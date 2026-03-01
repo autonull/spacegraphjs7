@@ -1,4 +1,4 @@
-# SpaceGraphJS6 — Complete Product Plan
+# SpaceGraphJS — Complete Product Plan
 
 **Generated:** March 1, 2026  
 **Status:** Ready for Execution
@@ -7,9 +7,9 @@
 
 ## Executive Summary
 
-SpaceGraphJS6 is the **first self-building UI framework**—a Zoomable User Interface (ZUI) library that synthesizes 175,000 lines of proven code from 5 repositories into a unified TypeScript codebase powered by AI vision.
+SpaceGraphJS is the **first self-building UI framework**—a Zoomable User Interface (ZUI) library that synthesizes 175,000 lines of proven code from 5 repositories into a unified TypeScript codebase powered by AI vision.
 
-**The Vision:** Stop describing UIs to AI. Start specifying them. SpaceGraphJS6 sees what it builds, verifies quality autonomously, and self-corrects in 30 seconds—98% faster than traditional AI iteration.
+**The Vision:** Stop describing UIs to AI. Start specifying them. SpaceGraphJS sees what it builds, verifies quality autonomously, and self-corrects in 30 seconds—98% faster than traditional AI iteration.
 
 ---
 
@@ -65,17 +65,21 @@ SpaceGraphJS6 is the **first self-building UI framework**—a Zoomable User Inte
 
 ## Immediate Next Actions (Week 1)
 
-| Priority | Action | Effort |
-|----------|--------|--------|
-| **P0** | Publish npm package (`spacegraphjs6@alpha`) | 2 hours |
-| **P0** | Write QUICKSTART.md | 4 hours |
-| **P0** | Create Matrix room (`#spacegraphjs6:matrix.org`) | 30 min |
-| **P0** | Set up GitHub Sponsors | 30 min |
-| **P1** | Build Vite vision plugin (minimal) | 8 hours |
-| **P1** | Write Manifesto article | 6 hours |
-| **P1** | Set up TypeDoc | 2 hours |
+| Priority | Action | Effort | Artifact |
+|----------|--------|--------|----------|
+| **P0** | Publish npm package (`spacegraphjs@alpha`) | 2 hours | [PACKAGE-TEMPLATE.md](./PACKAGE-TEMPLATE.md) |
+| **P0** | Write QUICKSTART.md | 4 hours | ✓ Done (root level) |
+| **P0** | Create Matrix room (`#spacegraphjs:matrix.org`) | 30 min | [WEEK-1-CHECKLIST.md](./WEEK-1-CHECKLIST.md) |
+| **P0** | Set up GitHub Sponsors | 30 min | [WEEK-1-CHECKLIST.md](./WEEK-1-CHECKLIST.md) |
+| **P1** | Build Vite vision plugin (minimal) | 8 hours | [PACKAGE-TEMPLATE.md](./PACKAGE-TEMPLATE.md) |
+| **P1** | Write Manifesto article | 6 hours | [CONTENT-TEMPLATES.md](./CONTENT-TEMPLATES.md) |
+| **P1** | Set up TypeDoc | 2 hours | [PACKAGE-TEMPLATE.md](./PACKAGE-TEMPLATE.md) |
+| **P1** | Set up CI/CD workflows | 2 hours | [GITHUB-ACTIONS.md](./GITHUB-ACTIONS.md) |
+| **P1** | Write CONTRIBUTING.md | 2 hours | ✓ Done (root level) |
 
-**Total Week 1 Effort:** ~23 hours
+**Total Week 1 Effort:** ~27 hours
+
+**Execution Guide:** Follow [WEEK-1-CHECKLIST.md](./WEEK-1-CHECKLIST.md) day-by-day.
 
 ---
 
@@ -126,19 +130,27 @@ SpaceGraphJS6 is the **first self-building UI framework**—a Zoomable User Inte
 
 ```
 PLAN/
-├── INDEX.md                    # This file
+├── INDEX.md                    # This file — master summary
+│
 ├── PHASE-1-AUDIT.md            # 6-U SWOT, ICP, Critical Gaps
 ├── PHASE-2-USABILITY.md        # Friction Log, TTHW, Fix List
 ├── PHASE-3-DISTRIBUTION.md     # Integrations, npm, Vite, Matrix
 ├── PHASE-4-EXPOSURE.md         # Content, Community, 90-Day GTM
-└── PHASE-5-SUSTAINABILITY.md   # Remarkability, Licensing, Revenue
+├── PHASE-5-SUSTAINABILITY.md   # Remarkability, Licensing, Revenue
+│
+├── WEEK-1-CHECKLIST.md         # Day-by-day execution checklist
+├── PACKAGE-TEMPLATE.md         # package.json, vite.config, tsconfig, LICENSE
+├── CONTRIBUTING.md             # Contributor guide (root level)
+├── GITHUB-ACTIONS.md           # CI/CD workflows, issue templates
+├── CONTENT-TEMPLATES.md        # Articles, videos, social posts
+└── RELEASE-CHECKLIST.md        # Release procedure, rollback
 ```
 
 ---
 
 ## The Remarkability Statement
 
-> SpaceGraphJS6 is the first self-building UI framework.
+> SpaceGraphJS is the first self-building UI framework.
 >
 > We synthesize 175,000 lines of proven code from 5 repositories into a unified TypeScript codebase powered by AI vision.
 >
@@ -154,7 +166,7 @@ PLAN/
 
 ### User Input (Project Baseline)
 
-1. **Repository:** https://github.com/autonull/spacegraphjs6
+1. **Repository:** https://github.com/autonull/spacegraphjs
 2. **Problem/Audience:** General-purpose UI solution
 3. **License:** MIT
 4. **Bottlenecks:** Adoption, Contribution, Revenue, Burnout (all four)
@@ -185,9 +197,9 @@ PLAN/
 
 ## Contact & Community
 
-- **GitHub:** https://github.com/autonull/spacegraphjs6
-- **Matrix:** https://matrix.to/#/#spacegraphjs6:matrix.org
-- **npm:** `spacegraphjs6` (pending publish)
+- **GitHub:** https://github.com/autonull/spacegraphjs
+- **Matrix:** https://matrix.to/#/#spacegraphjs:matrix.org
+- **npm:** `spacegraphjs` (pending publish)
 
 ---
 

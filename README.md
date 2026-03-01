@@ -1,4 +1,4 @@
-# SpaceGraphJS6 Specification
+# SpaceGraphJS Specification
 ## The Self-Building ZUI Library
 
 **Version:** 1.0.0  
@@ -30,7 +30,7 @@
 
 ### 1.1 Vision Statement
 
-SpaceGraphJS6 is a **self-building, self-optimizing Zoomable User Interface (ZUI) library** that synthesizes five complete implementations (175,000+ LOC) into a unified TypeScript codebase powered by AI vision. By giving AI the ability to **see, analyze, and self-correct** its output, we eliminate the iterative correction bottleneck and enable exponential development velocity.
+SpaceGraphJS is a **self-building, self-optimizing Zoomable User Interface (ZUI) library** that synthesizes five complete implementations (175,000+ LOC) into a unified TypeScript codebase powered by AI vision. By giving AI the ability to **see, analyze, and self-correct** its output, we eliminate the iterative correction bottleneck and enable exponential development velocity.
 
 ### 1.2 Key Innovations
 
@@ -107,7 +107,7 @@ Traditional AI-assisted development suffers from a **fundamental perception gap*
 
 ### 2.2 The Solution: Vision-Closed Loop
 
-SpaceGraphJS6 embeds AI vision at every layer, creating a **self-verifying development system**:
+SpaceGraphJS embeds AI vision at every layer, creating a **self-verifying development system**:
 
 ```
 ┌──────────────┐     ┌──────────┐     ┌───────────┐     ┌────────────┐     ┌─────────┐
@@ -128,7 +128,7 @@ SpaceGraphJS6 embeds AI vision at every layer, creating a **self-verifying devel
 
 ### 2.3 Automated Visual Verification
 
-In addition to AI vision models, SpaceGraphJS6 includes **automated screenshot-based verification** for all demos:
+In addition to AI vision models, SpaceGraphJS includes **automated screenshot-based verification** for all demos:
 
 ```python
 # verification/verify_demos.py
@@ -487,7 +487,7 @@ interface ErgonomicsReport {
 ```typescript
 // vite.config.ts
 import { defineConfig } from 'vite';
-import { spacegraphVision } from 'spacegraphjs6/vision-plugin';
+import { spacegraphVision } from 'spacegraphjs/vision-plugin';
 
 export default defineConfig({
     plugins: [
@@ -514,7 +514,7 @@ export default defineConfig({
 #### 2.5.2 Vitest Assertions
 
 ```typescript
-import { visionAssert } from 'spacegraphjs6/vision-test';
+import { visionAssert } from 'spacegraphjs/vision-test';
 
 await visionAssert.noOverlap(graph);
 await visionAssert.allTextLegible(graph);
@@ -525,7 +525,7 @@ await visionAssert.layoutQuality(graph, 80);
 #### 2.5.3 Playwright E2E
 
 ```typescript
-import { SpaceGraphVision } from 'spacegraphjs6/vision-e2e';
+import { SpaceGraphVision } from 'spacegraphjs/vision-e2e';
 
 const vision = new SpaceGraphVision(page);
 await vision.waitForRender();
@@ -546,12 +546,12 @@ expect(report.layout.overall).toBeGreaterThan(80);
 | **spacegraphjs3** | feature/svg-node-scaling | TypeScript | 81 | ~35,000 | Production | SolidJS, Managers, Performance systems |
 | **spacegraphjs4** | fix-demo-rendering | JavaScript | 50 | ~8,300 | Production | Surface graph, Verlet physics, UI components |
 | **spacegraphjs5** | ergonomics-logical-conclusion | JavaScript | 125 | ~65,000 | Production | ErgonomicsPlugin, Effects, Lighting |
-| **spacegraphjs6** | implementation | TypeScript | 15 | ~2,000 | MVP | Clean architecture, verification system |
+| **spacegraphjs** | implementation | TypeScript | 15 | ~2,000 | MVP | Clean architecture, verification system |
 | **Total** | - | - | 386 | ~175,300 | - | Complete feature union |
 
-### 3.2 Key Learnings from spacegraphjs6 Implementation
+### 3.2 Key Learnings from spacegraphjs Implementation
 
-The spacegraphjs6 implementation branch provides valuable architectural patterns:
+The spacegraphjs implementation branch provides valuable architectural patterns:
 
 **Clean Core Architecture:**
 ```typescript
@@ -654,7 +654,7 @@ createLabel(text: string): THREE.Sprite {
 │  ├── LightingManager (166 LOC, scene lighting)                  │
 │  └── Static Factory Pattern (SpaceGraph.the())                  │
 │                                                                  │
-│  spacegraphjs6 (sg6) - 2,000 LOC                                 │
+│  spacegraphjs (sg6) - 2,000 LOC                                 │
 │  ├── Clean TypeScript Architecture                               │
 │  ├── Automated Verification (Playwright)                        │
 │  ├── GSAP Animation Integration                                  │
@@ -672,7 +672,7 @@ createLabel(text: string): THREE.Sprite {
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                          SpaceGraphJS6                                   │
+│                          SpaceGraphJS                                   │
 │                     Self-Building ZUI Library                            │
 └─────────────────────────────────────────────────────────────────────────┘
                                       │
@@ -949,7 +949,7 @@ User Input / Spec
 ### 5.2 Model Training Pipeline
 
 ```typescript
-import { VisionTrainer } from 'spacegraphjs6/vision-training';
+import { VisionTrainer } from 'spacegraphjs/vision-training';
 
 const trainer = new VisionTrainer({
     dataSources: [
@@ -1529,7 +1529,7 @@ See Section 6.2 for complete TypeScript type definitions.
 
 ## Conclusion
 
-SpaceGraphJS6 represents the **complete synthesis** of five codebases (175,000+ LOC) into a unified, self-building ZUI library. Key additions from the spacegraphjs6 implementation branch include:
+SpaceGraphJS represents the **complete synthesis** of five codebases (175,000+ LOC) into a unified, self-building ZUI library. Key additions from the spacegraphjs implementation branch include:
 
 **Architectural Improvements:**
 - Clean class separation (SpaceGraph, Graph, Renderer, PluginManager)

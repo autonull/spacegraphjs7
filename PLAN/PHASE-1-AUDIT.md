@@ -103,7 +103,7 @@
 
 ## Ideal Customer Profile (ICP)
 
-| Segment | Persona | Pain Point | Why SpaceGraphJS6 |
+| Segment | Persona | Pain Point | Why SpaceGraphJS |
 |---------|---------|------------|-------------------|
 | **Primary** | Senior Frontend Engineer at Series B+ startup | Building complex data viz dashboards; AI iteration is slow | Vision system = 98% faster iteration |
 | **Secondary** | Solo indie hacker building SaaS tools | Burnout from context-switching between design/dev | Self-building UI = autonomous development |
@@ -135,7 +135,7 @@
 
 ## User Input (Initialization)
 
-1. **Repository URL:** https://github.com/autonull/spacegraphjs6 ✓
+1. **Repository URL:** https://github.com/autonull/spacegraphjs ✓
 2. **Problem & Audience:** General-purpose UI solution
 3. **License:** MIT
 4. **Biggest Bottleneck:** Adoption, Contribution, Revenue, Burnout (all four)

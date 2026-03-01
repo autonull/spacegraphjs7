@@ -18,17 +18,17 @@ Compare them in detail:
 - compatibility
 - etc...
 
-This is all for the purpose of creating a complete specification for a new implementation, `spacegraphjs6`:
+This is all for the purpose of creating a complete specification for a new implementation, `spacegraphjs`:
 - synergizes the union of all their functionalities
 - superior ideal architecture
 - superior testing
   - AI vision: debugging, ergonomics/aesthetics tuning
 
-# SpaceGraphJS6 - Comprehensive Analysis & Implementation Plan
+# SpaceGraphJS - Comprehensive Analysis & Implementation Plan
 
 ## Executive Summary
 
-This document provides a complete technical analysis of **FOUR** distinct SpaceGraphJS implementations, with detailed code-level examination of architecture, APIs, performance systems, and feature sets. The analysis reveals significant implementation differences that inform the unified SpaceGraphJS6 specification.
+This document provides a complete technical analysis of **FOUR** distinct SpaceGraphJS implementations, with detailed code-level examination of architecture, APIs, performance systems, and feature sets. The analysis reveals significant implementation differences that inform the unified SpaceGraphJS specification.
 
 ---
 
@@ -796,7 +796,7 @@ export class LightingManager {
 
 #### 4.1.1 Project Setup
 ```bash
-npm init spacegraphjs6
+npm init spacegraphjs
 # TypeScript + Vite + Vitest + Playwright
 ```
 
@@ -899,7 +899,7 @@ export interface SpecUpdate { /* ... */ }
 ## 5. File Structure for sg6
 
 ```
-spacegraphjs6/
+spacegraphjs/
 ├── src/
 │   ├── core/
 │   │   ├── SpaceGraph.ts
@@ -973,17 +973,17 @@ spacegraphjs6/
 
 ```json
 {
-    "name": "spacegraphjs6",
+    "name": "spacegraphjs",
     "version": "1.0.0",
     "type": "module",
-    "main": "./dist/spacegraphjs6.cjs.js",
-    "module": "./dist/spacegraphjs6.es.js",
+    "main": "./dist/spacegraphjs.cjs.js",
+    "module": "./dist/spacegraphjs.es.js",
     "types": "./dist/index.d.ts",
     "exports": {
         ".": {
             "types": "./dist/index.d.ts",
-            "import": "./dist/spacegraphjs6.es.js",
-            "require": "./dist/spacegraphjs6.cjs.js"
+            "import": "./dist/spacegraphjs.es.js",
+            "require": "./dist/spacegraphjs.cjs.js"
         }
     },
     "scripts": {
@@ -1038,7 +1038,7 @@ spacegraphjs6/
 
 ## 7. Conclusion
 
-SpaceGraphJS6 unifies **FOUR** codebases with the following synthesis:
+SpaceGraphJS unifies **FOUR** codebases with the following synthesis:
 
 | Source | Contribution | LOC | Key Features |
 |--------|--------------|-----|--------------|
@@ -1059,4 +1059,4 @@ SpaceGraphJS6 unifies **FOUR** codebases with the following synthesis:
 - Mobile support
 - AI debugging
 
-This comprehensive analysis provides the foundation for implementing SpaceGraphJS6 as a unified, superior ZUI library.
+This comprehensive analysis provides the foundation for implementing SpaceGraphJS as a unified, superior ZUI library.

@@ -2,7 +2,7 @@
 
 ## 4.1 The Exposure Imperative
 
-**SpaceGraphJS6 faces a visibility crisis:**
+**SpaceGraphJS faces a visibility crisis:**
 
 > It has **industry-first AI vision technology** buried in a spec document that almost no one will read.
 
@@ -18,7 +18,7 @@
 ```
 "Stop describing UIs to AI. Start specifying them.
 
-SpaceGraphJS6 is the first UI framework that sees what it builds,
+SpaceGraphJS is the first UI framework that sees what it builds,
 verifies quality autonomously, and self-corrects in milliseconds.
 
 Traditional AI iteration: 30 minutes per cycle
@@ -57,7 +57,7 @@ Channel: Dev.to, Hashnode, Personal blog
 Outline:
 1. The broken AI iteration loop (we've all lived it)
 2. What "vision-closed" means (the insight)
-3. How SpaceGraphJS6 implements it (the architecture)
+3. How SpaceGraphJS implements it (the architecture)
 4. Demo: AI detects overlap → auto-fixes in 30 seconds
 5. Why this changes everything (the implication)
 6. Call to action: Try it, contribute, join Matrix
@@ -65,7 +65,7 @@ Outline:
 
 **Article 2: Technical Deep Dive**
 ```
-Title: "Building a Self-Building UI Library: Architecture of SpaceGraphJS6"
+Title: "Building a Self-Building UI Library: Architecture of SpaceGraphJS"
 Length: 3500 words
 Channel: Dev.to, Hashnode
 
@@ -120,7 +120,7 @@ Script:
 
 **Room Structure:**
 ```
-#spacegraphjs6:matrix.org (main)
+#spacegraphjs:matrix.org (main)
 ├── #sg6-announcements:matrix.org (read-only, announcements only)
 ├── #sg6-help:matrix.org (support, Q&A)
 ├── #sg6-contributors:matrix.org (dev coordination)
@@ -140,12 +140,12 @@ Script:
 import { MatrixClient } from 'matrix-js-sdk';
 
 const WELCOME_MESSAGE = `
-👋 Welcome to SpaceGraphJS6!
+👋 Welcome to SpaceGraphJS!
 
 Quick links:
-• Docs: https://spacegraphjs6.dev
-• GitHub: https://github.com/autonull/spacegraphjs6
-• Quickstart: npm install spacegraphjs6
+• Docs: https://spacegraphjs.dev
+• GitHub: https://github.com/autonull/spacegraphjs
+• Quickstart: npm install spacegraphjs
 • Contributing: CONTRIBUTING.md
 
 Channels:
@@ -197,12 +197,12 @@ Pseudocode or architecture ideas (optional)
 
 **CONTRIBUTING.md Structure:**
 ```markdown
-# Contributing to SpaceGraphJS6
+# Contributing to SpaceGraphJS
 
 ## Quick Start
 ```bash
-git clone https://github.com/autonull/spacegraphjs6
-cd spacegraphjs6
+git clone https://github.com/autonull/spacegraphjs
+cd spacegraphjs
 npm install
 npm run dev
 ```
@@ -229,7 +229,7 @@ npm run dev
 See [docs/vision-models.md](docs/vision-models.md) for training data, architecture docs.
 
 ## Join the Conversation
-Matrix: https://matrix.to/#/#spacegraphjs6:matrix.org
+Matrix: https://matrix.to/#/#spacegraphjs:matrix.org
 ```
 
 **Good First Issues (Examples):**
@@ -288,7 +288,7 @@ Description: "intall" → "install" in line 12
 
 | Metric | Target | Measurement |
 |--------|--------|-------------|
-| **npm Downloads** | 5,000 cumulative | `npm trends spacegraphjs6` |
+| **npm Downloads** | 5,000 cumulative | `npm trends spacegraphjs` |
 | **GitHub Stars** | 100 | GitHub Insights |
 | **GitHub Forks** | 25 | GitHub Insights |
 | **External Contributors** | 10 | GitHub Contributors |

@@ -4,7 +4,7 @@
 
 **Seth Godin's definition:** *"A Purple Cow is something remarkable. Not 'very good.' Not 'slightly better.' Remarkable. Worth talking about."*
 
-**SpaceGraphJS6 has not one, but THREE Purple Cows:**
+**SpaceGraphJS has not one, but THREE Purple Cows:**
 
 ---
 
@@ -79,7 +79,7 @@ Boot into a computer that sees itself."
 │                         REMARKABILITY STATEMENT                          │
 ├─────────────────────────────────────────────────────────────────────────┤
 │                                                                         │
-│  SpaceGraphJS6 is the first self-building UI framework.                 │
+│  SpaceGraphJS is the first self-building UI framework.                 │
 │                                                                         │
 │  We synthesize 175,000 lines of proven code from 5 repositories         │
 │  into a unified TypeScript codebase powered by AI vision.               │
@@ -370,7 +370,7 @@ intro    #sg6-help   Good first   releases
 ├─────────────────────────────────────────────────────────────────────────┤
 │                                                                         │
 │  ┌─────────────────────────────────────────────────────────────────┐   │
-│  │                    SpaceGraphJS6 Applications                    │   │
+│  │                    SpaceGraphJS Applications                    │   │
 │  │  (Files, Apps, Processes, Network, Settings—all as nodes)       │   │
 │  └─────────────────────────────────────────────────────────────────┘   │
 │                                    │                                    │

@@ -39,16 +39,16 @@
 **Minimal Package Structure:**
 ```json
 {
-  "name": "spacegraphjs6",
+  "name": "spacegraphjs",
   "version": "6.0.0-alpha.1",
   "type": "module",
-  "main": "./dist/spacegraphjs6.js",
-  "module": "./dist/spacegraphjs6.js",
+  "main": "./dist/spacegraphjs.js",
+  "module": "./dist/spacegraphjs.js",
   "types": "./dist/types/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/types/index.d.ts",
-      "import": "./dist/spacegraphjs6.js"
+      "import": "./dist/spacegraphjs.js"
     },
     "./vision": {
       "types": "./dist/types/vision/index.d.ts",
@@ -76,7 +76,7 @@ npm publish --tag alpha
 
 # 4. Test install
 mkdir /tmp/test && cd /tmp/test
-npm install spacegraphjs6@alpha
+npm install spacegraphjs@alpha
 ```
 
 ---
@@ -133,7 +133,7 @@ export function spacegraphVision(options: VisionPluginOptions = {}): Plugin {
 ```typescript
 // vite.config.ts
 import { defineConfig } from 'vite';
-import { spacegraphVision } from 'spacegraphjs6/vision';
+import { spacegraphVision } from 'spacegraphjs/vision';
 
 export default defineConfig({
   plugins: [
@@ -222,7 +222,7 @@ export const visionAssert = {
 **Usage:**
 ```typescript
 // tests/graph.test.ts
-import { visionAssert } from 'spacegraphjs6/vision-test';
+import { visionAssert } from 'spacegraphjs/vision-test';
 
 test('graph has no overlaps', async () => {
   await visionAssert.noOverlap('test-graph');
@@ -242,18 +242,18 @@ test('all text is legible', async () => {
 **Why High Priority:** Contributors need a coordination channel. Matrix is open, federated, aligns with OSS values.
 
 **Minimal Setup:**
-1. Create room: `#spacegraphjs6:matrix.org`
+1. Create room: `#spacegraphjs:matrix.org`
 2. Add to GitHub README
 3. Set up basic bots (GitHub webhook → Matrix)
 
 **README Badge:**
 ```markdown
-[![Matrix](https://img.shields.io/matrix/spacegraphjs6:matrix.org)](https://matrix.to/#/#spacegraphjs6:matrix.org)
+[![Matrix](https://img.shields.io/matrix/spacegraphjs:matrix.org)](https://matrix.to/#/#spacegraphjs:matrix.org)
 ```
 
 **Join Link:**
 ```
-https://matrix.to/#/#spacegraphjs6:matrix.org
+https://matrix.to/#/#spacegraphjs:matrix.org
 ```
 
 **Effort:** 1 hour

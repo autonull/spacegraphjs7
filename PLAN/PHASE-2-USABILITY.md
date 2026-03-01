@@ -2,7 +2,7 @@
 
 ## 2.1 The Core Insight
 
-**SpaceGraphJS6 has a fundamental UX paradox:**
+**SpaceGraphJS has a fundamental UX paradox:**
 
 > It's a **self-building UI library**, but developers must manually build everything.
 
@@ -24,7 +24,7 @@ Developer specifies intent → AI builds → Vision verifies → AI self-correct
 
 | # | Friction Point | Severity | User Impact | Effort to Fix |
 |---|----------------|----------|-------------|---------------|
-| **F1** | No npm package | 🔴 Critical | Can't `npm install spacegraphjs6` | Low |
+| **F1** | No npm package | 🔴 Critical | Can't `npm install spacegraphjs` | Low |
 | **F2** | No quickstart tutorial | 🔴 Critical | No path from zero to working graph | Medium |
 | **F3** | No live demo (CodeSandbox/StackBlitz) | 🔴 Critical | Can't try before cloning | Low |
 | **F4** | Vision system not integrated into dev workflow | 🔴 Critical | Core differentiator is theoretical | High |
@@ -55,27 +55,27 @@ Developer specifies intent → AI builds → Vision verifies → AI self-correct
 ### Target Path
 ```bash
 # Option A: npm (fastest)
-npm install spacegraphjs6
+npm install spacegraphjs
 npx sg6 create my-graph
 cd my-graph && npm run dev
 # → Browser opens at localhost:5173 with working graph
 
 # Option B: Direct import
-import { SpaceGraph } from 'spacegraphjs6';
+import { SpaceGraph } from 'spacegraphjs';
 ```
 
 ---
 
 ## 2.4 The Vision-First DX Revolution
 
-**This is the key differentiator:** SpaceGraphJS6 should be the first UI library where **the AI builds with you, not for you**.
+**This is the key differentiator:** SpaceGraphJS should be the first UI library where **the AI builds with you, not for you**.
 
 ### Vision-Closed Development Experience
 
 ```typescript
 // vite.config.ts
 import { defineConfig } from 'vite';
-import { spacegraphVision } from 'spacegraphjs6/vision';
+import { spacegraphVision } from 'spacegraphjs/vision';
 
 export default defineConfig({
   plugins: [
@@ -158,14 +158,14 @@ export default defineConfig({
 
 ## Install
 ```bash
-npm install spacegraphjs6 three
+npm install spacegraphjs three
 ```
 
 ## Create your first graph
 
 ```typescript
 // main.ts
-import { SpaceGraph } from 'spacegraphjs6';
+import { SpaceGraph } from 'spacegraphjs';
 
 const graph = SpaceGraph.create('#container', {
   nodes: [
@@ -199,7 +199,7 @@ npx sg6 fix --all
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  The SpaceGraphJS6 Self-Assembly Loop                       │
+│  The SpaceGraphJS Self-Assembly Loop                       │
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
 │  1. Developer writes minimal spec                           │

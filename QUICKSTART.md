@@ -1,4 +1,4 @@
-# SpaceGraphJS6 Quickstart
+# SpaceGraphJS Quickstart
 
 **Get a working graph in 5 minutes.**
 
@@ -14,7 +14,7 @@
 ## Installation
 
 ```bash
-npm install spacegraphjs6 three
+npm install spacegraphjs three
 ```
 
 ---
@@ -26,7 +26,7 @@ npm install spacegraphjs6 three
 ```bash
 mkdir my-graph && cd my-graph
 npm init -y
-npm install spacegraphjs6 three vite
+npm install spacegraphjs three vite
 ```
 
 ### 2. Create `index.html`
@@ -53,7 +53,7 @@ npm install spacegraphjs6 three vite
 ### 3. Create `main.ts`
 
 ```typescript
-import { SpaceGraph } from 'spacegraphjs6';
+import { SpaceGraph } from 'spacegraphjs';
 
 const container = document.getElementById('container')!;
 
@@ -149,14 +149,14 @@ The vision system analyzes your graph and auto-fixes quality issues.
 ### 1. Install vision plugin
 
 ```bash
-npm install spacegraphjs6
+npm install spacegraphjs
 ```
 
 ### 2. Update `vite.config.ts`
 
 ```typescript
 import { defineConfig } from 'vite';
-import { spacegraphVision } from 'spacegraphjs6/vision';
+import { spacegraphVision } from 'spacegraphjs/vision';
 
 export default defineConfig({
   plugins: [
@@ -219,7 +219,7 @@ const graph = SpaceGraph.create(container, {
 ### Try Layout Engines
 
 ```typescript
-import { ForceLayout } from 'spacegraphjs6/layouts';
+import { ForceLayout } from 'spacegraphjs/layouts';
 
 const layout = new ForceLayout(graph, {
   nodeDistance: 150,
@@ -234,7 +234,7 @@ await layout.apply();
 ```typescript
 // tests/graph.test.ts
 import { test, expect } from 'vitest';
-import { visionAssert } from 'spacegraphjs6/vision-test';
+import { visionAssert } from 'spacegraphjs/vision-test';
 
 test('graph has no overlaps', async () => {
   await visionAssert.noOverlap('my-graph');
@@ -265,11 +265,11 @@ test('meets WCAG AA', async () => {
 
 ## Troubleshooting
 
-### "Module not found: spacegraphjs6"
+### "Module not found: spacegraphjs"
 
 Make sure you installed the package:
 ```bash
-npm install spacegraphjs6 three
+npm install spacegraphjs three
 ```
 
 ### "Three is not defined"
@@ -295,9 +295,9 @@ npm install three
 
 ## Get Help
 
-- **Documentation:** https://spacegraphjs6.dev
-- **GitHub Issues:** https://github.com/autonull/spacegraphjs6/issues
-- **Matrix Community:** https://matrix.to/#/#spacegraphjs6:matrix.org
+- **Documentation:** https://spacegraphjs.dev
+- **GitHub Issues:** https://github.com/autonull/spacegraphjs/issues
+- **Matrix Community:** https://matrix.to/#/#spacegraphjs:matrix.org
 
 ---
 
@@ -306,7 +306,7 @@ npm install three
 1. **Explore the API** — Read the [API Reference](./docs/api)
 2. **Build something** — Create your first project
 3. **Join the community** — Say hi on Matrix
-4. **Contribute** — Check out [good first issues](https://github.com/autonull/spacegraphjs6/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+4. **Contribute** — Check out [good first issues](https://github.com/autonull/spacegraphjs/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
 
 ---
 
