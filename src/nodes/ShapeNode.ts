@@ -19,6 +19,7 @@ function releaseGeometry(geo: THREE.SphereGeometry) {
 export class ShapeNode extends Node {
   private meshGeometry: THREE.SphereGeometry;
   private meshMaterial: THREE.MeshBasicMaterial;
+  private labelSprite?: THREE.Sprite;
 
   constructor(sg: SpaceGraph, spec: NodeSpec) {
     super(sg, spec);
@@ -31,12 +32,35 @@ export class ShapeNode extends Node {
     this.object.add(mesh);
 
     if (spec.label) {
-      const label = this.createLabel(spec.label);
-      label.position.y = -30;
-      this.object.add(label);
+      this.labelSprite = this.createLabel(spec.label);
+      this.labelSprite.position.y = -30;
+      this.object.add(this.labelSprite);
     }
 
     this.updatePosition(this.position.x, this.position.y, this.position.z);
+  }
+
+  updateSpec(updates: Partial<NodeSpec>) {
+    super.updateSpec(updates);
+
+    if (updates.data && updates.data.color) {
+        this.meshMaterial.color.setHex(updates.data.color);
+    }
+
+    if (updates.label !== undefined) {
+        if (this.labelSprite) {
+            if (this.labelSprite.material.map) this.labelSprite.material.map.dispose();
+            this.labelSprite.material.dispose();
+            this.object.remove(this.labelSprite);
+            this.labelSprite = undefined;
+        }
+
+        if (updates.label) {
+            this.labelSprite = this.createLabel(updates.label);
+            this.labelSprite.position.y = -30;
+            this.object.add(this.labelSprite);
+        }
+    }
   }
 
   private createLabel(text: string): THREE.Sprite {
@@ -67,6 +91,10 @@ export class ShapeNode extends Node {
     }
     if (this.meshMaterial) {
       this.meshMaterial.dispose();
+    }
+    if (this.labelSprite) {
+      if (this.labelSprite.material.map) this.labelSprite.material.map.dispose();
+      this.labelSprite.material.dispose();
     }
     super.dispose();
   }

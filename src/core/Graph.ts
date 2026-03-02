@@ -31,15 +31,13 @@ export class Graph {
       const node = this.nodes.get(id);
       if (!node) return null;
 
-      if (updates.data) {
-          node.data = { ...node.data, ...updates.data };
+      if (typeof node.updateSpec === 'function') {
+          node.updateSpec(updates);
+      } else {
+          // Fallback for custom nodes that don't implement updateSpec
+          if (updates.data) node.data = { ...node.data, ...updates.data };
+          if (updates.position) node.updatePosition(updates.position[0], updates.position[1], updates.position[2]);
       }
-      if (updates.position) {
-          node.updatePosition(updates.position[0], updates.position[1], updates.position[2]);
-      }
-
-      // Note: Changing type or label typically requires re-instantiating or specific update logic
-      // which we'll handle gracefully later.
 
       return node;
   }
@@ -75,8 +73,10 @@ export class Graph {
       const edge = this.edges.find(e => e.id === id);
       if (!edge) return null;
 
-      if (updates.data) {
-          edge.data = { ...edge.data, ...updates.data };
+      if (typeof edge.updateSpec === 'function') {
+          edge.updateSpec(updates);
+      } else {
+          if (updates.data) edge.data = { ...edge.data, ...updates.data };
       }
 
       // If source or target changes, we usually need to re-evaluate it

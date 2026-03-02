@@ -27,10 +27,23 @@ export class HtmlNode extends Node {
     this.domElement.style.flexDirection = 'column';
     this.domElement.style.justifyContent = 'center';
     this.domElement.style.alignItems = 'center';
-    this.domElement.innerHTML = `
-        <h3 style="margin:0;font-family:sans-serif;font-size:16px">${spec.label || 'HTML Node'}</h3>
-        <p style="margin:5px 0 0;font-family:sans-serif;font-size:12px">${spec.data?.description || ''}</p>
-    `;
+
+    const titleEl = document.createElement('h3');
+    titleEl.style.margin = '0';
+    titleEl.style.fontFamily = 'sans-serif';
+    titleEl.style.fontSize = '16px';
+    titleEl.className = 'html-node-title';
+    titleEl.textContent = spec.label || 'HTML Node';
+
+    const descEl = document.createElement('p');
+    descEl.style.margin = '5px 0 0';
+    descEl.style.fontFamily = 'sans-serif';
+    descEl.style.fontSize = '12px';
+    descEl.className = 'html-node-desc';
+    descEl.textContent = spec.data?.description || '';
+
+    this.domElement.appendChild(titleEl);
+    this.domElement.appendChild(descEl);
 
     this.cssObject = new CSS3DObject(this.domElement);
     this.object.add(this.cssObject);
@@ -47,6 +60,28 @@ export class HtmlNode extends Node {
     this.object.add(mesh);
 
     this.updatePosition(this.position.x, this.position.y, this.position.z);
+  }
+
+  updateSpec(updates: Partial<NodeSpec>) {
+    super.updateSpec(updates);
+
+    if (updates.data && updates.data.color) {
+      this.domElement.style.backgroundColor = updates.data.color;
+    }
+
+    if (updates.label !== undefined) {
+      const titleEl = this.domElement.querySelector('.html-node-title');
+      if (titleEl) {
+        titleEl.textContent = updates.label || 'HTML Node';
+      }
+    }
+
+    if (updates.data && updates.data.description !== undefined) {
+      const descEl = this.domElement.querySelector('.html-node-desc');
+      if (descEl) {
+        descEl.textContent = updates.data.description || '';
+      }
+    }
   }
 
   dispose(): void {

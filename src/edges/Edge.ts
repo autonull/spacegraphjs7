@@ -26,6 +26,15 @@ export class Edge {
     this.object = new THREE.Line(this.geometry, material);
   }
 
+  updateSpec(updates: Partial<EdgeSpec>) {
+    if (updates.data) {
+      this.data = { ...this.data, ...updates.data };
+      if (updates.data.color) {
+        (this.object.material as THREE.LineBasicMaterial).color.setHex(updates.data.color);
+      }
+    }
+  }
+
   update() {
     const positions = new Float32Array([
       this.source.position.x, this.source.position.y, this.source.position.z,
