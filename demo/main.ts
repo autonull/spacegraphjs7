@@ -43,7 +43,12 @@ try {
 
   updateStatus('Rendering graph...');
   graph.render();
-  updateStatus('✓ Graph rendered successfully!');
+
+  // Test fitView
+  setTimeout(() => {
+    graph.fitView(150, 2.0);
+    updateStatus('✓ Graph rendered successfully! (Fit View applied)');
+  }, 100);
 
   console.log('[Demo] Graph instance:', graph);
   console.log('[Demo] Controls: Left-click drag to rotate, scroll to zoom');

@@ -29,18 +29,18 @@ export class CameraControls {
     this.sg.events.emit('camera:move', { position: camera.position, target: this.target.clone() });
   }
 
-  public flyTo(targetPos: THREE.Vector3, duration: number = 1.5): void {
-      const camera = this.sg.renderer.camera;
-
-      // Update spherical based on new targetPos
-      const radius = targetPos.length();
-      const theta = Math.atan2(targetPos.x, targetPos.z);
-      const phi = Math.acos(targetPos.y / radius);
+  public flyTo(targetPos: THREE.Vector3, targetRadius: number, duration: number = 1.5): void {
+      // Animate both the look-at target and the spherical radius
+      gsap.to(this.target, {
+          x: targetPos.x,
+          y: targetPos.y,
+          z: targetPos.z,
+          duration,
+          ease: "power2.inOut"
+      });
 
       gsap.to(this.spherical, {
-          radius,
-          theta,
-          phi,
+          radius: targetRadius,
           duration,
           ease: "power2.inOut",
           onUpdate: () => {
