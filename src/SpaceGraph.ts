@@ -106,6 +106,7 @@ export class SpaceGraph {
 
     const delta = 0.016; // rough estimate for 60fps
     this.pluginManager.updateAll(delta);
+    this.cameraControls.update();
 
     this.renderer.render();
   }

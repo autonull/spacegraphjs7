@@ -8,6 +8,9 @@ export class CameraControls {
   private previousMousePosition = { x: 0, y: 0 };
   private spherical = { theta: 0, phi: Math.PI / 2, radius: 500 };
 
+  private damping = 0.9;
+  private velocity = { x: 0, y: 0 };
+
   constructor(sg: SpaceGraph) {
     this.sg = sg;
     this.setupControls();
@@ -43,12 +46,25 @@ export class CameraControls {
       });
   }
 
+  public update() {
+    if (!this.isDragging && (Math.abs(this.velocity.x) > 0.0001 || Math.abs(this.velocity.y) > 0.0001)) {
+      this.spherical.theta -= this.velocity.x;
+      this.spherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, this.spherical.phi + this.velocity.y));
+
+      this.velocity.x *= this.damping;
+      this.velocity.y *= this.damping;
+
+      this.updateCameraPosition();
+    }
+  }
+
   private setupControls() {
     const canvas = this.sg.renderer.renderer.domElement;
 
     canvas.addEventListener('mousedown', (e) => {
       this.isDragging = true;
       this.previousMousePosition = { x: e.clientX, y: e.clientY };
+      this.velocity = { x: 0, y: 0 };
     });
 
     canvas.addEventListener('mousemove', (e) => {
@@ -57,8 +73,11 @@ export class CameraControls {
       const deltaX = e.clientX - this.previousMousePosition.x;
       const deltaY = e.clientY - this.previousMousePosition.y;
 
-      this.spherical.theta -= deltaX * 0.005;
-      this.spherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, this.spherical.phi + deltaY * 0.005));
+      this.velocity.x = deltaX * 0.005;
+      this.velocity.y = deltaY * 0.005;
+
+      this.spherical.theta -= this.velocity.x;
+      this.spherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, this.spherical.phi + this.velocity.y));
 
       this.updateCameraPosition();
       this.previousMousePosition = { x: e.clientX, y: e.clientY };

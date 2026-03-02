@@ -25,4 +25,10 @@ export class Node {
     this.position.set(x, y, z);
     this.object.position.copy(this.position);
   }
+
+  dispose(): void {
+    if (this.object.parent) {
+      this.object.parent.remove(this.object);
+    }
+  }
 }
