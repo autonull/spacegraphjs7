@@ -5,6 +5,7 @@ import type { NodeSpec } from '../types';
 export class Node {
   public id: string;
   public sg: SpaceGraph;
+  public label?: string;
   public data: any;
   public object: THREE.Object3D;
   public position: THREE.Vector3;
@@ -12,6 +13,7 @@ export class Node {
   constructor(sg: SpaceGraph, spec: NodeSpec) {
     this.sg = sg;
     this.id = spec.id;
+    this.label = spec.label;
     this.data = spec.data || {};
     this.position = new THREE.Vector3(
       spec.position?.[0] || 0,
@@ -21,8 +23,20 @@ export class Node {
     this.object = new THREE.Object3D();
   }
 
+  updateSpec(updates: Partial<NodeSpec>) {
+    if (updates.label !== undefined) this.label = updates.label;
+    if (updates.data) this.data = { ...this.data, ...updates.data };
+    if (updates.position) this.updatePosition(updates.position[0], updates.position[1], updates.position[2]);
+  }
+
   updatePosition(x: number, y: number, z: number) {
     this.position.set(x, y, z);
     this.object.position.copy(this.position);
+  }
+
+  dispose(): void {
+    if (this.object.parent) {
+      this.object.parent.remove(this.object);
+    }
   }
 }
