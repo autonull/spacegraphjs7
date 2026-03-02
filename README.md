@@ -75,9 +75,8 @@ SpaceGraph Mini — A pocket-sized computer running SpaceGraphOS.
 
 **4 Research Papers:**
 1. **Vision-Closed Development** (CHI/UIST 2026) — 60x faster AI iteration
-2. **Codebase Synthesis** (MSR/SANER 2026) — 175K LOC from 5 repos
-3. **ZUI Performance** (WebSci/WWW 2026) — 60 FPS at 1000 nodes
-4. **Open Hardware** (TEI/ISWC 2026) — Accessible AI research platform
+2. **ZUI Performance** (WebSci/WWW 2026) — 60 FPS at 1000 nodes
+3. **Open Hardware** (TEI/ISWC 2026) — Accessible AI research platform
 
 **2 Open Datasets:**
 - **Layout Quality Corpus** — 100K+ labeled graph layouts (CC-BY-4.0)
