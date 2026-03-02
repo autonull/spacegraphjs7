@@ -82,7 +82,7 @@ export class VisionManager {
       // Simulate ODN (Overlap Detection Network) autonomous fix using repulsive forces
       if (category.type === 'overlap') {
           console.log('[VisionManager] Applying overlap corrections...');
-          const layoutPlugin: any = this.sg.pluginManager.get('LayoutPlugin');
+          const layoutPlugin: any = this.sg.pluginManager.getPlugin('LayoutPlugin');
           if (layoutPlugin && typeof layoutPlugin.update === 'function') {
               // Boost repulsion temporarily to resolve overlaps
               const originalRepulsion = layoutPlugin.settings.repulsion;

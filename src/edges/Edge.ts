@@ -34,4 +34,14 @@ export class Edge {
     this.geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     this.geometry.attributes.position.needsUpdate = true;
   }
+
+  dispose(): void {
+    if (this.object.parent) {
+      this.object.parent.remove(this.object);
+    }
+    this.geometry.dispose();
+    if (this.object.material) {
+      (this.object.material as THREE.Material).dispose();
+    }
+  }
 }

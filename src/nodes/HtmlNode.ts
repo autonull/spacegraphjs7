@@ -7,6 +7,8 @@ import type { NodeSpec } from '../types';
 export class HtmlNode extends Node {
   public domElement: HTMLElement;
   public cssObject: CSS3DObject;
+  private meshGeometry: THREE.PlaneGeometry;
+  private meshMaterial: THREE.MeshBasicMaterial;
 
   constructor(sg: SpaceGraph, spec: NodeSpec) {
     super(sg, spec);
@@ -34,16 +36,29 @@ export class HtmlNode extends Node {
     this.object.add(this.cssObject);
 
     // Optional backing mesh for raycasting/webgl representation
-    const geometry = new THREE.PlaneGeometry(200, 100);
-    const material = new THREE.MeshBasicMaterial({
+    this.meshGeometry = new THREE.PlaneGeometry(200, 100);
+    this.meshMaterial = new THREE.MeshBasicMaterial({
         color: 0x000000,
         opacity: 0.1,
         transparent: true,
         side: THREE.DoubleSide
     });
-    const mesh = new THREE.Mesh(geometry, material);
+    const mesh = new THREE.Mesh(this.meshGeometry, this.meshMaterial);
     this.object.add(mesh);
 
     this.updatePosition(this.position.x, this.position.y, this.position.z);
+  }
+
+  dispose(): void {
+    if (this.domElement.parentNode) {
+      this.domElement.parentNode.removeChild(this.domElement);
+    }
+    if (this.meshGeometry) {
+      this.meshGeometry.dispose();
+    }
+    if (this.meshMaterial) {
+      this.meshMaterial.dispose();
+    }
+    super.dispose();
   }
 }
