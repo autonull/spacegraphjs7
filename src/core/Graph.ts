@@ -11,6 +11,10 @@ export class Graph {
   }
 
   addNode(spec: NodeSpec) {
+    if (this.nodes.has(spec.id)) {
+        return this.updateNode(spec.id, spec);
+    }
+
     const NodeType = this.sg.pluginManager.getNodeType(spec.type);
     if (!NodeType) {
       console.warn(`[SpaceGraph] Node type "${spec.type}" not registered.`);
@@ -23,7 +27,29 @@ export class Graph {
     return node;
   }
 
+  updateNode(id: string, updates: Partial<NodeSpec>) {
+      const node = this.nodes.get(id);
+      if (!node) return null;
+
+      if (updates.data) {
+          node.data = { ...node.data, ...updates.data };
+      }
+      if (updates.position) {
+          node.updatePosition(updates.position[0], updates.position[1], updates.position[2]);
+      }
+
+      // Note: Changing type or label typically requires re-instantiating or specific update logic
+      // which we'll handle gracefully later.
+
+      return node;
+  }
+
   addEdge(spec: EdgeSpec) {
+    const existingIndex = this.edges.findIndex(e => e.id === spec.id);
+    if (existingIndex !== -1) {
+        return this.updateEdge(spec.id, spec);
+    }
+
     const sourceNode = this.nodes.get(spec.source);
     const targetNode = this.nodes.get(spec.target);
 
@@ -43,6 +69,28 @@ export class Graph {
     this.sg.renderer.scene.add(edge.object);
     this.sg.events.emit('edge:added', { edge });
     return edge;
+  }
+
+  updateEdge(id: string, updates: Partial<EdgeSpec>) {
+      const edge = this.edges.find(e => e.id === id);
+      if (!edge) return null;
+
+      if (updates.data) {
+          edge.data = { ...edge.data, ...updates.data };
+      }
+
+      // If source or target changes, we usually need to re-evaluate it
+      if (updates.source || updates.target) {
+          const sourceNode = this.nodes.get(updates.source || edge.source.id);
+          const targetNode = this.nodes.get(updates.target || edge.target.id);
+          if (sourceNode && targetNode) {
+              edge.source = sourceNode;
+              edge.target = targetNode;
+              edge.update();
+          }
+      }
+
+      return edge;
   }
 
   removeNode(id: string) {

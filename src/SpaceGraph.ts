@@ -8,9 +8,11 @@ import { VisionManager } from './core/VisionManager';
 import { ShapeNode } from './nodes/ShapeNode';
 import { HtmlNode } from './nodes/HtmlNode';
 import { Edge } from './edges/Edge';
+import { CurvedEdge } from './edges/CurvedEdge';
 import { ForceLayout } from './plugins/ForceLayout';
 import { InteractionPlugin } from './plugins/InteractionPlugin';
-import type { GraphSpec, SpaceGraphOptions } from './types';
+import { LODPlugin } from './plugins/LODPlugin';
+import type { GraphSpec, SpaceGraphOptions, SpecUpdate } from './types';
 
 export class SpaceGraph {
   public container: HTMLElement;
@@ -54,12 +56,15 @@ export class SpaceGraph {
     this.pluginManager.registerNodeType('ShapeNode', ShapeNode);
     this.pluginManager.registerNodeType('HtmlNode', HtmlNode);
     this.pluginManager.registerEdgeType('Edge', Edge);
+    this.pluginManager.registerEdgeType('CurvedEdge', CurvedEdge);
 
     // Register built-in plugins
     const layout = new ForceLayout();
     this.pluginManager.register('LayoutPlugin', layout);
     const interaction = new InteractionPlugin();
     this.pluginManager.register('InteractionPlugin', interaction);
+    const lod = new LODPlugin();
+    this.pluginManager.register('LODPlugin', lod);
 
     await this.pluginManager.initAll();
   }
@@ -76,6 +81,24 @@ export class SpaceGraph {
         this.graph.addEdge(edgeSpec);
       }
     }
+  }
+
+  update(spec: SpecUpdate): void {
+      if (spec.nodes) {
+          for (const nodeUpdate of spec.nodes) {
+              if (nodeUpdate.id) {
+                  this.graph.updateNode(nodeUpdate.id, nodeUpdate);
+              }
+          }
+      }
+
+      if (spec.edges) {
+          for (const edgeUpdate of spec.edges) {
+              if (edgeUpdate.id) {
+                  this.graph.updateEdge(edgeUpdate.id, edgeUpdate);
+              }
+          }
+      }
   }
 
   animate() {
