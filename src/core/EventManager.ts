@@ -9,6 +9,8 @@ export type SpaceGraphEvents = {
   'interaction:dragstart': { node: any };
   'interaction:dragend': { node: any };
   'camera:move': { position: any, target: any };
+  'node:click': { node: any, event: any };
+  'graph:click': { event: any };
   [key: string]: any;
 };
 

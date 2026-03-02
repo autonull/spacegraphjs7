@@ -53,6 +53,47 @@ try {
   console.log('[Demo] Graph instance:', graph);
   console.log('[Demo] Controls: Left-click drag to rotate, scroll to zoom');
 
+  let selectedNodeId: string | null = null;
+  const originalColors: Record<string, number> = {};
+
+  graph.events.on('node:click', ({ node }) => {
+    // Reset previous selection
+    if (selectedNodeId && selectedNodeId !== node.id) {
+        const prevNode = graph.graph.nodes.get(selectedNodeId);
+        if (prevNode) {
+            prevNode.updateSpec({ data: { color: originalColors[selectedNodeId] }});
+        }
+    }
+
+    if (selectedNodeId === node.id) {
+        // Deselect if clicking the same node
+        node.updateSpec({ data: { color: originalColors[node.id] }});
+        selectedNodeId = null;
+        updateStatus('✓ Graph rendered successfully! (Fit View applied)');
+    } else {
+        // Select new node
+        if (!originalColors[node.id]) {
+            originalColors[node.id] = node.data.color;
+        }
+        node.updateSpec({ data: { color: 0xffffff }});
+        selectedNodeId = node.id;
+        updateStatus(`✓ Selected node: ${node.id}`);
+    }
+  });
+
+  graph.events.on('graph:click', () => {
+      // Clicked on background, deselect
+      if (selectedNodeId) {
+          const prevNode = graph.graph.nodes.get(selectedNodeId);
+          if (prevNode) {
+              prevNode.updateSpec({ data: { color: originalColors[selectedNodeId] }});
+          }
+          selectedNodeId = null;
+          updateStatus('✓ Graph rendered successfully! (Fit View applied)');
+      }
+  });
+
+
 } catch (error) {
   const errorMsg = '✗ Error: ' + (error as Error).message;
   updateStatus(errorMsg);
