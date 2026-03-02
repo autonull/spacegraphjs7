@@ -4,8 +4,10 @@ import { Renderer } from './core/Renderer';
 import { PluginManager } from './core/PluginManager';
 import { CameraControls } from './core/CameraControls';
 import { ShapeNode } from './nodes/ShapeNode';
+import { HtmlNode } from './nodes/HtmlNode';
 import { Edge } from './edges/Edge';
 import { ForceLayout } from './plugins/ForceLayout';
+import { InteractionPlugin } from './plugins/InteractionPlugin';
 import type { GraphSpec, SpaceGraphOptions } from './types';
 
 export class SpaceGraph {
@@ -44,11 +46,14 @@ export class SpaceGraph {
 
     // Register built-in types
     this.pluginManager.registerNodeType('ShapeNode', ShapeNode);
+    this.pluginManager.registerNodeType('HtmlNode', HtmlNode);
     this.pluginManager.registerEdgeType('Edge', Edge);
 
     // Register built-in plugins
     const layout = new ForceLayout();
     this.pluginManager.register('LayoutPlugin', layout);
+    const interaction = new InteractionPlugin();
+    this.pluginManager.register('InteractionPlugin', interaction);
 
     await this.pluginManager.initAll();
   }

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SpaceGraphJS HTML Demo</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { overflow: hidden; background-color: #1a1a2e; }
+    #container { width: 100vw; height: 100vh; }
+  </style>
+</head>
+<body>
+  <div id="container"></div>
+  <script type="module">
+    import { SpaceGraph } from '../src/index.ts';
+
+    const graph = SpaceGraph.create('#container', {
+      nodes: [
+        {
+          id: 'n1',
+          type: 'HtmlNode',
+          label: 'Card 1',
+          position: [0, 100, 0],
+          data: { color: 'rgba(255, 50, 50, 0.8)', description: 'I am an HTML element' }
+        },
+        {
+          id: 'n2',
+          type: 'HtmlNode',
+          label: 'Card 2',
+          position: [150, -50, 0],
+          data: { color: 'rgba(50, 255, 50, 0.8)', description: 'Rendered in 3D' }
+        },
+        {
+          id: 'n3',
+          type: 'HtmlNode',
+          label: 'Card 3',
+          position: [-150, -50, 0],
+          data: { color: 'rgba(50, 50, 255, 0.8)', description: 'Connected together' }
+        }
+      ],
+      edges: [
+        { id: 'e1', source: 'n1', target: 'n2', type: 'Edge' },
+        { id: 'e2', source: 'n2', target: 'n3', type: 'Edge' },
+        { id: 'e3', source: 'n3', target: 'n1', type: 'Edge' }
+      ]
+    });
+
+    graph.render();
+  </script>
+</body>
+</html>
