@@ -105,51 +105,6 @@ UI development.
 
 ---
 
-### Paper 2: Codebase Synthesis Methodology
-
-**Title:** *"Synthesizing 175,000 Lines of Proven Code: A Methodology for Multi-Repository Unification"*
-
-**Target Venues:**
-- **MSR 2026** (Mining Software Repositories)
-- **SANER 2026** (Software Analysis, Evolution, and Reengineering)
-- **JSEP** (Journal of Software: Evolution and Process)
-
-**Abstract:**
-```
-Large-scale codebase unification—synthesizing multiple repositories into a
-single coherent codebase—is increasingly common but poorly understood.
-We present a methodology for synthesizing five distinct implementations
-(175,000 lines total) of a Zoomable User Interface library into a unified
-TypeScript codebase.
-
-Our approach combines: (1) feature extraction mapping across repositories,
-(2) architectural pattern identification, (3) automated verification via
-AI vision models, and (4) iterative refinement with visual regression testing.
-
-Key findings include: (1) 40% of code was directly reusable, (2) 35% required
-architectural adaptation, (3) 25% was rewritten from scratch, (4) AI vision
-verification reduced integration bugs by 80% compared to manual testing.
-
-We contribute: (1) a feature extraction matrix for multi-repo analysis,
-(2) an architectural pattern catalog for ZUI libraries, (3) AI vision
-verification as a synthesis quality metric, and (4) lessons learned from
-synthesizing 175K LOC across 5 repositories.
-```
-
-**Key Contributions:**
-1. **Methodology:** Systematic approach to multi-repo synthesis
-2. **Metrics:** Feature extraction matrix, pattern catalog
-3. **Findings:** 40/35/25 split (reuse/adapt/rewrite)
-4. **Verification:** AI vision reduces integration bugs 80%
-
-**Timeline:**
-- **Month 1-3:** Document synthesis process
-- **Month 4:** Analyze patterns, extract metrics
-- **Month 5:** Write paper
-- **Month 6:** Submit to MSR/SANER
-
----
-
 ### Paper 3: Performance Optimization for ZUIs
 
 **Title:** *"60 FPS at 1000 Nodes: Performance Optimization Techniques for Large-Scale Zoomable User Interfaces"*
@@ -716,7 +671,6 @@ Deliverables:
 | Component | Status | Timeline |
 |-----------|--------|----------|
 | **Paper 1:** Vision-Closed Development | Ready to write | M1-4 |
-| **Paper 2:** Codebase Synthesis | Ready to write | M1-6 |
 | **Paper 3:** Performance Optimization | Ready to write | M1-5 |
 | **Paper 4:** Open Hardware | Ready to write | M2-9 |
 | **Poster 1:** Vision-Closed Overview | Ready to design | M3 |
