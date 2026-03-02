@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Empty Graph Test</title>
+  <style>* { margin: 0; } #container { width: 100vw; height: 100vh; background-color: #1a1a2e; }</style>
+</head>
+<body>
+  <div id="container"></div>
+  <script type="module">
+    import { SpaceGraph } from '../src/index.ts';
+    try {
+      const graph = SpaceGraph.create('#container', { nodes: [], edges: [] });
+      graph.render();
+      console.log('✓ Empty graph works');
+    } catch (e) {
+      console.error('✗ Empty graph failed:', e);
+    }
+  </script>
+</body>
+</html>
