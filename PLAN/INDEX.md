@@ -1,206 +1,154 @@
-# SpaceGraphJS — Complete Product Plan
+# SpaceGraphJS — Plan Index
 
-**Generated:** March 1, 2026  
-**Status:** Ready for Execution
-
----
-
-## Executive Summary
-
-SpaceGraphJS is the **first self-building UI framework**—a Zoomable User Interface (ZUI) library that synthesizes 175,000 lines of proven code from 5 repositories into a unified TypeScript codebase powered by AI vision.
-
-**The Vision:** Stop describing UIs to AI. Start specifying them. SpaceGraphJS sees what it builds, verifies quality autonomously, and self-corrects in 30 seconds—98% faster than traditional AI iteration.
+**Version:** 3.2 (Reality-Checked)  
+**Date:** March 1, 2026  
+**Documents:** 10 core + 8 reference
 
 ---
 
-## The 5 Phases
+## Quick Navigation
 
-| Phase | Document | Key Output |
-|-------|----------|------------|
-| **Phase 1** | [PHASE-1-AUDIT.md](./PHASE-1-AUDIT.md) | 6-U Framework SWOT, ICP, Critical Gaps |
-| **Phase 2** | [PHASE-2-USABILITY.md](./PHASE-2-USABILITY.md) | Usability Friction Log, TTHW Strategy, 15-Task Fix List |
-| **Phase 3** | [PHASE-3-DISTRIBUTION.md](./PHASE-3-DISTRIBUTION.md) | Open-Only Distribution, P0/P1 Integrations (npm, Vite, Matrix) |
-| **Phase 4** | [PHASE-4-EXPOSURE.md](./PHASE-4-EXPOSURE.md) | Content Strategy, Community Plan, 90-Day GTM Calendar |
-| **Phase 5** | [PHASE-5-SUSTAINABILITY.md](./PHASE-5-SUSTAINABILITY.md) | Remarkability Statement, Pure FOSS Licensing, Hardware Revenue |
-
----
-
-## The Three Purple Cows
-
-1. **The Self-Building UI Library** — First vision-closed development framework
-2. **The 175K LOC Synthesis** — 5 codebases unified into one TypeScript codebase
-3. **SpaceGraphOS** — The Visible Operating System (zoomable, self-analyzing computing)
+| I Want To... | Go Here | Time |
+|--------------|---------|------|
+| **Understand the vision** | [README.md](../README.md) | 5 min |
+| **See the complete plan** | [PLAN.md](./PLAN.md) | 30 min |
+| **Reality check** | [REALITY-CHECK.md](./REALITY-CHECK.md) | 20 min |
+| **Start building** | [BUILD.md](./BUILD.md) | As needed |
+| **Track outcomes** | [EXECUTION.md](./EXECUTION.md) | 20 min |
+| **Understand research** | [RESEARCH.md](./RESEARCH.md) | 15 min |
+| **See growth strategy** | [GROWTH.md](./GROWTH.md) | 15 min |
+| **Manage risks** | [RISKS.md](./RISKS.md) | 10 min |
 
 ---
 
-## Licensing (Pure FOSS)
+## Core Documents
 
-| Component | License |
-|-----------|---------|
-| Core Library | MIT |
-| Vision System | MIT |
-| Model Weights | CC-BY-4.0 |
-| Plugins | MIT |
-| SpaceGraphOS | AGPL v3 |
-| Hardware Designs | CERN OHL v2 / CC-BY-SA 4.0 |
-| Documentation | CC-BY-SA 4.0 |
+### Primary (Read These First)
 
-**No dual-licensing. No enterprise tiers. No restrictions.**
+| # | Document | Purpose | When | Time |
+|---|----------|---------|------|------|
+| 1 | **[README.md](../README.md)** | Vision & user benefits | Day 0 | 5 min |
+| 2 | **[PLAN.md](./PLAN.md)** | Complete plan (vision, timeline, targets) | Day 0 | 30 min |
+| 3 | **[REALITY-CHECK.md](./REALITY-CHECK.md)** | Honest simulation, adjustments | Day 0 | 20 min |
+| 4 | **[BUILD.md](./BUILD.md)** | Day-by-day build + launch (Days 0-17) | Days 0-17 | As needed |
 
----
+### Secondary (Reference As Needed)
 
-## Revenue Model (Value-Add, Not Restriction)
-
-| Stream | Month 6 | Month 12 |
-|--------|---------|----------|
-| Hardware (SpaceGraph Mini) | $17,000 | $32,000 |
-| Training (Workshops) | $5,000 | $12,000 |
-| Consulting | $2,250 | $7,500 |
-| Donations | $500 | $2,000 |
-| Grants | $0 | $5,000 |
-| Merch | $200 | $1,000 |
-| **Total** | **$24,750/month** | **$59,500/month** |
+| # | Document | Purpose | When | Time |
+|---|----------|---------|------|------|
+| 5 | **[EXECUTION.md](./EXECUTION.md)** | Outcomes, buffers, motivation | Ongoing | 20 min |
+| 6 | **[RESEARCH.md](./RESEARCH.md)** | Research program (4+ papers) | Months 6-36 | 15 min |
+| 7 | **[GROWTH.md](./GROWTH.md)** | Growth strategy (Months 2-6) | Months 2-6 | 15 min |
+| 8 | **[RISKS.md](./RISKS.md)** | Risk mitigation (15 risks) | As needed | 10 min |
+| 9 | **[TEMPLATES.md](./TEMPLATES.md)** | Config templates | Day 1 | 5 min |
+| 10 | **[STRATEGY.md](./STRATEGY.md)** | Phase 1-5 audits | Reference | 20 min |
+| 11 | **[README-PLAN.md](./README-PLAN.md)** | One-page summary | Quick ref | 2 min |
 
 ---
 
-## Immediate Next Actions (Week 1)
+## Root Level (User-Facing)
 
-| Priority | Action | Effort | Artifact |
-|----------|--------|--------|----------|
-| **P0** | Publish npm package (`spacegraphjs@alpha`) | 2 hours | [PACKAGE-TEMPLATE.md](./PACKAGE-TEMPLATE.md) |
-| **P0** | Write QUICKSTART.md | 4 hours | ✓ Done (root level) |
-| **P0** | Create Matrix room (`#spacegraphjs:matrix.org`) | 30 min | [WEEK-1-CHECKLIST.md](./WEEK-1-CHECKLIST.md) |
-| **P0** | Set up GitHub Sponsors | 30 min | [WEEK-1-CHECKLIST.md](./WEEK-1-CHECKLIST.md) |
-| **P1** | Build Vite vision plugin (minimal) | 8 hours | [PACKAGE-TEMPLATE.md](./PACKAGE-TEMPLATE.md) |
-| **P1** | Write Manifesto article | 6 hours | [CONTENT-TEMPLATES.md](./CONTENT-TEMPLATES.md) |
-| **P1** | Set up TypeDoc | 2 hours | [PACKAGE-TEMPLATE.md](./PACKAGE-TEMPLATE.md) |
-| **P1** | Set up CI/CD workflows | 2 hours | [GITHUB-ACTIONS.md](./GITHUB-ACTIONS.md) |
-| **P1** | Write CONTRIBUTING.md | 2 hours | ✓ Done (root level) |
-
-**Total Week 1 Effort:** ~27 hours
-
-**Execution Guide:** Follow [WEEK-1-CHECKLIST.md](./WEEK-1-CHECKLIST.md) day-by-day.
+| Document | Purpose | Audience |
+|----------|---------|----------|
+| [README.md](../README.md) | Vision, benefits, quick start | Everyone |
+| [QUICKSTART.md](../QUICKSTART.md) | 5-minute getting started | New users |
+| [CONTRIBUTING.md](../CONTRIBUTING.md) | How to contribute | Contributors |
+| [TEAM-BRIEFING.md](../TEAM-BRIEFING.md) | Team briefing package | New team members |
 
 ---
 
-## 90-Day Success Metrics
-
-| Metric | Target |
-|--------|--------|
-| npm Downloads | 5,000 cumulative |
-| GitHub Stars | 100 |
-| GitHub Forks | 25 |
-| External Contributors | 10 |
-| PRs Merged (external) | 15 |
-| Matrix Members | 200 |
-| Article Views | 5,000 cumulative |
-| Video Views | 2,000 cumulative |
-
----
-
-## Integration Priority
-
-| Tier | Integration | Status |
-|------|-------------|--------|
-| **P0** | npm | Week 1 |
-| **P0** | Vite Plugin (Vision) | Week 1 |
-| **P1** | TypeDoc | Week 2 |
-| **P1** | Vitest Assertions | Week 2 |
-| **P1** | Matrix/Element | Week 2 |
-| **P2** | Open VSX | Week 3-4 (optional) |
-| **Deferred** | IPFS, CDN, Docker, Nix, etc. | Indefinitely |
-
-**All proprietary silo services excluded** (Vercel, Netlify, CodeSandbox, StackBlitz, GitHub Marketplace, MS VSCode Marketplace).
-
----
-
-## Governance Roadmap
-
-| Phase | Timeline | Structure |
-|-------|----------|-----------|
-| **Phase 1** | Months 1-6 | Benevolent Dictator (you) |
-| **Phase 2** | Months 6-12 | Core Team (3-5 maintainers) |
-| **Phase 3** | Year 2+ | Foundation (community-elected steering committee) |
-
-**No corporate sponsors on the board.**
-
----
-
-## File Structure
+## Document Flow
 
 ```
-PLAN/
-├── INDEX.md                    # This file — master summary
-│
-├── PHASE-1-AUDIT.md            # 6-U SWOT, ICP, Critical Gaps
-├── PHASE-2-USABILITY.md        # Friction Log, TTHW, Fix List
-├── PHASE-3-DISTRIBUTION.md     # Integrations, npm, Vite, Matrix
-├── PHASE-4-EXPOSURE.md         # Content, Community, 90-Day GTM
-├── PHASE-5-SUSTAINABILITY.md   # Remarkability, Licensing, Revenue
-│
-├── WEEK-1-CHECKLIST.md         # Day-by-day execution checklist
-├── PACKAGE-TEMPLATE.md         # package.json, vite.config, tsconfig, LICENSE
-├── CONTRIBUTING.md             # Contributor guide (root level)
-├── GITHUB-ACTIONS.md           # CI/CD workflows, issue templates
-├── CONTENT-TEMPLATES.md        # Articles, videos, social posts
-└── RELEASE-CHECKLIST.md        # Release procedure, rollback
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    SPACEGRAPHJS DOCUMENT FLOW                           │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│  START HERE                                                             │
+│     │                                                                   │
+│     ▼                                                                   │
+│  ┌─────────────────┐                                                   │
+│  │  README.md      │ ← Vision & benefits (5 min)                      │
+│  └────────┬────────┘                                                   │
+│           │                                                            │
+│           ▼                                                            │
+│  ┌─────────────────┐                                                   │
+│  │  PLAN.md        │ ← Complete plan (30 min)                         │
+│  └────────┬────────┘                                                   │
+│           │                                                            │
+│           ├──────────────────┬──────────────────┬─────────────────     │
+│           │                  │                  │                       │
+│           ▼                  ▼                  ▼                       │
+│  ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐           │
+│  │  BUILD.md       │ │ EXECUTION.md    │ │ RESEARCH.md     │           │
+│  │  (Days 0-17)    │ │ (Outcomes)      │ │ (Papers)        │           │
+│  └─────────────────┘ └─────────────────┘ └─────────────────┘           │
+│           │                  │                  │                       │
+│           │                  ▼                  ▼                       │
+│           │          ┌─────────────────┐ ┌─────────────────┐           │
+│           │          │ GROWTH.md       │ │ RISKS.md        │           │
+│           │          │ (Months 2-6)    │ │ (15 risks)      │           │
+│           │          └─────────────────┘ └─────────────────┘           │
+│           │                                                            │
+│           ▼                                                            │
+│  ┌─────────────────┐                                                   │
+│  │  TEMPLATES.md   │ ← Config templates                               │
+│  └─────────────────┘                                                   │
+│                                                                          │
+└─────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## The Remarkability Statement
+## Superseded Documents
 
-> SpaceGraphJS is the first self-building UI framework.
->
-> We synthesize 175,000 lines of proven code from 5 repositories into a unified TypeScript codebase powered by AI vision.
->
-> Our 6 vision models (LQ-Net, TLA, CHE, ODN, VHS, EQA) enable autonomous quality verification—fixing UI bugs in 30 seconds that would take 30 minutes through traditional AI iteration.
->
-> From npm package to full operating system, we are building a world where interfaces are visible, comprehensible, and alive.
->
-> **Stop describing. Start specifying.**
+These 17 documents were consolidated into the 10 core documents above. They remain for reference but are **no longer primary**.
 
----
-
-## Quick Reference
-
-### User Input (Project Baseline)
-
-1. **Repository:** https://github.com/autonull/spacegraphjs
-2. **Problem/Audience:** General-purpose UI solution
-3. **License:** MIT
-4. **Bottlenecks:** Adoption, Contribution, Revenue, Burnout (all four)
-5. **Documentation:** 5/10 - Incomplete
-
-### Critical Gaps (Phase 1)
-
-| Priority | Gap |
-|----------|-----|
-| 🔴 P1 | Incomplete documentation |
-| 🔴 P1 | Generic positioning |
-| 🟡 P2 | No npm package |
-| 🟡 P2 | No integrations |
-| 🟢 P3 | No monetization |
-| 🟢 P3 | No community |
-
-### Usability Friction (Phase 2)
-
-| # | Friction | Severity |
-|---|----------|----------|
-| F1 | No npm package | 🔴 Critical |
-| F2 | No quickstart | 🔴 Critical |
-| F3 | No live demo | 🔴 Critical |
-| F4 | Vision not in workflow | 🔴 Critical |
-| F5-F10 | Various | 🟡🟢 Medium |
+| Old Documents | Consolidated Into |
+|---------------|-------------------|
+| MASTER-PLAN.md, COMPLETE-PLAN-OVERVIEW.md, INDEX-README.md, AMBITIOUS-SUCCESS.md, PRODUCT-EXCELLENCE.md | → [PLAN.md](./PLAN.md) |
+| ENHANCED-BUILD-PLAN.md, LAUNCH-SEQUENCED.md | → [BUILD.md](./BUILD.md) |
+| OUTCOMES-TRACKING.md, RESILIENT-EXECUTION.md | → [EXECUTION.md](./EXECUTION.md) |
+| ACADEMIC-RESEARCH.md | → [RESEARCH.md](./RESEARCH.md) |
+| ENHANCEMENT-PLAN.md | → [GROWTH.md](./GROWTH.md) |
+| CONTINGENCY-PLAN.md | → [RISKS.md](./RISKS.md) |
+| PACKAGE-TEMPLATE.md | → [TEMPLATES.md](./TEMPLATES.md) |
+| PHASE-1-AUDIT.md, PHASE-2-USABILITY.md, PHASE-3-DISTRIBUTION.md, PHASE-4-EXPOSURE.md, PHASE-5-SUSTAINABILITY.md, PLAN-ANALYSIS.md | → [STRATEGY.md](./STRATEGY.md) |
+| LAUNCH-8HOURS.md, WEEK-1-CHECKLIST.md | → Superseded (skip) |
+| GITHUB-ACTIONS.md, CONTENT-TEMPLATES.md, RELEASE-CHECKLIST.md | → Month 2+ (deferred) |
 
 ---
 
-## Contact & Community
+## Summary
 
-- **GitHub:** https://github.com/autonull/spacegraphjs
-- **Matrix:** https://matrix.to/#/#spacegraphjs:matrix.org
-- **npm:** `spacegraphjs` (pending publish)
+| Dimension | Before | After | Improvement |
+|-----------|--------|-------|-------------|
+| **Total documents** | 27 | 10 core + 7 reference | -37% |
+| **Core execution** | 5 files | 3 files | -40% |
+| **Reading time** | 90+ min | 30 min (PLAN.md) | -67% |
+| **Navigation** | Complex tree | Simple table | Much clearer |
+| **Cross-references** | Few | Many | Better linked |
+
+**All essential details preserved. Nothing lost. Just organized.**
 
 ---
 
-*This plan was generated through the OSS Product Architect framework, following the 6-U Framework (Value, Usefulness, Usability, Ubiquity, Exposure, Remarkability).*
+## Start Here
+
+```bash
+# 1. Read the vision (5 min)
+cat ../README.md
+
+# 2. Read the complete plan (30 min)
+cat PLAN.md
+
+# 3. Start building (as needed)
+cat BUILD.md
+
+# 4. Track progress (ongoing)
+cat EXECUTION.md
+```
+
+---
+
+**Start with [PLAN.md](./PLAN.md). Build with [BUILD.md](./BUILD.md). Track with [EXECUTION.md](./EXECUTION.md).** 🚀
