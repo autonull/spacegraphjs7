@@ -45,5 +45,9 @@
     "graph",
     "visualization",
     "three.js"
-  ]
+  ],
+  "dependencies": {
+    "gsap": "^3.14.2",
+    "mitt": "^3.0.1"
+  }
 }

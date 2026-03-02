@@ -19,6 +19,7 @@ export class Graph {
     const node = new NodeType(this.sg, spec);
     this.nodes.set(spec.id, node);
     this.sg.renderer.scene.add(node.object);
+    this.sg.events.emit('node:added', { node });
     return node;
   }
 
@@ -40,6 +41,7 @@ export class Graph {
     const edge = new EdgeType(this.sg, spec, sourceNode, targetNode);
     this.edges.push(edge);
     this.sg.renderer.scene.add(edge.object);
+    this.sg.events.emit('edge:added', { edge });
     return edge;
   }
 
@@ -48,11 +50,13 @@ export class Graph {
     if (node) {
       this.sg.renderer.scene.remove(node.object);
       this.nodes.delete(id);
+      this.sg.events.emit('node:removed', { id });
 
       // Remove connected edges
       this.edges = this.edges.filter(edge => {
         if (edge.source.id === id || edge.target.id === id) {
           this.sg.renderer.scene.remove(edge.object);
+          this.sg.events.emit('edge:removed', { id: edge.id });
           return false;
         }
         return true;
@@ -66,6 +70,7 @@ export class Graph {
       const edge = this.edges[index];
       this.sg.renderer.scene.remove(edge.object);
       this.edges.splice(index, 1);
+      this.sg.events.emit('edge:removed', { id });
     }
   }
 

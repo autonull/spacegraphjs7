@@ -30,6 +30,7 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
         const node = this.getNodeFromMesh(event.object);
         if (node) {
             node.data.pinned = true;
+            this.sg.events.emit('interaction:dragstart', { node });
         }
     });
 
@@ -37,6 +38,7 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
         const node = this.getNodeFromMesh(event.object);
         if (node) {
             node.data.pinned = false; // or keep true if you want it permanently pinned
+            this.sg.events.emit('interaction:dragend', { node });
         }
     });
 

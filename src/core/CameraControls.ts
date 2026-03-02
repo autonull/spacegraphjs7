@@ -1,3 +1,5 @@
+import * as THREE from 'three';
+import gsap from 'gsap';
 import type { SpaceGraph } from '../SpaceGraph';
 
 export class CameraControls {
@@ -17,6 +19,28 @@ export class CameraControls {
     camera.position.y = this.spherical.radius * Math.cos(this.spherical.phi);
     camera.position.z = this.spherical.radius * Math.sin(this.spherical.phi) * Math.cos(this.spherical.theta);
     camera.lookAt(0, 0, 0);
+
+    this.sg.events.emit('camera:move', { position: camera.position, target: new THREE.Vector3(0, 0, 0) });
+  }
+
+  public flyTo(targetPos: THREE.Vector3, duration: number = 1.5): void {
+      const camera = this.sg.renderer.camera;
+
+      // Update spherical based on new targetPos
+      const radius = targetPos.length();
+      const theta = Math.atan2(targetPos.x, targetPos.z);
+      const phi = Math.acos(targetPos.y / radius);
+
+      gsap.to(this.spherical, {
+          radius,
+          theta,
+          phi,
+          duration,
+          ease: "power2.inOut",
+          onUpdate: () => {
+              this.updateCameraPosition();
+          }
+      });
   }
 
   private setupControls() {

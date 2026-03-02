@@ -3,6 +3,8 @@ import { Graph } from './core/Graph';
 import { Renderer } from './core/Renderer';
 import { PluginManager } from './core/PluginManager';
 import { CameraControls } from './core/CameraControls';
+import { EventManager } from './core/EventManager';
+import { VisionManager } from './core/VisionManager';
 import { ShapeNode } from './nodes/ShapeNode';
 import { HtmlNode } from './nodes/HtmlNode';
 import { Edge } from './edges/Edge';
@@ -16,9 +18,13 @@ export class SpaceGraph {
   public graph: Graph;
   public pluginManager: PluginManager;
   public cameraControls: CameraControls;
+  public events: EventManager;
+  public vision: VisionManager;
 
   constructor(container: HTMLElement, options: SpaceGraphOptions = {}) {
     this.container = container;
+    this.events = new EventManager(this);
+    this.vision = new VisionManager(this);
     this.pluginManager = new PluginManager(this);
     this.renderer = new Renderer(this, container);
     this.graph = new Graph(this);
