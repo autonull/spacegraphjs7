@@ -39,7 +39,14 @@ export class SpaceGraph {
       : container;
 
     if (!element) {
-      throw new Error(`Container not found: ${container}`);
+      throw new Error(
+        `Container not found: "${container}".\n` +
+        `Make sure the element exists in the DOM.`
+      );
+    }
+
+    if (!SpaceGraph.checkWebGL()) {
+      console.warn('WebGL not supported. Some features may not work.');
     }
 
     const graph = new SpaceGraph(element);
@@ -113,5 +120,14 @@ export class SpaceGraph {
 
   render(): void {
     this.animate();
+  }
+
+  private static checkWebGL(): boolean {
+    try {
+      const canvas = document.createElement('canvas');
+      return !!(window.WebGLRenderingContext && (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')));
+    } catch {
+      return false;
+    }
   }
 }
