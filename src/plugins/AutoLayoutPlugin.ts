@@ -21,41 +21,45 @@ export class AutoLayoutPlugin implements ISpaceGraphPlugin {
 
   public applyVisionCorrection(issues: any[]): void {
       console.log(`[AutoLayoutPlugin] Received ${issues.length} vision issues to auto-fix.`);
-
       const overlapIssues = issues.filter(i => i.type === 'overlap');
-
       if (overlapIssues.length > 0) {
-          console.log(`[AutoLayoutPlugin] Auto-fixing ${overlapIssues.length} overlaps...`);
-          const layoutPlugin: any = this.sg.pluginManager.getPlugin('LayoutPlugin');
-          if (layoutPlugin && layoutPlugin.settings) {
-              // Temporarily increase repulsion to push overlapping nodes apart
-              const originalRepulsion = layoutPlugin.settings.repulsion || 1000;
-              layoutPlugin.settings.repulsion = originalRepulsion * 5;
+          this.fixOverlaps(overlapIssues);
+      }
+  }
 
-              // Run a few steps of physics to separate nodes rapidly
-              for (let i = 0; i < 50; i++) {
-                  if (typeof layoutPlugin.update === 'function') {
-                      layoutPlugin.update();
-                  }
-              }
+  public fixOverlaps(overlaps: any[]): void {
+      console.log(`[AutoLayoutPlugin] Auto-fixing ${overlaps.length} overlaps...`);
+      const layoutPlugin: any = this.sg.pluginManager.getPlugin('ForceLayout');
 
-              layoutPlugin.settings.repulsion = originalRepulsion;
-          } else {
-              // Fallback if no physics layout plugin: manually push nodes apart
-              for (const issue of overlapIssues) {
-                  const nodeA = this.sg.graph.nodes.get(issue.nodeA);
-                  const nodeB = this.sg.graph.nodes.get(issue.nodeB);
-                  if (nodeA && nodeB) {
-                      const dir = nodeB.position.clone().sub(nodeA.position);
-                      if (dir.lengthSq() < 0.01) {
-                          dir.set(Math.random() - 0.5, Math.random() - 0.5, 0);
-                      }
-                      dir.normalize().multiplyScalar(10);
-                      nodeB.position.add(dir);
-                      nodeA.position.sub(dir);
-                      nodeA.object.position.copy(nodeA.position);
-                      nodeB.object.position.copy(nodeB.position);
+      if (layoutPlugin && typeof layoutPlugin.apply === 'function') {
+          // Temporarily increase distance to push overlapping nodes apart
+          const originalDistance = layoutPlugin.settings.nodeDistance || 100;
+          layoutPlugin.settings.nodeDistance = originalDistance * 2;
+
+          // Run a few steps of physics to separate nodes rapidly
+          layoutPlugin.apply();
+
+          // Restore settings
+          setTimeout(() => {
+              layoutPlugin.settings.nodeDistance = originalDistance;
+          }, 500);
+      } else {
+          // Fallback if no physics layout plugin: manually push nodes apart
+          for (const issue of overlaps) {
+              const nodeA = this.sg.graph.nodes.get(issue.nodeA);
+              const nodeB = this.sg.graph.nodes.get(issue.nodeB);
+              if (nodeA && nodeB) {
+                  const dir = nodeB.position.clone().sub(nodeA.position);
+                  if (dir.lengthSq() < 0.01) {
+                      dir.set(Math.random() - 0.5, Math.random() - 0.5, 0);
                   }
+
+                  // Move them apart by a fixed amount along the axis between them
+                  dir.normalize().multiplyScalar(30);
+                  nodeB.position.add(dir);
+                  nodeA.position.sub(dir);
+                  nodeA.object.position.copy(nodeA.position);
+                  nodeB.object.position.copy(nodeB.position);
               }
           }
       }

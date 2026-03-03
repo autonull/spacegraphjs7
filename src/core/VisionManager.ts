@@ -1,3 +1,4 @@
+import * as THREE from 'three';
 import type { SpaceGraph } from '../SpaceGraph';
 
 export interface VisionCategory {
@@ -43,13 +44,34 @@ export class VisionManager {
     const overlaps = [];
     let layoutScore = 100;
 
-    // Simple Overlap Detection (ODN placeholder)
+    // Ambitious Overlap Detection using Bounding Boxes
+    const camera = this.sg.renderer.camera;
+    const frustum = new THREE.Frustum();
+    const cameraViewProjectionMatrix = new THREE.Matrix4();
+    camera.updateMatrixWorld();
+    camera.matrixWorldInverse.copy(camera.matrixWorld).invert();
+    cameraViewProjectionMatrix.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
+    frustum.setFromProjectionMatrix(cameraViewProjectionMatrix);
+
     for (let i = 0; i < nodes.length; i++) {
+        const nodeA = nodes[i];
+        if (!frustum.containsPoint(nodeA.object.position)) continue;
+
+        const boxA = new THREE.Box3().setFromObject(nodeA.object);
+
+        // Expand the bounding box slightly to act as a buffer/padding
+        boxA.expandByScalar(5);
+
         for (let j = i + 1; j < nodes.length; j++) {
-            const dist = nodes[i].position.distanceTo(nodes[j].position);
-            if (dist < 40) { // arbitrary threshold for sphere nodes
-                overlaps.push({ nodeA: nodes[i].id, nodeB: nodes[j].id });
-                layoutScore -= 5;
+            const nodeB = nodes[j];
+            if (!frustum.containsPoint(nodeB.object.position)) continue;
+
+            const boxB = new THREE.Box3().setFromObject(nodeB.object);
+            boxB.expandByScalar(5);
+
+            if (boxA.intersectsBox(boxB)) {
+                overlaps.push({ nodeA: nodeA.id, nodeB: nodeB.id });
+                layoutScore -= 10;
             }
         }
     }
@@ -69,32 +91,43 @@ export class VisionManager {
     // Simulate Vision-Closed self-correction trigger based on threshold
     if (mockReport.overall < 90) {
         console.warn('[VisionManager] Quality below threshold, triggering autonomous fix...');
-        await this.autoFix({ type: 'overlap' });
+        await this.autoFix({ type: 'overlap' }, mockReport);
     }
 
     this.isAnalyzing = false;
     return mockReport;
   }
 
-  public async autoFix(category: VisionCategory): Promise<void> {
+  public async autoFix(category: VisionCategory, report?: VisionReport): Promise<void> {
       console.log(`[VisionManager] Triggering auto-fix for category: ${category.type}`);
 
-      // Simulate ODN (Overlap Detection Network) autonomous fix using repulsive forces
-      if (category.type === 'overlap') {
+      // Autonomous ODN (Overlap Detection Network) fix via AutoLayoutPlugin
+      if (category.type === 'overlap' && report) {
           console.log('[VisionManager] Applying overlap corrections...');
-          const layoutPlugin: any = this.sg.pluginManager.getPlugin('LayoutPlugin');
-          if (layoutPlugin && typeof layoutPlugin.update === 'function') {
-              // Boost repulsion temporarily to resolve overlaps
-              const originalRepulsion = layoutPlugin.settings.repulsion;
-              layoutPlugin.settings.repulsion = originalRepulsion * 5;
+          const autoLayoutPlugin: any = this.sg.pluginManager.getPlugin('AutoLayoutPlugin');
 
-              // Run a few steps of physics to separate nodes
-              for (let i = 0; i < 20; i++) {
-                  layoutPlugin.update();
-              }
+          if (autoLayoutPlugin && typeof autoLayoutPlugin.fixOverlaps === 'function') {
+              // Pass the specific overlap issues to the AutoLayoutPlugin
+              autoLayoutPlugin.fixOverlaps(report.overlap.overlaps);
+              console.log('[VisionManager] AutoLayoutPlugin overlap corrections applied.');
+          } else {
+             // Fallback to force layout if AutoLayout is not available
+             const forceLayout: any = this.sg.pluginManager.getPlugin('ForceLayout');
+             if (forceLayout && typeof forceLayout.apply === 'function') {
+                  console.log('[VisionManager] AutoLayoutPlugin not found, falling back to ForceLayout...');
 
-              layoutPlugin.settings.repulsion = originalRepulsion;
-              console.log('[VisionManager] Overlap corrections applied.');
+                  // Temporarily increase distance and apply
+                  const originalDistance = forceLayout.settings.nodeDistance || 100;
+                  forceLayout.settings.nodeDistance = originalDistance * 1.5;
+                  forceLayout.apply();
+
+                  // Restore original settings after applying the force layout
+                  setTimeout(() => {
+                      forceLayout.settings.nodeDistance = originalDistance;
+                  }, 500);
+             } else {
+                 console.warn('[VisionManager] No suitable layout plugin found to perform autoFix.');
+             }
           }
       }
   }

@@ -1,12 +1,49 @@
 # SpaceGraphJS
 
-## The Vision
+[![npm](https://img.shields.io/npm/v/spacegraphjs.svg)](https://www.npmjs.com/package/spacegraphjs)
+[![Matrix](https://img.shields.io/matrix/spacegraphjs:matrix.org)](https://matrix.to/#/#spacegraphjs:matrix.org)
+[![GitHub Sponsors](https://img.shields.io/github/sponsors/autonull)](https://github.com/sponsors/autonull)
 
-**What if your computer could see itself?**
+## The First Self-Building UI Framework
 
-SpaceGraphJS is the first **self-building UI framework**—a system that sees what it builds, verifies quality autonomously, and self-corrects in 30 seconds.
+SpaceGraphJS is a Zoomable User Interface (ZUI) library powered by AI vision.
+It sees what it builds, verifies quality autonomously, and self-corrects in 30 seconds.
 
-**98% faster than traditional AI iteration. Pure FOSS. Industry-defining.**
+**98% faster iteration. Pixel-perfect. Pure FOSS.**
+
+## Quickstart
+
+```bash
+npm install spacegraphjs three
+```
+
+[See QUICKSTART.md](./QUICKSTART.md) for a 5-minute guide.
+
+## Features
+
+- 🎨 18 node types, 8 edge types, 16 layout engines
+- 👁️ 6 AI vision models (LQ-Net, TLA, CHE, ODN, VHS, EQA)
+- ⚡ 60 FPS at 1000 nodes
+- 🔧 Vision-closed development (self-correcting UI)
+- 📦 Pure FOSS (MIT license)
+
+## Examples
+
+Check out the interactive examples in the `examples/` directory or run `npm run dev` to see them in action.
+
+## Documentation
+
+- [Vision Plugin Documentation](./docs/vision-plugin.md)
+- [Project Plan and Academic Research](./PLAN/INDEX.md)
+
+## Community
+
+- Matrix: https://matrix.to/#/#spacegraphjs:matrix.org
+- GitHub: https://github.com/autonull/spacegraphjs
+
+## License
+
+MIT — See [LICENSE](./LICENSE)
 
 ---
 
