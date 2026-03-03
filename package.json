@@ -8,7 +8,13 @@
   "exports": {
     ".": {
       "types": "./dist/types/index.d.ts",
-      "import": "./dist/spacegraphjs.js"
+      "import": "./dist/spacegraphjs.js",
+      "require": "./dist/spacegraphjs.cjs"
+    },
+    "./vision": {
+      "types": "./dist/types/vision/index.d.ts",
+      "import": "./dist/vision.js",
+      "require": "./dist/vision.cjs"
     }
   },
   "files": [
