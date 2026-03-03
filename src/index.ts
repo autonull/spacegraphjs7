@@ -23,17 +23,38 @@ export { HtmlNode } from './nodes/HtmlNode';
 export { InstancedShapeNode } from './nodes/InstancedShapeNode';
 export { ImageNode } from './nodes/ImageNode';
 export { GroupNode } from './nodes/GroupNode';
+export { NoteNode } from './nodes/NoteNode';
+export { CanvasNode } from './nodes/CanvasNode';
+export { TextMeshNode } from './nodes/TextMeshNode';
+export { DataNode } from './nodes/DataNode';
+export { VideoNode } from './nodes/VideoNode';
+export { IFrameNode } from './nodes/IFrameNode';
+export { ChartNode } from './nodes/ChartNode';
 
 // Edges
 export { Edge } from './edges/Edge';
 export { CurvedEdge } from './edges/CurvedEdge';
 export { FlowEdge } from './edges/FlowEdge';
+export { LabeledEdge } from './edges/LabeledEdge';
+export { DottedEdge } from './edges/DottedEdge';
+export { DynamicThicknessEdge } from './edges/DynamicThicknessEdge';
 
-// Plugins
+// Plugins — layout
 export { ForceLayout } from './plugins/ForceLayout';
+export { GridLayout } from './plugins/GridLayout';
+export { CircularLayout } from './plugins/CircularLayout';
+export { HierarchicalLayout } from './plugins/HierarchicalLayout';
+export { RadialLayout } from './plugins/RadialLayout';
+
+// Plugins — core
 export { InteractionPlugin } from './plugins/InteractionPlugin';
 export { LODPlugin } from './plugins/LODPlugin';
 export { AutoLayoutPlugin } from './plugins/AutoLayoutPlugin';
 export { AutoColorPlugin } from './plugins/AutoColorPlugin';
+
+// Plugins — extended
+export { PhysicsPlugin } from './plugins/PhysicsPlugin';
+export { MinimapPlugin } from './plugins/MinimapPlugin';
+export { ErgonomicsPlugin } from './plugins/ErgonomicsPlugin';
 
 console.log('[SpaceGraphJS] Loaded successfully');

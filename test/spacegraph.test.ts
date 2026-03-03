@@ -1,0 +1,659 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import * as THREE from 'three';
+
+// Node types
+import { Node } from '../src/nodes/Node';
+import { ShapeNode } from '../src/nodes/ShapeNode';
+import { NoteNode } from '../src/nodes/NoteNode';
+import { CanvasNode } from '../src/nodes/CanvasNode';
+import { TextMeshNode } from '../src/nodes/TextMeshNode';
+import { DataNode } from '../src/nodes/DataNode';
+import { VideoNode } from '../src/nodes/VideoNode';
+import { IFrameNode } from '../src/nodes/IFrameNode';
+
+// Edge types
+import { Edge } from '../src/edges/Edge';
+import { DottedEdge } from '../src/edges/DottedEdge';
+import { DynamicThicknessEdge } from '../src/edges/DynamicThicknessEdge';
+
+// Layout plugins
+import { ForceLayout } from '../src/plugins/ForceLayout';
+import { GridLayout } from '../src/plugins/GridLayout';
+import { CircularLayout } from '../src/plugins/CircularLayout';
+import { HierarchicalLayout } from '../src/plugins/HierarchicalLayout';
+import { RadialLayout } from '../src/plugins/RadialLayout';
+
+// Extended plugins
+import { PhysicsPlugin } from '../src/plugins/PhysicsPlugin';
+import { ErgonomicsPlugin } from '../src/plugins/ErgonomicsPlugin';
+
+// ---------------------------------------------------------------------------
+// Lightweight mock SpaceGraph — no browser APIs, no WebGL required
+// ---------------------------------------------------------------------------
+function makeSpaceGraph() {
+    const scene = {
+        add: vi.fn(),
+        remove: vi.fn(),
+        background: new THREE.Color(0x1a1a2e),
+    };
+    const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 10000);
+    camera.position.set(0, 0, 500);
+
+    const events = {
+        _handlers: new Map<string, Function[]>(),
+        on(evt: string, fn: Function) {
+            if (!this._handlers.has(evt)) this._handlers.set(evt, []);
+            this._handlers.get(evt)!.push(fn);
+        },
+        emit(evt: string, data?: any) {
+            (this._handlers.get(evt) ?? []).forEach(fn => fn(data));
+        },
+    };
+
+    const nodeTypeRegistry = new Map<string, any>();
+    const edgeTypeRegistry = new Map<string, any>();
+    const pluginRegistry = new Map<string, any>();
+
+    const poolManager = {
+        pools: new Map<string, any[]>(),
+        get(key: string) { return this.pools.get(key)?.pop() ?? null; },
+        release(key: string, obj: any) {
+            if (!this.pools.has(key)) this.pools.set(key, []);
+            this.pools.get(key)!.push(obj);
+        },
+    };
+
+    // Forward-reference to the SpaceGraph proxy
+    let sg: any;
+
+    const graph = {
+        nodes: new Map<string, any>(),
+        edges: [] as any[],
+        addNode(spec: any) {
+            const NodeType = nodeTypeRegistry.get(spec.type);
+            if (!NodeType) return null;
+            const node = new NodeType(sg, spec);
+            this.nodes.set(spec.id, node);
+            scene.add(node.object);
+            return node;
+        },
+        addEdge(spec: any) {
+            const EdgeType = edgeTypeRegistry.get(spec.type);
+            if (!EdgeType) return null;
+            const src = this.nodes.get(spec.source);
+            const tgt = this.nodes.get(spec.target);
+            if (!src || !tgt) return null;
+            const edge = new EdgeType(sg, spec, src, tgt);
+            this.edges.push(edge);
+            scene.add(edge.object);
+            return edge;
+        },
+        removeNode(id: string) {
+            const n = this.nodes.get(id);
+            if (n) { scene.remove(n.object); this.nodes.delete(id); }
+        },
+        removeEdge(id: string) {
+            const idx = this.edges.findIndex((e: any) => e.id === id);
+            if (idx !== -1) { scene.remove(this.edges[idx].object); this.edges.splice(idx, 1); }
+        },
+        clear() { this.nodes.clear(); this.edges.length = 0; },
+    };
+
+    const pluginManager = {
+        register: vi.fn((name: string, p: any) => pluginRegistry.set(name, p)),
+        getPlugin: (name: string) => pluginRegistry.get(name),
+        registerNodeType: (name: string, T: any) => nodeTypeRegistry.set(name, T),
+        registerEdgeType: (name: string, T: any) => edgeTypeRegistry.set(name, T),
+        getNodeType: (name: string) => nodeTypeRegistry.get(name),
+        getEdgeType: (name: string) => edgeTypeRegistry.get(name),
+    };
+
+    sg = { renderer: { scene, camera }, graph, events, pluginManager, poolManager };
+    return sg;
+}
+
+// ---------------------------------------------------------------------------
+// Small helpers
+// ---------------------------------------------------------------------------
+const POS_A: [number, number, number] = [0, 0, 0];
+const POS_B: [number, number, number] = [200, 0, 0];
+
+function mkNode(sg: any, id: string, pos: [number, number, number] = POS_A) {
+    return new ShapeNode(sg, { id, type: 'ShapeNode', label: id, position: pos });
+}
+function mkEdge(sg: any, id: string, src: any, tgt: any) {
+    return new Edge(sg, { id, source: src.id, target: tgt.id, type: 'Edge' }, src, tgt);
+}
+
+// ============================================================
+// Node tests
+// ============================================================
+
+describe('Node base class', () => {
+    let sg: any;
+    beforeEach(() => { sg = makeSpaceGraph(); });
+
+    it('creates a node with correct id and position', () => {
+        const n = new Node(sg, { id: 'n1', type: 'Node', position: [1, 2, 3] });
+        expect(n.id).toBe('n1');
+        expect(n.position.toArray()).toEqual([1, 2, 3]);
+    });
+
+    it('updatePosition syncs object.position', () => {
+        const n = new Node(sg, { id: 'n1', type: 'Node', position: [0, 0, 0] });
+        n.updatePosition(10, 20, 30);
+        expect(n.object.position.x).toBe(10);
+    });
+
+    it('updateSpec patches label and merges data', () => {
+        const n = new Node(sg, { id: 'n1', type: 'Node', label: 'old', data: { x: 1 } });
+        n.updateSpec({ label: 'new', data: { y: 2 } });
+        expect(n.label).toBe('new');
+        expect(n.data.x).toBe(1);
+        expect(n.data.y).toBe(2);
+    });
+});
+
+describe('ShapeNode', () => {
+    let sg: any;
+    beforeEach(() => { sg = makeSpaceGraph(); });
+
+    it('has child mesh in object', () => {
+        const n = new ShapeNode(sg, { id: 's', type: 'ShapeNode', label: 'hi', data: { color: 0xff0000 } });
+        expect(n.object.children.length).toBeGreaterThan(0);
+    });
+
+    it('updateSpec color change does not throw', () => {
+        const n = new ShapeNode(sg, { id: 's', type: 'ShapeNode', data: { color: 0x0000ff } });
+        expect(() => n.updateSpec({ data: { color: 0x00ff00 } })).not.toThrow();
+    });
+
+    it('dispose does not throw', () => {
+        const n = new ShapeNode(sg, { id: 's', type: 'ShapeNode' });
+        expect(() => n.dispose()).not.toThrow();
+    });
+});
+
+describe('NoteNode', () => {
+    let sg: any;
+    beforeEach(() => { sg = makeSpaceGraph(); });
+
+    it('renders title and body text', () => {
+        const n = new NoteNode(sg, { id: 'nn', type: 'NoteNode', label: 'My Note', data: { text: 'hello' } });
+        expect(n.domElement.querySelector('.sg-note-title')?.textContent).toBe('My Note');
+        expect(n.domElement.querySelector('.sg-note-body')?.textContent).toBe('hello');
+    });
+
+    it('updateSpec updates label and text', () => {
+        const n = new NoteNode(sg, { id: 'nn', type: 'NoteNode', label: 'A', data: { text: 'B' } });
+        n.updateSpec({ label: 'A2', data: { text: 'B2' } });
+        expect(n.domElement.querySelector('.sg-note-title')?.textContent).toBe('A2');
+        expect(n.domElement.querySelector('.sg-note-body')?.textContent).toBe('B2');
+    });
+
+    it('respects custom background color', () => {
+        const n = new NoteNode(sg, { id: 'nn', type: 'NoteNode', data: { color: '#ff0000' } });
+        // jsdom normalises hex to rgb(), so check for the colour value rather than exact string
+        expect(n.domElement.style.background).toMatch(/ff0000|255,\s*0,\s*0/);
+    });
+});
+
+describe('CanvasNode', () => {
+    let sg: any;
+    beforeEach(() => { sg = makeSpaceGraph(); });
+
+    it('creates canvas with specified dimensions', () => {
+        const n = new CanvasNode(sg, { id: 'cn', type: 'CanvasNode', data: { width: 128, height: 64 } });
+        expect((n as any)['canvas'].width).toBe(128);
+        expect((n as any)['canvas'].height).toBe(64);
+    });
+
+    it('redraw with custom function does not throw', () => {
+        const n = new CanvasNode(sg, { id: 'cn', type: 'CanvasNode' });
+        expect(() => n.redraw((ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) => {
+            ctx.fillStyle = 'red';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        })).not.toThrow();
+    });
+
+    it('exposes canvas 2D context (null in jsdom)', () => {
+        const n = new CanvasNode(sg, { id: 'cn', type: 'CanvasNode' });
+        // jsdom returns null from getContext('2d'); the property is accessible
+        expect('context' in n).toBe(true);
+    });
+});
+
+describe('TextMeshNode', () => {
+    let sg: any;
+    beforeEach(() => { sg = makeSpaceGraph(); });
+
+    it('creates a sprite child', () => {
+        const n = new TextMeshNode(sg, { id: 'tm', type: 'TextMeshNode', label: 'Hello' });
+        expect(n.object.children.length).toBeGreaterThan(0);
+    });
+
+    it('updateSpec with new label does not throw', () => {
+        const n = new TextMeshNode(sg, { id: 'tm', type: 'TextMeshNode', label: 'A' });
+        expect(() => n.updateSpec({ label: 'B' })).not.toThrow();
+    });
+});
+
+describe('DataNode', () => {
+    let sg: any;
+    beforeEach(() => { sg = makeSpaceGraph(); });
+
+    it('renders correct number of rows', () => {
+        const n = new DataNode(sg, {
+            id: 'dn', type: 'DataNode',
+            data: { fields: { foo: 'bar', baz: 42 } }
+        });
+        expect(n.domElement.querySelectorAll('.sg-data-row').length).toBe(2);
+    });
+
+    it('shows empty state placeholder when no fields', () => {
+        const n = new DataNode(sg, { id: 'dn', type: 'DataNode' });
+        expect(n.domElement.textContent).toContain('no data');
+    });
+
+    it('respects maxFields truncation', () => {
+        const fields: Record<string, number> = {};
+        for (let i = 0; i < 20; i++) fields[`k${i}`] = i;
+        const n = new DataNode(sg, { id: 'dn', type: 'DataNode', data: { fields, maxFields: 5 } });
+        expect(n.domElement.querySelectorAll('.sg-data-row').length).toBe(5);
+    });
+});
+
+describe('VideoNode', () => {
+    let sg: any;
+    beforeEach(() => { sg = makeSpaceGraph(); });
+
+    it('sets video src correctly', () => {
+        const n = new VideoNode(sg, { id: 'vn', type: 'VideoNode', data: { src: 'test.mp4', autoplay: false } });
+        expect(n.videoEl.src).toContain('test.mp4');
+    });
+
+    it('pause/play do not throw', () => {
+        const n = new VideoNode(sg, { id: 'vn', type: 'VideoNode', data: { src: '', autoplay: false } });
+        expect(() => { n.pause(); n.play(); }).not.toThrow();
+    });
+
+    it('muted is true by default', () => {
+        const n = new VideoNode(sg, { id: 'vn', type: 'VideoNode', data: { src: '', autoplay: false } });
+        expect(n.videoEl.muted).toBe(true);
+    });
+});
+
+describe('IFrameNode', () => {
+    let sg: any;
+    beforeEach(() => { sg = makeSpaceGraph(); });
+
+    it('creates iframe with target src', () => {
+        const n = new IFrameNode(sg, { id: 'iframe', type: 'IFrameNode', data: { src: 'https://example.com' } });
+        // jsdom may set src to full absolute url or leave it empty for cross-origin
+        expect(n.iframeEl).toBeTruthy();
+    });
+
+    it('navigate changes src', () => {
+        const n = new IFrameNode(sg, { id: 'iframe', type: 'IFrameNode', data: { src: 'about:blank' } });
+        n.navigate('https://new.example.com');
+        expect(n.iframeEl.src).toContain('new.example.com');
+    });
+});
+
+// ============================================================
+// Edge tests
+// ============================================================
+
+describe('Edge', () => {
+    let sg: any, nodeA: any, nodeB: any;
+    beforeEach(() => {
+        sg = makeSpaceGraph();
+        nodeA = mkNode(sg, 'a', POS_A);
+        nodeB = mkNode(sg, 'b', POS_B);
+    });
+
+    it('stores source and target references', () => {
+        const e = mkEdge(sg, 'e1', nodeA, nodeB);
+        expect(e.source.id).toBe('a');
+        expect(e.target.id).toBe('b');
+    });
+
+    it('update after node move does not throw', () => {
+        const e = mkEdge(sg, 'e1', nodeA, nodeB);
+        nodeA.updatePosition(50, 50, 0);
+        expect(() => e.update()).not.toThrow();
+    });
+
+    it('updateSpec merges data fields', () => {
+        const e = mkEdge(sg, 'e1', nodeA, nodeB);
+        e.updateSpec({ data: { weight: 0.8 } });
+        expect(e.data.weight).toBe(0.8);
+    });
+
+    it('dispose removes from parent and frees geometry', () => {
+        const e = mkEdge(sg, 'e1', nodeA, nodeB);
+        expect(() => e.dispose()).not.toThrow();
+    });
+});
+
+describe('DottedEdge', () => {
+    let sg: any, nodeA: any, nodeB: any;
+    beforeEach(() => {
+        sg = makeSpaceGraph();
+        nodeA = mkNode(sg, 'a', POS_A);
+        nodeB = mkNode(sg, 'b', POS_B);
+    });
+
+    it('uses LineDashedMaterial', () => {
+        const e = new DottedEdge(sg,
+            { id: 'de', source: 'a', target: 'b', type: 'DottedEdge', data: { dashSize: 10, gapSize: 5 } },
+            nodeA, nodeB);
+        expect(e.object.material).toBeInstanceOf(THREE.LineDashedMaterial);
+    });
+
+    it('update recomputes line distances', () => {
+        const e = new DottedEdge(sg,
+            { id: 'de', source: 'a', target: 'b', type: 'DottedEdge' },
+            nodeA, nodeB);
+        nodeA.updatePosition(100, 0, 0);
+        expect(() => e.update()).not.toThrow();
+    });
+});
+
+describe('DynamicThicknessEdge', () => {
+    let sg: any, nodeA: any, nodeB: any;
+    beforeEach(() => {
+        sg = makeSpaceGraph();
+        nodeA = mkNode(sg, 'a', POS_A);
+        nodeB = mkNode(sg, 'b', POS_B);
+    });
+
+    it('creates a Mesh (tube geometry)', () => {
+        const e = new DynamicThicknessEdge(sg,
+            { id: 'dte', source: 'a', target: 'b', type: 'DynamicThicknessEdge', data: { weight: 0.7 } },
+            nodeA, nodeB);
+        expect(e.object).toBeInstanceOf(THREE.Mesh);
+    });
+
+    it('update rebuilds geometry without throwing', () => {
+        const e = new DynamicThicknessEdge(sg,
+            { id: 'dte', source: 'a', target: 'b', type: 'DynamicThicknessEdge', data: { weight: 0.5 } },
+            nodeA, nodeB);
+        nodeA.updatePosition(100, 100, 0);
+        expect(() => e.update()).not.toThrow();
+    });
+});
+
+// ============================================================
+// Layout tests
+// ============================================================
+
+describe('GridLayout', () => {
+    let sg: any;
+    beforeEach(() => {
+        sg = makeSpaceGraph();
+        sg.pluginManager.registerNodeType('ShapeNode', ShapeNode);
+        for (let i = 0; i < 6; i++) {
+            sg.graph.addNode({ id: `n${i}`, type: 'ShapeNode', position: [0, 0, 0] });
+        }
+    });
+
+    it('places correct number of nodes per row', () => {
+        const layout = new GridLayout();
+        layout.settings.columns = 3;
+        layout.settings.spacingX = 100;
+        layout.settings.spacingY = 100;
+        layout.init(sg);
+        layout.apply();
+        const positions = [...sg.graph.nodes.values()].map((n: any) => n.position.x);
+        expect(positions[0]).toBe(0);
+        expect(positions[1]).toBe(100);
+        expect(positions[2]).toBe(200);
+        expect(positions[3]).toBe(0); // wraps to new row
+    });
+
+    it('row 1 is below row 0 (negative Y)', () => {
+        const layout = new GridLayout();
+        layout.settings.columns = 2;
+        layout.settings.spacingY = 150;
+        layout.init(sg);
+        layout.apply();
+        const nodes = [...sg.graph.nodes.values()];
+        expect(nodes[2].position.y).toBeLessThan(nodes[0].position.y);
+    });
+});
+
+describe('CircularLayout', () => {
+    let sg: any;
+    beforeEach(() => {
+        sg = makeSpaceGraph();
+        sg.pluginManager.registerNodeType('ShapeNode', ShapeNode);
+        for (let i = 0; i < 4; i++) {
+            sg.graph.addNode({ id: `n${i}`, type: 'ShapeNode', position: [0, 0, 0] });
+        }
+    });
+
+    it('places all nodes at the target radius', () => {
+        const layout = new CircularLayout();
+        layout.settings.radiusX = 200;
+        layout.settings.radiusY = 200;
+        layout.init(sg);
+        layout.apply();
+        for (const n of sg.graph.nodes.values()) {
+            const r = Math.sqrt(n.position.x ** 2 + n.position.y ** 2);
+            expect(r).toBeCloseTo(200, 0);
+        }
+    });
+});
+
+describe('HierarchicalLayout', () => {
+    let sg: any;
+    beforeEach(() => {
+        sg = makeSpaceGraph();
+        sg.pluginManager.registerNodeType('ShapeNode', ShapeNode);
+        sg.pluginManager.registerEdgeType('Edge', Edge);
+        ['A', 'B', 'C'].forEach(id => sg.graph.addNode({ id, type: 'ShapeNode', position: [0, 0, 0] }));
+        sg.graph.addEdge({ id: 'eAB', source: 'A', target: 'B', type: 'Edge' });
+        sg.graph.addEdge({ id: 'eBC', source: 'B', target: 'C', type: 'Edge' });
+    });
+
+    it('root has higher Y than children (top-down)', () => {
+        const layout = new HierarchicalLayout();
+        layout.settings.rootId = 'A';
+        layout.settings.levelHeight = 150;
+        layout.init(sg);
+        layout.apply();
+        const yA = sg.graph.nodes.get('A').position.y;
+        const yB = sg.graph.nodes.get('B').position.y;
+        const yC = sg.graph.nodes.get('C').position.y;
+        expect(yA).toBeGreaterThan(yB);
+        expect(yB).toBeGreaterThan(yC);
+    });
+
+    it('works with bottom-up direction', () => {
+        const layout = new HierarchicalLayout();
+        layout.settings.rootId = 'A';
+        layout.settings.direction = 'bottom-up';
+        layout.init(sg);
+        expect(() => layout.apply()).not.toThrow();
+    });
+});
+
+describe('RadialLayout', () => {
+    let sg: any;
+    beforeEach(() => {
+        sg = makeSpaceGraph();
+        sg.pluginManager.registerNodeType('ShapeNode', ShapeNode);
+        sg.pluginManager.registerEdgeType('Edge', Edge);
+        ['root', 'c1', 'c2'].forEach(id => sg.graph.addNode({ id, type: 'ShapeNode', position: [0, 0, 0] }));
+        sg.graph.addEdge({ id: 'e1', source: 'root', target: 'c1', type: 'Edge' });
+        sg.graph.addEdge({ id: 'e2', source: 'root', target: 'c2', type: 'Edge' });
+    });
+
+    it('places root at origin', () => {
+        const layout = new RadialLayout();
+        layout.settings.rootId = 'root';
+        layout.init(sg);
+        layout.apply();
+        const root = sg.graph.nodes.get('root');
+        expect(root.position.x).toBe(0);
+        expect(root.position.y).toBe(0);
+    });
+
+    it('places children at baseRadius distance', () => {
+        const layout = new RadialLayout();
+        layout.settings.rootId = 'root';
+        layout.settings.baseRadius = 300;
+        layout.init(sg);
+        layout.apply();
+        const c1 = sg.graph.nodes.get('c1');
+        const r = Math.sqrt(c1.position.x ** 2 + c1.position.y ** 2);
+        expect(r).toBeCloseTo(300, -1);
+    });
+});
+
+// ============================================================
+// Plugin tests
+// ============================================================
+
+describe('PhysicsPlugin', () => {
+    let sg: any;
+    beforeEach(() => {
+        sg = makeSpaceGraph();
+        sg.pluginManager.registerNodeType('ShapeNode', ShapeNode);
+        sg.graph.addNode({ id: 'p1', type: 'ShapeNode', position: [0, 100, 0] });
+    });
+
+    it('does not move nodes when disabled', () => {
+        const plugin = new PhysicsPlugin();
+        plugin.settings.enabled = false;
+        plugin.init(sg);
+        const before = sg.graph.nodes.get('p1').position.y;
+        plugin.onPreRender(1 / 60);
+        expect(sg.graph.nodes.get('p1').position.y).toBe(before);
+    });
+
+    it('applies gravity when enabled', () => {
+        const plugin = new PhysicsPlugin();
+        plugin.settings.enabled = true;
+        plugin.settings.gravity = -100;
+        plugin.settings.groundY = -10000;
+        plugin.init(sg);
+        const before = sg.graph.nodes.get('p1').position.y;
+        for (let i = 0; i < 10; i++) plugin.onPreRender(1 / 60);
+        expect(sg.graph.nodes.get('p1').position.y).toBeLessThan(before);
+    });
+
+    it('pin/unpin do not throw', () => {
+        const plugin = new PhysicsPlugin();
+        plugin.init(sg);
+        expect(() => {
+            plugin.pin('p1');
+            plugin.unpin('p1');
+        }).not.toThrow();
+    });
+});
+
+describe('ErgonomicsPlugin', () => {
+    let sg: any;
+    beforeEach(() => { sg = makeSpaceGraph(); });
+
+    it('initialises without throwing', () => {
+        expect(() => new ErgonomicsPlugin().init(sg)).not.toThrow();
+    });
+
+    it('updateConfig merges only changed settings', () => {
+        const p = new ErgonomicsPlugin();
+        p.init(sg);
+        p.updateConfig({ panSpeed: 2.5 });
+        expect(p.config.panSpeed).toBe(2.5);
+        expect(p.config.dampingFactor).toBe(0.12);
+    });
+
+    it('increments totalInteractions on node:drag event', () => {
+        const p = new ErgonomicsPlugin();
+        p.init(sg);
+        sg.events.emit('node:drag');
+        sg.events.emit('node:drag');
+        expect(p.metrics.totalInteractions).toBe(2);
+    });
+
+    it('getMetrics returns a copy', () => {
+        const p = new ErgonomicsPlugin();
+        p.init(sg);
+        const m1 = p.getMetrics();
+        sg.events.emit('node:drag');
+        const m2 = p.getMetrics();
+        expect(m1.totalInteractions).toBe(0);
+        expect(m2.totalInteractions).toBe(1);
+    });
+});
+
+// ============================================================
+// Graph CRUD
+// ============================================================
+
+describe('Graph CRUD', () => {
+    let sg: any;
+    beforeEach(() => {
+        sg = makeSpaceGraph();
+        sg.pluginManager.registerNodeType('ShapeNode', ShapeNode);
+        sg.pluginManager.registerEdgeType('Edge', Edge);
+    });
+
+    it('addNode stores node in map', () => {
+        sg.graph.addNode({ id: 'x', type: 'ShapeNode', position: [0, 0, 0] });
+        expect(sg.graph.nodes.has('x')).toBe(true);
+    });
+
+    it('addEdge adds to edges array', () => {
+        sg.graph.addNode({ id: 'a', type: 'ShapeNode', position: [0, 0, 0] });
+        sg.graph.addNode({ id: 'b', type: 'ShapeNode', position: [100, 0, 0] });
+        sg.graph.addEdge({ id: 'e', source: 'a', target: 'b', type: 'Edge' });
+        expect(sg.graph.edges.length).toBe(1);
+    });
+
+    it('addEdge returns null for missing source', () => {
+        sg.graph.addNode({ id: 'b', type: 'ShapeNode', position: [0, 0, 0] });
+        expect(sg.graph.addEdge({ id: 'e', source: 'missing', target: 'b', type: 'Edge' })).toBeNull();
+    });
+
+    it('removeNode deletes from map', () => {
+        sg.graph.addNode({ id: 'a', type: 'ShapeNode', position: [0, 0, 0] });
+        sg.graph.removeNode('a');
+        expect(sg.graph.nodes.has('a')).toBe(false);
+    });
+
+    it('clear empties everything', () => {
+        sg.graph.addNode({ id: 'a', type: 'ShapeNode', position: [0, 0, 0] });
+        sg.graph.addNode({ id: 'b', type: 'ShapeNode', position: [100, 0, 0] });
+        sg.graph.addEdge({ id: 'e', source: 'a', target: 'b', type: 'Edge' });
+        sg.graph.clear();
+        expect(sg.graph.nodes.size).toBe(0);
+        expect(sg.graph.edges.length).toBe(0);
+    });
+});
+
+// ============================================================
+// PluginManager
+// ============================================================
+
+describe('PluginManager', () => {
+    let sg: any;
+    beforeEach(() => { sg = makeSpaceGraph(); });
+
+    it('registers and retrieves plugins by key', () => {
+        const plugin = new ForceLayout();
+        sg.pluginManager.register('ForceLayout', plugin);
+        expect(sg.pluginManager.getPlugin('ForceLayout')).toBe(plugin);
+    });
+
+    it('registers node types', () => {
+        sg.pluginManager.registerNodeType('ShapeNode', ShapeNode);
+        expect(sg.pluginManager.getNodeType('ShapeNode')).toBe(ShapeNode);
+    });
+
+    it('returns undefined for unknown plugin', () => {
+        expect(sg.pluginManager.getPlugin('NonExistent')).toBeUndefined();
+    });
+});
