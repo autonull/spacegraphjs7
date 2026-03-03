@@ -44,6 +44,24 @@ export class VisionManager {
     const overlaps = [];
     let layoutScore = 100;
 
+    // TLA & CHE analysis
+    const legibilityFailures = [];
+    let colorHarmonyScore = 100;
+    const dominantPalette: string[] = [];
+    let wcagAA = true;
+    const bgColor = new THREE.Color(this.sg.renderer.scene.background as THREE.Color);
+
+    // Helper: relative luminance per WCAG 2.x
+    const getLuminance = (r: number, g: number, b: number) => {
+        const a = [r, g, b].map(function (v) {
+            v /= 255;
+            return v <= 0.03928
+                ? v / 12.92
+                : Math.pow((v + 0.055) / 1.055, 2.4);
+        });
+        return a[0] * 0.2126 + a[1] * 0.7152 + a[2] * 0.0722;
+    }
+
     // Ambitious Overlap Detection using Bounding Boxes
     const camera = this.sg.renderer.camera;
     const frustum = new THREE.Frustum();
@@ -55,6 +73,34 @@ export class VisionManager {
 
     for (let i = 0; i < nodes.length; i++) {
         const nodeA = nodes[i];
+
+        // --- Color and Legibility analysis (TLA/CHE) ---
+        if (nodeA.data && nodeA.data.color !== undefined) {
+            const nodeColor = new THREE.Color(nodeA.data.color);
+            dominantPalette.push(`#${nodeColor.getHexString()}`);
+
+            // Assuming text color is white (#ffffff) for calculation
+            // We compare node background to text color (white)
+            const nodeL1 = getLuminance(nodeColor.r * 255, nodeColor.g * 255, nodeColor.b * 255);
+            const textL2 = getLuminance(255, 255, 255);
+
+            const brightest = Math.max(nodeL1, textL2);
+            const darkest = Math.min(nodeL1, textL2);
+            const contrastRatio = (brightest + 0.05) / (darkest + 0.05);
+
+            // WCAG AA requires a contrast ratio of at least 4.5:1 for normal text
+            if (contrastRatio < 4.5) {
+                legibilityFailures.push({
+                    type: 'legibility',
+                    severity: 'error',
+                    nodeId: nodeA.id,
+                    message: `Poor contrast ratio (${contrastRatio.toFixed(2)}:1) for node ${nodeA.id}. Text may be illegible.`
+                });
+                wcagAA = false;
+                colorHarmonyScore -= 10;
+            }
+        }
+
         if (!frustum.containsPoint(nodeA.object.position)) continue;
 
         const boxA = new THREE.Box3().setFromObject(nodeA.object);
@@ -78,12 +124,12 @@ export class VisionManager {
 
     const mockReport: VisionReport = {
         layout: { overall: Math.max(0, layoutScore), issues: overlaps },
-        legibility: { wcagCompliance: { AA: true }, failures: [] },
-        color: { harmonyScore: 90, dominantPalette: ['#3366ff', '#ff6633'] },
+        legibility: { wcagCompliance: { AA: wcagAA }, failures: legibilityFailures },
+        color: { harmonyScore: Math.max(0, colorHarmonyScore), dominantPalette: [...new Set(dominantPalette)].slice(0, 5) },
         overlap: { overlaps: overlaps, statistics: { totalOverlaps: overlaps.length } },
         hierarchy: { clarityScore: 85 },
         ergonomics: { fittsLawScore: 90 },
-        overall: Math.max(0, layoutScore - (overlaps.length * 2))
+        overall: Math.max(0, layoutScore - (overlaps.length * 2) - (legibilityFailures.length * 5))
     };
 
     console.log('[VisionManager] Analysis complete. Overall Score:', mockReport.overall);
@@ -91,7 +137,12 @@ export class VisionManager {
     // Simulate Vision-Closed self-correction trigger based on threshold
     if (mockReport.overall < 90) {
         console.warn('[VisionManager] Quality below threshold, triggering autonomous fix...');
-        await this.autoFix({ type: 'overlap' }, mockReport);
+        if (overlaps.length > 0) {
+            await this.autoFix({ type: 'overlap' }, mockReport);
+        }
+        if (legibilityFailures.length > 0) {
+            await this.autoFix({ type: 'legibility' }, mockReport);
+        }
     }
 
     this.isAnalyzing = false;
@@ -100,6 +151,19 @@ export class VisionManager {
 
   public async autoFix(category: VisionCategory, report?: VisionReport): Promise<void> {
       console.log(`[VisionManager] Triggering auto-fix for category: ${category.type}`);
+
+      // Autonomous Legibility / Color fix via AutoColorPlugin
+      if ((category.type === 'legibility' || category.type === 'color') && report) {
+          console.log('[VisionManager] Applying color/legibility corrections...');
+          const autoColorPlugin: any = this.sg.pluginManager.getPlugin('AutoColorPlugin');
+
+          if (autoColorPlugin && typeof autoColorPlugin.applyVisionCorrection === 'function') {
+              autoColorPlugin.applyVisionCorrection(report.legibility.failures);
+              console.log('[VisionManager] AutoColorPlugin corrections applied.');
+          } else {
+              console.warn('[VisionManager] AutoColorPlugin not found or missing applyVisionCorrection.');
+          }
+      }
 
       // Autonomous ODN (Overlap Detection Network) fix via AutoLayoutPlugin
       if (category.type === 'overlap' && report) {
