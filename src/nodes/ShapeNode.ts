@@ -3,19 +3,6 @@ import { Node } from './Node';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec } from '../types';
 
-const geometryPool: THREE.SphereGeometry[] = [];
-
-function getGeometry(): THREE.SphereGeometry {
-  if (geometryPool.length > 0) {
-    return geometryPool.pop()!;
-  }
-  return new THREE.SphereGeometry(20, 32, 32);
-}
-
-function releaseGeometry(geo: THREE.SphereGeometry) {
-  geometryPool.push(geo);
-}
-
 export class ShapeNode extends Node {
   private meshGeometry: THREE.SphereGeometry;
   private meshMaterial: THREE.MeshBasicMaterial;
@@ -25,7 +12,14 @@ export class ShapeNode extends Node {
     super(sg, spec);
 
     const color = spec.data?.color || 0x3366ff;
-    this.meshGeometry = getGeometry();
+
+    // Use ObjectPoolManager to acquire geometry
+    let geo = sg.poolManager.get('ShapeNodeGeometry') as THREE.SphereGeometry | null;
+    if (!geo) {
+        geo = new THREE.SphereGeometry(20, 32, 32);
+    }
+
+    this.meshGeometry = geo;
     this.meshMaterial = new THREE.MeshBasicMaterial({ color });
     const mesh = new THREE.Mesh(this.meshGeometry, this.meshMaterial);
 
@@ -87,7 +81,7 @@ export class ShapeNode extends Node {
 
   dispose(): void {
     if (this.meshGeometry) {
-      releaseGeometry(this.meshGeometry);
+      this.sg.poolManager.release('ShapeNodeGeometry', this.meshGeometry);
     }
     if (this.meshMaterial) {
       this.meshMaterial.dispose();
