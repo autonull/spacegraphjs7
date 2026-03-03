@@ -12,7 +12,7 @@ export default defineConfig({
       formats: ['es', 'cjs'],
     },
     rollupOptions: {
-      external: ['three'],
+      external: ['three', 'child_process', 'fs', 'path', 'playwright', 'http-server'],
       output: {
         globals: {
           three: 'THREE',

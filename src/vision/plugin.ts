@@ -15,9 +15,9 @@ export function spacegraphVision(options: VisionPluginOptions = {}): Plugin {
     name: 'spacegraph-vision',
     enforce: 'post',
 
-    async buildEnd() {
+    async closeBundle() {
       if (!options.enabled) return;
-      console.log('👁️  Vision analysis running...');
+      console.log('👁️  Vision analysis running on build output...');
 
       const report = await runVisionAnalysis('dist');
       console.log('Vision Analysis Report:', report);
