@@ -7,6 +7,7 @@ export default defineConfig({
       entry: {
         spacegraphjs: resolve(__dirname, 'src/index.ts'),
         vision: resolve(__dirname, 'src/vision/index.ts'),
+        'vision-test': resolve(__dirname, 'src/vision/vision-test.ts'),
       },
       name: 'SpaceGraphJS',
       formats: ['es', 'cjs'],

@@ -219,7 +219,7 @@ const graph = SpaceGraph.create(container, {
 ### Try Layout Engines
 
 ```typescript
-import { ForceLayout } from 'spacegraphjs/layouts';
+import { ForceLayout } from 'spacegraphjs';
 
 const layout = new ForceLayout(graph, {
   nodeDistance: 150,
