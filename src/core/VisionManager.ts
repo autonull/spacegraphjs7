@@ -177,18 +177,19 @@ export class VisionManager {
           } else {
              // Fallback to force layout if AutoLayout is not available
              const forceLayout: any = this.sg.pluginManager.getPlugin('ForceLayout');
-             if (forceLayout && typeof forceLayout.apply === 'function') {
+             if (forceLayout && typeof forceLayout.update === 'function') {
                   console.log('[VisionManager] AutoLayoutPlugin not found, falling back to ForceLayout...');
 
                   // Temporarily increase distance and apply
-                  const originalDistance = forceLayout.settings.nodeDistance || 100;
-                  forceLayout.settings.nodeDistance = originalDistance * 1.5;
-                  forceLayout.apply();
+                  const originalRepulsion = forceLayout.settings.repulsion || 10000;
+                  forceLayout.settings.repulsion = originalRepulsion * 5;
+
+                  for (let i = 0; i < 50; i++) {
+                      forceLayout.update();
+                  }
 
                   // Restore original settings after applying the force layout
-                  setTimeout(() => {
-                      forceLayout.settings.nodeDistance = originalDistance;
-                  }, 500);
+                  forceLayout.settings.repulsion = originalRepulsion;
              } else {
                  console.warn('[VisionManager] No suitable layout plugin found to perform autoFix.');
              }

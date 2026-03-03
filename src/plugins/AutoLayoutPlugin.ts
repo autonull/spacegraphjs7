@@ -31,18 +31,18 @@ export class AutoLayoutPlugin implements ISpaceGraphPlugin {
       console.log(`[AutoLayoutPlugin] Auto-fixing ${overlaps.length} overlaps...`);
       const layoutPlugin: any = this.sg.pluginManager.getPlugin('ForceLayout');
 
-      if (layoutPlugin && typeof layoutPlugin.apply === 'function') {
-          // Temporarily increase distance to push overlapping nodes apart
-          const originalDistance = layoutPlugin.settings.nodeDistance || 100;
-          layoutPlugin.settings.nodeDistance = originalDistance * 2;
+      if (layoutPlugin && typeof layoutPlugin.update === 'function') {
+          // Temporarily increase repulsion to push overlapping nodes apart
+          const originalRepulsion = layoutPlugin.settings.repulsion || 10000;
+          layoutPlugin.settings.repulsion = originalRepulsion * 5;
 
           // Run a few steps of physics to separate nodes rapidly
-          layoutPlugin.apply();
+          for (let i = 0; i < 50; i++) {
+              layoutPlugin.update();
+          }
 
           // Restore settings
-          setTimeout(() => {
-              layoutPlugin.settings.nodeDistance = originalDistance;
-          }, 500);
+          layoutPlugin.settings.repulsion = originalRepulsion;
       } else {
           // Fallback if no physics layout plugin: manually push nodes apart
           for (const issue of overlaps) {

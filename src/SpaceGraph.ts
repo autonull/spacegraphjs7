@@ -95,8 +95,8 @@ export class SpaceGraph {
     this.pluginManager.registerEdgeType('FlowEdge', FlowEdge);
 
     // Register built-in plugins
-    const layout = new ForceLayout();
-    this.pluginManager.register('LayoutPlugin', layout);
+    const forceLayout = new ForceLayout();
+    this.pluginManager.register('ForceLayout', forceLayout);
     const interaction = new InteractionPlugin();
     this.pluginManager.register('InteractionPlugin', interaction);
     const lod = new LODPlugin();
