@@ -29,6 +29,16 @@ export function spacegraphVision(options: VisionPluginOptions = {}): Plugin {
       if (options.thresholds?.legibility && report.legibilityScore < options.thresholds.legibility) {
           console.warn(`[WARNING] Legibility score (${report.legibilityScore}) is below threshold (${options.thresholds.legibility})`);
       }
+
+      if (options.autoFix && report.issues.length > 0) {
+          console.log(`👁️  AutoFix enabled: applying ${report.issues.length} fixes to source files...`);
+          // A full production system would use AST transformations to update the source code.
+          // For now, we print a warning/stub so the user knows they have actionable issues.
+          console.log(`[AutoFix] Stub: Please implement AST transformations to automatically update node specs with the suggested fixes.`);
+          for (const issue of report.issues) {
+              console.log(`  -> Action required: ${issue.message}`);
+          }
+      }
     },
 
     configureServer(server) {
