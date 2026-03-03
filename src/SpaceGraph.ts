@@ -7,6 +7,8 @@ import { EventManager } from './core/EventManager';
 import { VisionManager } from './core/VisionManager';
 import { UnifiedDisposalSystem } from './core/UnifiedDisposalSystem';
 import { ObjectPoolManager } from './core/ObjectPoolManager';
+import { CullingManager } from './core/CullingManager';
+import { AdvancedRenderingOptimizer } from './core/AdvancedRenderingOptimizer';
 import { ShapeNode } from './nodes/ShapeNode';
 import { HtmlNode } from './nodes/HtmlNode';
 import { ImageNode } from './nodes/ImageNode';
@@ -31,11 +33,15 @@ export class SpaceGraph {
   public vision: VisionManager;
   public disposalSystem: UnifiedDisposalSystem;
   public poolManager: ObjectPoolManager<any>;
+  public cullingManager: CullingManager;
+  public optimizer: AdvancedRenderingOptimizer;
 
   constructor(container: HTMLElement, options: SpaceGraphOptions = {}) {
     this.container = container;
     this.disposalSystem = new UnifiedDisposalSystem();
     this.poolManager = new ObjectPoolManager<any>();
+    this.cullingManager = new CullingManager(this);
+    this.optimizer = new AdvancedRenderingOptimizer(this);
     this.events = new EventManager(this);
     this.vision = new VisionManager(this);
     this.pluginManager = new PluginManager(this);
@@ -161,12 +167,16 @@ export class SpaceGraph {
       this.cameraControls.flyTo(center, cameraZ, duration);
   }
 
-  animate() {
-    requestAnimationFrame(() => this.animate());
+  animate(timestamp: number = 0) {
+    requestAnimationFrame((t) => this.animate(t));
+
+    this.optimizer.beginFrame(timestamp);
 
     const delta = 0.016; // rough estimate for 60fps
     this.pluginManager.updateAll(delta);
     this.cameraControls.update();
+
+    this.cullingManager.update();
 
     this.renderer.render();
   }

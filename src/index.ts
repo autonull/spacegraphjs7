@@ -13,6 +13,8 @@ export { EventManager } from './core/EventManager';
 export { VisionManager } from './core/VisionManager';
 export { UnifiedDisposalSystem } from './core/UnifiedDisposalSystem';
 export { ObjectPoolManager } from './core/ObjectPoolManager';
+export { CullingManager } from './core/CullingManager';
+export { AdvancedRenderingOptimizer } from './core/AdvancedRenderingOptimizer';
 
 // Nodes
 export { Node } from './nodes/Node';
