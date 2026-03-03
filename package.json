@@ -15,6 +15,11 @@
       "types": "./dist/types/vision/index.d.ts",
       "import": "./dist/vision.js",
       "require": "./dist/vision.cjs"
+    },
+    "./vision-test": {
+      "types": "./dist/types/vision/vision-test.d.ts",
+      "import": "./dist/vision-test.js",
+      "require": "./dist/vision-test.cjs"
     }
   },
   "files": [
