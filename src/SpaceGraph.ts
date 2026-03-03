@@ -7,11 +7,15 @@ import { EventManager } from './core/EventManager';
 import { VisionManager } from './core/VisionManager';
 import { ShapeNode } from './nodes/ShapeNode';
 import { HtmlNode } from './nodes/HtmlNode';
+import { ImageNode } from './nodes/ImageNode';
+import { GroupNode } from './nodes/GroupNode';
 import { Edge } from './edges/Edge';
 import { CurvedEdge } from './edges/CurvedEdge';
+import { FlowEdge } from './edges/FlowEdge';
 import { ForceLayout } from './plugins/ForceLayout';
 import { InteractionPlugin } from './plugins/InteractionPlugin';
 import { LODPlugin } from './plugins/LODPlugin';
+import { AutoLayoutPlugin } from './plugins/AutoLayoutPlugin';
 import type { GraphSpec, SpaceGraphOptions, SpecUpdate } from './types';
 
 export class SpaceGraph {
@@ -71,8 +75,11 @@ export class SpaceGraph {
     // Register built-in types
     this.pluginManager.registerNodeType('ShapeNode', ShapeNode);
     this.pluginManager.registerNodeType('HtmlNode', HtmlNode);
+    this.pluginManager.registerNodeType('ImageNode', ImageNode);
+    this.pluginManager.registerNodeType('GroupNode', GroupNode);
     this.pluginManager.registerEdgeType('Edge', Edge);
     this.pluginManager.registerEdgeType('CurvedEdge', CurvedEdge);
+    this.pluginManager.registerEdgeType('FlowEdge', FlowEdge);
 
     // Register built-in plugins
     const layout = new ForceLayout();
@@ -81,6 +88,8 @@ export class SpaceGraph {
     this.pluginManager.register('InteractionPlugin', interaction);
     const lod = new LODPlugin();
     this.pluginManager.register('LODPlugin', lod);
+    const autoLayout = new AutoLayoutPlugin();
+    this.pluginManager.register('AutoLayoutPlugin', autoLayout);
 
     await this.pluginManager.initAll();
   }
