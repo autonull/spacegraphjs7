@@ -19,6 +19,54 @@ export class AutoColorPlugin implements ISpaceGraphPlugin {
     // color harmony and contrast issues.
   }
 
+  // Helper: relative luminance per WCAG 2.x
+  private getLuminance(r: number, g: number, b: number): number {
+      const a = [r, g, b].map(function (v) {
+          v /= 255;
+          return v <= 0.03928
+              ? v / 12.92
+              : Math.pow((v + 0.055) / 1.055, 2.4);
+      });
+      return a[0] * 0.2126 + a[1] * 0.7152 + a[2] * 0.0722;
+  }
+
+  // Calculate contrast ratio
+  private getContrastRatio(l1: number, l2: number): number {
+      const brightest = Math.max(l1, l2);
+      const darkest = Math.min(l1, l2);
+      return (brightest + 0.05) / (darkest + 0.05);
+  }
+
+  // Find a compliant color by adjusting lightness
+  private getCompliantColor(hexColor: number): number {
+      let r = (hexColor >> 16) & 255;
+      let g = (hexColor >> 8) & 255;
+      let b = hexColor & 255;
+
+      const textLuminance = this.getLuminance(255, 255, 255); // Assuming white text
+      let currentLuminance = this.getLuminance(r, g, b);
+      let ratio = this.getContrastRatio(currentLuminance, textLuminance);
+
+      // Iteratively darken the color until it passes WCAG AA (4.5:1)
+      let iterations = 0;
+      while (ratio < 4.5 && iterations < 20) {
+          r = Math.max(0, Math.floor(r * 0.9));
+          g = Math.max(0, Math.floor(g * 0.9));
+          b = Math.max(0, Math.floor(b * 0.9));
+
+          currentLuminance = this.getLuminance(r, g, b);
+          ratio = this.getContrastRatio(currentLuminance, textLuminance);
+          iterations++;
+      }
+
+      // If we couldn't make it work by darkening, fallback to a standard high-contrast dark color
+      if (ratio < 4.5) {
+          return 0x333333; // Dark gray
+      }
+
+      return (r << 16) | (g << 8) | b;
+  }
+
   public applyVisionCorrection(issues: any[]): void {
       console.log(`[AutoColorPlugin] Received ${issues.length} color vision issues to auto-fix.`);
 
@@ -31,18 +79,16 @@ export class AutoColorPlugin implements ISpaceGraphPlugin {
               if (issue.nodeId) {
                   const node = this.sg.graph.nodes.get(issue.nodeId);
                   if (node) {
-                      // Simple simulated heuristic fix: if there's a contrast issue, invert or adjust brightness
-                      // In a real TLA/CHE system this would use color theory algorithms to find a pleasing, compliant palette.
-                      let newColor = 0xffffff; // Default fallback to white
+                      let newColor = 0xffffff;
 
                       if (issue.suggestedColor) {
                           newColor = issue.suggestedColor;
-                      } else if (node.data && node.data.color) {
-                          // Very basic "make it more visible" placeholder: complement or lighten
-                          newColor = 0xffffff - node.data.color;
+                      } else if (node.data && node.data.color !== undefined) {
+                          // Find a mathematically compliant background color for the assumed white text
+                          newColor = this.getCompliantColor(node.data.color);
                       }
 
-                      console.log(`[AutoColorPlugin] Fixing color for node ${issue.nodeId}. New color: ${newColor.toString(16)}`);
+                      console.log(`[AutoColorPlugin] Fixing color for node ${issue.nodeId}. New color: 0x${newColor.toString(16)}`);
                       node.updateSpec({ data: { color: newColor } });
                   }
               }

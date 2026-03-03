@@ -66,50 +66,81 @@ export async function runVisionAnalysis(outputDir: string): Promise<VisionReport
                     // Analyze nodes inside the page context
                     const fileAnalysis = await page.evaluate(() => {
                         const w = window as any;
+                        const THREE = w.THREE;
                         const instances = w.__SPACEGRAPH_INSTANCES__;
                         const localIssues: any[] = [];
                         let overlaps = 0;
 
+                        // Helper: relative luminance per WCAG 2.x
+                        const getLuminance = (r: number, g: number, b: number) => {
+                            const a = [r, g, b].map(function (v) {
+                                v /= 255;
+                                return v <= 0.03928
+                                    ? v / 12.92
+                                    : Math.pow((v + 0.055) / 1.055, 2.4);
+                            });
+                            return a[0] * 0.2126 + a[1] * 0.7152 + a[2] * 0.0722;
+                        };
+
+                        if (!THREE) {
+                            return { overlaps: 0, legibilityIssues: 0, localIssues: [] };
+                        }
+
                         for (const sg of instances) {
                             const nodes = Array.from(sg.graph.nodes.values()) as any[];
+                            const camera = sg.renderer.camera;
+                            const frustum = new THREE.Frustum();
+                            const cameraViewProjectionMatrix = new THREE.Matrix4();
 
-                            // Check for node overlaps
+                            camera.updateMatrixWorld();
+                            camera.matrixWorldInverse.copy(camera.matrixWorld).invert();
+                            cameraViewProjectionMatrix.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
+                            frustum.setFromProjectionMatrix(cameraViewProjectionMatrix);
+
                             for (let i = 0; i < nodes.length; i++) {
-                                for (let j = i + 1; j < nodes.length; j++) {
-                                    const dist = nodes[i].position.distanceTo(nodes[j].position);
-                                    // Assuming typical node radius is ~20 as defined in ShapeNode
-                                    if (dist < 40) {
-                                        overlaps++;
+                                const nodeA = nodes[i];
+
+                                // Color/Legibility check (TLA/CHE)
+                                if (nodeA.data && nodeA.data.color !== undefined) {
+                                    const nodeColor = new THREE.Color(nodeA.data.color);
+                                    const nodeL1 = getLuminance(nodeColor.r * 255, nodeColor.g * 255, nodeColor.b * 255);
+                                    const textL2 = getLuminance(255, 255, 255); // Assumed white text
+
+                                    const brightest = Math.max(nodeL1, textL2);
+                                    const darkest = Math.min(nodeL1, textL2);
+                                    const contrastRatio = (brightest + 0.05) / (darkest + 0.05);
+
+                                    // WCAG AA
+                                    if (contrastRatio < 4.5) {
                                         localIssues.push({
-                                            type: 'overlap',
-                                            severity: 'warning',
-                                            nodeA: nodes[i].id,
-                                            nodeB: nodes[j].id,
-                                            message: `Overlap detected between nodes ${nodes[i].id} and ${nodes[j].id} (dist: ${dist.toFixed(2)})`
+                                            type: 'legibility',
+                                            severity: 'error',
+                                            nodeId: nodeA.id,
+                                            message: `Poor contrast ratio (${contrastRatio.toFixed(2)}:1) for node ${nodeA.id}. Text may be illegible.`
                                         });
                                     }
                                 }
 
-                                // Simulated TLA / CHE check
-                                const node = nodes[i];
-                                if (node.data && node.data.color) {
-                                    // Let's pretend very dark blue nodes on a dark background lack contrast
-                                    if (node.data.color === 0x000033 || node.data.color === 0x111111) {
-                                        localIssues.push({
-                                            type: 'legibility',
-                                            severity: 'error',
-                                            nodeId: node.id,
-                                            message: `Poor contrast detected for node ${node.id}. Text may be illegible.`
-                                        });
-                                    }
+                                if (!frustum.containsPoint(nodeA.object.position)) continue;
 
-                                    // Let's pretend pure red and green together are a color harmony issue
-                                    if (node.data.color === 0xff0000 || node.data.color === 0x00ff00) {
-                                         localIssues.push({
-                                            type: 'color',
+                                const boxA = new THREE.Box3().setFromObject(nodeA.object);
+                                boxA.expandByScalar(5); // Padding buffer
+
+                                for (let j = i + 1; j < nodes.length; j++) {
+                                    const nodeB = nodes[j];
+                                    if (!frustum.containsPoint(nodeB.object.position)) continue;
+
+                                    const boxB = new THREE.Box3().setFromObject(nodeB.object);
+                                    boxB.expandByScalar(5);
+
+                                    if (boxA.intersectsBox(boxB)) {
+                                        overlaps++;
+                                        localIssues.push({
+                                            type: 'overlap',
                                             severity: 'warning',
-                                            nodeId: node.id,
-                                            message: `Harsh color detected on node ${node.id} which may cause eye strain.`
+                                            nodeA: nodeA.id,
+                                            nodeB: nodeB.id,
+                                            message: `Bounding box overlap detected between nodes ${nodeA.id} and ${nodeB.id}.`
                                         });
                                     }
                                 }
