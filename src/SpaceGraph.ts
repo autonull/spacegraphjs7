@@ -10,6 +10,7 @@ import { ObjectPoolManager } from './core/ObjectPoolManager';
 import { CullingManager } from './core/CullingManager';
 import { AdvancedRenderingOptimizer } from './core/AdvancedRenderingOptimizer';
 import { ShapeNode } from './nodes/ShapeNode';
+import { InstancedShapeNode } from './nodes/InstancedShapeNode';
 import { HtmlNode } from './nodes/HtmlNode';
 import { ImageNode } from './nodes/ImageNode';
 import { GroupNode } from './nodes/GroupNode';
@@ -87,6 +88,7 @@ export class SpaceGraph {
 
     // Register built-in types
     this.pluginManager.registerNodeType('ShapeNode', ShapeNode);
+    this.pluginManager.registerNodeType('InstancedShapeNode', InstancedShapeNode);
     this.pluginManager.registerNodeType('HtmlNode', HtmlNode);
     this.pluginManager.registerNodeType('ImageNode', ImageNode);
     this.pluginManager.registerNodeType('GroupNode', GroupNode);

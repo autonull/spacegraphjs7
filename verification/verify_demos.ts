@@ -19,7 +19,7 @@ async function main() {
         const context = await browser.newContext({ viewport: { width: 1280, height: 720 } });
         const page = await context.newPage();
 
-        const demos = ['index.html', 'empty.html', 'single-node.html', 'html.html', 'large.html'];
+        const demos = ['index.html', 'empty.html', 'single-node.html', 'html.html', 'large.html', 'instanced.html'];
 
         for (const demo of demos) {
             console.log(`Verifying demo: ${demo}`);

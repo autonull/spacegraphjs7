@@ -20,6 +20,7 @@ export { AdvancedRenderingOptimizer } from './core/AdvancedRenderingOptimizer';
 export { Node } from './nodes/Node';
 export { ShapeNode } from './nodes/ShapeNode';
 export { HtmlNode } from './nodes/HtmlNode';
+export { InstancedShapeNode } from './nodes/InstancedShapeNode';
 export { ImageNode } from './nodes/ImageNode';
 export { GroupNode } from './nodes/GroupNode';
 
