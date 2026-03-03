@@ -5,6 +5,8 @@ import { PluginManager } from './core/PluginManager';
 import { CameraControls } from './core/CameraControls';
 import { EventManager } from './core/EventManager';
 import { VisionManager } from './core/VisionManager';
+import { UnifiedDisposalSystem } from './core/UnifiedDisposalSystem';
+import { ObjectPoolManager } from './core/ObjectPoolManager';
 import { ShapeNode } from './nodes/ShapeNode';
 import { HtmlNode } from './nodes/HtmlNode';
 import { ImageNode } from './nodes/ImageNode';
@@ -16,6 +18,7 @@ import { ForceLayout } from './plugins/ForceLayout';
 import { InteractionPlugin } from './plugins/InteractionPlugin';
 import { LODPlugin } from './plugins/LODPlugin';
 import { AutoLayoutPlugin } from './plugins/AutoLayoutPlugin';
+import { AutoColorPlugin } from './plugins/AutoColorPlugin';
 import type { GraphSpec, SpaceGraphOptions, SpecUpdate } from './types';
 
 export class SpaceGraph {
@@ -26,9 +29,13 @@ export class SpaceGraph {
   public cameraControls: CameraControls;
   public events: EventManager;
   public vision: VisionManager;
+  public disposalSystem: UnifiedDisposalSystem;
+  public poolManager: ObjectPoolManager<any>;
 
   constructor(container: HTMLElement, options: SpaceGraphOptions = {}) {
     this.container = container;
+    this.disposalSystem = new UnifiedDisposalSystem();
+    this.poolManager = new ObjectPoolManager<any>();
     this.events = new EventManager(this);
     this.vision = new VisionManager(this);
     this.pluginManager = new PluginManager(this);
@@ -90,6 +97,8 @@ export class SpaceGraph {
     this.pluginManager.register('LODPlugin', lod);
     const autoLayout = new AutoLayoutPlugin();
     this.pluginManager.register('AutoLayoutPlugin', autoLayout);
+    const autoColor = new AutoColorPlugin();
+    this.pluginManager.register('AutoColorPlugin', autoColor);
 
     await this.pluginManager.initAll();
   }

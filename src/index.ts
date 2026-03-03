@@ -11,6 +11,8 @@ export { PluginManager } from './core/PluginManager';
 export { CameraControls } from './core/CameraControls';
 export { EventManager } from './core/EventManager';
 export { VisionManager } from './core/VisionManager';
+export { UnifiedDisposalSystem } from './core/UnifiedDisposalSystem';
+export { ObjectPoolManager } from './core/ObjectPoolManager';
 
 // Nodes
 export { Node } from './nodes/Node';
@@ -29,5 +31,6 @@ export { ForceLayout } from './plugins/ForceLayout';
 export { InteractionPlugin } from './plugins/InteractionPlugin';
 export { LODPlugin } from './plugins/LODPlugin';
 export { AutoLayoutPlugin } from './plugins/AutoLayoutPlugin';
+export { AutoColorPlugin } from './plugins/AutoColorPlugin';
 
 console.log('[SpaceGraphJS] Loaded successfully');
