@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HTML Nodes - SpaceGraphJS Example</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { overflow: hidden; background-color: #1a1a2e; }
+    #container { width: 100vw; height: 100vh; }
+    .status {
+      position: absolute; top: 10px; left: 10px;
+      color: #0f0; background: rgba(0,0,0,0.8);
+      padding: 10px; font-family: monospace; z-index: 10;
+    }
+  </style>
+</head>
+<body>
+  <div class="status">HTML Nodes Example</div>
+  <div id="container"></div>
+
+  <script type="module">
+    import { SpaceGraph } from '../src/index.ts';
+
+    const createCard = (title, body, bg) => `
+      <div style="background: ${bg}; padding: 20px; border-radius: 8px; color: white; width: 200px; font-family: sans-serif; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
+        <h3 style="margin-bottom: 10px;">${title}</h3>
+        <p style="font-size: 14px; opacity: 0.9;">${body}</p>
+        <button style="margin-top: 15px; background: rgba(255,255,255,0.2); border: none; padding: 5px 10px; color: white; border-radius: 4px; cursor: pointer;">Click me</button>
+      </div>
+    `;
+
+    const graph = SpaceGraph.create('#container', {
+      nodes: [
+        {
+          id: 'h1',
+          type: 'HtmlNode',
+          position: [0, 100, 0],
+          data: { content: createCard('Dashboard', 'Real-time metrics and analytics', '#3b82f6') }
+        },
+        {
+          id: 'h2',
+          type: 'HtmlNode',
+          position: [-150, -100, 0],
+          data: { content: createCard('Users', 'Manage user access and roles', '#ef4444') }
+        },
+        {
+          id: 'h3',
+          type: 'HtmlNode',
+          position: [150, -100, 0],
+          data: { content: createCard('Settings', 'System configuration', '#10b981') }
+        }
+      ],
+      edges: [
+        { id: 'e1', source: 'h1', target: 'h2', type: 'CurvedEdge' },
+        { id: 'e2', source: 'h1', target: 'h3', type: 'CurvedEdge' }
+      ]
+    });
+
+    graph.render();
+  </script>
+</body>
+</html>
