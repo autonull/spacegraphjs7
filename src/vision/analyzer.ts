@@ -83,18 +83,46 @@ export async function runVisionAnalysis(outputDir: string): Promise<VisionReport
                                         localIssues.push({
                                             type: 'overlap',
                                             severity: 'warning',
+                                            nodeA: nodes[i].id,
+                                            nodeB: nodes[j].id,
                                             message: `Overlap detected between nodes ${nodes[i].id} and ${nodes[j].id} (dist: ${dist.toFixed(2)})`
+                                        });
+                                    }
+                                }
+
+                                // Simulated TLA / CHE check
+                                const node = nodes[i];
+                                if (node.data && node.data.color) {
+                                    // Let's pretend very dark blue nodes on a dark background lack contrast
+                                    if (node.data.color === 0x000033 || node.data.color === 0x111111) {
+                                        localIssues.push({
+                                            type: 'legibility',
+                                            severity: 'error',
+                                            nodeId: node.id,
+                                            message: `Poor contrast detected for node ${node.id}. Text may be illegible.`
+                                        });
+                                    }
+
+                                    // Let's pretend pure red and green together are a color harmony issue
+                                    if (node.data.color === 0xff0000 || node.data.color === 0x00ff00) {
+                                         localIssues.push({
+                                            type: 'color',
+                                            severity: 'warning',
+                                            nodeId: node.id,
+                                            message: `Harsh color detected on node ${node.id} which may cause eye strain.`
                                         });
                                     }
                                 }
                             }
                         }
 
-                        return { overlaps, localIssues };
+                        let legibilityIssues = localIssues.filter(i => i.type === 'legibility').length;
+                        return { overlaps, legibilityIssues, localIssues };
                     });
 
                     if (fileAnalysis) {
                         report.layoutScore = Math.max(0, report.layoutScore - (fileAnalysis.overlaps * 5));
+                        report.legibilityScore = Math.max(0, report.legibilityScore - (fileAnalysis.legibilityIssues * 10));
                         report.issues.push(...fileAnalysis.localIssues);
                     }
 

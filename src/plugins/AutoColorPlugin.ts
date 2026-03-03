@@ -21,7 +21,33 @@ export class AutoColorPlugin implements ISpaceGraphPlugin {
 
   public applyVisionCorrection(issues: any[]): void {
       console.log(`[AutoColorPlugin] Received ${issues.length} color vision issues to auto-fix.`);
-      // Future logic: Apply corrections based on reported issues
+
+      const colorIssues = issues.filter(i => i.type === 'color' || i.type === 'legibility');
+
+      if (colorIssues.length > 0) {
+          console.log(`[AutoColorPlugin] Auto-fixing ${colorIssues.length} color/legibility issues...`);
+
+          for (const issue of colorIssues) {
+              if (issue.nodeId) {
+                  const node = this.sg.graph.nodes.get(issue.nodeId);
+                  if (node) {
+                      // Simple simulated heuristic fix: if there's a contrast issue, invert or adjust brightness
+                      // In a real TLA/CHE system this would use color theory algorithms to find a pleasing, compliant palette.
+                      let newColor = 0xffffff; // Default fallback to white
+
+                      if (issue.suggestedColor) {
+                          newColor = issue.suggestedColor;
+                      } else if (node.data && node.data.color) {
+                          // Very basic "make it more visible" placeholder: complement or lighten
+                          newColor = 0xffffff - node.data.color;
+                      }
+
+                      console.log(`[AutoColorPlugin] Fixing color for node ${issue.nodeId}. New color: ${newColor.toString(16)}`);
+                      node.updateSpec({ data: { color: newColor } });
+                  }
+              }
+          }
+      }
   }
 
   dispose(): void {
