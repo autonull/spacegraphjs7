@@ -39,6 +39,8 @@
     "three": ">=0.150.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.2",
+    "@types/marked": "^5.0.2",
     "@types/node": "^20.10.0",
     "@types/three": "^0.160.0",
     "@vitest/coverage-v8": "^4.0.18",
@@ -63,7 +65,10 @@
     "three.js"
   ],
   "dependencies": {
+    "chart.js": "^4.5.1",
     "gsap": "^3.14.2",
-    "mitt": "^3.0.1"
+    "marked": "^17.0.3",
+    "mitt": "^3.0.1",
+    "three-mesh-bvh": "^0.9.9"
   }
 }

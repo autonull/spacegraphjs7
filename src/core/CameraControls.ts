@@ -26,27 +26,29 @@ export class CameraControls {
     camera.position.z = this.target.z + this.spherical.radius * Math.sin(this.spherical.phi) * Math.cos(this.spherical.theta);
     camera.lookAt(this.target);
 
-    this.sg.events.emit('camera:move', { position: camera.position, target: this.target.clone() });
+    // Emitting this constantly during drag causes heavy React/Solid UI thrashing. 
+    // We batch it to requestAnimationFrame cadence.
+    this.sg.events.emitBatched('camera:move', { position: camera.position, target: this.target.clone() });
   }
 
   public flyTo(targetPos: THREE.Vector3, targetRadius: number, duration: number = 1.5): void {
-      // Animate both the look-at target and the spherical radius
-      gsap.to(this.target, {
-          x: targetPos.x,
-          y: targetPos.y,
-          z: targetPos.z,
-          duration,
-          ease: "power2.inOut"
-      });
+    // Animate both the look-at target and the spherical radius
+    gsap.to(this.target, {
+      x: targetPos.x,
+      y: targetPos.y,
+      z: targetPos.z,
+      duration,
+      ease: "power2.inOut"
+    });
 
-      gsap.to(this.spherical, {
-          radius: targetRadius,
-          duration,
-          ease: "power2.inOut",
-          onUpdate: () => {
-              this.updateCameraPosition();
-          }
-      });
+    gsap.to(this.spherical, {
+      radius: targetRadius,
+      duration,
+      ease: "power2.inOut",
+      onUpdate: () => {
+        this.updateCameraPosition();
+      }
+    });
   }
 
   public update() {
@@ -129,7 +131,7 @@ export class CameraControls {
     });
 
     canvas.addEventListener('mouseleave', () => {
-        this.isDragging = false;
+      this.isDragging = false;
     });
 
     canvas.addEventListener('wheel', (e) => {

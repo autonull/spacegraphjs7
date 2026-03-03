@@ -1,6 +1,9 @@
 import * as THREE from 'three';
 import { CSS3DRenderer } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
+import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from 'three-mesh-bvh';
 import type { SpaceGraph } from '../SpaceGraph';
+import { CullingManager } from '../utils/CullingManager';
+import { LODManager } from '../utils/LODManager';
 
 export class Renderer {
   public sg: SpaceGraph;
@@ -9,6 +12,9 @@ export class Renderer {
   public camera: THREE.PerspectiveCamera;
   public renderer: THREE.WebGLRenderer;
   public cssRenderer: CSS3DRenderer;
+
+  public cullingManager: CullingManager;
+  public lodManager: LODManager;
 
   constructor(sg: SpaceGraph, container: HTMLElement) {
     this.sg = sg;
@@ -39,10 +45,22 @@ export class Renderer {
 
     // Handle resize
     window.addEventListener('resize', () => this.onResize());
+
+    // Initialize Performance Systems
+    this.cullingManager = new CullingManager();
+    this.cullingManager.setCamera(this.camera);
+
+    this.lodManager = new LODManager();
+    this.lodManager.setCamera(this.camera);
   }
 
   public init() {
     console.log('[SpaceGraph Renderer] Initialized');
+
+    // Wire up global accelerated raycasting
+    THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
+    THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
+    THREE.Mesh.prototype.raycast = acceleratedRaycast;
   }
 
   private onResize() {
@@ -58,6 +76,9 @@ export class Renderer {
   }
 
   public render() {
+    this.cullingManager.update();
+    this.lodManager.update();
+
     this.renderer.render(this.scene, this.camera);
     this.cssRenderer.render(this.scene, this.camera);
   }

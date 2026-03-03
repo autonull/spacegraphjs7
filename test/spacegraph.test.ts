@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import * as THREE from 'three';
 
 // Node types
@@ -10,7 +10,11 @@ import { TextMeshNode } from '../src/nodes/TextMeshNode';
 import { DataNode } from '../src/nodes/DataNode';
 import { VideoNode } from '../src/nodes/VideoNode';
 import { IFrameNode } from '../src/nodes/IFrameNode';
-
+import { MarkdownNode } from '../src/nodes/MarkdownNode';
+import { GlobeNode } from '../src/nodes/GlobeNode';
+import { SceneNode } from '../src/nodes/SceneNode';
+import { CullingManager } from '../src/utils/CullingManager';
+import { LODManager } from '../src/utils/LODManager';
 // Edge types
 import { Edge } from '../src/edges/Edge';
 import { DottedEdge } from '../src/edges/DottedEdge';
@@ -41,6 +45,8 @@ function makeSpaceGraph() {
 
     const events = {
         _handlers: new Map<string, Function[]>(),
+        _batched: new Map<string, any>(),
+        _rafId: null as number | null,
         on(evt: string, fn: Function) {
             if (!this._handlers.has(evt)) this._handlers.set(evt, []);
             this._handlers.get(evt)!.push(fn);
@@ -48,6 +54,18 @@ function makeSpaceGraph() {
         emit(evt: string, data?: any) {
             (this._handlers.get(evt) ?? []).forEach(fn => fn(data));
         },
+        emitBatched(evt: string, data?: any) {
+            this._batched.set(evt, data);
+            if (this._rafId === null) {
+                this._rafId = requestAnimationFrame(() => {
+                    this._rafId = null;
+                    for (const [e, d] of this._batched.entries()) {
+                        this.emit(e, d);
+                    }
+                    this._batched.clear();
+                });
+            }
+        }
     };
 
     const nodeTypeRegistry = new Map<string, any>();
@@ -300,6 +318,39 @@ describe('IFrameNode', () => {
     });
 });
 
+describe('MarkdownNode', () => {
+    let sg: any;
+    beforeEach(() => { sg = makeSpaceGraph(); });
+
+    it('creates CSS3D element with parsed html', () => {
+        const n = new MarkdownNode(sg, { id: 'mn', type: 'MarkdownNode', data: { markdown: '# Hello' } });
+        expect(n.domElement).toBeTruthy();
+        expect(n.domElement.innerHTML).toContain('Hello');
+    });
+});
+
+describe('GlobeNode', () => {
+    let sg: any;
+    beforeEach(() => { sg = makeSpaceGraph(); });
+
+    it('creates sphere geometry mesh', () => {
+        const n = new GlobeNode(sg, { id: 'gn', type: 'GlobeNode' });
+        const mesh = n.object.children.find(c => (c as any).isMesh);
+        expect(mesh).toBeTruthy();
+        expect((mesh as any).geometry.type).toBe('SphereGeometry');
+    });
+});
+
+describe('SceneNode', () => {
+    let sg: any;
+    beforeEach(() => { sg = makeSpaceGraph(); });
+
+    it('instantiates without error even if url is empty', () => {
+        const n = new SceneNode(sg, { id: 'sn', type: 'SceneNode' });
+        expect(n.object.children.length).toBeGreaterThanOrEqual(0);
+    });
+});
+
 // ============================================================
 // Edge tests
 // ============================================================
@@ -513,6 +564,69 @@ describe('RadialLayout', () => {
 });
 
 // ============================================================
+// Performance System tests
+// ============================================================
+
+describe('CullingManager', () => {
+    let cm: CullingManager;
+    let camera: THREE.PerspectiveCamera;
+
+    beforeEach(() => {
+        cm = new CullingManager();
+        // Camera looking straight down -Z
+        camera = new THREE.PerspectiveCamera(90, 1, 0.1, 100);
+        camera.position.set(0, 0, 0);
+        camera.updateMatrixWorld();
+        cm.setCamera(camera);
+    });
+
+    it('makes objects visible when inside frustum', () => {
+        const obj = new THREE.Mesh(new THREE.SphereGeometry(1));
+        obj.position.set(0, 0, -50); // Direct line of sight
+        obj.visible = false; // Start hidden
+
+        cm.registerObject(obj);
+        cm.update();
+
+        expect(obj.visible).toBe(true);
+    });
+
+    it('makes objects invisible when outside frustum (behind camera)', () => {
+        const obj = new THREE.Mesh(new THREE.SphereGeometry(1));
+        obj.position.set(0, 0, 50); // Behind camera
+        obj.visible = true; // Start visible
+
+        cm.registerObject(obj);
+        cm.update();
+
+        expect(obj.visible).toBe(false);
+    });
+
+    it('respects manual cullingRadius bypass', () => {
+        const obj = new THREE.Mesh(); // No geometry, implies empty bounds
+        obj.position.set(0, 0, -50);
+        obj.visible = false;
+
+        // Custom massive radius ensures intersects
+        cm.registerObject(obj, { enabled: true, cullingRadius: 9999 });
+        cm.update();
+
+        expect(obj.visible).toBe(true);
+    });
+
+    it('ignores objects when settings.enabled is false', () => {
+        const obj = new THREE.Mesh(new THREE.SphereGeometry(1));
+        obj.position.set(0, 0, 50); // Behind camera
+        obj.visible = true; // should stay true
+
+        cm.registerObject(obj, { enabled: false });
+        cm.update();
+
+        expect(obj.visible).toBe(true);
+    });
+});
+
+// ============================================================
 // Plugin tests
 // ============================================================
 
@@ -655,5 +769,106 @@ describe('PluginManager', () => {
 
     it('returns undefined for unknown plugin', () => {
         expect(sg.pluginManager.getPlugin('NonExistent')).toBeUndefined();
+    });
+});
+
+// ============================================================
+// LODManager
+// ============================================================
+
+describe('LODManager', () => {
+    let lod: LODManager;
+    let camera: THREE.PerspectiveCamera;
+    let root: THREE.Object3D;
+    let meshLevel0: THREE.Mesh;
+    let meshLevel1: THREE.Mesh;
+
+    beforeEach(() => {
+        lod = new LODManager();
+        camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        camera.position.set(0, 0, 0); // Origin
+        lod.setCamera(camera);
+
+        root = new THREE.Object3D();
+        root.position.set(0, 0, -10); // 10 units away
+
+        meshLevel0 = new THREE.Mesh(new THREE.SphereGeometry(2, 32, 32)); // High poly
+        meshLevel1 = new THREE.Mesh(new THREE.SphereGeometry(2, 8, 8));   // Low poly
+
+        lod.registerObject(root, {
+            enabled: true,
+            levels: [
+                { distance: 0, object: meshLevel0 },   // from 0 to 49
+                { distance: 50, object: meshLevel1 },  // from 50 to infinity
+            ]
+        });
+    });
+
+    it('makes closest level visible initially', () => {
+        lod.update();
+        expect(meshLevel0.visible).toBe(true);
+        expect(meshLevel1.visible).toBe(false);
+    });
+
+    it('switches to lower detail level when moving camera away', () => {
+        camera.position.set(0, 0, 100); // 110 units away from root
+        lod.update();
+        expect(meshLevel0.visible).toBe(false);
+        expect(meshLevel1.visible).toBe(true);
+    });
+
+    it('adds level meshes as children of root if they are not already', () => {
+        expect(meshLevel0.parent).toBe(root);
+        expect(meshLevel1.parent).toBe(root);
+    });
+});
+
+// ============================================================
+// EventManager
+// ============================================================
+
+describe('EventManager (Batching)', () => {
+    let sg: any;
+    beforeEach(() => {
+        sg = makeSpaceGraph();
+        vi.useFakeTimers();
+        vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb: FrameRequestCallback) => {
+            return setTimeout(() => cb(Date.now()), 16) as any;
+        });
+        vi.spyOn(window, 'cancelAnimationFrame').mockImplementation((id: number) => {
+            clearTimeout(id);
+        });
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+        vi.useRealTimers();
+    });
+
+    it('emits standard events instantly', () => {
+        const spy = vi.fn();
+        sg.events.on('node:added', spy);
+
+        sg.events.emit('node:added', { node: { id: 'test' } });
+        expect(spy).toHaveBeenCalledTimes(1);
+    });
+
+    it('batches high-frequency events to RAF', () => {
+        const spy = vi.fn();
+        sg.events.on('interaction:dragstart', spy);
+
+        sg.events.emitBatched('interaction:dragstart', { node: { id: '1' } });
+        sg.events.emitBatched('interaction:dragstart', { node: { id: '2' } });
+        sg.events.emitBatched('interaction:dragstart', { node: { id: '3' } });
+
+        // Has not fired yet
+        expect(spy).not.toHaveBeenCalled();
+
+        // Fast-forward to trigger RAF (simulated with setTimeout)
+        vi.advanceTimersByTime(20);
+
+        // Should only have fired ONCE with the the LAST payload
+        expect(spy).toHaveBeenCalledTimes(1);
+        expect(spy).toHaveBeenCalledWith({ node: { id: '3' } });
     });
 });

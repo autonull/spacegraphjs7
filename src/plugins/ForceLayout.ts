@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { ObjectPoolManager } from '../utils/ObjectPoolManager';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { ISpaceGraphPlugin } from '../types';
 import type { Node } from '../nodes/Node';
@@ -42,29 +43,42 @@ export class ForceLayout implements ISpaceGraphPlugin {
       for (let j = i + 1; j < nodes.length; j++) {
         const n1 = nodes[i];
         const n2 = nodes[j];
-        const diff = new THREE.Vector3().subVectors(n1.position, n2.position);
+
+        const diff = ObjectPoolManager.getInstance().acquireVector3();
+        diff.subVectors(n1.position, n2.position);
         const distSq = diff.lengthSq() || 1;
 
         if (distSq < 100000) {
-            const force = this.settings.repulsion / distSq;
-            const dir = diff.normalize().multiplyScalar(force);
+          const force = this.settings.repulsion / distSq;
+          const dir = ObjectPoolManager.getInstance().acquireVector3();
+          dir.copy(diff).normalize().multiplyScalar(force);
 
-            this.velocity.get(n1.id)?.add(dir);
-            this.velocity.get(n2.id)?.sub(dir);
+          this.velocity.get(n1.id)?.add(dir);
+          this.velocity.get(n2.id)?.sub(dir);
+          ObjectPoolManager.getInstance().releaseVector3(dir);
         }
+        ObjectPoolManager.getInstance().releaseVector3(diff);
       }
     }
 
     for (const edge of edges) {
       const n1 = edge.source;
       const n2 = edge.target;
-      const diff = new THREE.Vector3().subVectors(n2.position, n1.position);
+
+      const diff = ObjectPoolManager.getInstance().acquireVector3();
+      diff.subVectors(n2.position, n1.position);
+
       const dist = diff.length();
       const force = dist * this.settings.attraction;
-      const dir = diff.normalize().multiplyScalar(force);
+
+      const dir = ObjectPoolManager.getInstance().acquireVector3();
+      dir.copy(diff).normalize().multiplyScalar(force);
 
       this.velocity.get(n1.id)?.add(dir);
       this.velocity.get(n2.id)?.sub(dir);
+
+      ObjectPoolManager.getInstance().releaseVector3(dir);
+      ObjectPoolManager.getInstance().releaseVector3(diff);
     }
 
     for (const node of nodes) {
@@ -75,11 +89,11 @@ export class ForceLayout implements ISpaceGraphPlugin {
         vel.multiplyScalar(this.settings.damping);
 
         if (vel.lengthSq() > 0.01) {
-             node.updatePosition(
-                node.position.x + vel.x,
-                node.position.y + vel.y,
-                node.position.z + vel.z
-            );
+          node.updatePosition(
+            node.position.x + vel.x,
+            node.position.y + vel.y,
+            node.position.z + vel.z
+          );
         }
       }
     }

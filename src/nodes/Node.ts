@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { UnifiedDisposalSystem } from '../utils/UnifiedDisposalSystem';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec } from '../types';
 
@@ -34,9 +35,12 @@ export class Node {
     this.object.position.copy(this.position);
   }
 
+  /**
+   * Cleanly destroy this node and recursively free geometry, materials, and textures
+   * to prevent WebGL context memory leaks.
+   */
   dispose(): void {
-    if (this.object.parent) {
-      this.object.parent.remove(this.object);
-    }
+    this.object.parent?.remove(this.object);
+    UnifiedDisposalSystem.dispose(this.object);
   }
 }

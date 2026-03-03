@@ -2,6 +2,7 @@ import type { SpaceGraph } from '../SpaceGraph';
 import type { ISpaceGraphPlugin } from '../types';
 import type { Node } from '../nodes/Node';
 import * as THREE from 'three';
+import { ObjectPoolManager } from '../utils/ObjectPoolManager';
 
 /**
  * PhysicsPlugin — Verlet-based 2-D physics stub.
@@ -57,7 +58,7 @@ export class PhysicsPlugin implements ISpaceGraphPlugin {
             }
 
             const prev = this.prev.get(node.id)!;
-            const cur = node.position.clone();
+            const cur = node.position;
 
             // Verlet: newPos = 2*cur - prev + accel * dt²
             const vx = (cur.x - prev.x) * this.settings.damping;
@@ -74,7 +75,7 @@ export class PhysicsPlugin implements ISpaceGraphPlugin {
                 prev.y = ny; // absorb bounce (simple inelastic)
             }
 
-            this.prev.set(node.id, cur);
+            prev.copy(cur);
             node.updatePosition(nx, ny, nz);
         }
 

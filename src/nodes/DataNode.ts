@@ -126,7 +126,10 @@ export class DataNode extends Node {
             // Rebuild DOM in-place
             const oldDom = this.domElement;
             const parent = oldDom.parentNode;
-            const newDom = this._buildDOM({ ...this, data: { ...this.data, ...updates.data }, label: updates.label ?? this.label });
+            const newDom = this._buildDOM({
+                data: { ...this.data, ...updates.data },
+                label: updates.label ?? this.label
+            });
             if (parent) parent.replaceChild(newDom, oldDom);
             (this.cssObject as any).element = newDom;
             (this as any).domElement = newDom;

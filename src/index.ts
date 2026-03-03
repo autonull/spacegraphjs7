@@ -30,6 +30,9 @@ export { DataNode } from './nodes/DataNode';
 export { VideoNode } from './nodes/VideoNode';
 export { IFrameNode } from './nodes/IFrameNode';
 export { ChartNode } from './nodes/ChartNode';
+export { MarkdownNode } from './nodes/MarkdownNode';
+export { GlobeNode } from './nodes/GlobeNode';
+export { SceneNode } from './nodes/SceneNode';
 
 // Edges
 export { Edge } from './edges/Edge';

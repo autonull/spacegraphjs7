@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { UnifiedDisposalSystem } from '../utils/UnifiedDisposalSystem';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { EdgeSpec } from '../types';
 import type { Node } from '../nodes/Node';
@@ -45,12 +46,7 @@ export class Edge {
   }
 
   dispose(): void {
-    if (this.object.parent) {
-      this.object.parent.remove(this.object);
-    }
-    this.geometry.dispose();
-    if (this.object.material) {
-      (this.object.material as THREE.Material).dispose();
-    }
+    this.object.parent?.remove(this.object);
+    UnifiedDisposalSystem.dispose(this.object);
   }
 }
