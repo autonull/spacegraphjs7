@@ -36,9 +36,9 @@ export async function runVisionAnalysis(outputDir: string): Promise<VisionReport
 
         let serverProcess;
         try {
-            // Start a static file server to host the built output
+            // Start Vite dev server to host the fixture and resolve bare module imports automatically
             console.log(`[Vision] Starting static server for ${outputDir}...`);
-            serverProcess = spawn('npx', ['http-server', outputDir, '-p', '5175', '-c-1'], {
+            serverProcess = spawn('npx', ['vite', 'serve', outputDir, '--port', '5175', '--strictPort', '--no-open'], {
                 stdio: 'ignore',
             });
             await new Promise((resolve) => setTimeout(resolve, 2000)); // wait for server to start
@@ -53,6 +53,9 @@ export async function runVisionAnalysis(outputDir: string): Promise<VisionReport
                         console.log(`[Browser] ${msg.type()}: ${msg.text()}`),
                     );
                     page.on('pageerror', (err) => console.error(`[Browser Error] ${err.message}`));
+                    page.on('requestfailed', request =>
+                        console.error(`[Browser] Request failed: ${request.url()} (${request.failure()?.errorText})`)
+                    );
 
                     await page.goto(url, { waitUntil: 'networkidle', timeout: 10000 });
 

@@ -1,0 +1,14 @@
+{
+    "entryPoints": [
+        "src/index.ts",
+        "src/SpaceGraph.ts",
+        "src/vision/index.ts"
+    ],
+    "out": "docs",
+    "name": "SpaceGraphJS API Documentation",
+    "excludePrivate": true,
+    "excludeProtected": true,
+    "excludeInternal": true,
+    "readme": "README.md",
+    "plugin": []
+}
