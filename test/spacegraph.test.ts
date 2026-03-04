@@ -31,6 +31,7 @@ import { RadialLayout } from '../src/plugins/RadialLayout';
 import { PhysicsPlugin } from '../src/plugins/PhysicsPlugin';
 import { ErgonomicsPlugin } from '../src/plugins/ErgonomicsPlugin';
 import { CameraControls } from '../src/core/CameraControls';
+import { VisionManager } from '../src/core/VisionManager';
 
 // ---------------------------------------------------------------------------
 // Lightweight mock SpaceGraph — no browser APIs, no WebGL required
@@ -41,7 +42,30 @@ function makeSpaceGraph() {
         remove: vi.fn(),
         background: new THREE.Color(0x1a1a2e),
     };
-    const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 10000);
+    const camera = { position: new THREE.Vector3(), lookAt: vi.fn(), _mock: true };
+
+    const listeners = new Map<string, any[]>();
+    const domElement = {
+        getBoundingClientRect: () => ({ left: 0, top: 0, width: 800, height: 600 }),
+        addEventListener: (type: string, fn: any) => {
+            if (!listeners.has(type)) listeners.set(type, []);
+            listeners.get(type)!.push(fn);
+        },
+        removeEventListener: (type: string, fn: any) => {
+            if (listeners.has(type)) {
+                const arr = listeners.get(type)!;
+                const idx = arr.indexOf(fn);
+                if (idx > -1) arr.splice(idx, 1);
+            }
+        },
+        dispatchEvent: (event: any) => {
+            // Simplified synchronous dispatch
+            if (listeners.has(event.type)) {
+                listeners.get(event.type)!.forEach(fn => fn(event));
+            }
+            return true;
+        }
+    };
     camera.position.set(0, 0, 500);
 
     const events = {
@@ -129,7 +153,7 @@ function makeSpaceGraph() {
         getEdgeType: (name: string) => edgeTypeRegistry.get(name),
     };
 
-    sg = { renderer: { scene, camera }, graph, events, pluginManager, poolManager };
+    sg = { renderer: { scene, camera, renderer: { domElement } }, graph, events, pluginManager, poolManager };
     return sg;
 }
 
@@ -1158,5 +1182,65 @@ describe('CameraControls (Multi-touch)', () => {
             { id: 1, x: 150, y: 100 },
             { id: 2, x: 250, y: 100 }
         ]);
+    });
+});
+
+describe('VisionManager Auto-Correction Loop', () => {
+    let sg: any;
+    let visionManager: any;
+    let autoLayout: any;
+
+    beforeEach(() => {
+        sg = makeSpaceGraph();
+
+        // Setup AutoLayoutPlugin mock
+        autoLayout = {
+            id: 'auto-layout',
+            applyVisionCorrection: vi.fn()
+        };
+        sg.pluginManager.register('auto-layout', autoLayout);
+
+        // Mount nodes that overlap so the heuristic triggers
+        const n1 = sg.graph.addNode({ id: 'v1', type: 'ShapeNode', position: [0, 0, 0] });
+        const n2 = sg.graph.addNode({ id: 'v2', type: 'ShapeNode', position: [1, 1, 0] }); // highly overlapped
+
+        // Mock frustum intersection math to pretend they are in view
+        sg.renderer.camera.updateMatrixWorld = vi.fn();
+        sg.renderer.camera.matrixWorld = new THREE.Matrix4();
+        sg.renderer.camera.matrixWorldInverse = new THREE.Matrix4();
+        sg.renderer.camera.projectionMatrix = new THREE.Matrix4();
+
+        THREE.Frustum.prototype.containsPoint = vi.fn().mockReturnValue(true);
+        // Force nodes to register as overlapping regardless of physical mock geometry
+        THREE.Box3.prototype.intersectsBox = vi.fn().mockReturnValue(true);
+
+        sg.visionManager = new VisionManager(sg);
+
+        vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+        if (sg.visionManager) sg.visionManager.stopAutonomousCorrection();
+        vi.restoreAllMocks();
+        vi.useRealTimers();
+    });
+
+    it('periodically polls analyzeVision and fires autoLayout fixes', async () => {
+        // Start loop every 10 seconds
+        sg.visionManager.startAutonomousCorrection(10000);
+
+        // Should not have fired yet
+        expect(autoLayout.applyVisionCorrection).not.toHaveBeenCalled();
+
+        // Fast forward time and flush all resulting promises queued by the interval
+        await vi.advanceTimersByTimeAsync(11000);
+
+        expect(autoLayout.applyVisionCorrection).toHaveBeenCalledTimes(1);
+
+        // Verify it passed the right issue format
+        const args = autoLayout.applyVisionCorrection.mock.calls[0][0];
+        expect(args[0].type).toBe('overlap');
+        expect(args[0].nodeA).toBe('v1');
+        expect(args[0].nodeB).toBe('v2');
     });
 });

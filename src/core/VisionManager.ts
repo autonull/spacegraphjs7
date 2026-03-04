@@ -18,6 +18,7 @@ export interface VisionReport {
 export class VisionManager {
     private sg: SpaceGraph;
     private isAnalyzing: boolean = false;
+    private autonomousTimer: any = null;
 
     constructor(sg: SpaceGraph) {
         this.sg = sg;
@@ -214,6 +215,48 @@ export class VisionManager {
                     console.warn('[VisionManager] No suitable layout plugin found to perform autoFix.');
                 }
             }
+        }
+    }
+
+    /**
+     * The Vision-Closed loop: periodically analyzes the view and triggers
+     * plugins to correct aesthetic/layout issues autonomously.
+     */
+    public startAutonomousCorrection(intervalMs: number = 30000): void {
+        if (this.autonomousTimer) {
+            this.stopAutonomousCorrection();
+        }
+
+        console.log(`[VisionManager] Starting autonomous correction loop (interval: ${intervalMs}ms)`);
+
+        this.autonomousTimer = setInterval(async () => {
+            try {
+                const report = await this.analyzeVision();
+
+                // If overlaps exist, trigger AutoLayoutPlugin to fix them
+                if (report.overlap.overlaps.length > 0) {
+                    const autoLayout = this.sg.pluginManager.getPlugin('auto-layout') as any;
+                    if (autoLayout && typeof autoLayout.applyVisionCorrection === 'function') {
+                        // Pass simulated 'overlap' typed issues to the plugin
+                        const formattedIssues = report.overlap.overlaps.map(o => ({
+                            type: 'overlap',
+                            nodeA: o.nodeA,
+                            nodeB: o.nodeB
+                        }));
+                        autoLayout.applyVisionCorrection(formattedIssues);
+                    }
+                }
+            } catch (err) {
+                console.error('[VisionManager] Autonomous loop error: ', err);
+            }
+        }, intervalMs);
+    }
+
+    public stopAutonomousCorrection(): void {
+        if (this.autonomousTimer) {
+            clearInterval(this.autonomousTimer);
+            this.autonomousTimer = null;
+            console.log('[VisionManager] Stopped autonomous correction loop');
         }
     }
 }
