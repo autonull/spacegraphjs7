@@ -30,6 +30,7 @@ import { RadialLayout } from '../src/plugins/RadialLayout';
 // Extended plugins
 import { PhysicsPlugin } from '../src/plugins/PhysicsPlugin';
 import { ErgonomicsPlugin } from '../src/plugins/ErgonomicsPlugin';
+import { CameraControls } from '../src/core/CameraControls';
 
 // ---------------------------------------------------------------------------
 // Lightweight mock SpaceGraph — no browser APIs, no WebGL required
@@ -69,7 +70,9 @@ function makeSpaceGraph() {
     };
 
     const nodeTypeRegistry = new Map<string, any>();
+    nodeTypeRegistry.set('ShapeNode', ShapeNode); // pre-register for tests
     const edgeTypeRegistry = new Map<string, any>();
+    edgeTypeRegistry.set('Edge', Edge);
     const pluginRegistry = new Map<string, any>();
 
     const poolManager = {
@@ -687,8 +690,21 @@ describe('ErgonomicsPlugin', () => {
     it('increments totalInteractions on node:drag event', () => {
         const p = new ErgonomicsPlugin();
         p.init(sg);
-        sg.events.emit('node:drag');
-        sg.events.emit('node:drag');
+
+        const node = sg.graph.addNode({ id: 'test1', type: 'ShapeNode', position: [0, 0, 0] });
+
+        sg.events.emit('interaction:dragstart', { node });
+        sg.events.emit('interaction:drag', { node });
+        node.position.x = 10;
+        sg.events.emit('interaction:drag', { node });
+        sg.events.emit('interaction:dragend', { node });
+
+        sg.events.emit('interaction:dragstart', { node });
+        sg.events.emit('interaction:drag', { node });
+        node.position.x = 20;
+        sg.events.emit('interaction:drag', { node });
+        sg.events.emit('interaction:dragend', { node });
+
         expect(p.metrics.totalInteractions).toBe(2);
     });
 
@@ -696,7 +712,14 @@ describe('ErgonomicsPlugin', () => {
         const p = new ErgonomicsPlugin();
         p.init(sg);
         const m1 = p.getMetrics();
-        sg.events.emit('node:drag');
+
+        const node = sg.graph.addNode({ id: 'test2', type: 'ShapeNode', position: [0, 0, 0] });
+        sg.events.emit('interaction:dragstart', { node });
+        sg.events.emit('interaction:drag', { node });
+        node.position.x = 10;
+        sg.events.emit('interaction:drag', { node });
+        sg.events.emit('interaction:dragend', { node });
+
         const m2 = p.getMetrics();
         expect(m1.totalInteractions).toBe(0);
         expect(m2.totalInteractions).toBe(1);
@@ -870,5 +893,270 @@ describe('EventManager (Batching)', () => {
         // Should only have fired ONCE with the the LAST payload
         expect(spy).toHaveBeenCalledTimes(1);
         expect(spy).toHaveBeenCalledWith({ node: { id: '3' } });
+    });
+});
+
+// ============================================================
+// Phase 4: Physics & Ergonomics Plugins
+// ============================================================
+
+describe('PhysicsPlugin', () => {
+    let sg: any;
+    let physics: PhysicsPlugin;
+
+    beforeEach(() => {
+        sg = makeSpaceGraph();
+        physics = new PhysicsPlugin();
+        physics.init(sg);
+        physics.settings.enabled = true;
+        physics.settings.gravity = 0; // Turn off gravity for isolated test
+        sg.pluginManager.register('PhysicsPlugin', physics);
+    });
+
+    it('resolves Hookes Law spring constraints between connected nodes', () => {
+        const n1 = sg.graph.addNode({ id: '1', type: 'ShapeNode', position: [0, 0, 0] });
+        const n2 = sg.graph.addNode({ id: '2', type: 'ShapeNode', position: [1000, 0, 0] }); // Far apart
+        sg.graph.addEdge({ id: 'e', source: '1', target: '2', type: 'Edge' });
+
+        physics.settings.springStiffness = 0.5;
+        physics.settings.springRestLength = 100;
+        physics.settings.collide = false;
+        physics.settings.repulsion = 0;
+
+        // Step physics forward 1 frame
+        physics.onPreRender(0.016);
+
+        // Nodes should have pulled towards each other because 1000 > rest length 100
+        expect(n1.position.x).toBeGreaterThan(0);
+        expect(n2.position.x).toBeLessThan(1000);
+    });
+
+    it('resolves node overlap collisions', () => {
+        const n1 = sg.graph.addNode({ id: '1', type: 'ShapeNode', position: [0, 0, 0] });
+        const n2 = sg.graph.addNode({ id: '2', type: 'ShapeNode', position: [10, 0, 0] }); // Inside collision radius
+
+        physics.settings.collide = true;
+        physics.settings.collisionRadius = 20; // Needs 40 units distance (20*2)
+        physics.settings.springStiffness = 0;
+        physics.settings.repulsion = 0;
+
+        physics.onPreRender(0.016);
+
+        // Should have pushed away from each other
+        expect(n1.position.x).toBeLessThan(0);
+        expect(n2.position.x).toBeGreaterThan(10);
+
+        // Final distance should be exactly the required 40 (20 * 2) if 1 pass is enough
+        const finalDist = n1.position.distanceTo(n2.position);
+        expect(finalDist).toBeCloseTo(40, 0); // Precision 0 decimal point
+    });
+});
+
+describe('ErgonomicsPlugin', () => {
+    let sg: any;
+    let ergo: ErgonomicsPlugin;
+
+    beforeEach(() => {
+        sg = makeSpaceGraph();
+        ergo = new ErgonomicsPlugin();
+        ergo.init(sg);
+        sg.pluginManager.register('ErgonomicsPlugin', ergo);
+
+        vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+        vi.useRealTimers();
+    });
+
+    it('tracks efficiency during a straight line drag', () => {
+        const node = sg.graph.addNode({ id: '1', type: 'ShapeNode', position: [0, 0, 0] });
+
+        sg.events.emit('interaction:dragstart', { node });
+
+        // Move in a perfect straight line
+        node.position.set(10, 0, 0);
+        sg.events.emit('interaction:drag', { node });
+
+        node.position.set(20, 0, 0);
+        sg.events.emit('interaction:drag', { node });
+
+        sg.events.emit('interaction:dragend', { node });
+
+        const metrics = ergo.getMetrics();
+        expect(metrics.totalInteractions).toBe(1);
+
+        // The exponential moving avg incorporates the default 1.0 baseline
+        // Since the line was perfectly straight, the Session efficiency is 1.0. 
+        // 1.0 blended into 1.0 is 1.0.
+        expect(metrics.avgEfficiency).toBeCloseTo(1.0, 3);
+        expect(metrics.avgJitter).toBe(0);
+    });
+
+    it('registers jitter and lower efficiency during zig-zag drags', () => {
+        const node = sg.graph.addNode({ id: '2', type: 'ShapeNode', position: [0, 0, 0] });
+
+        sg.events.emit('interaction:dragstart', { node });
+
+        // Zig Zag dragging
+        node.position.set(10, 10, 0);
+        sg.events.emit('interaction:drag', { node });
+        vi.advanceTimersByTime(50);
+
+        node.position.set(20, -10, 0); // Sharp reversal in Y vector
+        sg.events.emit('interaction:drag', { node });
+        vi.advanceTimersByTime(50);
+
+        node.position.set(30, 10, 0); // Sharp reversal in Y vector
+        sg.events.emit('interaction:drag', { node });
+        vi.advanceTimersByTime(50);
+
+        sg.events.emit('interaction:dragend', { node });
+
+        const metrics = ergo.getMetrics();
+        expect(metrics.totalInteractions).toBe(1);
+
+        // Efficency should be pulled down below 1.0
+        expect(metrics.avgEfficiency).toBeLessThan(1.0);
+
+        // Jitter should be > 0 because of the sharp reversing directions
+        expect(metrics.avgJitter).toBeGreaterThan(0);
+    });
+
+    it('runs a CalibrationRound A/B test and selects the best variant', () => {
+        const configA = { dampingFactor: 0.1 };
+        const configB = { dampingFactor: 0.9 }; // Much smoother theoretically
+        ergo.startCalibrationRound(configA, configB, 2); // only require 2 interactions
+
+        expect(ergo.calibrating).toBe(true);
+        expect(ergo.config.dampingFactor).toBe(0.1);
+
+        const node = sg.graph.addNode({ id: 'calib', type: 'ShapeNode', position: [0, 0, 0] });
+
+        // 1. Simulate poor interactions under Config A (lots of jitter)
+        for (let i = 0; i < 2; i++) {
+            sg.events.emit('interaction:dragstart', { node });
+            sg.events.emit('interaction:drag', { node });
+            node.position.set(10, 10, 0);
+            sg.events.emit('interaction:drag', { node });
+            node.position.set(20, -10, 0); // Jitter
+            sg.events.emit('interaction:drag', { node });
+            sg.events.emit('interaction:dragend', { node });
+        }
+
+        // Trigger interval check
+        vi.advanceTimersByTime(1100);
+
+        // Should now be on Config B
+        expect(ergo.config.dampingFactor).toBe(0.9);
+
+        // 2. Simulate great interactions under Config B (straight lines)
+        for (let i = 0; i < 2; i++) {
+            sg.events.emit('interaction:dragstart', { node });
+            sg.events.emit('interaction:drag', { node });
+            node.position.set(100, 0, 0);
+            sg.events.emit('interaction:drag', { node });
+            node.position.set(200, 0, 0); // Straight
+            sg.events.emit('interaction:drag', { node });
+            sg.events.emit('interaction:dragend', { node });
+        }
+
+        // Trigger interval check
+        vi.advanceTimersByTime(1100);
+
+        // Calibration should be finished and B should have won due to no jitter
+        // Calibration should be finished and B should have won due to no jitter
+        expect(ergo.calibrating).toBe(false);
+        expect(ergo.config.dampingFactor).toBe(0.9);
+    });
+});
+
+describe('CameraControls (Multi-touch)', () => {
+    let sg: any;
+    let canvas: any;
+
+    // Helper to simulate touch events
+    const fireTouch = (type: string, touches: { id: number, x: number, y: number }[]) => {
+        const event = new Event(type) as any;
+        event.changedTouches = touches.map(t => ({
+            identifier: t.id,
+            clientX: t.x,
+            clientY: t.y
+        }));
+        event.preventDefault = vi.fn();
+        canvas.dispatchEvent(event);
+        return event;
+    };
+
+    beforeEach(() => {
+        sg = makeSpaceGraph();
+        canvas = sg.renderer.renderer.domElement;
+
+        // We have to mock the camera matrix for the pan math
+        sg.renderer.camera.matrix = new THREE.Matrix4();
+
+        // SpaceGraph auto-initializes CameraControls in its constructor usually,
+        // but our mock doesn't. We initialize it here manually.
+        sg.cameraControls = new CameraControls(sg);
+    });
+
+    it('handles 1-finger rotate', () => {
+        fireTouch('touchstart', [{ id: 1, x: 0, y: 0 }]);
+        expect((sg.cameraControls as any).isDragging).toBe(true);
+        expect((sg.cameraControls as any).dragMode).toBe('rotate');
+
+        fireTouch('touchmove', [{ id: 1, x: 100, y: 0 }]);
+
+        // Theta should change due to velocity
+        expect((sg.cameraControls as any).spherical.theta).not.toBe(0);
+
+        fireTouch('touchend', [{ id: 1, x: 100, y: 0 }]);
+        expect((sg.cameraControls as any).isDragging).toBe(false);
+    });
+
+    it('handles 2-finger pinch-to-zoom spreading (zoom in)', () => {
+        fireTouch('touchstart', [
+            { id: 1, x: 100, y: 100 },
+            { id: 2, x: 200, y: 200 }
+        ]);
+
+        expect((sg.cameraControls as any).isDragging).toBe(true);
+        expect((sg.cameraControls as any).dragMode).toBe('pan');
+
+        const initialRadius = (sg.cameraControls as any).spherical.radius; // usually 500
+
+        // Spread fingers further apart (100 -> 0, 200 -> 300)
+        fireTouch('touchmove', [
+            { id: 1, x: 0, y: 0 },
+            { id: 2, x: 300, y: 300 }
+        ]);
+
+        // Radius should decrease because spreading fingers = zoom in
+        const newRadius = (sg.cameraControls as any).spherical.radius;
+        expect(newRadius).toBeLessThan(initialRadius);
+    });
+
+    it('handles 2-finger panning (moving together)', () => {
+        fireTouch('touchstart', [
+            { id: 1, x: 100, y: 100 },
+            { id: 2, x: 200, y: 100 }
+        ]);
+
+        const initialTargetX = (sg.cameraControls as any).target.x;
+
+        // Move both fingers right
+        fireTouch('touchmove', [
+            { id: 1, x: 150, y: 100 },
+            { id: 2, x: 250, y: 100 }
+        ]);
+
+        const newTargetX = (sg.cameraControls as any).target.x;
+        expect(newTargetX).not.toBe(initialTargetX);
+
+        fireTouch('touchend', [
+            { id: 1, x: 150, y: 100 },
+            { id: 2, x: 250, y: 100 }
+        ]);
     });
 });
