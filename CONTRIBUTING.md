@@ -38,6 +38,7 @@ npm run vision
 Issues labeled [`good first issue`](https://github.com/autonull/spacegraphjs/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) are perfect for newcomers.
 
 **Current examples:**
+
 - Add example demo for HtmlNode
 - Write TypeDoc comments for NodePlugin
 - Fix typo in QUICKSTART.md
@@ -64,6 +65,7 @@ git checkout -b fix/issue-123
 ```
 
 **Branch naming:**
+
 - `feature/` for new features
 - `fix/` for bug fixes
 - `docs/` for documentation
@@ -119,6 +121,7 @@ Closes #42"
 ```
 
 **Commit message format:**
+
 ```
 feat: add new feature
 fix: fix bug in X
@@ -152,7 +155,7 @@ refactor: improve Z performance
  * @returns The created node instance
  */
 export function createNode(config: NodeConfig): Node {
-  // Implementation
+    // Implementation
 }
 ```
 
@@ -184,18 +187,18 @@ import { describe, it, expect } from 'vitest';
 import { createNode } from '../src/node';
 
 describe('createNode', () => {
-  it('creates a ShapeNode by default', () => {
-    const node = createNode({ id: 'test', label: 'Test' });
-    expect(node.type).toBe('ShapeNode');
-  });
-
-  it('creates nodes with correct position', () => {
-    const node = createNode({
-      id: 'test',
-      position: [100, 200, 0],
+    it('creates a ShapeNode by default', () => {
+        const node = createNode({ id: 'test', label: 'Test' });
+        expect(node.type).toBe('ShapeNode');
     });
-    expect(node.position).toEqual([100, 200, 0]);
-  });
+
+    it('creates nodes with correct position', () => {
+        const node = createNode({
+            id: 'test',
+            position: [100, 200, 0],
+        });
+        expect(node.position).toEqual([100, 200, 0]);
+    });
 });
 ```
 
@@ -207,17 +210,17 @@ import { describe, it, expect } from 'vitest';
 import { visionAssert } from '../src/vision/test';
 
 describe('Overlap Detection', () => {
-  it('detects overlapping nodes', async () => {
-    const graph = createTestGraph({
-      nodes: [
-        { id: 'a', position: [0, 0, 0] },
-        { id: 'b', position: [5, 0, 0] }, // Overlaps with 'a'
-      ],
+    it('detects overlapping nodes', async () => {
+        const graph = createTestGraph({
+            nodes: [
+                { id: 'a', position: [0, 0, 0] },
+                { id: 'b', position: [5, 0, 0] }, // Overlaps with 'a'
+            ],
+        });
+
+        const report = await visionAssert.analyze(graph);
+        expect(report.overlaps).toHaveLength(1);
     });
-    
-    const report = await visionAssert.analyze(graph);
-    expect(report.overlaps).toHaveLength(1);
-  });
 });
 ```
 
@@ -228,14 +231,14 @@ describe('Overlap Detection', () => {
 import { test, expect } from '@playwright/test';
 
 test('renders basic graph', async ({ page }) => {
-  await page.goto('http://localhost:5173/examples/basic');
-  
-  // Wait for canvas
-  await page.waitForSelector('canvas');
-  
-  // Take screenshot
-  const screenshot = await page.screenshot();
-  expect(screenshot).toMatchSnapshot('basic-graph.png');
+    await page.goto('http://localhost:5173/examples/basic');
+
+    // Wait for canvas
+    await page.waitForSelector('canvas');
+
+    // Take screenshot
+    const screenshot = await page.screenshot();
+    expect(screenshot).toMatchSnapshot('basic-graph.png');
 });
 ```
 
@@ -247,10 +250,10 @@ test('renders basic graph', async ({ page }) => {
 
 All public APIs must have TypeDoc comments:
 
-```typescript
+````typescript
 /**
  * SpaceGraph main class.
- * 
+ *
  * @example
  * ```typescript
  * const graph = SpaceGraph.create('#container', {
@@ -261,21 +264,22 @@ All public APIs must have TypeDoc comments:
  * ```
  */
 export class SpaceGraph {
-  /**
-   * Create a new SpaceGraph instance.
-   * @param container - Container element or selector
-   * @param spec - Graph specification
-   * @returns SpaceGraph instance
-   */
-  static create(container: string | HTMLElement, spec: GraphSpec): SpaceGraph {
-    // Implementation
-  }
+    /**
+     * Create a new SpaceGraph instance.
+     * @param container - Container element or selector
+     * @param spec - Graph specification
+     * @returns SpaceGraph instance
+     */
+    static create(container: string | HTMLElement, spec: GraphSpec): SpaceGraph {
+        // Implementation
+    }
 }
-```
+````
 
 ### README Updates
 
 Update README.md when:
+
 - Adding new features
 - Changing APIs
 - Adding examples
@@ -303,10 +307,10 @@ Contributing to vision models requires ML background.
 import { VisionCheck } from './types';
 
 export const newCheck: VisionCheck = {
-  name: 'new-check',
-  async analyze(frameBuffer: FrameBuffer): Promise<CheckReport> {
-    // Analysis logic
-  },
+    name: 'new-check',
+    async analyze(frameBuffer: FrameBuffer): Promise<CheckReport> {
+        // Analysis logic
+    },
 };
 ```
 

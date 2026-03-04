@@ -23,7 +23,7 @@ export class NoteNode extends Node {
         super(sg, spec);
 
         const color = spec.data?.color ?? '#fef08a';
-        const text = spec.data?.text ?? (spec.label ?? '');
+        const text = spec.data?.text ?? spec.label ?? '';
         const w = spec.data?.width ?? 200;
         const h = spec.data?.height ?? 160;
         const editable = spec.data?.editable !== false;

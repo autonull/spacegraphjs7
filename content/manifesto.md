@@ -3,6 +3,7 @@
 ## The Broken Loop
 
 We've all lived it:
+
 1. Describe what you want to AI
 2. AI generates code
 3. You run it — it's wrong
@@ -22,6 +23,7 @@ Measure quality. Detect issues. Self-correct.
 ## Vision-Closed Development
 
 SpaceGraphJS embeds AI vision at every layer:
+
 - LQ-Net evaluates layout quality
 - TLA ensures text is legible
 - ODN detects overlapping elements

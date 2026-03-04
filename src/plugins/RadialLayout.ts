@@ -49,7 +49,7 @@ export class RadialLayout implements ISpaceGraphPlugin {
         // Pick root
         let rootId = this.settings.rootId;
         if (!rootId || !nodeMap.has(rootId)) {
-            rootId = [...nodeMap.keys()].find(id => !hasParent.has(id)) ?? [...nodeMap.keys()][0];
+            rootId = [...nodeMap.keys()].find((id) => !hasParent.has(id)) ?? [...nodeMap.keys()][0];
         }
 
         // Place root at center
@@ -57,18 +57,25 @@ export class RadialLayout implements ISpaceGraphPlugin {
         root.updatePosition(0, 0, this.settings.z);
 
         // BFS with angular sector allocation
-        interface QueueItem { id: string; depth: number; minAngle: number; maxAngle: number; }
-        const queue: QueueItem[] = [{
-            id: rootId,
-            depth: 0,
-            minAngle: this.settings.startAngle,
-            maxAngle: this.settings.startAngle + 2 * Math.PI,
-        }];
+        interface QueueItem {
+            id: string;
+            depth: number;
+            minAngle: number;
+            maxAngle: number;
+        }
+        const queue: QueueItem[] = [
+            {
+                id: rootId,
+                depth: 0,
+                minAngle: this.settings.startAngle,
+                maxAngle: this.settings.startAngle + 2 * Math.PI,
+            },
+        ];
         const visited = new Set<string>([rootId]);
 
         while (queue.length) {
             const { id, depth, minAngle, maxAngle } = queue.shift()!;
-            const nodeChildren = (children.get(id) ?? []).filter(c => !visited.has(c));
+            const nodeChildren = (children.get(id) ?? []).filter((c) => !visited.has(c));
             if (!nodeChildren.length) continue;
 
             const angleStep = (maxAngle - minAngle) / nodeChildren.length;
@@ -90,15 +97,19 @@ export class RadialLayout implements ISpaceGraphPlugin {
         }
 
         // Orphan nodes in outer ring
-        const orphans = [...nodeMap.keys()].filter(id => !visited.has(id));
-        const outerR = this.settings.baseRadius + (nodeMap.size) * this.settings.radiusStep;
+        const orphans = [...nodeMap.keys()].filter((id) => !visited.has(id));
+        const outerR = this.settings.baseRadius + nodeMap.size * this.settings.radiusStep;
         orphans.forEach((id, i) => {
-            const angle = (2 * Math.PI / Math.max(orphans.length, 1)) * i;
-            (nodeMap.get(id) as Node).updatePosition(Math.cos(angle) * outerR, Math.sin(angle) * outerR, this.settings.z);
+            const angle = ((2 * Math.PI) / Math.max(orphans.length, 1)) * i;
+            (nodeMap.get(id) as Node).updatePosition(
+                Math.cos(angle) * outerR,
+                Math.sin(angle) * outerR,
+                this.settings.z,
+            );
         });
 
         for (const edge of edges) edge.update?.();
     }
 
-    onPreRender(_delta: number): void { }
+    onPreRender(_delta: number): void {}
 }

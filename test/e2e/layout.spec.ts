@@ -1,7 +1,6 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('SpaceGraph Layout and Interaction', () => {
-
     test('Demo page loads without console errors and renders canvas', async ({ page }) => {
         const errors: string[] = [];
         page.on('pageerror', (err) => errors.push(err.message));
@@ -22,7 +21,7 @@ test.describe('SpaceGraph Layout and Interaction', () => {
         await page.waitForTimeout(2000);
 
         // We shouldn't see unhandled errors
-        expect(errors.filter(e => !e.includes('favicon'))).toEqual([]);
+        expect(errors.filter((e) => !e.includes('favicon'))).toEqual([]);
     });
 
     test('CSS3D elements are rendered overlaying the canvas', async ({ page }) => {

@@ -10,11 +10,11 @@ Here's how it works: 👇
 
 Traditional AI loops rely on description. You describe, it codes, you describe errors. It's a broken loop that takes 30 minutes.
 
-What if AI could *see* the result?
+What if AI could _see_ the result?
 
 [2/7]
 
-With Vision-Closed Development, you specify, it builds, it *looks* at the layout, measures overlaps and legibility, and automatically corrects itself.
+With Vision-Closed Development, you specify, it builds, it _looks_ at the layout, measures overlaps and legibility, and automatically corrects itself.
 
 All in 30 seconds.
 

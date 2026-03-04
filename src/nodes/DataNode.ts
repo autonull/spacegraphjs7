@@ -128,7 +128,7 @@ export class DataNode extends Node {
             const parent = oldDom.parentNode;
             const newDom = this._buildDOM({
                 data: { ...this.data, ...updates.data },
-                label: updates.label ?? this.label
+                label: updates.label ?? this.label,
             });
             if (parent) parent.replaceChild(newDom, oldDom);
             (this.cssObject as any).element = newDom;

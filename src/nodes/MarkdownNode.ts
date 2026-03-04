@@ -68,7 +68,7 @@ export class MarkdownNode extends Node {
         contentDiv.innerHTML = marked.parse(md) as string;
 
         // Note: In CSS3D we need a backing plane for raycasting
-        const h = Math.max(100, (md.split('\n').length * 20) + 32);
+        const h = Math.max(100, md.split('\n').length * 20 + 32);
         const geo = new THREE.PlaneGeometry(w, h);
         const mat = new THREE.MeshBasicMaterial({ visible: false, side: THREE.DoubleSide });
         this.backing = new THREE.Mesh(geo, mat);

@@ -7,12 +7,14 @@
 ## The Reality: Delays Happen
 
 **Why plans fail:**
+
 - Unrealistic timelines
 - No buffers for the unexpected
 - No celebration of progress
 - Grind mentality vs. flywheel mentality
 
 **Why this plan succeeds:**
+
 - Built-in buffers at every level
 - Flexible milestone tracking
 - Weekly wins celebration
@@ -64,16 +66,16 @@
 
 ### Delay Scenarios & Responses
 
-| Scenario | Probability | Impact | Built-in Response |
-|----------|-------------|--------|-------------------|
-| **Sick day / personal emergency** | 80%/year | 1-3 days | Weekly 30% buffer absorbs |
-| **Critical bug discovered** | 60%/quarter | 2-5 days | Milestone buffer absorbs |
-| **Dependency breaks** | 40%/quarter | 1-3 days | Weekly buffer absorbs |
-| **Scope creep** | 90%/project | 5-10 days | Phase buffer absorbs |
-| **Burnout** | 50%/year | 1-2 weeks | Phase buffer + rest week |
-| **Hardware delay** | 70%/project | 2-4 weeks | Phase C flexible start |
-| **Paper rejection** | 30%/submission | 2-3 months | Resubmit to alternate venue |
-| **Funding rejection** | 50%/application | 1-3 months | Pivot to smaller grants |
+| Scenario                          | Probability     | Impact     | Built-in Response           |
+| --------------------------------- | --------------- | ---------- | --------------------------- |
+| **Sick day / personal emergency** | 80%/year        | 1-3 days   | Weekly 30% buffer absorbs   |
+| **Critical bug discovered**       | 60%/quarter     | 2-5 days   | Milestone buffer absorbs    |
+| **Dependency breaks**             | 40%/quarter     | 1-3 days   | Weekly buffer absorbs       |
+| **Scope creep**                   | 90%/project     | 5-10 days  | Phase buffer absorbs        |
+| **Burnout**                       | 50%/year        | 1-2 weeks  | Phase buffer + rest week    |
+| **Hardware delay**                | 70%/project     | 2-4 weeks  | Phase C flexible start      |
+| **Paper rejection**               | 30%/submission  | 2-3 months | Resubmit to alternate venue |
+| **Funding rejection**             | 50%/application | 1-3 months | Pivot to smaller grants     |
 
 ---
 
@@ -270,15 +272,15 @@ GRACEFUL DEGRADATION:
 
 ### Milestone Celebrations
 
-| Milestone | Celebration | Cost | Impact |
-|-----------|-------------|------|--------|
-| **Day 1: First commit** | Favorite meal | $30 | High (started!) |
-| **Day 7: First render** | Day off | $0 | High (momentum) |
-| **Day 14: Working demo** | Nice dinner + drink | $50 | High (tangible) |
-| **Month 1: npm publish** | Weekend trip | $200 | Very high (launched!) |
-| **Month 3: 100 downloads** | Team dinner | $100 | Medium (validation) |
-| **Month 6: Hardware prototype** | Celebration event | $500 | Very high (real!) |
-| **Month 12: Paper accepted** | Conference trip | $1,000 | Very high (recognition) |
+| Milestone                       | Celebration         | Cost   | Impact                  |
+| ------------------------------- | ------------------- | ------ | ----------------------- |
+| **Day 1: First commit**         | Favorite meal       | $30    | High (started!)         |
+| **Day 7: First render**         | Day off             | $0     | High (momentum)         |
+| **Day 14: Working demo**        | Nice dinner + drink | $50    | High (tangible)         |
+| **Month 1: npm publish**        | Weekend trip        | $200   | Very high (launched!)   |
+| **Month 3: 100 downloads**      | Team dinner         | $100   | Medium (validation)     |
+| **Month 6: Hardware prototype** | Celebration event   | $500   | Very high (real!)       |
+| **Month 12: Paper accepted**    | Conference trip     | $1,000 | Very high (recognition) |
 
 **Rule:** Celebrate every milestone. No exceptions. No "wait until the next one."
 
@@ -523,20 +525,20 @@ GRACEFUL DEGRADATION:
 
 ## Summary: Resilient + Motivational
 
-| Aspect | Mechanism | Effect |
-|--------|-----------|--------|
-| **Delay Resilience** | 50% task buffer | Absorbs daily overruns |
-| **Delay Resilience** | 30% weekly buffer | Absorbs weekly surprises |
-| **Delay Resilience** | Milestone buffers | Absorbs monthly slips |
-| **Delay Resilience** | Phase buffers | Absorbs major setbacks |
-| **Delay Resilience** | Graceful degradation | Launch with reduced scope OK |
-| **Motivation** | Friday win ritual | Weekly celebration |
-| **Motivation** | Milestone celebrations | Major wins recognized |
-| **Motivation** | Progress wall | Visual momentum |
-| **Motivation** | Don't break the chain | Daily consistency |
-| **Motivation** | Monthly community update | External accountability |
-| **Motivation** | Why reminder | Purpose reinforcement |
-| **Motivation** | Burnout prevention | Sustainable pace |
+| Aspect               | Mechanism                | Effect                       |
+| -------------------- | ------------------------ | ---------------------------- |
+| **Delay Resilience** | 50% task buffer          | Absorbs daily overruns       |
+| **Delay Resilience** | 30% weekly buffer        | Absorbs weekly surprises     |
+| **Delay Resilience** | Milestone buffers        | Absorbs monthly slips        |
+| **Delay Resilience** | Phase buffers            | Absorbs major setbacks       |
+| **Delay Resilience** | Graceful degradation     | Launch with reduced scope OK |
+| **Motivation**       | Friday win ritual        | Weekly celebration           |
+| **Motivation**       | Milestone celebrations   | Major wins recognized        |
+| **Motivation**       | Progress wall            | Visual momentum              |
+| **Motivation**       | Don't break the chain    | Daily consistency            |
+| **Motivation**       | Monthly community update | External accountability      |
+| **Motivation**       | Why reminder             | Purpose reinforcement        |
+| **Motivation**       | Burnout prevention       | Sustainable pace             |
 
 ---
 

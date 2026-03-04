@@ -30,14 +30,14 @@ export class CullingManager {
                     node.cssObject.visible = true;
                     // Don't override LOD plugin if it explicitly hides it, but for simple culling we turn it on
                     if (node.domElement.style.display === 'none') {
-                         node.domElement.style.display = 'flex';
+                        node.domElement.style.display = 'flex';
                     }
                 } else {
                     node.cssObject.visible = false;
                     node.domElement.style.display = 'none';
                 }
             } else {
-                 node.object.visible = inFrustum;
+                node.object.visible = inFrustum;
             }
         }
     }

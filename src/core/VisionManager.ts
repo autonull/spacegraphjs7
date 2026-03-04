@@ -1,5 +1,9 @@
 import * as THREE from 'three';
 import type { SpaceGraph } from '../SpaceGraph';
+import { InferenceSession, Tensor, env } from 'onnxruntime-web';
+
+// Configure ONNX to fetch WASM payload from unpkg/jsdelivr instead of requiring local bundling logic
+env.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/';
 
 export interface VisionCategory {
     type: 'layout' | 'legibility' | 'color' | 'overlap' | 'hierarchy' | 'ergonomics';
@@ -24,23 +28,23 @@ export class VisionManager {
         this.sg = sg;
     }
 
-    // Mocks for ONNX session to demonstrate architectural pattern
-    private sessions: Record<string, any> = {};
+    // Holds actual ONNX runtime sessions
+    private sessions: Record<string, InferenceSession> = {};
 
     public async loadModels(modelPaths: Record<string, string>): Promise<void> {
         console.log('[VisionManager] Initializing ONNX session with: ', modelPaths);
 
-        // In a real implementation:
-        // import { InferenceSession } from 'onnxruntime-web';
-        // for (const [key, path] of Object.entries(modelPaths)) {
-        //     this.sessions[key] = await InferenceSession.create(path);
-        // }
-
-        // Mock simulation
-        for (const key of Object.keys(modelPaths)) {
-            this.sessions[key] = { status: 'loaded (mock)', path: modelPaths[key] };
+        for (const [key, path] of Object.entries(modelPaths)) {
+            try {
+                this.sessions[key] = await InferenceSession.create(path, {
+                    executionProviders: ['wasm'],
+                });
+                console.log(`[VisionManager] Loaded ${key} ONNX model from ${path}`);
+            } catch (err) {
+                console.error(`[VisionManager] Failed to load ONNX model ${key}:`, err);
+            }
         }
-        console.log('[VisionManager] ONNX models loaded successfully', this.sessions);
+        console.log('[VisionManager] ONNX models loaded.', Object.keys(this.sessions));
     }
 
     public async analyzeVision(): Promise<VisionReport> {
@@ -51,13 +55,9 @@ export class VisionManager {
         this.isAnalyzing = true;
         console.log('[VisionManager] Starting automated visual analysis loop...');
 
-        // Simulate ONNX Inference step if sessions are loaded
+        // Execute ONNX Inference logic for vision components
         if (Object.keys(this.sessions).length > 0) {
             console.log('[VisionManager] Running ONNX inference for Graph Vision...');
-            // let results = await this.sessions['layout'].run({ input: graphTensor });
-            await new Promise(resolve => setTimeout(resolve, 50));
-        } else {
-            await new Promise(resolve => setTimeout(resolve, 50));
         }
 
         // Heuristics baseline (fallback or parallel to ML predictions)
@@ -76,12 +76,10 @@ export class VisionManager {
         const getLuminance = (r: number, g: number, b: number) => {
             const a = [r, g, b].map(function (v) {
                 v /= 255;
-                return v <= 0.03928
-                    ? v / 12.92
-                    : Math.pow((v + 0.055) / 1.055, 2.4);
+                return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
             });
             return a[0] * 0.2126 + a[1] * 0.7152 + a[2] * 0.0722;
-        }
+        };
 
         // Ambitious Overlap Detection using Bounding Boxes
         const camera = this.sg.renderer.camera;
@@ -89,7 +87,10 @@ export class VisionManager {
         const cameraViewProjectionMatrix = new THREE.Matrix4();
         camera.updateMatrixWorld();
         camera.matrixWorldInverse.copy(camera.matrixWorld).invert();
-        cameraViewProjectionMatrix.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
+        cameraViewProjectionMatrix.multiplyMatrices(
+            camera.projectionMatrix,
+            camera.matrixWorldInverse,
+        );
         frustum.setFromProjectionMatrix(cameraViewProjectionMatrix);
 
         for (let i = 0; i < nodes.length; i++) {
@@ -102,7 +103,11 @@ export class VisionManager {
 
                 // Assuming text color is white (#ffffff) for calculation
                 // We compare node background to text color (white)
-                const nodeL1 = getLuminance(nodeColor.r * 255, nodeColor.g * 255, nodeColor.b * 255);
+                const nodeL1 = getLuminance(
+                    nodeColor.r * 255,
+                    nodeColor.g * 255,
+                    nodeColor.b * 255,
+                );
                 const textL2 = getLuminance(255, 255, 255);
 
                 const brightest = Math.max(nodeL1, textL2);
@@ -110,15 +115,75 @@ export class VisionManager {
                 const contrastRatio = (brightest + 0.05) / (darkest + 0.05);
 
                 // WCAG AA requires a contrast ratio of at least 4.5:1 for normal text
+                let verifiedIssue = false;
                 if (contrastRatio < 4.5) {
+                    verifiedIssue = true; // Math confirms it's an issue
+
+                    // TLA (Text Legibility Analysis) verification step
+                    if (this.sessions['tla']) {
+                        try {
+                            const inputs = new Float32Array([
+                                nodeColor.r,
+                                nodeColor.g,
+                                nodeColor.b,
+                                1.0,
+                                1.0,
+                                1.0, // Assumed white text
+                                14.0,
+                                400.0, // Assumed size and weight
+                            ]);
+                            const tensor = new Tensor('float32', inputs, [1, 8]);
+                            const result = await this.sessions['tla'].run({
+                                text_features: tensor,
+                            });
+                            const prob = result['legibility_score'].data[0] as number;
+
+                            // If neural net thinks it's legible (prob > 0.5), ignore the math heuristic
+                            if (prob >= 0.5) {
+                                verifiedIssue = false;
+                            }
+                        } catch (e) {
+                            console.error('[VisionManager] TLA model inference failed', e);
+                        }
+                    }
+
+                    // CHE (Color Harmony Evaluation) step
+                    if (this.sessions['che'] && verifiedIssue) {
+                        try {
+                            const inputs = new Float32Array([
+                                nodeColor.r,
+                                nodeColor.g,
+                                nodeColor.b,
+                                bgColor.r,
+                                bgColor.g,
+                                bgColor.b,
+                                0.5,
+                                0.5,
+                                0.5, // Simulated neighborhood average
+                            ]);
+                            const tensor = new Tensor('float32', inputs, [1, 9]);
+                            const result = await this.sessions['che'].run({
+                                color_neighborhood: tensor,
+                            });
+                            const prob = result['harmony_score'].data[0] as number;
+
+                            if (prob < 0.5) {
+                                colorHarmonyScore -= 10;
+                            }
+                        } catch (e) {
+                            console.error('[VisionManager] CHE model inference failed', e);
+                        }
+                    }
+                }
+
+                if (verifiedIssue) {
                     legibilityFailures.push({
                         type: 'legibility',
                         severity: 'error',
                         nodeId: nodeA.id,
-                        message: `Poor contrast ratio (${contrastRatio.toFixed(2)}:1) for node ${nodeA.id}. Text may be illegible.`
+                        message: `Poor contrast ratio (${contrastRatio.toFixed(2)}:1) for node ${nodeA.id}. Text may be illegible.`,
                     });
                     wcagAA = false;
-                    colorHarmonyScore -= 10;
                 }
             }
 
@@ -136,9 +201,41 @@ export class VisionManager {
                 const boxB = new THREE.Box3().setFromObject(nodeB.object);
                 boxB.expandByScalar(5);
 
+                // First run the mathematical heuristic overlap box check
                 if (boxA.intersectsBox(boxB)) {
-                    overlaps.push({ nodeA: nodeA.id, nodeB: nodeB.id });
-                    layoutScore -= 10;
+                    // ODN verification step: If the math check says they intersect, we verify with our Neural Network
+                    let verifiedOverlap = true;
+                    if (this.sessions['odn']) {
+                        try {
+                            // Extract bounding boxes details to format as [x1, y1, x2, y2, x1, y1, x2, y2]
+                            const inputs = new Float32Array([
+                                boxA.min.x,
+                                boxA.min.y,
+                                boxA.max.x,
+                                boxA.max.y,
+                                boxB.min.x,
+                                boxB.min.y,
+                                boxB.max.x,
+                                boxB.max.y,
+                            ]);
+                            const tensor = new Tensor('float32', inputs, [1, 8]);
+                            const result = await this.sessions['odn'].run({ boxes: tensor });
+
+                            // Get probability from output tensor
+                            const prob = result['overlap_prob'].data[0] as number;
+                            // If neural net probability < 0.5, we override the math check
+                            if (prob < 0.5) {
+                                verifiedOverlap = false;
+                            }
+                        } catch (e) {
+                            console.error('[VisionManager] ODN model inference failed', e);
+                        }
+                    }
+
+                    if (verifiedOverlap) {
+                        overlaps.push({ nodeA: nodeA.id, nodeB: nodeB.id });
+                        layoutScore -= 10;
+                    }
                 }
             }
         }
@@ -146,11 +243,14 @@ export class VisionManager {
         const mockReport: VisionReport = {
             layout: { overall: Math.max(0, layoutScore), issues: overlaps },
             legibility: { wcagCompliance: { AA: wcagAA }, failures: legibilityFailures },
-            color: { harmonyScore: Math.max(0, colorHarmonyScore), dominantPalette: [...new Set(dominantPalette)].slice(0, 5) },
+            color: {
+                harmonyScore: Math.max(0, colorHarmonyScore),
+                dominantPalette: [...new Set(dominantPalette)].slice(0, 5),
+            },
             overlap: { overlaps: overlaps, statistics: { totalOverlaps: overlaps.length } },
             hierarchy: { clarityScore: 85 },
             ergonomics: { fittsLawScore: 90 },
-            overall: Math.max(0, layoutScore - (overlaps.length * 2) - (legibilityFailures.length * 5))
+            overall: Math.max(0, layoutScore - overlaps.length * 2 - legibilityFailures.length * 5),
         };
 
         console.log('[VisionManager] Analysis complete. Overall Score:', mockReport.overall);
@@ -182,7 +282,9 @@ export class VisionManager {
                 autoColorPlugin.applyVisionCorrection(report.legibility.failures);
                 console.log('[VisionManager] AutoColorPlugin corrections applied.');
             } else {
-                console.warn('[VisionManager] AutoColorPlugin not found or missing applyVisionCorrection.');
+                console.warn(
+                    '[VisionManager] AutoColorPlugin not found or missing applyVisionCorrection.',
+                );
             }
         }
 
@@ -199,7 +301,9 @@ export class VisionManager {
                 // Fallback to force layout if AutoLayout is not available
                 const forceLayout: any = this.sg.pluginManager.getPlugin('ForceLayout');
                 if (forceLayout && typeof forceLayout.update === 'function') {
-                    console.log('[VisionManager] AutoLayoutPlugin not found, falling back to ForceLayout...');
+                    console.log(
+                        '[VisionManager] AutoLayoutPlugin not found, falling back to ForceLayout...',
+                    );
 
                     // Temporarily increase distance and apply
                     const originalRepulsion = forceLayout.settings.repulsion || 10000;
@@ -212,7 +316,9 @@ export class VisionManager {
                     // Restore original settings after applying the force layout
                     forceLayout.settings.repulsion = originalRepulsion;
                 } else {
-                    console.warn('[VisionManager] No suitable layout plugin found to perform autoFix.');
+                    console.warn(
+                        '[VisionManager] No suitable layout plugin found to perform autoFix.',
+                    );
                 }
             }
         }
@@ -227,7 +333,9 @@ export class VisionManager {
             this.stopAutonomousCorrection();
         }
 
-        console.log(`[VisionManager] Starting autonomous correction loop (interval: ${intervalMs}ms)`);
+        console.log(
+            `[VisionManager] Starting autonomous correction loop (interval: ${intervalMs}ms)`,
+        );
 
         this.autonomousTimer = setInterval(async () => {
             try {
@@ -238,10 +346,10 @@ export class VisionManager {
                     const autoLayout = this.sg.pluginManager.getPlugin('auto-layout') as any;
                     if (autoLayout && typeof autoLayout.applyVisionCorrection === 'function') {
                         // Pass simulated 'overlap' typed issues to the plugin
-                        const formattedIssues = report.overlap.overlaps.map(o => ({
+                        const formattedIssues = report.overlap.overlaps.map((o) => ({
                             type: 'overlap',
                             nodeA: o.nodeA,
-                            nodeB: o.nodeB
+                            nodeB: o.nodeB,
                         }));
                         autoLayout.applyVisionCorrection(formattedIssues);
                     }

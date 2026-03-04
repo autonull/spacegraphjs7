@@ -1,46 +1,100 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Image Nodes - SpaceGraphJS Example</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { overflow: hidden; background-color: #1a1a2e; }
-    #container { width: 100vw; height: 100vh; }
-    .status {
-      position: absolute; top: 10px; left: 10px;
-      color: #0f0; background: rgba(0,0,0,0.8);
-      padding: 10px; font-family: monospace; z-index: 10;
-    }
-  </style>
-</head>
-<body>
-  <div class="status">Image Nodes Example</div>
-  <div id="container"></div>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Image Nodes - SpaceGraphJS Example</title>
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+            body {
+                overflow: hidden;
+                background-color: #1a1a2e;
+            }
+            #container {
+                width: 100vw;
+                height: 100vh;
+            }
+            .status {
+                position: absolute;
+                top: 10px;
+                left: 10px;
+                color: #0f0;
+                background: rgba(0, 0, 0, 0.8);
+                padding: 10px;
+                font-family: monospace;
+                z-index: 10;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="status">Image Nodes Example</div>
+        <div id="container"></div>
 
-  <script type="module">
-    import { SpaceGraph } from '../src/index.ts';
+        <script type="module">
+            import { SpaceGraph } from '../src/index.ts';
 
-    // SVG base64 helper for local placeholder
-    const svg1 = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzMzNjZmZiIgLz48dGV4dCB4PSI1MCIgeT0iNTUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIyNCIgZmlsbD0iI2ZmZmZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+QTwvdGV4dD48L3N2Zz4=';
-    const svg2 = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2ZmNjYzMyIgLz48dGV4dCB4PSI1MCIgeT0iNTUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIyNCIgZmlsbD0iI2ZmZmZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+QjwvdGV4dD48L3N2Zz4=';
-    const svg3 = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzMzZmY2NiIgLz48dGV4dCB4PSI1MCIgeT0iNTUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIyNCIgZmlsbD0iIzMzMzMzMyIgdGV4dC1hbmNob3I9Im1pZGRsZSI+QzwvdGV4dD48L3N2Zz4=';
+            // SVG base64 helper for local placeholder
+            const svg1 =
+                'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzMzNjZmZiIgLz48dGV4dCB4PSI1MCIgeT0iNTUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIyNCIgZmlsbD0iI2ZmZmZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+QTwvdGV4dD48L3N2Zz4=';
+            const svg2 =
+                'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2ZmNjYzMyIgLz48dGV4dCB4PSI1MCIgeT0iNTUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIyNCIgZmlsbD0iI2ZmZmZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+QjwvdGV4dD48L3N2Zz4=';
+            const svg3 =
+                'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzMzZmY2NiIgLz48dGV4dCB4PSI1MCIgeT0iNTUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIyNCIgZmlsbD0iIzMzMzMzMyIgdGV4dC1hbmNob3I9Im1pZGRsZSI+QzwvdGV4dD48L3N2Zz4=';
 
-    const graph = SpaceGraph.create('#container', {
-      nodes: [
-        { id: 'img1', type: 'ImageNode', label: 'Image A', position: [0, 80, 0], data: { url: svg1 } },
-        { id: 'img2', type: 'ImageNode', label: 'Image B', position: [-100, -80, 0], data: { url: svg2 } },
-        { id: 'img3', type: 'ImageNode', label: 'Image C', position: [100, -80, 0], data: { url: svg3 } }
-      ],
-      edges: [
-        { id: 'e1', source: 'img1', target: 'img2', type: 'FlowEdge', data: { color: 0x00ffff, flowSpeed: 2 } },
-        { id: 'e2', source: 'img2', target: 'img3', type: 'FlowEdge', data: { color: 0xff00ff, flowSpeed: 2 } },
-        { id: 'e3', source: 'img3', target: 'img1', type: 'FlowEdge', data: { color: 0xffff00, flowSpeed: 2 } }
-      ]
-    });
+            const graph = SpaceGraph.create('#container', {
+                nodes: [
+                    {
+                        id: 'img1',
+                        type: 'ImageNode',
+                        label: 'Image A',
+                        position: [0, 80, 0],
+                        data: { url: svg1 },
+                    },
+                    {
+                        id: 'img2',
+                        type: 'ImageNode',
+                        label: 'Image B',
+                        position: [-100, -80, 0],
+                        data: { url: svg2 },
+                    },
+                    {
+                        id: 'img3',
+                        type: 'ImageNode',
+                        label: 'Image C',
+                        position: [100, -80, 0],
+                        data: { url: svg3 },
+                    },
+                ],
+                edges: [
+                    {
+                        id: 'e1',
+                        source: 'img1',
+                        target: 'img2',
+                        type: 'FlowEdge',
+                        data: { color: 0x00ffff, flowSpeed: 2 },
+                    },
+                    {
+                        id: 'e2',
+                        source: 'img2',
+                        target: 'img3',
+                        type: 'FlowEdge',
+                        data: { color: 0xff00ff, flowSpeed: 2 },
+                    },
+                    {
+                        id: 'e3',
+                        source: 'img3',
+                        target: 'img1',
+                        type: 'FlowEdge',
+                        data: { color: 0xffff00, flowSpeed: 2 },
+                    },
+                ],
+            });
 
-    graph.render();
-  </script>
-</body>
+            graph.render();
+        </script>
+    </body>
 </html>

@@ -47,7 +47,9 @@ export class LabeledEdge extends Edge {
     }
 
     private _positionLabel() {
-        const mid = new THREE.Vector3().addVectors(this.source.position, this.target.position).multiplyScalar(0.5);
+        const mid = new THREE.Vector3()
+            .addVectors(this.source.position, this.target.position)
+            .multiplyScalar(0.5);
         this.labelObject.position.copy(mid).sub(this.object.position);
     }
 

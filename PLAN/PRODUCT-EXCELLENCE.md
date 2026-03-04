@@ -11,6 +11,7 @@
 **Great products win. Mediocre products fail.**
 
 No amount of:
+
 - Marketing
 - Community building
 - Content strategy
@@ -27,25 +28,24 @@ No amount of:
 
 ### Software Excellence Criteria
 
-| Criterion | Standard | How to Achieve |
-|-----------|----------|----------------|
-| **Performance** | 60 FPS at 1000 nodes | Instanced rendering, LOD, culling |
-| **Reliability** | Zero crashes, graceful errors | Extensive testing, error boundaries |
-| **Ease of Use** | Working in <5 minutes | Minimal API, sensible defaults |
-| **Developer Experience** | Autocomplete, clear errors | TypeScript types, helpful console messages |
-| **Visual Quality** | Beautiful out of the box | Thoughtful defaults, anti-aliasing |
-| **Bundle Size** | <100KB gzipped | Tree-shaking, no bloat |
+| Criterion                | Standard                      | How to Achieve                             |
+| ------------------------ | ----------------------------- | ------------------------------------------ |
+| **Performance**          | 60 FPS at 1000 nodes          | Instanced rendering, LOD, culling          |
+| **Reliability**          | Zero crashes, graceful errors | Extensive testing, error boundaries        |
+| **Ease of Use**          | Working in <5 minutes         | Minimal API, sensible defaults             |
+| **Developer Experience** | Autocomplete, clear errors    | TypeScript types, helpful console messages |
+| **Visual Quality**       | Beautiful out of the box      | Thoughtful defaults, anti-aliasing         |
 
 ### Hardware Excellence Criteria
 
-| Criterion | Standard | How to Achieve |
-|-----------|----------|----------------|
-| **Build Quality** | Premium feel | Aluminum case, quality PCB |
-| **Performance** | Smooth 60 FPS | RK3588 (6 TOPS NPU), 16GB RAM |
-| **Reliability** | No overheating, stable | Quality components, proper cooling |
-| **Openness** | Fully documented | Schematics, CAD files, source code |
-| **Value** | Competitive pricing | $249 base, direct-to-consumer |
-| **Longevity** | 5+ year lifespan | Quality caps, replaceable parts |
+| Criterion         | Standard               | How to Achieve                     |
+| ----------------- | ---------------------- | ---------------------------------- |
+| **Build Quality** | Premium feel           | Aluminum case, quality PCB         |
+| **Performance**   | Smooth 60 FPS          | RK3588 (6 TOPS NPU), 16GB RAM      |
+| **Reliability**   | No overheating, stable | Quality components, proper cooling |
+| **Openness**      | Fully documented       | Schematics, CAD files, source code |
+| **Value**         | Competitive pricing    | $249 base, direct-to-consumer      |
+| **Longevity**     | 5+ year lifespan       | Quality caps, replaceable parts    |
 
 ---
 
@@ -60,6 +60,7 @@ No amount of:
 5. **Hardware quality** (premium feel, reliable)
 
 **20% comes from everything else:**
+
 - Documentation
 - Marketing
 - Community
@@ -76,32 +77,35 @@ No amount of:
 **Goal:** Render graphs beautifully at 60 FPS.
 
 **What matters:**
+
 ```typescript
 // ✓ GOOD: Simple, works
 const graph = SpaceGraph.create('#container', {
-  nodes: [{ id: 'a', type: 'ShapeNode', position: [0, 0, 0] }],
-  edges: []
+    nodes: [{ id: 'a', type: 'ShapeNode', position: [0, 0, 0] }],
+    edges: [],
 });
 graph.render();
 
 // ✗ BAD: Complex, confusing
 const graph = new SpaceGraph({
-  container: document.querySelector('#container'),
-  config: {
-    renderer: { type: 'webgl2', antialias: true },
-    // ... 20 more options
-  }
+    container: document.querySelector('#container'),
+    config: {
+        renderer: { type: 'webgl2', antialias: true },
+        // ... 20 more options
+    },
 });
 ```
 
 **Test:** Open demo, see 3 beautiful spheres connected by lines. No errors. Smooth rotation.
 
 **Time allocation:**
+
 - 70%: Making it work perfectly
 - 20%: Making it fast
 - 10%: Making it pretty
 
 **DO NOT SPEND TIME ON:**
+
 - ❌ README polish
 - ❌ npm publishing
 - ❌ GitHub Actions
@@ -114,6 +118,7 @@ const graph = new SpaceGraph({
 **Goal:** API so simple it feels like magic.
 
 **What matters:**
+
 ```typescript
 // Common use case: Add a node
 graph.addNode({ id: 'd', position: [50, 50, 0] });
@@ -130,11 +135,12 @@ graph.flyTo({ target: [100, 100, 500] });
 **Test:** Give API to developer. Watch them use it without documentation. Note where they hesitate.
 
 **Time allocation:**
+
 - 50%: Simplifying existing API
-- 30%: Adding missing convenience methods
 - 20%: Error messages that actually help
 
 **DO NOT SPEND TIME ON:**
+
 - ❌ TypeDoc generation
 - ❌ API reference docs
 - ❌ Tutorial videos
@@ -146,11 +152,12 @@ graph.flyTo({ target: [100, 100, 500] });
 **Goal:** Fast, stable, no surprises.
 
 **What matters:**
+
 ```typescript
 // Performance test: 1000 nodes
 const nodes = Array.from({ length: 1000 }, (_, i) => ({
-  id: `node-${i}`,
-  position: [Math.random() * 1000, Math.random() * 1000, 0]
+    id: `node-${i}`,
+    position: [Math.random() * 1000, Math.random() * 1000, 0],
 }));
 
 // Should maintain 60 FPS
@@ -158,24 +165,27 @@ const graph = SpaceGraph.create('#container', { nodes, edges: [] });
 
 // Memory test: Create/destroy 100 times
 for (let i = 0; i < 100; i++) {
-  const g = SpaceGraph.create('#container', spec);
-  g.render();
-  g.dispose(); // Should clean up completely
+    const g = SpaceGraph.create('#container', spec);
+    g.render();
+    g.dispose(); // Should clean up completely
 }
 // Memory should be stable
 ```
 
 **Test:**
+
 - 1000 nodes → 60 FPS
 - 100 create/destroy cycles → no memory growth
 - 1 hour continuous → no crashes
 
 **Time allocation:**
+
 - 60%: Profiling and optimizing
 - 30%: Fixing memory leaks
 - 10%: Adding performance monitoring
 
 **DO NOT SPEND TIME ON:**
+
 - ❌ CI/CD setup
 - ❌ Automated benchmarks
 - ❌ Performance documentation
@@ -187,6 +197,7 @@ for (let i = 0; i < 100; i++) {
 **Goal:** Beautiful out of the box.
 
 **What matters:**
+
 ```typescript
 // Default colors should look good
 {
@@ -209,11 +220,13 @@ for (let i = 0; i < 100; i++) {
 **Test:** Show to designer. Ask "does this look professional?" Iterate based on feedback.
 
 **Time allocation:**
+
 - 50%: Color palette, lighting
 - 30%: Camera behavior
 - 20%: Node/edge aesthetics
 
 **DO NOT SPEND TIME ON:**
+
 - ❌ Logo design
 - ❌ Brand guidelines
 - ❌ Marketing materials
@@ -227,6 +240,7 @@ for (let i = 0; i < 100; i++) {
 **Goal:** Hardware that feels premium.
 
 **What matters:**
+
 - **PCB:** 4-layer, quality components, proper grounding
 - **Case:** Aluminum (not plastic), precise tolerances, good ventilation
 - **Power:** Quality PSU, proper regulation, overcurrent protection
@@ -235,11 +249,13 @@ for (let i = 0; i < 100; i++) {
 **Test:** Hold prototype. Does it feel like a $249 product or a $50 product?
 
 **Time allocation:**
+
 - 40%: Mechanical design (case, thermal)
 - 40%: Electrical design (PCB, power)
 - 20%: Aesthetics (finish, branding)
 
 **DO NOT SPEND TIME ON:**
+
 - ❌ Packaging design
 - ❌ Unboxing experience
 - ❌ Marketing photos
@@ -251,6 +267,7 @@ for (let i = 0; i < 100; i++) {
 **Goal:** Working prototypes that represent final product.
 
 **What matters:**
+
 - **Fit and finish:** No gaps, solid feel
 - **Thermals:** <60°C under load, silent (no fan or very quiet)
 - **Performance:** SpaceGraphJS runs at 60 FPS with vision analysis
@@ -259,11 +276,13 @@ for (let i = 0; i < 100; i++) {
 **Test:** Give to 5 trusted users. Let them use it for a week. Collect brutal feedback.
 
 **Time allocation:**
+
 - 50%: Fixing issues from design phase
 - 30%: Optimization (thermal, performance)
 - 20%: Final polish
 
 **DO NOT SPEND TIME ON:**
+
 - ❌ Mass production planning
 - ❌ Distribution logistics
 - ❌ Retail partnerships
@@ -275,6 +294,7 @@ for (let i = 0; i < 100; i++) {
 **Goal:** Production-ready design.
 
 **What matters:**
+
 - **Certifications:** FCC, CE (required for sale)
 - **Durability:** Drop test, thermal cycling, vibration
 - **Safety:** Overcurrent, overtemp, short-circuit protection
@@ -283,11 +303,13 @@ for (let i = 0; i < 100; i++) {
 **Test:** Send to certification lab. Pass on first try.
 
 **Time allocation:**
+
 - 40%: Certification process
 - 40%: Durability testing
 - 20%: Final adjustments
 
 **DO NOT SPEND TIME ON:**
+
 - ❌ Launch event planning
 - ❌ Press releases
 - ❌ Influencer outreach
@@ -309,7 +331,6 @@ PERFORMANCE:
 □ 60 FPS with 100 nodes
 □ 60 FPS with 1000 nodes (degraded gracefully if needed)
 □ Memory stable after 100 create/destroy cycles
-□ Bundle size <100KB gzipped (excluding three.js)
 
 API DESIGN:
 □ Create graph in <10 lines of code
@@ -371,14 +392,14 @@ QUALITY:
 
 ### Phase A: Software (Days 0-30)
 
-| Activity | Time | % of Total |
-|----------|------|------------|
-| Core rendering | 40 hours | 45% |
-| API design | 20 hours | 22% |
-| Performance | 15 hours | 17% |
-| Visual polish | 10 hours | 11% |
-| Documentation | 4 hours | 4% |
-| Launch prep | 1 hour | 1% |
+| Activity       | Time     | % of Total |
+| -------------- | -------- | ---------- |
+| Core rendering | 40 hours | 45%        |
+| API design     | 20 hours | 22%        |
+| Performance    | 15 hours | 17%        |
+| Visual polish  | 10 hours | 11%        |
+| Documentation  | 4 hours  | 4%         |
+| Launch prep    | 1 hour   | 1%         |
 
 **Total:** 90 hours
 
@@ -388,12 +409,12 @@ QUALITY:
 
 ### Phase B: Hardware (Months 2-6)
 
-| Activity | Time | % of Total |
-|----------|------|------------|
-| Design (mechanical + electrical) | 200 hours | 45% |
-| Prototyping | 150 hours | 33% |
-| Validation (certification, testing) | 80 hours | 18% |
-| Launch/Marketing | 20 hours | 4% |
+| Activity                            | Time      | % of Total |
+| ----------------------------------- | --------- | ---------- |
+| Design (mechanical + electrical)    | 200 hours | 45%        |
+| Prototyping                         | 150 hours | 33%        |
+| Validation (certification, testing) | 80 hours  | 18%        |
+| Launch/Marketing                    | 20 hours  | 4%         |
 
 **Total:** 450 hours
 
@@ -468,27 +489,26 @@ HARDWARE:
 
 ### Software Excellence Metrics
 
-| Metric | Target | How to Measure |
-|--------|--------|----------------|
-| Time to first render | <5 minutes | Follow your own quickstart |
-| FPS with 100 nodes | 60 | `performance.now()` timing |
-| FPS with 1000 nodes | 60 (or graceful degradation) | `performance.now()` timing |
-| Memory growth (100 cycles) | <10MB | DevTools heap snapshot |
-| Bundle size | <100KB gzipped | `gzip -c dist/spacegraphjs.js \| wc -c` |
-| TypeScript errors | 0 | `tsc --noEmit` |
-| Console errors (demo) | 0 | Browser console |
+| Metric                     | Target                       | How to Measure                          |
+| -------------------------- | ---------------------------- | --------------------------------------- |
+| Time to first render       | <5 minutes                   | Follow your own quickstart              |
+| FPS with 100 nodes         | 60                           | `performance.now()` timing              |
+| FPS with 1000 nodes        | 60 (or graceful degradation) | `performance.now()` timing              |
+| Memory growth (100 cycles) | <10MB                        | DevTools heap snapshot                  |
+| TypeScript errors          | 0                            | `tsc --noEmit`                          |
+| Console errors (demo)      | 0                            | Browser console                         |
 
 ### Hardware Excellence Metrics
 
-| Metric | Target | How to Measure |
-|--------|--------|----------------|
-| Surface temperature (load) | <60°C | Thermal camera |
-| Noise level | <30 dB | Sound meter app |
-| Boot time | <30 seconds | Stopwatch |
-| SpaceGraphJS FPS | 60 | Built-in FPS counter |
-| Vision analysis latency | <50ms | `performance.now()` |
-| Drop test survival | Pass (1m, 6 sides) | Certification lab |
-| FCC/CE certification | Pass | Certification lab |
+| Metric                     | Target             | How to Measure       |
+| -------------------------- | ------------------ | -------------------- |
+| Surface temperature (load) | <60°C              | Thermal camera       |
+| Noise level                | <30 dB             | Sound meter app      |
+| Boot time                  | <30 seconds        | Stopwatch            |
+| SpaceGraphJS FPS           | 60                 | Built-in FPS counter |
+| Vision analysis latency    | <50ms              | `performance.now()`  |
+| Drop test survival         | Pass (1m, 6 sides) | Certification lab    |
+| FCC/CE certification       | Pass               | Certification lab    |
 
 ---
 

@@ -53,7 +53,7 @@ export class HierarchicalLayout implements ISpaceGraphPlugin {
         // Pick root
         let rootId = this.settings.rootId;
         if (!rootId || !nodeMap.has(rootId)) {
-            rootId = [...nodeMap.keys()].find(id => !hasParent.has(id)) ?? [...nodeMap.keys()][0];
+            rootId = [...nodeMap.keys()].find((id) => !hasParent.has(id)) ?? [...nodeMap.keys()][0];
         }
 
         // BFS to assign levels
@@ -64,7 +64,7 @@ export class HierarchicalLayout implements ISpaceGraphPlugin {
 
         while (queue.length) {
             const cur = queue.shift()!;
-            for (const child of (children.get(cur) ?? [])) {
+            for (const child of children.get(cur) ?? []) {
                 if (!visited.has(child)) {
                     visited.add(child);
                     level.set(child, (level.get(cur) ?? 0) + 1);
@@ -93,13 +93,20 @@ export class HierarchicalLayout implements ISpaceGraphPlugin {
                 let x: number, y: number;
                 switch (direction) {
                     case 'bottom-up':
-                        x = secondary; y = primary; break;
+                        x = secondary;
+                        y = primary;
+                        break;
                     case 'left-right':
-                        x = primary; y = secondary; break;
+                        x = primary;
+                        y = secondary;
+                        break;
                     case 'right-left':
-                        x = -primary; y = secondary; break;
+                        x = -primary;
+                        y = secondary;
+                        break;
                     default: // top-down
-                        x = secondary; y = -primary;
+                        x = secondary;
+                        y = -primary;
                 }
                 node.updatePosition(x, y, z);
             });
@@ -109,7 +116,11 @@ export class HierarchicalLayout implements ISpaceGraphPlugin {
         let orphanX = 0;
         for (const [id, node] of nodeMap) {
             if (!visited.has(id)) {
-                (node as Node).updatePosition(orphanX, -(Math.max(...level.values()) + 1) * levelHeight, z);
+                (node as Node).updatePosition(
+                    orphanX,
+                    -(Math.max(...level.values()) + 1) * levelHeight,
+                    z,
+                );
                 orphanX += nodeSpacing;
             }
         }
@@ -117,5 +128,5 @@ export class HierarchicalLayout implements ISpaceGraphPlugin {
         for (const edge of edges) edge.update?.();
     }
 
-    onPreRender(_delta: number): void { }
+    onPreRender(_delta: number): void {}
 }

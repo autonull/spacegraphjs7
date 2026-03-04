@@ -16,6 +16,7 @@
 **This repository contains documentation only. No source code exists yet.**
 
 The plan is restructured:
+
 1. **Phase A (Days 0-14):** Build the minimum viable library
 2. **Phase B (Days 15-17):** Launch properly
 
@@ -68,28 +69,28 @@ The plan is restructured:
 
 ## Files You Need
 
-| File | Purpose | When |
-|------|---------|------|
-| **[ENHANCED-BUILD-PLAN.md](./ENHANCED-BUILD-PLAN.md)** | ★ Start here — Validated build plan | Day 0 |
-| [LAUNCH-SEQUENCED.md](./LAUNCH-SEQUENCED.md) | Launch checklist | Phase B (Day 15+) |
-| [PACKAGE-TEMPLATE.md](./PACKAGE-TEMPLATE.md) | package.json, vite.config, tsconfig | Day 1 |
-| [QUICKSTART.md](../QUICKSTART.md) | 5-minute getting started | Verify Day 14 |
+| File                                                   | Purpose                             | When              |
+| ------------------------------------------------------ | ----------------------------------- | ----------------- |
+| **[ENHANCED-BUILD-PLAN.md](./ENHANCED-BUILD-PLAN.md)** | ★ Start here — Validated build plan | Day 0             |
+| [LAUNCH-SEQUENCED.md](./LAUNCH-SEQUENCED.md)           | Launch checklist                    | Phase B (Day 15+) |
+| [PACKAGE-TEMPLATE.md](./PACKAGE-TEMPLATE.md)           | package.json, vite.config, tsconfig | Day 1             |
+| [QUICKSTART.md](../QUICKSTART.md)                      | 5-minute getting started            | Verify Day 14     |
 
 ---
 
 ## Critical Milestones
 
-| Milestone | Description | When |
-|-----------|-------------|------|
-| **M0** | Environment verified (Node 18+, git) | Day 0 |
-| **M1** | package.json + tsconfig created | Day 1 |
-| **M2** | SpaceGraph class compiles | Day 2 |
-| **M3** | Demo renders 3 nodes + 3 edges | Day 4 |
-| **M4** | Camera controls work | Day 5 |
-| **M5** | All tests pass, no console errors | Day 7 |
-| **M6** | Fresh install test passes | Day 12 |
-| **M7** | QUICKSTART.md verified | Day 14 |
-| **M8** | Published to npm | Day 16 |
+| Milestone | Description                          | When   |
+| --------- | ------------------------------------ | ------ |
+| **M0**    | Environment verified (Node 18+, git) | Day 0  |
+| **M1**    | package.json + tsconfig created      | Day 1  |
+| **M2**    | SpaceGraph class compiles            | Day 2  |
+| **M3**    | Demo renders 3 nodes + 3 edges       | Day 4  |
+| **M4**    | Camera controls work                 | Day 5  |
+| **M5**    | All tests pass, no console errors    | Day 7  |
+| **M6**    | Fresh install test passes            | Day 12 |
+| **M7**    | QUICKSTART.md verified               | Day 14 |
+| **M8**    | Published to npm                     | Day 16 |
 
 **Do not skip milestones. Do not publish until M7 passes.**
 
@@ -97,13 +98,13 @@ The plan is restructured:
 
 ## Time Estimates
 
-| Phase | Optimistic | Realistic | Conservative |
-|-------|------------|-----------|--------------|
-| Day 0 (Setup) | 30 min | 1 hour | 2 hours |
-| Week 1 (Build) | 20 hours | 30 hours | 40 hours |
-| Week 2 (Polish) | 10 hours | 20 hours | 30 hours |
-| Launch (Phase B) | 12 hours | 16 hours | 24 hours |
-| **TOTAL** | **42.5 hours** | **67 hours** | **96 hours** |
+| Phase            | Optimistic     | Realistic    | Conservative |
+| ---------------- | -------------- | ------------ | ------------ |
+| Day 0 (Setup)    | 30 min         | 1 hour       | 2 hours      |
+| Week 1 (Build)   | 20 hours       | 30 hours     | 40 hours     |
+| Week 2 (Polish)  | 10 hours       | 20 hours     | 30 hours     |
+| Launch (Phase B) | 12 hours       | 16 hours     | 24 hours     |
+| **TOTAL**        | **42.5 hours** | **67 hours** | **96 hours** |
 
 **In calendar days (part-time, 4h/day):** 11-24 days
 

@@ -22,7 +22,7 @@ export class GridLayout implements ISpaceGraphPlugin {
     private sg!: SpaceGraph;
 
     public settings = {
-        columns: 0,           // 0 = auto (ceil(sqrt(n)))
+        columns: 0, // 0 = auto (ceil(sqrt(n)))
         spacingX: 200,
         spacingY: 200,
         offsetX: 0,
@@ -35,12 +35,11 @@ export class GridLayout implements ISpaceGraphPlugin {
 
     /** Call explicitly or triggered externally. Does NOT run every frame. */
     apply(): void {
-        const nodes = Array.from(this.sg.graph.nodes.values()).filter(n => !n.data?.pinned);
+        const nodes = Array.from(this.sg.graph.nodes.values()).filter((n) => !n.data?.pinned);
         if (!nodes.length) return;
 
-        const cols = this.settings.columns > 0
-            ? this.settings.columns
-            : Math.ceil(Math.sqrt(nodes.length));
+        const cols =
+            this.settings.columns > 0 ? this.settings.columns : Math.ceil(Math.sqrt(nodes.length));
 
         nodes.forEach((node, i) => {
             const col = i % cols;
@@ -55,5 +54,5 @@ export class GridLayout implements ISpaceGraphPlugin {
     }
 
     // GridLayout is on-demand, not per-frame
-    onPreRender(_delta: number): void { }
+    onPreRender(_delta: number): void {}
 }

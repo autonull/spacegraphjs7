@@ -2,7 +2,14 @@
 console.log('[SpaceGraphJS] Loading...');
 
 export { SpaceGraph } from './SpaceGraph';
-export type { GraphSpec, NodeSpec, EdgeSpec, SpecUpdate, SpaceGraphOptions, ISpaceGraphPlugin } from './types';
+export type {
+    GraphSpec,
+    NodeSpec,
+    EdgeSpec,
+    SpecUpdate,
+    SpaceGraphOptions,
+    ISpaceGraphPlugin,
+} from './types';
 
 // Core
 export { Graph } from './core/Graph';

@@ -48,15 +48,21 @@ export class VideoNode extends Node {
 
         if (autoplay) {
             this.videoEl.play().catch(() => {
-                console.warn(`[VideoNode] Autoplay blocked for node "${spec.id}". User interaction required.`);
+                console.warn(
+                    `[VideoNode] Autoplay blocked for node "${spec.id}". User interaction required.`,
+                );
             });
         }
 
         this.updatePosition(this.position.x, this.position.y, this.position.z);
     }
 
-    play() { this.videoEl.play(); }
-    pause() { this.videoEl.pause(); }
+    play() {
+        this.videoEl.play();
+    }
+    pause() {
+        this.videoEl.pause();
+    }
 
     updateSpec(updates: Partial<NodeSpec>): void {
         super.updateSpec(updates);

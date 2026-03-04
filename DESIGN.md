@@ -1,4 +1,5 @@
 # SpaceGraphJS Specification
+
 ## The Self-Building ZUI Library
 
 **Version:** 1.0.0  
@@ -34,21 +35,22 @@ SpaceGraphJS is a **self-building, self-optimizing Zoomable User Interface (ZUI)
 
 ### 1.2 Key Innovations
 
-| Innovation | Description | Impact |
-|------------|-------------|--------|
-| **Vision-Closed Loop** | AI sees output, verifies quality, self-corrects | 98% faster iteration |
-| **Automated Verification** | Playwright screenshot testing for all demos | Visual regression detection |
-| **17 Plugins** | Unified from 5 codebases + 6 new vision plugins | Complete feature set |
-| **18 Node Types** | All from sg1/sg5, TypeScript, vision-verified | Rich visualization |
-| **8 Edge Types** | All from sg1/sg5, instanced rendering | Flexible connections |
-| **16 Layout Engines** | 12 from sg1/sg5 + 4 from sg4 | Optimal organization |
-| **Verlet Physics** | Complete 2D physics from sg4 (722 LOC) | Dynamic behaviors |
-| **6 Vision Models** | LQ-Net, TLA, CHE, ODN, VHS, EQA | Autonomous quality |
-| **5 Performance Systems** | ObjectPool, LOD, Culling, Disposal, Optimizer | 60 FPS at 1000 nodes |
+| Innovation                 | Description                                     | Impact                      |
+| -------------------------- | ----------------------------------------------- | --------------------------- |
+| **Vision-Closed Loop**     | AI sees output, verifies quality, self-corrects | 98% faster iteration        |
+| **Automated Verification** | Playwright screenshot testing for all demos     | Visual regression detection |
+| **17 Plugins**             | Unified from 5 codebases + 6 new vision plugins | Complete feature set        |
+| **18 Node Types**          | All from sg1/sg5, TypeScript, vision-verified   | Rich visualization          |
+| **8 Edge Types**           | All from sg1/sg5, instanced rendering           | Flexible connections        |
+| **16 Layout Engines**      | 12 from sg1/sg5 + 4 from sg4                    | Optimal organization        |
+| **Verlet Physics**         | Complete 2D physics from sg4 (722 LOC)          | Dynamic behaviors           |
+| **6 Vision Models**        | LQ-Net, TLA, CHE, ODN, VHS, EQA                 | Autonomous quality          |
+| **5 Performance Systems**  | ObjectPool, LOD, Culling, Disposal, Optimizer   | 60 FPS at 1000 nodes        |
 
 ### 1.3 Development Paradigm Shift
 
 **Traditional AI Development:**
+
 ```
 Human Request → AI Code → Human Views → Human Describes → AI Guesses → Repeat (10-20x)
                     ↓
@@ -58,6 +60,7 @@ Human Request → AI Code → Human Views → Human Describes → AI Guesses →
 ```
 
 **Vision-Closed Development:**
+
 ```
 Human Spec → AI Build → Vision Verify → AI Self-Correct → Done (1-3x)
                     ↓
@@ -68,16 +71,15 @@ Human Spec → AI Build → Vision Verify → AI Self-Correct → Done (1-3x)
 
 ### 1.4 Success Metrics
 
-| Metric | Target | Measurement |
-|--------|--------|-------------|
-| Bundle size | <100 KB gzipped | `gzip dist/*.js` |
-| Initial render | <100 ms (100 nodes) | Performance.now() |
-| Frame rate | 60 FPS (1000 nodes) | RAF timing |
-| Memory | <50 MB (1000 nodes) | DevTools heap |
-| Test coverage | >90% | Vitest coverage |
-| Vision accuracy | >95% | Model validation |
-| Auto-fix rate | >80% | Vision fixer logs |
-| WCAG compliance | 100% AA | TLA reports |
+| Metric            | Target               | Measurement            |
+| ----------------- | -------------------- | ---------------------- |
+| Initial render    | <100 ms (100 nodes)  | Performance.now()      |
+| Frame rate        | 60 FPS (1000 nodes)  | RAF timing             |
+| Memory            | <50 MB (1000 nodes)  | DevTools heap          |
+| Test coverage     | >90%                 | Vitest coverage        |
+| Vision accuracy   | >95%                 | Model validation       |
+| Auto-fix rate     | >80%                 | Vision fixer logs      |
+| WCAG compliance   | 100% AA              | TLA reports            |
 | Visual regression | 0 unapproved changes | Playwright screenshots |
 
 ---
@@ -100,6 +102,7 @@ Traditional AI-assisted development suffers from a **fundamental perception gap*
 ```
 
 **Consequences:**
+
 - **Slow:** Each iteration takes 30+ minutes
 - **Imprecise:** Human descriptions lose visual information
 - **Exhausting:** Constant context-switching drains mental energy
@@ -121,6 +124,7 @@ SpaceGraphJS embeds AI vision at every layer, creating a **self-verifying develo
 ```
 
 **Benefits:**
+
 - **Fast:** Vision verification in 30-50 milliseconds
 - **Precise:** Pixel-level analysis, no information loss
 - **Autonomous:** AI fixes issues without human intervention
@@ -142,20 +146,21 @@ def verify_demos():
 
         page.goto("http://localhost:3000/demos/index.html")
         page.wait_for_selector("canvas", timeout=5000)
-        
+
         # Capture each demo
         page.screenshot(path="verification/basic_graph.png")
-        
+
         page.click("button[data-demo='html']")
         page.screenshot(path="verification/html_nodes.png")
-        
+
         page.click("button[data-demo='large']")
         page.screenshot(path="verification/large_graph.png")
-        
+
         browser.close()
 ```
 
 **Integration with CI:**
+
 ```yaml
 # .github/workflows/visual-verification.yml
 name: Visual Verification
@@ -184,6 +189,7 @@ jobs:
 **Purpose:** Evaluate overall layout quality and detect issues autonomously.
 
 **Architecture:**
+
 ```
 Input: Frame buffer (512x512 RGB)
     ↓
@@ -203,11 +209,13 @@ Output: Quality scores + Issue bounding boxes
 ```
 
 **Training Data:**
+
 - 100,000+ labeled graph layouts
 - Expert ratings (1-5 scale) for aesthetics, clarity, usability
 - Annotated issues with bounding boxes and severity labels
 
 **Output Interface:**
+
 ```typescript
 interface LayoutQualityReport {
     // Overall scores (0-100)
@@ -215,34 +223,40 @@ interface LayoutQualityReport {
     aesthetics: number;
     clarity: number;
     usability: number;
-    
+
     // Detected issues
     issues: LayoutIssue[];
-    
+
     // Auto-fix suggestions
     autoFixes: AutoFix[];
 }
 
 interface LayoutIssue {
     id: string;
-    type: 'overlap' | 'poor-spacing' | 'unclear-hierarchy' | 
-          'edge-crossing' | 'node-clustering' | 'white-space-waste';
+    type:
+        | 'overlap'
+        | 'poor-spacing'
+        | 'unclear-hierarchy'
+        | 'edge-crossing'
+        | 'node-clustering'
+        | 'white-space-waste';
     severity: 'critical' | 'warning' | 'info';
-    confidence: number;  // 0-1
-    
+    confidence: number; // 0-1
+
     // Location
     boundingBox: { x: number; y: number; width: number; height: number };
-    affectedElements: string[];  // Element IDs
-    
+    affectedElements: string[]; // Element IDs
+
     // Fix information
-    suggestion: string;  // Human-readable
+    suggestion: string; // Human-readable
     autoFixAvailable: boolean;
     autoFixType?: 'move' | 'resize' | 'recolor' | 'relayout';
-    estimatedFixTime: number;  // milliseconds
+    estimatedFixTime: number; // milliseconds
 }
 ```
 
 **Performance:**
+
 - Inference time: <10 ms (WebGPU), <30 ms (WebGL)
 - Accuracy: >95% on test set
 - Model size: 12 MB (quantized ONNX)
@@ -252,6 +266,7 @@ interface LayoutIssue {
 **Purpose:** Ensure all text is readable at current zoom level with WCAG compliance.
 
 **Analysis Pipeline:**
+
 ```
 1. OCR pass → Extract all text regions
 2. Font analysis → Size, weight, family in screen pixels
@@ -262,12 +277,13 @@ interface LayoutIssue {
 ```
 
 **Output Interface:**
+
 ```typescript
 interface LegibilityReport {
     // Element classification
     readableElements: TextElement[];
     illegibleElements: IllegibleText[];
-    
+
     // WCAG compliance
     wcagCompliance: {
         A: boolean;
@@ -275,13 +291,13 @@ interface LegibilityReport {
         AAA: boolean;
         failures: WCAGFailure[];
     };
-    
+
     // Statistics
     statistics: {
         totalTextElements: number;
         readablePercentage: number;
         averageContrastRatio: number;
-        minimumFontSize: number;  // Screen pixels
+        minimumFontSize: number; // Screen pixels
         averageFontSize: number;
     };
 }
@@ -290,13 +306,13 @@ interface IllegibleText {
     elementId: string;
     text: string;
     reason: 'too-small' | 'low-contrast' | 'occluded' | 'blurred';
-    
+
     // Current state
-    currentSize: number;  // Screen pixels
+    currentSize: number; // Screen pixels
     contrastRatio: number;
     occlusionPercentage: number;
     blurScore: number;
-    
+
     // Recommendations
     recommendedSize: number;
     requiredContrast: number;
@@ -306,6 +322,7 @@ interface IllegibleText {
 ```
 
 **Performance:**
+
 - Analysis time: <20 ms for 100 text elements
 - OCR accuracy: >99% on rendered text
 - Contrast calculation: Exact (WCAG formula)
@@ -315,6 +332,7 @@ interface IllegibleText {
 **Purpose:** Evaluate and suggest color scheme improvements.
 
 **Analysis:**
+
 ```
 1. Color extraction → Dominant palette (K-means)
 2. Color theory analysis → Harmony type detection
@@ -324,19 +342,25 @@ interface IllegibleText {
 ```
 
 **Output Interface:**
+
 ```typescript
 interface ColorHarmonyReport {
     // Scores
-    harmonyScore: number;  // 0-100
-    accessibilityScore: number;  // 0-100
-    consistencyScore: number;  // 0-100
-    
+    harmonyScore: number; // 0-100
+    accessibilityScore: number; // 0-100
+    consistencyScore: number; // 0-100
+
     // Analysis
     dominantPalette: ColorStop[];
-    harmonyType: 'complementary' | 'analogous' | 'triadic' | 
-                 'split-complementary' | 'monochromatic' | 'none';
+    harmonyType:
+        | 'complementary'
+        | 'analogous'
+        | 'triadic'
+        | 'split-complementary'
+        | 'monochromatic'
+        | 'none';
     temperatureBalance: 'warm' | 'cool' | 'neutral' | 'mixed';
-    
+
     // Accessibility
     colorBlindSimulations: {
         protanopia: ColorBlindSimulation;
@@ -344,7 +368,7 @@ interface ColorHarmonyReport {
         tritanopia: ColorBlindSimulation;
         achromatopsia: ColorBlindSimulation;
     };
-    
+
     // Suggestions
     suggestions: ColorSuggestion[];
 }
@@ -355,6 +379,7 @@ interface ColorHarmonyReport {
 **Purpose:** Detect overlapping elements that should not overlap.
 
 **Architecture:**
+
 ```
 Input: Frame buffer + Depth buffer
     ↓
@@ -370,6 +395,7 @@ Output: Overlap list with resolution suggestions
 ```
 
 **Output Interface:**
+
 ```typescript
 interface OverlapReport {
     overlaps: Overlap[];
@@ -377,26 +403,26 @@ interface OverlapReport {
         totalOverlaps: number;
         criticalOverlaps: number;
         warningOverlaps: number;
-        totalOverlapArea: number;  // Pixels²
+        totalOverlapArea: number; // Pixels²
     };
 }
 
 interface Overlap {
     id: string;
-    elementA: string;  // Element ID
-    elementB: string;  // Element ID
+    elementA: string; // Element ID
+    elementB: string; // Element ID
     elementAType: 'node' | 'edge' | 'label' | 'ui';
     elementBType: 'node' | 'edge' | 'label' | 'ui';
-    
+
     // Overlap metrics
-    overlapArea: number;  // Pixels²
-    overlapPercentage: number;  // % of smaller element
-    iou: number;  // Intersection over Union
-    
+    overlapArea: number; // Pixels²
+    overlapPercentage: number; // % of smaller element
+    iou: number; // Intersection over Union
+
     // Severity
     severity: 'critical' | 'warning' | 'acceptable';
     reason: string;
-    
+
     // Resolution
     resolution: 'move-A' | 'move-B' | 'resize' | 'layer' | 'ignore';
     suggestedOffset?: { x: number; y: number };
@@ -404,6 +430,7 @@ interface Overlap {
 ```
 
 **Performance:**
+
 - Inference time: <25 ms
 - Detection accuracy: >98%
 - False positive rate: <1%
@@ -413,6 +440,7 @@ interface Overlap {
 **Purpose:** Evaluate visual hierarchy clarity.
 
 **Analysis:**
+
 ```
 1. Saliency detection → What draws attention first
 2. Size differentiation → Scale variance analysis
@@ -423,19 +451,20 @@ interface Overlap {
 ```
 
 **Output Interface:**
+
 ```typescript
 interface HierarchyReport {
     // Scores
-    clarityScore: number;  // 0-100
-    differentiationScore: number;  // 0-100
-    groupingScore: number;  // 0-100
-    
+    clarityScore: number; // 0-100
+    differentiationScore: number; // 0-100
+    groupingScore: number; // 0-100
+
     // Analysis
     focalPoints: FocalPoint[];
     visualGroups: VisualGroup[];
     flowDirection: 'top-down' | 'left-right' | 'radial' | 'central' | 'unclear';
-    flowStrength: number;  // 0-1
-    
+    flowStrength: number; // 0-1
+
     // Suggestions
     suggestions: HierarchySuggestion[];
 }
@@ -446,6 +475,7 @@ interface HierarchyReport {
 **Purpose:** Evaluate interaction ergonomics from visual data.
 
 **Analysis:**
+
 ```
 1. Target size analysis → Fitts's Law compliance
 2. Spacing analysis → Minimum touch targets
@@ -455,24 +485,25 @@ interface HierarchyReport {
 ```
 
 **Output Interface:**
+
 ```typescript
 interface ErgonomicsReport {
     // Scores
-    overallScore: number;  // 0-100
-    fittsLawScore: number;  // 0-100
-    touchFriendlinessScore: number;  // 0-100
-    reachabilityScore: number;  // 0-100
-    
+    overallScore: number; // 0-100
+    fittsLawScore: number; // 0-100
+    touchFriendlinessScore: number; // 0-100
+    reachabilityScore: number; // 0-100
+
     // Fitts's Law analysis
     fittsLawCompliance: {
         compliant: boolean;
         violations: FittsViolation[];
-        averageMovementTime: number;  // milliseconds
+        averageMovementTime: number; // milliseconds
     };
-    
+
     // Touch analysis
     touchAnalysis: {
-        minimumTargetSize: number;  // Pixels
+        minimumTargetSize: number; // Pixels
         recommendedTargetSize: number;
         targetsBelowMinimum: number;
         averageSpacing: number;
@@ -500,14 +531,14 @@ export default defineConfig({
                 overlap: 0,
                 color: 70,
                 hierarchy: 75,
-                ergonomics: 75
+                ergonomics: 75,
             },
             autoFix: {
                 enabled: true,
-                maxIterations: 3
-            }
-        })
-    ]
+                maxIterations: 3,
+            },
+        }),
+    ],
 });
 ```
 
@@ -540,20 +571,21 @@ expect(report.layout.overall).toBeGreaterThan(80);
 
 ### 3.1 Complete Repository Matrix
 
-| Repository | Branch | Language | Files | LOC | Status | Key Features |
-|------------|--------|----------|-------|-----|--------|--------------|
-| **spacegraphjs** | main | JavaScript | 115 | ~65,000 | Production | 18 nodes, 8 edges, 12 layouts, 11 plugins |
-| **spacegraphjs3** | feature/svg-node-scaling | TypeScript | 81 | ~35,000 | Production | SolidJS, Managers, Performance systems |
-| **spacegraphjs4** | fix-demo-rendering | JavaScript | 50 | ~8,300 | Production | Surface graph, Verlet physics, UI components |
-| **spacegraphjs5** | ergonomics-logical-conclusion | JavaScript | 125 | ~65,000 | Production | ErgonomicsPlugin, Effects, Lighting |
-| **spacegraphjs** | implementation | TypeScript | 15 | ~2,000 | MVP | Clean architecture, verification system |
-| **Total** | - | - | 386 | ~175,300 | - | Complete feature union |
+| Repository        | Branch                        | Language   | Files | LOC      | Status     | Key Features                                 |
+| ----------------- | ----------------------------- | ---------- | ----- | -------- | ---------- | -------------------------------------------- |
+| **spacegraphjs**  | main                          | JavaScript | 115   | ~65,000  | Production | 18 nodes, 8 edges, 12 layouts, 11 plugins    |
+| **spacegraphjs3** | feature/svg-node-scaling      | TypeScript | 81    | ~35,000  | Production | SolidJS, Managers, Performance systems       |
+| **spacegraphjs4** | fix-demo-rendering            | JavaScript | 50    | ~8,300   | Production | Surface graph, Verlet physics, UI components |
+| **spacegraphjs5** | ergonomics-logical-conclusion | JavaScript | 125   | ~65,000  | Production | ErgonomicsPlugin, Effects, Lighting          |
+| **spacegraphjs**  | implementation                | TypeScript | 15    | ~2,000   | MVP        | Clean architecture, verification system      |
+| **Total**         | -                             | -          | 386   | ~175,300 | -          | Complete feature union                       |
 
 ### 3.2 Key Learnings from spacegraphjs Implementation
 
 The spacegraphjs implementation branch provides valuable architectural patterns:
 
 **Clean Core Architecture:**
+
 ```typescript
 // Simplified class hierarchy
 SpaceGraph
@@ -572,6 +604,7 @@ SpaceGraph
 ```
 
 **Node Type Registration Pattern:**
+
 ```typescript
 // PluginManager registers node types
 pluginManager.registerNodeType('ShapeNode', ShapeNode);
@@ -583,6 +616,7 @@ const node = new NodeType(this.sg, config);
 ```
 
 **Automated Verification:**
+
 ```python
 # Playwright-based screenshot verification
 def verify_demos():
@@ -592,6 +626,7 @@ def verify_demos():
 ```
 
 **GSAP Integration for Smooth Animations:**
+
 ```typescript
 // Camera fly-to animation
 gsap.to(camera.position, {
@@ -599,11 +634,12 @@ gsap.to(camera.position, {
     y: targetPos.y,
     z: targetPos.z,
     duration: 1.5,
-    ease: "power2.inOut"
+    ease: 'power2.inOut',
 });
 ```
 
 **Canvas Texture Labels:**
+
 ```typescript
 // Simple sprite-based labels
 createLabel(text: string): THREE.Sprite {
@@ -611,7 +647,7 @@ createLabel(text: string): THREE.Sprite {
     const context = canvas.getContext('2d');
     context.font = '24px Arial';
     context.fillText(text, canvas.width / 2, canvas.height / 2);
-    
+
     const texture = new THREE.CanvasTexture(canvas);
     const material = new THREE.SpriteMaterial({ map: texture });
     return new THREE.Sprite(material);
@@ -955,51 +991,51 @@ const trainer = new VisionTrainer({
     dataSources: [
         './training-data/captured/',
         './training-data/labeled/',
-        './training-data/synthetic/'
+        './training-data/synthetic/',
     ],
-    
+
     models: {
         LQNet: {
             backbone: 'resnet50',
             pretrained: 'imagenet',
-            numClasses: 4
+            numClasses: 4,
         },
         TLA: {
             ocrModel: 'tesseract-web',
-            contrastCalculator: 'wcag-2.1'
+            contrastCalculator: 'wcag-2.1',
         },
         CHE: {
             paletteExtractor: 'kmeans',
-            harmonyDetector: 'color-theory-rules'
+            harmonyDetector: 'color-theory-rules',
         },
         ODN: {
             segmentationModel: 'mask-rcnn-resnet101',
-            iouThreshold: 0.5
+            iouThreshold: 0.5,
         },
         VHS: {
             saliencyModel: 'deepgaze2',
-            groupingAlgorithm: 'dbscan'
+            groupingAlgorithm: 'dbscan',
         },
         EQA: {
             fittsLawModel: 'macKenzie-1992',
-            touchTargetStandard: 'wcag-2.1'
-        }
+            touchTargetStandard: 'wcag-2.1',
+        },
     },
-    
+
     training: {
         epochs: 100,
         batchSize: 32,
         learningRate: 0.001,
         validationSplit: 0.2,
-        earlyStopping: true
+        earlyStopping: true,
     },
-    
+
     export: {
         format: 'onnx',
         optimize: true,
         quantize: true,
-        maxFileSize: 15 * 1024 * 1024
-    }
+        maxFileSize: 15 * 1024 * 1024,
+    },
 });
 
 await trainer.train();
@@ -1013,32 +1049,32 @@ import * as ort from 'onnxruntime-web';
 
 export class VisionAnalyzer {
     private sessions: Map<string, ort.InferenceSession> = new Map();
-    
+
     async loadModels(modelPaths: Record<string, string>): Promise<void> {
         for (const [name, path] of Object.entries(modelPaths)) {
             const session = await ort.InferenceSession.create(path, {
-                executionProviders: ['webgl']
+                executionProviders: ['webgl'],
             });
             this.sessions.set(name, session);
         }
     }
-    
+
     async analyzeLayout(frame: FrameBuffer): Promise<LayoutQualityReport> {
         const session = this.sessions.get('LQNet')!;
         const inputTensor = this.preprocessFrame(frame, [512, 512]);
         const results = await session.run({ input: inputTensor });
-        
+
         const scores = this.extractScores(results);
         const issues = this.detectIssues(results);
         const autoFixes = this.generateAutoFixes(issues);
-        
+
         return {
             overall: scores.overall,
             aesthetics: scores.aesthetics,
             clarity: scores.clarity,
             usability: scores.usability,
             issues,
-            autoFixes
+            autoFixes,
         };
     }
 }
@@ -1050,7 +1086,7 @@ export class VisionAnalyzer {
 export class VisionFixer {
     private graph: SpaceGraphCore;
     private visionAnalyzer: VisionAnalyzer;
-    
+
     async applyFix(fix: AutoFix): Promise<boolean> {
         switch (fix.type) {
             case 'move':
@@ -1063,12 +1099,12 @@ export class VisionFixer {
                 return await this.fixRelayout(fix);
         }
     }
-    
+
     private async fixRelayout(fix: AutoFix): Promise<boolean> {
         const layoutPlugin = this.graph.plugins.getPlugin('LayoutPlugin');
         await layoutPlugin.applyLayout(fix.parameters.layoutType, fix.parameters.settings);
         await this.waitForLayoutStable();
-        
+
         const report = await this.visionAnalyzer.analyzeLayout();
         return report.overall > fix.parameters.previousScore;
     }
@@ -1085,42 +1121,44 @@ export class VisionFixer {
 export class SpaceGraph {
     private core: SpaceGraphCore;
     private vision: VisionAnalyzer;
-    
-    // Static Factory Methods
-    static async visionCreate(container: string | HTMLElement, spec: VisionSpec): Promise<SpaceGraph>
-    static async the(container: string | HTMLElement, spec: Spec): Promise<SpaceGraph>
-    static create(simpleSpec: SimpleSpec): SpaceGraph
-    
+
+    static async visionCreate(
+        container: string | HTMLElement,
+        spec: VisionSpec,
+    ): Promise<SpaceGraph>;
+    static async the(container: string | HTMLElement, spec: Spec): Promise<SpaceGraph>;
+    static create(simpleSpec: SimpleSpec): SpaceGraph;
+
     // Constructor
-    constructor(container: string | HTMLElement, spec: Spec)
-    
+    constructor(container: string | HTMLElement, spec: Spec);
+
     // Lifecycle
-    async init(): Promise<void>
-    animate(): void
-    destroy(): void
-    
+    async init(): Promise<void>;
+    animate(): void;
+    destroy(): void;
+
     // Node operations
-    createNode(config: NodeSpec): Node
-    addNode(node: Node): Node
-    removeNode(id: string): void
-    
+    createNode(config: NodeSpec): Node;
+    addNode(node: Node): Node;
+    removeNode(id: string): void;
+
     // Edge operations
-    addEdge(source: string | Node, target: string | Node, data?: EdgeData): Edge
-    removeEdge(id: string): void
-    
+    addEdge(source: string | Node, target: string | Node, data?: EdgeData): Edge;
+    removeEdge(id: string): void;
+
     // Layout
-    async applyLayout(type: LayoutType, settings?: LayoutSettings): Promise<void>
-    
+    async applyLayout(type: LayoutType, settings?: LayoutSettings): Promise<void>;
+
     // Camera
-    camera: CameraController
-    
+    camera: CameraController;
+
     // Vision
-    async analyzeVision(): Promise<VisionReport>
-    async autoFix(category: VisionCategory): Promise<void>
-    
+    async analyzeVision(): Promise<VisionReport>;
+    async autoFix(category: VisionCategory): Promise<void>;
+
     // State
-    get state(): Spec
-    update(spec: SpecUpdate): void
+    get state(): Spec;
+    update(spec: SpecUpdate): void;
 }
 ```
 
@@ -1134,7 +1172,7 @@ export class SpaceGraph {
     graph: Graph;
     pluginManager: PluginManager;
     cameraControls: CameraControls;
-    
+
     constructor(container: HTMLElement, options: SpaceGraphOptions = {}) {
         this.container = container;
         this.graph = new Graph(this);
@@ -1142,27 +1180,27 @@ export class SpaceGraph {
         this.renderer = new Renderer(this, container);
         this.cameraControls = new CameraControls(this);
     }
-    
+
     async init() {
         this.renderer.init();
         this.pluginManager.registerNodeType('ShapeNode', ShapeNode);
         this.pluginManager.registerNodeType('HtmlNode', HtmlNode);
-        
+
         const layout = new ForceLayout(this);
         this.pluginManager.register('Layout', layout);
-        
+
         await this.pluginManager.initAll();
         this.animate();
     }
-    
+
     createNode(config: any) {
         return this.graph.addNode(config);
     }
-    
+
     addEdge(source: Node, target: Node, config: any) {
         return this.graph.addEdge(source, target, config);
     }
-    
+
     animate() {
         requestAnimationFrame(() => this.animate());
         this.pluginManager.updateAll();
@@ -1182,7 +1220,7 @@ export interface ISpaceGraphPlugin {
     readonly id: string;
     readonly name: string;
     readonly version: string;
-    
+
     init(graph: SpaceGraphCore): void;
     onStateUpdate?(update: SpecUpdate): void;
     onPreRender?(delta: number): void;
@@ -1197,15 +1235,15 @@ export interface ISpaceGraphPlugin {
 export class PluginManager {
     private plugins: Map<string, ISpaceGraphPlugin> = new Map();
     private nodeTypes: Map<string, any> = new Map();
-    
-    register(name: string, plugin: any): void
-    registerNodeType(type: string, cls: any): void
-    getNodeType(type: string): any
-    getPlugin(name: string): ISpaceGraphPlugin | undefined
-    
-    async initAll(): Promise<void>
-    updateAll(): void
-    disposePlugins(): void
+
+    register(name: string, plugin: any): void;
+    registerNodeType(type: string, cls: any): void;
+    getNodeType(type: string): any;
+    getPlugin(name: string): ISpaceGraphPlugin | undefined;
+
+    async initAll(): Promise<void>;
+    updateAll(): void;
+    disposePlugins(): void;
 }
 ```
 
@@ -1233,7 +1271,7 @@ export const NodeRegistry: Map<string, NodeConstructor> = new Map([
     ['canvas', CanvasNode],
     ['procedural-shape', ProceduralShapeNode],
     ['text-mesh', TextMeshNode],
-    ['meta-widget', MetaWidgetNode]
+    ['meta-widget', MetaWidgetNode],
 ]);
 ```
 
@@ -1244,20 +1282,20 @@ export class ShapeNode extends Node {
     createLabel(text: string): THREE.Sprite {
         const canvas = document.createElement('canvas');
         const context = canvas.getContext('2d');
-        
+
         canvas.width = 256;
         canvas.height = 64;
-        
+
         context.font = '24px Arial';
         context.fillStyle = 'white';
         context.textAlign = 'center';
         context.fillText(text, canvas.width / 2, canvas.height / 2 + 8);
-        
+
         const texture = new THREE.CanvasTexture(canvas);
         const material = new THREE.SpriteMaterial({ map: texture });
         const sprite = new THREE.Sprite(material);
         sprite.scale.set(20, 5, 1);
-        
+
         return sprite;
     }
 }
@@ -1278,7 +1316,7 @@ export const EdgeRegistry: Map<string, EdgeConstructor> = new Map([
     ['dynamic-thickness', DynamicThicknessEdge],
     ['flow', FlowEdge],
     ['spring', SpringEdge],
-    ['bezier', BezierEdge]
+    ['bezier', BezierEdge],
 ]);
 ```
 
@@ -1293,22 +1331,22 @@ export class ForceLayout {
     settings = {
         attraction: 0.01,
         repulsion: 100,
-        damping: 0.9
+        damping: 0.9,
     };
-    
+
     private velocity: Map<string, THREE.Vector3> = new Map();
-    
+
     update(): void {
         const nodes = Array.from(this.sg.graph.nodes.values());
         const edges = this.sg.graph.edges;
-        
+
         // Initialize velocities
         for (const node of nodes) {
             if (!this.velocity.has(node.id)) {
                 this.velocity.set(node.id, new THREE.Vector3(0, 0, 0));
             }
         }
-        
+
         // Repulsion (Coulomb's Law)
         for (let i = 0; i < nodes.length; i++) {
             for (let j = i + 1; j < nodes.length; j++) {
@@ -1316,14 +1354,14 @@ export class ForceLayout {
                 const n2 = nodes[j];
                 const diff = new THREE.Vector3().subVectors(n1.position, n2.position);
                 const distSq = diff.lengthSq() || 1;
-                const force = this.settings.repulsion * 100 / distSq;
+                const force = (this.settings.repulsion * 100) / distSq;
                 const dir = diff.normalize().multiplyScalar(force);
-                
+
                 this.velocity.get(n1.id)?.add(dir);
                 this.velocity.get(n2.id)?.sub(dir);
             }
         }
-        
+
         // Attraction (Hooke's Law)
         for (const edge of edges) {
             const n1 = edge.source;
@@ -1332,26 +1370,26 @@ export class ForceLayout {
             const dist = diff.length();
             const force = dist * this.settings.attraction;
             const dir = diff.normalize().multiplyScalar(force);
-            
+
             this.velocity.get(n1.id)?.add(dir);
             this.velocity.get(n2.id)?.sub(dir);
         }
-        
+
         // Apply velocity
         for (const node of nodes) {
             if (node.data.pinned) continue;
-            
+
             const vel = this.velocity.get(node.id);
             if (vel) {
                 vel.multiplyScalar(this.settings.damping);
                 node.updatePosition(
                     node.position.x + vel.x,
                     node.position.y + vel.y,
-                    node.position.z + vel.z
+                    node.position.z + vel.z,
                 );
             }
         }
-        
+
         // Update edges
         for (const edge of edges) {
             edge.update();
@@ -1373,16 +1411,18 @@ gsap.to(camera.position, {
     y: targetPos.y,
     z: targetPos.z,
     duration: 1.5,
-    ease: "power2.inOut",
+    ease: 'power2.inOut',
     onUpdate: () => {
         camera.lookAt(target);
-    }
+    },
 });
 
 // Node hover effect
 gsap.to(node.object.scale, {
-    x: 1.2, y: 1.2, z: 1.2,
-    duration: 0.3
+    x: 1.2,
+    y: 1.2,
+    z: 1.2,
+    duration: 0.3,
 });
 ```
 
@@ -1393,26 +1433,25 @@ import { DragControls } from 'three/examples/jsm/controls/DragControls.js';
 
 export class Interaction {
     dragControls: DragControls;
-    
+
     initDrag(): void {
-        const meshes = Array.from(this.sg.graph.nodes.values())
-            .map(node => node.object);
-        
+        const meshes = Array.from(this.sg.graph.nodes.values()).map((node) => node.object);
+
         this.dragControls = new DragControls(
             meshes,
             this.sg.renderer.camera,
-            this.sg.renderer.renderer.domElement
+            this.sg.renderer.renderer.domElement,
         );
-        
+
         this.dragControls.addEventListener('dragstart', (event) => {
             this.sg.cameraControls.controls.enabled = false;
             event.object.userData.node.data.pinned = true;
         });
-        
+
         this.dragControls.addEventListener('dragend', (event) => {
             this.sg.cameraControls.controls.enabled = true;
         });
-        
+
         this.dragControls.addEventListener('drag', (event) => {
             const node = event.object.userData.node;
             node.position.copy(event.object.position);
@@ -1435,17 +1474,17 @@ def verify_demos():
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
-        
+
         page.goto("http://localhost:3000/demos/")
         page.wait_for_selector("canvas", timeout=5000)
-        
+
         # Capture each demo
         demos = ['basic', 'html', 'large', 'layout']
         for demo in demos:
             page.click(f"button[data-demo='{demo}']")
             page.wait_for_timeout(2000)
             page.screenshot(path=f"verification/{demo}.png")
-        
+
         browser.close()
 ```
 
@@ -1477,18 +1516,21 @@ jobs:
 ## 13. Implementation Roadmap
 
 ### Phase 1: Foundation (Weeks 1-4)
+
 - [ ] TypeScript project setup
 - [ ] Clean core architecture (from sg6)
 - [ ] Basic plugin system
 - [ ] Renderer with WebGL + CSS3D
 
 ### Phase 2: Vision Infrastructure (Weeks 5-10)
+
 - [ ] Vision capture infrastructure
 - [ ] 6 vision model training
 - [ ] VisionReporter, VisionFixer
 - [ ] Automated screenshot verification
 
 ### Phase 3: Feature Porting (Weeks 11-18)
+
 - [ ] 18 node types
 - [ ] 8 edge types
 - [ ] 16 layout engines
@@ -1496,24 +1538,28 @@ jobs:
 - [ ] Verlet physics (sg4)
 
 ### Phase 4: Plugin Completion (Weeks 19-24)
+
 - [ ] 17 plugins total
 - [ ] Vision plugins (4 new)
 - [ ] GSAP integration
 - [ ] DragControls integration
 
 ### Phase 5: Performance Systems (Weeks 25-28)
+
 - [ ] ObjectPoolManager
 - [ ] LODManager, CullingManager
 - [ ] UnifiedDisposalSystem
 - [ ] AdvancedRenderingOptimizer
 
 ### Phase 6: Testing & Tooling (Weeks 29-32)
+
 - [ ] Vitest assertions
 - [ ] Playwright E2E
 - [ ] VSCode extension
 - [ ] CLI tool
 
 ### Phase 7: Polish & Release (Weeks 33-36)
+
 - [ ] Performance profiling
 - [ ] Demo applications
 - [ ] Documentation
@@ -1532,6 +1578,7 @@ See Section 6.2 for complete TypeScript type definitions.
 SpaceGraphJS represents the **complete synthesis** of five codebases (175,000+ LOC) into a unified, self-building ZUI library. Key additions from the spacegraphjs implementation branch include:
 
 **Architectural Improvements:**
+
 - Clean class separation (SpaceGraph, Graph, Renderer, PluginManager)
 - Node type registration pattern
 - GSAP animation integration
@@ -1539,11 +1586,13 @@ SpaceGraphJS represents the **complete synthesis** of five codebases (175,000+ L
 - DragControls for node manipulation
 
 **Verification System:**
+
 - Playwright-based screenshot verification
 - Automated visual regression testing
 - CI/CD integration for visual checks
 
 **Development Patterns:**
+
 - Simplified core API
 - Plugin-based node type registration
 - Modular demo system with verification
@@ -1551,6 +1600,7 @@ SpaceGraphJS represents the **complete synthesis** of five codebases (175,000+ L
 By embedding AI vision at every layer and adding automated visual verification, we transform development from a slow, iterative process into a fast, autonomous, quality-assured system.
 
 **Expected Impact:**
+
 - **98% faster iteration** (30 min → 30 sec)
 - **90% less human involvement** in quality assurance
 - **99.9% faster bug detection** (hours → milliseconds)

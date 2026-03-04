@@ -22,6 +22,7 @@
 ```
 
 **Checklist:**
+
 - [ ] Name is `spacegraphjs` (not taken)
 - [ ] Version is `6.0.0-alpha.1`
 - [ ] `type: "module"` is set
@@ -53,12 +54,12 @@ tar -tzf spacegraphjs-6.0.0-alpha.1.tgz
 ```
 
 **Checklist:**
+
 - [ ] Build completes without errors
 - [ ] `dist/` directory contains compiled JS
 - [ ] `dist/types/` contains TypeScript definitions
 - [ ] `npm pack --dry-run` shows expected files only
 - [ ] No sensitive files included (.env, .git, etc.)
-- [ ] Bundle size is reasonable (<1MB gzipped)
 
 ---
 
@@ -76,6 +77,7 @@ npm publish --tag alpha
 ```
 
 **Checklist:**
+
 - [ ] `npm login` successful
 - [ ] `npm publish --tag alpha` completes
 - [ ] Package visible on npmjs.com
@@ -96,6 +98,7 @@ node -e "import('spacegraphjs').then(m => console.log('OK:', typeof m.SpaceGraph
 ```
 
 **Checklist:**
+
 - [ ] Package installs without errors
 - [ ] Three.js installs as peer dependency
 - [ ] Import works in Node.js
@@ -116,10 +119,10 @@ mkdir quickstart-test && cd quickstart-test
 ```
 
 **Checklist:**
+
 - [ ] All commands work as written
 - [ ] All code snippets are valid
 - [ ] No missing steps
-- [ ] Time to complete is <10 minutes
 - [ ] Screenshots added (optional)
 
 ---
@@ -127,7 +130,8 @@ mkdir quickstart-test && cd quickstart-test
 ### □ 2.2 Update README.md (2 hours)
 
 **Required Sections:**
-```markdown
+
+````markdown
 # SpaceGraphJS
 
 [![npm](https://img.shields.io/npm/v/spacegraphjs.svg)](https://www.npmjs.com/package/spacegraphjs)
@@ -146,6 +150,7 @@ It sees what it builds, verifies quality autonomously, and self-corrects in 30 s
 ```bash
 npm install spacegraphjs three
 ```
+````
 
 [See QUICKSTART.md](./QUICKSTART.md) for a 5-minute guide.
 
@@ -173,7 +178,8 @@ npm install spacegraphjs three
 ## License
 
 MIT — See [LICENSE](./LICENSE)
-```
+
+````
 
 **Checklist:**
 - [ ] Badges work (npm, Matrix, Sponsors)
@@ -192,9 +198,10 @@ MIT — See [LICENSE](./LICENSE)
 cat LICENSE
 
 # Should be MIT license
-```
+````
 
 **Checklist:**
+
 - [ ] LICENSE file exists
 - [ ] Contains full MIT license text
 - [ ] Copyright year is current
@@ -207,6 +214,7 @@ cat LICENSE
 ### □ 3.1 Create Matrix Room (1 hour)
 
 **Steps:**
+
 1. Go to https://app.element.io
 2. Create account (if needed)
 3. Create room: `#spacegraphjs:matrix.org`
@@ -215,6 +223,7 @@ cat LICENSE
 6. Set permissions (anyone can join, members can send messages)
 
 **Checklist:**
+
 - [ ] Room created: `#spacegraphjs:matrix.org`
 - [ ] Description is set
 - [ ] Avatar is uploaded
@@ -226,15 +235,17 @@ cat LICENSE
 ### □ 3.2 Set Up GitHub Sponsors (1 hour)
 
 **Steps:**
+
 1. Go to https://github.com/sponsors/autonull
 2. Click "Create a sponsorship page"
 3. Fill in:
-   - About: "Building the first self-building UI framework"
-   - Suggested tiers: $5, $10, $25, $50, $100
-   - Benefits: Thank you, early access, priority support (by tier)
+    - About: "Building the first self-building UI framework"
+    - Suggested tiers: $5, $10, $25, $50, $100
+    - Benefits: Thank you, early access, priority support (by tier)
 4. Submit for review
 
 **Checklist:**
+
 - [ ] Sponsorship page created
 - [ ] About section is compelling
 - [ ] Tiers are set
@@ -252,6 +263,7 @@ cat LICENSE
 ```
 
 **Checklist:**
+
 - [ ] npm badge links to package
 - [ ] Matrix badge links to room
 - [ ] Sponsors badge links to sponsorship page
@@ -262,6 +274,7 @@ cat LICENSE
 ### □ 3.4 Set Up Open Collective (Optional, 30 min)
 
 **Steps:**
+
 1. Go to https://opencollective.com
 2. Create collective: "SpaceGraphJS"
 3. Link GitHub repository
@@ -269,6 +282,7 @@ cat LICENSE
 5. Add donation button to README
 
 **Checklist:**
+
 - [ ] Collective created
 - [ ] GitHub linked
 - [ ] Bank account verified
@@ -286,36 +300,37 @@ cat LICENSE
 import { Plugin } from 'vite';
 
 interface VisionPluginOptions {
-  enabled?: boolean;
-  autoFix?: boolean;
-  thresholds?: {
-    layout?: number;
-    legibility?: number;
-  };
+    enabled?: boolean;
+    autoFix?: boolean;
+    thresholds?: {
+        layout?: number;
+        legibility?: number;
+    };
 }
 
 export function spacegraphVision(options: VisionPluginOptions = {}): Plugin {
-  return {
-    name: 'spacegraph-vision',
-    enforce: 'post',
-    
-    async buildEnd() {
-      if (!options.enabled) return;
-      console.log('👁️  Vision analysis running...');
-      // TODO: Implement vision analysis
-    },
-    
-    configureServer(server) {
-      server.middlewares.use('/__vision', async (req, res) => {
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ status: 'ok' }));
-      });
-    },
-  };
+    return {
+        name: 'spacegraph-vision',
+        enforce: 'post',
+
+        async buildEnd() {
+            if (!options.enabled) return;
+            console.log('👁️  Vision analysis running...');
+            // TODO: Implement vision analysis
+        },
+
+        configureServer(server) {
+            server.middlewares.use('/__vision', async (req, res) => {
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ status: 'ok' }));
+            });
+        },
+    };
 }
 ```
 
 **Checklist:**
+
 - [ ] Plugin file created
 - [ ] Interface defined
 - [ ] Basic structure works
@@ -329,28 +344,29 @@ export function spacegraphVision(options: VisionPluginOptions = {}): Plugin {
 
 ```typescript
 export interface VisionReport {
-  layoutScore: number;
-  legibilityScore: number;
-  issues: VisionIssue[];
+    layoutScore: number;
+    legibilityScore: number;
+    issues: VisionIssue[];
 }
 
 export interface VisionIssue {
-  type: 'overlap' | 'legibility' | 'color';
-  severity: 'error' | 'warning';
-  message: string;
+    type: 'overlap' | 'legibility' | 'color';
+    severity: 'error' | 'warning';
+    message: string;
 }
 
 export async function runVisionAnalysis(outputDir: string): Promise<VisionReport> {
-  // Stub implementation
-  return {
-    layoutScore: 85,
-    legibilityScore: 90,
-    issues: [],
-  };
+    // Stub implementation
+    return {
+        layoutScore: 85,
+        legibilityScore: 90,
+        issues: [],
+    };
 }
 ```
 
 **Checklist:**
+
 - [ ] Types defined
 - [ ] Function signature works
 - [ ] Returns valid report structure
@@ -374,6 +390,7 @@ npm run build
 ```
 
 **Checklist:**
+
 - [ ] Plugin loads without errors
 - [ ] Vision analysis runs on build
 - [ ] Report is logged to console
@@ -385,7 +402,7 @@ npm run build
 
 **Add to docs/vision-plugin.md:**
 
-```markdown
+````markdown
 # Vision Plugin
 
 The Vite plugin integrates AI vision analysis into your build process.
@@ -395,6 +412,7 @@ The Vite plugin integrates AI vision analysis into your build process.
 ```bash
 npm install spacegraphjs
 ```
+````
 
 ## Configuration
 
@@ -404,28 +422,29 @@ import { defineConfig } from 'vite';
 import { spacegraphVision } from 'spacegraphjs/vision';
 
 export default defineConfig({
-  plugins: [
-    spacegraphVision({
-      enabled: true,
-      autoFix: true,
-      thresholds: {
-        layout: 80,
-        legibility: 85,
-      },
-    }),
-  ],
+    plugins: [
+        spacegraphVision({
+            enabled: true,
+            autoFix: true,
+            thresholds: {
+                layout: 80,
+                legibility: 85,
+            },
+        }),
+    ],
 });
 ```
 
 ## Options
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| enabled | boolean | true | Enable/disable analysis |
-| autoFix | boolean | false | Auto-fix issues |
-| thresholds.layout | number | 80 | Minimum layout score |
-| thresholds.legibility | number | 85 | Minimum legibility score |
-```
+| Option                | Type    | Default | Description              |
+| --------------------- | ------- | ------- | ------------------------ |
+| enabled               | boolean | true    | Enable/disable analysis  |
+| autoFix               | boolean | false   | Auto-fix issues          |
+| thresholds.layout     | number  | 80      | Minimum layout score     |
+| thresholds.legibility | number  | 85      | Minimum legibility score |
+
+````
 
 **Checklist:**
 - [ ] Installation steps clear
@@ -482,7 +501,7 @@ Result: 30-second iterations. 98% faster.
 
 ```bash
 npm install spacegraphjs@alpha
-```
+````
 
 [Link to QUICKSTART.md]
 
@@ -492,6 +511,7 @@ We're building a world where interfaces are visible, comprehensible, and alive.
 
 - GitHub: https://github.com/autonull/spacegraphjs
 - Matrix: https://matrix.to/#/#spacegraphjs:matrix.org
+
 ```
 
 **Checklist:**
@@ -508,6 +528,7 @@ We're building a world where interfaces are visible, comprehensible, and alive.
 
 **Twitter/LinkedIn Thread:**
 ```
+
 🧵 SpaceGraphJS is the first self-building UI framework.
 
 It sees what it builds, verifies quality autonomously, and self-corrects in 30 seconds.
@@ -517,6 +538,7 @@ It sees what it builds, verifies quality autonomously, and self-corrects in 30 s
 Here's how it works: 👇
 
 [1/7]
+
 ```
 
 **Checklist:**
@@ -531,12 +553,14 @@ Here's how it works: 👇
 
 **Script:**
 ```
+
 [0:00-0:15] Show broken graph (overlapping nodes)
 [0:15-0:30] Run vision analysis (show scores)
 [0:30-0:45] Trigger auto-fix
 [0:45-1:00] Show fixed graph
 [1:00-1:15] Call to action: "Try it yourself"
-```
+
+````
 
 **Checklist:**
 - [ ] Screen recording captured
@@ -557,9 +581,10 @@ npm install spacegraphjs@alpha
 # Verify Matrix room is accessible
 # Verify GitHub Sponsors page is live
 # Verify article is published
-```
+````
 
 **Checklist:**
+
 - [ ] npm package installs
 - [ ] QUICKSTART.md works end-to-end
 - [ ] Matrix room is accessible
@@ -572,6 +597,7 @@ npm install spacegraphjs@alpha
 ### □ 6.2 Announce Launch (1 hour)
 
 **Post to:**
+
 - [ ] GitHub Discussions (Announcement)
 - [ ] Matrix room (Welcome message)
 - [ ] Twitter/LinkedIn (Thread)
@@ -579,6 +605,7 @@ npm install spacegraphjs@alpha
 - [ ] Relevant subreddits (r/javascript, r/typescript, r/threejs)
 
 **Announcement Template:**
+
 ```
 🚀 SpaceGraphJS Alpha is Live!
 
@@ -608,6 +635,7 @@ Community: https://matrix.to/#/#spacegraphjs:matrix.org
 - [ ] Launch announcement posted
 
 **Success Metrics:**
+
 - [ ] 100 npm downloads
 - [ ] 10 Matrix members
 - [ ] 5 GitHub stars

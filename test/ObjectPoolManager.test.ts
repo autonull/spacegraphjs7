@@ -23,14 +23,14 @@ describe('ObjectPoolManager', () => {
     });
 
     it('should clear objects and call disposeFn', () => {
-        const pool = new ObjectPoolManager<{ id: number, disposed: boolean }>();
+        const pool = new ObjectPoolManager<{ id: number; disposed: boolean }>();
         const obj1 = { id: 1, disposed: false };
         const obj2 = { id: 2, disposed: false };
 
         pool.release('pool-A', obj1);
         pool.release('pool-B', obj2);
 
-        const disposeSpy = vi.fn((obj: { id: number, disposed: boolean }) => {
+        const disposeSpy = vi.fn((obj: { id: number; disposed: boolean }) => {
             obj.disposed = true;
         });
 

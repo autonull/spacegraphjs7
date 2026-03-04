@@ -37,6 +37,11 @@ export class MinimapPlugin implements ISpaceGraphPlugin {
     init(sg: SpaceGraph): void {
         this.sg = sg;
         this._buildCamera();
+
+        const dom = this.sg.renderer.renderer.domElement;
+        dom.addEventListener('pointerdown', this._onPointerDown);
+        dom.addEventListener('pointermove', this._onPointerMove);
+        window.addEventListener('pointerup', this._onPointerUp);
     }
 
     private _buildCamera() {
@@ -46,6 +51,76 @@ export class MinimapPlugin implements ISpaceGraphPlugin {
         this.orthoCamera.lookAt(0, 0, 0);
     }
 
+    private isDragging = false;
+
+    private _getBounds() {
+        const canvas = this.sg.renderer.renderer.domElement;
+        const cw = canvas.clientWidth;
+        const ch = canvas.clientHeight;
+        const { size, margin } = this.settings;
+
+        let left: number, bottom: number;
+        switch (this.settings.position) {
+            case 'bottom-left':
+                left = margin;
+                bottom = margin;
+                break;
+            case 'top-right':
+                left = cw - size - margin;
+                bottom = ch - size - margin;
+                break;
+            case 'top-left':
+                left = margin;
+                bottom = ch - size - margin;
+                break;
+            default:
+                left = cw - size - margin;
+                bottom = margin;
+        }
+        const top = ch - bottom - size;
+        return { left, top, size };
+    }
+
+    private _pointerToWorld(px: number, py: number) {
+        const { left, top, size } = this._getBounds();
+        const nx = ((px - left) / size) * 2 - 1;
+        const ny = -(((py - top) / size) * 2 - 1);
+        const z = this.settings.zoom;
+        return {
+            x: this.orthoCamera.position.x + nx * z,
+            y: this.orthoCamera.position.y + ny * z,
+        };
+    }
+
+    private _onPointerDown = (e: PointerEvent) => {
+        const { left, top, size } = this._getBounds();
+        if (
+            e.clientX >= left &&
+            e.clientX <= left + size &&
+            e.clientY >= top &&
+            e.clientY <= top + size
+        ) {
+            this.isDragging = true;
+            const pt = this._pointerToWorld(e.clientX, e.clientY);
+            this.sg.cameraControls.flyTo(
+                new THREE.Vector3(pt.x, pt.y, 0),
+                this.sg.cameraControls.spherical.radius,
+            );
+            e.stopPropagation();
+        }
+    };
+
+    private _onPointerMove = (e: PointerEvent) => {
+        if (!this.isDragging) return;
+        const pt = this._pointerToWorld(e.clientX, e.clientY);
+        this.sg.cameraControls.target.set(pt.x, pt.y, 0);
+        e.stopPropagation();
+    };
+
+    private _onPointerUp = () => {
+        this.isDragging = false;
+    };
+
     onPostRender(_delta: number): void {
         this._renderMinimap();
     }
@@ -54,19 +129,13 @@ export class MinimapPlugin implements ISpaceGraphPlugin {
         const renderer = this.sg.renderer.renderer;
         if (!renderer) return;
 
-        const { size, margin } = this.settings;
         const canvas = renderer.domElement;
         const cw = canvas.clientWidth;
         const ch = canvas.clientHeight;
         const pr = renderer.getPixelRatio();
 
-        let left: number, bottom: number;
-        switch (this.settings.position) {
-            case 'bottom-left': left = margin; bottom = margin; break;
-            case 'top-right': left = cw - size - margin; bottom = ch - size - margin; break;
-            case 'top-left': left = margin; bottom = ch - size - margin; break;
-            default: left = cw - size - margin; bottom = margin;
-        }
+        const { left, top, size } = this._getBounds();
+        const bottom = ch - top - size;
 
         // Update ortho camera to centre on graph
         const nodes = Array.from(this.sg.graph.nodes.values());
@@ -90,6 +159,11 @@ export class MinimapPlugin implements ISpaceGraphPlugin {
     }
 
     dispose(): void {
-        // Nothing to dispose for the camera itself
+        const dom = this.sg.renderer.renderer?.domElement;
+        if (dom) {
+            dom.removeEventListener('pointerdown', this._onPointerDown);
+            dom.removeEventListener('pointermove', this._onPointerMove);
+        }
+        window.removeEventListener('pointerup', this._onPointerUp);
     }
 }

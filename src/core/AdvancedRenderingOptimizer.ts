@@ -39,7 +39,9 @@ export class AdvancedRenderingOptimizer {
         // If FPS drops below 30, enable throttling to degrade gracefully
         if (this.fps < 30) {
             if (!this.isThrottled) {
-                console.warn(`[AdvancedRenderingOptimizer] FPS dropped to ${this.fps.toFixed(1)}. Throttling enabled.`);
+                console.warn(
+                    `[AdvancedRenderingOptimizer] FPS dropped to ${this.fps.toFixed(1)}. Throttling enabled.`,
+                );
                 this.isThrottled = true;
 
                 // Example of graceful degradation: disable heavy physics updates or CSS rendering
@@ -50,7 +52,9 @@ export class AdvancedRenderingOptimizer {
             }
         } else if (this.fps >= 55) {
             if (this.isThrottled) {
-                console.log(`[AdvancedRenderingOptimizer] FPS recovered to ${this.fps.toFixed(1)}. Throttling disabled.`);
+                console.log(
+                    `[AdvancedRenderingOptimizer] FPS recovered to ${this.fps.toFixed(1)}. Throttling disabled.`,
+                );
                 this.isThrottled = false;
 
                 // Re-enable plugins

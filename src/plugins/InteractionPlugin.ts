@@ -35,7 +35,9 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
 
         canvas.addEventListener('pointerup', (e) => {
             // Only trigger click if the pointer hasn't moved much (not a drag)
-            const distance = this.pointerDownPosition.distanceTo(new THREE.Vector2(e.clientX, e.clientY));
+            const distance = this.pointerDownPosition.distanceTo(
+                new THREE.Vector2(e.clientX, e.clientY),
+            );
             if (distance > 5 || this.isDragging) return;
 
             const rect = canvas.getBoundingClientRect();
@@ -44,7 +46,7 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
 
             this.raycaster.setFromCamera(this.mouse, this.sg.renderer.camera);
 
-            const meshes = Array.from(this.sg.graph.nodes.values()).flatMap(node => {
+            const meshes = Array.from(this.sg.graph.nodes.values()).flatMap((node) => {
                 // Support nested meshes within the node object
                 const children: THREE.Object3D[] = [];
                 node.object.traverse((child: THREE.Object3D) => {
@@ -76,7 +78,7 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
 
     private getIntersectedNode() {
         this.raycaster.setFromCamera(this.mouse, this.sg.renderer.camera);
-        const meshes = Array.from(this.sg.graph.nodes.values()).flatMap(node => {
+        const meshes = Array.from(this.sg.graph.nodes.values()).flatMap((node) => {
             const children: THREE.Object3D[] = [];
             node.object.traverse((child: THREE.Object3D) => {
                 if (child instanceof THREE.Mesh) children.push(child);
@@ -108,7 +110,7 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
                 // Create a mathematical plane facing the camera rooted at the node's current position
                 this.dragPlane.setFromNormalAndCoplanarPoint(
                     this.sg.renderer.camera.getWorldDirection(this.dragPlane.normal),
-                    this.dragNode.position
+                    this.dragNode.position,
                 );
 
                 // Find intersection offset so the node doesn't snap to the center of the mouse immediately
@@ -166,11 +168,11 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
         }
 
         const nodes = Array.from(this.sg.graph.nodes.values());
-        return nodes.find(n => n.object === current);
+        return nodes.find((n) => n.object === current);
     }
 
     dispose(): void {
-        // Event listeners are garbage collected if the DOM element unmounts usually, 
+        // Event listeners are garbage collected if the DOM element unmounts usually,
         // but explicit removal is best-practice if SpaceGraph instance drops.
         this.isDragging = false;
         this.dragNode = null;

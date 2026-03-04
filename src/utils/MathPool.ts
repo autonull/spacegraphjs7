@@ -59,21 +59,21 @@ export class ObjectPool<T> {
 /**
  * Central manager for specific object pools.
  */
-export class ObjectPoolManager {
-    private static instance: ObjectPoolManager;
+export class MathPool {
+    private static instance: MathPool;
     private pools = new Map<string, ObjectPool<any>>();
 
-    private constructor() { }
+    private constructor() {}
 
     /**
      * Get the singleton instance.
      */
-    static getInstance(): ObjectPoolManager {
-        if (!ObjectPoolManager.instance) {
-            ObjectPoolManager.instance = new ObjectPoolManager();
-            ObjectPoolManager.instance.createThreeJSPools();
+    static getInstance(): MathPool {
+        if (!MathPool.instance) {
+            MathPool.instance = new MathPool();
+            MathPool.instance.createThreeJSPools();
         }
-        return ObjectPoolManager.instance;
+        return MathPool.instance;
     }
 
     /**
@@ -81,28 +81,40 @@ export class ObjectPoolManager {
      */
     private createThreeJSPools(): void {
         // Vector3 Pool
-        this.pools.set('Vector3', new ObjectPool<THREE.Vector3>(
-            () => new THREE.Vector3(),
-            (v) => v.set(0, 0, 0)
-        ));
+        this.pools.set(
+            'Vector3',
+            new ObjectPool<THREE.Vector3>(
+                () => new THREE.Vector3(),
+                (v) => v.set(0, 0, 0),
+            ),
+        );
 
         // Matrix4 Pool
-        this.pools.set('Matrix4', new ObjectPool<THREE.Matrix4>(
-            () => new THREE.Matrix4(),
-            (m) => m.identity()
-        ));
+        this.pools.set(
+            'Matrix4',
+            new ObjectPool<THREE.Matrix4>(
+                () => new THREE.Matrix4(),
+                (m) => m.identity(),
+            ),
+        );
 
         // Color Pool
-        this.pools.set('Color', new ObjectPool<THREE.Color>(
-            () => new THREE.Color(),
-            (c) => c.setHex(0xFFFFFF)
-        ));
+        this.pools.set(
+            'Color',
+            new ObjectPool<THREE.Color>(
+                () => new THREE.Color(),
+                (c) => c.setHex(0xffffff),
+            ),
+        );
 
         // Quaternion Pool
-        this.pools.set('Quaternion', new ObjectPool<THREE.Quaternion>(
-            () => new THREE.Quaternion(),
-            (q) => q.identity()
-        ));
+        this.pools.set(
+            'Quaternion',
+            new ObjectPool<THREE.Quaternion>(
+                () => new THREE.Quaternion(),
+                (q) => q.identity(),
+            ),
+        );
     }
 
     /**

@@ -156,8 +156,8 @@ export class ErgonomicsPlugin implements ISpaceGraphPlugin {
 
         // Exponential moving average for metrics
         const alpha = 0.1;
-        this.metrics.avgEfficiency = (alpha * efficiency) + ((1 - alpha) * this.metrics.avgEfficiency);
-        this.metrics.avgJitter = (alpha * jitter) + ((1 - alpha) * this.metrics.avgJitter);
+        this.metrics.avgEfficiency = alpha * efficiency + (1 - alpha) * this.metrics.avgEfficiency;
+        this.metrics.avgJitter = alpha * jitter + (1 - alpha) * this.metrics.avgJitter;
         // Only count valid non-accidental clicks as full interactions
         if (session.path.length > 1) {
             this.metrics.totalInteractions++;
@@ -175,10 +175,14 @@ export class ErgonomicsPlugin implements ISpaceGraphPlugin {
         return { ...this.metrics };
     }
 
-    public startCalibrationRound(configA: Partial<typeof this.config>, configB: Partial<typeof this.config>, interactionsPerRound = 10) {
+    public startCalibrationRound(
+        configA: Partial<typeof this.config>,
+        configB: Partial<typeof this.config>,
+        interactionsPerRound = 10,
+    ) {
         this.calibrating = true;
 
-        let roundCount = 0;
+        const roundCount = 0;
         let activeConfig: 'A' | 'B' = 'A';
 
         // Stash baseline to restore or compare later
@@ -187,7 +191,7 @@ export class ErgonomicsPlugin implements ISpaceGraphPlugin {
         // Reset metrics for the test
         const scores = {
             A: { efficiency: 0, jitter: 0 },
-            B: { efficiency: 0, jitter: 0 }
+            B: { efficiency: 0, jitter: 0 },
         };
 
         this.updateConfig(configA);
@@ -218,14 +222,16 @@ export class ErgonomicsPlugin implements ISpaceGraphPlugin {
 
                     // Lower jitter and higher efficiency wins
                     // A simple score heuristic: Efficiency (0-1) - normalized jitter penalties
-                    const scoreA = scores.A.efficiency - (scores.A.jitter * 0.1);
-                    const scoreB = scores.B.efficiency - (scores.B.jitter * 0.1);
+                    const scoreA = scores.A.efficiency - scores.A.jitter * 0.1;
+                    const scoreB = scores.B.efficiency - scores.B.jitter * 0.1;
 
                     const winner = scoreA >= scoreB ? configA : configB;
 
                     // Apply winning config permanently
                     this.updateConfig({ ...baselineConfig, ...winner });
-                    console.log(`[Ergonomics] Calibration complete. Winner: Variant ${scoreA >= scoreB ? 'A' : 'B'}`);
+                    console.log(
+                        `[Ergonomics] Calibration complete. Winner: Variant ${scoreA >= scoreB ? 'A' : 'B'}`,
+                    );
                     this.sg.events.emit('ergonomics:calibrated' as any, { winner, scores });
                 }
             }

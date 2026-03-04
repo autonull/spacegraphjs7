@@ -29,7 +29,7 @@ export class CircularLayout implements ISpaceGraphPlugin {
     }
 
     apply(): void {
-        const nodes = Array.from(this.sg.graph.nodes.values()).filter(n => !n.data?.pinned);
+        const nodes = Array.from(this.sg.graph.nodes.values()).filter((n) => !n.data?.pinned);
         if (!nodes.length) return;
 
         const step = (2 * Math.PI) / nodes.length;
@@ -44,5 +44,5 @@ export class CircularLayout implements ISpaceGraphPlugin {
         for (const edge of this.sg.graph.edges) edge.update?.();
     }
 
-    onPreRender(_delta: number): void { }
+    onPreRender(_delta: number): void {}
 }

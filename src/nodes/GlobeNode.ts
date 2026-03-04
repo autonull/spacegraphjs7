@@ -46,7 +46,7 @@ export class GlobeNode extends Node {
                 color: 0xffffff,
                 wireframe: true,
                 transparent: true,
-                opacity: 0.2
+                opacity: 0.2,
             });
             this.wireframe = new THREE.Mesh(geo, wireMat);
             this.object.add(this.wireframe);
@@ -59,7 +59,7 @@ export class GlobeNode extends Node {
             transparent: true,
             opacity: 0.1,
             side: THREE.BackSide,
-            blending: THREE.AdditiveBlending
+            blending: THREE.AdditiveBlending,
         });
         const halo = new THREE.Mesh(haloGeo, haloMat);
         this.object.add(halo);
@@ -91,7 +91,9 @@ export class GlobeNode extends Node {
         }
 
         // Halo
-        const halo = this.object.children.find(c => c !== this.mesh && c !== this.wireframe) as THREE.Mesh;
+        const halo = this.object.children.find(
+            (c) => c !== this.mesh && c !== this.wireframe,
+        ) as THREE.Mesh;
         if (halo) {
             halo.geometry.dispose();
             (halo.material as THREE.Material).dispose();

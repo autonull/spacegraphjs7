@@ -2,7 +2,7 @@ import type { SpaceGraph } from '../SpaceGraph';
 import type { ISpaceGraphPlugin } from '../types';
 import type { Node } from '../nodes/Node';
 import * as THREE from 'three';
-import { ObjectPoolManager } from '../utils/ObjectPoolManager';
+import { MathPool } from '../utils/MathPool';
 
 /**
  * PhysicsPlugin — Verlet-based 2-D physics stub.
@@ -29,16 +29,16 @@ export class PhysicsPlugin implements ISpaceGraphPlugin {
     private prev: Map<string, THREE.Vector3> = new Map();
 
     public settings = {
-        enabled: false,      // opt-in; won't interfere unless activated
-        gravity: -9.8,       // units/s² in Y direction; 0 to disable
-        damping: 0.98,       // velocity multiplier each step (0–1)
-        groundY: -500,       // Y below which nodes are reflected; null to disable
-        fixedStep: 1 / 60,   // physics timestep in seconds
+        enabled: false, // opt-in; won't interfere unless activated
+        gravity: -9.8, // units/s² in Y direction; 0 to disable
+        damping: 0.98, // velocity multiplier each step (0–1)
+        groundY: -500, // Y below which nodes are reflected; null to disable
+        fixedStep: 1 / 60, // physics timestep in seconds
         springStiffness: 0.1, // Hooke's Law k constant
         springRestLength: 100,
-        collide: true,       // whether nodes push each other apart
+        collide: true, // whether nodes push each other apart
         collisionRadius: 20, // uniform minimum distance apart
-        repulsion: 100,      // electrical repulsion force for non-connected nodes
+        repulsion: 100, // electrical repulsion force for non-connected nodes
     };
 
     init(sg: SpaceGraph): void {
@@ -70,7 +70,7 @@ export class PhysicsPlugin implements ISpaceGraphPlugin {
             const vy = (cur.y - prev.y) * this.settings.damping;
             const vz = (cur.z - prev.z) * this.settings.damping;
 
-            let nx = cur.x + vx;
+            const nx = cur.x + vx;
             let ny = cur.y + vy + grav * dt * dt;
             const nz = cur.z + vz;
 
@@ -94,7 +94,9 @@ export class PhysicsPlugin implements ISpaceGraphPlugin {
                 const n2 = edge.target;
                 if (!n1 || !n2) continue;
 
-                const diff = ObjectPoolManager.getInstance().acquireVector3().subVectors(n2.position, n1.position);
+                const diff = MathPool.getInstance()
+                    .acquireVector3()
+                    .subVectors(n2.position, n1.position);
                 const dist = diff.length() || 0.0001;
 
                 // F = -k * x
@@ -110,7 +112,7 @@ export class PhysicsPlugin implements ISpaceGraphPlugin {
                     n2.position.sub(diff);
                 }
 
-                ObjectPoolManager.getInstance().releaseVector3(diff);
+                MathPool.getInstance().releaseVector3(diff);
             }
         }
 
@@ -121,7 +123,9 @@ export class PhysicsPlugin implements ISpaceGraphPlugin {
                     const n1 = nodes[i];
                     const n2 = nodes[j];
 
-                    const diff = ObjectPoolManager.getInstance().acquireVector3().subVectors(n1.position, n2.position);
+                    const diff = MathPool.getInstance()
+                        .acquireVector3()
+                        .subVectors(n1.position, n2.position);
                     const distSq = diff.lengthSq() || 0.0001;
                     const dist = Math.sqrt(distSq);
 
@@ -129,7 +133,7 @@ export class PhysicsPlugin implements ISpaceGraphPlugin {
 
                     // Hard collision constraint
                     if (this.settings.collide && dist < this.settings.collisionRadius * 2) {
-                        const overlap = (this.settings.collisionRadius * 2) - dist;
+                        const overlap = this.settings.collisionRadius * 2 - dist;
                         const push = diffNormalized.clone().multiplyScalar(overlap * 0.5);
 
                         if (!n1.data?.pinned && !n1.data?.physicsStatic) n1.position.add(push);
@@ -145,7 +149,7 @@ export class PhysicsPlugin implements ISpaceGraphPlugin {
                         if (!n2.data?.pinned && !n2.data?.physicsStatic) n2.position.sub(repPush);
                     }
 
-                    ObjectPoolManager.getInstance().releaseVector3(diff);
+                    MathPool.getInstance().releaseVector3(diff);
                 }
             }
         }

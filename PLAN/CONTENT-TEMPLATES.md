@@ -6,7 +6,7 @@
 
 ## Article Template: Technical Deep Dive
 
-```markdown
+````markdown
 # [Title: Clear, Specific, Benefit-Driven]
 
 **[Subtitle: One sentence expanding on the title]**
@@ -58,26 +58,27 @@ SpaceGraphJS embeds AI vision at every layer:
 import { spacegraphVision } from 'spacegraphjs/vision';
 
 export default defineConfig({
-  plugins: [
-    spacegraphVision({
-      enabled: true,
-      autoFix: true,
-      thresholds: { layout: 80, legibility: 85 }
-    })
-  ]
+    plugins: [
+        spacegraphVision({
+            enabled: true,
+            autoFix: true,
+            thresholds: { layout: 80, legibility: 85 },
+        }),
+    ],
 });
 ```
+````
 
 On every build, six vision models analyze the output:
 
-| Model | Purpose |
-|-------|---------|
-| LQ-Net | Layout quality scoring |
-| TLA | Text legibility analysis |
-| CHE | Color harmony evaluation |
-| ODN | Overlap detection |
-| VHS | Visual hierarchy scoring |
-| EQA | Ergonomics quality assessment |
+| Model  | Purpose                       |
+| ------ | ----------------------------- |
+| LQ-Net | Layout quality scoring        |
+| TLA    | Text legibility analysis      |
+| CHE    | Color harmony evaluation      |
+| ODN    | Overlap detection             |
+| VHS    | Visual hierarchy scoring      |
+| EQA    | Ergonomics quality assessment |
 
 ---
 
@@ -105,11 +106,11 @@ On every build, six vision models analyze the output:
 
 **Example:**
 
-| Metric | Before | After | Improvement |
-|--------|--------|-------|-------------|
-| Iteration time | 30 min | 30 sec | 60x faster |
-| Bug detection | Manual | Automatic | 100% coverage |
-| Code quality | Variable | Consistent | 95%+ pass rate |
+| Metric         | Before   | After      | Improvement    |
+| -------------- | -------- | ---------- | -------------- |
+| Iteration time | 30 min   | 30 sec     | 60x faster     |
+| Bug detection  | Manual   | Automatic  | 100% coverage  |
+| Code quality   | Variable | Consistent | 95%+ pass rate |
 
 ---
 
@@ -138,7 +139,8 @@ We're building [vision/mission]. Join us:
 ## About the Author
 
 [Brief bio with links.]
-```
+
+````
 
 ---
 
@@ -244,7 +246,7 @@ You can watch from the sidelines. Or you can build with us.
 **Get started:**
 ```bash
 npm install spacegraphjs@alpha
-```
+````
 
 **Join the conversation:**
 https://matrix.to/#/#spacegraphjs:matrix.org
@@ -259,6 +261,7 @@ The future is self-building. Let's build it together.
 ## About
 
 [Brief bio + mission statement.]
+
 ```
 
 ---
@@ -266,6 +269,7 @@ The future is self-building. Let's build it together.
 ## Video Script Template: Demo
 
 ```
+
 [0:00-0:05] HOOK
 "Watch me fix a UI bug in 30 seconds — without touching the code."
 
@@ -291,6 +295,7 @@ The future is self-building. Let's build it together.
 
 [0:55-1:00] END SCREEN
 [Links to GitHub, Matrix, docs]
+
 ```
 
 ---
@@ -298,6 +303,7 @@ The future is self-building. Let's build it together.
 ## Video Script Template: Tutorial
 
 ```
+
 [0:00-0:10] INTRO
 "Today: Build your first SpaceGraph in 5 minutes."
 [Show final result]
@@ -329,6 +335,7 @@ The future is self-building. Let's build it together.
 [4:30-5:00] OUTRO
 "Join the community on Matrix. Link in description."
 [Show Matrix badge]
+
 ```
 
 ---
@@ -338,6 +345,7 @@ The future is self-building. Let's build it together.
 ### Twitter/LinkedIn Thread
 
 ```
+
 🧵 [Hook: Bold claim or surprising fact]
 
 SpaceGraphJS is the first self-building UI framework.
@@ -355,6 +363,7 @@ Here's how it works: 👇
 [Problem setup]
 
 Traditional AI development:
+
 1. Describe → 2. AI codes → 3. You view → 4. AI guesses → Repeat (10-20x)
 
 30 min per iteration. Exhausting.
@@ -366,6 +375,7 @@ Traditional AI development:
 [Solution]
 
 Vision-closed development:
+
 1. Specify → 2. AI builds → 3. Vision verifies → 4. AI self-corrects → Done
 
 30 sec per iteration. Autonomous.
@@ -393,7 +403,6 @@ Vision-closed development:
 Benchmarks:
 • 60 FPS at 1000 nodes
 • <100ms initial render
-• <100KB bundle size
 • 95%+ vision accuracy
 
 [5/7]
@@ -420,11 +429,13 @@ Community: [link]
 GitHub: [link]
 
 [7/7]
+
 ```
 
 ### Reddit Post
 
 ```
+
 Title: I built the first self-building UI framework — AI that sees what it builds
 
 Body:
@@ -438,12 +449,14 @@ After [X months/years] of development, I'm excited to share SpaceGraphJS.
 **The solution:** Embed AI vision at every layer. The framework sees the rendered output, measures quality, and self-corrects in 30 seconds.
 
 **Key features:**
+
 - 18 node types, 8 edge types, 16 layout engines
 - 6 AI vision models (layout, legibility, color, overlap, hierarchy, ergonomics)
 - 60 FPS at 1000 nodes
 - Pure FOSS (MIT license)
 
 **Try it:**
+
 ```bash
 npm install spacegraphjs@alpha
 ```
@@ -453,7 +466,8 @@ npm install spacegraphjs@alpha
 **Matrix:** [link]
 
 Would love your feedback! Happy to answer questions.
-```
+
+````
 
 ---
 
@@ -476,7 +490,6 @@ Would love your feedback! Happy to answer questions.
 ### 🔧 Improvements
 
 - Improved [X] performance by [Y]%
-- Reduced bundle size by [Z]KB
 
 ### 🐛 Bug Fixes
 
@@ -497,9 +510,10 @@ Would love your feedback! Happy to answer questions.
 **Before:**
 ```typescript
 oldCode();
-```
+````
 
 **After:**
+
 ```typescript
 newCode();
 ```
@@ -521,6 +535,7 @@ Thanks to [@username1](link), [@username2](link) for contributions!
 ## Full Changelog
 
 https://github.com/autonull/spacegraphjs/compare/v5.0.0...v6.0.0-alpha.1
+
 ```
 
 ---
@@ -539,3 +554,4 @@ For each piece of content:
 - [ ] Proofread for typos
 - [ ] SEO keywords included (for articles)
 - [ ] Tags/categories set correctly
+```

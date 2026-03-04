@@ -78,7 +78,7 @@ export class SceneNode extends Node {
             undefined, // onProgress
             (error) => {
                 console.error(`[SceneNode ${this.id}] Error loading model:`, error);
-            }
+            },
         );
     }
 
@@ -89,7 +89,11 @@ export class SceneNode extends Node {
             if (this.modelRoot && this.modelRoot.parent) {
                 this.modelRoot.parent.remove(this.modelRoot);
             }
-            this.loadModel(updates.data.url, updates.data.targetSize ?? 100, updates.data.autoCenter ?? true);
+            this.loadModel(
+                updates.data.url,
+                updates.data.targetSize ?? 100,
+                updates.data.autoCenter ?? true,
+            );
         }
     }
 
@@ -100,7 +104,7 @@ export class SceneNode extends Node {
                     const mesh = child as THREE.Mesh;
                     mesh.geometry.dispose();
                     if (Array.isArray(mesh.material)) {
-                        mesh.material.forEach(m => m.dispose());
+                        mesh.material.forEach((m) => m.dispose());
                     } else if (mesh.material) {
                         mesh.material.dispose();
                     }

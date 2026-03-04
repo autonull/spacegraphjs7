@@ -70,7 +70,7 @@ export class TextMeshNode extends Node {
         const tex = new THREE.CanvasTexture(canvas);
         const mat = new THREE.SpriteMaterial({ map: tex, depthTest: false });
         const spr = new THREE.Sprite(mat);
-        const aspect = (canvas.width / canvas.height) || 1;
+        const aspect = canvas.width / canvas.height || 1;
         spr.scale.set(aspect * fontSize * scale * 0.8, fontSize * scale * 0.8, 1);
         return spr;
     }
@@ -85,7 +85,10 @@ export class TextMeshNode extends Node {
             if (this.spriteMat.map) this.spriteMat.map.dispose();
             this.spriteMat.dispose();
             // Merge previous data with updates
-            const merged = { data: { ...this.data, ...updates.data }, label: updates.label ?? this.label };
+            const merged = {
+                data: { ...this.data, ...updates.data },
+                label: updates.label ?? this.label,
+            };
             this.sprite = this._buildSprite(merged);
             this.spriteMat = this.sprite.material as THREE.SpriteMaterial;
             this.object.add(this.sprite);

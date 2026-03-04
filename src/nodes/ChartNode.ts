@@ -116,10 +116,13 @@ export class ChartNode extends Node {
                     plugins: {
                         legend: { labels: { color: '#94a3b8', font: { size: 11 } } },
                     },
-                    scales: chartType !== 'pie' ? {
-                        x: { ticks: { color: '#64748b' }, grid: { color: '#1e293b' } },
-                        y: { ticks: { color: '#64748b' }, grid: { color: '#1e293b' } },
-                    } : undefined,
+                    scales:
+                        chartType !== 'pie'
+                            ? {
+                                  x: { ticks: { color: '#64748b' }, grid: { color: '#1e293b' } },
+                                  y: { ticks: { color: '#64748b' }, grid: { color: '#1e293b' } },
+                              }
+                            : undefined,
                 },
             });
         } else {
@@ -150,7 +153,7 @@ export class ChartNode extends Node {
         const pad = 10;
 
         data.forEach((val, i) => {
-            const barH = ((val / max) * (h - 30));
+            const barH = (val / max) * (h - 30);
             ctx.fillStyle = `hsl(${i * 40}, 70%, 55%)`;
             ctx.fillRect(pad + i * barW + 2, h - barH - 20, barW - 4, barH);
 

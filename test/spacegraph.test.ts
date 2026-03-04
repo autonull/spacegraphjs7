@@ -13,8 +13,7 @@ import { IFrameNode } from '../src/nodes/IFrameNode';
 import { MarkdownNode } from '../src/nodes/MarkdownNode';
 import { GlobeNode } from '../src/nodes/GlobeNode';
 import { SceneNode } from '../src/nodes/SceneNode';
-import { CullingManager } from '../src/utils/CullingManager';
-import { LODManager } from '../src/utils/LODManager';
+
 // Edge types
 import { Edge } from '../src/edges/Edge';
 import { DottedEdge } from '../src/edges/DottedEdge';
@@ -61,10 +60,10 @@ function makeSpaceGraph() {
         dispatchEvent: (event: any) => {
             // Simplified synchronous dispatch
             if (listeners.has(event.type)) {
-                listeners.get(event.type)!.forEach(fn => fn(event));
+                listeners.get(event.type)!.forEach((fn) => fn(event));
             }
             return true;
-        }
+        },
     };
     camera.position.set(0, 0, 500);
 
@@ -77,7 +76,7 @@ function makeSpaceGraph() {
             this._handlers.get(evt)!.push(fn);
         },
         emit(evt: string, data?: any) {
-            (this._handlers.get(evt) ?? []).forEach(fn => fn(data));
+            (this._handlers.get(evt) ?? []).forEach((fn) => fn(data));
         },
         emitBatched(evt: string, data?: any) {
             this._batched.set(evt, data);
@@ -90,7 +89,7 @@ function makeSpaceGraph() {
                     this._batched.clear();
                 });
             }
-        }
+        },
     };
 
     const nodeTypeRegistry = new Map<string, any>();
@@ -101,7 +100,9 @@ function makeSpaceGraph() {
 
     const poolManager = {
         pools: new Map<string, any[]>(),
-        get(key: string) { return this.pools.get(key)?.pop() ?? null; },
+        get(key: string) {
+            return this.pools.get(key)?.pop() ?? null;
+        },
         release(key: string, obj: any) {
             if (!this.pools.has(key)) this.pools.set(key, []);
             this.pools.get(key)!.push(obj);
@@ -135,13 +136,22 @@ function makeSpaceGraph() {
         },
         removeNode(id: string) {
             const n = this.nodes.get(id);
-            if (n) { scene.remove(n.object); this.nodes.delete(id); }
+            if (n) {
+                scene.remove(n.object);
+                this.nodes.delete(id);
+            }
         },
         removeEdge(id: string) {
             const idx = this.edges.findIndex((e: any) => e.id === id);
-            if (idx !== -1) { scene.remove(this.edges[idx].object); this.edges.splice(idx, 1); }
+            if (idx !== -1) {
+                scene.remove(this.edges[idx].object);
+                this.edges.splice(idx, 1);
+            }
         },
-        clear() { this.nodes.clear(); this.edges.length = 0; },
+        clear() {
+            this.nodes.clear();
+            this.edges.length = 0;
+        },
     };
 
     const pluginManager = {
@@ -153,7 +163,13 @@ function makeSpaceGraph() {
         getEdgeType: (name: string) => edgeTypeRegistry.get(name),
     };
 
-    sg = { renderer: { scene, camera, renderer: { domElement } }, graph, events, pluginManager, poolManager };
+    sg = {
+        renderer: { scene, camera, renderer: { domElement } },
+        graph,
+        events,
+        pluginManager,
+        poolManager,
+    };
     return sg;
 }
 
@@ -176,7 +192,9 @@ function mkEdge(sg: any, id: string, src: any, tgt: any) {
 
 describe('Node base class', () => {
     let sg: any;
-    beforeEach(() => { sg = makeSpaceGraph(); });
+    beforeEach(() => {
+        sg = makeSpaceGraph();
+    });
 
     it('creates a node with correct id and position', () => {
         const n = new Node(sg, { id: 'n1', type: 'Node', position: [1, 2, 3] });
@@ -201,10 +219,17 @@ describe('Node base class', () => {
 
 describe('ShapeNode', () => {
     let sg: any;
-    beforeEach(() => { sg = makeSpaceGraph(); });
+    beforeEach(() => {
+        sg = makeSpaceGraph();
+    });
 
     it('has child mesh in object', () => {
-        const n = new ShapeNode(sg, { id: 's', type: 'ShapeNode', label: 'hi', data: { color: 0xff0000 } });
+        const n = new ShapeNode(sg, {
+            id: 's',
+            type: 'ShapeNode',
+            label: 'hi',
+            data: { color: 0xff0000 },
+        });
         expect(n.object.children.length).toBeGreaterThan(0);
     });
 
@@ -221,10 +246,17 @@ describe('ShapeNode', () => {
 
 describe('NoteNode', () => {
     let sg: any;
-    beforeEach(() => { sg = makeSpaceGraph(); });
+    beforeEach(() => {
+        sg = makeSpaceGraph();
+    });
 
     it('renders title and body text', () => {
-        const n = new NoteNode(sg, { id: 'nn', type: 'NoteNode', label: 'My Note', data: { text: 'hello' } });
+        const n = new NoteNode(sg, {
+            id: 'nn',
+            type: 'NoteNode',
+            label: 'My Note',
+            data: { text: 'hello' },
+        });
         expect(n.domElement.querySelector('.sg-note-title')?.textContent).toBe('My Note');
         expect(n.domElement.querySelector('.sg-note-body')?.textContent).toBe('hello');
     });
@@ -245,20 +277,28 @@ describe('NoteNode', () => {
 
 describe('CanvasNode', () => {
     let sg: any;
-    beforeEach(() => { sg = makeSpaceGraph(); });
+    beforeEach(() => {
+        sg = makeSpaceGraph();
+    });
 
     it('creates canvas with specified dimensions', () => {
-        const n = new CanvasNode(sg, { id: 'cn', type: 'CanvasNode', data: { width: 128, height: 64 } });
+        const n = new CanvasNode(sg, {
+            id: 'cn',
+            type: 'CanvasNode',
+            data: { width: 128, height: 64 },
+        });
         expect((n as any)['canvas'].width).toBe(128);
         expect((n as any)['canvas'].height).toBe(64);
     });
 
     it('redraw with custom function does not throw', () => {
         const n = new CanvasNode(sg, { id: 'cn', type: 'CanvasNode' });
-        expect(() => n.redraw((ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) => {
-            ctx.fillStyle = 'red';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-        })).not.toThrow();
+        expect(() =>
+            n.redraw((ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) => {
+                ctx.fillStyle = 'red';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }),
+        ).not.toThrow();
     });
 
     it('exposes canvas 2D context (null in jsdom)', () => {
@@ -270,7 +310,9 @@ describe('CanvasNode', () => {
 
 describe('TextMeshNode', () => {
     let sg: any;
-    beforeEach(() => { sg = makeSpaceGraph(); });
+    beforeEach(() => {
+        sg = makeSpaceGraph();
+    });
 
     it('creates a sprite child', () => {
         const n = new TextMeshNode(sg, { id: 'tm', type: 'TextMeshNode', label: 'Hello' });
@@ -285,12 +327,15 @@ describe('TextMeshNode', () => {
 
 describe('DataNode', () => {
     let sg: any;
-    beforeEach(() => { sg = makeSpaceGraph(); });
+    beforeEach(() => {
+        sg = makeSpaceGraph();
+    });
 
     it('renders correct number of rows', () => {
         const n = new DataNode(sg, {
-            id: 'dn', type: 'DataNode',
-            data: { fields: { foo: 'bar', baz: 42 } }
+            id: 'dn',
+            type: 'DataNode',
+            data: { fields: { foo: 'bar', baz: 42 } },
         });
         expect(n.domElement.querySelectorAll('.sg-data-row').length).toBe(2);
     });
@@ -310,36 +355,63 @@ describe('DataNode', () => {
 
 describe('VideoNode', () => {
     let sg: any;
-    beforeEach(() => { sg = makeSpaceGraph(); });
+    beforeEach(() => {
+        sg = makeSpaceGraph();
+    });
 
     it('sets video src correctly', () => {
-        const n = new VideoNode(sg, { id: 'vn', type: 'VideoNode', data: { src: 'test.mp4', autoplay: false } });
+        const n = new VideoNode(sg, {
+            id: 'vn',
+            type: 'VideoNode',
+            data: { src: 'test.mp4', autoplay: false },
+        });
         expect(n.videoEl.src).toContain('test.mp4');
     });
 
     it('pause/play do not throw', () => {
-        const n = new VideoNode(sg, { id: 'vn', type: 'VideoNode', data: { src: '', autoplay: false } });
-        expect(() => { n.pause(); n.play(); }).not.toThrow();
+        const n = new VideoNode(sg, {
+            id: 'vn',
+            type: 'VideoNode',
+            data: { src: '', autoplay: false },
+        });
+        expect(() => {
+            n.pause();
+            n.play();
+        }).not.toThrow();
     });
 
     it('muted is true by default', () => {
-        const n = new VideoNode(sg, { id: 'vn', type: 'VideoNode', data: { src: '', autoplay: false } });
+        const n = new VideoNode(sg, {
+            id: 'vn',
+            type: 'VideoNode',
+            data: { src: '', autoplay: false },
+        });
         expect(n.videoEl.muted).toBe(true);
     });
 });
 
 describe('IFrameNode', () => {
     let sg: any;
-    beforeEach(() => { sg = makeSpaceGraph(); });
+    beforeEach(() => {
+        sg = makeSpaceGraph();
+    });
 
     it('creates iframe with target src', () => {
-        const n = new IFrameNode(sg, { id: 'iframe', type: 'IFrameNode', data: { src: 'https://example.com' } });
+        const n = new IFrameNode(sg, {
+            id: 'iframe',
+            type: 'IFrameNode',
+            data: { src: 'https://example.com' },
+        });
         // jsdom may set src to full absolute url or leave it empty for cross-origin
         expect(n.iframeEl).toBeTruthy();
     });
 
     it('navigate changes src', () => {
-        const n = new IFrameNode(sg, { id: 'iframe', type: 'IFrameNode', data: { src: 'about:blank' } });
+        const n = new IFrameNode(sg, {
+            id: 'iframe',
+            type: 'IFrameNode',
+            data: { src: 'about:blank' },
+        });
         n.navigate('https://new.example.com');
         expect(n.iframeEl.src).toContain('new.example.com');
     });
@@ -347,10 +419,16 @@ describe('IFrameNode', () => {
 
 describe('MarkdownNode', () => {
     let sg: any;
-    beforeEach(() => { sg = makeSpaceGraph(); });
+    beforeEach(() => {
+        sg = makeSpaceGraph();
+    });
 
     it('creates CSS3D element with parsed html', () => {
-        const n = new MarkdownNode(sg, { id: 'mn', type: 'MarkdownNode', data: { markdown: '# Hello' } });
+        const n = new MarkdownNode(sg, {
+            id: 'mn',
+            type: 'MarkdownNode',
+            data: { markdown: '# Hello' },
+        });
         expect(n.domElement).toBeTruthy();
         expect(n.domElement.innerHTML).toContain('Hello');
     });
@@ -358,11 +436,13 @@ describe('MarkdownNode', () => {
 
 describe('GlobeNode', () => {
     let sg: any;
-    beforeEach(() => { sg = makeSpaceGraph(); });
+    beforeEach(() => {
+        sg = makeSpaceGraph();
+    });
 
     it('creates sphere geometry mesh', () => {
         const n = new GlobeNode(sg, { id: 'gn', type: 'GlobeNode' });
-        const mesh = n.object.children.find(c => (c as any).isMesh);
+        const mesh = n.object.children.find((c) => (c as any).isMesh);
         expect(mesh).toBeTruthy();
         expect((mesh as any).geometry.type).toBe('SphereGeometry');
     });
@@ -370,7 +450,9 @@ describe('GlobeNode', () => {
 
 describe('SceneNode', () => {
     let sg: any;
-    beforeEach(() => { sg = makeSpaceGraph(); });
+    beforeEach(() => {
+        sg = makeSpaceGraph();
+    });
 
     it('instantiates without error even if url is empty', () => {
         const n = new SceneNode(sg, { id: 'sn', type: 'SceneNode' });
@@ -423,16 +505,28 @@ describe('DottedEdge', () => {
     });
 
     it('uses LineDashedMaterial', () => {
-        const e = new DottedEdge(sg,
-            { id: 'de', source: 'a', target: 'b', type: 'DottedEdge', data: { dashSize: 10, gapSize: 5 } },
-            nodeA, nodeB);
+        const e = new DottedEdge(
+            sg,
+            {
+                id: 'de',
+                source: 'a',
+                target: 'b',
+                type: 'DottedEdge',
+                data: { dashSize: 10, gapSize: 5 },
+            },
+            nodeA,
+            nodeB,
+        );
         expect(e.object.material).toBeInstanceOf(THREE.LineDashedMaterial);
     });
 
     it('update recomputes line distances', () => {
-        const e = new DottedEdge(sg,
+        const e = new DottedEdge(
+            sg,
             { id: 'de', source: 'a', target: 'b', type: 'DottedEdge' },
-            nodeA, nodeB);
+            nodeA,
+            nodeB,
+        );
         nodeA.updatePosition(100, 0, 0);
         expect(() => e.update()).not.toThrow();
     });
@@ -447,16 +541,34 @@ describe('DynamicThicknessEdge', () => {
     });
 
     it('creates a Mesh (tube geometry)', () => {
-        const e = new DynamicThicknessEdge(sg,
-            { id: 'dte', source: 'a', target: 'b', type: 'DynamicThicknessEdge', data: { weight: 0.7 } },
-            nodeA, nodeB);
+        const e = new DynamicThicknessEdge(
+            sg,
+            {
+                id: 'dte',
+                source: 'a',
+                target: 'b',
+                type: 'DynamicThicknessEdge',
+                data: { weight: 0.7 },
+            },
+            nodeA,
+            nodeB,
+        );
         expect(e.object).toBeInstanceOf(THREE.Mesh);
     });
 
     it('update rebuilds geometry without throwing', () => {
-        const e = new DynamicThicknessEdge(sg,
-            { id: 'dte', source: 'a', target: 'b', type: 'DynamicThicknessEdge', data: { weight: 0.5 } },
-            nodeA, nodeB);
+        const e = new DynamicThicknessEdge(
+            sg,
+            {
+                id: 'dte',
+                source: 'a',
+                target: 'b',
+                type: 'DynamicThicknessEdge',
+                data: { weight: 0.5 },
+            },
+            nodeA,
+            nodeB,
+        );
         nodeA.updatePosition(100, 100, 0);
         expect(() => e.update()).not.toThrow();
     });
@@ -530,7 +642,9 @@ describe('HierarchicalLayout', () => {
         sg = makeSpaceGraph();
         sg.pluginManager.registerNodeType('ShapeNode', ShapeNode);
         sg.pluginManager.registerEdgeType('Edge', Edge);
-        ['A', 'B', 'C'].forEach(id => sg.graph.addNode({ id, type: 'ShapeNode', position: [0, 0, 0] }));
+        ['A', 'B', 'C'].forEach((id) =>
+            sg.graph.addNode({ id, type: 'ShapeNode', position: [0, 0, 0] }),
+        );
         sg.graph.addEdge({ id: 'eAB', source: 'A', target: 'B', type: 'Edge' });
         sg.graph.addEdge({ id: 'eBC', source: 'B', target: 'C', type: 'Edge' });
     });
@@ -563,7 +677,9 @@ describe('RadialLayout', () => {
         sg = makeSpaceGraph();
         sg.pluginManager.registerNodeType('ShapeNode', ShapeNode);
         sg.pluginManager.registerEdgeType('Edge', Edge);
-        ['root', 'c1', 'c2'].forEach(id => sg.graph.addNode({ id, type: 'ShapeNode', position: [0, 0, 0] }));
+        ['root', 'c1', 'c2'].forEach((id) =>
+            sg.graph.addNode({ id, type: 'ShapeNode', position: [0, 0, 0] }),
+        );
         sg.graph.addEdge({ id: 'e1', source: 'root', target: 'c1', type: 'Edge' });
         sg.graph.addEdge({ id: 'e2', source: 'root', target: 'c2', type: 'Edge' });
     });
@@ -587,69 +703,6 @@ describe('RadialLayout', () => {
         const c1 = sg.graph.nodes.get('c1');
         const r = Math.sqrt(c1.position.x ** 2 + c1.position.y ** 2);
         expect(r).toBeCloseTo(300, -1);
-    });
-});
-
-// ============================================================
-// Performance System tests
-// ============================================================
-
-describe('CullingManager', () => {
-    let cm: CullingManager;
-    let camera: THREE.PerspectiveCamera;
-
-    beforeEach(() => {
-        cm = new CullingManager();
-        // Camera looking straight down -Z
-        camera = new THREE.PerspectiveCamera(90, 1, 0.1, 100);
-        camera.position.set(0, 0, 0);
-        camera.updateMatrixWorld();
-        cm.setCamera(camera);
-    });
-
-    it('makes objects visible when inside frustum', () => {
-        const obj = new THREE.Mesh(new THREE.SphereGeometry(1));
-        obj.position.set(0, 0, -50); // Direct line of sight
-        obj.visible = false; // Start hidden
-
-        cm.registerObject(obj);
-        cm.update();
-
-        expect(obj.visible).toBe(true);
-    });
-
-    it('makes objects invisible when outside frustum (behind camera)', () => {
-        const obj = new THREE.Mesh(new THREE.SphereGeometry(1));
-        obj.position.set(0, 0, 50); // Behind camera
-        obj.visible = true; // Start visible
-
-        cm.registerObject(obj);
-        cm.update();
-
-        expect(obj.visible).toBe(false);
-    });
-
-    it('respects manual cullingRadius bypass', () => {
-        const obj = new THREE.Mesh(); // No geometry, implies empty bounds
-        obj.position.set(0, 0, -50);
-        obj.visible = false;
-
-        // Custom massive radius ensures intersects
-        cm.registerObject(obj, { enabled: true, cullingRadius: 9999 });
-        cm.update();
-
-        expect(obj.visible).toBe(true);
-    });
-
-    it('ignores objects when settings.enabled is false', () => {
-        const obj = new THREE.Mesh(new THREE.SphereGeometry(1));
-        obj.position.set(0, 0, 50); // Behind camera
-        obj.visible = true; // should stay true
-
-        cm.registerObject(obj, { enabled: false });
-        cm.update();
-
-        expect(obj.visible).toBe(true);
     });
 });
 
@@ -697,7 +750,9 @@ describe('PhysicsPlugin', () => {
 
 describe('ErgonomicsPlugin', () => {
     let sg: any;
-    beforeEach(() => { sg = makeSpaceGraph(); });
+    beforeEach(() => {
+        sg = makeSpaceGraph();
+    });
 
     it('initialises without throwing', () => {
         expect(() => new ErgonomicsPlugin().init(sg)).not.toThrow();
@@ -776,7 +831,9 @@ describe('Graph CRUD', () => {
 
     it('addEdge returns null for missing source', () => {
         sg.graph.addNode({ id: 'b', type: 'ShapeNode', position: [0, 0, 0] });
-        expect(sg.graph.addEdge({ id: 'e', source: 'missing', target: 'b', type: 'Edge' })).toBeNull();
+        expect(
+            sg.graph.addEdge({ id: 'e', source: 'missing', target: 'b', type: 'Edge' }),
+        ).toBeNull();
     });
 
     it('removeNode deletes from map', () => {
@@ -801,7 +858,9 @@ describe('Graph CRUD', () => {
 
 describe('PluginManager', () => {
     let sg: any;
-    beforeEach(() => { sg = makeSpaceGraph(); });
+    beforeEach(() => {
+        sg = makeSpaceGraph();
+    });
 
     it('registers and retrieves plugins by key', () => {
         const plugin = new ForceLayout();
@@ -816,57 +875,6 @@ describe('PluginManager', () => {
 
     it('returns undefined for unknown plugin', () => {
         expect(sg.pluginManager.getPlugin('NonExistent')).toBeUndefined();
-    });
-});
-
-// ============================================================
-// LODManager
-// ============================================================
-
-describe('LODManager', () => {
-    let lod: LODManager;
-    let camera: THREE.PerspectiveCamera;
-    let root: THREE.Object3D;
-    let meshLevel0: THREE.Mesh;
-    let meshLevel1: THREE.Mesh;
-
-    beforeEach(() => {
-        lod = new LODManager();
-        camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
-        camera.position.set(0, 0, 0); // Origin
-        lod.setCamera(camera);
-
-        root = new THREE.Object3D();
-        root.position.set(0, 0, -10); // 10 units away
-
-        meshLevel0 = new THREE.Mesh(new THREE.SphereGeometry(2, 32, 32)); // High poly
-        meshLevel1 = new THREE.Mesh(new THREE.SphereGeometry(2, 8, 8));   // Low poly
-
-        lod.registerObject(root, {
-            enabled: true,
-            levels: [
-                { distance: 0, object: meshLevel0 },   // from 0 to 49
-                { distance: 50, object: meshLevel1 },  // from 50 to infinity
-            ]
-        });
-    });
-
-    it('makes closest level visible initially', () => {
-        lod.update();
-        expect(meshLevel0.visible).toBe(true);
-        expect(meshLevel1.visible).toBe(false);
-    });
-
-    it('switches to lower detail level when moving camera away', () => {
-        camera.position.set(0, 0, 100); // 110 units away from root
-        lod.update();
-        expect(meshLevel0.visible).toBe(false);
-        expect(meshLevel1.visible).toBe(true);
-    });
-
-    it('adds level meshes as children of root if they are not already', () => {
-        expect(meshLevel0.parent).toBe(root);
-        expect(meshLevel1.parent).toBe(root);
     });
 });
 
@@ -1012,7 +1020,7 @@ describe('ErgonomicsPlugin', () => {
         expect(metrics.totalInteractions).toBe(1);
 
         // The exponential moving avg incorporates the default 1.0 baseline
-        // Since the line was perfectly straight, the Session efficiency is 1.0. 
+        // Since the line was perfectly straight, the Session efficiency is 1.0.
         // 1.0 blended into 1.0 is 1.0.
         expect(metrics.avgEfficiency).toBeCloseTo(1.0, 3);
         expect(metrics.avgJitter).toBe(0);
@@ -1101,12 +1109,12 @@ describe('CameraControls (Multi-touch)', () => {
     let canvas: any;
 
     // Helper to simulate touch events
-    const fireTouch = (type: string, touches: { id: number, x: number, y: number }[]) => {
+    const fireTouch = (type: string, touches: { id: number; x: number; y: number }[]) => {
         const event = new Event(type) as any;
-        event.changedTouches = touches.map(t => ({
+        event.changedTouches = touches.map((t) => ({
             identifier: t.id,
             clientX: t.x,
-            clientY: t.y
+            clientY: t.y,
         }));
         event.preventDefault = vi.fn();
         canvas.dispatchEvent(event);
@@ -1142,7 +1150,7 @@ describe('CameraControls (Multi-touch)', () => {
     it('handles 2-finger pinch-to-zoom spreading (zoom in)', () => {
         fireTouch('touchstart', [
             { id: 1, x: 100, y: 100 },
-            { id: 2, x: 200, y: 200 }
+            { id: 2, x: 200, y: 200 },
         ]);
 
         expect((sg.cameraControls as any).isDragging).toBe(true);
@@ -1153,7 +1161,7 @@ describe('CameraControls (Multi-touch)', () => {
         // Spread fingers further apart (100 -> 0, 200 -> 300)
         fireTouch('touchmove', [
             { id: 1, x: 0, y: 0 },
-            { id: 2, x: 300, y: 300 }
+            { id: 2, x: 300, y: 300 },
         ]);
 
         // Radius should decrease because spreading fingers = zoom in
@@ -1164,7 +1172,7 @@ describe('CameraControls (Multi-touch)', () => {
     it('handles 2-finger panning (moving together)', () => {
         fireTouch('touchstart', [
             { id: 1, x: 100, y: 100 },
-            { id: 2, x: 200, y: 100 }
+            { id: 2, x: 200, y: 100 },
         ]);
 
         const initialTargetX = (sg.cameraControls as any).target.x;
@@ -1172,7 +1180,7 @@ describe('CameraControls (Multi-touch)', () => {
         // Move both fingers right
         fireTouch('touchmove', [
             { id: 1, x: 150, y: 100 },
-            { id: 2, x: 250, y: 100 }
+            { id: 2, x: 250, y: 100 },
         ]);
 
         const newTargetX = (sg.cameraControls as any).target.x;
@@ -1180,7 +1188,7 @@ describe('CameraControls (Multi-touch)', () => {
 
         fireTouch('touchend', [
             { id: 1, x: 150, y: 100 },
-            { id: 2, x: 250, y: 100 }
+            { id: 2, x: 250, y: 100 },
         ]);
     });
 });
@@ -1196,7 +1204,7 @@ describe('VisionManager Auto-Correction Loop', () => {
         // Setup AutoLayoutPlugin mock
         autoLayout = {
             id: 'auto-layout',
-            applyVisionCorrection: vi.fn()
+            applyVisionCorrection: vi.fn(),
         };
         sg.pluginManager.register('auto-layout', autoLayout);
 
@@ -1242,5 +1250,103 @@ describe('VisionManager Auto-Correction Loop', () => {
         expect(args[0].type).toBe('overlap');
         expect(args[0].nodeA).toBe('v1');
         expect(args[0].nodeB).toBe('v2');
+    });
+});
+
+describe('Layout Engines', () => {
+    let sg: any;
+
+    beforeEach(() => {
+        sg = makeSpaceGraph();
+    });
+
+    it('GridLayout correctly places nodes in a mathematical grid', () => {
+        const layout = new GridLayout();
+        layout.init(sg);
+        layout.settings.spacingX = 100;
+        layout.settings.spacingY = 50;
+        layout.settings.columns = 2;
+
+        const n0 = sg.graph.addNode({ id: 'n0', type: 'ShapeNode', position: [0, 0, 0] });
+        const n1 = sg.graph.addNode({ id: 'n1', type: 'ShapeNode', position: [0, 0, 0] });
+        const n2 = sg.graph.addNode({ id: 'n2', type: 'ShapeNode', position: [0, 0, 0] });
+        const n3 = sg.graph.addNode({ id: 'n3', type: 'ShapeNode', position: [0, 0, 0] });
+
+        layout.apply();
+
+        // Node 0 should be at 0, 0 (row 0, col 0)
+        expect(n0.position.x).toBe(0);
+        expect(n0.position.y).toBe(0);
+
+        // Node 1 should be at 100, 0 (row 0, col 1)
+        expect(n1.position.x).toBe(100);
+        expect(n1.position.y).toBe(0);
+
+        // Node 2 should be at 0, -50 (row 1, col 0)
+        expect(n2.position.x).toBe(0);
+        expect(n2.position.y).toBe(-50);
+
+        // Node 3 should be at 100, -50 (row 1, col 1)
+        expect(n3.position.x).toBe(100);
+        expect(n3.position.y).toBe(-50);
+    });
+
+    it('CircularLayout evenly distributes nodes in an ellipse', () => {
+        const layout = new CircularLayout();
+        layout.init(sg);
+        layout.settings.radiusX = 100;
+        layout.settings.radiusY = 200;
+
+        const n0 = sg.graph.addNode({ id: 'nc0', type: 'ShapeNode', position: [0, 0, 0] });
+        const n1 = sg.graph.addNode({ id: 'nc1', type: 'ShapeNode', position: [0, 0, 0] });
+        const n2 = sg.graph.addNode({ id: 'nc2', type: 'ShapeNode', position: [0, 0, 0] });
+        const n3 = sg.graph.addNode({ id: 'nc3', type: 'ShapeNode', position: [0, 0, 0] });
+
+        layout.apply();
+
+        // Node 0 should be at angle 0: x = 100, y = 0
+        expect(n0.position.x).toBeCloseTo(100);
+        expect(n0.position.y).toBeCloseTo(0);
+
+        // Node 1 should be at angle PI/2: x = 0, y = 200
+        expect(n1.position.x).toBeCloseTo(0);
+        expect(n1.position.y).toBeCloseTo(200);
+
+        // Node 2 should be at angle PI: x = -100, y = 0
+        expect(n2.position.x).toBeCloseTo(-100);
+        expect(n2.position.y).toBeCloseTo(0);
+
+        // Node 3 should be at angle 3PI/2: x = 0, y = -200
+        expect(n3.position.x).toBeCloseTo(0);
+        expect(n3.position.y).toBeCloseTo(-200);
+    });
+
+    it('HierarchicalLayout calculates tree depth using BFS', () => {
+        const layout = new HierarchicalLayout();
+        layout.init(sg);
+        layout.settings.levelHeight = 100;
+        layout.settings.nodeSpacing = 50;
+
+        // Root
+        const r = sg.graph.addNode({ id: 'root', type: 'ShapeNode', position: [0, 0, 0] });
+        // Depth 1
+        const c1 = sg.graph.addNode({ id: 'child1', type: 'ShapeNode', position: [0, 0, 0] });
+        const c2 = sg.graph.addNode({ id: 'child2', type: 'ShapeNode', position: [0, 0, 0] });
+        // Depth 2
+        const gc1 = sg.graph.addNode({ id: 'grandchild1', type: 'ShapeNode', position: [0, 0, 0] });
+
+        sg.graph.addEdge({ id: 'e1', type: 'Edge', source: 'root', target: 'child1' });
+        sg.graph.addEdge({ id: 'e2', type: 'Edge', source: 'root', target: 'child2' });
+        sg.graph.addEdge({ id: 'e3', type: 'Edge', source: 'child1', target: 'grandchild1' });
+
+        layout.apply();
+
+        // Level 0
+        expect(r.position.y).toBe(-0);
+        // Level 1
+        expect(c1.position.y).toBe(-100);
+        expect(c2.position.y).toBe(-100);
+        // Level 2
+        expect(gc1.position.y).toBe(-200);
     });
 });

@@ -59,8 +59,12 @@ export class DottedEdge {
 
     update() {
         const positions = new Float32Array([
-            this.source.position.x, this.source.position.y, this.source.position.z,
-            this.target.position.x, this.target.position.y, this.target.position.z,
+            this.source.position.x,
+            this.source.position.y,
+            this.source.position.z,
+            this.target.position.x,
+            this.target.position.y,
+            this.target.position.z,
         ]);
         this.geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
         this.geometry.attributes.position.needsUpdate = true;

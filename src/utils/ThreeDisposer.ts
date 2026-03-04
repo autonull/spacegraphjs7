@@ -6,19 +6,18 @@ import { CSS3DObject } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
  * Utility to reliably recursively dispose of geometry, materials, and textures
  * of a ThreeJS object to prevent WebGL context memory leaks.
  */
-export class UnifiedDisposalSystem {
-
+export class ThreeDisposer {
     /**
      * Recursively clean up an Object3D, disposing of geometries, materials,
      * and optionally removing CSS backing DOM elements.
-     * 
+     *
      * @param object The root Object3D to recursively dispose.
      * @param removeChildren Whether to empty the object's children array (default true).
      */
     static dispose(object: THREE.Object3D, removeChildren: boolean = true): void {
         // recursively dispose children first
         for (let i = object.children.length - 1; i >= 0; i--) {
-            UnifiedDisposalSystem.dispose(object.children[i], removeChildren);
+            ThreeDisposer.dispose(object.children[i], removeChildren);
             if (removeChildren) {
                 object.remove(object.children[i]);
             }
