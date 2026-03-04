@@ -409,7 +409,7 @@ export default defineConfig({
 ```bash
 npm pack
 tar -tzf spacegraphjs-*.tgz | grep dist
-gzip -c dist/spacegraphjs.js | wc -c  
+gzip -c dist/spacegraphjs.js | wc -c
 
 # If >500KB, investigate
 ```

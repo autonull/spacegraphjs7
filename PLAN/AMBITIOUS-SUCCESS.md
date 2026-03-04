@@ -25,13 +25,13 @@
 
 ### Software Benchmarks (Best-in-Class)
 
-| Metric                     | Good        | Great       | **Industry-Defining** |
-| -------------------------- | ----------- | ----------- | --------------------- |
-| Initial render (100 nodes) | <500ms      | <200ms      | **<50ms**             |
-| FPS (1000 nodes)           | 30 FPS      | 60 FPS      | **120 FPS**           |
-| Time to first render       | <10 min     | <5 min      | **<2 min**            |
-| Memory (1000 nodes)        | <200MB      | <100MB      | **<25MB**             |
-| TypeScript inference       | Partial     | Good        | **Perfect**           |
+| Metric                     | Good    | Great  | **Industry-Defining** |
+| -------------------------- | ------- | ------ | --------------------- |
+| Initial render (100 nodes) | <500ms  | <200ms | **<50ms**             |
+| FPS (1000 nodes)           | 30 FPS  | 60 FPS | **120 FPS**           |
+| Time to first render       | <10 min | <5 min | **<2 min**            |
+| Memory (1000 nodes)        | <200MB  | <100MB | **<25MB**             |
+| TypeScript inference       | Partial | Good   | **Perfect**           |
 
 ### Hardware Benchmarks (Best-in-Class)
 

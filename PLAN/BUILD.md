@@ -1004,7 +1004,6 @@ node test.mjs
 npx tsc --noEmit test.mjs
 ```
 
-
 ```bash
 gzip -c dist/spacegraphjs.js | wc -c
 
@@ -1118,7 +1117,7 @@ npm install /path/to/spacegraphjs
 npm install three
 # Verify import works
 
-gzip -c dist/spacegraphjs.js | wc -c  
+gzip -c dist/spacegraphjs.js | wc -c
 
 # Run demo one more time
 npm run dev

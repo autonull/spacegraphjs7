@@ -25,7 +25,7 @@ export type {
     SceneNodeData,
     ShapeNodeData,
     TextMeshNodeData,
-    VideoNodeData
+    VideoNodeData,
 } from './types';
 
 // Core
@@ -83,5 +83,6 @@ export { AutoColorPlugin } from './plugins/AutoColorPlugin';
 export { PhysicsPlugin } from './plugins/PhysicsPlugin';
 export { MinimapPlugin } from './plugins/MinimapPlugin';
 export { ErgonomicsPlugin } from './plugins/ErgonomicsPlugin';
+export { VisionOverlayPlugin } from './plugins/VisionOverlayPlugin';
 
 console.log('[SpaceGraphJS] Loaded successfully');

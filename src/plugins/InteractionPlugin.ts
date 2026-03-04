@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { DragControls } from 'three/examples/jsm/controls/DragControls.js';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { ISpaceGraphPlugin } from '../types';
 
@@ -139,7 +138,7 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
             }
         });
 
-        canvas.addEventListener('pointerup', (e) => {
+        canvas.addEventListener('pointerup', (_e) => {
             if (this.isDragging && this.dragNode) {
                 this.dragNode.data.pinned = false; // Allow physics to resume
                 this.sg.events.emit('interaction:dragend', { node: this.dragNode });
@@ -149,7 +148,7 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
             }
         });
 
-        canvas.addEventListener('pointercancel', (e) => {
+        canvas.addEventListener('pointercancel', (_e) => {
             if (this.isDragging && this.dragNode) {
                 this.dragNode.data.pinned = false;
                 this.sg.events.emit('interaction:dragend', { node: this.dragNode });

@@ -18,7 +18,7 @@ export class SpatialIndex {
     public build(nodes: Node[]): void {
         this.cells.clear();
         for (const node of nodes) {
-            // A node might span multiple cells, but for simplicity, 
+            // A node might span multiple cells, but for simplicity,
             // we insert it into the cell matching its center point.
             // A more robust implementation would insert into all overlapped cells based on bounding box.
             const { x, y } = node.position;

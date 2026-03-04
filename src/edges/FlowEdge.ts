@@ -55,8 +55,6 @@ export class FlowEdge extends Edge {
 
         this.dashOffset -= this.flowSpeed;
 
-        const material = this.object.material as THREE.LineDashedMaterial;
-
         // As LineDashedMaterial doesn't have dashOffset, we achieve flow by
         // manipulating the dashSize/gapSize or updating the line distances array directly.
         // A simpler approach for the built-in material without a custom shader is

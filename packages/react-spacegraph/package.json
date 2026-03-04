@@ -1,0 +1,21 @@
+{
+    "name": "react-spacegraph",
+    "version": "1.0.0",
+    "description": "React component adapter for SpaceGraphJS",
+    "main": "dist/index.js",
+    "module": "dist/index.mjs",
+    "types": "dist/index.d.ts",
+    "peerDependencies": {
+        "react": "^18.0.0",
+        "react-dom": "^18.0.0",
+        "spacegraphjs": "file:../.."
+    },
+    "devDependencies": {
+        "@types/react": "^19.2.14",
+        "@types/react-dom": "^19.2.3",
+        "typescript": "^5.0.0"
+    },
+    "scripts": {
+        "build": "tsc"
+    }
+}

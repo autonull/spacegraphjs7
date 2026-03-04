@@ -172,11 +172,11 @@ Human specifies → AI builds → Vision verifies → AI self-corrects → Done
 
 ### For You (User)
 
-| Benefit             | Traditional | SpaceGraphJS    | Improvement   |
-| ------------------- | ----------- | --------------- | ------------- |
-| Time to first graph | 5-10 min    | **<30 sec**     | 10-20x faster |
-| Iteration time      | 30 min      | **30 sec**      | 60x faster    |
-| Bug detection       | Manual      | **Automatic**   | 95% auto-fix  |
+| Benefit             | Traditional | SpaceGraphJS  | Improvement   |
+| ------------------- | ----------- | ------------- | ------------- |
+| Time to first graph | 5-10 min    | **<30 sec**   | 10-20x faster |
+| Iteration time      | 30 min      | **30 sec**    | 60x faster    |
+| Bug detection       | Manual      | **Automatic** | 95% auto-fix  |
 
 ### For Science
 

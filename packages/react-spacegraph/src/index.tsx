@@ -11,7 +11,14 @@ export interface SpaceGraphProps {
     onReady?: (sg: SpaceGraph) => void;
 }
 
-export const SpaceGraphComponent: React.FC<SpaceGraphProps> = ({ spec, url, options, className, style, onReady }) => {
+export const SpaceGraphComponent = ({
+    spec,
+    url,
+    options,
+    className,
+    style,
+    onReady,
+}: SpaceGraphProps) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const sgRef = useRef<SpaceGraph | null>(null);
 
@@ -23,7 +30,10 @@ export const SpaceGraphComponent: React.FC<SpaceGraphProps> = ({ spec, url, opti
         const init = async () => {
             if (url) {
                 const sg = await SpaceGraph.fromURL(url, containerRef.current!, options);
-                if (!isMounted) { sg.dispose(); return; }
+                if (!isMounted) {
+                    sg.dispose();
+                    return;
+                }
                 sgRef.current = sg;
                 if (onReady) onReady(sg);
             } else {
@@ -45,7 +55,13 @@ export const SpaceGraphComponent: React.FC<SpaceGraphProps> = ({ spec, url, opti
         };
     }, [spec, url]); // Simple implementation. Advanced would diff spec.
 
-    return <div ref={containerRef} className={className} style={{ width: '100%', height: '100%', ...style }} />;
+    return (
+        <div
+            ref={containerRef}
+            className={className}
+            style={{ width: '100%', height: '100%', ...style }}
+        />
+    );
 };
 
 export default SpaceGraphComponent;

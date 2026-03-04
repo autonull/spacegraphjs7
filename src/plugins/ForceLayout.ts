@@ -24,7 +24,7 @@ export class ForceLayout implements ISpaceGraphPlugin {
         this.sg = sg;
     }
 
-    onPreRender(delta: number): void {
+    onPreRender(_delta: number): void {
         if (!this.settings.enabled) return;
         this.update();
     }

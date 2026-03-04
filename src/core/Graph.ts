@@ -25,7 +25,16 @@ export class Graph {
         this.sg.renderer.scene.add(node.object);
         this.sg.events.emit('node:added', { node });
         for (const plugin of this.sg.pluginManager['plugins'].values()) {
-            if (plugin.onNodeAdded) plugin.onNodeAdded(node);
+            if (plugin.onNodeAdded) {
+                try {
+                    plugin.onNodeAdded(node);
+                } catch (err) {
+                    console.error(
+                        `[SpaceGraph] Plugin ${plugin.constructor.name} failed onNodeAdded:`,
+                        err,
+                    );
+                }
+            }
         }
         return node;
     }
@@ -47,6 +56,18 @@ export class Graph {
     }
 
     addEdge(spec: EdgeSpec) {
+        if (
+            !spec ||
+            !spec.id ||
+            typeof spec.source !== 'string' ||
+            typeof spec.target !== 'string'
+        ) {
+            console.warn(
+                `[SpaceGraph] Edge missing critical topology attributes (id/source/target).`,
+            );
+            return null;
+        }
+
         const existingIndex = this.edges.findIndex((e) => e.id === spec.id);
         if (existingIndex !== -1) {
             return this.updateEdge(spec.id, spec);
@@ -56,7 +77,9 @@ export class Graph {
         const targetNode = this.nodes.get(spec.target);
 
         if (!sourceNode || !targetNode) {
-            console.warn(`[SpaceGraph] Edge "${spec.id}" missing source or target node.`);
+            console.warn(
+                `[SpaceGraph] Edge "${spec.id}" rejected: missing source or target node within graph bounds.`,
+            );
             return null;
         }
 
@@ -71,7 +94,16 @@ export class Graph {
         this.sg.renderer.scene.add(edge.object);
         this.sg.events.emit('edge:added', { edge });
         for (const plugin of this.sg.pluginManager['plugins'].values()) {
-            if (plugin.onEdgeAdded) plugin.onEdgeAdded(edge);
+            if (plugin.onEdgeAdded) {
+                try {
+                    plugin.onEdgeAdded(edge);
+                } catch (err) {
+                    console.error(
+                        `[SpaceGraph] Plugin ${plugin.constructor.name} failed onEdgeAdded:`,
+                        err,
+                    );
+                }
+            }
         }
         return edge;
     }
@@ -107,7 +139,16 @@ export class Graph {
             this.nodes.delete(id);
             this.sg.events.emit('node:removed', { id });
             for (const plugin of this.sg.pluginManager['plugins'].values()) {
-                if (plugin.onNodeRemoved) plugin.onNodeRemoved(id);
+                if (plugin.onNodeRemoved) {
+                    try {
+                        plugin.onNodeRemoved(id);
+                    } catch (err) {
+                        console.error(
+                            `[SpaceGraph] Plugin ${plugin.constructor.name} failed onNodeRemoved:`,
+                            err,
+                        );
+                    }
+                }
             }
 
             // Remove connected edges
@@ -116,7 +157,16 @@ export class Graph {
                     this.sg.renderer.scene.remove(edge.object);
                     this.sg.events.emit('edge:removed', { id: edge.id });
                     for (const plugin of this.sg.pluginManager['plugins'].values()) {
-                        if (plugin.onEdgeRemoved) plugin.onEdgeRemoved(edge.id);
+                        if (plugin.onEdgeRemoved) {
+                            try {
+                                plugin.onEdgeRemoved(edge.id);
+                            } catch (err) {
+                                console.error(
+                                    `[SpaceGraph] Plugin ${plugin.constructor.name} failed onEdgeRemoved:`,
+                                    err,
+                                );
+                            }
+                        }
                     }
                     if (typeof edge.dispose === 'function') edge.dispose();
                     return false;
@@ -138,7 +188,16 @@ export class Graph {
             this.edges.splice(index, 1);
             this.sg.events.emit('edge:removed', { id });
             for (const plugin of this.sg.pluginManager['plugins'].values()) {
-                if (plugin.onEdgeRemoved) plugin.onEdgeRemoved(id);
+                if (plugin.onEdgeRemoved) {
+                    try {
+                        plugin.onEdgeRemoved(id);
+                    } catch (err) {
+                        console.error(
+                            `[SpaceGraph] Plugin ${plugin.constructor.name} failed onEdgeRemoved:`,
+                            err,
+                        );
+                    }
+                }
             }
             if (typeof edge.dispose === 'function') edge.dispose();
         }
@@ -183,6 +242,15 @@ export class Graph {
     // --- Serialization ---
 
     public toJSON(): GraphSpec {
+        const safeClone = (obj: any) => {
+            if (!obj) return {};
+            try {
+                return structuredClone(obj);
+            } catch {
+                return JSON.parse(JSON.stringify(obj));
+            }
+        };
+
         const nodes: NodeSpec[] = [];
         for (const node of this.nodes.values()) {
             nodes.push({
@@ -190,16 +258,16 @@ export class Graph {
                 type: node.type,
                 label: node.label,
                 position: [node.position.x, node.position.y, node.position.z],
-                data: JSON.parse(JSON.stringify(node.data || {}))
+                data: safeClone(node.data),
             });
         }
 
-        const edges: EdgeSpec[] = this.edges.map(edge => ({
+        const edges: EdgeSpec[] = this.edges.map((edge) => ({
             id: edge.id,
             source: edge.source.id,
             target: edge.target.id,
             type: edge.type,
-            data: JSON.parse(JSON.stringify(edge.data || {}))
+            data: safeClone(edge.data),
         }));
 
         return { nodes, edges };

@@ -1,4 +1,4 @@
-import mitt, { Emitter, EventType } from 'mitt';
+import mitt, { Emitter } from 'mitt';
 import type { SpaceGraph } from '../SpaceGraph';
 
 export type SpaceGraphEvents = {
@@ -20,8 +20,9 @@ export class EventManager {
     private sg: SpaceGraph;
     private emitter: Emitter<SpaceGraphEvents>;
 
-    // Event batching state
-    private batchedEvents: Map<string | symbol, any> = new Map();
+    // Event batching state: mapping event types to an array of event payloads
+    // This prevents dropping intermediate events (e.g. multiple distinct nodes dragged simultaneously)
+    private batchedEvents: Map<string | symbol, any[]> = new Map();
     private batchFrameId: number | null = null;
 
     constructor(sg: SpaceGraph) {
@@ -56,19 +57,30 @@ export class EventManager {
      * prevent React/SolidJS state thrashing.
      */
     emitBatched<Key extends keyof SpaceGraphEvents>(type: Key, event: SpaceGraphEvents[Key]): void {
-        this.batchedEvents.set(type as string | symbol, event);
+        const typeKey = type as string | symbol;
+        if (!this.batchedEvents.has(typeKey)) {
+            this.batchedEvents.set(typeKey, []);
+        }
+        this.batchedEvents.get(typeKey)!.push(event);
 
         if (this.batchFrameId === null) {
-            this.batchFrameId = requestAnimationFrame(() => {
+            if (typeof window !== 'undefined' && 'requestAnimationFrame' in window) {
+                this.batchFrameId = requestAnimationFrame(() => {
+                    this.flushBatchedEvents();
+                });
+            } else {
+                // Fallback for SSR / Node environments
                 this.flushBatchedEvents();
-            });
+            }
         }
     }
 
     private flushBatchedEvents(): void {
         this.batchFrameId = null;
-        for (const [type, event] of this.batchedEvents.entries()) {
-            this.emitter.emit(type as keyof SpaceGraphEvents, event);
+        for (const [type, eventsArray] of this.batchedEvents.entries()) {
+            for (const ev of eventsArray) {
+                this.emitter.emit(type as keyof SpaceGraphEvents, ev);
+            }
         }
         this.batchedEvents.clear();
     }

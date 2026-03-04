@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Component Gallery - SpaceGraphJS</title>
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            body {
+                overflow: hidden;
+                background-color: #0d0d12;
+                font-family: system-ui;
+                color: white;
+            }
+
+            #container {
+                width: 100vw;
+                height: 100vh;
+            }
+
+            .header {
+                position: absolute;
+                top: 20px;
+                left: 20px;
+                z-index: 10;
+                background: rgba(0, 0, 0, 0.6);
+                backdrop-filter: blur(8px);
+                padding: 16px 24px;
+                border-radius: 12px;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+            }
+
+            .header h1 {
+                font-size: 20px;
+                margin-bottom: 4px;
+            }
+
+            .header p {
+                color: #888;
+                font-size: 14px;
+            }
+        </style>
+    </head>
+
+    <body>
+        <div class="header">
+            <h1>Component Gallery</h1>
+            <p>16 Node Variants + AI Vision Overlay</p>
+        </div>
+        <div id="container"></div>
+
+        <script type="module">
+            import { SpaceGraph } from '../src/index.ts';
+
+            // We mock the vision API to simulate failures and demonstrate the UI
+            // because we haven't loaded physical ONNX models in this raw HTML demo context.
+            const nodes = [
+                // Standard basic geometries
+                {
+                    id: 'n1',
+                    type: 'ShapeNode',
+                    label: 'ShapeNode (Box)',
+                    position: [-200, 150, 0],
+                    data: { shape: 'box', color: 0x3b82f6 },
+                },
+                {
+                    id: 'n2',
+                    type: 'ShapeNode',
+                    label: 'ShapeNode (Sphere)',
+                    position: [0, 150, 0],
+                    data: { shape: 'sphere', color: 0x10b981 },
+                },
+
+                // Advanced 3D Meshes
+                {
+                    id: 'n3',
+                    type: 'TextMeshNode',
+                    label: '3D Text',
+                    position: [200, 150, 0],
+                    data: { text: 'SpaceGraph', color: 0xffffff },
+                },
+                { id: 'n4', type: 'GlobeNode', label: 'Globe', position: [-200, 0, 0], data: {} },
+
+                // DOM / CSS 3D Nodes
+                {
+                    id: 'n5',
+                    type: 'HtmlNode',
+                    label: 'HTML DOM',
+                    position: [0, 0, 0],
+                    data: {
+                        html: '<button style="padding:10px; background:#e11d48; color:white; border:none; border-radius:4px; font-weight:bold; cursor:pointer;">Click Me</button>',
+                    },
+                },
+                {
+                    id: 'n6',
+                    type: 'MarkdownNode',
+                    label: 'Markdown',
+                    position: [200, 0, 0],
+                    data: { markdown: '### SpaceGraph\n**Rich** text rendering via marked.js' },
+                },
+
+                // Data vis
+                {
+                    id: 'n7',
+                    type: 'ChartNode',
+                    label: 'Live Chart',
+                    position: [-200, -150, 0],
+                    data: {
+                        type: 'bar',
+                        data: { labels: ['A', 'B', 'C'], datasets: [{ data: [12, 19, 3] }] },
+                    },
+                },
+
+                // Media
+                {
+                    id: 'n8',
+                    type: 'VideoNode',
+                    label: 'Video',
+                    position: [0, -150, 0],
+                    data: {
+                        src: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.webm',
+                    },
+                },
+                {
+                    id: 'n9',
+                    type: 'IFrameNode',
+                    label: 'IFrame',
+                    position: [200, -150, 0],
+                    data: { src: 'https://example.com', width: 200, height: 150 },
+                },
+
+                // Intentional Overlaps (to trigger Vision AI)
+                {
+                    id: 'n10',
+                    type: 'ShapeNode',
+                    label: 'Overlap A',
+                    position: [400, 50, 0],
+                    data: { color: 0xfacc15 },
+                },
+                {
+                    id: 'n11',
+                    type: 'ShapeNode',
+                    label: 'Overlap B',
+                    position: [410, 60, 0],
+                    data: { color: 0xf97316 },
+                },
+
+                // Intentional Bad Contrast (to trigger Vision AI)
+                {
+                    id: 'n12',
+                    type: 'ShapeNode',
+                    label: 'Bad Contrast',
+                    position: [400, -50, 0],
+                    data: { color: 0x222222, textColor: 0x111111 },
+                },
+            ];
+
+            const edges = [
+                { id: 'e1', source: 'n1', target: 'n2', type: 'Edge' },
+                { id: 'e2', source: 'n2', target: 'n3', type: 'CurvedEdge' },
+                { id: 'e3', source: 'n4', target: 'n5', type: 'DottedEdge' },
+                { id: 'e4', source: 'n5', target: 'n6', type: 'FlowEdge' },
+                {
+                    id: 'e5',
+                    source: 'n7',
+                    target: 'n8',
+                    type: 'LabeledEdge',
+                    data: { label: 'Loads Data' },
+                },
+                {
+                    id: 'e6',
+                    source: 'n8',
+                    target: 'n9',
+                    type: 'DynamicThicknessEdge',
+                    data: { value: 10 },
+                },
+            ];
+
+            const sg = SpaceGraph.create('#container', { nodes, edges });
+
+            // Activate Force interactions but pin nodes generally so the gallery stays organized
+            for (const node of sg.graph.nodes.values()) {
+                node.data.pinned = true;
+            }
+
+            // We mock the ONNX output to show how the plugin reacts to errors
+            sg.vision.analyzeVision = async () => {
+                return {
+                    overall: 65,
+                    layout: { overall: 75, issues: [] },
+                    legibility: {
+                        wcagCompliance: { AA: false },
+                        failures: [
+                            { nodeId: 'n12', message: 'Contrast ratio 1.1:1 fails WCAG AA' },
+                        ],
+                    },
+                    overlap: {
+                        overlaps: [{ nodeA: 'n10', nodeB: 'n11' }],
+                        statistics: { totalOverlaps: 1 },
+                    },
+                    color: { harmonyScore: 60, dominantPalette: [] },
+                    hierarchy: { clarityScore: 80 },
+                    ergonomics: { fittsLawScore: 90 },
+                };
+            };
+
+            // Mock the auto-fix implementation to visually fix the graph
+            sg.vision.applyAutonomousFixes = async (report) => {
+                const n10 = sg.graph.nodes.get('n10');
+                const n11 = sg.graph.nodes.get('n11');
+                const n12 = sg.graph.nodes.get('n12');
+
+                if (n10 && n11) {
+                    n10.position.set(350, 50, 0);
+                    n11.position.set(450, 60, 0);
+                    n10.object.position.copy(n10.position);
+                    n11.object.position.copy(n11.position);
+                }
+
+                if (n12 && n12.object.children[0]) {
+                    // Change text color to white
+                    const textSprite = n12.object.children.find((c) => c.type === 'Sprite');
+                    if (textSprite && textSprite.material.map) {
+                        // We would redraw the canvas text here, mock is fine
+                    }
+                }
+
+                // Mutate the mock to succeed
+                sg.vision.analyzeVision = async () => ({
+                    overall: 98,
+                    layout: { overall: 95, issues: [] },
+                    legibility: { wcagCompliance: { AA: true }, failures: [] },
+                    overlap: { overlaps: [], statistics: { totalOverlaps: 0 } },
+                    color: { harmonyScore: 92, dominantPalette: [] },
+                    hierarchy: { clarityScore: 95 },
+                    ergonomics: { fittsLawScore: 95 },
+                });
+            };
+
+            // Register and initialize the HUD overlay manually for the demo
+            import { VisionOverlayPlugin } from '../src/plugins/VisionOverlayPlugin.ts';
+            const visionOverlay = new VisionOverlayPlugin();
+            sg.pluginManager.add(visionOverlay);
+
+            sg.render();
+        </script>
+    </body>
+</html>

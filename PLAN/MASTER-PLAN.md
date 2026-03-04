@@ -23,7 +23,7 @@
 | Result              | Metric                             | Verification                 |
 | ------------------- | ---------------------------------- | ---------------------------- |
 | Fastest ZUI library | 120 FPS at 100 nodes               | Benchmark suite              |
-| Smallest bundle     | <200KB gzipped                      | `gzip -c dist/*.js \| wc -c` |
+| Smallest bundle     | <200KB gzipped                     | `gzip -c dist/*.js \| wc -c` |
 | Best DX             | <30 sec to first render            | User testing                 |
 | Most reliable       | 0 critical bugs, 95% test coverage | CI/CD reports                |
 

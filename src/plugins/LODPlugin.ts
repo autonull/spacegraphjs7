@@ -14,7 +14,7 @@ export class LODPlugin implements ISpaceGraphPlugin {
         this.sg = sg;
     }
 
-    onPreRender(delta: number): void {
+    onPreRender(_delta: number): void {
         const cameraPosition = this.sg.renderer.camera.position;
 
         const nodes = Array.from(this.sg.graph.nodes.values());

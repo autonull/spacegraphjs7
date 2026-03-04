@@ -489,14 +489,14 @@ HARDWARE:
 
 ### Software Excellence Metrics
 
-| Metric                     | Target                       | How to Measure                          |
-| -------------------------- | ---------------------------- | --------------------------------------- |
-| Time to first render       | <5 minutes                   | Follow your own quickstart              |
-| FPS with 100 nodes         | 60                           | `performance.now()` timing              |
-| FPS with 1000 nodes        | 60 (or graceful degradation) | `performance.now()` timing              |
-| Memory growth (100 cycles) | <10MB                        | DevTools heap snapshot                  |
-| TypeScript errors          | 0                            | `tsc --noEmit`                          |
-| Console errors (demo)      | 0                            | Browser console                         |
+| Metric                     | Target                       | How to Measure             |
+| -------------------------- | ---------------------------- | -------------------------- |
+| Time to first render       | <5 minutes                   | Follow your own quickstart |
+| FPS with 100 nodes         | 60                           | `performance.now()` timing |
+| FPS with 1000 nodes        | 60 (or graceful degradation) | `performance.now()` timing |
+| Memory growth (100 cycles) | <10MB                        | DevTools heap snapshot     |
+| TypeScript errors          | 0                            | `tsc --noEmit`             |
+| Console errors (demo)      | 0                            | Browser console            |
 
 ### Hardware Excellence Metrics
 

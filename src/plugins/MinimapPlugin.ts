@@ -41,7 +41,9 @@ export class MinimapPlugin implements ISpaceGraphPlugin {
         const dom = this.sg.renderer.renderer.domElement;
         dom.addEventListener('pointerdown', this._onPointerDown);
         dom.addEventListener('pointermove', this._onPointerMove);
-        window.addEventListener('pointerup', this._onPointerUp);
+        if (typeof window !== 'undefined') {
+            window.addEventListener('pointerup', this._onPointerUp);
+        }
     }
 
     private _buildCamera() {
@@ -164,6 +166,8 @@ export class MinimapPlugin implements ISpaceGraphPlugin {
             dom.removeEventListener('pointerdown', this._onPointerDown);
             dom.removeEventListener('pointermove', this._onPointerMove);
         }
-        window.removeEventListener('pointerup', this._onPointerUp);
+        if (typeof window !== 'undefined') {
+            window.removeEventListener('pointerup', this._onPointerUp);
+        }
     }
 }

@@ -36,7 +36,7 @@
         "test": "vitest run",
         "test:vision": "mkdir -p test/fixtures/dist && cp -r dist/* test/fixtures/dist/ && playwright test test/vision.spec.ts",
         "vision": "npm run test:vision",
-        "lint": "eslint 'src/**/*.{ts,js}'",
+        "lint": "eslint 'src/**/*.{ts,js}' --ignore-pattern 'dist'",
         "format": "prettier --write .",
         "format:check": "prettier --check .",
         "docs": "echo \"API docs deferred\""
@@ -65,10 +65,13 @@
         "vite": "^5.0.0",
         "vitest": "^4.0.18"
     },
+    "workspaces": [
+        "packages/*"
+    ],
     "license": "MIT",
     "repository": {
         "type": "git",
-        "url": "https://github.com/autonull/spacegraphjs.git"
+        "url": "git+https://github.com/autonull/spacegraphjs.git"
     },
     "keywords": [
         "zui",
@@ -83,5 +86,16 @@
         "mitt": "^3.0.1",
         "onnxruntime-web": "^1.24.2",
         "three-mesh-bvh": "^0.9.9"
-    }
+    },
+    "description": "[![npm](https://img.shields.io/npm/v/spacegraphjs.svg)](https://www.npmjs.com/package/spacegraphjs) [![Matrix](https://img.shields.io/matrix/spacegraphjs:matrix.org)](https://matrix.to/#/#spacegraphjs:matrix.org) [![GitHub Sponsors](https://img.shields.io/github/sponsors/autonull)](https://github.com/sponsors/autonull)",
+    "directories": {
+        "doc": "docs",
+        "example": "examples",
+        "test": "test"
+    },
+    "author": "",
+    "bugs": {
+        "url": "https://github.com/autonull/spacegraphjs/issues"
+    },
+    "homepage": "https://github.com/autonull/spacegraphjs#readme"
 }

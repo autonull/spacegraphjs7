@@ -14,8 +14,18 @@ export default defineConfig({
         },
         rollupOptions: {
             external: [
-                'three', 'chart.js', 'gsap', 'marked', 'mitt', 'onnxruntime-web', 'three-mesh-bvh',
-                'child_process', 'fs', 'path', 'playwright', 'http-server'
+                'three',
+                'chart.js',
+                'gsap',
+                'marked',
+                'mitt',
+                'onnxruntime-web',
+                'three-mesh-bvh',
+                'child_process',
+                'fs',
+                'path',
+                'playwright',
+                'http-server',
             ],
             output: {
                 globals: {

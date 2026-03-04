@@ -182,7 +182,7 @@ export class ErgonomicsPlugin implements ISpaceGraphPlugin {
     ) {
         this.calibrating = true;
 
-        const roundCount = 0;
+        const _roundCount = 0;
         let activeConfig: 'A' | 'B' = 'A';
 
         // Stash baseline to restore or compare later

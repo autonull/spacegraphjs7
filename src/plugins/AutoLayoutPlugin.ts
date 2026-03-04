@@ -13,7 +13,7 @@ export class AutoLayoutPlugin implements ISpaceGraphPlugin {
         console.log(`[AutoLayoutPlugin] Initialized ${this.name} v${this.version}`);
     }
 
-    onPreRender(delta: number): void {
+    onPreRender(_delta: number): void {
         // This plugin will serve as a skeleton for AI vision layout adjustments.
         // In the future, VisionManager will call methods on this plugin to auto-correct
         // overlapping nodes and poor visual groupings.

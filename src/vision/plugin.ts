@@ -44,7 +44,10 @@ export function spacegraphVision(options: VisionPluginOptions = {}): Plugin {
 
                 const patches = report.issues.map((issue: any) => {
                     // Generate a structural JSON patch based on the issue type
-                    const patch: any = { targetNodeId: issue.nodeId || issue.nodeA || 'global', action: 'update' };
+                    const patch: any = {
+                        targetNodeId: issue.nodeId || issue.nodeA || 'global',
+                        action: 'update',
+                    };
 
                     if (issue.message && issue.message.includes('contrast')) {
                         patch.data = { color: '#ffffff' }; // baseline bright color suggestion
@@ -57,7 +60,7 @@ export function spacegraphVision(options: VisionPluginOptions = {}): Plugin {
                     return {
                         issue: issue.type || 'unknown',
                         message: issue.message || 'No description',
-                        patch
+                        patch,
                     };
                 });
 

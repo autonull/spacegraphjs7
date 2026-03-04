@@ -29,7 +29,13 @@ export interface GlobeNodeData extends BaseNodeData {
     radius?: number;
     resolution?: number;
     textureUrl?: string;
-    markers?: { lat: number; lng: number; size?: number; color?: number | string; label?: string }[];
+    markers?: {
+        lat: number;
+        lng: number;
+        size?: number;
+        color?: number | string;
+        label?: string;
+    }[];
 }
 
 export interface GroupNodeData extends BaseNodeData {
@@ -121,7 +127,7 @@ export interface VideoNodeData extends BaseNodeData {
     muted?: boolean;
 }
 
-export type SpaceGraphNodeData = 
+export type SpaceGraphNodeData =
     | BaseNodeData
     | CanvasNodeData
     | ChartNodeData

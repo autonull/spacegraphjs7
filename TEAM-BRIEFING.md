@@ -68,12 +68,12 @@ Human specifies → AI builds → Vision verifies → AI self-corrects → Done
 
 ### What You're Helping Build
 
-| Component     | What It Is                    | Your Impact                        |
-| ------------- | ----------------------------- | ---------------------------------- |
-| **Software**  | Fastest ZUI library           | 60 FPS at 1000 nodes |
-| **Hardware**  | SpaceGraph Mini dev platform  | Most open, most capable, $249      |
-| **Research**  | 4 papers, 2 datasets          | Seminal academic contribution      |
-| **Community** | 25K+ users, 150+ contributors | Sustainable, self-governing        |
+| Component     | What It Is                    | Your Impact                   |
+| ------------- | ----------------------------- | ----------------------------- |
+| **Software**  | Fastest ZUI library           | 60 FPS at 1000 nodes          |
+| **Hardware**  | SpaceGraph Mini dev platform  | Most open, most capable, $249 |
+| **Research**  | 4 papers, 2 datasets          | Seminal academic contribution |
+| **Community** | 25K+ users, 150+ contributors | Sustainable, self-governing   |
 
 ---
 

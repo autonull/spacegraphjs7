@@ -91,7 +91,7 @@ export class SpaceGraph {
         if (!element) {
             throw new Error(
                 `Container not found: "${container}".\n` +
-                `Make sure the element exists in the DOM.`,
+                    `Make sure the element exists in the DOM.`,
             );
         }
 
@@ -292,7 +292,7 @@ export class SpaceGraph {
     public static async fromURL(
         url: string,
         container: HTMLElement,
-        options: SpaceGraphOptions = {}
+        options: SpaceGraphOptions = {},
     ): Promise<SpaceGraph> {
         const sg = new SpaceGraph(container, options);
         try {

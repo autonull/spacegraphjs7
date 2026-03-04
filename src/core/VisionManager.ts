@@ -1,9 +1,8 @@
 import * as THREE from 'three';
 import type { SpaceGraph } from '../SpaceGraph';
 import { InferenceSession, Tensor, env } from 'onnxruntime-web';
-import { getLuminance, hexToRgb, getDominantColors } from '../utils/color';
+import { getLuminance, hexToRgb } from '../utils/color.js';
 import { SpatialIndex } from './SpatialIndex';
-import type { SpaceGraphNodeData } from '../types';
 
 // Configure ONNX to fetch WASM payload from unpkg/jsdelivr instead of requiring local bundling logic
 env.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/';
@@ -75,8 +74,11 @@ export class VisionManager {
         const dominantPalette: string[] = [];
         let wcagAA = true;
         const bgColorThree = new THREE.Color(this.sg.renderer.scene.background as THREE.Color);
-        const bgColor = { r: bgColorThree.r * 255, g: bgColorThree.g * 255, b: bgColorThree.b * 255 };
-
+        const bgColor = {
+            r: bgColorThree.r * 255,
+            g: bgColorThree.g * 255,
+            b: bgColorThree.b * 255,
+        };
 
         // Ambitious Overlap Detection using Bounding Boxes
         const camera = this.sg.renderer.camera;
@@ -98,7 +100,9 @@ export class VisionManager {
 
             // --- Color and Legibility analysis (TLA/CHE) ---
             // Generate some random layout heuristics if the ONNX model isn't driving
-            const nodeColor = nodeA.data?.color ? hexToRgb(nodeA.data.color) : { r: 200, g: 200, b: 200 };
+            const nodeColor = nodeA.data?.color
+                ? hexToRgb(nodeA.data.color)
+                : { r: 200, g: 200, b: 200 };
             dominantPalette.push(nodeA.data?.color || '#cccccc');
 
             // Math-based heuristic for legibility (WCAG contrast)
@@ -119,12 +123,19 @@ export class VisionManager {
                     if (this.sessions['tla']) {
                         try {
                             const inputs = new Float32Array([
-                                nodeColor.r / 255, nodeColor.g / 255, nodeColor.b / 255,
-                                1.0, 1.0, 1.0, // Assumed white text
-                                14.0, 400.0 // Assumed size and weight
+                                nodeColor.r / 255,
+                                nodeColor.g / 255,
+                                nodeColor.b / 255,
+                                1.0,
+                                1.0,
+                                1.0, // Assumed white text
+                                14.0,
+                                400.0, // Assumed size and weight
                             ]);
                             const tensor = new Tensor('float32', inputs, [1, 8]);
-                            const result = await this.sessions['tla'].run({ text_features: tensor });
+                            const result = await this.sessions['tla'].run({
+                                text_features: tensor,
+                            });
                             const prob = result['legibility_score'].data[0] as number;
 
                             // If neural net thinks it's legible (prob > 0.5), ignore the math heuristic
@@ -140,12 +151,20 @@ export class VisionManager {
                     if (this.sessions['che'] && verifiedIssue) {
                         try {
                             const inputs = new Float32Array([
-                                nodeColor.r / 255, nodeColor.g / 255, nodeColor.b / 255,
-                                bgColor.r / 255, bgColor.g / 255, bgColor.b / 255,
-                                0.5, 0.5, 0.5 // Simulated neighborhood average
+                                nodeColor.r / 255,
+                                nodeColor.g / 255,
+                                nodeColor.b / 255,
+                                bgColor.r / 255,
+                                bgColor.g / 255,
+                                bgColor.b / 255,
+                                0.5,
+                                0.5,
+                                0.5, // Simulated neighborhood average
                             ]);
                             const tensor = new Tensor('float32', inputs, [1, 9]);
-                            const result = await this.sessions['che'].run({ color_neighborhood: tensor });
+                            const result = await this.sessions['che'].run({
+                                color_neighborhood: tensor,
+                            });
                             const prob = result['harmony_score'].data[0] as number;
 
                             if (prob < 0.5) {
@@ -197,8 +216,14 @@ export class VisionManager {
                         try {
                             // Extract bounding boxes details to format as [x1, y1, x2, y2, x1, y1, x2, y2]
                             const inputs = new Float32Array([
-                                boxA.min.x, boxA.min.y, boxA.max.x, boxA.max.y,
-                                boxB.min.x, boxB.min.y, boxB.max.x, boxB.max.y,
+                                boxA.min.x,
+                                boxA.min.y,
+                                boxA.max.x,
+                                boxA.max.y,
+                                boxB.min.x,
+                                boxB.min.y,
+                                boxB.max.x,
+                                boxB.max.y,
                             ]);
                             const tensor = new Tensor('float32', inputs, [1, 8]);
                             const result = await this.sessions['odn'].run({ boxes: tensor });
@@ -225,8 +250,8 @@ export class VisionManager {
         // --- VHS: Visual Hierarchy Scoring ---
         let clarityScore = 85;
         const inDegrees = new Map<string, number>();
-        nodes.forEach(n => inDegrees.set(n.id, 0));
-        this.sg.graph.edges.forEach(e => {
+        nodes.forEach((n) => inDegrees.set(n.id, 0));
+        this.sg.graph.edges.forEach((e) => {
             if (e.target && e.target.id) {
                 inDegrees.set(e.target.id, (inDegrees.get(e.target.id) || 0) + 1);
             }
@@ -234,8 +259,10 @@ export class VisionManager {
 
         // BFS to find max depth and distribution
         let maxDepth = 0;
-        let queue: { id: string, depth: number }[] = [];
-        inDegrees.forEach((deg, id) => { if (deg === 0) queue.push({ id, depth: 0 }); });
+        const queue: { id: string; depth: number }[] = [];
+        inDegrees.forEach((deg, id) => {
+            if (deg === 0) queue.push({ id, depth: 0 });
+        });
 
         const depths: number[] = [];
         while (queue.length > 0) {
@@ -255,7 +282,12 @@ export class VisionManager {
             try {
                 // Feature vector: [avg_depth, max_depth, node_count, edge_count]
                 const avgDepth = depths.reduce((a, b) => a + b, 0) / depths.length;
-                const inputs = new Float32Array([avgDepth, maxDepth, nodes.length, this.sg.graph.edges.length]);
+                const inputs = new Float32Array([
+                    avgDepth,
+                    maxDepth,
+                    nodes.length,
+                    this.sg.graph.edges.length,
+                ]);
                 const tensor = new Tensor('float32', inputs, [1, 4]);
                 const result = await this.sessions['vhs'].run({ hierarchy_features: tensor });
                 clarityScore = Math.floor((result['hierarchy_score'].data[0] as number) * 100);
@@ -275,8 +307,8 @@ export class VisionManager {
         for (const node of nodes) {
             if (!frustum.containsPoint(node.object.position)) continue;
 
-            // Get screen space coordinates
-            const screenPos = node.object.position.clone().project(camera);
+            // Ensure node coordinates project to screen appropriately, ignoring result for now
+            node.object.position.clone().project(camera);
 
             // To find bounding box size on screen, we convert node's box corners
             const box = new THREE.Box3().setFromObject(node.object);
@@ -296,7 +328,12 @@ export class VisionManager {
         if (this.sessions['eqa']) {
             try {
                 // Feature vector: [pct_small_targets, total_nodes, screen_width, screen_height]
-                const inputs = new Float32Array([pctSmall, nodes.length, screenWidth, screenHeight]);
+                const inputs = new Float32Array([
+                    pctSmall,
+                    nodes.length,
+                    screenWidth,
+                    screenHeight,
+                ]);
                 const tensor = new Tensor('float32', inputs, [1, 4]);
                 const result = await this.sessions['eqa'].run({ ergonomic_features: tensor });
                 fittsLawScore = Math.floor((result['fittslaw_score'].data[0] as number) * 100);
@@ -304,7 +341,7 @@ export class VisionManager {
                 console.error('[VisionManager] EQA model inference failed', e);
             }
         } else {
-            fittsLawScore = Math.max(0, 100 - (pctSmall * 100));
+            fittsLawScore = Math.max(0, 100 - pctSmall * 100);
         }
 
         const mockReport: VisionReport = {
@@ -317,7 +354,14 @@ export class VisionManager {
             overlap: { overlaps: overlaps, statistics: { totalOverlaps: overlaps.length } },
             hierarchy: { clarityScore: Math.max(0, clarityScore) },
             ergonomics: { fittsLawScore: Math.max(0, fittsLawScore) },
-            overall: Math.max(0, layoutScore - overlaps.length * 2 - legibilityFailures.length * 5 - (100 - clarityScore) * 0.5 - (100 - fittsLawScore) * 0.5),
+            overall: Math.max(
+                0,
+                layoutScore -
+                overlaps.length * 2 -
+                legibilityFailures.length * 5 -
+                (100 - clarityScore) * 0.5 -
+                (100 - fittsLawScore) * 0.5,
+            ),
         };
 
         console.log('[VisionManager] Analysis complete. Overall Score:', mockReport.overall);
@@ -450,6 +494,30 @@ export class VisionManager {
                 console.error('[VisionManager] Autonomous loop error: ', err);
             }
         }, intervalMs);
+    }
+
+    /**
+     * Imperatively triggers auto-fixes for all failing categories in a given report.
+     * This orchestrates the underlying `autoFix` pipeline.
+     */
+    public async applyAutonomousFixes(report: VisionReport): Promise<void> {
+        console.log('[VisionManager] Applying manual autonomous fixes from report...');
+
+        // Thresholds based on default plan logic
+        if (report.layout.overall < 80) {
+            await this.autoFix({ type: 'layout' }, report);
+        }
+        if (report.overlap.statistics.totalOverlaps > 0) {
+            await this.autoFix({ type: 'overlap' }, report);
+        }
+        if (report.legibility.failures && report.legibility.failures.length > 0) {
+            await this.autoFix({ type: 'legibility' }, report);
+        }
+        if (report.color.harmonyScore < 70) {
+            await this.autoFix({ type: 'color' }, report);
+        }
+
+        console.log('[VisionManager] Autonomous fixes dispatched.');
     }
 
     public stopAutonomousCorrection(): void {

@@ -1,5 +1,5 @@
 <template>
-  <div ref="container" class="spacegraph-container" :style="customStyle"></div>
+    <div ref="container" class="spacegraph-container" :style="customStyle"></div>
 </template>
 
 <script setup lang="ts">
@@ -8,62 +8,69 @@ import { SpaceGraph } from 'spacegraphjs';
 import type { GraphSpec, SpaceGraphOptions } from 'spacegraphjs';
 
 const props = defineProps<{
-  spec?: GraphSpec;
-  url?: string;
-  options?: SpaceGraphOptions;
-  customStyle?: Record<string, any>;
+    spec?: GraphSpec;
+    url?: string;
+    options?: SpaceGraphOptions;
+    customStyle?: Record<string, any>;
 }>();
 
 const emit = defineEmits<{
-  (e: 'ready', sg: SpaceGraph): void
+    (e: 'ready', sg: SpaceGraph): void;
 }>();
 
 const container = ref<HTMLElement | null>(null);
 let sgInstance: SpaceGraph | null = null;
 
 const initGraph = async () => {
-  if (!container.value) return;
-  
-  if (sgInstance) {
-    sgInstance.dispose();
-    sgInstance = null;
-  }
+    if (!container.value) return;
 
-  if (props.url) {
-    sgInstance = await SpaceGraph.fromURL(props.url, container.value, props.options);
-    emit('ready', sgInstance);
-  } else {
-    sgInstance = new SpaceGraph(container.value, props.options);
-    if (props.spec) {
-      sgInstance.graph.fromJSON(props.spec);
+    if (sgInstance) {
+        sgInstance.dispose();
+        sgInstance = null;
     }
-    emit('ready', sgInstance);
-  }
+
+    if (props.url) {
+        sgInstance = await SpaceGraph.fromURL(props.url, container.value, props.options);
+        emit('ready', sgInstance);
+    } else {
+        sgInstance = new SpaceGraph(container.value, props.options);
+        if (props.spec) {
+            sgInstance.graph.fromJSON(props.spec);
+        }
+        emit('ready', sgInstance);
+    }
 };
 
 onMounted(() => {
-  initGraph();
+    initGraph();
 });
 
-watch(() => props.spec, (newSpec) => {
-  // simple re-init for now
-  initGraph();
-}, { deep: true });
+watch(
+    () => props.spec,
+    (newSpec) => {
+        // simple re-init for now
+        initGraph();
+    },
+    { deep: true },
+);
 
-watch(() => props.url, () => {
-  initGraph();
-});
+watch(
+    () => props.url,
+    () => {
+        initGraph();
+    },
+);
 
 onBeforeUnmount(() => {
-  if (sgInstance) {
-    sgInstance.dispose();
-  }
+    if (sgInstance) {
+        sgInstance.dispose();
+    }
 });
 </script>
 
 <style scoped>
 .spacegraph-container {
-  width: 100%;
-  height: 100%;
+    width: 100%;
+    height: 100%;
 }
 </style>
