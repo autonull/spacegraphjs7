@@ -9,7 +9,13 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 async function init() {
     console.log('\n🚀 Welcome to SpaceGraphJS!');
 
-    let targetDir = process.argv[2] || 'spacegraph-app';
+    // Handle "npx sg6 create my-app" vs "npx create-spacegraph my-app"
+    let targetDir = process.argv[2];
+    if (targetDir === 'create' && process.argv[3]) {
+        targetDir = process.argv[3];
+    }
+    targetDir = targetDir || 'spacegraph-app';
+
     const cwd = process.cwd();
     const root = path.join(cwd, targetDir);
 
@@ -34,7 +40,7 @@ async function init() {
         type: 'module',
         scripts: {
             dev: 'vite',
-            build: 'tsc && vite build',
+            build: 'vite build',
             preview: 'vite preview',
         },
         dependencies: {

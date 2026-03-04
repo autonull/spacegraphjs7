@@ -30,11 +30,18 @@ import { FlowEdge } from './edges/FlowEdge';
 import { LabeledEdge } from './edges/LabeledEdge';
 import { DottedEdge } from './edges/DottedEdge';
 import { DynamicThicknessEdge } from './edges/DynamicThicknessEdge';
+import { AnimatedEdge } from './edges/AnimatedEdge';
+import { BundledEdge } from './edges/BundledEdge';
 import { ForceLayout } from './plugins/ForceLayout';
 import { CircularLayout } from './plugins/CircularLayout';
 import { GridLayout } from './plugins/GridLayout';
 import { HierarchicalLayout } from './plugins/HierarchicalLayout';
 import { RadialLayout } from './plugins/RadialLayout';
+import { TreeLayout } from './plugins/TreeLayout';
+import { SpectralLayout } from './plugins/SpectralLayout';
+import { GeoLayout } from './plugins/GeoLayout';
+import { TimelineLayout } from './plugins/TimelineLayout';
+import { ClusterLayout } from './plugins/ClusterLayout';
 import { InteractionPlugin } from './plugins/InteractionPlugin';
 import { LODPlugin } from './plugins/LODPlugin';
 import { AutoLayoutPlugin } from './plugins/AutoLayoutPlugin';
@@ -91,7 +98,7 @@ export class SpaceGraph {
         if (!element) {
             throw new Error(
                 `Container not found: "${container}".\n` +
-                    `Make sure the element exists in the DOM.`,
+                `Make sure the element exists in the DOM.`,
             );
         }
 
@@ -133,6 +140,8 @@ export class SpaceGraph {
         this.pluginManager.registerEdgeType('LabeledEdge', LabeledEdge);
         this.pluginManager.registerEdgeType('DottedEdge', DottedEdge);
         this.pluginManager.registerEdgeType('DynamicThicknessEdge', DynamicThicknessEdge);
+        this.pluginManager.registerEdgeType('AnimatedEdge', AnimatedEdge);
+        this.pluginManager.registerEdgeType('BundledEdge', BundledEdge);
 
         // Register built-in plugins (Layouts)
         this.pluginManager.register('ForceLayout', new ForceLayout());
@@ -140,6 +149,12 @@ export class SpaceGraph {
         this.pluginManager.register('GridLayout', new GridLayout());
         this.pluginManager.register('HierarchicalLayout', new HierarchicalLayout());
         this.pluginManager.register('RadialLayout', new RadialLayout());
+        this.pluginManager.register('TreeLayout', new TreeLayout());
+        this.pluginManager.register('SpectralLayout', new SpectralLayout());
+        this.pluginManager.register('GeoLayout', new GeoLayout());
+        this.pluginManager.register('MapLayout', new GeoLayout()); // Alias
+        this.pluginManager.register('TimelineLayout', new TimelineLayout());
+        this.pluginManager.register('ClusterLayout', new ClusterLayout());
 
         // Register built-in plugins (Systems)
         this.pluginManager.register('InteractionPlugin', new InteractionPlugin());

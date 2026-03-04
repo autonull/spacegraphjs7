@@ -65,6 +65,8 @@ export { FlowEdge } from './edges/FlowEdge';
 export { LabeledEdge } from './edges/LabeledEdge';
 export { DottedEdge } from './edges/DottedEdge';
 export { DynamicThicknessEdge } from './edges/DynamicThicknessEdge';
+export { AnimatedEdge } from './edges/AnimatedEdge';
+export { BundledEdge } from './edges/BundledEdge';
 
 // Plugins — layout
 export { ForceLayout } from './plugins/ForceLayout';
@@ -72,6 +74,11 @@ export { GridLayout } from './plugins/GridLayout';
 export { CircularLayout } from './plugins/CircularLayout';
 export { HierarchicalLayout } from './plugins/HierarchicalLayout';
 export { RadialLayout } from './plugins/RadialLayout';
+export { TreeLayout } from './plugins/TreeLayout';
+export { SpectralLayout } from './plugins/SpectralLayout';
+export { GeoLayout } from './plugins/GeoLayout';
+export { TimelineLayout } from './plugins/TimelineLayout';
+export { ClusterLayout } from './plugins/ClusterLayout';
 
 // Plugins — core
 export { InteractionPlugin } from './plugins/InteractionPlugin';

@@ -22,12 +22,25 @@ export class VisionOverlayPlugin implements ISpaceGraphPlugin {
         setTimeout(() => this.startPolling(), this.settings.pollingRate);
     }
 
+    private modelsLoaded = false;
+
     private async runAnalysis() {
         try {
+            if (!this.modelsLoaded) {
+                this.updateDOMState('Loading AI Models...');
+                await this.sg.vision.loadModels({
+                    tla: '/tla_model.onnx',
+                    che: '/che_model.onnx',
+                    odn: '/odn_model.onnx',
+                    vhs: '/vhs_model.onnx',
+                    eqa: '/eqa_model.onnx',
+                });
+                this.modelsLoaded = true;
+            }
             this.lastReport = await this.sg.vision.analyzeVision();
             this.updateDOM();
-        } catch {
-            // Already running or failed
+        } catch (e) {
+            console.error('[VisionOverlay] Analysis error:', e);
         }
     }
 
@@ -80,17 +93,22 @@ export class VisionOverlayPlugin implements ISpaceGraphPlugin {
         return '#f87171'; // Red
     }
 
+    private updateDOMState(message: string) {
+        if (!this.container) return;
+        this.container.innerHTML = `
+            <div style="font-weight: 600; font-size: 14px; margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+                <div class="sg-spinner"></div> Vision Analysis
+            </div>
+            <div style="color: rgba(255,255,255,0.6);">${message}</div>
+        `;
+        this.injectSpinnerStyles();
+    }
+
     private updateDOM() {
         if (!this.container) return;
 
         if (!this.lastReport) {
-            this.container.innerHTML = `
-                <div style="font-weight: 600; font-size: 14px; margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
-                    <div class="sg-spinner"></div> Vision Analysis
-                </div>
-                <div style="color: rgba(255,255,255,0.6);">Initializing ONNX runtime...</div>
-            `;
-            this.injectSpinnerStyles();
+            this.updateDOMState('Initializing ONNX runtime...');
             return;
         }
 
