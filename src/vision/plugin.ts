@@ -39,16 +39,36 @@ export function spacegraphVision(options: VisionPluginOptions = {}): Plugin {
 
             if (options.autoFix && report.issues.length > 0) {
                 console.log(
-                    `👁️  AutoFix enabled: applying ${report.issues.length} fixes to source files...`,
+                    `👁️  AutoFix enabled: generating patch for ${report.issues.length} issues...`,
                 );
-                // A full production system would use AST transformations to update the source code.
-                // For now, we print a warning/stub so the user knows they have actionable issues.
-                console.log(
-                    `[AutoFix] Stub: Please implement AST transformations to automatically update node specs with the suggested fixes.`,
-                );
-                for (const issue of report.issues) {
-                    console.log(`  -> Action required: ${issue.message}`);
-                }
+
+                const patches = report.issues.map((issue: any) => {
+                    // Generate a structural JSON patch based on the issue type
+                    const patch: any = { targetNodeId: issue.nodeId || issue.nodeA || 'global', action: 'update' };
+
+                    if (issue.message && issue.message.includes('contrast')) {
+                        patch.data = { color: '#ffffff' }; // baseline bright color suggestion
+                    } else if (issue.message && issue.message.includes('overlap')) {
+                        patch.position = 'auto-resolve-layout'; // Semantic instruction
+                    } else if (issue.type === 'overlap') {
+                        patch.position = 'auto-resolve-layout';
+                    }
+
+                    return {
+                        issue: issue.type || 'unknown',
+                        message: issue.message || 'No description',
+                        patch
+                    };
+                });
+
+                const fs = await import('fs');
+                const path = await import('path');
+                const patchPath = path.resolve(process.cwd(), 'spacegraph-autofix-patch.json');
+
+                fs.writeFileSync(patchPath, JSON.stringify(patches, null, 2), 'utf-8');
+
+                console.log(`[AutoFix] Generated JSON patch file at: ${patchPath}`);
+                console.log(`[AutoFix] CI systems can consume this patch to mutate source data.`);
             }
         },
 

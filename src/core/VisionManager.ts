@@ -1,6 +1,9 @@
 import * as THREE from 'three';
 import type { SpaceGraph } from '../SpaceGraph';
 import { InferenceSession, Tensor, env } from 'onnxruntime-web';
+import { getLuminance, hexToRgb, getDominantColors } from '../utils/color';
+import { SpatialIndex } from './SpatialIndex';
+import type { SpaceGraphNodeData } from '../types';
 
 // Configure ONNX to fetch WASM payload from unpkg/jsdelivr instead of requiring local bundling logic
 env.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/';
@@ -22,7 +25,8 @@ export interface VisionReport {
 export class VisionManager {
     private sg: SpaceGraph;
     private isAnalyzing: boolean = false;
-    private autonomousTimer: any = null;
+    private autonomousTimer: any | null = null;
+    private spatialIndex: SpatialIndex = new SpatialIndex(50); // 50 units cell size
 
     constructor(sg: SpaceGraph) {
         this.sg = sg;
@@ -70,16 +74,9 @@ export class VisionManager {
         let colorHarmonyScore = 100;
         const dominantPalette: string[] = [];
         let wcagAA = true;
-        const bgColor = new THREE.Color(this.sg.renderer.scene.background as THREE.Color);
+        const bgColorThree = new THREE.Color(this.sg.renderer.scene.background as THREE.Color);
+        const bgColor = { r: bgColorThree.r * 255, g: bgColorThree.g * 255, b: bgColorThree.b * 255 };
 
-        // Helper: relative luminance per WCAG 2.x
-        const getLuminance = (r: number, g: number, b: number) => {
-            const a = [r, g, b].map(function (v) {
-                v /= 255;
-                return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
-            });
-            return a[0] * 0.2126 + a[1] * 0.7152 + a[2] * 0.0722;
-        };
 
         // Ambitious Overlap Detection using Bounding Boxes
         const camera = this.sg.renderer.camera;
@@ -93,21 +90,20 @@ export class VisionManager {
         );
         frustum.setFromProjectionMatrix(cameraViewProjectionMatrix);
 
+        // Build Spatial Index for O(n log n) overlap queries
+        this.spatialIndex.build(nodes);
+
         for (let i = 0; i < nodes.length; i++) {
             const nodeA = nodes[i];
 
             // --- Color and Legibility analysis (TLA/CHE) ---
-            if (nodeA.data && nodeA.data.color !== undefined) {
-                const nodeColor = new THREE.Color(nodeA.data.color);
-                dominantPalette.push(`#${nodeColor.getHexString()}`);
+            // Generate some random layout heuristics if the ONNX model isn't driving
+            const nodeColor = nodeA.data?.color ? hexToRgb(nodeA.data.color) : { r: 200, g: 200, b: 200 };
+            dominantPalette.push(nodeA.data?.color || '#cccccc');
 
-                // Assuming text color is white (#ffffff) for calculation
-                // We compare node background to text color (white)
-                const nodeL1 = getLuminance(
-                    nodeColor.r * 255,
-                    nodeColor.g * 255,
-                    nodeColor.b * 255,
-                );
+            // Math-based heuristic for legibility (WCAG contrast)
+            if (nodeColor) {
+                const nodeL1 = getLuminance(nodeColor.r, nodeColor.g, nodeColor.b);
                 const textL2 = getLuminance(255, 255, 255);
 
                 const brightest = Math.max(nodeL1, textL2);
@@ -123,19 +119,12 @@ export class VisionManager {
                     if (this.sessions['tla']) {
                         try {
                             const inputs = new Float32Array([
-                                nodeColor.r,
-                                nodeColor.g,
-                                nodeColor.b,
-                                1.0,
-                                1.0,
-                                1.0, // Assumed white text
-                                14.0,
-                                400.0, // Assumed size and weight
+                                nodeColor.r / 255, nodeColor.g / 255, nodeColor.b / 255,
+                                1.0, 1.0, 1.0, // Assumed white text
+                                14.0, 400.0 // Assumed size and weight
                             ]);
                             const tensor = new Tensor('float32', inputs, [1, 8]);
-                            const result = await this.sessions['tla'].run({
-                                text_features: tensor,
-                            });
+                            const result = await this.sessions['tla'].run({ text_features: tensor });
                             const prob = result['legibility_score'].data[0] as number;
 
                             // If neural net thinks it's legible (prob > 0.5), ignore the math heuristic
@@ -151,20 +140,12 @@ export class VisionManager {
                     if (this.sessions['che'] && verifiedIssue) {
                         try {
                             const inputs = new Float32Array([
-                                nodeColor.r,
-                                nodeColor.g,
-                                nodeColor.b,
-                                bgColor.r,
-                                bgColor.g,
-                                bgColor.b,
-                                0.5,
-                                0.5,
-                                0.5, // Simulated neighborhood average
+                                nodeColor.r / 255, nodeColor.g / 255, nodeColor.b / 255,
+                                bgColor.r / 255, bgColor.g / 255, bgColor.b / 255,
+                                0.5, 0.5, 0.5 // Simulated neighborhood average
                             ]);
                             const tensor = new Tensor('float32', inputs, [1, 9]);
-                            const result = await this.sessions['che'].run({
-                                color_neighborhood: tensor,
-                            });
+                            const result = await this.sessions['che'].run({ color_neighborhood: tensor });
                             const prob = result['harmony_score'].data[0] as number;
 
                             if (prob < 0.5) {
@@ -194,8 +175,15 @@ export class VisionManager {
             // Expand the bounding box slightly to act as a buffer/padding
             boxA.expandByScalar(5);
 
-            for (let j = i + 1; j < nodes.length; j++) {
-                const nodeB = nodes[j];
+            // Query spatial index for neighbors
+            const neighbors = this.spatialIndex.queryBox(boxA);
+
+            for (const nodeB of neighbors) {
+                if (nodeA.id === nodeB.id) continue;
+
+                // Keep ordering alphabetical to avoid double counting A->B and B->A
+                if (nodeB.id < nodeA.id) continue;
+
                 if (!frustum.containsPoint(nodeB.object.position)) continue;
 
                 const boxB = new THREE.Box3().setFromObject(nodeB.object);
@@ -209,14 +197,8 @@ export class VisionManager {
                         try {
                             // Extract bounding boxes details to format as [x1, y1, x2, y2, x1, y1, x2, y2]
                             const inputs = new Float32Array([
-                                boxA.min.x,
-                                boxA.min.y,
-                                boxA.max.x,
-                                boxA.max.y,
-                                boxB.min.x,
-                                boxB.min.y,
-                                boxB.max.x,
-                                boxB.max.y,
+                                boxA.min.x, boxA.min.y, boxA.max.x, boxA.max.y,
+                                boxB.min.x, boxB.min.y, boxB.max.x, boxB.max.y,
                             ]);
                             const tensor = new Tensor('float32', inputs, [1, 8]);
                             const result = await this.sessions['odn'].run({ boxes: tensor });
@@ -240,6 +222,91 @@ export class VisionManager {
             }
         }
 
+        // --- VHS: Visual Hierarchy Scoring ---
+        let clarityScore = 85;
+        const inDegrees = new Map<string, number>();
+        nodes.forEach(n => inDegrees.set(n.id, 0));
+        this.sg.graph.edges.forEach(e => {
+            if (e.target && e.target.id) {
+                inDegrees.set(e.target.id, (inDegrees.get(e.target.id) || 0) + 1);
+            }
+        });
+
+        // BFS to find max depth and distribution
+        let maxDepth = 0;
+        let queue: { id: string, depth: number }[] = [];
+        inDegrees.forEach((deg, id) => { if (deg === 0) queue.push({ id, depth: 0 }); });
+
+        const depths: number[] = [];
+        while (queue.length > 0) {
+            const current = queue.shift()!;
+            maxDepth = Math.max(maxDepth, current.depth);
+            depths.push(current.depth);
+
+            // push children (simplified)
+            for (const edge of this.sg.graph.edges) {
+                if (edge.source.id === current.id) {
+                    queue.push({ id: edge.target.id, depth: current.depth + 1 });
+                }
+            }
+        }
+
+        if (this.sessions['vhs'] && depths.length > 0) {
+            try {
+                // Feature vector: [avg_depth, max_depth, node_count, edge_count]
+                const avgDepth = depths.reduce((a, b) => a + b, 0) / depths.length;
+                const inputs = new Float32Array([avgDepth, maxDepth, nodes.length, this.sg.graph.edges.length]);
+                const tensor = new Tensor('float32', inputs, [1, 4]);
+                const result = await this.sessions['vhs'].run({ hierarchy_features: tensor });
+                clarityScore = Math.floor((result['hierarchy_score'].data[0] as number) * 100);
+            } catch (e) {
+                console.error('[VisionManager] VHS model inference failed', e);
+            }
+        }
+
+        // --- EQA: Ergonomics Quality Assessment (Fitts' Law Proxy) ---
+        let fittsLawScore = 90;
+        let smallTargets = 0;
+
+        // Approximate pixel sizes
+        const screenWidth = this.sg.renderer.renderer.domElement.width;
+        const screenHeight = this.sg.renderer.renderer.domElement.height;
+
+        for (const node of nodes) {
+            if (!frustum.containsPoint(node.object.position)) continue;
+
+            // Get screen space coordinates
+            const screenPos = node.object.position.clone().project(camera);
+
+            // To find bounding box size on screen, we convert node's box corners
+            const box = new THREE.Box3().setFromObject(node.object);
+            const size = new THREE.Vector3();
+            box.getSize(size);
+
+            // A crude heuristic for screen size estimation (distance scaling)
+            const distance = camera.position.distanceTo(node.object.position);
+            const apparentSize = (Math.max(size.x, size.y) / distance) * screenHeight;
+
+            // Fitts law suggests target sizes < 44px (Apple guidelines) are hard to click
+            if (apparentSize < 44) smallTargets++;
+        }
+
+        const pctSmall = nodes.length > 0 ? smallTargets / nodes.length : 0;
+
+        if (this.sessions['eqa']) {
+            try {
+                // Feature vector: [pct_small_targets, total_nodes, screen_width, screen_height]
+                const inputs = new Float32Array([pctSmall, nodes.length, screenWidth, screenHeight]);
+                const tensor = new Tensor('float32', inputs, [1, 4]);
+                const result = await this.sessions['eqa'].run({ ergonomic_features: tensor });
+                fittsLawScore = Math.floor((result['fittslaw_score'].data[0] as number) * 100);
+            } catch (e) {
+                console.error('[VisionManager] EQA model inference failed', e);
+            }
+        } else {
+            fittsLawScore = Math.max(0, 100 - (pctSmall * 100));
+        }
+
         const mockReport: VisionReport = {
             layout: { overall: Math.max(0, layoutScore), issues: overlaps },
             legibility: { wcagCompliance: { AA: wcagAA }, failures: legibilityFailures },
@@ -248,9 +315,9 @@ export class VisionManager {
                 dominantPalette: [...new Set(dominantPalette)].slice(0, 5),
             },
             overlap: { overlaps: overlaps, statistics: { totalOverlaps: overlaps.length } },
-            hierarchy: { clarityScore: 85 },
-            ergonomics: { fittsLawScore: 90 },
-            overall: Math.max(0, layoutScore - overlaps.length * 2 - legibilityFailures.length * 5),
+            hierarchy: { clarityScore: Math.max(0, clarityScore) },
+            ergonomics: { fittsLawScore: Math.max(0, fittsLawScore) },
+            overall: Math.max(0, layoutScore - overlaps.length * 2 - legibilityFailures.length * 5 - (100 - clarityScore) * 0.5 - (100 - fittsLawScore) * 0.5),
         };
 
         console.log('[VisionManager] Analysis complete. Overall Score:', mockReport.overall);
@@ -263,6 +330,12 @@ export class VisionManager {
             }
             if (legibilityFailures.length > 0) {
                 await this.autoFix({ type: 'legibility' }, mockReport);
+            }
+            if (clarityScore < 60) {
+                await this.autoFix({ type: 'hierarchy' }, mockReport);
+            }
+            if (fittsLawScore < 60) {
+                await this.autoFix({ type: 'ergonomics' }, mockReport);
             }
         }
 
@@ -321,6 +394,25 @@ export class VisionManager {
                     );
                 }
             }
+        }
+
+        // Autonomous Hierarchy fix via HierarchicalLayout
+        if (category.type === 'hierarchy' && report) {
+            console.log('[VisionManager] Applying hierarchy corrections...');
+            const hierLayout: any = this.sg.pluginManager.getPlugin('HierarchicalLayout');
+            if (hierLayout && typeof hierLayout.fixHierarchy === 'function') {
+                hierLayout.fixHierarchy();
+            } else if (hierLayout && typeof hierLayout.apply === 'function') {
+                // Just force a re-layout
+                hierLayout.apply();
+            }
+        }
+
+        // Autonomous Ergonomics fix via Camera scale
+        if (category.type === 'ergonomics' && report) {
+            console.log('[VisionManager] Applying ergonomics corrections (camera zoom limit)...');
+            // Usually we might constrain the camera from zooming out too far, or we scale up key nodes.
+            this.sg.fitView(150, 2.0); // Simple auto-zoom
         }
     }
 

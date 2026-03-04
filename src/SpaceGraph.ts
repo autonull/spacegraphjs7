@@ -285,4 +285,25 @@ export class SpaceGraph {
             return false;
         }
     }
+
+    /**
+     * Initializes a SpaceGraph instance and loads graph spec from a URL representing JSON.
+     */
+    public static async fromURL(
+        url: string,
+        container: HTMLElement,
+        options: SpaceGraphOptions = {}
+    ): Promise<SpaceGraph> {
+        const sg = new SpaceGraph(container, options);
+        try {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`Failed to fetch graph from ${url}`);
+            const spec: GraphSpec = await response.json();
+            sg.graph.fromJSON(spec);
+        } catch (error) {
+            console.error('[SpaceGraphJS] fromURL failed:', error);
+            throw error;
+        }
+        return sg;
+    }
 }

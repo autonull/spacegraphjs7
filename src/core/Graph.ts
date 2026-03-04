@@ -1,5 +1,5 @@
 import type { SpaceGraph } from '../SpaceGraph';
-import type { NodeSpec, EdgeSpec } from '../types';
+import type { NodeSpec, EdgeSpec, GraphSpec } from '../types';
 
 export class Graph {
     public sg: SpaceGraph;
@@ -24,6 +24,9 @@ export class Graph {
         this.nodes.set(spec.id, node);
         this.sg.renderer.scene.add(node.object);
         this.sg.events.emit('node:added', { node });
+        for (const plugin of this.sg.pluginManager['plugins'].values()) {
+            if (plugin.onNodeAdded) plugin.onNodeAdded(node);
+        }
         return node;
     }
 
@@ -67,6 +70,9 @@ export class Graph {
         this.edges.push(edge);
         this.sg.renderer.scene.add(edge.object);
         this.sg.events.emit('edge:added', { edge });
+        for (const plugin of this.sg.pluginManager['plugins'].values()) {
+            if (plugin.onEdgeAdded) plugin.onEdgeAdded(edge);
+        }
         return edge;
     }
 
@@ -100,12 +106,18 @@ export class Graph {
             this.sg.renderer.scene.remove(node.object);
             this.nodes.delete(id);
             this.sg.events.emit('node:removed', { id });
+            for (const plugin of this.sg.pluginManager['plugins'].values()) {
+                if (plugin.onNodeRemoved) plugin.onNodeRemoved(id);
+            }
 
             // Remove connected edges
             this.edges = this.edges.filter((edge) => {
                 if (edge.source.id === id || edge.target.id === id) {
                     this.sg.renderer.scene.remove(edge.object);
                     this.sg.events.emit('edge:removed', { id: edge.id });
+                    for (const plugin of this.sg.pluginManager['plugins'].values()) {
+                        if (plugin.onEdgeRemoved) plugin.onEdgeRemoved(edge.id);
+                    }
                     if (typeof edge.dispose === 'function') edge.dispose();
                     return false;
                 }
@@ -125,6 +137,9 @@ export class Graph {
             this.sg.renderer.scene.remove(edge.object);
             this.edges.splice(index, 1);
             this.sg.events.emit('edge:removed', { id });
+            for (const plugin of this.sg.pluginManager['plugins'].values()) {
+                if (plugin.onEdgeRemoved) plugin.onEdgeRemoved(id);
+            }
             if (typeof edge.dispose === 'function') edge.dispose();
         }
     }
@@ -141,5 +156,70 @@ export class Graph {
             if (typeof node.dispose === 'function') node.dispose();
         });
         this.nodes.clear();
+    }
+
+    query(predicate: (node: any) => boolean): any[] {
+        const result: any[] = [];
+        for (const node of this.nodes.values()) {
+            if (predicate(node)) {
+                result.push(node);
+            }
+        }
+        return result;
+    }
+
+    neighbors(nodeId: string): any[] {
+        const result: any[] = [];
+        for (const edge of this.edges) {
+            if (edge.source.id === nodeId) {
+                result.push(edge.target);
+            } else if (edge.target.id === nodeId) {
+                result.push(edge.source);
+            }
+        }
+        return result;
+    }
+
+    // --- Serialization ---
+
+    public toJSON(): GraphSpec {
+        const nodes: NodeSpec[] = [];
+        for (const node of this.nodes.values()) {
+            nodes.push({
+                id: node.id,
+                type: node.type,
+                label: node.label,
+                position: [node.position.x, node.position.y, node.position.z],
+                data: JSON.parse(JSON.stringify(node.data || {}))
+            });
+        }
+
+        const edges: EdgeSpec[] = this.edges.map(edge => ({
+            id: edge.id,
+            source: edge.source.id,
+            target: edge.target.id,
+            type: edge.type,
+            data: JSON.parse(JSON.stringify(edge.data || {}))
+        }));
+
+        return { nodes, edges };
+    }
+
+    public fromJSON(spec: GraphSpec): void {
+        this.clear();
+
+        // Add nodes
+        if (spec.nodes) {
+            for (const nodeSpec of spec.nodes) {
+                this.addNode(nodeSpec);
+            }
+        }
+
+        // Add edges
+        if (spec.edges) {
+            for (const edgeSpec of spec.edges) {
+                this.addEdge(edgeSpec);
+            }
+        }
     }
 }

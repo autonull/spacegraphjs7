@@ -3,7 +3,7 @@ import type { ISpaceGraphPlugin } from '../types';
 
 export class PluginManager {
     private sg: SpaceGraph;
-    private plugins: Map<string, ISpaceGraphPlugin> = new Map();
+    public plugins: Map<string, ISpaceGraphPlugin> = new Map();
     private nodeTypes: Map<string, any> = new Map();
     private edgeTypes: Map<string, any> = new Map();
 

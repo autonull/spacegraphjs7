@@ -9,6 +9,23 @@ export type {
     SpecUpdate,
     SpaceGraphOptions,
     ISpaceGraphPlugin,
+    SpaceGraphNodeData,
+    BaseNodeData,
+    CanvasNodeData,
+    ChartNodeData,
+    DataNodeData,
+    GlobeNodeData,
+    GroupNodeData,
+    HtmlNodeData,
+    IFrameNodeData,
+    ImageNodeData,
+    InstancedShapeNodeData,
+    MarkdownNodeData,
+    NoteNodeData,
+    SceneNodeData,
+    ShapeNodeData,
+    TextMeshNodeData,
+    VideoNodeData
 } from './types';
 
 // Core

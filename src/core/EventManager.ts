@@ -8,9 +8,12 @@ export type SpaceGraphEvents = {
     'edge:removed': { id: string };
     'interaction:dragstart': { node: any };
     'interaction:dragend': { node: any };
+    'interaction:drag': { node: any };
     'camera:move': { position: any; target: any };
     'node:click': { node: any; event: any };
     'graph:click': { event: any };
+    'node:loaded': { id: string };
+    'ergonomics:calibrated': { winner: any; scores: any };
 };
 
 export class EventManager {
