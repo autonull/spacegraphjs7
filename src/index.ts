@@ -57,6 +57,8 @@ export { ChartNode } from './nodes/ChartNode';
 export { MarkdownNode } from './nodes/MarkdownNode';
 export { GlobeNode } from './nodes/GlobeNode';
 export { SceneNode } from './nodes/SceneNode';
+export { AudioNode } from './nodes/AudioNode';
+export { MathNode } from './nodes/MathNode';
 
 // Edges
 export { Edge } from './edges/Edge';

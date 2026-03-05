@@ -24,6 +24,8 @@ import { ChartNode } from './nodes/ChartNode';
 import { MarkdownNode } from './nodes/MarkdownNode';
 import { GlobeNode } from './nodes/GlobeNode';
 import { SceneNode } from './nodes/SceneNode';
+import { AudioNode } from './nodes/AudioNode';
+import { MathNode } from './nodes/MathNode';
 import { Edge } from './edges/Edge';
 import { CurvedEdge } from './edges/CurvedEdge';
 import { FlowEdge } from './edges/FlowEdge';
@@ -132,6 +134,8 @@ export class SpaceGraph {
         this.pluginManager.registerNodeType('MarkdownNode', MarkdownNode);
         this.pluginManager.registerNodeType('GlobeNode', GlobeNode);
         this.pluginManager.registerNodeType('SceneNode', SceneNode);
+        this.pluginManager.registerNodeType('AudioNode', AudioNode);
+        this.pluginManager.registerNodeType('MathNode', MathNode);
 
         // Register built-in edge types
         this.pluginManager.registerEdgeType('Edge', Edge);
