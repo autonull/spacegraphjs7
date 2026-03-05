@@ -56,7 +56,7 @@ export class TimelineLayout implements ISpaceGraphPlugin {
 
         temporalNodes.forEach((item, i) => {
             // Position along the primary axis
-            let linearPos = 0;
+            let linearPos;
 
             // If the time values are valid and spread out, use continuous scaling.
             // If they are all 0 or invalid, we fallback to discrete spacing based on order.

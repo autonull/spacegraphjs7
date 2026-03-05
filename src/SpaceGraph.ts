@@ -68,7 +68,7 @@ export class SpaceGraph {
     private animationFrameId?: number;
     private lastTimestamp: number = 0;
 
-    constructor(container: HTMLElement, options: SpaceGraphOptions = {}) {
+    constructor(container: HTMLElement, _options: SpaceGraphOptions = {}) {
         this.container = container;
         this.disposalSystem = new UnifiedDisposalSystem();
         this.poolManager = new ObjectPoolManager<any>();

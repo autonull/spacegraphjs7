@@ -1,6 +1,6 @@
 import { CSS3DObject } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
 import * as THREE from 'three';
-import { Node } from './Node';
+import { DOMNode } from './DOMNode';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec } from '../types';
 
@@ -21,22 +21,18 @@ import type { NodeSpec } from '../types';
  * at any zoom level. The canvas is also wrapped in a div so a title bar can
  * sit above it.
  */
-export class ChartNode extends Node {
-    public domElement: HTMLElement;
+export class ChartNode extends DOMNode {
     public canvasEl: HTMLCanvasElement;
-    public cssObject: CSS3DObject;
-    private backing: THREE.Mesh;
     private chartInstance: any = null;
 
     constructor(sg: SpaceGraph, spec: NodeSpec) {
-        super(sg, spec);
-
         const w = spec.data?.width ?? 300;
         const h = spec.data?.height ?? 200;
         const title = spec.label ?? spec.data?.title ?? '';
+        const totalH = h + (title ? 32 : 0);
 
-        // Container
-        this.domElement = document.createElement('div');
+        const div = document.createElement('div');
+        super(sg, spec, div, w, totalH, { visible: false });
         Object.assign(this.domElement.style, {
             width: `${w}px`,
             height: `${h + (title ? 32 : 0)}px`,
@@ -66,18 +62,9 @@ export class ChartNode extends Node {
         Object.assign(this.canvasEl.style, { display: 'block' });
         this.domElement.appendChild(this.canvasEl);
 
-        this.cssObject = new CSS3DObject(this.domElement);
-        this.object.add(this.cssObject);
 
-        // Backing mesh
-        const totalH = h + (title ? 32 : 0);
-        const geo = new THREE.PlaneGeometry(w, totalH);
-        const mat = new THREE.MeshBasicMaterial({ visible: false, side: THREE.DoubleSide });
-        this.backing = new THREE.Mesh(geo, mat);
-        this.object.add(this.backing);
 
         this._renderChart(spec);
-        this.updatePosition(this.position.x, this.position.y, this.position.z);
     }
 
     private async _renderChart(spec: Partial<NodeSpec>) {
@@ -119,9 +106,9 @@ export class ChartNode extends Node {
                     scales:
                         chartType !== 'pie'
                             ? {
-                                  x: { ticks: { color: '#64748b' }, grid: { color: '#1e293b' } },
-                                  y: { ticks: { color: '#64748b' }, grid: { color: '#1e293b' } },
-                              }
+                                x: { ticks: { color: '#64748b' }, grid: { color: '#1e293b' } },
+                                y: { ticks: { color: '#64748b' }, grid: { color: '#1e293b' } },
+                            }
                             : undefined,
                 },
             });
@@ -174,10 +161,9 @@ export class ChartNode extends Node {
     }
 
     dispose(): void {
-        this.chartInstance?.destroy();
-        this.domElement.parentNode?.removeChild(this.domElement);
-        this.backing.geometry.dispose();
-        (this.backing.material as THREE.Material).dispose();
+        if (this.chartInstance) {
+            this.chartInstance.destroy();
+        }
         super.dispose();
     }
 }

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { CSS3DObject } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
-import { Node } from './Node';
+import { DOMNode } from './DOMNode';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec } from '../types';
 
@@ -23,13 +23,12 @@ async function loadKatex() {
     return katexPromise;
 }
 
-export class MathNode extends Node {
-    public domElement: HTMLElement;
-    public cssObject: CSS3DObject;
+export class MathNode extends DOMNode {
     private mathContent: string = '\\int_0^\\infty e^{-x^2} dx = \\frac{\\sqrt{\\pi}}{2}';
 
     constructor(sg: SpaceGraph, spec: NodeSpec) {
-        super(sg, spec);
+        const div = document.createElement('div');
+        super(sg, spec, div, 200, 100, { opacity: 0.0 });
 
         if (spec.data?.math) {
             this.mathContent = spec.data.math;
@@ -50,19 +49,7 @@ export class MathNode extends Node {
 
         this.domElement.textContent = 'Loading Math...';
 
-        this.cssObject = new CSS3DObject(this.domElement);
-        this.object.add(this.cssObject);
 
-        // Optional backing mesh
-        const meshGeometry = new THREE.PlaneGeometry(200, 100);
-        const meshMaterial = new THREE.MeshBasicMaterial({
-            color: 0x000000,
-            opacity: 0.0,
-            transparent: true,
-            side: THREE.DoubleSide,
-        });
-        const mesh = new THREE.Mesh(meshGeometry, meshMaterial);
-        this.object.add(mesh);
 
         this.renderMath();
 
@@ -106,10 +93,5 @@ export class MathNode extends Node {
         }
     }
 
-    dispose(): void {
-        if (this.domElement.parentNode) {
-            this.domElement.parentNode.removeChild(this.domElement);
-        }
-        super.dispose();
-    }
+
 }

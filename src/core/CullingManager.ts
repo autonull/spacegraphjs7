@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import type { SpaceGraph } from '../SpaceGraph';
-import { HtmlNode } from '../nodes/HtmlNode';
+import { DOMNode } from '../nodes/DOMNode';
 
 export class CullingManager {
     private sg: SpaceGraph;
@@ -25,17 +25,8 @@ export class CullingManager {
             // A more exact implementation would use the node's actual bounding box
             const inFrustum = this.frustum.containsPoint(node.position);
 
-            if (node instanceof HtmlNode) {
-                if (inFrustum) {
-                    node.cssObject.visible = true;
-                    // Don't override LOD plugin if it explicitly hides it, but for simple culling we turn it on
-                    if (node.domElement.style.display === 'none') {
-                        node.domElement.style.display = 'flex';
-                    }
-                } else {
-                    node.cssObject.visible = false;
-                    node.domElement.style.display = 'none';
-                }
+            if (node instanceof DOMNode) {
+                node.setVisibility(inFrustum);
             } else {
                 node.object.visible = inFrustum;
             }

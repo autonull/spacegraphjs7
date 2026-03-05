@@ -1,19 +1,13 @@
 import * as THREE from 'three';
 import { CSS3DObject } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
-import { Node } from './Node';
+import { DOMNode } from './DOMNode';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec } from '../types';
 
-export class HtmlNode extends Node {
-    public domElement: HTMLElement;
-    public cssObject: CSS3DObject;
-    private meshGeometry: THREE.PlaneGeometry;
-    private meshMaterial: THREE.MeshBasicMaterial;
-
+export class HtmlNode extends DOMNode {
     constructor(sg: SpaceGraph, spec: NodeSpec) {
-        super(sg, spec);
-
-        this.domElement = document.createElement('div');
+        const div = document.createElement('div');
+        super(sg, spec, div, 200, 100, { opacity: 0.1 });
         this.domElement.className = 'spacegraph-html-node';
         this.domElement.style.width = '200px';
         this.domElement.style.height = '100px';
@@ -45,19 +39,7 @@ export class HtmlNode extends Node {
         this.domElement.appendChild(titleEl);
         this.domElement.appendChild(descEl);
 
-        this.cssObject = new CSS3DObject(this.domElement);
-        this.object.add(this.cssObject);
 
-        // Optional backing mesh for raycasting/webgl representation
-        this.meshGeometry = new THREE.PlaneGeometry(200, 100);
-        this.meshMaterial = new THREE.MeshBasicMaterial({
-            color: 0x000000,
-            opacity: 0.1,
-            transparent: true,
-            side: THREE.DoubleSide,
-        });
-        const mesh = new THREE.Mesh(this.meshGeometry, this.meshMaterial);
-        this.object.add(mesh);
 
         this.updatePosition(this.position.x, this.position.y, this.position.z);
     }
@@ -84,16 +66,5 @@ export class HtmlNode extends Node {
         }
     }
 
-    dispose(): void {
-        if (this.domElement.parentNode) {
-            this.domElement.parentNode.removeChild(this.domElement);
-        }
-        if (this.meshGeometry) {
-            this.meshGeometry.dispose();
-        }
-        if (this.meshMaterial) {
-            this.meshMaterial.dispose();
-        }
-        super.dispose();
-    }
+
 }

@@ -18,15 +18,25 @@ export class SpatialIndex {
     public build(nodes: Node[]): void {
         this.cells.clear();
         for (const node of nodes) {
-            // A node might span multiple cells, but for simplicity,
-            // we insert it into the cell matching its center point.
-            // A more robust implementation would insert into all overlapped cells based on bounding box.
-            const { x, y } = node.position;
-            const key = this.getCellKey(x, y);
-            if (!this.cells.has(key)) {
-                this.cells.set(key, []);
+            // Compute the bounding box of the node in world space
+            const box = new THREE.Box3().setFromObject(node.object);
+
+            const minX = Math.floor(box.min.x / this.cellSize);
+            const minY = Math.floor(box.min.y / this.cellSize);
+            const maxX = Math.floor(box.max.x / this.cellSize);
+            const maxY = Math.floor(box.max.y / this.cellSize);
+
+            // Insert the node into all overlapped cells
+            for (let cx = minX; cx <= maxX; cx++) {
+                for (let cy = minY; cy <= maxY; cy++) {
+                    const key = `${cx},${cy}`;
+                    if (!this.cells.has(key)) {
+                        this.cells.set(key, []);
+                    }
+                    // Avoid inserting the same node multiple times into the same cell, though Set handles it in query
+                    this.cells.get(key)!.push(node);
+                }
             }
-            this.cells.get(key)!.push(node);
         }
     }
 

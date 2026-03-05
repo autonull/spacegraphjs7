@@ -10,6 +10,21 @@ export class Graph {
         this.sg = sg;
     }
 
+    private _notifyPlugins(hookName: string, arg: any) {
+        for (const plugin of this.sg.pluginManager['plugins'].values()) {
+            if (typeof (plugin as any)[hookName] === 'function') {
+                try {
+                    (plugin as any)[hookName](arg);
+                } catch (err) {
+                    console.error(
+                        `[SpaceGraph] Plugin ${plugin.constructor.name} failed ${hookName}:`,
+                        err,
+                    );
+                }
+            }
+        }
+    }
+
     addNode(spec: NodeSpec) {
         if (this.nodes.has(spec.id)) {
             return this.updateNode(spec.id, spec);
@@ -24,18 +39,7 @@ export class Graph {
         this.nodes.set(spec.id, node);
         this.sg.renderer.scene.add(node.object);
         this.sg.events.emit('node:added', { node });
-        for (const plugin of this.sg.pluginManager['plugins'].values()) {
-            if (plugin.onNodeAdded) {
-                try {
-                    plugin.onNodeAdded(node);
-                } catch (err) {
-                    console.error(
-                        `[SpaceGraph] Plugin ${plugin.constructor.name} failed onNodeAdded:`,
-                        err,
-                    );
-                }
-            }
-        }
+        this._notifyPlugins('onNodeAdded', node);
         return node;
     }
 
@@ -93,18 +97,7 @@ export class Graph {
         this.edges.push(edge);
         this.sg.renderer.scene.add(edge.object);
         this.sg.events.emit('edge:added', { edge });
-        for (const plugin of this.sg.pluginManager['plugins'].values()) {
-            if (plugin.onEdgeAdded) {
-                try {
-                    plugin.onEdgeAdded(edge);
-                } catch (err) {
-                    console.error(
-                        `[SpaceGraph] Plugin ${plugin.constructor.name} failed onEdgeAdded:`,
-                        err,
-                    );
-                }
-            }
-        }
+        this._notifyPlugins('onEdgeAdded', edge);
         return edge;
     }
 
@@ -138,36 +131,14 @@ export class Graph {
             this.sg.renderer.scene.remove(node.object);
             this.nodes.delete(id);
             this.sg.events.emit('node:removed', { id });
-            for (const plugin of this.sg.pluginManager['plugins'].values()) {
-                if (plugin.onNodeRemoved) {
-                    try {
-                        plugin.onNodeRemoved(id);
-                    } catch (err) {
-                        console.error(
-                            `[SpaceGraph] Plugin ${plugin.constructor.name} failed onNodeRemoved:`,
-                            err,
-                        );
-                    }
-                }
-            }
+            this._notifyPlugins('onNodeRemoved', id);
 
             // Remove connected edges
             this.edges = this.edges.filter((edge) => {
                 if (edge.source.id === id || edge.target.id === id) {
                     this.sg.renderer.scene.remove(edge.object);
                     this.sg.events.emit('edge:removed', { id: edge.id });
-                    for (const plugin of this.sg.pluginManager['plugins'].values()) {
-                        if (plugin.onEdgeRemoved) {
-                            try {
-                                plugin.onEdgeRemoved(edge.id);
-                            } catch (err) {
-                                console.error(
-                                    `[SpaceGraph] Plugin ${plugin.constructor.name} failed onEdgeRemoved:`,
-                                    err,
-                                );
-                            }
-                        }
-                    }
+                    this._notifyPlugins('onEdgeRemoved', edge.id);
                     if (typeof edge.dispose === 'function') edge.dispose();
                     return false;
                 }
@@ -187,18 +158,7 @@ export class Graph {
             this.sg.renderer.scene.remove(edge.object);
             this.edges.splice(index, 1);
             this.sg.events.emit('edge:removed', { id });
-            for (const plugin of this.sg.pluginManager['plugins'].values()) {
-                if (plugin.onEdgeRemoved) {
-                    try {
-                        plugin.onEdgeRemoved(id);
-                    } catch (err) {
-                        console.error(
-                            `[SpaceGraph] Plugin ${plugin.constructor.name} failed onEdgeRemoved:`,
-                            err,
-                        );
-                    }
-                }
-            }
+            this._notifyPlugins('onEdgeRemoved', id);
             if (typeof edge.dispose === 'function') edge.dispose();
         }
     }

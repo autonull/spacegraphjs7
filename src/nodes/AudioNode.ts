@@ -1,18 +1,15 @@
 import * as THREE from 'three';
 import { CSS3DObject } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
-import { Node } from './Node';
+import { DOMNode } from './DOMNode';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec } from '../types';
 
-export class AudioNode extends Node {
-    public domElement: HTMLElement;
-    public cssObject: CSS3DObject;
+export class AudioNode extends DOMNode {
     public audioElement: HTMLAudioElement;
 
     constructor(sg: SpaceGraph, spec: NodeSpec) {
-        super(sg, spec);
-
-        this.domElement = document.createElement('div');
+        const div = document.createElement('div');
+        super(sg, spec, div, 300, 100, { opacity: 0.0 });
         this.domElement.className = 'spacegraph-audio-node';
         this.domElement.style.width = '300px';
         this.domElement.style.backgroundColor = spec.data?.color || 'rgba(30, 30, 30, 0.9)';
@@ -43,19 +40,7 @@ export class AudioNode extends Node {
         this.domElement.appendChild(titleEl);
         this.domElement.appendChild(this.audioElement);
 
-        this.cssObject = new CSS3DObject(this.domElement);
-        this.object.add(this.cssObject);
 
-        // Optional backing mesh for WebGL raycasting
-        const meshGeometry = new THREE.PlaneGeometry(300, 100);
-        const meshMaterial = new THREE.MeshBasicMaterial({
-            color: 0x000000,
-            opacity: 0.0,
-            transparent: true,
-            side: THREE.DoubleSide,
-        });
-        const mesh = new THREE.Mesh(meshGeometry, meshMaterial);
-        this.object.add(mesh);
 
         this.updatePosition(this.position.x, this.position.y, this.position.z);
     }
@@ -91,9 +76,6 @@ export class AudioNode extends Node {
         this.audioElement.removeAttribute('src');
         this.audioElement.load();
 
-        if (this.domElement.parentNode) {
-            this.domElement.parentNode.removeChild(this.domElement);
-        }
         super.dispose();
     }
 }

@@ -13,7 +13,7 @@ export class AutoColorPlugin implements ISpaceGraphPlugin {
         console.log(`[AutoColorPlugin] Initialized ${this.name} v${this.version}`);
     }
 
-    onPreRender(delta: number): void {
+    onPreRender(_delta: number): void {
         // This plugin will serve as a skeleton for AI vision color adjustments.
         // In the future, VisionManager will call methods on this plugin to auto-correct
         // color harmony and contrast issues.

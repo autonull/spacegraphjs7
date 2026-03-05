@@ -1,6 +1,6 @@
 import { CSS3DObject } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
 import * as THREE from 'three';
-import { Node } from './Node';
+import { DOMNode } from './DOMNode';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec } from '../types';
 import { marked } from 'marked';
@@ -14,22 +14,22 @@ import { marked } from 'marked';
  *   color    : background colour (default '#1e293b')
  *   textColor: CSS text colour (default '#f1f5f9')
  */
-export class MarkdownNode extends Node {
-    public domElement: HTMLDivElement;
-    public cssObject: CSS3DObject;
-    private backing: THREE.Mesh;
+export class MarkdownNode extends DOMNode { // Changed base class to DOMNode
+    // domElement, cssObject, and backing are now handled by DOMNode
+    // public domElement: HTMLDivElement;
+    // public cssObject: CSS3DObject;
+    // private backing: THREE.Mesh;
 
     constructor(sg: SpaceGraph, spec: NodeSpec) {
-        super(sg, spec);
-
         const w = spec.data?.width ?? 300;
         const color = spec.data?.color ?? '#1e293b';
         const txtColor = spec.data?.textColor ?? '#f1f5f9';
         const md = spec.data?.markdown ?? spec.label ?? '';
 
-        this.domElement = document.createElement('div');
-        this.domElement.className = 'sg-markdown-node sg-node';
-        Object.assign(this.domElement.style, {
+        // Create the div element and apply initial styles
+        const div = document.createElement('div');
+        div.className = 'sg-markdown-node sg-node';
+        Object.assign(div.style, {
             width: `${w}px`,
             padding: '16px',
             background: color,
@@ -56,33 +56,24 @@ export class MarkdownNode extends Node {
             .sg-markdown-node blockquote { border-left: 4px solid #475569; margin: 0; padding-left: 12px; color: #cbd5e1; }
             .sg-markdown-node img { max-width: 100%; border-radius: 4px; }
         `;
-        this.domElement.appendChild(style);
+        div.appendChild(style);
 
         const contentDiv = document.createElement('div');
-        this.domElement.appendChild(contentDiv);
+        div.appendChild(contentDiv);
 
-        this.cssObject = new CSS3DObject(this.domElement);
-        this.object.add(this.cssObject);
-
-        // Approximate height based on content
+        // Approximate height based on content for initial backing plane
         contentDiv.innerHTML = marked.parse(md) as string;
-
-        // Note: In CSS3D we need a backing plane for raycasting
         const h = Math.max(100, md.split('\n').length * 20 + 32);
-        const geo = new THREE.PlaneGeometry(w, h);
-        const mat = new THREE.MeshBasicMaterial({ visible: false, side: THREE.DoubleSide });
-        this.backing = new THREE.Mesh(geo, mat);
-        this.object.add(this.backing);
 
-        this.updatePosition(this.position.x, this.position.y, this.position.z);
+        // Call DOMNode constructor
+        super(sg, spec, div, w, h, { visible: false });
 
         // After DOM mounts, we could measure and adjust the backing plane,
         // but for now we rely on a rough heuristic.
         setTimeout(() => {
             const actualHeight = this.domElement.offsetHeight || h;
             if (actualHeight !== h && actualHeight > 0) {
-                this.backing.geometry.dispose();
-                this.backing.geometry = new THREE.PlaneGeometry(w, actualHeight);
+                this.updateBackingGeometry(w, actualHeight);
             }
         }, 50);
     }
@@ -100,17 +91,12 @@ export class MarkdownNode extends Node {
                     const actualHeight = this.domElement.offsetHeight;
                     if (actualHeight > 0) {
                         const w = this.data?.width ?? 300;
-                        this.backing.geometry.dispose();
-                        this.backing.geometry = new THREE.PlaneGeometry(w, actualHeight);
+                        this.updateBackingGeometry(w, actualHeight);
                     }
                 }, 50);
             }
         }
     }
 
-    dispose(): void {
-        this.backing.geometry.dispose();
-        (this.backing.material as THREE.Material).dispose();
-        super.dispose();
-    }
+    // dispose() is handled entirely by DOMNode!
 }

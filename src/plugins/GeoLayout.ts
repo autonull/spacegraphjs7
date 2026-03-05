@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import type { ISpaceGraphPlugin } from '../types';
-import type { Node } from '../nodes/Node';
 import type { SpaceGraph } from '../SpaceGraph';
 
 export class GeoLayout implements ISpaceGraphPlugin {
@@ -54,10 +53,9 @@ export class GeoLayout implements ISpaceGraphPlugin {
             else if (this.settings.projection === 'mercator') {
                 // Web mercator projection
                 const x = (lng + 180) * (this.settings.mapWidth / 360);
-                const latRad = lat * (Math.PI / 180);
 
                 // Truncate lat to avoid infinity
-                let latTrunc = Math.max(-85.0511, Math.min(85.0511, lat));
+                const latTrunc = Math.max(-85.0511, Math.min(85.0511, lat));
                 const mercN = Math.log(Math.tan((Math.PI / 4) + (latTrunc * Math.PI / 180) / 2));
 
                 // Normalize to mapHeight
