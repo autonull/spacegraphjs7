@@ -5,7 +5,6 @@ import { PluginManager } from './core/PluginManager';
 import { CameraControls } from './core/CameraControls';
 import { EventManager } from './core/EventManager';
 import { VisionManager } from './core/VisionManager';
-import { UnifiedDisposalSystem } from './core/UnifiedDisposalSystem';
 import { ObjectPoolManager } from './core/ObjectPoolManager';
 import { CullingManager } from './core/CullingManager';
 import { AdvancedRenderingOptimizer } from './core/AdvancedRenderingOptimizer';
@@ -61,7 +60,6 @@ export class SpaceGraph {
     public cameraControls: CameraControls;
     public events: EventManager;
     public vision: VisionManager;
-    public disposalSystem: UnifiedDisposalSystem;
     public poolManager: ObjectPoolManager<any>;
     public cullingManager: CullingManager;
     public optimizer: AdvancedRenderingOptimizer;
@@ -70,8 +68,10 @@ export class SpaceGraph {
 
     constructor(container: HTMLElement, _options: SpaceGraphOptions = {}) {
         this.container = container;
-        this.disposalSystem = new UnifiedDisposalSystem();
-        this.poolManager = new ObjectPoolManager<any>();
+        // Object Pool
+        this.poolManager = new ObjectPoolManager();
+
+        // Advanced Rendering Optimizer & Culling
         this.cullingManager = new CullingManager(this);
         this.optimizer = new AdvancedRenderingOptimizer(this);
         this.events = new EventManager(this);
@@ -264,7 +264,8 @@ export class SpaceGraph {
 
         // Dispose plugins and graphics resources
         this.pluginManager.disposePlugins();
-        this.disposalSystem.disposeAll();
+        // Empty graph
+        this.graph.clear();
 
         // Clean up DOM elements
         if (this.renderer) {

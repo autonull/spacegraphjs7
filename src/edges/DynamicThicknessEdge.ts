@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { MathPool } from '../utils/MathPool';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { EdgeSpec } from '../types';
 import type { Node } from '../nodes/Node';
@@ -22,7 +23,7 @@ export class DynamicThicknessEdge {
     public target: Node;
     public data: any;
     public object: THREE.Mesh;
-    private geometry: THREE.TubeGeometry;
+    private geometry: THREE.CylinderGeometry;
     private material: THREE.MeshBasicMaterial;
 
     constructor(sg: SpaceGraph, spec: EdgeSpec, source: Node, target: Node) {
@@ -38,20 +39,16 @@ export class DynamicThicknessEdge {
 
         this.geometry = this._buildGeometry();
         this.object = new THREE.Mesh(this.geometry, this.material);
+        this.update(); // Set initial transform
     }
 
-    private _buildGeometry(): THREE.TubeGeometry {
-        const weight = Math.max(0, Math.min(1, this.data.weight ?? 0.5));
-        const minR = this.data.minRadius ?? 1;
-        const maxR = this.data.maxRadius ?? 8;
-        const radius = minR + weight * (maxR - minR);
+    private _buildGeometry(): THREE.CylinderGeometry {
         const segments = this.data.segments ?? 6;
-
-        const curve = new THREE.LineCurve3(
-            this.source.position.clone(),
-            this.target.position.clone(),
-        );
-        return new THREE.TubeGeometry(curve, 1, radius, segments, false);
+        // Base cylinder of radius 1 and length 1, aligned along Y axis by default.
+        // We rotate it to align along Z axis so lookAt works perfectly.
+        const geom = new THREE.CylinderGeometry(1, 1, 1, segments, 1);
+        geom.rotateX(Math.PI / 2);
+        return geom;
     }
 
     updateSpec(updates: Partial<EdgeSpec>): void {
@@ -62,9 +59,29 @@ export class DynamicThicknessEdge {
     }
 
     update() {
-        this.geometry.dispose();
-        this.geometry = this._buildGeometry();
-        this.object.geometry = this.geometry;
+        const pool = MathPool.getInstance();
+        const src = this.source.position;
+        const tgt = this.target.position;
+
+        // Calculate thickness
+        const weight = Math.max(0, Math.min(1, this.data.weight ?? 0.5));
+        const minR = this.data.minRadius ?? 1;
+        const maxR = this.data.maxRadius ?? 8;
+        const radius = minR + weight * (maxR - minR);
+
+        // Calculate length and midpoint
+        const dir = pool.acquireVector3().subVectors(tgt, src);
+        const length = dir.length();
+
+        const midPoint = pool.acquireVector3().addVectors(src, tgt).multiplyScalar(0.5);
+
+        // Apply transformations
+        this.object.position.copy(midPoint);
+        this.object.lookAt(tgt); // Requires object to point along Z axis natively
+        this.object.scale.set(radius, radius, length);
+
+        pool.releaseVector3(dir);
+        pool.releaseVector3(midPoint);
     }
 
     dispose(): void {

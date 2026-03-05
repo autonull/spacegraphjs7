@@ -20,6 +20,7 @@ export class DottedEdge {
     public data: any;
     public object: THREE.Line;
     public geometry: THREE.BufferGeometry;
+    private positionsBuffer: Float32Array;
 
     constructor(sg: SpaceGraph, spec: EdgeSpec, source: Node, target: Node) {
         this.sg = sg;
@@ -32,8 +33,13 @@ export class DottedEdge {
         const gapSize = spec.data?.gapSize ?? 6;
         const color = spec.data?.color ?? 0x888888;
 
-        const points = [source.position.clone(), target.position.clone()];
-        this.geometry = new THREE.BufferGeometry().setFromPoints(points);
+        this.positionsBuffer = new Float32Array([
+            source.position.x, source.position.y, source.position.z,
+            target.position.x, target.position.y, target.position.z
+        ]);
+
+        this.geometry = new THREE.BufferGeometry();
+        this.geometry.setAttribute('position', new THREE.BufferAttribute(this.positionsBuffer, 3));
 
         // LineDashedMaterial requires computeLineDistances()
         const material = new THREE.LineDashedMaterial({
@@ -58,15 +64,13 @@ export class DottedEdge {
     }
 
     update() {
-        const positions = new Float32Array([
-            this.source.position.x,
-            this.source.position.y,
-            this.source.position.z,
-            this.target.position.x,
-            this.target.position.y,
-            this.target.position.z,
-        ]);
-        this.geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        this.positionsBuffer[0] = this.source.position.x;
+        this.positionsBuffer[1] = this.source.position.y;
+        this.positionsBuffer[2] = this.source.position.z;
+        this.positionsBuffer[3] = this.target.position.x;
+        this.positionsBuffer[4] = this.target.position.y;
+        this.positionsBuffer[5] = this.target.position.z;
+
         this.geometry.attributes.position.needsUpdate = true;
         this.object.computeLineDistances();
     }

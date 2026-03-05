@@ -6,6 +6,7 @@ import type { Node } from '../nodes/Node';
 
 export class CurvedEdge extends Edge {
     private curve: THREE.QuadraticBezierCurve3;
+    private positionsBuffer: Float32Array;
 
     constructor(sg: SpaceGraph, spec: EdgeSpec, source: Node, target: Node) {
         super(sg, spec, source, target);
@@ -18,7 +19,15 @@ export class CurvedEdge extends Edge {
         );
 
         const points = this.curve.getPoints(20);
-        this.geometry = new THREE.BufferGeometry().setFromPoints(points);
+        this.positionsBuffer = new Float32Array(points.length * 3);
+        for (let i = 0; i < points.length; i++) {
+            this.positionsBuffer[i * 3] = points[i].x;
+            this.positionsBuffer[i * 3 + 1] = points[i].y;
+            this.positionsBuffer[i * 3 + 2] = points[i].z;
+        }
+
+        this.geometry = new THREE.BufferGeometry();
+        this.geometry.setAttribute('position', new THREE.BufferAttribute(this.positionsBuffer, 3));
         this.object.geometry.dispose();
         this.object.geometry = this.geometry;
     }
@@ -43,15 +52,13 @@ export class CurvedEdge extends Edge {
         this.curve.v2.copy(this.target.position);
 
         const points = this.curve.getPoints(20);
-        const positions = new Float32Array(points.length * 3);
 
         for (let i = 0; i < points.length; i++) {
-            positions[i * 3] = points[i].x;
-            positions[i * 3 + 1] = points[i].y;
-            positions[i * 3 + 2] = points[i].z;
+            this.positionsBuffer[i * 3] = points[i].x;
+            this.positionsBuffer[i * 3 + 1] = points[i].y;
+            this.positionsBuffer[i * 3 + 2] = points[i].z;
         }
 
-        this.geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
         this.geometry.attributes.position.needsUpdate = true;
     }
 }
