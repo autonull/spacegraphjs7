@@ -33,8 +33,11 @@ Check out the interactive examples in the `examples/` directory or run `npm run 
 
 ## Documentation
 
-- [Vision Plugin Documentation](./docs/vision-plugin.md)
-- [Project Plan and Academic Research](./PLAN/INDEX.md)
+- **[ROADMAP.md](./ROADMAP.md)** — What's built, what's next (start here for software work)
+- [Vision Plugin](./docs/vision-plugin.md) — AI vision integration guide
+- [QUICKSTART.md](./QUICKSTART.md) — 5-minute getting started guide
+- [CONTRIBUTING.md](./CONTRIBUTING.md) — How to contribute
+- [PLAN/SPACEGRAPH_OS.md](./PLAN/SPACEGRAPH_OS.md) — Fractal ZUI & OS architecture vision
 
 ## Community
 

@@ -25,7 +25,14 @@ export default defineConfig({
                 'fs',
                 'path',
                 'playwright',
+                '@playwright/test',
                 'http-server',
+                'url',
+                'http',
+                'https',
+                'http2',
+                'crypto',
+                'os'
             ],
             output: {
                 globals: {

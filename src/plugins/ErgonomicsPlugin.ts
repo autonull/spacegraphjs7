@@ -54,6 +54,13 @@ class InteractionSession {
     }
 }
 
+export interface ErgonomicsConfig {
+    targetNodeSizePx: number;
+    dampingFactor: number;
+    panSpeed: number;
+    zoomSpeed: number;
+}
+
 /**
  * ErgonomicsPlugin — Tracks user interaction quality and adapts camera feel.
  *
@@ -72,7 +79,7 @@ export class ErgonomicsPlugin implements ISpaceGraphPlugin {
 
     private sg!: SpaceGraph;
 
-    public config = {
+    public config: ErgonomicsConfig = {
         targetNodeSizePx: 40,
         dampingFactor: 0.12,
         panSpeed: 1.0,
@@ -165,7 +172,7 @@ export class ErgonomicsPlugin implements ISpaceGraphPlugin {
     }
 
     /** Update config and re-apply to camera. */
-    updateConfig(partial: Partial<typeof this.config>): void {
+    updateConfig(partial: Partial<ErgonomicsConfig>): void {
         this.config = { ...this.config, ...partial };
         this._applyConfig();
     }
@@ -176,8 +183,8 @@ export class ErgonomicsPlugin implements ISpaceGraphPlugin {
     }
 
     public startCalibrationRound(
-        configA: Partial<typeof this.config>,
-        configB: Partial<typeof this.config>,
+        configA: Partial<ErgonomicsConfig>,
+        configB: Partial<ErgonomicsConfig>,
         interactionsPerRound = 10,
     ) {
         this.calibrating = true;

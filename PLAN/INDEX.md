@@ -10,14 +10,16 @@
 
 | I Want To...              | Go Here                                | Time      |
 | ------------------------- | -------------------------------------- | --------- |
+| **Start building now**    | [ROADMAP.md](../ROADMAP.md)            | 10 min    |
 | **Understand the vision** | [README.md](../README.md)              | 5 min     |
 | **See the complete plan** | [PLAN.md](./PLAN.md)                   | 30 min    |
 | **Reality check**         | [REALITY-CHECK.md](./REALITY-CHECK.md) | 20 min    |
-| **Start building**        | [BUILD.md](./BUILD.md)                 | As needed |
+| **Build day-by-day**      | [BUILD.md](./BUILD.md)                 | As needed |
 | **Track outcomes**        | [EXECUTION.md](./EXECUTION.md)         | 20 min    |
 | **Understand research**   | [RESEARCH.md](./RESEARCH.md)           | 15 min    |
 | **See growth strategy**   | [GROWTH.md](./GROWTH.md)               | 15 min    |
 | **Manage risks**          | [RISKS.md](./RISKS.md)                 | 10 min    |
+| **ZUI / OS architecture** | [SPACEGRAPH_OS.md](./SPACEGRAPH_OS.md) | 5 min     |
 
 ---
 
@@ -116,6 +118,8 @@ These 17 documents were consolidated into the 10 core documents above. They rema
 | PHASE-1-AUDIT.md, PHASE-2-USABILITY.md, PHASE-3-DISTRIBUTION.md, PHASE-4-EXPOSURE.md, PHASE-5-SUSTAINABILITY.md, PLAN-ANALYSIS.md | → [STRATEGY.md](./STRATEGY.md)   |
 | LAUNCH-8HOURS.md, WEEK-1-CHECKLIST.md                                                                                             | → Superseded (skip)              |
 | GITHUB-ACTIONS.md, CONTENT-TEMPLATES.md, RELEASE-CHECKLIST.md                                                                     | → Month 2+ (deferred)            |
+
+> ⭐ **New canonical software doc:** [`ROADMAP.md`](../ROADMAP.md) — replaces BUILD.md for day-to-day software planning and tracks what's built vs. what's next.
 
 ---
 

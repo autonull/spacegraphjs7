@@ -1,384 +1,82 @@
 # Contributing to SpaceGraphJS
 
-**Welcome! We're building the first self-building UI framework together.**
+Welcome to SpaceGraphJS! We're thrilled that you want to contribute to the first self-building UI framework. This guide provides an overview of our architecture, workflows, and the Vision-Closed Dev Loop.
+
+## 🌟 The Vision-Closed Dev Loop
+
+Before contributing, it's vital to understand the **Vision-Closed** development paradigm. In traditional UI development, developers write code, check the browser, adjust logic, and repeat. 
+
+In SpaceGraphJS, **the AI builds with you**.
+
+When you boot the local dev server (`npm run dev`), the `VisionManager` automatically layers on top of your graph. The manager continuously feeds screenshots of the DOM to ONNX machine-learning models (like LQ-Net for layout, ODN for overlap, etc.). When a visual regression is detected—such as poorly contrasted text or overlapping nodes—the AI generates semantic DOM patches automatically. 
+
+**As a contributor**, your goal is to *extend* the graph rendering engine and *trust* the AI to verify visual invariants. 
+
+## 🛠 Local Setup
+
+To start contributing, set up your standard NodeJS environment.
+
+1. **Fork & Clone**
+   ```bash
+   git clone https://github.com/autonull/spacegraphjs.git
+   cd spacegraphjs
+   ```
+
+2. **Install Dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Run the Interactive Examples**
+   ```bash
+   npm run dev
+   ```
+   Navigate to `http://localhost:5173/examples/index.html` to see the live templates, including the `VisionOverlayPlugin` in action.
+
+## 🏗 Project Architecture
+
+The workspace is split into core rendering and CLI tooling:
+
+- `src/`: Core framework
+  - `src/core/`: The `SpaceGraph` engine, camera controllers, and event dispatchers.
+  - `src/nodes/`: Available 3D UI objects (`ShapeNode`, `TextMeshNode`, `IFrameNode`).
+  - `src/edges/`: Linking behaviors (`DottedEdge`, `DynamicThicknessEdge`).
+  - `src/plugins/`: Auto-layouts, Physics algorithms, and the `VisionOverlayPlugin`.
+  - `src/vision/`: Playwright assertions (`visionAssert`), the Vite Plugin (`spacegraphVision`), and the ML analyzer.
+- `packages/`: Additional workspaces
+  - `packages/cli/`: `sg6 fix` CLI tool for auto-fixing code using AI telemetry.
+  - `packages/create-spacegraph/`: `sg6 create` scaffolding tool.
+- `examples/`: Sample `html` entry points used for local development and documentation.
+
+## ✅ Pull Request Process
+
+We maintain high quality standards. Before opening a PR, ensure you have:
+
+1. **Written specific types** for any new payloads or options interfaces.
+2. **Added unit tests**.
+   - If adding rendering logic, update `test/spacegraph.test.ts`.
+   - If adding visual layout logic, implement an invariant test inside `test/vision.spec.ts` using the `visionAssert` utility!
+3. **Run CI checks locally**.
+   ```bash
+   npm run lint
+   npm run format:check
+   npm run test
+   npm run vision
+   ```
+4. **Tested the build output**
+   ```bash
+   npm run build
+   ```
+
+After submitting a PR, wait for the GitHub Actions to complete. If the `Playwright Vision Tests` fail, it means your pull request introduced a visual defect (e.g. contrast failure) globally!
+
+## 🐞 Reporting Bugs
+
+When reporting an issue, please answer the following:
+1. Did the Vision API pick up the bug as poor telemetry? (e.g., was the Layout Score < 80?)
+2. Does it replicate in a fresh `sg6 create` template? 
+3. Include your browser console output if available.
 
 ---
 
-## Quick Start
-
-```bash
-# 1. Fork the repo
-# https://github.com/autonull/spacegraphjs/fork
-
-# 2. Clone your fork
-git clone https://github.com/YOUR_USERNAME/spacegraphjs
-cd spacegraphjs
-
-# 3. Install dependencies
-npm install
-
-# 4. Start dev server
-npm run dev
-
-# 5. Make changes, then test
-npm test
-
-# 6. Run vision checks
-npm run vision
-
-# 7. Submit PR
-```
-
----
-
-## Where to Start
-
-### 🟢 Good First Issues
-
-Issues labeled [`good first issue`](https://github.com/autonull/spacegraphjs/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) are perfect for newcomers.
-
-**Current examples:**
-
-- Add example demo for HtmlNode
-- Write TypeDoc comments for NodePlugin
-- Fix typo in QUICKSTART.md
-- Add unit tests for Edge types
-
-### 🟡 Help Wanted
-
-Issues labeled [`help wanted`](https://github.com/autonull/spacegraphjs/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22) need community assistance.
-
-### 🔴 High Priority
-
-Issues labeled [`priority`](https://github.com/autonull/spacegraphjs/issues?q=is%3Aissue+is%3Aopen+label%3A%22priority%22) are blocking progress.
-
----
-
-## Development Workflow
-
-### 1. Create a Branch
-
-```bash
-git checkout -b feature/your-feature-name
-# or
-git checkout -b fix/issue-123
-```
-
-**Branch naming:**
-
-- `feature/` for new features
-- `fix/` for bug fixes
-- `docs/` for documentation
-- `test/` for test additions
-- `refactor/` for code improvements
-
-### 2. Make Changes
-
-- Follow existing code style
-- Add tests for new functionality
-- Update documentation as needed
-- Run linter: `npm run lint`
-
-### 3. Run Tests
-
-```bash
-# Unit tests
-npm test
-
-# Test coverage
-npm run test:coverage
-
-# Vision tests
-npm run test:vision
-
-# All checks
-npm run lint
-npm run format:check
-npm test
-```
-
-### 4. Run Vision Analysis
-
-```bash
-# Check vision quality
-npm run vision
-
-# Auto-fix issues
-npm run vision:fix
-```
-
-### 5. Commit Changes
-
-```bash
-git add .
-git commit -m "feat: add HtmlNode example demo
-
-- Create examples/html-nodes/index.html
-- Add README with usage instructions
-- Include screenshot in docs
-
-Closes #42"
-```
-
-**Commit message format:**
-
-```
-feat: add new feature
-fix: fix bug in X
-docs: update documentation
-test: add tests for Y
-refactor: improve Z performance
-```
-
-### 6. Submit PR
-
-1. Push to your fork: `git push origin feature/your-feature`
-2. Open PR on GitHub
-3. Fill in PR template
-4. Wait for review
-
----
-
-## Code Style
-
-### TypeScript
-
-- Strict mode enabled
-- No `any` types (use `unknown` if needed)
-- Explicit return types on public APIs
-- JSDoc comments on all public functions
-
-```typescript
-/**
- * Create a new node in the graph.
- * @param config - Node configuration
- * @returns The created node instance
- */
-export function createNode(config: NodeConfig): Node {
-    // Implementation
-}
-```
-
-### Prettier
-
-Auto-formatting is enforced. Run before committing:
-
-```bash
-npm run format
-```
-
-### ESLint
-
-Linting is enforced in CI:
-
-```bash
-npm run lint
-```
-
----
-
-## Testing
-
-### Unit Tests
-
-```typescript
-// tests/node.test.ts
-import { describe, it, expect } from 'vitest';
-import { createNode } from '../src/node';
-
-describe('createNode', () => {
-    it('creates a ShapeNode by default', () => {
-        const node = createNode({ id: 'test', label: 'Test' });
-        expect(node.type).toBe('ShapeNode');
-    });
-
-    it('creates nodes with correct position', () => {
-        const node = createNode({
-            id: 'test',
-            position: [100, 200, 0],
-        });
-        expect(node.position).toEqual([100, 200, 0]);
-    });
-});
-```
-
-### Vision Tests
-
-```typescript
-// tests/vision/overlap.test.ts
-import { describe, it, expect } from 'vitest';
-import { visionAssert } from '../src/vision/test';
-
-describe('Overlap Detection', () => {
-    it('detects overlapping nodes', async () => {
-        const graph = createTestGraph({
-            nodes: [
-                { id: 'a', position: [0, 0, 0] },
-                { id: 'b', position: [5, 0, 0] }, // Overlaps with 'a'
-            ],
-        });
-
-        const report = await visionAssert.analyze(graph);
-        expect(report.overlaps).toHaveLength(1);
-    });
-});
-```
-
-### Visual Regression Tests
-
-```typescript
-// tests/e2e/basic-graph.test.ts
-import { test, expect } from '@playwright/test';
-
-test('renders basic graph', async ({ page }) => {
-    await page.goto('http://localhost:5173/examples/basic');
-
-    // Wait for canvas
-    await page.waitForSelector('canvas');
-
-    // Take screenshot
-    const screenshot = await page.screenshot();
-    expect(screenshot).toMatchSnapshot('basic-graph.png');
-});
-```
-
----
-
-## Documentation
-
-### TypeDoc Comments
-
-All public APIs must have TypeDoc comments:
-
-````typescript
-/**
- * SpaceGraph main class.
- *
- * @example
- * ```typescript
- * const graph = SpaceGraph.create('#container', {
- *   nodes: [{ id: 'a', type: 'ShapeNode' }],
- *   edges: []
- * });
- * graph.render();
- * ```
- */
-export class SpaceGraph {
-    /**
-     * Create a new SpaceGraph instance.
-     * @param container - Container element or selector
-     * @param spec - Graph specification
-     * @returns SpaceGraph instance
-     */
-    static create(container: string | HTMLElement, spec: GraphSpec): SpaceGraph {
-        // Implementation
-    }
-}
-````
-
-### README Updates
-
-Update README.md when:
-
-- Adding new features
-- Changing APIs
-- Adding examples
-
-### QUICKSTART.md
-
-Keep quickstart under 10 minutes. Test regularly.
-
----
-
-## Vision Model Contributions
-
-Contributing to vision models requires ML background.
-
-### Getting Started
-
-1. Read `docs/vision-models.md` for architecture overview
-2. Review training data format in `vision/data/`
-3. Set up local training environment (see `vision/README.md`)
-
-### Adding New Checks
-
-```typescript
-// vision/checks/new-check.ts
-import { VisionCheck } from './types';
-
-export const newCheck: VisionCheck = {
-    name: 'new-check',
-    async analyze(frameBuffer: FrameBuffer): Promise<CheckReport> {
-        // Analysis logic
-    },
-};
-```
-
-### Testing Vision Models
-
-```bash
-# Run vision test suite
-npm run test:vision
-
-# Generate test reports
-npm run vision:test-reports
-```
-
----
-
-## Pull Request Template
-
-```markdown
-## Description
-
-What does this PR do?
-
-## Related Issues
-
-Closes #123
-
-## Type of Change
-
-- [ ] Bug fix
-- [ ] New feature
-- [ ] Documentation update
-- [ ] Test addition
-- [ ] Refactor
-
-## Testing
-
-How did you test this?
-
-- [ ] Unit tests pass
-- [ ] Vision tests pass
-- [ ] Manual testing completed
-
-## Checklist
-
-- [ ] Code follows style guidelines
-- [ ] Tests added/updated
-- [ ] Documentation updated
-- [ ] Vision analysis passes
-```
-
----
-
-## Join the Conversation
-
-**Matrix:** https://matrix.to/#/#spacegraphjs:matrix.org
-
-- `#sg6-help:matrix.org` - Get help
-- `#sg6-contributors:matrix.org` - Dev coordination
-- `#sg6-showcase:matrix.org` - Show what you made
-
----
-
-## Questions?
-
-- Check existing [issues](https://github.com/autonull/spacegraphjs/issues)
-- Ask in `#sg6-help` on Matrix
-- Start a [GitHub Discussion](https://github.com/autonull/spacegraphjs/discussions)
-
----
-
-**Thank you for contributing to SpaceGraphJS!** 🚀
+> **Built with ❤️ for a visible, comprehensible, open future. Stop describing. Start specifying.**

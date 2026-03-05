@@ -132,6 +132,15 @@ graph.render();
 
 ---
 
+### 🌌 Paradigm: Fractal Zooming User Interface (FZUI)
+
+**SpaceGraphOS — The Visible Operating System**
+
+A revolution beyond the desktop metaphor. SpaceGraphJS enables the transition to **Fractal Zooming User Interfaces**. There are no applications or windows—only an infinite, navigable graph. 
+- Zoom in to edit a document node.
+- Zoom out to see its semantic connections to your whole system.
+- Radically visible computing. Learn more in [SPACEGRAPH_OS.md](./SPACEGRAPH_OS.md).
+
 ### 🔧 Hardware: The Most Open Dev Platform
 
 **SpaceGraph Mini — Specifications:**
@@ -372,6 +381,7 @@ mkdir src
 | **[RISKS.md](./RISKS.md)**         | ★ Risk mitigation (15 risks)    | 10 min    |
 | **[TEMPLATES.md](./TEMPLATES.md)** | ★ Config templates              | 5 min     |
 | **[STRATEGY.md](./STRATEGY.md)**   | Phase 1-5 audits (reference)    | 20 min    |
+| **[SPACEGRAPH_OS.md](./SPACEGRAPH_OS.md)** | ★ Fractal ZUI Architecture vision | 5 min |
 
 ---
 

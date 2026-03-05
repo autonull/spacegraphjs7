@@ -33,8 +33,8 @@ export { Graph } from './core/Graph';
 export { Renderer } from './core/Renderer';
 export { PluginManager } from './core/PluginManager';
 export { CameraControls } from './core/CameraControls';
-export { EventManager } from './core/EventManager';
-export { VisionManager } from './core/VisionManager';
+export { EventManager, type SpaceGraphEvents } from './core/EventManager';
+export { VisionManager, type VisionReport, type VisionCategory } from './core/VisionManager';
 export { ObjectPoolManager } from './core/ObjectPoolManager';
 export { CullingManager } from './core/CullingManager';
 export { AdvancedRenderingOptimizer } from './core/AdvancedRenderingOptimizer';
@@ -90,7 +90,7 @@ export { AutoColorPlugin } from './plugins/AutoColorPlugin';
 // Plugins — extended
 export { PhysicsPlugin } from './plugins/PhysicsPlugin';
 export { MinimapPlugin } from './plugins/MinimapPlugin';
-export { ErgonomicsPlugin } from './plugins/ErgonomicsPlugin';
+export { ErgonomicsPlugin, type ErgonomicsConfig } from './plugins/ErgonomicsPlugin';
 export { VisionOverlayPlugin } from './plugins/VisionOverlayPlugin';
 
 console.log('[SpaceGraphJS] Loaded successfully');
