@@ -7,11 +7,14 @@ import type { Node } from '../nodes/Node';
 export class FlowEdge extends Edge {
     private dashOffset: number = 0;
     private flowSpeed: number = 1.0;
+    private isFlowing: boolean = true;
+    private baseSpeed: number = 1.0;
 
     constructor(sg: SpaceGraph, spec: EdgeSpec, source: Node, target: Node) {
         super(sg, spec, source, target);
 
-        this.flowSpeed = spec.data?.flowSpeed || 2.0;
+        this.baseSpeed = spec.data?.flowSpeed || 2.0;
+        this.flowSpeed = this.baseSpeed;
 
         const material = new THREE.LineDashedMaterial({
             color: spec.data?.color || 0x00ff00,
@@ -37,7 +40,10 @@ export class FlowEdge extends Edge {
         super.updateSpec(updates);
 
         if (updates.data && updates.data.flowSpeed !== undefined) {
-            this.flowSpeed = updates.data.flowSpeed;
+            this.baseSpeed = updates.data.flowSpeed;
+            if (this.isFlowing) {
+                this.flowSpeed = this.baseSpeed;
+            }
         }
 
         if (updates.data && updates.data.color) {
@@ -45,8 +51,20 @@ export class FlowEdge extends Edge {
         }
     }
 
+    startDataFlow(rate: number = 1): void {
+        this.isFlowing = true;
+        this.flowSpeed = this.baseSpeed * rate;
+    }
+
+    stopDataFlow(): void {
+        this.isFlowing = false;
+        this.flowSpeed = 0;
+    }
+
     update() {
         super.update();
+
+        if (!this.isFlowing) return;
 
         // Animate flow effect by updating dash properties or recreating distances
         // The dashOffset isn't a direct property of LineDashedMaterial,
