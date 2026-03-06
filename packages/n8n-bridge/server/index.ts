@@ -64,24 +64,55 @@ async function main() {
                 break;
             case 'execute:trigger':
                 console.log(`[N8nBridgeServer] Triggering execution ${message.executionId} for workflow ${message.workflowId}`);
-                // Stub for triggering n8n execution and setting up event listener
-                broadcast({
-                    type: 'execution:progress',
-                    data: {
-                        executionId: message.executionId,
-                        status: 'running'
-                    }
+
+                // Mock sequence of execution events
+                const mockNodes = ['node1', 'node2', 'node3'];
+
+                // 1. Set all to waiting
+                mockNodes.forEach(nodeId => {
+                    broadcast({
+                        type: 'execution:progress',
+                        data: { executionId: message.executionId, status: 'waiting', nodeId }
+                    });
                 });
 
+                let delay = 500;
+
+                // 2. Cycle through nodes running -> success/error
+                mockNodes.forEach((nodeId, idx) => {
+                    setTimeout(() => {
+                        broadcast({
+                            type: 'execution:progress',
+                            data: { executionId: message.executionId, status: 'running', nodeId }
+                        });
+                    }, delay);
+
+                    delay += 1000;
+
+                    setTimeout(() => {
+                        const isError = idx === mockNodes.length - 1; // Make the last node error
+                        broadcast({
+                            type: 'execution:progress',
+                            data: {
+                                executionId: message.executionId,
+                                status: isError ? 'error' : 'success',
+                                nodeId,
+                                error: isError ? 'Mock error occurred' : undefined
+                            }
+                        });
+                    }, delay);
+                });
+
+                // 3. Execution complete
                 setTimeout(() => {
                     broadcast({
                         type: 'execution:complete',
                         data: {
                             executionId: message.executionId,
-                            status: 'success'
+                            status: 'error'
                         }
                     });
-                }, 2000);
+                }, delay + 500);
                 break;
             default:
                 console.warn('[N8nBridgeServer] Unknown message type:', message.type);
