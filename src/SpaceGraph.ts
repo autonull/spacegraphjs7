@@ -25,6 +25,14 @@ import { GlobeNode } from './nodes/GlobeNode';
 import { SceneNode } from './nodes/SceneNode';
 import { AudioNode } from './nodes/AudioNode';
 import { MathNode } from './nodes/MathNode';
+import { N8nTriggerNode } from './nodes/N8nTriggerNode';
+import { N8nScheduleNode } from './nodes/N8nScheduleNode';
+import { N8nHttpNode } from './nodes/N8nHttpNode';
+import { N8nAiNode } from './nodes/N8nAiNode';
+import { N8nCodeNode } from './nodes/N8nCodeNode';
+import { N8nCredentialNode } from './nodes/N8nCredentialNode';
+import { N8nHitlNode } from './nodes/N8nHitlNode';
+import { N8nVisionOptimizerNode } from './nodes/N8nVisionOptimizerNode';
 import { Edge } from './edges/Edge';
 import { CurvedEdge } from './edges/CurvedEdge';
 import { FlowEdge } from './edges/FlowEdge';
@@ -136,6 +144,14 @@ export class SpaceGraph {
         this.pluginManager.registerNodeType('SceneNode', SceneNode);
         this.pluginManager.registerNodeType('AudioNode', AudioNode);
         this.pluginManager.registerNodeType('MathNode', MathNode);
+        this.pluginManager.registerNodeType('N8nTriggerNode', N8nTriggerNode);
+        this.pluginManager.registerNodeType('N8nScheduleNode', N8nScheduleNode);
+        this.pluginManager.registerNodeType('N8nHttpNode', N8nHttpNode);
+        this.pluginManager.registerNodeType('N8nAiNode', N8nAiNode);
+        this.pluginManager.registerNodeType('N8nCodeNode', N8nCodeNode);
+        this.pluginManager.registerNodeType('N8nCredentialNode', N8nCredentialNode);
+        this.pluginManager.registerNodeType('N8nHitlNode', N8nHitlNode);
+        this.pluginManager.registerNodeType('N8nVisionOptimizerNode', N8nVisionOptimizerNode);
 
         // Register built-in edge types
         this.pluginManager.registerEdgeType('Edge', Edge);

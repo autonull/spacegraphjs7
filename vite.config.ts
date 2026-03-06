@@ -14,6 +14,9 @@ export default defineConfig({
         },
         rollupOptions: {
             external: [
+                'n8n',
+                'n8n-core',
+                'better-sqlite3',
                 'three',
                 'chart.js',
                 'gsap',
@@ -49,4 +52,10 @@ export default defineConfig({
     },
     root: '.', // Serve from project root
     publicDir: 'public', // Static assets
+    resolve: {
+        alias: {
+            'n8n/core': resolve(__dirname, 'node_modules/n8n/packages/core/dist'),
+            'n8n/workflow': resolve(__dirname, 'node_modules/n8n-workflow/dist'),
+        },
+    },
 });

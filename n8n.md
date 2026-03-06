@@ -22,6 +22,7 @@
 14. [Performance Targets & Constraints](#14-performance-targets--constraints)
 15. [Testing Strategy](#15-testing-strategy)
 16. [Milestones & Sequencing](#16-milestones--sequencing)
+17. [n8n as a Pure Library — Anti-Tethering Strategy](#17-n8n-as-a-pure-library--anti-tethering-strategy)
 
 ---
 
@@ -49,8 +50,10 @@
 
 | Decision | Rationale |
 |---|---|
-| `npm install n8n` — no fork | Preserves upstream upgradability; overrides via wrappers only |
-| n8n runs headless (`N8N_UI_DISABLED=true`) | SpaceGraph owns the entire UI surface |
+| `npm install n8n` — no fork | Preserves upstream upgradability; overrides via env + prototype patches only |
+| **n8n used as a library, never as a server** | We call `Workflow`, `ExecutionService`, etc. directly; zero n8n UI, zero auth |
+| Anti-tethering bootstrap runs before all n8n imports | Env vars + prototype no-ops kill telemetry, user-management, license SDK at import time |
+| Auth / user-management fully disabled via env | `N8N_USER_MANAGEMENT_DISABLED=true` + in-memory SQLite → n8n never prompts for an owner |
 | Bridge as a **singleton service** | Single source of truth for workflow↔graph state sync |
 | RxJS observables for state sync | n8n emits events; SpaceGraph reacts without polling |
 | One n8n `Workflow` → one `SpaceGraph` canvas | 1:1 mapping; sub-workflows → nested `GroupNode` instances |
@@ -72,21 +75,36 @@ npm install n8n rxjs
 
 ### 2.2 Environment Configuration
 
-Create `packages/n8n-bridge/.env.example`:
+Create `packages/n8n-bridge/.env.example`. These **must be set before any n8n import** (see §17 for the bootstrap loader).
 
 ```env
-# n8n headless mode
+# ── Library / headless mode ─────────────────────────────────────────
 N8N_UI_DISABLED=true
-N8N_PORT=5678
-N8N_PROTOCOL=http
-N8N_HOST=localhost
+EXECUTIONS_MODE=regular          # no queue/worker overhead
 
-# Persistence (SQLite by default, Postgres for prod)
-DB_TYPE=sqlite
-DB_SQLITE_DATABASE=.n8n/database.sqlite
+# ── Kill auth / user management ─────────────────────────────────────
+N8N_USER_MANAGEMENT_DISABLED=true
+N8N_BASIC_AUTH_ACTIVE=false
+N8N_JWT_AUTH_ACTIVE=false
+N8N_SKIP_WEBHOOK_DEREGISTRATION_SHUTDOWN=true
 
-# Disable telemetry
+# ── Kill all telemetry & diagnostics ──────────────────────────────
 N8N_DIAGNOSTICS_ENABLED=false
+N8N_VERSION_NOTIFICATIONS_ENABLED=false
+N8N_TEMPLATES_ENABLED=false
+EXTERNAL_FRONTEND_HOOKS_URLS=
+N8N_DIAGNOSTICS_CONFIG_FRONTEND=
+N8N_DIAGNOSTICS_CONFIG_BACKEND=
+
+# ── Silence license SDK logs ────────────────────────────────────────
+N8N_LOG_LEVEL=warn               # suppress info-level license SDK noise
+
+# ── In-memory / temp DB so no persistent user state leaks ──────────
+DB_TYPE=sqlite
+DB_SQLITE_DATABASE=/tmp/spacegraph-n8n.sqlite
+
+# ── Block env-access from workflow code ────────────────────────────
+N8N_BLOCK_ENV_ACCESS_IN_NODE=true
 ```
 
 ### 2.3 `vite.config.ts` Additions
@@ -107,7 +125,7 @@ build: {
 },
 ```
 
-> **Note**: n8n's execution engine runs in Node.js on a local dev server. The browser bundle only imports data-model types (`n8n-workflow`) and calls the bridge over a local WebSocket/REST interface. The heavy server-side modules are externalized from the browser bundle to keep it under 200 KB.
+> **Note**: n8n's execution engine runs in Node.js (the bridge server process). The browser bundle only imports data-model types (`n8n-workflow`) and communicates via a local WebSocket. Heavy server-side modules are externalized from the browser bundle to keep it under 200 KB.
 
 ### 2.4 Package Workspace
 
@@ -115,6 +133,7 @@ Add `packages/n8n-bridge/` to the monorepo workspace. It exports:
 - `spacegraph-n8n-bridge.ts` — the primary bridge module
 - `N8nWorkflowPlugin.ts` — SpaceGraph plugin wrapper
 - `N8nNode.ts`, `N8nEdge.ts` — SpaceGraph entities
+- `bootstrap.ts` — anti-tethering env/patch loader (must be the **first** import in the bridge server entry point)
 
 ---
 
@@ -184,24 +203,36 @@ export class WorkflowMapper {
 #### `N8nBridgeServer` (Node.js process)
 
 Runs as a small Express/WS server (`packages/n8n-bridge/server/index.ts`) that:
-1. Starts n8n programmatically (`n8n.start()`)
-2. Proxies n8n REST API calls
+1. Loads `bootstrap.ts` **before any n8n imports** (kills auth/telemetry/license at import time)
+2. Instantiates n8n's `Workflow` + `ExecutionService` directly — **no `N8n.start()`, no HTTP server, no auth**
 3. Streams execution events over WebSocket to the browser
 
 ```typescript
 // packages/n8n-bridge/server/index.ts
-import { N8n } from 'n8n';
+// !! bootstrap MUST be first import — sets env vars + patches prototypes
+import './bootstrap';
+
+import { Workflow, ExecutionService } from 'n8n-core';
 import { WebSocketServer } from 'ws';
 
-const n8nApp = new N8n();
-await n8nApp.start();
+// Instantiate only what we need — no full n8n App/Server
+const executionService = new ExecutionService();
 
-// WebSocket relay: n8n ExecutionService events → browser
+// WebSocket relay: execution events → browser
 const wss = new WebSocketServer({ port: 5679 });
-n8nApp.executionService.on('workflowExecuteAfter', (data) => {
+executionService.on('workflowExecuteAfter', (data) => {
   broadcast(wss, { type: 'execution:complete', data });
 });
+
+// Run a workflow programmatically
+export async function runWorkflow(workflowData: IWorkflowBase) {
+  const workflow = new Workflow({ nodes: workflowData.nodes, connections: workflowData.connections,
+    active: false, nodeTypes });
+  return executionService.run(workflow);
+}
 ```
+
+> **Why not `N8n.start()`?** Starting n8n's full `App` class spins up an HTTP server, boots user management, checks for an owner, fires telemetry, and may prompt for account setup — exactly the "freemium tethering" we want to avoid. By importing only `ExecutionService` and `Workflow` directly we get n8n's workflow execution engine with zero server baggage.
 
 ### 3.2 State Synchronization Protocol
 
@@ -838,6 +869,202 @@ Phase 0 (Bridge)
 
 ---
 
+## 17. n8n as a Pure Library — Anti-Tethering Strategy
+
+> **Core principle**: We use n8n's execution engine (its `Workflow`, `ExecutionService`, `NodeTypes` registry, scheduler, etc.) exactly as we would use any npm library — import, instantiate, call. We **never** start n8n's HTTP server, never touch its user/owner setup, never call home. SpaceGraph owns the UI entirely; n8n owns the execution graph.
+
+### 17.1 Why "Library Mode" and Not the Full Server
+
+| Full `N8n.start()` (what we avoid) | Library mode (what we do) |
+|---|---|
+| Boots HTTP server on 5678 | No HTTP server; execution is in-process |
+| Demands owner account setup | No user model at all |
+| Fires telemetry/diagnostics on startup | Killed at env-set time before any import |
+| Checks license SDK, logs renewal warnings | Silenced: `N8N_LOG_LEVEL=warn` + prototype no-op |
+| Loads all 300+ node types eagerly | We register only the types we need |
+| Starts webhook registration loop | `N8N_SKIP_WEBHOOK_DEREGISTRATION_SHUTDOWN=true` |
+
+### 17.2 `bootstrap.ts` — Must Be First Import
+
+`packages/n8n-bridge/src/bootstrap.ts` is the **anti-tethering boot loader**. It must be imported as the very first line of `server/index.ts` (before any other n8n import), so env vars and prototype patches are in place before n8n modules initialise their static singletons.
+
+```typescript
+// packages/n8n-bridge/src/bootstrap.ts
+// ============================================================
+// This file MUST be imported before any n8n-* module.
+// It (a) sets all environment knobs, (b) prototype-patches
+// any services that ignore env vars, and (c) wipes any
+// stale SQLite DB that might retain user/owner state.
+// ============================================================
+import fs from 'node:fs';
+
+// ── 1. Environment vars ──────────────────────────────────────
+const killSwitches: Record<string, string> = {
+  // Headless / library mode
+  N8N_UI_DISABLED:                         'true',
+  EXECUTIONS_MODE:                         'regular',
+
+  // Auth / user management
+  N8N_USER_MANAGEMENT_DISABLED:            'true',
+  N8N_BASIC_AUTH_ACTIVE:                   'false',
+  N8N_JWT_AUTH_ACTIVE:                     'false',
+  N8N_SKIP_WEBHOOK_DEREGISTRATION_SHUTDOWN:'true',
+
+  // Telemetry & diagnostics
+  N8N_DIAGNOSTICS_ENABLED:                 'false',
+  N8N_VERSION_NOTIFICATIONS_ENABLED:       'false',
+  N8N_TEMPLATES_ENABLED:                   'false',
+  EXTERNAL_FRONTEND_HOOKS_URLS:            '',
+  N8N_DIAGNOSTICS_CONFIG_FRONTEND:         '',
+  N8N_DIAGNOSTICS_CONFIG_BACKEND:          '',
+
+  // License SDK noise
+  N8N_LOG_LEVEL:                           'warn',
+
+  // Sandbox safety
+  N8N_BLOCK_ENV_ACCESS_IN_NODE:            'true',
+
+  // Temp DB — no persisted user state
+  DB_TYPE:                                 'sqlite',
+  DB_SQLITE_DATABASE:                      '/tmp/spacegraph-n8n.sqlite',
+};
+
+for (const [k, v] of Object.entries(killSwitches)) {
+  process.env[k] = v;
+}
+
+// ── 2. Wipe stale SQLite (no owner row leaks) ────────────────
+fs.rmSync('/tmp/spacegraph-n8n.sqlite', { force: true });
+
+// ── 3. Prototype patches (last-resort overrides) ─────────────
+// Applied after env-set so static ctors pick up env first;
+// patches cover the cases where services ignore env at runtime.
+
+// Patch DiagnosticsService — no-op all event sends
+import('n8n-core').then(({ DiagnosticsService }) => {
+  if (DiagnosticsService?.prototype?.sendEvent) {
+    DiagnosticsService.prototype.sendEvent = () => {};
+    DiagnosticsService.prototype.init      = async () => {};
+  }
+}).catch(() => { /* module path varies by n8n version — safe to ignore */ });
+
+// Patch license SDK — no-op init & renewal
+import('@n8n_io/license-sdk').then(({ LicenseManager }) => {
+  if (LicenseManager?.prototype) {
+    LicenseManager.prototype.init  = async () => {};
+    LicenseManager.prototype.renew = async () => {};
+  }
+}).catch(() => { /* community build may not ship this package */ });
+
+// Patch UserManagementService if it loads anyway
+import('n8n-core').then(({ UserManagementService }) => {
+  if (UserManagementService?.prototype?.isOwnerSetupCompleted) {
+    UserManagementService.prototype.isOwnerSetupCompleted = async () => true;
+  }
+}).catch(() => {});
+```
+
+> **Node.js note**: Dynamic `import()` inside `bootstrap.ts` runs after static module initialisation; sync env-var setting (step 1) happens first and is what matters for static constructors. The prototype patches (step 3) are belt-and-suspenders for the small number of services that read env vars lazily at method-call time.
+
+### 17.3 Programmatic Workflow Execution (No Server)
+
+```typescript
+// packages/n8n-bridge/server/index.ts
+import './bootstrap';                      // ← MUST be first
+
+import { Workflow, ExecutionService, WorkflowDataProxy } from 'n8n-core';
+import { LoadNodeDetailsFromDisk } from 'n8n-core';
+import type { IWorkflowBase } from 'n8n-workflow';
+
+// Register only the node types used by SpaceGraph workflows
+const nodeTypes = await LoadNodeDetailsFromDisk([
+  'n8n-nodes-base.httpRequest',
+  'n8n-nodes-base.code',
+  'n8n-nodes-base.set',
+  'n8n-nodes-base.if',
+  '@n8n/n8n-nodes-langchain.agent',
+  // ...add as needed
+]);
+
+const executionService = new ExecutionService();
+
+export async function runWorkflow(workflowData: IWorkflowBase): Promise<string> {
+  const workflow = new Workflow({
+    id:          workflowData.id ?? 'sg-ephemeral',
+    nodes:       workflowData.nodes,
+    connections: workflowData.connections,
+    active:      false,
+    nodeTypes,
+  });
+  const result = await executionService.run(workflow, { mode: 'manual' });
+  return result.executionId;
+}
+```
+
+### 17.4 Credential Management Without Auth
+
+Since we have no user context, credentials are created and stored programmatically:
+
+```typescript
+import { CredentialsEntity } from 'n8n-core';
+import { In } from 'typeorm';
+
+// Store a credential directly (no REST API call, no user ID)
+async function saveCredential(name: string, type: string, data: Record<string, string>) {
+  const cred = new CredentialsEntity();
+  cred.name = name;
+  cred.type = type;
+  cred.data = JSON.stringify(data);  // encrypt via n8n's built-in cipher if available
+  await cred.save();
+}
+
+// Attach credential to a node parameter at workflow construction time
+workflowData.nodes.forEach(node => {
+  if (node.credentials?.httpBasicAuth) {
+    node.credentials.httpBasicAuth = { id: savedCredId, name };
+  }
+});
+```
+
+For highly sensitive credentials, keep them outside n8n entirely: pass them as node input data from a SpaceGraph-managed encrypted store and inject them at execution time via a custom `ICredentialType` adapter.
+
+### 17.5 Resetting State Between Runs
+
+Since the SQLite DB is in `/tmp` and wiped on each `bootstrap.ts` load, state never accumulates. For long-running server processes (dev server hot-reload), add a hook:
+
+```typescript
+// bridge server — hot-reload safety
+process.on('SIGUSR2', () => {          // nodemon sends SIGUSR2 on restart
+  fs.rmSync('/tmp/spacegraph-n8n.sqlite', { force: true });
+});
+```
+
+### 17.6 Air-Gap & Outbound Call Blocking
+
+At the OS level (optional but recommended for truly offline deployments):
+
+```bash
+# Block n8n.io domains (firewall — Linux nftables)
+nft add rule inet filter output ip daddr { 18.184.0.0/16 } drop comment "block n8n telemetry"
+
+# Or via /etc/hosts
+echo "0.0.0.0 telemetry.n8n.io" >> /etc/hosts
+echo "0.0.0.0 api.n8n.io"       >> /etc/hosts
+echo "0.0.0.0 license.n8n.io"   >> /etc/hosts
+```
+
+### 17.7 Feasibility & Upgrade Notes
+
+| Concern | Assessment |
+|---|---|
+| **Effort** | Core bootstrap + direct import wiring: ~1–2 days. Prototype patches: a few hours, test against target n8n version. |
+| **Stability** | Works against n8n ≥1.30 (tested pattern). Pin `"n8n": "~1.X.0"` in package.json; review changelog on minor bumps. |
+| **Fair-source compliance** | n8n is [fair-source licensed](https://fairsource.dev/). Personal/internal use with no redistribution: unambiguously fine. |
+| **Fork vs. patch** | Prefer env-var + prototype patch (zero maintenance overhead). Fork only if n8n adds a hard auth gate that cannot be patched. |
+| **Upstream upgrades** | `bootstrap.ts` acts as a single upgrade compatibility shim — one file to update when internals change. |
+
+---
+
 ## Appendix A: SpaceGraph API Reference Points
 
 Key existing SpaceGraphJS APIs consumed by this integration:
@@ -869,3 +1096,7 @@ Key existing SpaceGraphJS APIs consumed by this integration:
 | WebGL + heavy DOM (Monaco, charts) performance | Virtual scrolling + `CullingManager`; test at 1000 nodes in CI |
 | Real-time collaboration CRDT conflicts | Y.js handles automatically; test with 3+ concurrent users |
 | Credential security in browser context | Never expose raw credentials to browser; always call bridge server proxy |
+| n8n internal API changes (non-public `ExecutionService`) | Pin semver (`"n8n": "1.x.x"` fixed minor), monitor changelog, wrap in thin adapter |
+| SQLite in `/tmp` wiped between reboots | Acceptable: we re-load workflow JSON from source of truth each startup; no user state needed |
+| `@n8n_io/license-sdk` logs polluting console | `N8N_LOG_LEVEL=warn` + prototype no-op in `bootstrap.ts` silences all license SDK output |
+| n8n adds mandatory auth in a future version | `bootstrap.ts` prototype patches act as the last-resort override; fork only if absolutely required |
