@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>n8n Node Preview - SpaceGraphJS</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #111; color: white; font-family: sans-serif; }
+        #spacegraph-container { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; }
+        #ui-overlay { position: absolute; top: 10px; left: 10px; z-index: 10; pointer-events: none; }
+        h1 { margin: 0; font-size: 20px; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
+        p { margin: 5px 0 0; font-size: 14px; color: #aaa; }
+    </style>
+</head>
+<body>
+    <div id="ui-overlay">
+        <h1>n8n Node Types Preview</h1>
+        <p>Zoom in and out to see LOD (Level of Detail) changes.</p>
+    </div>
+    <div id="spacegraph-container"></div>
+    <script type="module" src="./n8n-nodes-preview.ts"></script>
+</body>
+</html>

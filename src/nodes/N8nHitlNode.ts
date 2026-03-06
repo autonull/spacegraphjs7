@@ -3,111 +3,193 @@ import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec, SpecUpdate } from '../types';
 
 export class N8nHitlNode extends HtmlNode {
-    private summaryEl?: HTMLDivElement;
-    private approveBtn?: HTMLButtonElement;
-    private rejectBtn?: HTMLButtonElement;
+    readonly lodThresholds = {
+        icon: 800,
+        label: 400,
+        summary: 150,
+        full: 0,
+    };
 
     constructor(sg: SpaceGraph, spec: NodeSpec) {
-        // Human-in-the-loop Node UI
-        const html = `
-            <div class="n8n-hitl-node" style="
-                background: #ff9800; /* Warning orange */
-                border-radius: 8px;
-                padding: 15px;
-                color: #fff;
-                font-family: 'Inter', sans-serif;
-                width: 260px;
-                box-shadow: 0 4px 15px rgba(255, 152, 0, 0.4);
-                display: flex;
-                flex-direction: column;
-                gap: 12px;
-            ">
-                <div style="display: flex; align-items: center; justify-content: space-between;">
-                    <div style="font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 6px;">
-                        <span style="font-size: 16px;">👤</span> Human Intervention
-                    </div>
-                    <span class="status-badge" style="background: rgba(0,0,0,0.2); padding: 3px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; text-transform: uppercase;">Waiting</span>
-                </div>
-
-                <div class="task-summary" style="
-                    background: rgba(0,0,0,0.15);
-                    padding: 10px;
-                    border-radius: 6px;
-                    font-size: 12px;
-                    line-height: 1.4;
-                    max-height: 80px;
-                    overflow-y: auto;
-                    border: 1px solid rgba(255,255,255,0.2);
-                ">Review generated email copy before sending to client.</div>
-
-                <div style="display: flex; gap: 10px; margin-top: 5px;">
-                    <button class="reject-btn" style="
-                        flex: 1;
-                        padding: 8px;
-                        border: none;
-                        border-radius: 4px;
-                        background: #f44336;
-                        color: white;
-                        font-weight: bold;
-                        cursor: pointer;
-                        transition: opacity 0.2s;
-                    ">Reject</button>
-                    <button class="approve-btn" style="
-                        flex: 1;
-                        padding: 8px;
-                        border: none;
-                        border-radius: 4px;
-                        background: #4caf50;
-                        color: white;
-                        font-weight: bold;
-                        cursor: pointer;
-                        transition: opacity 0.2s;
-                    ">Approve</button>
-                </div>
-            </div>
-        `;
-
-        super(sg, { ...spec, html });
-        this.width = spec.width || 260;
-        this.height = spec.height || 160;
+        super(sg, {
+            ...spec,
+            html: '',
+            style: {
+                width: '350px',
+                height: 'auto',
+                padding: '16px',
+                borderRadius: '8px',
+                background: '#ff9800', // Warning orange
+                color: 'white',
+                fontFamily: 'sans-serif',
+                border: '2px solid #e65100',
+                boxSizing: 'border-box'
+            }
+        });
     }
 
-    protected initDomElement(html: string): void {
-        super.initDomElement(html);
-        if (this.domElement) {
-            this.summaryEl = this.domElement.querySelector('.task-summary') as HTMLDivElement;
-            this.approveBtn = this.domElement.querySelector('.approve-btn') as HTMLButtonElement;
-            this.rejectBtn = this.domElement.querySelector('.reject-btn') as HTMLButtonElement;
+    updateLod(distance: number): void {
+        super.updateLod(distance);
 
-            this.updateWidgetFromParams(this.parameters);
+        let level = 'full';
+        if (distance > this.lodThresholds.icon) level = 'icon';
+        else if (distance > this.lodThresholds.label) level = 'label';
+        else if (distance > this.lodThresholds.summary) level = 'summary';
 
-            if (this.approveBtn) {
-                this.approveBtn.addEventListener('click', () => {
-                    console.log(`[HITL] Approved node ${this.id}`);
-                    // Notify bridge
-                });
-            }
-            if (this.rejectBtn) {
-                this.rejectBtn.addEventListener('click', () => {
-                    console.log(`[HITL] Rejected node ${this.id}`);
-                    // Notify bridge
-                });
-            }
-        }
+        this.renderHtmlContent(level);
     }
 
-    private updateWidgetFromParams(params: any) {
-        if (!params) return;
+    private renderHtmlContent(level: string) {
+        if (!this.domElement) return;
 
-        if (this.summaryEl && params.taskSummary) {
-            this.summaryEl.textContent = params.taskSummary;
+        this.domElement.innerHTML = '';
+        const params = this.spec.parameters || {};
+        const taskSummary = params.taskSummary || 'Review required';
+        const status = params.status || 'waiting'; // could be 'approved', 'rejected'
+
+        if (level === 'icon') {
+            const el = document.createElement('div');
+            el.style.fontSize = '48px';
+            el.style.textAlign = 'center';
+            el.textContent = '👤';
+            this.domElement.appendChild(el);
+            this.domElement.style.background = 'transparent';
+            this.domElement.style.border = 'none';
+        } else if (level === 'label') {
+            const el = document.createElement('div');
+            el.style.textAlign = 'center';
+            el.style.fontSize = '24px';
+            el.style.fontWeight = 'bold';
+            el.textContent = '👤 HITL';
+            this.domElement.appendChild(el);
+            this.domElement.style.background = 'rgba(255, 152, 0, 0.8)';
+            this.domElement.style.border = '2px solid #e65100';
+        } else if (level === 'summary') {
+            const header = document.createElement('div');
+            header.style.display = 'flex';
+            header.style.justifyContent = 'space-between';
+            header.style.alignItems = 'center';
+            header.style.marginBottom = '8px';
+
+            const title = document.createElement('span');
+            title.style.fontWeight = 'bold';
+            title.textContent = '👤 Human in Loop';
+
+            const badge = document.createElement('span');
+            badge.style.background = 'rgba(0,0,0,0.3)';
+            badge.style.padding = '2px 6px';
+            badge.style.borderRadius = '4px';
+            badge.style.fontSize = '12px';
+            badge.style.textTransform = 'uppercase';
+            badge.textContent = status;
+
+            header.appendChild(title);
+            header.appendChild(badge);
+
+            const summary = document.createElement('div');
+            summary.style.background = 'rgba(0,0,0,0.15)';
+            summary.style.padding = '8px';
+            summary.style.borderRadius = '4px';
+            summary.style.fontSize = '12px';
+            summary.style.maxHeight = '40px';
+            summary.style.overflow = 'hidden';
+            summary.textContent = taskSummary;
+
+            this.domElement.appendChild(header);
+            this.domElement.appendChild(summary);
+            this.domElement.style.background = '#ff9800';
+            this.domElement.style.border = '2px solid #e65100';
+        } else if (level === 'full') {
+            const header = document.createElement('div');
+            header.style.display = 'flex';
+            header.style.justifyContent = 'space-between';
+            header.style.alignItems = 'center';
+            header.style.marginBottom = '12px';
+
+            const title = document.createElement('span');
+            title.style.fontWeight = 'bold';
+            title.style.fontSize = '16px';
+            title.textContent = '👤 Human Intervention';
+
+            const badge = document.createElement('span');
+            badge.style.background = 'rgba(0,0,0,0.3)';
+            badge.style.padding = '2px 6px';
+            badge.style.borderRadius = '4px';
+            badge.style.fontSize = '12px';
+            badge.style.fontWeight = 'bold';
+            badge.style.textTransform = 'uppercase';
+            badge.textContent = status;
+
+            header.appendChild(title);
+            header.appendChild(badge);
+
+            const taskBox = document.createElement('div');
+            taskBox.style.background = 'rgba(0,0,0,0.15)';
+            taskBox.style.padding = '12px';
+            taskBox.style.borderRadius = '6px';
+            taskBox.style.fontSize = '14px';
+            taskBox.style.lineHeight = '1.4';
+            taskBox.style.marginBottom = '16px';
+            taskBox.style.border = '1px solid rgba(255,255,255,0.2)';
+            taskBox.textContent = taskSummary;
+
+            const btnGroup = document.createElement('div');
+            btnGroup.style.display = 'flex';
+            btnGroup.style.gap = '12px';
+
+            const rejectBtn = document.createElement('button');
+            rejectBtn.textContent = 'Reject';
+            rejectBtn.style.flex = '1';
+            rejectBtn.style.padding = '10px';
+            rejectBtn.style.background = '#f44336';
+            rejectBtn.style.color = 'white';
+            rejectBtn.style.border = 'none';
+            rejectBtn.style.borderRadius = '4px';
+            rejectBtn.style.fontWeight = 'bold';
+            rejectBtn.style.cursor = 'pointer';
+
+            const approveBtn = document.createElement('button');
+            approveBtn.textContent = 'Approve';
+            approveBtn.style.flex = '1';
+            approveBtn.style.padding = '10px';
+            approveBtn.style.background = '#4caf50';
+            approveBtn.style.color = 'white';
+            approveBtn.style.border = 'none';
+            approveBtn.style.borderRadius = '4px';
+            approveBtn.style.fontWeight = 'bold';
+            approveBtn.style.cursor = 'pointer';
+
+            rejectBtn.addEventListener('click', () => {
+                this.parameters = { ...this.parameters, status: 'rejected' };
+                this.renderHtmlContent(level); // re-render
+                // Notify bridge via event manager
+                this.sg.pluginManager.getPlugin('EventManager')?.emit('hitl:decision', { id: this.id, decision: 'reject' });
+            });
+
+            approveBtn.addEventListener('click', () => {
+                this.parameters = { ...this.parameters, status: 'approved' };
+                this.renderHtmlContent(level); // re-render
+                // Notify bridge via event manager
+                this.sg.pluginManager.getPlugin('EventManager')?.emit('hitl:decision', { id: this.id, decision: 'approve' });
+            });
+
+            btnGroup.appendChild(rejectBtn);
+            btnGroup.appendChild(approveBtn);
+
+            this.domElement.appendChild(header);
+            this.domElement.appendChild(taskBox);
+            if (status === 'waiting') {
+                this.domElement.appendChild(btnGroup);
+            }
+
+            this.domElement.style.background = '#ff9800';
+            this.domElement.style.border = '2px solid #e65100';
         }
     }
 
     updateSpec(spec: SpecUpdate): void {
         super.updateSpec(spec);
-        if (spec.parameters) {
-            this.updateWidgetFromParams(spec.parameters);
-        }
+        const level = this.domElement?.querySelector('button') ? 'full' : (this.domElement?.querySelector('div[style*="maxHeight"]') ? 'summary' : (this.domElement?.querySelector('span') ? 'label' : 'icon'));
+        this.renderHtmlContent(level);
     }
 }
