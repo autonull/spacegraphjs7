@@ -40,9 +40,9 @@ export class N8nHitlNode extends HtmlNode {
     }
 
     private renderHtmlContent(level: string) {
-        if (!this.element) return;
+        if (!this.domElement) return;
 
-        this.element.innerHTML = '';
+        this.domElement.innerHTML = '';
         const params = this.spec.parameters || {};
         const taskSummary = params.taskSummary || 'Review required';
         const status = params.status || 'waiting'; // could be 'approved', 'rejected'
@@ -52,18 +52,18 @@ export class N8nHitlNode extends HtmlNode {
             el.style.fontSize = '48px';
             el.style.textAlign = 'center';
             el.textContent = '👤';
-            this.element.appendChild(el);
-            this.element.style.background = 'transparent';
-            this.element.style.border = 'none';
+            this.domElement.appendChild(el);
+            this.domElement.style.background = 'transparent';
+            this.domElement.style.border = 'none';
         } else if (level === 'label') {
             const el = document.createElement('div');
             el.style.textAlign = 'center';
             el.style.fontSize = '24px';
             el.style.fontWeight = 'bold';
             el.textContent = '👤 HITL';
-            this.element.appendChild(el);
-            this.element.style.background = 'rgba(255, 152, 0, 0.8)';
-            this.element.style.border = '2px solid #e65100';
+            this.domElement.appendChild(el);
+            this.domElement.style.background = 'rgba(255, 152, 0, 0.8)';
+            this.domElement.style.border = '2px solid #e65100';
         } else if (level === 'summary') {
             const header = document.createElement('div');
             header.style.display = 'flex';
@@ -95,10 +95,10 @@ export class N8nHitlNode extends HtmlNode {
             summary.style.overflow = 'hidden';
             summary.textContent = taskSummary;
 
-            this.element.appendChild(header);
-            this.element.appendChild(summary);
-            this.element.style.background = '#ff9800';
-            this.element.style.border = '2px solid #e65100';
+            this.domElement.appendChild(header);
+            this.domElement.appendChild(summary);
+            this.domElement.style.background = '#ff9800';
+            this.domElement.style.border = '2px solid #e65100';
         } else if (level === 'full') {
             const header = document.createElement('div');
             header.style.display = 'flex';
@@ -176,20 +176,20 @@ export class N8nHitlNode extends HtmlNode {
             btnGroup.appendChild(rejectBtn);
             btnGroup.appendChild(approveBtn);
 
-            this.element.appendChild(header);
-            this.element.appendChild(taskBox);
+            this.domElement.appendChild(header);
+            this.domElement.appendChild(taskBox);
             if (status === 'waiting') {
-                this.element.appendChild(btnGroup);
+                this.domElement.appendChild(btnGroup);
             }
 
-            this.element.style.background = '#ff9800';
-            this.element.style.border = '2px solid #e65100';
+            this.domElement.style.background = '#ff9800';
+            this.domElement.style.border = '2px solid #e65100';
         }
     }
 
     updateSpec(spec: SpecUpdate): void {
         super.updateSpec(spec);
-        const level = this.element?.querySelector('button') ? 'full' : (this.element?.querySelector('div[style*="maxHeight"]') ? 'summary' : (this.element?.querySelector('span') ? 'label' : 'icon'));
+        const level = this.domElement?.querySelector('button') ? 'full' : (this.domElement?.querySelector('div[style*="maxHeight"]') ? 'summary' : (this.domElement?.querySelector('span') ? 'label' : 'icon'));
         this.renderHtmlContent(level);
     }
 }

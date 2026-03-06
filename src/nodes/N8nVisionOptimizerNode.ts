@@ -40,9 +40,9 @@ export class N8nVisionOptimizerNode extends HtmlNode {
     }
 
     private renderHtmlContent(level: string) {
-        if (!this.element) return;
+        if (!this.domElement) return;
 
-        this.element.innerHTML = '';
+        this.domElement.innerHTML = '';
         const params = this.spec.parameters || {};
         const score = params.score !== undefined ? params.score : '--';
         const scoreColor = score >= 70 ? '#aed581' : (score === '--' ? 'white' : '#ffb74d');
@@ -52,18 +52,18 @@ export class N8nVisionOptimizerNode extends HtmlNode {
             el.style.fontSize = '48px';
             el.style.textAlign = 'center';
             el.textContent = '👁️';
-            this.element.appendChild(el);
-            this.element.style.background = 'transparent';
-            this.element.style.border = 'none';
+            this.domElement.appendChild(el);
+            this.domElement.style.background = 'transparent';
+            this.domElement.style.border = 'none';
         } else if (level === 'label') {
             const el = document.createElement('div');
             el.style.textAlign = 'center';
             el.style.fontSize = '24px';
             el.style.fontWeight = 'bold';
             el.textContent = '👁️ Vision Opt.';
-            this.element.appendChild(el);
-            this.element.style.background = 'rgba(96, 125, 139, 0.8)';
-            this.element.style.border = '2px solid #455a64';
+            this.domElement.appendChild(el);
+            this.domElement.style.background = 'rgba(96, 125, 139, 0.8)';
+            this.domElement.style.border = '2px solid #455a64';
         } else if (level === 'summary') {
             const header = document.createElement('div');
             header.style.display = 'flex';
@@ -87,9 +87,9 @@ export class N8nVisionOptimizerNode extends HtmlNode {
             header.appendChild(title);
             header.appendChild(badge);
 
-            this.element.appendChild(header);
-            this.element.style.background = '#607d8b';
-            this.element.style.border = '2px solid #455a64';
+            this.domElement.appendChild(header);
+            this.domElement.style.background = '#607d8b';
+            this.domElement.style.border = '2px solid #455a64';
         } else if (level === 'full') {
             const header = document.createElement('div');
             header.style.display = 'flex';
@@ -156,18 +156,18 @@ export class N8nVisionOptimizerNode extends HtmlNode {
                 }, 500);
             });
 
-            this.element.appendChild(header);
-            this.element.appendChild(scoreBox);
-            this.element.appendChild(fixBtn);
+            this.domElement.appendChild(header);
+            this.domElement.appendChild(scoreBox);
+            this.domElement.appendChild(fixBtn);
 
-            this.element.style.background = '#607d8b';
-            this.element.style.border = '2px solid #455a64';
+            this.domElement.style.background = '#607d8b';
+            this.domElement.style.border = '2px solid #455a64';
         }
     }
 
     updateSpec(spec: SpecUpdate): void {
         super.updateSpec(spec);
-        const level = this.element?.querySelector('button') ? 'full' : (this.element?.querySelector('span[style*="Score:"]') ? 'summary' : (this.element?.querySelector('span') ? 'label' : 'icon'));
+        const level = this.domElement?.querySelector('button') ? 'full' : (this.domElement?.querySelector('span[style*="Score:"]') ? 'summary' : (this.domElement?.querySelector('span') ? 'label' : 'icon'));
         this.renderHtmlContent(level);
     }
 }

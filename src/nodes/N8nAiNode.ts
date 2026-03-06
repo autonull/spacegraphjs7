@@ -40,9 +40,9 @@ export class N8nAiNode extends HtmlNode {
     }
 
     private renderHtmlContent(level: string) {
-        if (!this.element) return;
+        if (!this.domElement) return;
 
-        this.element.innerHTML = '';
+        this.domElement.innerHTML = '';
         const params = this.spec.parameters || {};
         const model = params.model || 'gpt-4o';
         const promptText = params.prompt || '';
@@ -52,18 +52,18 @@ export class N8nAiNode extends HtmlNode {
             el.style.fontSize = '48px';
             el.style.textAlign = 'center';
             el.textContent = '✨';
-            this.element.appendChild(el);
-            this.element.style.background = 'transparent';
-            this.element.style.border = 'none';
+            this.domElement.appendChild(el);
+            this.domElement.style.background = 'transparent';
+            this.domElement.style.border = 'none';
         } else if (level === 'label') {
             const el = document.createElement('div');
             el.style.textAlign = 'center';
             el.style.fontSize = '24px';
             el.style.fontWeight = 'bold';
             el.textContent = '✨ AI Agent';
-            this.element.appendChild(el);
-            this.element.style.background = 'linear-gradient(135deg, #673ab7, #3f51b5)';
-            this.element.style.border = '1px solid #7e57c2';
+            this.domElement.appendChild(el);
+            this.domElement.style.background = 'linear-gradient(135deg, #673ab7, #3f51b5)';
+            this.domElement.style.border = '1px solid #7e57c2';
         } else if (level === 'summary') {
             const header = document.createElement('div');
             header.style.display = 'flex';
@@ -94,10 +94,10 @@ export class N8nAiNode extends HtmlNode {
             preview.style.fontStyle = 'italic';
             preview.textContent = promptText.length > 0 ? (promptText.slice(0, 40) + '...') : 'No prompt set';
 
-            this.element.appendChild(header);
-            this.element.appendChild(preview);
-            this.element.style.background = 'linear-gradient(135deg, #673ab7, #3f51b5)';
-            this.element.style.border = '1px solid #7e57c2';
+            this.domElement.appendChild(header);
+            this.domElement.appendChild(preview);
+            this.domElement.style.background = 'linear-gradient(135deg, #673ab7, #3f51b5)';
+            this.domElement.style.border = '1px solid #7e57c2';
         } else if (level === 'full') {
             const header = document.createElement('div');
             header.style.display = 'flex';
@@ -173,16 +173,16 @@ export class N8nAiNode extends HtmlNode {
             textareaGroup.appendChild(label);
             textareaGroup.appendChild(textarea);
 
-            this.element.appendChild(header);
-            this.element.appendChild(textareaGroup);
-            this.element.style.background = 'linear-gradient(135deg, #673ab7, #3f51b5)';
-            this.element.style.border = '1px solid #7e57c2';
+            this.domElement.appendChild(header);
+            this.domElement.appendChild(textareaGroup);
+            this.domElement.style.background = 'linear-gradient(135deg, #673ab7, #3f51b5)';
+            this.domElement.style.border = '1px solid #7e57c2';
         }
     }
 
     updateSpec(spec: SpecUpdate): void {
         super.updateSpec(spec);
-        const level = this.element?.querySelector('textarea') ? 'full' : (this.element?.querySelector('div[style*="italic"]') ? 'summary' : (this.element?.querySelector('span') ? 'label' : 'icon'));
+        const level = this.domElement?.querySelector('textarea') ? 'full' : (this.domElement?.querySelector('div[style*="italic"]') ? 'summary' : (this.domElement?.querySelector('span') ? 'label' : 'icon'));
         this.renderHtmlContent(level);
     }
 }

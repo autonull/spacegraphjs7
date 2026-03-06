@@ -40,9 +40,9 @@ export class N8nCodeNode extends HtmlNode {
     }
 
     private renderHtmlContent(level: string) {
-        if (!this.element) return;
+        if (!this.domElement) return;
 
-        this.element.innerHTML = '';
+        this.domElement.innerHTML = '';
         const params = this.spec.parameters || {};
         const jsCode = params.jsCode || 'return items;';
 
@@ -53,9 +53,9 @@ export class N8nCodeNode extends HtmlNode {
             el.style.fontWeight = 'bold';
             el.style.color = '#fbc02d';
             el.textContent = 'JS';
-            this.element.appendChild(el);
-            this.element.style.background = 'transparent';
-            this.element.style.border = 'none';
+            this.domElement.appendChild(el);
+            this.domElement.style.background = 'transparent';
+            this.domElement.style.border = 'none';
         } else if (level === 'label') {
             const el = document.createElement('div');
             el.style.textAlign = 'center';
@@ -63,9 +63,9 @@ export class N8nCodeNode extends HtmlNode {
             el.style.fontWeight = 'bold';
             el.style.color = '#fbc02d';
             el.textContent = 'JS Code';
-            this.element.appendChild(el);
-            this.element.style.background = 'rgba(30, 30, 30, 0.8)';
-            this.element.style.borderLeft = '4px solid #fbc02d';
+            this.domElement.appendChild(el);
+            this.domElement.style.background = 'rgba(30, 30, 30, 0.8)';
+            this.domElement.style.borderLeft = '4px solid #fbc02d';
         } else if (level === 'summary') {
             const header = document.createElement('div');
             header.style.display = 'flex';
@@ -105,10 +105,10 @@ export class N8nCodeNode extends HtmlNode {
             const lines = jsCode.split('\n');
             preview.textContent = lines.slice(0, 3).join('\n') + (lines.length > 3 ? '\n...' : '');
 
-            this.element.appendChild(header);
-            this.element.appendChild(preview);
-            this.element.style.background = '#1e1e1e';
-            this.element.style.borderLeft = '4px solid #fbc02d';
+            this.domElement.appendChild(header);
+            this.domElement.appendChild(preview);
+            this.domElement.style.background = '#1e1e1e';
+            this.domElement.style.borderLeft = '4px solid #fbc02d';
         } else if (level === 'full') {
             const header = document.createElement('div');
             header.style.display = 'flex';
@@ -154,16 +154,16 @@ export class N8nCodeNode extends HtmlNode {
 
             editorContainer.appendChild(textarea);
 
-            this.element.appendChild(header);
-            this.element.appendChild(editorContainer);
-            this.element.style.background = '#1e1e1e';
-            this.element.style.borderLeft = '4px solid #fbc02d';
+            this.domElement.appendChild(header);
+            this.domElement.appendChild(editorContainer);
+            this.domElement.style.background = '#1e1e1e';
+            this.domElement.style.borderLeft = '4px solid #fbc02d';
         }
     }
 
     updateSpec(spec: SpecUpdate): void {
         super.updateSpec(spec);
-        const level = this.element?.querySelector('textarea') ? 'full' : (this.element?.querySelector('pre') ? 'summary' : (this.element?.querySelector('div[style*="24px"]') ? 'label' : 'icon'));
+        const level = this.domElement?.querySelector('textarea') ? 'full' : (this.domElement?.querySelector('pre') ? 'summary' : (this.domElement?.querySelector('div[style*="24px"]') ? 'label' : 'icon'));
         this.renderHtmlContent(level);
     }
 }

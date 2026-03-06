@@ -5,6 +5,13 @@ import type { NodeSpec } from '../types';
 export class ExecutionLogPanel extends HtmlNode {
     private logsContainer: HTMLDivElement;
 
+    readonly lodThresholds = {
+        icon: 800,
+        label: 400,
+        summary: 150,
+        full: 0,
+    };
+
     constructor(sg: SpaceGraph, spec: NodeSpec) {
         super(sg, spec);
 
@@ -49,6 +56,64 @@ export class ExecutionLogPanel extends HtmlNode {
         this.logsContainer.style.display = 'flex';
         this.logsContainer.style.flexDirection = 'column';
         this.domElement.appendChild(this.logsContainer);
+
+        // Ensure starting visual matches initial LOD
+        this.updateLod(0);
+    }
+
+    updateLod(distance: number): void {
+        super.updateLod(distance);
+
+        let level = 'full';
+        if (distance > this.lodThresholds.icon) level = 'icon';
+        else if (distance > this.lodThresholds.label) level = 'label';
+
+        if (level === 'icon') {
+            this.domElement.style.width = '60px';
+            this.domElement.style.height = '60px';
+            this.domElement.style.border = 'none';
+            this.domElement.style.background = 'transparent';
+            this.domElement.style.fontSize = '48px';
+            this.domElement.style.justifyContent = 'center';
+            this.domElement.style.alignItems = 'center';
+            this.domElement.textContent = '📄';
+            this.logsContainer.style.display = 'none';
+        } else if (level === 'label') {
+            this.domElement.style.width = '200px';
+            this.domElement.style.height = '60px';
+            this.domElement.style.border = '2px solid #00ff00';
+            this.domElement.style.background = 'rgba(20, 20, 20, 0.8)';
+            this.domElement.style.fontSize = '24px';
+            this.domElement.style.fontWeight = 'bold';
+            this.domElement.style.justifyContent = 'center';
+            this.domElement.style.alignItems = 'center';
+            this.domElement.textContent = '📄 Exec Log';
+            this.logsContainer.style.display = 'none';
+        } else {
+            this.domElement.style.width = '400px';
+            this.domElement.style.height = '300px';
+            this.domElement.style.border = '2px solid #00ff00';
+            this.domElement.style.background = 'rgba(20, 20, 20, 0.9)';
+            this.domElement.style.fontSize = '12px';
+            this.domElement.style.justifyContent = 'flex-start';
+            this.domElement.style.alignItems = 'flex-start';
+
+            // Restore header if removed by LOD change
+            if (!this.domElement.querySelector('div')) {
+                this.domElement.textContent = '';
+                const header = document.createElement('div');
+                header.style.width = '100%';
+                header.style.borderBottom = '1px solid #444';
+                header.style.paddingBottom = '5px';
+                header.style.marginBottom = '5px';
+                header.style.fontWeight = 'bold';
+                header.style.color = '#fff';
+                header.textContent = 'Execution Log';
+                this.domElement.appendChild(header);
+                this.domElement.appendChild(this.logsContainer);
+            }
+            this.logsContainer.style.display = 'flex';
+        }
     }
 
     addLog(message: string, type: 'info' | 'error' | 'success' | 'warn' = 'info') {

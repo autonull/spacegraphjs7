@@ -43,9 +43,9 @@ export class N8nCredentialNode extends HtmlNode {
     }
 
     private renderHtmlContent(level: string) {
-        if (!this.element) return;
+        if (!this.domElement) return;
 
-        this.element.innerHTML = '';
+        this.domElement.innerHTML = '';
         const params = this.spec.parameters || {};
         const serviceName = params.service || 'Unknown Service';
         const apiKey = params.apiKey || '';
@@ -55,9 +55,9 @@ export class N8nCredentialNode extends HtmlNode {
             el.style.fontSize = '48px';
             el.style.textAlign = 'center';
             el.textContent = '🔒';
-            this.element.appendChild(el);
-            this.element.style.background = 'transparent';
-            this.element.style.border = 'none';
+            this.domElement.appendChild(el);
+            this.domElement.style.background = 'transparent';
+            this.domElement.style.border = 'none';
         } else if (level === 'label') {
             const el = document.createElement('div');
             el.style.textAlign = 'center';
@@ -65,9 +65,9 @@ export class N8nCredentialNode extends HtmlNode {
             el.style.fontWeight = 'bold';
             el.style.color = '#e91e63';
             el.textContent = '🔒 Credential';
-            this.element.appendChild(el);
-            this.element.style.background = 'rgba(30, 30, 30, 0.8)';
-            this.element.style.border = '2px solid #e91e63';
+            this.domElement.appendChild(el);
+            this.domElement.style.background = 'rgba(30, 30, 30, 0.8)';
+            this.domElement.style.border = '2px solid #e91e63';
         } else if (level === 'summary') {
             const header = document.createElement('div');
             header.style.display = 'flex';
@@ -90,10 +90,10 @@ export class N8nCredentialNode extends HtmlNode {
             status.style.color = apiKey ? '#4caf50' : '#f44336';
             status.textContent = apiKey ? 'Key Configured' : 'Missing Key';
 
-            this.element.appendChild(header);
-            this.element.appendChild(status);
-            this.element.style.background = 'rgba(30, 30, 30, 0.95)';
-            this.element.style.border = '2px solid #e91e63';
+            this.domElement.appendChild(header);
+            this.domElement.appendChild(status);
+            this.domElement.style.background = 'rgba(30, 30, 30, 0.95)';
+            this.domElement.style.border = '2px solid #e91e63';
         } else if (level === 'full') {
             const header = document.createElement('div');
             header.style.display = 'flex';
@@ -165,18 +165,18 @@ export class N8nCredentialNode extends HtmlNode {
                 }, 1000);
             });
 
-            this.element.appendChild(header);
-            this.element.appendChild(inputGroup);
-            this.element.appendChild(testBtn);
+            this.domElement.appendChild(header);
+            this.domElement.appendChild(inputGroup);
+            this.domElement.appendChild(testBtn);
 
-            this.element.style.background = 'rgba(30, 30, 30, 0.95)';
-            this.element.style.border = '2px solid #e91e63';
+            this.domElement.style.background = 'rgba(30, 30, 30, 0.95)';
+            this.domElement.style.border = '2px solid #e91e63';
         }
     }
 
     updateSpec(spec: SpecUpdate): void {
         super.updateSpec(spec);
-        const level = this.element?.querySelector('input') ? 'full' : (this.element?.querySelector('div[style*="12px"]') ? 'summary' : (this.element?.querySelector('span') ? 'icon' : 'label'));
+        const level = this.domElement?.querySelector('input') ? 'full' : (this.domElement?.querySelector('div[style*="12px"]') ? 'summary' : (this.domElement?.querySelector('span') ? 'icon' : 'label'));
         this.renderHtmlContent(level);
     }
 }

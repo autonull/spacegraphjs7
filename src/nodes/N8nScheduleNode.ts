@@ -83,9 +83,9 @@ export class N8nScheduleNode extends HtmlNode {
     }
 
     private renderHtmlContent(level: string) {
-        if (!this.element) return;
+        if (!this.domElement) return;
 
-        this.element.innerHTML = '';
+        this.domElement.innerHTML = '';
         const params = this.spec.parameters || {};
         const cronExpr = params.cronExpression || '0 * * * *';
         const nextRun = params.nextRun || 'in 15 mins';
@@ -95,18 +95,18 @@ export class N8nScheduleNode extends HtmlNode {
             el.style.fontSize = '48px';
             el.style.textAlign = 'center';
             el.textContent = '🕐';
-            this.element.appendChild(el);
-            this.element.style.background = 'transparent';
-            this.element.style.border = 'none';
+            this.domElement.appendChild(el);
+            this.domElement.style.background = 'transparent';
+            this.domElement.style.border = 'none';
         } else if (level === 'label') {
             const el = document.createElement('div');
             el.style.textAlign = 'center';
             el.style.fontSize = '24px';
             el.style.fontWeight = 'bold';
             el.textContent = '🕐 Schedule';
-            this.element.appendChild(el);
-            this.element.style.background = 'rgba(30, 30, 30, 0.8)';
-            this.element.style.border = '2px solid #ff9800';
+            this.domElement.appendChild(el);
+            this.domElement.style.background = 'rgba(30, 30, 30, 0.8)';
+            this.domElement.style.border = '2px solid #ff9800';
         } else if (level === 'summary') {
             const title = document.createElement('div');
             title.style.fontWeight = 'bold';
@@ -116,10 +116,10 @@ export class N8nScheduleNode extends HtmlNode {
             const run = document.createElement('div');
             run.textContent = `Next Run: ${nextRun}`;
 
-            this.element.appendChild(title);
-            this.element.appendChild(run);
-            this.element.style.background = 'rgba(30, 30, 30, 0.95)';
-            this.element.style.border = '2px solid #ff9800';
+            this.domElement.appendChild(title);
+            this.domElement.appendChild(run);
+            this.domElement.style.background = 'rgba(30, 30, 30, 0.95)';
+            this.domElement.style.border = '2px solid #ff9800';
         } else if (level === 'full') {
             const title = document.createElement('div');
             title.style.fontWeight = 'bold';
@@ -154,19 +154,19 @@ export class N8nScheduleNode extends HtmlNode {
             inputGroup.appendChild(label);
             inputGroup.appendChild(input);
 
-            this.element.appendChild(title);
-            this.element.appendChild(run);
-            this.element.appendChild(inputGroup);
+            this.domElement.appendChild(title);
+            this.domElement.appendChild(run);
+            this.domElement.appendChild(inputGroup);
 
-            this.element.style.background = 'rgba(30, 30, 30, 0.95)';
-            this.element.style.border = '2px solid #ff9800';
+            this.domElement.style.background = 'rgba(30, 30, 30, 0.95)';
+            this.domElement.style.border = '2px solid #ff9800';
         }
     }
 
     updateSpec(spec: SpecUpdate): void {
         super.updateSpec(spec);
         // Force a re-render of current LOD
-        const level = this.element?.children[0]?.textContent === '🕐' ? 'icon' : 'full';
+        const level = this.domElement?.children[0]?.textContent === '🕐' ? 'icon' : 'full';
         this.renderHtmlContent(level);
     }
 
