@@ -33,6 +33,18 @@ async function main() {
 
     executionService.on('workflowExecuteAfter', (data: any) => {
         broadcast(clients, { type: 'execution:complete', data });
+
+        // Phase 6: SpaceGraph OS Integration
+        // Emit OS-level process entries for n8n workflows
+        const osProcessEntry = {
+            pid: data.executionId,
+            name: data.workflowName || 'Unknown Workflow',
+            status: data.status,
+            cpu: data.metrics?.cpuUsage || Math.random() * 5, // mock CPU % if undefined
+            memory: data.metrics?.memUsage || Math.random() * 50 + 10, // mock Memory MB if undefined
+        };
+
+        broadcast(clients, { type: 'os:process:update', data: osProcessEntry });
     });
 
     // Mock progress events since we don't have real n8n nodes executing in this stub environment
@@ -158,6 +170,18 @@ async function handleMessage(ws: WebSocket, clients: Set<WebSocket>, message: an
                     data: {
                         executionId: message.executionId,
                         status: 'error'
+                    }
+                });
+
+                // Emit OS-level process update
+                broadcast(clients, {
+                    type: 'os:process:update',
+                    data: {
+                        pid: message.executionId,
+                        name: `Workflow ${message.workflowId}`,
+                        status: 'error',
+                        cpu: 0,
+                        memory: 0
                     }
                 });
             }, delay + 500);
