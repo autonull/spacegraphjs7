@@ -2,64 +2,64 @@ import type { SpaceGraph } from '../SpaceGraph';
 import type { ISpaceGraphPlugin } from '../types';
 
 export class PluginManager {
-  private sg: SpaceGraph;
-  private plugins: Map<string, ISpaceGraphPlugin> = new Map();
-  private nodeTypes: Map<string, any> = new Map();
-  private edgeTypes: Map<string, any> = new Map();
+    private sg: SpaceGraph;
+    public plugins: Map<string, ISpaceGraphPlugin> = new Map();
+    private nodeTypes: Map<string, any> = new Map();
+    private edgeTypes: Map<string, any> = new Map();
 
-  constructor(sg: SpaceGraph) {
-    this.sg = sg;
-  }
-
-  register(name: string, plugin: ISpaceGraphPlugin): void {
-    this.plugins.set(name, plugin);
-  }
-
-  registerNodeType(type: string, cls: any): void {
-    this.nodeTypes.set(type, cls);
-  }
-
-  getNodeType(type: string): any {
-    return this.nodeTypes.get(type);
-  }
-
-  registerEdgeType(type: string, cls: any): void {
-    this.edgeTypes.set(type, cls);
-  }
-
-  getEdgeType(type: string): any {
-    return this.edgeTypes.get(type);
-  }
-
-  getPlugin(name: string): ISpaceGraphPlugin | undefined {
-    return this.plugins.get(name);
-  }
-
-  async initAll(): Promise<void> {
-    for (const plugin of this.plugins.values()) {
-      if (plugin.init) {
-        plugin.init(this.sg);
-      }
+    constructor(sg: SpaceGraph) {
+        this.sg = sg;
     }
-  }
 
-  updateAll(delta: number): void {
-    for (const plugin of this.plugins.values()) {
-      if (plugin.onPreRender) {
-        plugin.onPreRender(delta);
-      }
-      if (plugin.onPostRender) {
-        plugin.onPostRender(delta);
-      }
+    register(name: string, plugin: ISpaceGraphPlugin): void {
+        this.plugins.set(name, plugin);
     }
-  }
 
-  disposePlugins(): void {
-    for (const plugin of this.plugins.values()) {
-      if (plugin.dispose) {
-        plugin.dispose();
-      }
+    registerNodeType(type: string, cls: any): void {
+        this.nodeTypes.set(type, cls);
     }
-    this.plugins.clear();
-  }
+
+    getNodeType(type: string): any {
+        return this.nodeTypes.get(type);
+    }
+
+    registerEdgeType(type: string, cls: any): void {
+        this.edgeTypes.set(type, cls);
+    }
+
+    getEdgeType(type: string): any {
+        return this.edgeTypes.get(type);
+    }
+
+    getPlugin(name: string): ISpaceGraphPlugin | undefined {
+        return this.plugins.get(name);
+    }
+
+    async initAll(): Promise<void> {
+        for (const plugin of this.plugins.values()) {
+            if (plugin.init) {
+                plugin.init(this.sg);
+            }
+        }
+    }
+
+    updateAll(delta: number): void {
+        for (const plugin of this.plugins.values()) {
+            if (plugin.onPreRender) {
+                plugin.onPreRender(delta);
+            }
+            if (plugin.onPostRender) {
+                plugin.onPostRender(delta);
+            }
+        }
+    }
+
+    disposePlugins(): void {
+        for (const plugin of this.plugins.values()) {
+            if (plugin.dispose) {
+                plugin.dispose();
+            }
+        }
+        this.plugins.clear();
+    }
 }

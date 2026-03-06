@@ -18,33 +18,33 @@
 
 ### Critical Risks (Could Kill Project)
 
-| Risk | Probability | Impact | Prevention | Detection | Recovery |
-|------|-------------|--------|------------|-----------|----------|
-| **R1: Three.js incompatibility** | 25% | 100% | Version pinning | Build fails | Fallback version |
-| **R2: npm package name taken** | 15% | 100% | Check before Day 1 | npm publish fails | Alternative name |
-| **R3: TypeScript export broken** | 30% | 80% | Daily type checks | Import fails | Fix exports |
-| **R4: WebGL not supported** | 5% | 100% | Feature detection | Blank screen | Fallback message |
-| **R5: Critical memory leak** | 20% | 60% | Memory profiling | DevTools check | Fix leak |
+| Risk                             | Probability | Impact | Prevention         | Detection         | Recovery         |
+| -------------------------------- | ----------- | ------ | ------------------ | ----------------- | ---------------- |
+| **R1: Three.js incompatibility** | 25%         | 100%   | Version pinning    | Build fails       | Fallback version |
+| **R2: npm package name taken**   | 15%         | 100%   | Check before Day 1 | npm publish fails | Alternative name |
+| **R3: TypeScript export broken** | 30%         | 80%    | Daily type checks  | Import fails      | Fix exports      |
+| **R4: WebGL not supported**      | 5%          | 100%   | Feature detection  | Blank screen      | Fallback message |
+| **R5: Critical memory leak**     | 20%         | 60%    | Memory profiling   | DevTools check    | Fix leak         |
 
 ### High Risks (Could Delay Launch)
 
-| Risk | Probability | Impact | Prevention | Detection | Recovery |
-|------|-------------|--------|------------|-----------|----------|
-| **R6: ESM module resolution fails** | 40% | 50% | Correct package.json | Import errors | Fix type/module |
-| **R7: Camera controls broken** | 50% | 30% | Test early | User reports | Simplified controls |
-| **R8: Build size too large** | 25% | 40% | Bundle analysis | npm pack check | Tree-shaking |
-| **R9: Browser compatibility** | 35% | 50% | Multi-browser test | Cross-browser test | Polyfills |
-| **R10: Node.js version mismatch** | 30% | 40% | engines field | Error message | Clear requirements |
+| Risk                                | Probability | Impact | Prevention           | Detection          | Recovery            |
+| ----------------------------------- | ----------- | ------ | -------------------- | ------------------ | ------------------- |
+| **R6: ESM module resolution fails** | 40%         | 50%    | Correct package.json | Import errors      | Fix type/module     |
+| **R7: Camera controls broken**      | 50%         | 30%    | Test early           | User reports       | Simplified controls |
+| **R8: Build size too large**        | 25%         | 40%    | Bundle analysis      | npm pack check     | Tree-shaking        |
+| **R9: Browser compatibility**       | 35%         | 50%    | Multi-browser test   | Cross-browser test | Polyfills           |
+| **R10: Node.js version mismatch**   | 30%         | 40%    | engines field        | Error message      | Clear requirements  |
 
 ### Medium Risks (Annoyances)
 
-| Risk | Probability | Impact | Prevention | Detection | Recovery |
-|------|-------------|--------|------------|-----------|----------|
-| **R11: npm login expired** | 20% | 20% | Test before publish | Auth error | npm login |
-| **R12: Git conflicts** | 25% | 10% | Daily commits | Merge conflict | Resolve carefully |
-| **R13: Documentation typos** | 60% | 10% | Proofread | User reports | Fix post-launch |
-| **R14: Matrix room spam** | 10% | 10% | Moderation settings | User reports | Enable moderation |
-| **R15: Low initial adoption** | 50% | 30% | Content marketing | Download count | Month 2 marketing |
+| Risk                          | Probability | Impact | Prevention          | Detection      | Recovery          |
+| ----------------------------- | ----------- | ------ | ------------------- | -------------- | ----------------- |
+| **R11: npm login expired**    | 20%         | 20%    | Test before publish | Auth error     | npm login         |
+| **R12: Git conflicts**        | 25%         | 10%    | Daily commits       | Merge conflict | Resolve carefully |
+| **R13: Documentation typos**  | 60%         | 10%    | Proofread           | User reports   | Fix post-launch   |
+| **R14: Matrix room spam**     | 10%         | 10%    | Moderation settings | User reports   | Enable moderation |
+| **R15: Low initial adoption** | 50%         | 30%    | Content marketing   | Download count | Month 2 marketing |
 
 ---
 
@@ -53,24 +53,27 @@
 ### R1: Three.js Incompatibility
 
 **Prevention (Day 1):**
+
 ```json
 {
-  "peerDependencies": {
-    "three": ">=0.150.0 <0.170.0"
-  },
-  "devDependencies": {
-    "three": "^0.160.0"
-  }
+    "peerDependencies": {
+        "three": ">=0.150.0 <0.170.0"
+    },
+    "devDependencies": {
+        "three": "^0.160.0"
+    }
 }
 ```
 
 **Detection:**
+
 ```bash
 # Day 2: If build fails with Three.js errors
 npm run build 2>&1 | grep -i "three"
 ```
 
 **Recovery:**
+
 ```bash
 # Try known-compatible version
 npm install three@0.160.0 --save-dev
@@ -89,6 +92,7 @@ npm install three@0.155.0 --save-dev
 ### R2: npm Package Name Taken
 
 **Prevention (Day 0):**
+
 ```bash
 # Check availability BEFORE starting
 npm view spacegraphjs 2>&1 | grep -q "npm ERR" && echo "Available" || echo "Taken"
@@ -101,14 +105,15 @@ npm view @autonull/spacegraphjs
 
 **If `spacegraphjs` is taken:**
 
-| Alternative | Pros | Cons |
-|-------------|------|------|
-| `@autonull/spacegraphjs` | Scoped, professional | Requires org setup |
-| `spacegraph-js` | Clear separator | Hyphen in import |
-| `spacegraph-core` | Implies extensibility | Less memorable |
-| `zui-spacegraph` | Descriptive | Longer name |
+| Alternative              | Pros                  | Cons               |
+| ------------------------ | --------------------- | ------------------ |
+| `@autonull/spacegraphjs` | Scoped, professional  | Requires org setup |
+| `spacegraph-js`          | Clear separator       | Hyphen in import   |
+| `spacegraph-core`        | Implies extensibility | Less memorable     |
+| `zui-spacegraph`         | Descriptive           | Longer name        |
 
 **Recovery:**
+
 ```bash
 # Update package.json
 {
@@ -128,14 +133,15 @@ npm publish --tag alpha
 ### R3: TypeScript Export Broken
 
 **Prevention (Day 1-2):**
+
 ```json
 // tsconfig.json
 {
-  "compilerOptions": {
-    "declaration": true,
-    "declarationDir": "./dist/types",
-    "esModuleInterop": true
-  }
+    "compilerOptions": {
+        "declaration": true,
+        "declarationDir": "./dist/types",
+        "esModuleInterop": true
+    }
 }
 ```
 
@@ -146,6 +152,7 @@ export type { GraphSpec, NodeSpec, EdgeSpec } from './types';
 ```
 
 **Detection:**
+
 ```bash
 # Day 2: Test type resolution
 npm run build
@@ -162,6 +169,7 @@ npx tsc --noEmit test.ts  # Should pass
 ```
 
 **Recovery:**
+
 ```bash
 # If types don't export:
 # 1. Check tsconfig.json has declaration: true
@@ -183,42 +191,42 @@ export * from './types';
 ### R4: WebGL Not Supported
 
 **Prevention (Day 3):**
+
 ```typescript
 // src/SpaceGraph.ts - Add feature detection
 function checkWebGLSupport(): boolean {
-  try {
-    const canvas = document.createElement('canvas');
-    return !!(
-      canvas.getContext('webgl') ||
-      canvas.getContext('experimental-webgl')
-    );
-  } catch {
-    return false;
-  }
+    try {
+        const canvas = document.createElement('canvas');
+        return !!(canvas.getContext('webgl') || canvas.getContext('experimental-webgl'));
+    } catch {
+        return false;
+    }
 }
 ```
 
 **Detection:**
+
 ```html
 <!-- demo/index.html -->
 <div id="webgl-error" style="display:none; color: red; padding: 20px;">
-  <h2>WebGL Not Supported</h2>
-  <p>SpaceGraphJS requires WebGL support.</p>
-  <p>Please try a modern browser: Chrome, Firefox, Safari, or Edge.</p>
-  <p>Check your support: <a href="https://get.webgl.org/">get.webgl.org</a></p>
+    <h2>WebGL Not Supported</h2>
+    <p>SpaceGraphJS requires WebGL support.</p>
+    <p>Please try a modern browser: Chrome, Firefox, Safari, or Edge.</p>
+    <p>Check your support: <a href="https://get.webgl.org/">get.webgl.org</a></p>
 </div>
 ```
 
 ```typescript
 // demo/main.ts
 if (!checkWebGLSupport()) {
-  document.getElementById('webgl-error').style.display = 'block';
-  document.getElementById('container').style.display = 'none';
-  throw new Error('WebGL not supported');
+    document.getElementById('webgl-error').style.display = 'block';
+    document.getElementById('container').style.display = 'none';
+    throw new Error('WebGL not supported');
 }
 ```
 
 **Recovery:**
+
 - User sees clear error message
 - Directed to WebGL test page
 - No silent failures
@@ -228,14 +236,15 @@ if (!checkWebGLSupport()) {
 ### R5: Critical Memory Leak
 
 **Prevention (Day 5):**
+
 ```typescript
 // src/SpaceGraph.ts - Add cleanup method
 dispose(): void {
   console.log('[SpaceGraph] Disposing...');
-  
+
   // Remove event listeners
   window.removeEventListener('resize', this.onResize);
-  
+
   // Dispose Three.js objects
   this.nodes.forEach(node => {
     node.geometry.dispose();
@@ -245,21 +254,22 @@ dispose(): void {
       node.material.dispose();
     }
   });
-  
+
   this.edges.forEach(edge => {
     edge.geometry.dispose();
     edge.material.dispose();
   });
-  
+
   // Remove canvas
   this.renderer.domElement.remove();
   this.renderer.dispose();
-  
+
   console.log('[SpaceGraph] Disposed successfully');
 }
 ```
 
 **Detection:**
+
 ```javascript
 // In browser DevTools → Memory tab
 // 1. Take heap snapshot
@@ -272,6 +282,7 @@ dispose(): void {
 ```
 
 **Recovery:**
+
 ```bash
 # If leak detected:
 # 1. Identify leaking objects (DevTools → Heap Snapshot)
@@ -285,19 +296,21 @@ dispose(): void {
 ### R6: ESM Module Resolution Fails
 
 **Prevention (Day 1):**
+
 ```json
 {
-  "type": "module",
-  "exports": {
-    ".": {
-      "types": "./dist/types/index.d.ts",
-      "import": "./dist/spacegraphjs.js"
+    "type": "module",
+    "exports": {
+        ".": {
+            "types": "./dist/types/index.d.ts",
+            "import": "./dist/spacegraphjs.js"
+        }
     }
-  }
 }
 ```
 
 **Detection:**
+
 ```bash
 # Day 2: Test module resolution
 node --experimental-specifier-resolution=node -e "import('spacegraphjs')"
@@ -306,6 +319,7 @@ node --experimental-specifier-resolution=node -e "import('spacegraphjs')"
 ```
 
 **Recovery:**
+
 ```bash
 # Option 1: Add .js extensions to all imports
 # src/index.ts
@@ -325,6 +339,7 @@ export { SpaceGraph } from './SpaceGraph.js';  // Add .js
 ### R7: Camera Controls Broken
 
 **Prevention (Day 5):**
+
 ```typescript
 // Use simplified, tested controls
 // Include visual feedback
@@ -344,6 +359,7 @@ document.body.appendChild(instructions);
 ```
 
 **Detection:**
+
 ```javascript
 // In browser console
 // Try rotating - camera should move
@@ -356,6 +372,7 @@ document.body.appendChild(instructions);
 ```
 
 **Recovery:**
+
 ```typescript
 // Fallback: Use OrbitControls from three/examples
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
@@ -373,6 +390,7 @@ this.controls.update();
 ### R8: Build Size Too Large
 
 **Prevention (Day 1):**
+
 ```json
 // vite.config.ts
 export default defineConfig({
@@ -387,16 +405,17 @@ export default defineConfig({
 ```
 
 **Detection:**
+
 ```bash
-# Day 11: Check bundle size
 npm pack
 tar -tzf spacegraphjs-*.tgz | grep dist
-gzip -c dist/spacegraphjs.js | wc -c  # Should be <100KB
+gzip -c dist/spacegraphjs.js | wc -c
 
 # If >500KB, investigate
 ```
 
 **Recovery:**
+
 ```bash
 # 1. Check what's being bundled
 npm run build -- --debug
@@ -416,6 +435,7 @@ npm run build -- --debug
 ### R9: Browser Compatibility
 
 **Prevention (Day 5):**
+
 ```typescript
 // Test in multiple browsers
 // Minimum support:
@@ -426,20 +446,21 @@ npm run build -- --debug
 
 // Add browser detection
 function checkBrowserSupport(): { supported: boolean; message?: string } {
-  const ua = navigator.userAgent;
-  
-  // Check for ES6 support
-  try {
-    new Function('return class Test {}')();
-  } catch {
-    return { supported: false, message: 'ES6 not supported' };
-  }
-  
-  return { supported: true };
+    const ua = navigator.userAgent;
+
+    // Check for ES6 support
+    try {
+        new Function('return class Test {}')();
+    } catch {
+        return { supported: false, message: 'ES6 not supported' };
+    }
+
+    return { supported: true };
 }
 ```
 
 **Detection:**
+
 ```bash
 # Day 5: Test in multiple browsers
 # Chrome: Open demo/index.html
@@ -453,6 +474,7 @@ function checkBrowserSupport(): { supported: boolean; message?: string } {
 ```
 
 **Recovery:**
+
 ```typescript
 // If Safari issues:
 // Add webkit prefixes
@@ -471,18 +493,20 @@ function checkBrowserSupport(): { supported: boolean; message?: string } {
 ### R10: Node.js Version Mismatch
 
 **Prevention (Day 1):**
+
 ```json
 {
-  "engines": {
-    "node": ">=18.0.0"
-  },
-  "scripts": {
-    "preinstall": "node -e \"if(process.version<'v18')process.exit(1)\""
-  }
+    "engines": {
+        "node": ">=18.0.0"
+    },
+    "scripts": {
+        "preinstall": "node -e \"if(process.version<'v18')process.exit(1)\""
+    }
 }
 ```
 
 **Detection:**
+
 ```bash
 # npm will show warning if engines don't match
 # npm WARN EBADENGINE Unsupported engine {
@@ -492,6 +516,7 @@ function checkBrowserSupport(): { supported: boolean; message?: string } {
 ```
 
 **Recovery:**
+
 ```bash
 # Document in README:
 # "Requires Node.js 18 or higher"
@@ -509,7 +534,6 @@ function checkBrowserSupport(): { supported: boolean; message?: string } {
 
 - [ ] **Build succeeds:** `npm run build` completes without errors
 - [ ] **Types export:** `dist/types/index.d.ts` exists and is valid
-- [ ] **Bundle size:** <100KB gzipped (excluding three.js)
 - [ ] **Fresh install:** Works in empty directory
 - [ ] **Demo renders:** 3 nodes + 3 edges visible
 - [ ] **Controls work:** Rotate, zoom functional
@@ -561,7 +585,6 @@ npm install /path/to/spacegraphjs
 npm install three
 # Create test file, verify import works
 
-# 4. Check bundle size
 gzip -c dist/spacegraphjs.js | wc -c
 
 # 5. Run demo one more time
@@ -655,13 +678,13 @@ npm publish --tag alpha
 
 ## Success Metrics (With Contingencies)
 
-| Metric | Target | If Missed, Do This |
-|--------|--------|-------------------|
-| npm downloads (Week 1) | 50 | Post to more channels (Reddit, Dev.to) |
-| Matrix members (Week 1) | 10 | Personal outreach to interested users |
-| GitHub stars (Week 1) | 10 | Add star badge, mention in articles |
-| Bug reports (Week 1) | 0-2 | Good! If >5, pause and fix fundamentals |
-| Time to first response | <24h | Set up notifications |
+| Metric                  | Target | If Missed, Do This                      |
+| ----------------------- | ------ | --------------------------------------- |
+| npm downloads (Week 1)  | 50     | Post to more channels (Reddit, Dev.to)  |
+| Matrix members (Week 1) | 10     | Personal outreach to interested users   |
+| GitHub stars (Week 1)   | 10     | Add star badge, mention in articles     |
+| Bug reports (Week 1)    | 0-2    | Good! If >5, pause and fix fundamentals |
+| Time to first response  | <24h   | Set up notifications                    |
 
 ---
 
@@ -675,6 +698,7 @@ npm publish --tag alpha
 4. **Critical bug:** → Hotfix within 48 hours, transparent communication
 
 **The project cannot fail if:**
+
 - You ship working code (Phase A)
 - You verify installation works (Days 11-12)
 - You respond to issues quickly (Launch +1)
@@ -683,13 +707,13 @@ npm publish --tag alpha
 
 ## Summary: Contingency Coverage
 
-| Risk Category | Coverage |
-|---------------|----------|
+| Risk Category      | Coverage                             |
+| ------------------ | ------------------------------------ |
 | Technical (R1-R10) | ✅ Prevention + Detection + Recovery |
-| Documentation | ✅ Verification + Troubleshooting |
-| npm Publishing | ✅ Name check + Dry run + Rollback |
-| Community | ✅ Matrix setup + Response plan |
-| Emergency | ✅ Hotfix procedure + Deprecation |
+| Documentation      | ✅ Verification + Troubleshooting    |
+| npm Publishing     | ✅ Name check + Dry run + Rollback   |
+| Community          | ✅ Matrix setup + Response plan      |
+| Emergency          | ✅ Hotfix procedure + Deprecation    |
 
 ---
 

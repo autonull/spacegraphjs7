@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Physics Engine - SpaceGraphJS</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            overflow: hidden;
+            background-color: #0d0d12;
+            font-family: system-ui;
+            color: white;
+        }
+
+        #container {
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .header {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 10;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            padding: 16px 24px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .header h1 {
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+
+        .header p {
+            color: #888;
+            font-size: 14px;
+        }
+
+        .nav-link {
+            color: #3b82f6;
+            text-decoration: none;
+            font-size: 14px;
+            margin-bottom: 8px;
+            display: inline-block;
+        }
+
+        .nav-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <a href="./index.html" class="nav-link">← Back to Gallery</a>
+        <h1>Physics Engine</h1>
+        <p>Drag nodes to see collision boundaries and spring forces</p>
+    </div>
+    <div id="container"></div>
+
+    <script type="module">
+        import { SpaceGraph, PhysicsPlugin } from '../src/index.ts';
+
+        // Create some connected nodes to demonstrate physics
+        const nodes = [];
+        const edges = [];
+
+        // Central node
+        nodes.push({
+            id: 'center',
+            type: 'ShapeNode',
+            label: 'Core',
+            position: [0, 0, 0],
+            data: { shape: 'sphere', color: 0x8b5cf6 },
+        });
+
+        // Satellites
+        for (let i = 0; i < 8; i++) {
+            const angle = (i / 8) * Math.PI * 2;
+            const radius = 200;
+            const id = `sat_${i}`;
+
+            nodes.push({
+                id: id,
+                type: 'ShapeNode',
+                label: `Node ${i}`,
+                position: [Math.cos(angle) * radius, Math.sin(angle) * radius, 0],
+                data: { shape: 'box', color: 0x3b82f6 },
+            });
+
+            edges.push({
+                id: `e_${i}`,
+                source: 'center',
+                target: id,
+                type: 'FlowEdge'
+            });
+
+            // Connect ring
+            const nextI = (i + 1) % 8;
+            edges.push({
+                id: `ring_${i}`,
+                source: id,
+                target: `sat_${nextI}`,
+                type: 'DottedEdge'
+            });
+        }
+
+        const sg = SpaceGraph.create('#container', { nodes, edges });
+
+        // Initialize the Physics plugin
+        const physics = new PhysicsPlugin({
+            gravity: 0,
+            friction: 0.8,
+            bounce: 0.5,
+            enableCollisions: true
+        });
+        sg.pluginManager.add(physics);
+
+        // Make interactive
+        const interaction = sg.pluginManager.getPlugin('InteractionPlugin');
+        if (interaction) {
+            // Ensure nodes can be drag-and-dropped
+            interaction.settings.enableDrag = true;
+        }
+
+        // Apply force over time or auto layout to keep them bouncy
+        const forceLayout = sg.pluginManager.getPlugin('ForceLayout');
+        if (forceLayout) {
+            forceLayout.settings.repulsion = 5000;
+            forceLayout.settings.springLength = 150;
+        }
+
+        sg.render();
+    </script>
+</body>
+
+</html>

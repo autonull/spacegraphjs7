@@ -7,13 +7,13 @@
 
 ## Critical Path (12-16 hours total)
 
-| Phase | Task | Time | Gates |
-|-------|------|------|-------|
-| **P0** | Working prototype | 4-6h | Must render a graph |
-| **P1** | npm package prep | 2h | Must pass install test |
-| **P2** | Documentation | 3h | QUICKSTART must work |
-| **P3** | Publish + announce | 2h | Only if P0-P2 pass |
-| **P4** | Community setup | 1h | Matrix, Sponsors |
+| Phase  | Task               | Time | Gates                  |
+| ------ | ------------------ | ---- | ---------------------- |
+| **P0** | Working prototype  | 4-6h | Must render a graph    |
+| **P1** | npm package prep   | 2h   | Must pass install test |
+| **P2** | Documentation      | 3h   | QUICKSTART must work   |
+| **P3** | Publish + announce | 2h   | Only if P0-P2 pass     |
+| **P4** | Community setup    | 1h   | Matrix, Sponsors       |
 
 **Total:** 12-16 hours (not 8, not 27)
 
@@ -44,80 +44,90 @@ npm link /path/to/spacegraphjs
 ```html
 <!DOCTYPE html>
 <html>
-<head>
-  <meta charset="UTF-8" />
-  <title>SpaceGraphJS Prototype Test</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    #container { width: 100vw; height: 100vh; overflow: hidden; }
-  </style>
-</head>
-<body>
-  <div id="container"></div>
-  <script type="module">
-    import { SpaceGraph } from 'spacegraphjs';
-    
-    console.log('SpaceGraphJS loaded:', typeof SpaceGraph);
-    
-    try {
-      const graph = SpaceGraph.create('#container', {
-        nodes: [
-          { 
-            id: 'node-a', 
-            type: 'ShapeNode', 
-            label: 'Node A', 
-            position: [0, 0, 0],
-            data: { color: 0x3366ff }
-          },
-          { 
-            id: 'node-b', 
-            type: 'ShapeNode', 
-            label: 'Node B', 
-            position: [150, 0, 0],
-            data: { color: 0xff6633 }
-          },
-          { 
-            id: 'node-c', 
-            type: 'ShapeNode', 
-            label: 'Node C', 
-            position: [75, 130, 0],
-            data: { color: 0x33ff66 }
-          }
-        ],
-        edges: [
-          { 
-            id: 'edge-ab', 
-            source: 'node-a', 
-            target: 'node-b', 
-            type: 'Edge' 
-          },
-          { 
-            id: 'edge-bc', 
-            source: 'node-b', 
-            target: 'node-c', 
-            type: 'Edge' 
-          },
-          { 
-            id: 'edge-ca', 
-            source: 'node-c', 
-            target: 'node-a', 
-            type: 'Edge' 
-          }
-        ]
-      });
-      
-      graph.render();
-      console.log('✓ Graph rendered successfully');
-    } catch (error) {
-      console.error('✗ Graph render failed:', error);
-      document.body.innerHTML = '<h1 style="color: red; padding: 20px;">ERROR: ' + error.message + '</h1>';
-    }
-  </script>
-</body>
+    <head>
+        <meta charset="UTF-8" />
+        <title>SpaceGraphJS Prototype Test</title>
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+            #container {
+                width: 100vw;
+                height: 100vh;
+                overflow: hidden;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="container"></div>
+        <script type="module">
+            import { SpaceGraph } from 'spacegraphjs';
+
+            console.log('SpaceGraphJS loaded:', typeof SpaceGraph);
+
+            try {
+                const graph = SpaceGraph.create('#container', {
+                    nodes: [
+                        {
+                            id: 'node-a',
+                            type: 'ShapeNode',
+                            label: 'Node A',
+                            position: [0, 0, 0],
+                            data: { color: 0x3366ff },
+                        },
+                        {
+                            id: 'node-b',
+                            type: 'ShapeNode',
+                            label: 'Node B',
+                            position: [150, 0, 0],
+                            data: { color: 0xff6633 },
+                        },
+                        {
+                            id: 'node-c',
+                            type: 'ShapeNode',
+                            label: 'Node C',
+                            position: [75, 130, 0],
+                            data: { color: 0x33ff66 },
+                        },
+                    ],
+                    edges: [
+                        {
+                            id: 'edge-ab',
+                            source: 'node-a',
+                            target: 'node-b',
+                            type: 'Edge',
+                        },
+                        {
+                            id: 'edge-bc',
+                            source: 'node-b',
+                            target: 'node-c',
+                            type: 'Edge',
+                        },
+                        {
+                            id: 'edge-ca',
+                            source: 'node-c',
+                            target: 'node-a',
+                            type: 'Edge',
+                        },
+                    ],
+                });
+
+                graph.render();
+                console.log('✓ Graph rendered successfully');
+            } catch (error) {
+                console.error('✗ Graph render failed:', error);
+                document.body.innerHTML =
+                    '<h1 style="color: red; padding: 20px;">ERROR: ' + error.message + '</h1>';
+            }
+        </script>
+    </body>
 </html>
 ```
 
 **Test checklist:**
+
 - [ ] File opens in browser without errors
 - [ ] Three nodes render (different colors)
 - [ ] Three edges connect nodes
@@ -133,36 +143,39 @@ npm link /path/to/spacegraphjs
 ### □ 0.2 Test Edge Cases (1-2h)
 
 **Test 1: Empty graph**
+
 ```javascript
 const graph = SpaceGraph.create('#container', {
-  nodes: [],
-  edges: []
+    nodes: [],
+    edges: [],
 });
 graph.render();
 // Should not crash
 ```
 
 **Test 2: Single node**
+
 ```javascript
 const graph = SpaceGraph.create('#container', {
-  nodes: [{ id: 'a', type: 'ShapeNode', label: 'Single' }],
-  edges: []
+    nodes: [{ id: 'a', type: 'ShapeNode', label: 'Single' }],
+    edges: [],
 });
 graph.render();
 // Should render one node
 ```
 
 **Test 3: Large graph (performance)**
+
 ```javascript
 const nodes = [];
 const edges = [];
 for (let i = 0; i < 100; i++) {
-  nodes.push({
-    id: `node-${i}`,
-    type: 'ShapeNode',
-    label: `Node ${i}`,
-    position: [Math.random() * 1000, Math.random() * 1000, 0]
-  });
+    nodes.push({
+        id: `node-${i}`,
+        type: 'ShapeNode',
+        label: `Node ${i}`,
+        position: [Math.random() * 1000, Math.random() * 1000, 0],
+    });
 }
 const graph = SpaceGraph.create('#container', { nodes, edges });
 graph.render();
@@ -170,6 +183,7 @@ graph.render();
 ```
 
 **Checklist:**
+
 - [ ] Empty graph doesn't crash
 - [ ] Single node renders
 - [ ] 100 nodes maintain 60 FPS
@@ -180,6 +194,7 @@ graph.render();
 ### □ 0.3 Fix Any Bugs Found (variable)
 
 **If you find bugs:**
+
 1. Fix them
 2. Rebuild: `npm run build`
 3. Re-test: Reload test file
@@ -195,37 +210,34 @@ graph.render();
 
 ```json
 {
-  "name": "spacegraphjs",
-  "version": "6.0.0-alpha.1",
-  "description": "The first self-building UI framework — a Zoomable User Interface (ZUI) library powered by AI vision",
-  "type": "module",
-  "main": "./dist/spacegraphjs.js",
-  "module": "./dist/spacegraphjs.js",
-  "types": "./dist/types/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/types/index.d.ts",
-      "import": "./dist/spacegraphjs.js"
+    "name": "spacegraphjs",
+    "version": "6.0.0-alpha.1",
+    "description": "The first self-building UI framework — a Zoomable User Interface (ZUI) library powered by AI vision",
+    "type": "module",
+    "main": "./dist/spacegraphjs.js",
+    "module": "./dist/spacegraphjs.js",
+    "types": "./dist/types/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/types/index.d.ts",
+            "import": "./dist/spacegraphjs.js"
+        }
+    },
+    "files": ["dist", "README.md", "LICENSE"],
+    "sideEffects": false,
+    "peerDependencies": {
+        "three": ">=0.150.0"
+    },
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/autonull/spacegraphjs.git"
     }
-  },
-  "files": [
-    "dist",
-    "README.md",
-    "LICENSE"
-  ],
-  "sideEffects": false,
-  "peerDependencies": {
-    "three": ">=0.150.0"
-  },
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/autonull/spacegraphjs.git"
-  }
 }
 ```
 
 **Checklist:**
+
 - [ ] Name is `spacegraphjs`
 - [ ] Version is `6.0.0-alpha.1`
 - [ ] `type: "module"` is set
@@ -246,7 +258,6 @@ npm run build
 ls -la dist/
 # Expected: spacegraphjs.js, types/
 
-# Check bundle size
 gzip -c dist/spacegraphjs.js | wc -c
 # Expected: <500KB gzipped
 
@@ -256,10 +267,10 @@ ls dist/types/
 ```
 
 **Checklist:**
+
 - [ ] Build completes without errors
 - [ ] `dist/spacegraphjs.js` exists
 - [ ] `dist/types/index.d.ts` exists
-- [ ] Bundle size <500KB gzipped
 - [ ] No console warnings during build
 
 ---
@@ -285,6 +296,7 @@ tar -tzf spacegraphjs-6.0.0-alpha.1.tgz
 ```
 
 **Checklist:**
+
 - [ ] Only expected files are included
 - [ ] No `.git/`, `node_modules/`, source files
 - [ ] No `.env`, secrets, or sensitive files
@@ -315,6 +327,7 @@ node test.mjs
 ```
 
 **Checklist:**
+
 - [ ] Package installs without errors
 - [ ] Three.js installs as peer dependency
 - [ ] Import works in Node.js
@@ -341,9 +354,9 @@ node test.mjs
 **Critical test:** Give QUICKSTART.md to someone who's never seen the code. Watch them follow it. Don't help them. Note where they get stuck.
 
 **Checklist:**
+
 - [ ] All commands work as written
 - [ ] All code snippets are valid
-- [ ] Time to complete is <10 minutes
 - [ ] No missing steps
 - [ ] Tested by a stranger (ideal)
 
@@ -353,7 +366,7 @@ node test.mjs
 
 **Keep it under 150 lines:**
 
-```markdown
+````markdown
 # SpaceGraphJS
 
 [![npm](https://img.shields.io/npm/v/spacegraphjs.svg)](https://www.npmjs.com/package/spacegraphjs)
@@ -371,6 +384,7 @@ It sees what it builds, verifies quality autonomously, and self-corrects.
 ```bash
 npm install spacegraphjs three
 ```
+````
 
 [See QUICKSTART.md](./QUICKSTART.md) for a 5-minute guide.
 
@@ -389,7 +403,8 @@ npm install spacegraphjs three
 ## License
 
 MIT
-```
+
+````
 
 **Checklist:**
 - [ ] Under 150 lines
@@ -418,9 +433,10 @@ npm publish --tag alpha
 # Test public install
 mkdir /tmp/sg-public-test && cd /tmp/sg-public-test
 npm install spacegraphjs@alpha three
-```
+````
 
 **Checklist:**
+
 - [ ] `npm publish --tag alpha` completes
 - [ ] Package visible on npmjs.com
 - [ ] Tag is `alpha` (not `latest`)
@@ -435,6 +451,7 @@ npm install spacegraphjs@alpha three
 **Post to:** Dev.to (fastest audience, no approval needed)
 
 **Structure:**
+
 1. The problem (AI iteration hell) — 2 paragraphs
 2. The insight (vision-closed development) — 1 paragraph
 3. The solution (SpaceGraphJS) — 2 paragraphs
@@ -444,6 +461,7 @@ npm install spacegraphjs@alpha three
 **Total:** ~500 words, 2 hours max
 
 **Checklist:**
+
 - [ ] Article is published
 - [ ] Link works
 - [ ] npm install command is correct
@@ -466,6 +484,7 @@ npm install spacegraphjs@alpha three
 ```
 
 **Checklist:**
+
 - [ ] Room created
 - [ ] Description is set
 - [ ] Join link works
@@ -486,6 +505,7 @@ npm install spacegraphjs@alpha three
 ```
 
 **Checklist:**
+
 - [ ] Sponsorship page is live
 - [ ] Badge renders in README
 - [ ] Link works
@@ -497,6 +517,7 @@ npm install spacegraphjs@alpha three
 ### □ 5.1 Post Announcements
 
 **GitHub Discussions:**
+
 ```
 Title: SpaceGraphJS Alpha is Live!
 
@@ -509,6 +530,7 @@ Community: https://matrix.to/#/#spacegraphjs:matrix.org
 ```
 
 **Matrix:**
+
 ```
 🚀 SpaceGraphJS Alpha is live!
 
@@ -524,13 +546,13 @@ GitHub: [link]
 
 ## GATES: Do Not Proceed Until...
 
-| Gate | Requirement | Test |
-|------|-------------|------|
-| **Gate 0** | Prototype works | Test file renders 3 nodes + 3 edges |
-| **Gate 1** | Build succeeds | `npm run build` completes |
-| **Gate 2** | Fresh install works | `npm install` in empty directory |
-| **Gate 3** | QUICKSTART works | Stranger can follow in <10 min |
-| **Gate 4** | All tests pass | No console errors in test file |
+| Gate       | Requirement         | Test                                |
+| ---------- | ------------------- | ----------------------------------- |
+| **Gate 0** | Prototype works     | Test file renders 3 nodes + 3 edges |
+| **Gate 1** | Build succeeds      | `npm run build` completes           |
+| **Gate 2** | Fresh install works | `npm install` in empty directory    |
+| **Gate 3** | QUICKSTART works    | Stranger can follow in <10 min      |
+| **Gate 4** | All tests pass      | No console errors in test file      |
 
 **If any gate fails:** Fix the issue. Re-test. Do not publish.
 
@@ -575,15 +597,16 @@ Day 3 (if needed):
 
 ## Success Metrics (Week 1)
 
-| Metric | Target | Why |
-|--------|--------|-----|
-| npm downloads | 50 | Validates install works |
-| Matrix members | 10 | Validates community interest |
-| GitHub stars | 10 | Validates project appeal |
-| 1 external issue | Yes | Validates engagement |
-| **0 bug reports** | **Critical** | Validates quality |
+| Metric            | Target       | Why                          |
+| ----------------- | ------------ | ---------------------------- |
+| npm downloads     | 50           | Validates install works      |
+| Matrix members    | 10           | Validates community interest |
+| GitHub stars      | 10           | Validates project appeal     |
+| 1 external issue  | Yes          | Validates engagement         |
+| **0 bug reports** | **Critical** | Validates quality            |
 
 **If you get bug reports in Week 1:**
+
 1. Acknowledge immediately
 2. Fix within 48 hours
 3. Re-publish as `alpha.2`
@@ -600,12 +623,14 @@ Day 3 (if needed):
 - Trust takes months to build, seconds to lose
 
 **The proper sequence:**
+
 1. Make it work (prototype)
 2. Make sure it works for others (fresh install test)
 3. Make sure others can use it (QUICKSTART test)
 4. THEN publish
 
 **Not:**
+
 1. Publish
 2. Hope it works
 3. Fix bugs publicly

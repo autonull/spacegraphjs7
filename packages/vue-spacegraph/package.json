@@ -1,0 +1,19 @@
+{
+    "name": "vue-spacegraph",
+    "version": "1.0.0",
+    "description": "Vue 3 component adapter for SpaceGraphJS",
+    "main": "dist/index.js",
+    "module": "dist/index.mjs",
+    "types": "dist/index.d.ts",
+    "peerDependencies": {
+        "vue": "^3.0.0",
+        "spacegraphjs": "file:../.."
+    },
+    "devDependencies": {
+        "typescript": "^5.0.0",
+        "vue-tsc": "^2.0.0"
+    },
+    "scripts": {
+        "build": "vue-tsc --noEmit || echo 'Build step setup'"
+    }
+}

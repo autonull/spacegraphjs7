@@ -20,15 +20,17 @@
 
 ### Paper 1: Vision-Closed Development (Primary Contribution)
 
-**Title:** *"Vision-Closed Development: Autonomous Visual Verification in AI-Assisted UI Construction"*
+**Title:** _"Vision-Closed Development: Autonomous Visual Verification in AI-Assisted UI Construction"_
 
 **Target Venues:**
+
 - **CHI 2026** (Conference on Human Factors in Computing Systems)
 - **UIST 2026** (User Interface Software and Technology)
 - **ICSE 2026** (International Conference on Software Engineering)
 - **FSE 2026** (Foundations of Software Engineering)
 
 **Abstract:**
+
 ```
 AI-assisted software development promises exponential productivity gains,
 but suffers from a fundamental limitation: the AI cannot see what it builds.
@@ -52,43 +54,45 @@ UI development.
 ```
 
 **Key Contributions:**
+
 1. **Paradigm:** Vision-Closed Development (first formal definition)
 2. **System:** Six vision models integrated into development pipeline
 3. **Evaluation:** 60x iteration improvement, 95% auto-fix rate
 4. **Artifacts:** Open-source implementation (175K LOC synthesized)
 
 **Paper Structure:**
+
 ```
 1. Introduction
    • The perception gap in AI-assisted development
    • Vision-Closed Development paradigm
-   
+
 2. Related Work
    • AI-assisted development (Copilot, CodeT5, etc.)
    • Visual verification (screenshot testing, visual regression)
    • AI vision for UI (layout analysis, accessibility checking)
-   
+
 3. System Architecture
    • SpaceGraphJS codebase synthesis (5 repos → 1)
    • Six vision models (LQ-Net, TLA, CHE, ODN, VHS, EQA)
    • Integration points (Vite plugin, Vitest assertions, Playwright E2E)
-   
+
 4. Implementation
    • Model architectures (ResNet-50, Mask R-CNN backbones)
    • Training data (100K+ labeled graph layouts)
    • Inference optimization (<50ms on WebGPU)
-   
+
 5. Evaluation
    • Study 1: Iteration time (30 min → 30 sec)
    • Study 2: Fix accuracy (95% autonomous)
    • Study 3: Performance overhead (<50ms)
    • Study 4: Developer satisfaction (NPS +75)
-   
+
 6. Limitations & Future Work
    • Domain specificity (graphs/ZUIs)
    • Training data requirements
    • Generalization to other UI paradigms
-   
+
 7. Conclusion
    • Vision-Closed Development paradigm
    • 60x improvement demonstrated
@@ -96,6 +100,7 @@ UI development.
 ```
 
 **Timeline:**
+
 - **Month 1-2:** Implement full system
 - **Month 3:** Run user studies (24 developers)
 - **Month 4:** Write paper, prepare artifacts
@@ -107,14 +112,16 @@ UI development.
 
 ### Paper 3: Performance Optimization for ZUIs
 
-**Title:** *"60 FPS at 1000 Nodes: Performance Optimization Techniques for Large-Scale Zoomable User Interfaces"*
+**Title:** _"60 FPS at 1000 Nodes: Performance Optimization Techniques for Large-Scale Zoomable User Interfaces"_
 
 **Target Venues:**
+
 - **WebSci 2026** (Web Science Conference)
 - **WWW 2026** (The Web Conference)
 - **CGI 2026** (Computer Graphics International)
 
 **Abstract:**
+
 ```
 Zoomable User Interfaces (ZUIs) enable exploration of large information spaces
 through smooth zooming and panning. However, maintaining 60 FPS at scale
@@ -135,12 +142,14 @@ ZUI libraries (React Flow, Cytoscape.js, D3).
 ```
 
 **Key Contributions:**
+
 1. **Techniques:** Five optimization strategies for ZUIs
 2. **Benchmarks:** Comprehensive performance metrics
 3. **Comparison:** 4-10x improvement over state-of-the-art
 4. **Implementation:** Open-source reference implementation
 
 **Timeline:**
+
 - **Month 1-2:** Implement optimizations
 - **Month 3:** Benchmark against competitors
 - **Month 4:** Write paper
@@ -150,14 +159,16 @@ ZUI libraries (React Flow, Cytoscape.js, D3).
 
 ### Paper 4: Open Hardware for AI Research
 
-**Title:** *"SpaceGraph Mini: An Open Hardware Platform for AI Vision Research in Human-Computer Interaction"*
+**Title:** _"SpaceGraph Mini: An Open Hardware Platform for AI Vision Research in Human-Computer Interaction"_
 
 **Target Venues:**
+
 - **TEI 2026** (Tangible, Embedded, and Interactive Systems)
 - **ISWC 2026** (International Symposium on Wearable Computers)
 - **HardwareX Journal** (Elsevier open hardware journal)
 
 **Abstract:**
+
 ```
 AI vision research in HCI requires accessible hardware platforms with adequate
 compute, thermal headroom, and openness for modification. Existing platforms
@@ -179,12 +190,14 @@ and independent researchers worldwide.
 ```
 
 **Key Contributions:**
+
 1. **Hardware:** Complete open hardware design
 2. **Characterization:** Thermal, performance benchmarks
 3. **Accessibility:** $249 price point, fully documented
 4. **Community:** 50 early adopter case studies
 
 **Timeline:**
+
 - **Month 2-4:** Hardware design
 - **Month 5-6:** Prototyping, validation
 - **Month 7:** Distribute to 50 early adopters
@@ -198,11 +211,12 @@ and independent researchers worldwide.
 
 ### Poster 1: Vision-Closed Development Overview
 
-**Title:** *"Vision-Closed Development: 60x Faster AI-Assisted UI Construction"*
+**Title:** _"Vision-Closed Development: 60x Faster AI-Assisted UI Construction"_
 
 **Size:** 48" × 36" (standard academic poster)
 
 **Sections:**
+
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                    VISION-CLOSED DEVELOPMENT                     │
@@ -250,6 +264,7 @@ and independent researchers worldwide.
 ```
 
 **Usage:**
+
 - CHI 2026 poster session
 - UIST 2026 poster session
 - University research symposia
@@ -259,9 +274,10 @@ and independent researchers worldwide.
 
 ### Poster 2: Six Vision Models
 
-**Title:** *"Six AI Vision Models for Autonomous UI Quality Assurance"*
+**Title:** _"Six AI Vision Models for Autonomous UI Quality Assurance"_
 
 **Sections:**
+
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │              SIX AI VISION MODELS FOR UI QUALITY                 │
@@ -320,6 +336,7 @@ and independent researchers worldwide.
 ```
 
 **Usage:**
+
 - AI/ML conferences (NeurIPS, ICML workshops)
 - Computer vision conferences (CVPR workshops)
 - Lab recruitment events
@@ -330,40 +347,42 @@ and independent researchers worldwide.
 
 ### Talk 1: 45-Minute Keynote
 
-**Title:** *"Vision-Closed Development: The End of AI Iteration Hell"*
+**Title:** _"Vision-Closed Development: The End of AI Iteration Hell"_
 
 **Target Venues:**
+
 - University CS department seminars
 - Industry tech talks (FAANG research labs)
 - Conference keynotes (CHI, UIST, ICSE)
 
 **Outline:**
+
 ```
 0:00-0:05  Introduction: The Perception Gap
            • Show broken AI iteration loop
            • Audience poll: "Who has experienced this?"
-           
+
 0:05-0:15  The Insight: What If AI Could See?
            • Vision-Closed Development paradigm
            • Six vision models overview
            • Live demo: AI fixes UI bug in 30 seconds
-           
+
 0:15-0:25  System Architecture
            • Codebase synthesis (5 repos → 1)
            • Model architectures
            • Integration points
-           
+
 0:25-0:35  Evaluation Results
            • 60x iteration improvement
            • 95% autonomous fix rate
            • <50ms overhead
            • User study results
-           
+
 0:35-0:40  Broader Impact
            • Open-source release
            • Open hardware platform
            • Inspiring future research
-           
+
 0:40-0:45  Q&A
            • 3-5 questions
 ```
@@ -376,14 +395,16 @@ and independent researchers worldwide.
 
 ### Talk 2: 20-Minute Conference Talk
 
-**Title:** *"SpaceGraphJS: Self-Building UIs with AI Vision"*
+**Title:** _"SpaceGraphJS: Self-Building UIs with AI Vision"_
 
 **Target Venues:**
+
 - JSConf, Frontend conferences
 - AI/ML meetups
 - Local tech meetups
 
 **Outline:**
+
 ```
 0:00-0:03  The Problem: AI Iteration Hell
 0:03-0:08  The Solution: Vision-Closed Development
@@ -398,14 +419,16 @@ and independent researchers worldwide.
 
 ### Talk 3: 5-Minute Lightning Talk
 
-**Title:** *"60x Faster AI Development with Vision-Closed Loops"*
+**Title:** _"60x Faster AI Development with Vision-Closed Loops"_
 
 **Target Venues:**
+
 - Conference lightning talks
 - Lab meeting updates
 - Quick research updates
 
 **Outline:**
+
 ```
 0:00-0:01  Problem: AI can't see what it builds
 0:01-0:02  Solution: Embed AI vision
@@ -425,6 +448,7 @@ and independent researchers worldwide.
 **Description:** 100,000+ labeled graph layouts with expert ratings
 
 **Contents:**
+
 - Layout images (512×512 RGB)
 - Expert ratings (1-5 scale) for aesthetics, clarity, usability
 - Annotated issues with bounding boxes
@@ -435,6 +459,7 @@ and independent researchers worldwide.
 **Access:** Hugging Face Datasets, Zenodo
 
 **Citation:**
+
 ```bibtex
 @dataset{spacegraph-layouts-2026,
   title = {SpaceGraphJS Graph Layout Quality Corpus},
@@ -453,6 +478,7 @@ and independent researchers worldwide.
 **Description:** Standardized benchmark for UI vision models
 
 **Contents:**
+
 - 10,000 UI screenshots (graphs, dashboards, forms)
 - Annotations for: overlaps, legibility, color issues, hierarchy
 - Baseline model performance metrics
@@ -468,14 +494,14 @@ and independent researchers worldwide.
 
 ### Target Labs & Researchers
 
-| Lab/Researcher | Institution | Fit | Approach |
-|----------------|-------------|-----|----------|
-| **Manolis Savva** | Simon Fraser University | Visualization + AI | Email with Paper 1 preprint |
-| **Jeffrey Heer** | University of Washington | Visualization systems | Demo at lab meeting |
-| **Kayvon Fatahalian** | Stanford | Graphics + ML | Share performance paper |
-| **Fei-Fei Li** | Stanford | Computer vision | Vision models collaboration |
-| **Robert C. Miller** | MIT | Human-AI interaction | Vision-closed paradigm |
-| **Björn Hartmann** | UC Berkeley | HCI + AI | Demo + user study collab |
+| Lab/Researcher        | Institution              | Fit                   | Approach                    |
+| --------------------- | ------------------------ | --------------------- | --------------------------- |
+| **Manolis Savva**     | Simon Fraser University  | Visualization + AI    | Email with Paper 1 preprint |
+| **Jeffrey Heer**      | University of Washington | Visualization systems | Demo at lab meeting         |
+| **Kayvon Fatahalian** | Stanford                 | Graphics + ML         | Share performance paper     |
+| **Fei-Fei Li**        | Stanford                 | Computer vision       | Vision models collaboration |
+| **Robert C. Miller**  | MIT                      | Human-AI interaction  | Vision-closed paradigm      |
+| **Björn Hartmann**    | UC Berkeley              | HCI + AI              | Demo + user study collab    |
 
 ### Collaboration Proposal Template
 
@@ -513,26 +539,26 @@ https://spacegraphjs.dev
 
 ### Year 1: Foundation
 
-| Month | Milestone | Deliverables |
-|-------|-----------|--------------|
-| M1-2 | Implement full system | Working SpaceGraphJS, 6 vision models |
-| M3 | User studies (24 developers) | Study data, recordings |
-| M4 | Paper 1 writing | CHI/UIST submission |
-| M5 | Paper 2 writing | MSR/SANER submission |
-| M6 | Paper 3 writing | WebSci/WWW submission |
-| M7-8 | Hardware design | Schematics, CAD files |
-| M9 | Paper 4 writing | TEI/ISWC submission |
-| M10-12 | Review process, revisions | Camera-ready papers |
+| Month  | Milestone                    | Deliverables                          |
+| ------ | ---------------------------- | ------------------------------------- |
+| M1-2   | Implement full system        | Working SpaceGraphJS, 6 vision models |
+| M3     | User studies (24 developers) | Study data, recordings                |
+| M4     | Paper 1 writing              | CHI/UIST submission                   |
+| M5     | Paper 2 writing              | MSR/SANER submission                  |
+| M6     | Paper 3 writing              | WebSci/WWW submission                 |
+| M7-8   | Hardware design              | Schematics, CAD files                 |
+| M9     | Paper 4 writing              | TEI/ISWC submission                   |
+| M10-12 | Review process, revisions    | Camera-ready papers                   |
 
 ### Year 2: Expansion
 
-| Month | Milestone | Deliverables |
-|-------|-----------|--------------|
-| M13-14 | Present at conferences | CHI, UIST, ICSE talks |
-| M15-16 | Dataset release | Layout corpus, UI benchmark |
-| M17-18 | Hardware distribution | 50 early adopters |
-| M19-20 | Follow-up research | Journal extensions |
-| M21-24 | PhD recruitment | 2-3 PhD students on project |
+| Month  | Milestone              | Deliverables                |
+| ------ | ---------------------- | --------------------------- |
+| M13-14 | Present at conferences | CHI, UIST, ICSE talks       |
+| M15-16 | Dataset release        | Layout corpus, UI benchmark |
+| M17-18 | Hardware distribution  | 50 early adopters           |
+| M19-20 | Follow-up research     | Journal extensions          |
+| M21-24 | PhD recruitment        | 2-3 PhD students on project |
 
 ---
 
@@ -540,13 +566,13 @@ https://spacegraphjs.dev
 
 ### Target Citations (Year 1-3)
 
-| Metric | Target | Strategy |
-|--------|--------|----------|
-| Paper 1 citations | 100+ | CHI/UIST best paper candidate |
+| Metric              | Target   | Strategy                           |
+| ------------------- | -------- | ---------------------------------- |
+| Paper 1 citations   | 100+     | CHI/UIST best paper candidate      |
 | Paper 2-4 citations | 50+ each | Strong methodology, open artifacts |
-| GitHub stars | 2,000+ | Active maintenance, demos |
-| Dataset downloads | 500+ | Hugging Face promotion |
-| Hardware adopters | 200+ | Open hardware community |
+| GitHub stars        | 2,000+   | Active maintenance, demos          |
+| Dataset downloads   | 500+     | Hugging Face promotion             |
+| Hardware adopters   | 200+     | Open hardware community            |
 
 ### Citation Tracking
 
@@ -585,33 +611,33 @@ https://spacegraphjs.dev
 
 ### Academic Impact
 
-| Metric | Target (Year 3) |
-|--------|-----------------|
-| Papers published | 4+ (CHI, UIST, MSR, TEI) |
-| Total citations | 300+ |
-| h-index contribution | 4 |
-| Best paper awards | 1+ |
-| PhD theses using SpaceGraphJS | 5+ |
-| Course adoptions | 10+ universities |
+| Metric                        | Target (Year 3)          |
+| ----------------------------- | ------------------------ |
+| Papers published              | 4+ (CHI, UIST, MSR, TEI) |
+| Total citations               | 300+                     |
+| h-index contribution          | 4                        |
+| Best paper awards             | 1+                       |
+| PhD theses using SpaceGraphJS | 5+                       |
+| Course adoptions              | 10+ universities         |
 
 ### Industry Impact
 
-| Metric | Target (Year 3) |
-|--------|-----------------|
-| npm downloads/month | 25,000+ |
-| GitHub stars | 2,000+ |
-| External contributors | 100+ |
-| Industry adoptions | 50+ companies |
-| Conference talks | 20+ |
+| Metric                | Target (Year 3) |
+| --------------------- | --------------- |
+| npm downloads/month   | 25,000+         |
+| GitHub stars          | 2,000+          |
+| External contributors | 100+            |
+| Industry adoptions    | 50+ companies   |
+| Conference talks      | 20+             |
 
 ### Open Science Impact
 
-| Metric | Target (Year 3) |
-|--------|-----------------|
-| Dataset downloads | 500+ |
-| Hardware adopters | 200+ |
-| Replication studies | 3+ |
-| Follow-up papers (external) | 10+ |
+| Metric                      | Target (Year 3) |
+| --------------------------- | --------------- |
+| Dataset downloads           | 500+            |
+| Hardware adopters           | 200+            |
+| Replication studies         | 3+              |
+| Follow-up papers (external) | 10+             |
 
 ---
 
@@ -619,13 +645,13 @@ https://spacegraphjs.dev
 
 ### Research Grants
 
-| Grant | Agency | Amount | Deadline | Fit |
-|-------|--------|--------|----------|-----|
-| **NSF CISE** | NSF (US) | $500K | Jan/Apr/Jul/Oct | AI + HCI + Visualization |
-| **ERC Starting Grant** | EU | €1.5M | Annual | Vision-Closed paradigm |
-| **Google Research Award** | Google | $60K | Annual | AI-assisted development |
-| **Mozilla Research Grant** | Mozilla | $150K | Annual | Open source + AI |
-| **NLnet Foundation** | NLnet | €50K | Rolling | Open hardware + AI |
+| Grant                      | Agency   | Amount | Deadline        | Fit                      |
+| -------------------------- | -------- | ------ | --------------- | ------------------------ |
+| **NSF CISE**               | NSF (US) | $500K  | Jan/Apr/Jul/Oct | AI + HCI + Visualization |
+| **ERC Starting Grant**     | EU       | €1.5M  | Annual          | Vision-Closed paradigm   |
+| **Google Research Award**  | Google   | $60K   | Annual          | AI-assisted development  |
+| **Mozilla Research Grant** | Mozilla  | $150K  | Annual          | Open source + AI         |
+| **NLnet Foundation**       | NLnet    | €50K   | Rolling         | Open hardware + AI       |
 
 ### Grant Proposal Outline (NSF CISE)
 
@@ -668,20 +694,20 @@ Deliverables:
 
 ## Summary: Academic Research Program
 
-| Component | Status | Timeline |
-|-----------|--------|----------|
-| **Paper 1:** Vision-Closed Development | Ready to write | M1-4 |
-| **Paper 3:** Performance Optimization | Ready to write | M1-5 |
-| **Paper 4:** Open Hardware | Ready to write | M2-9 |
-| **Poster 1:** Vision-Closed Overview | Ready to design | M3 |
-| **Poster 2:** Six Vision Models | Ready to design | M3 |
-| **Talk 1:** 45-min Keynote | Ready to deliver | M4+ |
-| **Talk 2:** 20-min Conference | Ready to deliver | M4+ |
-| **Talk 3:** 5-min Lightning | Ready to deliver | M4+ |
-| **Dataset 1:** Layout Corpus | Ready to publish | M6 |
-| **Dataset 2:** UI Vision Benchmark | Ready to publish | M6 |
-| **Collaborations:** 6 target labs | Outreach ready | M1-6 |
-| **Funding:** 5 grant opportunities | Proposals ready | M1-12 |
+| Component                              | Status           | Timeline |
+| -------------------------------------- | ---------------- | -------- |
+| **Paper 1:** Vision-Closed Development | Ready to write   | M1-4     |
+| **Paper 3:** Performance Optimization  | Ready to write   | M1-5     |
+| **Paper 4:** Open Hardware             | Ready to write   | M2-9     |
+| **Poster 1:** Vision-Closed Overview   | Ready to design  | M3       |
+| **Poster 2:** Six Vision Models        | Ready to design  | M3       |
+| **Talk 1:** 45-min Keynote             | Ready to deliver | M4+      |
+| **Talk 2:** 20-min Conference          | Ready to deliver | M4+      |
+| **Talk 3:** 5-min Lightning            | Ready to deliver | M4+      |
+| **Dataset 1:** Layout Corpus           | Ready to publish | M6       |
+| **Dataset 2:** UI Vision Benchmark     | Ready to publish | M6       |
+| **Collaborations:** 6 target labs      | Outreach ready   | M1-6     |
+| **Funding:** 5 grant opportunities     | Proposals ready  | M1-12    |
 
 ---
 

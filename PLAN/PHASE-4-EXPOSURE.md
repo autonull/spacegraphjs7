@@ -15,6 +15,7 @@
 ### 4.2.1 Core Narrative
 
 **The Hook:**
+
 ```
 "Stop describing UIs to AI. Start specifying them.
 
@@ -28,6 +29,7 @@ Vision-closed development: 30 seconds per cycle
 ```
 
 **Supporting Points:**
+
 1. **Problem:** AI can't see what it builds → slow, imprecise, exhausting iteration
 2. **Solution:** Embed AI vision at every layer → autonomous quality verification
 3. **Proof:** 6 vision models, 175K LOC synthesized, production-tested code
@@ -36,19 +38,20 @@ Vision-closed development: 30 seconds per cycle
 
 ### 4.2.2 Content Pillars
 
-| Pillar | Format | Frequency | Channel | Owner |
-|--------|--------|-----------|---------|-------|
-| **Technical Deep Dives** | Long-form blog (2000+ words) | 2x/month | Dev.to, Hashnode, Personal blog | Core dev |
-| **Vision System Demos** | Short video (2-5 min) | 1x/month | YouTube, Matrix, GitHub | Core dev |
-| **Example Gallery** | Interactive demos | 10 at launch | Docs site | Core dev |
-| **Release Notes** | Changelog posts | Per release | GitHub Releases, Matrix | Core dev |
-| **Community Showcase** | User project highlights | 1x/month | Matrix, GitHub Discussions | Community |
+| Pillar                   | Format                       | Frequency    | Channel                         | Owner     |
+| ------------------------ | ---------------------------- | ------------ | ------------------------------- | --------- |
+| **Technical Deep Dives** | Long-form blog (2000+ words) | 2x/month     | Dev.to, Hashnode, Personal blog | Core dev  |
+| **Vision System Demos**  | Short video (2-5 min)        | 1x/month     | YouTube, Matrix, GitHub         | Core dev  |
+| **Example Gallery**      | Interactive demos            | 10 at launch | Docs site                       | Core dev  |
+| **Release Notes**        | Changelog posts              | Per release  | GitHub Releases, Matrix         | Core dev  |
+| **Community Showcase**   | User project highlights      | 1x/month     | Matrix, GitHub Discussions      | Community |
 
 ---
 
 ### 4.2.3 Launch Content (Week 1-2)
 
 **Article 1: The Vision-Closed Development Manifesto**
+
 ```
 Title: "Stop Describing UIs to AI. Start Specifying Them."
 Length: 2500 words
@@ -64,6 +67,7 @@ Outline:
 ```
 
 **Article 2: Technical Deep Dive**
+
 ```
 Title: "Building a Self-Building UI Library: Architecture of SpaceGraphJS"
 Length: 3500 words
@@ -79,6 +83,7 @@ Outline:
 ```
 
 **Video 1: Vision System Demo**
+
 ```
 Title: "Watch AI Fix Its Own UI Bugs in 30 Seconds"
 Length: 2:30
@@ -97,20 +102,20 @@ Script:
 
 ### 4.2.4 Ongoing Content Calendar
 
-| Week | Content | Channel |
-|------|---------|---------|
-| Week 1 | Launch Article 1 (Manifesto) | Dev.to, Hashnode, Matrix |
-| Week 2 | Launch Article 2 (Architecture) | Dev.to, Hashnode |
-| Week 3 | Video 1 (Vision Demo) | YouTube, Matrix |
-| Week 4 | Example Gallery Launch (10 demos) | Docs site |
-| Week 5 | Article 3 (Performance Deep Dive) | Dev.to |
-| Week 6 | Community Showcase #1 | Matrix, GitHub |
-| Week 7 | Article 4 (Contributor Guide) | Dev.to |
-| Week 8 | Video 2 (Building a Custom Node Type) | YouTube |
-| Week 9 | Article 5 (Vision Model Training) | Dev.to |
-| Week 10 | Community Showcase #2 | Matrix, GitHub |
-| Week 11 | Article 6 (Roadmap v6.1) | GitHub Discussions |
-| Week 12 | Video 3 (3-Month Retrospective) | YouTube |
+| Week    | Content                               | Channel                  |
+| ------- | ------------------------------------- | ------------------------ |
+| Week 1  | Launch Article 1 (Manifesto)          | Dev.to, Hashnode, Matrix |
+| Week 2  | Launch Article 2 (Architecture)       | Dev.to, Hashnode         |
+| Week 3  | Video 1 (Vision Demo)                 | YouTube, Matrix          |
+| Week 4  | Example Gallery Launch (10 demos)     | Docs site                |
+| Week 5  | Article 3 (Performance Deep Dive)     | Dev.to                   |
+| Week 6  | Community Showcase #1                 | Matrix, GitHub           |
+| Week 7  | Article 4 (Contributor Guide)         | Dev.to                   |
+| Week 8  | Video 2 (Building a Custom Node Type) | YouTube                  |
+| Week 9  | Article 5 (Vision Model Training)     | Dev.to                   |
+| Week 10 | Community Showcase #2                 | Matrix, GitHub           |
+| Week 11 | Article 6 (Roadmap v6.1)              | GitHub Discussions       |
+| Week 12 | Video 3 (3-Month Retrospective)       | YouTube                  |
 
 ---
 
@@ -119,6 +124,7 @@ Script:
 ### 4.3.1 Matrix-First Strategy
 
 **Room Structure:**
+
 ```
 #spacegraphjs:matrix.org (main)
 ├── #sg6-announcements:matrix.org (read-only, announcements only)
@@ -135,6 +141,7 @@ Script:
 | **Welcome Bot** | Greet new members, link to resources | 1 hour |
 
 **Welcome Bot Example:**
+
 ```typescript
 // Matrix welcome bot
 import { MatrixClient } from 'matrix-js-sdk';
@@ -157,9 +164,9 @@ Say hi and tell us what you're building!
 `;
 
 client.on('RoomMember.membership', (event, member) => {
-  if (member.membership === 'invite' && member.userId === client.getUserId()) {
-    client.sendText(member.roomId, WELCOME_MESSAGE);
-  }
+    if (member.membership === 'invite' && member.userId === client.getUserId()) {
+        client.sendText(member.roomId, WELCOME_MESSAGE);
+    }
 });
 ```
 
@@ -168,6 +175,7 @@ client.on('RoomMember.membership', (event, member) => {
 ### 4.3.2 GitHub Discussions
 
 **Categories:**
+
 ```
 📋 Announcements (maintainers only)
 💡 Ideas (feature requests, RFCs)
@@ -177,17 +185,22 @@ client.on('RoomMember.membership', (event, member) => {
 ```
 
 **Template: Feature Request**
+
 ```markdown
 ### Problem Statement
+
 What problem does this solve?
 
 ### Proposed Solution
+
 How should it work?
 
 ### Alternatives Consider
+
 What other approaches did you think about?
 
 ### Implementation Sketch
+
 Pseudocode or architecture ideas (optional)
 ```
 
@@ -196,23 +209,28 @@ Pseudocode or architecture ideas (optional)
 ### 4.3.3 Contributor Onboarding
 
 **CONTRIBUTING.md Structure:**
-```markdown
+
+````markdown
 # Contributing to SpaceGraphJS
 
 ## Quick Start
+
 ```bash
 git clone https://github.com/autonull/spacegraphjs
 cd spacegraphjs
 npm install
 npm run dev
 ```
+````
 
 ## Where to Start
+
 - 🟢 **Good First Issues**: Labelled `good first issue`
 - 🟡 **Help Wanted**: Labelled `help wanted`
 - 🔴 **High Priority**: Labelled `priority`
 
 ## Development Workflow
+
 1. Fork the repo
 2. Create a branch: `git checkout -b feature/your-feature`
 3. Make changes
@@ -221,19 +239,24 @@ npm run dev
 6. Submit PR
 
 ## Code Style
+
 - TypeScript strict mode
 - Prettier auto-formatting
 - ESLint rules enforced in CI
 
 ## Vision Model Contributions
+
 See [docs/vision-models.md](docs/vision-models.md) for training data, architecture docs.
 
 ## Join the Conversation
+
 Matrix: https://matrix.to/#/#spacegraphjs:matrix.org
+
 ```
 
 **Good First Issues (Examples):**
 ```
+
 Issue #42: Add example demo for HtmlNode
 Labels: good first issue, documentation
 Description: Create a minimal working demo showing HtmlNode usage
@@ -245,6 +268,7 @@ Description: Add JSDoc comments to all public APIs in src/plugins/NodePlugin.ts
 Issue #44: Fix typo in QUICKSTART.md
 Labels: good first issue, documentation
 Description: "intall" → "install" in line 12
+
 ```
 
 ---
@@ -323,3 +347,4 @@ Description: "intall" → "install" in line 12
 
 ### Success Metrics
 ✅ **10 KPIs** defined (downloads, stars, forks, contributors, Matrix members, views)
+```

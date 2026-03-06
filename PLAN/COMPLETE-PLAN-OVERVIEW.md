@@ -9,6 +9,7 @@
 ## The Goal
 
 **Ship a working npm package that:**
+
 1. ✅ Installs without errors
 2. ✅ Renders a graph in <5 minutes
 3. ✅ Has zero critical bugs
@@ -23,6 +24,7 @@
 **This repository contains documentation only. No source code exists.**
 
 The plan is structured:
+
 - **Phase A (Days 0-14):** Build the library from scratch
 - **Phase B (Days 15-17):** Launch properly
 
@@ -147,7 +149,6 @@ The plan is structured:
 │  │  Phase 1: npm Package Prep (2h)                                │    │
 │  │  ├─ Verify package.json fields                                │    │
 │  │  ├─ npm pack --dry-run                                        │    │
-│  │  ├─ Check bundle size (<100KB gzipped)                        │    │
 │  │  └─ npm login check                                           │    │
 │  └────────────────────────────────────────────────────────────────┘    │
 │                                    │                                    │
@@ -190,13 +191,13 @@ The plan is structured:
 
 ## Success Factors (Weighted)
 
-| Factor | Weight | Coverage | Status |
-|--------|--------|----------|--------|
-| **F1: Working Code** | 40% | Days 2-7, 11-12 | ✅ Complete |
-| **F2: Easy Installation** | 20% | Days 1, 11-12 | ✅ Complete |
-| **F3: Clear Documentation** | 15% | Days 13-14 | ✅ Complete |
-| **F4: Visible Progress** | 15% | Status overlay, logging | ✅ Complete |
-| **F5: Community Presence** | 10% | Phase B, Day 17 | ✅ Complete |
+| Factor                      | Weight | Coverage                | Status      |
+| --------------------------- | ------ | ----------------------- | ----------- |
+| **F1: Working Code**        | 40%    | Days 2-7, 11-12         | ✅ Complete |
+| **F2: Easy Installation**   | 20%    | Days 1, 11-12           | ✅ Complete |
+| **F3: Clear Documentation** | 15%    | Days 13-14              | ✅ Complete |
+| **F4: Visible Progress**    | 15%    | Status overlay, logging | ✅ Complete |
+| **F5: Community Presence**  | 10%    | Phase B, Day 17         | ✅ Complete |
 
 **Total Coverage:** 100%
 
@@ -204,11 +205,11 @@ The plan is structured:
 
 ## Risk Mitigation
 
-| Risk Category | Risks Identified | Mitigation |
-|---------------|------------------|------------|
-| **Critical (R1-R5)** | 5 risks | Prevention + Detection + Recovery |
-| **High (R6-R10)** | 5 risks | Prevention + Detection + Recovery |
-| **Medium (R11-R15)** | 5 risks | Prevention + Simple recovery |
+| Risk Category        | Risks Identified | Mitigation                        |
+| -------------------- | ---------------- | --------------------------------- |
+| **Critical (R1-R5)** | 5 risks          | Prevention + Detection + Recovery |
+| **High (R6-R10)**    | 5 risks          | Prevention + Detection + Recovery |
+| **Medium (R11-R15)** | 5 risks          | Prevention + Simple recovery      |
 
 **See [CONTINGENCY-PLAN.md](./CONTINGENCY-PLAN.md) for full details.**
 
@@ -216,30 +217,30 @@ The plan is structured:
 
 ## Files You Need
 
-| File | Purpose | When | Time |
-|------|---------|------|------|
-| **[README-PLAN.md](./README-PLAN.md)** | One-page summary | Read first | 2 min |
-| **[ENHANCED-BUILD-PLAN.md](./ENHANCED-BUILD-PLAN.md)** | Day-by-day build guide | Days 0-14 | Execute |
-| **[CONTINGENCY-PLAN.md](./CONTINGENCY-PLAN.md)** | Risk mitigation | Reference | Keep open |
-| **[PLAN-ANALYSIS.md](./PLAN-ANALYSIS.md)** | Why each component | Optional | 10 min |
-| **[LAUNCH-SEQUENCED.md](./LAUNCH-SEQUENCED.md)** | Launch checklist | Days 15-17 | Execute |
-| **[PACKAGE-TEMPLATE.md](./PACKAGE-TEMPLATE.md)** | Config templates | Day 1 | Copy |
+| File                                                   | Purpose                | When       | Time      |
+| ------------------------------------------------------ | ---------------------- | ---------- | --------- |
+| **[README-PLAN.md](./README-PLAN.md)**                 | One-page summary       | Read first | 2 min     |
+| **[ENHANCED-BUILD-PLAN.md](./ENHANCED-BUILD-PLAN.md)** | Day-by-day build guide | Days 0-14  | Execute   |
+| **[CONTINGENCY-PLAN.md](./CONTINGENCY-PLAN.md)**       | Risk mitigation        | Reference  | Keep open |
+| **[PLAN-ANALYSIS.md](./PLAN-ANALYSIS.md)**             | Why each component     | Optional   | 10 min    |
+| **[LAUNCH-SEQUENCED.md](./LAUNCH-SEQUENCED.md)**       | Launch checklist       | Days 15-17 | Execute   |
+| **[PACKAGE-TEMPLATE.md](./PACKAGE-TEMPLATE.md)**       | Config templates       | Day 1      | Copy      |
 
 ---
 
 ## Critical Milestones
 
-| Milestone | Description | When | Gate |
-|-----------|-------------|------|------|
-| **M0** | Environment verified | Day 0 | Node 18+, git |
-| **M1** | package.json created | Day 1 | npm install works |
-| **M2** | SpaceGraph class compiles | Day 2 | npm run build |
-| **M3** | Demo renders | Day 4 | 3 nodes + 3 edges |
-| **M4** | Camera controls work | Day 5 | Rotate, zoom |
-| **M5** | All tests pass | Day 7 | No console errors |
-| **M6** | Fresh install works | Day 12 | Empty directory |
-| **M7** | QUICKSTART verified | Day 14 | <10 min, stranger |
-| **M8** | Published to npm | Day 16 | npm publish --tag alpha |
+| Milestone | Description               | When   | Gate                    |
+| --------- | ------------------------- | ------ | ----------------------- |
+| **M0**    | Environment verified      | Day 0  | Node 18+, git           |
+| **M1**    | package.json created      | Day 1  | npm install works       |
+| **M2**    | SpaceGraph class compiles | Day 2  | npm run build           |
+| **M3**    | Demo renders              | Day 4  | 3 nodes + 3 edges       |
+| **M4**    | Camera controls work      | Day 5  | Rotate, zoom            |
+| **M5**    | All tests pass            | Day 7  | No console errors       |
+| **M6**    | Fresh install works       | Day 12 | Empty directory         |
+| **M7**    | QUICKSTART verified       | Day 14 | <10 min, stranger       |
+| **M8**    | Published to npm          | Day 16 | npm publish --tag alpha |
 
 **Do not skip milestones. Do not publish until M7 passes.**
 
@@ -247,11 +248,11 @@ The plan is structured:
 
 ## Time Investment
 
-| Phase | Hours | Days (4h/day) | Days (8h/day) |
-|-------|-------|---------------|---------------|
-| Phase A: Build | 56h | 14 days | 7 days |
-| Phase B: Launch | 10h | 2-3 days | 1-2 days |
-| **Total** | **66h** | **16-17 days** | **8-9 days** |
+| Phase           | Hours   | Days (4h/day)  | Days (8h/day) |
+| --------------- | ------- | -------------- | ------------- |
+| Phase A: Build  | 56h     | 14 days        | 7 days        |
+| Phase B: Launch | 10h     | 2-3 days       | 1-2 days      |
+| **Total**       | **66h** | **16-17 days** | **8-9 days**  |
 
 **Part-time (4h/day):** 16-17 days (about 3 weeks)
 
@@ -261,16 +262,16 @@ The plan is structured:
 
 ## What Makes This Plan Optimal
 
-| Quality | How |
-|---------|-----|
-| **Complete** | Every step documented, copy-paste commands |
-| **Validated** | Mental simulation complete, gaps identified |
-| **Enhanced** | Console logging, status overlay, error handling |
-| **Sequenced** | Proper order (build → test → launch) |
-| **Reality-Adjusted** | Accounts for no existing code |
-| **Contingency-Covered** | 15 risks with prevention + recovery |
-| **Git-Tracked** | Commits at each milestone |
-| **Time-Optimized** | 0% waste, all non-essentials removed |
+| Quality                 | How                                             |
+| ----------------------- | ----------------------------------------------- |
+| **Complete**            | Every step documented, copy-paste commands      |
+| **Validated**           | Mental simulation complete, gaps identified     |
+| **Enhanced**            | Console logging, status overlay, error handling |
+| **Sequenced**           | Proper order (build → test → launch)            |
+| **Reality-Adjusted**    | Accounts for no existing code                   |
+| **Contingency-Covered** | 15 risks with prevention + recovery             |
+| **Git-Tracked**         | Commits at each milestone                       |
+| **Time-Optimized**      | 0% waste, all non-essentials removed            |
 
 ---
 
@@ -313,6 +314,7 @@ git init
 4. **Critical bug:** → Hotfix within 48 hours, transparent communication
 
 **The project cannot fail if:**
+
 - You ship working code (Phase A)
 - You verify installation works (Days 11-12)
 - You respond to issues quickly (Launch +1)
@@ -321,14 +323,14 @@ git init
 
 ## Summary
 
-| Question | Answer |
-|----------|--------|
-| What is this? | Complete plan to build + launch SpaceGraphJS |
-| How long? | 66 hours over 16-17 days (part-time) |
-| What do I need? | Node.js 18+, npm 9+, git 2+, text editor |
-| Where do I start? | README-PLAN.md → ENHANCED-BUILD-PLAN.md |
-| What if things go wrong? | CONTINGENCY-PLAN.md has recovery procedures |
-| Will this succeed? | Yes — if you follow the plan and pass all gates |
+| Question                 | Answer                                          |
+| ------------------------ | ----------------------------------------------- |
+| What is this?            | Complete plan to build + launch SpaceGraphJS    |
+| How long?                | 66 hours over 16-17 days (part-time)            |
+| What do I need?          | Node.js 18+, npm 9+, git 2+, text editor        |
+| Where do I start?        | README-PLAN.md → ENHANCED-BUILD-PLAN.md         |
+| What if things go wrong? | CONTINGENCY-PLAN.md has recovery procedures     |
+| Will this succeed?       | Yes — if you follow the plan and pass all gates |
 
 ---
 

@@ -7,14 +7,14 @@
 
 ## The Critical Path (8 hours total)
 
-| # | Task | Time | Why |
-|---|------|------|-----|
-| 1 | npm package | 2 hours | Blocks ALL adoption |
-| 2 | QUICKSTART.md | 2 hours | First working graph in 5 min |
-| 3 | README.md | 1 hour | First impression |
-| 4 | Matrix room | 30 min | Community hub |
-| 5 | Launch article | 2 hours | Drives initial traffic |
-| 6 | GitHub Sponsors | 30 min | Passive donation option |
+| #   | Task            | Time    | Why                          |
+| --- | --------------- | ------- | ---------------------------- |
+| 1   | npm package     | 2 hours | Blocks ALL adoption          |
+| 2   | QUICKSTART.md   | 2 hours | First working graph in 5 min |
+| 3   | README.md       | 1 hour  | First impression             |
+| 4   | Matrix room     | 30 min  | Community hub                |
+| 5   | Launch article  | 2 hours | Drives initial traffic       |
+| 6   | GitHub Sponsors | 30 min  | Passive donation option      |
 
 **Total:** 8 hours
 
@@ -22,15 +22,15 @@
 
 ## What's DEFERRED (Not Week 1)
 
-| Task | Original | New | Why Defer |
-|------|----------|-----|-----------|
-| Vite vision plugin | 8 hours | Month 2 | Blocks nothing. Ship working lib first. |
-| TypeDoc | 2 hours | Month 2 | Inline JSDoc suffices initially. |
-| CI/CD workflows | 2 hours | Month 2 | Manual tests work for alpha. |
-| CONTRIBUTING.md | 2 hours | Month 2 | No contributors until there's adoption. |
-| Content calendar | 6 hours | Month 2 | One article is enough to start. |
-| Vision tests | 4 hours | Month 2 | Regular tests suffice initially. |
-| Release checklist | 1 hour | Month 2 | Alpha doesn't need ceremony. |
+| Task               | Original | New     | Why Defer                               |
+| ------------------ | -------- | ------- | --------------------------------------- |
+| Vite vision plugin | 8 hours  | Month 2 | Blocks nothing. Ship working lib first. |
+| TypeDoc            | 2 hours  | Month 2 | Inline JSDoc suffices initially.        |
+| CI/CD workflows    | 2 hours  | Month 2 | Manual tests work for alpha.            |
+| CONTRIBUTING.md    | 2 hours  | Month 2 | No contributors until there's adoption. |
+| Content calendar   | 6 hours  | Month 2 | One article is enough to start.         |
+| Vision tests       | 4 hours  | Month 2 | Regular tests suffice initially.        |
+| Release checklist  | 1 hour   | Month 2 | Alpha doesn't need ceremony.            |
 
 **Time saved:** 25 hours → 8 hours
 
@@ -72,51 +72,54 @@ node -e "import('spacegraphjs').then(m => console.log('OK:', typeof m.SpaceGraph
 
 **Keep it under 100 lines. Test it works.**
 
-```markdown
+````markdown
 # SpaceGraphJS Quickstart
 
 ## Install
+
 ```bash
 npm install spacegraphjs three
 ```
+````
 
 ## Your First Graph
 
 ```html
 <!DOCTYPE html>
 <html>
-<body>
-  <div id="container" style="width: 100vw; height: 100vh;"></div>
-  <script type="module">
-    import { SpaceGraph } from 'spacegraphjs';
-    
-    const graph = SpaceGraph.create('#container', {
-      nodes: [
-        { id: 'a', type: 'ShapeNode', label: 'A', position: [0, 0, 0] },
-        { id: 'b', type: 'ShapeNode', label: 'B', position: [100, 0, 0] }
-      ],
-      edges: [
-        { id: 'e1', source: 'a', target: 'b', type: 'Edge' }
-      ]
-    });
-    
-    graph.render();
-  </script>
-</body>
+    <body>
+        <div id="container" style="width: 100vw; height: 100vh;"></div>
+        <script type="module">
+            import { SpaceGraph } from 'spacegraphjs';
+
+            const graph = SpaceGraph.create('#container', {
+                nodes: [
+                    { id: 'a', type: 'ShapeNode', label: 'A', position: [0, 0, 0] },
+                    { id: 'b', type: 'ShapeNode', label: 'B', position: [100, 0, 0] },
+                ],
+                edges: [{ id: 'e1', source: 'a', target: 'b', type: 'Edge' }],
+            });
+
+            graph.render();
+        </script>
+    </body>
 </html>
 ```
 
 Open in browser. Done.
 
 ## Controls
+
 - Rotate: Left-click + drag
 - Pan: Right-click + drag
 - Zoom: Scroll wheel
 
 ## Next
+
 - GitHub: https://github.com/autonull/spacegraphjs
 - Matrix: https://matrix.to/#/#spacegraphjs:matrix.org
-```
+
+````
 
 **Done when:** A stranger can follow it in <5 minutes.
 
@@ -143,7 +146,7 @@ It sees what it builds, verifies quality autonomously, and self-corrects.
 
 ```bash
 npm install spacegraphjs three
-```
+````
 
 [See QUICKSTART.md](./QUICKSTART.md) for a 5-minute guide.
 
@@ -162,6 +165,7 @@ npm install spacegraphjs three
 ## License
 
 MIT
+
 ```
 
 **Done when:** Someone understands what it is in 30 seconds.
@@ -171,6 +175,7 @@ MIT
 ### □ 4. Matrix Room (30 min)
 
 ```
+
 1. Go to https://app.element.io
 2. Create account (if needed)
 3. Create room: #spacegraphjs:matrix.org
@@ -178,7 +183,8 @@ MIT
 5. Set avatar (logo if you have one)
 6. Copy join link: https://matrix.to/#/#spacegraphjs:matrix.org
 7. Add to README.md
-```
+
+````
 
 **Done when:** Join link works.
 
@@ -232,7 +238,7 @@ Result: 30-second iterations. 98% faster.
 
 ```bash
 npm install spacegraphjs@alpha
-```
+````
 
 [QUICKSTART.md](link) gets you running in 5 minutes.
 
@@ -243,6 +249,7 @@ comprehensible, and alive.
 
 - GitHub: https://github.com/autonull/spacegraphjs
 - Matrix: https://matrix.to/#/#spacegraphjs:matrix.org
+
 ```
 
 **Done when:** Article is published and linked from README.
@@ -252,14 +259,16 @@ comprehensible, and alive.
 ### □ 6. GitHub Sponsors (30 min)
 
 ```
+
 1. Go to https://github.com/sponsors/autonull
 2. Click "Create a sponsorship page"
 3. Fill in:
-   - About: "Building SpaceGraphJS — the first self-building UI framework"
-   - Tiers: $5, $10, $25 (keep it simple)
-   - Benefits: "Thank you!", "Early access", "Priority support"
+    - About: "Building SpaceGraphJS — the first self-building UI framework"
+    - Tiers: $5, $10, $25 (keep it simple)
+    - Benefits: "Thank you!", "Early access", "Priority support"
 4. Submit
 5. Add badge to README.md
+
 ```
 
 **Done when:** Sponsorship page is live.
@@ -278,6 +287,7 @@ comprehensible, and alive.
 **Template:**
 
 ```
+
 🚀 SpaceGraphJS Alpha is Live!
 
 The first self-building UI framework is now available on npm.
@@ -289,6 +299,7 @@ Docs: [link to QUICKSTART.md]
 Community: https://matrix.to/#/#spacegraphjs:matrix.org
 
 #opensource #typescript #threejs
+
 ```
 
 ---
@@ -352,36 +363,38 @@ It needs:
 ## One-Page Summary
 
 ```
+
 ┌─────────────────────────────────────────────────────────────┐
-│                  SPACEGRAPHJS LAUNCH PLAN                    │
+│ SPACEGRAPHJS LAUNCH PLAN │
 ├─────────────────────────────────────────────────────────────┤
-│                                                              │
-│  GOAL: 8 hours to launch                                     │
-│                                                              │
-│  CRITICAL PATH:                                              │
-│  1. npm package         (2h)  ← Blocks adoption             │
-│  2. QUICKSTART.md       (2h)  ← First working graph         │
-│  3. README.md           (1h)  ← First impression            │
-│  4. Matrix room         (30m) ← Community hub               │
-│  5. Launch article      (2h)  ← Drives traffic              │
-│  6. GitHub Sponsors     (30m) ← Passive donations           │
-│                                                              │
-│  DEFERRED (Month 2+):                                        │
-│  • Vite vision plugin                                        │
-│  • TypeDoc                                                   │
-│  • CI/CD workflows                                           │
-│  • CONTRIBUTING.md                                           │
-│  • Content calendar                                          │
-│                                                              │
-│  WEEK 1 TARGETS:                                             │
-│  • 50 npm downloads                                          │
-│  • 10 Matrix members                                         │
-│  • 10 GitHub stars                                           │
-│  • 1 external issue                                          │
-│                                                              │
-│  PRINCIPLE: Ship minimum. Learn. Iterate.                   │
-│                                                              │
+│ │
+│ GOAL: 8 hours to launch │
+│ │
+│ CRITICAL PATH: │
+│ 1. npm package (2h) ← Blocks adoption │
+│ 2. QUICKSTART.md (2h) ← First working graph │
+│ 3. README.md (1h) ← First impression │
+│ 4. Matrix room (30m) ← Community hub │
+│ 5. Launch article (2h) ← Drives traffic │
+│ 6. GitHub Sponsors (30m) ← Passive donations │
+│ │
+│ DEFERRED (Month 2+): │
+│ • Vite vision plugin │
+│ • TypeDoc │
+│ • CI/CD workflows │
+│ • CONTRIBUTING.md │
+│ • Content calendar │
+│ │
+│ WEEK 1 TARGETS: │
+│ • 50 npm downloads │
+│ • 10 Matrix members │
+│ • 10 GitHub stars │
+│ • 1 external issue │
+│ │
+│ PRINCIPLE: Ship minimum. Learn. Iterate. │
+│ │
 └─────────────────────────────────────────────────────────────┘
+
 ```
 
 ---
@@ -389,3 +402,4 @@ It needs:
 **Ready to launch in 8 hours?**
 
 Start with Task 1: `npm run build && npm publish --tag alpha`
+```

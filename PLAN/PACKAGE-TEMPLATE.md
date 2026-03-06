@@ -8,107 +8,102 @@
 
 ```json
 {
-  "name": "spacegraphjs",
-  "version": "6.0.0-alpha.1",
-  "description": "The first self-building UI framework — a Zoomable User Interface (ZUI) library powered by AI vision",
-  "type": "module",
-  "main": "./dist/spacegraphjs.js",
-  "module": "./dist/spacegraphjs.js",
-  "types": "./dist/types/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/types/index.d.ts",
-      "import": "./dist/spacegraphjs.js"
+    "name": "spacegraphjs",
+    "version": "6.0.0-alpha.1",
+    "description": "The first self-building UI framework — a Zoomable User Interface (ZUI) library powered by AI vision",
+    "type": "module",
+    "main": "./dist/spacegraphjs.js",
+    "module": "./dist/spacegraphjs.js",
+    "types": "./dist/types/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/types/index.d.ts",
+            "import": "./dist/spacegraphjs.js"
+        },
+        "./vision": {
+            "types": "./dist/types/vision/index.d.ts",
+            "import": "./dist/vision.js"
+        },
+        "./plugins": {
+            "types": "./dist/types/plugins/index.d.ts",
+            "import": "./dist/plugins.js"
+        },
+        "./layouts": {
+            "types": "./dist/types/layouts/index.d.ts",
+            "import": "./dist/layouts.js"
+        }
     },
-    "./vision": {
-      "types": "./dist/types/vision/index.d.ts",
-      "import": "./dist/vision.js"
+    "files": ["dist", "README.md", "LICENSE", "QUICKSTART.md"],
+    "sideEffects": false,
+    "scripts": {
+        "dev": "vite",
+        "build": "tsc && vite build",
+        "preview": "vite preview",
+        "test": "vitest",
+        "test:coverage": "vitest --coverage",
+        "test:vision": "vitest run --config vitest.vision.config.ts",
+        "docs": "typedoc src/index.ts",
+        "docs:serve": "npx http-server docs/api",
+        "lint": "eslint src --ext .ts",
+        "lint:fix": "eslint src --ext .ts --fix",
+        "format": "prettier --write src/**/*.ts",
+        "format:check": "prettier --check src/**/*.ts",
+        "prepublishOnly": "npm run build && npm run test",
+        "postpublish": "echo '🚀 Published! Visit https://www.npmjs.com/package/spacegraphjs'"
     },
-    "./plugins": {
-      "types": "./dist/types/plugins/index.d.ts",
-      "import": "./dist/plugins.js"
+    "keywords": [
+        "zui",
+        "zoomable",
+        "ui",
+        "graph",
+        "visualization",
+        "three.js",
+        "webgl",
+        "ai",
+        "vision",
+        "typescript"
+    ],
+    "author": {
+        "name": "autonull",
+        "url": "https://github.com/autonull"
     },
-    "./layouts": {
-      "types": "./dist/types/layouts/index.d.ts",
-      "import": "./dist/layouts.js"
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/autonull/spacegraphjs.git"
+    },
+    "bugs": {
+        "url": "https://github.com/autonull/spacegraphjs/issues"
+    },
+    "homepage": "https://spacegraphjs.dev",
+    "peerDependencies": {
+        "three": ">=0.150.0"
+    },
+    "dependencies": {
+        "mitt": "^3.0.1"
+    },
+    "devDependencies": {
+        "@types/node": "^20.10.0",
+        "@types/three": "^0.160.0",
+        "@typescript-eslint/eslint-plugin": "^6.13.0",
+        "@typescript-eslint/parser": "^6.13.0",
+        "@vitest/coverage-v8": "^1.0.0",
+        "eslint": "^8.54.0",
+        "playwright": "^1.40.0",
+        "prettier": "^3.1.0",
+        "three": "^0.160.0",
+        "typedoc": "^0.25.4",
+        "typedoc-plugin-markdown": "^3.17.1",
+        "typescript": "^5.3.2",
+        "vite": "^5.0.0",
+        "vitest": "^1.0.0"
+    },
+    "engines": {
+        "node": ">=18.0.0"
+    },
+    "publishConfig": {
+        "access": "public"
     }
-  },
-  "files": [
-    "dist",
-    "README.md",
-    "LICENSE",
-    "QUICKSTART.md"
-  ],
-  "sideEffects": false,
-  "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview",
-    "test": "vitest",
-    "test:coverage": "vitest --coverage",
-    "test:vision": "vitest run --config vitest.vision.config.ts",
-    "docs": "typedoc src/index.ts",
-    "docs:serve": "npx http-server docs/api",
-    "lint": "eslint src --ext .ts",
-    "lint:fix": "eslint src --ext .ts --fix",
-    "format": "prettier --write src/**/*.ts",
-    "format:check": "prettier --check src/**/*.ts",
-    "prepublishOnly": "npm run build && npm run test",
-    "postpublish": "echo '🚀 Published! Visit https://www.npmjs.com/package/spacegraphjs'"
-  },
-  "keywords": [
-    "zui",
-    "zoomable",
-    "ui",
-    "graph",
-    "visualization",
-    "three.js",
-    "webgl",
-    "ai",
-    "vision",
-    "typescript"
-  ],
-  "author": {
-    "name": "autonull",
-    "url": "https://github.com/autonull"
-  },
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/autonull/spacegraphjs.git"
-  },
-  "bugs": {
-    "url": "https://github.com/autonull/spacegraphjs/issues"
-  },
-  "homepage": "https://spacegraphjs.dev",
-  "peerDependencies": {
-    "three": ">=0.150.0"
-  },
-  "dependencies": {
-    "mitt": "^3.0.1"
-  },
-  "devDependencies": {
-    "@types/node": "^20.10.0",
-    "@types/three": "^0.160.0",
-    "@typescript-eslint/eslint-plugin": "^6.13.0",
-    "@typescript-eslint/parser": "^6.13.0",
-    "@vitest/coverage-v8": "^1.0.0",
-    "eslint": "^8.54.0",
-    "playwright": "^1.40.0",
-    "prettier": "^3.1.0",
-    "three": "^0.160.0",
-    "typedoc": "^0.25.4",
-    "typedoc-plugin-markdown": "^3.17.1",
-    "typescript": "^5.3.2",
-    "vite": "^5.0.0",
-    "vitest": "^1.0.0"
-  },
-  "engines": {
-    "node": ">=18.0.0"
-  },
-  "publishConfig": {
-    "access": "public"
-  }
 }
 ```
 
@@ -122,39 +117,39 @@ import { resolve } from 'path';
 import { spacegraphVision } from './plugins/vite-plugin-spacegraph-vision';
 
 export default defineConfig({
-  plugins: [
-    spacegraphVision({
-      enabled: true,
-      autoFix: false,
-      thresholds: {
-        layout: 80,
-        legibility: 85,
-      },
-    }),
-  ],
-  
-  build: {
-    lib: {
-      entry: resolve(__dirname, 'src/index.ts'),
-      name: 'SpaceGraphJS',
-      fileName: 'spacegraphjs',
-    },
-    rollupOptions: {
-      external: ['three'],
-      output: {
-        globals: {
-          three: 'THREE',
+    plugins: [
+        spacegraphVision({
+            enabled: true,
+            autoFix: false,
+            thresholds: {
+                layout: 80,
+                legibility: 85,
+            },
+        }),
+    ],
+
+    build: {
+        lib: {
+            entry: resolve(__dirname, 'src/index.ts'),
+            name: 'SpaceGraphJS',
+            fileName: 'spacegraphjs',
         },
-      },
+        rollupOptions: {
+            external: ['three'],
+            output: {
+                globals: {
+                    three: 'THREE',
+                },
+            },
+        },
+        sourcemap: true,
+        minify: 'terser',
     },
-    sourcemap: true,
-    minify: 'terser',
-  },
-  
-  test: {
-    globals: true,
-    environment: 'jsdom',
-  },
+
+    test: {
+        globals: true,
+        environment: 'jsdom',
+    },
 });
 ```
 
@@ -164,30 +159,30 @@ export default defineConfig({
 
 ```json
 {
-  "compilerOptions": {
-    "target": "ES2020",
-    "useDefineForClassFields": true,
-    "module": "ESNext",
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
-    "skipLibCheck": true,
-    "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "noEmit": true,
-    "declaration": true,
-    "declarationDir": "./dist/types",
-    "outDir": "./dist",
-    "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "forceConsistentCasingInFileNames": true
-  },
-  "include": ["src"],
-  "exclude": ["node_modules", "dist", "tests"]
+    "compilerOptions": {
+        "target": "ES2020",
+        "useDefineForClassFields": true,
+        "module": "ESNext",
+        "lib": ["ES2020", "DOM", "DOM.Iterable"],
+        "skipLibCheck": true,
+        "moduleResolution": "bundler",
+        "allowImportingTsExtensions": true,
+        "resolveJsonModule": true,
+        "isolatedModules": true,
+        "noEmit": true,
+        "declaration": true,
+        "declarationDir": "./dist/types",
+        "outDir": "./dist",
+        "strict": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "noFallthroughCasesInSwitch": true,
+        "esModuleInterop": true,
+        "allowSyntheticDefaultImports": true,
+        "forceConsistentCasingInFileNames": true
+    },
+    "include": ["src"],
+    "exclude": ["node_modules", "dist", "tests"]
 }
 ```
 
@@ -197,23 +192,23 @@ export default defineConfig({
 
 ```json
 {
-  "entryPoints": [
-    "src/index.ts",
-    "src/vision/index.ts",
-    "src/plugins/index.ts",
-    "src/layouts/index.ts"
-  ],
-  "out": "docs/api",
-  "plugin": ["typedoc-plugin-markdown"],
-  "readme": "none",
-  "excludePrivate": true,
-  "excludeProtected": false,
-  "excludeInternal": true,
-  "categoryOrder": ["Core", "Vision", "Plugins", "Layouts", "*"],
-  "navigationLinks": {
-    "GitHub": "https://github.com/autonull/spacegraphjs",
-    "Quickstart": "https://github.com/autonull/spacegraphjs/blob/main/QUICKSTART.md"
-  }
+    "entryPoints": [
+        "src/index.ts",
+        "src/vision/index.ts",
+        "src/plugins/index.ts",
+        "src/layouts/index.ts"
+    ],
+    "out": "docs/api",
+    "plugin": ["typedoc-plugin-markdown"],
+    "readme": "none",
+    "excludePrivate": true,
+    "excludeProtected": false,
+    "excludeInternal": true,
+    "categoryOrder": ["Core", "Vision", "Plugins", "Layouts", "*"],
+    "navigationLinks": {
+        "GitHub": "https://github.com/autonull/spacegraphjs",
+        "Quickstart": "https://github.com/autonull/spacegraphjs/blob/main/QUICKSTART.md"
+    }
 }
 ```
 
@@ -334,6 +329,7 @@ Verify `types` field points to correct path and `declaration: true` is in tsconf
 ### "Peer dependency warning"
 
 Three.js is a peer dependency. Users must install it separately:
+
 ```bash
 npm install three
 ```
@@ -341,6 +337,7 @@ npm install three
 ### "Build fails"
 
 Check that all entry points exist:
+
 - `src/index.ts`
 - `src/vision/index.ts`
 - `src/plugins/index.ts`

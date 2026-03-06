@@ -1,0 +1,17 @@
+{
+    "$schema": "https://typedoc.org/schema.json",
+    "entryPoints": [
+        "src/index.ts",
+        "src/vision/index.ts"
+    ],
+    "out": "docs/api",
+    "name": "SpaceGraphJS Plugin API & Core Engine",
+    "readme": "README.md",
+    "excludePrivate": true,
+    "excludeProtected": true,
+    "excludeInternal": true,
+    "plugin": [],
+    "theme": "default",
+    "hideGenerator": true,
+    "searchInComments": true
+}
