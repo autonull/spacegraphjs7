@@ -3,116 +3,171 @@ import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec, SpecUpdate } from '../types';
 
 export class N8nVisionOptimizerNode extends HtmlNode {
-    private scoreEl?: HTMLDivElement;
-    private fixBtn?: HTMLButtonElement;
+    readonly lodThresholds = {
+        icon: 800,
+        label: 400,
+        summary: 150,
+        full: 0,
+    };
 
     constructor(sg: SpaceGraph, spec: NodeSpec) {
-        // SpaceGraph Vision Optimizer Node UI
-        const html = `
-            <div class="n8n-vision-node" style="
-                background: #607d8b; /* Blue Grey */
-                border-radius: 8px;
-                padding: 15px;
-                color: white;
-                font-family: 'Inter', sans-serif;
-                width: 250px;
-                box-shadow: 0 4px 15px rgba(96, 125, 139, 0.4);
-                display: flex;
-                flex-direction: column;
-                gap: 12px;
-            ">
-                <div style="display: flex; align-items: center; justify-content: space-between;">
-                    <div style="font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 6px;">
-                        👁️ Vision Optimizer
-                    </div>
-                </div>
-
-                <div style="
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    background: rgba(0,0,0,0.15);
-                    padding: 10px;
-                    border-radius: 6px;
-                    border: 1px solid rgba(255,255,255,0.2);
-                ">
-                    <span style="font-size: 12px;">Layout Score</span>
-                    <span class="score-badge" style="font-size: 14px; font-weight: bold; color: #aed581;">--/100</span>
-                </div>
-
-                <button class="fix-btn" style="
-                    width: 100%;
-                    padding: 10px;
-                    border: none;
-                    border-radius: 4px;
-                    background: #2196f3;
-                    color: white;
-                    font-weight: bold;
-                    cursor: pointer;
-                    transition: background 0.2s;
-                    margin-top: 5px;
-                ">Auto-Fix Layout</button>
-            </div>
-        `;
-
-        super(sg, { ...spec, html });
-        this.width = spec.width || 250;
-        this.height = spec.height || 150;
-    }
-
-    protected initDomElement(html: string): void {
-        super.initDomElement(html);
-        if (this.domElement) {
-            this.scoreEl = this.domElement.querySelector('.score-badge') as HTMLDivElement;
-            this.fixBtn = this.domElement.querySelector('.fix-btn') as HTMLButtonElement;
-
-            this.updateWidgetFromParams(this.parameters);
-
-            if (this.fixBtn) {
-                this.fixBtn.addEventListener('click', async () => {
-                    console.log(`[VisionOptimizer] Triggering Auto-Fix`);
-                    if (this.fixBtn) this.fixBtn.textContent = 'Fixing...';
-
-                    // Trigger Vision Manager Layout Heal
-                    const forceLayout = this.sg.pluginManager.getPlugin('ForceLayout') as any;
-                    if (forceLayout && typeof forceLayout.update === 'function') {
-                        // Simulate running force layout for a bit
-                        for (let i = 0; i < 50; i++) {
-                            forceLayout.update(0.016);
-                        }
-                    }
-
-                    const ergonomics = this.sg.pluginManager.getPlugin('ErgonomicsPlugin') as any;
-                    if (ergonomics && typeof ergonomics.fixOverlaps === 'function') {
-                        await ergonomics.fixOverlaps();
-                    }
-
-                    if (this.fixBtn) this.fixBtn.textContent = 'Auto-Fix Layout';
-
-                    // Simulate score update
-                    if (this.scoreEl) {
-                        this.scoreEl.textContent = '95/100';
-                        this.scoreEl.style.color = '#aed581';
-                    }
-                });
+        super(sg, {
+            ...spec,
+            html: '',
+            style: {
+                width: '300px',
+                height: 'auto',
+                padding: '16px',
+                borderRadius: '8px',
+                background: '#607d8b', // Blue Grey
+                color: 'white',
+                fontFamily: 'sans-serif',
+                border: '2px solid #455a64',
+                boxSizing: 'border-box'
             }
-        }
+        });
     }
 
-    private updateWidgetFromParams(params: any) {
-        if (!params) return;
+    updateLod(distance: number): void {
+        super.updateLod(distance);
 
-        if (this.scoreEl && params.score !== undefined) {
-            this.scoreEl.textContent = `${params.score}/100`;
-            if (params.score < 70) this.scoreEl.style.color = '#ffb74d';
-            else this.scoreEl.style.color = '#aed581';
+        let level = 'full';
+        if (distance > this.lodThresholds.icon) level = 'icon';
+        else if (distance > this.lodThresholds.label) level = 'label';
+        else if (distance > this.lodThresholds.summary) level = 'summary';
+
+        this.renderHtmlContent(level);
+    }
+
+    private renderHtmlContent(level: string) {
+        if (!this.element) return;
+
+        this.element.innerHTML = '';
+        const params = this.spec.parameters || {};
+        const score = params.score !== undefined ? params.score : '--';
+        const scoreColor = score >= 70 ? '#aed581' : (score === '--' ? 'white' : '#ffb74d');
+
+        if (level === 'icon') {
+            const el = document.createElement('div');
+            el.style.fontSize = '48px';
+            el.style.textAlign = 'center';
+            el.textContent = '👁️';
+            this.element.appendChild(el);
+            this.element.style.background = 'transparent';
+            this.element.style.border = 'none';
+        } else if (level === 'label') {
+            const el = document.createElement('div');
+            el.style.textAlign = 'center';
+            el.style.fontSize = '24px';
+            el.style.fontWeight = 'bold';
+            el.textContent = '👁️ Vision Opt.';
+            this.element.appendChild(el);
+            this.element.style.background = 'rgba(96, 125, 139, 0.8)';
+            this.element.style.border = '2px solid #455a64';
+        } else if (level === 'summary') {
+            const header = document.createElement('div');
+            header.style.display = 'flex';
+            header.style.justifyContent = 'space-between';
+            header.style.alignItems = 'center';
+            header.style.marginBottom = '8px';
+
+            const title = document.createElement('span');
+            title.style.fontWeight = 'bold';
+            title.textContent = '👁️ Optimizer';
+
+            const badge = document.createElement('span');
+            badge.style.background = 'rgba(0,0,0,0.3)';
+            badge.style.padding = '2px 6px';
+            badge.style.borderRadius = '4px';
+            badge.style.fontSize = '12px';
+            badge.style.color = scoreColor;
+            badge.style.fontWeight = 'bold';
+            badge.textContent = `Score: ${score}`;
+
+            header.appendChild(title);
+            header.appendChild(badge);
+
+            this.element.appendChild(header);
+            this.element.style.background = '#607d8b';
+            this.element.style.border = '2px solid #455a64';
+        } else if (level === 'full') {
+            const header = document.createElement('div');
+            header.style.display = 'flex';
+            header.style.justifyContent = 'space-between';
+            header.style.alignItems = 'center';
+            header.style.marginBottom = '12px';
+
+            const title = document.createElement('span');
+            title.style.fontWeight = 'bold';
+            title.style.fontSize = '16px';
+            title.textContent = '👁️ Vision Optimizer';
+
+            header.appendChild(title);
+
+            const scoreBox = document.createElement('div');
+            scoreBox.style.display = 'flex';
+            scoreBox.style.justifyContent = 'space-between';
+            scoreBox.style.alignItems = 'center';
+            scoreBox.style.background = 'rgba(0,0,0,0.15)';
+            scoreBox.style.padding = '10px';
+            scoreBox.style.borderRadius = '6px';
+            scoreBox.style.border = '1px solid rgba(255,255,255,0.2)';
+            scoreBox.style.marginBottom = '16px';
+
+            const scoreLabel = document.createElement('span');
+            scoreLabel.style.fontSize = '12px';
+            scoreLabel.textContent = 'Layout Quality Score';
+
+            const scoreValue = document.createElement('span');
+            scoreValue.style.fontSize = '16px';
+            scoreValue.style.fontWeight = 'bold';
+            scoreValue.style.color = scoreColor;
+            scoreValue.textContent = `${score}/100`;
+
+            scoreBox.appendChild(scoreLabel);
+            scoreBox.appendChild(scoreValue);
+
+            const fixBtn = document.createElement('button');
+            fixBtn.textContent = 'Auto-Fix Layout';
+            fixBtn.style.width = '100%';
+            fixBtn.style.padding = '10px';
+            fixBtn.style.background = '#2196f3';
+            fixBtn.style.color = 'white';
+            fixBtn.style.border = 'none';
+            fixBtn.style.borderRadius = '4px';
+            fixBtn.style.fontWeight = 'bold';
+            fixBtn.style.cursor = 'pointer';
+
+            fixBtn.addEventListener('click', async () => {
+                fixBtn.textContent = 'Fixing...';
+
+                // Trigger Vision Manager Layout Heal
+                const forceLayout = this.sg.pluginManager.getPlugin('ForceLayout') as any;
+                if (forceLayout && typeof forceLayout.update === 'function') {
+                    for (let i = 0; i < 50; i++) {
+                        forceLayout.update(0.016);
+                    }
+                }
+
+                // Simulate fix outcome
+                setTimeout(() => {
+                    this.parameters = { ...this.parameters, score: 95 };
+                    this.renderHtmlContent(level); // Re-render triggers layout heal update on DOM
+                }, 500);
+            });
+
+            this.element.appendChild(header);
+            this.element.appendChild(scoreBox);
+            this.element.appendChild(fixBtn);
+
+            this.element.style.background = '#607d8b';
+            this.element.style.border = '2px solid #455a64';
         }
     }
 
     updateSpec(spec: SpecUpdate): void {
         super.updateSpec(spec);
-        if (spec.parameters) {
-            this.updateWidgetFromParams(spec.parameters);
-        }
+        const level = this.element?.querySelector('button') ? 'full' : (this.element?.querySelector('span[style*="Score:"]') ? 'summary' : (this.element?.querySelector('span') ? 'label' : 'icon'));
+        this.renderHtmlContent(level);
     }
 }

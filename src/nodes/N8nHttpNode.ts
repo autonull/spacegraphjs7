@@ -3,98 +3,216 @@ import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec, SpecUpdate } from '../types';
 
 export class N8nHttpNode extends HtmlNode {
-    private urlEl?: HTMLDivElement;
-    private methodEl?: HTMLSpanElement;
-    private previewEl?: HTMLPreElement;
+    readonly lodThresholds = {
+        icon: 800,
+        label: 400,
+        summary: 150,
+        full: 0,
+    };
 
     constructor(sg: SpaceGraph, spec: NodeSpec) {
-        // Initialize HTML structure
-        const html = `
-            <div class="n8n-http-node" style="
-                background: #1e1e1e;
-                border: 1px solid #444;
-                border-radius: 8px;
-                padding: 10px;
-                color: white;
-                font-family: monospace;
-                width: 200px;
-                box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-            ">
-                <div style="display: flex; gap: 5px; margin-bottom: 8px; align-items: center;">
-                    <span class="method-badge" style="
-                        background: #2196f3;
-                        padding: 2px 6px;
-                        border-radius: 4px;
-                        font-size: 10px;
-                        font-weight: bold;
-                    ">GET</span>
-                    <span class="url-label" style="
-                        font-size: 11px;
-                        white-space: nowrap;
-                        overflow: hidden;
-                        text-overflow: ellipsis;
-                        flex: 1;
-                    ">https://api.example.com</span>
-                </div>
-                <div class="response-preview" style="
-                    background: #000;
-                    padding: 5px;
-                    border-radius: 4px;
-                    font-size: 9px;
-                    height: 40px;
-                    overflow: hidden;
-                    color: #a5d6a7;
-                ">Waiting...</div>
-            </div>
-        `;
-
-        super(sg, { ...spec, html });
-        this.width = spec.width || 200;
-        this.height = spec.height || 80;
+        super(sg, {
+            ...spec,
+            html: '',
+            style: {
+                width: '350px',
+                height: 'auto',
+                padding: '16px',
+                borderRadius: '8px',
+                backgroundColor: 'rgba(30, 30, 30, 0.95)',
+                color: 'white',
+                fontFamily: 'sans-serif',
+                border: '2px solid #2196f3', // Blue for HTTP
+                boxSizing: 'border-box'
+            }
+        });
     }
 
-    protected initDomElement(html: string): void {
-        super.initDomElement(html);
-        if (this.domElement) {
-            this.methodEl = this.domElement.querySelector('.method-badge') as HTMLSpanElement;
-            this.urlEl = this.domElement.querySelector('.url-label') as HTMLDivElement;
-            this.previewEl = this.domElement.querySelector('.response-preview') as HTMLPreElement;
-            this.updateWidgetFromParams(this.parameters);
+    updateLod(distance: number): void {
+        super.updateLod(distance);
+
+        let level = 'full';
+        if (distance > this.lodThresholds.icon) level = 'icon';
+        else if (distance > this.lodThresholds.label) level = 'label';
+        else if (distance > this.lodThresholds.summary) level = 'summary';
+
+        this.renderHtmlContent(level);
+    }
+
+    private getMethodColor(method: string): string {
+        switch (method.toUpperCase()) {
+            case 'POST': return '#4caf50';
+            case 'PUT': return '#ff9800';
+            case 'DELETE': return '#f44336';
+            default: return '#2196f3';
         }
     }
 
-    private updateWidgetFromParams(params: any) {
-        if (!params) return;
+    private renderHtmlContent(level: string) {
+        if (!this.element) return;
 
-        if (this.methodEl && params.requestMethod) {
-            this.methodEl.textContent = params.requestMethod.toUpperCase();
+        this.element.innerHTML = '';
+        const params = this.spec.parameters || {};
+        const method = (params.requestMethod || 'GET').toUpperCase();
+        const url = params.url || 'https://api.example.com';
+        const methodColor = this.getMethodColor(method);
+        const status = params.status || 'waiting';
 
-            // Color code
-            if (params.requestMethod === 'POST') this.methodEl.style.background = '#4caf50';
-            else if (params.requestMethod === 'PUT') this.methodEl.style.background = '#ff9800';
-            else if (params.requestMethod === 'DELETE') this.methodEl.style.background = '#f44336';
-            else this.methodEl.style.background = '#2196f3';
-        }
+        if (level === 'icon') {
+            const el = document.createElement('div');
+            el.style.fontSize = '48px';
+            el.style.textAlign = 'center';
+            el.style.fontWeight = 'bold';
+            el.style.color = methodColor;
+            el.textContent = '🌐';
+            this.element.appendChild(el);
+            this.element.style.background = 'transparent';
+            this.element.style.border = 'none';
+        } else if (level === 'label') {
+            const el = document.createElement('div');
+            el.style.display = 'flex';
+            el.style.alignItems = 'center';
+            el.style.gap = '8px';
 
-        if (this.urlEl && params.url) {
-            this.urlEl.textContent = params.url;
-        }
+            const badge = document.createElement('span');
+            badge.style.background = methodColor;
+            badge.style.padding = '2px 6px';
+            badge.style.borderRadius = '4px';
+            badge.style.fontSize = '12px';
+            badge.style.fontWeight = 'bold';
+            badge.textContent = method;
 
-        if (this.previewEl && params.response) {
-             this.previewEl.textContent = JSON.stringify(params.response, null, 2).slice(0, 100) + '...';
-        } else if (this.previewEl && params.status === 'running') {
-             this.previewEl.textContent = 'Fetching...';
-             this.previewEl.style.color = '#ffcc80';
-        } else if (this.previewEl) {
-             this.previewEl.textContent = 'Waiting...';
-             this.previewEl.style.color = '#a5d6a7';
+            const text = document.createElement('span');
+            text.style.fontSize = '18px';
+            text.style.fontWeight = 'bold';
+            text.textContent = 'HTTP Request';
+
+            el.appendChild(badge);
+            el.appendChild(text);
+            this.element.appendChild(el);
+            this.element.style.background = 'rgba(30, 30, 30, 0.8)';
+            this.element.style.border = `2px solid ${methodColor}`;
+        } else if (level === 'summary') {
+            const header = document.createElement('div');
+            header.style.display = 'flex';
+            header.style.alignItems = 'center';
+            header.style.gap = '8px';
+            header.style.marginBottom = '8px';
+
+            const badge = document.createElement('span');
+            badge.style.background = methodColor;
+            badge.style.padding = '2px 6px';
+            badge.style.borderRadius = '4px';
+            badge.style.fontSize = '12px';
+            badge.style.fontWeight = 'bold';
+            badge.textContent = method;
+
+            const domain = new URL(url.startsWith('http') ? url : `http://${url}`).hostname;
+            const text = document.createElement('span');
+            text.style.fontSize = '14px';
+            text.style.fontWeight = 'bold';
+            text.textContent = domain;
+
+            header.appendChild(badge);
+            header.appendChild(text);
+
+            const preview = document.createElement('div');
+            preview.style.background = '#000';
+            preview.style.padding = '8px';
+            preview.style.borderRadius = '4px';
+            preview.style.fontSize = '11px';
+            preview.style.fontFamily = 'monospace';
+            preview.style.color = status === 'running' ? '#ffcc80' : '#a5d6a7';
+            preview.style.height = '40px';
+            preview.style.overflow = 'hidden';
+            preview.textContent = status === 'running' ? 'Fetching...' : (params.response ? JSON.stringify(params.response).slice(0, 50) + '...' : 'Waiting...');
+
+            this.element.appendChild(header);
+            this.element.appendChild(preview);
+            this.element.style.background = 'rgba(30, 30, 30, 0.95)';
+            this.element.style.border = `2px solid ${methodColor}`;
+        } else if (level === 'full') {
+            const header = document.createElement('div');
+            header.style.display = 'flex';
+            header.style.alignItems = 'center';
+            header.style.gap = '8px';
+            header.style.marginBottom = '12px';
+
+            const badge = document.createElement('span');
+            badge.style.background = methodColor;
+            badge.style.padding = '2px 6px';
+            badge.style.borderRadius = '4px';
+            badge.style.fontSize = '12px';
+            badge.style.fontWeight = 'bold';
+            badge.textContent = method;
+
+            const text = document.createElement('span');
+            text.style.fontSize = '16px';
+            text.style.fontWeight = 'bold';
+            text.textContent = 'HTTP Request';
+
+            header.appendChild(badge);
+            header.appendChild(text);
+
+            const urlGroup = document.createElement('div');
+            urlGroup.style.marginBottom = '12px';
+            const urlLabel = document.createElement('label');
+            urlLabel.textContent = 'URL:';
+            urlLabel.style.display = 'block';
+            urlLabel.style.fontSize = '12px';
+            urlLabel.style.color = '#aaa';
+            urlLabel.style.marginBottom = '4px';
+
+            const urlInput = document.createElement('input');
+            urlInput.type = 'text';
+            urlInput.value = url;
+            urlInput.style.width = '100%';
+            urlInput.style.padding = '8px';
+            urlInput.style.boxSizing = 'border-box';
+            urlInput.style.background = '#333';
+            urlInput.style.border = '1px solid #555';
+            urlInput.style.color = 'white';
+            urlInput.style.borderRadius = '4px';
+
+            urlGroup.appendChild(urlLabel);
+            urlGroup.appendChild(urlInput);
+
+            const responseGroup = document.createElement('div');
+            const resLabel = document.createElement('label');
+            resLabel.textContent = 'Response Preview:';
+            resLabel.style.display = 'block';
+            resLabel.style.fontSize = '12px';
+            resLabel.style.color = '#aaa';
+            resLabel.style.marginBottom = '4px';
+
+            const resPreview = document.createElement('pre');
+            resPreview.style.background = '#000';
+            resPreview.style.padding = '8px';
+            resPreview.style.borderRadius = '4px';
+            resPreview.style.fontSize = '11px';
+            resPreview.style.fontFamily = 'monospace';
+            resPreview.style.color = status === 'running' ? '#ffcc80' : '#a5d6a7';
+            resPreview.style.height = '80px';
+            resPreview.style.overflow = 'auto';
+            resPreview.style.margin = '0';
+            resPreview.textContent = status === 'running' ? 'Fetching...' : (params.response ? JSON.stringify(params.response, null, 2) : 'Waiting...');
+
+            responseGroup.appendChild(resLabel);
+            responseGroup.appendChild(resPreview);
+
+            this.element.appendChild(header);
+            this.element.appendChild(urlGroup);
+            this.element.appendChild(responseGroup);
+            this.element.style.background = 'rgba(30, 30, 30, 0.95)';
+            this.element.style.border = `2px solid ${methodColor}`;
         }
     }
 
     updateSpec(spec: SpecUpdate): void {
         super.updateSpec(spec);
-        if (spec.parameters) {
-            this.updateWidgetFromParams(spec.parameters);
-        }
+        // We use innerHTML check just to get a hint of what's rendered, or could store currentLOD.
+        // Assuming current LOD based on presence of URL input.
+        const level = this.element?.querySelector('input') ? 'full' : (this.element?.querySelector('pre') ? 'summary' : (this.element?.querySelector('span') ? 'label' : 'icon'));
+        this.renderHtmlContent(level);
     }
 }

@@ -3,48 +3,180 @@ import { ShapeNode } from './ShapeNode';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec, SpecUpdate } from '../types';
 
-export class N8nCredentialNode extends ShapeNode {
-    private lockGroup?: THREE.Group;
+import { HtmlNode } from './HtmlNode';
+
+export class N8nCredentialNode extends HtmlNode {
+    readonly lodThresholds = {
+        icon: 800,
+        label: 400,
+        summary: 150,
+        full: 0,
+    };
 
     constructor(sg: SpaceGraph, spec: NodeSpec) {
-        super(sg, spec);
-        this.shape = 'circle';
-        this.size = spec.size || 60;
-        this.color = spec.color || '#e91e63'; // Pink for credentials
+        super(sg, {
+            ...spec,
+            html: '',
+            style: {
+                width: '300px',
+                height: 'auto',
+                padding: '16px',
+                borderRadius: '8px',
+                backgroundColor: 'rgba(30, 30, 30, 0.95)',
+                color: 'white',
+                fontFamily: 'sans-serif',
+                border: '2px solid #e91e63', // Pink for credentials
+                boxSizing: 'border-box'
+            }
+        });
     }
 
-    protected createMesh(): THREE.Object3D {
-        const group = new THREE.Group();
+    updateLod(distance: number): void {
+        super.updateLod(distance);
 
-        // Base Circle
-        const baseMesh = super.createMesh();
-        group.add(baseMesh);
+        let level = 'full';
+        if (distance > this.lodThresholds.icon) level = 'icon';
+        else if (distance > this.lodThresholds.label) level = 'label';
+        else if (distance > this.lodThresholds.summary) level = 'summary';
 
-        // Simple Lock Icon using primitives
-        this.lockGroup = new THREE.Group();
+        this.renderHtmlContent(level);
+    }
 
-        // Lock body (box)
-        const bodyGeo = new THREE.BoxGeometry(this.size * 0.4, this.size * 0.3, this.size * 0.1);
-        const lockMat = new THREE.MeshBasicMaterial({ color: '#f8bbd0' });
-        const bodyMesh = new THREE.Mesh(bodyGeo, lockMat);
-        bodyMesh.position.y = -this.size * 0.1;
-        this.lockGroup.add(bodyMesh);
+    private renderHtmlContent(level: string) {
+        if (!this.element) return;
 
-        // Lock shackle (torus half)
-        const shackleGeo = new THREE.TorusGeometry(this.size * 0.15, this.size * 0.05, 8, 16, Math.PI);
-        const shackleMesh = new THREE.Mesh(shackleGeo, lockMat);
-        shackleMesh.position.y = this.size * 0.05;
-        this.lockGroup.add(shackleMesh);
+        this.element.innerHTML = '';
+        const params = this.spec.parameters || {};
+        const serviceName = params.service || 'Unknown Service';
+        const apiKey = params.apiKey || '';
 
-        // Move lock group to center slightly above base
-        this.lockGroup.position.z = 2;
+        if (level === 'icon') {
+            const el = document.createElement('div');
+            el.style.fontSize = '48px';
+            el.style.textAlign = 'center';
+            el.textContent = '🔒';
+            this.element.appendChild(el);
+            this.element.style.background = 'transparent';
+            this.element.style.border = 'none';
+        } else if (level === 'label') {
+            const el = document.createElement('div');
+            el.style.textAlign = 'center';
+            el.style.fontSize = '24px';
+            el.style.fontWeight = 'bold';
+            el.style.color = '#e91e63';
+            el.textContent = '🔒 Credential';
+            this.element.appendChild(el);
+            this.element.style.background = 'rgba(30, 30, 30, 0.8)';
+            this.element.style.border = '2px solid #e91e63';
+        } else if (level === 'summary') {
+            const header = document.createElement('div');
+            header.style.display = 'flex';
+            header.style.alignItems = 'center';
+            header.style.gap = '8px';
+            header.style.marginBottom = '8px';
 
-        group.add(this.lockGroup);
+            const icon = document.createElement('span');
+            icon.textContent = '🔒';
 
-        return group;
+            const title = document.createElement('span');
+            title.style.fontWeight = 'bold';
+            title.textContent = serviceName;
+
+            header.appendChild(icon);
+            header.appendChild(title);
+
+            const status = document.createElement('div');
+            status.style.fontSize = '12px';
+            status.style.color = apiKey ? '#4caf50' : '#f44336';
+            status.textContent = apiKey ? 'Key Configured' : 'Missing Key';
+
+            this.element.appendChild(header);
+            this.element.appendChild(status);
+            this.element.style.background = 'rgba(30, 30, 30, 0.95)';
+            this.element.style.border = '2px solid #e91e63';
+        } else if (level === 'full') {
+            const header = document.createElement('div');
+            header.style.display = 'flex';
+            header.style.alignItems = 'center';
+            header.style.gap = '8px';
+            header.style.marginBottom = '12px';
+
+            const icon = document.createElement('span');
+            icon.textContent = '🔒';
+
+            const title = document.createElement('span');
+            title.style.fontWeight = 'bold';
+            title.style.fontSize = '16px';
+            title.textContent = `${serviceName} Credentials`;
+
+            header.appendChild(icon);
+            header.appendChild(title);
+
+            const inputGroup = document.createElement('div');
+            inputGroup.style.marginBottom = '12px';
+
+            const label = document.createElement('label');
+            label.textContent = 'API Key / Token:';
+            label.style.display = 'block';
+            label.style.fontSize = '12px';
+            label.style.marginBottom = '4px';
+            label.style.color = '#aaa';
+
+            const input = document.createElement('input');
+            input.type = 'password';
+            input.value = apiKey;
+            input.placeholder = 'Enter secret...';
+            input.style.width = '100%';
+            input.style.padding = '8px';
+            input.style.boxSizing = 'border-box';
+            input.style.background = '#333';
+            input.style.border = '1px solid #555';
+            input.style.color = 'white';
+            input.style.borderRadius = '4px';
+
+            input.addEventListener('input', (e) => {
+                const val = (e.target as HTMLInputElement).value;
+                this.parameters = { ...this.parameters, apiKey: val };
+            });
+
+            inputGroup.appendChild(label);
+            inputGroup.appendChild(input);
+
+            const testBtn = document.createElement('button');
+            testBtn.textContent = 'Test Connection';
+            testBtn.style.width = '100%';
+            testBtn.style.padding = '8px';
+            testBtn.style.background = '#e91e63';
+            testBtn.style.color = 'white';
+            testBtn.style.border = 'none';
+            testBtn.style.borderRadius = '4px';
+            testBtn.style.cursor = 'pointer';
+            testBtn.style.fontWeight = 'bold';
+
+            testBtn.addEventListener('click', () => {
+                testBtn.textContent = 'Testing...';
+                setTimeout(() => {
+                    testBtn.textContent = this.parameters?.apiKey ? 'Success!' : 'Failed';
+                    testBtn.style.background = this.parameters?.apiKey ? '#4caf50' : '#f44336';
+                    setTimeout(() => {
+                        testBtn.textContent = 'Test Connection';
+                        testBtn.style.background = '#e91e63';
+                    }, 2000);
+                }, 1000);
+            });
+
+            this.element.appendChild(header);
+            this.element.appendChild(inputGroup);
+            this.element.appendChild(testBtn);
+
+            this.element.style.background = 'rgba(30, 30, 30, 0.95)';
+            this.element.style.border = '2px solid #e91e63';
+        }
     }
 
     updateSpec(spec: SpecUpdate): void {
         super.updateSpec(spec);
+        const level = this.element?.querySelector('input') ? 'full' : (this.element?.querySelector('div[style*="12px"]') ? 'summary' : (this.element?.querySelector('span') ? 'icon' : 'label'));
+        this.renderHtmlContent(level);
     }
 }
