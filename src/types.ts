@@ -145,28 +145,53 @@ export type SpaceGraphNodeData =
     | TextMeshNodeData
     | VideoNodeData;
 
+/**
+ * Specification for a single node in the graph.
+ */
 export interface NodeSpec<T = SpaceGraphNodeData> {
+    /** Unique identifier for the node. */
     id: string;
+    /** The class name of the node (e.g., 'ShapeNode', 'HtmlNode'). */
     type: string;
+    /** Optional text label to display with the node. */
     label?: string;
+    /** Optional initial position in 3D space [x, y, z]. */
     position?: [number, number, number];
+    /** Configuration data specific to the node type. */
     data?: T;
 }
 
+/**
+ * Specification for a single edge connecting two nodes in the graph.
+ */
 export interface EdgeSpec {
+    /** Unique identifier for the edge. */
     id: string;
+    /** The ID of the source node. */
     source: string;
+    /** The ID of the target node. */
     target: string;
+    /** The class name of the edge (e.g., 'Edge', 'CurvedEdge'). */
     type: string;
+    /** Optional configuration data specific to the edge type. */
     data?: Record<string, any>;
 }
 
+/**
+ * Specification for the entire graph structure.
+ */
 export interface GraphSpec {
+    /** Array of nodes to render in the graph. */
     nodes: NodeSpec[];
+    /** Array of edges connecting the nodes. */
     edges: EdgeSpec[];
 }
 
+/**
+ * Configuration options for creating a SpaceGraph instance.
+ */
 export interface SpaceGraphOptions {
+    /** Arbitrary configuration options passed to plugins and renderers. */
     [key: string]: any;
 }
 
@@ -175,18 +200,33 @@ export interface SpecUpdate {
     edges?: Partial<EdgeSpec>[];
 }
 
+/**
+ * Interface that all SpaceGraph plugins must implement.
+ */
 export interface ISpaceGraphPlugin {
+    /** Unique identifier for the plugin. */
     readonly id: string;
+    /** Human-readable name of the plugin. */
     readonly name: string;
+    /** Semantic version of the plugin. */
     readonly version: string;
 
+    /** Called once when the plugin is registered with the graph. */
     init(graph: any): void;
+    /** Called whenever the graph specification is updated. */
     onStateUpdate?(update: SpecUpdate): void;
+    /** Called every frame before the main render pass. */
     onPreRender?(delta: number): void;
+    /** Called every frame after the main render pass. */
     onPostRender?(delta: number): void;
+    /** Called when a new node is added to the graph. */
     onNodeAdded?(node: any): void;
+    /** Called when a node is removed from the graph. */
     onNodeRemoved?(id: string): void;
+    /** Called when a new edge is added to the graph. */
     onEdgeAdded?(edge: any): void;
+    /** Called when an edge is removed from the graph. */
     onEdgeRemoved?(id: string): void;
+    /** Called when the graph is destroyed or the plugin is unregistered. */
     dispose?(): void;
 }
