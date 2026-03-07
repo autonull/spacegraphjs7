@@ -4,6 +4,7 @@ import { N8nBridge } from '../packages/n8n-bridge/src/spacegraph-n8n-bridge';
 import { N8nVisionHealer } from '../packages/n8n-bridge/src/N8nVisionHealer';
 import { SpaceGraph } from '../src/SpaceGraph';
 import type { N8nWorkflowJSON } from '../packages/n8n-bridge/src/types';
+import { N8nScheduleNode } from '../src/nodes/N8nScheduleNode';
 
 describe('WorkflowMapper', () => {
     it('toGraphSpec: should map n8n workflow JSON to SpaceGraph spec correctly', () => {
@@ -236,5 +237,56 @@ describe('N8nVisionHealer', () => {
 
         expect(mockForceLayoutRun).not.toHaveBeenCalled();
         expect(mockErgonomicsFix).toHaveBeenCalled();
+    });
+});
+
+describe('N8nNodes LOD logic', () => {
+    it('N8nScheduleNode should change HTML content based on camera distance (LOD)', () => {
+        const sg = {
+            events: {
+                on: vi.fn(),
+                emit: vi.fn()
+            }
+        } as unknown as SpaceGraph;
+
+        const spec = {
+            id: 'node-sch',
+            type: 'N8nScheduleNode',
+            position: [0, 0, 0] as [number, number, number],
+            data: { nextRun: 'in 5 mins' }, // also put in data just in case
+        } as any;
+
+        const domElement = document.createElement('div');
+
+        // We can just construct N8nScheduleNode and see its content
+        // N8nScheduleNode creates a DOMNode, which needs a domElement.
+        // We override the object instantiation.
+        const node = new N8nScheduleNode(sg, spec);
+        node.parameters = { nextRun: 'in 5 mins' };
+
+        // It creates its own domElement in HtmlNode constructor
+        expect(node.domElement).toBeDefined();
+
+        // 1. Full view
+        node.updateLod(0);
+        expect(node.domElement?.innerHTML).toContain('Schedule Cron');
+        expect(node.domElement?.innerHTML).toContain('in 5 mins');
+        expect(node.domElement?.innerHTML).toContain('input');
+
+        // 2. Summary view
+        node.updateLod(200);
+        expect(node.domElement?.innerHTML).toContain('Schedule Node');
+        expect(node.domElement?.innerHTML).toContain('in 5 mins');
+        expect(node.domElement?.innerHTML).not.toContain('input');
+
+        // 3. Label view
+        node.updateLod(500);
+        expect(node.domElement?.innerHTML).toContain('Schedule');
+        expect(node.domElement?.innerHTML).not.toContain('in 5 mins');
+
+        // 4. Icon view
+        node.updateLod(1000);
+        expect(node.domElement?.innerHTML).toContain('🕐');
+        expect(node.domElement?.innerHTML).not.toContain('Schedule Node');
     });
 });

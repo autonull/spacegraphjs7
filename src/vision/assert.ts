@@ -15,11 +15,11 @@ export class VisionAssert {
         // We inject a function that calls the existing vision manager instances
         // attached to any SpaceGraph instances in the DOM.
         const report = await this.page.evaluate(async () => {
-            // @ts-ignore
+            // @ts-expect-error - Global object attached during tests
             if (!window.__SPACEGRAPH_INSTANCES__) {
                 return { layoutScore: 0, legibilityScore: 0, issues: [] };
             }
-            // @ts-ignore
+            // @ts-expect-error - Global object attached during tests
             const instances = Array.from(window.__SPACEGRAPH_INSTANCES__);
             if (instances.length === 0) {
                 return { layoutScore: 0, legibilityScore: 0, issues: [] };
