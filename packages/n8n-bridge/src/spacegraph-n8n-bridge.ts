@@ -2,6 +2,8 @@ import { Subject, BehaviorSubject, Observable } from 'rxjs';
 import type { SpaceGraph } from 'spacegraphjs';
 import { WorkflowMapper } from './WorkflowMapper';
 import type { N8nWorkflowJSON, N8nWorkflowDiff, ExecutionState } from './types';
+import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
+import type { GraphSpec } from 'spacegraphjs';
 
 export class N8nBridge {
     private sg: SpaceGraph;
@@ -73,6 +75,48 @@ export class N8nBridge {
             const executionId = Math.random().toString(36).substring(7);
             this.send({ type: 'execute:trigger', workflowId, executionId });
             resolve(executionId);
+        });
+    }
+
+    exportWorkflowJSON(): N8nWorkflowJSON {
+        // Build a temporary GraphSpec payload from the current graph state
+        const spec: GraphSpec = { nodes: [], edges: [] };
+
+        for (const [id, node] of this.sg.graph.nodes.entries()) {
+            spec.nodes!.push({
+                id: node.id,
+                type: node.constructor.name,
+                label: node.label,
+                position: [node.position.x, node.position.y, node.position.z],
+                parameters: node.parameters
+            });
+        }
+
+        for (const edge of this.sg.graph.edges) {
+            spec.edges!.push({
+                id: edge.id,
+                source: edge.sourceNode.id,
+                target: edge.targetNode.id,
+                type: edge.constructor.name
+            });
+        }
+
+        return WorkflowMapper.toN8nJSON(spec);
+    }
+
+    exportGLTF(): Promise<ArrayBuffer | { [key: string]: any }> {
+        return new Promise((resolve, reject) => {
+            const exporter = new GLTFExporter();
+            exporter.parse(
+                this.sg.renderer.scene,
+                (gltf) => {
+                    resolve(gltf);
+                },
+                (error) => {
+                    reject(error);
+                },
+                { binary: true }
+            );
         });
     }
 
