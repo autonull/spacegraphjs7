@@ -191,6 +191,8 @@ export interface GraphSpec {
  * Configuration options for creating a SpaceGraph instance.
  */
 export interface SpaceGraphOptions {
+    /** Hardware Acceleration Hook: specify custom ONNX execution providers (e.g. ['rknn']) */
+    onnxExecutionProviders?: string[];
     /** Arbitrary configuration options passed to plugins and renderers. */
     [key: string]: any;
 }
