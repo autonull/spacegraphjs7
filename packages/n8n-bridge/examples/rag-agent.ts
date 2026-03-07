@@ -1,76 +1,47 @@
 import { SpaceGraph, GraphSpec } from 'spacegraphjs';
 
-let container = document.getElementById('spacegraph-container');
-if (!container) {
-  container = document.createElement('div');
-  container.id = 'spacegraph-container';
-  container.style.width = '100vw';
-  container.style.height = '100vh';
-  document.body.appendChild(container);
-}
+const container = document.getElementById('spacegraph-container');
+if (!container) throw new Error('Container not found');
 
-// Template: Input -> Embedder -> VectorStore -> Retriever -> LLM -> Output
 const spec: GraphSpec = {
   nodes: [
     {
-      id: 'input',
-      type: 'N8nTriggerNode',
-      label: 'Input/Webhook',
-      position: [-600, 0, 0],
-      parameters: { status: 'success' }
-    },
-    {
-      id: 'embedder',
+      id: 'http-input',
       type: 'N8nHttpNode',
-      label: 'Embeddings (OpenAI)',
-      position: [-300, 150, 0],
-      parameters: { requestMethod: 'POST', url: 'https://api.openai.com/v1/embeddings' }
+      position: [-400, 0, 0],
+      parameters: { requestMethod: 'GET', url: 'https://docs.mycompany.com/api/data' }
     },
     {
-      id: 'vectorstore',
+      id: 'vector-store',
       type: 'ChartNode',
-      label: 'Pinecone Vector Store',
-      position: [0, 300, 0],
+      position: [0, -300, 0],
       parameters: {
-         chartType: 'bar',
-         data: {
-             labels: ['Indexes', 'Vectors'],
-             datasets: [{ data: [1, 15042] }]
-         }
+        chartType: 'bar',
+        chartData: {
+          labels: ['Documents', 'Embeddings', 'Chunks'],
+          datasets: [{ data: [120, 1500, 3200], backgroundColor: '#4caf50' }]
+        }
       }
     },
     {
-      id: 'retriever',
-      type: 'N8nCodeNode',
-      label: 'Retriever Logic',
-      position: [0, -150, 0],
-      parameters: { jsCode: 'return items.map(i => ({...i, query: i.json.text}));' }
-    },
-    {
-      id: 'llm',
+      id: 'ai-agent',
       type: 'N8nAiNode',
-      label: 'LLM (GPT-4)',
-      position: [300, 0, 0],
-      parameters: { model: 'gpt-4', prompt: 'Answer based on context: {{ $json.context }}' }
+      position: [0, 0, 0],
+      parameters: { model: 'gpt-4o', prompt: 'Use the retrieved documents to answer the user query.' }
     },
     {
-      id: 'output',
-      type: 'DataNode',
-      label: 'Output/Response',
-      position: [600, 0, 0],
-      parameters: { data: { result: 'Generated answer' } }
+      id: 'webhook-output',
+      type: 'N8nTriggerNode',
+      position: [400, 0, 0],
+      parameters: { status: 'waiting' }
     }
   ],
   edges: [
-    { id: 'e1', source: 'input', target: 'embedder', type: 'FlowEdge' },
-    { id: 'e2', source: 'embedder', target: 'vectorstore', type: 'FlowEdge' },
-    { id: 'e3', source: 'input', target: 'retriever', type: 'FlowEdge' },
-    { id: 'e4', source: 'retriever', target: 'vectorstore', type: 'DottedEdge' },
-    { id: 'e5', source: 'vectorstore', target: 'llm', type: 'FlowEdge' },
-    { id: 'e6', source: 'retriever', target: 'llm', type: 'FlowEdge' },
-    { id: 'e7', source: 'llm', target: 'output', type: 'FlowEdge' }
+    { id: 'e1', source: 'http-input', target: 'ai-agent', type: 'FlowEdge' },
+    { id: 'e2', source: 'ai-agent', target: 'vector-store', type: 'DottedEdge' },
+    { id: 'e3', source: 'ai-agent', target: 'webhook-output', type: 'FlowEdge' }
   ],
-  layout: { type: 'HierarchicalLayout', direction: 'LR' }
+  layout: { type: 'ForceLayout' }
 };
 
 SpaceGraph.create(container, spec);

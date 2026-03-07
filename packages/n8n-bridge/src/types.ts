@@ -52,3 +52,11 @@ export interface ExecutionState {
     nodeId?: string;
     error?: any;
 }
+
+export interface OSProcessUpdate {
+    pid: string;
+    name: string;
+    status: string;
+    cpu: number;
+    memory: number;
+}

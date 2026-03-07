@@ -8,6 +8,134 @@ export class N8nWorkflowPlugin implements SpaceGraphPlugin {
     private bridge!: N8nBridge;
     private sg!: SpaceGraph;
 
+    private onKeyDown = (e: KeyboardEvent) => {
+        if (e.key === '/') {
+            // Prevent if user is typing in an input
+            if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+            e.preventDefault();
+            this.showPromptOverlay();
+        }
+    };
+
+    private showPromptOverlay() {
+        const existing = document.getElementById('spacegraph-n8n-prompt-builder');
+        if (existing) return;
+
+        const overlay = document.createElement('div');
+        overlay.id = 'spacegraph-n8n-prompt-builder';
+        overlay.style.position = 'absolute';
+        overlay.style.top = '50%';
+        overlay.style.left = '50%';
+        overlay.style.transform = 'translate(-50%, -50%)';
+        overlay.style.background = 'rgba(20, 20, 20, 0.95)';
+        overlay.style.border = '2px solid #3f51b5';
+        overlay.style.borderRadius = '8px';
+        overlay.style.padding = '20px';
+        overlay.style.zIndex = '1000';
+        overlay.style.display = 'flex';
+        overlay.style.flexDirection = 'column';
+        overlay.style.gap = '10px';
+        overlay.style.width = '400px';
+        overlay.style.boxShadow = '0 10px 30px rgba(0,0,0,0.5)';
+
+        const label = document.createElement('label');
+        label.textContent = '✨ What workflow do you want to build?';
+        label.style.color = 'white';
+        label.style.fontWeight = 'bold';
+        label.style.fontSize = '16px';
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.placeholder = 'e.g., A researcher agent that searches the web';
+        input.style.padding = '10px';
+        input.style.borderRadius = '4px';
+        input.style.border = '1px solid #555';
+        input.style.background = '#333';
+        input.style.color = 'white';
+        input.style.outline = 'none';
+        input.style.fontSize = '14px';
+
+        const info = document.createElement('div');
+        info.textContent = 'Press Enter to generate, Esc to cancel';
+        info.style.color = '#aaa';
+        info.style.fontSize = '12px';
+        info.style.textAlign = 'right';
+
+        overlay.appendChild(label);
+        overlay.appendChild(input);
+        overlay.appendChild(info);
+
+        document.body.appendChild(overlay);
+        input.focus();
+
+        const close = () => {
+            if (document.body.contains(overlay)) {
+                document.body.removeChild(overlay);
+            }
+        };
+
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                close();
+            } else if (e.key === 'Enter') {
+                this.generateWorkflowFromPrompt(input.value);
+                close();
+            }
+        });
+    }
+
+    private generateWorkflowFromPrompt(prompt: string) {
+        const text = prompt.toLowerCase();
+
+        let mockSpec: any = null;
+
+        if (text.includes('research') || text.includes('agent')) {
+            mockSpec = {
+                nodes: [
+                    { id: `trigger-${Date.now()}`, type: 'N8nTriggerNode', position: [0, 0, 0], label: 'Start' },
+                    { id: `agent-${Date.now()}`, type: 'N8nAiNode', position: [300, 0, 0], label: 'Research Agent', parameters: { model: 'gpt-4o', prompt: 'You are a researcher...' } },
+                    { id: `code-${Date.now()}`, type: 'N8nCodeNode', position: [600, 0, 0], label: 'Format Results' }
+                ],
+                edges: [
+                    { id: `e1-${Date.now()}`, source: `trigger-${Date.now()}`, target: `agent-${Date.now()}`, type: 'FlowEdge' },
+                    { id: `e2-${Date.now()}`, source: `agent-${Date.now()}`, target: `code-${Date.now()}`, type: 'FlowEdge' }
+                ]
+            };
+        } else if (text.includes('rag') || text.includes('vector')) {
+             mockSpec = {
+                nodes: [
+                    { id: `http-${Date.now()}`, type: 'N8nHttpNode', position: [0, 0, 0], label: 'Fetch Data', parameters: { url: 'https://example.com/docs' } },
+                    { id: `ai-${Date.now()}`, type: 'N8nAiNode', position: [300, 0, 0], label: 'LLM Node' },
+                    { id: `vector-${Date.now()}`, type: 'ChartNode', position: [300, -200, 0], label: 'Vector Store' }
+                ],
+                edges: [
+                    { id: `e1-${Date.now()}`, source: `http-${Date.now()}`, target: `ai-${Date.now()}`, type: 'FlowEdge' },
+                    { id: `e2-${Date.now()}`, source: `ai-${Date.now()}`, target: `vector-${Date.now()}`, type: 'DottedEdge' }
+                ]
+            };
+        } else {
+             mockSpec = {
+                nodes: [
+                    { id: `trigger-${Date.now()}`, type: 'N8nTriggerNode', position: [0, 0, 0], label: 'Webhook' },
+                    { id: `code-${Date.now()}`, type: 'N8nCodeNode', position: [300, 0, 0], label: 'Execute Code' }
+                ],
+                edges: [
+                    { id: `e1-${Date.now()}`, source: `trigger-${Date.now()}`, target: `code-${Date.now()}`, type: 'FlowEdge' }
+                ]
+            };
+        }
+
+        if (mockSpec) {
+            this.sg.loadSpec(mockSpec);
+
+            // Re-run auto layout if available
+            const autoLayout = this.sg.pluginManager.getPlugin('AutoLayoutPlugin') as any;
+            if (autoLayout && autoLayout.apply) {
+                setTimeout(() => autoLayout.apply(), 100);
+            }
+        }
+    }
+
     init(sg: SpaceGraph): void {
         this.sg = sg;
         this.bridge = new N8nBridge(sg);
@@ -19,6 +147,8 @@ export class N8nWorkflowPlugin implements SpaceGraphPlugin {
         this.bridge.executionState.subscribe((state: ExecutionState | null) => {
              if (state) this.applyExecutionVisuals(state);
         });
+
+        window.addEventListener('keydown', this.onKeyDown);
     }
 
     update(_delta: number): void {
@@ -164,6 +294,7 @@ export class N8nWorkflowPlugin implements SpaceGraphPlugin {
     }
 
     dispose(): void {
+        window.removeEventListener('keydown', this.onKeyDown);
         if (this.bridge) {
              this.bridge.dispose();
         }
