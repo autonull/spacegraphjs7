@@ -1,6 +1,7 @@
 import type { SpaceGraph } from '../SpaceGraph';
 import type { ISpaceGraphPlugin } from '../types';
 import { DOMNode } from '../nodes/DOMNode';
+import { GroupNode } from '../nodes/GroupNode';
 
 export class LODPlugin implements ISpaceGraphPlugin {
     readonly id = 'lod';
@@ -22,6 +23,10 @@ export class LODPlugin implements ISpaceGraphPlugin {
             if (node instanceof DOMNode) {
                 const distance = cameraPosition.distanceTo(node.position);
                 node.setVisibility(distance <= this.maxDistance);
+                node.updateLod(distance);
+            } else if (node instanceof GroupNode) {
+                const distance = cameraPosition.distanceTo(node.position);
+                node.updateLod(distance);
             }
         }
     }

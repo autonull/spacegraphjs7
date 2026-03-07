@@ -51,6 +51,10 @@ export class DOMNode extends Node {
         this.backingMesh.visible = visible;
     }
 
+    public updateLod(distance: number): void {
+        // Base implementation for LOD distance updates. Overridden by subclasses.
+    }
+
     dispose(): void {
         if (this.domElement.parentNode) {
             this.domElement.parentNode.removeChild(this.domElement);

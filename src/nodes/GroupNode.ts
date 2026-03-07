@@ -71,6 +71,15 @@ export class GroupNode extends Node {
         }
     }
 
+    updateLod(distance: number): void {
+        // Fractal LOD infinite drill-down logic
+        if (distance < 800) {
+            this.meshMaterial.opacity = 0.05;
+        } else {
+            this.meshMaterial.opacity = 0.2;
+        }
+    }
+
     dispose(): void {
         if (this.meshGeometry) {
             this.meshGeometry.dispose();
