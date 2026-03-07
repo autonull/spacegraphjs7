@@ -121,7 +121,7 @@ export class N8nBridge {
     }
 
     private send(message: any) {
-        if (this.wsClient.readyState === WebSocket.OPEN) {
+        if (this.wsClient && this.wsClient.readyState === 1) { // 1 = WebSocket.OPEN
             this.wsClient.send(JSON.stringify(message));
         } else {
             console.warn('[N8nBridge] WebSocket is not open. Cannot send message:', message);
