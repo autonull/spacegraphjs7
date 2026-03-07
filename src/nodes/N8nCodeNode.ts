@@ -150,6 +150,7 @@ export class N8nCodeNode extends HtmlNode {
             textarea.addEventListener('input', (e) => {
                 const val = (e.target as HTMLTextAreaElement).value;
                 this.parameters = { ...this.parameters, jsCode: val };
+                this.sg.events.emit('node:paramChange', { nodeId: this.id, key: 'jsCode', value: val });
             });
 
             editorContainer.appendChild(textarea);

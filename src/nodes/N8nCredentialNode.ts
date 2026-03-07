@@ -137,6 +137,7 @@ export class N8nCredentialNode extends HtmlNode {
             input.addEventListener('input', (e) => {
                 const val = (e.target as HTMLInputElement).value;
                 this.parameters = { ...this.parameters, apiKey: val };
+                this.sg.events.emit('node:paramChange', { nodeId: this.id, key: 'apiKey', value: val });
             });
 
             inputGroup.appendChild(label);
