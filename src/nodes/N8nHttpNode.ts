@@ -52,7 +52,7 @@ export class N8nHttpNode extends HtmlNode {
         if (!this.domElement) return;
 
         this.domElement.innerHTML = '';
-        const params = this.parameters || this.spec?.parameters || {};
+        const params = (this.parameters && Object.keys(this.parameters).length > 0) ? this.parameters : (this.spec?.parameters || {});
         const method = (params.requestMethod || 'GET').toUpperCase();
         const url = params.url || 'https://api.example.com';
         const methodColor = this.getMethodColor(method);

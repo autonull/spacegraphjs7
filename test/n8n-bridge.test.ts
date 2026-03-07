@@ -8,6 +8,9 @@ import { N8nScheduleNode } from '../src/nodes/N8nScheduleNode';
 import { N8nCredentialNode } from '../src/nodes/N8nCredentialNode';
 import { N8nHitlNode } from '../src/nodes/N8nHitlNode';
 import { ExecutionLogPanel } from '../src/nodes/ExecutionLogPanel';
+import { N8nCodeNode } from '../src/nodes/N8nCodeNode';
+import { N8nHttpNode } from '../src/nodes/N8nHttpNode';
+import { N8nAiNode } from '../src/nodes/N8nAiNode';
 
 describe('WorkflowMapper', () => {
     it('toGraphSpec: should map n8n workflow JSON to SpaceGraph spec correctly', () => {
@@ -414,5 +417,137 @@ describe('N8nNodes LOD logic', () => {
         // 3. Icon view
         node.updateLod(1000);
         expect(node.domElement?.innerHTML).toContain('📄');
+    });
+
+    it('N8nCodeNode should change HTML content based on camera distance (LOD)', () => {
+        const sg = {
+            events: {
+                on: vi.fn(),
+                emit: vi.fn()
+            }
+        } as unknown as SpaceGraph;
+
+        const spec = {
+            id: 'node-code',
+            type: 'N8nCodeNode',
+            position: [0, 0, 0] as [number, number, number],
+        } as any;
+
+        const node = new N8nCodeNode(sg, spec);
+        node.parameters = { jsCode: 'console.log("hello");\nreturn items;' };
+
+        expect(node.domElement).toBeDefined();
+
+        // 1. Full view
+        node.updateLod(0);
+        expect(node.domElement?.innerHTML).toContain('Code Editor');
+        const textarea = node.domElement?.querySelector('textarea');
+        expect(textarea?.value).toContain('console.log("hello");');
+        expect(node.domElement?.innerHTML).toContain('textarea');
+
+        // 2. Summary view
+        node.updateLod(200);
+        expect(node.domElement?.innerHTML).toContain('Code');
+        expect(node.domElement?.innerHTML).toContain('console.log("hello");');
+        expect(node.domElement?.innerHTML).not.toContain('textarea');
+
+        // 3. Label view
+        node.updateLod(500);
+        expect(node.domElement?.innerHTML).toContain('JS Code');
+        expect(node.domElement?.innerHTML).not.toContain('console.log');
+
+        // 4. Icon view
+        node.updateLod(1000);
+        // It renders 'JS' in icon view as well as label/summary (in the badge)
+        // But in icon view, it should just be 'JS' with no 'Code'
+        expect(node.domElement?.innerHTML).toContain('JS');
+        expect(node.domElement?.innerHTML).not.toContain('Code');
+    });
+
+    it('N8nHttpNode should change HTML content based on camera distance (LOD)', () => {
+        const sg = {
+            events: {
+                on: vi.fn(),
+                emit: vi.fn()
+            }
+        } as unknown as SpaceGraph;
+
+        const spec = {
+            id: 'node-http',
+            type: 'N8nHttpNode',
+            position: [0, 0, 0] as [number, number, number],
+        } as any;
+
+        const node = new N8nHttpNode(sg, spec);
+        node.parameters = { requestMethod: 'POST', url: 'https://api.github.com' };
+
+        expect(node.domElement).toBeDefined();
+
+        // 1. Full view
+        node.updateLod(0);
+        expect(node.domElement?.innerHTML).toContain('HTTP Request');
+        const input = node.domElement?.querySelector('input');
+        expect(input?.value).toBe('https://api.github.com');
+
+        // 2. Summary view
+        node.updateLod(200);
+        expect(node.domElement?.innerHTML).toContain('api.github.com');
+        expect(node.domElement?.innerHTML).not.toContain('input type="text"');
+
+        // 3. Label view
+        node.updateLod(500);
+        expect(node.domElement?.innerHTML).toContain('HTTP Request');
+        expect(node.domElement?.innerHTML).not.toContain('api.github.com');
+
+        // 4. Icon view
+        node.updateLod(1000);
+        expect(node.domElement?.innerHTML).toContain('🌐');
+        expect(node.domElement?.innerHTML).not.toContain('HTTP Request');
+    });
+
+    it('N8nAiNode should change HTML content based on camera distance (LOD)', () => {
+        const sg = {
+            events: {
+                on: vi.fn(),
+                emit: vi.fn()
+            }
+        } as unknown as SpaceGraph;
+
+        const spec = {
+            id: 'node-ai',
+            type: 'N8nAiNode',
+            position: [0, 0, 0] as [number, number, number],
+        } as any;
+
+        const node = new N8nAiNode(sg, spec);
+        node.parameters = { model: 'gpt-4', prompt: 'You are a helpful assistant.' };
+
+        expect(node.domElement).toBeDefined();
+
+        // 1. Full view
+        node.updateLod(0);
+        expect(node.domElement?.innerHTML).toContain('AI Agent');
+        expect(node.domElement?.innerHTML).toContain('textarea');
+        // it sets textarea value but it's not reflected in innerHTML always, let's test content of textarea directly or just check it rendered.
+        const textarea = node.domElement?.querySelector('textarea');
+        expect(textarea?.value).toBe('You are a helpful assistant.');
+
+        // 2. Summary view
+        node.updateLod(200);
+        expect(node.domElement?.innerHTML).toContain('AI Agent');
+        expect(node.domElement?.innerHTML).toContain('gpt-4');
+        expect(node.domElement?.innerHTML).toContain('You are a helpful assistant.');
+        expect(node.domElement?.innerHTML).not.toContain('textarea');
+
+        // 3. Label view
+        node.updateLod(500);
+        expect(node.domElement?.innerHTML).toContain('AI Agent');
+        expect(node.domElement?.innerHTML).not.toContain('gpt-4');
+        expect(node.domElement?.innerHTML).not.toContain('You are a helpful assistant.');
+
+        // 4. Icon view
+        node.updateLod(1000);
+        expect(node.domElement?.innerHTML).toContain('✨');
+        expect(node.domElement?.innerHTML).not.toContain('AI Agent');
     });
 });
