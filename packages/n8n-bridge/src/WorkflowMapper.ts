@@ -105,4 +105,87 @@ export class WorkflowMapper {
       layout: { type: 'HierarchicalLayout', direction: 'LR' }
     };
   }
+
+  // Map SpaceGraph node type class name -> n8n node type string
+  static resolveN8nType(sgType: string): string {
+    const typeMap: Record<string, string> = {
+      'N8nTriggerNode': 'n8n-nodes-base.webhook',
+      'N8nScheduleNode': 'n8n-nodes-base.scheduleTrigger',
+      'N8nHttpNode': 'n8n-nodes-base.httpRequest',
+      'N8nAiNode': '@n8n/n8n-nodes-langchain.agent',
+      'N8nCodeNode': 'n8n-nodes-base.code',
+      'ChartNode': '@n8n/n8n-nodes-langchain.vectorStorePinecone',
+      'GroupNode': 'n8n-nodes-base.subWorkflow',
+      'ShapeNode': 'n8n-nodes-base.if',
+      'DataNode': 'n8n-nodes-base.set',
+      'N8nCredentialNode': 'n8n-nodes-base.credential',
+      'N8nHitlNode': 'n8n-nodes-base.wait',
+      'N8nVisionOptimizerNode': 'n8n-nodes-base.spaceGraphVisionOptimizer'
+    };
+    return typeMap[sgType] || 'n8n-nodes-base.noop';
+  }
+
+  // SpaceGraph GraphSpec -> n8n Workflow JSON
+  static toN8nJSON(spec: GraphSpec): N8nWorkflowJSON {
+    const nodes: N8nNodeSpec[] = [];
+    const connections: N8nConnectionSpec = {};
+
+    // 1. Map nodes
+    if (spec.nodes) {
+      spec.nodes.forEach(sgNode => {
+        // Find existing n8nType if stored, otherwise derive it
+        const type = sgNode.n8nType || WorkflowMapper.resolveN8nType(sgNode.type);
+        const name = sgNode.label || sgNode.id;
+
+        const n8nNode: N8nNodeSpec = {
+          id: sgNode.id,
+          name: name,
+          type: type,
+          typeVersion: 1,
+          position: sgNode.position ? [sgNode.position[0], -sgNode.position[1]] : [0, 0], // Invert Y back
+          parameters: sgNode.parameters || {}
+        };
+        nodes.push(n8nNode);
+
+        // Initialize connections for this node
+        connections[name] = { main: [[]] };
+      });
+    }
+
+    // 2. Map edges
+    if (spec.edges) {
+      spec.edges.forEach(sgEdge => {
+        const sourceNode = nodes.find(n => n.id === sgEdge.source);
+        const targetNode = nodes.find(n => n.id === sgEdge.target);
+
+        if (sourceNode && targetNode) {
+          const outputType = sgEdge.n8nOutputType || 'main';
+          const outputIndex = sgEdge.n8nOutputIndex || 0;
+
+          if (!connections[sourceNode.name][outputType]) {
+            connections[sourceNode.name][outputType] = [];
+          }
+          if (!connections[sourceNode.name][outputType][0]) {
+            connections[sourceNode.name][outputType][0] = [];
+          }
+
+          connections[sourceNode.name][outputType][0].push({
+            node: targetNode.name,
+            type: 'main',
+            index: outputIndex
+          });
+        }
+      });
+    }
+
+    return {
+      id: '',
+      name: 'Exported SpaceGraph Workflow',
+      active: false,
+      nodes,
+      connections,
+      settings: {},
+      tags: []
+    };
+  }
 }
