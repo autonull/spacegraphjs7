@@ -43,7 +43,7 @@ export class N8nHitlNode extends HtmlNode {
         if (!this.domElement) return;
 
         this.domElement.innerHTML = '';
-        const params = this.spec.parameters || {};
+        const params = this.parameters || this.spec?.parameters || {};
         const taskSummary = params.taskSummary || 'Review required';
         const status = params.status || 'waiting'; // could be 'approved', 'rejected'
 

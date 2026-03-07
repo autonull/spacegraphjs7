@@ -43,7 +43,7 @@ export class N8nCodeNode extends HtmlNode {
         if (!this.domElement) return;
 
         this.domElement.innerHTML = '';
-        const params = this.spec.parameters || {};
+        const params = this.parameters || this.spec?.parameters || {};
         const jsCode = params.jsCode || 'return items;';
 
         if (level === 'icon') {

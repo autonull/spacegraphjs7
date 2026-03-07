@@ -46,7 +46,7 @@ export class N8nCredentialNode extends HtmlNode {
         if (!this.domElement) return;
 
         this.domElement.innerHTML = '';
-        const params = this.spec.parameters || {};
+        const params = this.parameters || this.spec?.parameters || {};
         const serviceName = params.service || 'Unknown Service';
         const apiKey = params.apiKey || '';
 

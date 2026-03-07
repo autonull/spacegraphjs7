@@ -18,12 +18,17 @@ export class N8nVisionHealer {
 
         if (report.layoutScore < 70) {
             console.log(`[N8nVisionHealer] Layout score ${report.layoutScore} is low. Attempting auto-fix via ForceLayout...`);
-            const forceLayout = this.sg.pluginManager.getPlugin('ForceLayout') as any;
+            const forceLayout = typeof this.sg.pluginManager.getPlugin === 'function'
+                ? this.sg.pluginManager.getPlugin('ForceLayout')
+                : (this.sg.pluginManager as any).get('ForceLayout');
+
             if (forceLayout && typeof forceLayout.update === 'function') {
                 // Run force layout physics ticks to stabilize
                 for (let i = 0; i < 100; i++) {
                     forceLayout.update(0.016);
                 }
+            } else if (forceLayout && typeof (forceLayout as any).run === 'function') {
+                await (forceLayout as any).run();
             } else {
                  console.warn('[N8nVisionHealer] ForceLayout plugin not found or missing update method.');
             }
@@ -34,7 +39,10 @@ export class N8nVisionHealer {
 
         if (report.overlap && report.overlap.overlaps && report.overlap.overlaps.length > 0) {
             console.log(`[N8nVisionHealer] Overlaps detected. Triggering ErgonomicsPlugin to fix...`);
-            const ergonomics = this.sg.pluginManager.getPlugin('ErgonomicsPlugin') as any;
+            const ergonomics = typeof this.sg.pluginManager.getPlugin === 'function'
+                ? this.sg.pluginManager.getPlugin('ErgonomicsPlugin')
+                : (this.sg.pluginManager as any).get('ErgonomicsPlugin');
+
             if (ergonomics && typeof ergonomics.fixOverlaps === 'function') {
                 await ergonomics.fixOverlaps();
             } else {
