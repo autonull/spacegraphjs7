@@ -5,6 +5,9 @@ import { N8nVisionHealer } from '../packages/n8n-bridge/src/N8nVisionHealer';
 import { SpaceGraph } from '../src/SpaceGraph';
 import type { N8nWorkflowJSON } from '../packages/n8n-bridge/src/types';
 import { N8nScheduleNode } from '../src/nodes/N8nScheduleNode';
+import { N8nCredentialNode } from '../src/nodes/N8nCredentialNode';
+import { N8nHitlNode } from '../src/nodes/N8nHitlNode';
+import { ExecutionLogPanel } from '../src/nodes/ExecutionLogPanel';
 
 describe('WorkflowMapper', () => {
     it('toGraphSpec: should map n8n workflow JSON to SpaceGraph spec correctly', () => {
@@ -288,5 +291,128 @@ describe('N8nNodes LOD logic', () => {
         node.updateLod(1000);
         expect(node.domElement?.innerHTML).toContain('🕐');
         expect(node.domElement?.innerHTML).not.toContain('Schedule Node');
+    });
+
+    it('N8nCredentialNode should change HTML content based on camera distance (LOD)', () => {
+        const sg = {
+            events: {
+                on: vi.fn(),
+                emit: vi.fn()
+            }
+        } as unknown as SpaceGraph;
+
+        const spec = {
+            id: 'node-cred',
+            type: 'N8nCredentialNode',
+            position: [0, 0, 0] as [number, number, number],
+        } as any;
+
+        const node = new N8nCredentialNode(sg, spec);
+        node.parameters = { service: 'Github', apiKey: 'secret-key' };
+
+        expect(node.domElement).toBeDefined();
+
+        // 1. Full view
+        node.updateLod(0);
+        expect(node.domElement?.innerHTML).toContain('Github Credentials');
+        expect(node.domElement?.innerHTML).toContain('input type="password"');
+        expect(node.domElement?.innerHTML).toContain('Test Connection');
+
+        // 2. Summary view
+        node.updateLod(200);
+        expect(node.domElement?.innerHTML).toContain('Github');
+        expect(node.domElement?.innerHTML).toContain('Key Configured');
+        expect(node.domElement?.innerHTML).not.toContain('input type="password"');
+
+        // 3. Label view
+        node.updateLod(500);
+        expect(node.domElement?.innerHTML).toContain('Credential');
+        expect(node.domElement?.innerHTML).not.toContain('Github');
+
+        // 4. Icon view
+        node.updateLod(1000);
+        expect(node.domElement?.innerHTML).toContain('🔒');
+        expect(node.domElement?.innerHTML).not.toContain('Credential');
+    });
+
+    it('N8nHitlNode should change HTML content based on camera distance (LOD)', () => {
+        const sg = {
+            events: {
+                on: vi.fn(),
+                emit: vi.fn()
+            }
+        } as unknown as SpaceGraph;
+
+        const spec = {
+            id: 'node-hitl',
+            type: 'N8nHitlNode',
+            position: [0, 0, 0] as [number, number, number],
+        } as any;
+
+        const node = new N8nHitlNode(sg, spec);
+        node.parameters = { taskSummary: 'Please approve the transaction', status: 'waiting' };
+
+        expect(node.domElement).toBeDefined();
+
+        // 1. Full view
+        node.updateLod(0);
+        expect(node.domElement?.innerHTML).toContain('Human Intervention');
+        expect(node.domElement?.innerHTML).toContain('Please approve the transaction');
+        expect(node.domElement?.innerHTML).toContain('Approve');
+        expect(node.domElement?.innerHTML).toContain('Reject');
+
+        // 2. Summary view
+        node.updateLod(200);
+        expect(node.domElement?.innerHTML).toContain('Human in Loop');
+        expect(node.domElement?.innerHTML).toContain('Please approve the transaction');
+        expect(node.domElement?.innerHTML).not.toContain('Approve');
+
+        // 3. Label view
+        node.updateLod(500);
+        expect(node.domElement?.innerHTML).toContain('HITL');
+        expect(node.domElement?.innerHTML).not.toContain('Human in Loop');
+
+        // 4. Icon view
+        node.updateLod(1000);
+        expect(node.domElement?.innerHTML).toContain('👤');
+        expect(node.domElement?.innerHTML).not.toContain('HITL');
+    });
+
+    it('ExecutionLogPanel should change HTML content based on camera distance (LOD)', () => {
+        const sg = {
+            events: {
+                on: vi.fn(),
+                emit: vi.fn()
+            }
+        } as unknown as SpaceGraph;
+
+        const spec = {
+            id: 'node-log',
+            type: 'ExecutionLogPanel',
+            position: [0, 0, 0] as [number, number, number],
+        } as any;
+
+        const node = new ExecutionLogPanel(sg, spec);
+
+        expect(node.domElement).toBeDefined();
+
+        // Add a log to see if it renders
+        node.addLog('Started execution', 'info');
+
+        // 1. Full view
+        node.updateLod(0);
+        expect(node.domElement?.innerHTML).toContain('Execution Log');
+        expect(node.domElement?.innerHTML).toContain('Started execution');
+        expect(node.domElement?.textContent).toContain('Started execution'); // in the logsContainer
+
+        // 2. Label view
+        node.updateLod(500);
+        expect(node.domElement?.innerHTML).toContain('Exec Log');
+        // Because display is none, text might still be in innerHTML, but let's just check the title change
+        expect(node.domElement?.textContent).toContain('Exec Log');
+
+        // 3. Icon view
+        node.updateLod(1000);
+        expect(node.domElement?.innerHTML).toContain('📄');
     });
 });
