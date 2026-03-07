@@ -1,101 +1,61 @@
 import { SpaceGraph, GraphSpec } from 'spacegraphjs';
 
-let container = document.getElementById('spacegraph-container');
-if (!container) {
-  container = document.createElement('div');
-  container.id = 'spacegraph-container';
-  container.style.width = '100vw';
-  container.style.height = '100vh';
-  document.body.appendChild(container);
-}
+const container = document.getElementById('spacegraph-container');
+if (!container) throw new Error('Container not found');
 
-// Multi-Agent Orchestration Demo with Fractal Nesting
 const spec: GraphSpec = {
   nodes: [
-    // --- Supervisor Agent ---
     {
-      id: 'supervisor-group',
-      type: 'GroupNode',
-      label: 'Supervisor Agent',
-      position: [0, 600, 0],
-      parameters: { width: 800, height: 400, depth: 100, color: 0xaa2222 }
-    },
-    {
-      id: 'supervisor-trigger',
+      id: 'user-input',
       type: 'N8nTriggerNode',
-      label: 'Incoming Request',
-      position: [-300, 600, 0],
-      parameters: { status: 'success' }
+      position: [-600, 0, 0],
+      parameters: { status: 'waiting' }
     },
     {
-      id: 'supervisor-router',
-      type: 'ShapeNode',
-      label: 'Task Router',
-      position: [0, 600, 0],
-      parameters: { shape: 'diamond' }
-    },
-
-    // --- Researcher Agent ---
-    {
-      id: 'researcher-group',
-      type: 'GroupNode',
-      label: 'Researcher Agent',
-      position: [-500, -200, 0],
-      parameters: { width: 800, height: 400, depth: 100, color: 0x2222aa }
-    },
-    {
-      id: 'researcher-llm',
+      id: 'router-agent',
       type: 'N8nAiNode',
-      label: 'Web Search Agent',
-      position: [-500, -200, 0],
-      parameters: { model: 'claude-3-opus', prompt: 'Find recent news on {{ $json.topic }}' }
+      position: [-300, 0, 0],
+      parameters: { model: 'gpt-4o', prompt: 'You are a routing agent. Route the request to the correct specialist.' }
     },
     {
-      id: 'researcher-http',
-      type: 'N8nHttpNode',
-      label: 'Google Search API',
-      position: [-200, -200, 0],
-      parameters: { requestMethod: 'GET', url: 'https://customsearch.googleapis.com' }
-    },
-
-    // --- Writer Agent ---
-    {
-      id: 'writer-group',
+      id: 'research-group',
       type: 'GroupNode',
-      label: 'Writer Agent',
-      position: [500, -200, 0],
-      parameters: { width: 800, height: 400, depth: 100, color: 0x22aa22 }
+      position: [200, 300, 0],
+      parameters: { label: 'Research Sub-Workflow' }
     },
     {
-      id: 'writer-llm',
+      id: 'research-agent',
       type: 'N8nAiNode',
-      label: 'Drafting Agent',
-      position: [500, -200, 0],
-      parameters: { model: 'gpt-4o', prompt: 'Write a blog post based on: {{ $json.research }}' }
+      position: [200, 300, 0], // Same position as group to be contained within
+      parameters: { model: 'claude-3-5-sonnet', prompt: 'Research the internet for information on the topic.' }
     },
     {
-      id: 'writer-hitl',
-      type: 'N8nHitlNode',
-      label: 'Editor Approval',
-      position: [800, -200, 0],
-      parameters: { status: 'waiting', taskSummary: 'Review draft blog post' }
+      id: 'coding-group',
+      type: 'GroupNode',
+      position: [200, -300, 0],
+      parameters: { label: 'Coding Sub-Workflow' }
+    },
+    {
+      id: 'coding-agent',
+      type: 'N8nAiNode',
+      position: [200, -300, 0],
+      parameters: { model: 'gpt-4o', prompt: 'Write code to solve the user request.' }
+    },
+    {
+      id: 'aggregator-agent',
+      type: 'N8nAiNode',
+      position: [700, 0, 0],
+      parameters: { model: 'gpt-4o', prompt: 'Aggregate the results from the specialists into a final answer.' }
     }
   ],
   edges: [
-    // Internal routing
-    { id: 'e1', source: 'supervisor-trigger', target: 'supervisor-router', type: 'FlowEdge' },
-
-    // Internal researcher
-    { id: 'e2', source: 'researcher-llm', target: 'researcher-http', type: 'FlowEdge' },
-
-    // Internal writer
-    { id: 'e3', source: 'writer-llm', target: 'writer-hitl', type: 'FlowEdge' },
-
-    // Agent handoffs
-    { id: 'h1', source: 'supervisor-router', target: 'researcher-llm', type: 'FlowEdge' },
-    { id: 'h2', source: 'researcher-http', target: 'writer-llm', type: 'FlowEdge' }
+    { id: 'e1', source: 'user-input', target: 'router-agent', type: 'FlowEdge' },
+    { id: 'e2', source: 'router-agent', target: 'research-group', type: 'FlowEdge' },
+    { id: 'e3', source: 'router-agent', target: 'coding-group', type: 'FlowEdge' },
+    { id: 'e4', source: 'research-group', target: 'aggregator-agent', type: 'FlowEdge' },
+    { id: 'e5', source: 'coding-group', target: 'aggregator-agent', type: 'FlowEdge' }
   ],
-  layout: { type: 'ForceLayout' }
+  layout: { type: 'HierarchicalLayout' }
 };
 
 SpaceGraph.create(container, spec);
