@@ -2,9 +2,11 @@ import '../src/bootstrap';
 
 import { WebSocketServer, WebSocket } from 'ws';
 import { Workflow, ExecutionService } from 'n8n-core';
+import * as http from 'node:http';
 // import { LoadNodeDetailsFromDisk } from 'n8n-core';
 import type { IWorkflowBase } from 'n8n-workflow';
 import fs from 'node:fs';
+import { handleRequest } from './n8n-api-proxy';
 
 const executionService = new ExecutionService();
 let nodeTypes: any;
@@ -28,7 +30,16 @@ async function main() {
     await initN8n();
     console.log('[N8nBridgeServer] Starting server...');
 
-    const wss = new WebSocketServer({ port: 5679 });
+    const server = http.createServer((req, res) => {
+        if (req.url?.startsWith('/api/')) {
+            handleRequest(req, res);
+        } else {
+            res.writeHead(404);
+            res.end();
+        }
+    });
+
+    const wss = new WebSocketServer({ server });
     const clients = new Set<WebSocket>();
 
     executionService.on('workflowExecuteAfter', (data: any) => {
@@ -69,7 +80,9 @@ async function main() {
         });
     });
 
-    console.log('[N8nBridgeServer] Listening on ws://localhost:5679');
+    server.listen(5679, () => {
+        console.log('[N8nBridgeServer] HTTP and WS Server listening on port 5679');
+    });
 
     // Hot-reload safety
     process.on('SIGUSR2', () => {

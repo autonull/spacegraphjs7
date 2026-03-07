@@ -27,20 +27,24 @@ export class VisionManager {
     private autonomousTimer: any | null = null;
     private spatialIndex: SpatialIndex = new SpatialIndex(50); // 50 units cell size
 
+    private executionProviders: string[];
+
     constructor(sg: SpaceGraph) {
         this.sg = sg;
+        // Default to wasm, but allow override via SpaceGraphOptions for Hardware Acceleration Hooks (e.g. ['rknn'])
+        this.executionProviders = sg.options?.onnxExecutionProviders || ['wasm'];
     }
 
     // Holds actual ONNX runtime sessions
     private sessions: Record<string, InferenceSession> = {};
 
     public async loadModels(modelPaths: Record<string, string>): Promise<void> {
-        console.log('[VisionManager] Initializing ONNX session with: ', modelPaths);
+        console.log(`[VisionManager] Initializing ONNX session with providers [${this.executionProviders.join(', ')}]: `, modelPaths);
 
         for (const [key, path] of Object.entries(modelPaths)) {
             try {
                 this.sessions[key] = await InferenceSession.create(path, {
-                    executionProviders: ['wasm'],
+                    executionProviders: this.executionProviders,
                 });
                 console.log(`[VisionManager] Loaded ${key} ONNX model from ${path}`);
             } catch (err) {
