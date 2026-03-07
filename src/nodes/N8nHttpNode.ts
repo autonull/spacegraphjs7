@@ -174,6 +174,12 @@ export class N8nHttpNode extends HtmlNode {
             urlInput.style.color = 'white';
             urlInput.style.borderRadius = '4px';
 
+            urlInput.addEventListener('input', (e) => {
+                const val = (e.target as HTMLInputElement).value;
+                this.parameters = { ...this.parameters, url: val };
+                this.sg.events.emit('node:paramChange', { nodeId: this.id, key: 'url', value: val });
+            });
+
             urlGroup.appendChild(urlLabel);
             urlGroup.appendChild(urlInput);
 

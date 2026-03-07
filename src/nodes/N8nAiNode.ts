@@ -137,6 +137,7 @@ export class N8nAiNode extends HtmlNode {
             select.addEventListener('change', (e) => {
                 const val = (e.target as HTMLSelectElement).value;
                 this.parameters = { ...this.parameters, model: val };
+                this.sg.events.emit('node:paramChange', { nodeId: this.id, key: 'model', value: val });
             });
 
             header.appendChild(title);
@@ -168,6 +169,7 @@ export class N8nAiNode extends HtmlNode {
             textarea.addEventListener('input', (e) => {
                 const val = (e.target as HTMLTextAreaElement).value;
                 this.parameters = { ...this.parameters, prompt: val };
+                this.sg.events.emit('node:paramChange', { nodeId: this.id, key: 'prompt', value: val });
             });
 
             textareaGroup.appendChild(label);

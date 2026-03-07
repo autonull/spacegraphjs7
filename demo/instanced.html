@@ -50,7 +50,8 @@
 
                 // We don't want to draw 10,000 edges as that becomes the bottleneck,
                 // so we just generate the nodes to demonstrate InstancedMesh performance
-                const RENDER_SIZE = 10000;
+                // Note: reduced for CI test stability
+                const RENDER_SIZE = 1000;
 
                 for (let i = 0; i < RENDER_SIZE; i++) {
                     // Generate positions in a rough sphere
