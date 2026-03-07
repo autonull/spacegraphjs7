@@ -51,7 +51,7 @@ export class DOMNode extends Node {
         this.backingMesh.visible = visible;
     }
 
-    public updateLod(distance: number): void {
+    public updateLod(_distance: number): void {
         // Base implementation for LOD distance updates. Overridden by subclasses.
     }
 

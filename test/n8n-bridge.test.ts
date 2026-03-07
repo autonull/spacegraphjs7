@@ -4,6 +4,15 @@ import { N8nBridge } from '../packages/n8n-bridge/src/spacegraph-n8n-bridge';
 import { N8nVisionHealer } from '../packages/n8n-bridge/src/N8nVisionHealer';
 import { SpaceGraph } from '../src/SpaceGraph';
 import type { N8nWorkflowJSON } from '../packages/n8n-bridge/src/types';
+import { N8nScheduleNode } from '../src/nodes/N8nScheduleNode';
+import { N8nCredentialNode } from '../src/nodes/N8nCredentialNode';
+import { N8nHitlNode } from '../src/nodes/N8nHitlNode';
+import { ExecutionLogPanel } from '../src/nodes/ExecutionLogPanel';
+import { N8nCodeNode } from '../src/nodes/N8nCodeNode';
+import { N8nHttpNode } from '../src/nodes/N8nHttpNode';
+import { N8nAiNode } from '../src/nodes/N8nAiNode';
+import { N8nPaletteNode } from '../src/nodes/N8nPaletteNode';
+import { N8nVisionOptimizerNode } from '../src/nodes/N8nVisionOptimizerNode';
 
 describe('WorkflowMapper', () => {
     it('toGraphSpec: should map n8n workflow JSON to SpaceGraph spec correctly', () => {
@@ -236,5 +245,387 @@ describe('N8nVisionHealer', () => {
 
         expect(mockForceLayoutRun).not.toHaveBeenCalled();
         expect(mockErgonomicsFix).toHaveBeenCalled();
+    });
+});
+
+describe('N8nNodes LOD logic', () => {
+    it('N8nScheduleNode should change HTML content based on camera distance (LOD)', () => {
+        const sg = {
+            events: {
+                on: vi.fn(),
+                emit: vi.fn()
+            }
+        } as unknown as SpaceGraph;
+
+        const spec = {
+            id: 'node-sch',
+            type: 'N8nScheduleNode',
+            position: [0, 0, 0] as [number, number, number],
+            data: { nextRun: 'in 5 mins' }, // also put in data just in case
+        } as any;
+
+        const domElement = document.createElement('div');
+
+        // We can just construct N8nScheduleNode and see its content
+        // N8nScheduleNode creates a DOMNode, which needs a domElement.
+        // We override the object instantiation.
+        const node = new N8nScheduleNode(sg, spec);
+        node.parameters = { nextRun: 'in 5 mins' };
+
+        // It creates its own domElement in HtmlNode constructor
+        expect(node.domElement).toBeDefined();
+
+        // 1. Full view
+        node.updateLod(0);
+        expect(node.domElement?.innerHTML).toContain('Schedule Cron');
+        expect(node.domElement?.innerHTML).toContain('in 5 mins');
+        expect(node.domElement?.innerHTML).toContain('input');
+
+        // 2. Summary view
+        node.updateLod(200);
+        expect(node.domElement?.innerHTML).toContain('Schedule Node');
+        expect(node.domElement?.innerHTML).toContain('in 5 mins');
+        expect(node.domElement?.innerHTML).not.toContain('input');
+
+        // 3. Label view
+        node.updateLod(500);
+        expect(node.domElement?.innerHTML).toContain('Schedule');
+        expect(node.domElement?.innerHTML).not.toContain('in 5 mins');
+
+        // 4. Icon view
+        node.updateLod(1000);
+        expect(node.domElement?.innerHTML).toContain('🕐');
+        expect(node.domElement?.innerHTML).not.toContain('Schedule Node');
+    });
+
+    it('N8nCredentialNode should change HTML content based on camera distance (LOD)', () => {
+        const sg = {
+            events: {
+                on: vi.fn(),
+                emit: vi.fn()
+            }
+        } as unknown as SpaceGraph;
+
+        const spec = {
+            id: 'node-cred',
+            type: 'N8nCredentialNode',
+            position: [0, 0, 0] as [number, number, number],
+        } as any;
+
+        const node = new N8nCredentialNode(sg, spec);
+        node.parameters = { service: 'Github', apiKey: 'secret-key' };
+
+        expect(node.domElement).toBeDefined();
+
+        // 1. Full view
+        node.updateLod(0);
+        expect(node.domElement?.innerHTML).toContain('Github Credentials');
+        expect(node.domElement?.innerHTML).toContain('input type="password"');
+        expect(node.domElement?.innerHTML).toContain('Test Connection');
+
+        // 2. Summary view
+        node.updateLod(200);
+        expect(node.domElement?.innerHTML).toContain('Github');
+        expect(node.domElement?.innerHTML).toContain('Key Configured');
+        expect(node.domElement?.innerHTML).not.toContain('input type="password"');
+
+        // 3. Label view
+        node.updateLod(500);
+        expect(node.domElement?.innerHTML).toContain('Credential');
+        expect(node.domElement?.innerHTML).not.toContain('Github');
+
+        // 4. Icon view
+        node.updateLod(1000);
+        expect(node.domElement?.innerHTML).toContain('🔒');
+        expect(node.domElement?.innerHTML).not.toContain('Credential');
+    });
+
+    it('N8nHitlNode should change HTML content based on camera distance (LOD)', () => {
+        const sg = {
+            events: {
+                on: vi.fn(),
+                emit: vi.fn()
+            }
+        } as unknown as SpaceGraph;
+
+        const spec = {
+            id: 'node-hitl',
+            type: 'N8nHitlNode',
+            position: [0, 0, 0] as [number, number, number],
+        } as any;
+
+        const node = new N8nHitlNode(sg, spec);
+        node.parameters = { taskSummary: 'Please approve the transaction', status: 'waiting' };
+
+        expect(node.domElement).toBeDefined();
+
+        // 1. Full view
+        node.updateLod(0);
+        expect(node.domElement?.innerHTML).toContain('Human Intervention');
+        expect(node.domElement?.innerHTML).toContain('Please approve the transaction');
+        expect(node.domElement?.innerHTML).toContain('Approve');
+        expect(node.domElement?.innerHTML).toContain('Reject');
+
+        // 2. Summary view
+        node.updateLod(200);
+        expect(node.domElement?.innerHTML).toContain('Human in Loop');
+        expect(node.domElement?.innerHTML).toContain('Please approve the transaction');
+        expect(node.domElement?.innerHTML).not.toContain('Approve');
+
+        // 3. Label view
+        node.updateLod(500);
+        expect(node.domElement?.innerHTML).toContain('HITL');
+        expect(node.domElement?.innerHTML).not.toContain('Human in Loop');
+
+        // 4. Icon view
+        node.updateLod(1000);
+        expect(node.domElement?.innerHTML).toContain('👤');
+        expect(node.domElement?.innerHTML).not.toContain('HITL');
+    });
+
+    it('ExecutionLogPanel should change HTML content based on camera distance (LOD)', () => {
+        const sg = {
+            events: {
+                on: vi.fn(),
+                emit: vi.fn()
+            }
+        } as unknown as SpaceGraph;
+
+        const spec = {
+            id: 'node-log',
+            type: 'ExecutionLogPanel',
+            position: [0, 0, 0] as [number, number, number],
+        } as any;
+
+        const node = new ExecutionLogPanel(sg, spec);
+
+        expect(node.domElement).toBeDefined();
+
+        // Add a log to see if it renders
+        node.addLog('Started execution', 'info');
+
+        // 1. Full view
+        node.updateLod(0);
+        expect(node.domElement?.innerHTML).toContain('Execution Log');
+        expect(node.domElement?.innerHTML).toContain('Started execution');
+        expect(node.domElement?.textContent).toContain('Started execution'); // in the logsContainer
+
+        // 2. Label view
+        node.updateLod(500);
+        expect(node.domElement?.innerHTML).toContain('Exec Log');
+        // Because display is none, text might still be in innerHTML, but let's just check the title change
+        expect(node.domElement?.textContent).toContain('Exec Log');
+
+        // 3. Icon view
+        node.updateLod(1000);
+        expect(node.domElement?.innerHTML).toContain('📄');
+    });
+
+    it('N8nCodeNode should change HTML content based on camera distance (LOD)', () => {
+        const sg = {
+            events: {
+                on: vi.fn(),
+                emit: vi.fn()
+            }
+        } as unknown as SpaceGraph;
+
+        const spec = {
+            id: 'node-code',
+            type: 'N8nCodeNode',
+            position: [0, 0, 0] as [number, number, number],
+        } as any;
+
+        const node = new N8nCodeNode(sg, spec);
+        node.parameters = { jsCode: 'console.log("hello");\nreturn items;' };
+
+        expect(node.domElement).toBeDefined();
+
+        // 1. Full view
+        node.updateLod(0);
+        expect(node.domElement?.innerHTML).toContain('Code Editor');
+        const textarea = node.domElement?.querySelector('textarea');
+        expect(textarea?.value).toContain('console.log("hello");');
+        expect(node.domElement?.innerHTML).toContain('textarea');
+
+        // 2. Summary view
+        node.updateLod(200);
+        expect(node.domElement?.innerHTML).toContain('Code');
+        expect(node.domElement?.innerHTML).toContain('console.log("hello");');
+        expect(node.domElement?.innerHTML).not.toContain('textarea');
+
+        // 3. Label view
+        node.updateLod(500);
+        expect(node.domElement?.innerHTML).toContain('JS Code');
+        expect(node.domElement?.innerHTML).not.toContain('console.log');
+
+        // 4. Icon view
+        node.updateLod(1000);
+        // It renders 'JS' in icon view as well as label/summary (in the badge)
+        // But in icon view, it should just be 'JS' with no 'Code'
+        expect(node.domElement?.innerHTML).toContain('JS');
+        expect(node.domElement?.innerHTML).not.toContain('Code');
+    });
+
+    it('N8nHttpNode should change HTML content based on camera distance (LOD)', () => {
+        const sg = {
+            events: {
+                on: vi.fn(),
+                emit: vi.fn()
+            }
+        } as unknown as SpaceGraph;
+
+        const spec = {
+            id: 'node-http',
+            type: 'N8nHttpNode',
+            position: [0, 0, 0] as [number, number, number],
+        } as any;
+
+        const node = new N8nHttpNode(sg, spec);
+        node.parameters = { requestMethod: 'POST', url: 'https://api.github.com' };
+
+        expect(node.domElement).toBeDefined();
+
+        // 1. Full view
+        node.updateLod(0);
+        expect(node.domElement?.innerHTML).toContain('HTTP Request');
+        const input = node.domElement?.querySelector('input');
+        expect(input?.value).toBe('https://api.github.com');
+
+        // 2. Summary view
+        node.updateLod(200);
+        expect(node.domElement?.innerHTML).toContain('api.github.com');
+        expect(node.domElement?.innerHTML).not.toContain('input type="text"');
+
+        // 3. Label view
+        node.updateLod(500);
+        expect(node.domElement?.innerHTML).toContain('HTTP Request');
+        expect(node.domElement?.innerHTML).not.toContain('api.github.com');
+
+        // 4. Icon view
+        node.updateLod(1000);
+        expect(node.domElement?.innerHTML).toContain('🌐');
+        expect(node.domElement?.innerHTML).not.toContain('HTTP Request');
+    });
+
+    it('N8nAiNode should change HTML content based on camera distance (LOD)', () => {
+        const sg = {
+            events: {
+                on: vi.fn(),
+                emit: vi.fn()
+            }
+        } as unknown as SpaceGraph;
+
+        const spec = {
+            id: 'node-ai',
+            type: 'N8nAiNode',
+            position: [0, 0, 0] as [number, number, number],
+        } as any;
+
+        const node = new N8nAiNode(sg, spec);
+        node.parameters = { model: 'gpt-4', prompt: 'You are a helpful assistant.' };
+
+        expect(node.domElement).toBeDefined();
+
+        // 1. Full view
+        node.updateLod(0);
+        expect(node.domElement?.innerHTML).toContain('AI Agent');
+        expect(node.domElement?.innerHTML).toContain('textarea');
+        // it sets textarea value but it's not reflected in innerHTML always, let's test content of textarea directly or just check it rendered.
+        const textarea = node.domElement?.querySelector('textarea');
+        expect(textarea?.value).toBe('You are a helpful assistant.');
+
+        // 2. Summary view
+        node.updateLod(200);
+        expect(node.domElement?.innerHTML).toContain('AI Agent');
+        expect(node.domElement?.innerHTML).toContain('gpt-4');
+        expect(node.domElement?.innerHTML).toContain('You are a helpful assistant.');
+        expect(node.domElement?.innerHTML).not.toContain('textarea');
+
+        // 3. Label view
+        node.updateLod(500);
+        expect(node.domElement?.innerHTML).toContain('AI Agent');
+        expect(node.domElement?.innerHTML).not.toContain('gpt-4');
+        expect(node.domElement?.innerHTML).not.toContain('You are a helpful assistant.');
+
+        // 4. Icon view
+        node.updateLod(1000);
+        expect(node.domElement?.innerHTML).toContain('✨');
+        expect(node.domElement?.innerHTML).not.toContain('AI Agent');
+    });
+
+    it('N8nPaletteNode should change HTML content based on camera distance (LOD)', () => {
+        const sg = {
+            events: {
+                on: vi.fn(),
+                emit: vi.fn()
+            }
+        } as unknown as SpaceGraph;
+
+        const spec = {
+            id: 'node-palette',
+            type: 'N8nPaletteNode',
+            position: [0, 0, 0] as [number, number, number],
+        } as any;
+
+        const node = new N8nPaletteNode(sg, spec);
+
+        expect(node.domElement).toBeDefined();
+
+        // 1. Full view
+        node.updateLod(0);
+        expect(node.domElement?.innerHTML).toContain('Node Palette');
+        expect(node.domElement?.innerHTML).toContain('TriggerNode');
+
+        // 2. Label view (Palette has no summary, skips straight to label at 400+)
+        node.updateLod(500);
+        expect(node.domElement?.innerHTML).toContain('🎨 Palette');
+        expect(node.domElement?.innerHTML).not.toContain('TriggerNode');
+
+        // 3. Icon view
+        node.updateLod(1000);
+        expect(node.domElement?.innerHTML).toContain('🎨');
+        expect(node.domElement?.innerHTML).not.toContain('Palette');
+    });
+
+    it('N8nVisionOptimizerNode should change HTML content based on camera distance (LOD)', () => {
+        const sg = {
+            events: {
+                on: vi.fn(),
+                emit: vi.fn()
+            }
+        } as unknown as SpaceGraph;
+
+        const spec = {
+            id: 'node-opt',
+            type: 'N8nVisionOptimizerNode',
+            position: [0, 0, 0] as [number, number, number],
+        } as any;
+
+        const node = new N8nVisionOptimizerNode(sg, spec);
+        node.parameters = { score: 85 };
+
+        expect(node.domElement).toBeDefined();
+
+        // 1. Full view
+        node.updateLod(0);
+        expect(node.domElement?.innerHTML).toContain('Vision Optimizer');
+        expect(node.domElement?.innerHTML).toContain('Auto-Fix Layout');
+        expect(node.domElement?.innerHTML).toContain('85/100');
+
+        // 2. Summary view
+        node.updateLod(200);
+        expect(node.domElement?.innerHTML).toContain('Optimizer');
+        expect(node.domElement?.innerHTML).toContain('Score: 85');
+        expect(node.domElement?.innerHTML).not.toContain('Auto-Fix Layout');
+
+        // 3. Label view
+        node.updateLod(500);
+        expect(node.domElement?.innerHTML).toContain('Vision Opt.');
+        expect(node.domElement?.innerHTML).not.toContain('Score: 85');
+
+        // 4. Icon view
+        node.updateLod(1000);
+        expect(node.domElement?.innerHTML).toContain('👁️');
+        expect(node.domElement?.innerHTML).not.toContain('Vision Opt.');
     });
 });

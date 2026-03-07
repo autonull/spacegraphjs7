@@ -43,7 +43,7 @@ export class N8nAiNode extends HtmlNode {
         if (!this.domElement) return;
 
         this.domElement.innerHTML = '';
-        const params = this.parameters || this.spec?.parameters || {};
+        const params = (this.parameters && Object.keys(this.parameters).length > 0) ? this.parameters : (this.spec?.parameters || {});
         const model = params.model || 'gpt-4o';
         const promptText = params.prompt || '';
 

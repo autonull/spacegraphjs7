@@ -43,7 +43,7 @@ export class N8nVisionOptimizerNode extends HtmlNode {
         if (!this.domElement) return;
 
         this.domElement.innerHTML = '';
-        const params = this.spec.parameters || {};
+        const params = (this.parameters && Object.keys(this.parameters).length > 0) ? this.parameters : (this.spec?.parameters || {});
         const score = params.score !== undefined ? params.score : '--';
         const scoreColor = score >= 70 ? '#aed581' : (score === '--' ? 'white' : '#ffb74d');
 

@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { ShapeNode } from './ShapeNode';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec, SpecUpdate } from '../types';
 import { gsap } from 'gsap';
@@ -41,7 +40,8 @@ export class N8nScheduleNode extends HtmlNode {
     }
 
     private _init3DOrbit() {
-        const size = this.spec.size || 80;
+        // Find size from spec data or fallback to 80
+        const size = (this.spec?.data as any)?.size || 80;
 
         // Orbit dot for countdown
         const dotGeo = new THREE.CircleGeometry(size * 0.1, 16);
@@ -86,9 +86,9 @@ export class N8nScheduleNode extends HtmlNode {
         if (!this.domElement) return;
 
         this.domElement.innerHTML = '';
-        const params = this.spec.parameters || {};
+        const params = (this.parameters && Object.keys(this.parameters).length > 0) ? this.parameters : ((this.spec as any)?.parameters || {});
         const cronExpr = params.cronExpression || '0 * * * *';
-        const nextRun = params.nextRun || 'in 15 mins';
+        const nextRun = params.nextRun || (this.spec?.data as any)?.nextRun || 'in 15 mins';
 
         if (level === 'icon') {
             const el = document.createElement('div');

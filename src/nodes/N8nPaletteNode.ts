@@ -1,7 +1,6 @@
 import { HtmlNode } from './HtmlNode';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec, SpecUpdate } from '../types';
-import * as THREE from 'three';
 
 export class N8nPaletteNode extends HtmlNode {
     readonly lodThresholds = {

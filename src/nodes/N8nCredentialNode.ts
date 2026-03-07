@@ -1,5 +1,3 @@
-import * as THREE from 'three';
-import { ShapeNode } from './ShapeNode';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec, SpecUpdate } from '../types';
 
