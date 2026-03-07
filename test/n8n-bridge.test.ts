@@ -11,6 +11,8 @@ import { ExecutionLogPanel } from '../src/nodes/ExecutionLogPanel';
 import { N8nCodeNode } from '../src/nodes/N8nCodeNode';
 import { N8nHttpNode } from '../src/nodes/N8nHttpNode';
 import { N8nAiNode } from '../src/nodes/N8nAiNode';
+import { N8nPaletteNode } from '../src/nodes/N8nPaletteNode';
+import { N8nVisionOptimizerNode } from '../src/nodes/N8nVisionOptimizerNode';
 
 describe('WorkflowMapper', () => {
     it('toGraphSpec: should map n8n workflow JSON to SpaceGraph spec correctly', () => {
@@ -549,5 +551,81 @@ describe('N8nNodes LOD logic', () => {
         node.updateLod(1000);
         expect(node.domElement?.innerHTML).toContain('✨');
         expect(node.domElement?.innerHTML).not.toContain('AI Agent');
+    });
+
+    it('N8nPaletteNode should change HTML content based on camera distance (LOD)', () => {
+        const sg = {
+            events: {
+                on: vi.fn(),
+                emit: vi.fn()
+            }
+        } as unknown as SpaceGraph;
+
+        const spec = {
+            id: 'node-palette',
+            type: 'N8nPaletteNode',
+            position: [0, 0, 0] as [number, number, number],
+        } as any;
+
+        const node = new N8nPaletteNode(sg, spec);
+
+        expect(node.domElement).toBeDefined();
+
+        // 1. Full view
+        node.updateLod(0);
+        expect(node.domElement?.innerHTML).toContain('Node Palette');
+        expect(node.domElement?.innerHTML).toContain('TriggerNode');
+
+        // 2. Label view (Palette has no summary, skips straight to label at 400+)
+        node.updateLod(500);
+        expect(node.domElement?.innerHTML).toContain('🎨 Palette');
+        expect(node.domElement?.innerHTML).not.toContain('TriggerNode');
+
+        // 3. Icon view
+        node.updateLod(1000);
+        expect(node.domElement?.innerHTML).toContain('🎨');
+        expect(node.domElement?.innerHTML).not.toContain('Palette');
+    });
+
+    it('N8nVisionOptimizerNode should change HTML content based on camera distance (LOD)', () => {
+        const sg = {
+            events: {
+                on: vi.fn(),
+                emit: vi.fn()
+            }
+        } as unknown as SpaceGraph;
+
+        const spec = {
+            id: 'node-opt',
+            type: 'N8nVisionOptimizerNode',
+            position: [0, 0, 0] as [number, number, number],
+        } as any;
+
+        const node = new N8nVisionOptimizerNode(sg, spec);
+        node.parameters = { score: 85 };
+
+        expect(node.domElement).toBeDefined();
+
+        // 1. Full view
+        node.updateLod(0);
+        expect(node.domElement?.innerHTML).toContain('Vision Optimizer');
+        expect(node.domElement?.innerHTML).toContain('Auto-Fix Layout');
+        expect(node.domElement?.innerHTML).toContain('85/100');
+
+        // 2. Summary view
+        node.updateLod(200);
+        expect(node.domElement?.innerHTML).toContain('Optimizer');
+        expect(node.domElement?.innerHTML).toContain('Score: 85');
+        expect(node.domElement?.innerHTML).not.toContain('Auto-Fix Layout');
+
+        // 3. Label view
+        node.updateLod(500);
+        expect(node.domElement?.innerHTML).toContain('Vision Opt.');
+        expect(node.domElement?.innerHTML).not.toContain('Score: 85');
+
+        // 4. Icon view
+        node.updateLod(1000);
+        expect(node.domElement?.innerHTML).toContain('👁️');
+        expect(node.domElement?.innerHTML).not.toContain('Vision Opt.');
     });
 });
