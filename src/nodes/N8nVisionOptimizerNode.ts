@@ -47,103 +47,69 @@ export class N8nVisionOptimizerNode extends HtmlNode {
         const score = params.score !== undefined ? params.score : '--';
         const scoreColor = score >= 70 ? '#aed581' : (score === '--' ? 'white' : '#ffb74d');
 
+        const setStyles = (el: HTMLElement, styles: Partial<CSSStyleDeclaration>) => Object.assign(el.style, styles);
+
         if (level === 'icon') {
             const el = document.createElement('div');
-            el.style.fontSize = '48px';
-            el.style.textAlign = 'center';
+            setStyles(el, { fontSize: '48px', textAlign: 'center' });
             el.textContent = '👁️';
             this.domElement.appendChild(el);
-            this.domElement.style.background = 'transparent';
-            this.domElement.style.border = 'none';
+            setStyles(this.domElement, { background: 'transparent', border: 'none' });
         } else if (level === 'label') {
             const el = document.createElement('div');
-            el.style.textAlign = 'center';
-            el.style.fontSize = '24px';
-            el.style.fontWeight = 'bold';
+            setStyles(el, { textAlign: 'center', fontSize: '24px', fontWeight: 'bold' });
             el.textContent = '👁️ Vision Opt.';
             this.domElement.appendChild(el);
-            this.domElement.style.background = 'rgba(96, 125, 139, 0.8)';
-            this.domElement.style.border = '2px solid #455a64';
+            setStyles(this.domElement, { background: 'rgba(96, 125, 139, 0.8)', border: '2px solid #455a64' });
         } else if (level === 'summary') {
             const header = document.createElement('div');
-            header.style.display = 'flex';
-            header.style.justifyContent = 'space-between';
-            header.style.alignItems = 'center';
-            header.style.marginBottom = '8px';
+            setStyles(header, { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' });
 
             const title = document.createElement('span');
-            title.style.fontWeight = 'bold';
+            setStyles(title, { fontWeight: 'bold' });
             title.textContent = '👁️ Optimizer';
 
             const badge = document.createElement('span');
-            badge.style.background = 'rgba(0,0,0,0.3)';
-            badge.style.padding = '2px 6px';
-            badge.style.borderRadius = '4px';
-            badge.style.fontSize = '12px';
-            badge.style.color = scoreColor;
-            badge.style.fontWeight = 'bold';
+            setStyles(badge, { background: 'rgba(0,0,0,0.3)', padding: '2px 6px', borderRadius: '4px', fontSize: '12px', color: scoreColor, fontWeight: 'bold' });
             badge.textContent = `Score: ${score}`;
 
-            header.appendChild(title);
-            header.appendChild(badge);
+            header.append(title, badge);
 
             this.domElement.appendChild(header);
-            this.domElement.style.background = '#607d8b';
-            this.domElement.style.border = '2px solid #455a64';
+            setStyles(this.domElement, { background: '#607d8b', border: '2px solid #455a64' });
         } else if (level === 'full') {
             const header = document.createElement('div');
-            header.style.display = 'flex';
-            header.style.justifyContent = 'space-between';
-            header.style.alignItems = 'center';
-            header.style.marginBottom = '12px';
+            setStyles(header, { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' });
 
             const title = document.createElement('span');
-            title.style.fontWeight = 'bold';
-            title.style.fontSize = '16px';
+            setStyles(title, { fontWeight: 'bold', fontSize: '16px' });
             title.textContent = '👁️ Vision Optimizer';
 
             header.appendChild(title);
 
             const scoreBox = document.createElement('div');
-            scoreBox.style.display = 'flex';
-            scoreBox.style.justifyContent = 'space-between';
-            scoreBox.style.alignItems = 'center';
-            scoreBox.style.background = 'rgba(0,0,0,0.15)';
-            scoreBox.style.padding = '10px';
-            scoreBox.style.borderRadius = '6px';
-            scoreBox.style.border = '1px solid rgba(255,255,255,0.2)';
-            scoreBox.style.marginBottom = '16px';
+            setStyles(scoreBox, { display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.15)', padding: '10px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.2)', marginBottom: '16px' });
 
             const scoreLabel = document.createElement('span');
-            scoreLabel.style.fontSize = '12px';
+            setStyles(scoreLabel, { fontSize: '12px' });
             scoreLabel.textContent = 'Layout Quality Score';
 
             const scoreValue = document.createElement('span');
-            scoreValue.style.fontSize = '16px';
-            scoreValue.style.fontWeight = 'bold';
-            scoreValue.style.color = scoreColor;
+            setStyles(scoreValue, { fontSize: '16px', fontWeight: 'bold', color: scoreColor });
             scoreValue.textContent = `${score}/100`;
 
-            scoreBox.appendChild(scoreLabel);
-            scoreBox.appendChild(scoreValue);
+            scoreBox.append(scoreLabel, scoreValue);
 
             const fixBtn = document.createElement('button');
             fixBtn.textContent = 'Auto-Fix Layout';
-            fixBtn.style.width = '100%';
-            fixBtn.style.padding = '10px';
-            fixBtn.style.background = '#2196f3';
-            fixBtn.style.color = 'white';
-            fixBtn.style.border = 'none';
-            fixBtn.style.borderRadius = '4px';
-            fixBtn.style.fontWeight = 'bold';
-            fixBtn.style.cursor = 'pointer';
+            setStyles(fixBtn, { width: '100%', padding: '10px', background: '#2196f3', color: 'white', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' });
 
             fixBtn.addEventListener('click', async () => {
                 fixBtn.textContent = 'Fixing...';
 
                 // Trigger Vision Manager Layout Heal
-                const forceLayout = this.sg.pluginManager.getPlugin('ForceLayout') as any;
-                if (forceLayout && typeof forceLayout.update === 'function') {
+                const forceLayout = this.sg.pluginManager.getPlugin?.('ForceLayout') as any;
+                if (forceLayout?.update) {
                     for (let i = 0; i < 50; i++) {
                         forceLayout.update(0.016);
                     }
@@ -152,16 +118,12 @@ export class N8nVisionOptimizerNode extends HtmlNode {
                 // Simulate fix outcome
                 setTimeout(() => {
                     this.parameters = { ...this.parameters, score: 95 };
-                    this.renderHtmlContent(level); // Re-render triggers layout heal update on DOM
+                    this.renderHtmlContent(level);
                 }, 500);
             });
 
-            this.domElement.appendChild(header);
-            this.domElement.appendChild(scoreBox);
-            this.domElement.appendChild(fixBtn);
-
-            this.domElement.style.background = '#607d8b';
-            this.domElement.style.border = '2px solid #455a64';
+            this.domElement.append(header, scoreBox, fixBtn);
+            setStyles(this.domElement, { background: '#607d8b', border: '2px solid #455a64' });
         }
     }
 
