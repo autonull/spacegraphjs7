@@ -26,7 +26,8 @@ const spec: GraphSpec = {
     {
       id: 'research-agent',
       type: 'N8nAiNode',
-      position: [200, 300, 0], // Same position as group to be contained within
+      position: [200, 300, 0],
+      parent: 'research-group',
       parameters: { model: 'claude-3-5-sonnet', prompt: 'Research the internet for information on the topic.' }
     },
     {
@@ -39,6 +40,7 @@ const spec: GraphSpec = {
       id: 'coding-agent',
       type: 'N8nAiNode',
       position: [200, -300, 0],
+      parent: 'coding-group',
       parameters: { model: 'gpt-4o', prompt: 'Write code to solve the user request.' }
     },
     {

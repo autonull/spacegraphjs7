@@ -2,6 +2,16 @@ import { describe, it, expect, vi } from 'vitest';
 import { WorkflowMapper } from '../packages/n8n-bridge/src/WorkflowMapper';
 import { N8nVisionHealer } from '../packages/n8n-bridge/src/N8nVisionHealer';
 import type { N8nWorkflowJSON } from '../packages/n8n-bridge/src/types';
+import { N8nScheduleNode } from '../src/nodes/N8nScheduleNode';
+import { N8nCredentialNode } from '../src/nodes/N8nCredentialNode';
+import { N8nHitlNode } from '../src/nodes/N8nHitlNode';
+import { ExecutionLogPanel } from '../src/nodes/ExecutionLogPanel';
+import { N8nCodeNode } from '../src/nodes/N8nCodeNode';
+import { N8nHttpNode } from '../src/nodes/N8nHttpNode';
+import { N8nAiNode } from '../src/nodes/N8nAiNode';
+import { N8nPaletteNode } from '../src/nodes/N8nPaletteNode';
+import { N8nVisionOptimizerNode } from '../src/nodes/N8nVisionOptimizerNode';
+import { SpaceGraph } from '../src/SpaceGraph';
 
 describe('n8n-bridge Unit Tests', () => {
     describe('WorkflowMapper', () => {
@@ -113,6 +123,53 @@ describe('n8n-bridge Unit Tests', () => {
         });
     });
 
+    describe('N8nBridge Core', () => {
+        it('should send correct WS message on pushNodePositionUpdate', () => {
+            // We use vitest mock for the N8nBridge constructor to avoid real WS connections
+            // But since the original test was deleted/missing, let's mock it
+            // Actually N8nBridge uses standard WebSocket, we can mock global.WebSocket
+            const mockSend = vi.fn();
+            global.WebSocket = class {
+                onopen: any;
+                onmessage: any;
+                onclose: any;
+                readyState = 1;
+                send = mockSend;
+                close = vi.fn();
+                constructor(public url: string) {
+                    setTimeout(() => this.onopen?.(), 10);
+                }
+            } as any;
+
+            const sg = {
+                pluginManager: {
+                    register: vi.fn(),
+                    init: vi.fn(),
+                    getPlugin: vi.fn()
+                },
+                events: {
+                    on: vi.fn(),
+                    emit: vi.fn()
+                }
+            } as unknown as SpaceGraph;
+
+            // Dynamic import the actual module now so it uses the mocked WebSocket
+            return import('../packages/n8n-bridge/src/spacegraph-n8n-bridge.ts').then(({ N8nBridge }) => {
+                const bridge = new N8nBridge(sg);
+
+                bridge.pushNodePositionUpdate('test-node', 150, 300);
+
+                expect(mockSend).toHaveBeenCalledWith(JSON.stringify({
+                    type: 'node:moved',
+                    nodeId: 'test-node',
+                    position: [150, -300] // Y is inverted in bridge!
+                }));
+
+                bridge.dispose();
+            });
+        });
+    });
+
     describe('N8nVisionHealer', () => {
         it('should call vision analyze and fix layout if score is low', async () => {
             let score = 50;
@@ -160,17 +217,6 @@ describe('n8n-bridge Unit Tests', () => {
         });
     });
 });
-
-import { N8nScheduleNode } from '../src/nodes/N8nScheduleNode';
-import { N8nCredentialNode } from '../src/nodes/N8nCredentialNode';
-import { N8nHitlNode } from '../src/nodes/N8nHitlNode';
-import { ExecutionLogPanel } from '../src/nodes/ExecutionLogPanel';
-import { N8nCodeNode } from '../src/nodes/N8nCodeNode';
-import { N8nHttpNode } from '../src/nodes/N8nHttpNode';
-import { N8nAiNode } from '../src/nodes/N8nAiNode';
-import { N8nPaletteNode } from '../src/nodes/N8nPaletteNode';
-import { N8nVisionOptimizerNode } from '../src/nodes/N8nVisionOptimizerNode';
-import { SpaceGraph } from '../src/SpaceGraph';
 
 describe('N8n Nodes LOD Tests', () => {
     it('N8nScheduleNode should change HTML content based on camera distance (LOD)', () => {
