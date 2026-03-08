@@ -18,35 +18,29 @@ export class N8nVisionHealer {
 
         if (report.layoutScore < 70) {
             console.log(`[N8nVisionHealer] Layout score ${report.layoutScore} is low. Attempting auto-fix via ForceLayout...`);
-            const forceLayout = typeof this.sg.pluginManager.getPlugin === 'function'
-                ? this.sg.pluginManager.getPlugin('ForceLayout')
-                : (this.sg.pluginManager as any).get('ForceLayout');
+            const forceLayout = this.sg.pluginManager.getPlugin?.('ForceLayout') || (this.sg.pluginManager as any).get?.('ForceLayout');
 
-            if (forceLayout && typeof forceLayout.update === 'function') {
+            if (forceLayout?.update) {
                 // Run force layout physics ticks to stabilize
-                for (let i = 0; i < 100; i++) {
-                    forceLayout.update(0.016);
-                }
-            } else if (forceLayout && typeof (forceLayout as any).run === 'function') {
-                await (forceLayout as any).run();
+                for (let i = 0; i < 100; i++) forceLayout.update(0.016);
+            } else if (forceLayout?.run) {
+                await forceLayout.run();
             } else {
-                 console.warn('[N8nVisionHealer] ForceLayout plugin not found or missing update method.');
+                console.warn('[N8nVisionHealer] ForceLayout plugin not found or missing update method.');
             }
 
             // Re-score after running physics
             report = await this.vision.analyzeVision();
         }
 
-        if (report.overlap && report.overlap.overlaps && report.overlap.overlaps.length > 0) {
+        if (report.overlap?.overlaps?.length > 0) {
             console.log(`[N8nVisionHealer] Overlaps detected. Triggering ErgonomicsPlugin to fix...`);
-            const ergonomics = typeof this.sg.pluginManager.getPlugin === 'function'
-                ? this.sg.pluginManager.getPlugin('ErgonomicsPlugin')
-                : (this.sg.pluginManager as any).get('ErgonomicsPlugin');
+            const ergonomics = this.sg.pluginManager.getPlugin?.('ErgonomicsPlugin') || (this.sg.pluginManager as any).get?.('ErgonomicsPlugin');
 
-            if (ergonomics && typeof ergonomics.fixOverlaps === 'function') {
+            if (ergonomics?.fixOverlaps) {
                 await ergonomics.fixOverlaps();
             } else {
-                 console.warn('[N8nVisionHealer] ErgonomicsPlugin not found or missing fixOverlaps method.');
+                console.warn('[N8nVisionHealer] ErgonomicsPlugin not found or missing fixOverlaps method.');
             }
             // Re-score again
             report = await this.vision.analyzeVision();

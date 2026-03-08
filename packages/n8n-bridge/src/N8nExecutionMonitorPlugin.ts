@@ -101,35 +101,30 @@ export class N8nExecutionMonitorPlugin implements SpaceGraphPlugin {
         if (!this.isReplaying || this.timelineHistory.length === 0) return;
 
         const safeIndex = Math.max(0, Math.min(index, this.timelineHistory.length - 1));
-        const event = this.timelineHistory[safeIndex];
+        const colorMap: Record<string, string> = {
+            'waiting': '#9e9e9e',
+            'running': '#2196f3',
+            'success': '#4caf50',
+            'error': '#f44336',
+            'skipped': '#bdbdbd'
+        };
 
-        // Reset all nodes to base state, then apply history up to safeIndex
-        this.sg.graph.nodes.forEach(node => {
-            // Very naive reset
-            if (node.id !== 'timeline-slider' && node.id !== 'os-system-processes' && !node.id.startsWith('os-proc-')) {
-                this.sg.update({ nodes: [{ id: node.id, color: '#9e9e9e', parameters: { status: 'waiting' } }] });
-            }
-        });
+        const baseNodesUpdate = Array.from(this.sg.graph.nodes.values())
+            .filter(node => node.id !== 'timeline-slider' && node.id !== 'os-system-processes' && !node.id.startsWith('os-proc-'))
+            .map(node => ({ id: node.id, color: '#9e9e9e', parameters: { status: 'waiting' } }));
 
-        for (let i = 0; i <= safeIndex; i++) {
-            const h = this.timelineHistory[i];
-            if (h.state.nodeId) {
-                // Apply without animations during scrub for responsiveness
-                const colorMap: Record<string, string> = {
-                    'waiting': '#9e9e9e',
-                    'running': '#2196f3',
-                    'success': '#4caf50',
-                    'error': '#f44336',
-                    'skipped': '#bdbdbd'
-                };
-                this.sg.update({
-                    nodes: [{
-                        id: h.state.nodeId,
-                        color: colorMap[h.state.status],
-                        parameters: { status: h.state.status, error: h.state.error }
-                    }]
-                });
-            }
+        this.sg.update({ nodes: baseNodesUpdate });
+
+        const historyUpdates = this.timelineHistory.slice(0, safeIndex + 1)
+            .filter(h => h.state.nodeId)
+            .map(h => ({
+                id: h.state.nodeId!,
+                color: colorMap[h.state.status] || colorMap['waiting'],
+                parameters: { status: h.state.status, error: h.state.error }
+            }));
+
+        if (historyUpdates.length > 0) {
+            this.sg.update({ nodes: historyUpdates });
         }
     }
 
@@ -154,9 +149,11 @@ export class N8nExecutionMonitorPlugin implements SpaceGraphPlugin {
         const processNodeId = `os-proc-${processUpdate.pid}`;
         const processNode = this.sg.graph.nodes.get(processNodeId);
 
-        let processColor = '#4caf50'; // running/success
-        if (processUpdate.status === 'error') processColor = '#f44336';
-        else if (processUpdate.status === 'stopped') processColor = '#9e9e9e';
+        const colors: Record<string, string> = {
+            'error': '#f44336',
+            'stopped': '#9e9e9e',
+        };
+        const processColor = colors[processUpdate.status] || '#4caf50'; // default running/success
 
         const procHtml = `
             <div style="padding:8px; border-radius:4px; background:rgba(0,0,0,0.8); color:white; border: 1px solid ${processColor}">
@@ -167,14 +164,7 @@ export class N8nExecutionMonitorPlugin implements SpaceGraphPlugin {
         `;
 
         if (processNode) {
-            // Update existing process node
-            const updateSpec: SpecUpdate = {
-                nodes: [{
-                    id: processNodeId,
-                    parameters: { html: procHtml }
-                }]
-            };
-            this.sg.update(updateSpec);
+            this.sg.update({ nodes: [{ id: processNodeId, parameters: { html: procHtml } }] });
         } else {
             // Add new process node inside the group
             const procSpec: NodeSpec = {
@@ -241,47 +231,20 @@ export class N8nExecutionMonitorPlugin implements SpaceGraphPlugin {
         if (node && node.object) {
             gsap.killTweensOf(node.object.scale);
 
-            if (state.status === 'running') {
-                gsap.to(node.object.scale, {
-                    x: 1.1,
-                    y: 1.1,
-                    z: 1.1,
-                    duration: 0.5,
-                    yoyo: true,
-                    repeat: -1,
-                    ease: "sine.inOut"
-                });
-            } else if (state.status === 'success') {
-                gsap.to(node.object.scale, {
-                    x: 1,
-                    y: 1,
-                    z: 1,
-                    duration: 0.3,
-                    ease: "back.out(1.7)"
-                });
-            } else if (state.status === 'error') {
-                gsap.to(node.object.scale, {
-                    x: 1,
-                    y: 1,
-                    z: 1,
-                    duration: 0.3,
-                    ease: "bounce.out"
-                });
+            const animConfigs: Record<string, any> = {
+                'running': { scale: 1.1, duration: 0.5, yoyo: true, repeat: -1, ease: 'sine.inOut' },
+                'success': { scale: 1, duration: 0.3, ease: 'back.out(1.7)' },
+                'error': { scale: 1, duration: 0.3, ease: 'bounce.out' },
+            };
 
-                // Turn outgoing edges red
-                this.sg.graph.edges.forEach((edge) => {
-                    if (edge.source.id === state.nodeId) {
-                        this.sg.update({ edges: [{ id: edge.id, type: 'AnimatedEdge', data: { color: 0xf44336 } }] });
-                    }
-                });
+            const conf = animConfigs[state.status] || { scale: 1, duration: 0.2 };
+            gsap.to(node.object.scale, { x: conf.scale, y: conf.scale, z: conf.scale, ...conf });
 
-            } else {
-                 gsap.to(node.object.scale, {
-                    x: 1,
-                    y: 1,
-                    z: 1,
-                    duration: 0.2
-                 });
+            if (state.status === 'error') {
+                const redEdges = this.sg.graph.edges
+                    .filter(edge => edge.source.id === state.nodeId)
+                    .map(edge => ({ id: edge.id, type: 'AnimatedEdge', data: { color: 0xf44336 } }));
+                if (redEdges.length > 0) this.sg.update({ edges: redEdges });
             }
         }
 
