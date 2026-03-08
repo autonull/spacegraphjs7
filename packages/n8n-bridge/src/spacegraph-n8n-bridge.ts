@@ -50,23 +50,22 @@ export class N8nBridge {
     }
 
     private handleMessage(message: any) {
-        switch (message.type) {
-            case 'workflow:loaded':
+        const handlers: Record<string, () => void> = {
+            'workflow:loaded': () => {
                 const spec = WorkflowMapper.toGraphSpec(message.data as N8nWorkflowJSON);
                 this.sg.loadSpec(spec);
-                break;
-            case 'execution:progress':
-            case 'execution:complete':
-                this.executionState$.next(message.data as ExecutionState);
-                break;
-            case 'workflow:diff':
-                this.workflowDiff$.next(message.data as N8nWorkflowDiff);
-                break;
-            case 'os:process:update':
-                this.osProcess$.next(message.data as OSProcessUpdate);
-                break;
-            default:
-                console.warn('[N8nBridge] Unknown message type:', message.type);
+            },
+            'execution:progress': () => this.executionState$.next(message.data as ExecutionState),
+            'execution:complete': () => this.executionState$.next(message.data as ExecutionState),
+            'workflow:diff': () => this.workflowDiff$.next(message.data as N8nWorkflowDiff),
+            'os:process:update': () => this.osProcess$.next(message.data as OSProcessUpdate),
+        };
+
+        const handler = handlers[message.type];
+        if (handler) {
+            handler();
+        } else {
+            console.warn('[N8nBridge] Unknown message type:', message.type);
         }
     }
 
@@ -92,26 +91,21 @@ export class N8nBridge {
 
     exportWorkflowJSON(): N8nWorkflowJSON {
         // Build a temporary GraphSpec payload from the current graph state
-        const spec: GraphSpec = { nodes: [], edges: [] };
-
-        for (const [id, node] of this.sg.graph.nodes.entries()) {
-            spec.nodes!.push({
+        const spec: GraphSpec = {
+            nodes: Array.from(this.sg.graph.nodes.values()).map(node => ({
                 id: node.id,
                 type: node.constructor.name,
                 label: node.label,
                 position: [node.position.x, node.position.y, node.position.z],
                 parameters: node.parameters
-            });
-        }
-
-        for (const edge of this.sg.graph.edges) {
-            spec.edges!.push({
+            })),
+            edges: this.sg.graph.edges.map(edge => ({
                 id: edge.id,
                 source: edge.sourceNode.id,
                 target: edge.targetNode.id,
                 type: edge.constructor.name
-            });
-        }
+            }))
+        };
 
         return WorkflowMapper.toN8nJSON(spec);
     }

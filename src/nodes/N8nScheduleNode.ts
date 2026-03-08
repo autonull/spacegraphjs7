@@ -90,90 +90,64 @@ export class N8nScheduleNode extends HtmlNode {
         const cronExpr = params.cronExpression || '0 * * * *';
         const nextRun = params.nextRun || (this.spec?.data as any)?.nextRun || 'in 15 mins';
 
+        const setStyles = (el: HTMLElement, styles: Partial<CSSStyleDeclaration>) => Object.assign(el.style, styles);
+
         if (level === 'icon') {
             const el = document.createElement('div');
-            el.style.fontSize = '48px';
-            el.style.textAlign = 'center';
+            setStyles(el, { fontSize: '48px', textAlign: 'center' });
             el.textContent = '🕐';
             this.domElement.appendChild(el);
-            this.domElement.style.background = 'transparent';
-            this.domElement.style.border = 'none';
+            setStyles(this.domElement, { background: 'transparent', border: 'none' });
         } else if (level === 'label') {
             const el = document.createElement('div');
-            el.style.textAlign = 'center';
-            el.style.fontSize = '24px';
-            el.style.fontWeight = 'bold';
+            setStyles(el, { textAlign: 'center', fontSize: '24px', fontWeight: 'bold' });
             el.textContent = '🕐 Schedule';
             this.domElement.appendChild(el);
-            this.domElement.style.background = 'rgba(30, 30, 30, 0.8)';
-            this.domElement.style.border = '2px solid #ff9800';
+            setStyles(this.domElement, { background: 'rgba(30, 30, 30, 0.8)', border: '2px solid #ff9800' });
         } else if (level === 'summary') {
             const title = document.createElement('div');
-            title.style.fontWeight = 'bold';
-            title.style.marginBottom = '8px';
+            setStyles(title, { fontWeight: 'bold', marginBottom: '8px' });
             title.textContent = '🕐 Schedule Node';
 
             const run = document.createElement('div');
             run.textContent = `Next Run: ${nextRun}`;
 
-            this.domElement.appendChild(title);
-            this.domElement.appendChild(run);
-            this.domElement.style.background = 'rgba(30, 30, 30, 0.95)';
-            this.domElement.style.border = '2px solid #ff9800';
+            this.domElement.append(title, run);
+            setStyles(this.domElement, { background: 'rgba(30, 30, 30, 0.95)', border: '2px solid #ff9800' });
         } else if (level === 'full') {
             const title = document.createElement('div');
-            title.style.fontWeight = 'bold';
-            title.style.marginBottom = '12px';
-            title.style.fontSize = '18px';
+            setStyles(title, { fontWeight: 'bold', marginBottom: '12px', fontSize: '18px' });
             title.textContent = '🕐 Schedule Cron';
 
             const run = document.createElement('div');
-            run.style.marginBottom = '12px';
-            run.style.color = '#ffb74d';
+            setStyles(run, { marginBottom: '12px', color: '#ffb74d' });
             run.textContent = `Next Run: ${nextRun}`;
 
             const inputGroup = document.createElement('div');
             const label = document.createElement('label');
             label.textContent = 'Cron Expression:';
-            label.style.display = 'block';
-            label.style.marginBottom = '4px';
-            label.style.fontSize = '12px';
-            label.style.color = '#aaa';
+            setStyles(label, { display: 'block', marginBottom: '4px', fontSize: '12px', color: '#aaa' });
 
             const input = document.createElement('input');
             input.type = 'text';
             input.value = cronExpr;
-            input.style.width = '100%';
-            input.style.padding = '8px';
-            input.style.boxSizing = 'border-box';
-            input.style.background = '#333';
-            input.style.border = '1px solid #555';
-            input.style.color = 'white';
-            input.style.borderRadius = '4px';
+            setStyles(input, { width: '100%', padding: '8px', boxSizing: 'border-box', background: '#333', border: '1px solid #555', color: 'white', borderRadius: '4px' });
 
-            inputGroup.appendChild(label);
-            inputGroup.appendChild(input);
+            inputGroup.append(label, input);
 
-            this.domElement.appendChild(title);
-            this.domElement.appendChild(run);
-            this.domElement.appendChild(inputGroup);
-
-            this.domElement.style.background = 'rgba(30, 30, 30, 0.95)';
-            this.domElement.style.border = '2px solid #ff9800';
+            this.domElement.append(title, run, inputGroup);
+            setStyles(this.domElement, { background: 'rgba(30, 30, 30, 0.95)', border: '2px solid #ff9800' });
         }
     }
 
     updateSpec(spec: SpecUpdate): void {
         super.updateSpec(spec);
-        // Force a re-render of current LOD
         const level = this.domElement?.children[0]?.textContent === '🕐' ? 'icon' : 'full';
         this.renderHtmlContent(level);
     }
 
     dispose(): void {
         super.dispose();
-        if (this.orbitTween) {
-            this.orbitTween.kill();
-        }
+        this.orbitTween?.kill();
     }
 }

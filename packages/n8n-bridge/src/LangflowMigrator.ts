@@ -9,19 +9,19 @@ export class LangflowMigrator {
         const nodes: N8nNodeSpec[] = [];
         const connections: Record<string, Record<string, N8nConnectionSpec[][]>> = {};
 
-        if (!langflowJson || !langflowJson.data || !langflowJson.data.nodes) {
+        if (!langflowJson?.data?.nodes) {
             throw new Error("Invalid LangFlow JSON format");
         }
 
         langflowJson.data.nodes.forEach((lfNode: any) => {
-            const type = LangflowMigrator.mapNodeType(lfNode.data.type);
+            const type = LangflowMigrator.mapNodeType(lfNode.data?.type);
             const n8nNode: N8nNodeSpec = {
                 id: lfNode.id,
-                name: lfNode.data.id || lfNode.id,
-                type: type,
+                name: lfNode.data?.id || lfNode.id,
+                type,
                 position: [
-                    lfNode.position.x || 0,
-                    lfNode.position.y || 0
+                    lfNode.position?.x ?? 0,
+                    lfNode.position?.y ?? 0
                 ],
                 parameters: LangflowMigrator.mapParameters(lfNode.data)
             };
@@ -29,23 +29,19 @@ export class LangflowMigrator {
             connections[n8nNode.name] = { main: [] };
         });
 
-        if (langflowJson.data.edges) {
-            langflowJson.data.edges.forEach((lfEdge: any) => {
-                const sourceNode = nodes.find(n => n.id === lfEdge.source);
-                const targetNode = nodes.find(n => n.id === lfEdge.target);
+        langflowJson.data.edges?.forEach((lfEdge: any) => {
+            const sourceNode = nodes.find(n => n.id === lfEdge.source);
+            const targetNode = nodes.find(n => n.id === lfEdge.target);
 
-                if (sourceNode && targetNode) {
-                    if (!connections[sourceNode.name].main[0]) {
-                        connections[sourceNode.name].main[0] = [];
-                    }
-                    connections[sourceNode.name].main[0].push({
-                        node: targetNode.name,
-                        type: 'main',
-                        index: 0
-                    });
-                }
-            });
-        }
+            if (sourceNode && targetNode) {
+                connections[sourceNode.name].main[0] ??= [];
+                connections[sourceNode.name].main[0].push({
+                    node: targetNode.name,
+                    type: 'main',
+                    index: 0
+                });
+            }
+        });
 
         return {
             nodes,
@@ -53,7 +49,9 @@ export class LangflowMigrator {
         };
     }
 
-    private static mapNodeType(langflowType: string): string {
+    private static mapNodeType(langflowType: string | undefined): string {
+        if (!langflowType) return 'n8n-nodes-base.noop';
+
         const typeMap: Record<string, string> = {
             'LLMChain': '@n8n/n8n-nodes-langchain.chainLlm',
             'ChatOpenAI': '@n8n/n8n-nodes-langchain.modelOpenAi',
@@ -67,14 +65,15 @@ export class LangflowMigrator {
 
     private static mapParameters(lfData: any): any {
         const params: any = {};
+        const template = lfData?.node?.template;
 
-        if (lfData.node?.template) {
-            Object.keys(lfData.node.template).forEach(key => {
-                const field = lfData.node.template[key];
-                if (field.value !== undefined) {
+        if (template) {
+            Object.keys(template).forEach(key => {
+                const value = template[key]?.value;
+                if (value !== undefined) {
                      // Very naive parameter mapping
-                     if (key === 'model_name') params.model = field.value;
-                     if (key === 'template') params.prompt = field.value;
+                     if (key === 'model_name') params.model = value;
+                     if (key === 'template') params.prompt = value;
                 }
             });
         }

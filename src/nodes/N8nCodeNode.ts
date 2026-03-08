@@ -46,106 +46,61 @@ export class N8nCodeNode extends HtmlNode {
         const params = (this.parameters && Object.keys(this.parameters).length > 0) ? this.parameters : (this.spec?.parameters || {});
         const jsCode = params.jsCode || 'return items;';
 
+        const setStyles = (el: HTMLElement, styles: Partial<CSSStyleDeclaration>) => Object.assign(el.style, styles);
+
         if (level === 'icon') {
             const el = document.createElement('div');
-            el.style.fontSize = '48px';
-            el.style.textAlign = 'center';
-            el.style.fontWeight = 'bold';
-            el.style.color = '#fbc02d';
+            setStyles(el, { fontSize: '48px', textAlign: 'center', fontWeight: 'bold', color: '#fbc02d' });
             el.textContent = 'JS';
             this.domElement.appendChild(el);
-            this.domElement.style.background = 'transparent';
-            this.domElement.style.border = 'none';
+            setStyles(this.domElement, { background: 'transparent', border: 'none' });
         } else if (level === 'label') {
             const el = document.createElement('div');
-            el.style.textAlign = 'center';
-            el.style.fontSize = '24px';
-            el.style.fontWeight = 'bold';
-            el.style.color = '#fbc02d';
+            setStyles(el, { textAlign: 'center', fontSize: '24px', fontWeight: 'bold', color: '#fbc02d' });
             el.textContent = 'JS Code';
             this.domElement.appendChild(el);
-            this.domElement.style.background = 'rgba(30, 30, 30, 0.8)';
-            this.domElement.style.borderLeft = '4px solid #fbc02d';
+            setStyles(this.domElement, { background: 'rgba(30, 30, 30, 0.8)', borderLeft: '4px solid #fbc02d' });
         } else if (level === 'summary') {
             const header = document.createElement('div');
-            header.style.display = 'flex';
-            header.style.alignItems = 'center';
-            header.style.gap = '8px';
-            header.style.marginBottom = '8px';
+            setStyles(header, { display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' });
 
             const badge = document.createElement('span');
-            badge.style.background = '#fbc02d';
-            badge.style.color = 'black';
-            badge.style.padding = '2px 6px';
-            badge.style.borderRadius = '4px';
-            badge.style.fontSize = '12px';
-            badge.style.fontWeight = 'bold';
+            setStyles(badge, { background: '#fbc02d', color: 'black', padding: '2px 6px', borderRadius: '4px', fontSize: '12px', fontWeight: 'bold' });
             badge.textContent = 'JS';
 
             const text = document.createElement('span');
-            text.style.fontSize = '14px';
-            text.style.fontWeight = 'bold';
+            setStyles(text, { fontSize: '14px', fontWeight: 'bold' });
             text.textContent = 'Code';
 
-            header.appendChild(badge);
-            header.appendChild(text);
+            header.append(badge, text);
 
             const preview = document.createElement('pre');
-            preview.style.background = '#2d2d2d';
-            preview.style.padding = '8px';
-            preview.style.borderRadius = '4px';
-            preview.style.fontSize = '11px';
-            preview.style.fontFamily = 'monospace';
-            preview.style.color = '#9cdcfe'; // JS light blue variable color
-            preview.style.height = '40px';
-            preview.style.overflow = 'hidden';
-            preview.style.margin = '0';
+            setStyles(preview, { background: '#2d2d2d', padding: '8px', borderRadius: '4px', fontSize: '11px', fontFamily: 'monospace', color: '#9cdcfe', height: '40px', overflow: 'hidden', margin: '0' });
 
             // Show only first 3 lines
             const lines = jsCode.split('\n');
             preview.textContent = lines.slice(0, 3).join('\n') + (lines.length > 3 ? '\n...' : '');
 
-            this.domElement.appendChild(header);
-            this.domElement.appendChild(preview);
-            this.domElement.style.background = '#1e1e1e';
-            this.domElement.style.borderLeft = '4px solid #fbc02d';
+            this.domElement.append(header, preview);
+            setStyles(this.domElement, { background: '#1e1e1e', borderLeft: '4px solid #fbc02d' });
         } else if (level === 'full') {
             const header = document.createElement('div');
-            header.style.display = 'flex';
-            header.style.alignItems = 'center';
-            header.style.gap = '8px';
-            header.style.marginBottom = '12px';
+            setStyles(header, { display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' });
 
             const badge = document.createElement('span');
-            badge.style.background = '#fbc02d';
-            badge.style.color = 'black';
-            badge.style.padding = '2px 6px';
-            badge.style.borderRadius = '4px';
-            badge.style.fontSize = '12px';
-            badge.style.fontWeight = 'bold';
+            setStyles(badge, { background: '#fbc02d', color: 'black', padding: '2px 6px', borderRadius: '4px', fontSize: '12px', fontWeight: 'bold' });
             badge.textContent = 'JS';
 
             const text = document.createElement('span');
-            text.style.fontSize = '16px';
-            text.style.fontWeight = 'bold';
+            setStyles(text, { fontSize: '16px', fontWeight: 'bold' });
             text.textContent = 'Code Editor';
 
-            header.appendChild(badge);
-            header.appendChild(text);
+            header.append(badge, text);
 
             const editorContainer = document.createElement('div');
             const textarea = document.createElement('textarea');
             textarea.value = jsCode;
-            textarea.style.width = '100%';
-            textarea.style.height = '150px';
-            textarea.style.background = '#2d2d2d';
-            textarea.style.border = '1px solid #444';
-            textarea.style.color = '#9cdcfe';
-            textarea.style.fontFamily = 'monospace';
-            textarea.style.padding = '8px';
-            textarea.style.boxSizing = 'border-box';
-            textarea.style.outline = 'none';
-            textarea.style.borderRadius = '4px';
+            setStyles(textarea, { width: '100%', height: '150px', background: '#2d2d2d', border: '1px solid #444', color: '#9cdcfe', fontFamily: 'monospace', padding: '8px', boxSizing: 'border-box', outline: 'none', borderRadius: '4px' });
 
             textarea.addEventListener('input', (e) => {
                 const val = (e.target as HTMLTextAreaElement).value;
@@ -155,10 +110,8 @@ export class N8nCodeNode extends HtmlNode {
 
             editorContainer.appendChild(textarea);
 
-            this.domElement.appendChild(header);
-            this.domElement.appendChild(editorContainer);
-            this.domElement.style.background = '#1e1e1e';
-            this.domElement.style.borderLeft = '4px solid #fbc02d';
+            this.domElement.append(header, editorContainer);
+            setStyles(this.domElement, { background: '#1e1e1e', borderLeft: '4px solid #fbc02d' });
         }
     }
 

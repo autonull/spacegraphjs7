@@ -45,145 +45,91 @@ export class N8nHitlNode extends HtmlNode {
         this.domElement.innerHTML = '';
         const params = this.parameters || this.spec?.parameters || {};
         const taskSummary = params.taskSummary || 'Review required';
-        const status = params.status || 'waiting'; // could be 'approved', 'rejected'
+        const status = params.status || 'waiting';
+
+        const setStyles = (el: HTMLElement, styles: Partial<CSSStyleDeclaration>) => Object.assign(el.style, styles);
 
         if (level === 'icon') {
             const el = document.createElement('div');
-            el.style.fontSize = '48px';
-            el.style.textAlign = 'center';
+            setStyles(el, { fontSize: '48px', textAlign: 'center' });
             el.textContent = '👤';
             this.domElement.appendChild(el);
-            this.domElement.style.background = 'transparent';
-            this.domElement.style.border = 'none';
+            setStyles(this.domElement, { background: 'transparent', border: 'none' });
         } else if (level === 'label') {
             const el = document.createElement('div');
-            el.style.textAlign = 'center';
-            el.style.fontSize = '24px';
-            el.style.fontWeight = 'bold';
+            setStyles(el, { textAlign: 'center', fontSize: '24px', fontWeight: 'bold' });
             el.textContent = '👤 HITL';
             this.domElement.appendChild(el);
-            this.domElement.style.background = 'rgba(255, 152, 0, 0.8)';
-            this.domElement.style.border = '2px solid #e65100';
+            setStyles(this.domElement, { background: 'rgba(255, 152, 0, 0.8)', border: '2px solid #e65100' });
         } else if (level === 'summary') {
             const header = document.createElement('div');
-            header.style.display = 'flex';
-            header.style.justifyContent = 'space-between';
-            header.style.alignItems = 'center';
-            header.style.marginBottom = '8px';
+            setStyles(header, { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' });
 
             const title = document.createElement('span');
-            title.style.fontWeight = 'bold';
+            setStyles(title, { fontWeight: 'bold' });
             title.textContent = '👤 Human in Loop';
 
             const badge = document.createElement('span');
-            badge.style.background = 'rgba(0,0,0,0.3)';
-            badge.style.padding = '2px 6px';
-            badge.style.borderRadius = '4px';
-            badge.style.fontSize = '12px';
-            badge.style.textTransform = 'uppercase';
+            setStyles(badge, { background: 'rgba(0,0,0,0.3)', padding: '2px 6px', borderRadius: '4px', fontSize: '12px', textTransform: 'uppercase' });
             badge.textContent = status;
 
-            header.appendChild(title);
-            header.appendChild(badge);
+            header.append(title, badge);
 
             const summary = document.createElement('div');
-            summary.style.background = 'rgba(0,0,0,0.15)';
-            summary.style.padding = '8px';
-            summary.style.borderRadius = '4px';
-            summary.style.fontSize = '12px';
-            summary.style.maxHeight = '40px';
-            summary.style.overflow = 'hidden';
+            setStyles(summary, { background: 'rgba(0,0,0,0.15)', padding: '8px', borderRadius: '4px', fontSize: '12px', maxHeight: '40px', overflow: 'hidden' });
             summary.textContent = taskSummary;
 
-            this.domElement.appendChild(header);
-            this.domElement.appendChild(summary);
-            this.domElement.style.background = '#ff9800';
-            this.domElement.style.border = '2px solid #e65100';
+            this.domElement.append(header, summary);
+            setStyles(this.domElement, { background: '#ff9800', border: '2px solid #e65100' });
         } else if (level === 'full') {
             const header = document.createElement('div');
-            header.style.display = 'flex';
-            header.style.justifyContent = 'space-between';
-            header.style.alignItems = 'center';
-            header.style.marginBottom = '12px';
+            setStyles(header, { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' });
 
             const title = document.createElement('span');
-            title.style.fontWeight = 'bold';
-            title.style.fontSize = '16px';
+            setStyles(title, { fontWeight: 'bold', fontSize: '16px' });
             title.textContent = '👤 Human Intervention';
 
             const badge = document.createElement('span');
-            badge.style.background = 'rgba(0,0,0,0.3)';
-            badge.style.padding = '2px 6px';
-            badge.style.borderRadius = '4px';
-            badge.style.fontSize = '12px';
-            badge.style.fontWeight = 'bold';
-            badge.style.textTransform = 'uppercase';
+            setStyles(badge, { background: 'rgba(0,0,0,0.3)', padding: '2px 6px', borderRadius: '4px', fontSize: '12px', fontWeight: 'bold', textTransform: 'uppercase' });
             badge.textContent = status;
 
-            header.appendChild(title);
-            header.appendChild(badge);
+            header.append(title, badge);
 
             const taskBox = document.createElement('div');
-            taskBox.style.background = 'rgba(0,0,0,0.15)';
-            taskBox.style.padding = '12px';
-            taskBox.style.borderRadius = '6px';
-            taskBox.style.fontSize = '14px';
-            taskBox.style.lineHeight = '1.4';
-            taskBox.style.marginBottom = '16px';
-            taskBox.style.border = '1px solid rgba(255,255,255,0.2)';
+            setStyles(taskBox, { background: 'rgba(0,0,0,0.15)', padding: '12px', borderRadius: '6px', fontSize: '14px', lineHeight: '1.4', marginBottom: '16px', border: '1px solid rgba(255,255,255,0.2)' });
             taskBox.textContent = taskSummary;
 
             const btnGroup = document.createElement('div');
-            btnGroup.style.display = 'flex';
-            btnGroup.style.gap = '12px';
+            setStyles(btnGroup, { display: 'flex', gap: '12px' });
 
             const rejectBtn = document.createElement('button');
             rejectBtn.textContent = 'Reject';
-            rejectBtn.style.flex = '1';
-            rejectBtn.style.padding = '10px';
-            rejectBtn.style.background = '#f44336';
-            rejectBtn.style.color = 'white';
-            rejectBtn.style.border = 'none';
-            rejectBtn.style.borderRadius = '4px';
-            rejectBtn.style.fontWeight = 'bold';
-            rejectBtn.style.cursor = 'pointer';
+            setStyles(rejectBtn, { flex: '1', padding: '10px', background: '#f44336', color: 'white', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' });
 
             const approveBtn = document.createElement('button');
             approveBtn.textContent = 'Approve';
-            approveBtn.style.flex = '1';
-            approveBtn.style.padding = '10px';
-            approveBtn.style.background = '#4caf50';
-            approveBtn.style.color = 'white';
-            approveBtn.style.border = 'none';
-            approveBtn.style.borderRadius = '4px';
-            approveBtn.style.fontWeight = 'bold';
-            approveBtn.style.cursor = 'pointer';
+            setStyles(approveBtn, { flex: '1', padding: '10px', background: '#4caf50', color: 'white', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' });
 
             rejectBtn.addEventListener('click', () => {
                 this.parameters = { ...this.parameters, status: 'rejected' };
-                this.renderHtmlContent(level); // re-render
-                // Notify bridge via event manager
-                this.sg.pluginManager.getPlugin('EventManager')?.emit('hitl:decision', { id: this.id, decision: 'reject' });
+                this.renderHtmlContent(level);
+                this.sg.pluginManager.getPlugin?.('EventManager')?.emit('hitl:decision', { id: this.id, decision: 'reject' });
             });
 
             approveBtn.addEventListener('click', () => {
                 this.parameters = { ...this.parameters, status: 'approved' };
-                this.renderHtmlContent(level); // re-render
-                // Notify bridge via event manager
-                this.sg.pluginManager.getPlugin('EventManager')?.emit('hitl:decision', { id: this.id, decision: 'approve' });
+                this.renderHtmlContent(level);
+                this.sg.pluginManager.getPlugin?.('EventManager')?.emit('hitl:decision', { id: this.id, decision: 'approve' });
             });
 
-            btnGroup.appendChild(rejectBtn);
-            btnGroup.appendChild(approveBtn);
+            btnGroup.append(rejectBtn, approveBtn);
 
-            this.domElement.appendChild(header);
-            this.domElement.appendChild(taskBox);
+            this.domElement.append(header, taskBox);
             if (status === 'waiting') {
                 this.domElement.appendChild(btnGroup);
             }
 
-            this.domElement.style.background = '#ff9800';
-            this.domElement.style.border = '2px solid #e65100';
+            setStyles(this.domElement, { background: '#ff9800', border: '2px solid #e65100' });
         }
     }
 

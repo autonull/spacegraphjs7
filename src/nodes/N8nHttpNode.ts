@@ -40,12 +40,12 @@ export class N8nHttpNode extends HtmlNode {
     }
 
     private getMethodColor(method: string): string {
-        switch (method.toUpperCase()) {
-            case 'POST': return '#4caf50';
-            case 'PUT': return '#ff9800';
-            case 'DELETE': return '#f44336';
-            default: return '#2196f3';
-        }
+        const colors: Record<string, string> = {
+            'POST': '#4caf50',
+            'PUT': '#ff9800',
+            'DELETE': '#f44336'
+        };
+        return colors[method.toUpperCase()] || '#2196f3';
     }
 
     private renderHtmlContent(level: string) {
@@ -58,121 +58,74 @@ export class N8nHttpNode extends HtmlNode {
         const methodColor = this.getMethodColor(method);
         const status = params.status || 'waiting';
 
+        const setStyles = (el: HTMLElement, styles: Partial<CSSStyleDeclaration>) => Object.assign(el.style, styles);
+
         if (level === 'icon') {
             const el = document.createElement('div');
-            el.style.fontSize = '48px';
-            el.style.textAlign = 'center';
-            el.style.fontWeight = 'bold';
-            el.style.color = methodColor;
+            setStyles(el, { fontSize: '48px', textAlign: 'center', fontWeight: 'bold', color: methodColor });
             el.textContent = '🌐';
             this.domElement.appendChild(el);
-            this.domElement.style.background = 'transparent';
-            this.domElement.style.border = 'none';
+            setStyles(this.domElement, { background: 'transparent', border: 'none' });
         } else if (level === 'label') {
             const el = document.createElement('div');
-            el.style.display = 'flex';
-            el.style.alignItems = 'center';
-            el.style.gap = '8px';
+            setStyles(el, { display: 'flex', alignItems: 'center', gap: '8px' });
 
             const badge = document.createElement('span');
-            badge.style.background = methodColor;
-            badge.style.padding = '2px 6px';
-            badge.style.borderRadius = '4px';
-            badge.style.fontSize = '12px';
-            badge.style.fontWeight = 'bold';
+            setStyles(badge, { background: methodColor, padding: '2px 6px', borderRadius: '4px', fontSize: '12px', fontWeight: 'bold' });
             badge.textContent = method;
 
             const text = document.createElement('span');
-            text.style.fontSize = '18px';
-            text.style.fontWeight = 'bold';
+            setStyles(text, { fontSize: '18px', fontWeight: 'bold' });
             text.textContent = 'HTTP Request';
 
-            el.appendChild(badge);
-            el.appendChild(text);
+            el.append(badge, text);
             this.domElement.appendChild(el);
-            this.domElement.style.background = 'rgba(30, 30, 30, 0.8)';
-            this.domElement.style.border = `2px solid ${methodColor}`;
+            setStyles(this.domElement, { background: 'rgba(30, 30, 30, 0.8)', border: `2px solid ${methodColor}` });
         } else if (level === 'summary') {
             const header = document.createElement('div');
-            header.style.display = 'flex';
-            header.style.alignItems = 'center';
-            header.style.gap = '8px';
-            header.style.marginBottom = '8px';
+            setStyles(header, { display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' });
 
             const badge = document.createElement('span');
-            badge.style.background = methodColor;
-            badge.style.padding = '2px 6px';
-            badge.style.borderRadius = '4px';
-            badge.style.fontSize = '12px';
-            badge.style.fontWeight = 'bold';
+            setStyles(badge, { background: methodColor, padding: '2px 6px', borderRadius: '4px', fontSize: '12px', fontWeight: 'bold' });
             badge.textContent = method;
 
             const domain = new URL(url.startsWith('http') ? url : `http://${url}`).hostname;
             const text = document.createElement('span');
-            text.style.fontSize = '14px';
-            text.style.fontWeight = 'bold';
+            setStyles(text, { fontSize: '14px', fontWeight: 'bold' });
             text.textContent = domain;
 
-            header.appendChild(badge);
-            header.appendChild(text);
+            header.append(badge, text);
 
             const preview = document.createElement('div');
-            preview.style.background = '#000';
-            preview.style.padding = '8px';
-            preview.style.borderRadius = '4px';
-            preview.style.fontSize = '11px';
-            preview.style.fontFamily = 'monospace';
-            preview.style.color = status === 'running' ? '#ffcc80' : '#a5d6a7';
-            preview.style.height = '40px';
-            preview.style.overflow = 'hidden';
+            setStyles(preview, { background: '#000', padding: '8px', borderRadius: '4px', fontSize: '11px', fontFamily: 'monospace', color: status === 'running' ? '#ffcc80' : '#a5d6a7', height: '40px', overflow: 'hidden' });
             preview.textContent = status === 'running' ? 'Fetching...' : (params.response ? JSON.stringify(params.response).slice(0, 50) + '...' : 'Waiting...');
 
-            this.domElement.appendChild(header);
-            this.domElement.appendChild(preview);
-            this.domElement.style.background = 'rgba(30, 30, 30, 0.95)';
-            this.domElement.style.border = `2px solid ${methodColor}`;
+            this.domElement.append(header, preview);
+            setStyles(this.domElement, { background: 'rgba(30, 30, 30, 0.95)', border: `2px solid ${methodColor}` });
         } else if (level === 'full') {
             const header = document.createElement('div');
-            header.style.display = 'flex';
-            header.style.alignItems = 'center';
-            header.style.gap = '8px';
-            header.style.marginBottom = '12px';
+            setStyles(header, { display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' });
 
             const badge = document.createElement('span');
-            badge.style.background = methodColor;
-            badge.style.padding = '2px 6px';
-            badge.style.borderRadius = '4px';
-            badge.style.fontSize = '12px';
-            badge.style.fontWeight = 'bold';
+            setStyles(badge, { background: methodColor, padding: '2px 6px', borderRadius: '4px', fontSize: '12px', fontWeight: 'bold' });
             badge.textContent = method;
 
             const text = document.createElement('span');
-            text.style.fontSize = '16px';
-            text.style.fontWeight = 'bold';
+            setStyles(text, { fontSize: '16px', fontWeight: 'bold' });
             text.textContent = 'HTTP Request';
 
-            header.appendChild(badge);
-            header.appendChild(text);
+            header.append(badge, text);
 
             const urlGroup = document.createElement('div');
-            urlGroup.style.marginBottom = '12px';
+            setStyles(urlGroup, { marginBottom: '12px' });
             const urlLabel = document.createElement('label');
             urlLabel.textContent = 'URL:';
-            urlLabel.style.display = 'block';
-            urlLabel.style.fontSize = '12px';
-            urlLabel.style.color = '#aaa';
-            urlLabel.style.marginBottom = '4px';
+            setStyles(urlLabel, { display: 'block', fontSize: '12px', color: '#aaa', marginBottom: '4px' });
 
             const urlInput = document.createElement('input');
             urlInput.type = 'text';
             urlInput.value = url;
-            urlInput.style.width = '100%';
-            urlInput.style.padding = '8px';
-            urlInput.style.boxSizing = 'border-box';
-            urlInput.style.background = '#333';
-            urlInput.style.border = '1px solid #555';
-            urlInput.style.color = 'white';
-            urlInput.style.borderRadius = '4px';
+            setStyles(urlInput, { width: '100%', padding: '8px', boxSizing: 'border-box', background: '#333', border: '1px solid #555', color: 'white', borderRadius: '4px' });
 
             urlInput.addEventListener('input', (e) => {
                 const val = (e.target as HTMLInputElement).value;
@@ -180,37 +133,21 @@ export class N8nHttpNode extends HtmlNode {
                 this.sg.events.emit('node:paramChange', { nodeId: this.id, key: 'url', value: val });
             });
 
-            urlGroup.appendChild(urlLabel);
-            urlGroup.appendChild(urlInput);
+            urlGroup.append(urlLabel, urlInput);
 
             const responseGroup = document.createElement('div');
             const resLabel = document.createElement('label');
             resLabel.textContent = 'Response Preview:';
-            resLabel.style.display = 'block';
-            resLabel.style.fontSize = '12px';
-            resLabel.style.color = '#aaa';
-            resLabel.style.marginBottom = '4px';
+            setStyles(resLabel, { display: 'block', fontSize: '12px', color: '#aaa', marginBottom: '4px' });
 
             const resPreview = document.createElement('pre');
-            resPreview.style.background = '#000';
-            resPreview.style.padding = '8px';
-            resPreview.style.borderRadius = '4px';
-            resPreview.style.fontSize = '11px';
-            resPreview.style.fontFamily = 'monospace';
-            resPreview.style.color = status === 'running' ? '#ffcc80' : '#a5d6a7';
-            resPreview.style.height = '80px';
-            resPreview.style.overflow = 'auto';
-            resPreview.style.margin = '0';
+            setStyles(resPreview, { background: '#000', padding: '8px', borderRadius: '4px', fontSize: '11px', fontFamily: 'monospace', color: status === 'running' ? '#ffcc80' : '#a5d6a7', height: '80px', overflow: 'auto', margin: '0' });
             resPreview.textContent = status === 'running' ? 'Fetching...' : (params.response ? JSON.stringify(params.response, null, 2) : 'Waiting...');
 
-            responseGroup.appendChild(resLabel);
-            responseGroup.appendChild(resPreview);
+            responseGroup.append(resLabel, resPreview);
 
-            this.domElement.appendChild(header);
-            this.domElement.appendChild(urlGroup);
-            this.domElement.appendChild(responseGroup);
-            this.domElement.style.background = 'rgba(30, 30, 30, 0.95)';
-            this.domElement.style.border = `2px solid ${methodColor}`;
+            this.domElement.append(header, urlGroup, responseGroup);
+            setStyles(this.domElement, { background: 'rgba(30, 30, 30, 0.95)', border: `2px solid ${methodColor}` });
         }
     }
 

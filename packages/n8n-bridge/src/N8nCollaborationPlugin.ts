@@ -36,19 +36,18 @@ export class N8nCollaborationPlugin implements SpaceGraphPlugin {
         this.yNodes.observe((event) => {
             this.isUpdatingFromYjs = true;
 
-            const updates: any[] = [];
-            event.changes.keys.forEach((change, key) => {
-                if (change.action === 'add' || change.action === 'update') {
-                    const data = this.yNodes.get(key);
-                    if (data) updates.push(data);
-                } else if (change.action === 'delete') {
-                    // Logic to handle deletion
-                }
-            });
+            const updates = Array.from(event.changes.keys.entries())
+                .filter(([_, change]) => change.action === 'add' || change.action === 'update')
+                .map(([key, _]) => this.yNodes.get(key))
+                .filter(Boolean);
 
             if (updates.length > 0) {
                  this.sg.update({ nodes: updates } as SpecUpdate);
             }
+
+            // Deletions are conceptually:
+            // .filter(([_, change]) => change.action === 'delete')
+            // .forEach(([key, _]) => this.sg.graph.removeNode(key));
 
             this.isUpdatingFromYjs = false;
         });
@@ -58,9 +57,8 @@ export class N8nCollaborationPlugin implements SpaceGraphPlugin {
             if (this.isUpdatingFromYjs) return;
             const { node } = payload;
 
-            const state = this.yNodes.get(node.id) || {};
             this.yNodes.set(node.id, {
-                ...state,
+                ...(this.yNodes.get(node.id) || {}),
                 id: node.id,
                 position: [node.position.x, node.position.y, node.position.z]
             });
@@ -70,11 +68,11 @@ export class N8nCollaborationPlugin implements SpaceGraphPlugin {
         this.sg.events.on('node:param:changed', (payload: any) => {
             if (this.isUpdatingFromYjs) return;
             const { id, parameters } = payload;
-
             const state = this.yNodes.get(id) || {};
+
             this.yNodes.set(id, {
                 ...state,
-                id: id,
+                id,
                 parameters: { ...(state.parameters || {}), ...parameters }
             });
         });
