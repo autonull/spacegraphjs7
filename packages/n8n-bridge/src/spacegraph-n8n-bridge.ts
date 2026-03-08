@@ -4,6 +4,7 @@ import { WorkflowMapper } from './WorkflowMapper';
 import type { N8nWorkflowJSON, N8nWorkflowDiff, ExecutionState, OSProcessUpdate } from './types';
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
 import type { GraphSpec } from 'spacegraphjs';
+import { N8nCollaborationPlugin } from './N8nCollaborationPlugin';
 
 export class N8nBridge {
     private sg: SpaceGraph;
@@ -17,6 +18,13 @@ export class N8nBridge {
         this.sg = sg;
         this.serverUrl = bridgeServerUrl;
         this.connect();
+
+        // Initialize Collaboration Plugin (Y.js CRDT sync)
+        const collabPlugin = new N8nCollaborationPlugin('n8n-workflow-room', 'ws://localhost:1234');
+        this.sg.pluginManager.register('N8nCollaborationPlugin', collabPlugin);
+        // Note: The plugin manager will automatically call init() on it if SpaceGraph is already initialized,
+        // or we can call it manually if needed. To be safe:
+        collabPlugin.init(this.sg);
     }
 
     private connect() {
