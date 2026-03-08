@@ -35,6 +35,7 @@ import { N8nHitlNode } from './nodes/N8nHitlNode';
 import { N8nVisionOptimizerNode } from './nodes/N8nVisionOptimizerNode';
 import { N8nPaletteNode } from './nodes/N8nPaletteNode';
 import { ExecutionLogPanel } from './nodes/ExecutionLogPanel';
+import { TimelineSliderNode } from './nodes/TimelineSliderNode';
 import { Edge } from './edges/Edge';
 import { CurvedEdge } from './edges/CurvedEdge';
 import { FlowEdge } from './edges/FlowEdge';
@@ -156,6 +157,7 @@ export class SpaceGraph {
         this.pluginManager.registerNodeType('N8nVisionOptimizerNode', N8nVisionOptimizerNode);
         this.pluginManager.registerNodeType('N8nPaletteNode', N8nPaletteNode);
         this.pluginManager.registerNodeType('ExecutionLogPanel', ExecutionLogPanel);
+        this.pluginManager.registerNodeType('TimelineSliderNode', TimelineSliderNode);
 
         // Register built-in edge types
         this.pluginManager.registerEdgeType('Edge', Edge);

@@ -1,21 +1,30 @@
 import { Subject, BehaviorSubject, Observable } from 'rxjs';
 import type { SpaceGraph } from 'spacegraphjs';
 import { WorkflowMapper } from './WorkflowMapper';
-import type { N8nWorkflowJSON, N8nWorkflowDiff, ExecutionState } from './types';
+import type { N8nWorkflowJSON, N8nWorkflowDiff, ExecutionState, OSProcessUpdate } from './types';
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
 import type { GraphSpec } from 'spacegraphjs';
+import { N8nCollaborationPlugin } from './N8nCollaborationPlugin';
 
 export class N8nBridge {
     private sg: SpaceGraph;
     private wsClient!: WebSocket;           // connects to n8n-bridge-server
     private workflowDiff$ = new Subject<N8nWorkflowDiff>();
     private executionState$ = new BehaviorSubject<ExecutionState | null>(null);
+    private osProcess$ = new Subject<OSProcessUpdate>();
     private serverUrl: string;
 
     constructor(sg: SpaceGraph, bridgeServerUrl = 'ws://localhost:5679') {
         this.sg = sg;
         this.serverUrl = bridgeServerUrl;
         this.connect();
+
+        // Initialize Collaboration Plugin (Y.js CRDT sync)
+        const collabPlugin = new N8nCollaborationPlugin('n8n-workflow-room', 'ws://localhost:1234');
+        this.sg.pluginManager.register('N8nCollaborationPlugin', collabPlugin);
+        // Note: The plugin manager will automatically call init() on it if SpaceGraph is already initialized,
+        // or we can call it manually if needed. To be safe:
+        collabPlugin.init(this.sg);
     }
 
     private connect() {
@@ -52,6 +61,9 @@ export class N8nBridge {
                 break;
             case 'workflow:diff':
                 this.workflowDiff$.next(message.data as N8nWorkflowDiff);
+                break;
+            case 'os:process:update':
+                this.osProcess$.next(message.data as OSProcessUpdate);
                 break;
             default:
                 console.warn('[N8nBridge] Unknown message type:', message.type);
@@ -131,6 +143,7 @@ export class N8nBridge {
     // RxJS observables for reactive UI updates
     get executionState(): Observable<ExecutionState | null> { return this.executionState$.asObservable(); }
     get workflowDiffs(): Observable<N8nWorkflowDiff> { return this.workflowDiff$.asObservable(); }
+    get osProcessUpdates(): Observable<OSProcessUpdate> { return this.osProcess$.asObservable(); }
 
     dispose(): void {
         if (this.wsClient) {

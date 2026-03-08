@@ -31,8 +31,15 @@ export class VisionManager {
 
     constructor(sg: SpaceGraph) {
         this.sg = sg;
-        // Default to wasm, but allow override via SpaceGraphOptions for Hardware Acceleration Hooks (e.g. ['rknn'])
+        // Default to wasm, but allow override via SpaceGraphOptions for Hardware Acceleration Hooks.
+        // E.g., for SpaceGraph Mini (RK3588), we attempt to use the 'rknn' provider for NPU offloading.
         this.executionProviders = sg.options?.onnxExecutionProviders || ['wasm'];
+
+        // Automatically append rknn for RK3588 NPU acceleration if running in a Node environment that supports it
+        // This acts as a hook/fallback when deploying on SpaceGraph Mini hardware.
+        if (typeof process !== 'undefined' && process.arch === 'arm64' && !this.executionProviders.includes('rknn')) {
+             this.executionProviders.unshift('rknn');
+        }
     }
 
     // Holds actual ONNX runtime sessions

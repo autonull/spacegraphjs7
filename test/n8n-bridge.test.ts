@@ -140,6 +140,19 @@ describe('N8nBridge', () => {
             renderer: { scene: {} }
         } as unknown as SpaceGraph;
 
+        // Prevent Yjs WebSockets from connecting by overriding the N8nCollaborationPlugin registration mock.
+        // We will just patch the pluginManager before bridge initialization.
+        sg.pluginManager = {
+            register: vi.fn(),
+            get: vi.fn(),
+            getPlugin: vi.fn(),
+            initAll: vi.fn()
+        } as any;
+        sg.events = {
+            on: vi.fn(),
+            emit: vi.fn()
+        } as any;
+
         bridge = new N8nBridge(sg, 'ws://mock');
         // Let the constructor's new WebSocket() take effect, then force readyState to OPEN
         // Since we are mocking the class, the instance was created inside bridge
@@ -204,6 +217,7 @@ describe('N8nVisionHealer', () => {
         sg = {
             graph: { nodes: new Map(), edges: [] },
             pluginManager: {
+                register: vi.fn(),
                 get: vi.fn((name) => {
                     if (name === 'ForceLayout') return { run: mockForceLayoutRun };
                     if (name === 'ErgonomicsPlugin') return { fixOverlaps: mockErgonomicsFix };
@@ -212,6 +226,10 @@ describe('N8nVisionHealer', () => {
             },
             vision: {
                 analyzeVision: mockAnalyzeVision
+            },
+            events: {
+                on: vi.fn(),
+                emit: vi.fn()
             }
         } as unknown as SpaceGraph;
 
