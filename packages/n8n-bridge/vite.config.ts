@@ -10,7 +10,7 @@ export default defineConfig({
         fileName: 'index'
     },
     rollupOptions: {
-      external: ["three", "spacegraphjs", "rxjs"],
+      external: ["three", "three/examples/jsm/exporters/GLTFExporter.js", "spacegraphjs", "rxjs", "gsap", "yjs", "y-websocket"],
     },
   },
 });

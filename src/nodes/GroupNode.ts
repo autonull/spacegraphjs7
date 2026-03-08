@@ -73,10 +73,28 @@ export class GroupNode extends Node {
 
     updateLod(distance: number): void {
         // Fractal LOD infinite drill-down logic
-        if (distance < 800) {
+        const threshold = 800; // Define distance threshold
+
+        if (distance < threshold) {
             this.meshMaterial.opacity = 0.05;
         } else {
             this.meshMaterial.opacity = 0.2;
+        }
+
+        // Recursively toggle visibility of children based on zoom level
+        const shouldShowChildren = distance < threshold;
+        if (this.sg && this.sg.graph && this.sg.graph.nodes) {
+            this.sg.graph.nodes.forEach((node) => {
+                // Find all nodes that are immediate children of this group
+                if (node.parameters?.parent === this.id || node.data?.parent === this.id || (node as any).parent === this.id) {
+                    // Determine if node is a DOMNode
+                    if (typeof (node as any).setVisibility === 'function') {
+                        (node as any).setVisibility(shouldShowChildren);
+                    } else if (node.object) {
+                        node.object.visible = shouldShowChildren;
+                    }
+                }
+            });
         }
     }
 
