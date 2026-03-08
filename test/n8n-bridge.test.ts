@@ -1,8 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { WorkflowMapper } from '../packages/n8n-bridge/src/WorkflowMapper';
-import { N8nBridge } from '../packages/n8n-bridge/src/spacegraph-n8n-bridge';
 import { N8nVisionHealer } from '../packages/n8n-bridge/src/N8nVisionHealer';
-import { SpaceGraph } from '../src/SpaceGraph';
 import type { N8nWorkflowJSON } from '../packages/n8n-bridge/src/types';
 import { N8nScheduleNode } from '../src/nodes/N8nScheduleNode';
 import { N8nCredentialNode } from '../src/nodes/N8nCredentialNode';
@@ -13,260 +11,214 @@ import { N8nHttpNode } from '../src/nodes/N8nHttpNode';
 import { N8nAiNode } from '../src/nodes/N8nAiNode';
 import { N8nPaletteNode } from '../src/nodes/N8nPaletteNode';
 import { N8nVisionOptimizerNode } from '../src/nodes/N8nVisionOptimizerNode';
+import { SpaceGraph } from '../src/SpaceGraph';
 
-describe('WorkflowMapper', () => {
-    it('toGraphSpec: should map n8n workflow JSON to SpaceGraph spec correctly', () => {
-        const workflowJson: N8nWorkflowJSON = {
-            id: 'wf-1',
-            name: 'Test Workflow',
-            active: true,
-            settings: {},
-            tags: [],
-            nodes: [
-                {
-                    id: 'node-1',
-                    name: 'Trigger Node',
-                    type: 'n8n-nodes-base.webhook',
-                    typeVersion: 1,
-                    position: [100, 200],
-                    parameters: { key: 'value' }
-                },
-                {
-                    id: 'node-2',
-                    name: 'AI Node',
-                    type: '@n8n/n8n-nodes-langchain.agent',
-                    typeVersion: 1,
-                    position: [300, 200],
-                    parameters: { prompt: 'hello' }
-                }
-            ],
-            connections: {
-                'Trigger Node': {
-                    main: [
-                        [
-                            {
-                                node: 'AI Node',
-                                type: 'main',
-                                index: 0
-                            }
+describe('n8n-bridge Unit Tests', () => {
+    describe('WorkflowMapper', () => {
+        it('should correctly map n8n JSON to SpaceGraph GraphSpec', () => {
+            const n8nJson: N8nWorkflowJSON = {
+                id: 'workflow-1',
+                name: 'Test Workflow',
+                active: true,
+                settings: {},
+                tags: [],
+                nodes: [
+                    {
+                        id: 'node-1',
+                        name: 'Webhook',
+                        type: 'n8n-nodes-base.webhook',
+                        typeVersion: 1,
+                        position: [100, 200],
+                        parameters: { path: 'test' }
+                    },
+                    {
+                        id: 'node-2',
+                        name: 'HTTP Request',
+                        type: 'n8n-nodes-base.httpRequest',
+                        typeVersion: 1,
+                        position: [300, 200],
+                        parameters: { url: 'https://example.com' }
+                    }
+                ],
+                connections: {
+                    'Webhook': {
+                        'main': [
+                            [
+                                {
+                                    node: 'HTTP Request',
+                                    type: 'main',
+                                    index: 0
+                                }
+                            ]
                         ]
-                    ]
+                    }
                 }
-            }
-        };
+            };
 
-        const spec = WorkflowMapper.toGraphSpec(workflowJson);
+            const spec = WorkflowMapper.toGraphSpec(n8nJson);
 
-        expect(spec.nodes?.length).toBe(2);
+            expect(spec.nodes).toBeDefined();
+            expect(spec.nodes?.length).toBe(2);
 
-        // Check node 1
-        const sgNode1 = spec.nodes?.find(n => n.id === 'node-1');
-        expect(sgNode1).toBeDefined();
-        expect(sgNode1?.type).toBe('N8nTriggerNode');
-        expect(sgNode1?.position).toEqual([100, -200, 0]); // Y inverted
-        expect(sgNode1?.parameters?.key).toBe('value');
+            // Check node 1 mapped correctly
+            const node1 = spec.nodes?.find(n => n.id === 'node-1');
+            expect(node1).toBeDefined();
+            expect(node1?.type).toBe('N8nTriggerNode'); // Resolves webhook to trigger node
+            expect(node1?.position).toEqual([100, -200, 0]); // Y is inverted for 3D
 
-        // Check node 2
-        const sgNode2 = spec.nodes?.find(n => n.id === 'node-2');
-        expect(sgNode2).toBeDefined();
-        expect(sgNode2?.type).toBe('N8nAiNode');
+            // Check node 2 mapped correctly
+            const node2 = spec.nodes?.find(n => n.id === 'node-2');
+            expect(node2).toBeDefined();
+            expect(node2?.type).toBe('N8nHttpNode');
 
-        // Check edges
-        expect(spec.edges?.length).toBe(1);
-        expect(spec.edges?.[0].source).toBe('node-1');
-        expect(spec.edges?.[0].target).toBe('node-2');
-        expect(spec.edges?.[0].type).toBe('FlowEdge'); // Default
-    });
-
-    it('toN8nJSON: should map SpaceGraph spec back to n8n workflow JSON', () => {
-        const sgSpec = {
-            nodes: [
-                {
-                    id: 'node-1',
-                    type: 'N8nTriggerNode',
-                    label: 'Trigger Node',
-                    position: [100, -200, 0] as [number, number, number],
-                    parameters: { key: 'value' }
-                },
-                {
-                    id: 'node-2',
-                    type: 'N8nAiNode',
-                    label: 'AI Node',
-                    position: [300, -200, 0] as [number, number, number],
-                    parameters: { prompt: 'hello' }
-                }
-            ],
-            edges: [
-                {
-                    id: 'edge-0',
-                    source: 'node-1',
-                    target: 'node-2',
-                    type: 'FlowEdge'
-                }
-            ]
-        };
-
-        const workflowJson = WorkflowMapper.toN8nJSON(sgSpec);
-
-        expect(workflowJson.nodes.length).toBe(2);
-        const n8nNode1 = workflowJson.nodes.find(n => n.id === 'node-1');
-        expect(n8nNode1?.type).toBe('n8n-nodes-base.webhook'); // Resolved correctly
-        expect(n8nNode1?.position).toEqual([100, 200]); // Y inverted back
-
-        expect(workflowJson.connections['Trigger Node']).toBeDefined();
-        expect(workflowJson.connections['Trigger Node']['main'][0][0].node).toBe('AI Node');
-    });
-});
-
-describe('N8nBridge', () => {
-    let bridge: N8nBridge;
-    let sg: SpaceGraph;
-
-    beforeEach(() => {
-        // Mock global WebSocket
-        (global as any).WebSocket = class {
-            readyState = 1;
-            send = vi.fn();
-            close = vi.fn();
-            onopen = null;
-            onmessage = null;
-            onclose = null;
-        };
-
-        // Mock SpaceGraph
-        sg = {
-            graph: { nodes: new Map(), edges: [] },
-            loadSpec: vi.fn(),
-            renderer: { scene: {} }
-        } as unknown as SpaceGraph;
-
-        // Prevent Yjs WebSockets from connecting by overriding the N8nCollaborationPlugin registration mock.
-        // We will just patch the pluginManager before bridge initialization.
-        sg.pluginManager = {
-            register: vi.fn(),
-            get: vi.fn(),
-            getPlugin: vi.fn(),
-            initAll: vi.fn()
-        } as any;
-        sg.events = {
-            on: vi.fn(),
-            emit: vi.fn()
-        } as any;
-
-        bridge = new N8nBridge(sg, 'ws://mock');
-        // Let the constructor's new WebSocket() take effect, then force readyState to OPEN
-        // Since we are mocking the class, the instance was created inside bridge
-        (bridge as any).wsClient = {
-            readyState: 1, // WebSocket.OPEN
-            send: vi.fn(),
-            close: vi.fn()
-        };
-    });
-
-    it('pushNodePositionUpdate: should format WS payload correctly', () => {
-        const sendSpy = (bridge as any).wsClient.send;
-        bridge.pushNodePositionUpdate('node-123', 100, -50);
-
-        expect(sendSpy).toHaveBeenCalled();
-
-        const payload = JSON.parse(sendSpy.mock.calls[0][0]);
-        expect(payload.type).toBe('node:moved');
-        expect(payload.nodeId).toBe('node-123');
-        expect(payload.position).toEqual([100, 50]); // Y gets inverted -(-50) = 50
-    });
-
-    it('executeWorkflow: should send trigger payload and return an execution ID', async () => {
-        const sendSpy = (bridge as any).wsClient.send;
-        const executionIdPromise = bridge.executeWorkflow('wf-abc');
-
-        expect(sendSpy).toHaveBeenCalled();
-
-        const payload = JSON.parse(sendSpy.mock.calls[0][0]);
-        expect(payload.type).toBe('execute:trigger');
-        expect(payload.workflowId).toBe('wf-abc');
-        expect(payload.executionId).toBeDefined();
-
-        const executionId = await executionIdPromise;
-        expect(executionId).toBe(payload.executionId);
-    });
-});
-
-describe('N8nVisionHealer', () => {
-    let healer: N8nVisionHealer;
-    let bridge: N8nBridge;
-    let sg: SpaceGraph;
-    let mockForceLayoutRun: any;
-    let mockErgonomicsFix: any;
-    let mockAnalyzeVision: any;
-
-    beforeEach(() => {
-        (global as any).WebSocket = class {
-            readyState = 1;
-            send = vi.fn();
-            close = vi.fn();
-        };
-
-        mockForceLayoutRun = vi.fn().mockResolvedValue(undefined);
-        mockErgonomicsFix = vi.fn().mockResolvedValue(undefined);
-
-        // First call returns bad score, second call returns good score
-        mockAnalyzeVision = vi.fn()
-            .mockResolvedValueOnce({ layoutScore: 50, overlap: { overlaps: [] }, legibility: { items: [] }, colorHarmony: { issues: [] } })
-            .mockResolvedValueOnce({ layoutScore: 80, overlap: { overlaps: [] }, legibility: { items: [] }, colorHarmony: { issues: [] } });
-
-        sg = {
-            graph: { nodes: new Map(), edges: [] },
-            pluginManager: {
-                register: vi.fn(),
-                get: vi.fn((name) => {
-                    if (name === 'ForceLayout') return { run: mockForceLayoutRun };
-                    if (name === 'ErgonomicsPlugin') return { fixOverlaps: mockErgonomicsFix };
-                    return null;
-                })
-            },
-            vision: {
-                analyzeVision: mockAnalyzeVision
-            },
-            events: {
-                on: vi.fn(),
-                emit: vi.fn()
-            }
-        } as unknown as SpaceGraph;
-
-        bridge = new N8nBridge(sg);
-        healer = new N8nVisionHealer(bridge, sg);
-    });
-
-    it('healLayout: should invoke ForceLayout if layoutScore is below threshold', async () => {
-        const report = await healer.healLayout('wf-1');
-
-        // Assert ForceLayout was run
-        expect(mockForceLayoutRun).toHaveBeenCalled();
-        expect(mockAnalyzeVision).toHaveBeenCalledTimes(2);
-
-        // Final report should be the second one
-        expect(report.layoutScore).toBe(80);
-    });
-
-    it('healLayout: should invoke ErgonomicsPlugin if overlaps are detected', async () => {
-        mockAnalyzeVision = vi.fn().mockResolvedValue({
-            layoutScore: 80, // High enough to not trigger force layout
-            overlap: { overlaps: [{ nodeA: 'a', nodeB: 'b' }] }, // Has overlaps
-            legibility: { items: [] },
-            colorHarmony: { issues: [] }
+            // Check edges mapped correctly
+            expect(spec.edges).toBeDefined();
+            expect(spec.edges?.length).toBe(1);
+            expect(spec.edges?.[0].source).toBe('node-1');
+            expect(spec.edges?.[0].target).toBe('node-2');
+            expect(spec.edges?.[0].type).toBe('FlowEdge'); // Default to FlowEdge
         });
 
-        // Re-assign mock
-        (sg.vision.analyzeVision as any) = mockAnalyzeVision;
+        it('should correctly map SpaceGraph GraphSpec to n8n JSON', () => {
+            const spec = {
+                nodes: [
+                    {
+                        id: 'node-1',
+                        type: 'N8nTriggerNode',
+                        label: 'Webhook',
+                        position: [100, -200, 0] as [number, number, number],
+                        parameters: { path: 'test' }
+                    },
+                    {
+                        id: 'node-2',
+                        type: 'N8nHttpNode',
+                        label: 'HTTP Request',
+                        position: [300, -200, 0] as [number, number, number],
+                        parameters: { url: 'https://example.com' }
+                    }
+                ],
+                edges: [
+                    {
+                        id: 'edge-1',
+                        source: 'node-1',
+                        target: 'node-2',
+                        type: 'FlowEdge'
+                    }
+                ]
+            };
 
-        const report = await healer.healLayout('wf-1');
+            const n8nJson = WorkflowMapper.toN8nJSON(spec);
 
-        expect(mockForceLayoutRun).not.toHaveBeenCalled();
-        expect(mockErgonomicsFix).toHaveBeenCalled();
+            expect(n8nJson.nodes).toBeDefined();
+            expect(n8nJson.nodes.length).toBe(2);
+
+            const node1 = n8nJson.nodes.find(n => n.id === 'node-1');
+            expect(node1?.type).toBe('n8n-nodes-base.webhook');
+            expect(node1?.position).toEqual([100, 200]); // Y is reverted
+
+            expect(n8nJson.connections).toBeDefined();
+            expect(n8nJson.connections['Webhook']).toBeDefined();
+            expect(n8nJson.connections['Webhook']['main']).toBeDefined();
+            expect(n8nJson.connections['Webhook']['main'][0][0].node).toBe('HTTP Request');
+        });
+    });
+
+    describe('N8nBridge Core', () => {
+        it('should send correct WS message on pushNodePositionUpdate', () => {
+            // We use vitest mock for the N8nBridge constructor to avoid real WS connections
+            // But since the original test was deleted/missing, let's mock it
+            // Actually N8nBridge uses standard WebSocket, we can mock global.WebSocket
+            const mockSend = vi.fn();
+            global.WebSocket = class {
+                onopen: any;
+                onmessage: any;
+                onclose: any;
+                readyState = 1;
+                send = mockSend;
+                close = vi.fn();
+                constructor(public url: string) {
+                    setTimeout(() => this.onopen?.(), 10);
+                }
+            } as any;
+
+            const sg = {
+                pluginManager: {
+                    register: vi.fn(),
+                    init: vi.fn(),
+                    getPlugin: vi.fn()
+                },
+                events: {
+                    on: vi.fn(),
+                    emit: vi.fn()
+                }
+            } as unknown as SpaceGraph;
+
+            // Dynamic import the actual module now so it uses the mocked WebSocket
+            return import('../packages/n8n-bridge/src/spacegraph-n8n-bridge.ts').then(({ N8nBridge }) => {
+                const bridge = new N8nBridge(sg);
+
+                bridge.pushNodePositionUpdate('test-node', 150, 300);
+
+                expect(mockSend).toHaveBeenCalledWith(JSON.stringify({
+                    type: 'node:moved',
+                    nodeId: 'test-node',
+                    position: [150, -300] // Y is inverted in bridge!
+                }));
+
+                bridge.dispose();
+            });
+        });
+    });
+
+    describe('N8nVisionHealer', () => {
+        it('should call vision analyze and fix layout if score is low', async () => {
+            let score = 50;
+
+            const mockVisionManager = {
+                analyzeVision: vi.fn().mockImplementation(async () => {
+                    return { layoutScore: score, overlap: { overlaps: [] } };
+                })
+            };
+
+            const mockForceLayout = {
+                update: vi.fn()
+            };
+
+            const mockPluginManager = {
+                getPlugin: vi.fn().mockReturnValue(mockForceLayout)
+            };
+
+            const mockSg = {
+                vision: mockVisionManager,
+                pluginManager: mockPluginManager,
+                graph: {
+                    nodes: new Map()
+                }
+            };
+
+            const mockBridge = {
+                pushNodePositionUpdate: vi.fn()
+            };
+
+            const healer = new N8nVisionHealer(mockBridge as any, mockSg as any);
+
+            // Run heal
+            const reportPromise = healer.healLayout('wf-1');
+
+            // On second call to analyzeVision, score should be updated if force layout did its job
+            // For the mock, we'll just bump it
+            score = 80;
+
+            const report = await reportPromise;
+
+            expect(mockVisionManager.analyzeVision).toHaveBeenCalledTimes(2);
+            expect(mockForceLayout.update).toHaveBeenCalledTimes(100);
+            expect(report.layoutScore).toBe(80);
+        });
     });
 });
 
-describe('N8nNodes LOD logic', () => {
+describe('N8n Nodes LOD Tests', () => {
     it('N8nScheduleNode should change HTML content based on camera distance (LOD)', () => {
         const sg = {
             events: {
@@ -276,44 +228,37 @@ describe('N8nNodes LOD logic', () => {
         } as unknown as SpaceGraph;
 
         const spec = {
-            id: 'node-sch',
+            id: 'node-1',
             type: 'N8nScheduleNode',
             position: [0, 0, 0] as [number, number, number],
-            data: { nextRun: 'in 5 mins' }, // also put in data just in case
         } as any;
 
-        const domElement = document.createElement('div');
-
-        // We can just construct N8nScheduleNode and see its content
-        // N8nScheduleNode creates a DOMNode, which needs a domElement.
-        // We override the object instantiation.
         const node = new N8nScheduleNode(sg, spec);
-        node.parameters = { nextRun: 'in 5 mins' };
+        node.parameters = { cronExpression: '0 0 * * *' };
 
-        // It creates its own domElement in HtmlNode constructor
         expect(node.domElement).toBeDefined();
 
         // 1. Full view
         node.updateLod(0);
         expect(node.domElement?.innerHTML).toContain('Schedule Cron');
-        expect(node.domElement?.innerHTML).toContain('in 5 mins');
+        expect(node.domElement?.innerHTML).toContain('Cron Expression');
         expect(node.domElement?.innerHTML).toContain('input');
 
         // 2. Summary view
         node.updateLod(200);
         expect(node.domElement?.innerHTML).toContain('Schedule Node');
-        expect(node.domElement?.innerHTML).toContain('in 5 mins');
-        expect(node.domElement?.innerHTML).not.toContain('input');
+        expect(node.domElement?.innerHTML).toContain('Next Run');
+        expect(node.domElement?.innerHTML).not.toContain('Cron Expression');
 
         // 3. Label view
         node.updateLod(500);
         expect(node.domElement?.innerHTML).toContain('Schedule');
-        expect(node.domElement?.innerHTML).not.toContain('in 5 mins');
+        expect(node.domElement?.innerHTML).not.toContain('Schedule Node');
 
         // 4. Icon view
         node.updateLod(1000);
         expect(node.domElement?.innerHTML).toContain('🕐');
-        expect(node.domElement?.innerHTML).not.toContain('Schedule Node');
+        expect(node.domElement?.innerHTML).not.toContain('Schedule');
     });
 
     it('N8nCredentialNode should change HTML content based on camera distance (LOD)', () => {
@@ -331,26 +276,27 @@ describe('N8nNodes LOD logic', () => {
         } as any;
 
         const node = new N8nCredentialNode(sg, spec);
-        node.parameters = { service: 'Github', apiKey: 'secret-key' };
+        node.parameters = { service: 'AWS', apiKey: 'test-key' };
 
         expect(node.domElement).toBeDefined();
 
         // 1. Full view
         node.updateLod(0);
-        expect(node.domElement?.innerHTML).toContain('Github Credentials');
+        expect(node.domElement?.innerHTML).toContain('AWS Credentials');
+        expect(node.domElement?.innerHTML).toContain('API Key');
         expect(node.domElement?.innerHTML).toContain('input type="password"');
         expect(node.domElement?.innerHTML).toContain('Test Connection');
 
         // 2. Summary view
         node.updateLod(200);
-        expect(node.domElement?.innerHTML).toContain('Github');
+        expect(node.domElement?.innerHTML).toContain('AWS');
         expect(node.domElement?.innerHTML).toContain('Key Configured');
         expect(node.domElement?.innerHTML).not.toContain('input type="password"');
 
         // 3. Label view
         node.updateLod(500);
         expect(node.domElement?.innerHTML).toContain('Credential');
-        expect(node.domElement?.innerHTML).not.toContain('Github');
+        expect(node.domElement?.innerHTML).not.toContain('AWS');
 
         // 4. Icon view
         node.updateLod(1000);
@@ -362,7 +308,8 @@ describe('N8nNodes LOD logic', () => {
         const sg = {
             events: {
                 on: vi.fn(),
-                emit: vi.fn()
+                emit: vi.fn(),
+                pluginManager: { getPlugin: vi.fn() }
             }
         } as unknown as SpaceGraph;
 

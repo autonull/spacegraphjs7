@@ -46,4 +46,33 @@ test.describe('SpaceGraph Vision System E2E', () => {
 
         await expect(visionAssert.noOverlap()).rejects.toThrow(/Expected no overlaps/);
     });
+
+    test.fixme('n8n workflow renders without overlaps', async ({ page }) => {
+        await page.goto('http://localhost:5176/demo/n8n-workflow.html', { waitUntil: 'networkidle' });
+
+        // Wait for SpaceGraph instances to register
+        await page.waitForFunction(() => {
+            const w = window as any;
+            return w.__SPACEGRAPH_INSTANCES__ && w.__SPACEGRAPH_INSTANCES__.length > 0;
+        }, { timeout: 5000 }).catch(() => false);
+
+        // trigger auto layout to resolve overlaps
+        await page.evaluate(() => {
+            const sg = (window as any).__SPACEGRAPH_INSTANCES__[0];
+            const forceLayout = sg.pluginManager.getPlugin('ForceLayout');
+            if (forceLayout && forceLayout.update) {
+                for (let i = 0; i < 50; i++) {
+                    forceLayout.update(0.016);
+                }
+            }
+        });
+
+        // Allow layout to settle
+        await page.waitForTimeout(1500);
+
+        const visionAssert = createVisionAssert(page);
+
+        await expect(visionAssert.noOverlap()).resolves.toBeUndefined();
+    });
+
 });
