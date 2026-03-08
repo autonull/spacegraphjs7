@@ -16,48 +16,32 @@ export class ExecutionLogPanel extends HtmlNode {
         super(sg, spec);
 
         this.domElement.className = 'spacegraph-execution-log-panel';
-        this.domElement.style.width = '400px';
-        this.domElement.style.height = '300px';
-        this.domElement.style.backgroundColor = 'rgba(20, 20, 20, 0.9)';
-        this.domElement.style.border = '2px solid #00ff00';
-        this.domElement.style.color = '#00ff00';
-        this.domElement.style.borderRadius = '4px';
-        this.domElement.style.padding = '10px';
-        this.domElement.style.overflow = 'hidden';
-        this.domElement.style.fontFamily = 'monospace';
-        this.domElement.style.fontSize = '12px';
-        this.domElement.style.pointerEvents = 'auto';
-        this.domElement.style.opacity = '1';
-        this.domElement.style.justifyContent = 'flex-start';
-        this.domElement.style.alignItems = 'flex-start';
+        Object.assign(this.domElement.style, {
+            width: '400px', height: '300px', backgroundColor: 'rgba(20, 20, 20, 0.9)',
+            border: '2px solid #00ff00', color: '#00ff00', borderRadius: '4px',
+            padding: '10px', overflow: 'hidden', fontFamily: 'monospace',
+            fontSize: '12px', pointerEvents: 'auto', opacity: '1',
+            justifyContent: 'flex-start', alignItems: 'flex-start'
+        });
 
-        // Remove existing elements added by HtmlNode constructor
-        const titleEl = this.domElement.querySelector('.html-node-title');
-        const descEl = this.domElement.querySelector('.html-node-desc');
-        if (titleEl) titleEl.remove();
-        if (descEl) descEl.remove();
+        this.domElement.querySelector('.html-node-title')?.remove();
+        this.domElement.querySelector('.html-node-desc')?.remove();
 
-        // Add a header
         const header = document.createElement('div');
-        header.style.width = '100%';
-        header.style.borderBottom = '1px solid #444';
-        header.style.paddingBottom = '5px';
-        header.style.marginBottom = '5px';
-        header.style.fontWeight = 'bold';
-        header.style.color = '#fff';
+        Object.assign(header.style, {
+            width: '100%', borderBottom: '1px solid #444', paddingBottom: '5px',
+            marginBottom: '5px', fontWeight: 'bold', color: '#fff'
+        });
         header.textContent = 'Execution Log';
         this.domElement.appendChild(header);
 
-        // Add a container for logs
         this.logsContainer = document.createElement('div');
-        this.logsContainer.style.width = '100%';
-        this.logsContainer.style.height = 'calc(100% - 30px)';
-        this.logsContainer.style.overflowY = 'auto';
-        this.logsContainer.style.display = 'flex';
-        this.logsContainer.style.flexDirection = 'column';
+        Object.assign(this.logsContainer.style, {
+            width: '100%', height: 'calc(100% - 30px)', overflowY: 'auto',
+            display: 'flex', flexDirection: 'column'
+        });
         this.domElement.appendChild(this.logsContainer);
 
-        // Ensure starting visual matches initial LOD
         this.updateLod(0);
     }
 
@@ -68,49 +52,25 @@ export class ExecutionLogPanel extends HtmlNode {
         if (distance > this.lodThresholds.icon) level = 'icon';
         else if (distance > this.lodThresholds.label) level = 'label';
 
+        const setStyles = (styles: Partial<CSSStyleDeclaration>) => Object.assign(this.domElement.style, styles);
+
         if (level === 'icon') {
-            this.domElement.style.width = '60px';
-            this.domElement.style.height = '60px';
-            this.domElement.style.border = 'none';
-            this.domElement.style.background = 'transparent';
-            this.domElement.style.fontSize = '48px';
-            this.domElement.style.justifyContent = 'center';
-            this.domElement.style.alignItems = 'center';
+            setStyles({ width: '60px', height: '60px', border: 'none', background: 'transparent', fontSize: '48px', justifyContent: 'center', alignItems: 'center' });
             this.domElement.textContent = '📄';
             this.logsContainer.style.display = 'none';
         } else if (level === 'label') {
-            this.domElement.style.width = '200px';
-            this.domElement.style.height = '60px';
-            this.domElement.style.border = '2px solid #00ff00';
-            this.domElement.style.background = 'rgba(20, 20, 20, 0.8)';
-            this.domElement.style.fontSize = '24px';
-            this.domElement.style.fontWeight = 'bold';
-            this.domElement.style.justifyContent = 'center';
-            this.domElement.style.alignItems = 'center';
+            setStyles({ width: '200px', height: '60px', border: '2px solid #00ff00', background: 'rgba(20, 20, 20, 0.8)', fontSize: '24px', fontWeight: 'bold', justifyContent: 'center', alignItems: 'center' });
             this.domElement.textContent = '📄 Exec Log';
             this.logsContainer.style.display = 'none';
         } else {
-            this.domElement.style.width = '400px';
-            this.domElement.style.height = '300px';
-            this.domElement.style.border = '2px solid #00ff00';
-            this.domElement.style.background = 'rgba(20, 20, 20, 0.9)';
-            this.domElement.style.fontSize = '12px';
-            this.domElement.style.justifyContent = 'flex-start';
-            this.domElement.style.alignItems = 'flex-start';
+            setStyles({ width: '400px', height: '300px', border: '2px solid #00ff00', background: 'rgba(20, 20, 20, 0.9)', fontSize: '12px', justifyContent: 'flex-start', alignItems: 'flex-start', fontWeight: 'normal' });
 
-            // Restore header if removed by LOD change
             if (!this.domElement.querySelector('div')) {
                 this.domElement.textContent = '';
                 const header = document.createElement('div');
-                header.style.width = '100%';
-                header.style.borderBottom = '1px solid #444';
-                header.style.paddingBottom = '5px';
-                header.style.marginBottom = '5px';
-                header.style.fontWeight = 'bold';
-                header.style.color = '#fff';
+                Object.assign(header.style, { width: '100%', borderBottom: '1px solid #444', paddingBottom: '5px', marginBottom: '5px', fontWeight: 'bold', color: '#fff' });
                 header.textContent = 'Execution Log';
-                this.domElement.appendChild(header);
-                this.domElement.appendChild(this.logsContainer);
+                this.domElement.append(header, this.logsContainer);
             }
             this.logsContainer.style.display = 'flex';
         }
@@ -118,14 +78,9 @@ export class ExecutionLogPanel extends HtmlNode {
 
     addLog(message: string, type: 'info' | 'error' | 'success' | 'warn' = 'info') {
         const logEntry = document.createElement('div');
-        logEntry.style.marginBottom = '2px';
+        const colors: Record<string, string> = { 'error': '#ff5555', 'success': '#50fa7b', 'warn': '#f1fa8c' };
 
-        switch (type) {
-            case 'error': logEntry.style.color = '#ff5555'; break;
-            case 'success': logEntry.style.color = '#50fa7b'; break;
-            case 'warn': logEntry.style.color = '#f1fa8c'; break;
-            default: logEntry.style.color = '#f8f8f2'; break;
-        }
+        Object.assign(logEntry.style, { marginBottom: '2px', color: colors[type] || '#f8f8f2' });
 
         const timestamp = new Date().toISOString().split('T')[1].substring(0, 12);
         logEntry.textContent = `[${timestamp}] ${message}`;

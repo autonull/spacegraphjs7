@@ -56,71 +56,49 @@ export class N8nPaletteNode extends HtmlNode {
         if (!this.domElement) return;
 
         this.domElement.innerHTML = '';
+        const setStyles = (el: HTMLElement, styles: Partial<CSSStyleDeclaration>) => Object.assign(el.style, styles);
 
         if (level === 'icon') {
             const el = document.createElement('div');
-            el.style.fontSize = '48px';
-            el.style.textAlign = 'center';
+            setStyles(el, { fontSize: '48px', textAlign: 'center' });
             el.textContent = '🎨';
             this.domElement.appendChild(el);
-            this.domElement.style.background = 'transparent';
-            this.domElement.style.border = 'none';
+            setStyles(this.domElement, { background: 'transparent', border: 'none' });
         } else if (level === 'label') {
             const el = document.createElement('div');
-            el.style.textAlign = 'center';
-            el.style.fontSize = '24px';
-            el.style.fontWeight = 'bold';
+            setStyles(el, { textAlign: 'center', fontSize: '24px', fontWeight: 'bold' });
             el.textContent = '🎨 Palette';
             this.domElement.appendChild(el);
-            this.domElement.style.background = 'rgba(20, 20, 20, 0.8)';
-            this.domElement.style.border = '2px solid #555';
+            setStyles(this.domElement, { background: 'rgba(20, 20, 20, 0.8)', border: '2px solid #555' });
         } else {
             const header = document.createElement('div');
-            header.style.fontSize = '18px';
-            header.style.fontWeight = 'bold';
-            header.style.marginBottom = '16px';
-            header.style.borderBottom = '1px solid #444';
-            header.style.paddingBottom = '8px';
+            setStyles(header, { fontSize: '18px', fontWeight: 'bold', marginBottom: '16px', borderBottom: '1px solid #444', paddingBottom: '8px' });
             header.textContent = '🎨 Node Palette';
             this.domElement.appendChild(header);
 
             this.categories.forEach(category => {
                 const catHeader = document.createElement('div');
-                catHeader.style.fontSize = '14px';
-                catHeader.style.fontWeight = 'bold';
-                catHeader.style.color = '#aaa';
-                catHeader.style.marginTop = '12px';
-                catHeader.style.marginBottom = '8px';
+                setStyles(catHeader, { fontSize: '14px', fontWeight: 'bold', color: '#aaa', marginTop: '12px', marginBottom: '8px' });
                 catHeader.textContent = category.name;
                 this.domElement.appendChild(catHeader);
 
                 category.items.forEach(nodeType => {
                     const item = document.createElement('div');
-                    item.style.padding = '8px';
-                    item.style.background = '#333';
-                    item.style.marginBottom = '6px';
-                    item.style.borderRadius = '4px';
-                    item.style.fontSize = '12px';
-                    item.style.cursor = 'grab';
-                    item.style.userSelect = 'none';
+                    setStyles(item, { padding: '8px', background: '#333', marginBottom: '6px', borderRadius: '4px', fontSize: '12px', cursor: 'grab', userSelect: 'none' });
                     item.textContent = nodeType.replace('N8n', '');
 
-                    // Make it draggable
                     item.draggable = true;
                     item.addEventListener('dragstart', (e) => {
                         e.dataTransfer?.setData('application/spacegraph-node', nodeType);
                         item.style.opacity = '0.5';
                     });
-                    item.addEventListener('dragend', () => {
-                        item.style.opacity = '1';
-                    });
+                    item.addEventListener('dragend', () => item.style.opacity = '1');
 
                     this.domElement.appendChild(item);
                 });
             });
 
-            this.domElement.style.background = 'rgba(20, 20, 20, 0.95)';
-            this.domElement.style.border = '2px solid #555';
+            setStyles(this.domElement, { background: 'rgba(20, 20, 20, 0.95)', border: '2px solid #555' });
         }
     }
 

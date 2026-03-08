@@ -48,85 +48,60 @@ export class TimelineSliderNode extends HtmlNode {
         this.domElement.innerHTML = '';
         const params = (this.parameters && Object.keys(this.parameters).length > 0) ? this.parameters : (this.spec?.parameters || {});
 
-        // Use parameters to determine min, max, value, and current step timestamp
         const min = params.min || 0;
         const max = params.max || 100;
         const val = params.value || 0;
         const currentTimestamp = params.currentTimestamp || 'No events';
 
+        const setStyles = (el: HTMLElement, styles: Partial<CSSStyleDeclaration>) => Object.assign(el.style, styles);
+
         if (level === 'icon') {
             const el = document.createElement('div');
-            el.style.fontSize = '48px';
-            el.style.textAlign = 'center';
+            setStyles(el, { fontSize: '48px', textAlign: 'center' });
             el.textContent = '⏪';
             this.domElement.appendChild(el);
-            this.domElement.style.background = 'transparent';
-            this.domElement.style.border = 'none';
+            setStyles(this.domElement, { background: 'transparent', border: 'none' });
         } else if (level === 'label') {
             const el = document.createElement('div');
-            el.style.textAlign = 'center';
-            el.style.fontSize = '24px';
-            el.style.fontWeight = 'bold';
-            el.style.color = '#9c27b0';
+            setStyles(el, { textAlign: 'center', fontSize: '24px', fontWeight: 'bold', color: '#9c27b0' });
             el.textContent = '⏪ Timeline';
             this.domElement.appendChild(el);
-            this.domElement.style.background = 'rgba(20, 20, 20, 0.8)';
-            this.domElement.style.border = '2px solid #9c27b0';
+            setStyles(this.domElement, { background: 'rgba(20, 20, 20, 0.8)', border: '2px solid #9c27b0' });
         } else if (level === 'summary') {
             const header = document.createElement('div');
-            header.style.display = 'flex';
-            header.style.justifyContent = 'space-between';
-            header.style.alignItems = 'center';
-            header.style.marginBottom = '8px';
+            setStyles(header, { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' });
 
             const title = document.createElement('span');
-            title.style.fontWeight = 'bold';
+            setStyles(title, { fontWeight: 'bold' });
             title.textContent = '⏪ Timeline Scrub';
 
             const badge = document.createElement('span');
-            badge.style.background = '#9c27b0';
-            badge.style.padding = '2px 6px';
-            badge.style.borderRadius = '4px';
-            badge.style.fontSize = '12px';
+            setStyles(badge, { background: '#9c27b0', padding: '2px 6px', borderRadius: '4px', fontSize: '12px' });
             badge.textContent = `Step ${val}/${max}`;
 
-            header.appendChild(title);
-            header.appendChild(badge);
+            header.append(title, badge);
             this.domElement.appendChild(header);
 
-            this.domElement.style.background = 'rgba(20, 20, 20, 0.95)';
-            this.domElement.style.border = '2px solid #9c27b0';
+            setStyles(this.domElement, { background: 'rgba(20, 20, 20, 0.95)', border: '2px solid #9c27b0' });
         } else if (level === 'full') {
             const header = document.createElement('div');
-            header.style.display = 'flex';
-            header.style.justifyContent = 'space-between';
-            header.style.alignItems = 'center';
-            header.style.marginBottom = '12px';
+            setStyles(header, { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' });
 
             const title = document.createElement('span');
-            title.style.fontWeight = 'bold';
-            title.style.fontSize = '16px';
+            setStyles(title, { fontWeight: 'bold', fontSize: '16px' });
             title.textContent = '⏪ Execution Replay';
 
             const badge = document.createElement('span');
-            badge.style.background = '#9c27b0';
-            badge.style.padding = '2px 6px';
-            badge.style.borderRadius = '4px';
-            badge.style.fontSize = '12px';
+            setStyles(badge, { background: '#9c27b0', padding: '2px 6px', borderRadius: '4px', fontSize: '12px' });
             badge.textContent = `${val} / ${max}`;
 
-            header.appendChild(title);
-            header.appendChild(badge);
+            header.append(title, badge);
 
             const container = document.createElement('div');
-            container.style.display = 'flex';
-            container.style.flexDirection = 'column';
-            container.style.gap = '8px';
+            setStyles(container, { display: 'flex', flexDirection: 'column', gap: '8px' });
 
             this.labelDiv = document.createElement('div');
-            this.labelDiv.style.fontSize = '12px';
-            this.labelDiv.style.color = '#aaa';
-            this.labelDiv.style.textAlign = 'center';
+            setStyles(this.labelDiv, { fontSize: '12px', color: '#aaa', textAlign: 'center' });
             this.labelDiv.textContent = currentTimestamp;
 
             this.sliderInput = document.createElement('input');
@@ -134,27 +109,19 @@ export class TimelineSliderNode extends HtmlNode {
             this.sliderInput.min = min.toString();
             this.sliderInput.max = max.toString();
             this.sliderInput.value = val.toString();
-            this.sliderInput.style.width = '100%';
-            this.sliderInput.style.cursor = 'pointer';
+            setStyles(this.sliderInput, { width: '100%', cursor: 'pointer' });
 
             this.sliderInput.addEventListener('input', (e) => {
                 const newVal = parseInt((e.target as HTMLInputElement).value, 10);
                 this.parameters = { ...this.parameters, value: newVal };
-
-                // Emit scrub event so the plugin can catch it
                 this.sg.events.emit('timeline:scrub', { nodeId: this.id, value: newVal });
-
                 badge.textContent = `${newVal} / ${max}`;
             });
 
-            container.appendChild(this.sliderInput);
-            container.appendChild(this.labelDiv);
+            container.append(this.sliderInput, this.labelDiv);
 
-            this.domElement.appendChild(header);
-            this.domElement.appendChild(container);
-
-            this.domElement.style.background = 'rgba(20, 20, 20, 0.95)';
-            this.domElement.style.border = '2px solid #9c27b0';
+            this.domElement.append(header, container);
+            setStyles(this.domElement, { background: 'rgba(20, 20, 20, 0.95)', border: '2px solid #9c27b0' });
         }
     }
 
