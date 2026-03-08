@@ -22,7 +22,13 @@ export class N8nCollaborationPlugin implements SpaceGraphPlugin {
         this.ydoc = new Y.Doc();
 
         // Connect to Y-Websocket server
-        this.provider = new WebsocketProvider(this.serverUrl, this.roomName, this.ydoc);
+        this.provider = new WebsocketProvider(this.serverUrl, this.roomName, this.ydoc, { connect: false });
+
+        // Gracefully handle connection errors to avoid flooding console if server is absent
+        this.provider.on('connection-error', () => {
+            console.warn(`[N8nCollaborationPlugin] Could not connect to sync server at ${this.serverUrl}. Operating in local mode.`);
+        });
+        this.provider.connect();
 
         this.yNodes = this.ydoc.getMap('nodes');
 
