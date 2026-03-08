@@ -1,16 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Basic Workflow Preview</title>
-  <style>
-    body { margin: 0; overflow: hidden; background-color: #1a1a2e; }
-    #spacegraph-container { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify n8n Prompt Builder</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #111; color: white; font-family: sans-serif; }
+        #spacegraph-container { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; }
+    </style>
 </head>
 <body>
-  <div id="spacegraph-container"></div>
-  <script type="module" src="/src/index.ts"></script>
-  <script type="module" src="/packages/n8n-bridge/examples/basic-workflow.ts"></script>
+    <div id="spacegraph-container"></div>
+    <script type="module" src="/verify_n8n_script.ts"></script>
 </body>
 </html>
