@@ -5,10 +5,11 @@ const container = document.getElementById('spacegraph-container');
 if (!container) throw new Error('Container not found');
 
 const spec = { nodes: [], edges: [] };
-const sg = SpaceGraph.create(container, spec);
 
-// Add plugin to test prompt builder
+const sg = new SpaceGraph(container);
 sg.pluginManager.register('N8nWorkflowPlugin', new N8nWorkflowPlugin());
-sg.pluginManager.initAll().then(() => {
-    console.log("Plugins initialized");
+sg.init().then(() => {
+    sg.loadSpec(spec);
+    sg.render();
+    console.log("Plugins initialized and graph ready");
 });

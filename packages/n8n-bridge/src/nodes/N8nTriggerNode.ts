@@ -1,7 +1,7 @@
 import * as THREE from 'three';
-import { HtmlNode } from './HtmlNode';
-import type { SpaceGraph } from '../SpaceGraph';
-import type { NodeSpec, SpecUpdate } from '../types';
+import { HtmlNode } from 'spacegraphjs';
+import type { SpaceGraph } from 'spacegraphjs';
+import type { NodeSpec, SpecUpdate } from 'spacegraphjs';
 import { gsap } from 'gsap';
 
 export class N8nTriggerNode extends HtmlNode {

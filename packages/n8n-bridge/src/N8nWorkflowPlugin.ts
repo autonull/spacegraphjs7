@@ -2,6 +2,17 @@ import type { SpaceGraph, SpaceGraphPlugin } from 'spacegraphjs';
 import gsap from 'gsap';
 import { N8nBridge } from './spacegraph-n8n-bridge';
 import type { ExecutionState } from './types';
+import { ExecutionLogPanel } from './nodes/ExecutionLogPanel';
+import { N8nAiNode } from './nodes/N8nAiNode';
+import { N8nCodeNode } from './nodes/N8nCodeNode';
+import { N8nCredentialNode } from './nodes/N8nCredentialNode';
+import { N8nHitlNode } from './nodes/N8nHitlNode';
+import { N8nHttpNode } from './nodes/N8nHttpNode';
+import { N8nPaletteNode } from './nodes/N8nPaletteNode';
+import { N8nScheduleNode } from './nodes/N8nScheduleNode';
+import { N8nTriggerNode } from './nodes/N8nTriggerNode';
+import { N8nVisionOptimizerNode } from './nodes/N8nVisionOptimizerNode';
+import { TimelineSliderNode } from './nodes/TimelineSliderNode';
 
 export class N8nWorkflowPlugin implements SpaceGraphPlugin {
     name = 'N8nWorkflowPlugin';
@@ -116,9 +127,18 @@ export class N8nWorkflowPlugin implements SpaceGraphPlugin {
         this.sg = sg;
         this.bridge = new N8nBridge(sg);
 
-        // Nodes are already registered via SpaceGraph.init() per the plan,
-        // but we could also do it here dynamically if we wanted to avoid core modification.
-        // For now, this plugin focuses on the lifecycle and bridge state sync.
+        // Register nodes here to avoid core modifications and decouple N8N bridge from main lib.
+        sg.pluginManager.registerNodeType('ExecutionLogPanel', ExecutionLogPanel);
+        sg.pluginManager.registerNodeType('N8nAiNode', N8nAiNode);
+        sg.pluginManager.registerNodeType('N8nCodeNode', N8nCodeNode);
+        sg.pluginManager.registerNodeType('N8nCredentialNode', N8nCredentialNode);
+        sg.pluginManager.registerNodeType('N8nHitlNode', N8nHitlNode);
+        sg.pluginManager.registerNodeType('N8nHttpNode', N8nHttpNode);
+        sg.pluginManager.registerNodeType('N8nPaletteNode', N8nPaletteNode);
+        sg.pluginManager.registerNodeType('N8nScheduleNode', N8nScheduleNode);
+        sg.pluginManager.registerNodeType('N8nTriggerNode', N8nTriggerNode);
+        sg.pluginManager.registerNodeType('N8nVisionOptimizerNode', N8nVisionOptimizerNode);
+        sg.pluginManager.registerNodeType('TimelineSliderNode', TimelineSliderNode);
 
         this.bridge.executionState.subscribe((state: ExecutionState | null) => {
              if (state) this.applyExecutionVisuals(state);
