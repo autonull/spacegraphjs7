@@ -59,4 +59,14 @@ const spec: GraphSpec = {
   layout: { type: 'HierarchicalLayout', direction: 'LR' }
 };
 
-SpaceGraph.create(container, spec);
+import { N8nWorkflowPlugin } from '../src/N8nWorkflowPlugin';
+
+const sg = new SpaceGraph(container);
+sg.pluginManager.register('N8nWorkflowPlugin', new N8nWorkflowPlugin());
+sg.init().then(() => {
+    sg.loadSpec(spec);
+    sg.render();
+    // Optionally trigger an initial layout solve
+    const layout = sg.pluginManager.getPlugin('AutoLayoutPlugin') as any;
+    if (layout && layout.apply) layout.apply();
+});

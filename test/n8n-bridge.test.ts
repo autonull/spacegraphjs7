@@ -2,15 +2,15 @@ import { describe, it, expect, vi } from 'vitest';
 import { WorkflowMapper } from '../packages/n8n-bridge/src/WorkflowMapper';
 import { N8nVisionHealer } from '../packages/n8n-bridge/src/N8nVisionHealer';
 import type { N8nWorkflowJSON } from '../packages/n8n-bridge/src/types';
-import { N8nScheduleNode } from '../src/nodes/N8nScheduleNode';
-import { N8nCredentialNode } from '../src/nodes/N8nCredentialNode';
-import { N8nHitlNode } from '../src/nodes/N8nHitlNode';
-import { ExecutionLogPanel } from '../src/nodes/ExecutionLogPanel';
-import { N8nCodeNode } from '../src/nodes/N8nCodeNode';
-import { N8nHttpNode } from '../src/nodes/N8nHttpNode';
-import { N8nAiNode } from '../src/nodes/N8nAiNode';
-import { N8nPaletteNode } from '../src/nodes/N8nPaletteNode';
-import { N8nVisionOptimizerNode } from '../src/nodes/N8nVisionOptimizerNode';
+import { N8nScheduleNode } from '../packages/n8n-bridge/src/nodes/N8nScheduleNode';
+import { N8nCredentialNode } from '../packages/n8n-bridge/src/nodes/N8nCredentialNode';
+import { N8nHitlNode } from '../packages/n8n-bridge/src/nodes/N8nHitlNode';
+import { ExecutionLogPanel } from '../packages/n8n-bridge/src/nodes/ExecutionLogPanel';
+import { N8nCodeNode } from '../packages/n8n-bridge/src/nodes/N8nCodeNode';
+import { N8nHttpNode } from '../packages/n8n-bridge/src/nodes/N8nHttpNode';
+import { N8nAiNode } from '../packages/n8n-bridge/src/nodes/N8nAiNode';
+import { N8nPaletteNode } from '../packages/n8n-bridge/src/nodes/N8nPaletteNode';
+import { N8nVisionOptimizerNode } from '../packages/n8n-bridge/src/nodes/N8nVisionOptimizerNode';
 import { SpaceGraph } from '../src/SpaceGraph';
 
 describe('n8n-bridge Unit Tests', () => {
@@ -147,7 +147,7 @@ describe('n8n-bridge Unit Tests', () => {
                     init: vi.fn(),
                     getPlugin: vi.fn()
                 },
-                events: {
+                poolManager: { get: vi.fn(), release: vi.fn() }, events: {
                     on: vi.fn(),
                     emit: vi.fn()
                 }
@@ -221,7 +221,7 @@ describe('n8n-bridge Unit Tests', () => {
 describe('N8n Nodes LOD Tests', () => {
     it('N8nScheduleNode should change HTML content based on camera distance (LOD)', () => {
         const sg = {
-            events: {
+            poolManager: { get: vi.fn(), release: vi.fn() }, events: {
                 on: vi.fn(),
                 emit: vi.fn()
             }
@@ -263,7 +263,7 @@ describe('N8n Nodes LOD Tests', () => {
 
     it('N8nCredentialNode should change HTML content based on camera distance (LOD)', () => {
         const sg = {
-            events: {
+            poolManager: { get: vi.fn(), release: vi.fn() }, events: {
                 on: vi.fn(),
                 emit: vi.fn()
             }
@@ -306,7 +306,7 @@ describe('N8n Nodes LOD Tests', () => {
 
     it('N8nHitlNode should change HTML content based on camera distance (LOD)', () => {
         const sg = {
-            events: {
+            poolManager: { get: vi.fn(), release: vi.fn() }, events: {
                 on: vi.fn(),
                 emit: vi.fn(),
                 pluginManager: { getPlugin: vi.fn() }
@@ -350,7 +350,7 @@ describe('N8n Nodes LOD Tests', () => {
 
     it('ExecutionLogPanel should change HTML content based on camera distance (LOD)', () => {
         const sg = {
-            events: {
+            poolManager: { get: vi.fn(), release: vi.fn() }, events: {
                 on: vi.fn(),
                 emit: vi.fn()
             }
@@ -388,7 +388,7 @@ describe('N8n Nodes LOD Tests', () => {
 
     it('N8nCodeNode should change HTML content based on camera distance (LOD)', () => {
         const sg = {
-            events: {
+            poolManager: { get: vi.fn(), release: vi.fn() }, events: {
                 on: vi.fn(),
                 emit: vi.fn()
             }
@@ -433,7 +433,7 @@ describe('N8n Nodes LOD Tests', () => {
 
     it('N8nHttpNode should change HTML content based on camera distance (LOD)', () => {
         const sg = {
-            events: {
+            poolManager: { get: vi.fn(), release: vi.fn() }, events: {
                 on: vi.fn(),
                 emit: vi.fn()
             }
@@ -474,7 +474,7 @@ describe('N8n Nodes LOD Tests', () => {
 
     it('N8nAiNode should change HTML content based on camera distance (LOD)', () => {
         const sg = {
-            events: {
+            poolManager: { get: vi.fn(), release: vi.fn() }, events: {
                 on: vi.fn(),
                 emit: vi.fn()
             }
@@ -520,7 +520,7 @@ describe('N8n Nodes LOD Tests', () => {
 
     it('N8nPaletteNode should change HTML content based on camera distance (LOD)', () => {
         const sg = {
-            events: {
+            poolManager: { get: vi.fn(), release: vi.fn() }, events: {
                 on: vi.fn(),
                 emit: vi.fn()
             }
@@ -554,7 +554,7 @@ describe('N8n Nodes LOD Tests', () => {
 
     it('N8nVisionOptimizerNode should change HTML content based on camera distance (LOD)', () => {
         const sg = {
-            events: {
+            poolManager: { get: vi.fn(), release: vi.fn() }, events: {
                 on: vi.fn(),
                 emit: vi.fn()
             }
