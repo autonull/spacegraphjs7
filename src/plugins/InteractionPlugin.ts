@@ -23,6 +23,67 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
         this.sg = sg;
         this.initDrag();
         this.initClick();
+        this.initDblClick();
+    }
+
+    // Helper to get all current node meshes to avoid recreation on every event
+    private getAllNodeMeshes(): THREE.Object3D[] {
+        const meshes: THREE.Object3D[] = [];
+        for (const node of this.sg.graph.nodes.values()) {
+            if (node.object) {
+                node.object.traverse((child: THREE.Object3D) => {
+                    if (child instanceof THREE.Mesh) meshes.push(child);
+                });
+            }
+        }
+        return meshes;
+    }
+
+    private initDblClick(): void {
+        const canvas = this.sg.renderer.renderer.domElement;
+
+        canvas.addEventListener('dblclick', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            this.mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+            this.mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+            this.raycaster.setFromCamera(this.mouse, this.sg.renderer.camera);
+
+            // Allow raycaster to hit lines (edges) with a small threshold
+            this.raycaster.params.Line = { threshold: 5 };
+
+            // Check edges first using simple map over current edges
+            const lineObjects = this.sg.graph.edges.map(edge => edge.object).filter(Boolean);
+            const edgeIntersects = this.raycaster.intersectObjects(lineObjects, false);
+
+            if (edgeIntersects.length > 0) {
+                const edgeObj = edgeIntersects[0].object;
+                const edge = this.sg.graph.edges.find(e => e.object === edgeObj);
+                if (edge) {
+                    this.sg.events.emit('edge:dblclick', { edge, event: e });
+
+                    // Semantic navigation: fly to the target node
+                    if (edge.target && this.sg.cameraControls) {
+                        const targetPos = edge.target.position.clone();
+                        // Adjust radius slightly based on the current zoom to keep it smooth
+                        const targetRadius = 300;
+                        this.sg.cameraControls.flyTo(targetPos, targetRadius);
+                    }
+                    return;
+                }
+            }
+
+            // Check nodes if no edge was double-clicked
+            const meshes = this.getAllNodeMeshes();
+            const nodeIntersects = this.raycaster.intersectObjects(meshes, false);
+
+            if (nodeIntersects.length > 0) {
+                const node = this.getNodeFromMesh(nodeIntersects[0].object);
+                if (node) {
+                    this.sg.events.emit('node:dblclick', { node, event: e });
+                }
+            }
+        });
     }
 
     private initClick(): void {
@@ -45,14 +106,7 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
 
             this.raycaster.setFromCamera(this.mouse, this.sg.renderer.camera);
 
-            const meshes = Array.from(this.sg.graph.nodes.values()).flatMap((node) => {
-                // Support nested meshes within the node object
-                const children: THREE.Object3D[] = [];
-                node.object.traverse((child: THREE.Object3D) => {
-                    if (child instanceof THREE.Mesh) children.push(child);
-                });
-                return children;
-            });
+            const meshes = this.getAllNodeMeshes();
 
             const intersects = this.raycaster.intersectObjects(meshes, false);
 
@@ -77,13 +131,7 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
 
     private getIntersectedNode() {
         this.raycaster.setFromCamera(this.mouse, this.sg.renderer.camera);
-        const meshes = Array.from(this.sg.graph.nodes.values()).flatMap((node) => {
-            const children: THREE.Object3D[] = [];
-            node.object.traverse((child: THREE.Object3D) => {
-                if (child instanceof THREE.Mesh) children.push(child);
-            });
-            return children;
-        });
+        const meshes = this.getAllNodeMeshes();
 
         const intersects = this.raycaster.intersectObjects(meshes, false);
         if (intersects.length > 0) {

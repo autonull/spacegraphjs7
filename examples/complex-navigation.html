@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Semantic Navigation - SpaceGraphJS Example</title>
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+            body {
+                overflow: hidden;
+                background-color: #050510;
+                font-family: system-ui;
+                color: white;
+            }
+            #container {
+                width: 100vw;
+                height: 100vh;
+            }
+            .header {
+                position: absolute;
+                top: 20px;
+                left: 20px;
+                z-index: 10;
+                background: rgba(0, 0, 0, 0.6);
+                backdrop-filter: blur(8px);
+                padding: 16px 24px;
+                border-radius: 12px;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+            }
+
+            .header h1 {
+                font-size: 20px;
+                margin-bottom: 4px;
+            }
+
+            .header p {
+                color: #aaa;
+                font-size: 14px;
+                max-width: 300px;
+                line-height: 1.4;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="header">
+            <h1>Semantic Navigation</h1>
+            <p>Double-click any edge to fly across the graph and zoom perfectly to its target node. Try it on this clustered graph of 200 nodes!</p>
+        </div>
+        <div id="container"></div>
+
+        <script type="module">
+            import { SpaceGraph } from '../src/index.ts';
+
+            const nodes = [];
+            const edges = [];
+
+            const NUM_CLUSTERS = 6;
+            const NODES_PER_CLUSTER = 30;
+
+            // Generate clusters
+            for (let c = 0; c < NUM_CLUSTERS; c++) {
+                const clusterId = `cluster-${c}`;
+
+                // Color palette per cluster
+                const hue = (c / NUM_CLUSTERS) * 360;
+                const centerColor = `hsl(${hue}, 80%, 50%)`;
+                const leafColor = `hsl(${hue}, 60%, 40%)`;
+
+                // Calculate color hex
+                const dummyEl = document.createElement('div');
+                dummyEl.style.color = centerColor;
+                document.body.appendChild(dummyEl);
+                const computed = window.getComputedStyle(dummyEl).color;
+                const [r1, g1, b1] = computed.match(/\d+/g).map(Number);
+                const centerHex = (r1 << 16) | (g1 << 8) | b1;
+
+                dummyEl.style.color = leafColor;
+                const computed2 = window.getComputedStyle(dummyEl).color;
+                const [r2, g2, b2] = computed2.match(/\d+/g).map(Number);
+                const leafHex = (r2 << 16) | (g2 << 8) | b2;
+                document.body.removeChild(dummyEl);
+
+
+                // Center Node
+                nodes.push({
+                    id: clusterId,
+                    type: 'ShapeNode',
+                    label: `Cluster ${c}`,
+                    position: [
+                        Math.random() * 2000 - 1000,
+                        Math.random() * 2000 - 1000,
+                        Math.random() * 500 - 250
+                    ],
+                    data: { color: centerHex, shape: 'sphere' },
+                });
+
+                // Child Nodes
+                for (let i = 0; i < NODES_PER_CLUSTER; i++) {
+                    const childId = `child-${c}-${i}`;
+                    nodes.push({
+                        id: childId,
+                        type: 'ShapeNode',
+                        label: `C${c} Node ${i}`,
+                        position: [
+                            (Math.random() * 100 - 50),
+                            (Math.random() * 100 - 50),
+                            (Math.random() * 100 - 50)
+                        ],
+                        data: { color: leafHex },
+                    });
+
+                    // Connect child to cluster center
+                    edges.push({
+                        id: `e-${c}-${i}`,
+                        source: childId,
+                        target: clusterId,
+                        type: 'DottedEdge',
+                        data: { dashSize: 4, gapSize: 2 }
+                    });
+                }
+            }
+
+            // Connect some clusters together
+            for (let c = 0; c < NUM_CLUSTERS - 1; c++) {
+                 edges.push({
+                    id: `e-inter-${c}`,
+                    source: `cluster-${c}`,
+                    target: `cluster-${c+1}`,
+                    type: 'DynamicThicknessEdge',
+                    data: { weight: 0.8 }
+                });
+            }
+
+            const graph = SpaceGraph.create('#container', { nodes, edges });
+
+            // Let the force layout organize the clusters
+            const layout = graph.pluginManager.getPlugin('LayoutPlugin');
+            if (layout) {
+                layout.settings.attraction = 0.05;
+                layout.settings.repulsion = 50000;
+                layout.settings.enabled = true;
+
+                // turn off force after a few seconds so it's easier to click
+                setTimeout(() => {
+                    layout.settings.enabled = false;
+                }, 5000);
+            }
+
+            graph.render();
+
+            // Start the camera looking at the first cluster
+            setTimeout(() => {
+                const n = graph.graph.nodes.get('cluster-0');
+                if (n) {
+                   graph.cameraControls.flyTo(n.position, 600, 2);
+                }
+            }, 500);
+
+        </script>
+    </body>
+</html>
