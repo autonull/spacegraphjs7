@@ -207,6 +207,69 @@ export class SpaceGraph {
         }
     }
 
+    export(): GraphSpec & { camera?: { position: [number, number, number], target: [number, number, number] } } {
+        const spec: any = {
+            nodes: [],
+            edges: []
+        };
+
+        for (const node of this.graph.nodes.values()) {
+            spec.nodes.push({
+                id: node.id,
+                type: node.constructor.name,
+                label: node.label,
+                position: [node.position.x, node.position.y, node.position.z],
+                data: JSON.parse(JSON.stringify(node.data || {}))
+            });
+        }
+
+        for (const edge of this.graph.edges) {
+            spec.edges.push({
+                id: edge.id,
+                type: edge.constructor.name,
+                source: edge.source.id,
+                target: edge.target.id,
+                data: JSON.parse(JSON.stringify(edge.data || {}))
+            });
+        }
+
+        if (this.cameraControls) {
+            spec.camera = {
+                position: [
+                    this.renderer.camera.position.x,
+                    this.renderer.camera.position.y,
+                    this.renderer.camera.position.z
+                ],
+                target: [
+                    this.cameraControls.controls.target.x,
+                    this.cameraControls.controls.target.y,
+                    this.cameraControls.controls.target.z
+                ]
+            };
+        }
+
+        return spec;
+    }
+
+    import(data: any): void {
+        this.graph.clear();
+        this.loadSpec(data);
+
+        if (data.camera && this.cameraControls) {
+            this.renderer.camera.position.set(
+                data.camera.position[0],
+                data.camera.position[1],
+                data.camera.position[2]
+            );
+            this.cameraControls.controls.target.set(
+                data.camera.target[0],
+                data.camera.target[1],
+                data.camera.target[2]
+            );
+            this.cameraControls.controls.update();
+        }
+    }
+
     fitView(padding: number = 100, duration: number = 1.5): void {
         const nodes = Array.from(this.graph.nodes.values());
         if (nodes.length === 0) return;

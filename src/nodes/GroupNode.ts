@@ -73,7 +73,8 @@ export class GroupNode extends Node {
 
     updateLod(distance: number): void {
         // Fractal LOD infinite drill-down logic
-        const threshold = 800; // Define distance threshold
+        // Get dynamic threshold from parameters if it exists, otherwise use default
+        const threshold = this.data?.lodThreshold || 1200;
 
         if (distance < threshold) {
             this.meshMaterial.opacity = 0.05;
@@ -83,18 +84,37 @@ export class GroupNode extends Node {
 
         // Recursively toggle visibility of children based on zoom level
         const shouldShowChildren = distance < threshold;
+
+        // Removed global early-return cache because dynamically added child nodes
+        // need to have their visibility explicitly set based on current distance,
+        // even if the group's overall visibility state hasn't changed.
+        this.data._lastLodVisible = shouldShowChildren;
+
         if (this.sg && this.sg.graph && this.sg.graph.nodes) {
-            this.sg.graph.nodes.forEach((node) => {
-                // Find all nodes that are immediate children of this group
-                if (node.parameters?.parent === this.id || node.data?.parent === this.id || (node as any).parent === this.id) {
-                    // Determine if node is a DOMNode
-                    if (typeof (node as any).setVisibility === 'function') {
-                        (node as any).setVisibility(shouldShowChildren);
-                    } else if (node.object) {
-                        node.object.visible = shouldShowChildren;
+            const processChildren = (parentId: string, visible: boolean) => {
+                this.sg.graph.nodes.forEach((node) => {
+                    // Check parent reference variations
+                    const nParent = node.data?.parent || (node as any).parameters?.parent || (node as any).parent;
+
+                    if (nParent === parentId) {
+                        // Apply visibility
+                        if (typeof (node as any).setVisibility === 'function') {
+                            (node as any).setVisibility(visible);
+                        } else if (node.object) {
+                            node.object.visible = visible;
+                        }
+
+                        // If the child is also a GroupNode, recursively update its children
+                        // but only if the parent group is becoming invisible.
+                        // If it's becoming visible, the child GroupNode's own LOD check will handle its children.
+                        if (!visible && node instanceof GroupNode) {
+                             processChildren(node.id, false);
+                        }
                     }
-                }
-            });
+                });
+            };
+
+            processChildren(this.id, shouldShowChildren);
         }
     }
 
