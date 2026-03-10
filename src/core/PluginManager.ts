@@ -36,9 +36,13 @@ export class PluginManager {
     }
 
     async initAll(): Promise<void> {
-        for (const plugin of this.plugins.values()) {
+        for (const [name, plugin] of this.plugins.entries()) {
             if (plugin.init) {
-                plugin.init(this.sg);
+                try {
+                    await plugin.init(this.sg);
+                } catch (err) {
+                    console.error(`[SpaceGraph] Plugin Initialization Error: Failed to initialize plugin "${name}". Continuing without it.`, err);
+                }
             }
         }
     }
