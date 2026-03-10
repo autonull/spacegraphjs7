@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Multi-Agent Workflow - SpaceGraphJS</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            overflow: hidden;
+            background-color: #050510;
+            font-family: system-ui, -apple-system, sans-serif;
+            color: white;
+        }
+
+        #container {
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .header {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 10;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(8px);
+            padding: 16px 24px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .header h1 {
+            font-size: 20px;
+            margin-bottom: 4px;
+            background: -webkit-linear-gradient(135deg, #3b82f6, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header p {
+            color: #94a3b8;
+            font-size: 14px;
+            max-width: 300px;
+            line-height: 1.4;
+        }
+
+        .nav-link {
+            color: #3b82f6;
+            text-decoration: none;
+            font-size: 14px;
+            margin-bottom: 8px;
+            display: inline-block;
+        }
+
+        .nav-link:hover {
+            text-decoration: underline;
+        }
+
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            background: rgba(15, 23, 42, 0.8);
+            padding: 12px 24px;
+            border-radius: 99px;
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            border: none;
+            padding: 8px 16px;
+            border-radius: 99px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="./index.html" class="nav-link">← Back to Gallery</a>
+        <h1>Multi-Agent Workflow</h1>
+        <p>A complex workflow visualizer showing hierarchical agents with nested GroupNodes, Markdown instructions, Data payloads, and executing steps.</p>
+    </div>
+
+    <div class="controls">
+         <button class="btn" id="btn-run">Run Workflow</button>
+    </div>
+
+    <div id="container"></div>
+
+    <script type="module">
+        import { SpaceGraph } from '../src/index.ts';
+
+        const markdownContentRouter = `
+### Orchestrator Agent
+**Role:** Root Router
+**Goal:** Parse incoming requests and route to the appropriate sub-agent based on intent.
+* If coding task -> Send to **Dev Agent**
+* If analysis task -> Send to **Data Agent**
+        `;
+
+        const markdownContentDev = `
+### Developer Agent
+**Role:** Software Engineer
+**Tools:** Code Interpreter, GitHub API
+**Goal:** Write, test, and commit code based on the Orchestrator's prompt.
+        `;
+
+        const markdownContentData = `
+### Data Analyst Agent
+**Role:** Analyst
+**Tools:** Python Interpreter, SQL Engine
+**Goal:** Query databases and generate charts for analysis.
+        `;
+
+        const nodes = [
+            // --- Orchestrator Level ---
+            {
+                id: 'group-orchestrator',
+                type: 'GroupNode',
+                label: 'Orchestrator Swarm',
+                position: [0, 300, 0],
+                data: { width: 500, height: 400, color: '#3b82f6', expanded: true }
+            },
+            {
+                id: 'agent-orchestrator-md',
+                type: 'MarkdownNode',
+                parent: 'group-orchestrator',
+                position: [-100, 50, 0], // Relative to parent
+                data: {
+                    markdown: markdownContentRouter,
+                    width: 280,
+                    color: 'rgba(15, 23, 42, 0.9)'
+                }
+            },
+            {
+                id: 'agent-orchestrator-status',
+                type: 'DataNode',
+                parent: 'group-orchestrator',
+                position: [120, 50, 0], // Relative to parent
+                data: {
+                    data: { status: 'Idle', lastTask: 'None', memoryUsage: '45MB' },
+                    width: 200,
+                    theme: 'dark'
+                }
+            },
+
+            // --- Dev Agent Level ---
+            {
+                id: 'group-dev',
+                type: 'GroupNode',
+                label: 'Developer Swarm',
+                position: [-400, -200, 0],
+                data: { width: 450, height: 350, color: '#10b981', expanded: true }
+            },
+            {
+                id: 'agent-dev-md',
+                type: 'MarkdownNode',
+                parent: 'group-dev',
+                position: [-100, 0, 0], // Relative to parent
+                data: {
+                    markdown: markdownContentDev,
+                    width: 220,
+                    color: 'rgba(15, 23, 42, 0.9)'
+                }
+            },
+            {
+                id: 'agent-dev-tools',
+                type: 'HtmlNode',
+                parent: 'group-dev',
+                position: [100, 0, 0], // Relative to parent
+                data: {
+                    html: `
+                        <div style="background: rgba(15,23,42,0.9); padding: 10px; border-radius: 8px; border: 1px solid #10b981;">
+                            <h4 style="color: #34d399;">Active Tools</h4>
+                            <ul style="color: #94a3b8; font-size: 12px; padding-left: 20px;">
+                                <li>Terminal</li>
+                                <li>File System</li>
+                                <li>Linter</li>
+                            </ul>
+                        </div>
+                    `,
+                    width: 180,
+                    height: 120
+                }
+            },
+
+            // --- Data Agent Level ---
+            {
+                id: 'group-data',
+                type: 'GroupNode',
+                label: 'Data Analyst Swarm',
+                position: [400, -200, 0],
+                data: { width: 450, height: 350, color: '#8b5cf6', expanded: true }
+            },
+            {
+                id: 'agent-data-md',
+                type: 'MarkdownNode',
+                parent: 'group-data',
+                position: [0, 80, 0], // Relative to parent
+                data: {
+                    markdown: markdownContentData,
+                    width: 380,
+                    color: 'rgba(15, 23, 42, 0.9)'
+                }
+            },
+            {
+                id: 'agent-data-chart',
+                type: 'ChartNode',
+                parent: 'group-data',
+                position: [0, -60, 0], // Relative to parent
+                data: {
+                    chartType: 'bar',
+                    width: 380,
+                    height: 150,
+                    theme: 'dark',
+                    labels: ['Q1', 'Q2', 'Q3', 'Q4'],
+                    datasets: [
+                        { label: 'Revenue', data: [120, 190, 300, 500], color: '#a855f7' }
+                    ]
+                }
+            },
+
+            // --- User Input / Output ---
+            {
+                id: 'user-input',
+                type: 'NoteNode',
+                label: 'User Request',
+                position: [0, 650, 0],
+                data: { text: "Analyze the Q3 revenue data and then write a python script to export it.", color: '#ef4444' }
+            }
+        ];
+
+        const edges = [
+            // User to Orchestrator
+            { id: 'e-in', source: 'user-input', target: 'group-orchestrator', type: 'AnimatedEdge', data: { color: 0xef4444, speed: 0.01, particleColor: 0xffffff } },
+
+            // Orchestrator Routing
+            { id: 'e-route-dev', source: 'group-orchestrator', target: 'group-dev', type: 'FlowEdge', data: { color: 0x3b82f6, flowSpeed: 2 } },
+            { id: 'e-route-data', source: 'group-orchestrator', target: 'group-data', type: 'FlowEdge', data: { color: 0x3b82f6, flowSpeed: 2 } },
+
+            // Collaboration between agents
+            { id: 'e-collab', source: 'group-data', target: 'group-dev', type: 'DottedEdge', data: { color: 0xf59e0b, dashSize: 5, gapSize: 5 } }
+        ];
+
+        const sg = SpaceGraph.create('#container', { nodes, edges });
+
+        sg.render();
+        sg.fitView(150);
+
+        // Simulation Logic
+        const btnRun = document.getElementById('btn-run');
+        let isRunning = false;
+
+        btnRun.addEventListener('click', () => {
+            if (isRunning) return;
+            isRunning = true;
+            btnRun.innerText = 'Running...';
+            btnRun.style.background = '#64748b';
+
+            const statusNode = sg.graph.nodes.get('agent-orchestrator-status');
+            const dataChart = sg.graph.nodes.get('agent-data-chart');
+
+            // 1. Orchestrator Processing
+            setTimeout(() => {
+                if(statusNode) statusNode.updateSpec({ data: { data: { status: 'Routing', lastTask: 'Parse Input', memoryUsage: '128MB' } } });
+
+                const eIn = sg.graph.edges.find(e => e.id === 'e-in');
+                if(eIn) eIn.updateSpec({ data: { speed: 0.05 } });
+            }, 500);
+
+            // 2. Data Agent execution
+            setTimeout(() => {
+                if(statusNode) statusNode.updateSpec({ data: { data: { status: 'Delegated', lastTask: 'Sent to Data Agent', memoryUsage: '80MB' } } });
+
+                const eRouteData = sg.graph.edges.find(e => e.id === 'e-route-data');
+                if(eRouteData) eRouteData.updateSpec({ data: { flowSpeed: 5, color: '#8b5cf6' } });
+
+                if(dataChart) {
+                    // Update chart to simulate "analysis"
+                    dataChart.updateSpec({
+                        data: {
+                            datasets: [{ label: 'Revenue', data: [150, 210, 350, 550], color: '#d946ef' }]
+                        }
+                    });
+                }
+            }, 2000);
+
+            // 3. Collaboration (Data sends info to Dev)
+            setTimeout(() => {
+                 const eCollab = sg.graph.edges.find(e => e.id === 'e-collab');
+                 if(eCollab) {
+                     // Hacky way to simulate a flow on a dotted edge for the demo
+                     eCollab.updateSpec({ data: { color: '#ef4444', dashSize: 20 } });
+                 }
+            }, 4000);
+
+            // 4. Dev Agent execution
+            setTimeout(() => {
+                const eRouteDev = sg.graph.edges.find(e => e.id === 'e-route-dev');
+                if(eRouteDev) eRouteDev.updateSpec({ data: { flowSpeed: 5, color: '#10b981' } });
+
+                const toolsNode = sg.graph.nodes.get('agent-dev-tools');
+                if(toolsNode) {
+                    toolsNode.updateSpec({
+                        data: {
+                            html: `
+                                <div style="background: rgba(15,23,42,0.9); padding: 10px; border-radius: 8px; border: 1px solid #10b981;">
+                                    <h4 style="color: #34d399;">Active Tools</h4>
+                                    <ul style="color: #f8fafc; font-size: 12px; padding-left: 20px;">
+                                        <li>> Terminal: <span style="color:#fbbf24">Writing export_data.py</span></li>
+                                        <li>> File System: <span style="color:#10b981">Saved</span></li>
+                                        <li>> Linter: <span style="color:#10b981">Pass</span></li>
+                                    </ul>
+                                </div>
+                            `
+                        }
+                    });
+                }
+            }, 5000);
+
+            // 5. Completion
+            setTimeout(() => {
+                 if(statusNode) statusNode.updateSpec({ data: { data: { status: 'Complete', lastTask: 'Workflow Finished', memoryUsage: '40MB' } } });
+
+                 const eRouteData = sg.graph.edges.find(e => e.id === 'e-route-data');
+                 if(eRouteData) eRouteData.updateSpec({ data: { flowSpeed: 2, color: 0x3b82f6 } });
+
+                 const eRouteDev = sg.graph.edges.find(e => e.id === 'e-route-dev');
+                 if(eRouteDev) eRouteDev.updateSpec({ data: { flowSpeed: 2, color: 0x3b82f6 } });
+
+                 const eIn = sg.graph.edges.find(e => e.id === 'e-in');
+                 if(eIn) eIn.updateSpec({ data: { speed: 0.01 } });
+
+                 btnRun.innerText = 'Run Workflow';
+                 btnRun.style.background = 'linear-gradient(135deg, #3b82f6, #8b5cf6)';
+                 isRunning = false;
+            }, 8000);
+        });
+
+    </script>
+</body>
+</html>
