@@ -66,34 +66,74 @@ export class MarkdownNode extends DOMNode { // Changed base class to DOMNode
         // Call DOMNode constructor
         super(sg, spec, div, w, h, { visible: false });
 
-        // After DOM mounts, we could measure and adjust the backing plane,
-        // but for now we rely on a rough heuristic.
-        setTimeout(() => {
-            const actualHeight = this.domElement.offsetHeight || h;
-            if (actualHeight !== h && actualHeight > 0) {
-                this.updateBackingGeometry(w, actualHeight);
-            }
-        }, 50);
+        // Setup ResizeObserver to properly resize backing plane when content changes bounds
+        // This is much safer than heuristic setTimeouts.
+        if (typeof ResizeObserver !== 'undefined') {
+             const ro = new ResizeObserver(entries => {
+                 for (let entry of entries) {
+                     const rect = entry.contentRect;
+                     if (rect.height > 0 && rect.width > 0) {
+                         // Ensure min width
+                         const w = Math.max(rect.width, this.data?.width ?? 300);
+                         this.updateBackingGeometry(w, rect.height);
+                     }
+                 }
+             });
+             ro.observe(this.domElement);
+             // Store ref so we can disconnect if needed in dispose, though DOM removal often handles it
+             (this as any)._ro = ro;
+        } else {
+             // Fallback for environments without ResizeObserver
+             setTimeout(() => {
+                 const actualHeight = this.domElement.offsetHeight || h;
+                 if (actualHeight !== h && actualHeight > 0) {
+                     this.updateBackingGeometry(w, actualHeight);
+                 }
+             }, 50);
+        }
     }
 
     updateSpec(updates: Partial<NodeSpec>): void {
         super.updateSpec(updates);
+
+        if (updates.data) {
+             if (updates.data.width !== undefined) {
+                 this.domElement.style.width = `${updates.data.width}px`;
+             }
+             if (updates.data.color !== undefined) {
+                 this.domElement.style.background = updates.data.color;
+             }
+             if (updates.data.textColor !== undefined) {
+                 this.domElement.style.color = updates.data.textColor;
+             }
+        }
+
         if (updates.data?.markdown !== undefined || updates.label !== undefined) {
             const md = updates.data?.markdown ?? updates.label ?? '';
-            const contentDiv = this.domElement.querySelector('div');
+            // Get the inner div without the style tag
+            const contentDiv = Array.from(this.domElement.children).find(el => el.tagName.toLowerCase() === 'div');
             if (contentDiv) {
                 contentDiv.innerHTML = marked.parse(md) as string;
 
-                // Readjust backing plane height
-                setTimeout(() => {
-                    const actualHeight = this.domElement.offsetHeight;
-                    if (actualHeight > 0) {
-                        const w = this.data?.width ?? 300;
-                        this.updateBackingGeometry(w, actualHeight);
-                    }
-                }, 50);
+                // If no resize observer, fallback readjustment
+                if (typeof ResizeObserver === 'undefined') {
+                    setTimeout(() => {
+                        const actualHeight = this.domElement.offsetHeight;
+                        if (actualHeight > 0) {
+                            const w = this.data?.width ?? 300;
+                            this.updateBackingGeometry(w, actualHeight);
+                        }
+                    }, 50);
+                }
             }
         }
+    }
+
+    dispose(): void {
+         if ((this as any)._ro) {
+             (this as any)._ro.disconnect();
+         }
+         super.dispose();
     }
 
     // dispose() is handled entirely by DOMNode!
