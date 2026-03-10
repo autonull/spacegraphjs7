@@ -26,28 +26,33 @@ export class MathNode extends DOMNode {
 
     constructor(sg: SpaceGraph, spec: NodeSpec) {
         const div = document.createElement('div');
-        super(sg, spec, div, 200, 100, { opacity: 0.0 });
+
+        // Pass div into DOMNode correctly and specify base size
+        super(sg, spec, div, spec.data?.width || 300, spec.data?.height || 100, { opacity: 0.0 });
 
         if (spec.data?.math) {
             this.mathContent = spec.data.math;
         }
 
-        this.domElement = document.createElement('div');
         this.domElement.className = 'spacegraph-math-node';
-        this.domElement.style.backgroundColor = spec.data?.color || 'rgba(0, 0, 0, 0.8)';
-        this.domElement.style.color = '#fff';
-        this.domElement.style.border = '2px solid #555';
-        this.domElement.style.borderRadius = '8px';
-        this.domElement.style.padding = '15px';
-        this.domElement.style.display = 'flex';
-        this.domElement.style.justifyContent = 'center';
-        this.domElement.style.alignItems = 'center';
-        this.domElement.style.fontSize = spec.data?.fontSize ? `${spec.data.fontSize}px` : '24px';
-        this.domElement.style.boxShadow = '0 4px 12px rgba(0,0,0,0.5)';
+        Object.assign(this.domElement.style, {
+            width: `${spec.data?.width || 300}px`,
+            height: `${spec.data?.height || 100}px`,
+            backgroundColor: spec.data?.color || 'rgba(0, 0, 0, 0.8)',
+            color: '#fff',
+            border: '2px solid #555',
+            borderRadius: '8px',
+            padding: '15px',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            fontSize: spec.data?.fontSize ? `${spec.data.fontSize}px` : '24px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+            boxSizing: 'border-box',
+            pointerEvents: 'auto'
+        });
 
         this.domElement.textContent = 'Loading Math...';
-
-
 
         this.renderMath();
 

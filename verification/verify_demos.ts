@@ -29,7 +29,8 @@ async function main() {
             '../examples/complex-hud-layout.html',
             '../examples/minimap.html',
             '../examples/data-viz.html',
-            '../examples/media-nodes.html'
+            '../examples/media-nodes.html',
+            '../examples/mixed-topology.html'
         ];
 
         for (const demo of demos) {
