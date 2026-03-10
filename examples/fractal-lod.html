@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SpaceGraphJS - Fractal LOD</title>
+    <style>
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #1a1a1a;
+            color: #ffffff;
+            font-family: sans-serif;
+        }
+
+        #container {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+        }
+
+        .controls {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 10;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 8px;
+            max-width: 300px;
+        }
+
+        .controls h3 { margin-top: 0; }
+    </style>
+</head>
+
+<body>
+    <div id="container"></div>
+    <div class="controls">
+        <h3>Fractal LOD & Semantic Nav</h3>
+        <p>1. Scroll to zoom into the Group Node (the transparent box).</p>
+        <p>2. Notice the nested nodes appear only when close enough.</p>
+        <p>3. Double click on an edge to auto-navigate to the connected node!</p>
+    </div>
+
+    <script type="module">
+        import { SpaceGraph } from '../src/index.ts';
+
+        // Outer graph
+        const nodes = [
+            { id: 'group-a', type: 'GroupNode', label: 'Systems', position: [-200, 0, 0], data: { width: 500, height: 400, depth: 300, color: 0x44aa88, lodThreshold: 1500 } },
+            { id: 'node-b', type: 'ShapeNode', label: 'External', position: [400, 0, 0], data: { shape: 'sphere', color: 0xaa4488, size: 40 } },
+
+            // Inner graph (nested inside group-a)
+            { id: 'inner-1', type: 'ShapeNode', label: 'DB', position: [-300, 50, 0], data: { parent: 'group-a', shape: 'cylinder', color: 0x4488ff, size: 25 } },
+            { id: 'inner-2', type: 'ShapeNode', label: 'API', position: [-100, -50, 0], data: { parent: 'group-a', shape: 'box', color: 0xff8844, size: 25 } },
+        ];
+
+        const edges = [
+            // External edge
+            { id: 'e1', source: 'group-a', target: 'node-b', type: 'Edge' },
+            // Internal edge
+            { id: 'e2', source: 'inner-1', target: 'inner-2', type: 'FlowEdge' },
+        ];
+
+        const graph = SpaceGraph.create('#container', { nodes, edges });
+
+        // Ensure starting far enough away so inner nodes are hidden initially
+        graph.cameraControls.spherical.radius = 2500;
+        graph.cameraControls.update();
+
+    </script>
+</body>
+
+</html>

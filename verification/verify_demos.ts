@@ -30,7 +30,11 @@ async function main() {
             '../examples/minimap.html',
             '../examples/data-viz.html',
             '../examples/media-nodes.html',
-            '../examples/mixed-topology.html'
+            '../examples/mixed-topology.html',
+            '../examples/benchmark.html',
+            '../examples/inter-graph-edges.html',
+            '../examples/viewport-serialization.html',
+            '../examples/fractal-lod.html'
         ];
 
         for (const demo of demos) {

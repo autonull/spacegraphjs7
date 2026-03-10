@@ -70,7 +70,7 @@ export class MarkdownNode extends DOMNode { // Changed base class to DOMNode
         // This is much safer than heuristic setTimeouts.
         if (typeof ResizeObserver !== 'undefined') {
              const ro = new ResizeObserver(entries => {
-                 for (let entry of entries) {
+                 for (const entry of entries) {
                      const rect = entry.contentRect;
                      if (rect.height > 0 && rect.width > 0) {
                          // Ensure min width

@@ -33,6 +33,7 @@ import { DottedEdge } from './edges/DottedEdge';
 import { DynamicThicknessEdge } from './edges/DynamicThicknessEdge';
 import { AnimatedEdge } from './edges/AnimatedEdge';
 import { BundledEdge } from './edges/BundledEdge';
+import { InterGraphEdge } from './edges/InterGraphEdge';
 import { ForceLayout } from './plugins/ForceLayout';
 import { CircularLayout } from './plugins/CircularLayout';
 import { GridLayout } from './plugins/GridLayout';
@@ -148,6 +149,7 @@ export class SpaceGraph {
         this.pluginManager.registerEdgeType('DynamicThicknessEdge', DynamicThicknessEdge);
         this.pluginManager.registerEdgeType('AnimatedEdge', AnimatedEdge);
         this.pluginManager.registerEdgeType('BundledEdge', BundledEdge);
+        this.pluginManager.registerEdgeType('InterGraphEdge', InterGraphEdge);
 
         // Register built-in plugins (Layouts)
         this.pluginManager.register('ForceLayout', new ForceLayout());
@@ -233,7 +235,7 @@ export class SpaceGraph {
             });
         }
 
-        if (this.cameraControls) {
+        if (this.cameraControls && this.cameraControls.target) {
             spec.camera = {
                 position: [
                     this.renderer.camera.position.x,
@@ -241,9 +243,9 @@ export class SpaceGraph {
                     this.renderer.camera.position.z
                 ],
                 target: [
-                    this.cameraControls.controls.target.x,
-                    this.cameraControls.controls.target.y,
-                    this.cameraControls.controls.target.z
+                    this.cameraControls.target.x,
+                    this.cameraControls.target.y,
+                    this.cameraControls.target.z
                 ]
             };
         }
@@ -255,18 +257,25 @@ export class SpaceGraph {
         this.graph.clear();
         this.loadSpec(data);
 
-        if (data.camera && this.cameraControls) {
+        if (data.camera && this.cameraControls && this.cameraControls.target) {
             this.renderer.camera.position.set(
                 data.camera.position[0],
                 data.camera.position[1],
                 data.camera.position[2]
             );
-            this.cameraControls.controls.target.set(
+            this.cameraControls.target.set(
                 data.camera.target[0],
                 data.camera.target[1],
                 data.camera.target[2]
             );
-            this.cameraControls.controls.update();
+
+            // Recompute spherical based on new position/target
+            const diff = new THREE.Vector3().subVectors(this.renderer.camera.position, this.cameraControls.target);
+            this.cameraControls.spherical.radius = diff.length();
+            this.cameraControls.spherical.phi = Math.acos(diff.y / this.cameraControls.spherical.radius);
+            this.cameraControls.spherical.theta = Math.atan2(diff.x, diff.z);
+
+            this.cameraControls.update();
         }
     }
 
