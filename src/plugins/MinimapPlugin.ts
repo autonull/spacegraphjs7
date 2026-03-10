@@ -55,6 +55,12 @@ export class MinimapPlugin implements ISpaceGraphPlugin {
 
     private isDragging = false;
 
+    private container!: HTMLElement;
+    private canvas!: HTMLCanvasElement;
+    private ctx!: CanvasRenderingContext2D;
+    private indicatorColor = 'rgba(139, 92, 246, 0.8)';
+    private borderColor = 'rgba(255, 255, 255, 0.1)';
+
     private _getBounds() {
         const canvas = this.sg.renderer.renderer.domElement;
         const cw = canvas.clientWidth;
@@ -80,7 +86,7 @@ export class MinimapPlugin implements ISpaceGraphPlugin {
                 bottom = margin;
         }
         const top = ch - bottom - size;
-        return { left, top, size };
+        return { left, top, bottom, size, cw, ch };
     }
 
     private _pointerToWorld(px: number, py: number) {
@@ -103,24 +109,44 @@ export class MinimapPlugin implements ISpaceGraphPlugin {
             e.clientY <= top + size
         ) {
             this.isDragging = true;
+            this.sg.cameraControls.controls.enabled = false;
+
             const pt = this._pointerToWorld(e.clientX, e.clientY);
-            this.sg.cameraControls.flyTo(
-                new THREE.Vector3(pt.x, pt.y, 0),
-                this.sg.cameraControls.spherical.radius,
-            );
+            this.sg.cameraControls.controls.moveTo(pt.x, pt.y, 0, false);
+
+            // Re-render minimap immediately to update indicator
+            this._renderMinimap();
+
             e.stopPropagation();
+            e.preventDefault();
         }
     };
 
     private _onPointerMove = (e: PointerEvent) => {
-        if (!this.isDragging) return;
+        if (!this.isDragging) {
+             const { left, top, size } = this._getBounds();
+             if (e.clientX >= left && e.clientX <= left + size && e.clientY >= top && e.clientY <= top + size) {
+                  this.sg.renderer.renderer.domElement.style.cursor = 'crosshair';
+             } else {
+                 // Assume InteractionPlugin handles base cursor, don't reset to 'auto' blindly
+             }
+             return;
+        }
+
         const pt = this._pointerToWorld(e.clientX, e.clientY);
-        this.sg.cameraControls.target.set(pt.x, pt.y, 0);
+        this.sg.cameraControls.controls.moveTo(pt.x, pt.y, 0, false);
+        this.sg.cameraControls.update(); // Force immediate update
+
         e.stopPropagation();
+        e.preventDefault();
     };
 
     private _onPointerUp = () => {
-        this.isDragging = false;
+        if (this.isDragging) {
+            this.isDragging = false;
+            this.sg.cameraControls.controls.enabled = true;
+            this.sg.renderer.renderer.domElement.style.cursor = 'auto';
+        }
     };
 
     onPostRender(_delta: number): void {
@@ -136,18 +162,33 @@ export class MinimapPlugin implements ISpaceGraphPlugin {
         const ch = canvas.clientHeight;
         const pr = renderer.getPixelRatio();
 
-        const { left, top, size } = this._getBounds();
-        const bottom = ch - top - size;
+        const { left, top, bottom, size } = this._getBounds();
 
-        // Update ortho camera to centre on graph
+        // 1. Center ortho camera around the main scene nodes
         const nodes = Array.from(this.sg.graph.nodes.values());
         if (nodes.length) {
-            const cx = nodes.reduce((s, n) => s + n.position.x, 0) / nodes.length;
-            const cy = nodes.reduce((s, n) => s + n.position.y, 0) / nodes.length;
-            this.orthoCamera.position.set(cx, cy, 1000);
-            this.orthoCamera.lookAt(cx, cy, 0);
+            const box = new THREE.Box3();
+            nodes.forEach(n => box.expandByPoint(n.position));
+            const center = new THREE.Vector3();
+            box.getCenter(center);
+
+            this.orthoCamera.position.set(center.x, center.y, 1000);
+            this.orthoCamera.lookAt(center.x, center.y, 0);
+
+            // Adjust zoom dynamically based on graph size if needed, or stick to setting
+            const graphSize = new THREE.Vector3();
+            box.getSize(graphSize);
+            const maxDim = Math.max(graphSize.x, graphSize.y, 500);
+
+            // Base zoom on max dim + padding, or user setting if larger
+            this.orthoCamera.left = -this.settings.zoom;
+            this.orthoCamera.right = this.settings.zoom;
+            this.orthoCamera.top = this.settings.zoom;
+            this.orthoCamera.bottom = -this.settings.zoom;
+            this.orthoCamera.updateProjectionMatrix();
         }
 
+        // 2. Render 3D Scene to Minimap Viewport
         renderer.setViewport(left * pr, bottom * pr, size * pr, size * pr);
         renderer.setScissor(left * pr, bottom * pr, size * pr, size * pr);
         renderer.setScissorTest(true);
@@ -156,8 +197,73 @@ export class MinimapPlugin implements ISpaceGraphPlugin {
         renderer.render(this.sg.renderer.scene, this.orthoCamera);
         renderer.setScissorTest(false);
 
+        // 3. Draw Overlay (Border + Viewport Indicator) using an explicit overlay div or context
+        // Instead of managing a separate 2D canvas context every frame, we can use CSS3DRenderer DOM manipulation
+        // or just calculate the rect and let the user know. The simplest and most robust way in this WebGL loop
+        // is to add an explicit HTML element overlay matching the viewport over the canvas, but since we are drawing
+        // straight to WebGL viewport, we'll initialize a dedicated DOM container for the minimap borders/indicator.
+
+        this._updateOverlay(left, top, size, cw, ch);
+
         // Restore main viewport
         renderer.setViewport(0, 0, cw * pr, ch * pr);
+    }
+
+    private _updateOverlay(left: number, top: number, size: number, cw: number, ch: number) {
+        if (typeof document === 'undefined') return;
+
+        if (!this.container) {
+            this.container = document.createElement('div');
+            this.container.style.position = 'absolute';
+            this.container.style.pointerEvents = 'none'; // let pointer events pass through to webgl canvas handler
+            this.container.style.border = `2px solid ${this.borderColor}`;
+            this.container.style.borderRadius = '8px';
+            this.container.style.boxSizing = 'border-box';
+            this.container.style.overflow = 'hidden';
+            this.container.style.zIndex = '9997'; // Below HUD but above WebGL
+
+            const indicator = document.createElement('div');
+            indicator.id = 'sg-minimap-indicator';
+            indicator.style.position = 'absolute';
+            indicator.style.border = `1px solid ${this.indicatorColor}`;
+            indicator.style.backgroundColor = 'rgba(139, 92, 246, 0.1)';
+            indicator.style.boxSizing = 'border-box';
+
+            this.container.appendChild(indicator);
+            this.sg.renderer.container.appendChild(this.container);
+        }
+
+        // Update container bounds
+        this.container.style.left = `${left}px`;
+        this.container.style.top = `${top}px`;
+        this.container.style.width = `${size}px`;
+        this.container.style.height = `${size}px`;
+
+        // Calculate the main camera frustum bounds in world space
+        const mainCam = this.sg.renderer.camera;
+        // z-plane distance from camera to controls target
+        const dist = mainCam.position.distanceTo(this.sg.cameraControls.target);
+        const vFov = mainCam.fov * Math.PI / 180;
+        const visibleHeight = 2 * Math.tan(vFov / 2) * dist;
+        const visibleWidth = visibleHeight * mainCam.aspect;
+
+        const target = this.sg.cameraControls.target;
+
+        // Map target to minimap coordinates
+        const mapX = ((target.x - this.orthoCamera.position.x) / (this.settings.zoom * 2)) * size + (size / 2);
+        // y is inverted
+        const mapY = -((target.y - this.orthoCamera.position.y) / (this.settings.zoom * 2)) * size + (size / 2);
+
+        const mapW = (visibleWidth / (this.settings.zoom * 2)) * size;
+        const mapH = (visibleHeight / (this.settings.zoom * 2)) * size;
+
+        const indicator = this.container.querySelector('#sg-minimap-indicator') as HTMLElement;
+        if (indicator) {
+            indicator.style.left = `${mapX - mapW/2}px`;
+            indicator.style.top = `${mapY - mapH/2}px`;
+            indicator.style.width = `${mapW}px`;
+            indicator.style.height = `${mapH}px`;
+        }
     }
 
     dispose(): void {

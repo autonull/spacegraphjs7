@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Rich Media Nodes - SpaceGraphJS</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            overflow: hidden;
+            background-color: #050510;
+            font-family: system-ui, -apple-system, sans-serif;
+            color: white;
+        }
+
+        #container {
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .header {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 10;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(8px);
+            padding: 16px 24px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .header h1 {
+            font-size: 20px;
+            margin-bottom: 4px;
+            background: -webkit-linear-gradient(135deg, #3b82f6, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header p {
+            color: #94a3b8;
+            font-size: 14px;
+            max-width: 300px;
+            line-height: 1.4;
+        }
+
+        .controls {
+             position: absolute;
+             bottom: 20px;
+             left: 50%;
+             transform: translateX(-50%);
+             z-index: 10;
+             background: rgba(15, 23, 42, 0.8);
+             padding: 12px 24px;
+             border-radius: 99px;
+             display: flex;
+             gap: 12px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            border: none;
+            padding: 8px 16px;
+            border-radius: 99px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>Rich Media Nodes</h1>
+        <p>Combining 3D primitives like the Globe with CSS3D media elements like Video, Image, and Markdown text.</p>
+    </div>
+
+    <div class="controls">
+         <button class="btn" id="btn-toggle-texture">Toggle Globe Texture</button>
+         <button class="btn" id="btn-update-md">Update Markdown</button>
+    </div>
+
+    <div id="container"></div>
+
+    <script type="module">
+        import { SpaceGraph } from '../src/index.ts';
+
+        const markdownContent = `
+# Global Logistics Report
+## Q3 Overview
+
+We are tracking multiple inbound shipments across the Atlantic. Key indicators show **stable performance** across the board.
+
+* **On-time Delivery:** 94%
+* **Avg Transit Time:** 12 Days
+* **Active Vessels:** 18
+
+> "The supply chain remains robust despite minor weather delays in the northern sector."
+        `;
+
+        const nodes = [
+            // Textured Globe Node with markers
+            {
+                id: 'earth',
+                type: 'GlobeNode',
+                position: [0, 0, 0],
+                data: {
+                    radius: 120,
+                    // A public domain earth texture
+                    textureUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cd/Land_ocean_ice_2048.jpg/1024px-Land_ocean_ice_2048.jpg',
+                    segments: 64,
+                    markers: [
+                        { lat: 40.7128, lng: -74.0060, size: 4, color: 0xef4444 }, // NYC
+                        { lat: 51.5074, lng: -0.1278, size: 4, color: 0x3b82f6 },  // London
+                        { lat: 35.6895, lng: 139.6917, size: 4, color: 0x10b981 }  // Tokyo
+                    ]
+                }
+            },
+
+            // Markdown Node
+            {
+                id: 'report',
+                type: 'MarkdownNode',
+                position: [400, 100, 0],
+                data: {
+                    width: 320,
+                    markdown: markdownContent,
+                    color: 'rgba(15, 23, 42, 0.9)'
+                }
+            },
+
+            // Video Node
+            {
+                id: 'camera-feed',
+                type: 'VideoNode',
+                position: [-400, 100, 0],
+                data: {
+                    // A simple public test video
+                    url: 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+                    width: 320,
+                    height: 180,
+                    autoplay: true,
+                    loop: true,
+                    muted: true
+                }
+            },
+
+            // Image Node
+            {
+                id: 'satellite-img',
+                type: 'ImageNode',
+                position: [0, -250, 0],
+                data: {
+                    // Public domain satellite image
+                    url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Hurricane_Isabel_from_ISS.jpg/640px-Hurricane_Isabel_from_ISS.jpg',
+                    width: 250,
+                    height: 250
+                }
+            }
+        ];
+
+        const edges = [
+            { id: 'e1', source: 'earth', target: 'report', type: 'DottedEdge', data: { color: 0x8b5cf6 } },
+            { id: 'e2', source: 'earth', target: 'camera-feed', type: 'CurvedEdge', data: { color: 0x3b82f6 } },
+            { id: 'e3', source: 'earth', target: 'satellite-img', type: 'AnimatedEdge', data: { color: 0x10b981, speed: 0.01, particleColor: 0xffffff } }
+        ];
+
+        const sg = SpaceGraph.create('#container', { nodes, edges });
+
+        // Spin the globe slowly
+        sg.events.on('prerender', () => {
+             const earth = sg.graph.nodes.get('earth');
+             if (earth && earth.object) {
+                 earth.object.rotation.y += 0.002;
+             }
+        });
+
+        sg.render();
+        sg.fitView(150);
+
+        // UI Controls
+        let hasTexture = true;
+        document.getElementById('btn-toggle-texture').addEventListener('click', () => {
+             const earth = sg.graph.nodes.get('earth');
+             if (earth) {
+                 hasTexture = !hasTexture;
+                 earth.updateSpec({
+                     data: {
+                         textureUrl: hasTexture ? 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cd/Land_ocean_ice_2048.jpg/1024px-Land_ocean_ice_2048.jpg' : null,
+                         color: 0x1e293b // Dark blue fallback
+                     }
+                 });
+             }
+        });
+
+        document.getElementById('btn-update-md').addEventListener('click', () => {
+             const mdNode = sg.graph.nodes.get('report');
+             if (mdNode) {
+                 mdNode.updateSpec({
+                     data: {
+                         markdown: mdNode.data.markdown + '\n\n**Update:** New cargo ship departed from Tokyo port at 14:00 GMT.'
+                     }
+                 });
+             }
+        });
+
+    </script>
+</body>
+
+</html>

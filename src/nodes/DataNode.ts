@@ -1,145 +1,249 @@
-import { CSS3DObject } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
-import * as THREE from 'three';
-import { Node } from './Node';
+import { DOMNode } from './DOMNode';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec } from '../types';
 
 /**
- * DataNode — Displays a key-value table or arbitrary JSON/object.
+ * DataNode — Displays arbitrary JSON/objects as a structured, interactive view.
+ * Now extended from DOMNode to natively handle sizing and interactive backing properly.
  *
  * data options:
- *   fields    : Record<string, any> — key-value pairs to display
- *   maxFields : max rows before truncating (default 8)
- *   width     : pixel width  (default 220)
- *   color     : header background CSS color (default '#0f172a')
+ *   data      : any — the JSON payload to render
+ *   expanded  : boolean — auto-expand top level (default true)
+ *   width     : pixel width  (default 250)
+ *   maxHeight : max pixel height before scrolling (default 300)
+ *   theme     : 'dark' | 'light' (default 'dark')
  */
-export class DataNode extends Node {
-    public domElement: HTMLElement;
-    public cssObject: CSS3DObject;
-    private backing: THREE.Mesh;
-    private readonly w: number;
+export class DataNode extends DOMNode {
+    private contentContainer!: HTMLElement;
 
     constructor(sg: SpaceGraph, spec: NodeSpec) {
-        super(sg, spec);
+        const w = spec.data?.width ?? 250;
+        const maxH = spec.data?.maxHeight ?? 300;
+        const theme = spec.data?.theme ?? 'dark';
 
-        this.w = spec.data?.width ?? 220;
-        this.domElement = this._buildDOM(spec);
-        this.cssObject = new CSS3DObject(this.domElement);
-        this.object.add(this.cssObject);
+        const div = document.createElement('div');
+        // Initialize DOMNode base. Use fixed height or let DOM size it naturally inside the wrapper.
+        // We'll give it a generous height based on maxH since it scrolls.
+        super(sg, spec, div, w, maxH, { opacity: 0.1 });
 
-        // Invisible backing for raycasting
-        const h = parseInt(this.domElement.style.height) || 200;
-        const geo = new THREE.PlaneGeometry(this.w, h);
-        const mat = new THREE.MeshBasicMaterial({ visible: false, side: THREE.DoubleSide });
-        this.backing = new THREE.Mesh(geo, mat);
-        this.object.add(this.backing);
+        this.domElement.className = `spacegraph-data-node theme-${theme}`;
 
-        this.updatePosition(this.position.x, this.position.y, this.position.z);
-    }
+        const bgColor = theme === 'dark' ? '#1e293b' : '#f8fafc';
+        const borderColor = theme === 'dark' ? '#334155' : '#e2e8f0';
+        const headerColor = theme === 'dark' ? '#0f172a' : '#f1f5f9';
+        const textColor = theme === 'dark' ? '#e2e8f0' : '#334155';
 
-    private _buildDOM(spec: Partial<NodeSpec>): HTMLElement {
-        const fields = spec.data?.fields ?? {};
-        const maxFields = spec.data?.maxFields ?? 8;
-        const headerBg = spec.data?.color ?? '#0f172a';
-        const w = spec.data?.width ?? 220;
-
-        const keys = Object.keys(fields).slice(0, maxFields);
-        const rowH = 28;
-        const headerH = 36;
-        const totalH = headerH + rowH * Math.max(keys.length, 1) + 8;
-
-        const root = document.createElement('div');
-        root.className = 'sg-data-node';
-        Object.assign(root.style, {
+        Object.assign(this.domElement.style, {
             width: `${w}px`,
-            height: `${totalH}px`,
-            background: '#1e293b',
-            borderRadius: '6px',
+            maxHeight: `${maxH}px`,
+            background: bgColor,
+            borderRadius: '8px',
             overflow: 'hidden',
-            boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
-            fontFamily: 'monospace',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
+            fontFamily: 'monospace, "Courier New", Courier',
             fontSize: '12px',
-            color: '#e2e8f0',
+            color: textColor,
+            display: 'flex',
+            flexDirection: 'column',
             boxSizing: 'border-box',
-        } as CSSStyleDeclaration);
+            pointerEvents: 'auto',
+            border: `1px solid ${borderColor}`
+        });
 
         // Header
         const header = document.createElement('div');
-        header.className = 'sg-data-header';
         Object.assign(header.style, {
-            background: headerBg,
-            padding: '8px 10px',
-            fontWeight: 'bold',
+            background: headerColor,
+            padding: '8px 12px',
+            fontWeight: '600',
             fontSize: '13px',
-            color: '#94a3b8',
-            letterSpacing: '0.05em',
-            borderBottom: '1px solid #334155',
+            color: theme === 'dark' ? '#94a3b8' : '#64748b',
+            borderBottom: `1px solid ${borderColor}`,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexShrink: '0',
+            userSelect: 'none'
         });
-        header.textContent = spec.label ?? 'data';
-        root.appendChild(header);
 
-        // Rows
-        for (const key of keys) {
-            const row = document.createElement('div');
-            row.className = 'sg-data-row';
-            Object.assign(row.style, {
-                display: 'flex',
-                padding: '4px 10px',
-                borderBottom: '1px solid #1e293b',
-                alignItems: 'center',
-                height: `${rowH}px`,
-                boxSizing: 'border-box',
-            });
-            const k = document.createElement('span');
-            k.style.color = '#7dd3fc';
-            k.style.flex = '0 0 40%';
-            k.style.overflow = 'hidden';
-            k.style.textOverflow = 'ellipsis';
-            k.textContent = key;
+        const titleSpan = document.createElement('span');
+        titleSpan.textContent = spec.label || 'JSON Data';
+        header.appendChild(titleSpan);
+        this.domElement.appendChild(header);
 
-            const v = document.createElement('span');
-            v.style.color = '#fbbf24';
-            v.style.flex = '1';
-            v.style.overflow = 'hidden';
-            v.style.textOverflow = 'ellipsis';
-            v.textContent = JSON.stringify(fields[key]);
+        // Content Area (Scrollable)
+        this.contentContainer = document.createElement('div');
+        Object.assign(this.contentContainer.style, {
+            padding: '8px 12px',
+            overflowY: 'auto',
+            flexGrow: '1',
+            scrollbarWidth: 'thin',
+            scrollbarColor: theme === 'dark' ? '#475569 #1e293b' : '#cbd5e1 #f8fafc'
+        });
 
-            row.appendChild(k);
-            row.appendChild(v);
-            root.appendChild(row);
+        this.domElement.appendChild(this.contentContainer);
+
+        this._renderData(spec.data?.data || spec.data?.fields, spec.data?.expanded !== false, theme);
+    }
+
+    private _renderData(data: any, expandTopLevel: boolean, theme: string) {
+        this.contentContainer.innerHTML = '';
+        if (data === undefined || data === null) {
+            const empty = document.createElement('div');
+            empty.style.color = theme === 'dark' ? '#64748b' : '#94a3b8';
+            empty.style.fontStyle = 'italic';
+            empty.textContent = 'null';
+            this.contentContainer.appendChild(empty);
+            return;
         }
+
+        const tree = this._buildTree(data, theme, 0, expandTopLevel);
+        this.contentContainer.appendChild(tree);
+    }
+
+    private _buildTree(data: any, theme: string, depth: number, expanded: boolean): HTMLElement {
+        const container = document.createElement('div');
+        container.style.paddingLeft = depth > 0 ? '12px' : '0';
+
+        if (typeof data !== 'object' || data === null) {
+            // Primitive value
+            const valSpan = document.createElement('span');
+            valSpan.style.color = this._getColorForType(data, theme);
+            valSpan.style.wordBreak = 'break-all';
+            valSpan.textContent = typeof data === 'string' ? `"${data}"` : String(data);
+            container.appendChild(valSpan);
+            return container;
+        }
+
+        const isArray = Array.isArray(data);
+        const keys = Object.keys(data);
+        const openBracket = isArray ? '[' : '{';
+        const closeBracket = isArray ? ']' : '}';
 
         if (keys.length === 0) {
-            const empty = document.createElement('div');
-            empty.style.padding = '8px 10px';
-            empty.style.color = '#475569';
-            empty.textContent = '(no data)';
-            root.appendChild(empty);
+            const emptySpan = document.createElement('span');
+            emptySpan.style.color = theme === 'dark' ? '#64748b' : '#94a3b8';
+            emptySpan.textContent = `${openBracket}${closeBracket}`;
+            container.appendChild(emptySpan);
+            return container;
         }
 
-        return root;
+        // Parent toggle node
+        const toggleWrapper = document.createElement('div');
+        Object.assign(toggleWrapper.style, {
+            cursor: 'pointer',
+            userSelect: 'none',
+            display: 'flex',
+            alignItems: 'baseline'
+        });
+
+        const chevron = document.createElement('span');
+        chevron.textContent = expanded ? '▼' : '▶';
+        Object.assign(chevron.style, {
+            display: 'inline-block',
+            width: '12px',
+            fontSize: '9px',
+            color: theme === 'dark' ? '#64748b' : '#94a3b8',
+            transition: 'transform 0.1s'
+        });
+
+        const summary = document.createElement('span');
+        summary.style.color = theme === 'dark' ? '#94a3b8' : '#64748b';
+        summary.textContent = isArray ? `Array(${keys.length}) ${openBracket}` : `Object ${openBracket}`;
+
+        toggleWrapper.appendChild(chevron);
+        toggleWrapper.appendChild(summary);
+        container.appendChild(toggleWrapper);
+
+        // Children container
+        const childrenDiv = document.createElement('div');
+        childrenDiv.style.display = expanded ? 'block' : 'none';
+
+        keys.forEach((key, index) => {
+            const row = document.createElement('div');
+            row.style.display = 'flex';
+            row.style.marginTop = '2px';
+
+            // Key
+            if (!isArray) {
+                const keySpan = document.createElement('span');
+                keySpan.style.color = theme === 'dark' ? '#7dd3fc' : '#0284c7';
+                keySpan.style.marginRight = '6px';
+                keySpan.textContent = `"${key}":`;
+                row.appendChild(keySpan);
+            }
+
+            // Value
+            const valNode = this._buildTree(data[key], theme, depth + 1, false);
+            row.appendChild(valNode);
+
+            if (index < keys.length - 1) {
+                 const comma = document.createElement('span');
+                 comma.textContent = ',';
+                 comma.style.color = theme === 'dark' ? '#64748b' : '#94a3b8';
+                 row.appendChild(comma);
+            }
+
+            childrenDiv.appendChild(row);
+        });
+
+        const closeSpan = document.createElement('div');
+        closeSpan.style.color = theme === 'dark' ? '#94a3b8' : '#64748b';
+        closeSpan.style.paddingLeft = depth > 0 ? '12px' : '0';
+        closeSpan.textContent = closeBracket;
+        childrenDiv.appendChild(closeSpan);
+
+        container.appendChild(childrenDiv);
+
+        // Interaction
+        toggleWrapper.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isNowExpanded = childrenDiv.style.display === 'none';
+            childrenDiv.style.display = isNowExpanded ? 'block' : 'none';
+            chevron.textContent = isNowExpanded ? '▼' : '▶';
+            // Slight visual feedback
+            toggleWrapper.style.opacity = '0.7';
+            setTimeout(() => toggleWrapper.style.opacity = '1', 100);
+        });
+
+        return container;
+    }
+
+    private _getColorForType(value: any, theme: string): string {
+        if (value === null) return theme === 'dark' ? '#94a3b8' : '#64748b';
+        switch (typeof value) {
+            case 'string': return theme === 'dark' ? '#a3e635' : '#16a34a';
+            case 'number': return theme === 'dark' ? '#fbbf24' : '#d97706';
+            case 'boolean': return theme === 'dark' ? '#f472b6' : '#db2777';
+            default: return theme === 'dark' ? '#e2e8f0' : '#334155';
+        }
     }
 
     updateSpec(updates: Partial<NodeSpec>): void {
         super.updateSpec(updates);
-        if (updates.data?.fields || updates.label !== undefined) {
-            // Rebuild DOM in-place
-            const oldDom = this.domElement;
-            const parent = oldDom.parentNode;
-            const newDom = this._buildDOM({
-                data: { ...this.data, ...updates.data },
-                label: updates.label ?? this.label,
-            });
-            if (parent) parent.replaceChild(newDom, oldDom);
-            (this.cssObject as any).element = newDom;
-            (this as any).domElement = newDom;
-        }
-    }
 
-    dispose(): void {
-        this.domElement.parentNode?.removeChild(this.domElement);
-        this.backing.geometry.dispose();
-        (this.backing.material as THREE.Material).dispose();
-        super.dispose();
+        if (updates.label !== undefined) {
+             const titleSpan = this.domElement.querySelector('.sg-data-header span');
+             if (titleSpan) titleSpan.textContent = updates.label;
+        }
+
+        if (updates.data) {
+            const theme = updates.data.theme || this.data.theme || 'dark';
+
+            if (updates.data.width || updates.data.maxHeight) {
+                const w = updates.data.width || this.data.width || 250;
+                const h = updates.data.maxHeight || this.data.maxHeight || 300;
+                this.domElement.style.width = `${w}px`;
+                this.domElement.style.maxHeight = `${h}px`;
+                if (this.plane) {
+                    this.plane.scale.set(w, h, 1);
+                }
+            }
+
+            if (updates.data.data !== undefined || updates.data.fields !== undefined) {
+                 const payload = updates.data.data !== undefined ? updates.data.data : updates.data.fields;
+                 this._renderData(payload, updates.data.expanded !== false, theme);
+            }
+        }
     }
 }

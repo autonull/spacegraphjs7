@@ -50,6 +50,7 @@ import { AutoColorPlugin } from './plugins/AutoColorPlugin';
 import { MinimapPlugin } from './plugins/MinimapPlugin';
 import { ErgonomicsPlugin } from './plugins/ErgonomicsPlugin';
 import { PhysicsPlugin } from './plugins/PhysicsPlugin';
+import { HUDPlugin } from './plugins/HUDPlugin';
 import type { GraphSpec, SpaceGraphOptions, SpecUpdate } from './types';
 
 export class SpaceGraph {
@@ -169,6 +170,7 @@ export class SpaceGraph {
         this.pluginManager.register('MinimapPlugin', new MinimapPlugin());
         this.pluginManager.register('ErgonomicsPlugin', new ErgonomicsPlugin());
         this.pluginManager.register('PhysicsPlugin', new PhysicsPlugin());
+        this.pluginManager.register('HUDPlugin', new HUDPlugin());
 
         await this.pluginManager.initAll();
     }

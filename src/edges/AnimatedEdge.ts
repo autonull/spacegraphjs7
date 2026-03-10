@@ -32,6 +32,9 @@ export class AnimatedEdge extends Edge {
 
         this.particle = new THREE.Mesh(particleGeom, particleMat);
         this.object.add(this.particle); // Attach particle to the line group
+
+        // Start particle at correct position based on direction
+        this.progress = this.reverse ? 1 : 0;
     }
 
     updateSpec(updates: Partial<EdgeSpec>) {

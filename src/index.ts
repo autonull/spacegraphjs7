@@ -92,5 +92,6 @@ export { PhysicsPlugin } from './plugins/PhysicsPlugin';
 export { MinimapPlugin } from './plugins/MinimapPlugin';
 export { ErgonomicsPlugin, type ErgonomicsConfig } from './plugins/ErgonomicsPlugin';
 export { VisionOverlayPlugin } from './plugins/VisionOverlayPlugin';
+export { HUDPlugin, type HUDElementOptions } from './plugins/HUDPlugin';
 
 console.log('[SpaceGraphJS] Loaded successfully');

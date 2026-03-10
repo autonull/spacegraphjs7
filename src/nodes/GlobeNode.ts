@@ -17,6 +17,8 @@ import type { NodeSpec } from '../types';
 export class GlobeNode extends Node {
     private mesh: THREE.Mesh;
     private wireframe?: THREE.Mesh;
+    private markersGroup: THREE.Group;
+    private textureLoader = new THREE.TextureLoader();
 
     constructor(sg: SpaceGraph, spec: NodeSpec) {
         super(sg, spec);
@@ -28,14 +30,16 @@ export class GlobeNode extends Node {
         const segments = spec.data?.segments ?? 32;
 
         const geo = new THREE.SphereGeometry(r, segments, segments);
-        let mat: THREE.Material;
+
+        // Always create material, map will be assigned if available
+        const mat = new THREE.MeshBasicMaterial({ color });
 
         if (textureUrl) {
-            const loader = new THREE.TextureLoader();
-            const tex = loader.load(textureUrl);
-            mat = new THREE.MeshBasicMaterial({ map: tex });
-        } else {
-            mat = new THREE.MeshBasicMaterial({ color });
+            this.textureLoader.load(textureUrl, (tex) => {
+                mat.map = tex;
+                mat.color.setHex(0xffffff); // Reset base color if textured
+                mat.needsUpdate = true;
+            });
         }
 
         this.mesh = new THREE.Mesh(geo, mat);
@@ -64,18 +68,81 @@ export class GlobeNode extends Node {
         const halo = new THREE.Mesh(haloGeo, haloMat);
         this.object.add(halo);
 
+        this.markersGroup = new THREE.Group();
+        this.object.add(this.markersGroup);
+
+        if (spec.data?.markers) {
+            this._renderMarkers(spec.data.markers, r);
+        }
+
         this.updatePosition(this.position.x, this.position.y, this.position.z);
+    }
+
+    private _renderMarkers(markers: any[], radius: number) {
+        // Clear existing markers
+        while (this.markersGroup.children.length > 0) {
+            const child = this.markersGroup.children[0] as THREE.Mesh;
+            this.markersGroup.remove(child);
+            child.geometry.dispose();
+            (child.material as THREE.Material).dispose();
+        }
+
+        markers.forEach(marker => {
+            const lat = marker.lat;
+            const lng = marker.lng;
+            const size = marker.size || 2;
+            const color = marker.color || 0xff0000;
+
+            // Convert lat/lng to 3D spherical coordinates
+            const phi = (90 - lat) * (Math.PI / 180);
+            const theta = (lng + 180) * (Math.PI / 180);
+
+            const x = -(radius * Math.sin(phi) * Math.cos(theta));
+            const z = (radius * Math.sin(phi) * Math.sin(theta));
+            const y = (radius * Math.cos(phi));
+
+            const geo = new THREE.SphereGeometry(size, 8, 8);
+            const mat = new THREE.MeshBasicMaterial({ color });
+            const mesh = new THREE.Mesh(geo, mat);
+
+            mesh.position.set(x, y, z);
+            this.markersGroup.add(mesh);
+        });
     }
 
     updateSpec(updates: Partial<NodeSpec>): void {
         super.updateSpec(updates);
-        // Globe updates could trigger texture reloads here, but for simplicity
-        // in this scaffold we mainly allow color changes if untextured.
-        if (updates.data?.color !== undefined) {
+
+        if (!updates.data) return;
+
+        const r = this.data?.radius ?? 50;
+
+        if (updates.data.textureUrl !== undefined) {
+             const mat = this.mesh.material as THREE.MeshBasicMaterial;
+             if (updates.data.textureUrl) {
+                 this.textureLoader.load(updates.data.textureUrl, (tex) => {
+                     if (mat.map) mat.map.dispose();
+                     mat.map = tex;
+                     mat.color.setHex(0xffffff);
+                     mat.needsUpdate = true;
+                 });
+             } else {
+                 if (mat.map) {
+                     mat.map.dispose();
+                     mat.map = null;
+                 }
+                 mat.color.setHex(updates.data.color ?? this.data.color ?? 0x3b82f6);
+                 mat.needsUpdate = true;
+             }
+        } else if (updates.data.color !== undefined) {
             const mat = this.mesh.material as THREE.MeshBasicMaterial;
-            if (!mat.map && mat.color) {
+            if (!mat.map) {
                 mat.color.setHex(updates.data.color);
             }
+        }
+
+        if (updates.data.markers !== undefined) {
+            this._renderMarkers(updates.data.markers, r);
         }
     }
 

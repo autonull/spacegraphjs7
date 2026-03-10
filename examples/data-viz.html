@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Data & Chart Nodes - SpaceGraphJS</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            overflow: hidden;
+            background-color: #050510;
+            font-family: system-ui, -apple-system, sans-serif;
+            color: white;
+        }
+
+        #container {
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .header {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 10;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(8px);
+            padding: 16px 24px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .header h1 {
+            font-size: 20px;
+            margin-bottom: 4px;
+            background: -webkit-linear-gradient(135deg, #3b82f6, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header p {
+            color: #94a3b8;
+            font-size: 14px;
+            max-width: 300px;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>Data Visualization</h1>
+        <p>Interact with the JSON DataNode and see various chart types generated using Chart.js inside WebGL.</p>
+    </div>
+    <div id="container"></div>
+
+    <script type="module">
+        import { SpaceGraph } from '../src/index.ts';
+
+        // Sample complex JSON for DataNode
+        const complexData = {
+            systemStatus: "Operational",
+            uptime: 1423400,
+            activeUsers: 843,
+            config: {
+                mode: "production",
+                features: ["alpha", "beta", "omega"],
+                limits: { maxConnections: 1000, timeoutMs: 5000 }
+            },
+            recentErrors: null,
+            metrics: [
+                { id: 1, type: 'cpu', value: 45.2 },
+                { id: 2, type: 'mem', value: 89.1 },
+                { id: 3, type: 'disk', value: 12.0 }
+            ]
+        };
+
+        const nodes = [
+            // Interactive JSON Data Node
+            {
+                id: 'data-1',
+                type: 'DataNode',
+                label: 'System Payload',
+                position: [-400, 0, 0],
+                data: {
+                    data: complexData,
+                    width: 320,
+                    maxHeight: 400,
+                    theme: 'dark',
+                    expanded: true
+                }
+            },
+
+            // Bar Chart Node
+            {
+                id: 'chart-bar',
+                type: 'ChartNode',
+                label: 'CPU Usage (Bar)',
+                position: [0, 200, 0],
+                data: {
+                    chartType: 'bar',
+                    width: 350,
+                    height: 200,
+                    theme: 'dark',
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May'],
+                    datasets: [
+                        { label: 'Server A', data: [65, 59, 80, 81, 56], color: '#3b82f6' },
+                        { label: 'Server B', data: [28, 48, 40, 19, 86], color: '#10b981' }
+                    ]
+                }
+            },
+
+            // Line Chart Node
+            {
+                id: 'chart-line',
+                type: 'ChartNode',
+                label: 'Network Traffic (Line)',
+                position: [0, -200, 0],
+                data: {
+                    chartType: 'line',
+                    width: 350,
+                    height: 200,
+                    theme: 'dark',
+                    labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'],
+                    datasets: [
+                        { label: 'Ingress (GB)', data: [12, 19, 3, 5, 2, 3], color: '#a855f7', fill: true, backgroundColor: 'rgba(168, 85, 247, 0.2)' }
+                    ],
+                    chartOptions: { elements: { line: { tension: 0.4 } } } // smooth curves
+                }
+            },
+
+            // Doughnut Chart Node
+            {
+                id: 'chart-pie',
+                type: 'ChartNode',
+                label: 'Resource Allocation (Doughnut)',
+                position: [400, 0, 0],
+                data: {
+                    chartType: 'doughnut',
+                    width: 300,
+                    height: 300,
+                    theme: 'dark',
+                    labels: ['Database', 'Cache', 'Web', 'Workers'],
+                    datasets: [
+                        {
+                            label: 'GB RAM',
+                            data: [300, 50, 100, 40],
+                            backgroundColor: ['#ef4444', '#f59e0b', '#3b82f6', '#8b5cf6'],
+                            borderColor: '#0f172a',
+                            borderWidth: 2
+                        }
+                    ],
+                    chartOptions: { cutout: '60%' }
+                }
+            }
+        ];
+
+        const edges = [
+            { id: 'e1', source: 'data-1', target: 'chart-bar', type: 'CurvedEdge', data: { color: '#3b82f6' } },
+            { id: 'e2', source: 'data-1', target: 'chart-line', type: 'CurvedEdge', data: { color: '#a855f7' } },
+            { id: 'e3', source: 'data-1', target: 'chart-pie', type: 'CurvedEdge', data: { color: '#ef4444' } },
+            { id: 'e4', source: 'chart-bar', target: 'chart-pie', type: 'DottedEdge', data: { color: '#94a3b8' } },
+            { id: 'e5', source: 'chart-line', target: 'chart-pie', type: 'DottedEdge', data: { color: '#94a3b8' } }
+        ];
+
+        const sg = SpaceGraph.create('#container', { nodes, edges });
+
+        sg.render();
+        sg.fitView(150);
+
+        // Optional: animate data in the line chart
+        setInterval(() => {
+             const lineNode = sg.graph.nodes.get('chart-line');
+             if (lineNode) {
+                 const currentData = lineNode.data.datasets[0].data;
+                 // shift left and add new random point
+                 const newData = [...currentData.slice(1), Math.floor(Math.random() * 20)];
+                 lineNode.updateSpec({
+                     data: {
+                         datasets: [
+                             { ...lineNode.data.datasets[0], data: newData }
+                         ]
+                     }
+                 });
+             }
+        }, 2000);
+
+    </script>
+</body>
+
+</html>

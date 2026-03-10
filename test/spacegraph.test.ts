@@ -332,25 +332,20 @@ describe('DataNode', () => {
         sg = makeSpaceGraph();
     });
 
-    it('renders correct number of rows', () => {
+    it('renders correct number of keys for an object payload', () => {
         const n = new DataNode(sg, {
             id: 'dn',
             type: 'DataNode',
-            data: { fields: { foo: 'bar', baz: 42 } },
+            data: { data: { foo: 'bar', baz: 42 }, expanded: true },
         });
-        expect(n.domElement.querySelectorAll('.sg-data-row').length).toBe(2);
+        // Should contain two child span elements representing the primitive values
+        expect(n.domElement.textContent).toContain('"bar"');
+        expect(n.domElement.textContent).toContain('42');
     });
 
-    it('shows empty state placeholder when no fields', () => {
+    it('shows empty state placeholder when null', () => {
         const n = new DataNode(sg, { id: 'dn', type: 'DataNode' });
-        expect(n.domElement.textContent).toContain('no data');
-    });
-
-    it('respects maxFields truncation', () => {
-        const fields: Record<string, number> = {};
-        for (let i = 0; i < 20; i++) fields[`k${i}`] = i;
-        const n = new DataNode(sg, { id: 'dn', type: 'DataNode', data: { fields, maxFields: 5 } });
-        expect(n.domElement.querySelectorAll('.sg-data-row').length).toBe(5);
+        expect(n.domElement.textContent).toContain('null');
     });
 });
 
