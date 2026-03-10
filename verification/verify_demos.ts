@@ -26,7 +26,9 @@ async function main() {
             'html.html',
             'large.html',
             'instanced.html',
-            '../examples/complex-hud-layout.html'
+            '../examples/complex-hud-layout.html',
+            '../examples/minimap.html',
+            '../examples/data-viz.html'
         ];
 
         for (const demo of demos) {

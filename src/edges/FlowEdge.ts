@@ -16,12 +16,19 @@ export class FlowEdge extends Edge {
         this.baseSpeed = spec.data?.flowSpeed || 2.0;
         this.flowSpeed = this.baseSpeed;
 
+        const dashSize = spec.data?.dashSize || 5;
+        const gapSize = spec.data?.gapSize || 5;
+        const color = spec.data?.color || 0x00ff00;
+        const opacity = spec.data?.opacity !== undefined ? spec.data.opacity : 1.0;
+
         const material = new THREE.LineDashedMaterial({
-            color: spec.data?.color || 0x00ff00,
-            linewidth: 2,
-            dashSize: 5,
-            gapSize: 5,
+            color: color,
+            linewidth: spec.data?.lineWidth || 2,
+            dashSize: dashSize,
+            gapSize: gapSize,
             scale: 1,
+            transparent: opacity < 1.0,
+            opacity: opacity,
         });
 
         if (this.object.material) {
@@ -39,15 +46,38 @@ export class FlowEdge extends Edge {
     updateSpec(updates: Partial<EdgeSpec>) {
         super.updateSpec(updates);
 
-        if (updates.data && updates.data.flowSpeed !== undefined) {
+        if (!updates.data) return;
+
+        const mat = this.object.material as THREE.LineDashedMaterial;
+
+        if (updates.data.flowSpeed !== undefined) {
             this.baseSpeed = updates.data.flowSpeed;
             if (this.isFlowing) {
                 this.flowSpeed = this.baseSpeed;
             }
         }
 
-        if (updates.data && updates.data.color) {
-            (this.object.material as THREE.LineDashedMaterial).color.setHex(updates.data.color);
+        if (updates.data.color !== undefined) {
+            mat.color.setHex(updates.data.color);
+        }
+
+        if (updates.data.dashSize !== undefined) {
+            mat.dashSize = updates.data.dashSize;
+        }
+
+        if (updates.data.gapSize !== undefined) {
+            mat.gapSize = updates.data.gapSize;
+        }
+
+        if (updates.data.opacity !== undefined) {
+            mat.opacity = updates.data.opacity;
+            mat.transparent = updates.data.opacity < 1.0;
+        }
+
+        // Need to recompute if dashes changed
+        if (updates.data.dashSize !== undefined || updates.data.gapSize !== undefined) {
+             this.object.computeLineDistances();
+             this.dashOffset = 0;
         }
     }
 
@@ -66,27 +96,14 @@ export class FlowEdge extends Edge {
 
         if (!this.isFlowing) return;
 
-        // Animate flow effect by updating dash properties or recreating distances
-        // The dashOffset isn't a direct property of LineDashedMaterial,
-        // but we can animate the dash by changing dashSize/gapSize or using a custom shader.
-        // However, a simple trick for LineDashedMaterial is to shift the distances.
-
         this.dashOffset -= this.flowSpeed;
-
-        // As LineDashedMaterial doesn't have dashOffset, we achieve flow by
-        // manipulating the dashSize/gapSize or updating the line distances array directly.
-        // A simpler approach for the built-in material without a custom shader is
-        // just to increment dashOffset in our own logic and update dashSize/gapSize slightly
-        // to simulate movement, or we can use a custom shader.
-
-        // For a true flow effect with LineDashedMaterial, we often need to manipulate the distances.
-        // Three.js computes line distances, we can add our offset to them.
 
         this.object.computeLineDistances();
 
         const distances = this.geometry.attributes.lineDistance;
         if (distances) {
             for (let i = 0; i < distances.count; i++) {
+                // Add the moving offset to the base computed line distances
                 distances.setX(i, distances.getX(i) + this.dashOffset);
             }
             distances.needsUpdate = true;

@@ -23,44 +23,70 @@ export class ChartNode extends DOMNode {
     public canvasEl: HTMLCanvasElement;
     private chartInstance: any = null;
 
+    private titleEl: HTMLElement | null = null;
+
     constructor(sg: SpaceGraph, spec: NodeSpec) {
         const w = spec.data?.width ?? 300;
         const h = spec.data?.height ?? 200;
+        const theme = spec.data?.theme ?? 'dark';
         const title = spec.label ?? spec.data?.title ?? '';
         const totalH = h + (title ? 32 : 0);
 
         const div = document.createElement('div');
-        super(sg, spec, div, w, totalH, { visible: false });
+        // Ensure DOMNode treats this as fully interactive, similar to HtmlNode
+        super(sg, spec, div, w, totalH, { opacity: 0.1 });
+
+        const bgColor = theme === 'dark' ? '#0f172a' : '#ffffff';
+        const titleColor = theme === 'dark' ? '#94a3b8' : '#64748b';
+        const borderColor = theme === 'dark' ? '#1e293b' : '#e2e8f0';
+
+        this.domElement.className = `spacegraph-chart-node theme-${theme}`;
         Object.assign(this.domElement.style, {
             width: `${w}px`,
-            height: `${h + (title ? 32 : 0)}px`,
-            background: '#0f172a',
+            height: `${totalH}px`,
+            background: bgColor,
             borderRadius: '8px',
             overflow: 'hidden',
             boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
             boxSizing: 'border-box',
-        } as CSSStyleDeclaration);
+            pointerEvents: 'auto',
+            display: 'flex',
+            flexDirection: 'column',
+            border: `1px solid ${borderColor}`
+        });
 
         if (title) {
-            const titleEl = document.createElement('div');
-            Object.assign(titleEl.style, {
+            this.titleEl = document.createElement('div');
+            Object.assign(this.titleEl.style, {
                 padding: '6px 10px',
-                color: '#94a3b8',
+                color: titleColor,
                 fontSize: '12px',
                 fontFamily: 'sans-serif',
-                borderBottom: '1px solid #1e293b',
+                fontWeight: '600',
+                borderBottom: `1px solid ${borderColor}`,
+                background: theme === 'dark' ? '#1e293b' : '#f8fafc',
+                flexShrink: '0'
             });
-            titleEl.textContent = title;
-            this.domElement.appendChild(titleEl);
+            this.titleEl.textContent = title;
+            this.domElement.appendChild(this.titleEl);
         }
 
+        const canvasContainer = document.createElement('div');
+        Object.assign(canvasContainer.style, {
+            position: 'relative',
+            flexGrow: '1',
+            width: '100%',
+            height: '100%'
+        });
+
         this.canvasEl = document.createElement('canvas');
-        this.canvasEl.width = w;
-        this.canvasEl.height = h;
-        Object.assign(this.canvasEl.style, { display: 'block' });
-        this.domElement.appendChild(this.canvasEl);
-
-
+        Object.assign(this.canvasEl.style, {
+            display: 'block',
+            width: '100%',
+            height: '100%'
+        });
+        canvasContainer.appendChild(this.canvasEl);
+        this.domElement.appendChild(canvasContainer);
 
         this._renderChart(spec);
     }
@@ -81,8 +107,30 @@ export class ChartNode extends DOMNode {
             Chart = null;
         }
 
+        const theme = spec.data?.theme ?? 'dark';
+        const isDark = theme === 'dark';
+        const textColor = isDark ? '#94a3b8' : '#64748b';
+        const gridColor = isDark ? '#1e293b' : '#e2e8f0';
+
         if (Chart) {
             this.chartInstance?.destroy();
+
+            // Allow full override via chartOptions if provided
+            const customOptions = spec.data?.chartOptions || {};
+
+            const baseOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: false,
+                plugins: {
+                    legend: { labels: { color: textColor, font: { size: 11 } } },
+                },
+                scales: chartType === 'pie' || chartType === 'radar' ? undefined : {
+                    x: { ticks: { color: textColor }, grid: { color: gridColor } },
+                    y: { ticks: { color: textColor }, grid: { color: gridColor } },
+                }
+            };
+
             this.chartInstance = new Chart(this.canvasEl, {
                 type: chartType,
                 data: {
@@ -91,37 +139,36 @@ export class ChartNode extends DOMNode {
                         label: ds.label ?? `Series ${i + 1}`,
                         data: ds.data ?? [],
                         backgroundColor: ds.color ?? `hsl(${i * 60}, 70%, 55%)`,
-                        borderColor: ds.color ?? `hsl(${i * 60}, 70%, 55%)`,
-                        borderWidth: 1,
+                        borderColor: ds.borderColor ?? ds.color ?? `hsl(${i * 60}, 70%, 55%)`,
+                        borderWidth: ds.borderWidth ?? 1,
+                        ...ds // Allow other chartjs specific dataset properties to pass through
                     })),
                 },
-                options: {
-                    responsive: false,
-                    animation: false,
-                    plugins: {
-                        legend: { labels: { color: '#94a3b8', font: { size: 11 } } },
-                    },
-                    scales:
-                        chartType !== 'pie'
-                            ? {
-                                x: { ticks: { color: '#64748b' }, grid: { color: '#1e293b' } },
-                                y: { ticks: { color: '#64748b' }, grid: { color: '#1e293b' } },
-                            }
-                            : undefined,
-                },
+                options: { ...baseOptions, ...customOptions },
             });
         } else {
             // Fallback built-in renderer (bar chart only)
-            this._renderFallback(labels, datasets);
+            this._renderFallback(labels, datasets, theme);
         }
     }
 
-    private _renderFallback(labels: string[], datasets: any[]) {
+    private _renderFallback(labels: string[], datasets: any[], theme: string) {
         const ctx = this.canvasEl.getContext('2d');
         if (!ctx) return;
-        const { width: w, height: h } = this.canvasEl;
+
+        // Ensure internal canvas resolution matches display size for sharp rendering
+        const rect = this.canvasEl.getBoundingClientRect();
+        // If not attached to DOM yet, fallback to node dimensions
+        const w = rect.width || this.data?.width || 300;
+        const h = rect.height || this.data?.height || 200;
+
+        this.canvasEl.width = w;
+        this.canvasEl.height = h;
+
         ctx.clearRect(0, 0, w, h);
-        ctx.fillStyle = '#0f172a';
+
+        const isDark = theme === 'dark';
+        ctx.fillStyle = isDark ? '#0f172a' : '#ffffff';
         ctx.fillRect(0, 0, w, h);
 
         const data: number[] = datasets[0]?.data ?? [];
@@ -139,11 +186,11 @@ export class ChartNode extends DOMNode {
 
         data.forEach((val, i) => {
             const barH = (val / max) * (h - 30);
-            ctx.fillStyle = `hsl(${i * 40}, 70%, 55%)`;
+            ctx.fillStyle = datasets[0]?.color ?? `hsl(${i * 40}, 70%, 55%)`;
             ctx.fillRect(pad + i * barW + 2, h - barH - 20, barW - 4, barH);
 
             if (labels[i]) {
-                ctx.fillStyle = '#64748b';
+                ctx.fillStyle = isDark ? '#64748b' : '#94a3b8';
                 ctx.font = '10px sans-serif';
                 ctx.textAlign = 'center';
                 ctx.fillText(labels[i], pad + i * barW + barW / 2, h - 5);
@@ -153,8 +200,30 @@ export class ChartNode extends DOMNode {
 
     updateSpec(updates: Partial<NodeSpec>): void {
         super.updateSpec(updates);
-        if (updates.data?.datasets || updates.data?.labels || updates.data?.chartType) {
-            this._renderChart({ data: { ...this.data, ...updates.data } });
+
+        if (updates.label !== undefined && this.titleEl) {
+             this.titleEl.textContent = updates.label;
+        }
+
+        if (updates.data) {
+             // Handle size updates
+             if (updates.data.width || updates.data.height) {
+                 const w = updates.data.width || this.data.width || 300;
+                 const h = updates.data.height || this.data.height || 200;
+                 const title = updates.label ?? this.label ?? this.data.title ?? '';
+                 const totalH = h + (title ? 32 : 0);
+
+                 this.domElement.style.width = `${w}px`;
+                 this.domElement.style.height = `${totalH}px`;
+
+                 if (this.plane) {
+                     this.plane.scale.set(w, totalH, 1);
+                 }
+             }
+
+             if (updates.data.datasets || updates.data.labels || updates.data.chartType || updates.data.theme || updates.data.chartOptions) {
+                 this._renderChart({ data: { ...this.data, ...updates.data } });
+             }
         }
     }
 

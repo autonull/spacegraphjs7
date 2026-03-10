@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Interactive Minimap - SpaceGraphJS</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            overflow: hidden;
+            background-color: #050510;
+            font-family: system-ui, -apple-system, sans-serif;
+            color: white;
+        }
+
+        #container {
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .header {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 10;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(8px);
+            padding: 16px 24px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .header h1 {
+            font-size: 20px;
+            margin-bottom: 4px;
+            background: -webkit-linear-gradient(135deg, #3b82f6, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header p {
+            color: #94a3b8;
+            font-size: 14px;
+            max-width: 300px;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>Interactive Minimap</h1>
+        <p>A huge graph layout demonstrating the MinimapPlugin. Click and drag inside the minimap on the bottom right to quickly pan the main camera.</p>
+    </div>
+    <div id="container"></div>
+
+    <script type="module">
+        import { SpaceGraph } from '../src/index.ts';
+
+        const nodes = [];
+        const edges = [];
+
+        // Generate a large sprawling graph
+        const CLUSTERS = 8;
+        const NODES_PER_CLUSTER = 40;
+
+        for (let c = 0; c < CLUSTERS; c++) {
+            const cx = (Math.random() - 0.5) * 6000;
+            const cy = (Math.random() - 0.5) * 6000;
+
+            const clusterId = `cluster-${c}`;
+
+            // Central node
+            nodes.push({
+                id: clusterId,
+                type: 'ShapeNode',
+                position: [cx, cy, 0],
+                data: { shape: 'sphere', size: 60, color: 0x8b5cf6 }
+            });
+
+            for (let i = 0; i < NODES_PER_CLUSTER; i++) {
+                const id = `node-${c}-${i}`;
+                nodes.push({
+                    id,
+                    type: 'InstancedShapeNode',
+                    position: [
+                        cx + (Math.random() - 0.5) * 800,
+                        cy + (Math.random() - 0.5) * 800,
+                        (Math.random() - 0.5) * 200
+                    ],
+                    data: { shape: 'box', size: 15, color: 0x3b82f6 }
+                });
+
+                edges.push({
+                    id: `e-${c}-${i}`,
+                    source: id,
+                    target: clusterId,
+                    type: 'FlowEdge',
+                    data: { color: 0x3b82f6, opacity: 0.3, flowSpeed: 0.5, dashSize: 10, gapSize: 5 }
+                });
+
+                // Random cross connections
+                if (Math.random() > 0.8 && i > 0) {
+                     edges.push({
+                        id: `cross-${c}-${i}`,
+                        source: id,
+                        target: `node-${c}-${i-1}`,
+                        type: 'Edge',
+                        data: { color: 0x1e293b, opacity: 0.5 }
+                    });
+                }
+            }
+
+            // Connect clusters together
+            if (c > 0) {
+                 edges.push({
+                    id: `bridge-${c}`,
+                    source: clusterId,
+                    target: `cluster-${c-1}`,
+                    type: 'AnimatedEdge',
+                    data: { color: 0xa855f7, speed: 0.002, particleSize: 10, particleColor: 0xffffff }
+                });
+            }
+        }
+
+        const sg = SpaceGraph.create('#container', { nodes, edges });
+
+        // Enable minimap plugin
+        const minimap = sg.pluginManager.getPlugin('minimap-plugin');
+        if (minimap) {
+             minimap.settings.zoom = 4000; // Increase zoom to see the whole sprawling graph
+             minimap.settings.size = 200;  // Make the minimap a bit bigger
+        }
+
+        sg.render();
+        sg.fitView(100);
+    </script>
+</body>
+
+</html>
