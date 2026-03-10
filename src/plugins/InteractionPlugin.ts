@@ -19,11 +19,38 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
     private dragOffset = new THREE.Vector3();
     private intersection = new THREE.Vector3();
 
+    // Box Selection State
+    private isBoxSelecting = false;
+    private selectionBoxEl: HTMLElement | null = null;
+    private selectionStart = new THREE.Vector2();
+    private selectedNodes: Set<any> = new Set();
+
     init(sg: SpaceGraph): void {
         this.sg = sg;
-        this.initDrag();
+        this.createSelectionBoxElement();
+        this.initDragAndSelect();
         this.initClick();
         this.initDblClick();
+    }
+
+    private createSelectionBoxElement() {
+        if (typeof document === 'undefined') return;
+        this.selectionBoxEl = document.createElement('div');
+        Object.assign(this.selectionBoxEl.style, {
+            position: 'absolute',
+            border: '1px solid rgba(139, 92, 246, 0.8)',
+            backgroundColor: 'rgba(139, 92, 246, 0.2)',
+            pointerEvents: 'none',
+            display: 'none',
+            zIndex: '9999'
+        });
+
+        // Ensure it's attached to the container
+        const domElement = this.sg.renderer.renderer.domElement;
+        if (domElement.parentElement) {
+            domElement.parentElement.style.position = 'relative';
+            domElement.parentElement.appendChild(this.selectionBoxEl);
+        }
     }
 
     // Helper to get all current node meshes to avoid recreation on every event
@@ -81,6 +108,14 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
                 const node = this.getNodeFromMesh(nodeIntersects[0].object);
                 if (node) {
                     this.sg.events.emit('node:dblclick', { node, event: e });
+
+                    // Semantic navigation: fly to the node
+                    if (this.sg.cameraControls) {
+                        const targetPos = node.position.clone();
+                        // Adjust radius based on node size or a reasonable default
+                        const targetRadius = node.data?.width ? Math.max(node.data.width * 1.5, 150) : 150;
+                        this.sg.cameraControls.flyTo(targetPos, targetRadius);
+                    }
                 }
             }
         });
@@ -140,13 +175,32 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
         return null;
     }
 
-    private initDrag(): void {
+    private initDragAndSelect(): void {
         const canvas = this.sg.renderer.renderer.domElement;
 
         canvas.addEventListener('pointerdown', (e) => {
             this.updateMousePosition(e);
             const hit = this.getIntersectedNode();
 
+            // Shift key pressed => Box selection
+            if (e.shiftKey) {
+                this.isBoxSelecting = true;
+                this.selectionStart.set(e.clientX, e.clientY);
+                this.selectedNodes.clear();
+
+                if (this.selectionBoxEl) {
+                    this.selectionBoxEl.style.display = 'block';
+                    this.selectionBoxEl.style.left = `${e.clientX}px`;
+                    this.selectionBoxEl.style.top = `${e.clientY}px`;
+                    this.selectionBoxEl.style.width = '0px';
+                    this.selectionBoxEl.style.height = '0px';
+                }
+
+                this.sg.cameraControls.controls.enabled = false; // Disable orbit while selecting
+                return;
+            }
+
+            // Normal Drag
             if (hit && hit.node) {
                 this.isDragging = true;
                 this.dragNode = hit.node;
@@ -171,6 +225,24 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
         });
 
         canvas.addEventListener('pointermove', (e) => {
+            if (this.isBoxSelecting && this.selectionBoxEl) {
+                const currentX = e.clientX;
+                const currentY = e.clientY;
+
+                const left = Math.min(this.selectionStart.x, currentX);
+                const top = Math.min(this.selectionStart.y, currentY);
+                const width = Math.abs(currentX - this.selectionStart.x);
+                const height = Math.abs(currentY - this.selectionStart.y);
+
+                this.selectionBoxEl.style.left = `${left}px`;
+                this.selectionBoxEl.style.top = `${top}px`;
+                this.selectionBoxEl.style.width = `${width}px`;
+                this.selectionBoxEl.style.height = `${height}px`;
+
+                this.updateSelectionBox(left, top, width, height, canvas);
+                return;
+            }
+
             if (!this.isDragging || !this.dragNode) return;
 
             this.updateMousePosition(e);
@@ -186,7 +258,16 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
             }
         });
 
-        canvas.addEventListener('pointerup', (_e) => {
+        const endInteraction = () => {
+            if (this.isBoxSelecting) {
+                this.isBoxSelecting = false;
+                if (this.selectionBoxEl) this.selectionBoxEl.style.display = 'none';
+                this.sg.cameraControls.controls.enabled = true;
+
+                // Emit selection event
+                this.sg.events.emit('interaction:selection', { nodes: Array.from(this.selectedNodes) });
+            }
+
             if (this.isDragging && this.dragNode) {
                 this.dragNode.data.pinned = false; // Allow physics to resume
                 this.sg.events.emit('interaction:dragend', { node: this.dragNode });
@@ -194,17 +275,38 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
                 this.dragNode = null;
                 this.sg.renderer.renderer.domElement.style.cursor = 'auto';
             }
-        });
+        };
 
-        canvas.addEventListener('pointercancel', (_e) => {
-            if (this.isDragging && this.dragNode) {
-                this.dragNode.data.pinned = false;
-                this.sg.events.emit('interaction:dragend', { node: this.dragNode });
-                this.isDragging = false;
-                this.dragNode = null;
-                this.sg.renderer.renderer.domElement.style.cursor = 'auto';
+        canvas.addEventListener('pointerup', endInteraction);
+        canvas.addEventListener('pointercancel', endInteraction);
+    }
+
+    private updateSelectionBox(left: number, top: number, width: number, height: number, canvas: HTMLCanvasElement) {
+        const rect = canvas.getBoundingClientRect();
+
+        // Convert screen coordinates to NDC space for frustum testing
+        const minX = ((left - rect.left) / rect.width) * 2 - 1;
+        const maxX = (((left + width) - rect.left) / rect.width) * 2 - 1;
+        // Invert Y for NDC
+        const minY = -(((top + height) - rect.top) / rect.height) * 2 + 1;
+        const maxY = -((top - rect.top) / rect.height) * 2 + 1;
+
+        // Build frustum from the current camera to test against nodes
+        this.sg.renderer.camera.updateMatrixWorld();
+
+        // Use a simpler approach: project node positions to screen space and check if they fall in the box
+        this.selectedNodes.clear();
+        const vec = new THREE.Vector3();
+
+        for (const node of this.sg.graph.nodes.values()) {
+            vec.copy(node.position);
+            vec.project(this.sg.renderer.camera);
+
+            // vec.x and vec.y are now in NDC space [-1, 1]
+            if (vec.x >= minX && vec.x <= maxX && vec.y >= minY && vec.y <= maxY && vec.z <= 1) {
+                this.selectedNodes.add(node);
             }
-        });
+        }
     }
 
     private getNodeFromMesh(mesh: THREE.Object3D): any {
@@ -223,5 +325,10 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
         // but explicit removal is best-practice if SpaceGraph instance drops.
         this.isDragging = false;
         this.dragNode = null;
+        this.isBoxSelecting = false;
+        this.selectedNodes.clear();
+        if (this.selectionBoxEl && this.selectionBoxEl.parentElement) {
+            this.selectionBoxEl.parentElement.removeChild(this.selectionBoxEl);
+        }
     }
 }

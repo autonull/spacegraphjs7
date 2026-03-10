@@ -26,6 +26,7 @@ async function main() {
             'html.html',
             'large.html',
             'instanced.html',
+            '../examples/complex-hud-layout.html'
         ];
 
         for (const demo of demos) {
@@ -37,7 +38,7 @@ async function main() {
             });
             await page.waitForTimeout(2000); // Give the graph 2 seconds to stabilize its layout
 
-            const name = demo.replace('.html', '');
+            const name = demo.split('/').pop().replace('.html', '');
             await page.screenshot({ path: `verification/${name}.png` });
             console.log(`✓ Captured ${name}.png`);
         }

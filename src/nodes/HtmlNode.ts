@@ -4,40 +4,66 @@ import type { NodeSpec } from '../types';
 
 export class HtmlNode extends DOMNode {
     constructor(sg: SpaceGraph, spec: NodeSpec) {
+        const width = spec.data?.width || 200;
+        const height = spec.data?.height || 100;
         const div = document.createElement('div');
-        super(sg, spec, div, 200, 100, { opacity: 0.1 });
-        this.domElement.className = 'spacegraph-html-node';
-        this.domElement.style.width = '200px';
-        this.domElement.style.height = '100px';
-        this.domElement.style.backgroundColor = spec.data?.color || 'rgba(51, 102, 255, 0.8)';
-        this.domElement.style.color = 'white';
-        this.domElement.style.border = '2px solid white';
-        this.domElement.style.borderRadius = '8px';
-        this.domElement.style.padding = '10px';
-        this.domElement.style.boxShadow = '0 4px 8px rgba(0,0,0,0.3)';
-        this.domElement.style.display = 'flex';
-        this.domElement.style.flexDirection = 'column';
-        this.domElement.style.justifyContent = 'center';
-        this.domElement.style.alignItems = 'center';
+        super(sg, spec, div, width, height, { opacity: 0.1 });
+
+        this.domElement.className = `spacegraph-html-node ${spec.data?.className || ''}`;
+
+        Object.assign(this.domElement.style, {
+            width: `${width}px`,
+            height: `${height}px`,
+            backgroundColor: spec.data?.color || 'rgba(51, 102, 255, 0.8)',
+            color: 'white',
+            border: '2px solid white',
+            borderRadius: '8px',
+            padding: '10px',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.3)',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
+            pointerEvents: spec.data?.pointerEvents || 'auto',
+            overflow: 'hidden',
+            boxSizing: 'border-box'
+        });
 
         // Ensure subclasses don't get the default title/desc if they provide custom HTML logic
         if (this.constructor.name === 'HtmlNode') {
-            const titleEl = document.createElement('h3');
-            titleEl.style.margin = '0';
-            titleEl.style.fontFamily = 'sans-serif';
-            titleEl.style.fontSize = '16px';
-            titleEl.className = 'html-node-title';
-            titleEl.textContent = spec.label || 'HTML Node';
+            if (spec.data?.html) {
+                // Render custom HTML directly
+                this.domElement.innerHTML = spec.data.html;
+                // Since innerHTML is replaced, we ensure styling supports it
+                Object.assign(this.domElement.style, {
+                    display: 'block', // Block is usually better for custom HTML content
+                    padding: '0',     // Remove padding if injecting raw HTML
+                    border: 'none',
+                    backgroundColor: 'transparent'
+                });
+            } else {
+                // Render default label & description
+                const titleEl = document.createElement('h3');
+                Object.assign(titleEl.style, {
+                    margin: '0',
+                    fontFamily: 'sans-serif',
+                    fontSize: '16px'
+                });
+                titleEl.className = 'html-node-title';
+                titleEl.textContent = spec.label || 'HTML Node';
 
-            const descEl = document.createElement('p');
-            descEl.style.margin = '5px 0 0';
-            descEl.style.fontFamily = 'sans-serif';
-            descEl.style.fontSize = '12px';
-            descEl.className = 'html-node-desc';
-            descEl.textContent = spec.data?.description || '';
+                const descEl = document.createElement('p');
+                Object.assign(descEl.style, {
+                    margin: '5px 0 0',
+                    fontFamily: 'sans-serif',
+                    fontSize: '12px'
+                });
+                descEl.className = 'html-node-desc';
+                descEl.textContent = spec.data?.description || '';
 
-            this.domElement.appendChild(titleEl);
-            this.domElement.appendChild(descEl);
+                this.domElement.appendChild(titleEl);
+                this.domElement.appendChild(descEl);
+            }
         }
 
         this.updatePosition(this.position.x, this.position.y, this.position.z);
@@ -46,21 +72,42 @@ export class HtmlNode extends DOMNode {
     updateSpec(updates: Partial<NodeSpec>) {
         super.updateSpec(updates);
 
-        if (updates.data && updates.data.color) {
-            this.domElement.style.backgroundColor = updates.data.color;
-        }
+        if (updates.data) {
+            if (updates.data.color) {
+                this.domElement.style.backgroundColor = updates.data.color;
+            }
+            if (updates.data.className !== undefined) {
+                this.domElement.className = `spacegraph-html-node ${updates.data.className}`;
+            }
+            if (updates.data.pointerEvents) {
+                this.domElement.style.pointerEvents = updates.data.pointerEvents;
+            }
+            if (updates.data.width || updates.data.height) {
+                const w = updates.data.width || this.data.width || 200;
+                const h = updates.data.height || this.data.height || 100;
+                this.domElement.style.width = `${w}px`;
+                this.domElement.style.height = `${h}px`;
+                if (this.plane) {
+                    this.plane.scale.set(w, h, 1);
+                }
+            }
 
-        if (updates.label !== undefined) {
-            const titleEl = this.domElement.querySelector('.html-node-title');
-            if (titleEl) {
-                titleEl.textContent = updates.label || 'HTML Node';
+            if (this.constructor.name === 'HtmlNode') {
+                if (updates.data.html !== undefined) {
+                    this.domElement.innerHTML = updates.data.html;
+                } else if (updates.data.description !== undefined) {
+                    const descEl = this.domElement.querySelector('.html-node-desc');
+                    if (descEl) {
+                        descEl.textContent = updates.data.description;
+                    }
+                }
             }
         }
 
-        if (updates.data && updates.data.description !== undefined) {
-            const descEl = this.domElement.querySelector('.html-node-desc');
-            if (descEl) {
-                descEl.textContent = updates.data.description || '';
+        if (updates.label !== undefined && this.constructor.name === 'HtmlNode' && !this.data.html) {
+            const titleEl = this.domElement.querySelector('.html-node-title');
+            if (titleEl) {
+                titleEl.textContent = updates.label;
             }
         }
     }
