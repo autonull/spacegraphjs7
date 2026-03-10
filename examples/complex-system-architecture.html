@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Complex System Architecture - SpaceGraphJS</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            overflow: hidden;
+            background-color: #050510;
+            font-family: system-ui, -apple-system, sans-serif;
+            color: white;
+        }
+
+        #container {
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .header {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 10;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(8px);
+            padding: 16px 24px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .header h1 {
+            font-size: 20px;
+            margin-bottom: 4px;
+            background: -webkit-linear-gradient(135deg, #3b82f6, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header p {
+            color: #94a3b8;
+            font-size: 14px;
+            max-width: 300px;
+            line-height: 1.4;
+        }
+
+        .nav-link {
+            color: #3b82f6;
+            text-decoration: none;
+            font-size: 14px;
+            margin-bottom: 8px;
+            display: inline-block;
+        }
+
+        .nav-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="./index.html" class="nav-link">← Back to Gallery</a>
+        <h1>System Architecture</h1>
+        <p>A complex, interactive cloud infrastructure visualization utilizing GlobeNode for geographic regions, ChartNodes for metrics, and dynamic edges for data flow.</p>
+    </div>
+    <div id="container"></div>
+
+    <script type="module">
+        import { SpaceGraph } from '../src/index.ts';
+
+        const nodes = [
+            // Core Global Router
+            {
+                id: 'global-router',
+                type: 'GlobeNode',
+                position: [0, 0, 0],
+                data: {
+                    radius: 150,
+                    textureUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cd/Land_ocean_ice_2048.jpg/1024px-Land_ocean_ice_2048.jpg',
+                    segments: 64,
+                    markers: [
+                        { lat: 40.7128, lng: -74.0060, size: 5, color: 0x3b82f6 }, // US East
+                        { lat: 51.5074, lng: -0.1278, size: 5, color: 0x10b981 },  // EU West
+                        { lat: 35.6895, lng: 139.6917, size: 5, color: 0xef4444 }  // Asia East
+                    ]
+                }
+            },
+
+            // --- US East Region ---
+            {
+                id: 'us-east-lb',
+                type: 'ShapeNode',
+                label: 'US-East Load Balancer',
+                position: [-400, 200, 0],
+                data: { shape: 'box', color: 0x3b82f6 }
+            },
+            {
+                id: 'us-east-api-1',
+                type: 'ShapeNode',
+                label: 'API Service 1',
+                position: [-600, 300, 0],
+                data: { shape: 'sphere', color: 0x94a3b8 }
+            },
+            {
+                id: 'us-east-api-2',
+                type: 'ShapeNode',
+                label: 'API Service 2',
+                position: [-600, 100, 0],
+                data: { shape: 'sphere', color: 0x94a3b8 }
+            },
+            {
+                id: 'us-east-db',
+                type: 'DataNode',
+                label: 'Primary Database',
+                position: [-800, 200, 0],
+                data: {
+                    data: {
+                        status: 'Healthy',
+                        connections: 450,
+                        replication: 'Syncing',
+                        latencyMs: 12
+                    },
+                    width: 250,
+                    theme: 'dark',
+                    expanded: true
+                }
+            },
+
+            // --- EU West Region ---
+            {
+                id: 'eu-west-lb',
+                type: 'ShapeNode',
+                label: 'EU-West Load Balancer',
+                position: [400, 200, 0],
+                data: { shape: 'box', color: 0x10b981 }
+            },
+            {
+                id: 'eu-west-api',
+                type: 'ShapeNode',
+                label: 'API Service (EU)',
+                position: [600, 200, 0],
+                data: { shape: 'sphere', color: 0x94a3b8 }
+            },
+            {
+                id: 'eu-west-db',
+                type: 'DataNode',
+                label: 'Replica Database',
+                position: [800, 200, 0],
+                data: {
+                    data: {
+                        status: 'Healthy',
+                        connections: 120,
+                        replication: 'Lag 50ms',
+                        latencyMs: 45
+                    },
+                    width: 250,
+                    theme: 'dark',
+                    expanded: true
+                }
+            },
+
+            // --- Control Plane & Monitoring ---
+            {
+                id: 'control-panel',
+                type: 'HtmlNode',
+                position: [0, -350, 0],
+                data: {
+                    html: `
+                        <div style="background: rgba(15, 23, 42, 0.9); padding: 20px; border-radius: 8px; border: 1px solid #3b82f6; width: 300px;">
+                            <h3 style="color: #60a5fa; margin-bottom: 15px;">System Control Plane</h3>
+                            <button id="btn-scale" style="width: 100%; padding: 10px; background: #3b82f6; border: none; border-radius: 4px; color: white; cursor: pointer; font-weight: bold; margin-bottom: 10px;">Scale Up US-East</button>
+                            <button id="btn-failover" style="width: 100%; padding: 10px; background: #ef4444; border: none; border-radius: 4px; color: white; cursor: pointer; font-weight: bold;">Trigger EU Failover</button>
+                        </div>
+                    `,
+                    width: 300,
+                    height: 180
+                }
+            },
+            {
+                id: 'metrics-chart',
+                type: 'ChartNode',
+                position: [-400, -350, 0],
+                data: {
+                    chartType: 'line',
+                    width: 350,
+                    height: 200,
+                    theme: 'dark',
+                    labels: ['10:00', '10:05', '10:10', '10:15', '10:20', '10:25'],
+                    datasets: [
+                        { label: 'Global Traffic (req/s)', data: [1200, 1900, 3000, 5000, 2000, 3000], color: '#a855f7', fill: true, backgroundColor: 'rgba(168, 85, 247, 0.2)' }
+                    ],
+                    chartOptions: { elements: { line: { tension: 0.4 } } }
+                }
+            },
+            {
+                id: 'error-chart',
+                type: 'ChartNode',
+                position: [400, -350, 0],
+                data: {
+                    chartType: 'bar',
+                    width: 350,
+                    height: 200,
+                    theme: 'dark',
+                    labels: ['US-East', 'EU-West', 'Asia-East'],
+                    datasets: [
+                        { label: '5xx Errors', data: [12, 5, 2], color: '#ef4444' }
+                    ]
+                }
+            }
+        ];
+
+        const edges = [
+            // Global to LBs
+            { id: 'e-g-us', source: 'global-router', target: 'us-east-lb', type: 'AnimatedEdge', data: { color: 0x3b82f6, speed: 0.02, particleColor: 0xffffff } },
+            { id: 'e-g-eu', source: 'global-router', target: 'eu-west-lb', type: 'AnimatedEdge', data: { color: 0x10b981, speed: 0.01, particleColor: 0xffffff } },
+
+            // US East Internal
+            { id: 'e-us-api1', source: 'us-east-lb', target: 'us-east-api-1', type: 'FlowEdge', data: { color: 0x60a5fa, flowSpeed: 2 } },
+            { id: 'e-us-api2', source: 'us-east-lb', target: 'us-east-api-2', type: 'FlowEdge', data: { color: 0x60a5fa, flowSpeed: 2 } },
+            { id: 'e-us-db1', source: 'us-east-api-1', target: 'us-east-db', type: 'DynamicThicknessEdge', data: { color: 0x8b5cf6, weight: 0.6 } },
+            { id: 'e-us-db2', source: 'us-east-api-2', target: 'us-east-db', type: 'DynamicThicknessEdge', data: { color: 0x8b5cf6, weight: 0.6 } },
+
+            // EU West Internal
+            { id: 'e-eu-api', source: 'eu-west-lb', target: 'eu-west-api', type: 'FlowEdge', data: { color: 0x34d399, flowSpeed: 1.5 } },
+            { id: 'e-eu-db', source: 'eu-west-api', target: 'eu-west-db', type: 'DynamicThicknessEdge', data: { color: 0x8b5cf6, weight: 0.4 } },
+
+            // Cross-Region Replication
+            { id: 'e-rep', source: 'us-east-db', target: 'eu-west-db', type: 'DottedEdge', data: { color: 0xf59e0b, dashSize: 10, gapSize: 5 } },
+
+            // Monitoring Connections
+            { id: 'e-mon1', source: 'control-panel', target: 'global-router', type: 'DottedEdge', data: { color: 0x64748b } },
+            { id: 'e-mon2', source: 'metrics-chart', target: 'global-router', type: 'CurvedEdge', data: { color: 0x64748b } },
+            { id: 'e-mon3', source: 'error-chart', target: 'global-router', type: 'CurvedEdge', data: { color: 0x64748b } }
+        ];
+
+        const sg = SpaceGraph.create('#container', { nodes, edges });
+
+        // Spin the globe slowly
+        sg.events.on('prerender', () => {
+             const earth = sg.graph.nodes.get('global-router');
+             if (earth && earth.object) {
+                 earth.object.rotation.y += 0.001;
+             }
+        });
+
+        // Add interaction handlers for the HTML Node
+        sg.events.on('render', () => {
+            const controlNode = sg.graph.nodes.get('control-panel');
+            if (controlNode && controlNode.domElement && !controlNode._eventsAttached) {
+                const btnScale = controlNode.domElement.querySelector('#btn-scale');
+                const btnFailover = controlNode.domElement.querySelector('#btn-failover');
+
+                if (btnScale) {
+                    btnScale.addEventListener('click', () => {
+                        alert('Scaling up US-East region (simulated)');
+                        const chartNode = sg.graph.nodes.get('metrics-chart');
+                        if (chartNode) {
+                            const currentData = chartNode.data.datasets[0].data;
+                            const newData = [...currentData.slice(1), 8000];
+                            chartNode.updateSpec({
+                                data: {
+                                    datasets: [{ ...chartNode.data.datasets[0], data: newData }]
+                                }
+                            });
+                        }
+                    });
+                }
+
+                if (btnFailover) {
+                    btnFailover.addEventListener('click', () => {
+                        alert('Triggering EU Failover (simulated)');
+                        const edgeEu = sg.graph.edges.find(e => e.id === 'e-g-eu');
+                        const edgeUs = sg.graph.edges.find(e => e.id === 'e-g-us');
+
+                        if (edgeEu) edgeEu.updateSpec({ data: { speed: 0.05, particleColor: 0xff0000 } });
+                        if (edgeUs) edgeUs.updateSpec({ data: { speed: 0.005 } });
+                    });
+                }
+
+                controlNode._eventsAttached = true;
+            }
+        });
+
+        sg.render();
+        sg.fitView(150);
+
+    </script>
+</body>
+</html>

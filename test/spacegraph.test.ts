@@ -36,6 +36,7 @@ import { VisionManager } from '../src/core/VisionManager';
 // Lightweight mock SpaceGraph — no browser APIs, no WebGL required
 // ---------------------------------------------------------------------------
 import { InteractionPlugin } from '../src/plugins/InteractionPlugin';
+import { SpaceGraph } from '../src/SpaceGraph';
 function makeSpaceGraph() {
     const scene = {
         add: vi.fn(),
@@ -170,7 +171,17 @@ function makeSpaceGraph() {
         events,
         pluginManager,
         poolManager,
+        cameraControls: { controls: { target: new THREE.Vector3(), update: vi.fn() } },
+        export: SpaceGraph.prototype.export,
+        import: SpaceGraph.prototype.import,
+        loadSpec: SpaceGraph.prototype.loadSpec
     };
+
+    // Bind prototype methods to this mock object
+    sg.export = sg.export.bind(sg);
+    sg.import = sg.import.bind(sg);
+    sg.loadSpec = sg.loadSpec.bind(sg);
+
     return sg;
 }
 
@@ -798,6 +809,53 @@ describe('ErgonomicsPlugin', () => {
         const m2 = p.getMetrics();
         expect(m1.totalInteractions).toBe(0);
         expect(m2.totalInteractions).toBe(1);
+    });
+});
+
+// ============================================================
+// Graph CRUD and Serialization
+// ============================================================
+
+describe('Graph Serialization', () => {
+    let sg: any;
+    beforeEach(() => {
+        sg = makeSpaceGraph();
+        sg.pluginManager.registerNodeType('ShapeNode', ShapeNode);
+        sg.pluginManager.registerEdgeType('Edge', Edge);
+
+        // Using real `SpaceGraph.prototype.export` and `import` bound to the mock instance.
+    });
+
+    it('exports graph nodes and edges', () => {
+        sg.graph.addNode({ id: 'a', type: 'ShapeNode', position: [10, 20, 30], data: { color: 'red' } });
+        sg.graph.addNode({ id: 'b', type: 'ShapeNode', position: [-10, 0, 0] });
+        sg.graph.addEdge({ id: 'e1', source: 'a', target: 'b', type: 'Edge' });
+
+        const exported = sg.export();
+
+        expect(exported.nodes.length).toBe(2);
+        expect(exported.edges.length).toBe(1);
+        expect(exported.nodes[0].id).toBe('a');
+        expect(exported.nodes[0].position).toEqual([10, 20, 30]);
+        expect(exported.nodes[0].data.color).toBe('red');
+    });
+
+    it('imports graph data correctly', () => {
+        const spec = {
+            nodes: [
+                { id: '1', type: 'ShapeNode', position: [0, 0, 0] },
+                { id: '2', type: 'ShapeNode', position: [100, 100, 100] }
+            ],
+            edges: [
+                { id: 'e-1-2', source: '1', target: '2', type: 'Edge' }
+            ]
+        };
+
+        sg.import(spec);
+
+        expect(sg.graph.nodes.size).toBe(2);
+        expect(sg.graph.edges.length).toBe(1);
+        expect(sg.graph.nodes.get('2').position.x).toBe(100);
     });
 });
 
