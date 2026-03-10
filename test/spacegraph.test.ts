@@ -35,6 +35,7 @@ import { VisionManager } from '../src/core/VisionManager';
 // ---------------------------------------------------------------------------
 // Lightweight mock SpaceGraph — no browser APIs, no WebGL required
 // ---------------------------------------------------------------------------
+import { InteractionPlugin } from '../src/plugins/InteractionPlugin';
 function makeSpaceGraph() {
     const scene = {
         add: vi.fn(),
@@ -925,6 +926,77 @@ describe('EventManager (Batching)', () => {
         // Should only have fired ONCE with the the LAST payload
         expect(spy).toHaveBeenCalledTimes(1);
         expect(spy).toHaveBeenCalledWith({ node: { id: '3' } });
+    });
+});
+
+// ============================================================
+// Interaction tests
+// ============================================================
+
+describe('InteractionPlugin', () => {
+    let sg: any;
+    let interaction: InteractionPlugin;
+
+    beforeEach(() => {
+        sg = makeSpaceGraph();
+        // Make camera look like a PerspectiveCamera for Raycaster
+        sg.renderer.camera.isPerspectiveCamera = true;
+        sg.renderer.camera.matrixWorld = new THREE.Matrix4();
+        sg.renderer.camera.matrixWorldInverse = new THREE.Matrix4();
+        sg.renderer.camera.projectionMatrix = new THREE.Matrix4();
+        sg.renderer.camera.projectionMatrixInverse = new THREE.Matrix4();
+        sg.cameraControls = { flyTo: vi.fn() };
+        interaction = new InteractionPlugin();
+        interaction.init(sg);
+        sg.pluginManager.register('InteractionPlugin', interaction);
+    });
+
+    it('emits node:dblclick event when a node is double clicked', () => {
+        const n = sg.graph.addNode({ id: 'n1', type: 'ShapeNode', position: [0, 0, 0] });
+        const spy = vi.fn();
+        sg.events.on('node:dblclick', spy);
+
+        // Mock Raycaster
+        (interaction as any).raycaster.intersectObjects = vi.fn().mockReturnValue([{ object: n.object.children[0] }]);
+
+        // Fire event
+        const canvas = sg.renderer.renderer.domElement;
+        const e = new Event('dblclick') as any;
+        e.clientX = 400;
+        e.clientY = 300;
+        canvas.dispatchEvent(e);
+
+        expect(spy).toHaveBeenCalledTimes(1);
+        expect(spy).toHaveBeenCalledWith(expect.objectContaining({ node: n }));
+    });
+
+    it('emits edge:dblclick event and flies to target node', () => {
+        const n1 = sg.graph.addNode({ id: 'n1', type: 'ShapeNode', position: [0, 0, 0] });
+        const n2 = sg.graph.addNode({ id: 'n2', type: 'ShapeNode', position: [100, 100, 0] });
+        const e1 = sg.graph.addEdge({ id: 'e1', type: 'Edge', source: 'n1', target: 'n2' });
+
+        const spy = vi.fn();
+        sg.events.on('edge:dblclick', spy);
+
+        // Mock Raycaster to hit edge
+        (interaction as any).raycaster.intersectObjects = vi.fn((objs: any[]) => {
+            if (objs.includes(e1.object)) return [{ object: e1.object }];
+            return [];
+        });
+
+        // Fire event
+        const canvas = sg.renderer.renderer.domElement;
+        const e = new Event('dblclick') as any;
+        e.clientX = 400;
+        e.clientY = 300;
+        canvas.dispatchEvent(e);
+
+        expect(spy).toHaveBeenCalledTimes(1);
+        expect(spy).toHaveBeenCalledWith(expect.objectContaining({ edge: e1 }));
+
+        // Assert flyTo was called with the target node's position
+        expect(sg.cameraControls.flyTo).toHaveBeenCalledTimes(1);
+        expect(sg.cameraControls.flyTo).toHaveBeenCalledWith(n2.position.clone(), 300);
     });
 });
 
