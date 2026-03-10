@@ -87,15 +87,28 @@ export class Graph {
             return null;
         }
 
-        const EdgeType = this.sg.pluginManager.getEdgeType(spec.type);
+        let EdgeType = this.sg.pluginManager.getEdgeType(spec.type);
         if (!EdgeType) {
             console.warn(`[SpaceGraph] Edge type "${spec.type}" not registered.`);
             return null;
         }
 
-        const edge = new EdgeType(this.sg, spec, sourceNode, targetNode);
+        let edge;
+        if (sourceNode.sg !== targetNode.sg) {
+            const InterGraphEdgeClass = this.sg.pluginManager.getEdgeType('InterGraphEdge');
+            if (InterGraphEdgeClass) {
+                 EdgeType = InterGraphEdgeClass;
+            } else {
+                 console.warn('[SpaceGraph] InterGraphEdge not registered. Falling back to default edge.');
+            }
+            edge = new EdgeType(this.sg, spec, sourceNode, targetNode);
+            (edge as any).isInterGraphEdge = true;
+        } else {
+            edge = new EdgeType(this.sg, spec, sourceNode, targetNode);
+            this.sg.renderer.scene.add(edge.object);
+        }
+
         this.edges.push(edge);
-        this.sg.renderer.scene.add(edge.object);
         this.sg.events.emit('edge:added', { edge });
         this._notifyPlugins('onEdgeAdded', edge);
         return edge;
