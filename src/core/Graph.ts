@@ -82,19 +82,14 @@ export class Graph {
 
         // If not found locally, search across other registered instances for InterGraphEdge
         if (!sourceNode || !targetNode) {
-            if (typeof window !== 'undefined') {
-                const w = window as any;
-                if (w.__SPACEGRAPH_INSTANCES__) {
-                    for (const inst of w.__SPACEGRAPH_INSTANCES__) {
-                        if (!sourceNode && inst.graph.nodes.has(spec.source)) {
-                            sourceNode = inst.graph.nodes.get(spec.source);
-                        }
-                        if (!targetNode && inst.graph.nodes.has(spec.target)) {
-                            targetNode = inst.graph.nodes.get(spec.target);
-                        }
-                        if (sourceNode && targetNode) break;
-                    }
+            for (const inst of this.sg.constructor.prototype.constructor.instances || []) {
+                if (!sourceNode && inst.graph.nodes.has(spec.source)) {
+                    sourceNode = inst.graph.nodes.get(spec.source);
                 }
+                if (!targetNode && inst.graph.nodes.has(spec.target)) {
+                    targetNode = inst.graph.nodes.get(spec.target);
+                }
+                if (sourceNode && targetNode) break;
             }
         }
 

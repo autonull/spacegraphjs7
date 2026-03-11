@@ -56,6 +56,7 @@ import { HUDPlugin } from './plugins/HUDPlugin';
 import type { GraphSpec, SpaceGraphOptions, SpecUpdate } from './types';
 
 export class SpaceGraph {
+    public static instances: Set<SpaceGraph> = new Set();
     public container: HTMLElement;
     public renderer: Renderer;
     public graph: Graph;
@@ -84,14 +85,8 @@ export class SpaceGraph {
         this.graph = new Graph(this);
         this.cameraControls = new CameraControls(this);
 
-        // Register instance for global analysis
-        if (typeof window !== 'undefined') {
-            const w = window as any;
-            if (!w.__SPACEGRAPH_INSTANCES__) {
-                w.__SPACEGRAPH_INSTANCES__ = [];
-            }
-            w.__SPACEGRAPH_INSTANCES__.push(this);
-        }
+        // Register instance for cross-graph analysis and interactions
+        SpaceGraph.instances.add(this);
     }
 
     static create(container: string | HTMLElement, spec: GraphSpec): SpaceGraph {
@@ -378,15 +373,8 @@ export class SpaceGraph {
             }
         }
 
-        // Clean up instances array
-        if (typeof window !== 'undefined') {
-            const w = window as any;
-            if (w.__SPACEGRAPH_INSTANCES__) {
-                w.__SPACEGRAPH_INSTANCES__ = w.__SPACEGRAPH_INSTANCES__.filter(
-                    (inst: any) => inst !== this,
-                );
-            }
-        }
+        // Clean up instance registry
+        SpaceGraph.instances.delete(this);
     }
 
     private static checkWebGL(): boolean {

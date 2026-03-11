@@ -27,6 +27,8 @@
             import { N8nExecutionMonitorPlugin } from '../../../packages/n8n-bridge/src/N8nExecutionMonitorPlugin.ts';
             import { N8nWorkflowPlugin } from '../../../packages/n8n-bridge/src/N8nWorkflowPlugin.ts';
 
+            window.SpaceGraph = SpaceGraph;
+
             // SpaceGraph.create automatically calls initAll().
             // We need to register our plugins BEFORE it parses the spec.
             // However, SpaceGraph.create() signature takes the spec directly.

@@ -138,19 +138,14 @@ function makeSpaceGraph() {
             let tgt = this.nodes.get(spec.target);
 
             if (!src || !tgt) {
-                if (typeof window !== 'undefined') {
-                    const w = window as any;
-                    if (w.__SPACEGRAPH_INSTANCES__) {
-                        for (const inst of w.__SPACEGRAPH_INSTANCES__) {
-                            if (!src && inst.graph.nodes.has(spec.source)) {
-                                src = inst.graph.nodes.get(spec.source);
-                            }
-                            if (!tgt && inst.graph.nodes.has(spec.target)) {
-                                tgt = inst.graph.nodes.get(spec.target);
-                            }
-                            if (src && tgt) break;
-                        }
+                for (const inst of SpaceGraph.instances || []) {
+                    if (!src && inst.graph.nodes.has(spec.source)) {
+                        src = inst.graph.nodes.get(spec.source);
                     }
+                    if (!tgt && inst.graph.nodes.has(spec.target)) {
+                        tgt = inst.graph.nodes.get(spec.target);
+                    }
+                    if (src && tgt) break;
                 }
             }
 
@@ -919,8 +914,9 @@ describe('Graph Serialization', () => {
         sg1.graph.getNode('a').sg = sg1;
         sg2.graph.getNode('b').sg = sg2;
 
-        // Mock global SpaceGraph instances for the inter-graph lookup
-        (window as any).__SPACEGRAPH_INSTANCES__ = [sg1, sg2];
+        // Register mocked instances directly into SpaceGraph static registry
+        SpaceGraph.instances.add(sg1);
+        SpaceGraph.instances.add(sg2);
 
         // Mock getting InterGraphEdge plugin since we are using makeSpaceGraph mock
         class MockInterGraphEdge extends Edge {
