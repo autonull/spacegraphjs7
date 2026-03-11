@@ -27,6 +27,9 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
     private selectionStart = new THREE.Vector2();
     private selectedNodes: Set<any> = new Set();
 
+    // Hover Tracking
+    private hoveredNode: any = null;
+
     init(sg: SpaceGraph): void {
         this.sg = sg;
         this.createSelectionBoxElement();
@@ -240,6 +243,9 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
                 this.isDragging = true;
                 this.dragNode = hit.node;
 
+                // Disable orbit while dragging a node
+                this.sg.cameraControls.controls.enabled = false;
+
                 // If dragging a node that isn't selected, drag ONLY that node
                 if (!this.selectedNodes.has(this.dragNode)) {
                     this.selectedNodes.clear();
@@ -274,6 +280,8 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
         });
 
         canvas.addEventListener('pointermove', (e) => {
+            this.updateMousePosition(e);
+
             if (this.isBoxSelecting && this.selectionBoxEl) {
                 const currentX = e.clientX;
                 const currentY = e.clientY;
@@ -292,9 +300,23 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
                 return;
             }
 
-            if (!this.isDragging || !this.dragNode) return;
+            if (!this.isDragging || !this.dragNode) {
+                // Not dragging or box-selecting, check for hover
+                const hit = this.getIntersectedNode();
+                const currentNode = hit ? hit.node : null;
 
-            this.updateMousePosition(e);
+                if (currentNode !== this.hoveredNode) {
+                    if (this.hoveredNode) {
+                        this.sg.events.emit('node:pointerleave', { node: this.hoveredNode, event: e });
+                    }
+                    this.hoveredNode = currentNode;
+                    if (this.hoveredNode) {
+                        this.sg.events.emit('node:pointerenter', { node: this.hoveredNode, event: e });
+                    }
+                }
+                return;
+            }
+
             this.raycaster.setFromCamera(this.mouse, this.sg.renderer.camera);
 
             if (this.raycaster.ray.intersectPlane(this.dragPlane, this.intersection)) {
@@ -333,6 +355,7 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
                 this.draggingNodes.clear();
                 this.nodeDragOffsets.clear();
                 this.sg.renderer.renderer.domElement.style.cursor = 'auto';
+                this.sg.cameraControls.controls.enabled = true; // Re-enable orbit after drag
             }
         };
 

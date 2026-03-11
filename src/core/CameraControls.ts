@@ -19,6 +19,20 @@ export class CameraControls {
     private prevPinchDistance = 0;
     private prevPinchMidpoint = { x: 0, y: 0 };
 
+    // Public wrapper for controls toggling, expected by some plugins
+    public controls = {
+        enabled: true,
+        moveTo: (x: number, y: number, z: number, animate: boolean = true) => {
+            const target = new THREE.Vector3(x, y, z);
+            if (animate) {
+                this.flyTo(target, this.spherical.radius, 1.0);
+            } else {
+                this.target.copy(target);
+                this.updateCameraPosition();
+            }
+        }
+    };
+
     constructor(sg: SpaceGraph) {
         this.sg = sg;
         this.setupControls();
@@ -110,6 +124,7 @@ export class CameraControls {
         });
 
         canvas.addEventListener('mousedown', (e) => {
+            if (!this.controls.enabled) return;
             this.isDragging = true;
             this.dragMode = e.button === 2 ? 'pan' : 'rotate';
             this.previousMousePosition = { x: e.clientX, y: e.clientY };
@@ -118,7 +133,7 @@ export class CameraControls {
         });
 
         canvas.addEventListener('mousemove', (e) => {
-            if (!this.isDragging) return;
+            if (!this.isDragging || !this.controls.enabled) return;
 
             const deltaX = e.clientX - this.previousMousePosition.x;
             const deltaY = e.clientY - this.previousMousePosition.y;
@@ -163,6 +178,7 @@ export class CameraControls {
         canvas.addEventListener(
             'touchstart',
             (e) => {
+                if (!this.controls.enabled) return;
                 // e.preventDefault(); // allow default to handle taps, let InteractionPlugin catch taps
                 for (let i = 0; i < e.changedTouches.length; i++) {
                     const touch = e.changedTouches[i];
@@ -203,6 +219,7 @@ export class CameraControls {
         canvas.addEventListener(
             'touchmove',
             (e) => {
+                if (!this.controls.enabled) return;
                 e.preventDefault(); // Stop page scrolling when manipulating graph
 
                 for (let i = 0; i < e.changedTouches.length; i++) {
@@ -298,6 +315,7 @@ export class CameraControls {
         canvas.addEventListener(
             'wheel',
             (e) => {
+                if (!this.controls.enabled) return;
                 this.spherical.radius = Math.max(
                     10,
                     Math.min(5000, this.spherical.radius + e.deltaY),
