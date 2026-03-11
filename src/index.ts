@@ -29,6 +29,7 @@ export type {
     VideoNodeData,
     AudioNodeData,
     ProcessNodeData,
+    CodeEditorNodeData,
 } from './types';
 
 // Core
@@ -62,6 +63,7 @@ export { SceneNode } from './nodes/SceneNode';
 export { AudioNode } from './nodes/AudioNode';
 export { MathNode } from './nodes/MathNode';
 export { ProcessNode } from './nodes/ProcessNode';
+export { CodeEditorNode } from './nodes/CodeEditorNode';
 
 // Edges
 export { Edge } from './edges/Edge';

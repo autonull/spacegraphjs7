@@ -151,6 +151,14 @@ export interface AudioNodeData extends BaseNodeData {
     loop?: boolean;
 }
 
+export interface CodeEditorNodeData extends BaseNodeData {
+    code?: string;
+    language?: string;
+    theme?: string;
+    width?: number;
+    height?: number;
+}
+
 export type SpaceGraphNodeData =
     | BaseNodeData
     | CanvasNodeData
@@ -170,7 +178,8 @@ export type SpaceGraphNodeData =
     | TextMeshNodeData
     | VideoNodeData
     | AudioNodeData
-    | ProcessNodeData;
+    | ProcessNodeData
+    | CodeEditorNodeData;
 
 /**
  * Specification for a single node in the graph.
