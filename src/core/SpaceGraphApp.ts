@@ -24,6 +24,8 @@ export interface SpaceGraphAppOptions {
     graphContextMenu?: () => Array<{ label: string; action: () => void }>;
     nodeTooltip?: (node: any) => string | HTMLElement;
     enableGrid?: boolean;
+    enableSearch?: boolean;
+    hotkeys?: Record<string, () => void>;
 }
 
 export interface AppButtonConfig {
@@ -65,6 +67,8 @@ export class SpaceGraphApp {
         // Create the base SpaceGraph instance
         this.sg = SpaceGraph.create(container, this.options.spec);
 
+        this.setupHotkeys();
+
         // Register default plugins
         this.hud = new HUDPlugin();
         this.sg.pluginManager.register('hud', this.hud);
@@ -97,6 +101,109 @@ export class SpaceGraphApp {
         }
 
         this.setupDefaultHUD(theme);
+
+        if (this.options.enableSearch) {
+            this.setupSearchHUD(theme);
+        }
+    }
+
+    private setupHotkeys() {
+        if (typeof document === 'undefined') return;
+
+        document.addEventListener('keydown', (e) => {
+            // Built-in standard behavior
+            if (e.key === 'Escape') {
+                this.hideModal();
+                this.hud.hideContextMenu();
+                this.clearSelectionStyles();
+                this.currentSelected = [];
+                this.updateStatsHUD();
+                if (this.options.onNodeSelect) this.options.onNodeSelect([]);
+            }
+
+            // Custom hotkeys
+            if (this.options.hotkeys && this.options.hotkeys[e.key]) {
+                // Don't trigger custom hotkeys if user is typing in an input
+                const tag = (e.target as HTMLElement)?.tagName;
+                if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+
+                this.options.hotkeys[e.key]();
+            }
+        });
+    }
+
+    private setupSearchHUD(theme: any) {
+        if (typeof document === 'undefined') return;
+
+        const container = document.createElement('div');
+        Object.assign(container.style, {
+            background: theme.backgroundColor,
+            backdropFilter: 'blur(8px)',
+            padding: '8px 16px',
+            borderRadius: '99px',
+            border: '1px solid rgba(255,255,255,0.1)',
+            display: 'flex',
+            alignItems: 'center',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
+            width: '300px'
+        });
+
+        const icon = document.createElement('span');
+        icon.textContent = '🔍';
+        Object.assign(icon.style, { marginRight: '10px', fontSize: '14px', color: '#94a3b8' });
+        container.appendChild(icon);
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.placeholder = 'Search nodes...';
+        Object.assign(input.style, {
+            background: 'transparent',
+            border: 'none',
+            color: 'white',
+            outline: 'none',
+            width: '100%',
+            fontFamily: 'sans-serif',
+            fontSize: '14px'
+        });
+
+        input.addEventListener('input', (e) => {
+            const query = (e.target as HTMLInputElement).value.toLowerCase();
+            if (!query) {
+                this.clearSelectionStyles();
+                this.currentSelected = [];
+                this.updateStatsHUD();
+                return;
+            }
+
+            const matches: any[] = [];
+            for (const node of this.sg.graph.nodes.values()) {
+                const label = node.data?.label || node.data?.title || node.id || '';
+                if (label.toLowerCase().includes(query)) {
+                    matches.push(node);
+                }
+            }
+
+            this.clearSelectionStyles();
+            this.currentSelected = matches;
+            this.applySelectionStyles();
+            this.updateStatsHUD();
+
+            if (matches.length === 1 && this.sg.cameraControls) {
+                // Auto fly to single exact match
+                const node = matches[0];
+                const targetPos = node.position.clone();
+                const targetRadius = node.data?.width ? Math.max(node.data.width * 1.5, 150) : 150;
+                this.sg.cameraControls.flyTo(targetPos, targetRadius);
+            }
+        });
+
+        container.appendChild(input);
+
+        this.hud.addElement({
+            id: 'app-search',
+            position: 'top-center',
+            element: container
+        });
     }
 
     private setupInteractionHandlers() {
@@ -479,6 +586,39 @@ export class SpaceGraphApp {
 
     public hideLoading() {
         this.hud.hideLoading();
+    }
+
+    // --- Graph Mutation Helpers ---
+
+    public addNode(nodeSpec: any) {
+        this.sg.graph.addNode(nodeSpec);
+        this.updateStatsHUD();
+    }
+
+    public removeNode(nodeId: string) {
+        const node = this.sg.graph.getNode(nodeId);
+        if (node) {
+            // Unselect if selected
+            const index = this.currentSelected.indexOf(node);
+            if (index > -1) {
+                this.currentSelected.splice(index, 1);
+            }
+            this.sg.graph.removeNode(nodeId);
+            this.updateStatsHUD();
+        }
+    }
+
+    public addEdge(edgeSpec: any) {
+        this.sg.graph.addEdge(edgeSpec);
+        this.updateStatsHUD(); // Stats currently only show nodes, but keeps it synced
+    }
+
+    public removeEdge(edgeId: string) {
+        this.sg.graph.removeEdge(edgeId);
+    }
+
+    public getSelectedNodes(): any[] {
+        return this.currentSelected;
     }
 
     public dispose() {

@@ -76,6 +76,11 @@
             nodeTooltip: (node) => {
                 return `**${node.id}**\nType: ${node.type}\nStatus: Active`;
             },
+            enableSearch: true,
+            hotkeys: {
+                'Delete': () => deleteSelectedNodes(),
+                'Backspace': () => deleteSelectedNodes(),
+            },
             onNodeSelect: (selectedNodes) => {
                 if (selectedNodes.length > 0) {
                     console.log('Selected:', selectedNodes.map(n => n.id));
@@ -94,10 +99,21 @@
                 { label: 'Delete', action: () => app.showAlert(`Deleted ${node.id}`, 'error') }
             ],
             graphContextMenu: () => [
-                { label: 'Add Node', action: () => app.showAlert('Adding new node...') },
+                { label: 'Add Node', action: () => {
+                    const id = `node-${Date.now()}`;
+                    app.addNode({ id, type: 'ShapeNode', position: [Math.random() * 400 - 200, Math.random() * 400 - 200, 0], data: { shape: 'sphere', color: Math.random() * 0xffffff } });
+                    app.showAlert(`Added ${id}`, 'success');
+                }},
                 { label: 'Settings', action: () => app.showAlert('Opening settings...') }
             ]
         });
+
+        const deleteSelectedNodes = () => {
+            const selected = app.getSelectedNodes();
+            if (selected.length === 0) return;
+            selected.forEach(n => app.removeNode(n.id));
+            app.showAlert(`Deleted ${selected.length} nodes`, 'error');
+        };
 
         // Add custom HUD Actions
         app.addButton({
