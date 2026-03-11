@@ -21,11 +21,13 @@ export type {
     ImageNodeData,
     InstancedShapeNodeData,
     MarkdownNodeData,
+    MathNodeData,
     NoteNodeData,
     SceneNodeData,
     ShapeNodeData,
     TextMeshNodeData,
     VideoNodeData,
+    AudioNodeData,
     ProcessNodeData,
 } from './types';
 

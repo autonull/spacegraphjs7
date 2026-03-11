@@ -136,6 +136,21 @@ export interface VideoNodeData extends BaseNodeData {
     muted?: boolean;
 }
 
+export interface MathNodeData extends BaseNodeData {
+    math?: string;
+    width?: number;
+    height?: number;
+    color?: string | number;
+    fontSize?: number;
+}
+
+export interface AudioNodeData extends BaseNodeData {
+    src?: string;
+    color?: string | number;
+    autoplay?: boolean;
+    loop?: boolean;
+}
+
 export type SpaceGraphNodeData =
     | BaseNodeData
     | CanvasNodeData
@@ -148,11 +163,13 @@ export type SpaceGraphNodeData =
     | ImageNodeData
     | InstancedShapeNodeData
     | MarkdownNodeData
+    | MathNodeData
     | NoteNodeData
     | SceneNodeData
     | ShapeNodeData
     | TextMeshNodeData
     | VideoNodeData
+    | AudioNodeData
     | ProcessNodeData;
 
 /**
