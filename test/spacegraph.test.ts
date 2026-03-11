@@ -154,6 +154,12 @@ function makeSpaceGraph() {
             this.nodes.clear();
             this.edges.length = 0;
         },
+        getNode(id: string) {
+            return this.nodes.get(id);
+        },
+        getEdge(id: string) {
+            return this.edges.find((e: any) => e.id === id);
+        }
     };
 
     const pluginManager = {
@@ -956,6 +962,24 @@ describe('Graph CRUD', () => {
         expect(sg.graph.nodes.size).toBe(0);
         expect(sg.graph.edges.length).toBe(0);
     });
+
+    it('getNode and getEdge retrieve elements correctly', () => {
+        sg.graph.addNode({ id: 'node-A', type: 'ShapeNode', position: [0, 0, 0] });
+        sg.graph.addNode({ id: 'node-B', type: 'ShapeNode', position: [100, 0, 0] });
+        sg.graph.addEdge({ id: 'edge-1', source: 'node-A', target: 'node-B', type: 'Edge' });
+
+        const nodeA = sg.graph.getNode('node-A');
+        const edge1 = sg.graph.getEdge('edge-1');
+
+        expect(nodeA).toBeDefined();
+        expect(nodeA.id).toBe('node-A');
+
+        expect(edge1).toBeDefined();
+        expect(edge1.id).toBe('edge-1');
+
+        expect(sg.graph.getNode('missing')).toBeUndefined();
+        expect(sg.graph.getEdge('missing')).toBeUndefined();
+    });
 });
 
 // ============================================================
@@ -1367,6 +1391,57 @@ describe('CameraControls (Multi-touch)', () => {
             { id: 1, x: 150, y: 100 },
             { id: 2, x: 250, y: 100 },
         ]);
+    });
+
+    // --- Mouse Tests ---
+    const fireMouse = (type: string, x: number, y: number, button = 0) => {
+        const event = new MouseEvent(type, { clientX: x, clientY: y, button }) as any;
+        canvas.dispatchEvent(event);
+        return event;
+    };
+
+    it('handles mouse rotate (left click + drag)', () => {
+        fireMouse('mousedown', 0, 0, 0); // Left click
+        expect((sg.cameraControls as any).isDragging).toBe(true);
+        expect((sg.cameraControls as any).dragMode).toBe('rotate');
+
+        const initialTheta = (sg.cameraControls as any).spherical.theta;
+
+        fireMouse('mousemove', 100, 0);
+
+        const newTheta = (sg.cameraControls as any).spherical.theta;
+        expect(newTheta).not.toBe(initialTheta);
+
+        fireMouse('mouseup', 100, 0);
+        expect((sg.cameraControls as any).isDragging).toBe(false);
+    });
+
+    it('handles mouse pan (right click + drag)', () => {
+        fireMouse('mousedown', 0, 0, 2); // Right click
+        expect((sg.cameraControls as any).isDragging).toBe(true);
+        expect((sg.cameraControls as any).dragMode).toBe('pan');
+
+        const initialTargetX = (sg.cameraControls as any).target.x;
+
+        fireMouse('mousemove', 100, 0);
+
+        const newTargetX = (sg.cameraControls as any).target.x;
+        expect(newTargetX).not.toBe(initialTargetX);
+
+        fireMouse('mouseup', 100, 0);
+        expect((sg.cameraControls as any).isDragging).toBe(false);
+    });
+
+    it('handles mouse wheel zoom', () => {
+        const initialRadius = (sg.cameraControls as any).spherical.radius;
+
+        const event = new WheelEvent('wheel', { deltaY: -100 }) as any;
+        event.preventDefault = vi.fn();
+        canvas.dispatchEvent(event);
+
+        const newRadius = (sg.cameraControls as any).spherical.radius;
+        expect(newRadius).toBe(initialRadius - 100);
+        expect(event.preventDefault).toHaveBeenCalled();
     });
 });
 

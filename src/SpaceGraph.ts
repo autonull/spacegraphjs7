@@ -112,22 +112,18 @@ export class SpaceGraph {
         }
 
         const graph = new SpaceGraph(element);
-        try {
-            graph.init()
-                .then(() => {
-                    try {
-                        graph.loadSpec(spec);
-                        graph.render();
-                    } catch (err) {
-                        console.error('[SpaceGraph] Runtime Error: Failed to load spec or start rendering loop.', err);
-                    }
-                })
-                .catch((err) => {
-                    console.error('[SpaceGraph] Initialization Error: Core systems failed to initialize.', err);
-                });
-        } catch (err) {
-            console.error('[SpaceGraph] Synchronous Initialization Error:', err);
-        }
+        graph.init()
+            .then(() => {
+                try {
+                    graph.loadSpec(spec);
+                    graph.render();
+                } catch (err) {
+                    console.error('[SpaceGraph] Runtime Error: Failed to load spec or start rendering loop.', err);
+                }
+            })
+            .catch((err) => {
+                console.error('[SpaceGraph] Initialization Error: Core systems failed to initialize.', err);
+            });
 
         return graph;
     }

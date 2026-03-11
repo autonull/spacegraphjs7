@@ -23,9 +23,9 @@
     <body>
         <div id="container"></div>
         <script type="module">
-            import { SpaceGraph } from '../src/index.ts';
-            import { N8nExecutionMonitorPlugin } from '../packages/n8n-bridge/src/N8nExecutionMonitorPlugin.ts';
-            import { N8nWorkflowPlugin } from '../packages/n8n-bridge/src/N8nWorkflowPlugin.ts';
+            import { SpaceGraph } from '../../../src/index.ts';
+            import { N8nExecutionMonitorPlugin } from '../../../packages/n8n-bridge/src/N8nExecutionMonitorPlugin.ts';
+            import { N8nWorkflowPlugin } from '../../../packages/n8n-bridge/src/N8nWorkflowPlugin.ts';
 
             // SpaceGraph.create automatically calls initAll().
             // We need to register our plugins BEFORE it parses the spec.
