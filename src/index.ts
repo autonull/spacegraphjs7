@@ -26,6 +26,7 @@ export type {
     ShapeNodeData,
     TextMeshNodeData,
     VideoNodeData,
+    ProcessNodeData,
 } from './types';
 
 // Core
@@ -58,6 +59,7 @@ export { GlobeNode } from './nodes/GlobeNode';
 export { SceneNode } from './nodes/SceneNode';
 export { AudioNode } from './nodes/AudioNode';
 export { MathNode } from './nodes/MathNode';
+export { ProcessNode } from './nodes/ProcessNode';
 
 // Edges
 export { Edge } from './edges/Edge';

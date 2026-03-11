@@ -25,6 +25,7 @@ import { GlobeNode } from './nodes/GlobeNode';
 import { SceneNode } from './nodes/SceneNode';
 import { AudioNode } from './nodes/AudioNode';
 import { MathNode } from './nodes/MathNode';
+import { ProcessNode } from './nodes/ProcessNode';
 import { Edge } from './edges/Edge';
 import { CurvedEdge } from './edges/CurvedEdge';
 import { FlowEdge } from './edges/FlowEdge';
@@ -101,20 +102,29 @@ export class SpaceGraph {
 
         if (!element) {
             throw new Error(
-                `Container not found: "${container}".\n` +
-                `Make sure the element exists in the DOM.`,
+                `[SpaceGraph] Initialization Error: Container not found for selector/element "${container}". ` +
+                `Make sure the element exists in the DOM before calling create().`
             );
         }
 
         if (!SpaceGraph.checkWebGL()) {
-            console.warn('WebGL not supported. Some features may not work.');
+            console.warn('[SpaceGraph] Warning: WebGL not supported on this device. Rendering may fail or perform poorly.');
         }
 
         const graph = new SpaceGraph(element);
-        graph.init().then(() => {
-            graph.loadSpec(spec);
-            graph.render();
-        });
+        graph.init()
+            .then(() => {
+                try {
+                    graph.loadSpec(spec);
+                    graph.render();
+                } catch (err) {
+                    console.error('[SpaceGraph] Runtime Error: Failed to load spec or start rendering loop.', err);
+                }
+            })
+            .catch((err) => {
+                console.error('[SpaceGraph] Initialization Error: Core systems failed to initialize.', err);
+            });
+
         return graph;
     }
 
@@ -139,6 +149,7 @@ export class SpaceGraph {
         this.pluginManager.registerNodeType('SceneNode', SceneNode);
         this.pluginManager.registerNodeType('AudioNode', AudioNode);
         this.pluginManager.registerNodeType('MathNode', MathNode);
+        this.pluginManager.registerNodeType('ProcessNode', ProcessNode);
 
         // Register built-in edge types
         this.pluginManager.registerEdgeType('Edge', Edge);

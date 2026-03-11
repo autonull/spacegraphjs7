@@ -28,19 +28,27 @@ export const SpaceGraphComponent = ({
         let isMounted = true;
 
         const init = async () => {
-            if (url) {
-                const sg = await SpaceGraph.fromURL(url, containerRef.current!, options);
+            try {
+                let sg: SpaceGraph;
+                if (url) {
+                    sg = await SpaceGraph.fromURL(url, containerRef.current!, options);
+                } else {
+                    sg = new SpaceGraph(containerRef.current!, options);
+                    if (spec) sg.graph.fromJSON(spec);
+                }
+
+                await sg.init();
+
                 if (!isMounted) {
                     sg.dispose();
                     return;
                 }
+
+                sg.render();
                 sgRef.current = sg;
                 if (onReady) onReady(sg);
-            } else {
-                const sg = new SpaceGraph(containerRef.current!, options);
-                if (spec) sg.graph.fromJSON(spec);
-                sgRef.current = sg;
-                if (onReady) onReady(sg);
+            } catch (err) {
+                console.error('[ReactSpaceGraph] Initialization failed', err);
             }
         };
 

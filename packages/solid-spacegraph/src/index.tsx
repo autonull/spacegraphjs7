@@ -18,18 +18,25 @@ export const SpaceGraphComponent = (props: SpaceGraphProps) => {
     onMount(() => {
         if (!containerRef) return;
 
-        if (props.url) {
-            SpaceGraph.fromURL(props.url, containerRef, props.options).then(sg => {
-                sgInstance = sg;
-                if (props.onReady) props.onReady(sg);
-            });
-        } else {
-            sgInstance = new SpaceGraph(containerRef, props.options);
-            if (props.spec) {
-                sgInstance.graph.fromJSON(props.spec);
+        const init = async () => {
+            try {
+                if (props.url) {
+                    sgInstance = await SpaceGraph.fromURL(props.url, containerRef!, props.options);
+                } else {
+                    sgInstance = new SpaceGraph(containerRef!, props.options);
+                    if (props.spec) {
+                        sgInstance.graph.fromJSON(props.spec);
+                    }
+                }
+                await sgInstance.init();
+                sgInstance.render();
+                if (props.onReady) props.onReady(sgInstance);
+            } catch (err) {
+                console.error('[SolidSpaceGraph] Initialization failed', err);
             }
-            if (props.onReady) props.onReady(sgInstance);
-        }
+        };
+
+        init();
     });
 
     createEffect(() => {

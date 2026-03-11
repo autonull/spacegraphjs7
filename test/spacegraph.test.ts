@@ -430,13 +430,16 @@ describe('MarkdownNode', () => {
         sg = makeSpaceGraph();
     });
 
-    it('creates CSS3D element with parsed html', () => {
+    it('creates CSS3D element with parsed html', async () => {
         const n = new MarkdownNode(sg, {
             id: 'mn',
             type: 'MarkdownNode',
             data: { markdown: '# Hello' },
         });
         expect(n.domElement).toBeTruthy();
+
+        // Wait for dynamic import to complete
+        await new Promise(resolve => setTimeout(resolve, 100));
         expect(n.domElement.innerHTML).toContain('Hello');
     });
 });
