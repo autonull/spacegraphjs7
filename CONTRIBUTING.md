@@ -74,9 +74,9 @@ After submitting a PR, wait for the GitHub Actions to complete. If the `Playwrig
 
 If you are new to the project, the easiest way to start contributing is by adding or improving **Nodes**. Nodes are self-contained rendering primitives that extend `DOMNode` or `Node`.
 
-1. **Check the `good-first-issue` label** on GitHub.
-2. **Add a new Node type:** Look at simple implementations like `src/nodes/ShapeNode.ts` or `src/nodes/ImageNode.ts`. You can build new nodes (e.g., `CodeSnippetNode`, `BadgeNode`) by extending `DOMNode` and registering them in `PluginManager`.
-3. **Enhance existing Nodes:** Help us add more configuration options to complex nodes like `src/nodes/ChartNode.ts` or `src/nodes/GlobeNode.ts`.
+1. **Check the [`good-first-issue` label](https://github.com/autonull/spacegraphjs/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)** on GitHub.
+2. **Add a new Node type:** Look at simple implementations like [`src/nodes/ShapeNode.ts`](https://github.com/autonull/spacegraphjs/blob/main/src/nodes/ShapeNode.ts) or [`src/nodes/ImageNode.ts`](https://github.com/autonull/spacegraphjs/blob/main/src/nodes/ImageNode.ts). You can build new nodes (e.g., `CodeSnippetNode`, `BadgeNode`) by extending `DOMNode` and registering them in `PluginManager`.
+3. **Enhance existing Nodes:** Help us add more configuration options to complex nodes like [`src/nodes/ChartNode.ts`](https://github.com/autonull/spacegraphjs/blob/main/src/nodes/ChartNode.ts) or [`src/nodes/GlobeNode.ts`](https://github.com/autonull/spacegraphjs/blob/main/src/nodes/GlobeNode.ts).
 
 ## 🧠 Training ONNX Vision Models
 
