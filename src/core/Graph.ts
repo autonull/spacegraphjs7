@@ -190,6 +190,14 @@ export class Graph {
         this.nodes.clear();
     }
 
+    getNode(id: string): any {
+        return this.nodes.get(id);
+    }
+
+    getEdge(id: string): any {
+        return this.edges.find((e) => e.id === id);
+    }
+
     query(predicate: (node: any) => boolean): any[] {
         const result: any[] = [];
         for (const node of this.nodes.values()) {

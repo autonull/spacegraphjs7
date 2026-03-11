@@ -36,14 +36,18 @@ export class PluginManager {
     }
 
     async initAll(): Promise<void> {
-        for (const [name, plugin] of this.plugins.entries()) {
-            if (plugin.init) {
-                try {
-                    await plugin.init(this.sg);
-                } catch (err) {
-                    console.error(`[SpaceGraph] Plugin Initialization Error: Failed to initialize plugin "${name}". Continuing without it.`, err);
+        try {
+            for (const [name, plugin] of this.plugins.entries()) {
+                if (plugin.init) {
+                    try {
+                        await plugin.init(this.sg);
+                    } catch (err) {
+                        console.error(`[SpaceGraph] Plugin Initialization Error: Failed to initialize plugin "${name}". Continuing without it.`, err);
+                    }
                 }
             }
+        } catch (err) {
+            console.error('[SpaceGraph] Critical Error during PluginManager initialization sequence.', err);
         }
     }
 
@@ -65,5 +69,33 @@ export class PluginManager {
             }
         }
         this.plugins.clear();
+    }
+
+    export(): Record<string, any> {
+        const state: Record<string, any> = {};
+        for (const [name, plugin] of this.plugins.entries()) {
+            if (plugin.export) {
+                try {
+                    state[name] = plugin.export();
+                } catch (err) {
+                    console.error(`[SpaceGraph] Failed to export plugin "${name}".`, err);
+                }
+            }
+        }
+        return state;
+    }
+
+    import(data: Record<string, any>): void {
+        if (!data) return;
+        for (const [name, pluginState] of Object.entries(data)) {
+            const plugin = this.plugins.get(name);
+            if (plugin && plugin.import) {
+                try {
+                    plugin.import(pluginState);
+                } catch (err) {
+                    console.error(`[SpaceGraph] Failed to import state for plugin "${name}".`, err);
+                }
+            }
+        }
     }
 }

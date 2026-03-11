@@ -220,7 +220,7 @@ export class SpaceGraph {
         }
     }
 
-    export(): GraphSpec & { camera?: { position: [number, number, number], target: [number, number, number] } } {
+    export(): GraphSpec & { camera?: { position: [number, number, number], target: [number, number, number] }, plugins?: Record<string, any> } {
         const spec: any = {
             nodes: [],
             edges: []
@@ -261,6 +261,11 @@ export class SpaceGraph {
             };
         }
 
+        const pluginState = this.pluginManager.export();
+        if (Object.keys(pluginState).length > 0) {
+            spec.plugins = pluginState;
+        }
+
         return spec;
     }
 
@@ -287,6 +292,10 @@ export class SpaceGraph {
             this.cameraControls.spherical.theta = Math.atan2(diff.x, diff.z);
 
             this.cameraControls.update();
+        }
+
+        if (data.plugins) {
+            this.pluginManager.import(data.plugins);
         }
     }
 
