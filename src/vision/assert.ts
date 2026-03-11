@@ -16,11 +16,11 @@ export class VisionAssert {
         // attached to any SpaceGraph instances in the DOM.
         const report = await this.page.evaluate(async () => {
             // @ts-expect-error - Global object attached during tests
-            if (!window.__SPACEGRAPH_INSTANCES__) {
+            if (!window.SpaceGraph || !window.SpaceGraph.instances) {
                 return { layoutScore: 0, legibilityScore: 0, issues: [] };
             }
             // @ts-expect-error - Global object attached during tests
-            const instances = Array.from(window.__SPACEGRAPH_INSTANCES__);
+            const instances = Array.from(window.SpaceGraph.instances);
             if (instances.length === 0) {
                 return { layoutScore: 0, legibilityScore: 0, issues: [] };
             }
@@ -32,6 +32,18 @@ export class VisionAssert {
 
             // Turn off autonomous mode for the test so we can do a single frame analysis
             sg.vision.stopAutonomousCorrection();
+
+            // Wait for ONNX models to fully load
+            if (!sg.vision.modelsLoaded) {
+                await new Promise<void>((resolve) => {
+                    const check = setInterval(() => {
+                        if (sg.vision.modelsLoaded) {
+                            clearInterval(check);
+                            resolve();
+                        }
+                    }, 100);
+                });
+            }
 
             // Grab the real heuristics + ONNX validated report from the library Engine
             const report = await sg.vision.analyzeVision();

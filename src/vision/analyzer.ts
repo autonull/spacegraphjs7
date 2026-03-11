@@ -65,8 +65,9 @@ export async function runVisionAnalysis(outputDir: string): Promise<VisionReport
                             () => {
                                 const w = window as any;
                                 return (
-                                    w.__SPACEGRAPH_INSTANCES__ &&
-                                    w.__SPACEGRAPH_INSTANCES__.length > 0
+                                        w.SpaceGraph &&
+                                        w.SpaceGraph.instances &&
+                                        w.SpaceGraph.instances.size > 0
                                 );
                             },
                             { timeout: 5000 },
