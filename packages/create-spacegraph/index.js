@@ -124,7 +124,10 @@ const edges = [
 const sg = SpaceGraph.create('#app', { nodes, edges });
 
 // Expose the vision overlay UI
-sg.pluginManager.add(new VisionOverlayPlugin());
+const visionPlugin = new VisionOverlayPlugin();
+sg.pluginManager.register('VisionOverlayPlugin', visionPlugin);
+// SpaceGraph.create() has already run initAll(), so we must manually init dynamically added plugins
+visionPlugin.init(sg);
 
 sg.render();
 `,
