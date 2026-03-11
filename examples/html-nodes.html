@@ -31,7 +31,6 @@
         </style>
     </head>
     <body>
-        <div class="status">HTML Nodes Example</div>
         <div id="container"></div>
 
         <script type="module">
@@ -52,7 +51,7 @@
                         type: 'HtmlNode',
                         position: [0, 100, 0],
                         data: {
-                            content: createCard(
+                            html: createCard(
                                 'Dashboard',
                                 'Real-time metrics and analytics',
                                 '#3b82f6',
@@ -64,7 +63,7 @@
                         type: 'HtmlNode',
                         position: [-150, -100, 0],
                         data: {
-                            content: createCard('Users', 'Manage user access and roles', '#ef4444'),
+                            html: createCard('Users', 'Manage user access and roles', '#ef4444'),
                         },
                     },
                     {
@@ -72,7 +71,7 @@
                         type: 'HtmlNode',
                         position: [150, -100, 0],
                         data: {
-                            content: createCard('Settings', 'System configuration', '#10b981'),
+                            html: createCard('Settings', 'System configuration', '#10b981'),
                         },
                     },
                 ],
@@ -81,6 +80,39 @@
                     { id: 'e2', source: 'h1', target: 'h3', type: 'CurvedEdge' },
                 ],
             });
+
+            const hud = graph.pluginManager.getPlugin('hud-plugin');
+            window.__test_hud = hud;
+            window.__test_graph = graph;
+            if (hud) {
+                hud.addElement({
+                    id: 'title',
+                    position: 'top-left',
+                    html: '<div style="color: #0f0; background: rgba(0, 0, 0, 0.8); padding: 10px; font-family: monospace;">HTML Nodes Example (HUD Plugin)</div>'
+                });
+
+                // Test Alerts
+                setTimeout(() => hud.showAlert('System initialized successfully', 'success'), 500);
+
+                // Context Menu on node right click
+                graph.events.on('node:contextmenu', ({ node, event }) => {
+                    hud.showContextMenu([
+                        { label: 'Edit Node', action: () => hud.showAlert(`Editing ${node.id}`, 'info') },
+                        { label: 'Delete Node', action: () => {
+                            graph.graph.removeNode(node.id);
+                            hud.showAlert(`Deleted ${node.id}`, 'warning');
+                        }}
+                    ], event.clientX, event.clientY);
+                });
+
+                // Tooltips on node hover (we can simulate it by clicking for now as an example, or standard pointer events)
+                // Real hover events would require raycaster pointermove emitting 'node:mouseenter' which is missing,
+                // so we use click as an example of tooltip logic
+                graph.events.on('node:click', ({ node, event }) => {
+                    hud.showTooltip(`Clicked on node:\nID: ${node.id}`, event.clientX, event.clientY);
+                    setTimeout(() => hud.hideTooltip(), 2000);
+                });
+            }
 
             graph.render();
         </script>

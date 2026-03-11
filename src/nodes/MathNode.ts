@@ -27,8 +27,11 @@ export class MathNode extends DOMNode {
     constructor(sg: SpaceGraph, spec: NodeSpec) {
         const div = document.createElement('div');
 
+        const w = spec.data?.width || 300;
+        const h = spec.data?.height || 100;
+
         // Pass div into DOMNode correctly and specify base size
-        super(sg, spec, div, spec.data?.width || 300, spec.data?.height || 100, { opacity: 0.0 });
+        super(sg, spec, div, w, h, { opacity: 0.0 });
 
         if (spec.data?.math) {
             this.mathContent = spec.data.math;

@@ -228,16 +228,14 @@ export class DataNode extends DOMNode {
         }
 
         if (updates.data) {
-            const theme = updates.data.theme || this.data.theme || 'dark';
+            const theme = updates.data.theme || this.data?.theme || 'dark';
 
             if (updates.data.width || updates.data.maxHeight) {
-                const w = updates.data.width || this.data.width || 250;
-                const h = updates.data.maxHeight || this.data.maxHeight || 300;
+                const w = updates.data.width || this.data?.width || 250;
+                const h = updates.data.maxHeight || this.data?.maxHeight || 300;
                 this.domElement.style.width = `${w}px`;
                 this.domElement.style.maxHeight = `${h}px`;
-                if (this.plane) {
-                    this.plane.scale.set(w, h, 1);
-                }
+                this.updateBackingGeometry(w, h);
             }
 
             if (updates.data.data !== undefined || updates.data.fields !== undefined) {

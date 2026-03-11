@@ -33,6 +33,39 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
         this.initDragAndSelect();
         this.initClick();
         this.initDblClick();
+        this.initContextMenu();
+    }
+
+    private initContextMenu(): void {
+        const canvas = this.sg.renderer.renderer.domElement;
+
+        canvas.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+
+            // Only trigger node context menu if right-clicking without significant dragging
+            // Handled similarly to left click
+            const distance = this.pointerDownPosition.distanceTo(
+                new THREE.Vector2(e.clientX, e.clientY)
+            );
+            if (distance > 5) return;
+
+            const rect = canvas.getBoundingClientRect();
+            this.mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+            this.mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+            this.raycaster.setFromCamera(this.mouse, this.sg.renderer.camera);
+            const meshes = this.getAllNodeMeshes();
+            const intersects = this.raycaster.intersectObjects(meshes, false);
+
+            if (intersects.length > 0) {
+                const node = this.getNodeFromMesh(intersects[0].object);
+                if (node) {
+                    this.sg.events.emit('node:contextmenu', { node, event: e });
+                }
+            } else {
+                this.sg.events.emit('graph:contextmenu', { event: e });
+            }
+        });
     }
 
     private createSelectionBoxElement() {

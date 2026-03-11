@@ -216,9 +216,7 @@ export class ChartNode extends DOMNode {
                  this.domElement.style.width = `${w}px`;
                  this.domElement.style.height = `${totalH}px`;
 
-                 if (this.plane) {
-                     this.plane.scale.set(w, totalH, 1);
-                 }
+                 this.updateBackingGeometry(w, totalH);
              }
 
              if (updates.data.datasets || updates.data.labels || updates.data.chartType || updates.data.theme || updates.data.chartOptions) {

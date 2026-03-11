@@ -12,6 +12,8 @@ export type SpaceGraphEvents = {
     'camera:move': { position: any; target: any };
     'node:click': { node: any; event: any };
     'graph:click': { event: any };
+    'node:contextmenu': { node: any; event: MouseEvent };
+    'graph:contextmenu': { event: MouseEvent };
     'node:loaded': { id: string };
     'ergonomics:calibrated': { winner: any; scores: any };
 };

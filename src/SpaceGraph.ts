@@ -26,6 +26,7 @@ import { SceneNode } from './nodes/SceneNode';
 import { AudioNode } from './nodes/AudioNode';
 import { MathNode } from './nodes/MathNode';
 import { ProcessNode } from './nodes/ProcessNode';
+import { CodeEditorNode } from './nodes/CodeEditorNode';
 import { Edge } from './edges/Edge';
 import { CurvedEdge } from './edges/CurvedEdge';
 import { FlowEdge } from './edges/FlowEdge';
@@ -107,18 +108,22 @@ export class SpaceGraph {
         }
 
         const graph = new SpaceGraph(element);
-        graph.init()
-            .then(() => {
-                try {
-                    graph.loadSpec(spec);
-                    graph.render();
-                } catch (err) {
-                    console.error('[SpaceGraph] Runtime Error: Failed to load spec or start rendering loop.', err);
-                }
-            })
-            .catch((err) => {
-                console.error('[SpaceGraph] Initialization Error: Core systems failed to initialize.', err);
-            });
+        try {
+            graph.init()
+                .then(() => {
+                    try {
+                        graph.loadSpec(spec);
+                        graph.render();
+                    } catch (err) {
+                        console.error('[SpaceGraph] Runtime Error: Failed to load spec or start rendering loop.', err);
+                    }
+                })
+                .catch((err) => {
+                    console.error('[SpaceGraph] Initialization Error: Core systems failed to initialize.', err);
+                });
+        } catch (err) {
+             console.error('[SpaceGraph] Initialization Error: Core systems failed to initialize.', err);
+        }
 
         return graph;
     }
@@ -145,6 +150,7 @@ export class SpaceGraph {
         this.pluginManager.registerNodeType('AudioNode', AudioNode);
         this.pluginManager.registerNodeType('MathNode', MathNode);
         this.pluginManager.registerNodeType('ProcessNode', ProcessNode);
+        this.pluginManager.registerNodeType('CodeEditorNode', CodeEditorNode);
 
         // Register built-in edge types
         this.pluginManager.registerEdgeType('Edge', Edge);
@@ -409,9 +415,13 @@ export class SpaceGraph {
         }
 
         const sg = new SpaceGraph(element, options);
-        await sg.init();
-        sg.import(data);
-        sg.render();
+        try {
+            await sg.init();
+            sg.import(data);
+            sg.render();
+        } catch (err) {
+            console.error('[SpaceGraph] Import Runtime Error: Failed to import data or start rendering loop.', err);
+        }
         return sg;
     }
 
