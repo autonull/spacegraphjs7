@@ -87,9 +87,7 @@ export class HtmlNode extends DOMNode {
                 const h = updates.data.height || this.data.height || 100;
                 this.domElement.style.width = `${w}px`;
                 this.domElement.style.height = `${h}px`;
-                if (this.plane) {
-                    this.plane.scale.set(w, h, 1);
-                }
+                this.updateBackingGeometry(w, h);
             }
 
             if (this.constructor.name === 'HtmlNode') {

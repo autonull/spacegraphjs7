@@ -53,6 +53,14 @@ export class IFrameNode extends DOMNode {
     updateSpec(updates: Partial<NodeSpec>): void {
         super.updateSpec(updates);
         if (updates.data?.src) this.navigate(updates.data.src);
+
+        if (updates.data?.width || updates.data?.height) {
+            const w = updates.data.width || this.data?.width || 480;
+            const h = updates.data.height || this.data?.height || 320;
+            this.iframeEl.style.width = `${w}px`;
+            this.iframeEl.style.height = `${h}px`;
+            this.updateBackingGeometry(w, h);
+        }
     }
 
     dispose(): void {
