@@ -20,9 +20,9 @@ export class EventManager {
     private sg: SpaceGraph;
     private emitter: Emitter<SpaceGraphEvents>;
 
-    // Event batching state: mapping event types to the latest event payload
-    // Throttles high-frequency events to only emit the most recent state per frame
-    private batchedEvents: Map<string | symbol, any> = new Map();
+    // Event batching state: mapping event types to an array of event payloads
+    // Throttles high-frequency events to emit all batched states per frame
+    private batchedEvents: Map<string | symbol, any[]> = new Map();
     private batchFrameId: number | null = null;
 
     constructor(sg: SpaceGraph) {
@@ -58,7 +58,10 @@ export class EventManager {
      */
     emitBatched<Key extends keyof SpaceGraphEvents>(type: Key, event: SpaceGraphEvents[Key]): void {
         const typeKey = type as string | symbol;
-        this.batchedEvents.set(typeKey, event);
+        if (!this.batchedEvents.has(typeKey)) {
+            this.batchedEvents.set(typeKey, []);
+        }
+        this.batchedEvents.get(typeKey)!.push(event);
 
         if (this.batchFrameId === null) {
             if (typeof window !== 'undefined' && 'requestAnimationFrame' in window) {
@@ -74,8 +77,10 @@ export class EventManager {
 
     private flushBatchedEvents(): void {
         this.batchFrameId = null;
-        for (const [type, event] of this.batchedEvents.entries()) {
-            this.emitter.emit(type as keyof SpaceGraphEvents, event);
+        for (const [type, events] of this.batchedEvents.entries()) {
+            for (const event of events) {
+                this.emitter.emit(type as keyof SpaceGraphEvents, event);
+            }
         }
         this.batchedEvents.clear();
     }

@@ -51,7 +51,7 @@ describe('EventManager', () => {
         expect(handler2).not.toHaveBeenCalled();
     });
 
-    it('should batch emit events and only fire the latest one', () => {
+    it('should batch emit events and fire all batched events sequentially per type', () => {
         vi.useFakeTimers();
 
         const mockSg = {} as SpaceGraph;
@@ -65,18 +65,20 @@ describe('EventManager', () => {
         const handlerSpy = vi.fn();
         manager.on('interaction:drag', handlerSpy);
 
-        manager.emitBatched('interaction:drag', { node: { id: 'test', position: { x: 1 } } });
-        manager.emitBatched('interaction:drag', { node: { id: 'test', position: { x: 2 } } });
-        manager.emitBatched('interaction:drag', { node: { id: 'test', position: { x: 3 } } });
+        manager.emitBatched('interaction:drag', { node: { id: 'test1', position: { x: 1 } } });
+        manager.emitBatched('interaction:drag', { node: { id: 'test2', position: { x: 2 } } });
+        manager.emitBatched('interaction:drag', { node: { id: 'test3', position: { x: 3 } } });
 
         // Has not fired synchronously
         expect(handlerSpy).not.toHaveBeenCalled();
 
         vi.advanceTimersByTime(20);
 
-        // Should have fired only once with the latest position
-        expect(handlerSpy).toHaveBeenCalledTimes(1);
-        expect(handlerSpy).toHaveBeenCalledWith({ node: { id: 'test', position: { x: 3 } } });
+        // Should have fired sequentially
+        expect(handlerSpy).toHaveBeenCalledTimes(3);
+        expect(handlerSpy).toHaveBeenNthCalledWith(1, { node: { id: 'test1', position: { x: 1 } } });
+        expect(handlerSpy).toHaveBeenNthCalledWith(2, { node: { id: 'test2', position: { x: 2 } } });
+        expect(handlerSpy).toHaveBeenNthCalledWith(3, { node: { id: 'test3', position: { x: 3 } } });
 
         vi.restoreAllMocks();
         vi.useRealTimers();

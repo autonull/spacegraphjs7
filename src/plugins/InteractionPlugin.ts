@@ -15,8 +15,10 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
     // Dragging State Tracking
     private isDragging = false;
     private dragNode: any = null;
+    private draggingNodes: Set<any> = new Set();
     private dragPlane = new THREE.Plane();
     private dragOffset = new THREE.Vector3();
+    private nodeDragOffsets: Map<any, THREE.Vector3> = new Map();
     private intersection = new THREE.Vector3();
 
     // Box Selection State
@@ -205,22 +207,36 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
                 this.isDragging = true;
                 this.dragNode = hit.node;
 
-                // Disable physical constraints temporarily
-                this.dragNode.data.pinned = true;
+                // If dragging a node that isn't selected, drag ONLY that node
+                if (!this.selectedNodes.has(this.dragNode)) {
+                    this.selectedNodes.clear();
+                    this.draggingNodes = new Set([this.dragNode]);
+                } else {
+                    // Drag all selected nodes
+                    this.draggingNodes = new Set(this.selectedNodes);
+                }
 
-                // Create a mathematical plane facing the camera rooted at the node's current position
+                // Create a mathematical plane facing the camera rooted at the primary node's current position
                 this.dragPlane.setFromNormalAndCoplanarPoint(
                     this.sg.renderer.camera.getWorldDirection(this.dragPlane.normal),
                     this.dragNode.position,
                 );
 
-                // Find intersection offset so the node doesn't snap to the center of the mouse immediately
+                // Find intersection offset so the primary node doesn't snap to the center of the mouse immediately
                 if (this.raycaster.ray.intersectPlane(this.dragPlane, this.intersection)) {
                     this.dragOffset.copy(this.intersection).sub(this.dragNode.position);
                 }
 
+                this.nodeDragOffsets.clear();
+                for (const node of this.draggingNodes) {
+                    node.data.pinned = true; // Disable physical constraints temporarily
+                    // Store offset of each node relative to the primary dragged node
+                    const relativeOffset = new THREE.Vector3().subVectors(node.position, this.dragNode.position);
+                    this.nodeDragOffsets.set(node, relativeOffset);
+                    this.sg.events.emit('interaction:dragstart', { node: node });
+                }
+
                 this.sg.renderer.renderer.domElement.style.cursor = 'grabbing';
-                this.sg.events.emit('interaction:dragstart', { node: this.dragNode });
             }
         });
 
@@ -249,12 +265,17 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
             this.raycaster.setFromCamera(this.mouse, this.sg.renderer.camera);
 
             if (this.raycaster.ray.intersectPlane(this.dragPlane, this.intersection)) {
-                // Move node to intersection point minus initial grab offset
-                const targetPos = this.intersection.clone().sub(this.dragOffset);
-                this.dragNode.position.copy(targetPos);
-                this.dragNode.object.position.copy(targetPos);
+                // Move primary node to intersection point minus initial grab offset
+                const primaryTargetPos = this.intersection.clone().sub(this.dragOffset);
 
-                this.sg.events.emitBatched('interaction:drag', { node: this.dragNode });
+                for (const node of this.draggingNodes) {
+                    const relativeOffset = this.nodeDragOffsets.get(node) || new THREE.Vector3();
+                    const targetPos = primaryTargetPos.clone().add(relativeOffset);
+                    node.position.copy(targetPos);
+                    node.object.position.copy(targetPos);
+
+                    this.sg.events.emitBatched('interaction:drag', { node: node });
+                }
             }
         });
 
@@ -269,10 +290,15 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
             }
 
             if (this.isDragging && this.dragNode) {
-                this.dragNode.data.pinned = false; // Allow physics to resume
-                this.sg.events.emit('interaction:dragend', { node: this.dragNode });
+                for (const node of this.draggingNodes) {
+                    node.data.pinned = false; // Allow physics to resume
+                    this.sg.events.emit('interaction:dragend', { node: node });
+                }
+
                 this.isDragging = false;
                 this.dragNode = null;
+                this.draggingNodes.clear();
+                this.nodeDragOffsets.clear();
                 this.sg.renderer.renderer.domElement.style.cursor = 'auto';
             }
         };
@@ -325,6 +351,8 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
         // but explicit removal is best-practice if SpaceGraph instance drops.
         this.isDragging = false;
         this.dragNode = null;
+        this.draggingNodes.clear();
+        this.nodeDragOffsets.clear();
         this.isBoxSelecting = false;
         this.selectedNodes.clear();
         if (this.selectionBoxEl && this.selectionBoxEl.parentElement) {
