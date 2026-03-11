@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [6.0.0-alpha.1] - 2026-03-03
 
+### Changed
+- Core API: `SpaceGraph.create()` and `PluginManager.initAll()` now use strict `try/catch` and provide actionable console errors instead of silent failures.
+- Bundle Optimization: `MarkdownNode` now utilizes dynamic imports for heavy optional dependencies (`marked`), matching `MathNode` and `ChartNode`.
+
 ### Added
 
 - Core API: `SpaceGraph` class and `.create()` builder.
