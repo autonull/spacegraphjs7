@@ -92,8 +92,8 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
                     // Semantic navigation: fly to the target node
                     if (edge.target && this.sg.cameraControls) {
                         const targetPos = edge.target.position.clone();
-                        // Adjust radius slightly based on the current zoom to keep it smooth
-                        const targetRadius = 300;
+                        // Adjust radius based on node size or a reasonable default
+                        const targetRadius = edge.target.data?.width ? Math.max(edge.target.data.width * 1.5, 150) : 150;
                         this.sg.cameraControls.flyTo(targetPos, targetRadius);
                     }
                     return;

@@ -77,8 +77,26 @@ export class Graph {
             return this.updateEdge(spec.id, spec);
         }
 
-        const sourceNode = this.nodes.get(spec.source);
-        const targetNode = this.nodes.get(spec.target);
+        let sourceNode = this.nodes.get(spec.source);
+        let targetNode = this.nodes.get(spec.target);
+
+        // If not found locally, search across other registered instances for InterGraphEdge
+        if (!sourceNode || !targetNode) {
+            if (typeof window !== 'undefined') {
+                const w = window as any;
+                if (w.__SPACEGRAPH_INSTANCES__) {
+                    for (const inst of w.__SPACEGRAPH_INSTANCES__) {
+                        if (!sourceNode && inst.graph.nodes.has(spec.source)) {
+                            sourceNode = inst.graph.nodes.get(spec.source);
+                        }
+                        if (!targetNode && inst.graph.nodes.has(spec.target)) {
+                            targetNode = inst.graph.nodes.get(spec.target);
+                        }
+                        if (sourceNode && targetNode) break;
+                    }
+                }
+            }
+        }
 
         if (!sourceNode || !targetNode) {
             console.warn(

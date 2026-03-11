@@ -402,6 +402,32 @@ export class SpaceGraph {
     }
 
     /**
+     * Creates a new SpaceGraph instance, initializes it asynchronously, and imports the provided data state.
+     */
+    public static async import(
+        container: string | HTMLElement,
+        data: any,
+        options: SpaceGraphOptions = {}
+    ): Promise<SpaceGraph> {
+        const element =
+            typeof container === 'string'
+                ? (document.querySelector(container) as HTMLElement)
+                : container;
+
+        if (!element) {
+            throw new Error(
+                `[SpaceGraph] Import Error: Container not found for selector/element "${container}".`
+            );
+        }
+
+        const sg = new SpaceGraph(element, options);
+        await sg.init();
+        sg.import(data);
+        sg.render();
+        return sg;
+    }
+
+    /**
      * Initializes a SpaceGraph instance and loads graph spec from a URL representing JSON.
      */
     public static async fromURL(
