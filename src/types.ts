@@ -93,6 +93,15 @@ export interface NoteNodeData extends BaseNodeData {
     fontSize?: number;
 }
 
+export interface ProcessNodeData extends BaseNodeData {
+    pid?: string | number;
+    name?: string;
+    cpu?: number;
+    memory?: number;
+    width?: number;
+    height?: number;
+}
+
 export interface SceneNodeData extends BaseNodeData {
     url?: string;
     targetSize?: number;
@@ -143,7 +152,8 @@ export type SpaceGraphNodeData =
     | SceneNodeData
     | ShapeNodeData
     | TextMeshNodeData
-    | VideoNodeData;
+    | VideoNodeData
+    | ProcessNodeData;
 
 /**
  * Specification for a single node in the graph.
