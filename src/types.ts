@@ -241,4 +241,8 @@ export interface ISpaceGraphPlugin {
     onEdgeRemoved?(id: string): void;
     /** Called when the graph is destroyed or the plugin is unregistered. */
     dispose?(): void;
+    /** Called during graph serialization to save plugin state. */
+    export?(): any;
+    /** Called during graph deserialization to restore plugin state. */
+    import?(data: any): void;
 }

@@ -70,4 +70,32 @@ export class PluginManager {
         }
         this.plugins.clear();
     }
+
+    export(): Record<string, any> {
+        const state: Record<string, any> = {};
+        for (const [name, plugin] of this.plugins.entries()) {
+            if (plugin.export) {
+                try {
+                    state[name] = plugin.export();
+                } catch (err) {
+                    console.error(`[SpaceGraph] Failed to export plugin "${name}".`, err);
+                }
+            }
+        }
+        return state;
+    }
+
+    import(data: Record<string, any>): void {
+        if (!data) return;
+        for (const [name, pluginState] of Object.entries(data)) {
+            const plugin = this.plugins.get(name);
+            if (plugin && plugin.import) {
+                try {
+                    plugin.import(pluginState);
+                } catch (err) {
+                    console.error(`[SpaceGraph] Failed to import state for plugin "${name}".`, err);
+                }
+            }
+        }
+    }
 }

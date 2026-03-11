@@ -163,6 +163,24 @@ function makeSpaceGraph() {
         registerEdgeType: (name: string, T: any) => edgeTypeRegistry.set(name, T),
         getNodeType: (name: string) => nodeTypeRegistry.get(name),
         getEdgeType: (name: string) => edgeTypeRegistry.get(name),
+        export: vi.fn(() => {
+            const state: any = {};
+            for (const [name, plugin] of pluginRegistry.entries()) {
+                if (plugin.export) {
+                    state[name] = plugin.export();
+                }
+            }
+            return state;
+        }),
+        import: vi.fn((data: any) => {
+            if (!data) return;
+            for (const [name, pluginState] of Object.entries(data)) {
+                const plugin = pluginRegistry.get(name);
+                if (plugin && plugin.import) {
+                    plugin.import(pluginState);
+                }
+            }
+        })
     };
 
     sg = {
@@ -859,6 +877,37 @@ describe('Graph Serialization', () => {
         expect(sg.graph.nodes.size).toBe(2);
         expect(sg.graph.edges.length).toBe(1);
         expect(sg.graph.nodes.get('2').position.x).toBe(100);
+    });
+
+    it('exports and imports plugin state correctly', () => {
+        const mockPlugin = {
+            id: 'mockPlugin',
+            name: 'Mock Plugin',
+            version: '1.0',
+            init: vi.fn(),
+            export: vi.fn().mockReturnValue({ configured: true }),
+            import: vi.fn(),
+        };
+
+        sg.pluginManager.register('mockPlugin', mockPlugin);
+
+        // Test Export
+        const exported = sg.export();
+        expect(mockPlugin.export).toHaveBeenCalled();
+        expect(exported.plugins).toBeDefined();
+        expect(exported.plugins.mockPlugin).toEqual({ configured: true });
+
+        // Test Import
+        const specWithPlugins = {
+            nodes: [],
+            edges: [],
+            plugins: {
+                mockPlugin: { restored: true }
+            }
+        };
+
+        sg.import(specWithPlugins);
+        expect(mockPlugin.import).toHaveBeenCalledWith({ restored: true });
     });
 });
 
