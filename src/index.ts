@@ -3,7 +3,7 @@ console.log('[SpaceGraphJS] Loading...');
 
 export { SpaceGraph } from './SpaceGraph';
 export { SpaceGraphApp } from './core/SpaceGraphApp';
-export type { SpaceGraphAppOptions } from './core/SpaceGraphApp';
+export type { SpaceGraphAppOptions, AppButtonConfig } from './core/SpaceGraphApp';
 export type {
     GraphSpec,
     NodeSpec,

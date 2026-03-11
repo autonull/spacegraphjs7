@@ -11,6 +11,7 @@ export interface SpaceGraphAppOptions {
     enableMinimap?: boolean;
     enableInteraction?: boolean;
     selectionHighlightClass?: string;
+    selectionHighlightColor?: number;
     theme?: {
         primaryColor?: string;
         secondaryColor?: string;
@@ -18,6 +19,13 @@ export interface SpaceGraphAppOptions {
     };
     onNodeSelect?: (nodes: any[]) => void;
     onNodeDblClick?: (node: any) => void;
+}
+
+export interface AppButtonConfig {
+    id: string;
+    label: string;
+    icon?: string;
+    onClick: () => void;
 }
 
 /**
@@ -29,12 +37,15 @@ export class SpaceGraphApp {
     private options: SpaceGraphAppOptions;
     private hud!: HUDPlugin;
     private currentSelected: any[] = [];
+    private originalColors = new Map<any, number>();
+    private buttons: AppButtonConfig[] = [];
 
     constructor(container: HTMLElement | string, options: SpaceGraphAppOptions = {}) {
         this.options = {
             enableMinimap: true,
             enableInteraction: true,
             selectionHighlightClass: 'sg-node-selected',
+            selectionHighlightColor: 0xffffff,
             ...options
         };
 
@@ -119,19 +130,25 @@ export class SpaceGraphApp {
     }
 
     private clearSelectionStyles() {
-        if (!this.options.selectionHighlightClass) return;
         this.currentSelected.forEach(node => {
-            if (node instanceof HtmlNode) {
-                node.domElement.classList.remove(this.options.selectionHighlightClass!);
+            if (node instanceof HtmlNode && this.options.selectionHighlightClass) {
+                node.domElement.classList.remove(this.options.selectionHighlightClass);
+            } else if (this.options.selectionHighlightColor && this.originalColors.has(node)) {
+                // Restore original color for WebGL nodes
+                node.updateSpec({ data: { color: this.originalColors.get(node) } });
             }
         });
+        this.originalColors.clear();
     }
 
     private applySelectionStyles() {
-        if (!this.options.selectionHighlightClass) return;
         this.currentSelected.forEach(node => {
-            if (node instanceof HtmlNode) {
-                node.domElement.classList.add(this.options.selectionHighlightClass!);
+            if (node instanceof HtmlNode && this.options.selectionHighlightClass) {
+                node.domElement.classList.add(this.options.selectionHighlightClass);
+            } else if (this.options.selectionHighlightColor && node.data?.color !== undefined) {
+                // Save original color and apply highlight for WebGL nodes
+                this.originalColors.set(node, node.data.color);
+                node.updateSpec({ data: { color: this.options.selectionHighlightColor } });
             }
         });
     }
@@ -180,6 +197,61 @@ export class SpaceGraphApp {
             }
             this.updateStatsHUD(); // initialize node count after load
         }, 100);
+    }
+
+    /**
+     * Adds a generic action button to the HUD (typically top-right).
+     */
+    public addButton(config: AppButtonConfig) {
+        this.buttons.push(config);
+        this.renderButtons();
+    }
+
+    private renderButtons() {
+        const theme = {
+            primaryColor: '#3b82f6',
+            secondaryColor: '#8b5cf6',
+            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+            ...this.options.theme
+        };
+
+        const buttonsHtml = this.buttons.map(btn => `
+            <button id="sg-btn-${btn.id}" style="
+                background: ${theme.backgroundColor};
+                border: 1px solid rgba(255,255,255,0.1);
+                padding: 10px 16px;
+                border-radius: 8px;
+                color: white;
+                font-family: sans-serif;
+                font-size: 14px;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            ">
+                ${btn.icon ? `<span>${btn.icon}</span>` : ''}
+                ${btn.label}
+            </button>
+        `).join('');
+
+        this.hud.addElement({
+            id: 'app-actions',
+            position: 'top-right',
+            html: `<div style="display: flex; gap: 12px; flex-direction: column;">${buttonsHtml}</div>`
+        });
+
+        // Wire up events after DOM injection
+        setTimeout(() => {
+            this.buttons.forEach(btn => {
+                const el = document.getElementById(`sg-btn-${btn.id}`);
+                if (el) {
+                    el.onmouseenter = () => el.style.background = 'rgba(255,255,255,0.1)';
+                    el.onmouseleave = () => el.style.background = theme.backgroundColor;
+                    el.onclick = () => btn.onClick();
+                }
+            });
+        }, 10);
     }
 
     private updateStatsHUD() {
