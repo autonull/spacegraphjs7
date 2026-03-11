@@ -46,7 +46,7 @@ SpaceGraphJS is a layered graph rendering framework built on Three.js. Each laye
 **Extended Plugins (4):** PhysicsPlugin, MinimapPlugin, ErgonomicsPlugin, VisionOverlayPlugin
 
 **Vision System (5 modules):**
-- `VisionManager` — ONNX model inference for layout quality (LQ-Net), overlap detection (ODN), text legibility (TLA), color harmony (CHE)
+- `VisionManager` — ONNX model inference for layout quality (LQ-Net), overlap detection (ODN), text legibility (TLA), color harmony (CHE), visual hierarchy (VHS), ergonomics (EQA)
 - `VisionOverlayPlugin` — Live UI overlay with quality scores + "Auto-Fix" button
 - `analyzer.ts` — Playwright-based build analysis for Vite integration
 - `assert.ts` — Playwright test assertions (`visionAssert.noOverlap()`, `.isLegible()`, `.expectedLayoutScore()`)
@@ -96,7 +96,6 @@ These are sequenced software tasks ordered by priority. **P0** blocks release; *
 | **Vision model training pipeline** | Full `train_vision_models.py` → `.onnx` pipeline with CI. Requires labeled layout corpus. | Research track |
 | **React / Vue adapters** | `@spacegraphjs/react` and `@spacegraphjs/vue` for framework integration. Use framework-agnostic core. | Community driven |
 | **Open VSX extension** | Editor integration for syntax highlighting of `.sgraph` spec files. | After demand confirmed |
-| **VHS and EQA models** | Visual Hierarchy Scoring and Ergonomics Quality Assessment ONNX models are planned but not yet implemented. | See PLAN/PLAN.md |
 | **SpaceGraphOS compositor** | Wayland-based compositor rendering the entire Linux OS as a SpaceGraph, using `VisionManager` for system health overlay. | Long-term (hardware required) |
 
 ---
