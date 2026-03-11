@@ -84,7 +84,15 @@
                 if (app.sg.cameraControls) {
                     app.sg.cameraControls.flyTo(node.position.clone(), 150);
                 }
-            }
+            },
+            nodeContextMenu: (node) => [
+                { label: `Edit ${node.id}`, action: () => app.showAlert(`Editing ${node.id}`) },
+                { label: 'Delete', action: () => app.showAlert(`Deleted ${node.id}`, 'error') }
+            ],
+            graphContextMenu: () => [
+                { label: 'Add Node', action: () => app.showAlert('Adding new node...') },
+                { label: 'Settings', action: () => app.showAlert('Opening settings...') }
+            ]
         });
 
         // Add custom HUD Actions
@@ -109,6 +117,21 @@
                     app.showAlert('Force layout activated', 'info');
                 }
             }
+        });
+
+        // Add tools to the bottom-center action bar
+        app.addToolbarAction({
+            id: 'tool-pointer',
+            label: 'Pointer',
+            icon: '👆',
+            onClick: () => app.showAlert('Pointer tool selected', 'info')
+        });
+
+        app.addToolbarAction({
+            id: 'tool-box-select',
+            label: 'Select Mode',
+            icon: '🔲',
+            onClick: () => app.showAlert('Hold Shift and Drag to box select', 'info')
         });
 
         app.sg.render();

@@ -19,6 +19,8 @@ export interface SpaceGraphAppOptions {
     };
     onNodeSelect?: (nodes: any[]) => void;
     onNodeDblClick?: (node: any) => void;
+    nodeContextMenu?: (node: any) => Array<{ label: string; action: () => void }>;
+    graphContextMenu?: () => Array<{ label: string; action: () => void }>;
 }
 
 export interface AppButtonConfig {
@@ -39,6 +41,7 @@ export class SpaceGraphApp {
     private currentSelected: any[] = [];
     private originalColors = new Map<any, number>();
     private buttons: AppButtonConfig[] = [];
+    private toolbarActions: AppButtonConfig[] = [];
 
     constructor(container: HTMLElement | string, options: SpaceGraphAppOptions = {}) {
         this.options = {
@@ -127,6 +130,25 @@ export class SpaceGraphApp {
                 this.sg.cameraControls.flyTo(targetPos, targetRadius);
             }
         });
+
+        // Context Menus
+        this.sg.events.on('node:contextmenu', ({ node, event }) => {
+            if (this.options.nodeContextMenu) {
+                const items = this.options.nodeContextMenu(node);
+                if (items && items.length > 0) {
+                    this.hud.showContextMenu(items, event.clientX, event.clientY);
+                }
+            }
+        });
+
+        this.sg.events.on('graph:contextmenu', ({ event }) => {
+            if (this.options.graphContextMenu) {
+                const items = this.options.graphContextMenu();
+                if (items && items.length > 0) {
+                    this.hud.showContextMenu(items, event.clientX, event.clientY);
+                }
+            }
+        });
     }
 
     private clearSelectionStyles() {
@@ -145,7 +167,7 @@ export class SpaceGraphApp {
         this.currentSelected.forEach(node => {
             if (node instanceof HtmlNode && this.options.selectionHighlightClass) {
                 node.domElement.classList.add(this.options.selectionHighlightClass);
-            } else if (this.options.selectionHighlightColor && node.data?.color !== undefined) {
+            } else if (this.options.selectionHighlightColor && node.data?.color !== undefined && typeof node.updateSpec === 'function') {
                 // Save original color and apply highlight for WebGL nodes
                 this.originalColors.set(node, node.data.color);
                 node.updateSpec({ data: { color: this.options.selectionHighlightColor } });
@@ -154,6 +176,8 @@ export class SpaceGraphApp {
     }
 
     private setupDefaultHUD(theme: any) {
+        if (typeof document === 'undefined') return;
+
         // App Title
         if (this.options.title) {
             this.hud.addElement({
@@ -169,34 +193,128 @@ export class SpaceGraphApp {
         }
 
         // Stats Bar & Controls
+        const toolbarContainer = document.createElement('div');
+        Object.assign(toolbarContainer.style, {
+            background: theme.backgroundColor,
+            backdropFilter: 'blur(8px)',
+            padding: '12px 24px',
+            borderRadius: '99px',
+            border: '1px solid rgba(255,255,255,0.1)',
+            display: 'flex',
+            gap: '24px',
+            alignItems: 'center',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
+            color: 'white',
+            fontFamily: 'sans-serif'
+        });
+
+        // Nodes Stat
+        const nodesStat = document.createElement('div');
+        Object.assign(nodesStat.style, { display: 'flex', flexDirection: 'column', alignItems: 'center' });
+        nodesStat.innerHTML = `<span style="font-size: 10px; color: #94a3b8; text-transform: uppercase;">Nodes</span><span id="sg-app-node-count" style="font-size: 16px; font-weight: 700;">${this.sg.graph.nodes.size}</span>`;
+        toolbarContainer.appendChild(nodesStat);
+
+        const divider1 = document.createElement('div');
+        Object.assign(divider1.style, { width: '1px', height: '24px', background: 'rgba(255,255,255,0.1)' });
+        toolbarContainer.appendChild(divider1);
+
+        // Selected Stat
+        const selectedStat = document.createElement('div');
+        Object.assign(selectedStat.style, { display: 'flex', flexDirection: 'column', alignItems: 'center' });
+        selectedStat.innerHTML = `<span style="font-size: 10px; color: #94a3b8; text-transform: uppercase;">Selected</span><span id="sg-app-selected-count" style="font-size: 16px; font-weight: 700; color: ${theme.primaryColor};">0</span>`;
+        toolbarContainer.appendChild(selectedStat);
+
+        const divider2 = document.createElement('div');
+        Object.assign(divider2.style, { width: '1px', height: '24px', background: 'rgba(255,255,255,0.1)' });
+        toolbarContainer.appendChild(divider2);
+
+        // Fit View Button
+        const fitBtn = document.createElement('button');
+        Object.assign(fitBtn.style, {
+            background: `linear-gradient(135deg, ${theme.primaryColor}, ${theme.secondaryColor})`,
+            border: 'none',
+            padding: '8px 16px',
+            borderRadius: '99px',
+            color: 'white',
+            fontWeight: '600',
+            cursor: 'pointer'
+        });
+        fitBtn.textContent = 'Fit View';
+        fitBtn.addEventListener('click', () => this.sg.fitView(200));
+        toolbarContainer.appendChild(fitBtn);
+
+        // Toolbar Actions Container
+        const actionsContainer = document.createElement('div');
+        actionsContainer.id = 'sg-app-toolbar-actions';
+        Object.assign(actionsContainer.style, {
+            display: 'flex',
+            gap: '12px'
+        });
+        toolbarContainer.appendChild(actionsContainer);
+
         this.hud.addElement({
             id: 'app-toolbar',
             position: 'bottom-center',
-            html: `
-                <div style="background: ${theme.backgroundColor}; backdrop-filter: blur(8px); padding: 12px 24px; border-radius: 99px; border: 1px solid rgba(255,255,255,0.1); display: flex; gap: 24px; align-items: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); color: white; font-family: sans-serif;">
-                    <div style="display: flex; flex-direction: column; align-items: center;">
-                        <span style="font-size: 10px; color: #94a3b8; text-transform: uppercase;">Nodes</span>
-                        <span id="sg-app-node-count" style="font-size: 16px; font-weight: 700;">${this.sg.graph.nodes.size}</span>
-                    </div>
-                    <div style="width: 1px; height: 24px; background: rgba(255,255,255,0.1);"></div>
-                    <div style="display: flex; flex-direction: column; align-items: center;">
-                        <span style="font-size: 10px; color: #94a3b8; text-transform: uppercase;">Selected</span>
-                        <span id="sg-app-selected-count" style="font-size: 16px; font-weight: 700; color: ${theme.primaryColor};">0</span>
-                    </div>
-                    <div style="width: 1px; height: 24px; background: rgba(255,255,255,0.1);"></div>
-                    <button id="sg-app-fit-btn" style="background: linear-gradient(135deg, ${theme.primaryColor}, ${theme.secondaryColor}); border: none; padding: 8px 16px; border-radius: 99px; color: white; font-weight: 600; cursor: pointer;">Fit View</button>
-                </div>
-            `
+            element: toolbarContainer
         });
 
-        // Event listener for Fit View
-        setTimeout(() => {
-            const btn = document.getElementById('sg-app-fit-btn');
-            if (btn) {
-                btn.addEventListener('click', () => this.sg.fitView(200));
+        this.updateStatsHUD(); // initialize node count after load
+        this.renderToolbarActions();
+    }
+
+    /**
+     * Adds an action button directly into the bottom-center toolbar next to the stats.
+     */
+    public addToolbarAction(config: AppButtonConfig) {
+        this.toolbarActions.push(config);
+        this.renderToolbarActions();
+    }
+
+    private renderToolbarActions() {
+        if (typeof document === 'undefined') return;
+        const container = document.getElementById('sg-app-toolbar-actions');
+        if (!container) return;
+
+        container.innerHTML = ''; // clear existing
+
+        const theme = {
+            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+            ...this.options.theme
+        };
+
+        this.toolbarActions.forEach(btn => {
+            const btnEl = document.createElement('button');
+            btnEl.id = `sg-toolbar-btn-${btn.id}`;
+            Object.assign(btnEl.style, {
+                background: 'transparent',
+                border: '1px solid rgba(255,255,255,0.2)',
+                padding: '6px 12px',
+                borderRadius: '99px',
+                color: 'white',
+                fontFamily: 'sans-serif',
+                fontSize: '13px',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+            });
+
+            if (btn.icon) {
+                const iconSpan = document.createElement('span');
+                iconSpan.innerHTML = btn.icon;
+                btnEl.appendChild(iconSpan);
             }
-            this.updateStatsHUD(); // initialize node count after load
-        }, 100);
+
+            const labelNode = document.createTextNode(btn.label);
+            btnEl.appendChild(labelNode);
+
+            btnEl.onmouseenter = () => btnEl.style.background = 'rgba(255,255,255,0.1)';
+            btnEl.onmouseleave = () => btnEl.style.background = 'transparent';
+            btnEl.onclick = () => btn.onClick();
+
+            container.appendChild(btnEl);
+        });
     }
 
     /**
@@ -208,6 +326,8 @@ export class SpaceGraphApp {
     }
 
     private renderButtons() {
+        if (typeof document === 'undefined') return;
+
         const theme = {
             primaryColor: '#3b82f6',
             secondaryColor: '#8b5cf6',
@@ -215,43 +335,52 @@ export class SpaceGraphApp {
             ...this.options.theme
         };
 
-        const buttonsHtml = this.buttons.map(btn => `
-            <button id="sg-btn-${btn.id}" style="
-                background: ${theme.backgroundColor};
-                border: 1px solid rgba(255,255,255,0.1);
-                padding: 10px 16px;
-                border-radius: 8px;
-                color: white;
-                font-family: sans-serif;
-                font-size: 14px;
-                cursor: pointer;
-                transition: all 0.2s ease;
-                display: flex;
-                align-items: center;
-                gap: 8px;
-            ">
-                ${btn.icon ? `<span>${btn.icon}</span>` : ''}
-                ${btn.label}
-            </button>
-        `).join('');
+        const container = document.createElement('div');
+        Object.assign(container.style, {
+            display: 'flex',
+            gap: '12px',
+            flexDirection: 'column'
+        });
+
+        this.buttons.forEach(btn => {
+            const btnEl = document.createElement('button');
+            btnEl.id = `sg-btn-${btn.id}`;
+            Object.assign(btnEl.style, {
+                background: theme.backgroundColor,
+                border: '1px solid rgba(255,255,255,0.1)',
+                padding: '10px 16px',
+                borderRadius: '8px',
+                color: 'white',
+                fontFamily: 'sans-serif',
+                fontSize: '14px',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+            });
+
+            if (btn.icon) {
+                const iconSpan = document.createElement('span');
+                iconSpan.innerHTML = btn.icon;
+                btnEl.appendChild(iconSpan);
+            }
+
+            const labelNode = document.createTextNode(btn.label);
+            btnEl.appendChild(labelNode);
+
+            btnEl.onmouseenter = () => btnEl.style.background = 'rgba(255,255,255,0.1)';
+            btnEl.onmouseleave = () => btnEl.style.background = theme.backgroundColor;
+            btnEl.onclick = () => btn.onClick();
+
+            container.appendChild(btnEl);
+        });
 
         this.hud.addElement({
             id: 'app-actions',
             position: 'top-right',
-            html: `<div style="display: flex; gap: 12px; flex-direction: column;">${buttonsHtml}</div>`
+            element: container
         });
-
-        // Wire up events after DOM injection
-        setTimeout(() => {
-            this.buttons.forEach(btn => {
-                const el = document.getElementById(`sg-btn-${btn.id}`);
-                if (el) {
-                    el.onmouseenter = () => el.style.background = 'rgba(255,255,255,0.1)';
-                    el.onmouseleave = () => el.style.background = theme.backgroundColor;
-                    el.onclick = () => btn.onClick();
-                }
-            });
-        }, 10);
     }
 
     private updateStatsHUD() {
