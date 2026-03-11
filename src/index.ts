@@ -21,11 +21,13 @@ export type {
     ImageNodeData,
     InstancedShapeNodeData,
     MarkdownNodeData,
+    MathNodeData,
     NoteNodeData,
     SceneNodeData,
     ShapeNodeData,
     TextMeshNodeData,
     VideoNodeData,
+    AudioNodeData,
     ProcessNodeData,
 } from './types';
 
@@ -80,6 +82,7 @@ export { RadialLayout } from './plugins/RadialLayout';
 export { TreeLayout } from './plugins/TreeLayout';
 export { SpectralLayout } from './plugins/SpectralLayout';
 export { GeoLayout } from './plugins/GeoLayout';
+export { GeoLayout as MapLayout } from './plugins/GeoLayout';
 export { TimelineLayout } from './plugins/TimelineLayout';
 export { ClusterLayout } from './plugins/ClusterLayout';
 

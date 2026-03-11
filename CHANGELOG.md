@@ -9,7 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Core API: `SpaceGraph.create()` and `PluginManager.initAll()` now use strict `try/catch` and provide actionable console errors instead of silent failures.
+- Core API: Exported `MapLayout` as a public alias for `GeoLayout` in `src/index.ts` to ensure consistency with internal plugin string aliases.
 - Bundle Optimization: `MarkdownNode` now utilizes dynamic imports for heavy optional dependencies (`marked`), matching `MathNode` and `ChartNode`.
+- Bundle Optimization: Moved `chart.js`, `katex`, and `marked` from direct `dependencies` to optional `peerDependencies` to ensure a minimal installation footprint by default.
 
 ### Added
 
