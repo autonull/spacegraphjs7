@@ -13,6 +13,11 @@ import { IFrameNode } from '../src/nodes/IFrameNode';
 import { MarkdownNode } from '../src/nodes/MarkdownNode';
 import { GlobeNode } from '../src/nodes/GlobeNode';
 import { SceneNode } from '../src/nodes/SceneNode';
+import { AudioNode } from '../src/nodes/AudioNode';
+import { MathNode } from '../src/nodes/MathNode';
+import { ChartNode } from '../src/nodes/ChartNode';
+import { GroupNode } from '../src/nodes/GroupNode';
+import { HtmlNode } from '../src/nodes/HtmlNode';
 
 // Edge types
 import { Edge } from '../src/edges/Edge';
@@ -510,6 +515,105 @@ describe('SceneNode', () => {
     it('instantiates without error even if url is empty', () => {
         const n = new SceneNode(sg, { id: 'sn', type: 'SceneNode' });
         expect(n.object.children.length).toBeGreaterThanOrEqual(0);
+    });
+});
+
+describe('AudioNode', () => {
+    let sg: any;
+    beforeEach(() => {
+        sg = makeSpaceGraph();
+    });
+
+    it('creates audio element and updates properly', () => {
+        const n = new AudioNode(sg, {
+            id: 'an',
+            type: 'AudioNode',
+            data: { src: 'test.mp3', autoplay: true },
+        });
+        expect(n.audioElement).toBeTruthy();
+        expect(n.audioElement.src).toContain('test.mp3');
+        expect(n.audioElement.autoplay).toBe(true);
+
+        n.updateSpec({ data: { src: 'test2.mp3', loop: true } });
+        expect(n.audioElement.src).toContain('test2.mp3');
+        expect(n.audioElement.loop).toBe(true);
+    });
+});
+
+describe('MathNode', () => {
+    let sg: any;
+    beforeEach(() => {
+        sg = makeSpaceGraph();
+    });
+
+    it('instantiates and contains loading text before katex loads', () => {
+        const n = new MathNode(sg, {
+            id: 'mn',
+            type: 'MathNode',
+            data: { math: 'x^2' },
+        });
+        expect(n.domElement).toBeTruthy();
+        expect(n.domElement.textContent).toContain('Loading Math...');
+    });
+});
+
+describe('ChartNode', () => {
+    let sg: any;
+    beforeEach(() => {
+        sg = makeSpaceGraph();
+    });
+
+    it('instantiates and fallback renders without throwing', () => {
+        const n = new ChartNode(sg, {
+            id: 'cn',
+            type: 'ChartNode',
+            label: 'Test Chart',
+            data: { datasets: [{ data: [1, 2, 3] }] },
+        });
+        expect(n.canvasEl).toBeTruthy();
+        expect(n.domElement.textContent).toContain('Test Chart');
+    });
+});
+
+describe('GroupNode', () => {
+    let sg: any;
+    beforeEach(() => {
+        sg = makeSpaceGraph();
+    });
+
+    it('creates box geometry and handles LOD opacity', () => {
+        const n = new GroupNode(sg, {
+            id: 'gn',
+            type: 'GroupNode',
+            data: { width: 100, height: 100, depth: 100 },
+        });
+
+        // Find mesh child
+        const mesh = n.object.children[0] as THREE.Mesh;
+        expect(mesh).toBeTruthy();
+
+        // Test LOD update
+        n.updateLod(500); // Less than default threshold 1200
+        expect((mesh.material as THREE.Material).opacity).toBe(0.05);
+
+        n.updateLod(2000); // Greater than threshold
+        expect((mesh.material as THREE.Material).opacity).toBe(0.2);
+    });
+});
+
+describe('HtmlNode', () => {
+    let sg: any;
+    beforeEach(() => {
+        sg = makeSpaceGraph();
+    });
+
+    it('creates html content correctly', () => {
+        const n = new HtmlNode(sg, {
+            id: 'hn',
+            type: 'HtmlNode',
+            data: { html: '<span>Test</span>' },
+        });
+        expect(n.domElement.innerHTML).toContain('Test');
     });
 });
 

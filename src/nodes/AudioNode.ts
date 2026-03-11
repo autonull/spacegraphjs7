@@ -34,6 +34,12 @@ export class AudioNode extends DOMNode {
         if (spec.data?.src) {
             this.audioElement.src = spec.data.src;
         }
+        if (spec.data?.autoplay !== undefined) {
+            this.audioElement.autoplay = spec.data.autoplay;
+        }
+        if (spec.data?.loop !== undefined) {
+            this.audioElement.loop = spec.data.loop;
+        }
 
         this.domElement.appendChild(titleEl);
         this.domElement.appendChild(this.audioElement);
