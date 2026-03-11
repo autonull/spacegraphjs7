@@ -70,6 +70,31 @@ We maintain high quality standards. Before opening a PR, ensure you have:
 
 After submitting a PR, wait for the GitHub Actions to complete. If the `Playwright Vision Tests` fail, it means your pull request introduced a visual defect (e.g. contrast failure) globally!
 
+## 🚀 Good First Issues
+
+If you are new to the project, the easiest way to start contributing is by adding or improving **Nodes**. Nodes are self-contained rendering primitives that extend `DOMNode` or `Node`.
+
+1. **Check the `good-first-issue` label** on GitHub.
+2. **Add a new Node type:** Look at simple implementations like `src/nodes/ShapeNode.ts` or `src/nodes/ImageNode.ts`. You can build new nodes (e.g., `CodeSnippetNode`, `BadgeNode`) by extending `DOMNode` and registering them in `PluginManager`.
+3. **Enhance existing Nodes:** Help us add more configuration options to complex nodes like `src/nodes/ChartNode.ts` or `src/nodes/GlobeNode.ts`.
+
+## 🧠 Training ONNX Vision Models
+
+SpaceGraphJS relies on localized ONNX models to evaluate UI quality (Layout, Contrast, Overlap). If you are interested in ML/AI contributions, you can help improve our heuristics:
+
+1. **Prerequisites:** You need Python 3 installed.
+2. **Install ML dependencies:**
+   ```bash
+   pip install numpy scikit-learn skl2onnx
+   ```
+3. **Modify Training Data:** Open `train_vision_models.py`. You can adjust the synthetic data generation logic (e.g., inside `train_tla()` for Text Legibility or `train_odn()` for Overlap Detection) to better represent complex edge cases.
+4. **Train and Export:**
+   ```bash
+   python3 train_vision_models.py
+   ```
+   This will output new `.onnx` files into the `public/` directory.
+5. **Test locally:** Run `npm run test:vision` to see if your new weights improve the Playwright assertions.
+
 ## 🐞 Reporting Bugs
 
 When reporting an issue, please answer the following:
