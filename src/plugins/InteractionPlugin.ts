@@ -240,6 +240,9 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
                 this.isDragging = true;
                 this.dragNode = hit.node;
 
+                // Disable orbit while dragging a node
+                this.sg.cameraControls.controls.enabled = false;
+
                 // If dragging a node that isn't selected, drag ONLY that node
                 if (!this.selectedNodes.has(this.dragNode)) {
                     this.selectedNodes.clear();
@@ -333,6 +336,7 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
                 this.draggingNodes.clear();
                 this.nodeDragOffsets.clear();
                 this.sg.renderer.renderer.domElement.style.cursor = 'auto';
+                this.sg.cameraControls.controls.enabled = true; // Re-enable orbit after drag
             }
         };
 
