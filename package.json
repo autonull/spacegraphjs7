@@ -38,7 +38,21 @@
         "docs": "typedoc --options typedoc.json"
     },
     "peerDependencies": {
+        "chart.js": "^4.5.1",
+        "katex": "^0.16.33",
+        "marked": "^17.0.3",
         "three": ">=0.150.0"
+    },
+    "peerDependenciesMeta": {
+        "chart.js": {
+            "optional": true
+        },
+        "katex": {
+            "optional": true
+        },
+        "marked": {
+            "optional": true
+        }
     },
     "devDependencies": {
         "@eslint/js": "^10.0.1",
@@ -78,10 +92,7 @@
         "three.js"
     ],
     "dependencies": {
-        "chart.js": "^4.5.1",
         "gsap": "^3.14.2",
-        "katex": "^0.16.33",
-        "marked": "^17.0.3",
         "mitt": "^3.0.1",
         "onnxruntime-web": "^1.24.2",
         "three-mesh-bvh": "^0.9.9"
