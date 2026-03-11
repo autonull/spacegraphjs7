@@ -29,15 +29,21 @@ const initGraph = async () => {
         sgInstance = null;
     }
 
-    if (props.url) {
-        sgInstance = await SpaceGraph.fromURL(props.url, container.value, props.options);
-        emit('ready', sgInstance);
-    } else {
-        sgInstance = new SpaceGraph(container.value, props.options);
-        if (props.spec) {
-            sgInstance.graph.fromJSON(props.spec);
+    try {
+        if (props.url) {
+            sgInstance = await SpaceGraph.fromURL(props.url, container.value, props.options);
+        } else {
+            sgInstance = new SpaceGraph(container.value, props.options);
+            if (props.spec) {
+                sgInstance.graph.fromJSON(props.spec);
+            }
         }
+
+        await sgInstance.init();
+        sgInstance.render();
         emit('ready', sgInstance);
+    } catch (err) {
+        console.error('[VueSpaceGraph] Initialization failed', err);
     }
 };
 
