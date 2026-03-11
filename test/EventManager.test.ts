@@ -50,4 +50,35 @@ describe('EventManager', () => {
         expect(handler1).not.toHaveBeenCalled();
         expect(handler2).not.toHaveBeenCalled();
     });
+
+    it('should batch emit events and only fire the latest one', () => {
+        vi.useFakeTimers();
+
+        const mockSg = {} as SpaceGraph;
+        const manager = new EventManager(mockSg);
+
+        // Mock RAF since we are in node/jsdom
+        vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb: FrameRequestCallback) => {
+            return setTimeout(() => cb(Date.now()), 16) as any;
+        });
+
+        const handlerSpy = vi.fn();
+        manager.on('interaction:drag', handlerSpy);
+
+        manager.emitBatched('interaction:drag', { node: { id: 'test', position: { x: 1 } } });
+        manager.emitBatched('interaction:drag', { node: { id: 'test', position: { x: 2 } } });
+        manager.emitBatched('interaction:drag', { node: { id: 'test', position: { x: 3 } } });
+
+        // Has not fired synchronously
+        expect(handlerSpy).not.toHaveBeenCalled();
+
+        vi.advanceTimersByTime(20);
+
+        // Should have fired only once with the latest position
+        expect(handlerSpy).toHaveBeenCalledTimes(1);
+        expect(handlerSpy).toHaveBeenCalledWith({ node: { id: 'test', position: { x: 3 } } });
+
+        vi.restoreAllMocks();
+        vi.useRealTimers();
+    });
 });
