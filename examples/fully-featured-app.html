@@ -72,6 +72,10 @@
                 primaryColor: '#22c55e',
                 secondaryColor: '#10b981'
             },
+            enableGrid: true,
+            nodeTooltip: (node) => {
+                return `**${node.id}**\nType: ${node.type}\nStatus: Active`;
+            },
             onNodeSelect: (selectedNodes) => {
                 if (selectedNodes.length > 0) {
                     console.log('Selected:', selectedNodes.map(n => n.id));
@@ -101,8 +105,37 @@
             label: 'Analyze Network',
             icon: '🔍',
             onClick: () => {
-                app.showAlert('Running network analysis...', 'warning', 2000);
-                setTimeout(() => app.showAlert('Analysis complete. No issues found.', 'success'), 2500);
+                app.showLoading('Analyzing network traffic...');
+                setTimeout(() => {
+                    app.hideLoading();
+                    app.showAlert('Analysis complete. No issues found.', 'success');
+                }, 2000);
+            }
+        });
+
+        app.addButton({
+            id: 'btn-settings',
+            label: 'Settings',
+            icon: '⚙️',
+            onClick: () => {
+                app.showModal({
+                    title: 'System Settings',
+                    html: `
+                        <div style="display: flex; flex-direction: column; gap: 12px;">
+                            <label style="display: flex; align-items: center; gap: 8px;">
+                                <input type="checkbox" checked /> Enable auto-layout
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px;">
+                                <input type="checkbox" checked /> Show real-time traffic
+                            </label>
+                            <label style="display: flex; flex-direction: column; gap: 4px; margin-top: 8px;">
+                                Refresh Rate
+                                <input type="range" min="1" max="10" value="5" />
+                            </label>
+                            <button onclick="document.getElementById('spacegraph-modal-overlay').click()" style="margin-top: 16px; padding: 8px; background: #3b82f6; border: none; border-radius: 4px; color: white; cursor: pointer;">Save Changes</button>
+                        </div>
+                    `
+                });
             }
         });
 

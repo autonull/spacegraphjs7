@@ -2,6 +2,7 @@ import { SpaceGraph, GraphSpec } from '../SpaceGraph';
 import { HUDPlugin } from '../plugins/HUDPlugin';
 import { InteractionPlugin } from '../plugins/InteractionPlugin';
 import { MinimapPlugin } from '../plugins/MinimapPlugin';
+import * as THREE from 'three';
 import { HtmlNode } from '../nodes/HtmlNode';
 
 export interface SpaceGraphAppOptions {
@@ -21,6 +22,8 @@ export interface SpaceGraphAppOptions {
     onNodeDblClick?: (node: any) => void;
     nodeContextMenu?: (node: any) => Array<{ label: string; action: () => void }>;
     graphContextMenu?: () => Array<{ label: string; action: () => void }>;
+    nodeTooltip?: (node: any) => string | HTMLElement;
+    enableGrid?: boolean;
 }
 
 export interface AppButtonConfig {
@@ -79,6 +82,18 @@ export class SpaceGraphApp {
             const minimap = new MinimapPlugin();
             this.sg.pluginManager.register('minimap', minimap);
             minimap.init(this.sg);
+        }
+
+        if (this.options.enableGrid !== false) {
+            // enable grid by default unless explicitly false
+            const size = 10000;
+            const divisions = 100;
+            const gridHelper = new THREE.GridHelper(size, divisions, 0x475569, 0x1e293b);
+            // @ts-ignore
+            gridHelper.material.opacity = 0.5;
+            // @ts-ignore
+            gridHelper.material.transparent = true;
+            this.sg.renderer.scene.add(gridHelper);
         }
 
         this.setupDefaultHUD(theme);
@@ -148,6 +163,20 @@ export class SpaceGraphApp {
                     this.hud.showContextMenu(items, event.clientX, event.clientY);
                 }
             }
+        });
+
+        // Hover events
+        this.sg.events.on('node:pointerenter', ({ node, event }) => {
+            if (this.options.nodeTooltip) {
+                const content = this.options.nodeTooltip(node);
+                if (content) {
+                    this.hud.showTooltip(content as string, event.clientX, event.clientY);
+                }
+            }
+        });
+
+        this.sg.events.on('node:pointerleave', () => {
+            this.hud.hideTooltip();
         });
     }
 
@@ -242,6 +271,41 @@ export class SpaceGraphApp {
         fitBtn.textContent = 'Fit View';
         fitBtn.addEventListener('click', () => this.sg.fitView(200));
         toolbarContainer.appendChild(fitBtn);
+
+        // Zoom Controls Container
+        const zoomContainer = document.createElement('div');
+        Object.assign(zoomContainer.style, {
+            display: 'flex',
+            gap: '2px',
+            background: 'rgba(255,255,255,0.05)',
+            borderRadius: '99px',
+            overflow: 'hidden',
+            border: '1px solid rgba(255,255,255,0.1)'
+        });
+
+        const createZoomBtn = (label: string, isZoomIn: boolean) => {
+            const btn = document.createElement('button');
+            btn.textContent = label;
+            Object.assign(btn.style, {
+                background: 'transparent', border: 'none', padding: '6px 12px',
+                color: 'white', fontWeight: 'bold', fontSize: '16px', cursor: 'pointer'
+            });
+            btn.onmouseenter = () => btn.style.background = 'rgba(255,255,255,0.1)';
+            btn.onmouseleave = () => btn.style.background = 'transparent';
+            btn.onclick = () => {
+                if (!this.sg.cameraControls) return;
+                const currentRadius = this.sg.cameraControls.spherical.radius;
+                const zoomFactor = 0.5; // adjust relative to distance
+                const delta = isZoomIn ? -(currentRadius * zoomFactor) : (currentRadius * zoomFactor);
+                const targetRadius = Math.max(10, Math.min(5000, currentRadius + delta));
+                this.sg.cameraControls.flyTo(this.sg.cameraControls.target, targetRadius, 0.5);
+            };
+            return btn;
+        };
+
+        zoomContainer.appendChild(createZoomBtn('-', false));
+        zoomContainer.appendChild(createZoomBtn('+', true));
+        toolbarContainer.appendChild(zoomContainer);
 
         // Toolbar Actions Container
         const actionsContainer = document.createElement('div');
@@ -399,6 +463,22 @@ export class SpaceGraphApp {
 
     public showAlert(message: string, type: 'info' | 'success' | 'warning' | 'error' = 'info') {
         this.hud.showAlert(message, type);
+    }
+
+    public showModal(options: { title: string; html: string; width?: string; onClose?: () => void }) {
+        this.hud.showModal(options);
+    }
+
+    public hideModal() {
+        this.hud.hideModal();
+    }
+
+    public showLoading(message?: string) {
+        this.hud.showLoading(message);
+    }
+
+    public hideLoading() {
+        this.hud.hideLoading();
     }
 
     public dispose() {
