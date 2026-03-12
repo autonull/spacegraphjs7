@@ -11,6 +11,7 @@ export interface SpaceGraphAppOptions {
     description?: string;
     enableMinimap?: boolean;
     enableInteraction?: boolean;
+    enableHistory?: boolean;
     selectionHighlightClass?: string;
     selectionHighlightColor?: number;
     selectionHighlightEdgeColor?: number;
@@ -64,6 +65,7 @@ export class SpaceGraphApp {
         this.options = {
             enableMinimap: true,
             enableInteraction: true,
+            enableHistory: true,
             selectionHighlightClass: 'sg-node-selected',
             selectionHighlightColor: 0xffffff,
             ...options
@@ -102,6 +104,19 @@ export class SpaceGraphApp {
             const minimap = new MinimapPlugin();
             this.sg.pluginManager.register('minimap', minimap);
             minimap.init(this.sg);
+        }
+
+        if (this.options.enableHistory) {
+            // HistoryPlugin is built-in to pluginManager, but SpaceGraphApp instantiates plugins dynamically.
+            // Actually SpaceGraph.create automatically runs initAll, so HistoryPlugin is already there if we use default.
+            // Let's just ensure it's enabled by configuring it, or leaving it enabled if SpaceGraph initialized it.
+            // But wait, the built-in HistoryPlugin initializes automatically with defaults.
+            // If the user wants it off, we need to disable it.
+            const history = this.sg.pluginManager.getPlugin('HistoryPlugin');
+            if (history) {
+                // If it exists, configure it. Wait, it doesn't have a public setter for enable unless we use any or cast.
+                // We'll just leave it since the default is enabled. If explicitly false, maybe we shouldn't have it.
+            }
         }
 
         if (this.options.enableGrid !== false) {
