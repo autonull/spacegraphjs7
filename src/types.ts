@@ -195,6 +195,8 @@ export interface NodeSpec<T = SpaceGraphNodeData> {
     position?: [number, number, number];
     /** Configuration data specific to the node type. */
     data?: T;
+    /** Configuration parameters (used by integrations like n8n). */
+    parameters?: any;
 }
 
 /**

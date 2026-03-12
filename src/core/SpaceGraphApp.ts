@@ -13,6 +13,7 @@ export interface SpaceGraphAppOptions {
     enableInteraction?: boolean;
     selectionHighlightClass?: string;
     selectionHighlightColor?: number;
+    selectionHighlightEdgeColor?: number;
     theme?: {
         primaryColor?: string;
         secondaryColor?: string;
@@ -21,6 +22,11 @@ export interface SpaceGraphAppOptions {
     onNodeSelect?: (nodes: any[]) => void;
     onNodeDblClick?: (node: any) => void;
     nodeContextMenu?: (node: any) => Array<{ label: string; action: () => void }>;
+    onEdgeSelect?: (edges: any[]) => void;
+    onEdgeDblClick?: (edge: any) => void;
+    edgeContextMenu?: (edge: any) => Array<{ label: string; action: () => void }>;
+    onEdgeCreate?: (source: any, target: any) => void;
+    edgeTooltip?: (edge: any) => string | HTMLElement;
     graphContextMenu?: () => Array<{ label: string; action: () => void }>;
     nodeTooltip?: (node: any) => string | HTMLElement;
     enableGrid?: boolean;
@@ -44,7 +50,9 @@ export class SpaceGraphApp {
     private options: SpaceGraphAppOptions;
     private hud!: HUDPlugin;
     private currentSelected: any[] = [];
+    private currentSelectedEdges: any[] = [];
     private originalColors = new Map<any, number>();
+    private originalEdgeColors = new Map<any, number>();
     private buttons: AppButtonConfig[] = [];
     private toolbarActions: AppButtonConfig[] = [];
 
@@ -111,22 +119,32 @@ export class SpaceGraphApp {
         if (typeof document === 'undefined') return;
 
         document.addEventListener('keydown', (e) => {
+            const tag = (e.target as HTMLElement)?.tagName;
+            if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+
             // Built-in standard behavior
             if (e.key === 'Escape') {
                 this.hideModal();
                 this.hud.hideContextMenu();
                 this.clearSelectionStyles();
                 this.currentSelected = [];
+                this.currentSelectedEdges = [];
+                this.setMode('default'); // reset mode on escape
                 this.updateStatsHUD();
                 if (this.options.onNodeSelect) this.options.onNodeSelect([]);
+                if (this.options.onEdgeSelect) this.options.onEdgeSelect([]);
+            }
+
+            if ((e.key === 'Delete' || e.key === 'Backspace') && (this.currentSelected.length > 0 || this.currentSelectedEdges.length > 0)) {
+                // If custom hotkey overrides delete, don't do default delete
+                if (!(this.options.hotkeys && this.options.hotkeys[e.key])) {
+                    this.currentSelectedEdges.forEach(edge => this.removeEdge(edge.id));
+                    this.currentSelected.forEach(node => this.removeNode(node.id));
+                }
             }
 
             // Custom hotkeys
             if (this.options.hotkeys && this.options.hotkeys[e.key]) {
-                // Don't trigger custom hotkeys if user is typing in an input
-                const tag = (e.target as HTMLElement)?.tagName;
-                if (tag === 'INPUT' || tag === 'TEXTAREA') return;
-
                 this.options.hotkeys[e.key]();
             }
         });
@@ -208,14 +226,29 @@ export class SpaceGraphApp {
 
     private setupInteractionHandlers() {
         // Selection handling
-        this.sg.events.on('interaction:selection', ({ nodes }) => {
+        this.sg.events.on('interaction:selection', ({ nodes, edges }) => {
             this.clearSelectionStyles();
-            this.currentSelected = nodes;
+            this.currentSelected = nodes || [];
+            this.currentSelectedEdges = edges || [];
             this.applySelectionStyles();
             this.updateStatsHUD();
 
             if (this.options.onNodeSelect) {
                 this.options.onNodeSelect(this.currentSelected);
+            }
+            if (this.options.onEdgeSelect) {
+                this.options.onEdgeSelect(this.currentSelectedEdges);
+            }
+        });
+
+        // Edge Creation
+        this.sg.events.on('interaction:edgecreate', ({ source, target }) => {
+            if (this.options.onEdgeCreate) {
+                this.options.onEdgeCreate(source, target);
+            } else {
+                // Default behavior: create a FlowEdge
+                const edgeId = `edge-${Date.now()}`;
+                this.addEdge({ id: edgeId, source: source.id, target: target.id, type: 'FlowEdge' });
             }
         });
 
@@ -223,10 +256,14 @@ export class SpaceGraphApp {
         this.sg.events.on('graph:click', () => {
             this.clearSelectionStyles();
             this.currentSelected = [];
+            this.currentSelectedEdges = [];
             this.updateStatsHUD();
 
             if (this.options.onNodeSelect) {
                 this.options.onNodeSelect([]);
+            }
+            if (this.options.onEdgeSelect) {
+                this.options.onEdgeSelect([]);
             }
         });
 
@@ -234,11 +271,31 @@ export class SpaceGraphApp {
         this.sg.events.on('node:click', ({ node }) => {
             this.clearSelectionStyles();
             this.currentSelected = [node];
+            this.currentSelectedEdges = [];
             this.applySelectionStyles();
             this.updateStatsHUD();
 
             if (this.options.onNodeSelect) {
                 this.options.onNodeSelect(this.currentSelected);
+            }
+            if (this.options.onEdgeSelect) {
+                this.options.onEdgeSelect([]);
+            }
+        });
+
+        // Edge click handling
+        this.sg.events.on('edge:click', ({ edge }) => {
+            this.clearSelectionStyles();
+            this.currentSelected = [];
+            this.currentSelectedEdges = [edge];
+            this.applySelectionStyles();
+            this.updateStatsHUD();
+
+            if (this.options.onNodeSelect) {
+                this.options.onNodeSelect([]);
+            }
+            if (this.options.onEdgeSelect) {
+                this.options.onEdgeSelect(this.currentSelectedEdges);
             }
         });
 
@@ -253,10 +310,26 @@ export class SpaceGraphApp {
             }
         });
 
+        // Edge double click
+        this.sg.events.on('edge:dblclick', ({ edge }) => {
+            if (this.options.onEdgeDblClick) {
+                this.options.onEdgeDblClick(edge);
+            }
+        });
+
         // Context Menus
         this.sg.events.on('node:contextmenu', ({ node, event }) => {
             if (this.options.nodeContextMenu) {
                 const items = this.options.nodeContextMenu(node);
+                if (items && items.length > 0) {
+                    this.hud.showContextMenu(items, event.clientX, event.clientY);
+                }
+            }
+        });
+
+        this.sg.events.on('edge:contextmenu', ({ edge, event }) => {
+            if (this.options.edgeContextMenu) {
+                const items = this.options.edgeContextMenu(edge);
                 if (items && items.length > 0) {
                     this.hud.showContextMenu(items, event.clientX, event.clientY);
                 }
@@ -285,6 +358,29 @@ export class SpaceGraphApp {
         this.sg.events.on('node:pointerleave', () => {
             this.hud.hideTooltip();
         });
+
+        this.sg.events.on('edge:pointerenter', ({ edge, event }) => {
+            if (this.options.edgeTooltip) {
+                const content = this.options.edgeTooltip(edge);
+                if (content) {
+                    this.hud.showTooltip(content as string, event.clientX, event.clientY);
+                }
+            }
+        });
+
+        this.sg.events.on('edge:pointerleave', () => {
+            this.hud.hideTooltip();
+        });
+    }
+
+    /**
+     * Set the interaction mode for the canvas.
+     */
+    public setMode(mode: 'default' | 'select' | 'connect') {
+        const interaction = this.sg.pluginManager.getPlugin('interaction') as InteractionPlugin;
+        if (interaction) {
+            interaction.mode = mode;
+        }
     }
 
     private clearSelectionStyles() {
@@ -297,6 +393,13 @@ export class SpaceGraphApp {
             }
         });
         this.originalColors.clear();
+
+        this.currentSelectedEdges.forEach(edge => {
+            if (this.options.selectionHighlightEdgeColor && this.originalEdgeColors.has(edge)) {
+                edge.updateSpec({ data: { color: this.originalEdgeColors.get(edge) } });
+            }
+        });
+        this.originalEdgeColors.clear();
     }
 
     private applySelectionStyles() {
@@ -307,6 +410,13 @@ export class SpaceGraphApp {
                 // Save original color and apply highlight for WebGL nodes
                 this.originalColors.set(node, node.data.color);
                 node.updateSpec({ data: { color: this.options.selectionHighlightColor } });
+            }
+        });
+
+        this.currentSelectedEdges.forEach(edge => {
+            if (this.options.selectionHighlightEdgeColor && edge.data?.color !== undefined && typeof edge.updateSpec === 'function') {
+                this.originalEdgeColors.set(edge, edge.data.color);
+                edge.updateSpec({ data: { color: this.options.selectionHighlightEdgeColor } });
             }
         });
     }
@@ -559,7 +669,7 @@ export class SpaceGraphApp {
 
         const countEl = document.getElementById('sg-app-selected-count');
         if (countEl) {
-            countEl.textContent = this.currentSelected.length.toString();
+            countEl.textContent = (this.currentSelected.length + this.currentSelectedEdges.length).toString();
         }
 
         const nodeCountEl = document.getElementById('sg-app-node-count');
