@@ -32,6 +32,10 @@ export interface SpaceGraphAppOptions {
     enableGrid?: boolean;
     enableSearch?: boolean;
     hotkeys?: Record<string, () => void>;
+    /** Initial actions to place in the bottom toolbar. */
+    toolbarActions?: AppButtonConfig[];
+    /** Initial actions to place in the top-right HUD. */
+    actions?: AppButtonConfig[];
 }
 
 export interface AppButtonConfig {
@@ -71,6 +75,10 @@ export class SpaceGraphApp {
             backgroundColor: 'rgba(15, 23, 42, 0.9)',
             ...this.options.theme
         };
+        this.options.theme = theme; // save defaults back
+
+        if (options.actions) this.buttons.push(...options.actions);
+        if (options.toolbarActions) this.toolbarActions.push(...options.toolbarActions);
 
         // Create the base SpaceGraph instance
         this.sg = SpaceGraph.create(container, this.options.spec);
@@ -113,6 +121,24 @@ export class SpaceGraphApp {
         if (this.options.enableSearch) {
             this.setupSearchHUD(theme);
         }
+
+        if (this.buttons.length > 0) {
+            this.renderButtons();
+        }
+    }
+
+    public setTheme(theme: Partial<SpaceGraphAppOptions['theme']>) {
+        this.options.theme = { ...this.options.theme, ...theme };
+
+        // Re-render HUD to apply theme changes
+        this.setupDefaultHUD(this.options.theme);
+        if (this.options.enableSearch) {
+            this.setupSearchHUD(this.options.theme);
+        }
+        if (this.buttons.length > 0) {
+            this.renderButtons();
+        }
+        this.renderToolbarActions();
     }
 
     private setupHotkeys() {
@@ -154,6 +180,9 @@ export class SpaceGraphApp {
     private setupSearchHUD(theme: any) {
         if (typeof document === 'undefined') return;
 
+        // Remove old if exists
+        this.hud.removeElement('app-search');
+
         const container = document.createElement('div');
         Object.assign(container.style, {
             background: theme.backgroundColor,
@@ -164,7 +193,8 @@ export class SpaceGraphApp {
             display: 'flex',
             alignItems: 'center',
             boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
-            width: '300px'
+            width: '300px',
+            transition: 'background 0.3s ease'
         });
 
         const icon = document.createElement('span');
@@ -425,17 +455,34 @@ export class SpaceGraphApp {
     private setupDefaultHUD(theme: any) {
         if (typeof document === 'undefined') return;
 
+        // Remove old HUD elements to support dynamic theme swapping
+        this.hud.removeElement('app-title-card');
+        this.hud.removeElement('app-toolbar');
+
         // App Title
         if (this.options.title) {
+            const titleCard = document.createElement('div');
+            Object.assign(titleCard.style, {
+                background: theme.backgroundColor,
+                backdropFilter: 'blur(8px)',
+                padding: '16px',
+                borderRadius: '12px',
+                border: '1px solid rgba(255,255,255,0.1)',
+                width: '300px',
+                color: 'white',
+                fontFamily: 'sans-serif',
+                transition: 'all 0.3s ease'
+            });
+
+            titleCard.innerHTML = `
+                <h1 style="font-size: 18px; margin: 0 0 8px 0; background: -webkit-linear-gradient(135deg, ${theme.primaryColor}, ${theme.secondaryColor}); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">${this.options.title}</h1>
+                ${this.options.description ? `<p style="font-size: 12px; color: #94a3b8; line-height: 1.5; margin: 0;">${this.options.description}</p>` : ''}
+            `;
+
             this.hud.addElement({
                 id: 'app-title-card',
                 position: 'top-left',
-                html: `
-                    <div style="background: ${theme.backgroundColor}; backdrop-filter: blur(8px); padding: 16px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); width: 300px; color: white; font-family: sans-serif;">
-                        <h1 style="font-size: 18px; margin: 0 0 8px 0; background: -webkit-linear-gradient(135deg, ${theme.primaryColor}, ${theme.secondaryColor}); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">${this.options.title}</h1>
-                        ${this.options.description ? `<p style="font-size: 12px; color: #94a3b8; line-height: 1.5; margin: 0;">${this.options.description}</p>` : ''}
-                    </div>
-                `
+                element: titleCard
             });
         }
 
@@ -610,6 +657,8 @@ export class SpaceGraphApp {
     private renderButtons() {
         if (typeof document === 'undefined') return;
 
+        this.hud.removeElement('app-actions');
+
         const theme = {
             primaryColor: '#3b82f6',
             secondaryColor: '#8b5cf6',
@@ -697,6 +746,45 @@ export class SpaceGraphApp {
 
     public hideLoading() {
         this.hud.hideLoading();
+    }
+
+    // --- View and Data Helpers ---
+
+    public exportData() {
+        return this.sg.export();
+    }
+
+    public importData(data: any) {
+        this.sg.import(data);
+        this.updateStatsHUD();
+    }
+
+    /**
+     * Computes the bounding box of a specific set of nodes and flies the camera to view them.
+     */
+    public focusOnNodes(nodeIds: string[], padding: number = 100, duration: number = 1.5) {
+        const nodes = nodeIds.map(id => this.sg.graph.getNode(id)).filter(Boolean);
+        if (nodes.length === 0) return;
+
+        const box = new THREE.Box3();
+        nodes.forEach((node) => {
+            box.expandByPoint(node!.position);
+        });
+
+        const center = new THREE.Vector3();
+        box.getCenter(center);
+
+        const size = new THREE.Vector3();
+        box.getSize(size);
+
+        const maxDim = Math.max(size.x, size.y, size.z);
+        const fov = this.sg.renderer.camera.fov * (Math.PI / 180);
+        let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
+
+        cameraZ += padding;
+        cameraZ = Math.max(cameraZ, 200);
+
+        this.sg.cameraControls.flyTo(center, cameraZ, duration);
     }
 
     // --- Graph Mutation Helpers ---
