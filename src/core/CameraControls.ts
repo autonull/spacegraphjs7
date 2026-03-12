@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import gsap from 'gsap';
 import type { SpaceGraph } from '../SpaceGraph';
+import { GestureManager } from '../utils/GestureManager';
 
 export class CameraControls {
     private sg: SpaceGraph;
@@ -201,15 +202,10 @@ export class CameraControls {
                     const t = Array.from(this.activeTouches.values());
 
                     // Initial distance between two fingers
-                    const dx = t[0].x - t[1].x;
-                    const dy = t[0].y - t[1].y;
-                    this.prevPinchDistance = Math.sqrt(dx * dx + dy * dy);
+                    this.prevPinchDistance = GestureManager.calculateDistance(t[0], t[1]);
 
                     // Midpoint
-                    this.prevPinchMidpoint = {
-                        x: (t[0].x + t[1].x) / 2,
-                        y: (t[0].y + t[1].y) / 2,
-                    };
+                    this.prevPinchMidpoint = GestureManager.calculateMidpoint(t[0], t[1]);
                     this.panVelocity = { x: 0, y: 0 };
                 }
             },
@@ -253,31 +249,24 @@ export class CameraControls {
                     const t = Array.from(this.activeTouches.values());
 
                     // 1. Pinch-to-zoom calculation
-                    const dx = t[0].x - t[1].x;
-                    const dy = t[0].y - t[1].y;
-                    const distance = Math.sqrt(dx * dx + dy * dy);
-
-                    const distanceDelta = distance - this.prevPinchDistance;
-                    const zoomSpeed = this.spherical.radius * 0.005; // speed scales with distance
-                    this.spherical.radius = Math.max(
-                        10,
-                        Math.min(5000, this.spherical.radius - distanceDelta * zoomSpeed),
+                    const distance = GestureManager.calculateDistance(t[0], t[1]);
+                    this.spherical.radius = GestureManager.calculatePinchZoom(
+                        distance,
+                        this.prevPinchDistance,
+                        this.spherical.radius
                     );
-
                     this.prevPinchDistance = distance;
 
                     // 2. Midpoint 2-finger panning calculation
-                    const currentMidpoint = {
-                        x: (t[0].x + t[1].x) / 2,
-                        y: (t[0].y + t[1].y) / 2,
-                    };
+                    const currentMidpoint = GestureManager.calculateMidpoint(t[0], t[1]);
+                    const panVel = GestureManager.calculatePan(
+                        currentMidpoint,
+                        this.prevPinchMidpoint,
+                        this.spherical.radius
+                    );
 
-                    const midDeltaX = currentMidpoint.x - this.prevPinchMidpoint.x;
-                    const midDeltaY = currentMidpoint.y - this.prevPinchMidpoint.y;
-
-                    const panSpeed = this.spherical.radius * 0.002;
-                    this.panVelocity.x = -midDeltaX * panSpeed;
-                    this.panVelocity.y = midDeltaY * panSpeed;
+                    this.panVelocity.x = panVel.x;
+                    this.panVelocity.y = panVel.y;
 
                     const camera = this.sg.renderer.camera;
                     const right = new THREE.Vector3().setFromMatrixColumn(camera.matrix, 0);
