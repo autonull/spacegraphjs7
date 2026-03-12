@@ -56,6 +56,7 @@ import { PhysicsPlugin } from './plugins/PhysicsPlugin';
 import { HUDPlugin } from './plugins/HUDPlugin';
 import { HistoryPlugin } from './plugins/HistoryPlugin';
 import type { GraphSpec, SpaceGraphOptions, SpecUpdate } from './types';
+import { CameraUtils } from './utils/CameraUtils';
 
 export class SpaceGraph {
     public static instances: Set<SpaceGraph> = new Set();
@@ -304,28 +305,10 @@ export class SpaceGraph {
 
     fitView(padding: number = 100, duration: number = 1.5): void {
         const nodes = Array.from(this.graph.nodes.values());
-        if (nodes.length === 0) return;
-
-        const box = new THREE.Box3();
-        nodes.forEach((node) => {
-            box.expandByPoint(node.position);
-        });
-
-        const center = new THREE.Vector3();
-        box.getCenter(center);
-
-        const size = new THREE.Vector3();
-        box.getSize(size);
-
-        const maxDim = Math.max(size.x, size.y, size.z);
-        const fov = this.renderer.camera.fov * (Math.PI / 180);
-        let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
-
-        // Add padding and a minimum distance
-        cameraZ += padding;
-        cameraZ = Math.max(cameraZ, 200); // Minimum distance
-
-        this.cameraControls.flyTo(center, cameraZ, duration);
+        const fit = CameraUtils.calculateFitView(nodes, this.renderer.camera, padding);
+        if (fit) {
+            this.cameraControls.flyTo(fit.center, fit.cameraZ, duration);
+        }
     }
 
     animate(timestamp: number = 0) {
