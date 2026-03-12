@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import gsap from 'gsap';
 import type { SpaceGraph } from '../SpaceGraph';
 import { GestureManager } from '../utils/GestureManager';
+import { CameraUtils } from '../utils/CameraUtils';
 
 export class CameraControls {
     private sg: SpaceGraph;
@@ -100,12 +101,8 @@ export class CameraControls {
             !this.isDragging &&
             (Math.abs(this.panVelocity.x) > 0.0001 || Math.abs(this.panVelocity.y) > 0.0001)
         ) {
-            const camera = this.sg.renderer.camera;
-            const right = new THREE.Vector3().setFromMatrixColumn(camera.matrix, 0);
-            const up = new THREE.Vector3().setFromMatrixColumn(camera.matrix, 1);
-
-            this.target.add(right.multiplyScalar(this.panVelocity.x));
-            this.target.add(up.multiplyScalar(this.panVelocity.y));
+            const translation = CameraUtils.calculatePanTranslation(this.sg.renderer.camera, this.panVelocity);
+            this.target.add(translation);
 
             this.panVelocity.x *= this.damping;
             this.panVelocity.y *= this.damping;
@@ -154,12 +151,8 @@ export class CameraControls {
                 this.panVelocity.x = -deltaX * panSpeed;
                 this.panVelocity.y = deltaY * panSpeed;
 
-                const camera = this.sg.renderer.camera;
-                const right = new THREE.Vector3().setFromMatrixColumn(camera.matrix, 0);
-                const up = new THREE.Vector3().setFromMatrixColumn(camera.matrix, 1);
-
-                this.target.add(right.multiplyScalar(this.panVelocity.x));
-                this.target.add(up.multiplyScalar(this.panVelocity.y));
+                const translation = CameraUtils.calculatePanTranslation(this.sg.renderer.camera, this.panVelocity);
+                this.target.add(translation);
             }
 
             this.updateCameraPosition();
@@ -268,12 +261,8 @@ export class CameraControls {
                     this.panVelocity.x = panVel.x;
                     this.panVelocity.y = panVel.y;
 
-                    const camera = this.sg.renderer.camera;
-                    const right = new THREE.Vector3().setFromMatrixColumn(camera.matrix, 0);
-                    const up = new THREE.Vector3().setFromMatrixColumn(camera.matrix, 1);
-
-                    this.target.add(right.multiplyScalar(this.panVelocity.x));
-                    this.target.add(up.multiplyScalar(this.panVelocity.y));
+                    const translation = CameraUtils.calculatePanTranslation(this.sg.renderer.camera, this.panVelocity);
+                    this.target.add(translation);
 
                     this.prevPinchMidpoint = currentMidpoint;
                     this.updateCameraPosition();

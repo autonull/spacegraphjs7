@@ -42,4 +42,26 @@ export class CameraUtils {
 
         return { center, cameraZ };
     }
+
+    /**
+     * Calculates the local 3D spatial translation required for panning based on a 2D velocity vector.
+     * Uses the camera's local right and up axes extracted from its matrix.
+     *
+     * @param camera The perspective camera used as the reference frame.
+     * @param panVelocity The 2D (x, y) pan velocity from gesture input.
+     * @returns A THREE.Vector3 representing the translation to apply to the camera's target.
+     */
+    static calculatePanTranslation(
+        camera: THREE.PerspectiveCamera,
+        panVelocity: { x: number, y: number }
+    ): THREE.Vector3 {
+        const right = new THREE.Vector3().setFromMatrixColumn(camera.matrix, 0);
+        const up = new THREE.Vector3().setFromMatrixColumn(camera.matrix, 1);
+
+        const translation = new THREE.Vector3();
+        translation.add(right.multiplyScalar(panVelocity.x));
+        translation.add(up.multiplyScalar(panVelocity.y));
+
+        return translation;
+    }
 }
