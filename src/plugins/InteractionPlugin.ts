@@ -12,6 +12,19 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
     private mouse = new THREE.Vector2();
     private pointerDownPosition = new THREE.Vector2();
 
+    private _mode: 'default' | 'select' | 'connect' = 'default';
+
+    get mode() {
+        return this._mode;
+    }
+
+    set mode(newMode: 'default' | 'select' | 'connect') {
+        this._mode = newMode;
+        if (newMode !== 'connect' && this.isConnecting) {
+            this.cancelConnectMode();
+        }
+    }
+
     // Dragging State Tracking
     private isDragging = false;
     private dragNode: any = null;
@@ -21,14 +34,22 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
     private nodeDragOffsets: Map<any, THREE.Vector3> = new Map();
     private intersection = new THREE.Vector3();
 
+    // Connect Mode State Tracking
+    private isConnecting = false;
+    private connectSourceNode: any = null;
+    private connectTempLine: THREE.Line | null = null;
+    private connectTempLineGeom: THREE.BufferGeometry | null = null;
+
     // Box Selection State
     private isBoxSelecting = false;
     private selectionBoxEl: HTMLElement | null = null;
     private selectionStart = new THREE.Vector2();
     private selectedNodes: Set<any> = new Set();
+    private selectedEdges: Set<any> = new Set();
 
     // Hover Tracking
     private hoveredNode: any = null;
+    private hoveredEdge: any = null;
 
     init(sg: SpaceGraph): void {
         this.sg = sg;
@@ -59,6 +80,20 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
             this.raycaster.setFromCamera(this.mouse, this.sg.renderer.camera);
             const meshes = this.getAllNodeMeshes();
             const intersects = this.raycaster.intersectObjects(meshes, false);
+
+            // Check edges
+            this.raycaster.params.Line = { threshold: 5 };
+            const lineObjects = this.sg.graph.edges.map(edge => edge.object).filter(Boolean);
+            const edgeIntersects = this.raycaster.intersectObjects(lineObjects, false);
+
+            if (edgeIntersects.length > 0) {
+                const edgeObj = edgeIntersects[0].object;
+                const edge = this.sg.graph.edges.find(edge => edge.object === edgeObj);
+                if (edge) {
+                    this.sg.events.emit('edge:contextmenu', { edge, event: e });
+                    return;
+                }
+            }
 
             if (intersects.length > 0) {
                 const node = this.getNodeFromMesh(intersects[0].object);
@@ -181,6 +216,20 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
 
             const meshes = this.getAllNodeMeshes();
 
+            // Check edges first using simple map over current edges
+            this.raycaster.params.Line = { threshold: 5 };
+            const lineObjects = this.sg.graph.edges.map(edge => edge.object).filter(Boolean);
+            const edgeIntersects = this.raycaster.intersectObjects(lineObjects, false);
+
+            if (edgeIntersects.length > 0) {
+                const edgeObj = edgeIntersects[0].object;
+                const edge = this.sg.graph.edges.find(e => e.object === edgeObj);
+                if (edge) {
+                    this.sg.events.emit('edge:click', { edge, event: e });
+                    return;
+                }
+            }
+
             const intersects = this.raycaster.intersectObjects(meshes, false);
 
             if (intersects.length > 0) {
@@ -213,6 +262,19 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
         return null;
     }
 
+    private getIntersectedEdge() {
+        this.raycaster.setFromCamera(this.mouse, this.sg.renderer.camera);
+        this.raycaster.params.Line = { threshold: 5 };
+        const lineObjects = this.sg.graph.edges.map(edge => edge.object).filter(Boolean);
+        const edgeIntersects = this.raycaster.intersectObjects(lineObjects, false);
+        if (edgeIntersects.length > 0) {
+            const edgeObj = edgeIntersects[0].object;
+            const edge = this.sg.graph.edges.find(e => e.object === edgeObj);
+            return { edge, point: edgeIntersects[0].point };
+        }
+        return null;
+    }
+
     private initDragAndSelect(): void {
         const canvas = this.sg.renderer.renderer.domElement;
 
@@ -220,11 +282,12 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
             this.updateMousePosition(e);
             const hit = this.getIntersectedNode();
 
-            // Shift key pressed => Box selection
-            if (e.shiftKey) {
+            // Box selection
+            if (e.shiftKey || this.mode === 'select') {
                 this.isBoxSelecting = true;
                 this.selectionStart.set(e.clientX, e.clientY);
                 this.selectedNodes.clear();
+                this.selectedEdges.clear();
 
                 if (this.selectionBoxEl) {
                     this.selectionBoxEl.style.display = 'block';
@@ -238,8 +301,39 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
                 return;
             }
 
+            // Connect Mode (draw edge)
+            if ((this.mode === 'connect' || e.altKey) && hit && hit.node) {
+                this.isConnecting = true;
+                this.connectSourceNode = hit.node;
+                this.sg.cameraControls.controls.enabled = false;
+
+                // Create temp line
+                const material = new THREE.LineDashedMaterial({
+                    color: 0x8b5cf6,
+                    dashSize: 10,
+                    gapSize: 5,
+                    linewidth: 2,
+                    depthTest: false
+                });
+                const points = [hit.node.position.clone(), hit.node.position.clone()];
+                this.connectTempLineGeom = new THREE.BufferGeometry().setFromPoints(points);
+                this.connectTempLine = new THREE.Line(this.connectTempLineGeom, material);
+                this.connectTempLine.computeLineDistances();
+                this.connectTempLine.renderOrder = 999;
+                this.sg.renderer.scene.add(this.connectTempLine);
+
+                // Create mathematical plane for dragging line end
+                this.dragPlane.setFromNormalAndCoplanarPoint(
+                    this.sg.renderer.camera.getWorldDirection(this.dragPlane.normal),
+                    hit.node.position,
+                );
+
+                this.sg.renderer.renderer.domElement.style.cursor = 'crosshair';
+                return;
+            }
+
             // Normal Drag
-            if (hit && hit.node) {
+            if (hit && hit.node && this.mode === 'default') {
                 this.isDragging = true;
                 this.dragNode = hit.node;
 
@@ -300,6 +394,42 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
                 return;
             }
 
+            if (this.isConnecting && this.connectSourceNode && this.connectTempLineGeom && this.connectTempLine) {
+                this.raycaster.setFromCamera(this.mouse, this.sg.renderer.camera);
+
+                // Update end point of line
+                if (this.raycaster.ray.intersectPlane(this.dragPlane, this.intersection)) {
+                    const positions = this.connectTempLineGeom.attributes.position.array as Float32Array;
+                    positions[3] = this.intersection.x;
+                    positions[4] = this.intersection.y;
+                    positions[5] = this.intersection.z;
+                    this.connectTempLineGeom.attributes.position.needsUpdate = true;
+                    this.connectTempLine.computeLineDistances();
+
+                    // Check for hover target
+                    const hit = this.getIntersectedNode();
+                    const currentNode = hit ? hit.node : null;
+                    if (currentNode !== this.hoveredNode) {
+                        if (this.hoveredNode) {
+                            this.sg.events.emit('node:pointerleave', { node: this.hoveredNode, event: e });
+                            if (this.hoveredNode.object && this.hoveredNode !== this.connectSourceNode) {
+                                // optional visual feedback reset
+                                this.hoveredNode.object.scale.set(1, 1, 1);
+                            }
+                        }
+                        this.hoveredNode = currentNode;
+                        if (this.hoveredNode) {
+                            this.sg.events.emit('node:pointerenter', { node: this.hoveredNode, event: e });
+                            if (this.hoveredNode.object && this.hoveredNode !== this.connectSourceNode) {
+                                // visually pop the drop target
+                                this.hoveredNode.object.scale.set(1.1, 1.1, 1.1);
+                            }
+                        }
+                    }
+                }
+                return;
+            }
+
             if (!this.isDragging || !this.dragNode) {
                 // Not dragging or box-selecting, check for hover
                 const hit = this.getIntersectedNode();
@@ -314,6 +444,26 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
                         this.sg.events.emit('node:pointerenter', { node: this.hoveredNode, event: e });
                     }
                 }
+
+                // Check edge hover if no node hover
+                if (!currentNode) {
+                    const edgeHit = this.getIntersectedEdge();
+                    const currentEdge = edgeHit ? edgeHit.edge : null;
+
+                    if (currentEdge !== this.hoveredEdge) {
+                        if (this.hoveredEdge) {
+                            this.sg.events.emit('edge:pointerleave', { edge: this.hoveredEdge, event: e });
+                        }
+                        this.hoveredEdge = currentEdge;
+                        if (this.hoveredEdge) {
+                            this.sg.events.emit('edge:pointerenter', { edge: this.hoveredEdge, event: e });
+                        }
+                    }
+                } else if (this.hoveredEdge) {
+                    this.sg.events.emit('edge:pointerleave', { edge: this.hoveredEdge, event: e });
+                    this.hoveredEdge = null;
+                }
+
                 return;
             }
 
@@ -334,14 +484,31 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
             }
         });
 
-        const endInteraction = () => {
+        const endInteraction = (e: PointerEvent) => {
+            if (this.isConnecting && this.connectSourceNode) {
+                const targetNode = this.hoveredNode;
+
+                if (targetNode && targetNode !== this.connectSourceNode) {
+                    this.sg.events.emit('interaction:edgecreate', {
+                        source: this.connectSourceNode,
+                        target: targetNode,
+                        event: e
+                    });
+                }
+
+                this.cancelConnectMode();
+            }
+
             if (this.isBoxSelecting) {
                 this.isBoxSelecting = false;
                 if (this.selectionBoxEl) this.selectionBoxEl.style.display = 'none';
                 this.sg.cameraControls.controls.enabled = true;
 
                 // Emit selection event
-                this.sg.events.emit('interaction:selection', { nodes: Array.from(this.selectedNodes) });
+                this.sg.events.emit('interaction:selection', {
+                    nodes: Array.from(this.selectedNodes),
+                    edges: Array.from(this.selectedEdges)
+                });
             }
 
             if (this.isDragging && this.dragNode) {
@@ -361,6 +528,34 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
 
         canvas.addEventListener('pointerup', endInteraction);
         canvas.addEventListener('pointercancel', endInteraction);
+
+        // Global escape key handler to cancel connect mode
+        if (typeof window !== 'undefined') {
+            window.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && this.isConnecting) {
+                    this.cancelConnectMode();
+                }
+            });
+        }
+    }
+
+    private cancelConnectMode() {
+        if (this.connectTempLine) {
+            this.sg.renderer.scene.remove(this.connectTempLine);
+            this.connectTempLine.geometry.dispose();
+            (this.connectTempLine.material as THREE.Material).dispose();
+            this.connectTempLine = null;
+            this.connectTempLineGeom = null;
+        }
+
+        if (this.hoveredNode && this.hoveredNode.object && this.hoveredNode !== this.connectSourceNode) {
+            this.hoveredNode.object.scale.set(1, 1, 1); // Reset visual pop
+        }
+
+        this.isConnecting = false;
+        this.connectSourceNode = null;
+        this.sg.renderer.renderer.domElement.style.cursor = 'auto';
+        this.sg.cameraControls.controls.enabled = true;
     }
 
     private updateSelectionBox(left: number, top: number, width: number, height: number, canvas: HTMLCanvasElement) {
@@ -389,6 +584,19 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
                 this.selectedNodes.add(node);
             }
         }
+
+        // Project edges as well (check midpoint)
+        this.selectedEdges.clear();
+        const midPoint = new THREE.Vector3();
+        for (const edge of this.sg.graph.edges) {
+            if (!edge.source || !edge.target) continue;
+            midPoint.addVectors(edge.source.position, edge.target.position).multiplyScalar(0.5);
+            midPoint.project(this.sg.renderer.camera);
+
+            if (midPoint.x >= minX && midPoint.x <= maxX && midPoint.y >= minY && midPoint.y <= maxY && midPoint.z <= 1) {
+                this.selectedEdges.add(edge);
+            }
+        }
     }
 
     private getNodeFromMesh(mesh: THREE.Object3D): any {
@@ -411,6 +619,12 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
         this.nodeDragOffsets.clear();
         this.isBoxSelecting = false;
         this.selectedNodes.clear();
+        this.selectedEdges.clear();
+        this.isConnecting = false;
+        this.connectSourceNode = null;
+        if (this.connectTempLine) {
+            this.sg.renderer.scene.remove(this.connectTempLine);
+        }
         if (this.selectionBoxEl && this.selectionBoxEl.parentElement) {
             this.selectionBoxEl.parentElement.removeChild(this.selectionBoxEl);
         }
