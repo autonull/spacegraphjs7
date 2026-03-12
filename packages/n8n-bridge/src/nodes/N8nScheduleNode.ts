@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import type { SpaceGraph } from 'spacegraphjs';
 import type { NodeSpec, SpecUpdate } from 'spacegraphjs';
-import { gsap } from 'gsap';
+import gsapPkg from 'gsap';
+const gsap = gsapPkg.gsap || gsapPkg;
 
 import { HtmlNode } from 'spacegraphjs';
 

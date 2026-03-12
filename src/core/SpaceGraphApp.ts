@@ -4,6 +4,7 @@ import { InteractionPlugin } from '../plugins/InteractionPlugin';
 import { MinimapPlugin } from '../plugins/MinimapPlugin';
 import * as THREE from 'three';
 import { HtmlNode } from '../nodes/HtmlNode';
+import { CameraUtils } from '../utils/CameraUtils';
 
 export interface SpaceGraphAppOptions {
     spec?: GraphSpec;
@@ -60,6 +61,7 @@ export class SpaceGraphApp {
     private originalEdgeColors = new Map<any, number>();
     private buttons: AppButtonConfig[] = [];
     private toolbarActions: AppButtonConfig[] = [];
+    private _zoomSliderHandler?: () => void;
 
     constructor(container: HTMLElement | string, options: SpaceGraphAppOptions = {}) {
         this.options = {
@@ -510,8 +512,10 @@ export class SpaceGraphApp {
             borderRadius: '99px',
             border: '1px solid rgba(255,255,255,0.1)',
             display: 'flex',
-            gap: '24px',
+            gap: '16px', // Reduced gap slightly to fit more items
             alignItems: 'center',
+            flexWrap: 'nowrap', // Force single line
+            whiteSpace: 'nowrap', // Prevent text wrap internally
             boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
             color: 'white',
             fontFamily: 'sans-serif'
@@ -552,14 +556,72 @@ export class SpaceGraphApp {
         fitBtn.addEventListener('click', () => this.sg.fitView(200));
         toolbarContainer.appendChild(fitBtn);
 
+        // Mode Toggle Container
+        const modeContainer = document.createElement('div');
+        Object.assign(modeContainer.style, {
+            display: 'flex',
+            gap: '4px',
+            background: 'rgba(255,255,255,0.05)',
+            borderRadius: '99px',
+            padding: '2px',
+            flexShrink: '0', // Prevent shrinking so text doesn't truncate
+            border: '1px solid rgba(255,255,255,0.1)'
+        });
+
+        const modeButtons: { [key: string]: HTMLButtonElement } = {};
+        const updateModeStyles = (activeMode: string) => {
+            for (const [mode, btn] of Object.entries(modeButtons)) {
+                if (mode === activeMode) {
+                    btn.style.background = `linear-gradient(135deg, ${theme.primaryColor}, ${theme.secondaryColor})`;
+                    btn.style.color = 'white';
+                } else {
+                    btn.style.background = 'transparent';
+                    btn.style.color = '#94a3b8';
+                }
+            }
+        };
+
+        const createModeBtn = (label: string, mode: 'default' | 'select' | 'connect') => {
+            const btn = document.createElement('button');
+            btn.textContent = label;
+            Object.assign(btn.style, {
+                background: 'transparent',
+                border: 'none',
+                padding: '6px 16px',
+                borderRadius: '99px',
+                color: '#94a3b8',
+                fontWeight: 'bold',
+                fontSize: '12px',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+            });
+            btn.onclick = () => {
+                this.setMode(mode);
+                updateModeStyles(mode);
+            };
+            modeButtons[mode] = btn;
+            return btn;
+        };
+
+        modeContainer.appendChild(createModeBtn('View', 'default'));
+        modeContainer.appendChild(createModeBtn('Select', 'select'));
+        modeContainer.appendChild(createModeBtn('Connect', 'connect'));
+
+        // Set initial state based on interaction plugin
+        const interaction = this.sg.pluginManager.getPlugin('interaction') as InteractionPlugin;
+        updateModeStyles(interaction ? interaction.mode : 'default');
+
+        toolbarContainer.appendChild(modeContainer);
+
         // Zoom Controls Container
         const zoomContainer = document.createElement('div');
         Object.assign(zoomContainer.style, {
             display: 'flex',
+            alignItems: 'center',
             gap: '2px',
             background: 'rgba(255,255,255,0.05)',
             borderRadius: '99px',
-            overflow: 'hidden',
+            padding: '2px 4px',
             border: '1px solid rgba(255,255,255,0.1)'
         });
 
@@ -568,6 +630,7 @@ export class SpaceGraphApp {
             btn.textContent = label;
             Object.assign(btn.style, {
                 background: 'transparent', border: 'none', padding: '6px 12px',
+                borderRadius: '99px',
                 color: 'white', fontWeight: 'bold', fontSize: '16px', cursor: 'pointer'
             });
             btn.onmouseenter = () => btn.style.background = 'rgba(255,255,255,0.1)';
@@ -583,8 +646,57 @@ export class SpaceGraphApp {
             return btn;
         };
 
-        zoomContainer.appendChild(createZoomBtn('-', false));
-        zoomContainer.appendChild(createZoomBtn('+', true));
+        const zoomOutBtn = createZoomBtn('-', false);
+        const zoomInBtn = createZoomBtn('+', true);
+
+        // Zoom Slider
+        const zoomSlider = document.createElement('input');
+        zoomSlider.type = 'range';
+        zoomSlider.min = '10';
+        zoomSlider.max = '5000';
+        zoomSlider.step = '1';
+        // Invert slider mapping: large radius = zoomed out (left), small radius = zoomed in (right)
+        // Since input values naturally go left->right as small->large, we will visually map min radius (close) to max slider value.
+        // We'll set the actual input value handling below.
+        zoomSlider.id = 'sg-app-zoom-slider';
+        Object.assign(zoomSlider.style, {
+            width: '80px',
+            margin: '0 8px',
+            cursor: 'pointer',
+            accentColor: theme.primaryColor
+        });
+
+        const updateZoomFromSlider = () => {
+            if (!this.sg.cameraControls) return;
+            // Native mapping: slider 10 -> radius 5000, slider 5000 -> radius 10
+            const invertedRadius = 5010 - parseFloat(zoomSlider.value);
+            this.sg.cameraControls.spherical.radius = invertedRadius;
+
+            // Re-render camera position instantly without animating
+            this.sg.cameraControls.flyTo(this.sg.cameraControls.target, invertedRadius, 0);
+        };
+
+        zoomSlider.addEventListener('input', updateZoomFromSlider);
+
+        if (this.sg.cameraControls) {
+            zoomSlider.value = (5010 - this.sg.cameraControls.spherical.radius).toString();
+        }
+
+        const handleCameraMove = () => {
+            if (!this.sg.cameraControls) return;
+            // Update slider without triggering the 'input' event listener to avoid infinite loop
+            const newRadius = this.sg.cameraControls.spherical.radius;
+            zoomSlider.value = (5010 - newRadius).toString();
+        };
+
+        this.sg.events.on('camera:move', handleCameraMove);
+
+        // Store reference so we can remove it if HUD is destroyed
+        this._zoomSliderHandler = handleCameraMove;
+
+        zoomContainer.appendChild(zoomOutBtn);
+        zoomContainer.appendChild(zoomSlider);
+        zoomContainer.appendChild(zoomInBtn);
         toolbarContainer.appendChild(zoomContainer);
 
         // Toolbar Actions Container
@@ -779,27 +891,10 @@ export class SpaceGraphApp {
      */
     public focusOnNodes(nodeIds: string[], padding: number = 100, duration: number = 1.5) {
         const nodes = nodeIds.map(id => this.sg.graph.getNode(id)).filter(Boolean);
-        if (nodes.length === 0) return;
-
-        const box = new THREE.Box3();
-        nodes.forEach((node) => {
-            box.expandByPoint(node!.position);
-        });
-
-        const center = new THREE.Vector3();
-        box.getCenter(center);
-
-        const size = new THREE.Vector3();
-        box.getSize(size);
-
-        const maxDim = Math.max(size.x, size.y, size.z);
-        const fov = this.sg.renderer.camera.fov * (Math.PI / 180);
-        let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
-
-        cameraZ += padding;
-        cameraZ = Math.max(cameraZ, 200);
-
-        this.sg.cameraControls.flyTo(center, cameraZ, duration);
+        const fit = CameraUtils.calculateFitView(nodes, this.sg.renderer.camera, padding);
+        if (fit) {
+            this.sg.cameraControls.flyTo(fit.center, fit.cameraZ, duration);
+        }
     }
 
     // --- Graph Mutation Helpers ---
@@ -863,6 +958,10 @@ export class SpaceGraphApp {
     }
 
     public dispose() {
+        if (this._zoomSliderHandler) {
+            this.sg.events.off('camera:move', this._zoomSliderHandler);
+            this._zoomSliderHandler = undefined;
+        }
         this.hud.dispose();
         // Minimap and Interaction plugins handle their own disposal via SpaceGraph's plugin manager usually,
         // but here we instantiated them manually without the whole lifecycle manager running `dispose` on app destroy.
