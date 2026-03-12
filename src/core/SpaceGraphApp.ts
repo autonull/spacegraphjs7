@@ -138,8 +138,9 @@ export class SpaceGraphApp {
             if ((e.key === 'Delete' || e.key === 'Backspace') && (this.currentSelected.length > 0 || this.currentSelectedEdges.length > 0)) {
                 // If custom hotkey overrides delete, don't do default delete
                 if (!(this.options.hotkeys && this.options.hotkeys[e.key])) {
-                    this.currentSelectedEdges.forEach(edge => this.removeEdge(edge.id));
-                    this.currentSelected.forEach(node => this.removeNode(node.id));
+                    // Iterate over a copy to avoid skipping elements due to array mutation
+                    [...this.currentSelectedEdges].forEach(edge => this.removeEdge(edge.id));
+                    [...this.currentSelected].forEach(node => this.removeNode(node.id));
                 }
             }
 
@@ -705,6 +706,10 @@ export class SpaceGraphApp {
         this.updateStatsHUD();
     }
 
+    public updateNode(nodeId: string, nodeSpec: any) {
+        this.sg.graph.updateNode(nodeId, nodeSpec);
+    }
+
     public removeNode(nodeId: string) {
         const node = this.sg.graph.getNode(nodeId);
         if (node) {
@@ -723,12 +728,35 @@ export class SpaceGraphApp {
         this.updateStatsHUD(); // Stats currently only show nodes, but keeps it synced
     }
 
+    public updateEdge(edgeId: string, edgeSpec: any) {
+        this.sg.graph.updateEdge(edgeId, edgeSpec);
+    }
+
     public removeEdge(edgeId: string) {
-        this.sg.graph.removeEdge(edgeId);
+        const edge = this.sg.graph.getEdge(edgeId);
+        if (edge) {
+            const index = this.currentSelectedEdges.indexOf(edge);
+            if (index > -1) {
+                this.currentSelectedEdges.splice(index, 1);
+            }
+            this.sg.graph.removeEdge(edgeId);
+            this.updateStatsHUD();
+        }
+    }
+
+    public clearSelection() {
+        this.clearSelectionStyles();
+        this.currentSelected = [];
+        this.currentSelectedEdges = [];
+        this.updateStatsHUD();
     }
 
     public getSelectedNodes(): any[] {
         return this.currentSelected;
+    }
+
+    public getSelectedEdges(): any[] {
+        return this.currentSelectedEdges;
     }
 
     public dispose() {

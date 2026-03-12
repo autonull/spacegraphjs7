@@ -12,7 +12,18 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
     private mouse = new THREE.Vector2();
     private pointerDownPosition = new THREE.Vector2();
 
-    public mode: 'default' | 'select' | 'connect' = 'default';
+    private _mode: 'default' | 'select' | 'connect' = 'default';
+
+    get mode() {
+        return this._mode;
+    }
+
+    set mode(newMode: 'default' | 'select' | 'connect') {
+        this._mode = newMode;
+        if (newMode !== 'connect' && this.isConnecting) {
+            this.cancelConnectMode();
+        }
+    }
 
     // Dragging State Tracking
     private isDragging = false;
@@ -477,11 +488,6 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
             if (this.isConnecting && this.connectSourceNode) {
                 const targetNode = this.hoveredNode;
 
-                // cleanup drop target visual pop
-                if (targetNode && targetNode.object && targetNode !== this.connectSourceNode) {
-                    targetNode.object.scale.set(1, 1, 1);
-                }
-
                 if (targetNode && targetNode !== this.connectSourceNode) {
                     this.sg.events.emit('interaction:edgecreate', {
                         source: this.connectSourceNode,
@@ -490,18 +496,7 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
                     });
                 }
 
-                if (this.connectTempLine) {
-                    this.sg.renderer.scene.remove(this.connectTempLine);
-                    this.connectTempLine.geometry.dispose();
-                    (this.connectTempLine.material as THREE.Material).dispose();
-                    this.connectTempLine = null;
-                    this.connectTempLineGeom = null;
-                }
-
-                this.isConnecting = false;
-                this.connectSourceNode = null;
-                this.sg.renderer.renderer.domElement.style.cursor = 'auto';
-                this.sg.cameraControls.controls.enabled = true;
+                this.cancelConnectMode();
             }
 
             if (this.isBoxSelecting) {
@@ -533,6 +528,34 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
 
         canvas.addEventListener('pointerup', endInteraction);
         canvas.addEventListener('pointercancel', endInteraction);
+
+        // Global escape key handler to cancel connect mode
+        if (typeof window !== 'undefined') {
+            window.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && this.isConnecting) {
+                    this.cancelConnectMode();
+                }
+            });
+        }
+    }
+
+    private cancelConnectMode() {
+        if (this.connectTempLine) {
+            this.sg.renderer.scene.remove(this.connectTempLine);
+            this.connectTempLine.geometry.dispose();
+            (this.connectTempLine.material as THREE.Material).dispose();
+            this.connectTempLine = null;
+            this.connectTempLineGeom = null;
+        }
+
+        if (this.hoveredNode && this.hoveredNode.object && this.hoveredNode !== this.connectSourceNode) {
+            this.hoveredNode.object.scale.set(1, 1, 1); // Reset visual pop
+        }
+
+        this.isConnecting = false;
+        this.connectSourceNode = null;
+        this.sg.renderer.renderer.domElement.style.cursor = 'auto';
+        this.sg.cameraControls.controls.enabled = true;
     }
 
     private updateSelectionBox(left: number, top: number, width: number, height: number, canvas: HTMLCanvasElement) {
