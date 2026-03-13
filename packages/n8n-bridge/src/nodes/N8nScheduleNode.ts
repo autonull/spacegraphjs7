@@ -64,6 +64,7 @@ export class N8nScheduleNode extends HtmlNode {
             repeat: -1,
             ease: "linear"
         });
+        this.renderHtmlContent('full');
     }
 
     updateLod(distance: number): void {

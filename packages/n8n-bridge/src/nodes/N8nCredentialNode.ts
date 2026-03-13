@@ -27,6 +27,7 @@ export class N8nCredentialNode extends HtmlNode {
                 boxSizing: 'border-box'
             }
         });
+        this.renderHtmlContent('full');
     }
 
     updateLod(distance: number): void {

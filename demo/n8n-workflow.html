@@ -32,6 +32,7 @@
             // However, SpaceGraph.create() signature takes the spec directly.
             // The n8n nodes are registered in SpaceGraph.ts built-ins now, so they exist.
 
+            window.SpaceGraph = SpaceGraph;
             const container = document.querySelector('#container');
             const graph = new SpaceGraph(container);
 
@@ -123,7 +124,8 @@
                 });
 
                 // Force update to display LODs
-                graph.cameraControls.camera.position.set(0, 0, 1500);
+                graph.cameraControls.spherical.radius = 1500;
+                graph.cameraControls.update();
                 graph.render();
 
                 // Trigger a mock execution state after 1 second to see the log panel and particles

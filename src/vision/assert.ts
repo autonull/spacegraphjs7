@@ -35,6 +35,7 @@ export class VisionAssert {
 
             // Wait for ONNX models to fully load
             if (!sg.vision.modelsLoaded) {
+                console.log('Waiting for ONNX models to fully load...');
                 await new Promise<void>((resolve) => {
                     const check = setInterval(() => {
                         if (sg.vision.modelsLoaded) {

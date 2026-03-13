@@ -26,6 +26,7 @@ export class N8nHitlNode extends HtmlNode {
                 boxSizing: 'border-box'
             }
         });
+        this.renderHtmlContent('full');
     }
 
     updateLod(distance: number): void {

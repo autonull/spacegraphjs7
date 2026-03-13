@@ -29,6 +29,7 @@ export class TimelineSliderNode extends HtmlNode {
                 boxSizing: 'border-box'
             }
         });
+        this.renderHtmlContent('full');
     }
 
     updateLod(distance: number): void {
