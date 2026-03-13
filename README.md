@@ -73,7 +73,7 @@ graph.render();
 **Results:**
 
 - ⚡ **60 FPS at 1000 nodes** (120 FPS target)
-- 📦 **<200KB bundle** (4x smaller than competitors)
+- 📦 **Prefer smaller bundle size**
 - 🧠 **AI vision** that catches UI bugs automatically
 - ⏱️ **<30 seconds** to first render
 

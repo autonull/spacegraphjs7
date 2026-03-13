@@ -85,7 +85,7 @@ These are sequenced software tasks ordered by priority. **P0** blocks release; *
 | **Fractal LOD zooming** | Nodes that are themselves graphs (sub-graphs). When camera zooms sufficiently close, a `GroupNode` seamlessly reveals its children as a nested graph. This is the core primitive for SpaceGraphOS. | `src/nodes/GroupNode.ts`, `LODPlugin.ts` |
 | **Semantic edge navigation** | Double-clicking an edge smoothly navigates the camera across the connection to the target node, establishing spatial traversal as the primary navigation model. | `InteractionPlugin.ts`, `CameraControls.ts` |
 | **Viewport serialization** | `sg.export()` and `SpaceGraph.import()` — serialize graph state (positions, node data, plugin config) to JSON for save/restore and sharing. | `SpaceGraph.ts`, `src/core/` |
-| **Performance benchmark suite** | Formal benchmark: 60 FPS at 1,000 nodes, <200KB bundle, <30s time-to-first-render. Run in CI on every release. | `verification/`, `.github/workflows/` |
+| **Performance benchmark suite** | Formal benchmark: 60 FPS at 1,000 nodes, Prefer smaller bundle size, <30s time-to-first-render. Run in CI on every release. | `verification/`, `.github/workflows/` |
 | **Inter-graph edges** | Edges that connect nodes in different `SpaceGraph` instances (multi-canvas layout), required for compositional ZUI views. | `src/edges/Edge.ts`, `Graph.ts` |
 | **CONTRIBUTING.md polish** | Add `good-first-issue` guide with links to specific `src/nodes/` files. Add setup guide for ONNX model training. | `CONTRIBUTING.md` |
 
