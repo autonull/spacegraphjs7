@@ -31,16 +31,16 @@ test.describe('SpaceGraph Vision System E2E', () => {
         page.on('console', msg => console.log(`[Browser] ${msg.text()}`));
         page.on('pageerror', err => console.error(`[Browser Error] ${err.message}`));
 
-        await page.goto('http://localhost:5176/', { waitUntil: 'networkidle' });
+        await page.goto('http://localhost:5176/index.html', { waitUntil: 'networkidle' });
 
         // Wait for SpaceGraph instances to register
         await page.waitForFunction(() => {
             const w = window as any;
             return w.SpaceGraph && w.SpaceGraph.instances && w.SpaceGraph.instances.size > 0;
-        }, { timeout: 5000 }).catch(() => false);
+        }, { timeout: 15000 });
 
         // Allow layout to settle
-        await page.waitForTimeout(1000);
+        await page.waitForTimeout(2000);
 
         const visionAssert = createVisionAssert(page);
 
@@ -54,7 +54,7 @@ test.describe('SpaceGraph Vision System E2E', () => {
         await page.waitForFunction(() => {
             const w = window as any;
             return w.SpaceGraph && w.SpaceGraph.instances && w.SpaceGraph.instances.size > 0;
-        }, { timeout: 5000 }).catch(() => false);
+        }, { timeout: 15000 });
 
         // trigger auto layout to resolve overlaps
         await page.evaluate(() => {
