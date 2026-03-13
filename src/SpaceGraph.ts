@@ -110,22 +110,19 @@ export class SpaceGraph {
         }
 
         const graph = new SpaceGraph(element);
-        try {
-            graph.init()
-                .then(() => {
-                    try {
-                        graph.loadSpec(spec);
-                        graph.render();
-                    } catch (err) {
-                        console.error('[SpaceGraph] Runtime Error: Failed to load spec or start rendering loop.', err);
-                    }
-                })
-                .catch((err) => {
-                    console.error('[SpaceGraph] Initialization Error: Core systems failed to initialize.', err);
-                });
-        } catch (err) {
-             console.error('[SpaceGraph] Initialization Error: Core systems failed to initialize.', err);
-        }
+
+        // Return a promise-like behavior or throw synchronously if possible,
+        // but `create` is currently synchronous returning SpaceGraph.
+        // We will improve the unhandled promise rejection by explicitly throwing.
+        graph.init()
+            .then(() => {
+                graph.loadSpec(spec);
+                graph.render();
+            })
+            .catch((err) => {
+                const message = err instanceof Error ? err.message : String(err);
+                throw new Error(`[SpaceGraph] Initialization Error: Core systems failed to initialize. Reason: ${message}`, { cause: err });
+            });
 
         return graph;
     }
@@ -418,15 +415,28 @@ export class SpaceGraph {
         container: HTMLElement,
         options: SpaceGraphOptions = {},
     ): Promise<SpaceGraph> {
+        if (!url || typeof url !== 'string') {
+            throw new Error(`[SpaceGraph] fromURL Error: Invalid URL "${url}".`);
+        }
+        if (!container) {
+            throw new Error(`[SpaceGraph] fromURL Error: Container element is undefined or null.`);
+        }
+
         const sg = new SpaceGraph(container, options);
         try {
+            await sg.init();
             const response = await fetch(url);
-            if (!response.ok) throw new Error(`Failed to fetch graph from ${url}`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status} ${response.statusText}`);
+            }
             const spec: GraphSpec = await response.json();
-            sg.graph.fromJSON(spec);
+            sg.loadSpec(spec);
+            sg.render();
         } catch (error) {
-            console.error('[SpaceGraphJS] fromURL failed:', error);
-            throw error;
+            const message = error instanceof Error ? error.message : String(error);
+            const wrappedError = new Error(`[SpaceGraph] fromURL Error: Failed to load graph from ${url}. Reason: ${message}`, { cause: error });
+            console.error(wrappedError);
+            throw wrappedError;
         }
         return sg;
     }

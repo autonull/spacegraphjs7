@@ -1157,6 +1157,8 @@ describe('Graph CRUD', () => {
 // PluginManager
 // ============================================================
 
+import { PluginManager } from '../src/core/PluginManager';
+
 describe('PluginManager', () => {
     let sg: any;
     beforeEach(() => {
@@ -1164,18 +1166,38 @@ describe('PluginManager', () => {
     });
 
     it('registers and retrieves plugins by key', () => {
+        const pm = new PluginManager(sg);
         const plugin = new ForceLayout();
-        sg.pluginManager.register('ForceLayout', plugin);
-        expect(sg.pluginManager.getPlugin('ForceLayout')).toBe(plugin);
+        pm.register('ForceLayout', plugin);
+        expect(pm.getPlugin('ForceLayout')).toBe(plugin);
+    });
+
+    it('throws error when registering with invalid name or undefined plugin', () => {
+        const pm = new PluginManager(sg);
+        const plugin = new ForceLayout();
+        expect(() => pm.register('', plugin)).toThrow(/Invalid plugin name/);
+        expect(() => pm.register('InvalidPlugin', undefined as any)).toThrow(/undefined or null/);
+    });
+
+    it('initAll throws AggregateError if plugins fail to init', async () => {
+        const pm = new PluginManager(sg);
+        const badPlugin = {
+            id: 'bad', name: 'Bad', version: '1',
+            init: async () => { throw new Error('Crash'); }
+        };
+        pm.register('badPlugin', badPlugin);
+        await expect(pm.initAll()).rejects.toThrow(AggregateError);
     });
 
     it('registers node types', () => {
-        sg.pluginManager.registerNodeType('ShapeNode', ShapeNode);
-        expect(sg.pluginManager.getNodeType('ShapeNode')).toBe(ShapeNode);
+        const pm = new PluginManager(sg);
+        pm.registerNodeType('ShapeNode', ShapeNode);
+        expect(pm.getNodeType('ShapeNode')).toBe(ShapeNode);
     });
 
     it('returns undefined for unknown plugin', () => {
-        expect(sg.pluginManager.getPlugin('NonExistent')).toBeUndefined();
+        const pm = new PluginManager(sg);
+        expect(pm.getPlugin('NonExistent')).toBeUndefined();
     });
 });
 
