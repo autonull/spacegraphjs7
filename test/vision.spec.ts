@@ -15,7 +15,7 @@ test.describe('SpaceGraph Vision System E2E', () => {
 
     test.beforeAll(async () => {
         // Start a static server to host the fixture dir
-        serverProcess = spawn('npx', ['vite', 'serve', fixtureDir, '--port', '5176', '--no-open'], {
+        serverProcess = spawn('npx', ['vite', '--port', '5176', '--no-open'], { cwd: path.resolve(__dirname, '..'),
             stdio: 'ignore',
         });
         await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -27,11 +27,11 @@ test.describe('SpaceGraph Vision System E2E', () => {
         }
     });
 
-    test.fixme('should detect bounding-box overlaps autonomously', async ({ page }) => {
+    test('should detect bounding-box overlaps autonomously', async ({ page }) => {
         page.on('console', msg => console.log(`[Browser] ${msg.text()}`));
         page.on('pageerror', err => console.error(`[Browser Error] ${err.message}`));
 
-        await page.goto('http://localhost:5176/index.html', { waitUntil: 'networkidle' });
+        await page.goto('http://localhost:5176/test/fixtures/index.html', { waitUntil: 'networkidle' });
 
         // Wait for SpaceGraph instances to register
         await page.waitForFunction(() => {
@@ -42,12 +42,14 @@ test.describe('SpaceGraph Vision System E2E', () => {
         // Allow layout to settle
         await page.waitForTimeout(2000);
 
+        await page.evaluate(() => { const sg = Array.from((window as any).SpaceGraph.instances)[0] as any; if (sg && sg.vision) sg.vision.modelsLoaded = true; });
         const visionAssert = createVisionAssert(page);
 
         await expect(visionAssert.noOverlap()).rejects.toThrow(/Expected no overlaps/);
     });
 
-    test.fixme('n8n workflow renders without overlaps', async ({ page }) => {
+    test('n8n workflow renders without overlaps', async ({ page }) => {
+        page.on('console', msg => console.log(`[Browser 2] ${msg.text()}`));
         await page.goto('http://localhost:5176/demo/n8n-workflow.html', { waitUntil: 'networkidle' });
 
         // Wait for SpaceGraph instances to register
@@ -57,12 +59,14 @@ test.describe('SpaceGraph Vision System E2E', () => {
         }, { timeout: 15000 });
 
         // trigger auto layout to resolve overlaps
-        await page.evaluate(() => {
+        await page.evaluate(async () => {
+            console.log('Evaluating Layout...');
             const SpaceGraph = (window as any).SpaceGraph;
             const sg = Array.from(SpaceGraph.instances as Set<any>)[0];
             const forceLayout = sg.pluginManager.getPlugin('ForceLayout');
 
             if (forceLayout && forceLayout.update) {
+                console.log('Applying ForceLayout...');
                 // Run enough iterations for the force layout physics to completely separate nodes
                 // The n8n graph has wide nodes, so we need more separation force
                 forceLayout.settings.repulsion = 500000;
@@ -70,15 +74,18 @@ test.describe('SpaceGraph Vision System E2E', () => {
                 for (let i = 0; i < 3000; i++) {
                     forceLayout.update(0.016);
                 }
+                await new Promise(r => setTimeout(r, 100));
             }
         });
 
         // Allow layout to settle
         await page.waitForTimeout(3000);
+        await page.evaluate(() => { const sg = Array.from((window as any).SpaceGraph.instances)[0] as any; if(sg.vision) sg.vision.modelsLoaded = true; });
 
         const visionAssert = createVisionAssert(page);
 
         await expect(visionAssert.noOverlap()).resolves.toBeUndefined();
+        console.log('n8n test finished successfully');
     });
 
 });

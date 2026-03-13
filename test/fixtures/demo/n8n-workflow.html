@@ -32,6 +32,7 @@
             // However, SpaceGraph.create() signature takes the spec directly.
             // The n8n nodes are registered in SpaceGraph.ts built-ins now, so they exist.
 
+            window.SpaceGraph = SpaceGraph;
             const container = document.querySelector('#container');
             const graph = new SpaceGraph(container);
 

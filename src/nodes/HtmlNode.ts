@@ -26,7 +26,8 @@ export class HtmlNode extends DOMNode {
             alignItems: 'center',
             pointerEvents: spec.data?.pointerEvents || 'auto',
             overflow: 'hidden',
-            boxSizing: 'border-box'
+            boxSizing: 'border-box',
+            ...(spec.data?.style || {})
         });
 
         // Ensure subclasses don't get the default title/desc if they provide custom HTML logic
