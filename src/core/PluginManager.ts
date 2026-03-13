@@ -12,6 +12,12 @@ export class PluginManager {
     }
 
     register(name: string, plugin: ISpaceGraphPlugin): void {
+        if (!name || typeof name !== 'string') {
+            throw new Error(`[SpaceGraph] Plugin Registration Error: Invalid plugin name "${name}". Name must be a non-empty string.`);
+        }
+        if (!plugin) {
+            throw new Error(`[SpaceGraph] Plugin Registration Error: Plugin "${name}" is undefined or null.`);
+        }
         this.plugins.set(name, plugin);
     }
 
@@ -36,18 +42,21 @@ export class PluginManager {
     }
 
     async initAll(): Promise<void> {
-        try {
-            for (const [name, plugin] of this.plugins.entries()) {
-                if (plugin.init) {
-                    try {
-                        await plugin.init(this.sg);
-                    } catch (err) {
-                        console.error(`[SpaceGraph] Plugin Initialization Error: Failed to initialize plugin "${name}". Continuing without it.`, err);
-                    }
+        const errors: Error[] = [];
+        for (const [name, plugin] of this.plugins.entries()) {
+            if (plugin.init) {
+                try {
+                    await plugin.init(this.sg);
+                } catch (err) {
+                    const message = err instanceof Error ? err.message : String(err);
+                    const wrappedError = new Error(`[SpaceGraph] Plugin Initialization Error: Failed to initialize plugin "${name}". Reason: ${message}`);
+                    console.error(wrappedError);
+                    errors.push(wrappedError);
                 }
             }
-        } catch (err) {
-            console.error('[SpaceGraph] Critical Error during PluginManager initialization sequence.', err);
+        }
+        if (errors.length > 0) {
+            throw new AggregateError(errors, `[SpaceGraph] PluginManager initAll failed with ${errors.length} error(s).`);
         }
     }
 

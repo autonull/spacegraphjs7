@@ -44,6 +44,7 @@ export class VisionManager {
 
     // Holds actual ONNX runtime sessions
     private sessions: Record<string, InferenceSession> = {};
+    public modelsLoaded: boolean = false;
 
     public async loadModels(modelPaths: Record<string, string>): Promise<void> {
         console.log(`[VisionManager] Initializing ONNX session with providers [${this.executionProviders.join(', ')}]: `, modelPaths);
@@ -58,6 +59,7 @@ export class VisionManager {
                 console.error(`[VisionManager] Failed to load ONNX model ${key}:`, err);
             }
         }
+        this.modelsLoaded = true;
         console.log('[VisionManager] ONNX models loaded.', Object.keys(this.sessions));
     }
 
