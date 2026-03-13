@@ -602,6 +602,44 @@ describe('GroupNode', () => {
         n.updateLod(2000); // Greater than threshold
         expect((mesh.material as THREE.Material).opacity).toBe(0.2);
     });
+
+    it('sets _lastLodVisible false when beyond threshold', () => {
+        const n = new GroupNode(sg, {
+            id: 'gn2',
+            type: 'GroupNode',
+            data: { lodThreshold: 1000 },
+        });
+
+        n.updateLod(1500);
+        expect(n.data._lastLodVisible).toBe(false);
+
+        n.updateLod(500);
+        expect(n.data._lastLodVisible).toBe(true);
+    });
+
+    it('remains hidden if its parent is hidden (Fractal LOD)', () => {
+        const parent = new GroupNode(sg, { id: 'parent', type: 'GroupNode', data: { lodThreshold: 1000 }});
+        sg.graph.addNode(parent);
+
+        const childGroup = new GroupNode(sg, { id: 'childGroup', type: 'GroupNode', data: { parent: 'parent', lodThreshold: 500 }});
+        sg.graph.addNode(childGroup);
+
+        // Update sg to match what the GroupNode loop expects
+        sg.graph.nodes = new Map([
+            ['parent', parent],
+            ['childGroup', childGroup]
+        ]);
+
+        // Zoom camera way out - parent closes
+        parent.updateLod(2000);
+        expect(parent.data._lastLodVisible).toBe(false);
+
+        // Try to update child group (simulate being close to the child but the parent is closed)
+        childGroup.updateLod(100);
+
+        // Because parent is closed, child should stay closed
+        expect(childGroup.data._lastLodVisible).toBe(false);
+    });
 });
 
 describe('HtmlNode', () => {

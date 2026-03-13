@@ -82,40 +82,36 @@ export class GroupNode extends Node {
             this.meshMaterial.opacity = 0.2;
         }
 
-        // Recursively toggle visibility of children based on zoom level
-        const shouldShowChildren = distance < threshold;
+        // Check if this group itself is hidden by a parent group.
+        // If it is, then it should not show its children regardless of distance.
+        let isHiddenByParent = false;
+        let currentParent = this.data?.parent || (this as any).parameters?.parent || (this as any).parent;
 
-        // Removed global early-return cache because dynamically added child nodes
-        // need to have their visibility explicitly set based on current distance,
-        // even if the group's overall visibility state hasn't changed.
+        // Use a Set to detect infinite parent loops and prevent freezing
+        const visited = new Set<string>();
+
+        while (currentParent && this.sg?.graph?.nodes) {
+            if (visited.has(currentParent)) break;
+            visited.add(currentParent);
+
+            const parentNode = this.sg.graph.nodes.get(currentParent);
+            if (parentNode instanceof GroupNode && parentNode.data._lastLodVisible === false) {
+                isHiddenByParent = true;
+                break;
+            }
+            currentParent = parentNode?.data?.parent || (parentNode as any)?.parameters?.parent || (parentNode as any)?.parent;
+        }
+
+        // Recursively toggle visibility of children based on zoom level
+        // and whether this group is allowed to be visible.
+        const shouldShowChildren = !isHiddenByParent && (distance < threshold);
+
+        // We store this state so the LODPlugin can use it to definitively hide child nodes
         this.data._lastLodVisible = shouldShowChildren;
 
-        if (this.sg && this.sg.graph && this.sg.graph.nodes) {
-            const processChildren = (parentId: string, visible: boolean) => {
-                this.sg.graph.nodes.forEach((node) => {
-                    // Check parent reference variations
-                    const nParent = node.data?.parent || (node as any).parameters?.parent || (node as any).parent;
-
-                    if (nParent === parentId) {
-                        // Apply visibility
-                        if (typeof (node as any).setVisibility === 'function') {
-                            (node as any).setVisibility(visible);
-                        } else if (node.object) {
-                            node.object.visible = visible;
-                        }
-
-                        // If the child is also a GroupNode, recursively update its children
-                        // but only if the parent group is becoming invisible.
-                        // If it's becoming visible, the child GroupNode's own LOD check will handle its children.
-                        if (!visible && node instanceof GroupNode) {
-                             processChildren(node.id, false);
-                        }
-                    }
-                });
-            };
-
-            processChildren(this.id, shouldShowChildren);
-        }
+        // Note: The actual hiding of children (DOM nodes, WebGL objects) is now completely
+        // handled centrally in LODPlugin.ts Pass 2. This prevents conflicting updates
+        // where LODPlugin turns a node on, but GroupNode tries to turn it off, causing flicker.
     }
 
     dispose(): void {
