@@ -86,17 +86,11 @@ export class TimelineLayout implements ISpaceGraphPlugin {
                 targetPos.z = 0;
             }
 
-            if (this.settings.animate && (window as any).gsap) {
-                (window as any).gsap.to(item.node.position, {
-                    x: targetPos.x,
-                    y: targetPos.y,
-                    z: targetPos.z,
-                    duration: this.settings.animationDuration,
-                    ease: 'power2.out',
-                });
-            } else {
-                item.node.position.copy(targetPos);
-            }
+            (item.node as any).applyPosition(
+                targetPos,
+                this.settings.animate,
+                this.settings.animationDuration
+            );
         });
 
         // Center the entire timeline around the origin
@@ -106,20 +100,11 @@ export class TimelineLayout implements ISpaceGraphPlugin {
 
         temporalNodes.forEach(item => {
             const finalPos = item.node.position.clone().sub(sumPos);
-            if (this.settings.animate && (window as any).gsap) {
-                // The animation might be jumping if we mutate while animating,
-                // but since GSAP overwrites previous tweens on the same property,
-                // we just re-issue the tween to the shifted final position.
-                (window as any).gsap.to(item.node.position, {
-                    x: finalPos.x,
-                    y: finalPos.y,
-                    z: finalPos.z,
-                    duration: this.settings.animationDuration,
-                    ease: 'power2.out',
-                });
-            } else {
-                item.node.position.copy(finalPos);
-            }
+            (item.node as any).applyPosition(
+                finalPos,
+                this.settings.animate,
+                this.settings.animationDuration
+            );
         });
     }
 

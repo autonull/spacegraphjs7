@@ -17,68 +17,56 @@ export class LODPlugin implements ISpaceGraphPlugin {
 
     onPreRender(_delta: number): void {
         const cameraPosition = this.sg.renderer.camera.position;
-
         const nodes = Array.from(this.sg.graph.nodes.values());
 
-        // Find which nodes are inside GroupNodes that are currently collapsed/hidden
-        // This stops nested DOMNodes from re-appearing independently when they shouldn't.
-        const hiddenParentIds = new Set<string>();
+        const hiddenParentIds = this._updateGroupsAndFindHidden(nodes, cameraPosition);
+        this._updateNodeVisibility(nodes, cameraPosition, hiddenParentIds);
+        this._updateEdgeVisibility();
+    }
 
-        // Pass 1: Update GroupNodes and register hidden children
+    private _updateGroupsAndFindHidden(nodes: any[], cameraPosition: THREE.Vector3): Set<string> {
+        const hiddenParentIds = new Set<string>();
         for (const node of nodes) {
             if (node instanceof GroupNode) {
                 const distance = cameraPosition.distanceTo(node.position);
                 node.updateLod(distance);
-
                 if (node.data._lastLodVisible === false) {
                     hiddenParentIds.add(node.id);
                 }
             }
         }
+        return hiddenParentIds;
+    }
 
-        // Pass 2: Update remaining nodes and enforce parent visibility restrictions
+    private _updateNodeVisibility(nodes: any[], cameraPosition: THREE.Vector3, hiddenParentIds: Set<string>): void {
         for (const node of nodes) {
-            // Check if node is nested within a hidden parent
             let isHiddenByParent = false;
-            let currentParent = node.data?.parent || (node as any).parameters?.parent || (node as any).parent;
+            let currentParent = node.data?.parent || node.parameters?.parent || node.parent;
 
-            // Check ancestry loop
             while (currentParent) {
                 if (hiddenParentIds.has(currentParent)) {
                     isHiddenByParent = true;
                     break;
                 }
                 const parentNode = this.sg.graph.nodes.get(currentParent);
-                currentParent = parentNode?.data?.parent || (parentNode as any)?.parameters?.parent || (parentNode as any)?.parent;
+                currentParent = parentNode?.data?.parent || parentNode?.parameters?.parent || parentNode?.parent;
             }
 
             if (node instanceof DOMNode) {
                 const distance = cameraPosition.distanceTo(node.position);
-                if (isHiddenByParent) {
-                    node.setVisibility(false);
-                } else {
-                    node.setVisibility(distance <= this.maxDistance);
-                    node.updateLod(distance);
-                }
+                node.setVisibility(!isHiddenByParent && distance <= this.maxDistance);
+                if (!isHiddenByParent) node.updateLod(distance);
             } else if (!(node instanceof GroupNode)) {
-                // Non-DOM, Non-Group Nodes (e.g. standard WebGL ShapeNodes)
-                if (isHiddenByParent) {
-                    node.object.visible = false;
-                } else {
-                    node.object.visible = true; // CullingManager handles actual frustum culling
-                }
+                node.object.visible = !isHiddenByParent;
             }
-
-            // Edges logic could optionally live here to hide internal edges of collapsed groups
         }
+    }
 
-        // Hide edges whose source or target is hidden
+    private _updateEdgeVisibility(): void {
         for (const edge of this.sg.graph.edges) {
             if (edge.object) {
                 const sourceHidden = edge.source?.object?.visible === false || (edge.source instanceof DOMNode && !edge.source.cssObject.visible);
                 const targetHidden = edge.target?.object?.visible === false || (edge.target instanceof DOMNode && !edge.target.cssObject.visible);
-
-                // If either end is hidden by LOD/Group folding, hide the edge
                 edge.object.visible = !(sourceHidden || targetHidden);
             }
         }

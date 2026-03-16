@@ -222,50 +222,9 @@ export class CameraControls {
                 if (!this.isDragging) return;
 
                 if (this.activeTouches.size === 1) {
-                    // Standard 1-finger rotate
-                    const t = Array.from(this.activeTouches.values())[0];
-                    const deltaX = t.x - this.previousMousePosition.x;
-                    const deltaY = t.y - this.previousMousePosition.y;
-
-                    this.velocity.x = deltaX * 0.005;
-                    this.velocity.y = deltaY * 0.005;
-
-                    this.spherical.theta -= this.velocity.x;
-                    this.spherical.phi = Math.max(
-                        0.1,
-                        Math.min(Math.PI - 0.1, this.spherical.phi + this.velocity.y),
-                    );
-
-                    this.previousMousePosition = { x: t.x, y: t.y };
-                    this.updateCameraPosition();
+                    this._handleSingleTouch();
                 } else if (this.activeTouches.size === 2) {
-                    const t = Array.from(this.activeTouches.values());
-
-                    // 1. Pinch-to-zoom calculation
-                    const distance = GestureManager.calculateDistance(t[0], t[1]);
-                    this.spherical.radius = GestureManager.calculatePinchZoom(
-                        distance,
-                        this.prevPinchDistance,
-                        this.spherical.radius
-                    );
-                    this.prevPinchDistance = distance;
-
-                    // 2. Midpoint 2-finger panning calculation
-                    const currentMidpoint = GestureManager.calculateMidpoint(t[0], t[1]);
-                    const panVel = GestureManager.calculatePan(
-                        currentMidpoint,
-                        this.prevPinchMidpoint,
-                        this.spherical.radius
-                    );
-
-                    this.panVelocity.x = panVel.x;
-                    this.panVelocity.y = panVel.y;
-
-                    const translation = CameraUtils.calculatePanTranslation(this.sg.renderer.camera, this.panVelocity);
-                    this.target.add(translation);
-
-                    this.prevPinchMidpoint = currentMidpoint;
-                    this.updateCameraPosition();
+                    this._handleDoubleTouch();
                 }
             },
             { passive: false },
@@ -304,6 +263,54 @@ export class CameraControls {
             { passive: false },
         );
 
+        this.updateCameraPosition();
+    }
+
+    private _handleSingleTouch() {
+        const t = Array.from(this.activeTouches.values())[0];
+        const deltaX = t.x - this.previousMousePosition.x;
+        const deltaY = t.y - this.previousMousePosition.y;
+
+        this.velocity.x = deltaX * 0.005;
+        this.velocity.y = deltaY * 0.005;
+
+        this.spherical.theta -= this.velocity.x;
+        this.spherical.phi = Math.max(
+            0.1,
+            Math.min(Math.PI - 0.1, this.spherical.phi + this.velocity.y),
+        );
+
+        this.previousMousePosition = { x: t.x, y: t.y };
+        this.updateCameraPosition();
+    }
+
+    private _handleDoubleTouch() {
+        const t = Array.from(this.activeTouches.values());
+
+        // 1. Pinch-to-zoom calculation
+        const distance = GestureManager.calculateDistance(t[0], t[1]);
+        this.spherical.radius = GestureManager.calculatePinchZoom(
+            distance,
+            this.prevPinchDistance,
+            this.spherical.radius
+        );
+        this.prevPinchDistance = distance;
+
+        // 2. Midpoint 2-finger panning calculation
+        const currentMidpoint = GestureManager.calculateMidpoint(t[0], t[1]);
+        const panVel = GestureManager.calculatePan(
+            currentMidpoint,
+            this.prevPinchMidpoint,
+            this.spherical.radius
+        );
+
+        this.panVelocity.x = panVel.x;
+        this.panVelocity.y = panVel.y;
+
+        const translation = CameraUtils.calculatePanTranslation(this.sg.renderer.camera, this.panVelocity);
+        this.target.add(translation);
+
+        this.prevPinchMidpoint = currentMidpoint;
         this.updateCameraPosition();
     }
 }

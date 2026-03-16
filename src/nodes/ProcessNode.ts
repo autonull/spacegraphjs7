@@ -22,19 +22,11 @@ export class ProcessNode extends DOMNode {
         const cpu = spec.data?.cpu ?? 0;
         const mem = spec.data?.memory ?? 0;
 
-        Object.assign(div.style, {
-            width: `${w}px`,
-            height: `${h}px`,
+        this.setupContainerStyles(w, h, 'dark', {
             backgroundColor: 'rgba(15, 23, 42, 0.85)',
-            border: '1px solid #334155',
-            borderRadius: '6px',
             padding: '10px',
-            color: '#f8fafc',
             fontFamily: 'monospace',
-            display: 'flex',
-            flexDirection: 'column',
             justifyContent: 'space-between',
-            boxSizing: 'border-box'
         });
 
         // Header (PID + Name)

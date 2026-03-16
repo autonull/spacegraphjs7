@@ -63,21 +63,17 @@ export class DynamicThicknessEdge {
         const src = this.source.position;
         const tgt = this.target.position;
 
-        // Calculate thickness
-        const weight = Math.max(0, Math.min(1, this.data.weight ?? 0.5));
-        const minR = this.data.minRadius ?? 1;
-        const maxR = this.data.maxRadius ?? 8;
-        const radius = minR + weight * (maxR - minR);
+        const { weight = 0.5, minRadius = 1, maxRadius = 8 } = this.data;
+        const clampedWeight = Math.max(0, Math.min(1, weight));
+        const radius = minRadius + clampedWeight * (maxRadius - minRadius);
 
-        // Calculate length and midpoint
         const dir = pool.acquireVector3().subVectors(tgt, src);
         const length = dir.length();
 
         const midPoint = pool.acquireVector3().addVectors(src, tgt).multiplyScalar(0.5);
 
-        // Apply transformations
         this.object.position.copy(midPoint);
-        this.object.lookAt(tgt); // Requires object to point along Z axis natively
+        this.object.lookAt(tgt);
         this.object.scale.set(radius, radius, length);
 
         pool.releaseVector3(dir);

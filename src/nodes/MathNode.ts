@@ -38,21 +38,14 @@ export class MathNode extends DOMNode {
         }
 
         this.domElement.className = 'spacegraph-math-node';
-        Object.assign(this.domElement.style, {
-            width: `${spec.data?.width || 300}px`,
-            height: `${spec.data?.height || 100}px`,
+
+        this.setupContainerStyles(w, h, 'dark', {
             backgroundColor: spec.data?.color || 'rgba(0, 0, 0, 0.8)',
-            color: '#fff',
             border: '2px solid #555',
-            borderRadius: '8px',
             padding: '15px',
-            display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
             fontSize: spec.data?.fontSize ? `${spec.data.fontSize}px` : '24px',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-            boxSizing: 'border-box',
-            pointerEvents: 'auto'
         });
 
         this.domElement.textContent = 'Loading Math...';

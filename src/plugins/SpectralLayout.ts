@@ -145,17 +145,11 @@ export class SpectralLayout implements ISpaceGraphPlugin {
     }
 
     private setPosition(node: any, pos: THREE.Vector3) {
-        if (this.settings.animate && (window as any).gsap) {
-            (window as any).gsap.to(node.position, {
-                x: pos.x,
-                y: pos.y,
-                z: pos.z,
-                duration: this.settings.animationDuration,
-                ease: 'power2.out',
-            });
-        } else {
-            node.position.copy(pos);
-        }
+        node.applyPosition(
+            pos,
+            this.settings.animate,
+            this.settings.animationDuration
+        );
     }
 
     dispose(): void { }

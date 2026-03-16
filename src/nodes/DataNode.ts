@@ -28,47 +28,14 @@ export class DataNode extends DOMNode {
 
         this.domElement.className = `spacegraph-data-node theme-${theme}`;
 
-        const bgColor = theme === 'dark' ? '#1e293b' : '#f8fafc';
-        const borderColor = theme === 'dark' ? '#334155' : '#e2e8f0';
-        const headerColor = theme === 'dark' ? '#0f172a' : '#f1f5f9';
-        const textColor = theme === 'dark' ? '#e2e8f0' : '#334155';
-
-        Object.assign(this.domElement.style, {
-            width: `${w}px`,
+        this.setupContainerStyles(w, maxH, theme as any, {
+            height: 'auto',
             maxHeight: `${maxH}px`,
-            background: bgColor,
-            borderRadius: '8px',
-            overflow: 'hidden',
-            boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
             fontFamily: 'monospace, "Courier New", Courier',
             fontSize: '12px',
-            color: textColor,
-            display: 'flex',
-            flexDirection: 'column',
-            boxSizing: 'border-box',
-            pointerEvents: 'auto',
-            border: `1px solid ${borderColor}`
         });
 
-        // Header
-        const header = document.createElement('div');
-        Object.assign(header.style, {
-            background: headerColor,
-            padding: '8px 12px',
-            fontWeight: '600',
-            fontSize: '13px',
-            color: theme === 'dark' ? '#94a3b8' : '#64748b',
-            borderBottom: `1px solid ${borderColor}`,
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexShrink: '0',
-            userSelect: 'none'
-        });
-
-        const titleSpan = document.createElement('span');
-        titleSpan.textContent = spec.label || 'JSON Data';
-        header.appendChild(titleSpan);
+        const header = this.createTitleBar(spec.label || 'JSON Data', theme as any);
         this.domElement.appendChild(header);
 
         // Content Area (Scrollable)
@@ -223,7 +190,7 @@ export class DataNode extends DOMNode {
         super.updateSpec(updates);
 
         if (updates.label !== undefined) {
-             const titleSpan = this.domElement.querySelector('.sg-data-header span');
+             const titleSpan = this.domElement.querySelector('.sg-node-title');
              if (titleSpan) titleSpan.textContent = updates.label;
         }
 

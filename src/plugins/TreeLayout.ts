@@ -108,17 +108,11 @@ export class TreeLayout implements ISpaceGraphPlugin {
 
             const targetNode = this.sg.graph.nodes.get(id);
             if (targetNode) {
-                if (this.settings.animate && (window as any).gsap) {
-                    (window as any).gsap.to(targetNode.position, {
-                        x: finalPos.x,
-                        y: finalPos.y,
-                        z: finalPos.z,
-                        duration: this.settings.animationDuration,
-                        ease: 'power2.out',
-                    });
-                } else {
-                    targetNode.position.copy(finalPos);
-                }
+                (targetNode as any).applyPosition(
+                    finalPos,
+                    this.settings.animate,
+                    this.settings.animationDuration
+                );
             }
         });
     }

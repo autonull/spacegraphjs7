@@ -72,22 +72,18 @@ export class GroupNode extends Node {
     }
 
     updateLod(distance: number): void {
-        // Fractal LOD infinite drill-down logic
-        // Get dynamic threshold from parameters if it exists, otherwise use default
         const threshold = this.data?.lodThreshold || 1200;
 
-        if (distance < threshold) {
-            this.meshMaterial.opacity = 0.05;
-        } else {
-            this.meshMaterial.opacity = 0.2;
-        }
+        this.meshMaterial.opacity = distance < threshold ? 0.05 : 0.2;
 
-        // Check if this group itself is hidden by a parent group.
-        // If it is, then it should not show its children regardless of distance.
-        let isHiddenByParent = false;
+        const isHiddenByParent = this._isAncestorHidden();
+        const shouldShowChildren = !isHiddenByParent && (distance < threshold);
+
+        this.data._lastLodVisible = shouldShowChildren;
+    }
+
+    private _isAncestorHidden(): boolean {
         let currentParent = this.data?.parent || (this as any).parameters?.parent || (this as any).parent;
-
-        // Use a Set to detect infinite parent loops and prevent freezing
         const visited = new Set<string>();
 
         while (currentParent && this.sg?.graph?.nodes) {
@@ -96,22 +92,12 @@ export class GroupNode extends Node {
 
             const parentNode = this.sg.graph.nodes.get(currentParent);
             if (parentNode instanceof GroupNode && parentNode.data._lastLodVisible === false) {
-                isHiddenByParent = true;
-                break;
+                return true;
             }
             currentParent = parentNode?.data?.parent || (parentNode as any)?.parameters?.parent || (parentNode as any)?.parent;
         }
 
-        // Recursively toggle visibility of children based on zoom level
-        // and whether this group is allowed to be visible.
-        const shouldShowChildren = !isHiddenByParent && (distance < threshold);
-
-        // We store this state so the LODPlugin can use it to definitively hide child nodes
-        this.data._lastLodVisible = shouldShowChildren;
-
-        // Note: The actual hiding of children (DOM nodes, WebGL objects) is now completely
-        // handled centrally in LODPlugin.ts Pass 2. This prevents conflicting updates
-        // where LODPlugin turns a node on, but GroupNode tries to turn it off, causing flicker.
+        return false;
     }
 
     dispose(): void {

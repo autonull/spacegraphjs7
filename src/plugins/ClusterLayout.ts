@@ -89,18 +89,12 @@ export class ClusterLayout implements ISpaceGraphPlugin {
                     }
                 }
 
-                if (this.settings.animate && (window as any).gsap) {
-                    (window as any).gsap.to(node.position, {
-                        x: targetPos.x,
-                        y: targetPos.y,
-                        z: targetPos.z,
-                        duration: this.settings.animationDuration,
-                        ease: 'power2.out',
-                        delay: clusterIndex * 0.1 // Stagger animation grouped by cluster!
-                    });
-                } else {
-                    node.position.copy(targetPos);
-                }
+                (node as any).applyPosition(
+                    targetPos,
+                    this.settings.animate,
+                    this.settings.animationDuration,
+                    clusterIndex * 0.1 // Stagger animation grouped by cluster
+                );
             });
         });
     }

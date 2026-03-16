@@ -36,38 +36,12 @@ export class ChartNode extends DOMNode {
         // Ensure DOMNode treats this as fully interactive, similar to HtmlNode
         super(sg, spec, div, w, totalH, { opacity: 0.1 });
 
-        const bgColor = theme === 'dark' ? '#0f172a' : '#ffffff';
-        const titleColor = theme === 'dark' ? '#94a3b8' : '#64748b';
-        const borderColor = theme === 'dark' ? '#1e293b' : '#e2e8f0';
-
         this.domElement.className = `spacegraph-chart-node theme-${theme}`;
-        Object.assign(this.domElement.style, {
-            width: `${w}px`,
-            height: `${totalH}px`,
-            background: bgColor,
-            borderRadius: '8px',
-            overflow: 'hidden',
-            boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
-            boxSizing: 'border-box',
-            pointerEvents: 'auto',
-            display: 'flex',
-            flexDirection: 'column',
-            border: `1px solid ${borderColor}`
-        });
+
+        this.setupContainerStyles(w, totalH, theme as any);
 
         if (title) {
-            this.titleEl = document.createElement('div');
-            Object.assign(this.titleEl.style, {
-                padding: '6px 10px',
-                color: titleColor,
-                fontSize: '12px',
-                fontFamily: 'sans-serif',
-                fontWeight: '600',
-                borderBottom: `1px solid ${borderColor}`,
-                background: theme === 'dark' ? '#1e293b' : '#f8fafc',
-                flexShrink: '0'
-            });
-            this.titleEl.textContent = title;
+            this.titleEl = this.createTitleBar(title, theme as any);
             this.domElement.appendChild(this.titleEl);
         }
 

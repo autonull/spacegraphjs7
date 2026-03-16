@@ -9,23 +9,20 @@ export class AudioNode extends DOMNode {
         const div = document.createElement('div');
         super(sg, spec, div, 300, 100, { opacity: 0.0 });
         this.domElement.className = 'spacegraph-audio-node';
-        this.domElement.style.width = '300px';
-        this.domElement.style.backgroundColor = spec.data?.color || 'rgba(30, 30, 30, 0.9)';
-        this.domElement.style.color = '#fff';
-        this.domElement.style.border = '1px solid #444';
-        this.domElement.style.borderRadius = '12px';
-        this.domElement.style.padding = '15px';
-        this.domElement.style.boxShadow = '0 8px 16px rgba(0,0,0,0.5)';
-        this.domElement.style.display = 'flex';
-        this.domElement.style.flexDirection = 'column';
-        this.domElement.style.alignItems = 'center';
-        this.domElement.style.gap = '10px';
+        this.setupContainerStyles(300, 100, 'dark', {
+            backgroundColor: spec.data?.color || 'rgba(30, 30, 30, 0.9)',
+            border: '1px solid #444',
+            borderRadius: '12px',
+            padding: '15px',
+            alignItems: 'center',
+            gap: '10px'
+        });
 
         const titleEl = document.createElement('h4');
         titleEl.style.margin = '0';
         titleEl.style.fontFamily = 'system-ui, sans-serif';
         titleEl.style.fontSize = '14px';
-        titleEl.className = 'audio-node-title';
+        titleEl.className = 'audio-node-title sg-node-title';
         titleEl.textContent = spec.label || 'Audio Player';
 
         this.audioElement = document.createElement('audio');
