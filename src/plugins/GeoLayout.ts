@@ -67,17 +67,11 @@ export class GeoLayout implements ISpaceGraphPlugin {
                 targetPos.z = 0;
             }
 
-            if (this.settings.animate && (window as any).gsap) {
-                (window as any).gsap.to(node.position, {
-                    x: targetPos.x,
-                    y: targetPos.y,
-                    z: targetPos.z,
-                    duration: this.settings.animationDuration,
-                    ease: 'power3.out',
-                });
-            } else {
-                node.position.copy(targetPos);
-            }
+            (node as any).applyPosition(
+                targetPos,
+                this.settings.animate,
+                this.settings.animationDuration
+            );
         });
     }
 

@@ -63,126 +63,48 @@ export class VisionManager {
         console.log('[VisionManager] ONNX models loaded.', Object.keys(this.sessions));
     }
 
-    public async analyzeVision(): Promise<VisionReport> {
-        if (this.isAnalyzing) {
-            throw new Error('[VisionManager] Analysis already in progress.');
-        }
-
-        this.isAnalyzing = true;
-        console.log('[VisionManager] Starting automated visual analysis loop...');
-
-        // Execute ONNX Inference logic for vision components
-        if (Object.keys(this.sessions).length > 0) {
-            console.log('[VisionManager] Running ONNX inference for Graph Vision...');
-        }
-
-        // Heuristics baseline (fallback or parallel to ML predictions)
-        const nodes = Array.from(this.sg.graph.nodes.values());
-        const overlaps = [];
-        let layoutScore = 100;
-
-        // TLA & CHE analysis
+    private async _analyzeLegibility(nodes: any[], frustum: THREE.Frustum): Promise<{ legibilityFailures: any[], colorHarmonyScore: number, dominantPalette: string[], wcagAA: boolean }> {
         const legibilityFailures = [];
         let colorHarmonyScore = 100;
         const dominantPalette: string[] = [];
         let wcagAA = true;
         const bgColorThree = new THREE.Color(this.sg.renderer.scene.background as THREE.Color);
-        const bgColor = {
-            r: bgColorThree.r * 255,
-            g: bgColorThree.g * 255,
-            b: bgColorThree.b * 255,
-        };
-
-        // Ambitious Overlap Detection using Bounding Boxes
-        const camera = this.sg.renderer.camera;
-        const frustum = new THREE.Frustum();
-        const cameraViewProjectionMatrix = new THREE.Matrix4();
-        camera.updateMatrixWorld();
-        camera.matrixWorldInverse.copy(camera.matrixWorld).invert();
-        cameraViewProjectionMatrix.multiplyMatrices(
-            camera.projectionMatrix,
-            camera.matrixWorldInverse,
-        );
-        frustum.setFromProjectionMatrix(cameraViewProjectionMatrix);
-
-        // Build Spatial Index for O(n log n) overlap queries
-        this.spatialIndex.build(nodes);
+        const bgColor = { r: bgColorThree.r * 255, g: bgColorThree.g * 255, b: bgColorThree.b * 255 };
 
         for (let i = 0; i < nodes.length; i++) {
             const nodeA = nodes[i];
-
-            // --- Color and Legibility analysis (TLA/CHE) ---
-            // Generate some random layout heuristics if the ONNX model isn't driving
-            const nodeColor = nodeA.data?.color
-                ? hexToRgb(nodeA.data.color)
-                : { r: 200, g: 200, b: 200 };
+            const nodeColor = nodeA.data?.color ? hexToRgb(nodeA.data.color) : { r: 200, g: 200, b: 200 };
             dominantPalette.push(nodeA.data?.color || '#cccccc');
 
-            // Math-based heuristic for legibility (WCAG contrast)
             if (nodeColor) {
                 const nodeL1 = getLuminance(nodeColor.r, nodeColor.g, nodeColor.b);
                 const textL2 = getLuminance(255, 255, 255);
-
                 const brightest = Math.max(nodeL1, textL2);
                 const darkest = Math.min(nodeL1, textL2);
                 const contrastRatio = (brightest + 0.05) / (darkest + 0.05);
 
-                // WCAG AA requires a contrast ratio of at least 4.5:1 for normal text
                 let verifiedIssue = false;
                 if (contrastRatio < 4.5) {
-                    verifiedIssue = true; // Math confirms it's an issue
-
-                    // TLA (Text Legibility Analysis) verification step
+                    verifiedIssue = true;
                     if (this.sessions['tla']) {
                         try {
-                            const inputs = new Float32Array([
-                                nodeColor.r / 255,
-                                nodeColor.g / 255,
-                                nodeColor.b / 255,
-                                1.0,
-                                1.0,
-                                1.0, // Assumed white text
-                                14.0,
-                                400.0, // Assumed size and weight
-                            ]);
+                            const inputs = new Float32Array([nodeColor.r / 255, nodeColor.g / 255, nodeColor.b / 255, 1.0, 1.0, 1.0, 14.0, 400.0]);
                             const tensor = new Tensor('float32', inputs, [1, 8]);
-                            const result = await this.sessions['tla'].run({
-                                text_features: tensor,
-                            });
+                            const result = await this.sessions['tla'].run({ text_features: tensor });
                             const prob = result['legibility_score'].data[0] as number;
-
-                            // If neural net thinks it's legible (prob > 0.5), ignore the math heuristic
-                            if (prob >= 0.5) {
-                                verifiedIssue = false;
-                            }
+                            if (prob >= 0.5) verifiedIssue = false;
                         } catch (e) {
                             console.error('[VisionManager] TLA model inference failed', e);
                         }
                     }
 
-                    // CHE (Color Harmony Evaluation) step
                     if (this.sessions['che'] && verifiedIssue) {
                         try {
-                            const inputs = new Float32Array([
-                                nodeColor.r / 255,
-                                nodeColor.g / 255,
-                                nodeColor.b / 255,
-                                bgColor.r / 255,
-                                bgColor.g / 255,
-                                bgColor.b / 255,
-                                0.5,
-                                0.5,
-                                0.5, // Simulated neighborhood average
-                            ]);
+                            const inputs = new Float32Array([nodeColor.r / 255, nodeColor.g / 255, nodeColor.b / 255, bgColor.r / 255, bgColor.g / 255, bgColor.b / 255, 0.5, 0.5, 0.5]);
                             const tensor = new Tensor('float32', inputs, [1, 9]);
-                            const result = await this.sessions['che'].run({
-                                color_neighborhood: tensor,
-                            });
+                            const result = await this.sessions['che'].run({ color_neighborhood: tensor });
                             const prob = result['harmony_score'].data[0] as number;
-
-                            if (prob < 0.5) {
-                                colorHarmonyScore -= 10;
-                            }
+                            if (prob < 0.5) colorHarmonyScore -= 10;
                         } catch (e) {
                             console.error('[VisionManager] CHE model inference failed', e);
                         }
@@ -199,54 +121,40 @@ export class VisionManager {
                     wcagAA = false;
                 }
             }
+        }
+        return { legibilityFailures, colorHarmonyScore, dominantPalette, wcagAA };
+    }
 
+    private async _analyzeOverlaps(nodes: any[], frustum: THREE.Frustum): Promise<{ overlaps: any[], layoutScore: number }> {
+        const overlaps = [];
+        let layoutScore = 100;
+        this.spatialIndex.build(nodes);
+
+        for (let i = 0; i < nodes.length; i++) {
+            const nodeA = nodes[i];
             if (!frustum.containsPoint(nodeA.object.position)) continue;
 
             const boxA = new THREE.Box3().setFromObject(nodeA.object);
-
-            // Expand the bounding box slightly to act as a buffer/padding
             boxA.expandByScalar(5);
 
-            // Query spatial index for neighbors
             const neighbors = this.spatialIndex.queryBox(boxA);
 
             for (const nodeB of neighbors) {
-                if (nodeA.id === nodeB.id) continue;
-
-                // Keep ordering alphabetical to avoid double counting A->B and B->A
-                if (nodeB.id < nodeA.id) continue;
-
+                if (nodeA.id === nodeB.id || nodeB.id < nodeA.id) continue;
                 if (!frustum.containsPoint(nodeB.object.position)) continue;
 
                 const boxB = new THREE.Box3().setFromObject(nodeB.object);
                 boxB.expandByScalar(5);
 
-                // First run the mathematical heuristic overlap box check
                 if (boxA.intersectsBox(boxB)) {
-                    // ODN verification step: If the math check says they intersect, we verify with our Neural Network
                     let verifiedOverlap = true;
                     if (this.sessions['odn']) {
                         try {
-                            // Extract bounding boxes details to format as [x1, y1, x2, y2, x1, y1, x2, y2]
-                            const inputs = new Float32Array([
-                                boxA.min.x,
-                                boxA.min.y,
-                                boxA.max.x,
-                                boxA.max.y,
-                                boxB.min.x,
-                                boxB.min.y,
-                                boxB.max.x,
-                                boxB.max.y,
-                            ]);
+                            const inputs = new Float32Array([boxA.min.x, boxA.min.y, boxA.max.x, boxA.max.y, boxB.min.x, boxB.min.y, boxB.max.x, boxB.max.y]);
                             const tensor = new Tensor('float32', inputs, [1, 8]);
                             const result = await this.sessions['odn'].run({ boxes: tensor });
-
-                            // Get probability from output tensor
                             const prob = result['overlap_prob'].data[0] as number;
-                            // If neural net probability < 0.5, we override the math check
-                            if (prob < 0.5) {
-                                verifiedOverlap = false;
-                            }
+                            if (prob < 0.5) verifiedOverlap = false;
                         } catch (e) {
                             console.error('[VisionManager] ODN model inference failed', e);
                         }
@@ -259,8 +167,10 @@ export class VisionManager {
                 }
             }
         }
+        return { overlaps, layoutScore };
+    }
 
-        // --- VHS: Visual Hierarchy Scoring ---
+    private async _analyzeHierarchy(nodes: any[]): Promise<{ clarityScore: number }> {
         let clarityScore = 85;
         const inDegrees = new Map<string, number>();
         nodes.forEach((n) => inDegrees.set(n.id, 0));
@@ -270,7 +180,6 @@ export class VisionManager {
             }
         });
 
-        // BFS to find max depth and distribution
         let maxDepth = 0;
         const queue: { id: string; depth: number }[] = [];
         inDegrees.forEach((deg, id) => {
@@ -283,7 +192,6 @@ export class VisionManager {
             maxDepth = Math.max(maxDepth, current.depth);
             depths.push(current.depth);
 
-            // push children (simplified)
             for (const edge of this.sg.graph.edges) {
                 if (edge.source.id === current.id) {
                     queue.push({ id: edge.target.id, depth: current.depth + 1 });
@@ -293,14 +201,8 @@ export class VisionManager {
 
         if (this.sessions['vhs'] && depths.length > 0) {
             try {
-                // Feature vector: [avg_depth, max_depth, node_count, edge_count]
                 const avgDepth = depths.reduce((a, b) => a + b, 0) / depths.length;
-                const inputs = new Float32Array([
-                    avgDepth,
-                    maxDepth,
-                    nodes.length,
-                    this.sg.graph.edges.length,
-                ]);
+                const inputs = new Float32Array([avgDepth, maxDepth, nodes.length, this.sg.graph.edges.length]);
                 const tensor = new Tensor('float32', inputs, [1, 4]);
                 const result = await this.sessions['vhs'].run({ hierarchy_features: tensor });
                 clarityScore = Math.floor((result['hierarchy_score'].data[0] as number) * 100);
@@ -308,31 +210,26 @@ export class VisionManager {
                 console.error('[VisionManager] VHS model inference failed', e);
             }
         }
+        return { clarityScore };
+    }
 
-        // --- EQA: Ergonomics Quality Assessment (Fitts' Law Proxy) ---
+    private async _analyzeErgonomics(nodes: any[], camera: THREE.PerspectiveCamera, frustum: THREE.Frustum): Promise<{ fittsLawScore: number }> {
         let fittsLawScore = 90;
         let smallTargets = 0;
-
-        // Approximate pixel sizes
         const screenWidth = this.sg.renderer.renderer.domElement.width;
         const screenHeight = this.sg.renderer.renderer.domElement.height;
 
         for (const node of nodes) {
             if (!frustum.containsPoint(node.object.position)) continue;
 
-            // Ensure node coordinates project to screen appropriately, ignoring result for now
             node.object.position.clone().project(camera);
-
-            // To find bounding box size on screen, we convert node's box corners
             const box = new THREE.Box3().setFromObject(node.object);
             const size = new THREE.Vector3();
             box.getSize(size);
 
-            // A crude heuristic for screen size estimation (distance scaling)
             const distance = camera.position.distanceTo(node.object.position);
             const apparentSize = (Math.max(size.x, size.y) / distance) * screenHeight;
 
-            // Fitts law suggests target sizes < 44px (Apple guidelines) are hard to click
             if (apparentSize < 44) smallTargets++;
         }
 
@@ -340,13 +237,7 @@ export class VisionManager {
 
         if (this.sessions['eqa']) {
             try {
-                // Feature vector: [pct_small_targets, total_nodes, screen_width, screen_height]
-                const inputs = new Float32Array([
-                    pctSmall,
-                    nodes.length,
-                    screenWidth,
-                    screenHeight,
-                ]);
+                const inputs = new Float32Array([pctSmall, nodes.length, screenWidth, screenHeight]);
                 const tensor = new Tensor('float32', inputs, [1, 4]);
                 const result = await this.sessions['eqa'].run({ ergonomic_features: tensor });
                 fittsLawScore = Math.floor((result['fittslaw_score'].data[0] as number) * 100);
@@ -356,6 +247,34 @@ export class VisionManager {
         } else {
             fittsLawScore = Math.max(0, 100 - pctSmall * 100);
         }
+        return { fittsLawScore };
+    }
+
+    public async analyzeVision(): Promise<VisionReport> {
+        if (this.isAnalyzing) {
+            throw new Error('[VisionManager] Analysis already in progress.');
+        }
+
+        this.isAnalyzing = true;
+        console.log('[VisionManager] Starting automated visual analysis loop...');
+
+        if (Object.keys(this.sessions).length > 0) {
+            console.log('[VisionManager] Running ONNX inference for Graph Vision...');
+        }
+
+        const nodes = Array.from(this.sg.graph.nodes.values());
+        const camera = this.sg.renderer.camera;
+        const frustum = new THREE.Frustum();
+        const cameraViewProjectionMatrix = new THREE.Matrix4();
+        camera.updateMatrixWorld();
+        camera.matrixWorldInverse.copy(camera.matrixWorld).invert();
+        cameraViewProjectionMatrix.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
+        frustum.setFromProjectionMatrix(cameraViewProjectionMatrix);
+
+        const { legibilityFailures, colorHarmonyScore, dominantPalette, wcagAA } = await this._analyzeLegibility(nodes, frustum);
+        const { overlaps, layoutScore } = await this._analyzeOverlaps(nodes, frustum);
+        const { clarityScore } = await this._analyzeHierarchy(nodes);
+        const { fittsLawScore } = await this._analyzeErgonomics(nodes, camera, frustum);
 
         const mockReport: VisionReport = {
             layout: { overall: Math.max(0, layoutScore), issues: overlaps },

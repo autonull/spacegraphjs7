@@ -11,22 +11,14 @@ export class HtmlNode extends DOMNode {
 
         this.domElement.className = `spacegraph-html-node ${spec.data?.className || ''}`;
 
-        Object.assign(this.domElement.style, {
-            width: `${width}px`,
-            height: `${height}px`,
+        this.setupContainerStyles(width, height, 'dark', {
             backgroundColor: spec.data?.color || 'rgba(51, 102, 255, 0.8)',
             color: 'white',
             border: '2px solid white',
-            borderRadius: '8px',
             padding: '10px',
-            boxShadow: '0 4px 8px rgba(0,0,0,0.3)',
-            display: 'flex',
-            flexDirection: 'column',
             justifyContent: 'center',
             alignItems: 'center',
             pointerEvents: spec.data?.pointerEvents || 'auto',
-            overflow: 'hidden',
-            boxSizing: 'border-box',
             ...(spec.data?.style || {})
         });
 
@@ -50,7 +42,7 @@ export class HtmlNode extends DOMNode {
                     fontFamily: 'sans-serif',
                     fontSize: '16px'
                 });
-                titleEl.className = 'html-node-title';
+                titleEl.className = 'html-node-title sg-node-title';
                 titleEl.textContent = spec.label || 'HTML Node';
 
                 const descEl = document.createElement('p');

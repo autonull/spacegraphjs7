@@ -74,6 +74,30 @@ export class Node {
     }
 
     /**
+     * Applies a new position to the node, optionally animating it via GSAP.
+     * Helper to DRY up layout plugins.
+     */
+    applyPosition(targetPos: THREE.Vector3, animate: boolean = true, duration: number = 1.0, delay: number = 0): this {
+        if (animate && (window as any).gsap) {
+            (window as any).gsap.to(this.position, {
+                x: targetPos.x,
+                y: targetPos.y,
+                z: targetPos.z,
+                duration,
+                ease: 'power2.out',
+                delay,
+                onUpdate: () => {
+                    this.object.position.copy(this.position);
+                }
+            });
+        } else {
+            this.position.copy(targetPos);
+            this.object.position.copy(targetPos);
+        }
+        return this;
+    }
+
+    /**
      * Cleanly destroy this node and recursively free geometry, materials, and textures
      * to prevent WebGL context memory leaks.
      */

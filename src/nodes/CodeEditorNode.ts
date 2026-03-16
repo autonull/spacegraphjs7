@@ -25,36 +25,18 @@ export class CodeEditorNode extends DOMNode {
         super(sg, spec, div, w, h, { visible: false });
 
         this.domElement.className = 'spacegraph-code-editor-node';
-        Object.assign(this.domElement.style, {
-            width: `${w}px`,
-            height: `${h}px`,
-            backgroundColor: spec.data?.theme === 'vs' ? '#fffffe' : '#1e1e1e',
-            borderRadius: '8px',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-            boxSizing: 'border-box',
-            pointerEvents: 'auto',
-            display: 'flex',
-            flexDirection: 'column',
-            overflow: 'hidden',
+        const isLight = spec.data?.theme === 'vs';
+
+        this.setupContainerStyles(w, h, isLight ? 'light' : 'dark', {
+            backgroundColor: isLight ? '#fffffe' : '#1e1e1e',
             border: '1px solid rgba(255, 255, 255, 0.1)'
         });
 
-        // Optional title bar
-        const titleBar = document.createElement('div');
+        const titleBar = this.createTitleBar(spec.label || spec.data?.language || 'Code Editor', isLight ? 'light' : 'dark');
         Object.assign(titleBar.style, {
-            height: '30px',
-            backgroundColor: spec.data?.theme === 'vs' ? '#f3f3f3' : '#2d2d2d',
-            borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
-            display: 'flex',
-            alignItems: 'center',
-            padding: '0 12px',
-            fontFamily: 'sans-serif',
-            fontSize: '12px',
-            color: spec.data?.theme === 'vs' ? '#333' : '#ccc',
-            flexShrink: '0',
-            userSelect: 'none'
+            backgroundColor: isLight ? '#f3f3f3' : '#2d2d2d',
+            color: isLight ? '#333' : '#ccc'
         });
-        titleBar.textContent = spec.label || spec.data?.language || 'Code Editor';
         this.domElement.appendChild(titleBar);
 
         this.editorContainer = document.createElement('div');
@@ -119,8 +101,8 @@ export class CodeEditorNode extends DOMNode {
         }
 
         if (updates.label !== undefined) {
-            const titleBar = this.domElement.firstChild as HTMLElement;
-            if (titleBar) titleBar.textContent = updates.label;
+            const titleSpan = this.domElement.querySelector('.sg-node-title');
+            if (titleSpan) titleSpan.textContent = updates.label;
         }
     }
 
