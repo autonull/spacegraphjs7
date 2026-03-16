@@ -1,5 +1,6 @@
 import type { SpaceGraph } from '../SpaceGraph';
 import type { ISpaceGraphPlugin } from '../types';
+import { DOMUtils } from '../utils/DOMUtils';
 
 export interface HUDElementOptions {
     id: string;
@@ -23,17 +24,18 @@ export class HUDPlugin implements ISpaceGraphPlugin {
         this.sg = sg;
         if (typeof document === 'undefined') return;
 
-        this.container = document.createElement('div');
-        this.container.className = 'spacegraph-hud-container';
-        Object.assign(this.container.style, {
-            position: 'absolute',
-            top: '0',
-            left: '0',
-            width: '100%',
-            height: '100%',
-            pointerEvents: 'none', // Let clicks pass through to the canvas by default
-            zIndex: '9998', // Just below the vision overlay which is 9999
-            overflow: 'hidden'
+        this.container = DOMUtils.createElement('div', {
+            className: 'spacegraph-hud-container',
+            style: {
+                position: 'absolute',
+                top: '0',
+                left: '0',
+                width: '100%',
+                height: '100%',
+                pointerEvents: 'none', // Let clicks pass through to the canvas by default
+                zIndex: '9998', // Just below the vision overlay which is 9999
+                overflow: 'hidden'
+            }
         });
 
         const domElement = this.sg.renderer.renderer.domElement;
@@ -42,17 +44,18 @@ export class HUDPlugin implements ISpaceGraphPlugin {
             domElement.parentElement.appendChild(this.container);
         }
 
-        this.alertsContainer = document.createElement('div');
-        this.alertsContainer.className = 'spacegraph-alerts-container';
-        Object.assign(this.alertsContainer.style, {
-            position: 'absolute',
-            bottom: '20px',
-            right: '20px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '10px',
-            pointerEvents: 'none',
-            zIndex: '10000'
+        this.alertsContainer = DOMUtils.createElement('div', {
+            className: 'spacegraph-alerts-container',
+            style: {
+                position: 'absolute',
+                bottom: '20px',
+                right: '20px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '10px',
+                pointerEvents: 'none',
+                zIndex: '10000'
+            }
         });
         if (domElement.parentElement) {
             domElement.parentElement.appendChild(this.alertsContainer);
@@ -67,24 +70,31 @@ export class HUDPlugin implements ISpaceGraphPlugin {
             this.removeElement(options.id);
         }
 
-        const el = options.element || document.createElement('div');
-        el.id = `sg-hud-${options.id}`;
+        let el = options.element;
+        if (!el) {
+            el = DOMUtils.createElement('div', {
+                id: `sg-hud-${options.id}`,
+                style: {
+                    position: 'absolute',
+                    pointerEvents: 'auto', // Enable pointer events for the HUD element itself
+                },
+                innerHTML: options.html
+            });
 
-        // Base styling for all HUD elements
-        Object.assign(el.style, {
-            position: 'absolute',
-            pointerEvents: 'auto', // Enable pointer events for the HUD element itself
-        });
-
-        if (options.html) {
-            el.innerHTML = options.html;
+            if (options.style) {
+                Object.assign(el.style, options.style);
+            }
+        } else {
+            el.id = `sg-hud-${options.id}`;
+            Object.assign(el.style, {
+                position: 'absolute',
+                pointerEvents: 'auto',
+            });
+            if (options.html) el.innerHTML = options.html;
+            if (options.style) Object.assign(el.style, options.style);
         }
 
         this.applyPosition(el, options.position);
-
-        if (options.style) {
-            Object.assign(el.style, options.style);
-        }
 
         this.container.appendChild(el);
         this.elements.set(options.id, { el, options });
@@ -138,43 +148,46 @@ export class HUDPlugin implements ISpaceGraphPlugin {
     }
 
     private _createModalOverlay(): HTMLElement {
-        const overlay = document.createElement('div');
-        overlay.id = 'spacegraph-modal-overlay';
-        Object.assign(overlay.style, {
-            position: 'absolute', top: '0', left: '0', width: '100%', height: '100%',
-            backgroundColor: 'rgba(15, 23, 42, 0.7)', backdropFilter: 'blur(4px)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            zIndex: '10003', pointerEvents: 'auto', opacity: '0', transition: 'opacity 0.2s ease'
+        return DOMUtils.createElement('div', {
+            id: 'spacegraph-modal-overlay',
+            style: {
+                position: 'absolute', top: '0', left: '0', width: '100%', height: '100%',
+                backgroundColor: 'rgba(15, 23, 42, 0.7)', backdropFilter: 'blur(4px)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                zIndex: '10003', pointerEvents: 'auto', opacity: '0', transition: 'opacity 0.2s ease'
+            }
         });
-        return overlay;
     }
 
     private _createModalContainer(width?: string): HTMLElement {
-        const modal = document.createElement('div');
-        Object.assign(modal.style, {
-            background: '#1e293b', border: '1px solid #334155', borderRadius: '12px',
-            width: width || '400px', maxWidth: '90%', boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
-            display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: 'sans-serif',
-            transform: 'scale(0.95)', transition: 'transform 0.2s ease'
+        return DOMUtils.createElement('div', {
+            style: {
+                background: '#1e293b', border: '1px solid #334155', borderRadius: '12px',
+                width: width || '400px', maxWidth: '90%', boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
+                display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: 'sans-serif',
+                transform: 'scale(0.95)', transition: 'transform 0.2s ease'
+            }
         });
-        return modal;
     }
 
     private _createModalHeader(titleText: string, onClose?: () => void): HTMLElement {
-        const header = document.createElement('div');
-        Object.assign(header.style, {
-            padding: '16px 20px', borderBottom: '1px solid #334155', display: 'flex',
-            justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.2)'
+        const header = DOMUtils.createElement('div', {
+            style: {
+                padding: '16px 20px', borderBottom: '1px solid #334155', display: 'flex',
+                justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.2)'
+            }
         });
 
-        const title = document.createElement('h3');
-        title.textContent = titleText;
-        Object.assign(title.style, { margin: '0', color: '#f8fafc', fontSize: '16px' });
+        const title = DOMUtils.createElement('h3', {
+            textContent: titleText,
+            style: { margin: '0', color: '#f8fafc', fontSize: '16px' }
+        });
         header.appendChild(title);
 
-        const closeBtn = document.createElement('button');
-        closeBtn.innerHTML = '✕';
-        Object.assign(closeBtn.style, { background: 'transparent', border: 'none', color: '#94a3b8', fontSize: '18px', cursor: 'pointer' });
+        const closeBtn = DOMUtils.createElement('button', {
+            innerHTML: '✕',
+            style: { background: 'transparent', border: 'none', color: '#94a3b8', fontSize: '18px', cursor: 'pointer' }
+        });
         closeBtn.onmouseenter = () => closeBtn.style.color = 'white';
         closeBtn.onmouseleave = () => closeBtn.style.color = '#94a3b8';
         closeBtn.onclick = () => {
@@ -199,9 +212,10 @@ export class HUDPlugin implements ISpaceGraphPlugin {
 
         modal.appendChild(header);
 
-        const body = document.createElement('div');
-        Object.assign(body.style, { padding: '20px', color: '#cbd5e1', fontSize: '14px', lineHeight: '1.5' });
-        body.innerHTML = options.html;
+        const body = DOMUtils.createElement('div', {
+            innerHTML: options.html,
+            style: { padding: '20px', color: '#cbd5e1', fontSize: '14px', lineHeight: '1.5' }
+        });
         modal.appendChild(body);
 
         overlay.appendChild(modal);
@@ -236,33 +250,36 @@ export class HUDPlugin implements ISpaceGraphPlugin {
     }
 
     private _createLoadingOverlay(message: string): HTMLElement {
-        const overlay = document.createElement('div');
-        overlay.id = 'spacegraph-loading-overlay';
-        Object.assign(overlay.style, {
-            position: 'absolute', top: '0', left: '0', width: '100%', height: '100%',
-            backgroundColor: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(2px)',
-            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-            zIndex: '10004', pointerEvents: 'auto', color: 'white', fontFamily: 'sans-serif'
+        const overlay = DOMUtils.createElement('div', {
+            id: 'spacegraph-loading-overlay',
+            style: {
+                position: 'absolute', top: '0', left: '0', width: '100%', height: '100%',
+                backgroundColor: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(2px)',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                zIndex: '10004', pointerEvents: 'auto', color: 'white', fontFamily: 'sans-serif'
+            }
         });
 
-        const spinner = document.createElement('div');
-        Object.assign(spinner.style, {
-            width: '40px', height: '40px', border: '4px solid rgba(255,255,255,0.1)',
-            borderTop: '4px solid #3b82f6', borderRadius: '50%', marginBottom: '16px',
-            animation: 'sg-spin 1s linear infinite'
+        const spinner = DOMUtils.createElement('div', {
+            style: {
+                width: '40px', height: '40px', border: '4px solid rgba(255,255,255,0.1)',
+                borderTop: '4px solid #3b82f6', borderRadius: '50%', marginBottom: '16px',
+                animation: 'sg-spin 1s linear infinite'
+            }
         });
 
         if (!document.getElementById('sg-spin-keyframes')) {
-            const keyframes = document.createElement('style');
-            keyframes.id = 'sg-spin-keyframes';
-            keyframes.innerHTML = `@keyframes sg-spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`;
+            const keyframes = DOMUtils.createElement('style', {
+                id: 'sg-spin-keyframes',
+                innerHTML: `@keyframes sg-spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`
+            });
             document.head.appendChild(keyframes);
         }
 
-        const text = document.createElement('div');
-        text.textContent = message;
-        text.style.fontSize = '14px';
-        text.style.color = '#cbd5e1';
+        const text = DOMUtils.createElement('div', {
+            textContent: message,
+            style: { fontSize: '14px', color: '#cbd5e1' }
+        });
 
         overlay.appendChild(spinner);
         overlay.appendChild(text);
@@ -357,31 +374,30 @@ export class HUDPlugin implements ISpaceGraphPlugin {
     showAlert(message: string, type: 'info' | 'success' | 'warning' | 'error' = 'info', duration: number = 3000): void {
         if (!this.alertsContainer) return;
 
-        const alert = document.createElement('div');
-        alert.className = `spacegraph-alert alert-${type}`;
-
         let bgColor = '#1e293b';
         let borderColor = '#334155';
         if (type === 'success') { bgColor = 'rgba(22, 163, 74, 0.9)'; borderColor = '#4ade80'; }
         else if (type === 'error') { bgColor = 'rgba(220, 38, 38, 0.9)'; borderColor = '#f87171'; }
         else if (type === 'warning') { bgColor = 'rgba(217, 119, 6, 0.9)'; borderColor = '#fbbf24'; }
 
-        Object.assign(alert.style, {
-            background: bgColor,
-            border: `1px solid ${borderColor}`,
-            color: '#fff',
-            padding: '12px 16px',
-            borderRadius: '6px',
-            fontFamily: 'sans-serif',
-            fontSize: '14px',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-            opacity: '0',
-            transform: 'translateY(10px)',
-            transition: 'opacity 0.3s ease, transform 0.3s ease',
-            pointerEvents: 'auto'
+        const alert = DOMUtils.createElement('div', {
+            className: `spacegraph-alert alert-${type}`,
+            textContent: message,
+            style: {
+                background: bgColor,
+                border: `1px solid ${borderColor}`,
+                color: '#fff',
+                padding: '12px 16px',
+                borderRadius: '6px',
+                fontFamily: 'sans-serif',
+                fontSize: '14px',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                opacity: '0',
+                transform: 'translateY(10px)',
+                transition: 'opacity 0.3s ease, transform 0.3s ease',
+                pointerEvents: 'auto'
+            }
         });
-
-        alert.textContent = message;
         this.alertsContainer.appendChild(alert);
 
         // Animate in
@@ -408,25 +424,26 @@ export class HUDPlugin implements ISpaceGraphPlugin {
     showTooltip(text: string, x: number, y: number): void {
         this.hideTooltip();
 
-        const tooltip = document.createElement('div');
-        tooltip.id = 'spacegraph-tooltip';
-        Object.assign(tooltip.style, {
-            position: 'absolute',
-            left: `${x + 15}px`,
-            top: `${y + 15}px`,
-            background: 'rgba(15, 23, 42, 0.95)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            borderRadius: '6px',
-            padding: '6px 12px',
-            color: '#f1f5f9',
-            fontFamily: 'sans-serif',
-            fontSize: '12px',
-            pointerEvents: 'none', // tooltips shouldn't capture mouse
-            zIndex: '10002',
-            whiteSpace: 'pre-wrap',
-            boxShadow: '0 4px 6px rgba(0,0,0,0.3)'
+        const tooltip = DOMUtils.createElement('div', {
+            id: 'spacegraph-tooltip',
+            textContent: text,
+            style: {
+                position: 'absolute',
+                left: `${x + 15}px`,
+                top: `${y + 15}px`,
+                background: 'rgba(15, 23, 42, 0.95)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: '6px',
+                padding: '6px 12px',
+                color: '#f1f5f9',
+                fontFamily: 'sans-serif',
+                fontSize: '12px',
+                pointerEvents: 'none', // tooltips shouldn't capture mouse
+                zIndex: '10002',
+                whiteSpace: 'pre-wrap',
+                boxShadow: '0 4px 6px rgba(0,0,0,0.3)'
+            }
         });
-        tooltip.textContent = text;
 
         const domElement = this.sg.renderer.renderer.domElement;
         if (domElement.parentElement) {
@@ -448,38 +465,40 @@ export class HUDPlugin implements ISpaceGraphPlugin {
     showContextMenu(items: Array<{ label: string; action: () => void }>, x: number, y: number): void {
         this.hideContextMenu(); // Close any existing
 
-        const menu = document.createElement('div');
-        menu.id = 'spacegraph-context-menu';
-        Object.assign(menu.style, {
-            position: 'absolute',
-            left: `${x}px`,
-            top: `${y}px`,
-            background: '#1e293b',
-            border: '1px solid #334155',
-            borderRadius: '6px',
-            padding: '4px 0',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-            zIndex: '10001',
-            fontFamily: 'sans-serif',
-            fontSize: '13px',
-            minWidth: '120px',
-            pointerEvents: 'auto'
+        const menu = DOMUtils.createElement('div', {
+            id: 'spacegraph-context-menu',
+            style: {
+                position: 'absolute',
+                left: `${x}px`,
+                top: `${y}px`,
+                background: '#1e293b',
+                border: '1px solid #334155',
+                borderRadius: '6px',
+                padding: '4px 0',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                zIndex: '10001',
+                fontFamily: 'sans-serif',
+                fontSize: '13px',
+                minWidth: '120px',
+                pointerEvents: 'auto'
+            }
         });
 
         items.forEach(item => {
-            const btn = document.createElement('button');
-            btn.textContent = item.label;
-            Object.assign(btn.style, {
-                display: 'block',
-                width: '100%',
-                padding: '8px 16px',
-                background: 'transparent',
-                border: 'none',
-                color: '#f1f5f9',
-                textAlign: 'left',
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-                fontSize: 'inherit'
+            const btn = DOMUtils.createElement('button', {
+                textContent: item.label,
+                style: {
+                    display: 'block',
+                    width: '100%',
+                    padding: '8px 16px',
+                    background: 'transparent',
+                    border: 'none',
+                    color: '#f1f5f9',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                    fontSize: 'inherit'
+                }
             });
             btn.onmouseenter = () => { btn.style.background = '#334155'; };
             btn.onmouseleave = () => { btn.style.background = 'transparent'; };

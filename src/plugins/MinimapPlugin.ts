@@ -150,6 +150,7 @@ export class MinimapPlugin implements ISpaceGraphPlugin {
     };
 
     onPostRender(_delta: number): void {
+        if (!this.sg || !this.sg.renderer || !this.sg.renderer.renderer) return;
         this._renderMinimap();
     }
 
