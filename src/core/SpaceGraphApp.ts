@@ -472,100 +472,101 @@ export class SpaceGraphApp {
     private setupDefaultHUD(theme: any) {
         if (typeof document === 'undefined') return;
 
-        // Remove old HUD elements to support dynamic theme swapping
         this.hud.removeElement('app-title-card');
         this.hud.removeElement('app-toolbar');
 
-        // App Title
         if (this.options.title) {
-            const titleCard = document.createElement('div');
-            Object.assign(titleCard.style, {
-                background: theme.backgroundColor,
-                backdropFilter: 'blur(8px)',
-                padding: '16px',
-                borderRadius: '12px',
-                border: '1px solid rgba(255,255,255,0.1)',
-                width: '300px',
-                color: 'white',
-                fontFamily: 'sans-serif',
-                transition: 'all 0.3s ease'
-            });
-
-            titleCard.innerHTML = `
-                <h1 style="font-size: 18px; margin: 0 0 8px 0; background: -webkit-linear-gradient(135deg, ${theme.primaryColor}, ${theme.secondaryColor}); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">${this.options.title}</h1>
-                ${this.options.description ? `<p style="font-size: 12px; color: #94a3b8; line-height: 1.5; margin: 0;">${this.options.description}</p>` : ''}
-            `;
-
-            this.hud.addElement({
-                id: 'app-title-card',
-                position: 'top-left',
-                element: titleCard
-            });
+            this._renderTitleCard(theme);
         }
 
-        // Stats Bar & Controls
-        const toolbarContainer = document.createElement('div');
-        Object.assign(toolbarContainer.style, {
+        this._renderToolbar(theme);
+
+        this.updateStatsHUD();
+        this.renderToolbarActions();
+    }
+
+    private _renderTitleCard(theme: any) {
+        const titleCard = document.createElement('div');
+        Object.assign(titleCard.style, {
+            background: theme.backgroundColor,
+            backdropFilter: 'blur(8px)',
+            padding: '16px',
+            borderRadius: '12px',
+            border: '1px solid rgba(255,255,255,0.1)',
+            width: '300px',
+            color: 'white',
+            fontFamily: 'sans-serif',
+            transition: 'all 0.3s ease'
+        });
+
+        titleCard.innerHTML = `
+            <h1 style="font-size: 18px; margin: 0 0 8px 0; background: -webkit-linear-gradient(135deg, ${theme.primaryColor}, ${theme.secondaryColor}); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">${this.options.title}</h1>
+            ${this.options.description ? `<p style="font-size: 12px; color: #94a3b8; line-height: 1.5; margin: 0;">${this.options.description}</p>` : ''}
+        `;
+
+        this.hud.addElement({ id: 'app-title-card', position: 'top-left', element: titleCard });
+    }
+
+    private _renderToolbar(theme: any) {
+        const container = document.createElement('div');
+        Object.assign(container.style, {
             background: theme.backgroundColor,
             backdropFilter: 'blur(8px)',
             padding: '12px 24px',
             borderRadius: '99px',
             border: '1px solid rgba(255,255,255,0.1)',
             display: 'flex',
-            gap: '16px', // Reduced gap slightly to fit more items
+            gap: '16px',
             alignItems: 'center',
-            flexWrap: 'nowrap', // Force single line
-            whiteSpace: 'nowrap', // Prevent text wrap internally
+            flexWrap: 'nowrap',
+            whiteSpace: 'nowrap',
             boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
             color: 'white',
             fontFamily: 'sans-serif'
         });
 
-        // Nodes Stat
-        const nodesStat = document.createElement('div');
-        Object.assign(nodesStat.style, { display: 'flex', flexDirection: 'column', alignItems: 'center' });
-        nodesStat.innerHTML = `<span style="font-size: 10px; color: #94a3b8; text-transform: uppercase;">Nodes</span><span id="sg-app-node-count" style="font-size: 16px; font-weight: 700;">${this.sg.graph.nodes.size}</span>`;
-        toolbarContainer.appendChild(nodesStat);
+        const nodesStat = this._createStatBlock('Nodes', 'sg-app-node-count', this.sg.graph.nodes.size.toString());
+        const selectedStat = this._createStatBlock('Selected', 'sg-app-selected-count', '0', theme.primaryColor);
 
-        const divider1 = document.createElement('div');
-        Object.assign(divider1.style, { width: '1px', height: '24px', background: 'rgba(255,255,255,0.1)' });
-        toolbarContainer.appendChild(divider1);
+        container.append(nodesStat, this._createDivider(), selectedStat, this._createDivider());
 
-        // Selected Stat
-        const selectedStat = document.createElement('div');
-        Object.assign(selectedStat.style, { display: 'flex', flexDirection: 'column', alignItems: 'center' });
-        selectedStat.innerHTML = `<span style="font-size: 10px; color: #94a3b8; text-transform: uppercase;">Selected</span><span id="sg-app-selected-count" style="font-size: 16px; font-weight: 700; color: ${theme.primaryColor};">0</span>`;
-        toolbarContainer.appendChild(selectedStat);
-
-        const divider2 = document.createElement('div');
-        Object.assign(divider2.style, { width: '1px', height: '24px', background: 'rgba(255,255,255,0.1)' });
-        toolbarContainer.appendChild(divider2);
-
-        // Fit View Button
         const fitBtn = document.createElement('button');
         Object.assign(fitBtn.style, {
             background: `linear-gradient(135deg, ${theme.primaryColor}, ${theme.secondaryColor})`,
-            border: 'none',
-            padding: '8px 16px',
-            borderRadius: '99px',
-            color: 'white',
-            fontWeight: '600',
-            cursor: 'pointer'
+            border: 'none', padding: '8px 16px', borderRadius: '99px', color: 'white', fontWeight: '600', cursor: 'pointer'
         });
         fitBtn.textContent = 'Fit View';
-        fitBtn.addEventListener('click', () => this.sg.fitView(200));
-        toolbarContainer.appendChild(fitBtn);
+        fitBtn.onclick = () => this.sg.fitView(200);
+        container.appendChild(fitBtn);
 
-        // Mode Toggle Container
-        const modeContainer = document.createElement('div');
-        Object.assign(modeContainer.style, {
-            display: 'flex',
-            gap: '4px',
-            background: 'rgba(255,255,255,0.05)',
-            borderRadius: '99px',
-            padding: '2px',
-            flexShrink: '0', // Prevent shrinking so text doesn't truncate
-            border: '1px solid rgba(255,255,255,0.1)'
+        container.appendChild(this._createModeToggle(theme));
+        container.appendChild(this._createZoomControls(theme));
+
+        const actionsContainer = document.createElement('div');
+        actionsContainer.id = 'sg-app-toolbar-actions';
+        Object.assign(actionsContainer.style, { display: 'flex', gap: '12px' });
+        container.appendChild(actionsContainer);
+
+        this.hud.addElement({ id: 'app-toolbar', position: 'bottom-center', element: container });
+    }
+
+    private _createStatBlock(label: string, id: string, value: string, color?: string): HTMLElement {
+        const stat = document.createElement('div');
+        Object.assign(stat.style, { display: 'flex', flexDirection: 'column', alignItems: 'center' });
+        stat.innerHTML = `<span style="font-size: 10px; color: #94a3b8; text-transform: uppercase;">${label}</span><span id="${id}" style="font-size: 16px; font-weight: 700;${color ? ` color: ${color};` : ''}">${value}</span>`;
+        return stat;
+    }
+
+    private _createDivider(): HTMLElement {
+        const div = document.createElement('div');
+        Object.assign(div.style, { width: '1px', height: '24px', background: 'rgba(255,255,255,0.1)' });
+        return div;
+    }
+
+    private _createModeToggle(theme: any): HTMLElement {
+        const container = document.createElement('div');
+        Object.assign(container.style, {
+            display: 'flex', gap: '4px', background: 'rgba(255,255,255,0.05)', borderRadius: '99px', padding: '2px', border: '1px solid rgba(255,255,255,0.1)'
         });
 
         const modeButtons: { [key: string]: HTMLButtonElement } = {};
@@ -581,141 +582,67 @@ export class SpaceGraphApp {
             }
         };
 
-        const createModeBtn = (label: string, mode: 'default' | 'select' | 'connect') => {
+        const modes: ('default'|'select'|'connect')[] = ['default', 'select', 'connect'];
+        const labels = ['View', 'Select', 'Connect'];
+
+        modes.forEach((mode, i) => {
             const btn = document.createElement('button');
-            btn.textContent = label;
+            btn.textContent = labels[i];
             Object.assign(btn.style, {
-                background: 'transparent',
-                border: 'none',
-                padding: '6px 16px',
-                borderRadius: '99px',
-                color: '#94a3b8',
-                fontWeight: 'bold',
-                fontSize: '12px',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease'
+                background: 'transparent', border: 'none', padding: '6px 16px', borderRadius: '99px', color: '#94a3b8', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer', transition: 'all 0.2s ease'
             });
-            btn.onclick = () => {
-                this.setMode(mode);
-                updateModeStyles(mode);
-            };
+            btn.onclick = () => { this.setMode(mode); updateModeStyles(mode); };
             modeButtons[mode] = btn;
-            return btn;
-        };
+            container.appendChild(btn);
+        });
 
-        modeContainer.appendChild(createModeBtn('View', 'default'));
-        modeContainer.appendChild(createModeBtn('Select', 'select'));
-        modeContainer.appendChild(createModeBtn('Connect', 'connect'));
-
-        // Set initial state based on interaction plugin
         const interaction = this.sg.pluginManager.getPlugin('interaction') as InteractionPlugin;
         updateModeStyles(interaction ? interaction.mode : 'default');
 
-        toolbarContainer.appendChild(modeContainer);
+        return container;
+    }
 
-        // Zoom Controls Container
-        const zoomContainer = document.createElement('div');
-        Object.assign(zoomContainer.style, {
-            display: 'flex',
-            alignItems: 'center',
-            gap: '2px',
-            background: 'rgba(255,255,255,0.05)',
-            borderRadius: '99px',
-            padding: '2px 4px',
-            border: '1px solid rgba(255,255,255,0.1)'
+    private _createZoomControls(theme: any): HTMLElement {
+        const container = document.createElement('div');
+        Object.assign(container.style, {
+            display: 'flex', alignItems: 'center', gap: '2px', background: 'rgba(255,255,255,0.05)', borderRadius: '99px', padding: '2px 4px', border: '1px solid rgba(255,255,255,0.1)'
         });
 
-        const createZoomBtn = (label: string, isZoomIn: boolean) => {
+        const createBtn = (label: string, isZoomIn: boolean) => {
             const btn = document.createElement('button');
             btn.textContent = label;
-            Object.assign(btn.style, {
-                background: 'transparent', border: 'none', padding: '6px 12px',
-                borderRadius: '99px',
-                color: 'white', fontWeight: 'bold', fontSize: '16px', cursor: 'pointer'
-            });
+            Object.assign(btn.style, { background: 'transparent', border: 'none', padding: '6px 12px', borderRadius: '99px', color: 'white', fontWeight: 'bold', fontSize: '16px', cursor: 'pointer' });
             btn.onmouseenter = () => btn.style.background = 'rgba(255,255,255,0.1)';
             btn.onmouseleave = () => btn.style.background = 'transparent';
             btn.onclick = () => {
                 if (!this.sg.cameraControls) return;
                 const currentRadius = this.sg.cameraControls.spherical.radius;
-                const zoomFactor = 0.5; // adjust relative to distance
-                const delta = isZoomIn ? -(currentRadius * zoomFactor) : (currentRadius * zoomFactor);
-                const targetRadius = Math.max(10, Math.min(5000, currentRadius + delta));
+                const targetRadius = Math.max(10, Math.min(5000, currentRadius + (isZoomIn ? -currentRadius * 0.5 : currentRadius * 0.5)));
                 this.sg.cameraControls.flyTo(this.sg.cameraControls.target, targetRadius, 0.5);
             };
             return btn;
         };
 
-        const zoomOutBtn = createZoomBtn('-', false);
-        const zoomInBtn = createZoomBtn('+', true);
-
-        // Zoom Slider
         const zoomSlider = document.createElement('input');
-        zoomSlider.type = 'range';
-        zoomSlider.min = '10';
-        zoomSlider.max = '5000';
-        zoomSlider.step = '1';
-        // Invert slider mapping: large radius = zoomed out (left), small radius = zoomed in (right)
-        // Since input values naturally go left->right as small->large, we will visually map min radius (close) to max slider value.
-        // We'll set the actual input value handling below.
-        zoomSlider.id = 'sg-app-zoom-slider';
-        Object.assign(zoomSlider.style, {
-            width: '80px',
-            margin: '0 8px',
-            cursor: 'pointer',
-            accentColor: theme.primaryColor
-        });
+        Object.assign(zoomSlider, { type: 'range', min: '10', max: '5000', step: '1', id: 'sg-app-zoom-slider' });
+        Object.assign(zoomSlider.style, { width: '80px', margin: '0 8px', cursor: 'pointer', accentColor: theme.primaryColor });
 
-        const updateZoomFromSlider = () => {
+        zoomSlider.oninput = () => {
             if (!this.sg.cameraControls) return;
-            // Native mapping: slider 10 -> radius 5000, slider 5000 -> radius 10
             const invertedRadius = 5010 - parseFloat(zoomSlider.value);
             this.sg.cameraControls.spherical.radius = invertedRadius;
-
-            // Re-render camera position instantly without animating
             this.sg.cameraControls.flyTo(this.sg.cameraControls.target, invertedRadius, 0);
         };
 
-        zoomSlider.addEventListener('input', updateZoomFromSlider);
+        if (this.sg.cameraControls) zoomSlider.value = (5010 - this.sg.cameraControls.spherical.radius).toString();
 
-        if (this.sg.cameraControls) {
-            zoomSlider.value = (5010 - this.sg.cameraControls.spherical.radius).toString();
-        }
-
-        const handleCameraMove = () => {
-            if (!this.sg.cameraControls) return;
-            // Update slider without triggering the 'input' event listener to avoid infinite loop
-            const newRadius = this.sg.cameraControls.spherical.radius;
-            zoomSlider.value = (5010 - newRadius).toString();
+        this._zoomSliderHandler = () => {
+            if (this.sg.cameraControls) zoomSlider.value = (5010 - this.sg.cameraControls.spherical.radius).toString();
         };
+        this.sg.events.on('camera:move', this._zoomSliderHandler);
 
-        this.sg.events.on('camera:move', handleCameraMove);
-
-        // Store reference so we can remove it if HUD is destroyed
-        this._zoomSliderHandler = handleCameraMove;
-
-        zoomContainer.appendChild(zoomOutBtn);
-        zoomContainer.appendChild(zoomSlider);
-        zoomContainer.appendChild(zoomInBtn);
-        toolbarContainer.appendChild(zoomContainer);
-
-        // Toolbar Actions Container
-        const actionsContainer = document.createElement('div');
-        actionsContainer.id = 'sg-app-toolbar-actions';
-        Object.assign(actionsContainer.style, {
-            display: 'flex',
-            gap: '12px'
-        });
-        toolbarContainer.appendChild(actionsContainer);
-
-        this.hud.addElement({
-            id: 'app-toolbar',
-            position: 'bottom-center',
-            element: toolbarContainer
-        });
-
-        this.updateStatsHUD(); // initialize node count after load
-        this.renderToolbarActions();
+        container.append(createBtn('-', false), zoomSlider, createBtn('+', true));
+        return container;
     }
 
     /**
