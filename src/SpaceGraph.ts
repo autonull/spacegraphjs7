@@ -31,6 +31,15 @@ export class SpaceGraph {
     this.renderer = new Renderer(this, container);
     this.graph = new Graph(this);
     this.cameraControls = new CameraControls(this);
+
+    // Register instance for global analysis
+    if (typeof window !== 'undefined') {
+      const w = window as any;
+      if (!w.__SPACEGRAPH_INSTANCES__) {
+        w.__SPACEGRAPH_INSTANCES__ = [];
+      }
+      w.__SPACEGRAPH_INSTANCES__.push(this);
+    }
   }
 
   static create(container: string | HTMLElement, spec: GraphSpec): SpaceGraph {

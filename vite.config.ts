@@ -4,12 +4,15 @@ import { resolve } from 'path';
 export default defineConfig({
   build: {
     lib: {
-      entry: resolve(__dirname, 'src/index.ts'),
+      entry: {
+        spacegraphjs: resolve(__dirname, 'src/index.ts'),
+        vision: resolve(__dirname, 'src/vision/index.ts'),
+      },
       name: 'SpaceGraphJS',
-      fileName: 'spacegraphjs',
+      formats: ['es', 'cjs'],
     },
     rollupOptions: {
-      external: ['three'],
+      external: ['three', 'child_process', 'fs', 'path', 'playwright', 'http-server'],
       output: {
         globals: {
           three: 'THREE',
