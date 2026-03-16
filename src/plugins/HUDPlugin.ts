@@ -137,76 +137,66 @@ export class HUDPlugin implements ISpaceGraphPlugin {
         return this.elements.get(id)?.el || null;
     }
 
+    private _createModalOverlay(): HTMLElement {
+        const overlay = document.createElement('div');
+        overlay.id = 'spacegraph-modal-overlay';
+        Object.assign(overlay.style, {
+            position: 'absolute', top: '0', left: '0', width: '100%', height: '100%',
+            backgroundColor: 'rgba(15, 23, 42, 0.7)', backdropFilter: 'blur(4px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: '10003', pointerEvents: 'auto', opacity: '0', transition: 'opacity 0.2s ease'
+        });
+        return overlay;
+    }
+
+    private _createModalContainer(width?: string): HTMLElement {
+        const modal = document.createElement('div');
+        Object.assign(modal.style, {
+            background: '#1e293b', border: '1px solid #334155', borderRadius: '12px',
+            width: width || '400px', maxWidth: '90%', boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
+            display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: 'sans-serif',
+            transform: 'scale(0.95)', transition: 'transform 0.2s ease'
+        });
+        return modal;
+    }
+
+    private _createModalHeader(titleText: string, onClose?: () => void): HTMLElement {
+        const header = document.createElement('div');
+        Object.assign(header.style, {
+            padding: '16px 20px', borderBottom: '1px solid #334155', display: 'flex',
+            justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.2)'
+        });
+
+        const title = document.createElement('h3');
+        title.textContent = titleText;
+        Object.assign(title.style, { margin: '0', color: '#f8fafc', fontSize: '16px' });
+        header.appendChild(title);
+
+        const closeBtn = document.createElement('button');
+        closeBtn.innerHTML = '✕';
+        Object.assign(closeBtn.style, { background: 'transparent', border: 'none', color: '#94a3b8', fontSize: '18px', cursor: 'pointer' });
+        closeBtn.onmouseenter = () => closeBtn.style.color = 'white';
+        closeBtn.onmouseleave = () => closeBtn.style.color = '#94a3b8';
+        closeBtn.onclick = () => {
+            if (onClose) onClose();
+            this.hideModal();
+        };
+        header.appendChild(closeBtn);
+        return header;
+    }
+
     /**
      * Shows a centralized modal overlay with backdrop.
      */
     showModal(options: { title: string; html: string; width?: string; onClose?: () => void }) {
         if (typeof document === 'undefined') return;
 
-        this.hideModal(); // hide existing
+        this.hideModal();
 
-        const overlay = document.createElement('div');
-        overlay.id = 'spacegraph-modal-overlay';
-        Object.assign(overlay.style, {
-            position: 'absolute',
-            top: '0',
-            left: '0',
-            width: '100%',
-            height: '100%',
-            backgroundColor: 'rgba(15, 23, 42, 0.7)',
-            backdropFilter: 'blur(4px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: '10003', // above tooltips and context menus
-            pointerEvents: 'auto',
-            opacity: '0',
-            transition: 'opacity 0.2s ease'
-        });
+        const overlay = this._createModalOverlay();
+        const modal = this._createModalContainer(options.width);
+        const header = this._createModalHeader(options.title, options.onClose);
 
-        const modal = document.createElement('div');
-        Object.assign(modal.style, {
-            background: '#1e293b',
-            border: '1px solid #334155',
-            borderRadius: '12px',
-            width: options.width || '400px',
-            maxWidth: '90%',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
-            display: 'flex',
-            flexDirection: 'column',
-            overflow: 'hidden',
-            fontFamily: 'sans-serif',
-            transform: 'scale(0.95)',
-            transition: 'transform 0.2s ease'
-        });
-
-        const header = document.createElement('div');
-        Object.assign(header.style, {
-            padding: '16px 20px',
-            borderBottom: '1px solid #334155',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            backgroundColor: 'rgba(0,0,0,0.2)'
-        });
-
-        const title = document.createElement('h3');
-        title.textContent = options.title;
-        Object.assign(title.style, { margin: '0', color: '#f8fafc', fontSize: '16px' });
-        header.appendChild(title);
-
-        const closeBtn = document.createElement('button');
-        closeBtn.innerHTML = '✕';
-        Object.assign(closeBtn.style, {
-            background: 'transparent', border: 'none', color: '#94a3b8', fontSize: '18px', cursor: 'pointer'
-        });
-        closeBtn.onmouseenter = () => closeBtn.style.color = 'white';
-        closeBtn.onmouseleave = () => closeBtn.style.color = '#94a3b8';
-        closeBtn.onclick = () => {
-            if (options.onClose) options.onClose();
-            this.hideModal();
-        };
-        header.appendChild(closeBtn);
         modal.appendChild(header);
 
         const body = document.createElement('div');
@@ -216,7 +206,6 @@ export class HUDPlugin implements ISpaceGraphPlugin {
 
         overlay.appendChild(modal);
 
-        // Click outside to close
         overlay.addEventListener('click', (e) => {
             if (e.target === overlay) {
                 if (options.onClose) options.onClose();
@@ -227,8 +216,6 @@ export class HUDPlugin implements ISpaceGraphPlugin {
         const domElement = this.sg.renderer.renderer.domElement;
         if (domElement.parentElement) {
             domElement.parentElement.appendChild(overlay);
-
-            // Animate in
             requestAnimationFrame(() => {
                 overlay.style.opacity = '1';
                 modal.style.transform = 'scale(1)';
@@ -248,6 +235,41 @@ export class HUDPlugin implements ISpaceGraphPlugin {
         }
     }
 
+    private _createLoadingOverlay(message: string): HTMLElement {
+        const overlay = document.createElement('div');
+        overlay.id = 'spacegraph-loading-overlay';
+        Object.assign(overlay.style, {
+            position: 'absolute', top: '0', left: '0', width: '100%', height: '100%',
+            backgroundColor: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(2px)',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            zIndex: '10004', pointerEvents: 'auto', color: 'white', fontFamily: 'sans-serif'
+        });
+
+        const spinner = document.createElement('div');
+        Object.assign(spinner.style, {
+            width: '40px', height: '40px', border: '4px solid rgba(255,255,255,0.1)',
+            borderTop: '4px solid #3b82f6', borderRadius: '50%', marginBottom: '16px',
+            animation: 'sg-spin 1s linear infinite'
+        });
+
+        if (!document.getElementById('sg-spin-keyframes')) {
+            const keyframes = document.createElement('style');
+            keyframes.id = 'sg-spin-keyframes';
+            keyframes.innerHTML = `@keyframes sg-spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`;
+            document.head.appendChild(keyframes);
+        }
+
+        const text = document.createElement('div');
+        text.textContent = message;
+        text.style.fontSize = '14px';
+        text.style.color = '#cbd5e1';
+
+        overlay.appendChild(spinner);
+        overlay.appendChild(text);
+
+        return overlay;
+    }
+
     /**
      * Shows a generic blocking loading overlay with a message.
      */
@@ -255,50 +277,7 @@ export class HUDPlugin implements ISpaceGraphPlugin {
         if (typeof document === 'undefined') return;
 
         this.hideLoading();
-
-        const overlay = document.createElement('div');
-        overlay.id = 'spacegraph-loading-overlay';
-        Object.assign(overlay.style, {
-            position: 'absolute',
-            top: '0',
-            left: '0',
-            width: '100%',
-            height: '100%',
-            backgroundColor: 'rgba(15, 23, 42, 0.8)',
-            backdropFilter: 'blur(2px)',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: '10004', // highest
-            pointerEvents: 'auto',
-            color: 'white',
-            fontFamily: 'sans-serif'
-        });
-
-        // Simple CSS spinner inline
-        const spinner = document.createElement('div');
-        Object.assign(spinner.style, {
-            width: '40px',
-            height: '40px',
-            border: '4px solid rgba(255,255,255,0.1)',
-            borderTop: '4px solid #3b82f6',
-            borderRadius: '50%',
-            marginBottom: '16px',
-            animation: 'sg-spin 1s linear infinite'
-        });
-
-        const keyframes = document.createElement('style');
-        keyframes.innerHTML = `@keyframes sg-spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`;
-        overlay.appendChild(keyframes);
-
-        overlay.appendChild(spinner);
-
-        const text = document.createElement('div');
-        text.textContent = message;
-        text.style.fontSize = '14px';
-        text.style.color = '#cbd5e1';
-        overlay.appendChild(text);
+        const overlay = this._createLoadingOverlay(message);
 
         const domElement = this.sg.renderer.renderer.domElement;
         if (domElement.parentElement) {
