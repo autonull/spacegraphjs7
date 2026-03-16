@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Force Layout - SpaceGraphJS Example</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { overflow: hidden; background-color: #1a1a2e; }
+    #container { width: 100vw; height: 100vh; }
+    .status {
+      position: absolute; top: 10px; left: 10px;
+      color: #0f0; background: rgba(0,0,0,0.8);
+      padding: 10px; font-family: monospace; z-index: 10;
+    }
+  </style>
+</head>
+<body>
+  <div class="status">Force Layout Example (Watch nodes arrange automatically)</div>
+  <div id="container"></div>
+
+  <script type="module">
+    import { SpaceGraph } from '../src/index.ts';
+
+    // Generate a random clustered graph
+    const nodes = [];
+    const edges = [];
+
+    // Central hubs
+    for (let i = 0; i < 3; i++) {
+        nodes.push({ id: `hub-${i}`, type: 'ShapeNode', label: `Hub ${i}`, position: [Math.random() * 100 - 50, Math.random() * 100 - 50, 0], data: { color: 0xff0000 } });
+    }
+
+    // Children
+    for (let i = 0; i < 30; i++) {
+        const hubId = `hub-${Math.floor(Math.random() * 3)}`;
+        const childId = `child-${i}`;
+        // Start them all clumped together to demonstrate the repulsive forces
+        nodes.push({ id: childId, type: 'ShapeNode', position: [Math.random() * 20 - 10, Math.random() * 20 - 10, 0], data: { color: 0x3366ff } });
+        edges.push({ id: `e-${i}`, source: hubId, target: childId, type: 'Edge' });
+    }
+
+    const graph = SpaceGraph.create('#container', { nodes, edges });
+
+    // Configure layout
+    const layout = graph.pluginManager.getPlugin('LayoutPlugin');
+    if (layout) {
+        layout.settings.attraction = 0.02;
+        layout.settings.repulsion = 20000;
+        layout.settings.enabled = true;
+    }
+
+    graph.render();
+  </script>
+</body>
+</html>
