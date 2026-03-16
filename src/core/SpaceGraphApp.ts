@@ -558,22 +558,23 @@ export class SpaceGraphApp {
     }
 
     private _createStatBlock(label: string, id: string, value: string, color?: string): HTMLElement {
-        const stat = document.createElement('div');
-        Object.assign(stat.style, { display: 'flex', flexDirection: 'column', alignItems: 'center' });
-        stat.innerHTML = `<span style="font-size: 10px; color: #94a3b8; text-transform: uppercase;">${label}</span><span id="${id}" style="font-size: 16px; font-weight: 700;${color ? ` color: ${color};` : ''}">${value}</span>`;
-        return stat;
+        return DOMUtils.createElement('div', {
+            innerHTML: `<span style="font-size: 10px; color: #94a3b8; text-transform: uppercase;">${label}</span><span id="${id}" style="font-size: 16px; font-weight: 700;${color ? ` color: ${color};` : ''}">${value}</span>`,
+            style: { display: 'flex', flexDirection: 'column', alignItems: 'center' }
+        });
     }
 
     private _createDivider(): HTMLElement {
-        const div = document.createElement('div');
-        Object.assign(div.style, { width: '1px', height: '24px', background: 'rgba(255,255,255,0.1)' });
-        return div;
+        return DOMUtils.createElement('div', {
+            style: { width: '1px', height: '24px', background: 'rgba(255,255,255,0.1)' }
+        });
     }
 
     private _createModeToggle(theme: any): HTMLElement {
-        const container = document.createElement('div');
-        Object.assign(container.style, {
-            display: 'flex', gap: '4px', background: 'rgba(255,255,255,0.05)', borderRadius: '99px', padding: '2px', border: '1px solid rgba(255,255,255,0.1)'
+        const container = DOMUtils.createElement('div', {
+            style: {
+                display: 'flex', gap: '4px', background: 'rgba(255,255,255,0.05)', borderRadius: '99px', padding: '2px', border: '1px solid rgba(255,255,255,0.1)'
+            }
         });
 
         const modeButtons: { [key: string]: HTMLButtonElement } = {};
@@ -593,10 +594,11 @@ export class SpaceGraphApp {
         const labels = ['View', 'Select', 'Connect'];
 
         modes.forEach((mode, i) => {
-            const btn = document.createElement('button');
-            btn.textContent = labels[i];
-            Object.assign(btn.style, {
-                background: 'transparent', border: 'none', padding: '6px 16px', borderRadius: '99px', color: '#94a3b8', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer', transition: 'all 0.2s ease'
+            const btn = DOMUtils.createElement('button', {
+                textContent: labels[i],
+                style: {
+                    background: 'transparent', border: 'none', padding: '6px 16px', borderRadius: '99px', color: '#94a3b8', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer', transition: 'all 0.2s ease'
+                }
             });
             btn.onclick = () => { this.setMode(mode); updateModeStyles(mode); };
             modeButtons[mode] = btn;
@@ -610,15 +612,17 @@ export class SpaceGraphApp {
     }
 
     private _createZoomControls(theme: any): HTMLElement {
-        const container = document.createElement('div');
-        Object.assign(container.style, {
-            display: 'flex', alignItems: 'center', gap: '2px', background: 'rgba(255,255,255,0.05)', borderRadius: '99px', padding: '2px 4px', border: '1px solid rgba(255,255,255,0.1)'
+        const container = DOMUtils.createElement('div', {
+            style: {
+                display: 'flex', alignItems: 'center', gap: '2px', background: 'rgba(255,255,255,0.05)', borderRadius: '99px', padding: '2px 4px', border: '1px solid rgba(255,255,255,0.1)'
+            }
         });
 
         const createBtn = (label: string, isZoomIn: boolean) => {
-            const btn = document.createElement('button');
-            btn.textContent = label;
-            Object.assign(btn.style, { background: 'transparent', border: 'none', padding: '6px 12px', borderRadius: '99px', color: 'white', fontWeight: 'bold', fontSize: '16px', cursor: 'pointer' });
+            const btn = DOMUtils.createElement('button', {
+                textContent: label,
+                style: { background: 'transparent', border: 'none', padding: '6px 12px', borderRadius: '99px', color: 'white', fontWeight: 'bold', fontSize: '16px', cursor: 'pointer' }
+            });
             btn.onmouseenter = () => btn.style.background = 'rgba(255,255,255,0.1)';
             btn.onmouseleave = () => btn.style.background = 'transparent';
             btn.onclick = () => {
@@ -630,9 +634,14 @@ export class SpaceGraphApp {
             return btn;
         };
 
-        const zoomSlider = document.createElement('input');
-        Object.assign(zoomSlider, { type: 'range', min: '10', max: '5000', step: '1', id: 'sg-app-zoom-slider' });
-        Object.assign(zoomSlider.style, { width: '80px', margin: '0 8px', cursor: 'pointer', accentColor: theme.primaryColor });
+        const zoomSlider = DOMUtils.createElement('input', {
+            type: 'range',
+            id: 'sg-app-zoom-slider',
+            min: '10',
+            max: '5000',
+            step: '1',
+            style: { width: '80px', margin: '0 8px', cursor: 'pointer', accentColor: theme.primaryColor }
+        });
 
         zoomSlider.oninput = () => {
             if (!this.sg.cameraControls) return;
@@ -673,26 +682,26 @@ export class SpaceGraphApp {
         };
 
         this.toolbarActions.forEach(btn => {
-            const btnEl = document.createElement('button');
-            btnEl.id = `sg-toolbar-btn-${btn.id}`;
-            Object.assign(btnEl.style, {
-                background: 'transparent',
-                border: '1px solid rgba(255,255,255,0.2)',
-                padding: '6px 12px',
-                borderRadius: '99px',
-                color: 'white',
-                fontFamily: 'sans-serif',
-                fontSize: '13px',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px'
+            const btnEl = DOMUtils.createElement('button', {
+                id: `sg-toolbar-btn-${btn.id}`,
+                style: {
+                    background: 'transparent',
+                    border: '1px solid rgba(255,255,255,0.2)',
+                    padding: '6px 12px',
+                    borderRadius: '99px',
+                    color: 'white',
+                    fontFamily: 'sans-serif',
+                    fontSize: '13px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                }
             });
 
             if (btn.icon) {
-                const iconSpan = document.createElement('span');
-                iconSpan.innerHTML = btn.icon;
+                const iconSpan = DOMUtils.createElement('span', { innerHTML: btn.icon });
                 btnEl.appendChild(iconSpan);
             }
 
@@ -727,34 +736,35 @@ export class SpaceGraphApp {
             ...this.options.theme
         };
 
-        const container = document.createElement('div');
-        Object.assign(container.style, {
-            display: 'flex',
-            gap: '12px',
-            flexDirection: 'column'
+        const container = DOMUtils.createElement('div', {
+            style: {
+                display: 'flex',
+                gap: '12px',
+                flexDirection: 'column'
+            }
         });
 
         this.buttons.forEach(btn => {
-            const btnEl = document.createElement('button');
-            btnEl.id = `sg-btn-${btn.id}`;
-            Object.assign(btnEl.style, {
-                background: theme.backgroundColor,
-                border: '1px solid rgba(255,255,255,0.1)',
-                padding: '10px 16px',
-                borderRadius: '8px',
-                color: 'white',
-                fontFamily: 'sans-serif',
-                fontSize: '14px',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
+            const btnEl = DOMUtils.createElement('button', {
+                id: `sg-btn-${btn.id}`,
+                style: {
+                    background: theme.backgroundColor,
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    padding: '10px 16px',
+                    borderRadius: '8px',
+                    color: 'white',
+                    fontFamily: 'sans-serif',
+                    fontSize: '14px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                }
             });
 
             if (btn.icon) {
-                const iconSpan = document.createElement('span');
-                iconSpan.innerHTML = btn.icon;
+                const iconSpan = DOMUtils.createElement('span', { innerHTML: btn.icon });
                 btnEl.appendChild(iconSpan);
             }
 
