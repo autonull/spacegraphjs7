@@ -5,13 +5,22 @@ import { PluginManager } from './core/PluginManager';
 import { CameraControls } from './core/CameraControls';
 import { EventManager } from './core/EventManager';
 import { VisionManager } from './core/VisionManager';
+import { UnifiedDisposalSystem } from './core/UnifiedDisposalSystem';
+import { ObjectPoolManager } from './core/ObjectPoolManager';
+import { CullingManager } from './core/CullingManager';
+import { AdvancedRenderingOptimizer } from './core/AdvancedRenderingOptimizer';
 import { ShapeNode } from './nodes/ShapeNode';
 import { HtmlNode } from './nodes/HtmlNode';
+import { ImageNode } from './nodes/ImageNode';
+import { GroupNode } from './nodes/GroupNode';
 import { Edge } from './edges/Edge';
 import { CurvedEdge } from './edges/CurvedEdge';
+import { FlowEdge } from './edges/FlowEdge';
 import { ForceLayout } from './plugins/ForceLayout';
 import { InteractionPlugin } from './plugins/InteractionPlugin';
 import { LODPlugin } from './plugins/LODPlugin';
+import { AutoLayoutPlugin } from './plugins/AutoLayoutPlugin';
+import { AutoColorPlugin } from './plugins/AutoColorPlugin';
 import type { GraphSpec, SpaceGraphOptions, SpecUpdate } from './types';
 
 export class SpaceGraph {
@@ -22,9 +31,17 @@ export class SpaceGraph {
   public cameraControls: CameraControls;
   public events: EventManager;
   public vision: VisionManager;
+  public disposalSystem: UnifiedDisposalSystem;
+  public poolManager: ObjectPoolManager<any>;
+  public cullingManager: CullingManager;
+  public optimizer: AdvancedRenderingOptimizer;
 
   constructor(container: HTMLElement, options: SpaceGraphOptions = {}) {
     this.container = container;
+    this.disposalSystem = new UnifiedDisposalSystem();
+    this.poolManager = new ObjectPoolManager<any>();
+    this.cullingManager = new CullingManager(this);
+    this.optimizer = new AdvancedRenderingOptimizer(this);
     this.events = new EventManager(this);
     this.vision = new VisionManager(this);
     this.pluginManager = new PluginManager(this);
@@ -71,8 +88,11 @@ export class SpaceGraph {
     // Register built-in types
     this.pluginManager.registerNodeType('ShapeNode', ShapeNode);
     this.pluginManager.registerNodeType('HtmlNode', HtmlNode);
+    this.pluginManager.registerNodeType('ImageNode', ImageNode);
+    this.pluginManager.registerNodeType('GroupNode', GroupNode);
     this.pluginManager.registerEdgeType('Edge', Edge);
     this.pluginManager.registerEdgeType('CurvedEdge', CurvedEdge);
+    this.pluginManager.registerEdgeType('FlowEdge', FlowEdge);
 
     // Register built-in plugins
     const layout = new ForceLayout();
@@ -81,6 +101,10 @@ export class SpaceGraph {
     this.pluginManager.register('InteractionPlugin', interaction);
     const lod = new LODPlugin();
     this.pluginManager.register('LODPlugin', lod);
+    const autoLayout = new AutoLayoutPlugin();
+    this.pluginManager.register('AutoLayoutPlugin', autoLayout);
+    const autoColor = new AutoColorPlugin();
+    this.pluginManager.register('AutoColorPlugin', autoColor);
 
     await this.pluginManager.initAll();
   }
@@ -143,12 +167,16 @@ export class SpaceGraph {
       this.cameraControls.flyTo(center, cameraZ, duration);
   }
 
-  animate() {
-    requestAnimationFrame(() => this.animate());
+  animate(timestamp: number = 0) {
+    requestAnimationFrame((t) => this.animate(t));
+
+    this.optimizer.beginFrame(timestamp);
 
     const delta = 0.016; // rough estimate for 60fps
     this.pluginManager.updateAll(delta);
     this.cameraControls.update();
+
+    this.cullingManager.update();
 
     this.renderer.render();
   }
