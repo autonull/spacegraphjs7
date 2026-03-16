@@ -73,19 +73,14 @@ export class BundledEdge extends Edge {
 
     update() {
         const pool = MathPool.getInstance();
-        // Compute perpendicular vectors for the spread
         const dir = pool.acquireVector3().subVectors(this.target.position, this.source.position);
 
-        // If they are exactly the same, no direction to compute spread
         if (dir.lengthSq() < 0.001) {
             pool.releaseVector3(dir);
             return;
         }
 
-        // Create an arbitrary orthogonal vector
         const ortho1 = pool.acquireVector3().set(-dir.y, dir.x, 0).normalize();
-
-        // If dir is perfectly along Z, ortho1 will be zero
         if (ortho1.lengthSq() < 0.001) {
             ortho1.set(1, 0, 0);
         }
@@ -96,33 +91,24 @@ export class BundledEdge extends Edge {
         const p1 = pool.acquireVector3();
         const p2 = pool.acquireVector3();
 
-        for (let i = 0; i < this.strandCount; i++) {
-            // Distribute points in a cross-section circle
-            const angle = (i / this.strandCount) * Math.PI * 2;
+        const { source, target, spread, strandCount } = this;
 
-            // Perpendicular offset
-            const offsetX = Math.cos(angle) * this.spread;
-            const offsetY = Math.sin(angle) * this.spread;
+        for (let i = 0; i < strandCount; i++) {
+            const angle = (i / strandCount) * Math.PI * 2;
+            const offsetX = Math.cos(angle) * spread;
+            const offsetY = Math.sin(angle) * spread;
 
             offsetVec.copy(ortho1).multiplyScalar(offsetX).addScaledVector(ortho2, offsetY);
+            p1.copy(source.position).add(offsetVec);
+            p2.copy(target.position).add(offsetVec);
 
-            p1.copy(this.source.position).add(offsetVec);
-            p2.copy(this.target.position).add(offsetVec);
-
-            const strand = this.strands[i];
-            const posAttr = strand.geometry.attributes.position as THREE.BufferAttribute;
-
+            const posAttr = this.strands[i].geometry.attributes.position as THREE.BufferAttribute;
             posAttr.setXYZ(0, p1.x, p1.y, p1.z);
             posAttr.setXYZ(1, p2.x, p2.y, p2.z);
             posAttr.needsUpdate = true;
         }
 
-        pool.releaseVector3(dir);
-        pool.releaseVector3(ortho1);
-        pool.releaseVector3(ortho2);
-        pool.releaseVector3(offsetVec);
-        pool.releaseVector3(p1);
-        pool.releaseVector3(p2);
+        [dir, ortho1, ortho2, offsetVec, p1, p2].forEach(v => pool.releaseVector3(v));
     }
 
     dispose(): void {

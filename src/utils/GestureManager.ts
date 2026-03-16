@@ -7,19 +7,19 @@ export class GestureManager {
     /**
      * Calculates the distance between two points, used for pinch-to-zoom.
      */
-    static calculateDistance(p1: Point, p2: Point): number {
-        const dx = p1.x - p2.x;
-        const dy = p1.y - p2.y;
-        return Math.sqrt(dx * dx + dy * dy);
+    static calculateDistance({ x: x1, y: y1 }: Point, { x: x2, y: y2 }: Point): number {
+        const dx = x1 - x2;
+        const dy = y1 - y2;
+        return Math.hypot(dx, dy);
     }
 
     /**
      * Calculates the midpoint between two points, used for two-finger pan.
      */
-    static calculateMidpoint(p1: Point, p2: Point): Point {
+    static calculateMidpoint({ x: x1, y: y1 }: Point, { x: x2, y: y2 }: Point): Point {
         return {
-            x: (p1.x + p2.x) / 2,
-            y: (p1.y + p2.y) / 2,
+            x: (x1 + x2) / 2,
+            y: (y1 + y2) / 2,
         };
     }
 
@@ -34,30 +34,23 @@ export class GestureManager {
         minRadius: number = 10,
         maxRadius: number = 5000
     ): number {
-        const distanceDelta = currentDistance - previousDistance;
-        const zoomSpeed = currentRadius * zoomSpeedFactor;
-        return Math.max(
-            minRadius,
-            Math.min(maxRadius, currentRadius - distanceDelta * zoomSpeed)
-        );
+        const zoomDelta = (currentDistance - previousDistance) * (currentRadius * zoomSpeedFactor);
+        return Math.max(minRadius, Math.min(maxRadius, currentRadius - zoomDelta));
     }
 
     /**
      * Calculates the pan velocity based on midpoint movement.
      */
     static calculatePan(
-        currentMidpoint: Point,
-        previousMidpoint: Point,
+        { x: cx, y: cy }: Point,
+        { x: px, y: py }: Point,
         currentRadius: number,
         panSpeedFactor: number = 0.002
     ): Point {
-        const midDeltaX = currentMidpoint.x - previousMidpoint.x;
-        const midDeltaY = currentMidpoint.y - previousMidpoint.y;
-
         const panSpeed = currentRadius * panSpeedFactor;
         return {
-            x: -midDeltaX * panSpeed,
-            y: midDeltaY * panSpeed
+            x: -(cx - px) * panSpeed,
+            y: (cy - py) * panSpeed
         };
     }
 }
