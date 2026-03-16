@@ -5,6 +5,7 @@ import { MinimapPlugin } from '../plugins/MinimapPlugin';
 import * as THREE from 'three';
 import { HtmlNode } from '../nodes/HtmlNode';
 import { CameraUtils } from '../utils/CameraUtils';
+import { DOMUtils } from '../utils/DOMUtils';
 
 export interface SpaceGraphAppOptions {
     spec?: GraphSpec;
@@ -200,36 +201,39 @@ export class SpaceGraphApp {
         // Remove old if exists
         this.hud.removeElement('app-search');
 
-        const container = document.createElement('div');
-        Object.assign(container.style, {
-            background: theme.backgroundColor,
-            backdropFilter: 'blur(8px)',
-            padding: '8px 16px',
-            borderRadius: '99px',
-            border: '1px solid rgba(255,255,255,0.1)',
-            display: 'flex',
-            alignItems: 'center',
-            boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
-            width: '300px',
-            transition: 'background 0.3s ease'
+        const container = DOMUtils.createElement('div', {
+            style: {
+                background: theme.backgroundColor,
+                backdropFilter: 'blur(8px)',
+                padding: '8px 16px',
+                borderRadius: '99px',
+                border: '1px solid rgba(255,255,255,0.1)',
+                display: 'flex',
+                alignItems: 'center',
+                boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
+                width: '300px',
+                transition: 'background 0.3s ease'
+            }
         });
 
-        const icon = document.createElement('span');
-        icon.textContent = '🔍';
-        Object.assign(icon.style, { marginRight: '10px', fontSize: '14px', color: '#94a3b8' });
+        const icon = DOMUtils.createElement('span', {
+            textContent: '🔍',
+            style: { marginRight: '10px', fontSize: '14px', color: '#94a3b8' }
+        });
         container.appendChild(icon);
 
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.placeholder = 'Search nodes...';
-        Object.assign(input.style, {
-            background: 'transparent',
-            border: 'none',
-            color: 'white',
-            outline: 'none',
-            width: '100%',
-            fontFamily: 'sans-serif',
-            fontSize: '14px'
+        const input = DOMUtils.createElement('input', {
+            type: 'text',
+            placeholder: 'Search nodes...',
+            style: {
+                background: 'transparent',
+                border: 'none',
+                color: 'white',
+                outline: 'none',
+                width: '100%',
+                fontFamily: 'sans-serif',
+                fontSize: '14px'
+            }
         });
 
         input.addEventListener('input', (e) => {
@@ -486,43 +490,44 @@ export class SpaceGraphApp {
     }
 
     private _renderTitleCard(theme: any) {
-        const titleCard = document.createElement('div');
-        Object.assign(titleCard.style, {
-            background: theme.backgroundColor,
-            backdropFilter: 'blur(8px)',
-            padding: '16px',
-            borderRadius: '12px',
-            border: '1px solid rgba(255,255,255,0.1)',
-            width: '300px',
-            color: 'white',
-            fontFamily: 'sans-serif',
-            transition: 'all 0.3s ease'
+        const titleCard = DOMUtils.createElement('div', {
+            innerHTML: `
+                <h1 style="font-size: 18px; margin: 0 0 8px 0; background: -webkit-linear-gradient(135deg, ${theme.primaryColor}, ${theme.secondaryColor}); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">${this.options.title}</h1>
+                ${this.options.description ? `<p style="font-size: 12px; color: #94a3b8; line-height: 1.5; margin: 0;">${this.options.description}</p>` : ''}
+            `,
+            style: {
+                background: theme.backgroundColor,
+                backdropFilter: 'blur(8px)',
+                padding: '16px',
+                borderRadius: '12px',
+                border: '1px solid rgba(255,255,255,0.1)',
+                width: '300px',
+                color: 'white',
+                fontFamily: 'sans-serif',
+                transition: 'all 0.3s ease'
+            }
         });
-
-        titleCard.innerHTML = `
-            <h1 style="font-size: 18px; margin: 0 0 8px 0; background: -webkit-linear-gradient(135deg, ${theme.primaryColor}, ${theme.secondaryColor}); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">${this.options.title}</h1>
-            ${this.options.description ? `<p style="font-size: 12px; color: #94a3b8; line-height: 1.5; margin: 0;">${this.options.description}</p>` : ''}
-        `;
 
         this.hud.addElement({ id: 'app-title-card', position: 'top-left', element: titleCard });
     }
 
     private _renderToolbar(theme: any) {
-        const container = document.createElement('div');
-        Object.assign(container.style, {
-            background: theme.backgroundColor,
-            backdropFilter: 'blur(8px)',
-            padding: '12px 24px',
-            borderRadius: '99px',
-            border: '1px solid rgba(255,255,255,0.1)',
-            display: 'flex',
-            gap: '16px',
-            alignItems: 'center',
-            flexWrap: 'nowrap',
-            whiteSpace: 'nowrap',
-            boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
-            color: 'white',
-            fontFamily: 'sans-serif'
+        const container = DOMUtils.createElement('div', {
+            style: {
+                background: theme.backgroundColor,
+                backdropFilter: 'blur(8px)',
+                padding: '12px 24px',
+                borderRadius: '99px',
+                border: '1px solid rgba(255,255,255,0.1)',
+                display: 'flex',
+                gap: '16px',
+                alignItems: 'center',
+                flexWrap: 'nowrap',
+                whiteSpace: 'nowrap',
+                boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
+                color: 'white',
+                fontFamily: 'sans-serif'
+            }
         });
 
         const nodesStat = this._createStatBlock('Nodes', 'sg-app-node-count', this.sg.graph.nodes.size.toString());
@@ -530,21 +535,23 @@ export class SpaceGraphApp {
 
         container.append(nodesStat, this._createDivider(), selectedStat, this._createDivider());
 
-        const fitBtn = document.createElement('button');
-        Object.assign(fitBtn.style, {
-            background: `linear-gradient(135deg, ${theme.primaryColor}, ${theme.secondaryColor})`,
-            border: 'none', padding: '8px 16px', borderRadius: '99px', color: 'white', fontWeight: '600', cursor: 'pointer'
+        const fitBtn = DOMUtils.createElement('button', {
+            textContent: 'Fit View',
+            style: {
+                background: `linear-gradient(135deg, ${theme.primaryColor}, ${theme.secondaryColor})`,
+                border: 'none', padding: '8px 16px', borderRadius: '99px', color: 'white', fontWeight: '600', cursor: 'pointer'
+            }
         });
-        fitBtn.textContent = 'Fit View';
         fitBtn.onclick = () => this.sg.fitView(200);
         container.appendChild(fitBtn);
 
         container.appendChild(this._createModeToggle(theme));
         container.appendChild(this._createZoomControls(theme));
 
-        const actionsContainer = document.createElement('div');
-        actionsContainer.id = 'sg-app-toolbar-actions';
-        Object.assign(actionsContainer.style, { display: 'flex', gap: '12px' });
+        const actionsContainer = DOMUtils.createElement('div', {
+            id: 'sg-app-toolbar-actions',
+            style: { display: 'flex', gap: '12px' }
+        });
         container.appendChild(actionsContainer);
 
         this.hud.addElement({ id: 'app-toolbar', position: 'bottom-center', element: container });
