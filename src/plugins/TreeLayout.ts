@@ -96,8 +96,9 @@ export class TreeLayout implements ISpaceGraphPlugin {
         const offsetX = sumX / positions.size;
         const offsetY = sumY / positions.size;
 
+        const finalPos = new THREE.Vector3();
         positions.forEach((pos, id) => {
-            const finalPos = new THREE.Vector3(pos.x - offsetX, pos.y - offsetY, 0);
+            finalPos.set(pos.x - offsetX, pos.y - offsetY, 0);
 
             // Handle Horizontal orientation
             if (this.settings.orientation === 'horizontal') {

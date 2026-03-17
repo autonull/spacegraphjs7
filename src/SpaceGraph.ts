@@ -288,10 +288,11 @@ export class SpaceGraph {
             );
 
             // Recompute spherical based on new position/target
-            const diff = new THREE.Vector3().subVectors(this.renderer.camera.position, this.cameraControls.target);
+            const diff = MathPool.getInstance().acquireVector3().subVectors(this.renderer.camera.position, this.cameraControls.target);
             this.cameraControls.spherical.radius = diff.length();
             this.cameraControls.spherical.phi = Math.acos(diff.y / this.cameraControls.spherical.radius);
             this.cameraControls.spherical.theta = Math.atan2(diff.x, diff.z);
+            MathPool.getInstance().releaseVector3(diff);
 
             this.cameraControls.update();
         }

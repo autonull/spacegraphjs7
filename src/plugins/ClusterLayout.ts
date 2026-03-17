@@ -42,7 +42,10 @@ export class ClusterLayout implements ISpaceGraphPlugin {
         const clusterKeys = Array.from(clusters.keys());
         const numClusters = clusterKeys.length;
 
-        clusterKeys.forEach((key, clusterIndex) => {
+        const targetPos = new THREE.Vector3();
+
+        for (let clusterIndex = 0; clusterIndex < clusterKeys.length; clusterIndex++) {
+            const key = clusterKeys[clusterIndex];
             const clusterNodes = clusters.get(key)!;
             const numNodes = clusterNodes.length;
 
@@ -55,8 +58,8 @@ export class ClusterLayout implements ISpaceGraphPlugin {
             const centerY = Math.sin(macroAngle) * macroR;
 
             // 2. Arrange nodes inside the cluster in a micro-circle or pack
-            clusterNodes.forEach((node, nodeIndex) => {
-                const targetPos = new THREE.Vector3();
+            for (let nodeIndex = 0; nodeIndex < numNodes; nodeIndex++) {
+                const node = clusterNodes[nodeIndex];
 
                 if (numNodes === 1) {
                     targetPos.set(centerX, centerY, 0);
@@ -95,8 +98,8 @@ export class ClusterLayout implements ISpaceGraphPlugin {
                     this.settings.animationDuration,
                     clusterIndex * 0.1 // Stagger animation grouped by cluster
                 );
-            });
-        });
+            }
+        }
     }
 
     dispose(): void { }

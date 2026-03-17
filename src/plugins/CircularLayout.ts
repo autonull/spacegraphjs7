@@ -39,11 +39,13 @@ export class CircularLayout implements ISpaceGraphPlugin {
         const step = (2 * Math.PI) / nodes.length;
 
         let i = 0;
+        const targetPos = new THREE.Vector3();
         for (const node of nodes) {
             const angle = this.settings.startAngle + i * step;
             const x = this.settings.radiusX * Math.cos(angle);
             const y = this.settings.radiusY * Math.sin(angle);
-            node.applyPosition(new THREE.Vector3(x, y, this.settings.z), this.settings.animate ?? true);
+            targetPos.set(x, y, this.settings.z);
+            node.applyPosition(targetPos, this.settings.animate ?? true);
             i++;
         }
 

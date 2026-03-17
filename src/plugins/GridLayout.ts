@@ -46,12 +46,14 @@ export class GridLayout implements ISpaceGraphPlugin {
             this.settings.columns > 0 ? this.settings.columns : Math.ceil(Math.sqrt(nodes.length));
 
         let i = 0;
+        const targetPos = new THREE.Vector3();
         for (const node of nodes) {
             const col = i % cols;
             const row = Math.floor(i / cols);
             const x = this.settings.offsetX + col * this.settings.spacingX;
             const y = this.settings.offsetY - row * this.settings.spacingY;
-            node.applyPosition(new THREE.Vector3(x, y, node.position.z), this.settings.animate ?? true);
+            targetPos.set(x, y, node.position.z);
+            node.applyPosition(targetPos, this.settings.animate ?? true);
             i++;
         }
 

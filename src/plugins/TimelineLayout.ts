@@ -53,8 +53,10 @@ export class TimelineLayout implements ISpaceGraphPlugin {
         const minTime = temporalNodes.length > 0 ? temporalNodes[0].timeVal : 0;
 
         let currentIndex = 0;
+        const targetPos = new THREE.Vector3();
 
-        temporalNodes.forEach((item, i) => {
+        for (let i = 0; i < temporalNodes.length; i++) {
+            const item = temporalNodes[i];
             // Position along the primary axis
             let linearPos;
 
@@ -69,21 +71,15 @@ export class TimelineLayout implements ISpaceGraphPlugin {
                 currentIndex++;
             }
 
-            const targetPos = new THREE.Vector3();
-
             // Stagger logic to avoid overlaps for things that happen close in time
             const staggerOffset = this.settings.staggerLayout
                 ? (i % 2 === 0 ? this.settings.staggerAmount : -this.settings.staggerAmount)
                 : 0;
 
             if (this.settings.orientation === 'horizontal') {
-                targetPos.x = linearPos;
-                targetPos.y = staggerOffset;
-                targetPos.z = 0;
+                targetPos.set(linearPos, staggerOffset, 0);
             } else {
-                targetPos.x = staggerOffset;
-                targetPos.y = -linearPos; // downwards timeline is standard
-                targetPos.z = 0;
+                targetPos.set(staggerOffset, -linearPos, 0); // Y down for vertical timelines is standard
             }
 
             (item.node as any).applyPosition(
@@ -91,21 +87,23 @@ export class TimelineLayout implements ISpaceGraphPlugin {
                 this.settings.animate,
                 this.settings.animationDuration
             );
-        });
+        }
 
         // Center the entire timeline around the origin
         const sumPos = new THREE.Vector3();
-        temporalNodes.forEach(item => sumPos.add(item.node.position));
+        for (const item of temporalNodes) {
+            sumPos.add(item.node.position);
+        }
         sumPos.divideScalar(temporalNodes.length || 1);
 
-        temporalNodes.forEach(item => {
-            const finalPos = item.node.position.clone().sub(sumPos);
+        for (const item of temporalNodes) {
+            targetPos.copy(item.node.position).sub(sumPos);
             (item.node as any).applyPosition(
-                finalPos,
+                targetPos,
                 this.settings.animate,
                 this.settings.animationDuration
             );
-        });
+        }
     }
 
     dispose(): void { }
