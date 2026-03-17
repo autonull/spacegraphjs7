@@ -20,8 +20,9 @@ export class SpatialIndex {
 
     public build(nodes: Node[]): void {
         this.cells.clear();
+        const box = new THREE.Box3();
         for (const node of nodes) {
-            const box = new THREE.Box3().setFromObject(node.object);
+            box.setFromObject(node.object);
             const bounds = this._getGridBounds(box);
 
             for (let cx = bounds.minX; cx <= bounds.maxX; cx++) {
