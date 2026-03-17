@@ -79,13 +79,10 @@ export class HistoryPlugin implements ISpaceGraphPlugin {
 
         const spec = this.sg.export();
 
-        // Don't push if it's identical to the last one (simple check)
-        if (this.pastStack.length > 0) {
-            const last = this.pastStack[this.pastStack.length - 1];
-            // Shallow length check to avoid full deep equals cost if obvious
-            if (last.nodes.length === spec.nodes.length && last.edges.length === spec.edges.length) {
-                // If it's a minor change we still want to save it, but we could add deep equality later if performance demands.
-            }
+        const last = this.pastStack[this.pastStack.length - 1];
+        if (last && last.nodes.length === spec.nodes.length && last.edges.length === spec.edges.length) {
+            // Shallow length check to avoid full deep equals cost if obvious.
+            // If it's a minor change we still want to save it, but we could add deep equality later if performance demands.
         }
 
         this.pastStack.push(spec);

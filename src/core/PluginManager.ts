@@ -42,19 +42,25 @@ export class PluginManager {
     }
 
     async initAll(): Promise<void> {
-        const errors: Error[] = [];
-        for (const [name, plugin] of this.plugins.entries()) {
-            if (plugin.init) {
+        const initializations = Array.from(this.plugins.entries())
+            .filter(([_, plugin]) => plugin.init)
+            .map(async ([name, plugin]) => {
                 try {
-                    await plugin.init(this.sg);
+                    await plugin.init!(this.sg);
                 } catch (err) {
                     const message = err instanceof Error ? err.message : String(err);
                     const wrappedError = new Error(`[SpaceGraph] Plugin Initialization Error: Failed to initialize plugin "${name}". Reason: ${message}`);
                     console.error(wrappedError);
-                    errors.push(wrappedError);
+                    throw wrappedError;
                 }
-            }
-        }
+            });
+
+        const results = await Promise.allSettled(initializations);
+
+        const errors = results
+            .filter((result): result is PromiseRejectedResult => result.status === 'rejected')
+            .map(result => result.reason);
+
         if (errors.length > 0) {
             throw new AggregateError(errors, `[SpaceGraph] PluginManager initAll failed with ${errors.length} error(s).`);
         }
