@@ -78,8 +78,8 @@ export class Node {
      * Helper to DRY up layout plugins.
      */
     applyPosition(targetPos: THREE.Vector3, animate: boolean = true, duration: number = 1.0, delay: number = 0): this {
-        if (animate && (window as any).gsap) {
-            (window as any).gsap.to(this.position, {
+        if (animate && gsap) {
+            gsap.to(this.position, {
                 x: targetPos.x,
                 y: targetPos.y,
                 z: targetPos.z,

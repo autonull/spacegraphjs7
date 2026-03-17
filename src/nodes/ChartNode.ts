@@ -54,11 +54,12 @@ export class ChartNode extends DOMNode {
             height: '100%'
         });
 
-        this.canvasEl = DOMUtils.createElement('canvas');
-        Object.assign(this.canvasEl.style, {
-            display: 'block',
-            width: '100%',
-            height: '100%'
+        this.canvasEl = DOMUtils.createElement('canvas', {
+            style: {
+                display: 'block',
+                width: '100%',
+                height: '100%'
+            }
         });
         canvasContainer.appendChild(this.canvasEl);
         this.domElement.appendChild(canvasContainer);

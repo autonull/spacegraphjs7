@@ -40,13 +40,14 @@ export class DataNode extends DOMNode {
         this.domElement.appendChild(header);
 
         // Content Area (Scrollable)
-        this.contentContainer = DOMUtils.createElement('div');
-        Object.assign(this.contentContainer.style, {
-            padding: '8px 12px',
-            overflowY: 'auto',
-            flexGrow: '1',
-            scrollbarWidth: 'thin',
-            scrollbarColor: theme === 'dark' ? '#475569 #1e293b' : '#cbd5e1 #f8fafc'
+        this.contentContainer = DOMUtils.createElement('div', {
+            style: {
+                padding: '8px 12px',
+                overflowY: 'auto',
+                flexGrow: '1',
+                scrollbarWidth: 'thin',
+                scrollbarColor: theme === 'dark' ? '#475569 #1e293b' : '#cbd5e1 #f8fafc'
+            }
         });
 
         this.domElement.appendChild(this.contentContainer);
@@ -97,12 +98,13 @@ export class DataNode extends DOMNode {
         }
 
         // Parent toggle node
-        const toggleWrapper = DOMUtils.createElement('div');
-        Object.assign(toggleWrapper.style, {
-            cursor: 'pointer',
-            userSelect: 'none',
-            display: 'flex',
-            alignItems: 'baseline'
+        const toggleWrapper = DOMUtils.createElement('div', {
+            style: {
+                cursor: 'pointer',
+                userSelect: 'none',
+                display: 'flex',
+                alignItems: 'baseline'
+            }
         });
 
         const chevron = DOMUtils.createElement('span');
