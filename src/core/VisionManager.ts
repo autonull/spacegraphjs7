@@ -322,73 +322,64 @@ export class VisionManager {
     public async autoFix(category: VisionCategory, report?: VisionReport): Promise<void> {
         console.log(`[VisionManager] Triggering auto-fix for category: ${category.type}`);
 
-        // Autonomous Legibility / Color fix via AutoColorPlugin
-        if ((category.type === 'legibility' || category.type === 'color') && report) {
-            console.log('[VisionManager] Applying color/legibility corrections...');
-            const autoColorPlugin: any = this.sg.pluginManager.getPlugin('AutoColorPlugin');
+        if (!report) return;
 
-            if (autoColorPlugin && typeof autoColorPlugin.applyVisionCorrection === 'function') {
-                autoColorPlugin.applyVisionCorrection(report.legibility.failures);
-                console.log('[VisionManager] AutoColorPlugin corrections applied.');
-            } else {
-                console.warn(
-                    '[VisionManager] AutoColorPlugin not found or missing applyVisionCorrection.',
-                );
-            }
-        }
+        switch (category.type) {
+            case 'legibility':
+            case 'color':
+                console.log('[VisionManager] Applying color/legibility corrections...');
+                const autoColorPlugin: any = this.sg.pluginManager.getPlugin('AutoColorPlugin');
 
-        // Autonomous ODN (Overlap Detection Network) fix via AutoLayoutPlugin
-        if (category.type === 'overlap' && report) {
-            console.log('[VisionManager] Applying overlap corrections...');
-            const autoLayoutPlugin: any = this.sg.pluginManager.getPlugin('AutoLayoutPlugin');
-
-            if (autoLayoutPlugin && typeof autoLayoutPlugin.fixOverlaps === 'function') {
-                // Pass the specific overlap issues to the AutoLayoutPlugin
-                autoLayoutPlugin.fixOverlaps(report.overlap.overlaps);
-                console.log('[VisionManager] AutoLayoutPlugin overlap corrections applied.');
-            } else {
-                // Fallback to force layout if AutoLayout is not available
-                const forceLayout: any = this.sg.pluginManager.getPlugin('ForceLayout');
-                if (forceLayout && typeof forceLayout.update === 'function') {
-                    console.log(
-                        '[VisionManager] AutoLayoutPlugin not found, falling back to ForceLayout...',
-                    );
-
-                    // Temporarily increase distance and apply
-                    const originalRepulsion = forceLayout.settings.repulsion || 10000;
-                    forceLayout.settings.repulsion = originalRepulsion * 5;
-
-                    for (let i = 0; i < 50; i++) {
-                        forceLayout.update();
-                    }
-
-                    // Restore original settings after applying the force layout
-                    forceLayout.settings.repulsion = originalRepulsion;
+                if (autoColorPlugin && typeof autoColorPlugin.applyVisionCorrection === 'function') {
+                    autoColorPlugin.applyVisionCorrection(report.legibility.failures);
+                    console.log('[VisionManager] AutoColorPlugin corrections applied.');
                 } else {
                     console.warn(
-                        '[VisionManager] No suitable layout plugin found to perform autoFix.',
+                        '[VisionManager] AutoColorPlugin not found or missing applyVisionCorrection.',
                     );
                 }
-            }
-        }
+                break;
 
-        // Autonomous Hierarchy fix via HierarchicalLayout
-        if (category.type === 'hierarchy' && report) {
-            console.log('[VisionManager] Applying hierarchy corrections...');
-            const hierLayout: any = this.sg.pluginManager.getPlugin('HierarchicalLayout');
-            if (hierLayout && typeof hierLayout.fixHierarchy === 'function') {
-                hierLayout.fixHierarchy();
-            } else if (hierLayout && typeof hierLayout.apply === 'function') {
-                // Just force a re-layout
-                hierLayout.apply();
-            }
-        }
+            case 'overlap':
+                console.log('[VisionManager] Applying overlap corrections...');
+                const autoLayoutPlugin: any = this.sg.pluginManager.getPlugin('AutoLayoutPlugin');
 
-        // Autonomous Ergonomics fix via Camera scale
-        if (category.type === 'ergonomics' && report) {
-            console.log('[VisionManager] Applying ergonomics corrections (camera zoom limit)...');
-            // Usually we might constrain the camera from zooming out too far, or we scale up key nodes.
-            this.sg.fitView(150, 2.0); // Simple auto-zoom
+                if (autoLayoutPlugin && typeof autoLayoutPlugin.fixOverlaps === 'function') {
+                    autoLayoutPlugin.fixOverlaps(report.overlap.overlaps);
+                    console.log('[VisionManager] AutoLayoutPlugin overlap corrections applied.');
+                } else {
+                    const forceLayout: any = this.sg.pluginManager.getPlugin('ForceLayout');
+                    if (forceLayout && typeof forceLayout.update === 'function') {
+                        console.log('[VisionManager] AutoLayoutPlugin not found, falling back to ForceLayout...');
+
+                        const originalRepulsion = forceLayout.settings.repulsion || 10000;
+                        forceLayout.settings.repulsion = originalRepulsion * 5;
+
+                        for (let i = 0; i < 50; i++) {
+                            forceLayout.update();
+                        }
+
+                        forceLayout.settings.repulsion = originalRepulsion;
+                    } else {
+                        console.warn('[VisionManager] No suitable layout plugin found to perform autoFix.');
+                    }
+                }
+                break;
+
+            case 'hierarchy':
+                console.log('[VisionManager] Applying hierarchy corrections...');
+                const hierLayout: any = this.sg.pluginManager.getPlugin('HierarchicalLayout');
+                if (hierLayout && typeof hierLayout.fixHierarchy === 'function') {
+                    hierLayout.fixHierarchy();
+                } else if (hierLayout && typeof hierLayout.apply === 'function') {
+                    hierLayout.apply();
+                }
+                break;
+
+            case 'ergonomics':
+                console.log('[VisionManager] Applying ergonomics corrections (camera zoom limit)...');
+                this.sg.fitView(150, 2.0);
+                break;
         }
     }
 

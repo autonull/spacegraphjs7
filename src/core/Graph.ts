@@ -159,17 +159,17 @@ export class Graph {
             this.sg.events.emit('node:removed', { id });
             this._notifyPlugins('onNodeRemoved', id);
 
-            // Remove connected edges
-            this.edges = this.edges.filter((edge) => {
+            // Remove connected edges safely traversing backwards
+            for (let i = this.edges.length - 1; i >= 0; i--) {
+                const edge = this.edges[i];
                 if (edge.source.id === id || edge.target.id === id) {
                     this.sg.renderer.scene.remove(edge.object);
                     this.sg.events.emit('edge:removed', { id: edge.id });
                     this._notifyPlugins('onEdgeRemoved', edge.id);
                     if (typeof edge.dispose === 'function') edge.dispose();
-                    return false;
+                    this.edges.splice(i, 1);
                 }
-                return true;
-            });
+            }
 
             if (typeof node.dispose === 'function') {
                 node.dispose();
@@ -212,25 +212,15 @@ export class Graph {
     }
 
     query(predicate: (node: any) => boolean): any[] {
-        const result: any[] = [];
-        for (const node of this.nodes.values()) {
-            if (predicate(node)) {
-                result.push(node);
-            }
-        }
-        return result;
+        return Array.from(this.nodes.values()).filter(predicate);
     }
 
     neighbors(nodeId: string): any[] {
-        const result: any[] = [];
-        for (const edge of this.edges) {
-            if (edge.source.id === nodeId) {
-                result.push(edge.target);
-            } else if (edge.target.id === nodeId) {
-                result.push(edge.source);
-            }
-        }
-        return result;
+        return this.edges.reduce((acc, edge) => {
+            if (edge.source.id === nodeId) acc.push(edge.target);
+            else if (edge.target.id === nodeId) acc.push(edge.source);
+            return acc;
+        }, []);
     }
 
     // --- Serialization ---

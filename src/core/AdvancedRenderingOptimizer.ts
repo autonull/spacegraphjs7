@@ -37,32 +37,24 @@ export class AdvancedRenderingOptimizer {
 
     private evaluatePerformance(): void {
         // If FPS drops below 30, enable throttling to degrade gracefully
-        if (this.fps < 30) {
-            if (!this.isThrottled) {
-                console.warn(
-                    `[AdvancedRenderingOptimizer] FPS dropped to ${this.fps.toFixed(1)}. Throttling enabled.`,
-                );
-                this.isThrottled = true;
+        if (this.fps < 30 && !this.isThrottled) {
+            console.warn(`[AdvancedRenderingOptimizer] FPS dropped to ${this.fps.toFixed(1)}. Throttling enabled.`);
+            this.isThrottled = true;
+            this._toggleHeavyPlugins(false);
+            return;
+        }
 
-                // Example of graceful degradation: disable heavy physics updates or CSS rendering
-                const layoutPlugin: any = this.sg.pluginManager.getPlugin('LayoutPlugin');
-                if (layoutPlugin && typeof layoutPlugin.settings !== 'undefined') {
-                    layoutPlugin.settings.enabled = false;
-                }
-            }
-        } else if (this.fps >= 55) {
-            if (this.isThrottled) {
-                console.log(
-                    `[AdvancedRenderingOptimizer] FPS recovered to ${this.fps.toFixed(1)}. Throttling disabled.`,
-                );
-                this.isThrottled = false;
+        if (this.fps >= 55 && this.isThrottled) {
+            console.log(`[AdvancedRenderingOptimizer] FPS recovered to ${this.fps.toFixed(1)}. Throttling disabled.`);
+            this.isThrottled = false;
+            this._toggleHeavyPlugins(true);
+        }
+    }
 
-                // Re-enable plugins
-                const layoutPlugin: any = this.sg.pluginManager.getPlugin('LayoutPlugin');
-                if (layoutPlugin && typeof layoutPlugin.settings !== 'undefined') {
-                    layoutPlugin.settings.enabled = true;
-                }
-            }
+    private _toggleHeavyPlugins(enabled: boolean): void {
+        const layoutPlugin: any = this.sg.pluginManager.getPlugin('LayoutPlugin');
+        if (layoutPlugin?.settings !== undefined) {
+            layoutPlugin.settings.enabled = enabled;
         }
     }
 
