@@ -27,22 +27,7 @@ export class MarkdownNode extends DOMNode { // Changed base class to DOMNode
 
         // Create the div element and apply initial styles
         const div = DOMUtils.createElement('div', {
-            className: 'sg-markdown-node sg-node',
-            style: {
-                width: `${w}px`,
-                padding: '16px',
-                background: color,
-                color: txtColor,
-                border: '1px solid rgba(255,255,255,0.2)',
-                borderRadius: '8px',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-                fontFamily: 'sans-serif',
-                fontSize: '14px',
-                lineHeight: '1.5',
-                boxSizing: 'border-box',
-                overflow: 'auto',
-                pointerEvents: 'auto',
-            }
+            className: 'sg-markdown-node sg-node'
         });
 
         // Add some basic styling for markdown elements
@@ -73,6 +58,18 @@ export class MarkdownNode extends DOMNode { // Changed base class to DOMNode
 
         // Call DOMNode constructor
         super(sg, spec, div, w, h, { visible: false });
+
+        this.setupContainerStyles(w, h, 'dark', {
+            background: color,
+            color: txtColor,
+            padding: '16px',
+            fontSize: '14px',
+            lineHeight: '1.5',
+            overflow: 'auto',
+            border: '1px solid rgba(255,255,255,0.2)'
+        });
+
+
 
         // Setup ResizeObserver to properly resize backing plane when content changes bounds
         // This is much safer than heuristic setTimeouts.
