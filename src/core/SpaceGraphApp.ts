@@ -669,6 +669,41 @@ export class SpaceGraphApp {
         this.renderToolbarActions();
     }
 
+    private _createStyledButton(btn: AppButtonConfig, isToolbar: boolean, theme: any): HTMLElement {
+        const bgNormal = isToolbar ? 'transparent' : theme.backgroundColor;
+        const bgHover = 'rgba(255,255,255,0.1)';
+
+        const btnEl = DOMUtils.createElement('button', {
+            id: `sg-${isToolbar ? 'toolbar-' : ''}btn-${btn.id}`,
+            style: {
+                background: bgNormal,
+                border: isToolbar ? '1px solid rgba(255,255,255,0.2)' : '1px solid rgba(255,255,255,0.1)',
+                padding: isToolbar ? '6px 12px' : '10px 16px',
+                borderRadius: isToolbar ? '99px' : '8px',
+                color: 'white',
+                fontFamily: 'sans-serif',
+                fontSize: isToolbar ? '13px' : '14px',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                display: 'flex',
+                alignItems: 'center',
+                gap: isToolbar ? '6px' : '8px'
+            }
+        });
+
+        if (btn.icon) {
+            btnEl.appendChild(DOMUtils.createElement('span', { innerHTML: btn.icon }));
+        }
+
+        btnEl.appendChild(document.createTextNode(btn.label));
+
+        btnEl.onmouseenter = () => btnEl.style.background = bgHover;
+        btnEl.onmouseleave = () => btnEl.style.background = bgNormal;
+        btnEl.onclick = () => btn.onClick();
+
+        return btnEl;
+    }
+
     private renderToolbarActions() {
         if (typeof document === 'undefined') return;
         const container = document.getElementById('sg-app-toolbar-actions');
@@ -682,37 +717,7 @@ export class SpaceGraphApp {
         };
 
         this.toolbarActions.forEach(btn => {
-            const btnEl = DOMUtils.createElement('button', {
-                id: `sg-toolbar-btn-${btn.id}`,
-                style: {
-                    background: 'transparent',
-                    border: '1px solid rgba(255,255,255,0.2)',
-                    padding: '6px 12px',
-                    borderRadius: '99px',
-                    color: 'white',
-                    fontFamily: 'sans-serif',
-                    fontSize: '13px',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px'
-                }
-            });
-
-            if (btn.icon) {
-                const iconSpan = DOMUtils.createElement('span', { innerHTML: btn.icon });
-                btnEl.appendChild(iconSpan);
-            }
-
-            const labelNode = document.createTextNode(btn.label);
-            btnEl.appendChild(labelNode);
-
-            btnEl.onmouseenter = () => btnEl.style.background = 'rgba(255,255,255,0.1)';
-            btnEl.onmouseleave = () => btnEl.style.background = 'transparent';
-            btnEl.onclick = () => btn.onClick();
-
-            container.appendChild(btnEl);
+            container.appendChild(this._createStyledButton(btn, true, theme));
         });
     }
 
@@ -745,37 +750,7 @@ export class SpaceGraphApp {
         });
 
         this.buttons.forEach(btn => {
-            const btnEl = DOMUtils.createElement('button', {
-                id: `sg-btn-${btn.id}`,
-                style: {
-                    background: theme.backgroundColor,
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    padding: '10px 16px',
-                    borderRadius: '8px',
-                    color: 'white',
-                    fontFamily: 'sans-serif',
-                    fontSize: '14px',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px'
-                }
-            });
-
-            if (btn.icon) {
-                const iconSpan = DOMUtils.createElement('span', { innerHTML: btn.icon });
-                btnEl.appendChild(iconSpan);
-            }
-
-            const labelNode = document.createTextNode(btn.label);
-            btnEl.appendChild(labelNode);
-
-            btnEl.onmouseenter = () => btnEl.style.background = 'rgba(255,255,255,0.1)';
-            btnEl.onmouseleave = () => btnEl.style.background = theme.backgroundColor;
-            btnEl.onclick = () => btn.onClick();
-
-            container.appendChild(btnEl);
+            container.appendChild(this._createStyledButton(btn, false, theme));
         });
 
         this.hud.addElement({

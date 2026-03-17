@@ -374,18 +374,20 @@ export class HUDPlugin implements ISpaceGraphPlugin {
     showAlert(message: string, type: 'info' | 'success' | 'warning' | 'error' = 'info', duration: number = 3000): void {
         if (!this.alertsContainer) return;
 
-        let bgColor = '#1e293b';
-        let borderColor = '#334155';
-        if (type === 'success') { bgColor = 'rgba(22, 163, 74, 0.9)'; borderColor = '#4ade80'; }
-        else if (type === 'error') { bgColor = 'rgba(220, 38, 38, 0.9)'; borderColor = '#f87171'; }
-        else if (type === 'warning') { bgColor = 'rgba(217, 119, 6, 0.9)'; borderColor = '#fbbf24'; }
+        const alertStyles: Record<string, { bg: string, border: string }> = {
+            'info': { bg: '#1e293b', border: '#334155' },
+            'success': { bg: 'rgba(22, 163, 74, 0.9)', border: '#4ade80' },
+            'warning': { bg: 'rgba(217, 119, 6, 0.9)', border: '#fbbf24' },
+            'error': { bg: 'rgba(220, 38, 38, 0.9)', border: '#f87171' },
+        };
+        const style = alertStyles[type] || alertStyles['info'];
 
         const alert = DOMUtils.createElement('div', {
             className: `spacegraph-alert alert-${type}`,
             textContent: message,
             style: {
-                background: bgColor,
-                border: `1px solid ${borderColor}`,
+                background: style.bg,
+                border: `1px solid ${style.border}`,
                 color: '#fff',
                 padding: '12px 16px',
                 borderRadius: '6px',
