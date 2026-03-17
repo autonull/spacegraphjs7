@@ -27,7 +27,7 @@ export class ClusterLayout implements ISpaceGraphPlugin {
 
         // Group nodes by cluster key
         const clusters = new Map<string, any[]>();
-        nodes.forEach(node => {
+        for (const node of nodes) {
             const key = (node.data && node.data[this.settings.clusterBy])
                 ? String(node.data[this.settings.clusterBy])
                 : 'Uncategorized';
@@ -36,7 +36,7 @@ export class ClusterLayout implements ISpaceGraphPlugin {
                 clusters.set(key, []);
             }
             clusters.get(key)!.push(node);
-        });
+        }
 
         // 1. Arrange clusters in a macro-circle
         const clusterKeys = Array.from(clusters.keys());
