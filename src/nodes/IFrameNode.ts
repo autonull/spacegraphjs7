@@ -32,13 +32,11 @@ export class IFrameNode extends DOMNode {
         this.iframeEl.src = src;
         this.iframeEl.allow = allow;
         this.iframeEl.sandbox?.add?.('allow-scripts', 'allow-same-origin', 'allow-forms');
-        Object.assign(this.iframeEl.style, {
-            width: `${w}px`,
-            height: `${h}px`,
+        this.setupContainerStyles(w, h, 'dark', {
             border: '2px solid rgba(255,255,255,0.2)',
             borderRadius: '6px',
             background: '#0a0a0a',
-            display: 'block',
+            display: 'block'
         });
 
 
