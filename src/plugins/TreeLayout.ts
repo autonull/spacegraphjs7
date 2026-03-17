@@ -32,17 +32,17 @@ export class TreeLayout implements ISpaceGraphPlugin {
         const inDegree = new Map<string, number>();
         const childrenMap = new Map<string, Node[]>();
 
-        nodes.forEach(n => {
+        for (const n of nodes) {
             inDegree.set(n.id, 0);
             childrenMap.set(n.id, []);
-        });
+        }
 
-        edges.forEach(e => {
+        for (const e of edges) {
             if (e.source && e.target && e.source.id && e.target.id) {
                 inDegree.set(e.target.id, (inDegree.get(e.target.id) || 0) + 1);
                 childrenMap.get(e.source.id)?.push(e.target);
             }
-        });
+        }
 
         const roots = nodes.filter(n => inDegree.get(n.id) === 0);
 
@@ -89,15 +89,15 @@ export class TreeLayout implements ISpaceGraphPlugin {
 
         // Center the whole tree to Origin
         let sumX = 0, sumY = 0;
-        positions.forEach(p => {
+        for (const p of positions.values()) {
             sumX += p.x;
             sumY += p.y;
-        });
+        }
         const offsetX = sumX / positions.size;
         const offsetY = sumY / positions.size;
 
         const finalPos = new THREE.Vector3();
-        positions.forEach((pos, id) => {
+        for (const [id, pos] of positions.entries()) {
             finalPos.set(pos.x - offsetX, pos.y - offsetY, 0);
 
             // Handle Horizontal orientation
@@ -115,7 +115,7 @@ export class TreeLayout implements ISpaceGraphPlugin {
                     this.settings.animationDuration
                 );
             }
-        });
+        }
     }
 
     dispose(): void { }

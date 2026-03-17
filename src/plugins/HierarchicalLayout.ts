@@ -86,7 +86,8 @@ export class HierarchicalLayout implements ISpaceGraphPlugin {
 
         for (const [lv, ids] of byLevel) {
             const totalWidth = (ids.length - 1) * nodeSpacing;
-            ids.forEach((id, i) => {
+            for (let i = 0; i < ids.length; i++) {
+                const id = ids[i];
                 const node = nodeMap.get(id) as Node;
                 const primary = lv * levelHeight;
                 const secondary = -totalWidth / 2 + i * nodeSpacing;
@@ -110,7 +111,7 @@ export class HierarchicalLayout implements ISpaceGraphPlugin {
                         y = -primary;
                 }
                 node.applyPosition(new THREE.Vector3(x, y, z), this.settings.animate ?? true);
-            });
+            }
         }
 
         // Handle disconnected nodes (not visited in BFS)

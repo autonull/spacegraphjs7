@@ -33,13 +33,15 @@ export class SpectralLayout implements ISpaceGraphPlugin {
 
         // 1. Build Adjacency Matrix
         const nodeIndexMap = new Map<string, number>();
-        nodes.forEach((node, i) => nodeIndexMap.set(node.id, i));
+        for (let i = 0; i < nodes.length; i++) {
+            nodeIndexMap.set(nodes[i].id, i);
+        }
 
         const A = Array.from({ length: n }, () => new Float32Array(n).fill(0));
         const D = new Float32Array(n).fill(0); // Degree matrix diagonal
 
-        edges.forEach(edge => {
-            if (!edge.source || !edge.target || !edge.source.id || !edge.target.id) return;
+        for (const edge of edges) {
+            if (!edge.source || !edge.target || !edge.source.id || !edge.target.id) continue;
             const i = nodeIndexMap.get(edge.source.id);
             const j = nodeIndexMap.get(edge.target.id);
             if (i !== undefined && j !== undefined && i !== j) {
@@ -48,7 +50,7 @@ export class SpectralLayout implements ISpaceGraphPlugin {
                 D[i]++;
                 D[j]++;
             }
-        });
+        }
 
         // 2. Build Laplacian Matrix (L = D - A)
         // For simplicity and speed in JS without a full linear algebra library,
@@ -135,13 +137,14 @@ export class SpectralLayout implements ISpaceGraphPlugin {
         const rangeY = (maxY - minY) || 1;
         const rangeZ = (maxZ - minZ) || 1;
 
-        nodes.forEach((node, i) => {
+        for (let i = 0; i < nodes.length; i++) {
+            const node = nodes[i];
             const nx = ((eigenvectors[0][i] - minX) / rangeX - 0.5) * scale;
             const ny = numEigs > 1 ? ((eigenvectors[1][i] - minY) / rangeY - 0.5) * scale : 0;
             const nz = numEigs > 2 ? ((eigenvectors[2][i] - minZ) / rangeZ - 0.5) * scale : 0;
 
             this.setPosition(node, new THREE.Vector3(nx, ny, nz));
-        });
+        }
     }
 
     private setPosition(node: any, pos: THREE.Vector3) {
