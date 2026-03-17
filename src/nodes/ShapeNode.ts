@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { Node } from './Node';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec } from '../types';
+import { DOMUtils } from '../utils/DOMUtils';
 
 export class ShapeNode extends Node {
     private meshGeometry: THREE.SphereGeometry;
@@ -58,7 +59,7 @@ export class ShapeNode extends Node {
     }
 
     private createLabel(text: string): THREE.Sprite {
-        const canvas = document.createElement('canvas');
+        const canvas = DOMUtils.createElement('canvas');
         const context = canvas.getContext('2d');
 
         canvas.width = 256;

@@ -1,6 +1,7 @@
 import { DOMNode } from './DOMNode';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec } from '../types';
+import { DOMUtils } from '../utils/DOMUtils';
 
 /**
  * ChartNode — Canvas-based chart node.  Renders via Chart.js if available,
@@ -32,7 +33,7 @@ export class ChartNode extends DOMNode {
         const title = spec.label ?? spec.data?.title ?? '';
         const totalH = h + (title ? 32 : 0);
 
-        const div = document.createElement('div');
+        const div = DOMUtils.createElement('div');
         // Ensure DOMNode treats this as fully interactive, similar to HtmlNode
         super(sg, spec, div, w, totalH, { opacity: 0.1 });
 
@@ -45,7 +46,7 @@ export class ChartNode extends DOMNode {
             this.domElement.appendChild(this.titleEl);
         }
 
-        const canvasContainer = document.createElement('div');
+        const canvasContainer = DOMUtils.createElement('div');
         Object.assign(canvasContainer.style, {
             position: 'relative',
             flexGrow: '1',
@@ -53,7 +54,7 @@ export class ChartNode extends DOMNode {
             height: '100%'
         });
 
-        this.canvasEl = document.createElement('canvas');
+        this.canvasEl = DOMUtils.createElement('canvas');
         Object.assign(this.canvasEl.style, {
             display: 'block',
             width: '100%',

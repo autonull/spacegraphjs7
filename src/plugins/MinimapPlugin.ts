@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { ISpaceGraphPlugin } from '../types';
+import { DOMUtils } from '../utils/DOMUtils';
 
 /**
  * MinimapPlugin — Renders a thumbnail overview of the graph in a corner overlay.
@@ -214,7 +215,7 @@ export class MinimapPlugin implements ISpaceGraphPlugin {
         if (typeof document === 'undefined') return;
 
         if (!this.container) {
-            this.container = document.createElement('div');
+            this.container = DOMUtils.createElement('div');
             this.container.style.position = 'absolute';
             this.container.style.pointerEvents = 'none'; // let pointer events pass through to webgl canvas handler
             this.container.style.border = `2px solid ${this.borderColor}`;
@@ -223,7 +224,7 @@ export class MinimapPlugin implements ISpaceGraphPlugin {
             this.container.style.overflow = 'hidden';
             this.container.style.zIndex = '9997'; // Below HUD but above WebGL
 
-            const indicator = document.createElement('div');
+            const indicator = DOMUtils.createElement('div');
             indicator.id = 'sg-minimap-indicator';
             indicator.style.position = 'absolute';
             indicator.style.border = `1px solid ${this.indicatorColor}`;

@@ -2,6 +2,7 @@ import { DOMNode } from './DOMNode';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec } from '../types';
 import loader from '@monaco-editor/loader';
+import { DOMUtils } from '../utils/DOMUtils';
 
 /**
  * CodeEditorNode — Embeds a full Monaco editor into the ZUI.
@@ -21,7 +22,7 @@ export class CodeEditorNode extends DOMNode {
         const w = spec.data?.width ?? 600;
         const h = spec.data?.height ?? 400;
 
-        const div = document.createElement('div');
+        const div = DOMUtils.createElement('div');
         super(sg, spec, div, w, h, { visible: false });
 
         this.domElement.className = 'spacegraph-code-editor-node';
@@ -33,13 +34,11 @@ export class CodeEditorNode extends DOMNode {
         });
 
         const titleBar = this.createTitleBar(spec.label || spec.data?.language || 'Code Editor', isLight ? 'light' : 'dark');
-        Object.assign(titleBar.style, {
-            backgroundColor: isLight ? '#f3f3f3' : '#2d2d2d',
-            color: isLight ? '#333' : '#ccc'
-        });
+        titleBar.style.backgroundColor = isLight ? '#f3f3f3' : '#2d2d2d';
+        titleBar.style.color = isLight ? '#333' : '#ccc';
         this.domElement.appendChild(titleBar);
 
-        this.editorContainer = document.createElement('div');
+        this.editorContainer = DOMUtils.createElement('div');
         Object.assign(this.editorContainer.style, {
             flexGrow: '1',
             width: '100%',

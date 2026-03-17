@@ -1,6 +1,7 @@
 import { DOMNode } from './DOMNode';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec } from '../types';
+import { DOMUtils } from '../utils/DOMUtils';
 
 /**
  * IFrameNode — Embeds a web page inside a CSS3D iframe.
@@ -21,7 +22,7 @@ export class IFrameNode extends DOMNode {
     constructor(sg: SpaceGraph, spec: NodeSpec) {
         const w = spec.data?.width ?? 480;
         const h = spec.data?.height ?? 320;
-        const iframe = document.createElement('iframe');
+        const iframe = DOMUtils.createElement('iframe');
         super(sg, spec, iframe, w, h, { visible: false });
 
         const src = spec.data?.src ?? 'about:blank';

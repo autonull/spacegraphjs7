@@ -15,6 +15,7 @@ import type { NodeSpec } from '../types';
  *   editable   : boolean — whether text is directly editable (default true)
  */
 import { DOMNode } from './DOMNode';
+import { DOMUtils } from '../utils/DOMUtils';
 
 export class NoteNode extends DOMNode {
     constructor(sg: SpaceGraph, spec: NodeSpec) {
@@ -22,7 +23,7 @@ export class NoteNode extends DOMNode {
         const w = spec.data?.width ?? 200;
         const h = spec.data?.height ?? 160;
 
-        const div = document.createElement('div');
+        const div = DOMUtils.createElement('div');
         super(sg, spec, div, w, h, { visible: false });
 
         const text = spec.data?.text ?? spec.label ?? '';
@@ -39,23 +40,25 @@ export class NoteNode extends DOMNode {
             cursor: editable ? 'text' : 'default',
         });
 
-        const titleEl = document.createElement('div');
-        titleEl.className = 'sg-note-title sg-node-title';
-        Object.assign(titleEl.style, {
-            fontWeight: 'bold',
-            marginBottom: '6px',
-            fontSize: '13px',
-            color: '#555'
+        const titleEl = DOMUtils.createElement('div', {
+            className: 'sg-note-title sg-node-title',
+            textContent: spec.label ?? 'Note',
+            style: {
+                fontWeight: 'bold',
+                marginBottom: '6px',
+                fontSize: '13px',
+                color: '#555'
+            }
         });
-        titleEl.textContent = spec.label ?? 'Note';
 
-        const bodyEl = document.createElement('div');
-        bodyEl.className = 'sg-note-body';
-        Object.assign(bodyEl.style, {
-            whiteSpace: 'pre-wrap',
-            wordBreak: 'break-word'
+        const bodyEl = DOMUtils.createElement('div', {
+            className: 'sg-note-body',
+            textContent: text,
+            style: {
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word'
+            }
         });
-        bodyEl.textContent = text;
 
         if (editable) {
             bodyEl.contentEditable = 'true';

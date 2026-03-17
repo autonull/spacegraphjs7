@@ -57,6 +57,7 @@ import { HUDPlugin } from './plugins/HUDPlugin';
 import { HistoryPlugin } from './plugins/HistoryPlugin';
 import type { GraphSpec, SpaceGraphOptions, SpecUpdate } from './types';
 import { CameraUtils } from './utils/CameraUtils';
+import { DOMUtils } from './utils/DOMUtils';
 
 export class SpaceGraph {
     public static instances: Set<SpaceGraph> = new Set();
@@ -367,7 +368,7 @@ export class SpaceGraph {
 
     private static checkWebGL(): boolean {
         try {
-            const canvas = document.createElement('canvas');
+            const canvas = DOMUtils.createElement('canvas');
             return !!(
                 window.WebGLRenderingContext &&
                 (canvas.getContext('webgl') || canvas.getContext('experimental-webgl'))

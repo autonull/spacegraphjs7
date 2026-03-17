@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { Node } from './Node';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec } from '../types';
+import { DOMUtils } from '../utils/DOMUtils';
 
 /**
  * TextMeshNode — Billboard sprite-based large text node.
@@ -41,7 +42,7 @@ export class TextMeshNode extends Node {
         const background = spec.data?.background ?? 'transparent';
         const scale = spec.data?.scale ?? 1;
 
-        const canvas = document.createElement('canvas');
+        const canvas = DOMUtils.createElement('canvas');
         const ctx = canvas.getContext('2d');
         const padding = 20;
 

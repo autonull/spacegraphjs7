@@ -1,6 +1,7 @@
 import { DOMNode } from './DOMNode';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec } from '../types';
+import { DOMUtils } from '../utils/DOMUtils';
 
 export class ProcessNode extends DOMNode {
     private cpuBar: HTMLDivElement;
@@ -12,7 +13,7 @@ export class ProcessNode extends DOMNode {
         const w = spec.data?.width ?? 200;
         const h = spec.data?.height ?? 120;
 
-        const div = document.createElement('div');
+        const div = DOMUtils.createElement('div');
         div.className = 'sg-process-node';
 
         super(sg, spec, div, w, h, { opacity: 0.1 });
@@ -30,17 +31,17 @@ export class ProcessNode extends DOMNode {
         });
 
         // Header (PID + Name)
-        const header = document.createElement('div');
+        const header = DOMUtils.createElement('div');
         header.style.display = 'flex';
         header.style.justifyContent = 'space-between';
         header.style.borderBottom = '1px solid #334155';
         header.style.paddingBottom = '4px';
         header.style.marginBottom = '8px';
 
-        const titleSpan = document.createElement('strong');
+        const titleSpan = DOMUtils.createElement('strong');
         titleSpan.textContent = name;
 
-        const pidSpan = document.createElement('span');
+        const pidSpan = DOMUtils.createElement('span');
         pidSpan.textContent = `PID: ${pid}`;
         pidSpan.style.color = '#94a3b8';
 
@@ -49,7 +50,7 @@ export class ProcessNode extends DOMNode {
         div.appendChild(header);
 
         // Stats Container
-        const stats = document.createElement('div');
+        const stats = DOMUtils.createElement('div');
         stats.style.display = 'flex';
         stats.style.flexDirection = 'column';
         stats.style.gap = '8px';
@@ -72,17 +73,17 @@ export class ProcessNode extends DOMNode {
     }
 
     private createStatRow(label: string) {
-        const container = document.createElement('div');
+        const container = DOMUtils.createElement('div');
         container.style.display = 'flex';
         container.style.alignItems = 'center';
         container.style.gap = '8px';
 
-        const labelSpan = document.createElement('span');
+        const labelSpan = DOMUtils.createElement('span');
         labelSpan.textContent = label;
         labelSpan.style.width = '30px';
         labelSpan.style.fontSize = '12px';
 
-        const barTrack = document.createElement('div');
+        const barTrack = DOMUtils.createElement('div');
         Object.assign(barTrack.style, {
             flex: '1',
             height: '8px',
@@ -91,7 +92,7 @@ export class ProcessNode extends DOMNode {
             overflow: 'hidden'
         });
 
-        const bar = document.createElement('div');
+        const bar = DOMUtils.createElement('div');
         Object.assign(bar.style, {
             height: '100%',
             width: '0%',
@@ -100,7 +101,7 @@ export class ProcessNode extends DOMNode {
         });
         barTrack.appendChild(bar);
 
-        const text = document.createElement('span');
+        const text = DOMUtils.createElement('span');
         text.textContent = '0%';
         text.style.width = '35px';
         text.style.textAlign = 'right';
