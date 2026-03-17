@@ -19,7 +19,8 @@ export class CullingManager {
         this.projScreenMatrix.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
         this.frustum.setFromProjectionMatrix(this.projScreenMatrix);
 
-        for (const node of this.sg.graph.nodes.values()) {
+        const nodes = this.sg.graph.nodes.values();
+        for (const node of nodes) {
             // Check bounding sphere (approximated based on position)
             // A more exact implementation would use the node's actual bounding box
             const inFrustum = this.frustum.containsPoint(node.position);

@@ -62,11 +62,11 @@ export class BundledEdge extends Edge {
         if (updates.data) {
             if (updates.data.spread) this.spread = updates.data.spread;
             if (updates.data.color || updates.data.opacity) {
-                this.strands.forEach(strand => {
+                for (const strand of this.strands) {
                     const mat = strand.material as THREE.LineBasicMaterial;
                     if (updates.data!.color) mat.color.setHex(updates.data!.color);
                     if (updates.data!.opacity) mat.opacity = updates.data!.opacity;
-                });
+                }
             }
         }
     }
@@ -108,14 +108,19 @@ export class BundledEdge extends Edge {
             posAttr.needsUpdate = true;
         }
 
-        [dir, ortho1, ortho2, offsetVec, p1, p2].forEach(v => pool.releaseVector3(v));
+        pool.releaseVector3(dir);
+        pool.releaseVector3(ortho1);
+        pool.releaseVector3(ortho2);
+        pool.releaseVector3(offsetVec);
+        pool.releaseVector3(p1);
+        pool.releaseVector3(p2);
     }
 
     dispose(): void {
-        this.strands.forEach(strand => {
+        for (const strand of this.strands) {
             this.object.remove(strand);
             ThreeDisposer.dispose(strand);
-        });
+        }
         this.strands = [];
         super.dispose();
     }

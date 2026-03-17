@@ -170,7 +170,9 @@ export class MinimapPlugin implements ISpaceGraphPlugin {
         const nodes = Array.from(this.sg.graph.nodes.values());
         if (nodes.length) {
             const box = new THREE.Box3();
-            nodes.forEach(n => box.expandByPoint(n.position));
+            for (const n of nodes) {
+                box.expandByPoint(n.position);
+            }
             const center = new THREE.Vector3();
             box.getCenter(center);
 

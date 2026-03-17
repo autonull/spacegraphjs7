@@ -212,15 +212,22 @@ export class Graph {
     }
 
     query(predicate: (node: any) => boolean): any[] {
-        return Array.from(this.nodes.values()).filter(predicate);
+        const result = [];
+        for (const node of this.nodes.values()) {
+            if (predicate(node)) {
+                result.push(node);
+            }
+        }
+        return result;
     }
 
     neighbors(nodeId: string): any[] {
-        return this.edges.reduce((acc, edge) => {
-            if (edge.source.id === nodeId) acc.push(edge.target);
-            else if (edge.target.id === nodeId) acc.push(edge.source);
-            return acc;
-        }, []);
+        const result = [];
+        for (const edge of this.edges) {
+            if (edge.source.id === nodeId) result.push(edge.target);
+            else if (edge.target.id === nodeId) result.push(edge.source);
+        }
+        return result;
     }
 
     // --- Serialization ---

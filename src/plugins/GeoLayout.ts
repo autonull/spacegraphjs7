@@ -26,12 +26,11 @@ export class GeoLayout implements ISpaceGraphPlugin {
         const nodes = Array.from(this.sg.graph.nodes.values());
         if (nodes.length === 0) return;
 
-        nodes.forEach(node => {
+        const targetPos = new THREE.Vector3();
+        for (const node of nodes) {
             // Check if node data contains lat/lng
             const lat = node.data?.lat !== undefined ? node.data.lat : (Math.random() * 180 - 90);
             const lng = node.data?.lng !== undefined ? node.data.lng : (Math.random() * 360 - 180);
-
-            const targetPos = new THREE.Vector3();
 
             if (this.settings.projection === 'sphere') {
                 // Convert lat/lng to Cartesian coordinates on a sphere
@@ -40,15 +39,19 @@ export class GeoLayout implements ISpaceGraphPlugin {
                 const phi = (90 - lat) * (Math.PI / 180);
                 const theta = (lng + 180) * (Math.PI / 180);
 
-                targetPos.x = -(this.settings.radius * Math.sin(phi) * Math.cos(theta));
-                targetPos.z = (this.settings.radius * Math.sin(phi) * Math.sin(theta));
-                targetPos.y = (this.settings.radius * Math.cos(phi));
+                targetPos.set(
+                    -(this.settings.radius * Math.sin(phi) * Math.cos(theta)),
+                    (this.settings.radius * Math.cos(phi)),
+                    (this.settings.radius * Math.sin(phi) * Math.sin(theta))
+                );
             }
             else if (this.settings.projection === 'equirectangular') {
                 // Flat mapping where x and y are directly proportional to lng and lat
-                targetPos.x = (lng / 180) * (this.settings.mapWidth / 2);
-                targetPos.y = (lat / 90) * (this.settings.mapHeight / 2);
-                targetPos.z = 0;
+                targetPos.set(
+                    (lng / 180) * (this.settings.mapWidth / 2),
+                    (lat / 90) * (this.settings.mapHeight / 2),
+                    0
+                );
             }
             else if (this.settings.projection === 'mercator') {
                 // Web mercator projection
@@ -62,9 +65,11 @@ export class GeoLayout implements ISpaceGraphPlugin {
                 const y = (this.settings.mapHeight / 2) - (this.settings.mapWidth * mercN / (2 * Math.PI));
 
                 // Centering to origin [-mapWidth/2, +mapWidth/2]
-                targetPos.x = x - (this.settings.mapWidth / 2);
-                targetPos.y = (this.settings.mapHeight / 2) - y;
-                targetPos.z = 0;
+                targetPos.set(
+                    x - (this.settings.mapWidth / 2),
+                    (this.settings.mapHeight / 2) - y,
+                    0
+                );
             }
 
             (node as any).applyPosition(
@@ -72,7 +77,7 @@ export class GeoLayout implements ISpaceGraphPlugin {
                 this.settings.animate,
                 this.settings.animationDuration
             );
-        });
+        }
     }
 
     dispose(): void { }

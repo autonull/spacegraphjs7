@@ -183,8 +183,12 @@ export class SpaceGraphApp {
                 // If custom hotkey overrides delete, don't do default delete
                 if (!(this.options.hotkeys && this.options.hotkeys[e.key])) {
                     // Iterate over a copy to avoid skipping elements due to array mutation
-                    [...this.currentSelectedEdges].forEach(edge => this.removeEdge(edge.id));
-                    [...this.currentSelected].forEach(node => this.removeNode(node.id));
+                    for (const edge of [...this.currentSelectedEdges]) {
+                        this.removeEdge(edge.id);
+                    }
+                    for (const node of [...this.currentSelected]) {
+                        this.removeNode(node.id);
+                    }
                 }
             }
 
@@ -436,26 +440,26 @@ export class SpaceGraphApp {
     }
 
     private clearSelectionStyles() {
-        this.currentSelected.forEach(node => {
+        for (const node of this.currentSelected) {
             if (node instanceof HtmlNode && this.options.selectionHighlightClass) {
                 node.domElement.classList.remove(this.options.selectionHighlightClass);
             } else if (this.options.selectionHighlightColor && this.originalColors.has(node)) {
                 // Restore original color for WebGL nodes
                 node.updateSpec({ data: { color: this.originalColors.get(node) } });
             }
-        });
+        }
         this.originalColors.clear();
 
-        this.currentSelectedEdges.forEach(edge => {
+        for (const edge of this.currentSelectedEdges) {
             if (this.options.selectionHighlightEdgeColor && this.originalEdgeColors.has(edge)) {
                 edge.updateSpec({ data: { color: this.originalEdgeColors.get(edge) } });
             }
-        });
+        }
         this.originalEdgeColors.clear();
     }
 
     private applySelectionStyles() {
-        this.currentSelected.forEach(node => {
+        for (const node of this.currentSelected) {
             if (node instanceof HtmlNode && this.options.selectionHighlightClass) {
                 node.domElement.classList.add(this.options.selectionHighlightClass);
             } else if (this.options.selectionHighlightColor && node.data?.color !== undefined && typeof node.updateSpec === 'function') {
@@ -463,14 +467,14 @@ export class SpaceGraphApp {
                 this.originalColors.set(node, node.data.color);
                 node.updateSpec({ data: { color: this.options.selectionHighlightColor } });
             }
-        });
+        }
 
-        this.currentSelectedEdges.forEach(edge => {
+        for (const edge of this.currentSelectedEdges) {
             if (this.options.selectionHighlightEdgeColor && edge.data?.color !== undefined && typeof edge.updateSpec === 'function') {
                 this.originalEdgeColors.set(edge, edge.data.color);
                 edge.updateSpec({ data: { color: this.options.selectionHighlightEdgeColor } });
             }
-        });
+        }
     }
 
     private setupDefaultHUD(theme: any) {
@@ -716,9 +720,9 @@ export class SpaceGraphApp {
             ...this.options.theme
         };
 
-        this.toolbarActions.forEach(btn => {
+        for (const btn of this.toolbarActions) {
             container.appendChild(this._createStyledButton(btn, true, theme));
-        });
+        }
     }
 
     /**
@@ -749,9 +753,9 @@ export class SpaceGraphApp {
             }
         });
 
-        this.buttons.forEach(btn => {
+        for (const btn of this.buttons) {
             container.appendChild(this._createStyledButton(btn, false, theme));
-        });
+        }
 
         this.hud.addElement({
             id: 'app-actions',
@@ -809,7 +813,11 @@ export class SpaceGraphApp {
      * Computes the bounding box of a specific set of nodes and flies the camera to view them.
      */
     public focusOnNodes(nodeIds: string[], padding: number = 100, duration: number = 1.5) {
-        const nodes = nodeIds.map(id => this.sg.graph.getNode(id)).filter(Boolean);
+        const nodes = [];
+        for (const id of nodeIds) {
+            const node = this.sg.graph.getNode(id);
+            if (node) nodes.push(node);
+        }
         const fit = CameraUtils.calculateFitView(nodes, this.sg.renderer.camera, padding);
         if (fit) {
             this.sg.cameraControls.flyTo(fit.center, fit.cameraZ, duration);

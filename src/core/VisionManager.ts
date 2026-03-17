@@ -26,6 +26,8 @@ export class VisionManager {
     private isAnalyzing: boolean = false;
     private autonomousTimer: any | null = null;
     private spatialIndex: SpatialIndex = new SpatialIndex(50); // 50 units cell size
+    private cameraViewProjectionMatrix = new THREE.Matrix4();
+    private frustum = new THREE.Frustum();
 
     private executionProviders: string[];
 
@@ -130,11 +132,14 @@ export class VisionManager {
         let layoutScore = 100;
         this.spatialIndex.build(nodes);
 
+        const boxA = new THREE.Box3();
+        const boxB = new THREE.Box3();
+
         for (let i = 0; i < nodes.length; i++) {
             const nodeA = nodes[i];
             if (!frustum.containsPoint(nodeA.object.position)) continue;
 
-            const boxA = new THREE.Box3().setFromObject(nodeA.object);
+            boxA.setFromObject(nodeA.object);
             boxA.expandByScalar(5);
 
             const neighbors = this.spatialIndex.queryBox(boxA);
@@ -143,7 +148,7 @@ export class VisionManager {
                 if (nodeA.id === nodeB.id || nodeB.id < nodeA.id) continue;
                 if (!frustum.containsPoint(nodeB.object.position)) continue;
 
-                const boxB = new THREE.Box3().setFromObject(nodeB.object);
+                boxB.setFromObject(nodeB.object);
                 boxB.expandByScalar(5);
 
                 if (boxA.intersectsBox(boxB)) {
@@ -170,8 +175,8 @@ export class VisionManager {
         return { overlaps, layoutScore };
     }
 
-    private async _analyzeHierarchy(nodes: any[]): Promise<{ clarityScore: number }> {
-        let clarityScore = 85;
+    private async _analyzeHierarchy(nodes: any[]): Promise<{ hierarchyScore: number }> {
+        let hierarchyScore = 85;
         const inDegrees = new Map<string, number>();
         nodes.forEach((n) => inDegrees.set(n.id, 0));
         this.sg.graph.edges.forEach((e) => {
@@ -205,12 +210,12 @@ export class VisionManager {
                 const inputs = new Float32Array([avgDepth, maxDepth, nodes.length, this.sg.graph.edges.length]);
                 const tensor = new Tensor('float32', inputs, [1, 4]);
                 const result = await this.sessions['vhs'].run({ hierarchy_features: tensor });
-                clarityScore = Math.floor((result['hierarchy_score'].data[0] as number) * 100);
+                hierarchyScore = Math.floor((result['hierarchy_score'].data[0] as number) * 100);
             } catch (e) {
                 console.error('[VisionManager] VHS model inference failed', e);
             }
         }
-        return { clarityScore };
+        return { hierarchyScore };
     }
 
     private async _analyzeErgonomics(nodes: any[], camera: THREE.PerspectiveCamera, frustum: THREE.Frustum): Promise<{ fittsLawScore: number }> {
@@ -219,12 +224,14 @@ export class VisionManager {
         const screenWidth = this.sg.renderer.renderer.domElement.width;
         const screenHeight = this.sg.renderer.renderer.domElement.height;
 
+        const box = new THREE.Box3();
+        const size = new THREE.Vector3();
+
         for (const node of nodes) {
             if (!frustum.containsPoint(node.object.position)) continue;
 
             node.object.position.clone().project(camera);
-            const box = new THREE.Box3().setFromObject(node.object);
-            const size = new THREE.Vector3();
+            box.setFromObject(node.object);
             box.getSize(size);
 
             const distance = camera.position.distanceTo(node.object.position);
@@ -264,17 +271,15 @@ export class VisionManager {
 
         const nodes = Array.from(this.sg.graph.nodes.values());
         const camera = this.sg.renderer.camera;
-        const frustum = new THREE.Frustum();
-        const cameraViewProjectionMatrix = new THREE.Matrix4();
         camera.updateMatrixWorld();
         camera.matrixWorldInverse.copy(camera.matrixWorld).invert();
-        cameraViewProjectionMatrix.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
-        frustum.setFromProjectionMatrix(cameraViewProjectionMatrix);
+        this.cameraViewProjectionMatrix.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
+        this.frustum.setFromProjectionMatrix(this.cameraViewProjectionMatrix);
 
-        const { legibilityFailures, colorHarmonyScore, dominantPalette, wcagAA } = await this._analyzeLegibility(nodes, frustum);
-        const { overlaps, layoutScore } = await this._analyzeOverlaps(nodes, frustum);
-        const { clarityScore } = await this._analyzeHierarchy(nodes);
-        const { fittsLawScore } = await this._analyzeErgonomics(nodes, camera, frustum);
+        const { legibilityFailures, colorHarmonyScore, dominantPalette, wcagAA } = await this._analyzeLegibility(nodes, this.frustum);
+        const { overlaps, layoutScore } = await this._analyzeOverlaps(nodes, this.frustum);
+        const { hierarchyScore } = await this._analyzeHierarchy(nodes);
+        const { fittsLawScore } = await this._analyzeErgonomics(nodes, camera, this.frustum);
 
         const mockReport: VisionReport = {
             layout: { overall: Math.max(0, layoutScore), issues: overlaps },
@@ -284,14 +289,14 @@ export class VisionManager {
                 dominantPalette: [...new Set(dominantPalette)].slice(0, 5),
             },
             overlap: { overlaps: overlaps, statistics: { totalOverlaps: overlaps.length } },
-            hierarchy: { clarityScore: Math.max(0, clarityScore) },
+            hierarchy: { clarityScore: Math.max(0, hierarchyScore) },
             ergonomics: { fittsLawScore: Math.max(0, fittsLawScore) },
             overall: Math.max(
                 0,
                 layoutScore -
                 overlaps.length * 2 -
                 legibilityFailures.length * 5 -
-                (100 - clarityScore) * 0.5 -
+                (100 - hierarchyScore) * 0.5 -
                 (100 - fittsLawScore) * 0.5,
             ),
         };
@@ -307,7 +312,7 @@ export class VisionManager {
             if (legibilityFailures.length > 0) {
                 await this.autoFix({ type: 'legibility' }, mockReport);
             }
-            if (clarityScore < 60) {
+            if (hierarchyScore < 60) {
                 await this.autoFix({ type: 'hierarchy' }, mockReport);
             }
             if (fittsLawScore < 60) {

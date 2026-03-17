@@ -84,7 +84,7 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
 
             // Check edges
             this.raycaster.params.Line = { threshold: 5 };
-            const lineObjects = this.sg.graph.edges.map(edge => edge.object).filter(Boolean);
+            const lineObjects = this.getEdgeObjects();
             const edgeIntersects = this.raycaster.intersectObjects(lineObjects, false);
 
             if (edgeIntersects.length > 0) {
@@ -140,6 +140,15 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
         return meshes;
     }
 
+    // Helper to get all current edge objects to avoid recreation and map/filter on every event
+    private getEdgeObjects(): THREE.Object3D[] {
+        const lineObjects: THREE.Object3D[] = [];
+        for (const edge of this.sg.graph.edges) {
+            if (edge.object) lineObjects.push(edge.object);
+        }
+        return lineObjects;
+    }
+
     private initDblClick(): void {
         const canvas = this.sg.renderer.renderer.domElement;
 
@@ -154,7 +163,7 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
             this.raycaster.params.Line = { threshold: 5 };
 
             // Check edges first using simple map over current edges
-            const lineObjects = this.sg.graph.edges.map(edge => edge.object).filter(Boolean);
+            const lineObjects = this.getEdgeObjects();
             const edgeIntersects = this.raycaster.intersectObjects(lineObjects, false);
 
             if (edgeIntersects.length > 0) {
@@ -219,7 +228,7 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
 
             // Check edges first using simple map over current edges
             this.raycaster.params.Line = { threshold: 5 };
-            const lineObjects = this.sg.graph.edges.map(edge => edge.object).filter(Boolean);
+            const lineObjects = this.getEdgeObjects();
             const edgeIntersects = this.raycaster.intersectObjects(lineObjects, false);
 
             if (edgeIntersects.length > 0) {
@@ -266,7 +275,7 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
     private getIntersectedEdge() {
         this.raycaster.setFromCamera(this.mouse, this.sg.renderer.camera);
         this.raycaster.params.Line = { threshold: 5 };
-        const lineObjects = this.sg.graph.edges.map(edge => edge.object).filter(Boolean);
+        const lineObjects = this.getEdgeObjects();
         const edgeIntersects = this.raycaster.intersectObjects(lineObjects, false);
         if (edgeIntersects.length > 0) {
             const edgeObj = edgeIntersects[0].object;
