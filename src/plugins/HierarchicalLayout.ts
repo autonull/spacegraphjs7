@@ -1,3 +1,4 @@
+import * as THREE from 'three';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { ISpaceGraphPlugin } from '../types';
 import type { Node } from '../nodes/Node';
@@ -108,7 +109,7 @@ export class HierarchicalLayout implements ISpaceGraphPlugin {
                         x = secondary;
                         y = -primary;
                 }
-                node.updatePosition(x, y, z);
+                node.applyPosition(new THREE.Vector3(x, y, z), this.settings.animate ?? true);
             });
         }
 
