@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { Node } from './Node';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec } from '../types';
+import { DOMUtils } from '../utils/DOMUtils';
 
 /**
  * CanvasNode — A node backed by a 2D <canvas> rendered as a Three.js texture.
@@ -26,7 +27,7 @@ export class CanvasNode extends Node {
         const h = spec.data?.height ?? 256;
         this.drawFn = spec.data?.draw;
 
-        this.canvas = document.createElement('canvas');
+        this.canvas = DOMUtils.createElement('canvas');
         this.canvas.width = w;
         this.canvas.height = h;
         this.ctx = this.canvas.getContext('2d') as CanvasRenderingContext2D;

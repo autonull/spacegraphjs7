@@ -1,3 +1,4 @@
+import * as THREE from 'three';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { ISpaceGraphPlugin } from '../types';
 
@@ -38,7 +39,7 @@ export class CircularLayout implements ISpaceGraphPlugin {
             const angle = this.settings.startAngle + i * step;
             const x = this.settings.radiusX * Math.cos(angle);
             const y = this.settings.radiusY * Math.sin(angle);
-            node.updatePosition(x, y, this.settings.z);
+            node.applyPosition(new THREE.Vector3(x, y, this.settings.z), this.settings.animate ?? true);
         });
 
         for (const edge of this.sg.graph.edges) edge.update?.();

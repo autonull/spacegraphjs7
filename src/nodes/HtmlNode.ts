@@ -1,12 +1,13 @@
 import { DOMNode } from './DOMNode';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec } from '../types';
+import { DOMUtils } from '../utils/DOMUtils';
 
 export class HtmlNode extends DOMNode {
     constructor(sg: SpaceGraph, spec: NodeSpec) {
         const width = spec.data?.width || 200;
         const height = spec.data?.height || 100;
-        const div = document.createElement('div');
+        const div = DOMUtils.createElement('div');
         super(sg, spec, div, width, height, { opacity: 0.1 });
 
         this.domElement.className = `spacegraph-html-node ${spec.data?.className || ''}`;
@@ -36,7 +37,7 @@ export class HtmlNode extends DOMNode {
                 });
             } else {
                 // Render default label & description
-                const titleEl = document.createElement('h3');
+                const titleEl = DOMUtils.createElement('h3');
                 Object.assign(titleEl.style, {
                     margin: '0',
                     fontFamily: 'sans-serif',
@@ -45,7 +46,7 @@ export class HtmlNode extends DOMNode {
                 titleEl.className = 'html-node-title sg-node-title';
                 titleEl.textContent = spec.label || 'HTML Node';
 
-                const descEl = document.createElement('p');
+                const descEl = DOMUtils.createElement('p');
                 Object.assign(descEl.style, {
                     margin: '5px 0 0',
                     fontFamily: 'sans-serif',

@@ -1,5 +1,6 @@
 import type { SpaceGraph } from '../SpaceGraph';
 import type { ISpaceGraphPlugin } from '../types';
+import { DOMUtils } from '../utils/DOMUtils';
 
 export class VisionOverlayPlugin implements ISpaceGraphPlugin {
     readonly id = 'vision-overlay-plugin';
@@ -48,8 +49,28 @@ export class VisionOverlayPlugin implements ISpaceGraphPlugin {
         this.sg = sg;
         if (typeof document === 'undefined') return;
 
-        this.container = document.createElement('div');
-        this.container.className = 'spacegraph-vision-overlay';
+        this.container = DOMUtils.createElement('div', {
+            className: 'spacegraph-vision-overlay',
+            style: {
+                position: 'absolute',
+                top: '16px',
+                right: '16px',
+                width: '280px',
+                background: 'rgba(15, 15, 20, 0.85)',
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                borderRadius: '12px',
+                padding: '16px',
+                color: '#fff',
+                fontFamily: 'system-ui, -apple-system, sans-serif',
+                fontSize: '13px',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
+                zIndex: '9999',
+                pointerEvents: 'auto',
+                transition: 'all 0.3s ease'
+            }
+        });
         this.applyStyles();
 
         // Attach to the same parent as the canvas
@@ -66,25 +87,7 @@ export class VisionOverlayPlugin implements ISpaceGraphPlugin {
     }
 
     private applyStyles() {
-        Object.assign(this.container.style, {
-            position: 'absolute',
-            top: '16px',
-            right: '16px',
-            width: '280px',
-            background: 'rgba(15, 15, 20, 0.85)',
-            backdropFilter: 'blur(12px)',
-            WebkitBackdropFilter: 'blur(12px)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            borderRadius: '12px',
-            padding: '16px',
-            color: '#fff',
-            fontFamily: 'system-ui, -apple-system, sans-serif',
-            fontSize: '13px',
-            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
-            zIndex: '9999',
-            pointerEvents: 'auto',
-            transition: 'all 0.3s ease',
-        });
+        // Handled in DOMUtils.createElement
     }
 
     private getScoreColor(score: number): string {
@@ -173,7 +176,7 @@ export class VisionOverlayPlugin implements ISpaceGraphPlugin {
     private injectSpinnerStyles() {
         if (typeof document === 'undefined') return;
         if (!document.getElementById('sg-vision-styles')) {
-            const style = document.createElement('style');
+            const style = DOMUtils.createElement('style');
             style.id = 'sg-vision-styles';
             style.innerHTML = `
                 @keyframes sg-spin { 100% { transform: rotate(360deg); } }

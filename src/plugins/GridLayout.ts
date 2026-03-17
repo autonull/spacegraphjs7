@@ -1,3 +1,4 @@
+import * as THREE from 'three';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { ISpaceGraphPlugin } from '../types';
 
@@ -46,7 +47,7 @@ export class GridLayout implements ISpaceGraphPlugin {
             const row = Math.floor(i / cols);
             const x = this.settings.offsetX + col * this.settings.spacingX;
             const y = this.settings.offsetY - row * this.settings.spacingY;
-            node.updatePosition(x, y, node.position.z);
+            node.applyPosition(new THREE.Vector3(x, y, node.position.z), this.settings.animate ?? true);
         });
 
         // Refresh all edge geometries

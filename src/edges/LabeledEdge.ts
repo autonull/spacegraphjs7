@@ -4,6 +4,7 @@ import type { SpaceGraph } from '../SpaceGraph';
 import type { EdgeSpec } from '../types';
 import type { Node } from '../nodes/Node';
 import { Edge } from './Edge';
+import { DOMUtils } from '../utils/DOMUtils';
 
 /**
  * LabeledEdge — Straight edge with a mid-point text label rendered via CSS2D.
@@ -26,7 +27,7 @@ export class LabeledEdge extends Edge {
         (this.object.material as THREE.LineBasicMaterial).color.setHex(color);
 
         // Build DOM label
-        this.labelEl = document.createElement('div');
+        this.labelEl = DOMUtils.createElement('div');
         this.labelEl.className = 'sg-edge-label';
         Object.assign(this.labelEl.style, {
             color: spec.data?.labelColor ?? '#ffffff',

@@ -331,7 +331,7 @@ describe('NoteNode', () => {
     it('respects custom background color', () => {
         const n = new NoteNode(sg, { id: 'nn', type: 'NoteNode', data: { color: '#ff0000' } });
         // jsdom normalises hex to rgb(), so check for the colour value rather than exact string
-        expect(n.domElement.style.background).toMatch(/ff0000|255,\s*0,\s*0/);
+        expect(n.domElement.style.backgroundColor).toMatch(/ff0000|255,\s*0,\s*0/);
     });
 });
 

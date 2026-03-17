@@ -3,6 +3,7 @@ import { CSS3DObject } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
 import { Node } from './Node';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec } from '../types';
+import { DOMUtils } from '../utils/DOMUtils';
 
 export class DOMNode extends Node {
     public domElement: HTMLElement;
@@ -52,7 +53,7 @@ export class DOMNode extends Node {
         const borderColor = isDark ? '#334155' : '#e2e8f0';
         const titleColor = isDark ? '#94a3b8' : '#64748b';
 
-        const titleBar = document.createElement('div');
+        const titleBar = DOMUtils.createElement('div');
         Object.assign(titleBar.style, {
             background: headerColor,
             padding: '8px 12px',
@@ -66,7 +67,7 @@ export class DOMNode extends Node {
             userSelect: 'none'
         });
 
-        const titleSpan = document.createElement('span');
+        const titleSpan = DOMUtils.createElement('span');
         titleSpan.textContent = title;
         titleSpan.className = 'sg-node-title';
         titleBar.appendChild(titleSpan);

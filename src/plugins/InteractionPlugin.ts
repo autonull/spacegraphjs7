@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { ISpaceGraphPlugin } from '../types';
+import { DOMUtils } from '../utils/DOMUtils';
 
 export class InteractionPlugin implements ISpaceGraphPlugin {
     readonly id = 'interaction';
@@ -108,7 +109,7 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
 
     private createSelectionBoxElement() {
         if (typeof document === 'undefined') return;
-        this.selectionBoxEl = document.createElement('div');
+        this.selectionBoxEl = DOMUtils.createElement('div');
         Object.assign(this.selectionBoxEl.style, {
             position: 'absolute',
             border: '1px solid rgba(139, 92, 246, 0.8)',

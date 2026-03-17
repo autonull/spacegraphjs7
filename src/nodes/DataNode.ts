@@ -1,6 +1,7 @@
 import { DOMNode } from './DOMNode';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec } from '../types';
+import { DOMUtils } from '../utils/DOMUtils';
 
 /**
  * DataNode — Displays arbitrary JSON/objects as a structured, interactive view.
@@ -21,7 +22,7 @@ export class DataNode extends DOMNode {
         const maxH = spec.data?.maxHeight ?? 300;
         const theme = spec.data?.theme ?? 'dark';
 
-        const div = document.createElement('div');
+        const div = DOMUtils.createElement('div');
         // Initialize DOMNode base. Use fixed height or let DOM size it naturally inside the wrapper.
         // We'll give it a generous height based on maxH since it scrolls.
         super(sg, spec, div, w, maxH, { opacity: 0.1 });
@@ -39,13 +40,14 @@ export class DataNode extends DOMNode {
         this.domElement.appendChild(header);
 
         // Content Area (Scrollable)
-        this.contentContainer = document.createElement('div');
-        Object.assign(this.contentContainer.style, {
-            padding: '8px 12px',
-            overflowY: 'auto',
-            flexGrow: '1',
-            scrollbarWidth: 'thin',
-            scrollbarColor: theme === 'dark' ? '#475569 #1e293b' : '#cbd5e1 #f8fafc'
+        this.contentContainer = DOMUtils.createElement('div', {
+            style: {
+                padding: '8px 12px',
+                overflowY: 'auto',
+                flexGrow: '1',
+                scrollbarWidth: 'thin',
+                scrollbarColor: theme === 'dark' ? '#475569 #1e293b' : '#cbd5e1 #f8fafc'
+            }
         });
 
         this.domElement.appendChild(this.contentContainer);
@@ -56,7 +58,7 @@ export class DataNode extends DOMNode {
     private _renderData(data: any, expandTopLevel: boolean, theme: string) {
         this.contentContainer.innerHTML = '';
         if (data === undefined || data === null) {
-            const empty = document.createElement('div');
+            const empty = DOMUtils.createElement('div');
             empty.style.color = theme === 'dark' ? '#64748b' : '#94a3b8';
             empty.style.fontStyle = 'italic';
             empty.textContent = 'null';
@@ -69,12 +71,12 @@ export class DataNode extends DOMNode {
     }
 
     private _buildTree(data: any, theme: string, depth: number, expanded: boolean): HTMLElement {
-        const container = document.createElement('div');
+        const container = DOMUtils.createElement('div');
         container.style.paddingLeft = depth > 0 ? '12px' : '0';
 
         if (typeof data !== 'object' || data === null) {
             // Primitive value
-            const valSpan = document.createElement('span');
+            const valSpan = DOMUtils.createElement('span');
             valSpan.style.color = this._getColorForType(data, theme);
             valSpan.style.wordBreak = 'break-all';
             valSpan.textContent = typeof data === 'string' ? `"${data}"` : String(data);
@@ -88,7 +90,7 @@ export class DataNode extends DOMNode {
         const closeBracket = isArray ? ']' : '}';
 
         if (keys.length === 0) {
-            const emptySpan = document.createElement('span');
+            const emptySpan = DOMUtils.createElement('span');
             emptySpan.style.color = theme === 'dark' ? '#64748b' : '#94a3b8';
             emptySpan.textContent = `${openBracket}${closeBracket}`;
             container.appendChild(emptySpan);
@@ -96,15 +98,16 @@ export class DataNode extends DOMNode {
         }
 
         // Parent toggle node
-        const toggleWrapper = document.createElement('div');
-        Object.assign(toggleWrapper.style, {
-            cursor: 'pointer',
-            userSelect: 'none',
-            display: 'flex',
-            alignItems: 'baseline'
+        const toggleWrapper = DOMUtils.createElement('div', {
+            style: {
+                cursor: 'pointer',
+                userSelect: 'none',
+                display: 'flex',
+                alignItems: 'baseline'
+            }
         });
 
-        const chevron = document.createElement('span');
+        const chevron = DOMUtils.createElement('span');
         chevron.textContent = expanded ? '▼' : '▶';
         Object.assign(chevron.style, {
             display: 'inline-block',
@@ -114,7 +117,7 @@ export class DataNode extends DOMNode {
             transition: 'transform 0.1s'
         });
 
-        const summary = document.createElement('span');
+        const summary = DOMUtils.createElement('span');
         summary.style.color = theme === 'dark' ? '#94a3b8' : '#64748b';
         summary.textContent = isArray ? `Array(${keys.length}) ${openBracket}` : `Object ${openBracket}`;
 
@@ -123,17 +126,17 @@ export class DataNode extends DOMNode {
         container.appendChild(toggleWrapper);
 
         // Children container
-        const childrenDiv = document.createElement('div');
+        const childrenDiv = DOMUtils.createElement('div');
         childrenDiv.style.display = expanded ? 'block' : 'none';
 
         keys.forEach((key, index) => {
-            const row = document.createElement('div');
+            const row = DOMUtils.createElement('div');
             row.style.display = 'flex';
             row.style.marginTop = '2px';
 
             // Key
             if (!isArray) {
-                const keySpan = document.createElement('span');
+                const keySpan = DOMUtils.createElement('span');
                 keySpan.style.color = theme === 'dark' ? '#7dd3fc' : '#0284c7';
                 keySpan.style.marginRight = '6px';
                 keySpan.textContent = `"${key}":`;
@@ -145,7 +148,7 @@ export class DataNode extends DOMNode {
             row.appendChild(valNode);
 
             if (index < keys.length - 1) {
-                 const comma = document.createElement('span');
+                 const comma = DOMUtils.createElement('span');
                  comma.textContent = ',';
                  comma.style.color = theme === 'dark' ? '#64748b' : '#94a3b8';
                  row.appendChild(comma);
@@ -154,7 +157,7 @@ export class DataNode extends DOMNode {
             childrenDiv.appendChild(row);
         });
 
-        const closeSpan = document.createElement('div');
+        const closeSpan = DOMUtils.createElement('div');
         closeSpan.style.color = theme === 'dark' ? '#94a3b8' : '#64748b';
         closeSpan.style.paddingLeft = depth > 0 ? '12px' : '0';
         closeSpan.textContent = closeBracket;

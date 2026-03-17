@@ -1,6 +1,7 @@
 import { DOMNode } from './DOMNode';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec } from '../types';
+import { DOMUtils } from '../utils/DOMUtils';
 
 let katexPromise: Promise<any> | null = null;
 let katexCssLoaded = false;
@@ -8,7 +9,7 @@ let katexCssLoaded = false;
 // Async load KaTeX to avoid hard dependency bundled
 async function loadKatex() {
     if (!katexCssLoaded && typeof document !== 'undefined') {
-        const link = document.createElement('link');
+        const link = DOMUtils.createElement('link');
         link.rel = 'stylesheet';
         link.href = 'https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css';
         document.head.appendChild(link);
@@ -25,7 +26,7 @@ export class MathNode extends DOMNode {
     private mathContent: string = '\\int_0^\\infty e^{-x^2} dx = \\frac{\\sqrt{\\pi}}{2}';
 
     constructor(sg: SpaceGraph, spec: NodeSpec) {
-        const div = document.createElement('div');
+        const div = DOMUtils.createElement('div');
 
         const w = spec.data?.width || 300;
         const h = spec.data?.height || 100;

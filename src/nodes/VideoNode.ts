@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { Node } from './Node';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec } from '../types';
+import { DOMUtils } from '../utils/DOMUtils';
 
 /**
  * VideoNode — Displays an HTML5 video as a Three.js texture on a plane.
@@ -29,7 +30,7 @@ export class VideoNode extends Node {
         const loop = spec.data?.loop !== false;
         const muted = spec.data?.muted !== false;
 
-        this.videoEl = document.createElement('video');
+        this.videoEl = DOMUtils.createElement('video');
         this.videoEl.src = src;
         this.videoEl.loop = loop;
         this.videoEl.muted = muted;

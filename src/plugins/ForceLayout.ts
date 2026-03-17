@@ -89,11 +89,9 @@ export class ForceLayout implements ISpaceGraphPlugin {
                 vel.multiplyScalar(this.settings.damping);
 
                 if (vel.lengthSq() > 0.01) {
-                    node.updatePosition(
-                        node.position.x + vel.x,
-                        node.position.y + vel.y,
-                        node.position.z + vel.z,
-                    );
+                    node.applyPosition(new THREE.Vector3(
+                        node.position.x + vel.x, node.position.y + vel.y, node.position.z + vel.z,
+                    ), this.settings.animate ?? true);
                 }
             }
         }

@@ -55,8 +55,8 @@ export class EventManager {
 
     /**
      * Emit an event but throttle it to the next requestAnimationFrame.
-     * Useful for high-frequency events (like camera move or node drag) to
-     * prevent React/SolidJS state thrashing. Keeps only the latest payload.
+     * Useful for high-frequency events (like camera move or node drag).
+     * Collects an array of payloads to avoid dropping intermediate events.
      */
     emitBatched<Key extends keyof SpaceGraphEvents>(type: Key, event: SpaceGraphEvents[Key]): void {
         const typeKey = type as string | symbol;
