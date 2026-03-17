@@ -30,17 +30,22 @@ export class CircularLayout implements ISpaceGraphPlugin {
     }
 
     apply(): void {
-        const nodes = Array.from(this.sg.graph.nodes.values()).filter((n) => !n.data?.pinned);
+        const nodes = [];
+        for (const n of this.sg.graph.nodes.values()) {
+            if (!n.data?.pinned) nodes.push(n);
+        }
         if (!nodes.length) return;
 
         const step = (2 * Math.PI) / nodes.length;
 
-        nodes.forEach((node, i) => {
+        let i = 0;
+        for (const node of nodes) {
             const angle = this.settings.startAngle + i * step;
             const x = this.settings.radiusX * Math.cos(angle);
             const y = this.settings.radiusY * Math.sin(angle);
             node.applyPosition(new THREE.Vector3(x, y, this.settings.z), this.settings.animate ?? true);
-        });
+            i++;
+        }
 
         for (const edge of this.sg.graph.edges) edge.update?.();
     }

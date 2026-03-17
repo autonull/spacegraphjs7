@@ -75,7 +75,12 @@ export class RadialLayout implements ISpaceGraphPlugin {
 
         while (queue.length) {
             const { id, depth, minAngle, maxAngle } = queue.shift()!;
-            const nodeChildren = (children.get(id) ?? []).filter((c) => !visited.has(c));
+            const nodeChildren = [];
+            for (const c of (children.get(id) ?? [])) {
+                if (!visited.has(c)) {
+                    nodeChildren.push(c);
+                }
+            }
             if (!nodeChildren.length) continue;
 
             const angleStep = (maxAngle - minAngle) / nodeChildren.length;
@@ -97,7 +102,12 @@ export class RadialLayout implements ISpaceGraphPlugin {
         }
 
         // Orphan nodes in outer ring
-        const orphans = [...nodeMap.keys()].filter((id) => !visited.has(id));
+        const orphans = [];
+        for (const id of nodeMap.keys()) {
+            if (!visited.has(id)) {
+                orphans.push(id);
+            }
+        }
         const outerR = this.settings.baseRadius + nodeMap.size * this.settings.radiusStep;
         orphans.forEach((id, i) => {
             const angle = ((2 * Math.PI) / Math.max(orphans.length, 1)) * i;
