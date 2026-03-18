@@ -486,7 +486,7 @@ export class HUDPlugin implements ISpaceGraphPlugin {
             }
         });
 
-        items.forEach(item => {
+        for (const item of items) {
             const btn = DOMUtils.createElement('button', {
                 textContent: item.label,
                 style: {
@@ -510,7 +510,7 @@ export class HUDPlugin implements ISpaceGraphPlugin {
                 item.action();
             };
             menu.appendChild(btn);
-        });
+        }
 
         const domElement = this.sg.renderer.renderer.domElement;
         if (domElement.parentElement) {

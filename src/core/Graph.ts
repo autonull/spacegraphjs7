@@ -190,16 +190,16 @@ export class Graph {
     }
 
     clear() {
-        this.edges.forEach((edge) => {
+        for (const edge of this.edges) {
             this.sg.renderer.scene.remove(edge.object);
             if (typeof edge.dispose === 'function') edge.dispose();
-        });
+        }
         this.edges = [];
 
-        this.nodes.forEach((node) => {
+        for (const node of this.nodes.values()) {
             this.sg.renderer.scene.remove(node.object);
             if (typeof node.dispose === 'function') node.dispose();
-        });
+        }
         this.nodes.clear();
     }
 
@@ -253,13 +253,16 @@ export class Graph {
             });
         }
 
-        const edges: EdgeSpec[] = this.edges.map((edge) => ({
-            id: edge.id,
-            source: edge.source.id,
-            target: edge.target.id,
-            type: edge.type,
-            data: safeClone(edge.data),
-        }));
+        const edges: EdgeSpec[] = [];
+        for (const edge of this.edges) {
+            edges.push({
+                id: edge.id,
+                source: edge.source.id,
+                target: edge.target.id,
+                type: edge.type,
+                data: safeClone(edge.data),
+            });
+        }
 
         return { nodes, edges };
     }

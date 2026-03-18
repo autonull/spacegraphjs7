@@ -178,18 +178,20 @@ export class VisionManager {
     private async _analyzeHierarchy(nodes: any[]): Promise<{ hierarchyScore: number }> {
         let hierarchyScore = 85;
         const inDegrees = new Map<string, number>();
-        nodes.forEach((n) => inDegrees.set(n.id, 0));
-        this.sg.graph.edges.forEach((e) => {
+        for (const n of nodes) {
+            inDegrees.set(n.id, 0);
+        }
+        for (const e of this.sg.graph.edges) {
             if (e.target && e.target.id) {
                 inDegrees.set(e.target.id, (inDegrees.get(e.target.id) || 0) + 1);
             }
-        });
+        }
 
         let maxDepth = 0;
         const queue: { id: string; depth: number }[] = [];
-        inDegrees.forEach((deg, id) => {
+        for (const [id, deg] of inDegrees) {
             if (deg === 0) queue.push({ id, depth: 0 });
-        });
+        }
 
         const depths: number[] = [];
         while (queue.length > 0) {
@@ -410,11 +412,14 @@ export class VisionManager {
                     const autoLayout = this.sg.pluginManager.getPlugin('auto-layout') as any;
                     if (autoLayout && typeof autoLayout.applyVisionCorrection === 'function') {
                         // Pass simulated 'overlap' typed issues to the plugin
-                        const formattedIssues = report.overlap.overlaps.map((o) => ({
-                            type: 'overlap',
-                            nodeA: o.nodeA,
-                            nodeB: o.nodeB,
-                        }));
+                        const formattedIssues = [];
+                        for (const o of report.overlap.overlaps) {
+                            formattedIssues.push({
+                                type: 'overlap',
+                                nodeA: o.nodeA,
+                                nodeB: o.nodeB,
+                            });
+                        }
                         autoLayout.applyVisionCorrection(formattedIssues);
                     }
                 }
