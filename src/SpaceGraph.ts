@@ -93,11 +93,14 @@ export class SpaceGraph {
         SpaceGraph.instances.add(this);
     }
 
+    static getContainerElement(container: string | HTMLElement): HTMLElement | null {
+        return typeof container === 'string'
+            ? (document.querySelector(container) as HTMLElement)
+            : container;
+    }
+
     static create(container: string | HTMLElement, spec: GraphSpec): SpaceGraph {
-        const element =
-            typeof container === 'string'
-                ? (document.querySelector(container) as HTMLElement)
-                : container;
+        const element = SpaceGraph.getContainerElement(container);
 
         if (!element) {
             throw new Error(
@@ -387,10 +390,7 @@ export class SpaceGraph {
         data: any,
         options: SpaceGraphOptions = {}
     ): Promise<SpaceGraph> {
-        const element =
-            typeof container === 'string'
-                ? (document.querySelector(container) as HTMLElement)
-                : container;
+        const element = SpaceGraph.getContainerElement(container);
 
         if (!element) {
             throw new Error(

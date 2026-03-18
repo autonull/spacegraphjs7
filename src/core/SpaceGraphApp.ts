@@ -174,7 +174,7 @@ export class SpaceGraphApp {
                 this.currentSelected = [];
                 this.currentSelectedEdges = [];
                 this.setMode('default'); // reset mode on escape
-                this.updateStatsHUD();
+                this.hudController.updateSelection(this.currentSelected, this.currentSelectedEdges);
                 if (this.options.onNodeSelect) this.options.onNodeSelect([]);
                 if (this.options.onEdgeSelect) this.options.onEdgeSelect([]);
             }
@@ -245,7 +245,7 @@ export class SpaceGraphApp {
             if (!query) {
                 this.clearSelectionStyles();
                 this.currentSelected = [];
-                this.updateStatsHUD();
+                this.hudController.updateSelection(this.currentSelected, this.currentSelectedEdges);
                 return;
             }
 
@@ -260,7 +260,7 @@ export class SpaceGraphApp {
             this.clearSelectionStyles();
             this.currentSelected = matches;
             this.applySelectionStyles();
-            this.updateStatsHUD();
+            this.hudController.updateSelection(this.currentSelected, this.currentSelectedEdges);
 
             if (matches.length === 1 && this.sg.cameraControls) {
                 // Auto fly to single exact match
@@ -287,7 +287,7 @@ export class SpaceGraphApp {
             this.currentSelected = nodes || [];
             this.currentSelectedEdges = edges || [];
             this.applySelectionStyles();
-            this.updateStatsHUD();
+            this.hudController.updateSelection(this.currentSelected, this.currentSelectedEdges);
 
             if (this.options.onNodeSelect) {
                 this.options.onNodeSelect(this.currentSelected);
@@ -313,7 +313,7 @@ export class SpaceGraphApp {
             this.clearSelectionStyles();
             this.currentSelected = [];
             this.currentSelectedEdges = [];
-            this.updateStatsHUD();
+            this.hudController.updateSelection(this.currentSelected, this.currentSelectedEdges);
 
             if (this.options.onNodeSelect) {
                 this.options.onNodeSelect([]);
@@ -329,7 +329,7 @@ export class SpaceGraphApp {
             this.currentSelected = [node];
             this.currentSelectedEdges = [];
             this.applySelectionStyles();
-            this.updateStatsHUD();
+            this.hudController.updateSelection(this.currentSelected, this.currentSelectedEdges);
 
             if (this.options.onNodeSelect) {
                 this.options.onNodeSelect(this.currentSelected);
@@ -345,7 +345,7 @@ export class SpaceGraphApp {
             this.currentSelected = [];
             this.currentSelectedEdges = [edge];
             this.applySelectionStyles();
-            this.updateStatsHUD();
+            this.hudController.updateSelection(this.currentSelected, this.currentSelectedEdges);
 
             if (this.options.onNodeSelect) {
                 this.options.onNodeSelect([]);
@@ -489,7 +489,7 @@ export class SpaceGraphApp {
 
         this._renderToolbar(theme);
 
-        this.updateStatsHUD();
+        this.hudController.updateSelection(this.currentSelected, this.currentSelectedEdges);
         this.renderToolbarActions();
     }
 
@@ -806,7 +806,7 @@ export class SpaceGraphApp {
 
     public importData(data: any) {
         this.sg.import(data);
-        this.updateStatsHUD();
+        this.hudController.updateSelection(this.currentSelected, this.currentSelectedEdges);
     }
 
     /**
@@ -828,7 +828,7 @@ export class SpaceGraphApp {
 
     public addNode(nodeSpec: any) {
         this.sg.graph.addNode(nodeSpec);
-        this.updateStatsHUD();
+        this.hudController.updateSelection(this.currentSelected, this.currentSelectedEdges);
     }
 
     public updateNode(nodeId: string, nodeSpec: any) {
@@ -844,13 +844,13 @@ export class SpaceGraphApp {
                 this.currentSelected.splice(index, 1);
             }
             this.sg.graph.removeNode(nodeId);
-            this.updateStatsHUD();
+            this.hudController.updateSelection(this.currentSelected, this.currentSelectedEdges);
         }
     }
 
     public addEdge(edgeSpec: any) {
         this.sg.graph.addEdge(edgeSpec);
-        this.updateStatsHUD(); // Stats currently only show nodes, but keeps it synced
+        this.hudController.updateSelection(this.currentSelected, this.currentSelectedEdges); // Stats currently only show nodes, but keeps it synced
     }
 
     public updateEdge(edgeId: string, edgeSpec: any) {
@@ -865,7 +865,7 @@ export class SpaceGraphApp {
                 this.currentSelectedEdges.splice(index, 1);
             }
             this.sg.graph.removeEdge(edgeId);
-            this.updateStatsHUD();
+            this.hudController.updateSelection(this.currentSelected, this.currentSelectedEdges);
         }
     }
 
@@ -873,7 +873,7 @@ export class SpaceGraphApp {
         this.clearSelectionStyles();
         this.currentSelected = [];
         this.currentSelectedEdges = [];
-        this.updateStatsHUD();
+        this.hudController.updateSelection(this.currentSelected, this.currentSelectedEdges);
     }
 
     public getSelectedNodes(): any[] {

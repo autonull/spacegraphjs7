@@ -1,6 +1,8 @@
 import mitt, { Emitter } from 'mitt';
 import type { SpaceGraph } from '../SpaceGraph';
 
+// Ensure the system supports generic custom events by allowing index signatures
+// with `[key: string]: any;` while still preserving strict types for built-ins.
 export type SpaceGraphEvents = {
     'node:added': { node: any };
     'node:removed': { id: string };
@@ -16,7 +18,7 @@ export type SpaceGraphEvents = {
     'graph:contextmenu': { event: MouseEvent };
     'node:loaded': { id: string };
     'ergonomics:calibrated': { winner: any; scores: any };
-};
+} & Record<string, any>; // Allow generic custom events
 
 export class EventManager {
     private sg: SpaceGraph;

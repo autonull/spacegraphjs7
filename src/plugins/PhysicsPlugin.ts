@@ -129,12 +129,14 @@ export class PhysicsPlugin implements ISpaceGraphPlugin {
                     const distSq = diff.lengthSq() || 0.0001;
                     const dist = Math.sqrt(distSq);
 
-                    const diffNormalized = diff.clone().divideScalar(dist);
+                    // Avoid instantiating clones in a hot double-nested loop
+                    const diffNormalized = MathPool.getInstance().acquireVector3().copy(diff).divideScalar(dist);
+                    const push = MathPool.getInstance().acquireVector3();
 
                     // Hard collision constraint
                     if (this.settings.collide && dist < this.settings.collisionRadius * 2) {
                         const overlap = this.settings.collisionRadius * 2 - dist;
-                        const push = diffNormalized.clone().multiplyScalar(overlap * 0.5);
+                        push.copy(diffNormalized).multiplyScalar(overlap * 0.5);
 
                         if (!n1.data?.pinned && !n1.data?.physicsStatic) n1.position.add(push);
                         if (!n2.data?.pinned && !n2.data?.physicsStatic) n2.position.sub(push);
@@ -143,12 +145,14 @@ export class PhysicsPlugin implements ISpaceGraphPlugin {
                     // Soft electrical repulsion
                     if (this.settings.repulsion > 0 && distSq < 100000) {
                         const repForce = this.settings.repulsion / distSq;
-                        const repPush = diffNormalized.clone().multiplyScalar(repForce);
+                        push.copy(diffNormalized).multiplyScalar(repForce);
 
-                        if (!n1.data?.pinned && !n1.data?.physicsStatic) n1.position.add(repPush);
-                        if (!n2.data?.pinned && !n2.data?.physicsStatic) n2.position.sub(repPush);
+                        if (!n1.data?.pinned && !n1.data?.physicsStatic) n1.position.add(push);
+                        if (!n2.data?.pinned && !n2.data?.physicsStatic) n2.position.sub(push);
                     }
 
+                    MathPool.getInstance().releaseVector3(push);
+                    MathPool.getInstance().releaseVector3(diffNormalized);
                     MathPool.getInstance().releaseVector3(diff);
                 }
             }
