@@ -86,7 +86,8 @@ export class RadialLayout implements ISpaceGraphPlugin {
             const angleStep = (maxAngle - minAngle) / nodeChildren.length;
             const radius = this.settings.baseRadius + depth * this.settings.radiusStep;
 
-            nodeChildren.forEach((childId, i) => {
+            for (let i = 0; i < nodeChildren.length; i++) {
+                const childId = nodeChildren[i];
                 visited.add(childId);
                 const angle = minAngle + (i + 0.5) * angleStep;
                 const childX = Math.cos(angle) * radius;
@@ -98,7 +99,7 @@ export class RadialLayout implements ISpaceGraphPlugin {
                     minAngle: minAngle + i * angleStep,
                     maxAngle: minAngle + (i + 1) * angleStep,
                 });
-            });
+            }
         }
 
         // Orphan nodes in outer ring
@@ -109,14 +110,15 @@ export class RadialLayout implements ISpaceGraphPlugin {
             }
         }
         const outerR = this.settings.baseRadius + nodeMap.size * this.settings.radiusStep;
-        orphans.forEach((id, i) => {
+        for (let i = 0; i < orphans.length; i++) {
+            const id = orphans[i];
             const angle = ((2 * Math.PI) / Math.max(orphans.length, 1)) * i;
             (nodeMap.get(id) as Node).updatePosition(
                 Math.cos(angle) * outerR,
                 Math.sin(angle) * outerR,
                 this.settings.z,
             );
-        });
+        }
 
         for (const edge of edges) edge.update?.();
     }

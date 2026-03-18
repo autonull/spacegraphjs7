@@ -87,7 +87,7 @@ export class GlobeNode extends Node {
             (child.material as THREE.Material).dispose();
         }
 
-        markers.forEach(marker => {
+        for (const marker of markers) {
             const lat = marker.lat;
             const lng = marker.lng;
             const size = marker.size || 2;
@@ -107,7 +107,7 @@ export class GlobeNode extends Node {
 
             mesh.position.set(x, y, z);
             this.markersGroup.add(mesh);
-        });
+        }
     }
 
     updateSpec(updates: Partial<NodeSpec>): void {

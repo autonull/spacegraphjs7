@@ -30,9 +30,11 @@ export class ObjectPoolManager<T> {
     // Clear all objects in the pool, optionally calling a dispose function on each
     public clear(disposeFn?: (obj: T) => void): void {
         if (disposeFn) {
-            this.pool.forEach((objects) => {
-                objects.forEach((obj) => disposeFn(obj));
-            });
+            for (const objects of this.pool.values()) {
+                for (const obj of objects) {
+                    disposeFn(obj);
+                }
+            }
         }
         this.pool.clear();
     }

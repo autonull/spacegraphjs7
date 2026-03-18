@@ -3,6 +3,7 @@ import { Edge } from './Edge';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { EdgeSpec } from '../types';
 import type { Node } from '../nodes/Node';
+import { DOMUtils } from '../utils/DOMUtils';
 
 export class InterGraphEdge extends Edge {
     public isInterGraphEdge = true;
@@ -20,7 +21,7 @@ export class InterGraphEdge extends Edge {
         }
 
         this.svgContainer = this.getGlobalSvgContainer();
-        this.svgLine = document.createElementNS(this.svgNamespace, 'path');
+        this.svgLine = DOMUtils.createElementNS(this.svgNamespace, 'path') as SVGPathElement;
 
         const colorHex = (spec.data && spec.data.color) ? spec.data.color : 0x666666;
         const colorHexStr = typeof colorHex === 'number' ? `#${colorHex.toString(16).padStart(6, '0')}` : colorHex;
@@ -39,15 +40,18 @@ export class InterGraphEdge extends Edge {
     private getGlobalSvgContainer(): SVGSVGElement {
         let svg = document.getElementById('spacegraph-intergraph-overlay') as unknown as SVGSVGElement;
         if (!svg) {
-            svg = document.createElementNS(this.svgNamespace, 'svg');
-            svg.id = 'spacegraph-intergraph-overlay';
-            svg.style.position = 'fixed';
-            svg.style.top = '0';
-            svg.style.left = '0';
-            svg.style.width = '100vw';
-            svg.style.height = '100vh';
-            svg.style.pointerEvents = 'none';
-            svg.style.zIndex = '9999';
+            svg = DOMUtils.createElementNS(this.svgNamespace, 'svg', {
+                id: 'spacegraph-intergraph-overlay',
+                style: {
+                    position: 'fixed',
+                    top: '0',
+                    left: '0',
+                    width: '100vw',
+                    height: '100vh',
+                    pointerEvents: 'none',
+                    zIndex: '9999'
+                }
+            }) as unknown as SVGSVGElement;
             document.body.appendChild(svg);
         }
         return svg;

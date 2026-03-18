@@ -107,18 +107,24 @@ export class ChartNode extends DOMNode {
                 }
             };
 
+            const formattedDatasets = [];
+            for (let i = 0; i < datasets.length; i++) {
+                const ds = datasets[i];
+                formattedDatasets.push({
+                    label: ds.label ?? `Series ${i + 1}`,
+                    data: ds.data ?? [],
+                    backgroundColor: ds.color ?? `hsl(${i * 60}, 70%, 55%)`,
+                    borderColor: ds.borderColor ?? ds.color ?? `hsl(${i * 60}, 70%, 55%)`,
+                    borderWidth: ds.borderWidth ?? 1,
+                    ...ds // Allow other chartjs specific dataset properties to pass through
+                });
+            }
+
             this.chartInstance = new Chart(this.canvasEl, {
                 type: chartType,
                 data: {
                     labels,
-                    datasets: datasets.map((ds: any, i: number) => ({
-                        label: ds.label ?? `Series ${i + 1}`,
-                        data: ds.data ?? [],
-                        backgroundColor: ds.color ?? `hsl(${i * 60}, 70%, 55%)`,
-                        borderColor: ds.borderColor ?? ds.color ?? `hsl(${i * 60}, 70%, 55%)`,
-                        borderWidth: ds.borderWidth ?? 1,
-                        ...ds // Allow other chartjs specific dataset properties to pass through
-                    })),
+                    datasets: formattedDatasets,
                 },
                 options: { ...baseOptions, ...customOptions },
             });
@@ -160,7 +166,8 @@ export class ChartNode extends DOMNode {
         const barW = (w - 20) / data.length;
         const pad = 10;
 
-        data.forEach((val, i) => {
+        for (let i = 0; i < data.length; i++) {
+            const val = data[i];
             const barH = (val / max) * (h - 30);
             ctx.fillStyle = datasets[0]?.color ?? `hsl(${i * 40}, 70%, 55%)`;
             ctx.fillRect(pad + i * barW + 2, h - barH - 20, barW - 4, barH);
@@ -171,7 +178,7 @@ export class ChartNode extends DOMNode {
                 ctx.textAlign = 'center';
                 ctx.fillText(labels[i], pad + i * barW + barW / 2, h - 5);
             }
-        });
+        }
     }
 
     updateSpec(updates: Partial<NodeSpec>): void {

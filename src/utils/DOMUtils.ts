@@ -39,4 +39,26 @@ export class DOMUtils {
 
         return el;
     }
+
+    /**
+     * Helper to deeply deduplicate namespace DOM element creation.
+     */
+    static createElementNS(
+        namespaceURI: string,
+        qualifiedName: string,
+        options: DOMElementOptions = {}
+    ): SVGElement {
+        const el = document.createElementNS(namespaceURI, qualifiedName) as SVGElement;
+
+        if (options.id) el.id = options.id;
+        if (options.className) el.setAttribute('class', options.className);
+        if (options.innerHTML !== undefined) el.innerHTML = options.innerHTML;
+        if (options.textContent !== undefined) el.textContent = options.textContent;
+
+        if (options.style) {
+            Object.assign(el.style, options.style);
+        }
+
+        return el;
+    }
 }
