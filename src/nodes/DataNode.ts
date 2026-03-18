@@ -129,7 +129,8 @@ export class DataNode extends DOMNode {
         const childrenDiv = DOMUtils.createElement('div');
         childrenDiv.style.display = expanded ? 'block' : 'none';
 
-        keys.forEach((key, index) => {
+        for (let index = 0; index < keys.length; index++) {
+            const key = keys[index];
             const row = DOMUtils.createElement('div');
             row.style.display = 'flex';
             row.style.marginTop = '2px';
@@ -155,7 +156,7 @@ export class DataNode extends DOMNode {
             }
 
             childrenDiv.appendChild(row);
-        });
+        }
 
         const closeSpan = DOMUtils.createElement('div');
         closeSpan.style.color = theme === 'dark' ? '#94a3b8' : '#64748b';

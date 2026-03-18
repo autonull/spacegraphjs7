@@ -138,7 +138,9 @@ export class SceneNode extends Node {
                     mesh.geometry.dispose();
                     if (mesh.geometry.disposeBoundsTree) mesh.geometry.disposeBoundsTree();
                     if (Array.isArray(mesh.material)) {
-                        mesh.material.forEach((m) => m.dispose());
+                        for (const m of mesh.material) {
+                            m.dispose();
+                        }
                     } else if (mesh.material) {
                         mesh.material.dispose();
                     }
