@@ -1,0 +1,53 @@
+<!doctype html>
+<html>
+    <head>
+        <title>Large Graph Test</title>
+        <style>
+            * {
+                margin: 0;
+            }
+            #container {
+                width: 100vw;
+                height: 100vh;
+                background-color: #1a1a2e;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="container"></div>
+        <script type="module">
+            import { SpaceGraph } from '../src/index.ts';
+
+            const startTime = performance.now();
+
+            const nodes = [];
+            for (let i = 0; i < 100; i++) {
+                nodes.push({
+                    id: `node-${i}`,
+                    type: 'ShapeNode',
+                    position: [
+                        Math.random() * 1000 - 500,
+                        Math.random() * 1000 - 500,
+                        Math.random() * 1000 - 500,
+                    ],
+                });
+            }
+
+            const edges = [];
+            for (let i = 0; i < 99; i++) {
+                edges.push({
+                    id: `edge-${i}`,
+                    source: `node-${i}`,
+                    target: `node-${i + 1}`,
+                    type: 'Edge',
+                });
+            }
+
+            const graph = SpaceGraph.create('#container', { nodes, edges });
+            graph.render();
+
+            const endTime = performance.now();
+            console.log(`✓ 100 nodes rendered in ${(endTime - startTime).toFixed(2)}ms`);
+        </script>
+    </body>
+</html>

@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SpaceGraphJS - Viewport Serialization</title>
+    <style>
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #1a1a1a;
+            color: #ffffff;
+            font-family: sans-serif;
+        }
+
+        #container {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+        }
+
+        .controls {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 10;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        button {
+            padding: 8px 12px;
+            background: #444;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #666;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="container"></div>
+    <div class="controls">
+        <h3>Viewport Serialization</h3>
+        <p>1. Move the camera around</p>
+        <p>2. Save the state</p>
+        <p>3. Move again</p>
+        <p>4. Load to restore everything</p>
+        <button id="save-btn">Save State</button>
+        <button id="load-btn">Load State</button>
+        <textarea id="state-output" rows="5" readonly></textarea>
+    </div>
+
+    <script type="module">
+        import { SpaceGraph } from '../src/index.ts';
+
+        const graph = SpaceGraph.create('#container', {
+            nodes: [
+                { id: '1', type: 'ShapeNode', label: 'Start', position: [-200, 0, 0], data: { shape: 'box', color: 0x44aa88 } },
+                { id: '2', type: 'ShapeNode', label: 'Middle', position: [0, 100, 0], data: { shape: 'sphere', color: 0xaa4488 } },
+                { id: '3', type: 'ShapeNode', label: 'End', position: [200, 0, 0], data: { shape: 'cone', color: 0x4488aa } }
+            ],
+            edges: [
+                { id: 'e1', source: '1', target: '2', type: 'Edge' },
+                { id: 'e2', source: '2', target: '3', type: 'CurvedEdge' }
+            ]
+        });
+
+        let savedState = null;
+
+        document.getElementById('save-btn').addEventListener('click', () => {
+            savedState = graph.export();
+            document.getElementById('state-output').value = JSON.stringify(savedState, null, 2);
+            console.log('State saved:', savedState);
+        });
+
+        document.getElementById('load-btn').addEventListener('click', () => {
+            if (savedState) {
+                graph.import(savedState);
+                console.log('State loaded!');
+            } else {
+                alert('No state saved yet!');
+            }
+        });
+    </script>
+</body>
+
+</html>

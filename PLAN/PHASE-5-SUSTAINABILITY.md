@@ -2,7 +2,7 @@
 
 ## 5.1 The Purple Cow
 
-**Seth Godin's definition:** *"A Purple Cow is something remarkable. Not 'very good.' Not 'slightly better.' Remarkable. Worth talking about."*
+**Seth Godin's definition:** _"A Purple Cow is something remarkable. Not 'very good.' Not 'slightly better.' Remarkable. Worth talking about."_
 
 **SpaceGraphJS has not one, but THREE Purple Cows:**
 
@@ -11,6 +11,7 @@
 ### Purple Cow #1: The Self-Building UI Library
 
 **The Hook:**
+
 ```
 "The first UI framework that sees what it builds."
 
@@ -22,6 +23,7 @@ Verifies quality. Fixes its own bugs. In 30 seconds.
 ```
 
 **Why Remarkable:**
+
 - ✅ Industry-first paradigm (vision-closed development)
 - ✅ 98% iteration speedup (measurable, provable)
 - ✅ Solves a universal pain (AI iteration hell)
@@ -31,6 +33,7 @@ Verifies quality. Fixes its own bugs. In 30 seconds.
 ### Purple Cow #2: The 175K LOC Synthesis
 
 **The Hook:**
+
 ```
 "5 codebases. 175,000 lines of code. Unified into one.
 
@@ -43,6 +46,7 @@ now fits in one package and installs in 10 seconds."
 ```
 
 **Why Remarkable:**
+
 - ✅ Unprecedented codebase unification
 - ✅ Proven code (not greenfield speculation)
 - ✅ Respectful of prior work (not "we did it better")
@@ -52,6 +56,7 @@ now fits in one package and installs in 10 seconds."
 ### Purple Cow #3: SpaceGraphOS — The Visible Operating System
 
 **The Hook:**
+
 ```
 "What if your entire computer was a SpaceGraph?
 
@@ -66,6 +71,7 @@ Boot into a computer that sees itself."
 ```
 
 **Why Remarkable:**
+
 - ✅ Category creation (not "better DE," but "different paradigm")
 - ✅ Hardware + software integration (full-stack vision)
 - ✅ Philosophical depth (visible, comprehensible computing)
@@ -102,17 +108,18 @@ Boot into a computer that sees itself."
 
 ### 5.3.1 Everything FOSS, Forever
 
-| Component | License | Rationale |
-|-----------|---------|-----------|
-| **Core Library** | MIT | Max adoption, no restrictions |
-| **Vision System** | MIT | All code open, no NC restrictions |
-| **Model Weights** | CC-BY-4.0 | Free for all uses, attribution required |
-| **Plugins** | MIT | Community extensions stay open |
-| **SpaceGraphOS** | AGPL v3 | Ensures OS derivatives remain open |
-| **Hardware Designs** | CERN OHL v2 / CC-BY-SA 4.0 | Open hardware, share-alike |
-| **Documentation** | CC-BY-SA 4.0 | Free to share, adapt, distribute |
+| Component            | License                    | Rationale                               |
+| -------------------- | -------------------------- | --------------------------------------- |
+| **Core Library**     | MIT                        | Max adoption, no restrictions           |
+| **Vision System**    | MIT                        | All code open, no NC restrictions       |
+| **Model Weights**    | CC-BY-4.0                  | Free for all uses, attribution required |
+| **Plugins**          | MIT                        | Community extensions stay open          |
+| **SpaceGraphOS**     | AGPL v3                    | Ensures OS derivatives remain open      |
+| **Hardware Designs** | CERN OHL v2 / CC-BY-SA 4.0 | Open hardware, share-alike              |
+| **Documentation**    | CC-BY-SA 4.0               | Free to share, adapt, distribute        |
 
 **Principles:**
+
 - ✅ No dual-licensing games
 - ✅ No "community vs. enterprise" tiers
 - ✅ No feature gating
@@ -136,17 +143,17 @@ Boot into a computer that sees itself."
 
 ### 5.4.2 What We DO
 
-**Revenue Principle:** *People pay for value they choose, not features they're forced into.*
+**Revenue Principle:** _People pay for value they choose, not features they're forced into._
 
-| Revenue Stream | Description | Month 6 Target | Month 12 Target |
-|----------------|-------------|----------------|-----------------|
-| **Hardware** | SpaceGraph Mini sales | $4,700/month | $15,000/month |
-| **Training** | Workshops, tutorials | $5,000/month | $12,000/month |
-| **Consulting** | Custom development | $2,000/month | $8,000/month |
-| **Donations** | GitHub Sponsors, Open Collective | $500/month | $2,000/month |
-| **Grants** | NLnet, Mozilla, OSS foundations | $0/month | $5,000/month |
-| **Merch** | Stickers, shirts, cases | $200/month | $1,000/month |
-| **Total** | | **$12,400/month** | **$43,000/month** |
+| Revenue Stream | Description                      | Month 6 Target    | Month 12 Target   |
+| -------------- | -------------------------------- | ----------------- | ----------------- |
+| **Hardware**   | SpaceGraph Mini sales            | $4,700/month      | $15,000/month     |
+| **Training**   | Workshops, tutorials             | $5,000/month      | $12,000/month     |
+| **Consulting** | Custom development               | $2,000/month      | $8,000/month      |
+| **Donations**  | GitHub Sponsors, Open Collective | $500/month        | $2,000/month      |
+| **Grants**     | NLnet, Mozilla, OSS foundations  | $0/month          | $5,000/month      |
+| **Merch**      | Stickers, shirts, cases          | $200/month        | $1,000/month      |
+| **Total**      |                                  | **$12,400/month** | **$43,000/month** |
 
 ---
 
@@ -154,17 +161,18 @@ Boot into a computer that sees itself."
 
 **SpaceGraph Mini — The Zoomable Computer**
 
-| Tier | Product | Price | Margin | Target Volume |
-|------|---------|-------|--------|---------------|
-| **Base** | Mini (no screen) | $249 | $94 | 100 units/month |
-| **Bundle** | Mini + 7" touchscreen | $299 | $110 | 50 units/month |
-| **Dev Kit** | Mini + accessories + case | $349 | $140 | 25 units/month |
-| **Sponsor** | Signed unit, name in firmware | $499 | $394 | 5 units/month |
+| Tier        | Product                       | Price | Margin | Target Volume   |
+| ----------- | ----------------------------- | ----- | ------ | --------------- |
+| **Base**    | Mini (no screen)              | $249  | $94    | 100 units/month |
+| **Bundle**  | Mini + 7" touchscreen         | $299  | $110   | 50 units/month  |
+| **Dev Kit** | Mini + accessories + case     | $349  | $140   | 25 units/month  |
+| **Sponsor** | Signed unit, name in firmware | $499  | $394   | 5 units/month   |
 
 **Month 6:** 180 units × ~$100 avg = **$18,000 revenue, ~$17,000 margin**
 **Month 12:** 350 units × ~$100 avg = **$35,000 revenue, ~$32,000 margin**
 
 **Why This Works:**
+
 - ✅ Tangible value (physical product)
 - ✅ No artificial scarcity (on-demand manufacturing)
 - ✅ Community can self-manufacture (open designs)
@@ -177,14 +185,15 @@ Boot into a computer that sees itself."
 
 **Workshop Offerings:**
 
-| Workshop | Duration | Price | Audience |
-|----------|----------|-------|----------|
-| **Vision-Closed Development** | 2 days | $3,000 | Engineering teams |
-| **Custom Node Development** | 1 day | $1,500 | Plugin authors |
-| **Vision Model Fine-Tuning** | 3 days | $5,000 | ML teams |
-| **SpaceGraphOS Deployment** | 1 week | $10,000 | IT departments |
+| Workshop                      | Duration | Price   | Audience          |
+| ----------------------------- | -------- | ------- | ----------------- |
+| **Vision-Closed Development** | 2 days   | $3,000  | Engineering teams |
+| **Custom Node Development**   | 1 day    | $1,500  | Plugin authors    |
+| **Vision Model Fine-Tuning**  | 3 days   | $5,000  | ML teams          |
+| **SpaceGraphOS Deployment**   | 1 week   | $10,000 | IT departments    |
 
 **Delivery:**
+
 - Remote (Zoom + Matrix)
 - On-site (travel extra)
 - Recorded (sell access, $299/workshop)
@@ -193,6 +202,7 @@ Boot into a computer that sees itself."
 **Month 12:** 4 workshops × $3,000 avg = **$12,000/month**
 
 **Why This Works:**
+
 - ✅ Scales with your time (you control capacity)
 - ✅ Builds community (trained users become advocates)
 - ✅ No code gating (teach FOSS, charge for expertise)
@@ -214,6 +224,7 @@ Boot into a computer that sees itself."
 **Month 12:** 50 hours × $150 = **$7,500/month**
 
 **Why This Works:**
+
 - ✅ Flexible (you choose projects)
 - ✅ High-margin (your time, no COGS)
 - ✅ Builds relationships (consulting → training → hardware)
@@ -235,6 +246,7 @@ Boot into a computer that sees itself."
 **Month 12:** **$5,000-10,000 one-time** (grants) + **$2,000/month** (donations)
 
 **Why This Works:**
+
 - ✅ Pure support (no strings attached)
 - ✅ Community ownership (they fund what they want)
 - ✅ Grant-funded features stay FOSS
@@ -253,6 +265,7 @@ Boot into a computer that sees itself."
 | **Posters** | $3 | $15 | $12 |
 
 **Fulfillment:**
+
 - Print-on-demand (no inventory)
 - Community distributors (local manufacturing)
 - Bundle with hardware (free sticker with every Mini)
@@ -290,6 +303,7 @@ intro    #sg6-help   Good first   releases
 | **Total** | **$24,750/month** | |
 
 **What This Buys:**
+
 - Your full-time work ($10,000/month salary)
 - Freelance docs/community ($3,000/month)
 - Hardware pre-production ($5,000/month)
@@ -310,6 +324,7 @@ intro    #sg6-help   Good first   releases
 | **Total** | **$59,500/month** | |
 
 **What This Buys:**
+
 - Your salary ($15,000/month)
 - Small team: 2 FTE ($15,000/month)
 - Hardware production scaling ($15,000/month)
@@ -411,16 +426,17 @@ intro    #sg6-help   Good first   releases
 
 **All hardware artifacts will be open source:**
 
-| Artifact | License | Repository |
-|----------|---------|------------|
-| **Schematics** | CERN OHL v2 | github.com/autonull/spacegraph-hardware |
-| **PCB Layout** | CERN OHL v2 | github.com/autonull/spacegraph-hardware |
-| **Case Design** | CC-BY-SA 4.0 | github.com/autonull/spacegraph-hardware (STEP, STL) |
-| **Firmware** | MIT / Apache 2.0 | github.com/autonull/spacegraph-firmware |
-| **OS Image** | AGPL v3 | github.com/autonull/spacegraph-os |
-| **Build Scripts** | MIT | github.com/autonull/spacegraph-os |
+| Artifact          | License          | Repository                                          |
+| ----------------- | ---------------- | --------------------------------------------------- |
+| **Schematics**    | CERN OHL v2      | github.com/autonull/spacegraph-hardware             |
+| **PCB Layout**    | CERN OHL v2      | github.com/autonull/spacegraph-hardware             |
+| **Case Design**   | CC-BY-SA 4.0     | github.com/autonull/spacegraph-hardware (STEP, STL) |
+| **Firmware**      | MIT / Apache 2.0 | github.com/autonull/spacegraph-firmware             |
+| **OS Image**      | AGPL v3          | github.com/autonull/spacegraph-os                   |
+| **Build Scripts** | MIT              | github.com/autonull/spacegraph-os                   |
 
 **Why Open Hardware:**
+
 - ✅ Community can verify security (no backdoors)
 - ✅ Local manufacturing (reduce shipping, support community)
 - ✅ Customization (users can modify designs)
@@ -432,12 +448,14 @@ intro    #sg6-help   Good first   releases
 ### 5.6.4 Crowdfunding Strategy
 
 **Platform:** Crowd Supply (not Kickstarter)
+
 - ✅ Open-source hardware focused
 - ✅ Community-driven (not profit-maximizing)
 - ✅ Allows ongoing sales (not just campaigns)
 - ✅ Aligns with values
 
 **Campaign Structure:**
+
 ```
 Goal: $50,000 (tooling, first batch of 200 units)
 
@@ -468,10 +486,12 @@ Stretch Goals:
 ## 5.7 Phase 5 Deliverables Summary
 
 ### The Purple Cow Statement
+
 ✅ **Three Purple Cows** identified (Self-Building UI, 175K Synthesis, SpaceGraphOS)
 ✅ **Remarkability Statement** written and finalized
 
 ### Licensing Strategy (Pure FOSS)
+
 ✅ **MIT** for core library, vision system, plugins
 ✅ **CC-BY-4.0** for model weights (attribution required, all uses allowed)
 ✅ **AGPL v3** for SpaceGraphOS (derivatives stay open)
@@ -479,6 +499,7 @@ Stretch Goals:
 ✅ **No dual-licensing, no enterprise tiers, no restrictions**
 
 ### Revenue Model (Value-Add, Not Restriction)
+
 ✅ **Hardware** — SpaceGraph Mini ($17K/month Month 6, $32K/month Month 12)
 ✅ **Training** — Workshops ($5K/month Month 6, $12K/month Month 12)
 ✅ **Consulting** — Custom dev ($2K/month Month 6, $7.5K/month Month 12)
@@ -487,11 +508,13 @@ Stretch Goals:
 ✅ **Merch** — Stickers, shirts ($200/month Month 6, $1K/month Month 12)
 
 ### Sustainability Model
+
 ✅ **Month 6:** $24,750/month (your full-time + buffer)
 ✅ **Month 12:** $59,500/month (small team + production scale)
 ✅ **Governance:** Benevolent Dictator → Core Team → Foundation (no corporate control)
 
 ### SpaceGraphOS Hardware
+
 ✅ **Technical architecture** (RK3588, Wayland, NPU acceleration)
 ✅ **Open hardware commitments** (all designs on GitHub)
 ✅ **Community manufacturing** (anyone can build and sell)

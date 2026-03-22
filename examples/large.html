@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Large Graph Performance - SpaceGraphJS Example</title>
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+            body {
+                overflow: hidden;
+                background-color: #1a1a2e;
+            }
+            #container {
+                width: 100vw;
+                height: 100vh;
+            }
+            .status {
+                position: absolute;
+                top: 10px;
+                left: 10px;
+                color: #0f0;
+                background: rgba(0, 0, 0, 0.8);
+                padding: 10px;
+                font-family: monospace;
+                z-index: 10;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="status" id="statusMsg">Generating 1000+ nodes...</div>
+        <div id="container"></div>
+
+        <script type="module">
+            import { SpaceGraph } from '../src/index.ts';
+
+            const statusMsg = document.getElementById('statusMsg');
+            const start = performance.now();
+
+            const nodes = [];
+            const edges = [];
+
+            // Generate 1500 nodes
+            for (let i = 0; i < 1500; i++) {
+                nodes.push({
+                    id: `n-${i}`,
+                    type: 'ShapeNode',
+                    position: [
+                        Math.random() * 2000 - 1000,
+                        Math.random() * 2000 - 1000,
+                        Math.random() * 2000 - 1000,
+                    ],
+                    data: { color: 0x3366ff },
+                });
+            }
+
+            // Connect randomly
+            for (let i = 0; i < 2000; i++) {
+                const source = `n-${Math.floor(Math.random() * 1500)}`;
+                let target = `n-${Math.floor(Math.random() * 1500)}`;
+                while (source === target) target = `n-${Math.floor(Math.random() * 1500)}`;
+
+                edges.push({ id: `e-${i}`, source, target, type: 'Edge' });
+            }
+
+            const graph = SpaceGraph.create('#container', { nodes, edges });
+
+            // Disable forces for performance benchmark (static rendering test)
+            const layout = graph.pluginManager.getPlugin('LayoutPlugin');
+            if (layout) layout.settings.enabled = false;
+
+            graph.render();
+
+            const end = performance.now();
+            statusMsg.innerText = `Rendered 1500 nodes and 2000 edges in ${(end - start).toFixed(2)} ms`;
+        </script>
+    </body>
+</html>

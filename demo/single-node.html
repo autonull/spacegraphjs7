@@ -1,0 +1,32 @@
+<!doctype html>
+<html>
+    <head>
+        <title>Single Node Test</title>
+        <style>
+            * {
+                margin: 0;
+            }
+            #container {
+                width: 100vw;
+                height: 100vh;
+                background-color: #1a1a2e;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="container"></div>
+        <script type="module">
+            import { SpaceGraph } from '../src/index.ts';
+            try {
+                const graph = SpaceGraph.create('#container', {
+                    nodes: [{ id: 'a', type: 'ShapeNode', label: 'Single', position: [0, 0, 0] }],
+                    edges: [],
+                });
+                graph.render();
+                console.log('✓ Single node works');
+            } catch (e) {
+                console.error('✗ Single node failed:', e);
+            }
+        </script>
+    </body>
+</html>

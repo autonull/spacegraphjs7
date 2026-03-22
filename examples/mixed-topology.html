@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mixed Topology - SpaceGraphJS</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            overflow: hidden;
+            background-color: #050510;
+            font-family: system-ui, -apple-system, sans-serif;
+            color: white;
+        }
+
+        #container {
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .header {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 10;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(8px);
+            padding: 16px 24px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .header h1 {
+            font-size: 20px;
+            margin-bottom: 4px;
+            background: -webkit-linear-gradient(135deg, #3b82f6, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header p {
+            color: #94a3b8;
+            font-size: 14px;
+            max-width: 300px;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>Mixed Node Topology</h1>
+        <p>Combining structural nodes, math equations, 3D GLTF models, and CSS3D interfaces in a unified physics layout.</p>
+    </div>
+    <div id="container"></div>
+
+    <script type="module">
+        import { SpaceGraph } from '../src/index.ts';
+
+        const nodes = [
+            // Centerpiece: A spinning 3D Scene Node (Helmet GLTF from Khronos repo)
+            {
+                id: 'center-model',
+                type: 'SceneNode',
+                position: [0, 0, 0],
+                data: {
+                    url: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/FlightHelmet/glTF/FlightHelmet.gltf',
+                    targetSize: 200,
+                    rotationSpeed: 0.01
+                }
+            },
+
+            // Formula Node 1
+            {
+                id: 'math-1',
+                type: 'MathNode',
+                position: [300, 200, 0],
+                data: {
+                    width: 350,
+                    height: 120,
+                    math: '\\nabla \\times \\mathbf{E} = -\\frac{\\partial \\mathbf{B}}{\\partial t}',
+                    fontSize: 26,
+                    color: 'rgba(30, 41, 59, 0.8)'
+                }
+            },
+
+            // Formula Node 2
+            {
+                id: 'math-2',
+                type: 'MathNode',
+                position: [-300, -200, 0],
+                data: {
+                    width: 250,
+                    height: 100,
+                    math: 'E = mc^2',
+                    fontSize: 32,
+                    color: 'rgba(88, 28, 135, 0.8)'
+                }
+            },
+
+            // Group Node containing smaller components
+            {
+                id: 'group-1',
+                type: 'GroupNode',
+                position: [400, -200, 0],
+                data: {
+                    width: 250,
+                    height: 250,
+                    depth: 100,
+                    color: 0x3b82f6
+                }
+            },
+            {
+                id: 'child-1',
+                type: 'ShapeNode',
+                position: [350, -150, 0],
+                data: { shape: 'sphere', color: 0xeab308, parent: 'group-1' }
+            },
+            {
+                id: 'child-2',
+                type: 'ShapeNode',
+                position: [450, -250, 0],
+                data: { shape: 'box', color: 0xef4444, parent: 'group-1' }
+            },
+
+            // Markdown explanation
+            {
+                id: 'note-1',
+                type: 'MarkdownNode',
+                position: [-400, 200, 0],
+                data: {
+                    width: 250,
+                    markdown: '### Topology Map\n\nThis graph demonstrates bridging complex DOM entities (`MathNode`, `MarkdownNode`) with standard 3D scene elements natively.',
+                    color: 'rgba(15, 23, 42, 0.9)'
+                }
+            }
+        ];
+
+        const edges = [
+            { id: 'e1', source: 'center-model', target: 'math-1', type: 'AnimatedEdge', data: { color: 0x8b5cf6, speed: 0.005 } },
+            { id: 'e2', source: 'center-model', target: 'math-2', type: 'FlowEdge', data: { color: 0xa855f7, dashSize: 4 } },
+            { id: 'e3', source: 'center-model', target: 'group-1', type: 'CurvedEdge', data: { color: 0x3b82f6 } },
+            { id: 'e4', source: 'center-model', target: 'note-1', type: 'Edge', data: { color: 0x94a3b8 } },
+            { id: 'e5', source: 'child-1', target: 'child-2', type: 'DottedEdge', data: { color: 0xffffff } }
+        ];
+
+        const sg = SpaceGraph.create('#container', { nodes, edges });
+
+        const layout = sg.pluginManager.getPlugin('ForceLayout');
+        if (layout) {
+            layout.settings.attraction = 0.01;
+            layout.settings.repulsion = 80000;
+            layout.settings.enabled = true;
+        }
+
+        sg.render();
+
+        // Wait a tick for models/math to size up, then fit
+        setTimeout(() => sg.fitView(150), 500);
+
+    </script>
+</body>
+
+</html>

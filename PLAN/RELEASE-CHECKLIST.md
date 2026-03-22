@@ -14,7 +14,6 @@
 - [ ] Formatting is correct: `npm run format:check`
 - [ ] TypeScript compiles: `npx tsc --noEmit`
 - [ ] Build succeeds: `npm run build`
-- [ ] Bundle size is acceptable: `ls -lh dist/`
 
 ### □ Documentation
 
@@ -126,6 +125,7 @@ npm publish --access public
 ### □ Announce Release
 
 **Matrix:**
+
 ```
 🚀 SpaceGraphJS v6.0.0-alpha.1 is here!
 
@@ -142,14 +142,17 @@ Changelog: https://github.com/autonull/spacegraphjs/releases/tag/v6.0.0-alpha.1
 - [ ] Posted to `#sg6-general`
 
 **GitHub Discussions:**
+
 - [ ] Announcement post created
 - [ ] Pinned to top
 
 **Twitter/LinkedIn:**
+
 - [ ] Thread posted
 - [ ] Links included
 
 **Dev.to/Hashnode:**
+
 - [ ] Release article published (if major)
 
 ### □ Update Documentation
@@ -168,7 +171,7 @@ Changelog: https://github.com/autonull/spacegraphjs/releases/tag/v6.0.0-alpha.1
 
 ## Release Notes Template
 
-```markdown
+````markdown
 # Release v6.0.0-alpha.1
 
 **Date:** March 1, 2026
@@ -198,6 +201,7 @@ Changelog: https://github.com/autonull/spacegraphjs/releases/tag/v6.0.0-alpha.1
 ⚠️ [Description]
 
 **Migration:**
+
 ```typescript
 // Before
 oldCode();
@@ -205,10 +209,11 @@ oldCode();
 // After
 newCode();
 ```
+````
 
 ## Stats
 
-- [X] commits
+- [x] commits
 - [Y] files changed
 - [Z] contributors
 
@@ -221,7 +226,8 @@ npm install spacegraphjs@alpha
 ## Full Changelog
 
 https://github.com/autonull/spacegraphjs/compare/v5.0.0...v6.0.0-alpha.1
-```
+
+````
 
 ---
 
@@ -247,7 +253,7 @@ git push origin :refs/tags/v6.0.0-alpha.1
 
 # Delete release on GitHub
 # https://github.com/autonull/spacegraphjs/releases
-```
+````
 
 - [ ] Version deprecated on npm
 - [ ] Tag deleted (if applicable)
@@ -271,12 +277,12 @@ git checkout -b hotfix/issue-123
 
 ## Release Frequency
 
-| Release Type | Frequency | Example |
-|--------------|-----------|---------|
-| **Alpha** | Weekly | v6.0.0-alpha.1, alpha.2, ... |
-| **Beta** | Monthly | v6.0.0-beta.1, beta.2, ... |
-| **RC** | As needed | v6.0.0-rc.1, rc.2, ... |
-| **Stable** | Quarterly | v6.0.0, v6.1.0, v7.0.0 |
+| Release Type | Frequency | Example                      |
+| ------------ | --------- | ---------------------------- |
+| **Alpha**    | Weekly    | v6.0.0-alpha.1, alpha.2, ... |
+| **Beta**     | Monthly   | v6.0.0-beta.1, beta.2, ...   |
+| **RC**       | As needed | v6.0.0-rc.1, rc.2, ...       |
+| **Stable**   | Quarterly | v6.0.0, v6.1.0, v7.0.0       |
 
 ---
 
@@ -306,22 +312,22 @@ Examples:
 
 Track these for each release:
 
-| Metric | Target | Actual |
-|--------|--------|--------|
-| npm downloads (week 1) | 500 | ___ |
-| GitHub stars (week 1) | 10 | ___ |
-| Issues opened (week 1) | <5 | ___ |
-| Matrix growth (week 1) | 20 | ___ |
-| Time to first bug report | >48h | ___ |
+| Metric                   | Target | Actual |
+| ------------------------ | ------ | ------ |
+| npm downloads (week 1)   | 500    | \_\_\_ |
+| GitHub stars (week 1)    | 10     | \_\_\_ |
+| Issues opened (week 1)   | <5     | \_\_\_ |
+| Matrix growth (week 1)   | 20     | \_\_\_ |
+| Time to first bug report | >48h   | \_\_\_ |
 
 ---
 
 ## Sign-Off
 
-| Role | Name | Date |
-|------|------|------|
-| Release Manager | _______ | ___ |
-| QA Lead | _______ | ___ |
-| Docs Lead | _______ | ___ |
+| Role            | Name       | Date   |
+| --------------- | ---------- | ------ |
+| Release Manager | **\_\_\_** | \_\_\_ |
+| QA Lead         | **\_\_\_** | \_\_\_ |
+| Docs Lead       | **\_\_\_** | \_\_\_ |
 
 **Release approved for publication.**

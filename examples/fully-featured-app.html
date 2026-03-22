@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fully Featured App - SpaceGraphJS</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            overflow: hidden;
+            background-color: #0f172a;
+            font-family: system-ui, -apple-system, sans-serif;
+            color: white;
+        }
+
+        #container {
+            width: 100vw;
+            height: 100vh;
+        }
+
+        /* Custom selection highlight class for HTML nodes */
+        .my-selected-node {
+            border: 2px solid #22c55e !important;
+            box-shadow: 0 0 30px rgba(34, 197, 94, 0.5) !important;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="container"></div>
+
+    <script type="module">
+        import { SpaceGraphApp } from '../src/index.ts';
+
+        const nodes = [
+            // Core WebGL Nodes
+            { id: 'webgl-1', type: 'ShapeNode', position: [0, 0, 0], data: { shape: 'sphere', color: 0x3b82f6 } },
+            { id: 'webgl-2', type: 'ShapeNode', position: [200, 100, 0], data: { shape: 'box', color: 0xef4444 } },
+            { id: 'webgl-3', type: 'ShapeNode', position: [200, -100, 0], data: { shape: 'cylinder', color: 0xeab308 } },
+
+            // HTML Node
+            {
+                id: 'html-1',
+                type: 'HtmlNode',
+                position: [-300, 0, 0],
+                data: {
+                    width: 200, height: 100,
+                    html: `<div style="background: rgba(30,41,59,0.9); padding: 20px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;"><h3>Server Status</h3></div>`
+                }
+            }
+        ];
+
+        const edges = [
+            { id: 'e1', source: 'webgl-1', target: 'webgl-2', type: 'FlowEdge', data: { color: 0xffffff } },
+            { id: 'e2', source: 'webgl-1', target: 'webgl-3', type: 'AnimatedEdge', data: { color: 0x8b5cf6, speed: 2.0 } },
+            { id: 'e3', source: 'html-1', target: 'webgl-1', type: 'Edge', data: { color: 0x94a3b8 } }
+        ];
+
+        const app = new SpaceGraphApp('#container', {
+            spec: { nodes, edges },
+            title: 'Infrastructure Overview',
+            description: 'A fully featured general purpose ZUI. Shift+drag to box select elements.',
+            selectionHighlightClass: 'my-selected-node',
+            selectionHighlightColor: 0x22c55e, // Green highlight for WebGL nodes
+            theme: {
+                primaryColor: '#22c55e',
+                secondaryColor: '#10b981'
+            },
+            enableGrid: true,
+            nodeTooltip: (node) => {
+                return `**${node.id}**\nType: ${node.type}\nStatus: Active`;
+            },
+            enableSearch: true,
+            hotkeys: {
+                'Delete': () => deleteSelectedNodes(),
+                'Backspace': () => deleteSelectedNodes(),
+            },
+            onNodeSelect: (selectedNodes) => {
+                if (selectedNodes.length > 0) {
+                    console.log('Selected:', selectedNodes.map(n => n.id));
+                }
+            },
+            onNodeDblClick: (node) => {
+                app.showAlert(`Flew to ${node.id}`, 'info');
+                // The wrapper still flies to it by default unless we specifically override entirely,
+                // but since we provided a handler, it overrides. Let's manually trigger flyTo for demo.
+                if (app.sg.cameraControls) {
+                    app.sg.cameraControls.flyTo(node.position.clone(), 150);
+                }
+            },
+            nodeContextMenu: (node) => [
+                { label: `Edit ${node.id}`, action: () => app.showAlert(`Editing ${node.id}`) },
+                { label: 'Delete', action: () => app.showAlert(`Deleted ${node.id}`, 'error') }
+            ],
+            graphContextMenu: () => [
+                { label: 'Add Node', action: () => {
+                    const id = `node-${Date.now()}`;
+                    app.addNode({ id, type: 'ShapeNode', position: [Math.random() * 400 - 200, Math.random() * 400 - 200, 0], data: { shape: 'sphere', color: Math.random() * 0xffffff } });
+                    app.showAlert(`Added ${id}`, 'success');
+                }},
+                { label: 'Settings', action: () => app.showAlert('Opening settings...') }
+            ]
+        });
+
+        const deleteSelectedNodes = () => {
+            const selected = app.getSelectedNodes();
+            if (selected.length === 0) return;
+            selected.forEach(n => app.removeNode(n.id));
+            app.showAlert(`Deleted ${selected.length} nodes`, 'error');
+        };
+
+        // Add custom HUD Actions
+        app.addButton({
+            id: 'btn-analyze',
+            label: 'Analyze Network',
+            icon: '🔍',
+            onClick: () => {
+                app.showLoading('Analyzing network traffic...');
+                setTimeout(() => {
+                    app.hideLoading();
+                    app.showAlert('Analysis complete. No issues found.', 'success');
+                }, 2000);
+            }
+        });
+
+        app.addButton({
+            id: 'btn-settings',
+            label: 'Settings',
+            icon: '⚙️',
+            onClick: () => {
+                app.showModal({
+                    title: 'System Settings',
+                    html: `
+                        <div style="display: flex; flex-direction: column; gap: 12px;">
+                            <label style="display: flex; align-items: center; gap: 8px;">
+                                <input type="checkbox" checked /> Enable auto-layout
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px;">
+                                <input type="checkbox" checked /> Show real-time traffic
+                            </label>
+                            <label style="display: flex; flex-direction: column; gap: 4px; margin-top: 8px;">
+                                Refresh Rate
+                                <input type="range" min="1" max="10" value="5" />
+                            </label>
+                            <button onclick="document.getElementById('spacegraph-modal-overlay').click()" style="margin-top: 16px; padding: 8px; background: #3b82f6; border: none; border-radius: 4px; color: white; cursor: pointer;">Save Changes</button>
+                        </div>
+                    `
+                });
+            }
+        });
+
+        app.addButton({
+            id: 'btn-reset',
+            label: 'Reset Layout',
+            icon: '🔄',
+            onClick: () => {
+                const layout = app.sg.pluginManager.getPlugin('ForceLayout');
+                if (layout) {
+                    layout.settings.enabled = true;
+                    app.showAlert('Force layout activated', 'info');
+                }
+            }
+        });
+
+        // Add tools to the bottom-center action bar
+        app.addToolbarAction({
+            id: 'tool-pointer',
+            label: 'Pointer',
+            icon: '👆',
+            onClick: () => app.showAlert('Pointer tool selected', 'info')
+        });
+
+        app.addToolbarAction({
+            id: 'tool-box-select',
+            label: 'Select Mode',
+            icon: '🔲',
+            onClick: () => app.showAlert('Hold Shift and Drag to box select', 'info')
+        });
+
+        app.sg.render();
+        setTimeout(() => app.sg.fitView(150), 500);
+
+    </script>
+</body>
+
+</html>

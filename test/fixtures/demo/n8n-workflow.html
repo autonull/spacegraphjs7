@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>SpaceGraphJS n8n Workflow Demo</title>
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+            body {
+                overflow: hidden;
+                background: #1a1a2e;
+            }
+            #container {
+                width: 100vw;
+                height: 100vh;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="container"></div>
+        <script type="module">
+            import { SpaceGraph } from '../src/index.ts';
+            import { N8nExecutionMonitorPlugin } from '../packages/n8n-bridge/src/N8nExecutionMonitorPlugin.ts';
+            import { N8nWorkflowPlugin } from '../packages/n8n-bridge/src/N8nWorkflowPlugin.ts';
+
+            // SpaceGraph.create automatically calls initAll().
+            // We need to register our plugins BEFORE it parses the spec.
+            // However, SpaceGraph.create() signature takes the spec directly.
+            // The n8n nodes are registered in SpaceGraph.ts built-ins now, so they exist.
+
+            window.SpaceGraph = SpaceGraph;
+            const container = document.querySelector('#container');
+            const graph = new SpaceGraph(container);
+
+            graph.pluginManager.register('N8nExecutionMonitorPlugin', new N8nExecutionMonitorPlugin());
+            graph.pluginManager.register('N8nWorkflowPlugin', new N8nWorkflowPlugin());
+
+            graph.init().then(() => {
+                const hudPlugin = graph.pluginManager.getPlugin('hud-plugin');
+                if (hudPlugin && hudPlugin.addElement) {
+                    hudPlugin.addElement({
+                        id: 'controls-help',
+                        position: 'top-left',
+                        html: `
+                            <div style="background: rgba(0,0,0,0.8); color: #0f0; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 12px; pointer-events: none;">
+                                <b>Controls:</b><br/>
+                                • Left-click + drag: Rotate<br/>
+                                • Right-click + drag: Pan<br/>
+                                • Scroll: Zoom<br/>
+                                • Shift + drag: Select nodes<br/>
+                                • Double-click node/edge: Focus
+                            </div>
+                        `
+                    });
+                }
+
+                graph.loadSpec({
+                    nodes: [
+                        {
+                            id: 'palette',
+                            type: 'N8nPaletteNode',
+                            position: [-800, 200, 0]
+                        },
+                        {
+                            id: 'cred-1',
+                            type: 'N8nCredentialNode',
+                            position: [-400, 200, 0],
+                            parameters: {
+                                service: 'GitHub API'
+                            }
+                        },
+                        {
+                            id: 'hitl-1',
+                            type: 'N8nHitlNode',
+                            position: [0, -300, 0],
+                            parameters: {
+                                taskSummary: 'Review summarized data before committing.'
+                            }
+                        },
+                        {
+                            id: 'webhook-1',
+                            type: 'N8nTriggerNode',
+                            position: [-400, 0, 0],
+                            parameters: {
+                                triggerType: 'webhook'
+                            }
+                        },
+                        {
+                            id: 'ai-1',
+                            type: 'N8nAiNode',
+                            position: [0, 0, 0],
+                            parameters: {
+                                model: 'gpt-4o',
+                                prompt: 'Summarize the input data.'
+                            }
+                        },
+                        {
+                            id: 'http-1',
+                            type: 'N8nHttpNode',
+                            position: [400, -200, 0],
+                            parameters: {
+                                requestMethod: 'GET',
+                                url: 'https://api.github.com'
+                            }
+                        },
+                        {
+                            id: 'code-1',
+                            type: 'N8nCodeNode',
+                            position: [400, 200, 0],
+                            parameters: {
+                                jsCode: 'return items;'
+                            }
+                        }
+                    ],
+                    edges: [
+                        { id: 'e1', source: 'webhook-1', target: 'ai-1', type: 'FlowEdge' },
+                        { id: 'e2', source: 'ai-1', target: 'http-1', type: 'FlowEdge' },
+                        { id: 'e3', source: 'ai-1', target: 'code-1', type: 'FlowEdge' }
+                    ],
+                });
+
+                // Force update to display LODs
+                graph.cameraControls.camera.position.set(0, 0, 1500);
+                graph.render();
+
+                // Trigger a mock execution state after 1 second to see the log panel and particles
+                setTimeout(() => {
+                    graph.update({
+                        nodes: [
+                            { id: 'webhook-1', parameters: { status: 'success' } },
+                            { id: 'n8n-exec-log', parameters: { newLog: { message: 'Workflow started', type: 'info' } } }
+                        ]
+                    });
+
+                    const edge = graph.graph.getEdge('e1');
+                    if (edge && typeof edge.startDataFlow === 'function') {
+                        edge.startDataFlow(2.0);
+                    }
+                }, 1000);
+            });
+        </script>
+    </body>
+</html>

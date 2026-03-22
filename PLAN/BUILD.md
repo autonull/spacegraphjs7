@@ -6,10 +6,10 @@
 
 ## Overview
 
-| Phase | Days | Focus | Outcome |
-|-------|------|-------|---------|
-| **Build** | 0-14 | Core development | Working, tested library |
-| **Launch** | 15-17 | Publish + announce | npm package, community |
+| Phase      | Days  | Focus              | Outcome                 |
+| ---------- | ----- | ------------------ | ----------------------- |
+| **Build**  | 0-14  | Core development   | Working, tested library |
+| **Launch** | 15-17 | Publish + announce | npm package, community  |
 
 **Total time:** 66 hours over 17 days (part-time, 4h/day)
 
@@ -46,6 +46,7 @@ git commit -m "Initial commit: project structure"
 ```
 
 **✅ Success Criteria:**
+
 - [ ] Node.js v18+ installed
 - [ ] Git repo initialized
 - [ ] Clean working directory
@@ -66,36 +67,36 @@ npm init -y
 
 ```json
 {
-  "name": "spacegraphjs",
-  "version": "0.0.0-dev",
-  "type": "module",
-  "main": "./dist/spacegraphjs.js",
-  "module": "./dist/spacegraphjs.js",
-  "types": "./dist/types/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/types/index.d.ts",
-      "import": "./dist/spacegraphjs.js"
-    }
-  },
-  "files": ["dist", "README.md", "LICENSE"],
-  "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview",
-    "clean": "rm -rf dist/"
-  },
-  "peerDependencies": {
-    "three": ">=0.150.0"
-  },
-  "devDependencies": {
-    "@types/node": "^20.10.0",
-    "@types/three": "^0.160.0",
-    "typescript": "^5.3.2",
-    "vite": "^5.0.0",
-    "three": "^0.160.0"
-  },
-  "license": "MIT"
+    "name": "spacegraphjs",
+    "version": "0.0.0-dev",
+    "type": "module",
+    "main": "./dist/spacegraphjs.js",
+    "module": "./dist/spacegraphjs.js",
+    "types": "./dist/types/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/types/index.d.ts",
+            "import": "./dist/spacegraphjs.js"
+        }
+    },
+    "files": ["dist", "README.md", "LICENSE"],
+    "scripts": {
+        "dev": "vite",
+        "build": "tsc && vite build",
+        "preview": "vite preview",
+        "clean": "rm -rf dist/"
+    },
+    "peerDependencies": {
+        "three": ">=0.150.0"
+    },
+    "devDependencies": {
+        "@types/node": "^20.10.0",
+        "@types/three": "^0.160.0",
+        "typescript": "^5.3.2",
+        "vite": "^5.0.0",
+        "three": "^0.160.0"
+    },
+    "license": "MIT"
 }
 ```
 
@@ -103,24 +104,24 @@ npm init -y
 
 ```json
 {
-  "compilerOptions": {
-    "target": "ES2020",
-    "module": "ESNext",
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
-    "skipLibCheck": true,
-    "moduleResolution": "bundler",
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "noEmit": true,
-    "declaration": true,
-    "declarationDir": "./dist/types",
-    "strict": true,
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "forceConsistentCasingInFileNames": true
-  },
-  "include": ["src"],
-  "exclude": ["node_modules", "dist"]
+    "compilerOptions": {
+        "target": "ES2020",
+        "module": "ESNext",
+        "lib": ["ES2020", "DOM", "DOM.Iterable"],
+        "skipLibCheck": true,
+        "moduleResolution": "bundler",
+        "resolveJsonModule": true,
+        "isolatedModules": true,
+        "noEmit": true,
+        "declaration": true,
+        "declarationDir": "./dist/types",
+        "strict": true,
+        "esModuleInterop": true,
+        "allowSyntheticDefaultImports": true,
+        "forceConsistentCasingInFileNames": true
+    },
+    "include": ["src"],
+    "exclude": ["node_modules", "dist"]
 }
 ```
 
@@ -131,27 +132,27 @@ import { defineConfig } from 'vite';
 import { resolve } from 'path';
 
 export default defineConfig({
-  build: {
-    lib: {
-      entry: resolve(__dirname, 'src/index.ts'),
-      name: 'SpaceGraphJS',
-      fileName: 'spacegraphjs',
-    },
-    rollupOptions: {
-      external: ['three'],
-      output: {
-        globals: {
-          three: 'THREE',
+    build: {
+        lib: {
+            entry: resolve(__dirname, 'src/index.ts'),
+            name: 'SpaceGraphJS',
+            fileName: 'spacegraphjs',
         },
-      },
+        rollupOptions: {
+            external: ['three'],
+            output: {
+                globals: {
+                    three: 'THREE',
+                },
+            },
+        },
+        sourcemap: true,
+        minify: false,
     },
-    sourcemap: true,
-    minify: false,
-  },
-  server: {
-    port: 5173,
-    open: false,
-  },
+    server: {
+        port: 5173,
+        open: false,
+    },
 });
 ```
 
@@ -162,6 +163,7 @@ mkdir src
 ```
 
 **src/index.ts:**
+
 ```typescript
 console.log('[SpaceGraphJS] Loading...');
 
@@ -172,26 +174,27 @@ console.log('[SpaceGraphJS] Loaded successfully');
 ```
 
 **src/types.ts:**
+
 ```typescript
 export interface NodeSpec {
-  id: string;
-  type: string;
-  label?: string;
-  position?: [number, number, number];
-  data?: Record<string, any>;
+    id: string;
+    type: string;
+    label?: string;
+    position?: [number, number, number];
+    data?: Record<string, any>;
 }
 
 export interface EdgeSpec {
-  id: string;
-  source: string;
-  target: string;
-  type: string;
-  data?: Record<string, any>;
+    id: string;
+    source: string;
+    target: string;
+    type: string;
+    data?: Record<string, any>;
 }
 
 export interface GraphSpec {
-  nodes: NodeSpec[];
-  edges: EdgeSpec[];
+    nodes: NodeSpec[];
+    edges: EdgeSpec[];
 }
 ```
 
@@ -231,7 +234,7 @@ EOF
 
 **Step 8: Create minimal README.md**
 
-```markdown
+````markdown
 # SpaceGraphJS
 
 The first self-building UI framework.
@@ -241,20 +244,23 @@ The first self-building UI framework.
 ```bash
 npm install spacegraphjs three
 ```
+````
 
 ## License
 
 MIT
-```
+
+````
 
 **Step 9: Commit**
 
 ```bash
 git add .
 git commit -m "Day 1: Project setup with package.json, tsconfig, vite config"
-```
+````
 
 **✅ Success Criteria:**
+
 - [ ] `npm install` works without errors
 - [ ] `npm run build` shows expected TypeScript error (no source yet)
 - [ ] Git commit successful
@@ -274,174 +280,175 @@ import type { GraphSpec } from './types';
 console.log('[SpaceGraph] Module loading...');
 
 export class SpaceGraph {
-  private container: HTMLElement;
-  private scene: THREE.Scene;
-  private camera: THREE.PerspectiveCamera;
-  private renderer: THREE.WebGLRenderer;
-  private nodes: Map<string, THREE.Mesh> = new Map();
-  private edges: THREE.Line[] = [];
+    private container: HTMLElement;
+    private scene: THREE.Scene;
+    private camera: THREE.PerspectiveCamera;
+    private renderer: THREE.WebGLRenderer;
+    private nodes: Map<string, THREE.Mesh> = new Map();
+    private edges: THREE.Line[] = [];
 
-  constructor(container: HTMLElement) {
-    console.log('[SpaceGraph] Initializing...');
-    this.container = container;
-    
-    // Scene setup
-    this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x1a1a2e);
-    
-    // Camera setup
-    const aspect = container.clientWidth / container.clientHeight;
-    this.camera = new THREE.PerspectiveCamera(75, aspect, 0.1, 10000);
-    this.camera.position.set(0, 0, 500);
-    
-    // Renderer setup
-    this.renderer = new THREE.WebGLRenderer({ antialias: true });
-    this.renderer.setSize(container.clientWidth, container.clientHeight);
-    this.renderer.setPixelRatio(window.devicePixelRatio);
-    container.appendChild(this.renderer.domElement);
-    
-    console.log('[SpaceGraph] Three.js initialized');
-    
-    // Handle resize
-    window.addEventListener('resize', () => this.onResize());
-    
-    // Setup controls
-    this.setupControls();
-  }
+    constructor(container: HTMLElement) {
+        console.log('[SpaceGraph] Initializing...');
+        this.container = container;
 
-  static create(container: string | HTMLElement, spec: GraphSpec): SpaceGraph {
-    console.log('[SpaceGraph] Creating instance...');
-    const element = typeof container === 'string' 
-      ? document.querySelector(container)! 
-      : container;
-    
-    if (!element) {
-      throw new Error('Container not found: ' + container);
+        // Scene setup
+        this.scene = new THREE.Scene();
+        this.scene.background = new THREE.Color(0x1a1a2e);
+
+        // Camera setup
+        const aspect = container.clientWidth / container.clientHeight;
+        this.camera = new THREE.PerspectiveCamera(75, aspect, 0.1, 10000);
+        this.camera.position.set(0, 0, 500);
+
+        // Renderer setup
+        this.renderer = new THREE.WebGLRenderer({ antialias: true });
+        this.renderer.setSize(container.clientWidth, container.clientHeight);
+        this.renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(this.renderer.domElement);
+
+        console.log('[SpaceGraph] Three.js initialized');
+
+        // Handle resize
+        window.addEventListener('resize', () => this.onResize());
+
+        // Setup controls
+        this.setupControls();
     }
-    
-    const graph = new SpaceGraph(element);
-    graph.loadSpec(spec);
-    console.log('[SpaceGraph] Instance created successfully');
-    return graph;
-  }
 
-  loadSpec(spec: GraphSpec): void {
-    console.log('[SpaceGraph] Loading spec...');
-    
-    if (spec.nodes && spec.nodes.length > 0) {
-      console.log('[SpaceGraph] Creating', spec.nodes.length, 'nodes');
-      for (const nodeSpec of spec.nodes) {
-        this.createNode(nodeSpec);
-      }
+    static create(container: string | HTMLElement, spec: GraphSpec): SpaceGraph {
+        console.log('[SpaceGraph] Creating instance...');
+        const element =
+            typeof container === 'string' ? document.querySelector(container)! : container;
+
+        if (!element) {
+            throw new Error('Container not found: ' + container);
+        }
+
+        const graph = new SpaceGraph(element);
+        graph.loadSpec(spec);
+        console.log('[SpaceGraph] Instance created successfully');
+        return graph;
     }
-    
-    if (spec.edges && spec.edges.length > 0) {
-      console.log('[SpaceGraph] Creating', spec.edges.length, 'edges');
-      for (const edgeSpec of spec.edges) {
-        this.createEdge(edgeSpec);
-      }
+
+    loadSpec(spec: GraphSpec): void {
+        console.log('[SpaceGraph] Loading spec...');
+
+        if (spec.nodes && spec.nodes.length > 0) {
+            console.log('[SpaceGraph] Creating', spec.nodes.length, 'nodes');
+            for (const nodeSpec of spec.nodes) {
+                this.createNode(nodeSpec);
+            }
+        }
+
+        if (spec.edges && spec.edges.length > 0) {
+            console.log('[SpaceGraph] Creating', spec.edges.length, 'edges');
+            for (const edgeSpec of spec.edges) {
+                this.createEdge(edgeSpec);
+            }
+        }
+
+        console.log('[SpaceGraph] Spec loaded successfully');
     }
-    
-    console.log('[SpaceGraph] Spec loaded successfully');
-  }
 
-  createNode(spec: any): void {
-    console.log('[SpaceGraph] Creating node:', spec.id);
-    
-    const geometry = new THREE.SphereGeometry(20, 32, 32);
-    const material = new THREE.MeshBasicMaterial({ 
-      color: spec.data?.color || 0x3366ff,
-    });
-    const sphere = new THREE.Mesh(geometry, material);
-    
-    if (spec.position) {
-      sphere.position.set(spec.position[0], spec.position[1], spec.position[2]);
+    createNode(spec: any): void {
+        console.log('[SpaceGraph] Creating node:', spec.id);
+
+        const geometry = new THREE.SphereGeometry(20, 32, 32);
+        const material = new THREE.MeshBasicMaterial({
+            color: spec.data?.color || 0x3366ff,
+        });
+        const sphere = new THREE.Mesh(geometry, material);
+
+        if (spec.position) {
+            sphere.position.set(spec.position[0], spec.position[1], spec.position[2]);
+        }
+
+        this.scene.add(sphere);
+        this.nodes.set(spec.id, sphere);
+        console.log('[SpaceGraph] Node created:', spec.id);
     }
-    
-    this.scene.add(sphere);
-    this.nodes.set(spec.id, sphere);
-    console.log('[SpaceGraph] Node created:', spec.id);
-  }
 
-  createEdge(spec: any): void {
-    console.log('[SpaceGraph] Creating edge:', spec.id);
-    
-    const sourceNode = this.nodes.get(spec.source);
-    const targetNode = this.nodes.get(spec.target);
-    
-    if (!sourceNode || !targetNode) {
-      console.warn('[SpaceGraph] Edge missing nodes:', spec);
-      return;
+    createEdge(spec: any): void {
+        console.log('[SpaceGraph] Creating edge:', spec.id);
+
+        const sourceNode = this.nodes.get(spec.source);
+        const targetNode = this.nodes.get(spec.target);
+
+        if (!sourceNode || !targetNode) {
+            console.warn('[SpaceGraph] Edge missing nodes:', spec);
+            return;
+        }
+
+        const points = [sourceNode.position, targetNode.position];
+        const geometry = new THREE.BufferGeometry().setFromPoints(points);
+        const material = new THREE.LineBasicMaterial({ color: 0x666666 });
+        const line = new THREE.Line(geometry, material);
+
+        this.scene.add(line);
+        this.edges.push(line);
+        console.log('[SpaceGraph] Edge created:', spec.id);
     }
-    
-    const points = [sourceNode.position, targetNode.position];
-    const geometry = new THREE.BufferGeometry().setFromPoints(points);
-    const material = new THREE.LineBasicMaterial({ color: 0x666666 });
-    const line = new THREE.Line(geometry, material);
-    
-    this.scene.add(line);
-    this.edges.push(line);
-    console.log('[SpaceGraph] Edge created:', spec.id);
-  }
 
-  render(): void {
-    console.log('[SpaceGraph] Rendering...');
-    this.renderer.render(this.scene, this.camera);
-    console.log('[SpaceGraph] Render complete');
-  }
+    render(): void {
+        console.log('[SpaceGraph] Rendering...');
+        this.renderer.render(this.scene, this.camera);
+        console.log('[SpaceGraph] Render complete');
+    }
 
-  private onResize(): void {
-    const width = this.container.clientWidth;
-    const height = this.container.clientHeight;
-    
-    this.camera.aspect = width / height;
-    this.camera.updateProjectionMatrix();
-    this.renderer.setSize(width, height);
-  }
+    private onResize(): void {
+        const width = this.container.clientWidth;
+        const height = this.container.clientHeight;
 
-  private setupControls(): void {
-    let isDragging = false;
-    let previousMousePosition = { x: 0, y: 0 };
-    let spherical = { theta: 0, phi: Math.PI / 2, radius: 500 };
+        this.camera.aspect = width / height;
+        this.camera.updateProjectionMatrix();
+        this.renderer.setSize(width, height);
+    }
 
-    const updateCameraPosition = () => {
-      this.camera.position.x = spherical.radius * Math.sin(spherical.phi) * Math.sin(spherical.theta);
-      this.camera.position.y = spherical.radius * Math.cos(spherical.phi);
-      this.camera.position.z = spherical.radius * Math.sin(spherical.phi) * Math.cos(spherical.theta);
-      this.camera.lookAt(0, 0, 0);
-    };
+    private setupControls(): void {
+        let isDragging = false;
+        let previousMousePosition = { x: 0, y: 0 };
+        let spherical = { theta: 0, phi: Math.PI / 2, radius: 500 };
 
-    const canvas = this.renderer.domElement;
+        const updateCameraPosition = () => {
+            this.camera.position.x =
+                spherical.radius * Math.sin(spherical.phi) * Math.sin(spherical.theta);
+            this.camera.position.y = spherical.radius * Math.cos(spherical.phi);
+            this.camera.position.z =
+                spherical.radius * Math.sin(spherical.phi) * Math.cos(spherical.theta);
+            this.camera.lookAt(0, 0, 0);
+        };
 
-    canvas.addEventListener('mousedown', () => {
-      isDragging = true;
-    });
+        const canvas = this.renderer.domElement;
 
-    canvas.addEventListener('mousemove', (e) => {
-      if (!isDragging) return;
-      
-      const deltaX = e.clientX - previousMousePosition.x;
-      const deltaY = e.clientY - previousMousePosition.y;
-      
-      spherical.theta -= deltaX * 0.005;
-      spherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, spherical.phi + deltaY * 0.005));
-      
-      updateCameraPosition();
-      previousMousePosition = { x: e.clientX, y: e.clientY };
-    });
+        canvas.addEventListener('mousedown', () => {
+            isDragging = true;
+        });
 
-    canvas.addEventListener('mouseup', () => {
-      isDragging = false;
-    });
+        canvas.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
 
-    canvas.addEventListener('wheel', (e) => {
-      spherical.radius = Math.max(100, Math.min(2000, spherical.radius + e.deltaY));
-      updateCameraPosition();
-    });
+            const deltaX = e.clientX - previousMousePosition.x;
+            const deltaY = e.clientY - previousMousePosition.y;
 
-    updateCameraPosition();
-    console.log('[SpaceGraph] Controls initialized');
-  }
+            spherical.theta -= deltaX * 0.005;
+            spherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, spherical.phi + deltaY * 0.005));
+
+            updateCameraPosition();
+            previousMousePosition = { x: e.clientX, y: e.clientY };
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        canvas.addEventListener('wheel', (e) => {
+            spherical.radius = Math.max(100, Math.min(2000, spherical.radius + e.deltaY));
+            updateCameraPosition();
+        });
+
+        updateCameraPosition();
+        console.log('[SpaceGraph] Controls initialized');
+    }
 }
 ```
 
@@ -452,6 +459,7 @@ npm run build
 ```
 
 **Expected output:**
+
 ```
 ✓ built in 1.2s
 dist/
@@ -468,6 +476,7 @@ git commit -m "Day 2: Core SpaceGraph class with basic rendering"
 ```
 
 **✅ Success Criteria:**
+
 - [ ] `npm run build` completes without errors
 - [ ] `dist/` directory created with spacegraphjs.js and types/
 - [ ] Git commit successful
@@ -489,33 +498,42 @@ mkdir demo
 ```html
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SpaceGraphJS Demo</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { overflow: hidden; }
-    #container { width: 100vw; height: 100vh; }
-    #status {
-      position: fixed;
-      top: 10px;
-      left: 10px;
-      background: rgba(0, 0, 0, 0.8);
-      color: #0f0;
-      padding: 10px;
-      font-family: monospace;
-      font-size: 12px;
-      z-index: 1000;
-      border-radius: 4px;
-    }
-  </style>
-</head>
-<body>
-  <div id="status">SpaceGraphJS Demo - Loading...</div>
-  <div id="container"></div>
-  <script type="module" src="/demo/main.ts"></script>
-</body>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>SpaceGraphJS Demo</title>
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+            body {
+                overflow: hidden;
+            }
+            #container {
+                width: 100vw;
+                height: 100vh;
+            }
+            #status {
+                position: fixed;
+                top: 10px;
+                left: 10px;
+                background: rgba(0, 0, 0, 0.8);
+                color: #0f0;
+                padding: 10px;
+                font-family: monospace;
+                font-size: 12px;
+                z-index: 1000;
+                border-radius: 4px;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="status">SpaceGraphJS Demo - Loading...</div>
+        <div id="container"></div>
+        <script type="module" src="/demo/main.ts"></script>
+    </body>
 </html>
 ```
 
@@ -527,53 +545,52 @@ import { SpaceGraph } from '../src/index';
 const statusEl = document.getElementById('status')!;
 
 function updateStatus(message: string) {
-  statusEl.textContent = message;
-  console.log('[Demo]', message);
+    statusEl.textContent = message;
+    console.log('[Demo]', message);
 }
 
 try {
-  updateStatus('Creating graph...');
-  
-  const graph = SpaceGraph.create('#container', {
-    nodes: [
-      { 
-        id: 'node-a', 
-        type: 'ShapeNode', 
-        label: 'Node A', 
-        position: [0, 0, 0],
-        data: { color: 0x3366ff }
-      },
-      { 
-        id: 'node-b', 
-        type: 'ShapeNode', 
-        label: 'Node B', 
-        position: [150, 0, 0],
-        data: { color: 0xff6633 }
-      },
-      { 
-        id: 'node-c', 
-        type: 'ShapeNode', 
-        label: 'Node C', 
-        position: [75, 130, 0],
-        data: { color: 0x33ff66 }
-      }
-    ],
-    edges: [
-      { id: 'edge-ab', source: 'node-a', target: 'node-b', type: 'Edge' },
-      { id: 'edge-bc', source: 'node-b', target: 'node-c', type: 'Edge' },
-      { id: 'edge-ca', source: 'node-c', target: 'node-a', type: 'Edge' }
-    ]
-  });
-  
-  updateStatus('Rendering graph...');
-  graph.render();
-  updateStatus('✓ Graph rendered successfully!');
-  
+    updateStatus('Creating graph...');
+
+    const graph = SpaceGraph.create('#container', {
+        nodes: [
+            {
+                id: 'node-a',
+                type: 'ShapeNode',
+                label: 'Node A',
+                position: [0, 0, 0],
+                data: { color: 0x3366ff },
+            },
+            {
+                id: 'node-b',
+                type: 'ShapeNode',
+                label: 'Node B',
+                position: [150, 0, 0],
+                data: { color: 0xff6633 },
+            },
+            {
+                id: 'node-c',
+                type: 'ShapeNode',
+                label: 'Node C',
+                position: [75, 130, 0],
+                data: { color: 0x33ff66 },
+            },
+        ],
+        edges: [
+            { id: 'edge-ab', source: 'node-a', target: 'node-b', type: 'Edge' },
+            { id: 'edge-bc', source: 'node-b', target: 'node-c', type: 'Edge' },
+            { id: 'edge-ca', source: 'node-c', target: 'node-a', type: 'Edge' },
+        ],
+    });
+
+    updateStatus('Rendering graph...');
+    graph.render();
+    updateStatus('✓ Graph rendered successfully!');
 } catch (error) {
-  const errorMsg = '✗ Error: ' + (error as Error).message;
-  updateStatus(errorMsg);
-  statusEl.style.color = '#f00';
-  console.error('[Demo] Error:', error);
+    const errorMsg = '✗ Error: ' + (error as Error).message;
+    updateStatus(errorMsg);
+    statusEl.style.color = '#f00';
+    console.error('[Demo] Error:', error);
 }
 ```
 
@@ -613,6 +630,7 @@ git commit -m "Days 3-4: Working demo with 3 nodes and 3 edges"
 ```
 
 **✅ Success Criteria:**
+
 - [ ] Demo opens without errors
 - [ ] 3 colored spheres visible
 - [ ] 3 gray lines connecting them
@@ -633,23 +651,31 @@ Create `demo/empty.html`:
 ```html
 <!DOCTYPE html>
 <html>
-<head>
-  <title>Empty Graph Test</title>
-  <style>* { margin: 0; } #container { width: 100vw; height: 100vh; }</style>
-</head>
-<body>
-  <div id="container"></div>
-  <script type="module">
-    import { SpaceGraph } from '../src/index.js';
-    try {
-      const graph = SpaceGraph.create('#container', { nodes: [], edges: [] });
-      graph.render();
-      console.log('✓ Empty graph works');
-    } catch (e) {
-      console.error('✗ Empty graph failed:', e);
-    }
-  </script>
-</body>
+    <head>
+        <title>Empty Graph Test</title>
+        <style>
+            * {
+                margin: 0;
+            }
+            #container {
+                width: 100vw;
+                height: 100vh;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="container"></div>
+        <script type="module">
+            import { SpaceGraph } from '../src/index.js';
+            try {
+                const graph = SpaceGraph.create('#container', { nodes: [], edges: [] });
+                graph.render();
+                console.log('✓ Empty graph works');
+            } catch (e) {
+                console.error('✗ Empty graph failed:', e);
+            }
+        </script>
+    </body>
 </html>
 ```
 
@@ -662,26 +688,34 @@ Create `demo/single-node.html`:
 ```html
 <!DOCTYPE html>
 <html>
-<head>
-  <title>Single Node Test</title>
-  <style>* { margin: 0; } #container { width: 100vw; height: 100vh; }</style>
-</head>
-<body>
-  <div id="container"></div>
-  <script type="module">
-    import { SpaceGraph } from '../src/index.js';
-    try {
-      const graph = SpaceGraph.create('#container', {
-        nodes: [{ id: 'a', type: 'ShapeNode', label: 'Single', position: [0, 0, 0] }],
-        edges: []
-      });
-      graph.render();
-      console.log('✓ Single node works');
-    } catch (e) {
-      console.error('✗ Single node failed:', e);
-    }
-  </script>
-</body>
+    <head>
+        <title>Single Node Test</title>
+        <style>
+            * {
+                margin: 0;
+            }
+            #container {
+                width: 100vw;
+                height: 100vh;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="container"></div>
+        <script type="module">
+            import { SpaceGraph } from '../src/index.js';
+            try {
+                const graph = SpaceGraph.create('#container', {
+                    nodes: [{ id: 'a', type: 'ShapeNode', label: 'Single', position: [0, 0, 0] }],
+                    edges: [],
+                });
+                graph.render();
+                console.log('✓ Single node works');
+            } catch (e) {
+                console.error('✗ Single node failed:', e);
+            }
+        </script>
+    </body>
 </html>
 ```
 
@@ -694,33 +728,41 @@ Create `demo/large.html`:
 ```html
 <!DOCTYPE html>
 <html>
-<head>
-  <title>Large Graph Test</title>
-  <style>* { margin: 0; } #container { width: 100vw; height: 100vh; }</style>
-</head>
-<body>
-  <div id="container"></div>
-  <script type="module">
-    import { SpaceGraph } from '../src/index.js';
-    
-    const startTime = performance.now();
-    
-    const nodes = [];
-    for (let i = 0; i < 100; i++) {
-      nodes.push({
-        id: `node-${i}`,
-        type: 'ShapeNode',
-        position: [Math.random() * 1000 - 500, Math.random() * 1000 - 500, 0]
-      });
-    }
-    
-    const graph = SpaceGraph.create('#container', { nodes, edges: [] });
-    graph.render();
-    
-    const endTime = performance.now();
-    console.log(`✓ 100 nodes rendered in ${(endTime - startTime).toFixed(2)}ms`);
-  </script>
-</body>
+    <head>
+        <title>Large Graph Test</title>
+        <style>
+            * {
+                margin: 0;
+            }
+            #container {
+                width: 100vw;
+                height: 100vh;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="container"></div>
+        <script type="module">
+            import { SpaceGraph } from '../src/index.js';
+
+            const startTime = performance.now();
+
+            const nodes = [];
+            for (let i = 0; i < 100; i++) {
+                nodes.push({
+                    id: `node-${i}`,
+                    type: 'ShapeNode',
+                    position: [Math.random() * 1000 - 500, Math.random() * 1000 - 500, 0],
+                });
+            }
+
+            const graph = SpaceGraph.create('#container', { nodes, edges: [] });
+            graph.render();
+
+            const endTime = performance.now();
+            console.log(`✓ 100 nodes rendered in ${(endTime - startTime).toFixed(2)}ms`);
+        </script>
+    </body>
 </html>
 ```
 
@@ -776,6 +818,7 @@ git commit -m "Day 5: Edge case testing and troubleshooting guide"
 ```
 
 **✅ Success Criteria:**
+
 - [ ] Empty graph test passes
 - [ ] Single node test passes
 - [ ] Large graph renders in <100ms
@@ -790,36 +833,35 @@ git commit -m "Day 5: Edge case testing and troubleshooting guide"
 
 **Use this time to:**
 
-| Task | Priority | Time |
-|------|----------|------|
-| Fix bugs from testing | High | 2-4h |
-| Improve error messages | Medium | 1-2h |
-| Add missing features | Medium | 2-4h |
-| Write better documentation | Low | 1-2h |
+| Task                       | Priority | Time |
+| -------------------------- | -------- | ---- |
+| Fix bugs from testing      | High     | 2-4h |
+| Improve error messages     | Medium   | 1-2h |
+| Add missing features       | Medium   | 2-4h |
+| Write better documentation | Low      | 1-2h |
 
 **Common fixes:**
 
 ```typescript
 // Better error messages
 if (!element) {
-  throw new Error(
-    `Container not found: "${container}".\n` +
-    `Make sure the element exists in the DOM.`
-  );
+    throw new Error(
+        `Container not found: "${container}".\n` + `Make sure the element exists in the DOM.`,
+    );
 }
 
 // Graceful WebGL fallback
 function checkWebGL(): boolean {
-  try {
-    const canvas = document.createElement('canvas');
-    return !!(canvas.getContext('webgl') || canvas.getContext('experimental-webgl'));
-  } catch {
-    return false;
-  }
+    try {
+        const canvas = document.createElement('canvas');
+        return !!(canvas.getContext('webgl') || canvas.getContext('experimental-webgl'));
+    } catch {
+        return false;
+    }
 }
 
 if (!checkWebGL()) {
-  console.warn('WebGL not supported. Some features may not work.');
+    console.warn('WebGL not supported. Some features may not work.');
 }
 ```
 
@@ -831,6 +873,7 @@ git commit -m "Days 6-7: Bug fixes and improvements"
 ```
 
 **✅ Success Criteria:**
+
 - [ ] All known bugs fixed
 - [ ] Error messages are helpful
 - [ ] Code is cleaner
@@ -855,19 +898,19 @@ createLabel(text: string, position: THREE.Vector3): void {
   const context = canvas.getContext('2d')!;
   canvas.width = 256;
   canvas.height = 64;
-  
+
   context.font = 'Bold 32px Arial';
   context.fillStyle = 'white';
   context.textAlign = 'center';
   context.fillText(text, 128, 40);
-  
+
   const texture = new THREE.CanvasTexture(canvas);
   const material = new THREE.SpriteMaterial({ map: texture });
   const sprite = new THREE.Sprite(material);
   sprite.position.copy(position);
   sprite.position.y += 30;
   sprite.scale.set(50, 12.5, 1);
-  
+
   this.scene.add(sprite);
 }
 ```
@@ -897,14 +940,14 @@ velocity.y *= 0.9;
 const geometryPool: THREE.SphereGeometry[] = [];
 
 function getGeometry(): THREE.SphereGeometry {
-  if (geometryPool.length > 0) {
-    return geometryPool.pop()!;
-  }
-  return new THREE.SphereGeometry(20, 32, 32);
+    if (geometryPool.length > 0) {
+        return geometryPool.pop()!;
+    }
+    return new THREE.SphereGeometry(20, 32, 32);
 }
 
 function releaseGeometry(geo: THREE.SphereGeometry) {
-  geometryPool.push(geo);
+    geometryPool.push(geo);
 }
 ```
 
@@ -916,6 +959,7 @@ git commit -m "Days 8-10: Polish - labels, improved controls, performance"
 ```
 
 **✅ Success Criteria:**
+
 - [ ] Labels visible on nodes
 - [ ] Camera feels smooth
 - [ ] Performance improved
@@ -960,11 +1004,9 @@ node test.mjs
 npx tsc --noEmit test.mjs
 ```
 
-**Step 3: Verify bundle size**
-
 ```bash
 gzip -c dist/spacegraphjs.js | wc -c
-# Should be <100KB
+
 ```
 
 **Commit:**
@@ -975,10 +1017,10 @@ git commit -m "Days 11-12: Fresh install test passes"
 ```
 
 **✅ Success Criteria:**
+
 - [ ] Fresh install works
 - [ ] Import successful
 - [ ] Types resolve correctly
-- [ ] Bundle size <100KB gzipped
 
 ---
 
@@ -988,47 +1030,49 @@ git commit -m "Days 11-12: Fresh install test passes"
 
 **Create QUICKSTART.md:**
 
-```markdown
+````markdown
 # SpaceGraphJS Quickstart
 
 ## Install
+
 ```bash
 npm install spacegraphjs three
 ```
+````
 
 ## Your First Graph
 
 ```html
 <!DOCTYPE html>
 <html>
-<body>
-  <div id="container" style="width: 100vw; height: 100vh;"></div>
-  <script type="module">
-    import { SpaceGraph } from 'spacegraphjs';
-    
-    const graph = SpaceGraph.create('#container', {
-      nodes: [
-        { id: 'a', type: 'ShapeNode', label: 'A', position: [0, 0, 0] },
-        { id: 'b', type: 'ShapeNode', label: 'B', position: [150, 0, 0] }
-      ],
-      edges: [
-        { id: 'e1', source: 'a', target: 'b', type: 'Edge' }
-      ]
-    });
-    
-    graph.render();
-  </script>
-</body>
+    <body>
+        <div id="container" style="width: 100vw; height: 100vh;"></div>
+        <script type="module">
+            import { SpaceGraph } from 'spacegraphjs';
+
+            const graph = SpaceGraph.create('#container', {
+                nodes: [
+                    { id: 'a', type: 'ShapeNode', label: 'A', position: [0, 0, 0] },
+                    { id: 'b', type: 'ShapeNode', label: 'B', position: [150, 0, 0] },
+                ],
+                edges: [{ id: 'e1', source: 'a', target: 'b', type: 'Edge' }],
+            });
+
+            graph.render();
+        </script>
+    </body>
 </html>
 ```
 
 Open in browser. Done.
 
 ## Controls
+
 - Rotate: Left-click + drag
 - Pan: Right-click + drag
 - Zoom: Scroll wheel
-```
+
+````
 
 **Test with stranger:**
 
@@ -1043,9 +1087,10 @@ Open in browser. Done.
 ```bash
 git add .
 git commit -m "Days 13-14: QUICKSTART.md verified"
-```
+````
 
 **✅ Success Criteria:**
+
 - [ ] Stranger completes in <10 minutes
 - [ ] No confusion points
 - [ ] All commands work as written
@@ -1072,8 +1117,7 @@ npm install /path/to/spacegraphjs
 npm install three
 # Verify import works
 
-# Check bundle size
-gzip -c dist/spacegraphjs.js | wc -c  # Should be <100KB
+gzip -c dist/spacegraphjs.js | wc -c
 
 # Run demo one more time
 npm run dev
@@ -1084,6 +1128,7 @@ npm whoami
 ```
 
 **✅ Success Criteria:**
+
 - [ ] All checks pass
 - [ ] Demo works in Chrome and Firefox
 - [ ] npm login valid
@@ -1095,9 +1140,10 @@ npm whoami
 **Step 1: Update version**
 
 Edit package.json:
+
 ```json
 {
-  "version": "6.0.0-alpha.1"
+    "version": "6.0.0-alpha.1"
 }
 ```
 
@@ -1112,6 +1158,7 @@ npm publish --tag alpha
 Visit: https://www.npmjs.com/package/spacegraphjs
 
 Should show:
+
 - Package name: spacegraphjs
 - Version: 6.0.0-alpha.1
 - Tag: alpha
@@ -1131,6 +1178,7 @@ git commit -m "Day 16: Published to npm as spacegraphjs@alpha"
 ```
 
 **✅ Success Criteria:**
+
 - [ ] Package on npmjs.com
 - [ ] Public install works
 - [ ] Tag is alpha (not latest)
@@ -1163,6 +1211,7 @@ GitHub: [link]
 ```
 
 **✅ Success Criteria:**
+
 - [ ] Announcement posted to GitHub
 - [ ] Announcement posted to Matrix
 - [ ] Links work
@@ -1171,21 +1220,21 @@ GitHub: [link]
 
 ## Summary
 
-| Day | Focus | Time | Success Criteria |
-|-----|-------|------|------------------|
-| **0** | Environment | 1h | Node 18+, git initialized |
-| **1** | Project Setup | 4h | npm install works |
-| **2** | SpaceGraph Class | 4h | Build succeeds |
-| **3-4** | Demo | 6h | 3 nodes + 3 edges render |
-| **5** | Testing | 3h | Edge cases pass |
-| **6-7** | Buffer | 8h | Bugs fixed |
-| **8-10** | Polish | 12h | Labels, performance |
-| **11-12** | Fresh Install | 4h | Works in empty directory |
-| **13-14** | QUICKSTART | 4h | <10 min for stranger |
-| **15** | Final Check | 2h | All checks pass |
-| **16** | Publish | 2h | On npm |
-| **17** | Announce | 2h | Community knows |
-| **TOTAL** | | **66h** | **Launch complete** |
+| Day       | Focus            | Time    | Success Criteria          |
+| --------- | ---------------- | ------- | ------------------------- |
+| **0**     | Environment      | 1h      | Node 18+, git initialized |
+| **1**     | Project Setup    | 4h      | npm install works         |
+| **2**     | SpaceGraph Class | 4h      | Build succeeds            |
+| **3-4**   | Demo             | 6h      | 3 nodes + 3 edges render  |
+| **5**     | Testing          | 3h      | Edge cases pass           |
+| **6-7**   | Buffer           | 8h      | Bugs fixed                |
+| **8-10**  | Polish           | 12h     | Labels, performance       |
+| **11-12** | Fresh Install    | 4h      | Works in empty directory  |
+| **13-14** | QUICKSTART       | 4h      | <10 min for stranger      |
+| **15**    | Final Check      | 2h      | All checks pass           |
+| **16**    | Publish          | 2h      | On npm                    |
+| **17**    | Announce         | 2h      | Community knows           |
+| **TOTAL** |                  | **66h** | **Launch complete**       |
 
 ---
 

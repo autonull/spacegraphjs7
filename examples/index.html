@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SpaceGraphJS Examples</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #0d0d12;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            color: #e2e8f0;
+            line-height: 1.5;
+        }
+
+        header {
+            padding: 4rem 2rem;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            background: linear-gradient(180deg, rgba(30, 30, 40, 0.8) 0%, rgba(13, 13, 18, 1) 100%);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            background: -webkit-linear-gradient(135deg, #3b82f6, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p.lead {
+            color: #94a3b8;
+            font-size: 1.125rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-decoration: none;
+            color: inherit;
+            transition: transform 0.2s, background 0.2s, border-color 0.2s, box-shadow 0.2s;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(139, 92, 246, 0.5);
+            box-shadow: 0 10px 30px -10px rgba(139, 92, 246, 0.3);
+        }
+
+        .card h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #f8fafc;
+        }
+
+        .card p {
+            color: #94a3b8;
+            font-size: 0.95rem;
+            flex-grow: 1;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 1rem;
+        }
+
+        .badge.ai {
+            background: rgba(139, 92, 246, 0.2);
+            color: #c4b5fd;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+        }
+
+        .badge.ui {
+            background: rgba(59, 130, 246, 0.2);
+            color: #93c5fd;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .badge.performance {
+            background: rgba(16, 185, 129, 0.2);
+            color: #6ee7b7;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>SpaceGraphJS Examples</h1>
+        <p class="lead">Interactive demonstrations of the first self-building UI framework.</p>
+    </header>
+
+    <main>
+        <div class="grid">
+            <!-- System Architecture -->
+            <a href="./complex-system-architecture.html" class="card">
+                <div><span class="badge ui">Complex Use Case</span></div>
+                <h2>System Architecture</h2>
+                <p>A cloud infrastructure visualization using GlobeNode, ChartNodes, and dynamic interactive edges.</p>
+            </a>
+
+            <!-- Multi-Agent Workflow -->
+            <a href="./multi-agent-workflow.html" class="card">
+                <div><span class="badge ui">Complex Use Case</span></div>
+                <h2>Multi-Agent Workflow</h2>
+                <p>Visualizing hierarchical AI agents executing tasks, complete with state updates and execution flow animations.</p>
+            </a>
+
+            <!-- Vision AI Demo -->
+            <a href="./vision-ui.html" class="card">
+                <div><span class="badge ai">Vision AI</span></div>
+                <h2>Vision Overlay UI</h2>
+                <p>Experience the Vision-Closed Dev Loop. Generates intentional UI errors and uses real ONNX models to
+                    autonomously identify and fix them.</p>
+            </a>
+
+            <!-- Gallery Hub -->
+            <a href="./gallery.html" class="card">
+                <div><span class="badge ui">Components</span></div>
+                <h2>Component Gallery</h2>
+                <p>A comprehensive showcase of all 16 node variants, including 3D meshes, HTML nodes, charts, and media
+                    components.</p>
+            </a>
+
+            <!-- Physics Demo -->
+            <a href="./physics.html" class="card">
+                <div><span class="badge ui">Interactions</span></div>
+                <h2>Physics Engine</h2>
+                <p>Interactive demonstration of the physics engine plugin, featuring drag-and-drop collision boundaries
+                    and spring forces.</p>
+            </a>
+
+            <!-- Force Layout -->
+            <a href="./force-layout.html" class="card">
+                <div><span class="badge performance">Layouts</span></div>
+                <h2>Force Layout</h2>
+                <p>Dynamic force-directed graph generation displaying robust repulsion and attraction metrics.</p>
+            </a>
+
+            <!-- HTML Nodes -->
+            <a href="./html-nodes.html" class="card">
+                <div><span class="badge ui">DOM Integration</span></div>
+                <h2>HTML & CSS3D Nodes</h2>
+                <p>Mixing traditional HTML elements, interactive iframes, and 3D graphics seamlessly in the same canvas.
+                </p>
+            </a>
+
+            <!-- Large Graph -->
+            <a href="./large.html" class="card">
+                <div><span class="badge performance">Scale</span></div>
+                <h2>Performance Test</h2>
+                <p>Stress test spacegraphjs rendering using thousands of instanced items while maintaining steady 60
+                    FPS.</p>
+            </a>
+
+            <!-- Benchmark -->
+            <a href="./benchmark.html" class="card">
+                <div><span class="badge performance">1000 Nodes</span></div>
+                <h2>Benchmark</h2>
+                <p>Formal performance verification running a dynamic network of 1000 interconnected nodes calculating live FPS.</p>
+            </a>
+
+            <!-- Viewport Serialization -->
+            <a href="./viewport-serialization.html" class="card">
+                <div><span class="badge ui">State Management</span></div>
+                <h2>Viewport Serialization</h2>
+                <p>Save and restore camera and node states across instances.</p>
+            </a>
+
+            <!-- Inter-graph Edges -->
+            <a href="./inter-graph-edges.html" class="card">
+                <div><span class="badge ui">Multi-canvas</span></div>
+                <h2>Inter-graph Edges</h2>
+                <p>Connect nodes seamlessly across different SpaceGraph instances on the same page.</p>
+            </a>
+
+            <!-- Fractal LOD -->
+            <a href="./fractal-lod.html" class="card">
+                <div><span class="badge ui">ZUI Core</span></div>
+                <h2>Fractal LOD Zooming</h2>
+                <p>Infinite drill-down into Group nodes and semantic edge navigation on double-click.</p>
+            </a>
+
+            <!-- Basic -->
+            <a href="./basic.html" class="card">
+                <div><span class="badge ui">Getting Started</span></div>
+                <h2>Basic Usage</h2>
+                <p>The simplest way to use SpaceGraphJS just importing the library and creating nodes.</p>
+            </a>
+
+            <!-- Images -->
+            <a href="./images.html" class="card">
+                <div><span class="badge ui">Media</span></div>
+                <h2>Image Handling</h2>
+                <p>Working with image textures loaded via URLs mapped cleanly across the graph.</p>
+            </a>
+        </div>
+    </main>
+</body>
+
+</html>

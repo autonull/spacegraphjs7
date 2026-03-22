@@ -20,42 +20,41 @@
 
 ### Software (Days 0-30)
 
-| Result | Metric | Verification |
-|--------|--------|--------------|
-| Fastest ZUI library | 120 FPS at 100 nodes | Benchmark suite |
-| Smallest bundle | <50KB gzipped | `gzip -c dist/*.js \| wc -c` |
-| Simplest API | <10 public methods | API documentation |
-| Best DX | <30 sec to first render | User testing |
-| Most reliable | 0 critical bugs, 95% test coverage | CI/CD reports |
+| Result              | Metric                             | Verification                 |
+| ------------------- | ---------------------------------- | ---------------------------- |
+| Fastest ZUI library | 120 FPS at 100 nodes               | Benchmark suite              |
+| Smallest bundle     | <200KB gzipped                     | `gzip -c dist/*.js \| wc -c` |
+| Best DX             | <30 sec to first render            | User testing                 |
+| Most reliable       | 0 critical bugs, 95% test coverage | CI/CD reports                |
 
 ### Hardware (Months 2-6)
 
-| Result | Metric | Verification |
-|--------|--------|--------------|
-| Most capable | 12+ TOPS NPU, 32GB RAM | Spec sheet |
-| Coolest running | <40°C passive | Thermal camera |
-| Fastest boot | <8 seconds | Stopwatch |
-| Most open | Full BOM + CAD + schematics | GitHub repository |
-| Best value | $249 (40% below competitors) | Price comparison |
+| Result          | Metric                       | Verification      |
+| --------------- | ---------------------------- | ----------------- |
+| Most capable    | 12+ TOPS NPU, 32GB RAM       | Spec sheet        |
+| Coolest running | <40°C passive                | Thermal camera    |
+| Fastest boot    | <8 seconds                   | Stopwatch         |
+| Most open       | Full BOM + CAD + schematics  | GitHub repository |
+| Best value      | $249 (40% below competitors) | Price comparison  |
 
 ### Research (Months 6-36)
 
-| Result | Metric | Verification |
-|--------|--------|--------------|
-| Seminal papers | 4+ (CHI, UIST, MSR, TEI) | Conference proceedings |
-| High impact | 250+ citations | Google Scholar |
-| Open datasets | 2 (100K+ layouts, 10K UI) | Zenodo, Hugging Face |
-| Active collaborations | 6+ labs | Joint publications |
-| Sustainable funding | $2M+ secured | Grant awards |
+| Result                | Metric                    | Verification           |
+| --------------------- | ------------------------- | ---------------------- |
+| Seminal papers        | 4+ (CHI, UIST, MSR, TEI)  | Conference proceedings |
+| High impact           | 250+ citations            | Google Scholar         |
+| Open datasets         | 2 (100K+ layouts, 10K UI) | Zenodo, Hugging Face   |
+| Active collaborations | 6+ labs                   | Joint publications     |
+| Sustainable funding   | $2M+ secured              | Grant awards           |
 
 ### Community (Months 1-36)
 
-| Result | Metric | Verification |
-|--------|--------|--------------|
-| Active users | 25,000+ npm downloads/month | npm trends |
-| Engaged contributors | 150+ external contributors | GitHub insights |
-| Healthy discourse | <2h response time, 98% resolution | Matrix, GitHub |
-| Sustainable revenue | $100K/month | P&L statements |
+| Result               | Metric                            | Verification    |
+| -------------------- | --------------------------------- | --------------- |
+| Active users         | 25,000+ npm downloads/month       | npm trends      |
+| Engaged contributors | 150+ external contributors        | GitHub insights |
+| Healthy discourse    | <2h response time, 98% resolution | Matrix, GitHub  |
+| Sustainable revenue  | $100K/month                       | P&L statements  |
 
 ---
 
@@ -86,7 +85,6 @@
 │  Week 3-4: API Design                                                   │
 │  ═══════════════════════════════════════════════════════════════════    │
 │  Deliverables:                                                          │
-│  □ Minimal public API (<10 methods)                                     │
 │  □ TypeScript types (100% coverage)                                     │
 │  □ Error messages (helpful, not cryptic)                                │
 │  □ QUICKSTART.md (<5 minutes to first render)                           │
@@ -289,33 +287,33 @@
 
 ### Review Cadence
 
-| Frequency | Duration | Focus | Output |
-|-----------|----------|-------|--------|
-| **Daily** | 15 min | Yesterday's progress, today's priorities | Task list |
-| **Weekly** | 1 hour | All metrics, at-risk outcomes | Status report |
-| **Monthly** | 4 hours | Strategic adjustments | Stakeholder update |
-| **Quarterly** | 1 day | Comprehensive review | Public report |
+| Frequency     | Duration | Focus                                    | Output             |
+| ------------- | -------- | ---------------------------------------- | ------------------ |
+| **Daily**     | 15 min   | Yesterday's progress, today's priorities | Task list          |
+| **Weekly**    | 1 hour   | All metrics, at-risk outcomes            | Status report      |
+| **Monthly**   | 4 hours  | Strategic adjustments                    | Stakeholder update |
+| **Quarterly** | 1 day    | Comprehensive review                     | Public report      |
 
 ---
 
 ### Status Tracking
 
-| Status | Criteria | Action |
-|--------|----------|--------|
-| 🟢 **On Track** | Metrics within 10% of target | Continue |
-| 🟡 **At Risk** | Metrics 10-25% below target | Intervention plan |
-| 🔴 **Off Track** | Metrics >25% below target | Strategy pivot |
+| Status           | Criteria                     | Action            |
+| ---------------- | ---------------------------- | ----------------- |
+| 🟢 **On Track**  | Metrics within 10% of target | Continue          |
+| 🟡 **At Risk**   | Metrics 10-25% below target  | Intervention plan |
+| 🔴 **Off Track** | Metrics >25% below target    | Strategy pivot    |
 
 ---
 
 ### Buffers (Delay Resilience)
 
-| Level | Buffer | Purpose |
-|-------|--------|---------|
-| **Task** | +50% time | Daily overruns |
-| **Week** | 30% uncommitted | Sick days, meetings |
-| **Milestone** | 1 slip allowed | Complex tasks |
-| **Phase** | 2-4 weeks | Major setbacks |
+| Level         | Buffer          | Purpose             |
+| ------------- | --------------- | ------------------- |
+| **Task**      | +50% time       | Daily overruns      |
+| **Week**      | 30% uncommitted | Sick days, meetings |
+| **Milestone** | 1 slip allowed  | Complex tasks       |
+| **Phase**     | 2-4 weeks       | Major setbacks      |
 
 **No guilt policy:** Delays are data, not failure. Acknowledge → Investigate → Adjust → Communicate → Continue.
 
@@ -323,32 +321,32 @@
 
 ### Motivation (Flywheel)
 
-| Ritual | Frequency | Purpose |
-|--------|-----------|---------|
-| **Friday Win Ritual** | Weekly | Celebrate progress |
-| **Milestone Celebration** | Per milestone | Reward achievement |
-| **Progress Wall** | Visual | See accumulation |
-| **Don't Break the Chain** | Daily | Build consistency |
-| **Monthly Community Update** | Monthly | External accountability |
-| **Why Reminder** | Daily | Purpose reinforcement |
+| Ritual                       | Frequency     | Purpose                 |
+| ---------------------------- | ------------- | ----------------------- |
+| **Friday Win Ritual**        | Weekly        | Celebrate progress      |
+| **Milestone Celebration**    | Per milestone | Reward achievement      |
+| **Progress Wall**            | Visual        | See accumulation        |
+| **Don't Break the Chain**    | Daily         | Build consistency       |
+| **Monthly Community Update** | Monthly       | External accountability |
+| **Why Reminder**             | Daily         | Purpose reinforcement   |
 
 ---
 
 ## Documents (Where)
 
-| Document | Purpose | When |
-|----------|---------|------|
-| **[README.md](../README.md)** | Vision, quick start | Read first |
-| **[PLAN/INDEX.md](./PLAN/INDEX.md)** | Complete plan index | Navigation |
-| **[PLAN/AMBITIOUS-SUCCESS.md](./PLAN/AMBITIOUS-SUCCESS.md)** | 10x targets | Inspiration |
-| **[PLAN/PRODUCT-EXCELLENCE.md](./PLAN/PRODUCT-EXCELLENCE.md)** | Product-first philosophy | Guidance |
-| **[PLAN/ENHANCED-BUILD-PLAN.md](./PLAN/ENHANCED-BUILD-PLAN.md)** | Day-by-day build | Days 0-14 |
-| **[PLAN/LAUNCH-SEQUENCED.md](./PLAN/LAUNCH-SEQUENCED.md)** | Launch checklist | Days 15-17 |
-| **[PLAN/OUTCOMES-TRACKING.md](./PLAN/OUTCOMES-TRACKING.md)** | Metrics & accountability | Ongoing |
-| **[PLAN/RESILIENT-EXECUTION.md](./PLAN/RESILIENT-EXECUTION.md)** | Buffers & motivation | Ongoing |
-| **[PLAN/ACADEMIC-RESEARCH.md](./PLAN/ACADEMIC-RESEARCH.md)** | Research program | Months 6-36 |
-| **[PLAN/ENHANCEMENT-PLAN.md](./PLAN/ENHANCEMENT-PLAN.md)** | Growth strategy | Months 2-6 |
-| **[PLAN/CONTINGENCY-PLAN.md](./PLAN/CONTINGENCY-PLAN.md)** | Risk mitigation | As needed |
+| Document                                                         | Purpose                  | When        |
+| ---------------------------------------------------------------- | ------------------------ | ----------- |
+| **[README.md](../README.md)**                                    | Vision, quick start      | Read first  |
+| **[PLAN/INDEX.md](./PLAN/INDEX.md)**                             | Complete plan index      | Navigation  |
+| **[PLAN/AMBITIOUS-SUCCESS.md](./PLAN/AMBITIOUS-SUCCESS.md)**     | 10x targets              | Inspiration |
+| **[PLAN/PRODUCT-EXCELLENCE.md](./PLAN/PRODUCT-EXCELLENCE.md)**   | Product-first philosophy | Guidance    |
+| **[PLAN/ENHANCED-BUILD-PLAN.md](./PLAN/ENHANCED-BUILD-PLAN.md)** | Day-by-day build         | Days 0-14   |
+| **[PLAN/LAUNCH-SEQUENCED.md](./PLAN/LAUNCH-SEQUENCED.md)**       | Launch checklist         | Days 15-17  |
+| **[PLAN/OUTCOMES-TRACKING.md](./PLAN/OUTCOMES-TRACKING.md)**     | Metrics & accountability | Ongoing     |
+| **[PLAN/RESILIENT-EXECUTION.md](./PLAN/RESILIENT-EXECUTION.md)** | Buffers & motivation     | Ongoing     |
+| **[PLAN/ACADEMIC-RESEARCH.md](./PLAN/ACADEMIC-RESEARCH.md)**     | Research program         | Months 6-36 |
+| **[PLAN/ENHANCEMENT-PLAN.md](./PLAN/ENHANCEMENT-PLAN.md)**       | Growth strategy          | Months 2-6  |
+| **[PLAN/CONTINGENCY-PLAN.md](./PLAN/CONTINGENCY-PLAN.md)**       | Risk mitigation          | As needed   |
 
 ---
 

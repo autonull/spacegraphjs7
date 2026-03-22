@@ -7,11 +7,13 @@
 ## The Ambition
 
 **Most projects aim for:**
+
 - Working code
 - Some users
 - Sustainable revenue
 
 **We aim for:**
+
 - **Best-in-class performance** (fastest ZUI library)
 - **Best-in-class DX** (most intuitive API)
 - **Best-in-class hardware** (most open, most capable)
@@ -23,27 +25,25 @@
 
 ### Software Benchmarks (Best-in-Class)
 
-| Metric | Good | Great | **Industry-Defining** |
-|--------|------|-------|----------------------|
-| Initial render (100 nodes) | <500ms | <200ms | **<50ms** |
-| FPS (1000 nodes) | 30 FPS | 60 FPS | **120 FPS** |
-| Bundle size | <500KB | <200KB | **<50KB** |
-| API surface | 50+ methods | 20+ methods | **<10 methods** |
-| Time to first render | <10 min | <5 min | **<2 min** |
-| Memory (1000 nodes) | <200MB | <100MB | **<25MB** |
-| TypeScript inference | Partial | Good | **Perfect** |
+| Metric                     | Good    | Great  | **Industry-Defining** |
+| -------------------------- | ------- | ------ | --------------------- |
+| Initial render (100 nodes) | <500ms  | <200ms | **<50ms**             |
+| FPS (1000 nodes)           | 30 FPS  | 60 FPS | **120 FPS**           |
+| Time to first render       | <10 min | <5 min | **<2 min**            |
+| Memory (1000 nodes)        | <200MB  | <100MB | **<25MB**             |
+| TypeScript inference       | Partial | Good   | **Perfect**           |
 
 ### Hardware Benchmarks (Best-in-Class)
 
-| Metric | Good | Great | **Industry-Defining** |
-|--------|------|-------|----------------------|
-| SoC performance | 2 TOPS | 4 TOPS | **12+ TOPS** |
-| RAM | 8GB | 16GB | **32GB** |
-| Thermal (load) | <70°C | <60°C | **<45°C passive** |
-| Boot time | <60s | <30s | **<10s** |
-| Case material | Plastic | Aluminum | **CNC Aluminum** |
-| Openness | Source only | Source + schematics | **Full BOM + CAD** |
-| Price | $399 | $299 | **$249** |
+| Metric          | Good        | Great               | **Industry-Defining** |
+| --------------- | ----------- | ------------------- | --------------------- |
+| SoC performance | 2 TOPS      | 4 TOPS              | **12+ TOPS**          |
+| RAM             | 8GB         | 16GB                | **32GB**              |
+| Thermal (load)  | <70°C       | <60°C               | **<45°C passive**     |
+| Boot time       | <60s        | <30s                | **<10s**              |
+| Case material   | Plastic     | Aluminum            | **CNC Aluminum**      |
+| Openness        | Source only | Source + schematics | **Full BOM + CAD**    |
+| Price           | $399        | $299                | **$249**              |
 
 ---
 
@@ -107,16 +107,17 @@
 
 ### ZUI/Graph Visualization Landscape
 
-| Library | Strengths | Weaknesses | Our Advantage |
-|---------|-----------|------------|---------------|
-| **React Flow** | React integration, popular | React-only, 2D only | Framework agnostic, 3D |
-| **Cytoscape.js** | Mature, many layouts | Dated visuals, 2D only | Modern, 3D, vision |
-| **Three.js** | Powerful, flexible | Low-level, steep learning curve | High-level API |
-| **D3** | Extremely flexible | Complex, not for graphs | Purpose-built for graphs |
-| **Kepler.gl** | Beautiful, map-focused | Map-only, heavy | General-purpose, light |
-| **Observable Plot** | Simple, declarative | Limited customization | Full customization |
+| Library             | Strengths                  | Weaknesses                      | Our Advantage            |
+| ------------------- | -------------------------- | ------------------------------- | ------------------------ |
+| **React Flow**      | React integration, popular | React-only, 2D only             | Framework agnostic, 3D   |
+| **Cytoscape.js**    | Mature, many layouts       | Dated visuals, 2D only          | Modern, 3D, vision       |
+| **Three.js**        | Powerful, flexible         | Low-level, steep learning curve | High-level API           |
+| **D3**              | Extremely flexible         | Complex, not for graphs         | Purpose-built for graphs |
+| **Kepler.gl**       | Beautiful, map-focused     | Map-only, heavy                 | General-purpose, light   |
+| **Observable Plot** | Simple, declarative        | Limited customization           | Full customization       |
 
 **Our unique position:**
+
 - High-level API (like React Flow)
 - 3D rendering (like Three.js)
 - AI vision (unique)
@@ -180,9 +181,7 @@ Benchmarks to beat:
 ├─────────────────────────────────────────────────────────────┤
 │  Initial render      │ 200ms    │ 20ms       │ 10x         │
 │  FPS (1000 nodes)    │ 60 FPS   │ 120 FPS    │ 2x smooth   │
-│  Bundle size         │ 100KB    │ 25KB       │ 4x smaller  │
 │  Memory (1000 nodes) │ 100MB    │ 25MB       │ 4x lighter  │
-│  API methods         │ 50+      │ 8          │ 6x simpler  │
 │  Time to first       │ 5 min    │ 30 sec     │ 10x faster  │
 └─────────────────────────────────────────────────────────────┘
 
@@ -191,7 +190,6 @@ How we achieve this:
 • WebGPU backend (2x faster than WebGL)
 • Aggressive tree-shaking (4x smaller bundle)
 • Object pooling (4x less GC pressure)
-• Minimal API surface (6x fewer methods)
 • Sensible defaults (10x faster setup)
 ```
 
@@ -382,7 +380,6 @@ BEFORE RELEASE, VERIFY:
 │  Initial render     │ <50ms    │ ____     │ □              │
 │  FPS (100 nodes)    │ 120 FPS  │ ____     │ □              │
 │  FPS (1000 nodes)   │ 60 FPS   │ ____     │ □              │
-│  Bundle size        │ <50KB    │ ____     │ □              │
 │  Memory (1000)      │ <25MB    │ ____     │ □              │
 │  Memory leak test   │ <1MB     │ ____     │ □              │
 └─────────────────────────────────────────────────────────────┘
@@ -445,15 +442,15 @@ IF ANY HESITATION: Fix before release.
 
 ### Month 12 Targets
 
-| Metric | Conservative | Ambitious | **Industry-Defining** |
-|--------|--------------|-----------|----------------------|
-| npm downloads/mo | 1,000 | 5,000 | **25,000** |
-| GitHub stars | 200 | 500 | **2,000** |
-| External contributors | 10 | 25 | **100** |
-| Monthly revenue | $10K | $25K | **$100K** |
-| Hardware units | 100 | 500 | **2,000** |
-| Press mentions | 5 | 20 | **100+** |
-| Conference talks | 1 | 5 | **20+** |
+| Metric                | Conservative | Ambitious | **Industry-Defining** |
+| --------------------- | ------------ | --------- | --------------------- |
+| npm downloads/mo      | 1,000        | 5,000     | **25,000**            |
+| GitHub stars          | 200          | 500       | **2,000**             |
+| External contributors | 10           | 25        | **100**               |
+| Monthly revenue       | $10K         | $25K      | **$100K**             |
+| Hardware units        | 100          | 500       | **2,000**             |
+| Press mentions        | 5            | 20        | **100+**              |
+| Conference talks      | 1            | 5         | **20+**               |
 
 ---
 
