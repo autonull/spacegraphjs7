@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>SpaceGraphJS Interaction Demo</title>
+        <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { overflow: hidden; background-color: #1a1a2e; }
+            #container { width: 100vw; height: 100vh; }
+            #log {
+                position: fixed;
+                bottom: 16px;
+                left: 16px;
+                z-index: 20000;
+                background: rgba(15,23,42,0.9);
+                color: #94a3b8;
+                font: 12px/1.5 monospace;
+                border: 1px solid #334155;
+                border-radius: 8px;
+                padding: 10px 14px;
+                max-width: 340px;
+                pointer-events: none;
+            }
+            #log .entry { margin-bottom: 2px; }
+            #log .entry.action { color: #a78bfa; }
+            #log .entry.hover  { color: #34d399; }
+            #log .entry.drag   { color: #60a5fa; }
+        </style>
+    </head>
+    <body>
+        <div id="container"></div>
+        <div id="log"><strong style="color:#e2e8f0">Events</strong><div id="log-entries"></div></div>
+        <script type="module">
+            import { SpaceGraph, HoverMetaWidget } from '../src/index.ts';
+
+            const graph = await SpaceGraph.create('#container', {
+                nodes: [
+                    {
+                        id: 'n1',
+                        type: 'HtmlNode',
+                        label: 'Alpha',
+                        position: [-200, 80, 0],
+                        data: {
+                            color: 'rgba(139,92,246,0.85)',
+                            description: 'Drag me or hover for actions',
+                            width: 200,
+                            height: 100,
+                        },
+                    },
+                    {
+                        id: 'n2',
+                        type: 'HtmlNode',
+                        label: 'Beta',
+                        position: [200, 80, 0],
+                        data: {
+                            color: 'rgba(52,211,153,0.85)',
+                            description: 'Custom actions below',
+                            width: 200,
+                            height: 100,
+                            hoverActions: [
+                                { icon: '⤢', label: 'Focus', action: 'focus' },
+                                { icon: '★', label: 'Pin', action: 'pin' },
+                                { icon: '✕', label: 'Delete', action: 'delete' },
+                            ],
+                        },
+                    },
+                    {
+                        id: 'n3',
+                        type: 'HtmlNode',
+                        label: 'Gamma',
+                        position: [0, -120, 0],
+                        data: {
+                            color: 'rgba(251,146,60,0.85)',
+                            description: 'Connected to both',
+                            width: 200,
+                            height: 100,
+                        },
+                    },
+                    {
+                        id: 'n4',
+                        type: 'ShapeNode',
+                        label: 'Shape',
+                        position: [0, 240, 0],
+                        data: { shape: 'sphere', color: 0x60a5fa, size: 60 },
+                    },
+                    {
+                        id: 'n5',
+                        type: 'HtmlNode',
+                        label: 'No widget',
+                        position: [400, 240, 0],
+                        data: {
+                            color: 'rgba(100,100,100,0.7)',
+                            description: 'metaWidget disabled for this node',
+                            metaWidget: false,   // ← opt-out
+                        },
+                    },
+                ],
+                edges: [
+                    { id: 'e1', source: 'n1', target: 'n2', type: 'Edge' },
+                    { id: 'e2', source: 'n1', target: 'n3', type: 'CurvedEdge' },
+                    { id: 'e3', source: 'n2', target: 'n3', type: 'CurvedEdge' },
+                    { id: 'e4', source: 'n4', target: 'n1', type: 'DottedEdge' },
+                ],
+            });
+
+            // Register the HoverMetaWidget plugin and initialize it.
+            // Options shown with their defaults — override any you like:
+            const metaWidget = new HoverMetaWidget({
+                enabled:      true,     // global on/off (also per-node: data.metaWidget=false)
+                hideDelay:    400,      // ms grace period before hiding (lets you reach buttons)
+                fadeDelay:    3500,     // ms of idle before auto-fading (0 = no fade)
+                fadeDuration: 700,      // ms for the fade-out animation
+                showBorder:   true,     // dashed bounding outline
+                // defaultActions can be overridden here or per-node via data.hoverActions
+            });
+            graph.pluginManager.register('HoverMetaWidget', metaWidget);
+            metaWidget.init(graph);
+
+            // ── Event logging ──────────────────────────────────────────
+            const logEntries = document.getElementById('log-entries');
+            const MAX_ENTRIES = 8;
+
+            function addLog(text, cls = '') {
+                const el = document.createElement('div');
+                el.className = 'entry ' + cls;
+                el.textContent = text;
+                logEntries.prepend(el);
+                while (logEntries.children.length > MAX_ENTRIES) {
+                    logEntries.lastChild.remove();
+                }
+            }
+
+            graph.events.on('node:pointerenter', ({ node }) => {
+                addLog(`hover → ${node.label ?? node.id}`, 'hover');
+                // Expose for tests
+                window._lastHoverNodeId = node.id;
+            });
+
+            graph.events.on('node:pointerleave', () => {
+                window._lastHoverNodeId = null;
+            });
+
+            graph.events.on('node:metaaction', ({ node, action }) => {
+                addLog(`action [${action}] on ${node.label ?? node.id}`, 'action');
+                window._lastMetaAction = { nodeId: node.id, action };
+
+                if (action === 'pin') {
+                    node.data.pinned = !node.data.pinned;
+                    addLog(`pin toggled: ${node.data.pinned}`, 'action');
+                }
+            });
+
+            graph.events.on('interaction:dragend', ({ node }) => {
+                addLog(`dragged → ${node.label ?? node.id}`, 'drag');
+            });
+
+            // Expose for Playwright tests
+            window._sg = graph;
+        </script>
+    </body>
+</html>

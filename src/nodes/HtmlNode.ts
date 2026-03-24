@@ -8,7 +8,7 @@ export class HtmlNode extends DOMNode {
         const width = spec.data?.width || 200;
         const height = spec.data?.height || 100;
         const div = DOMUtils.createElement('div');
-        super(sg, spec, div, width, height, { opacity: 0.1 });
+        super(sg, spec, div, width, height, { visible: false });
 
         this.domElement.className = `spacegraph-html-node ${spec.data?.className || ''}`;
 

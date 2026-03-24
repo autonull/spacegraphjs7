@@ -101,6 +101,103 @@ export class DOMNode extends Node {
 
         this.backingMesh = new THREE.Mesh(this.meshGeometry, this.meshMaterial);
         this.object.add(this.backingMesh);
+
+        this._setupPointerEventRelay(sg);
+    }
+
+    /**
+     * Relay pointer events from this DOM element to the WebGL canvas so that
+     * InteractionPlugin's raycaster-based hover and drag detection works for
+     * DOM-backed nodes. Without this, the HTML element captures all pointer
+     * events and the canvas never sees them.
+     *
+     * - mouseenter / mouseleave: synthetic pointermove to canvas triggers raycasting
+     * - pointerdown/move/up:     relayed with pointer capture for smooth drag
+     * - dblclick / contextmenu: relayed for semantic navigation and context menus
+     */
+    private _setupPointerEventRelay(sg: SpaceGraph): void {
+        const canvas = sg.renderer.renderer.domElement as HTMLCanvasElement;
+        const el = this.domElement;
+
+        const relayPointer = (type: string, src: PointerEvent) => {
+            canvas.dispatchEvent(new PointerEvent(type, {
+                bubbles: false,
+                cancelable: true,
+                clientX: src.clientX,
+                clientY: src.clientY,
+                pointerId: src.pointerId,
+                pointerType: src.pointerType,
+                isPrimary: src.isPrimary,
+                button: src.button,
+                buttons: src.buttons,
+                ctrlKey: src.ctrlKey,
+                shiftKey: src.shiftKey,
+                altKey: src.altKey,
+                metaKey: src.metaKey,
+            }));
+        };
+
+        // Hover enter: dispatch pointermove at real coords to trigger raycasting
+        el.addEventListener('mouseenter', (e) => {
+            canvas.dispatchEvent(new PointerEvent('pointermove', {
+                bubbles: false,
+                clientX: e.clientX,
+                clientY: e.clientY,
+                ctrlKey: e.ctrlKey,
+                shiftKey: e.shiftKey,
+                altKey: e.altKey,
+            }));
+        });
+
+        // Hover leave: dispatch pointermove at an off-screen coordinate so the
+        // raycaster finds nothing and InteractionPlugin emits node:pointerleave.
+        el.addEventListener('mouseleave', () => {
+            canvas.dispatchEvent(new PointerEvent('pointermove', {
+                bubbles: false,
+                clientX: -99999,
+                clientY: -99999,
+            }));
+        });
+
+        // Drag: capture pointer so subsequent move/up events stay on this element,
+        // then relay each one to the canvas so InteractionPlugin handles dragging.
+        el.addEventListener('pointerdown', (e) => {
+            el.setPointerCapture(e.pointerId);
+            relayPointer('pointerdown', e);
+        });
+
+        el.addEventListener('pointermove', (e) => {
+            relayPointer('pointermove', e);
+        });
+
+        el.addEventListener('pointerup', (e) => {
+            relayPointer('pointerup', e);
+        });
+
+        el.addEventListener('pointercancel', (e) => {
+            relayPointer('pointercancel', e);
+        });
+
+        // Semantic navigation on double-click
+        el.addEventListener('dblclick', (e) => {
+            canvas.dispatchEvent(new MouseEvent('dblclick', {
+                bubbles: false,
+                cancelable: true,
+                clientX: e.clientX,
+                clientY: e.clientY,
+            }));
+        });
+
+        // Context menu
+        el.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            canvas.dispatchEvent(new MouseEvent('contextmenu', {
+                bubbles: false,
+                cancelable: true,
+                clientX: e.clientX,
+                clientY: e.clientY,
+            }));
+        });
     }
 
     protected updateBackingGeometry(width: number, height: number): void {

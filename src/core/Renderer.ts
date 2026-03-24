@@ -33,11 +33,19 @@ export class Renderer {
         this.renderer.setPixelRatio(window.devicePixelRatio);
         this.container.appendChild(this.renderer.domElement);
 
+        // The CSS3D overlay is position:absolute — the container MUST be a positioned
+        // ancestor, otherwise the overlay escapes to <body> and misaligns with the
+        // WebGL canvas when the container is not at the page origin.
+        this.container.style.position = 'relative';
+
         this.cssRenderer = new CSS3DRenderer();
         this.cssRenderer.setSize(this.container.clientWidth, this.container.clientHeight);
-        this.cssRenderer.domElement.style.position = 'absolute';
-        this.cssRenderer.domElement.style.top = '0px';
-        this.cssRenderer.domElement.style.pointerEvents = 'none';
+        Object.assign(this.cssRenderer.domElement.style, {
+            position:      'absolute',
+            top:           '0px',
+            left:          '0px',
+            pointerEvents: 'none',
+        });
         this.container.appendChild(this.cssRenderer.domElement);
 
         this.instancedRenderer = new InstancedNodeRenderer(sg, this.scene);
