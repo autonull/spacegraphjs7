@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>SpaceGraphJS Demo</title>
+        <title>SpaceGraphJS Demos</title>
         <style>
             * {
                 margin: 0;
@@ -11,30 +11,110 @@
                 box-sizing: border-box;
             }
             body {
-                overflow: hidden;
-                background-color: #1a1a2e;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+                background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+                min-height: 100vh;
+                padding: 40px 20px;
+                color: #e0e0e0;
             }
-            #container {
-                width: 100vw;
-                height: 100vh;
+            .container {
+                max-width: 1200px;
+                margin: 0 auto;
             }
-            #status {
-                position: fixed;
-                top: 10px;
-                left: 10px;
-                background: rgba(0, 0, 0, 0.8);
-                color: #0f0;
-                padding: 10px;
-                font-family: monospace;
-                font-size: 12px;
-                z-index: 1000;
-                border-radius: 4px;
+            header {
+                text-align: center;
+                margin-bottom: 50px;
+            }
+            h1 {
+                font-size: 2.5rem;
+                color: #fff;
+                margin-bottom: 10px;
+                background: linear-gradient(90deg, #3366ff, #33ff66);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                background-clip: text;
+            }
+            .subtitle {
+                color: #888;
+                font-size: 1.1rem;
+            }
+            .demo-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+                gap: 24px;
+            }
+            .demo-card {
+                background: rgba(255, 255, 255, 0.05);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 12px;
+                padding: 24px;
+                transition: all 0.3s ease;
+                cursor: pointer;
+                text-decoration: none;
+                color: inherit;
+                display: block;
+            }
+            .demo-card:hover {
+                background: rgba(255, 255, 255, 0.1);
+                border-color: #3366ff;
+                transform: translateY(-4px);
+                box-shadow: 0 8px 32px rgba(51, 102, 255, 0.2);
+            }
+            .demo-card h2 {
+                font-size: 1.3rem;
+                color: #fff;
+                margin-bottom: 8px;
+            }
+            .demo-card .path {
+                font-family: 'Courier New', monospace;
+                font-size: 0.85rem;
+                color: #3366ff;
+                margin-bottom: 12px;
+            }
+            .demo-card .description {
+                font-size: 0.9rem;
+                color: #888;
+                line-height: 1.5;
+            }
+            .demo-card .icon {
+                font-size: 2rem;
+                margin-bottom: 12px;
+            }
+            #demo-grid + .count {
+                text-align: center;
+                margin: 30px auto;
+                display: block !important;
+            }
+            .count {
+                background: rgba(51, 102, 255, 0.2);
+                color: #3366ff;
+                padding: 4px 12px;
+                border-radius: 20px;
+                font-size: 0.9rem;
+                display: inline-block;
+                margin-top: 10px;
+            }
+            footer {
+                text-align: center;
+                margin-top: 60px;
+                padding-top: 30px;
+                border-top: 1px solid rgba(255, 255, 255, 0.1);
+                color: #666;
+                font-size: 0.9rem;
             }
         </style>
     </head>
     <body>
-        <div id="status">SpaceGraphJS Demo - Loading...</div>
-        <div id="container"></div>
-        <script type="module" src="./main.ts"></script>
+        <div class="container">
+            <header>
+                <h1>SpaceGraphJS Demos</h1>
+                <p class="subtitle">Interactive demonstrations of SpaceGraphJS capabilities</p>
+            </header>
+            <div id="demo-grid" class="demo-grid"></div>
+            <footer>
+                <p>SpaceGraphJS v6.0.0-alpha.1</p>
+            </footer>
+        </div>
+        <script type="module" src="./index.ts"></script>
     </body>
 </html>
