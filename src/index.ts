@@ -45,8 +45,16 @@ export { ObjectPoolManager } from './core/ObjectPoolManager';
 export { CullingManager } from './core/CullingManager';
 export { AdvancedRenderingOptimizer } from './core/AdvancedRenderingOptimizer';
 
+// Rendering
+export {
+    InstancedNodeRenderer,
+    GEOMETRY_FAMILIES,
+    type GeometryFamily,
+} from './rendering/InstancedNodeRenderer';
+
 // Nodes
 export { Node } from './nodes/Node';
+export { InstancedNode } from './nodes/InstancedNode';
 export { ShapeNode } from './nodes/ShapeNode';
 export { HtmlNode } from './nodes/HtmlNode';
 export { InstancedShapeNode } from './nodes/InstancedShapeNode';
