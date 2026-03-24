@@ -404,5 +404,3 @@ npm install spacegraphjs three
 ---
 
 **SpaceGraphJS — The First Self-Building UI Framework**
-
-**Built with ❤️ for a visible, comprehensible, open future**

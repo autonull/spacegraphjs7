@@ -71,10 +71,12 @@ export class SpaceGraph {
     public poolManager: ObjectPoolManager<any>;
     public cullingManager: CullingManager;
     public optimizer: AdvancedRenderingOptimizer;
+    public options: SpaceGraphOptions;
     private animationFrameId?: number;
     private lastTimestamp: number = 0;
 
-    constructor(container: HTMLElement, _options: SpaceGraphOptions = {}) {
+    constructor(container: HTMLElement, options: SpaceGraphOptions = {}) {
+        this.options = options;
         this.container = container;
         // Object Pool
         this.poolManager = new ObjectPoolManager();
@@ -99,35 +101,30 @@ export class SpaceGraph {
             : container;
     }
 
-    static create(container: string | HTMLElement, spec: GraphSpec): SpaceGraph {
+    static async create(
+        container: string | HTMLElement,
+        spec: GraphSpec,
+        options?: SpaceGraphOptions,
+    ): Promise<SpaceGraph> {
         const element = SpaceGraph.getContainerElement(container);
 
         if (!element) {
             throw new Error(
                 `[SpaceGraph] Initialization Error: Container not found for selector/element "${container}". ` +
-                `Make sure the element exists in the DOM before calling create().`
+                    `Make sure the element exists in the DOM before calling create().`,
             );
         }
 
         if (!SpaceGraph.checkWebGL()) {
-            console.warn('[SpaceGraph] Warning: WebGL not supported on this device. Rendering may fail or perform poorly.');
+            console.warn(
+                '[SpaceGraph] Warning: WebGL not supported on this device. Rendering may fail or perform poorly.',
+            );
         }
 
-        const graph = new SpaceGraph(element);
-
-        // Return a promise-like behavior or throw synchronously if possible,
-        // but `create` is currently synchronous returning SpaceGraph.
-        // We will improve the unhandled promise rejection by explicitly throwing.
-        graph.init()
-            .then(() => {
-                graph.loadSpec(spec);
-                graph.render();
-            })
-            .catch((err) => {
-                const message = err instanceof Error ? err.message : String(err);
-                throw new Error(`[SpaceGraph] Initialization Error: Core systems failed to initialize. Reason: ${message}`, { cause: err });
-            });
-
+        const graph = new SpaceGraph(element, options);
+        await graph.init();
+        graph.loadSpec(spec);
+        graph.render();
         return graph;
     }
 
@@ -225,10 +222,13 @@ export class SpaceGraph {
         }
     }
 
-    export(): GraphSpec & { camera?: { position: [number, number, number], target: [number, number, number] }, plugins?: Record<string, any> } {
+    export(): GraphSpec & {
+        camera?: { position: [number, number, number]; target: [number, number, number] };
+        plugins?: Record<string, any>;
+    } {
         const spec: any = {
             nodes: [],
-            edges: []
+            edges: [],
         };
 
         for (const node of this.graph.nodes.values()) {
@@ -237,7 +237,7 @@ export class SpaceGraph {
                 type: node.constructor.name,
                 label: node.label,
                 position: [node.position.x, node.position.y, node.position.z],
-                data: JSON.parse(JSON.stringify(node.data || {}))
+                data: JSON.parse(JSON.stringify(node.data || {})),
             });
         }
 
@@ -247,7 +247,7 @@ export class SpaceGraph {
                 type: edge.constructor.name,
                 source: edge.source.id,
                 target: edge.target.id,
-                data: JSON.parse(JSON.stringify(edge.data || {}))
+                data: JSON.parse(JSON.stringify(edge.data || {})),
             });
         }
 
@@ -256,13 +256,13 @@ export class SpaceGraph {
                 position: [
                     this.renderer.camera.position.x,
                     this.renderer.camera.position.y,
-                    this.renderer.camera.position.z
+                    this.renderer.camera.position.z,
                 ],
                 target: [
                     this.cameraControls.target.x,
                     this.cameraControls.target.y,
-                    this.cameraControls.target.z
-                ]
+                    this.cameraControls.target.z,
+                ],
             };
         }
 
@@ -282,18 +282,22 @@ export class SpaceGraph {
             this.renderer.camera.position.set(
                 data.camera.position[0],
                 data.camera.position[1],
-                data.camera.position[2]
+                data.camera.position[2],
             );
             this.cameraControls.target.set(
                 data.camera.target[0],
                 data.camera.target[1],
-                data.camera.target[2]
+                data.camera.target[2],
             );
 
             // Recompute spherical based on new position/target
-            const diff = MathPool.getInstance().acquireVector3().subVectors(this.renderer.camera.position, this.cameraControls.target);
+            const diff = MathPool.getInstance()
+                .acquireVector3()
+                .subVectors(this.renderer.camera.position, this.cameraControls.target);
             this.cameraControls.spherical.radius = diff.length();
-            this.cameraControls.spherical.phi = Math.acos(diff.y / this.cameraControls.spherical.radius);
+            this.cameraControls.spherical.phi = Math.acos(
+                diff.y / this.cameraControls.spherical.radius,
+            );
             this.cameraControls.spherical.theta = Math.atan2(diff.x, diff.z);
             MathPool.getInstance().releaseVector3(diff);
 
@@ -388,13 +392,13 @@ export class SpaceGraph {
     public static async import(
         container: string | HTMLElement,
         data: any,
-        options: SpaceGraphOptions = {}
+        options: SpaceGraphOptions = {},
     ): Promise<SpaceGraph> {
         const element = SpaceGraph.getContainerElement(container);
 
         if (!element) {
             throw new Error(
-                `[SpaceGraph] Import Error: Container not found for selector/element "${container}".`
+                `[SpaceGraph] Import Error: Container not found for selector/element "${container}".`,
             );
         }
 
@@ -404,7 +408,10 @@ export class SpaceGraph {
             sg.import(data);
             sg.render();
         } catch (err) {
-            console.error('[SpaceGraph] Import Runtime Error: Failed to import data or start rendering loop.', err);
+            console.error(
+                '[SpaceGraph] Import Runtime Error: Failed to import data or start rendering loop.',
+                err,
+            );
         }
         return sg;
     }
@@ -436,7 +443,10 @@ export class SpaceGraph {
             sg.render();
         } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
-            const wrappedError = new Error(`[SpaceGraph] fromURL Error: Failed to load graph from ${url}. Reason: ${message}`, { cause: error });
+            const wrappedError = new Error(
+                `[SpaceGraph] fromURL Error: Failed to load graph from ${url}. Reason: ${message}`,
+                { cause: error },
+            );
             console.error(wrappedError);
             throw wrappedError;
         }

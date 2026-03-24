@@ -5,18 +5,21 @@ import * as THREE from 'three';
 import { MathPool } from '../utils/MathPool';
 
 /**
- * PhysicsPlugin — Verlet-based 2-D physics stub.
+ * PhysicsPlugin — Verlet-based 2-D physics simulation.
  *
- * Provides a foundation for constraint-based or particle physics.
+ * Provides force-directed graph layout using constraint-based or particle physics.
  * Each node gets a position, previous-position (for Verlet integration),
  * and optional mass from node.data.mass.
  *
  * Current behaviours:
  *   - Gravity (optional, disabled by default)
+ *   - Spring forces between connected nodes (Hooke's Law)
+ *   - Electrical repulsion between all node pairs (O(n²) - see Phase 1 optimization)
  *   - Simple position damping
  *   - Ground plane collision (y = 0, disabled by default)
+ *   - Node-to-node collision detection
  *
- * Extend by adding constraints, springs, or collision detection.
+ * Enable via: sg.pluginManager.get<PhysicsPlugin>('PhysicsPlugin').settings.enabled = true
  */
 export class PhysicsPlugin implements ISpaceGraphPlugin {
     readonly id = 'physics-plugin';
@@ -130,7 +133,10 @@ export class PhysicsPlugin implements ISpaceGraphPlugin {
                     const dist = Math.sqrt(distSq);
 
                     // Avoid instantiating clones in a hot double-nested loop
-                    const diffNormalized = MathPool.getInstance().acquireVector3().copy(diff).divideScalar(dist);
+                    const diffNormalized = MathPool.getInstance()
+                        .acquireVector3()
+                        .copy(diff)
+                        .divideScalar(dist);
                     const push = MathPool.getInstance().acquireVector3();
 
                     // Hard collision constraint

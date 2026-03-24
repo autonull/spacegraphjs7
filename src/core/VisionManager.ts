@@ -21,6 +21,25 @@ export interface VisionReport {
     overall: number;
 }
 
+/**
+ * VisionManager — Accessibility and layout quality analysis for SpaceGraph.
+ *
+ * Architecture: This manager runs in all environments without ONNX models.
+ * It uses heuristic-based analysis (WCAG contrast checking, BVH overlap detection)
+ * to evaluate graph quality.
+ *
+ * ONNX models are optional and enhance heuristic confidence when provided.
+ * They run in try/catch blocks and fail silently, falling back to pure heuristics.
+ * This ensures graceful degradation in any environment.
+ *
+ * To enable ONNX models:
+ *   1. Host the .onnx model files in your public folder
+ *   2. Call sg.vision.loadModels({ tla: '/tla_model.onnx', che: '/che_model.onnx', ... })
+ *   3. Or use the VisionOverlayPlugin which handles loading automatically
+ *
+ * Hardware acceleration: Override execution providers via SpaceGraphOptions:
+ *   await SpaceGraph.create('#container', spec, { onnxExecutionProviders: ['wasm', 'webgpu'] })
+ */
 export class VisionManager {
     private sg: SpaceGraph;
     private isAnalyzing: boolean = false;
@@ -39,8 +58,12 @@ export class VisionManager {
 
         // Automatically append rknn for RK3588 NPU acceleration if running in a Node environment that supports it
         // This acts as a hook/fallback when deploying on SpaceGraph Mini hardware.
-        if (typeof process !== 'undefined' && process.arch === 'arm64' && !this.executionProviders.includes('rknn')) {
-             this.executionProviders.unshift('rknn');
+        if (
+            typeof process !== 'undefined' &&
+            process.arch === 'arm64' &&
+            !this.executionProviders.includes('rknn')
+        ) {
+            this.executionProviders.unshift('rknn');
         }
     }
 
@@ -49,7 +72,10 @@ export class VisionManager {
     public modelsLoaded: boolean = false;
 
     public async loadModels(modelPaths: Record<string, string>): Promise<void> {
-        console.log(`[VisionManager] Initializing ONNX session with providers [${this.executionProviders.join(', ')}]: `, modelPaths);
+        console.log(
+            `[VisionManager] Initializing ONNX session with providers [${this.executionProviders.join(', ')}]: `,
+            modelPaths,
+        );
 
         for (const [key, path] of Object.entries(modelPaths)) {
             try {
@@ -65,17 +91,31 @@ export class VisionManager {
         console.log('[VisionManager] ONNX models loaded.', Object.keys(this.sessions));
     }
 
-    private async _analyzeLegibility(nodes: any[], frustum: THREE.Frustum): Promise<{ legibilityFailures: any[], colorHarmonyScore: number, dominantPalette: string[], wcagAA: boolean }> {
+    private async _analyzeLegibility(
+        nodes: any[],
+        _frustum: THREE.Frustum,
+    ): Promise<{
+        legibilityFailures: any[];
+        colorHarmonyScore: number;
+        dominantPalette: string[];
+        wcagAA: boolean;
+    }> {
         const legibilityFailures = [];
         let colorHarmonyScore = 100;
         const dominantPalette: string[] = [];
         let wcagAA = true;
         const bgColorThree = new THREE.Color(this.sg.renderer.scene.background as THREE.Color);
-        const bgColor = { r: bgColorThree.r * 255, g: bgColorThree.g * 255, b: bgColorThree.b * 255 };
+        const bgColor = {
+            r: bgColorThree.r * 255,
+            g: bgColorThree.g * 255,
+            b: bgColorThree.b * 255,
+        };
 
         for (let i = 0; i < nodes.length; i++) {
             const nodeA = nodes[i];
-            const nodeColor = nodeA.data?.color ? hexToRgb(nodeA.data.color) : { r: 200, g: 200, b: 200 };
+            const nodeColor = nodeA.data?.color
+                ? hexToRgb(nodeA.data.color)
+                : { r: 200, g: 200, b: 200 };
             dominantPalette.push(nodeA.data?.color || '#cccccc');
 
             if (nodeColor) {
@@ -90,9 +130,20 @@ export class VisionManager {
                     verifiedIssue = true;
                     if (this.sessions['tla']) {
                         try {
-                            const inputs = new Float32Array([nodeColor.r / 255, nodeColor.g / 255, nodeColor.b / 255, 1.0, 1.0, 1.0, 14.0, 400.0]);
+                            const inputs = new Float32Array([
+                                nodeColor.r / 255,
+                                nodeColor.g / 255,
+                                nodeColor.b / 255,
+                                1.0,
+                                1.0,
+                                1.0,
+                                14.0,
+                                400.0,
+                            ]);
                             const tensor = new Tensor('float32', inputs, [1, 8]);
-                            const result = await this.sessions['tla'].run({ text_features: tensor });
+                            const result = await this.sessions['tla'].run({
+                                text_features: tensor,
+                            });
                             const prob = result['legibility_score'].data[0] as number;
                             if (prob >= 0.5) verifiedIssue = false;
                         } catch (e) {
@@ -102,9 +153,21 @@ export class VisionManager {
 
                     if (this.sessions['che'] && verifiedIssue) {
                         try {
-                            const inputs = new Float32Array([nodeColor.r / 255, nodeColor.g / 255, nodeColor.b / 255, bgColor.r / 255, bgColor.g / 255, bgColor.b / 255, 0.5, 0.5, 0.5]);
+                            const inputs = new Float32Array([
+                                nodeColor.r / 255,
+                                nodeColor.g / 255,
+                                nodeColor.b / 255,
+                                bgColor.r / 255,
+                                bgColor.g / 255,
+                                bgColor.b / 255,
+                                0.5,
+                                0.5,
+                                0.5,
+                            ]);
                             const tensor = new Tensor('float32', inputs, [1, 9]);
-                            const result = await this.sessions['che'].run({ color_neighborhood: tensor });
+                            const result = await this.sessions['che'].run({
+                                color_neighborhood: tensor,
+                            });
                             const prob = result['harmony_score'].data[0] as number;
                             if (prob < 0.5) colorHarmonyScore -= 10;
                         } catch (e) {
@@ -127,10 +190,14 @@ export class VisionManager {
         return { legibilityFailures, colorHarmonyScore, dominantPalette, wcagAA };
     }
 
-    private async _analyzeOverlaps(nodes: any[], frustum: THREE.Frustum): Promise<{ overlaps: any[], layoutScore: number }> {
+    private async _analyzeOverlaps(
+        nodes: any[],
+        frustum: THREE.Frustum,
+    ): Promise<{ overlaps: any[]; layoutScore: number }> {
         const overlaps = [];
         let layoutScore = 100;
         this.spatialIndex.build(nodes);
+        const processedPairs = new Set<string>();
 
         const boxA = new THREE.Box3();
         const boxB = new THREE.Box3();
@@ -145,7 +212,9 @@ export class VisionManager {
             const neighbors = this.spatialIndex.queryBox(boxA);
 
             for (const nodeB of neighbors) {
-                if (nodeA.id === nodeB.id || nodeB.id < nodeA.id) continue;
+                const pairKey = [nodeA.id, nodeB.id].sort().join('|');
+                if (nodeA.id === nodeB.id || processedPairs.has(pairKey)) continue;
+                processedPairs.add(pairKey);
                 if (!frustum.containsPoint(nodeB.object.position)) continue;
 
                 boxB.setFromObject(nodeB.object);
@@ -155,7 +224,16 @@ export class VisionManager {
                     let verifiedOverlap = true;
                     if (this.sessions['odn']) {
                         try {
-                            const inputs = new Float32Array([boxA.min.x, boxA.min.y, boxA.max.x, boxA.max.y, boxB.min.x, boxB.min.y, boxB.max.x, boxB.max.y]);
+                            const inputs = new Float32Array([
+                                boxA.min.x,
+                                boxA.min.y,
+                                boxA.max.x,
+                                boxA.max.y,
+                                boxB.min.x,
+                                boxB.min.y,
+                                boxB.max.x,
+                                boxB.max.y,
+                            ]);
                             const tensor = new Tensor('float32', inputs, [1, 8]);
                             const result = await this.sessions['odn'].run({ boxes: tensor });
                             const prob = result['overlap_prob'].data[0] as number;
@@ -209,7 +287,12 @@ export class VisionManager {
         if (this.sessions['vhs'] && depths.length > 0) {
             try {
                 const avgDepth = depths.reduce((a, b) => a + b, 0) / depths.length;
-                const inputs = new Float32Array([avgDepth, maxDepth, nodes.length, this.sg.graph.edges.length]);
+                const inputs = new Float32Array([
+                    avgDepth,
+                    maxDepth,
+                    nodes.length,
+                    this.sg.graph.edges.length,
+                ]);
                 const tensor = new Tensor('float32', inputs, [1, 4]);
                 const result = await this.sessions['vhs'].run({ hierarchy_features: tensor });
                 hierarchyScore = Math.floor((result['hierarchy_score'].data[0] as number) * 100);
@@ -220,7 +303,11 @@ export class VisionManager {
         return { hierarchyScore };
     }
 
-    private async _analyzeErgonomics(nodes: any[], camera: THREE.PerspectiveCamera, frustum: THREE.Frustum): Promise<{ fittsLawScore: number }> {
+    private async _analyzeErgonomics(
+        nodes: any[],
+        camera: THREE.PerspectiveCamera,
+        frustum: THREE.Frustum,
+    ): Promise<{ fittsLawScore: number }> {
         let fittsLawScore = 90;
         let smallTargets = 0;
         const screenWidth = this.sg.renderer.renderer.domElement.width;
@@ -246,7 +333,12 @@ export class VisionManager {
 
         if (this.sessions['eqa']) {
             try {
-                const inputs = new Float32Array([pctSmall, nodes.length, screenWidth, screenHeight]);
+                const inputs = new Float32Array([
+                    pctSmall,
+                    nodes.length,
+                    screenWidth,
+                    screenHeight,
+                ]);
                 const tensor = new Tensor('float32', inputs, [1, 4]);
                 const result = await this.sessions['eqa'].run({ ergonomic_features: tensor });
                 fittsLawScore = Math.floor((result['fittslaw_score'].data[0] as number) * 100);
@@ -275,10 +367,14 @@ export class VisionManager {
         const camera = this.sg.renderer.camera;
         camera.updateMatrixWorld();
         camera.matrixWorldInverse.copy(camera.matrixWorld).invert();
-        this.cameraViewProjectionMatrix.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
+        this.cameraViewProjectionMatrix.multiplyMatrices(
+            camera.projectionMatrix,
+            camera.matrixWorldInverse,
+        );
         this.frustum.setFromProjectionMatrix(this.cameraViewProjectionMatrix);
 
-        const { legibilityFailures, colorHarmonyScore, dominantPalette, wcagAA } = await this._analyzeLegibility(nodes, this.frustum);
+        const { legibilityFailures, colorHarmonyScore, dominantPalette, wcagAA } =
+            await this._analyzeLegibility(nodes, this.frustum);
         const { overlaps, layoutScore } = await this._analyzeOverlaps(nodes, this.frustum);
         const { hierarchyScore } = await this._analyzeHierarchy(nodes);
         const { fittsLawScore } = await this._analyzeErgonomics(nodes, camera, this.frustum);
@@ -296,10 +392,10 @@ export class VisionManager {
             overall: Math.max(
                 0,
                 layoutScore -
-                overlaps.length * 2 -
-                legibilityFailures.length * 5 -
-                (100 - hierarchyScore) * 0.5 -
-                (100 - fittsLawScore) * 0.5,
+                    overlaps.length * 2 -
+                    legibilityFailures.length * 5 -
+                    (100 - hierarchyScore) * 0.5 -
+                    (100 - fittsLawScore) * 0.5,
             ),
         };
 
@@ -333,11 +429,14 @@ export class VisionManager {
 
         switch (category.type) {
             case 'legibility':
-            case 'color':
+            case 'color': {
                 console.log('[VisionManager] Applying color/legibility corrections...');
                 const autoColorPlugin: any = this.sg.pluginManager.getPlugin('AutoColorPlugin');
 
-                if (autoColorPlugin && typeof autoColorPlugin.applyVisionCorrection === 'function') {
+                if (
+                    autoColorPlugin &&
+                    typeof autoColorPlugin.applyVisionCorrection === 'function'
+                ) {
                     autoColorPlugin.applyVisionCorrection(report.legibility.failures);
                     console.log('[VisionManager] AutoColorPlugin corrections applied.');
                 } else {
@@ -346,8 +445,9 @@ export class VisionManager {
                     );
                 }
                 break;
+            }
 
-            case 'overlap':
+            case 'overlap': {
                 console.log('[VisionManager] Applying overlap corrections...');
                 const autoLayoutPlugin: any = this.sg.pluginManager.getPlugin('AutoLayoutPlugin');
 
@@ -357,7 +457,9 @@ export class VisionManager {
                 } else {
                     const forceLayout: any = this.sg.pluginManager.getPlugin('ForceLayout');
                     if (forceLayout && typeof forceLayout.update === 'function') {
-                        console.log('[VisionManager] AutoLayoutPlugin not found, falling back to ForceLayout...');
+                        console.log(
+                            '[VisionManager] AutoLayoutPlugin not found, falling back to ForceLayout...',
+                        );
 
                         const originalRepulsion = forceLayout.settings.repulsion || 10000;
                         forceLayout.settings.repulsion = originalRepulsion * 5;
@@ -368,12 +470,15 @@ export class VisionManager {
 
                         forceLayout.settings.repulsion = originalRepulsion;
                     } else {
-                        console.warn('[VisionManager] No suitable layout plugin found to perform autoFix.');
+                        console.warn(
+                            '[VisionManager] No suitable layout plugin found to perform autoFix.',
+                        );
                     }
                 }
                 break;
+            }
 
-            case 'hierarchy':
+            case 'hierarchy': {
                 console.log('[VisionManager] Applying hierarchy corrections...');
                 const hierLayout: any = this.sg.pluginManager.getPlugin('HierarchicalLayout');
                 if (hierLayout && typeof hierLayout.fixHierarchy === 'function') {
@@ -382,9 +487,12 @@ export class VisionManager {
                     hierLayout.apply();
                 }
                 break;
+            }
 
             case 'ergonomics':
-                console.log('[VisionManager] Applying ergonomics corrections (camera zoom limit)...');
+                console.log(
+                    '[VisionManager] Applying ergonomics corrections (camera zoom limit)...',
+                );
                 this.sg.fitView(150, 2.0);
                 break;
         }
@@ -459,5 +567,13 @@ export class VisionManager {
             this.autonomousTimer = null;
             console.log('[VisionManager] Stopped autonomous correction loop');
         }
+    }
+
+    public startAutonomousAnalysis(intervalMs: number = 30000): void {
+        this.startAutonomousCorrection(intervalMs);
+    }
+
+    public stopAutonomousAnalysis(): void {
+        this.stopAutonomousCorrection();
     }
 }
