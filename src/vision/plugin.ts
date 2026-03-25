@@ -1,5 +1,8 @@
 import type { Plugin } from 'vite';
 import { runVisionAnalysis } from './analyzer';
+import { createLogger } from '../utils/logger';
+
+const logger = createLogger('VisionPlugin');
 
 export interface VisionPluginOptions {
     enabled?: boolean;
@@ -17,14 +20,14 @@ export function spacegraphVision(options: VisionPluginOptions = {}): Plugin {
 
         async closeBundle() {
             if (!options.enabled) return;
-            console.log('👁️  Vision analysis running on build output...');
+            logger.log('Vision analysis running on build output...');
 
             const report = await runVisionAnalysis('dist');
-            console.log('Vision Analysis Report:', report);
+            logger.log('Vision Analysis Report:', report);
 
             if (options.thresholds?.layout && report.layoutScore < options.thresholds.layout) {
-                console.warn(
-                    `[WARNING] Layout score (${report.layoutScore}) is below threshold (${options.thresholds.layout})`,
+                logger.warn(
+                    `Layout score (${report.layoutScore}) is below threshold (${options.thresholds.layout})`,
                 );
             }
 
@@ -32,27 +35,26 @@ export function spacegraphVision(options: VisionPluginOptions = {}): Plugin {
                 options.thresholds?.legibility &&
                 report.legibilityScore < options.thresholds.legibility
             ) {
-                console.warn(
-                    `[WARNING] Legibility score (${report.legibilityScore}) is below threshold (${options.thresholds.legibility})`,
+                logger.warn(
+                    `Legibility score (${report.legibilityScore}) is below threshold (${options.thresholds.legibility})`,
                 );
             }
 
             if (options.autoFix && report.issues.length > 0) {
-                console.log(
-                    `👁️  AutoFix enabled: generating patch for ${report.issues.length} issues...`,
+                logger.log(
+                    `AutoFix enabled: generating patch for ${report.issues.length} issues...`,
                 );
 
                 const patches = report.issues.map((issue: any) => {
-                    // Generate a structural JSON patch based on the issue type
                     const patch: any = {
                         targetNodeId: issue.nodeId || issue.nodeA || 'global',
                         action: 'update',
                     };
 
                     if (issue.message && issue.message.includes('contrast')) {
-                        patch.data = { color: '#ffffff' }; // baseline bright color suggestion
+                        patch.data = { color: '#ffffff' };
                     } else if (issue.message && issue.message.includes('overlap')) {
-                        patch.position = 'auto-resolve-layout'; // Semantic instruction
+                        patch.position = 'auto-resolve-layout';
                     } else if (issue.type === 'overlap') {
                         patch.position = 'auto-resolve-layout';
                     }
@@ -70,8 +72,8 @@ export function spacegraphVision(options: VisionPluginOptions = {}): Plugin {
 
                 fs.writeFileSync(patchPath, JSON.stringify(patches, null, 2), 'utf-8');
 
-                console.log(`[AutoFix] Generated JSON patch file at: ${patchPath}`);
-                console.log(`[AutoFix] CI systems can consume this patch to mutate source data.`);
+                logger.log(`Generated JSON patch file at: ${patchPath}`);
+                logger.log(`CI systems can consume this patch to mutate source data.`);
             }
         },
 

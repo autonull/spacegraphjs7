@@ -1,6 +1,9 @@
 import { spawn } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
+import { createLogger } from '../utils/logger';
+
+const logger = createLogger('Vision');
 
 export interface VisionReport {
     layoutScore: number;
@@ -21,10 +24,9 @@ export async function runVisionAnalysis(outputDir: string): Promise<VisionReport
         issues: [],
     };
 
-    // Find all HTML files in the output directory
     const htmlFiles = findHtmlFiles(outputDir);
     if (htmlFiles.length === 0) {
-        console.warn('[Vision] No HTML files found in output directory to analyze.');
+        logger.warn('No HTML files found in output directory to analyze.');
         return report;
     }
 
@@ -36,30 +38,28 @@ export async function runVisionAnalysis(outputDir: string): Promise<VisionReport
 
         let serverProcess;
         try {
-            // Start Vite dev server to host the fixture and resolve bare module imports automatically
-            console.log(`[Vision] Starting static server for ${outputDir}...`);
+            logger.log(`Starting static server for ${outputDir}...`);
             serverProcess = spawn('npx', ['vite', 'serve', outputDir, '--port', '5175', '--strictPort', '--no-open'], {
                 stdio: 'ignore',
             });
-            await new Promise((resolve) => setTimeout(resolve, 2000)); // wait for server to start
+            await new Promise((resolve) => setTimeout(resolve, 2000));
 
             for (const file of htmlFiles) {
                 const relativePath = path.relative(outputDir, file).replace(/\\/g, '/');
                 const url = `http://localhost:5175/${relativePath}`;
-                console.log(`[Vision] Analyzing ${url}`);
+                logger.log(`Analyzing ${url}`);
 
                 try {
                     page.on('console', (msg) =>
-                        console.log(`[Browser] ${msg.type()}: ${msg.text()}`),
+                        logger.debug(`[Browser] ${msg.type()}: ${msg.text()}`),
                     );
-                    page.on('pageerror', (err) => console.error(`[Browser Error] ${err.message}`));
+                    page.on('pageerror', (err) => logger.error(`[Browser Error] ${err.message}`));
                     page.on('requestfailed', request =>
-                        console.error(`[Browser] Request failed: ${request.url()} (${request.failure()?.errorText})`)
+                        logger.error(`[Browser] Request failed: ${request.url()} (${request.failure()?.errorText})`)
                     );
 
                     await page.goto(url, { waitUntil: 'networkidle', timeout: 10000 });
 
-                    // Wait for SpaceGraph instances to register
                     const hasGraph = await page
                         .waitForFunction(
                             () => {
@@ -75,16 +75,12 @@ export async function runVisionAnalysis(outputDir: string): Promise<VisionReport
                         .catch(() => false);
 
                     if (!hasGraph) {
-                        console.log(
-                            `[Vision] No SpaceGraph instance found on ${relativePath}, skipping.`,
-                        );
+                        logger.debug(`No SpaceGraph instance found on ${relativePath}, skipping.`);
                         continue;
                     }
 
-                    // Give layout algorithms time to settle
                     await page.waitForTimeout(1000);
 
-                    // Analyze nodes inside the page context
                     const fileAnalysis = await page.evaluate(async () => {
                         const w = window as any;
                         const instances = w.__SPACEGRAPH_INSTANCES__;
@@ -96,16 +92,12 @@ export async function runVisionAnalysis(outputDir: string): Promise<VisionReport
                         const localIssues: any[] = [];
 
                         for (const sg of instances) {
-                            // Turn off autonomous mode for the test so we can do a single frame analysis
                             sg.vision.stopAutonomousCorrection();
-
-                            // Grab the real heuristics + ONNX validated report from the library Engine
                             const report = await sg.vision.analyzeVision();
 
                             overlaps += report.overlap.overlaps.length;
                             legibilityIssues += report.legibility.failures.length;
 
-                            // Map overlap format to expected Playwright output
                             localIssues.push(
                                 ...report.overlap.overlaps.map((o: any) => ({
                                     type: 'overlap',
@@ -134,7 +126,7 @@ export async function runVisionAnalysis(outputDir: string): Promise<VisionReport
                         report.issues.push(...fileAnalysis.localIssues);
                     }
                 } catch (e) {
-                    console.error(`[Vision] Error analyzing ${relativePath}:`, e);
+                    logger.error(`Error analyzing ${relativePath}:`, e);
                 }
             }
         } finally {
@@ -144,7 +136,7 @@ export async function runVisionAnalysis(outputDir: string): Promise<VisionReport
         }
         await browser.close();
     } catch (e) {
-        console.error('[Vision] Failed to run playwright analysis:', e);
+        logger.error('Failed to run playwright analysis:', e);
     }
 
     return report;
