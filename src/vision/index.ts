@@ -1,5 +1,29 @@
-export { spacegraphVision } from './plugin';
-export { runVisionAnalysis } from './analyzer';
-export type { VisionPluginOptions } from './plugin';
-export type { VisionReport, VisionIssue } from './analyzer';
-export { VisionAssert, createVisionAssert } from './assert';
+// SpaceGraphJS v7.0 - Vision Module Exports
+
+export { VisionSystem } from './VisionSystem';
+
+export { HeuristicsStrategy } from './strategies/HeuristicsStrategy';
+export type { HeuristicsConfig } from './strategies/HeuristicsStrategy';
+
+export { LegibilityAnalyzer } from './analyzers/LegibilityAnalyzer';
+export { OverlapAnalyzer } from './analyzers/OverlapAnalyzer';
+export { HierarchyAnalyzer } from './analyzers/HierarchyAnalyzer';
+export { ErgonomicsAnalyzer } from './analyzers/ErgonomicsAnalyzer';
+
+export type {
+  VisionReport,
+  VisionScore,
+  VisionIssue,
+  LegibilityResult,
+  ContrastFailure,
+  OverlapResult,
+  Overlap,
+  HierarchyResult,
+  ErgonomicsResult,
+  TargetIssue,
+  VisionContext,
+  VisionStrategy,
+  VisionOptions,
+  VisionBenchmark,
+  VisionBenchmarkResult
+} from './types';

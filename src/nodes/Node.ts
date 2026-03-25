@@ -1,12 +1,12 @@
 import * as THREE from 'three';
-import gsapPkg from 'gsap';
-const gsap = gsapPkg.gsap || gsapPkg;
+import gsap from 'gsap';
 import { ThreeDisposer } from '../utils/ThreeDisposer';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec } from '../types';
 
 export class Node {
     public id: string;
+    public type: string;
     public sg: SpaceGraph;
     public label?: string;
     public data: any;
@@ -16,6 +16,7 @@ export class Node {
     constructor(sg: SpaceGraph, spec: NodeSpec) {
         this.sg = sg;
         this.id = spec.id;
+        this.type = spec.type;
         this.label = spec.label;
         this.data = spec.data || {};
         this.position = new THREE.Vector3(
@@ -24,6 +25,7 @@ export class Node {
             spec.position?.[2] || 0,
         );
         this.object = new THREE.Object3D();
+        this.object.position.copy(this.position);
     }
 
     updateSpec(updates: Partial<NodeSpec>): this {
@@ -58,7 +60,7 @@ export class Node {
             onUpdate: () => {
                 this.object.position.copy(this.position);
                 if (props.onUpdate) props.onUpdate();
-            }
+            },
         });
         if (props.scale !== undefined) {
             gsap.to(this.object.scale, {
@@ -67,7 +69,7 @@ export class Node {
                 z: props.scale,
                 duration: props.duration,
                 ease: props.ease,
-                delay: props.delay
+                delay: props.delay,
             });
         }
         return this;
@@ -77,7 +79,12 @@ export class Node {
      * Applies a new position to the node, optionally animating it via GSAP.
      * Helper to DRY up layout plugins.
      */
-    applyPosition(targetPos: THREE.Vector3, animate: boolean = true, duration: number = 1.0, delay: number = 0): this {
+    applyPosition(
+        targetPos: THREE.Vector3,
+        animate: boolean = true,
+        duration: number = 1.0,
+        delay: number = 0,
+    ): this {
         if (animate && typeof process === 'undefined') {
             gsap.to(this.position, {
                 x: targetPos.x,
@@ -88,7 +95,7 @@ export class Node {
                 delay,
                 onUpdate: () => {
                     this.object.position.copy(this.position);
-                }
+                },
             });
         } else {
             this.position.copy(targetPos);

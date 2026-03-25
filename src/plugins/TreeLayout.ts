@@ -11,8 +11,8 @@ export class TreeLayout implements ISpaceGraphPlugin {
     private sg!: SpaceGraph;
 
     public settings = {
-        levelHeight: 150,     // Vertical distance between levels
-        nodeSpacing: 100,     // Horizontal distance between siblings
+        levelHeight: 150,
+        nodeSpacing: 100,
         orientation: 'vertical' as 'vertical' | 'horizontal',
         animate: true,
         animationDuration: 1.0,
@@ -28,7 +28,6 @@ export class TreeLayout implements ISpaceGraphPlugin {
 
         if (nodes.length === 0) return;
 
-        // InDegree map to find roots
         const inDegree = new Map<string, number>();
         const childrenMap = new Map<string, Node[]>();
 
@@ -39,21 +38,19 @@ export class TreeLayout implements ISpaceGraphPlugin {
 
         for (const e of edges) {
             if (e.source && e.target && e.source.id && e.target.id) {
-                inDegree.set(e.target.id, (inDegree.get(e.target.id) || 0) + 1);
+                inDegree.set(e.target.id, (inDegree.get(e.target.id) ?? 0) + 1);
                 childrenMap.get(e.source.id)?.push(e.target);
             }
         }
 
         const roots = nodes.filter(n => inDegree.get(n.id) === 0);
 
-        // If no roots (cycle), use the first node as root
         if (roots.length === 0) {
             roots.push(nodes[0]);
         }
 
         const positions = new Map<string, THREE.Vector3>();
 
-        // We assign X relative horizontal space and Y as vertical depth
         let currentX = 0;
 
         const assignPositions = (node: Node, depth: number) => {

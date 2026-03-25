@@ -24,7 +24,7 @@
         "LICENSE"
     ],
     "scripts": {
-        "dev": "vite",
+        "dev": "npx vite demo --host",
         "build": "vite build",
         "prepublishOnly": "npm run clean && npm run build && npm run test",
         "clean": "rm -rf dist/",

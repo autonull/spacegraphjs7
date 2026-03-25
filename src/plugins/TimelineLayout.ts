@@ -10,13 +10,13 @@ export class TimelineLayout implements ISpaceGraphPlugin {
     private sg!: SpaceGraph;
 
     public settings = {
-        timeField: 'timestamp',    // The field in node.data to read time from
+        timeField: 'timestamp',
         orientation: 'horizontal' as 'horizontal' | 'vertical',
-        spacing: 200,              // Base spacing if timeline is discrete
-        scaleFactor: 0.1,          // Scale factor for continuous mapping (pixels per millisecond or tick)
+        spacing: 200,
+        scaleFactor: 0.1,
         animate: true,
         animationDuration: 1.5,
-        staggerLayout: true,       // Stagger nodes up and down to avoid overlap
+        staggerLayout: true,
         staggerAmount: 150,
     };
 
@@ -28,12 +28,10 @@ export class TimelineLayout implements ISpaceGraphPlugin {
         const nodes = Array.from(this.sg.graph.nodes.values());
         if (nodes.length === 0) return;
 
-        // Extract and sort nodes by time
         const temporalNodes = nodes.map(node => {
             let timeVal = 0;
             if (node.data && node.data[this.settings.timeField] !== undefined) {
                 const val = node.data[this.settings.timeField];
-                // Handle Date objects or strings
                 if (val instanceof Date) {
                     timeVal = val.getTime();
                 } else if (typeof val === 'string') {
@@ -46,10 +44,8 @@ export class TimelineLayout implements ISpaceGraphPlugin {
             return { node, timeVal };
         });
 
-        // Sort chronologically
         temporalNodes.sort((a, b) => a.timeVal - b.timeVal);
 
-        // Find min/max to normalize or start from zero
         const minTime = temporalNodes.length > 0 ? temporalNodes[0].timeVal : 0;
 
         let currentIndex = 0;
@@ -57,11 +53,8 @@ export class TimelineLayout implements ISpaceGraphPlugin {
 
         for (let i = 0; i < temporalNodes.length; i++) {
             const item = temporalNodes[i];
-            // Position along the primary axis
             let linearPos;
 
-            // If the time values are valid and spread out, use continuous scaling.
-            // If they are all 0 or invalid, we fallback to discrete spacing based on order.
             const hasValidTime = item.timeVal !== 0 || minTime !== 0;
 
             if (hasValidTime) {
@@ -71,7 +64,6 @@ export class TimelineLayout implements ISpaceGraphPlugin {
                 currentIndex++;
             }
 
-            // Stagger logic to avoid overlaps for things that happen close in time
             const staggerOffset = this.settings.staggerLayout
                 ? (i % 2 === 0 ? this.settings.staggerAmount : -this.settings.staggerAmount)
                 : 0;

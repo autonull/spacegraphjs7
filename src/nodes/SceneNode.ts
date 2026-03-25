@@ -3,6 +3,9 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { Node } from './Node';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec } from '../types';
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('SceneNode');
 
 /**
  * SceneNode — Loads an external 3D model (GLTF/GLB) into the node.
@@ -37,7 +40,7 @@ export class SceneNode extends Node {
         if (url) {
             this.loadModel(url, targetSize, autoCenter);
         } else {
-            console.warn(`[SceneNode ${this.id}] No URL provided.`);
+            logger.warn('Node %s: No URL provided.', this.id);
         }
 
         this.updatePosition(this.position.x, this.position.y, this.position.z);
@@ -99,7 +102,7 @@ export class SceneNode extends Node {
             },
             undefined, // onProgress
             (error) => {
-                console.error(`[SceneNode ${this.id}] Error loading model:`, error);
+                logger.error('Node %s: Error loading model:', this.id, error);
             },
         );
     }

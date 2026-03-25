@@ -1,11 +1,17 @@
 import type { SpaceGraph } from '../SpaceGraph';
+import type { ForceLayout } from '../plugins/ForceLayout';
+
+const OPTIMIZER_CONFIG = {
+    CHECK_INTERVAL_MS: 1000,
+    MIN_FPS_THRESHOLD: 30,
+    MAX_FPS_THRESHOLD: 55,
+} as const;
 
 export class AdvancedRenderingOptimizer {
-    private sg: SpaceGraph;
+    private readonly sg: SpaceGraph;
     private lastTime: number = 0;
     private frames: number = 0;
     private fps: number = 60;
-    private checkInterval: number = 1000; // ms
     private timeSinceLastCheck: number = 0;
 
     public isThrottled: boolean = false;
@@ -26,7 +32,7 @@ export class AdvancedRenderingOptimizer {
         this.frames++;
         this.timeSinceLastCheck += delta;
 
-        if (this.timeSinceLastCheck >= this.checkInterval) {
+        if (this.timeSinceLastCheck >= OPTIMIZER_CONFIG.CHECK_INTERVAL_MS) {
             this.fps = (this.frames * 1000) / this.timeSinceLastCheck;
             this.evaluatePerformance();
 
@@ -36,23 +42,20 @@ export class AdvancedRenderingOptimizer {
     }
 
     private evaluatePerformance(): void {
-        // If FPS drops below 30, enable throttling to degrade gracefully
-        if (this.fps < 30 && !this.isThrottled) {
-            console.warn(`[AdvancedRenderingOptimizer] FPS dropped to ${this.fps.toFixed(1)}. Throttling enabled.`);
+        if (this.fps < OPTIMIZER_CONFIG.MIN_FPS_THRESHOLD && !this.isThrottled) {
             this.isThrottled = true;
             this._toggleHeavyPlugins(false);
             return;
         }
 
-        if (this.fps >= 55 && this.isThrottled) {
-            console.log(`[AdvancedRenderingOptimizer] FPS recovered to ${this.fps.toFixed(1)}. Throttling disabled.`);
+        if (this.fps >= OPTIMIZER_CONFIG.MAX_FPS_THRESHOLD && this.isThrottled) {
             this.isThrottled = false;
             this._toggleHeavyPlugins(true);
         }
     }
 
     private _toggleHeavyPlugins(enabled: boolean): void {
-        const layoutPlugin: any = this.sg.pluginManager.getPlugin('LayoutPlugin');
+        const layoutPlugin = this.sg.pluginManager.getPlugin('LayoutPlugin') as ForceLayout | undefined;
         if (layoutPlugin?.settings !== undefined) {
             layoutPlugin.settings.enabled = enabled;
         }

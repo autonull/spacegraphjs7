@@ -5,18 +5,15 @@ import * as THREE from 'three';
 import { MathPool } from '../utils/MathPool';
 
 /**
- * PhysicsPlugin — Verlet-based 2-D physics stub.
+ * PhysicsPlugin — Verlet-based 2-D physics simulation.
  *
- * Provides a foundation for constraint-based or particle physics.
- * Each node gets a position, previous-position (for Verlet integration),
- * and optional mass from node.data.mass.
- *
- * Current behaviours:
- *   - Gravity (optional, disabled by default)
- *   - Simple position damping
- *   - Ground plane collision (y = 0, disabled by default)
- *
- * Extend by adding constraints, springs, or collision detection.
+ * Provides force-directed graph layout with:
+ *   - Gravity (optional)
+ *   - Spring forces (Hooke's Law)
+ *   - Electrical repulsion
+ *   - Simple damping
+ *   - Ground plane collision
+ *   - Node-to-node collision
  */
 export class PhysicsPlugin implements ISpaceGraphPlugin {
     readonly id = 'physics-plugin';
@@ -24,21 +21,19 @@ export class PhysicsPlugin implements ISpaceGraphPlugin {
     readonly version = '1.0.0';
 
     private sg!: SpaceGraph;
-
-    /** Previous positions for Verlet integration (keyed by node.id) */
-    private prev: Map<string, THREE.Vector3> = new Map();
+    private prev = new Map<string, THREE.Vector3>();
 
     public settings = {
-        enabled: false, // opt-in; won't interfere unless activated
-        gravity: -9.8, // units/s² in Y direction; 0 to disable
-        damping: 0.98, // velocity multiplier each step (0–1)
-        groundY: -500, // Y below which nodes are reflected; null to disable
-        fixedStep: 1 / 60, // physics timestep in seconds
-        springStiffness: 0.1, // Hooke's Law k constant
+        enabled: false,
+        gravity: -9.8,
+        damping: 0.98,
+        groundY: -500,
+        fixedStep: 1 / 60,
+        springStiffness: 0.1,
         springRestLength: 100,
-        collide: true, // whether nodes push each other apart
-        collisionRadius: 20, // uniform minimum distance apart
-        repulsion: 100, // electrical repulsion force for non-connected nodes
+        collide: true,
+        collisionRadius: 20,
+        repulsion: 100,
     };
 
     init(sg: SpaceGraph): void {
@@ -47,7 +42,7 @@ export class PhysicsPlugin implements ISpaceGraphPlugin {
 
     onPreRender(delta: number): void {
         if (!this.settings.enabled) return;
-        this._step(Math.min(delta, 0.05)); // cap to avoid explosion on large deltas
+        this._step(Math.min(delta, 0.05));
     }
 
     private _step(dt: number) {
@@ -57,7 +52,6 @@ export class PhysicsPlugin implements ISpaceGraphPlugin {
         for (const node of nodes) {
             if (node.data?.pinned || node.data?.physicsStatic) continue;
 
-            // Initialise previous position on first encounter
             if (!this.prev.has(node.id)) {
                 this.prev.set(node.id, node.position.clone());
             }
@@ -65,7 +59,6 @@ export class PhysicsPlugin implements ISpaceGraphPlugin {
             const prev = this.prev.get(node.id)!;
             const cur = node.position;
 
-            // Verlet: newPos = 2*cur - prev + accel * dt²
             const vx = (cur.x - prev.x) * this.settings.damping;
             const vy = (cur.y - prev.y) * this.settings.damping;
             const vz = (cur.z - prev.z) * this.settings.damping;
@@ -130,7 +123,10 @@ export class PhysicsPlugin implements ISpaceGraphPlugin {
                     const dist = Math.sqrt(distSq);
 
                     // Avoid instantiating clones in a hot double-nested loop
-                    const diffNormalized = MathPool.getInstance().acquireVector3().copy(diff).divideScalar(dist);
+                    const diffNormalized = MathPool.getInstance()
+                        .acquireVector3()
+                        .copy(diff)
+                        .divideScalar(dist);
                     const push = MathPool.getInstance().acquireVector3();
 
                     // Hard collision constraint

@@ -1,7 +1,16 @@
 import * as THREE from 'three';
 import type { SpaceGraph } from '../SpaceGraph';
-import type { ISpaceGraphPlugin } from '../types';
-import { DOMUtils } from '../utils/DOMUtils';
+import type { ISpaceGraphPlugin, NodeSpec } from '../types';
+import type { Node } from '../nodes/Node';
+import type { Edge } from '../edges/Edge';
+import { InteractionRaycaster } from './interaction/RaycasterHelper';
+import { CursorManager, type CursorMode } from './interaction/CursorManager';
+import { HoverManager } from './interaction/HoverManager';
+import { SelectionManager } from './interaction/SelectionManager';
+import { DragHandler } from './interaction/DragHandler';
+import { ConnectionHandler } from './interaction/ConnectionHandler';
+import { ResizeHandler } from './interaction/ResizeHandler';
+import { KeyboardShortcuts, type SelectionState } from './interaction/KeyboardShortcuts';
 
 export class InteractionPlugin implements ISpaceGraphPlugin {
     readonly id = 'interaction';
@@ -9,614 +18,295 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
     readonly version = '1.0.0';
 
     private sg!: SpaceGraph;
-    private raycaster = new THREE.Raycaster();
-    private mouse = new THREE.Vector2();
-    private pointerDownPosition = new THREE.Vector2();
+    private raycaster!: InteractionRaycaster;
+    private cursorManager!: CursorManager;
+    private hoverManager!: HoverManager;
+    private selectionManager!: SelectionManager;
+    private dragHandler!: DragHandler;
+    private connectionHandler!: ConnectionHandler;
+    private resizeHandler!: ResizeHandler;
+    private keyboardShortcuts!: KeyboardShortcuts;
 
     private _mode: 'default' | 'select' | 'connect' = 'default';
+    private pointerDownPosition = new THREE.Vector2();
+    private lastZoomedId: string | null = null;
 
-    get mode() {
+    get mode(): 'default' | 'select' | 'connect' {
         return this._mode;
     }
 
     set mode(newMode: 'default' | 'select' | 'connect') {
         this._mode = newMode;
-        if (newMode !== 'connect' && this.isConnecting) {
-            this.cancelConnectMode();
+        if (newMode !== 'connect' && this.connectionHandler.isConnectingMode()) {
+            this.connectionHandler.cancelConnection();
         }
     }
-
-    // Dragging State Tracking
-    private isDragging = false;
-    private dragNode: any = null;
-    private draggingNodes: Set<any> = new Set();
-    private dragPlane = new THREE.Plane();
-    private dragOffset = new THREE.Vector3();
-    private nodeDragOffsets: Map<any, THREE.Vector3> = new Map();
-    private intersection = new THREE.Vector3();
-
-    // Connect Mode State Tracking
-    private isConnecting = false;
-    private connectSourceNode: any = null;
-    private connectTempLine: THREE.Line | null = null;
-    private connectTempLineGeom: THREE.BufferGeometry | null = null;
-
-    // Box Selection State
-    private isBoxSelecting = false;
-    private selectionBoxEl: HTMLElement | null = null;
-    private selectionStart = new THREE.Vector2();
-    private selectedNodes: Set<any> = new Set();
-    private selectedEdges: Set<any> = new Set();
-
-    // Hover Tracking
-    private hoveredNode: any = null;
-    private hoveredEdge: any = null;
 
     init(sg: SpaceGraph): void {
         this.sg = sg;
-        this.createSelectionBoxElement();
-        this.initDragAndSelect();
-        this.initClick();
-        this.initDblClick();
-        this.initContextMenu();
-    }
+        this.raycaster = new InteractionRaycaster(sg);
+        this.cursorManager = new CursorManager();
+        this.hoverManager = new HoverManager(sg);
+        this.selectionManager = new SelectionManager(sg);
+        this.dragHandler = new DragHandler(sg, this.raycaster);
+        this.connectionHandler = new ConnectionHandler(sg, this.raycaster);
+        this.resizeHandler = new ResizeHandler(sg, this.raycaster);
+        this.keyboardShortcuts = new KeyboardShortcuts(sg);
 
-    private initContextMenu(): void {
-        const canvas = this.sg.renderer.renderer.domElement;
-
-        canvas.addEventListener('contextmenu', (e) => {
-            e.preventDefault();
-
-            // Only trigger node context menu if right-clicking without significant dragging
-            // Handled similarly to left click
-            const distance = this.pointerDownPosition.distanceTo(
-                new THREE.Vector2(e.clientX, e.clientY)
-            );
-            if (distance > 5) return;
-
-            const rect = canvas.getBoundingClientRect();
-            this.mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-            this.mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-
-            this.raycaster.setFromCamera(this.mouse, this.sg.renderer.camera);
-            const meshes = this.getAllNodeMeshes();
-            const intersects = this.raycaster.intersectObjects(meshes, false);
-
-            // Check edges
-            this.raycaster.params.Line = { threshold: 5 };
-            const lineObjects = this.getEdgeObjects();
-            const edgeIntersects = this.raycaster.intersectObjects(lineObjects, false);
-
-            if (edgeIntersects.length > 0) {
-                const edgeObj = edgeIntersects[0].object;
-                const edge = this.sg.graph.edges.find(edge => edge.object === edgeObj);
-                if (edge) {
-                    this.sg.events.emit('edge:contextmenu', { edge, event: e });
-                    return;
-                }
-            }
-
-            if (intersects.length > 0) {
-                const node = this.getNodeFromMesh(intersects[0].object);
-                if (node) {
-                    this.sg.events.emit('node:contextmenu', { node, event: e });
-                }
-            } else {
-                this.sg.events.emit('graph:contextmenu', { event: e });
-            }
-        });
-    }
-
-    private createSelectionBoxElement() {
-        if (typeof document === 'undefined') return;
-        this.selectionBoxEl = DOMUtils.createElement('div');
-        Object.assign(this.selectionBoxEl.style, {
-            position: 'absolute',
-            border: '1px solid rgba(139, 92, 246, 0.8)',
-            backgroundColor: 'rgba(139, 92, 246, 0.2)',
-            pointerEvents: 'none',
-            display: 'none',
-            zIndex: '9999'
+        this.cursorManager.setContainer(this.sg.renderer.renderer.domElement);
+        this.keyboardShortcuts.setSelectionChangeHandler((selection) => {
+            this.selectionManager.clear();
         });
 
-        // Ensure it's attached to the container
-        const domElement = this.sg.renderer.renderer.domElement;
-        if (domElement.parentElement) {
-            domElement.parentElement.style.position = 'relative';
-            domElement.parentElement.appendChild(this.selectionBoxEl);
-        }
+        this.initInputHandlers();
     }
 
-    // Helper to get all current node meshes to avoid recreation on every event
-    private getAllNodeMeshes(): THREE.Object3D[] {
-        const meshes: THREE.Object3D[] = [];
-        for (const node of this.sg.graph.nodes.values()) {
-            if (node.object) {
-                node.object.traverse((child: THREE.Object3D) => {
-                    if (child instanceof THREE.Mesh) meshes.push(child);
-                });
-            }
-        }
-        return meshes;
-    }
-
-    // Helper to get all current edge objects to avoid recreation and map/filter on every event
-    private getEdgeObjects(): THREE.Object3D[] {
-        const lineObjects: THREE.Object3D[] = [];
-        for (const edge of this.sg.graph.edges) {
-            if (edge.object) lineObjects.push(edge.object);
-        }
-        return lineObjects;
-    }
-
-    private initDblClick(): void {
-        const canvas = this.sg.renderer.renderer.domElement;
-
-        canvas.addEventListener('dblclick', (e) => {
-            const rect = canvas.getBoundingClientRect();
-            this.mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-            this.mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-
-            this.raycaster.setFromCamera(this.mouse, this.sg.renderer.camera);
-
-            // Allow raycaster to hit lines (edges) with a small threshold
-            this.raycaster.params.Line = { threshold: 5 };
-
-            // Check edges first using simple map over current edges
-            const lineObjects = this.getEdgeObjects();
-            const edgeIntersects = this.raycaster.intersectObjects(lineObjects, false);
-
-            if (edgeIntersects.length > 0) {
-                const edgeObj = edgeIntersects[0].object;
-                const edge = this.sg.graph.edges.find(e => e.object === edgeObj);
-                if (edge) {
-                    this.sg.events.emit('edge:dblclick', { edge, event: e });
-
-                    // Semantic navigation: fly to the target node
-                    if (edge.target && this.sg.cameraControls) {
-                        const targetPos = edge.target.position.clone();
-                        // Adjust radius based on node size or a reasonable default
-                        const targetRadius = edge.target.data?.width ? Math.max(edge.target.data.width * 1.5, 150) : 150;
-                        this.sg.cameraControls.flyTo(targetPos, targetRadius);
-                    }
-                    return;
-                }
-            }
-
-            // Check nodes if no edge was double-clicked
-            const meshes = this.getAllNodeMeshes();
-            const nodeIntersects = this.raycaster.intersectObjects(meshes, false);
-
-            if (nodeIntersects.length > 0) {
-                const node = this.getNodeFromMesh(nodeIntersects[0].object);
-                if (node) {
-                    this.sg.events.emit('node:dblclick', { node, event: e });
-
-                    // Semantic navigation: fly to the node
-                    if (this.sg.cameraControls) {
-                        const targetPos = node.position.clone();
-                        // Adjust radius based on node size or a reasonable default
-                        const targetRadius = node.data?.width ? Math.max(node.data.width * 1.5, 150) : 150;
-                        this.sg.cameraControls.flyTo(targetPos, targetRadius);
-                    }
-                }
-            }
-        });
-    }
-
-    private initClick(): void {
-        const canvas = this.sg.renderer.renderer.domElement;
-
-        canvas.addEventListener('pointerdown', (e) => {
-            this.pointerDownPosition.set(e.clientX, e.clientY);
-        });
-
-        canvas.addEventListener('pointerup', (e) => {
-            // Only trigger click if the pointer hasn't moved much (not a drag)
-            const distance = this.pointerDownPosition.distanceTo(
-                new THREE.Vector2(e.clientX, e.clientY),
-            );
-            if (distance > 5 || this.isDragging) return;
-
-            const rect = canvas.getBoundingClientRect();
-            this.mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-            this.mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-
-            this.raycaster.setFromCamera(this.mouse, this.sg.renderer.camera);
-
-            const meshes = this.getAllNodeMeshes();
-
-            // Check edges first using simple map over current edges
-            this.raycaster.params.Line = { threshold: 5 };
-            const lineObjects = this.getEdgeObjects();
-            const edgeIntersects = this.raycaster.intersectObjects(lineObjects, false);
-
-            if (edgeIntersects.length > 0) {
-                const edgeObj = edgeIntersects[0].object;
-                const edge = this.sg.graph.edges.find(e => e.object === edgeObj);
-                if (edge) {
-                    this.sg.events.emit('edge:click', { edge, event: e });
-                    return;
-                }
-            }
-
-            const intersects = this.raycaster.intersectObjects(meshes, false);
-
-            if (intersects.length > 0) {
-                const node = this.getNodeFromMesh(intersects[0].object);
-                if (node) {
-                    this.sg.events.emit('node:click', { node, event: e });
-                }
-            } else {
-                // Emitted when clicking on empty space
-                this.sg.events.emit('graph:click', { event: e });
-            }
-        });
-    }
-
-    private updateMousePosition(e: PointerEvent) {
-        const canvas = this.sg.renderer.renderer.domElement;
-        const rect = canvas.getBoundingClientRect();
-        this.mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-        this.mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-    }
-
-    private getIntersectedNode() {
-        this.raycaster.setFromCamera(this.mouse, this.sg.renderer.camera);
-        const meshes = this.getAllNodeMeshes();
-
-        const intersects = this.raycaster.intersectObjects(meshes, false);
-        if (intersects.length > 0) {
-            return { node: this.getNodeFromMesh(intersects[0].object), point: intersects[0].point };
-        }
-        return null;
-    }
-
-    private getIntersectedEdge() {
-        this.raycaster.setFromCamera(this.mouse, this.sg.renderer.camera);
-        this.raycaster.params.Line = { threshold: 5 };
-        const lineObjects = this.getEdgeObjects();
-        const edgeIntersects = this.raycaster.intersectObjects(lineObjects, false);
-        if (edgeIntersects.length > 0) {
-            const edgeObj = edgeIntersects[0].object;
-            const edge = this.sg.graph.edges.find(e => e.object === edgeObj);
-            return { edge, point: edgeIntersects[0].point };
-        }
-        return null;
-    }
-
-    private initDragAndSelect(): void {
-        const canvas = this.sg.renderer.renderer.domElement;
-
-        canvas.addEventListener('pointerdown', (e) => this.handlePointerDown(e, canvas));
-        canvas.addEventListener('pointermove', (e) => this.handlePointerMove(e, canvas));
-        canvas.addEventListener('pointerup', (e) => this.handlePointerUp(e));
-        canvas.addEventListener('pointercancel', (e) => this.handlePointerUp(e));
-
-        if (typeof window !== 'undefined') {
-            window.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape' && this.isConnecting) this.cancelConnectMode();
-            });
-        }
-    }
-
-    private handlePointerDown(e: PointerEvent, canvas: HTMLCanvasElement): void {
-        this.updateMousePosition(e);
-        const hit = this.getIntersectedNode();
-
-        if (e.shiftKey || this.mode === 'select') {
-            this.startBoxSelection(e);
-            return;
-        }
-
-        if ((this.mode === 'connect' || e.altKey) && hit?.node) {
-            this.startConnectMode(hit.node);
-            return;
-        }
-
-        if (hit?.node && this.mode === 'default') {
-            this.startDrag(hit.node);
-        }
-    }
-
-    private startBoxSelection(e: PointerEvent): void {
-        this.isBoxSelecting = true;
-        this.selectionStart.set(e.clientX, e.clientY);
-        this.selectedNodes.clear();
-        this.selectedEdges.clear();
-
-        if (this.selectionBoxEl) {
-            Object.assign(this.selectionBoxEl.style, {
-                display: 'block',
-                left: `${e.clientX}px`,
-                top: `${e.clientY}px`,
-                width: '0px',
-                height: '0px'
-            });
-        }
-        this.sg.cameraControls.controls.enabled = false;
-    }
-
-    private startConnectMode(node: any): void {
-        this.isConnecting = true;
-        this.connectSourceNode = node;
-        this.sg.cameraControls.controls.enabled = false;
-
-        const material = new THREE.LineDashedMaterial({ color: 0x8b5cf6, dashSize: 10, gapSize: 5, linewidth: 2, depthTest: false });
-        const points = [node.position.clone(), node.position.clone()];
-        this.connectTempLineGeom = new THREE.BufferGeometry().setFromPoints(points);
-        this.connectTempLine = new THREE.Line(this.connectTempLineGeom, material);
-        this.connectTempLine.computeLineDistances();
-        this.connectTempLine.renderOrder = 999;
-        this.sg.renderer.scene.add(this.connectTempLine);
-
-        this.dragPlane.setFromNormalAndCoplanarPoint(
-            this.sg.renderer.camera.getWorldDirection(this.dragPlane.normal),
-            node.position
+    private initInputHandlers(): void {
+        this.sg.events.on('input:interaction:pointerdown', (e: any) =>
+            this.handlePointerDown(e),
         );
-
-        this.sg.renderer.renderer.domElement.style.cursor = 'crosshair';
-    }
-
-    private startDrag(node: any): void {
-        this.isDragging = true;
-        this.dragNode = node;
-        this.sg.cameraControls.controls.enabled = false;
-
-        this.draggingNodes = this.selectedNodes.has(this.dragNode)
-            ? new Set(this.selectedNodes)
-            : new Set([this.dragNode]);
-        if (!this.selectedNodes.has(this.dragNode)) this.selectedNodes.clear();
-
-        this.dragPlane.setFromNormalAndCoplanarPoint(
-            this.sg.renderer.camera.getWorldDirection(this.dragPlane.normal),
-            this.dragNode.position
+        this.sg.events.on('input:interaction:pointermove', (e: any) =>
+            this.handlePointerMove(e),
         );
-
-        if (this.raycaster.ray.intersectPlane(this.dragPlane, this.intersection)) {
-            this.dragOffset.copy(this.intersection).sub(this.dragNode.position);
-        }
-
-        this.nodeDragOffsets.clear();
-        for (const n of this.draggingNodes) {
-            n.data.pinned = true;
-            this.nodeDragOffsets.set(n, new THREE.Vector3().subVectors(n.position, this.dragNode.position));
-            this.sg.events.emit('interaction:dragstart', { node: n });
-        }
-        this.sg.renderer.renderer.domElement.style.cursor = 'grabbing';
+        this.sg.events.on('input:interaction:pointerup', (e: any) => this.handlePointerUp(e));
+        this.sg.events.on('input:interaction:keydown', (e: any) => this.handleKeyDown(e));
+        this.sg.events.on('input:interaction:keyup', (e: any) => this.handleKeyUp(e));
+        this.sg.events.on('input:interaction:dblclick', (e: any) => this.handleDblClick(e));
+        this.sg.events.on('input:interaction:contextmenu', (e: any) =>
+            this.handleContextMenu(e),
+        );
     }
 
-    private handlePointerMove(e: PointerEvent, canvas: HTMLCanvasElement): void {
-        this.updateMousePosition(e);
+    private handlePointerDown(e: any): void {
+        this.pointerDownPosition.set(e.x, e.y);
+        this.raycaster.updateMousePosition(e.x, e.y);
 
-        if (this.isBoxSelecting && this.selectionBoxEl) {
-            this.updateBoxSelection(e, canvas);
+        if (e.button === 2 || e.shiftKey) {
+            e.originalEvent?.preventDefault();
+        }
+
+        if (this.connectionHandler.isConnectingMode()) {
             return;
         }
 
-        if (this.isConnecting && this.connectSourceNode && this.connectTempLineGeom && this.connectTempLine) {
-            this.updateConnectMode(e);
+        const nodeResult = this.raycaster.raycastNode();
+        const edgeResult = this.raycaster.raycastEdge();
+
+        if (e.button === 2 && nodeResult?.node) {
+            this.startContextMenu(nodeResult.node, e);
             return;
         }
 
-        if (!this.isDragging || !this.dragNode) {
-            this.updateHoverStates(e);
+        if (e.shiftKey && e.button === 0) {
+            this.selectionManager.startBoxSelection(e.x, e.y);
+            this.cursorManager.set('crosshair', 'box-select');
             return;
         }
 
-        this.updateDrag();
-    }
+        if (nodeResult?.node && e.button === 0) {
+            const isResizeHandle = this.checkResizeHandle(nodeResult.node, e);
+            if (isResizeHandle) {
+                this.resizeHandler.startResize(nodeResult.node, e.x, e.y);
+                this.cursorManager.set('nwse-resize', 'resize');
+                return;
+            }
 
-    private updateBoxSelection(e: PointerEvent, canvas: HTMLCanvasElement): void {
-        const left = Math.min(this.selectionStart.x, e.clientX);
-        const top = Math.min(this.selectionStart.y, e.clientY);
-        const width = Math.abs(e.clientX - this.selectionStart.x);
-        const height = Math.abs(e.clientY - this.selectionStart.y);
+            if (this._mode === 'connect') {
+                this.connectionHandler.startConnection(nodeResult.node);
+                this.cursorManager.set('crosshair', 'connection');
+                return;
+            }
 
-        if (this.selectionBoxEl) {
-            Object.assign(this.selectionBoxEl.style, {
-                left: `${left}px`,
-                top: `${top}px`,
-                width: `${width}px`,
-                height: `${height}px`
-            });
+            this.dragHandler.startDrag(nodeResult.node);
+            this.cursorManager.set('grabbing', 'drag');
         }
-        this.updateSelectionBox(left, top, width, height, canvas);
     }
 
-    private updateConnectMode(e: PointerEvent): void {
-        this.raycaster.setFromCamera(this.mouse, this.sg.renderer.camera);
-        if (this.raycaster.ray.intersectPlane(this.dragPlane, this.intersection)) {
-            const positions = this.connectTempLineGeom!.attributes.position.array as Float32Array;
-            positions[3] = this.intersection.x;
-            positions[4] = this.intersection.y;
-            positions[5] = this.intersection.z;
-            this.connectTempLineGeom!.attributes.position.needsUpdate = true;
-            this.connectTempLine!.computeLineDistances();
+    private handlePointerMove(e: any): void {
+        this.raycaster.updateMousePosition(e.x, e.y);
 
-            const hit = this.getIntersectedNode();
-            const currentNode = hit?.node || null;
-            if (currentNode !== this.hoveredNode) {
-                if (this.hoveredNode) {
-                    this.sg.events.emit('node:pointerleave', { node: this.hoveredNode, event: e });
-                    if (this.hoveredNode.object && this.hoveredNode !== this.connectSourceNode) {
-                        this.hoveredNode.object.scale.set(1, 1, 1);
+        if (this.dragHandler.isDraggingNode()) {
+            const enableZAxis = (window as any).__spacegraph_altKey === true;
+            this.dragHandler.updateDrag(enableZAxis);
+            return;
+        }
+
+        if (this.selectionManager.isBoxSelectingActive()) {
+            this.selectionManager.updateBoxSelection(e.x, e.y);
+            return;
+        }
+
+        if (this.connectionHandler.isConnectingMode()) {
+            this.connectionHandler.updateConnection();
+            const hoverResult = this.raycaster.raycastNode();
+            this.hoverManager.updateNodeHover(hoverResult?.node ?? null);
+            return;
+        }
+
+        if (this.resizeHandler.isResizingNode()) {
+            this.resizeHandler.updateResize(e.x, e.y);
+            return;
+        }
+
+        const nodeResult = this.raycaster.raycastNode();
+        const edgeResult = this.raycaster.raycastEdge();
+        this.hoverManager.updateHover(nodeResult?.node ?? null, edgeResult?.edge ?? null);
+
+        const cursorMode: CursorMode = nodeResult?.node ? 'grab' : 'auto';
+        this.cursorManager.set(cursorMode, 'hover');
+    }
+
+    private handlePointerUp(e: any): void {
+        if (this.dragHandler.isDraggingNode()) {
+            this.dragHandler.endDrag();
+            this.cursorManager.clear('drag');
+        }
+
+        if (this.selectionManager.isBoxSelectingActive()) {
+            this.selectionManager.endBoxSelection();
+            this.cursorManager.clear('box-select');
+        }
+
+        if (this.connectionHandler.isConnectingMode()) {
+            const hoverResult = this.raycaster.raycastNode();
+            const targetNode = hoverResult?.node ?? null;
+            const completed = this.connectionHandler.completeConnection(targetNode);
+
+            if (!completed && targetNode && targetNode !== this.connectionHandler.getSourceNode()) {
+                this.connectionHandler.startConnection(targetNode);
+            }
+
+            this.cursorManager.clear('connection');
+        }
+
+        if (this.resizeHandler.isResizingNode()) {
+            this.resizeHandler.endResize();
+            this.cursorManager.clear('resize');
+        }
+
+        this.cursorManager.clear('hover');
+    }
+
+    private handleKeyDown(e: any): void {
+        (window as any).__spacegraph_altKey = e.altKey;
+
+        const activeEl = document.activeElement;
+        const isEditingText =
+            activeEl &&
+            (activeEl.tagName === 'INPUT' ||
+                activeEl.tagName === 'TEXTAREA' ||
+                (activeEl as HTMLElement).isContentEditable);
+
+        if (isEditingText && e.key !== 'Escape') return;
+
+        const selectedNodes = Array.from(this.selectionManager.getSelectedNodes());
+        const selectedEdges = Array.from(this.selectionManager.getSelectedEdges());
+
+        switch (e.key) {
+            case 'Escape':
+                if (this.connectionHandler.isConnectingMode()) {
+                    this.connectionHandler.cancelConnection();
+                } else {
+                    this.selectionManager.clear();
+                }
+                break;
+
+            case 'Delete':
+            case 'Backspace':
+                this.keyboardShortcuts.handleDelete(selectedNodes, selectedEdges);
+                break;
+
+            case 'a':
+                if (e.ctrlKey || e.metaKey) {
+                    e.preventDefault();
+                    const allNodes = Array.from(this.sg.graph.nodes.values());
+                    this.keyboardShortcuts.handleSelectAll(allNodes);
+                }
+                break;
+
+            case ' ':
+                if (!isEditingText) {
+                    e.preventDefault();
+                    const hoveredNode = this.hoverManager.getHoveredNode();
+                    if (hoveredNode) {
+                        this.keyboardShortcuts.handleZoomIn(hoveredNode);
                     }
                 }
-                this.hoveredNode = currentNode;
-                if (this.hoveredNode) {
-                    this.sg.events.emit('node:pointerenter', { node: this.hoveredNode, event: e });
-                    if (this.hoveredNode.object && this.hoveredNode !== this.connectSourceNode) {
-                        this.hoveredNode.object.scale.set(1.1, 1.1, 1.1);
-                    }
-                }
-            }
+                break;
         }
     }
 
-    private updateHoverStates(e: PointerEvent): void {
-        const hit = this.getIntersectedNode();
-        const currentNode = hit?.node || null;
+    private handleKeyUp(e: any): void {
+        (window as any).__spacegraph_altKey = e.altKey;
+    }
 
-        if (currentNode !== this.hoveredNode) {
-            if (this.hoveredNode) this.sg.events.emit('node:pointerleave', { node: this.hoveredNode, event: e });
-            this.hoveredNode = currentNode;
-            if (this.hoveredNode) this.sg.events.emit('node:pointerenter', { node: this.hoveredNode, event: e });
+    private handleDblClick(e: any): void {
+        this.raycaster.updateMousePosition(e.x, e.y);
+
+        const edgeResult = this.raycaster.raycastEdge();
+        if (edgeResult?.edge) {
+            this.sg.events.emit('edge:dblclick', { edge: edgeResult.edge, event: e.originalEvent });
+            this.handleZoomNavigation(edgeResult.edge.target, `edge:${edgeResult.edge.id}`);
+            return;
         }
 
-        if (!currentNode) {
-            const edgeHit = this.getIntersectedEdge();
-            const currentEdge = edgeHit?.edge || null;
-
-            if (currentEdge !== this.hoveredEdge) {
-                if (this.hoveredEdge) this.sg.events.emit('edge:pointerleave', { edge: this.hoveredEdge, event: e });
-                this.hoveredEdge = currentEdge;
-                if (this.hoveredEdge) this.sg.events.emit('edge:pointerenter', { edge: this.hoveredEdge, event: e });
-            }
-        } else if (this.hoveredEdge) {
-            this.sg.events.emit('edge:pointerleave', { edge: this.hoveredEdge, event: e });
-            this.hoveredEdge = null;
+        const nodeResult = this.raycaster.raycastNode();
+        if (nodeResult?.node) {
+            this.sg.events.emit('node:dblclick', { node: nodeResult.node, event: e.originalEvent });
+            this.handleZoomNavigation(nodeResult.node, nodeResult.node.id);
         }
     }
 
-    private updateDrag(): void {
-        this.raycaster.setFromCamera(this.mouse, this.sg.renderer.camera);
-        if (this.raycaster.ray.intersectPlane(this.dragPlane, this.intersection)) {
-            const primaryTargetPos = this.intersection.clone().sub(this.dragOffset);
-            for (const node of this.draggingNodes) {
-                const relativeOffset = this.nodeDragOffsets.get(node) || new THREE.Vector3();
-                const targetPos = primaryTargetPos.clone().add(relativeOffset);
-                node.position.copy(targetPos);
-                node.object.position.copy(targetPos);
-                this.sg.events.emitBatched('interaction:drag', { node });
-            }
+    private handleContextMenu(e: any): void {
+        e.originalEvent?.preventDefault();
+
+        const distance = this.pointerDownPosition.distanceTo(new THREE.Vector2(e.x, e.y));
+        if (distance > 5) return;
+
+        this.raycaster.updateMousePosition(e.x, e.y);
+
+        const edgeResult = this.raycaster.raycastEdge();
+        if (edgeResult?.edge) {
+            this.sg.events.emit('edge:contextmenu', { edge: edgeResult.edge, event: e.originalEvent });
+            return;
+        }
+
+        const nodeResult = this.raycaster.raycastNode();
+        if (nodeResult?.node) {
+            this.sg.events.emit('node:contextmenu', { node: nodeResult.node, event: e.originalEvent });
+        } else {
+            this.sg.events.emit('graph:contextmenu', { event: e.originalEvent });
         }
     }
 
-    private handlePointerUp(e: PointerEvent): void {
-        if (this.isConnecting && this.connectSourceNode) {
-            if (this.hoveredNode && this.hoveredNode !== this.connectSourceNode) {
-                this.sg.events.emit('interaction:edgecreate', {
-                    source: this.connectSourceNode,
-                    target: this.hoveredNode,
-                    event: e
-                });
-            }
-            this.cancelConnectMode();
-        }
+    private handleZoomNavigation(target: Node | Edge, zoomId: string): void {
+        if (!target || !this.sg.cameraControls) return;
 
-        if (this.isBoxSelecting) {
-            this.isBoxSelecting = false;
-            if (this.selectionBoxEl) this.selectionBoxEl.style.display = 'none';
-            this.sg.cameraControls.controls.enabled = true;
-            this.sg.events.emit('interaction:selection', {
-                nodes: Array.from(this.selectedNodes),
-                edges: Array.from(this.selectedEdges)
-            });
-        }
+        const targetPos = target.position.clone();
+        const targetRadius =
+            'data' in target && target.data?.width
+                ? Math.max(target.data.width * 1.5, 150)
+                : 150;
 
-        if (this.isDragging && this.dragNode) {
-            for (const node of this.draggingNodes) {
-                node.data.pinned = false;
-                this.sg.events.emit('interaction:dragend', { node });
-            }
-            this.isDragging = false;
-            this.dragNode = null;
-            this.draggingNodes.clear();
-            this.nodeDragOffsets.clear();
-            this.sg.renderer.renderer.domElement.style.cursor = 'auto';
-            this.sg.cameraControls.controls.enabled = true;
+        if (this.lastZoomedId === zoomId && this.sg.cameraControls.hasZoomHistory) {
+            this.sg.cameraControls.flyBack();
+            this.lastZoomedId = null;
+        } else {
+            this.sg.cameraControls.flyTo(targetPos, targetRadius);
+            this.lastZoomedId = zoomId;
         }
     }
 
-    private cancelConnectMode() {
-        if (this.connectTempLine) {
-            this.sg.renderer.scene.remove(this.connectTempLine);
-            this.connectTempLine.geometry.dispose();
-            (this.connectTempLine.material as THREE.Material).dispose();
-            this.connectTempLine = null;
-            this.connectTempLineGeom = null;
-        }
-
-        if (this.hoveredNode && this.hoveredNode.object && this.hoveredNode !== this.connectSourceNode) {
-            this.hoveredNode.object.scale.set(1, 1, 1); // Reset visual pop
-        }
-
-        this.isConnecting = false;
-        this.connectSourceNode = null;
-        this.sg.renderer.renderer.domElement.style.cursor = 'auto';
-        this.sg.cameraControls.controls.enabled = true;
+    private checkResizeHandle(_node: Node, _e: any): boolean {
+        return false;
     }
 
-    private updateSelectionBox(left: number, top: number, width: number, height: number, canvas: HTMLCanvasElement) {
-        const rect = canvas.getBoundingClientRect();
-
-        // Convert screen coordinates to NDC space for frustum testing
-        const minX = ((left - rect.left) / rect.width) * 2 - 1;
-        const maxX = (((left + width) - rect.left) / rect.width) * 2 - 1;
-        // Invert Y for NDC
-        const minY = -(((top + height) - rect.top) / rect.height) * 2 + 1;
-        const maxY = -((top - rect.top) / rect.height) * 2 + 1;
-
-        // Build frustum from the current camera to test against nodes
-        this.sg.renderer.camera.updateMatrixWorld();
-
-        // Use a simpler approach: project node positions to screen space and check if they fall in the box
-        this.selectedNodes.clear();
-        const vec = new THREE.Vector3();
-
-        for (const node of this.sg.graph.nodes.values()) {
-            vec.copy(node.position);
-            vec.project(this.sg.renderer.camera);
-
-            // vec.x and vec.y are now in NDC space [-1, 1]
-            if (vec.x >= minX && vec.x <= maxX && vec.y >= minY && vec.y <= maxY && vec.z <= 1) {
-                this.selectedNodes.add(node);
-            }
-        }
-
-        // Project edges as well (check midpoint)
-        this.selectedEdges.clear();
-        const midPoint = new THREE.Vector3();
-        for (const edge of this.sg.graph.edges) {
-            if (!edge.source || !edge.target) continue;
-            midPoint.addVectors(edge.source.position, edge.target.position).multiplyScalar(0.5);
-            midPoint.project(this.sg.renderer.camera);
-
-            if (midPoint.x >= minX && midPoint.x <= maxX && midPoint.y >= minY && midPoint.y <= maxY && midPoint.z <= 1) {
-                this.selectedEdges.add(edge);
-            }
-        }
-    }
-
-    private getNodeFromMesh(mesh: THREE.Object3D): any {
-        // Walk up the hierarchy to find the root node object
-        let current = mesh;
-        while (current.parent && current.parent !== this.sg.renderer.scene) {
-            current = current.parent;
-        }
-
-        const nodes = Array.from(this.sg.graph.nodes.values());
-        return nodes.find((n) => n.object === current);
+    private startContextMenu(_node: Node, _e: any): void {
+        // Context menu handling delegated to events
     }
 
     dispose(): void {
-        // Event listeners are garbage collected if the DOM element unmounts usually,
-        // but explicit removal is best-practice if SpaceGraph instance drops.
-        this.isDragging = false;
-        this.dragNode = null;
-        this.draggingNodes.clear();
-        this.nodeDragOffsets.clear();
-        this.isBoxSelecting = false;
-        this.selectedNodes.clear();
-        this.selectedEdges.clear();
-        this.isConnecting = false;
-        this.connectSourceNode = null;
-        if (this.connectTempLine) {
-            this.sg.renderer.scene.remove(this.connectTempLine);
-        }
-        if (this.selectionBoxEl && this.selectionBoxEl.parentElement) {
-            this.selectionBoxEl.parentElement.removeChild(this.selectionBoxEl);
-        }
+        this.selectionManager.dispose();
+        this.connectionHandler.dispose();
     }
 }

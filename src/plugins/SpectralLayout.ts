@@ -13,7 +13,7 @@ export class SpectralLayout implements ISpaceGraphPlugin {
         scale: 400,
         animate: true,
         animationDuration: 1.5,
-        dimensions: 3, // 2 or 3
+        dimensions: 3,
     };
 
     init(sg: SpaceGraph): void {
@@ -31,14 +31,13 @@ export class SpectralLayout implements ISpaceGraphPlugin {
             return;
         }
 
-        // 1. Build Adjacency Matrix
         const nodeIndexMap = new Map<string, number>();
         for (let i = 0; i < nodes.length; i++) {
             nodeIndexMap.set(nodes[i].id, i);
         }
 
         const A = Array.from({ length: n }, () => new Float32Array(n).fill(0));
-        const D = new Float32Array(n).fill(0); // Degree matrix diagonal
+        const D = new Float32Array(n).fill(0);
 
         for (const edge of edges) {
             if (!edge.source || !edge.target || !edge.source.id || !edge.target.id) continue;
@@ -52,28 +51,17 @@ export class SpectralLayout implements ISpaceGraphPlugin {
             }
         }
 
-        // 2. Build Laplacian Matrix (L = D - A)
-        // For simplicity and speed in JS without a full linear algebra library,
-        // we'll use a fast iterative approximation (Power Iteration / Orthogonal Iteration) 
-        // to find the Fiedler vector and the next eigenvectors.
-
-        // Let's find the eigenvectors of the Random Walk normalized Laplacian: L_rw = I - D^-1 A
-        // Which is equivalent to finding the eigenvectors of D^-1 A with the largest eigenvalues (< 1).
-
         const numEigs = Math.min(this.settings.dimensions, n - 1);
         const eigenvectors = Array.from({ length: numEigs }, () => new Float32Array(n));
 
-        // Initialize with random values
         for (let k = 0; k < numEigs; k++) {
             for (let i = 0; i < n; i++) {
                 eigenvectors[k][i] = Math.random() - 0.5;
             }
         }
 
-        // Orthogonal Iteration (Simultaneous iteration)
         const iterations = 50;
         for (let iter = 0; iter < iterations; iter++) {
-            // Multiply by Transition Matrix (P = D^-1 A)
             const nextEigs = Array.from({ length: numEigs }, () => new Float32Array(n).fill(0));
 
             for (let k = 0; k < numEigs; k++) {

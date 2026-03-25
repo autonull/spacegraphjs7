@@ -2,6 +2,10 @@ import * as THREE from 'three';
 import { CSS3DRenderer } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
 import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from 'three-mesh-bvh';
 import type { SpaceGraph } from '../SpaceGraph';
+import { InstancedNodeRenderer } from '../rendering/InstancedNodeRenderer';
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('Renderer');
 
 export class Renderer {
     public sg: SpaceGraph;
@@ -10,42 +14,48 @@ export class Renderer {
     public camera: THREE.PerspectiveCamera;
     public renderer: THREE.WebGLRenderer;
     public cssRenderer: CSS3DRenderer;
+    public instancedRenderer: InstancedNodeRenderer;
 
     constructor(sg: SpaceGraph, container: HTMLElement) {
         this.sg = sg;
         this.container = container;
 
-        // Scene setup
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color(0x1a1a2e);
 
-        // Camera setup
         const aspect = this.container.clientWidth / this.container.clientHeight;
         this.camera = new THREE.PerspectiveCamera(75, aspect, 0.1, 10000);
         this.camera.position.set(0, 0, 500);
 
-        // WebGL Renderer setup
-        this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        this.renderer = new THREE.WebGLRenderer({
+            antialias: true,
+            alpha: true,
+            preserveDrawingBuffer: true,
+        });
         this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
         this.renderer.setPixelRatio(window.devicePixelRatio);
         this.container.appendChild(this.renderer.domElement);
 
-        // CSS3D Renderer setup
+        this.container.style.position = 'relative';
+
         this.cssRenderer = new CSS3DRenderer();
         this.cssRenderer.setSize(this.container.clientWidth, this.container.clientHeight);
-        this.cssRenderer.domElement.style.position = 'absolute';
-        this.cssRenderer.domElement.style.top = '0px';
-        this.cssRenderer.domElement.style.pointerEvents = 'none'; // let WebGL handle primary pointer events initially
+        Object.assign(this.cssRenderer.domElement.style, {
+            position:      'absolute',
+            top:           '0px',
+            left:          '0px',
+            pointerEvents: 'none',
+        });
         this.container.appendChild(this.cssRenderer.domElement);
 
-        // Handle resize
+        this.instancedRenderer = new InstancedNodeRenderer(sg, this.scene);
+
         window.addEventListener('resize', () => this.onResize());
     }
 
     public init() {
-        console.log('[SpaceGraph Renderer] Initialized');
+        logger.info('Initialized');
 
-        // Wire up global accelerated raycasting
         THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
         THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
         THREE.Mesh.prototype.raycast = acceleratedRaycast;
@@ -64,7 +74,22 @@ export class Renderer {
     }
 
     public render() {
+        this.instancedRenderer.update();
+        // Sync all edge geometries to current node positions immediately before
+        // rendering so they always match the CSS3D layer regardless of when
+        // layout plugins or GSAP animations last updated node.position.
+        for (const edge of this.sg.graph.edges) {
+            if (typeof edge.update === 'function') edge.update();
+        }
         this.renderer.render(this.scene, this.camera);
         this.cssRenderer.render(this.scene, this.camera);
+    }
+
+    public dispose() {
+        this.instancedRenderer.dispose();
+        this.renderer.dispose();
+        if (this.cssRenderer.domElement.parentNode) {
+            this.cssRenderer.domElement.parentNode.removeChild(this.cssRenderer.domElement);
+        }
     }
 }

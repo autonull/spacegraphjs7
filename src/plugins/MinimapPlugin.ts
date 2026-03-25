@@ -6,17 +6,13 @@ import { DOMUtils } from '../utils/DOMUtils';
 /**
  * MinimapPlugin — Renders a thumbnail overview of the graph in a corner overlay.
  *
- * Scaffold: creates a secondary ortho camera and renders into a small viewport
- * region each frame.  Full implementation would add interactive panning (click
- * on minimap to fly the main camera there).
- *
  * Plugin settings:
  *   position : 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left'
  *   size     : pixel size of the square minimap (default 160)
  *   margin   : px from the edge of the screen (default 12)
  *   bgColor  : minimap background (default 0x0a0a0a)
  *   alpha    : minimap opacity 0–1 (default 0.8)
- *   zoom     : orthographic half-size (default 1500; larger = more of graph visible)
+ *   zoom     : orthographic half-size (default 1500)
  */
 export class MinimapPlugin implements ISpaceGraphPlugin {
     readonly id = 'minimap-plugin';
@@ -128,15 +124,13 @@ export class MinimapPlugin implements ISpaceGraphPlugin {
              const { left, top, size } = this._getBounds();
              if (e.clientX >= left && e.clientX <= left + size && e.clientY >= top && e.clientY <= top + size) {
                   this.sg.renderer.renderer.domElement.style.cursor = 'crosshair';
-             } else {
-                 // Assume InteractionPlugin handles base cursor, don't reset to 'auto' blindly
              }
              return;
         }
 
         const pt = this._pointerToWorld(e.clientX, e.clientY);
         this.sg.cameraControls.controls.moveTo(pt.x, pt.y, 0, false);
-        this.sg.cameraControls.update(); // Force immediate update
+        this.sg.cameraControls.update();
 
         e.stopPropagation();
         e.preventDefault();

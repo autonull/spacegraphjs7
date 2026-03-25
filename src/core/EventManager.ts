@@ -67,15 +67,12 @@ export class EventManager {
         }
         this.batchedEvents.get(typeKey)!.push(event);
 
-        if (this.batchFrameId === null) {
-            if (typeof window !== 'undefined' && 'requestAnimationFrame' in window) {
-                this.batchFrameId = requestAnimationFrame(() => {
-                    this.flushBatchedEvents();
-                });
-            } else {
-                // Fallback for SSR / Node environments
-                this.flushBatchedEvents();
-            }
+        if (this.batchFrameId !== null) return;
+
+        if (typeof window !== 'undefined' && 'requestAnimationFrame' in window) {
+            this.batchFrameId = requestAnimationFrame(() => this.flushBatchedEvents());
+        } else {
+            this.flushBatchedEvents();
         }
     }
 

@@ -1,5 +1,8 @@
 import type { SpaceGraph } from '../SpaceGraph';
 import type { ISpaceGraphPlugin } from '../types';
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('AutoColorPlugin');
 
 export class AutoColorPlugin implements ISpaceGraphPlugin {
     readonly id = 'auto-color';
@@ -10,16 +13,13 @@ export class AutoColorPlugin implements ISpaceGraphPlugin {
 
     init(sg: SpaceGraph): void {
         this.sg = sg;
-        console.log(`[AutoColorPlugin] Initialized ${this.name} v${this.version}`);
+        logger.info('Initialized %s v%s', this.name, this.version);
     }
 
     onPreRender(_delta: number): void {
-        // This plugin will serve as a skeleton for AI vision color adjustments.
-        // In the future, VisionManager will call methods on this plugin to auto-correct
-        // color harmony and contrast issues.
+        // Skeleton for AI vision color adjustments
     }
 
-    // Helper: relative luminance per WCAG 2.x
     private getLuminance(r: number, g: number, b: number): number {
         const a = [r, g, b].map(function (v) {
             v /= 255;
@@ -28,24 +28,21 @@ export class AutoColorPlugin implements ISpaceGraphPlugin {
         return a[0] * 0.2126 + a[1] * 0.7152 + a[2] * 0.0722;
     }
 
-    // Calculate contrast ratio
     private getContrastRatio(l1: number, l2: number): number {
         const brightest = Math.max(l1, l2);
         const darkest = Math.min(l1, l2);
         return (brightest + 0.05) / (darkest + 0.05);
     }
 
-    // Find a compliant color by adjusting lightness
     private getCompliantColor(hexColor: number): number {
         let r = (hexColor >> 16) & 255;
         let g = (hexColor >> 8) & 255;
         let b = hexColor & 255;
 
-        const textLuminance = this.getLuminance(255, 255, 255); // Assuming white text
+        const textLuminance = this.getLuminance(255, 255, 255);
         let currentLuminance = this.getLuminance(r, g, b);
         let ratio = this.getContrastRatio(currentLuminance, textLuminance);
 
-        // Iteratively darken the color until it passes WCAG AA (4.5:1)
         let iterations = 0;
         while (ratio < 4.5 && iterations < 20) {
             r = Math.max(0, Math.floor(r * 0.9));
@@ -57,23 +54,20 @@ export class AutoColorPlugin implements ISpaceGraphPlugin {
             iterations++;
         }
 
-        // If we couldn't make it work by darkening, fallback to a standard high-contrast dark color
         if (ratio < 4.5) {
-            return 0x333333; // Dark gray
+            return 0x333333;
         }
 
         return (r << 16) | (g << 8) | b;
     }
 
-    public applyVisionCorrection(issues: any[]): void {
-        console.log(`[AutoColorPlugin] Received ${issues.length} color vision issues to auto-fix.`);
+    public applyVisionCorrection(issues: unknown[]): void {
+        logger.info('Received %d color vision issues to auto-fix.', issues.length);
 
-        const colorIssues = issues.filter((i) => i.type === 'color' || i.type === 'legibility');
+        const colorIssues = issues.filter((i: any) => i.type === 'color' || i.type === 'legibility');
 
         if (colorIssues.length > 0) {
-            console.log(
-                `[AutoColorPlugin] Auto-fixing ${colorIssues.length} color/legibility issues...`,
-            );
+            logger.info('Auto-fixing %d color/legibility issues...', colorIssues.length);
 
             for (const issue of colorIssues) {
                 if (issue.nodeId) {
@@ -84,13 +78,10 @@ export class AutoColorPlugin implements ISpaceGraphPlugin {
                         if (issue.suggestedColor) {
                             newColor = issue.suggestedColor;
                         } else if (node.data && node.data.color !== undefined) {
-                            // Find a mathematically compliant background color for the assumed white text
                             newColor = this.getCompliantColor(node.data.color);
                         }
 
-                        console.log(
-                            `[AutoColorPlugin] Fixing color for node ${issue.nodeId}. New color: 0x${newColor.toString(16)}`,
-                        );
+                        logger.info('Fixing color for node %s. New color: 0x%s', issue.nodeId, newColor.toString(16));
                         node.updateSpec({ data: { color: newColor } });
                     }
                 }
@@ -99,6 +90,6 @@ export class AutoColorPlugin implements ISpaceGraphPlugin {
     }
 
     dispose(): void {
-        console.log(`[AutoColorPlugin] Disposing ${this.name}`);
+        logger.info('Disposing %s', this.name);
     }
 }

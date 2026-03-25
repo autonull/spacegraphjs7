@@ -23,11 +23,12 @@ export class GridLayout implements ISpaceGraphPlugin {
     private sg!: SpaceGraph;
 
     public settings = {
-        columns: 0, // 0 = auto (ceil(sqrt(n)))
+        columns: 0,
         spacingX: 200,
         spacingY: 200,
         offsetX: 0,
         offsetY: 0,
+        animate: true,
     };
 
     init(sg: SpaceGraph): void {

@@ -3,6 +3,9 @@ import { Node } from './Node';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec } from '../types';
 import { DOMUtils } from '../utils/DOMUtils';
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('VideoNode');
 
 /**
  * VideoNode — Displays an HTML5 video as a Three.js texture on a plane.
@@ -49,9 +52,7 @@ export class VideoNode extends Node {
 
         if (autoplay) {
             this.videoEl.play().catch(() => {
-                console.warn(
-                    `[VideoNode] Autoplay blocked for node "${spec.id}". User interaction required.`,
-                );
+                logger.warn('Autoplay blocked for node "%s". User interaction required.', spec.id);
             });
         }
 
