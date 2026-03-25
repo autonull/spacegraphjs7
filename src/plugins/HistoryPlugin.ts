@@ -18,7 +18,6 @@ export class HistoryPlugin implements ISpaceGraphPlugin {
     private isRestoring = false;
     private isEnabled = true;
 
-    // Throttle / Debounce variables for dragging and frequent updates
     private lastSnapshotTime = 0;
     private snapshotDebounce = 500;
     private debounceTimer: any = null;
@@ -31,12 +30,10 @@ export class HistoryPlugin implements ISpaceGraphPlugin {
     init(sg: SpaceGraph): void {
         this.sg = sg;
 
-        // Take initial snapshot
         if (this.isEnabled) {
             this.pushSnapshot();
         }
 
-        // Listen for significant user interactions that warrant a history state
         this.sg.events.on('interaction:dragend', () => this.debouncedSnapshot());
         this.sg.events.on('interaction:edgecreate', () => this.debouncedSnapshot());
         this.sg.events.on('node:added', () => this.debouncedSnapshot());
@@ -44,53 +41,40 @@ export class HistoryPlugin implements ISpaceGraphPlugin {
         this.sg.events.on('edge:added', () => this.debouncedSnapshot());
         this.sg.events.on('edge:removed', () => this.debouncedSnapshot());
 
-        if (typeof window !== 'undefined') {
-            window.addEventListener('keydown', this.handleKeydown);
-        }
+        this.sg.events.on('input:interaction:keydown', ((e: any) => this.handleKeydown(e)) as any);
     }
 
-    private handleKeydown = (e: KeyboardEvent) => {
+    private handleKeydown(e: any): void {
         if (!this.isEnabled) return;
 
-        // Ignore if user is typing in an input or textarea
-        const tag = (e.target as HTMLElement)?.tagName;
+        const tag = (e.originalEvent?.target as HTMLElement)?.tagName;
         if (tag === 'INPUT' || tag === 'TEXTAREA') return;
 
         if (e.ctrlKey || e.metaKey) {
             if (e.key === 'z') {
-                e.preventDefault();
+                e.originalEvent?.preventDefault();
                 if (e.shiftKey) {
                     this.redo();
                 } else {
                     this.undo();
                 }
             } else if (e.key === 'y') {
-                e.preventDefault();
+                e.originalEvent?.preventDefault();
                 this.redo();
             }
         }
-    };
+    }
 
-    /**
-     * Manually push a snapshot onto the history stack.
-     */
     public pushSnapshot() {
         if (!this.isEnabled || this.isRestoring) return;
 
         const spec = this.sg.export();
-
-        const last = this.pastStack[this.pastStack.length - 1];
-        if (last && last.nodes.length === spec.nodes.length && last.edges.length === spec.edges.length) {
-            // Shallow length check to avoid full deep equals cost if obvious.
-            // If it's a minor change we still want to save it, but we could add deep equality later if performance demands.
-        }
 
         this.pastStack.push(spec);
         if (this.pastStack.length > this.maxHistorySize) {
             this.pastStack.shift();
         }
 
-        // Clear future stack on new action
         this.futureStack = [];
     }
 
@@ -107,23 +91,18 @@ export class HistoryPlugin implements ISpaceGraphPlugin {
     }
 
     public undo() {
-        if (!this.isEnabled || this.pastStack.length <= 1) return; // Keep initial state
+        if (!this.isEnabled || this.pastStack.length <= 1) return;
 
         this.isRestoring = true;
 
-        // The current state is the top of the past stack. We pop it to future.
         const currentState = this.pastStack.pop()!;
         this.futureStack.push(currentState);
 
-        // The state to restore is now the new top of the past stack.
         const previousState = this.pastStack[this.pastStack.length - 1];
 
-        // Import without camera changes to prevent jarring jumps, just data.
-        // The SpaceGraph.import clears the graph.
         this.sg.graph.clear();
         this.sg.loadSpec(previousState);
 
-        // Tell plugins/HUD that a major change happened
         this.sg.events.emit('history:undo', { state: previousState });
 
         this.isRestoring = false;
@@ -148,13 +127,10 @@ export class HistoryPlugin implements ISpaceGraphPlugin {
     public clear() {
         this.pastStack = [];
         this.futureStack = [];
-        this.pushSnapshot(); // save current state as base
+        this.pushSnapshot();
     }
 
     dispose(): void {
-        if (typeof window !== 'undefined') {
-            window.removeEventListener('keydown', this.handleKeydown);
-        }
         if (this.debounceTimer) {
             clearTimeout(this.debounceTimer);
         }

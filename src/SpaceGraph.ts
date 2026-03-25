@@ -7,6 +7,8 @@ import { VisionManager } from './core/VisionManager';
 import { ObjectPoolManager } from './core/ObjectPoolManager';
 import { CullingManager } from './core/CullingManager';
 import { AdvancedRenderingOptimizer } from './core/AdvancedRenderingOptimizer';
+import { InputManager } from './input/InputManager';
+import { applyDefaultInputConfig, DefaultInputConfig } from './input/DefaultInputConfig';
 
 import type { GraphSpec, SpaceGraphOptions, SpecUpdate, ISpaceGraphPlugin } from './types';
 import { MathPool } from './utils/MathPool';
@@ -137,6 +139,7 @@ export class SpaceGraph {
     public poolManager: ObjectPoolManager<any>;
     public cullingManager: CullingManager;
     public optimizer: AdvancedRenderingOptimizer;
+    public input: InputManager;
     public options: SpaceGraphOptions;
     private animationFrameId?: number;
     private lastTimestamp: number = 0;
@@ -144,10 +147,8 @@ export class SpaceGraph {
     constructor(container: HTMLElement, options: SpaceGraphOptions = {}) {
         this.options = options;
         this.container = container;
-        // Object Pool
         this.poolManager = new ObjectPoolManager();
 
-        // Advanced Rendering Optimizer & Culling
         this.cullingManager = new CullingManager(this);
         this.optimizer = new AdvancedRenderingOptimizer(this);
         this.events = new EventManager(this);
@@ -157,7 +158,20 @@ export class SpaceGraph {
         this.graph = new Graph(this);
         this.cameraControls = new CameraControls(this);
 
-        // Register instance for cross-graph analysis and interactions
+        this.input = new InputManager({
+            graph: this,
+            events: this.events,
+        });
+
+        if ('input' in options) {
+            const inputConfig = options.input as DefaultInputConfig | undefined;
+            if (inputConfig && typeof inputConfig !== 'boolean') {
+                applyDefaultInputConfig(this.input, this, inputConfig);
+            }
+        } else {
+            applyDefaultInputConfig(this.input, this, {});
+        }
+
         SpaceGraph.instances.add(this);
     }
 

@@ -17,6 +17,25 @@ export {
 
 export { SpaceGraph } from './SpaceGraph';
 export { SpaceGraphApp } from './core/SpaceGraphApp';
+export { InputManager } from './input/InputManager';
+export type {
+    InputEvent,
+    InputEventType,
+    InputAction,
+    InputBinding,
+    InputContext,
+    InputState,
+    KeyEventData,
+    PointerEventData,
+    WheelEventData,
+    TouchEventData,
+} from './input/InputManager';
+export type {
+    DefaultInputConfig,
+    CameraInputConfig,
+    InteractionInputConfig,
+    HistoryInputConfig,
+} from './input/DefaultInputConfig';
 export type { SpaceGraphAppOptions, AppButtonConfig } from './core/SpaceGraphApp';
 export type {
     GraphSpec,

@@ -6,8 +6,8 @@ import { CameraUtils } from '../utils/CameraUtils';
 
 export class CameraControls {
     private sg: SpaceGraph;
-    private isDragging = false;
-    private dragMode: 'rotate' | 'pan' = 'rotate';
+    public isDragging = false;
+    public dragMode: 'rotate' | 'pan' = 'rotate';
     private previousMousePosition = { x: 0, y: 0 };
     public spherical = { theta: 0, phi: Math.PI / 2, radius: 500 };
     public target = new THREE.Vector3(0, 0, 0);
@@ -16,7 +16,6 @@ export class CameraControls {
     private velocity = { x: 0, y: 0 };
     private panVelocity = { x: 0, y: 0 };
 
-    // Zoom history stack for undo-zoom behavior
     private zoomStack: Array<{ target: THREE.Vector3; radius: number }> = [];
     private static readonly MAX_ZOOM_HISTORY = 20;
 
@@ -24,12 +23,10 @@ export class CameraControls {
         return this.zoomStack.length > 0;
     }
 
-    // Touch tracking
     private activeTouches: Map<number, { x: number; y: number }> = new Map();
     private prevPinchDistance = 0;
     private prevPinchMidpoint = { x: 0, y: 0 };
 
-    // Public wrapper for controls toggling, expected by some plugins
     public controls = {
         enabled: true,
         moveTo: (x: number, y: number, z: number, animate: boolean = true) => {
@@ -40,7 +37,7 @@ export class CameraControls {
                 this.target.copy(target);
                 this.updateCameraPosition();
             }
-        }
+        },
     };
 
     constructor(sg: SpaceGraph) {
@@ -59,8 +56,6 @@ export class CameraControls {
             this.spherical.radius * Math.sin(this.spherical.phi) * Math.cos(this.spherical.theta);
         camera.lookAt(this.target);
 
-        // Emitting this constantly during drag causes heavy React/Solid UI thrashing.
-        // We batch it to requestAnimationFrame cadence.
         this.sg.events.emitBatched('camera:move', {
             position: camera.position,
             target: this.target.clone(),
@@ -68,7 +63,6 @@ export class CameraControls {
     }
 
     public flyTo(targetPos: THREE.Vector3, targetRadius: number, duration: number = 1.5): void {
-        // Push current camera state so flyBack() can return here
         if (this.zoomStack.length < CameraControls.MAX_ZOOM_HISTORY) {
             this.zoomStack.push({
                 target: this.target.clone(),
@@ -126,7 +120,10 @@ export class CameraControls {
             !this.isDragging &&
             (Math.abs(this.panVelocity.x) > 0.0001 || Math.abs(this.panVelocity.y) > 0.0001)
         ) {
-            const translation = CameraUtils.calculatePanTranslation(this.sg.renderer.camera, this.panVelocity);
+            const translation = CameraUtils.calculatePanTranslation(
+                this.sg.renderer.camera,
+                this.panVelocity,
+            );
             this.target.add(translation);
 
             this.panVelocity.x *= this.damping;
@@ -141,25 +138,22 @@ export class CameraControls {
 
     private setupControls() {
         const canvas = this.sg.renderer.renderer.domElement;
+        canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 
-        canvas.addEventListener('contextmenu', (e) => {
-            e.preventDefault();
-        });
-
-        canvas.addEventListener('mousedown', (e) => {
+        this.sg.events.on('input:camera:mousedown', ((e: any) => {
             if (!this.controls.enabled) return;
             this.isDragging = true;
             this.dragMode = e.button === 2 ? 'pan' : 'rotate';
-            this.previousMousePosition = { x: e.clientX, y: e.clientY };
+            this.previousMousePosition = { x: e.x, y: e.y };
             if (this.dragMode === 'rotate') this.velocity = { x: 0, y: 0 };
             if (this.dragMode === 'pan') this.panVelocity = { x: 0, y: 0 };
-        });
+        }) as any);
 
-        canvas.addEventListener('mousemove', (e) => {
+        this.sg.events.on('input:camera:mousemove', ((e: any) => {
             if (!this.isDragging || !this.controls.enabled) return;
 
-            const deltaX = e.clientX - this.previousMousePosition.x;
-            const deltaY = e.clientY - this.previousMousePosition.y;
+            const deltaX = e.x - this.previousMousePosition.x;
+            const deltaY = e.y - this.previousMousePosition.y;
 
             if (this.dragMode === 'rotate') {
                 this.velocity.x = deltaX * 0.005;
@@ -171,122 +165,91 @@ export class CameraControls {
                     Math.min(Math.PI - 0.1, this.spherical.phi + this.velocity.y),
                 );
             } else if (this.dragMode === 'pan') {
-                // Calculate pan distance based on camera distance to maintain perceived speed
                 const panSpeed = this.spherical.radius * 0.002;
                 this.panVelocity.x = -deltaX * panSpeed;
                 this.panVelocity.y = deltaY * panSpeed;
 
-                const translation = CameraUtils.calculatePanTranslation(this.sg.renderer.camera, this.panVelocity);
+                const translation = CameraUtils.calculatePanTranslation(
+                    this.sg.renderer.camera,
+                    this.panVelocity,
+                );
                 this.target.add(translation);
             }
 
             this.updateCameraPosition();
-            this.previousMousePosition = { x: e.clientX, y: e.clientY };
-        });
+            this.previousMousePosition = { x: e.x, y: e.y };
+        }) as any);
 
-        canvas.addEventListener('mouseup', () => {
+        this.sg.events.on('input:camera:mouseup', (() => {
             this.isDragging = false;
-        });
+        }) as any);
 
-        canvas.addEventListener('mouseleave', () => {
+        this.sg.events.on('input:camera:mouseleave', (() => {
             this.isDragging = false;
-        });
+        }) as any);
 
-        // --- Touch Gestures ---
+        this.sg.events.on('input:camera:wheel', ((e: any) => {
+            if (!this.controls.enabled) return;
+            this.spherical.radius = Math.max(10, Math.min(5000, this.spherical.radius + e.deltaY));
+            this.updateCameraPosition();
+            e.originalEvent?.preventDefault();
+        }) as any);
 
-        canvas.addEventListener(
-            'touchstart',
-            (e) => {
-                if (!this.controls.enabled) return;
-                // e.preventDefault(); // allow default to handle taps, let InteractionPlugin catch taps
-                for (let i = 0; i < e.changedTouches.length; i++) {
-                    const touch = e.changedTouches[i];
-                    this.activeTouches.set(touch.identifier, {
-                        x: touch.clientX,
-                        y: touch.clientY,
-                    });
-                }
+        this.sg.events.on('input:camera:touchstart', ((e: any) => {
+            if (!this.controls.enabled) return;
 
-                if (this.activeTouches.size === 1) {
-                    this.isDragging = true;
-                    this.dragMode = 'rotate';
-                    const t = Array.from(this.activeTouches.values())[0];
-                    this.previousMousePosition = { x: t.x, y: t.y };
-                    this.velocity = { x: 0, y: 0 };
-                } else if (this.activeTouches.size === 2) {
-                    // Initiate pinch/pan
-                    this.isDragging = true;
-                    this.dragMode = 'pan'; // 2 fingers pan by default + pinched
-                    const t = Array.from(this.activeTouches.values());
+            for (const touch of e.changedTouches) {
+                this.activeTouches.set(touch.identifier, { x: touch.x, y: touch.y });
+            }
 
-                    // Initial distance between two fingers
-                    this.prevPinchDistance = GestureManager.calculateDistance(t[0], t[1]);
+            if (this.activeTouches.size === 1) {
+                this.isDragging = true;
+                this.dragMode = 'rotate';
+                const t = Array.from(this.activeTouches.values())[0];
+                this.previousMousePosition = { x: t.x, y: t.y };
+                this.velocity = { x: 0, y: 0 };
+            } else if (this.activeTouches.size === 2) {
+                this.isDragging = true;
+                this.dragMode = 'pan';
+                const t = Array.from(this.activeTouches.values());
+                this.prevPinchDistance = GestureManager.calculateDistance(t[0], t[1]);
+                this.prevPinchMidpoint = GestureManager.calculateMidpoint(t[0], t[1]);
+                this.panVelocity = { x: 0, y: 0 };
+            }
+        }) as any);
 
-                    // Midpoint
-                    this.prevPinchMidpoint = GestureManager.calculateMidpoint(t[0], t[1]);
-                    this.panVelocity = { x: 0, y: 0 };
-                }
-            },
-            { passive: false },
-        ); // Needs to be false to optionally preventDefault on move
+        this.sg.events.on('input:camera:touchmove', ((e: any) => {
+            if (!this.controls.enabled) return;
+            e.originalEvent?.preventDefault();
 
-        canvas.addEventListener(
-            'touchmove',
-            (e) => {
-                if (!this.controls.enabled) return;
-                e.preventDefault(); // Stop page scrolling when manipulating graph
+            for (const touch of e.changedTouches) {
+                this.activeTouches.set(touch.identifier, { x: touch.x, y: touch.y });
+            }
 
-                for (let i = 0; i < e.changedTouches.length; i++) {
-                    const touch = e.changedTouches[i];
-                    this.activeTouches.set(touch.identifier, {
-                        x: touch.clientX,
-                        y: touch.clientY,
-                    });
-                }
+            if (!this.isDragging) return;
 
-                if (!this.isDragging) return;
+            if (this.activeTouches.size === 1) {
+                this._handleSingleTouch();
+            } else if (this.activeTouches.size === 2) {
+                this._handleDoubleTouch();
+            }
+        }) as any);
 
-                if (this.activeTouches.size === 1) {
-                    this._handleSingleTouch();
-                } else if (this.activeTouches.size === 2) {
-                    this._handleDoubleTouch();
-                }
-            },
-            { passive: false },
-        );
-
-        const handleTouchEnd = (e: TouchEvent) => {
-            for (let i = 0; i < e.changedTouches.length; i++) {
-                this.activeTouches.delete(e.changedTouches[i].identifier);
+        const handleTouchEnd = (e: any) => {
+            for (const touch of e.changedTouches) {
+                this.activeTouches.delete(touch.identifier);
             }
 
             if (this.activeTouches.size === 0) {
                 this.isDragging = false;
             } else if (this.activeTouches.size === 1) {
-                // Drop down to 1 finger rotation safely
                 const remains = Array.from(this.activeTouches.values())[0];
                 this.dragMode = 'rotate';
                 this.previousMousePosition = { x: remains.x, y: remains.y };
             }
         };
 
-        canvas.addEventListener('touchend', handleTouchEnd);
-        canvas.addEventListener('touchcancel', handleTouchEnd);
-
-        // --- Mouse Wheel ---
-        canvas.addEventListener(
-            'wheel',
-            (e) => {
-                if (!this.controls.enabled) return;
-                this.spherical.radius = Math.max(
-                    10,
-                    Math.min(5000, this.spherical.radius + e.deltaY),
-                );
-                this.updateCameraPosition();
-                e.preventDefault();
-            },
-            { passive: false },
-        );
+        this.sg.events.on('input:camera:touchend', handleTouchEnd as any);
 
         this.updateCameraPosition();
     }
@@ -312,27 +275,28 @@ export class CameraControls {
     private _handleDoubleTouch() {
         const t = Array.from(this.activeTouches.values());
 
-        // 1. Pinch-to-zoom calculation
         const distance = GestureManager.calculateDistance(t[0], t[1]);
         this.spherical.radius = GestureManager.calculatePinchZoom(
             distance,
             this.prevPinchDistance,
-            this.spherical.radius
+            this.spherical.radius,
         );
         this.prevPinchDistance = distance;
 
-        // 2. Midpoint 2-finger panning calculation
         const currentMidpoint = GestureManager.calculateMidpoint(t[0], t[1]);
         const panVel = GestureManager.calculatePan(
             currentMidpoint,
             this.prevPinchMidpoint,
-            this.spherical.radius
+            this.spherical.radius,
         );
 
         this.panVelocity.x = panVel.x;
         this.panVelocity.y = panVel.y;
 
-        const translation = CameraUtils.calculatePanTranslation(this.sg.renderer.camera, this.panVelocity);
+        const translation = CameraUtils.calculatePanTranslation(
+            this.sg.renderer.camera,
+            this.panVelocity,
+        );
         this.target.add(translation);
 
         this.prevPinchMidpoint = currentMidpoint;
