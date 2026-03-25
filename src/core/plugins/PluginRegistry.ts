@@ -5,6 +5,9 @@ import type { Graph } from '../../graph/Graph';
 import type { Node } from '../../graph/Node';
 import type { Edge } from '../../graph/Edge';
 import type { EventSystem, PluginEventBus } from '../events/EventSystem';
+import { createLogger } from '../../utils/logger.js';
+
+const logger = createLogger('PluginRegistry');
 
 /**
  * Plugin context provided to all plugins during initialization
@@ -112,7 +115,7 @@ export class PluginRegistry {
    */
   async register(plugin: Plugin): Promise<void> {
     if (this.plugins.has(plugin.id)) {
-      console.warn(`[PluginRegistry] Plugin "${plugin.id}" is already registered.`);
+      logger.warn('Plugin "%s" is already registered.', plugin.id);
       return;
     }
 
@@ -143,8 +146,8 @@ export class PluginRegistry {
       this.setupGraphEventListeners(plugin);
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
-      console.error(`[PluginRegistry] Failed to initialize plugin "${plugin.id}":`, err);
-      
+      logger.error('Failed to initialize plugin "%s":', plugin.id, err);
+
       this.events.emit('plugin:error', {
         pluginId: plugin.id,
         error: err,
@@ -211,7 +214,7 @@ export class PluginRegistry {
         try {
           plugin.onPreFrame(delta);
         } catch (err) {
-          console.error(`[PluginRegistry] Plugin "${plugin.id}" onPreFrame failed:`, err);
+          logger.error('Plugin "%s" onPreFrame failed:', plugin.id, err);
         }
       }
     }
@@ -226,7 +229,7 @@ export class PluginRegistry {
         try {
           plugin.onPostFrame(delta);
         } catch (err) {
-          console.error(`[PluginRegistry] Plugin "${plugin.id}" onPostFrame failed:`, err);
+          logger.error('Plugin "%s" onPostFrame failed:', plugin.id, err);
         }
       }
     }
@@ -237,13 +240,13 @@ export class PluginRegistry {
    */
   export(): Record<string, unknown> {
     const state: Record<string, unknown> = {};
-    
+
     for (const [id, plugin] of this.plugins.entries()) {
       if (plugin.export) {
         try {
           state[id] = plugin.export();
         } catch (err) {
-          console.error(`[PluginRegistry] Plugin "${id}" export failed:`, err);
+          logger.error('Plugin "%s" export failed:', id, err);
         }
       }
     }
@@ -257,11 +260,11 @@ export class PluginRegistry {
   import(state: Record<string, unknown>): void {
     for (const [id, data] of Object.entries(state)) {
       const plugin = this.plugins.get(id);
-      if (plugin && plugin.import) {
+      if (plugin?.import) {
         try {
           plugin.import(data);
         } catch (err) {
-          console.error(`[PluginRegistry] Plugin "${id}" import failed:`, err);
+          logger.error('Plugin "%s" import failed:', id, err);
         }
       }
     }
@@ -276,7 +279,7 @@ export class PluginRegistry {
         try {
           plugin.dispose();
         } catch (err) {
-          console.error(`[PluginRegistry] Plugin "${plugin.id}" dispose failed:`, err);
+          logger.error('Plugin "%s" dispose failed:', plugin.id, err);
         }
       }
     }

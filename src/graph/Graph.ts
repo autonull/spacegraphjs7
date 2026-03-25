@@ -2,6 +2,9 @@ import type { NodeSpec, EdgeSpec, GraphSpec, GraphExport } from './types';
 import type { Node } from './Node';
 import type { Edge } from './Edge';
 import { TypeRegistry } from '../core/TypeRegistry';
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('Graph');
 
 export type GraphEventMap = {
   'node:added': { node: Node; timestamp: number };
@@ -33,7 +36,7 @@ export class Graph {
       try {
         handler({ ...data, timestamp: Date.now() } as GraphEventMap[T]);
       } catch (err) {
-        console.error(`[Graph] Event handler for ${event} failed:`, err);
+        logger.error('Event handler for %s failed:', event, err);
       }
     });
   }
@@ -165,7 +168,7 @@ export class Graph {
       try {
         this.addNode(registry.createNode(nodeSpec));
       } catch (err) {
-        console.error(`[Graph] Failed to create node "${nodeSpec.id}":`, err);
+        logger.error('Failed to create node "%s":', nodeSpec.id, err);
       }
     }
 
@@ -174,12 +177,12 @@ export class Graph {
         const source = this.getNode(edgeSpec.source);
         const target = this.getNode(edgeSpec.target);
         if (!source || !target) {
-          console.warn(`[Graph] Edge "${edgeSpec.id}" rejected: missing source or target.`);
+          logger.warn('Edge "%s" rejected: missing source or target.', edgeSpec.id);
           continue;
         }
         this.addEdge(registry.createEdge(edgeSpec, source, target));
       } catch (err) {
-        console.error(`[Graph] Failed to create edge "${edgeSpec.id}":`, err);
+        logger.error('Failed to create edge "%s":', edgeSpec.id, err);
       }
     }
   }

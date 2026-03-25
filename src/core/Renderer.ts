@@ -3,6 +3,9 @@ import { CSS3DRenderer } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
 import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from 'three-mesh-bvh';
 import type { SpaceGraph } from '../SpaceGraph';
 import { InstancedNodeRenderer } from '../rendering/InstancedNodeRenderer';
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('Renderer');
 
 export class Renderer {
     public sg: SpaceGraph;
@@ -33,9 +36,6 @@ export class Renderer {
         this.renderer.setPixelRatio(window.devicePixelRatio);
         this.container.appendChild(this.renderer.domElement);
 
-        // The CSS3D overlay is position:absolute — the container MUST be a positioned
-        // ancestor, otherwise the overlay escapes to <body> and misaligns with the
-        // WebGL canvas when the container is not at the page origin.
         this.container.style.position = 'relative';
 
         this.cssRenderer = new CSS3DRenderer();
@@ -54,9 +54,8 @@ export class Renderer {
     }
 
     public init() {
-        console.log('[SpaceGraph Renderer] Initialized');
+        logger.info('Initialized');
 
-        // Wire up global accelerated raycasting
         THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
         THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
         THREE.Mesh.prototype.raycast = acceleratedRaycast;

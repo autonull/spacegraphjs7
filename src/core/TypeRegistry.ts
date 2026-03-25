@@ -1,6 +1,9 @@
 import type { Node } from '../graph/Node';
 import type { Edge } from '../graph/Edge';
 import type { NodeSpec, EdgeSpec } from '../graph/types';
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('TypeRegistry');
 
 export type NodeConstructor = new (spec: NodeSpec) => Node;
 export type EdgeConstructor = new (spec: EdgeSpec, source: Node, target: Node) => Edge;
@@ -18,14 +21,14 @@ export class TypeRegistry {
 
   registerNode(typeName: string, constructor: NodeConstructor): void {
     if (this.nodeTypes.has(typeName)) {
-      console.warn(`[TypeRegistry] Node type "${typeName}" already registered. Overwriting.`);
+      logger.warn('Node type "%s" already registered. Overwriting.', typeName);
     }
     this.nodeTypes.set(typeName, constructor);
   }
 
   registerEdge(typeName: string, constructor: EdgeConstructor): void {
     if (this.edgeTypes.has(typeName)) {
-      console.warn(`[TypeRegistry] Edge type "${typeName}" already registered. Overwriting.`);
+      logger.warn('Edge type "%s" already registered. Overwriting.', typeName);
     }
     this.edgeTypes.set(typeName, constructor);
   }

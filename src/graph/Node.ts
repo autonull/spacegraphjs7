@@ -1,5 +1,8 @@
 import * as THREE from 'three';
 import type { NodeSpec, NodeData } from './types';
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('Node');
 
 type NodeEventMap = {
   'updated': { node: Node; changes: Partial<NodeSpec>; timestamp: number };
@@ -25,9 +28,21 @@ export abstract class Node {
     this.type = spec.type;
     this.label = spec.label;
     this.data = { ...spec.data };
-    this.position = new THREE.Vector3(spec.position?.[0] ?? 0, spec.position?.[1] ?? 0, spec.position?.[2] ?? 0);
-    this.rotation = new THREE.Vector3(spec.rotation?.[0] ?? 0, spec.rotation?.[1] ?? 0, spec.rotation?.[2] ?? 0);
-    this.scale = new THREE.Vector3(spec.scale?.[0] ?? 1, spec.scale?.[1] ?? 1, spec.scale?.[2] ?? 1);
+    this.position = new THREE.Vector3(
+      spec.position?.[0] ?? 0,
+      spec.position?.[1] ?? 0,
+      spec.position?.[2] ?? 0,
+    );
+    this.rotation = new THREE.Vector3(
+      spec.rotation?.[0] ?? 0,
+      spec.rotation?.[1] ?? 0,
+      spec.rotation?.[2] ?? 0,
+    );
+    this.scale = new THREE.Vector3(
+      spec.scale?.[0] ?? 1,
+      spec.scale?.[1] ?? 1,
+      spec.scale?.[2] ?? 1,
+    );
   }
 
   on<T extends keyof NodeEventMap>(event: T, handler: NodeEventHandler<T>): { dispose(): void } {
@@ -42,7 +57,7 @@ export abstract class Node {
       try {
         handler({ ...data, timestamp: Date.now() } as NodeEventMap[T]);
       } catch (err) {
-        console.error(`[Node ${this.id}] Event handler for ${event} failed:`, err);
+        logger.error('Node %s event handler for %s failed:', this.id, event, err);
       }
     });
   }

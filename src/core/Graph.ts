@@ -2,6 +2,9 @@ import { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec, EdgeSpec, GraphSpec } from '../types';
 import type { Node } from '../nodes/Node';
 import type { Edge } from '../edges/Edge';
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('Graph');
 
 type PluginHook = 'onNodeAdded' | 'onNodeRemoved' | 'onEdgeAdded' | 'onEdgeRemoved';
 
@@ -21,10 +24,7 @@ export class Graph {
                 try {
                     hook(arg);
                 } catch (err) {
-                    console.error(
-                        `[SpaceGraph] Plugin ${plugin.constructor.name} failed ${hookName}:`,
-                        err,
-                    );
+                    logger.error('Plugin %s failed %s:', plugin.constructor.name, hookName, err);
                 }
             }
         }
@@ -43,7 +43,7 @@ export class Graph {
 
         const NodeType = this.sg.pluginManager.getNodeType(spec.type);
         if (!NodeType) {
-            console.warn(`[SpaceGraph] Node type "${spec.type}" not registered.`);
+            logger.warn('Node type "%s" not registered.', spec.type);
             return null;
         }
         const node = new NodeType(this.sg, spec);
@@ -80,9 +80,7 @@ export class Graph {
 
     addEdge(spec: EdgeSpec): Edge | null {
         if (!spec?.id || typeof spec.source !== 'string' || typeof spec.target !== 'string') {
-            console.warn(
-                '[SpaceGraph] Edge missing critical topology attributes (id/source/target).',
-            );
+            logger.warn('Edge missing critical topology attributes (id/source/target).');
             return null;
         }
 
@@ -95,13 +93,13 @@ export class Graph {
         const targetNode = this.nodes.get(spec.target) ?? this.findNodeAcrossInstances(spec.target);
 
         if (!sourceNode || !targetNode) {
-            console.warn(`[SpaceGraph] Edge "${spec.id}" rejected: missing source or target node.`);
+            logger.warn('Edge "%s" rejected: missing source or target node.', spec.id);
             return null;
         }
 
         let EdgeType = this.sg.pluginManager.getEdgeType(spec.type);
         if (!EdgeType) {
-            console.warn(`[SpaceGraph] Edge type "${spec.type}" not registered.`);
+            logger.warn('Edge type "%s" not registered.', spec.type);
             return null;
         }
 
@@ -111,9 +109,7 @@ export class Graph {
             if (InterGraphEdgeClass) {
                 EdgeType = InterGraphEdgeClass;
             } else {
-                console.warn(
-                    '[SpaceGraph] InterGraphEdge not registered. Falling back to default edge.',
-                );
+                logger.warn('InterGraphEdge not registered. Falling back to default edge.');
             }
         }
 

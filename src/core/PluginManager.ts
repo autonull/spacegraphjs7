@@ -1,11 +1,14 @@
 import type { SpaceGraph } from '../SpaceGraph';
 import type { ISpaceGraphPlugin } from '../types';
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('PluginManager');
 
 export class PluginManager {
-    private sg: SpaceGraph;
-    public plugins: Map<string, ISpaceGraphPlugin> = new Map();
-    private nodeTypes: Map<string, new (...args: unknown[]) => unknown> = new Map();
-    private edgeTypes: Map<string, new (...args: unknown[]) => unknown> = new Map();
+    private readonly sg: SpaceGraph;
+    public readonly plugins = new Map<string, ISpaceGraphPlugin>();
+    private readonly nodeTypes = new Map<string, new (...args: unknown[]) => unknown>();
+    private readonly edgeTypes = new Map<string, new (...args: unknown[]) => unknown>();
 
     constructor(sg: SpaceGraph) {
         this.sg = sg;
@@ -64,7 +67,7 @@ export class PluginManager {
                     const wrappedError = new Error(
                         `[SpaceGraph] Plugin Initialization Error: Failed to initialize plugin "${name}". Reason: ${message}`,
                     );
-                    console.error(wrappedError);
+                    logger.error(wrappedError);
                     errors.push(wrappedError);
                 }
             }
@@ -79,20 +82,14 @@ export class PluginManager {
 
     updateAll(delta: number): void {
         for (const plugin of this.plugins.values()) {
-            if (plugin.onPreRender) {
-                plugin.onPreRender(delta);
-            }
-            if (plugin.onPostRender) {
-                plugin.onPostRender(delta);
-            }
+            plugin.onPreRender?.(delta);
+            plugin.onPostRender?.(delta);
         }
     }
 
     disposePlugins(): void {
         for (const plugin of this.plugins.values()) {
-            if (plugin.dispose) {
-                plugin.dispose();
-            }
+            plugin.dispose?.();
         }
         this.plugins.clear();
     }
@@ -104,7 +101,7 @@ export class PluginManager {
                 try {
                     state[name] = plugin.export();
                 } catch (err) {
-                    console.error(`[SpaceGraph] Failed to export plugin "${name}".`, err);
+                    logger.error('Failed to export plugin "%s".', name, err);
                 }
             }
         }
@@ -115,11 +112,11 @@ export class PluginManager {
         if (!data) return;
         for (const [name, pluginState] of Object.entries(data)) {
             const plugin = this.plugins.get(name);
-            if (plugin && plugin.import) {
+            if (plugin?.import) {
                 try {
                     plugin.import(pluginState);
                 } catch (err) {
-                    console.error(`[SpaceGraph] Failed to import state for plugin "${name}".`, err);
+                    logger.error('Failed to import state for plugin "%s".', name, err);
                 }
             }
         }

@@ -3,8 +3,10 @@ import type { SpaceGraph } from '../SpaceGraph';
 import { InferenceSession, Tensor, env } from 'onnxruntime-web';
 import { getLuminance, hexToRgb } from '../utils/color.js';
 import { SpatialIndex } from './SpatialIndex';
+import { createLogger } from '../utils/logger.js';
 
-// Configure ONNX to fetch WASM payload from unpkg/jsdelivr instead of requiring local bundling logic
+const logger = createLogger('VisionManager');
+
 env.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/';
 
 export interface VisionCategory {
@@ -12,10 +14,10 @@ export interface VisionCategory {
 }
 
 export interface VisionReport {
-    layout: { overall: number; issues: any[] };
-    legibility: { wcagCompliance: { AA: boolean }; failures: any[] };
+    layout: { overall: number; issues: unknown[] };
+    legibility: { wcagCompliance: { AA: boolean }; failures: unknown[] };
     color: { harmonyScore: number; dominantPalette: string[] };
-    overlap: { overlaps: any[]; statistics: { totalOverlaps: number } };
+    overlap: { overlaps: unknown[]; statistics: { totalOverlaps: number } };
     hierarchy: { clarityScore: number };
     ergonomics: { fittsLawScore: number };
     overall: number;
@@ -24,40 +26,29 @@ export interface VisionReport {
 /**
  * VisionManager — Accessibility and layout quality analysis for SpaceGraph.
  *
- * Architecture: This manager runs in all environments without ONNX models.
- * It uses heuristic-based analysis (WCAG contrast checking, BVH overlap detection)
- * to evaluate graph quality.
- *
- * ONNX models are optional and enhance heuristic confidence when provided.
- * They run in try/catch blocks and fail silently, falling back to pure heuristics.
- * This ensures graceful degradation in any environment.
+ * Architecture: Uses heuristic-based analysis (WCAG contrast, BVH overlap detection).
+ * ONNX models are optional and enhance confidence when provided.
  *
  * To enable ONNX models:
  *   1. Host the .onnx model files in your public folder
  *   2. Call sg.vision.loadModels({ tla: '/tla_model.onnx', che: '/che_model.onnx', ... })
- *   3. Or use the VisionOverlayPlugin which handles loading automatically
  *
- * Hardware acceleration: Override execution providers via SpaceGraphOptions:
- *   await SpaceGraph.create('#container', spec, { onnxExecutionProviders: ['wasm', 'webgpu'] })
+ * Hardware acceleration: Override execution providers via SpaceGraphOptions
  */
 export class VisionManager {
-    private sg: SpaceGraph;
-    private isAnalyzing: boolean = false;
-    private autonomousTimer: any | null = null;
-    private spatialIndex: SpatialIndex = new SpatialIndex(50); // 50 units cell size
-    private cameraViewProjectionMatrix = new THREE.Matrix4();
-    private frustum = new THREE.Frustum();
-
-    private executionProviders: string[];
+    private readonly sg: SpaceGraph;
+    private isAnalyzing = false;
+    private autonomousTimer: ReturnType<typeof setInterval> | null = null;
+    private readonly spatialIndex = new SpatialIndex(50);
+    private readonly cameraViewProjectionMatrix = new THREE.Matrix4();
+    private readonly frustum = new THREE.Frustum();
+    private readonly executionProviders: string[];
+    private readonly sessions: Record<string, InferenceSession> = {};
 
     constructor(sg: SpaceGraph) {
         this.sg = sg;
-        // Default to wasm, but allow override via SpaceGraphOptions for Hardware Acceleration Hooks.
-        // E.g., for SpaceGraph Mini (RK3588), we attempt to use the 'rknn' provider for NPU offloading.
-        this.executionProviders = sg.options?.onnxExecutionProviders || ['wasm'];
+        this.executionProviders = sg.options?.onnxExecutionProviders ?? ['wasm'];
 
-        // Automatically append rknn for RK3588 NPU acceleration if running in a Node environment that supports it
-        // This acts as a hook/fallback when deploying on SpaceGraph Mini hardware.
         if (
             typeof process !== 'undefined' &&
             process.arch === 'arm64' &&
@@ -67,40 +58,35 @@ export class VisionManager {
         }
     }
 
-    // Holds actual ONNX runtime sessions
-    private sessions: Record<string, InferenceSession> = {};
-    public modelsLoaded: boolean = false;
+    public modelsLoaded = false;
 
     public async loadModels(modelPaths: Record<string, string>): Promise<void> {
-        console.log(
-            `[VisionManager] Initializing ONNX session with providers [${this.executionProviders.join(', ')}]: `,
-            modelPaths,
-        );
+        logger.info('Initializing ONNX session with providers [%s]:', this.executionProviders.join(', '), modelPaths);
 
         for (const [key, path] of Object.entries(modelPaths)) {
             try {
                 this.sessions[key] = await InferenceSession.create(path, {
                     executionProviders: this.executionProviders,
                 });
-                console.log(`[VisionManager] Loaded ${key} ONNX model from ${path}`);
+                logger.info('Loaded %s ONNX model from %s', key, path);
             } catch (err) {
-                console.error(`[VisionManager] Failed to load ONNX model ${key}:`, err);
+                logger.error('Failed to load ONNX model %s:', key, err);
             }
         }
         this.modelsLoaded = true;
-        console.log('[VisionManager] ONNX models loaded.', Object.keys(this.sessions));
+        logger.info('ONNX models loaded: %s', Object.keys(this.sessions).join(', '));
     }
 
     private async _analyzeLegibility(
-        nodes: any[],
+        nodes: unknown[],
         _frustum: THREE.Frustum,
     ): Promise<{
-        legibilityFailures: any[];
+        legibilityFailures: unknown[];
         colorHarmonyScore: number;
         dominantPalette: string[];
         wcagAA: boolean;
     }> {
-        const legibilityFailures = [];
+        const legibilityFailures: unknown[] = [];
         let colorHarmonyScore = 100;
         const dominantPalette: string[] = [];
         let wcagAA = true;
@@ -111,12 +97,11 @@ export class VisionManager {
             b: bgColorThree.b * 255,
         };
 
-        for (let i = 0; i < nodes.length; i++) {
-            const nodeA = nodes[i];
-            const nodeColor = nodeA.data?.color
-                ? hexToRgb(nodeA.data.color)
+        for (const nodeA of nodes) {
+            const nodeColor = (nodeA as any).data?.color
+                ? hexToRgb((nodeA as any).data.color)
                 : { r: 200, g: 200, b: 200 };
-            dominantPalette.push(nodeA.data?.color || '#cccccc');
+            dominantPalette.push((nodeA as any).data?.color ?? '#cccccc');
 
             if (nodeColor) {
                 const nodeL1 = getLuminance(nodeColor.r, nodeColor.g, nodeColor.b);
@@ -144,10 +129,10 @@ export class VisionManager {
                             const result = await this.sessions['tla'].run({
                                 text_features: tensor,
                             });
-                            const prob = result['legibility_score'].data[0] as number;
+                            const prob = (result['legibility_score'].data[0] as number);
                             if (prob >= 0.5) verifiedIssue = false;
                         } catch (e) {
-                            console.error('[VisionManager] TLA model inference failed', e);
+                            logger.error('TLA model inference failed:', e);
                         }
                     }
 
@@ -168,10 +153,10 @@ export class VisionManager {
                             const result = await this.sessions['che'].run({
                                 color_neighborhood: tensor,
                             });
-                            const prob = result['harmony_score'].data[0] as number;
+                            const prob = (result['harmony_score'].data[0] as number);
                             if (prob < 0.5) colorHarmonyScore -= 10;
                         } catch (e) {
-                            console.error('[VisionManager] CHE model inference failed', e);
+                            logger.error('CHE model inference failed:', e);
                         }
                     }
                 }
@@ -180,8 +165,8 @@ export class VisionManager {
                     legibilityFailures.push({
                         type: 'legibility',
                         severity: 'error',
-                        nodeId: nodeA.id,
-                        message: `Poor contrast ratio (${contrastRatio.toFixed(2)}:1) for node ${nodeA.id}. Text may be illegible.`,
+                        nodeId: (nodeA as any).id,
+                        message: `Poor contrast ratio (${contrastRatio.toFixed(2)}:1) for node ${(nodeA as any).id}. Text may be illegible.`,
                     });
                     wcagAA = false;
                 }
@@ -191,33 +176,32 @@ export class VisionManager {
     }
 
     private async _analyzeOverlaps(
-        nodes: any[],
+        nodes: unknown[],
         frustum: THREE.Frustum,
-    ): Promise<{ overlaps: any[]; layoutScore: number }> {
-        const overlaps = [];
+    ): Promise<{ overlaps: unknown[]; layoutScore: number }> {
+        const overlaps: unknown[] = [];
         let layoutScore = 100;
-        this.spatialIndex.build(nodes);
+        this.spatialIndex.build(nodes as any);
         const processedPairs = new Set<string>();
 
         const boxA = new THREE.Box3();
         const boxB = new THREE.Box3();
 
-        for (let i = 0; i < nodes.length; i++) {
-            const nodeA = nodes[i];
-            if (!frustum.containsPoint(nodeA.object.position)) continue;
+        for (const nodeA of nodes) {
+            if (!frustum.containsPoint((nodeA as any).object.position)) continue;
 
-            boxA.setFromObject(nodeA.object);
+            boxA.setFromObject((nodeA as any).object);
             boxA.expandByScalar(5);
 
             const neighbors = this.spatialIndex.queryBox(boxA);
 
             for (const nodeB of neighbors) {
-                const pairKey = [nodeA.id, nodeB.id].sort().join('|');
-                if (nodeA.id === nodeB.id || processedPairs.has(pairKey)) continue;
+                const pairKey = [(nodeA as any).id, (nodeB as any).id].sort().join('|');
+                if ((nodeA as any).id === (nodeB as any).id || processedPairs.has(pairKey)) continue;
                 processedPairs.add(pairKey);
-                if (!frustum.containsPoint(nodeB.object.position)) continue;
+                if (!frustum.containsPoint((nodeB as any).object.position)) continue;
 
-                boxB.setFromObject(nodeB.object);
+                boxB.setFromObject((nodeB as any).object);
                 boxB.expandByScalar(5);
 
                 if (boxA.intersectsBox(boxB)) {
@@ -236,15 +220,15 @@ export class VisionManager {
                             ]);
                             const tensor = new Tensor('float32', inputs, [1, 8]);
                             const result = await this.sessions['odn'].run({ boxes: tensor });
-                            const prob = result['overlap_prob'].data[0] as number;
+                            const prob = (result['overlap_prob'].data[0] as number);
                             if (prob < 0.5) verifiedOverlap = false;
                         } catch (e) {
-                            console.error('[VisionManager] ODN model inference failed', e);
+                            logger.error('ODN model inference failed:', e);
                         }
                     }
 
                     if (verifiedOverlap) {
-                        overlaps.push({ nodeA: nodeA.id, nodeB: nodeB.id });
+                        overlaps.push({ nodeA: (nodeA as any).id, nodeB: (nodeB as any).id });
                         layoutScore -= 10;
                     }
                 }
@@ -253,15 +237,15 @@ export class VisionManager {
         return { overlaps, layoutScore };
     }
 
-    private async _analyzeHierarchy(nodes: any[]): Promise<{ hierarchyScore: number }> {
+    private async _analyzeHierarchy(nodes: unknown[]): Promise<{ hierarchyScore: number }> {
         let hierarchyScore = 85;
         const inDegrees = new Map<string, number>();
         for (const n of nodes) {
-            inDegrees.set(n.id, 0);
+            inDegrees.set((n as any).id, 0);
         }
         for (const e of this.sg.graph.edges) {
-            if (e.target && e.target.id) {
-                inDegrees.set(e.target.id, (inDegrees.get(e.target.id) || 0) + 1);
+            if (e.target?.id) {
+                inDegrees.set(e.target.id, (inDegrees.get(e.target.id) ?? 0) + 1);
             }
         }
 
@@ -297,14 +281,14 @@ export class VisionManager {
                 const result = await this.sessions['vhs'].run({ hierarchy_features: tensor });
                 hierarchyScore = Math.floor((result['hierarchy_score'].data[0] as number) * 100);
             } catch (e) {
-                console.error('[VisionManager] VHS model inference failed', e);
+                logger.error('VHS model inference failed:', e);
             }
         }
         return { hierarchyScore };
     }
 
     private async _analyzeErgonomics(
-        nodes: any[],
+        nodes: unknown[],
         camera: THREE.PerspectiveCamera,
         frustum: THREE.Frustum,
     ): Promise<{ fittsLawScore: number }> {
@@ -317,13 +301,13 @@ export class VisionManager {
         const size = new THREE.Vector3();
 
         for (const node of nodes) {
-            if (!frustum.containsPoint(node.object.position)) continue;
+            if (!frustum.containsPoint((node as any).object.position)) continue;
 
-            node.object.position.clone().project(camera);
-            box.setFromObject(node.object);
+            (node as any).object.position.clone().project(camera);
+            box.setFromObject((node as any).object);
             box.getSize(size);
 
-            const distance = camera.position.distanceTo(node.object.position);
+            const distance = camera.position.distanceTo((node as any).object.position);
             const apparentSize = (Math.max(size.x, size.y) / distance) * screenHeight;
 
             if (apparentSize < 44) smallTargets++;
@@ -343,7 +327,7 @@ export class VisionManager {
                 const result = await this.sessions['eqa'].run({ ergonomic_features: tensor });
                 fittsLawScore = Math.floor((result['fittslaw_score'].data[0] as number) * 100);
             } catch (e) {
-                console.error('[VisionManager] EQA model inference failed', e);
+                logger.error('EQA model inference failed:', e);
             }
         } else {
             fittsLawScore = Math.max(0, 100 - pctSmall * 100);
@@ -357,10 +341,10 @@ export class VisionManager {
         }
 
         this.isAnalyzing = true;
-        console.log('[VisionManager] Starting automated visual analysis loop...');
+        logger.info('Starting automated visual analysis loop...');
 
         if (Object.keys(this.sessions).length > 0) {
-            console.log('[VisionManager] Running ONNX inference for Graph Vision...');
+            logger.info('Running ONNX inference for Graph Vision...');
         }
 
         const nodes = Array.from(this.sg.graph.nodes.values());
@@ -399,23 +383,14 @@ export class VisionManager {
             ),
         };
 
-        console.log('[VisionManager] Analysis complete. Overall Score:', mockReport.overall);
+        logger.info('Analysis complete. Overall Score: %d', mockReport.overall);
 
-        // Simulate Vision-Closed self-correction trigger based on threshold
         if (mockReport.overall < 90) {
-            console.warn('[VisionManager] Quality below threshold, triggering autonomous fix...');
-            if (overlaps.length > 0) {
-                await this.autoFix({ type: 'overlap' }, mockReport);
-            }
-            if (legibilityFailures.length > 0) {
-                await this.autoFix({ type: 'legibility' }, mockReport);
-            }
-            if (hierarchyScore < 60) {
-                await this.autoFix({ type: 'hierarchy' }, mockReport);
-            }
-            if (fittsLawScore < 60) {
-                await this.autoFix({ type: 'ergonomics' }, mockReport);
-            }
+            logger.warn('Quality below threshold, triggering autonomous fix...');
+            if (overlaps.length > 0) await this.autoFix({ type: 'overlap' }, mockReport);
+            if (legibilityFailures.length > 0) await this.autoFix({ type: 'legibility' }, mockReport);
+            if (hierarchyScore < 60) await this.autoFix({ type: 'hierarchy' }, mockReport);
+            if (fittsLawScore < 60) await this.autoFix({ type: 'ergonomics' }, mockReport);
         }
 
         this.isAnalyzing = false;
@@ -423,45 +398,38 @@ export class VisionManager {
     }
 
     public async autoFix(category: VisionCategory, report?: VisionReport): Promise<void> {
-        console.log(`[VisionManager] Triggering auto-fix for category: ${category.type}`);
+        logger.info('Triggering auto-fix for category: %s', category.type);
 
         if (!report) return;
 
         switch (category.type) {
             case 'legibility':
             case 'color': {
-                console.log('[VisionManager] Applying color/legibility corrections...');
-                const autoColorPlugin: any = this.sg.pluginManager.getPlugin('AutoColorPlugin');
+                logger.info('Applying color/legibility corrections...');
+                const autoColorPlugin = this.sg.pluginManager.getPlugin('AutoColorPlugin') as any;
 
-                if (
-                    autoColorPlugin &&
-                    typeof autoColorPlugin.applyVisionCorrection === 'function'
-                ) {
+                if (autoColorPlugin && typeof autoColorPlugin.applyVisionCorrection === 'function') {
                     autoColorPlugin.applyVisionCorrection(report.legibility.failures);
-                    console.log('[VisionManager] AutoColorPlugin corrections applied.');
+                    logger.info('AutoColorPlugin corrections applied.');
                 } else {
-                    console.warn(
-                        '[VisionManager] AutoColorPlugin not found or missing applyVisionCorrection.',
-                    );
+                    logger.warn('AutoColorPlugin not found or missing applyVisionCorrection.');
                 }
                 break;
             }
 
             case 'overlap': {
-                console.log('[VisionManager] Applying overlap corrections...');
-                const autoLayoutPlugin: any = this.sg.pluginManager.getPlugin('AutoLayoutPlugin');
+                logger.info('Applying overlap corrections...');
+                const autoLayoutPlugin = this.sg.pluginManager.getPlugin('AutoLayoutPlugin') as any;
 
                 if (autoLayoutPlugin && typeof autoLayoutPlugin.fixOverlaps === 'function') {
                     autoLayoutPlugin.fixOverlaps(report.overlap.overlaps);
-                    console.log('[VisionManager] AutoLayoutPlugin overlap corrections applied.');
+                    logger.info('AutoLayoutPlugin overlap corrections applied.');
                 } else {
-                    const forceLayout: any = this.sg.pluginManager.getPlugin('ForceLayout');
+                    const forceLayout = this.sg.pluginManager.getPlugin('ForceLayout') as any;
                     if (forceLayout && typeof forceLayout.update === 'function') {
-                        console.log(
-                            '[VisionManager] AutoLayoutPlugin not found, falling back to ForceLayout...',
-                        );
+                        logger.info('AutoLayoutPlugin not found, falling back to ForceLayout...');
 
-                        const originalRepulsion = forceLayout.settings.repulsion || 10000;
+                        const originalRepulsion = forceLayout.settings.repulsion ?? 10000;
                         forceLayout.settings.repulsion = originalRepulsion * 5;
 
                         for (let i = 0; i < 50; i++) {
@@ -470,17 +438,15 @@ export class VisionManager {
 
                         forceLayout.settings.repulsion = originalRepulsion;
                     } else {
-                        console.warn(
-                            '[VisionManager] No suitable layout plugin found to perform autoFix.',
-                        );
+                        logger.warn('No suitable layout plugin found to perform autoFix.');
                     }
                 }
                 break;
             }
 
             case 'hierarchy': {
-                console.log('[VisionManager] Applying hierarchy corrections...');
-                const hierLayout: any = this.sg.pluginManager.getPlugin('HierarchicalLayout');
+                logger.info('Applying hierarchy corrections...');
+                const hierLayout = this.sg.pluginManager.getPlugin('HierarchicalLayout') as any;
                 if (hierLayout && typeof hierLayout.fixHierarchy === 'function') {
                     hierLayout.fixHierarchy();
                 } else if (hierLayout && typeof hierLayout.apply === 'function') {
@@ -490,9 +456,7 @@ export class VisionManager {
             }
 
             case 'ergonomics':
-                console.log(
-                    '[VisionManager] Applying ergonomics corrections (camera zoom limit)...',
-                );
+                logger.info('Applying ergonomics corrections (camera zoom limit)...');
                 this.sg.fitView(150, 2.0);
                 break;
         }
@@ -502,74 +466,65 @@ export class VisionManager {
      * The Vision-Closed loop: periodically analyzes the view and triggers
      * plugins to correct aesthetic/layout issues autonomously.
      */
-    public startAutonomousCorrection(intervalMs: number = 30000): void {
+    public startAutonomousCorrection(intervalMs = 30000): void {
         if (this.autonomousTimer) {
             this.stopAutonomousCorrection();
         }
 
-        console.log(
-            `[VisionManager] Starting autonomous correction loop (interval: ${intervalMs}ms)`,
-        );
+        logger.info('Starting autonomous correction loop (interval: %dms)', intervalMs);
 
         this.autonomousTimer = setInterval(async () => {
             try {
                 const report = await this.analyzeVision();
 
-                // If overlaps exist, trigger AutoLayoutPlugin to fix them
                 if (report.overlap.overlaps.length > 0) {
                     const autoLayout = this.sg.pluginManager.getPlugin('auto-layout') as any;
                     if (autoLayout && typeof autoLayout.applyVisionCorrection === 'function') {
-                        // Pass simulated 'overlap' typed issues to the plugin
-                        const formattedIssues = [];
-                        for (const o of report.overlap.overlaps) {
-                            formattedIssues.push({
-                                type: 'overlap',
-                                nodeA: o.nodeA,
-                                nodeB: o.nodeB,
-                            });
-                        }
+                        const formattedIssues = report.overlap.overlaps.map((o: any) => ({
+                            type: 'overlap',
+                            nodeA: o.nodeA,
+                            nodeB: o.nodeB,
+                        }));
                         autoLayout.applyVisionCorrection(formattedIssues);
                     }
                 }
             } catch (err) {
-                console.error('[VisionManager] Autonomous loop error: ', err);
+                logger.error('Autonomous loop error:', err);
             }
         }, intervalMs);
     }
 
     /**
      * Imperatively triggers auto-fixes for all failing categories in a given report.
-     * This orchestrates the underlying `autoFix` pipeline.
      */
     public async applyAutonomousFixes(report: VisionReport): Promise<void> {
-        console.log('[VisionManager] Applying manual autonomous fixes from report...');
+        logger.info('Applying manual autonomous fixes from report...');
 
-        // Thresholds based on default plan logic
         if (report.layout.overall < 80) {
             await this.autoFix({ type: 'layout' }, report);
         }
         if (report.overlap.statistics.totalOverlaps > 0) {
             await this.autoFix({ type: 'overlap' }, report);
         }
-        if (report.legibility.failures && report.legibility.failures.length > 0) {
+        if (report.legibility.failures?.length > 0) {
             await this.autoFix({ type: 'legibility' }, report);
         }
         if (report.color.harmonyScore < 70) {
             await this.autoFix({ type: 'color' }, report);
         }
 
-        console.log('[VisionManager] Autonomous fixes dispatched.');
+        logger.info('Autonomous fixes dispatched.');
     }
 
     public stopAutonomousCorrection(): void {
         if (this.autonomousTimer) {
             clearInterval(this.autonomousTimer);
             this.autonomousTimer = null;
-            console.log('[VisionManager] Stopped autonomous correction loop');
+            logger.info('Stopped autonomous correction loop');
         }
     }
 
-    public startAutonomousAnalysis(intervalMs: number = 30000): void {
+    public startAutonomousAnalysis(intervalMs = 30000): void {
         this.startAutonomousCorrection(intervalMs);
     }
 

@@ -1,4 +1,7 @@
 import mitt, { Emitter } from 'mitt';
+import { createLogger } from '../../utils/logger.js';
+
+const logger = createLogger('EventSystem');
 
 export interface SpaceGraphEvents {
   'node:added': { node: unknown; timestamp: number };
@@ -130,7 +133,7 @@ export class PluginEventBus {
       try {
         handler({ ...event, timestamp: Date.now() });
       } catch (err) {
-        console.error(`[PluginEventBus] Handler for ${event.type} failed:`, err);
+        logger.error('Handler for %s failed:', event.type, err);
       }
     });
   }

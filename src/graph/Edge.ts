@@ -1,6 +1,9 @@
 import * as THREE from 'three';
 import type { EdgeSpec, EdgeData } from './types';
 import type { Node } from './Node';
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('Edge');
 
 type EdgeEventMap = {
   'updated': { edge: Edge; changes: Partial<EdgeSpec>; timestamp: number };
@@ -39,7 +42,7 @@ export abstract class Edge {
       try {
         handler({ ...data, timestamp: Date.now() } as EdgeEventMap[T]);
       } catch (err) {
-        console.error(`[Edge ${this.id}] Event handler for ${event} failed:`, err);
+        logger.error('Edge %s event handler for %s failed:', this.id, event, err);
       }
     });
   }
@@ -51,7 +54,7 @@ export abstract class Edge {
       changes.data = spec.data;
     }
     if (spec.source !== undefined || spec.target !== undefined) {
-      console.warn('[Edge] Topology changes (source/target) require explicit handling.');
+      logger.warn('Topology changes (source/target) require explicit handling.');
     }
     if (Object.keys(changes).length > 0) {
       this.emit('updated', { edge: this, changes });

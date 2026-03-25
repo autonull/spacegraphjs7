@@ -9,6 +9,9 @@ import { VisionSystem } from './vision/VisionSystem';
 import { SpaceGraph, type SpaceGraphOptions } from './core/SpaceGraph';
 import { TypeRegistry } from './core/TypeRegistry';
 import type { GraphSpec, NodeSpec, EdgeSpec } from './graph/types';
+import { createLogger } from './utils/logger.js';
+
+const logger = createLogger('Factory');
 
 /**
  * Create a SpaceGraph instance
@@ -116,7 +119,7 @@ export async function createSpaceGraphFromManifest(
 
   // TODO: Connect to stream if available
   if (manifest.stream_url) {
-    console.log('[createSpaceGraphFromManifest] Stream support not yet implemented');
+    logger.warn('Stream support not yet implemented');
   }
 
   return sg;
