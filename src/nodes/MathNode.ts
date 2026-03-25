@@ -2,6 +2,9 @@ import { DOMNode } from './DOMNode';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec } from '../types';
 import { DOMUtils } from '../utils/DOMUtils';
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('MathNode');
 
 let katexPromise: Promise<any> | null = null;
 let katexCssLoaded = false;
@@ -65,7 +68,7 @@ export class MathNode extends DOMNode {
                 output: 'html'
             });
         } catch (e) {
-            console.error('[MathNode] Failed to render LaTeX', e);
+            logger.error('Failed to render LaTeX:', e);
             this.domElement.textContent = this.mathContent;
         }
     }

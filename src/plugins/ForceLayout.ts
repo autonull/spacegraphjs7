@@ -5,9 +5,6 @@ import * as THREE from 'three';
 import { BaseLayout } from '../core/plugins/BaseLayout';
 import type { LayoutOptions } from '../core/plugins/PluginRegistry';
 
-/**
- * Force layout configuration
- */
 export interface ForceLayoutConfig {
   repulsion: number;
   attraction: number;
@@ -19,16 +16,12 @@ export interface ForceLayoutConfig {
   temperature: number;
 }
 
-/**
- * Force Layout
- * Implements force-directed layout with velocity Verlet integration
- */
 export class ForceLayout extends BaseLayout {
   readonly id = 'force-layout';
   readonly name = 'Force Directed';
 
   private config: ForceLayoutConfig;
-  private velocities: Map<string, THREE.Vector3> = new Map();
+  private velocities = new Map<string, THREE.Vector3>();
 
   defaultConfig(): ForceLayoutConfig {
     return {
@@ -48,9 +41,6 @@ export class ForceLayout extends BaseLayout {
     this.config = { ...this.defaultConfig(), ...context.config };
   }
 
-  /**
-   * Apply force-directed layout
-   */
   async apply(options?: LayoutOptions): Promise<void> {
     const {
       animate = this.config.animate ?? true,
@@ -60,18 +50,15 @@ export class ForceLayout extends BaseLayout {
     const nodes = Array.from(this.graph.getNodes());
     if (nodes.length === 0) return;
 
-    // Initialize velocities
     this.velocities.clear();
     for (const node of nodes) {
       this.velocities.set(node.id, new THREE.Vector3());
     }
 
-    // Run simulation iterations
     for (let i = 0; i < this.config.iterations; i++) {
       this.simulateStep(nodes);
     }
 
-    // Apply final positions
     for (const node of nodes) {
       if ((node.data as any).pinned) continue;
 

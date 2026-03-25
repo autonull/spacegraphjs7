@@ -4,6 +4,12 @@
 import { TypeRegistry } from './core/TypeRegistry';
 import { ShapeNode, HtmlNode, ImageNode } from './nodes/v7';
 import { EdgeImpl } from './edges/v7';
+import {
+  createSpaceGraph,
+  createSpaceGraphFromURL,
+  createSpaceGraphFromManifest,
+  quickGraph
+} from './factory';
 
 // Register built-in node/edge types
 const registry = TypeRegistry.getInstance();
@@ -11,14 +17,6 @@ registry.registerNode('ShapeNode', ShapeNode);
 registry.registerNode('HtmlNode', HtmlNode);
 registry.registerNode('ImageNode', ImageNode);
 registry.registerEdge('Edge', EdgeImpl);
-
-// Factory functions (primary API)
-export {
-  createSpaceGraph,
-  createSpaceGraphFromURL,
-  createSpaceGraphFromManifest,
-  quickGraph
-} from './factory';
 
 // Core classes
 export { SpaceGraph } from './core/SpaceGraph';
@@ -88,6 +86,14 @@ export { ShapeNode, HtmlNode, ImageNode } from './nodes/v7';
 
 // V7 Edge types
 export { EdgeImpl } from './edges/v7';
+
+// Factory functions (primary API)
+export {
+  createSpaceGraph,
+  createSpaceGraphFromURL,
+  createSpaceGraphFromManifest,
+  quickGraph
+};
 
 // Utilities
 export {

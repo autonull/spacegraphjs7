@@ -4,6 +4,9 @@
 import * as THREE from 'three';
 import { Node } from '../../graph/Node';
 import type { NodeSpec, ImageNodeData } from '../../graph/types';
+import { createLogger } from '../../utils/logger.js';
+
+const logger = createLogger('ImageNode');
 
 export class ImageNode extends Node {
   private mesh: THREE.Mesh;
@@ -20,22 +23,18 @@ export class ImageNode extends Node {
     const height = data.height ?? 150;
     this.size = { width, height };
 
-    // Create plane geometry
     this.geometry = new THREE.PlaneGeometry(width, height);
 
-    // Create material with texture
     this.material = new THREE.MeshBasicMaterial({
       transparent: true,
       opacity: data.opacity ?? 1,
       side: THREE.DoubleSide
     });
 
-    // Load texture if URL provided
     if (data.url) {
       this.loadTexture(data.url);
     }
 
-    // Create mesh
     this.mesh = new THREE.Mesh(this.geometry, this.material);
     this.mesh.position.copy(this.position);
     this.object.add(this.mesh);
@@ -52,7 +51,7 @@ export class ImageNode extends Node {
       this.material.map = this.texture;
       this.material.needsUpdate = true;
     } catch (error) {
-      console.error(`[ImageNode] Failed to load texture: ${url}`, error);
+      logger.error('Failed to load texture: %s', url, error);
     }
   }
 

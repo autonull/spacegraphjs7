@@ -11,6 +11,9 @@ import type { EventSystem } from './events/EventSystem';
 import type { PluginRegistry } from './plugins/PluginRegistry';
 import type { RenderingSystem } from './renderer/RenderingSystem';
 import type { VisionSystem } from '../vision/VisionSystem';
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('SpaceGraph');
 
 /**
  * SpaceGraph options
@@ -196,12 +199,8 @@ export class SpaceGraph {
    * Import graph from JSON
    */
   import(data: GraphExport): void {
-    // Clear existing
     this.graph.clear();
-
-    // Would need node/edge factories to recreate
-    // This is a simplified version
-    console.warn('[SpaceGraph] import() requires node/edge factories - not fully implemented');
+    logger.warn('import() requires node/edge factories - not fully implemented');
   }
 
   /**

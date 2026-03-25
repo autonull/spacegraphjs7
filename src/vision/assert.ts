@@ -1,5 +1,8 @@
 import { Page, expect } from '@playwright/test';
 import { VisionReport } from './analyzer';
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('VisionAssert');
 
 /**
  * Utility class for asserting visual invariants of a SpaceGraph instance
@@ -12,8 +15,6 @@ export class VisionAssert {
      * Executes the vision pipeline on the current page to retrieve the report.
      */
     private async getReport(): Promise<VisionReport> {
-        // We inject a function that calls the existing vision manager instances
-        // attached to any SpaceGraph instances in the DOM.
         const report = await this.page.evaluate(async () => {
             // @ts-expect-error - Global object attached during tests
             if (!window.SpaceGraph || !window.SpaceGraph.instances) {
@@ -30,12 +31,9 @@ export class VisionAssert {
                 throw new Error("VisionManager not found on SpaceGraph instance.");
             }
 
-            // Turn off autonomous mode for the test so we can do a single frame analysis
             sg.vision.stopAutonomousCorrection();
 
-            // Wait for ONNX models to fully load
             if (!sg.vision.modelsLoaded) {
-                console.log('Waiting for ONNX models to fully load...');
                 await new Promise<void>((resolve) => {
                     const check = setInterval(() => {
                         if (sg.vision.modelsLoaded) {
@@ -46,7 +44,6 @@ export class VisionAssert {
                 });
             }
 
-            // Grab the real heuristics + ONNX validated report from the library Engine
             const report = await sg.vision.analyzeVision();
 
             const localIssues: any[] = [];

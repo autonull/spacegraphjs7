@@ -3,6 +3,9 @@ import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec } from '../types';
 import loader from '@monaco-editor/loader';
 import { DOMUtils } from '../utils/DOMUtils';
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('CodeEditorNode');
 
 /**
  * CodeEditorNode — Embeds a full Monaco editor into the ZUI.
@@ -55,7 +58,7 @@ export class CodeEditorNode extends DOMNode {
     private initEditor(spec: NodeSpec) {
         loader.init().then(monaco => {
             this.editorInstance = monaco.editor.create(this.editorContainer, {
-                value: spec.data?.code || '// Write some code here...',
+                value: spec.data?.code || '// Write code here...',
                 language: spec.data?.language || 'typescript',
                 theme: spec.data?.theme || 'vs-dark',
                 automaticLayout: true,
@@ -68,7 +71,7 @@ export class CodeEditorNode extends DOMNode {
                 this.data.code = this.editorInstance.getValue();
             });
         }).catch(err => {
-            console.error('[CodeEditorNode] Failed to load Monaco editor', err);
+            logger.error('Failed to load Monaco editor:', err);
             this.editorContainer.textContent = 'Failed to load editor.';
             this.editorContainer.style.color = 'red';
             this.editorContainer.style.padding = '20px';

@@ -6,6 +6,9 @@ import { HUDPerformanceMetrics } from './hud/HUDPerformanceMetrics';
 import { HUDAlerts, type AlertOptions } from './hud/HUDAlerts';
 import { HUD_ZINDEX, HUD_POSITIONS, HUD_STYLES } from './hud/HUDStyles';
 import { HUDDOMFactory } from './hud/HUDDOMFactory';
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('HUDPlugin');
 
 export type { HUDElementOptions, AlertOptions };
 
@@ -121,8 +124,7 @@ export class HUDPlugin implements ISpaceGraphPlugin {
     }
 
     showModal(_title: string, _content: string): void {
-        // Simplified modal - full implementation in separate module if needed
-        console.warn('HUDPlugin.showModal() - not yet implemented in refactored version');
+        logger.warn('showModal() not yet implemented in refactored version');
     }
 
     hideModal(): void {

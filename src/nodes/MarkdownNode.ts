@@ -2,6 +2,9 @@ import { DOMNode } from './DOMNode';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec } from '../types';
 import { DOMUtils } from '../utils/DOMUtils';
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('MarkdownNode');
 
 
 /**
@@ -13,24 +16,17 @@ import { DOMUtils } from '../utils/DOMUtils';
  *   color    : background colour (default '#1e293b')
  *   textColor: CSS text colour (default '#f1f5f9')
  */
-export class MarkdownNode extends DOMNode { // Changed base class to DOMNode
-    // domElement, cssObject, and backing are now handled by DOMNode
-    // public domElement: HTMLDivElement;
-    // public cssObject: CSS3DObject;
-    // private backing: THREE.Mesh;
-
+export class MarkdownNode extends DOMNode {
     constructor(sg: SpaceGraph, spec: NodeSpec) {
         const w = spec.data?.width ?? 300;
         const color = spec.data?.color ?? '#1e293b';
         const txtColor = spec.data?.textColor ?? '#f1f5f9';
         const md = spec.data?.markdown ?? spec.label ?? '';
 
-        // Create the div element and apply initial styles
         const div = DOMUtils.createElement('div', {
             className: 'sg-markdown-node sg-node'
         });
 
-        // Add some basic styling for markdown elements
         const style = DOMUtils.createElement('style');
         style.textContent = `
             .sg-markdown-node h1, .sg-markdown-node h2, .sg-markdown-node h3 { margin-top: 0; }
@@ -46,17 +42,15 @@ export class MarkdownNode extends DOMNode { // Changed base class to DOMNode
         const contentDiv = DOMUtils.createElement('div');
         div.appendChild(contentDiv);
 
-        // Approximate height based on content for initial backing plane
         contentDiv.innerHTML = 'Loading markdown...';
         import('marked').then(({ marked }) => {
             contentDiv.innerHTML = marked.parse(md) as string;
         }).catch(err => {
             contentDiv.innerHTML = 'Failed to load markdown renderer';
-            console.error(err);
+            logger.error('Failed to load marked:', err);
         });
         const h = Math.max(100, md.split('\n').length * 20 + 32);
 
-        // Call DOMNode constructor
         super(sg, spec, div, w, h, { visible: false });
 
         this.setupContainerStyles(w, h, 'dark', {
@@ -133,7 +127,7 @@ export class MarkdownNode extends DOMNode { // Changed base class to DOMNode
                     }
                 }).catch(err => {
                     contentDiv.innerHTML = 'Failed to load markdown renderer';
-                    console.error(err);
+                    logger.error('Failed to load marked:', err);
                 });
             }
         }

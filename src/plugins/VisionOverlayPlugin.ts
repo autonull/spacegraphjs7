@@ -1,6 +1,9 @@
 import type { SpaceGraph } from '../SpaceGraph';
 import type { ISpaceGraphPlugin } from '../types';
 import { DOMUtils } from '../utils/DOMUtils';
+import { createLogger } from '../utils/logger.js';
+
+const logger = createLogger('VisionOverlay');
 
 export class VisionOverlayPlugin implements ISpaceGraphPlugin {
     readonly id = 'vision-overlay-plugin';
@@ -10,11 +13,11 @@ export class VisionOverlayPlugin implements ISpaceGraphPlugin {
     private sg!: SpaceGraph;
     private container!: HTMLElement;
     private rafId: number | null = null;
-    private lastReport: any = null;
+    private lastReport: unknown = null;
 
     public settings = {
         enabled: true,
-        pollingRate: 3000, // Ms between auto-vision checks
+        pollingRate: 3000,
     };
 
     private startPolling() {
@@ -41,7 +44,7 @@ export class VisionOverlayPlugin implements ISpaceGraphPlugin {
             this.lastReport = await this.sg.vision.analyzeVision();
             this.updateDOM();
         } catch (e) {
-            console.error('[VisionOverlay] Analysis error:', e);
+            logger.error('Analysis error:', e);
         }
     }
 
