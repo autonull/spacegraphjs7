@@ -4,7 +4,16 @@ import { DOMUtils } from '../utils/DOMUtils';
 
 export interface HUDElementOptions {
     id: string;
-    position: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'center' | 'top-center' | 'bottom-center' | 'left-center' | 'right-center';
+    position:
+        | 'top-left'
+        | 'top-right'
+        | 'bottom-left'
+        | 'bottom-right'
+        | 'center'
+        | 'top-center'
+        | 'bottom-center'
+        | 'left-center'
+        | 'right-center';
     html?: string;
     element?: HTMLElement;
     style?: Partial<CSSStyleDeclaration>;
@@ -18,7 +27,14 @@ export class HUDPlugin implements ISpaceGraphPlugin {
     private sg!: SpaceGraph;
     private container!: HTMLElement;
     private alertsContainer!: HTMLElement;
+    private statusBar!: HTMLElement;
+    private performanceMetricsEl!: HTMLElement;
     private elements: Map<string, { el: HTMLElement; options: HUDElementOptions }> = new Map();
+    private settings = {
+        showStatusBar: true,
+        showPerformanceMetrics: true,
+        hudOpacity: 0.9,
+    };
 
     init(sg: SpaceGraph): void {
         this.sg = sg;
@@ -34,8 +50,8 @@ export class HUDPlugin implements ISpaceGraphPlugin {
                 height: '100%',
                 pointerEvents: 'none', // Let clicks pass through to the canvas by default
                 zIndex: '9998', // Just below the vision overlay which is 9999
-                overflow: 'hidden'
-            }
+                overflow: 'hidden',
+            },
         });
 
         const domElement = this.sg.renderer.renderer.domElement;
@@ -54,12 +70,196 @@ export class HUDPlugin implements ISpaceGraphPlugin {
                 flexDirection: 'column',
                 gap: '10px',
                 pointerEvents: 'none',
-                zIndex: '10000'
-            }
+                zIndex: '10000',
+            },
         });
         if (domElement.parentElement) {
             domElement.parentElement.appendChild(this.alertsContainer);
         }
+
+        this._createStatusBar();
+        this._createPerformanceMetrics();
+        this._subscribeToEvents();
+    }
+
+    private _createStatusBar(): void {
+        if (!this.settings.showStatusBar) return;
+
+        this.statusBar = DOMUtils.createElement('div', {
+            className: 'spacegraph-status-bar',
+            style: {
+                position: 'absolute',
+                bottom: '0',
+                left: '0',
+                right: '0',
+                height: '28px',
+                background: 'rgba(15, 23, 42, 0.9)',
+                borderTop: '1px solid rgba(255,255,255,0.1)',
+                display: 'flex',
+                alignItems: 'center',
+                padding: '0 16px',
+                gap: '20px',
+                fontFamily: 'sans-serif',
+                fontSize: '12px',
+                color: '#94a3b8',
+                pointerEvents: 'auto',
+                zIndex: '10001',
+            },
+        });
+
+        const statusSelection = DOMUtils.createElement('span');
+        statusSelection.id = 'sg-status-selection';
+        statusSelection.textContent = 'Selection: None';
+
+        const statusCamera = DOMUtils.createElement('span');
+        statusCamera.id = 'sg-status-camera';
+        statusCamera.textContent = 'Camera: Perspective';
+
+        const statusNodeCount = DOMUtils.createElement('span');
+        statusNodeCount.id = 'sg-status-nodes';
+        statusNodeCount.textContent = 'Nodes: 0';
+
+        const statusLayout = DOMUtils.createElement('span');
+        statusLayout.id = 'sg-status-layout';
+        statusLayout.textContent = 'Layout: Idle';
+
+        this.statusBar.appendChild(statusSelection);
+        this.statusBar.appendChild(statusCamera);
+        this.statusBar.appendChild(statusNodeCount);
+        this.statusBar.appendChild(statusLayout);
+
+        const domElement = this.sg.renderer.renderer.domElement;
+        if (domElement.parentElement) {
+            domElement.parentElement.appendChild(this.statusBar);
+        }
+    }
+
+    private _createPerformanceMetrics(): void {
+        if (!this.settings.showPerformanceMetrics) return;
+
+        this.performanceMetricsEl = DOMUtils.createElement('div', {
+            className: 'spacegraph-performance-metrics',
+            style: {
+                position: 'absolute',
+                top: '50px',
+                right: '16px',
+                background: 'rgba(15, 23, 42, 0.85)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: '6px',
+                padding: '8px 12px',
+                fontFamily: 'monospace',
+                fontSize: '11px',
+                color: '#22c55e',
+                pointerEvents: 'none',
+                zIndex: '10000',
+            },
+        });
+
+        this.performanceMetricsEl.innerHTML = `
+            <div>FPS: <span id="sg-fps">--</span></div>
+            <div>Frame: <span id="sg-frame-time">--</span>ms</div>
+            <div>DrawCalls: <span id="sg-draw-calls">--</span></div>
+        `;
+
+        const domElement = this.sg.renderer.renderer.domElement;
+        if (domElement.parentElement) {
+            domElement.parentElement.appendChild(this.performanceMetricsEl);
+        }
+
+        this._startPerformanceMonitoring();
+    }
+
+    private _startPerformanceMonitoring(): void {
+        let frameCount = 0;
+        let lastTime = performance.now();
+
+        const updateMetrics = () => {
+            if (!this.performanceMetricsEl) return;
+
+            frameCount++;
+            const now = performance.now();
+            const delta = now - lastTime;
+
+            if (delta >= 1000) {
+                const fps = Math.round((frameCount * 1000) / delta);
+                const fpsEl = document.getElementById('sg-fps');
+                if (fpsEl) {
+                    fpsEl.textContent = fps.toString();
+                    fpsEl.style.color = fps >= 50 ? '#22c55e' : fps >= 30 ? '#eab308' : '#ef4444';
+                }
+
+                frameCount = 0;
+                lastTime = now;
+            }
+
+            const frameTimeEl = document.getElementById('sg-frame-time');
+            if (frameTimeEl) {
+                const renderer = this.sg.renderer?.renderer;
+                if (renderer?.info) {
+                    frameTimeEl.textContent = renderer.info.render.calls.toString();
+                }
+            }
+
+            requestAnimationFrame(updateMetrics);
+        };
+
+        requestAnimationFrame(updateMetrics);
+    }
+
+    private _subscribeToEvents(): void {
+        this.sg.events.on('selection:changed', (payload: { nodes: Set<any>; edges: Set<any> }) => {
+            this._updateSelectionStatus(payload);
+        });
+
+        this.sg.events.on('node:added', () => this._updateNodeCountStatus());
+        this.sg.events.on('node:removed', () => this._updateNodeCountStatus());
+        this.sg.events.on('edge:added', () => this._updateNodeCountStatus());
+        this.sg.events.on('edge:removed', () => this._updateNodeCountStatus());
+    }
+
+    private _updateSelectionStatus(payload: { nodes: Set<any>; edges: Set<any> }): void {
+        const statusSelection = document.getElementById('sg-status-selection');
+        if (!statusSelection) return;
+
+        const selectedNodes = payload?.nodes || new Set();
+        const selectedEdges = payload?.edges || new Set();
+
+        let text = 'Selection: None';
+        if (selectedNodes.size === 1) {
+            text = `Node: ${selectedNodes.values().next().value?.id?.substring(0, 8) || '?'}`;
+        } else if (selectedNodes.size > 1) {
+            text = `${selectedNodes.size} Nodes`;
+        } else if (selectedEdges.size === 1) {
+            text = `Edge: ${selectedEdges.values().next().value?.id?.substring(0, 8) || '?'}`;
+        } else if (selectedEdges.size > 1) {
+            text = `${selectedEdges.size} Edges`;
+        }
+
+        statusSelection.textContent = text;
+    }
+
+    private _updateNodeCountStatus(): void {
+        const statusNodeCount = document.getElementById('sg-status-nodes');
+        if (!statusNodeCount) return;
+
+        const nodeCount = this.sg.graph?.nodes?.size || 0;
+        const edgeCount = this.sg.graph?.edges?.length || 0;
+        statusNodeCount.textContent = `Nodes: ${nodeCount} | Edges: ${edgeCount}`;
+    }
+
+    private _updateCameraStatus(): void {
+        const statusCamera = document.getElementById('sg-status-camera');
+        if (!statusCamera) return;
+
+        const mode = this.sg.cameraControls?.controls?.enabled ? 'Interactive' : 'Locked';
+        statusCamera.textContent = `Camera: ${mode}`;
+    }
+
+    private _updateLayoutStatus(): void {
+        const statusLayout = document.getElementById('sg-status-layout');
+        if (!statusLayout) return;
+
+        statusLayout.textContent = 'Layout: Manual';
     }
 
     /**
@@ -78,7 +278,7 @@ export class HUDPlugin implements ISpaceGraphPlugin {
                     position: 'absolute',
                     pointerEvents: 'auto', // Enable pointer events for the HUD element itself
                 },
-                innerHTML: options.html
+                innerHTML: options.html,
             });
 
             if (options.style) {
@@ -151,45 +351,73 @@ export class HUDPlugin implements ISpaceGraphPlugin {
         return DOMUtils.createElement('div', {
             id: 'spacegraph-modal-overlay',
             style: {
-                position: 'absolute', top: '0', left: '0', width: '100%', height: '100%',
-                backgroundColor: 'rgba(15, 23, 42, 0.7)', backdropFilter: 'blur(4px)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                zIndex: '10003', pointerEvents: 'auto', opacity: '0', transition: 'opacity 0.2s ease'
-            }
+                position: 'absolute',
+                top: '0',
+                left: '0',
+                width: '100%',
+                height: '100%',
+                backgroundColor: 'rgba(15, 23, 42, 0.7)',
+                backdropFilter: 'blur(4px)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: '10003',
+                pointerEvents: 'auto',
+                opacity: '0',
+                transition: 'opacity 0.2s ease',
+            },
         });
     }
 
     private _createModalContainer(width?: string): HTMLElement {
         return DOMUtils.createElement('div', {
             style: {
-                background: '#1e293b', border: '1px solid #334155', borderRadius: '12px',
-                width: width || '400px', maxWidth: '90%', boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
-                display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: 'sans-serif',
-                transform: 'scale(0.95)', transition: 'transform 0.2s ease'
-            }
+                background: '#1e293b',
+                border: '1px solid #334155',
+                borderRadius: '12px',
+                width: width || '400px',
+                maxWidth: '90%',
+                boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden',
+                fontFamily: 'sans-serif',
+                transform: 'scale(0.95)',
+                transition: 'transform 0.2s ease',
+            },
         });
     }
 
     private _createModalHeader(titleText: string, onClose?: () => void): HTMLElement {
         const header = DOMUtils.createElement('div', {
             style: {
-                padding: '16px 20px', borderBottom: '1px solid #334155', display: 'flex',
-                justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.2)'
-            }
+                padding: '16px 20px',
+                borderBottom: '1px solid #334155',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                backgroundColor: 'rgba(0,0,0,0.2)',
+            },
         });
 
         const title = DOMUtils.createElement('h3', {
             textContent: titleText,
-            style: { margin: '0', color: '#f8fafc', fontSize: '16px' }
+            style: { margin: '0', color: '#f8fafc', fontSize: '16px' },
         });
         header.appendChild(title);
 
         const closeBtn = DOMUtils.createElement('button', {
             innerHTML: '✕',
-            style: { background: 'transparent', border: 'none', color: '#94a3b8', fontSize: '18px', cursor: 'pointer' }
+            style: {
+                background: 'transparent',
+                border: 'none',
+                color: '#94a3b8',
+                fontSize: '18px',
+                cursor: 'pointer',
+            },
         });
-        closeBtn.onmouseenter = () => closeBtn.style.color = 'white';
-        closeBtn.onmouseleave = () => closeBtn.style.color = '#94a3b8';
+        closeBtn.onmouseenter = () => (closeBtn.style.color = 'white');
+        closeBtn.onmouseleave = () => (closeBtn.style.color = '#94a3b8');
         closeBtn.onclick = () => {
             if (onClose) onClose();
             this.hideModal();
@@ -214,7 +442,7 @@ export class HUDPlugin implements ISpaceGraphPlugin {
 
         const body = DOMUtils.createElement('div', {
             innerHTML: options.html,
-            style: { padding: '20px', color: '#cbd5e1', fontSize: '14px', lineHeight: '1.5' }
+            style: { padding: '20px', color: '#cbd5e1', fontSize: '14px', lineHeight: '1.5' },
         });
         modal.appendChild(body);
 
@@ -242,7 +470,10 @@ export class HUDPlugin implements ISpaceGraphPlugin {
         const existing = document.getElementById('spacegraph-modal-overlay');
         if (existing && existing.parentElement) {
             existing.style.opacity = '0';
-            existing.children[0].setAttribute('style', existing.children[0].getAttribute('style') + '; transform: scale(0.95)');
+            existing.children[0].setAttribute(
+                'style',
+                existing.children[0].getAttribute('style') + '; transform: scale(0.95)',
+            );
             setTimeout(() => {
                 if (existing.parentElement) existing.parentElement.removeChild(existing);
             }, 200);
@@ -253,32 +484,47 @@ export class HUDPlugin implements ISpaceGraphPlugin {
         const overlay = DOMUtils.createElement('div', {
             id: 'spacegraph-loading-overlay',
             style: {
-                position: 'absolute', top: '0', left: '0', width: '100%', height: '100%',
-                backgroundColor: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(2px)',
-                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                zIndex: '10004', pointerEvents: 'auto', color: 'white', fontFamily: 'sans-serif'
-            }
+                position: 'absolute',
+                top: '0',
+                left: '0',
+                width: '100%',
+                height: '100%',
+                backgroundColor: 'rgba(15, 23, 42, 0.8)',
+                backdropFilter: 'blur(2px)',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: '10004',
+                pointerEvents: 'auto',
+                color: 'white',
+                fontFamily: 'sans-serif',
+            },
         });
 
         const spinner = DOMUtils.createElement('div', {
             style: {
-                width: '40px', height: '40px', border: '4px solid rgba(255,255,255,0.1)',
-                borderTop: '4px solid #3b82f6', borderRadius: '50%', marginBottom: '16px',
-                animation: 'sg-spin 1s linear infinite'
-            }
+                width: '40px',
+                height: '40px',
+                border: '4px solid rgba(255,255,255,0.1)',
+                borderTop: '4px solid #3b82f6',
+                borderRadius: '50%',
+                marginBottom: '16px',
+                animation: 'sg-spin 1s linear infinite',
+            },
         });
 
         if (!document.getElementById('sg-spin-keyframes')) {
             const keyframes = DOMUtils.createElement('style', {
                 id: 'sg-spin-keyframes',
-                innerHTML: `@keyframes sg-spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`
+                innerHTML: `@keyframes sg-spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`,
             });
             document.head.appendChild(keyframes);
         }
 
         const text = DOMUtils.createElement('div', {
             textContent: message,
-            style: { fontSize: '14px', color: '#cbd5e1' }
+            style: { fontSize: '14px', color: '#cbd5e1' },
         });
 
         overlay.appendChild(spinner);
@@ -371,14 +617,18 @@ export class HUDPlugin implements ISpaceGraphPlugin {
      * @param type Style variant
      * @param duration Time in ms before it disappears
      */
-    showAlert(message: string, type: 'info' | 'success' | 'warning' | 'error' = 'info', duration: number = 3000): void {
+    showAlert(
+        message: string,
+        type: 'info' | 'success' | 'warning' | 'error' = 'info',
+        duration: number = 3000,
+    ): void {
         if (!this.alertsContainer) return;
 
-        const alertStyles: Record<string, { bg: string, border: string }> = {
-            'info': { bg: '#1e293b', border: '#334155' },
-            'success': { bg: 'rgba(22, 163, 74, 0.9)', border: '#4ade80' },
-            'warning': { bg: 'rgba(217, 119, 6, 0.9)', border: '#fbbf24' },
-            'error': { bg: 'rgba(220, 38, 38, 0.9)', border: '#f87171' },
+        const alertStyles: Record<string, { bg: string; border: string }> = {
+            info: { bg: '#1e293b', border: '#334155' },
+            success: { bg: 'rgba(22, 163, 74, 0.9)', border: '#4ade80' },
+            warning: { bg: 'rgba(217, 119, 6, 0.9)', border: '#fbbf24' },
+            error: { bg: 'rgba(220, 38, 38, 0.9)', border: '#f87171' },
         };
         const style = alertStyles[type] || alertStyles['info'];
 
@@ -397,8 +647,8 @@ export class HUDPlugin implements ISpaceGraphPlugin {
                 opacity: '0',
                 transform: 'translateY(10px)',
                 transition: 'opacity 0.3s ease, transform 0.3s ease',
-                pointerEvents: 'auto'
-            }
+                pointerEvents: 'auto',
+            },
         });
         this.alertsContainer.appendChild(alert);
 
@@ -443,8 +693,8 @@ export class HUDPlugin implements ISpaceGraphPlugin {
                 pointerEvents: 'none', // tooltips shouldn't capture mouse
                 zIndex: '10002',
                 whiteSpace: 'pre-wrap',
-                boxShadow: '0 4px 6px rgba(0,0,0,0.3)'
-            }
+                boxShadow: '0 4px 6px rgba(0,0,0,0.3)',
+            },
         });
 
         const domElement = this.sg.renderer.renderer.domElement;
@@ -464,7 +714,11 @@ export class HUDPlugin implements ISpaceGraphPlugin {
     /**
      * Shows a context menu at the given screen coordinates.
      */
-    showContextMenu(items: Array<{ label: string; action: () => void }>, x: number, y: number): void {
+    showContextMenu(
+        items: Array<{ label: string; action: () => void }>,
+        x: number,
+        y: number,
+    ): void {
         this.hideContextMenu(); // Close any existing
 
         const menu = DOMUtils.createElement('div', {
@@ -482,8 +736,8 @@ export class HUDPlugin implements ISpaceGraphPlugin {
                 fontFamily: 'sans-serif',
                 fontSize: '13px',
                 minWidth: '120px',
-                pointerEvents: 'auto'
-            }
+                pointerEvents: 'auto',
+            },
         });
 
         for (const item of items) {
@@ -499,11 +753,15 @@ export class HUDPlugin implements ISpaceGraphPlugin {
                     textAlign: 'left',
                     cursor: 'pointer',
                     fontFamily: 'inherit',
-                    fontSize: 'inherit'
-                }
+                    fontSize: 'inherit',
+                },
             });
-            btn.onmouseenter = () => { btn.style.background = '#334155'; };
-            btn.onmouseleave = () => { btn.style.background = 'transparent'; };
+            btn.onmouseenter = () => {
+                btn.style.background = '#334155';
+            };
+            btn.onmouseleave = () => {
+                btn.style.background = 'transparent';
+            };
             btn.onclick = (e) => {
                 e.stopPropagation();
                 this.hideContextMenu();

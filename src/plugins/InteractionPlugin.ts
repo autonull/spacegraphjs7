@@ -52,6 +52,14 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
     private hoveredNode: any = null;
     private hoveredEdge: any = null;
 
+    // Resize State Tracking
+    private isResizing = false;
+    private resizedNode: any = null;
+    private resizeStartPointerPos = { x: 0, y: 0 };
+    private resizeStartNodeSize = { width: 0, height: 0 };
+    private resizeNodeScreenScaleX = 1;
+    private resizeNodeScreenScaleY = 1;
+
     // Zoom stack: track last double-clicked target to enable undo-zoom
     private lastZoomedId: string | null = null;
 
@@ -288,14 +296,129 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
         canvas.addEventListener('pointercancel', (e) => this.handlePointerUp(e));
 
         if (typeof window !== 'undefined') {
-            window.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape' && this.isConnecting) this.cancelConnectMode();
-            });
+            window.addEventListener('keydown', (e) => this.handleKeyDown(e));
+        }
+    }
+
+    private handleKeyDown(e: KeyboardEvent): void {
+        const activeEl = document.activeElement;
+        const isEditingText =
+            activeEl &&
+            (activeEl.tagName === 'INPUT' ||
+                activeEl.tagName === 'TEXTAREA' ||
+                (activeEl as HTMLElement).isContentEditable);
+
+        if (isEditingText && e.key !== 'Escape') return;
+
+        const selectedNodesArray = Array.from(this.selectedNodes);
+        const selectedEdgesArray = Array.from(this.selectedEdges);
+        const primarySelectedNode = selectedNodesArray.length > 0 ? selectedNodesArray[0] : null;
+
+        switch (e.key) {
+            case 'Escape':
+                if (this.isConnecting) {
+                    this.cancelConnectMode();
+                } else {
+                    this.selectedNodes.clear();
+                    this.selectedEdges.clear();
+                    this.sg.events.emit('selection:changed', {
+                        nodes: this.selectedNodes,
+                        edges: this.selectedEdges,
+                    });
+                }
+                break;
+
+            case 'Delete':
+            case 'Backspace':
+                if (primarySelectedNode) {
+                    const message =
+                        selectedNodesArray.length > 1
+                            ? `Delete ${selectedNodesArray.length} selected nodes?`
+                            : `Delete node "${primarySelectedNode.id.substring(0, 10)}..."?`;
+
+                    this.sg.events.emit('ui:request:confirm', {
+                        message: message,
+                        onConfirm: () => {
+                            selectedNodesArray.forEach((node) => {
+                                this.sg.events.emit('node:delete', { node });
+                            });
+                            this.selectedNodes.clear();
+                        },
+                    });
+                } else if (selectedEdgesArray.length > 0) {
+                    const message =
+                        selectedEdgesArray.length > 1
+                            ? `Delete ${selectedEdgesArray.length} selected edges?`
+                            : `Delete edge?`;
+
+                    this.sg.events.emit('ui:request:confirm', {
+                        message: message,
+                        onConfirm: () => {
+                            selectedEdgesArray.forEach((edge) => {
+                                this.sg.graph.edges = this.sg.graph.edges.filter((e) => e !== edge);
+                            });
+                            this.selectedEdges.clear();
+                        },
+                    });
+                }
+                break;
+
+            case 'Enter':
+                if (primarySelectedNode?.domElement?.querySelector) {
+                    const editableContent = primarySelectedNode.domElement.querySelector(
+                        '[contenteditable="true"]',
+                    );
+                    if (editableContent) {
+                        (editableContent as HTMLElement).focus();
+                    }
+                }
+                break;
+
+            case ' ':
+                e.preventDefault();
+                if (primarySelectedNode) {
+                    const targetPos = primarySelectedNode.position.clone();
+                    const targetRadius = primarySelectedNode.data?.width
+                        ? Math.max(primarySelectedNode.data.width * 1.5, 150)
+                        : 150;
+                    this.sg.cameraControls.flyTo(targetPos, targetRadius, 0.5);
+                } else {
+                    this.sg.fitView();
+                }
+                break;
+
+            case 'a':
+                if (e.ctrlKey || e.metaKey) {
+                    e.preventDefault();
+                    this.sg.graph.nodes.forEach((node) => this.selectedNodes.add(node));
+                    this.sg.events.emit('selection:changed', {
+                        nodes: this.selectedNodes,
+                        edges: this.selectedEdges,
+                    });
+                }
+                break;
         }
     }
 
     private handlePointerDown(e: PointerEvent, canvas: HTMLCanvasElement): void {
         this.updateMousePosition(e);
+
+        // Check for resize handle on HtmlNode
+        const target = e.target as HTMLElement;
+        const resizeHandle = target?.closest('.resize-handle');
+
+        if (resizeHandle) {
+            const nodeElement = resizeHandle.closest('.node-common') as HTMLElement | null;
+            if (nodeElement) {
+                const nodeId = nodeElement.dataset.nodeId;
+                const node = this.sg.graph.nodes.get(nodeId || '');
+                if (node && typeof (node as any).startResize === 'function') {
+                    this.startResize(node, e);
+                    return;
+                }
+            }
+        }
+
         const hit = this.getIntersectedNode();
 
         if (e.shiftKey || this.mode === 'select') {
@@ -390,6 +513,62 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
         if (this.dragNode.domElement) this.dragNode.domElement.style.cursor = 'grabbing';
     }
 
+    private startResize(node: any, e: PointerEvent): void {
+        this.isResizing = true;
+        this.resizedNode = node;
+        this.sg.cameraControls.controls.enabled = false;
+
+        this.resizeStartPointerPos = { x: e.clientX, y: e.clientY };
+        this.resizeStartNodeSize = { ...(node.size || { width: 200, height: 100 }) };
+
+        const cam = this.sg.renderer?.camera;
+
+        if (node && cam && node.cssObject) {
+            const localOrigin = new THREE.Vector3(0, 0, 0);
+            const localOffsetX = new THREE.Vector3(1, 0, 0);
+            const localOffsetY = new THREE.Vector3(0, 1, 0);
+
+            const worldOrigin = localOrigin.clone().applyMatrix4(node.cssObject.matrixWorld);
+            const worldOffsetX = localOffsetX.clone().applyMatrix4(node.cssObject.matrixWorld);
+            const worldOffsetY = localOffsetY.clone().applyMatrix4(node.cssObject.matrixWorld);
+
+            const screenOriginNDC = worldOrigin.clone().project(cam);
+            const screenOffsetXNDC = worldOffsetX.clone().project(cam);
+            const screenOffsetYNDC = worldOffsetY.clone().project(cam);
+
+            const halfW = window.innerWidth / 2;
+            const halfH = window.innerHeight / 2;
+
+            const screenOriginPx = {
+                x: screenOriginNDC.x * halfW + halfW,
+                y: -screenOriginNDC.y * halfH + halfH,
+            };
+            const screenOffsetXPx = {
+                x: screenOffsetXNDC.x * halfW + halfW,
+                y: -screenOffsetXNDC.y * halfH + halfH,
+            };
+            const screenOffsetYPx = {
+                x: screenOffsetYNDC.x * halfW + halfH,
+                y: -screenOffsetYNDC.y * halfH + halfH,
+            };
+
+            this.resizeNodeScreenScaleX = Math.abs(screenOffsetXPx.x - screenOriginPx.x);
+            this.resizeNodeScreenScaleY = Math.abs(screenOffsetYPx.y - screenOriginPx.y);
+
+            if (this.resizeNodeScreenScaleX < 0.001) this.resizeNodeScreenScaleX = 0.001;
+            if (this.resizeNodeScreenScaleY < 0.001) this.resizeNodeScreenScaleY = 0.001;
+        } else {
+            this.resizeNodeScreenScaleX = 1;
+            this.resizeNodeScreenScaleY = 1;
+        }
+
+        if (typeof node.startResize === 'function') {
+            node.startResize();
+        }
+
+        this.sg.renderer.renderer.domElement.style.cursor = 'nwse-resize';
+    }
+
     private handlePointerMove(e: PointerEvent, canvas: HTMLCanvasElement): void {
         this.updateMousePosition(e);
 
@@ -405,6 +584,11 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
             this.connectTempLine
         ) {
             this.updateConnectMode(e);
+            return;
+        }
+
+        if (this.isResizing && this.resizedNode) {
+            this.updateResize(e);
             return;
         }
 
@@ -494,13 +678,24 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
             const currentEdge = edgeHit?.edge || null;
 
             if (currentEdge !== this.hoveredEdge) {
-                if (this.hoveredEdge)
+                if (this.hoveredEdge) {
+                    if (typeof this.hoveredEdge.setHoverStyle === 'function') {
+                        this.hoveredEdge.setHoverStyle(false);
+                    }
                     this.sg.events.emit('edge:pointerleave', { edge: this.hoveredEdge, event: e });
+                }
                 this.hoveredEdge = currentEdge;
-                if (this.hoveredEdge)
+                if (this.hoveredEdge) {
+                    if (typeof this.hoveredEdge.setHoverStyle === 'function') {
+                        this.hoveredEdge.setHoverStyle(true);
+                    }
                     this.sg.events.emit('edge:pointerenter', { edge: this.hoveredEdge, event: e });
+                }
             }
         } else if (this.hoveredEdge) {
+            if (typeof this.hoveredEdge.setHoverStyle === 'function') {
+                this.hoveredEdge.setHoverStyle(false);
+            }
             this.sg.events.emit('edge:pointerleave', { edge: this.hoveredEdge, event: e });
             this.hoveredEdge = null;
         }
@@ -517,6 +712,26 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
                 node.object.position.copy(targetPos);
                 this.sg.events.emitBatched('interaction:drag', { node });
             }
+        }
+    }
+
+    private updateResize(e: PointerEvent): void {
+        if (!this.resizedNode) return;
+
+        const totalDx_screen = e.clientX - this.resizeStartPointerPos.x;
+        const totalDy_screen = e.clientY - this.resizeStartPointerPos.y;
+
+        const deltaWidth_local = totalDx_screen / (this.resizeNodeScreenScaleX || 1);
+        const deltaHeight_local = totalDy_screen / (this.resizeNodeScreenScaleY || 1);
+
+        const newWidth = this.resizeStartNodeSize.width + deltaWidth_local;
+        const newHeight = this.resizeStartNodeSize.height + deltaHeight_local;
+
+        const MIN_WIDTH = 80;
+        const MIN_HEIGHT = 40;
+
+        if (typeof this.resizedNode.resize === 'function') {
+            this.resizedNode.resize(Math.max(MIN_WIDTH, newWidth), Math.max(MIN_HEIGHT, newHeight));
         }
     }
 
@@ -558,6 +773,16 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
                 releasedNode.domElement.style.cursor =
                     this.hoveredNode === releasedNode ? 'grab' : '';
             }
+            this.sg.cameraControls.controls.enabled = true;
+        }
+
+        if (this.isResizing && this.resizedNode) {
+            if (typeof this.resizedNode.endResize === 'function') {
+                this.resizedNode.endResize();
+            }
+            this.isResizing = false;
+            this.resizedNode = null;
+            this.sg.renderer.renderer.domElement.style.cursor = 'auto';
             this.sg.cameraControls.controls.enabled = true;
         }
     }
