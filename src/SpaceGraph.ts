@@ -1,4 +1,3 @@
-import * as THREE from 'three';
 import { Graph } from './core/Graph';
 import { Renderer } from './core/Renderer';
 import { PluginManager } from './core/PluginManager';
@@ -8,6 +7,12 @@ import { VisionManager } from './core/VisionManager';
 import { ObjectPoolManager } from './core/ObjectPoolManager';
 import { CullingManager } from './core/CullingManager';
 import { AdvancedRenderingOptimizer } from './core/AdvancedRenderingOptimizer';
+
+import type { GraphSpec, SpaceGraphOptions, SpecUpdate, ISpaceGraphPlugin } from './types';
+import { MathPool } from './utils/MathPool';
+import { CameraUtils } from './utils/CameraUtils';
+import { DOMUtils } from './utils/DOMUtils';
+
 import { ShapeNode } from './nodes/ShapeNode';
 import { InstancedShapeNode } from './nodes/InstancedShapeNode';
 import { HtmlNode } from './nodes/HtmlNode';
@@ -27,6 +32,7 @@ import { AudioNode } from './nodes/AudioNode';
 import { MathNode } from './nodes/MathNode';
 import { ProcessNode } from './nodes/ProcessNode';
 import { CodeEditorNode } from './nodes/CodeEditorNode';
+
 import { Edge } from './edges/Edge';
 import { CurvedEdge } from './edges/CurvedEdge';
 import { FlowEdge } from './edges/FlowEdge';
@@ -36,6 +42,7 @@ import { DynamicThicknessEdge } from './edges/DynamicThicknessEdge';
 import { AnimatedEdge } from './edges/AnimatedEdge';
 import { BundledEdge } from './edges/BundledEdge';
 import { InterGraphEdge } from './edges/InterGraphEdge';
+
 import { ForceLayout } from './plugins/ForceLayout';
 import { CircularLayout } from './plugins/CircularLayout';
 import { GridLayout } from './plugins/GridLayout';
@@ -55,10 +62,68 @@ import { ErgonomicsPlugin } from './plugins/ErgonomicsPlugin';
 import { PhysicsPlugin } from './plugins/PhysicsPlugin';
 import { HUDPlugin } from './plugins/HUDPlugin';
 import { HistoryPlugin } from './plugins/HistoryPlugin';
-import type { GraphSpec, SpaceGraphOptions, SpecUpdate, ISpaceGraphPlugin } from './types';
-import { MathPool } from './utils/MathPool';
-import { CameraUtils } from './utils/CameraUtils';
-import { DOMUtils } from './utils/DOMUtils';
+
+type PluginCtor = new () => ISpaceGraphPlugin;
+
+const NODE_TYPES = [
+    ShapeNode,
+    InstancedShapeNode,
+    HtmlNode,
+    ImageNode,
+    GroupNode,
+    NoteNode,
+    DataNode,
+    CanvasNode,
+    TextMeshNode,
+    VideoNode,
+    IFrameNode,
+    ChartNode,
+    MarkdownNode,
+    GlobeNode,
+    SceneNode,
+    AudioNode,
+    MathNode,
+    ProcessNode,
+    CodeEditorNode,
+] as const;
+
+const EDGE_TYPES = [
+    Edge,
+    CurvedEdge,
+    FlowEdge,
+    LabeledEdge,
+    DottedEdge,
+    DynamicThicknessEdge,
+    AnimatedEdge,
+    BundledEdge,
+    InterGraphEdge,
+] as const;
+
+const LAYOUT_PLUGINS: [PluginCtor, string][] = [
+    [ForceLayout, 'ForceLayout'],
+    [CircularLayout, 'CircularLayout'],
+    [GridLayout, 'GridLayout'],
+    [HierarchicalLayout, 'HierarchicalLayout'],
+    [RadialLayout, 'RadialLayout'],
+    [TreeLayout, 'TreeLayout'],
+    [SpectralLayout, 'SpectralLayout'],
+    [GeoLayout, 'GeoLayout'],
+    [GeoLayout, 'MapLayout'],
+    [TimelineLayout, 'TimelineLayout'],
+    [ClusterLayout, 'ClusterLayout'],
+];
+
+const SYSTEM_PLUGINS: [PluginCtor, string][] = [
+    [InteractionPlugin, 'InteractionPlugin'],
+    [LODPlugin, 'LODPlugin'],
+    [AutoLayoutPlugin, 'AutoLayoutPlugin'],
+    [AutoColorPlugin, 'AutoColorPlugin'],
+    [MinimapPlugin, 'MinimapPlugin'],
+    [ErgonomicsPlugin, 'ErgonomicsPlugin'],
+    [PhysicsPlugin, 'PhysicsPlugin'],
+    [HUDPlugin, 'HUDPlugin'],
+    [HistoryPlugin, 'HistoryPlugin'],
+];
 
 export class SpaceGraph {
     public static instances: Set<SpaceGraph> = new Set();
@@ -132,146 +197,57 @@ export class SpaceGraph {
     async init() {
         this.renderer.init();
 
-        const nodeTypes = [
-            ShapeNode,
-            InstancedShapeNode,
-            HtmlNode,
-            ImageNode,
-            GroupNode,
-            NoteNode,
-            DataNode,
-            CanvasNode,
-            TextMeshNode,
-            VideoNode,
-            IFrameNode,
-            ChartNode,
-            MarkdownNode,
-            GlobeNode,
-            SceneNode,
-            AudioNode,
-            MathNode,
-            ProcessNode,
-            CodeEditorNode,
-        ];
-        nodeTypes.forEach((cls) => this.pluginManager.registerNodeType(cls.name, cls));
-
-        const edgeTypes = [
-            Edge,
-            CurvedEdge,
-            FlowEdge,
-            LabeledEdge,
-            DottedEdge,
-            DynamicThicknessEdge,
-            AnimatedEdge,
-            BundledEdge,
-            InterGraphEdge,
-        ];
-        edgeTypes.forEach((cls) => this.pluginManager.registerEdgeType(cls.name, cls));
-
-        const layoutPlugins: [new () => ISpaceGraphPlugin, string][] = [
-            [ForceLayout, 'ForceLayout'],
-            [CircularLayout, 'CircularLayout'],
-            [GridLayout, 'GridLayout'],
-            [HierarchicalLayout, 'HierarchicalLayout'],
-            [RadialLayout, 'RadialLayout'],
-            [TreeLayout, 'TreeLayout'],
-            [SpectralLayout, 'SpectralLayout'],
-            [GeoLayout, 'GeoLayout'],
-            [GeoLayout, 'MapLayout'],
-            [TimelineLayout, 'TimelineLayout'],
-            [ClusterLayout, 'ClusterLayout'],
-        ];
-        layoutPlugins.forEach(([cls, name]) => this.pluginManager.register(name, new cls()));
-
-        const systemPlugins: [new () => ISpaceGraphPlugin, string][] = [
-            [InteractionPlugin, 'InteractionPlugin'],
-            [LODPlugin, 'LODPlugin'],
-            [AutoLayoutPlugin, 'AutoLayoutPlugin'],
-            [AutoColorPlugin, 'AutoColorPlugin'],
-            [MinimapPlugin, 'MinimapPlugin'],
-            [ErgonomicsPlugin, 'ErgonomicsPlugin'],
-            [PhysicsPlugin, 'PhysicsPlugin'],
-            [HUDPlugin, 'HUDPlugin'],
-            [HistoryPlugin, 'HistoryPlugin'],
-        ];
-        systemPlugins.forEach(([cls, name]) => this.pluginManager.register(name, new cls()));
+        NODE_TYPES.forEach((cls) => this.pluginManager.registerNodeType(cls.name, cls));
+        EDGE_TYPES.forEach((cls) => this.pluginManager.registerEdgeType(cls.name, cls));
+        LAYOUT_PLUGINS.forEach(([cls, name]) => this.pluginManager.register(name, new cls()));
+        SYSTEM_PLUGINS.forEach(([cls, name]) => this.pluginManager.register(name, new cls()));
 
         await this.pluginManager.initAll();
     }
 
     loadSpec(spec: GraphSpec): void {
-        if (spec.nodes && spec.nodes.length > 0) {
-            for (const nodeSpec of spec.nodes) {
-                this.graph.addNode(nodeSpec);
-            }
-        }
-
-        if (spec.edges && spec.edges.length > 0) {
-            for (const edgeSpec of spec.edges) {
-                this.graph.addEdge(edgeSpec);
-            }
-        }
+        spec.nodes?.forEach((nodeSpec) => this.graph.addNode(nodeSpec));
+        spec.edges?.forEach((edgeSpec) => this.graph.addEdge(edgeSpec));
     }
 
     update(spec: SpecUpdate): void {
-        if (spec.nodes) {
-            for (const nodeUpdate of spec.nodes) {
-                if (nodeUpdate.id) {
-                    this.graph.updateNode(nodeUpdate.id, nodeUpdate);
-                }
-            }
-        }
-
-        if (spec.edges) {
-            for (const edgeUpdate of spec.edges) {
-                if (edgeUpdate.id) {
-                    this.graph.updateEdge(edgeUpdate.id, edgeUpdate);
-                }
-            }
-        }
+        spec.nodes?.forEach(
+            (nodeUpdate) => nodeUpdate.id && this.graph.updateNode(nodeUpdate.id, nodeUpdate),
+        );
+        spec.edges?.forEach(
+            (edgeUpdate) => edgeUpdate.id && this.graph.updateEdge(edgeUpdate.id, edgeUpdate),
+        );
     }
 
     export(): GraphSpec & {
         camera?: { position: [number, number, number]; target: [number, number, number] };
         plugins?: Record<string, any>;
     } {
-        const spec: any = {
-            nodes: [],
-            edges: [],
-        };
+        const safeClone = (obj: any) => (obj ? JSON.parse(JSON.stringify(obj)) : {});
 
-        for (const node of this.graph.nodes.values()) {
-            spec.nodes.push({
+        const spec: any = {
+            nodes: [...this.graph.nodes.values()].map((node) => ({
                 id: node.id,
                 type: node.constructor.name,
                 label: node.label,
                 position: [node.position.x, node.position.y, node.position.z],
-                data: JSON.parse(JSON.stringify(node.data || {})),
-            });
-        }
-
-        for (const edge of this.graph.edges) {
-            spec.edges.push({
+                data: safeClone(node.data),
+            })),
+            edges: this.graph.edges.map((edge) => ({
                 id: edge.id,
                 type: edge.constructor.name,
                 source: edge.source.id,
                 target: edge.target.id,
-                data: JSON.parse(JSON.stringify(edge.data || {})),
-            });
-        }
+                data: safeClone(edge.data),
+            })),
+        };
 
-        if (this.cameraControls && this.cameraControls.target) {
+        if (this.cameraControls?.target) {
+            const { camera } = this.renderer;
+            const { target } = this.cameraControls;
             spec.camera = {
-                position: [
-                    this.renderer.camera.position.x,
-                    this.renderer.camera.position.y,
-                    this.renderer.camera.position.z,
-                ],
-                target: [
-                    this.cameraControls.target.x,
-                    this.cameraControls.target.y,
-                    this.cameraControls.target.z,
-                ],
+                position: [camera.position.x, camera.position.y, camera.position.z],
+                target: [target.x, target.y, target.z],
             };
         }
 

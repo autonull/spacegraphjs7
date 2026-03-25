@@ -23,6 +23,7 @@ export class CircularLayout implements ISpaceGraphPlugin {
         radiusY: 300,
         startAngle: 0,
         z: 0,
+        animate: true,
     };
 
     init(sg: SpaceGraph): void {

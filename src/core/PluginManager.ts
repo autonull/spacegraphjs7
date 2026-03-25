@@ -4,8 +4,8 @@ import type { ISpaceGraphPlugin } from '../types';
 export class PluginManager {
     private sg: SpaceGraph;
     public plugins: Map<string, ISpaceGraphPlugin> = new Map();
-    private nodeTypes: Map<string, any> = new Map();
-    private edgeTypes: Map<string, any> = new Map();
+    private nodeTypes: Map<string, new (...args: unknown[]) => unknown> = new Map();
+    private edgeTypes: Map<string, new (...args: unknown[]) => unknown> = new Map();
 
     constructor(sg: SpaceGraph) {
         this.sg = sg;
@@ -25,24 +25,32 @@ export class PluginManager {
         this.plugins.set(name, plugin);
     }
 
-    registerNodeType(type: string, cls: any): void {
+    registerNodeType(type: string, cls: new (...args: unknown[]) => unknown): void {
         this.nodeTypes.set(type, cls);
     }
 
-    getNodeType(type: string): any {
-        return this.nodeTypes.get(type);
+    getNodeType(type: string): new (...args: unknown[]) => unknown {
+        return this.nodeTypes.get(type)!;
     }
 
-    registerEdgeType(type: string, cls: any): void {
+    registerEdgeType(type: string, cls: new (...args: unknown[]) => unknown): void {
         this.edgeTypes.set(type, cls);
     }
 
-    getEdgeType(type: string): any {
-        return this.edgeTypes.get(type);
+    getEdgeType(type: string): new (...args: unknown[]) => unknown {
+        return this.edgeTypes.get(type)!;
     }
 
     getPlugin(name: string): ISpaceGraphPlugin | undefined {
         return this.plugins.get(name);
+    }
+
+    hasPlugin(name: string): boolean {
+        return this.plugins.has(name);
+    }
+
+    getPluginNames(): string[] {
+        return [...this.plugins.keys()];
     }
 
     async initAll(): Promise<void> {
@@ -62,10 +70,9 @@ export class PluginManager {
             }
         }
         if (errors.length > 0) {
-            const err = new Error(
-                `[SpaceGraph] PluginManager initAll failed with ${errors.length} error(s).`,
-            );
-            (err as any).errors = errors;
+            const message = `[SpaceGraph] PluginManager initAll failed with ${errors.length} error(s).`;
+            const err = new Error(message);
+            (err as Error & { errors: Error[] }).errors = errors;
             throw err;
         }
     }
@@ -90,8 +97,8 @@ export class PluginManager {
         this.plugins.clear();
     }
 
-    export(): Record<string, any> {
-        const state: Record<string, any> = {};
+    export(): Record<string, unknown> {
+        const state: Record<string, unknown> = {};
         for (const [name, plugin] of this.plugins.entries()) {
             if (plugin.export) {
                 try {
@@ -104,7 +111,7 @@ export class PluginManager {
         return state;
     }
 
-    import(data: Record<string, any>): void {
+    import(data: Record<string, unknown>): void {
         if (!data) return;
         for (const [name, pluginState] of Object.entries(data)) {
             const plugin = this.plugins.get(name);

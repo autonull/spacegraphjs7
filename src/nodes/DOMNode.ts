@@ -19,7 +19,7 @@ export class DOMNode extends Node {
         width: number,
         height: number,
         theme: 'dark' | 'light' = 'dark',
-        customStyles: Partial<CSSStyleDeclaration> = {}
+        customStyles: Partial<CSSStyleDeclaration> = {},
     ): void {
         const isDark = theme === 'dark';
         const bgColor = isDark ? '#1e293b' : '#ffffff';
@@ -40,7 +40,7 @@ export class DOMNode extends Node {
             flexDirection: 'column',
             overflow: 'hidden',
             fontFamily: 'sans-serif',
-            ...customStyles
+            ...customStyles,
         });
     }
 
@@ -64,7 +64,7 @@ export class DOMNode extends Node {
             display: 'flex',
             alignItems: 'center',
             flexShrink: '0',
-            userSelect: 'none'
+            userSelect: 'none',
         });
 
         const titleSpan = DOMUtils.createElement('span');
@@ -81,7 +81,7 @@ export class DOMNode extends Node {
         domElement: HTMLElement,
         width: number = 200,
         height: number = 100,
-        materialParams?: THREE.MeshBasicMaterialParameters
+        materialParams?: THREE.MeshBasicMaterialParameters,
     ) {
         super(sg, spec);
 
@@ -92,7 +92,10 @@ export class DOMNode extends Node {
         this.meshGeometry = new THREE.PlaneGeometry(width, height);
 
         // Provide standard defaults but allow overrides
-        const defaultTranslucency = materialParams?.visible === false ? {} : { color: 0x000000, opacity: 0.1, transparent: true };
+        const defaultTranslucency =
+            materialParams?.visible === false
+                ? {}
+                : { color: 0x000000, opacity: 0.1, transparent: true };
         this.meshMaterial = new THREE.MeshBasicMaterial({
             side: THREE.DoubleSide,
             ...defaultTranslucency,
@@ -116,47 +119,55 @@ export class DOMNode extends Node {
      * - dblclick / contextmenu: relayed for semantic navigation and context menus
      */
     private _setupPointerEventRelay(sg: SpaceGraph): void {
+        if (!sg?.renderer?.renderer?.domElement) return;
+
         const canvas = sg.renderer.renderer.domElement as HTMLCanvasElement;
         const el = this.domElement;
 
         const relayPointer = (type: string, src: PointerEvent) => {
-            canvas.dispatchEvent(new PointerEvent(type, {
-                bubbles: false,
-                cancelable: true,
-                clientX: src.clientX,
-                clientY: src.clientY,
-                pointerId: src.pointerId,
-                pointerType: src.pointerType,
-                isPrimary: src.isPrimary,
-                button: src.button,
-                buttons: src.buttons,
-                ctrlKey: src.ctrlKey,
-                shiftKey: src.shiftKey,
-                altKey: src.altKey,
-                metaKey: src.metaKey,
-            }));
+            canvas.dispatchEvent(
+                new PointerEvent(type, {
+                    bubbles: false,
+                    cancelable: true,
+                    clientX: src.clientX,
+                    clientY: src.clientY,
+                    pointerId: src.pointerId,
+                    pointerType: src.pointerType,
+                    isPrimary: src.isPrimary,
+                    button: src.button,
+                    buttons: src.buttons,
+                    ctrlKey: src.ctrlKey,
+                    shiftKey: src.shiftKey,
+                    altKey: src.altKey,
+                    metaKey: src.metaKey,
+                }),
+            );
         };
 
         // Hover enter: dispatch pointermove at real coords to trigger raycasting
         el.addEventListener('mouseenter', (e) => {
-            canvas.dispatchEvent(new PointerEvent('pointermove', {
-                bubbles: false,
-                clientX: e.clientX,
-                clientY: e.clientY,
-                ctrlKey: e.ctrlKey,
-                shiftKey: e.shiftKey,
-                altKey: e.altKey,
-            }));
+            canvas.dispatchEvent(
+                new PointerEvent('pointermove', {
+                    bubbles: false,
+                    clientX: e.clientX,
+                    clientY: e.clientY,
+                    ctrlKey: e.ctrlKey,
+                    shiftKey: e.shiftKey,
+                    altKey: e.altKey,
+                }),
+            );
         });
 
         // Hover leave: dispatch pointermove at an off-screen coordinate so the
         // raycaster finds nothing and InteractionPlugin emits node:pointerleave.
         el.addEventListener('mouseleave', () => {
-            canvas.dispatchEvent(new PointerEvent('pointermove', {
-                bubbles: false,
-                clientX: -99999,
-                clientY: -99999,
-            }));
+            canvas.dispatchEvent(
+                new PointerEvent('pointermove', {
+                    bubbles: false,
+                    clientX: -99999,
+                    clientY: -99999,
+                }),
+            );
         });
 
         // Drag: capture pointer so subsequent move/up events stay on this element,
@@ -180,23 +191,27 @@ export class DOMNode extends Node {
 
         // Semantic navigation on double-click
         el.addEventListener('dblclick', (e) => {
-            canvas.dispatchEvent(new MouseEvent('dblclick', {
-                bubbles: false,
-                cancelable: true,
-                clientX: e.clientX,
-                clientY: e.clientY,
-            }));
+            canvas.dispatchEvent(
+                new MouseEvent('dblclick', {
+                    bubbles: false,
+                    cancelable: true,
+                    clientX: e.clientX,
+                    clientY: e.clientY,
+                }),
+            );
         });
 
         // Context menu
         el.addEventListener('contextmenu', (e) => {
             e.preventDefault();
-            canvas.dispatchEvent(new MouseEvent('contextmenu', {
-                bubbles: false,
-                cancelable: true,
-                clientX: e.clientX,
-                clientY: e.clientY,
-            }));
+            canvas.dispatchEvent(
+                new MouseEvent('contextmenu', {
+                    bubbles: false,
+                    cancelable: true,
+                    clientX: e.clientX,
+                    clientY: e.clientY,
+                }),
+            );
         });
     }
 

@@ -30,17 +30,22 @@ export class Edge {
     updateSpec(updates: Partial<EdgeSpec>) {
         if (updates.data) {
             this.data = { ...this.data, ...updates.data };
-            if (updates.data.color) {
+            if (updates.data.color && typeof updates.data.color === 'number') {
                 (this.object.material as THREE.LineBasicMaterial).color.setHex(updates.data.color);
             }
         }
+        return this;
     }
 
     update() {
         const attr = this.geometry.attributes.position as THREE.BufferAttribute;
         const a = attr.array as Float32Array;
-        a[0] = this.source.position.x; a[1] = this.source.position.y; a[2] = this.source.position.z;
-        a[3] = this.target.position.x; a[4] = this.target.position.y; a[5] = this.target.position.z;
+        a[0] = this.source.position.x;
+        a[1] = this.source.position.y;
+        a[2] = this.source.position.z;
+        a[3] = this.target.position.x;
+        a[4] = this.target.position.y;
+        a[5] = this.target.position.z;
         attr.needsUpdate = true;
     }
 

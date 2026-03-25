@@ -70,23 +70,16 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
         canvas.addEventListener('contextmenu', (e) => {
             e.preventDefault();
 
-            // Only trigger node context menu if right-clicking without significant dragging
-            // Handled similarly to left click
             const distance = this.pointerDownPosition.distanceTo(
                 new THREE.Vector2(e.clientX, e.clientY),
             );
             if (distance > 5) return;
 
-            const rect = canvas.getBoundingClientRect();
-            this.mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-            this.mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-
+            const ndc = this.getMouseNDC(e);
+            this.mouse.copy(ndc);
             this.raycaster.setFromCamera(this.mouse, this.sg.renderer.camera);
-            const meshes = this.getAllNodeMeshes();
-            const intersects = this.raycaster.intersectObjects(meshes, false);
-
-            // Check edges
             this.raycaster.params.Line = { threshold: 5 };
+
             const lineObjects = this.getEdgeObjects();
             const edgeIntersects = this.raycaster.intersectObjects(lineObjects, false);
 
@@ -98,6 +91,9 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
                     return;
                 }
             }
+
+            const meshes = this.getAllNodeMeshes();
+            const intersects = this.raycaster.intersectObjects(meshes, false);
 
             if (intersects.length > 0) {
                 const node = this.getNodeFromMesh(intersects[0].object);
@@ -156,16 +152,11 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
         const canvas = this.sg.renderer.renderer.domElement;
 
         canvas.addEventListener('dblclick', (e) => {
-            const rect = canvas.getBoundingClientRect();
-            this.mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-            this.mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-
+            const ndc = this.getMouseNDC(e);
+            this.mouse.copy(ndc);
             this.raycaster.setFromCamera(this.mouse, this.sg.renderer.camera);
-
-            // Allow raycaster to hit lines (edges) with a small threshold
             this.raycaster.params.Line = { threshold: 5 };
 
-            // Check edges first using simple map over current edges
             const lineObjects = this.getEdgeObjects();
             const edgeIntersects = this.raycaster.intersectObjects(lineObjects, false);
 
@@ -174,27 +165,11 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
                 const edge = this.sg.graph.edges.find((e) => e.object === edgeObj);
                 if (edge) {
                     this.sg.events.emit('edge:dblclick', { edge, event: e });
-
-                    // Semantic navigation: fly to the target node (or undo if already zoomed there)
-                    if (edge.target && this.sg.cameraControls) {
-                        const zoomId = `edge:${edge.id}`;
-                        if (this.lastZoomedId === zoomId && this.sg.cameraControls.hasZoomHistory) {
-                            this.sg.cameraControls.flyBack();
-                            this.lastZoomedId = null;
-                        } else {
-                            const targetPos = edge.target.position.clone();
-                            const targetRadius = edge.target.data?.width
-                                ? Math.max(edge.target.data.width * 1.5, 150)
-                                : 150;
-                            this.sg.cameraControls.flyTo(targetPos, targetRadius);
-                            this.lastZoomedId = zoomId;
-                        }
-                    }
+                    this.handleZoomNavigation(edge.target, `edge:${edge.id}`);
                     return;
                 }
             }
 
-            // Check nodes if no edge was double-clicked
             const meshes = this.getAllNodeMeshes();
             const nodeIntersects = this.raycaster.intersectObjects(meshes, false);
 
@@ -202,27 +177,26 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
                 const node = this.getNodeFromMesh(nodeIntersects[0].object);
                 if (node) {
                     this.sg.events.emit('node:dblclick', { node, event: e });
-
-                    // Semantic navigation: fly to node, or undo zoom if already zoomed to this node
-                    if (this.sg.cameraControls) {
-                        if (
-                            this.lastZoomedId === node.id &&
-                            this.sg.cameraControls.hasZoomHistory
-                        ) {
-                            this.sg.cameraControls.flyBack();
-                            this.lastZoomedId = null;
-                        } else {
-                            const targetPos = node.position.clone();
-                            const targetRadius = node.data?.width
-                                ? Math.max(node.data.width * 1.5, 150)
-                                : 150;
-                            this.sg.cameraControls.flyTo(targetPos, targetRadius);
-                            this.lastZoomedId = node.id;
-                        }
-                    }
+                    this.handleZoomNavigation(node, node.id);
                 }
             }
         });
+    }
+
+    private handleZoomNavigation(targetNode: any, zoomId: string): void {
+        if (!targetNode || !this.sg.cameraControls) return;
+
+        if (this.lastZoomedId === zoomId && this.sg.cameraControls.hasZoomHistory) {
+            this.sg.cameraControls.flyBack();
+            this.lastZoomedId = null;
+        } else {
+            const targetPos = targetNode.position.clone();
+            const targetRadius = targetNode.data?.width
+                ? Math.max(targetNode.data.width * 1.5, 150)
+                : 150;
+            this.sg.cameraControls.flyTo(targetPos, targetRadius);
+            this.lastZoomedId = zoomId;
+        }
     }
 
     private initClick(): void {
@@ -233,22 +207,16 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
         });
 
         canvas.addEventListener('pointerup', (e) => {
-            // Only trigger click if the pointer hasn't moved much (not a drag)
             const distance = this.pointerDownPosition.distanceTo(
                 new THREE.Vector2(e.clientX, e.clientY),
             );
             if (distance > 5 || this.isDragging) return;
 
-            const rect = canvas.getBoundingClientRect();
-            this.mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-            this.mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-
+            const ndc = this.getMouseNDC(e);
+            this.mouse.copy(ndc);
             this.raycaster.setFromCamera(this.mouse, this.sg.renderer.camera);
-
-            const meshes = this.getAllNodeMeshes();
-
-            // Check edges first using simple map over current edges
             this.raycaster.params.Line = { threshold: 5 };
+
             const lineObjects = this.getEdgeObjects();
             const edgeIntersects = this.raycaster.intersectObjects(lineObjects, false);
 
@@ -261,6 +229,7 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
                 }
             }
 
+            const meshes = this.getAllNodeMeshes();
             const intersects = this.raycaster.intersectObjects(meshes, false);
 
             if (intersects.length > 0) {
@@ -269,17 +238,23 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
                     this.sg.events.emit('node:click', { node, event: e });
                 }
             } else {
-                // Emitted when clicking on empty space
                 this.sg.events.emit('graph:click', { event: e });
             }
         });
     }
 
-    private updateMousePosition(e: PointerEvent) {
+    private getMouseNDC(e: { clientX: number; clientY: number }): THREE.Vector2 {
         const canvas = this.sg.renderer.renderer.domElement;
         const rect = canvas.getBoundingClientRect();
-        this.mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-        this.mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+        return new THREE.Vector2(
+            ((e.clientX - rect.left) / rect.width) * 2 - 1,
+            -((e.clientY - rect.top) / rect.height) * 2 + 1,
+        );
+    }
+
+    private updateMousePosition(e: PointerEvent) {
+        const ndc = this.getMouseNDC(e);
+        this.mouse.copy(ndc);
     }
 
     private getIntersectedNode() {

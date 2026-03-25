@@ -16,6 +16,7 @@ export class ForceLayout implements ISpaceGraphPlugin {
         repulsion: 10000,
         damping: 0.9,
         enabled: true,
+        animate: true,
     };
 
     private velocity: Map<string, THREE.Vector3> = new Map();
@@ -89,9 +90,14 @@ export class ForceLayout implements ISpaceGraphPlugin {
                 vel.multiplyScalar(this.settings.damping);
 
                 if (vel.lengthSq() > 0.01) {
-                    node.applyPosition(new THREE.Vector3(
-                        node.position.x + vel.x, node.position.y + vel.y, node.position.z + vel.z,
-                    ), this.settings.animate ?? true);
+                    node.applyPosition(
+                        new THREE.Vector3(
+                            node.position.x + vel.x,
+                            node.position.y + vel.y,
+                            node.position.z + vel.z,
+                        ),
+                        this.settings.animate ?? true,
+                    );
                 }
             }
         }

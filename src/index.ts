@@ -13,6 +13,10 @@ export type {
     ISpaceGraphPlugin,
     SpaceGraphNodeData,
     BaseNodeData,
+    Dimensions,
+    Colorable,
+    Opacity,
+    Themable,
     CanvasNodeData,
     ChartNodeData,
     DataNodeData,
@@ -84,6 +88,7 @@ export { DottedEdge } from './edges/DottedEdge';
 export { DynamicThicknessEdge } from './edges/DynamicThicknessEdge';
 export { AnimatedEdge } from './edges/AnimatedEdge';
 export { BundledEdge } from './edges/BundledEdge';
+export { InterGraphEdge } from './edges/InterGraphEdge';
 
 // Plugins — layout
 export { ForceLayout } from './plugins/ForceLayout';

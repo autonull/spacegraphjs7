@@ -183,7 +183,7 @@ function makeSpaceGraph() {
         },
         getEdge(id: string) {
             return this.edges.find((e: any) => e.id === id);
-        }
+        },
     };
 
     const pluginManager = {
@@ -210,7 +210,7 @@ function makeSpaceGraph() {
                     plugin.import(pluginState);
                 }
             }
-        })
+        }),
     };
 
     sg = {
@@ -222,7 +222,7 @@ function makeSpaceGraph() {
         cameraControls: { controls: { target: new THREE.Vector3(), update: vi.fn() } },
         export: SpaceGraph.prototype.export,
         import: SpaceGraph.prototype.import,
-        loadSpec: SpaceGraph.prototype.loadSpec
+        loadSpec: SpaceGraph.prototype.loadSpec,
     };
 
     // Bind prototype methods to this mock object
@@ -487,11 +487,13 @@ describe('MarkdownNode', () => {
         expect(n.domElement).toBeTruthy();
 
         // Wait for dynamic import to complete or fail
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 100));
         // It should either contain the parsed HTML (if 'marked' is installed)
         // or the failure message since 'marked' is now an optional peer dependency.
         const content = n.domElement.innerHTML;
-        expect(content.includes('Hello') || content.includes('Failed to load markdown renderer')).toBe(true);
+        expect(
+            content.includes('Hello') || content.includes('Failed to load markdown renderer'),
+        ).toBe(true);
     });
 });
 
@@ -618,16 +620,24 @@ describe('GroupNode', () => {
     });
 
     it('remains hidden if its parent is hidden (Fractal LOD)', () => {
-        const parent = new GroupNode(sg, { id: 'parent', type: 'GroupNode', data: { lodThreshold: 1000 }});
+        const parent = new GroupNode(sg, {
+            id: 'parent',
+            type: 'GroupNode',
+            data: { lodThreshold: 1000 },
+        });
         sg.graph.addNode(parent);
 
-        const childGroup = new GroupNode(sg, { id: 'childGroup', type: 'GroupNode', data: { parent: 'parent', lodThreshold: 500 }});
+        const childGroup = new GroupNode(sg, {
+            id: 'childGroup',
+            type: 'GroupNode',
+            data: { parent: 'parent', lodThreshold: 500 },
+        });
         sg.graph.addNode(childGroup);
 
         // Update sg to match what the GroupNode loop expects
         sg.graph.nodes = new Map([
             ['parent', parent],
-            ['childGroup', childGroup]
+            ['childGroup', childGroup],
         ]);
 
         // Zoom camera way out - parent closes
@@ -1018,7 +1028,12 @@ describe('Graph Serialization', () => {
     });
 
     it('exports graph nodes and edges', () => {
-        sg.graph.addNode({ id: 'a', type: 'ShapeNode', position: [10, 20, 30], data: { color: 'red' } });
+        sg.graph.addNode({
+            id: 'a',
+            type: 'ShapeNode',
+            position: [10, 20, 30],
+            data: { color: 'red' },
+        });
         sg.graph.addNode({ id: 'b', type: 'ShapeNode', position: [-10, 0, 0] });
         sg.graph.addEdge({ id: 'e1', source: 'a', target: 'b', type: 'Edge' });
 
@@ -1067,9 +1082,15 @@ describe('Graph Serialization', () => {
         class MockInterGraphEdge extends Edge {
             isInterGraphEdge = true;
         }
-        sg1.pluginManager.getEdgeType = (type: string) => type === 'InterGraphEdge' ? MockInterGraphEdge : Edge;
+        sg1.pluginManager.getEdgeType = (type: string) =>
+            type === 'InterGraphEdge' ? MockInterGraphEdge : Edge;
 
-        const edge = sg1.graph.addEdge({ id: 'e1', source: 'a', target: 'b', type: 'InterGraphEdge' });
+        const edge = sg1.graph.addEdge({
+            id: 'e1',
+            source: 'a',
+            target: 'b',
+            type: 'InterGraphEdge',
+        });
 
         expect(edge).toBeTruthy();
         expect((edge as any).isInterGraphEdge).toBe(true);
@@ -1080,11 +1101,9 @@ describe('Graph Serialization', () => {
         const spec = {
             nodes: [
                 { id: '1', type: 'ShapeNode', position: [0, 0, 0] },
-                { id: '2', type: 'ShapeNode', position: [100, 100, 100] }
+                { id: '2', type: 'ShapeNode', position: [100, 100, 100] },
             ],
-            edges: [
-                { id: 'e-1-2', source: '1', target: '2', type: 'Edge' }
-            ]
+            edges: [{ id: 'e-1-2', source: '1', target: '2', type: 'Edge' }],
         };
 
         sg.import(spec);
@@ -1117,8 +1136,8 @@ describe('Graph Serialization', () => {
             nodes: [],
             edges: [],
             plugins: {
-                mockPlugin: { restored: true }
-            }
+                mockPlugin: { restored: true },
+            },
         };
 
         sg.import(specWithPlugins);
@@ -1217,14 +1236,20 @@ describe('PluginManager', () => {
         expect(() => pm.register('InvalidPlugin', undefined as any)).toThrow(/undefined or null/);
     });
 
-    it('initAll throws AggregateError if plugins fail to init', async () => {
+    it('initAll throws Error with errors array if plugins fail to init', async () => {
         const pm = new PluginManager(sg);
         const badPlugin = {
-            id: 'bad', name: 'Bad', version: '1',
-            init: async () => { throw new Error('Crash'); }
+            id: 'bad',
+            name: 'Bad',
+            version: '1',
+            init: async () => {
+                throw new Error('Crash');
+            },
         };
         pm.register('badPlugin', badPlugin);
-        await expect(pm.initAll()).rejects.toThrow(AggregateError);
+        const error = await pm.initAll().catch((e) => e);
+        expect(error).toBeInstanceOf(Error);
+        expect((error as Error & { errors: Error[] }).errors).toHaveLength(1);
     });
 
     it('registers node types', () => {
@@ -1317,7 +1342,9 @@ describe('InteractionPlugin', () => {
         sg.events.on('node:dblclick', spy);
 
         // Mock Raycaster
-        (interaction as any).raycaster.intersectObjects = vi.fn().mockReturnValue([{ object: n.object.children[0] }]);
+        (interaction as any).raycaster.intersectObjects = vi
+            .fn()
+            .mockReturnValue([{ object: n.object.children[0] }]);
 
         // Fire event
         const canvas = sg.renderer.renderer.domElement;

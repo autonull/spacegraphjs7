@@ -12,7 +12,7 @@ export class ShapeNode extends Node {
     constructor(sg: SpaceGraph, spec: NodeSpec) {
         super(sg, spec);
 
-        const color = spec.data?.color || 0x3366ff;
+        const color = (spec.data?.color as THREE.ColorRepresentation) ?? 0x3366ff;
 
         // Use ObjectPoolManager to acquire geometry
         let geo = sg.poolManager.get('ShapeNodeGeometry') as THREE.SphereGeometry | null;
@@ -35,10 +35,10 @@ export class ShapeNode extends Node {
         this.updatePosition(this.position.x, this.position.y, this.position.z);
     }
 
-    updateSpec(updates: Partial<NodeSpec>) {
+    updateSpec(updates: Partial<NodeSpec>): this {
         super.updateSpec(updates);
 
-        if (updates.data && updates.data.color) {
+        if (updates.data && updates.data.color && typeof updates.data.color === 'number') {
             this.meshMaterial.color.setHex(updates.data.color);
         }
 
@@ -56,6 +56,7 @@ export class ShapeNode extends Node {
                 this.object.add(this.labelSprite);
             }
         }
+        return this;
     }
 
     private createLabel(text: string): THREE.Sprite {

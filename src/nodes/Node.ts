@@ -1,6 +1,5 @@
 import * as THREE from 'three';
-import gsapPkg from 'gsap';
-const gsap = gsapPkg.gsap || gsapPkg;
+import gsap from 'gsap';
 import { ThreeDisposer } from '../utils/ThreeDisposer';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec } from '../types';

@@ -29,6 +29,12 @@ export class Graph {
         }
     }
 
+    private _removeFromScene(obj: any) {
+        if (obj?.object?.parent) {
+            this.sg.renderer.scene.remove(obj.object);
+        }
+    }
+
     addNode(spec: NodeSpec) {
         if (this.nodes.has(spec.id)) {
             return this.updateNode(spec.id, spec);
@@ -152,7 +158,7 @@ export class Graph {
         const node = this.nodes.get(id);
         if (!node) return;
 
-        this.sg.renderer.scene.remove(node.object);
+        this._removeFromScene(node);
         this.nodes.delete(id);
         this.sg.events.emit('node:removed', { id });
         this._notifyPlugins('onNodeRemoved', id);
@@ -160,7 +166,7 @@ export class Graph {
         for (let i = this.edges.length - 1; i >= 0; i--) {
             const edge = this.edges[i];
             if (edge.source.id === id || edge.target.id === id) {
-                this.sg.renderer.scene.remove(edge.object);
+                this._removeFromScene(edge);
                 this.sg.events.emit('edge:removed', { id: edge.id });
                 this._notifyPlugins('onEdgeRemoved', edge.id);
                 edge.dispose?.();
@@ -176,7 +182,7 @@ export class Graph {
         if (index === -1) return;
 
         const edge = this.edges[index];
-        this.sg.renderer.scene.remove(edge.object);
+        this._removeFromScene(edge);
         this.edges.splice(index, 1);
         this.sg.events.emit('edge:removed', { id });
         this._notifyPlugins('onEdgeRemoved', id);
@@ -185,38 +191,62 @@ export class Graph {
 
     clear() {
         this.edges.forEach((edge) => {
-            this.sg.renderer.scene.remove(edge.object);
+            this._removeFromScene(edge);
             edge.dispose?.();
         });
-        this.edges = [];
-
         this.nodes.forEach((node) => {
-            this.sg.renderer.scene.remove(node.object);
+            this._removeFromScene(node);
             node.dispose?.();
         });
+        this.edges = [];
         this.nodes.clear();
     }
 
-    getNode(id: string): any {
+    getNode(id: string): unknown {
         return this.nodes.get(id);
     }
 
-    getEdge(id: string): any {
+    getEdge(id: string): unknown {
         return this.edges.find((e) => e.id === id);
     }
 
-    query(predicate: (node: any) => boolean): any[] {
+    hasNode(id: string): boolean {
+        return this.nodes.has(id);
+    }
+
+    hasEdge(id: string): boolean {
+        return this.edges.some((e) => e.id === id);
+    }
+
+    getNodeCount(): number {
+        return this.nodes.size;
+    }
+
+    getEdgeCount(): number {
+        return this.edges.length;
+    }
+
+    query(predicate: (node: unknown) => boolean): unknown[] {
         return [...this.nodes.values()].filter(predicate);
     }
 
-    neighbors(nodeId: string): any[] {
-        return this.edges.flatMap((edge) =>
-            edge.source.id === nodeId
-                ? [edge.target]
-                : edge.target.id === nodeId
-                  ? [edge.source]
-                  : [],
-        );
+    neighbors(nodeId: string): unknown[] {
+        const nodeIds = new Set([nodeId]);
+        return this.edges
+            .filter((edge) => nodeIds.has(edge.source.id) || nodeIds.has(edge.target.id))
+            .flatMap((edge) => (edge.source.id === nodeId ? edge.target : edge.source));
+    }
+
+    getConnectedEdges(nodeId: string): unknown[] {
+        return this.edges.filter((edge) => edge.source.id === nodeId || edge.target.id === nodeId);
+    }
+
+    getIncomingEdges(nodeId: string): unknown[] {
+        return this.edges.filter((edge) => edge.target.id === nodeId);
+    }
+
+    getOutgoingEdges(nodeId: string): unknown[] {
+        return this.edges.filter((edge) => edge.source.id === nodeId);
     }
 
     // --- Serialization ---

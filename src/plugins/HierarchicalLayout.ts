@@ -30,6 +30,7 @@ export class HierarchicalLayout implements ISpaceGraphPlugin {
         nodeSpacing: 150,
         z: 0,
         direction: 'top-down' as 'top-down' | 'bottom-up' | 'left-right' | 'right-left',
+        animate: true,
     };
 
     init(sg: SpaceGraph): void {
