@@ -51,7 +51,8 @@ export type {
 } from './core/events/EventSystem';
 
 // Plugin system
-export { PluginRegistry, BaseLayout } from './core/plugins/PluginRegistry';
+export { PluginRegistry } from './core/plugins/PluginRegistry';
+export { BaseLayout } from './core/plugins/BaseLayout';
 export type { Plugin, PluginContext, LayoutConfig, LayoutOptions } from './core/plugins/PluginRegistry';
 
 // Rendering
@@ -76,6 +77,12 @@ export { SpatialIndex, BVH } from './core/spatial/SpatialIndex';
 // Object pool
 export { ObjectPool, MathPool } from './core/pooling/ObjectPool';
 
+// Type registry
+export { TypeRegistry } from './core/TypeRegistry';
+
+// Camera controls
+export { CameraControls } from './core/CameraControls';
+
 // V7 Node types
 export { ShapeNode, HtmlNode, ImageNode } from './nodes/v7';
 
@@ -84,19 +91,18 @@ export { EdgeImpl } from './edges/v7';
 
 // Utilities
 export {
-  DEG2RAD,
-  RAD2DEG,
-  clamp,
-  lerp,
-  lerpVector3,
-  randomRange,
-  randomInt,
-  smoothstep,
-  mapRange
+    DEG2RAD,
+    RAD2DEG,
+    clamp,
+    lerp,
+    lerpVector3,
+    randomRange,
+    randomInt,
+    smoothstep,
+    mapRange,
 } from './utils/math';
 
 export { DOMUtils } from './utils/DOMUtils';
-export { MathPool } from './utils/MathPool';
 
 // Version
 export const VERSION = '7.0.0';

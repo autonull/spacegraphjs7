@@ -9,6 +9,7 @@ import { CullingManager } from './core/CullingManager';
 import { AdvancedRenderingOptimizer } from './core/AdvancedRenderingOptimizer';
 import { InputManager } from './input/InputManager';
 import { applyDefaultInputConfig, DefaultInputConfig } from './input/DefaultInputConfig';
+import { createLogger } from './utils/logger';
 
 import type { GraphSpec, SpaceGraphOptions, SpecUpdate, ISpaceGraphPlugin } from './types';
 import { MathPool } from './utils/MathPool';
@@ -64,6 +65,8 @@ import { ErgonomicsPlugin } from './plugins/ErgonomicsPlugin';
 import { PhysicsPlugin } from './plugins/PhysicsPlugin';
 import { HUDPlugin } from './plugins/HUDPlugin';
 import { HistoryPlugin } from './plugins/HistoryPlugin';
+
+const logger = createLogger('SpaceGraph');
 
 type PluginCtor = new () => ISpaceGraphPlugin;
 
@@ -196,9 +199,7 @@ export class SpaceGraph {
         }
 
         if (!SpaceGraph.checkWebGL()) {
-            console.warn(
-                '[SpaceGraph] Warning: WebGL not supported on this device. Rendering may fail or perform poorly.',
-            );
+            logger.warn('WebGL not supported on this device. Rendering may fail or perform poorly.');
         }
 
         const graph = new SpaceGraph(element, options);
@@ -407,10 +408,7 @@ export class SpaceGraph {
             sg.import(data);
             sg.render();
         } catch (err) {
-            console.error(
-                '[SpaceGraph] Import Runtime Error: Failed to import data or start rendering loop.',
-                err,
-            );
+            logger.error('Import Runtime Error: Failed to import data or start rendering loop.', err);
         }
         return sg;
     }
@@ -446,7 +444,7 @@ export class SpaceGraph {
                 `[SpaceGraph] fromURL Error: Failed to load graph from ${url}. Reason: ${message}`,
             );
             (wrappedError as any).cause = error;
-            console.error(wrappedError);
+            logger.error('fromURL Error: Failed to load graph.', wrappedError);
             throw wrappedError;
         }
         return sg;

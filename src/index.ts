@@ -1,6 +1,12 @@
 // SpaceGraphJS - The Self-Building UI Framework
-console.log('[SpaceGraphJS] Loading...');
 
+// ============================================================================
+// Standard Library
+// ============================================================================
+
+// ============================================================================
+// Utilities
+// ============================================================================
 export {
     DEG2RAD,
     RAD2DEG,
@@ -15,9 +21,36 @@ export {
     mapRange,
 } from './utils/math';
 
+export { logger, createLogger, setLogLevel, type LogLevel, type Logger } from './utils/logger';
+
+// ============================================================================
+// Core (v6 Architecture - Legacy)
+// ============================================================================
 export { SpaceGraph } from './SpaceGraph';
 export { SpaceGraphApp } from './core/SpaceGraphApp';
 export { InputManager } from './input/InputManager';
+export { Graph } from './core/Graph';
+export { Renderer } from './core/Renderer';
+export { PluginManager } from './core/PluginManager';
+export { CameraControls } from './core/CameraControls';
+export { EventManager, type SpaceGraphEvents } from './core/EventManager';
+export { VisionManager, type VisionReport, type VisionCategory } from './core/VisionManager';
+export { ObjectPoolManager } from './core/ObjectPoolManager';
+export { CullingManager } from './core/CullingManager';
+export { AdvancedRenderingOptimizer } from './core/AdvancedRenderingOptimizer';
+
+// ============================================================================
+// Rendering
+// ============================================================================
+export {
+    InstancedNodeRenderer,
+    GEOMETRY_FAMILIES,
+    type GeometryFamily,
+} from './rendering/InstancedNodeRenderer';
+
+// ============================================================================
+// Input
+// ============================================================================
 export type {
     InputEvent,
     InputEventType,
@@ -30,13 +63,17 @@ export type {
     WheelEventData,
     TouchEventData,
 } from './input/InputManager';
+
 export type {
     DefaultInputConfig,
     CameraInputConfig,
     InteractionInputConfig,
     HistoryInputConfig,
 } from './input/DefaultInputConfig';
-export type { SpaceGraphAppOptions, AppButtonConfig } from './core/SpaceGraphApp';
+
+// ============================================================================
+// Types
+// ============================================================================
 export type {
     GraphSpec,
     NodeSpec,
@@ -71,25 +108,9 @@ export type {
     CodeEditorNodeData,
 } from './types';
 
-// Core
-export { Graph } from './core/Graph';
-export { Renderer } from './core/Renderer';
-export { PluginManager } from './core/PluginManager';
-export { CameraControls } from './core/CameraControls';
-export { EventManager, type SpaceGraphEvents } from './core/EventManager';
-export { VisionManager, type VisionReport, type VisionCategory } from './core/VisionManager';
-export { ObjectPoolManager } from './core/ObjectPoolManager';
-export { CullingManager } from './core/CullingManager';
-export { AdvancedRenderingOptimizer } from './core/AdvancedRenderingOptimizer';
-
-// Rendering
-export {
-    InstancedNodeRenderer,
-    GEOMETRY_FAMILIES,
-    type GeometryFamily,
-} from './rendering/InstancedNodeRenderer';
-
+// ============================================================================
 // Nodes
+// ============================================================================
 export { Node } from './nodes/Node';
 export { InstancedNode } from './nodes/InstancedNode';
 export { ShapeNode } from './nodes/ShapeNode';
@@ -112,7 +133,9 @@ export { MathNode } from './nodes/MathNode';
 export { ProcessNode } from './nodes/ProcessNode';
 export { CodeEditorNode } from './nodes/CodeEditorNode';
 
+// ============================================================================
 // Edges
+// ============================================================================
 export { Edge } from './edges/Edge';
 export { CurvedEdge } from './edges/CurvedEdge';
 export { FlowEdge } from './edges/FlowEdge';
@@ -123,7 +146,9 @@ export { AnimatedEdge } from './edges/AnimatedEdge';
 export { BundledEdge } from './edges/BundledEdge';
 export { InterGraphEdge } from './edges/InterGraphEdge';
 
-// Plugins — layout
+// ============================================================================
+// Plugins - Layout
+// ============================================================================
 export { ForceLayout } from './plugins/ForceLayout';
 export { GridLayout } from './plugins/GridLayout';
 export { CircularLayout } from './plugins/CircularLayout';
@@ -136,13 +161,17 @@ export { GeoLayout as MapLayout } from './plugins/GeoLayout';
 export { TimelineLayout } from './plugins/TimelineLayout';
 export { ClusterLayout } from './plugins/ClusterLayout';
 
-// Plugins — core
+// ============================================================================
+// Plugins - Core
+// ============================================================================
 export { InteractionPlugin } from './plugins/InteractionPlugin';
 export { LODPlugin } from './plugins/LODPlugin';
 export { AutoLayoutPlugin } from './plugins/AutoLayoutPlugin';
 export { AutoColorPlugin } from './plugins/AutoColorPlugin';
 
-// Plugins — extended
+// ============================================================================
+// Plugins - Extended
+// ============================================================================
 export { PhysicsPlugin } from './plugins/PhysicsPlugin';
 export { MinimapPlugin } from './plugins/MinimapPlugin';
 export { ErgonomicsPlugin, type ErgonomicsConfig } from './plugins/ErgonomicsPlugin';
@@ -151,82 +180,53 @@ export { HUDPlugin, type HUDElementOptions } from './plugins/HUDPlugin';
 export { HoverMetaWidget, type MetaAction } from './plugins/HoverMetaWidget';
 export { HistoryPlugin, type HistoryPluginOptions } from './plugins/HistoryPlugin';
 
-console.log('[SpaceGraphJS] Loaded successfully');
-
 // ============================================================================
 // SpaceGraphJS v7.0 Exports (New Architecture)
 // ============================================================================
-// The v7 API uses factory functions and a modular architecture.
-// See V7_IMPLEMENTATION_SUMMARY.md for details.
-
 export {
-  // Factory functions
-  createSpaceGraph,
-  createSpaceGraphFromURL,
-  createSpaceGraphFromManifest,
-  quickGraph,
-  
-  // Core classes
-  SpaceGraph as SpaceGraphV7,
-  Graph,
-  Node,
-  Edge,
-  
-  // Event system
-  EventSystem,
-  PluginEventBus,
-  
-  // Plugin system
-  PluginRegistry,
-  BaseLayout,
-  
-  // Vision system
-  VisionSystem,
-  HeuristicsStrategy,
-  
-  // Spatial index
-  SpatialIndex,
-  BVH,
-  
-  // Object pool
-  ObjectPool,
-  MathPool,
-  
-  // Type registry
-  TypeRegistry,
-  
-  // Camera controls
-  CameraControls,
-  
-  // Rendering
-  RenderingSystem,
-  
-  // V7 node types
-  ShapeNode,
-  HtmlNode,
-  ImageNode,
-  
-  // V7 edge types
-  EdgeImpl,
-  
-  // Version
-  VERSION
+    createSpaceGraph,
+    createSpaceGraphFromURL,
+    createSpaceGraphFromManifest,
+    quickGraph,
+    SpaceGraph as SpaceGraphV7,
+    Graph as GraphV7,
+    Node as NodeV7,
+    Edge as EdgeV7,
+    EventSystem,
+    PluginEventBus,
+    PluginRegistry,
+    BaseLayout,
+    VisionSystem,
+    HeuristicsStrategy,
+    SpatialIndex,
+    BVH,
+    ObjectPool,
+    MathPool,
+    TypeRegistry,
+    CameraControls as CameraControlsV7,
+    RenderingSystem,
+    ShapeNode as ShapeNodeV7,
+    HtmlNode as HtmlNodeV7,
+    ImageNode as ImageNodeV7,
+    EdgeImpl,
+    VERSION,
 } from './index.v7';
 
-// Re-export types from v7
 export type {
-  SpaceGraphOptions as SpaceGraphV7Options,
-  RenderOptions,
-  VisionOptions,
-  VisionReport,
-  Plugin,
-  PluginContext,
-  NodeSpec,
-  EdgeSpec,
-  GraphSpec,
-  NodeData,
-  EdgeData,
-  ShapeNodeData,
-  HtmlNodeData,
-  ImageNodeData
+    SpaceGraphOptions as SpaceGraphV7Options,
+    RenderOptions,
+    VisionOptions,
+    VisionReport as VisionReportV7,
+    Plugin,
+    PluginContext,
+    NodeSpec as NodeSpecV7,
+    EdgeSpec as EdgeSpecV7,
+    GraphSpec as GraphSpecV7,
+    NodeData,
+    EdgeData,
+    ShapeNodeData as ShapeNodeDataV7,
+    HtmlNodeData as HtmlNodeDataV7,
+    ImageNodeData as ImageNodeDataV7,
 } from './index.v7';
+
+export type { SpaceGraphAppOptions, AppButtonConfig } from './core/SpaceGraphApp';

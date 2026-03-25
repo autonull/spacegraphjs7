@@ -2,6 +2,14 @@ import type { SpaceGraph } from '../SpaceGraph';
 import type { ISpaceGraphPlugin } from '../types';
 import * as THREE from 'three';
 
+const ERGONOMICS_CONFIG = {
+    JITTER_DOT_PRODUCT_THRESHOLD: -0.2,
+    SESSION_TIMEOUT_MS: 500,
+    EMA_ALPHA: 0.1,
+    JITTER_PENALTY_WEIGHT: 0.1,
+    CALIBRATION_CHECK_INTERVAL_MS: 1000,
+} as const;
+
 /**
  * InteractionSession records a single continuous interaction (like a drag or pan)
  * to evaluate the physical efficiency vs. jitter (direction changes).
@@ -25,7 +33,6 @@ class InteractionSession {
         let pathLength = 0;
         let jitterCount = 0;
 
-        // Calculate total path distance and count directional reversals
         for (let i = 1; i < this.path.length; i++) {
             const p1 = this.path[i - 1];
             const p2 = this.path[i];
@@ -33,10 +40,11 @@ class InteractionSession {
             pathLength += dist;
 
             if (i > 1) {
-                // Jitter Check: if the dot product of consecutive motion vectors is negative, it's a reversal
                 const dir1 = new THREE.Vector3().subVectors(p2, p1).normalize();
                 const dir0 = new THREE.Vector3().subVectors(p1, this.path[i - 2]).normalize();
-                if (dir1.dot(dir0) < -0.2) jitterCount++;
+                if (dir1.dot(dir0) < ERGONOMICS_CONFIG.JITTER_DOT_PRODUCT_THRESHOLD) {
+                    jitterCount++;
+                }
             }
         }
 
@@ -46,12 +54,16 @@ class InteractionSession {
 
         const efficiency = pathLength > 0 ? displacement / pathLength : 1.0;
         const durationMs = this.endTime - this.startTime;
-
-        // Jitter per second
         const jitter = durationMs > 0 ? (jitterCount / durationMs) * 1000 : 0;
 
         return { efficiency, jitter, durationMs };
     }
+}
+
+interface CameraSession {
+    session: InteractionSession;
+    lastActivity: number;
+    timeoutHandle?: ReturnType<typeof setTimeout>;
 }
 
 export interface ErgonomicsConfig {
@@ -114,22 +126,22 @@ export class ErgonomicsPlugin implements ISpaceGraphPlugin {
     }
 
     private activeSessions: Map<string, InteractionSession> = new Map();
+    private cameraSession: CameraSession | null = null;
 
     private _listenToInteractions(): void {
-        // Track Node Dragging
         this.sg.events.on('interaction:dragstart', (payload) => {
-            if (!payload || !payload.node) return;
+            if (!payload?.node) return;
             this.activeSessions.set(`drag-${payload.node.id}`, new InteractionSession());
         });
 
         this.sg.events.on('interaction:drag', (payload) => {
-            if (!payload || !payload.node) return;
+            if (!payload?.node) return;
             const session = this.activeSessions.get(`drag-${payload.node.id}`);
-            if (session) session.addPoint(payload.node.position.x, payload.node.position.y);
+            session?.addPoint(payload.node.position.x, payload.node.position.y);
         });
 
         this.sg.events.on('interaction:dragend', (payload) => {
-            if (!payload || !payload.node) return;
+            if (!payload?.node) return;
             const session = this.activeSessions.get(`drag-${payload.node.id}`);
             if (session) {
                 session.close();
@@ -138,34 +150,44 @@ export class ErgonomicsPlugin implements ISpaceGraphPlugin {
             }
         });
 
-        // Track Camera Panning
-        let camSession: InteractionSession | null = null;
         this.sg.events.on('camera:move', (payload) => {
-            if (!payload || !payload.position) return;
-            if (!camSession) {
-                camSession = new InteractionSession();
-                // Close it after 500ms of inactivity (debounce essentially)
-                const checkEnd = setInterval(() => {
-                    if (Date.now() - camSession!.path[camSession!.path.length - 1]?.z > 500) {
-                        camSession!.close();
-                        this._accumulateMetrics(camSession!);
-                        camSession = null;
-                        clearInterval(checkEnd);
-                    }
-                }, 500);
-            }
-            camSession.addPoint(payload.position.x, payload.position.y, Date.now()); // hack: stash timestamp in Z temporarily for the debounce check above
+            if (!payload?.position) return;
+            this._handleCameraMovement(payload.position.x, payload.position.y);
         });
     }
 
-    private _accumulateMetrics(session: InteractionSession) {
+    private _handleCameraMovement(x: number, y: number): void {
+        if (!this.cameraSession) {
+            this.cameraSession = {
+                session: new InteractionSession(),
+                lastActivity: Date.now(),
+            };
+        } else {
+            clearTimeout(this.cameraSession.timeoutHandle);
+        }
+
+        this.cameraSession.session.addPoint(x, y, Date.now());
+        this.cameraSession.lastActivity = Date.now();
+
+        this.cameraSession.timeoutHandle = setTimeout(() => {
+            if (this.cameraSession && Date.now() - this.cameraSession.lastActivity >= ERGONOMICS_CONFIG.SESSION_TIMEOUT_MS) {
+                this.cameraSession.session.close();
+                this._accumulateMetrics(this.cameraSession.session);
+                this.cameraSession = null;
+            }
+        }, ERGONOMICS_CONFIG.SESSION_TIMEOUT_MS);
+    }
+
+    private _accumulateMetrics(session: InteractionSession): void {
         const { efficiency, jitter } = session.getMetrics();
 
-        // Exponential moving average for metrics
-        const alpha = 0.1;
-        this.metrics.avgEfficiency = alpha * efficiency + (1 - alpha) * this.metrics.avgEfficiency;
-        this.metrics.avgJitter = alpha * jitter + (1 - alpha) * this.metrics.avgJitter;
-        // Only count valid non-accidental clicks as full interactions
+        this.metrics.avgEfficiency =
+            ERGONOMICS_CONFIG.EMA_ALPHA * efficiency +
+            (1 - ERGONOMICS_CONFIG.EMA_ALPHA) * this.metrics.avgEfficiency;
+        this.metrics.avgJitter =
+            ERGONOMICS_CONFIG.EMA_ALPHA * jitter +
+            (1 - ERGONOMICS_CONFIG.EMA_ALPHA) * this.metrics.avgJitter;
+
         if (session.path.length > 1) {
             this.metrics.totalInteractions++;
         }
@@ -186,15 +208,12 @@ export class ErgonomicsPlugin implements ISpaceGraphPlugin {
         configA: Partial<ErgonomicsConfig>,
         configB: Partial<ErgonomicsConfig>,
         interactionsPerRound = 10,
-    ) {
+    ): void {
         this.calibrating = true;
 
         let activeConfig: 'A' | 'B' = 'A';
-
-        // Stash baseline to restore or compare later
         const baselineConfig = { ...this.config };
 
-        // Reset metrics for the test
         const scores = {
             A: { efficiency: 0, jitter: 0 },
             B: { efficiency: 0, jitter: 0 },
@@ -210,38 +229,29 @@ export class ErgonomicsPlugin implements ISpaceGraphPlugin {
             }
 
             if (this.metrics.totalInteractions >= interactionsPerRound) {
-                // Record the score for this variant
                 scores[activeConfig].efficiency = this.metrics.avgEfficiency;
                 scores[activeConfig].jitter = this.metrics.avgJitter;
 
                 if (activeConfig === 'A') {
-                    // Switch to B
                     activeConfig = 'B';
                     this.updateConfig(configB);
                     this.metrics.totalInteractions = 0;
                     this.metrics.avgEfficiency = 1.0;
                     this.metrics.avgJitter = 0.0;
                 } else {
-                    // Finished both A and B. Compare.
                     clearInterval(checkRound);
                     this.calibrating = false;
 
-                    // Lower jitter and higher efficiency wins
-                    // A simple score heuristic: Efficiency (0-1) - normalized jitter penalties
-                    const scoreA = scores.A.efficiency - scores.A.jitter * 0.1;
-                    const scoreB = scores.B.efficiency - scores.B.jitter * 0.1;
+                    const scoreA = scores.A.efficiency - scores.A.jitter * ERGONOMICS_CONFIG.JITTER_PENALTY_WEIGHT;
+                    const scoreB = scores.B.efficiency - scores.B.jitter * ERGONOMICS_CONFIG.JITTER_PENALTY_WEIGHT;
 
                     const winner = scoreA >= scoreB ? configA : configB;
 
-                    // Apply winning config permanently
                     this.updateConfig({ ...baselineConfig, ...winner });
-                    console.log(
-                        `[Ergonomics] Calibration complete. Winner: Variant ${scoreA >= scoreB ? 'A' : 'B'}`,
-                    );
                     this.sg.events.emit('ergonomics:calibrated' as any, { winner, scores });
                 }
             }
-        }, 1000);
+        }, ERGONOMICS_CONFIG.CALIBRATION_CHECK_INTERVAL_MS);
     }
 
     onPreRender(_delta: number): void {
