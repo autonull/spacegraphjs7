@@ -55,7 +55,8 @@ import { ErgonomicsPlugin } from './plugins/ErgonomicsPlugin';
 import { PhysicsPlugin } from './plugins/PhysicsPlugin';
 import { HUDPlugin } from './plugins/HUDPlugin';
 import { HistoryPlugin } from './plugins/HistoryPlugin';
-import type { GraphSpec, SpaceGraphOptions, SpecUpdate } from './types';
+import type { GraphSpec, SpaceGraphOptions, SpecUpdate, ISpaceGraphPlugin } from './types';
+import { MathPool } from './utils/MathPool';
 import { CameraUtils } from './utils/CameraUtils';
 import { DOMUtils } from './utils/DOMUtils';
 
@@ -131,61 +132,69 @@ export class SpaceGraph {
     async init() {
         this.renderer.init();
 
-        // Register built-in node types
-        this.pluginManager.registerNodeType('ShapeNode', ShapeNode);
-        this.pluginManager.registerNodeType('InstancedShapeNode', InstancedShapeNode);
-        this.pluginManager.registerNodeType('HtmlNode', HtmlNode);
-        this.pluginManager.registerNodeType('ImageNode', ImageNode);
-        this.pluginManager.registerNodeType('GroupNode', GroupNode);
-        this.pluginManager.registerNodeType('NoteNode', NoteNode);
-        this.pluginManager.registerNodeType('DataNode', DataNode);
-        this.pluginManager.registerNodeType('CanvasNode', CanvasNode);
-        this.pluginManager.registerNodeType('TextMeshNode', TextMeshNode);
-        this.pluginManager.registerNodeType('VideoNode', VideoNode);
-        this.pluginManager.registerNodeType('IFrameNode', IFrameNode);
-        this.pluginManager.registerNodeType('ChartNode', ChartNode);
-        this.pluginManager.registerNodeType('MarkdownNode', MarkdownNode);
-        this.pluginManager.registerNodeType('GlobeNode', GlobeNode);
-        this.pluginManager.registerNodeType('SceneNode', SceneNode);
-        this.pluginManager.registerNodeType('AudioNode', AudioNode);
-        this.pluginManager.registerNodeType('MathNode', MathNode);
-        this.pluginManager.registerNodeType('ProcessNode', ProcessNode);
-        this.pluginManager.registerNodeType('CodeEditorNode', CodeEditorNode);
+        const nodeTypes = [
+            ShapeNode,
+            InstancedShapeNode,
+            HtmlNode,
+            ImageNode,
+            GroupNode,
+            NoteNode,
+            DataNode,
+            CanvasNode,
+            TextMeshNode,
+            VideoNode,
+            IFrameNode,
+            ChartNode,
+            MarkdownNode,
+            GlobeNode,
+            SceneNode,
+            AudioNode,
+            MathNode,
+            ProcessNode,
+            CodeEditorNode,
+        ];
+        nodeTypes.forEach((cls) => this.pluginManager.registerNodeType(cls.name, cls));
 
-        // Register built-in edge types
-        this.pluginManager.registerEdgeType('Edge', Edge);
-        this.pluginManager.registerEdgeType('CurvedEdge', CurvedEdge);
-        this.pluginManager.registerEdgeType('FlowEdge', FlowEdge);
-        this.pluginManager.registerEdgeType('LabeledEdge', LabeledEdge);
-        this.pluginManager.registerEdgeType('DottedEdge', DottedEdge);
-        this.pluginManager.registerEdgeType('DynamicThicknessEdge', DynamicThicknessEdge);
-        this.pluginManager.registerEdgeType('AnimatedEdge', AnimatedEdge);
-        this.pluginManager.registerEdgeType('BundledEdge', BundledEdge);
-        this.pluginManager.registerEdgeType('InterGraphEdge', InterGraphEdge);
+        const edgeTypes = [
+            Edge,
+            CurvedEdge,
+            FlowEdge,
+            LabeledEdge,
+            DottedEdge,
+            DynamicThicknessEdge,
+            AnimatedEdge,
+            BundledEdge,
+            InterGraphEdge,
+        ];
+        edgeTypes.forEach((cls) => this.pluginManager.registerEdgeType(cls.name, cls));
 
-        // Register built-in plugins (Layouts)
-        this.pluginManager.register('ForceLayout', new ForceLayout());
-        this.pluginManager.register('CircularLayout', new CircularLayout());
-        this.pluginManager.register('GridLayout', new GridLayout());
-        this.pluginManager.register('HierarchicalLayout', new HierarchicalLayout());
-        this.pluginManager.register('RadialLayout', new RadialLayout());
-        this.pluginManager.register('TreeLayout', new TreeLayout());
-        this.pluginManager.register('SpectralLayout', new SpectralLayout());
-        this.pluginManager.register('GeoLayout', new GeoLayout());
-        this.pluginManager.register('MapLayout', new GeoLayout()); // Alias
-        this.pluginManager.register('TimelineLayout', new TimelineLayout());
-        this.pluginManager.register('ClusterLayout', new ClusterLayout());
+        const layoutPlugins: [new () => ISpaceGraphPlugin, string][] = [
+            [ForceLayout, 'ForceLayout'],
+            [CircularLayout, 'CircularLayout'],
+            [GridLayout, 'GridLayout'],
+            [HierarchicalLayout, 'HierarchicalLayout'],
+            [RadialLayout, 'RadialLayout'],
+            [TreeLayout, 'TreeLayout'],
+            [SpectralLayout, 'SpectralLayout'],
+            [GeoLayout, 'GeoLayout'],
+            [GeoLayout, 'MapLayout'],
+            [TimelineLayout, 'TimelineLayout'],
+            [ClusterLayout, 'ClusterLayout'],
+        ];
+        layoutPlugins.forEach(([cls, name]) => this.pluginManager.register(name, new cls()));
 
-        // Register built-in plugins (Systems)
-        this.pluginManager.register('InteractionPlugin', new InteractionPlugin());
-        this.pluginManager.register('LODPlugin', new LODPlugin());
-        this.pluginManager.register('AutoLayoutPlugin', new AutoLayoutPlugin());
-        this.pluginManager.register('AutoColorPlugin', new AutoColorPlugin());
-        this.pluginManager.register('MinimapPlugin', new MinimapPlugin());
-        this.pluginManager.register('ErgonomicsPlugin', new ErgonomicsPlugin());
-        this.pluginManager.register('PhysicsPlugin', new PhysicsPlugin());
-        this.pluginManager.register('HUDPlugin', new HUDPlugin());
-        this.pluginManager.register('HistoryPlugin', new HistoryPlugin());
+        const systemPlugins: [new () => ISpaceGraphPlugin, string][] = [
+            [InteractionPlugin, 'InteractionPlugin'],
+            [LODPlugin, 'LODPlugin'],
+            [AutoLayoutPlugin, 'AutoLayoutPlugin'],
+            [AutoColorPlugin, 'AutoColorPlugin'],
+            [MinimapPlugin, 'MinimapPlugin'],
+            [ErgonomicsPlugin, 'ErgonomicsPlugin'],
+            [PhysicsPlugin, 'PhysicsPlugin'],
+            [HUDPlugin, 'HUDPlugin'],
+            [HistoryPlugin, 'HistoryPlugin'],
+        ];
+        systemPlugins.forEach(([cls, name]) => this.pluginManager.register(name, new cls()));
 
         await this.pluginManager.initAll();
     }
@@ -445,8 +454,8 @@ export class SpaceGraph {
             const message = error instanceof Error ? error.message : String(error);
             const wrappedError = new Error(
                 `[SpaceGraph] fromURL Error: Failed to load graph from ${url}. Reason: ${message}`,
-                { cause: error },
             );
+            (wrappedError as any).cause = error;
             console.error(wrappedError);
             throw wrappedError;
         }

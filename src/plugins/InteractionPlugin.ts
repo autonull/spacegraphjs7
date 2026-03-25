@@ -73,7 +73,7 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
             // Only trigger node context menu if right-clicking without significant dragging
             // Handled similarly to left click
             const distance = this.pointerDownPosition.distanceTo(
-                new THREE.Vector2(e.clientX, e.clientY)
+                new THREE.Vector2(e.clientX, e.clientY),
             );
             if (distance > 5) return;
 
@@ -92,7 +92,7 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
 
             if (edgeIntersects.length > 0) {
                 const edgeObj = edgeIntersects[0].object;
-                const edge = this.sg.graph.edges.find(edge => edge.object === edgeObj);
+                const edge = this.sg.graph.edges.find((edge) => edge.object === edgeObj);
                 if (edge) {
                     this.sg.events.emit('edge:contextmenu', { edge, event: e });
                     return;
@@ -119,7 +119,7 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
             backgroundColor: 'rgba(139, 92, 246, 0.2)',
             pointerEvents: 'none',
             display: 'none',
-            zIndex: '9999'
+            zIndex: '9999',
         });
 
         // Ensure it's attached to the container
@@ -171,7 +171,7 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
 
             if (edgeIntersects.length > 0) {
                 const edgeObj = edgeIntersects[0].object;
-                const edge = this.sg.graph.edges.find(e => e.object === edgeObj);
+                const edge = this.sg.graph.edges.find((e) => e.object === edgeObj);
                 if (edge) {
                     this.sg.events.emit('edge:dblclick', { edge, event: e });
 
@@ -183,7 +183,9 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
                             this.lastZoomedId = null;
                         } else {
                             const targetPos = edge.target.position.clone();
-                            const targetRadius = edge.target.data?.width ? Math.max(edge.target.data.width * 1.5, 150) : 150;
+                            const targetRadius = edge.target.data?.width
+                                ? Math.max(edge.target.data.width * 1.5, 150)
+                                : 150;
                             this.sg.cameraControls.flyTo(targetPos, targetRadius);
                             this.lastZoomedId = zoomId;
                         }
@@ -203,12 +205,17 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
 
                     // Semantic navigation: fly to node, or undo zoom if already zoomed to this node
                     if (this.sg.cameraControls) {
-                        if (this.lastZoomedId === node.id && this.sg.cameraControls.hasZoomHistory) {
+                        if (
+                            this.lastZoomedId === node.id &&
+                            this.sg.cameraControls.hasZoomHistory
+                        ) {
                             this.sg.cameraControls.flyBack();
                             this.lastZoomedId = null;
                         } else {
                             const targetPos = node.position.clone();
-                            const targetRadius = node.data?.width ? Math.max(node.data.width * 1.5, 150) : 150;
+                            const targetRadius = node.data?.width
+                                ? Math.max(node.data.width * 1.5, 150)
+                                : 150;
                             this.sg.cameraControls.flyTo(targetPos, targetRadius);
                             this.lastZoomedId = node.id;
                         }
@@ -247,7 +254,7 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
 
             if (edgeIntersects.length > 0) {
                 const edgeObj = edgeIntersects[0].object;
-                const edge = this.sg.graph.edges.find(e => e.object === edgeObj);
+                const edge = this.sg.graph.edges.find((e) => e.object === edgeObj);
                 if (edge) {
                     this.sg.events.emit('edge:click', { edge, event: e });
                     return;
@@ -278,12 +285,10 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
     private getIntersectedNode() {
         this.raycaster.setFromCamera(this.mouse, this.sg.renderer.camera);
         const meshes = this.getAllNodeMeshes();
-
         const intersects = this.raycaster.intersectObjects(meshes, false);
-        if (intersects.length > 0) {
-            return { node: this.getNodeFromMesh(intersects[0].object), point: intersects[0].point };
-        }
-        return null;
+        return intersects.length > 0
+            ? { node: this.getNodeFromMesh(intersects[0].object), point: intersects[0].point }
+            : null;
     }
 
     private getIntersectedEdge() {
@@ -291,12 +296,12 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
         this.raycaster.params.Line = { threshold: 5 };
         const lineObjects = this.getEdgeObjects();
         const edgeIntersects = this.raycaster.intersectObjects(lineObjects, false);
-        if (edgeIntersects.length > 0) {
-            const edgeObj = edgeIntersects[0].object;
-            const edge = this.sg.graph.edges.find(e => e.object === edgeObj);
-            return { edge, point: edgeIntersects[0].point };
-        }
-        return null;
+        return edgeIntersects.length > 0
+            ? {
+                  edge: this.sg.graph.edges.find((e) => e.object === edgeIntersects[0].object),
+                  point: edgeIntersects[0].point,
+              }
+            : null;
     }
 
     private initDragAndSelect(): void {
@@ -345,7 +350,7 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
                 left: `${e.clientX}px`,
                 top: `${e.clientY}px`,
                 width: '0px',
-                height: '0px'
+                height: '0px',
             });
         }
         this.sg.cameraControls.controls.enabled = false;
@@ -356,7 +361,13 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
         this.connectSourceNode = node;
         this.sg.cameraControls.controls.enabled = false;
 
-        const material = new THREE.LineDashedMaterial({ color: 0x8b5cf6, dashSize: 10, gapSize: 5, linewidth: 2, depthTest: false });
+        const material = new THREE.LineDashedMaterial({
+            color: 0x8b5cf6,
+            dashSize: 10,
+            gapSize: 5,
+            linewidth: 2,
+            depthTest: false,
+        });
         const points = [node.position.clone(), node.position.clone()];
         this.connectTempLineGeom = new THREE.BufferGeometry().setFromPoints(points);
         this.connectTempLine = new THREE.Line(this.connectTempLineGeom, material);
@@ -366,7 +377,7 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
 
         this.dragPlane.setFromNormalAndCoplanarPoint(
             this.sg.renderer.camera.getWorldDirection(this.dragPlane.normal),
-            node.position
+            node.position,
         );
 
         this.sg.renderer.renderer.domElement.style.cursor = 'crosshair';
@@ -384,7 +395,7 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
 
         this.dragPlane.setFromNormalAndCoplanarPoint(
             this.sg.renderer.camera.getWorldDirection(this.dragPlane.normal),
-            this.dragNode.position
+            this.dragNode.position,
         );
 
         if (this.raycaster.ray.intersectPlane(this.dragPlane, this.intersection)) {
@@ -394,7 +405,10 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
         this.nodeDragOffsets.clear();
         for (const n of this.draggingNodes) {
             n.data.pinned = true;
-            this.nodeDragOffsets.set(n, new THREE.Vector3().subVectors(n.position, this.dragNode.position));
+            this.nodeDragOffsets.set(
+                n,
+                new THREE.Vector3().subVectors(n.position, this.dragNode.position),
+            );
             this.sg.events.emit('interaction:dragstart', { node: n });
         }
         this.sg.renderer.renderer.domElement.style.cursor = 'grabbing';
@@ -409,7 +423,12 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
             return;
         }
 
-        if (this.isConnecting && this.connectSourceNode && this.connectTempLineGeom && this.connectTempLine) {
+        if (
+            this.isConnecting &&
+            this.connectSourceNode &&
+            this.connectTempLineGeom &&
+            this.connectTempLine
+        ) {
             this.updateConnectMode(e);
             return;
         }
@@ -433,7 +452,7 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
                 left: `${left}px`,
                 top: `${top}px`,
                 width: `${width}px`,
-                height: `${height}px`
+                height: `${height}px`,
             });
         }
         this.updateSelectionBox(left, top, width, height, canvas);
@@ -479,13 +498,15 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
             if (this.hoveredNode?.domElement) {
                 this.hoveredNode.domElement.style.cursor = '';
             }
-            if (this.hoveredNode) this.sg.events.emit('node:pointerleave', { node: this.hoveredNode, event: e });
+            if (this.hoveredNode)
+                this.sg.events.emit('node:pointerleave', { node: this.hoveredNode, event: e });
             this.hoveredNode = currentNode;
             // Set grab cursor on the node we're entering (in default drag mode only)
             if (this.hoveredNode?.domElement && this.mode === 'default') {
                 this.hoveredNode.domElement.style.cursor = 'grab';
             }
-            if (this.hoveredNode) this.sg.events.emit('node:pointerenter', { node: this.hoveredNode, event: e });
+            if (this.hoveredNode)
+                this.sg.events.emit('node:pointerenter', { node: this.hoveredNode, event: e });
         }
 
         // Update canvas cursor to reflect hover state
@@ -498,9 +519,11 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
             const currentEdge = edgeHit?.edge || null;
 
             if (currentEdge !== this.hoveredEdge) {
-                if (this.hoveredEdge) this.sg.events.emit('edge:pointerleave', { edge: this.hoveredEdge, event: e });
+                if (this.hoveredEdge)
+                    this.sg.events.emit('edge:pointerleave', { edge: this.hoveredEdge, event: e });
                 this.hoveredEdge = currentEdge;
-                if (this.hoveredEdge) this.sg.events.emit('edge:pointerenter', { edge: this.hoveredEdge, event: e });
+                if (this.hoveredEdge)
+                    this.sg.events.emit('edge:pointerenter', { edge: this.hoveredEdge, event: e });
             }
         } else if (this.hoveredEdge) {
             this.sg.events.emit('edge:pointerleave', { edge: this.hoveredEdge, event: e });
@@ -528,7 +551,7 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
                 this.sg.events.emit('interaction:edgecreate', {
                     source: this.connectSourceNode,
                     target: this.hoveredNode,
-                    event: e
+                    event: e,
                 });
             }
             this.cancelConnectMode();
@@ -540,7 +563,7 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
             this.sg.cameraControls.controls.enabled = true;
             this.sg.events.emit('interaction:selection', {
                 nodes: Array.from(this.selectedNodes),
-                edges: Array.from(this.selectedEdges)
+                edges: Array.from(this.selectedEdges),
             });
         }
 
@@ -557,7 +580,8 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
             this.sg.renderer.renderer.domElement.style.cursor = this.hoveredNode ? 'grab' : 'auto';
             // Restore grab cursor on domElement if still hovering it, else clear
             if (releasedNode.domElement) {
-                releasedNode.domElement.style.cursor = (this.hoveredNode === releasedNode) ? 'grab' : '';
+                releasedNode.domElement.style.cursor =
+                    this.hoveredNode === releasedNode ? 'grab' : '';
             }
             this.sg.cameraControls.controls.enabled = true;
         }
@@ -572,7 +596,11 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
             this.connectTempLineGeom = null;
         }
 
-        if (this.hoveredNode && this.hoveredNode.object && this.hoveredNode !== this.connectSourceNode) {
+        if (
+            this.hoveredNode &&
+            this.hoveredNode.object &&
+            this.hoveredNode !== this.connectSourceNode
+        ) {
             this.hoveredNode.object.scale.set(1, 1, 1); // Reset visual pop
         }
 
@@ -582,14 +610,20 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
         this.sg.cameraControls.controls.enabled = true;
     }
 
-    private updateSelectionBox(left: number, top: number, width: number, height: number, canvas: HTMLCanvasElement) {
+    private updateSelectionBox(
+        left: number,
+        top: number,
+        width: number,
+        height: number,
+        canvas: HTMLCanvasElement,
+    ) {
         const rect = canvas.getBoundingClientRect();
 
         // Convert screen coordinates to NDC space for frustum testing
         const minX = ((left - rect.left) / rect.width) * 2 - 1;
-        const maxX = (((left + width) - rect.left) / rect.width) * 2 - 1;
+        const maxX = ((left + width - rect.left) / rect.width) * 2 - 1;
         // Invert Y for NDC
-        const minY = -(((top + height) - rect.top) / rect.height) * 2 + 1;
+        const minY = -((top + height - rect.top) / rect.height) * 2 + 1;
         const maxY = -((top - rect.top) / rect.height) * 2 + 1;
 
         // Build frustum from the current camera to test against nodes
@@ -617,7 +651,13 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
             midPoint.addVectors(edge.source.position, edge.target.position).multiplyScalar(0.5);
             midPoint.project(this.sg.renderer.camera);
 
-            if (midPoint.x >= minX && midPoint.x <= maxX && midPoint.y >= minY && midPoint.y <= maxY && midPoint.z <= 1) {
+            if (
+                midPoint.x >= minX &&
+                midPoint.x <= maxX &&
+                midPoint.y >= minY &&
+                midPoint.y <= maxY &&
+                midPoint.z <= 1
+            ) {
                 this.selectedEdges.add(edge);
             }
         }

@@ -13,10 +13,14 @@ export class PluginManager {
 
     register(name: string, plugin: ISpaceGraphPlugin): void {
         if (!name || typeof name !== 'string') {
-            throw new Error(`[SpaceGraph] Plugin Registration Error: Invalid plugin name "${name}". Name must be a non-empty string.`);
+            throw new Error(
+                `[SpaceGraph] Plugin Registration Error: Invalid plugin name "${name}". Name must be a non-empty string.`,
+            );
         }
         if (!plugin) {
-            throw new Error(`[SpaceGraph] Plugin Registration Error: Plugin "${name}" is undefined or null.`);
+            throw new Error(
+                `[SpaceGraph] Plugin Registration Error: Plugin "${name}" is undefined or null.`,
+            );
         }
         this.plugins.set(name, plugin);
     }
@@ -49,14 +53,20 @@ export class PluginManager {
                     await plugin.init(this.sg);
                 } catch (err) {
                     const message = err instanceof Error ? err.message : String(err);
-                    const wrappedError = new Error(`[SpaceGraph] Plugin Initialization Error: Failed to initialize plugin "${name}". Reason: ${message}`);
+                    const wrappedError = new Error(
+                        `[SpaceGraph] Plugin Initialization Error: Failed to initialize plugin "${name}". Reason: ${message}`,
+                    );
                     console.error(wrappedError);
                     errors.push(wrappedError);
                 }
             }
         }
         if (errors.length > 0) {
-            throw new AggregateError(errors, `[SpaceGraph] PluginManager initAll failed with ${errors.length} error(s).`);
+            const err = new Error(
+                `[SpaceGraph] PluginManager initAll failed with ${errors.length} error(s).`,
+            );
+            (err as any).errors = errors;
+            throw err;
         }
     }
 
