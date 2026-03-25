@@ -29,7 +29,7 @@ export class DOMNode extends Node {
         Object.assign(this.domElement.style, {
             width: `${width}px`,
             height: `${height}px`,
-            backgroundColor: bgColor,
+            backgroundColor: 'var(--node-bg, ' + bgColor + ')',
             color: textColor,
             border: `1px solid ${borderColor}`,
             borderRadius: '8px',

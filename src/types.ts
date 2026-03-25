@@ -48,6 +48,11 @@ export interface HtmlNodeData extends BaseNodeData, Dimensions {
     html?: string;
     className?: string;
     pointerEvents?: 'none' | 'auto';
+    labelLod?: {
+        distance: number;
+        scale?: number;
+        style?: string;
+    }[];
 }
 export interface IFrameNodeData extends BaseNodeData, Dimensions {
     src?: string;

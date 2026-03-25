@@ -2,6 +2,13 @@ import { DOMNode } from './DOMNode';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec, SpaceGraphNodeData } from '../types';
 import { DOMUtils } from '../utils/DOMUtils';
+import { clamp } from '../utils/math';
+
+export interface LabelLodLevel {
+    distance: number;
+    scale?: number;
+    style?: string;
+}
 
 export class HtmlNode extends DOMNode {
     public static MIN_SIZE = { width: 80, height: 40 };
@@ -9,6 +16,7 @@ export class HtmlNode extends DOMNode {
 
     public size = { width: 160, height: 70 };
     public billboard = false;
+    public labelLod: LabelLodLevel[] = [];
     private resizeHandle: HTMLElement | null = null;
     private contentWrapper: HTMLElement | null = null;
     private controlsWrapper: HTMLElement | null = null;
@@ -48,6 +56,12 @@ export class HtmlNode extends DOMNode {
         if (data.billboard) {
             this.billboard = data.billboard as boolean;
         }
+
+        if (data.labelLod) {
+            this.labelLod = data.labelLod as LabelLodLevel[];
+        }
+
+        this._applyNodeBgColor((spec.data?.color as string) || 'rgba(51, 102, 255, 0.8)');
 
         this.updatePosition(this.position.x, this.position.y, this.position.z);
     }
@@ -274,6 +288,12 @@ export class HtmlNode extends DOMNode {
             if (data.billboard !== undefined) {
                 this.billboard = data.billboard as boolean;
             }
+            if (data.labelLod !== undefined) {
+                this.labelLod = data.labelLod as LabelLodLevel[];
+            }
+            if (data.color !== undefined) {
+                this._applyNodeBgColor(data.color as string);
+            }
             if (data.html !== undefined && this.contentWrapper) {
                 this.contentWrapper.innerHTML = data.html as string;
             } else if (
@@ -387,6 +407,65 @@ export class HtmlNode extends DOMNode {
 
     getResizeHandle(): HTMLElement | null {
         return this.resizeHandle;
+    }
+
+    private _applyNodeBgColor(color: string): void {
+        this.domElement.style.setProperty('--node-bg', color);
+    }
+
+    setBackgroundColor(color: string): void {
+        this.data = { ...this.data, color };
+        this._applyNodeBgColor(color);
+        this.sg?.events.emit('node:dataChanged', {
+            node: this,
+            property: 'backgroundColor',
+            value: color,
+        });
+    }
+
+    updateLod(distance: number): void {
+        if (!this.labelLod || this.labelLod.length === 0) {
+            if (this.contentWrapper) {
+                const baseScale = (this.data?.contentScale as number) || 1.0;
+                this.contentWrapper.style.transform = `scale(${baseScale})`;
+            }
+            this.domElement.style.visibility = '';
+            return;
+        }
+
+        const sortedLodLevels = [...this.labelLod].sort(
+            (a, b) => (b.distance || 0) - (a.distance || 0),
+        );
+        const camera = this.sg?.renderer?.camera;
+        if (!camera) return;
+
+        const distanceToCamera = this.position.distanceTo(camera.position);
+
+        let ruleApplied = false;
+        for (const level of sortedLodLevels) {
+            if (distanceToCamera >= (level.distance || 0)) {
+                if (level.style?.includes('visibility:hidden')) {
+                    this.domElement.style.visibility = 'hidden';
+                } else {
+                    this.domElement.style.visibility = '';
+                }
+                if (this.contentWrapper) {
+                    const baseScale = (this.data?.contentScale as number) || 1.0;
+                    const scale = baseScale * (level.scale ?? 1.0);
+                    this.contentWrapper.style.transform = `scale(${scale})`;
+                }
+                ruleApplied = true;
+                break;
+            }
+        }
+
+        if (!ruleApplied) {
+            this.domElement.style.visibility = '';
+            if (this.contentWrapper) {
+                const baseScale = (this.data?.contentScale as number) || 1.0;
+                this.contentWrapper.style.transform = `scale(${baseScale})`;
+            }
+        }
     }
 
     dispose(): void {

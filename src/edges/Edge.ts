@@ -19,6 +19,14 @@ export interface EdgeData {
     dashScale?: number;
     dashSize?: number;
     gapSize?: number;
+    label?: string;
+    labelColor?: string;
+    fontSize?: string;
+    labelLod?: {
+        distance: number;
+        scale?: number;
+        style?: string;
+    }[];
     [key: string]: unknown;
 }
 

@@ -5,6 +5,13 @@ import type { EdgeSpec } from '../types';
 import type { Node } from '../nodes/Node';
 import { Edge } from './Edge';
 import { DOMUtils } from '../utils/DOMUtils';
+import { clamp } from '../utils/math';
+
+export interface LabelLodLevel {
+    distance: number;
+    scale?: number;
+    style?: string;
+}
 
 /**
  * LabeledEdge — Straight edge with a mid-point text label rendered via CSS2D.
@@ -14,10 +21,12 @@ import { DOMUtils } from '../utils/DOMUtils';
  *   color     : line hex color (default 0x888888)
  *   labelColor: CSS color string (default '#ffffff')
  *   fontSize  : CSS font-size (default '12px')
+ *   labelLod  : Array of { distance, scale, style } for LOD-based visibility/scaling
  */
 export class LabeledEdge extends Edge {
     private labelEl: HTMLElement;
     private labelObject: CSS2DObject;
+    public labelLod: LabelLodLevel[] = [];
 
     constructor(sg: SpaceGraph, spec: EdgeSpec, source: Node, target: Node) {
         super(sg, spec, source, target);
@@ -44,6 +53,10 @@ export class LabeledEdge extends Edge {
         this.labelObject = new CSS2DObject(this.labelEl);
         this.object.add(this.labelObject);
 
+        if (spec.data?.labelLod) {
+            this.labelLod = spec.data.labelLod as LabelLodLevel[];
+        }
+
         this._positionLabel();
     }
 
@@ -54,9 +67,52 @@ export class LabeledEdge extends Edge {
         this.labelObject.position.copy(mid).sub(this.object.position);
     }
 
+    updateLod(distance: number): void {
+        if (!this.labelLod || this.labelLod.length === 0) {
+            this.labelEl.style.visibility = '';
+            this.labelEl.style.transform = '';
+            return;
+        }
+
+        const sortedLodLevels = [...this.labelLod].sort(
+            (a, b) => (b.distance || 0) - (a.distance || 0),
+        );
+        const camera = this.sg?.renderer?.camera;
+        if (!camera) return;
+
+        const midPoint = new THREE.Vector3()
+            .addVectors(this.source.position, this.target.position)
+            .multiplyScalar(0.5);
+        const distanceToCamera = midPoint.distanceTo(camera.position);
+
+        let ruleApplied = false;
+        for (const level of sortedLodLevels) {
+            if (distanceToCamera >= (level.distance || 0)) {
+                if (level.style?.includes('visibility:hidden')) {
+                    this.labelEl.style.visibility = 'hidden';
+                } else {
+                    this.labelEl.style.visibility = '';
+                }
+                if (level.scale !== undefined) {
+                    this.labelEl.style.transform = `scale(${level.scale})`;
+                } else {
+                    this.labelEl.style.transform = '';
+                }
+                ruleApplied = true;
+                break;
+            }
+        }
+
+        if (!ruleApplied) {
+            this.labelEl.style.visibility = '';
+            this.labelEl.style.transform = '';
+        }
+    }
+
     update(): void {
         super.update();
         this._positionLabel();
+        this.updateLod(0);
     }
 
     updateSpec(updates: Partial<EdgeSpec>): void {
@@ -69,6 +125,9 @@ export class LabeledEdge extends Edge {
         }
         if (updates.data?.color) {
             (this.object.material as THREE.LineBasicMaterial).color.setHex(updates.data.color);
+        }
+        if (updates.data?.labelLod !== undefined) {
+            this.labelLod = updates.data.labelLod as LabelLodLevel[];
         }
     }
 

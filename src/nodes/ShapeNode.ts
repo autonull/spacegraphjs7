@@ -1,26 +1,27 @@
 import * as THREE from 'three';
 import { Node } from './Node';
 import type { SpaceGraph } from '../SpaceGraph';
-import type { NodeSpec } from '../types';
+import type { NodeSpec, ShapeNodeData } from '../types';
 import { DOMUtils } from '../utils/DOMUtils';
 
+type ShapeType = 'sphere' | 'box' | 'circle' | 'plane' | 'cone' | 'cylinder' | 'torus' | 'ring';
+
 export class ShapeNode extends Node {
-    private meshGeometry: THREE.SphereGeometry;
+    private meshGeometry: THREE.BufferGeometry;
     private meshMaterial: THREE.MeshBasicMaterial;
     private labelSprite?: THREE.Sprite;
+    private shapeType: ShapeType = 'sphere';
+    private nodeSize: number = 40;
 
     constructor(sg: SpaceGraph, spec: NodeSpec) {
         super(sg, spec);
 
-        const color = (spec.data?.color as THREE.ColorRepresentation) ?? 0x3366ff;
+        const data = spec.data as ShapeNodeData;
+        this.shapeType = (data?.shape as ShapeType) || 'sphere';
+        this.nodeSize = data?.size || 40;
+        const color = (data?.color as THREE.ColorRepresentation) ?? 0x3366ff;
 
-        // Use ObjectPoolManager to acquire geometry
-        let geo = sg.poolManager.get('ShapeNodeGeometry') as THREE.SphereGeometry | null;
-        if (!geo) {
-            geo = new THREE.SphereGeometry(20, 32, 32);
-        }
-
-        this.meshGeometry = geo;
+        this.meshGeometry = this.createGeometry(this.shapeType, this.nodeSize);
         this.meshMaterial = new THREE.MeshBasicMaterial({ color });
         const mesh = new THREE.Mesh(this.meshGeometry, this.meshMaterial);
 
@@ -28,18 +29,70 @@ export class ShapeNode extends Node {
 
         if (spec.label) {
             this.labelSprite = this.createLabel(spec.label);
-            this.labelSprite.position.y = -30;
+            this.labelSprite.position.y = -this.nodeSize * 0.8;
             this.object.add(this.labelSprite);
         }
 
         this.updatePosition(this.position.x, this.position.y, this.position.z);
     }
 
+    private createGeometry(shape: ShapeType, size: number): THREE.BufferGeometry {
+        switch (shape) {
+            case 'box':
+                return new THREE.BoxGeometry(size, size, size);
+            case 'circle':
+            case 'plane':
+                return new THREE.CircleGeometry(size / 2, 32);
+            case 'cone':
+                return new THREE.ConeGeometry(size / 2, size, 32);
+            case 'cylinder':
+                return new THREE.CylinderGeometry(size / 2, size / 2, size, 32);
+            case 'torus':
+                return new THREE.TorusGeometry(size / 3, size / 8, 16, 48);
+            case 'ring':
+                return new THREE.RingGeometry(size / 4, size / 2, 32);
+            case 'sphere':
+            default:
+                return new THREE.SphereGeometry(size / 2, 32, 32);
+        }
+    }
+
     updateSpec(updates: Partial<NodeSpec>): this {
         super.updateSpec(updates);
 
-        if (updates.data && updates.data.color && typeof updates.data.color === 'number') {
-            this.meshMaterial.color.setHex(updates.data.color);
+        if (updates.data) {
+            const data = updates.data as ShapeNodeData;
+
+            if (data.color && typeof data.color === 'number') {
+                this.meshMaterial.color.setHex(data.color);
+            }
+
+            if (data.shape && data.shape !== this.shapeType) {
+                this.shapeType = data.shape as ShapeType;
+                this.disposeGeometry();
+                this.meshGeometry = this.createGeometry(this.shapeType, this.nodeSize);
+                const mesh = this.object.children.find(
+                    (c) => c instanceof THREE.Mesh,
+                ) as THREE.Mesh;
+                if (mesh) {
+                    mesh.geometry = this.meshGeometry;
+                }
+            }
+
+            if (data.size && data.size !== this.nodeSize) {
+                this.nodeSize = data.size;
+                this.disposeGeometry();
+                this.meshGeometry = this.createGeometry(this.shapeType, this.nodeSize);
+                const mesh = this.object.children.find(
+                    (c) => c instanceof THREE.Mesh,
+                ) as THREE.Mesh;
+                if (mesh) {
+                    mesh.geometry = this.meshGeometry;
+                }
+                if (this.labelSprite) {
+                    this.labelSprite.position.y = -this.nodeSize * 0.8;
+                }
+            }
         }
 
         if (updates.label !== undefined) {
@@ -52,11 +105,17 @@ export class ShapeNode extends Node {
 
             if (updates.label) {
                 this.labelSprite = this.createLabel(updates.label);
-                this.labelSprite.position.y = -30;
+                this.labelSprite.position.y = -this.nodeSize * 0.8;
                 this.object.add(this.labelSprite);
             }
         }
         return this;
+    }
+
+    private disposeGeometry(): void {
+        if (this.meshGeometry) {
+            this.meshGeometry.dispose();
+        }
     }
 
     private createLabel(text: string): THREE.Sprite {
@@ -76,15 +135,17 @@ export class ShapeNode extends Node {
         const texture = new THREE.CanvasTexture(canvas);
         const material = new THREE.SpriteMaterial({ map: texture, depthTest: false });
         const sprite = new THREE.Sprite(material);
-        sprite.scale.set(60, 15, 1);
+        sprite.scale.set(this.nodeSize * 1.5, this.nodeSize * 0.4, 1);
 
         return sprite;
     }
 
+    getBoundingSphereRadius(): number {
+        return this.nodeSize / 2;
+    }
+
     dispose(): void {
-        if (this.meshGeometry) {
-            this.sg.poolManager.release('ShapeNodeGeometry', this.meshGeometry);
-        }
+        this.disposeGeometry();
         if (this.meshMaterial) {
             this.meshMaterial.dispose();
         }

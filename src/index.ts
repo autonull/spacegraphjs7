@@ -1,6 +1,20 @@
 // SpaceGraphJS - The Self-Building UI Framework
 console.log('[SpaceGraphJS] Loading...');
 
+export {
+    DEG2RAD,
+    RAD2DEG,
+    clamp,
+    lerp,
+    lerpVector3,
+    mergeDeep,
+    toHexColor,
+    randomRange,
+    randomInt,
+    smoothstep,
+    mapRange,
+} from './utils/math';
+
 export { SpaceGraph } from './SpaceGraph';
 export { SpaceGraphApp } from './core/SpaceGraphApp';
 export type { SpaceGraphAppOptions, AppButtonConfig } from './core/SpaceGraphApp';
@@ -60,7 +74,7 @@ export {
 export { Node } from './nodes/Node';
 export { InstancedNode } from './nodes/InstancedNode';
 export { ShapeNode } from './nodes/ShapeNode';
-export { HtmlNode } from './nodes/HtmlNode';
+export { HtmlNode, type LabelLodLevel } from './nodes/HtmlNode';
 export { InstancedShapeNode } from './nodes/InstancedShapeNode';
 export { ImageNode } from './nodes/ImageNode';
 export { GroupNode } from './nodes/GroupNode';
@@ -83,7 +97,7 @@ export { CodeEditorNode } from './nodes/CodeEditorNode';
 export { Edge } from './edges/Edge';
 export { CurvedEdge } from './edges/CurvedEdge';
 export { FlowEdge } from './edges/FlowEdge';
-export { LabeledEdge } from './edges/LabeledEdge';
+export { LabeledEdge, type LabelLodLevel as EdgeLabelLodLevel } from './edges/LabeledEdge';
 export { DottedEdge } from './edges/DottedEdge';
 export { DynamicThicknessEdge } from './edges/DynamicThicknessEdge';
 export { AnimatedEdge } from './edges/AnimatedEdge';

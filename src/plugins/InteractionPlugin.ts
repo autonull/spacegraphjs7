@@ -297,10 +297,19 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
 
         if (typeof window !== 'undefined') {
             window.addEventListener('keydown', (e) => this.handleKeyDown(e));
+            window.addEventListener('keyup', (e) => {
+                if (e.key === 'Alt') {
+                    (window as any).__spacegraph_altKey = e.altKey;
+                }
+            });
         }
     }
 
     private handleKeyDown(e: KeyboardEvent): void {
+        if (typeof window !== 'undefined') {
+            (window as any).__spacegraph_altKey = e.altKey;
+        }
+
         const activeEl = document.activeElement;
         const isEditingText =
             activeEl &&
@@ -426,7 +435,8 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
             return;
         }
 
-        if ((this.mode === 'connect' || e.altKey) && hit?.node) {
+        // Alt+click for connect mode (but not for Z-axis drag which is handled during movement)
+        if (this.mode === 'connect' && hit?.node) {
             this.startConnectMode(hit.node);
             return;
         }
@@ -481,6 +491,9 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
         this.sg.renderer.renderer.domElement.style.cursor = 'crosshair';
     }
 
+    private dragStartZ = 0;
+    private isDraggingZ = false;
+
     private startDrag(node: any): void {
         this.isDragging = true;
         this.dragNode = node;
@@ -499,6 +512,9 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
         if (this.raycaster.ray.intersectPlane(this.dragPlane, this.intersection)) {
             this.dragOffset.copy(this.intersection).sub(this.dragNode.position);
         }
+
+        this.dragStartZ = this.dragNode.position.z;
+        this.isDraggingZ = false;
 
         this.nodeDragOffsets.clear();
         for (const n of this.draggingNodes) {
@@ -701,7 +717,36 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
         }
     }
 
+    private previousDragPosition = { x: 0, y: 0 };
+
     private updateDrag(): void {
+        // Check for Alt key to enable Z-axis dragging
+        const altHeld =
+            (this.dragNode?.domElement?.ownerDocument?.defaultView?.event as PointerEvent)
+                ?.altKey ||
+            (typeof window !== 'undefined' && (window as any).__spacegraph_altKey);
+
+        if (altHeld && this.dragNode) {
+            // Z-axis dragging with Alt key
+            const currentMouse = { x: this.mouse.x, y: this.mouse.y };
+            const deltaY = currentMouse.y - this.previousDragPosition.y;
+
+            const zSensitivity = 2.0;
+            const newZ = this.dragStartZ - deltaY * zSensitivity;
+
+            for (const node of this.draggingNodes) {
+                const zOffset = node.position.z - this.dragNode.position.z;
+                node.position.z = newZ + zOffset;
+                node.object.position.z = node.position.z;
+                this.sg.events.emitBatched('interaction:drag', { node });
+            }
+            this.previousDragPosition = currentMouse;
+            return;
+        }
+
+        this.previousDragPosition = { x: this.mouse.x, y: this.mouse.y };
+        this.dragStartZ = this.dragNode?.position.z || 0;
+
         this.raycaster.setFromCamera(this.mouse, this.sg.renderer.camera);
         if (this.raycaster.ray.intersectPlane(this.dragPlane, this.intersection)) {
             const primaryTargetPos = this.intersection.clone().sub(this.dragOffset);
