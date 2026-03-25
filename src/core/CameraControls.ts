@@ -16,6 +16,14 @@ export class CameraControls {
     private velocity = { x: 0, y: 0 };
     private panVelocity = { x: 0, y: 0 };
 
+    // Zoom history stack for undo-zoom behavior
+    private zoomStack: Array<{ target: THREE.Vector3; radius: number }> = [];
+    private static readonly MAX_ZOOM_HISTORY = 20;
+
+    public get hasZoomHistory(): boolean {
+        return this.zoomStack.length > 0;
+    }
+
     // Touch tracking
     private activeTouches: Map<number, { x: number; y: number }> = new Map();
     private prevPinchDistance = 0;
@@ -60,7 +68,24 @@ export class CameraControls {
     }
 
     public flyTo(targetPos: THREE.Vector3, targetRadius: number, duration: number = 1.5): void {
-        // Animate both the look-at target and the spherical radius
+        // Push current camera state so flyBack() can return here
+        if (this.zoomStack.length < CameraControls.MAX_ZOOM_HISTORY) {
+            this.zoomStack.push({
+                target: this.target.clone(),
+                radius: this.spherical.radius,
+            });
+        }
+        this._animateTo(targetPos, targetRadius, duration);
+    }
+
+    public flyBack(duration: number = 1.5): boolean {
+        const prev = this.zoomStack.pop();
+        if (!prev) return false;
+        this._animateTo(prev.target, prev.radius, duration);
+        return true;
+    }
+
+    private _animateTo(targetPos: THREE.Vector3, targetRadius: number, duration: number): void {
         gsap.to(this.target, {
             x: targetPos.x,
             y: targetPos.y,

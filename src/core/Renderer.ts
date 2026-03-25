@@ -76,6 +76,12 @@ export class Renderer {
 
     public render() {
         this.instancedRenderer.update();
+        // Sync all edge geometries to current node positions immediately before
+        // rendering so they always match the CSS3D layer regardless of when
+        // layout plugins or GSAP animations last updated node.position.
+        for (const edge of this.sg.graph.edges) {
+            if (typeof edge.update === 'function') edge.update();
+        }
         this.renderer.render(this.scene, this.camera);
         this.cssRenderer.render(this.scene, this.camera);
     }

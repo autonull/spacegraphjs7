@@ -37,16 +37,11 @@ export class Edge {
     }
 
     update() {
-        const positions = new Float32Array([
-            this.source.position.x,
-            this.source.position.y,
-            this.source.position.z,
-            this.target.position.x,
-            this.target.position.y,
-            this.target.position.z,
-        ]);
-        this.geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-        this.geometry.attributes.position.needsUpdate = true;
+        const attr = this.geometry.attributes.position as THREE.BufferAttribute;
+        const a = attr.array as Float32Array;
+        a[0] = this.source.position.x; a[1] = this.source.position.y; a[2] = this.source.position.z;
+        a[3] = this.target.position.x; a[4] = this.target.position.y; a[5] = this.target.position.z;
+        attr.needsUpdate = true;
     }
 
     dispose(): void {

@@ -26,6 +26,7 @@ export class Node {
             spec.position?.[2] || 0,
         );
         this.object = new THREE.Object3D();
+        this.object.position.copy(this.position);
     }
 
     updateSpec(updates: Partial<NodeSpec>): this {

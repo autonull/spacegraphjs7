@@ -52,6 +52,9 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
     private hoveredNode: any = null;
     private hoveredEdge: any = null;
 
+    // Zoom stack: track last double-clicked target to enable undo-zoom
+    private lastZoomedId: string | null = null;
+
     init(sg: SpaceGraph): void {
         this.sg = sg;
         this.createSelectionBoxElement();
@@ -172,12 +175,18 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
                 if (edge) {
                     this.sg.events.emit('edge:dblclick', { edge, event: e });
 
-                    // Semantic navigation: fly to the target node
+                    // Semantic navigation: fly to the target node (or undo if already zoomed there)
                     if (edge.target && this.sg.cameraControls) {
-                        const targetPos = edge.target.position.clone();
-                        // Adjust radius based on node size or a reasonable default
-                        const targetRadius = edge.target.data?.width ? Math.max(edge.target.data.width * 1.5, 150) : 150;
-                        this.sg.cameraControls.flyTo(targetPos, targetRadius);
+                        const zoomId = `edge:${edge.id}`;
+                        if (this.lastZoomedId === zoomId && this.sg.cameraControls.hasZoomHistory) {
+                            this.sg.cameraControls.flyBack();
+                            this.lastZoomedId = null;
+                        } else {
+                            const targetPos = edge.target.position.clone();
+                            const targetRadius = edge.target.data?.width ? Math.max(edge.target.data.width * 1.5, 150) : 150;
+                            this.sg.cameraControls.flyTo(targetPos, targetRadius);
+                            this.lastZoomedId = zoomId;
+                        }
                     }
                     return;
                 }
@@ -192,12 +201,17 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
                 if (node) {
                     this.sg.events.emit('node:dblclick', { node, event: e });
 
-                    // Semantic navigation: fly to the node
+                    // Semantic navigation: fly to node, or undo zoom if already zoomed to this node
                     if (this.sg.cameraControls) {
-                        const targetPos = node.position.clone();
-                        // Adjust radius based on node size or a reasonable default
-                        const targetRadius = node.data?.width ? Math.max(node.data.width * 1.5, 150) : 150;
-                        this.sg.cameraControls.flyTo(targetPos, targetRadius);
+                        if (this.lastZoomedId === node.id && this.sg.cameraControls.hasZoomHistory) {
+                            this.sg.cameraControls.flyBack();
+                            this.lastZoomedId = null;
+                        } else {
+                            const targetPos = node.position.clone();
+                            const targetRadius = node.data?.width ? Math.max(node.data.width * 1.5, 150) : 150;
+                            this.sg.cameraControls.flyTo(targetPos, targetRadius);
+                            this.lastZoomedId = node.id;
+                        }
                     }
                 }
             }
@@ -384,6 +398,7 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
             this.sg.events.emit('interaction:dragstart', { node: n });
         }
         this.sg.renderer.renderer.domElement.style.cursor = 'grabbing';
+        if (this.dragNode.domElement) this.dragNode.domElement.style.cursor = 'grabbing';
     }
 
     private handlePointerMove(e: PointerEvent, canvas: HTMLCanvasElement): void {
@@ -457,11 +472,25 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
     private updateHoverStates(e: PointerEvent): void {
         const hit = this.getIntersectedNode();
         const currentNode = hit?.node || null;
+        const canvas = this.sg.renderer.renderer.domElement;
 
         if (currentNode !== this.hoveredNode) {
+            // Clear grab cursor on the node we're leaving
+            if (this.hoveredNode?.domElement) {
+                this.hoveredNode.domElement.style.cursor = '';
+            }
             if (this.hoveredNode) this.sg.events.emit('node:pointerleave', { node: this.hoveredNode, event: e });
             this.hoveredNode = currentNode;
+            // Set grab cursor on the node we're entering (in default drag mode only)
+            if (this.hoveredNode?.domElement && this.mode === 'default') {
+                this.hoveredNode.domElement.style.cursor = 'grab';
+            }
             if (this.hoveredNode) this.sg.events.emit('node:pointerenter', { node: this.hoveredNode, event: e });
+        }
+
+        // Update canvas cursor to reflect hover state
+        if (this.mode === 'default') {
+            canvas.style.cursor = currentNode ? 'grab' : 'auto';
         }
 
         if (!currentNode) {
@@ -516,6 +545,7 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
         }
 
         if (this.isDragging && this.dragNode) {
+            const releasedNode = this.dragNode;
             for (const node of this.draggingNodes) {
                 node.data.pinned = false;
                 this.sg.events.emit('interaction:dragend', { node });
@@ -524,7 +554,11 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
             this.dragNode = null;
             this.draggingNodes.clear();
             this.nodeDragOffsets.clear();
-            this.sg.renderer.renderer.domElement.style.cursor = 'auto';
+            this.sg.renderer.renderer.domElement.style.cursor = this.hoveredNode ? 'grab' : 'auto';
+            // Restore grab cursor on domElement if still hovering it, else clear
+            if (releasedNode.domElement) {
+                releasedNode.domElement.style.cursor = (this.hoveredNode === releasedNode) ? 'grab' : '';
+            }
             this.sg.cameraControls.controls.enabled = true;
         }
     }
