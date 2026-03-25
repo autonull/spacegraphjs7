@@ -69,7 +69,7 @@ export class EventSystem {
   on<K extends keyof SpaceGraphEvents>(
     type: K,
     handler: (event: SpaceGraphEvents[K]) => void
-  ): Disposable {
+  ): { dispose(): void } {
     this.emitter.on(type, handler);
     return {
       dispose: () => {
@@ -206,7 +206,7 @@ export class PluginEventBus {
   subscribe<T extends AnyPluginEvent>(
     type: T['type'],
     handler: (event: T) => void
-  ): Disposable {
+  ): { dispose(): void } {
     if (!this.handlers.has(type)) {
       this.handlers.set(type, new Set());
     }

@@ -2,7 +2,7 @@
 // Three.js rendering abstraction with WebGL and CSS3D support
 
 import * as THREE from 'three';
-import { WebGLRenderer } from 'three/webgl';
+import { WebGLRenderer } from 'three';
 import { CSS3DRenderer } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
 
 /**
@@ -98,7 +98,9 @@ export class RenderingSystem {
     // Allow pointer events on CSS3D objects
     const cssObjects = this.cssRenderer.domElement.querySelectorAll('.spacegraph-html-node');
     cssObjects.forEach(el => {
-      el.style.pointerEvents = 'auto';
+      if (el instanceof HTMLElement) {
+        el.style.pointerEvents = 'auto';
+      }
     });
   }
 

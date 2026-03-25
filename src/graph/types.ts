@@ -262,8 +262,3 @@ export type NodeEvent =
 export type EdgeEvent =
   | 'updated'
   | 'destroying';
-
-// Disposable interface for cleanup
-export interface Disposable {
-  dispose(): void;
-}

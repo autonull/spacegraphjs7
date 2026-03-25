@@ -4,6 +4,7 @@
 import type { NodeSpec, EdgeSpec, GraphSpec, GraphExport, NodeData, EdgeData } from './types';
 import type { Node } from './Node';
 import type { Edge } from './Edge';
+import { TypeRegistry } from '../core/TypeRegistry';
 
 export type GraphEventMap = {
   'node:added': { node: Node; timestamp: number };
@@ -26,7 +27,7 @@ export class Graph {
   /**
    * Subscribe to graph events
    */
-  on<T extends keyof GraphEventMap>(event: T, handler: GraphEventHandler<T>): Disposable {
+  on<T extends keyof GraphEventMap>(event: T, handler: GraphEventHandler<T>): { dispose(): void } {
     if (!this.eventHandlers.has(event)) {
       this.eventHandlers.set(event, new Set());
     }
@@ -304,19 +305,36 @@ export class Graph {
 
   /**
    * Import graph from JSON spec
-   * Note: This requires factory functions to create nodes/edges
    */
-  fromJSON(spec: GraphSpec, nodeFactory: (spec: NodeSpec) => Node, edgeFactory: (spec: EdgeSpec) => Edge): void {
+  fromJSON(spec: GraphSpec): void {
     this.clear();
     
+    const registry = TypeRegistry.getInstance();
+    
     spec.nodes?.forEach(nodeSpec => {
-      const node = nodeFactory(nodeSpec);
-      this.addNode(node);
+      try {
+        const node = registry.createNode(nodeSpec);
+        this.addNode(node);
+      } catch (err) {
+        console.error(`[Graph] Failed to create node "${nodeSpec.id}":`, err);
+      }
     });
 
     spec.edges?.forEach(edgeSpec => {
-      const edge = edgeFactory(edgeSpec);
-      this.addEdge(edge);
+      try {
+        const source = this.getNode(edgeSpec.source);
+        const target = this.getNode(edgeSpec.target);
+        
+        if (!source || !target) {
+          console.warn(`[Graph] Edge "${edgeSpec.id}" rejected: missing source or target node.`);
+          return;
+        }
+        
+        const edge = registry.createEdge(edgeSpec, source, target);
+        this.addEdge(edge);
+      } catch (err) {
+        console.error(`[Graph] Failed to create edge "${edgeSpec.id}":`, err);
+      }
     });
   }
 

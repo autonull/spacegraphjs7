@@ -77,11 +77,11 @@ export class OverlapAnalyzer {
     // Get bounds for both nodes
     const boxA = nodeA.object
       ? new THREE.Box3().setFromObject(nodeA.object)
-      : new THREE.Box3().setFromPoint(nodeA.position);
+      : new THREE.Box3().makeEmpty().expandByPoint(nodeA.position);
 
     const boxB = nodeB.object
       ? new THREE.Box3().setFromObject(nodeB.object)
-      : new THREE.Box3().setFromPoint(nodeB.position);
+      : new THREE.Box3().makeEmpty().expandByPoint(nodeB.position);
 
     // Check intersection
     if (!boxA.intersectsBox(boxB)) {

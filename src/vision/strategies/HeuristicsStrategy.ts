@@ -3,6 +3,7 @@
 
 import * as THREE from 'three';
 import type { VisionStrategy, VisionReport, VisionContext } from '../types';
+import type { LegibilityResult, OverlapResult, HierarchyResult, ErgonomicsResult } from '../types';
 import { LegibilityAnalyzer } from '../analyzers/LegibilityAnalyzer';
 import { OverlapAnalyzer } from '../analyzers/OverlapAnalyzer';
 import { HierarchyAnalyzer } from '../analyzers/HierarchyAnalyzer';
@@ -51,12 +52,17 @@ export class HeuristicsStrategy implements VisionStrategy {
       nodes: this.extractNodes(graph)
     };
 
-    // Run all analyzers in parallel
+    // Run all analyzers in parallel with proper typing
+    const legibilityPromise = this.analyzers[0].analyze(context, this.config) as Promise<LegibilityResult>;
+    const overlapPromise = this.analyzers[1].analyze(context, this.config) as Promise<OverlapResult>;
+    const hierarchyPromise = this.analyzers[2].analyze(context, this.config) as Promise<HierarchyResult>;
+    const ergonomicsPromise = this.analyzers[3].analyze(context, this.config) as Promise<ErgonomicsResult>;
+
     const [legibility, overlap, hierarchy, ergonomics] = await Promise.all([
-      this.analyzers[0].analyze(context, this.config),
-      this.analyzers[1].analyze(context, this.config),
-      this.analyzers[2].analyze(context, this.config),
-      this.analyzers[3].analyze(context, this.config)
+      legibilityPromise,
+      overlapPromise,
+      hierarchyPromise,
+      ergonomicsPromise
     ]);
 
     // Aggregate results

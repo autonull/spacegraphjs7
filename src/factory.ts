@@ -1,13 +1,14 @@
 // SpaceGraphJS v7.0 - Factory Functions
 // Public API for creating SpaceGraph instances
 
-import { Graph } from '../graph/Graph';
-import { EventSystem, PluginEventBus } from '../events/EventSystem';
-import { PluginRegistry } from '../plugins/PluginRegistry';
-import { RenderingSystem } from '../renderer/RenderingSystem';
-import { VisionSystem } from '../vision/VisionSystem';
-import { SpaceGraph, type SpaceGraphOptions } from '../core/SpaceGraph';
-import type { GraphSpec, NodeSpec, EdgeSpec } from '../graph/types';
+import { Graph } from './graph/Graph';
+import { EventSystem, PluginEventBus } from './core/events/EventSystem';
+import { PluginRegistry } from './core/plugins/PluginRegistry';
+import { RenderingSystem } from './core/renderer/RenderingSystem';
+import { VisionSystem } from './vision/VisionSystem';
+import { SpaceGraph, type SpaceGraphOptions } from './core/SpaceGraph';
+import { TypeRegistry } from './core/TypeRegistry';
+import type { GraphSpec, NodeSpec, EdgeSpec } from './graph/types';
 
 /**
  * Create a SpaceGraph instance
@@ -161,16 +162,5 @@ export async function quickGraph(
  * Load graph spec into graph
  */
 function loadGraphSpec(graph: Graph, spec: GraphSpec): void {
-  // Note: In a full implementation, we'd need node/edge factories
-  // to create the appropriate node/edge types from the spec
-  console.log('[loadGraphSpec] Full node/edge type loading not yet implemented');
-  
-  // Placeholder - would create nodes and edges from spec
-  spec.nodes?.forEach(nodeSpec => {
-    // graph.addNode(createNodeFromSpec(nodeSpec));
-  });
-  
-  spec.edges?.forEach(edgeSpec => {
-    // graph.addEdge(createEdgeFromSpec(edgeSpec));
-  });
+  graph.fromJSON(spec);
 }

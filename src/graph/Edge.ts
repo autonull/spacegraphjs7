@@ -17,9 +17,11 @@ export type EdgeEventHandler<T extends keyof EdgeEventMap> = (
 export abstract class Edge {
   readonly id: string;
   readonly type: string;
-  readonly data: Readonly<EdgeData>;
+  
+  // Mutable data
+  public data: EdgeData;
 
-  // Topology (read-only references to nodes)
+  // Topology (references to nodes)
   public source: Node;
   public target: Node;
 
@@ -34,13 +36,13 @@ export abstract class Edge {
     this.type = spec.type;
     this.source = source;
     this.target = target;
-    this.data = Object.freeze({ ...spec.data });
+    this.data = { ...spec.data };
   }
 
   /**
    * Subscribe to edge events
    */
-  on<T extends keyof EdgeEventMap>(event: T, handler: EdgeEventHandler<T>): Disposable {
+  on<T extends keyof EdgeEventMap>(event: T, handler: EdgeEventHandler<T>): { dispose(): void } {
     if (!this.eventHandlers.has(event)) {
       this.eventHandlers.set(event, new Set());
     }

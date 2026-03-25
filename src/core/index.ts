@@ -23,6 +23,14 @@ export type {
   LayoutOptions
 } from './plugins/PluginRegistry';
 
+// Type Registry
+export { TypeRegistry } from './TypeRegistry';
+export type { NodeConstructor, EdgeConstructor } from './TypeRegistry';
+
+// Camera Controls
+export { CameraControls } from './CameraControls';
+export type { CameraControlsConfig } from './CameraControls';
+
 // Object Pool
 export { ObjectPool, MathPool } from './pooling/ObjectPool';
 export {
@@ -34,3 +42,11 @@ export {
 
 // Spatial Index
 export { SpatialIndex, BVH } from './spatial/SpatialIndex';
+
+// Rendering
+export { RenderingSystem } from './renderer/RenderingSystem';
+export type { RenderOptions } from './renderer/RenderingSystem';
+
+// SpaceGraph
+export { SpaceGraph } from './SpaceGraph';
+export type { SpaceGraphOptions } from './SpaceGraph';

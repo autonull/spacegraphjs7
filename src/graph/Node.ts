@@ -16,7 +16,9 @@ export type NodeEventHandler<T extends keyof NodeEventMap> = (
 export abstract class Node {
   readonly id: string;
   readonly type: string;
-  readonly data: Readonly<NodeData>;
+  
+  // Mutable data (not frozen to allow updates)
+  public data: NodeData;
 
   // Spatial state
   public position: THREE.Vector3;
@@ -36,7 +38,7 @@ export abstract class Node {
     this.id = spec.id;
     this.type = spec.type;
     this.label = spec.label;
-    this.data = Object.freeze({ ...spec.data });
+    this.data = { ...spec.data };
 
     this.position = new THREE.Vector3(
       spec.position?.[0] ?? 0,
@@ -60,7 +62,7 @@ export abstract class Node {
   /**
    * Subscribe to node events
    */
-  on<T extends keyof NodeEventMap>(event: T, handler: NodeEventHandler<T>): Disposable {
+  on<T extends keyof NodeEventMap>(event: T, handler: NodeEventHandler<T>): { dispose(): void } {
     if (!this.eventHandlers.has(event)) {
       this.eventHandlers.set(event, new Set());
     }

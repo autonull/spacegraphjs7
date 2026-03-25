@@ -48,5 +48,6 @@ export type {
   EdgeEvent,
   GraphEventMap,
   NodeEventMap,
-  EdgeEventMap
+  EdgeEventMap,
+  GraphEventHandler
 } from './types';

@@ -2,12 +2,15 @@
 // Main SpaceGraph implementation
 
 import * as THREE from 'three';
-import type { Graph } from '../../graph/Graph';
-import type { NodeSpec, EdgeSpec, GraphSpec, GraphExport } from '../../graph/types';
-import type { EventSystem } from '../events/EventSystem';
-import type { PluginRegistry } from '../plugins/PluginRegistry';
-import type { RenderingSystem } from '../renderer/RenderingSystem';
-import type { VisionSystem } from '../../vision/VisionSystem';
+import { CameraControls } from './CameraControls';
+import type { Graph } from '../graph/Graph';
+import type { Node } from '../graph/Node';
+import type { Edge } from '../graph/Edge';
+import type { NodeSpec, EdgeSpec, GraphSpec, GraphExport } from '../graph/types';
+import type { EventSystem } from './events/EventSystem';
+import type { PluginRegistry } from './plugins/PluginRegistry';
+import type { RenderingSystem } from './renderer/RenderingSystem';
+import type { VisionSystem } from '../vision/VisionSystem';
 
 /**
  * SpaceGraph options
@@ -39,6 +42,7 @@ export class SpaceGraph {
   readonly vision: VisionSystem;
   readonly plugins: PluginRegistry;
   readonly renderer: RenderingSystem;
+  readonly cameraControls: CameraControls;
   readonly options: Readonly<SpaceGraphOptions>;
 
   // Private state
@@ -62,8 +66,48 @@ export class SpaceGraph {
     this.renderer = renderer;
     this.options = Object.freeze({ ...options });
 
+    // Create camera controls
+    this.cameraControls = new CameraControls(
+      this.renderer.camera,
+      container
+    );
+
+    // Setup event listeners for graph changes
+    this.setupGraphEventListeners();
+
     // Start render loop
     this.startRenderLoop();
+  }
+
+  /**
+   * Setup graph event listeners
+   */
+  private setupGraphEventListeners(): void {
+    // Add nodes to scene when added to graph
+    this.graph.on('node:added', ({ node }) => {
+      this.renderer.add(node.object);
+    });
+
+    // Remove nodes from scene when removed from graph
+    this.graph.on('node:removed', ({ id }) => {
+      const node = this.graph.getNode(id);
+      if (node) {
+        this.renderer.remove(node.object);
+      }
+    });
+
+    // Add edges to scene when added to graph
+    this.graph.on('edge:added', ({ edge }) => {
+      this.renderer.add(edge.object);
+    });
+
+    // Remove edges from scene when removed from graph
+    this.graph.on('edge:removed', ({ id }) => {
+      const edge = this.graph.getEdge(id);
+      if (edge) {
+        this.renderer.remove(edge.object);
+      }
+    });
   }
 
   /**
@@ -102,8 +146,9 @@ export class SpaceGraph {
    * Sync edge positions with their connected nodes
    */
   private syncEdges(): void {
-    // This would iterate over edges and update their positions
-    // Implementation depends on how edges are stored
+    for (const edge of this.graph.getEdges()) {
+      edge.updatePositions();
+    }
   }
 
   /**
@@ -129,9 +174,8 @@ export class SpaceGraph {
     let cameraZ = Math.abs(maxDim / (2 * Math.tan(fov / 2)));
     cameraZ *= 1.5; // Extra padding
 
-    // Fly to position (would use GSAP in full implementation)
-    this.renderer.camera.position.set(center.x, center.y, cameraZ + padding);
-    this.renderer.camera.lookAt(center);
+    // Fly to position
+    this.cameraControls.flyTo(center, cameraZ + padding, duration);
   }
 
   /**

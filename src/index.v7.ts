@@ -1,6 +1,17 @@
 // SpaceGraphJS v7.0 - Public API
 // The Self-Building ZUI Framework
 
+import { TypeRegistry } from './core/TypeRegistry';
+import { ShapeNode, HtmlNode, ImageNode } from './nodes/v7';
+import { EdgeImpl } from './edges/v7';
+
+// Register built-in node/edge types
+const registry = TypeRegistry.getInstance();
+registry.registerNode('ShapeNode', ShapeNode);
+registry.registerNode('HtmlNode', HtmlNode);
+registry.registerNode('ImageNode', ImageNode);
+registry.registerEdge('Edge', EdgeImpl);
+
 // Factory functions (primary API)
 export {
   createSpaceGraph,

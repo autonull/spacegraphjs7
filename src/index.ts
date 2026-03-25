@@ -152,3 +152,81 @@ export { HoverMetaWidget, type MetaAction } from './plugins/HoverMetaWidget';
 export { HistoryPlugin, type HistoryPluginOptions } from './plugins/HistoryPlugin';
 
 console.log('[SpaceGraphJS] Loaded successfully');
+
+// ============================================================================
+// SpaceGraphJS v7.0 Exports (New Architecture)
+// ============================================================================
+// The v7 API uses factory functions and a modular architecture.
+// See V7_IMPLEMENTATION_SUMMARY.md for details.
+
+export {
+  // Factory functions
+  createSpaceGraph,
+  createSpaceGraphFromURL,
+  createSpaceGraphFromManifest,
+  quickGraph,
+  
+  // Core classes
+  SpaceGraph as SpaceGraphV7,
+  Graph,
+  Node,
+  Edge,
+  
+  // Event system
+  EventSystem,
+  PluginEventBus,
+  
+  // Plugin system
+  PluginRegistry,
+  BaseLayout,
+  
+  // Vision system
+  VisionSystem,
+  HeuristicsStrategy,
+  
+  // Spatial index
+  SpatialIndex,
+  BVH,
+  
+  // Object pool
+  ObjectPool,
+  MathPool,
+  
+  // Type registry
+  TypeRegistry,
+  
+  // Camera controls
+  CameraControls,
+  
+  // Rendering
+  RenderingSystem,
+  
+  // V7 node types
+  ShapeNode,
+  HtmlNode,
+  ImageNode,
+  
+  // V7 edge types
+  EdgeImpl,
+  
+  // Version
+  VERSION
+} from './index.v7';
+
+// Re-export types from v7
+export type {
+  SpaceGraphOptions as SpaceGraphV7Options,
+  RenderOptions,
+  VisionOptions,
+  VisionReport,
+  Plugin,
+  PluginContext,
+  NodeSpec,
+  EdgeSpec,
+  GraphSpec,
+  NodeData,
+  EdgeData,
+  ShapeNodeData,
+  HtmlNodeData,
+  ImageNodeData
+} from './index.v7';

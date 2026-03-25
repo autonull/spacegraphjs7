@@ -8,7 +8,17 @@ import type { Node } from '../../graph/Node';
  * Grid cell containing nodes
  */
 interface SpatialCell {
-  nodes: Set<Node>;
+  nodes: Set<NodeLike>;
+}
+
+/**
+ * Node-like interface for spatial indexing
+ * Works with both Node class and plain objects with required properties
+ */
+interface NodeLike {
+  id: string;
+  position: THREE.Vector3;
+  object?: THREE.Object3D;
 }
 
 /**
@@ -18,7 +28,7 @@ interface SpatialCell {
 export class SpatialIndex {
   private cellSize: number;
   private cells: Map<string, SpatialCell> = new Map();
-  private nodeBounds: Map<Node, THREE.Box3> = new Map();
+  private nodeBounds: Map<NodeLike, THREE.Box3> = new Map();
 
   /**
    * Create a spatial index
@@ -64,7 +74,7 @@ export class SpatialIndex {
    * Build the spatial index from nodes
    * @param nodes - Array of nodes to index
    */
-  build(nodes: Node[]): void {
+  build(nodes: NodeLike[]): void {
     this.clear();
 
     const box = new THREE.Box3();
@@ -216,13 +226,13 @@ export class SpatialIndex {
    * Find all overlapping node pairs
    * @returns Array of overlapping node pairs
    */
-  findAllOverlaps(): Array<[Node, Node]> {
-    const overlaps: Array<[Node, Node]> = [];
+  findAllOverlaps(): Array<[NodeLike, NodeLike]> {
+    const overlaps: Array<[NodeLike, NodeLike]> = [];
     const checked = new Set<string>();
 
     for (const cell of this.cells.values()) {
       const nodes = Array.from(cell.nodes);
-      
+
       for (let i = 0; i < nodes.length; i++) {
         for (let j = i + 1; j < nodes.length; j++) {
           const a = nodes[i];
