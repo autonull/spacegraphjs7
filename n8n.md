@@ -39,7 +39,7 @@
 │                   SpaceGraphJS Core (existing)                         │
 │   Graph ─ Renderer ─ PluginManager ─ VisionManager ─ EventManager    │
 ├──────────────────────────────────────────────────────────────────────┤
-│                   n8n (npm dependency, headless)                       │
+│                   n8n (pnpm dependency, headless)                       │
 │   Workflow ─ Node ─ ExecutionService ─ WebhookServer ─ Scheduler      │
 ├──────────────────────────────────────────────────────────────────────┤
 │                   THREE.js / WebGL / ONNX Runtime Web                 │
@@ -50,7 +50,7 @@
 
 | Decision | Rationale |
 |---|---|
-| `npm install n8n` — no fork | Preserves upstream upgradability; overrides via env + prototype patches only |
+| `pnpm install n8n` — no fork | Preserves upstream upgradability; overrides via env + prototype patches only |
 | **n8n used as a library, never as a server** | We call `Workflow`, `ExecutionService`, etc. directly; zero n8n UI, zero auth |
 | Anti-tethering bootstrap runs before all n8n imports | Env vars + prototype no-ops kill telemetry, user-management, license SDK at import time |
 | Auth / user-management fully disabled via env | `N8N_USER_MANAGEMENT_DISABLED=true` + in-memory SQLite → n8n never prompts for an owner |
@@ -67,7 +67,7 @@
 
 ```bash
 # In the SpaceGraphJS monorepo root
-npm install n8n rxjs
+pnpm install n8n rxjs
 
 # Vite alias to resolve headless n8n core modules
 # (add to vite.config.ts — see §2.3)
@@ -808,7 +808,7 @@ Use `supertest` to test the HTTP proxy and WebSocket relay in isolation, with n8
 Add to existing GitHub Actions CI (`.github/workflows/`):
 ```yaml
 - name: n8n workflow vision test
-  run: npm run test:vision -- --grep "n8n"
+  run: pnpm run test:vision -- --grep "n8n"
 ```
 
 ---
@@ -871,7 +871,7 @@ Phase 0 (Bridge)
 
 ## 17. n8n as a Pure Library — Anti-Tethering Strategy
 
-> **Core principle**: We use n8n's execution engine (its `Workflow`, `ExecutionService`, `NodeTypes` registry, scheduler, etc.) exactly as we would use any npm library — import, instantiate, call. We **never** start n8n's HTTP server, never touch its user/owner setup, never call home. SpaceGraph owns the UI entirely; n8n owns the execution graph.
+> **Core principle**: We use n8n's execution engine (its `Workflow`, `ExecutionService`, `NodeTypes` registry, scheduler, etc.) exactly as we would use any pnpm library — import, instantiate, call. We **never** start n8n's HTTP server, never touch its user/owner setup, never call home. SpaceGraph owns the UI entirely; n8n owns the execution graph.
 
 ### 17.1 Why "Library Mode" and Not the Full Server
 

@@ -92,22 +92,22 @@ export class SpaceGraphApp {
 
         // Register default plugins
         this.hud = new HUDPlugin();
-        this.sg.pluginManager.register('hud', this.hud);
-        this.hud.init(this.sg);
+        this.sg.pluginManager.registerPlugin('HUDPlugin', this.hud);
 
         if (this.options.enableInteraction) {
             const interaction = new InteractionPlugin();
-            this.sg.pluginManager.register('interaction', interaction);
-            interaction.init(this.sg);
+            this.sg.pluginManager.registerPlugin('InteractionPlugin', interaction);
             // wait for next tick for handlers to attach properly
             setTimeout(() => this.setupInteractionHandlers(), 0);
         }
 
         if (this.options.enableMinimap) {
             const minimap = new MinimapPlugin();
-            this.sg.pluginManager.register('minimap', minimap);
-            minimap.init(this.sg);
+            this.sg.pluginManager.registerPlugin('MinimapPlugin', minimap);
         }
+
+        // Re-init plugins so new ones are properly handled
+        this.sg.pluginManager.initAll();
 
         if (this.options.enableHistory) {
             // HistoryPlugin is built-in to pluginManager, but SpaceGraphApp instantiates plugins dynamically.

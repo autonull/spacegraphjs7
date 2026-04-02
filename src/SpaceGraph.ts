@@ -159,7 +159,7 @@ export class SpaceGraph {
         this.pluginManager = new PluginManager(this);
         this.renderer = new Renderer(this, container);
         this.graph = new Graph(this);
-        this.cameraControls = new CameraControls(this);
+        this.cameraControls = new CameraControls(this.renderer.camera, this.container, this.options.cameraControls);
 
         this.input = new InputManager({
             graph: this,

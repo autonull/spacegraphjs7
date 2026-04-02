@@ -1,12 +1,12 @@
 # Week 1 Execution Checklist
 
-**Goal:** Ship npm package + quickstart + community presence  
+**Goal:** Ship ppnpm package + quickstart + community presence
 **Total Time:** ~23 hours  
 **Status:** [ ] Not Started [ ] In Progress [ ] Complete
 
 ---
 
-## Day 1: npm Package (4 hours)
+## Day 1: pnpm Package (4 hours)
 
 ### □ 1.1 Prepare package.json (30 min)
 
@@ -40,16 +40,16 @@
 
 ```bash
 # Run build
-npm run build
+pnpm run build
 
 # Verify output exists
 ls -la dist/
 
 # Check package contents
-npm pack --dry-run
+pnpm pack --dry-run
 
 # Inspect what will be published
-npm pack
+pnpm pack
 tar -tzf spacegraphjs-6.0.0-alpha.1.tgz
 ```
 
@@ -58,19 +58,19 @@ tar -tzf spacegraphjs-6.0.0-alpha.1.tgz
 - [ ] Build completes without errors
 - [ ] `dist/` directory contains compiled JS
 - [ ] `dist/types/` contains TypeScript definitions
-- [ ] `npm pack --dry-run` shows expected files only
+- [ ] `pnpm pack --dry-run` shows expected files only
 - [ ] No sensitive files included (.env, .git, etc.)
 
 ---
 
-### □ 1.3 Publish to npm (30 min)
+### □ 1.3 Publish to pnpm (30 min)
 
 ```bash
 # Login (if not already)
-npm login
+pnpm login
 
 # Publish alpha tag
-npm publish --tag alpha
+pnpm publish --tag alpha
 
 # Verify on npmjs.com
 # https://www.npmjs.com/package/spacegraphjs
@@ -78,10 +78,10 @@ npm publish --tag alpha
 
 **Checklist:**
 
-- [ ] `npm login` successful
-- [ ] `npm publish --tag alpha` completes
+- [ ] `pnpm login` successful
+- [ ] `pnpm publish --tag alpha` completes
 - [ ] Package visible on npmjs.com
-- [ ] Install test works: `npm install spacegraphjs@alpha`
+- [ ] Install test works: `pnpm install spacegraphjs@alpha`
 
 ---
 
@@ -90,8 +90,8 @@ npm publish --tag alpha
 ```bash
 # Create test project
 mkdir /tmp/sg6-test && cd /tmp/sg6-test
-npm init -y
-npm install spacegraphjs@alpha three
+pnpm create -y
+pnpm install spacegraphjs@alpha three
 
 # Verify import works
 node -e "import('spacegraphjs').then(m => console.log('OK:', typeof m.SpaceGraph))"
@@ -134,7 +134,7 @@ mkdir quickstart-test && cd quickstart-test
 ````markdown
 # SpaceGraphJS
 
-[![npm](https://img.shields.io/npm/v/spacegraphjs.svg)](https://www.npmjs.com/package/spacegraphjs)
+[![pnpm](https://img.shields.io/pnpm/v/spacegraphjs.svg)](https://www.npmjs.com/package/spacegraphjs)
 [![Matrix](https://img.shields.io/matrix/spacegraphjs:matrix.org)](https://matrix.to/#/#spacegraphjs:matrix.org)
 [![GitHub Sponsors](https://img.shields.io/github/sponsors/autonull)](https://github.com/sponsors/autonull)
 
@@ -148,7 +148,7 @@ It sees what it builds, verifies quality autonomously, and self-corrects in 30 s
 ## Quickstart
 
 ```bash
-npm install spacegraphjs three
+pnpm install spacegraphjs three
 ```
 ````
 
@@ -182,7 +182,7 @@ MIT — See [LICENSE](./LICENSE)
 ````
 
 **Checklist:**
-- [ ] Badges work (npm, Matrix, Sponsors)
+- [ ] Badges work (pnpm, Matrix, Sponsors)
 - [ ] One-liner is clear
 - [ ] Quickstart command works
 - [ ] Features list is accurate
@@ -257,14 +257,14 @@ cat LICENSE
 ### □ 3.3 Add Badges to README (30 min)
 
 ```markdown
-[![npm](https://img.shields.io/npm/v/spacegraphjs.svg)](https://www.npmjs.com/package/spacegraphjs)
+[![pnpm](https://img.shields.io/pnpm/v/spacegraphjs.svg)](https://www.npmjs.com/package/spacegraphjs)
 [![Matrix](https://img.shields.io/matrix/spacegraphjs:matrix.org)](https://matrix.to/#/#spacegraphjs:matrix.org)
 [![GitHub Sponsors](https://img.shields.io/github/sponsors/autonull)](https://github.com/sponsors/autonull)
 ```
 
 **Checklist:**
 
-- [ ] npm badge links to package
+- [ ] pnpm badge links to package
 - [ ] Matrix badge links to room
 - [ ] Sponsors badge links to sponsorship page
 - [ ] All badges render correctly
@@ -379,12 +379,12 @@ export async function runVisionAnalysis(outputDir: string): Promise<VisionReport
 ```bash
 # Create test project
 mkdir /tmp/vision-test && cd /tmp/vision-test
-npm init -y
-npm install spacegraphjs@alpha three vite
+pnpm create -y
+pnpm install spacegraphjs@alpha three vite
 
 # Create vite.config.ts with plugin
 # Run build
-npm run build
+pnpm run build
 
 # Check for vision output
 ```
@@ -410,7 +410,7 @@ The Vite plugin integrates AI vision analysis into your build process.
 ## Installation
 
 ```bash
-npm install spacegraphjs
+pnpm install spacegraphjs
 ```
 ````
 
@@ -500,7 +500,7 @@ Result: 30-second iterations. 98% faster.
 ## Try It
 
 ```bash
-npm install spacegraphjs@alpha
+pnpm install spacegraphjs@alpha
 ````
 
 [Link to QUICKSTART.md]
@@ -576,7 +576,7 @@ Here's how it works: 👇
 
 ```bash
 # Verify everything works
-npm install spacegraphjs@alpha
+pnpm install spacegraphjs@alpha
 # Follow QUICKSTART.md
 # Verify Matrix room is accessible
 # Verify GitHub Sponsors page is live
@@ -585,7 +585,7 @@ npm install spacegraphjs@alpha
 
 **Checklist:**
 
-- [ ] npm package installs
+- [ ] ppnpm package installs
 - [ ] QUICKSTART.md works end-to-end
 - [ ] Matrix room is accessible
 - [ ] GitHub Sponsors is live
@@ -609,11 +609,11 @@ npm install spacegraphjs@alpha
 ```
 🚀 SpaceGraphJS Alpha is Live!
 
-The first self-building UI framework is now available on npm.
+The first self-building UI framework is now available on pnpm.
 
 98% faster iteration with AI vision that sees, verifies, and self-corrects.
 
-Try it: npm install spacegraphjs@alpha
+Try it: pnpm install spacegraphjs@alpha
 Docs: [link]
 Community: https://matrix.to/#/#spacegraphjs:matrix.org
 
@@ -624,7 +624,7 @@ Community: https://matrix.to/#/#spacegraphjs:matrix.org
 
 ## Week 1 Complete Checklist
 
-- [ ] npm package published (`spacegraphjs@alpha`)
+- [ ] ppnpm package published (`spacegraphjs@alpha`)
 - [ ] QUICKSTART.md written and tested
 - [ ] README.md updated with badges
 - [ ] LICENSE file present (MIT)
@@ -636,7 +636,7 @@ Community: https://matrix.to/#/#spacegraphjs:matrix.org
 
 **Success Metrics:**
 
-- [ ] 100 npm downloads
+- [ ] 100 pnpm downloads
 - [ ] 10 Matrix members
 - [ ] 5 GitHub stars
 - [ ] 1 external issue/PR

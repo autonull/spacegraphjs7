@@ -40,7 +40,7 @@ SpaceGraphJS is built on a high-performance WebGL and CSS3D rendering engine uti
 ## Try It
 
 ```bash
-npm install spacegraphjs@alpha
+pnpm install spacegraphjs@alpha
 ```
 
 [See the Quickstart Guide](../QUICKSTART.md)

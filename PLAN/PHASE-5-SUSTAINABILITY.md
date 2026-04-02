@@ -94,7 +94,7 @@ Boot into a computer that sees itself."
 │  autonomous quality verification—fixing UI bugs in 30 seconds           │
 │  that would take 30 minutes through traditional AI iteration.           │
 │                                                                         │
-│  From npm package to full operating system, we are building             │
+│  From ppnpm package to full operating system, we are building             │
 │  a world where interfaces are visible, comprehensible, and alive.       │
 │                                                                         │
 │  Stop describing. Start specifying.                                     │

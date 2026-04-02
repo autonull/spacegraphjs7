@@ -20,8 +20,8 @@ All in 30 seconds.
 
 [3/7]
 
-Try it out today on npm:
-`npm install spacegraphjs@alpha`
+Try it out today on pnpm:
+`pnpm install spacegraphjs@alpha`
 
 Read more here: [Link to Manifesto/Article]
 

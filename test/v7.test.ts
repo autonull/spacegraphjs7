@@ -1,5 +1,5 @@
 // SpaceGraphJS v7.0 - Basic Unit Tests
-// Run with: npx vitest run test/v7.test.ts
+// Run with: pnpm dlx vitest run test/v7.test.ts
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { Graph } from '../src/graph/Graph';

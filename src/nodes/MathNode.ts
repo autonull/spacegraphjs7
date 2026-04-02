@@ -14,7 +14,7 @@ async function loadKatex() {
     if (!katexCssLoaded && typeof document !== 'undefined') {
         const link = DOMUtils.createElement('link');
         link.rel = 'stylesheet';
-        link.href = 'https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css';
+        link.href = 'https://cdn.jsdelivr.net/pnpm/katex@0.16.9/dist/katex.min.css';
         document.head.appendChild(link);
         katexCssLoaded = true;
     }

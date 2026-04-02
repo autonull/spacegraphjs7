@@ -151,7 +151,7 @@ Target model sizes (post-quantization):
   CHE (color harmony):        <5MB   — runs on palette check
   LQ-Net (layout quality):    <10MB  — runs on full quality audit
 
-Host models at a CDN (jsdelivr or equivalent). Never bundle in the npm package.
+Host models at a CDN (jsdelivr or equivalent). Never bundle in the ppnpm package.
 
 V.3 — Evolutionary Layout Optimizer
 
@@ -280,14 +280,14 @@ A single-file Node.js script that:
    imports/requires as edges (parsed via acorn or @babel/parser for JS/TS)
 
 Usage:
-  npx spacegraph-explore ./my-project
+  pnpm dlx spacegraph-explore ./my-project
 
 The script itself is <300 lines. The visual result is a navigable 3D
 constellation of the user's codebase. When a developer sees their own project
 visualized this way for the first time, they will share it.
 
 Also provide:
-  npx spacegraph-explore --github owner/repo
+  pnpm dlx spacegraph-explore --github owner/repo
   (clones to /tmp, then runs the same pipeline)
 
 E.2 — React Wrapper
@@ -388,6 +388,6 @@ Phase H: Boot-to-graph in <15 seconds on RK3588 hardware.
          NPU inference latency <10ms per vision model per frame.
          CPU temperature <40°C under sustained vision loop.
 
-Phase E: npx spacegraph-explore runs without global install on Node 18+.
+Phase E: pnpm dlx spacegraph-explore runs without global install on Node 18+.
          React wrapper passes react-hooks exhaustive-deps lint with zero warnings.
          GitHub connector renders the spacegraphjs repo's own dependency graph correctly.

@@ -66,7 +66,7 @@ program
                 // Clean up the patch file to signify completion
                 fs.unlinkSync(patchPath);
 
-                console.log(chalk.blue('Run `npm run dev` to verify the patched UI.'));
+                console.log(chalk.blue('Run `pnpm run dev` to verify the patched UI.'));
             } else {
                 console.log(chalk.gray('\nAborted. No source files were modified.'));
             }

@@ -65,14 +65,14 @@ Total: ~20 min actual work
 
 ```
 Developer opens editor.
-→ Runs npm init -y (1 min)
+→ Runs pnpm create -y (1 min)
 → Edits package.json (15 min)
 → Creates tsconfig.json (15 min)
 → Creates vite.config.ts (20 min)
 → Creates src/ directory (1 min)
 → Writes src/index.ts (10 min)
 → Writes src/types.ts (20 min)
-→ Runs npm install (2 min... or 10 min if slow connection)
+→ Runs pnpm install (2 min... or 10 min if slow connection)
 → Creates LICENSE (5 min)
 → Creates README.md (10 min)
 → First commit (5 min)
@@ -86,20 +86,20 @@ Planned: 4 hours ✅
 
 - ❌ TypeScript configuration errors (strict mode issues)
 - ❌ Vite config doesn't work (ESM vs CJS confusion)
-- ❌ npm install fails (network, proxy, permissions)
+- ❌ pnpm install fails (network, proxy, permissions)
 - ❌ Types don't export correctly
 
 **Mitigation:**
 
 ```bash
 # Add troubleshooting section:
-## If npm install fails:
-npm cache clean --force
+## If pnpm install fails:
+pnpm cache clean --force
 rm -rf node_modules package-lock.json
-npm install
+pnpm install
 
 ## If TypeScript errors:
-npx tsc --init  # Generate fresh config
+pnpm dlx tsc --init  # Generate fresh config
 # Compare with template
 ```
 
@@ -419,7 +419,7 @@ Total: ~2.5 hours
 
 Day 16 (Publish):
 → Update version (5 min)
-→ npm publish (10 min... or 30 min if npm down)
+→ pnpm publish (10 min... or 30 min if pnpm down)
 → Verify on npmjs.com (10 min)
 → Test public install (15 min)
 → Fix any issues (1 hour)
@@ -507,7 +507,7 @@ Total: 3-4 months (not 1)
 
 ### Months 6-12: Growth
 
-**Planned:** 500 → 5,000 npm downloads/month
+**Planned:** 500 → 5,000 pnpm downloads/month
 **Reality Check:** ⚠️ Optimistic but Possible
 
 **Simulation:**

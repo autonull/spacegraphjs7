@@ -9,7 +9,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 async function init() {
     console.log('\n🚀 Welcome to SpaceGraphJS!');
 
-    // Handle "npx sg6 create my-app" vs "npx create-spacegraph my-app"
+    // Handle "pnpm dlx sg6 create my-app" vs "pnpm dlx create-spacegraph my-app"
     let targetDir = process.argv[2];
     if (targetDir === 'create' && process.argv[3]) {
         targetDir = process.argv[3];
@@ -134,7 +134,7 @@ sg.render();
     );
 
     console.log(`\n🎉 Done! The self-building AI vision engine is ready.\n`);
-    console.log(`Next steps:\n  cd ${targetDir}\n  npm install\n  npm run dev\n`);
+    console.log(`Next steps:\n  cd ${targetDir}\n  pnpm install\n  pnpm run dev\n`);
 }
 
 init().catch((e) => {

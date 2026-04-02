@@ -23,7 +23,7 @@
 │                                                                          │
 │  Month 1 (Days 1-30): LAUNCH                                            │
 │  ═══════════════════════════════════════════════════════════════════    │
-│  • npm downloads: 50                                                     │
+│  • pnpm downloads: 50                                                     │
 │  • Matrix members: 10                                                    │
 │  • GitHub stars: 10                                                      │
 │  • External contributors: 0                                              │
@@ -31,7 +31,7 @@
 │                                                                          │
 │  Month 2 (Days 31-60): FEEDBACK                                         │
 │  ═══════════════════════════════════════════════════════════════════    │
-│  • npm downloads: 200                                                    │
+│  • pnpm downloads: 200                                                    │
 │  • Matrix members: 25                                                    │
 │  • GitHub stars: 25                                                      │
 │  • External contributors: 2                                              │
@@ -39,7 +39,7 @@
 │                                                                          │
 │  Month 3 (Days 61-90): OPTIMIZATION                                     │
 │  ═══════════════════════════════════════════════════════════════════    │
-│  • npm downloads: 500                                                    │
+│  • pnpm downloads: 500                                                    │
 │  • Matrix members: 50                                                    │
 │  • GitHub stars: 50                                                      │
 │  • External contributors: 5                                              │
@@ -47,7 +47,7 @@
 │                                                                          │
 │  Month 4 (Days 91-120): EXPANSION                                       │
 │  ═══════════════════════════════════════════════════════════════════    │
-│  • npm downloads: 1,500                                                  │
+│  • pnpm downloads: 1,500                                                  │
 │  • Matrix members: 100                                                   │
 │  • GitHub stars: 75                                                      │
 │  • External contributors: 8                                              │
@@ -55,7 +55,7 @@
 │                                                                          │
 │  Month 5 (Days 121-150): ACCELERATION                                   │
 │  ═══════════════════════════════════════════════════════════════════    │
-│  • npm downloads: 3,000                                                  │
+│  • pnpm downloads: 3,000                                                  │
 │  • Matrix members: 150                                                   │
 │  • GitHub stars: 100                                                     │
 │  • External contributors: 10                                             │
@@ -63,7 +63,7 @@
 │                                                                          │
 │  Month 6 (Days 151-180): MATURITY                                       │
 │  ═══════════════════════════════════════════════════════════════════    │
-│  • npm downloads: 5,000                                                  │
+│  • pnpm downloads: 5,000                                                  │
 │  • Matrix members: 200                                                   │
 │  • GitHub stars: 150                                                     │
 │  • External contributors: 15                                             │
@@ -90,7 +90,7 @@
 # Auto-prompt new members: "What brought you to SpaceGraphJS?"
 
 # 3. Post-install survey (optional)
-# npm install spacegraphjs → Show survey link after first use
+# pnpm install spacegraphjs → Show survey link after first use
 
 # 4. Usage analytics (opt-in, privacy-respecting)
 # Track: render calls, node counts, errors (with user consent)
@@ -231,7 +231,7 @@ Based on feedback, implement:
 
 - Article views: 5,000+ cumulative
 - Crowdfunding goal: 100% funded
-- npm downloads: 1,500+ cumulative
+- pnpm downloads: 1,500+ cumulative
 
 ---
 
@@ -295,7 +295,7 @@ Based on feedback, implement:
 
 - Workshop revenue: $5,000+
 - External contributors: 10+
-- npm downloads: 3,000+ cumulative
+- pnpm downloads: 3,000+ cumulative
 
 ---
 
@@ -384,7 +384,7 @@ Based on feedback, implement:
 
 | Metric                     | M1  | M2  | M3  | M4    | M5    | M6    |
 | -------------------------- | --- | --- | --- | ----- | ----- | ----- |
-| npm downloads (cumulative) | 50  | 200 | 500 | 1,500 | 3,000 | 5,000 |
+| pnpm downloads (cumulative) | 50  | 200 | 500 | 1,500 | 3,000 | 5,000 |
 | Weekly active projects     | 5   | 15  | 40  | 100   | 200   | 350   |
 | GitHub stars               | 10  | 25  | 50  | 75    | 100   | 150   |
 | GitHub forks               | 2   | 8   | 20  | 35    | 50    | 75    |
@@ -502,7 +502,7 @@ Based on feedback, implement:
 
 ### Adoption
 
-- [ ] 5,000+ cumulative npm downloads
+- [ ] 5,000+ cumulative pnpm downloads
 - [ ] 150+ GitHub stars
 - [ ] 200+ Matrix members
 - [ ] 15+ external contributors

@@ -9,7 +9,7 @@
 The library is **Alpha quality**. The core rendering engine, all node/edge types, and the Vision AI loop are implemented. We are in the **Developer Experience** hardening phase before a stable `1.0` release.
 
 ```
-npm install spacegraphjs three
+pnpm install spacegraphjs three
 ```
 
 ---
@@ -53,12 +53,12 @@ SpaceGraphJS is a layered graph rendering framework built on Three.js. Each laye
 - `plugin.ts` — Vite plugin stub (`spacegraphVision()`)
 
 **CLI & Tooling:**
-- `packages/create-spacegraph/` — `npx sg6 create my-app` scaffolder
+- `packages/create-spacegraph/` — `pnpm dlx sg6 create my-app` scaffolder
 - `packages/cli/` — `sg6 fix` interactive auto-fix tool
 
 **DX & Docs:**
 - `QUICKSTART.md`, `CONTRIBUTING.md`, `docs/vision-plugin.md`
-- `typedoc.json` — `npm run docs` generates API reference (output gitignored)
+- `typedoc.json` — `pnpm run docs` generates API reference (output gitignored)
 - 9 live examples in `examples/`
 - 75 passing unit tests + 1 Playwright vision E2E test
 
@@ -76,7 +76,7 @@ These are sequenced software tasks ordered by priority. **P0** blocks release; *
 | **Bundle size audit** | Ensure `spacegraphjs.js` ships without bundling optional heavyweights (KaTeX, Chart.js) by default. Use tree-shaking and dynamic imports. | `vite.config.ts`, `src/index.ts` |
 | **API stability pass** | Review all public APIs for naming consistency, deprecate any alpha-era names, document breaking changes in `CHANGELOG.md`. | `src/types.ts`, `src/index.ts` |
 | **Error handling** | All `SpaceGraph.create()` and plugin `.init()` paths must surface actionable errors, not silent failures or stack traces. | `SpaceGraph.ts`, `PluginManager.ts` |
-| **CI vision gate** | GitHub Actions pipeline must run `npm run test:vision` and fail the build if visual regression is detected. | `.github/workflows/` |
+| **CI vision gate** | GitHub Actions pipeline must run `pnpm run test:vision` and fail the build if visual regression is detected. | `.github/workflows/` |
 
 ### P1 — Ships with `1.0`
 
@@ -132,7 +132,7 @@ See `PLAN/SPACEGRAPH_OS.md` for the full architectural vision.
 | Item | Reason |
 |------|--------|
 | Docker image | It's a library, not a service |
-| Self-hosted CDN / Verdaccio | npm/unpkg suffice |
+| Self-hosted CDN / Verdaccio | pnpm/unpkg suffice |
 | Vercel / Netlify / CodeSandbox integrations | Proprietary silos |
 | IPFS distribution | Ideological, low practical impact |
 | Nix flake | Too niche, blocks nothing |
@@ -143,13 +143,13 @@ See `PLAN/SPACEGRAPH_OS.md` for the full architectural vision.
 
 ```bash
 # Before tagging a release:
-npm run lint
-npm run format:check
-npm run build          # zero errors
-npm run test           # 75+ tests passing
-npm run test:vision    # Playwright vision gate passes
-npm run docs           # TypeDoc generates cleanly (output gitignored)
-npm pack --dry-run     # verify package contents
+pnpm run lint
+pnpm run format:check
+pnpm run build          # zero errors
+pnpm run test           # 75+ tests passing
+pnpm run test:vision    # Playwright vision gate passes
+pnpm run docs           # TypeDoc generates cleanly (output gitignored)
+pnpm pack --dry-run     # verify package contents
 ```
 
 ---
@@ -161,7 +161,7 @@ npm pack --dry-run     # verify package contents
 | Vision & philosophy | `README.md` |
 | Software roadmap (this) | `ROADMAP.md` |
 | Fractal ZUI & OS architecture | `PLAN/SPACEGRAPH_OS.md` |
-| API reference | `npm run docs` → `docs/api/index.html` |
+| API reference | `pnpm run docs` → `docs/api/index.html` |
 | Getting started | `QUICKSTART.md` |
 | Contributing | `CONTRIBUTING.md` |
 | Hardware & sustainability | `PLAN/PHASE-5-SUSTAINABILITY.md` |

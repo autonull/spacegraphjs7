@@ -32,7 +32,7 @@ The plan is restructured:
 │  PHASE A: BUILD (Days 0-14) ← START HERE                   │
 │  ┌─────────────────────────────────────────────────────┐   │
 │  │  Day 0: Environment setup (1h)                      │   │
-│  │  • Verify Node.js 18+, npm, git                     │   │
+│  │  • Verify Node.js 18+, pnpm, git                     │   │
 │  │  • Create project, init git                         │   │
 │  │                                                      │   │
 │  │  Week 1: Core Infrastructure                        │   │
@@ -55,7 +55,7 @@ The plan is restructured:
 │                                                              │
 │  PHASE B: LAUNCH (Days 15-17)                               │
 │  • Follow LAUNCH-SEQUENCED.md (12-16h)                     │
-│  • npm publish --tag alpha                                  │
+│  • pnpm publish --tag alpha                                  │
 │  • Launch article + community                               │
 │                                                              │
 │  TOTAL: 14 days build + 2-3 days launch                    │
@@ -90,7 +90,7 @@ The plan is restructured:
 | **M5**    | All tests pass, no console errors    | Day 7  |
 | **M6**    | Fresh install test passes            | Day 12 |
 | **M7**    | QUICKSTART.md verified               | Day 14 |
-| **M8**    | Published to npm                     | Day 16 |
+| **M8**    | Published to pnpm                     | Day 16 |
 
 **Do not skip milestones. Do not publish until M7 passes.**
 
@@ -115,7 +115,7 @@ The plan is restructured:
 ```bash
 # Day 0: Environment setup (1 hour)
 node --version  # Should be v18+
-npm --version   # Should be 9+
+pnpm --version   # Should be 9+
 git --version   # Should be 2+
 
 # Create project
@@ -144,7 +144,7 @@ Lead with #1. Mention #2. Build #3.
 
 - **GitHub:** https://github.com/autonull/spacegraphjs
 - **Matrix:** https://matrix.to/#/#spacegraphjs:matrix.org
-- **npm:** `spacegraphjs` (publish as `spacegraphjs@alpha` when ready)
+- **pnpm:** `spacegraphjs` (publish as `spacegraphjs@alpha` when ready)
 
 ---
 

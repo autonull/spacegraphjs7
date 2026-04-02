@@ -444,7 +444,7 @@ IF ANY HESITATION: Fix before release.
 
 | Metric                | Conservative | Ambitious | **Industry-Defining** |
 | --------------------- | ------------ | --------- | --------------------- |
-| npm downloads/mo      | 1,000        | 5,000     | **25,000**            |
+| pnpm downloads/mo      | 1,000        | 5,000     | **25,000**            |
 | GitHub stars          | 200          | 500       | **2,000**             |
 | External contributors | 10           | 25        | **100**               |
 | Monthly revenue       | $10K         | $25K      | **$100K**             |
@@ -547,8 +547,8 @@ Focus on what cannot be copied.
 
 # Day 1: Core rendering
 mkdir spacegraphjs && cd spacegraphjs
-npm init -y
-npm install three
+pnpm create -y
+pnpm install three
 
 # Create src/SpaceGraph.ts
 # Make it render 3 beautiful spheres

@@ -27,7 +27,7 @@
 | Initial render (100 nodes) | <100ms      | <50ms        | **<20ms**    |
 | FPS (1000 nodes)           | 60 FPS      | 120 FPS      | **120 FPS**  |
 | Memory (1000 nodes)        | <100MB      | <50MB        | **<25MB**    |
-| npm downloads/mo           | 500         | 5,000        | **25,000**   |
+| pnpm downloads/mo           | 500         | 5,000        | **25,000**   |
 
 **Outcome 1.2: DX Leadership**
 
@@ -338,7 +338,7 @@ STEP 5: Rest (5 min)
 | Day 1: First commit         | Favorite meal     | $30    |
 | Day 7: First render         | Day off           | $0     |
 | Day 14: Working demo        | Nice dinner       | $50    |
-| Month 1: npm publish        | Weekend trip      | $200   |
+| Month 1: pnpm publish        | Weekend trip      | $200   |
 | Month 3: 100 downloads      | Team dinner       | $100   |
 | Month 6: Hardware prototype | Celebration event | $500   |
 | Month 12: Paper accepted    | Conference trip   | $1,000 |

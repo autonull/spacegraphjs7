@@ -9,7 +9,7 @@
 
 | #   | Task            | Time    | Why                          |
 | --- | --------------- | ------- | ---------------------------- |
-| 1   | npm package     | 2 hours | Blocks ALL adoption          |
+| 1   | ppnpm package     | 2 hours | Blocks ALL adoption          |
 | 2   | QUICKSTART.md   | 2 hours | First working graph in 5 min |
 | 3   | README.md       | 1 hour  | First impression             |
 | 4   | Matrix room     | 30 min  | Community hub                |
@@ -38,7 +38,7 @@
 
 ## Launch Day Checklist
 
-### □ 1. npm Package (2 hours)
+### □ 1. pnpm Package (2 hours)
 
 ```bash
 # 1. Verify package.json
@@ -46,25 +46,25 @@ cat package.json | grep -E '"name"|"version"|"license"'
 # Expected: "spacegraphjs", "6.0.0-alpha.1", "MIT"
 
 # 2. Build
-npm run build
+pnpm run build
 
 # 3. Verify dist/
 ls dist/
 # Expected: spacegraphjs.js, types/
 
 # 4. Test package contents
-npm pack --dry-run
+pnpm pack --dry-run
 
 # 5. Publish
-npm publish --tag alpha
+pnpm publish --tag alpha
 
 # 6. Verify install
 mkdir /tmp/test && cd /tmp/test
-npm install spacegraphjs@alpha three
+pnpm install spacegraphjs@alpha three
 node -e "import('spacegraphjs').then(m => console.log('OK:', typeof m.SpaceGraph))"
 ```
 
-**Done when:** `npm install spacegraphjs@alpha` works.
+**Done when:** `pnpm install spacegraphjs@alpha` works.
 
 ---
 
@@ -78,7 +78,7 @@ node -e "import('spacegraphjs').then(m => console.log('OK:', typeof m.SpaceGraph
 ## Install
 
 ```bash
-npm install spacegraphjs three
+pnpm install spacegraphjs three
 ```
 ````
 
@@ -132,7 +132,7 @@ Open in browser. Done.
 ```markdown
 # SpaceGraphJS
 
-[![npm](https://img.shields.io/npm/v/spacegraphjs.svg)](https://www.npmjs.com/package/spacegraphjs)
+[![pnpm](https://img.shields.io/pnpm/v/spacegraphjs.svg)](https://www.npmjs.com/package/spacegraphjs)
 [![Matrix](https://img.shields.io/matrix/spacegraphjs:matrix.org)](https://matrix.to/#/#spacegraphjs:matrix.org)
 
 ## The First Self-Building UI Framework
@@ -145,7 +145,7 @@ It sees what it builds, verifies quality autonomously, and self-corrects.
 ## Quickstart
 
 ```bash
-npm install spacegraphjs three
+pnpm install spacegraphjs three
 ````
 
 [See QUICKSTART.md](./QUICKSTART.md) for a 5-minute guide.
@@ -237,7 +237,7 @@ Result: 30-second iterations. 98% faster.
 ## Try It
 
 ```bash
-npm install spacegraphjs@alpha
+pnpm install spacegraphjs@alpha
 ````
 
 [QUICKSTART.md](link) gets you running in 5 minutes.
@@ -290,11 +290,11 @@ comprehensible, and alive.
 
 🚀 SpaceGraphJS Alpha is Live!
 
-The first self-building UI framework is now available on npm.
+The first self-building UI framework is now available on pnpm.
 
 98% faster iteration with AI vision that sees, verifies, and self-corrects.
 
-Try it: npm install spacegraphjs@alpha
+Try it: pnpm install spacegraphjs@alpha
 Docs: [link to QUICKSTART.md]
 Community: https://matrix.to/#/#spacegraphjs:matrix.org
 
@@ -308,7 +308,7 @@ Community: https://matrix.to/#/#spacegraphjs:matrix.org
 
 | Metric | Target | Why |
 |--------|--------|-----|
-| npm downloads | 50 | Validates install works |
+| pnpm downloads | 50 | Validates install works |
 | Matrix members | 10 | Validates community interest |
 | GitHub stars | 10 | Validates project appeal |
 | 1 external issue | Yes | Validates engagement |
@@ -334,7 +334,7 @@ Community: https://matrix.to/#/#spacegraphjs:matrix.org
 
 **If not,** fix Week 1 fundamentals first:
 - Is QUICKSTART.md actually working?
-- Is the npm package installable?
+- Is the ppnpm package installable?
 - Is the value proposition clear?
 
 ---
@@ -351,7 +351,7 @@ SpaceGraphJS doesn't need:
 - ❌ Revenue projections (yet)
 
 It needs:
-- ✅ Working npm package
+- ✅ Working ppnpm package
 - ✅ 5-minute quickstart
 - ✅ One compelling story
 - ✅ One place to gather (Matrix)
@@ -371,7 +371,7 @@ It needs:
 │ GOAL: 8 hours to launch │
 │ │
 │ CRITICAL PATH: │
-│ 1. npm package (2h) ← Blocks adoption │
+│ 1. ppnpm package (2h) ← Blocks adoption │
 │ 2. QUICKSTART.md (2h) ← First working graph │
 │ 3. README.md (1h) ← First impression │
 │ 4. Matrix room (30m) ← Community hub │
@@ -386,7 +386,7 @@ It needs:
 │ • Content calendar │
 │ │
 │ WEEK 1 TARGETS: │
-│ • 50 npm downloads │
+│ • 50 pnpm downloads │
 │ • 10 Matrix members │
 │ • 10 GitHub stars │
 │ • 1 external issue │
@@ -401,5 +401,5 @@ It needs:
 
 **Ready to launch in 8 hours?**
 
-Start with Task 1: `npm run build && npm publish --tag alpha`
+Start with Task 1: `pnpm run build && pnpm publish --tag alpha`
 ```

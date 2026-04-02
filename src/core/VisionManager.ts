@@ -7,7 +7,7 @@ import { createLogger } from '../utils/logger.js';
 
 const logger = createLogger('VisionManager');
 
-env.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/';
+env.wasm.wasmPaths = 'https://cdn.jsdelivr.net/pnpm/onnxruntime-web/dist/';
 
 export interface VisionCategory {
     type: 'layout' | 'legibility' | 'color' | 'overlap' | 'hierarchy' | 'ergonomics';

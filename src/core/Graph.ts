@@ -270,4 +270,8 @@ export class Graph {
         spec.nodes?.forEach((nodeSpec) => this.addNode(nodeSpec));
         spec.edges?.forEach((edgeSpec) => this.addEdge(edgeSpec));
     }
+
+    public render(): void {
+        this.sg.render();
+    }
 }
