@@ -72,7 +72,7 @@ export class Renderer {
 
     public render() {
         this.instancedRenderer.update();
-        for (const edge of this.sg.graph.edges) {
+        for (const [, edge] of this.sg.graph.edges) {
             edge.update?.();
         }
         this.renderer.render(this.scene, this.camera);

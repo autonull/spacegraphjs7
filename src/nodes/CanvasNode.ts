@@ -1,8 +1,9 @@
 import * as THREE from 'three';
+
 import { Node } from './Node';
-import type { SpaceGraph } from '../SpaceGraph';
-import type { NodeSpec } from '../types';
 import { DOMUtils } from '../utils/DOMUtils';
+import type { NodeSpec } from '../types';
+import type { SpaceGraph } from '../SpaceGraph';
 
 /**
  * CanvasNode — A node backed by a 2D <canvas> rendered as a Three.js texture.
@@ -19,20 +20,28 @@ export class CanvasNode extends Node {
     private texture: THREE.CanvasTexture;
     private plane: THREE.Mesh;
     private drawFn?: (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) => void;
+    private readonly _object: THREE.Group;
+
+    get object(): THREE.Object3D {
+        return this._object;
+    }
 
     constructor(sg: SpaceGraph, spec: NodeSpec) {
         super(sg, spec);
 
-        const w = spec.data?.width ?? 256;
-        const h = spec.data?.height ?? 256;
-        this.drawFn = spec.data?.draw;
+        this._object = new THREE.Group();
+
+        const w = (spec.data?.width ?? 256) as number;
+        const h = (spec.data?.height ?? 256) as number;
+        this.drawFn = spec.data?.draw as
+            | ((ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) => void)
+            | undefined;
 
         this.canvas = DOMUtils.createElement('canvas');
         this.canvas.width = w;
         this.canvas.height = h;
         this.ctx = this.canvas.getContext('2d') as CanvasRenderingContext2D;
 
-        // Default draw: solid background + label
         this._draw();
 
         this.texture = new THREE.CanvasTexture(this.canvas);
@@ -46,13 +55,12 @@ export class CanvasNode extends Node {
 
     private _draw() {
         const { ctx, canvas } = this;
-        if (!ctx) return; // no canvas 2D in jsdom / SSR
+        if (!ctx) return;
         if (this.drawFn) {
             this.drawFn(ctx, canvas);
             return;
         }
-        // Default: gradient background + label
-        const bg = this.data?.bgColor ?? '#1e293b';
+        const bg = (this.data?.bgColor as string) ?? '#1e293b';
         ctx.fillStyle = bg;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         if (this.label) {
@@ -64,10 +72,7 @@ export class CanvasNode extends Node {
         }
     }
 
-    /**
-     * Redraw the canvas using the draw function (or default renderer)
-     * and mark the texture as needing an update.
-     */
+    /** Redraw the canvas using the draw function (or default renderer) and mark the texture as needing an update. */
     redraw(drawFn?: (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) => void): void {
         if (drawFn) this.drawFn = drawFn;
         this._draw();
@@ -79,12 +84,15 @@ export class CanvasNode extends Node {
         return this.ctx;
     }
 
-    updateSpec(updates: Partial<NodeSpec>): void {
+    updateSpec(updates: Partial<NodeSpec>): this {
         super.updateSpec(updates);
         if (updates.data?.draw) {
-            this.drawFn = updates.data.draw;
+            this.drawFn = updates.data.draw as
+                | ((ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) => void)
+                | undefined;
             this.redraw();
         }
+        return this;
     }
 
     dispose(): void {

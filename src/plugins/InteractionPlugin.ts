@@ -62,19 +62,13 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
     }
 
     private initInputHandlers(): void {
-        this.sg.events.on('input:interaction:pointerdown', (e: any) =>
-            this.handlePointerDown(e),
-        );
-        this.sg.events.on('input:interaction:pointermove', (e: any) =>
-            this.handlePointerMove(e),
-        );
+        this.sg.events.on('input:interaction:pointerdown', (e: any) => this.handlePointerDown(e));
+        this.sg.events.on('input:interaction:pointermove', (e: any) => this.handlePointerMove(e));
         this.sg.events.on('input:interaction:pointerup', (e: any) => this.handlePointerUp(e));
         this.sg.events.on('input:interaction:keydown', (e: any) => this.handleKeyDown(e));
         this.sg.events.on('input:interaction:keyup', (e: any) => this.handleKeyUp(e));
         this.sg.events.on('input:interaction:dblclick', (e: any) => this.handleDblClick(e));
-        this.sg.events.on('input:interaction:contextmenu', (e: any) =>
-            this.handleContextMenu(e),
-        );
+        this.sg.events.on('input:interaction:contextmenu', (e: any) => this.handleContextMenu(e));
     }
 
     private handlePointerDown(e: any): void {
@@ -267,13 +261,19 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
 
         const edgeResult = this.raycaster.raycastEdge();
         if (edgeResult?.edge) {
-            this.sg.events.emit('edge:contextmenu', { edge: edgeResult.edge, event: e.originalEvent });
+            this.sg.events.emit('edge:contextmenu', {
+                edge: edgeResult.edge,
+                event: e.originalEvent,
+            });
             return;
         }
 
         const nodeResult = this.raycaster.raycastNode();
         if (nodeResult?.node) {
-            this.sg.events.emit('node:contextmenu', { node: nodeResult.node, event: e.originalEvent });
+            this.sg.events.emit('node:contextmenu', {
+                node: nodeResult.node,
+                event: e.originalEvent,
+            });
         } else {
             this.sg.events.emit('graph:contextmenu', { event: e.originalEvent });
         }
@@ -282,14 +282,17 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
     private handleZoomNavigation(target: Node | Edge, zoomId: string): void {
         if (!target || !this.sg.cameraControls) return;
 
-        const targetPos = target.position.clone();
+        const targetPos =
+            'position' in target
+                ? (target as Node).position.clone()
+                : (target as Edge).target.position.clone();
         const targetRadius =
-            'data' in target && target.data?.width
-                ? Math.max(target.data.width * 1.5, 150)
+            'data' in target && ((target as Node).data as any)?.width
+                ? Math.max(((target as Node).data as any).width * 1.5, 150)
                 : 150;
 
-        if (this.lastZoomedId === zoomId && this.sg.cameraControls.hasZoomHistory) {
-            this.sg.cameraControls.flyBack();
+        if (this.lastZoomedId === zoomId && (this.sg.cameraControls as any).hasZoomHistory) {
+            (this.sg.cameraControls as any).flyBack();
             this.lastZoomedId = null;
         } else {
             this.sg.cameraControls.flyTo(targetPos, targetRadius);

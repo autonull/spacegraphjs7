@@ -1,24 +1,17 @@
 import * as THREE from 'three';
+
 import { Node } from './Node';
-import type { SpaceGraph } from '../SpaceGraph';
-import type { NodeSpec } from '../types';
 import { DOMUtils } from '../utils/DOMUtils';
-import { createLogger } from '../utils/logger.js';
+import { createLogger } from '../utils/logger';
+import type { NodeSpec } from '../types';
+import type { SpaceGraph } from '../SpaceGraph';
 
 const logger = createLogger('VideoNode');
 
-/**
- * VideoNode — Displays an HTML5 video as a Three.js texture on a plane.
- *
- * data options:
- *   src      : video URL (required)
- *   width    : world-space width  (default 320)
- *   height   : world-space height (default 180)
- *   autoplay : boolean (default true)
- *   loop     : boolean (default true)
- *   muted    : boolean (default true — required for autoplay in most browsers)
- */
 export class VideoNode extends Node {
+    private _object = new THREE.Object3D();
+    get object(): THREE.Object3D { return this._object; }
+
     public videoEl: HTMLVideoElement;
     private texture: THREE.VideoTexture;
     private plane: THREE.Mesh;
@@ -26,9 +19,9 @@ export class VideoNode extends Node {
     constructor(sg: SpaceGraph, spec: NodeSpec) {
         super(sg, spec);
 
-        const src = spec.data?.src ?? '';
-        const w = spec.data?.width ?? 320;
-        const h = spec.data?.height ?? 180;
+        const src = (spec.data?.src as string) ?? '';
+        const w = (spec.data?.width as number) ?? 320;
+        const h = (spec.data?.height as number) ?? 180;
         const autoplay = spec.data?.autoplay !== false;
         const loop = spec.data?.loop !== false;
         const muted = spec.data?.muted !== false;
@@ -48,7 +41,7 @@ export class VideoNode extends Node {
         const geo = new THREE.PlaneGeometry(w, h);
         const mat = new THREE.MeshBasicMaterial({ map: this.texture, side: THREE.DoubleSide });
         this.plane = new THREE.Mesh(geo, mat);
-        this.object.add(this.plane);
+        this._object.add(this.plane);
 
         if (autoplay) {
             this.videoEl.play().catch(() => {
@@ -66,13 +59,14 @@ export class VideoNode extends Node {
         this.videoEl.pause();
     }
 
-    updateSpec(updates: Partial<NodeSpec>): void {
+    updateSpec(updates: Partial<NodeSpec>): this {
         super.updateSpec(updates);
-        if (updates.data?.src && updates.data.src !== this.videoEl.src) {
-            this.videoEl.src = updates.data.src;
+        if (updates.data?.src && (updates.data.src as string) !== this.videoEl.src) {
+            this.videoEl.src = updates.data.src as string;
             this.videoEl.load();
             if (updates.data?.autoplay !== false) this.videoEl.play();
         }
+        return this;
     }
 
     dispose(): void {

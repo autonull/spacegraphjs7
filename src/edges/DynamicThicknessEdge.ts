@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { MathPool } from '../utils/MathPool';
 import type { SpaceGraph } from '../SpaceGraph';
-import type { EdgeSpec } from '../types';
+import type { EdgeData, EdgeSpec } from '../types';
 import type { Node } from '../nodes/Node';
 
 /**
@@ -21,7 +21,7 @@ export class DynamicThicknessEdge {
     public sg: SpaceGraph;
     public source: Node;
     public target: Node;
-    public data: any;
+    public data: EdgeData;
     public object: THREE.Mesh;
     private geometry: THREE.CylinderGeometry;
     private material: THREE.MeshBasicMaterial;
@@ -39,13 +39,11 @@ export class DynamicThicknessEdge {
 
         this.geometry = this._buildGeometry();
         this.object = new THREE.Mesh(this.geometry, this.material);
-        this.update(); // Set initial transform
+        this.update();
     }
 
     private _buildGeometry(): THREE.CylinderGeometry {
-        const segments = this.data.segments ?? 6;
-        // Base cylinder of radius 1 and length 1, aligned along Y axis by default.
-        // We rotate it to align along Z axis so lookAt works perfectly.
+        const segments = Number(this.data.segments) || 6;
         const geom = new THREE.CylinderGeometry(1, 1, 1, segments, 1);
         geom.rotateX(Math.PI / 2);
         return geom;
@@ -60,20 +58,22 @@ export class DynamicThicknessEdge {
 
     update() {
         const pool = MathPool.getInstance();
-        const src = this.source.position;
-        const tgt = this.target.position;
+        const { source, target, data } = this;
+        const { weight = 0.5, minRadius = 1, maxRadius = 8 } = data;
+        const clampedWeight = Math.max(0, Math.min(1, weight as number));
+        const radius =
+            (minRadius as number) + clampedWeight * ((maxRadius as number) - (minRadius as number));
 
-        const { weight = 0.5, minRadius = 1, maxRadius = 8 } = this.data;
-        const clampedWeight = Math.max(0, Math.min(1, weight));
-        const radius = minRadius + clampedWeight * (maxRadius - minRadius);
-
-        const dir = pool.acquireVector3().subVectors(tgt, src);
+        const dir = pool.acquireVector3().subVectors(target.position, source.position);
         const length = dir.length();
 
-        const midPoint = pool.acquireVector3().addVectors(src, tgt).multiplyScalar(0.5);
+        const midPoint = pool
+            .acquireVector3()
+            .addVectors(source.position, target.position)
+            .multiplyScalar(0.5);
 
         this.object.position.copy(midPoint);
-        this.object.lookAt(tgt);
+        this.object.lookAt(target.position);
         this.object.scale.set(radius, radius, length);
 
         pool.releaseVector3(dir);

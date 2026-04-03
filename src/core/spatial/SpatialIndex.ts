@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import type { Node } from '../../graph/Node';
+import type { Node } from '../../nodes/Node';
 
 interface SpatialCell {
     nodes: Set<NodeLike>;
@@ -12,7 +12,7 @@ interface NodeLike {
 }
 
 export class SpatialIndex {
-    private readonly cellSize: number;
+    private cellSize: number;
     private readonly cells = new Map<string, SpatialCell>();
     private readonly nodeBounds = new Map<NodeLike, THREE.Box3>();
 

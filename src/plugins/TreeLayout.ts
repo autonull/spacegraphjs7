@@ -1,7 +1,7 @@
 import * as THREE from 'three';
-import type { ISpaceGraphPlugin } from '../types';
 import type { Node } from '../nodes/Node';
 import type { SpaceGraph } from '../SpaceGraph';
+import type { ISpaceGraphPlugin } from '../types';
 
 export class TreeLayout implements ISpaceGraphPlugin {
     readonly id = 'tree-layout';
@@ -24,9 +24,8 @@ export class TreeLayout implements ISpaceGraphPlugin {
 
     public apply(): void {
         const nodes = Array.from(this.sg.graph.nodes.values());
-        const edges = Array.from(this.sg.graph.edges);
-
-        if (nodes.length === 0) return;
+        const edges = Array.from(this.sg.graph.edges.values());
+        if (!nodes.length) return;
 
         const inDegree = new Map<string, number>();
         const childrenMap = new Map<string, Node[]>();
@@ -37,28 +36,26 @@ export class TreeLayout implements ISpaceGraphPlugin {
         }
 
         for (const e of edges) {
-            if (e.source && e.target && e.source.id && e.target.id) {
+            if (e.source?.id && e.target?.id) {
                 inDegree.set(e.target.id, (inDegree.get(e.target.id) ?? 0) + 1);
-                childrenMap.get(e.source.id)?.push(e.target);
+                childrenMap.get(e.source.id)?.push(e.target as Node);
             }
         }
 
-        const roots = nodes.filter(n => inDegree.get(n.id) === 0);
-
-        if (roots.length === 0) {
-            roots.push(nodes[0]);
-        }
+        const roots = nodes.filter((n) => inDegree.get(n.id) === 0);
+        if (!roots.length) roots.push(nodes[0]);
 
         const positions = new Map<string, THREE.Vector3>();
-
         let currentX = 0;
 
         const assignPositions = (node: Node, depth: number) => {
-            const children = childrenMap.get(node.id) || [];
+            const children = childrenMap.get(node.id) ?? [];
 
-            // Post-order traversal for placing parents centered above children
-            if (children.length === 0) {
-                positions.set(node.id, new THREE.Vector3(currentX, -depth * this.settings.levelHeight, 0));
+            if (!children.length) {
+                positions.set(
+                    node.id,
+                    new THREE.Vector3(currentX, -depth * this.settings.levelHeight, 0),
+                );
                 currentX += this.settings.nodeSpacing;
             } else {
                 let minX = Infinity;
@@ -73,19 +70,20 @@ export class TreeLayout implements ISpaceGraphPlugin {
                     }
                 }
 
-                const centerX = (minX + maxX) / 2;
-                positions.set(node.id, new THREE.Vector3(centerX, -depth * this.settings.levelHeight, 0));
+                positions.set(
+                    node.id,
+                    new THREE.Vector3((minX + maxX) / 2, -depth * this.settings.levelHeight, 0),
+                );
             }
         };
 
-        // Layout all disconnected trees alongside each other
         for (const root of roots) {
             assignPositions(root, 0);
-            currentX += this.settings.nodeSpacing * 2; // Gap between different root trees
+            currentX += this.settings.nodeSpacing * 2;
         }
 
-        // Center the whole tree to Origin
-        let sumX = 0, sumY = 0;
+        let sumX = 0;
+        let sumY = 0;
         for (const p of positions.values()) {
             sumX += p.x;
             sumY += p.y;
@@ -93,27 +91,24 @@ export class TreeLayout implements ISpaceGraphPlugin {
         const offsetX = sumX / positions.size;
         const offsetY = sumY / positions.size;
 
+        const { orientation, animate, animationDuration } = this.settings;
         const finalPos = new THREE.Vector3();
-        for (const [id, pos] of positions.entries()) {
+
+        for (const [id, pos] of positions) {
             finalPos.set(pos.x - offsetX, pos.y - offsetY, 0);
 
-            // Handle Horizontal orientation
-            if (this.settings.orientation === 'horizontal') {
-                const temp = finalPos.x;
-                finalPos.x = -finalPos.y; // depth goes to right
-                finalPos.y = -temp; // breadth goes top-to-bottom
+            if (orientation === 'horizontal') {
+                finalPos.set(-finalPos.y, -finalPos.x, 0);
             }
 
-            const targetNode = this.sg.graph.nodes.get(id);
-            if (targetNode) {
-                (targetNode as any).applyPosition(
-                    finalPos,
-                    this.settings.animate,
-                    this.settings.animationDuration
-                );
-            }
+            this.sg.graph.nodes.get(id)?.applyPosition(finalPos, {
+                animate,
+                duration: animationDuration,
+            });
         }
+
+        for (const edge of edges) edge.update?.();
     }
 
-    dispose(): void { }
+    dispose(): void {}
 }

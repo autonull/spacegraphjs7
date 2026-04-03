@@ -1,4 +1,5 @@
-import { SpaceGraph, GraphSpec } from '../SpaceGraph';
+import { SpaceGraph } from '../SpaceGraph';
+import type { GraphSpec } from '../types';
 import { HUDPlugin } from '../plugins/HUDPlugin';
 import { InteractionPlugin } from '../plugins/InteractionPlugin';
 import { MinimapPlugin } from '../plugins/MinimapPlugin';

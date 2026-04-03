@@ -1,34 +1,44 @@
 import * as THREE from 'three';
+import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
 import { Edge } from './Edge';
 import type { SpaceGraph } from '../SpaceGraph';
-import type { EdgeSpec } from '../types';
+import type { EdgeData, EdgeSpec } from '../types';
 import type { Node } from '../nodes/Node';
 
 export class FlowEdge extends Edge {
-    private dashOffset: number = 0;
-    private flowSpeed: number = 1.0;
-    private isFlowing: boolean = true;
-    private baseSpeed: number = 1.0;
+    private dashOffset = 0;
+    private flowSpeed = 1.0;
+    private isFlowing = true;
+    private baseSpeed = 1.0;
 
     constructor(sg: SpaceGraph, spec: EdgeSpec, source: Node, target: Node) {
         super(sg, spec, source, target);
 
-        this.baseSpeed = spec.data?.flowSpeed || 2.0;
+        const data = spec.data as EdgeData & {
+            flowSpeed?: number;
+            dashSize?: number;
+            gapSize?: number;
+            color?: number;
+            lineWidth?: number;
+            opacity?: number;
+        };
+        this.baseSpeed = data?.flowSpeed ?? 2.0;
         this.flowSpeed = this.baseSpeed;
 
-        const dashSize = spec.data?.dashSize || 5;
-        const gapSize = spec.data?.gapSize || 5;
-        const color = spec.data?.color || 0x00ff00;
-        const opacity = spec.data?.opacity !== undefined ? spec.data.opacity : 1.0;
+        const dashSize = data?.dashSize ?? 5;
+        const gapSize = data?.gapSize ?? 5;
+        const color = data?.color ?? 0x00ff00;
+        const opacity = data?.opacity ?? 1.0;
 
-        const material = new THREE.LineDashedMaterial({
-            color: color,
-            linewidth: spec.data?.lineWidth || 2,
-            dashSize: dashSize,
-            gapSize: gapSize,
-            scale: 1,
+        const material = new LineMaterial({
+            color,
+            linewidth: data?.lineWidth ?? 2,
+            dashSize,
+            gapSize,
+            dashed: true,
             transparent: opacity < 1.0,
-            opacity: opacity,
+            opacity,
+            resolution: new THREE.Vector2(window.innerWidth, window.innerHeight),
         });
 
         if (this.object.material) {
@@ -43,45 +53,44 @@ export class FlowEdge extends Edge {
         this.object.computeLineDistances();
     }
 
-    updateSpec(updates: Partial<EdgeSpec>) {
+    updateSpec(updates: Partial<EdgeSpec>): this {
         super.updateSpec(updates);
 
-        if (!updates.data) return;
+        if (!updates.data) return this;
 
-        const mat = this.object.material as THREE.LineDashedMaterial;
+        const data = updates.data as EdgeData & {
+            flowSpeed?: number;
+            dashSize?: number;
+            gapSize?: number;
+            color?: number;
+            opacity?: number;
+        };
+        const mat = this.object.material as LineMaterial;
 
-        if (updates.data.flowSpeed !== undefined) {
-            this.baseSpeed = updates.data.flowSpeed;
+        if (data.flowSpeed !== undefined) {
+            this.baseSpeed = data.flowSpeed;
             if (this.isFlowing) {
                 this.flowSpeed = this.baseSpeed;
             }
         }
 
-        if (updates.data.color !== undefined) {
-            mat.color.setHex(updates.data.color);
+        if (data.color !== undefined) mat.color.setHex(data.color);
+        if (data.dashSize !== undefined) mat.dashSize = data.dashSize;
+        if (data.gapSize !== undefined) mat.gapSize = data.gapSize;
+
+        if (data.opacity !== undefined) {
+            mat.opacity = data.opacity;
+            mat.transparent = data.opacity < 1.0;
         }
 
-        if (updates.data.dashSize !== undefined) {
-            mat.dashSize = updates.data.dashSize;
+        if (data.dashSize !== undefined || data.gapSize !== undefined) {
+            this.object.computeLineDistances();
+            this.dashOffset = 0;
         }
-
-        if (updates.data.gapSize !== undefined) {
-            mat.gapSize = updates.data.gapSize;
-        }
-
-        if (updates.data.opacity !== undefined) {
-            mat.opacity = updates.data.opacity;
-            mat.transparent = updates.data.opacity < 1.0;
-        }
-
-        // Need to recompute if dashes changed
-        if (updates.data.dashSize !== undefined || updates.data.gapSize !== undefined) {
-             this.object.computeLineDistances();
-             this.dashOffset = 0;
-        }
+        return this;
     }
 
-    startDataFlow(rate: number = 1): void {
+    startDataFlow(rate = 1): void {
         this.isFlowing = true;
         this.flowSpeed = this.baseSpeed * rate;
     }
@@ -97,13 +106,11 @@ export class FlowEdge extends Edge {
         if (!this.isFlowing) return;
 
         this.dashOffset -= this.flowSpeed;
-
         this.object.computeLineDistances();
 
         const distances = this.geometry.attributes.lineDistance;
         if (distances) {
             for (let i = 0; i < distances.count; i++) {
-                // Add the moving offset to the base computed line distances
                 distances.setX(i, distances.getX(i) + this.dashOffset);
             }
             distances.needsUpdate = true;

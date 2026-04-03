@@ -64,7 +64,9 @@ export class AutoColorPlugin implements ISpaceGraphPlugin {
     public applyVisionCorrection(issues: unknown[]): void {
         logger.info('Received %d color vision issues to auto-fix.', issues.length);
 
-        const colorIssues = issues.filter((i: any) => i.type === 'color' || i.type === 'legibility');
+        const colorIssues = issues.filter(
+            (i: any) => i.type === 'color' || i.type === 'legibility',
+        ) as Array<{ type: string; nodeId?: string; suggestedColor?: number }>;
 
         if (colorIssues.length > 0) {
             logger.info('Auto-fixing %d color/legibility issues...', colorIssues.length);
@@ -78,10 +80,14 @@ export class AutoColorPlugin implements ISpaceGraphPlugin {
                         if (issue.suggestedColor) {
                             newColor = issue.suggestedColor;
                         } else if (node.data && node.data.color !== undefined) {
-                            newColor = this.getCompliantColor(node.data.color);
+                            newColor = this.getCompliantColor(node.data.color as number);
                         }
 
-                        logger.info('Fixing color for node %s. New color: 0x%s', issue.nodeId, newColor.toString(16));
+                        logger.info(
+                            'Fixing color for node %s. New color: 0x%s',
+                            issue.nodeId,
+                            newColor.toString(16),
+                        );
                         node.updateSpec({ data: { color: newColor } });
                     }
                 }

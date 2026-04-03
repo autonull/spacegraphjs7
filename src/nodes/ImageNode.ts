@@ -1,58 +1,57 @@
 import * as THREE from 'three';
+
 import { Node } from './Node';
-import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec } from '../types';
+import type { SpaceGraph } from '../SpaceGraph';
 
 export class ImageNode extends Node {
     private meshGeometry: THREE.PlaneGeometry;
     private meshMaterial: THREE.MeshBasicMaterial;
+    private readonly _object: THREE.Group;
+
+    get object(): THREE.Object3D {
+        return this._object;
+    }
 
     constructor(sg: SpaceGraph, spec: NodeSpec) {
         super(sg, spec);
 
+        this._object = new THREE.Group();
         this.meshGeometry = new THREE.PlaneGeometry(100, 100);
         this.meshMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true });
 
-        if (spec.data && spec.data.url) {
-            const textureLoader = new THREE.TextureLoader();
-            textureLoader.load(spec.data.url, (texture) => {
+        if (spec.data?.url) {
+            new THREE.TextureLoader().load(spec.data.url as string, (texture) => {
                 this.meshMaterial.map = texture;
                 this.meshMaterial.needsUpdate = true;
             });
         }
 
         const mesh = new THREE.Mesh(this.meshGeometry, this.meshMaterial);
-
-        // Rotate to face camera
         mesh.rotation.y = 0;
 
-        this.object.add(mesh);
+        this._object.add(mesh);
         this.updatePosition(this.position.x, this.position.y, this.position.z);
     }
 
-    updateSpec(updates: Partial<NodeSpec>) {
+    updateSpec(updates: Partial<NodeSpec>): this {
         super.updateSpec(updates);
 
-        if (updates.data && updates.data.url) {
-            const textureLoader = new THREE.TextureLoader();
-            textureLoader.load(updates.data.url, (texture) => {
-                if (this.meshMaterial.map) {
-                    this.meshMaterial.map.dispose();
-                }
+        if (updates.data?.url) {
+            new THREE.TextureLoader().load(updates.data.url as string, (texture) => {
+                this.meshMaterial.map?.dispose();
                 this.meshMaterial.map = texture;
                 this.meshMaterial.needsUpdate = true;
             });
         }
+
+        return this;
     }
 
     dispose(): void {
-        if (this.meshGeometry) {
-            this.meshGeometry.dispose();
-        }
+        this.meshGeometry?.dispose();
         if (this.meshMaterial) {
-            if (this.meshMaterial.map) {
-                this.meshMaterial.map.dispose();
-            }
+            this.meshMaterial.map?.dispose();
             this.meshMaterial.dispose();
         }
         super.dispose();

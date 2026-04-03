@@ -41,17 +41,19 @@ export class AutoLayoutPlugin implements ISpaceGraphPlugin {
 
     public fixOverlaps(overlaps: VisionIssue[]): void {
         logger.debug(`Auto-fixing ${overlaps.length} overlaps...`);
-        const layoutPlugin = this.sg.pluginManager.getPlugin('ForceLayout') as ForceLayout | undefined;
+        const layoutPlugin = this.sg.pluginManager.getPlugin('ForceLayout') as
+            | ForceLayout
+            | undefined;
 
-        if (layoutPlugin && typeof layoutPlugin.update === 'function') {
-            const originalRepulsion = layoutPlugin.settings.repulsion ?? 10000;
-            layoutPlugin.settings.repulsion = originalRepulsion * 5;
+        if (layoutPlugin && typeof (layoutPlugin as any).step === 'function') {
+            const originalRepulsion = (layoutPlugin as any).config?.repulsion ?? 10000;
+            (layoutPlugin as any).config.repulsion = originalRepulsion * 5;
 
             for (let i = 0; i < 50; i++) {
-                layoutPlugin.update();
+                (layoutPlugin as any).step();
             }
 
-            layoutPlugin.settings.repulsion = originalRepulsion;
+            (layoutPlugin as any).config.repulsion = originalRepulsion;
         } else {
             for (const issue of overlaps) {
                 this.fixSingleOverlap(issue);

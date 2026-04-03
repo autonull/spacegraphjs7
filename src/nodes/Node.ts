@@ -2,37 +2,106 @@ import * as THREE from 'three';
 import gsap from 'gsap';
 import { ThreeDisposer } from '../utils/ThreeDisposer';
 import type { SpaceGraph } from '../SpaceGraph';
-import type { NodeSpec } from '../types';
+import type { NodeSpec, NodeData, NodeEvent } from '../types';
+import { createLogger } from '../utils/logger';
 
-export class Node {
-    public id: string;
-    public type: string;
+const logger = createLogger('Node');
+
+type NodeEventMap = {
+    updated: { node: Node; changes: Partial<NodeSpec>; timestamp: number };
+    destroying: { node: Node; timestamp: number };
+};
+
+type NodeEventHandler<T extends keyof NodeEventMap> = (event: NodeEventMap[T]) => void;
+
+export abstract class Node {
+    readonly id: string;
+    readonly type: string;
     public sg: SpaceGraph;
     public label?: string;
-    public data: any;
-    public object: THREE.Object3D;
+    public data: NodeData;
     public position: THREE.Vector3;
+    public rotation: THREE.Vector3;
+    public scale: THREE.Vector3;
+    abstract readonly object: THREE.Object3D;
+
+    private readonly eventHandlers = new Map<keyof NodeEventMap, Set<NodeEventHandler<any>>>();
 
     constructor(sg: SpaceGraph, spec: NodeSpec) {
         this.sg = sg;
         this.id = spec.id;
         this.type = spec.type;
         this.label = spec.label;
-        this.data = spec.data || {};
+        this.data = spec.data ?? {};
         this.position = new THREE.Vector3(
-            spec.position?.[0] || 0,
-            spec.position?.[1] || 0,
-            spec.position?.[2] || 0,
+            spec.position?.[0] ?? 0,
+            spec.position?.[1] ?? 0,
+            spec.position?.[2] ?? 0,
         );
-        this.object = new THREE.Object3D();
-        this.object.position.copy(this.position);
+        this.rotation = new THREE.Vector3(
+            spec.rotation?.[0] ?? 0,
+            spec.rotation?.[1] ?? 0,
+            spec.rotation?.[2] ?? 0,
+        );
+        this.scale = new THREE.Vector3(
+            spec.scale?.[0] ?? 1,
+            spec.scale?.[1] ?? 1,
+            spec.scale?.[2] ?? 1,
+        );
+    }
+
+    on<T extends keyof NodeEventMap>(event: T, handler: NodeEventHandler<T>): { dispose(): void } {
+        const handlers = this.eventHandlers.get(event) ?? new Set();
+        if (!this.eventHandlers.has(event)) this.eventHandlers.set(event, handlers);
+        handlers.add(handler);
+        return { dispose: () => handlers.delete(handler) };
+    }
+
+    protected emit<T extends keyof NodeEventMap>(
+        event: T,
+        data: Omit<NodeEventMap[T], 'timestamp'>,
+    ): void {
+        this.eventHandlers.get(event)?.forEach((handler) => {
+            try {
+                handler({ ...data, timestamp: Date.now() } as NodeEventMap[T]);
+            } catch (err) {
+                logger.error('Node %s event handler for %s failed:', this.id, event, err);
+            }
+        });
     }
 
     updateSpec(updates: Partial<NodeSpec>): this {
-        if (updates.label !== undefined) this.label = updates.label;
-        if (updates.data) this.data = { ...this.data, ...updates.data };
-        if (updates.position)
-            this.updatePosition(updates.position[0], updates.position[1], updates.position[2]);
+        const changes: Partial<NodeSpec> = {};
+
+        if (updates.label !== undefined && updates.label !== this.label) {
+            this.label = updates.label;
+            changes.label = updates.label;
+        }
+
+        if (updates.data !== undefined) {
+            this.data = { ...this.data, ...updates.data };
+            changes.data = updates.data;
+        }
+
+        if (updates.position !== undefined) {
+            this.position.fromArray(updates.position);
+            changes.position = updates.position;
+        }
+
+        if (updates.rotation !== undefined) {
+            this.rotation.fromArray(updates.rotation);
+            changes.rotation = updates.rotation;
+        }
+
+        if (updates.scale !== undefined) {
+            this.scale.fromArray(updates.scale);
+            changes.scale = updates.scale;
+        }
+
+        if (Object.keys(changes).length > 0) {
+            this.emit('updated', { node: this, changes });
+        }
+
         return this;
     }
 
@@ -46,70 +115,82 @@ export class Node {
         return this.updatePosition(x, y, z);
     }
 
-    scale(s: number): this {
+    scaleUniform(s: number): this {
         this.object.scale.set(s, s, s);
         return this;
     }
 
-    animate(props: any): this {
-        const positionProps = { ...props };
-        delete positionProps.scale; // Remove scale to avoid GSAP warning on position
+    animate(props: Record<string, unknown>): this {
+        const { scale, onUpdate, ...positionProps } = props;
 
         gsap.to(this.position, {
             ...positionProps,
-            onUpdate: () => {
-                this.object.position.copy(this.position);
-                if (props.onUpdate) props.onUpdate();
-            },
+            onUpdate: () => void this.object.position.copy(this.position),
         });
-        if (props.scale !== undefined) {
+
+        if (scale !== undefined) {
             gsap.to(this.object.scale, {
-                x: props.scale,
-                y: props.scale,
-                z: props.scale,
-                duration: props.duration,
-                ease: props.ease,
-                delay: props.delay,
+                x: scale as number,
+                y: scale as number,
+                z: scale as number,
+                duration: props.duration as number,
+                ease: props.ease as string,
+                delay: props.delay as number,
             });
         }
+
         return this;
     }
 
-    /**
-     * Applies a new position to the node, optionally animating it via GSAP.
-     * Helper to DRY up layout plugins.
-     */
     applyPosition(
-        targetPos: THREE.Vector3,
-        animate: boolean = true,
-        duration: number = 1.0,
-        delay: number = 0,
+        target: THREE.Vector3,
+        {
+            animate = true,
+            duration = 1.0,
+            delay = 0,
+        }: { animate?: boolean; duration?: number; delay?: number } = {},
     ): this {
         if (animate && typeof process === 'undefined') {
             gsap.to(this.position, {
-                x: targetPos.x,
-                y: targetPos.y,
-                z: targetPos.z,
+                x: target.x,
+                y: target.y,
+                z: target.z,
                 duration,
                 ease: 'power2.out',
                 delay,
-                onUpdate: () => {
-                    this.object.position.copy(this.position);
-                },
+                onUpdate: () => void this.object.position.copy(this.position),
             });
         } else {
-            this.position.copy(targetPos);
-            this.object.position.copy(targetPos);
+            this.position.copy(target);
+            this.object.position.copy(target);
         }
         return this;
     }
 
-    /**
-     * Cleanly destroy this node and recursively free geometry, materials, and textures
-     * to prevent WebGL context memory leaks.
-     */
+    toJSON(): NodeSpec {
+        return {
+            id: this.id,
+            type: this.type,
+            label: this.label,
+            position: [this.position.x, this.position.y, this.position.z] as [
+                number,
+                number,
+                number,
+            ],
+            rotation: [this.rotation.x, this.rotation.y, this.rotation.z] as [
+                number,
+                number,
+                number,
+            ],
+            scale: [this.scale.x, this.scale.y, this.scale.z] as [number, number, number],
+            data: { ...this.data },
+        };
+    }
+
     dispose(): void {
+        this.emit('destroying', { node: this });
         this.object.parent?.remove(this.object);
         ThreeDisposer.dispose(this.object);
+        this.eventHandlers.clear();
     }
 }

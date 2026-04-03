@@ -208,7 +208,6 @@ export {
     ShapeNode as ShapeNodeV7,
     HtmlNode as HtmlNodeV7,
     ImageNode as ImageNodeV7,
-    EdgeImpl,
     VERSION,
 } from './index.v7';
 

@@ -1,15 +1,15 @@
-import { DOMNode } from './DOMNode';
-import type { SpaceGraph } from '../SpaceGraph';
-import type { NodeSpec } from '../types';
 import { DOMUtils } from '../utils/DOMUtils';
-import { createLogger } from '../utils/logger.js';
+import { createLogger } from '../utils/logger';
+import type { NodeSpec } from '../types';
+import type { SpaceGraph } from '../SpaceGraph';
+
+import { DOMNode } from './DOMNode';
 
 const logger = createLogger('MathNode');
 
-let katexPromise: Promise<any> | null = null;
+let katexPromise: Promise<unknown> | null = null;
 let katexCssLoaded = false;
 
-// Async load KaTeX to avoid hard dependency bundled
 async function loadKatex() {
     if (!katexCssLoaded && typeof document !== 'undefined') {
         const link = DOMUtils.createElement('link');
@@ -21,7 +21,7 @@ async function loadKatex() {
 
     if (katexPromise) return katexPromise;
 
-    katexPromise = import('katex').then(m => m.default || m);
+    katexPromise = import('katex').then((m) => m.default ?? m);
     return katexPromise;
 }
 
@@ -31,20 +31,19 @@ export class MathNode extends DOMNode {
     constructor(sg: SpaceGraph, spec: NodeSpec) {
         const div = DOMUtils.createElement('div');
 
-        const w = spec.data?.width || 300;
-        const h = spec.data?.height || 100;
+        const w = (spec.data?.width ?? 300) as number;
+        const h = (spec.data?.height ?? 100) as number;
 
-        // Pass div into DOMNode correctly and specify base size
         super(sg, spec, div, w, h, { opacity: 0.0 });
 
         if (spec.data?.math) {
-            this.mathContent = spec.data.math;
+            this.mathContent = spec.data.math as string;
         }
 
         this.domElement.className = 'spacegraph-math-node';
 
         this.setupContainerStyles(w, h, 'dark', {
-            backgroundColor: spec.data?.color || 'rgba(0, 0, 0, 0.8)',
+            backgroundColor: (spec.data?.color as string) ?? 'rgba(0, 0, 0, 0.8)',
             border: '2px solid #555',
             padding: '15px',
             justifyContent: 'center',
@@ -62,10 +61,14 @@ export class MathNode extends DOMNode {
     private async renderMath() {
         try {
             const katex = await loadKatex();
-            katex.render(this.mathContent, this.domElement, {
+            (
+                katex as {
+                    render: (math: string, el: HTMLElement, opts: Record<string, unknown>) => void;
+                }
+            ).render(this.mathContent, this.domElement, {
                 throwOnError: false,
                 displayMode: true,
-                output: 'html'
+                output: 'html',
             });
         } catch (e) {
             logger.error('Failed to render LaTeX:', e);
@@ -73,20 +76,20 @@ export class MathNode extends DOMNode {
         }
     }
 
-    updateSpec(updates: Partial<NodeSpec>) {
+    updateSpec(updates: Partial<NodeSpec>): this {
         super.updateSpec(updates);
 
         let needsRender = false;
 
         if (updates.data) {
             if (updates.data.color) {
-                this.domElement.style.backgroundColor = updates.data.color;
+                this.domElement.style.backgroundColor = updates.data.color as string;
             }
             if (updates.data.fontSize) {
-                this.domElement.style.fontSize = `${updates.data.fontSize}px`;
+                this.domElement.style.fontSize = `${updates.data.fontSize as number}px`;
             }
             if (updates.data.math && updates.data.math !== this.mathContent) {
-                this.mathContent = updates.data.math;
+                this.mathContent = updates.data.math as string;
                 needsRender = true;
             }
         }
@@ -94,7 +97,6 @@ export class MathNode extends DOMNode {
         if (needsRender) {
             this.renderMath();
         }
+        return this;
     }
-
-
 }

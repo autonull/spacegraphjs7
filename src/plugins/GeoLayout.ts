@@ -1,6 +1,7 @@
 import * as THREE from 'three';
-import type { ISpaceGraphPlugin } from '../types';
+import type { Node } from '../nodes/Node';
 import type { SpaceGraph } from '../SpaceGraph';
+import type { ISpaceGraphPlugin } from '../types';
 
 export class GeoLayout implements ISpaceGraphPlugin {
     readonly id = 'geo-layout';
@@ -11,9 +12,9 @@ export class GeoLayout implements ISpaceGraphPlugin {
 
     public settings = {
         projection: 'sphere' as 'sphere' | 'equirectangular' | 'mercator',
-        radius: 500,          // Used for sphere projection
-        mapWidth: 1000,       // Used for flat projections
-        mapHeight: 500,       // Used for flat projections
+        radius: 500,
+        mapWidth: 1000,
+        mapHeight: 500,
         animate: true,
         animationDuration: 1.5,
     };
@@ -23,62 +24,46 @@ export class GeoLayout implements ISpaceGraphPlugin {
     }
 
     public apply(): void {
-        const nodes = Array.from(this.sg.graph.nodes.values());
-        if (nodes.length === 0) return;
+        const nodes = Array.from(this.sg.graph.nodes.values()).filter((n) => !n.data?.pinned);
+        if (!nodes.length) return;
 
+        const { projection, radius, mapWidth, mapHeight, animate, animationDuration } =
+            this.settings;
         const targetPos = new THREE.Vector3();
-        for (const node of nodes) {
-            // Check if node data contains lat/lng
-            const lat = node.data?.lat !== undefined ? node.data.lat : (Math.random() * 180 - 90);
-            const lng = node.data?.lng !== undefined ? node.data.lng : (Math.random() * 360 - 180);
 
-            if (this.settings.projection === 'sphere') {
-                // Convert lat/lng to Cartesian coordinates on a sphere
-                // Lat: -90 (South Pole) to +90 (North Pole)
-                // Lng: -180 (West) to +180 (East)
-                const phi = (90 - lat) * (Math.PI / 180);
-                const theta = (lng + 180) * (Math.PI / 180);
+        for (const node of nodes as Node[]) {
+            const lat = (node.data?.lat as number) ?? Math.random() * 180 - 90;
+            const lng = (node.data?.lng as number) ?? Math.random() * 360 - 180;
 
-                targetPos.set(
-                    -(this.settings.radius * Math.sin(phi) * Math.cos(theta)),
-                    (this.settings.radius * Math.cos(phi)),
-                    (this.settings.radius * Math.sin(phi) * Math.sin(theta))
-                );
-            }
-            else if (this.settings.projection === 'equirectangular') {
-                // Flat mapping where x and y are directly proportional to lng and lat
-                targetPos.set(
-                    (lng / 180) * (this.settings.mapWidth / 2),
-                    (lat / 90) * (this.settings.mapHeight / 2),
-                    0
-                );
-            }
-            else if (this.settings.projection === 'mercator') {
-                // Web mercator projection
-                const x = (lng + 180) * (this.settings.mapWidth / 360);
-
-                // Truncate lat to avoid infinity
-                const latTrunc = Math.max(-85.0511, Math.min(85.0511, lat));
-                const mercN = Math.log(Math.tan((Math.PI / 4) + (latTrunc * Math.PI / 180) / 2));
-
-                // Normalize to mapHeight
-                const y = (this.settings.mapHeight / 2) - (this.settings.mapWidth * mercN / (2 * Math.PI));
-
-                // Centering to origin [-mapWidth/2, +mapWidth/2]
-                targetPos.set(
-                    x - (this.settings.mapWidth / 2),
-                    (this.settings.mapHeight / 2) - y,
-                    0
-                );
+            switch (projection) {
+                case 'sphere': {
+                    const phi = (90 - lat) * (Math.PI / 180);
+                    const theta = (lng + 180) * (Math.PI / 180);
+                    targetPos.set(
+                        -(radius * Math.sin(phi) * Math.cos(theta)),
+                        radius * Math.cos(phi),
+                        radius * Math.sin(phi) * Math.sin(theta),
+                    );
+                    break;
+                }
+                case 'equirectangular':
+                    targetPos.set((lng / 180) * (mapWidth / 2), (lat / 90) * (mapHeight / 2), 0);
+                    break;
+                case 'mercator': {
+                    const x = (lng + 180) * (mapWidth / 360);
+                    const latTrunc = Math.max(-85.0511, Math.min(85.0511, lat));
+                    const mercN = Math.log(Math.tan(Math.PI / 4 + (latTrunc * Math.PI) / 180 / 2));
+                    const y = mapHeight / 2 - (mapWidth * mercN) / (2 * Math.PI);
+                    targetPos.set(x - mapWidth / 2, mapHeight / 2 - y, 0);
+                    break;
+                }
             }
 
-            (node as any).applyPosition(
-                targetPos,
-                this.settings.animate,
-                this.settings.animationDuration
-            );
+            node.applyPosition(targetPos, { animate, duration: animationDuration });
         }
+
+        for (const edge of this.sg.graph.edges.values()) edge.update?.();
     }
 
-    dispose(): void { }
+    dispose(): void {}
 }

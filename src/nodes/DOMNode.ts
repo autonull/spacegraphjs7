@@ -1,9 +1,10 @@
 import * as THREE from 'three';
 import { CSS3DObject } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
+
 import { Node } from './Node';
-import type { SpaceGraph } from '../SpaceGraph';
-import type { NodeSpec } from '../types';
 import { DOMUtils } from '../utils/DOMUtils';
+import type { NodeSpec } from '../types';
+import type { SpaceGraph } from '../SpaceGraph';
 
 export class DOMNode extends Node {
     public domElement: HTMLElement;
@@ -11,10 +12,13 @@ export class DOMNode extends Node {
     public meshGeometry: THREE.PlaneGeometry;
     public meshMaterial: THREE.MeshBasicMaterial;
     public backingMesh: THREE.Mesh;
+    private readonly _object: THREE.Group;
 
-    /**
-     * Helper to set up standard FZUI container styles.
-     */
+    get object(): THREE.Object3D {
+        return this._object;
+    }
+
+    /** Helper to set up standard FZUI container styles. */
     protected setupContainerStyles(
         width: number,
         height: number,
@@ -44,9 +48,7 @@ export class DOMNode extends Node {
         });
     }
 
-    /**
-     * Helper to create a standard FZUI title bar.
-     */
+    /** Helper to create a standard FZUI title bar. */
     protected createTitleBar(title: string, theme: 'dark' | 'light' = 'dark'): HTMLElement {
         const isDark = theme === 'dark';
         const headerColor = isDark ? '#0f172a' : '#f1f5f9';
@@ -85,13 +87,13 @@ export class DOMNode extends Node {
     ) {
         super(sg, spec);
 
+        this._object = new THREE.Group();
         this.domElement = domElement;
         this.cssObject = new CSS3DObject(this.domElement);
         this.object.add(this.cssObject);
 
         this.meshGeometry = new THREE.PlaneGeometry(width, height);
 
-        // Provide standard defaults but allow overrides
         const defaultTranslucency =
             materialParams?.visible === false
                 ? {}
@@ -108,16 +110,7 @@ export class DOMNode extends Node {
         this._setupPointerEventRelay(sg);
     }
 
-    /**
-     * Relay pointer events from this DOM element to the WebGL canvas so that
-     * InteractionPlugin's raycaster-based hover and drag detection works for
-     * DOM-backed nodes. Without this, the HTML element captures all pointer
-     * events and the canvas never sees them.
-     *
-     * - mouseenter / mouseleave: synthetic pointermove to canvas triggers raycasting
-     * - pointerdown/move/up:     relayed with pointer capture for smooth drag
-     * - dblclick / contextmenu: relayed for semantic navigation and context menus
-     */
+    /** Relay pointer events from this DOM element to the WebGL canvas. */
     private _setupPointerEventRelay(sg: SpaceGraph): void {
         if (!sg?.renderer?.renderer?.domElement) return;
 
@@ -144,7 +137,6 @@ export class DOMNode extends Node {
             );
         };
 
-        // Hover enter: dispatch pointermove at real coords to trigger raycasting
         el.addEventListener('mouseenter', (e) => {
             canvas.dispatchEvent(
                 new PointerEvent('pointermove', {
@@ -158,8 +150,6 @@ export class DOMNode extends Node {
             );
         });
 
-        // Hover leave: dispatch pointermove at an off-screen coordinate so the
-        // raycaster finds nothing and InteractionPlugin emits node:pointerleave.
         el.addEventListener('mouseleave', () => {
             canvas.dispatchEvent(
                 new PointerEvent('pointermove', {
@@ -170,8 +160,6 @@ export class DOMNode extends Node {
             );
         });
 
-        // Drag: capture pointer so subsequent move/up events stay on this element,
-        // then relay each one to the canvas so InteractionPlugin handles dragging.
         el.addEventListener('pointerdown', (e) => {
             el.setPointerCapture(e.pointerId);
             relayPointer('pointerdown', e);
@@ -180,16 +168,13 @@ export class DOMNode extends Node {
         el.addEventListener('pointermove', (e) => {
             relayPointer('pointermove', e);
         });
-
         el.addEventListener('pointerup', (e) => {
             relayPointer('pointerup', e);
         });
-
         el.addEventListener('pointercancel', (e) => {
             relayPointer('pointercancel', e);
         });
 
-        // Semantic navigation on double-click
         el.addEventListener('dblclick', (e) => {
             canvas.dispatchEvent(
                 new MouseEvent('dblclick', {
@@ -201,7 +186,6 @@ export class DOMNode extends Node {
             );
         });
 
-        // Context menu
         el.addEventListener('contextmenu', (e) => {
             e.preventDefault();
             canvas.dispatchEvent(
@@ -216,7 +200,7 @@ export class DOMNode extends Node {
     }
 
     protected updateBackingGeometry(width: number, height: number): void {
-        if (this.meshGeometry) this.meshGeometry.dispose();
+        this.meshGeometry?.dispose();
         this.meshGeometry = new THREE.PlaneGeometry(width, height);
         this.backingMesh.geometry = this.meshGeometry;
     }
@@ -227,16 +211,12 @@ export class DOMNode extends Node {
         this.backingMesh.visible = visible;
     }
 
-    public updateLod(_distance: number): void {
-        // Base implementation for LOD distance updates. Overridden by subclasses.
-    }
+    public updateLod(_distance: number): void {}
 
     dispose(): void {
-        if (this.domElement.parentNode) {
-            this.domElement.parentNode.removeChild(this.domElement);
-        }
-        if (this.meshGeometry) this.meshGeometry.dispose();
-        if (this.meshMaterial) this.meshMaterial.dispose();
+        this.domElement.parentNode?.removeChild(this.domElement);
+        this.meshGeometry?.dispose();
+        this.meshMaterial?.dispose();
         super.dispose();
     }
 }

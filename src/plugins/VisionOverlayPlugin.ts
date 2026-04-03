@@ -1,5 +1,6 @@
 import type { SpaceGraph } from '../SpaceGraph';
 import type { ISpaceGraphPlugin } from '../types';
+import type { VisionReport } from '../core/VisionManager';
 import { DOMUtils } from '../utils/DOMUtils';
 import { createLogger } from '../utils/logger.js';
 
@@ -13,7 +14,7 @@ export class VisionOverlayPlugin implements ISpaceGraphPlugin {
     private sg!: SpaceGraph;
     private container!: HTMLElement;
     private rafId: number | null = null;
-    private lastReport: unknown = null;
+    private lastReport: VisionReport | null = null;
 
     public settings = {
         enabled: true,
@@ -61,7 +62,6 @@ export class VisionOverlayPlugin implements ISpaceGraphPlugin {
                 width: '280px',
                 background: 'rgba(15, 15, 20, 0.85)',
                 backdropFilter: 'blur(12px)',
-                WebkitBackdropFilter: 'blur(12px)',
                 border: '1px solid rgba(255, 255, 255, 0.1)',
                 borderRadius: '12px',
                 padding: '16px',
@@ -71,8 +71,8 @@ export class VisionOverlayPlugin implements ISpaceGraphPlugin {
                 boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
                 zIndex: '9999',
                 pointerEvents: 'auto',
-                transition: 'all 0.3s ease'
-            }
+                transition: 'all 0.3s ease',
+            },
         });
         this.applyStyles();
 
@@ -168,7 +168,7 @@ export class VisionOverlayPlugin implements ISpaceGraphPlugin {
             btn.addEventListener('click', async () => {
                 btn.innerHTML =
                     '<div class="sg-spinner" style="width: 14px; height: 14px; display: inline-block; margin-right: 6px;"></div> Fixing...';
-                await this.sg.vision.applyAutonomousFixes(this.lastReport);
+                await this.sg.vision.applyAutonomousFixes(this.lastReport!);
                 this.runAnalysis(); // re-eval
             });
             btn.addEventListener('mouseenter', () => ((btn as HTMLElement).style.opacity = '0.9'));

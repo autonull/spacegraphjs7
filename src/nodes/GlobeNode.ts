@@ -1,43 +1,39 @@
 import * as THREE from 'three';
-import { Node } from './Node';
-import type { SpaceGraph } from '../SpaceGraph';
-import type { NodeSpec } from '../types';
 
-/**
- * GlobeNode — A 3D sphere node, optionally with a texture map.
- * Demonstrates a primitive-based 3D node.
- *
- * data options:
- *   radius     : radius of the globe (default 50)
- *   textureUrl : URL to an equirectangular map (optional)
- *   color      : base color if no texture (default 0x3b82f6)
- *   wireframe  : boolean overlay wireframe (default true)
- *   segments   : sphere segments (default 32)
- */
+import { Node } from './Node';
+import type { NodeSpec, GlobeNodeData } from '../types';
+import type { SpaceGraph } from '../SpaceGraph';
+
 export class GlobeNode extends Node {
-    private mesh: THREE.Mesh;
+    private readonly _object: THREE.Group;
+
+    get object(): THREE.Object3D {
+        return this._object;
+    }
+
+    private mesh!: THREE.Mesh;
     private wireframe?: THREE.Mesh;
-    private markersGroup: THREE.Group;
+    private markersGroup!: THREE.Group;
     private textureLoader = new THREE.TextureLoader();
 
     constructor(sg: SpaceGraph, spec: NodeSpec) {
         super(sg, spec);
 
-        const r = spec.data?.radius ?? 50;
-        const color = spec.data?.color ?? 0x3b82f6;
-        const textureUrl = spec.data?.textureUrl;
-        const showWireframe = spec.data?.wireframe ?? true;
-        const segments = spec.data?.segments ?? 32;
+        this._object = new THREE.Group();
+
+        const r = (spec.data?.radius as number) ?? 50;
+        const color = (spec.data?.color as number) ?? 0x3b82f6;
+        const textureUrl = spec.data?.textureUrl as string;
+        const showWireframe = (spec.data?.wireframe as boolean) ?? true;
+        const segments = (spec.data?.segments as number) ?? 32;
 
         const geo = new THREE.SphereGeometry(r, segments, segments);
-
-        // Always create material, map will be assigned if available
         const mat = new THREE.MeshBasicMaterial({ color });
 
         if (textureUrl) {
             this.textureLoader.load(textureUrl, (tex) => {
                 mat.map = tex;
-                mat.color.setHex(0xffffff); // Reset base color if textured
+                mat.color.setHex(0xffffff);
                 mat.needsUpdate = true;
             });
         }
@@ -56,10 +52,9 @@ export class GlobeNode extends Node {
             this.object.add(this.wireframe);
         }
 
-        // Add a simple halo/atmosphere effect
         const haloGeo = new THREE.SphereGeometry(r * 1.1, segments, segments);
         const haloMat = new THREE.MeshBasicMaterial({
-            color: color,
+            color,
             transparent: true,
             opacity: 0.1,
             side: THREE.BackSide,
@@ -72,14 +67,13 @@ export class GlobeNode extends Node {
         this.object.add(this.markersGroup);
 
         if (spec.data?.markers) {
-            this._renderMarkers(spec.data.markers, r);
+            this._renderMarkers(spec.data.markers as GlobeNodeData['markers'], r);
         }
 
         this.updatePosition(this.position.x, this.position.y, this.position.z);
     }
 
-    private _renderMarkers(markers: any[], radius: number) {
-        // Clear existing markers
+    private _renderMarkers(markers: GlobeNodeData['markers'], radius: number) {
         while (this.markersGroup.children.length > 0) {
             const child = this.markersGroup.children[0] as THREE.Mesh;
             this.markersGroup.remove(child);
@@ -87,19 +81,15 @@ export class GlobeNode extends Node {
             (child.material as THREE.Material).dispose();
         }
 
-        for (const marker of markers) {
-            const lat = marker.lat;
-            const lng = marker.lng;
-            const size = marker.size || 2;
-            const color = marker.color || 0xff0000;
+        for (const marker of markers ?? []) {
+            const { lat, lng, size = 2, color = 0xff0000 } = marker;
 
-            // Convert lat/lng to 3D spherical coordinates
             const phi = (90 - lat) * (Math.PI / 180);
             const theta = (lng + 180) * (Math.PI / 180);
 
             const x = -(radius * Math.sin(phi) * Math.cos(theta));
-            const z = (radius * Math.sin(phi) * Math.sin(theta));
-            const y = (radius * Math.cos(phi));
+            const z = radius * Math.sin(phi) * Math.sin(theta);
+            const y = radius * Math.cos(phi);
 
             const geo = new THREE.SphereGeometry(size, 8, 8);
             const mat = new THREE.MeshBasicMaterial({ color });
@@ -110,54 +100,53 @@ export class GlobeNode extends Node {
         }
     }
 
-    updateSpec(updates: Partial<NodeSpec>): void {
+    updateSpec(updates: Partial<NodeSpec>): this {
         super.updateSpec(updates);
 
-        if (!updates.data) return;
+        if (!updates.data) return this;
 
-        const r = this.data?.radius ?? 50;
+        const r = (this.data?.radius as number) ?? 50;
 
         if (updates.data.textureUrl !== undefined) {
-             const mat = this.mesh.material as THREE.MeshBasicMaterial;
-             if (updates.data.textureUrl) {
-                 this.textureLoader.load(updates.data.textureUrl, (tex) => {
-                     if (mat.map) mat.map.dispose();
-                     mat.map = tex;
-                     mat.color.setHex(0xffffff);
-                     mat.needsUpdate = true;
-                 });
-             } else {
-                 if (mat.map) {
-                     mat.map.dispose();
-                     mat.map = null;
-                 }
-                 mat.color.setHex(updates.data.color ?? this.data.color ?? 0x3b82f6);
-                 mat.needsUpdate = true;
-             }
+            const mat = this.mesh.material as THREE.MeshBasicMaterial;
+            if (updates.data.textureUrl) {
+                this.textureLoader.load(updates.data.textureUrl as string, (tex) => {
+                    mat.map?.dispose();
+                    mat.map = tex;
+                    mat.color.setHex(0xffffff);
+                    mat.needsUpdate = true;
+                });
+            } else {
+                mat.map?.dispose();
+                mat.map = null;
+                mat.color.setHex(
+                    (updates.data.color as number) ?? (this.data?.color as number) ?? 0x3b82f6,
+                );
+                mat.needsUpdate = true;
+            }
         } else if (updates.data.color !== undefined) {
             const mat = this.mesh.material as THREE.MeshBasicMaterial;
             if (!mat.map) {
-                mat.color.setHex(updates.data.color);
+                mat.color.setHex(updates.data.color as number);
             }
         }
 
         if (updates.data.markers !== undefined) {
-            this._renderMarkers(updates.data.markers, r);
+            this._renderMarkers(updates.data.markers as GlobeNodeData['markers'], r);
         }
+
+        return this;
     }
 
     dispose(): void {
         this.mesh.geometry.dispose();
-        if ((this.mesh.material as THREE.MeshBasicMaterial).map) {
-            (this.mesh.material as THREE.MeshBasicMaterial).map?.dispose();
-        }
-        (this.mesh.material as THREE.Material).dispose();
+        const mat = this.mesh.material as THREE.MeshBasicMaterial;
+        mat.map?.dispose();
+        mat.dispose();
 
-        if (this.wireframe) {
-            (this.wireframe.material as THREE.Material).dispose();
-        }
+        this.wireframe?.geometry.dispose();
+        (this.wireframe?.material as THREE.Material)?.dispose();
 
-        // Halo
         const halo = this.object.children.find(
             (c) => c !== this.mesh && c !== this.wireframe,
         ) as THREE.Mesh;

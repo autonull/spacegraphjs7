@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 import { Edge } from './Edge';
-import type { SpaceGraph } from '../SpaceGraph';
-import type { EdgeSpec } from '../types';
-import type { Node } from '../nodes/Node';
 import { DOMUtils } from '../utils/DOMUtils';
+import type { SpaceGraph } from '../SpaceGraph';
+import type { EdgeData, EdgeSpec } from '../types';
+import type { Node } from '../nodes/Node';
 
 export class InterGraphEdge extends Edge {
     public isInterGraphEdge = true;
@@ -15,7 +15,6 @@ export class InterGraphEdge extends Edge {
     constructor(sg: SpaceGraph, spec: EdgeSpec, source: Node, target: Node) {
         super(sg, spec, source, target);
 
-        // Remove from the THREE scene if it was added incorrectly
         if (this.object.parent) {
             this.object.parent.remove(this.object);
         }
@@ -23,22 +22,25 @@ export class InterGraphEdge extends Edge {
         this.svgContainer = this.getGlobalSvgContainer();
         this.svgLine = DOMUtils.createElementNS(this.svgNamespace, 'path') as SVGPathElement;
 
-        const colorHex = (spec.data && spec.data.color) ? spec.data.color : 0x666666;
-        const colorHexStr = typeof colorHex === 'number' ? `#${colorHex.toString(16).padStart(6, '0')}` : colorHex;
+        const data = spec.data as EdgeData & { color?: number | string };
+        const colorHex = data?.color ?? 0x666666;
+        const colorHexStr =
+            typeof colorHex === 'number' ? `#${colorHex.toString(16).padStart(6, '0')}` : colorHex;
 
         this.svgLine.setAttribute('stroke', colorHexStr);
         this.svgLine.setAttribute('stroke-width', '2');
         this.svgLine.setAttribute('fill', 'none');
-        this.svgLine.setAttribute('stroke-dasharray', '5, 5'); // Dotted to indicate cross-canvas
+        this.svgLine.setAttribute('stroke-dasharray', '5, 5');
 
         this.svgContainer.appendChild(this.svgLine);
 
-        // Start continuous update loop to track camera/node changes across both instances
         this.startUpdateLoop();
     }
 
     private getGlobalSvgContainer(): SVGSVGElement {
-        let svg = document.getElementById('spacegraph-intergraph-overlay') as unknown as SVGSVGElement;
+        let svg = document.getElementById(
+            'spacegraph-intergraph-overlay',
+        ) as unknown as SVGSVGElement;
         if (!svg) {
             svg = DOMUtils.createElementNS(this.svgNamespace, 'svg', {
                 id: 'spacegraph-intergraph-overlay',
@@ -49,8 +51,8 @@ export class InterGraphEdge extends Edge {
                     width: '100vw',
                     height: '100vh',
                     pointerEvents: 'none',
-                    zIndex: '9999'
-                }
+                    zIndex: '9999',
+                },
             }) as unknown as SVGSVGElement;
             document.body.appendChild(svg);
         }
@@ -63,7 +65,7 @@ export class InterGraphEdge extends Edge {
 
         const rect = node.sg.renderer.renderer.domElement.getBoundingClientRect();
 
-        targetVector.x = (targetVector.x *  0.5 + 0.5) * rect.width + rect.left;
+        targetVector.x = (targetVector.x * 0.5 + 0.5) * rect.width + rect.left;
         targetVector.y = (targetVector.y * -0.5 + 0.5) * rect.height + rect.top;
         targetVector.z = 0;
     }
@@ -91,20 +93,22 @@ export class InterGraphEdge extends Edge {
         // Handled by update loop
     }
 
-    updateSpec(updates: Partial<EdgeSpec>) {
+    updateSpec(updates: Partial<EdgeSpec>): this {
         super.updateSpec(updates);
-        if (updates.data && updates.data.color) {
+        if (updates.data?.color) {
             const colorHex = updates.data.color;
-            const colorHexStr = typeof colorHex === 'number' ? `#${colorHex.toString(16).padStart(6, '0')}` : colorHex;
+            const colorHexStr =
+                typeof colorHex === 'number'
+                    ? `#${colorHex.toString(16).padStart(6, '0')}`
+                    : colorHex;
             this.svgLine.setAttribute('stroke', colorHexStr);
         }
+        return this;
     }
 
     dispose() {
         if (this.animationFrameId) cancelAnimationFrame(this.animationFrameId);
-        if (this.svgLine && this.svgLine.parentNode) {
-            this.svgLine.parentNode.removeChild(this.svgLine);
-        }
+        this.svgLine.parentNode?.removeChild(this.svgLine);
         super.dispose();
     }
 }

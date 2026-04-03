@@ -38,24 +38,30 @@ export async function runVisionAnalysis(outputDir: string): Promise<VisionReport
 
         let serverProcess;
         try {
-            logger.log(`Starting static server for ${outputDir}...`);
-            serverProcess = spawn('npx', ['vite', 'serve', outputDir, '--port', '5175', '--strictPort', '--no-open'], {
-                stdio: 'ignore',
-            });
+            logger.info(`Starting static server for ${outputDir}...`);
+            serverProcess = spawn(
+                'npx',
+                ['vite', 'serve', outputDir, '--port', '5175', '--strictPort', '--no-open'],
+                {
+                    stdio: 'ignore',
+                },
+            );
             await new Promise((resolve) => setTimeout(resolve, 2000));
 
             for (const file of htmlFiles) {
                 const relativePath = path.relative(outputDir, file).replace(/\\/g, '/');
                 const url = `http://localhost:5175/${relativePath}`;
-                logger.log(`Analyzing ${url}`);
+                logger.info(`Analyzing ${url}`);
 
                 try {
                     page.on('console', (msg) =>
                         logger.debug(`[Browser] ${msg.type()}: ${msg.text()}`),
                     );
                     page.on('pageerror', (err) => logger.error(`[Browser Error] ${err.message}`));
-                    page.on('requestfailed', request =>
-                        logger.error(`[Browser] Request failed: ${request.url()} (${request.failure()?.errorText})`)
+                    page.on('requestfailed', (request) =>
+                        logger.error(
+                            `[Browser] Request failed: ${request.url()} (${request.failure()?.errorText})`,
+                        ),
                     );
 
                     await page.goto(url, { waitUntil: 'networkidle', timeout: 10000 });
@@ -65,9 +71,9 @@ export async function runVisionAnalysis(outputDir: string): Promise<VisionReport
                             () => {
                                 const w = window as any;
                                 return (
-                                        w.SpaceGraph &&
-                                        w.SpaceGraph.instances &&
-                                        w.SpaceGraph.instances.size > 0
+                                    w.SpaceGraph &&
+                                    w.SpaceGraph.instances &&
+                                    w.SpaceGraph.instances.size > 0
                                 );
                             },
                             { timeout: 5000 },

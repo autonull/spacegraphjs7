@@ -1,24 +1,19 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+
+import { computeBoundsTree, disposeBoundsTree } from 'three-mesh-bvh';
+
 import { Node } from './Node';
-import type { SpaceGraph } from '../SpaceGraph';
+import { createLogger } from '../utils/logger';
 import type { NodeSpec } from '../types';
-import { createLogger } from '../utils/logger.js';
+import type { SpaceGraph } from '../SpaceGraph';
 
 const logger = createLogger('SceneNode');
 
-/**
- * SceneNode — Loads an external 3D model (GLTF/GLB) into the node.
- * Automatically computes bounding box and scales it to fit requested size.
- *
- * data options:
- *   url         : Model URL (required)
- *   targetSize  : Scale model so its max bounds match this size (default 100)
- *   autoCenter  : Center the model's geometry origin (default true)
- */
-import { computeBoundsTree, disposeBoundsTree } from 'three-mesh-bvh';
-
 export class SceneNode extends Node {
+    private _object = new THREE.Object3D();
+    get object(): THREE.Object3D { return this._object; }
+
     private modelRoot?: THREE.Group;
     private loader: GLTFLoader;
     private proxyMesh?: THREE.Mesh;
@@ -28,14 +23,14 @@ export class SceneNode extends Node {
     constructor(sg: SpaceGraph, spec: NodeSpec) {
         super(sg, spec);
 
-        const url = spec.data?.url;
-        const targetSize = spec.data?.targetSize ?? 100;
-        const autoCenter = spec.data?.autoCenter ?? true;
-        this.rotationSpeed = spec.data?.rotationSpeed ?? 0;
+        const url = (spec.data?.url as string) ?? undefined;
+        const targetSize = (spec.data?.targetSize as number) ?? 100;
+        const autoCenter = (spec.data?.autoCenter as boolean) ?? true;
+        this.rotationSpeed = (spec.data?.rotationSpeed as number) ?? 0;
 
         this.loader = new GLTFLoader();
         this.wrapper = new THREE.Group();
-        this.object.add(this.wrapper);
+        this._object.add(this.wrapper);
 
         if (url) {
             this.loadModel(url, targetSize, autoCenter);
@@ -52,23 +47,19 @@ export class SceneNode extends Node {
             (gltf) => {
                 this.modelRoot = gltf.scene;
 
-                // Compute bounding box
                 const box = new THREE.Box3().setFromObject(this.modelRoot);
                 const size = new THREE.Vector3();
                 box.getSize(size);
                 const center = new THREE.Vector3();
                 box.getCenter(center);
 
-                // Scale to target size
                 const maxDim = Math.max(size.x, size.y, size.z);
                 if (maxDim > 0) {
                     const scale = targetSize / maxDim;
                     this.modelRoot.scale.setScalar(scale);
                 }
 
-                // Center position locally
                 if (autoCenter) {
-                    // re-evaluate box after scale
                     const newBox = new THREE.Box3().setFromObject(this.modelRoot);
                     newBox.getCenter(center);
                     this.modelRoot.position.sub(center);
@@ -76,31 +67,26 @@ export class SceneNode extends Node {
 
                 this.wrapper.add(this.modelRoot);
 
-                // Create an invisible proxy geometry for much faster raycasting instead of deep traversing GLTFs
                 const finalBox = new THREE.Box3().setFromObject(this.wrapper);
                 const finalSize = new THREE.Vector3();
                 finalBox.getSize(finalSize);
 
                 const proxyGeo = new THREE.BoxGeometry(finalSize.x, finalSize.y, finalSize.z);
-                // Compute BVH for the simple proxy box
                 if (proxyGeo.computeBoundsTree) proxyGeo.computeBoundsTree();
 
                 const proxyMat = new THREE.MeshBasicMaterial({ visible: false });
                 this.proxyMesh = new THREE.Mesh(proxyGeo, proxyMat);
 
-                // Align proxy center to object center
                 const finalCenter = new THREE.Vector3();
                 finalBox.getCenter(finalCenter);
-                // Convert world space center back to local space relative to the node
                 this.wrapper.worldToLocal(finalCenter);
                 this.proxyMesh.position.copy(finalCenter);
 
                 this.wrapper.add(this.proxyMesh);
 
-                // Emitting an event ensures layouts/plugins know the model loaded
                 this.sg.events.emit('node:loaded', { id: this.id });
             },
-            undefined, // onProgress
+            undefined,
             (error) => {
                 logger.error('Node %s: Error loading model:', this.id, error);
             },
@@ -109,28 +95,27 @@ export class SceneNode extends Node {
 
     update() {
         if (this.rotationSpeed !== 0 && this.wrapper) {
-            // Apply rotation to the wrapper (which holds the centered model and proxy)
             this.wrapper.rotation.y += this.rotationSpeed;
         }
     }
 
-    updateSpec(updates: Partial<NodeSpec>): void {
+    updateSpec(updates: Partial<NodeSpec>): this {
         super.updateSpec(updates);
-        if (updates.data?.url && updates.data.url !== this.data.url) {
-            // Hot swapping models
+        if (updates.data?.url && (updates.data.url as string) !== this.data.url) {
             if (this.modelRoot && this.modelRoot.parent) {
                 this.modelRoot.parent.remove(this.modelRoot);
             }
             this.loadModel(
-                updates.data.url,
-                updates.data.targetSize ?? 100,
-                updates.data.autoCenter ?? true,
+                updates.data.url as string,
+                (updates.data.targetSize as number) ?? 100,
+                (updates.data.autoCenter as boolean) ?? true,
             );
         }
 
         if (updates.data?.rotationSpeed !== undefined) {
-             this.rotationSpeed = updates.data.rotationSpeed;
+            this.rotationSpeed = updates.data.rotationSpeed as number;
         }
+        return this;
     }
 
     dispose(): void {
@@ -141,9 +126,7 @@ export class SceneNode extends Node {
                     mesh.geometry.dispose();
                     if (mesh.geometry.disposeBoundsTree) mesh.geometry.disposeBoundsTree();
                     if (Array.isArray(mesh.material)) {
-                        for (const m of mesh.material) {
-                            m.dispose();
-                        }
+                        for (const m of mesh.material) m.dispose();
                     } else if (mesh.material) {
                         mesh.material.dispose();
                     }
@@ -151,9 +134,10 @@ export class SceneNode extends Node {
             });
         }
         if (this.proxyMesh) {
-             this.proxyMesh.geometry.dispose();
-             if (this.proxyMesh.geometry.disposeBoundsTree) this.proxyMesh.geometry.disposeBoundsTree();
-             (this.proxyMesh.material as THREE.Material).dispose();
+            this.proxyMesh.geometry.dispose();
+            if (this.proxyMesh.geometry.disposeBoundsTree)
+                this.proxyMesh.geometry.disposeBoundsTree();
+            (this.proxyMesh.material as THREE.Material).dispose();
         }
         super.dispose();
     }

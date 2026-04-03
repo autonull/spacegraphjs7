@@ -1,7 +1,8 @@
 import * as THREE from 'three';
+import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
 import { Edge } from './Edge';
 import type { SpaceGraph } from '../SpaceGraph';
-import type { EdgeSpec } from '../types';
+import type { EdgeData, EdgeSpec } from '../types';
 import type { Node } from '../nodes/Node';
 
 export class CurvedEdge extends Edge {
@@ -11,7 +12,6 @@ export class CurvedEdge extends Edge {
     constructor(sg: SpaceGraph, spec: EdgeSpec, source: Node, target: Node) {
         super(sg, spec, source, target);
 
-        // Swap the default geometry with our curve geometry
         this.curve = new THREE.QuadraticBezierCurve3(
             this.source.position,
             this.getControlPoint(),
@@ -26,8 +26,8 @@ export class CurvedEdge extends Edge {
             this.positionsBuffer[i * 3 + 2] = points[i].z;
         }
 
-        this.geometry = new THREE.BufferGeometry();
-        this.geometry.setAttribute('position', new THREE.BufferAttribute(this.positionsBuffer, 3));
+        this.geometry = new LineGeometry();
+        this.geometry.setPositions(Array.from(this.positionsBuffer));
         this.object.geometry.dispose();
         this.object.geometry = this.geometry;
     }
@@ -37,12 +37,10 @@ export class CurvedEdge extends Edge {
             .addVectors(this.source.position, this.target.position)
             .multiplyScalar(0.5);
 
-        // Calculate a normal vector to push the curve outwards
         const dir = new THREE.Vector3().subVectors(this.target.position, this.source.position);
         const normal = new THREE.Vector3(-dir.y, dir.x, 0).normalize();
 
-        // Determine curve strength based on edge data or default
-        const curveStrength = this.data.curveStrength || 50;
+        const curveStrength = Number((this.data as EdgeData).curveStrength as number) || 50;
         return mid.add(normal.multiplyScalar(curveStrength));
     }
 

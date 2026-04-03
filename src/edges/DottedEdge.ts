@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import type { SpaceGraph } from '../SpaceGraph';
-import type { EdgeSpec } from '../types';
+import type { EdgeData, EdgeSpec } from '../types';
 import type { Node } from '../nodes/Node';
 
 /**
@@ -17,7 +17,7 @@ export class DottedEdge {
     public sg: SpaceGraph;
     public source: Node;
     public target: Node;
-    public data: any;
+    public data: EdgeData;
     public object: THREE.Line;
     public geometry: THREE.BufferGeometry;
     private positionsBuffer: Float32Array;
@@ -29,24 +29,33 @@ export class DottedEdge {
         this.target = target;
         this.data = spec.data ?? {};
 
-        const dashSize = spec.data?.dashSize ?? 8;
-        const gapSize = spec.data?.gapSize ?? 6;
-        const color = spec.data?.color ?? 0x888888;
+        const data = spec.data as EdgeData & {
+            dashSize?: number;
+            gapSize?: number;
+            color?: number;
+            linewidth?: number;
+        };
+        const dashSize = data?.dashSize ?? 8;
+        const gapSize = data?.gapSize ?? 6;
+        const color = data?.color ?? 0x888888;
 
         this.positionsBuffer = new Float32Array([
-            source.position.x, source.position.y, source.position.z,
-            target.position.x, target.position.y, target.position.z
+            source.position.x,
+            source.position.y,
+            source.position.z,
+            target.position.x,
+            target.position.y,
+            target.position.z,
         ]);
 
         this.geometry = new THREE.BufferGeometry();
         this.geometry.setAttribute('position', new THREE.BufferAttribute(this.positionsBuffer, 3));
 
-        // LineDashedMaterial requires computeLineDistances()
         const material = new THREE.LineDashedMaterial({
             color,
             dashSize,
             gapSize,
-            linewidth: spec.data?.linewidth ?? 2,
+            linewidth: data?.linewidth ?? 2,
         });
 
         this.object = new THREE.Line(this.geometry, material);

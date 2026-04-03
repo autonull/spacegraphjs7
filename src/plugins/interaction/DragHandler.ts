@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import type { SpaceGraph } from '../SpaceGraph';
-import type { Node } from '../nodes/Node';
+import type { SpaceGraph } from '../../SpaceGraph';
+import type { Node } from '../../nodes/Node';
 import type { InteractionRaycaster } from './RaycasterHelper';
 
 /**
@@ -83,14 +83,14 @@ export class DragHandler {
         }
 
         this.dragNode.position.copy(newPosition);
-        this.dragNode.updateMatrixWorld(true);
+        this.dragNode.object?.updateMatrixWorld(true);
 
         for (const otherNode of this.draggingNodes) {
             if (otherNode !== this.dragNode && otherNode.object) {
                 const offset = this.nodeDragOffsets.get(otherNode);
                 if (offset) {
                     otherNode.position.copy(newPosition).add(offset);
-                    otherNode.updateMatrixWorld(true);
+                    otherNode.object.updateMatrixWorld(true);
                 }
             }
         }

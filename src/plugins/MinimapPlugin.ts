@@ -106,10 +106,10 @@ export class MinimapPlugin implements ISpaceGraphPlugin {
             e.clientY <= top + size
         ) {
             this.isDragging = true;
-            this.sg.cameraControls.controls.enabled = false;
+            (this.sg.cameraControls as any).enabled = false;
 
             const pt = this._pointerToWorld(e.clientX, e.clientY);
-            this.sg.cameraControls.controls.moveTo(pt.x, pt.y, 0, false);
+            (this.sg.cameraControls as any).setTarget(pt.x, pt.y, 0);
 
             // Re-render minimap immediately to update indicator
             this._renderMinimap();
@@ -119,29 +119,20 @@ export class MinimapPlugin implements ISpaceGraphPlugin {
         }
     };
 
-    private _onPointerMove = (e: PointerEvent) => {
-        if (!this.isDragging) {
-             const { left, top, size } = this._getBounds();
-             if (e.clientX >= left && e.clientX <= left + size && e.clientY >= top && e.clientY <= top + size) {
-                  this.sg.renderer.renderer.domElement.style.cursor = 'crosshair';
-             }
-             return;
-        }
-
-        const pt = this._pointerToWorld(e.clientX, e.clientY);
-        this.sg.cameraControls.controls.moveTo(pt.x, pt.y, 0, false);
-        this.sg.cameraControls.update();
-
-        e.stopPropagation();
-        e.preventDefault();
-    };
-
     private _onPointerUp = () => {
         if (this.isDragging) {
             this.isDragging = false;
-            this.sg.cameraControls.controls.enabled = true;
+            (this.sg.cameraControls as any).enabled = true;
             this.sg.renderer.renderer.domElement.style.cursor = 'auto';
         }
+    };
+
+    private _onPointerMove = (e: PointerEvent) => {
+        if (!this.isDragging) return;
+        const pt = this._pointerToWorld(e.clientX, e.clientY);
+        (this.sg.cameraControls as any).setTarget(pt.x, pt.y, 0);
+        this._renderMinimap();
+        e.stopPropagation();
     };
 
     onPostRender(_delta: number): void {
@@ -241,24 +232,27 @@ export class MinimapPlugin implements ISpaceGraphPlugin {
         const mainCam = this.sg.renderer.camera;
         // z-plane distance from camera to controls target
         const dist = mainCam.position.distanceTo(this.sg.cameraControls.target);
-        const vFov = mainCam.fov * Math.PI / 180;
+        const vFov = (mainCam.fov * Math.PI) / 180;
         const visibleHeight = 2 * Math.tan(vFov / 2) * dist;
         const visibleWidth = visibleHeight * mainCam.aspect;
 
         const target = this.sg.cameraControls.target;
 
         // Map target to minimap coordinates
-        const mapX = ((target.x - this.orthoCamera.position.x) / (this.settings.zoom * 2)) * size + (size / 2);
+        const mapX =
+            ((target.x - this.orthoCamera.position.x) / (this.settings.zoom * 2)) * size + size / 2;
         // y is inverted
-        const mapY = -((target.y - this.orthoCamera.position.y) / (this.settings.zoom * 2)) * size + (size / 2);
+        const mapY =
+            -((target.y - this.orthoCamera.position.y) / (this.settings.zoom * 2)) * size +
+            size / 2;
 
         const mapW = (visibleWidth / (this.settings.zoom * 2)) * size;
         const mapH = (visibleHeight / (this.settings.zoom * 2)) * size;
 
         const indicator = this.container.querySelector('#sg-minimap-indicator') as HTMLElement;
         if (indicator) {
-            indicator.style.left = `${mapX - mapW/2}px`;
-            indicator.style.top = `${mapY - mapH/2}px`;
+            indicator.style.left = `${mapX - mapW / 2}px`;
+            indicator.style.top = `${mapY - mapH / 2}px`;
             indicator.style.width = `${mapW}px`;
             indicator.style.height = `${mapH}px`;
         }

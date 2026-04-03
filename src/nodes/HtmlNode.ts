@@ -1,8 +1,9 @@
-import { DOMNode } from './DOMNode';
-import type { SpaceGraph } from '../SpaceGraph';
-import type { NodeSpec, SpaceGraphNodeData } from '../types';
 import { DOMUtils } from '../utils/DOMUtils';
 import { clamp } from '../utils/math';
+import type { NodeSpec, SpaceGraphNodeData } from '../types';
+import type { SpaceGraph } from '../SpaceGraph';
+
+import { DOMNode } from './DOMNode';
 
 export interface LabelLodLevel {
     distance: number;
@@ -22,33 +23,33 @@ export class HtmlNode extends DOMNode {
     private controlsWrapper: HTMLElement | null = null;
 
     constructor(sg: SpaceGraph, spec: NodeSpec) {
-        const width = (spec.data?.width as number) || 200;
-        const height = (spec.data?.height as number) || 100;
+        const width = (spec.data?.width as number) ?? 200;
+        const height = (spec.data?.height as number) ?? 100;
         const div = DOMUtils.createElement('div');
         super(sg, spec, div, width, height, { visible: false });
 
         this.size = { width, height };
 
-        this.domElement.className = `spacegraph-html-node node-common ${(spec.data?.className as string) || ''}`;
+        this.domElement.className = `spacegraph-html-node node-common ${(spec.data?.className as string) ?? ''}`;
         this.domElement.id = `node-html-${spec.id}`;
         this.domElement.dataset.nodeId = spec.id;
 
         this.setupContainerStyles(width, height, 'dark', {
-            backgroundColor: (spec.data?.color as string) || 'rgba(51, 102, 255, 0.8)',
+            backgroundColor: (spec.data?.color as string) ?? 'rgba(51, 102, 255, 0.8)',
             color: 'white',
             border: '2px solid white',
             padding: '0',
             justifyContent: 'center',
             alignItems: 'center',
-            pointerEvents: (spec.data?.pointerEvents as string) || 'auto',
-            ...((spec.data?.style as Record<string, string>) || {}),
+            pointerEvents: (spec.data?.pointerEvents as string) ?? 'auto',
+            ...((spec.data?.style as Record<string, string>) ?? {}),
         });
 
         this._createInnerContent(spec);
         this._createControls();
         this._createResizeHandle();
 
-        const data = (spec.data as SpaceGraphNodeData) || {};
+        const data = (spec.data as SpaceGraphNodeData) ?? {};
         if (data.contentScale) {
             this.setContentScale(data.contentScale as number);
         }
@@ -61,7 +62,7 @@ export class HtmlNode extends DOMNode {
             this.labelLod = data.labelLod as LabelLodLevel[];
         }
 
-        this._applyNodeBgColor((spec.data?.color as string) || 'rgba(51, 102, 255, 0.8)');
+        this._applyNodeBgColor((spec.data?.color as string) ?? 'rgba(51, 102, 255, 0.8)');
 
         this.updatePosition(this.position.x, this.position.y, this.position.z);
     }
@@ -72,8 +73,8 @@ export class HtmlNode extends DOMNode {
 
         const contentWrapper = DOMUtils.createElement('div');
         contentWrapper.className = 'node-content';
-        const data = (spec.data as SpaceGraphNodeData) || {};
-        contentWrapper.style.transform = `scale(${(data.contentScale as number) || 1.0})`;
+        const data = (spec.data as SpaceGraphNodeData) ?? {};
+        contentWrapper.style.transform = `scale(${(data.contentScale as number) ?? 1.0})`;
         contentWrapper.style.transformOrigin = 'center center';
 
         if (data.html) {
@@ -87,7 +88,7 @@ export class HtmlNode extends DOMNode {
         } else if (data.editable) {
             contentWrapper.contentEditable = 'true';
             contentWrapper.spellcheck = false;
-            contentWrapper.textContent = (data.content as string) || spec.label || 'HTML Node';
+            contentWrapper.textContent = (data.content as string) ?? spec.label ?? 'HTML Node';
 
             let debounceTimer: ReturnType<typeof setTimeout>;
             contentWrapper.addEventListener('input', () => {
@@ -129,7 +130,7 @@ export class HtmlNode extends DOMNode {
                 { passive: false },
             );
         } else {
-            contentWrapper.textContent = (data.content as string) || spec.label || 'HTML Node';
+            contentWrapper.textContent = (data.content as string) ?? spec.label ?? 'HTML Node';
         }
 
         wrapper.appendChild(contentWrapper);
@@ -186,11 +187,11 @@ export class HtmlNode extends DOMNode {
             },
         ];
 
-        buttons.forEach((btn) => {
+        buttons.forEach(({ class: cls, title, icon, action }) => {
             const button = DOMUtils.createElement('button');
-            button.className = `node-quick-button ${btn.class}`;
-            button.title = btn.title;
-            button.textContent = btn.icon;
+            button.className = `node-quick-button ${cls}`;
+            button.title = title;
+            button.textContent = icon;
             button.style.cssText = `
                 background: rgba(0,0,0,0.7);
                 border: 1px solid rgba(255,255,255,0.3);
@@ -203,7 +204,7 @@ export class HtmlNode extends DOMNode {
             `;
             button.onclick = (e) => {
                 e.stopPropagation();
-                btn.action();
+                action();
             };
             controls.appendChild(button);
         });
@@ -247,7 +248,6 @@ export class HtmlNode extends DOMNode {
         this.domElement.addEventListener('mouseenter', () => {
             handle.style.opacity = '1';
         });
-
         this.domElement.addEventListener('mouseleave', () => {
             handle.style.opacity = '0';
         });
@@ -265,7 +265,7 @@ export class HtmlNode extends DOMNode {
     updateSpec(updates: Partial<NodeSpec>): this {
         super.updateSpec(updates);
 
-        const data = (updates.data as SpaceGraphNodeData) || {};
+        const data = (updates.data as SpaceGraphNodeData) ?? {};
 
         if (updates.data) {
             if (data.color) {
@@ -278,8 +278,8 @@ export class HtmlNode extends DOMNode {
                 this.domElement.style.pointerEvents = data.pointerEvents as string;
             }
             if (data.width || data.height) {
-                const w = (data.width as number) || (this.data.width as number) || 200;
-                const h = (data.height as number) || (this.data.height as number) || 100;
+                const w = (data.width as number) ?? (this.data.width as number) ?? 200;
+                const h = (data.height as number) ?? (this.data.height as number) ?? 100;
                 this.setSize(w, h);
             }
             if (data.contentScale !== undefined) {
@@ -330,16 +330,17 @@ export class HtmlNode extends DOMNode {
 
         if (scaleContent && oldArea > 0) {
             const scaleFactor = Math.sqrt((this.size.width * this.size.height) / oldArea);
-            this.setContentScale((this.data?.contentScale || 1.0) * scaleFactor);
+            this.setContentScale(((this.data?.contentScale as number) ?? 1.0) * scaleFactor);
         }
 
         this.data = { ...this.data, width: this.size.width, height: this.size.height };
     }
 
     setContentScale(scale: number): void {
-        const clampedScale = Math.max(
+        const clampedScale = clamp(
+            scale,
             HtmlNode.CONTENT_SCALE_RANGE.min,
-            Math.min(scale, HtmlNode.CONTENT_SCALE_RANGE.max),
+            HtmlNode.CONTENT_SCALE_RANGE.max,
         );
         this.data = { ...this.data, contentScale: clampedScale };
 
@@ -355,7 +356,7 @@ export class HtmlNode extends DOMNode {
     }
 
     adjustContentScale = (deltaFactor: number): void => {
-        this.setContentScale((this.data?.contentScale || 1.0) * deltaFactor);
+        this.setContentScale(((this.data?.contentScale as number) ?? 1.0) * deltaFactor);
     };
 
     adjustNodeSize = (factor: number): void => {
@@ -424,9 +425,9 @@ export class HtmlNode extends DOMNode {
     }
 
     updateLod(distance: number): void {
-        if (!this.labelLod || this.labelLod.length === 0) {
+        if (!this.labelLod.length) {
             if (this.contentWrapper) {
-                const baseScale = (this.data?.contentScale as number) || 1.0;
+                const baseScale = (this.data?.contentScale as number) ?? 1.0;
                 this.contentWrapper.style.transform = `scale(${baseScale})`;
             }
             this.domElement.style.visibility = '';
@@ -434,7 +435,7 @@ export class HtmlNode extends DOMNode {
         }
 
         const sortedLodLevels = [...this.labelLod].sort(
-            (a, b) => (b.distance || 0) - (a.distance || 0),
+            (a, b) => (b.distance ?? 0) - (a.distance ?? 0),
         );
         const camera = this.sg?.renderer?.camera;
         if (!camera) return;
@@ -443,16 +444,13 @@ export class HtmlNode extends DOMNode {
 
         let ruleApplied = false;
         for (const level of sortedLodLevels) {
-            if (distanceToCamera >= (level.distance || 0)) {
-                if (level.style?.includes('visibility:hidden')) {
-                    this.domElement.style.visibility = 'hidden';
-                } else {
-                    this.domElement.style.visibility = '';
-                }
+            if (distanceToCamera >= (level.distance ?? 0)) {
+                this.domElement.style.visibility = level.style?.includes('visibility:hidden')
+                    ? 'hidden'
+                    : '';
                 if (this.contentWrapper) {
-                    const baseScale = (this.data?.contentScale as number) || 1.0;
-                    const scale = baseScale * (level.scale ?? 1.0);
-                    this.contentWrapper.style.transform = `scale(${scale})`;
+                    const baseScale = (this.data?.contentScale as number) ?? 1.0;
+                    this.contentWrapper.style.transform = `scale(${baseScale * (level.scale ?? 1.0)})`;
                 }
                 ruleApplied = true;
                 break;
@@ -462,7 +460,7 @@ export class HtmlNode extends DOMNode {
         if (!ruleApplied) {
             this.domElement.style.visibility = '';
             if (this.contentWrapper) {
-                const baseScale = (this.data?.contentScale as number) || 1.0;
+                const baseScale = (this.data?.contentScale as number) ?? 1.0;
                 this.contentWrapper.style.transform = `scale(${baseScale})`;
             }
         }

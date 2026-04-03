@@ -1,6 +1,6 @@
 import type { SpaceGraph } from '../SpaceGraph';
 import type { ISpaceGraphPlugin } from '../types';
-import type { HUDElementOptions } from './types';
+import type { HUDElementOptions } from './hud/types';
 import { HUDStatusBar } from './hud/HUDStatusBar';
 import { HUDPerformanceMetrics } from './hud/HUDPerformanceMetrics';
 import { HUDAlerts, type AlertOptions } from './hud/HUDAlerts';
@@ -42,7 +42,10 @@ export class HUDPlugin implements ISpaceGraphPlugin {
     }
 
     private createContainer(): void {
-        this.container = HUDDOMFactory.createContainer('spacegraph-hud', 'spacegraph-hud-container');
+        this.container = HUDDOMFactory.createContainer(
+            'spacegraph-hud',
+            'spacegraph-hud-container',
+        );
         this.container.style.inset = '0';
         this.container.style.zIndex = HUD_ZINDEX.HUD;
         HUDDOMFactory.appendToRenderer(this.sg, this.container);
@@ -91,7 +94,7 @@ export class HUDPlugin implements ISpaceGraphPlugin {
         this.elements.set(options.id, { el: element, options });
     }
 
-    updateElement(id: string, options: Partial<HUDXMLElementOptions>): void {
+    updateElement(id: string, options: Partial<HUDElementOptions>): void {
         const existing = this.elements.get(id);
         if (!existing) return;
 
@@ -115,7 +118,8 @@ export class HUDPlugin implements ISpaceGraphPlugin {
     }
 
     applyPosition(element: HTMLElement, position: HUDElementOptions['position']): void {
-        const styles = HUD_POSITIONS[position];
+        const posKey = position as keyof typeof HUD_POSITIONS;
+        const styles = HUD_POSITIONS[posKey];
         HUDDOMFactory.applyStyles(element, styles as Partial<CSSStyleDeclaration>);
     }
 
@@ -147,7 +151,11 @@ export class HUDPlugin implements ISpaceGraphPlugin {
         // Simplified tooltip
     }
 
-    showContextMenu(_x: number, _y: number, _items: Array<{ label: string; action: () => void }>): void {
+    showContextMenu(
+        _x: number,
+        _y: number,
+        _items: Array<{ label: string; action: () => void }>,
+    ): void {
         // Simplified context menu
     }
 

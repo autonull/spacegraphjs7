@@ -253,7 +253,7 @@ export class SpaceGraph {
                 position: [node.position.x, node.position.y, node.position.z],
                 data: safeClone(node.data),
             })),
-            edges: this.graph.edges.map((edge) => ({
+            edges: Array.from(this.graph.edges.values()).map((edge) => ({
                 id: edge.id,
                 type: edge.constructor.name,
                 source: edge.source.id,

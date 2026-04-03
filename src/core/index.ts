@@ -3,25 +3,21 @@
 // Event System
 export { EventSystem, PluginEventBus } from './events/EventSystem';
 export type {
-  SpaceGraphEvents,
-  PluginEvent,
-  VisionReportEvent,
-  LayoutAppliedEvent,
-  OverlapDetectedEvent,
-  NodeDragEvent,
-  SelectionChangedEvent,
-  AnyPluginEvent
+    SpaceGraphEvents,
+    PluginEvent,
+    VisionReportEvent,
+    LayoutAppliedEvent,
+    OverlapDetectedEvent,
+    NodeDragEvent,
+    SelectionChangedEvent,
+    AnyPluginEvent,
 } from './events/EventSystem';
 
 // Plugin System
 export { PluginRegistry } from './plugins/PluginRegistry';
 export { BaseLayout } from './plugins/BaseLayout';
-export type {
-  Plugin,
-  PluginContext,
-  LayoutConfig,
-  LayoutOptions
-} from './plugins/PluginRegistry';
+export type { LayoutConfig, LayoutOptions } from './plugins/BaseLayout';
+export type { Plugin, PluginContext } from './plugins/PluginRegistry';
 
 // Type Registry
 export { TypeRegistry } from './TypeRegistry';
@@ -34,10 +30,10 @@ export type { CameraControlsConfig } from './CameraControls';
 // Object Pool
 export { ObjectPool, MathPool } from './pooling/ObjectPool';
 export {
-  withPooledVector3,
-  withPooledVector2,
-  withPooledMatrix4,
-  withPooledBox3
+    withPooledVector3,
+    withPooledVector2,
+    withPooledMatrix4,
+    withPooledBox3,
 } from './pooling/ObjectPool';
 
 // Spatial Index

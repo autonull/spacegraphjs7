@@ -63,7 +63,8 @@ export class LODPlugin implements ISpaceGraphPlugin {
     }
 
     private _isNodeHiddenByParent(node: Node, hiddenParentIds: Set<string>): boolean {
-        let currentParent = (node.data as any)?.parent ?? (node as any).parameters?.parent ?? (node as any).parent;
+        let currentParent =
+            (node.data as any)?.parent ?? (node as any).parameters?.parent ?? (node as any).parent;
 
         while (currentParent) {
             if (hiddenParentIds.has(currentParent)) {
@@ -81,7 +82,7 @@ export class LODPlugin implements ISpaceGraphPlugin {
     }
 
     private _updateEdgeVisibility(): void {
-        for (const edge of this.sg.graph.edges) {
+        for (const [, edge] of this.sg.graph.edges) {
             if (!edge.object) continue;
 
             const sourceHidden =

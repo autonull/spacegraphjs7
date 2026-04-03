@@ -1,8 +1,9 @@
 import * as THREE from 'three';
+
 import { Node } from './Node';
-import type { SpaceGraph } from '../SpaceGraph';
-import type { NodeSpec, ShapeNodeData } from '../types';
 import { DOMUtils } from '../utils/DOMUtils';
+import type { NodeSpec, ShapeNodeData } from '../types';
+import type { SpaceGraph } from '../SpaceGraph';
 
 type ShapeType = 'sphere' | 'box' | 'circle' | 'plane' | 'cone' | 'cylinder' | 'torus' | 'ring';
 
@@ -12,25 +13,32 @@ export class ShapeNode extends Node {
     private labelSprite?: THREE.Sprite;
     private shapeType: ShapeType = 'sphere';
     private nodeSize: number = 40;
+    private readonly _object: THREE.Group;
+
+    get object(): THREE.Object3D {
+        return this._object;
+    }
 
     constructor(sg: SpaceGraph, spec: NodeSpec) {
         super(sg, spec);
 
+        this._object = new THREE.Group();
+
         const data = spec.data as ShapeNodeData;
-        this.shapeType = (data?.shape as ShapeType) || 'sphere';
-        this.nodeSize = data?.size || 40;
+        this.shapeType = (data?.shape as ShapeType) ?? 'sphere';
+        this.nodeSize = data?.size ?? 40;
         const color = (data?.color as THREE.ColorRepresentation) ?? 0x3366ff;
 
         this.meshGeometry = this.createGeometry(this.shapeType, this.nodeSize);
         this.meshMaterial = new THREE.MeshBasicMaterial({ color });
         const mesh = new THREE.Mesh(this.meshGeometry, this.meshMaterial);
 
-        this.object.add(mesh);
+        this._object.add(mesh);
 
         if (spec.label) {
             this.labelSprite = this.createLabel(spec.label);
             this.labelSprite.position.y = -this.nodeSize * 0.8;
-            this.object.add(this.labelSprite);
+            this._object.add(this.labelSprite);
         }
 
         this.updatePosition(this.position.x, this.position.y, this.position.z);
@@ -74,9 +82,7 @@ export class ShapeNode extends Node {
                 const mesh = this.object.children.find(
                     (c) => c instanceof THREE.Mesh,
                 ) as THREE.Mesh;
-                if (mesh) {
-                    mesh.geometry = this.meshGeometry;
-                }
+                if (mesh) mesh.geometry = this.meshGeometry;
             }
 
             if (data.size && data.size !== this.nodeSize) {
@@ -86,9 +92,7 @@ export class ShapeNode extends Node {
                 const mesh = this.object.children.find(
                     (c) => c instanceof THREE.Mesh,
                 ) as THREE.Mesh;
-                if (mesh) {
-                    mesh.geometry = this.meshGeometry;
-                }
+                if (mesh) mesh.geometry = this.meshGeometry;
                 if (this.labelSprite) {
                     this.labelSprite.position.y = -this.nodeSize * 0.8;
                 }
@@ -97,7 +101,7 @@ export class ShapeNode extends Node {
 
         if (updates.label !== undefined) {
             if (this.labelSprite) {
-                if (this.labelSprite.material.map) this.labelSprite.material.map.dispose();
+                this.labelSprite.material.map?.dispose();
                 this.labelSprite.material.dispose();
                 this.object.remove(this.labelSprite);
                 this.labelSprite = undefined;
@@ -113,9 +117,7 @@ export class ShapeNode extends Node {
     }
 
     private disposeGeometry(): void {
-        if (this.meshGeometry) {
-            this.meshGeometry.dispose();
-        }
+        this.meshGeometry?.dispose();
     }
 
     private createLabel(text: string): THREE.Sprite {
@@ -146,11 +148,9 @@ export class ShapeNode extends Node {
 
     dispose(): void {
         this.disposeGeometry();
-        if (this.meshMaterial) {
-            this.meshMaterial.dispose();
-        }
+        this.meshMaterial?.dispose();
         if (this.labelSprite) {
-            if (this.labelSprite.material.map) this.labelSprite.material.map.dispose();
+            this.labelSprite.material.map?.dispose();
             this.labelSprite.material.dispose();
         }
         super.dispose();

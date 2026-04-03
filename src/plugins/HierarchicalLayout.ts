@@ -1,7 +1,7 @@
 import * as THREE from 'three';
+import type { Node } from '../nodes/Node';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { ISpaceGraphPlugin } from '../types';
-import type { Node } from '../nodes/Node';
 
 /**
  * HierarchicalLayout — Top-down tree layout.
@@ -38,28 +38,25 @@ export class HierarchicalLayout implements ISpaceGraphPlugin {
     }
 
     apply(): void {
-        const nodeMap = this.sg.graph.nodes;
-        const edges = this.sg.graph.edges;
-        if (!nodeMap.size) return;
+        const { nodes, edges } = this.sg.graph;
+        if (!nodes.size) return;
 
-        // Build adjacency: parent → children
         const children: Map<string, string[]> = new Map();
         const hasParent: Set<string> = new Set();
 
-        for (const [id] of nodeMap) children.set(id, []);
-        for (const edge of edges) {
+        for (const [id] of nodes) children.set(id, []);
+        for (const edge of edges.values()) {
             children.get(edge.source.id)?.push(edge.target.id);
             hasParent.add(edge.target.id);
         }
 
-        // Pick root
         let rootId = this.settings.rootId;
-        if (!rootId || !nodeMap.has(rootId)) {
-            rootId = [...nodeMap.keys()].find((id) => !hasParent.has(id)) ?? [...nodeMap.keys()][0];
+        if (!rootId || !nodes.has(rootId)) {
+            const keys = [...nodes.keys()];
+            rootId = keys.find((id) => !hasParent.has(id)) ?? keys[0];
         }
 
-        // BFS to assign levels
-        const level: Map<string, number> = new Map();
+        const level = new Map<string, number>();
         const queue: string[] = [rootId];
         level.set(rootId, 0);
         const visited = new Set<string>([rootId]);
@@ -75,60 +72,48 @@ export class HierarchicalLayout implements ISpaceGraphPlugin {
             }
         }
 
-        // Group by level
-        const byLevel: Map<number, string[]> = new Map();
+        const byLevel = new Map<number, string[]>();
         for (const [id, lv] of level) {
             if (!byLevel.has(lv)) byLevel.set(lv, []);
             byLevel.get(lv)!.push(id);
         }
 
-        // Assign positions
-        const { levelHeight, nodeSpacing, z, direction } = this.settings;
+        const { levelHeight, nodeSpacing, z, direction, animate } = this.settings;
 
         for (const [lv, ids] of byLevel) {
             const totalWidth = (ids.length - 1) * nodeSpacing;
-            for (let i = 0; i < ids.length; i++) {
-                const id = ids[i];
-                const node = nodeMap.get(id) as Node;
+            ids.forEach((id, i) => {
+                const node = nodes.get(id) as Node;
                 const primary = lv * levelHeight;
                 const secondary = -totalWidth / 2 + i * nodeSpacing;
 
-                let x: number, y: number;
-                switch (direction) {
-                    case 'bottom-up':
-                        x = secondary;
-                        y = primary;
-                        break;
-                    case 'left-right':
-                        x = primary;
-                        y = secondary;
-                        break;
-                    case 'right-left':
-                        x = -primary;
-                        y = secondary;
-                        break;
-                    default: // top-down
-                        x = secondary;
-                        y = -primary;
-                }
-                node.applyPosition(new THREE.Vector3(x, y, z), this.settings.animate ?? true);
-            }
+                const [x, y] = (() => {
+                    switch (direction) {
+                        case 'bottom-up':
+                            return [secondary, primary];
+                        case 'left-right':
+                            return [primary, secondary];
+                        case 'right-left':
+                            return [-primary, secondary];
+                        default:
+                            return [secondary, -primary];
+                    }
+                })();
+
+                node.applyPosition(new THREE.Vector3(x, y, z), { animate });
+            });
         }
 
-        // Handle disconnected nodes (not visited in BFS)
         let orphanX = 0;
-        for (const [id, node] of nodeMap) {
+        const maxLevel = Math.max(...level.values(), 0);
+        for (const [id, node] of nodes) {
             if (!visited.has(id)) {
-                (node as Node).updatePosition(
-                    orphanX,
-                    -(Math.max(...level.values()) + 1) * levelHeight,
-                    z,
-                );
+                (node as Node).updatePosition(orphanX, -(maxLevel + 1) * levelHeight, z);
                 orphanX += nodeSpacing;
             }
         }
 
-        for (const edge of edges) edge.update?.();
+        for (const edge of edges.values()) edge.update?.();
     }
 
     onPreRender(_delta: number): void {}

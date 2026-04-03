@@ -1,11 +1,11 @@
 import * as THREE from 'three';
 import { CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
-import type { SpaceGraph } from '../SpaceGraph';
-import type { EdgeSpec } from '../types';
-import type { Node } from '../nodes/Node';
+import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
 import { Edge } from './Edge';
 import { DOMUtils } from '../utils/DOMUtils';
-import { clamp } from '../utils/math';
+import type { SpaceGraph } from '../SpaceGraph';
+import type { EdgeData, EdgeSpec } from '../types';
+import type { Node } from '../nodes/Node';
 
 export interface LabelLodLevel {
     distance: number;
@@ -31,16 +31,19 @@ export class LabeledEdge extends Edge {
     constructor(sg: SpaceGraph, spec: EdgeSpec, source: Node, target: Node) {
         super(sg, spec, source, target);
 
-        // Style the line
+        const data = spec.data as EdgeData & {
+            labelColor?: string;
+            fontSize?: string;
+            labelLod?: LabelLodLevel[];
+        };
         const color = spec.data?.color ?? 0x888888;
-        (this.object.material as THREE.LineBasicMaterial).color.setHex(color);
+        (this.object.material as LineMaterial).color.setHex(color);
 
-        // Build DOM label
         this.labelEl = DOMUtils.createElement('div');
         this.labelEl.className = 'sg-edge-label';
         Object.assign(this.labelEl.style, {
-            color: spec.data?.labelColor ?? '#ffffff',
-            fontSize: spec.data?.fontSize ?? '12px',
+            color: data?.labelColor ?? '#ffffff',
+            fontSize: data?.fontSize ?? '12px',
             fontFamily: 'sans-serif',
             background: 'rgba(0,0,0,0.55)',
             padding: '1px 5px',
@@ -53,8 +56,8 @@ export class LabeledEdge extends Edge {
         this.labelObject = new CSS2DObject(this.labelEl);
         this.object.add(this.labelObject);
 
-        if (spec.data?.labelLod) {
-            this.labelLod = spec.data.labelLod as LabelLodLevel[];
+        if (data?.labelLod) {
+            this.labelLod = data.labelLod;
         }
 
         this._positionLabel();
@@ -75,7 +78,7 @@ export class LabeledEdge extends Edge {
         }
 
         const sortedLodLevels = [...this.labelLod].sort(
-            (a, b) => (b.distance || 0) - (a.distance || 0),
+            (a, b) => (b.distance ?? 0) - (a.distance ?? 0),
         );
         const camera = this.sg?.renderer?.camera;
         if (!camera) return;
@@ -87,17 +90,12 @@ export class LabeledEdge extends Edge {
 
         let ruleApplied = false;
         for (const level of sortedLodLevels) {
-            if (distanceToCamera >= (level.distance || 0)) {
-                if (level.style?.includes('visibility:hidden')) {
-                    this.labelEl.style.visibility = 'hidden';
-                } else {
-                    this.labelEl.style.visibility = '';
-                }
-                if (level.scale !== undefined) {
-                    this.labelEl.style.transform = `scale(${level.scale})`;
-                } else {
-                    this.labelEl.style.transform = '';
-                }
+            if (distanceToCamera >= (level.distance ?? 0)) {
+                this.labelEl.style.visibility = level.style?.includes('visibility:hidden')
+                    ? 'hidden'
+                    : '';
+                this.labelEl.style.transform =
+                    level.scale !== undefined ? `scale(${level.scale})` : '';
                 ruleApplied = true;
                 break;
             }
@@ -115,20 +113,22 @@ export class LabeledEdge extends Edge {
         this.updateLod(0);
     }
 
-    updateSpec(updates: Partial<EdgeSpec>): void {
+    updateSpec(updates: Partial<EdgeSpec>): this {
         super.updateSpec(updates);
+        const data = updates.data as EdgeData & { labelColor?: string; labelLod?: LabelLodLevel[] };
         if (updates.data?.label !== undefined) {
             this.labelEl.textContent = updates.data.label;
         }
-        if (updates.data?.labelColor) {
-            this.labelEl.style.color = updates.data.labelColor;
+        if (data?.labelColor) {
+            this.labelEl.style.color = data.labelColor;
         }
-        if (updates.data?.color) {
-            (this.object.material as THREE.LineBasicMaterial).color.setHex(updates.data.color);
+        if (data?.color) {
+            (this.object.material as LineMaterial).color.setHex(data.color);
         }
-        if (updates.data?.labelLod !== undefined) {
-            this.labelLod = updates.data.labelLod as LabelLodLevel[];
+        if (data?.labelLod !== undefined) {
+            this.labelLod = data.labelLod;
         }
+        return this;
     }
 
     dispose(): void {

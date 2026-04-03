@@ -1,6 +1,6 @@
 import type { SpaceGraph } from '../SpaceGraph';
-import type { ISpaceGraphPlugin } from '../types';
 import type { Node } from '../nodes/Node';
+import type { ISpaceGraphPlugin } from '../types';
 
 /**
  * RadialLayout — Positions the root node at the center and distributes
@@ -33,94 +33,83 @@ export class RadialLayout implements ISpaceGraphPlugin {
     }
 
     apply(): void {
-        const nodeMap = this.sg.graph.nodes;
-        const edges = this.sg.graph.edges;
-        if (!nodeMap.size) return;
+        const { nodes, edges } = this.sg.graph;
+        if (!nodes.size) return;
 
-        // Build adjacency
         const children: Map<string, string[]> = new Map();
         const hasParent: Set<string> = new Set();
-        for (const [id] of nodeMap) children.set(id, []);
-        for (const edge of edges) {
+        for (const [id] of nodes) children.set(id, []);
+        for (const edge of edges.values()) {
             children.get(edge.source.id)?.push(edge.target.id);
             hasParent.add(edge.target.id);
         }
 
-        // Pick root
         let rootId = this.settings.rootId;
-        if (!rootId || !nodeMap.has(rootId)) {
-            rootId = [...nodeMap.keys()].find((id) => !hasParent.has(id)) ?? [...nodeMap.keys()][0];
+        if (!rootId || !nodes.has(rootId)) {
+            const keys = [...nodes.keys()];
+            rootId = keys.find((id) => !hasParent.has(id)) ?? keys[0];
         }
 
-        // Place root at center
-        const root = nodeMap.get(rootId) as Node;
-        root.updatePosition(0, 0, this.settings.z);
+        const { baseRadius, radiusStep, z, startAngle } = this.settings;
+        const root = nodes.get(rootId) as Node;
+        root.updatePosition(0, 0, z);
 
-        // BFS with angular sector allocation
         interface QueueItem {
             id: string;
             depth: number;
             minAngle: number;
             maxAngle: number;
         }
+
         const queue: QueueItem[] = [
             {
                 id: rootId,
                 depth: 0,
-                minAngle: this.settings.startAngle,
-                maxAngle: this.settings.startAngle + 2 * Math.PI,
+                minAngle: startAngle,
+                maxAngle: startAngle + 2 * Math.PI,
             },
         ];
         const visited = new Set<string>([rootId]);
 
         while (queue.length) {
             const { id, depth, minAngle, maxAngle } = queue.shift()!;
-            const nodeChildren = [];
-            for (const c of (children.get(id) ?? [])) {
-                if (!visited.has(c)) {
-                    nodeChildren.push(c);
-                }
-            }
+            const nodeChildren = (children.get(id) ?? []).filter((c) => !visited.has(c));
             if (!nodeChildren.length) continue;
 
             const angleStep = (maxAngle - minAngle) / nodeChildren.length;
-            const radius = this.settings.baseRadius + depth * this.settings.radiusStep;
+            const radius = baseRadius + depth * radiusStep;
 
-            for (let i = 0; i < nodeChildren.length; i++) {
-                const childId = nodeChildren[i];
+            nodeChildren.forEach((childId, i) => {
                 visited.add(childId);
                 const angle = minAngle + (i + 0.5) * angleStep;
-                const childX = Math.cos(angle) * radius;
-                const childY = Math.sin(angle) * radius;
-                (nodeMap.get(childId) as Node)?.updatePosition(childX, childY, this.settings.z);
+                (nodes.get(childId) as Node)?.updatePosition(
+                    Math.cos(angle) * radius,
+                    Math.sin(angle) * radius,
+                    z,
+                );
                 queue.push({
                     id: childId,
                     depth: depth + 1,
                     minAngle: minAngle + i * angleStep,
                     maxAngle: minAngle + (i + 1) * angleStep,
                 });
-            }
+            });
         }
 
-        // Orphan nodes in outer ring
-        const orphans = [];
-        for (const id of nodeMap.keys()) {
-            if (!visited.has(id)) {
-                orphans.push(id);
-            }
-        }
-        const outerR = this.settings.baseRadius + nodeMap.size * this.settings.radiusStep;
-        for (let i = 0; i < orphans.length; i++) {
-            const id = orphans[i];
-            const angle = ((2 * Math.PI) / Math.max(orphans.length, 1)) * i;
-            (nodeMap.get(id) as Node).updatePosition(
-                Math.cos(angle) * outerR,
-                Math.sin(angle) * outerR,
-                this.settings.z,
-            );
+        const orphans = [...nodes.keys()].filter((id) => !visited.has(id));
+        if (orphans.length) {
+            const outerR = baseRadius + nodes.size * radiusStep;
+            orphans.forEach((id, i) => {
+                const angle = ((2 * Math.PI) / orphans.length) * i;
+                (nodes.get(id) as Node).updatePosition(
+                    Math.cos(angle) * outerR,
+                    Math.sin(angle) * outerR,
+                    z,
+                );
+            });
         }
 
-        for (const edge of edges) edge.update?.();
+        for (const edge of edges.values()) edge.update?.();
     }
 
     onPreRender(_delta: number): void {}

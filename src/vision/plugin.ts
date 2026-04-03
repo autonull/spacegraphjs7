@@ -20,10 +20,10 @@ export function spacegraphVision(options: VisionPluginOptions = {}): Plugin {
 
         async closeBundle() {
             if (!options.enabled) return;
-            logger.log('Vision analysis running on build output...');
+            logger.info('Vision analysis running on build output...');
 
             const report = await runVisionAnalysis('dist');
-            logger.log('Vision Analysis Report:', report);
+            logger.info('Vision Analysis Report:', report);
 
             if (options.thresholds?.layout && report.layoutScore < options.thresholds.layout) {
                 logger.warn(
@@ -41,7 +41,7 @@ export function spacegraphVision(options: VisionPluginOptions = {}): Plugin {
             }
 
             if (options.autoFix && report.issues.length > 0) {
-                logger.log(
+                logger.info(
                     `AutoFix enabled: generating patch for ${report.issues.length} issues...`,
                 );
 
@@ -72,8 +72,8 @@ export function spacegraphVision(options: VisionPluginOptions = {}): Plugin {
 
                 fs.writeFileSync(patchPath, JSON.stringify(patches, null, 2), 'utf-8');
 
-                logger.log(`Generated JSON patch file at: ${patchPath}`);
-                logger.log(`CI systems can consume this patch to mutate source data.`);
+                logger.info(`Generated JSON patch file at: ${patchPath}`);
+                logger.info(`CI systems can consume this patch to mutate source data.`);
             }
         },
 

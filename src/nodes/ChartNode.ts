@@ -1,7 +1,8 @@
-import { DOMNode } from './DOMNode';
-import type { SpaceGraph } from '../SpaceGraph';
-import type { NodeSpec } from '../types';
 import { DOMUtils } from '../utils/DOMUtils';
+import type { NodeSpec } from '../types';
+import type { SpaceGraph } from '../SpaceGraph';
+
+import { DOMNode } from './DOMNode';
 
 /**
  * ChartNode — Canvas-based chart node.  Renders via Chart.js if available,
@@ -15,34 +16,28 @@ import { DOMUtils } from '../utils/DOMUtils';
  *   width     : pixel width  (default 300)
  *   height    : pixel height (default 200)
  *   title     : optional chart title string
- *
- * Charts render onto a <canvas> element via CSS3D so they remain fully crisp
- * at any zoom level. The canvas is also wrapped in a div so a title bar can
- * sit above it.
  */
 export class ChartNode extends DOMNode {
     public canvasEl: HTMLCanvasElement;
-    private chartInstance: any = null;
-
+    private chartInstance: unknown = null;
     private titleEl: HTMLElement | null = null;
 
     constructor(sg: SpaceGraph, spec: NodeSpec) {
-        const w = spec.data?.width ?? 300;
-        const h = spec.data?.height ?? 200;
-        const theme = spec.data?.theme ?? 'dark';
-        const title = spec.label ?? spec.data?.title ?? '';
-        const totalH = h + (title ? 32 : 0);
+        const w = (spec.data?.width as number) ?? 300;
+        const h = (spec.data?.height as number) ?? 200;
+        const theme = (spec.data?.theme as string) ?? 'dark';
+        const title = spec.label ?? (spec.data?.title as string) ?? '';
+        const totalH = h + ((title as string) ? 32 : 0);
 
         const div = DOMUtils.createElement('div');
-        // Ensure DOMNode treats this as fully interactive, similar to HtmlNode
         super(sg, spec, div, w, totalH, { opacity: 0.1 });
 
         this.domElement.className = `spacegraph-chart-node theme-${theme}`;
 
-        this.setupContainerStyles(w, totalH, theme as any);
+        this.setupContainerStyles(w, totalH, theme as 'light' | 'dark');
 
         if (title) {
-            this.titleEl = this.createTitleBar(title, theme as any);
+            this.titleEl = this.createTitleBar(title, theme as 'light' | 'dark');
             this.domElement.appendChild(this.titleEl);
         }
 
@@ -51,15 +46,11 @@ export class ChartNode extends DOMNode {
             position: 'relative',
             flexGrow: '1',
             width: '100%',
-            height: '100%'
+            height: '100%',
         });
 
         this.canvasEl = DOMUtils.createElement('canvas', {
-            style: {
-                display: 'block',
-                width: '100%',
-                height: '100%'
-            }
+            style: { display: 'block', width: '100%', height: '100%' },
         });
         canvasContainer.appendChild(this.canvasEl);
         this.domElement.appendChild(canvasContainer);
@@ -68,31 +59,28 @@ export class ChartNode extends DOMNode {
     }
 
     private async _renderChart(spec: Partial<NodeSpec>) {
-        const chartType = spec.data?.chartType ?? 'bar';
-        const labels = spec.data?.labels ?? [];
-        const datasets = spec.data?.datasets ?? [];
+        const chartType = (spec.data?.chartType as string) ?? 'bar';
+        const labels = (spec.data?.labels as string[]) ?? [];
+        const datasets = (spec.data?.datasets as Record<string, unknown>[]) ?? [];
 
-        // Try to use Chart.js if the user has it installed
-        let Chart: any;
+        let Chart: unknown;
         try {
-            Chart = (await import('chart.js' as any)).Chart;
-            // Auto-register all components
-            const auto = await import('chart.js/auto' as any);
+            Chart = (await import('chart.js')).Chart;
+            const auto = await import('chart.js/auto');
             Chart = auto.default ?? Chart;
         } catch {
             Chart = null;
         }
 
-        const theme = spec.data?.theme ?? 'dark';
+        const theme = (spec.data?.theme as string) ?? 'dark';
         const isDark = theme === 'dark';
         const textColor = isDark ? '#94a3b8' : '#64748b';
         const gridColor = isDark ? '#1e293b' : '#e2e8f0';
 
         if (Chart) {
-            this.chartInstance?.destroy();
+            (this.chartInstance as { destroy?: () => void })?.destroy?.();
 
-            // Allow full override via chartOptions if provided
-            const customOptions = spec.data?.chartOptions || {};
+            const customOptions = (spec.data?.chartOptions as Record<string, unknown>) ?? {};
 
             const baseOptions = {
                 responsive: true,
@@ -101,48 +89,41 @@ export class ChartNode extends DOMNode {
                 plugins: {
                     legend: { labels: { color: textColor, font: { size: 11 } } },
                 },
-                scales: chartType === 'pie' || chartType === 'radar' ? undefined : {
-                    x: { ticks: { color: textColor }, grid: { color: gridColor } },
-                    y: { ticks: { color: textColor }, grid: { color: gridColor } },
-                }
+                scales:
+                    chartType === 'pie' || chartType === 'radar'
+                        ? undefined
+                        : {
+                              x: { ticks: { color: textColor }, grid: { color: gridColor } },
+                              y: { ticks: { color: textColor }, grid: { color: gridColor } },
+                          },
             };
 
-            const formattedDatasets = [];
-            for (let i = 0; i < datasets.length; i++) {
-                const ds = datasets[i];
-                formattedDatasets.push({
-                    label: ds.label ?? `Series ${i + 1}`,
-                    data: ds.data ?? [],
-                    backgroundColor: ds.color ?? `hsl(${i * 60}, 70%, 55%)`,
-                    borderColor: ds.borderColor ?? ds.color ?? `hsl(${i * 60}, 70%, 55%)`,
-                    borderWidth: ds.borderWidth ?? 1,
-                    ...ds // Allow other chartjs specific dataset properties to pass through
-                });
-            }
+            const formattedDatasets = datasets.map((ds: Record<string, unknown>, i: number) => ({
+                label: ds.label ?? `Series ${i + 1}`,
+                data: ds.data ?? [],
+                backgroundColor: ds.color ?? `hsl(${i * 60}, 70%, 55%)`,
+                borderColor: ds.borderColor ?? ds.color ?? `hsl(${i * 60}, 70%, 55%)`,
+                borderWidth: ds.borderWidth ?? 1,
+                ...ds,
+            }));
 
-            this.chartInstance = new Chart(this.canvasEl, {
+            this.chartInstance = new (Chart as new (...args: unknown[]) => unknown)(this.canvasEl, {
                 type: chartType,
-                data: {
-                    labels,
-                    datasets: formattedDatasets,
-                },
+                data: { labels, datasets: formattedDatasets },
                 options: { ...baseOptions, ...customOptions },
             });
         } else {
-            // Fallback built-in renderer (bar chart only)
-            this._renderFallback(labels, datasets, theme);
+            this._renderFallback(labels as string[], datasets as Record<string, unknown>[], theme);
         }
     }
 
-    private _renderFallback(labels: string[], datasets: any[], theme: string) {
+    private _renderFallback(labels: string[], datasets: Record<string, unknown>[], theme: string) {
         const ctx = this.canvasEl.getContext('2d');
         if (!ctx) return;
 
-        // Ensure internal canvas resolution matches display size for sharp rendering
         const rect = this.canvasEl.getBoundingClientRect();
-        // If not attached to DOM yet, fallback to node dimensions
-        const w = rect.width || this.data?.width || 300;
-        const h = rect.height || this.data?.height || 200;
+        const w = rect.width ?? (this.data?.width as number) ?? 300;
+        const h = rect.height ?? (this.data?.height as number) ?? 200;
 
         this.canvasEl.width = w;
         this.canvasEl.height = h;
@@ -153,7 +134,7 @@ export class ChartNode extends DOMNode {
         ctx.fillStyle = isDark ? '#0f172a' : '#ffffff';
         ctx.fillRect(0, 0, w, h);
 
-        const data: number[] = datasets[0]?.data ?? [];
+        const data: number[] = (datasets[0]?.data as number[]) ?? [];
         if (!data.length) {
             ctx.fillStyle = '#475569';
             ctx.font = '14px sans-serif';
@@ -169,7 +150,7 @@ export class ChartNode extends DOMNode {
         for (let i = 0; i < data.length; i++) {
             const val = data[i];
             const barH = (val / max) * (h - 30);
-            ctx.fillStyle = datasets[0]?.color ?? `hsl(${i * 40}, 70%, 55%)`;
+            ctx.fillStyle = (datasets[0]?.color as string) ?? `hsl(${i * 40}, 70%, 55%)`;
             ctx.fillRect(pad + i * barW + 2, h - barH - 20, barW - 4, barH);
 
             if (labels[i]) {
@@ -181,37 +162,42 @@ export class ChartNode extends DOMNode {
         }
     }
 
-    updateSpec(updates: Partial<NodeSpec>): void {
+    updateSpec(updates: Partial<NodeSpec>): this {
         super.updateSpec(updates);
 
         if (updates.label !== undefined && this.titleEl) {
-             this.titleEl.textContent = updates.label;
+            this.titleEl.textContent = updates.label;
         }
 
         if (updates.data) {
-             // Handle size updates
-             if (updates.data.width || updates.data.height) {
-                 const w = updates.data.width || this.data.width || 300;
-                 const h = updates.data.height || this.data.height || 200;
-                 const title = updates.label ?? this.label ?? this.data.title ?? '';
-                 const totalH = h + (title ? 32 : 0);
+            if (updates.data.width || updates.data.height) {
+                const w = Number(updates.data.width ?? this.data?.width ?? 300);
+                const h = Number(updates.data.height ?? this.data?.height ?? 200);
+                const title = (updates.label ?? this.label ?? this.data?.title ?? '') as string;
+                const totalH = h + (title ? 32 : 0);
 
-                 this.domElement.style.width = `${w}px`;
-                 this.domElement.style.height = `${totalH}px`;
+                this.domElement.style.width = `${w}px`;
+                this.domElement.style.height = `${totalH}px`;
 
-                 this.updateBackingGeometry(w, totalH);
-             }
+                this.updateBackingGeometry(w, totalH);
+            }
 
-             if (updates.data.datasets || updates.data.labels || updates.data.chartType || updates.data.theme || updates.data.chartOptions) {
-                 this._renderChart({ data: { ...this.data, ...updates.data } });
-             }
+            if (
+                updates.data.datasets ||
+                updates.data.labels ||
+                updates.data.chartType ||
+                updates.data.theme ||
+                updates.data.chartOptions
+            ) {
+                this._renderChart({ data: { ...this.data, ...updates.data } });
+            }
         }
+
+        return this;
     }
 
     dispose(): void {
-        if (this.chartInstance) {
-            this.chartInstance.destroy();
-        }
+        (this.chartInstance as { destroy?: () => void })?.destroy?.();
         super.dispose();
     }
 }

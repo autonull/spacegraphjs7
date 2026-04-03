@@ -61,7 +61,11 @@ export class VisionManager {
     public modelsLoaded = false;
 
     public async loadModels(modelPaths: Record<string, string>): Promise<void> {
-        logger.info('Initializing ONNX session with providers [%s]:', this.executionProviders.join(', '), modelPaths);
+        logger.info(
+            'Initializing ONNX session with providers [%s]:',
+            this.executionProviders.join(', '),
+            modelPaths,
+        );
 
         for (const [key, path] of Object.entries(modelPaths)) {
             try {
@@ -129,7 +133,7 @@ export class VisionManager {
                             const result = await this.sessions['tla'].run({
                                 text_features: tensor,
                             });
-                            const prob = (result['legibility_score'].data[0] as number);
+                            const prob = result['legibility_score'].data[0] as number;
                             if (prob >= 0.5) verifiedIssue = false;
                         } catch (e) {
                             logger.error('TLA model inference failed:', e);
@@ -153,7 +157,7 @@ export class VisionManager {
                             const result = await this.sessions['che'].run({
                                 color_neighborhood: tensor,
                             });
-                            const prob = (result['harmony_score'].data[0] as number);
+                            const prob = result['harmony_score'].data[0] as number;
                             if (prob < 0.5) colorHarmonyScore -= 10;
                         } catch (e) {
                             logger.error('CHE model inference failed:', e);
@@ -197,7 +201,8 @@ export class VisionManager {
 
             for (const nodeB of neighbors) {
                 const pairKey = [(nodeA as any).id, (nodeB as any).id].sort().join('|');
-                if ((nodeA as any).id === (nodeB as any).id || processedPairs.has(pairKey)) continue;
+                if ((nodeA as any).id === (nodeB as any).id || processedPairs.has(pairKey))
+                    continue;
                 processedPairs.add(pairKey);
                 if (!frustum.containsPoint((nodeB as any).object.position)) continue;
 
@@ -220,7 +225,7 @@ export class VisionManager {
                             ]);
                             const tensor = new Tensor('float32', inputs, [1, 8]);
                             const result = await this.sessions['odn'].run({ boxes: tensor });
-                            const prob = (result['overlap_prob'].data[0] as number);
+                            const prob = result['overlap_prob'].data[0] as number;
                             if (prob < 0.5) verifiedOverlap = false;
                         } catch (e) {
                             logger.error('ODN model inference failed:', e);
@@ -243,7 +248,7 @@ export class VisionManager {
         for (const n of nodes) {
             inDegrees.set((n as any).id, 0);
         }
-        for (const e of this.sg.graph.edges) {
+        for (const [, e] of this.sg.graph.edges) {
             if (e.target?.id) {
                 inDegrees.set(e.target.id, (inDegrees.get(e.target.id) ?? 0) + 1);
             }
@@ -261,7 +266,7 @@ export class VisionManager {
             maxDepth = Math.max(maxDepth, current.depth);
             depths.push(current.depth);
 
-            for (const edge of this.sg.graph.edges) {
+            for (const [, edge] of this.sg.graph.edges) {
                 if (edge.source.id === current.id) {
                     queue.push({ id: edge.target.id, depth: current.depth + 1 });
                 }
@@ -275,7 +280,7 @@ export class VisionManager {
                     avgDepth,
                     maxDepth,
                     nodes.length,
-                    this.sg.graph.edges.length,
+                    this.sg.graph.edges.size,
                 ]);
                 const tensor = new Tensor('float32', inputs, [1, 4]);
                 const result = await this.sessions['vhs'].run({ hierarchy_features: tensor });
@@ -388,7 +393,8 @@ export class VisionManager {
         if (mockReport.overall < 90) {
             logger.warn('Quality below threshold, triggering autonomous fix...');
             if (overlaps.length > 0) await this.autoFix({ type: 'overlap' }, mockReport);
-            if (legibilityFailures.length > 0) await this.autoFix({ type: 'legibility' }, mockReport);
+            if (legibilityFailures.length > 0)
+                await this.autoFix({ type: 'legibility' }, mockReport);
             if (hierarchyScore < 60) await this.autoFix({ type: 'hierarchy' }, mockReport);
             if (fittsLawScore < 60) await this.autoFix({ type: 'ergonomics' }, mockReport);
         }
@@ -408,7 +414,10 @@ export class VisionManager {
                 logger.info('Applying color/legibility corrections...');
                 const autoColorPlugin = this.sg.pluginManager.getPlugin('AutoColorPlugin') as any;
 
-                if (autoColorPlugin && typeof autoColorPlugin.applyVisionCorrection === 'function') {
+                if (
+                    autoColorPlugin &&
+                    typeof autoColorPlugin.applyVisionCorrection === 'function'
+                ) {
                     autoColorPlugin.applyVisionCorrection(report.legibility.failures);
                     logger.info('AutoColorPlugin corrections applied.');
                 } else {

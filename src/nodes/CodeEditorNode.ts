@@ -1,9 +1,11 @@
-import { DOMNode } from './DOMNode';
-import type { SpaceGraph } from '../SpaceGraph';
-import type { NodeSpec } from '../types';
 import loader from '@monaco-editor/loader';
+
 import { DOMUtils } from '../utils/DOMUtils';
-import { createLogger } from '../utils/logger.js';
+import { createLogger } from '../utils/logger';
+import type { NodeSpec } from '../types';
+import type { SpaceGraph } from '../SpaceGraph';
+
+import { DOMNode } from './DOMNode';
 
 const logger = createLogger('CodeEditorNode');
 
@@ -19,24 +21,27 @@ const logger = createLogger('CodeEditorNode');
  */
 export class CodeEditorNode extends DOMNode {
     private editorContainer: HTMLDivElement;
-    private editorInstance: any = null;
+    private editorInstance: unknown = null;
 
     constructor(sg: SpaceGraph, spec: NodeSpec) {
-        const w = spec.data?.width ?? 600;
-        const h = spec.data?.height ?? 400;
+        const w = (spec.data?.width as number) ?? 600;
+        const h = (spec.data?.height as number) ?? 400;
 
         const div = DOMUtils.createElement('div');
         super(sg, spec, div, w, h, { visible: false });
 
         this.domElement.className = 'spacegraph-code-editor-node';
-        const isLight = spec.data?.theme === 'vs';
+        const isLight = (spec.data?.theme as string) === 'vs';
 
         this.setupContainerStyles(w, h, isLight ? 'light' : 'dark', {
             backgroundColor: isLight ? '#fffffe' : '#1e1e1e',
-            border: '1px solid rgba(255, 255, 255, 0.1)'
+            border: '1px solid rgba(255, 255, 255, 0.1)',
         });
 
-        const titleBar = this.createTitleBar(spec.label || spec.data?.language || 'Code Editor', isLight ? 'light' : 'dark');
+        const titleBar = this.createTitleBar(
+            spec.label ?? (spec.data?.language as string) ?? 'Code Editor',
+            isLight ? 'light' : 'dark',
+        );
         titleBar.style.backgroundColor = isLight ? '#f3f3f3' : '#2d2d2d';
         titleBar.style.color = isLight ? '#333' : '#ccc';
         this.domElement.appendChild(titleBar);
@@ -46,7 +51,7 @@ export class CodeEditorNode extends DOMNode {
             flexGrow: '1',
             width: '100%',
             height: '100%',
-            position: 'relative'
+            position: 'relative',
         });
         this.domElement.appendChild(this.editorContainer);
 
@@ -56,48 +61,68 @@ export class CodeEditorNode extends DOMNode {
     }
 
     private initEditor(spec: NodeSpec) {
-        loader.init().then(monaco => {
-            this.editorInstance = monaco.editor.create(this.editorContainer, {
-                value: spec.data?.code || '// Write code here...',
-                language: spec.data?.language || 'typescript',
-                theme: spec.data?.theme || 'vs-dark',
-                automaticLayout: true,
-                minimap: { enabled: false },
-                scrollBeyondLastLine: false,
-                fontSize: 14
-            });
+        loader
+            .init()
+            .then((monaco) => {
+                this.editorInstance = monaco.editor.create(this.editorContainer, {
+                    value: (spec.data?.code as string) ?? '// Write code here...',
+                    language: (spec.data?.language as string) ?? 'typescript',
+                    theme: (spec.data?.theme as string) ?? 'vs-dark',
+                    automaticLayout: true,
+                    minimap: { enabled: false },
+                    scrollBeyondLastLine: false,
+                    fontSize: 14,
+                });
 
-            this.editorInstance.onDidChangeModelContent(() => {
-                this.data.code = this.editorInstance.getValue();
+                (
+                    this.editorInstance as {
+                        onDidChangeModelContent: (cb: () => void) => void;
+                        getValue: () => string;
+                    }
+                ).onDidChangeModelContent(() => {
+                    this.data.code = (this.editorInstance as { getValue: () => string }).getValue();
+                });
+            })
+            .catch((err) => {
+                logger.error('Failed to load Monaco editor:', err);
+                this.editorContainer.textContent = 'Failed to load editor.';
+                this.editorContainer.style.color = 'red';
+                this.editorContainer.style.padding = '20px';
             });
-        }).catch(err => {
-            logger.error('Failed to load Monaco editor:', err);
-            this.editorContainer.textContent = 'Failed to load editor.';
-            this.editorContainer.style.color = 'red';
-            this.editorContainer.style.padding = '20px';
-        });
     }
 
-    updateSpec(updates: Partial<NodeSpec>): void {
+    updateSpec(updates: Partial<NodeSpec>): this {
         super.updateSpec(updates);
 
         if (updates.data) {
             if (updates.data.width || updates.data.height) {
-                const w = updates.data.width || this.data?.width || 600;
-                const h = updates.data.height || this.data?.height || 400;
+                const w = (updates.data.width as number) ?? (this.data?.width as number) ?? 600;
+                const h = (updates.data.height as number) ?? (this.data?.height as number) ?? 400;
                 this.domElement.style.width = `${w}px`;
                 this.domElement.style.height = `${h}px`;
                 this.updateBackingGeometry(w, h);
                 if (this.editorInstance) {
-                    this.editorInstance.layout();
+                    (this.editorInstance as { layout: () => void }).layout();
                 }
             }
-            if (updates.data.code !== undefined && this.editorInstance && updates.data.code !== this.editorInstance.getValue()) {
-                this.editorInstance.setValue(updates.data.code);
+            if (
+                updates.data.code !== undefined &&
+                this.editorInstance &&
+                updates.data.code !== (this.editorInstance as { getValue: () => string }).getValue()
+            ) {
+                (this.editorInstance as { setValue: (v: string) => void }).setValue(
+                    updates.data.code as string,
+                );
             }
             if (updates.data.language !== undefined && this.editorInstance) {
-                loader.init().then(monaco => {
-                    monaco.editor.setModelLanguage(this.editorInstance.getModel(), updates.data!.language!);
+                const lang = updates.data.language;
+                loader.init().then((monaco) => {
+                    monaco.editor.setModelLanguage(
+                        (
+                            this.editorInstance as { getModel: () => unknown }
+                        ).getModel() as Parameters<typeof monaco.editor.setModelLanguage>[0],
+                        lang as string,
+                    );
                 });
             }
         }
@@ -106,12 +131,12 @@ export class CodeEditorNode extends DOMNode {
             const titleSpan = this.domElement.querySelector('.sg-node-title');
             if (titleSpan) titleSpan.textContent = updates.label;
         }
+
+        return this;
     }
 
     dispose(): void {
-        if (this.editorInstance) {
-            this.editorInstance.dispose();
-        }
+        (this.editorInstance as { dispose?: () => void })?.dispose?.();
         super.dispose();
     }
 }

@@ -37,31 +37,22 @@ export class GridLayout implements ISpaceGraphPlugin {
 
     /** Call explicitly or triggered externally. Does NOT run every frame. */
     apply(): void {
-        const nodes = [];
-        for (const n of this.sg.graph.nodes.values()) {
-            if (!n.data?.pinned) nodes.push(n);
-        }
+        const nodes = Array.from(this.sg.graph.nodes.values()).filter((n) => !n.data?.pinned);
         if (!nodes.length) return;
 
-        const cols =
-            this.settings.columns > 0 ? this.settings.columns : Math.ceil(Math.sqrt(nodes.length));
+        const { columns, spacingX, spacingY, offsetX, offsetY, animate } = this.settings;
+        const cols = columns > 0 ? columns : Math.ceil(Math.sqrt(nodes.length));
 
-        let i = 0;
         const targetPos = new THREE.Vector3();
-        for (const node of nodes) {
+        nodes.forEach((node, i) => {
             const col = i % cols;
             const row = Math.floor(i / cols);
-            const x = this.settings.offsetX + col * this.settings.spacingX;
-            const y = this.settings.offsetY - row * this.settings.spacingY;
-            targetPos.set(x, y, node.position.z);
-            node.applyPosition(targetPos, this.settings.animate ?? true);
-            i++;
-        }
+            targetPos.set(offsetX + col * spacingX, offsetY - row * spacingY, node.position.z);
+            node.applyPosition(targetPos, { animate });
+        });
 
-        // Refresh all edge geometries
-        for (const edge of this.sg.graph.edges) edge.update?.();
+        for (const edge of this.sg.graph.edges.values()) edge.update?.();
     }
 
-    // GridLayout is on-demand, not per-frame
     onPreRender(_delta: number): void {}
 }

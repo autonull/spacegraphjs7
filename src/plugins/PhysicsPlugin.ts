@@ -82,7 +82,7 @@ export class PhysicsPlugin implements ISpaceGraphPlugin {
 
         // 1. Edge Springs (Hooke's Law)
         if (this.settings.springStiffness > 0) {
-            for (const edge of this.sg.graph.edges) {
+            for (const [, edge] of this.sg.graph.edges) {
                 const n1 = edge.source;
                 const n2 = edge.target;
                 if (!n1 || !n2) continue;
@@ -159,7 +159,7 @@ export class PhysicsPlugin implements ISpaceGraphPlugin {
             node.updatePosition(node.position.x, node.position.y, node.position.z);
         }
 
-        for (const edge of this.sg.graph.edges) edge.update?.();
+        for (const [, edge] of this.sg.graph.edges) edge.update?.();
     }
 
     /** Pin a node so physics won't move it. */

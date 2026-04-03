@@ -1,6 +1,6 @@
-import type { SpaceGraph } from '../SpaceGraph';
-import type { Node } from '../nodes/Node';
-import type { Edge } from '../edges/Edge';
+import type { SpaceGraph } from '../../SpaceGraph';
+import type { Node } from '../../nodes/Node';
+import type { Edge } from '../../edges/Edge';
 
 /**
  * Hover manager for InteractionPlugin
