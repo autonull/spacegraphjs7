@@ -1,0 +1,70 @@
+<!doctype html>
+<html>
+    <head>
+        <title>Debug Test</title>
+        <style>
+            * { margin: 0; }
+            #container {
+                width: 100vw;
+                height: 100vh;
+                background-color: #1a1a2e;
+            }
+            #debug {
+                position: fixed;
+                top: 10px;
+                left: 10px;
+                background: rgba(0,0,0,0.8);
+                color: #0f0;
+                padding: 10px;
+                font-family: monospace;
+                font-size: 12px;
+                z-index: 9999;
+                border-radius: 4px;
+                max-width: 600px;
+                white-space: pre-wrap;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="debug">Initializing...</div>
+        <div id="container"></div>
+        <script type="module">
+            import { SpaceGraph, ShapeNode, Edge } from '../src/index.ts';
+            
+            const debug = document.getElementById('debug');
+            const log = (msg) => { debug.textContent += '\n' + msg; console.log(msg); };
+            
+            try {
+                log('1. SpaceGraph imported: ' + (SpaceGraph ? 'YES' : 'NO'));
+                log('2. SpaceGraph.create: ' + (typeof SpaceGraph.create));
+                log('3. ShapeNode: ' + (ShapeNode ? 'YES' : 'NO'));
+                
+                const spec = {
+                    nodes: [
+                        { id: 'a', type: 'ShapeNode', label: 'Node A', position: [0, 0, 0], data: { color: 0x3366ff } },
+                        { id: 'b', type: 'ShapeNode', label: 'Node B', position: [150, 0, 0], data: { color: 0xff6633 } },
+                        { id: 'c', type: 'ShapeNode', label: 'Node C', position: [75, 130, 0], data: { color: 0x33ff66 } },
+                    ],
+                    edges: [
+                        { id: 'e1', source: 'a', target: 'b', type: 'Edge' },
+                    ],
+                };
+                
+                log('4. Creating graph...');
+                const graph = await SpaceGraph.create('#container', spec);
+                
+                log('5. Graph created: ' + (graph ? 'YES' : 'NO'));
+                log('6. Graph nodes count: ' + graph.graph.nodes.size);
+                log('7. Graph edges count: ' + graph.graph.edges.length);
+                log('8. Node IDs: ' + [...graph.graph.nodes.keys()].join(', '));
+                
+                graph.fitView(150, 2.0);
+                log('9. fitView called');
+                log('✓ SUCCESS');
+            } catch (e) {
+                log('✗ ERROR: ' + e.message);
+                log(e.stack);
+            }
+        </script>
+    </body>
+</html>

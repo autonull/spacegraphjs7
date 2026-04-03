@@ -71,14 +71,14 @@ export class SpaceGraphApp {
             enableHistory: true,
             selectionHighlightClass: 'sg-node-selected',
             selectionHighlightColor: 0xffffff,
-            ...options
+            ...options,
         };
 
         const theme = {
             primaryColor: '#3b82f6',
             secondaryColor: '#8b5cf6',
             backgroundColor: 'rgba(15, 23, 42, 0.9)',
-            ...this.options.theme
+            ...this.options.theme,
         };
         this.options.theme = theme; // save defaults back
 
@@ -127,9 +127,9 @@ export class SpaceGraphApp {
             const size = 10000;
             const divisions = 100;
             const gridHelper = new THREE.GridHelper(size, divisions, 0x475569, 0x1e293b);
-            // @ts-ignore
+            // @ts-expect-error - GridHelper.material is Material | Material[]
             gridHelper.material.opacity = 0.5;
-            // @ts-ignore
+            // @ts-expect-error - GridHelper.material is Material | Material[]
             gridHelper.material.transparent = true;
             this.sg.renderer.scene.add(gridHelper);
         }
@@ -179,7 +179,10 @@ export class SpaceGraphApp {
                 if (this.options.onEdgeSelect) this.options.onEdgeSelect([]);
             }
 
-            if ((e.key === 'Delete' || e.key === 'Backspace') && (this.currentSelected.length > 0 || this.currentSelectedEdges.length > 0)) {
+            if (
+                (e.key === 'Delete' || e.key === 'Backspace') &&
+                (this.currentSelected.length > 0 || this.currentSelectedEdges.length > 0)
+            ) {
                 // If custom hotkey overrides delete, don't do default delete
                 if (!(this.options.hotkeys && this.options.hotkeys[e.key])) {
                     // Iterate over a copy to avoid skipping elements due to array mutation
@@ -216,13 +219,13 @@ export class SpaceGraphApp {
                 alignItems: 'center',
                 boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
                 width: '300px',
-                transition: 'background 0.3s ease'
-            }
+                transition: 'background 0.3s ease',
+            },
         });
 
         const icon = DOMUtils.createElement('span', {
             textContent: '🔍',
-            style: { marginRight: '10px', fontSize: '14px', color: '#94a3b8' }
+            style: { marginRight: '10px', fontSize: '14px', color: '#94a3b8' },
         });
         container.appendChild(icon);
 
@@ -236,8 +239,8 @@ export class SpaceGraphApp {
                 outline: 'none',
                 width: '100%',
                 fontFamily: 'sans-serif',
-                fontSize: '14px'
-            }
+                fontSize: '14px',
+            },
         });
 
         input.addEventListener('input', (e) => {
@@ -276,7 +279,7 @@ export class SpaceGraphApp {
         this.hud.addElement({
             id: 'app-search',
             position: 'top-center',
-            element: container
+            element: container,
         });
     }
 
@@ -304,7 +307,12 @@ export class SpaceGraphApp {
             } else {
                 // Default behavior: create a FlowEdge
                 const edgeId = `edge-${Date.now()}`;
-                this.addEdge({ id: edgeId, source: source.id, target: target.id, type: 'FlowEdge' });
+                this.addEdge({
+                    id: edgeId,
+                    source: source.id,
+                    target: target.id,
+                    type: 'FlowEdge',
+                });
             }
         });
 
@@ -462,7 +470,11 @@ export class SpaceGraphApp {
         for (const node of this.currentSelected) {
             if (node instanceof HtmlNode && this.options.selectionHighlightClass) {
                 node.domElement.classList.add(this.options.selectionHighlightClass);
-            } else if (this.options.selectionHighlightColor && node.data?.color !== undefined && typeof node.updateSpec === 'function') {
+            } else if (
+                this.options.selectionHighlightColor &&
+                node.data?.color !== undefined &&
+                typeof node.updateSpec === 'function'
+            ) {
                 // Save original color and apply highlight for WebGL nodes
                 this.originalColors.set(node, node.data.color);
                 node.updateSpec({ data: { color: this.options.selectionHighlightColor } });
@@ -470,7 +482,11 @@ export class SpaceGraphApp {
         }
 
         for (const edge of this.currentSelectedEdges) {
-            if (this.options.selectionHighlightEdgeColor && edge.data?.color !== undefined && typeof edge.updateSpec === 'function') {
+            if (
+                this.options.selectionHighlightEdgeColor &&
+                edge.data?.color !== undefined &&
+                typeof edge.updateSpec === 'function'
+            ) {
                 this.originalEdgeColors.set(edge, edge.data.color);
                 edge.updateSpec({ data: { color: this.options.selectionHighlightEdgeColor } });
             }
@@ -508,8 +524,8 @@ export class SpaceGraphApp {
                 width: '300px',
                 color: 'white',
                 fontFamily: 'sans-serif',
-                transition: 'all 0.3s ease'
-            }
+                transition: 'all 0.3s ease',
+            },
         });
 
         this.hud.addElement({ id: 'app-title-card', position: 'top-left', element: titleCard });
@@ -530,12 +546,21 @@ export class SpaceGraphApp {
                 whiteSpace: 'nowrap',
                 boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
                 color: 'white',
-                fontFamily: 'sans-serif'
-            }
+                fontFamily: 'sans-serif',
+            },
         });
 
-        const nodesStat = this._createStatBlock('Nodes', 'sg-app-node-count', this.sg.graph.nodes.size.toString());
-        const selectedStat = this._createStatBlock('Selected', 'sg-app-selected-count', '0', theme.primaryColor);
+        const nodesStat = this._createStatBlock(
+            'Nodes',
+            'sg-app-node-count',
+            this.sg.graph.nodes.size.toString(),
+        );
+        const selectedStat = this._createStatBlock(
+            'Selected',
+            'sg-app-selected-count',
+            '0',
+            theme.primaryColor,
+        );
 
         container.append(nodesStat, this._createDivider(), selectedStat, this._createDivider());
 
@@ -543,8 +568,13 @@ export class SpaceGraphApp {
             textContent: 'Fit View',
             style: {
                 background: `linear-gradient(135deg, ${theme.primaryColor}, ${theme.secondaryColor})`,
-                border: 'none', padding: '8px 16px', borderRadius: '99px', color: 'white', fontWeight: '600', cursor: 'pointer'
-            }
+                border: 'none',
+                padding: '8px 16px',
+                borderRadius: '99px',
+                color: 'white',
+                fontWeight: '600',
+                cursor: 'pointer',
+            },
         });
         fitBtn.onclick = () => this.sg.fitView(200);
         container.appendChild(fitBtn);
@@ -554,31 +584,41 @@ export class SpaceGraphApp {
 
         const actionsContainer = DOMUtils.createElement('div', {
             id: 'sg-app-toolbar-actions',
-            style: { display: 'flex', gap: '12px' }
+            style: { display: 'flex', gap: '12px' },
         });
         container.appendChild(actionsContainer);
 
         this.hud.addElement({ id: 'app-toolbar', position: 'bottom-center', element: container });
     }
 
-    private _createStatBlock(label: string, id: string, value: string, color?: string): HTMLElement {
+    private _createStatBlock(
+        label: string,
+        id: string,
+        value: string,
+        color?: string,
+    ): HTMLElement {
         return DOMUtils.createElement('div', {
             innerHTML: `<span style="font-size: 10px; color: #94a3b8; text-transform: uppercase;">${label}</span><span id="${id}" style="font-size: 16px; font-weight: 700;${color ? ` color: ${color};` : ''}">${value}</span>`,
-            style: { display: 'flex', flexDirection: 'column', alignItems: 'center' }
+            style: { display: 'flex', flexDirection: 'column', alignItems: 'center' },
         });
     }
 
     private _createDivider(): HTMLElement {
         return DOMUtils.createElement('div', {
-            style: { width: '1px', height: '24px', background: 'rgba(255,255,255,0.1)' }
+            style: { width: '1px', height: '24px', background: 'rgba(255,255,255,0.1)' },
         });
     }
 
     private _createModeToggle(theme: any): HTMLElement {
         const container = DOMUtils.createElement('div', {
             style: {
-                display: 'flex', gap: '4px', background: 'rgba(255,255,255,0.05)', borderRadius: '99px', padding: '2px', border: '1px solid rgba(255,255,255,0.1)'
-            }
+                display: 'flex',
+                gap: '4px',
+                background: 'rgba(255,255,255,0.05)',
+                borderRadius: '99px',
+                padding: '2px',
+                border: '1px solid rgba(255,255,255,0.1)',
+            },
         });
 
         const modeButtons: { [key: string]: HTMLButtonElement } = {};
@@ -594,17 +634,28 @@ export class SpaceGraphApp {
             }
         };
 
-        const modes: ('default'|'select'|'connect')[] = ['default', 'select', 'connect'];
+        const modes: ('default' | 'select' | 'connect')[] = ['default', 'select', 'connect'];
         const labels = ['View', 'Select', 'Connect'];
 
         modes.forEach((mode, i) => {
             const btn = DOMUtils.createElement('button', {
                 textContent: labels[i],
                 style: {
-                    background: 'transparent', border: 'none', padding: '6px 16px', borderRadius: '99px', color: '#94a3b8', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer', transition: 'all 0.2s ease'
-                }
+                    background: 'transparent',
+                    border: 'none',
+                    padding: '6px 16px',
+                    borderRadius: '99px',
+                    color: '#94a3b8',
+                    fontWeight: 'bold',
+                    fontSize: '12px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                },
             });
-            btn.onclick = () => { this.setMode(mode); updateModeStyles(mode); };
+            btn.onclick = () => {
+                this.setMode(mode);
+                updateModeStyles(mode);
+            };
             modeButtons[mode] = btn;
             container.appendChild(btn);
         });
@@ -618,21 +669,42 @@ export class SpaceGraphApp {
     private _createZoomControls(theme: any): HTMLElement {
         const container = DOMUtils.createElement('div', {
             style: {
-                display: 'flex', alignItems: 'center', gap: '2px', background: 'rgba(255,255,255,0.05)', borderRadius: '99px', padding: '2px 4px', border: '1px solid rgba(255,255,255,0.1)'
-            }
+                display: 'flex',
+                alignItems: 'center',
+                gap: '2px',
+                background: 'rgba(255,255,255,0.05)',
+                borderRadius: '99px',
+                padding: '2px 4px',
+                border: '1px solid rgba(255,255,255,0.1)',
+            },
         });
 
         const createBtn = (label: string, isZoomIn: boolean) => {
             const btn = DOMUtils.createElement('button', {
                 textContent: label,
-                style: { background: 'transparent', border: 'none', padding: '6px 12px', borderRadius: '99px', color: 'white', fontWeight: 'bold', fontSize: '16px', cursor: 'pointer' }
+                style: {
+                    background: 'transparent',
+                    border: 'none',
+                    padding: '6px 12px',
+                    borderRadius: '99px',
+                    color: 'white',
+                    fontWeight: 'bold',
+                    fontSize: '16px',
+                    cursor: 'pointer',
+                },
             });
-            btn.onmouseenter = () => btn.style.background = 'rgba(255,255,255,0.1)';
-            btn.onmouseleave = () => btn.style.background = 'transparent';
+            btn.onmouseenter = () => (btn.style.background = 'rgba(255,255,255,0.1)');
+            btn.onmouseleave = () => (btn.style.background = 'transparent');
             btn.onclick = () => {
                 if (!this.sg.cameraControls) return;
                 const currentRadius = this.sg.cameraControls.spherical.radius;
-                const targetRadius = Math.max(10, Math.min(5000, currentRadius + (isZoomIn ? -currentRadius * 0.5 : currentRadius * 0.5)));
+                const targetRadius = Math.max(
+                    10,
+                    Math.min(
+                        5000,
+                        currentRadius + (isZoomIn ? -currentRadius * 0.5 : currentRadius * 0.5),
+                    ),
+                );
                 this.sg.cameraControls.flyTo(this.sg.cameraControls.target, targetRadius, 0.5);
             };
             return btn;
@@ -644,7 +716,12 @@ export class SpaceGraphApp {
             min: '10',
             max: '5000',
             step: '1',
-            style: { width: '80px', margin: '0 8px', cursor: 'pointer', accentColor: theme.primaryColor }
+            style: {
+                width: '80px',
+                margin: '0 8px',
+                cursor: 'pointer',
+                accentColor: theme.primaryColor,
+            },
         });
 
         zoomSlider.oninput = () => {
@@ -654,10 +731,12 @@ export class SpaceGraphApp {
             this.sg.cameraControls.flyTo(this.sg.cameraControls.target, invertedRadius, 0);
         };
 
-        if (this.sg.cameraControls) zoomSlider.value = (5010 - this.sg.cameraControls.spherical.radius).toString();
+        if (this.sg.cameraControls)
+            zoomSlider.value = (5010 - this.sg.cameraControls.spherical.radius).toString();
 
         this._zoomSliderHandler = () => {
-            if (this.sg.cameraControls) zoomSlider.value = (5010 - this.sg.cameraControls.spherical.radius).toString();
+            if (this.sg.cameraControls)
+                zoomSlider.value = (5010 - this.sg.cameraControls.spherical.radius).toString();
         };
         this.sg.events.on('camera:move', this._zoomSliderHandler);
 
@@ -681,7 +760,9 @@ export class SpaceGraphApp {
             id: `sg-${isToolbar ? 'toolbar-' : ''}btn-${btn.id}`,
             style: {
                 background: bgNormal,
-                border: isToolbar ? '1px solid rgba(255,255,255,0.2)' : '1px solid rgba(255,255,255,0.1)',
+                border: isToolbar
+                    ? '1px solid rgba(255,255,255,0.2)'
+                    : '1px solid rgba(255,255,255,0.1)',
                 padding: isToolbar ? '6px 12px' : '10px 16px',
                 borderRadius: isToolbar ? '99px' : '8px',
                 color: 'white',
@@ -691,8 +772,8 @@ export class SpaceGraphApp {
                 transition: 'all 0.2s ease',
                 display: 'flex',
                 alignItems: 'center',
-                gap: isToolbar ? '6px' : '8px'
-            }
+                gap: isToolbar ? '6px' : '8px',
+            },
         });
 
         if (btn.icon) {
@@ -701,8 +782,8 @@ export class SpaceGraphApp {
 
         btnEl.appendChild(document.createTextNode(btn.label));
 
-        btnEl.onmouseenter = () => btnEl.style.background = bgHover;
-        btnEl.onmouseleave = () => btnEl.style.background = bgNormal;
+        btnEl.onmouseenter = () => (btnEl.style.background = bgHover);
+        btnEl.onmouseleave = () => (btnEl.style.background = bgNormal);
         btnEl.onclick = () => btn.onClick();
 
         return btnEl;
@@ -717,7 +798,7 @@ export class SpaceGraphApp {
 
         const theme = {
             backgroundColor: 'rgba(15, 23, 42, 0.9)',
-            ...this.options.theme
+            ...this.options.theme,
         };
 
         for (const btn of this.toolbarActions) {
@@ -742,15 +823,15 @@ export class SpaceGraphApp {
             primaryColor: '#3b82f6',
             secondaryColor: '#8b5cf6',
             backgroundColor: 'rgba(15, 23, 42, 0.9)',
-            ...this.options.theme
+            ...this.options.theme,
         };
 
         const container = DOMUtils.createElement('div', {
             style: {
                 display: 'flex',
                 gap: '12px',
-                flexDirection: 'column'
-            }
+                flexDirection: 'column',
+            },
         });
 
         for (const btn of this.buttons) {
@@ -760,7 +841,7 @@ export class SpaceGraphApp {
         this.hud.addElement({
             id: 'app-actions',
             position: 'top-right',
-            element: container
+            element: container,
         });
     }
 
@@ -769,7 +850,9 @@ export class SpaceGraphApp {
 
         const countEl = document.getElementById('sg-app-selected-count');
         if (countEl) {
-            countEl.textContent = (this.currentSelected.length + this.currentSelectedEdges.length).toString();
+            countEl.textContent = (
+                this.currentSelected.length + this.currentSelectedEdges.length
+            ).toString();
         }
 
         const nodeCountEl = document.getElementById('sg-app-node-count');
@@ -782,7 +865,12 @@ export class SpaceGraphApp {
         this.hud.showAlert(message, type);
     }
 
-    public showModal(options: { title: string; html: string; width?: string; onClose?: () => void }) {
+    public showModal(options: {
+        title: string;
+        html: string;
+        width?: string;
+        onClose?: () => void;
+    }) {
         this.hud.showModal(options);
     }
 

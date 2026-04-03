@@ -1,13 +1,10 @@
 export const DEG2RAD = Math.PI / 180;
 export const RAD2DEG = 180 / Math.PI;
 
-export function clamp(value: number, min: number, max: number): number {
-    return Math.max(min, Math.min(value, max));
-}
+export const clamp = (value: number, min: number, max: number): number =>
+    Math.max(min, Math.min(value, max));
 
-export function lerp(start: number, end: number, t: number): number {
-    return start + (end - start) * t;
-}
+export const lerp = (start: number, end: number, t: number): number => start + (end - start) * t;
 
 export function lerpVector3(
     out: { x: number; y: number; z: number },
@@ -21,9 +18,8 @@ export function lerpVector3(
     return out;
 }
 
-export function isObject(item: unknown): item is Record<string, unknown> {
-    return item !== null && typeof item === 'object' && !Array.isArray(item);
-}
+export const isObject = (item: unknown): item is Record<string, unknown> =>
+    item !== null && typeof item === 'object' && !Array.isArray(item);
 
 export function mergeDeep<T extends Record<string, unknown>>(
     target: T,
@@ -34,14 +30,13 @@ export function mergeDeep<T extends Record<string, unknown>>(
         for (const key in source) {
             const targetValue = target[key];
             const sourceValue = source[key];
-            if (isObject(targetValue) && isObject(sourceValue)) {
-                target[key] = mergeDeep(
-                    targetValue as Record<string, unknown>,
-                    sourceValue as Record<string, unknown>,
-                ) as T[Extract<keyof T, string>];
-            } else {
-                target[key] = sourceValue as T[Extract<keyof T, string>];
-            }
+            target[key] =
+                isObject(targetValue) && isObject(sourceValue)
+                    ? (mergeDeep(
+                          targetValue as Record<string, unknown>,
+                          sourceValue as Record<string, unknown>,
+                      ) as T[Extract<keyof T, string>])
+                    : (sourceValue as T[Extract<keyof T, string>]);
         }
     }
     return target;
@@ -52,41 +47,34 @@ export function toHexColor(numColor: number | string): string {
         if (numColor.startsWith('#')) return numColor;
         if (numColor.startsWith('rgb')) {
             const match = numColor.match(/\d+/g);
-            if (match && match.length >= 3) {
-                const r = parseInt(match[0], 10).toString(16).padStart(2, '0');
-                const g = parseInt(match[1], 10).toString(16).padStart(2, '0');
-                const b = parseInt(match[2], 10).toString(16).padStart(2, '0');
+            if (match?.length && match.length >= 3) {
+                const [r, g, b] = match
+                    .slice(0, 3)
+                    .map((v) => parseInt(v, 10).toString(16).padStart(2, '0'));
                 return `#${r}${g}${b}`;
             }
         }
         return numColor;
     }
-    if (typeof numColor !== 'number' || isNaN(numColor)) {
-        return '#ffffff';
-    }
-    const hex = Math.floor(numColor).toString(16).padStart(6, '0');
-    return `#${hex}`;
+    return typeof numColor === 'number' && !isNaN(numColor)
+        ? `#${Math.floor(numColor).toString(16).padStart(6, '0')}`
+        : '#ffffff';
 }
 
-export function randomRange(min: number, max: number): number {
-    return Math.random() * (max - min) + min;
-}
+export const randomRange = (min: number, max: number): number => Math.random() * (max - min) + min;
 
-export function randomInt(min: number, max: number): number {
-    return Math.floor(randomRange(min, max + 1));
-}
+export const randomInt = (min: number, max: number): number =>
+    Math.floor(randomRange(min, max + 1));
 
-export function smoothstep(edge0: number, edge1: number, x: number): number {
+export const smoothstep = (edge0: number, edge1: number, x: number): number => {
     const t = clamp((x - edge0) / (edge1 - edge0), 0, 1);
     return t * t * (3 - 2 * t);
-}
+};
 
-export function mapRange(
+export const mapRange = (
     value: number,
     inMin: number,
     inMax: number,
     outMin: number,
     outMax: number,
-): number {
-    return ((value - inMin) * (outMax - outMin)) / (inMax - inMin) + outMin;
-}
+): number => ((value - inMin) * (outMax - outMin)) / (inMax - inMin) + outMin;

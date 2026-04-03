@@ -1,0 +1,57 @@
+<!doctype html>
+<html>
+    <head>
+        <title>SpaceGraphJS Verification - FIXED</title>
+        <style>
+            * { margin: 0; }
+            #container { width: 100vw; height: 100vh; background-color: #1a1a2e; }
+            #status {
+                position: fixed; top: 10px; left: 10px;
+                background: rgba(0,255,0,0.9); color: #000;
+                padding: 10px; font-family: monospace; font-size: 12px;
+                z-index: 9999; border-radius: 4px;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="status">Starting...</div>
+        <div id="container"></div>
+        <script type="module">
+            import { SpaceGraph } from '../src/index.ts';
+            const status = document.getElementById('status');
+            
+            try {
+                const graph = await SpaceGraph.create('#container', {
+                    nodes: [
+                        { id: 'a', type: 'ShapeNode', label: 'A', position: [0, 0, 0], data: { color: 0x3366ff, size: 80 } },
+                        { id: 'b', type: 'ShapeNode', label: 'B', position: [150, 0, 0], data: { color: 0xff6633, size: 80 } },
+                        { id: 'c', type: 'ShapeNode', label: 'C', position: [75, 130, 0], data: { color: 0x33ff66, size: 80 } },
+                    ],
+                    edges: [
+                        { id: 'e1', source: 'a', target: 'b', type: 'Edge' },
+                        { id: 'e2', source: 'b', target: 'c', type: 'Edge' },
+                        { id: 'e3', source: 'c', target: 'a', type: 'Edge' },
+                    ],
+                });
+                
+                status.textContent = `Created! Nodes: ${graph.graph.nodes.size}`;
+                
+                // Wait for scene to populate
+                await new Promise(r => setTimeout(r, 2000));
+                
+                // Manual camera setup
+                graph.renderer.camera.position.set(75, 65, 500);
+                graph.renderer.camera.lookAt(75, 65, 0);
+                graph.cameraControls.target.set(75, 65, 0);
+                graph.cameraControls.update();
+                
+                status.textContent = `✓ Ready! Cam: ${graph.renderer.camera.position.z}`;
+                console.log('Camera:', graph.renderer.camera.position);
+                console.log('Scene children:', graph.renderer.scene.children.length);
+            } catch (e) {
+                status.textContent = 'ERROR: ' + e.message;
+                console.error(e);
+            }
+        </script>
+    </body>
+</html>

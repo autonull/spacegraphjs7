@@ -7,6 +7,13 @@ import { createLogger } from '../utils/logger.js';
 
 const logger = createLogger('Renderer');
 
+const CSS_RENDERER_STYLES = {
+    position: 'absolute',
+    top: '0px',
+    left: '0px',
+    pointerEvents: 'none',
+} as const;
+
 export class Renderer {
     public sg: SpaceGraph;
     public container: HTMLElement;
@@ -23,7 +30,7 @@ export class Renderer {
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color(0x1a1a2e);
 
-        const aspect = this.container.clientWidth / this.container.clientHeight;
+        const aspect = container.clientWidth / container.clientHeight;
         this.camera = new THREE.PerspectiveCamera(75, aspect, 0.1, 10000);
         this.camera.position.set(0, 0, 500);
 
@@ -32,21 +39,15 @@ export class Renderer {
             alpha: true,
             preserveDrawingBuffer: true,
         });
-        this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
+        this.renderer.setSize(container.clientWidth, container.clientHeight);
         this.renderer.setPixelRatio(window.devicePixelRatio);
-        this.container.appendChild(this.renderer.domElement);
-
-        this.container.style.position = 'relative';
+        container.appendChild(this.renderer.domElement);
+        container.style.position = 'relative';
 
         this.cssRenderer = new CSS3DRenderer();
-        this.cssRenderer.setSize(this.container.clientWidth, this.container.clientHeight);
-        Object.assign(this.cssRenderer.domElement.style, {
-            position:      'absolute',
-            top:           '0px',
-            left:          '0px',
-            pointerEvents: 'none',
-        });
-        this.container.appendChild(this.cssRenderer.domElement);
+        this.cssRenderer.setSize(container.clientWidth, container.clientHeight);
+        Object.assign(this.cssRenderer.domElement.style, CSS_RENDERER_STYLES);
+        container.appendChild(this.cssRenderer.domElement);
 
         this.instancedRenderer = new InstancedNodeRenderer(sg, this.scene);
 
@@ -54,8 +55,6 @@ export class Renderer {
     }
 
     public init() {
-        logger.info('Initialized');
-
         THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
         THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
         THREE.Mesh.prototype.raycast = acceleratedRaycast;
@@ -63,23 +62,18 @@ export class Renderer {
 
     private onResize() {
         if (!this.container) return;
-        const width = this.container.clientWidth;
-        const height = this.container.clientHeight;
+        const { clientWidth: width, clientHeight: height } = this.container;
 
         this.camera.aspect = width / height;
         this.camera.updateProjectionMatrix();
-
         this.renderer.setSize(width, height);
         this.cssRenderer.setSize(width, height);
     }
 
     public render() {
         this.instancedRenderer.update();
-        // Sync all edge geometries to current node positions immediately before
-        // rendering so they always match the CSS3D layer regardless of when
-        // layout plugins or GSAP animations last updated node.position.
         for (const edge of this.sg.graph.edges) {
-            if (typeof edge.update === 'function') edge.update();
+            edge.update?.();
         }
         this.renderer.render(this.scene, this.camera);
         this.cssRenderer.render(this.scene, this.camera);
@@ -88,8 +82,6 @@ export class Renderer {
     public dispose() {
         this.instancedRenderer.dispose();
         this.renderer.dispose();
-        if (this.cssRenderer.domElement.parentNode) {
-            this.cssRenderer.domElement.parentNode.removeChild(this.cssRenderer.domElement);
-        }
+        this.cssRenderer.domElement.parentNode?.removeChild(this.cssRenderer.domElement);
     }
 }

@@ -65,6 +65,7 @@
         "@typescript-eslint/eslint-plugin": "^8.56.1",
         "@typescript-eslint/parser": "^8.56.1",
         "@vitest/coverage-v8": "^4.0.18",
+        "canvas": "^3.2.3",
         "chart.js": "^4.5.1",
         "eslint": "^10.0.2",
         "http-server": "^14.1.1",

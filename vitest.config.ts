@@ -11,6 +11,8 @@ export default defineConfig({
         environment: 'jsdom',
         include: ['test/**/*.test.ts'],
         globals: false,
+        // Setup file to provide node-canvas and DOM shims for jsdom
+        setupFiles: ['test/setupTests.ts'],
         coverage: {
             provider: 'v8',
             include: ['src/**/*.ts'],

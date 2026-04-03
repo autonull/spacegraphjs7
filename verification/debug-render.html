@@ -1,0 +1,77 @@
+<!doctype html>
+<html>
+<head>
+    <title>Debug Render</title>
+    <style>
+        * { margin: 0; }
+        body { background: #000; }
+        #container { width: 100vw; height: 100vh; }
+        #log {
+            position: fixed; top: 10px; left: 10px;
+            background: rgba(0,255,0,0.9); color: #000;
+            padding: 15px; font-family: monospace; font-size: 13px;
+            z-index: 9999; border-radius: 4px; white-space: pre-wrap;
+            max-width: 500px;
+        }
+    </style>
+</head>
+<body>
+    <div id="log">Initializing...</div>
+    <div id="container"></div>
+    <script type="module">
+        import { SpaceGraph } from '../src/index.ts';
+        const log = document.getElementById('log');
+        const addLog = (m) => { log.textContent += '\n' + m; console.log(m); };
+        
+        try {
+            addLog('1. Creating graph...');
+            const graph = await SpaceGraph.create('#container', {
+                nodes: [
+                    { id: 'a', type: 'ShapeNode', label: 'A', position: [0, 0, 0], data: { color: 0x00FF00, size: 100 } },
+                    { id: 'b', type: 'ShapeNode', label: 'B', position: [200, 0, 0], data: { color: 0xFF0000, size: 100 } },
+                    { id: 'c', type: 'ShapeNode', label: 'C', position: [100, 200, 0], data: { color: 0x0000FF, size: 100 } },
+                ],
+                edges: [
+                    { id: 'e1', source: 'a', target: 'b', type: 'Edge' },
+                    { id: 'e2', source: 'b', target: 'c', type: 'Edge' },
+                    { id: 'e3', source: 'c', target: 'a', type: 'Edge' },
+                ],
+            });
+            
+            addLog('2. Graph created!');
+            addLog('3. Node count: ' + graph.graph.nodes.size);
+            addLog('4. Edge count: ' + graph.graph.edges.length);
+            
+            const nodeA = graph.graph.nodes.get('a');
+            if (nodeA) {
+                addLog('5. Node A found!');
+                addLog('6. Node A object children: ' + nodeA.object.children.length);
+                addLog('7. Node A position: ' + JSON.stringify(nodeA.position));
+                addLog('8. Node A object position: ' + JSON.stringify(nodeA.object.position));
+            }
+            
+            addLog('9. Scene children: ' + graph.renderer.scene.children.length);
+            addLog('10. Camera position: ' + JSON.stringify(graph.renderer.camera.position));
+            
+            // Force camera to look at nodes
+            graph.renderer.camera.position.set(100, 100, 600);
+            graph.renderer.camera.lookAt(100, 100, 0);
+            graph.cameraControls.target.set(100, 100, 0);
+            graph.cameraControls.update();
+            
+            addLog('11. Camera updated!');
+            addLog('12. New camera position: ' + JSON.stringify(graph.renderer.camera.position));
+            
+            // Wait and verify
+            setTimeout(() => {
+                addLog('13. After wait - Scene children: ' + graph.renderer.scene.children.length);
+                addLog('✓ COMPLETE - Nodes should be visible!');
+            }, 2000);
+            
+        } catch (e) {
+            addLog('✗ ERROR: ' + e.message);
+            addLog(e.stack);
+        }
+    </script>
+</body>
+</html>

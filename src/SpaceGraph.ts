@@ -8,8 +8,8 @@ import { ObjectPoolManager } from './core/ObjectPoolManager';
 import { CullingManager } from './core/CullingManager';
 import { AdvancedRenderingOptimizer } from './core/AdvancedRenderingOptimizer';
 import { InputManager } from './input/InputManager';
-import { applyDefaultInputConfig, DefaultInputConfig } from './input/DefaultInputConfig';
-import { createLogger } from './utils/logger';
+import { applyDefaultInputConfig, type DefaultInputConfig } from './input/DefaultInputConfig';
+import { createLogger } from './utils/logger.js';
 
 import type { GraphSpec, SpaceGraphOptions, SpecUpdate, ISpaceGraphPlugin } from './types';
 import { MathPool } from './utils/MathPool';
@@ -159,7 +159,11 @@ export class SpaceGraph {
         this.pluginManager = new PluginManager(this);
         this.renderer = new Renderer(this, container);
         this.graph = new Graph(this);
-        this.cameraControls = new CameraControls(this.renderer.camera, this.container, this.options.cameraControls);
+        this.cameraControls = new CameraControls(
+            this.renderer.camera,
+            this.container,
+            this.options.cameraControls as any,
+        );
 
         this.input = new InputManager({
             graph: this,
@@ -190,7 +194,6 @@ export class SpaceGraph {
         options?: SpaceGraphOptions,
     ): Promise<SpaceGraph> {
         const element = SpaceGraph.getContainerElement(container);
-
         if (!element) {
             throw new Error(
                 `[SpaceGraph] Initialization Error: Container not found for selector/element "${container}". ` +
@@ -199,7 +202,9 @@ export class SpaceGraph {
         }
 
         if (!SpaceGraph.checkWebGL()) {
-            logger.warn('WebGL not supported on this device. Rendering may fail or perform poorly.');
+            logger.warn(
+                'WebGL not supported on this device. Rendering may fail or perform poorly.',
+            );
         }
 
         const graph = new SpaceGraph(element, options);
@@ -278,7 +283,7 @@ export class SpaceGraph {
         this.graph.clear();
         this.loadSpec(data);
 
-        if (data.camera && this.cameraControls && this.cameraControls.target) {
+        if (data.camera && this.cameraControls?.target) {
             this.renderer.camera.position.set(
                 data.camera.position[0],
                 data.camera.position[1],
@@ -290,7 +295,6 @@ export class SpaceGraph {
                 data.camera.target[2],
             );
 
-            // Recompute spherical based on new position/target
             const diff = MathPool.getInstance()
                 .acquireVector3()
                 .subVectors(this.renderer.camera.position, this.cameraControls.target);
@@ -322,25 +326,20 @@ export class SpaceGraph {
 
         this.optimizer.beginFrame(timestamp);
 
-        // Calculate actual frame delta in seconds, capped at 0.1s to prevent huge jumps
-        let delta = 0.016;
-        if (this.lastTimestamp > 0 && timestamp > 0) {
-            delta = Math.min((timestamp - this.lastTimestamp) / 1000, 0.1);
-        }
+        const delta =
+            this.lastTimestamp > 0 && timestamp > 0
+                ? Math.min((timestamp - this.lastTimestamp) / 1000, 0.1)
+                : 0.016;
         this.lastTimestamp = timestamp;
 
         this.pluginManager.updateAll(delta);
         this.cameraControls.update();
-
         this.cullingManager.update();
-
         this.renderer.render();
     }
 
     render(): void {
-        if (!this.animationFrameId) {
-            this.animate();
-        }
+        this.animationFrameId ??= requestAnimationFrame((t) => this.animate(t));
     }
 
     dispose(): void {
@@ -349,28 +348,24 @@ export class SpaceGraph {
             this.animationFrameId = undefined;
         }
 
-        // Dispose plugins and graphics resources
         this.pluginManager.disposePlugins();
-        // Empty graph
         this.graph.clear();
 
-        // Clean up DOM elements
         if (this.renderer) {
             if (
-                this.renderer.renderer &&
+                this.renderer.renderer?.domElement &&
                 this.container.contains(this.renderer.renderer.domElement)
             ) {
                 this.container.removeChild(this.renderer.renderer.domElement);
             }
             if (
-                this.renderer.cssRenderer &&
+                this.renderer.cssRenderer?.domElement &&
                 this.container.contains(this.renderer.cssRenderer.domElement)
             ) {
                 this.container.removeChild(this.renderer.cssRenderer.domElement);
             }
         }
 
-        // Clean up instance registry
         SpaceGraph.instances.delete(this);
     }
 
@@ -386,16 +381,12 @@ export class SpaceGraph {
         }
     }
 
-    /**
-     * Creates a new SpaceGraph instance, initializes it asynchronously, and imports the provided data state.
-     */
     public static async import(
         container: string | HTMLElement,
         data: any,
         options: SpaceGraphOptions = {},
     ): Promise<SpaceGraph> {
         const element = SpaceGraph.getContainerElement(container);
-
         if (!element) {
             throw new Error(
                 `[SpaceGraph] Import Error: Container not found for selector/element "${container}".`,
@@ -408,14 +399,14 @@ export class SpaceGraph {
             sg.import(data);
             sg.render();
         } catch (err) {
-            logger.error('Import Runtime Error: Failed to import data or start rendering loop.', err);
+            logger.error(
+                'Import Runtime Error: Failed to import data or start rendering loop.',
+                err,
+            );
         }
         return sg;
     }
 
-    /**
-     * Initializes a SpaceGraph instance and loads graph spec from a URL representing JSON.
-     */
     public static async fromURL(
         url: string,
         container: HTMLElement,

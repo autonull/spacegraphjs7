@@ -2,13 +2,16 @@ import type { SpaceGraph } from '../SpaceGraph';
 import type { ISpaceGraphPlugin } from '../types';
 import { createLogger } from '../utils/logger.js';
 
+type NodeConstructor = new (...args: any[]) => any;
+type EdgeConstructor = new (...args: any[]) => any;
+
 const logger = createLogger('PluginManager');
 
 export class PluginManager {
     private readonly sg: SpaceGraph;
     public readonly plugins = new Map<string, ISpaceGraphPlugin>();
-    private readonly nodeTypes = new Map<string, new (...args: unknown[]) => unknown>();
-    private readonly edgeTypes = new Map<string, new (...args: unknown[]) => unknown>();
+    private readonly nodeTypes = new Map<string, NodeConstructor>();
+    private readonly edgeTypes = new Map<string, EdgeConstructor>();
 
     constructor(sg: SpaceGraph) {
         this.sg = sg;
@@ -28,20 +31,20 @@ export class PluginManager {
         this.plugins.set(name, plugin);
     }
 
-    registerNodeType(type: string, cls: new (...args: unknown[]) => unknown): void {
+    registerNodeType(type: string, cls: NodeConstructor): void {
         this.nodeTypes.set(type, cls);
     }
 
-    getNodeType(type: string): new (...args: unknown[]) => unknown {
-        return this.nodeTypes.get(type)!;
+    getNodeType(type: string): NodeConstructor | undefined {
+        return this.nodeTypes.get(type);
     }
 
-    registerEdgeType(type: string, cls: new (...args: unknown[]) => unknown): void {
+    registerEdgeType(type: string, cls: EdgeConstructor): void {
         this.edgeTypes.set(type, cls);
     }
 
-    getEdgeType(type: string): new (...args: unknown[]) => unknown {
-        return this.edgeTypes.get(type)!;
+    getEdgeType(type: string): EdgeConstructor | undefined {
+        return this.edgeTypes.get(type);
     }
 
     getPlugin(name: string): ISpaceGraphPlugin | undefined {
@@ -67,14 +70,15 @@ export class PluginManager {
                     const wrappedError = new Error(
                         `[SpaceGraph] Plugin Initialization Error: Failed to initialize plugin "${name}". Reason: ${message}`,
                     );
-                    logger.error(wrappedError);
+                    logger.error(wrappedError.message);
                     errors.push(wrappedError);
                 }
             }
         }
         if (errors.length > 0) {
-            const message = `[SpaceGraph] PluginManager initAll failed with ${errors.length} error(s).`;
-            const err = new Error(message);
+            const err = new Error(
+                `[SpaceGraph] PluginManager initAll failed with ${errors.length} error(s).`,
+            );
             (err as Error & { errors: Error[] }).errors = errors;
             throw err;
         }

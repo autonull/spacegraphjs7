@@ -6,8 +6,6 @@ import { createLogger } from '../utils/logger.js';
 
 const logger = createLogger('Graph');
 
-type PluginHook = 'onNodeAdded' | 'onNodeRemoved' | 'onEdgeAdded' | 'onEdgeRemoved';
-
 export class Graph {
     public sg: SpaceGraph;
     public nodes: Map<string, Node> = new Map();
@@ -17,9 +15,9 @@ export class Graph {
         this.sg = sg;
     }
 
-    private _notifyPlugins(hookName: PluginHook, arg: Node | Edge | string): void {
+    private _notifyPlugins(hookName: string, arg: unknown): void {
         for (const plugin of this.sg.pluginManager.plugins.values()) {
-            const hook = plugin[hookName];
+            const hook = (plugin as any)[hookName];
             if (typeof hook === 'function') {
                 try {
                     hook(arg);
@@ -37,16 +35,15 @@ export class Graph {
     }
 
     addNode(spec: NodeSpec): Node | null {
-        if (this.nodes.has(spec.id)) {
-            return this.updateNode(spec.id, spec);
-        }
+        if (this.nodes.has(spec.id)) return this.updateNode(spec.id, spec);
 
         const NodeType = this.sg.pluginManager.getNodeType(spec.type);
         if (!NodeType) {
             logger.warn('Node type "%s" not registered.', spec.type);
             return null;
         }
-        const node = new NodeType(this.sg, spec);
+
+        const node = new NodeType(this.sg, spec) as Node;
         this.nodes.set(spec.id, node);
         this.sg.renderer.scene.add(node.object);
         this.sg.events.emit('node:added', { node });
@@ -62,8 +59,10 @@ export class Graph {
             node.updateSpec(updates);
         } else {
             if (updates.data) node.data = { ...node.data, ...updates.data };
-            if (updates.position)
-                node.updatePosition(updates.position[0], updates.position[1], updates.position[2]);
+            if (updates.position) {
+                const [x, y, z] = updates.position;
+                node.updatePosition(x, y, z);
+            }
         }
 
         return node;
@@ -85,9 +84,7 @@ export class Graph {
         }
 
         const existingIndex = this.edges.findIndex((e) => e.id === spec.id);
-        if (existingIndex !== -1) {
-            return this.updateEdge(spec.id, spec);
-        }
+        if (existingIndex !== -1) return this.updateEdge(spec.id, spec);
 
         const sourceNode = this.nodes.get(spec.source) ?? this.findNodeAcrossInstances(spec.source);
         const targetNode = this.nodes.get(spec.target) ?? this.findNodeAcrossInstances(spec.target);
@@ -105,15 +102,13 @@ export class Graph {
 
         const isInterGraph = sourceNode.sg !== targetNode.sg;
         if (isInterGraph) {
-            const InterGraphEdgeClass = this.sg.pluginManager.getEdgeType('InterGraphEdge');
-            if (InterGraphEdgeClass) {
-                EdgeType = InterGraphEdgeClass;
-            } else {
+            EdgeType = this.sg.pluginManager.getEdgeType('InterGraphEdge') ?? EdgeType;
+            if (!this.sg.pluginManager.getEdgeType('InterGraphEdge')) {
                 logger.warn('InterGraphEdge not registered. Falling back to default edge.');
             }
         }
 
-        const edge = new EdgeType(this.sg, spec, sourceNode, targetNode);
+        const edge = new EdgeType(this.sg, spec, sourceNode, targetNode) as Edge;
         if (isInterGraph) {
             (edge as Edge & { isInterGraphEdge: boolean }).isInterGraphEdge = true;
         } else {
@@ -132,8 +127,8 @@ export class Graph {
 
         if (typeof edge.updateSpec === 'function') {
             edge.updateSpec(updates);
-        } else {
-            if (updates.data) edge.data = { ...edge.data, ...updates.data };
+        } else if (updates.data) {
+            edge.data = { ...edge.data, ...updates.data };
         }
 
         if (updates.source || updates.target) {
@@ -185,14 +180,14 @@ export class Graph {
     }
 
     clear(): void {
-        this.edges.forEach((edge) => {
+        for (const edge of this.edges) {
             this._removeFromScene(edge);
             edge.dispose?.();
-        });
-        this.nodes.forEach((node) => {
+        }
+        for (const node of this.nodes.values()) {
             this._removeFromScene(node);
             node.dispose?.();
-        });
+        }
         this.edges = [];
         this.nodes.clear();
     }
@@ -226,10 +221,9 @@ export class Graph {
     }
 
     neighbors(nodeId: string): Node[] {
-        const nodeIds = new Set([nodeId]);
         return this.edges
-            .filter((edge) => nodeIds.has(edge.source.id) || nodeIds.has(edge.target.id))
-            .flatMap((edge) => (edge.source.id === nodeId ? edge.target : edge.source));
+            .filter((edge) => edge.source.id === nodeId || edge.target.id === nodeId)
+            .map((edge) => (edge.source.id === nodeId ? edge.target : edge.source));
     }
 
     getConnectedEdges(nodeId: string): Edge[] {
@@ -244,8 +238,6 @@ export class Graph {
         return this.edges.filter((edge) => edge.source.id === nodeId);
     }
 
-    // --- Serialization ---
-
     public toJSON(): GraphSpec {
         return {
             nodes: [...this.nodes.values()].map((node) => ({
@@ -259,7 +251,7 @@ export class Graph {
                 id: edge.id,
                 source: edge.source.id,
                 target: edge.target.id,
-                type: edge.type,
+                type: (edge as any).type ?? 'Edge',
                 data: edge.data ? structuredClone(edge.data) : {},
             })),
         };

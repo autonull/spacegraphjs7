@@ -55,9 +55,11 @@ export class AdvancedRenderingOptimizer {
     }
 
     private _toggleHeavyPlugins(enabled: boolean): void {
-        const layoutPlugin = this.sg.pluginManager.getPlugin('LayoutPlugin') as ForceLayout | undefined;
-        if (layoutPlugin?.settings !== undefined) {
-            layoutPlugin.settings.enabled = enabled;
+        const layoutPlugin = this.sg.pluginManager.getPlugin('ForceLayout') as
+            | ForceLayout
+            | undefined;
+        if (layoutPlugin) {
+            (layoutPlugin as any).config = { ...(layoutPlugin as any).config, enabled };
         }
     }
 
