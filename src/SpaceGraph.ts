@@ -2,7 +2,7 @@ import { Graph } from './core/Graph';
 import { Renderer } from './core/Renderer';
 import { PluginManager } from './core/PluginManager';
 import { CameraControls } from './core/CameraControls';
-import { EventManager } from './core/EventManager';
+import { EventSystem } from './core/events/EventSystem';
 import { VisionManager } from './core/VisionManager';
 import { ObjectPoolManager } from './core/ObjectPoolManager';
 import { CullingManager } from './core/CullingManager';
@@ -138,7 +138,7 @@ export class SpaceGraph {
     public graph: Graph;
     public pluginManager: PluginManager;
     public cameraControls: CameraControls;
-    public events: EventManager;
+    public events: EventSystem;
     public vision: VisionManager;
     public poolManager: ObjectPoolManager<any>;
     public cullingManager: CullingManager;
@@ -156,7 +156,7 @@ export class SpaceGraph {
 
         this.cullingManager = new CullingManager(this);
         this.optimizer = new AdvancedRenderingOptimizer(this);
-        this.events = new EventManager(this);
+        this.events = new EventSystem();
         this.vision = new VisionManager(this);
         this.pluginManager = new PluginManager(this);
         this.renderer = new Renderer(this, container);

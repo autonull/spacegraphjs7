@@ -2,32 +2,68 @@ import { spawn } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 import { createLogger } from '../utils/logger';
+import type { VisionReport, VisionIssue, Overlap, ContrastFailure } from './types';
 
 const logger = createLogger('Vision');
 
-export interface VisionReport {
-    layoutScore: number;
-    legibilityScore: number;
-    issues: VisionIssue[];
-}
+function buildVisionReport(
+    layoutScore: number,
+    legibilityScore: number,
+    issues: any[],
+): VisionReport {
+    const overlaps: Overlap[] = issues
+        .filter((i) => i.type === 'overlap')
+        .map((i) => ({ nodeA: i.nodeA, nodeB: i.nodeB, penetration: 0 }));
 
-export interface VisionIssue {
-    type: 'overlap' | 'legibility' | 'color';
-    severity: 'error' | 'warning';
-    message: string;
+    const failures: ContrastFailure[] = issues
+        .filter((i) => i.type === 'legibility')
+        .map((i) => ({
+            nodeId: i.nodeId ?? 'unknown',
+            contrast: 0,
+            severity: i.severity === 'info' ? 'warning' : i.severity,
+        }));
+
+    const issuesList: VisionIssue[] = issues.map((i) => ({
+        severity: i.severity,
+        category: (i.type === 'overlap'
+            ? 'overlap'
+            : i.type === 'legibility'
+              ? 'legibility'
+              : 'ergonomics') as VisionIssue['category'],
+        message: i.message,
+        nodeIds: i.nodeA ? [i.nodeA, i.nodeB] : i.nodeId ? [i.nodeId] : undefined,
+    }));
+
+    const overallScore = Math.max(0, Math.min(100, (layoutScore + legibilityScore) / 2));
+    const grade =
+        overallScore >= 90
+            ? 'A'
+            : overallScore >= 80
+              ? 'B'
+              : overallScore >= 70
+                ? 'C'
+                : overallScore >= 60
+                  ? 'D'
+                  : 'F';
+
+    return {
+        legibility: { wcagAA: legibilityScore >= 90, averageContrast: legibilityScore, failures },
+        overlap: { hasOverlaps: overlaps.length > 0, overlapCount: overlaps.length, overlaps },
+        hierarchy: { hasRoot: false, rootIds: [], depth: 0, levels: [], score: 0 },
+        ergonomics: { fittsLawCompliant: true, averageTargetSize: 0, smallTargets: [], score: 0 },
+        overall: { score: overallScore, grade, issues: issuesList },
+    };
 }
 
 export async function runVisionAnalysis(outputDir: string): Promise<VisionReport> {
-    const report: VisionReport = {
-        layoutScore: 100,
-        legibilityScore: 100,
-        issues: [],
-    };
+    let layoutScore = 100;
+    let legibilityScore = 100;
+    const issues: any[] = [];
 
     const htmlFiles = findHtmlFiles(outputDir);
     if (htmlFiles.length === 0) {
         logger.warn('No HTML files found in output directory to analyze.');
-        return report;
+        return buildVisionReport(layoutScore, legibilityScore, issues);
     }
 
     try {
@@ -42,9 +78,7 @@ export async function runVisionAnalysis(outputDir: string): Promise<VisionReport
             serverProcess = spawn(
                 'npx',
                 ['vite', 'serve', outputDir, '--port', '5175', '--strictPort', '--no-open'],
-                {
-                    stdio: 'ignore',
-                },
+                { stdio: 'ignore' },
             );
             await new Promise((resolve) => setTimeout(resolve, 2000));
 
@@ -107,7 +141,7 @@ export async function runVisionAnalysis(outputDir: string): Promise<VisionReport
                             localIssues.push(
                                 ...report.overlap.overlaps.map((o: any) => ({
                                     type: 'overlap',
-                                    severity: 'warning',
+                                    severity: 'warning' as const,
                                     nodeA: o.nodeA,
                                     nodeB: o.nodeB,
                                     message: `Bounding box overlap detected between nodes ${o.nodeA} and ${o.nodeB}.`,
@@ -121,15 +155,12 @@ export async function runVisionAnalysis(outputDir: string): Promise<VisionReport
                     });
 
                     if (fileAnalysis) {
-                        report.layoutScore = Math.max(
+                        layoutScore = Math.max(0, layoutScore - fileAnalysis.overlaps * 5);
+                        legibilityScore = Math.max(
                             0,
-                            report.layoutScore - fileAnalysis.overlaps * 5,
+                            legibilityScore - fileAnalysis.legibilityIssues * 10,
                         );
-                        report.legibilityScore = Math.max(
-                            0,
-                            report.legibilityScore - fileAnalysis.legibilityIssues * 10,
-                        );
-                        report.issues.push(...fileAnalysis.localIssues);
+                        issues.push(...fileAnalysis.localIssues);
                     }
                 } catch (e) {
                     logger.error(`Error analyzing ${relativePath}:`, e);
@@ -145,7 +176,7 @@ export async function runVisionAnalysis(outputDir: string): Promise<VisionReport
         logger.error('Failed to run playwright analysis:', e);
     }
 
-    return report;
+    return buildVisionReport(layoutScore, legibilityScore, issues);
 }
 
 function findHtmlFiles(dir: string, fileList: string[] = []): string[] {

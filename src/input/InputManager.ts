@@ -1,5 +1,5 @@
 import type { SpaceGraph } from '../SpaceGraph';
-import { EventManager } from '../core/EventManager';
+import { EventSystem } from '../core/events/EventSystem';
 
 export type InputEventType =
     | 'keydown'
@@ -81,7 +81,7 @@ export interface InputBinding {
 
 export interface InputContext {
     graph: SpaceGraph;
-    events: EventManager;
+    events: EventSystem;
     getState: () => InputState;
     setActiveInput: (source: string) => void;
     disableInput: (source: string) => void;
@@ -110,13 +110,13 @@ export interface InputSourceConfig {
 
 export interface InputManagerOptions {
     graph: SpaceGraph;
-    events: EventManager;
+    events: EventSystem;
     sources?: InputSourceConfig[];
 }
 
 export class InputManager {
     private graph: SpaceGraph;
-    private events: EventManager;
+    private events: EventSystem;
     private state: InputState;
     private sources: Map<string, InputSource> = new Map();
     private actions: Map<string, InputAction> = new Map();

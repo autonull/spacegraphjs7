@@ -4,6 +4,7 @@ import { InferenceSession, Tensor, env } from 'onnxruntime-web';
 import { getLuminance, hexToRgb } from '../utils/color.js';
 import { SpatialIndex } from './spatial/SpatialIndex';
 import { createLogger } from '../utils/logger.js';
+import type { VisionReport } from '../vision/types';
 
 const logger = createLogger('VisionManager');
 
@@ -11,16 +12,6 @@ env.wasm.wasmPaths = 'https://cdn.jsdelivr.net/pnpm/onnxruntime-web/dist/';
 
 export interface VisionCategory {
     type: 'layout' | 'legibility' | 'color' | 'overlap' | 'hierarchy' | 'ergonomics';
-}
-
-export interface VisionReport {
-    layout: { overall: number; issues: unknown[] };
-    legibility: { wcagCompliance: { AA: boolean }; failures: unknown[] };
-    color: { harmonyScore: number; dominantPalette: string[] };
-    overlap: { overlaps: unknown[]; statistics: { totalOverlaps: number } };
-    hierarchy: { clarityScore: number };
-    ergonomics: { fittsLawScore: number };
-    overall: number;
 }
 
 /**
@@ -362,35 +353,64 @@ export class VisionManager {
         );
         this.frustum.setFromProjectionMatrix(this.cameraViewProjectionMatrix);
 
-        const { legibilityFailures, colorHarmonyScore, dominantPalette, wcagAA } =
-            await this._analyzeLegibility(nodes, this.frustum);
+        const { legibilityFailures, wcagAA } = await this._analyzeLegibility(nodes, this.frustum);
         const { overlaps, layoutScore } = await this._analyzeOverlaps(nodes, this.frustum);
         const { hierarchyScore } = await this._analyzeHierarchy(nodes);
         const { fittsLawScore } = await this._analyzeErgonomics(nodes, camera, this.frustum);
 
         const mockReport: VisionReport = {
-            layout: { overall: Math.max(0, layoutScore), issues: overlaps },
-            legibility: { wcagCompliance: { AA: wcagAA }, failures: legibilityFailures },
-            color: {
-                harmonyScore: Math.max(0, colorHarmonyScore),
-                dominantPalette: [...new Set(dominantPalette)].slice(0, 5),
+            legibility: {
+                wcagAA,
+                averageContrast: 0,
+                failures: legibilityFailures as any[],
             },
-            overlap: { overlaps: overlaps, statistics: { totalOverlaps: overlaps.length } },
-            hierarchy: { clarityScore: Math.max(0, hierarchyScore) },
-            ergonomics: { fittsLawScore: Math.max(0, fittsLawScore) },
-            overall: Math.max(
-                0,
-                layoutScore -
-                    overlaps.length * 2 -
-                    legibilityFailures.length * 5 -
-                    (100 - hierarchyScore) * 0.5 -
-                    (100 - fittsLawScore) * 0.5,
-            ),
+            overlap: {
+                hasOverlaps: overlaps.length > 0,
+                overlapCount: overlaps.length,
+                overlaps: overlaps as any[],
+            },
+            hierarchy: {
+                hasRoot: false,
+                rootIds: [],
+                depth: 0,
+                levels: [],
+                score: Math.max(0, hierarchyScore),
+            },
+            ergonomics: {
+                fittsLawCompliant: fittsLawScore >= 70,
+                averageTargetSize: 0,
+                smallTargets: [],
+                score: Math.max(0, fittsLawScore),
+            },
+            overall: {
+                score: Math.max(
+                    0,
+                    layoutScore -
+                        overlaps.length * 2 -
+                        legibilityFailures.length * 5 -
+                        (100 - hierarchyScore) * 0.5 -
+                        (100 - fittsLawScore) * 0.5,
+                ),
+                grade: 'A',
+                issues: [],
+            },
         };
 
-        logger.info('Analysis complete. Overall Score: %d', mockReport.overall);
+        const overallScore = mockReport.overall.score;
+        mockReport.overall.grade =
+            overallScore >= 90
+                ? 'A'
+                : overallScore >= 80
+                  ? 'B'
+                  : overallScore >= 70
+                    ? 'C'
+                    : overallScore >= 60
+                      ? 'D'
+                      : 'F';
 
-        if (mockReport.overall < 90) {
+        logger.info('Analysis complete. Overall Score: %d', overallScore);
+
+        if (overallScore < 90) {
             logger.warn('Quality below threshold, triggering autonomous fix...');
             if (overlaps.length > 0) await this.autoFix({ type: 'overlap' }, mockReport);
             if (legibilityFailures.length > 0)
@@ -509,17 +529,14 @@ export class VisionManager {
     public async applyAutonomousFixes(report: VisionReport): Promise<void> {
         logger.info('Applying manual autonomous fixes from report...');
 
-        if (report.layout.overall < 80) {
+        if (report.overall.score < 80) {
             await this.autoFix({ type: 'layout' }, report);
         }
-        if (report.overlap.statistics.totalOverlaps > 0) {
+        if (report.overlap.overlapCount > 0) {
             await this.autoFix({ type: 'overlap' }, report);
         }
         if (report.legibility.failures?.length > 0) {
             await this.autoFix({ type: 'legibility' }, report);
-        }
-        if (report.color.harmonyScore < 70) {
-            await this.autoFix({ type: 'color' }, report);
         }
 
         logger.info('Autonomous fixes dispatched.');

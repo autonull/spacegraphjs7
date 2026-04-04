@@ -49,7 +49,7 @@ export { Graph } from './core/Graph';
 export { Renderer } from './core/Renderer';
 export { PluginManager } from './core/PluginManager';
 export { CameraControls } from './core/CameraControls';
-export { EventManager, type SpaceGraphEvents as LegacySpaceGraphEvents } from './core/EventManager';
+export { EventSystem, type SpaceGraphEvents } from './core/events/EventSystem';
 export {
     VisionManager,
     type VisionReport as LegacyVisionReport,
