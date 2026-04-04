@@ -36,7 +36,7 @@ export class VisionAssert {
                 };
             }
 
-            const sg = instances[0] as unknown as {
+            const sg = instances[0] as {
                 vision: {
                     stopAutonomousCorrection: () => void;
                     modelsLoaded: boolean;

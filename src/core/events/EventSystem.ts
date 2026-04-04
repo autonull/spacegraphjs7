@@ -1,7 +1,4 @@
 import mitt from 'mitt';
-import { createLogger } from '../../utils/logger.js';
-
-const logger = createLogger('EventSystem');
 
 export interface SpaceGraphEvents {
     'node:added': { node: import('../../nodes/Node').Node; timestamp: number };

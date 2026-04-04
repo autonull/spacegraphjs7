@@ -58,8 +58,9 @@ export class ThreeDisposer {
         material.dispose();
 
         // Iterate over properties to find textures to dispose
+        const matRecord = material as Record<string, unknown>;
         for (const key of Object.keys(material)) {
-            const value = (material as unknown as Record<string, unknown>)[key];
+            const value = matRecord[key];
             if (value && typeof value === 'object' && 'isTexture' in value && value.isTexture) {
                 (value as THREE.Texture).dispose();
             }

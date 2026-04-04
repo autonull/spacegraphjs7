@@ -7,6 +7,12 @@ import type { Node } from '../nodes/Node';
 import { DOMNode } from '../nodes/DOMNode';
 import { GroupNode } from '../nodes/GroupNode';
 
+type NodeLike = {
+    data?: Record<string, unknown>;
+    parameters?: Record<string, unknown>;
+    parent?: string;
+};
+
 export class LODPlugin implements Plugin {
     readonly id = 'lod';
     readonly name = 'Level of Detail';
@@ -81,15 +87,8 @@ export class LODPlugin implements Plugin {
 
     private _getParentId(node?: Node): string | undefined {
         if (!node) return undefined;
-        const data = node.data as Record<string, unknown>;
-        const params = (node as unknown as Record<string, unknown>).parameters as
-            | Record<string, unknown>
-            | undefined;
-        return (
-            (data?.parent as string) ??
-            (params?.parent as string) ??
-            ((node as unknown as Record<string, unknown>).parent as string)
-        );
+        const n = node as unknown as NodeLike;
+        return (n.data?.parent ?? n.parameters?.parent ?? n.parent) as string | undefined;
     }
 
     private _updateEdgeVisibility(): void {

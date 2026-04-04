@@ -8,6 +8,8 @@ import { createLogger } from '../utils/logger';
 const logger = createLogger('MarkdownNode');
 
 export class MarkdownNode extends DOMNode {
+    private _ro?: ResizeObserver;
+
     constructor(sg: SpaceGraph, spec: NodeSpec) {
         const w = (spec.data?.width as number) ?? 300;
         const color = (spec.data?.color as string) ?? '#1e293b';
@@ -67,7 +69,7 @@ export class MarkdownNode extends DOMNode {
                 }
             });
             ro.observe(this.domElement);
-            (this as Record<string, unknown>)._ro = ro;
+            this._ro = ro;
         } else {
             setTimeout(() => {
                 const actualHeight = this.domElement.offsetHeight ?? h;
@@ -123,7 +125,7 @@ export class MarkdownNode extends DOMNode {
     }
 
     dispose(): void {
-        (this as unknown as Record<string, ResizeObserver | undefined>)._ro?.disconnect();
+        this._ro?.disconnect();
         super.dispose();
     }
 }

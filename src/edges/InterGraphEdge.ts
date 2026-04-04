@@ -38,9 +38,7 @@ export class InterGraphEdge extends Edge {
     }
 
     private getGlobalSvgContainer(): SVGSVGElement {
-        let svg = document.getElementById(
-            'spacegraph-intergraph-overlay',
-        ) as unknown as SVGSVGElement;
+        let svg = document.getElementById('spacegraph-intergraph-overlay') as SVGSVGElement | null;
         if (!svg) {
             svg = DOMUtils.createElementNS(this.svgNamespace, 'svg', {
                 id: 'spacegraph-intergraph-overlay',
@@ -53,17 +51,19 @@ export class InterGraphEdge extends Edge {
                     pointerEvents: 'none',
                     zIndex: '9999',
                 },
-            }) as unknown as SVGSVGElement;
+            }) as SVGSVGElement;
             document.body.appendChild(svg);
         }
         return svg;
     }
 
     private projectToScreen(node: Node, targetVector: THREE.Vector3) {
+        const sg = node.sg;
+        if (!sg?.renderer) return;
         targetVector.copy(node.position);
-        targetVector.project(node.sg.renderer.camera);
+        targetVector.project(sg.renderer.camera);
 
-        const rect = node.sg.renderer.renderer.domElement.getBoundingClientRect();
+        const rect = sg.renderer.renderer.domElement.getBoundingClientRect();
 
         targetVector.x = (targetVector.x * 0.5 + 0.5) * rect.width + rect.left;
         targetVector.y = (targetVector.y * -0.5 + 0.5) * rect.height + rect.top;

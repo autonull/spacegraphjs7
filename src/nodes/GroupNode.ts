@@ -4,6 +4,12 @@ import { Node } from './Node';
 import type { NodeSpec, GroupNodeData } from '../types';
 import type { SpaceGraph } from '../SpaceGraph';
 
+type NodeLike = {
+    data?: Record<string, unknown>;
+    parameters?: Record<string, unknown>;
+    parent?: string;
+};
+
 export class GroupNode extends Node {
     private _object = new THREE.Object3D();
     get object() {
@@ -85,12 +91,14 @@ export class GroupNode extends Node {
         this.data._lastLodVisible = shouldShowChildren;
     }
 
+    private _getParentId(node?: Node): string | undefined {
+        if (!node) return undefined;
+        const n = node as unknown as NodeLike;
+        return n.data?.parent ?? n.parameters?.parent ?? n.parent;
+    }
+
     private _isAncestorHidden(): boolean {
-        let currentParent =
-            (this.data?.parent as string) ??
-            (((this as unknown as Record<string, unknown>).parameters as Record<string, unknown>)
-                ?.parent as string) ??
-            ((this as unknown as Record<string, unknown>).parent as string);
+        let currentParent = this._getParentId(this);
         const visited = new Set<string>();
 
         while (currentParent && this.sg?.graph?.nodes) {
@@ -101,15 +109,7 @@ export class GroupNode extends Node {
             if (parentNode instanceof GroupNode && parentNode.data._lastLodVisible === false) {
                 return true;
             }
-            currentParent =
-                (parentNode?.data?.parent as string) ??
-                ((
-                    (parentNode as unknown as Record<string, unknown>).parameters as Record<
-                        string,
-                        unknown
-                    >
-                )?.parent as string) ??
-                ((parentNode as unknown as Record<string, unknown>).parent as string);
+            currentParent = this._getParentId(parentNode);
         }
 
         return false;

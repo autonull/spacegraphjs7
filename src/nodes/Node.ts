@@ -102,7 +102,7 @@ export abstract class Node extends EventEmitter<NodeEventMap> {
     }
 
     animate(props: AnimationProps): this {
-        const { scale, onUpdate: _onUpdate, ...positionProps } = props;
+        const { scale, ...positionProps } = props;
 
         gsap.to(this.position, {
             ...positionProps,

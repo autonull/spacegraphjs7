@@ -103,7 +103,7 @@ export async function runVisionAnalysis(outputDir: string): Promise<VisionReport
                     const hasGraph = await page
                         .waitForFunction(
                             () => {
-                                const w = window as unknown as {
+                                const w = window as {
                                     SpaceGraph?: { instances: Set<unknown> };
                                 };
                                 return (
@@ -124,7 +124,7 @@ export async function runVisionAnalysis(outputDir: string): Promise<VisionReport
                     await page.waitForTimeout(1000);
 
                     const fileAnalysis = await page.evaluate(async () => {
-                        const w = window as unknown as {
+                        const w = window as {
                             __SPACEGRAPH_INSTANCES__?: Array<{
                                 vision: {
                                     stopAutonomousCorrection: () => void;
