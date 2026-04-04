@@ -3,9 +3,6 @@ import { CSS3DRenderer } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
 import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from 'three-mesh-bvh';
 import type { SpaceGraph } from '../SpaceGraph';
 import { InstancedNodeRenderer } from '../rendering/InstancedNodeRenderer';
-import { createLogger } from '../utils/logger.js';
-
-const logger = createLogger('Renderer');
 
 const CSS_RENDERER_STYLES = {
     position: 'absolute',

@@ -4,7 +4,7 @@ import type { HUDElementOptions } from './hud/types';
 import { HUDStatusBar } from './hud/HUDStatusBar';
 import { HUDPerformanceMetrics } from './hud/HUDPerformanceMetrics';
 import { HUDAlerts, type AlertOptions } from './hud/HUDAlerts';
-import { HUD_ZINDEX, HUD_POSITIONS, HUD_STYLES } from './hud/HUDStyles';
+import { HUD_ZINDEX, HUD_POSITIONS } from './hud/HUDStyles';
 import { HUDDOMFactory } from './hud/HUDDOMFactory';
 import { createLogger } from '../utils/logger.js';
 

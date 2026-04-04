@@ -355,13 +355,13 @@ export class HtmlNode extends DOMNode {
         });
     }
 
-    adjustContentScale = (deltaFactor: number): void => {
+    adjustContentScale(deltaFactor: number): void {
         this.setContentScale(((this.data?.contentScale as number) ?? 1.0) * deltaFactor);
-    };
+    }
 
-    adjustNodeSize = (factor: number): void => {
+    adjustNodeSize(factor: number): void {
         this.setSize(this.size.width * factor, this.size.height * factor, false);
-    };
+    }
 
     startResize(): void {
         this.domElement?.classList.add('resizing');
@@ -424,7 +424,7 @@ export class HtmlNode extends DOMNode {
         });
     }
 
-    updateLod(distance: number): void {
+    updateLod(_distance: number): void {
         if (!this.labelLod.length) {
             if (this.contentWrapper) {
                 const baseScale = (this.data?.contentScale as number) ?? 1.0;

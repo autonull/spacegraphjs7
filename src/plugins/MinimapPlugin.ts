@@ -167,7 +167,6 @@ export class MinimapPlugin implements ISpaceGraphPlugin {
             // Adjust zoom dynamically based on graph size if needed, or stick to setting
             const graphSize = new THREE.Vector3();
             box.getSize(graphSize);
-            const maxDim = Math.max(graphSize.x, graphSize.y, 500);
 
             // Base zoom on max dim + padding, or user setting if larger
             this.orthoCamera.left = -this.settings.zoom;
@@ -198,7 +197,7 @@ export class MinimapPlugin implements ISpaceGraphPlugin {
         renderer.setViewport(0, 0, cw * pr, ch * pr);
     }
 
-    private _updateOverlay(left: number, top: number, size: number, cw: number, ch: number) {
+    private _updateOverlay(left: number, top: number, size: number, _cw: number, _ch: number) {
         if (typeof document === 'undefined') return;
 
         if (!this.container) {

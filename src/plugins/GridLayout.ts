@@ -53,6 +53,4 @@ export class GridLayout implements ISpaceGraphPlugin {
 
         for (const edge of this.sg.graph.edges.values()) edge.update?.();
     }
-
-    onPreRender(_delta: number): void {}
 }

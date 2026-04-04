@@ -1,15 +1,12 @@
 import { Page, expect } from '@playwright/test';
 import { VisionReport } from './analyzer';
-import { createLogger } from '../utils/logger.js';
-
-const logger = createLogger('VisionAssert');
 
 /**
  * Utility class for asserting visual invariants of a SpaceGraph instance
  * running within a Playwright page.
  */
 export class VisionAssert {
-    constructor(private page: Page) { }
+    constructor(private page: Page) {}
 
     /**
      * Executes the vision pipeline on the current page to retrieve the report.
@@ -28,7 +25,7 @@ export class VisionAssert {
 
             const sg = instances[0] as any;
             if (!sg.vision) {
-                throw new Error("VisionManager not found on SpaceGraph instance.");
+                throw new Error('VisionManager not found on SpaceGraph instance.');
             }
 
             sg.vision.stopAutonomousCorrection();
@@ -55,7 +52,7 @@ export class VisionAssert {
                     nodeA: o.nodeA,
                     nodeB: o.nodeB,
                     message: `Bounding box overlap detected between nodes ${o.nodeA} and ${o.nodeB}.`,
-                }))
+                })),
             );
 
             localIssues.push(...report.legibility.failures);
@@ -63,7 +60,7 @@ export class VisionAssert {
             return {
                 layoutScore: report.layoutScore ?? 100,
                 legibilityScore: report.legibilityScore ?? 100,
-                issues: localIssues
+                issues: localIssues,
             };
         });
 
@@ -85,7 +82,10 @@ export class VisionAssert {
     async isLegible() {
         const report = await this.getReport();
         const badText = report.issues.filter((i) => i.type === 'legibility');
-        expect(badText, `Expected all text to be legible, found ${badText.length} issues.`).toHaveLength(0);
+        expect(
+            badText,
+            `Expected all text to be legible, found ${badText.length} issues.`,
+        ).toHaveLength(0);
     }
 
     /**
@@ -94,7 +94,10 @@ export class VisionAssert {
      */
     async expectedLayoutScore(minScore: number) {
         const report = await this.getReport();
-        expect(report.layoutScore, `Expected layout score >= ${minScore}, got ${report.layoutScore}`).toBeGreaterThanOrEqual(minScore);
+        expect(
+            report.layoutScore,
+            `Expected layout score >= ${minScore}, got ${report.layoutScore}`,
+        ).toBeGreaterThanOrEqual(minScore);
     }
 }
 

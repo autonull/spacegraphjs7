@@ -1,8 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
-import { computeBoundsTree, disposeBoundsTree } from 'three-mesh-bvh';
-
 import { Node } from './Node';
 import { createLogger } from '../utils/logger';
 import type { NodeSpec } from '../types';
@@ -12,7 +10,9 @@ const logger = createLogger('SceneNode');
 
 export class SceneNode extends Node {
     private _object = new THREE.Object3D();
-    get object(): THREE.Object3D { return this._object; }
+    get object(): THREE.Object3D {
+        return this._object;
+    }
 
     private modelRoot?: THREE.Group;
     private loader: GLTFLoader;

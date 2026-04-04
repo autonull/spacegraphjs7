@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import type { SpaceGraph } from '../SpaceGraph';
-import type { ISpaceGraphPlugin, NodeSpec } from '../types';
+import type { ISpaceGraphPlugin } from '../types';
 import type { Node } from '../nodes/Node';
 import type { Edge } from '../edges/Edge';
 import { InteractionRaycaster } from './interaction/RaycasterHelper';
@@ -10,7 +10,7 @@ import { SelectionManager } from './interaction/SelectionManager';
 import { DragHandler } from './interaction/DragHandler';
 import { ConnectionHandler } from './interaction/ConnectionHandler';
 import { ResizeHandler } from './interaction/ResizeHandler';
-import { KeyboardShortcuts, type SelectionState } from './interaction/KeyboardShortcuts';
+import { KeyboardShortcuts } from './interaction/KeyboardShortcuts';
 
 export class InteractionPlugin implements ISpaceGraphPlugin {
     readonly id = 'interaction';
@@ -54,7 +54,7 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
         this.keyboardShortcuts = new KeyboardShortcuts(sg);
 
         this.cursorManager.setContainer(this.sg.renderer.renderer.domElement);
-        this.keyboardShortcuts.setSelectionChangeHandler((selection) => {
+        this.keyboardShortcuts.setSelectionChangeHandler((_selection) => {
             this.selectionManager.clear();
         });
 
@@ -84,7 +84,7 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
         }
 
         const nodeResult = this.raycaster.raycastNode();
-        const edgeResult = this.raycaster.raycastEdge();
+        this.raycaster.raycastEdge();
 
         if (e.button === 2 && nodeResult?.node) {
             this.startContextMenu(nodeResult.node, e);
@@ -150,7 +150,7 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
         this.cursorManager.set(cursorMode, 'hover');
     }
 
-    private handlePointerUp(e: any): void {
+    private handlePointerUp(_e: any): void {
         if (this.dragHandler.isDraggingNode()) {
             this.dragHandler.endDrag();
             this.cursorManager.clear('drag');

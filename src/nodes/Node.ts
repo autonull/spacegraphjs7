@@ -1,12 +1,9 @@
 import * as THREE from 'three';
 import gsap from 'gsap';
 import { ThreeDisposer } from '../utils/ThreeDisposer';
-import { EventEmitter, type Disposable } from '../core/EventEmitter';
+import { EventEmitter } from '../core/EventEmitter';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec, NodeData, AnimationProps } from '../types';
-import { createLogger } from '../utils/logger';
-
-const logger = createLogger('Node');
 
 type NodeEventMap = {
     updated: { node: Node; changes: Partial<NodeSpec>; timestamp: number };
@@ -98,7 +95,7 @@ export abstract class Node extends EventEmitter<NodeEventMap> {
     }
 
     animate(props: AnimationProps): this {
-        const { scale, onUpdate, ...positionProps } = props;
+        const { scale, onUpdate: _onUpdate, ...positionProps } = props;
 
         gsap.to(this.position, {
             ...positionProps,

@@ -1,7 +1,6 @@
 // SpaceGraphJS - Heuristics Strategy
 // Vision analysis using WCAG, spatial indexing, and Fitts's law
 
-import * as THREE from 'three';
 import type { VisionStrategy, VisionReport, VisionContext } from '../types';
 import type { LegibilityResult, OverlapResult, HierarchyResult, ErgonomicsResult } from '../types';
 import { LegibilityAnalyzer } from '../analyzers/LegibilityAnalyzer';

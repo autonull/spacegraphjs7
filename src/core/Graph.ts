@@ -2,6 +2,7 @@ import type { NodeSpec, EdgeSpec, GraphSpec, GraphExport } from '../types';
 import type { Node } from '../nodes/Node';
 import type { Edge } from '../edges/Edge';
 import { createLogger } from '../utils/logger';
+import { safeClone } from '../utils/math.js';
 
 const logger = createLogger('Graph');
 
@@ -56,14 +57,6 @@ export class Graph {
                 logger.error('Graph event handler for %s failed:', event, err);
             }
         });
-    }
-
-    private safeClone(data: unknown): unknown {
-        try {
-            return structuredClone(data);
-        } catch {
-            return JSON.parse(JSON.stringify(data));
-        }
     }
 
     addNode(specOrNode: NodeSpec | Node): Node | null {
@@ -273,14 +266,14 @@ export class Graph {
                 type,
                 label,
                 position: [position.x, position.y, position.z] as [number, number, number],
-                data: data ? this.safeClone(data) : {},
+                data: data ? safeClone(data) : {},
             })),
             edges: [...this.edges.values()].map(({ id, source, target, type, data }) => ({
                 id,
                 source: source.id,
                 target: target.id,
                 type: type ?? 'Edge',
-                data: data ? this.safeClone(data) : {},
+                data: data ? safeClone(data) : {},
             })),
         };
     }

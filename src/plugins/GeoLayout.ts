@@ -64,6 +64,4 @@ export class GeoLayout implements ISpaceGraphPlugin {
 
         for (const edge of this.sg.graph.edges.values()) edge.update?.();
     }
-
-    dispose(): void {}
 }

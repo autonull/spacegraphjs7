@@ -111,6 +111,4 @@ export class RadialLayout implements ISpaceGraphPlugin {
 
         for (const edge of edges.values()) edge.update?.();
     }
-
-    onPreRender(_delta: number): void {}
 }

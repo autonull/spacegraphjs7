@@ -70,7 +70,7 @@ export class LabeledEdge extends Edge {
         this.labelObject.position.copy(mid).sub(this.object.position);
     }
 
-    updateLod(distance: number): void {
+    updateLod(_distance: number): void {
         if (!this.labelLod || this.labelLod.length === 0) {
             this.labelEl.style.visibility = '';
             this.labelEl.style.transform = '';

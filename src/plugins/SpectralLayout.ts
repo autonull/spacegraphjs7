@@ -133,6 +133,4 @@ export class SpectralLayout implements ISpaceGraphPlugin {
             duration: this.settings.animationDuration,
         });
     }
-
-    dispose(): void {}
 }

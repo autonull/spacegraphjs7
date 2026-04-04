@@ -88,7 +88,6 @@ export abstract class BaseLayout implements Plugin {
             options;
 
         if (animate && typeof window !== 'undefined') {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const gsap = (window as any).gsap;
             if (gsap) {
                 gsap.to(node.position, {
@@ -115,7 +114,6 @@ export abstract class BaseLayout implements Plugin {
      * Helper: Get bounds of all nodes
      */
     protected getNodeBounds(): { min: THREE.Vector3; max: THREE.Vector3 } {
-        const mathPool = THREE.MathUtils;
         const min = new THREE.Vector3(Infinity, Infinity, Infinity);
         const max = new THREE.Vector3(-Infinity, -Infinity, -Infinity);
 

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { MathPool } from '../utils/MathPool';
+import { MathPool } from '../core/pooling/ObjectPool.js';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { EdgeData, EdgeSpec } from '../types';
 import type { Node } from '../nodes/Node';

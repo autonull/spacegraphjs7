@@ -10,9 +10,10 @@ import { AdvancedRenderingOptimizer } from './core/AdvancedRenderingOptimizer';
 import { InputManager } from './input/InputManager';
 import { applyDefaultInputConfig, type DefaultInputConfig } from './input/DefaultInputConfig';
 import { createLogger } from './utils/logger.js';
+import { safeClone } from './utils/math.js';
 
 import type { GraphSpec, SpaceGraphOptions, SpecUpdate, ISpaceGraphPlugin } from './types';
-import { MathPool } from './utils/MathPool';
+import { MathPool } from './core/pooling/ObjectPool.js';
 import { CameraUtils } from './utils/CameraUtils';
 import { DOMUtils } from './utils/DOMUtils';
 
@@ -218,41 +219,32 @@ export class SpaceGraph {
     async init() {
         this.renderer.init();
 
-        NODE_TYPES.forEach((cls) => this.pluginManager.registerNodeType(cls.name, cls));
-        EDGE_TYPES.forEach((cls) => this.pluginManager.registerEdgeType(cls.name, cls));
-        LAYOUT_PLUGINS.forEach(([cls, name]) => this.pluginManager.register(name, new cls()));
-        SYSTEM_PLUGINS.forEach(([cls, name]) => this.pluginManager.register(name, new cls()));
+        for (const cls of NODE_TYPES) this.pluginManager.registerNodeType(cls.name, cls);
+        for (const cls of EDGE_TYPES) this.pluginManager.registerEdgeType(cls.name, cls);
+        for (const [cls, name] of LAYOUT_PLUGINS) this.pluginManager.register(name, new cls());
+        for (const [cls, name] of SYSTEM_PLUGINS) this.pluginManager.register(name, new cls());
 
         await this.pluginManager.initAll();
     }
 
     loadSpec(spec: GraphSpec): void {
-        spec.nodes?.forEach((nodeSpec) => this.graph.addNode(nodeSpec));
-        spec.edges?.forEach((edgeSpec) => this.graph.addEdge(edgeSpec));
+        if (spec.nodes) for (const nodeSpec of spec.nodes) this.graph.addNode(nodeSpec);
+        if (spec.edges) for (const edgeSpec of spec.edges) this.graph.addEdge(edgeSpec);
     }
 
     update(spec: SpecUpdate): void {
-        spec.nodes?.forEach(
-            (nodeUpdate) => nodeUpdate.id && this.graph.updateNode(nodeUpdate.id, nodeUpdate),
-        );
-        spec.edges?.forEach(
-            (edgeUpdate) => edgeUpdate.id && this.graph.updateEdge(edgeUpdate.id, edgeUpdate),
-        );
+        if (spec.nodes)
+            for (const nodeUpdate of spec.nodes)
+                if (nodeUpdate.id) this.graph.updateNode(nodeUpdate.id, nodeUpdate);
+        if (spec.edges)
+            for (const edgeUpdate of spec.edges)
+                if (edgeUpdate.id) this.graph.updateEdge(edgeUpdate.id, edgeUpdate);
     }
 
     export(): GraphSpec & {
         camera?: { position: [number, number, number]; target: [number, number, number] };
         plugins?: Record<string, any>;
     } {
-        const safeClone = (obj: unknown) => {
-            if (!obj) return {};
-            try {
-                return structuredClone(obj);
-            } catch {
-                return JSON.parse(JSON.stringify(obj));
-            }
-        };
-
         const spec: any = {
             nodes: [...this.graph.nodes.values()].map((node) => ({
                 id: node.id,

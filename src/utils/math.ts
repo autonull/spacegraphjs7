@@ -80,3 +80,12 @@ export const mapRange = (
     outMax: number,
 ): number =>
     inMax === inMin ? outMin : ((value - inMin) * (outMax - outMin)) / (inMax - inMin) + outMin;
+
+export function safeClone<T>(obj: T): T {
+    if (obj == null) return obj;
+    try {
+        return structuredClone(obj);
+    } catch {
+        return JSON.parse(JSON.stringify(obj));
+    }
+}

@@ -2,7 +2,7 @@ import type { SpaceGraph } from '../SpaceGraph';
 import type { ISpaceGraphPlugin } from '../types';
 import type { Node } from '../nodes/Node';
 import * as THREE from 'three';
-import { MathPool } from '../utils/MathPool';
+import { MathPool } from '../core/pooling/ObjectPool.js';
 
 /**
  * PhysicsPlugin — Verlet-based 2-D physics simulation.

@@ -109,6 +109,4 @@ export class TreeLayout implements ISpaceGraphPlugin {
 
         for (const edge of edges) edge.update?.();
     }
-
-    dispose(): void {}
 }

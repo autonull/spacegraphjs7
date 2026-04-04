@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import type { SpaceGraph } from '../SpaceGraph';
 import { InferenceSession, Tensor, env } from 'onnxruntime-web';
 import { getLuminance, hexToRgb } from '../utils/color.js';
-import { SpatialIndex } from './SpatialIndex';
+import { SpatialIndex } from './spatial/SpatialIndex';
 import { createLogger } from '../utils/logger.js';
 
 const logger = createLogger('VisionManager');

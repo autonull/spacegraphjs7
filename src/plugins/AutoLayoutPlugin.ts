@@ -1,7 +1,6 @@
 import type { SpaceGraph } from '../SpaceGraph';
 import type { ISpaceGraphPlugin } from '../types';
 import type { ForceLayout } from './ForceLayout';
-import type { Node } from '../nodes/Node';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('AutoLayoutPlugin');
