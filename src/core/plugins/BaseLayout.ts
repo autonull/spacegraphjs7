@@ -2,10 +2,11 @@
 // Abstract base class for layout plugins with common helpers
 
 import * as THREE from 'three';
-import type { Plugin, PluginContext } from './PluginRegistry';
+import type { Plugin } from '../PluginManager';
 import type { Graph } from '../Graph';
 import type { Node } from '../../nodes/Node';
 import type { EventSystem } from '../events/EventSystem';
+import type { SpaceGraph } from '../../SpaceGraph';
 
 /**
  * Layout configuration
@@ -47,10 +48,10 @@ export abstract class BaseLayout implements Plugin {
     /**
      * Initialize the layout
      */
-    init(context: PluginContext): void {
-        this.graph = context.graph;
-        this.events = context.events;
-        this.config = { ...this.defaultConfig(), ...context.config };
+    init(_sg: SpaceGraph, graph: Graph, events: EventSystem): void {
+        this.graph = graph;
+        this.events = events;
+        this.config = { ...this.defaultConfig() };
     }
 
     /**

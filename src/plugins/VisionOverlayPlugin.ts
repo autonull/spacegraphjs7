@@ -1,12 +1,14 @@
 import type { SpaceGraph } from '../SpaceGraph';
-import type { ISpaceGraphPlugin } from '../types';
+import type { Plugin } from '../core/PluginManager';
+import type { Graph } from '../core/Graph';
+import type { EventSystem } from '../core/events/EventSystem';
 import type { VisionReport } from '../core/VisionManager';
 import { DOMUtils } from '../utils/DOMUtils';
 import { createLogger } from '../utils/logger.js';
 
 const logger = createLogger('VisionOverlay');
 
-export class VisionOverlayPlugin implements ISpaceGraphPlugin {
+export class VisionOverlayPlugin implements Plugin {
     readonly id = 'vision-overlay-plugin';
     readonly name = 'Vision Overlay';
     readonly version = '1.0.0';
@@ -49,7 +51,7 @@ export class VisionOverlayPlugin implements ISpaceGraphPlugin {
         }
     }
 
-    init(sg: SpaceGraph): void {
+    init(sg: SpaceGraph, _graph: Graph, _events: EventSystem): void {
         this.sg = sg;
         if (typeof document === 'undefined') return;
 

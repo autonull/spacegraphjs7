@@ -1,6 +1,7 @@
 import type { NodeSpec, EdgeSpec, GraphSpec, GraphExport } from '../types';
 import type { Node } from '../nodes/Node';
 import type { Edge } from '../edges/Edge';
+import type { SpaceGraph } from '../SpaceGraph';
 import { createLogger } from '../utils/logger';
 import { safeClone } from '../utils/math.js';
 
@@ -15,10 +16,11 @@ type GraphEventMap = {
 
 type GraphEventHandler<T extends keyof GraphEventMap> = (event: GraphEventMap[T]) => void;
 
-type NodeConstructor = new (spec: NodeSpec) => Node;
-type EdgeConstructor = new (spec: EdgeSpec, source: Node, target: Node) => Edge;
+type NodeConstructor = new (sg: SpaceGraph, spec: NodeSpec) => Node;
+type EdgeConstructor = new (sg: SpaceGraph, spec: EdgeSpec, source: Node, target: Node) => Edge;
 
 export class Graph {
+    private readonly sg: SpaceGraph;
     public nodes: Map<string, Node> = new Map();
     public edges: Map<string, Edge> = new Map();
 
@@ -26,7 +28,9 @@ export class Graph {
     private nodeTypes: Map<string, NodeConstructor> = new Map();
     private edgeTypes: Map<string, EdgeConstructor> = new Map();
 
-    constructor() {}
+    constructor(sg: SpaceGraph) {
+        this.sg = sg;
+    }
 
     registerNodeType(type: string, ctor: NodeConstructor): void {
         this.nodeTypes.set(type, ctor);
@@ -76,7 +80,7 @@ export class Graph {
             return null;
         }
 
-        const node = new NodeType(spec);
+        const node = new NodeType(this.sg, spec);
         this.nodes.set(spec.id, node);
         this.emit('node:added', { node });
         return node;
@@ -133,7 +137,7 @@ export class Graph {
             return null;
         }
 
-        const edge = new EdgeType(spec, sourceNode, targetNode);
+        const edge = new EdgeType(this.sg, spec, sourceNode, targetNode);
         this.edges.set(spec.id, edge);
         this.emit('edge:added', { edge });
         return edge;

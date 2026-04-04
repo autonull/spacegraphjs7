@@ -1,5 +1,7 @@
 import type { SpaceGraph } from '../SpaceGraph';
-import type { ISpaceGraphPlugin } from '../types';
+import type { Plugin } from '../core/PluginManager';
+import type { Graph } from '../core/Graph';
+import type { EventSystem } from '../core/events/EventSystem';
 import * as THREE from 'three';
 
 const ERGONOMICS_CONFIG = {
@@ -84,7 +86,7 @@ export interface ErgonomicsConfig {
  *   avgEfficiency      : path-length / displacement ratio (1 = perfectly straight)
  *   avgJitter          : direction reversals per second
  */
-export class ErgonomicsPlugin implements ISpaceGraphPlugin {
+export class ErgonomicsPlugin implements Plugin {
     readonly id = 'ergonomics-plugin';
     readonly name = 'Ergonomics';
     readonly version = '1.0.0';
@@ -110,7 +112,7 @@ export class ErgonomicsPlugin implements ISpaceGraphPlugin {
      */
     public calibrating = false;
 
-    init(sg: SpaceGraph): void {
+    init(sg: SpaceGraph, _graph: Graph, events: EventSystem): void {
         this.sg = sg;
         this._applyConfig();
         this._listenToInteractions();
@@ -170,7 +172,10 @@ export class ErgonomicsPlugin implements ISpaceGraphPlugin {
         this.cameraSession.lastActivity = Date.now();
 
         this.cameraSession.timeoutHandle = setTimeout(() => {
-            if (this.cameraSession && Date.now() - this.cameraSession.lastActivity >= ERGONOMICS_CONFIG.SESSION_TIMEOUT_MS) {
+            if (
+                this.cameraSession &&
+                Date.now() - this.cameraSession.lastActivity >= ERGONOMICS_CONFIG.SESSION_TIMEOUT_MS
+            ) {
                 this.cameraSession.session.close();
                 this._accumulateMetrics(this.cameraSession.session);
                 this.cameraSession = null;
@@ -242,8 +247,12 @@ export class ErgonomicsPlugin implements ISpaceGraphPlugin {
                     clearInterval(checkRound);
                     this.calibrating = false;
 
-                    const scoreA = scores.A.efficiency - scores.A.jitter * ERGONOMICS_CONFIG.JITTER_PENALTY_WEIGHT;
-                    const scoreB = scores.B.efficiency - scores.B.jitter * ERGONOMICS_CONFIG.JITTER_PENALTY_WEIGHT;
+                    const scoreA =
+                        scores.A.efficiency -
+                        scores.A.jitter * ERGONOMICS_CONFIG.JITTER_PENALTY_WEIGHT;
+                    const scoreB =
+                        scores.B.efficiency -
+                        scores.B.jitter * ERGONOMICS_CONFIG.JITTER_PENALTY_WEIGHT;
 
                     const winner = scoreA >= scoreB ? configA : configB;
 

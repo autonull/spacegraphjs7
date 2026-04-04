@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import type { SpaceGraph } from '../SpaceGraph';
-import type { ISpaceGraphPlugin } from '../types';
+import type { Plugin } from '../core/PluginManager';
+import type { Graph } from '../core/Graph';
+import type { EventSystem } from '../core/events/EventSystem';
 import type { Node } from '../nodes/Node';
 import type { Edge } from '../edges/Edge';
 import { InteractionRaycaster } from './interaction/RaycasterHelper';
@@ -12,7 +14,7 @@ import { ConnectionHandler } from './interaction/ConnectionHandler';
 import { ResizeHandler } from './interaction/ResizeHandler';
 import { KeyboardShortcuts } from './interaction/KeyboardShortcuts';
 
-export class InteractionPlugin implements ISpaceGraphPlugin {
+export class InteractionPlugin implements Plugin {
     readonly id = 'interaction';
     readonly name = 'Interaction Controls';
     readonly version = '1.0.0';
@@ -42,7 +44,7 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
         }
     }
 
-    init(sg: SpaceGraph): void {
+    init(sg: SpaceGraph, _graph: Graph, _events: EventSystem): void {
         this.sg = sg;
         this.raycaster = new InteractionRaycaster(sg);
         this.cursorManager = new CursorManager();

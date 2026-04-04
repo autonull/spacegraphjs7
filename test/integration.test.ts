@@ -5,13 +5,13 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { Graph } from '../src/core/Graph';
 import { Node } from '../src/nodes/Node';
 import { Edge } from '../src/edges/Edge';
-import { EventSystem, PluginEventBus } from '../src/core/events/EventSystem';
+import { EventSystem } from '../src/core/events/EventSystem';
 import { TypeRegistry } from '../src/core/TypeRegistry';
 import { SpatialIndex } from '../src/core/spatial/SpatialIndex';
 import { MathPool } from '../src/core/pooling/ObjectPool';
 import { VisionSystem } from '../src/vision/VisionSystem';
-import { PluginRegistry } from '../src/core/plugins/PluginRegistry';
 import { ForceLayout } from '../src/plugins/ForceLayout';
+import { PluginManager, type Plugin } from '../src/core/PluginManager';
 import * as THREE from 'three';
 
 /**
@@ -275,43 +275,39 @@ describe('SpaceGraphJS v7.0 Integration', () => {
 
     describe('Plugin System', () => {
         it('should register and initialize plugins', async () => {
-            const plugins = new PluginRegistry();
             const testGraph = new Graph();
             const testEvents = new EventSystem();
-            const pluginBus = new PluginEventBus();
-
-            plugins.init(testGraph, testEvents, pluginBus);
+            const mockSg = { graph: testGraph, events: testEvents } as any;
+            const plugins = new PluginManager(mockSg);
 
             const forceLayout = new ForceLayout();
-            await plugins.register(forceLayout);
+            plugins.register('force-layout', forceLayout);
 
-            expect(plugins.has('force-layout')).toBe(true);
+            expect(plugins.hasPlugin('force-layout')).toBe(true);
         });
 
         it('should call plugin hooks', async () => {
-            const plugins = new PluginRegistry();
             const testGraph = new Graph();
             const testEvents = new EventSystem();
-            const pluginBus = new PluginEventBus();
+            const mockSg = { graph: testGraph, events: testEvents } as any;
+            const plugins = new PluginManager(mockSg);
 
-            plugins.init(testGraph, testEvents, pluginBus);
+            let preRenderCalled = false;
 
-            let preFrameCalled = false;
-
-            const testPlugin = {
+            const testPlugin: Plugin = {
                 id: 'test-plugin',
                 name: 'Test Plugin',
                 version: '1.0.0',
                 init: () => {},
-                onPreFrame: () => {
-                    preFrameCalled = true;
+                onPreRender: () => {
+                    preRenderCalled = true;
                 },
             };
 
-            await plugins.register(testPlugin as any);
-            plugins.updatePreFrame(0.016);
+            plugins.register('test-plugin', testPlugin);
+            plugins.updateAll(0.016);
 
-            expect(preFrameCalled).toBe(true);
+            expect(preRenderCalled).toBe(true);
         });
     });
 
@@ -337,14 +333,12 @@ describe('SpaceGraphJS v7.0 Integration', () => {
                 ],
             });
 
-            const events = new EventSystem();
-            const plugins = new PluginRegistry();
-            const pluginBus = new PluginEventBus();
-
-            plugins.init(graph, events, pluginBus);
+            const mockSg = { graph, events } as any;
+            const plugins = new PluginManager(mockSg);
 
             const layout = new ForceLayout();
-            await plugins.register(layout);
+            plugins.register('force-layout', layout);
+            await layout.init(mockSg, graph, events);
 
             // Get initial positions
             const n1 = graph.getNode('n1')!;

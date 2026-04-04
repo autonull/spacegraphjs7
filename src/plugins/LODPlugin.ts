@@ -1,11 +1,13 @@
 import * as THREE from 'three';
 import type { SpaceGraph } from '../SpaceGraph';
-import type { ISpaceGraphPlugin } from '../types';
+import type { Plugin } from '../core/PluginManager';
+import type { Graph } from '../core/Graph';
+import type { EventSystem } from '../core/events/EventSystem';
 import type { Node } from '../nodes/Node';
 import { DOMNode } from '../nodes/DOMNode';
 import { GroupNode } from '../nodes/GroupNode';
 
-export class LODPlugin implements ISpaceGraphPlugin {
+export class LODPlugin implements Plugin {
     readonly id = 'lod';
     readonly name = 'Level of Detail';
     readonly version = '1.0.0';
@@ -13,7 +15,7 @@ export class LODPlugin implements ISpaceGraphPlugin {
     private sg!: SpaceGraph;
     private maxDistance = 3000;
 
-    init(sg: SpaceGraph): void {
+    init(sg: SpaceGraph, _graph: Graph, _events: EventSystem): void {
         this.sg = sg;
     }
 

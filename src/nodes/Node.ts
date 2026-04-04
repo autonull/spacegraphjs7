@@ -13,7 +13,7 @@ type NodeEventMap = {
 export abstract class Node extends EventEmitter<NodeEventMap> {
     readonly id: string;
     readonly type: string;
-    public sg: SpaceGraph;
+    public sg?: SpaceGraph;
     public label?: string;
     public data: NodeData;
     public position: THREE.Vector3;
@@ -25,7 +25,7 @@ export abstract class Node extends EventEmitter<NodeEventMap> {
     constructor(sgOrSpec?: SpaceGraph | NodeSpec, maybeSpec?: NodeSpec) {
         super();
         const isSpecOnly = !!(sgOrSpec && 'id' in sgOrSpec);
-        this.sg = isSpecOnly ? (undefined as unknown as SpaceGraph) : (sgOrSpec as SpaceGraph);
+        this.sg = isSpecOnly ? undefined : (sgOrSpec as SpaceGraph);
         const spec = isSpecOnly ? (sgOrSpec as NodeSpec) : maybeSpec;
         this.id = spec?.id ?? '';
         this.type = spec?.type ?? '';
@@ -46,6 +46,13 @@ export abstract class Node extends EventEmitter<NodeEventMap> {
             spec?.scale?.[1] ?? 1,
             spec?.scale?.[2] ?? 1,
         );
+    }
+
+    requireSpaceGraph(): SpaceGraph {
+        if (!this.sg) {
+            throw new Error(`Node '${this.id}' requires SpaceGraph but sg is not initialized`);
+        }
+        return this.sg;
     }
 
     updateSpec(updates: Partial<NodeSpec>): this {

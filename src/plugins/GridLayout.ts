@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import type { SpaceGraph } from '../SpaceGraph';
-import type { ISpaceGraphPlugin } from '../types';
+import type { Plugin } from '../core/PluginManager';
+import type { Graph } from '../core/Graph';
+import type { EventSystem } from '../core/events/EventSystem';
 
 /**
  * GridLayout — Arranges nodes in a uniform rectangular grid on the XY plane.
@@ -15,7 +17,7 @@ import type { ISpaceGraphPlugin } from '../types';
  *   offsetX  : world X origin     (default 0)
  *   offsetY  : world Y origin     (default 0)
  */
-export class GridLayout implements ISpaceGraphPlugin {
+export class GridLayout implements Plugin {
     readonly id = 'grid-layout';
     readonly name = 'Grid Layout';
     readonly version = '1.0.0';
@@ -31,7 +33,7 @@ export class GridLayout implements ISpaceGraphPlugin {
         animate: true,
     };
 
-    init(sg: SpaceGraph): void {
+    init(sg: SpaceGraph, _graph: Graph, _events: EventSystem): void {
         this.sg = sg;
     }
 

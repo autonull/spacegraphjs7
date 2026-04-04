@@ -47,7 +47,6 @@ export type { SpaceGraphAppOptions, AppButtonConfig } from './core/SpaceGraphApp
 export { InputManager } from './input/InputManager';
 export { Graph } from './core/Graph';
 export { Renderer } from './core/Renderer';
-export { PluginManager } from './core/PluginManager';
 export { CameraControls } from './core/CameraControls';
 export { EventSystem, type SpaceGraphEvents } from './core/events/EventSystem';
 export { VisionManager, type VisionCategory } from './core/VisionManager';
@@ -56,21 +55,10 @@ export { CullingManager } from './core/CullingManager';
 export { AdvancedRenderingOptimizer } from './core/AdvancedRenderingOptimizer';
 
 // ============================================================================
-// Event System
-// ============================================================================
-export type {
-    PluginEvent,
-    VisionReportEvent,
-    LayoutAppliedEvent,
-    OverlapDetectedEvent,
-} from './core/events/EventSystem';
-
-// ============================================================================
 // Plugin System
 // ============================================================================
-export { PluginRegistry } from './core/plugins/PluginRegistry';
+export { PluginManager, type Plugin } from './core/PluginManager';
 export { BaseLayout } from './core/plugins/BaseLayout';
-export type { Plugin, PluginContext } from './core/plugins/PluginRegistry';
 export type { LayoutConfig, LayoutOptions } from './core/plugins/BaseLayout';
 
 // ============================================================================
@@ -144,7 +132,6 @@ export type {
     NodeSpec,
     EdgeSpec,
     SpecUpdate,
-    ISpaceGraphPlugin,
     SpaceGraphNodeData,
     BaseNodeData,
     BaseEdgeData,

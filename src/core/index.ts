@@ -1,26 +1,13 @@
 // SpaceGraphJS - Core Module Exports
 
-// Event Emitter Base
-export { EventEmitter } from './EventEmitter';
-
 // Event System
-export { EventSystem, PluginEventBus } from './events/EventSystem';
-export type {
-    SpaceGraphEvents,
-    PluginEvent,
-    VisionReportEvent,
-    LayoutAppliedEvent,
-    OverlapDetectedEvent,
-    NodeDragEvent,
-    SelectionChangedEvent,
-    AnyPluginEvent,
-} from './events/EventSystem';
+export { EventSystem } from './events/EventSystem';
+export type { SpaceGraphEvents } from './events/EventSystem';
 
 // Plugin System
-export { PluginRegistry } from './plugins/PluginRegistry';
+export { PluginManager, type Plugin } from './PluginManager';
 export { BaseLayout } from './plugins/BaseLayout';
 export type { LayoutConfig, LayoutOptions } from './plugins/BaseLayout';
-export type { Plugin, PluginContext } from './plugins/PluginRegistry';
 
 // Type Registry
 export { TypeRegistry } from './TypeRegistry';

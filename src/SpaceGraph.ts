@@ -12,7 +12,8 @@ import { applyDefaultInputConfig, type DefaultInputConfig } from './input/Defaul
 import { createLogger } from './utils/logger.js';
 import { safeClone } from './utils/math.js';
 
-import type { GraphSpec, SpaceGraphOptions, SpecUpdate, ISpaceGraphPlugin } from './types';
+import type { GraphSpec, SpaceGraphOptions, SpecUpdate } from './types';
+import type { Plugin } from './core/PluginManager';
 import { MathPool } from './core/pooling/ObjectPool.js';
 import { CameraUtils } from './utils/CameraUtils';
 import { DOMUtils } from './utils/DOMUtils';
@@ -69,7 +70,7 @@ import { HistoryPlugin } from './plugins/HistoryPlugin';
 
 const logger = createLogger('SpaceGraph');
 
-type PluginCtor = new () => ISpaceGraphPlugin;
+type PluginCtor = new () => Plugin;
 
 const NODE_TYPES = [
     ShapeNode,
@@ -160,7 +161,7 @@ export class SpaceGraph {
         this.vision = new VisionManager(this);
         this.pluginManager = new PluginManager(this);
         this.renderer = new Renderer(this, container);
-        this.graph = new Graph();
+        this.graph = new Graph(this);
         this.cameraControls = new CameraControls(
             this.renderer.camera,
             this.container,

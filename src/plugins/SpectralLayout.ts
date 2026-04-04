@@ -1,9 +1,11 @@
 import * as THREE from 'three';
 import type { Node } from '../nodes/Node';
 import type { SpaceGraph } from '../SpaceGraph';
-import type { ISpaceGraphPlugin } from '../types';
+import type { Plugin } from '../core/PluginManager';
+import type { Graph } from '../core/Graph';
+import type { EventSystem } from '../core/events/EventSystem';
 
-export class SpectralLayout implements ISpaceGraphPlugin {
+export class SpectralLayout implements Plugin {
     readonly id = 'spectral-layout';
     readonly name = 'Spectral Layout';
     readonly version = '1.0.0';
@@ -17,7 +19,7 @@ export class SpectralLayout implements ISpaceGraphPlugin {
         dimensions: 3,
     };
 
-    init(sg: SpaceGraph): void {
+    init(sg: SpaceGraph, _graph: Graph, _events: EventSystem): void {
         this.sg = sg;
     }
 

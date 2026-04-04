@@ -4,22 +4,33 @@ import { createLogger } from '../../utils/logger.js';
 const logger = createLogger('EventSystem');
 
 export interface SpaceGraphEvents {
-    'node:added': { node: unknown; timestamp: number };
+    'node:added': { node: import('../../nodes/Node').Node; timestamp: number };
     'node:removed': { id: string; timestamp: number };
-    'node:updated': { node: unknown; changes: Record<string, unknown>; timestamp: number };
-    'edge:added': { edge: unknown; timestamp: number };
+    'node:updated': {
+        node: import('../../nodes/Node').Node;
+        changes: Record<string, unknown>;
+        timestamp: number;
+    };
+    'edge:added': { edge: import('../../edges/Edge').Edge; timestamp: number };
     'edge:removed': { id: string; timestamp: number };
-    'edge:updated': { edge: unknown; changes: Record<string, unknown>; timestamp: number };
-    'interaction:dragstart': { node: unknown; event: PointerEvent };
-    'interaction:dragend': { node: unknown; event: PointerEvent };
-    'interaction:drag': { node: unknown; position: [number, number, number] };
+    'edge:updated': {
+        edge: import('../../edges/Edge').Edge;
+        changes: Record<string, unknown>;
+        timestamp: number;
+    };
+    'interaction:dragstart': { node: import('../../nodes/Node').Node; event: PointerEvent };
+    'interaction:dragend': { node: import('../../nodes/Node').Node; event: PointerEvent };
+    'interaction:drag': {
+        node: import('../../nodes/Node').Node;
+        position: [number, number, number];
+    };
     'camera:move': { position: [number, number, number]; target: [number, number, number] };
     'selection:changed': { nodes: string[]; edges: string[]; timestamp: number };
-    'node:click': { node: unknown; event: MouseEvent };
+    'node:click': { node: import('../../nodes/Node').Node; event: MouseEvent };
     'graph:click': { event: MouseEvent };
-    'node:contextmenu': { node: unknown; event: MouseEvent };
+    'node:contextmenu': { node: import('../../nodes/Node').Node; event: MouseEvent };
     'graph:contextmenu': { event: MouseEvent };
-    'vision:report': { report: unknown; timestamp: number };
+    'vision:report': { report: import('../../vision/types').VisionReport; timestamp: number };
     'vision:overlap:detected': {
         overlaps: Array<{ nodeA: string; nodeB: string }>;
         timestamp: number;
@@ -92,73 +103,5 @@ export class EventSystem {
     listenerCount<K extends keyof SpaceGraphEvents>(type: K): number {
         const handlers = this.emitter.all.get(type);
         return Array.isArray(handlers) ? handlers.length : 0;
-    }
-}
-
-export interface PluginEvent {
-    type: string;
-    timestamp: number;
-}
-
-export interface VisionReportEvent extends PluginEvent {
-    type: 'vision:report';
-    report: unknown;
-}
-
-export interface LayoutAppliedEvent extends PluginEvent {
-    type: 'layout:applied';
-    layout: string;
-    duration: number;
-}
-
-export interface OverlapDetectedEvent extends PluginEvent {
-    type: 'vision:overlap:detected';
-    overlaps: Array<{ nodeA: string; nodeB: string }>;
-}
-
-export interface NodeDragEvent extends PluginEvent {
-    type: 'node:drag';
-    nodeId: string;
-    position: [number, number, number];
-}
-
-export interface SelectionChangedEvent extends PluginEvent {
-    type: 'selection:changed';
-    nodes: string[];
-    edges: string[];
-}
-
-export type AnyPluginEvent =
-    | VisionReportEvent
-    | LayoutAppliedEvent
-    | OverlapDetectedEvent
-    | NodeDragEvent
-    | SelectionChangedEvent;
-
-export class PluginEventBus {
-    private readonly handlers = new Map<string, Set<(event: AnyPluginEvent) => void>>();
-
-    subscribe<T extends AnyPluginEvent>(
-        type: T['type'],
-        handler: (event: T) => void,
-    ): { dispose(): void } {
-        const handlers = this.handlers.get(type) ?? new Set();
-        if (!this.handlers.has(type)) this.handlers.set(type, handlers);
-        handlers.add(handler as (event: AnyPluginEvent) => void);
-        return { dispose: () => handlers.delete(handler as (event: AnyPluginEvent) => void) };
-    }
-
-    publish<T extends AnyPluginEvent>(event: T): void {
-        this.handlers.get(event.type)?.forEach((handler) => {
-            try {
-                handler({ ...event, timestamp: Date.now() });
-            } catch (err) {
-                logger.error('Handler for %s failed:', event.type, err);
-            }
-        });
-    }
-
-    clear(): void {
-        this.handlers.clear();
     }
 }

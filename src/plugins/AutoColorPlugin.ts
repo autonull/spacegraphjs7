@@ -1,17 +1,19 @@
 import type { SpaceGraph } from '../SpaceGraph';
-import type { ISpaceGraphPlugin } from '../types';
+import type { Plugin } from '../core/PluginManager';
+import type { Graph } from '../core/Graph';
+import type { EventSystem } from '../core/events/EventSystem';
 import { createLogger } from '../utils/logger.js';
 
 const logger = createLogger('AutoColorPlugin');
 
-export class AutoColorPlugin implements ISpaceGraphPlugin {
+export class AutoColorPlugin implements Plugin {
     readonly id = 'auto-color';
     readonly name = 'Auto Color';
     readonly version = '1.0.0';
 
     private sg!: SpaceGraph;
 
-    init(sg: SpaceGraph): void {
+    init(sg: SpaceGraph, _graph: Graph, _events: EventSystem): void {
         this.sg = sg;
         logger.info('Initialized %s v%s', this.name, this.version);
     }

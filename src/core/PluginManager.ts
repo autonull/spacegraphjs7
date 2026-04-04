@@ -1,17 +1,35 @@
 import type { SpaceGraph } from '../SpaceGraph';
-import type { ISpaceGraphPlugin } from '../types';
 import type { Node } from '../nodes/Node';
 import type { Edge } from '../edges/Edge';
+import type { NodeSpec, EdgeSpec } from '../types';
+import type { EventSystem } from './events/EventSystem';
+import type { Graph } from './Graph';
 import { createLogger } from '../utils/logger.js';
 
-type NodeConstructor = new (spec: unknown) => Node;
-type EdgeConstructor = new (spec: unknown, source: Node, target: Node) => Edge;
+export interface Plugin {
+    readonly id: string;
+    readonly name: string;
+    readonly version: string;
+    init(sg: SpaceGraph, graph: Graph, events: EventSystem): void | Promise<void>;
+    onPreRender?(delta: number): void;
+    onPostRender?(delta: number): void;
+    onNodeAdded?(node: Node): void;
+    onNodeRemoved?(node: Node): void;
+    onEdgeAdded?(edge: Edge): void;
+    onEdgeRemoved?(edge: Edge): void;
+    dispose?(): void;
+    export?(): unknown;
+    import?(data: unknown): void;
+}
+
+type NodeConstructor = new (sg: SpaceGraph, spec: NodeSpec) => Node;
+type EdgeConstructor = new (sg: SpaceGraph, spec: EdgeSpec, source: Node, target: Node) => Edge;
 
 const logger = createLogger('PluginManager');
 
 export class PluginManager {
     private readonly sg: SpaceGraph;
-    public readonly plugins = new Map<string, ISpaceGraphPlugin>();
+    public readonly plugins = new Map<string, Plugin>();
     private readonly nodeTypes = new Map<string, NodeConstructor>();
     private readonly edgeTypes = new Map<string, EdgeConstructor>();
 
@@ -19,7 +37,7 @@ export class PluginManager {
         this.sg = sg;
     }
 
-    register(name: string, plugin: ISpaceGraphPlugin): void {
+    register(name: string, plugin: Plugin): void {
         if (!name || typeof name !== 'string') {
             throw new Error(
                 `[SpaceGraph] Plugin Registration Error: Invalid plugin name "${name}". Name must be a non-empty string.`,
@@ -49,7 +67,7 @@ export class PluginManager {
         return this.edgeTypes.get(type);
     }
 
-    getPlugin(name: string): ISpaceGraphPlugin | undefined {
+    getPlugin(name: string): Plugin | undefined {
         return this.plugins.get(name);
     }
 
@@ -64,22 +82,20 @@ export class PluginManager {
     async initAll(): Promise<void> {
         const errors: Error[] = [];
         for (const [name, plugin] of this.plugins.entries()) {
-            if (plugin.init) {
-                try {
-                    await plugin.init(this.sg);
-                } catch (err) {
-                    const message = err instanceof Error ? err.message : String(err);
-                    const wrappedError = new Error(
-                        `[SpaceGraph] Plugin Initialization Error: Failed to initialize plugin "${name}". Reason: ${message}`,
-                    );
-                    logger.error(wrappedError.message);
-                    errors.push(wrappedError);
-                }
+            try {
+                await plugin.init(this.sg, this.sg.graph, this.sg.events);
+            } catch (err) {
+                const message = err instanceof Error ? err.message : String(err);
+                const wrappedError = new Error(
+                    `[SpaceGraph] Plugin Initialization Error: Failed to initialize plugin "${name}". Reason: ${message}`,
+                );
+                logger.error(wrappedError.message);
+                errors.push(wrappedError);
             }
         }
         if (errors.length > 0) {
             const err = new Error(
-                `[SpaceGraph] PluginManager initAll failed with ${errors.length} error(s).`,
+                `[SpaceGraph] PluginManager initAll fails with ${errors.length} error(s).`,
             );
             (err as Error & { errors: Error[] }).errors = errors;
             throw err;

@@ -33,7 +33,7 @@ export class Edge extends EventEmitter<EdgeEventMap> {
 
     readonly id: string;
     readonly type: string;
-    public sg: SpaceGraph;
+    public sg?: SpaceGraph;
     public source: Node;
     public target: Node;
     public data: EdgeData;
@@ -64,7 +64,7 @@ export class Edge extends EventEmitter<EdgeEventMap> {
     ) {
         super();
         const isSpecFirst = sgOrSpec && typeof sgOrSpec === 'object' && 'source' in sgOrSpec;
-        this.sg = isSpecFirst ? (undefined as unknown as SpaceGraph) : (sgOrSpec as SpaceGraph);
+        this.sg = isSpecFirst ? undefined : (sgOrSpec as SpaceGraph);
         const spec = isSpecFirst ? (sgOrSpec as EdgeSpec) : (specOrSource as EdgeSpec);
         const source = isSpecFirst ? (specOrSource as Node) : (sourceOrTarget as Node);
         const target = isSpecFirst ? (sourceOrTarget as Node) : (targetOrNothing as Node);
@@ -122,6 +122,13 @@ export class Edge extends EventEmitter<EdgeEventMap> {
 
         this._createArrowheads();
         this.update();
+    }
+
+    requireSpaceGraph(): SpaceGraph {
+        if (!this.sg) {
+            throw new Error(`Edge '${this.id}' requires SpaceGraph but sg is not initialized`);
+        }
+        return this.sg;
     }
 
     private _createArrowheads(): void {
@@ -243,8 +250,8 @@ export class Edge extends EventEmitter<EdgeEventMap> {
             arrowhead.position.copy(endPos);
             const direction = new THREE.Vector3().subVectors(endPos, startPos).normalize();
             arrowhead.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction);
-            if (arrowhead.parent !== this.sg.renderer.scene) {
-                this.sg.renderer.scene.add(arrowhead);
+            if (arrowhead.parent !== this.sg?.renderer.scene) {
+                this.sg!.renderer.scene.add(arrowhead);
             }
         };
 

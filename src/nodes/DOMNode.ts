@@ -7,15 +7,19 @@ import type { NodeSpec } from '../types';
 import type { SpaceGraph } from '../SpaceGraph';
 
 export class DOMNode extends Node {
-    public domElement: HTMLElement;
-    public cssObject: CSS3DObject;
-    public meshGeometry: THREE.PlaneGeometry;
-    public meshMaterial: THREE.MeshBasicMaterial;
-    public backingMesh: THREE.Mesh;
+    public readonly domElement: HTMLElement;
+    public readonly cssObject: CSS3DObject;
+    public readonly meshMaterial: THREE.MeshBasicMaterial;
+    public readonly backingMesh: THREE.Mesh;
+    private _meshGeometry: THREE.PlaneGeometry;
     private readonly _object: THREE.Group;
 
     get object(): THREE.Object3D {
         return this._object;
+    }
+
+    get meshGeometry(): THREE.PlaneGeometry {
+        return this._meshGeometry;
     }
 
     /** Helper to set up standard FZUI container styles. */
@@ -92,7 +96,7 @@ export class DOMNode extends Node {
         this.cssObject = new CSS3DObject(this.domElement);
         this.object.add(this.cssObject);
 
-        this.meshGeometry = new THREE.PlaneGeometry(width, height);
+        this._meshGeometry = new THREE.PlaneGeometry(width, height);
 
         const defaultTranslucency =
             materialParams?.visible === false
@@ -200,9 +204,9 @@ export class DOMNode extends Node {
     }
 
     protected updateBackingGeometry(width: number, height: number): void {
-        this.meshGeometry?.dispose();
-        this.meshGeometry = new THREE.PlaneGeometry(width, height);
-        this.backingMesh.geometry = this.meshGeometry;
+        this._meshGeometry.dispose();
+        this._meshGeometry = new THREE.PlaneGeometry(width, height);
+        this.backingMesh.geometry = this._meshGeometry;
     }
 
     public setVisibility(visible: boolean): void {

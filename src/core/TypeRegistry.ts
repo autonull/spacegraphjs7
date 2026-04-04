@@ -65,8 +65,7 @@ export class TypeRegistry {
 
     createNode(sgOrSpec: SpaceGraph | NodeSpec, maybeSpec?: NodeSpec): Node {
         const spec = 'type' in sgOrSpec ? (sgOrSpec as NodeSpec) : maybeSpec!;
-        const sg =
-            'type' in sgOrSpec ? (undefined as unknown as SpaceGraph) : (sgOrSpec as SpaceGraph);
+        const sg = 'type' in sgOrSpec ? undefined : (sgOrSpec as SpaceGraph);
         const constructor = this.getNodeConstructor(spec.type);
         if (!constructor) {
             throw new Error(
@@ -84,7 +83,7 @@ export class TypeRegistry {
     ): Edge {
         const isSpecFirst = 'source' in (sgOrSpec as object);
         const spec = isSpecFirst ? (sgOrSpec as EdgeSpec) : (specOrSource as EdgeSpec);
-        const sg = isSpecFirst ? (undefined as unknown as SpaceGraph) : (sgOrSpec as SpaceGraph);
+        const sg = isSpecFirst ? undefined : (sgOrSpec as SpaceGraph);
         const source = isSpecFirst ? (specOrSource as Node) : (sourceOrTarget as Node);
         const target = isSpecFirst ? (sourceOrTarget as Node) : (targetOrNothing as Node);
         const constructor = this.getEdgeConstructor(spec.type);

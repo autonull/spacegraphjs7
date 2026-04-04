@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import type { SpaceGraph } from '../SpaceGraph';
-import type { ISpaceGraphPlugin } from '../types';
+import type { Plugin } from '../core/PluginManager';
+import type { Graph } from '../core/Graph';
+import type { EventSystem } from '../core/events/EventSystem';
 import { DOMUtils } from '../utils/DOMUtils';
 
 export interface MetaAction {
@@ -64,9 +66,9 @@ export interface HoverMetaWidgetOptions {
 }
 
 const DEFAULT_ACTIONS: MetaAction[] = [
-    { icon: '⤢', label: 'Focus',   action: 'focus'   },
+    { icon: '⤢', label: 'Focus', action: 'focus' },
     { icon: '⊕', label: 'Connect', action: 'connect' },
-    { icon: '✕', label: 'Delete',  action: 'delete'  },
+    { icon: '✕', label: 'Delete', action: 'delete' },
 ];
 
 /**
@@ -90,9 +92,9 @@ const DEFAULT_ACTIONS: MetaAction[] = [
  * ─────────────────────────
  * 'node:metaaction'  { node, action: string }   — button was clicked
  */
-export class HoverMetaWidget implements ISpaceGraphPlugin {
-    readonly id      = 'hover-meta-widget';
-    readonly name    = 'Hover Meta Widget';
+export class HoverMetaWidget implements Plugin {
+    readonly id = 'hover-meta-widget';
+    readonly name = 'Hover Meta Widget';
     readonly version = '1.0.0';
 
     private opts: Required<HoverMetaWidgetOptions>;
@@ -107,24 +109,24 @@ export class HoverMetaWidget implements ISpaceGraphPlugin {
     private _fadeTimer: ReturnType<typeof setTimeout> | null = null;
 
     // Scratch vectors for 3D projection
-    private _box    = new THREE.Box3();
-    private _va     = new THREE.Vector3();
-    private _vb     = new THREE.Vector3();
+    private _box = new THREE.Box3();
+    private _va = new THREE.Vector3();
+    private _vb = new THREE.Vector3();
 
     constructor(options: HoverMetaWidgetOptions = {}) {
         this.opts = {
-            enabled:        options.enabled        ?? true,
-            hideDelay:      options.hideDelay      ?? 400,
-            fadeDelay:      options.fadeDelay      ?? 3500,
-            fadeDuration:   options.fadeDuration   ?? 700,
+            enabled: options.enabled ?? true,
+            hideDelay: options.hideDelay ?? 400,
+            fadeDelay: options.fadeDelay ?? 3500,
+            fadeDuration: options.fadeDuration ?? 700,
             defaultActions: options.defaultActions ?? DEFAULT_ACTIONS,
-            showBorder:     options.showBorder     ?? true,
-            borderStyle:    options.borderStyle    ?? '1.5px dashed rgba(139, 92, 246, 0.75)',
-            borderRadius:   options.borderRadius   ?? '10px',
+            showBorder: options.showBorder ?? true,
+            borderStyle: options.borderStyle ?? '1.5px dashed rgba(139, 92, 246, 0.75)',
+            borderRadius: options.borderRadius ?? '10px',
         };
     }
 
-    init(sg: SpaceGraph): void {
+    init(sg: SpaceGraph, _graph: Graph, _events: EventSystem): void {
         this.sg = sg;
         if (typeof document === 'undefined') return;
 
@@ -132,27 +134,27 @@ export class HoverMetaWidget implements ISpaceGraphPlugin {
         this.overlay = DOMUtils.createElement('div');
         this.overlay.className = 'sg-hover-meta-widget';
         Object.assign(this.overlay.style, {
-            position:    'absolute',
-            pointerEvents: 'none',   // passes mouse events through to canvas/nodes
-            display:     'none',
-            boxSizing:   'border-box',
-            border:      this.opts.showBorder ? this.opts.borderStyle : 'none',
+            position: 'absolute',
+            pointerEvents: 'none', // passes mouse events through to canvas/nodes
+            display: 'none',
+            boxSizing: 'border-box',
+            border: this.opts.showBorder ? this.opts.borderStyle : 'none',
             borderRadius: this.opts.borderRadius,
-            zIndex:      '10000',
-            transition:  '',
-            opacity:     '1',
+            zIndex: '10000',
+            transition: '',
+            opacity: '1',
         });
 
         // ── Toolbar (buttons) ───────────────────────────────────────────────
         this.toolbar = DOMUtils.createElement('div');
         this.toolbar.className = 'sg-meta-toolbar';
         Object.assign(this.toolbar.style, {
-            position:      'absolute',
-            top:           '-36px',
-            left:          '0',
-            display:       'flex',
-            gap:           '4px',
-            pointerEvents: 'auto',  // buttons must be clickable
+            position: 'absolute',
+            top: '-36px',
+            left: '0',
+            display: 'flex',
+            gap: '4px',
+            pointerEvents: 'auto', // buttons must be clickable
         });
         this.overlay.appendChild(this.toolbar);
 
@@ -229,30 +231,30 @@ export class HoverMetaWidget implements ISpaceGraphPlugin {
             btn.className = 'sg-meta-btn';
             btn.textContent = a.icon;
             Object.assign(btn.style, {
-                background:     'rgba(15,23,42,0.95)',
-                color:          '#94a3b8',
-                border:         '1px solid #334155',
-                borderRadius:   '4px',
-                width:          '28px',
-                height:         '28px',
-                cursor:         'pointer',
-                fontSize:       '14px',
-                display:        'flex',
-                alignItems:     'center',
+                background: 'rgba(15,23,42,0.95)',
+                color: '#94a3b8',
+                border: '1px solid #334155',
+                borderRadius: '4px',
+                width: '28px',
+                height: '28px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                display: 'flex',
+                alignItems: 'center',
                 justifyContent: 'center',
-                padding:        '0',
-                lineHeight:     '1',
-                transition:     'background 0.1s, color 0.1s',
-                userSelect:     'none',
+                padding: '0',
+                lineHeight: '1',
+                transition: 'background 0.1s, color 0.1s',
+                userSelect: 'none',
             });
 
             btn.addEventListener('mouseenter', () => {
                 btn.style.background = 'rgba(139,92,246,0.35)';
-                btn.style.color      = '#e2e8f0';
+                btn.style.color = '#e2e8f0';
             });
             btn.addEventListener('mouseleave', () => {
                 btn.style.background = 'rgba(15,23,42,0.95)';
-                btn.style.color      = '#94a3b8';
+                btn.style.color = '#94a3b8';
             });
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -309,7 +311,7 @@ export class HoverMetaWidget implements ISpaceGraphPlugin {
             this._fadeTimer = null;
             const ms = this.opts.fadeDuration;
             this.overlay.style.transition = `opacity ${ms}ms ease`;
-            this.overlay.style.opacity    = '0';
+            this.overlay.style.opacity = '0';
             // Disable toolbar pointer-events once fully faded so it doesn't
             // invisibly block the canvas.
             setTimeout(() => {
@@ -321,11 +323,17 @@ export class HoverMetaWidget implements ISpaceGraphPlugin {
     }
 
     private _cancelHideTimer(): void {
-        if (this._hideTimer !== null) { clearTimeout(this._hideTimer); this._hideTimer = null; }
+        if (this._hideTimer !== null) {
+            clearTimeout(this._hideTimer);
+            this._hideTimer = null;
+        }
     }
 
     private _cancelFadeTimer(): void {
-        if (this._fadeTimer !== null) { clearTimeout(this._fadeTimer); this._fadeTimer = null; }
+        if (this._fadeTimer !== null) {
+            clearTimeout(this._fadeTimer);
+            this._fadeTimer = null;
+        }
     }
 
     private _cancelTimers(): void {
@@ -334,8 +342,8 @@ export class HoverMetaWidget implements ISpaceGraphPlugin {
     }
 
     private _restoreOpacity(): void {
-        this.overlay.style.transition    = '';
-        this.overlay.style.opacity       = '1';
+        this.overlay.style.transition = '';
+        this.overlay.style.opacity = '1';
         this.toolbar.style.pointerEvents = 'auto';
     }
 
@@ -369,29 +377,31 @@ export class HoverMetaWidget implements ISpaceGraphPlugin {
         if (node.domElement) {
             // DOM-backed node: CSS3D transform is already applied, so
             // getBoundingClientRect gives the exact screen rect.
-            const rect       = (node.domElement as HTMLElement).getBoundingClientRect();
+            const rect = (node.domElement as HTMLElement).getBoundingClientRect();
             const parentRect = parent.getBoundingClientRect();
-            left   = rect.left   - parentRect.left;
-            top    = rect.top    - parentRect.top;
-            width  = rect.width;
+            left = rect.left - parentRect.left;
+            top = rect.top - parentRect.top;
+            width = rect.width;
             height = rect.height;
         } else {
             // Pure-3D node: compute world-space Box3 over all Meshes, then project.
-            const camera     = this.sg.renderer.camera;
-            const canvas     = this.sg.renderer.renderer.domElement;
-            const cw         = canvas.clientWidth;
-            const ch         = canvas.clientHeight;
+            const camera = this.sg.renderer.camera;
+            const canvas = this.sg.renderer.renderer.domElement;
+            const cw = canvas.clientWidth;
+            const ch = canvas.clientHeight;
             const parentRect = parent.getBoundingClientRect();
             const canvasRect = canvas.getBoundingClientRect();
-            const ox         = canvasRect.left - parentRect.left;
-            const oy         = canvasRect.top  - parentRect.top;
+            const ox = canvasRect.left - parentRect.left;
+            const oy = canvasRect.top - parentRect.top;
 
             this._box.makeEmpty();
             node.object.traverse((child: THREE.Object3D) => {
                 if (child instanceof THREE.Mesh) {
                     child.geometry.computeBoundingBox();
                     if (child.geometry.boundingBox) {
-                        const wb = child.geometry.boundingBox.clone().applyMatrix4(child.matrixWorld);
+                        const wb = child.geometry.boundingBox
+                            .clone()
+                            .applyMatrix4(child.matrixWorld);
                         this._box.union(wb);
                     }
                 }
@@ -400,36 +410,33 @@ export class HoverMetaWidget implements ISpaceGraphPlugin {
             if (this._box.isEmpty()) {
                 // Fallback: sphere of radius 40 centred on node position
                 const r = 40 * node.object.scale.x;
-                this._box.setFromCenterAndSize(
-                    node.position,
-                    this._va.set(r * 2, r * 2, r * 2)
-                );
+                this._box.setFromCenterAndSize(node.position, this._va.set(r * 2, r * 2, r * 2));
             }
 
             this._va.set(this._box.min.x, this._box.max.y, this._box.max.z).project(camera);
             this._vb.set(this._box.max.x, this._box.min.y, this._box.min.z).project(camera);
 
-            const sx0 = (this._va.x + 1) / 2 * cw + ox;
-            const sy0 = -(this._va.y - 1) / 2 * ch + oy;
-            const sx1 = (this._vb.x + 1) / 2 * cw + ox;
-            const sy1 = -(this._vb.y - 1) / 2 * ch + oy;
+            const sx0 = ((this._va.x + 1) / 2) * cw + ox;
+            const sy0 = (-(this._va.y - 1) / 2) * ch + oy;
+            const sx1 = ((this._vb.x + 1) / 2) * cw + ox;
+            const sy1 = (-(this._vb.y - 1) / 2) * ch + oy;
 
-            left   = Math.min(sx0, sx1);
-            top    = Math.min(sy0, sy1);
-            width  = Math.abs(sx1 - sx0);
+            left = Math.min(sx0, sx1);
+            top = Math.min(sy0, sy1);
+            width = Math.abs(sx1 - sx0);
             height = Math.abs(sy1 - sy0);
         }
 
         Object.assign(this.overlay.style, {
-            left:   `${left}px`,
-            top:    `${top}px`,
-            width:  `${width}px`,
+            left: `${left}px`,
+            top: `${top}px`,
+            width: `${width}px`,
             height: `${height}px`,
         });
 
         // Edge detection: flip toolbar below the node if it would clip above the parent
         const toolbarH = 36;
-        const pad      = 6;
+        const pad = 6;
         if (top < toolbarH + pad) {
             Object.assign(this.toolbar.style, { top: 'auto', bottom: `-${toolbarH}px` });
         } else {

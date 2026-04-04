@@ -1,5 +1,7 @@
 import type { SpaceGraph } from '../SpaceGraph';
-import type { ISpaceGraphPlugin } from '../types';
+import type { Plugin } from '../core/PluginManager';
+import type { Graph } from '../core/Graph';
+import type { EventSystem } from '../core/events/EventSystem';
 import type { Node } from '../nodes/Node';
 import * as THREE from 'three';
 import { MathPool } from '../core/pooling/ObjectPool.js';
@@ -15,7 +17,7 @@ import { MathPool } from '../core/pooling/ObjectPool.js';
  *   - Ground plane collision
  *   - Node-to-node collision
  */
-export class PhysicsPlugin implements ISpaceGraphPlugin {
+export class PhysicsPlugin implements Plugin {
     readonly id = 'physics-plugin';
     readonly name = 'Physics Plugin';
     readonly version = '1.0.0';
@@ -36,7 +38,7 @@ export class PhysicsPlugin implements ISpaceGraphPlugin {
         repulsion: 100,
     };
 
-    init(sg: SpaceGraph): void {
+    init(sg: SpaceGraph, _graph: Graph, _events: EventSystem): void {
         this.sg = sg;
     }
 

@@ -19,6 +19,7 @@ const GEOMETRY_FACTORIES: Record<ShapeType, (size: number) => THREE.BufferGeomet
 };
 
 export class ShapeNode extends Node {
+    private readonly mesh: THREE.Mesh;
     private meshGeometry: THREE.BufferGeometry;
     private meshMaterial: THREE.MeshBasicMaterial;
     private labelSprite?: THREE.Sprite;
@@ -42,9 +43,9 @@ export class ShapeNode extends Node {
 
         this.meshGeometry = this.createGeometry(this.shapeType, this.nodeSize);
         this.meshMaterial = new THREE.MeshBasicMaterial({ color });
-        const mesh = new THREE.Mesh(this.meshGeometry, this.meshMaterial);
+        this.mesh = new THREE.Mesh(this.meshGeometry, this.meshMaterial);
 
-        this._object.add(mesh);
+        this._object.add(this.mesh);
 
         if (spec.label) {
             this.labelSprite = this.createLabel(spec.label);
@@ -57,10 +58,6 @@ export class ShapeNode extends Node {
 
     private createGeometry(shape: ShapeType, size: number): THREE.BufferGeometry {
         return GEOMETRY_FACTORIES[shape]?.(size) ?? GEOMETRY_FACTORIES.sphere(size);
-    }
-
-    private _getMesh(): THREE.Mesh | undefined {
-        return this.object.children.find((c) => c instanceof THREE.Mesh) as THREE.Mesh | undefined;
     }
 
     updateSpec(updates: Partial<NodeSpec>): this {
@@ -77,16 +74,14 @@ export class ShapeNode extends Node {
                 this.shapeType = data.shape as ShapeType;
                 this.disposeGeometry();
                 this.meshGeometry = this.createGeometry(this.shapeType, this.nodeSize);
-                const mesh = this._getMesh();
-                if (mesh) mesh.geometry = this.meshGeometry;
+                this.mesh.geometry = this.meshGeometry;
             }
 
             if (data.size && data.size !== this.nodeSize) {
                 this.nodeSize = data.size;
                 this.disposeGeometry();
                 this.meshGeometry = this.createGeometry(this.shapeType, this.nodeSize);
-                const mesh = this._getMesh();
-                if (mesh) mesh.geometry = this.meshGeometry;
+                this.mesh.geometry = this.meshGeometry;
                 if (this.labelSprite) {
                     this.labelSprite.position.y = -this.nodeSize * 0.8;
                 }

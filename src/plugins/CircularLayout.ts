@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import type { SpaceGraph } from '../SpaceGraph';
-import type { ISpaceGraphPlugin } from '../types';
+import type { Plugin } from '../core/PluginManager';
+import type { Graph } from '../core/Graph';
+import type { EventSystem } from '../core/events/EventSystem';
 
 /**
  * CircularLayout — Places nodes evenly around a circle (or ellipse) on the XY plane.
@@ -11,7 +13,7 @@ import type { ISpaceGraphPlugin } from '../types';
  *   startAngle : starting angle in radians (default 0 = right)
  *   z          : constant Z for all placed nodes (default 0)
  */
-export class CircularLayout implements ISpaceGraphPlugin {
+export class CircularLayout implements Plugin {
     readonly id = 'circular-layout';
     readonly name = 'Circular Layout';
     readonly version = '1.0.0';
@@ -26,7 +28,7 @@ export class CircularLayout implements ISpaceGraphPlugin {
         animate: true,
     };
 
-    init(sg: SpaceGraph): void {
+    init(sg: SpaceGraph, _graph: Graph, _events: EventSystem): void {
         this.sg = sg;
     }
 

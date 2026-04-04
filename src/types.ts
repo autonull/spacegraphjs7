@@ -290,22 +290,7 @@ export interface SpecUpdate {
     edges?: Partial<EdgeSpec>[];
 }
 
-export interface ISpaceGraphPlugin {
-    readonly id: string;
-    readonly name: string;
-    readonly version: string;
-    init(graph: unknown): void;
-    onStateUpdate?(update: SpecUpdate): void;
-    onPreRender?(delta: number): void;
-    onPostRender?(delta: number): void;
-    onNodeAdded?(node: unknown): void;
-    onNodeRemoved?(id: string): void;
-    onEdgeAdded?(edge: unknown): void;
-    onEdgeRemoved?(id: string): void;
-    dispose?(): void;
-    export?(): unknown;
-    import?(data: unknown): void;
-}
+// ISpaceGraphPlugin removed - use Plugin from core/PluginManager instead
 
 export interface AnimationProps {
     x?: number;

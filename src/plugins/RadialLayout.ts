@@ -1,6 +1,8 @@
 import type { SpaceGraph } from '../SpaceGraph';
 import type { Node } from '../nodes/Node';
-import type { ISpaceGraphPlugin } from '../types';
+import type { Plugin } from '../core/PluginManager';
+import type { Graph } from '../core/Graph';
+import type { EventSystem } from '../core/events/EventSystem';
 
 /**
  * RadialLayout — Positions the root node at the center and distributes
@@ -13,7 +15,7 @@ import type { ISpaceGraphPlugin } from '../types';
  *   z           : constant Z (default 0)
  *   startAngle  : starting angle in radians (default 0)
  */
-export class RadialLayout implements ISpaceGraphPlugin {
+export class RadialLayout implements Plugin {
     readonly id = 'radial-layout';
     readonly name = 'Radial Layout';
     readonly version = '1.0.0';
@@ -28,7 +30,7 @@ export class RadialLayout implements ISpaceGraphPlugin {
         startAngle: 0,
     };
 
-    init(sg: SpaceGraph): void {
+    init(sg: SpaceGraph, _graph: Graph, _events: EventSystem): void {
         this.sg = sg;
     }
 

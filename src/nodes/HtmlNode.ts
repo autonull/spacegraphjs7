@@ -2,6 +2,7 @@ import { DOMUtils } from '../utils/DOMUtils';
 import { clamp } from '../utils/math';
 import type { NodeSpec, SpaceGraphNodeData, LabelLodLevel } from '../types';
 import type { SpaceGraph } from '../SpaceGraph';
+import { createQuickControls, type QuickControlButton } from './QuickControls';
 
 import { DOMNode } from './DOMNode';
 
@@ -133,88 +134,41 @@ export class HtmlNode extends DOMNode {
     }
 
     private _createControls(): void {
-        const controls = DOMUtils.createElement('div');
-        controls.className = 'node-controls';
-        controls.style.cssText = `
-            position: absolute;
-            top: -30px;
-            left: 0;
-            right: 0;
-            display: flex;
-            justify-content: center;
-            gap: 4px;
-            opacity: 0;
-            transition: opacity 0.2s;
-            pointer-events: none;
-        `;
-
-        const buttons = [
+        const buttons: QuickControlButton[] = [
             {
-                class: 'node-content-zoom-in',
+                className: 'node-content-zoom-in',
                 title: 'Zoom In Content (+)',
                 icon: '➕',
                 action: () => this.adjustContentScale(1.15),
             },
             {
-                class: 'node-content-zoom-out',
+                className: 'node-content-zoom-out',
                 title: 'Zoom Out Content (-)',
                 icon: '➖',
                 action: () => this.adjustContentScale(1 / 1.15),
             },
             {
-                class: 'node-grow',
+                className: 'node-grow',
                 title: 'Grow Node (Ctrl++)',
                 icon: '↗️',
                 action: () => this.adjustNodeSize(1.2),
             },
             {
-                class: 'node-shrink',
+                className: 'node-shrink',
                 title: 'Shrink Node (Ctrl+-)',
                 icon: '↙️',
                 action: () => this.adjustNodeSize(1 / 1.2),
             },
             {
-                class: 'node-delete',
+                className: 'node-delete',
                 title: 'Delete Node (Del)',
                 icon: '🗑️',
                 action: () => this._requestDelete(),
             },
         ];
 
-        buttons.forEach(({ class: cls, title, icon, action }) => {
-            const button = DOMUtils.createElement('button');
-            button.className = `node-quick-button ${cls}`;
-            button.title = title;
-            button.textContent = icon;
-            button.style.cssText = `
-                background: rgba(0,0,0,0.7);
-                border: 1px solid rgba(255,255,255,0.3);
-                border-radius: 4px;
-                color: white;
-                cursor: pointer;
-                padding: 2px 6px;
-                font-size: 12px;
-                pointer-events: auto;
-            `;
-            button.onclick = (e) => {
-                e.stopPropagation();
-                action();
-            };
-            controls.appendChild(button);
-        });
-
-        this.domElement.appendChild(controls);
-        this.controlsWrapper = controls;
-
-        this.domElement.addEventListener('mouseenter', () => {
-            controls.style.opacity = '1';
-            controls.style.pointerEvents = 'auto';
-        });
-
-        this.domElement.addEventListener('mouseleave', () => {
-            controls.style.opacity = '0';
-            controls.style.pointerEvents = 'none';
-        });
+        const { container } = createQuickControls(buttons, this.domElement);
+        this.controlsWrapper = container;
     }
 
     private _createResizeHandle(): void {
@@ -259,43 +213,42 @@ export class HtmlNode extends DOMNode {
     updateSpec(updates: Partial<NodeSpec>): this {
         super.updateSpec(updates);
 
-        const data = (updates.data as SpaceGraphNodeData) ?? {};
-
         if (updates.data) {
-            if (data.color) {
-                this.domElement.style.backgroundColor = data.color as string;
-            }
-            if (data.className !== undefined) {
-                this.domElement.className = `spacegraph-html-node node-common ${data.className as string}`;
-            }
-            if (data.pointerEvents) {
-                this.domElement.style.pointerEvents = data.pointerEvents as string;
-            }
-            if (data.width || data.height) {
-                const w = (data.width as number) ?? (this.data.width as number) ?? 200;
-                const h = (data.height as number) ?? (this.data.height as number) ?? 100;
-                this.setSize(w, h);
-            }
-            if (data.contentScale !== undefined) {
-                this.setContentScale(data.contentScale as number);
-            }
-            if (data.billboard !== undefined) {
-                this.billboard = data.billboard as boolean;
-            }
-            if (data.labelLod !== undefined) {
-                this.labelLod = data.labelLod as LabelLodLevel[];
-            }
-            if (data.color !== undefined) {
-                this._applyNodeBgColor(data.color as string);
-            }
-            if (data.html !== undefined && this.contentWrapper) {
-                this.contentWrapper.innerHTML = data.html as string;
-            } else if (
-                data.content !== undefined &&
-                this.contentWrapper &&
-                !this.contentWrapper.isContentEditable
-            ) {
-                this.contentWrapper.textContent = data.content as string;
+            const data = updates.data as SpaceGraphNodeData;
+            const handlers: Record<string, () => void> = {
+                color: () => {
+                    this.domElement.style.backgroundColor = data.color as string;
+                    this._applyNodeBgColor(data.color as string);
+                },
+                className: () => {
+                    this.domElement.className = `spacegraph-html-node node-common ${data.className as string}`;
+                },
+                pointerEvents: () => {
+                    this.domElement.style.pointerEvents = data.pointerEvents as string;
+                },
+                width: () => this._handleSizeUpdate(data),
+                height: () => this._handleSizeUpdate(data),
+                contentScale: () => {
+                    this.setContentScale(data.contentScale as number);
+                },
+                billboard: () => {
+                    this.billboard = data.billboard as boolean;
+                },
+                labelLod: () => {
+                    this.labelLod = data.labelLod as LabelLodLevel[];
+                },
+                html: () => {
+                    if (this.contentWrapper) this.contentWrapper.innerHTML = data.html as string;
+                },
+                content: () => {
+                    if (this.contentWrapper && !this.contentWrapper.isContentEditable) {
+                        this.contentWrapper.textContent = data.content as string;
+                    }
+                },
+            };
+
+            for (const key of Object.keys(data)) {
+                handlers[key]?.();
             }
         }
 
@@ -308,6 +261,12 @@ export class HtmlNode extends DOMNode {
         }
 
         return this;
+    }
+
+    private _handleSizeUpdate(data: SpaceGraphNodeData): void {
+        const w = (data.width as number) ?? (this.data.width as number) ?? 200;
+        const h = (data.height as number) ?? (this.data.height as number) ?? 100;
+        this.setSize(w, h);
     }
 
     setSize(width: number, height: number, scaleContent = false): void {

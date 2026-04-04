@@ -1,7 +1,9 @@
 import * as THREE from 'three';
 import type { Node } from '../nodes/Node';
 import type { SpaceGraph } from '../SpaceGraph';
-import type { ISpaceGraphPlugin } from '../types';
+import type { Plugin } from '../core/PluginManager';
+import type { Graph } from '../core/Graph';
+import type { EventSystem } from '../core/events/EventSystem';
 
 /**
  * HierarchicalLayout — Top-down tree layout.
@@ -17,7 +19,7 @@ import type { ISpaceGraphPlugin } from '../types';
  *   z            : constant Z (default 0)
  *   direction    : 'top-down' | 'bottom-up' | 'left-right' | 'right-left' (default 'top-down')
  */
-export class HierarchicalLayout implements ISpaceGraphPlugin {
+export class HierarchicalLayout implements Plugin {
     readonly id = 'hierarchical-layout';
     readonly name = 'Hierarchical Layout';
     readonly version = '1.0.0';
@@ -33,7 +35,7 @@ export class HierarchicalLayout implements ISpaceGraphPlugin {
         animate: true,
     };
 
-    init(sg: SpaceGraph): void {
+    init(sg: SpaceGraph, _graph: Graph, _events: EventSystem): void {
         this.sg = sg;
     }
 

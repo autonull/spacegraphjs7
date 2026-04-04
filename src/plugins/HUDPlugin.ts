@@ -1,5 +1,7 @@
 import type { SpaceGraph } from '../SpaceGraph';
-import type { ISpaceGraphPlugin } from '../types';
+import type { Plugin } from '../core/PluginManager';
+import type { Graph } from '../core/Graph';
+import type { EventSystem } from '../core/events/EventSystem';
 import type { HUDElementOptions } from './hud/types';
 import { HUDStatusBar } from './hud/HUDStatusBar';
 import { HUDPerformanceMetrics } from './hud/HUDPerformanceMetrics';
@@ -12,7 +14,7 @@ const logger = createLogger('HUDPlugin');
 
 export type { HUDElementOptions, AlertOptions };
 
-export class HUDPlugin implements ISpaceGraphPlugin {
+export class HUDPlugin implements Plugin {
     readonly id = 'hud-plugin';
     readonly name = 'Heads Up Display';
     readonly version = '1.0.0';
@@ -24,7 +26,7 @@ export class HUDPlugin implements ISpaceGraphPlugin {
     private alerts: HUDAlerts | null = null;
     private elements: Map<string, { el: HTMLElement; options: HUDElementOptions }> = new Map();
 
-    init(sg: SpaceGraph): void {
+    init(sg: SpaceGraph, _graph: Graph, _events: EventSystem): void {
         this.sg = sg;
         if (typeof document === 'undefined') return;
 

@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import type { SpaceGraph } from '../SpaceGraph';
-import type { ISpaceGraphPlugin } from '../types';
+import type { Plugin } from '../core/PluginManager';
+import type { Graph } from '../core/Graph';
+import type { EventSystem } from '../core/events/EventSystem';
 import { DOMUtils } from '../utils/DOMUtils';
 
 /**
@@ -14,7 +16,7 @@ import { DOMUtils } from '../utils/DOMUtils';
  *   alpha    : minimap opacity 0–1 (default 0.8)
  *   zoom     : orthographic half-size (default 1500)
  */
-export class MinimapPlugin implements ISpaceGraphPlugin {
+export class MinimapPlugin implements Plugin {
     readonly id = 'minimap-plugin';
     readonly name = 'Minimap';
     readonly version = '1.0.0';
@@ -31,7 +33,7 @@ export class MinimapPlugin implements ISpaceGraphPlugin {
         zoom: 1500,
     };
 
-    init(sg: SpaceGraph): void {
+    init(sg: SpaceGraph, _graph: Graph, _events: EventSystem): void {
         this.sg = sg;
         this._buildCamera();
 

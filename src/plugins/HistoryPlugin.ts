@@ -1,12 +1,15 @@
 import type { SpaceGraph } from '../SpaceGraph';
-import type { ISpaceGraphPlugin, GraphSpec } from '../types';
+import type { Plugin } from '../core/PluginManager';
+import type { Graph } from '../core/Graph';
+import type { EventSystem } from '../core/events/EventSystem';
+import type { GraphSpec } from '../types';
 
 export interface HistoryPluginOptions {
     maxHistorySize?: number;
     enabled?: boolean;
 }
 
-export class HistoryPlugin implements ISpaceGraphPlugin {
+export class HistoryPlugin implements Plugin {
     readonly id = 'history';
     readonly name = 'History Stack';
     readonly version = '1.0.0';
@@ -27,7 +30,7 @@ export class HistoryPlugin implements ISpaceGraphPlugin {
         this.isEnabled = options.enabled !== false;
     }
 
-    init(sg: SpaceGraph): void {
+    init(sg: SpaceGraph, _graph: Graph, _events: EventSystem): void {
         this.sg = sg;
 
         if (this.isEnabled) {
