@@ -6,6 +6,29 @@
 
 ---
 
+## Table of Contents
+
+- [The Vision (Why)](#the-vision-why)
+- [Expected Results (What You Get)](#expected-results-what-you-get)
+  - [Software (Days 0-30)](#software-days-0-30)
+  - [Hardware (Months 2-6)](#hardware-months-2-6)
+  - [Research (Months 6-36)](#research-months-6-36)
+  - [Community (Months 1-36)](#community-months-1-36)
+- [Execution Plan (How)](#execution-plan-how)
+  - [Phase A: Software Excellence (Days 0-30)](#phase-a-software-excellence-days-0-30)
+  - [Phase B: Hardware Excellence (Months 2-6)](#phase-b-hardware-excellence-months-2-6)
+  - [Phase C: Growth (Months 6-12)](#phase-c-growth-months-6-12)
+  - [Phase D: Research (Months 12-36)](#phase-d-research-months-12-36)
+- [Accountability (Who & When)](#accountability-who--when)
+  - [Review Cadence](#review-cadence)
+  - [Status Tracking](#status-tracking)
+  - [Buffers (Delay Resilience)](#buffers-delay-resilience)
+  - [Motivation (Flywheel)](#motivation-flywheel)
+- [Documents (Where)](#documents-where)
+- [Start Now](#start-now)
+
+---
+
 ## The Vision (Why)
 
 **Problem:** AI-assisted development has a fundamental flaw—the AI cannot see what it builds, creating a broken feedback loop requiring 10-20 iterations over 5-10 hours per feature.
