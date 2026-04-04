@@ -36,7 +36,13 @@ export class VisionAssert {
                 };
             }
 
-            const sg = instances[0] as any;
+            const sg = instances[0] as unknown as {
+                vision: {
+                    stopAutonomousCorrection: () => void;
+                    modelsLoaded: boolean;
+                    analyzeVision: () => Promise<import('./types').VisionReport>;
+                };
+            };
             if (!sg.vision) {
                 throw new Error('VisionManager not found on SpaceGraph instance.');
             }

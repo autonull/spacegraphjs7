@@ -3,6 +3,7 @@ import type { SpaceGraph } from '../SpaceGraph';
 import type { Plugin } from '../core/PluginManager';
 import type { Graph } from '../core/Graph';
 import type { EventSystem } from '../core/events/EventSystem';
+import type { CameraControls } from '../core/CameraControls';
 import { DOMUtils } from '../utils/DOMUtils';
 
 /**
@@ -108,10 +109,11 @@ export class MinimapPlugin implements Plugin {
             e.clientY <= top + size
         ) {
             this.isDragging = true;
-            (this.sg.cameraControls as any).enabled = false;
+            const controls = this.sg.cameraControls as CameraControls & { enabled?: boolean };
+            controls.enabled = false;
 
             const pt = this._pointerToWorld(e.clientX, e.clientY);
-            (this.sg.cameraControls as any).setTarget(pt.x, pt.y, 0);
+            controls.setTarget(pt.x, pt.y, 0);
 
             // Re-render minimap immediately to update indicator
             this._renderMinimap();
@@ -124,7 +126,7 @@ export class MinimapPlugin implements Plugin {
     private _onPointerUp = () => {
         if (this.isDragging) {
             this.isDragging = false;
-            (this.sg.cameraControls as any).enabled = true;
+            (this.sg.cameraControls as CameraControls & { enabled?: boolean }).enabled = true;
             this.sg.renderer.renderer.domElement.style.cursor = 'auto';
         }
     };
@@ -132,7 +134,11 @@ export class MinimapPlugin implements Plugin {
     private _onPointerMove = (e: PointerEvent) => {
         if (!this.isDragging) return;
         const pt = this._pointerToWorld(e.clientX, e.clientY);
-        (this.sg.cameraControls as any).setTarget(pt.x, pt.y, 0);
+        (
+            this.sg.cameraControls as CameraControls & {
+                setTarget: (x: number, y: number, z: number) => void;
+            }
+        ).setTarget(pt.x, pt.y, 0);
         this._renderMinimap();
         e.stopPropagation();
     };

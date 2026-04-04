@@ -33,8 +33,8 @@ export class ResizeHandler {
         this.resizedNode = node;
         this.resizeStartPointerPos = { x: pointerX, y: pointerY };
         this.resizeStartNodeSize = {
-            width: (node.data as any).width,
-            height: (node.data as any).height,
+            width: (node.data as Record<string, unknown>).width as number,
+            height: (node.data as Record<string, unknown>).height as number,
         };
 
         const canvas = this.sg.renderer.renderer.domElement;

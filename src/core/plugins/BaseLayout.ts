@@ -72,7 +72,7 @@ export abstract class BaseLayout implements Plugin {
 
         let index = 0;
         for (const node of nodes) {
-            if (skipPinned && (node.data as any).pinned) continue;
+            if (skipPinned && (node.data as Record<string, unknown>).pinned) continue;
             fn(node, index++, nodes.length);
         }
     }
@@ -89,7 +89,7 @@ export abstract class BaseLayout implements Plugin {
             options;
 
         if (animate && typeof window !== 'undefined') {
-            const gsap = (window as any).gsap;
+            const gsap = (window as Window & { gsap?: { to: (...args: unknown[]) => void } }).gsap;
             if (gsap) {
                 gsap.to(node.position, {
                     x: target.x,

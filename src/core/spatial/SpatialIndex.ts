@@ -15,6 +15,7 @@ export class SpatialIndex {
     private cellSize: number;
     private readonly cells = new Map<string, SpatialCell>();
     private readonly nodeBounds = new Map<NodeLike, THREE.Box3>();
+    private readonly nodeCells = new Map<NodeLike, Set<string>>();
 
     constructor(cellSize = 100) {
         if (cellSize <= 0) throw new Error('cellSize must be positive');
@@ -46,54 +47,54 @@ export class SpatialIndex {
     build(nodes: NodeLike[]): void {
         this.clear();
         const box = new THREE.Box3();
-
         for (const node of nodes) {
-            if (node.object) {
-                box.setFromObject(node.object);
-                this.nodeBounds.set(node, box.clone());
-                const minX = Math.floor(box.min.x / this.cellSize);
-                const maxX = Math.floor(box.max.x / this.cellSize);
-                const minY = Math.floor(box.min.y / this.cellSize);
-                const maxY = Math.floor(box.max.y / this.cellSize);
-                const minZ = Math.floor(box.min.z / this.cellSize);
-                const maxZ = Math.floor(box.max.z / this.cellSize);
-                for (let x = minX; x <= maxX; x++) {
-                    for (let y = minY; y <= maxY; y++) {
-                        for (let z = minZ; z <= maxZ; z++) {
-                            this.getOrCreateCell(x, y, z).nodes.add(node);
-                        }
+            this.insertNode(node, box);
+        }
+    }
+
+    private insertNode(node: NodeLike, box: THREE.Box3): void {
+        if (node.object) {
+            box.setFromObject(node.object);
+            this.nodeBounds.set(node, box.clone());
+            const minX = Math.floor(box.min.x / this.cellSize);
+            const maxX = Math.floor(box.max.x / this.cellSize);
+            const minY = Math.floor(box.min.y / this.cellSize);
+            const maxY = Math.floor(box.max.y / this.cellSize);
+            const minZ = Math.floor(box.min.z / this.cellSize);
+            const maxZ = Math.floor(box.max.z / this.cellSize);
+            const cells = new Set<string>();
+            for (let x = minX; x <= maxX; x++) {
+                for (let y = minY; y <= maxY; y++) {
+                    for (let z = minZ; z <= maxZ; z++) {
+                        const key = this.getCellKey(x, y, z);
+                        cells.add(key);
+                        this.getOrCreateCell(x, y, z).nodes.add(node);
                     }
                 }
-            } else {
-                const { x, y, z } = this.getGridCoords(node.position);
-                this.getOrCreateCell(x, y, z).nodes.add(node);
             }
+            this.nodeCells.set(node, cells);
+        } else {
+            const { x, y, z } = this.getGridCoords(node.position);
+            const key = this.getCellKey(x, y, z);
+            this.nodeCells.set(node, new Set([key]));
+            this.getOrCreateCell(x, y, z).nodes.add(node);
         }
     }
 
     updateNode(node: NodeLike): void {
         this.removeNode(node);
-        const box = node.object
-            ? new THREE.Box3().setFromObject(node.object)
-            : new THREE.Box3().makeEmpty().expandByPoint(node.position);
-
-        const minX = Math.floor(box.min.x / this.cellSize);
-        const maxX = Math.floor(box.max.x / this.cellSize);
-        const minY = Math.floor(box.min.y / this.cellSize);
-        const maxY = Math.floor(box.max.y / this.cellSize);
-        const minZ = Math.floor(box.min.z / this.cellSize);
-        const maxZ = Math.floor(box.max.z / this.cellSize);
-        for (let x = minX; x <= maxX; x++) {
-            for (let y = minY; y <= maxY; y++) {
-                for (let z = minZ; z <= maxZ; z++) {
-                    this.getOrCreateCell(x, y, z).nodes.add(node);
-                }
-            }
-        }
+        const box = new THREE.Box3();
+        this.insertNode(node, box);
     }
 
     removeNode(node: NodeLike): void {
-        for (const cell of this.cells.values()) cell.nodes.delete(node);
+        const cells = this.nodeCells.get(node);
+        if (cells) {
+            for (const key of cells) {
+                this.cells.get(key)?.nodes.delete(node);
+            }
+            this.nodeCells.delete(node);
+        }
         this.nodeBounds.delete(node);
     }
 
@@ -170,6 +171,7 @@ export class SpatialIndex {
     clear(): void {
         this.cells.clear();
         this.nodeBounds.clear();
+        this.nodeCells.clear();
     }
 
     getStats(): { cellCount: number; nodeCount: number; avgNodesPerCell: number } {
@@ -183,7 +185,13 @@ export class SpatialIndex {
     }
 
     setCellSize(cellSize: number): void {
+        if (cellSize <= 0) throw new Error('cellSize must be positive');
+        if (cellSize === this.cellSize) return;
         this.cellSize = cellSize;
+        const allNodes = Array.from(this.nodeBounds.keys());
+        if (allNodes.length > 0) {
+            this.build(allNodes);
+        }
     }
 }
 

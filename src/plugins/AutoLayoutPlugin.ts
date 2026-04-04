@@ -46,15 +46,22 @@ export class AutoLayoutPlugin implements Plugin {
             | ForceLayout
             | undefined;
 
-        if (layoutPlugin && typeof (layoutPlugin as any).step === 'function') {
-            const originalRepulsion = (layoutPlugin as any).config?.repulsion ?? 10000;
-            (layoutPlugin as any).config.repulsion = originalRepulsion * 5;
+        if (
+            layoutPlugin &&
+            typeof (layoutPlugin as ForceLayout & { step?: () => void }).step === 'function'
+        ) {
+            const layout = layoutPlugin as ForceLayout & {
+                step: () => void;
+                config: Record<string, unknown>;
+            };
+            const originalRepulsion = (layout.config?.repulsion as number) ?? 10000;
+            layout.config.repulsion = originalRepulsion * 5;
 
             for (let i = 0; i < 50; i++) {
-                (layoutPlugin as any).step();
+                layout.step();
             }
 
-            (layoutPlugin as any).config.repulsion = originalRepulsion;
+            layout.config.repulsion = originalRepulsion;
         } else {
             for (const issue of overlaps) {
                 this.fixSingleOverlap(issue);

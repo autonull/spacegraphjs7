@@ -24,13 +24,16 @@ export class ThreeDisposer {
         }
 
         // Deal with Geometries
-        if ((object as any).geometry) {
-            (object as any).geometry.dispose();
+        const obj = object as THREE.Object3D & { geometry?: THREE.BufferGeometry };
+        if (obj.geometry) {
+            obj.geometry.dispose();
         }
 
-        // Deal with Materials
-        if ((object as any).material) {
-            const mat = (object as any).material;
+        const objWithMat = object as THREE.Object3D & {
+            material?: THREE.Material | THREE.Material[];
+        };
+        if (objWithMat.material) {
+            const mat = objWithMat.material;
             if (Array.isArray(mat)) {
                 for (const m of mat) {
                     this.disposeMaterial(m);
@@ -56,9 +59,9 @@ export class ThreeDisposer {
 
         // Iterate over properties to find textures to dispose
         for (const key of Object.keys(material)) {
-            const value = (material as any)[key];
-            if (value && typeof value === 'object' && value.isTexture) {
-                value.dispose();
+            const value = (material as unknown as Record<string, unknown>)[key];
+            if (value && typeof value === 'object' && 'isTexture' in value && value.isTexture) {
+                (value as THREE.Texture).dispose();
             }
         }
     }

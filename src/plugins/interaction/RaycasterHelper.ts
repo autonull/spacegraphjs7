@@ -90,7 +90,8 @@ export class InteractionRaycaster {
     private getNodeFromMesh(mesh: THREE.Object3D): Node | null {
         let current: THREE.Object3D | null = mesh;
         while (current) {
-            const node = (current as any).userData?.node;
+            const node = (current as THREE.Object3D & { userData?: { node?: Node } }).userData
+                ?.node;
             if (node) return node;
             current = current.parent;
         }

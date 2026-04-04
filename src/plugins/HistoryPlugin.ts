@@ -44,7 +44,17 @@ export class HistoryPlugin implements Plugin {
         this.sg.events.on('edge:added', () => this.debouncedSnapshot());
         this.sg.events.on('edge:removed', () => this.debouncedSnapshot());
 
-        this.sg.events.on('input:interaction:keydown', ((e: any) => this.handleKeydown(e)) as any);
+        this.sg.events.on('input:interaction:keydown', (e: unknown) =>
+            this.handleKeydown(
+                e as {
+                    key: string;
+                    ctrlKey: boolean;
+                    metaKey: boolean;
+                    shiftKey: boolean;
+                    originalEvent?: { target?: { tagName?: string }; preventDefault?: () => void };
+                },
+            ),
+        );
     }
 
     private handleKeydown(e: any): void {

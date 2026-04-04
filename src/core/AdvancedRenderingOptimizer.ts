@@ -1,24 +1,16 @@
 import type { SpaceGraph } from '../SpaceGraph';
-import type { ForceLayout } from '../plugins/ForceLayout';
 
 const OPTIMIZER_CONFIG = {
-    CHECK_INTERVAL_MS: 1000,
-    MIN_FPS_THRESHOLD: 30,
-    MAX_FPS_THRESHOLD: 55,
+    CHECK_INTERVAL_MS: 250,
 } as const;
 
 export class AdvancedRenderingOptimizer {
-    private readonly sg: SpaceGraph;
     private lastTime: number = 0;
     private frames: number = 0;
     private fps: number = 60;
     private timeSinceLastCheck: number = 0;
 
-    public isThrottled: boolean = false;
-
-    constructor(sg: SpaceGraph) {
-        this.sg = sg;
-    }
+    constructor(_sg: SpaceGraph) {}
 
     public beginFrame(timestamp: number): void {
         if (this.lastTime === 0) {
@@ -34,32 +26,8 @@ export class AdvancedRenderingOptimizer {
 
         if (this.timeSinceLastCheck >= OPTIMIZER_CONFIG.CHECK_INTERVAL_MS) {
             this.fps = (this.frames * 1000) / this.timeSinceLastCheck;
-            this.evaluatePerformance();
-
             this.frames = 0;
             this.timeSinceLastCheck = 0;
-        }
-    }
-
-    private evaluatePerformance(): void {
-        if (this.fps < OPTIMIZER_CONFIG.MIN_FPS_THRESHOLD && !this.isThrottled) {
-            this.isThrottled = true;
-            this._toggleHeavyPlugins(false);
-            return;
-        }
-
-        if (this.fps >= OPTIMIZER_CONFIG.MAX_FPS_THRESHOLD && this.isThrottled) {
-            this.isThrottled = false;
-            this._toggleHeavyPlugins(true);
-        }
-    }
-
-    private _toggleHeavyPlugins(enabled: boolean): void {
-        const layoutPlugin = this.sg.pluginManager.getPlugin('ForceLayout') as
-            | ForceLayout
-            | undefined;
-        if (layoutPlugin) {
-            (layoutPlugin as any).config = { ...(layoutPlugin as any).config, enabled };
         }
     }
 

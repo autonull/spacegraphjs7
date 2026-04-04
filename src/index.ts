@@ -1,21 +1,12 @@
 // SpaceGraphJS - The Self-Building UI Framework
 
-import { TypeRegistry } from './core/TypeRegistry';
-import { ShapeNode, HtmlNode, ImageNode } from './nodes';
-import { Edge } from './edges/Edge';
+import './init';
 import {
     createSpaceGraph,
     createSpaceGraphFromURL,
     createSpaceGraphFromManifest,
     quickGraph,
 } from './factory';
-
-// Register built-in node/edge types
-const registry = TypeRegistry.getInstance();
-registry.registerNode('ShapeNode', ShapeNode);
-registry.registerNode('HtmlNode', HtmlNode);
-registry.registerNode('ImageNode', ImageNode);
-registry.registerEdge('Edge', Edge);
 
 // ============================================================================
 // Utilities
@@ -49,7 +40,8 @@ export { Graph } from './core/Graph';
 export { Renderer } from './core/Renderer';
 export { CameraControls } from './core/CameraControls';
 export { EventSystem, type SpaceGraphEvents } from './core/events/EventSystem';
-export { VisionManager, type VisionCategory } from './core/VisionManager';
+export { VisionManager } from './core/VisionManager';
+export type { VisionCategory } from './core/vision/VisionAutoFixer.js';
 export { ObjectPoolManager } from './core/ObjectPoolManager';
 export { CullingManager } from './core/CullingManager';
 export { AdvancedRenderingOptimizer } from './core/AdvancedRenderingOptimizer';
@@ -217,7 +209,6 @@ export { RadialLayout } from './plugins/RadialLayout';
 export { TreeLayout } from './plugins/TreeLayout';
 export { SpectralLayout } from './plugins/SpectralLayout';
 export { GeoLayout } from './plugins/GeoLayout';
-export { GeoLayout as MapLayout } from './plugins/GeoLayout';
 export { TimelineLayout } from './plugins/TimelineLayout';
 export { ClusterLayout } from './plugins/ClusterLayout';
 

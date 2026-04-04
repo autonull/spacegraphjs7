@@ -122,7 +122,8 @@ export class InteractionPlugin implements Plugin {
         this.raycaster.updateMousePosition(e.x, e.y);
 
         if (this.dragHandler.isDraggingNode()) {
-            const enableZAxis = (window as any).__spacegraph_altKey === true;
+            const enableZAxis =
+                (window as Window & { __spacegraph_altKey?: boolean }).__spacegraph_altKey === true;
             this.dragHandler.updateDrag(enableZAxis);
             return;
         }
@@ -184,7 +185,7 @@ export class InteractionPlugin implements Plugin {
     }
 
     private handleKeyDown(e: any): void {
-        (window as any).__spacegraph_altKey = e.altKey;
+        (window as Window & { __spacegraph_altKey?: boolean }).__spacegraph_altKey = e.altKey;
 
         const activeEl = document.activeElement;
         const isEditingText =
@@ -233,7 +234,7 @@ export class InteractionPlugin implements Plugin {
     }
 
     private handleKeyUp(e: any): void {
-        (window as any).__spacegraph_altKey = e.altKey;
+        (window as Window & { __spacegraph_altKey?: boolean }).__spacegraph_altKey = e.altKey;
     }
 
     private handleDblClick(e: any): void {
@@ -289,12 +290,22 @@ export class InteractionPlugin implements Plugin {
                 ? (target as Node).position.clone()
                 : (target as Edge).target.position.clone();
         const targetRadius =
-            'data' in target && ((target as Node).data as any)?.width
-                ? Math.max(((target as Node).data as any).width * 1.5, 150)
+            'data' in target &&
+            typeof (target as Node).data === 'object' &&
+            (target as Node).data !== null &&
+            'width' in (target as Node).data
+                ? Math.max(
+                      (((target as Node).data as Record<string, unknown>).width as number) * 1.5,
+                      150,
+                  )
                 : 150;
 
-        if (this.lastZoomedId === zoomId && (this.sg.cameraControls as any).hasZoomHistory) {
-            (this.sg.cameraControls as any).flyBack();
+        const controls = this.sg.cameraControls as CameraControls & {
+            hasZoomHistory?: boolean;
+            flyBack?: () => void;
+        };
+        if (this.lastZoomedId === zoomId && controls.hasZoomHistory) {
+            controls.flyBack?.();
             this.lastZoomedId = null;
         } else {
             this.sg.cameraControls.flyTo(targetPos, targetRadius);

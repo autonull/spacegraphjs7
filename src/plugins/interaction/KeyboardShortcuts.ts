@@ -61,15 +61,18 @@ export class KeyboardShortcuts {
 
     handleSelectAll(nodes: Node[]): void {
         for (const node of nodes) {
-            (this.sg.events as any).emit('selection:addNode', node);
+            this.sg.events.emit(
+                'selection:addNode' as keyof import('../../core/events/EventSystem').SpaceGraphEvents,
+                node as never,
+            );
         }
     }
 
     handleZoomIn(node: Node): void {
         if (!node || !this.sg.cameraControls) return;
         const targetPos = node.position.clone();
-        const targetRadius = (node.data as any)?.width
-            ? Math.max((node.data as any).width * 1.5, 150)
+        const targetRadius = (node.data as Record<string, unknown>)?.width
+            ? Math.max(((node.data as Record<string, unknown>).width as number) * 1.5, 150)
             : 150;
         this.sg.cameraControls.flyTo(targetPos, targetRadius);
     }

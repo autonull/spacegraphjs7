@@ -282,6 +282,14 @@ export type EdgeEvent = 'updated' | 'destroying';
 
 export interface SpaceGraphOptions {
     onnxExecutionProviders?: string[];
+    vision?: {
+        wasmPaths?: string;
+        heuristics?: {
+            wcagThreshold?: number;
+            overlapPadding?: number;
+            fittsLawTargetSize?: number;
+        };
+    };
     [key: string]: unknown;
 }
 

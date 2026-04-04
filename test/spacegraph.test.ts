@@ -1526,26 +1526,36 @@ describe('VisionManager Auto-Correction Loop', () => {
 
         // Setup AutoLayoutPlugin mock
         autoLayout = {
-            id: 'auto-layout',
+            id: 'AutoLayoutPlugin',
             applyVisionCorrection: vi.fn(),
         };
-        sg.pluginManager.register('auto-layout', autoLayout);
-
-        // Mount nodes that overlap so the heuristic triggers
-        const n1 = sg.graph.addNode({ id: 'v1', type: 'ShapeNode', position: [0, 0, 0] });
-        const n2 = sg.graph.addNode({ id: 'v2', type: 'ShapeNode', position: [1, 1, 0] }); // highly overlapped
-
-        // Mock frustum intersection math to pretend they are in view
-        sg.renderer.camera.updateMatrixWorld = vi.fn();
-        sg.renderer.camera.matrixWorld = new THREE.Matrix4();
-        sg.renderer.camera.matrixWorldInverse = new THREE.Matrix4();
-        sg.renderer.camera.projectionMatrix = new THREE.Matrix4();
-
-        THREE.Frustum.prototype.containsPoint = vi.fn().mockReturnValue(true);
-        // Force nodes to register as overlapping regardless of physical mock geometry
-        THREE.Box3.prototype.intersectsBox = vi.fn().mockReturnValue(true);
+        sg.pluginManager.register('AutoLayoutPlugin', autoLayout);
 
         sg.visionManager = new VisionManager(sg);
+
+        // Mock analyzeVision to return overlaps so auto-fix is triggered
+        vi.spyOn(sg.visionManager, 'analyzeVision').mockResolvedValue({
+            overall: { score: 70, grade: 'D', issues: [] },
+            overlap: {
+                hasOverlaps: true,
+                overlapCount: 1,
+                overlaps: [{ nodeA: 'v1', nodeB: 'v2', penetration: 5 }],
+            },
+            legibility: { wcagAA: true, averageContrast: 10, failures: [] },
+            hierarchy: {
+                hasRoot: true,
+                rootIds: ['v1'],
+                depth: 2,
+                levels: [['v1'], ['v2']],
+                score: 80,
+            },
+            ergonomics: {
+                fittsLawCompliant: true,
+                averageTargetSize: 50,
+                smallTargets: [],
+                score: 90,
+            },
+        });
 
         vi.useFakeTimers();
     });

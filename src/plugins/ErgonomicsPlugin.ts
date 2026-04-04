@@ -112,7 +112,7 @@ export class ErgonomicsPlugin implements Plugin {
      */
     public calibrating = false;
 
-    init(sg: SpaceGraph, _graph: Graph, events: EventSystem): void {
+    init(sg: SpaceGraph, _graph: Graph, _events: EventSystem): void {
         this.sg = sg;
         this._applyConfig();
         this._listenToInteractions();
@@ -120,7 +120,7 @@ export class ErgonomicsPlugin implements Plugin {
 
     private _applyConfig(): void {
         // Hook into camera controls if available
-        const cam = (this.sg as any).cameraControls;
+        const cam = this.sg.cameraControls;
         if (!cam) return;
         if ('dampingFactor' in cam) cam.dampingFactor = this.config.dampingFactor;
         if ('panSpeed' in cam) cam.panSpeed = this.config.panSpeed;
@@ -154,7 +154,8 @@ export class ErgonomicsPlugin implements Plugin {
 
         this.sg.events.on('camera:move', (payload) => {
             if (!payload?.position) return;
-            this._handleCameraMovement(payload.position.x, payload.position.y);
+            const pos = payload.position as [number, number, number];
+            this._handleCameraMovement(pos[0], pos[1]);
         });
     }
 
@@ -257,7 +258,10 @@ export class ErgonomicsPlugin implements Plugin {
                     const winner = scoreA >= scoreB ? configA : configB;
 
                     this.updateConfig({ ...baselineConfig, ...winner });
-                    this.sg.events.emit('ergonomics:calibrated' as any, { winner, scores });
+                    this.sg.events.emit(
+                        'ergonomics:calibrated' as keyof import('../core/events/EventSystem').SpaceGraphEvents,
+                        { winner, scores },
+                    );
                 }
             }
         }, ERGONOMICS_CONFIG.CALIBRATION_CHECK_INTERVAL_MS);

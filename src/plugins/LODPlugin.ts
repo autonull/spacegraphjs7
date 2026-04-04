@@ -37,7 +37,7 @@ export class LODPlugin implements Plugin {
             if (node instanceof GroupNode) {
                 const distance = cameraPosition.distanceTo(node.position);
                 node.updateLod(distance);
-                if ((node.data as any)._lastLodVisible === false) {
+                if ((node.data as Record<string, unknown>)._lastLodVisible === false) {
                     hiddenParentIds.add(node.id);
                 }
             }
@@ -65,8 +65,7 @@ export class LODPlugin implements Plugin {
     }
 
     private _isNodeHiddenByParent(node: Node, hiddenParentIds: Set<string>): boolean {
-        let currentParent =
-            (node.data as any)?.parent ?? (node as any).parameters?.parent ?? (node as any).parent;
+        let currentParent = this._getParentId(node);
 
         while (currentParent) {
             if (hiddenParentIds.has(currentParent)) {
@@ -74,13 +73,23 @@ export class LODPlugin implements Plugin {
             }
 
             const parentNode = this.sg.graph.nodes.get(currentParent);
-            currentParent =
-                (parentNode?.data as any)?.parent ??
-                (parentNode as any)?.parameters?.parent ??
-                (parentNode as any)?.parent;
+            currentParent = this._getParentId(parentNode);
         }
 
         return false;
+    }
+
+    private _getParentId(node?: Node): string | undefined {
+        if (!node) return undefined;
+        const data = node.data as Record<string, unknown>;
+        const params = (node as unknown as Record<string, unknown>).parameters as
+            | Record<string, unknown>
+            | undefined;
+        return (
+            (data?.parent as string) ??
+            (params?.parent as string) ??
+            ((node as unknown as Record<string, unknown>).parent as string)
+        );
     }
 
     private _updateEdgeVisibility(): void {

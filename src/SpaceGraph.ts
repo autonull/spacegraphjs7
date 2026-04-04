@@ -165,7 +165,9 @@ export class SpaceGraph {
         this.cameraControls = new CameraControls(
             this.renderer.camera,
             this.container,
-            this.options.cameraControls as any,
+            this.options.cameraControls as Partial<
+                import('./core/CameraControls').CameraControlsConfig
+            >,
         );
 
         this.input = new InputManager({
@@ -441,7 +443,7 @@ export class SpaceGraph {
             const wrappedError = new Error(
                 `[SpaceGraph] fromURL Error: Failed to load graph from ${url}. Reason: ${message}`,
             );
-            (wrappedError as any).cause = error;
+            (wrappedError as Error & { cause?: unknown }).cause = error;
             logger.error('fromURL Error: Failed to load graph.', wrappedError);
             throw wrappedError;
         }
