@@ -4,14 +4,8 @@ import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
 import { Edge } from './Edge';
 import { DOMUtils } from '../utils/DOMUtils';
 import type { SpaceGraph } from '../SpaceGraph';
-import type { EdgeData, EdgeSpec } from '../types';
+import type { EdgeData, EdgeSpec, LabelLodLevel } from '../types';
 import type { Node } from '../nodes/Node';
-
-export interface LabelLodLevel {
-    distance: number;
-    scale?: number;
-    style?: string;
-}
 
 /**
  * LabeledEdge — Straight edge with a mid-point text label rendered via CSS2D.

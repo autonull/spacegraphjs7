@@ -26,11 +26,13 @@ export interface Themable {
 // Node Data Types
 // ============================================================================
 
-export interface LabelLodConfig {
+export interface LabelLodLevel {
     distance: number;
     scale?: number;
     style?: string;
 }
+
+export type LabelLodConfig = LabelLodLevel;
 
 export interface BaseNodeData {
     [key: string]: unknown;

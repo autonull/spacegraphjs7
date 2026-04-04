@@ -50,11 +50,7 @@ export { Renderer } from './core/Renderer';
 export { PluginManager } from './core/PluginManager';
 export { CameraControls } from './core/CameraControls';
 export { EventSystem, type SpaceGraphEvents } from './core/events/EventSystem';
-export {
-    VisionManager,
-    type VisionReport as LegacyVisionReport,
-    type VisionCategory,
-} from './core/VisionManager';
+export { VisionManager, type VisionCategory } from './core/VisionManager';
 export { ObjectPoolManager } from './core/ObjectPoolManager';
 export { CullingManager } from './core/CullingManager';
 export { AdvancedRenderingOptimizer } from './core/AdvancedRenderingOptimizer';
@@ -62,9 +58,7 @@ export { AdvancedRenderingOptimizer } from './core/AdvancedRenderingOptimizer';
 // ============================================================================
 // Event System
 // ============================================================================
-export { EventSystem, PluginEventBus } from './core/events/EventSystem';
 export type {
-    SpaceGraphEvents,
     PluginEvent,
     VisionReportEvent,
     LayoutAppliedEvent,
@@ -183,6 +177,8 @@ export type {
     GraphEvent,
     NodeEvent,
     EdgeEvent,
+    LabelLodLevel,
+    LabelLodConfig,
 } from './types';
 
 // ============================================================================
@@ -191,7 +187,7 @@ export type {
 export { Node } from './nodes/Node';
 export { InstancedNode } from './nodes/InstancedNode';
 export { ShapeNode } from './nodes/ShapeNode';
-export { HtmlNode, type LabelLodLevel } from './nodes/HtmlNode';
+export { HtmlNode } from './nodes/HtmlNode';
 export { InstancedShapeNode } from './nodes/InstancedShapeNode';
 export { ImageNode } from './nodes/ImageNode';
 export { GroupNode } from './nodes/GroupNode';
@@ -216,7 +212,7 @@ export { CodeEditorNode } from './nodes/CodeEditorNode';
 export { Edge } from './edges/Edge';
 export { CurvedEdge } from './edges/CurvedEdge';
 export { FlowEdge } from './edges/FlowEdge';
-export { LabeledEdge, type LabelLodLevel as EdgeLabelLodLevel } from './edges/LabeledEdge';
+export { LabeledEdge } from './edges/LabeledEdge';
 export { DottedEdge } from './edges/DottedEdge';
 export { DynamicThicknessEdge } from './edges/DynamicThicknessEdge';
 export { AnimatedEdge } from './edges/AnimatedEdge';

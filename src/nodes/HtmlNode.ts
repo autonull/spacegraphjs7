@@ -1,15 +1,9 @@
 import { DOMUtils } from '../utils/DOMUtils';
 import { clamp } from '../utils/math';
-import type { NodeSpec, SpaceGraphNodeData } from '../types';
+import type { NodeSpec, SpaceGraphNodeData, LabelLodLevel } from '../types';
 import type { SpaceGraph } from '../SpaceGraph';
 
 import { DOMNode } from './DOMNode';
-
-export interface LabelLodLevel {
-    distance: number;
-    scale?: number;
-    style?: string;
-}
 
 export class HtmlNode extends DOMNode {
     public static MIN_SIZE = { width: 80, height: 40 };
