@@ -1,75 +1,73 @@
 <!doctype html>
 <html lang="en">
-
-<head>
-    <meta charset="UTF-8" />
-    <title>Vision Test Fixture</title>
-    <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-            background: #1a1a2e;
-        }
-
-        #app {
-            width: 100vw;
-            height: 100vh;
-        }
-    </style>
-</head>
-
-<body>
-    <div id="app"></div>
-    <!-- Load from cloned dist so analyzer's http-server can serve it -->
-    <script type="module">
-        import * as THREE from 'three';
-        import { SpaceGraph } from './dist/spacegraphjs.js';
-
-        window.THREE = THREE;
-        window.SpaceGraph = SpaceGraph;
-
-        const spec = {
-            nodes: [
-                // Red background (#ff0000) with default white text has poor contrast (WCAG violation)
-                { id: 'n1', type: 'ShapeNode', label: 'Node 1', data: { color: 0xff0000 } },
-                { id: 'n2', type: 'ShapeNode', label: 'Node 2', data: { color: 0x00ff00 } },
-                { id: 'n3', type: 'ShapeNode', label: 'Node 3', data: { color: 0x0000ff } },
-            ],
-            edges: [
-                { id: 'e1', type: 'Edge', source: 'n1', target: 'n2' },
-                { id: 'e2', type: 'Edge', source: 'n2', target: 'n3' },
-            ],
-        };
-
-        const sg = SpaceGraph.create('#app', spec);
-
-        // Load the ODN, TLA, and CHE inference models for Vision validation
-        setTimeout(async () => {
-            await sg.vision.loadModels({
-                odn: '/dist/odn_model.onnx',
-                tla: '/dist/tla_model.onnx',
-                che: '/dist/che_model.onnx',
-            });
-        }, 50);
-
-        // Wait for graph to be ready and layout to apply, then override positions to force overlaps.
-        setTimeout(() => {
-            const n1 = sg.graph.nodes.get('n1');
-            const n2 = sg.graph.nodes.get('n2');
-            if (n1 && n2) {
-                // Pin them so ForceLayout doesn't move them before vision runs
-                n1.data = n1.data || {};
-                n2.data = n2.data || {};
-                n1.data.pinned = true;
-                n2.data.pinned = true;
-                // Place them physically overlapping in Frustum bounds
-                n1.updatePosition(0, 0, 0);
-                n2.updatePosition(5, 5, 0);
+    <head>
+        <meta charset="UTF-8" />
+        <title>Vision Test Fixture</title>
+        <style>
+            body {
+                margin: 0;
+                overflow: hidden;
+                background: #1a1a2e;
             }
-        }, 500);
 
-        window.sg = sg;
-    </script>
-</body>
+            #app {
+                width: 100vw;
+                height: 100vh;
+            }
+        </style>
+    </head>
 
+    <body>
+        <div id="app"></div>
+        <!-- Load from cloned dist so analyzer's http-server can serve it -->
+        <script type="module">
+            import * as THREE from 'three';
+            import { SpaceGraph } from './dist/spacegraphjs.js';
+
+            window.THREE = THREE;
+            window.SpaceGraph = SpaceGraph;
+
+            const spec = {
+                nodes: [
+                    // Red background (#ff0000) with default white text has poor contrast (WCAG violation)
+                    { id: 'n1', type: 'ShapeNode', label: 'Node 1', data: { color: 0xff0000 } },
+                    { id: 'n2', type: 'ShapeNode', label: 'Node 2', data: { color: 0x00ff00 } },
+                    { id: 'n3', type: 'ShapeNode', label: 'Node 3', data: { color: 0x0000ff } },
+                ],
+                edges: [
+                    { id: 'e1', type: 'Edge', source: 'n1', target: 'n2' },
+                    { id: 'e2', type: 'Edge', source: 'n2', target: 'n3' },
+                ],
+            };
+
+            const sg = await SpaceGraph.create('#app', spec);
+
+            // Load the ODN, TLA, and CHE inference models for Vision validation
+            setTimeout(async () => {
+                await sg.vision.loadModels({
+                    odn: '/dist/odn_model.onnx',
+                    tla: '/dist/tla_model.onnx',
+                    che: '/dist/che_model.onnx',
+                });
+            }, 50);
+
+            // Wait for graph to be ready and layout to apply, then override positions to force overlaps.
+            setTimeout(() => {
+                const n1 = sg.graph.nodes.get('n1');
+                const n2 = sg.graph.nodes.get('n2');
+                if (n1 && n2) {
+                    // Pin them so ForceLayout doesn't move them before vision runs
+                    n1.data = n1.data || {};
+                    n2.data = n2.data || {};
+                    n1.data.pinned = true;
+                    n2.data.pinned = true;
+                    // Place them physically overlapping in Frustum bounds
+                    n1.updatePosition(0, 0, 0);
+                    n2.updatePosition(5, 5, 0);
+                }
+            }, 500);
+
+            window.sg = sg;
+        </script>
+    </body>
 </html>

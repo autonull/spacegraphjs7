@@ -18,11 +18,10 @@
         <script type="module">
             import { SpaceGraph } from '../src/index.ts';
             try {
-                const graph = SpaceGraph.create('#container', {
+                const graph = await SpaceGraph.create('#container', {
                     nodes: [{ id: 'a', type: 'ShapeNode', label: 'Single', position: [0, 0, 0] }],
                     edges: [],
                 });
-                graph.render();
                 console.log('✓ Single node works');
             } catch (e) {
                 console.error('✗ Single node failed:', e);

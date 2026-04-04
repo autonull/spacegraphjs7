@@ -43,8 +43,7 @@
                 });
             }
 
-            const graph = SpaceGraph.create('#container', { nodes, edges });
-            graph.render();
+            const graph = await SpaceGraph.create('#container', { nodes, edges });
 
             const endTime = performance.now();
             console.log(`✓ 100 nodes rendered in ${(endTime - startTime).toFixed(2)}ms`);

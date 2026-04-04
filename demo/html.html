@@ -25,7 +25,7 @@
         <script type="module">
             import { SpaceGraph } from '../src/index.ts';
 
-            const graph = SpaceGraph.create('#container', {
+            const graph = await SpaceGraph.create('#container', {
                 nodes: [
                     {
                         id: 'n1',
@@ -61,8 +61,6 @@
                     { id: 'e3', source: 'n3', target: 'n1', type: 'Edge' },
                 ],
             });
-
-            graph.render();
         </script>
     </body>
 </html>

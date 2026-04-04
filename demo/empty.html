@@ -18,8 +18,7 @@
         <script type="module">
             import { SpaceGraph } from '../src/index.ts';
             try {
-                const graph = SpaceGraph.create('#container', { nodes: [], edges: [] });
-                graph.render();
+                const graph = await SpaceGraph.create('#container', { nodes: [], edges: [] });
                 console.log('✓ Empty graph works');
             } catch (e) {
                 console.error('✗ Empty graph failed:', e);

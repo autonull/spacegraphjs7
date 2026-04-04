@@ -75,7 +75,7 @@
 
                 statusEl.textContent = `Instantiating graph...`;
 
-                const graph = SpaceGraph.create('#container', { nodes, edges });
+                const graph = await SpaceGraph.create('#container', { nodes, edges });
 
                 // Update status with FPS loop
                 let frames = 0;
@@ -93,7 +93,6 @@
                     requestAnimationFrame(updateFPS);
                 };
 
-                graph.render();
                 updateFPS();
             } catch (error) {
                 statusEl.textContent = '✗ Error: ' + error.message;

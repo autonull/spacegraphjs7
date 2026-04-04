@@ -1683,3 +1683,20 @@ describe('Layout Engines', () => {
         expect(gc1.position.y).toBe(-200);
     });
 });
+
+// ============================================================
+// SpaceGraph.create() async behavior
+// ============================================================
+
+describe('SpaceGraph.create()', () => {
+    it('returns a Promise that rejects for missing container', async () => {
+        const promise = SpaceGraph.create('#nonexistent-container', { nodes: [], edges: [] });
+        expect(promise).toBeInstanceOf(Promise);
+        await expect(promise).rejects.toThrow('Container not found');
+    });
+
+    it('create() method is declared async', () => {
+        const fnString = SpaceGraph.create.toString();
+        expect(fnString).toContain('async');
+    });
+});
