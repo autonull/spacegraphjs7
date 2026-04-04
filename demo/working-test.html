@@ -3,7 +3,9 @@
     <head>
         <title>Working Test</title>
         <style>
-            * { margin: 0; }
+            * {
+                margin: 0;
+            }
             #container {
                 width: 100vw;
                 height: 100vh;
@@ -13,7 +15,7 @@
                 position: fixed;
                 top: 10px;
                 left: 10px;
-                background: rgba(0,255,0,0.9);
+                background: rgba(0, 255, 0, 0.9);
                 color: #000;
                 padding: 15px;
                 font-family: monospace;
@@ -29,17 +31,38 @@
         <div id="container"></div>
         <script type="module">
             import { SpaceGraph } from '../src/index.ts';
-            
+
             const status = document.getElementById('status');
-            const log = (msg) => { status.textContent = msg; console.log(msg); };
-            
+            const log = (msg) => {
+                status.textContent = msg;
+                console.log(msg);
+            };
+
             try {
                 log('Creating SpaceGraph...');
                 const graph = await SpaceGraph.create('#container', {
                     nodes: [
-                        { id: 'a', type: 'ShapeNode', label: 'A', position: [0, 0, 0], data: { color: 0x00FF00, size: 100 } },
-                        { id: 'b', type: 'ShapeNode', label: 'B', position: [200, 0, 0], data: { color: 0xFF0000, size: 100 } },
-                        { id: 'c', type: 'ShapeNode', label: 'C', position: [100, 200, 0], data: { color: 0x0000FF, size: 100 } },
+                        {
+                            id: 'a',
+                            type: 'ShapeNode',
+                            label: 'A',
+                            position: [0, 0, 0],
+                            data: { color: 0x00ff00, size: 100 },
+                        },
+                        {
+                            id: 'b',
+                            type: 'ShapeNode',
+                            label: 'B',
+                            position: [200, 0, 0],
+                            data: { color: 0xff0000, size: 100 },
+                        },
+                        {
+                            id: 'c',
+                            type: 'ShapeNode',
+                            label: 'C',
+                            position: [100, 200, 0],
+                            data: { color: 0x0000ff, size: 100 },
+                        },
                     ],
                     edges: [
                         { id: 'e1', source: 'a', target: 'b', type: 'Edge' },
@@ -47,26 +70,31 @@
                         { id: 'e3', source: 'c', target: 'a', type: 'Edge' },
                     ],
                 });
-                
-                log(`✓ Graph created! Nodes: ${graph.graph.nodes.size}, Edges: ${graph.graph.edges.length}`);
-                
+
+                log(
+                    `✓ Graph created! Nodes: ${graph.graph.nodes.size}, Edges: ${graph.graph.edges.length}`,
+                );
+
+                window.addEventListener('beforeunload', () => graph.dispose());
+
                 setTimeout(() => {
                     graph.fitView(200, 1.0);
                     log(`✓ fitView called - Nodes: ${graph.graph.nodes.size}`);
-                }, 500);
-                
+                }, 100);
+
                 // Log after 2 seconds
                 setTimeout(() => {
                     const node = graph.graph.nodes.get('a');
                     if (node) {
-                        log(`✓ Node A exists! Position: [${node.position.x}, ${node.position.y}, ${node.position.z}]`);
+                        log(
+                            `✓ Node A exists! Position: [${node.position.x}, ${node.position.y}, ${node.position.z}]`,
+                        );
                         log(`✓ Node A children: ${node.object.children.length}`);
                         log(`✓ Scene children: ${graph.renderer.scene.children.length}`);
                     } else {
                         log('✗ Node A not found!');
                     }
                 }, 2000);
-                
             } catch (e) {
                 log('✗ ERROR: ' + e.message);
                 console.error(e);

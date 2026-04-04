@@ -68,6 +68,8 @@
             }, 500);
 
             window.sg = sg;
+
+            window.addEventListener('beforeunload', () => sg.dispose());
         </script>
     </body>
 </html>

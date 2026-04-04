@@ -1,34 +1,58 @@
 <!doctype html>
 <html>
-<head><title>DIRECT TEST</title></head>
-<body style="background:#000;color:#0f0;font-family:monospace;padding:50px;font-size:24px">
-<h1>THIS IS THE DIRECT TEST PAGE</h1>
-<p>If you see this, the page loaded correctly</p>
-<div id="status">Loading SpaceGraph...</div>
-<div id="container" style="width:800px;height:600px;border:2px solid #0f0"></div>
-<script type="module">
-import { SpaceGraph } from '../src/index.ts';
-const status = document.getElementById('status');
-try {
-    const g = await SpaceGraph.create('#container', {
-        nodes: [
-            {id:'a',type:'ShapeNode',label:'NODE A',position:[0,0,0],data:{color:0x00FF00,size:150}},
-            {id:'b',type:'ShapeNode',label:'NODE B',position:[300,0,0],data:{color:0xFF0000,size:150}},
-        ],
-        edges: [{id:'e',source:'a',target:'b',type:'Edge'}]
-    });
-    status.textContent = 'SUCCESS! Nodes: ' + g.graph.nodes.size + ' Edges: ' + g.graph.edges.length;
-    status.style.color = '#0f0';
-    g.renderer.camera.position.set(150, 150, 500);
-    g.renderer.camera.lookAt(150, 0, 0);
-    g.cameraControls.target.set(150, 0, 0);
-    g.cameraControls.update();
-    console.log('Graph created with', g.graph.nodes.size, 'nodes');
-} catch(e) {
-    status.textContent = 'ERROR: ' + e.message;
-    status.style.color = '#f00';
-    console.error(e);
-}
-</script>
-</body>
+    <head>
+        <title>DIRECT TEST</title>
+    </head>
+    <body
+        style="
+            background: #000;
+            color: #0f0;
+            font-family: monospace;
+            padding: 50px;
+            font-size: 24px;
+        "
+    >
+        <h1>THIS IS THE DIRECT TEST PAGE</h1>
+        <p>If you see this, the page loaded correctly</p>
+        <div id="status">Loading SpaceGraph...</div>
+        <div id="container" style="width: 800px; height: 600px; border: 2px solid #0f0"></div>
+        <script type="module">
+            import { SpaceGraph } from '../src/index.ts';
+            const status = document.getElementById('status');
+            try {
+                const g = await SpaceGraph.create('#container', {
+                    nodes: [
+                        {
+                            id: 'a',
+                            type: 'ShapeNode',
+                            label: 'NODE A',
+                            position: [0, 0, 0],
+                            data: { color: 0x00ff00, size: 150 },
+                        },
+                        {
+                            id: 'b',
+                            type: 'ShapeNode',
+                            label: 'NODE B',
+                            position: [300, 0, 0],
+                            data: { color: 0xff0000, size: 150 },
+                        },
+                    ],
+                    edges: [{ id: 'e', source: 'a', target: 'b', type: 'Edge' }],
+                });
+                status.textContent =
+                    'SUCCESS! Nodes: ' + g.graph.nodes.size + ' Edges: ' + g.graph.edges.length;
+                status.style.color = '#0f0';
+                g.renderer.camera.position.set(150, 150, 500);
+                g.renderer.camera.lookAt(150, 0, 0);
+                g.cameraControls.target.set(150, 0, 0);
+                g.cameraControls.update();
+                console.log('Graph created with', g.graph.nodes.size, 'nodes');
+                window.addEventListener('beforeunload', () => g.dispose());
+            } catch (e) {
+                status.textContent = 'ERROR: ' + e.message;
+                status.style.color = '#f00';
+                console.error(e);
+            }
+        </script>
+    </body>
 </html>

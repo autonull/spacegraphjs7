@@ -20,6 +20,7 @@
             try {
                 const graph = await SpaceGraph.create('#container', { nodes: [], edges: [] });
                 console.log('✓ Empty graph works');
+                window.addEventListener('beforeunload', () => graph.dispose());
             } catch (e) {
                 console.error('✗ Empty graph failed:', e);
             }

@@ -25,42 +25,51 @@
         <script type="module">
             import { SpaceGraph } from '../src/index.ts';
 
-            const graph = await SpaceGraph.create('#container', {
-                nodes: [
-                    {
-                        id: 'n1',
-                        type: 'HtmlNode',
-                        label: 'Card 1',
-                        position: [0, 100, 0],
-                        data: {
-                            color: 'rgba(255, 50, 50, 0.8)',
-                            description: 'I am an HTML element',
+            try {
+                const graph = await SpaceGraph.create('#container', {
+                    nodes: [
+                        {
+                            id: 'n1',
+                            type: 'HtmlNode',
+                            label: 'Card 1',
+                            position: [0, 100, 0],
+                            data: {
+                                color: 'rgba(255, 50, 50, 0.8)',
+                                description: 'I am an HTML element',
+                            },
                         },
-                    },
-                    {
-                        id: 'n2',
-                        type: 'HtmlNode',
-                        label: 'Card 2',
-                        position: [150, -50, 0],
-                        data: { color: 'rgba(50, 255, 50, 0.8)', description: 'Rendered in 3D' },
-                    },
-                    {
-                        id: 'n3',
-                        type: 'HtmlNode',
-                        label: 'Card 3',
-                        position: [-150, -50, 0],
-                        data: {
-                            color: 'rgba(50, 50, 255, 0.8)',
-                            description: 'Connected together',
+                        {
+                            id: 'n2',
+                            type: 'HtmlNode',
+                            label: 'Card 2',
+                            position: [150, -50, 0],
+                            data: {
+                                color: 'rgba(50, 255, 50, 0.8)',
+                                description: 'Rendered in 3D',
+                            },
                         },
-                    },
-                ],
-                edges: [
-                    { id: 'e1', source: 'n1', target: 'n2', type: 'Edge' },
-                    { id: 'e2', source: 'n2', target: 'n3', type: 'Edge' },
-                    { id: 'e3', source: 'n3', target: 'n1', type: 'Edge' },
-                ],
-            });
+                        {
+                            id: 'n3',
+                            type: 'HtmlNode',
+                            label: 'Card 3',
+                            position: [-150, -50, 0],
+                            data: {
+                                color: 'rgba(50, 50, 255, 0.8)',
+                                description: 'Connected together',
+                            },
+                        },
+                    ],
+                    edges: [
+                        { id: 'e1', source: 'n1', target: 'n2', type: 'Edge' },
+                        { id: 'e2', source: 'n2', target: 'n3', type: 'Edge' },
+                        { id: 'e3', source: 'n3', target: 'n1', type: 'Edge' },
+                    ],
+                });
+
+                window.addEventListener('beforeunload', () => graph.dispose());
+            } catch (error) {
+                console.error('[html.html] Failed to create graph:', error);
+            }
         </script>
     </body>
 </html>

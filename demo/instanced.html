@@ -36,7 +36,7 @@
         <div id="status">SpaceGraphJS Instanced Demo - Loading...</div>
         <div id="container"></div>
         <script type="module">
-            import { SpaceGraph } from '../src/index';
+            import { SpaceGraph } from '../src/index.ts';
 
             const statusEl = document.getElementById('status');
 
@@ -94,6 +94,8 @@
                 };
 
                 updateFPS();
+
+                window.addEventListener('beforeunload', () => graph.dispose());
             } catch (error) {
                 statusEl.textContent = '✗ Error: ' + error.message;
                 statusEl.style.color = '#f00';

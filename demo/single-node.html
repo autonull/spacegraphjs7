@@ -23,6 +23,7 @@
                     edges: [],
                 });
                 console.log('✓ Single node works');
+                window.addEventListener('beforeunload', () => graph.dispose());
             } catch (e) {
                 console.error('✗ Single node failed:', e);
             }
