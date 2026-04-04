@@ -1,9 +1,11 @@
 import type { SpaceGraph } from '../SpaceGraph';
 import type { ISpaceGraphPlugin } from '../types';
+import type { Node } from '../nodes/Node';
+import type { Edge } from '../edges/Edge';
 import { createLogger } from '../utils/logger.js';
 
-type NodeConstructor = new (...args: any[]) => any;
-type EdgeConstructor = new (...args: any[]) => any;
+type NodeConstructor = new (spec: unknown) => Node;
+type EdgeConstructor = new (spec: unknown, source: Node, target: Node) => Edge;
 
 const logger = createLogger('PluginManager');
 
@@ -86,9 +88,27 @@ export class PluginManager {
 
     updateAll(delta: number): void {
         for (const plugin of this.plugins.values()) {
-            plugin.onPreRender?.(delta);
-            plugin.onPostRender?.(delta);
+            try {
+                plugin.onPreRender?.(delta);
+            } catch (err) {
+                logger.error('Plugin onPreRender error:', err);
+            }
         }
+        for (const plugin of this.plugins.values()) {
+            try {
+                plugin.onPostRender?.(delta);
+            } catch (err) {
+                logger.error('Plugin onPostRender error:', err);
+            }
+        }
+    }
+
+    unregister(name: string): boolean {
+        const plugin = this.plugins.get(name);
+        if (!plugin) return false;
+        plugin.dispose?.();
+        this.plugins.delete(name);
+        return true;
     }
 
     disposePlugins(): void {

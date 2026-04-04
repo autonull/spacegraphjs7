@@ -1,4 +1,4 @@
-// SpaceGraphJS v7.0 - Base Layout Plugin
+// SpaceGraphJS - Base Layout Plugin
 // Abstract base class for layout plugins with common helpers
 
 import * as THREE from 'three';
@@ -33,7 +33,7 @@ export interface LayoutOptions {
 export abstract class BaseLayout implements Plugin {
     abstract readonly id: string;
     abstract readonly name: string;
-    readonly version: string = '7.0.0';
+    abstract readonly version: string;
 
     protected graph!: Graph;
     protected events!: EventSystem;

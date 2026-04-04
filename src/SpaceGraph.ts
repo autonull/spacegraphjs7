@@ -146,6 +146,7 @@ export class SpaceGraph {
     public options: SpaceGraphOptions;
     private animationFrameId?: number;
     private lastTimestamp: number = 0;
+    private _animating: boolean = false;
 
     constructor(container: HTMLElement, options: SpaceGraphOptions = {}) {
         this.options = options;
@@ -158,7 +159,7 @@ export class SpaceGraph {
         this.vision = new VisionManager(this);
         this.pluginManager = new PluginManager(this);
         this.renderer = new Renderer(this, container);
-        this.graph = new Graph(this);
+        this.graph = new Graph();
         this.cameraControls = new CameraControls(
             this.renderer.camera,
             this.container,
@@ -243,7 +244,14 @@ export class SpaceGraph {
         camera?: { position: [number, number, number]; target: [number, number, number] };
         plugins?: Record<string, any>;
     } {
-        const safeClone = (obj: any) => (obj ? JSON.parse(JSON.stringify(obj)) : {});
+        const safeClone = (obj: unknown) => {
+            if (!obj) return {};
+            try {
+                return structuredClone(obj);
+            } catch {
+                return JSON.parse(JSON.stringify(obj));
+            }
+        };
 
         const spec: any = {
             nodes: [...this.graph.nodes.values()].map((node) => ({
@@ -299,9 +307,9 @@ export class SpaceGraph {
                 .acquireVector3()
                 .subVectors(this.renderer.camera.position, this.cameraControls.target);
             this.cameraControls.spherical.radius = diff.length();
-            this.cameraControls.spherical.phi = Math.acos(
-                diff.y / this.cameraControls.spherical.radius,
-            );
+            const radius = this.cameraControls.spherical.radius;
+            const ratio = radius > 0 ? Math.max(-1, Math.min(1, diff.y / radius)) : 0;
+            this.cameraControls.spherical.phi = Math.acos(ratio);
             this.cameraControls.spherical.theta = Math.atan2(diff.x, diff.z);
             MathPool.getInstance().releaseVector3(diff);
 
@@ -322,6 +330,7 @@ export class SpaceGraph {
     }
 
     animate(timestamp: number = 0) {
+        if (!this._animating) return;
         this.animationFrameId = requestAnimationFrame((t) => this.animate(t));
 
         this.optimizer.beginFrame(timestamp);
@@ -339,6 +348,7 @@ export class SpaceGraph {
     }
 
     render(): void {
+        this._animating = true;
         this.animationFrameId ??= requestAnimationFrame((t) => this.animate(t));
     }
 
@@ -347,6 +357,7 @@ export class SpaceGraph {
             cancelAnimationFrame(this.animationFrameId);
             this.animationFrameId = undefined;
         }
+        this._animating = false;
 
         this.pluginManager.disposePlugins();
         this.graph.clear();
@@ -381,7 +392,7 @@ export class SpaceGraph {
         }
     }
 
-    public static async import(
+    public static async load(
         container: string | HTMLElement,
         data: any,
         options: SpaceGraphOptions = {},
@@ -399,10 +410,13 @@ export class SpaceGraph {
             sg.import(data);
             sg.render();
         } catch (err) {
-            logger.error(
-                'Import Runtime Error: Failed to import data or start rendering loop.',
-                err,
+            const message = err instanceof Error ? err.message : String(err);
+            const wrappedError = new Error(
+                `[SpaceGraph] Import Error: Failed to import data. Reason: ${message}`,
             );
+            (wrappedError as Error & { cause: unknown }).cause = err;
+            logger.error('Import Runtime Error:', wrappedError);
+            throw wrappedError;
         }
         return sg;
     }

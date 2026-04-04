@@ -1,17 +1,12 @@
-// SpaceGraphJS v7.0 - Factory Functions
+// SpaceGraphJS - Factory Functions
 // Public API for creating SpaceGraph instances
 
-import { Graph } from './core/Graph';
-import { EventSystem, PluginEventBus } from './core/events/EventSystem';
-import { PluginRegistry } from './core/plugins/PluginRegistry';
-import { RenderingSystem } from './core/renderer/RenderingSystem';
-import { VisionSystem } from './vision/VisionSystem';
-import { SpaceGraph, type SpaceGraphOptions } from './core/SpaceGraph';
-import { TypeRegistry } from './core/TypeRegistry';
-import type { GraphSpec, NodeSpec, EdgeSpec } from './types';
-import { createLogger } from './utils/logger.js';
+import { SpaceGraph } from './SpaceGraph';
+import type { SpaceGraphOptions } from './types';
+import type { GraphSpec } from './types';
 
-const logger = createLogger('Factory');
+export { SpaceGraph };
+export type { SpaceGraphOptions };
 
 /**
  * Create a SpaceGraph instance
@@ -21,42 +16,16 @@ export async function createSpaceGraph(
     spec: GraphSpec,
     options: SpaceGraphOptions = {},
 ): Promise<SpaceGraph> {
-    // Resolve container
-    const element = typeof container === 'string' ? document.querySelector(container) : container;
+    const element =
+        typeof container === 'string'
+            ? (document.querySelector(container) as HTMLElement | null)
+            : container;
 
     if (!element) {
         throw new Error(`[createSpaceGraph] Container not found: ${container}`);
     }
 
-    // Create core systems
-    const graph = new Graph(null as any);
-    const events = new EventSystem();
-    const pluginBus = new PluginEventBus();
-    const plugins = new PluginRegistry();
-
-    const vision = new VisionSystem(options.vision);
-    const renderer = new RenderingSystem(element as HTMLElement, options.rendering);
-
-    // Initialize plugin registry
-    plugins.init(graph, events, pluginBus);
-
-    // Create SpaceGraph
-    const sg = new SpaceGraph(
-        element as HTMLElement,
-        graph,
-        events,
-        vision,
-        plugins,
-        renderer,
-        options,
-    );
-
-    // Load spec
-    loadGraphSpec(graph, spec);
-
-    // Emit ready event
-    events.emit('plugin:ready', { pluginId: 'spacegraph', timestamp: Date.now() });
-
+    const sg = await SpaceGraph.create(element, spec, options);
     return sg;
 }
 
@@ -84,7 +53,6 @@ export async function createSpaceGraphFromManifest(
     container: HTMLElement | string,
     options: SpaceGraphOptions = {},
 ): Promise<SpaceGraph> {
-    // Fetch manifest
     const manifestUrl = `${origin}/.well-known/zui-manifest.json`;
     const response = await fetch(manifestUrl);
 
@@ -92,15 +60,13 @@ export async function createSpaceGraphFromManifest(
         throw new Error(`Failed to fetch ZUI manifest: ${response.statusText}`);
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const manifest: Record<string, any> = await response.json();
+    const manifest = (await response.json()) as Record<string, unknown>;
 
-    // Get graph spec
     let spec: GraphSpec;
     if (manifest.spec) {
-        spec = manifest.spec;
+        spec = manifest.spec as GraphSpec;
     } else if (manifest.spec_url) {
-        const specResponse = await fetch(manifest.spec_url);
+        const specResponse = await fetch(manifest.spec_url as string);
         if (!specResponse.ok) {
             throw new Error(`Failed to fetch spec_url: ${specResponse.statusText}`);
         }
@@ -109,15 +75,13 @@ export async function createSpaceGraphFromManifest(
         throw new Error('Manifest must include spec or spec_url');
     }
 
-    // Create graph
     const sg = await createSpaceGraph(container, spec, {
         ...options,
-        initialLayout: manifest.initial_layout,
+        initialLayout: manifest.initial_layout as string | undefined,
     });
 
-    // TODO: Connect to stream if available
     if (manifest.stream_url) {
-        logger.warn('Stream support not yet implemented');
+        console.warn('[createSpaceGraphFromManifest] Stream support not yet implemented');
     }
 
     return sg;
@@ -158,11 +122,4 @@ export async function quickGraph(
     };
 
     return createSpaceGraph(container, spec);
-}
-
-/**
- * Load graph spec into graph
- */
-function loadGraphSpec(graph: Graph, spec: GraphSpec): void {
-    graph.fromJSON(spec);
 }

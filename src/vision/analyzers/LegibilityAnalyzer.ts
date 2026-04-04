@@ -1,4 +1,4 @@
-// SpaceGraphJS v7.0 - Legibility Analyzer
+// SpaceGraphJS - Legibility Analyzer
 // WCAG contrast analysis for text and UI elements
 
 import * as THREE from 'three';

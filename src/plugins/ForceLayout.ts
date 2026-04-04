@@ -20,8 +20,10 @@ export interface ForceLayoutConfig {
 export class ForceLayout extends BaseLayout {
     readonly id = 'force-layout';
     readonly name = 'Force Directed';
+    readonly version = '1.0.0';
 
     private velocities = new Map<string, THREE.Vector3>();
+    private currentIteration = 0;
 
     protected defaultConfig(): ForceLayoutConfig {
         return {
@@ -46,11 +48,14 @@ export class ForceLayout extends BaseLayout {
         if (!nodes.length) return;
 
         this.velocities.clear();
+        this.currentIteration = 0;
         for (const node of nodes) {
             this.velocities.set(node.id, new THREE.Vector3());
         }
 
-        for (let i = 0; i < (this.config as ForceLayoutConfig).iterations; i++) {
+        const totalIterations = (this.config as ForceLayoutConfig).iterations;
+        for (let i = 0; i < totalIterations; i++) {
+            this.currentIteration = i + 1;
             this.simulateStep(nodes);
         }
 
@@ -73,6 +78,8 @@ export class ForceLayout extends BaseLayout {
         const forces = new Map<string, THREE.Vector3>();
         for (const node of nodes) forces.set(node.id, new THREE.Vector3());
 
+        const maxForce = config.repulsion / (config.minDistance * config.minDistance);
+
         for (let i = 0; i < nodes.length; i++) {
             for (let j = i + 1; j < nodes.length; j++) {
                 const a = nodes[i];
@@ -80,9 +87,10 @@ export class ForceLayout extends BaseLayout {
                 const diff = new THREE.Vector3().subVectors(a.position, b.position);
                 const distSq = diff.lengthSq();
                 const dist = Math.sqrt(distSq);
-                if (dist < 0.1) continue;
+                if (dist < 0.001) continue;
 
-                const force = config.repulsion / distSq;
+                const repulsion = config.repulsion / distSq;
+                const force = Math.min(repulsion, maxForce);
                 const direction = diff.normalize();
                 forces.get(a.id)!.add(direction.clone().multiplyScalar(force));
                 forces.get(b.id)!.sub(direction.clone().multiplyScalar(force));
@@ -97,9 +105,8 @@ export class ForceLayout extends BaseLayout {
 
             const diff = new THREE.Vector3().subVectors(target.position, source.position);
             const dist = diff.length();
-            if (dist < config.minDistance) continue;
 
-            const force = config.attraction * (dist - config.minDistance);
+            const force = config.attraction * dist;
             const direction = diff.normalize();
             forces.get(source.id)!.add(direction.clone().multiplyScalar(force));
             forces.get(target.id)!.sub(direction.clone().multiplyScalar(force));
@@ -124,21 +131,22 @@ export class ForceLayout extends BaseLayout {
 
             const velocity = this.velocities.get(node.id)!;
             velocity.add(forces.get(node.id)!).multiplyScalar(config.damping);
-            node.position.add(velocity);
 
             const maxMove = config.temperature * (1 - this.simulationProgress);
-            if (node.position.length() > maxMove) {
-                node.position.clampLength(0, maxMove);
+            if (velocity.length() > maxMove) {
+                velocity.setLength(maxMove);
             }
+
+            node.position.add(velocity);
         }
     }
 
     private get simulationProgress(): number {
-        return 0.5;
+        const total = (this.config as ForceLayoutConfig).iterations;
+        return total > 0 ? this.currentIteration / total : 0;
     }
 
     dispose(): void {
-        this.velocities.forEach((v) => v.set(0, 0, 0));
         this.velocities.clear();
     }
 }

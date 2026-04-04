@@ -1,4 +1,4 @@
-// SpaceGraphJS v7.0 - Camera Controls
+// SpaceGraphJS - Camera Controls
 // Orbit-style camera controls with fly-to animation
 
 import * as THREE from 'three';

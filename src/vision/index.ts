@@ -1,4 +1,4 @@
-// SpaceGraphJS v7.0 - Vision Module Exports
+// SpaceGraphJS - Vision Module Exports
 
 export { VisionSystem } from './VisionSystem';
 

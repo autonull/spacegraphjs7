@@ -26,6 +26,12 @@ export interface Themable {
 // Node Data Types
 // ============================================================================
 
+export interface LabelLodConfig {
+    distance: number;
+    scale?: number;
+    style?: string;
+}
+
 export interface BaseNodeData {
     [key: string]: unknown;
     pinned?: boolean;
@@ -44,7 +50,7 @@ export interface HtmlNodeData extends BaseNodeData, Dimensions {
     html?: string;
     className?: string;
     pointerEvents?: 'none' | 'auto';
-    labelLod?: { distance: number; scale?: number; style?: string }[];
+    labelLod?: LabelLodConfig[];
 }
 
 export interface ImageNodeData extends BaseNodeData, Dimensions, Opacity {
@@ -154,7 +160,6 @@ export interface InstancedShapeNodeData extends BaseNodeData, Colorable, Opacity
 
 // Union of all node data types
 export type NodeData =
-    | BaseNodeData
     | ShapeNodeData
     | HtmlNodeData
     | ImageNodeData
@@ -200,7 +205,7 @@ export interface EdgeData extends BaseEdgeData {
     label?: string;
     labelColor?: string;
     fontSize?: string;
-    labelLod?: { distance: number; scale?: number; style?: string }[];
+    labelLod?: LabelLodConfig[];
 }
 
 // ============================================================================
@@ -298,4 +303,15 @@ export interface ISpaceGraphPlugin {
     dispose?(): void;
     export?(): unknown;
     import?(data: unknown): void;
+}
+
+export interface AnimationProps {
+    x?: number;
+    y?: number;
+    z?: number;
+    scale?: number;
+    duration?: number;
+    ease?: string;
+    delay?: number;
+    onUpdate?: () => void;
 }

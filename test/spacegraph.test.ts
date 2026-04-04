@@ -121,7 +121,7 @@ function makeSpaceGraph() {
 
     const graph = {
         nodes: new Map<string, any>(),
-        edges: [] as any[],
+        edges: new Map<string, any>(),
         addNode(spec: any) {
             const NodeType = nodeTypeRegistry.get(spec.type);
             if (!NodeType) return null;
@@ -133,7 +133,6 @@ function makeSpaceGraph() {
         addEdge(spec: any) {
             let EdgeType = edgeTypeRegistry.get(spec.type);
             if (!EdgeType) {
-                // Check plugin manager for dynamic edge types
                 if (sg && sg.pluginManager && sg.pluginManager.getEdgeType) {
                     EdgeType = sg.pluginManager.getEdgeType(spec.type);
                 }
@@ -156,7 +155,7 @@ function makeSpaceGraph() {
 
             if (!src || !tgt) return null;
             const edge = new EdgeType(sg, spec, src, tgt);
-            this.edges.push(edge);
+            this.edges.set(spec.id, edge);
             scene.add(edge.object);
             return edge;
         },
@@ -168,21 +167,17 @@ function makeSpaceGraph() {
             }
         },
         removeEdge(id: string) {
-            const idx = this.edges.findIndex((e: any) => e.id === id);
-            if (idx !== -1) {
-                scene.remove(this.edges[idx].object);
-                this.edges.splice(idx, 1);
-            }
+            this.edges.delete(id);
         },
         clear() {
             this.nodes.clear();
-            this.edges.length = 0;
+            this.edges.clear();
         },
         getNode(id: string) {
             return this.nodes.get(id);
         },
         getEdge(id: string) {
-            return this.edges.find((e: any) => e.id === id);
+            return this.edges.get(id);
         },
     };
 
@@ -263,7 +258,7 @@ describe('Node base class', () => {
     });
 
     it('updatePosition syncs object.position', () => {
-        const n = new Node(sg, { id: 'n1', type: 'Node', position: [0, 0, 0] });
+        const n = new ShapeNode(sg, { id: 'n1', type: 'ShapeNode', position: [0, 0, 0] });
         n.updatePosition(10, 20, 30);
         expect(n.object.position.x).toBe(10);
     });
@@ -1059,7 +1054,7 @@ describe('Graph Serialization', () => {
         sg2.import(state);
 
         expect(sg2.graph.nodes.size).toBe(2);
-        expect(sg2.graph.edges.length).toBe(1);
+        expect(sg2.graph.edges.size).toBe(1);
         expect(sg2.graph.nodes.get('a').position.x).toBe(10);
     });
 
@@ -1094,7 +1089,7 @@ describe('Graph Serialization', () => {
 
         expect(edge).toBeTruthy();
         expect((edge as any).isInterGraphEdge).toBe(true);
-        expect(sg1.graph.edges.length).toBe(1);
+        expect(sg1.graph.edges.size).toBe(1);
     });
 
     it('imports graph data correctly', () => {
@@ -1109,7 +1104,7 @@ describe('Graph Serialization', () => {
         sg.import(spec);
 
         expect(sg.graph.nodes.size).toBe(2);
-        expect(sg.graph.edges.length).toBe(1);
+        expect(sg.graph.edges.size).toBe(1);
         expect(sg.graph.nodes.get('2').position.x).toBe(100);
     });
 
@@ -1166,7 +1161,7 @@ describe('Graph CRUD', () => {
         sg.graph.addNode({ id: 'a', type: 'ShapeNode', position: [0, 0, 0] });
         sg.graph.addNode({ id: 'b', type: 'ShapeNode', position: [100, 0, 0] });
         sg.graph.addEdge({ id: 'e', source: 'a', target: 'b', type: 'Edge' });
-        expect(sg.graph.edges.length).toBe(1);
+        expect(sg.graph.edges.size).toBe(1);
     });
 
     it('addEdge returns null for missing source', () => {
@@ -1188,7 +1183,7 @@ describe('Graph CRUD', () => {
         sg.graph.addEdge({ id: 'e', source: 'a', target: 'b', type: 'Edge' });
         sg.graph.clear();
         expect(sg.graph.nodes.size).toBe(0);
-        expect(sg.graph.edges.length).toBe(0);
+        expect(sg.graph.edges.size).toBe(0);
     });
 
     it('getNode and getEdge retrieve elements correctly', () => {

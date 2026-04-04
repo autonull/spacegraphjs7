@@ -1,4 +1,4 @@
-// SpaceGraphJS v7.0 - Ergonomics Analyzer
+// SpaceGraphJS - Ergonomics Analyzer
 // Fitts's law analysis for interactive targets
 
 import * as THREE from 'three';

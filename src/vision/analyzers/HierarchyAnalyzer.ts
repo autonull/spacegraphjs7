@@ -1,4 +1,4 @@
-// SpaceGraphJS v7.0 - Hierarchy Analyzer
+// SpaceGraphJS - Hierarchy Analyzer
 // Graph topology analysis for hierarchy detection
 
 import type { VisionContext } from '../types';

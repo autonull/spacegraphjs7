@@ -1,4 +1,4 @@
-// SpaceGraphJS v7.0 - Rendering System
+// SpaceGraphJS - Rendering System
 // Three.js rendering abstraction with WebGL and CSS3D support
 
 import * as THREE from 'three';

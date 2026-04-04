@@ -1,8 +1,21 @@
 // SpaceGraphJS - The Self-Building UI Framework
 
-// ============================================================================
-// Standard Library
-// ============================================================================
+import { TypeRegistry } from './core/TypeRegistry';
+import { ShapeNode, HtmlNode, ImageNode } from './nodes';
+import { Edge } from './edges/Edge';
+import {
+    createSpaceGraph,
+    createSpaceGraphFromURL,
+    createSpaceGraphFromManifest,
+    quickGraph,
+} from './factory';
+
+// Register built-in node/edge types
+const registry = TypeRegistry.getInstance();
+registry.registerNode('ShapeNode', ShapeNode);
+registry.registerNode('HtmlNode', HtmlNode);
+registry.registerNode('ImageNode', ImageNode);
+registry.registerEdge('Edge', Edge);
 
 // ============================================================================
 // Utilities
@@ -22,31 +35,89 @@ export {
 } from './utils/math';
 
 export { logger, createLogger, setLogLevel, type LogLevel, type Logger } from './utils/logger';
+export { DOMUtils } from './utils/DOMUtils';
 
 // ============================================================================
-// Core (v6 Architecture - Legacy)
+// Core
 // ============================================================================
 export { SpaceGraph } from './SpaceGraph';
+export type { SpaceGraphOptions } from './types';
 export { SpaceGraphApp } from './core/SpaceGraphApp';
+export type { SpaceGraphAppOptions, AppButtonConfig } from './core/SpaceGraphApp';
 export { InputManager } from './input/InputManager';
 export { Graph } from './core/Graph';
 export { Renderer } from './core/Renderer';
 export { PluginManager } from './core/PluginManager';
 export { CameraControls } from './core/CameraControls';
-export { EventManager, type SpaceGraphEvents } from './core/EventManager';
-export { VisionManager, type VisionReport, type VisionCategory } from './core/VisionManager';
+export { EventManager, type SpaceGraphEvents as LegacySpaceGraphEvents } from './core/EventManager';
+export {
+    VisionManager,
+    type VisionReport as LegacyVisionReport,
+    type VisionCategory,
+} from './core/VisionManager';
 export { ObjectPoolManager } from './core/ObjectPoolManager';
 export { CullingManager } from './core/CullingManager';
 export { AdvancedRenderingOptimizer } from './core/AdvancedRenderingOptimizer';
 
 // ============================================================================
+// Event System
+// ============================================================================
+export { EventSystem, PluginEventBus } from './core/events/EventSystem';
+export type {
+    SpaceGraphEvents,
+    PluginEvent,
+    VisionReportEvent,
+    LayoutAppliedEvent,
+    OverlapDetectedEvent,
+} from './core/events/EventSystem';
+
+// ============================================================================
+// Plugin System
+// ============================================================================
+export { PluginRegistry } from './core/plugins/PluginRegistry';
+export { BaseLayout } from './core/plugins/BaseLayout';
+export type { Plugin, PluginContext } from './core/plugins/PluginRegistry';
+export type { LayoutConfig, LayoutOptions } from './core/plugins/BaseLayout';
+
+// ============================================================================
 // Rendering
 // ============================================================================
+export { RenderingSystem } from './core/renderer/RenderingSystem';
+export type { RenderOptions } from './core/renderer/RenderingSystem';
 export {
     InstancedNodeRenderer,
     GEOMETRY_FAMILIES,
     type GeometryFamily,
 } from './rendering/InstancedNodeRenderer';
+
+// ============================================================================
+// Vision System
+// ============================================================================
+export { VisionSystem, HeuristicsStrategy } from './vision';
+export type {
+    VisionOptions,
+    VisionReport,
+    VisionScore,
+    LegibilityResult,
+    OverlapResult,
+    HierarchyResult,
+    ErgonomicsResult,
+} from './vision';
+
+// ============================================================================
+// Spatial Index
+// ============================================================================
+export { SpatialIndex, BVH } from './core/spatial/SpatialIndex';
+
+// ============================================================================
+// Object Pool
+// ============================================================================
+export { ObjectPool, MathPool } from './core/pooling/ObjectPool';
+
+// ============================================================================
+// Type Registry
+// ============================================================================
+export { TypeRegistry } from './core/TypeRegistry';
 
 // ============================================================================
 // Input
@@ -79,10 +150,10 @@ export type {
     NodeSpec,
     EdgeSpec,
     SpecUpdate,
-    SpaceGraphOptions,
     ISpaceGraphPlugin,
     SpaceGraphNodeData,
     BaseNodeData,
+    BaseEdgeData,
     Dimensions,
     Colorable,
     Opacity,
@@ -106,6 +177,12 @@ export type {
     AudioNodeData,
     ProcessNodeData,
     CodeEditorNodeData,
+    NodeData,
+    EdgeData,
+    GraphExport,
+    GraphEvent,
+    NodeEvent,
+    EdgeEvent,
 } from './types';
 
 // ============================================================================
@@ -181,51 +258,22 @@ export { HoverMetaWidget, type MetaAction } from './plugins/HoverMetaWidget';
 export { HistoryPlugin, type HistoryPluginOptions } from './plugins/HistoryPlugin';
 
 // ============================================================================
-// SpaceGraphJS v7.0 Exports (New Architecture)
+// Factory Functions (Primary API)
 // ============================================================================
-export {
+export { createSpaceGraph, createSpaceGraphFromURL, createSpaceGraphFromManifest, quickGraph };
+
+// ============================================================================
+// Version
+// ============================================================================
+export const VERSION = '7.0.0';
+
+// ============================================================================
+// Default Export
+// ============================================================================
+export default {
     createSpaceGraph,
     createSpaceGraphFromURL,
     createSpaceGraphFromManifest,
     quickGraph,
-    SpaceGraph as SpaceGraphV7,
-    Graph as GraphV7,
-    Node as NodeV7,
-    Edge as EdgeV7,
-    EventSystem,
-    PluginEventBus,
-    PluginRegistry,
-    BaseLayout,
-    VisionSystem,
-    HeuristicsStrategy,
-    SpatialIndex,
-    BVH,
-    ObjectPool,
-    MathPool,
-    TypeRegistry,
-    CameraControls as CameraControlsV7,
-    RenderingSystem,
-    ShapeNode as ShapeNodeV7,
-    HtmlNode as HtmlNodeV7,
-    ImageNode as ImageNodeV7,
     VERSION,
-} from './index.v7';
-
-export type {
-    SpaceGraphOptions as SpaceGraphV7Options,
-    RenderOptions,
-    VisionOptions,
-    VisionReport as VisionReportV7,
-    Plugin,
-    PluginContext,
-    NodeSpec as NodeSpecV7,
-    EdgeSpec as EdgeSpecV7,
-    GraphSpec as GraphSpecV7,
-    NodeData,
-    EdgeData,
-    ShapeNodeData as ShapeNodeDataV7,
-    HtmlNodeData as HtmlNodeDataV7,
-    ImageNodeData as ImageNodeDataV7,
-} from './index.v7';
-
-export type { SpaceGraphAppOptions, AppButtonConfig } from './core/SpaceGraphApp';
+};

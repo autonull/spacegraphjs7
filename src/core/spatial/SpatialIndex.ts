@@ -17,22 +17,24 @@ export class SpatialIndex {
     private readonly nodeBounds = new Map<NodeLike, THREE.Box3>();
 
     constructor(cellSize = 100) {
+        if (cellSize <= 0) throw new Error('cellSize must be positive');
         this.cellSize = cellSize;
     }
 
-    private getGridCoords(position: THREE.Vector3): { x: number; y: number } {
+    private getGridCoords(position: THREE.Vector3): { x: number; y: number; z: number } {
         return {
             x: Math.floor(position.x / this.cellSize),
             y: Math.floor(position.y / this.cellSize),
+            z: Math.floor(position.z / this.cellSize),
         };
     }
 
-    private getCellKey(x: number, y: number): string {
-        return `${x},${y}`;
+    private getCellKey(x: number, y: number, z: number): string {
+        return `${x},${y},${z}`;
     }
 
-    private getOrCreateCell(x: number, y: number): SpatialCell {
-        const key = this.getCellKey(x, y);
+    private getOrCreateCell(x: number, y: number, z: number): SpatialCell {
+        const key = this.getCellKey(x, y, z);
         let cell = this.cells.get(key);
         if (!cell) {
             cell = { nodes: new Set() };
@@ -53,14 +55,18 @@ export class SpatialIndex {
                 const maxX = Math.floor(box.max.x / this.cellSize);
                 const minY = Math.floor(box.min.y / this.cellSize);
                 const maxY = Math.floor(box.max.y / this.cellSize);
+                const minZ = Math.floor(box.min.z / this.cellSize);
+                const maxZ = Math.floor(box.max.z / this.cellSize);
                 for (let x = minX; x <= maxX; x++) {
                     for (let y = minY; y <= maxY; y++) {
-                        this.getOrCreateCell(x, y).nodes.add(node);
+                        for (let z = minZ; z <= maxZ; z++) {
+                            this.getOrCreateCell(x, y, z).nodes.add(node);
+                        }
                     }
                 }
             } else {
-                const { x, y } = this.getGridCoords(node.position);
-                this.getOrCreateCell(x, y).nodes.add(node);
+                const { x, y, z } = this.getGridCoords(node.position);
+                this.getOrCreateCell(x, y, z).nodes.add(node);
             }
         }
     }
@@ -75,9 +81,13 @@ export class SpatialIndex {
         const maxX = Math.floor(box.max.x / this.cellSize);
         const minY = Math.floor(box.min.y / this.cellSize);
         const maxY = Math.floor(box.max.y / this.cellSize);
+        const minZ = Math.floor(box.min.z / this.cellSize);
+        const maxZ = Math.floor(box.max.z / this.cellSize);
         for (let x = minX; x <= maxX; x++) {
             for (let y = minY; y <= maxY; y++) {
-                this.getOrCreateCell(x, y).nodes.add(node);
+                for (let z = minZ; z <= maxZ; z++) {
+                    this.getOrCreateCell(x, y, z).nodes.add(node);
+                }
             }
         }
     }
@@ -93,9 +103,13 @@ export class SpatialIndex {
         const maxX = Math.floor(box.max.x / this.cellSize);
         const minY = Math.floor(box.min.y / this.cellSize);
         const maxY = Math.floor(box.max.y / this.cellSize);
+        const minZ = Math.floor(box.min.z / this.cellSize);
+        const maxZ = Math.floor(box.max.z / this.cellSize);
         for (let x = minX; x <= maxX; x++) {
             for (let y = minY; y <= maxY; y++) {
-                this.cells.get(this.getCellKey(x, y))?.nodes.forEach((n) => result.add(n));
+                for (let z = minZ; z <= maxZ; z++) {
+                    this.cells.get(this.getCellKey(x, y, z))?.nodes.forEach((n) => result.add(n));
+                }
             }
         }
         return Array.from(result);
@@ -111,7 +125,8 @@ export class SpatialIndex {
         return candidates.filter((n) => {
             const dx = n.position.x - position.x;
             const dy = n.position.y - position.y;
-            return dx * dx + dy * dy <= radiusSquared;
+            const dz = n.position.z - position.z;
+            return dx * dx + dy * dy + dz * dz <= radiusSquared;
         });
     }
 

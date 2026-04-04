@@ -7,6 +7,17 @@ import type { SpaceGraph } from '../SpaceGraph';
 
 type ShapeType = 'sphere' | 'box' | 'circle' | 'plane' | 'cone' | 'cylinder' | 'torus' | 'ring';
 
+const GEOMETRY_FACTORIES: Record<ShapeType, (size: number) => THREE.BufferGeometry> = {
+    sphere: (size) => new THREE.SphereGeometry(size / 2, 32, 32),
+    box: (size) => new THREE.BoxGeometry(size, size, size),
+    circle: (size) => new THREE.CircleGeometry(size / 2, 32),
+    plane: (size) => new THREE.CircleGeometry(size / 2, 32),
+    cone: (size) => new THREE.ConeGeometry(size / 2, size, 32),
+    cylinder: (size) => new THREE.CylinderGeometry(size / 2, size / 2, size, 32),
+    torus: (size) => new THREE.TorusGeometry(size / 3, size / 8, 16, 48),
+    ring: (size) => new THREE.RingGeometry(size / 4, size / 2, 32),
+};
+
 export class ShapeNode extends Node {
     private meshGeometry: THREE.BufferGeometry;
     private meshMaterial: THREE.MeshBasicMaterial;
@@ -45,24 +56,11 @@ export class ShapeNode extends Node {
     }
 
     private createGeometry(shape: ShapeType, size: number): THREE.BufferGeometry {
-        switch (shape) {
-            case 'box':
-                return new THREE.BoxGeometry(size, size, size);
-            case 'circle':
-            case 'plane':
-                return new THREE.CircleGeometry(size / 2, 32);
-            case 'cone':
-                return new THREE.ConeGeometry(size / 2, size, 32);
-            case 'cylinder':
-                return new THREE.CylinderGeometry(size / 2, size / 2, size, 32);
-            case 'torus':
-                return new THREE.TorusGeometry(size / 3, size / 8, 16, 48);
-            case 'ring':
-                return new THREE.RingGeometry(size / 4, size / 2, 32);
-            case 'sphere':
-            default:
-                return new THREE.SphereGeometry(size / 2, 32, 32);
-        }
+        return GEOMETRY_FACTORIES[shape]?.(size) ?? GEOMETRY_FACTORIES.sphere(size);
+    }
+
+    private _getMesh(): THREE.Mesh | undefined {
+        return this.object.children.find((c) => c instanceof THREE.Mesh) as THREE.Mesh | undefined;
     }
 
     updateSpec(updates: Partial<NodeSpec>): this {
@@ -79,9 +77,7 @@ export class ShapeNode extends Node {
                 this.shapeType = data.shape as ShapeType;
                 this.disposeGeometry();
                 this.meshGeometry = this.createGeometry(this.shapeType, this.nodeSize);
-                const mesh = this.object.children.find(
-                    (c) => c instanceof THREE.Mesh,
-                ) as THREE.Mesh;
+                const mesh = this._getMesh();
                 if (mesh) mesh.geometry = this.meshGeometry;
             }
 
@@ -89,9 +85,7 @@ export class ShapeNode extends Node {
                 this.nodeSize = data.size;
                 this.disposeGeometry();
                 this.meshGeometry = this.createGeometry(this.shapeType, this.nodeSize);
-                const mesh = this.object.children.find(
-                    (c) => c instanceof THREE.Mesh,
-                ) as THREE.Mesh;
+                const mesh = this._getMesh();
                 if (mesh) mesh.geometry = this.meshGeometry;
                 if (this.labelSprite) {
                     this.labelSprite.position.y = -this.nodeSize * 0.8;

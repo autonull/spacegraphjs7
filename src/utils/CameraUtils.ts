@@ -12,11 +12,11 @@ export class CameraUtils {
      * @returns An object containing the optimal center point and cameraZ distance.
      */
     static calculateFitView(
-        nodes: any[],
+        nodes: Array<{ position: THREE.Vector3 }>,
         camera: THREE.PerspectiveCamera,
         padding: number = 100,
-        minDistance: number = 200
-    ): { center: THREE.Vector3, cameraZ: number } | null {
+        minDistance: number = 200,
+    ): { center: THREE.Vector3; cameraZ: number } | null {
         if (!nodes || nodes.length === 0) return null;
 
         const box = new THREE.Box3();
@@ -34,13 +34,11 @@ export class CameraUtils {
 
         const maxDim = Math.max(size.x, size.y, size.z);
         const fov = camera.fov * (Math.PI / 180);
-        let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
+        const aspect = camera.aspect;
+        const fovRad = fov * (Math.PI / 180);
+        const cameraZ = Math.abs(maxDim / (2 * Math.tan(fovRad / 2) * Math.max(1, aspect)));
 
-        // Add padding and a minimum distance
-        cameraZ += padding;
-        cameraZ = Math.max(cameraZ, minDistance);
-
-        return { center, cameraZ };
+        return { center, cameraZ: Math.max(cameraZ + padding, minDistance) };
     }
 
     /**
@@ -53,8 +51,9 @@ export class CameraUtils {
      */
     static calculatePanTranslation(
         camera: THREE.PerspectiveCamera,
-        panVelocity: { x: number, y: number }
+        panVelocity: { x: number; y: number },
     ): THREE.Vector3 {
+        camera.updateMatrix();
         const right = new THREE.Vector3().setFromMatrixColumn(camera.matrix, 0);
         const up = new THREE.Vector3().setFromMatrixColumn(camera.matrix, 1);
 

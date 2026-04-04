@@ -9,10 +9,7 @@ import { execSync } from 'child_process';
 
 const program = new Command();
 
-program
-    .name('sg6')
-    .description('SpaceGraphJS Vision Auto-Fix CLI')
-    .version('6.0.0-alpha.1');
+program.name('sg').description('SpaceGraphJS Vision Auto-Fix CLI').version('7.0.0');
 
 program
     .command('fix')
@@ -24,7 +21,11 @@ program
 
         if (!fs.existsSync(patchPath)) {
             console.log(chalk.green('✓ No issues detected. Visual telemetry is clean.'));
-            console.log(chalk.gray('(If you expected issues, ensure Vite build finished with spacegraphVision({ autoFix: true }))'));
+            console.log(
+                chalk.gray(
+                    '(If you expected issues, ensure Vite build finished with spacegraphVision({ autoFix: true }))',
+                ),
+            );
             return;
         }
 
@@ -37,7 +38,11 @@ program
                 return;
             }
 
-            console.log(chalk.yellow(`\n⚠️ Detected ${patch.fixes.length} visual issues requiring correction:\n`));
+            console.log(
+                chalk.yellow(
+                    `\n⚠️ Detected ${patch.fixes.length} visual issues requiring correction:\n`,
+                ),
+            );
 
             patch.fixes.forEach((f: any, i: number) => {
                 const color = f.type === 'overlap' ? chalk.red : chalk.magenta;
@@ -52,8 +57,8 @@ program
                     type: 'confirm',
                     name: 'apply',
                     message: 'Do you want to apply these autonomous fixes to your source files?',
-                    default: false
-                }
+                    default: false,
+                },
             ]);
 
             if (answer.apply) {
@@ -70,7 +75,6 @@ program
             } else {
                 console.log(chalk.gray('\nAborted. No source files were modified.'));
             }
-
         } catch (e: any) {
             console.error(chalk.red('\nFailed to parse vision patch telemetry.'));
             console.error(e.message);

@@ -3,6 +3,7 @@ import { Line2 } from 'three/examples/jsm/lines/Line2.js';
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
 import { ThreeDisposer } from '../utils/ThreeDisposer';
+import { EventEmitter } from '../core/EventEmitter';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { EdgeSpec, EdgeData } from '../types';
 import type { Node } from '../nodes/Node';
@@ -10,14 +11,7 @@ import { createLogger } from '../utils/logger';
 
 const logger = createLogger('Edge');
 
-type EdgeEventMap = {
-    updated: { edge: Edge; changes: Partial<EdgeSpec>; timestamp: number };
-    destroying: { edge: Edge; timestamp: number };
-};
-
-type EdgeEventHandler<T extends keyof EdgeEventMap> = (event: EdgeEventMap[T]) => void;
-
-const DEFAULT_EDGE_DATA: EdgeData = {
+export const DEFAULT_EDGE_DATA: EdgeData = Object.freeze({
     color: 0x00d0ff,
     thickness: 3,
     thicknessInstanced: 0.5,
@@ -27,9 +21,14 @@ const DEFAULT_EDGE_DATA: EdgeData = {
     dashScale: 1,
     dashSize: 3,
     gapSize: 1,
+});
+
+type EdgeEventMap = {
+    updated: { edge: Edge; changes: Partial<EdgeSpec>; timestamp: number };
+    destroying: { edge: Edge; timestamp: number };
 };
 
-export class Edge {
+export class Edge extends EventEmitter<EdgeEventMap> {
     static HIGHLIGHT_COLOR = 0x00ffff;
     static DEFAULT_OPACITY = 0.8;
     static HIGHLIGHT_OPACITY = 1.0;
@@ -56,21 +55,31 @@ export class Edge {
     public isHighlighted = false;
     public isHovered = false;
 
-    private readonly eventHandlers = new Map<keyof EdgeEventMap, Set<EdgeEventHandler<any>>>();
     private _colorStart = new THREE.Color();
     private _colorEnd = new THREE.Color();
 
-    constructor(sg: SpaceGraph, spec: EdgeSpec, source: Node, target: Node) {
-        this.sg = sg;
+    constructor(spec: EdgeSpec, source: Node, target: Node);
+    constructor(sg: SpaceGraph, spec: EdgeSpec, source: Node, target: Node);
+    constructor(
+        sgOrSpec: SpaceGraph | EdgeSpec,
+        specOrSource: EdgeSpec | Node,
+        sourceOrTarget?: Node,
+        targetOrNothing?: Node,
+    ) {
+        super();
+        const isSpecFirst = sgOrSpec && typeof sgOrSpec === 'object' && 'source' in sgOrSpec;
+        this.sg = isSpecFirst ? (undefined as unknown as SpaceGraph) : (sgOrSpec as SpaceGraph);
+        const spec = isSpecFirst ? (sgOrSpec as EdgeSpec) : (specOrSource as EdgeSpec);
+        const source = isSpecFirst ? (specOrSource as Node) : (sourceOrTarget as Node);
+        const target = isSpecFirst ? (sourceOrTarget as Node) : (targetOrNothing as Node);
         this.id = spec.id;
         this.type = spec.type ?? 'Edge';
         this.source = source;
         this.target = target;
         this.data = { ...DEFAULT_EDGE_DATA, ...spec.data };
 
-        if (this.data.gradientColors?.length === 2) {
-            this.data.color = undefined;
-        } else if (this.data.color === undefined) {
+        const hasGradient = this.data.gradientColors?.length === 2;
+        if (!hasGradient && this.data.color === undefined) {
             this.data.color = DEFAULT_EDGE_DATA.color;
         }
 
@@ -117,26 +126,6 @@ export class Edge {
 
         this._createArrowheads();
         this.update();
-    }
-
-    on<T extends keyof EdgeEventMap>(event: T, handler: EdgeEventHandler<T>): { dispose(): void } {
-        const handlers = this.eventHandlers.get(event) ?? new Set();
-        if (!this.eventHandlers.has(event)) this.eventHandlers.set(event, handlers);
-        handlers.add(handler);
-        return { dispose: () => handlers.delete(handler) };
-    }
-
-    protected emit<T extends keyof EdgeEventMap>(
-        event: T,
-        data: Omit<EdgeEventMap[T], 'timestamp'>,
-    ): void {
-        this.eventHandlers.get(event)?.forEach((handler) => {
-            try {
-                handler({ ...data, timestamp: Date.now() } as EdgeEventMap[T]);
-            } catch (err) {
-                logger.error('Edge %s event handler for %s failed:', this.id, event, err);
-            }
-        });
     }
 
     private _createArrowheads(): void {
@@ -335,7 +324,7 @@ export class Edge {
     }
 
     dispose(): void {
-        this.emit('destroying', { edge: this });
+        this.emitWithTimestamp('destroying', { edge: this });
         this.line?.geometry?.dispose();
         this.line?.material?.dispose();
         this.line?.parent?.remove(this.line);
@@ -349,6 +338,6 @@ export class Edge {
         disposeArrowhead(this.arrowheads.target);
         this.arrowheads.source = null;
         this.arrowheads.target = null;
-        this.eventHandlers.clear();
+        this.removeAllListeners();
     }
 }

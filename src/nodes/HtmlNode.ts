@@ -94,7 +94,7 @@ export class HtmlNode extends DOMNode {
             contentWrapper.addEventListener('input', () => {
                 clearTimeout(debounceTimer);
                 debounceTimer = setTimeout(() => {
-                    spec.data = { ...spec.data, content: contentWrapper.innerHTML };
+                    this.data = { ...this.data, content: contentWrapper.innerHTML };
                     this.sg?.events.emit('node:dataChanged', {
                         node: this,
                         property: 'content',

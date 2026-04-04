@@ -275,7 +275,11 @@ export class InputSource {
     private element: HTMLElement;
     private manager: InputManager;
     private enabled = true;
-    private boundHandlers: Array<{ type: string; handler: (e: unknown) => void }> = [];
+    private boundHandlers: Array<{
+        type: string;
+        original: (e: unknown) => void;
+        handler: (e: unknown) => void;
+    }> = [];
 
     constructor(config: InputSourceConfig, manager: InputManager) {
         this.id = config.id;
@@ -297,6 +301,7 @@ export class InputSource {
     }
 
     on<T extends InputEventType>(type: T, handler: (event: InputEvent) => void): void {
+        const originalHandler = handler;
         const wrappedHandler = (e: unknown) => {
             if (!this.enabled) return;
             const event = this.normalizeEvent(type, e);
@@ -305,17 +310,21 @@ export class InputSource {
                 this.manager.handleEvent(event);
             }
         };
-
-        this.boundHandlers.push({ type, handler: wrappedHandler as (e: unknown) => void });
+        this.boundHandlers.push({
+            type,
+            original: originalHandler as (e: unknown) => void,
+            handler: wrappedHandler as (e: unknown) => void,
+        });
         this.element.addEventListener(type, wrappedHandler, { passive: false });
     }
 
     off(type: string, handler?: (e: unknown) => void): void {
         if (handler) {
-            this.element.removeEventListener(type, handler);
-            this.boundHandlers = this.boundHandlers.filter(
-                (h) => !(h.type === type && h.handler === handler),
-            );
+            const bound = this.boundHandlers.find((h) => h.type === type && h.original === handler);
+            if (bound) {
+                this.element.removeEventListener(type, bound.handler);
+                this.boundHandlers = this.boundHandlers.filter((h) => h !== bound);
+            }
         } else {
             const toRemove = this.boundHandlers.filter((h) => h.type === type);
             for (const h of toRemove) {
@@ -350,29 +359,11 @@ export class InputSource {
             }
             case 'mousedown':
             case 'mouseup':
-            case 'mousemove': {
-                const e = originalEvent as MouseEvent;
-                return {
-                    type,
-                    source: this.id,
-                    timestamp,
-                    data: {
-                        x: e.clientX,
-                        y: e.clientY,
-                        button: e.button,
-                        buttons: e.buttons,
-                        ctrlKey: e.ctrlKey,
-                        shiftKey: e.shiftKey,
-                        altKey: e.altKey,
-                        target: e.target as HTMLElement | null,
-                    } as PointerEventData,
-                    originalEvent: e,
-                };
-            }
+            case 'mousemove':
             case 'pointerdown':
             case 'pointerup':
             case 'pointermove': {
-                const e = originalEvent as PointerEvent;
+                const e = originalEvent as MouseEvent | PointerEvent;
                 return {
                     type,
                     source: this.id,
@@ -408,7 +399,8 @@ export class InputSource {
             }
             case 'touchstart':
             case 'touchmove':
-            case 'touchend': {
+            case 'touchend':
+            case 'touchcancel': {
                 const e = originalEvent as TouchEvent;
                 const getTouches = (touches: TouchList) =>
                     Array.from(touches).map((t) => ({

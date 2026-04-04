@@ -48,17 +48,18 @@ export function toHexColor(numColor: number | string): string {
         if (numColor.startsWith('rgb')) {
             const match = numColor.match(/\d+/g);
             if (match?.length && match.length >= 3) {
-                const [r, g, b] = match
-                    .slice(0, 3)
-                    .map((v) => parseInt(v, 10).toString(16).padStart(2, '0'));
+                const [r, g, b] = match.slice(0, 3).map((v) =>
+                    Math.max(0, Math.min(255, parseInt(v, 10)))
+                        .toString(16)
+                        .padStart(2, '0'),
+                );
                 return `#${r}${g}${b}`;
             }
         }
         return numColor;
     }
-    return typeof numColor === 'number' && !isNaN(numColor)
-        ? `#${Math.floor(numColor).toString(16).padStart(6, '0')}`
-        : '#ffffff';
+    if (typeof numColor !== 'number' || isNaN(numColor) || numColor < 0) return '#000000';
+    return `#${Math.floor(numColor).toString(16).padStart(6, '0')}`;
 }
 
 export const randomRange = (min: number, max: number): number => Math.random() * (max - min) + min;
@@ -77,4 +78,5 @@ export const mapRange = (
     inMax: number,
     outMin: number,
     outMax: number,
-): number => ((value - inMin) * (outMax - outMin)) / (inMax - inMin) + outMin;
+): number =>
+    inMax === inMin ? outMin : ((value - inMin) * (outMax - outMin)) / (inMax - inMin) + outMin;

@@ -30,7 +30,7 @@ export class Renderer {
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color(0x1a1a2e);
 
-        const aspect = container.clientWidth / container.clientHeight;
+        const aspect = container.clientWidth / (container.clientHeight || 1);
         this.camera = new THREE.PerspectiveCamera(75, aspect, 0.1, 10000);
         this.camera.position.set(0, 0, 500);
 
@@ -40,7 +40,7 @@ export class Renderer {
             preserveDrawingBuffer: true,
         });
         this.renderer.setSize(container.clientWidth, container.clientHeight);
-        this.renderer.setPixelRatio(window.devicePixelRatio);
+        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         container.appendChild(this.renderer.domElement);
         container.style.position = 'relative';
 
@@ -51,13 +51,19 @@ export class Renderer {
 
         this.instancedRenderer = new InstancedNodeRenderer(sg, this.scene);
 
-        window.addEventListener('resize', () => this.onResize());
+        this._resizeHandler = () => this.onResize();
+        window.addEventListener('resize', this._resizeHandler);
     }
 
+    private _resizeHandler: (() => void) | null = null;
+    private _threePatched = false;
+
     public init() {
+        if (this._threePatched) return;
         THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
         THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
         THREE.Mesh.prototype.raycast = acceleratedRaycast;
+        this._threePatched = true;
     }
 
     private onResize() {
@@ -75,11 +81,14 @@ export class Renderer {
         for (const [, edge] of this.sg.graph.edges) {
             edge.update?.();
         }
-        this.renderer.render(this.scene, this.camera);
         this.cssRenderer.render(this.scene, this.camera);
+        this.renderer.render(this.scene, this.camera);
     }
 
     public dispose() {
+        if (this._resizeHandler) {
+            window.removeEventListener('resize', this._resizeHandler);
+        }
         this.instancedRenderer.dispose();
         this.renderer.dispose();
         this.cssRenderer.domElement.parentNode?.removeChild(this.cssRenderer.domElement);

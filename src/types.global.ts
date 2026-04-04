@@ -1,4 +1,4 @@
-// SpaceGraphJS v7.0 - Global Type Definitions
+// SpaceGraphJS - Global Type Definitions
 
 /**
  * Disposable interface for cleanup

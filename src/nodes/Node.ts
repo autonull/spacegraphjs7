@@ -1,8 +1,9 @@
 import * as THREE from 'three';
 import gsap from 'gsap';
 import { ThreeDisposer } from '../utils/ThreeDisposer';
+import { EventEmitter, type Disposable } from '../core/EventEmitter';
 import type { SpaceGraph } from '../SpaceGraph';
-import type { NodeSpec, NodeData, NodeEvent } from '../types';
+import type { NodeSpec, NodeData, AnimationProps } from '../types';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('Node');
@@ -12,9 +13,7 @@ type NodeEventMap = {
     destroying: { node: Node; timestamp: number };
 };
 
-type NodeEventHandler<T extends keyof NodeEventMap> = (event: NodeEventMap[T]) => void;
-
-export abstract class Node {
+export abstract class Node extends EventEmitter<NodeEventMap> {
     readonly id: string;
     readonly type: string;
     public sg: SpaceGraph;
@@ -25,49 +24,31 @@ export abstract class Node {
     public scale: THREE.Vector3;
     abstract readonly object: THREE.Object3D;
 
-    private readonly eventHandlers = new Map<keyof NodeEventMap, Set<NodeEventHandler<any>>>();
-
-    constructor(sg: SpaceGraph, spec: NodeSpec) {
-        this.sg = sg;
-        this.id = spec.id;
-        this.type = spec.type;
-        this.label = spec.label;
-        this.data = spec.data ?? {};
+    constructor(sg?: SpaceGraph, spec?: NodeSpec);
+    constructor(sgOrSpec?: SpaceGraph | NodeSpec, maybeSpec?: NodeSpec) {
+        super();
+        const isSpecOnly = !!(sgOrSpec && 'id' in sgOrSpec);
+        this.sg = isSpecOnly ? (undefined as unknown as SpaceGraph) : (sgOrSpec as SpaceGraph);
+        const spec = isSpecOnly ? (sgOrSpec as NodeSpec) : maybeSpec;
+        this.id = spec?.id ?? '';
+        this.type = spec?.type ?? '';
+        this.label = spec?.label;
+        this.data = spec?.data ?? {};
         this.position = new THREE.Vector3(
-            spec.position?.[0] ?? 0,
-            spec.position?.[1] ?? 0,
-            spec.position?.[2] ?? 0,
+            spec?.position?.[0] ?? 0,
+            spec?.position?.[1] ?? 0,
+            spec?.position?.[2] ?? 0,
         );
         this.rotation = new THREE.Vector3(
-            spec.rotation?.[0] ?? 0,
-            spec.rotation?.[1] ?? 0,
-            spec.rotation?.[2] ?? 0,
+            spec?.rotation?.[0] ?? 0,
+            spec?.rotation?.[1] ?? 0,
+            spec?.rotation?.[2] ?? 0,
         );
         this.scale = new THREE.Vector3(
-            spec.scale?.[0] ?? 1,
-            spec.scale?.[1] ?? 1,
-            spec.scale?.[2] ?? 1,
+            spec?.scale?.[0] ?? 1,
+            spec?.scale?.[1] ?? 1,
+            spec?.scale?.[2] ?? 1,
         );
-    }
-
-    on<T extends keyof NodeEventMap>(event: T, handler: NodeEventHandler<T>): { dispose(): void } {
-        const handlers = this.eventHandlers.get(event) ?? new Set();
-        if (!this.eventHandlers.has(event)) this.eventHandlers.set(event, handlers);
-        handlers.add(handler);
-        return { dispose: () => handlers.delete(handler) };
-    }
-
-    protected emit<T extends keyof NodeEventMap>(
-        event: T,
-        data: Omit<NodeEventMap[T], 'timestamp'>,
-    ): void {
-        this.eventHandlers.get(event)?.forEach((handler) => {
-            try {
-                handler({ ...data, timestamp: Date.now() } as NodeEventMap[T]);
-            } catch (err) {
-                logger.error('Node %s event handler for %s failed:', this.id, event, err);
-            }
-        });
     }
 
     updateSpec(updates: Partial<NodeSpec>): this {
@@ -99,7 +80,7 @@ export abstract class Node {
         }
 
         if (Object.keys(changes).length > 0) {
-            this.emit('updated', { node: this, changes });
+            this.emitWithTimestamp('updated', { node: this, changes });
         }
 
         return this;
@@ -107,12 +88,8 @@ export abstract class Node {
 
     updatePosition(x: number, y: number, z: number): this {
         this.position.set(x, y, z);
-        this.object.position.copy(this.position);
+        this.object?.position.copy(this.position);
         return this;
-    }
-
-    setPosition(x: number, y: number, z: number = 0): this {
-        return this.updatePosition(x, y, z);
     }
 
     scaleUniform(s: number): this {
@@ -120,7 +97,7 @@ export abstract class Node {
         return this;
     }
 
-    animate(props: Record<string, unknown>): this {
+    animate(props: AnimationProps): this {
         const { scale, onUpdate, ...positionProps } = props;
 
         gsap.to(this.position, {
@@ -130,12 +107,12 @@ export abstract class Node {
 
         if (scale !== undefined) {
             gsap.to(this.object.scale, {
-                x: scale as number,
-                y: scale as number,
-                z: scale as number,
-                duration: props.duration as number,
-                ease: props.ease as string,
-                delay: props.delay as number,
+                x: scale,
+                y: scale,
+                z: scale,
+                duration: props.duration,
+                ease: props.ease,
+                delay: props.delay,
             });
         }
 
@@ -188,9 +165,9 @@ export abstract class Node {
     }
 
     dispose(): void {
-        this.emit('destroying', { node: this });
+        this.emitWithTimestamp('destroying', { node: this });
         this.object.parent?.remove(this.object);
         ThreeDisposer.dispose(this.object);
-        this.eventHandlers.clear();
+        this.removeAllListeners();
     }
 }

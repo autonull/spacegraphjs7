@@ -1,4 +1,4 @@
-// SpaceGraphJS v7.0 - Plugin System
+// SpaceGraphJS - Plugin System
 // Plugin interface, registry, and event bus for plugin communication
 
 import type { Graph } from '../Graph';

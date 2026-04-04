@@ -1,4 +1,7 @@
-// SpaceGraphJS v7.0 - Core Module Exports
+// SpaceGraphJS - Core Module Exports
+
+// Event Emitter Base
+export { EventEmitter } from './EventEmitter';
 
 // Event System
 export { EventSystem, PluginEventBus } from './events/EventSystem';
@@ -43,6 +46,6 @@ export { SpatialIndex, BVH } from './spatial/SpatialIndex';
 export { RenderingSystem } from './renderer/RenderingSystem';
 export type { RenderOptions } from './renderer/RenderingSystem';
 
-// SpaceGraph
-export { SpaceGraph } from './SpaceGraph';
-export type { SpaceGraphOptions } from './SpaceGraph';
+// Re-export main SpaceGraph from parent
+export { SpaceGraph } from '../SpaceGraph';
+export type { SpaceGraphOptions } from '../types';
