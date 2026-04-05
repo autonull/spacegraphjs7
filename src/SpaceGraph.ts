@@ -9,12 +9,12 @@ import { CullingManager } from './core/CullingManager';
 import { AdvancedRenderingOptimizer } from './core/AdvancedRenderingOptimizer';
 import { InputManager } from './input/InputManager';
 import { applyDefaultInputConfig, type DefaultInputConfig } from './input/DefaultInputConfig';
-import { createLogger } from './utils/logger.js';
-import { safeClone } from './utils/math.js';
+import { createLogger } from './utils/logger';
+import { safeClone } from './utils/math';
 
 import type { GraphSpec, SpaceGraphOptions, SpecUpdate } from './types';
 import type { Plugin } from './core/PluginManager';
-import { MathPool } from './core/pooling/ObjectPool.js';
+import { MathPool } from './core/pooling/ObjectPool';
 import { CameraUtils } from './utils/CameraUtils';
 import { DOMUtils } from './utils/DOMUtils';
 
@@ -45,9 +45,6 @@ import { SwitchNode } from './nodes/SwitchNode';
 import { VirtualGridNode } from './nodes/VirtualGridNode';
 import { PanelNode } from './nodes/PanelNode';
 import { PortNode } from './nodes/PortNode';
-import { VirtualGridNode } from './nodes/VirtualGridNode';
-import { PanelNode } from './nodes/PanelNode';
-import { PortNode } from './nodes/PortNode';
 
 import { Edge } from './edges/Edge';
 import { CurvedEdge } from './edges/CurvedEdge';
@@ -58,7 +55,6 @@ import { DynamicThicknessEdge } from './edges/DynamicThicknessEdge';
 import { AnimatedEdge } from './edges/AnimatedEdge';
 import { BundledEdge } from './edges/BundledEdge';
 import { InterGraphEdge } from './edges/InterGraphEdge';
-import { Wire } from './edges/Wire';
 import { Wire } from './edges/Wire';
 
 import { ForceLayout } from './plugins/ForceLayout';
@@ -113,6 +109,19 @@ const NODE_TYPES = [
     VirtualGridNode,
     PanelNode,
     PortNode,
+] as const;
+
+const EDGE_TYPES = [
+    Edge,
+    CurvedEdge,
+    FlowEdge,
+    LabeledEdge,
+    DottedEdge,
+    DynamicThicknessEdge,
+    AnimatedEdge,
+    BundledEdge,
+    InterGraphEdge,
+    Wire,
 ] as const;
 
 const LAYOUT_PLUGINS: [PluginCtor, string][] = [
@@ -230,6 +239,8 @@ export class SpaceGraph {
 
     async init() {
         this.renderer.init();
+
+        (globalThis as any).__SG_Wire = Wire;
 
         for (const cls of NODE_TYPES) this.pluginManager.registerNodeType(cls.name, cls);
         for (const cls of EDGE_TYPES) this.pluginManager.registerEdgeType(cls.name, cls);

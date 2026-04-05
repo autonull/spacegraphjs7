@@ -133,6 +133,9 @@ export class CameraControls {
             this.state = 'rotate';
         } else if (event.button === 1 || (event.button === 0 && event.shiftKey)) {
             this.state = 'pan';
+        } else if (event.button === 2) {
+            this.setRightDragStart(event.clientX, event.clientY);
+            return;
         }
 
         this.rotateStart.set(event.clientX, event.clientY);
@@ -141,6 +144,10 @@ export class CameraControls {
     };
 
     private onPointerMove = (event: PointerEvent): void => {
+        if (this.isRightDragging) {
+            this.updateRightDrag(event.clientX, event.clientY);
+            return;
+        }
         if (!this.isDragging) return;
 
         this.rotateEnd.set(event.clientX, event.clientY);
@@ -164,6 +171,10 @@ export class CameraControls {
     };
 
     private onPointerUp = (event: PointerEvent): void => {
+        if (this.isRightDragging) {
+            this.endRightDrag();
+            return;
+        }
         this.isDragging = false;
         this.state = 'none';
         this.domElement.releasePointerCapture(event.pointerId);
@@ -231,6 +242,7 @@ export class CameraControls {
         if (isPressed(this.config.keyPanBack)) this.panBy(0, -keyPanSpeed);
         if (isPressed(this.config.keyZoomIn)) this.spherical.radius *= 1 - keyZoomSpeed * 0.01;
         if (isPressed(this.config.keyZoomOut)) this.spherical.radius *= 1 + keyZoomSpeed * 0.01;
+        if (isPressed('o')) this.toggleOrthographic();
     }
 
     panBy(dx: number, dy: number): void {

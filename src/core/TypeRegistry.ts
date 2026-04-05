@@ -2,7 +2,7 @@ import type { Node } from '../nodes/Node';
 import type { Edge } from '../edges/Edge';
 import type { NodeSpec, EdgeSpec } from '../types';
 import type { SpaceGraph } from '../SpaceGraph';
-import { createLogger } from '../utils/logger.js';
+import { createLogger } from '../utils/logger';
 
 const logger = createLogger('TypeRegistry');
 

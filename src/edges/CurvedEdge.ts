@@ -8,6 +8,7 @@ import type { Node } from '../nodes/Node';
 export class CurvedEdge extends Edge {
     private curve: THREE.QuadraticBezierCurve3;
     private positionsBuffer: Float32Array;
+    private _controlPoint = new THREE.Vector3();
 
     constructor(sg: SpaceGraph, spec: EdgeSpec, source: Node, target: Node) {
         super(sg, spec, source, target);
@@ -27,10 +28,6 @@ export class CurvedEdge extends Edge {
         this.object.geometry = this.geometry;
     }
 
-    private _controlPoint = new THREE.Vector3();
-
-    private _controlPoint = new THREE.Vector3();
-
     private getControlPoint(): THREE.Vector3 {
         const curveStrength = ((this.data as EdgeData)?.curveStrength as number) ?? 50;
         const dir = this._controlPoint.subVectors(this.target.position, this.source.position);
@@ -39,24 +36,6 @@ export class CurvedEdge extends Edge {
             .addVectors(this.source.position, this.target.position)
             .multiplyScalar(0.5)
             .add(normal.multiplyScalar(curveStrength));
-    }
-
-    update() {
-        super.update();
-
-        this.curve.v0.copy(this.source.position);
-        this.curve.v1.copy(this.getControlPoint());
-        this.curve.v2.copy(this.target.position);
-
-        const points = this.curve.getPoints(20);
-        let offset = 0;
-        for (const p of points) {
-            this.positionsBuffer[offset++] = p.x;
-            this.positionsBuffer[offset++] = p.y;
-            this.positionsBuffer[offset++] = p.z;
-        }
-
-        this.geometry.attributes.position.needsUpdate = true;
     }
 
     update() {

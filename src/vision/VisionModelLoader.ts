@@ -1,5 +1,5 @@
 import { InferenceSession, env } from 'onnxruntime-web';
-import { createLogger } from '../../utils/logger.js';
+import { createLogger } from '../utils/logger';
 
 const logger = createLogger('VisionModelLoader');
 

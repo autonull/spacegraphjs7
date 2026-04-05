@@ -23,10 +23,18 @@ export {
     randomInt,
     smoothstep,
     mapRange,
-} from './utils/math';
+    safeClone,
+} from './utils';
 
-export { logger, createLogger, setLogLevel, type LogLevel, type Logger } from './utils/logger';
-export { DOMUtils } from './utils/DOMUtils';
+export { logger, createLogger, setLogLevel, type LogLevel, type Logger } from './utils';
+export { DOMUtils, CameraUtils, GestureManager, ThreeDisposer } from './utils';
+export {
+    getRelativeLuminance,
+    getContrastRatio,
+    getCompliantColor,
+    hexToRgb,
+    getColorsByFrequency,
+} from './utils';
 
 // ============================================================================
 // Core
@@ -35,13 +43,13 @@ export { SpaceGraph } from './SpaceGraph';
 export type { SpaceGraphOptions } from './types';
 export { SpaceGraphApp } from './core/SpaceGraphApp';
 export type { SpaceGraphAppOptions, AppButtonConfig } from './core/SpaceGraphApp';
-export { InputManager } from './input/InputManager';
 export { Graph } from './core/Graph';
 export { Renderer } from './core/Renderer';
+export type { RenderOptions } from './core/Renderer';
 export { CameraControls } from './core/CameraControls';
 export { EventSystem, type SpaceGraphEvents } from './core/events/EventSystem';
 export { VisionManager } from './core/VisionManager';
-export type { VisionCategory } from './core/vision/VisionAutoFixer.js';
+export type { VisionCategory } from './vision/VisionAutoFixer';
 export { ObjectPoolManager } from './core/ObjectPoolManager';
 export { CullingManager } from './core/CullingManager';
 export { AdvancedRenderingOptimizer } from './core/AdvancedRenderingOptimizer';
@@ -49,15 +57,50 @@ export { AdvancedRenderingOptimizer } from './core/AdvancedRenderingOptimizer';
 // ============================================================================
 // Plugin System
 // ============================================================================
-export { PluginManager, type Plugin } from './core/PluginManager';
-export { BaseLayout } from './core/plugins/BaseLayout';
-export type { LayoutConfig, LayoutOptions } from './core/plugins/BaseLayout';
+export {
+    PluginManager,
+    type Plugin,
+    BaseLayout,
+    type LayoutConfig,
+    type LayoutOptions,
+} from './plugins';
+
+export {
+    ForceLayout,
+    type ForceLayoutConfig,
+    GridLayout,
+    CircularLayout,
+    HierarchicalLayout,
+    RadialLayout,
+    TreeLayout,
+    SpectralLayout,
+    GeoLayout,
+    TimelineLayout,
+    ClusterLayout,
+    InteractionPlugin,
+    LODPlugin,
+    AutoLayoutPlugin,
+    AutoColorPlugin,
+    PhysicsPlugin,
+    MinimapPlugin,
+    ErgonomicsPlugin,
+    type ErgonomicsConfig,
+    VisionOverlayPlugin,
+    HUDPlugin,
+    type HUDElementOptions,
+    HoverMetaWidget,
+    type MetaAction,
+    HistoryPlugin,
+    type HistoryPluginOptions,
+    LayoutContainer,
+    HoverOverlay,
+    type HoverModel,
+} from './plugins';
 
 // ============================================================================
 // Rendering
 // ============================================================================
 export { RenderingSystem } from './core/renderer/RenderingSystem';
-export type { RenderOptions } from './core/renderer/RenderingSystem';
 export {
     InstancedNodeRenderer,
     GEOMETRY_FAMILIES,
@@ -87,15 +130,23 @@ export { SpatialIndex, BVH } from './core/spatial/SpatialIndex';
 // Object Pool
 // ============================================================================
 export { ObjectPool, MathPool } from './core/pooling/ObjectPool';
+export {
+    withPooledVector3,
+    withPooledVector2,
+    withPooledMatrix4,
+    withPooledBox3,
+} from './core/pooling/ObjectPool';
 
 // ============================================================================
 // Type Registry
 // ============================================================================
 export { TypeRegistry } from './core/TypeRegistry';
+export type { NodeConstructor, EdgeConstructor } from './core/TypeRegistry';
 
 // ============================================================================
 // Input
 // ============================================================================
+export { InputManager, FingerManager, Fingering, createParentTransform } from './input';
 export type {
     InputEvent,
     InputEventType,
@@ -107,14 +158,13 @@ export type {
     PointerEventData,
     WheelEventData,
     TouchEventData,
-} from './input/InputManager';
-
-export type {
+    Finger,
+    SurfaceTransform,
     DefaultInputConfig,
     CameraInputConfig,
     InteractionInputConfig,
     HistoryInputConfig,
-} from './input/DefaultInputConfig';
+} from './input';
 
 // ============================================================================
 // Types
@@ -163,73 +213,61 @@ export type {
 // ============================================================================
 // Nodes
 // ============================================================================
-export { Node } from './nodes/Node';
-export { InstancedNode } from './nodes/InstancedNode';
-export { ShapeNode } from './nodes/ShapeNode';
-export { HtmlNode } from './nodes/HtmlNode';
-export { InstancedShapeNode } from './nodes/InstancedShapeNode';
-export { ImageNode } from './nodes/ImageNode';
-export { GroupNode } from './nodes/GroupNode';
-export { NoteNode } from './nodes/NoteNode';
-export { CanvasNode } from './nodes/CanvasNode';
-export { TextMeshNode } from './nodes/TextMeshNode';
-export { DataNode } from './nodes/DataNode';
-export { VideoNode } from './nodes/VideoNode';
-export { IFrameNode } from './nodes/IFrameNode';
-export { ChartNode } from './nodes/ChartNode';
-export { MarkdownNode } from './nodes/MarkdownNode';
-export { GlobeNode } from './nodes/GlobeNode';
-export { SceneNode } from './nodes/SceneNode';
-export { AudioNode } from './nodes/AudioNode';
-export { MathNode } from './nodes/MathNode';
-export { ProcessNode } from './nodes/ProcessNode';
-export { CodeEditorNode } from './nodes/CodeEditorNode';
+export {
+    Node,
+    InstancedNode,
+    ShapeNode,
+    HtmlNode,
+    InstancedShapeNode,
+    ImageNode,
+    GroupNode,
+    NoteNode,
+    CanvasNode,
+    TextMeshNode,
+    DataNode,
+    VideoNode,
+    IFrameNode,
+    ChartNode,
+    MarkdownNode,
+    GlobeNode,
+    SceneNode,
+    AudioNode,
+    MathNode,
+    ProcessNode,
+    CodeEditorNode,
+    StackingNode,
+    GridNode,
+    SplitNode,
+    BorderNode,
+    SwitchNode,
+    VirtualGridNode,
+    PanelNode,
+    PortNode,
+    DOMNode,
+} from './nodes';
+export type { GridModel } from './nodes/VirtualGridNode';
 
 // ============================================================================
 // Edges
 // ============================================================================
-export { Edge } from './edges/Edge';
-export { CurvedEdge } from './edges/CurvedEdge';
-export { FlowEdge } from './edges/FlowEdge';
-export { LabeledEdge } from './edges/LabeledEdge';
-export { DottedEdge } from './edges/DottedEdge';
-export { DynamicThicknessEdge } from './edges/DynamicThicknessEdge';
-export { AnimatedEdge } from './edges/AnimatedEdge';
-export { BundledEdge } from './edges/BundledEdge';
-export { InterGraphEdge } from './edges/InterGraphEdge';
+export {
+    Edge,
+    CurvedEdge,
+    FlowEdge,
+    LabeledEdge,
+    DottedEdge,
+    DynamicThicknessEdge,
+    AnimatedEdge,
+    BundledEdge,
+    InterGraphEdge,
+    Wire,
+} from './edges';
 
 // ============================================================================
-// Plugins - Layout
+// Surface
 // ============================================================================
-export { ForceLayout } from './plugins/ForceLayout';
-export { GridLayout } from './plugins/GridLayout';
-export { CircularLayout } from './plugins/CircularLayout';
-export { HierarchicalLayout } from './plugins/HierarchicalLayout';
-export { RadialLayout } from './plugins/RadialLayout';
-export { TreeLayout } from './plugins/TreeLayout';
-export { SpectralLayout } from './plugins/SpectralLayout';
-export { GeoLayout } from './plugins/GeoLayout';
-export { TimelineLayout } from './plugins/TimelineLayout';
-export { ClusterLayout } from './plugins/ClusterLayout';
-
-// ============================================================================
-// Plugins - Core
-// ============================================================================
-export { InteractionPlugin } from './plugins/InteractionPlugin';
-export { LODPlugin } from './plugins/LODPlugin';
-export { AutoLayoutPlugin } from './plugins/AutoLayoutPlugin';
-export { AutoColorPlugin } from './plugins/AutoColorPlugin';
-
-// ============================================================================
-// Plugins - Extended
-// ============================================================================
-export { PhysicsPlugin } from './plugins/PhysicsPlugin';
-export { MinimapPlugin } from './plugins/MinimapPlugin';
-export { ErgonomicsPlugin, type ErgonomicsConfig } from './plugins/ErgonomicsPlugin';
-export { VisionOverlayPlugin } from './plugins/VisionOverlayPlugin';
-export { HUDPlugin, type HUDElementOptions } from './plugins/HUDPlugin';
-export { HoverMetaWidget, type MetaAction } from './plugins/HoverMetaWidget';
-export { HistoryPlugin, type HistoryPluginOptions } from './plugins/HistoryPlugin';
+export { Surface } from './core/Surface';
+export type { HitResult, Rect } from './core/Surface';
 
 // ============================================================================
 // Factory Functions (Primary API)

@@ -12,8 +12,8 @@ export {
 } from './math';
 
 export { logger, createLogger, setLogLevel, type LogLevel, type Logger } from './logger';
-export { createElement, createElementNS, type DOMElementOptions } from './DOMUtils';
-export { calculateFitView, type FitViewResult, type Point } from './CameraUtils';
+export { createElement, createElementNS, type DOMElementOptions, DOMUtils } from './DOMUtils';
+export { calculateFitView, type FitViewResult, type Point, CameraUtils } from './CameraUtils';
 export {
     calculateDistance,
     calculateMidpoint,
@@ -25,6 +25,7 @@ export {
     type DragCallback,
     type PinchCallback,
     type RotateCallback,
+    GestureManager,
 } from './GestureManager';
 export { disposeObject3D, ThreeDisposer } from './ThreeDisposer';
 export {

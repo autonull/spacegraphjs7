@@ -1,6 +1,6 @@
-import type { SpaceGraph } from '../SpaceGraph.js';
-import type { VisionReport } from '../../vision/types.js';
-import { createLogger } from '../../utils/logger.js';
+import type { SpaceGraph } from '../SpaceGraph';
+import type { VisionReport } from './types';
+import { createLogger } from '../utils/logger';
 
 const logger = createLogger('VisionAutoFixer');
 

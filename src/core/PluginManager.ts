@@ -1,10 +1,10 @@
 import type { SpaceGraph } from '../SpaceGraph';
 import type { Node } from '../nodes/Node';
 import type { Edge } from '../edges/Edge';
-import type { NodeSpec, EdgeSpec } from '../types';
 import type { EventSystem } from './events/EventSystem';
 import type { Graph } from './Graph';
-import { createLogger } from '../utils/logger.js';
+import { createLogger } from '../utils/logger';
+import { TypeRegistry } from './TypeRegistry';
 
 export interface Plugin {
     readonly id: string;
@@ -22,16 +22,11 @@ export interface Plugin {
     import?(data: unknown): void;
 }
 
-type NodeConstructor = new (sg: SpaceGraph, spec: NodeSpec) => Node;
-type EdgeConstructor = new (sg: SpaceGraph, spec: EdgeSpec, source: Node, target: Node) => Edge;
-
 const logger = createLogger('PluginManager');
 
 export class PluginManager {
     private readonly sg: SpaceGraph;
     public readonly plugins = new Map<string, Plugin>();
-    private readonly nodeTypes = new Map<string, NodeConstructor>();
-    private readonly edgeTypes = new Map<string, EdgeConstructor>();
 
     constructor(sg: SpaceGraph) {
         this.sg = sg;
@@ -51,20 +46,20 @@ export class PluginManager {
         this.plugins.set(name, plugin);
     }
 
-    registerNodeType(type: string, cls: NodeConstructor): void {
-        this.nodeTypes.set(type, cls);
+    registerNodeType(type: string, cls: import('./TypeRegistry').NodeConstructor): void {
+        TypeRegistry.getInstance().registerNode(type, cls);
     }
 
-    getNodeType(type: string): NodeConstructor | undefined {
-        return this.nodeTypes.get(type);
+    getNodeType(type: string): import('./TypeRegistry').NodeConstructor | undefined {
+        return TypeRegistry.getInstance().getNodeConstructor(type);
     }
 
-    registerEdgeType(type: string, cls: EdgeConstructor): void {
-        this.edgeTypes.set(type, cls);
+    registerEdgeType(type: string, cls: import('./TypeRegistry').EdgeConstructor): void {
+        TypeRegistry.getInstance().registerEdge(type, cls);
     }
 
-    getEdgeType(type: string): EdgeConstructor | undefined {
-        return this.edgeTypes.get(type);
+    getEdgeType(type: string): import('./TypeRegistry').EdgeConstructor | undefined {
+        return TypeRegistry.getInstance().getEdgeConstructor(type);
     }
 
     getPlugin(name: string): Plugin | undefined {

@@ -161,41 +161,6 @@ export abstract class BaseLayout implements Plugin {
     }
 
     /**
-     * Cleanup
-     */
-    dispose?(): void {
-        // Override if needed
-    }
-
-    /**
-     * Helper: Get non-pinned nodes
-     */
-    protected getNonPinnedNodes(): Node[] {
-        return Array.from(this.graph.getNodes()).filter(
-            (n) => !(n.data as Record<string, unknown>).pinned,
-        );
-    }
-
-    /**
-     * Helper: Update all edges after layout application
-     */
-    protected updateEdges(): void {
-        for (const edge of this.graph.getEdges()) (edge as { update?: () => void }).update?.();
-    }
-
-    /**
-     * Helper: Emit layout applied event
-     */
-    protected emitLayoutApplied(options?: { duration: number }): void {
-        this.events.emit('layout:applied', {
-            layout: this.id,
-            duration: options?.duration ?? this.config.duration ?? 1.0,
-            timestamp: Date.now(),
-        });
-    }
-}
-
-    /**
      * Helper: Get non-pinned nodes
      */
     protected getNonPinnedNodes(): Node[] {

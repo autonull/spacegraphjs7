@@ -3,7 +3,9 @@ import type { Node } from '../nodes/Node';
 import type { Edge } from '../edges/Edge';
 import type { SpaceGraph } from '../SpaceGraph';
 import { createLogger } from '../utils/logger';
-import { safeClone } from '../utils/math.js';
+import { safeClone } from '../utils/math';
+import { TypeRegistry } from './TypeRegistry';
+import { EventEmitter } from './EventEmitter';
 
 const logger = createLogger('Graph');
 
@@ -14,67 +16,36 @@ type GraphEventMap = {
     'edge:removed': { id: string; timestamp: number };
 };
 
-type GraphEventHandler<T extends keyof GraphEventMap> = (event: GraphEventMap[T]) => void;
-
-type NodeConstructor = new (sg: SpaceGraph, spec: NodeSpec) => Node;
-type EdgeConstructor = new (sg: SpaceGraph, spec: EdgeSpec, source: Node, target: Node) => Edge;
-
-export class Graph {
+export class Graph extends EventEmitter<GraphEventMap> {
     private readonly sg: SpaceGraph;
     public nodes: Map<string, Node> = new Map();
     public edges: Map<string, Edge> = new Map();
 
-    private readonly eventHandlers = new Map<keyof GraphEventMap, Set<GraphEventHandler<any>>>();
-    private nodeTypes: Map<string, NodeConstructor> = new Map();
-    private edgeTypes: Map<string, EdgeConstructor> = new Map();
-
     constructor(sg: SpaceGraph) {
+        super();
         this.sg = sg;
     }
 
-    registerNodeType(type: string, ctor: NodeConstructor): void {
-        this.nodeTypes.set(type, ctor);
+    registerNodeType(type: string, ctor: import('./TypeRegistry').NodeConstructor): void {
+        TypeRegistry.getInstance().registerNode(type, ctor);
     }
 
-    registerEdgeType(type: string, ctor: EdgeConstructor): void {
-        this.edgeTypes.set(type, ctor);
-    }
-
-    on<T extends keyof GraphEventMap>(
-        event: T,
-        handler: GraphEventHandler<T>,
-    ): { dispose(): void } {
-        const handlers = this.eventHandlers.get(event) ?? new Set();
-        if (!this.eventHandlers.has(event)) this.eventHandlers.set(event, handlers);
-        handlers.add(handler);
-        return { dispose: () => handlers.delete(handler) };
-    }
-
-    private emit<T extends keyof GraphEventMap>(
-        event: T,
-        data: Omit<GraphEventMap[T], 'timestamp'>,
-    ): void {
-        this.eventHandlers.get(event)?.forEach((handler) => {
-            try {
-                handler({ ...data, timestamp: Date.now() } as GraphEventMap[T]);
-            } catch (err) {
-                logger.error('Graph event handler for %s failed:', event, err);
-            }
-        });
+    registerEdgeType(type: string, ctor: import('./TypeRegistry').EdgeConstructor): void {
+        TypeRegistry.getInstance().registerEdge(type, ctor);
     }
 
     addNode(specOrNode: NodeSpec | Node): Node | null {
         if (typeof (specOrNode as Node).updatePosition === 'function') {
             const node = specOrNode as Node;
             this.nodes.set(node.id, node);
-            this.emit('node:added', { node });
+            this.emitWithTimestamp('node:added', { node });
             return node;
         }
 
         const spec = specOrNode as NodeSpec;
         if (this.nodes.has(spec.id)) return this.updateNode(spec.id, spec);
 
-        const NodeType = this.nodeTypes.get(spec.type);
+        const NodeType = TypeRegistry.getInstance().getNodeConstructor(spec.type);
         if (!NodeType) {
             logger.warn('Node type "%s" not registered.', spec.type);
             return null;
@@ -82,7 +53,7 @@ export class Graph {
 
         const node = new NodeType(this.sg, spec);
         this.nodes.set(spec.id, node);
-        this.emit('node:added', { node });
+        this.emitWithTimestamp('node:added', { node });
         return node;
     }
 
@@ -111,7 +82,7 @@ export class Graph {
         ) {
             const edge = specOrEdge as Edge;
             this.edges.set(edge.id, edge);
-            this.emit('edge:added', { edge });
+            this.emitWithTimestamp('edge:added', { edge });
             return edge;
         }
 
@@ -131,7 +102,7 @@ export class Graph {
             return null;
         }
 
-        const EdgeType = this.edgeTypes.get(spec.type ?? 'Edge');
+        const EdgeType = TypeRegistry.getInstance().getEdgeConstructor(spec.type ?? 'Edge');
         if (!EdgeType) {
             logger.warn('Edge type "%s" not registered.', spec.type);
             return null;
@@ -139,7 +110,7 @@ export class Graph {
 
         const edge = new EdgeType(this.sg, spec, sourceNode, targetNode);
         this.edges.set(spec.id, edge);
-        this.emit('edge:added', { edge });
+        this.emitWithTimestamp('edge:added', { edge });
         return edge;
     }
 
@@ -171,11 +142,11 @@ export class Graph {
         if (!node) return;
 
         this.nodes.delete(id);
-        this.emit('node:removed', { id });
+        this.emitWithTimestamp('node:removed', { id });
 
         for (const [edgeId, edge] of this.edges) {
             if (edge.source.id === id || edge.target.id === id) {
-                this.emit('edge:removed', { id: edgeId });
+                this.emitWithTimestamp('edge:removed', { id: edgeId });
                 edge.dispose?.();
                 this.edges.delete(edgeId);
             }
@@ -189,7 +160,7 @@ export class Graph {
         if (!edge) return;
 
         this.edges.delete(id);
-        this.emit('edge:removed', { id });
+        this.emitWithTimestamp('edge:removed', { id });
         edge.dispose?.();
     }
 

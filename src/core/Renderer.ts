@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { CSS3DRenderer } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
 import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from 'three-mesh-bvh';
-import type { SpaceGraph } from '../SpaceGraph';
+import type { SpaceGraph } from '../../SpaceGraph';
 import { InstancedNodeRenderer } from '../rendering/InstancedNodeRenderer';
 
 const CSS_RENDERER_STYLES = {
@@ -10,6 +10,13 @@ const CSS_RENDERER_STYLES = {
     left: '0px',
     pointerEvents: 'none',
 } as const;
+
+export interface RenderOptions {
+    antialias?: boolean;
+    alpha?: boolean;
+    backgroundColor?: string | number;
+    pixelRatio?: number;
+}
 
 export class Renderer {
     public sg: SpaceGraph;
@@ -20,24 +27,32 @@ export class Renderer {
     public cssRenderer: CSS3DRenderer;
     public instancedRenderer: InstancedNodeRenderer;
 
-    constructor(sg: SpaceGraph, container: HTMLElement) {
+    private _resizeObserver: ResizeObserver | null = null;
+    private _threePatched = false;
+    private renderScheduled = false;
+
+    constructor(sg: SpaceGraph, container: HTMLElement, options: RenderOptions = {}) {
         this.sg = sg;
         this.container = container;
 
+        const pixelRatio = options.pixelRatio ?? Math.min(window.devicePixelRatio, 2);
+        const backgroundColor = options.backgroundColor ?? 0x1a1a2e;
+
         this.scene = new THREE.Scene();
-        this.scene.background = new THREE.Color(0x1a1a2e);
+        this.scene.background = new THREE.Color(backgroundColor);
 
         const aspect = container.clientWidth / (container.clientHeight || 1);
         this.camera = new THREE.PerspectiveCamera(75, aspect, 0.1, 10000);
         this.camera.position.set(0, 0, 500);
 
         this.renderer = new THREE.WebGLRenderer({
-            antialias: true,
-            alpha: true,
+            antialias: options.antialias ?? true,
+            alpha: options.alpha ?? true,
             preserveDrawingBuffer: true,
         });
         this.renderer.setSize(container.clientWidth, container.clientHeight);
-        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        this.renderer.setPixelRatio(pixelRatio);
+        this.renderer.setClearColor(backgroundColor, (options.alpha ?? true) ? 0 : 1);
         container.appendChild(this.renderer.domElement);
         container.style.position = 'relative';
 
@@ -48,12 +63,9 @@ export class Renderer {
 
         this.instancedRenderer = new InstancedNodeRenderer(sg, this.scene);
 
-        this._resizeHandler = () => this.onResize();
-        window.addEventListener('resize', this._resizeHandler);
+        this._resizeObserver = new ResizeObserver(() => this.onResize());
+        this._resizeObserver.observe(container);
     }
-
-    private _resizeHandler: (() => void) | null = null;
-    private _threePatched = false;
 
     public init() {
         if (this._threePatched) return;
@@ -73,6 +85,15 @@ export class Renderer {
         this.cssRenderer.setSize(width, height);
     }
 
+    scheduleRender(): void {
+        if (this.renderScheduled) return;
+        this.renderScheduled = true;
+        requestAnimationFrame(() => {
+            this.renderScheduled = false;
+            this.render();
+        });
+    }
+
     public render() {
         this.instancedRenderer.update();
         for (const [, edge] of this.sg.graph.edges) {
@@ -82,12 +103,25 @@ export class Renderer {
         this.renderer.render(this.scene, this.camera);
     }
 
+    async exportPNG(scale = 1): Promise<Blob> {
+        this.render();
+        return new Promise((resolve, reject) => {
+            this.renderer.domElement.toBlob(
+                (blob) => {
+                    if (blob) resolve(blob);
+                    else reject(new Error('toBlob failed'));
+                },
+                'image/png',
+                scale,
+            );
+        });
+    }
+
     public dispose() {
-        if (this._resizeHandler) {
-            window.removeEventListener('resize', this._resizeHandler);
-        }
+        this._resizeObserver?.disconnect();
         this.instancedRenderer.dispose();
         this.renderer.dispose();
-        this.cssRenderer.domElement.parentNode?.removeChild(this.cssRenderer.domElement);
+        this.cssRenderer.domElement.remove();
+        this.renderer.domElement.remove();
     }
 }

@@ -39,3 +39,9 @@ export function calculateFitView(
 
     return { center, cameraZ: Math.max(cameraZ + padding, minDistance) };
 }
+
+/** @deprecated Use `calculateFitView` directly */
+export const CameraUtils = { calculateFitView };
+
+/** @deprecated Use `calculateFitView` directly */
+export const CameraUtils = { calculateFitView };

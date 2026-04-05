@@ -38,7 +38,7 @@ export abstract class Surface extends EventEmitter<{
         return this.parent ?? this;
     }
 
-    parent(predicate: (s: Surface) => boolean): Surface | null {
+    findParent(predicate: (s: Surface) => boolean): Surface | null {
         let current: Surface | undefined = this.parent;
         while (current) {
             if (predicate(current)) return current;

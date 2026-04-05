@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { Edge } from './Edge';
 import { ThreeDisposer } from '../utils/ThreeDisposer';
-import { MathPool } from '../core/pooling/ObjectPool.js';
+import { MathPool } from '../core/pooling/ObjectPool';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { EdgeData, EdgeSpec } from '../types';
 import type { Node } from '../nodes/Node';

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { clamp } from '../../utils/math';
+import { clamp } from '../utils/math';
 import { Edge } from './Edge';
 import { MathPool } from '../core/pooling/ObjectPool';
 import type { SpaceGraph } from '../SpaceGraph';

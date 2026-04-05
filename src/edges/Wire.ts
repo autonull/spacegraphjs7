@@ -34,7 +34,7 @@ export class Wire<T = unknown> extends Edge {
         return false;
     }
 
-    activity(now: number, window: number = 2000): number {
+    getActivity(now: number, window: number = 2000): number {
         const dt = now - this.lastActivity;
         return 1 / (1 + dt / window);
     }

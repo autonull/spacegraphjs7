@@ -1,9 +1,9 @@
 import type { SpaceGraph } from '../SpaceGraph';
-import { VisionModelLoader } from './vision/VisionModelLoader.js';
-import { VisionAutoFixer, type VisionCategory } from './vision/VisionAutoFixer.js';
-import { HeuristicsStrategy } from '../vision/strategies/HeuristicsStrategy.js';
+import { VisionModelLoader } from '../vision/VisionModelLoader';
+import { VisionAutoFixer, type VisionCategory } from '../vision/VisionAutoFixer';
+import { VisionSystem } from '../vision/VisionSystem';
 import type { VisionReport } from '../vision/types';
-import { createLogger } from '../utils/logger.js';
+import { createLogger } from '../utils/logger';
 
 const logger = createLogger('VisionManager');
 
@@ -13,7 +13,7 @@ export class VisionManager {
     private readonly sg: SpaceGraph;
     private readonly modelLoader: VisionModelLoader;
     private readonly autoFixer: VisionAutoFixer;
-    private readonly heuristics: HeuristicsStrategy;
+    private readonly visionSystem: VisionSystem;
     private isAnalyzing = false;
     private autonomousTimer: ReturnType<typeof setInterval> | null = null;
 
@@ -29,11 +29,15 @@ export class VisionManager {
         }
         this.modelLoader = new VisionModelLoader(providers);
         this.autoFixer = new VisionAutoFixer(sg);
-        this.heuristics = new HeuristicsStrategy(sg.options?.vision?.heuristics);
+        this.visionSystem = new VisionSystem(sg.options?.vision);
     }
 
     public get modelsLoaded(): boolean {
         return this.modelLoader.isLoaded;
+    }
+
+    public get strategy(): string {
+        return this.visionSystem.getStrategy();
     }
 
     public async loadModels(modelPaths: Record<string, string>): Promise<void> {
@@ -57,7 +61,7 @@ export class VisionManager {
         this.isAnalyzing = true;
         logger.info('Starting vision analysis...');
 
-        const report = await this.heuristics.analyze(this.sg.graph, this.sg.renderer.camera);
+        const report = await this.visionSystem.analyze(this.sg.graph, this.sg.renderer.camera);
 
         logger.info('Analysis complete. Overall Score: %d', report.overall.score);
 
@@ -119,10 +123,12 @@ export class VisionManager {
         }
     }
 
+    /** @deprecated Use `startAutonomousCorrection` instead. */
     public startAutonomousAnalysis(intervalMs = 30000): void {
         this.startAutonomousCorrection(intervalMs);
     }
 
+    /** @deprecated Use `stopAutonomousCorrection` instead. */
     public stopAutonomousAnalysis(): void {
         this.stopAutonomousCorrection();
     }
