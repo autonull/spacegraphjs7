@@ -1,7 +1,4 @@
-import type { SpaceGraph } from '../SpaceGraph';
-import type { Plugin } from '../core/PluginManager';
-import type { Graph } from '../core/Graph';
-import type { EventSystem } from '../core/events/EventSystem';
+import { BaseSystemPlugin } from './BaseSystemPlugin';
 import type { ForceLayout } from './ForceLayout';
 import { createLogger } from '../utils/logger';
 
@@ -14,15 +11,13 @@ interface VisionIssue {
     nodeId?: string;
 }
 
-export class AutoLayoutPlugin implements Plugin {
+export class AutoLayoutPlugin extends BaseSystemPlugin {
     readonly id = 'auto-layout';
     readonly name = 'Auto Layout';
     readonly version = '1.0.0';
 
-    private sg!: SpaceGraph;
-
-    init(sg: SpaceGraph, _graph: Graph, _events: EventSystem): void {
-        this.sg = sg;
+    init(sg: SpaceGraph, graph: Graph, events: EventSystem): void {
+        super.init(sg, graph, events);
         logger.debug(`Initialized ${this.name} v${this.version}`);
     }
 

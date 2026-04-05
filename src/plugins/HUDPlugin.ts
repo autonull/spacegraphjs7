@@ -1,33 +1,29 @@
-import type { SpaceGraph } from '../SpaceGraph';
-import type { Plugin } from '../core/PluginManager';
-import type { Graph } from '../core/Graph';
-import type { EventSystem } from '../core/events/EventSystem';
+import { BaseSystemPlugin } from './BaseSystemPlugin';
 import type { HUDElementOptions } from './hud/types';
 import { HUDStatusBar } from './hud/HUDStatusBar';
 import { HUDPerformanceMetrics } from './hud/HUDPerformanceMetrics';
 import { HUDAlerts, type AlertOptions } from './hud/HUDAlerts';
 import { HUD_ZINDEX, HUD_POSITIONS } from './hud/HUDStyles';
 import { HUDDOMFactory } from './hud/HUDDOMFactory';
-import { createLogger } from '../utils/logger.js';
+import { createLogger } from '../utils/logger';
 
 const logger = createLogger('HUDPlugin');
 
 export type { HUDElementOptions, AlertOptions };
 
-export class HUDPlugin implements Plugin {
-    readonly id = 'hud-plugin';
+export class HUDPlugin extends BaseSystemPlugin {
+    readonly id = 'hud';
     readonly name = 'Heads Up Display';
     readonly version = '1.0.0';
 
-    private sg!: SpaceGraph;
     private container: HTMLElement | null = null;
     private statusBar: HUDStatusBar | null = null;
     private performanceMetrics: HUDPerformanceMetrics | null = null;
     private alerts: HUDAlerts | null = null;
     private elements: Map<string, { el: HTMLElement; options: HUDElementOptions }> = new Map();
 
-    init(sg: SpaceGraph, _graph: Graph, _events: EventSystem): void {
-        this.sg = sg;
+    init(sg: SpaceGraph, graph: Graph, events: EventSystem): void {
+        super.init(sg, graph, events);
         if (typeof document === 'undefined') return;
 
         this.createContainer();

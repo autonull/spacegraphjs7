@@ -241,9 +241,7 @@ export class InteractionPlugin implements Plugin {
         }
     }
 
-    private handleKeyUp(e: any): void {
-        (window as Window & { __spacegraph_altKey?: boolean }).__spacegraph_altKey = e.altKey;
-    }
+    private handleKeyUp(_e: any): void {}
 
     private handleDblClick(e: any): void {
         this.raycaster.updateMousePosition(e.x, e.y);

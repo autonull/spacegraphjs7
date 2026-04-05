@@ -1,7 +1,4 @@
-import type { SpaceGraph } from '../SpaceGraph';
-import type { Plugin } from '../core/PluginManager';
-import type { Graph } from '../core/Graph';
-import type { EventSystem } from '../core/events/EventSystem';
+import { BaseSystemPlugin } from './BaseSystemPlugin';
 import * as THREE from 'three';
 
 const ERGONOMICS_CONFIG = {
@@ -87,7 +84,7 @@ export interface ErgonomicsConfig {
  *   avgJitter          : direction reversals per second
  */
 export class ErgonomicsPlugin implements Plugin {
-    readonly id = 'ergonomics-plugin';
+    readonly id = 'ergonomics';
     readonly name = 'Ergonomics';
     readonly version = '1.0.0';
 

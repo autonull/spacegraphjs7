@@ -93,7 +93,7 @@ const DEFAULT_ACTIONS: MetaAction[] = [
  * 'node:metaaction'  { node, action: string }   — button was clicked
  */
 export class HoverMetaWidget implements Plugin {
-    readonly id = 'hover-meta-widget';
+    readonly id = 'hover-meta';
     readonly name = 'Hover Meta Widget';
     readonly version = '1.0.0';
 

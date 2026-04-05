@@ -1,7 +1,4 @@
-import type { SpaceGraph } from '../SpaceGraph';
-import type { Plugin } from '../core/PluginManager';
-import type { Graph } from '../core/Graph';
-import type { EventSystem } from '../core/events/EventSystem';
+import { BaseSystemPlugin } from './BaseSystemPlugin';
 import type { GraphSpec } from '../types';
 
 export interface HistoryPluginOptions {
@@ -9,12 +6,11 @@ export interface HistoryPluginOptions {
     enabled?: boolean;
 }
 
-export class HistoryPlugin implements Plugin {
+export class HistoryPlugin extends BaseSystemPlugin {
     readonly id = 'history';
     readonly name = 'History Stack';
     readonly version = '1.0.0';
 
-    private sg!: SpaceGraph;
     private pastStack: GraphSpec[] = [];
     private futureStack: GraphSpec[] = [];
     private maxHistorySize: number;
@@ -26,12 +22,13 @@ export class HistoryPlugin implements Plugin {
     private debounceTimer: any = null;
 
     constructor(options: HistoryPluginOptions = {}) {
+        super();
         this.maxHistorySize = options.maxHistorySize || 50;
         this.isEnabled = options.enabled !== false;
     }
 
-    init(sg: SpaceGraph, _graph: Graph, _events: EventSystem): void {
-        this.sg = sg;
+    init(sg: SpaceGraph, graph: Graph, events: EventSystem): void {
+        super.init(sg, graph, events);
 
         if (this.isEnabled) {
             this.pushSnapshot();

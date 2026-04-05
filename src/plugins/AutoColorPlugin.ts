@@ -1,66 +1,21 @@
-import type { SpaceGraph } from '../SpaceGraph';
-import type { Plugin } from '../core/PluginManager';
-import type { Graph } from '../core/Graph';
-import type { EventSystem } from '../core/events/EventSystem';
-import { createLogger } from '../utils/logger.js';
+import { BaseSystemPlugin } from './BaseSystemPlugin';
+import { createLogger } from '../utils/logger';
+import { getCompliantColor } from '../utils/color';
 
 const logger = createLogger('AutoColorPlugin');
 
-export class AutoColorPlugin implements Plugin {
+export class AutoColorPlugin extends BaseSystemPlugin {
     readonly id = 'auto-color';
     readonly name = 'Auto Color';
     readonly version = '1.0.0';
 
-    private sg!: SpaceGraph;
-
-    init(sg: SpaceGraph, _graph: Graph, _events: EventSystem): void {
-        this.sg = sg;
+    init(sg: SpaceGraph, graph: Graph, events: EventSystem): void {
+        super.init(sg, graph, events);
         logger.info('Initialized %s v%s', this.name, this.version);
     }
 
     onPreRender(_delta: number): void {
         // Skeleton for AI vision color adjustments
-    }
-
-    private getLuminance(r: number, g: number, b: number): number {
-        const a = [r, g, b].map(function (v) {
-            v /= 255;
-            return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
-        });
-        return a[0] * 0.2126 + a[1] * 0.7152 + a[2] * 0.0722;
-    }
-
-    private getContrastRatio(l1: number, l2: number): number {
-        const brightest = Math.max(l1, l2);
-        const darkest = Math.min(l1, l2);
-        return (brightest + 0.05) / (darkest + 0.05);
-    }
-
-    private getCompliantColor(hexColor: number): number {
-        let r = (hexColor >> 16) & 255;
-        let g = (hexColor >> 8) & 255;
-        let b = hexColor & 255;
-
-        const textLuminance = this.getLuminance(255, 255, 255);
-        let currentLuminance = this.getLuminance(r, g, b);
-        let ratio = this.getContrastRatio(currentLuminance, textLuminance);
-
-        let iterations = 0;
-        while (ratio < 4.5 && iterations < 20) {
-            r = Math.max(0, Math.floor(r * 0.9));
-            g = Math.max(0, Math.floor(g * 0.9));
-            b = Math.max(0, Math.floor(b * 0.9));
-
-            currentLuminance = this.getLuminance(r, g, b);
-            ratio = this.getContrastRatio(currentLuminance, textLuminance);
-            iterations++;
-        }
-
-        if (ratio < 4.5) {
-            return 0x333333;
-        }
-
-        return (r << 16) | (g << 8) | b;
     }
 
     public applyVisionCorrection(issues: unknown[]): void {
@@ -82,7 +37,7 @@ export class AutoColorPlugin implements Plugin {
                         if (issue.suggestedColor) {
                             newColor = issue.suggestedColor;
                         } else if (node.data && node.data.color !== undefined) {
-                            newColor = this.getCompliantColor(node.data.color as number);
+                            newColor = getCompliantColor(node.data.color as number);
                         }
 
                         logger.info(

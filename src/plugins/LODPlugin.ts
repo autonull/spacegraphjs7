@@ -1,8 +1,5 @@
 import * as THREE from 'three';
-import type { SpaceGraph } from '../SpaceGraph';
-import type { Plugin } from '../core/PluginManager';
-import type { Graph } from '../core/Graph';
-import type { EventSystem } from '../core/events/EventSystem';
+import { BaseSystemPlugin } from './BaseSystemPlugin';
 import type { Node } from '../nodes/Node';
 import { DOMNode } from '../nodes/DOMNode';
 import { GroupNode } from '../nodes/GroupNode';
@@ -13,17 +10,12 @@ type NodeLike = {
     parent?: string;
 };
 
-export class LODPlugin implements Plugin {
+export class LODPlugin extends BaseSystemPlugin {
     readonly id = 'lod';
     readonly name = 'Level of Detail';
     readonly version = '1.0.0';
 
-    private sg!: SpaceGraph;
     private maxDistance = 3000;
-
-    init(sg: SpaceGraph, _graph: Graph, _events: EventSystem): void {
-        this.sg = sg;
-    }
 
     onPreRender(_delta: number): void {
         if (!this.sg?.renderer?.camera) return;

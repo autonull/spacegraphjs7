@@ -1,8 +1,5 @@
 import * as THREE from 'three';
-import type { SpaceGraph } from '../SpaceGraph';
-import type { Plugin } from '../core/PluginManager';
-import type { Graph } from '../core/Graph';
-import type { EventSystem } from '../core/events/EventSystem';
+import { BaseSystemPlugin } from './BaseSystemPlugin';
 import type { CameraControls } from '../core/CameraControls';
 import { DOMUtils } from '../utils/DOMUtils';
 
@@ -17,12 +14,11 @@ import { DOMUtils } from '../utils/DOMUtils';
  *   alpha    : minimap opacity 0–1 (default 0.8)
  *   zoom     : orthographic half-size (default 1500)
  */
-export class MinimapPlugin implements Plugin {
-    readonly id = 'minimap-plugin';
+export class MinimapPlugin extends BaseSystemPlugin {
+    readonly id = 'minimap';
     readonly name = 'Minimap';
     readonly version = '1.0.0';
 
-    private sg!: SpaceGraph;
     private orthoCamera!: THREE.OrthographicCamera;
 
     public settings = {
@@ -34,8 +30,8 @@ export class MinimapPlugin implements Plugin {
         zoom: 1500,
     };
 
-    init(sg: SpaceGraph, _graph: Graph, _events: EventSystem): void {
-        this.sg = sg;
+    init(sg: SpaceGraph, graph: Graph, events: EventSystem): void {
+        super.init(sg, graph, events);
         this._buildCamera();
 
         const dom = this.sg.renderer.renderer.domElement;

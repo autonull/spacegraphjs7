@@ -4,12 +4,12 @@ import type { Graph } from '../core/Graph';
 import type { EventSystem } from '../core/events/EventSystem';
 import type { VisionReport } from '../core/VisionManager';
 import { DOMUtils } from '../utils/DOMUtils';
-import { createLogger } from '../utils/logger.js';
+import { createLogger } from '../utils/logger';
 
 const logger = createLogger('VisionOverlay');
 
 export class VisionOverlayPlugin implements Plugin {
-    readonly id = 'vision-overlay-plugin';
+    readonly id = 'vision-overlay';
     readonly name = 'Vision Overlay';
     readonly version = '1.0.0';
 
