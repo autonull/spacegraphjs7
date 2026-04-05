@@ -1,4 +1,7 @@
 import { BaseSystemPlugin } from './BaseSystemPlugin';
+import type { SpaceGraph } from '../SpaceGraph';
+import type { Graph } from '../core/Graph';
+import type { EventSystem } from '../core/events/EventSystem';
 import type { HUDElementOptions } from './hud/types';
 import { HUDStatusBar } from './hud/HUDStatusBar';
 import { HUDPerformanceMetrics } from './hud/HUDPerformanceMetrics';

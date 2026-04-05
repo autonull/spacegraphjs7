@@ -713,7 +713,7 @@ describe('DottedEdge', () => {
         nodeB = mkNode(sg, 'b', POS_B);
     });
 
-    it('uses LineDashedMaterial', () => {
+    it('uses dashed LineMaterial', () => {
         const e = new DottedEdge(
             sg,
             {
@@ -726,7 +726,10 @@ describe('DottedEdge', () => {
             nodeA,
             nodeB,
         );
-        expect(e.object.material).toBeInstanceOf(THREE.LineDashedMaterial);
+        const mat = e.object.material as { dashed?: boolean; dashSize?: number; gapSize?: number };
+        expect(mat.dashed).toBe(true);
+        expect(mat.dashSize).toBe(10);
+        expect(mat.gapSize).toBe(5);
     });
 
     it('update recomputes line distances', () => {

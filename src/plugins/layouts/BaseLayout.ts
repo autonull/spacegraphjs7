@@ -2,7 +2,7 @@
 // Abstract base class for layout plugins with common helpers
 
 import * as THREE from 'three';
-import type { Plugin } from '../PluginManager';
+import type { Plugin } from '../../core/PluginManager';
 import type { Graph } from '../../core/Graph';
 import type { Node } from '../../nodes/Node';
 import type { EventSystem } from '../../core/events/EventSystem';

@@ -101,7 +101,7 @@ export const borderStrategy: LayoutStrategy = (children, parent, params) => {
 export const switchStrategy: LayoutStrategy = (children, _parent, params) => {
     const activeIndex = (params.activeIndex as number) ?? 0;
     children.forEach((child, i) => {
-        child.visible = i === activeIndex;
+        child.object.visible = i === activeIndex;
     });
 };
 

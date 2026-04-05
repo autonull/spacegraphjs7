@@ -19,7 +19,8 @@ import type { Node } from '../nodes/Node';
  *   segments  : tube radial segments (default 6)
  */
 export class DynamicThicknessEdge extends Edge {
-    private cylinder: THREE.Mesh;
+    private cylinder!: THREE.Mesh;
+    private _initialized = false;
 
     constructor(sg: SpaceGraph, spec: EdgeSpec, source: Node, target: Node) {
         super(sg, spec, source, target);
@@ -37,9 +38,14 @@ export class DynamicThicknessEdge extends Edge {
         this.cylinder = new THREE.Mesh(geometry, material);
         this.cylinder.userData = { edgeId: this.id, type: 'edge-cylinder' };
         this.sg?.renderer.scene.add(this.cylinder);
+        this._initialized = true;
     }
 
     update(): void {
+        if (!this._initialized) return;
+        super.update();
+        if (!this._initialized) return;
+        super.update();
         const pool = MathPool.getInstance();
         const { source, target, data } = this;
         const { weight = 0.5, minRadius = 1, maxRadius = 8 } = data;

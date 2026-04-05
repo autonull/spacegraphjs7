@@ -1,4 +1,7 @@
 import { BaseSystemPlugin } from './BaseSystemPlugin';
+import type { SpaceGraph } from '../SpaceGraph';
+import type { Graph } from '../core/Graph';
+import type { EventSystem } from '../core/events/EventSystem';
 import * as THREE from 'three';
 
 const ERGONOMICS_CONFIG = {
@@ -83,12 +86,10 @@ export interface ErgonomicsConfig {
  *   avgEfficiency      : path-length / displacement ratio (1 = perfectly straight)
  *   avgJitter          : direction reversals per second
  */
-export class ErgonomicsPlugin implements Plugin {
+export class ErgonomicsPlugin extends BaseSystemPlugin {
     readonly id = 'ergonomics';
     readonly name = 'Ergonomics';
     readonly version = '1.0.0';
-
-    private sg!: SpaceGraph;
 
     public config: ErgonomicsConfig = {
         targetNodeSizePx: 40,
@@ -109,8 +110,8 @@ export class ErgonomicsPlugin implements Plugin {
      */
     public calibrating = false;
 
-    init(sg: SpaceGraph, _graph: Graph, _events: EventSystem): void {
-        this.sg = sg;
+    init(sg: SpaceGraph, graph: Graph, events: EventSystem): void {
+        super.init(sg, graph, events);
         this._applyConfig();
         this._listenToInteractions();
     }

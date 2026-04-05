@@ -42,6 +42,3 @@ export function calculateFitView(
 
 /** @deprecated Use `calculateFitView` directly */
 export const CameraUtils = { calculateFitView };
-
-/** @deprecated Use `calculateFitView` directly */
-export const CameraUtils = { calculateFitView };

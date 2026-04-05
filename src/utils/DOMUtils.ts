@@ -51,6 +51,3 @@ export function createElementNS(
 
 /** @deprecated Use `createElement` and `createElementNS` directly */
 export const DOMUtils = { createElement, createElementNS };
-
-/** @deprecated Use `createElement` and `createElementNS` directly */
-export const DOMUtils = { createElement, createElementNS };
