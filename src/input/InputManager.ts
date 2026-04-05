@@ -25,6 +25,7 @@ export interface InputEvent<T = unknown> {
     timestamp: number;
     data: T;
     originalEvent?: unknown;
+    consumed: boolean;
 }
 
 export interface KeyEventData {
@@ -225,6 +226,7 @@ export class InputManager {
         }
 
         for (const binding of this.bindings) {
+            if (event.consumed) break;
             if (binding.sources.includes(source) && binding.eventType === event.type) {
                 if (binding.predicate && !binding.predicate(event)) continue;
 
@@ -355,6 +357,7 @@ export class InputSource {
                         repeat: e.repeat,
                     } as KeyEventData,
                     originalEvent: e,
+                    consumed: false,
                 };
             }
             case 'mousedown':
@@ -379,6 +382,7 @@ export class InputSource {
                         target: e.target as HTMLElement | null,
                     } as PointerEventData,
                     originalEvent: e,
+                    consumed: false,
                 };
             }
             case 'wheel': {
@@ -395,6 +399,7 @@ export class InputSource {
                         deltaZ: e.deltaZ,
                     } as WheelEventData,
                     originalEvent: e,
+                    consumed: false,
                 };
             }
             case 'touchstart':
@@ -417,6 +422,7 @@ export class InputSource {
                         changedTouches: getTouches(e.changedTouches),
                     } as TouchEventData,
                     originalEvent: e,
+                    consumed: false,
                 };
             }
             case 'dblclick':
@@ -436,6 +442,7 @@ export class InputSource {
                         target: e.target as HTMLElement | null,
                     } as PointerEventData,
                     originalEvent: e,
+                    consumed: false,
                 };
             }
             default:

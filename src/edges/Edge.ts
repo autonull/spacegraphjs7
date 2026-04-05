@@ -50,6 +50,10 @@ export class Edge extends EventEmitter<EdgeEventMap> {
     };
     public isHighlighted = false;
     public isHovered = false;
+    public activity = 0;
+    public lastActivityTime = 0;
+
+    private readonly ACTIVITY_DECAY_RATE = 0.5;
 
     private _colorStart = new THREE.Color();
     private _colorEnd = new THREE.Color();
@@ -324,6 +328,20 @@ export class Edge extends EventEmitter<EdgeEventMap> {
 
     updateResolution(width: number, height: number): void {
         this.line?.material?.resolution.set(width, height);
+    }
+
+    pulse(intensity: number = 1.0): void {
+        this.activity = Math.max(this.activity, intensity);
+        this.lastActivityTime = performance.now();
+    }
+
+    onPreRender(dt: number): void {
+        this.activity *= Math.exp(-dt / this.ACTIVITY_DECAY_RATE);
+    }
+
+    activityDecay(now: number, window: number = 2000): number {
+        const dt = now - this.lastActivityTime;
+        return dt > 0 ? 1 / (1 + dt / window) : 0;
     }
 
     dispose(): void {

@@ -116,14 +116,24 @@ export class InteractionPlugin implements Plugin {
             this.dragHandler.startDrag(nodeResult.node);
             this.cursorManager.set('grabbing', 'drag');
         }
+
+        if (nodeResult?.node && e.button === 1) {
+            e.originalEvent?.preventDefault();
+            const node = nodeResult.node;
+            const radius = Math.max(
+                (((node.data as Record<string, unknown>)?.width as number) ?? 100) * 1.5,
+                150,
+            );
+            this.sg.cameraControls.flyTo(node.position, radius);
+        }
     }
 
     private handlePointerMove(e: any): void {
         this.raycaster.updateMousePosition(e.x, e.y);
 
         if (this.dragHandler.isDraggingNode()) {
-            const enableZAxis =
-                (window as Window & { __spacegraph_altKey?: boolean }).__spacegraph_altKey === true;
+            const state = this.sg.input.getState();
+            const enableZAxis = state.keysPressed.has('Alt');
             this.dragHandler.updateDrag(enableZAxis);
             return;
         }
@@ -185,8 +195,6 @@ export class InteractionPlugin implements Plugin {
     }
 
     private handleKeyDown(e: any): void {
-        (window as Window & { __spacegraph_altKey?: boolean }).__spacegraph_altKey = e.altKey;
-
         const activeEl = document.activeElement;
         const isEditingText =
             activeEl &&
@@ -300,15 +308,12 @@ export class InteractionPlugin implements Plugin {
                   )
                 : 150;
 
-        const controls = this.sg.cameraControls as CameraControls & {
-            hasZoomHistory?: boolean;
-            flyBack?: () => void;
-        };
+        const controls = this.sg.cameraControls;
         if (this.lastZoomedId === zoomId && controls.hasZoomHistory) {
-            controls.flyBack?.();
+            controls.flyBack();
             this.lastZoomedId = null;
         } else {
-            this.sg.cameraControls.flyTo(targetPos, targetRadius);
+            controls.zoomTo(targetPos, targetRadius);
             this.lastZoomedId = zoomId;
         }
     }

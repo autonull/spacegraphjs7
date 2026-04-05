@@ -37,6 +37,17 @@ import { AudioNode } from './nodes/AudioNode';
 import { MathNode } from './nodes/MathNode';
 import { ProcessNode } from './nodes/ProcessNode';
 import { CodeEditorNode } from './nodes/CodeEditorNode';
+import { StackingNode } from './nodes/StackingNode';
+import { GridNode } from './nodes/GridNode';
+import { SplitNode } from './nodes/SplitNode';
+import { BorderNode } from './nodes/BorderNode';
+import { SwitchNode } from './nodes/SwitchNode';
+import { VirtualGridNode } from './nodes/VirtualGridNode';
+import { PanelNode } from './nodes/PanelNode';
+import { PortNode } from './nodes/PortNode';
+import { VirtualGridNode } from './nodes/VirtualGridNode';
+import { PanelNode } from './nodes/PanelNode';
+import { PortNode } from './nodes/PortNode';
 
 import { Edge } from './edges/Edge';
 import { CurvedEdge } from './edges/CurvedEdge';
@@ -47,6 +58,8 @@ import { DynamicThicknessEdge } from './edges/DynamicThicknessEdge';
 import { AnimatedEdge } from './edges/AnimatedEdge';
 import { BundledEdge } from './edges/BundledEdge';
 import { InterGraphEdge } from './edges/InterGraphEdge';
+import { Wire } from './edges/Wire';
+import { Wire } from './edges/Wire';
 
 import { ForceLayout } from './plugins/ForceLayout';
 import { CircularLayout } from './plugins/CircularLayout';
@@ -92,18 +105,14 @@ const NODE_TYPES = [
     MathNode,
     ProcessNode,
     CodeEditorNode,
-] as const;
-
-const EDGE_TYPES = [
-    Edge,
-    CurvedEdge,
-    FlowEdge,
-    LabeledEdge,
-    DottedEdge,
-    DynamicThicknessEdge,
-    AnimatedEdge,
-    BundledEdge,
-    InterGraphEdge,
+    StackingNode,
+    GridNode,
+    SplitNode,
+    BorderNode,
+    SwitchNode,
+    VirtualGridNode,
+    PanelNode,
+    PortNode,
 ] as const;
 
 const LAYOUT_PLUGINS: [PluginCtor, string][] = [
@@ -337,6 +346,14 @@ export class SpaceGraph {
         this.lastTimestamp = timestamp;
 
         this.pluginManager.updateAll(delta);
+
+        for (const node of this.graph.nodes.values()) {
+            node.onPreRender?.(delta);
+        }
+        for (const edge of this.graph.edges.values()) {
+            (edge as any).onPreRender?.(delta);
+        }
+
         this.cameraControls.update();
         this.cullingManager.update();
         this.renderer.render();

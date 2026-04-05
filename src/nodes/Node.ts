@@ -21,6 +21,10 @@ export abstract class Node extends EventEmitter<NodeEventMap> {
     public scale: THREE.Vector3;
     abstract readonly object: THREE.Object3D;
 
+    activity = 0;
+    private readonly ACTIVITY_DECAY_RATE = 0.5;
+    isTouchable = true;
+
     constructor(sg?: SpaceGraph, spec?: NodeSpec);
     constructor(sgOrSpec?: SpaceGraph | NodeSpec, maybeSpec?: NodeSpec) {
         super();
@@ -99,6 +103,18 @@ export abstract class Node extends EventEmitter<NodeEventMap> {
     scaleUniform(s: number): this {
         this.object.scale.set(s, s, s);
         return this;
+    }
+
+    isDraggable(_localPos: THREE.Vector3): boolean {
+        return true;
+    }
+
+    pulse(intensity: number = 1.0): void {
+        this.activity = Math.max(this.activity, intensity);
+    }
+
+    onPreRender(_dt: number): void {
+        this.activity *= Math.exp(-_dt / this.ACTIVITY_DECAY_RATE);
     }
 
     animate(props: AnimationProps): this {

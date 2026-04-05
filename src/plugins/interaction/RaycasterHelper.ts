@@ -44,6 +44,7 @@ export class InteractionRaycaster {
         if (intersects.length === 0) return null;
 
         const node = this.getNodeFromMesh(intersects[0].object);
+        if (node && !node.isTouchable) return null;
         return node ? { node, point: intersects[0].point } : null;
     }
 
