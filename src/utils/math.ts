@@ -6,18 +6,6 @@ export const clamp = (value: number, min: number, max: number): number =>
 
 export const lerp = (start: number, end: number, t: number): number => start + (end - start) * t;
 
-export function lerpVector3(
-    out: { x: number; y: number; z: number },
-    a: { x: number; y: number; z: number },
-    b: { x: number; y: number; z: number },
-    t: number,
-): { x: number; y: number; z: number } {
-    out.x = lerp(a.x, b.x, t);
-    out.y = lerp(a.y, b.y, t);
-    out.z = lerp(a.z, b.z, t);
-    return out;
-}
-
 export const isObject = (item: unknown): item is Record<string, unknown> =>
     item !== null && typeof item === 'object' && !Array.isArray(item);
 
@@ -40,26 +28,6 @@ export function mergeDeep<T extends Record<string, unknown>>(
         }
     }
     return target;
-}
-
-export function toHexColor(numColor: number | string): string {
-    if (typeof numColor === 'string') {
-        if (numColor.startsWith('#')) return numColor;
-        if (numColor.startsWith('rgb')) {
-            const match = numColor.match(/\d+/g);
-            if (match?.length && match.length >= 3) {
-                const [r, g, b] = match.slice(0, 3).map((v) =>
-                    Math.max(0, Math.min(255, parseInt(v, 10)))
-                        .toString(16)
-                        .padStart(2, '0'),
-                );
-                return `#${r}${g}${b}`;
-            }
-        }
-        return numColor;
-    }
-    if (typeof numColor !== 'number' || isNaN(numColor) || numColor < 0) return '#000000';
-    return `#${Math.floor(numColor).toString(16).padStart(6, '0')}`;
 }
 
 export const randomRange = (min: number, max: number): number => Math.random() * (max - min) + min;

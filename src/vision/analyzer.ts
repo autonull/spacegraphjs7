@@ -1,3 +1,5 @@
+import { clamp } from '../utils/math';
+import { clamp } from '../utils/math';
 import { spawn } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -34,7 +36,7 @@ function buildVisionReport(
         nodeIds: i.nodeA ? [i.nodeA, i.nodeB] : i.nodeId ? [i.nodeId] : undefined,
     }));
 
-    const overallScore = Math.max(0, Math.min(100, (layoutScore + legibilityScore) / 2));
+    const overallScore = clamp((layoutScore + legibilityScore) / 2, 0, 100);
     const grade =
         overallScore >= 90
             ? 'A'

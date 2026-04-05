@@ -1,6 +1,7 @@
 // SpaceGraphJS - Heuristics Strategy
 // Vision analysis using WCAG, spatial indexing, and Fitts's law
 
+import { clamp } from '../../utils/math';
 import type { VisionStrategy, VisionReport, VisionContext } from '../types';
 import type { LegibilityResult, OverlapResult, HierarchyResult, ErgonomicsResult } from '../types';
 import { LegibilityAnalyzer } from '../analyzers/LegibilityAnalyzer';
@@ -158,7 +159,7 @@ export class HeuristicsStrategy implements VisionStrategy {
             });
         }
 
-        const clampedScore = Math.max(0, Math.min(100, score));
+        const clampedScore = clamp(score, 0, 100);
         const grade = getGrade(clampedScore);
 
         return { score: clampedScore, grade, issues };

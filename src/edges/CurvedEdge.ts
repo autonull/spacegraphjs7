@@ -27,9 +27,13 @@ export class CurvedEdge extends Edge {
         this.object.geometry = this.geometry;
     }
 
+    private _controlPoint = new THREE.Vector3();
+
+    private _controlPoint = new THREE.Vector3();
+
     private getControlPoint(): THREE.Vector3 {
         const curveStrength = ((this.data as EdgeData)?.curveStrength as number) ?? 50;
-        const dir = new THREE.Vector3().subVectors(this.target.position, this.source.position);
+        const dir = this._controlPoint.subVectors(this.target.position, this.source.position);
         const normal = dir.clone().setZ(0).normalize();
         return new THREE.Vector3()
             .addVectors(this.source.position, this.target.position)
@@ -45,8 +49,30 @@ export class CurvedEdge extends Edge {
         this.curve.v2.copy(this.target.position);
 
         const points = this.curve.getPoints(20);
-        const newBuffer = new Float32Array(points.flatMap((p) => [p.x, p.y, p.z]));
-        this.positionsBuffer.set(newBuffer);
+        let offset = 0;
+        for (const p of points) {
+            this.positionsBuffer[offset++] = p.x;
+            this.positionsBuffer[offset++] = p.y;
+            this.positionsBuffer[offset++] = p.z;
+        }
+
+        this.geometry.attributes.position.needsUpdate = true;
+    }
+
+    update() {
+        super.update();
+
+        this.curve.v0.copy(this.source.position);
+        this.curve.v1.copy(this.getControlPoint());
+        this.curve.v2.copy(this.target.position);
+
+        const points = this.curve.getPoints(20);
+        let offset = 0;
+        for (const p of points) {
+            this.positionsBuffer[offset++] = p.x;
+            this.positionsBuffer[offset++] = p.y;
+            this.positionsBuffer[offset++] = p.z;
+        }
 
         this.geometry.attributes.position.needsUpdate = true;
     }
