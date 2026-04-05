@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import { BaseLayout, type LayoutConfig, type LayoutOptions } from './BaseLayout';
-import type { Edge } from '../../edges/Edge';
 
 export class CircularLayout extends BaseLayout {
     readonly id = 'circular-layout';
@@ -28,9 +27,7 @@ export class CircularLayout extends BaseLayout {
             duration = this.config.duration ?? 1.0,
         } = options ?? {};
 
-        const nodes = Array.from(this.graph.getNodes()).filter(
-            (n) => !(n.data as Record<string, unknown>).pinned,
-        );
+        const nodes = this.getNonPinnedNodes();
         if (!nodes.length) return;
 
         const step = (2 * Math.PI) / nodes.length;
@@ -42,6 +39,7 @@ export class CircularLayout extends BaseLayout {
             this.applyPosition(node, targetPos, { animate, duration });
         });
 
-        for (const edge of this.graph.getEdges()) (edge as Edge).update?.();
+        this.updateEdges();
+        this.emitLayoutApplied({ duration });
     }
 }

@@ -1,61 +1,25 @@
-import type { SpaceGraph } from '../SpaceGraph';
-import type { Plugin } from '../core/PluginManager';
-import type { Graph } from '../core/Graph';
-import type { EventSystem } from '../core/events/EventSystem';
-import type { VisionReport } from '../vision/types';
+import { DOMOverlayPlugin, type DOMOverlayOptions } from './DOMOverlayPlugin';
 import { DOMUtils } from '../utils/DOMUtils';
+import type { VisionReport } from '../vision/types';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('VisionOverlay');
 
-export class VisionOverlayPlugin implements Plugin {
+export class VisionOverlayPlugin extends DOMOverlayPlugin {
     readonly id = 'vision-overlay';
     readonly name = 'Vision Overlay';
     readonly version = '1.0.0';
 
-    private sg!: SpaceGraph;
-    private container!: HTMLElement;
-    private rafId: number | null = null;
     private lastReport: VisionReport | null = null;
+    private modelsLoaded = false;
 
     public settings = {
         enabled: true,
         pollingRate: 3000,
     };
 
-    private startPolling() {
-        if (!this.settings.enabled) return;
-        this.runAnalysis();
-        setTimeout(() => this.startPolling(), this.settings.pollingRate);
-    }
-
-    private modelsLoaded = false;
-
-    private async runAnalysis() {
-        try {
-            if (!this.modelsLoaded) {
-                this.updateDOMState('Loading AI Models...');
-                await this.sg.vision.loadModels({
-                    tla: '/tla_model.onnx',
-                    che: '/che_model.onnx',
-                    odn: '/odn_model.onnx',
-                    vhs: '/vhs_model.onnx',
-                    eqa: '/eqa_model.onnx',
-                });
-                this.modelsLoaded = true;
-            }
-            this.lastReport = await this.sg.vision.analyzeVision();
-            this.updateDOM();
-        } catch (e) {
-            logger.error('Analysis error:', e);
-        }
-    }
-
-    init(sg: SpaceGraph, _graph: Graph, _events: EventSystem): void {
-        this.sg = sg;
-        if (typeof document === 'undefined') return;
-
-        this.container = DOMUtils.createElement('div', {
+    protected getOverlayOptions(): DOMOverlayOptions {
+        return {
             className: 'spacegraph-vision-overlay',
             style: {
                 position: 'absolute',
@@ -75,95 +39,101 @@ export class VisionOverlayPlugin implements Plugin {
                 pointerEvents: 'auto',
                 transition: 'all 0.3s ease',
             },
-        });
-        this.applyStyles();
+        };
+    }
 
-        // Attach to the same parent as the canvas
-        const domElement = this.sg.renderer.renderer.domElement;
-        if (domElement.parentElement) {
-            domElement.parentElement.style.position = 'relative';
-            domElement.parentElement.appendChild(this.container);
-        }
-
+    init(): void | Promise<void> {
+        super.init(this.sg, this.graph, this.events);
         this.updateDOM();
-
-        // Start autonomous polling
         setTimeout(() => this.startPolling(), 1000);
     }
 
-    private applyStyles() {
-        // Handled in DOMUtils.createElement
+    private startPolling(): void {
+        if (!this.settings.enabled) return;
+        this.runAnalysis();
+        setTimeout(() => this.startPolling(), this.settings.pollingRate);
+    }
+
+    private async runAnalysis(): Promise<void> {
+        try {
+            if (!this.modelsLoaded) {
+                this.updateDOMState('Loading AI Models...');
+                await this.sg.vision.loadModels({
+                    tla: '/tla_model.onnx',
+                    che: '/che_model.onnx',
+                    odn: '/odn_model.onnx',
+                    vhs: '/vhs_model.onnx',
+                    eqa: '/eqa_model.onnx',
+                });
+                this.modelsLoaded = true;
+            }
+            this.lastReport = await this.sg.vision.analyzeVision();
+            this.updateDOM();
+        } catch (e) {
+            logger.error('Analysis error:', e);
+        }
     }
 
     private getScoreColor(score: number): string {
-        if (score >= 90) return '#4ade80'; // Green
-        if (score >= 70) return '#facc15'; // Yellow
-        return '#f87171'; // Red
+        if (score >= 90) return '#4ade80';
+        if (score >= 70) return '#facc15';
+        return '#f87171';
     }
 
-    private updateDOMState(message: string) {
+    private updateDOMState(message: string): void {
         if (!this.container) return;
         this.container.innerHTML = `
-            <div style="font-weight: 600; font-size: 14px; margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
-                <div class="sg-spinner"></div> Vision Analysis
-            </div>
-            <div style="color: rgba(255,255,255,0.6);">${message}</div>
-        `;
+      <div style="font-weight: 600; font-size: 14px; margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+        <div class="sg-spinner"></div> Vision Analysis
+      </div>
+      <div style="color: rgba(255,255,255,0.6);">${message}</div>
+    `;
         this.injectSpinnerStyles();
     }
 
-    private updateDOM() {
+    private updateDOM(): void {
         if (!this.container) return;
-
         if (!this.lastReport) {
             this.updateDOMState('Initializing ONNX runtime...');
             return;
         }
 
         const { overall } = this.lastReport;
-
         this.container.innerHTML = `
-            <div style="font-weight: 600; font-size: 14px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
-                <div>👁️ Vision Quality</div>
-                <div style="color: ${this.getScoreColor(overall.score)}; font-weight: 700;">${Math.round(overall.score)}/100</div>
-            </div>
-
-            <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px;">
-                <!-- Hierarchy -->
-                <div style="display: flex; justify-content: space-between;">
-                    <span style="color: rgba(255,255,255,0.8);">Hierarchy Depth</span>
-                    <span style="color: ${this.getScoreColor(this.lastReport.hierarchy.score)}; font-variant-numeric: tabular-nums;">${this.lastReport.hierarchy.depth} levels</span>
-                </div>
-                
-                <!-- Legibility -->
-                <div style="display: flex; justify-content: space-between;">
-                    <span style="color: rgba(255,255,255,0.8);">Text Legibility</span>
-                    <span style="color: ${this.getScoreColor(this.lastReport.legibility.averageContrast)}; font-variant-numeric: tabular-nums;">${this.lastReport.legibility.wcagAA ? 'Pass' : 'Fail'}</span>
-                </div>
-
-                <!-- Overlaps -->
-                <div style="display: flex; justify-content: space-between;">
-                    <span style="color: rgba(255,255,255,0.8);">Node Overlaps</span>
-                    <span style="color: ${this.lastReport.overlap.overlapCount === 0 ? '#4ade80' : '#f87171'}; font-variant-numeric: tabular-nums;">
-                        ${this.lastReport.overlap.overlapCount}
-                    </span>
-                </div>
-            </div>
-
-            <button id="sg-vision-autofix" style="
-                width: 100%;
-                background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-                border: none;
-                border-radius: 6px;
-                padding: 10px;
-                color: white;
-                font-weight: 600;
-                cursor: pointer;
-                transition: opacity 0.2s;
-            ">
-                ✨ Auto-Fix Issues
-            </button>
-        `;
+      <div style="font-weight: 600; font-size: 14px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+        <div>Vision Quality</div>
+        <div style="color: ${this.getScoreColor(overall.score)}; font-weight: 700;">${Math.round(overall.score)}/100</div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px;">
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: rgba(255,255,255,0.8);">Hierarchy Depth</span>
+          <span style="color: ${this.getScoreColor(this.lastReport.hierarchy.score)}; font-variant-numeric: tabular-nums;">${this.lastReport.hierarchy.depth} levels</span>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: rgba(255,255,255,0.8);">Text Legibility</span>
+          <span style="color: ${this.getScoreColor(this.lastReport.legibility.averageContrast)}; font-variant-numeric: tabular-nums;">${this.lastReport.legibility.wcagAA ? 'Pass' : 'Fail'}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: rgba(255,255,255,0.8);">Node Overlaps</span>
+          <span style="color: ${this.lastReport.overlap.overlapCount === 0 ? '#4ade80' : '#f87171'}; font-variant-numeric: tabular-nums;">
+            ${this.lastReport.overlap.overlapCount}
+          </span>
+        </div>
+      </div>
+      <button id="sg-vision-autofix" style="
+        width: 100%;
+        background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+        border: none;
+        border-radius: 6px;
+        padding: 10px;
+        color: white;
+        font-weight: 600;
+        cursor: pointer;
+        transition: opacity 0.2s;
+      ">
+        Auto-Fix Issues
+      </button>
+    `;
 
         const btn = this.container.querySelector('#sg-vision-autofix');
         if (btn) {
@@ -171,36 +141,26 @@ export class VisionOverlayPlugin implements Plugin {
                 btn.innerHTML =
                     '<div class="sg-spinner" style="width: 14px; height: 14px; display: inline-block; margin-right: 6px;"></div> Fixing...';
                 await this.sg.vision.applyAutonomousFixes(this.lastReport!);
-                this.runAnalysis(); // re-eval
+                this.runAnalysis();
             });
-            btn.addEventListener('mouseenter', () => ((btn as HTMLElement).style.opacity = '0.9'));
-            btn.addEventListener('mouseleave', () => ((btn as HTMLElement).style.opacity = '1'));
         }
     }
 
-    private injectSpinnerStyles() {
+    private injectSpinnerStyles(): void {
         if (typeof document === 'undefined') return;
         if (!document.getElementById('sg-vision-styles')) {
             const style = DOMUtils.createElement('style');
             style.id = 'sg-vision-styles';
             style.innerHTML = `
-                @keyframes sg-spin { 100% { transform: rotate(360deg); } }
-                .sg-spinner {
-                    width: 12px; height: 12px;
-                    border: 2px solid rgba(255,255,255,0.2);
-                    border-top-color: #fff;
-                    border-radius: 50%;
-                    animation: sg-spin 1s linear infinite;
-                }
-            `;
+        @keyframes sg-spin { 100% { transform: rotate(360deg); } }
+        .sg-spinner { width: 12px; height: 12px; border: 2px solid rgba(255,255,255,0.2); border-top-color: #fff; border-radius: 50%; animation: sg-spin 1s linear infinite; }
+      `;
             document.head.appendChild(style);
         }
     }
 
     dispose(): void {
         this.settings.enabled = false;
-        if (this.container && this.container.parentElement) {
-            this.container.parentElement.removeChild(this.container);
-        }
+        super.dispose();
     }
 }

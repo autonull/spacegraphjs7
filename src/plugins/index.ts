@@ -1,4 +1,11 @@
 export { PluginManager, type Plugin } from '../core/PluginManager';
+export {
+    BaseSystemPlugin,
+    hasMethod,
+    createLoggerPrefix,
+    type SubscriptionHandle,
+} from './BaseSystemPlugin';
+export { DOMOverlayPlugin, type DOMOverlayOptions } from './DOMOverlayPlugin';
 export { BaseLayout } from './layouts/BaseLayout';
 export type { LayoutConfig, LayoutOptions } from './layouts/BaseLayout';
 

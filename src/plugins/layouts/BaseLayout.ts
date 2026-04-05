@@ -195,9 +195,11 @@ export abstract class BaseLayout implements Plugin {
      * Helper: Get non-pinned nodes
      */
     protected getNonPinnedNodes(): Node[] {
-        return Array.from(this.graph.getNodes()).filter(
-            (n) => !(n.data as Record<string, unknown>).pinned,
-        );
+        return Array.from(this.graph.getNodes()).filter((n) => !this.isPinned(n));
+    }
+
+    protected isPinned(node: Node): boolean {
+        return (node.data as Record<string, unknown>)?.pinned === true;
     }
 
     /**

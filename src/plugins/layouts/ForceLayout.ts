@@ -24,14 +24,22 @@ export class ForceLayout extends BaseLayout {
 
     protected defaultConfig(): ForceLayoutConfig {
         return {
-            repulsion: 10000, attraction: 0.01, damping: 0.9, gravity: 0.1,
-            minDistance: 50, maxDistance: 1000, iterations: 50, temperature: 100,
-            animate: true, duration: 1.0,
+            repulsion: 10000,
+            attraction: 0.01,
+            damping: 0.9,
+            gravity: 0.1,
+            minDistance: 50,
+            maxDistance: 1000,
+            iterations: 50,
+            temperature: 100,
+            animate: true,
+            duration: 1.0,
         };
     }
 
     async apply(options?: LayoutOptions): Promise<void> {
-        const { animate = this.config.animate ?? true, duration = this.config.duration ?? 1.0 } = options ?? {};
+        const { animate = this.config.animate ?? true, duration = this.config.duration ?? 1.0 } =
+            options ?? {};
         const nodes = Array.from(this.graph.getNodes()) as Node[];
         if (!nodes.length) return;
 
@@ -40,15 +48,18 @@ export class ForceLayout extends BaseLayout {
         for (const node of nodes) this.velocities.set(node.id, new THREE.Vector3());
 
         const totalIterations = (this.config as ForceLayoutConfig).iterations;
-        for (let i = 0; i < totalIterations; i++) { this.currentIteration = i + 1; this.simulateStep(nodes); }
+        for (let i = 0; i < totalIterations; i++) {
+            this.currentIteration = i + 1;
+            this.simulateStep(nodes);
+        }
 
         for (const node of nodes) {
-            if ((node.data as Record<string, unknown>)?.pinned) continue;
+            if (this.isPinned(node)) continue;
             this.applyPosition(node, node.position.clone(), { animate, duration });
         }
 
-        for (const edge of this.graph.getEdges()) (edge as Edge).update?.();
-        this.events.emit('layout:applied', { layout: this.id, duration, timestamp: Date.now() });
+        this.updateEdges();
+        this.emitLayoutApplied({ duration });
     }
 
     private simulateStep(nodes: Node[]): void {
@@ -59,7 +70,8 @@ export class ForceLayout extends BaseLayout {
         const maxForce = config.repulsion / (config.minDistance * config.minDistance);
         for (let i = 0; i < nodes.length; i++) {
             for (let j = i + 1; j < nodes.length; j++) {
-                const a = nodes[i], b = nodes[j];
+                const a = nodes[i],
+                    b = nodes[j];
                 const diff = new THREE.Vector3().subVectors(a.position, b.position);
                 const distSq = diff.lengthSq();
                 const dist = Math.sqrt(distSq);
@@ -88,11 +100,18 @@ export class ForceLayout extends BaseLayout {
         for (const node of nodes) {
             const force = forces.get(node.id)!;
             const dist = node.position.length();
-            if (dist > 0) force.add(node.position.clone().normalize().negate().multiplyScalar(config.gravity * dist));
+            if (dist > 0)
+                force.add(
+                    node.position
+                        .clone()
+                        .normalize()
+                        .negate()
+                        .multiplyScalar(config.gravity * dist),
+                );
         }
 
         for (const node of nodes) {
-            if ((node.data as Record<string, unknown>)?.pinned) continue;
+            if (this.isPinned(node)) continue;
             const velocity = this.velocities.get(node.id)!;
             velocity.add(forces.get(node.id)!).multiplyScalar(config.damping);
             const maxMove = config.temperature * (1 - this.simulationProgress);
@@ -106,5 +125,7 @@ export class ForceLayout extends BaseLayout {
         return total > 0 ? this.currentIteration / total : 0;
     }
 
-    dispose(): void { this.velocities.clear(); }
+    dispose(): void {
+        this.velocities.clear();
+    }
 }

@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import { BaseLayout, type LayoutConfig, type LayoutOptions } from './BaseLayout';
-import type { Edge } from '../../edges/Edge';
 
 export class GridLayout extends BaseLayout {
     readonly id = 'grid-layout';
@@ -30,9 +29,7 @@ export class GridLayout extends BaseLayout {
             duration = this.config.duration ?? 1.0,
         } = options ?? {};
 
-        const nodes = Array.from(this.graph.getNodes()).filter(
-            (n) => !(n.data as Record<string, unknown>).pinned,
-        );
+        const nodes = this.getNonPinnedNodes();
         if (!nodes.length) return;
 
         const cols = columns > 0 ? columns : Math.ceil(Math.sqrt(nodes.length));
@@ -45,6 +42,7 @@ export class GridLayout extends BaseLayout {
             this.applyPosition(node, targetPos, { animate, duration });
         });
 
-        for (const edge of this.graph.getEdges()) (edge as Edge).update?.();
+        this.updateEdges();
+        this.emitLayoutApplied({ duration });
     }
 }
