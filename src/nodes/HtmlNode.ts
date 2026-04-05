@@ -4,9 +4,9 @@ import type { NodeSpec, SpaceGraphNodeData, LabelLodLevel } from '../types';
 import type { SpaceGraph } from '../SpaceGraph';
 import { createQuickControls, type QuickControlButton } from './QuickControls';
 
-import { DOMNode } from './DOMNode';
+import { BaseContentNode } from './BaseContentNode';
 
-export class HtmlNode extends DOMNode {
+export class HtmlNode extends BaseContentNode {
     public static MIN_SIZE = { width: 80, height: 40 };
     public static CONTENT_SCALE_RANGE = { min: 0.3, max: 3.0 };
 
@@ -20,46 +20,39 @@ export class HtmlNode extends DOMNode {
     constructor(sg: SpaceGraph, spec: NodeSpec) {
         const width = (spec.data?.width as number) ?? 200;
         const height = (spec.data?.height as number) ?? 100;
-        const div = DOMUtils.createElement('div');
-        super(sg, spec, div, width, height, { visible: false });
+
+        super(sg, spec, {
+            defaultWidth: 200,
+            defaultHeight: 100,
+            materialParams: { visible: false },
+            className: `spacegraph-html-node node-common ${(spec.data?.className as string) ?? ''}`,
+            customStyles: {
+                backgroundColor: (spec.data?.color as string) ?? 'rgba(51, 102, 255, 0.8)',
+                color: 'white',
+                border: '2px solid white',
+                padding: '0',
+                justifyContent: 'center',
+                alignItems: 'center',
+                pointerEvents: (spec.data?.pointerEvents as string) ?? 'auto',
+                ...((spec.data?.style as Record<string, string>) ?? {}),
+            },
+            updatePositionOnInit: true,
+        });
 
         this.size = { width, height };
-
-        this.domElement.className = `spacegraph-html-node node-common ${(spec.data?.className as string) ?? ''}`;
         this.domElement.id = `node-html-${spec.id}`;
         this.domElement.dataset.nodeId = spec.id;
-
-        this.setupContainerStyles(width, height, 'dark', {
-            backgroundColor: (spec.data?.color as string) ?? 'rgba(51, 102, 255, 0.8)',
-            color: 'white',
-            border: '2px solid white',
-            padding: '0',
-            justifyContent: 'center',
-            alignItems: 'center',
-            pointerEvents: (spec.data?.pointerEvents as string) ?? 'auto',
-            ...((spec.data?.style as Record<string, string>) ?? {}),
-        });
 
         this._createInnerContent(spec);
         this._createControls();
         this._createResizeHandle();
 
         const data = (spec.data as SpaceGraphNodeData) ?? {};
-        if (data.contentScale) {
-            this.setContentScale(data.contentScale as number);
-        }
-
-        if (data.billboard) {
-            this.billboard = data.billboard as boolean;
-        }
-
-        if (data.labelLod) {
-            this.labelLod = data.labelLod as LabelLodLevel[];
-        }
+        if (data.contentScale) this.setContentScale(data.contentScale as number);
+        if (data.billboard) this.billboard = data.billboard as boolean;
+        if (data.labelLod) this.labelLod = data.labelLod as LabelLodLevel[];
 
         this._applyNodeBgColor((spec.data?.color as string) ?? 'rgba(51, 102, 255, 0.8)');
-
-        this.updatePosition(this.position.x, this.position.y, this.position.z);
     }
 
     private _createInnerContent(spec: NodeSpec): void {
