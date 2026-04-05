@@ -2,7 +2,7 @@ import { DOMUtils } from '../utils/DOMUtils';
 import type { NodeSpec } from '../types';
 import type { SpaceGraph } from '../SpaceGraph';
 
-import { DOMNode } from './DOMNode';
+import { BaseContentNode } from './BaseContentNode';
 
 /**
  * ChartNode — Canvas-based chart node.  Renders via Chart.js if available,
@@ -17,7 +17,7 @@ import { DOMNode } from './DOMNode';
  *   height    : pixel height (default 200)
  *   title     : optional chart title string
  */
-export class ChartNode extends DOMNode {
+export class ChartNode extends BaseContentNode {
     public canvasEl: HTMLCanvasElement;
     private chartInstance: unknown = null;
     private titleEl: HTMLElement | null = null;
@@ -29,17 +29,14 @@ export class ChartNode extends DOMNode {
         const title = spec.label ?? (spec.data?.title as string) ?? '';
         const totalH = h + ((title as string) ? 32 : 0);
 
-        const div = DOMUtils.createElement('div');
-        super(sg, spec, div, w, totalH, { opacity: 0.1 });
-
-        this.domElement.className = `spacegraph-chart-node theme-${theme}`;
-
-        this.setupContainerStyles(w, totalH, theme as 'light' | 'dark');
-
-        if (title) {
-            this.titleEl = this.createTitleBar(title, theme as 'light' | 'dark');
-            this.domElement.appendChild(this.titleEl);
-        }
+        super(sg, spec, {
+            defaultWidth: w,
+            defaultHeight: totalH,
+            defaultTheme: theme as 'dark' | 'light',
+            materialParams: { opacity: 0.1 },
+            className: `spacegraph-chart-node theme-${theme}`,
+            createTitleBar: title || undefined,
+        });
 
         const canvasContainer = DOMUtils.createElement('div');
         Object.assign(canvasContainer.style, {
@@ -54,6 +51,10 @@ export class ChartNode extends DOMNode {
         });
         canvasContainer.appendChild(this.canvasEl);
         this.domElement.appendChild(canvasContainer);
+
+        if (title) {
+            this.titleEl = this.domElement.querySelector('.sg-node-title') as HTMLElement;
+        }
 
         this._renderChart(spec);
     }

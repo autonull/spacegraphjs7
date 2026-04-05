@@ -3,7 +3,7 @@ import { createLogger } from '../utils/logger';
 import type { NodeSpec } from '../types';
 import type { SpaceGraph } from '../SpaceGraph';
 
-import { DOMNode } from './DOMNode';
+import { BaseContentNode } from './BaseContentNode';
 
 const logger = createLogger('MathNode');
 
@@ -25,37 +25,32 @@ async function loadKatex() {
     return katexPromise;
 }
 
-export class MathNode extends DOMNode {
+export class MathNode extends BaseContentNode {
     private mathContent: string = '\\int_0^\\infty e^{-x^2} dx = \\frac{\\sqrt{\\pi}}{2}';
 
     constructor(sg: SpaceGraph, spec: NodeSpec) {
-        const div = DOMUtils.createElement('div');
-
-        const w = (spec.data?.width ?? 300) as number;
-        const h = (spec.data?.height ?? 100) as number;
-
-        super(sg, spec, div, w, h, { opacity: 0.0 });
+        super(sg, spec, {
+            defaultWidth: 300,
+            defaultHeight: 100,
+            materialParams: { opacity: 0.0 },
+            className: 'spacegraph-math-node',
+            customStyles: {
+                backgroundColor: (spec.data?.color as string) ?? 'rgba(0, 0, 0, 0.8)',
+                border: '2px solid #555',
+                padding: '15px',
+                justifyContent: 'center',
+                alignItems: 'center',
+                fontSize: spec.data?.fontSize ? `${spec.data.fontSize}px` : '24px',
+            },
+            updatePositionOnInit: true,
+        });
 
         if (spec.data?.math) {
             this.mathContent = spec.data.math as string;
         }
 
-        this.domElement.className = 'spacegraph-math-node';
-
-        this.setupContainerStyles(w, h, 'dark', {
-            backgroundColor: (spec.data?.color as string) ?? 'rgba(0, 0, 0, 0.8)',
-            border: '2px solid #555',
-            padding: '15px',
-            justifyContent: 'center',
-            alignItems: 'center',
-            fontSize: spec.data?.fontSize ? `${spec.data.fontSize}px` : '24px',
-        });
-
         this.domElement.textContent = 'Loading Math...';
-
         this.renderMath();
-
-        this.updatePosition(this.position.x, this.position.y, this.position.z);
     }
 
     private async renderMath() {

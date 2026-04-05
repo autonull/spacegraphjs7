@@ -2,34 +2,32 @@ import { DOMUtils } from '../utils/DOMUtils';
 import type { NodeSpec } from '../types';
 import type { SpaceGraph } from '../SpaceGraph';
 
-import { DOMNode } from './DOMNode';
+import { BaseContentNode } from './BaseContentNode';
 
-export class ProcessNode extends DOMNode {
+export class ProcessNode extends BaseContentNode {
     private cpuBar: HTMLDivElement;
     private memBar: HTMLDivElement;
     private cpuText: HTMLSpanElement;
     private memText: HTMLSpanElement;
 
     constructor(sg: SpaceGraph, spec: NodeSpec) {
-        const w = (spec.data?.width as number) ?? 200;
-        const h = (spec.data?.height as number) ?? 120;
-
-        const div = DOMUtils.createElement('div');
-        div.className = 'sg-process-node';
-
-        super(sg, spec, div, w, h, { opacity: 0.1 });
+        super(sg, spec, {
+            defaultWidth: 200,
+            defaultHeight: 120,
+            materialParams: { opacity: 0.1 },
+            className: 'sg-process-node',
+            customStyles: {
+                backgroundColor: 'rgba(15, 23, 42, 0.85)',
+                padding: '10px',
+                fontFamily: 'monospace',
+                justifyContent: 'space-between',
+            },
+        });
 
         const pid = (spec.data?.pid as string) ?? '???';
         const name = spec.label ?? (spec.data?.name as string) ?? 'unknown_process';
         const cpu = (spec.data?.cpu as number) ?? 0;
         const mem = (spec.data?.memory as number) ?? 0;
-
-        this.setupContainerStyles(w, h, 'dark', {
-            backgroundColor: 'rgba(15, 23, 42, 0.85)',
-            padding: '10px',
-            fontFamily: 'monospace',
-            justifyContent: 'space-between',
-        });
 
         const header = DOMUtils.createElement('div');
         header.style.display = 'flex';
@@ -47,7 +45,7 @@ export class ProcessNode extends DOMNode {
 
         header.appendChild(titleSpan);
         header.appendChild(pidSpan);
-        div.appendChild(header);
+        this.domElement.appendChild(header);
 
         const stats = DOMUtils.createElement('div');
         stats.style.display = 'flex';
@@ -64,7 +62,7 @@ export class ProcessNode extends DOMNode {
         this.memText = memRow.text;
         stats.appendChild(memRow.container);
 
-        div.appendChild(stats);
+        this.domElement.appendChild(stats);
 
         this.updateBars(cpu, mem);
     }
@@ -134,7 +132,8 @@ export class ProcessNode extends DOMNode {
         super.updateSpec(updates);
         if (updates.data) {
             const cpu = (updates.data.cpu as number) ?? parseFloat(this.cpuText.textContent ?? '0');
-            const mem = (updates.data.memory as number) ?? parseFloat(this.memText.textContent ?? '0');
+            const mem =
+                (updates.data.memory as number) ?? parseFloat(this.memText.textContent ?? '0');
             this.updateBars(cpu, mem);
         }
         return this;

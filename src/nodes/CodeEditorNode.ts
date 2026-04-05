@@ -5,7 +5,7 @@ import { createLogger } from '../utils/logger';
 import type { NodeSpec } from '../types';
 import type { SpaceGraph } from '../SpaceGraph';
 
-import { DOMNode } from './DOMNode';
+import { BaseContentNode } from './BaseContentNode';
 
 const logger = createLogger('CodeEditorNode');
 
@@ -19,32 +19,33 @@ const logger = createLogger('CodeEditorNode');
  *   width    : pixel width  (default 600)
  *   height   : pixel height (default 400)
  */
-export class CodeEditorNode extends DOMNode {
+export class CodeEditorNode extends BaseContentNode {
     private editorContainer: HTMLDivElement;
     private editorInstance: unknown = null;
 
     constructor(sg: SpaceGraph, spec: NodeSpec) {
         const w = (spec.data?.width as number) ?? 600;
         const h = (spec.data?.height as number) ?? 400;
-
-        const div = DOMUtils.createElement('div');
-        super(sg, spec, div, w, h, { visible: false });
-
-        this.domElement.className = 'spacegraph-code-editor-node';
         const isLight = (spec.data?.theme as string) === 'vs';
 
-        this.setupContainerStyles(w, h, isLight ? 'light' : 'dark', {
-            backgroundColor: isLight ? '#fffffe' : '#1e1e1e',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
+        super(sg, spec, {
+            defaultWidth: 600,
+            defaultHeight: 400,
+            materialParams: { visible: false },
+            className: 'spacegraph-code-editor-node',
+            customStyles: {
+                backgroundColor: isLight ? '#fffffe' : '#1e1e1e',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+            },
+            createTitleBar: spec.label ?? (spec.data?.language as string) ?? 'Code Editor',
+            updatePositionOnInit: true,
         });
 
-        const titleBar = this.createTitleBar(
-            spec.label ?? (spec.data?.language as string) ?? 'Code Editor',
-            isLight ? 'light' : 'dark',
-        );
-        titleBar.style.backgroundColor = isLight ? '#f3f3f3' : '#2d2d2d';
-        titleBar.style.color = isLight ? '#333' : '#ccc';
-        this.domElement.appendChild(titleBar);
+        const titleBar = this.domElement.querySelector('.sg-node-title') as HTMLElement;
+        if (titleBar) {
+            titleBar.style.backgroundColor = isLight ? '#f3f3f3' : '#2d2d2d';
+            titleBar.style.color = isLight ? '#333' : '#ccc';
+        }
 
         this.editorContainer = DOMUtils.createElement('div');
         Object.assign(this.editorContainer.style, {
@@ -56,8 +57,6 @@ export class CodeEditorNode extends DOMNode {
         this.domElement.appendChild(this.editorContainer);
 
         this.initEditor(spec);
-
-        this.updatePosition(this.position.x, this.position.y, this.position.z);
     }
 
     private initEditor(spec: NodeSpec) {

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-import { Node } from './Node';
+import { BaseInstancedNode } from './BaseInstancedNode';
 import type { NodeSpec } from '../types';
 import type { SpaceGraph } from '../SpaceGraph';
 
@@ -14,25 +14,16 @@ const positionHelper = new THREE.Vector3();
 const rotationHelper = new THREE.Quaternion();
 const scaleHelper = new THREE.Vector3(1, 1, 1);
 
-export class InstancedShapeNode extends Node {
-    private _object = new THREE.Object3D();
-    get object(): THREE.Object3D {
-        return this._object;
-    }
-
+export class InstancedShapeNode extends BaseInstancedNode {
     private instanceIndex: number = -1;
-    private colorHex: number;
 
     constructor(sg: SpaceGraph, spec: NodeSpec) {
         super(sg, spec);
-        this.colorHex = (spec.data?.color as number) ?? 0x3366ff;
-
         this.registerInstance();
-
         this.updatePosition(this.position.x, this.position.y, this.position.z);
     }
 
-    private registerInstance() {
+    protected registerInstance() {
         const capacity = capacityRegistry.get(this.sg!) ?? 0;
         const count = nodeCountRegistry.get(this.sg!) ?? 0;
 
@@ -111,20 +102,9 @@ export class InstancedShapeNode extends Node {
         }
     }
 
-    updatePosition(x: number, y: number, z: number): this {
-        super.updatePosition(x, y, z);
+    protected updateInstanceTransform() {
         this.updateInstanceMatrix();
-        return this;
-    }
-
-    updateSpec(updates: Partial<NodeSpec>): this {
-        super.updateSpec(updates);
-
-        if (updates.data?.color) {
-            this.colorHex = updates.data.color as number;
-            this.updateInstanceColor();
-        }
-        return this;
+        this.updateInstanceColor();
     }
 
     dispose(): void {

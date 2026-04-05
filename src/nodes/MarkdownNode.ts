@@ -2,12 +2,12 @@ import { DOMUtils } from '../utils/DOMUtils';
 import type { NodeSpec } from '../types';
 import type { SpaceGraph } from '../SpaceGraph';
 
-import { DOMNode } from './DOMNode';
+import { BaseContentNode } from './BaseContentNode';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('MarkdownNode');
 
-export class MarkdownNode extends DOMNode {
+export class MarkdownNode extends BaseContentNode {
     private _ro?: ResizeObserver;
 
     constructor(sg: SpaceGraph, spec: NodeSpec) {
@@ -15,9 +15,22 @@ export class MarkdownNode extends DOMNode {
         const color = (spec.data?.color as string) ?? '#1e293b';
         const txtColor = (spec.data?.textColor as string) ?? '#f1f5f9';
         const md = (spec.data?.markdown as string) ?? spec.label ?? '';
+        const h = Math.max(100, (md as string).split('\n').length * 20 + 32);
 
-        const div = DOMUtils.createElement('div', {
+        super(sg, spec, {
+            defaultWidth: w,
+            defaultHeight: h,
+            materialParams: { visible: false },
             className: 'sg-markdown-node sg-node',
+            customStyles: {
+                background: color,
+                color: txtColor,
+                padding: '16px',
+                fontSize: '14px',
+                lineHeight: '1.5',
+                overflow: 'auto',
+                border: '1px solid rgba(255,255,255,0.2)',
+            },
         });
 
         const style = DOMUtils.createElement('style');
@@ -30,10 +43,10 @@ export class MarkdownNode extends DOMNode {
             .sg-markdown-node blockquote { border-left: 4px solid #475569; margin: 0; padding-left: 12px; color: #cbd5e1; }
             .sg-markdown-node img { max-width: 100%; border-radius: 4px; }
         `;
-        div.appendChild(style);
+        this.domElement.appendChild(style);
 
         const contentDiv = DOMUtils.createElement('div');
-        div.appendChild(contentDiv);
+        this.domElement.appendChild(contentDiv);
 
         contentDiv.innerHTML = 'Loading markdown...';
         import('marked')
@@ -44,19 +57,6 @@ export class MarkdownNode extends DOMNode {
                 contentDiv.innerHTML = 'Failed to load markdown renderer';
                 logger.error('Failed to load marked:', err);
             });
-        const h = Math.max(100, (md as string).split('\n').length * 20 + 32);
-
-        super(sg, spec, div, w, h, { visible: false });
-
-        this.setupContainerStyles(w, h, 'dark', {
-            background: color,
-            color: txtColor,
-            padding: '16px',
-            fontSize: '14px',
-            lineHeight: '1.5',
-            overflow: 'auto',
-            border: '1px solid rgba(255,255,255,0.2)',
-        });
 
         if (typeof ResizeObserver !== 'undefined') {
             const ro = new ResizeObserver((entries) => {

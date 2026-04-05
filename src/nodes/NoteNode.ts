@@ -2,7 +2,7 @@ import { DOMUtils } from '../utils/DOMUtils';
 import type { NodeSpec } from '../types';
 import type { SpaceGraph } from '../SpaceGraph';
 
-import { DOMNode } from './DOMNode';
+import { BaseContentNode } from './BaseContentNode';
 
 /**
  * NoteNode — Sticky-note style editable text node.
@@ -14,28 +14,30 @@ import { DOMNode } from './DOMNode';
  *   height     : pixel height (default 160)
  *   editable   : boolean — whether text is directly editable (default true)
  */
-export class NoteNode extends DOMNode {
+export class NoteNode extends BaseContentNode {
     constructor(sg: SpaceGraph, spec: NodeSpec) {
         const color = (spec.data?.color ?? '#fef08a') as string;
         const w = (spec.data?.width ?? 200) as number;
         const h = (spec.data?.height ?? 160) as number;
 
-        const div = DOMUtils.createElement('div');
-        super(sg, spec, div, w, h, { visible: false });
+        super(sg, spec, {
+            defaultWidth: 200,
+            defaultHeight: 160,
+            defaultTheme: 'light',
+            materialParams: { visible: false },
+            className: 'sg-note-node',
+            customStyles: {
+                backgroundColor: color,
+                borderRadius: '4px',
+                boxShadow: '2px 4px 12px rgba(0,0,0,0.25)',
+                padding: '10px',
+                userSelect: 'text',
+                cursor: spec.data?.editable !== false ? 'text' : 'default',
+            },
+        });
 
         const text = (spec.data?.text ?? spec.label ?? '') as string;
         const editable = spec.data?.editable !== false;
-
-        this.domElement.className = 'sg-note-node';
-
-        this.setupContainerStyles(w, h, 'light', {
-            backgroundColor: color,
-            borderRadius: '4px',
-            boxShadow: '2px 4px 12px rgba(0,0,0,0.25)',
-            padding: '10px',
-            userSelect: 'text',
-            cursor: editable ? 'text' : 'default',
-        });
 
         const titleEl = DOMUtils.createElement('div', {
             className: 'sg-note-title sg-node-title',

@@ -2,7 +2,7 @@ import { DOMUtils } from '../utils/DOMUtils';
 import type { NodeSpec } from '../types';
 import type { SpaceGraph } from '../SpaceGraph';
 
-import { DOMNode } from './DOMNode';
+import { BaseContentNode } from './BaseContentNode';
 
 /**
  * DataNode — Displays arbitrary JSON/objects as a structured, interactive view.
@@ -14,7 +14,7 @@ import { DOMNode } from './DOMNode';
  *   maxHeight : max pixel height before scrolling (default 300)
  *   theme     : 'dark' | 'light' (default 'dark')
  */
-export class DataNode extends DOMNode {
+export class DataNode extends BaseContentNode {
     private contentContainer!: HTMLElement;
 
     constructor(sg: SpaceGraph, spec: NodeSpec) {
@@ -22,20 +22,20 @@ export class DataNode extends DOMNode {
         const maxH = (spec.data?.maxHeight as number) ?? 300;
         const theme = (spec.data?.theme as string) ?? 'dark';
 
-        const div = DOMUtils.createElement('div');
-        super(sg, spec, div, w, maxH, { opacity: 0.1 });
-
-        this.domElement.className = `spacegraph-data-node theme-${theme}`;
-
-        this.setupContainerStyles(w, maxH, theme as 'light' | 'dark', {
-            height: 'auto',
-            maxHeight: `${maxH}px`,
-            fontFamily: 'monospace, "Courier New", Courier',
-            fontSize: '12px',
+        super(sg, spec, {
+            defaultWidth: 250,
+            defaultHeight: maxH,
+            defaultTheme: theme as 'dark' | 'light',
+            materialParams: { opacity: 0.1 },
+            className: `spacegraph-data-node theme-${theme}`,
+            customStyles: {
+                height: 'auto',
+                maxHeight: `${maxH}px`,
+                fontFamily: 'monospace, "Courier New", Courier',
+                fontSize: '12px',
+            },
+            createTitleBar: spec.label ?? 'JSON Data',
         });
-
-        const header = this.createTitleBar(spec.label ?? 'JSON Data', theme as 'light' | 'dark');
-        this.domElement.appendChild(header);
 
         this.contentContainer = DOMUtils.createElement('div', {
             style: {
@@ -48,7 +48,6 @@ export class DataNode extends DOMNode {
         });
 
         this.domElement.appendChild(this.contentContainer);
-
         this._renderData(
             spec.data?.data ?? spec.data?.fields,
             spec.data?.expanded !== false,
