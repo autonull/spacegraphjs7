@@ -16,7 +16,6 @@ export {
     RAD2DEG,
     clamp,
     lerp,
-    lerpVector3,
     mergeDeep,
     toHexColor,
     randomRange,
