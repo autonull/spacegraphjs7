@@ -84,7 +84,7 @@ export class SceneNode extends Node {
 
                 this.wrapper.add(this.proxyMesh);
 
-                this.sg.events.emit('node:loaded', { id: this.id });
+                this.sg!.events.emit('node:loaded', { id: this.id });
             },
             undefined,
             (error) => {

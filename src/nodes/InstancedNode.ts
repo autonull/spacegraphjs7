@@ -27,7 +27,7 @@ export class InstancedNode extends Node {
     }
 
     private registerWithInstancedRenderer() {
-        const instancedRenderer = this.sg.renderer.instancedRenderer;
+        const instancedRenderer = this.sg!.renderer.instancedRenderer;
         if (instancedRenderer) {
             this.instanceSlot = instancedRenderer.getNextAvailableSlot(this.geometryFamily);
             if (this.instanceSlot !== -1) {
@@ -38,7 +38,7 @@ export class InstancedNode extends Node {
 
     protected updateInstanceTransform() {
         if (this.instanceSlot === -1) return;
-        const instancedRenderer = this.sg.renderer.instancedRenderer;
+        const instancedRenderer = this.sg!.renderer.instancedRenderer;
         if (instancedRenderer) {
             instancedRenderer.updateInstanceAt(
                 this.geometryFamily,
@@ -70,7 +70,7 @@ export class InstancedNode extends Node {
 
     dispose(): void {
         super.dispose();
-        const instancedRenderer = this.sg.renderer.instancedRenderer;
+        const instancedRenderer = this.sg!.renderer.instancedRenderer;
         if (instancedRenderer && this.instanceSlot !== -1) {
             instancedRenderer.releaseSlot(this.geometryFamily, this.instanceSlot);
             this.instanceSlot = -1;

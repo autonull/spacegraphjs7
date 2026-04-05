@@ -21,7 +21,7 @@ export class VirtualGridNode<T = unknown> extends GroupNode {
     cellHeight = 150;
 
     constructor(sg?: SpaceGraph, spec?: NodeSpec) {
-        super(sg, spec);
+        super(sg!, spec!);
         if (spec?.data) {
             const d = spec.data as Record<string, unknown>;
             if (typeof d.cellWidth === 'number') this.cellWidth = d.cellWidth;

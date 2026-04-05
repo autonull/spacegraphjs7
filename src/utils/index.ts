@@ -35,5 +35,4 @@ export {
     hexToRgb,
     toHexColor,
     sortByFrequency,
-    getColorsByFrequency,
 } from './color';

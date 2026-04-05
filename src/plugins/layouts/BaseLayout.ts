@@ -25,6 +25,37 @@ export interface LayoutOptions {
     animate?: boolean;
     duration?: number;
     skipPinned?: boolean;
+    radiusX?: number;
+    radiusY?: number;
+    startAngle?: number;
+    z?: number;
+    clusterBy?: string;
+    clusterRadius?: number;
+    nodeRadius?: number;
+    projection?: string;
+    radius?: number;
+    mapWidth?: number;
+    mapHeight?: number;
+    columns?: number;
+    spacingX?: number;
+    spacingY?: number;
+    offsetX?: number;
+    offsetY?: number;
+    rootId?: string;
+    levelHeight?: number;
+    nodeSpacing?: number;
+    direction?: string;
+    baseRadius?: number;
+    radiusStep?: number;
+    scale?: number;
+    dimensions?: number;
+    timeField?: string;
+    orientation?: string;
+    spacing?: number;
+    scaleFactor?: number;
+    staggerLayout?: boolean;
+    staggerAmount?: number;
+    [key: string]: unknown;
 }
 
 /**

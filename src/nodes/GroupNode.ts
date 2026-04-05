@@ -94,7 +94,7 @@ export class GroupNode extends Node {
     private _getParentId(node?: Node): string | undefined {
         if (!node) return undefined;
         const n = node as unknown as NodeLike;
-        return n.data?.parent ?? n.parameters?.parent ?? n.parent;
+        return (n.data?.parent as string) ?? (n.parameters?.parent as string) ?? n.parent;
     }
 
     private _isAncestorHidden(): boolean {

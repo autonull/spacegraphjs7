@@ -4,7 +4,7 @@ import { CSS3DObject } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
 
 function disposeMaterial(material: THREE.Material): void {
     material.dispose();
-    const matRecord = material as Record<string, unknown>;
+    const matRecord = material as unknown as Record<string, unknown>;
     for (const key of Object.keys(material)) {
         const value = matRecord[key];
         if (value && typeof value === 'object' && 'isTexture' in value && value.isTexture) {

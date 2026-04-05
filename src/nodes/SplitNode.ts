@@ -4,7 +4,7 @@ import type { NodeSpec } from '../types';
 
 export class SplitNode extends LayoutNode {
     constructor(sg?: SpaceGraph, spec?: NodeSpec) {
-        super(sg, spec as NodeSpec, splitStrategy, {
+        super(sg!, spec as NodeSpec, splitStrategy, {
             splitRatio: 0.5,
             splitAxis: 'horizontal',
         });

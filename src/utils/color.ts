@@ -8,9 +8,18 @@ import { clamp } from './math';
 export function getRelativeLuminance(
     color: THREE.Color | { r: number; g: number; b: number },
 ): number {
-    const r = 'r' in color ? color.r : color.r / 255;
-    const g = 'g' in color ? color.g : color.g / 255;
-    const b = 'b' in color ? color.b : color.b / 255;
+    const r =
+        'r' in color
+            ? (color as { r: number; g: number; b: number }).r
+            : (color as THREE.Color).r / 255;
+    const g =
+        'g' in color
+            ? (color as { r: number; g: number; b: number }).g
+            : (color as THREE.Color).g / 255;
+    const b =
+        'b' in color
+            ? (color as { r: number; g: number; b: number }).b
+            : (color as THREE.Color).b / 255;
 
     const rLinear = r <= 0.03928 ? r / 12.92 : Math.pow((r + 0.055) / 1.055, 2.4);
     const gLinear = g <= 0.03928 ? g / 12.92 : Math.pow((g + 0.055) / 1.055, 2.4);
@@ -123,8 +132,3 @@ export function sortByFrequency<T>(items: T[]): T[] {
         .sort((a, b) => b[1] - a[1])
         .map((x) => x[0]);
 }
-
-/**
- * @deprecated Use `sortByFrequency` instead.
- */
-export const getColorsByFrequency = sortByFrequency;

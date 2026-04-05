@@ -44,8 +44,6 @@ export class DynamicThicknessEdge extends Edge {
     update(): void {
         if (!this._initialized) return;
         super.update();
-        if (!this._initialized) return;
-        super.update();
         const pool = MathPool.getInstance();
         const { source, target, data } = this;
         const { weight = 0.5, minRadius = 1, maxRadius = 8 } = data;

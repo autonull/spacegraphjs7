@@ -16,7 +16,9 @@ const scaleHelper = new THREE.Vector3(1, 1, 1);
 
 export class InstancedShapeNode extends Node {
     private _object = new THREE.Object3D();
-    get object(): THREE.Object3D { return this._object; }
+    get object(): THREE.Object3D {
+        return this._object;
+    }
 
     private instanceIndex: number = -1;
     private colorHex: number;
@@ -31,25 +33,25 @@ export class InstancedShapeNode extends Node {
     }
 
     private registerInstance() {
-        const capacity = capacityRegistry.get(this.sg) ?? 0;
-        const count = nodeCountRegistry.get(this.sg) ?? 0;
+        const capacity = capacityRegistry.get(this.sg!) ?? 0;
+        const count = nodeCountRegistry.get(this.sg!) ?? 0;
 
-        if (!instancedMeshRegistry.has(this.sg) || count >= capacity) {
+        if (!instancedMeshRegistry.has(this.sg!) || count >= capacity) {
             this.rebuildInstancedMesh(Math.max(1000, capacity * 2));
         }
 
-        const mesh = instancedMeshRegistry.get(this.sg)!;
-        this.instanceIndex = nodeCountRegistry.get(this.sg) ?? 0;
-        nodeCountRegistry.set(this.sg, this.instanceIndex + 1);
+        const mesh = instancedMeshRegistry.get(this.sg!)!;
+        this.instanceIndex = nodeCountRegistry.get(this.sg!) ?? 0;
+        nodeCountRegistry.set(this.sg!, this.instanceIndex + 1);
         nodeIndexRegistry.set(this, this.instanceIndex);
 
         this.updateInstanceMatrix();
         this.updateInstanceColor();
-        mesh.count = nodeCountRegistry.get(this.sg)!;
+        mesh.count = nodeCountRegistry.get(this.sg!)!;
     }
 
     private rebuildInstancedMesh(newCapacity: number) {
-        const oldMesh = instancedMeshRegistry.get(this.sg);
+        const oldMesh = instancedMeshRegistry.get(this.sg!);
         const geometry = new THREE.SphereGeometry(20, 16, 16);
         const material = new THREE.MeshBasicMaterial();
         const newMesh = new THREE.InstancedMesh(geometry, material, newCapacity);
@@ -73,7 +75,7 @@ export class InstancedShapeNode extends Node {
                 oldMesh.getColorAt(i, colorHelper);
                 newMesh.setColorAt(i, colorHelper);
             }
-            this.sg.renderer.scene.remove(oldMesh);
+            this.sg!.renderer.scene.remove(oldMesh);
             oldMesh.geometry.dispose();
             (oldMesh.material as THREE.Material).dispose();
             oldMesh.dispose();
@@ -81,14 +83,14 @@ export class InstancedShapeNode extends Node {
             newMesh.count = 0;
         }
 
-        instancedMeshRegistry.set(this.sg, newMesh);
-        capacityRegistry.set(this.sg, newCapacity);
-        this.sg.renderer.scene.add(newMesh);
+        instancedMeshRegistry.set(this.sg!, newMesh);
+        capacityRegistry.set(this.sg!, newCapacity);
+        this.sg!.renderer.scene.add(newMesh);
     }
 
     private updateInstanceMatrix() {
         if (this.instanceIndex === -1) return;
-        const mesh = instancedMeshRegistry.get(this.sg);
+        const mesh = instancedMeshRegistry.get(this.sg!);
         if (!mesh) return;
 
         positionHelper.copy(this.position);
@@ -99,7 +101,7 @@ export class InstancedShapeNode extends Node {
 
     private updateInstanceColor() {
         if (this.instanceIndex === -1) return;
-        const mesh = instancedMeshRegistry.get(this.sg);
+        const mesh = instancedMeshRegistry.get(this.sg!);
         if (!mesh) return;
 
         colorHelper.setHex(this.colorHex);
@@ -127,7 +129,7 @@ export class InstancedShapeNode extends Node {
 
     dispose(): void {
         if (this.instanceIndex !== -1) {
-            const mesh = instancedMeshRegistry.get(this.sg);
+            const mesh = instancedMeshRegistry.get(this.sg!);
             if (mesh) {
                 scaleHelper.set(0, 0, 0);
                 matrixHelper.compose(this.position, rotationHelper, scaleHelper);

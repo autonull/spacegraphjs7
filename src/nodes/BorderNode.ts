@@ -17,7 +17,7 @@ export class BorderNode extends LayoutNode {
     regions = new Map<BorderRegion, string>();
 
     constructor(sg?: SpaceGraph, spec?: NodeSpec) {
-        super(sg, spec as NodeSpec, borderStrategy, { regions: {} });
+        super(sg!, spec as NodeSpec, borderStrategy, { regions: {} });
         if (spec?.data?.regions) {
             const r = (spec.data as Record<string, unknown>).regions as Record<string, string>;
             for (const [key, value] of Object.entries(r)) {

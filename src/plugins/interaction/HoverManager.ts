@@ -26,14 +26,14 @@ export class HoverManager {
         if (node === this.hoveredNode) return;
 
         if (this.hoveredNode && this.hoveredNode.object) {
-            this.sg.events.emit('node:pointerleave', { node: this.hoveredNode });
+            this.sg.events.emit('node:pointerleave', { node: this.hoveredNode } as any);
             this.hoveredNode.object.scale.divideScalar(HoverManager.HOVER_SCALE);
         }
 
         this.hoveredNode = node;
 
         if (this.hoveredNode && this.hoveredNode.object) {
-            this.sg.events.emit('node:pointerenter', { node: this.hoveredNode });
+            this.sg.events.emit('node:pointerenter', { node: this.hoveredNode } as any);
             this.hoveredNode.object.scale.multiplyScalar(HoverManager.HOVER_SCALE);
         }
     }
@@ -42,13 +42,13 @@ export class HoverManager {
         if (edge === this.hoveredEdge) return;
 
         if (this.hoveredEdge) {
-            this.sg.events.emit('edge:pointerleave', { edge: this.hoveredEdge });
+            this.sg.events.emit('edge:pointerleave', { edge: this.hoveredEdge } as any);
         }
 
         this.hoveredEdge = edge;
 
         if (this.hoveredEdge) {
-            this.sg.events.emit('edge:pointerenter', { edge: this.hoveredEdge });
+            this.sg.events.emit('edge:pointerenter', { edge: this.hoveredEdge } as any);
         }
     }
 

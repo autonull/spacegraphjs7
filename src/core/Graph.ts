@@ -254,7 +254,7 @@ export class Graph extends EventEmitter<GraphEventMap> {
     }
 
     export(): GraphExport {
-        return this.toJSON();
+        return this.toJSON() as GraphExport;
     }
 
     fromJSON(spec: GraphSpec): void {

@@ -4,7 +4,7 @@ import type { NodeSpec } from '../types';
 
 export class GridNode extends LayoutNode {
     constructor(sg?: SpaceGraph, spec?: NodeSpec) {
-        super(sg, spec as NodeSpec, gridStrategy, {
+        super(sg!, spec as NodeSpec, gridStrategy, {
             columns: 3,
             cellWidth: 200,
             cellHeight: 150,

@@ -248,14 +248,14 @@ export class InteractionPlugin implements Plugin {
 
         const edgeResult = this.raycaster.raycastEdge();
         if (edgeResult?.edge) {
-            this.sg.events.emit('edge:dblclick', { edge: edgeResult.edge, event: e.originalEvent });
+            this.sg.events.emit('edge:dblclick', { edge: edgeResult.edge } as any);
             this.handleZoomNavigation(edgeResult.edge.target, `edge:${edgeResult.edge.id}`);
             return;
         }
 
         const nodeResult = this.raycaster.raycastNode();
         if (nodeResult?.node) {
-            this.sg.events.emit('node:dblclick', { node: nodeResult.node, event: e.originalEvent });
+            this.sg.events.emit('node:dblclick', { node: nodeResult.node } as any);
             this.handleZoomNavigation(nodeResult.node, nodeResult.node.id);
         }
     }

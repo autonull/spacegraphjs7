@@ -51,7 +51,7 @@ export class DragHandler {
                 ...args: unknown[]
             ) => { nodes?: Set<Node> } | undefined
         )('selection:getSelectedNodes')?.nodes;
-        if (selectedNodes?.size > 1 && selectedNodes.has(node)) {
+        if (selectedNodes && selectedNodes.size > 1 && selectedNodes.has(node)) {
             for (const selectedNode of selectedNodes) {
                 if (selectedNode !== node && selectedNode.object) {
                     this.draggingNodes.add(selectedNode);
@@ -75,7 +75,7 @@ export class DragHandler {
         const ndc = this.raycaster.getMouseNDC();
         this.previousDragPosition = { x: ndc.x, y: ndc.y };
 
-        this.sg.events.emit('interaction:dragstart', { node });
+        this.sg.events.emit('interaction:dragstart', { node } as any);
         return true;
     }
 
@@ -136,14 +136,21 @@ export class DragHandler {
             }
         }
 
-        this.sg.events.emit('interaction:drag', { node: this.dragNode });
+        this.sg.events.emit('interaction:drag', {
+            node: this.dragNode,
+            position: [
+                this.dragNode.position.x,
+                this.dragNode.position.y,
+                this.dragNode.position.z,
+            ] as [number, number, number],
+        });
     }
 
     endDrag(): void {
         if (!this.isDragging) return;
 
         if (this.dragNode) {
-            this.sg.events.emit('interaction:dragend', { node: this.dragNode });
+            this.sg.events.emit('interaction:dragend', { node: this.dragNode } as any);
         }
 
         this.isDragging = false;

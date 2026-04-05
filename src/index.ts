@@ -1,16 +1,6 @@
-// SpaceGraphJS - The Self-Building UI Framework
-
 import './init';
-import {
-    createSpaceGraph,
-    createSpaceGraphFromURL,
-    createSpaceGraphFromManifest,
-    quickGraph,
-} from './factory';
+import { SpaceGraph } from './SpaceGraph';
 
-// ============================================================================
-// Utilities
-// ============================================================================
 export {
     DEG2RAD,
     RAD2DEG,
@@ -26,19 +16,10 @@ export {
 } from './utils';
 
 export { logger, createLogger, setLogLevel, type LogLevel, type Logger } from './utils';
-export { DOMUtils, CameraUtils, GestureManager, ThreeDisposer } from './utils';
-export {
-    getRelativeLuminance,
-    getContrastRatio,
-    getCompliantColor,
-    hexToRgb,
-    getColorsByFrequency,
-} from './utils';
+export { calculateFitView as CameraUtils, createElement as DOMUtils } from './utils';
+export { getRelativeLuminance, getContrastRatio, getCompliantColor, hexToRgb } from './utils';
 
-// ============================================================================
-// Core
-// ============================================================================
-export { SpaceGraph } from './SpaceGraph';
+export { SpaceGraph };
 export type { SpaceGraphOptions } from './types';
 export { SpaceGraphApp } from './core/SpaceGraphApp';
 export type { SpaceGraphAppOptions, AppButtonConfig } from './core/SpaceGraphApp';
@@ -47,15 +28,11 @@ export { Renderer } from './core/Renderer';
 export type { RenderOptions } from './core/Renderer';
 export { CameraControls } from './core/CameraControls';
 export { EventSystem, type SpaceGraphEvents } from './core/events/EventSystem';
+export { EventEmitter, type Disposable } from './core/EventEmitter';
 export { VisionManager } from './core/VisionManager';
 export type { VisionCategory } from './vision/VisionAutoFixer';
 export { ObjectPoolManager } from './core/ObjectPoolManager';
-export { CullingManager } from './core/CullingManager';
-export { AdvancedRenderingOptimizer } from './core/AdvancedRenderingOptimizer';
 
-// ============================================================================
-// Plugin System
-// ============================================================================
 export {
     PluginManager,
     type Plugin,
@@ -96,19 +73,12 @@ export {
     type HoverModel,
 } from './plugins';
 
-// ============================================================================
-// Rendering
-// ============================================================================
-export { RenderingSystem } from './core/renderer/RenderingSystem';
 export {
     InstancedNodeRenderer,
     GEOMETRY_FAMILIES,
     type GeometryFamily,
 } from './rendering/InstancedNodeRenderer';
 
-// ============================================================================
-// Vision System
-// ============================================================================
 export { VisionSystem, HeuristicsStrategy } from './vision';
 export type {
     VisionOptions,
@@ -120,14 +90,8 @@ export type {
     ErgonomicsResult,
 } from './vision';
 
-// ============================================================================
-// Spatial Index
-// ============================================================================
 export { SpatialIndex, BVH } from './core/spatial/SpatialIndex';
 
-// ============================================================================
-// Object Pool
-// ============================================================================
 export { ObjectPool, MathPool } from './core/pooling/ObjectPool';
 export {
     withPooledVector3,
@@ -136,15 +100,9 @@ export {
     withPooledBox3,
 } from './core/pooling/ObjectPool';
 
-// ============================================================================
-// Type Registry
-// ============================================================================
 export { TypeRegistry } from './core/TypeRegistry';
 export type { NodeConstructor, EdgeConstructor } from './core/TypeRegistry';
 
-// ============================================================================
-// Input
-// ============================================================================
 export { InputManager, FingerManager, Fingering, createParentTransform } from './input';
 export type {
     InputEvent,
@@ -165,9 +123,6 @@ export type {
     HistoryInputConfig,
 } from './input';
 
-// ============================================================================
-// Types
-// ============================================================================
 export type {
     GraphSpec,
     NodeSpec,
@@ -206,12 +161,8 @@ export type {
     NodeEvent,
     EdgeEvent,
     LabelLodLevel,
-    LabelLodConfig,
 } from './types';
 
-// ============================================================================
-// Nodes
-// ============================================================================
 export {
     Node,
     InstancedNode,
@@ -246,9 +197,6 @@ export {
 } from './nodes';
 export type { GridModel } from './nodes/VirtualGridNode';
 
-// ============================================================================
-// Edges
-// ============================================================================
 export {
     Edge,
     CurvedEdge,
@@ -262,29 +210,12 @@ export {
     Wire,
 } from './edges';
 
-// ============================================================================
-// Surface
-// ============================================================================
 export { Surface } from './core/Surface';
 export type { HitResult, Rect } from './core/Surface';
 
-// ============================================================================
-// Factory Functions (Primary API)
-// ============================================================================
-export { createSpaceGraph, createSpaceGraphFromURL, createSpaceGraphFromManifest, quickGraph };
-
-// ============================================================================
-// Version
-// ============================================================================
 export const VERSION = '7.0.0';
 
-// ============================================================================
-// Default Export
-// ============================================================================
 export default {
-    createSpaceGraph,
-    createSpaceGraphFromURL,
-    createSpaceGraphFromManifest,
-    quickGraph,
+    SpaceGraph,
     VERSION,
 };

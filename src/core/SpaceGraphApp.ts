@@ -65,8 +65,16 @@ export class SpaceGraphApp {
     private toolbarActions: AppButtonConfig[] = [];
     private _zoomSliderHandler?: () => void;
 
-    constructor(container: HTMLElement | string, options: SpaceGraphAppOptions = {}) {
-        this.options = {
+    private constructor(sg: SpaceGraph, options: SpaceGraphAppOptions) {
+        this.sg = sg;
+        this.options = options;
+    }
+
+    static async create(
+        container: HTMLElement | string,
+        options: SpaceGraphAppOptions = {},
+    ): Promise<SpaceGraphApp> {
+        const resolvedOptions: SpaceGraphAppOptions = {
             enableMinimap: true,
             enableInteraction: true,
             enableHistory: true,
@@ -79,71 +87,59 @@ export class SpaceGraphApp {
             primaryColor: '#3b82f6',
             secondaryColor: '#8b5cf6',
             backgroundColor: 'rgba(15, 23, 42, 0.9)',
-            ...this.options.theme,
+            ...resolvedOptions.theme,
         };
-        this.options.theme = theme; // save defaults back
+        resolvedOptions.theme = theme;
 
-        if (options.actions) this.buttons.push(...options.actions);
-        if (options.toolbarActions) this.toolbarActions.push(...options.toolbarActions);
+        const sg = await SpaceGraph.create(
+            container,
+            resolvedOptions.spec ?? { nodes: [], edges: [] },
+        );
 
-        // Create the base SpaceGraph instance
-        this.sg = SpaceGraph.create(container, this.options.spec);
+        const app = new SpaceGraphApp(sg, resolvedOptions);
 
-        this.setupHotkeys();
+        if (resolvedOptions.actions) app.buttons.push(...resolvedOptions.actions);
+        if (resolvedOptions.toolbarActions)
+            app.toolbarActions.push(...resolvedOptions.toolbarActions);
 
-        // Register default plugins
-        this.hud = new HUDPlugin();
-        this.sg.pluginManager.registerPlugin('HUDPlugin', this.hud);
+        app.setupHotkeys();
 
-        if (this.options.enableInteraction) {
+        app.hud = new HUDPlugin();
+        app.sg.pluginManager.register('HUDPlugin', app.hud);
+
+        if (app.options.enableInteraction) {
             const interaction = new InteractionPlugin();
-            this.sg.pluginManager.registerPlugin('InteractionPlugin', interaction);
-            // wait for next tick for handlers to attach properly
-            setTimeout(() => this.setupInteractionHandlers(), 0);
+            app.sg.pluginManager.register('InteractionPlugin', interaction);
+            setTimeout(() => app.setupInteractionHandlers(), 0);
         }
 
-        if (this.options.enableMinimap) {
+        if (app.options.enableMinimap) {
             const minimap = new MinimapPlugin();
-            this.sg.pluginManager.registerPlugin('MinimapPlugin', minimap);
+            app.sg.pluginManager.register('MinimapPlugin', minimap);
         }
 
-        // Re-init plugins so new ones are properly handled
-        this.sg.pluginManager.initAll();
+        app.sg.pluginManager.initAll();
 
-        if (this.options.enableHistory) {
-            // HistoryPlugin is built-in to pluginManager, but SpaceGraphApp instantiates plugins dynamically.
-            // Actually SpaceGraph.create automatically runs initAll, so HistoryPlugin is already there if we use default.
-            // Let's just ensure it's enabled by configuring it, or leaving it enabled if SpaceGraph initialized it.
-            // But wait, the built-in HistoryPlugin initializes automatically with defaults.
-            // If the user wants it off, we need to disable it.
-            const history = this.sg.pluginManager.getPlugin('HistoryPlugin');
-            if (history) {
-                // If it exists, configure it. Wait, it doesn't have a public setter for enable unless we use any or cast.
-                // We'll just leave it since the default is enabled. If explicitly false, maybe we shouldn't have it.
-            }
-        }
-
-        if (this.options.enableGrid !== false) {
-            // enable grid by default unless explicitly false
+        if (app.options.enableGrid !== false) {
             const size = 10000;
             const divisions = 100;
             const gridHelper = new THREE.GridHelper(size, divisions, 0x475569, 0x1e293b);
-            // @ts-expect-error - GridHelper.material is Material | Material[]
             gridHelper.material.opacity = 0.5;
-            // @ts-expect-error - GridHelper.material is Material | Material[]
             gridHelper.material.transparent = true;
-            this.sg.renderer.scene.add(gridHelper);
+            app.sg.renderer.scene.add(gridHelper);
         }
 
-        this.setupDefaultHUD(theme);
+        app.setupDefaultHUD(theme);
 
-        if (this.options.enableSearch) {
-            this.setupSearchHUD(theme);
+        if (app.options.enableSearch) {
+            app.setupSearchHUD(theme);
         }
 
-        if (this.buttons.length > 0) {
-            this.renderButtons();
+        if (app.buttons.length > 0) {
+            app.renderButtons();
         }
+
+        return app;
     }
 
     public setTheme(theme: Partial<SpaceGraphAppOptions['theme']>) {
@@ -175,7 +171,11 @@ export class SpaceGraphApp {
                 this.currentSelected = [];
                 this.currentSelectedEdges = [];
                 this.setMode('default'); // reset mode on escape
-                this.hudController.updateSelection(this.currentSelected, this.currentSelectedEdges);
+                this.sg.events.emit('selection:changed', {
+                    nodes: this.currentSelected,
+                    edges: this.currentSelectedEdges,
+                    timestamp: Date.now(),
+                });
                 if (this.options.onNodeSelect) this.options.onNodeSelect([]);
                 if (this.options.onEdgeSelect) this.options.onEdgeSelect([]);
             }
@@ -249,13 +249,17 @@ export class SpaceGraphApp {
             if (!query) {
                 this.clearSelectionStyles();
                 this.currentSelected = [];
-                this.hudController.updateSelection(this.currentSelected, this.currentSelectedEdges);
+                this.sg.events.emit('selection:changed', {
+                    nodes: this.currentSelected,
+                    edges: this.currentSelectedEdges,
+                    timestamp: Date.now(),
+                });
                 return;
             }
 
             const matches: any[] = [];
             for (const node of this.sg.graph.nodes.values()) {
-                const label = node.data?.label || node.data?.title || node.id || '';
+                const label = String(node.data?.label || node.data?.title || node.id || '');
                 if (label.toLowerCase().includes(query)) {
                     matches.push(node);
                 }
@@ -264,7 +268,11 @@ export class SpaceGraphApp {
             this.clearSelectionStyles();
             this.currentSelected = matches;
             this.applySelectionStyles();
-            this.hudController.updateSelection(this.currentSelected, this.currentSelectedEdges);
+            this.sg.events.emit('selection:changed', {
+                nodes: this.currentSelected,
+                edges: this.currentSelectedEdges,
+                timestamp: Date.now(),
+            });
 
             if (matches.length === 1 && this.sg.cameraControls) {
                 // Auto fly to single exact match
@@ -291,7 +299,11 @@ export class SpaceGraphApp {
             this.currentSelected = nodes || [];
             this.currentSelectedEdges = edges || [];
             this.applySelectionStyles();
-            this.hudController.updateSelection(this.currentSelected, this.currentSelectedEdges);
+            this.sg.events.emit('selection:changed', {
+                nodes: this.currentSelected,
+                edges: this.currentSelectedEdges,
+                timestamp: Date.now(),
+            });
 
             if (this.options.onNodeSelect) {
                 this.options.onNodeSelect(this.currentSelected);
@@ -322,7 +334,11 @@ export class SpaceGraphApp {
             this.clearSelectionStyles();
             this.currentSelected = [];
             this.currentSelectedEdges = [];
-            this.hudController.updateSelection(this.currentSelected, this.currentSelectedEdges);
+            this.sg.events.emit('selection:changed', {
+                nodes: this.currentSelected,
+                edges: this.currentSelectedEdges,
+                timestamp: Date.now(),
+            });
 
             if (this.options.onNodeSelect) {
                 this.options.onNodeSelect([]);
@@ -338,7 +354,11 @@ export class SpaceGraphApp {
             this.currentSelected = [node];
             this.currentSelectedEdges = [];
             this.applySelectionStyles();
-            this.hudController.updateSelection(this.currentSelected, this.currentSelectedEdges);
+            this.sg.events.emit('selection:changed', {
+                nodes: this.currentSelected,
+                edges: this.currentSelectedEdges,
+                timestamp: Date.now(),
+            });
 
             if (this.options.onNodeSelect) {
                 this.options.onNodeSelect(this.currentSelected);
@@ -354,7 +374,11 @@ export class SpaceGraphApp {
             this.currentSelected = [];
             this.currentSelectedEdges = [edge];
             this.applySelectionStyles();
-            this.hudController.updateSelection(this.currentSelected, this.currentSelectedEdges);
+            this.sg.events.emit('selection:changed', {
+                nodes: this.currentSelected,
+                edges: this.currentSelectedEdges,
+                timestamp: Date.now(),
+            });
 
             if (this.options.onNodeSelect) {
                 this.options.onNodeSelect([]);
@@ -387,16 +411,17 @@ export class SpaceGraphApp {
             if (this.options.nodeContextMenu) {
                 const items = this.options.nodeContextMenu(node);
                 if (items && items.length > 0) {
-                    this.hud.showContextMenu(items, event.clientX, event.clientY);
+                    this.hud.showContextMenu(event.clientX, event.clientY, items);
                 }
             }
         });
 
-        this.sg.events.on('edge:contextmenu', ({ edge, event }) => {
+        this.sg.events.on('edge:contextmenu', (data: any) => {
+            const { edge, event } = data;
             if (this.options.edgeContextMenu) {
                 const items = this.options.edgeContextMenu(edge);
                 if (items && items.length > 0) {
-                    this.hud.showContextMenu(items, event.clientX, event.clientY);
+                    this.hud.showContextMenu(event.clientX, event.clientY, items);
                 }
             }
         });
@@ -405,7 +430,7 @@ export class SpaceGraphApp {
             if (this.options.graphContextMenu) {
                 const items = this.options.graphContextMenu();
                 if (items && items.length > 0) {
-                    this.hud.showContextMenu(items, event.clientX, event.clientY);
+                    this.hud.showContextMenu(event.clientX, event.clientY, items);
                 }
             }
         });
@@ -415,7 +440,7 @@ export class SpaceGraphApp {
             if (this.options.nodeTooltip) {
                 const content = this.options.nodeTooltip(node);
                 if (content) {
-                    this.hud.showTooltip(content as string, event.clientX, event.clientY);
+                    this.hud.showTooltip(this.sg.renderer.renderer.domElement, content as string);
                 }
             }
         });
@@ -428,7 +453,7 @@ export class SpaceGraphApp {
             if (this.options.edgeTooltip) {
                 const content = this.options.edgeTooltip(edge);
                 if (content) {
-                    this.hud.showTooltip(content as string, event.clientX, event.clientY);
+                    this.hud.showTooltip(this.sg.renderer.renderer.domElement, content as string);
                 }
             }
         });
@@ -506,7 +531,11 @@ export class SpaceGraphApp {
 
         this._renderToolbar(theme);
 
-        this.hudController.updateSelection(this.currentSelected, this.currentSelectedEdges);
+        this.sg.events.emit('selection:changed', {
+            nodes: this.currentSelected,
+            edges: this.currentSelectedEdges,
+            timestamp: Date.now(),
+        });
         this.renderToolbarActions();
     }
 
@@ -863,7 +892,7 @@ export class SpaceGraphApp {
     }
 
     public showAlert(message: string, type: 'info' | 'success' | 'warning' | 'error' = 'info') {
-        this.hud.showAlert(message, type);
+        this.hud.showAlert(message);
     }
 
     public showModal(options: {
@@ -872,7 +901,7 @@ export class SpaceGraphApp {
         width?: string;
         onClose?: () => void;
     }) {
-        this.hud.showModal(options);
+        this.hud.showModal(options.title, options.html);
     }
 
     public hideModal() {
@@ -880,7 +909,7 @@ export class SpaceGraphApp {
     }
 
     public showLoading(message?: string) {
-        this.hud.showLoading(message);
+        this.hud.showLoading(message ?? '');
     }
 
     public hideLoading() {
@@ -895,7 +924,11 @@ export class SpaceGraphApp {
 
     public importData(data: any) {
         this.sg.import(data);
-        this.hudController.updateSelection(this.currentSelected, this.currentSelectedEdges);
+        this.sg.events.emit('selection:changed', {
+            nodes: this.currentSelected,
+            edges: this.currentSelectedEdges,
+            timestamp: Date.now(),
+        });
     }
 
     /**
@@ -917,7 +950,11 @@ export class SpaceGraphApp {
 
     public addNode(nodeSpec: any) {
         this.sg.graph.addNode(nodeSpec);
-        this.hudController.updateSelection(this.currentSelected, this.currentSelectedEdges);
+        this.sg.events.emit('selection:changed', {
+            nodes: this.currentSelected,
+            edges: this.currentSelectedEdges,
+            timestamp: Date.now(),
+        });
     }
 
     public updateNode(nodeId: string, nodeSpec: any) {
@@ -933,13 +970,21 @@ export class SpaceGraphApp {
                 this.currentSelected.splice(index, 1);
             }
             this.sg.graph.removeNode(nodeId);
-            this.hudController.updateSelection(this.currentSelected, this.currentSelectedEdges);
+            this.sg.events.emit('selection:changed', {
+                nodes: this.currentSelected,
+                edges: this.currentSelectedEdges,
+                timestamp: Date.now(),
+            });
         }
     }
 
     public addEdge(edgeSpec: any) {
         this.sg.graph.addEdge(edgeSpec);
-        this.hudController.updateSelection(this.currentSelected, this.currentSelectedEdges); // Stats currently only show nodes, but keeps it synced
+        this.sg.events.emit('selection:changed', {
+            nodes: this.currentSelected,
+            edges: this.currentSelectedEdges,
+            timestamp: Date.now(),
+        }); // Stats currently only show nodes, but keeps it synced
     }
 
     public updateEdge(edgeId: string, edgeSpec: any) {
@@ -954,7 +999,11 @@ export class SpaceGraphApp {
                 this.currentSelectedEdges.splice(index, 1);
             }
             this.sg.graph.removeEdge(edgeId);
-            this.hudController.updateSelection(this.currentSelected, this.currentSelectedEdges);
+            this.sg.events.emit('selection:changed', {
+                nodes: this.currentSelected,
+                edges: this.currentSelectedEdges,
+                timestamp: Date.now(),
+            });
         }
     }
 
@@ -962,7 +1011,11 @@ export class SpaceGraphApp {
         this.clearSelectionStyles();
         this.currentSelected = [];
         this.currentSelectedEdges = [];
-        this.hudController.updateSelection(this.currentSelected, this.currentSelectedEdges);
+        this.sg.events.emit('selection:changed', {
+            nodes: this.currentSelected,
+            edges: this.currentSelectedEdges,
+            timestamp: Date.now(),
+        });
     }
 
     public getSelectedNodes(): any[] {

@@ -10,7 +10,7 @@ import { TypeRegistry } from '../src/core/TypeRegistry';
 import { SpatialIndex } from '../src/core/spatial/SpatialIndex';
 import { MathPool } from '../src/core/pooling/ObjectPool';
 import { VisionSystem } from '../src/vision/VisionSystem';
-import { ForceLayout } from '../src/plugins/ForceLayout';
+import { ForceLayout } from '../src/plugins/layouts/ForceLayout';
 import { PluginManager, type Plugin } from '../src/core/PluginManager';
 import * as THREE from 'three';
 

@@ -25,11 +25,11 @@ import { DottedEdge } from '../src/edges/DottedEdge';
 import { DynamicThicknessEdge } from '../src/edges/DynamicThicknessEdge';
 
 // Layout plugins
-import { ForceLayout } from '../src/plugins/ForceLayout';
-import { GridLayout } from '../src/plugins/GridLayout';
-import { CircularLayout } from '../src/plugins/CircularLayout';
-import { HierarchicalLayout } from '../src/plugins/HierarchicalLayout';
-import { RadialLayout } from '../src/plugins/RadialLayout';
+import { ForceLayout } from '../src/plugins/layouts/ForceLayout';
+import { GridLayout } from '../src/plugins/layouts/GridLayout';
+import { CircularLayout } from '../src/plugins/layouts/CircularLayout';
+import { HierarchicalLayout } from '../src/plugins/layouts/HierarchicalLayout';
+import { RadialLayout } from '../src/plugins/layouts/RadialLayout';
 
 // Extended plugins
 import { PhysicsPlugin } from '../src/plugins/PhysicsPlugin';

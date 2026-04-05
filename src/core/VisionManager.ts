@@ -122,14 +122,4 @@ export class VisionManager {
             logger.info('Stopped autonomous correction loop');
         }
     }
-
-    /** @deprecated Use `startAutonomousCorrection` instead. */
-    public startAutonomousAnalysis(intervalMs = 30000): void {
-        this.startAutonomousCorrection(intervalMs);
-    }
-
-    /** @deprecated Use `stopAutonomousCorrection` instead. */
-    public stopAutonomousAnalysis(): void {
-        this.stopAutonomousCorrection();
-    }
 }

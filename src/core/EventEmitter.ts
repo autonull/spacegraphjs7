@@ -1,6 +1,3 @@
-// SpaceGraphJS - Event Emitter Base Class
-// Shared event system for Node, Edge, Graph, and other components
-
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('EventEmitter');
@@ -11,6 +8,8 @@ export interface Disposable {
 
 export class EventEmitter<T extends Record<string, unknown>> {
     private readonly eventHandlers = new Map<keyof T, Set<(event: T[keyof T]) => void>>();
+    private readonly batchedEvents = new Map<keyof T, unknown[]>();
+    private batchFrameId: number | ReturnType<typeof setTimeout> | null = null;
 
     on<K extends keyof T>(event: K, handler: (event: T[K]) => void): Disposable {
         const handlers = this.eventHandlers.get(event) ?? new Set();
@@ -41,6 +40,28 @@ export class EventEmitter<T extends Record<string, unknown>> {
         });
     }
 
+    emitBatched<K extends keyof T>(event: K, data: T[K]): void {
+        const events = this.batchedEvents.get(event) ?? [];
+        if (!this.batchedEvents.has(event)) this.batchedEvents.set(event, events);
+        events.push(data);
+        if (this.batchFrameId === null) {
+            this.batchFrameId =
+                typeof window !== 'undefined' && 'requestAnimationFrame' in window
+                    ? requestAnimationFrame(() => this.flushBatch())
+                    : setTimeout(() => this.flushBatch(), 0);
+        }
+    }
+
+    private flushBatch(): void {
+        this.batchFrameId = null;
+        for (const [event, events] of this.batchedEvents) {
+            for (const data of events) {
+                this.emit(event, data as T[typeof event]);
+            }
+        }
+        this.batchedEvents.clear();
+    }
+
     protected emitWithTimestamp<K extends keyof T>(
         event: K,
         data: Omit<T[K] & { timestamp: number }, 'timestamp'>,
@@ -61,5 +82,18 @@ export class EventEmitter<T extends Record<string, unknown>> {
 
     listenerCount<K extends keyof T>(event: K): number {
         return this.eventHandlers.get(event)?.size ?? 0;
+    }
+
+    clear(): void {
+        if (this.batchFrameId !== null) {
+            if (typeof this.batchFrameId === 'number') {
+                cancelAnimationFrame(this.batchFrameId);
+            } else {
+                clearTimeout(this.batchFrameId);
+            }
+            this.batchFrameId = null;
+        }
+        this.batchedEvents.clear();
+        this.eventHandlers.clear();
     }
 }

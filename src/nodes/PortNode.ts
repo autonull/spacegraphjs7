@@ -11,7 +11,7 @@ export class PortNode<T = unknown> extends ShapeNode {
     private onReceive: ((wire: Wire<T>, data: T) => void) | null = null;
 
     constructor(sg?: SpaceGraph, spec?: NodeSpec) {
-        super(sg, spec);
+        super(sg!, spec!);
         if (this.object) {
             this.object.userData.portNode = this;
         }

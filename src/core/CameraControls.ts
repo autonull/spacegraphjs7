@@ -233,15 +233,18 @@ export class CameraControls {
     }
 
     private processKeyboardInput(): void {
-        const { keyPanSpeed, keyZoomSpeed } = this.config;
+        const keyPanSpeed = this.config.keyPanSpeed ?? 7;
+        const keyZoomSpeed = this.config.keyZoomSpeed ?? 1;
         const isPressed = (key: string) => this.keyState.get(key);
 
-        if (isPressed(this.config.keyPanLeft)) this.panBy(-keyPanSpeed, 0);
-        if (isPressed(this.config.keyPanRight)) this.panBy(keyPanSpeed, 0);
-        if (isPressed(this.config.keyPanFront)) this.panBy(0, keyPanSpeed);
-        if (isPressed(this.config.keyPanBack)) this.panBy(0, -keyPanSpeed);
-        if (isPressed(this.config.keyZoomIn)) this.spherical.radius *= 1 - keyZoomSpeed * 0.01;
-        if (isPressed(this.config.keyZoomOut)) this.spherical.radius *= 1 + keyZoomSpeed * 0.01;
+        if (isPressed(this.config.keyPanLeft ?? '')) this.panBy(-keyPanSpeed, 0);
+        if (isPressed(this.config.keyPanRight ?? '')) this.panBy(keyPanSpeed, 0);
+        if (isPressed(this.config.keyPanFront ?? '')) this.panBy(0, keyPanSpeed);
+        if (isPressed(this.config.keyPanBack ?? '')) this.panBy(0, -keyPanSpeed);
+        if (isPressed(this.config.keyZoomIn ?? ''))
+            this.spherical.radius *= 1 - keyZoomSpeed * 0.01;
+        if (isPressed(this.config.keyZoomOut ?? ''))
+            this.spherical.radius *= 1 + keyZoomSpeed * 0.01;
         if (isPressed('o')) this.toggleOrthographic();
     }
 
@@ -365,7 +368,7 @@ export class CameraControls {
         this.domElement.removeEventListener('contextmenu', this.onContextMenu);
 
         for (const { type, handler } of this.boundKeyHandlers) {
-            window.removeEventListener(type, handler);
+            window.removeEventListener(type as keyof WindowEventMap, handler as EventListener);
         }
         this.boundKeyHandlers = [];
         this.keyState.clear();

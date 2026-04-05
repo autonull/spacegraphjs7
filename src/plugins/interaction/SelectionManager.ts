@@ -91,8 +91,9 @@ export class SelectionManager {
         }
 
         this.sg.events.emit('selection:changed', {
-            nodes: this.selectedNodes,
-            edges: this.selectedEdges,
+            nodes: Array.from(this.selectedNodes).map((n) => n.id),
+            edges: Array.from(this.selectedEdges).map((e) => e.id),
+            timestamp: Date.now(),
         });
     }
 
@@ -135,8 +136,9 @@ export class SelectionManager {
 
     private emitSelectionChange(): void {
         this.sg.events.emit('selection:changed', {
-            nodes: this.selectedNodes,
-            edges: this.selectedEdges,
+            nodes: Array.from(this.selectedNodes).map((n) => n.id),
+            edges: Array.from(this.selectedEdges).map((e) => e.id),
+            timestamp: Date.now(),
         });
     }
 

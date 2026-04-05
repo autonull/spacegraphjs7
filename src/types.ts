@@ -32,8 +32,6 @@ export interface LabelLodLevel {
     style?: string;
 }
 
-export type LabelLodConfig = LabelLodLevel;
-
 export interface BaseNodeData {
     [key: string]: unknown;
     pinned?: boolean;
@@ -52,7 +50,7 @@ export interface HtmlNodeData extends BaseNodeData, Dimensions {
     html?: string;
     className?: string;
     pointerEvents?: 'none' | 'auto';
-    labelLod?: LabelLodConfig[];
+    labelLod?: LabelLodLevel[];
 }
 
 export interface ImageNodeData extends BaseNodeData, Dimensions, Opacity {
@@ -207,7 +205,7 @@ export interface EdgeData extends BaseEdgeData {
     label?: string;
     labelColor?: string;
     fontSize?: string;
-    labelLod?: LabelLodConfig[];
+    labelLod?: LabelLodLevel[];
 }
 
 // ============================================================================

@@ -1,8 +1,9 @@
 import * as THREE from 'three';
 import { CSS3DRenderer } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
 import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from 'three-mesh-bvh';
-import type { SpaceGraph } from '../../SpaceGraph';
+import type { SpaceGraph } from '../SpaceGraph';
 import { InstancedNodeRenderer } from '../rendering/InstancedNodeRenderer';
+import { DOMNode } from '../nodes/DOMNode';
 
 const CSS_RENDERER_STYLES = {
     position: 'absolute',
@@ -10,6 +11,8 @@ const CSS_RENDERER_STYLES = {
     left: '0px',
     pointerEvents: 'none',
 } as const;
+
+const OPTIMIZER_CHECK_INTERVAL_MS = 250;
 
 export interface RenderOptions {
     antialias?: boolean;
@@ -30,6 +33,14 @@ export class Renderer {
     private _resizeObserver: ResizeObserver | null = null;
     private _threePatched = false;
     private renderScheduled = false;
+
+    private frustum: THREE.Frustum;
+    private projScreenMatrix: THREE.Matrix4;
+
+    private lastOptTime: number = 0;
+    private optFrames: number = 0;
+    private fps: number = 60;
+    private timeSinceLastOptCheck: number = 0;
 
     constructor(sg: SpaceGraph, container: HTMLElement, options: RenderOptions = {}) {
         this.sg = sg;
@@ -62,6 +73,9 @@ export class Renderer {
         container.appendChild(this.cssRenderer.domElement);
 
         this.instancedRenderer = new InstancedNodeRenderer(sg, this.scene);
+
+        this.frustum = new THREE.Frustum();
+        this.projScreenMatrix = new THREE.Matrix4();
 
         this._resizeObserver = new ResizeObserver(() => this.onResize());
         this._resizeObserver.observe(container);
@@ -101,6 +115,43 @@ export class Renderer {
         }
         this.cssRenderer.render(this.scene, this.camera);
         this.renderer.render(this.scene, this.camera);
+    }
+
+    beginFrameOptimization(timestamp: number): void {
+        if (this.lastOptTime === 0) {
+            this.lastOptTime = timestamp;
+            return;
+        }
+        const delta = timestamp - this.lastOptTime;
+        this.lastOptTime = timestamp;
+        this.optFrames++;
+        this.timeSinceLastOptCheck += delta;
+        if (this.timeSinceLastOptCheck >= OPTIMIZER_CHECK_INTERVAL_MS) {
+            this.fps = (this.optFrames * 1000) / this.timeSinceLastOptCheck;
+            this.optFrames = 0;
+            this.timeSinceLastOptCheck = 0;
+        }
+    }
+
+    getFPS(): number {
+        return this.fps;
+    }
+
+    updateCulling(): void {
+        this.camera.updateMatrixWorld();
+        this.projScreenMatrix.multiplyMatrices(
+            this.camera.projectionMatrix,
+            this.camera.matrixWorldInverse,
+        );
+        this.frustum.setFromProjectionMatrix(this.projScreenMatrix);
+        for (const node of this.sg.graph.nodes.values()) {
+            const inFrustum = this.frustum.containsPoint(node.position);
+            if (node instanceof DOMNode) {
+                node.setVisibility(inFrustum);
+            } else {
+                node.object.visible = inFrustum;
+            }
+        }
     }
 
     async exportPNG(scale = 1): Promise<Blob> {

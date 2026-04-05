@@ -1,4 +1,4 @@
-import mitt from 'mitt';
+import { EventEmitter } from '../EventEmitter';
 
 export interface SpaceGraphEvents {
     'node:added': { node: import('../../nodes/Node').Node; timestamp: number };
@@ -35,70 +35,39 @@ export interface SpaceGraphEvents {
     'layout:applied': { layout: string; duration: number; timestamp: number };
     'plugin:ready': { pluginId: string; timestamp: number };
     'plugin:error': { pluginId: string; error: Error; timestamp: number };
+    'interaction:selection': { nodes: any[]; edges: any[] };
+    'interaction:edgecreate': { source: any; target: any };
+    'node:dblclick': { node: any };
+    'edge:dblclick': { edge: any };
+    'edge:click': { edge: any };
+    'node:pointerenter': { node: any; event: any };
+    'node:pointerleave': { node: any };
+    'edge:pointerenter': { edge: any; event: any };
+    'edge:pointerleave': { edge: any };
     [key: string]: unknown;
     [key: symbol]: unknown;
 }
 
-export class EventSystem {
-    private readonly emitter = mitt<SpaceGraphEvents>();
-    private readonly batchedEvents = new Map<keyof SpaceGraphEvents, unknown[]>();
-    private batchFrameId: number | ReturnType<typeof setTimeout> | null = null;
+export class EventSystem extends EventEmitter<SpaceGraphEvents> {
+    emit<K extends keyof SpaceGraphEvents>(type: K, event: SpaceGraphEvents[K]): void {
+        super.emit(type, event);
+    }
+
+    emitBatched<K extends keyof SpaceGraphEvents>(type: K, event: SpaceGraphEvents[K]): void {
+        super.emitBatched(type, event);
+    }
 
     on<K extends keyof SpaceGraphEvents>(
         type: K,
         handler: (event: SpaceGraphEvents[K]) => void,
     ): { dispose(): void } {
-        this.emitter.on(type, handler);
-        return { dispose: () => this.emitter.off(type, handler) };
+        return super.on(type, handler);
     }
 
     off<K extends keyof SpaceGraphEvents>(
         type: K,
         handler?: (event: SpaceGraphEvents[K]) => void,
     ): void {
-        this.emitter.off(type, handler);
-    }
-
-    emit<K extends keyof SpaceGraphEvents>(type: K, event: SpaceGraphEvents[K]): void {
-        this.emitter.emit(type, event);
-    }
-
-    emitBatched<K extends keyof SpaceGraphEvents>(type: K, event: SpaceGraphEvents[K]): void {
-        const events = this.batchedEvents.get(type) ?? [];
-        if (!this.batchedEvents.has(type)) this.batchedEvents.set(type, events);
-        events.push(event);
-        if (this.batchFrameId === null) {
-            this.batchFrameId =
-                typeof window !== 'undefined' && 'requestAnimationFrame' in window
-                    ? requestAnimationFrame(() => this.flushBatch())
-                    : setTimeout(() => this.flushBatch(), 0);
-        }
-    }
-
-    private flushBatch(): void {
-        this.batchFrameId = null;
-        for (const [type, events] of this.batchedEvents) {
-            for (const event of events)
-                this.emitter.emit(type, event as SpaceGraphEvents[typeof type]);
-        }
-        this.batchedEvents.clear();
-    }
-
-    clear(): void {
-        if (this.batchFrameId !== null) {
-            if (typeof this.batchFrameId === 'number') {
-                cancelAnimationFrame(this.batchFrameId);
-            } else {
-                clearTimeout(this.batchFrameId);
-            }
-            this.batchFrameId = null;
-        }
-        this.batchedEvents.clear();
-        this.emitter.all.clear();
-    }
-
-    listenerCount<K extends keyof SpaceGraphEvents>(type: K): number {
-        const handlers = this.emitter.all.get(type);
-        return Array.isArray(handlers) ? handlers.length : 0;
+        super.off(type, handler);
     }
 }

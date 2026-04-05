@@ -6,8 +6,6 @@ export type { SpaceGraphEvents } from './events/EventSystem';
 
 // Plugin System
 export { PluginManager, type Plugin } from './PluginManager';
-export { BaseLayout } from './plugins/BaseLayout';
-export type { LayoutConfig, LayoutOptions } from './plugins/BaseLayout';
 
 // Type Registry
 export { TypeRegistry } from './TypeRegistry';
@@ -28,10 +26,6 @@ export {
 
 // Spatial Index
 export { SpatialIndex, BVH } from './spatial/SpatialIndex';
-
-// Rendering
-export { RenderingSystem } from './renderer/RenderingSystem';
-export type { RenderOptions } from './renderer/RenderingSystem';
 
 // Re-export main SpaceGraph from parent
 export { SpaceGraph } from '../SpaceGraph';

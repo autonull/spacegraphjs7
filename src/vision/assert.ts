@@ -6,7 +6,7 @@ export class VisionAssert {
 
     private async getReport(): Promise<VisionReport> {
         const report = await this.page.evaluate(async () => {
-            if (!window.SpaceGraph || !window.SpaceGraph.instances) {
+            if (!(window as any).SpaceGraph || !(window as any).SpaceGraph.instances) {
                 return {
                     legibility: { wcagAA: false, averageContrast: 0, failures: [] },
                     overlap: { hasOverlaps: false, overlapCount: 0, overlaps: [] },
@@ -20,7 +20,7 @@ export class VisionAssert {
                     overall: { score: 0, grade: 'F' as const, issues: [] },
                 };
             }
-            const instances = Array.from(window.SpaceGraph.instances);
+            const instances = Array.from((window as any).SpaceGraph.instances);
             if (instances.length === 0) {
                 return {
                     legibility: { wcagAA: false, averageContrast: 0, failures: [] },

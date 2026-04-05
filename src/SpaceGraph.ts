@@ -5,12 +5,17 @@ import { CameraControls } from './core/CameraControls';
 import { EventSystem } from './core/events/EventSystem';
 import { VisionManager } from './core/VisionManager';
 import { ObjectPoolManager } from './core/ObjectPoolManager';
-import { CullingManager } from './core/CullingManager';
-import { AdvancedRenderingOptimizer } from './core/AdvancedRenderingOptimizer';
 import { InputManager } from './input/InputManager';
 import { applyDefaultInputConfig, type DefaultInputConfig } from './input/DefaultInputConfig';
 import { createLogger } from './utils/logger';
 import { safeClone } from './utils/math';
+import {
+    DEFAULT_NODE_TYPES,
+    DEFAULT_EDGE_TYPES,
+    DEFAULT_LAYOUT_PLUGINS,
+    DEFAULT_SYSTEM_PLUGINS,
+    createQuickGraphSpec,
+} from './core/defaults';
 
 import type { GraphSpec, SpaceGraphOptions, SpecUpdate } from './types';
 import type { Plugin } from './core/PluginManager';
@@ -18,137 +23,7 @@ import { MathPool } from './core/pooling/ObjectPool';
 import { CameraUtils } from './utils/CameraUtils';
 import { DOMUtils } from './utils/DOMUtils';
 
-import { ShapeNode } from './nodes/ShapeNode';
-import { InstancedShapeNode } from './nodes/InstancedShapeNode';
-import { HtmlNode } from './nodes/HtmlNode';
-import { ImageNode } from './nodes/ImageNode';
-import { GroupNode } from './nodes/GroupNode';
-import { NoteNode } from './nodes/NoteNode';
-import { DataNode } from './nodes/DataNode';
-import { CanvasNode } from './nodes/CanvasNode';
-import { TextMeshNode } from './nodes/TextMeshNode';
-import { VideoNode } from './nodes/VideoNode';
-import { IFrameNode } from './nodes/IFrameNode';
-import { ChartNode } from './nodes/ChartNode';
-import { MarkdownNode } from './nodes/MarkdownNode';
-import { GlobeNode } from './nodes/GlobeNode';
-import { SceneNode } from './nodes/SceneNode';
-import { AudioNode } from './nodes/AudioNode';
-import { MathNode } from './nodes/MathNode';
-import { ProcessNode } from './nodes/ProcessNode';
-import { CodeEditorNode } from './nodes/CodeEditorNode';
-import { StackingNode } from './nodes/StackingNode';
-import { GridNode } from './nodes/GridNode';
-import { SplitNode } from './nodes/SplitNode';
-import { BorderNode } from './nodes/BorderNode';
-import { SwitchNode } from './nodes/SwitchNode';
-import { VirtualGridNode } from './nodes/VirtualGridNode';
-import { PanelNode } from './nodes/PanelNode';
-import { PortNode } from './nodes/PortNode';
-
-import { Edge } from './edges/Edge';
-import { CurvedEdge } from './edges/CurvedEdge';
-import { FlowEdge } from './edges/FlowEdge';
-import { LabeledEdge } from './edges/LabeledEdge';
-import { DottedEdge } from './edges/DottedEdge';
-import { DynamicThicknessEdge } from './edges/DynamicThicknessEdge';
-import { AnimatedEdge } from './edges/AnimatedEdge';
-import { BundledEdge } from './edges/BundledEdge';
-import { InterGraphEdge } from './edges/InterGraphEdge';
-import { Wire } from './edges/Wire';
-
-import { ForceLayout } from './plugins/ForceLayout';
-import { CircularLayout } from './plugins/CircularLayout';
-import { GridLayout } from './plugins/GridLayout';
-import { HierarchicalLayout } from './plugins/HierarchicalLayout';
-import { RadialLayout } from './plugins/RadialLayout';
-import { TreeLayout } from './plugins/TreeLayout';
-import { SpectralLayout } from './plugins/SpectralLayout';
-import { GeoLayout } from './plugins/GeoLayout';
-import { TimelineLayout } from './plugins/TimelineLayout';
-import { ClusterLayout } from './plugins/ClusterLayout';
-import { InteractionPlugin } from './plugins/InteractionPlugin';
-import { LODPlugin } from './plugins/LODPlugin';
-import { AutoLayoutPlugin } from './plugins/AutoLayoutPlugin';
-import { AutoColorPlugin } from './plugins/AutoColorPlugin';
-import { MinimapPlugin } from './plugins/MinimapPlugin';
-import { ErgonomicsPlugin } from './plugins/ErgonomicsPlugin';
-import { PhysicsPlugin } from './plugins/PhysicsPlugin';
-import { HUDPlugin } from './plugins/HUDPlugin';
-import { HistoryPlugin } from './plugins/HistoryPlugin';
-
 const logger = createLogger('SpaceGraph');
-
-type PluginCtor = new () => Plugin;
-
-const NODE_TYPES = [
-    ShapeNode,
-    InstancedShapeNode,
-    HtmlNode,
-    ImageNode,
-    GroupNode,
-    NoteNode,
-    DataNode,
-    CanvasNode,
-    TextMeshNode,
-    VideoNode,
-    IFrameNode,
-    ChartNode,
-    MarkdownNode,
-    GlobeNode,
-    SceneNode,
-    AudioNode,
-    MathNode,
-    ProcessNode,
-    CodeEditorNode,
-    StackingNode,
-    GridNode,
-    SplitNode,
-    BorderNode,
-    SwitchNode,
-    VirtualGridNode,
-    PanelNode,
-    PortNode,
-] as const;
-
-const EDGE_TYPES = [
-    Edge,
-    CurvedEdge,
-    FlowEdge,
-    LabeledEdge,
-    DottedEdge,
-    DynamicThicknessEdge,
-    AnimatedEdge,
-    BundledEdge,
-    InterGraphEdge,
-    Wire,
-] as const;
-
-const LAYOUT_PLUGINS: [PluginCtor, string][] = [
-    [ForceLayout, 'ForceLayout'],
-    [CircularLayout, 'CircularLayout'],
-    [GridLayout, 'GridLayout'],
-    [HierarchicalLayout, 'HierarchicalLayout'],
-    [RadialLayout, 'RadialLayout'],
-    [TreeLayout, 'TreeLayout'],
-    [SpectralLayout, 'SpectralLayout'],
-    [GeoLayout, 'GeoLayout'],
-    [GeoLayout, 'MapLayout'],
-    [TimelineLayout, 'TimelineLayout'],
-    [ClusterLayout, 'ClusterLayout'],
-];
-
-const SYSTEM_PLUGINS: [PluginCtor, string][] = [
-    [InteractionPlugin, 'InteractionPlugin'],
-    [LODPlugin, 'LODPlugin'],
-    [AutoLayoutPlugin, 'AutoLayoutPlugin'],
-    [AutoColorPlugin, 'AutoColorPlugin'],
-    [MinimapPlugin, 'MinimapPlugin'],
-    [ErgonomicsPlugin, 'ErgonomicsPlugin'],
-    [PhysicsPlugin, 'PhysicsPlugin'],
-    [HUDPlugin, 'HUDPlugin'],
-    [HistoryPlugin, 'HistoryPlugin'],
-];
 
 export class SpaceGraph {
     public static instances: Set<SpaceGraph> = new Set();
@@ -160,8 +35,6 @@ export class SpaceGraph {
     public events: EventSystem;
     public vision: VisionManager;
     public poolManager: ObjectPoolManager<any>;
-    public cullingManager: CullingManager;
-    public optimizer: AdvancedRenderingOptimizer;
     public input: InputManager;
     public options: SpaceGraphOptions;
     private animationFrameId?: number;
@@ -173,8 +46,6 @@ export class SpaceGraph {
         this.container = container;
         this.poolManager = new ObjectPoolManager();
 
-        this.cullingManager = new CullingManager(this);
-        this.optimizer = new AdvancedRenderingOptimizer(this);
         this.events = new EventSystem();
         this.vision = new VisionManager(this);
         this.pluginManager = new PluginManager(this);
@@ -240,12 +111,16 @@ export class SpaceGraph {
     async init() {
         this.renderer.init();
 
-        (globalThis as any).__SG_Wire = Wire;
-
-        for (const cls of NODE_TYPES) this.pluginManager.registerNodeType(cls.name, cls);
-        for (const cls of EDGE_TYPES) this.pluginManager.registerEdgeType(cls.name, cls);
-        for (const [cls, name] of LAYOUT_PLUGINS) this.pluginManager.register(name, new cls());
-        for (const [cls, name] of SYSTEM_PLUGINS) this.pluginManager.register(name, new cls());
+        for (const cls of DEFAULT_NODE_TYPES) this.pluginManager.registerNodeType(cls.name, cls);
+        for (const cls of DEFAULT_EDGE_TYPES)
+            this.pluginManager.registerEdgeType(
+                cls.name,
+                cls as import('./core/TypeRegistry').EdgeConstructor,
+            );
+        for (const [cls, name] of DEFAULT_LAYOUT_PLUGINS)
+            this.pluginManager.register(name, new cls());
+        for (const [cls, name] of DEFAULT_SYSTEM_PLUGINS)
+            this.pluginManager.register(name, new cls());
 
         await this.pluginManager.initAll();
     }
@@ -348,7 +223,7 @@ export class SpaceGraph {
         if (!this._animating) return;
         this.animationFrameId = requestAnimationFrame((t) => this.animate(t));
 
-        this.optimizer.beginFrame(timestamp);
+        this.renderer.beginFrameOptimization(timestamp);
 
         const delta =
             this.lastTimestamp > 0 && timestamp > 0
@@ -366,7 +241,7 @@ export class SpaceGraph {
         }
 
         this.cameraControls.update();
-        this.cullingManager.update();
+        this.renderer.updateCulling();
         this.renderer.render();
     }
 
@@ -476,5 +351,48 @@ export class SpaceGraph {
             throw wrappedError;
         }
         return sg;
+    }
+
+    public static async quickGraph(
+        container: string | HTMLElement,
+        nodes: Array<{
+            id: string;
+            label?: string;
+            position?: [number, number, number];
+            data?: Record<string, unknown>;
+        }>,
+        edges?: Array<{ id: string; source: string; target: string }>,
+        options?: SpaceGraphOptions,
+    ): Promise<SpaceGraph> {
+        return SpaceGraph.create(container, createQuickGraphSpec(nodes, edges), options);
+    }
+
+    public static async fromManifest(
+        origin: string,
+        container: string | HTMLElement,
+        options: SpaceGraphOptions = {},
+    ): Promise<SpaceGraph> {
+        const manifestUrl = `${origin}/.well-known/zui-manifest.json`;
+        const response = await fetch(manifestUrl);
+        if (!response.ok) {
+            throw new Error(`Failed to fetch ZUI manifest: ${response.statusText}`);
+        }
+        const manifest = (await response.json()) as Record<string, unknown>;
+        let spec: GraphSpec;
+        if (manifest.spec) {
+            spec = manifest.spec as GraphSpec;
+        } else if (manifest.spec_url) {
+            const specResponse = await fetch(manifest.spec_url as string);
+            if (!specResponse.ok) {
+                throw new Error(`Failed to fetch spec_url: ${specResponse.statusText}`);
+            }
+            spec = await specResponse.json();
+        } else {
+            throw new Error('Manifest must include spec or spec_url');
+        }
+        return SpaceGraph.create(container, spec, {
+            ...options,
+            initialLayout: manifest.initial_layout as string | undefined,
+        });
     }
 }

@@ -2,7 +2,7 @@ import type { SpaceGraph } from '../SpaceGraph';
 import type { Plugin } from '../core/PluginManager';
 import type { Graph } from '../core/Graph';
 import type { EventSystem } from '../core/events/EventSystem';
-import type { VisionReport } from '../core/VisionManager';
+import type { VisionReport } from '../vision/types';
 import { DOMUtils } from '../utils/DOMUtils';
 import { createLogger } from '../utils/logger';
 
@@ -120,32 +120,32 @@ export class VisionOverlayPlugin implements Plugin {
             return;
         }
 
-        const { layout, overall } = this.lastReport;
+        const { overall } = this.lastReport;
 
         this.container.innerHTML = `
             <div style="font-weight: 600; font-size: 14px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
                 <div>👁️ Vision Quality</div>
-                <div style="color: ${this.getScoreColor(overall)}; font-weight: 700;">${Math.round(overall)}/100</div>
+                <div style="color: ${this.getScoreColor(overall.score)}; font-weight: 700;">${Math.round(overall.score)}/100</div>
             </div>
 
             <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px;">
-                <!-- Layout -->
+                <!-- Hierarchy -->
                 <div style="display: flex; justify-content: space-between;">
-                    <span style="color: rgba(255,255,255,0.8);">Layout Architecture</span>
-                    <span style="color: ${this.getScoreColor(layout.overall)}; font-variant-numeric: tabular-nums;">${Math.round(layout.overall)}</span>
+                    <span style="color: rgba(255,255,255,0.8);">Hierarchy Depth</span>
+                    <span style="color: ${this.getScoreColor(this.lastReport.hierarchy.score)}; font-variant-numeric: tabular-nums;">${this.lastReport.hierarchy.depth} levels</span>
                 </div>
                 
                 <!-- Legibility -->
                 <div style="display: flex; justify-content: space-between;">
                     <span style="color: rgba(255,255,255,0.8);">Text Legibility</span>
-                    <span style="color: ${this.getScoreColor(100)}; font-variant-numeric: tabular-nums;">Pass</span>
+                    <span style="color: ${this.getScoreColor(this.lastReport.legibility.averageContrast)}; font-variant-numeric: tabular-nums;">${this.lastReport.legibility.wcagAA ? 'Pass' : 'Fail'}</span>
                 </div>
 
                 <!-- Overlaps -->
                 <div style="display: flex; justify-content: space-between;">
                     <span style="color: rgba(255,255,255,0.8);">Node Overlaps</span>
-                    <span style="color: ${this.lastReport.overlap.statistics.totalOverlaps === 0 ? '#4ade80' : '#f87171'}; font-variant-numeric: tabular-nums;">
-                        ${this.lastReport.overlap.statistics.totalOverlaps}
+                    <span style="color: ${this.lastReport.overlap.overlapCount === 0 ? '#4ade80' : '#f87171'}; font-variant-numeric: tabular-nums;">
+                        ${this.lastReport.overlap.overlapCount}
                     </span>
                 </div>
             </div>
