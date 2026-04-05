@@ -58,7 +58,7 @@ export class PanelNode extends HtmlNode {
         return null;
     }
 
-    startDrag(localPos: { x: number; y: number }): boolean {
+    onPanelDragStart(localPos: { x: number; y: number }): boolean {
         if (this.fixed) return false;
         const mode = this.getDragMode(localPos);
         if (mode === 'resize') {
@@ -71,11 +71,11 @@ export class PanelNode extends HtmlNode {
         }
         this.isDragging = true;
         this.dragStartPos = { ...localPos };
-        this.startDrag();
+        super.startDrag();
         return true;
     }
 
-    updateDrag(localPos: { x: number; y: number }): void {
+    onPanelDragMove(localPos: { x: number; y: number }): void {
         if (this.isDragging) {
             const dx = localPos.x - this.dragStartPos.x;
             const dy = localPos.y - this.dragStartPos.y;
@@ -101,9 +101,9 @@ export class PanelNode extends HtmlNode {
         }
     }
 
-    endDrag(): void {
+    onPanelDragEnd(): void {
         if (this.isDragging) {
-            this.endDrag();
+            super.endDrag();
             this.isDragging = false;
         }
         if (this.isResizing) {

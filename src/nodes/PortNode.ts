@@ -1,7 +1,6 @@
 // SpaceGraphJS - PortNode
 // Typed connectable data ports for visual programming
 
-import * as THREE from 'three';
 import { ShapeNode } from './ShapeNode';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec } from '../types';
@@ -18,7 +17,7 @@ export class PortNode<T = unknown> extends ShapeNode {
         }
     }
 
-    on(callback: (wire: Wire<T>, data: T) => void): this {
+    listen(callback: (wire: Wire<T>, data: T) => void): this {
         this.onReceive = callback;
         return this;
     }
@@ -30,8 +29,9 @@ export class PortNode<T = unknown> extends ShapeNode {
     }
 
     connect(target: PortNode<T>): Wire<T> {
-        const { Wire } = require('../edges/Wire');
-        const wire = new Wire<T>(this, target);
+        const WireCtor = (globalThis as any).__SG_Wire;
+        if (!WireCtor) throw new Error('Wire constructor not registered');
+        const wire = new WireCtor(this, target);
         this.connections.push(wire);
         return wire;
     }

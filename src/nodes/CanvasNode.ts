@@ -1,9 +1,10 @@
 import * as THREE from 'three';
-
-import { Node } from './Node';
-import { DOMUtils } from '../utils/DOMUtils';
+import { TexturedMeshNode } from './TexturedMeshNode';
+import { createElement } from '../utils/DOMUtils';
 import type { NodeSpec } from '../types';
 import type { SpaceGraph } from '../SpaceGraph';
+
+type DrawFn = (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) => void;
 
 /**
  * CanvasNode — A node backed by a 2D <canvas> rendered as a Three.js texture.
@@ -14,43 +15,28 @@ import type { SpaceGraph } from '../SpaceGraph';
  *   draw   : (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) => void
  *            Custom draw function called on construction and on redraw().
  */
-export class CanvasNode extends Node {
+export class CanvasNode extends TexturedMeshNode {
     private canvas: HTMLCanvasElement;
     private ctx: CanvasRenderingContext2D;
-    private texture: THREE.CanvasTexture;
-    private plane: THREE.Mesh;
-    private drawFn?: (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) => void;
-    private readonly _object: THREE.Group;
-
-    get object(): THREE.Object3D {
-        return this._object;
-    }
+    private canvasTexture!: THREE.CanvasTexture;
+    private drawFn?: DrawFn;
 
     constructor(sg: SpaceGraph, spec: NodeSpec) {
-        super(sg, spec);
-
-        this._object = new THREE.Group();
-
         const w = (spec.data?.width ?? 256) as number;
         const h = (spec.data?.height ?? 256) as number;
-        this.drawFn = spec.data?.draw as
-            | ((ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) => void)
-            | undefined;
+        super(sg, spec, w * 0.5, h * 0.5);
 
-        this.canvas = DOMUtils.createElement('canvas');
+        this.drawFn = spec.data?.draw as DrawFn | undefined;
+
+        this.canvas = createElement('canvas');
         this.canvas.width = w;
         this.canvas.height = h;
         this.ctx = this.canvas.getContext('2d') as CanvasRenderingContext2D;
 
         this._draw();
 
-        this.texture = new THREE.CanvasTexture(this.canvas);
-        const geo = new THREE.PlaneGeometry(w * 0.5, h * 0.5);
-        const mat = new THREE.MeshBasicMaterial({ map: this.texture, side: THREE.DoubleSide });
-        this.plane = new THREE.Mesh(geo, mat);
-        this.object.add(this.plane);
-
-        this.updatePosition(this.position.x, this.position.y, this.position.z);
+        this.canvasTexture = new THREE.CanvasTexture(this.canvas);
+        this.setTexture(this.canvasTexture);
     }
 
     private _draw() {
@@ -73,10 +59,10 @@ export class CanvasNode extends Node {
     }
 
     /** Redraw the canvas using the draw function (or default renderer) and mark the texture as needing an update. */
-    redraw(drawFn?: (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) => void): void {
+    redraw(drawFn?: DrawFn): void {
         if (drawFn) this.drawFn = drawFn;
         this._draw();
-        this.texture.needsUpdate = true;
+        this.canvasTexture.needsUpdate = true;
     }
 
     /** Expose the raw 2D context for external drawing. Call redraw() after modifying. */
@@ -87,18 +73,9 @@ export class CanvasNode extends Node {
     updateSpec(updates: Partial<NodeSpec>): this {
         super.updateSpec(updates);
         if (updates.data?.draw) {
-            this.drawFn = updates.data.draw as
-                | ((ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) => void)
-                | undefined;
+            this.drawFn = updates.data.draw as DrawFn | undefined;
             this.redraw();
         }
         return this;
-    }
-
-    dispose(): void {
-        this.texture.dispose();
-        this.plane.geometry.dispose();
-        (this.plane.material as THREE.Material).dispose();
-        super.dispose();
     }
 }

@@ -24,6 +24,7 @@ export abstract class Node extends EventEmitter<NodeEventMap> {
     activity = 0;
     private readonly ACTIVITY_DECAY_RATE = 0.5;
     isTouchable = true;
+    children: Node[] = [];
 
     constructor(sg?: SpaceGraph, spec?: NodeSpec);
     constructor(sgOrSpec?: SpaceGraph | NodeSpec, maybeSpec?: NodeSpec) {

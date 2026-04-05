@@ -1,32 +1,27 @@
 import * as THREE from 'three';
-
-import { Node } from './Node';
-import { DOMUtils } from '../utils/DOMUtils';
+import { TexturedMeshNode } from './TexturedMeshNode';
+import { createElement } from '../utils/DOMUtils';
 import { createLogger } from '../utils/logger';
 import type { NodeSpec } from '../types';
 import type { SpaceGraph } from '../SpaceGraph';
 
 const logger = createLogger('VideoNode');
 
-export class VideoNode extends Node {
-    private _object = new THREE.Object3D();
-    get object(): THREE.Object3D { return this._object; }
-
+export class VideoNode extends TexturedMeshNode {
     public videoEl: HTMLVideoElement;
-    private texture: THREE.VideoTexture;
-    private plane: THREE.Mesh;
+    private videoTexture: THREE.VideoTexture;
 
     constructor(sg: SpaceGraph, spec: NodeSpec) {
-        super(sg, spec);
-
-        const src = (spec.data?.src as string) ?? '';
         const w = (spec.data?.width as number) ?? 320;
         const h = (spec.data?.height as number) ?? 180;
+        super(sg, spec, w, h);
+
+        const src = (spec.data?.src as string) ?? '';
         const autoplay = spec.data?.autoplay !== false;
         const loop = spec.data?.loop !== false;
         const muted = spec.data?.muted !== false;
 
-        this.videoEl = DOMUtils.createElement('video');
+        this.videoEl = createElement('video');
         this.videoEl.src = src;
         this.videoEl.loop = loop;
         this.videoEl.muted = muted;
@@ -34,22 +29,16 @@ export class VideoNode extends Node {
         this.videoEl.playsInline = true;
         if (autoplay) this.videoEl.autoplay = true;
 
-        this.texture = new THREE.VideoTexture(this.videoEl);
-        this.texture.minFilter = THREE.LinearFilter;
-        this.texture.magFilter = THREE.LinearFilter;
-
-        const geo = new THREE.PlaneGeometry(w, h);
-        const mat = new THREE.MeshBasicMaterial({ map: this.texture, side: THREE.DoubleSide });
-        this.plane = new THREE.Mesh(geo, mat);
-        this._object.add(this.plane);
+        this.videoTexture = new THREE.VideoTexture(this.videoEl);
+        this.videoTexture.minFilter = THREE.LinearFilter;
+        this.videoTexture.magFilter = THREE.LinearFilter;
+        this.setTexture(this.videoTexture);
 
         if (autoplay) {
             this.videoEl.play().catch(() => {
                 logger.warn('Autoplay blocked for node "%s". User interaction required.', spec.id);
             });
         }
-
-        this.updatePosition(this.position.x, this.position.y, this.position.z);
     }
 
     play() {
@@ -73,9 +62,7 @@ export class VideoNode extends Node {
         this.videoEl.pause();
         this.videoEl.src = '';
         this.videoEl.load();
-        this.texture.dispose();
-        this.plane.geometry.dispose();
-        (this.plane.material as THREE.Material).dispose();
+        this.videoTexture.dispose();
         super.dispose();
     }
 }

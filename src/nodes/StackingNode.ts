@@ -1,19 +1,9 @@
-// SpaceGraphJS - StackingNode
-// Layout container that stacks children at the same position (z-order)
-
-import * as THREE from 'three';
-import { GroupNode } from './GroupNode';
+import { LayoutNode, stackingStrategy } from './LayoutNode';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec } from '../types';
 
-export class StackingNode extends GroupNode {
+export class StackingNode extends LayoutNode {
     constructor(sg?: SpaceGraph, spec?: NodeSpec) {
-        super(sg, spec);
-    }
-
-    onPreRender(_dt: number): void {
-        for (const child of this.children) {
-            child.position.copy(this.position);
-        }
+        super(sg, spec as NodeSpec, stackingStrategy);
     }
 }

@@ -1,8 +1,8 @@
 export { Node } from './Node';
 export { InstancedNode } from './InstancedNode';
+export { InstancedShapeNode } from './InstancedShapeNode';
 export { ShapeNode } from './ShapeNode';
 export { HtmlNode } from './HtmlNode';
-export { InstancedShapeNode } from './InstancedShapeNode';
 export { ImageNode } from './ImageNode';
 export { GroupNode } from './GroupNode';
 export { NoteNode } from './NoteNode';
@@ -20,3 +20,22 @@ export { MathNode } from './MathNode';
 export { ProcessNode } from './ProcessNode';
 export { CodeEditorNode } from './CodeEditorNode';
 export { DOMNode } from './DOMNode';
+export { TexturedMeshNode } from './TexturedMeshNode';
+export {
+    LayoutNode,
+    gridStrategy,
+    stackingStrategy,
+    splitStrategy,
+    borderStrategy,
+    switchStrategy,
+    type LayoutStrategy,
+} from './LayoutNode';
+export { StackingNode } from './StackingNode';
+export { GridNode } from './GridNode';
+export { SplitNode } from './SplitNode';
+export { BorderNode, type BorderRegion } from './BorderNode';
+export { SwitchNode } from './SwitchNode';
+export { VirtualGridNode } from './VirtualGridNode';
+export type { GridModel } from './VirtualGridNode';
+export { PanelNode } from './PanelNode';
+export { PortNode } from './PortNode';
