@@ -1,5 +1,5 @@
 import type { SpaceGraphApp } from './SpaceGraphApp';
-import type { AppButtonConfig } from './SpaceGraphApp';
+import type { Node as SGNode } from '../nodes/Node';
 import { DOMUtils } from '../utils/DOMUtils';
 import * as THREE from 'three';
 
@@ -359,17 +359,15 @@ export function setupSearchHUD(app: SpaceGraphApp, theme: any) {
         const query = (e.target as HTMLInputElement).value.toLowerCase();
         if (!query) {
             app.clearSelectionStyles();
-            (app as any).currentSelected = [];
-            (app as any).currentSelectedEdges = [];
             app.sg.events.emit('selection:changed', {
-                nodes: (app as any).currentSelected,
-                edges: (app as any).currentSelectedEdges,
+                nodes: [],
+                edges: [],
                 timestamp: Date.now(),
             });
             return;
         }
 
-        const matches: any[] = [];
+        const matches: SGNode[] = [];
         for (const node of app.sg.graph.nodes.values()) {
             const label = String(node.data?.label || node.data?.title || node.id || '');
             if (label.toLowerCase().includes(query)) {
@@ -378,18 +376,19 @@ export function setupSearchHUD(app: SpaceGraphApp, theme: any) {
         }
 
         app.clearSelectionStyles();
-        (app as any).currentSelected = matches;
         app.applySelectionStyles();
         app.sg.events.emit('selection:changed', {
-            nodes: (app as any).currentSelected,
-            edges: (app as any).currentSelectedEdges,
+            nodes: matches.map((n) => n.id),
+            edges: [],
             timestamp: Date.now(),
         });
 
         if (matches.length === 1 && app.sg.cameraControls) {
             const node = matches[0];
             const targetPos = node.position.clone();
-            const targetRadius = node.data?.width ? Math.max(node.data.width * 1.5, 150) : 150;
+            const targetRadius = node.data?.width
+                ? Math.max((node.data as any).width * 1.5, 150)
+                : 150;
             app.sg.cameraControls.flyTo(targetPos, targetRadius);
         }
     });

@@ -321,11 +321,11 @@ export class SpaceGraphApp {
         });
     }
 
-    public getSelectedNodes(): any[] {
+    public getSelectedNodes(): Node[] {
         return this.currentSelected;
     }
 
-    public getSelectedEdges(): any[] {
+    public getSelectedEdges(): Edge[] {
         return this.currentSelectedEdges;
     }
 
