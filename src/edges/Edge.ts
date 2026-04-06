@@ -49,6 +49,7 @@ export class Edge extends Surface {
 
     private _colorStart = new THREE.Color();
     private _colorEnd = new THREE.Color();
+    private _direction = new THREE.Vector3();
 
     constructor(spec: EdgeSpec, source: Node, target: Node);
     constructor(sg: SpaceGraph, spec: EdgeSpec, source: Node, target: Node);
@@ -234,8 +235,12 @@ export class Edge extends Surface {
     }
 
     private _updateArrowheads(): void {
+        if (!this.sg?.renderer?.scene) return;
+        if (!this.source?.position || !this.target?.position) return;
+
         const { position: sourcePos } = this.source;
         const { position: targetPos } = this.target;
+        const scene = this.sg.renderer.scene;
 
         const updateArrowhead = (
             arrowhead: THREE.Mesh | null,
@@ -244,10 +249,10 @@ export class Edge extends Surface {
         ) => {
             if (!arrowhead) return;
             arrowhead.position.copy(endPos);
-            const direction = new THREE.Vector3().subVectors(endPos, startPos).normalize();
-            arrowhead.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction);
-            if (arrowhead.parent !== this.sg?.renderer.scene) {
-                this.sg!.renderer.scene.add(arrowhead);
+            this._direction.subVectors(endPos, startPos).normalize();
+            arrowhead.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), this._direction);
+            if (scene && arrowhead.parent !== scene) {
+                scene.add(arrowhead);
             }
         };
 

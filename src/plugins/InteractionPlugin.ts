@@ -19,6 +19,7 @@ import {
     BoxSelectingFingering,
     ResizeFingering,
     WiringFingering,
+    PinchZoomFingering,
 } from '../input/fingerings';
 
 export class InteractionPlugin implements Plugin {
@@ -92,6 +93,9 @@ export class InteractionPlugin implements Plugin {
 
         const hoverFingering = new HoverFingering(this.sg, this.raycaster);
         inputManager.registerFingering(hoverFingering, 60);
+
+        const pinchZoomFingering = new PinchZoomFingering(this.sg);
+        inputManager.registerFingering(pinchZoomFingering, 50);
     }
 
     private initInputHandlers(): void {

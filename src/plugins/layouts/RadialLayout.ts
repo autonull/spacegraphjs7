@@ -1,7 +1,6 @@
 import * as THREE from 'three';
 import { BaseLayout, type LayoutConfig, type LayoutOptions } from './BaseLayout';
 import type { Node } from '../../nodes/Node';
-import type { Edge } from '../../edges/Edge';
 
 export class RadialLayout extends BaseLayout {
     readonly id = 'radial-layout';
@@ -51,8 +50,20 @@ export class RadialLayout extends BaseLayout {
         const root = nodes.get(resolvedRootId) as Node;
         this.applyPosition(root, new THREE.Vector3(0, 0, z), { animate, duration });
 
-        interface QueueItem { id: string; depth: number; minAngle: number; maxAngle: number; }
-        const queue: QueueItem[] = [{ id: resolvedRootId, depth: 0, minAngle: startAngle, maxAngle: startAngle + 2 * Math.PI }];
+        interface QueueItem {
+            id: string;
+            depth: number;
+            minAngle: number;
+            maxAngle: number;
+        }
+        const queue: QueueItem[] = [
+            {
+                id: resolvedRootId,
+                depth: 0,
+                minAngle: startAngle,
+                maxAngle: startAngle + 2 * Math.PI,
+            },
+        ];
         const visited = new Set<string>([resolvedRootId]);
 
         while (queue.length) {
@@ -68,9 +79,18 @@ export class RadialLayout extends BaseLayout {
                 const angle = minAngle + (i + 0.5) * angleStep;
                 const node = nodes.get(childId) as Node;
                 if (node) {
-                    this.applyPosition(node, new THREE.Vector3(Math.cos(angle) * radius, Math.sin(angle) * radius, z), { animate, duration });
+                    this.applyPosition(
+                        node,
+                        new THREE.Vector3(Math.cos(angle) * radius, Math.sin(angle) * radius, z),
+                        { animate, duration },
+                    );
                 }
-                queue.push({ id: childId, depth: depth + 1, minAngle: minAngle + i * angleStep, maxAngle: minAngle + (i + 1) * angleStep });
+                queue.push({
+                    id: childId,
+                    depth: depth + 1,
+                    minAngle: minAngle + i * angleStep,
+                    maxAngle: minAngle + (i + 1) * angleStep,
+                });
             });
         }
 
@@ -79,10 +99,14 @@ export class RadialLayout extends BaseLayout {
             const outerR = baseRadius + nodes.size * radiusStep;
             orphans.forEach((id, i) => {
                 const angle = ((2 * Math.PI) / orphans.length) * i;
-                this.applyPosition(nodes.get(id) as Node, new THREE.Vector3(Math.cos(angle) * outerR, Math.sin(angle) * outerR, z), { animate, duration });
+                this.applyPosition(
+                    nodes.get(id) as Node,
+                    new THREE.Vector3(Math.cos(angle) * outerR, Math.sin(angle) * outerR, z),
+                    { animate, duration },
+                );
             });
         }
 
-        for (const edge of edges.values()) (edge as Edge).update?.();
+        this.updateEdges();
     }
 }

@@ -16,6 +16,8 @@ export class LODPlugin extends BaseSystemPlugin {
     readonly version = '1.0.0';
 
     private maxDistance = 3000;
+    private currentZoomLevel: number = 0;
+    private detailThreshold: number = 0.5;
 
     onPreRender(_delta: number): void {
         if (!this.sg?.renderer?.camera) return;
@@ -26,6 +28,20 @@ export class LODPlugin extends BaseSystemPlugin {
         const hiddenParentIds = this._updateGroupsAndFindHidden(nodes, cameraPosition);
         this._updateNodeVisibility(nodes, cameraPosition, hiddenParentIds);
         this._updateEdgeVisibility();
+    }
+
+    setZoomLevel(level: number, threshold?: number): void {
+        this.currentZoomLevel = level;
+        if (threshold !== undefined) {
+            this.detailThreshold = threshold;
+        }
+
+        // Trigger visibility update
+        this.onPreRender(0);
+    }
+
+    getCurrentDetailThreshold(): number {
+        return this.detailThreshold;
     }
 
     private _updateGroupsAndFindHidden(nodes: Node[], cameraPosition: THREE.Vector3): Set<string> {

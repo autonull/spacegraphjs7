@@ -82,25 +82,33 @@ export class DragHandler {
     updateDrag(enableZAxis = false): void {
         if (!this.isDragging || !this.dragNode || !this.dragNode.object) return;
 
+        const targetPosition = this.calculateTargetPosition(enableZAxis);
+        if (!targetPosition) return;
+
+        this.applyZAxisAdjustment(targetPosition, enableZAxis);
+        this.updateNodePosition(targetPosition);
+        this.updateDraggingNodes(targetPosition);
+        this.emitDragEvent();
+    }
+
+    private calculateTargetPosition(enableZAxis: boolean): THREE.Vector3 | null {
+        if (!this.dragNode) return null;
         let targetPosition: THREE.Vector3;
 
         if (this.preserveDistance) {
             const ndc = this.raycaster.getMouseNDC();
             const camera = this.sg.renderer.camera;
-            const ray = new THREE.Ray();
-            ray.origin.copy(camera.position);
             const direction = new THREE.Vector3(ndc.x, ndc.y, 0.5)
                 .unproject(camera)
                 .sub(camera.position)
                 .normalize();
-            ray.direction.copy(direction);
             targetPosition = this.rayFrom
                 .clone()
                 .add(direction.clone().multiplyScalar(this.initialPickDistance))
                 .sub(this.dragOffset);
         } else {
             const intersectPoint = this.raycaster.raycastPlane(this.dragPlane);
-            if (!intersectPoint) return;
+            if (!intersectPoint) return null;
             targetPosition = intersectPoint.sub(this.dragOffset);
             this.dragPlane.setFromNormalAndCoplanarPoint(
                 this.sg.renderer.camera.getWorldDirection(this.dragPlane.normal),
@@ -108,6 +116,14 @@ export class DragHandler {
             );
         }
 
+        if (!enableZAxis) {
+            targetPosition.z = this.dragNode.position.z;
+        }
+
+        return targetPosition;
+    }
+
+    private applyZAxisAdjustment(targetPosition: THREE.Vector3, enableZAxis: boolean): void {
         if (enableZAxis) {
             const ndc = this.raycaster.getMouseNDC();
             const deltaX = ndc.x - this.previousDragPosition.x;
@@ -115,17 +131,21 @@ export class DragHandler {
             const deltaZ = (deltaX + deltaY) * 0.5;
             targetPosition.z = this.dragStartZ + deltaZ;
             this.previousDragPosition = { x: ndc.x, y: ndc.y };
-        } else {
-            targetPosition.z = this.dragNode.position.z;
         }
+    }
 
+    private updateNodePosition(targetPosition: THREE.Vector3): void {
+        if (!this.dragNode) return;
         if (this.dragStiffness < 1.0) {
             this.dragNode.position.lerp(targetPosition, this.dragStiffness);
         } else {
             this.dragNode.position.copy(targetPosition);
         }
         this.dragNode.object?.updateMatrixWorld(true);
+    }
 
+    private updateDraggingNodes(targetPosition: THREE.Vector3): void {
+        if (!this.dragNode) return;
         for (const otherNode of this.draggingNodes) {
             if (otherNode !== this.dragNode && otherNode.object) {
                 const offset = this.nodeDragOffsets.get(otherNode);
@@ -135,7 +155,10 @@ export class DragHandler {
                 }
             }
         }
+    }
 
+    private emitDragEvent(): void {
+        if (!this.dragNode) return;
         this.sg.events.emit('interaction:drag', {
             node: this.dragNode,
             position: [

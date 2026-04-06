@@ -4,8 +4,10 @@ import type { GraphSpec } from '../src/types';
 export function createDemo(spec: GraphSpec, _options?: Record<string, unknown>): SpaceGraph {
     const container = document.getElementById('app')!;
     const sg = new SpaceGraph(container);
-    sg.loadSpec(spec);
-    sg.init().then(() => sg.render());
+    sg.init().then(() => {
+        sg.loadSpec(spec);
+        sg.render();
+    });
     return sg;
 }
 

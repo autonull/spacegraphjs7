@@ -35,14 +35,14 @@ const logger = createLogger('SpaceGraph');
 export class SpaceGraph {
     public static instances: Set<SpaceGraph> = new Set();
     public container: HTMLElement;
-    public renderer: Renderer;
-    public graph: Graph;
-    public pluginManager: PluginManager;
-    public cameraControls: CameraControls;
-    public events: EventSystem;
-    public vision: VisionManager;
-    public poolManager: ObjectPoolManager<any>;
-    public input: InputManager;
+    public renderer!: Renderer;
+    public graph!: Graph;
+    public pluginManager!: PluginManager;
+    public cameraControls!: CameraControls;
+    public events!: EventSystem;
+    public vision!: VisionManager;
+    public poolManager!: ObjectPoolManager<any>;
+    public input!: InputManager;
     public options: SpaceGraphOptions;
     private animationFrameId?: number;
     private lastTimestamp: number = 0;
@@ -51,12 +51,17 @@ export class SpaceGraph {
     constructor(container: HTMLElement, options: SpaceGraphOptions = {}) {
         this.options = options;
         this.container = container;
-        this.poolManager = new ObjectPoolManager();
+        this.initializeCoreServices();
+        this.initializeInput();
+        SpaceGraph.instances.add(this);
+    }
 
+    private initializeCoreServices(): void {
+        this.poolManager = new ObjectPoolManager();
         this.events = new EventSystem();
         this.vision = new VisionManager(this);
         this.pluginManager = new PluginManager(this);
-        this.renderer = new Renderer(this, container);
+        this.renderer = new Renderer(this, this.container);
         this.graph = new Graph(this);
         this.cameraControls = new CameraControls(
             this.renderer.camera,
@@ -65,22 +70,22 @@ export class SpaceGraph {
                 import('./core/CameraControls').CameraControlsConfig
             >,
         );
+    }
 
+    private initializeInput(): void {
         this.input = new InputManager({
             graph: this,
             events: this.events,
         });
 
-        if ('input' in options) {
-            const inputConfig = options.input as DefaultInputConfig | undefined;
+        if ('input' in this.options) {
+            const inputConfig = this.options.input as DefaultInputConfig | undefined;
             if (inputConfig && typeof inputConfig !== 'boolean') {
                 applyDefaultInputConfig(this.input, this, inputConfig);
             }
         } else {
             applyDefaultInputConfig(this.input, this, {});
         }
-
-        SpaceGraph.instances.add(this);
     }
 
     static getContainerElement(container: string | HTMLElement): HTMLElement | null {
@@ -117,23 +122,45 @@ export class SpaceGraph {
 
     async init() {
         this.renderer.init();
+        this.registerNodeTypes();
+        this.registerEdgeTypes();
+        this.registerLayouts();
+        this.registerSystemPlugins();
+        this.registerFingerings();
+        await this.pluginManager.initAll();
+    }
 
-        for (const cls of DEFAULT_NODE_TYPES) this.pluginManager.registerNodeType(cls.name, cls);
-        for (const cls of DEFAULT_EDGE_TYPES)
+    private registerNodeTypes(): void {
+        for (const cls of DEFAULT_NODE_TYPES) {
+            this.pluginManager.registerNodeType(cls.name, cls);
+        }
+    }
+
+    private registerEdgeTypes(): void {
+        for (const cls of DEFAULT_EDGE_TYPES) {
             this.pluginManager.registerEdgeType(
                 cls.name,
                 cls as import('./core/TypeRegistry').EdgeConstructor,
             );
-        for (const [cls, name] of DEFAULT_LAYOUT_PLUGINS)
-            this.pluginManager.register(name, new cls());
-        for (const [cls, name] of DEFAULT_SYSTEM_PLUGINS)
-            this.pluginManager.register(name, new cls());
+        }
+    }
 
+    private registerLayouts(): void {
+        for (const [cls, name] of DEFAULT_LAYOUT_PLUGINS) {
+            this.pluginManager.register(name, new cls());
+        }
+    }
+
+    private registerSystemPlugins(): void {
+        for (const [cls, name] of DEFAULT_SYSTEM_PLUGINS) {
+            this.pluginManager.register(name, new cls());
+        }
+    }
+
+    private registerFingerings(): void {
         this.input.registerFingering(new CameraOrbitingFingering(this.cameraControls), 40);
         this.input.registerFingering(new CameraPanningFingering(this.cameraControls), 30);
         this.input.registerFingering(new CameraZoomingFingering(this.cameraControls), 20);
-
-        await this.pluginManager.initAll();
     }
 
     loadSpec(spec: GraphSpec): void {

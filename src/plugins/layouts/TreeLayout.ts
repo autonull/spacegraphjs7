@@ -1,7 +1,6 @@
 import * as THREE from 'three';
 import { BaseLayout, type LayoutConfig, type LayoutOptions } from './BaseLayout';
 import type { Node } from '../../nodes/Node';
-import type { Edge } from '../../edges/Edge';
 
 export class TreeLayout extends BaseLayout {
     readonly id = 'tree-layout';
@@ -33,7 +32,10 @@ export class TreeLayout extends BaseLayout {
 
         const inDegree = new Map<string, number>();
         const childrenMap = new Map<string, Node[]>();
-        for (const n of nodes) { inDegree.set(n.id, 0); childrenMap.set(n.id, []); }
+        for (const n of nodes) {
+            inDegree.set(n.id, 0);
+            childrenMap.set(n.id, []);
+        }
         for (const e of edges) {
             if (e.source?.id && e.target?.id) {
                 inDegree.set(e.target.id, (inDegree.get(e.target.id) ?? 0) + 1);
@@ -53,21 +55,36 @@ export class TreeLayout extends BaseLayout {
                 positions.set(node.id, new THREE.Vector3(currentX, -depth * levelHeight, 0));
                 currentX += nodeSpacing;
             } else {
-                let minX = Infinity, maxX = -Infinity;
+                let minX = Infinity,
+                    maxX = -Infinity;
                 for (const child of nodeChildren) {
                     assignPositions(child, depth + 1);
                     const cp = positions.get(child.id);
-                    if (cp) { minX = Math.min(minX, cp.x); maxX = Math.max(maxX, cp.x); }
+                    if (cp) {
+                        minX = Math.min(minX, cp.x);
+                        maxX = Math.max(maxX, cp.x);
+                    }
                 }
-                positions.set(node.id, new THREE.Vector3((minX + maxX) / 2, -depth * levelHeight, 0));
+                positions.set(
+                    node.id,
+                    new THREE.Vector3((minX + maxX) / 2, -depth * levelHeight, 0),
+                );
             }
         };
 
-        for (const root of roots) { assignPositions(root, 0); currentX += nodeSpacing * 2; }
+        for (const root of roots) {
+            assignPositions(root, 0);
+            currentX += nodeSpacing * 2;
+        }
 
-        let sumX = 0, sumY = 0;
-        for (const p of positions.values()) { sumX += p.x; sumY += p.y; }
-        const offsetX = sumX / positions.size, offsetY = sumY / positions.size;
+        let sumX = 0,
+            sumY = 0;
+        for (const p of positions.values()) {
+            sumX += p.x;
+            sumY += p.y;
+        }
+        const offsetX = sumX / positions.size,
+            offsetY = sumY / positions.size;
         const finalPos = new THREE.Vector3();
 
         for (const [id, pos] of positions) {
@@ -76,6 +93,6 @@ export class TreeLayout extends BaseLayout {
             this.applyPosition(this.graph.getNode(id) as Node, finalPos, { animate, duration });
         }
 
-        for (const edge of edges) (edge as Edge).update?.();
+        this.updateEdges();
     }
 }

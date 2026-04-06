@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import { BaseLayout, type LayoutConfig, type LayoutOptions } from './BaseLayout';
-import type { Edge } from '../../edges/Edge';
 
 export class GeoLayout extends BaseLayout {
     readonly id = 'geo-layout';
@@ -8,7 +7,14 @@ export class GeoLayout extends BaseLayout {
     readonly version = '1.0.0';
 
     protected defaultConfig(): LayoutConfig {
-        return { projection: 'sphere', radius: 500, mapWidth: 1000, mapHeight: 500, animate: true, duration: 1.5 };
+        return {
+            projection: 'sphere',
+            radius: 500,
+            mapWidth: 1000,
+            mapHeight: 500,
+            animate: true,
+            duration: 1.5,
+        };
     }
 
     async apply(options?: LayoutOptions): Promise<void> {
@@ -21,7 +27,9 @@ export class GeoLayout extends BaseLayout {
             duration = this.config.duration ?? 1.5,
         } = options ?? {};
 
-        const nodes = Array.from(this.graph.getNodes()).filter((n) => !(n.data as Record<string, unknown>).pinned);
+        const nodes = Array.from(this.graph.getNodes()).filter(
+            (n) => !(n.data as Record<string, unknown>).pinned,
+        );
         if (!nodes.length) return;
 
         const targetPos = new THREE.Vector3();
@@ -32,7 +40,11 @@ export class GeoLayout extends BaseLayout {
             if (projection === 'sphere') {
                 const phi = (90 - lat) * (Math.PI / 180);
                 const theta = (lng + 180) * (Math.PI / 180);
-                targetPos.set(-(radius * Math.sin(phi) * Math.cos(theta)), radius * Math.cos(phi), radius * Math.sin(phi) * Math.sin(theta));
+                targetPos.set(
+                    -(radius * Math.sin(phi) * Math.cos(theta)),
+                    radius * Math.cos(phi),
+                    radius * Math.sin(phi) * Math.sin(theta),
+                );
             } else if (projection === 'equirectangular') {
                 targetPos.set((lng / 180) * (mapWidth / 2), (lat / 90) * (mapHeight / 2), 0);
             } else {
@@ -46,6 +58,6 @@ export class GeoLayout extends BaseLayout {
             this.applyPosition(node, targetPos, { animate, duration });
         }
 
-        for (const edge of this.graph.getEdges()) (edge as Edge).update?.();
+        this.updateEdges();
     }
 }

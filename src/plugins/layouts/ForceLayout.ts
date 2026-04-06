@@ -14,6 +14,11 @@ export interface ForceLayoutConfig extends LayoutConfig {
     temperature: number;
 }
 
+/**
+ * Force-directed layout using spring-electrical model.
+ * Simulates physical forces (repulsion between nodes, attraction along edges)
+ * to produce aesthetically pleasing layouts with minimal edge crossings.
+ */
 export class ForceLayout extends BaseLayout {
     readonly id = 'force-layout';
     readonly name = 'Force Directed';

@@ -9,3 +9,4 @@ export { HoverFingering } from './HoverFingering';
 export { BoxSelectingFingering } from './BoxSelectingFingering';
 export { ResizeFingering } from './ResizeFingering';
 export { WiringFingering } from './WiringFingering';
+export { PinchZoomFingering } from './PinchZoomFingering';

@@ -1,7 +1,6 @@
 import * as THREE from 'three';
 import { BaseLayout, type LayoutConfig, type LayoutOptions } from './BaseLayout';
 import type { Node } from '../../nodes/Node';
-import type { Edge } from '../../edges/Edge';
 
 export class ClusterLayout extends BaseLayout {
     readonly id = 'cluster-layout';
@@ -9,7 +8,13 @@ export class ClusterLayout extends BaseLayout {
     readonly version = '1.0.0';
 
     protected defaultConfig(): LayoutConfig {
-        return { clusterBy: 'category', clusterRadius: 300, nodeRadius: 100, animate: true, duration: 1.5 };
+        return {
+            clusterBy: 'category',
+            clusterRadius: 300,
+            nodeRadius: 100,
+            animate: true,
+            duration: 1.5,
+        };
     }
 
     async apply(options?: LayoutOptions): Promise<void> {
@@ -21,12 +26,15 @@ export class ClusterLayout extends BaseLayout {
             duration = this.config.duration ?? 1.5,
         } = options ?? {};
 
-        const nodes = Array.from(this.graph.getNodes()).filter((n) => !(n.data as Record<string, unknown>).pinned);
+        const nodes = Array.from(this.graph.getNodes()).filter(
+            (n) => !(n.data as Record<string, unknown>).pinned,
+        );
         if (!nodes.length) return;
 
         const clusters = new Map<string, Node[]>();
         for (const node of nodes) {
-            const key = node.data?.[clusterBy] != null ? String(node.data[clusterBy]) : 'Uncategorized';
+            const key =
+                node.data?.[clusterBy] != null ? String(node.data[clusterBy]) : 'Uncategorized';
             if (!clusters.has(key)) clusters.set(key, []);
             clusters.get(key)!.push(node as Node);
         }
@@ -48,17 +56,25 @@ export class ClusterLayout extends BaseLayout {
                     targetPos.set(centerX, centerY, 0);
                 } else if (numNodes < 10) {
                     const microAngle = (Math.PI * 2 * nodeIndex) / numNodes;
-                    targetPos.set(centerX + Math.cos(microAngle) * nodeRadius, centerY + Math.sin(microAngle) * nodeRadius, 0);
+                    targetPos.set(
+                        centerX + Math.cos(microAngle) * nodeRadius,
+                        centerY + Math.sin(microAngle) * nodeRadius,
+                        0,
+                    );
                 } else {
                     const phi = (1 + Math.sqrt(5)) / 2;
                     const microAngle = (nodeIndex * 2 * Math.PI) / (phi * phi);
                     const microR = nodeRadius * Math.sqrt(nodeIndex / numNodes);
-                    targetPos.set(centerX + Math.cos(microAngle) * microR, centerY + Math.sin(microAngle) * microR, (Math.random() - 0.5) * nodeRadius * 0.2);
+                    targetPos.set(
+                        centerX + Math.cos(microAngle) * microR,
+                        centerY + Math.sin(microAngle) * microR,
+                        (Math.random() - 0.5) * nodeRadius * 0.2,
+                    );
                 }
                 this.applyPosition(node, targetPos, { animate, duration });
             });
         });
 
-        for (const edge of this.graph.getEdges()) (edge as Edge).update?.();
+        this.updateEdges();
     }
 }

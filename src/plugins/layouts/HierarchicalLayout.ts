@@ -1,7 +1,6 @@
 import * as THREE from 'three';
 import { BaseLayout, type LayoutConfig, type LayoutOptions } from './BaseLayout';
 import type { Node } from '../../nodes/Node';
-import type { Edge } from '../../edges/Edge';
 
 export class HierarchicalLayout extends BaseLayout {
     readonly id = 'hierarchical-layout';
@@ -78,10 +77,14 @@ export class HierarchicalLayout extends BaseLayout {
                 const secondary = -totalWidth / 2 + i * nodeSpacing;
                 const [x, y] = (() => {
                     switch (direction) {
-                        case 'bottom-up': return [secondary, primary];
-                        case 'left-right': return [primary, secondary];
-                        case 'right-left': return [-primary, secondary];
-                        default: return [secondary, -primary];
+                        case 'bottom-up':
+                            return [secondary, primary];
+                        case 'left-right':
+                            return [primary, secondary];
+                        case 'right-left':
+                            return [-primary, secondary];
+                        default:
+                            return [secondary, -primary];
                     }
                 })();
                 this.applyPosition(node, new THREE.Vector3(x, y, z), { animate, duration });
@@ -92,11 +95,15 @@ export class HierarchicalLayout extends BaseLayout {
         const maxLevel = Math.max(...level.values(), 0);
         for (const [id, node] of nodes) {
             if (!visited.has(id)) {
-                this.applyPosition(node as Node, new THREE.Vector3(orphanX, -(maxLevel + 1) * levelHeight, z), { animate: false });
+                this.applyPosition(
+                    node as Node,
+                    new THREE.Vector3(orphanX, -(maxLevel + 1) * levelHeight, z),
+                    { animate: false },
+                );
                 orphanX += nodeSpacing;
             }
         }
 
-        for (const edge of edges.values()) (edge as Edge).update?.();
+        this.updateEdges();
     }
 }

@@ -1,7 +1,6 @@
 import * as THREE from 'three';
 import { BaseLayout, type LayoutConfig, type LayoutOptions } from './BaseLayout';
 import type { Node } from '../../nodes/Node';
-import type { Edge } from '../../edges/Edge';
 
 export class TimelineLayout extends BaseLayout {
     readonly id = 'timeline-layout';
@@ -9,7 +8,16 @@ export class TimelineLayout extends BaseLayout {
     readonly version = '1.0.0';
 
     protected defaultConfig(): LayoutConfig {
-        return { timeField: 'timestamp', orientation: 'horizontal', spacing: 200, scaleFactor: 0.1, animate: true, duration: 1.5, staggerLayout: true, staggerAmount: 150 };
+        return {
+            timeField: 'timestamp',
+            orientation: 'horizontal',
+            spacing: 200,
+            scaleFactor: 0.1,
+            animate: true,
+            duration: 1.5,
+            staggerLayout: true,
+            staggerAmount: 150,
+        };
     }
 
     async apply(options?: LayoutOptions): Promise<void> {
@@ -24,14 +32,25 @@ export class TimelineLayout extends BaseLayout {
             staggerAmount = this.config.staggerAmount as number,
         } = options ?? {};
 
-        const nodes = Array.from(this.graph.getNodes()).filter((n) => !(n.data as Record<string, unknown>).pinned);
+        const nodes = Array.from(this.graph.getNodes()).filter(
+            (n) => !(n.data as Record<string, unknown>).pinned,
+        );
         if (!nodes.length) return;
 
         const temporalNodes = nodes.map((node) => {
             let timeVal = 0;
             if (node.data?.[timeField] !== undefined) {
                 const val = node.data[timeField];
-                timeVal = val instanceof Date ? val.getTime() : typeof val === 'string' ? (isNaN(Date.parse(val)) ? 0 : Date.parse(val)) : typeof val === 'number' ? val : 0;
+                timeVal =
+                    val instanceof Date
+                        ? val.getTime()
+                        : typeof val === 'string'
+                          ? isNaN(Date.parse(val))
+                              ? 0
+                              : Date.parse(val)
+                          : typeof val === 'number'
+                            ? val
+                            : 0;
             }
             return { node: node as Node, timeVal };
         });
@@ -44,10 +63,20 @@ export class TimelineLayout extends BaseLayout {
         for (let i = 0; i < temporalNodes.length; i++) {
             const { node, timeVal } = temporalNodes[i];
             const hasValidTime = timeVal !== 0 || minTime !== 0;
-            const linearPos = hasValidTime ? (timeVal - minTime) * scaleFactor : currentIndex++ * spacing;
-            const staggerOffset = staggerLayout ? (i % 2 === 0 ? staggerAmount : -staggerAmount) : 0;
+            const linearPos = hasValidTime
+                ? (timeVal - minTime) * scaleFactor
+                : currentIndex++ * spacing;
+            const staggerOffset = staggerLayout
+                ? i % 2 === 0
+                    ? staggerAmount
+                    : -staggerAmount
+                : 0;
 
-            targetPos.set(orientation === 'horizontal' ? linearPos : staggerOffset, orientation === 'horizontal' ? staggerOffset : -linearPos, 0);
+            targetPos.set(
+                orientation === 'horizontal' ? linearPos : staggerOffset,
+                orientation === 'horizontal' ? staggerOffset : -linearPos,
+                0,
+            );
             this.applyPosition(node, targetPos, { animate, duration });
         }
 
@@ -60,6 +89,6 @@ export class TimelineLayout extends BaseLayout {
             this.applyPosition(node, targetPos, { animate, duration });
         }
 
-        for (const edge of this.graph.getEdges()) (edge as Edge).update?.();
+        this.updateEdges();
     }
 }

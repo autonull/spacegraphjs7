@@ -57,6 +57,8 @@ import { ErgonomicsPlugin } from '../plugins/ErgonomicsPlugin';
 import { PhysicsPlugin } from '../plugins/PhysicsPlugin';
 import { HUDPlugin } from '../plugins/HUDPlugin';
 import { HistoryPlugin } from '../plugins/HistoryPlugin';
+import { FractalZoomPlugin } from '../plugins/FractalZoomPlugin';
+import { ZoomUIPlugin } from '../plugins/ZoomUIPlugin';
 
 import type { Plugin } from '../core/PluginManager';
 import type { GraphSpec, NodeSpec, EdgeSpec } from '../types';
@@ -122,6 +124,8 @@ export const DEFAULT_LAYOUT_PLUGINS: [PluginCtor, string][] = [
 
 export const DEFAULT_SYSTEM_PLUGINS: [PluginCtor, string][] = [
     [InteractionPlugin, 'InteractionPlugin'],
+    [FractalZoomPlugin, 'FractalZoomPlugin'],
+    [ZoomUIPlugin, 'ZoomUIPlugin'],
     [LODPlugin, 'LODPlugin'],
     [AutoLayoutPlugin, 'AutoLayoutPlugin'],
     [AutoColorPlugin, 'AutoColorPlugin'],

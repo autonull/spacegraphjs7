@@ -16,6 +16,9 @@ export abstract class Fingering {
     defer(_finger: Finger): boolean {
         return true;
     }
+    startMultiTouch?(finger1: Finger, finger2: Finger): boolean;
+    updateMultiTouch?(finger1: Finger, finger2: Finger): boolean;
+    stopMultiTouch?(): void;
 }
 
 export class FingerManager {
