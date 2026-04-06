@@ -1,5 +1,7 @@
 import { SpaceGraph } from '../SpaceGraph';
-import type { GraphSpec } from '../types';
+import type { GraphSpec, NodeData, EdgeData } from '../types';
+import type { Node } from '../nodes/Node';
+import type { Edge } from '../edges/Edge';
 import { HUDPlugin } from '../plugins/HUDPlugin';
 import { InteractionPlugin } from '../plugins/InteractionPlugin';
 import { MinimapPlugin } from '../plugins/MinimapPlugin';
@@ -30,16 +32,16 @@ export interface SpaceGraphAppOptions {
         secondaryColor?: string;
         backgroundColor?: string;
     };
-    onNodeSelect?: (nodes: any[]) => void;
-    onNodeDblClick?: (node: any) => void;
-    nodeContextMenu?: (node: any) => Array<{ label: string; action: () => void }>;
-    onEdgeSelect?: (edges: any[]) => void;
-    onEdgeDblClick?: (edge: any) => void;
-    edgeContextMenu?: (edge: any) => Array<{ label: string; action: () => void }>;
-    onEdgeCreate?: (source: any, target: any) => void;
-    edgeTooltip?: (edge: any) => string | HTMLElement;
+    onNodeSelect?: (nodes: Node[]) => void;
+    onNodeDblClick?: (node: Node) => void;
+    nodeContextMenu?: (node: Node) => Array<{ label: string; action: () => void }>;
+    onEdgeSelect?: (edges: Edge[]) => void;
+    onEdgeDblClick?: (edge: Edge) => void;
+    edgeContextMenu?: (edge: Edge) => Array<{ label: string; action: () => void }>;
+    onEdgeCreate?: (source: Node, target: Node) => void;
+    edgeTooltip?: (edge: Edge) => string | HTMLElement;
     graphContextMenu?: () => Array<{ label: string; action: () => void }>;
-    nodeTooltip?: (node: any) => string | HTMLElement;
+    nodeTooltip?: (node: Node) => string | HTMLElement;
     enableGrid?: boolean;
     enableSearch?: boolean;
     hotkeys?: Record<string, () => void>;
@@ -58,10 +60,10 @@ export class SpaceGraphApp {
     public readonly sg: SpaceGraph;
     public readonly options: SpaceGraphAppOptions;
     public hud!: HUDPlugin;
-    private currentSelected: any[] = [];
-    private currentSelectedEdges: any[] = [];
-    private originalColors = new Map<any, number>();
-    private originalEdgeColors = new Map<any, number>();
+    private currentSelected: Node[] = [];
+    private currentSelectedEdges: Edge[] = [];
+    private originalColors = new Map<Node, number>();
+    private originalEdgeColors = new Map<Edge, number>();
     public buttons: AppButtonConfig[] = [];
     public toolbarActions: AppButtonConfig[] = [];
     private _zoomSliderHandler?: () => void;
@@ -169,8 +171,10 @@ export class SpaceGraphApp {
                 node.data?.color !== undefined &&
                 typeof node.updateSpec === 'function'
             ) {
-                this.originalColors.set(node, node.data.color);
-                node.updateSpec({ data: { color: this.options.selectionHighlightColor } });
+                this.originalColors.set(node, node.data.color as number);
+                node.updateSpec({
+                    data: { ...node.data, color: this.options.selectionHighlightColor },
+                });
             }
         }
 
@@ -180,8 +184,10 @@ export class SpaceGraphApp {
                 edge.data?.color !== undefined &&
                 typeof edge.updateSpec === 'function'
             ) {
-                this.originalEdgeColors.set(edge, edge.data.color);
-                edge.updateSpec({ data: { color: this.options.selectionHighlightEdgeColor } });
+                this.originalEdgeColors.set(edge, edge.data.color as number);
+                edge.updateSpec({
+                    data: { ...edge.data, color: this.options.selectionHighlightEdgeColor },
+                });
             }
         }
     }
@@ -232,8 +238,8 @@ export class SpaceGraphApp {
     public importData(data: any) {
         this.sg.import(data);
         this.sg.events.emit('selection:changed', {
-            nodes: this.currentSelected,
-            edges: this.currentSelectedEdges,
+            nodes: this.currentSelected.map((n) => n.id),
+            edges: this.currentSelectedEdges.map((e) => e.id),
             timestamp: Date.now(),
         });
     }
@@ -253,8 +259,8 @@ export class SpaceGraphApp {
     public addNode(nodeSpec: any) {
         this.sg.graph.addNode(nodeSpec);
         this.sg.events.emit('selection:changed', {
-            nodes: this.currentSelected,
-            edges: this.currentSelectedEdges,
+            nodes: this.currentSelected.map((n) => n.id),
+            edges: this.currentSelectedEdges.map((e) => e.id),
             timestamp: Date.now(),
         });
     }
@@ -270,8 +276,8 @@ export class SpaceGraphApp {
             if (index > -1) this.currentSelected.splice(index, 1);
             this.sg.graph.removeNode(nodeId);
             this.sg.events.emit('selection:changed', {
-                nodes: this.currentSelected,
-                edges: this.currentSelectedEdges,
+                nodes: this.currentSelected.map((n) => n.id),
+                edges: this.currentSelectedEdges.map((e) => e.id),
                 timestamp: Date.now(),
             });
         }
@@ -280,8 +286,8 @@ export class SpaceGraphApp {
     public addEdge(edgeSpec: any) {
         this.sg.graph.addEdge(edgeSpec);
         this.sg.events.emit('selection:changed', {
-            nodes: this.currentSelected,
-            edges: this.currentSelectedEdges,
+            nodes: this.currentSelected.map((n) => n.id),
+            edges: this.currentSelectedEdges.map((e) => e.id),
             timestamp: Date.now(),
         });
     }
@@ -297,8 +303,8 @@ export class SpaceGraphApp {
             if (index > -1) this.currentSelectedEdges.splice(index, 1);
             this.sg.graph.removeEdge(edgeId);
             this.sg.events.emit('selection:changed', {
-                nodes: this.currentSelected,
-                edges: this.currentSelectedEdges,
+                nodes: this.currentSelected.map((n) => n.id),
+                edges: this.currentSelectedEdges.map((e) => e.id),
                 timestamp: Date.now(),
             });
         }
@@ -309,8 +315,8 @@ export class SpaceGraphApp {
         this.currentSelected = [];
         this.currentSelectedEdges = [];
         this.sg.events.emit('selection:changed', {
-            nodes: this.currentSelected,
-            edges: this.currentSelectedEdges,
+            nodes: [],
+            edges: [],
             timestamp: Date.now(),
         });
     }
