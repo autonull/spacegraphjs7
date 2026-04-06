@@ -2,9 +2,6 @@ import type { Node } from '../nodes/Node';
 import type { Edge } from '../edges/Edge';
 import type { NodeSpec, EdgeSpec } from '../types';
 import type { SpaceGraph } from '../SpaceGraph';
-import { createLogger } from '../utils/logger';
-
-const logger = createLogger('TypeRegistry');
 
 export type NodeConstructor = new (sg: SpaceGraph, spec: NodeSpec) => Node;
 export type EdgeConstructor = new (
@@ -27,14 +24,14 @@ export class TypeRegistry {
 
     registerNode(typeName: string, constructor: NodeConstructor): void {
         if (this.nodeTypes.has(typeName)) {
-            logger.warn('Node type "%s" already registered. Overwriting.', typeName);
+            return;
         }
         this.nodeTypes.set(typeName, constructor);
     }
 
     registerEdge(typeName: string, constructor: EdgeConstructor): void {
         if (this.edgeTypes.has(typeName)) {
-            logger.warn('Edge type "%s" already registered. Overwriting.', typeName);
+            return;
         }
         this.edgeTypes.set(typeName, constructor);
     }

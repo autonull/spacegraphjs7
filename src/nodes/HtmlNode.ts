@@ -76,6 +76,7 @@ export class HtmlNode extends BaseContentNode {
         } else if (data.editable) {
             contentWrapper.contentEditable = 'true';
             contentWrapper.spellcheck = false;
+            contentWrapper.dataset.sgInteractive = 'true';
             contentWrapper.textContent = (data.content as string) ?? spec.label ?? 'HTML Node';
 
             let debounceTimer: ReturnType<typeof setTimeout>;

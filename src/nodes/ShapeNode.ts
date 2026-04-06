@@ -21,7 +21,7 @@ const GEOMETRY_FACTORIES: Record<ShapeType, (size: number) => THREE.BufferGeomet
 export class ShapeNode extends Node {
     private readonly mesh: THREE.Mesh;
     private meshGeometry: THREE.BufferGeometry;
-    private meshMaterial: THREE.MeshBasicMaterial;
+    private meshMaterial: THREE.MeshStandardMaterial;
     private labelSprite?: THREE.Sprite;
     private shapeType: ShapeType = 'sphere';
     private nodeSize: number = 40;
@@ -42,7 +42,11 @@ export class ShapeNode extends Node {
         const color = (data?.color as THREE.ColorRepresentation) ?? 0x3366ff;
 
         this.meshGeometry = this.createGeometry(this.shapeType, this.nodeSize);
-        this.meshMaterial = new THREE.MeshBasicMaterial({ color });
+        this.meshMaterial = new THREE.MeshStandardMaterial({
+            color,
+            emissive: 0x000000,
+            emissiveIntensity: 0,
+        });
         this.mesh = new THREE.Mesh(this.meshGeometry, this.meshMaterial);
 
         this._object.add(this.mesh);
@@ -133,6 +137,18 @@ export class ShapeNode extends Node {
 
     getBoundingSphereRadius(): number {
         return this.nodeSize / 2;
+    }
+
+    onPreRender(dt: number): void {
+        super.onPreRender(dt);
+        if (this.activity > 0.01) {
+            const intensity = this.activity * 0.5;
+            this.meshMaterial.emissive.setHex(0x4488ff);
+            this.meshMaterial.emissiveIntensity = intensity;
+        } else {
+            this.meshMaterial.emissive.setHex(0x000000);
+            this.meshMaterial.emissiveIntensity = 0;
+        }
     }
 
     dispose(): void {

@@ -221,6 +221,9 @@ function makeSpaceGraph() {
         pluginManager,
         poolManager,
         cameraControls: { controls: { target: new THREE.Vector3(), update: vi.fn() } },
+        input: {
+            registerFingering: vi.fn(),
+        },
         export: SpaceGraph.prototype.export,
         import: SpaceGraph.prototype.import,
         loadSpec: SpaceGraph.prototype.loadSpec,
@@ -1334,7 +1337,7 @@ describe('InteractionPlugin', () => {
         sg.renderer.camera.projectionMatrixInverse = new THREE.Matrix4();
         sg.cameraControls = { flyTo: vi.fn() };
         interaction = new InteractionPlugin();
-        interaction.init(sg);
+        interaction.init(sg, sg.graph, sg.events);
         sg.pluginManager.register('InteractionPlugin', interaction);
     });
 

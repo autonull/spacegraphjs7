@@ -1,16 +1,16 @@
 import * as THREE from 'three';
 import gsap from 'gsap';
 import { ThreeDisposer } from '../utils/ThreeDisposer';
-import { EventEmitter } from '../core/EventEmitter';
+import { Surface, type HitResult, type Rect } from '../core/Surface';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec, NodeData, AnimationProps } from '../types';
 
-type NodeEventMap = {
-    updated: { node: Node; changes: Partial<NodeSpec>; timestamp: number };
-    destroying: { node: Node; timestamp: number };
+export type NodeEventMap = {
+    'node:updated': { node: Node; changes: Partial<NodeSpec>; timestamp: number };
+    'node:destroying': { node: Node; timestamp: number };
 };
 
-export abstract class Node extends EventEmitter<NodeEventMap> {
+export abstract class Node extends Surface {
     readonly id: string;
     readonly type: string;
     public sg?: SpaceGraph;
@@ -20,11 +20,6 @@ export abstract class Node extends EventEmitter<NodeEventMap> {
     public rotation: THREE.Vector3;
     public scale: THREE.Vector3;
     abstract readonly object: THREE.Object3D;
-
-    activity = 0;
-    private readonly ACTIVITY_DECAY_RATE = 0.5;
-    isTouchable = true;
-    children: Node[] = [];
 
     constructor(sg?: SpaceGraph, spec?: NodeSpec);
     constructor(sgOrSpec?: SpaceGraph | NodeSpec, maybeSpec?: NodeSpec) {
@@ -51,6 +46,40 @@ export abstract class Node extends EventEmitter<NodeEventMap> {
             spec?.scale?.[1] ?? 1,
             spec?.scale?.[2] ?? 1,
         );
+    }
+
+    get bounds(): Rect {
+        const box = new THREE.Box3().setFromObject(this.object);
+        return {
+            x: box.min.x,
+            y: box.min.y,
+            width: box.max.x - box.min.x,
+            height: box.max.y - box.min.y,
+        };
+    }
+
+    hitTest(ray: THREE.Raycaster): HitResult | null {
+        if (!this.isTouchable) return null;
+        const hits = ray.intersectObject(this.object, true);
+        if (hits.length > 0) {
+            return {
+                surface: this,
+                point: hits[0].point,
+                localPoint: this.object.worldToLocal(hits[0].point.clone()),
+                distance: hits[0].distance,
+            };
+        }
+        return null;
+    }
+
+    start(): void {
+        this.pulse(0.5);
+    }
+
+    stop(): void {}
+
+    delete(): void {
+        this.dispose();
     }
 
     requireSpaceGraph(): SpaceGraph {
@@ -89,7 +118,7 @@ export abstract class Node extends EventEmitter<NodeEventMap> {
         }
 
         if (Object.keys(changes).length > 0) {
-            this.emitWithTimestamp('updated', { node: this, changes });
+            this.emit('node:updated', { node: this, changes, timestamp: Date.now() });
         }
 
         return this;
@@ -108,14 +137,6 @@ export abstract class Node extends EventEmitter<NodeEventMap> {
 
     isDraggable(_localPos: THREE.Vector3): boolean {
         return true;
-    }
-
-    pulse(intensity: number = 1.0): void {
-        this.activity = Math.max(this.activity, intensity);
-    }
-
-    onPreRender(_dt: number): void {
-        this.activity *= Math.exp(-_dt / this.ACTIVITY_DECAY_RATE);
     }
 
     animate(props: AnimationProps): this {
@@ -186,7 +207,7 @@ export abstract class Node extends EventEmitter<NodeEventMap> {
     }
 
     dispose(): void {
-        this.emitWithTimestamp('destroying', { node: this });
+        this.emit('node:destroying', { node: this, timestamp: Date.now() });
         this.object.parent?.remove(this.object);
         ThreeDisposer.dispose(this.object);
         this.removeAllListeners();

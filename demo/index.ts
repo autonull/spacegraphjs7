@@ -3,12 +3,61 @@ const demoModules = import.meta.glob('./*.html', { eager: false });
 
 // Human-readable names and icons for common demo patterns
 const DEMO_METADATA: Record<string, { name: string; icon: string; description: string }> = {
-    'empty.html': { name: 'Empty', icon: '◻️', description: 'Minimal setup with an empty graph canvas' },
-    'html.html': { name: 'HTML', icon: '🌐', description: 'Demonstrates HTML/CSS nodes integration' },
-    'instanced.html': { name: 'Instanced', icon: '📦', description: 'Uses instanced rendering for performance' },
-    'large.html': { name: 'Large', icon: '📊', description: 'Large-scale graph with many nodes and edges' },
-    'n8n-workflow.html': { name: 'n8n Workflow', icon: '⚙️', description: 'Visualizes n8n workflow automation graphs' },
-    'single-node.html': { name: 'Single Node', icon: '⬤', description: 'Basic single node demonstration' },
+    'empty.html': {
+        name: 'Empty',
+        icon: '◻️',
+        description: 'Minimal setup with an empty graph canvas',
+    },
+    'html.html': {
+        name: 'HTML',
+        icon: '🌐',
+        description: 'Demonstrates HTML/CSS nodes integration',
+    },
+    'instanced.html': {
+        name: 'Instanced',
+        icon: '📦',
+        description: 'Uses instanced rendering for performance',
+    },
+    'interaction.html': {
+        name: 'Interaction',
+        icon: '🖱️',
+        description: 'Basic node interaction and event handling',
+    },
+    'interaction-meta.html': {
+        name: 'Meta Widget',
+        icon: '⚡',
+        description: 'HoverMetaWidget with context actions and customization',
+    },
+    'large.html': {
+        name: 'Large',
+        icon: '📊',
+        description: 'Large-scale graph with many nodes and edges',
+    },
+    'layouts.html': {
+        name: 'Layouts',
+        icon: '🔷',
+        description: 'Layout algorithms: Force, Circular, Grid, Tree, etc.',
+    },
+    'plugins.html': {
+        name: 'Plugins',
+        icon: '🔌',
+        description: 'Plugin system: Minimap, History, HUD, and more',
+    },
+    'quickstart.html': {
+        name: 'Quick Start',
+        icon: '🚀',
+        description: 'Essential setup with common plugins - start here!',
+    },
+    'n8n-workflow.html': {
+        name: 'n8n Workflow',
+        icon: '⚙️',
+        description: 'Visualizes n8n workflow automation graphs',
+    },
+    'single-node.html': {
+        name: 'Single Node',
+        icon: '⬤',
+        description: 'Basic single node demonstration',
+    },
 };
 
 // Convert filename to display name (fallback for unknown demos)

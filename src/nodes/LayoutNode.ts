@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GroupNode } from './GroupNode';
-import type { Node } from './Node';
+import { Node } from './Node';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec } from '../types';
 
@@ -127,6 +127,8 @@ export class LayoutNode extends GroupNode {
     }
 
     onPreRender(_dt: number): void {
-        this.strategy(this.children, this, this.params);
+        super.onPreRender(_dt);
+        const childNodes = this.children.filter((c): c is Node => c instanceof Node);
+        this.strategy(childNodes, this, this.params);
     }
 }

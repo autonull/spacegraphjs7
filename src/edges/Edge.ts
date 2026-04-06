@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { Line2 } from 'three/examples/jsm/lines/Line2.js';
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
-import { EventEmitter } from '../core/EventEmitter';
+import { Surface, type HitResult, type Rect } from '../core/Surface';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { EdgeSpec, EdgeData } from '../types';
 import type { Node } from '../nodes/Node';
@@ -19,12 +19,7 @@ export const DEFAULT_EDGE_DATA: EdgeData = Object.freeze({
     gapSize: 1,
 });
 
-type EdgeEventMap = {
-    updated: { edge: Edge; changes: Partial<EdgeSpec>; timestamp: number };
-    destroying: { edge: Edge; timestamp: number };
-};
-
-export class Edge extends EventEmitter<EdgeEventMap> {
+export class Edge extends Surface {
     static HIGHLIGHT_COLOR = 0x00ffff;
     static DEFAULT_OPACITY = 0.8;
     static HIGHLIGHT_OPACITY = 1.0;
@@ -50,10 +45,7 @@ export class Edge extends EventEmitter<EdgeEventMap> {
     };
     public isHighlighted = false;
     public isHovered = false;
-    public activity = 0;
     public lastActivityTime = 0;
-
-    private readonly ACTIVITY_DECAY_RATE = 0.5;
 
     private _colorStart = new THREE.Color();
     private _colorEnd = new THREE.Color();
@@ -326,17 +318,44 @@ export class Edge extends EventEmitter<EdgeEventMap> {
         }
     }
 
-    updateResolution(width: number, height: number): void {
-        this.line?.material?.resolution.set(width, height);
+    get bounds(): Rect {
+        const box = new THREE.Box3().setFromObject(this.line);
+        return {
+            x: box.min.x,
+            y: box.min.y,
+            width: box.max.x - box.min.x,
+            height: box.max.y - box.min.y,
+        };
     }
 
-    pulse(intensity: number = 1.0): void {
-        this.activity = Math.max(this.activity, intensity);
+    hitTest(ray: THREE.Raycaster): HitResult | null {
+        if (!this.isTouchable) return null;
+        const hits = ray.intersectObject(this.line, true);
+        if (hits.length > 0) {
+            return {
+                surface: this,
+                point: hits[0].point,
+                localPoint: hits[0].point.clone(),
+                distance: hits[0].distance,
+            };
+        }
+        return null;
+    }
+
+    start(): void {
         this.lastActivityTime = performance.now();
+        this.pulse(0.3);
+    }
+
+    stop(): void {}
+
+    delete(): void {
+        this.dispose();
     }
 
     onPreRender(dt: number): void {
-        this.activity *= Math.exp(-dt / this.ACTIVITY_DECAY_RATE);
+        super.onPreRender(dt);
+        this.update();
     }
 
     activityDecay(now: number, window: number = 2000): number {
@@ -345,7 +364,7 @@ export class Edge extends EventEmitter<EdgeEventMap> {
     }
 
     dispose(): void {
-        this.emitWithTimestamp('destroying', { edge: this });
+        this.emit('destroying', { surface: this });
         this.line?.geometry?.dispose();
         this.line?.material?.dispose();
         this.line?.parent?.remove(this.line);

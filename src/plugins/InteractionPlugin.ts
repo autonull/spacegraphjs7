@@ -13,6 +13,13 @@ import { DragHandler } from './interaction/DragHandler';
 import { ConnectionHandler } from './interaction/ConnectionHandler';
 import { ResizeHandler } from './interaction/ResizeHandler';
 import { KeyboardShortcuts } from './interaction/KeyboardShortcuts';
+import {
+    NodeDraggingFingering,
+    HoverFingering,
+    BoxSelectingFingering,
+    ResizeFingering,
+    WiringFingering,
+} from '../input/fingerings';
 
 export class InteractionPlugin implements Plugin {
     readonly id = 'interaction';
@@ -60,7 +67,31 @@ export class InteractionPlugin implements Plugin {
             this.selectionManager.clear();
         });
 
+        this.registerFingerings();
         this.initInputHandlers();
+    }
+
+    private registerFingerings(): void {
+        const inputManager = this.sg.input;
+
+        const resizeFingering = new ResizeFingering(this.sg, this.raycaster);
+        inputManager.registerFingering(resizeFingering, 200);
+
+        const wiringFingering = new WiringFingering(this.sg, this.raycaster);
+        inputManager.registerFingering(wiringFingering, 150);
+
+        const nodeDragFingering = new NodeDraggingFingering(this.sg, this.raycaster);
+        inputManager.registerFingering(nodeDragFingering, 100);
+
+        const boxSelectFingering = new BoxSelectingFingering(
+            this.sg,
+            this.raycaster,
+            this.selectionManager,
+        );
+        inputManager.registerFingering(boxSelectFingering, 80);
+
+        const hoverFingering = new HoverFingering(this.sg, this.raycaster);
+        inputManager.registerFingering(hoverFingering, 60);
     }
 
     private initInputHandlers(): void {

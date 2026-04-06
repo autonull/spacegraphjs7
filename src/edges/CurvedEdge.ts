@@ -41,6 +41,8 @@ export class CurvedEdge extends Edge {
     update() {
         super.update();
 
+        if (!this.curve) return;
+
         this.curve.v0.copy(this.source.position);
         this.curve.v1.copy(this.getControlPoint());
         this.curve.v2.copy(this.target.position);

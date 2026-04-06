@@ -38,6 +38,8 @@ export class Graph extends EventEmitter<GraphEventMap> {
         if (typeof (specOrNode as Node).updatePosition === 'function') {
             const node = specOrNode as Node;
             this.nodes.set(node.id, node);
+            this.sg?.renderer.scene.add(node.object);
+            node.start();
             this.emitWithTimestamp('node:added', { node });
             return node;
         }
@@ -53,6 +55,8 @@ export class Graph extends EventEmitter<GraphEventMap> {
 
         const node = new NodeType(this.sg, spec);
         this.nodes.set(spec.id, node);
+        this.sg?.renderer.scene.add(node.object);
+        node.start();
         this.emitWithTimestamp('node:added', { node });
         return node;
     }
@@ -82,6 +86,8 @@ export class Graph extends EventEmitter<GraphEventMap> {
         ) {
             const edge = specOrEdge as Edge;
             this.edges.set(edge.id, edge);
+            this.sg?.renderer.scene.add(edge.line);
+            edge.start();
             this.emitWithTimestamp('edge:added', { edge });
             return edge;
         }
@@ -110,6 +116,8 @@ export class Graph extends EventEmitter<GraphEventMap> {
 
         const edge = new EdgeType(this.sg, spec, sourceNode, targetNode);
         this.edges.set(spec.id, edge);
+        this.sg?.renderer.scene.add(edge.line);
+        edge.start();
         this.emitWithTimestamp('edge:added', { edge });
         return edge;
     }
@@ -141,6 +149,7 @@ export class Graph extends EventEmitter<GraphEventMap> {
         const node = this.nodes.get(id);
         if (!node) return;
 
+        this.sg?.renderer.scene.remove(node.object);
         this.nodes.delete(id);
         this.emitWithTimestamp('node:removed', { id });
 
@@ -158,6 +167,14 @@ export class Graph extends EventEmitter<GraphEventMap> {
     removeEdge(id: string): void {
         const edge = this.edges.get(id);
         if (!edge) return;
+
+        this.sg?.renderer.scene.remove(edge.line);
+        if (edge.arrowheads.source) {
+            this.sg?.renderer.scene.remove(edge.arrowheads.source);
+        }
+        if (edge.arrowheads.target) {
+            this.sg?.renderer.scene.remove(edge.arrowheads.target);
+        }
 
         this.edges.delete(id);
         this.emitWithTimestamp('edge:removed', { id });

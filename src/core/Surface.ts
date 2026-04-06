@@ -18,12 +18,19 @@ export interface Rect {
     height: number;
 }
 
-export abstract class Surface extends EventEmitter<{
+export type SurfaceEventMap = {
     pointerenter: { surface: Surface };
     pointerleave: { surface: Surface };
     pointerdown: { surface: Surface; event: PointerEvent };
     pointerup: { surface: Surface; event: PointerEvent };
-}> {
+    updated: { surface: Surface; changes: unknown };
+    destroying: { surface: Surface };
+    [key: string]: unknown;
+};
+
+export abstract class Surface extends EventEmitter<SurfaceEventMap> {
+    abstract readonly id: string;
+    abstract readonly type: string;
     abstract bounds: Rect;
     abstract hitTest(ray: THREE.Raycaster): HitResult | null;
     abstract start(): void;
@@ -33,6 +40,25 @@ export abstract class Surface extends EventEmitter<{
     parent?: Surface;
     children: Surface[] = [];
     visible = true;
+    isTouchable = true;
+    activity = 0;
+
+    private readonly ACTIVITY_DECAY_RATE = 0.5;
+
+    isDraggable(_localPos: THREE.Vector3): boolean {
+        return true;
+    }
+
+    onPreRender(_dt: number): void {
+        this.activity *= Math.exp(-_dt / this.ACTIVITY_DECAY_RATE);
+    }
+
+    pulse(intensity: number = 1.0): void {
+        this.activity = Math.max(this.activity, intensity);
+        if ('lastActivityTime' in this) {
+            (this as any).lastActivityTime = performance.now();
+        }
+    }
 
     parentOrSelf(): Surface {
         return this.parent ?? this;

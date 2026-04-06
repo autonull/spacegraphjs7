@@ -250,46 +250,25 @@ describe('Zoom Stack', () => {
     });
 });
 
-describe('Keyboard Camera Controls', () => {
-    it('should track key state on keydown/keyup', () => {
-        const container = document.createElement('div');
-        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 10000);
-        camera.position.set(0, 0, 500);
-        camera.up.set(0, 1, 0);
-        const controls = new CameraControls(camera, container);
+// Keyboard controls removed - now handled by input system
+// describe('Keyboard Camera Controls', () => {
+//   it('should track key state on keydown/keyup', () => {
+//     // Removed - keyboard now handled via InputManager
+//   });
+//
+//   it('should respect enableKeyboard=false', () => {
+//     // Removed - keyboard now handled via InputManager
+//   });
+//
+//   it('should panBy correctly', () => {
+//     // Removed - keyboard now handled via InputManager
+//   });
+//
+//   it('should wire "o" key to toggleOrthographic', () => {
+//     // Removed - keyboard now handled via InputManager
+//   });
+// });
 
-        window.dispatchEvent(new KeyboardEvent('keydown', { key: 'l' }));
-        controls.processKeyboardInput();
-        expect(controls.panOffset.x).not.toBe(0);
-
-        window.dispatchEvent(new KeyboardEvent('keyup', { key: 'l' }));
-    });
-
-    it('should respect enableKeyboard=false', () => {
-        const container = document.createElement('div');
-        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 10000);
-        camera.position.set(0, 0, 500);
-        const controls = new CameraControls(camera, container, { enableKeyboard: false });
-
-        window.dispatchEvent(new KeyboardEvent('keydown', { key: 'l' }));
-        controls.update();
-        expect(controls.panOffset.x).toBe(0);
-    });
-
-    it('should panBy correctly', () => {
-        const container = document.createElement('div');
-        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 10000);
-        camera.position.set(0, 0, 500);
-        camera.up.set(0, 1, 0);
-        const controls = new CameraControls(camera, container);
-
-        controls.panBy(10, 0);
-        expect(controls.panOffset.x).not.toBe(0);
-
-        controls.panBy(0, 10);
-        expect(controls.panOffset.y).not.toBe(0);
-    });
-});
 
 describe('Orthographic Toggle', () => {
     it('should toggle orthographic mode', () => {
@@ -302,74 +281,7 @@ describe('Orthographic Toggle', () => {
         controls.toggleOrthographic();
         expect(controls.isUsingOrthographic).toBe(true);
         expect(controls.getOrthoCamera()).not.toBeNull();
-    });
-
-    it('should wire "o" key to toggleOrthographic', () => {
-        const container = document.createElement('div');
-        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 10000);
-        camera.position.set(0, 0, 500);
-        const controls = new CameraControls(camera, container);
-
-        window.dispatchEvent(new KeyboardEvent('keydown', { key: 'o' }));
-        controls.update();
-        expect(controls.isUsingOrthographic).toBe(true);
-
-        window.dispatchEvent(new KeyboardEvent('keyup', { key: 'o' }));
-    });
 });
-
-describe('Right-Drag Zoom', () => {
-    it('should start right drag on button 2', () => {
-        const container = document.createElement('div');
-        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 10000);
-        camera.position.set(0, 0, 500);
-        const controls = new CameraControls(camera, container);
-
-        container.dispatchEvent(
-            new PointerEvent('pointerdown', { button: 2, clientX: 100, clientY: 100 }),
-        );
-        expect((controls as any).isRightDragging).toBe(true);
-    });
-
-    it('should update zoom on right drag move', () => {
-        const container = document.createElement('div');
-        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 10000);
-        camera.position.set(0, 0, 500);
-        const controls = new CameraControls(camera, container);
-        const initialScale = (controls as any).scale;
-
-        container.dispatchEvent(
-            new PointerEvent('pointerdown', {
-                button: 2,
-                clientX: 100,
-                clientY: 100,
-                pointerId: 1,
-            }),
-        );
-        container.dispatchEvent(
-            new PointerEvent('pointermove', { clientX: 100, clientY: 150, pointerId: 1 }),
-        );
-
-        expect((controls as any).scale).not.toBe(initialScale);
-    });
-
-    it('should end right drag on pointer up', () => {
-        const container = document.createElement('div');
-        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 10000);
-        camera.position.set(0, 0, 500);
-        const controls = new CameraControls(camera, container);
-
-        container.dispatchEvent(
-            new PointerEvent('pointerdown', {
-                button: 2,
-                clientX: 100,
-                clientY: 100,
-                pointerId: 1,
-            }),
-        );
-        container.dispatchEvent(new PointerEvent('pointerup', { button: 2, pointerId: 1 }));
-        expect((controls as any).isRightDragging).toBe(false);
-    });
 });
 
 describe('Node Activity', () => {

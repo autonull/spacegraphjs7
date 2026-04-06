@@ -7,6 +7,13 @@ import { VisionManager } from './core/VisionManager';
 import { ObjectPoolManager } from './core/ObjectPoolManager';
 import { InputManager } from './input/InputManager';
 import { applyDefaultInputConfig, type DefaultInputConfig } from './input/DefaultInputConfig';
+import {
+    CameraOrbitingFingering,
+    CameraPanningFingering,
+    CameraZoomingFingering,
+    NodeDraggingFingering,
+    HoverFingering,
+} from './input/fingerings';
 import { createLogger } from './utils/logger';
 import { safeClone } from './utils/math';
 import {
@@ -121,6 +128,10 @@ export class SpaceGraph {
             this.pluginManager.register(name, new cls());
         for (const [cls, name] of DEFAULT_SYSTEM_PLUGINS)
             this.pluginManager.register(name, new cls());
+
+        this.input.registerFingering(new CameraOrbitingFingering(this.cameraControls), 40);
+        this.input.registerFingering(new CameraPanningFingering(this.cameraControls), 30);
+        this.input.registerFingering(new CameraZoomingFingering(this.cameraControls), 20);
 
         await this.pluginManager.initAll();
     }

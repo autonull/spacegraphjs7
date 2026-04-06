@@ -217,6 +217,31 @@ export class DOMNode extends Node {
 
     public updateLod(_distance: number): void {}
 
+    isDraggable(localPos: THREE.Vector3): boolean {
+        const interactive = this.domElement.querySelector('[data-sg-interactive="true"]');
+        if (!interactive) return true;
+        const rect = interactive.getBoundingClientRect();
+        const canvasRect = this.sg?.renderer?.renderer?.domElement?.getBoundingClientRect();
+        if (!canvasRect) return true;
+        const relX = (localPos.x * canvasRect.width) / 2 + canvasRect.width / 2;
+        const relY = (-localPos.y * canvasRect.height) / 2 + canvasRect.height / 2;
+        return !(
+            relX >= rect.left - canvasRect.left &&
+            relX <= rect.right - canvasRect.left &&
+            relY >= rect.top - canvasRect.top &&
+            relY <= rect.bottom - canvasRect.top
+        );
+    }
+
+    onPreRender(dt: number): void {
+        super.onPreRender(dt);
+        if (this.activity > 0.01) {
+            this.domElement.style.boxShadow = `0 0 ${this.activity * 20}px rgba(68,136,255,${this.activity * 0.5})`;
+        } else {
+            this.domElement.style.boxShadow = 'none';
+        }
+    }
+
     dispose(): void {
         this.domElement.parentNode?.removeChild(this.domElement);
         this.meshGeometry?.dispose();

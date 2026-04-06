@@ -1,5 +1,6 @@
 import type { SpaceGraph } from '../SpaceGraph';
 import { EventSystem } from '../core/events/EventSystem';
+import { FingerManager, type Fingering, type Finger } from './Fingering';
 
 export type InputEventType =
     | 'keydown'
@@ -123,6 +124,8 @@ export class InputManager {
     private actions: Map<string, InputAction> = new Map();
     private bindings: InputBinding[] = [];
     private enabled = true;
+    private fingerManager: FingerManager;
+    private fingerings: Array<{ fingering: Fingering; priority: number }> = [];
 
     constructor(options: InputManagerOptions) {
         this.graph = options.graph;
@@ -136,11 +139,22 @@ export class InputManager {
             touchCount: 0,
         };
 
+        this.fingerManager = new FingerManager();
+
         if (options.sources) {
             for (const config of options.sources) {
                 this.addSource(config);
             }
         }
+    }
+
+    registerFingering(fingering: Fingering, priority: number): void {
+        this.fingerings.push({ fingering, priority });
+        this.fingerings.sort((a, b) => b.priority - a.priority);
+    }
+
+    getFingerManager(): FingerManager {
+        return this.fingerManager;
     }
 
     get context(): InputContext {
@@ -225,6 +239,14 @@ export class InputManager {
             return;
         }
 
+        if (
+            event.type === 'pointerdown' ||
+            event.type === 'pointermove' ||
+            event.type === 'pointerup'
+        ) {
+            this.routeFingeringEvent(event);
+        }
+
         for (const binding of this.bindings) {
             if (event.consumed) break;
             if (binding.sources.includes(source) && binding.eventType === event.type) {
@@ -234,6 +256,41 @@ export class InputManager {
                 if (action && (!action.enabled || action.enabled())) {
                     action.handler(event, this.context);
                 }
+            }
+        }
+    }
+
+    private routeFingeringEvent(event: InputEvent): void {
+        const data = event.data as PointerEventData;
+        const finger: Finger = {
+            pointerId: (event.originalEvent as PointerEvent)?.pointerId ?? 0,
+            position: { x: data.x, y: data.y },
+            buttons: data.buttons ?? 0,
+            state:
+                event.type === 'pointerdown' ? 'down' : event.type === 'pointerup' ? 'up' : 'move',
+            target: data.target,
+        };
+
+        if (event.type === 'pointerdown') {
+            this.fingerManager.setFinger(finger.pointerId, finger);
+            for (const { fingering } of this.fingerings) {
+                if (this.fingerManager.test(fingering, finger)) {
+                    event.consumed = true;
+                    return;
+                }
+            }
+        } else if (event.type === 'pointermove') {
+            const existing = this.fingerManager.getFinger(finger.pointerId);
+            if (existing) {
+                existing.position = finger.position;
+                existing.buttons = finger.buttons;
+                this.fingerManager.update(existing);
+            }
+        } else if (event.type === 'pointerup') {
+            const existing = this.fingerManager.getFinger(finger.pointerId);
+            if (existing) {
+                this.fingerManager.end(existing);
+                this.fingerManager.deleteFinger(finger.pointerId);
             }
         }
     }

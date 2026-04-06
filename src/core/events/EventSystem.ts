@@ -15,11 +15,12 @@ export interface SpaceGraphEvents {
         changes: Record<string, unknown>;
         timestamp: number;
     };
-    'interaction:dragstart': { node: import('../../nodes/Node').Node; event: PointerEvent };
-    'interaction:dragend': { node: import('../../nodes/Node').Node; event: PointerEvent };
+    'interaction:dragstart': { node: import('../../nodes/Node').Node; event?: PointerEvent };
+    'interaction:dragend': { node: import('../../nodes/Node').Node; event?: PointerEvent };
     'interaction:drag': {
         node: import('../../nodes/Node').Node;
         position: [number, number, number];
+        event?: PointerEvent;
     };
     'camera:move': { position: [number, number, number]; target: [number, number, number] };
     'selection:changed': { nodes: string[]; edges: string[]; timestamp: number };
@@ -40,9 +41,9 @@ export interface SpaceGraphEvents {
     'node:dblclick': { node: any };
     'edge:dblclick': { edge: any };
     'edge:click': { edge: any };
-    'node:pointerenter': { node: any; event: any };
+    'node:pointerenter': { node: any; event?: any };
     'node:pointerleave': { node: any };
-    'edge:pointerenter': { edge: any; event: any };
+    'edge:pointerenter': { edge: any; event?: any };
     'edge:pointerleave': { edge: any };
     [key: string]: unknown;
     [key: symbol]: unknown;

@@ -1,5 +1,5 @@
 // SpaceGraphJS - Camera Controls
-// Orbit-style camera controls with fly-to animation, zoom stack, and keyboard controls
+// Pure camera state machine - all input handled via Fingering
 
 import * as THREE from 'three';
 
@@ -12,15 +12,6 @@ export interface CameraControlsConfig {
     panSpeed: number;
     minDistance: number;
     maxDistance: number;
-    keyPanSpeed?: number;
-    keyZoomSpeed?: number;
-    keyPanLeft?: string;
-    keyPanRight?: string;
-    keyPanFront?: string;
-    keyPanBack?: string;
-    keyZoomIn?: string;
-    keyZoomOut?: string;
-    enableKeyboard?: boolean;
 }
 
 export class CameraControls {
@@ -33,10 +24,6 @@ export class CameraControls {
     private sphericalDelta: THREE.Spherical;
     private scale: number = 1;
     private panOffset: THREE.Vector3;
-    private rotateStart: THREE.Vector2;
-    private rotateEnd: THREE.Vector2;
-    private isDragging = false;
-    private state: 'none' | 'rotate' | 'zoom' | 'pan' = 'none';
 
     private zoomStack: Array<{ target: THREE.Vector3; distance: number }> = [];
     private readonly MAX_ZOOM_DEPTH = 8;
@@ -48,14 +35,8 @@ export class CameraControls {
     private startTarget = new THREE.Vector3();
     private startRadius = 0;
 
-    private keyState = new Map<string, boolean>();
-    private boundKeyHandlers: Array<{ type: string; handler: (e: KeyboardEvent) => void }> = [];
-
     private isOrthographic = false;
     private orthoCamera: THREE.OrthographicCamera | null = null;
-    private perspectiveCamera: THREE.PerspectiveCamera | null = null;
-    private isRightDragging = false;
-    private rightDragStart = new THREE.Vector2();
 
     constructor(
         camera: THREE.Camera,
@@ -74,15 +55,6 @@ export class CameraControls {
             panSpeed: 1.0,
             minDistance: 10,
             maxDistance: 10000,
-            keyPanSpeed: 5.0,
-            keyZoomSpeed: 0.4,
-            keyPanLeft: 'l',
-            keyPanRight: 'r',
-            keyPanFront: 'f',
-            keyPanBack: 'b',
-            keyZoomIn: 'z',
-            keyZoomOut: 'x',
-            enableKeyboard: true,
             ...config,
         };
 
@@ -90,11 +62,8 @@ export class CameraControls {
         this.spherical = new THREE.Spherical();
         this.sphericalDelta = new THREE.Spherical();
         this.panOffset = new THREE.Vector3();
-        this.rotateStart = new THREE.Vector2();
-        this.rotateEnd = new THREE.Vector2();
 
         this.updateSpherical();
-        this.setupEventListeners();
     }
 
     private updateSpherical(): void {
@@ -102,95 +71,25 @@ export class CameraControls {
         this.spherical.setFromVector3(offset);
     }
 
-    private setupEventListeners(): void {
-        this.domElement.addEventListener('pointerdown', this.onPointerDown);
-        this.domElement.addEventListener('pointermove', this.onPointerMove);
-        this.domElement.addEventListener('pointerup', this.onPointerUp);
-        this.domElement.addEventListener('wheel', this.onWheel, { passive: false });
-        this.domElement.addEventListener('contextmenu', this.onContextMenu);
-
-        const onKeyDown = (e: KeyboardEvent) => this.onKeyDown(e);
-        const onKeyUp = (e: KeyboardEvent) => this.onKeyUp(e);
-        window.addEventListener('keydown', onKeyDown);
-        window.addEventListener('keyup', onKeyUp);
-        this.boundKeyHandlers = [
-            { type: 'keydown', handler: onKeyDown },
-            { type: 'keyup', handler: onKeyUp },
-        ];
+    rotate(dx: number, dy: number): void {
+        if (!this.config.enableRotate) return;
+        this.sphericalDelta.theta -= dx * this.config.rotateSpeed * 0.005;
+        this.sphericalDelta.phi -= dy * this.config.rotateSpeed * 0.005;
     }
 
-    private onKeyDown = (e: KeyboardEvent): void => {
-        if (!this.config.enableKeyboard) return;
-        this.keyState.set(e.key, true);
-    };
+    pan(dx: number, dy: number): void {
+        if (!this.config.enablePan) return;
+        const offset = new THREE.Vector3().copy(this.camera.position).sub(this.target);
+        const side = new THREE.Vector3().crossVectors(this.camera.up, offset).normalize();
+        const up = this.camera.up.clone().normalize();
+        this.panOffset.add(side.multiplyScalar(-dx * this.config.panSpeed * 0.1));
+        this.panOffset.add(up.multiplyScalar(dy * this.config.panSpeed * 0.1));
+    }
 
-    private onKeyUp = (e: KeyboardEvent): void => {
-        this.keyState.set(e.key, false);
-    };
-
-    private onPointerDown = (event: PointerEvent): void => {
-        if (event.button === 0) {
-            this.state = 'rotate';
-        } else if (event.button === 1 || (event.button === 0 && event.shiftKey)) {
-            this.state = 'pan';
-        } else if (event.button === 2) {
-            this.setRightDragStart(event.clientX, event.clientY);
-            return;
-        }
-
-        this.rotateStart.set(event.clientX, event.clientY);
-        this.isDragging = true;
-        this.domElement.setPointerCapture(event.pointerId);
-    };
-
-    private onPointerMove = (event: PointerEvent): void => {
-        if (this.isRightDragging) {
-            this.updateRightDrag(event.clientX, event.clientY);
-            return;
-        }
-        if (!this.isDragging) return;
-
-        this.rotateEnd.set(event.clientX, event.clientY);
-
-        const deltaX = (this.rotateEnd.x - this.rotateStart.x) * this.config.rotateSpeed;
-        const deltaY = (this.rotateEnd.y - this.rotateStart.y) * this.config.rotateSpeed;
-
-        if (this.state === 'rotate' && this.config.enableRotate) {
-            this.sphericalDelta.theta -= deltaX * 0.005;
-            this.sphericalDelta.phi -= deltaY * 0.005;
-        } else if (this.state === 'pan' && this.config.enablePan) {
-            const offset = new THREE.Vector3().copy(this.camera.position).sub(this.target);
-            const side = new THREE.Vector3().crossVectors(this.camera.up, offset).normalize();
-            const up = this.camera.up.clone().normalize();
-
-            this.panOffset.add(side.multiplyScalar(-deltaX * 0.1));
-            this.panOffset.add(up.multiplyScalar(deltaY * 0.1));
-        }
-
-        this.rotateStart.copy(this.rotateEnd);
-    };
-
-    private onPointerUp = (event: PointerEvent): void => {
-        if (this.isRightDragging) {
-            this.endRightDrag();
-            return;
-        }
-        this.isDragging = false;
-        this.state = 'none';
-        this.domElement.releasePointerCapture(event.pointerId);
-    };
-
-    private onWheel = (event: WheelEvent): void => {
+    zoom(factor: number): void {
         if (!this.config.enableZoom) return;
-        event.preventDefault();
-
-        const delta = event.deltaY > 0 ? 1.1 : 1 / 1.1;
-        this.scale *= delta;
-    };
-
-    private onContextMenu = (event: MouseEvent): void => {
-        event.preventDefault();
-    };
+        this.scale *= factor;
+    }
 
     update(): void {
         this.spherical.theta += this.sphericalDelta.theta;
@@ -221,8 +120,6 @@ export class CameraControls {
             }
         }
 
-        this.processKeyboardInput();
-
         const offset = new THREE.Vector3().setFromSpherical(this.spherical);
         this.camera.position.copy(this.target).add(offset);
         this.camera.lookAt(this.target);
@@ -230,22 +127,6 @@ export class CameraControls {
         this.sphericalDelta.set(0, 0, 0);
         this.scale = 1;
         this.panOffset.set(0, 0, 0);
-    }
-
-    private processKeyboardInput(): void {
-        const keyPanSpeed = this.config.keyPanSpeed ?? 7;
-        const keyZoomSpeed = this.config.keyZoomSpeed ?? 1;
-        const isPressed = (key: string) => this.keyState.get(key);
-
-        if (isPressed(this.config.keyPanLeft ?? '')) this.panBy(-keyPanSpeed, 0);
-        if (isPressed(this.config.keyPanRight ?? '')) this.panBy(keyPanSpeed, 0);
-        if (isPressed(this.config.keyPanFront ?? '')) this.panBy(0, keyPanSpeed);
-        if (isPressed(this.config.keyPanBack ?? '')) this.panBy(0, -keyPanSpeed);
-        if (isPressed(this.config.keyZoomIn ?? ''))
-            this.spherical.radius *= 1 - keyZoomSpeed * 0.01;
-        if (isPressed(this.config.keyZoomOut ?? ''))
-            this.spherical.radius *= 1 + keyZoomSpeed * 0.01;
-        if (isPressed('o')) this.toggleOrthographic();
     }
 
     panBy(dx: number, dy: number): void {
@@ -337,23 +218,6 @@ export class CameraControls {
         return this.orthoCamera;
     }
 
-    setRightDragStart(x: number, y: number): void {
-        this.isRightDragging = true;
-        this.rightDragStart.set(x, y);
-    }
-
-    updateRightDrag(x: number, y: number): void {
-        if (!this.isRightDragging || !this.config.enableZoom) return;
-        const dy = y - this.rightDragStart.y;
-        const factor = dy > 0 ? 1.02 : 1 / 1.02;
-        this.scale *= Math.pow(factor, Math.abs(dy) * 0.1);
-        this.rightDragStart.set(x, y);
-    }
-
-    endRightDrag(): void {
-        this.isRightDragging = false;
-    }
-
     reset(): void {
         this.target.set(0, 0, 0);
         this.spherical.set(500, Math.PI / 4, 0);
@@ -361,17 +225,6 @@ export class CameraControls {
     }
 
     dispose(): void {
-        this.domElement.removeEventListener('pointerdown', this.onPointerDown);
-        this.domElement.removeEventListener('pointermove', this.onPointerMove);
-        this.domElement.removeEventListener('pointerup', this.onPointerUp);
-        this.domElement.removeEventListener('wheel', this.onWheel);
-        this.domElement.removeEventListener('contextmenu', this.onContextMenu);
-
-        for (const { type, handler } of this.boundKeyHandlers) {
-            window.removeEventListener(type as keyof WindowEventMap, handler as EventListener);
-        }
-        this.boundKeyHandlers = [];
-        this.keyState.clear();
         this.zoomStack = [];
     }
 }

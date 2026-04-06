@@ -24,10 +24,13 @@
         "LICENSE"
     ],
     "scripts": {
-        "dev": "pnpm dlx vite demo --host",
+        "dev": "pnpm dlx vite --host",
+        "dev:demo": "cd demo && pnpm dlx vite --port 5174",
         "build": "vite build",
+        "build:lib": "vite build",
+        "build:demo": "cd demo && pnpm dlx vite build --outDir ../dist-demo",
         "prepublishOnly": "pnpm run clean && pnpm run build && pnpm run test",
-        "clean": "rm -rf dist/",
+        "clean": "rm -rf dist/ dist-demo/",
         "verify": "tsx verification/verify_demos.ts",
         "test": "vitest run",
         "test:vision": "mkdir -p test/fixtures/dist && cp -r dist/* test/fixtures/dist/ && playwright test test/vision.spec.ts",
