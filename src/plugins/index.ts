@@ -29,8 +29,5 @@ export { MinimapPlugin } from './MinimapPlugin';
 export { ErgonomicsPlugin, type ErgonomicsConfig } from './ErgonomicsPlugin';
 export { VisionOverlayPlugin } from './VisionOverlayPlugin';
 export { HUDPlugin, type HUDElementOptions } from './HUDPlugin';
-export { HoverMetaWidget, type MetaAction } from './HoverMetaWidget';
 export { HistoryPlugin, type HistoryPluginOptions } from './HistoryPlugin';
 export { LayoutContainer } from './LayoutContainer';
-export { HoverOverlay } from './HoverOverlay';
-export type { HoverModel } from './HoverOverlay';

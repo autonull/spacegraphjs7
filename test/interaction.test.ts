@@ -14,7 +14,6 @@ import { DragHandler } from '../src/plugins/interaction/DragHandler';
 import { InteractionRaycaster } from '../src/plugins/interaction/RaycasterHelper';
 import { FingerManager, Fingering, type Finger } from '../src/input/Fingering';
 import { LayoutContainer } from '../src/plugins/LayoutContainer';
-import { HoverOverlay, type HoverModel } from '../src/plugins/HoverOverlay';
 import { Surface, type HitResult, type Rect } from '../src/core/Surface';
 import { createParentTransform, type SurfaceTransform } from '../src/input/SurfaceTransform';
 import { Node } from '../src/nodes/Node';
@@ -61,6 +60,8 @@ class TestNode extends Node {
 
 // Concrete test surface
 class TestSurface extends Surface {
+    readonly id = 'test-surface';
+    readonly type = 'TestSurface';
     bounds: Rect = { x: 0, y: 0, width: 100, height: 100 };
     hitTest(_ray: THREE.Raycaster): HitResult | null {
         return null;
@@ -269,7 +270,6 @@ describe('Zoom Stack', () => {
 //   });
 // });
 
-
 describe('Orthographic Toggle', () => {
     it('should toggle orthographic mode', () => {
         const container = document.createElement('div');
@@ -281,7 +281,7 @@ describe('Orthographic Toggle', () => {
         controls.toggleOrthographic();
         expect(controls.isUsingOrthographic).toBe(true);
         expect(controls.getOrthoCamera()).not.toBeNull();
-});
+    });
 });
 
 describe('Node Activity', () => {
@@ -605,67 +605,6 @@ describe('Surface', () => {
     it('should return self when no parent', () => {
         const surface = new TestSurface();
         expect(surface.parentOrSelf()).toBe(surface);
-    });
-});
-
-describe('HoverOverlay', () => {
-    it('should show target on pointerenter after delay', async () => {
-        const source = new TestSurface();
-        const target = new TestSurface();
-        let built = false;
-
-        const overlay = new HoverOverlay(
-            source,
-            () => {
-                built = true;
-                return target;
-            },
-            { delay: 10 },
-        );
-
-        source.emit('pointerenter', { surface: source });
-        expect(built).toBe(false);
-
-        await new Promise((r) => setTimeout(r, 20));
-        expect(built).toBe(true);
-
-        overlay.dispose();
-    });
-
-    it('should hide target on pointerleave', async () => {
-        const source = new TestSurface();
-        const target = new TestSurface();
-        let started = false;
-        let stopped = false;
-        let deleted = false;
-
-        const origStart = target.start.bind(target);
-        const origStop = target.stop.bind(target);
-        const origDelete = target.delete.bind(target);
-        target.start = () => {
-            started = true;
-            origStart();
-        };
-        target.stop = () => {
-            stopped = true;
-            origStop();
-        };
-        target.delete = () => {
-            deleted = true;
-            origDelete();
-        };
-
-        const overlay = new HoverOverlay(source, () => target, { delay: 0 });
-
-        source.emit('pointerenter', { surface: source });
-        await new Promise((r) => setTimeout(r, 5));
-        expect(started).toBe(true);
-
-        source.emit('pointerleave', { surface: source });
-        expect(stopped).toBe(true);
-        expect(deleted).toBe(true);
-
-        overlay.dispose();
     });
 });
 

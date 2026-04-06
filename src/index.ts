@@ -64,13 +64,9 @@ export {
     VisionOverlayPlugin,
     HUDPlugin,
     type HUDElementOptions,
-    HoverMetaWidget,
-    type MetaAction,
     HistoryPlugin,
     type HistoryPluginOptions,
     LayoutContainer,
-    HoverOverlay,
-    type HoverModel,
 } from './plugins';
 
 export {
