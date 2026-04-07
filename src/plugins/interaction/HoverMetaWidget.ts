@@ -1,4 +1,3 @@
-import * as THREE from 'three';
 import type { SpaceGraph } from '../../SpaceGraph';
 import type { Plugin } from '../../core/PluginManager';
 import type { Graph } from '../../core/Graph';

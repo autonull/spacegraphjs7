@@ -11,8 +11,6 @@ import {
     CameraOrbitingFingering,
     CameraPanningFingering,
     CameraZoomingFingering,
-    NodeDraggingFingering,
-    HoverFingering,
 } from './input/fingerings';
 import { createLogger } from './utils/logger';
 import { safeClone } from './utils/math';
@@ -25,7 +23,6 @@ import {
 } from './core/defaults';
 
 import type { GraphSpec, SpaceGraphOptions, SpecUpdate } from './types';
-import type { Plugin } from './core/PluginManager';
 import { MathPool } from './core/pooling/ObjectPool';
 import { CameraUtils } from './utils/CameraUtils';
 import { DOMUtils } from './utils/DOMUtils';

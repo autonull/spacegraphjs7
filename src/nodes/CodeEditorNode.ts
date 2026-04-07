@@ -24,8 +24,6 @@ export class CodeEditorNode extends BaseContentNode {
     private editorInstance: unknown = null;
 
     constructor(sg: SpaceGraph, spec: NodeSpec) {
-        const w = (spec.data?.width as number) ?? 600;
-        const h = (spec.data?.height as number) ?? 400;
         const isLight = (spec.data?.theme as string) === 'vs';
 
         super(sg, spec, {

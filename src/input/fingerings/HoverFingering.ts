@@ -19,7 +19,7 @@ export class HoverFingering implements Fingering {
         return false;
     }
 
-    update(finger: Finger): boolean {
+    update(_finger: Finger): boolean {
         const nodeResult = this.raycaster.raycastNode();
         const edgeResult = this.raycaster.raycastEdge();
 

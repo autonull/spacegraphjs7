@@ -3,7 +3,7 @@ import { clamp } from '../utils/math';
 import { Edge } from './Edge';
 import { MathPool } from '../core/pooling/ObjectPool';
 import type { SpaceGraph } from '../SpaceGraph';
-import type { EdgeData, EdgeSpec } from '../types';
+import type { EdgeSpec } from '../types';
 import type { Node } from '../nodes/Node';
 
 /**

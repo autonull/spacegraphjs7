@@ -1,4 +1,3 @@
-import * as THREE from 'three';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { Plugin } from '../core/PluginManager';
 import type { Graph } from '../core/Graph';
@@ -179,11 +178,8 @@ export class FractalZoomPlugin implements Plugin {
     zoomTo(distance: number, level?: number): void {
         if (!this.sg?.cameraControls) return;
 
-        const camera = this.sg.renderer.camera;
         const target = this.sg.cameraControls.target.clone();
-        const direction = new THREE.Vector3().subVectors(camera.position, target).normalize();
 
-        const newPos = target.clone().add(direction.multiplyScalar(distance));
         this.sg.cameraControls.flyTo(target, distance, this.config.transitionDuration);
 
         if (level !== undefined) {

@@ -1,5 +1,4 @@
 import type { SpaceGraphApp } from './SpaceGraphApp';
-import { InteractionPlugin } from '../plugins/InteractionPlugin';
 
 export function setupInteractionHandlers(app: SpaceGraphApp) {
     app.sg.events.on('interaction:selection', ({ nodes, edges }) => {
@@ -132,7 +131,7 @@ export function setupInteractionHandlers(app: SpaceGraphApp) {
         }
     });
 
-    app.sg.events.on('node:pointerenter', ({ node, event }) => {
+    app.sg.events.on('node:pointerenter', ({ node, event: _event }) => {
         if (app.options.nodeTooltip) {
             const content = app.options.nodeTooltip(node);
             if (content) {
@@ -145,7 +144,7 @@ export function setupInteractionHandlers(app: SpaceGraphApp) {
         app.hud.hideTooltip();
     });
 
-    app.sg.events.on('edge:pointerenter', ({ edge, event }) => {
+    app.sg.events.on('edge:pointerenter', ({ edge, event: _event }) => {
         if (app.options.edgeTooltip) {
             const content = app.options.edgeTooltip(edge);
             if (content) {
