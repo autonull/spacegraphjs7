@@ -2,7 +2,6 @@
 // Auto-triggers layout on graph mutations via dirty flag pattern
 
 import type { Graph } from '../core/Graph';
-import type { Node } from '../nodes/Node';
 import type { EventSystem } from '../core/events/EventSystem';
 
 export abstract class LayoutContainer {

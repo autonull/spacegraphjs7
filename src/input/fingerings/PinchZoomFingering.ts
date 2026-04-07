@@ -1,4 +1,3 @@
-import * as THREE from 'three';
 import type { SpaceGraph } from '../../SpaceGraph';
 import type { Finger, Fingering } from '../Fingering';
 
@@ -13,17 +12,17 @@ export class PinchZoomFingering implements Fingering {
         this.sg = sg;
     }
 
-    start(finger: Finger): boolean {
+    start(_finger: Finger): boolean {
         return false;
     }
 
-    update(finger: Finger): boolean {
+    update(_finger: Finger): boolean {
         return false;
     }
 
-    stop(finger: Finger): void {}
+    stop(_finger: Finger): void {}
 
-    defer(finger: Finger): boolean {
+    defer(_finger: Finger): boolean {
         return false;
     }
 

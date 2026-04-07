@@ -17,8 +17,6 @@ import { BaseContentNode } from './BaseContentNode';
 export class NoteNode extends BaseContentNode {
     constructor(sg: SpaceGraph, spec: NodeSpec) {
         const color = (spec.data?.color ?? '#fef08a') as string;
-        const w = (spec.data?.width ?? 200) as number;
-        const h = (spec.data?.height ?? 160) as number;
 
         super(sg, spec, {
             defaultWidth: 200,

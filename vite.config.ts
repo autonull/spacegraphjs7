@@ -17,5 +17,13 @@ export default defineConfig({
         target: 'esnext',
         outDir: '../dist-demo',
         emptyOutDir: true,
+        rollupOptions: {
+            output: {
+                manualChunks: {
+                    three: ['three'],
+                    monaco: ['@monaco-editor/loader'],
+                },
+            },
+        },
     },
 });

@@ -48,7 +48,7 @@ export class NodeDraggingFingering implements Fingering {
         return true;
     }
 
-    update(finger: Finger): boolean {
+    update(_finger: Finger): boolean {
         if (!this.active || !this.dragNode) return false;
 
         const intersect = this.raycaster.raycastPlane(this.dragPlane);
@@ -66,7 +66,7 @@ export class NodeDraggingFingering implements Fingering {
         return true;
     }
 
-    stop(finger: Finger): void {
+    stop(_finger: Finger): void {
         if (this.dragNode) {
             this.sg.events.emit('interaction:dragend', { node: this.dragNode });
         }

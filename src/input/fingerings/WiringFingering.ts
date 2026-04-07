@@ -51,7 +51,7 @@ export class WiringFingering implements Fingering {
         return true;
     }
 
-    update(finger: Finger): boolean {
+    update(_finger: Finger): boolean {
         if (!this.isConnecting || !this.sourceNode || !this.tempGeom) return false;
 
         const normal = this.sg.renderer.camera.getWorldDirection(new THREE.Vector3(0, 0, 1));
@@ -79,7 +79,7 @@ export class WiringFingering implements Fingering {
         return true;
     }
 
-    stop(finger: Finger): void {
+    stop(_finger: Finger): void {
         if (!this.isConnecting) return;
 
         const hoverResult = this.raycaster.raycastNode();

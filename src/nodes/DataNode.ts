@@ -18,7 +18,6 @@ export class DataNode extends BaseContentNode {
     private contentContainer!: HTMLElement;
 
     constructor(sg: SpaceGraph, spec: NodeSpec) {
-        const w = (spec.data?.width as number) ?? 250;
         const maxH = (spec.data?.maxHeight as number) ?? 300;
         const theme = (spec.data?.theme as string) ?? 'dark';
 

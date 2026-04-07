@@ -1,5 +1,5 @@
 import { SpaceGraph } from '../SpaceGraph';
-import type { GraphSpec, NodeData, EdgeData } from '../types';
+import type { GraphSpec } from '../types';
 import type { Node } from '../nodes/Node';
 import type { Edge } from '../edges/Edge';
 import { HUDPlugin } from '../plugins/HUDPlugin';
