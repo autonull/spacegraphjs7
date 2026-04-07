@@ -2,8 +2,14 @@ import { SpaceGraph } from '../src/SpaceGraph';
 import type { GraphSpec } from '../src/types';
 
 export function createDemo(spec: GraphSpec, _options?: Record<string, unknown>): SpaceGraph {
-    const container = document.getElementById('app')!;
-    const sg = new SpaceGraph(container);
+    let container = document.getElementById('app');
+    if (!container) {
+        container = document.getElementById('container');
+    }
+    if (!container) {
+        console.error("Could not find container 'app' or 'container'");
+    }
+    const sg = new SpaceGraph(container!);
     sg.init().then(() => {
         sg.loadSpec(spec);
         sg.render();
