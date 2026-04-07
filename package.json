@@ -25,7 +25,7 @@
     ],
     "scripts": {
         "dev": "pnpm dlx vite --host",
-        "dev:demo": "pnpm dlx vite --port 5173",
+        "dev:demo": "pnpm dlx vite --config vite.demo.config.ts --port 5173",
         "build": "vite build",
         "build:lib": "vite build",
         "build:demo": "vite build",

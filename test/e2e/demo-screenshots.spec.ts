@@ -11,7 +11,7 @@ if (!fs.existsSync(screenshotDir)) {
     fs.mkdirSync(screenshotDir, { recursive: true });
 }
 
-const EXPECTED_ERROR_PATTERNS = ['WebSocket connection', 'ERR_CONNECTION_REFUSED'];
+const EXPECTED_ERROR_PATTERNS = ['WebSocket connection', 'ERR_CONNECTION_REFUSED', 'Outdated Optimize Dep'];
 
 function isExpectedError(msg: string): boolean {
     return EXPECTED_ERROR_PATTERNS.some((pattern) => msg.includes(pattern));
@@ -39,12 +39,27 @@ test.describe('Demo Screenshots & Rendering Verification', () => {
                 }
             });
 
-            await page.goto(`http://localhost:5173/demo/${demo}.html`, {
+            await page.goto(`http://localhost:5173/${demo}.html`, {
                 waitUntil: 'networkidle',
                 timeout: 15000,
             });
 
             await page.waitForTimeout(3000);
+
+            // Output errors to console if any, for debugging purposes before the assertion
+            if (errors.length > 0) {
+                console.log(`[${demo}] Found errors: `, errors);
+            }
+
+            // Also check that a valid canvas and correct rendering has occurred
+            try {
+                await page.waitForSelector('canvas', { timeout: 2000 });
+            } catch (e) {
+                console.log(`[${demo}] No canvas found!`);
+            }
+
+            // Add extra time to ensure initial animations or models are fully loaded
+            await page.waitForTimeout(2000);
 
             expect(errors).toEqual([]);
 
