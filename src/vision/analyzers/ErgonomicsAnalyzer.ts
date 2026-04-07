@@ -22,23 +22,23 @@ export class ErgonomicsAnalyzer {
             data: Record<string, unknown>;
         }>;
 
-        const smallTargets: TargetIssue[] = [];
-        let totalSize = 0;
-        let nodeCount = 0;
+        const { smallTargets, totalSize, nodeCount } = nodes.reduce(
+            (acc, node) => {
+                const size = this.getNodeTargetSize(node);
+                acc.totalSize += size;
+                acc.nodeCount++;
 
-        for (const node of nodes) {
-            const size = this.getNodeTargetSize(node);
-            totalSize += size;
-            nodeCount++;
-
-            if (size < config.fittsLawTargetSize) {
-                smallTargets.push({
-                    nodeId: node.id,
-                    size,
-                    recommended: config.fittsLawTargetSize,
-                });
-            }
-        }
+                if (size < config.fittsLawTargetSize) {
+                    acc.smallTargets.push({
+                        nodeId: node.id,
+                        size,
+                        recommended: config.fittsLawTargetSize,
+                    });
+                }
+                return acc;
+            },
+            { smallTargets: [] as TargetIssue[], totalSize: 0, nodeCount: 0 }
+        );
 
         const averageTargetSize = nodeCount > 0 ? totalSize / nodeCount : 0;
         const fittsLawCompliant = smallTargets.length === 0;
