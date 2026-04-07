@@ -1,31 +1,32 @@
+import { BaseSystemPlugin } from './BaseSystemPlugin';
 import type { SpaceGraph } from '../SpaceGraph';
-import type { ISpaceGraphPlugin } from '../types';
-import type { HUDElementOptions } from './types';
+import type { Graph } from '../core/Graph';
+import type { EventSystem } from '../core/events/EventSystem';
+import type { HUDElementOptions } from './hud/types';
 import { HUDStatusBar } from './hud/HUDStatusBar';
 import { HUDPerformanceMetrics } from './hud/HUDPerformanceMetrics';
 import { HUDAlerts, type AlertOptions } from './hud/HUDAlerts';
-import { HUD_ZINDEX, HUD_POSITIONS, HUD_STYLES } from './hud/HUDStyles';
+import { HUD_ZINDEX, HUD_POSITIONS } from './hud/HUDStyles';
 import { HUDDOMFactory } from './hud/HUDDOMFactory';
-import { createLogger } from '../utils/logger.js';
+import { createLogger } from '../utils/logger';
 
 const logger = createLogger('HUDPlugin');
 
 export type { HUDElementOptions, AlertOptions };
 
-export class HUDPlugin implements ISpaceGraphPlugin {
-    readonly id = 'hud-plugin';
+export class HUDPlugin extends BaseSystemPlugin {
+    readonly id = 'hud';
     readonly name = 'Heads Up Display';
     readonly version = '1.0.0';
 
-    private sg!: SpaceGraph;
     private container: HTMLElement | null = null;
     private statusBar: HUDStatusBar | null = null;
     private performanceMetrics: HUDPerformanceMetrics | null = null;
     private alerts: HUDAlerts | null = null;
     private elements: Map<string, { el: HTMLElement; options: HUDElementOptions }> = new Map();
 
-    init(sg: SpaceGraph): void {
-        this.sg = sg;
+    init(sg: SpaceGraph, graph: Graph, events: EventSystem): void {
+        super.init(sg, graph, events);
         if (typeof document === 'undefined') return;
 
         this.createContainer();
@@ -42,7 +43,10 @@ export class HUDPlugin implements ISpaceGraphPlugin {
     }
 
     private createContainer(): void {
-        this.container = HUDDOMFactory.createContainer('spacegraph-hud', 'spacegraph-hud-container');
+        this.container = HUDDOMFactory.createContainer(
+            'spacegraph-hud',
+            'spacegraph-hud-container',
+        );
         this.container.style.inset = '0';
         this.container.style.zIndex = HUD_ZINDEX.HUD;
         HUDDOMFactory.appendToRenderer(this.sg, this.container);
@@ -91,7 +95,7 @@ export class HUDPlugin implements ISpaceGraphPlugin {
         this.elements.set(options.id, { el: element, options });
     }
 
-    updateElement(id: string, options: Partial<HUDXMLElementOptions>): void {
+    updateElement(id: string, options: Partial<HUDElementOptions>): void {
         const existing = this.elements.get(id);
         if (!existing) return;
 
@@ -115,7 +119,8 @@ export class HUDPlugin implements ISpaceGraphPlugin {
     }
 
     applyPosition(element: HTMLElement, position: HUDElementOptions['position']): void {
-        const styles = HUD_POSITIONS[position];
+        const posKey = position as keyof typeof HUD_POSITIONS;
+        const styles = HUD_POSITIONS[posKey];
         HUDDOMFactory.applyStyles(element, styles as Partial<CSSStyleDeclaration>);
     }
 
@@ -147,7 +152,11 @@ export class HUDPlugin implements ISpaceGraphPlugin {
         // Simplified tooltip
     }
 
-    showContextMenu(_x: number, _y: number, _items: Array<{ label: string; action: () => void }>): void {
+    showContextMenu(
+        _x: number,
+        _y: number,
+        _items: Array<{ label: string; action: () => void }>,
+    ): void {
         // Simplified context menu
     }
 

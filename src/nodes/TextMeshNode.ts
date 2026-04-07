@@ -1,25 +1,16 @@
 import * as THREE from 'three';
-import { Node } from './Node';
-import type { SpaceGraph } from '../SpaceGraph';
-import type { NodeSpec } from '../types';
-import { DOMUtils } from '../utils/DOMUtils';
 
-/**
- * TextMeshNode — Billboard sprite-based large text node.
- *
- * Note: THREE.TextGeometry requires a font loader. This node uses a high-res
- * canvas sprite as a pragmatic cross-env alternative, giving the same visual
- * effect (prominent 3-D style text) without requiring font file loading.
- * If you need true 3-D extruded text, swap in TextGeometry + FontLoader here.
- *
- * data options:
- *   text       : string to display (falls back to spec.label)
- *   fontSize   : px for the canvas text (default 72)
- *   color      : CSS color (default '#ffffff')
- *   background : CSS background (default 'transparent')
- *   scale      : world-space scale multiplier (default 1)
- */
+import { Node } from './Node';
+import { DOMUtils } from '../utils/DOMUtils';
+import type { NodeSpec } from '../types';
+import type { SpaceGraph } from '../SpaceGraph';
+
 export class TextMeshNode extends Node {
+    private _object = new THREE.Object3D();
+    get object() {
+        return this._object;
+    }
+
     private sprite: THREE.Sprite;
     private spriteMat: THREE.SpriteMaterial;
     private currentText: string;
@@ -27,20 +18,20 @@ export class TextMeshNode extends Node {
     constructor(sg: SpaceGraph, spec: NodeSpec) {
         super(sg, spec);
 
-        this.currentText = spec.data?.text ?? spec.label ?? '';
+        this.currentText = (spec.data?.text as string) ?? spec.label ?? '';
         this.sprite = this._buildSprite(spec);
         this.spriteMat = this.sprite.material as THREE.SpriteMaterial;
-        this.object.add(this.sprite);
+        this._object.add(this.sprite);
 
         this.updatePosition(this.position.x, this.position.y, this.position.z);
     }
 
     private _buildSprite(spec: Partial<NodeSpec>): THREE.Sprite {
-        const text = spec.data?.text ?? spec.label ?? '';
-        const fontSize = spec.data?.fontSize ?? 72;
-        const color = spec.data?.color ?? '#ffffff';
-        const background = spec.data?.background ?? 'transparent';
-        const scale = spec.data?.scale ?? 1;
+        const text = (spec.data?.text as string) ?? spec.label ?? '';
+        const fontSize = (spec.data?.fontSize as number) ?? 72;
+        const color = (spec.data?.color as string) ?? '#ffffff';
+        const background = (spec.data?.background as string) ?? 'transparent';
+        const scale = (spec.data?.scale as number) ?? 1;
 
         const canvas = DOMUtils.createElement('canvas');
         const ctx = canvas.getContext('2d');
@@ -53,17 +44,16 @@ export class TextMeshNode extends Node {
             canvas.height = fontSize * 1.4 + padding * 2;
 
             if (background !== 'transparent') {
-                ctx.fillStyle = background;
+                ctx.fillStyle = background as string | CanvasGradient | CanvasPattern;
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
             }
 
             ctx.font = `bold ${fontSize}px sans-serif`;
-            ctx.fillStyle = color;
+            ctx.fillStyle = color as string | CanvasGradient | CanvasPattern;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText(text, canvas.width / 2, canvas.height / 2);
         } else {
-            // Fallback dimensions for jsdom / SSR environments
             canvas.width = Math.max(64, text.length * fontSize * 0.6 + padding * 2);
             canvas.height = fontSize * 1.4 + padding * 2;
         }
@@ -76,28 +66,27 @@ export class TextMeshNode extends Node {
         return spr;
     }
 
-    updateSpec(updates: Partial<NodeSpec>): void {
+    updateSpec(updates: Partial<NodeSpec>): this {
         super.updateSpec(updates);
-        const newText = updates.data?.text ?? updates.label ?? null;
+        const newText = (updates.data?.text as string) ?? updates.label ?? null;
         if (newText !== null && newText !== this.currentText) {
             this.currentText = newText;
-            // Rebuild sprite
-            this.object.remove(this.sprite);
-            if (this.spriteMat.map) this.spriteMat.map.dispose();
+            this._object.remove(this.sprite);
+            this.spriteMat.map?.dispose();
             this.spriteMat.dispose();
-            // Merge previous data with updates
             const merged = {
                 data: { ...this.data, ...updates.data },
                 label: updates.label ?? this.label,
             };
             this.sprite = this._buildSprite(merged);
             this.spriteMat = this.sprite.material as THREE.SpriteMaterial;
-            this.object.add(this.sprite);
+            this._object.add(this.sprite);
         }
+        return this;
     }
 
     dispose(): void {
-        if (this.spriteMat.map) this.spriteMat.map.dispose();
+        this.spriteMat.map?.dispose();
         this.spriteMat.dispose();
         super.dispose();
     }

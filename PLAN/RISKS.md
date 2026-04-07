@@ -21,7 +21,7 @@
 | Risk                             | Probability | Impact | Prevention         | Detection         | Recovery         |
 | -------------------------------- | ----------- | ------ | ------------------ | ----------------- | ---------------- |
 | **R1: Three.js incompatibility** | 25%         | 100%   | Version pinning    | Build fails       | Fallback version |
-| **R2: npm package name taken**   | 15%         | 100%   | Check before Day 1 | npm publish fails | Alternative name |
+| **R2: ppnpm package name taken**   | 15%         | 100%   | Check before Day 1 | pnpm publish fails | Alternative name |
 | **R3: TypeScript export broken** | 30%         | 80%    | Daily type checks  | Import fails      | Fix exports      |
 | **R4: WebGL not supported**      | 5%          | 100%   | Feature detection  | Blank screen      | Fallback message |
 | **R5: Critical memory leak**     | 20%         | 60%    | Memory profiling   | DevTools check    | Fix leak         |
@@ -32,7 +32,7 @@
 | ----------------------------------- | ----------- | ------ | -------------------- | ------------------ | ------------------- |
 | **R6: ESM module resolution fails** | 40%         | 50%    | Correct package.json | Import errors      | Fix type/module     |
 | **R7: Camera controls broken**      | 50%         | 30%    | Test early           | User reports       | Simplified controls |
-| **R8: Build size too large**        | 25%         | 40%    | Bundle analysis      | npm pack check     | Tree-shaking        |
+| **R8: Build size too large**        | 25%         | 40%    | Bundle analysis      | pnpm pack check     | Tree-shaking        |
 | **R9: Browser compatibility**       | 35%         | 50%    | Multi-browser test   | Cross-browser test | Polyfills           |
 | **R10: Node.js version mismatch**   | 30%         | 40%    | engines field        | Error message      | Clear requirements  |
 
@@ -40,7 +40,7 @@
 
 | Risk                          | Probability | Impact | Prevention          | Detection      | Recovery          |
 | ----------------------------- | ----------- | ------ | ------------------- | -------------- | ----------------- |
-| **R11: npm login expired**    | 20%         | 20%    | Test before publish | Auth error     | npm login         |
+| **R11: pnpm login expired**    | 20%         | 20%    | Test before publish | Auth error     | pnpm login         |
 | **R12: Git conflicts**        | 25%         | 10%    | Daily commits       | Merge conflict | Resolve carefully |
 | **R13: Documentation typos**  | 60%         | 10%    | Proofread           | User reports   | Fix post-launch   |
 | **R14: Matrix room spam**     | 10%         | 10%    | Moderation settings | User reports   | Enable moderation |
@@ -69,17 +69,17 @@
 
 ```bash
 # Day 2: If build fails with Three.js errors
-npm run build 2>&1 | grep -i "three"
+pnpm run build 2>&1 | grep -i "three"
 ```
 
 **Recovery:**
 
 ```bash
 # Try known-compatible version
-npm install three@0.160.0 --save-dev
+pnpm install three@0.160.0 --save-dev
 
 # If that fails, try older version
-npm install three@0.155.0 --save-dev
+pnpm install three@0.155.0 --save-dev
 
 # Update peerDependencies range
 # Rebuild and test
@@ -89,18 +89,18 @@ npm install three@0.155.0 --save-dev
 
 ---
 
-### R2: npm Package Name Taken
+### R2: pnpm Package Name Taken
 
 **Prevention (Day 0):**
 
 ```bash
 # Check availability BEFORE starting
-npm view spacegraphjs 2>&1 | grep -q "npm ERR" && echo "Available" || echo "Taken"
+pnpm view spacegraphjs 2>&1 | grep -q "pnpm ERR" && echo "Available" || echo "Taken"
 
 # Also check similar names
-npm view space-graph-js
-npm view spacegraph-js
-npm view @autonull/spacegraphjs
+pnpm view space-graph-js
+pnpm view spacegraph-js
+pnpm view @autonull/spacegraphjs
 ```
 
 **If `spacegraphjs` is taken:**
@@ -124,8 +124,8 @@ npm view @autonull/spacegraphjs
 import { SpaceGraph } from '@autonull/spacegraphjs';
 
 # Update documentation
-# npm login (ensure org access)
-npm publish --tag alpha
+# pnpm login (ensure org access)
+pnpm publish --tag alpha
 ```
 
 ---
@@ -155,17 +155,17 @@ export type { GraphSpec, NodeSpec, EdgeSpec } from './types';
 
 ```bash
 # Day 2: Test type resolution
-npm run build
+pnpm run build
 ls dist/types/  # Should show .d.ts files
 
 # Test in fresh project
 mkdir /tmp/type-test && cd /tmp/type-test
-npm install /path/to/spacegraphjs
+pnpm install /path/to/spacegraphjs
 cat > test.ts << 'EOF'
 import { SpaceGraph } from 'spacegraphjs';
 // TypeScript should provide autocomplete
 EOF
-npx tsc --noEmit test.ts  # Should pass
+pnpm dlx tsc --noEmit test.ts  # Should pass
 ```
 
 **Recovery:**
@@ -175,7 +175,7 @@ npx tsc --noEmit test.ts  # Should pass
 # 1. Check tsconfig.json has declaration: true
 # 2. Check src/index.ts has explicit exports
 # 3. Rebuild
-npm run clean && npm run build
+pnpm run clean && pnpm run build
 
 # 4. Verify .d.ts files exist
 find dist/types -name "*.d.ts"
@@ -407,7 +407,7 @@ export default defineConfig({
 **Detection:**
 
 ```bash
-npm pack
+pnpm pack
 tar -tzf spacegraphjs-*.tgz | grep dist
 gzip -c dist/spacegraphjs.js | wc -c
 
@@ -418,7 +418,7 @@ gzip -c dist/spacegraphjs.js | wc -c
 
 ```bash
 # 1. Check what's being bundled
-npm run build -- --debug
+pnpm run build -- --debug
 
 # 2. Ensure three.js is external
 # Check vite.config.ts has external: ['three']
@@ -508,11 +508,11 @@ function checkBrowserSupport(): { supported: boolean; message?: string } {
 **Detection:**
 
 ```bash
-# npm will show warning if engines don't match
-# npm WARN EBADENGINE Unsupported engine {
-# npm WARN EBADENGINE   package: 'spacegraphjs@6.0.0',
-# npm WARN EBADENGINE   required: { node: '>=18.0.0' },
-# npm WARN EBADENGINE   current: { node: 'v16.0.0' }
+# pnpm will show warning if engines don't match
+# pnpm WARN EBADENGINE Unsupported engine {
+# pnpm WARN EBADENGINE   package: 'spacegraphjs@6.0.0',
+# pnpm WARN EBADENGINE   required: { node: '>=18.0.0' },
+# pnpm WARN EBADENGINE   current: { node: 'v16.0.0' }
 ```
 
 **Recovery:**
@@ -532,7 +532,7 @@ function checkBrowserSupport(): { supported: boolean; message?: string } {
 
 ### Technical Verification
 
-- [ ] **Build succeeds:** `npm run build` completes without errors
+- [ ] **Build succeeds:** `pnpm run build` completes without errors
 - [ ] **Types export:** `dist/types/index.d.ts` exists and is valid
 - [ ] **Fresh install:** Works in empty directory
 - [ ] **Demo renders:** 3 nodes + 3 edges visible
@@ -550,13 +550,13 @@ function checkBrowserSupport(): { supported: boolean; message?: string } {
 - [ ] **TROUBLESHOOTING.md:** Common issues documented
 - [ ] **TypeDoc/JSDoc:** Public APIs documented
 
-### npm Verification
+### pnpm Verification
 
-- [ ] **Package name available:** `npm view spacegraphjs` returns error
+- [ ] **Package name available:** `pnpm view spacegraphjs` returns error
 - [ ] **package.json valid:** All required fields present
 - [ ] **Files correct:** Only dist/, README.md, LICENSE included
-- [ ] **npm login valid:** `npm whoami` succeeds
-- [ ] **Publish test:** `npm publish --tag alpha --dry-run` succeeds
+- [ ] **pnpm login valid:** `pnpm whoami` succeeds
+- [ ] **Publish test:** `pnpm publish --tag alpha --dry-run` succeeds
 
 ### Community Verification
 
@@ -573,7 +573,7 @@ function checkBrowserSupport(): { supported: boolean; message?: string } {
 
 ```bash
 # 1. Clean build
-npm run clean && npm run build
+pnpm run clean && pnpm run build
 
 # 2. Verify types
 ls dist/types/index.d.ts
@@ -581,8 +581,8 @@ ls dist/types/index.d.ts
 # 3. Test fresh install
 rm -rf /tmp/final-test
 mkdir /tmp/final-test && cd /tmp/final-test
-npm install /path/to/spacegraphjs
-npm install three
+pnpm install /path/to/spacegraphjs
+pnpm install three
 # Create test file, verify import works
 
 gzip -c dist/spacegraphjs.js | wc -c
@@ -590,8 +590,8 @@ gzip -c dist/spacegraphjs.js | wc -c
 # 5. Run demo one more time
 # Open demo/index.html in Chrome and Firefox
 
-# 6. npm login check
-npm whoami
+# 6. pnpm login check
+pnpm whoami
 
 # 7. Prepare announcement text
 # Save to launch-announcement.md
@@ -601,17 +601,17 @@ npm whoami
 
 ```bash
 # 9:00 AM - Final check
-npm run build
+pnpm run build
 
-# 10:00 AM - Publish to npm
-npm publish --tag alpha
+# 10:00 AM - Publish to pnpm
+pnpm publish --tag alpha
 
 # 10:05 AM - Verify on npmjs.com
 # https://www.npmjs.com/package/spacegraphjs
 
 # 10:10 AM - Test public install
 mkdir /tmp/public-test && cd /tmp/public-test
-npm install spacegraphjs@alpha three
+pnpm install spacegraphjs@alpha three
 
 # 11:00 AM - Post announcement
 # GitHub Discussions
@@ -623,7 +623,7 @@ npm install spacegraphjs@alpha three
 # Monitor Matrix for bug reports
 
 # 5:00 PM - Day 1 metrics
-# npm downloads (target: 10+)
+# pnpm downloads (target: 10+)
 # Matrix members (target: 5+)
 # GitHub stars (target: 5+)
 ```
@@ -632,7 +632,7 @@ npm install spacegraphjs@alpha three
 
 ```bash
 # Check metrics
-# npm trends spacegraphjs
+# pnpm trends spacegraphjs
 # GitHub Insights
 # Matrix room activity
 
@@ -663,15 +663,15 @@ git checkout -b hotfix/issue-1
 # Edge cases
 
 # 5. Patch release
-npm version patch  # 6.0.0-alpha.1 → 6.0.0-alpha.2
-npm run build
-npm publish --tag alpha
+pnpm version patch  # 6.0.0-alpha.1 → 6.0.0-alpha.2
+pnpm run build
+pnpm publish --tag alpha
 
 # 6. Announce fix
 # "Fixed in v6.0.0-alpha.2 - please update"
 
 # 7. If bug is CRITICAL (data loss, security):
-# npm deprecate spacegraphjs@6.0.0-alpha.1 "Critical bug, use alpha.2"
+# pnpm deprecate spacegraphjs@6.0.0-alpha.1 "Critical bug, use alpha.2"
 ```
 
 ---
@@ -680,7 +680,7 @@ npm publish --tag alpha
 
 | Metric                  | Target | If Missed, Do This                      |
 | ----------------------- | ------ | --------------------------------------- |
-| npm downloads (Week 1)  | 50     | Post to more channels (Reddit, Dev.to)  |
+| pnpm downloads (Week 1)  | 50     | Post to more channels (Reddit, Dev.to)  |
 | Matrix members (Week 1) | 10     | Personal outreach to interested users   |
 | GitHub stars (Week 1)   | 10     | Add star badge, mention in articles     |
 | Bug reports (Week 1)    | 0-2    | Good! If >5, pause and fix fundamentals |
@@ -693,7 +693,7 @@ npm publish --tag alpha
 **If everything goes wrong:**
 
 1. **Code doesn't work:** → Fix before launch (Days 6-7 buffer)
-2. **npm publish fails:** → Fix package.json, try alternative name
+2. **pnpm publish fails:** → Fix package.json, try alternative name
 3. **No adoption:** → Month 2 content marketing, improve docs
 4. **Critical bug:** → Hotfix within 48 hours, transparent communication
 
@@ -711,7 +711,7 @@ npm publish --tag alpha
 | ------------------ | ------------------------------------ |
 | Technical (R1-R10) | ✅ Prevention + Detection + Recovery |
 | Documentation      | ✅ Verification + Troubleshooting    |
-| npm Publishing     | ✅ Name check + Dry run + Rollback   |
+| pnpm Publishing     | ✅ Name check + Dry run + Rollback   |
 | Community          | ✅ Matrix setup + Response plan      |
 | Emergency          | ✅ Hotfix procedure + Deprecation    |
 

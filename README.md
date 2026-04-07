@@ -1,6 +1,6 @@
 # SpaceGraphJS
 
-[![npm](https://img.shields.io/npm/v/spacegraphjs.svg)](https://www.npmjs.com/package/spacegraphjs)
+[![pnpm](https://img.shields.io/pnpm/v/spacegraphjs.svg)](https://www.npmjs.com/package/spacegraphjs)
 [![Matrix](https://img.shields.io/matrix/spacegraphjs:matrix.org)](https://matrix.to/#/#spacegraphjs:matrix.org)
 [![GitHub Sponsors](https://img.shields.io/github/sponsors/autonull)](https://github.com/sponsors/autonull)
 
@@ -14,7 +14,7 @@ It sees what it builds, verifies quality autonomously, and self-corrects in 30 s
 ## Quickstart
 
 ```bash
-npm install spacegraphjs three
+pnpm install spacegraphjs three
 ```
 
 [See QUICKSTART.md](./QUICKSTART.md) for a 5-minute guide.
@@ -29,7 +29,7 @@ npm install spacegraphjs three
 
 ## Examples
 
-Check out the interactive examples in the `examples/` directory or run `npm run dev` to see them in action.
+Check out the interactive examples in the `examples/` directory or run `pnpm run dev` to see them in action.
 
 ## Documentation
 
@@ -80,7 +80,7 @@ graph.render();
 **Install:**
 
 ```bash
-npm install spacegraphjs three
+pnpm install spacegraphjs three
 ```
 
 ---
@@ -214,7 +214,7 @@ Human specifies → AI builds → Vision verifies → AI self-corrects → Done
 | 5-6  | Performance    | 60 FPS at 1000 nodes               |
 | 7-8  | Polish         | Beautiful defaults, error messages |
 
-**Launch:** Day 30 (npm publish `spacegraphjs@alpha`)
+**Launch:** Day 30 (pnpm publish `spacegraphjs@alpha`)
 
 ---
 
@@ -238,7 +238,7 @@ Human specifies → AI builds → Vision verifies → AI self-corrects → Done
 
 | Metric                | Target   |
 | --------------------- | -------- |
-| npm downloads/month   | 5,000+   |
+| pnpm downloads/month   | 5,000+   |
 | GitHub stars          | 500+     |
 | External contributors | 25+      |
 | Monthly revenue       | $45,000+ |
@@ -269,10 +269,10 @@ git clone https://github.com/autonull/spacegraphjs
 cd spacegraphjs
 
 # 2. Install
-npm install
+pnpm install
 
 # 3. Run demo
-npm run dev
+pnpm run dev
 
 # 4. Find a good first issue
 # https://github.com/autonull/spacegraphjs/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22
@@ -311,7 +311,7 @@ All designs published under open licenses:
 | ---------- | ---------------------------------------------------------------------------- | ------------------- |
 | **Matrix** | [#spacegraphjs:matrix.org](https://matrix.to/#/#spacegraphjs:matrix.org)     | 200+ target         |
 | **GitHub** | [github.com/autonull/spacegraphjs](https://github.com/autonull/spacegraphjs) | 2,000+ stars target |
-| **npm**    | [npmjs.com/package/spacegraphjs](https://npmjs.com/package/spacegraphjs)     | 25K+/month target   |
+| **pnpm**    | [npmjs.com/package/spacegraphjs](https://npmjs.com/package/spacegraphjs)     | 25K+/month target   |
 
 ---
 
@@ -360,7 +360,7 @@ All designs published under open licenses:
 
 ```bash
 # Install
-npm install spacegraphjs three
+pnpm install spacegraphjs three
 
 # Quickstart
 # See QUICKSTART.md for 5-minute guide

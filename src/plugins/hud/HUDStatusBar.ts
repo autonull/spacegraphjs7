@@ -42,7 +42,7 @@ export class HUDStatusBar {
         HUDDOMFactory.appendToRenderer(this.sg, this.statusBar);
     }
 
-    updateSelection(nodeCount: number, edgeCount: number): void {
+    updateSelection(nodeCount: number, _edgeCount: number): void {
         const el = HUDDOMFactory.getElementById('sg-status-selection');
         if (el) {
             el.textContent = `Selection: ${nodeCount} node${nodeCount !== 1 ? 's' : ''}`;

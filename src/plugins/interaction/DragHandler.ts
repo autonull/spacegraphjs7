@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import type { SpaceGraph } from '../SpaceGraph';
-import type { Node } from '../nodes/Node';
+import type { SpaceGraph } from '../../SpaceGraph';
+import type { Node } from '../../nodes/Node';
 import type { InteractionRaycaster } from './RaycasterHelper';
 
 /**
@@ -17,6 +17,10 @@ export class DragHandler {
     private readonly intersection = new THREE.Vector3();
     private dragStartZ = 0;
     private previousDragPosition = { x: 0, y: 0 };
+    private dragStiffness = 1.0;
+    private preserveDistance = false;
+    private initialPickDistance = 0;
+    private readonly rayFrom = new THREE.Vector3();
 
     private readonly sg: SpaceGraph;
     private readonly raycaster: InteractionRaycaster;
@@ -26,16 +30,28 @@ export class DragHandler {
         this.raycaster = raycaster;
     }
 
-    startDrag(node: Node): boolean {
+    startDrag(node: Node, options?: { stiffness?: number; preserveDistance?: boolean }): boolean {
         if (!node.object) return false;
 
+        const localPos = new THREE.Vector3();
+        if (!node.isDraggable(localPos)) return false;
+
+        this.dragStiffness = options?.stiffness ?? 1.0;
+        this.preserveDistance = options?.preserveDistance ?? false;
+        this.rayFrom.copy(this.sg.renderer.camera.position);
+        this.initialPickDistance = this.rayFrom.distanceTo(node.position);
         this.isDragging = true;
         this.dragNode = node;
         this.draggingNodes.clear();
         this.draggingNodes.add(node);
 
-        const selectedNodes = (this.sg.events as any).emit('selection:getSelectedNodes')?.nodes;
-        if (selectedNodes?.size > 1 && selectedNodes.has(node)) {
+        const selectedNodes = (
+            this.sg.events.emit as (
+                type: string,
+                ...args: unknown[]
+            ) => { nodes?: Set<Node> } | undefined
+        )('selection:getSelectedNodes')?.nodes;
+        if (selectedNodes && selectedNodes.size > 1 && selectedNodes.has(node)) {
             for (const selectedNode of selectedNodes) {
                 if (selectedNode !== node && selectedNode.object) {
                     this.draggingNodes.add(selectedNode);
@@ -59,50 +75,105 @@ export class DragHandler {
         const ndc = this.raycaster.getMouseNDC();
         this.previousDragPosition = { x: ndc.x, y: ndc.y };
 
-        this.sg.events.emit('interaction:dragstart', { node });
+        this.sg.events.emit('interaction:dragstart', { node } as any);
         return true;
     }
 
     updateDrag(enableZAxis = false): void {
         if (!this.isDragging || !this.dragNode || !this.dragNode.object) return;
 
-        const intersectPoint = this.raycaster.raycastPlane(this.dragPlane);
-        if (!intersectPoint) return;
+        const targetPosition = this.calculateTargetPosition(enableZAxis);
+        if (!targetPosition) return;
 
-        const newPosition = intersectPoint.sub(this.dragOffset);
+        this.applyZAxisAdjustment(targetPosition, enableZAxis);
+        this.updateNodePosition(targetPosition);
+        this.updateDraggingNodes(targetPosition);
+        this.emitDragEvent();
+    }
 
+    private calculateTargetPosition(enableZAxis: boolean): THREE.Vector3 | null {
+        if (!this.dragNode) return null;
+        let targetPosition: THREE.Vector3;
+
+        if (this.preserveDistance) {
+            const ndc = this.raycaster.getMouseNDC();
+            const camera = this.sg.renderer.camera;
+            const direction = new THREE.Vector3(ndc.x, ndc.y, 0.5)
+                .unproject(camera)
+                .sub(camera.position)
+                .normalize();
+            targetPosition = this.rayFrom
+                .clone()
+                .add(direction.clone().multiplyScalar(this.initialPickDistance))
+                .sub(this.dragOffset);
+        } else {
+            const intersectPoint = this.raycaster.raycastPlane(this.dragPlane);
+            if (!intersectPoint) return null;
+            targetPosition = intersectPoint.sub(this.dragOffset);
+            this.dragPlane.setFromNormalAndCoplanarPoint(
+                this.sg.renderer.camera.getWorldDirection(this.dragPlane.normal),
+                this.dragNode.position,
+            );
+        }
+
+        if (!enableZAxis) {
+            targetPosition.z = this.dragNode.position.z;
+        }
+
+        return targetPosition;
+    }
+
+    private applyZAxisAdjustment(targetPosition: THREE.Vector3, enableZAxis: boolean): void {
         if (enableZAxis) {
             const ndc = this.raycaster.getMouseNDC();
             const deltaX = ndc.x - this.previousDragPosition.x;
             const deltaY = ndc.y - this.previousDragPosition.y;
             const deltaZ = (deltaX + deltaY) * 0.5;
-            newPosition.z = this.dragStartZ + deltaZ;
+            targetPosition.z = this.dragStartZ + deltaZ;
             this.previousDragPosition = { x: ndc.x, y: ndc.y };
-        } else {
-            newPosition.z = this.dragNode.position.z;
         }
+    }
 
-        this.dragNode.position.copy(newPosition);
-        this.dragNode.updateMatrixWorld(true);
+    private updateNodePosition(targetPosition: THREE.Vector3): void {
+        if (!this.dragNode) return;
+        if (this.dragStiffness < 1.0) {
+            this.dragNode.position.lerp(targetPosition, this.dragStiffness);
+        } else {
+            this.dragNode.position.copy(targetPosition);
+        }
+        this.dragNode.object?.updateMatrixWorld(true);
+    }
 
+    private updateDraggingNodes(targetPosition: THREE.Vector3): void {
+        if (!this.dragNode) return;
         for (const otherNode of this.draggingNodes) {
             if (otherNode !== this.dragNode && otherNode.object) {
                 const offset = this.nodeDragOffsets.get(otherNode);
                 if (offset) {
-                    otherNode.position.copy(newPosition).add(offset);
-                    otherNode.updateMatrixWorld(true);
+                    otherNode.position.copy(targetPosition).add(offset);
+                    otherNode.object.updateMatrixWorld(true);
                 }
             }
         }
+    }
 
-        this.sg.events.emit('interaction:drag', { node: this.dragNode });
+    private emitDragEvent(): void {
+        if (!this.dragNode) return;
+        this.sg.events.emit('interaction:drag', {
+            node: this.dragNode,
+            position: [
+                this.dragNode.position.x,
+                this.dragNode.position.y,
+                this.dragNode.position.z,
+            ] as [number, number, number],
+        });
     }
 
     endDrag(): void {
         if (!this.isDragging) return;
 
         if (this.dragNode) {
-            this.sg.events.emit('interaction:dragend', { node: this.dragNode });
+            this.sg.events.emit('interaction:dragend', { node: this.dragNode } as any);
         }
 
         this.isDragging = false;

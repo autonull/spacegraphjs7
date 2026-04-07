@@ -1,88 +1,84 @@
 import * as THREE from 'three';
-import { MathPool } from '../utils/MathPool';
+import { clamp } from '../utils/math';
+import { Edge } from './Edge';
+import { MathPool } from '../core/pooling/ObjectPool';
 import type { SpaceGraph } from '../SpaceGraph';
-import type { EdgeSpec } from '../types';
+import type { EdgeData, EdgeSpec } from '../types';
 import type { Node } from '../nodes/Node';
 
 /**
  * DynamicThicknessEdge — A tube-based edge whose visual thickness reflects a
- * weight property.  Uses TubeGeometry (rebuilt on update) for true 3-D thickness
+ * weight property. Uses a scaled CylinderGeometry for true 3D thickness
  * that scales correctly with zoom.
  *
  * data options:
- *   weight    : number 0–1 controlling thickness (default 0.5)
+ *   weight    : number 0-1 controlling thickness (default 0.5)
  *   minRadius : world-space tube radius at weight=0 (default 1)
  *   maxRadius : world-space tube radius at weight=1 (default 8)
  *   color     : hex color (default 0x3b82f6)
  *   segments  : tube radial segments (default 6)
  */
-export class DynamicThicknessEdge {
-    public id: string;
-    public sg: SpaceGraph;
-    public source: Node;
-    public target: Node;
-    public data: any;
-    public object: THREE.Mesh;
-    private geometry: THREE.CylinderGeometry;
-    private material: THREE.MeshBasicMaterial;
+export class DynamicThicknessEdge extends Edge {
+    private cylinder!: THREE.Mesh;
+    private _initialized = false;
 
     constructor(sg: SpaceGraph, spec: EdgeSpec, source: Node, target: Node) {
-        this.sg = sg;
-        this.id = spec.id;
-        this.source = source;
-        this.target = target;
-        this.data = spec.data ?? {};
+        super(sg, spec, source, target);
 
-        this.material = new THREE.MeshBasicMaterial({
-            color: spec.data?.color ?? 0x3b82f6,
+        this.object.visible = false;
+
+        const segments = Number(spec.data?.segments) || 6;
+        const geometry = new THREE.CylinderGeometry(1, 1, 1, segments, 1);
+        geometry.rotateX(Math.PI / 2);
+
+        const material = new THREE.MeshBasicMaterial({
+            color: (spec.data?.color as number) ?? 0x3b82f6,
         });
 
-        this.geometry = this._buildGeometry();
-        this.object = new THREE.Mesh(this.geometry, this.material);
-        this.update(); // Set initial transform
+        this.cylinder = new THREE.Mesh(geometry, material);
+        this.cylinder.userData = { edgeId: this.id, type: 'edge-cylinder' };
+        this.sg?.renderer.scene.add(this.cylinder);
+        this._initialized = true;
     }
 
-    private _buildGeometry(): THREE.CylinderGeometry {
-        const segments = this.data.segments ?? 6;
-        // Base cylinder of radius 1 and length 1, aligned along Y axis by default.
-        // We rotate it to align along Z axis so lookAt works perfectly.
-        const geom = new THREE.CylinderGeometry(1, 1, 1, segments, 1);
-        geom.rotateX(Math.PI / 2);
-        return geom;
-    }
-
-    updateSpec(updates: Partial<EdgeSpec>): void {
-        if (updates.data) {
-            this.data = { ...this.data, ...updates.data };
-            if (updates.data.color) this.material.color.setHex(updates.data.color);
-        }
-    }
-
-    update() {
+    update(): void {
+        if (!this._initialized) return;
+        super.update();
         const pool = MathPool.getInstance();
-        const src = this.source.position;
-        const tgt = this.target.position;
+        const { source, target, data } = this;
+        const { weight = 0.5, minRadius = 1, maxRadius = 8 } = data;
+        const clampedWeight = clamp(weight as number, 0, 1);
+        const radius =
+            (minRadius as number) + clampedWeight * ((maxRadius as number) - (minRadius as number));
 
-        const { weight = 0.5, minRadius = 1, maxRadius = 8 } = this.data;
-        const clampedWeight = Math.max(0, Math.min(1, weight));
-        const radius = minRadius + clampedWeight * (maxRadius - minRadius);
-
-        const dir = pool.acquireVector3().subVectors(tgt, src);
+        const dir = pool.acquireVector3().subVectors(target.position, source.position);
         const length = dir.length();
 
-        const midPoint = pool.acquireVector3().addVectors(src, tgt).multiplyScalar(0.5);
+        const midPoint = pool
+            .acquireVector3()
+            .addVectors(source.position, target.position)
+            .multiplyScalar(0.5);
 
-        this.object.position.copy(midPoint);
-        this.object.lookAt(tgt);
-        this.object.scale.set(radius, radius, length);
+        this.cylinder.position.copy(midPoint);
+        this.cylinder.lookAt(target.position);
+        this.cylinder.scale.set(radius, radius, length);
 
         pool.releaseVector3(dir);
         pool.releaseVector3(midPoint);
     }
 
+    updateSpec(updates: Partial<EdgeSpec>): this {
+        super.updateSpec(updates);
+        if (updates.data?.color) {
+            (this.cylinder.material as THREE.MeshBasicMaterial).color.setHex(updates.data.color);
+        }
+        return this;
+    }
+
     dispose(): void {
-        this.object.parent?.remove(this.object);
-        this.geometry.dispose();
-        this.material.dispose();
+        this.cylinder.parent?.remove(this.cylinder);
+        this.cylinder.geometry?.dispose();
+        (this.cylinder.material as THREE.Material)?.dispose();
+        super.dispose();
     }
 }

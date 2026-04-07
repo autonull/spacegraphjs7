@@ -1,65 +1,51 @@
-import { DOMNode } from './DOMNode';
-import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec } from '../types';
-import { DOMUtils } from '../utils/DOMUtils';
+import type { SpaceGraph } from '../SpaceGraph';
 
-/**
- * IFrameNode — Embeds a web page inside a CSS3D iframe.
- *
- * Important: Cross-origin pages will be blocked by browsers unless they allow
- * embedding via X-Frame-Options / CSP. Best used with same-origin content or
- * sandboxed local pages.
- *
- * data options:
- *   src    : URL to embed (required)
- *   width  : pixel width  (default 480)
- *   height : pixel height (default 320)
- *   allow  : iframe allow attribute (default '')
- */
-export class IFrameNode extends DOMNode {
+import { BaseContentNode } from './BaseContentNode';
+
+export class IFrameNode extends BaseContentNode {
     public iframeEl: HTMLIFrameElement;
 
     constructor(sg: SpaceGraph, spec: NodeSpec) {
-        const w = spec.data?.width ?? 480;
-        const h = spec.data?.height ?? 320;
-        const iframe = DOMUtils.createElement('iframe');
-        super(sg, spec, iframe, w, h, { visible: false });
+        super(sg, spec, {
+            tag: 'iframe',
+            defaultWidth: 480,
+            defaultHeight: 320,
+            materialParams: { visible: false },
+            customStyles: {
+                border: '2px solid rgba(255,255,255,0.2)',
+                borderRadius: '6px',
+                background: '#0a0a0a',
+                display: 'block',
+            },
+            updatePositionOnInit: true,
+        });
 
-        const src = spec.data?.src ?? 'about:blank';
-        const allow = spec.data?.allow ?? '';
+        const src = (spec.data?.src as string) ?? 'about:blank';
+        const allow = (spec.data?.allow as string) ?? '';
 
-        this.iframeEl = iframe;
+        this.iframeEl = this.domElement as HTMLIFrameElement;
         this.iframeEl.src = src;
         this.iframeEl.allow = allow;
         this.iframeEl.sandbox?.add?.('allow-scripts', 'allow-same-origin', 'allow-forms');
-        this.setupContainerStyles(w, h, 'dark', {
-            border: '2px solid rgba(255,255,255,0.2)',
-            borderRadius: '6px',
-            background: '#0a0a0a',
-            display: 'block'
-        });
-
-
-
-        this.updatePosition(this.position.x, this.position.y, this.position.z);
     }
 
-    /** Load a new URL. */
     navigate(url: string): void {
         this.iframeEl.src = url;
     }
 
-    updateSpec(updates: Partial<NodeSpec>): void {
+    updateSpec(updates: Partial<NodeSpec>): this {
         super.updateSpec(updates);
-        if (updates.data?.src) this.navigate(updates.data.src);
+        if (updates.data?.src) this.navigate(updates.data.src as string);
 
         if (updates.data?.width || updates.data?.height) {
-            const w = updates.data.width || this.data?.width || 480;
-            const h = updates.data.height || this.data?.height || 320;
+            const w = (updates.data.width as number) ?? (this.data?.width as number) ?? 480;
+            const h = (updates.data.height as number) ?? (this.data?.height as number) ?? 320;
             this.iframeEl.style.width = `${w}px`;
             this.iframeEl.style.height = `${h}px`;
             this.updateBackingGeometry(w, h);
         }
+        return this;
     }
 
     dispose(): void {

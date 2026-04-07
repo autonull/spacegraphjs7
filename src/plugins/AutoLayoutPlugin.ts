@@ -1,7 +1,8 @@
+import { BaseSystemPlugin } from './BaseSystemPlugin';
 import type { SpaceGraph } from '../SpaceGraph';
-import type { ISpaceGraphPlugin } from '../types';
-import type { ForceLayout } from './ForceLayout';
-import type { Node } from '../nodes/Node';
+import type { Graph } from '../core/Graph';
+import type { EventSystem } from '../core/events/EventSystem';
+import type { ForceLayout } from './layouts/ForceLayout';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('AutoLayoutPlugin');
@@ -13,15 +14,13 @@ interface VisionIssue {
     nodeId?: string;
 }
 
-export class AutoLayoutPlugin implements ISpaceGraphPlugin {
+export class AutoLayoutPlugin extends BaseSystemPlugin {
     readonly id = 'auto-layout';
     readonly name = 'Auto Layout';
     readonly version = '1.0.0';
 
-    private sg!: SpaceGraph;
-
-    init(sg: SpaceGraph): void {
-        this.sg = sg;
+    init(sg: SpaceGraph, graph: Graph, events: EventSystem): void {
+        super.init(sg, graph, events);
         logger.debug(`Initialized ${this.name} v${this.version}`);
     }
 
@@ -41,17 +40,26 @@ export class AutoLayoutPlugin implements ISpaceGraphPlugin {
 
     public fixOverlaps(overlaps: VisionIssue[]): void {
         logger.debug(`Auto-fixing ${overlaps.length} overlaps...`);
-        const layoutPlugin = this.sg.pluginManager.getPlugin('ForceLayout') as ForceLayout | undefined;
+        const layoutPlugin = this.sg.pluginManager.getPlugin('ForceLayout') as
+            | ForceLayout
+            | undefined;
 
-        if (layoutPlugin && typeof layoutPlugin.update === 'function') {
-            const originalRepulsion = layoutPlugin.settings.repulsion ?? 10000;
-            layoutPlugin.settings.repulsion = originalRepulsion * 5;
+        if (
+            layoutPlugin &&
+            typeof (layoutPlugin as ForceLayout & { step?: () => void }).step === 'function'
+        ) {
+            const layout = layoutPlugin as ForceLayout & {
+                step: () => void;
+                config: Record<string, unknown>;
+            };
+            const originalRepulsion = (layout.config?.repulsion as number) ?? 10000;
+            layout.config.repulsion = originalRepulsion * 5;
 
             for (let i = 0; i < 50; i++) {
-                layoutPlugin.update();
+                layout.step();
             }
 
-            layoutPlugin.settings.repulsion = originalRepulsion;
+            layout.config.repulsion = originalRepulsion;
         } else {
             for (const issue of overlaps) {
                 this.fixSingleOverlap(issue);

@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import type { SpaceGraph } from '../SpaceGraph';
-import type { ISpaceGraphPlugin, NodeSpec } from '../types';
+import type { Plugin } from '../core/PluginManager';
+import type { Graph } from '../core/Graph';
+import type { EventSystem } from '../core/events/EventSystem';
 import type { Node } from '../nodes/Node';
 import type { Edge } from '../edges/Edge';
 import { InteractionRaycaster } from './interaction/RaycasterHelper';
@@ -10,9 +12,17 @@ import { SelectionManager } from './interaction/SelectionManager';
 import { DragHandler } from './interaction/DragHandler';
 import { ConnectionHandler } from './interaction/ConnectionHandler';
 import { ResizeHandler } from './interaction/ResizeHandler';
-import { KeyboardShortcuts, type SelectionState } from './interaction/KeyboardShortcuts';
+import { KeyboardShortcuts } from './interaction/KeyboardShortcuts';
+import {
+    NodeDraggingFingering,
+    HoverFingering,
+    BoxSelectingFingering,
+    ResizeFingering,
+    WiringFingering,
+    PinchZoomFingering,
+} from '../input/fingerings';
 
-export class InteractionPlugin implements ISpaceGraphPlugin {
+export class InteractionPlugin implements Plugin {
     readonly id = 'interaction';
     readonly name = 'Interaction Controls';
     readonly version = '1.0.0';
@@ -42,7 +52,7 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
         }
     }
 
-    init(sg: SpaceGraph): void {
+    init(sg: SpaceGraph, _graph: Graph, _events: EventSystem): void {
         this.sg = sg;
         this.raycaster = new InteractionRaycaster(sg);
         this.cursorManager = new CursorManager();
@@ -54,27 +64,48 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
         this.keyboardShortcuts = new KeyboardShortcuts(sg);
 
         this.cursorManager.setContainer(this.sg.renderer.renderer.domElement);
-        this.keyboardShortcuts.setSelectionChangeHandler((selection) => {
+        this.keyboardShortcuts.setSelectionChangeHandler((_selection) => {
             this.selectionManager.clear();
         });
 
+        this.registerFingerings();
         this.initInputHandlers();
     }
 
+    private registerFingerings(): void {
+        const inputManager = this.sg.input;
+
+        const resizeFingering = new ResizeFingering(this.sg, this.raycaster);
+        inputManager.registerFingering(resizeFingering, 200);
+
+        const wiringFingering = new WiringFingering(this.sg, this.raycaster);
+        inputManager.registerFingering(wiringFingering, 150);
+
+        const nodeDragFingering = new NodeDraggingFingering(this.sg, this.raycaster);
+        inputManager.registerFingering(nodeDragFingering, 100);
+
+        const boxSelectFingering = new BoxSelectingFingering(
+            this.sg,
+            this.raycaster,
+            this.selectionManager,
+        );
+        inputManager.registerFingering(boxSelectFingering, 80);
+
+        const hoverFingering = new HoverFingering(this.sg, this.raycaster);
+        inputManager.registerFingering(hoverFingering, 60);
+
+        const pinchZoomFingering = new PinchZoomFingering(this.sg);
+        inputManager.registerFingering(pinchZoomFingering, 50);
+    }
+
     private initInputHandlers(): void {
-        this.sg.events.on('input:interaction:pointerdown', (e: any) =>
-            this.handlePointerDown(e),
-        );
-        this.sg.events.on('input:interaction:pointermove', (e: any) =>
-            this.handlePointerMove(e),
-        );
+        this.sg.events.on('input:interaction:pointerdown', (e: any) => this.handlePointerDown(e));
+        this.sg.events.on('input:interaction:pointermove', (e: any) => this.handlePointerMove(e));
         this.sg.events.on('input:interaction:pointerup', (e: any) => this.handlePointerUp(e));
         this.sg.events.on('input:interaction:keydown', (e: any) => this.handleKeyDown(e));
         this.sg.events.on('input:interaction:keyup', (e: any) => this.handleKeyUp(e));
         this.sg.events.on('input:interaction:dblclick', (e: any) => this.handleDblClick(e));
-        this.sg.events.on('input:interaction:contextmenu', (e: any) =>
-            this.handleContextMenu(e),
-        );
+        this.sg.events.on('input:interaction:contextmenu', (e: any) => this.handleContextMenu(e));
     }
 
     private handlePointerDown(e: any): void {
@@ -90,7 +121,7 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
         }
 
         const nodeResult = this.raycaster.raycastNode();
-        const edgeResult = this.raycaster.raycastEdge();
+        this.raycaster.raycastEdge();
 
         if (e.button === 2 && nodeResult?.node) {
             this.startContextMenu(nodeResult.node, e);
@@ -120,13 +151,24 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
             this.dragHandler.startDrag(nodeResult.node);
             this.cursorManager.set('grabbing', 'drag');
         }
+
+        if (nodeResult?.node && e.button === 1) {
+            e.originalEvent?.preventDefault();
+            const node = nodeResult.node;
+            const radius = Math.max(
+                (((node.data as Record<string, unknown>)?.width as number) ?? 100) * 1.5,
+                150,
+            );
+            this.sg.cameraControls.flyTo(node.position, radius);
+        }
     }
 
     private handlePointerMove(e: any): void {
         this.raycaster.updateMousePosition(e.x, e.y);
 
         if (this.dragHandler.isDraggingNode()) {
-            const enableZAxis = (window as any).__spacegraph_altKey === true;
+            const state = this.sg.input.getState();
+            const enableZAxis = state.keysPressed.has('Alt');
             this.dragHandler.updateDrag(enableZAxis);
             return;
         }
@@ -156,7 +198,7 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
         this.cursorManager.set(cursorMode, 'hover');
     }
 
-    private handlePointerUp(e: any): void {
+    private handlePointerUp(_e: any): void {
         if (this.dragHandler.isDraggingNode()) {
             this.dragHandler.endDrag();
             this.cursorManager.clear('drag');
@@ -188,8 +230,6 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
     }
 
     private handleKeyDown(e: any): void {
-        (window as any).__spacegraph_altKey = e.altKey;
-
         const activeEl = document.activeElement;
         const isEditingText =
             activeEl &&
@@ -236,23 +276,21 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
         }
     }
 
-    private handleKeyUp(e: any): void {
-        (window as any).__spacegraph_altKey = e.altKey;
-    }
+    private handleKeyUp(_e: any): void {}
 
     private handleDblClick(e: any): void {
         this.raycaster.updateMousePosition(e.x, e.y);
 
         const edgeResult = this.raycaster.raycastEdge();
         if (edgeResult?.edge) {
-            this.sg.events.emit('edge:dblclick', { edge: edgeResult.edge, event: e.originalEvent });
+            this.sg.events.emit('edge:dblclick', { edge: edgeResult.edge } as any);
             this.handleZoomNavigation(edgeResult.edge.target, `edge:${edgeResult.edge.id}`);
             return;
         }
 
         const nodeResult = this.raycaster.raycastNode();
         if (nodeResult?.node) {
-            this.sg.events.emit('node:dblclick', { node: nodeResult.node, event: e.originalEvent });
+            this.sg.events.emit('node:dblclick', { node: nodeResult.node } as any);
             this.handleZoomNavigation(nodeResult.node, nodeResult.node.id);
         }
     }
@@ -267,13 +305,19 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
 
         const edgeResult = this.raycaster.raycastEdge();
         if (edgeResult?.edge) {
-            this.sg.events.emit('edge:contextmenu', { edge: edgeResult.edge, event: e.originalEvent });
+            this.sg.events.emit('edge:contextmenu', {
+                edge: edgeResult.edge,
+                event: e.originalEvent,
+            });
             return;
         }
 
         const nodeResult = this.raycaster.raycastNode();
         if (nodeResult?.node) {
-            this.sg.events.emit('node:contextmenu', { node: nodeResult.node, event: e.originalEvent });
+            this.sg.events.emit('node:contextmenu', {
+                node: nodeResult.node,
+                event: e.originalEvent,
+            });
         } else {
             this.sg.events.emit('graph:contextmenu', { event: e.originalEvent });
         }
@@ -282,17 +326,27 @@ export class InteractionPlugin implements ISpaceGraphPlugin {
     private handleZoomNavigation(target: Node | Edge, zoomId: string): void {
         if (!target || !this.sg.cameraControls) return;
 
-        const targetPos = target.position.clone();
+        const targetPos =
+            'position' in target
+                ? (target as Node).position.clone()
+                : (target as Edge).target.position.clone();
         const targetRadius =
-            'data' in target && target.data?.width
-                ? Math.max(target.data.width * 1.5, 150)
+            'data' in target &&
+            typeof (target as Node).data === 'object' &&
+            (target as Node).data !== null &&
+            'width' in (target as Node).data
+                ? Math.max(
+                      (((target as Node).data as Record<string, unknown>).width as number) * 1.5,
+                      150,
+                  )
                 : 150;
 
-        if (this.lastZoomedId === zoomId && this.sg.cameraControls.hasZoomHistory) {
-            this.sg.cameraControls.flyBack();
+        const controls = this.sg.cameraControls;
+        if (this.lastZoomedId === zoomId && controls.hasZoomHistory) {
+            controls.flyBack();
             this.lastZoomedId = null;
         } else {
-            this.sg.cameraControls.flyTo(targetPos, targetRadius);
+            controls.zoomTo(targetPos, targetRadius);
             this.lastZoomedId = zoomId;
         }
     }

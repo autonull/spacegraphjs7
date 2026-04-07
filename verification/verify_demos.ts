@@ -9,6 +9,14 @@ async function main() {
     // Wait for the server to start
     await new Promise((resolve) => setTimeout(resolve, 3000));
 
+    // Listen to output to make sure it is starting correctly
+    viteProcess.stdout.on('data', (data) => {
+        console.log(`Vite: ${data}`);
+    });
+    viteProcess.stderr.on('data', (data) => {
+        console.error(`Vite error: ${data}`);
+    });
+
     if (!fs.existsSync('verification')) {
         fs.mkdirSync('verification');
     }
@@ -18,6 +26,9 @@ async function main() {
         const browser = await chromium.launch({ headless: true });
         const context = await browser.newContext({ viewport: { width: 1280, height: 720 } });
         const page = await context.newPage();
+
+        page.on('console', msg => console.log('Browser console:', msg.text()));
+        page.on('pageerror', err => console.log('Browser error:', err));
 
         const demos = [
             'index.html',
@@ -40,11 +51,21 @@ async function main() {
         for (const demo of demos) {
             console.log(`Verifying demo: ${demo}`);
             await page.goto(`http://localhost:5174/demo/${demo}`);
-            // Let the module load and create the canvas
-            await page.waitForFunction(() => !!document.querySelector('canvas'), {
-                timeout: 10000,
-            });
-            await page.waitForTimeout(2000); // Give the graph 2 seconds to stabilize its layout
+
+            // Wait based on whether the demo is expected to create a canvas
+            if (demo !== 'index.html') {
+                // Let the module load and create the canvas
+                await page.waitForFunction(() => !!document.querySelector('canvas'), {
+                    timeout: 10000,
+                });
+                await page.waitForTimeout(2000); // Give the graph 2 seconds to stabilize its layout
+            } else {
+                // Index is just an HTML page with links, wait for it to render
+                await page.waitForFunction(() => !!document.querySelector('.demo-card'), {
+                    timeout: 10000,
+                });
+                await page.waitForTimeout(1000);
+            }
 
             const name = demo.split('/').pop().replace('.html', '');
             await page.screenshot({ path: `verification/${name}.png` });

@@ -172,9 +172,9 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4
-            - run: npm install
-            - run: npm run build
-            - run: npm run dev &
+            - run: pnpm install
+            - run: pnpm run build
+            - run: pnpm run dev &
             - run: python verification/verify_demos.py
             - uses: actions/upload-artifact@v4
               with:
@@ -1501,9 +1501,9 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4
-            - run: npm install
-            - run: npm run build
-            - run: npm run dev &
+            - run: pnpm install
+            - run: pnpm run build
+            - run: pnpm run dev &
             - run: python verification/verify_demos.py
             - uses: actions/upload-artifact@v4
               with:
@@ -1563,7 +1563,7 @@ jobs:
 - [ ] Performance profiling
 - [ ] Demo applications
 - [ ] Documentation
-- [ ] npm publish
+- [ ] pnpm publish
 
 ---
 

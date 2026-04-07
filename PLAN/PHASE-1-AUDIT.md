@@ -54,14 +54,14 @@
 
 | **Strengths**                                | **Weaknesses**                                          |
 | -------------------------------------------- | ------------------------------------------------------- |
-| ✅ Web-first (Three.js) = runs everywhere    | ❌ No npm package published (or not mentioned)          |
+| ✅ Web-first (Three.js) = runs everywhere    | ❌ No ppnpm package published (or not mentioned)          |
 | ✅ Vite build = modern bundler compatibility | ❌ No CDN distribution (unpkg, jsDelivr)                |
 | ✅ Plugin architecture = extensible          | ❌ No integrations (VS Code, Figma, Slack, GitHub)      |
 |                                              | ❌ No cloud marketplace presence (Vercel, Netlify, AWS) |
 
 | **Opportunities**                            | **Threats**                                                |
 | -------------------------------------------- | ---------------------------------------------------------- |
-| 🚀 Publish to npm with zero-config setup     | ⚠️ Web-only = no React Native, Electron, Tauri support yet |
+| 🚀 Publish to pnpm with zero-config setup     | ⚠️ Web-only = no React Native, Electron, Tauri support yet |
 | 🚀 VS Code extension for graph visualization | ⚠️ No integrations = easy to ignore                        |
 | 🚀 Figma plugin (design → SpaceGraph export) |                                                            |
 
@@ -126,7 +126,7 @@
 | --------- | ------------------------------------------ | ----------------------------- |
 | 🔴 **P1** | Incomplete documentation (5/10)            | Blocks adoption, contribution |
 | 🔴 **P1** | Generic positioning ("general-purpose UI") | No remarkability, no press    |
-| 🟡 **P2** | No npm package / CDN distribution          | Blocks ubiquity               |
+| 🟡 **P2** | No ppnpm package / CDN distribution          | Blocks ubiquity               |
 | 🟡 **P2** | No integrations roadmap                    | Easy to ignore                |
 | 🟢 **P3** | No monetization model                      | Revenue bottleneck            |
 | 🟢 **P3** | No community platform                      | No word-of-mouth growth       |

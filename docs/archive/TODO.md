@@ -116,14 +116,14 @@
   File: .github/workflows/ci.yml (create if absent)                                                                                                       
    
   Minimal pipeline:                                                                                                                                       
-  1. npm install                                            
-  2. npm run build — catches TypeScript errors                                                                                                            
-  3. npm run test — Vitest unit tests         
-  4. npm run lint — ESLint                                                                                                                                
+  1. pnpm install
+  2. pnpm run build — catches TypeScript errors
+  3. pnpm run test — Vitest unit tests
+  4. pnpm run lint — ESLint
                                                                                                                                                           
   Don't run Playwright E2E in CI yet — it requires a browser environment and will be slow. That comes in Phase 1.
                                                                                                                                                           
-  Success criteria for Phase 0: npm run build && npm run test passes clean from a fresh clone. The SpaceGraph.create() call in demo/main.ts is await-based
+  Success criteria for Phase 0: pnpm run build && pnpm run test passes clean from a fresh clone. The SpaceGraph.create() call in demo/main.ts is await-based
    and handles errors visibly.                                                                                                                            
                                                                                                                                                           
   ---                                                       
@@ -464,15 +464,15 @@
   Week 5:   Phase 2.1 tasks 2.1.1–2.1.3 (create(), events, quick())                                                                                       
   Week 6:   Phase 2.1 task 2.1.4 (bind()) + Phase 4.4 manifest spec                                                                                       
   Week 7:   Phase 4.4 fromManifest() + zui-server package                                                                                                 
-  Week 8:   Integration, documentation, npm publish 6.0.0-beta.1                                                                                          
+  Week 8:   Integration, documentation, pnpm publish 6.0.0-beta.1
                                                                                                                                                           
   Success Criteria                                                                                                                                        
                                                                                                                                                           
-  Phase 0: npm run build && npm run test passes from clean clone. No race conditions. create() is awaitable.                                              
+  Phase 0: pnpm run build && pnpm run test passes from clean clone. No race conditions. create() is awaitable.
    
   Phase 1: Demo renders all 20 node types. Physics converges at 500 nodes at 30fps minimum. toJSON() → fromJSON() round-trips without data loss.          
                                                             
-  Phase 2.1: A developer with no prior SpaceGraph knowledge can go from npm install spacegraphjs to a live graph in < 15 lines of code. The events API is 
+  Phase 2.1: A developer with no prior SpaceGraph knowledge can go from pnpm install spacegraphjs to a live graph in < 15 lines of code. The events API is
   fully typed.                                              
                                                                                                                                                           
   Phase 4.4: /.well-known/zui-manifest.json is served by at least two distinct applications (SpaceGraph demo server + the n8n bridge).                    

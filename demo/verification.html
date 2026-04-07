@@ -1,0 +1,64 @@
+<!doctype html>
+<html>
+    <head>
+        <title>SpaceGraphJS Verification</title>
+        <style>
+            * {
+                margin: 0;
+            }
+            #container {
+                width: 100vw;
+                height: 100vh;
+                background-color: #1a1a2e;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="container"></div>
+        <script type="module">
+            import { SpaceGraph } from '@src/index.ts';
+
+            try {
+                const graph = await SpaceGraph.create('#container', {
+                    nodes: [
+                        {
+                            id: 'a',
+                            type: 'ShapeNode',
+                            label: 'Node A',
+                            position: [0, 0, 0],
+                            data: { color: 0x3366ff, size: 80 },
+                        },
+                        {
+                            id: 'b',
+                            type: 'ShapeNode',
+                            label: 'Node B',
+                            position: [150, 0, 0],
+                            data: { color: 0xff6633, size: 80 },
+                        },
+                        {
+                            id: 'c',
+                            type: 'ShapeNode',
+                            label: 'Node C',
+                            position: [75, 130, 0],
+                            data: { color: 0x33ff66, size: 80 },
+                        },
+                    ],
+                    edges: [
+                        { id: 'e1', source: 'a', target: 'b', type: 'Edge' },
+                        { id: 'e2', source: 'b', target: 'c', type: 'CurvedEdge' },
+                        { id: 'e3', source: 'c', target: 'a', type: 'FlowEdge' },
+                    ],
+                });
+
+                graph.fitView(200, 1.5);
+
+                window._sg = graph;
+                console.log('✓ Verification graph rendered with', graph.graph.nodes.size, 'nodes');
+
+                window.addEventListener('beforeunload', () => graph.dispose());
+            } catch (error) {
+                console.error('[verification.html] Failed to create graph:', error);
+            }
+        </script>
+    </body>
+</html>

@@ -1,115 +1,215 @@
 import * as THREE from 'three';
 import gsap from 'gsap';
 import { ThreeDisposer } from '../utils/ThreeDisposer';
+import { Surface, type HitResult, type Rect } from '../core/Surface';
 import type { SpaceGraph } from '../SpaceGraph';
-import type { NodeSpec } from '../types';
+import type { NodeSpec, NodeData, AnimationProps } from '../types';
 
-export class Node {
-    public id: string;
-    public type: string;
-    public sg: SpaceGraph;
+export type NodeEventMap = {
+    'node:updated': { node: Node; changes: Partial<NodeSpec>; timestamp: number };
+    'node:destroying': { node: Node; timestamp: number };
+};
+
+export abstract class Node extends Surface {
+    readonly id: string;
+    readonly type: string;
+    public sg?: SpaceGraph;
     public label?: string;
-    public data: any;
-    public object: THREE.Object3D;
+    public data: NodeData;
     public position: THREE.Vector3;
+    public rotation: THREE.Vector3;
+    public scale: THREE.Vector3;
+    abstract readonly object: THREE.Object3D;
 
-    constructor(sg: SpaceGraph, spec: NodeSpec) {
-        this.sg = sg;
-        this.id = spec.id;
-        this.type = spec.type;
-        this.label = spec.label;
-        this.data = spec.data || {};
+    constructor(sg?: SpaceGraph, spec?: NodeSpec);
+    constructor(sgOrSpec?: SpaceGraph | NodeSpec, maybeSpec?: NodeSpec) {
+        super();
+        const isSpecOnly = !!(sgOrSpec && 'id' in sgOrSpec);
+        this.sg = isSpecOnly ? undefined : (sgOrSpec as SpaceGraph);
+        const spec = isSpecOnly ? (sgOrSpec as NodeSpec) : maybeSpec;
+        this.id = spec?.id ?? '';
+        this.type = spec?.type ?? '';
+        this.label = spec?.label;
+        this.data = spec?.data ?? {};
         this.position = new THREE.Vector3(
-            spec.position?.[0] || 0,
-            spec.position?.[1] || 0,
-            spec.position?.[2] || 0,
+            spec?.position?.[0] ?? 0,
+            spec?.position?.[1] ?? 0,
+            spec?.position?.[2] ?? 0,
         );
-        this.object = new THREE.Object3D();
-        this.object.position.copy(this.position);
+        this.rotation = new THREE.Vector3(
+            spec?.rotation?.[0] ?? 0,
+            spec?.rotation?.[1] ?? 0,
+            spec?.rotation?.[2] ?? 0,
+        );
+        this.scale = new THREE.Vector3(
+            spec?.scale?.[0] ?? 1,
+            spec?.scale?.[1] ?? 1,
+            spec?.scale?.[2] ?? 1,
+        );
+    }
+
+    get bounds(): Rect {
+        const box = new THREE.Box3().setFromObject(this.object);
+        return {
+            x: box.min.x,
+            y: box.min.y,
+            width: box.max.x - box.min.x,
+            height: box.max.y - box.min.y,
+        };
+    }
+
+    hitTest(ray: THREE.Raycaster): HitResult | null {
+        if (!this.isTouchable) return null;
+        const hits = ray.intersectObject(this.object, true);
+        if (hits.length > 0) {
+            return {
+                surface: this,
+                point: hits[0].point,
+                localPoint: this.object.worldToLocal(hits[0].point.clone()),
+                distance: hits[0].distance,
+            };
+        }
+        return null;
+    }
+
+    start(): void {
+        this.pulse(0.5);
+    }
+
+    stop(): void {}
+
+    delete(): void {
+        this.dispose();
+    }
+
+    requireSpaceGraph(): SpaceGraph {
+        if (!this.sg) {
+            throw new Error(`Node '${this.id}' requires SpaceGraph but sg is not initialized`);
+        }
+        return this.sg;
     }
 
     updateSpec(updates: Partial<NodeSpec>): this {
-        if (updates.label !== undefined) this.label = updates.label;
-        if (updates.data) this.data = { ...this.data, ...updates.data };
-        if (updates.position)
-            this.updatePosition(updates.position[0], updates.position[1], updates.position[2]);
+        const changes: Partial<NodeSpec> = {};
+
+        if (updates.label !== undefined && updates.label !== this.label) {
+            this.label = updates.label;
+            changes.label = updates.label;
+        }
+
+        if (updates.data !== undefined) {
+            this.data = { ...this.data, ...updates.data };
+            changes.data = updates.data;
+        }
+
+        if (updates.position !== undefined) {
+            this.position.fromArray(updates.position);
+            changes.position = updates.position;
+        }
+
+        if (updates.rotation !== undefined) {
+            this.rotation.fromArray(updates.rotation);
+            changes.rotation = updates.rotation;
+        }
+
+        if (updates.scale !== undefined) {
+            this.scale.fromArray(updates.scale);
+            changes.scale = updates.scale;
+        }
+
+        if (Object.keys(changes).length > 0) {
+            this.emit('node:updated', { node: this, changes, timestamp: Date.now() });
+        }
+
         return this;
     }
 
     updatePosition(x: number, y: number, z: number): this {
         this.position.set(x, y, z);
-        this.object.position.copy(this.position);
+        this.object?.position.copy(this.position);
         return this;
     }
 
-    setPosition(x: number, y: number, z: number = 0): this {
-        return this.updatePosition(x, y, z);
-    }
-
-    scale(s: number): this {
+    scaleUniform(s: number): this {
         this.object.scale.set(s, s, s);
         return this;
     }
 
-    animate(props: any): this {
-        const positionProps = { ...props };
-        delete positionProps.scale; // Remove scale to avoid GSAP warning on position
+    isDraggable(_localPos: THREE.Vector3): boolean {
+        return true;
+    }
+
+    animate(props: AnimationProps): this {
+        const { scale, ...positionProps } = props;
 
         gsap.to(this.position, {
             ...positionProps,
-            onUpdate: () => {
-                this.object.position.copy(this.position);
-                if (props.onUpdate) props.onUpdate();
-            },
+            onUpdate: () => void this.object.position.copy(this.position),
         });
-        if (props.scale !== undefined) {
+
+        if (scale !== undefined) {
             gsap.to(this.object.scale, {
-                x: props.scale,
-                y: props.scale,
-                z: props.scale,
+                x: scale,
+                y: scale,
+                z: scale,
                 duration: props.duration,
                 ease: props.ease,
                 delay: props.delay,
             });
         }
+
         return this;
     }
 
-    /**
-     * Applies a new position to the node, optionally animating it via GSAP.
-     * Helper to DRY up layout plugins.
-     */
     applyPosition(
-        targetPos: THREE.Vector3,
-        animate: boolean = true,
-        duration: number = 1.0,
-        delay: number = 0,
+        target: THREE.Vector3,
+        {
+            animate = true,
+            duration = 1.0,
+            delay = 0,
+        }: { animate?: boolean; duration?: number; delay?: number } = {},
     ): this {
         if (animate && typeof process === 'undefined') {
             gsap.to(this.position, {
-                x: targetPos.x,
-                y: targetPos.y,
-                z: targetPos.z,
+                x: target.x,
+                y: target.y,
+                z: target.z,
                 duration,
                 ease: 'power2.out',
                 delay,
-                onUpdate: () => {
-                    this.object.position.copy(this.position);
-                },
+                onUpdate: () => void this.object.position.copy(this.position),
             });
         } else {
-            this.position.copy(targetPos);
-            this.object.position.copy(targetPos);
+            this.position.copy(target);
+            this.object.position.copy(target);
         }
         return this;
     }
 
-    /**
-     * Cleanly destroy this node and recursively free geometry, materials, and textures
-     * to prevent WebGL context memory leaks.
-     */
+    toJSON(): NodeSpec {
+        return {
+            id: this.id,
+            type: this.type,
+            label: this.label,
+            position: [this.position.x, this.position.y, this.position.z] as [
+                number,
+                number,
+                number,
+            ],
+            rotation: [this.rotation.x, this.rotation.y, this.rotation.z] as [
+                number,
+                number,
+                number,
+            ],
+            scale: [this.scale.x, this.scale.y, this.scale.z] as [number, number, number],
+            data: { ...this.data },
+        };
+    }
+
     dispose(): void {
+        this.emit('node:destroying', { node: this, timestamp: Date.now() });
         this.object.parent?.remove(this.object);
         ThreeDisposer.dispose(this.object);
+        this.removeAllListeners();
     }
 }

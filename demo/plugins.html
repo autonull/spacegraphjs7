@@ -1,0 +1,464 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Plugin Showcase - SpaceGraphJS</title>
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+                color: #e0e0e0;
+                overflow: hidden;
+            }
+            #container {
+                width: 100vw;
+                height: 100vh;
+            }
+            .panel {
+                position: fixed;
+                top: 20px;
+                left: 20px;
+                z-index: 1000;
+                background: rgba(15, 23, 42, 0.95);
+                border: 1px solid #334155;
+                border-radius: 12px;
+                padding: 16px;
+                min-width: 320px;
+                max-height: calc(100vh - 80px);
+                overflow-y: auto;
+            }
+            .panel h2 {
+                font-size: 14px;
+                color: #94a3b8;
+                margin-bottom: 16px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                border-bottom: 1px solid #334155;
+                padding-bottom: 8px;
+            }
+            .plugin-section {
+                margin-bottom: 20px;
+            }
+            .plugin-section h3 {
+                font-size: 13px;
+                color: #3b82f6;
+                margin-bottom: 10px;
+            }
+            .plugin-row {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 8px;
+                padding: 8px;
+                background: rgba(30, 41, 59, 0.5);
+                border-radius: 6px;
+            }
+            .plugin-row label {
+                font-size: 13px;
+                color: #cbd5e1;
+            }
+            .plugin-row input[type='checkbox'] {
+                width: 18px;
+                height: 18px;
+                cursor: pointer;
+            }
+            button {
+                width: 100%;
+                padding: 10px 16px;
+                background: rgba(59, 130, 246, 0.2);
+                border: 1px solid #3b82f6;
+                border-radius: 6px;
+                color: #e2e8f0;
+                font-size: 13px;
+                cursor: pointer;
+                margin-bottom: 8px;
+                transition: all 0.2s;
+            }
+            button:hover {
+                background: rgba(59, 130, 246, 0.3);
+                border-color: #60a5fa;
+            }
+            .event-log {
+                position: fixed;
+                bottom: 20px;
+                left: 20px;
+                z-index: 1000;
+                background: rgba(15, 23, 42, 0.95);
+                border: 1px solid #334155;
+                border-radius: 8px;
+                padding: 12px;
+                width: 400px;
+                max-height: 200px;
+                overflow-y: auto;
+                font-family: monospace;
+                font-size: 11px;
+            }
+            .event-log .entry {
+                margin-bottom: 4px;
+                padding: 4px 8px;
+                border-radius: 4px;
+            }
+            .event-log .entry.action {
+                color: #a78bfa;
+            }
+            .event-log .entry.hover {
+                color: #34d399;
+            }
+            .event-log .entry.info {
+                color: #60a5fa;
+            }
+            .event-log .entry.system {
+                color: #fbbf24;
+            }
+
+            /* HUD styles */
+            .hud-stats {
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                z-index: 1000;
+                background: rgba(15, 23, 42, 0.95);
+                border: 1px solid #334155;
+                border-radius: 8px;
+                padding: 12px 16px;
+                font-size: 12px;
+            }
+            .hud-stat {
+                margin-bottom: 6px;
+                color: #94a3b8;
+            }
+            .hud-stat span {
+                color: #3b82f6;
+                font-weight: bold;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="container"></div>
+
+        <div class="panel">
+            <h2>Plugin Controls</h2>
+
+            <div class="plugin-section">
+                <h3>Interaction Plugins</h3>
+                <div class="plugin-row">
+                    <label for="hover-meta">Hover Meta Widget</label>
+                    <input type="checkbox" id="hover-meta" checked />
+                </div>
+                <div class="plugin-row">
+                    <label for="minimap">Minimap</label>
+                    <input type="checkbox" id="minimap" checked />
+                </div>
+            </div>
+
+            <div class="plugin-section">
+                <h3>System Plugins</h3>
+                <div class="plugin-row">
+                    <label for="history">History (Undo/Redo)</label>
+                    <input type="checkbox" id="history" checked />
+                </div>
+                <div class="plugin-row">
+                    <label for="hud">HUD Overlay</label>
+                    <input type="checkbox" id="hud" checked />
+                </div>
+            </div>
+
+            <div class="plugin-section">
+                <h3>Actions</h3>
+                <button id="add-node">Add Node</button>
+                <button id="remove-node">Remove Random Node</button>
+                <button id="undo" disabled>Undo (Ctrl+Z)</button>
+                <button id="redo" disabled>Redo (Ctrl+Y)</button>
+                <button id="clear-log">Clear Event Log</button>
+            </div>
+        </div>
+
+        <div class="hud-stats">
+            <div class="hud-stat">Nodes: <span id="stat-nodes">0</span></div>
+            <div class="hud-stat">Edges: <span id="stat-edges">0</span></div>
+            <div class="hud-stat">FPS: <span id="stat-fps">0</span></div>
+        </div>
+
+        <div class="event-log" id="event-log">
+            <div class="entry info">Event log initialized</div>
+        </div>
+
+        <script type="module">
+            import {
+                SpaceGraph,
+                HoverMetaWidget,
+                MinimapPlugin,
+                HistoryPlugin,
+                HUDPlugin,
+                ForceLayout,
+            } from '@src/index.ts';
+
+            let sg = null;
+            let nodeCounter = 10;
+
+            const nodes = [];
+            const edges = [];
+
+            // Create initial graph structure
+            nodes.push({
+                id: 'central',
+                type: 'HtmlNode',
+                label: 'Central Hub',
+                position: [0, 0, 0],
+                data: {
+                    color: 'rgba(59, 130, 246, 0.95)',
+                    width: 200,
+                    height: 100,
+                    description: 'Central node with connections',
+                },
+            });
+
+            // Create surrounding nodes
+            for (let i = 0; i < 6; i++) {
+                const angle = (i / 6) * Math.PI * 2;
+                const x = Math.cos(angle) * 300;
+                const y = Math.sin(angle) * 300;
+
+                nodes.push({
+                    id: `node-${i}`,
+                    type: 'HtmlNode',
+                    label: `Node ${i + 1}`,
+                    position: [x, y, 0],
+                    data: {
+                        color: `rgba(${139 + i * 20}, ${92 + i * 10}, 246, 0.85)`,
+                        width: 160,
+                        height: 80,
+                        description: `Sample node ${i + 1}`,
+                    },
+                });
+
+                edges.push({
+                    id: `edge-${i}`,
+                    source: 'central',
+                    target: `node-${i}`,
+                    type: 'CurvedEdge',
+                    data: { color: 0x3b82f6 },
+                });
+            }
+
+            // Add some interconnections
+            for (let i = 0; i < 5; i++) {
+                edges.push({
+                    id: `cross-${i}`,
+                    source: `node-${i}`,
+                    target: `node-${(i + 1) % 6}`,
+                    type: 'DottedEdge',
+                    data: { color: 0x64748b },
+                });
+            }
+
+            // Plugin instances
+            let minimapPlugin = null;
+            let hoverMetaPlugin = null;
+            let historyPlugin = null;
+            let hudPlugin = null;
+
+            function addLog(text, type = 'info') {
+                const log = document.getElementById('event-log');
+                const entry = document.createElement('div');
+                entry.className = `entry ${type}`;
+                entry.textContent = `[${new Date().toLocaleTimeString()}] ${text}`;
+                log.appendChild(entry);
+
+                // Keep only last 50 entries
+                while (log.children.length > 50) {
+                    log.removeChild(log.firstChild);
+                }
+            }
+
+            function updateStats() {
+                if (!sg) return;
+                document.getElementById('stat-nodes').textContent = sg.graph.nodes.size;
+                document.getElementById('stat-edges').textContent = sg.graph.edges.size;
+            }
+
+            async function init() {
+                sg = await SpaceGraph.create('#container', { nodes, edges });
+                window._sg = sg;
+
+                // Initialize History Plugin
+                historyPlugin = new HistoryPlugin({ maxHistorySize: 50 });
+                sg.pluginManager.register('HistoryPlugin', historyPlugin);
+                historyPlugin.init(sg, sg.graph, sg.events);
+                document.getElementById('history').checked = true;
+
+                // Initialize Minimap Plugin
+                minimapPlugin = new MinimapPlugin({
+                    position: 'bottom-right',
+                    size: 200,
+                    alpha: 0.9,
+                });
+                sg.pluginManager.register('MinimapPlugin', minimapPlugin);
+                minimapPlugin.init(sg, sg.graph, sg.events);
+                document.getElementById('minimap').checked = true;
+
+                // Initialize HoverMetaWidget
+                hoverMetaPlugin = new HoverMetaWidget({
+                    enabled: true,
+                    hideDelay: 500,
+                    fadeDelay: 4000,
+                });
+                sg.pluginManager.register('HoverMetaWidget', hoverMetaPlugin);
+                hoverMetaPlugin.init(sg, sg.graph, sg.events);
+                document.getElementById('hover-meta').checked = true;
+
+                // Initialize HUD Plugin
+                hudPlugin = new HUDPlugin({
+                    showStats: true,
+                    showControls: true,
+                    position: 'top-right',
+                });
+                sg.pluginManager.register('HUDPlugin', hudPlugin);
+                hudPlugin.init(sg, sg.graph, sg.events);
+                document.getElementById('hud').checked = true;
+
+                // Apply force layout
+                const forceLayout = new ForceLayout({ iterations: 60, repulsion: 10000 });
+                forceLayout.init(sg, sg.graph, sg.events);
+                await forceLayout.apply();
+
+                // Event listeners
+                sg.events.on('node:pointerenter', ({ node }) => {
+                    addLog(`Hover: ${node.label || node.id}`, 'hover');
+                });
+
+                sg.events.on('node:metaaction', ({ node, action }) => {
+                    addLog(`Action [${action}] on ${node.label || node.id}`, 'action');
+
+                    if (action === 'delete') {
+                        // Already handled by HoverMetaWidget
+                    } else if (action === 'focus') {
+                        sg.fitView(150, 2.0);
+                    }
+                });
+
+                sg.events.on('node:added', () => {
+                    addLog('Node added', 'system');
+                    updateStats();
+                });
+
+                sg.events.on('node:removed', () => {
+                    addLog('Node removed', 'system');
+                    updateStats();
+                });
+
+                // Button handlers
+                document.getElementById('add-node').addEventListener('click', () => {
+                    const angle = Math.random() * Math.PI * 2;
+                    const x = Math.cos(angle) * 400;
+                    const y = Math.sin(angle) * 400;
+
+                    sg.graph.addNode({
+                        id: `node-${nodeCounter++}`,
+                        type: 'HtmlNode',
+                        label: `Node ${nodeCounter}`,
+                        position: [x, y, 0],
+                        data: {
+                            color: `rgba(${Math.random() * 200 + 55}, ${Math.random() * 200 + 55}, 246, 0.85)`,
+                            width: 150,
+                            height: 75,
+                        },
+                    });
+                    updateStats();
+                });
+
+                document.getElementById('remove-node').addEventListener('click', () => {
+                    const nodes = Array.from(sg.graph.nodes.values());
+                    if (nodes.length > 1) {
+                        const randomNode = nodes[Math.floor(Math.random() * nodes.length)];
+                        if (randomNode.id !== 'central') {
+                            sg.graph.removeNode(randomNode.id);
+                        }
+                    }
+                    updateStats();
+                });
+
+                document.getElementById('undo').addEventListener('click', () => {
+                    if (historyPlugin && historyPlugin.canUndo()) {
+                        historyPlugin.undo();
+                        addLog('Undo performed', 'system');
+                    }
+                });
+
+                document.getElementById('redo').addEventListener('click', () => {
+                    if (historyPlugin && historyPlugin.canRedo()) {
+                        historyPlugin.redo();
+                        addLog('Redo performed', 'system');
+                    }
+                });
+
+                document.getElementById('clear-log').addEventListener('click', () => {
+                    const log = document.getElementById('event-log');
+                    log.innerHTML = '<div class="entry info">Event log cleared</div>';
+                });
+
+                // Plugin toggle handlers
+                document.getElementById('hover-meta').addEventListener('change', (e) => {
+                    if (hoverMetaPlugin) {
+                        hoverMetaPlugin.opts.enabled = e.target.checked;
+                        addLog(
+                            `Hover Meta Widget ${e.target.checked ? 'enabled' : 'disabled'}`,
+                            'system',
+                        );
+                    }
+                });
+
+                document.getElementById('minimap').addEventListener('change', (e) => {
+                    if (minimapPlugin && minimapPlugin.container) {
+                        minimapPlugin.container.style.display = e.target.checked ? 'block' : 'none';
+                        addLog(`Minimap ${e.target.checked ? 'shown' : 'hidden'}`, 'system');
+                    }
+                });
+
+                // Update undo/redo button states
+                const updateUndoRedo = () => {
+                    if (historyPlugin) {
+                        document.getElementById('undo').disabled = !historyPlugin.canUndo();
+                        document.getElementById('redo').disabled = !historyPlugin.canRedo();
+                    }
+                };
+
+                // Hook into history events
+                if (historyPlugin) {
+                    sg.events.on('history:change', updateUndoRedo);
+                    sg.events.on('node:added', updateUndoRedo);
+                    sg.events.on('node:removed', updateUndoRedo);
+                }
+
+                // FPS counter
+                let frameCount = 0;
+                let fps = 0;
+                let lastTime = performance.now();
+
+                function animate() {
+                    frameCount++;
+                    const now = performance.now();
+                    if (now - lastTime >= 1000) {
+                        fps = frameCount;
+                        frameCount = 0;
+                        lastTime = now;
+                        document.getElementById('stat-fps').textContent = fps;
+                    }
+                    requestAnimationFrame(animate);
+                }
+                animate();
+
+                updateStats();
+                addLog('Plugin showcase initialized', 'system');
+            }
+
+            init().catch(console.error);
+        </script>
+    </body>
+</html>

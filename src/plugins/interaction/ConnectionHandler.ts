@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import type { SpaceGraph } from '../SpaceGraph';
-import type { Node } from '../nodes/Node';
+import type { SpaceGraph } from '../../SpaceGraph';
+import type { Node } from '../../nodes/Node';
 import type { EdgeSpec } from '../../types';
 import type { InteractionRaycaster } from './RaycasterHelper';
 
@@ -50,16 +50,18 @@ export class ConnectionHandler {
     updateConnection(): void {
         if (!this.isConnecting || !this.connectSourceNode || !this.connectTempLineGeom) return;
 
-        const intersectPoint = this.raycaster.raycastPlane(
-            new THREE.Plane(
-                this.sg.renderer.camera.getWorldDirection(new THREE.Vector3(0, 0, 1)),
-                this.connectSourceNode.position,
-            ),
+        const normal = this.sg.renderer.camera.getWorldDirection(new THREE.Vector3(0, 0, 1));
+        const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(
+            normal,
+            this.connectSourceNode.position,
         );
+        const intersectPoint = this.raycaster.raycastPlane(plane);
 
         if (!intersectPoint) return;
 
-        const positions = this.connectTempLineGeom.getAttribute('position') as THREE.BufferAttribute;
+        const positions = this.connectTempLineGeom.getAttribute(
+            'position',
+        ) as THREE.BufferAttribute;
         positions.setXYZ(1, intersectPoint.x, intersectPoint.y, intersectPoint.z);
         positions.needsUpdate = true;
 

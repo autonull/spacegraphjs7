@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Layout Showcase - SpaceGraphJS</title>
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                background: #0a0a0a;
+                color: #e0e0e0;
+                overflow: hidden;
+            }
+            #container {
+                width: 100vw;
+                height: 100vh;
+            }
+            .controls {
+                position: fixed;
+                top: 20px;
+                left: 20px;
+                z-index: 1000;
+                background: rgba(15, 23, 42, 0.95);
+                border: 1px solid #334155;
+                border-radius: 12px;
+                padding: 16px;
+                min-width: 280px;
+            }
+            .controls h2 {
+                font-size: 14px;
+                color: #94a3b8;
+                margin-bottom: 12px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+            .control-group {
+                margin-bottom: 16px;
+            }
+            .control-group label {
+                display: block;
+                font-size: 12px;
+                color: #64748b;
+                margin-bottom: 6px;
+            }
+            select,
+            button {
+                width: 100%;
+                padding: 8px 12px;
+                background: rgba(30, 41, 59, 0.8);
+                border: 1px solid #475569;
+                border-radius: 6px;
+                color: #e2e8f0;
+                font-size: 13px;
+                cursor: pointer;
+                margin-bottom: 8px;
+            }
+            select:hover,
+            button:hover {
+                border-color: #3b82f6;
+                background: rgba(30, 41, 59, 1);
+            }
+            button {
+                background: rgba(59, 130, 246, 0.2);
+                border-color: #3b82f6;
+                transition: all 0.2s;
+            }
+            button:hover {
+                background: rgba(59, 130, 246, 0.3);
+            }
+            .stats {
+                position: fixed;
+                bottom: 20px;
+                left: 20px;
+                z-index: 1000;
+                background: rgba(15, 23, 42, 0.95);
+                border: 1px solid #334155;
+                border-radius: 8px;
+                padding: 12px 16px;
+                font-size: 12px;
+                color: #94a3b8;
+            }
+            .stats span {
+                color: #3b82f6;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="container"></div>
+
+        <div class="controls">
+            <h2>Layout Controls</h2>
+            <div class="control-group">
+                <label>Layout Algorithm</label>
+                <select id="layout-select">
+                    <option value="force">Force Directed</option>
+                    <option value="circular">Circular</option>
+                    <option value="grid">Grid</option>
+                    <option value="hierarchical">Hierarchical</option>
+                    <option value="radial">Radial</option>
+                    <option value="tree">Tree</option>
+                    <option value="spectral">Spectral</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>Actions</label>
+                <button id="apply-layout">Apply Layout</button>
+                <button id="randomize">Randomize Positions</button>
+                <button id="reset-camera">Reset Camera</button>
+            </div>
+        </div>
+
+        <div class="stats">
+            Nodes: <span id="node-count">0</span> | Edges: <span id="edge-count">0</span>
+        </div>
+
+        <script type="module">
+            import {
+                SpaceGraph,
+                ForceLayout,
+                CircularLayout,
+                GridLayout,
+                HierarchicalLayout,
+                RadialLayout,
+                TreeLayout,
+                SpectralLayout,
+                MinimapPlugin,
+                HoverMetaWidget,
+            } from '@src/index.ts';
+
+            // Create sample graph data
+            const nodes = [];
+            const edges = [];
+            const nodeCount = 24;
+
+            // Create root node
+            nodes.push({
+                id: 'root',
+                type: 'HtmlNode',
+                label: 'Root',
+                position: [0, 0, 0],
+                data: {
+                    color: 'rgba(59, 130, 246, 0.9)',
+                    width: 180,
+                    height: 80,
+                },
+            });
+
+            // Create level 1 nodes
+            for (let i = 0; i < 3; i++) {
+                const id = `l1-${i}`;
+                nodes.push({
+                    id,
+                    type: 'HtmlNode',
+                    label: `Level 1.${i + 1}`,
+                    position: [(i - 1) * 300, 300, 0],
+                    data: {
+                        color: 'rgba(139, 92, 246, 0.85)',
+                        width: 160,
+                        height: 70,
+                    },
+                });
+                edges.push({
+                    id: `e-root-${i}`,
+                    source: 'root',
+                    target: id,
+                    type: 'CurvedEdge',
+                });
+            }
+
+            // Create level 2 nodes
+            for (let i = 0; i < 3; i++) {
+                for (let j = 0; j < 3; j++) {
+                    const id = `l2-${i}-${j}`;
+                    nodes.push({
+                        id,
+                        type: 'HtmlNode',
+                        label: `L${i + 2}.${j + 1}`,
+                        position: [(i - 1) * 200 + j * 50, 300 + (i + 1) * 200, 0],
+                        data: {
+                            color: `rgba(${100 + i * 50}, ${200 - j * 30}, 146, 0.8)`,
+                            width: 140,
+                            height: 60,
+                        },
+                    });
+                    edges.push({
+                        id: `e-l1-${i}-${j}`,
+                        source: `l1-${i}`,
+                        target: id,
+                        type: 'Edge',
+                    });
+                }
+            }
+
+            // Add some cross-links
+            edges.push({
+                id: 'cross-1',
+                source: 'l2-0-0',
+                target: 'l2-1-2',
+                type: 'DottedEdge',
+                data: { color: 0x64748b },
+            });
+            edges.push({
+                id: 'cross-2',
+                source: 'l2-1-0',
+                target: 'l2-2-2',
+                type: 'DottedEdge',
+                data: { color: 0x64748b },
+            });
+
+            let sg = null;
+            let currentLayout = 'force';
+            let layouts = null;
+
+            async function init() {
+                sg = await SpaceGraph.create('#container', { nodes, edges });
+                window._sg = sg;
+
+                // Create and initialize all layouts after graph is ready
+                layouts = {
+                    force: new ForceLayout({ iterations: 50, repulsion: 8000, attraction: 0.02 }),
+                    circular: new CircularLayout(),
+                    grid: new GridLayout(),
+                    hierarchical: new HierarchicalLayout({ direction: 'TB' }),
+                    radial: new RadialLayout(),
+                    tree: new TreeLayout({ direction: 'TB' }),
+                    spectral: new SpectralLayout(),
+                };
+
+                // Initialize all layouts with graph context
+                Object.values(layouts).forEach((layout) => {
+                    layout.init(sg, sg.graph, sg.events);
+                });
+
+                // Register plugins
+                const minimap = new MinimapPlugin({ position: 'bottom-right', size: 180 });
+                sg.pluginManager.register('MinimapPlugin', minimap);
+                minimap.init(sg, sg.graph, sg.events);
+
+                const hoverMeta = new HoverMetaWidget();
+                sg.pluginManager.register('HoverMetaWidget', hoverMeta);
+                hoverMeta.init(sg, sg.graph, sg.events);
+
+                // Apply initial layout
+                await layouts.force.apply();
+
+                // Update stats
+                document.getElementById('node-count').textContent = nodes.length;
+                document.getElementById('edge-count').textContent = edges.length;
+
+                // Layout controls
+                document.getElementById('layout-select').value = 'force';
+                document.getElementById('layout-select').addEventListener('change', (e) => {
+                    currentLayout = e.target.value;
+                });
+
+                document.getElementById('apply-layout').addEventListener('click', async () => {
+                    const layout = layouts[currentLayout];
+                    if (layout) {
+                        await layout.apply();
+                    }
+                });
+
+                document.getElementById('randomize').addEventListener('click', () => {
+                    nodes.forEach((node) => {
+                        const n = sg.graph.nodes.get(node.id);
+                        if (n) {
+                            n.position.set(
+                                (Math.random() - 0.5) * 800,
+                                (Math.random() - 0.5) * 600,
+                                0,
+                            );
+                        }
+                    });
+                });
+
+                document.getElementById('reset-camera').addEventListener('click', () => {
+                    sg.fitView(150, 2.0);
+                });
+            }
+
+            init().catch(console.error);
+        </script>
+    </body>
+</html>

@@ -1,7 +1,7 @@
 import * as THREE from 'three';
-import type { SpaceGraph } from '../SpaceGraph';
-import type { Node } from '../nodes/Node';
-import type { Edge } from '../edges/Edge';
+import type { SpaceGraph } from '../../SpaceGraph';
+import type { Node } from '../../nodes/Node';
+import type { Edge } from '../../edges/Edge';
 
 /**
  * Raycasting helper for InteractionPlugin
@@ -23,7 +23,10 @@ export class InteractionRaycaster {
         const canvas = this.sg.renderer.renderer.domElement;
         const rect = canvas.getBoundingClientRect();
         this.mouse.copy(
-            new THREE.Vector2(((x - rect.left) / rect.width) * 2 - 1, -((y - rect.top) / rect.height) * 2 + 1),
+            new THREE.Vector2(
+                ((x - rect.left) / rect.width) * 2 - 1,
+                -((y - rect.top) / rect.height) * 2 + 1,
+            ),
         );
     }
 
@@ -41,6 +44,7 @@ export class InteractionRaycaster {
         if (intersects.length === 0) return null;
 
         const node = this.getNodeFromMesh(intersects[0].object);
+        if (node && !node.isTouchable) return null;
         return node ? { node, point: intersects[0].point } : null;
     }
 
@@ -53,7 +57,9 @@ export class InteractionRaycaster {
 
         if (edgeIntersects.length === 0) return null;
 
-        const edge = this.sg.graph.edges.find((e) => e.object === edgeIntersects[0].object);
+        const edge = [...this.sg.graph.edges.values()].find(
+            (e) => e.object === edgeIntersects[0].object,
+        );
         return edge ? { edge, point: edgeIntersects[0].point } : null;
     }
 
@@ -76,7 +82,7 @@ export class InteractionRaycaster {
 
     private getEdgeObjects(): THREE.Object3D[] {
         const lineObjects: THREE.Object3D[] = [];
-        for (const edge of this.sg.graph.edges) {
+        for (const [, edge] of this.sg.graph.edges) {
             if (edge.object) lineObjects.push(edge.object);
         }
         return lineObjects;
@@ -85,7 +91,8 @@ export class InteractionRaycaster {
     private getNodeFromMesh(mesh: THREE.Object3D): Node | null {
         let current: THREE.Object3D | null = mesh;
         while (current) {
-            const node = (current as any).userData?.node;
+            const node = (current as THREE.Object3D & { userData?: { node?: Node } }).userData
+                ?.node;
             if (node) return node;
             current = current.parent;
         }

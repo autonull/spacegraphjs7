@@ -1,4 +1,4 @@
-// SpaceGraphJS v7.0 - Overlap Analyzer
+// SpaceGraphJS - Overlap Analyzer
 // Spatial index-based overlap detection
 
 import * as THREE from 'three';

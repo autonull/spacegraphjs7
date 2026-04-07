@@ -119,7 +119,7 @@ On every build, six vision models analyze the output:
 [Clear call to action with installation steps.]
 
 ```bash
-npm install spacegraphjs@alpha
+pnpm install spacegraphjs@alpha
 ```
 
 [Link to quickstart, docs, examples.]
@@ -245,7 +245,7 @@ You can watch from the sidelines. Or you can build with us.
 
 **Get started:**
 ```bash
-npm install spacegraphjs@alpha
+pnpm install spacegraphjs@alpha
 ````
 
 **Join the conversation:**
@@ -291,7 +291,7 @@ The future is self-building. Let's build it together.
 
 [0:45-0:55] CALL TO ACTION
 "This is vision-closed development. Try it yourself:"
-[Show npm install command on screen]
+[Show pnpm install command on screen]
 
 [0:55-1:00] END SCREEN
 [Links to GitHub, Matrix, docs]
@@ -309,12 +309,12 @@ The future is self-building. Let's build it together.
 [Show final result]
 
 [0:10-0:30] PREREQUISITES
-"You need Node.js 18+ and npm."
+"You need Node.js 18+ and pnpm."
 [Show terminal with node --version]
 
 [0:30-1:00] INSTALL
 "Step 1: Install the package."
-[Show npm install spacegraphjs three]
+[Show pnpm install spacegraphjs three]
 
 [1:00-2:00] CREATE PROJECT
 "Step 2: Create your first graph."
@@ -322,7 +322,7 @@ The future is self-building. Let's build it together.
 
 [2:00-3:00] RUN
 "Step 3: Start the dev server."
-[Show npm run dev, browser opening]
+[Show pnpm run dev, browser opening]
 
 [3:00-4:00] INTERACT
 "Try rotating, panning, zooming."
@@ -422,7 +422,7 @@ TypeScript. Vision-verified. Pure FOSS.
 [Call to action]
 
 Try it:
-npm install spacegraphjs@alpha
+pnpm install spacegraphjs@alpha
 
 Docs: [link]
 Community: [link]
@@ -458,7 +458,7 @@ After [X months/years] of development, I'm excited to share SpaceGraphJS.
 **Try it:**
 
 ```bash
-npm install spacegraphjs@alpha
+pnpm install spacegraphjs@alpha
 ```
 
 **Docs:** [link]

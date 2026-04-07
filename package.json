@@ -1,6 +1,6 @@
 {
     "name": "spacegraphjs",
-    "version": "6.0.0-alpha.1",
+    "version": "7.0.0",
     "type": "module",
     "main": "./dist/spacegraphjs.js",
     "module": "./dist/spacegraphjs.js",
@@ -24,18 +24,24 @@
         "LICENSE"
     ],
     "scripts": {
-        "dev": "npx vite demo --host",
+        "dev": "pnpm dlx vite --host",
+        "dev:demo": "pnpm dlx vite --port 5173",
         "build": "vite build",
-        "prepublishOnly": "npm run clean && npm run build && npm run test",
-        "clean": "rm -rf dist/",
+        "build:lib": "vite build",
+        "build:demo": "vite build",
+        "prepublishOnly": "pnpm run clean && pnpm run build && pnpm run test",
+        "clean": "rm -rf dist/ dist-demo/",
         "verify": "tsx verification/verify_demos.ts",
         "test": "vitest run",
         "test:vision": "mkdir -p test/fixtures/dist && cp -r dist/* test/fixtures/dist/ && playwright test test/vision.spec.ts",
-        "vision": "npm run test:vision",
+        "vision": "pnpm run test:vision",
         "lint": "eslint 'src/**/*.{ts,js}' --ignore-pattern 'dist'",
         "format": "prettier --write .",
         "format:check": "prettier --check .",
-        "docs": "typedoc --options typedoc.json"
+        "docs": "typedoc --options typedoc.json",
+        "test:screenshots": "mkdir -p test/screenshots && playwright test test/e2e/demo-screenshots.spec.ts --reporter=list",
+        "test:demo-errors": "playwright test test/e2e/demo-errors.spec.ts --reporter=list",
+        "test:all-demos": "pnpm run test:demo-errors && pnpm run test:screenshots"
     },
     "peerDependencies": {
         "chart.js": "^4.5.1",
@@ -65,6 +71,7 @@
         "@typescript-eslint/eslint-plugin": "^8.56.1",
         "@typescript-eslint/parser": "^8.56.1",
         "@vitest/coverage-v8": "^4.0.18",
+        "canvas": "^3.2.3",
         "chart.js": "^4.5.1",
         "eslint": "^10.0.2",
         "http-server": "^14.1.1",
@@ -102,7 +109,7 @@
         "onnxruntime-web": "^1.24.2",
         "three-mesh-bvh": "^0.9.9"
     },
-    "description": "[![npm](https://img.shields.io/npm/v/spacegraphjs.svg)](https://www.npmjs.com/package/spacegraphjs) [![Matrix](https://img.shields.io/matrix/spacegraphjs:matrix.org)](https://matrix.to/#/#spacegraphjs:matrix.org) [![GitHub Sponsors](https://img.shields.io/github/sponsors/autonull)](https://github.com/sponsors/autonull)",
+    "description": "[![pnpm](https://img.shields.io/pnpm/v/spacegraphjs.svg)](https://www.npmjs.com/package/spacegraphjs) [![Matrix](https://img.shields.io/matrix/spacegraphjs:matrix.org)](https://matrix.to/#/#spacegraphjs:matrix.org) [![GitHub Sponsors](https://img.shields.io/github/sponsors/autonull)](https://github.com/sponsors/autonull)",
     "directories": {
         "doc": "docs",
         "example": "examples",

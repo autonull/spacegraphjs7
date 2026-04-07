@@ -14,7 +14,7 @@
 
 ```bash
 # Install
-npm install spacegraphjs three
+pnpm install spacegraphjs three
 
 # That's it. See QUICKSTART.md for the 5-minute guide.
 ```
@@ -223,7 +223,7 @@ A revolution beyond the desktop metaphor. SpaceGraphJS enables the transition to
 | ------- | --------------- | -------------------- | ------------------------ |
 | **1-2** | Core rendering  | Working demo         | 3 nodes + 3 edges render |
 | **5-6** | Performance     | 60 FPS at 1000 nodes | Benchmark suite passes   |
-| **7-8** | Polish + Launch | npm publish alpha    | Package on npmjs.com     |
+| **7-8** | Polish + Launch | pnpm publish alpha    | Package on npmjs.com     |
 
 ---
 
@@ -241,9 +241,9 @@ A revolution beyond the desktop metaphor. SpaceGraphJS enables the transition to
 
 | Period          | Focus              | Targets               |
 | --------------- | ------------------ | --------------------- |
-| **Month 6-8**   | User Acquisition   | 500 npm/mo, 50 stars  |
-| **Month 9-10**  | Community Building | 2K npm/mo, 100 Matrix |
-| **Month 11-12** | Revenue Scaling    | 5K npm/mo, $45K/mo    |
+| **Month 6-8**   | User Acquisition   | 500 pnpm/mo, 50 stars  |
+| **Month 9-10**  | Community Building | 2K pnpm/mo, 100 Matrix |
+| **Month 11-12** | Revenue Scaling    | 5K pnpm/mo, $45K/mo    |
 
 ---
 
@@ -349,10 +349,10 @@ mkdir spacegraphjs && cd spacegraphjs
 git init
 
 # Create package.json
-npm init -y
+pnpm create -y
 
 # Install dependencies
-npm install three @types/three typescript vite --save-dev
+pnpm install three @types/three typescript vite --save-dev
 
 # Create source files
 mkdir src

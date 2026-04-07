@@ -7,14 +7,14 @@
 ## Prerequisites
 
 - Node.js 18+
-- npm or pnpm
+- pnpm or pnpm
 
 ---
 
 ## Installation
 
 ```bash
-npm install spacegraphjs three
+pnpm install spacegraphjs three
 ```
 
 ---
@@ -25,8 +25,8 @@ npm install spacegraphjs three
 
 ```bash
 mkdir my-graph && cd my-graph
-npm init -y
-npm install spacegraphjs three vite
+pnpm create -y
+pnpm install spacegraphjs three vite
 ```
 
 ### 2. Create `index.html`
@@ -131,7 +131,7 @@ export default defineConfig({
 ### 5. Run
 
 ```bash
-npx vite
+pnpm dlx vite
 ```
 
 Open http://localhost:5173 — you should see three connected nodes.
@@ -157,7 +157,7 @@ The vision system analyzes your graph and auto-fixes quality issues.
 ### 1. Install vision plugin
 
 ```bash
-npm install spacegraphjs
+pnpm install spacegraphjs
 ```
 
 ### 2. Update `vite.config.ts`
@@ -183,7 +183,7 @@ export default defineConfig({
 ### 3. Run with vision
 
 ```bash
-npx vite
+pnpm dlx vite
 ```
 
 The vision plugin will analyze your graph on build and report:
@@ -280,7 +280,7 @@ test('meets WCAG AA', async () => {
 Make sure you installed the package:
 
 ```bash
-npm install spacegraphjs three
+pnpm install spacegraphjs three
 ```
 
 ### "Three is not defined"
@@ -288,7 +288,7 @@ npm install spacegraphjs three
 Three.js is a peer dependency:
 
 ```bash
-npm install three
+pnpm install three
 ```
 
 ### Graph doesn't render

@@ -1,60 +1,28 @@
 import * as THREE from 'three';
-import { Node } from './Node';
-import type { SpaceGraph } from '../SpaceGraph';
+import { TexturedMeshNode } from './TexturedMeshNode';
 import type { NodeSpec } from '../types';
+import type { SpaceGraph } from '../SpaceGraph';
 
-export class ImageNode extends Node {
-    private meshGeometry: THREE.PlaneGeometry;
-    private meshMaterial: THREE.MeshBasicMaterial;
-
+export class ImageNode extends TexturedMeshNode {
     constructor(sg: SpaceGraph, spec: NodeSpec) {
-        super(sg, spec);
+        const w = (spec.data?.width as number) ?? 100;
+        const h = (spec.data?.height as number) ?? 100;
+        super(sg, spec, w, h);
 
-        this.meshGeometry = new THREE.PlaneGeometry(100, 100);
-        this.meshMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true });
-
-        if (spec.data && spec.data.url) {
-            const textureLoader = new THREE.TextureLoader();
-            textureLoader.load(spec.data.url, (texture) => {
-                this.meshMaterial.map = texture;
-                this.meshMaterial.needsUpdate = true;
-            });
+        if (spec.data?.url) {
+            this.loadTexture(spec.data.url as string);
         }
-
-        const mesh = new THREE.Mesh(this.meshGeometry, this.meshMaterial);
-
-        // Rotate to face camera
-        mesh.rotation.y = 0;
-
-        this.object.add(mesh);
-        this.updatePosition(this.position.x, this.position.y, this.position.z);
     }
 
-    updateSpec(updates: Partial<NodeSpec>) {
+    private loadTexture(url: string): void {
+        new THREE.TextureLoader().load(url, (texture) => this.setTexture(texture));
+    }
+
+    updateSpec(updates: Partial<NodeSpec>): this {
         super.updateSpec(updates);
-
-        if (updates.data && updates.data.url) {
-            const textureLoader = new THREE.TextureLoader();
-            textureLoader.load(updates.data.url, (texture) => {
-                if (this.meshMaterial.map) {
-                    this.meshMaterial.map.dispose();
-                }
-                this.meshMaterial.map = texture;
-                this.meshMaterial.needsUpdate = true;
-            });
+        if (updates.data?.url) {
+            this.loadTexture(updates.data.url as string);
         }
-    }
-
-    dispose(): void {
-        if (this.meshGeometry) {
-            this.meshGeometry.dispose();
-        }
-        if (this.meshMaterial) {
-            if (this.meshMaterial.map) {
-                this.meshMaterial.map.dispose();
-            }
-            this.meshMaterial.dispose();
-        }
-        super.dispose();
+        return this;
     }
 }

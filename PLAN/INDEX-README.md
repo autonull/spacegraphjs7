@@ -92,7 +92,7 @@
 │  ═══════════════════════════════════════════════════════════════════    │
 │  │                                                                       │
 │  ├─ Phase 0: Final Verification (2h)                                    │
-│  ├─ Phase 1: npm Package Prep (2h)                                      │
+│  ├─ Phase 1: pnpm Package Prep (2h)                                      │
 │  ├─ Phase 2: Documentation (3h)                                         │
 │  ├─ Phase 3: Publish + Announce (2h)                                    │
 │  └─ Phase 4: Community Setup (1h)                                       │
@@ -122,14 +122,14 @@
 | Working demo  | 3 nodes + 3 edges render     | ENHANCED-BUILD-PLAN.md |
 | Fresh install | Works in empty directory     | ENHANCED-BUILD-PLAN.md |
 | QUICKSTART    | <10 minutes, stranger tested | ENHANCED-BUILD-PLAN.md |
-| npm publish   | Successful, alpha tag        | LAUNCH-SEQUENCED.md    |
+| pnpm publish   | Successful, alpha tag        | LAUNCH-SEQUENCED.md    |
 | Matrix room   | 10+ members                  | LAUNCH-SEQUENCED.md    |
 
 ### Phase C (Months 2-6): Growth Success
 
 | Metric                     | M2   | M3     | M4      | M5      | M6      |
 | -------------------------- | ---- | ------ | ------- | ------- | ------- |
-| npm downloads (cumulative) | 200  | 500    | 1,500   | 3,000   | 5,000   |
+| pnpm downloads (cumulative) | 200  | 500    | 1,500   | 3,000   | 5,000   |
 | Matrix members             | 25   | 50     | 100     | 150     | 200     |
 | GitHub stars               | 25   | 50     | 75      | 100     | 150     |
 | External contributors      | 2    | 5      | 8       | 10      | 15      |
@@ -143,9 +143,9 @@
 
 | Risk Category        | Risks                                                                               | Document                                     |
 | -------------------- | ----------------------------------------------------------------------------------- | -------------------------------------------- |
-| **Critical (R1-R5)** | Three.js incompatibility, npm name taken, TypeScript exports, WebGL, Memory leak    | [CONTINGENCY-PLAN.md](./CONTINGENCY-PLAN.md) |
+| **Critical (R1-R5)** | Three.js incompatibility, pnpm name taken, TypeScript exports, WebGL, Memory leak    | [CONTINGENCY-PLAN.md](./CONTINGENCY-PLAN.md) |
 | **High (R6-R10)**    | ESM resolution, Camera controls, Build size, Browser compatibility, Node.js version | [CONTINGENCY-PLAN.md](./CONTINGENCY-PLAN.md) |
-| **Medium (R11-R15)** | npm login, Git conflicts, Documentation typos, Matrix spam, Low adoption            | [CONTINGENCY-PLAN.md](./CONTINGENCY-PLAN.md) |
+| **Medium (R11-R15)** | pnpm login, Git conflicts, Documentation typos, Matrix spam, Low adoption            | [CONTINGENCY-PLAN.md](./CONTINGENCY-PLAN.md) |
 | **Post-Launch**      | Low adoption, Critical bugs, No contributors, Negative feedback                     | [ENHANCEMENT-PLAN.md](./ENHANCEMENT-PLAN.md) |
 | **Growth**           | Hardware delays, Workshop no-shows, Burnout, Revenue plateau                        | [ENHANCEMENT-PLAN.md](./ENHANCEMENT-PLAN.md) |
 
@@ -209,14 +209,14 @@
 | Milestone | Description               | When   | Gate                    |
 | --------- | ------------------------- | ------ | ----------------------- |
 | **M0**    | Environment verified      | Day 0  | Node 18+, git           |
-| **M1**    | package.json created      | Day 1  | npm install works       |
-| **M2**    | SpaceGraph class compiles | Day 2  | npm run build           |
+| **M1**    | package.json created      | Day 1  | pnpm install works       |
+| **M2**    | SpaceGraph class compiles | Day 2  | pnpm run build           |
 | **M3**    | Demo renders              | Day 4  | 3 nodes + 3 edges       |
 | **M4**    | Camera controls work      | Day 5  | Rotate, zoom            |
 | **M5**    | All tests pass            | Day 7  | No console errors       |
 | **M6**    | Fresh install works       | Day 12 | Empty directory         |
 | **M7**    | QUICKSTART verified       | Day 14 | <10 min, stranger       |
-| **M8**    | Published to npm          | Day 16 | npm publish --tag alpha |
+| **M8**    | Published to pnpm          | Day 16 | pnpm publish --tag alpha |
 
 **Do not skip milestones. Do not publish until M7 passes.**
 
@@ -228,9 +228,9 @@
 
 ```bash
 node --version  # Should be v18+
-npm --version   # Should be 9+
+pnpm --version   # Should be 9+
 git --version   # Should be 2+
-npm view spacegraphjs 2>&1 | grep -q "npm ERR" && echo "Available" || echo "Taken"
+pnpm view spacegraphjs 2>&1 | grep -q "pnpm ERR" && echo "Available" || echo "Taken"
 ```
 
 ### Day 1: Project Setup
@@ -238,21 +238,21 @@ npm view spacegraphjs 2>&1 | grep -q "npm ERR" && echo "Available" || echo "Take
 ```bash
 mkdir spacegraphjs && cd spacegraphjs
 git init
-npm init -y
-npm install three @types/three typescript vite --save-dev
+pnpm create -y
+pnpm install three @types/three typescript vite --save-dev
 ```
 
 ### Day 2: Build Test
 
 ```bash
-npm run build
+pnpm run build
 ls dist/  # Should show spacegraphjs.js, types/
 ```
 
 ### Day 4: Demo Test
 
 ```bash
-npm run dev
+pnpm run dev
 # Open http://localhost:5173/demo/index.html
 # Should see 3 colored spheres connected by lines
 ```
@@ -261,17 +261,17 @@ npm run dev
 
 ```bash
 rm -rf /tmp/sg-test && mkdir /tmp/sg-test && cd /tmp/sg-test
-npm init -y
-npm install /path/to/spacegraphjs
-npm install three
+pnpm create -y
+pnpm install /path/to/spacegraphjs
+pnpm install three
 # Create test file, verify import works
 ```
 
 ### Day 16: Publish
 
 ```bash
-npm login
-npm publish --tag alpha
+pnpm login
+pnpm publish --tag alpha
 # Verify on https://www.npmjs.com/package/spacegraphjs
 ```
 
@@ -281,7 +281,7 @@ npm publish --tag alpha
 
 - **GitHub:** https://github.com/autonull/spacegraphjs
 - **Matrix:** https://matrix.to/#/#spacegraphjs:matrix.org
-- **npm:** `spacegraphjs` (publish as `spacegraphjs@alpha`)
+- **pnpm:** `spacegraphjs` (publish as `spacegraphjs@alpha`)
 
 ---
 
@@ -298,7 +298,7 @@ cat README-PLAN.md
 cat ENHANCED-BUILD-PLAN.md
 
 # 4. Day 0: Environment setup
-node --version && npm --version && git --version
+node --version && pnpm --version && git --version
 
 # 5. Create project
 mkdir spacegraphjs && cd spacegraphjs

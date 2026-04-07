@@ -11,110 +11,124 @@
                 box-sizing: border-box;
             }
             body {
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-                background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                background: #0d0d0d;
+                color: #eee;
                 min-height: 100vh;
-                padding: 40px 20px;
-                color: #e0e0e0;
-            }
-            .container {
-                max-width: 1200px;
-                margin: 0 auto;
             }
             header {
-                text-align: center;
-                margin-bottom: 50px;
+                padding: 20px 30px;
+                border-bottom: 1px solid #222;
+                background: #111;
             }
             h1 {
-                font-size: 2.5rem;
-                color: #fff;
-                margin-bottom: 10px;
-                background: linear-gradient(90deg, #3366ff, #33ff66);
-                -webkit-background-clip: text;
-                -webkit-text-fill-color: transparent;
-                background-clip: text;
+                font-size: 24px;
+                font-weight: 500;
+                color: #8b5cf6;
             }
             .subtitle {
-                color: #888;
-                font-size: 1.1rem;
-            }
-            .demo-grid {
-                display: grid;
-                grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-                gap: 24px;
-            }
-            .demo-card {
-                background: rgba(255, 255, 255, 0.05);
-                border: 1px solid rgba(255, 255, 255, 0.1);
-                border-radius: 12px;
-                padding: 24px;
-                transition: all 0.3s ease;
-                cursor: pointer;
-                text-decoration: none;
-                color: inherit;
-                display: block;
-            }
-            .demo-card:hover {
-                background: rgba(255, 255, 255, 0.1);
-                border-color: #3366ff;
-                transform: translateY(-4px);
-                box-shadow: 0 8px 32px rgba(51, 102, 255, 0.2);
-            }
-            .demo-card h2 {
-                font-size: 1.3rem;
-                color: #fff;
-                margin-bottom: 8px;
-            }
-            .demo-card .path {
-                font-family: 'Courier New', monospace;
-                font-size: 0.85rem;
-                color: #3366ff;
-                margin-bottom: 12px;
-            }
-            .demo-card .description {
-                font-size: 0.9rem;
-                color: #888;
-                line-height: 1.5;
-            }
-            .demo-card .icon {
-                font-size: 2rem;
-                margin-bottom: 12px;
-            }
-            #demo-grid + .count {
-                text-align: center;
-                margin: 30px auto;
-                display: block !important;
-            }
-            .count {
-                background: rgba(51, 102, 255, 0.2);
-                color: #3366ff;
-                padding: 4px 12px;
-                border-radius: 20px;
-                font-size: 0.9rem;
-                display: inline-block;
-                margin-top: 10px;
-            }
-            footer {
-                text-align: center;
-                margin-top: 60px;
-                padding-top: 30px;
-                border-top: 1px solid rgba(255, 255, 255, 0.1);
+                font-size: 13px;
                 color: #666;
-                font-size: 0.9rem;
+                margin-top: 4px;
+            }
+            #demo-selector {
+                padding: 20px 30px;
+                display: flex;
+                flex-wrap: wrap;
+                gap: 10px;
+                border-bottom: 1px solid #222;
+            }
+            #demo-selector button {
+                padding: 10px 16px;
+                background: #1a1a1a;
+                border: 1px solid #333;
+                color: #ccc;
+                cursor: pointer;
+                border-radius: 4px;
+                font-size: 13px;
+                transition: all 0.2s;
+            }
+            #demo-selector button:hover {
+                background: #252525;
+                border-color: #8b5cf6;
+                color: #fff;
+            }
+            #demo-selector button.active {
+                background: #8b5cf6;
+                border-color: #8b5cf6;
+                color: #fff;
+            }
+            #app {
+                width: 100%;
+                height: calc(100vh - 130px);
+            }
+            .instructions {
+                padding: 12px 30px;
+                background: #111;
+                border-top: 1px solid #222;
+                font-size: 12px;
+                color: #666;
             }
         </style>
     </head>
     <body>
-        <div class="container">
-            <header>
-                <h1>SpaceGraphJS Demos</h1>
-                <p class="subtitle">Interactive demonstrations of SpaceGraphJS capabilities</p>
-            </header>
-            <div id="demo-grid" class="demo-grid"></div>
-            <footer>
-                <p>SpaceGraphJS v6.0.0-alpha.1</p>
-            </footer>
+        <header>
+            <h1>SpaceGraphJS Demos</h1>
+            <div class="subtitle">SG_ALIGN Unified Architecture</div>
+        </header>
+        <div id="demo-selector"></div>
+        <div id="app"></div>
+        <div class="instructions">
+            <strong>Controls:</strong> Left drag = orbit / drag node | Middle drag = pan | Right
+            drag = zoom | Shift+drag = box select | Alt+drag = create edge
         </div>
-        <script type="module" src="./index.ts"></script>
+
+        <script type="module">
+            const DEMOS = import.meta.glob('./demos/*.ts', { eager: true });
+
+            const demoList = Object.keys(DEMOS).map((path) => {
+                const name = path.replace('./demos/', '').replace('.ts', '');
+                return { name, path };
+            });
+
+            let currentDemo = null;
+            let demoInstance = null;
+
+            async function loadDemo(demo) {
+                if (demoInstance) {
+                    demoInstance.stop?.();
+                    demoInstance = null;
+                }
+                document.getElementById('app').innerHTML = '';
+
+                const mod = DEMOS[demo.path];
+                demoInstance = mod.default?.() || mod.create?.() || mod;
+            }
+
+            function renderSelector() {
+                const container = document.getElementById('demo-selector');
+                container.innerHTML = demoList
+                    .map(
+                        (d) =>
+                            `<button data-demo="${d.name}" data-path="${d.path}">${d.name}</button>`,
+                    )
+                    .join('');
+
+                container.querySelectorAll('button').forEach((btn) => {
+                    btn.addEventListener('click', async () => {
+                        container
+                            .querySelectorAll('button')
+                            .forEach((b) => b.classList.remove('active'));
+                        btn.classList.add('active');
+                        const path = btn.dataset.path;
+                        const demo = demoList.find((d) => d.path === path);
+                        await loadDemo(demo);
+                    });
+                });
+            }
+
+            renderSelector();
+            loadDemo(demoList[0]);
+        </script>
     </body>
 </html>

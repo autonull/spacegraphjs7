@@ -51,7 +51,7 @@
 
 | Result               | Metric                            | Verification    |
 | -------------------- | --------------------------------- | --------------- |
-| Active users         | 25,000+ npm downloads/month       | npm trends      |
+| Active users         | 25,000+ pnpm downloads/month       | pnpm trends      |
 | Engaged contributors | 150+ external contributors        | GitHub insights |
 | Healthy discourse    | <2h response time, 98% resolution | Matrix, GitHub  |
 | Sustainable revenue  | $100K/month                       | P&L statements  |
@@ -123,7 +123,7 @@
 │                                                                          │
 │  LAUNCH (Day 30):                                                       │
 │  ═══════════════════════════════════════════════════════════════════    │
-│  □ npm publish --tag alpha                                              │
+│  □ pnpm publish --tag alpha                                              │
 │  □ GitHub public                                                        │
 │  □ Matrix community created                                             │
 │  □ Launch announcement                                                  │
@@ -204,7 +204,7 @@
 │  □ Conference talks (2+)                                                │
 │                                                                          │
 │  Targets:                                                               │
-│  • 500 npm downloads/month                                              │
+│  • 500 pnpm downloads/month                                              │
 │  • 50 GitHub stars                                                      │
 │  • 50 Matrix members                                                    │
 │                                                                          │
@@ -217,7 +217,7 @@
 │  □ First external PRs merged                                            │
 │                                                                          │
 │  Targets:                                                               │
-│  • 2,000 npm downloads/month                                            │
+│  • 2,000 pnpm downloads/month                                            │
 │  • 200 GitHub stars                                                     │
 │  • 100 Matrix members                                                   │
 │  • 10 external contributors                                             │
@@ -231,7 +231,7 @@
 │  □ Grant applications (2+)                                              │
 │                                                                          │
 │  Targets:                                                               │
-│  • 5,000 npm downloads/month                                            │
+│  • 5,000 pnpm downloads/month                                            │
 │  • 500 GitHub stars                                                     │
 │  • $45,000/month revenue                                                │
 │  • 25 external contributors                                             │
@@ -276,7 +276,7 @@
 │  • 250+ total citations                                                 │
 │  • 100+ university adopters                                             │
 │  • 2,000+ GitHub stars                                                  │
-│  • 25,000+ npm downloads/month                                          │
+│  • 25,000+ pnpm downloads/month                                          │
 │                                                                          │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
@@ -365,8 +365,8 @@ cat PLAN/ENHANCED-BUILD-PLAN.md
 # Day 1: Environment + Project Setup
 mkdir spacegraphjs && cd spacegraphjs
 git init
-npm init -y
-npm install three @types/three typescript vite --save-dev
+pnpm create -y
+pnpm install three @types/three typescript vite --save-dev
 
 # Create src/index.ts, src/types.ts, src/SpaceGraph.ts
 # Follow ENHANCED-BUILD-PLAN.md day by day

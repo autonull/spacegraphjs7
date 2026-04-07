@@ -1,34 +1,50 @@
 import { Page, expect } from '@playwright/test';
-import { VisionReport } from './analyzer';
-import { createLogger } from '../utils/logger.js';
+import type { VisionReport } from './types';
 
-const logger = createLogger('VisionAssert');
-
-/**
- * Utility class for asserting visual invariants of a SpaceGraph instance
- * running within a Playwright page.
- */
 export class VisionAssert {
-    constructor(private page: Page) { }
+    constructor(private page: Page) {}
 
-    /**
-     * Executes the vision pipeline on the current page to retrieve the report.
-     */
     private async getReport(): Promise<VisionReport> {
         const report = await this.page.evaluate(async () => {
-            // @ts-expect-error - Global object attached during tests
-            if (!window.SpaceGraph || !window.SpaceGraph.instances) {
-                return { layoutScore: 0, legibilityScore: 0, issues: [] };
+            if (!(window as any).SpaceGraph || !(window as any).SpaceGraph.instances) {
+                return {
+                    legibility: { wcagAA: false, averageContrast: 0, failures: [] },
+                    overlap: { hasOverlaps: false, overlapCount: 0, overlaps: [] },
+                    hierarchy: { hasRoot: false, rootIds: [], depth: 0, levels: [], score: 0 },
+                    ergonomics: {
+                        fittsLawCompliant: false,
+                        averageTargetSize: 0,
+                        smallTargets: [],
+                        score: 0,
+                    },
+                    overall: { score: 0, grade: 'F' as const, issues: [] },
+                };
             }
-            // @ts-expect-error - Global object attached during tests
-            const instances = Array.from(window.SpaceGraph.instances);
+            const instances = Array.from((window as any).SpaceGraph.instances);
             if (instances.length === 0) {
-                return { layoutScore: 0, legibilityScore: 0, issues: [] };
+                return {
+                    legibility: { wcagAA: false, averageContrast: 0, failures: [] },
+                    overlap: { hasOverlaps: false, overlapCount: 0, overlaps: [] },
+                    hierarchy: { hasRoot: false, rootIds: [], depth: 0, levels: [], score: 0 },
+                    ergonomics: {
+                        fittsLawCompliant: false,
+                        averageTargetSize: 0,
+                        smallTargets: [],
+                        score: 0,
+                    },
+                    overall: { score: 0, grade: 'F' as const, issues: [] },
+                };
             }
 
-            const sg = instances[0] as any;
+            const sg = instances[0] as {
+                vision: {
+                    stopAutonomousCorrection: () => void;
+                    modelsLoaded: boolean;
+                    analyzeVision: () => Promise<import('./types').VisionReport>;
+                };
+            };
             if (!sg.vision) {
-                throw new Error("VisionManager not found on SpaceGraph instance.");
+                throw new Error('VisionManager not found on SpaceGraph instance.');
             }
 
             sg.vision.stopAutonomousCorrection();
@@ -44,63 +60,37 @@ export class VisionAssert {
                 });
             }
 
-            const report = await sg.vision.analyzeVision();
-
-            const localIssues: any[] = [];
-
-            localIssues.push(
-                ...report.overlap.overlaps.map((o: any) => ({
-                    type: 'overlap',
-                    severity: 'warning',
-                    nodeA: o.nodeA,
-                    nodeB: o.nodeB,
-                    message: `Bounding box overlap detected between nodes ${o.nodeA} and ${o.nodeB}.`,
-                }))
-            );
-
-            localIssues.push(...report.legibility.failures);
-
-            return {
-                layoutScore: report.layoutScore ?? 100,
-                legibilityScore: report.legibilityScore ?? 100,
-                issues: localIssues
-            };
+            return await sg.vision.analyzeVision();
         });
 
-        return report as VisionReport;
+        return report;
     }
 
-    /**
-     * Asserts that no overlapping nodes exist in the visual output.
-     */
     async noOverlap() {
         const report = await this.getReport();
-        const overlaps = report.issues.filter((i) => i.type === 'overlap');
-        expect(overlaps, `Expected no overlaps, but found ${overlaps.length}`).toHaveLength(0);
+        expect(
+            report.overlap.overlaps,
+            `Expected no overlaps, but found ${report.overlap.overlapCount}`,
+        ).toHaveLength(0);
     }
 
-    /**
-     * Asserts that all text meets legibility and WCAG AA contrast standards.
-     */
     async isLegible() {
         const report = await this.getReport();
-        const badText = report.issues.filter((i) => i.type === 'legibility');
-        expect(badText, `Expected all text to be legible, found ${badText.length} issues.`).toHaveLength(0);
+        expect(
+            report.legibility.failures,
+            `Expected all text to be legible, found ${report.legibility.failures.length} issues.`,
+        ).toHaveLength(0);
     }
 
-    /**
-     * Asserts that the layout score meets a minimum threshold.
-     * @param minScore 0-100 threshold
-     */
     async expectedLayoutScore(minScore: number) {
         const report = await this.getReport();
-        expect(report.layoutScore, `Expected layout score >= ${minScore}, got ${report.layoutScore}`).toBeGreaterThanOrEqual(minScore);
+        expect(
+            report.overall.score,
+            `Expected overall score >= ${minScore}, got ${report.overall.score}`,
+        ).toBeGreaterThanOrEqual(minScore);
     }
 }
 
-/**
- * Factory function to wrap a Playwright page with Vision assertions.
- */
 export function createVisionAssert(page: Page) {
     return new VisionAssert(page);
 }

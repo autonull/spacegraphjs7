@@ -1,6 +1,9 @@
 import * as THREE from 'three';
+import { BaseSystemPlugin } from './BaseSystemPlugin';
 import type { SpaceGraph } from '../SpaceGraph';
-import type { ISpaceGraphPlugin } from '../types';
+import type { Graph } from '../core/Graph';
+import type { EventSystem } from '../core/events/EventSystem';
+import type { CameraControls } from '../core/CameraControls';
 import { DOMUtils } from '../utils/DOMUtils';
 
 /**
@@ -14,12 +17,11 @@ import { DOMUtils } from '../utils/DOMUtils';
  *   alpha    : minimap opacity 0–1 (default 0.8)
  *   zoom     : orthographic half-size (default 1500)
  */
-export class MinimapPlugin implements ISpaceGraphPlugin {
-    readonly id = 'minimap-plugin';
+export class MinimapPlugin extends BaseSystemPlugin {
+    readonly id = 'minimap';
     readonly name = 'Minimap';
     readonly version = '1.0.0';
 
-    private sg!: SpaceGraph;
     private orthoCamera!: THREE.OrthographicCamera;
 
     public settings = {
@@ -31,8 +33,8 @@ export class MinimapPlugin implements ISpaceGraphPlugin {
         zoom: 1500,
     };
 
-    init(sg: SpaceGraph): void {
-        this.sg = sg;
+    init(sg: SpaceGraph, graph: Graph, events: EventSystem): void {
+        super.init(sg, graph, events);
         this._buildCamera();
 
         const dom = this.sg.renderer.renderer.domElement;
@@ -106,10 +108,11 @@ export class MinimapPlugin implements ISpaceGraphPlugin {
             e.clientY <= top + size
         ) {
             this.isDragging = true;
-            this.sg.cameraControls.controls.enabled = false;
+            const controls = this.sg.cameraControls as CameraControls & { enabled?: boolean };
+            controls.enabled = false;
 
             const pt = this._pointerToWorld(e.clientX, e.clientY);
-            this.sg.cameraControls.controls.moveTo(pt.x, pt.y, 0, false);
+            controls.setTarget(pt.x, pt.y, 0);
 
             // Re-render minimap immediately to update indicator
             this._renderMinimap();
@@ -119,29 +122,24 @@ export class MinimapPlugin implements ISpaceGraphPlugin {
         }
     };
 
-    private _onPointerMove = (e: PointerEvent) => {
-        if (!this.isDragging) {
-             const { left, top, size } = this._getBounds();
-             if (e.clientX >= left && e.clientX <= left + size && e.clientY >= top && e.clientY <= top + size) {
-                  this.sg.renderer.renderer.domElement.style.cursor = 'crosshair';
-             }
-             return;
-        }
-
-        const pt = this._pointerToWorld(e.clientX, e.clientY);
-        this.sg.cameraControls.controls.moveTo(pt.x, pt.y, 0, false);
-        this.sg.cameraControls.update();
-
-        e.stopPropagation();
-        e.preventDefault();
-    };
-
     private _onPointerUp = () => {
         if (this.isDragging) {
             this.isDragging = false;
-            this.sg.cameraControls.controls.enabled = true;
+            (this.sg.cameraControls as CameraControls & { enabled?: boolean }).enabled = true;
             this.sg.renderer.renderer.domElement.style.cursor = 'auto';
         }
+    };
+
+    private _onPointerMove = (e: PointerEvent) => {
+        if (!this.isDragging) return;
+        const pt = this._pointerToWorld(e.clientX, e.clientY);
+        (
+            this.sg.cameraControls as CameraControls & {
+                setTarget: (x: number, y: number, z: number) => void;
+            }
+        ).setTarget(pt.x, pt.y, 0);
+        this._renderMinimap();
+        e.stopPropagation();
     };
 
     onPostRender(_delta: number): void {
@@ -176,7 +174,6 @@ export class MinimapPlugin implements ISpaceGraphPlugin {
             // Adjust zoom dynamically based on graph size if needed, or stick to setting
             const graphSize = new THREE.Vector3();
             box.getSize(graphSize);
-            const maxDim = Math.max(graphSize.x, graphSize.y, 500);
 
             // Base zoom on max dim + padding, or user setting if larger
             this.orthoCamera.left = -this.settings.zoom;
@@ -207,7 +204,7 @@ export class MinimapPlugin implements ISpaceGraphPlugin {
         renderer.setViewport(0, 0, cw * pr, ch * pr);
     }
 
-    private _updateOverlay(left: number, top: number, size: number, cw: number, ch: number) {
+    private _updateOverlay(left: number, top: number, size: number, _cw: number, _ch: number) {
         if (typeof document === 'undefined') return;
 
         if (!this.container) {
@@ -241,24 +238,27 @@ export class MinimapPlugin implements ISpaceGraphPlugin {
         const mainCam = this.sg.renderer.camera;
         // z-plane distance from camera to controls target
         const dist = mainCam.position.distanceTo(this.sg.cameraControls.target);
-        const vFov = mainCam.fov * Math.PI / 180;
+        const vFov = (mainCam.fov * Math.PI) / 180;
         const visibleHeight = 2 * Math.tan(vFov / 2) * dist;
         const visibleWidth = visibleHeight * mainCam.aspect;
 
         const target = this.sg.cameraControls.target;
 
         // Map target to minimap coordinates
-        const mapX = ((target.x - this.orthoCamera.position.x) / (this.settings.zoom * 2)) * size + (size / 2);
+        const mapX =
+            ((target.x - this.orthoCamera.position.x) / (this.settings.zoom * 2)) * size + size / 2;
         // y is inverted
-        const mapY = -((target.y - this.orthoCamera.position.y) / (this.settings.zoom * 2)) * size + (size / 2);
+        const mapY =
+            -((target.y - this.orthoCamera.position.y) / (this.settings.zoom * 2)) * size +
+            size / 2;
 
         const mapW = (visibleWidth / (this.settings.zoom * 2)) * size;
         const mapH = (visibleHeight / (this.settings.zoom * 2)) * size;
 
         const indicator = this.container.querySelector('#sg-minimap-indicator') as HTMLElement;
         if (indicator) {
-            indicator.style.left = `${mapX - mapW/2}px`;
-            indicator.style.top = `${mapY - mapH/2}px`;
+            indicator.style.left = `${mapX - mapW / 2}px`;
+            indicator.style.top = `${mapY - mapH / 2}px`;
             indicator.style.width = `${mapW}px`;
             indicator.style.height = `${mapH}px`;
         }

@@ -1,6 +1,6 @@
-import type { SpaceGraph } from '../SpaceGraph';
-import type { Node } from '../nodes/Node';
-import type { Edge } from '../edges/Edge';
+import type { SpaceGraph } from '../../SpaceGraph';
+import type { Node } from '../../nodes/Node';
+import type { Edge } from '../../edges/Edge';
 
 export interface SelectionState {
     nodes: Set<Node>;
@@ -43,7 +43,9 @@ export class KeyboardShortcuts {
             });
         } else if (selectedEdges.length > 0) {
             const message =
-                selectedEdges.length > 1 ? `Delete ${selectedEdges.length} selected edges?` : `Delete edge?`;
+                selectedEdges.length > 1
+                    ? `Delete ${selectedEdges.length} selected edges?`
+                    : `Delete edge?`;
 
             this.sg.events.emit('ui:request:confirm', {
                 message,
@@ -59,14 +61,19 @@ export class KeyboardShortcuts {
 
     handleSelectAll(nodes: Node[]): void {
         for (const node of nodes) {
-            (this.sg.events as any).emit('selection:addNode', node);
+            this.sg.events.emit(
+                'selection:addNode' as keyof import('../../core/events/EventSystem').SpaceGraphEvents,
+                node as never,
+            );
         }
     }
 
     handleZoomIn(node: Node): void {
         if (!node || !this.sg.cameraControls) return;
         const targetPos = node.position.clone();
-        const targetRadius = node.data?.width ? Math.max(node.data.width * 1.5, 150) : 150;
+        const targetRadius = (node.data as Record<string, unknown>)?.width
+            ? Math.max(((node.data as Record<string, unknown>).width as number) * 1.5, 150)
+            : 150;
         this.sg.cameraControls.flyTo(targetPos, targetRadius);
     }
 }

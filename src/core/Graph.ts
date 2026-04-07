@@ -1,56 +1,63 @@
-import { SpaceGraph } from '../SpaceGraph';
-import type { NodeSpec, EdgeSpec, GraphSpec } from '../types';
+import type { NodeSpec, EdgeSpec, GraphSpec, GraphExport } from '../types';
 import type { Node } from '../nodes/Node';
 import type { Edge } from '../edges/Edge';
-import { createLogger } from '../utils/logger.js';
+import type { SpaceGraph } from '../SpaceGraph';
+import { createLogger } from '../utils/logger';
+import { safeClone } from '../utils/math';
+import { TypeRegistry } from './TypeRegistry';
+import { EventEmitter } from './EventEmitter';
 
 const logger = createLogger('Graph');
 
-type PluginHook = 'onNodeAdded' | 'onNodeRemoved' | 'onEdgeAdded' | 'onEdgeRemoved';
+type GraphEventMap = {
+    'node:added': { node: Node; timestamp: number };
+    'node:removed': { id: string; timestamp: number };
+    'edge:added': { edge: Edge; timestamp: number };
+    'edge:removed': { id: string; timestamp: number };
+};
 
-export class Graph {
-    public sg: SpaceGraph;
+export class Graph extends EventEmitter<GraphEventMap> {
+    private readonly sg: SpaceGraph;
     public nodes: Map<string, Node> = new Map();
-    public edges: Edge[] = [];
+    public edges: Map<string, Edge> = new Map();
 
     constructor(sg: SpaceGraph) {
+        super();
         this.sg = sg;
     }
 
-    private _notifyPlugins(hookName: PluginHook, arg: Node | Edge | string): void {
-        for (const plugin of this.sg.pluginManager.plugins.values()) {
-            const hook = plugin[hookName];
-            if (typeof hook === 'function') {
-                try {
-                    hook(arg);
-                } catch (err) {
-                    logger.error('Plugin %s failed %s:', plugin.constructor.name, hookName, err);
-                }
-            }
-        }
+    registerNodeType(type: string, ctor: import('./TypeRegistry').NodeConstructor): void {
+        TypeRegistry.getInstance().registerNode(type, ctor);
     }
 
-    private _removeFromScene(obj: Node | Edge | null): void {
-        if (obj?.object?.parent) {
-            this.sg.renderer.scene.remove(obj.object);
-        }
+    registerEdgeType(type: string, ctor: import('./TypeRegistry').EdgeConstructor): void {
+        TypeRegistry.getInstance().registerEdge(type, ctor);
     }
 
-    addNode(spec: NodeSpec): Node | null {
-        if (this.nodes.has(spec.id)) {
-            return this.updateNode(spec.id, spec);
+    addNode(specOrNode: NodeSpec | Node): Node | null {
+        if (typeof (specOrNode as Node).updatePosition === 'function') {
+            const node = specOrNode as Node;
+            this.nodes.set(node.id, node);
+            this.sg?.renderer.scene.add(node.object);
+            node.start();
+            this.emitWithTimestamp('node:added', { node });
+            return node;
         }
 
-        const NodeType = this.sg.pluginManager.getNodeType(spec.type);
+        const spec = specOrNode as NodeSpec;
+        if (this.nodes.has(spec.id)) return this.updateNode(spec.id, spec);
+
+        const NodeType = TypeRegistry.getInstance().getNodeConstructor(spec.type);
         if (!NodeType) {
             logger.warn('Node type "%s" not registered.', spec.type);
             return null;
         }
+
         const node = new NodeType(this.sg, spec);
         this.nodes.set(spec.id, node);
-        this.sg.renderer.scene.add(node.object);
-        this.sg.events.emit('node:added', { node });
-        this._notifyPlugins('onNodeAdded', node);
+        this.sg?.renderer.scene.add(node.object);
+        node.start();
+        this.emitWithTimestamp('node:added', { node });
         return node;
     }
 
@@ -62,78 +69,67 @@ export class Graph {
             node.updateSpec(updates);
         } else {
             if (updates.data) node.data = { ...node.data, ...updates.data };
-            if (updates.position)
-                node.updatePosition(updates.position[0], updates.position[1], updates.position[2]);
+            if (updates.position) {
+                const [x, y, z] = updates.position;
+                node.updatePosition(x, y, z);
+            }
         }
 
         return node;
     }
 
-    private findNodeAcrossInstances(nodeId: string): Node | null {
-        for (const inst of SpaceGraph.instances) {
-            if (inst.graph.nodes.has(nodeId)) {
-                return inst.graph.nodes.get(nodeId) ?? null;
-            }
+    addEdge(specOrEdge: EdgeSpec | Edge): Edge | null {
+        if (
+            'source' in specOrEdge &&
+            specOrEdge.source instanceof Object &&
+            'position' in specOrEdge.source
+        ) {
+            const edge = specOrEdge as Edge;
+            this.edges.set(edge.id, edge);
+            this.sg?.renderer.scene.add(edge.line);
+            edge.start();
+            this.emitWithTimestamp('edge:added', { edge });
+            return edge;
         }
-        return null;
-    }
 
-    addEdge(spec: EdgeSpec): Edge | null {
+        const spec = specOrEdge as EdgeSpec;
         if (!spec?.id || typeof spec.source !== 'string' || typeof spec.target !== 'string') {
             logger.warn('Edge missing critical topology attributes (id/source/target).');
             return null;
         }
 
-        const existingIndex = this.edges.findIndex((e) => e.id === spec.id);
-        if (existingIndex !== -1) {
-            return this.updateEdge(spec.id, spec);
-        }
+        if (this.edges.has(spec.id)) return this.updateEdge(spec.id, spec);
 
-        const sourceNode = this.nodes.get(spec.source) ?? this.findNodeAcrossInstances(spec.source);
-        const targetNode = this.nodes.get(spec.target) ?? this.findNodeAcrossInstances(spec.target);
+        const sourceNode = this.nodes.get(spec.source);
+        const targetNode = this.nodes.get(spec.target);
 
         if (!sourceNode || !targetNode) {
             logger.warn('Edge "%s" rejected: missing source or target node.', spec.id);
             return null;
         }
 
-        let EdgeType = this.sg.pluginManager.getEdgeType(spec.type);
+        const EdgeType = TypeRegistry.getInstance().getEdgeConstructor(spec.type ?? 'Edge');
         if (!EdgeType) {
             logger.warn('Edge type "%s" not registered.', spec.type);
             return null;
         }
 
-        const isInterGraph = sourceNode.sg !== targetNode.sg;
-        if (isInterGraph) {
-            const InterGraphEdgeClass = this.sg.pluginManager.getEdgeType('InterGraphEdge');
-            if (InterGraphEdgeClass) {
-                EdgeType = InterGraphEdgeClass;
-            } else {
-                logger.warn('InterGraphEdge not registered. Falling back to default edge.');
-            }
-        }
-
         const edge = new EdgeType(this.sg, spec, sourceNode, targetNode);
-        if (isInterGraph) {
-            (edge as Edge & { isInterGraphEdge: boolean }).isInterGraphEdge = true;
-        } else {
-            this.sg.renderer.scene.add(edge.object);
-        }
-
-        this.edges.push(edge);
-        this.sg.events.emit('edge:added', { edge });
-        this._notifyPlugins('onEdgeAdded', edge);
+        this.edges.set(spec.id, edge);
+        this.sg?.renderer.scene.add(edge.line);
+        edge.start();
+        this.emitWithTimestamp('edge:added', { edge });
         return edge;
     }
 
     updateEdge(id: string, updates: Partial<EdgeSpec>): Edge | null {
-        const edge = this.edges.find((e) => e.id === id);
+        const edge = this.edges.get(id);
         if (!edge) return null;
 
         if (typeof edge.updateSpec === 'function') {
             edge.updateSpec(updates);
-        } else {
-            if (updates.data) edge.data = { ...edge.data, ...updates.data };
+        } else if (updates.data) {
+            edge.data = { ...edge.data, ...updates.data };
         }
 
         if (updates.source || updates.target) {
@@ -153,19 +149,15 @@ export class Graph {
         const node = this.nodes.get(id);
         if (!node) return;
 
-        this._removeFromScene(node);
+        this.sg?.renderer.scene.remove(node.object);
         this.nodes.delete(id);
-        this.sg.events.emit('node:removed', { id });
-        this._notifyPlugins('onNodeRemoved', id);
+        this.emitWithTimestamp('node:removed', { id });
 
-        for (let i = this.edges.length - 1; i >= 0; i--) {
-            const edge = this.edges[i];
+        for (const [edgeId, edge] of this.edges) {
             if (edge.source.id === id || edge.target.id === id) {
-                this._removeFromScene(edge);
-                this.sg.events.emit('edge:removed', { id: edge.id });
-                this._notifyPlugins('onEdgeRemoved', edge.id);
+                this.emitWithTimestamp('edge:removed', { id: edgeId });
                 edge.dispose?.();
-                this.edges.splice(i, 1);
+                this.edges.delete(edgeId);
             }
         }
 
@@ -173,28 +165,39 @@ export class Graph {
     }
 
     removeEdge(id: string): void {
-        const index = this.edges.findIndex((edge) => edge.id === id);
-        if (index === -1) return;
+        const edge = this.edges.get(id);
+        if (!edge) return;
 
-        const edge = this.edges[index];
-        this._removeFromScene(edge);
-        this.edges.splice(index, 1);
-        this.sg.events.emit('edge:removed', { id });
-        this._notifyPlugins('onEdgeRemoved', id);
+        this.sg?.renderer.scene.remove(edge.line);
+        if (edge.arrowheads.source) {
+            this.sg?.renderer.scene.remove(edge.arrowheads.source);
+        }
+        if (edge.arrowheads.target) {
+            this.sg?.renderer.scene.remove(edge.arrowheads.target);
+        }
+
+        this.edges.delete(id);
+        this.emitWithTimestamp('edge:removed', { id });
         edge.dispose?.();
     }
 
     clear(): void {
-        this.edges.forEach((edge) => {
-            this._removeFromScene(edge);
+        for (const edge of this.edges.values()) {
             edge.dispose?.();
-        });
-        this.nodes.forEach((node) => {
-            this._removeFromScene(node);
+        }
+        for (const node of this.nodes.values()) {
             node.dispose?.();
-        });
-        this.edges = [];
+        }
+        this.edges.clear();
         this.nodes.clear();
+    }
+
+    getNodes(): IterableIterator<Node> {
+        return this.nodes.values();
+    }
+
+    getEdges(): IterableIterator<Edge> {
+        return this.edges.values();
     }
 
     getNode(id: string): Node | undefined {
@@ -202,7 +205,7 @@ export class Graph {
     }
 
     getEdge(id: string): Edge | undefined {
-        return this.edges.find((e) => e.id === id);
+        return this.edges.get(id);
     }
 
     hasNode(id: string): boolean {
@@ -210,7 +213,7 @@ export class Graph {
     }
 
     hasEdge(id: string): boolean {
-        return this.edges.some((e) => e.id === id);
+        return this.edges.has(id);
     }
 
     getNodeCount(): number {
@@ -218,7 +221,7 @@ export class Graph {
     }
 
     getEdgeCount(): number {
-        return this.edges.length;
+        return this.edges.size;
     }
 
     query(predicate: (node: Node) => boolean): Node[] {
@@ -226,46 +229,52 @@ export class Graph {
     }
 
     neighbors(nodeId: string): Node[] {
-        const nodeIds = new Set([nodeId]);
-        return this.edges
-            .filter((edge) => nodeIds.has(edge.source.id) || nodeIds.has(edge.target.id))
-            .flatMap((edge) => (edge.source.id === nodeId ? edge.target : edge.source));
+        const neighborSet = new Set<Node>();
+        for (const edge of this.edges.values()) {
+            if (edge.source.id === nodeId) neighborSet.add(edge.target);
+            else if (edge.target.id === nodeId) neighborSet.add(edge.source);
+        }
+        return [...neighborSet];
     }
 
     getConnectedEdges(nodeId: string): Edge[] {
-        return this.edges.filter((edge) => edge.source.id === nodeId || edge.target.id === nodeId);
+        return [...this.edges.values()].filter(
+            ({ source, target }) => source.id === nodeId || target.id === nodeId,
+        );
     }
 
     getIncomingEdges(nodeId: string): Edge[] {
-        return this.edges.filter((edge) => edge.target.id === nodeId);
+        return [...this.edges.values()].filter(({ target }) => target.id === nodeId);
     }
 
     getOutgoingEdges(nodeId: string): Edge[] {
-        return this.edges.filter((edge) => edge.source.id === nodeId);
+        return [...this.edges.values()].filter(({ source }) => source.id === nodeId);
     }
 
-    // --- Serialization ---
-
-    public toJSON(): GraphSpec {
+    toJSON(): GraphSpec {
         return {
-            nodes: [...this.nodes.values()].map((node) => ({
-                id: node.id,
-                type: node.type,
-                label: node.label,
-                position: [node.position.x, node.position.y, node.position.z],
-                data: node.data ? structuredClone(node.data) : {},
+            nodes: [...this.nodes.values()].map(({ id, type, label, position, data }) => ({
+                id,
+                type,
+                label,
+                position: [position.x, position.y, position.z] as [number, number, number],
+                data: data ? safeClone(data) : {},
             })),
-            edges: this.edges.map((edge) => ({
-                id: edge.id,
-                source: edge.source.id,
-                target: edge.target.id,
-                type: edge.type,
-                data: edge.data ? structuredClone(edge.data) : {},
+            edges: [...this.edges.values()].map(({ id, source, target, type, data }) => ({
+                id,
+                source: source.id,
+                target: target.id,
+                type: type ?? 'Edge',
+                data: data ? safeClone(data) : {},
             })),
         };
     }
 
-    public fromJSON(spec: GraphSpec): void {
+    export(): GraphExport {
+        return this.toJSON() as GraphExport;
+    }
+
+    fromJSON(spec: GraphSpec): void {
         this.clear();
         spec.nodes?.forEach((nodeSpec) => this.addNode(nodeSpec));
         spec.edges?.forEach((edgeSpec) => this.addEdge(edgeSpec));

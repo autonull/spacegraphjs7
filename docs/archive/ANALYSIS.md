@@ -831,7 +831,7 @@ export class LightingManager {
 #### 4.1.1 Project Setup
 
 ```bash
-npm init spacegraphjs
+pnpm create spacegraphjs
 # TypeScript + Vite + Vitest + Playwright
 ```
 
@@ -1048,7 +1048,7 @@ spacegraphjs/
         "build": "vite build && tsc --emitDeclarationOnly",
         "test": "vitest",
         "test:e2e": "playwright test",
-        "test:visual": "npx ts-node tests/visual/run-visual-tests.ts",
+        "test:visual": "pnpm dlx ts-node tests/visual/run-visual-tests.ts",
         "test:coverage": "vitest --coverage",
         "lint": "eslint .",
         "format": "prettier --write .",

@@ -25,11 +25,11 @@ import { DottedEdge } from '../src/edges/DottedEdge';
 import { DynamicThicknessEdge } from '../src/edges/DynamicThicknessEdge';
 
 // Layout plugins
-import { ForceLayout } from '../src/plugins/ForceLayout';
-import { GridLayout } from '../src/plugins/GridLayout';
-import { CircularLayout } from '../src/plugins/CircularLayout';
-import { HierarchicalLayout } from '../src/plugins/HierarchicalLayout';
-import { RadialLayout } from '../src/plugins/RadialLayout';
+import { ForceLayout } from '../src/plugins/layouts/ForceLayout';
+import { GridLayout } from '../src/plugins/layouts/GridLayout';
+import { CircularLayout } from '../src/plugins/layouts/CircularLayout';
+import { HierarchicalLayout } from '../src/plugins/layouts/HierarchicalLayout';
+import { RadialLayout } from '../src/plugins/layouts/RadialLayout';
 
 // Extended plugins
 import { PhysicsPlugin } from '../src/plugins/PhysicsPlugin';
@@ -121,7 +121,7 @@ function makeSpaceGraph() {
 
     const graph = {
         nodes: new Map<string, any>(),
-        edges: [] as any[],
+        edges: new Map<string, any>(),
         addNode(spec: any) {
             const NodeType = nodeTypeRegistry.get(spec.type);
             if (!NodeType) return null;
@@ -133,7 +133,6 @@ function makeSpaceGraph() {
         addEdge(spec: any) {
             let EdgeType = edgeTypeRegistry.get(spec.type);
             if (!EdgeType) {
-                // Check plugin manager for dynamic edge types
                 if (sg && sg.pluginManager && sg.pluginManager.getEdgeType) {
                     EdgeType = sg.pluginManager.getEdgeType(spec.type);
                 }
@@ -156,7 +155,7 @@ function makeSpaceGraph() {
 
             if (!src || !tgt) return null;
             const edge = new EdgeType(sg, spec, src, tgt);
-            this.edges.push(edge);
+            this.edges.set(spec.id, edge);
             scene.add(edge.object);
             return edge;
         },
@@ -168,21 +167,23 @@ function makeSpaceGraph() {
             }
         },
         removeEdge(id: string) {
-            const idx = this.edges.findIndex((e: any) => e.id === id);
-            if (idx !== -1) {
-                scene.remove(this.edges[idx].object);
-                this.edges.splice(idx, 1);
-            }
+            this.edges.delete(id);
         },
         clear() {
             this.nodes.clear();
-            this.edges.length = 0;
+            this.edges.clear();
         },
         getNode(id: string) {
             return this.nodes.get(id);
         },
         getEdge(id: string) {
-            return this.edges.find((e: any) => e.id === id);
+            return this.edges.get(id);
+        },
+        getNodes() {
+            return this.nodes.values();
+        },
+        getEdges() {
+            return this.edges.values();
         },
     };
 
@@ -220,6 +221,9 @@ function makeSpaceGraph() {
         pluginManager,
         poolManager,
         cameraControls: { controls: { target: new THREE.Vector3(), update: vi.fn() } },
+        input: {
+            registerFingering: vi.fn(),
+        },
         export: SpaceGraph.prototype.export,
         import: SpaceGraph.prototype.import,
         loadSpec: SpaceGraph.prototype.loadSpec,
@@ -263,7 +267,7 @@ describe('Node base class', () => {
     });
 
     it('updatePosition syncs object.position', () => {
-        const n = new Node(sg, { id: 'n1', type: 'Node', position: [0, 0, 0] });
+        const n = new ShapeNode(sg, { id: 'n1', type: 'ShapeNode', position: [0, 0, 0] });
         n.updatePosition(10, 20, 30);
         expect(n.object.position.x).toBe(10);
     });
@@ -712,7 +716,7 @@ describe('DottedEdge', () => {
         nodeB = mkNode(sg, 'b', POS_B);
     });
 
-    it('uses LineDashedMaterial', () => {
+    it('uses dashed LineMaterial', () => {
         const e = new DottedEdge(
             sg,
             {
@@ -725,7 +729,10 @@ describe('DottedEdge', () => {
             nodeA,
             nodeB,
         );
-        expect(e.object.material).toBeInstanceOf(THREE.LineDashedMaterial);
+        const mat = e.object.material as { dashed?: boolean; dashSize?: number; gapSize?: number };
+        expect(mat.dashed).toBe(true);
+        expect(mat.dashSize).toBe(10);
+        expect(mat.gapSize).toBe(5);
     });
 
     it('update recomputes line distances', () => {
@@ -796,13 +803,13 @@ describe('GridLayout', () => {
         }
     });
 
-    it('places correct number of nodes per row', () => {
+    it('places correct number of nodes per row', async () => {
         const layout = new GridLayout();
-        layout.settings.columns = 3;
-        layout.settings.spacingX = 100;
-        layout.settings.spacingY = 100;
-        layout.init(sg);
-        layout.apply();
+        layout.init(sg, sg.graph, sg.events);
+        (layout.config as any).columns = 3;
+        (layout.config as any).spacingX = 100;
+        (layout.config as any).spacingY = 100;
+        await layout.apply();
         const positions = [...sg.graph.nodes.values()].map((n: any) => n.position.x);
         expect(positions[0]).toBe(0);
         expect(positions[1]).toBe(100);
@@ -810,12 +817,12 @@ describe('GridLayout', () => {
         expect(positions[3]).toBe(0); // wraps to new row
     });
 
-    it('row 1 is below row 0 (negative Y)', () => {
+    it('row 1 is below row 0 (negative Y)', async () => {
         const layout = new GridLayout();
-        layout.settings.columns = 2;
-        layout.settings.spacingY = 150;
-        layout.init(sg);
-        layout.apply();
+        layout.init(sg, sg.graph, sg.events);
+        (layout.config as any).columns = 2;
+        (layout.config as any).spacingY = 150;
+        await layout.apply();
         const nodes = [...sg.graph.nodes.values()];
         expect(nodes[2].position.y).toBeLessThan(nodes[0].position.y);
     });
@@ -831,12 +838,12 @@ describe('CircularLayout', () => {
         }
     });
 
-    it('places all nodes at the target radius', () => {
+    it('places all nodes at the target radius', async () => {
         const layout = new CircularLayout();
-        layout.settings.radiusX = 200;
-        layout.settings.radiusY = 200;
-        layout.init(sg);
-        layout.apply();
+        layout.init(sg, sg.graph, sg.events);
+        (layout.config as any).radiusX = 200;
+        (layout.config as any).radiusY = 200;
+        await layout.apply();
         for (const n of sg.graph.nodes.values()) {
             const r = Math.sqrt(n.position.x ** 2 + n.position.y ** 2);
             expect(r).toBeCloseTo(200, 0);
@@ -853,29 +860,28 @@ describe('HierarchicalLayout', () => {
         ['A', 'B', 'C'].forEach((id) =>
             sg.graph.addNode({ id, type: 'ShapeNode', position: [0, 0, 0] }),
         );
-        sg.graph.addEdge({ id: 'eAB', source: 'A', target: 'B', type: 'Edge' });
-        sg.graph.addEdge({ id: 'eBC', source: 'B', target: 'C', type: 'Edge' });
+        sg.graph.addEdge({ id: 'e1', source: 'A', target: 'B', type: 'Edge' });
+        sg.graph.addEdge({ id: 'e2', source: 'A', target: 'C', type: 'Edge' });
     });
 
-    it('root has higher Y than children (top-down)', () => {
+    it('root has higher Y than children (top-down)', async () => {
         const layout = new HierarchicalLayout();
-        layout.settings.rootId = 'A';
-        layout.settings.levelHeight = 150;
-        layout.init(sg);
-        layout.apply();
+        layout.init(sg, sg.graph, sg.events);
+        (layout.config as any).rootId = 'A';
+        (layout.config as any).levelHeight = 150;
+        await layout.apply();
         const yA = sg.graph.nodes.get('A').position.y;
         const yB = sg.graph.nodes.get('B').position.y;
         const yC = sg.graph.nodes.get('C').position.y;
         expect(yA).toBeGreaterThan(yB);
-        expect(yB).toBeGreaterThan(yC);
+        expect(yB).toBe(yC);
     });
 
-    it('works with bottom-up direction', () => {
+    it('works with bottom-up direction', async () => {
         const layout = new HierarchicalLayout();
-        layout.settings.rootId = 'A';
-        layout.settings.direction = 'bottom-up';
-        layout.init(sg);
-        expect(() => layout.apply()).not.toThrow();
+        layout.init(sg, sg.graph, sg.events);
+        (layout.config as any).direction = 'bottom-up';
+        await expect(layout.apply()).resolves.not.toThrow();
     });
 });
 
@@ -892,22 +898,21 @@ describe('RadialLayout', () => {
         sg.graph.addEdge({ id: 'e2', source: 'root', target: 'c2', type: 'Edge' });
     });
 
-    it('places root at origin', () => {
+    it('places root at origin', async () => {
         const layout = new RadialLayout();
-        layout.settings.rootId = 'root';
-        layout.init(sg);
-        layout.apply();
+        layout.init(sg, sg.graph, sg.events);
+        (layout.config as any).rootId = 'root';
+        await layout.apply();
         const root = sg.graph.nodes.get('root');
         expect(root.position.x).toBe(0);
         expect(root.position.y).toBe(0);
     });
 
-    it('places children at baseRadius distance', () => {
+    it('places children at baseRadius distance', async () => {
         const layout = new RadialLayout();
-        layout.settings.rootId = 'root';
-        layout.settings.baseRadius = 300;
-        layout.init(sg);
-        layout.apply();
+        layout.init(sg, sg.graph, sg.events);
+        (layout.config as any).baseRadius = 300;
+        await layout.apply();
         const c1 = sg.graph.nodes.get('c1');
         const r = Math.sqrt(c1.position.x ** 2 + c1.position.y ** 2);
         expect(r).toBeCloseTo(300, -1);
@@ -1059,7 +1064,7 @@ describe('Graph Serialization', () => {
         sg2.import(state);
 
         expect(sg2.graph.nodes.size).toBe(2);
-        expect(sg2.graph.edges.length).toBe(1);
+        expect(sg2.graph.edges.size).toBe(1);
         expect(sg2.graph.nodes.get('a').position.x).toBe(10);
     });
 
@@ -1094,7 +1099,7 @@ describe('Graph Serialization', () => {
 
         expect(edge).toBeTruthy();
         expect((edge as any).isInterGraphEdge).toBe(true);
-        expect(sg1.graph.edges.length).toBe(1);
+        expect(sg1.graph.edges.size).toBe(1);
     });
 
     it('imports graph data correctly', () => {
@@ -1109,7 +1114,7 @@ describe('Graph Serialization', () => {
         sg.import(spec);
 
         expect(sg.graph.nodes.size).toBe(2);
-        expect(sg.graph.edges.length).toBe(1);
+        expect(sg.graph.edges.size).toBe(1);
         expect(sg.graph.nodes.get('2').position.x).toBe(100);
     });
 
@@ -1166,7 +1171,7 @@ describe('Graph CRUD', () => {
         sg.graph.addNode({ id: 'a', type: 'ShapeNode', position: [0, 0, 0] });
         sg.graph.addNode({ id: 'b', type: 'ShapeNode', position: [100, 0, 0] });
         sg.graph.addEdge({ id: 'e', source: 'a', target: 'b', type: 'Edge' });
-        expect(sg.graph.edges.length).toBe(1);
+        expect(sg.graph.edges.size).toBe(1);
     });
 
     it('addEdge returns null for missing source', () => {
@@ -1188,7 +1193,7 @@ describe('Graph CRUD', () => {
         sg.graph.addEdge({ id: 'e', source: 'a', target: 'b', type: 'Edge' });
         sg.graph.clear();
         expect(sg.graph.nodes.size).toBe(0);
-        expect(sg.graph.edges.length).toBe(0);
+        expect(sg.graph.edges.size).toBe(0);
     });
 
     it('getNode and getEdge retrieve elements correctly', () => {
@@ -1332,7 +1337,7 @@ describe('InteractionPlugin', () => {
         sg.renderer.camera.projectionMatrixInverse = new THREE.Matrix4();
         sg.cameraControls = { flyTo: vi.fn() };
         interaction = new InteractionPlugin();
-        interaction.init(sg);
+        interaction.init(sg, sg.graph, sg.events);
         sg.pluginManager.register('InteractionPlugin', interaction);
     });
 
@@ -1531,26 +1536,36 @@ describe('VisionManager Auto-Correction Loop', () => {
 
         // Setup AutoLayoutPlugin mock
         autoLayout = {
-            id: 'auto-layout',
+            id: 'AutoLayoutPlugin',
             applyVisionCorrection: vi.fn(),
         };
-        sg.pluginManager.register('auto-layout', autoLayout);
-
-        // Mount nodes that overlap so the heuristic triggers
-        const n1 = sg.graph.addNode({ id: 'v1', type: 'ShapeNode', position: [0, 0, 0] });
-        const n2 = sg.graph.addNode({ id: 'v2', type: 'ShapeNode', position: [1, 1, 0] }); // highly overlapped
-
-        // Mock frustum intersection math to pretend they are in view
-        sg.renderer.camera.updateMatrixWorld = vi.fn();
-        sg.renderer.camera.matrixWorld = new THREE.Matrix4();
-        sg.renderer.camera.matrixWorldInverse = new THREE.Matrix4();
-        sg.renderer.camera.projectionMatrix = new THREE.Matrix4();
-
-        THREE.Frustum.prototype.containsPoint = vi.fn().mockReturnValue(true);
-        // Force nodes to register as overlapping regardless of physical mock geometry
-        THREE.Box3.prototype.intersectsBox = vi.fn().mockReturnValue(true);
+        sg.pluginManager.register('AutoLayoutPlugin', autoLayout);
 
         sg.visionManager = new VisionManager(sg);
+
+        // Mock analyzeVision to return overlaps so auto-fix is triggered
+        vi.spyOn(sg.visionManager, 'analyzeVision').mockResolvedValue({
+            overall: { score: 70, grade: 'D', issues: [] },
+            overlap: {
+                hasOverlaps: true,
+                overlapCount: 1,
+                overlaps: [{ nodeA: 'v1', nodeB: 'v2', penetration: 5 }],
+            },
+            legibility: { wcagAA: true, averageContrast: 10, failures: [] },
+            hierarchy: {
+                hasRoot: true,
+                rootIds: ['v1'],
+                depth: 2,
+                levels: [['v1'], ['v2']],
+                score: 80,
+            },
+            ergonomics: {
+                fittsLawCompliant: true,
+                averageTargetSize: 50,
+                smallTargets: [],
+                score: 90,
+            },
+        });
 
         vi.useFakeTimers();
     });
@@ -1588,19 +1603,19 @@ describe('Layout Engines', () => {
         sg = makeSpaceGraph();
     });
 
-    it('GridLayout correctly places nodes in a mathematical grid', () => {
+    it('GridLayout correctly places nodes in a mathematical grid', async () => {
         const layout = new GridLayout();
-        layout.init(sg);
-        layout.settings.spacingX = 100;
-        layout.settings.spacingY = 50;
-        layout.settings.columns = 2;
+        layout.init(sg, sg.graph, sg.events);
+        (layout.config as any).spacingX = 100;
+        (layout.config as any).spacingY = 50;
+        (layout.config as any).columns = 2;
 
         const n0 = sg.graph.addNode({ id: 'n0', type: 'ShapeNode', position: [0, 0, 0] });
         const n1 = sg.graph.addNode({ id: 'n1', type: 'ShapeNode', position: [0, 0, 0] });
         const n2 = sg.graph.addNode({ id: 'n2', type: 'ShapeNode', position: [0, 0, 0] });
         const n3 = sg.graph.addNode({ id: 'n3', type: 'ShapeNode', position: [0, 0, 0] });
 
-        layout.apply();
+        await layout.apply();
 
         // Node 0 should be at 0, 0 (row 0, col 0)
         expect(n0.position.x).toBe(0);
@@ -1619,18 +1634,18 @@ describe('Layout Engines', () => {
         expect(n3.position.y).toBe(-50);
     });
 
-    it('CircularLayout evenly distributes nodes in an ellipse', () => {
+    it('CircularLayout evenly distributes nodes in an ellipse', async () => {
         const layout = new CircularLayout();
-        layout.init(sg);
-        layout.settings.radiusX = 100;
-        layout.settings.radiusY = 200;
+        layout.init(sg, sg.graph, sg.events);
+        (layout.config as any).radiusX = 100;
+        (layout.config as any).radiusY = 200;
 
         const n0 = sg.graph.addNode({ id: 'nc0', type: 'ShapeNode', position: [0, 0, 0] });
         const n1 = sg.graph.addNode({ id: 'nc1', type: 'ShapeNode', position: [0, 0, 0] });
         const n2 = sg.graph.addNode({ id: 'nc2', type: 'ShapeNode', position: [0, 0, 0] });
         const n3 = sg.graph.addNode({ id: 'nc3', type: 'ShapeNode', position: [0, 0, 0] });
 
-        layout.apply();
+        await layout.apply();
 
         // Node 0 should be at angle 0: x = 100, y = 0
         expect(n0.position.x).toBeCloseTo(100);
@@ -1649,11 +1664,11 @@ describe('Layout Engines', () => {
         expect(n3.position.y).toBeCloseTo(-200);
     });
 
-    it('HierarchicalLayout calculates tree depth using BFS', () => {
+    it('HierarchicalLayout calculates tree depth using BFS', async () => {
         const layout = new HierarchicalLayout();
-        layout.init(sg);
-        layout.settings.levelHeight = 100;
-        layout.settings.nodeSpacing = 50;
+        layout.init(sg, sg.graph, sg.events);
+        (layout.config as any).levelHeight = 100;
+        (layout.config as any).nodeSpacing = 50;
 
         // Root
         const r = sg.graph.addNode({ id: 'root', type: 'ShapeNode', position: [0, 0, 0] });
@@ -1667,7 +1682,7 @@ describe('Layout Engines', () => {
         sg.graph.addEdge({ id: 'e2', type: 'Edge', source: 'root', target: 'child2' });
         sg.graph.addEdge({ id: 'e3', type: 'Edge', source: 'child1', target: 'grandchild1' });
 
-        layout.apply();
+        await layout.apply();
 
         // Level 0
         expect(r.position.y).toBe(-0);

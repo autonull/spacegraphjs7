@@ -1,5 +1,5 @@
-import type { SpaceGraph } from '../SpaceGraph';
-import type { Node } from '../nodes/Node';
+import type { SpaceGraph } from '../../SpaceGraph';
+import type { Node } from '../../nodes/Node';
 import type { InteractionRaycaster } from './RaycasterHelper';
 import * as THREE from 'three';
 
@@ -33,8 +33,8 @@ export class ResizeHandler {
         this.resizedNode = node;
         this.resizeStartPointerPos = { x: pointerX, y: pointerY };
         this.resizeStartNodeSize = {
-            width: node.data.width,
-            height: node.data.height,
+            width: (node.data as Record<string, unknown>).width as number,
+            height: (node.data as Record<string, unknown>).height as number,
         };
 
         const canvas = this.sg.renderer.renderer.domElement;
@@ -102,7 +102,7 @@ export class ResizeHandler {
         const distance = this.sg.renderer.camera.position.distanceTo(node.position);
 
         const visibleHeight = 2 * Math.tan(fov / 2) * distance;
-        const visibleWidth = visibleHeight * canvas.clientWidth / canvas.clientHeight;
+        const visibleWidth = (visibleHeight * canvas.clientWidth) / canvas.clientHeight;
 
         return {
             width: (size.x / visibleWidth) * canvas.clientWidth,

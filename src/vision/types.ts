@@ -1,4 +1,4 @@
-// SpaceGraphJS v7.0 - Vision System Types
+// SpaceGraphJS - Vision System Types
 
 /**
  * Vision report containing analysis results

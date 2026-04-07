@@ -29,8 +29,8 @@ async function getNodeScreenPos(page: any, nodeId: string) {
         const rect = canvas.getBoundingClientRect();
         const v = node.position.clone().project(camera);
         return {
-            x: Math.round((v.x + 1) / 2 * rect.width + rect.left),
-            y: Math.round(-(v.y - 1) / 2 * rect.height + rect.top),
+            x: Math.round(((v.x + 1) / 2) * rect.width + rect.left),
+            y: Math.round((-(v.y - 1) / 2) * rect.height + rect.top),
         };
     }, nodeId);
 }
@@ -41,11 +41,10 @@ test.describe('SpaceGraph Interaction Tests', () => {
     let serverProcess: any;
 
     test.beforeAll(async () => {
-        serverProcess = spawn(
-            'npx',
-            ['vite', '--port', String(PORT), '--no-open'],
-            { cwd: path.resolve(__dirname, '..'), stdio: 'ignore' }
-        );
+        serverProcess = spawn('pnpm', ['exec', 'vite', '--port', String(PORT), '--no-open'], {
+            cwd: path.resolve(__dirname, '..'),
+            stdio: 'ignore',
+        });
         // Wait for vite to be ready
         await new Promise((resolve) => setTimeout(resolve, 3000));
     });
@@ -61,7 +60,7 @@ test.describe('SpaceGraph Interaction Tests', () => {
                 const w = window as any;
                 return w._sg && w.SpaceGraph?.instances?.size > 0;
             },
-            { timeout: 20_000 }
+            { timeout: 20_000 },
         );
         // Allow layout / first render to settle
         await page.waitForTimeout(500);
@@ -105,7 +104,9 @@ test.describe('SpaceGraph Interaction Tests', () => {
         await loadDemo(page);
 
         // Clear any stale hover state
-        await page.evaluate(() => { (window as any)._lastHoverNodeId = null; });
+        await page.evaluate(() => {
+            (window as any)._lastHoverNodeId = null;
+        });
 
         const pos = await getNodeScreenPos(page, 'n1');
 
@@ -160,7 +161,9 @@ test.describe('SpaceGraph Interaction Tests', () => {
         page.on('pageerror', (err: Error) => console.error('[Browser]', err.message));
         await loadDemo(page);
 
-        await page.evaluate(() => { (window as any)._lastMetaAction = null; });
+        await page.evaluate(() => {
+            (window as any)._lastMetaAction = null;
+        });
 
         const pos = await getNodeScreenPos(page, 'n1');
 

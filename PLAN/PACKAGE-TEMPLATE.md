@@ -43,12 +43,12 @@
         "test:coverage": "vitest --coverage",
         "test:vision": "vitest run --config vitest.vision.config.ts",
         "docs": "typedoc src/index.ts",
-        "docs:serve": "npx http-server docs/api",
+        "docs:serve": "pnpm dlx http-server docs/api",
         "lint": "eslint src --ext .ts",
         "lint:fix": "eslint src --ext .ts --fix",
         "format": "prettier --write src/**/*.ts",
         "format:check": "prettier --check src/**/*.ts",
-        "prepublishOnly": "npm run build && npm run test",
+        "prepublishOnly": "pnpm run build && pnpm run test",
         "postpublish": "echo '🚀 Published! Visit https://www.npmjs.com/package/spacegraphjs'"
     },
     "keywords": [
@@ -214,7 +214,7 @@ export default defineConfig({
 
 ---
 
-## .npmignore
+## .pnpmignore
 
 ```
 # Source
@@ -289,12 +289,12 @@ SOFTWARE.
 - [ ] Copy `vite.config.ts` template
 - [ ] Copy `tsconfig.json` template
 - [ ] Copy `typedoc.json` template
-- [ ] Copy `.npmignore` template
+- [ ] Copy `.pnpmignore` template
 - [ ] Copy `LICENSE` template
-- [ ] Run `npm install`
-- [ ] Run `npm run build`
+- [ ] Run `pnpm install`
+- [ ] Run `pnpm run build`
 - [ ] Verify output in `dist/`
-- [ ] Run `npm pack --dry-run`
+- [ ] Run `pnpm pack --dry-run`
 - [ ] Verify only intended files are included
 
 ---
@@ -304,14 +304,14 @@ SOFTWARE.
 ```bash
 # Install fresh
 mkdir /tmp/verify && cd /tmp/verify
-npm init -y
-npm install spacegraphjs@alpha three
+pnpm create -y
+pnpm install spacegraphjs@alpha three
 
 # Test import
 node -e "import('spacegraphjs').then(m => console.log('SpaceGraph:', typeof m.SpaceGraph))"
 
 # Test types
-npx tsc --noEmit --skipLibCheck node_modules/spacegraphjs/dist/types/index.d.ts
+pnpm dlx tsc --noEmit --skipLibCheck node_modules/spacegraphjs/dist/types/index.d.ts
 ```
 
 ---
@@ -331,7 +331,7 @@ Verify `types` field points to correct path and `declaration: true` is in tsconf
 Three.js is a peer dependency. Users must install it separately:
 
 ```bash
-npm install three
+pnpm install three
 ```
 
 ### "Build fails"

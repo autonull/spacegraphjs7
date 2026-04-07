@@ -1,5 +1,6 @@
 import type { SpaceGraph } from '../SpaceGraph';
-import { EventManager } from '../core/EventManager';
+import { EventSystem } from '../core/events/EventSystem';
+import { FingerManager, type Fingering, type Finger } from './Fingering';
 
 export type InputEventType =
     | 'keydown'
@@ -25,6 +26,7 @@ export interface InputEvent<T = unknown> {
     timestamp: number;
     data: T;
     originalEvent?: unknown;
+    consumed: boolean;
 }
 
 export interface KeyEventData {
@@ -81,7 +83,7 @@ export interface InputBinding {
 
 export interface InputContext {
     graph: SpaceGraph;
-    events: EventManager;
+    events: EventSystem;
     getState: () => InputState;
     setActiveInput: (source: string) => void;
     disableInput: (source: string) => void;
@@ -110,18 +112,20 @@ export interface InputSourceConfig {
 
 export interface InputManagerOptions {
     graph: SpaceGraph;
-    events: EventManager;
+    events: EventSystem;
     sources?: InputSourceConfig[];
 }
 
 export class InputManager {
     private graph: SpaceGraph;
-    private events: EventManager;
+    private events: EventSystem;
     private state: InputState;
     private sources: Map<string, InputSource> = new Map();
     private actions: Map<string, InputAction> = new Map();
     private bindings: InputBinding[] = [];
     private enabled = true;
+    private fingerManager: FingerManager;
+    private fingerings: Array<{ fingering: Fingering; priority: number }> = [];
 
     constructor(options: InputManagerOptions) {
         this.graph = options.graph;
@@ -135,11 +139,22 @@ export class InputManager {
             touchCount: 0,
         };
 
+        this.fingerManager = new FingerManager();
+
         if (options.sources) {
             for (const config of options.sources) {
                 this.addSource(config);
             }
         }
+    }
+
+    registerFingering(fingering: Fingering, priority: number): void {
+        this.fingerings.push({ fingering, priority });
+        this.fingerings.sort((a, b) => b.priority - a.priority);
+    }
+
+    getFingerManager(): FingerManager {
+        return this.fingerManager;
     }
 
     get context(): InputContext {
@@ -224,7 +239,16 @@ export class InputManager {
             return;
         }
 
+        if (
+            event.type === 'pointerdown' ||
+            event.type === 'pointermove' ||
+            event.type === 'pointerup'
+        ) {
+            this.routeFingeringEvent(event);
+        }
+
         for (const binding of this.bindings) {
+            if (event.consumed) break;
             if (binding.sources.includes(source) && binding.eventType === event.type) {
                 if (binding.predicate && !binding.predicate(event)) continue;
 
@@ -232,6 +256,41 @@ export class InputManager {
                 if (action && (!action.enabled || action.enabled())) {
                     action.handler(event, this.context);
                 }
+            }
+        }
+    }
+
+    private routeFingeringEvent(event: InputEvent): void {
+        const data = event.data as PointerEventData;
+        const finger: Finger = {
+            pointerId: (event.originalEvent as PointerEvent)?.pointerId ?? 0,
+            position: { x: data.x, y: data.y },
+            buttons: data.buttons ?? 0,
+            state:
+                event.type === 'pointerdown' ? 'down' : event.type === 'pointerup' ? 'up' : 'move',
+            target: data.target,
+        };
+
+        if (event.type === 'pointerdown') {
+            this.fingerManager.setFinger(finger.pointerId, finger);
+            for (const { fingering } of this.fingerings) {
+                if (this.fingerManager.test(fingering, finger)) {
+                    event.consumed = true;
+                    return;
+                }
+            }
+        } else if (event.type === 'pointermove') {
+            const existing = this.fingerManager.getFinger(finger.pointerId);
+            if (existing) {
+                existing.position = finger.position;
+                existing.buttons = finger.buttons;
+                this.fingerManager.update(existing);
+            }
+        } else if (event.type === 'pointerup') {
+            const existing = this.fingerManager.getFinger(finger.pointerId);
+            if (existing) {
+                this.fingerManager.end(existing);
+                this.fingerManager.deleteFinger(finger.pointerId);
             }
         }
     }
@@ -275,7 +334,11 @@ export class InputSource {
     private element: HTMLElement;
     private manager: InputManager;
     private enabled = true;
-    private boundHandlers: Array<{ type: string; handler: (e: unknown) => void }> = [];
+    private boundHandlers: Array<{
+        type: string;
+        original: (e: unknown) => void;
+        handler: (e: unknown) => void;
+    }> = [];
 
     constructor(config: InputSourceConfig, manager: InputManager) {
         this.id = config.id;
@@ -297,6 +360,7 @@ export class InputSource {
     }
 
     on<T extends InputEventType>(type: T, handler: (event: InputEvent) => void): void {
+        const originalHandler = handler;
         const wrappedHandler = (e: unknown) => {
             if (!this.enabled) return;
             const event = this.normalizeEvent(type, e);
@@ -305,17 +369,21 @@ export class InputSource {
                 this.manager.handleEvent(event);
             }
         };
-
-        this.boundHandlers.push({ type, handler: wrappedHandler as (e: unknown) => void });
+        this.boundHandlers.push({
+            type,
+            original: originalHandler as (e: unknown) => void,
+            handler: wrappedHandler as (e: unknown) => void,
+        });
         this.element.addEventListener(type, wrappedHandler, { passive: false });
     }
 
     off(type: string, handler?: (e: unknown) => void): void {
         if (handler) {
-            this.element.removeEventListener(type, handler);
-            this.boundHandlers = this.boundHandlers.filter(
-                (h) => !(h.type === type && h.handler === handler),
-            );
+            const bound = this.boundHandlers.find((h) => h.type === type && h.original === handler);
+            if (bound) {
+                this.element.removeEventListener(type, bound.handler);
+                this.boundHandlers = this.boundHandlers.filter((h) => h !== bound);
+            }
         } else {
             const toRemove = this.boundHandlers.filter((h) => h.type === type);
             for (const h of toRemove) {
@@ -346,33 +414,16 @@ export class InputSource {
                         repeat: e.repeat,
                     } as KeyEventData,
                     originalEvent: e,
+                    consumed: false,
                 };
             }
             case 'mousedown':
             case 'mouseup':
-            case 'mousemove': {
-                const e = originalEvent as MouseEvent;
-                return {
-                    type,
-                    source: this.id,
-                    timestamp,
-                    data: {
-                        x: e.clientX,
-                        y: e.clientY,
-                        button: e.button,
-                        buttons: e.buttons,
-                        ctrlKey: e.ctrlKey,
-                        shiftKey: e.shiftKey,
-                        altKey: e.altKey,
-                        target: e.target as HTMLElement | null,
-                    } as PointerEventData,
-                    originalEvent: e,
-                };
-            }
+            case 'mousemove':
             case 'pointerdown':
             case 'pointerup':
             case 'pointermove': {
-                const e = originalEvent as PointerEvent;
+                const e = originalEvent as MouseEvent | PointerEvent;
                 return {
                     type,
                     source: this.id,
@@ -388,6 +439,7 @@ export class InputSource {
                         target: e.target as HTMLElement | null,
                     } as PointerEventData,
                     originalEvent: e,
+                    consumed: false,
                 };
             }
             case 'wheel': {
@@ -404,11 +456,13 @@ export class InputSource {
                         deltaZ: e.deltaZ,
                     } as WheelEventData,
                     originalEvent: e,
+                    consumed: false,
                 };
             }
             case 'touchstart':
             case 'touchmove':
-            case 'touchend': {
+            case 'touchend':
+            case 'touchcancel': {
                 const e = originalEvent as TouchEvent;
                 const getTouches = (touches: TouchList) =>
                     Array.from(touches).map((t) => ({
@@ -425,6 +479,7 @@ export class InputSource {
                         changedTouches: getTouches(e.changedTouches),
                     } as TouchEventData,
                     originalEvent: e,
+                    consumed: false,
                 };
             }
             case 'dblclick':
@@ -444,6 +499,7 @@ export class InputSource {
                         target: e.target as HTMLElement | null,
                     } as PointerEventData,
                     originalEvent: e,
+                    consumed: false,
                 };
             }
             default:

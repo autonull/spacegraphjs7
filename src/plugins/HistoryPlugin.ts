@@ -1,17 +1,19 @@
+import { BaseSystemPlugin } from './BaseSystemPlugin';
 import type { SpaceGraph } from '../SpaceGraph';
-import type { ISpaceGraphPlugin, GraphSpec } from '../types';
+import type { Graph } from '../core/Graph';
+import type { EventSystem } from '../core/events/EventSystem';
+import type { GraphSpec } from '../types';
 
 export interface HistoryPluginOptions {
     maxHistorySize?: number;
     enabled?: boolean;
 }
 
-export class HistoryPlugin implements ISpaceGraphPlugin {
+export class HistoryPlugin extends BaseSystemPlugin {
     readonly id = 'history';
     readonly name = 'History Stack';
     readonly version = '1.0.0';
 
-    private sg!: SpaceGraph;
     private pastStack: GraphSpec[] = [];
     private futureStack: GraphSpec[] = [];
     private maxHistorySize: number;
@@ -23,12 +25,13 @@ export class HistoryPlugin implements ISpaceGraphPlugin {
     private debounceTimer: any = null;
 
     constructor(options: HistoryPluginOptions = {}) {
+        super();
         this.maxHistorySize = options.maxHistorySize || 50;
         this.isEnabled = options.enabled !== false;
     }
 
-    init(sg: SpaceGraph): void {
-        this.sg = sg;
+    init(sg: SpaceGraph, graph: Graph, events: EventSystem): void {
+        super.init(sg, graph, events);
 
         if (this.isEnabled) {
             this.pushSnapshot();
@@ -41,7 +44,17 @@ export class HistoryPlugin implements ISpaceGraphPlugin {
         this.sg.events.on('edge:added', () => this.debouncedSnapshot());
         this.sg.events.on('edge:removed', () => this.debouncedSnapshot());
 
-        this.sg.events.on('input:interaction:keydown', ((e: any) => this.handleKeydown(e)) as any);
+        this.sg.events.on('input:interaction:keydown', (e: unknown) =>
+            this.handleKeydown(
+                e as {
+                    key: string;
+                    ctrlKey: boolean;
+                    metaKey: boolean;
+                    shiftKey: boolean;
+                    originalEvent?: { target?: { tagName?: string }; preventDefault?: () => void };
+                },
+            ),
+        );
     }
 
     private handleKeydown(e: any): void {

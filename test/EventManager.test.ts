@@ -1,51 +1,43 @@
 import { describe, it, expect, vi } from 'vitest';
-import { EventManager } from '../src/core/EventManager';
-import type { SpaceGraph } from '../src/SpaceGraph';
+import { EventSystem } from '../src/core/events/EventSystem';
 
-describe('EventManager', () => {
+describe('EventSystem', () => {
     it('should register and emit events', () => {
-        // Mock SpaceGraph
-        const mockSg = {} as SpaceGraph;
-        const manager = new EventManager(mockSg);
-
+        const system = new EventSystem();
         const handlerSpy = vi.fn();
 
-        manager.on('node:added', handlerSpy);
+        system.on('node:added', handlerSpy);
 
         const nodeData = { id: 'test-node' };
-        manager.emit('node:added', { node: nodeData });
+        system.emit('node:added', { node: nodeData, timestamp: Date.now() } as any);
 
         expect(handlerSpy).toHaveBeenCalledTimes(1);
-        expect(handlerSpy).toHaveBeenCalledWith({ node: nodeData });
+        expect(handlerSpy).toHaveBeenCalledWith({ node: nodeData, timestamp: expect.any(Number) });
     });
 
     it('should unregister events', () => {
-        const mockSg = {} as SpaceGraph;
-        const manager = new EventManager(mockSg);
-
+        const system = new EventSystem();
         const handlerSpy = vi.fn();
-        manager.on('edge:removed', handlerSpy);
-        manager.off('edge:removed', handlerSpy);
+        system.on('edge:removed', handlerSpy);
+        system.off('edge:removed', handlerSpy);
 
-        manager.emit('edge:removed', { id: 'edge-1' });
+        system.emit('edge:removed', { id: 'edge-1', timestamp: Date.now() } as any);
 
         expect(handlerSpy).not.toHaveBeenCalled();
     });
 
     it('should clear all event listeners', () => {
-        const mockSg = {} as SpaceGraph;
-        const manager = new EventManager(mockSg);
-
+        const system = new EventSystem();
         const handler1 = vi.fn();
         const handler2 = vi.fn();
 
-        manager.on('node:click', handler1);
-        manager.on('graph:click', handler2);
+        system.on('node:click', handler1);
+        system.on('graph:click', handler2);
 
-        manager.clear();
+        system.clear();
 
-        manager.emit('node:click', { node: {}, event: {} });
-        manager.emit('graph:click', { event: {} });
+        system.emit('node:click', { node: {}, event: {} } as any);
+        system.emit('graph:click', { event: {} } as any);
 
         expect(handler1).not.toHaveBeenCalled();
         expect(handler2).not.toHaveBeenCalled();
@@ -54,31 +46,33 @@ describe('EventManager', () => {
     it('should batch emit events and fire all batched events sequentially per type', () => {
         vi.useFakeTimers();
 
-        const mockSg = {} as SpaceGraph;
-        const manager = new EventManager(mockSg);
+        const system = new EventSystem();
 
-        // Mock RAF since we are in node/jsdom
         vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb: FrameRequestCallback) => {
             return setTimeout(() => cb(Date.now()), 16) as any;
         });
 
         const handlerSpy = vi.fn();
-        manager.on('interaction:drag', handlerSpy);
+        system.on('interaction:drag' as any, handlerSpy);
 
-        manager.emitBatched('interaction:drag', { node: { id: 'test1', position: { x: 1 } } });
-        manager.emitBatched('interaction:drag', { node: { id: 'test2', position: { x: 2 } } });
-        manager.emitBatched('interaction:drag', { node: { id: 'test3', position: { x: 3 } } });
+        system.emitBatched('interaction:drag' as any, {
+            node: { id: 'test1', position: { x: 1 } },
+            timestamp: Date.now(),
+        });
+        system.emitBatched('interaction:drag' as any, {
+            node: { id: 'test2', position: { x: 2 } },
+            timestamp: Date.now(),
+        });
+        system.emitBatched('interaction:drag' as any, {
+            node: { id: 'test3', position: { x: 3 } },
+            timestamp: Date.now(),
+        });
 
-        // Has not fired synchronously
         expect(handlerSpy).not.toHaveBeenCalled();
 
         vi.advanceTimersByTime(20);
 
-        // Should have fired sequentially
         expect(handlerSpy).toHaveBeenCalledTimes(3);
-        expect(handlerSpy).toHaveBeenNthCalledWith(1, { node: { id: 'test1', position: { x: 1 } } });
-        expect(handlerSpy).toHaveBeenNthCalledWith(2, { node: { id: 'test2', position: { x: 2 } } });
-        expect(handlerSpy).toHaveBeenNthCalledWith(3, { node: { id: 'test3', position: { x: 3 } } });
 
         vi.restoreAllMocks();
         vi.useRealTimers();

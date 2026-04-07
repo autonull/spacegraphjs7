@@ -1,36 +1,34 @@
-import { DOMNode } from './DOMNode';
-import type { SpaceGraph } from '../SpaceGraph';
-import type { NodeSpec } from '../types';
 import { DOMUtils } from '../utils/DOMUtils';
+import type { NodeSpec } from '../types';
+import type { SpaceGraph } from '../SpaceGraph';
 
-export class ProcessNode extends DOMNode {
+import { BaseContentNode } from './BaseContentNode';
+
+export class ProcessNode extends BaseContentNode {
     private cpuBar: HTMLDivElement;
     private memBar: HTMLDivElement;
     private cpuText: HTMLSpanElement;
     private memText: HTMLSpanElement;
 
     constructor(sg: SpaceGraph, spec: NodeSpec) {
-        const w = spec.data?.width ?? 200;
-        const h = spec.data?.height ?? 120;
-
-        const div = DOMUtils.createElement('div');
-        div.className = 'sg-process-node';
-
-        super(sg, spec, div, w, h, { opacity: 0.1 });
-
-        const pid = spec.data?.pid ?? '???';
-        const name = spec.label ?? spec.data?.name ?? 'unknown_process';
-        const cpu = spec.data?.cpu ?? 0;
-        const mem = spec.data?.memory ?? 0;
-
-        this.setupContainerStyles(w, h, 'dark', {
-            backgroundColor: 'rgba(15, 23, 42, 0.85)',
-            padding: '10px',
-            fontFamily: 'monospace',
-            justifyContent: 'space-between',
+        super(sg, spec, {
+            defaultWidth: 200,
+            defaultHeight: 120,
+            materialParams: { opacity: 0.1 },
+            className: 'sg-process-node',
+            customStyles: {
+                backgroundColor: 'rgba(15, 23, 42, 0.85)',
+                padding: '10px',
+                fontFamily: 'monospace',
+                justifyContent: 'space-between',
+            },
         });
 
-        // Header (PID + Name)
+        const pid = (spec.data?.pid as string) ?? '???';
+        const name = spec.label ?? (spec.data?.name as string) ?? 'unknown_process';
+        const cpu = (spec.data?.cpu as number) ?? 0;
+        const mem = (spec.data?.memory as number) ?? 0;
+
         const header = DOMUtils.createElement('div');
         header.style.display = 'flex';
         header.style.justifyContent = 'space-between';
@@ -47,27 +45,24 @@ export class ProcessNode extends DOMNode {
 
         header.appendChild(titleSpan);
         header.appendChild(pidSpan);
-        div.appendChild(header);
+        this.domElement.appendChild(header);
 
-        // Stats Container
         const stats = DOMUtils.createElement('div');
         stats.style.display = 'flex';
         stats.style.flexDirection = 'column';
         stats.style.gap = '8px';
 
-        // CPU row
         const cpuRow = this.createStatRow('CPU');
         this.cpuBar = cpuRow.bar;
         this.cpuText = cpuRow.text;
         stats.appendChild(cpuRow.container);
 
-        // Memory row
         const memRow = this.createStatRow('MEM');
         this.memBar = memRow.bar;
         this.memText = memRow.text;
         stats.appendChild(memRow.container);
 
-        div.appendChild(stats);
+        this.domElement.appendChild(stats);
 
         this.updateBars(cpu, mem);
     }
@@ -89,7 +84,7 @@ export class ProcessNode extends DOMNode {
             height: '8px',
             backgroundColor: '#1e293b',
             borderRadius: '4px',
-            overflow: 'hidden'
+            overflow: 'hidden',
         });
 
         const bar = DOMUtils.createElement('div');
@@ -97,7 +92,7 @@ export class ProcessNode extends DOMNode {
             height: '100%',
             width: '0%',
             backgroundColor: label === 'CPU' ? '#3b82f6' : '#10b981',
-            transition: 'width 0.2s ease-out, background-color 0.2s ease-out'
+            transition: 'width 0.2s ease-out, background-color 0.2s ease-out',
         });
         barTrack.appendChild(bar);
 
@@ -118,29 +113,29 @@ export class ProcessNode extends DOMNode {
         this.cpuBar.style.width = `${Math.min(100, cpu)}%`;
         this.cpuText.textContent = `${cpu.toFixed(1)}%`;
 
-        // Color coding for CPU usage
-        if (cpu > 80) this.cpuBar.style.backgroundColor = '#ef4444'; // red
-        else if (cpu > 50) this.cpuBar.style.backgroundColor = '#f59e0b'; // yellow
-        else this.cpuBar.style.backgroundColor = '#3b82f6'; // blue
+        if (cpu > 80) this.cpuBar.style.backgroundColor = '#ef4444';
+        else if (cpu > 50) this.cpuBar.style.backgroundColor = '#f59e0b';
+        else this.cpuBar.style.backgroundColor = '#3b82f6';
 
         this.memBar.style.width = `${Math.min(100, mem)}%`;
         this.memText.textContent = `${mem.toFixed(1)}%`;
 
-        if (mem > 80) this.memBar.style.backgroundColor = '#ef4444'; // red
-        else if (mem > 50) this.memBar.style.backgroundColor = '#f59e0b'; // yellow
-        else this.memBar.style.backgroundColor = '#10b981'; // green
+        if (mem > 80) this.memBar.style.backgroundColor = '#ef4444';
+        else if (mem > 50) this.memBar.style.backgroundColor = '#f59e0b';
+        else this.memBar.style.backgroundColor = '#10b981';
 
-        // Dynamically scale node based on memory usage as per FZUI specs
-        const scale = 1.0 + (mem / 100) * 0.5; // Max 1.5x scale
+        const scale = 1.0 + (mem / 100) * 0.5;
         this.object.scale.set(scale, scale, scale);
     }
 
-    updateSpec(updates: Partial<NodeSpec>) {
+    updateSpec(updates: Partial<NodeSpec>): this {
         super.updateSpec(updates);
         if (updates.data) {
-            const cpu = updates.data.cpu !== undefined ? updates.data.cpu : parseFloat(this.cpuText.textContent || '0');
-            const mem = updates.data.memory !== undefined ? updates.data.memory : parseFloat(this.memText.textContent || '0');
+            const cpu = (updates.data.cpu as number) ?? parseFloat(this.cpuText.textContent ?? '0');
+            const mem =
+                (updates.data.memory as number) ?? parseFloat(this.memText.textContent ?? '0');
             this.updateBars(cpu, mem);
         }
+        return this;
     }
 }

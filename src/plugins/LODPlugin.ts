@@ -1,21 +1,23 @@
 import * as THREE from 'three';
-import type { SpaceGraph } from '../SpaceGraph';
-import type { ISpaceGraphPlugin } from '../types';
+import { BaseSystemPlugin } from './BaseSystemPlugin';
 import type { Node } from '../nodes/Node';
 import { DOMNode } from '../nodes/DOMNode';
 import { GroupNode } from '../nodes/GroupNode';
 
-export class LODPlugin implements ISpaceGraphPlugin {
+type NodeLike = {
+    data?: Record<string, unknown>;
+    parameters?: Record<string, unknown>;
+    parent?: string;
+};
+
+export class LODPlugin extends BaseSystemPlugin {
     readonly id = 'lod';
     readonly name = 'Level of Detail';
     readonly version = '1.0.0';
 
-    private sg!: SpaceGraph;
     private maxDistance = 3000;
-
-    init(sg: SpaceGraph): void {
-        this.sg = sg;
-    }
+    private currentZoomLevel: number = 0;
+    private detailThreshold: number = 0.5;
 
     onPreRender(_delta: number): void {
         if (!this.sg?.renderer?.camera) return;
@@ -28,6 +30,20 @@ export class LODPlugin implements ISpaceGraphPlugin {
         this._updateEdgeVisibility();
     }
 
+    setZoomLevel(level: number, threshold?: number): void {
+        this.currentZoomLevel = level;
+        if (threshold !== undefined) {
+            this.detailThreshold = threshold;
+        }
+
+        // Trigger visibility update
+        this.onPreRender(0);
+    }
+
+    getCurrentDetailThreshold(): number {
+        return this.detailThreshold;
+    }
+
     private _updateGroupsAndFindHidden(nodes: Node[], cameraPosition: THREE.Vector3): Set<string> {
         const hiddenParentIds = new Set<string>();
 
@@ -35,7 +51,7 @@ export class LODPlugin implements ISpaceGraphPlugin {
             if (node instanceof GroupNode) {
                 const distance = cameraPosition.distanceTo(node.position);
                 node.updateLod(distance);
-                if ((node.data as any)._lastLodVisible === false) {
+                if ((node.data as Record<string, unknown>)._lastLodVisible === false) {
                     hiddenParentIds.add(node.id);
                 }
             }
@@ -63,7 +79,7 @@ export class LODPlugin implements ISpaceGraphPlugin {
     }
 
     private _isNodeHiddenByParent(node: Node, hiddenParentIds: Set<string>): boolean {
-        let currentParent = (node.data as any)?.parent ?? (node as any).parameters?.parent ?? (node as any).parent;
+        let currentParent = this._getParentId(node);
 
         while (currentParent) {
             if (hiddenParentIds.has(currentParent)) {
@@ -71,17 +87,20 @@ export class LODPlugin implements ISpaceGraphPlugin {
             }
 
             const parentNode = this.sg.graph.nodes.get(currentParent);
-            currentParent =
-                (parentNode?.data as any)?.parent ??
-                (parentNode as any)?.parameters?.parent ??
-                (parentNode as any)?.parent;
+            currentParent = this._getParentId(parentNode);
         }
 
         return false;
     }
 
+    private _getParentId(node?: Node): string | undefined {
+        if (!node) return undefined;
+        const n = node as unknown as NodeLike;
+        return (n.data?.parent ?? n.parameters?.parent ?? n.parent) as string | undefined;
+    }
+
     private _updateEdgeVisibility(): void {
-        for (const edge of this.sg.graph.edges) {
+        for (const [, edge] of this.sg.graph.edges) {
             if (!edge.object) continue;
 
             const sourceHidden =
