@@ -16,32 +16,32 @@ export class LegibilityAnalyzer {
      * Analyze legibility of nodes
      */
     async analyze(context: VisionContext, config: HeuristicsConfig): Promise<LegibilityResult> {
-        const failures: ContrastFailure[] = [];
-        let totalContrast = 0;
-        let nodeCount = 0;
+        const { failures, totalContrast, nodeCount } = context.nodes.reduce(
+            (acc, node) => {
+                const result = this.analyzeNode(
+                    node as {
+                        id: string;
+                        data: Record<string, unknown>;
+                        object?: THREE.Object3D;
+                    },
+                );
 
-        for (const node of context.nodes) {
-            const result = this.analyzeNode(
-                node as {
-                    id: string;
-                    data: Record<string, unknown>;
-                    object?: THREE.Object3D;
-                },
-            );
+                if (result) {
+                    acc.totalContrast += result.contrast;
+                    acc.nodeCount++;
 
-            if (result) {
-                totalContrast += result.contrast;
-                nodeCount++;
-
-                if (result.contrast < config.wcagThreshold) {
-                    failures.push({
-                        nodeId: result.nodeId,
-                        contrast: result.contrast,
-                        severity: result.contrast < 3.0 ? 'error' : 'warning',
-                    });
+                    if (result.contrast < config.wcagThreshold) {
+                        acc.failures.push({
+                            nodeId: result.nodeId,
+                            contrast: result.contrast,
+                            severity: result.contrast < 3.0 ? 'error' : 'warning',
+                        });
+                    }
                 }
-            }
-        }
+                return acc;
+            },
+            { failures: [] as ContrastFailure[], totalContrast: 0, nodeCount: 0 }
+        );
 
         const averageContrast = nodeCount > 0 ? totalContrast / nodeCount : 0;
 
