@@ -93,14 +93,7 @@ export class HierarchyAnalyzer {
             hasIncoming.add(edge.target.id);
         }
 
-        const roots: string[] = [];
-        for (const node of nodes) {
-            if (!hasIncoming.has(node.id)) {
-                roots.push(node.id);
-            }
-        }
-
-        return roots;
+        return nodes.filter((node) => !hasIncoming.has(node.id)).map((node) => node.id);
     }
 
     /**

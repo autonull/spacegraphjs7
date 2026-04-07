@@ -41,24 +41,20 @@ export class OverlapAnalyzer {
     const overlapPairs = spatialIndex.findAllOverlaps();
     
     // Refine overlaps with precise bounds checking
-    const overlaps: Overlap[] = [];
     const checked = new Set<string>();
 
-    for (const [nodeA, nodeB] of overlapPairs) {
+    const overlaps = overlapPairs.reduce<Overlap[]>((acc, [nodeA, nodeB]) => {
       // Avoid duplicates
       const key = nodeA.id < nodeB.id ? `${nodeA.id}-${nodeB.id}` : `${nodeB.id}-${nodeA.id}`;
-      if (checked.has(key)) continue;
+      if (checked.has(key)) return acc;
       checked.add(key);
 
       const penetration = this.computePenetration(nodeA, nodeB);
       if (penetration > 0) {
-        overlaps.push({
-          nodeA: nodeA.id,
-          nodeB: nodeB.id,
-          penetration
-        });
+        acc.push({ nodeA: nodeA.id, nodeB: nodeB.id, penetration });
       }
-    }
+      return acc;
+    }, []);
 
     return {
       hasOverlaps: overlaps.length > 0,
