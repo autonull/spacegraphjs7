@@ -62,7 +62,7 @@
         <div class="loading">Loading Fractal Demo</div>
 
         <script type="module">
-            import { fractalDemo } from './demos/index.js';
+            import { fractalDemo } from './demos/index.ts';
 
             // Wait for DOM
             if (document.readyState === 'loading') {
@@ -74,6 +74,7 @@
             function init() {
                 try {
                     const sg = fractalDemo();
+                    window._sg = sg;
 
                     // Remove loading indicator once ready
                     sg.events.on('fractal:level-change', () => {

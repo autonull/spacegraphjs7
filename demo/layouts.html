@@ -130,7 +130,7 @@
                 SpectralLayout,
                 MinimapPlugin,
                 HoverMetaWidget,
-            } from '../src/index.ts';
+            } from '@src/index.ts';
 
             // Create sample graph data
             const nodes = [];
@@ -218,6 +218,7 @@
 
             async function init() {
                 sg = await SpaceGraph.create('#container', { nodes, edges });
+                window._sg = sg;
 
                 // Create and initialize all layouts after graph is ready
                 layouts = {

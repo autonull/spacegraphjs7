@@ -30,7 +30,7 @@
         <div id="status">Starting...</div>
         <div id="container"></div>
         <script type="module">
-            import { SpaceGraph } from '../src/index.ts';
+            import { SpaceGraph } from '@src/index.ts';
 
             const status = document.getElementById('status');
             const log = (msg) => {
@@ -70,6 +70,8 @@
                         { id: 'e3', source: 'c', target: 'a', type: 'Edge' },
                     ],
                 });
+
+                window._sg = graph;
 
                 log(
                     `✓ Graph created! Nodes: ${graph.graph.nodes.size}, Edges: ${graph.graph.edges.length}`,

@@ -23,7 +23,7 @@
     <body>
         <div id="container"></div>
         <script type="module">
-            import { SpaceGraph } from '../src/index.ts';
+            import { SpaceGraph } from '@src/index.ts';
             import { N8nExecutionMonitorPlugin } from '../packages/n8n-bridge/src/N8nExecutionMonitorPlugin.ts';
             import { N8nWorkflowPlugin } from '../packages/n8n-bridge/src/N8nWorkflowPlugin.ts';
 
@@ -35,6 +35,7 @@
             window.SpaceGraph = SpaceGraph;
             const container = document.querySelector('#container');
             const graph = new SpaceGraph(container);
+            window._sg = graph;
 
             graph.pluginManager.register(
                 'N8nExecutionMonitorPlugin',

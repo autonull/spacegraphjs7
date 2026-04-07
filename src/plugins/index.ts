@@ -31,3 +31,8 @@ export { VisionOverlayPlugin } from './VisionOverlayPlugin';
 export { HUDPlugin, type HUDElementOptions } from './HUDPlugin';
 export { HistoryPlugin, type HistoryPluginOptions } from './HistoryPlugin';
 export { LayoutContainer } from './LayoutContainer';
+export {
+    HoverMetaWidget,
+    type HoverMetaWidgetOptions,
+    type HoverAction,
+} from './interaction/HoverMetaWidget';

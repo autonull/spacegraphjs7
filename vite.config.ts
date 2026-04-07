@@ -6,15 +6,15 @@ export default defineConfig({
     publicDir: '../public',
     resolve: {
         alias: {
-            '../src': resolve(__dirname, 'src'),
-            '../framework': resolve(__dirname, 'demo/framework.ts'),
+            '@src': resolve(__dirname, 'src'),
         },
     },
     server: {
-        port: 5174,
+        port: 5173,
         open: false,
     },
     build: {
+        target: 'esnext',
         outDir: '../dist-demo',
         emptyOutDir: true,
     },

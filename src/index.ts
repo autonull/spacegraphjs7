@@ -67,6 +67,9 @@ export {
     HistoryPlugin,
     type HistoryPluginOptions,
     LayoutContainer,
+    HoverMetaWidget,
+    type HoverMetaWidgetOptions,
+    type HoverAction,
 } from './plugins';
 
 export {

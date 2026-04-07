@@ -114,7 +114,7 @@
                 MinimapPlugin,
                 HistoryPlugin,
                 ForceLayout,
-            } from '../src/index.ts';
+            } from '@src/index.ts';
 
             // Sample data structure
             const sampleData = {
@@ -175,6 +175,7 @@
             async function init() {
                 // Create SpaceGraph instance
                 const sg = await SpaceGraph.create('#container', sampleData);
+                window._sg = sg;
 
                 // 1. Register History Plugin (for undo/redo)
                 const history = new HistoryPlugin({ maxHistorySize: 50 });
@@ -225,7 +226,7 @@
 
                 // Expose for debugging
                 window.sg = sg;
-                window.history = history;
+                window._historyPlugin = history;
 
                 console.log('[quickstart] Graph created:', {
                     nodes: sg.graph.nodes.size,

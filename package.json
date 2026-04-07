@@ -25,10 +25,10 @@
     ],
     "scripts": {
         "dev": "pnpm dlx vite --host",
-        "dev:demo": "cd demo && pnpm dlx vite --port 5174",
+        "dev:demo": "pnpm dlx vite --port 5173",
         "build": "vite build",
         "build:lib": "vite build",
-        "build:demo": "cd demo && pnpm dlx vite build --outDir ../dist-demo",
+        "build:demo": "vite build",
         "prepublishOnly": "pnpm run clean && pnpm run build && pnpm run test",
         "clean": "rm -rf dist/ dist-demo/",
         "verify": "tsx verification/verify_demos.ts",
@@ -38,7 +38,10 @@
         "lint": "eslint 'src/**/*.{ts,js}' --ignore-pattern 'dist'",
         "format": "prettier --write .",
         "format:check": "prettier --check .",
-        "docs": "typedoc --options typedoc.json"
+        "docs": "typedoc --options typedoc.json",
+        "test:screenshots": "mkdir -p test/screenshots && playwright test test/e2e/demo-screenshots.spec.ts --reporter=list",
+        "test:demo-errors": "playwright test test/e2e/demo-errors.spec.ts --reporter=list",
+        "test:all-demos": "pnpm run test:demo-errors && pnpm run test:screenshots"
     },
     "peerDependencies": {
         "chart.js": "^4.5.1",

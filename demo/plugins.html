@@ -197,7 +197,7 @@
                 HistoryPlugin,
                 HUDPlugin,
                 ForceLayout,
-            } from '../src/index.ts';
+            } from '@src/index.ts';
 
             let sg = null;
             let nodeCounter = 10;
@@ -285,6 +285,7 @@
 
             async function init() {
                 sg = await SpaceGraph.create('#container', { nodes, edges });
+                window._sg = sg;
 
                 // Initialize History Plugin
                 historyPlugin = new HistoryPlugin({ maxHistorySize: 50 });

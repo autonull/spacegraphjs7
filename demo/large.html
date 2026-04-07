@@ -16,7 +16,7 @@
     <body>
         <div id="container"></div>
         <script type="module">
-            import { SpaceGraph } from '../src/index.ts';
+            import { SpaceGraph } from '@src/index.ts';
 
             const startTime = performance.now();
 
@@ -46,6 +46,7 @@
             try {
                 try {
                     const graph = await SpaceGraph.create('#container', { nodes, edges });
+                    window._sg = graph;
 
                     const endTime = performance.now();
                     console.log(`✓ 100 nodes rendered in ${(endTime - startTime).toFixed(2)}ms`);

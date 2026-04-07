@@ -16,7 +16,7 @@
     <body>
         <div id="container"></div>
         <script type="module">
-            import { SpaceGraph } from '../src/index.ts';
+            import { SpaceGraph } from '@src/index.ts';
 
             try {
                 const graph = await SpaceGraph.create('#container', {
@@ -52,6 +52,7 @@
 
                 graph.fitView(200, 1.5);
 
+                window._sg = graph;
                 console.log('✓ Verification graph rendered with', graph.graph.nodes.size, 'nodes');
 
                 window.addEventListener('beforeunload', () => graph.dispose());

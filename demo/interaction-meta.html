@@ -204,7 +204,7 @@
         </div>
 
         <script type="module">
-            import { SpaceGraph, HoverMetaWidget, ForceLayout } from '../src/index.ts';
+            import { SpaceGraph, HoverMetaWidget, ForceLayout } from '@src/index.ts';
 
             let sg = null;
             let metaWidget = null;
@@ -303,6 +303,7 @@
 
             async function init() {
                 sg = await SpaceGraph.create('#container', { nodes, edges });
+                window._sg = sg;
 
                 // Initialize HoverMetaWidget
                 metaWidget = new HoverMetaWidget({

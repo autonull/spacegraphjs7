@@ -36,7 +36,7 @@
         <div id="status">SpaceGraphJS Instanced Demo - Loading...</div>
         <div id="container"></div>
         <script type="module">
-            import { SpaceGraph } from '../src/index.ts';
+            import { SpaceGraph } from '@src/index.ts';
 
             const statusEl = document.getElementById('status');
 
@@ -76,6 +76,7 @@
                 statusEl.textContent = `Instantiating graph...`;
 
                 const graph = await SpaceGraph.create('#container', { nodes, edges });
+                window._sg = graph;
 
                 // Update status with FPS loop
                 let frames = 0;
