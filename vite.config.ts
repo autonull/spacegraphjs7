@@ -7,6 +7,7 @@ export default defineConfig({
     resolve: {
         alias: {
             '@src': resolve(__dirname, 'src'),
+            'spacegraphjs': resolve(__dirname, 'src/index.ts'),
         },
     },
     server: {

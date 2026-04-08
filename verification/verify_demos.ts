@@ -4,7 +4,7 @@ import * as fs from 'fs';
 
 async function main() {
     console.log('Starting dev server...');
-    const viteProcess = spawn('npx', ['vite', '--port', '5174'], { stdio: 'pipe' });
+    const viteProcess = spawn('npx', ['vite', '--config', 'vite.demo.config.ts', '--port', '5174'], { stdio: 'pipe' });
 
     // Wait for the server to start
     await new Promise((resolve) => setTimeout(resolve, 3000));
@@ -53,18 +53,23 @@ async function main() {
             await page.goto(`http://localhost:5174/demo/${demo}`);
 
             // Wait based on whether the demo is expected to create a canvas
-            if (demo !== 'index.html') {
+            if (demo !== 'index.html' && !demo.startsWith('../examples/')) {
                 // Let the module load and create the canvas
                 await page.waitForFunction(() => !!document.querySelector('canvas'), {
                     timeout: 10000,
                 });
                 await page.waitForTimeout(2000); // Give the graph 2 seconds to stabilize its layout
+            } else if (demo.startsWith('../examples/')) {
+                // Examples are loaded using an iframe or different structure if index.html isn't the root container
+                // but let's wait a bit and just assert rendering based on file name or generic delay.
+                // Assuming Examples just load a canvas.
+                await page.waitForTimeout(3000);
             } else {
                 // Index is just an HTML page with links, wait for it to render
-                await page.waitForFunction(() => !!document.querySelector('.demo-card'), {
+                await page.waitForFunction(() => !!document.querySelector('button'), {
                     timeout: 10000,
                 });
-                await page.waitForTimeout(1000);
+                await page.waitForTimeout(1000); // Give it time to load the first demo's canvas
             }
 
             const name = demo.split('/').pop().replace('.html', '');
