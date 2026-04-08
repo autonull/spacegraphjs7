@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { Line2 } from 'three/examples/jsm/lines/Line2.js';
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
-import { Surface, type HitResult, type Rect } from '../core/Surface';
+import { Surface, type HitResult, type Rect, type Bounds3D } from '../core/Surface';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { EdgeSpec, EdgeData } from '../types';
 import type { Node } from '../nodes/Node';
@@ -37,6 +37,25 @@ export class Edge extends Surface {
 
     public get object(): Line2 {
         return this.line;
+    }
+
+    public get position(): THREE.Vector3 {
+        if (!this.source || !this.target) return new THREE.Vector3();
+        return new THREE.Vector3()
+            .addVectors(this.source.position, this.target.position)
+            .multiplyScalar(0.5);
+    }
+
+    public get rotation(): THREE.Euler {
+        return new THREE.Euler();
+    }
+
+    public get scale(): THREE.Vector3 {
+        return new THREE.Vector3(1, 1, 1);
+    }
+
+    public get worldMatrix(): THREE.Matrix4 {
+        return new THREE.Matrix4();
     }
 
     public arrowheads: { source: THREE.Mesh | null; target: THREE.Mesh | null } = {
@@ -333,15 +352,50 @@ export class Edge extends Surface {
         };
     }
 
-    hitTest(ray: THREE.Raycaster): HitResult | null {
-        if (!this.isTouchable) return null;
-        const hits = ray.intersectObject(this.line, true);
-        if (hits.length > 0) {
+    get bounds3D(): Bounds3D {
+        const min = new THREE.Vector3(
+            Math.min(this.source.position.x, this.target.position.x),
+            Math.min(this.source.position.y, this.target.position.y),
+            Math.min(this.source.position.z, this.target.position.z),
+        );
+        const max = new THREE.Vector3(
+            Math.max(this.source.position.x, this.target.position.x),
+            Math.max(this.source.position.y, this.target.position.y),
+            Math.max(this.source.position.z, this.target.position.z),
+        );
+        return {
+            min,
+            max,
+            get center() {
+                return new THREE.Vector3().addVectors(this.min, this.max).multiplyScalar(0.5);
+            },
+            get size() {
+                return new THREE.Vector3().subVectors(this.max, this.min);
+            },
+            containsPoint(p: THREE.Vector3) {
+                return false;
+            },
+            intersectsRay(ray: THREE.Ray) {
+                return false;
+            },
+        };
+    }
+
+    hitTest(raycaster: THREE.Raycaster): HitResult | null {
+        if (!this.visible || !this.isTouchable) return null;
+
+        const originalThreshold = raycaster.params.Line?.threshold ?? 1;
+        raycaster.params.Line = { threshold: 5 };
+
+        const intersects = raycaster.intersectObject(this.line, true);
+        raycaster.params.Line = { threshold: originalThreshold };
+
+        if (intersects.length > 0) {
             return {
                 surface: this,
-                point: hits[0].point,
-                localPoint: hits[0].point.clone(),
-                distance: hits[0].distance,
+                point: intersects[0].point,
+                localPoint: intersects[0].point.clone(),
+                distance: intersects[0].distance,
             };
         }
         return null;

@@ -5,8 +5,11 @@ import { HtmlNode } from './HtmlNode';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec } from '../types';
 
+import * as THREE from 'three';
+
 export class PanelNode extends HtmlNode {
     fixed = false;
+    billboard = true;
     resizeBorder = 0.1;
     private isDragging = false;
     private isResizing = false;
@@ -20,18 +23,29 @@ export class PanelNode extends HtmlNode {
             const d = spec.data as Record<string, unknown>;
             if (typeof d.fixed === 'boolean') this.fixed = d.fixed;
             if (typeof d.resizeBorder === 'number') this.resizeBorder = d.resizeBorder;
+            if (typeof d.billboard === 'boolean') this.billboard = d.billboard;
         }
     }
 
-    getDragMode(localPos: { x: number; y: number }): 'move' | 'resize' | null {
+    onPreRender(dt: number): void {
+        super.onPreRender(dt);
+
+        if (this.billboard && this.sg) {
+            const cameraPos = this.sg.renderer.camera.position;
+            const direction = new THREE.Vector3().subVectors(cameraPos, this.position);
+            this.rotation.y = Math.atan2(direction.x, direction.z);
+            this.object.rotation.copy(this.rotation);
+        }
+    }
+
+    getDragMode(localPos: { x: number; y: number; z?: number }): 'move' | 'resize' | null {
         if (this.fixed) return null;
-        const { width = 300, height = 200 } = this.data as Record<string, number>;
+        const { width = 300, height = 200, depth = 0 } = this.data as Record<string, number>;
         const border = this.resizeBorder;
         const nearEdge =
-            localPos.x < width * border ||
-            localPos.x > width * (1 - border) ||
-            localPos.y < height * border ||
-            localPos.y > height * (1 - border);
+            Math.abs(localPos.x) > width * (0.5 - border) ||
+            Math.abs(localPos.y) > height * (0.5 - border) ||
+            (depth > 0 && Math.abs(localPos.z ?? 0) > depth * (0.5 - border));
         return nearEdge ? 'resize' : 'move';
     }
 

@@ -8,7 +8,10 @@ export class GridNode extends LayoutNode {
             columns: 3,
             cellWidth: 200,
             cellHeight: 150,
-            gap: 20,
+            cellDepth: 100,
+            gapX: 20,
+            gapY: 20,
+            gapZ: 50,
         });
     }
 }

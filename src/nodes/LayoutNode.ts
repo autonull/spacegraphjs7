@@ -12,18 +12,44 @@ export type LayoutStrategy = (
 
 export const gridStrategy: LayoutStrategy = (children, parent, params) => {
     const columns = (params.columns as number) ?? 3;
+    const rows = (params.rows as number) ?? Math.ceil(Math.sqrt(children.length));
     const cellWidth = (params.cellWidth as number) ?? 200;
     const cellHeight = (params.cellHeight as number) ?? 150;
-    const gap = (params.gap as number) ?? 20;
+    const cellDepth = (params.cellDepth as number) ?? 100;
+    const gapX = (params.gapX as number) ?? (params.gap as number) ?? 20;
+    const gapY = (params.gapY as number) ?? (params.gap as number) ?? 20;
+    const gapZ = (params.gapZ as number) ?? 50;
 
     children.forEach((child, i) => {
         const col = i % columns;
-        const row = Math.floor(i / columns);
+        const row = Math.floor((i / columns) % rows);
+        const layer = Math.floor(i / (columns * rows));
+
         child.position.set(
-            parent.position.x + col * (cellWidth + gap),
-            parent.position.y - row * (cellHeight + gap),
-            parent.position.z,
+            parent.position.x + col * (cellWidth + gapX),
+            parent.position.y - row * (cellHeight + gapY),
+            parent.position.z + layer * (cellDepth + gapZ),
         );
+    });
+};
+
+export const sphereStrategy: LayoutStrategy = (children, parent, params) => {
+    const radius = (params.radius as number) ?? 200;
+    const n = children.length;
+    const phi = Math.PI * (3 - Math.sqrt(5));
+
+    children.forEach((child, i) => {
+        const y = 1 - (i / (n - 1)) * 2;
+        const radiusAtY = Math.sqrt(1 - y * y);
+        const theta = phi * i;
+
+        child.position.set(
+            parent.position.x + Math.cos(theta) * radiusAtY * radius,
+            parent.position.y + y * radius,
+            parent.position.z + Math.sin(theta) * radiusAtY * radius,
+        );
+
+        child.rotation.set(0, Math.atan2(child.position.z - parent.position.z, child.position.x - parent.position.x), 0);
     });
 };
 
