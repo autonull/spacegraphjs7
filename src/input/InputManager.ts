@@ -272,19 +272,20 @@ export class InputManager {
     private routeFingeringEvent(event: InputEvent): void {
         const data = event.data as PointerEventData;
 
-        let ndcX = 0;
-        let ndcY = 0;
+        let ndc: { x: number; y: number };
         const target = data.target;
         if (target && target instanceof Element) {
             const rect = target.getBoundingClientRect();
-            ndcX = ((data.x - rect.left) / rect.width) * 2 - 1;
-            ndcY = -((data.y - rect.top) / rect.height) * 2 + 1;
+            ndc = {
+                x: ((data.x - rect.left) / rect.width) * 2 - 1,
+                y: -((data.y - rect.top) / rect.height) * 2 + 1,
+            };
         } else {
-            ndcX = (data.x / window.innerWidth) * 2 - 1;
-            ndcY = -(data.y / window.innerHeight) * 2 + 1;
+            ndc = {
+                x: (data.x / window.innerWidth) * 2 - 1,
+                y: -(data.y / window.innerHeight) * 2 + 1,
+            };
         }
-
-        const ndc = { x: ndcX, y: ndcY };
 
         const finger: Finger = {
             pointerId: (event.originalEvent as PointerEvent)?.pointerId ?? 0,
