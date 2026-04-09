@@ -9,6 +9,18 @@ export interface HitResult {
     point: THREE.Vector3;
     localPoint: THREE.Vector3;
     distance: number;
+    normal?: THREE.Vector3;
+    uv?: THREE.Vector2;
+    face?: THREE.Face;
+}
+
+export interface Bounds3D {
+    min: THREE.Vector3;
+    max: THREE.Vector3;
+    get center(): THREE.Vector3;
+    get size(): THREE.Vector3;
+    containsPoint(p: THREE.Vector3): boolean;
+    intersectsRay(ray: THREE.Ray): boolean;
 }
 
 export interface Rect {
@@ -32,7 +44,14 @@ export abstract class Surface extends EventEmitter<SurfaceEventMap> {
     abstract readonly id: string;
     abstract readonly type: string;
     abstract bounds: Rect;
+    abstract get bounds3D(): Bounds3D;
     abstract hitTest(ray: THREE.Raycaster): HitResult | null;
+
+    abstract get position(): THREE.Vector3;
+    abstract get rotation(): THREE.Euler | THREE.Vector3;
+    abstract get scale(): THREE.Vector3;
+    abstract get worldMatrix(): THREE.Matrix4;
+
     abstract start(): void;
     abstract stop(): void;
     abstract delete(): void;
@@ -89,5 +108,14 @@ export abstract class Surface extends EventEmitter<SurfaceEventMap> {
             result.push(child, ...child.descendants());
         }
         return result;
+    }
+
+    localToWorld(localPos: THREE.Vector3): THREE.Vector3 {
+        return localPos.clone().applyMatrix4(this.worldMatrix);
+    }
+
+    worldToLocal(worldPos: THREE.Vector3): THREE.Vector3 {
+        const inverse = this.worldMatrix.clone().invert();
+        return worldPos.clone().applyMatrix4(inverse);
     }
 }

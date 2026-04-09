@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import gsap from 'gsap';
 import { ThreeDisposer } from '../utils/ThreeDisposer';
-import { Surface, type HitResult, type Rect } from '../core/Surface';
+import { Surface, type HitResult, type Rect, type Bounds3D } from '../core/Surface';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec, NodeData, AnimationProps } from '../types';
 
@@ -20,6 +20,10 @@ export abstract class Node extends Surface {
     public rotation: THREE.Vector3;
     public scale: THREE.Vector3;
     abstract readonly object: THREE.Object3D;
+
+    get worldMatrix(): THREE.Matrix4 {
+        return this.object.matrixWorld;
+    }
 
     constructor(sg?: SpaceGraph, spec?: NodeSpec);
     constructor(sgOrSpec?: SpaceGraph | NodeSpec, maybeSpec?: NodeSpec) {
@@ -58,15 +62,42 @@ export abstract class Node extends Surface {
         };
     }
 
-    hitTest(ray: THREE.Raycaster): HitResult | null {
-        if (!this.isTouchable) return null;
-        const hits = ray.intersectObject(this.object, true);
-        if (hits.length > 0) {
+    get bounds3D(): Bounds3D {
+        const box = new THREE.Box3().setFromObject(this.object);
+        return {
+            min: box.min,
+            max: box.max,
+            get center() {
+                return new THREE.Vector3().addVectors(this.min, this.max).multiplyScalar(0.5);
+            },
+            get size() {
+                return new THREE.Vector3().subVectors(this.max, this.min);
+            },
+            containsPoint(p: THREE.Vector3) {
+                return box.containsPoint(p);
+            },
+            intersectsRay(ray: THREE.Ray) {
+                return ray.intersectsBox(box);
+            },
+        };
+    }
+
+    hitTest(raycaster: THREE.Raycaster): HitResult | null {
+        if (!this.visible || !this.isTouchable) return null;
+
+        const intersects = raycaster.intersectObject(this.object, true);
+        if (intersects.length > 0) {
+            const hit = intersects[0];
             return {
                 surface: this,
-                point: hits[0].point,
-                localPoint: this.object.worldToLocal(hits[0].point.clone()),
-                distance: hits[0].distance,
+                point: hit.point,
+                localPoint: this.object.worldToLocal(hit.point.clone()),
+                distance: hit.distance,
+                normal: hit.face?.normal
+                    ?.clone()
+                    .applyMatrix4(new THREE.Matrix4().extractRotation(this.object.matrixWorld)),
+                uv: hit.uv,
+                face: hit.face ?? undefined,
             };
         }
         return null;

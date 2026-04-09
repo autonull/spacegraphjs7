@@ -218,19 +218,30 @@ export class DOMNode extends Node {
     public updateLod(_distance: number): void {}
 
     isDraggable(localPos: THREE.Vector3): boolean {
-        const interactive = this.domElement.querySelector('[data-sg-interactive="true"]');
-        if (!interactive) return true;
-        const rect = interactive.getBoundingClientRect();
-        const canvasRect = this.sg?.renderer?.renderer?.domElement?.getBoundingClientRect();
-        if (!canvasRect) return true;
-        const relX = (localPos.x * canvasRect.width) / 2 + canvasRect.width / 2;
-        const relY = (-localPos.y * canvasRect.height) / 2 + canvasRect.height / 2;
-        return !(
-            relX >= rect.left - canvasRect.left &&
-            relX <= rect.right - canvasRect.left &&
-            relY >= rect.top - canvasRect.top &&
-            relY <= rect.bottom - canvasRect.top
-        );
+        const interactive = this.domElement.querySelectorAll('[data-sg-interactive="true"]');
+        if (!interactive || interactive.length === 0) return true;
+
+        const rect = this.domElement.getBoundingClientRect();
+        const width = rect.width;
+        const height = rect.height;
+
+        const px = localPos.x + width / 2;
+        const py = height / 2 - localPos.y;
+
+        for (const el of interactive) {
+            const elRect = el.getBoundingClientRect();
+
+            const localElLeft = elRect.left - rect.left;
+            const localElRight = elRect.right - rect.left;
+            const localElTop = elRect.top - rect.top;
+            const localElBottom = elRect.bottom - rect.top;
+
+            if (px >= localElLeft && px <= localElRight && py >= localElTop && py <= localElBottom) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     onPreRender(dt: number): void {

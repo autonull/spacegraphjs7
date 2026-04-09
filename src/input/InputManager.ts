@@ -1,5 +1,6 @@
 import type { SpaceGraph } from '../SpaceGraph';
 import { EventSystem } from '../core/events/EventSystem';
+import * as THREE from 'three';
 import { FingerManager, type Fingering, type Finger } from './Fingering';
 
 export type InputEventType =
@@ -260,15 +261,40 @@ export class InputManager {
         }
     }
 
+    private computeWorldRay(ndc: { x: number; y: number }): THREE.Ray {
+        const camera = this.graph.renderer.camera;
+        const ray = new THREE.Ray();
+        ray.origin.setFromMatrixPosition(camera.matrixWorld);
+        ray.direction.set(ndc.x, ndc.y, 0.5).unproject(camera).sub(ray.origin).normalize();
+        return ray;
+    }
+
     private routeFingeringEvent(event: InputEvent): void {
         const data = event.data as PointerEventData;
+
+        let ndcX = 0;
+        let ndcY = 0;
+        const target = data.target;
+        if (target && target instanceof Element) {
+            const rect = target.getBoundingClientRect();
+            ndcX = ((data.x - rect.left) / rect.width) * 2 - 1;
+            ndcY = -((data.y - rect.top) / rect.height) * 2 + 1;
+        } else {
+            ndcX = (data.x / window.innerWidth) * 2 - 1;
+            ndcY = -(data.y / window.innerHeight) * 2 + 1;
+        }
+
+        const ndc = { x: ndcX, y: ndcY };
+
         const finger: Finger = {
             pointerId: (event.originalEvent as PointerEvent)?.pointerId ?? 0,
             position: { x: data.x, y: data.y },
+            ndc,
             buttons: data.buttons ?? 0,
             state:
                 event.type === 'pointerdown' ? 'down' : event.type === 'pointerup' ? 'up' : 'move',
             target: data.target,
+            worldRay: this.computeWorldRay(ndc)
         };
 
         if (event.type === 'pointerdown') {
@@ -283,7 +309,9 @@ export class InputManager {
             const existing = this.fingerManager.getFinger(finger.pointerId);
             if (existing) {
                 existing.position = finger.position;
+                existing.ndc = finger.ndc;
                 existing.buttons = finger.buttons;
+                existing.worldRay = finger.worldRay;
                 this.fingerManager.update(existing);
             }
         } else if (event.type === 'pointerup') {

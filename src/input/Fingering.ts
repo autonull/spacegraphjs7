@@ -1,12 +1,16 @@
 // SpaceGraphJS - Exclusive Input State Machine (Fingering)
 // Priority-based input acquisition system inspired by SGJ's Finger/Fingering
 
+import type * as THREE from 'three';
+
 export interface Finger {
     pointerId: number;
     position: { x: number; y: number };
+    ndc: { x: number; y: number };
     buttons: number;
     state: 'down' | 'move' | 'up';
     target: unknown;
+    worldRay?: THREE.Ray;
 }
 
 export abstract class Fingering {

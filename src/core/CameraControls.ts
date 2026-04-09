@@ -3,6 +3,8 @@
 
 import * as THREE from 'three';
 
+import type { Surface } from './Surface';
+
 export interface CameraControlsConfig {
     enableRotate: boolean;
     enableZoom: boolean;
@@ -25,8 +27,26 @@ export class CameraControls {
     private scale: number = 1;
     private panOffset: THREE.Vector3;
 
-    private zoomStack: Array<{ target: THREE.Vector3; distance: number }> = [];
+    private zoomStack: Array<{ target: THREE.Vector3; distance: number; phi: number; theta: number }> = [];
     private readonly MAX_ZOOM_DEPTH = 8;
+    private keyState = new Map<string, boolean>();
+    private keyConfig = {
+        panLeft: 'a',
+        panRight: 'd',
+        panForward: 'w',
+        panBackward: 's',
+        panUp: 'q',
+        panDown: 'e',
+        zoomIn: 'z',
+        zoomOut: 'x',
+        rotateLeft: 'j',
+        rotateRight: 'l',
+        rotateUp: 'i',
+        rotateDown: 'k',
+        panSpeed: 10.0,
+        zoomSpeed: 0.1,
+        rotateSpeed: 0.05,
+    };
 
     private targetNext: THREE.Vector3 | null = null;
     private radiusNext: number | null = null;
@@ -64,6 +84,20 @@ export class CameraControls {
         this.panOffset = new THREE.Vector3();
 
         this.updateSpherical();
+
+        // Add keyboard listeners
+        this.onKeyDown = this.onKeyDown.bind(this);
+        this.onKeyUp = this.onKeyUp.bind(this);
+        window.addEventListener('keydown', this.onKeyDown);
+        window.addEventListener('keyup', this.onKeyUp);
+    }
+
+    private onKeyDown(e: KeyboardEvent): void {
+        this.keyState.set(e.key.toLowerCase(), true);
+    }
+
+    private onKeyUp(e: KeyboardEvent): void {
+        this.keyState.set(e.key.toLowerCase(), false);
     }
 
     private updateSpherical(): void {
@@ -92,6 +126,52 @@ export class CameraControls {
     }
 
     update(): void {
+        const camRight = new THREE.Vector3();
+        const camForward = new THREE.Vector3();
+        const camUp = this.camera.up.clone();
+
+        camRight.setFromMatrixColumn(this.camera.matrix, 0);
+        camForward.setFromMatrixColumn(this.camera.matrix, 2).negate();
+
+        if (this.keyState.get(this.keyConfig.panLeft)) {
+            this.panOffset.add(camRight.clone().multiplyScalar(-this.keyConfig.panSpeed));
+        }
+        if (this.keyState.get(this.keyConfig.panRight)) {
+            this.panOffset.add(camRight.clone().multiplyScalar(this.keyConfig.panSpeed));
+        }
+        if (this.keyState.get(this.keyConfig.panForward)) {
+            this.panOffset.add(camForward.clone().multiplyScalar(this.keyConfig.panSpeed));
+        }
+        if (this.keyState.get(this.keyConfig.panBackward)) {
+            this.panOffset.add(camForward.clone().multiplyScalar(-this.keyConfig.panSpeed));
+        }
+        if (this.keyState.get(this.keyConfig.panUp)) {
+            this.panOffset.add(camUp.clone().multiplyScalar(this.keyConfig.panSpeed));
+        }
+        if (this.keyState.get(this.keyConfig.panDown)) {
+            this.panOffset.add(camUp.clone().multiplyScalar(-this.keyConfig.panSpeed));
+        }
+
+        if (this.keyState.get(this.keyConfig.rotateLeft)) {
+            this.sphericalDelta.theta -= this.keyConfig.rotateSpeed;
+        }
+        if (this.keyState.get(this.keyConfig.rotateRight)) {
+            this.sphericalDelta.theta += this.keyConfig.rotateSpeed;
+        }
+        if (this.keyState.get(this.keyConfig.rotateUp)) {
+            this.sphericalDelta.phi -= this.keyConfig.rotateSpeed;
+        }
+        if (this.keyState.get(this.keyConfig.rotateDown)) {
+            this.sphericalDelta.phi += this.keyConfig.rotateSpeed;
+        }
+
+        if (this.keyState.get(this.keyConfig.zoomIn)) {
+            this.scale *= 1 - this.keyConfig.zoomSpeed;
+        }
+        if (this.keyState.get(this.keyConfig.zoomOut)) {
+            this.scale *= 1 + this.keyConfig.zoomSpeed;
+        }
+
         this.spherical.theta += this.sphericalDelta.theta;
         this.spherical.phi += this.sphericalDelta.phi;
         this.spherical.phi = Math.max(0.01, Math.min(Math.PI - 0.01, this.spherical.phi));
@@ -148,10 +228,39 @@ export class CameraControls {
             return;
         }
 
-        this.zoomStack.push({ target: this.target.clone(), distance: this.spherical.radius });
+        this.zoomStack.push({ target: this.target.clone(), distance: this.spherical.radius, phi: this.spherical.phi, theta: this.spherical.theta });
         if (this.zoomStack.length > this.MAX_ZOOM_DEPTH) this.zoomStack.shift();
 
         this.flyTo(target, distance, duration);
+    }
+
+    zoomToSurface3D(surface: Surface, duration: number = 1.5): void {
+        if (!surface.bounds3D) return;
+
+        const bounds = surface.bounds3D;
+        const center = bounds.center;
+        const size = bounds.size;
+        const maxDim = Math.max(size.x, size.y, size.z);
+        const distance = maxDim * 2.5;
+
+        const top = this.zoomStack.at(-1);
+        if (top && center.distanceTo(top.target) < distance * 0.1) {
+            this.zoomOut();
+            return;
+        }
+
+        this.zoomStack.push({
+            target: this.target.clone(),
+            distance: this.spherical.radius,
+            phi: this.spherical.phi,
+            theta: this.spherical.theta,
+        });
+
+        if (this.zoomStack.length > this.MAX_ZOOM_DEPTH) {
+            this.zoomStack.shift();
+        }
+
+        this.flyTo(center, distance, duration);
     }
 
     zoomOut(): void {
@@ -226,5 +335,7 @@ export class CameraControls {
 
     dispose(): void {
         this.zoomStack = [];
+        window.removeEventListener('keydown', this.onKeyDown);
+        window.removeEventListener('keyup', this.onKeyUp);
     }
 }
