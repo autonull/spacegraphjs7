@@ -372,10 +372,10 @@ export class Edge extends Surface {
             get size() {
                 return new THREE.Vector3().subVectors(this.max, this.min);
             },
-            containsPoint(p: THREE.Vector3) {
+            containsPoint(_p: THREE.Vector3) {
                 return false;
             },
-            intersectsRay(ray: THREE.Ray) {
+            intersectsRay(_ray: THREE.Ray) {
                 return false;
             },
         };

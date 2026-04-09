@@ -77,7 +77,6 @@ export class BoxSelectingFingering implements Fingering {
         const projection = new THREE.Matrix4();
 
         const originalProjection = camera.projectionMatrix.clone();
-        const originalProjectionInverse = camera.projectionMatrixInverse.clone();
 
         const pickScale = new THREE.Vector2(2 / (maxX - minX), 2 / (maxY - minY));
         const pickOffset = new THREE.Vector2(- (minX + maxX) / 2, - (minY + maxY) / 2);
