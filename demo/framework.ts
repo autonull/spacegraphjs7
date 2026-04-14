@@ -1,7 +1,10 @@
 import { SpaceGraph } from '../src/SpaceGraph';
 import type { GraphSpec } from '../src/types';
 
-export function createDemo(spec: GraphSpec, _options?: Record<string, unknown>): SpaceGraph {
+export async function createDemo(
+    spec: GraphSpec,
+    _options?: Record<string, unknown>,
+): Promise<SpaceGraph> {
     let container = document.getElementById('app');
     if (!container) {
         container = document.getElementById('container');
@@ -9,15 +12,11 @@ export function createDemo(spec: GraphSpec, _options?: Record<string, unknown>):
     if (!container) {
         console.error("Could not find container 'app' or 'container'");
     }
-    const sg = new SpaceGraph(container!);
-    sg.init().then(() => {
-        sg.loadSpec(spec);
-        sg.render();
-    });
+    const sg = await SpaceGraph.create(container!, spec);
     return sg;
 }
 
-export function createDemoWithNodes(nodes: any[], edges: any[] = []): SpaceGraph {
+export async function createDemoWithNodes(nodes: any[], edges: any[] = []): Promise<SpaceGraph> {
     return createDemo({
         nodes: nodes.map((n) => ({
             id: n.id,

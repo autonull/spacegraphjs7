@@ -20,6 +20,7 @@ import {
     ResizeFingering,
     WiringFingering,
     PinchZoomFingering,
+    WidgetFingering,
 } from '../input/fingerings';
 
 export class InteractionPlugin implements Plugin {
@@ -74,6 +75,9 @@ export class InteractionPlugin implements Plugin {
 
     private registerFingerings(): void {
         const inputManager = this.sg.input;
+
+        const widgetFingering = new WidgetFingering(this.sg, this.raycaster);
+        inputManager.registerFingering(widgetFingering, 110);
 
         const resizeFingering = new ResizeFingering(this.sg, this.raycaster);
         inputManager.registerFingering(resizeFingering, 200);
@@ -194,7 +198,10 @@ export class InteractionPlugin implements Plugin {
         const edgeResult = this.raycaster.raycastEdge();
         this.hoverManager.updateHover(nodeResult?.node ?? null, edgeResult?.edge ?? null);
 
-        const cursorMode: CursorMode = nodeResult?.node ? 'grab' : 'auto';
+        let cursorMode: CursorMode = 'auto';
+        if (nodeResult?.node) {
+            cursorMode = (nodeResult.node as any).isTouchable ? 'pointer' : 'grab';
+        }
         this.cursorManager.set(cursorMode, 'hover');
     }
 

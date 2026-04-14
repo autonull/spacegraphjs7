@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>SpaceGraphJS Demos</title>
+        <title>SpaceGraphJS</title>
         <style>
             * {
                 margin: 0;
@@ -11,124 +11,95 @@
                 box-sizing: border-box;
             }
             body {
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
                 background: #0d0d0d;
                 color: #eee;
-                min-height: 100vh;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                overflow: hidden;
             }
-            header {
-                padding: 20px 30px;
-                border-bottom: 1px solid #222;
+            #menu {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                height: 40px;
                 background: #111;
-            }
-            h1 {
-                font-size: 24px;
-                font-weight: 500;
-                color: #8b5cf6;
-            }
-            .subtitle {
-                font-size: 13px;
-                color: #666;
-                margin-top: 4px;
-            }
-            #demo-selector {
-                padding: 20px 30px;
-                display: flex;
-                flex-wrap: wrap;
-                gap: 10px;
                 border-bottom: 1px solid #222;
+                display: flex;
+                align-items: center;
+                padding: 0 16px;
+                gap: 8px;
+                z-index: 10000;
             }
-            #demo-selector button {
-                padding: 10px 16px;
+            #menu select {
                 background: #1a1a1a;
                 border: 1px solid #333;
                 color: #ccc;
-                cursor: pointer;
+                padding: 6px 12px;
                 border-radius: 4px;
                 font-size: 13px;
-                transition: all 0.2s;
+                cursor: pointer;
             }
-            #demo-selector button:hover {
-                background: #252525;
+            #menu select:hover {
                 border-color: #8b5cf6;
-                color: #fff;
-            }
-            #demo-selector button.active {
-                background: #8b5cf6;
-                border-color: #8b5cf6;
-                color: #fff;
             }
             #app {
-                width: 100%;
-                height: calc(100vh - 130px);
-            }
-            .instructions {
-                padding: 12px 30px;
-                background: #111;
-                border-top: 1px solid #222;
-                font-size: 12px;
-                color: #666;
+                width: 100vw;
+                height: calc(100vh - 40px);
+                margin-top: 40px;
             }
         </style>
     </head>
     <body>
-        <header>
-            <h1>SpaceGraphJS Demos</h1>
-            <div class="subtitle">SG_ALIGN Unified Architecture</div>
-        </header>
-        <div id="demo-selector"></div>
-        <div id="app"></div>
-        <div class="instructions">
-            <strong>Controls:</strong> Left drag = orbit / drag node | Middle drag = pan | Right
-            drag = zoom | Shift+drag = box select | Alt+drag = create edge
+        <div id="menu">
+            <select id="demo-select"></select>
+            <span id="demo-title" style="color: #666; font-size: 12px; margin-left: 8px"></span>
         </div>
+        <div id="app"></div>
 
         <script type="module">
             const DEMOS = import.meta.glob('./demos/*.ts', { eager: true });
 
             const demoList = Object.keys(DEMOS).map((path) => {
                 const name = path.replace('./demos/', '').replace('.ts', '');
-                return { name, path };
+                const mod = DEMOS[path];
+                return { name, create: mod.default || mod };
             });
 
             let currentDemo = null;
-            let demoInstance = null;
 
-            async function loadDemo(demo) {
-                if (demoInstance) {
-                    demoInstance.stop?.();
-                    demoInstance = null;
-                }
+            const select = document.getElementById('demo-select');
+            const title = document.getElementById('demo-title');
+
+            demoList.forEach((d, i) => {
+                const opt = document.createElement('option');
+                opt.value = String(i);
+                opt.textContent = d.name;
+                select.appendChild(opt);
+            });
+
+            async function loadDemo(index) {
+                const demo = demoList[index];
+                if (!demo) return;
+
+                title.textContent = demo.name;
+
                 document.getElementById('app').innerHTML = '';
 
-                const mod = DEMOS[demo.path];
-                demoInstance = mod.default?.() || mod.create?.() || mod;
+                if (currentDemo?.stop) {
+                    currentDemo.stop();
+                }
+                if (currentDemo?.dispose) {
+                    currentDemo.dispose();
+                }
+
+                currentDemo = await demo.create();
             }
 
-            function renderSelector() {
-                const container = document.getElementById('demo-selector');
-                container.innerHTML = demoList
-                    .map(
-                        (d) =>
-                            `<button data-demo="${d.name}" data-path="${d.path}">${d.name}</button>`,
-                    )
-                    .join('');
+            select.addEventListener('change', (e) => {
+                loadDemo(parseInt(e.target.value));
+            });
 
-                container.querySelectorAll('button').forEach((btn) => {
-                    btn.addEventListener('click', async () => {
-                        container
-                            .querySelectorAll('button')
-                            .forEach((b) => b.classList.remove('active'));
-                        btn.classList.add('active');
-                        const path = btn.dataset.path;
-                        const demo = demoList.find((d) => d.path === path);
-                        await loadDemo(demo);
-                    });
-                });
-            }
-
-            renderSelector();
-            loadDemo(demoList[0]);
+            loadDemo(0);
         </script>
     </body>
 </html>
