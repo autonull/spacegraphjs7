@@ -1,6 +1,6 @@
 import { createDemo } from '../framework';
 
-export default function fingeringBoxselectDemo() {
+export default async function fingeringBoxselectDemo() {
     const nodes = Array.from({ length: 20 }, (_, i) => ({
         id: `node-${i}`,
         type: 'ShapeNode',
@@ -12,5 +12,5 @@ export default function fingeringBoxselectDemo() {
         data: { color: 0xff4466 + i * 0x101010 },
     }));
 
-    return createDemo({ nodes, edges: [] });
+    return await createDemo({ nodes, edges: [] });
 }

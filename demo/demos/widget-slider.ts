@@ -1,7 +1,7 @@
 import { createDemo } from '../framework';
 
-export default function widgetSliderDemo() {
-    return createDemo({
+export default async function widgetSliderDemo() {
+  return await createDemo({
         nodes: [
             {
                 id: 'slider1',

@@ -1,7 +1,7 @@
 import { createDemo } from '../framework';
 
-export default function widgetButtonDemo() {
-    return createDemo({
+export default async function widgetButtonDemo() {
+  return await createDemo({
         nodes: [
             {
                 id: 'button1',

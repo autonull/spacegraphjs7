@@ -1,13 +1,13 @@
 import { createDemoWithNodes, shapeNode } from '../framework';
 
-export default function interactiveDemo() {
-    const nodes = [
-        shapeNode('draggable', [-150, 0, 0], { color: 0x4488ff, size: 60 }),
-        shapeNode('target1', [100, -100, 0], { color: 0x44ff88, size: 50 }),
-        shapeNode('target2', [100, 100, 0], { color: 0xff4488, size: 50 }),
-    ];
+export default async function interactiveDemo() {
+  const nodes = [
+    shapeNode('draggable', [-150, 0, 0], { color: 0x4488ff, size: 60 }),
+    shapeNode('target1', [100, -100, 0], { color: 0x44ff88, size: 50 }),
+    shapeNode('target2', [100, 100, 0], { color: 0xff4488, size: 50 }),
+  ];
 
-    const sg = createDemoWithNodes(nodes);
+  const sg = await createDemoWithNodes(nodes);
 
     const el = document.createElement('div');
     el.style.cssText =

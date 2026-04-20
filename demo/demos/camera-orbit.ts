@@ -1,7 +1,7 @@
 import { createDemoWithNodes, shapeNode } from '../framework';
 
-export default function cameraOrbitDemo() {
-    const sg = createDemoWithNodes([
+export default async function cameraOrbitDemo() {
+  const sg = await createDemoWithNodes([
         shapeNode('center', [0, 0, 0], { color: 0x4488ff, size: 80 }),
         shapeNode('north', [0, 200, 0], { color: 0x44ff88, size: 40 }),
         shapeNode('south', [0, -200, 0], { color: 0xff4488, size: 40 }),

@@ -1,6 +1,6 @@
 import { createDemoWithNodes, shapeNode, edge } from '../framework';
 
-export default function edgeDottedDemo() {
+export default async function edgeDottedDemo() {
     const nodes = [
         shapeNode('a', [-200, 100, 0], { color: 0xff6644 }),
         shapeNode('b', [0, 100, 0], { color: 0x44ff88 }),
@@ -62,5 +62,5 @@ export default function edgeDottedDemo() {
         },
     ];
 
-    return createDemoWithNodes(nodes, edges);
+    return await createDemoWithNodes(nodes, edges);
 }

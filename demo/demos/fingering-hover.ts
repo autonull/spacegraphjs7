@@ -1,7 +1,7 @@
 import { createDemo } from '../framework';
 
-export default function fingeringHoverDemo() {
-    return createDemo({
+export default async function fingeringHoverDemo() {
+  return await createDemo({
         nodes: [
             { id: 'n1', type: 'ShapeNode', position: [-200, 100, 0], data: { color: 0xff6644 } },
             { id: 'n2', type: 'ShapeNode', position: [0, 100, 0], data: { color: 0x44ff88 } },

@@ -1,7 +1,7 @@
 import { createDemoWithNodes, htmlNode, edge } from '../framework';
 
-export default function nodeHtmlDemo() {
-    return createDemoWithNodes(
+export default async function nodeHtmlDemo() {
+  return await createDemoWithNodes(
         [
             htmlNode('html1', [-200, 0, 0], {
                 html: '<h3 style="color: #4488ff;">Welcome</h3><p>This is an HTML node with custom content.</p>',

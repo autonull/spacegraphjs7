@@ -1,7 +1,7 @@
 import { createDemoWithNodes, shapeNode } from '../framework';
 
-export default function cameraPanDemo() {
-    const sg = createDemoWithNodes([
+export default async function cameraPanDemo() {
+  const sg = await createDemoWithNodes([
         shapeNode('a', [-300, 0, 0], { color: 0xff4466, size: 50 }),
         shapeNode('b', [0, 0, 0], { color: 0x44ff88, size: 50 }),
         shapeNode('c', [300, 0, 0], { color: 0x4488ff, size: 50 }),

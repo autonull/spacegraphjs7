@@ -1,6 +1,6 @@
 import { createDemoWithNodes, shapeNode, edge } from '../framework';
 
-export default function edgeCurvedDemo() {
+export default async function edgeCurvedDemo() {
     const nodes = [
         shapeNode('start', [-300, 0, 0], { color: 0xff6644 }),
         shapeNode('mid1', [-100, 100, 0], { color: 0x44ff88 }),
@@ -15,5 +15,5 @@ export default function edgeCurvedDemo() {
         edge('start', 'mid2', 'CurvedEdge'),
     ];
 
-    return createDemoWithNodes(nodes, edges);
+    return await createDemoWithNodes(nodes, edges);
 }

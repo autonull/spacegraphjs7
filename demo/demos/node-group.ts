@@ -1,7 +1,7 @@
 import { createDemo } from '../framework';
 
-export default function nodeGroupDemo() {
-    return createDemo({
+export default async function nodeGroupDemo() {
+  return await createDemo({
         nodes: [
             {
                 id: 'group1',

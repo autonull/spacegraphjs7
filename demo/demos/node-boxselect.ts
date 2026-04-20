@@ -1,7 +1,7 @@
 import { createDemoWithNodes, shapeNode } from '../framework';
 
-export default function nodeBoxSelectDemo() {
-    const sg = createDemoWithNodes([
+export default async function nodeBoxSelectDemo() {
+  const sg = await createDemoWithNodes([
         shapeNode('a', [-150, 100, 0], { color: 0xff4466, size: 40 }),
         shapeNode('b', [0, 100, 0], { color: 0x44ff88, size: 40 }),
         shapeNode('c', [150, 100, 0], { color: 0x4488ff, size: 40 }),

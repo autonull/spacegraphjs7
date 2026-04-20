@@ -1,7 +1,7 @@
 import { createDemoWithNodes, shapeNode, edge, htmlNode } from '../framework';
 
-export default function fingeringDemo() {
-    const sg = createDemoWithNodes(
+export default async function fingeringDemo() {
+  const sg = await createDemoWithNodes(
         [
             shapeNode('node1', [-200, 0, 0], { color: 0x4488ff, size: 60 }),
             shapeNode('node2', [200, 0, 0], { color: 0xff4488, size: 60 }),

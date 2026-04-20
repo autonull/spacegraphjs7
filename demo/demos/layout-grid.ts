@@ -1,6 +1,6 @@
 import { createDemo } from '../framework';
 
-export default function layoutGridDemo() {
+export default async function layoutGridDemo() {
     const nodes = Array.from({ length: 12 }, (_, i) => ({
         id: `node-${i}`,
         type: 'ShapeNode',
@@ -8,7 +8,7 @@ export default function layoutGridDemo() {
         data: { color: 0xff4466 + i * 0x110000 },
     }));
 
-    return createDemo({
+    return await createDemo({
         nodes,
         edges: [],
         layout: {

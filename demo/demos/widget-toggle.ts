@@ -1,7 +1,7 @@
 import { createDemo } from '../framework';
 
-export default function widgetToggleDemo() {
-    return createDemo({
+export default async function widgetToggleDemo() {
+  return await createDemo({
         nodes: [
             {
                 id: 'toggle1',

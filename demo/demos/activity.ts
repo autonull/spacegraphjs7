@@ -1,12 +1,12 @@
 import { createDemoWithNodes, shapeNode } from '../framework';
 
-export default function activityDemo() {
-    const nodes = [];
-    for (let i = 0; i < 5; i++) {
-        nodes.push(shapeNode(`n${i}`, [i * 120 - 240, 0, 0], { color: 0x3366ff, size: 50 }));
-    }
+export default async function activityDemo() {
+  const nodes = [];
+  for (let i = 0; i < 5; i++) {
+    nodes.push(shapeNode(`n${i}`, [i * 120 - 240, 0, 0], { color: 0x3366ff, size: 50 }));
+  }
 
-    const sg = createDemoWithNodes(nodes);
+  const sg = await createDemoWithNodes(nodes);
 
     const el = document.createElement('div');
     el.style.cssText = 'position:fixed;top:20px;left:20px;z-index:100;color:#fff;font-size:14px;';

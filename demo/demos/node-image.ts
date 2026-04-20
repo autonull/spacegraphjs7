@@ -1,7 +1,7 @@
 import { createDemo, GraphSpec } from '../framework';
 
-export default function nodeImageDemo() {
-    return createDemo({
+export default async function nodeImageDemo() {
+  return await createDemo({
         nodes: [
             {
                 id: 'img1',

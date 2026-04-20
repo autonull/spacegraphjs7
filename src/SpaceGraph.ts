@@ -376,7 +376,7 @@ export class SpaceGraph {
             const spec: GraphSpec = await response.json();
             sg.loadSpec(spec);
             sg.render();
-        } catch {
+        } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
             const wrappedError = new Error(
                 `[SpaceGraph] fromURL Error: Failed to load graph from ${url}. Reason: ${message}`,

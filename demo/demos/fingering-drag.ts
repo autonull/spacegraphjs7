@@ -1,7 +1,7 @@
 import { createDemoWithNodes, shapeNode, edge } from '../framework';
 
-export default function fingeringDragDemo() {
-    return createDemoWithNodes(
+export default async function fingeringDragDemo() {
+  return await createDemoWithNodes(
         [
             shapeNode('a', [-150, 50, 0], { color: 0xff6644 }),
             shapeNode('b', [0, 50, 0], { color: 0x44ff88 }),

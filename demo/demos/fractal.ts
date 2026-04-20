@@ -1,10 +1,10 @@
 import { createDemoWithNodes, shapeNode, edge } from '../framework';
 
-export default function fractalDemo() {
-    const LEVELS = ['Overview', 'Cluster', 'Detail', 'Micro', 'Nano'];
-    let currentLevel = 0;
+export default async function fractalDemo() {
+  const LEVELS = ['Overview', 'Cluster', 'Detail', 'Micro', 'Nano'];
+  let currentLevel = 0;
 
-    const sg = createDemoWithNodes(
+  const sg = await createDemoWithNodes(
         [
             shapeNode('node1', [-200, 0, 0], { color: 0x4488ff, size: 60 }),
             shapeNode('node2', [200, 0, 0], { color: 0xff4488, size: 60 }),

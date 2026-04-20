@@ -1,6 +1,6 @@
 import { createDemo } from '../framework';
 
-export default function layoutCircularDemo() {
+export default async function layoutCircularDemo() {
     const nodes = Array.from({ length: 10 }, (_, i) => ({
         id: `node-${i}`,
         type: 'ShapeNode',
@@ -15,7 +15,7 @@ export default function layoutCircularDemo() {
         type: 'Edge',
     }));
 
-    return createDemo({
+    return await createDemo({
         nodes,
         edges,
         layout: {

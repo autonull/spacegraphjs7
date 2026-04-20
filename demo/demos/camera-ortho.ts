@@ -1,7 +1,7 @@
 import { createDemo } from '../framework';
 
-export default function cameraOrthoDemo() {
-    const sg = createDemo({
+export default async function cameraOrthoDemo() {
+  const sg = await createDemo({
         nodes: [
             {
                 id: 'a',

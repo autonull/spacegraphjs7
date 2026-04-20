@@ -9,6 +9,7 @@ export default defineConfig({
     },
     test: {
         environment: 'jsdom',
+        // Only run unit tests here (keep Playwright E2E specs out of Vitest)
         include: ['test/**/*.test.ts'],
         globals: false,
         // Setup file to provide node-canvas and DOM shims for jsdom

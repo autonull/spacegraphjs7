@@ -1,7 +1,7 @@
 import { createDemoWithNodes, htmlNode, edge } from '../framework';
 
-export default function htmlNodeDemo() {
-    return createDemoWithNodes(
+export default async function htmlNodeDemo() {
+  return await createDemoWithNodes(
         [
             htmlNode('panel1', [-150, 0, 0], {
                 title: 'Panel 1',

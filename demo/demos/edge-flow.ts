@@ -1,6 +1,6 @@
 import { createDemoWithNodes, shapeNode, edge } from '../framework';
 
-export default function edgeFlowDemo() {
+export default async function edgeFlowDemo() {
     const nodes = [
         shapeNode('node1', [-200, 100, 0], { color: 0xff6644 }),
         shapeNode('node2', [0, 100, 0], { color: 0x44ff88 }),
@@ -62,5 +62,5 @@ export default function edgeFlowDemo() {
         },
     ];
 
-    return createDemoWithNodes(nodes, edges);
+    return await createDemoWithNodes(nodes, edges);
 }

@@ -2,7 +2,7 @@ import { createDemoWithNodes, shapeNode, edge } from '../framework';
 
 const SHAPES = ['box', 'sphere', 'cylinder', 'cone', 'torus', 'plane', 'circle', 'ring'];
 
-export default function nodeShapeDemo() {
+export default async function nodeShapeDemo() {
     const nodes = SHAPES.map((shape, i) => {
         const col = i % 4;
         const row = Math.floor(i / 4);
@@ -13,5 +13,5 @@ export default function nodeShapeDemo() {
         });
     });
 
-    return createDemoWithNodes(nodes, []);
+    return await createDemoWithNodes(nodes, []);
 }

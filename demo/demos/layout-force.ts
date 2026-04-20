@@ -1,6 +1,6 @@
 import { createDemo } from '../framework';
 
-export default function layoutForceDemo() {
+export default async function layoutForceDemo() {
     const nodes = Array.from({ length: 20 }, (_, i) => ({
         id: `node-${i}`,
         type: 'ShapeNode',
@@ -19,7 +19,7 @@ export default function layoutForceDemo() {
         type: 'Edge',
     }));
 
-    return createDemo({
+    return await createDemo({
         nodes,
         edges,
         layout: {
