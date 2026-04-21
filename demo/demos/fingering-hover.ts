@@ -1,6 +1,6 @@
-import { createDemo } from '../framework';
+import { createDemo, SpaceGraph } from '../framework';
 
-export default async function fingeringHoverDemo() {
+export default async function fingeringHoverDemo(): Promise<SpaceGraph> {
   return await createDemo({
         nodes: [
             { id: 'n1', type: 'ShapeNode', position: [-200, 100, 0], data: { color: 0xff6644 } },

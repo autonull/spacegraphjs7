@@ -1,6 +1,6 @@
-import { createDemo } from '../framework';
+import { createDemo, SpaceGraph } from '../framework';
 
-export default async function layoutCircularDemo() {
+export default async function layoutCircularDemo(): Promise<SpaceGraph> {
     const nodes = Array.from({ length: 10 }, (_, i) => ({
         id: `node-${i}`,
         type: 'ShapeNode',

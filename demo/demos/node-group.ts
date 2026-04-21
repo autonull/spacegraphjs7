@@ -1,6 +1,6 @@
-import { createDemo } from '../framework';
+import { createDemo, SpaceGraph } from '../framework';
 
-export default async function nodeGroupDemo() {
+export default async function nodeGroupDemo(): Promise<SpaceGraph> {
   return await createDemo({
         nodes: [
             {

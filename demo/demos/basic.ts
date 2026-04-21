@@ -1,6 +1,6 @@
-import { createDemoWithNodes, shapeNode, edge } from '../framework';
+import { createDemoWithNodes, shapeNode, edge, SpaceGraph } from '../framework';
 
-export default async function basicDemo() {
+export default async function basicDemo(): Promise<SpaceGraph> {
   return await createDemoWithNodes(
         [
             shapeNode('a', [-150, 50, 0], { color: 0xff4466 }),

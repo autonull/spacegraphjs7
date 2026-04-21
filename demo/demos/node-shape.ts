@@ -1,8 +1,8 @@
-import { createDemoWithNodes, shapeNode, edge } from '../framework';
+import { createDemoWithNodes, shapeNode, edge, SpaceGraph } from '../framework';
 
 const SHAPES = ['box', 'sphere', 'cylinder', 'cone', 'torus', 'plane', 'circle', 'ring'];
 
-export default async function nodeShapeDemo() {
+export default async function nodeShapeDemo(): Promise<SpaceGraph> {
     const nodes = SHAPES.map((shape, i) => {
         const col = i % 4;
         const row = Math.floor(i / 4);

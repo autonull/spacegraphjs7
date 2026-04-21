@@ -1,6 +1,6 @@
-import { createDemoWithNodes, shapeNode, edge } from '../framework';
+import { createDemoWithNodes, shapeNode, edge, SpaceGraph } from '../framework';
 
-export default async function edgeCurvedDemo() {
+export default async function edgeCurvedDemo(): Promise<SpaceGraph> {
     const nodes = [
         shapeNode('start', [-300, 0, 0], { color: 0xff6644 }),
         shapeNode('mid1', [-100, 100, 0], { color: 0x44ff88 }),

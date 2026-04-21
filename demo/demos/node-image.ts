@@ -1,6 +1,6 @@
-import { createDemo, GraphSpec } from '../framework';
+import { createDemo, SpaceGraph } from '../framework';
 
-export default async function nodeImageDemo() {
+export default async function nodeImageDemo(): Promise<SpaceGraph> {
   return await createDemo({
         nodes: [
             {

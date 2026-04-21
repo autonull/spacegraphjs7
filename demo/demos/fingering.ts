@@ -1,6 +1,6 @@
-import { createDemoWithNodes, shapeNode, edge, htmlNode } from '../framework';
+import { createDemoWithNodes, shapeNode, edge, htmlNode, SpaceGraph } from '../framework';
 
-export default async function fingeringDemo() {
+export default async function fingeringDemo(): Promise<SpaceGraph> {
   const sg = await createDemoWithNodes(
         [
             shapeNode('node1', [-200, 0, 0], { color: 0x4488ff, size: 60 }),

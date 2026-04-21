@@ -1,6 +1,6 @@
-import { createDemoWithNodes, shapeNode } from '../framework';
+import { createDemoWithNodes, shapeNode, SpaceGraph } from '../framework';
 
-export default async function layoutDemo() {
+export default async function layoutDemo(): Promise<SpaceGraph> {
   const nodes: any[] = [];
   for (let i = 0; i < 12; i++) {
     nodes.push(shapeNode(`n${i}`, [0, 0, 0], { color: Math.random() * 0xffffff, size: 40 }));

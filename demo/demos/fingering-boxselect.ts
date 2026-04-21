@@ -1,6 +1,6 @@
-import { createDemo } from '../framework';
+import { createDemo, SpaceGraph } from '../framework';
 
-export default async function fingeringBoxselectDemo() {
+export default async function fingeringBoxselectDemo(): Promise<SpaceGraph> {
     const nodes = Array.from({ length: 20 }, (_, i) => ({
         id: `node-${i}`,
         type: 'ShapeNode',

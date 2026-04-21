@@ -1,6 +1,6 @@
-import { createDemo } from '../framework';
+import { createDemo, SpaceGraph } from '../framework';
 
-export default async function layoutGridDemo() {
+export default async function layoutGridDemo(): Promise<SpaceGraph> {
     const nodes = Array.from({ length: 12 }, (_, i) => ({
         id: `node-${i}`,
         type: 'ShapeNode',
