@@ -26,6 +26,8 @@ import { VirtualGridNode } from '../nodes/VirtualGridNode';
 import { PanelNode } from '../nodes/PanelNode';
 import { PortNode } from '../nodes/PortNode';
 
+import { MermaidNode } from '../plugins/mermaid/MermaidNode';
+
 import { Edge } from '../edges/Edge';
 import { CurvedEdge } from '../edges/CurvedEdge';
 import { FlowEdge } from '../edges/FlowEdge';
@@ -66,33 +68,34 @@ import type { GraphSpec, NodeSpec, EdgeSpec } from '../types';
 type PluginCtor = new () => Plugin;
 
 export const DEFAULT_NODE_TYPES = [
-    ShapeNode,
-    InstancedShapeNode,
-    HtmlNode,
-    ImageNode,
-    GroupNode,
-    NoteNode,
-    DataNode,
-    CanvasNode,
-    TextMeshNode,
-    VideoNode,
-    IFrameNode,
-    ChartNode,
-    MarkdownNode,
-    GlobeNode,
-    SceneNode,
-    AudioNode,
-    MathNode,
-    ProcessNode,
-    CodeEditorNode,
-    StackingNode,
-    GridNode,
-    SplitNode,
-    BorderNode,
-    SwitchNode,
-    VirtualGridNode,
-    PanelNode,
-    PortNode,
+  ShapeNode,
+  InstancedShapeNode,
+  HtmlNode,
+  ImageNode,
+  GroupNode,
+  NoteNode,
+  DataNode,
+  CanvasNode,
+  TextMeshNode,
+  VideoNode,
+  IFrameNode,
+  ChartNode,
+  MarkdownNode,
+  GlobeNode,
+  SceneNode,
+  AudioNode,
+  MathNode,
+  ProcessNode,
+  CodeEditorNode,
+  StackingNode,
+  GridNode,
+  SplitNode,
+  BorderNode,
+  SwitchNode,
+  VirtualGridNode,
+  PanelNode,
+  PortNode,
+  MermaidNode,
 ] as const;
 
 export const DEFAULT_EDGE_TYPES = [

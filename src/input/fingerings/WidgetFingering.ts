@@ -1,4 +1,3 @@
-import * as THREE from 'three';
 import type { SpaceGraph } from '../../SpaceGraph';
 import type { Node } from '../../nodes/Node';
 import type { Finger, Fingering } from '../Fingering';
@@ -15,8 +14,8 @@ export class WidgetFingering implements Fingering {
         this.raycaster = raycaster;
     }
 
-    start(finger: Finger): boolean {
-        if (finger.buttons !== 1) return false;
+start(_finger: Finger): boolean {
+    if (_finger.buttons !== 1) return false;
 
         const result = this.raycaster.raycastNode();
         if (!result?.node) return false;
@@ -32,7 +31,7 @@ export class WidgetFingering implements Fingering {
         return false;
     }
 
-    update(finger: Finger): boolean {
+    update(_finger: Finger): boolean {
         if (!this.isButtonDown || !this.widgetNode) return true;
 
         const result = this.raycaster.raycastNode();
@@ -47,7 +46,7 @@ export class WidgetFingering implements Fingering {
         return true;
     }
 
-    stop(finger: Finger): void {
+    stop(_finger: Finger): void {
         if (this.isButtonDown && this.widgetNode) {
             const result = this.raycaster.raycastNode();
             if (

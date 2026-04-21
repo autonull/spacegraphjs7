@@ -109,7 +109,7 @@ export class SpatialIndex {
         for (let x = minX; x <= maxX; x++) {
             for (let y = minY; y <= maxY; y++) {
                 for (let z = minZ; z <= maxZ; z++) {
-                    this.cells.get(this.getCellKey(x, y, z))?.nodes.forEach((n) => result.add(n));
+                    for (const n of this.cells.get(this.getCellKey(x, y, z))?.nodes ?? []) result.add(n);
                 }
             }
         }

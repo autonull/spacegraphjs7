@@ -32,7 +32,10 @@ export { HUDPlugin, type HUDElementOptions } from './HUDPlugin';
 export { HistoryPlugin, type HistoryPluginOptions } from './HistoryPlugin';
 export { LayoutContainer } from './LayoutContainer';
 export {
-    HoverMetaWidget,
-    type HoverMetaWidgetOptions,
-    type HoverAction,
+  HoverMetaWidget,
+  type HoverMetaWidgetOptions,
+  type HoverAction,
 } from './interaction/HoverMetaWidget';
+
+export { MermaidPlugin, type MermaidPluginOptions, injectMermaidStyles } from './mermaid';
+export { MermaidParser, LAYOUT_NAMES, type MermaidParseResult, type MermaidThemeName, type LayoutName, type MermaidLayoutType, type MermaidNodeShape } from './mermaid';

@@ -41,7 +41,3 @@
 - Code structure: Keep functions focused (single responsibility), limit function length, organize methods logically,
   prefer composition over inheritance, maintain consistent class structure
 
-- Project Specific Patterns
-    - Term Construction: Use fluent methods in `TermFactory` (e.g., `termFactory.inheritance(a, b)`,
-      `termFactory.variable('x')`)
-    - Tensor Operations: Prefer `@senars/tensor` for tensor operations. Use `SymbolicTensor` for neuro-symbolic integration.

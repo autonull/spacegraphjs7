@@ -274,9 +274,9 @@ export class Graph extends EventEmitter<GraphEventMap> {
         return this.toJSON() as GraphExport;
     }
 
-    fromJSON(spec: GraphSpec): void {
-        this.clear();
-        spec.nodes?.forEach((nodeSpec) => this.addNode(nodeSpec));
-        spec.edges?.forEach((edgeSpec) => this.addEdge(edgeSpec));
-    }
+fromJSON(spec: GraphSpec): void {
+    this.clear();
+    if (spec.nodes) for (const nodeSpec of spec.nodes) this.addNode(nodeSpec);
+    if (spec.edges) for (const edgeSpec of spec.edges) this.addEdge(edgeSpec);
+  }
 }

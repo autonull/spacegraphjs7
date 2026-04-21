@@ -39,7 +39,7 @@ export class SpectralLayout extends BaseLayout {
         }
 
         const nodeIndexMap = new Map<string, number>();
-        nodes.forEach((node, i) => nodeIndexMap.set(node.id, i));
+        for (const [i, node] of nodes.entries()) nodeIndexMap.set(node.id, i);
 
         const A = Array.from({ length: n }, () => new Float32Array(n));
         const D = new Float32Array(n);

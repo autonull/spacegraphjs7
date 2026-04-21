@@ -71,24 +71,24 @@ export class HierarchicalLayout extends BaseLayout {
 
         for (const [lv, ids] of byLevel) {
             const totalWidth = (ids.length - 1) * nodeSpacing;
-            ids.forEach((id, i) => {
-                const node = nodes.get(id) as Node;
-                const primary = lv * levelHeight;
-                const secondary = -totalWidth / 2 + i * nodeSpacing;
-                const [x, y] = (() => {
-                    switch (direction) {
-                        case 'bottom-up':
-                            return [secondary, primary];
-                        case 'left-right':
-                            return [primary, secondary];
-                        case 'right-left':
-                            return [-primary, secondary];
-                        default:
-                            return [secondary, -primary];
-                    }
-                })();
-                this.applyPosition(node, new THREE.Vector3(x, y, z), { animate, duration });
-            });
+for (const [i, id] of ids.entries()) {
+      const node = nodes.get(id) as Node;
+      const primary = lv * levelHeight;
+      const secondary = -totalWidth / 2 + i * nodeSpacing;
+      const [x, y] = (() => {
+        switch (direction) {
+          case 'bottom-up':
+            return [secondary, primary];
+          case 'left-right':
+            return [primary, secondary];
+          case 'right-left':
+            return [-primary, secondary];
+          default:
+            return [secondary, -primary];
+        }
+      })();
+      this.applyPosition(node, new THREE.Vector3(x, y, z), { animate, duration });
+    }
         }
 
         let orphanX = 0;
