@@ -3,13 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mermaid Diagrams - SpaceGraphJS</title>
+  <title>Diagram Renderer - SpaceGraphJS</title>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -18,97 +14,132 @@
       overflow: hidden;
     }
 
-    #container {
-      width: 100vw;
-      height: 100vh;
-    }
+    #container { width: 100vw; height: 100vh; }
 
-    .mermaid-input-panel {
+    .input-panel {
       position: fixed;
       top: 60px;
       left: 16px;
-      width: 320px;
+      width: 340px;
       max-height: calc(100vh - 120px);
       background: rgba(15, 23, 42, 0.95);
       border: 1px solid #334155;
       border-radius: 12px;
-      padding: 16px;
+      padding: 14px;
       z-index: 1000;
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 10px;
       overflow: hidden;
     }
 
-    .mermaid-input-panel h2 {
-      font-size: 14px;
+    .input-panel h2 {
+      font-size: 13px;
       color: #8b5cf6;
-      margin-bottom: 8px;
       text-transform: uppercase;
       letter-spacing: 0.5px;
+      margin-bottom: 4px;
     }
 
-    .mermaid-input-panel textarea {
-      width: 100%;
-      height: 200px;
+    .format-tabs {
+      display: flex;
+      gap: 4px;
       background: #1e293b;
-      border: 1px solid #475569;
       border-radius: 8px;
-      color: #e2e8f0;
-      font-family: 'Monaco', 'Menlo', monospace;
-      font-size: 12px;
+      padding: 4px;
+    }
+
+    .format-tab {
+      flex: 1;
+      padding: 8px 12px;
+      background: transparent;
+      border: none;
+      border-radius: 6px;
+      color: #94a3b8;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .format-tab.active {
+      background: #8b5cf6;
+      color: white;
+    }
+
+    .format-tab:hover:not(.active) {
+      background: rgba(139, 92, 246, 0.2);
+    }
+
+    .code-editor {
+      width: 100%;
+      height: 220px;
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      color: #c9d1d9;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      font-size: 11px;
+      line-height: 1.5;
       padding: 12px;
       resize: none;
-      line-height: 1.5;
     }
 
-    .mermaid-input-panel textarea:focus {
+    .code-editor:focus {
       outline: none;
       border-color: #8b5cf6;
-      box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
+    }
+
+    .example-section { display: flex; flex-direction: column; gap: 6px; }
+
+    .example-label {
+      font-size: 10px;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
 
     .example-buttons {
       display: flex;
       flex-wrap: wrap;
-      gap: 6px;
+      gap: 4px;
     }
 
     .example-buttons button {
-      padding: 6px 10px;
+      padding: 5px 10px;
       background: rgba(139, 92, 246, 0.15);
       border: 1px solid #8b5cf6;
-      border-radius: 6px;
+      border-radius: 5px;
       color: #c4b5fd;
-      font-size: 11px;
+      font-size: 10px;
       cursor: pointer;
       transition: all 0.2s;
     }
 
     .example-buttons button:hover {
-      background: rgba(139, 92, 246, 0.3);
+      background: rgba(139, 92, 246, 0.35);
       color: #fff;
     }
 
-    .render-button {
+    .render-btn {
       width: 100%;
       padding: 12px;
       background: linear-gradient(135deg, #8b5cf6, #6366f1);
       border: none;
       border-radius: 8px;
       color: white;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 600;
       cursor: pointer;
       transition: all 0.2s;
     }
 
-    .render-button:hover {
+    .render-btn:hover {
       transform: translateY(-1px);
       box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
     }
 
-    .mermaid-stats {
+    .stats {
       position: fixed;
       bottom: 20px;
       left: 50%;
@@ -116,18 +147,17 @@
       background: rgba(15, 23, 42, 0.95);
       border: 1px solid #334155;
       border-radius: 8px;
-      padding: 12px 24px;
-      font-size: 12px;
+      padding: 10px 20px;
+      font-size: 11px;
       color: #94a3b8;
       z-index: 1000;
+      display: flex;
+      gap: 16px;
     }
 
-    .mermaid-stats span {
-      color: #8b5cf6;
-      font-weight: 600;
-    }
+    .stats span { color: #8b5cf6; font-weight: 600; }
 
-    .demo-title {
+    .title {
       position: fixed;
       top: 16px;
       left: 50%;
@@ -136,47 +166,50 @@
       border: 1px solid #334155;
       border-radius: 8px;
       padding: 10px 20px;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 600;
       color: #f1f5f9;
       z-index: 1000;
     }
 
-    .demo-title span {
-      color: #8b5cf6;
-    }
+    .title span { color: #8b5cf6; }
   </style>
 </head>
 <body>
-  <div class="demo-title">
-    <span>Mermaid</span> Diagram Renderer
+  <div class="title">
+    <span>Diagram</span> Renderer — Mermaid · DOT · GraphML · JSON
   </div>
 
   <div id="container"></div>
 
-  <div class="mermaid-input-panel">
-    <h2>Mermaid Code</h2>
-    <textarea id="mermaid-code" placeholder="Enter Mermaid diagram code...">graph TD
+  <div class="input-panel">
+    <div class="format-tabs">
+      <button class="format-tab active" data-format="mermaid">Mermaid</button>
+      <button class="format-tab" data-format="dot">DOT</button>
+      <button class="format-tab" data-format="graphml">GraphML</button>
+      <button class="format-tab" data-format="json">JSON</button>
+    </div>
+
+    <textarea class="code-editor" id="code">graph TD
     A[Start] --> B{Decision}
     B -->|Yes| C[Process 1]
     B -->|No| D[Process 2]
     C --> E((End))
     D --> E</textarea>
 
-    <div class="example-buttons">
-      <button onclick="loadExample('flowchart')">Flowchart</button>
-      <button onclick="loadExample('decision')">Decision Tree</button>
-      <button onclick="loadExample('process')">Process Flow</button>
-      <button onclick="loadExample('ierarchy')">Hierarchy</button>
-      <button onclick="loadExample('cycle')">Cycle</button>
-      <button onclick="loadExample('complex')">Complex</button>
+    <div class="example-section">
+      <div class="example-label">Quick Examples</div>
+      <div class="example-buttons" id="examples"></div>
     </div>
 
-    <button class="render-button" onclick="renderDiagram()">Render Diagram</button>
+    <button class="render-btn" onclick="renderDiagram()">Render Diagram</button>
   </div>
 
-  <div class="mermaid-stats">
-    Nodes: <span id="node-count">0</span> | Edges: <span id="edge-count">0</span> | Layout: <span id="current-layout">Hierarchical</span>
+  <div class="stats">
+    Nodes: <span id="node-count">0</span>
+    Edges: <span id="edge-count">0</span>
+    Clusters: <span id="cluster-count">0</span>
+    Format: <span id="format-label">Mermaid</span>
   </div>
 
   <script type="module">
@@ -184,95 +217,181 @@
       SpaceGraph,
       MermaidPlugin,
       MinimapPlugin,
-      HUDPlugin,
       injectMermaidStyles,
+      DiagramParserFactory,
     } from '@src/index.ts';
 
     injectMermaidStyles();
 
     const EXAMPLES = {
-      flowchart: `graph TD
-      A[Start] --> B{Decision}
-      B -->|Yes| C[Process 1]
-      B -->|No| D[Process 2]
-      C --> E((End))
-      D --> E`,
-
-      decision: `graph TD
-      A{Is it working?}
-      A -->|Yes| B[Great!]
-      A -->|No| C[Debug]
-      C --> D{Fixed?}
-      D -->|Yes| B
-      D -->|No| E[Ask for help]
-      E --> C`,
-
-      process: `graph LR
-      A[Design] --> B[Implement]
-      B --> C[Test]
-      C --> D{Approved?}
-      D -->|Yes| E[Deploy]
-      D -->|No| B`,
-
-      hierarchy: `graph TB
-      A[CEO] --> B[CTO]
-      A --> C[CFO]
-      A --> D[COO]
-      B --> E[Engineering]
-      B --> F[Product]
-      C --> G[Finance]
-      D --> H[Operations]`,
-
-      cycle: `graph LR
-      A[Plan] --> B[Execute]
-      B --> C[Review]
-      C -->|Good| D[Complete]
-      C -->|Bad| A`,
-
-      complex: `graph TD
-      subgraph Input
-        A[User Request]
-      end
-      A --> B{Valid?}
-      B -->|No| C[Error Handler]
-      C --> A
-      B -->|Yes| D[Process]
-      D --> E[Database]
-      E --> F{Cache?}
-      F -->|Yes| G[Return Cached]
-      F -->|No| H[Compute]
-      H --> I[Update Cache]
-      I --> G
-      G --> J((Response))`,
+      mermaid: {
+        flowchart: `graph TD
+    A[Start] --> B{Decision}
+    B -->|Yes| C[Process 1]
+    B -->|No| D[Process 2]
+    C --> E((End))
+    D --> E`,
+        hierarchy: `graph TB
+    A[CEO] --> B[CTO]
+    A --> C[CFO]
+    A --> D[COO]
+    B --> E[Engineering]
+    B --> F[Product]
+    C --> G[Finance]
+    D --> H[Operations]`,
+        decision: `graph TD
+    A{Is it working?}
+    A -->|Yes| B[Great!]
+    A -->|No| C[Debug]
+    C --> D{Fixed?}
+    D -->|Yes| B
+    D -->|No| E[Ask for help]
+    E --> C`,
+        cycle: `graph LR
+    A[Plan] --> B[Execute]
+    B --> C[Review]
+    C -->|Good| D[Complete]
+    C -->|Bad| A`,
+        subgraph: `graph TD
+    subgraph Frontend
+      A[User Interface]
+      B[State Management]
+      A --> B
+    end
+    subgraph Backend
+      C[API Server]
+      D[Database]
+      C --> D
+    end
+    B --> C`,
+        complex: `graph TD
+    subgraph Input
+      A[User Request]
+    end
+    A --> B{Valid?}
+    B -->|No| C[Error Handler]
+    C --> A
+    B -->|Yes| D[Process]
+    D --> E[Database]
+    E --> F{Cache?}
+    F -->|Yes| G[Return Cached]
+    F -->|No| H[Compute]
+    H --> I[Update Cache]
+    I --> G
+    G --> J((Response))`,
+      },
+      dot: {
+        basic: `digraph G {
+    A -> B -> C;
+    B -> D;
+    A [label="Start"];
+    B [shape=box];
+    C [shape=ellipse];
+    D [shape=diamond];
+}`,
+        styled: `digraph G {
+    rankdir=LR;
+    A [label="Input", shape=box, style=filled, fillcolor="#8b5cf6"];
+    B [label="Process", shape=ellipse, style=filled, fillcolor="#6366f1"];
+    C [label="Output", shape=box, style=filled, fillcolor="#10b981"];
+    A -> B -> C;
+    B -> A [style=dashed, color=gray];
+}`,
+      },
+      graphml: `<?xml version="1.0" encoding="UTF-8"?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns">
+  <key id="d0" for="node" attr.name="label" attr.type="string"/>
+  <key id="d1" for="edge" attr.name="label" attr.type="string"/>
+  <graph edgedefault="directed">
+    <node id="n1"><data key="d0">A</data></node>
+    <node id="n2"><data key="d0">B</data></node>
+    <node id="n3"><data key="d0">C</data></node>
+    <edge source="n1" target="n2"><data key="d1">links to</data></edge>
+    <edge source="n2" target="n3"/>
+  </graph>
+</graphml>`,
+      json: {
+        basic: `{
+  "nodes": [
+    {"id": "a", "label": "Start", "shape": "rect"},
+    {"id": "b", "label": "Process", "shape": "round"},
+    {"id": "c", "label": "End", "shape": "circle"}
+  ],
+  "edges": [
+    {"source": "a", "target": "b"},
+    {"source": "b", "target": "c"}
+  ]
+}`,
+        withLabels: `{
+  "nodes": [
+    {"id": "a", "label": "Input"},
+    {"id": "b", "label": "Process"},
+    {"id": "c", "label": "Output"}
+  ],
+  "edges": [
+    {"source": "a", "target": "b", "label": "data"},
+    {"source": "b", "target": "c", "label": "result"}
+  ]
+}`,
+      },
     };
+
+    const EXTERNAL_EXAMPLES = [
+      { name: 'Flowchart', format: 'mermaid', key: 'flowchart' },
+      { name: 'Hierarchy', format: 'mermaid', key: 'hierarchy' },
+      { name: 'Decision', format: 'mermaid', key: 'decision' },
+      { name: 'Cycle', format: 'mermaid', key: 'cycle' },
+      { name: 'Subgraphs', format: 'mermaid', key: 'subgraph' },
+      { name: 'Complex', format: 'mermaid', key: 'complex' },
+      { name: 'DOT Basic', format: 'dot', key: 'basic' },
+      { name: 'DOT Styled', format: 'dot', key: 'styled' },
+      { name: 'GraphML', format: 'graphml', key: 'graphml' },
+      { name: 'JSON Basic', format: 'json', key: 'basic' },
+      { name: 'JSON Labels', format: 'json', key: 'withLabels' },
+    ];
 
     let sg = null;
     let mermaidPlugin = null;
-    let currentLayout = 'hierarchical';
+    let currentFormat = 'mermaid';
 
-    const LAYOUT_LABELS = {
-      force: 'Force Directed',
-      circular: 'Circular',
-      grid: 'Grid',
-      hierarchical: 'Hierarchical',
-      radial: 'Radial',
-      tree: 'Tree',
-      spectral: 'Spectral',
-      cluster: 'Cluster',
-    };
+    function populateExamples(format) {
+      const container = document.getElementById('examples');
+      container.innerHTML = '';
+      EXTERNAL_EXAMPLES
+        .filter(e => e.format === format)
+        .forEach(example => {
+          const btn = document.createElement('button');
+          btn.textContent = example.name;
+          btn.onclick = () => loadExample(example.format, example.key);
+          container.appendChild(btn);
+        });
+    }
+
+    function loadExample(format, key) {
+      const code = EXAMPLES[format]?.[key];
+      if (code) {
+        document.getElementById('code').value = code;
+        currentFormat = format;
+        updateFormatTabs();
+        renderDiagram();
+      }
+    }
+
+    function updateFormatTabs() {
+      document.querySelectorAll('.format-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.format === currentFormat);
+      });
+    }
 
     async function init() {
-      const initialCode = document.getElementById('mermaid-code').value;
-
-      sg = await SpaceGraph.create('#container', {
-        nodes: [],
-        edges: [],
-      });
+      sg = await SpaceGraph.create('#container', { nodes: [], edges: [] });
 
       mermaidPlugin = new MermaidPlugin({
         defaultLayout: 'hierarchical',
         defaultTheme: 'default',
         showHud: true,
+        autoAnimate: true,
+        enableSubgraphs: true,
       });
 
       sg.pluginManager.register('MermaidPlugin', mermaidPlugin);
@@ -282,35 +401,38 @@
       sg.pluginManager.register('MinimapPlugin', minimap);
       minimap.init(sg, sg.graph, sg.events);
 
+      document.querySelectorAll('.format-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          currentFormat = tab.dataset.format;
+          updateFormatTabs();
+          populateExamples(currentFormat);
+          document.getElementById('code').value = EXAMPLES[currentFormat]?.flowchart ||
+            EXAMPLES[currentFormat]?.basic || '';
+        });
+      });
+
+      populateExamples('mermaid');
       renderDiagram();
     }
 
-    window.loadExample = function(name) {
-      const code = EXAMPLES[name];
-      if (code) {
-        document.getElementById('mermaid-code').value = code;
-        renderDiagram();
-      }
-    };
-
     window.renderDiagram = function() {
-      const code = document.getElementById('mermaid-code').value;
+      const code = document.getElementById('code').value;
       if (mermaidPlugin && code.trim()) {
-        mermaidPlugin.parseAndRender(code);
+        const detectedFormat = DiagramParserFactory.detectFormat(code);
+        mermaidPlugin.parseAndRender(code, detectedFormat);
+        currentFormat = detectedFormat;
+        document.getElementById('format-label').textContent = detectedFormat.toUpperCase();
 
-        setTimeout(() => {
-          updateStats();
-        }, 500);
+        setTimeout(updateStats, 500);
       }
     };
 
     function updateStats() {
       if (!sg) return;
-      const nodes = sg.graph.getNodeCount();
-      const edges = sg.graph.getEdgeCount();
-      document.getElementById('node-count').textContent = nodes;
-      document.getElementById('edge-count').textContent = edges;
-      document.getElementById('current-layout').textContent = LAYOUT_LABELS[currentLayout] || currentLayout;
+      const result = mermaidPlugin.getParseResult();
+      document.getElementById('node-count').textContent = result?.nodes.length || 0;
+      document.getElementById('edge-count').textContent = result?.edges.length || 0;
+      document.getElementById('cluster-count').textContent = result?.clusters.length || 0;
     }
 
     init().catch(console.error);
