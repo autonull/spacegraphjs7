@@ -1,6 +1,7 @@
 import type { SpaceGraph } from '../../SpaceGraph';
 import type { Node } from '../../nodes/Node';
 import type { Edge } from '../../edges/Edge';
+import { applyControlStateStyles, type ControlState } from './ControlStateBorder';
 
 /**
  * Hover manager for InteractionPlugin
@@ -28,6 +29,7 @@ export class HoverManager {
         if (this.hoveredNode && this.hoveredNode.object) {
             this.sg.events.emit('node:pointerleave', { node: this.hoveredNode } as any);
             this.hoveredNode.object.scale.divideScalar(HoverManager.HOVER_SCALE);
+            this.updateNodeState(this.hoveredNode, 'normal');
             if (typeof this.hoveredNode.onPointerLeave === 'function') {
                 this.hoveredNode.onPointerLeave();
             }
@@ -38,9 +40,18 @@ export class HoverManager {
         if (this.hoveredNode && this.hoveredNode.object) {
             this.sg.events.emit('node:pointerenter', { node: this.hoveredNode } as any);
             this.hoveredNode.object.scale.multiplyScalar(HoverManager.HOVER_SCALE);
+            this.updateNodeState(this.hoveredNode, 'hovered');
             if (typeof this.hoveredNode.onPointerEnter === 'function') {
                 this.hoveredNode.onPointerEnter();
             }
+        }
+    }
+
+    private updateNodeState(node: Node, state: ControlState): void {
+        const prevState = node.controlState;
+        node.controlState = state;
+        if (node.object?.userData?.domElement) {
+            applyControlStateStyles(node.object.userData.domElement as HTMLElement, state, prevState);
         }
     }
 

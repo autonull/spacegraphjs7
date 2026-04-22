@@ -4,6 +4,7 @@ import { ThreeDisposer } from '../utils/ThreeDisposer';
 import { Surface, type HitResult, type Rect, type Bounds3D } from '../core/Surface';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec, NodeData, AnimationProps } from '../types';
+import { type ControlState } from '../plugins/interaction/ControlStateBorder';
 
 export type NodeEventMap = {
     'node:updated': { node: Node; changes: Partial<NodeSpec>; timestamp: number };
@@ -19,6 +20,7 @@ export abstract class Node extends Surface {
     public position: THREE.Vector3;
     public rotation: THREE.Vector3;
     public scale: THREE.Vector3;
+    public controlState: ControlState = 'normal';
     abstract readonly object: THREE.Object3D;
 
     get worldMatrix(): THREE.Matrix4 {
@@ -160,6 +162,15 @@ export abstract class Node extends Surface {
         this.object?.position.copy(this.position);
         return this;
     }
+
+    public onPointerEnter?: () => void;
+    public onPointerLeave?: () => void;
+    public onClick?: (node: this) => void;
+    public onDoubleClick?: (node: this) => void;
+    public onDragStart?: (node: this) => void;
+    public onDragging?: (node: this) => void;
+    public onDragStop?: (node: this) => void;
+    public actions?: Array<{ icon: string; label: string; action: string }>;
 
     scaleUniform(s: number): this {
         this.object.scale.set(s, s, s);

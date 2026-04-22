@@ -30,3 +30,7 @@ export { SpatialIndex, BVH } from './spatial/SpatialIndex';
 // Re-export main SpaceGraph from parent
 export { SpaceGraph } from '../SpaceGraph';
 export type { SpaceGraphOptions } from '../types';
+
+// Property System
+export { Property, type PropertyChange } from './Property';
+export { ComputedProperty } from './ComputedProperty';

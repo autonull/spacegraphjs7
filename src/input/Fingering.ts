@@ -23,6 +23,9 @@ export abstract class Fingering {
     startMultiTouch?(finger1: Finger, finger2: Finger): boolean;
     updateMultiTouch?(finger1: Finger, finger2: Finger): boolean;
     stopMultiTouch?(): void;
+    onDragStart?(finger: Finger): void;
+    onDragging?(finger: Finger): void;
+    onDragStop?(finger: Finger): void;
 }
 
 export class FingerManager {

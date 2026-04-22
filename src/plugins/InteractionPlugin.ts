@@ -13,6 +13,7 @@ import { DragHandler } from './interaction/DragHandler';
 import { ConnectionHandler } from './interaction/ConnectionHandler';
 import { ResizeHandler } from './interaction/ResizeHandler';
 import { KeyboardShortcuts } from './interaction/KeyboardShortcuts';
+import { type Pressable, type Zoomable, type PickResult } from '../input/interfaces/Tangible';
 import {
     NodeDraggingFingering,
     HoverFingering,
@@ -41,6 +42,7 @@ export class InteractionPlugin implements Plugin {
     private _mode: 'default' | 'select' | 'connect' = 'default';
     private pointerDownPosition = new THREE.Vector2();
     private lastZoomedId: string | null = null;
+    private lastPressedNode: Node | null = null;
 
     get mode(): 'default' | 'select' | 'connect' {
         return this._mode;
@@ -152,6 +154,18 @@ export class InteractionPlugin implements Plugin {
                 return;
             }
 
+            const node = nodeResult.node;
+            const pickResult: PickResult = {
+                node,
+                point: nodeResult.hit?.point ?? new THREE.Vector3(),
+                distance: nodeResult.hit?.distance ?? 0,
+            };
+
+            if (node instanceof Pressable) {
+                node.onPressStart?.(pickResult);
+                this.lastPressedNode = node;
+            }
+
             this.dragHandler.startDrag(nodeResult.node);
             this.cursorManager.set('grabbing', 'drag');
         }
@@ -159,6 +173,9 @@ export class InteractionPlugin implements Plugin {
         if (nodeResult?.node && e.button === 1) {
             e.originalEvent?.preventDefault();
             const node = nodeResult.node;
+            if (node instanceof Zoomable && node.isZoomable?.()) {
+                node.onZoomStart?.();
+            }
             const radius = Math.max(
                 (((node.data as Record<string, unknown>)?.width as number) ?? 100) * 1.5,
                 150,
@@ -206,6 +223,18 @@ export class InteractionPlugin implements Plugin {
     }
 
     private handlePointerUp(_e: any): void {
+        if (this.lastPressedNode) {
+            const pickResult: PickResult = {
+                node: this.lastPressedNode,
+                point: new THREE.Vector3(),
+                distance: 0,
+            };
+            if (this.lastPressedNode instanceof Pressable) {
+                this.lastPressedNode.onPressStop?.(pickResult);
+            }
+            this.lastPressedNode = null;
+        }
+
         if (this.dragHandler.isDraggingNode()) {
             this.dragHandler.endDrag();
             this.cursorManager.clear('drag');

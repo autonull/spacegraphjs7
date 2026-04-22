@@ -2,6 +2,7 @@ import type { SpaceGraph } from '../../SpaceGraph';
 import type { Node } from '../../nodes/Node';
 import type { Edge } from '../../edges/Edge';
 import { DOMUtils } from '../../utils/DOMUtils';
+import { applyControlStateStyles } from './ControlStateBorder';
 
 /**
  * Selection manager for InteractionPlugin
@@ -120,18 +121,32 @@ export class SelectionManager {
 
     addNode(node: Node): void {
         this.selectedNodes.add(node);
+        node.controlState = 'selected';
+        this.updateNodeVisualState(node, 'selected');
         this.emitSelectionChange();
     }
 
     removeNode(node: Node): void {
         this.selectedNodes.delete(node);
+        node.controlState = 'normal';
+        this.updateNodeVisualState(node, 'normal');
         this.emitSelectionChange();
     }
 
     clear(): void {
+        for (const node of this.selectedNodes) {
+            node.controlState = 'normal';
+            this.updateNodeVisualState(node, 'normal');
+        }
         this.selectedNodes.clear();
         this.selectedEdges.clear();
         this.emitSelectionChange();
+    }
+
+    private updateNodeVisualState(node: Node, state: 'selected' | 'normal'): void {
+        if (node.object?.userData?.domElement) {
+            applyControlStateStyles(node.object.userData.domElement as HTMLElement, state);
+        }
     }
 
     private emitSelectionChange(): void {
