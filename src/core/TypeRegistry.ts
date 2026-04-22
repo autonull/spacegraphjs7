@@ -69,7 +69,7 @@ export class TypeRegistry {
                 `Unknown node type: ${spec.type}. Registered: ${this.getNodeTypes().join(', ')}`,
             );
         }
-        return new constructor(sg!, spec);
+        return new constructor(sg ?? ({} as SpaceGraph), spec);
     }
 
     createEdge(
@@ -89,7 +89,7 @@ export class TypeRegistry {
                 `Unknown edge type: ${spec.type}. Registered: ${this.getEdgeTypes().join(', ')}`,
             );
         }
-        return new constructor(sg!, spec, source, target);
+        return new constructor(sg ?? ({} as SpaceGraph), spec, source, target);
     }
 
     clear(): void {

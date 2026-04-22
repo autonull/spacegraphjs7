@@ -64,14 +64,22 @@ export class SpaceGraphApp {
     private currentSelectedEdges: Edge[] = [];
     private originalColors = new Map<Node, number>();
     private originalEdgeColors = new Map<Edge, number>();
-    public buttons: AppButtonConfig[] = [];
-    public toolbarActions: AppButtonConfig[] = [];
-    private _zoomSliderHandler?: () => void;
+public buttons: AppButtonConfig[] = [];
+public toolbarActions: AppButtonConfig[] = [];
+private _zoomSliderHandler?: () => void;
 
-    private constructor(sg: SpaceGraph, options: SpaceGraphAppOptions) {
-        this.sg = sg;
-        this.options = options;
-    }
+private _emitSelectionChanged(): void {
+this.sg.events.emit('selection:changed', {
+nodes: this.currentSelected.map((n) => n.id),
+edges: this.currentSelectedEdges.map((e) => e.id),
+timestamp: Date.now(),
+});
+}
+
+private constructor(sg: SpaceGraph, options: SpaceGraphAppOptions) {
+this.sg = sg;
+this.options = options;
+}
 
     static async create(
         container: HTMLElement | string,
@@ -139,60 +147,67 @@ export class SpaceGraphApp {
         setTheme(this, theme ?? {});
     }
 
-    public setMode(mode: 'default' | 'select' | 'connect') {
-        const interaction = this.sg.pluginManager.getPlugin('interaction') as InteractionPlugin;
-        if (interaction) interaction.mode = mode;
-    }
+public setMode(mode: 'default' | 'select' | 'connect') {
+const interaction = this.sg.pluginManager.getPlugin('interaction') as InteractionPlugin;
+if (interaction) interaction.mode = mode;
+}
 
-    public clearSelectionStyles() {
-        for (const node of this.currentSelected) {
-            if (node instanceof HtmlNode && this.options.selectionHighlightClass) {
-                node.domElement.classList.remove(this.options.selectionHighlightClass);
-            } else if (this.options.selectionHighlightColor && this.originalColors.has(node)) {
-                node.updateSpec({ data: { color: this.originalColors.get(node) } });
-            }
-        }
-        this.originalColors.clear();
+private _clearNodeStyle(node: Node): void {
+if (node instanceof HtmlNode && this.options.selectionHighlightClass) {
+node.domElement.classList.remove(this.options.selectionHighlightClass);
+} else if (this.options.selectionHighlightColor && this.originalColors.has(node)) {
+node.updateSpec({ data: { color: this.originalColors.get(node) } });
+}
+}
 
-        for (const edge of this.currentSelectedEdges) {
-            if (this.options.selectionHighlightEdgeColor && this.originalEdgeColors.has(edge)) {
-                edge.updateSpec({ data: { color: this.originalEdgeColors.get(edge) } });
-            }
-        }
-        this.originalEdgeColors.clear();
-    }
+private _applyNodeStyle(node: Node): void {
+if (node instanceof HtmlNode && this.options.selectionHighlightClass) {
+node.domElement.classList.add(this.options.selectionHighlightClass);
+} else if (
+this.options.selectionHighlightColor &&
+node.data?.color !== undefined &&
+typeof node.updateSpec === 'function'
+) {
+this.originalColors.set(node, node.data.color as number);
+node.updateSpec({
+data: { ...node.data, color: this.options.selectionHighlightColor },
+});
+}
+}
 
-    public applySelectionStyles() {
-        for (const node of this.currentSelected) {
-            if (node instanceof HtmlNode && this.options.selectionHighlightClass) {
-                node.domElement.classList.add(this.options.selectionHighlightClass);
-            } else if (
-                this.options.selectionHighlightColor &&
-                node.data?.color !== undefined &&
-                typeof node.updateSpec === 'function'
-            ) {
-                this.originalColors.set(node, node.data.color as number);
-                node.updateSpec({
-                    data: { ...node.data, color: this.options.selectionHighlightColor },
-                });
-            }
-        }
+private _clearEdgeStyle(edge: Edge): void {
+if (this.options.selectionHighlightEdgeColor && this.originalEdgeColors.has(edge)) {
+edge.updateSpec({ data: { color: this.originalEdgeColors.get(edge) } });
+}
+}
 
-        for (const edge of this.currentSelectedEdges) {
-            if (
-                this.options.selectionHighlightEdgeColor &&
-                edge.data?.color !== undefined &&
-                typeof edge.updateSpec === 'function'
-            ) {
-                this.originalEdgeColors.set(edge, edge.data.color as number);
-                edge.updateSpec({
-                    data: { ...edge.data, color: this.options.selectionHighlightEdgeColor },
-                });
-            }
-        }
-    }
+private _applyEdgeStyle(edge: Edge): void {
+if (
+this.options.selectionHighlightEdgeColor &&
+edge.data?.color !== undefined &&
+typeof edge.updateSpec === 'function'
+) {
+this.originalEdgeColors.set(edge, edge.data.color as number);
+edge.updateSpec({
+data: { ...edge.data, color: this.options.selectionHighlightEdgeColor },
+});
+}
+}
 
-    public addToolbarAction(config: AppButtonConfig) {
+public clearSelectionStyles() {
+for (const node of this.currentSelected) this._clearNodeStyle(node);
+this.originalColors.clear();
+
+for (const edge of this.currentSelectedEdges) this._clearEdgeStyle(edge);
+this.originalEdgeColors.clear();
+}
+
+public applySelectionStyles() {
+for (const node of this.currentSelected) this._applyNodeStyle(node);
+for (const edge of this.currentSelectedEdges) this._applyEdgeStyle(edge);
+}
+
+public addToolbarAction(config: AppButtonConfig) {
         this.toolbarActions.push(config);
         renderToolbarActions(this);
     }
@@ -235,14 +250,10 @@ export class SpaceGraphApp {
         return this.sg.export();
     }
 
-    public importData(data: any) {
-        this.sg.import(data);
-        this.sg.events.emit('selection:changed', {
-            nodes: this.currentSelected.map((n) => n.id),
-            edges: this.currentSelectedEdges.map((e) => e.id),
-            timestamp: Date.now(),
-        });
-    }
+public importData(data: any) {
+this.sg.import(data);
+this._emitSelectionChanged();
+}
 
     public focusOnNodes(nodeIds: string[], padding = 100, duration = 1.5) {
         const nodes = nodeIds
@@ -256,70 +267,50 @@ export class SpaceGraphApp {
         }
     }
 
-    public addNode(nodeSpec: any) {
-        this.sg.graph.addNode(nodeSpec);
-        this.sg.events.emit('selection:changed', {
-            nodes: this.currentSelected.map((n) => n.id),
-            edges: this.currentSelectedEdges.map((e) => e.id),
-            timestamp: Date.now(),
-        });
-    }
+public addNode(nodeSpec: any) {
+this.sg.graph.addNode(nodeSpec);
+this._emitSelectionChanged();
+}
 
     public updateNode(nodeId: string, nodeSpec: any) {
         this.sg.graph.updateNode(nodeId, nodeSpec);
     }
 
-    public removeNode(nodeId: string) {
-        const node = this.sg.graph.getNode(nodeId);
-        if (node) {
-            const index = this.currentSelected.indexOf(node);
-            if (index > -1) this.currentSelected.splice(index, 1);
-            this.sg.graph.removeNode(nodeId);
-            this.sg.events.emit('selection:changed', {
-                nodes: this.currentSelected.map((n) => n.id),
-                edges: this.currentSelectedEdges.map((e) => e.id),
-                timestamp: Date.now(),
-            });
-        }
-    }
+public removeNode(nodeId: string) {
+const node = this.sg.graph.getNode(nodeId);
+if (node) {
+const index = this.currentSelected.indexOf(node);
+if (index > -1) this.currentSelected.splice(index, 1);
+this.sg.graph.removeNode(nodeId);
+this._emitSelectionChanged();
+}
+}
 
-    public addEdge(edgeSpec: any) {
-        this.sg.graph.addEdge(edgeSpec);
-        this.sg.events.emit('selection:changed', {
-            nodes: this.currentSelected.map((n) => n.id),
-            edges: this.currentSelectedEdges.map((e) => e.id),
-            timestamp: Date.now(),
-        });
-    }
+public addEdge(edgeSpec: any) {
+this.sg.graph.addEdge(edgeSpec);
+this._emitSelectionChanged();
+}
 
     public updateEdge(edgeId: string, edgeSpec: any) {
         this.sg.graph.updateEdge(edgeId, edgeSpec);
     }
 
-    public removeEdge(edgeId: string) {
-        const edge = this.sg.graph.getEdge(edgeId);
-        if (edge) {
-            const index = this.currentSelectedEdges.indexOf(edge);
-            if (index > -1) this.currentSelectedEdges.splice(index, 1);
-            this.sg.graph.removeEdge(edgeId);
-            this.sg.events.emit('selection:changed', {
-                nodes: this.currentSelected.map((n) => n.id),
-                edges: this.currentSelectedEdges.map((e) => e.id),
-                timestamp: Date.now(),
-            });
-        }
-    }
+public removeEdge(edgeId: string) {
+const edge = this.sg.graph.getEdge(edgeId);
+if (edge) {
+const index = this.currentSelectedEdges.indexOf(edge);
+if (index > -1) this.currentSelectedEdges.splice(index, 1);
+this.sg.graph.removeEdge(edgeId);
+this._emitSelectionChanged();
+}
+}
 
-    public clearSelection() {
-        this.clearSelectionStyles();
-        this.currentSelected = [];
-        this.currentSelectedEdges = [];
-        this.sg.events.emit('selection:changed', {
-            nodes: [],
-            edges: [],
-            timestamp: Date.now(),
-        });
-    }
+public clearSelection() {
+this.clearSelectionStyles();
+this.currentSelected = [];
+this.currentSelectedEdges = [];
+this._emitSelectionChanged();
+}
 
     public getSelectedNodes(): Node[] {
         return this.currentSelected;

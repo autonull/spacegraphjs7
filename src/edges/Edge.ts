@@ -279,68 +279,62 @@ export class Edge extends Surface {
         updateArrowhead(this.arrowheads.source, sourcePos, targetPos);
     }
 
-    setHighlight(highlight: boolean): void {
-        this.isHighlighted = highlight;
-        const mat = this.line?.material;
-        if (!mat) return;
+private _setArrowheadStyle(arrowhead: THREE.Mesh | null, opacity: number, color?: number): void {
+if (arrowhead?.material instanceof THREE.MeshBasicMaterial) {
+if (color !== undefined) arrowhead.material.color.setHex(color);
+arrowhead.material.opacity = opacity;
+}
+}
 
-        mat.opacity = highlight ? Edge.HIGHLIGHT_OPACITY : Edge.DEFAULT_OPACITY;
-        const thicknessMultiplier =
-            this.data.gradientColors?.length === 2 && mat.vertexColors ? 2.0 : 1.5;
-        mat.linewidth = highlight
-            ? (this.data.thickness ?? 3) * thicknessMultiplier
-            : (this.data.thickness ?? 3);
+setHighlight(highlight: boolean): void {
+this.isHighlighted = highlight;
+const mat = this.line?.material;
+if (!mat) return;
 
-        if (!mat.vertexColors)
-            mat.color.set(highlight ? Edge.HIGHLIGHT_COLOR : (this.data.color ?? 0x00d0ff));
-        mat.needsUpdate = true;
+mat.opacity = highlight ? Edge.HIGHLIGHT_OPACITY : Edge.DEFAULT_OPACITY;
+const thicknessMultiplier =
+this.data.gradientColors?.length === 2 && mat.vertexColors ? 2.0 : 1.5;
+mat.linewidth = highlight
+? (this.data.thickness ?? 3) * thicknessMultiplier
+: (this.data.thickness ?? 3);
 
-        const highlightArrowhead = (arrowhead: THREE.Mesh | null) => {
-            if (arrowhead?.material instanceof THREE.MeshBasicMaterial) {
-                arrowhead.material.color.set(
-                    highlight
-                        ? Edge.HIGHLIGHT_COLOR
-                        : (this.data.arrowheadColor ?? this.data.color ?? 0x00d0ff),
-                );
-                arrowhead.material.opacity = highlight
-                    ? Edge.HIGHLIGHT_OPACITY
-                    : Edge.DEFAULT_OPACITY;
-            }
-        };
-        highlightArrowhead(this.arrowheads.source);
-        highlightArrowhead(this.arrowheads.target);
+if (!mat.vertexColors)
+mat.color.set(highlight ? Edge.HIGHLIGHT_COLOR : (this.data.color ?? 0x00d0ff));
+mat.needsUpdate = true;
 
-        if (highlight && this.isHovered) this.setHoverStyle(false, true);
-    }
+const arrowheadColor = highlight
+? Edge.HIGHLIGHT_COLOR
+: (this.data.arrowheadColor ?? this.data.color ?? 0x00d0ff);
+this._setArrowheadStyle(this.arrowheads.source, Edge.HIGHLIGHT_OPACITY, arrowheadColor);
+this._setArrowheadStyle(this.arrowheads.target, Edge.HIGHLIGHT_OPACITY, arrowheadColor);
 
-    setHoverStyle(hovered: boolean, force = false): void {
-        if (!force && this.isHighlighted) return;
-        const mat = this.line?.material;
-        if (!mat) return;
+if (highlight && this.isHovered) this.setHoverStyle(false, true);
+}
 
-        this.isHovered = hovered;
-        const baseThickness = this.data.thickness ?? 3;
+setHoverStyle(hovered: boolean, force = false): void {
+if (!force && this.isHighlighted) return;
+const mat = this.line?.material;
+if (!mat) return;
 
-        mat.opacity = hovered
-            ? Math.min(1.0, Edge.DEFAULT_OPACITY + Edge.DEFAULT_HOVER_OPACITY_BOOST)
-            : Edge.DEFAULT_OPACITY;
-        mat.linewidth = hovered
-            ? baseThickness * Edge.DEFAULT_HOVER_THICKNESS_MULTIPLIER
-            : baseThickness;
-        mat.needsUpdate = true;
+this.isHovered = hovered;
+const baseThickness = this.data.thickness ?? 3;
 
-        if (!this.isHighlighted) {
-            const hoverArrowhead = (arrowhead: THREE.Mesh | null) => {
-                if (arrowhead?.material instanceof THREE.MeshBasicMaterial) {
-                    arrowhead.material.opacity = hovered
-                        ? Math.min(1.0, Edge.DEFAULT_OPACITY + Edge.DEFAULT_HOVER_OPACITY_BOOST)
-                        : Edge.DEFAULT_OPACITY;
-                }
-            };
-            hoverArrowhead(this.arrowheads.source);
-            hoverArrowhead(this.arrowheads.target);
-        }
-    }
+mat.opacity = hovered
+? Math.min(1.0, Edge.DEFAULT_OPACITY + Edge.DEFAULT_HOVER_OPACITY_BOOST)
+: Edge.DEFAULT_OPACITY;
+mat.linewidth = hovered
+? baseThickness * Edge.DEFAULT_HOVER_THICKNESS_MULTIPLIER
+: baseThickness;
+mat.needsUpdate = true;
+
+if (!this.isHighlighted) {
+const hoverOpacity = hovered
+? Math.min(1.0, Edge.DEFAULT_OPACITY + Edge.DEFAULT_HOVER_OPACITY_BOOST)
+: Edge.DEFAULT_OPACITY;
+this._setArrowheadStyle(this.arrowheads.source, hoverOpacity);
+this._setArrowheadStyle(this.arrowheads.target, hoverOpacity);
+}
+}
 
     get bounds(): Rect {
         const box = new THREE.Box3().setFromObject(this.line);

@@ -42,7 +42,8 @@
         "test:screenshots": "mkdir -p test/screenshots && playwright test test/e2e/demo-screenshots.spec.ts --reporter=list",
         "test:demo-errors": "playwright test test/e2e/demo-errors.spec.ts --reporter=list",
         "test:all-demos": "pnpm run test:demo-errors && pnpm run test:screenshots",
-        "test:behavioral": "playwright test test/e2e/behavioral.spec.ts --reporter=list"
+        "test:behavioral": "playwright test test/e2e/behavioral.spec.ts --reporter=list",
+        "test:full": "pnpm test"
     },
     "peerDependencies": {
         "chart.js": "^4.5.1",

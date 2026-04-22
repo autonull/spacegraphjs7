@@ -298,33 +298,39 @@ export class InputManager {
             worldRay: this.computeWorldRay(ndc)
         };
 
-        if (event.type === 'pointerdown') {
-            this.fingerManager.setFinger(finger.pointerId, finger);
-            for (const { fingering } of this.fingerings) {
-                if (this.fingerManager.test(fingering, finger)) {
-                    event.consumed = true;
-                    return;
-                }
-            }
-        } else if (event.type === 'pointermove') {
-            const existing = this.fingerManager.getFinger(finger.pointerId);
-            if (existing) {
-                existing.position = finger.position;
-                existing.ndc = finger.ndc;
-                existing.buttons = finger.buttons;
-                existing.worldRay = finger.worldRay;
-                this.fingerManager.update(existing);
-            }
-        } else if (event.type === 'pointerup') {
-            const existing = this.fingerManager.getFinger(finger.pointerId);
-            if (existing) {
-                this.fingerManager.end(existing);
-                this.fingerManager.deleteFinger(finger.pointerId);
-            }
-        }
-    }
+switch (event.type) {
+case 'pointerdown':
+this.fingerManager.setFinger(finger.pointerId, finger);
+for (const { fingering } of this.fingerings) {
+if (this.fingerManager.test(fingering, finger)) {
+event.consumed = true;
+return;
+}
+}
+break;
+case 'pointermove': {
+const existing = this.fingerManager.getFinger(finger.pointerId);
+if (existing) {
+existing.position = finger.position;
+existing.ndc = finger.ndc;
+existing.buttons = finger.buttons;
+existing.worldRay = finger.worldRay;
+this.fingerManager.update(existing);
+}
+break;
+}
+case 'pointerup': {
+const existing = this.fingerManager.getFinger(finger.pointerId);
+if (existing) {
+this.fingerManager.end(existing);
+this.fingerManager.deleteFinger(finger.pointerId);
+}
+break;
+}
+}
+}
 
-    emit(eventType: string, data: unknown): void {
+emit(eventType: string, data: unknown): void {
         this.events.emit(eventType, data);
     }
 
@@ -424,116 +430,43 @@ export class InputSource {
 
     private normalizeEvent(type: InputEventType, originalEvent: unknown): InputEvent | null {
         const timestamp = Date.now();
+        const base = { type, source: this.id, timestamp, originalEvent, consumed: false };
+        const builders: Record<InputEventType, () => InputEvent> = {
+            keydown: () => ({ ...base, data: this.normalizeKeyEvent(originalEvent as KeyboardEvent) }),
+            keyup: () => ({ ...base, data: this.normalizeKeyEvent(originalEvent as KeyboardEvent) }),
+            mousedown: () => ({ ...base, data: this.normalizePointerEvent(originalEvent as MouseEvent) }),
+            mouseup: () => ({ ...base, data: this.normalizePointerEvent(originalEvent as MouseEvent) }),
+            mousemove: () => ({ ...base, data: this.normalizePointerEvent(originalEvent as MouseEvent) }),
+            mouseleave: () => ({ ...base, data: this.normalizePointerEvent(originalEvent as MouseEvent) }),
+            pointerdown: () => ({ ...base, data: this.normalizePointerEvent(originalEvent as MouseEvent) }),
+            pointerup: () => ({ ...base, data: this.normalizePointerEvent(originalEvent as MouseEvent) }),
+            pointermove: () => ({ ...base, data: this.normalizePointerEvent(originalEvent as MouseEvent) }),
+            wheel: () => ({ ...base, data: this.normalizeWheelEvent(originalEvent as WheelEvent) }),
+            touchstart: () => ({ ...base, data: this.normalizeTouchEvent(originalEvent as TouchEvent) }),
+            touchmove: () => ({ ...base, data: this.normalizeTouchEvent(originalEvent as TouchEvent) }),
+            touchend: () => ({ ...base, data: this.normalizeTouchEvent(originalEvent as TouchEvent) }),
+            touchcancel: () => ({ ...base, data: this.normalizeTouchEvent(originalEvent as TouchEvent) }),
+            dblclick: () => ({ ...base, data: this.normalizePointerEvent(originalEvent as MouseEvent) }),
+            contextmenu: () => ({ ...base, data: this.normalizePointerEvent(originalEvent as MouseEvent) }),
+        };
+        return builders[type]?.() ?? null;
+    }
 
-        switch (type) {
-            case 'keydown':
-            case 'keyup': {
-                const e = originalEvent as KeyboardEvent;
-                return {
-                    type,
-                    source: this.id,
-                    timestamp,
-                    data: {
-                        key: e.key,
-                        code: e.code,
-                        ctrlKey: e.ctrlKey,
-                        shiftKey: e.shiftKey,
-                        altKey: e.altKey,
-                        metaKey: e.metaKey,
-                        repeat: e.repeat,
-                    } as KeyEventData,
-                    originalEvent: e,
-                    consumed: false,
-                };
-            }
-            case 'mousedown':
-            case 'mouseup':
-            case 'mousemove':
-            case 'pointerdown':
-            case 'pointerup':
-            case 'pointermove': {
-                const e = originalEvent as MouseEvent | PointerEvent;
-                return {
-                    type,
-                    source: this.id,
-                    timestamp,
-                    data: {
-                        x: e.clientX,
-                        y: e.clientY,
-                        button: e.button,
-                        buttons: e.buttons,
-                        ctrlKey: e.ctrlKey,
-                        shiftKey: e.shiftKey,
-                        altKey: e.altKey,
-                        target: e.target as HTMLElement | null,
-                    } as PointerEventData,
-                    originalEvent: e,
-                    consumed: false,
-                };
-            }
-            case 'wheel': {
-                const e = originalEvent as WheelEvent;
-                return {
-                    type,
-                    source: this.id,
-                    timestamp,
-                    data: {
-                        x: e.clientX,
-                        y: e.clientY,
-                        deltaX: e.deltaX,
-                        deltaY: e.deltaY,
-                        deltaZ: e.deltaZ,
-                    } as WheelEventData,
-                    originalEvent: e,
-                    consumed: false,
-                };
-            }
-            case 'touchstart':
-            case 'touchmove':
-            case 'touchend':
-            case 'touchcancel': {
-                const e = originalEvent as TouchEvent;
-                const getTouches = (touches: TouchList) =>
-                    Array.from(touches).map((t) => ({
-                        identifier: t.identifier,
-                        x: t.clientX,
-                        y: t.clientY,
-                    }));
-                return {
-                    type,
-                    source: this.id,
-                    timestamp,
-                    data: {
-                        touches: getTouches(e.touches),
-                        changedTouches: getTouches(e.changedTouches),
-                    } as TouchEventData,
-                    originalEvent: e,
-                    consumed: false,
-                };
-            }
-            case 'dblclick':
-            case 'contextmenu': {
-                const e = originalEvent as MouseEvent;
-                return {
-                    type,
-                    source: this.id,
-                    timestamp,
-                    data: {
-                        x: e.clientX,
-                        y: e.clientY,
-                        button: e.button,
-                        ctrlKey: e.ctrlKey,
-                        shiftKey: e.shiftKey,
-                        altKey: e.altKey,
-                        target: e.target as HTMLElement | null,
-                    } as PointerEventData,
-                    originalEvent: e,
-                    consumed: false,
-                };
-            }
-            default:
-                return null;
-        }
+    private normalizeKeyEvent(e: KeyboardEvent): KeyEventData {
+        return { key: e.key, code: e.code, ctrlKey: e.ctrlKey, shiftKey: e.shiftKey, altKey: e.altKey, metaKey: e.metaKey, repeat: e.repeat };
+    }
+
+    private normalizePointerEvent(e: MouseEvent): PointerEventData {
+        return { x: e.clientX, y: e.clientY, button: e.button, buttons: e.buttons, ctrlKey: e.ctrlKey, shiftKey: e.shiftKey, altKey: e.altKey, target: e.target as HTMLElement | null };
+    }
+
+    private normalizeWheelEvent(e: WheelEvent): WheelEventData {
+        return { x: e.clientX, y: e.clientY, deltaX: e.deltaX, deltaY: e.deltaY, deltaZ: e.deltaZ };
+    }
+
+    private normalizeTouchEvent(e: TouchEvent): TouchEventData {
+        const map = (t: Touch) => ({ identifier: t.identifier, x: t.clientX, y: t.clientY });
+        return { touches: Array.from(e.touches).map(map), changedTouches: Array.from(e.changedTouches).map(map) };
     }
 
     dispose(): void {

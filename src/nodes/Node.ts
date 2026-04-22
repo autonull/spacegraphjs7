@@ -12,57 +12,53 @@ export type NodeEventMap = {
 };
 
 export abstract class Node extends Surface {
-    readonly id: string;
-    readonly type: string;
-    public sg?: SpaceGraph;
-    public label?: string;
-    public data: NodeData;
-    public position: THREE.Vector3;
-    public rotation: THREE.Vector3;
-    public scale: THREE.Vector3;
-    public controlState: ControlState = 'normal';
-    abstract readonly object: THREE.Object3D;
-    callbacks?: {
-        onPointerEnter?: () => void;
-        onPointerLeave?: () => void;
-        onClick?: (node: this) => void;
-        onDoubleClick?: (node: this) => void;
-        onDragStart?: (node: this) => void;
-        onDragging?: (node: this) => void;
-        onDragStop?: (node: this) => void;
-    };
-    actions?: Array<{ icon: string; label: string; action: string }>;
+readonly id: string;
+readonly type: string;
+public sg?: SpaceGraph;
+public label?: string;
+public data: NodeData;
+public position: THREE.Vector3;
+public rotation: THREE.Vector3;
+public scale: THREE.Vector3;
+public controlState: ControlState = 'normal';
+abstract readonly object: THREE.Object3D;
+callbacks?: {
+onPointerEnter?: () => void;
+onPointerLeave?: () => void;
+onClick?: (node: this) => void;
+onDoubleClick?: (node: this) => void;
+onDragStart?: (node: this) => void;
+onDragging?: (node: this) => void;
+onDragStop?: (node: this) => void;
+};
+actions?: Array<{ icon: string; label: string; action: string }>;
 
-    get worldMatrix(): THREE.Matrix4 {
-        return this.object.matrixWorld;
-    }
+get worldMatrix(): THREE.Matrix4 {
+return this.object.matrixWorld;
+}
 
-    constructor(sg?: SpaceGraph, spec?: NodeSpec);
-    constructor(sgOrSpec?: SpaceGraph | NodeSpec, maybeSpec?: NodeSpec) {
-        super();
-        const isSpecOnly = !!(sgOrSpec && 'id' in sgOrSpec);
-        this.sg = isSpecOnly ? undefined : (sgOrSpec as SpaceGraph);
-        const spec = isSpecOnly ? (sgOrSpec as NodeSpec) : maybeSpec;
-        this.id = spec?.id ?? '';
-        this.type = spec?.type ?? '';
-        this.label = spec?.label;
-        this.data = spec?.data ?? {};
-        this.position = new THREE.Vector3(
-            spec?.position?.[0] ?? 0,
-            spec?.position?.[1] ?? 0,
-            spec?.position?.[2] ?? 0,
-        );
-        this.rotation = new THREE.Vector3(
-            spec?.rotation?.[0] ?? 0,
-            spec?.rotation?.[1] ?? 0,
-            spec?.rotation?.[2] ?? 0,
-        );
-        this.scale = new THREE.Vector3(
-            spec?.scale?.[0] ?? 1,
-            spec?.scale?.[1] ?? 1,
-            spec?.scale?.[2] ?? 1,
-        );
-    }
+private static _parseVector3(spec: number[] | undefined, defaults: [number, number, number]): THREE.Vector3 {
+return new THREE.Vector3(
+spec?.[0] ?? defaults[0],
+spec?.[1] ?? defaults[1],
+spec?.[2] ?? defaults[2],
+);
+}
+
+constructor(sg?: SpaceGraph, spec?: NodeSpec);
+constructor(sgOrSpec?: SpaceGraph | NodeSpec, maybeSpec?: NodeSpec) {
+super();
+const isSpecOnly = !!(sgOrSpec && 'id' in sgOrSpec);
+this.sg = isSpecOnly ? undefined : (sgOrSpec as SpaceGraph);
+const spec = isSpecOnly ? (sgOrSpec as NodeSpec) : maybeSpec;
+this.id = spec?.id ?? '';
+this.type = spec?.type ?? '';
+this.label = spec?.label;
+this.data = spec?.data ?? {};
+this.position = Node._parseVector3(spec?.position, [0, 0, 0]);
+this.rotation = Node._parseVector3(spec?.rotation, [0, 0, 0]);
+this.scale = Node._parseVector3(spec?.scale, [1, 1, 1]);
+}
 
     get bounds(): Rect {
         const box = new THREE.Box3().setFromObject(this.object);

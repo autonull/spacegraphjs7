@@ -73,12 +73,12 @@ export class SelectionManager {
     addNode(node: Node): void { this.selectedNodes.add(node); node.controlState = 'selected'; this.updateNodeVisual(node, 'selected'); this.emitSelectionChange(); }
     removeNode(node: Node): void { this.selectedNodes.delete(node); node.controlState = 'normal'; this.updateNodeVisual(node, 'normal'); this.emitSelectionChange(); }
 
-    clear(): void {
-        this.selectedNodes.forEach((n) => { n.controlState = 'normal'; this.updateNodeVisual(n, 'normal'); });
-        this.selectedNodes.clear();
-        this.selectedEdges.clear();
-        this.emitSelectionChange();
-    }
+clear(): void {
+for (const n of this.selectedNodes) { n.controlState = 'normal'; this.updateNodeVisual(n, 'normal'); }
+this.selectedNodes.clear();
+this.selectedEdges.clear();
+this.emitSelectionChange();
+}
 
     private updateNodeVisual(node: Node, state: 'selected' | 'normal'): void {
         const el = node.object?.userData?.domElement;

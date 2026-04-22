@@ -4,7 +4,6 @@ import type { Plugin } from '../core/PluginManager';
 import type { Graph } from '../core/Graph';
 import type { EventSystem } from '../core/events/EventSystem';
 import type { Node } from '../nodes/Node';
-import type { Edge } from '../edges/Edge';
 import { InteractionRaycaster } from './interaction/RaycasterHelper';
 import { CursorManager, type CursorMode } from './interaction/CursorManager';
 import { HoverManager } from './interaction/HoverManager';
@@ -114,75 +113,86 @@ export class InteractionPlugin implements Plugin {
         this.sg.events.on('input:interaction:contextmenu', (e: any) => this.handleContextMenu(e));
     }
 
-    private handlePointerDown(e: any): void {
-        this.pointerDownPosition.set(e.x, e.y);
-        this.raycaster.updateMousePosition(e.x, e.y);
+private handlePointerDown(e: any): void {
+this.pointerDownPosition.set(e.x, e.y);
+this.raycaster.updateMousePosition(e.x, e.y);
 
-        if (e.button === 2 || e.shiftKey) {
-            e.originalEvent?.preventDefault();
-        }
+if (e.button === 2 || e.shiftKey) {
+e.originalEvent?.preventDefault();
+}
 
-        if (this.connectionHandler.isConnectingMode()) {
-            return;
-        }
+if (this.connectionHandler.isConnectingMode()) {
+return;
+}
 
-        const nodeResult = this.raycaster.raycastNode();
-        this.raycaster.raycastEdge();
+const nodeResult = this.raycaster.raycastNode();
+this.raycaster.raycastEdge();
 
-        if (e.button === 2 && nodeResult?.node) {
-            this.startContextMenu(nodeResult.node, e);
-            return;
-        }
+if (e.button === 2 && nodeResult?.node) {
+this.startContextMenu(nodeResult.node, e);
+return;
+}
 
-        if (e.shiftKey && e.button === 0) {
-            this.selectionManager.startBoxSelection(e.x, e.y);
-            this.cursorManager.set('crosshair', 'box-select');
-            return;
-        }
+if (e.shiftKey && e.button === 0) {
+this._handleBoxSelectionStart(e);
+return;
+}
 
-        if (nodeResult?.node && e.button === 0) {
-            const isResizeHandle = this.checkResizeHandle(nodeResult.node, e);
-            if (isResizeHandle) {
-                this.resizeHandler.startResize(nodeResult.node, e.x, e.y);
-                this.cursorManager.set('nwse-resize', 'resize');
-                return;
-            }
+if (nodeResult?.node && e.button === 0) {
+this._handleLeftClick(nodeResult, e);
+}
 
-            if (this._mode === 'connect') {
-                this.connectionHandler.startConnection(nodeResult.node);
-                this.cursorManager.set('crosshair', 'connection');
-                return;
-            }
+if (nodeResult?.node && e.button === 1) {
+this._handleMiddleClick(nodeResult.node, e);
+}
+}
 
-            const node = nodeResult.node;
-            const pickResult: PickResult = {
-                node,
-                point: nodeResult.hit?.point ?? new THREE.Vector3(),
-                distance: nodeResult.hit?.distance ?? 0,
-            };
+private _handleBoxSelectionStart(e: any): void {
+this.selectionManager.startBoxSelection(e.x, e.y);
+this.cursorManager.set('crosshair', 'box-select');
+}
 
-            if (node instanceof Pressable) {
-                node.onPressStart?.(pickResult);
-                this.lastPressedNode = node;
-            }
+private _handleLeftClick(nodeResult: any, e: any): void {
+const isResizeHandle = this.checkResizeHandle(nodeResult.node, e);
+if (isResizeHandle) {
+this.resizeHandler.startResize(nodeResult.node, e.x, e.y);
+this.cursorManager.set('nwse-resize', 'resize');
+return;
+}
 
-            this.dragHandler.startDrag(nodeResult.node);
-            this.cursorManager.set('grabbing', 'drag');
-        }
+if (this._mode === 'connect') {
+this.connectionHandler.startConnection(nodeResult.node);
+this.cursorManager.set('crosshair', 'connection');
+return;
+}
 
-        if (nodeResult?.node && e.button === 1) {
-            e.originalEvent?.preventDefault();
-            const node = nodeResult.node;
-            if (node instanceof Zoomable && node.isZoomable?.()) {
-                node.onZoomStart?.();
-            }
-            const radius = Math.max(
-                (((node.data as Record<string, unknown>)?.width as number) ?? 100) * 1.5,
-                150,
-            );
-            this.sg.cameraControls.flyTo(node.position, radius);
-        }
-    }
+const node = nodeResult.node;
+const pickResult: PickResult = {
+node,
+point: nodeResult.hit?.point ?? new THREE.Vector3(),
+distance: nodeResult.hit?.distance ?? 0,
+};
+
+if (node instanceof Pressable) {
+node.onPressStart?.(pickResult);
+this.lastPressedNode = node;
+}
+
+this.dragHandler.startDrag(nodeResult.node);
+this.cursorManager.set('grabbing', 'drag');
+}
+
+private _handleMiddleClick(node: Node, e: any): void {
+e.originalEvent?.preventDefault();
+if (node instanceof Zoomable && node.isZoomable?.()) {
+node.onZoomStart?.();
+}
+const radius = Math.max(
+(((node.data as Record<string, unknown>)?.width as number) ?? 100) * 1.5,
+150,
+);
+this.sg.cameraControls.flyTo(node.position, radius);
+}
 
     private handlePointerMove(e: any): void {
         this.raycaster.updateMousePosition(e.x, e.y);
