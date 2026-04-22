@@ -22,6 +22,16 @@ export abstract class Node extends Surface {
     public scale: THREE.Vector3;
     public controlState: ControlState = 'normal';
     abstract readonly object: THREE.Object3D;
+    callbacks?: {
+        onPointerEnter?: () => void;
+        onPointerLeave?: () => void;
+        onClick?: (node: this) => void;
+        onDoubleClick?: (node: this) => void;
+        onDragStart?: (node: this) => void;
+        onDragging?: (node: this) => void;
+        onDragStop?: (node: this) => void;
+    };
+    actions?: Array<{ icon: string; label: string; action: string }>;
 
     get worldMatrix(): THREE.Matrix4 {
         return this.object.matrixWorld;
@@ -162,15 +172,6 @@ export abstract class Node extends Surface {
         this.object?.position.copy(this.position);
         return this;
     }
-
-    public onPointerEnter?: () => void;
-    public onPointerLeave?: () => void;
-    public onClick?: (node: this) => void;
-    public onDoubleClick?: (node: this) => void;
-    public onDragStart?: (node: this) => void;
-    public onDragging?: (node: this) => void;
-    public onDragStop?: (node: this) => void;
-    public actions?: Array<{ icon: string; label: string; action: string }>;
 
     scaleUniform(s: number): this {
         this.object.scale.set(s, s, s);
