@@ -1,17 +1,19 @@
 export {
-    DEG2RAD,
-    RAD2DEG,
-    clamp,
-    lerp,
-    mergeDeep,
-    randomRange,
-    randomInt,
-    smoothstep,
-    mapRange,
-    safeClone,
+  DEG2RAD,
+  RAD2DEG,
+  clamp,
+  lerp,
+  mergeDeep,
+  randomRange,
+  randomInt,
+  smoothstep,
+  mapRange,
+  safeClone,
 } from './math';
 
 export { logger, createLogger, setLogLevel, type LogLevel, type Logger } from './logger';
+
+export { SpaceGraphError, wrapError, wrapAndThrow, type SpaceGraphErrorOptions } from './error';
 export { createElement, createElementNS, type DOMElementOptions, DOMUtils } from './DOMUtils';
 export { calculateFitView, type FitViewResult, type Point, CameraUtils } from './CameraUtils';
 export {

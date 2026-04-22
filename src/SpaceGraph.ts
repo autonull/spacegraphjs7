@@ -13,6 +13,7 @@ import {
     CameraZoomingFingering,
 } from './input/fingerings';
 import { createLogger } from './utils/logger';
+import { wrapError, type SpaceGraphErrorOptions } from './utils/error';
 import { safeClone } from './utils/math';
 import {
     DEFAULT_NODE_TYPES,
@@ -342,15 +343,13 @@ export class SpaceGraph {
             await sg.init();
             sg.import(data);
             sg.render();
-        } catch (err) {
-            const message = err instanceof Error ? err.message : String(err);
-            const wrappedError = new Error(
-                `[SpaceGraph] Import Error: Failed to import data. Reason: ${message}`,
-            );
-            (wrappedError as Error & { cause: unknown }).cause = err;
-            logger.error('Import Runtime Error:', wrappedError);
-            throw wrappedError;
-        }
+} catch (err) {
+    throw wrapError(err, {
+      namespace: 'SpaceGraph',
+      operation: 'Import',
+      reason: 'Failed to import data',
+    }, logger);
+  }
         return sg;
     }
 
@@ -376,15 +375,13 @@ export class SpaceGraph {
             const spec: GraphSpec = await response.json();
             sg.loadSpec(spec);
             sg.render();
-        } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
-            const wrappedError = new Error(
-                `[SpaceGraph] fromURL Error: Failed to load graph from ${url}. Reason: ${message}`,
-            );
-            (wrappedError as Error & { cause?: unknown }).cause = error;
-            logger.error('fromURL Error: Failed to load graph.', wrappedError);
-            throw wrappedError;
-        }
+} catch (err) {
+    throw wrapError(err, {
+      namespace: 'SpaceGraph',
+      operation: 'fromURL',
+      reason: `Failed to load graph from ${url}`,
+    }, logger);
+  }
         return sg;
     }
 

@@ -30,23 +30,32 @@ export class CameraControls {
     private zoomStack: Array<{ target: THREE.Vector3; distance: number; phi: number; theta: number }> = [];
     private readonly MAX_ZOOM_DEPTH = 8;
     private keyState = new Map<string, boolean>();
-    private keyConfig = {
-        panLeft: 'a',
-        panRight: 'd',
-        panForward: 'w',
-        panBackward: 's',
-        panUp: 'q',
-        panDown: 'e',
-        zoomIn: 'z',
-        zoomOut: 'x',
-        rotateLeft: 'j',
-        rotateRight: 'l',
-        rotateUp: 'i',
-        rotateDown: 'k',
-        panSpeed: 10.0,
-        zoomSpeed: 0.1,
-        rotateSpeed: 0.05,
-    };
+private readonly PANNING_KEYS = [
+  { key: 'a', axis: 'right', dir: -1 },
+  { key: 'd', axis: 'right', dir: 1 },
+  { key: 'w', axis: 'forward', dir: 1 },
+  { key: 's', axis: 'forward', dir: -1 },
+  { key: 'q', axis: 'up', dir: 1 },
+  { key: 'e', axis: 'up', dir: -1 },
+] as const;
+
+private readonly ROTATION_KEYS = [
+  { key: 'j', delta: 'theta', dir: -1 },
+  { key: 'l', delta: 'theta', dir: 1 },
+  { key: 'i', delta: 'phi', dir: -1 },
+  { key: 'k', delta: 'phi', dir: 1 },
+] as const;
+
+private readonly ZOOM_KEYS = [
+  { key: 'z', factor: 1 - 0.1 },
+  { key: 'x', factor: 1 + 0.1 },
+] as const;
+
+private readonly KEY_SPEED = {
+  pan: 10.0,
+  zoom: 0.1,
+  rotate: 0.05,
+};
 
     private targetNext: THREE.Vector3 | null = null;
     private radiusNext: number | null = null;
@@ -125,52 +134,34 @@ export class CameraControls {
         this.scale *= factor;
     }
 
-    update(): void {
-        const camRight = new THREE.Vector3();
-        const camForward = new THREE.Vector3();
-        const camUp = this.camera.up.clone();
+update(): void {
+    const camRight = new THREE.Vector3();
+    const camForward = new THREE.Vector3();
+    const camUp = this.camera.up.clone();
+    const tempVec = new THREE.Vector3();
 
-        camRight.setFromMatrixColumn(this.camera.matrix, 0);
-        camForward.setFromMatrixColumn(this.camera.matrix, 2).negate();
+    camRight.setFromMatrixColumn(this.camera.matrix, 0);
+    camForward.setFromMatrixColumn(this.camera.matrix, 2).negate();
 
-        if (this.keyState.get(this.keyConfig.panLeft)) {
-            this.panOffset.add(camRight.clone().multiplyScalar(-this.keyConfig.panSpeed));
-        }
-        if (this.keyState.get(this.keyConfig.panRight)) {
-            this.panOffset.add(camRight.clone().multiplyScalar(this.keyConfig.panSpeed));
-        }
-        if (this.keyState.get(this.keyConfig.panForward)) {
-            this.panOffset.add(camForward.clone().multiplyScalar(this.keyConfig.panSpeed));
-        }
-        if (this.keyState.get(this.keyConfig.panBackward)) {
-            this.panOffset.add(camForward.clone().multiplyScalar(-this.keyConfig.panSpeed));
-        }
-        if (this.keyState.get(this.keyConfig.panUp)) {
-            this.panOffset.add(camUp.clone().multiplyScalar(this.keyConfig.panSpeed));
-        }
-        if (this.keyState.get(this.keyConfig.panDown)) {
-            this.panOffset.add(camUp.clone().multiplyScalar(-this.keyConfig.panSpeed));
-        }
+    for (const { key, axis, dir } of this.PANNING_KEYS) {
+      if (this.keyState.get(key)) {
+        const vec = axis === 'right' ? camRight : axis === 'forward' ? camForward : camUp;
+        tempVec.copy(vec).multiplyScalar(dir * this.KEY_SPEED.pan);
+        this.panOffset.add(tempVec);
+      }
+    }
 
-        if (this.keyState.get(this.keyConfig.rotateLeft)) {
-            this.sphericalDelta.theta -= this.keyConfig.rotateSpeed;
-        }
-        if (this.keyState.get(this.keyConfig.rotateRight)) {
-            this.sphericalDelta.theta += this.keyConfig.rotateSpeed;
-        }
-        if (this.keyState.get(this.keyConfig.rotateUp)) {
-            this.sphericalDelta.phi -= this.keyConfig.rotateSpeed;
-        }
-        if (this.keyState.get(this.keyConfig.rotateDown)) {
-            this.sphericalDelta.phi += this.keyConfig.rotateSpeed;
-        }
+    for (const { key, delta, dir } of this.ROTATION_KEYS) {
+      if (this.keyState.get(key)) {
+        this.sphericalDelta[delta] += dir * this.KEY_SPEED.rotate;
+      }
+    }
 
-        if (this.keyState.get(this.keyConfig.zoomIn)) {
-            this.scale *= 1 - this.keyConfig.zoomSpeed;
-        }
-        if (this.keyState.get(this.keyConfig.zoomOut)) {
-            this.scale *= 1 + this.keyConfig.zoomSpeed;
-        }
+    for (const { key, factor } of this.ZOOM_KEYS) {
+      if (this.keyState.get(key)) {
+        this.scale *= factor;
+      }
+    }
 
         this.spherical.theta += this.sphericalDelta.theta;
         this.spherical.phi += this.sphericalDelta.phi;

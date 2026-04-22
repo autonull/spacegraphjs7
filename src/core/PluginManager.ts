@@ -4,6 +4,7 @@ import type { Edge } from '../edges/Edge';
 import type { EventSystem } from './events/EventSystem';
 import type { Graph } from './Graph';
 import { createLogger } from '../utils/logger';
+import { wrapError } from '../utils/error';
 import { TypeRegistry } from './TypeRegistry';
 
 export interface Plugin {
@@ -74,28 +75,29 @@ export class PluginManager {
         return [...this.plugins.keys()];
     }
 
-    async initAll(): Promise<void> {
-        const errors: Error[] = [];
-        for (const [name, plugin] of this.plugins.entries()) {
-            try {
-                await plugin.init(this.sg, this.sg.graph, this.sg.events);
-            } catch (err) {
-                const message = err instanceof Error ? err.message : String(err);
-                const wrappedError = new Error(
-                    `[SpaceGraph] Plugin Initialization Error: Failed to initialize plugin "${name}". Reason: ${message}`,
-                );
-                logger.error(wrappedError.message);
-                errors.push(wrappedError);
-            }
-        }
-        if (errors.length > 0) {
-            const err = new Error(
-                `[SpaceGraph] PluginManager initAll fails with ${errors.length} error(s).`,
-            );
-            (err as Error & { errors: Error[] }).errors = errors;
-            throw err;
-        }
+async initAll(): Promise<void> {
+    const errors: Error[] = [];
+    for (const [name, plugin] of this.plugins.entries()) {
+      try {
+        await plugin.init(this.sg, this.sg.graph, this.sg.events);
+      } catch (err) {
+        const wrapped = wrapError(err, {
+          namespace: 'SpaceGraph',
+          operation: 'Plugin Initialization',
+          reason: `Failed to initialize plugin "${name}"`,
+        });
+        logger.error(wrapped.message);
+        errors.push(wrapped);
+      }
     }
+    if (errors.length > 0) {
+      const err = new Error(
+        `[SpaceGraph] PluginManager initAll fails with ${errors.length} error(s).`,
+      );
+      (err as Error & { errors: Error[] }).errors = errors;
+      throw err;
+    }
+  }
 
     updateAll(delta: number): void {
         for (const plugin of this.plugins.values()) {
