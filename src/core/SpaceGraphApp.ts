@@ -60,26 +60,26 @@ export class SpaceGraphApp {
     public readonly sg: SpaceGraph;
     public readonly options: SpaceGraphAppOptions;
     public hud!: HUDPlugin;
-    private currentSelected: Node[] = [];
-    private currentSelectedEdges: Edge[] = [];
+    private currentSelected = new Set<Node>();
+    private currentSelectedEdges = new Set<Edge>();
     private originalColors = new Map<Node, number>();
     private originalEdgeColors = new Map<Edge, number>();
-public buttons: AppButtonConfig[] = [];
-public toolbarActions: AppButtonConfig[] = [];
-private _zoomSliderHandler?: () => void;
+    public buttons: AppButtonConfig[] = [];
+    public toolbarActions: AppButtonConfig[] = [];
+    private _zoomSliderHandler?: () => void;
 
-private _emitSelectionChanged(): void {
-this.sg.events.emit('selection:changed', {
-nodes: this.currentSelected.map((n) => n.id),
-edges: this.currentSelectedEdges.map((e) => e.id),
-timestamp: Date.now(),
-});
-}
+    private _emitSelectionChanged(): void {
+        this.sg.events.emit('selection:changed', {
+            nodes: [...this.currentSelected].map((n) => n.id),
+            edges: [...this.currentSelectedEdges].map((e) => e.id),
+            timestamp: Date.now(),
+        });
+    }
 
-private constructor(sg: SpaceGraph, options: SpaceGraphAppOptions) {
-this.sg = sg;
-this.options = options;
-}
+    private constructor(sg: SpaceGraph, options: SpaceGraphAppOptions) {
+        this.sg = sg;
+        this.options = options;
+    }
 
     static async create(
         container: HTMLElement | string,
@@ -195,17 +195,17 @@ data: { ...edge.data, color: this.options.selectionHighlightEdgeColor },
 }
 
 public clearSelectionStyles() {
-for (const node of this.currentSelected) this._clearNodeStyle(node);
-this.originalColors.clear();
+        for (const node of this.currentSelected) this._clearNodeStyle(node);
+        this.originalColors.clear();
 
-for (const edge of this.currentSelectedEdges) this._clearEdgeStyle(edge);
-this.originalEdgeColors.clear();
-}
+        for (const edge of this.currentSelectedEdges) this._clearEdgeStyle(edge);
+        this.originalEdgeColors.clear();
+    }
 
-public applySelectionStyles() {
-for (const node of this.currentSelected) this._applyNodeStyle(node);
-for (const edge of this.currentSelectedEdges) this._applyEdgeStyle(edge);
-}
+    public applySelectionStyles() {
+        for (const node of this.currentSelected) this._applyNodeStyle(node);
+        for (const edge of this.currentSelectedEdges) this._applyEdgeStyle(edge);
+    }
 
 public addToolbarAction(config: AppButtonConfig) {
         this.toolbarActions.push(config);
@@ -268,56 +268,54 @@ this._emitSelectionChanged();
     }
 
 public addNode(nodeSpec: any) {
-this.sg.graph.addNode(nodeSpec);
-this._emitSelectionChanged();
-}
+        this.sg.graph.addNode(nodeSpec);
+        this._emitSelectionChanged();
+    }
 
     public updateNode(nodeId: string, nodeSpec: any) {
         this.sg.graph.updateNode(nodeId, nodeSpec);
     }
 
-public removeNode(nodeId: string) {
-const node = this.sg.graph.getNode(nodeId);
-if (node) {
-const index = this.currentSelected.indexOf(node);
-if (index > -1) this.currentSelected.splice(index, 1);
-this.sg.graph.removeNode(nodeId);
-this._emitSelectionChanged();
-}
-}
+    public removeNode(nodeId: string) {
+        const node = this.sg.graph.getNode(nodeId);
+        if (node) {
+            this.currentSelected.delete(node);
+            this.sg.graph.removeNode(nodeId);
+            this._emitSelectionChanged();
+        }
+    }
 
-public addEdge(edgeSpec: any) {
-this.sg.graph.addEdge(edgeSpec);
-this._emitSelectionChanged();
-}
+    public addEdge(edgeSpec: any) {
+        this.sg.graph.addEdge(edgeSpec);
+        this._emitSelectionChanged();
+    }
 
     public updateEdge(edgeId: string, edgeSpec: any) {
         this.sg.graph.updateEdge(edgeId, edgeSpec);
     }
 
-public removeEdge(edgeId: string) {
-const edge = this.sg.graph.getEdge(edgeId);
-if (edge) {
-const index = this.currentSelectedEdges.indexOf(edge);
-if (index > -1) this.currentSelectedEdges.splice(index, 1);
-this.sg.graph.removeEdge(edgeId);
-this._emitSelectionChanged();
-}
-}
+    public removeEdge(edgeId: string) {
+        const edge = this.sg.graph.getEdge(edgeId);
+        if (edge) {
+            this.currentSelectedEdges.delete(edge);
+            this.sg.graph.removeEdge(edgeId);
+            this._emitSelectionChanged();
+        }
+    }
 
-public clearSelection() {
-this.clearSelectionStyles();
-this.currentSelected = [];
-this.currentSelectedEdges = [];
-this._emitSelectionChanged();
-}
+    public clearSelection() {
+        this.clearSelectionStyles();
+        this.currentSelected.clear();
+        this.currentSelectedEdges.clear();
+        this._emitSelectionChanged();
+    }
 
     public getSelectedNodes(): Node[] {
-        return this.currentSelected;
+        return [...this.currentSelected];
     }
 
     public getSelectedEdges(): Edge[] {
-        return this.currentSelectedEdges;
+        return [...this.currentSelectedEdges];
     }
 
     public dispose() {

@@ -265,7 +265,6 @@ export class DOTParser {
       clusters.set(clusterId, { id: clusterId, label: clusterLabel });
     }
 
-    const nodeRegex = /^\s*(\w+)(?:\s*\[[\s\S]*?\])?(?:\s*->\s*|$)/gm;
     const edgeRegex = /(\w+)\s*->\s*(\w+)(?:\s*\[[\s\S]*?\])?/g;
 
     let edgeMatch;
@@ -379,7 +378,7 @@ export class GraphMLParser {
     });
 
     const graphEl = doc.querySelector('graph');
-    const graphId = graphEl?.getAttribute('id') || 'g';
+    graphEl?.getAttribute('id');
     const edgedefault = graphEl?.getAttribute('edgedefault') || 'directed';
 
     const nodeEls = doc.querySelectorAll('node');

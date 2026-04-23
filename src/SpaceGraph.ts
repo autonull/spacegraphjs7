@@ -207,7 +207,7 @@ export class SpaceGraph {
         }
 
         const pluginState = this.pluginManager.export();
-        if (Object.keys(pluginState).length > 0) {
+        if (pluginState && Object.keys(pluginState).length > 0) {
             spec.plugins = pluginState;
         }
 

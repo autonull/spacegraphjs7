@@ -232,13 +232,8 @@ export class InputManager {
 
     handleEvent(event: InputEvent): void {
         if (!this.enabled) return;
-
-        const source = event.source;
-        if (this.state.disabledInputs.has(source)) return;
-
-        if (this.state.activeInput && this.state.activeInput !== source) {
-            return;
-        }
+        if (this.state.disabledInputs.has(event.source)) return;
+        if (this.state.activeInput && this.state.activeInput !== event.source) return;
 
         if (
             event.type === 'pointerdown' ||
@@ -250,7 +245,7 @@ export class InputManager {
 
         for (const binding of this.bindings) {
             if (event.consumed) break;
-            if (binding.sources.includes(source) && binding.eventType === event.type) {
+            if (binding.sources.includes(event.source) && binding.eventType === event.type) {
                 if (binding.predicate && !binding.predicate(event)) continue;
 
                 const action = this.actions.get(binding.action);

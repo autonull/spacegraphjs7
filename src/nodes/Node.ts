@@ -156,7 +156,7 @@ this.scale = Node._parseVector3(spec?.scale, [1, 1, 1]);
             changes.scale = updates.scale;
         }
 
-        if (Object.keys(changes).length > 0) {
+        if (changes.label || changes.data || changes.position || changes.rotation || changes.scale) {
             this.emit('node:updated', { node: this, changes, timestamp: Date.now() });
         }
 
