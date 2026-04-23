@@ -3,6 +3,7 @@
 
 import * as THREE from 'three';
 import { EventEmitter } from './EventEmitter';
+import type { SpaceGraph } from '../SpaceGraph';
 
 export interface HitResult {
     surface: Surface;
@@ -43,6 +44,7 @@ export type SurfaceEventMap = {
 export abstract class Surface extends EventEmitter<SurfaceEventMap> {
     abstract readonly id: string;
     abstract readonly type: string;
+    abstract sg?: SpaceGraph;
     abstract bounds: Rect;
     abstract get bounds3D(): Bounds3D;
     abstract hitTest(ray: THREE.Raycaster): HitResult | null;
@@ -117,5 +119,12 @@ export abstract class Surface extends EventEmitter<SurfaceEventMap> {
     worldToLocal(worldPos: THREE.Vector3): THREE.Vector3 {
         const inverse = this.worldMatrix.clone().invert();
         return worldPos.clone().applyMatrix4(inverse);
+    }
+
+    requireSpaceGraph(): SpaceGraph {
+        if (!this.sg) {
+            throw new Error(`Surface '${this.id}' requires SpaceGraph but sg is not initialized`);
+        }
+        return this.sg;
     }
 }

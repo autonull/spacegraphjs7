@@ -17,6 +17,17 @@ export class SpaceGraphError extends Error {
   }
 }
 
+/**
+ * Thrown when a code path is intentionally left as a stub.
+ * Use this to make unimplemented behaviour obvious at runtime.
+ */
+export class NotImplementedError extends SpaceGraphError {
+  constructor(feature = 'Not implemented') {
+    super(feature, { operation: 'NotImplemented' });
+    this.name = 'NotImplementedError';
+  }
+}
+
 export function wrapError(
   error: unknown,
   options: Omit<SpaceGraphErrorOptions, 'cause'> & { cause?: unknown },

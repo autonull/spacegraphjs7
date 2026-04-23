@@ -1,4 +1,5 @@
 import { createDemoWithNodes, shapeNode, edge, SpaceGraph } from '../framework';
+import { logger } from '../../src/utils/logger';
 
 export default async function nodeWiringDemo(): Promise<SpaceGraph> {
   const sg = await createDemoWithNodes([
@@ -8,7 +9,7 @@ export default async function nodeWiringDemo(): Promise<SpaceGraph> {
     ]);
 
     sg.events.on('connection:complete', ({ source, target }: any) => {
-        console.log('Connected:', source.id, '->', target.id);
+        logger.debug('Connected:', source.id, '->', target.id);
     });
 
     return sg;

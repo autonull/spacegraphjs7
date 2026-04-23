@@ -1,4 +1,5 @@
 import { createDemoWithNodes, shapeNode, addOverlayPanel, SpaceGraph } from '../framework';
+import { logger } from '../../src/utils/logger';
 
 export default async function interactiveDemo(): Promise<SpaceGraph> {
   const nodes = [
@@ -23,11 +24,11 @@ export default async function interactiveDemo(): Promise<SpaceGraph> {
   );
 
   sg.events.on('interaction:dragstart', ({ node }: any) => {
-    console.log('Drag started:', node.id);
+    logger.debug('Drag started:', node.id);
   });
 
   sg.events.on('connection:complete', ({ source, target }: any) => {
-    console.log('Edge created:', source.id, '->', target.id);
+    logger.debug('Edge created:', source.id, '->', target.id);
   });
 
   return sg;

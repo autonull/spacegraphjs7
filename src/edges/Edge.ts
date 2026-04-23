@@ -3,24 +3,25 @@ import { Line2 } from 'three/examples/jsm/lines/Line2.js';
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
 import { Surface, type HitResult, type Rect, type Bounds3D } from '../core/Surface';
+import { Defaults, EdgeColors } from '../core/constants';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { EdgeSpec, EdgeData } from '../types';
 import type { Node } from '../nodes/Node';
 
 export const DEFAULT_EDGE_DATA: EdgeData = Object.freeze({
-    color: 0x00d0ff,
-    thickness: 3,
-    thicknessInstanced: 0.5,
+    color: EdgeColors.DEFAULT,
+    thickness: Defaults.EDGE_THICKNESS,
+    thicknessInstanced: Defaults.INSTANCED_THICKNESS,
     arrowhead: false,
-    arrowheadSize: 10,
+    arrowheadSize: Defaults.ARROWHEAD_SIZE,
     dashed: false,
     dashScale: 1,
-    dashSize: 3,
-    gapSize: 1,
+    dashSize: Defaults.DASH_SIZE,
+    gapSize: Defaults.GAP_SIZE,
 });
 
 export class Edge extends Surface {
-    static HIGHLIGHT_COLOR = 0x00ffff;
+    static HIGHLIGHT_COLOR = EdgeColors.HIGHLIGHT;
     static DEFAULT_OPACITY = 0.8;
     static HIGHLIGHT_OPACITY = 1.0;
     static DEFAULT_HOVER_OPACITY_BOOST = 0.1;
@@ -126,7 +127,7 @@ export class Edge extends Surface {
             ]);
         } else {
             materialConfig.vertexColors = false;
-            materialConfig.color = color ?? 0x00d0ff;
+            materialConfig.color = color ?? EdgeColors.DEFAULT;
         }
 
         const material = new LineMaterial(materialConfig);
@@ -158,10 +159,10 @@ export class Edge extends Surface {
     }
 
     private _createSingleArrowhead(): THREE.Mesh {
-        const size = this.data.arrowheadSize ?? 10;
+        const size = this.data.arrowheadSize ?? Defaults.ARROWHEAD_SIZE;
         const geometry = new THREE.ConeGeometry(size / 2, size, 8);
         const material = new THREE.MeshBasicMaterial({
-            color: this.data.arrowheadColor ?? this.data.color ?? 0x00d0ff,
+            color: this.data.arrowheadColor ?? this.data.color ?? EdgeColors.DEFAULT,
             opacity: Edge.DEFAULT_OPACITY,
             transparent: true,
             depthTest: false,
@@ -211,7 +212,7 @@ export class Edge extends Surface {
         } else if (this.line.material.vertexColors) {
             this.line.material.vertexColors = false;
             this.line.material.needsUpdate = true;
-            this.line.material.color.set(this.data.color ?? 0x00d0ff);
+            this.line.material.color.set(this.data.color ?? EdgeColors.DEFAULT);
         }
     }
 
@@ -295,16 +296,16 @@ mat.opacity = highlight ? Edge.HIGHLIGHT_OPACITY : Edge.DEFAULT_OPACITY;
 const thicknessMultiplier =
 this.data.gradientColors?.length === 2 && mat.vertexColors ? 2.0 : 1.5;
 mat.linewidth = highlight
-? (this.data.thickness ?? 3) * thicknessMultiplier
-: (this.data.thickness ?? 3);
+    ? (this.data.thickness ?? Defaults.EDGE_THICKNESS) * thicknessMultiplier
+    : (this.data.thickness ?? Defaults.EDGE_THICKNESS);
 
 if (!mat.vertexColors)
-mat.color.set(highlight ? Edge.HIGHLIGHT_COLOR : (this.data.color ?? 0x00d0ff));
+    mat.color.set(highlight ? Edge.HIGHLIGHT_COLOR : (this.data.color ?? EdgeColors.DEFAULT));
 mat.needsUpdate = true;
 
 const arrowheadColor = highlight
-? Edge.HIGHLIGHT_COLOR
-: (this.data.arrowheadColor ?? this.data.color ?? 0x00d0ff);
+    ? Edge.HIGHLIGHT_COLOR
+    : (this.data.arrowheadColor ?? this.data.color ?? EdgeColors.DEFAULT);
 this._setArrowheadStyle(this.arrowheads.source, Edge.HIGHLIGHT_OPACITY, arrowheadColor);
 this._setArrowheadStyle(this.arrowheads.target, Edge.HIGHLIGHT_OPACITY, arrowheadColor);
 

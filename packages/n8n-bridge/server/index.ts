@@ -11,8 +11,12 @@ import { handleRequest } from './n8n-api-proxy';
 const executionService = new ExecutionService();
 let nodeTypes: any;
 
+import pkgLogger from '../src/logger';
+
+const log = pkgLogger('[N8nBridgeServer]');
+
 async function initN8n() {
-    console.log('[N8nBridgeServer] Initializing n8n execution engine...');
+    log.info('Initializing n8n execution engine...');
     // In a real implementation we would load actual node types:
     // nodeTypes = await LoadNodeDetailsFromDisk(['n8n-nodes-base.httpRequest', ...]);
     // For now we mock nodeTypes or leave them generic if possible
@@ -28,7 +32,7 @@ async function initN8n() {
 
 async function main() {
     await initN8n();
-    console.log('[N8nBridgeServer] Starting server...');
+    log.info('Starting server...');
 
     const server = http.createServer((req, res) => {
         if (req.url?.startsWith('/api/')) {
@@ -63,25 +67,25 @@ async function main() {
 
     wss.on('connection', (ws) => {
         clients.add(ws);
-        console.log('[N8nBridgeServer] Client connected.');
+        log.info('Client connected.');
 
         ws.on('message', async (message) => {
             try {
                 const data = JSON.parse(message.toString());
                 await handleMessage(ws, clients, data);
             } catch (e) {
-                console.error('[N8nBridgeServer] Error handling message', e);
+                log.error('Error handling message', e);
             }
         });
 
         ws.on('close', () => {
             clients.delete(ws);
-            console.log('[N8nBridgeServer] Client disconnected.');
+            log.info('Client disconnected.');
         });
     });
 
     server.listen(5679, () => {
-        console.log('[N8nBridgeServer] HTTP and WS Server listening on port 5679');
+        log.info('HTTP and WS Server listening on port 5679');
     });
 
     // Hot-reload safety
@@ -117,7 +121,7 @@ async function handleMessage(ws: WebSocket, clients: Set<WebSocket>, message: an
         case 'loadWorkflow':
             // Stub for workflow loading logic
             // Should fetch workflow from n8n DB or API
-            console.log(`[N8nBridgeServer] Loading workflow ${message.workflowId}`);
+            log.info(`Loading workflow ${message.workflowId}`);
             ws.send(JSON.stringify({
                 type: 'workflow:loaded',
                 data: {
@@ -132,11 +136,11 @@ async function handleMessage(ws: WebSocket, clients: Set<WebSocket>, message: an
             }));
             break;
         case 'node:moved':
-            console.log(`[N8nBridgeServer] Node ${message.nodeId} moved to ${message.position}`);
+            log.info(`Node ${message.nodeId} moved to ${message.position}`);
             // Stub for patching workflow JSON in n8n DB
             break;
         case 'execute:trigger':
-            console.log(`[N8nBridgeServer] Triggering execution ${message.executionId} for workflow ${message.workflowId}`);
+            log.info(`Triggering execution ${message.executionId} for workflow ${message.workflowId}`);
 
             // Mock sequence of execution events
             const mockNodes = ['node1', 'node2', 'node3'];
@@ -200,8 +204,8 @@ async function handleMessage(ws: WebSocket, clients: Set<WebSocket>, message: an
             }, delay + 500);
             break;
         default:
-            console.warn('[N8nBridgeServer] Unknown message type:', message.type);
+            log.warn('Unknown message type:', message.type);
     }
 }
 
-main().catch(console.error);
+main().catch((e) => log.error(e));

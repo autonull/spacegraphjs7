@@ -13,7 +13,7 @@ import {
     CameraZoomingFingering,
 } from './input/fingerings';
 import { createLogger } from './utils/logger';
-import { wrapError, type SpaceGraphErrorOptions } from './utils/error';
+import { wrapError } from './utils/error';
 import { safeClone } from './utils/math';
 import {
     DEFAULT_NODE_TYPES,
@@ -22,6 +22,7 @@ import {
     DEFAULT_SYSTEM_PLUGINS,
     createQuickGraphSpec,
 } from './core/defaults';
+import { FingeringPriority, Performance } from './core/constants';
 
 import type { GraphSpec, SpaceGraphOptions, SpecUpdate } from './types';
 import { MathPool } from './core/pooling/ObjectPool';
@@ -156,9 +157,9 @@ export class SpaceGraph {
     }
 
     private registerFingerings(): void {
-        this.input.registerFingering(new CameraOrbitingFingering(this.cameraControls), 40);
-        this.input.registerFingering(new CameraPanningFingering(this.cameraControls), 30);
-        this.input.registerFingering(new CameraZoomingFingering(this.cameraControls), 20);
+        this.input.registerFingering(new CameraOrbitingFingering(this.cameraControls), FingeringPriority.CAMERA_ORBIT);
+        this.input.registerFingering(new CameraPanningFingering(this.cameraControls), FingeringPriority.CAMERA_PAN);
+        this.input.registerFingering(new CameraZoomingFingering(this.cameraControls), FingeringPriority.CAMERA_ZOOM);
     }
 
     loadSpec(spec: GraphSpec): void {
@@ -263,8 +264,8 @@ export class SpaceGraph {
 
         const delta =
             this.lastTimestamp > 0 && timestamp > 0
-                ? Math.min((timestamp - this.lastTimestamp) / 1000, 0.1)
-                : 0.016;
+                ? Math.min((timestamp - this.lastTimestamp) / Performance.MS_PER_SEC, Performance.MAX_DELTA_CLAMP)
+                : Performance.DEFAULT_DELTA_TIME;
         this.lastTimestamp = timestamp;
 
         this.pluginManager.updateAll(delta);
