@@ -1,21 +1,13 @@
-import type { SpaceGraph } from '../../SpaceGraph';
 import type { Node } from '../../nodes/Node';
-import type { Finger, Fingering } from '../Fingering';
-import type { InteractionRaycaster } from '../../plugins/interaction/RaycasterHelper';
+import type { Finger } from '../Fingering';
+import { BaseFingering } from './BaseFingering';
 
-export class WidgetFingering implements Fingering {
-    private sg: SpaceGraph;
-    private raycaster: InteractionRaycaster;
+export class WidgetFingering extends BaseFingering {
     private widgetNode: Node | null = null;
     private isButtonDown = false;
 
-    constructor(sg: SpaceGraph, raycaster: InteractionRaycaster) {
-        this.sg = sg;
-        this.raycaster = raycaster;
-    }
-
-start(_finger: Finger): boolean {
-    if (_finger.buttons !== 1) return false;
+    start(_finger: Finger): boolean {
+        if (_finger.buttons !== 1) return false;
 
         const result = this.raycaster.raycastNode();
         if (!result?.node) return false;
@@ -58,9 +50,5 @@ start(_finger: Finger): boolean {
         }
         this.isButtonDown = false;
         this.widgetNode = null;
-    }
-
-    defer(_finger: Finger): boolean {
-        return true;
     }
 }

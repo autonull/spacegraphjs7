@@ -56,7 +56,6 @@ export class ButtonNode extends Node {
         }
 
         this.isTouchable = true;
-        this.isDraggable = () => false;
         this.updatePosition(this.position.x, this.position.y, this.position.z);
     }
 
@@ -144,6 +143,21 @@ export class ButtonNode extends Node {
             const data = updates.data as ButtonNodeData;
             if (data.color) {
                 this.baseMaterial.color.setHex(data.color);
+            }
+            if (data.width !== undefined || data.height !== undefined || data.depth !== undefined) {
+                this.width = data.width ?? this.width;
+                this.height = data.height ?? this.height;
+                this.depth = data.depth ?? this.depth;
+                this.mesh.geometry.dispose();
+                this.mesh.geometry = new THREE.BoxGeometry(this.width, this.height, this.depth);
+            }
+            if (data.label !== undefined) {
+                this.labelMesh?.geometry.dispose();
+                (this.labelMesh?.material as THREE.Material)?.dispose();
+                this.labelMesh = undefined;
+                if (data.label) {
+                    this.createLabel(data.label);
+                }
             }
         }
         return this;

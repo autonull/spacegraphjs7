@@ -1,7 +1,7 @@
 import { Graph } from './core/Graph';
 import { Renderer } from './core/Renderer';
 import { PluginManager } from './core/PluginManager';
-import { CameraControls } from './core/CameraControls';
+import { CameraControls, type CameraControlsConfig } from './core/CameraControls';
 import { EventSystem } from './core/events/EventSystem';
 import { VisionManager } from './core/VisionManager';
 import { ObjectPoolManager } from './core/ObjectPoolManager';
@@ -65,26 +65,21 @@ export class SpaceGraph {
         this.cameraControls = new CameraControls(
             this.renderer.camera,
             this.container,
-            this.options.cameraControls as Partial<
-                import('./core/CameraControls').CameraControlsConfig
-            >,
+            this.options.cameraControls as Partial<CameraControlsConfig>,
         );
     }
 
     private initializeInput(): void {
-        this.input = new InputManager({
-            graph: this,
-            events: this.events,
-        });
+        const inputConfig = 'input' in this.options
+            ? (this.options.input as DefaultInputConfig | undefined)
+            : {};
 
-        if ('input' in this.options) {
-            const inputConfig = this.options.input as DefaultInputConfig | undefined;
-            if (inputConfig && typeof inputConfig !== 'boolean') {
-                applyDefaultInputConfig(this.input, this, inputConfig);
-            }
-        } else {
-            applyDefaultInputConfig(this.input, this, {});
-        }
+        const config = inputConfig && typeof inputConfig !== 'boolean'
+            ? inputConfig
+            : {};
+
+        this.input = new InputManager({ graph: this, events: this.events });
+        applyDefaultInputConfig(this.input, this, config);
     }
 
     static getContainerElement(container: string | HTMLElement): HTMLElement | null {
@@ -163,17 +158,13 @@ export class SpaceGraph {
     }
 
     loadSpec(spec: GraphSpec): void {
-        if (spec.nodes) for (const nodeSpec of spec.nodes) this.graph.addNode(nodeSpec);
-        if (spec.edges) for (const edgeSpec of spec.edges) this.graph.addEdge(edgeSpec);
+        spec.nodes?.forEach((nodeSpec) => this.graph.addNode(nodeSpec));
+        spec.edges?.forEach((edgeSpec) => this.graph.addEdge(edgeSpec));
     }
 
     update(spec: SpecUpdate): void {
-        if (spec.nodes)
-            for (const nodeUpdate of spec.nodes)
-                if (nodeUpdate.id) this.graph.updateNode(nodeUpdate.id, nodeUpdate);
-        if (spec.edges)
-            for (const edgeUpdate of spec.edges)
-                if (edgeUpdate.id) this.graph.updateEdge(edgeUpdate.id, edgeUpdate);
+        spec.nodes?.forEach((nodeUpdate) => nodeUpdate.id && this.graph.updateNode(nodeUpdate.id, nodeUpdate));
+        spec.edges?.forEach((edgeUpdate) => edgeUpdate.id && this.graph.updateEdge(edgeUpdate.id, edgeUpdate));
     }
 
     export(): GraphSpec & {
@@ -262,10 +253,9 @@ export class SpaceGraph {
 
         this.renderer.beginFrameOptimization(timestamp);
 
-        const delta =
-            this.lastTimestamp > 0 && timestamp > 0
-                ? Math.min((timestamp - this.lastTimestamp) / Performance.MS_PER_SEC, Performance.MAX_DELTA_CLAMP)
-                : Performance.DEFAULT_DELTA_TIME;
+        const delta = this.lastTimestamp > 0 && timestamp > 0
+            ? Math.min((timestamp - this.lastTimestamp) / Performance.MS_PER_SEC, Performance.MAX_DELTA_CLAMP)
+            : Performance.DEFAULT_DELTA_TIME;
         this.lastTimestamp = timestamp;
 
         this.pluginManager.updateAll(delta);
@@ -274,7 +264,7 @@ export class SpaceGraph {
             node.onPreRender?.(delta);
         }
         for (const edge of this.graph.edges.values()) {
-            (edge as any).onPreRender?.(delta);
+            (edge as unknown as { onPreRender?: (dt: number) => void }).onPreRender?.(delta);
         }
 
         this.cameraControls.update();
@@ -329,14 +319,12 @@ export class SpaceGraph {
 
     public static async load(
         container: string | HTMLElement,
-        data: any,
+        data: unknown,
         options: SpaceGraphOptions = {},
     ): Promise<SpaceGraph> {
         const element = SpaceGraph.getContainerElement(container);
         if (!element) {
-            throw new Error(
-                `[SpaceGraph] Import Error: Container not found for selector/element "${container}".`,
-            );
+            throw new Error(`[SpaceGraph] Import Error: Container not found for "${container}".`);
         }
 
         const sg = new SpaceGraph(element, options);
@@ -344,13 +332,9 @@ export class SpaceGraph {
             await sg.init();
             sg.import(data);
             sg.render();
-} catch (err) {
-    throw wrapError(err, {
-      namespace: 'SpaceGraph',
-      operation: 'Import',
-      reason: 'Failed to import data',
-    }, logger);
-  }
+        } catch (err) {
+            throw wrapError(err, { namespace: 'SpaceGraph', operation: 'Import', reason: 'Failed to import data' }, logger);
+        }
         return sg;
     }
 
@@ -363,7 +347,7 @@ export class SpaceGraph {
             throw new Error(`[SpaceGraph] fromURL Error: Invalid URL "${url}".`);
         }
         if (!container) {
-            throw new Error(`[SpaceGraph] fromURL Error: Container element is undefined or null.`);
+            throw new Error('[SpaceGraph] fromURL Error: Container element is undefined or null.');
         }
 
         const sg = new SpaceGraph(container, options);
@@ -376,13 +360,9 @@ export class SpaceGraph {
             const spec: GraphSpec = await response.json();
             sg.loadSpec(spec);
             sg.render();
-} catch (err) {
-    throw wrapError(err, {
-      namespace: 'SpaceGraph',
-      operation: 'fromURL',
-      reason: `Failed to load graph from ${url}`,
-    }, logger);
-  }
+        } catch (err) {
+            throw wrapError(err, { namespace: 'SpaceGraph', operation: 'fromURL', reason: `Failed to load graph from ${url}` }, logger);
+        }
         return sg;
     }
 

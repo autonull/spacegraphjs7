@@ -1,3 +1,5 @@
+import * as THREE from 'three';
+
 export class ObjectPool<T> {
   private readonly available: T[] = [];
   private readonly createFn: () => T;

@@ -1,14 +1,11 @@
 import * as THREE from 'three';
 import type { SpaceGraph } from '../../SpaceGraph';
-import type { Finger, Fingering } from '../Fingering';
 import type { InteractionRaycaster } from '../../plugins/interaction/RaycasterHelper';
 import type { SelectionManager } from '../../plugins/interaction/SelectionManager';
+import { BaseFingering } from './BaseFingering';
 
-export class BoxSelectingFingering implements Fingering {
-    private sg: SpaceGraph;
-    private raycaster: InteractionRaycaster;
+export class BoxSelectingFingering extends BaseFingering {
     private selectionManager: SelectionManager;
-    private active = false;
     private startNDC = new THREE.Vector2();
     private currentNDC = new THREE.Vector2();
 
@@ -17,8 +14,7 @@ export class BoxSelectingFingering implements Fingering {
         raycaster: InteractionRaycaster,
         selectionManager: SelectionManager,
     ) {
-        this.sg = sg;
-        this.raycaster = raycaster;
+        super(sg, raycaster);
         this.selectionManager = selectionManager;
     }
 

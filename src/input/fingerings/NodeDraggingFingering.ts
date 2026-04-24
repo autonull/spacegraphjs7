@@ -1,24 +1,15 @@
 import * as THREE from 'three';
-import type { SpaceGraph } from '../../SpaceGraph';
 import type { Node } from '../../nodes/Node';
-import type { Finger, Fingering } from '../Fingering';
-import type { InteractionRaycaster } from '../../plugins/interaction/RaycasterHelper';
+import type { Finger } from '../Fingering';
+import { BaseFingering } from './BaseFingering';
 
-export class NodeDraggingFingering implements Fingering {
-    private sg: SpaceGraph;
-    private raycaster: InteractionRaycaster;
+export class NodeDraggingFingering extends BaseFingering {
     private dragNode: Node | null = null;
     private dragPlane = new THREE.Plane();
     private dragOffset = new THREE.Vector3();
     private startPos = { x: 0, y: 0 };
     private lastFingerY?: number;
-    private active = false;
     private enableZAxis = false;
-
-    constructor(sg: SpaceGraph, raycaster: InteractionRaycaster) {
-        this.sg = sg;
-        this.raycaster = raycaster;
-    }
 
     start(finger: Finger): boolean {
         if (finger.buttons !== 1) return false;
@@ -108,14 +99,10 @@ export class NodeDraggingFingering implements Fingering {
     stop(_finger: Finger): void {
         if (this.dragNode) {
             this.dragNode.pulse(0.5);
-            this.sg.events.emit('interaction:dragend', { node: this.dragNode });
+            this.emit('interaction:dragend', { node: this.dragNode });
         }
         this.active = false;
         this.dragNode = null;
         this.lastFingerY = undefined;
-    }
-
-    defer(_finger: Finger): boolean {
-        return true;
     }
 }

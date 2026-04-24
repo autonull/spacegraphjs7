@@ -1,4 +1,5 @@
 export { type Finger, type Fingering, FingerManager } from '../Fingering';
+export { BaseFingering } from './BaseFingering';
 export {
     CameraOrbitingFingering,
     CameraPanningFingering,

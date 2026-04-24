@@ -4,7 +4,7 @@ import { ThreeDisposer } from '../utils/ThreeDisposer';
 import { Surface, type HitResult, type Rect, type Bounds3D } from '../core/Surface';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec, NodeData, AnimationProps } from '../types';
-import { type ControlState } from '../plugins/interaction/ControlStateBorder';
+import type { ControlState } from '../plugins/interaction/ControlStateBorder';
 
 export type NodeEventMap = {
     'node:updated': { node: Node; changes: Partial<NodeSpec>; timestamp: number };
@@ -12,53 +12,52 @@ export type NodeEventMap = {
 };
 
 export abstract class Node extends Surface {
-readonly id: string;
-readonly type: string;
-public sg?: SpaceGraph;
-public label?: string;
-public data: NodeData;
-public position: THREE.Vector3;
-public rotation: THREE.Vector3;
-public scale: THREE.Vector3;
-public controlState: ControlState = 'normal';
-abstract readonly object: THREE.Object3D;
-callbacks?: {
-onPointerEnter?: () => void;
-onPointerLeave?: () => void;
-onClick?: (node: this) => void;
-onDoubleClick?: (node: this) => void;
-onDragStart?: (node: this) => void;
-onDragging?: (node: this) => void;
-onDragStop?: (node: this) => void;
-};
-actions?: Array<{ icon: string; label: string; action: string }>;
+    readonly id: string;
+    readonly type: string;
+    public sg?: SpaceGraph;
+    public label?: string;
+    public data: NodeData;
+    public position: THREE.Vector3;
+    public rotation: THREE.Vector3;
+    public scale: THREE.Vector3;
+    public controlState: ControlState = 'normal';
+    abstract readonly object: THREE.Object3D;
+    callbacks?: {
+        onPointerEnter?: () => void;
+        onPointerLeave?: () => void;
+        onClick?: (node: this) => void;
+        onDoubleClick?: (node: this) => void;
+        onDragStart?: (node: this) => void;
+        onDragging?: (node: this) => void;
+        onDragStop?: (node: this) => void;
+    };
+    actions?: Array<{ icon: string; label: string; action: string }>;
 
 get worldMatrix(): THREE.Matrix4 {
-return this.object.matrixWorld;
-}
+        return this.object.matrixWorld;
+    }
 
 private static _parseVector3(spec: number[] | undefined, defaults: [number, number, number]): THREE.Vector3 {
-return new THREE.Vector3(
-spec?.[0] ?? defaults[0],
-spec?.[1] ?? defaults[1],
-spec?.[2] ?? defaults[2],
-);
-}
+        return new THREE.Vector3(
+            spec?.[0] ?? defaults[0],
+            spec?.[1] ?? defaults[1],
+            spec?.[2] ?? defaults[2],
+        );
+    }
 
-constructor(sg?: SpaceGraph, spec?: NodeSpec);
 constructor(sgOrSpec?: SpaceGraph | NodeSpec, maybeSpec?: NodeSpec) {
-super();
-const isSpecOnly = !!(sgOrSpec && 'id' in sgOrSpec);
-this.sg = isSpecOnly ? undefined : (sgOrSpec as SpaceGraph);
-const spec = isSpecOnly ? (sgOrSpec as NodeSpec) : maybeSpec;
-this.id = spec?.id ?? '';
-this.type = spec?.type ?? '';
-this.label = spec?.label;
-this.data = spec?.data ?? {};
-this.position = Node._parseVector3(spec?.position, [0, 0, 0]);
-this.rotation = Node._parseVector3(spec?.rotation, [0, 0, 0]);
-this.scale = Node._parseVector3(spec?.scale, [1, 1, 1]);
-}
+        super();
+        const isSpecOnly = !!(sgOrSpec && 'id' in sgOrSpec);
+        this.sg = isSpecOnly ? undefined : (sgOrSpec as SpaceGraph);
+        const spec = isSpecOnly ? (sgOrSpec as NodeSpec) : maybeSpec;
+        this.id = spec?.id ?? '';
+        this.type = spec?.type ?? '';
+        this.label = spec?.label;
+        this.data = spec?.data ?? {};
+        this.position = Node._parseVector3(spec?.position, [0, 0, 0]);
+        this.rotation = Node._parseVector3(spec?.rotation, [0, 0, 0]);
+        this.scale = Node._parseVector3(spec?.scale, [1, 1, 1]);
+    }
 
     get bounds(): Rect {
         const box = new THREE.Box3().setFromObject(this.object);
@@ -178,52 +177,48 @@ this.scale = Node._parseVector3(spec?.scale, [1, 1, 1]);
         return true;
     }
 
-    animate(props: AnimationProps): this {
-        const { scale, ...positionProps } = props;
+animate(props: AnimationProps): this {
+    const { scale, ...positionProps } = props;
 
-        gsap.to(this.position, {
-            ...positionProps,
-            onUpdate: () => void this.object.position.copy(this.position),
+    gsap.to(this.position, {
+        ...positionProps,
+        onUpdate: () => { this.object.position.copy(this.position); },
+    });
+
+    if (scale !== undefined) {
+        gsap.to(this.object.scale, {
+            x: scale,
+            y: scale,
+            z: scale,
+            duration: props.duration,
+            ease: props.ease,
+            delay: props.delay,
         });
-
-        if (scale !== undefined) {
-            gsap.to(this.object.scale, {
-                x: scale,
-                y: scale,
-                z: scale,
-                duration: props.duration,
-                ease: props.ease,
-                delay: props.delay,
-            });
-        }
-
-        return this;
     }
 
-    applyPosition(
-        target: THREE.Vector3,
-        {
-            animate = true,
-            duration = 1.0,
-            delay = 0,
-        }: { animate?: boolean; duration?: number; delay?: number } = {},
-    ): this {
-        if (animate && typeof process === 'undefined') {
-            gsap.to(this.position, {
-                x: target.x,
-                y: target.y,
-                z: target.z,
-                duration,
-                ease: 'power2.out',
-                delay,
-                onUpdate: () => void this.object.position.copy(this.position),
-            });
-        } else {
-            this.position.copy(target);
-            this.object.position.copy(target);
-        }
-        return this;
+    return this;
+}
+
+applyPosition(
+    target: THREE.Vector3,
+    { animate = true, duration = 1.0, delay = 0 }: { animate?: boolean; duration?: number; delay?: number } = {},
+): this {
+    if (animate && typeof process !== 'undefined') {
+        gsap.to(this.position, {
+            x: target.x,
+            y: target.y,
+            z: target.z,
+            duration,
+            ease: 'power2.out',
+            delay,
+            onUpdate: () => { this.object.position.copy(this.position); },
+        });
+    } else {
+        this.position.copy(target);
+        this.object.position.copy(target);
     }
+    return this;
+}
 
     toJSON(): NodeSpec {
         return {
@@ -246,6 +241,7 @@ this.scale = Node._parseVector3(spec?.scale, [1, 1, 1]);
     }
 
     dispose(): void {
+        this.emit('surface:destroying', { surface: this, timestamp: Date.now() });
         this.emit('node:destroying', { node: this, timestamp: Date.now() });
         this.object.parent?.remove(this.object);
         ThreeDisposer.dispose(this.object);

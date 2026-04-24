@@ -33,11 +33,11 @@ export class CircularLayout extends BaseLayout {
         const step = (2 * Math.PI) / nodes.length;
         const targetPos = new THREE.Vector3();
 
-for (const [i, node] of nodes.entries()) {
-      const angle = startAngle + i * step;
-      targetPos.set(radiusX * Math.cos(angle), radiusY * Math.sin(angle), z);
-      this.applyPosition(node, targetPos, { animate, duration });
-    }
+        for (const [i, node] of nodes.entries()) {
+            const angle = startAngle + i * step;
+            targetPos.set(radiusX * Math.cos(angle), radiusY * Math.sin(angle), z);
+            this.applyPosition(node, targetPos, { animate, duration });
+        }
 
         this.updateEdges();
         this.emitLayoutApplied({ duration });

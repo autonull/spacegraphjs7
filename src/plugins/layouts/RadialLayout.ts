@@ -75,36 +75,36 @@ export class RadialLayout extends BaseLayout {
             const radius = baseRadius + depth * radiusStep;
 
 for (const [i, childId] of nodeChildren.entries()) {
-      visited.add(childId);
-      const angle = minAngle + (i + 0.5) * angleStep;
-      const node = nodes.get(childId) as Node;
-      if (node) {
-        this.applyPosition(
-          node,
-          new THREE.Vector3(Math.cos(angle) * radius, Math.sin(angle) * radius, z),
-          { animate, duration },
-        );
-      }
-      queue.push({
-        id: childId,
-        depth: depth + 1,
-        minAngle: minAngle + i * angleStep,
-        maxAngle: minAngle + (i + 1) * angleStep,
-      });
-    }
+            visited.add(childId);
+            const angle = minAngle + (i + 0.5) * angleStep;
+            const node = nodes.get(childId) as Node;
+            if (node) {
+                this.applyPosition(
+                    node,
+                    new THREE.Vector3(Math.cos(angle) * radius, Math.sin(angle) * radius, z),
+                    { animate, duration },
+                );
+            }
+            queue.push({
+                id: childId,
+                depth: depth + 1,
+                minAngle: minAngle + i * angleStep,
+                maxAngle: minAngle + (i + 1) * angleStep,
+            });
+        }
         }
 
         const orphans = [...nodes.keys()].filter((id) => !visited.has(id));
         if (orphans.length) {
             const outerR = baseRadius + nodes.size * radiusStep;
-for (const [i, id] of orphans.entries()) {
-      const angle = ((2 * Math.PI) / orphans.length) * i;
-      this.applyPosition(
-        nodes.get(id) as Node,
-        new THREE.Vector3(Math.cos(angle) * outerR, Math.sin(angle) * outerR, z),
-        { animate, duration },
-      );
-    }
+            for (const [i, id] of orphans.entries()) {
+                const angle = ((2 * Math.PI) / orphans.length) * i;
+                this.applyPosition(
+                    nodes.get(id) as Node,
+                    new THREE.Vector3(Math.cos(angle) * outerR, Math.sin(angle) * outerR, z),
+                    { animate, duration },
+                );
+            }
         }
 
         this.updateEdges();

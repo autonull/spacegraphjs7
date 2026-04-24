@@ -71,9 +71,12 @@ export class ToggleNode extends Node {
         this.group.add(this.mesh);
         this.group.add(this.label);
 
-        this.isTouchable = true;
-        this.isDraggable = () => false;
+this.isTouchable = true;
         this.updatePosition(this.position.x, this.position.y, this.position.z);
+    }
+
+    isDraggable(_localPos: THREE.Vector3): boolean {
+        return false;
     }
 
     private updateLabel(): void {
@@ -88,10 +91,6 @@ export class ToggleNode extends Node {
         ctx.fillText(this._value ? 'ON' : 'OFF', 32, 16);
         (this.labelMaterial.map as THREE.CanvasTexture).dispose();
         this.labelMaterial.map = new THREE.CanvasTexture(canvas);
-    }
-
-    isDraggable(_localPos: THREE.Vector3): boolean {
-        return false;
     }
 
     get value(): boolean {
@@ -148,6 +147,15 @@ export class ToggleNode extends Node {
             if (data.value !== undefined) {
                 this.value = data.value;
             }
+            if (data.width !== undefined || data.height !== undefined || data.depth !== undefined) {
+                this.width = data.width ?? this.width;
+                this.height = data.height ?? this.height;
+                this.depth = data.depth ?? this.depth;
+                this.mesh.geometry.dispose();
+                this.mesh.geometry = new THREE.BoxGeometry(this.width, this.height, this.depth);
+            }
+            if (data.onColor !== undefined) this.onMaterial.color.setHex(data.onColor);
+            if (data.offColor !== undefined) this.offMaterial.color.setHex(data.offColor);
         }
         return this;
     }

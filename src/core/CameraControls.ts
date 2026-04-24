@@ -2,19 +2,27 @@
 // Pure camera state machine - all input handled via Fingering
 
 import * as THREE from 'three';
-
 import type { Surface } from './Surface';
 
 export interface CameraControlsConfig {
-    enableRotate: boolean;
-    enableZoom: boolean;
-    enablePan: boolean;
-    rotateSpeed: number;
-    zoomSpeed: number;
-    panSpeed: number;
-    minDistance: number;
-    maxDistance: number;
+    enableRotate: boolean; enableZoom: boolean; enablePan: boolean;
+    rotateSpeed: number; zoomSpeed: number; panSpeed: number;
+    minDistance: number; maxDistance: number;
 }
+
+const KEY_CONFIG = {
+    pan: [
+        { key: 'a', axis: 'right', dir: -1 }, { key: 'd', axis: 'right', dir: 1 },
+        { key: 'w', axis: 'forward', dir: 1 }, { key: 's', axis: 'forward', dir: -1 },
+        { key: 'q', axis: 'up', dir: 1 }, { key: 'e', axis: 'up', dir: -1 },
+    ] as const,
+    rotate: [
+        { key: 'j', delta: 'theta', dir: -1 }, { key: 'l', delta: 'theta', dir: 1 },
+        { key: 'i', delta: 'phi', dir: -1 }, { key: 'k', delta: 'phi', dir: 1 },
+    ] as const,
+    zoom: [{ key: 'z', factor: 0.9 }, { key: 'x', factor: 1.1 }] as const,
+    speed: { pan: 10.0, zoom: 0.1, rotate: 0.05 },
+} as const;
 
 export class CameraControls {
     readonly camera: THREE.Camera;
@@ -23,92 +31,41 @@ export class CameraControls {
     spherical: THREE.Spherical;
 
     private config: CameraControlsConfig;
-    private sphericalDelta: THREE.Spherical;
-    private scale: number = 1;
-    private panOffset: THREE.Vector3;
-
+    private sphericalDelta = new THREE.Spherical();
+    private scale = 1;
+    private panOffset = new THREE.Vector3();
     private zoomStack: Array<{ target: THREE.Vector3; distance: number; phi: number; theta: number }> = [];
     private readonly MAX_ZOOM_DEPTH = 8;
     private keyState = new Map<string, boolean>();
-private readonly PANNING_KEYS = [
-  { key: 'a', axis: 'right', dir: -1 },
-  { key: 'd', axis: 'right', dir: 1 },
-  { key: 'w', axis: 'forward', dir: 1 },
-  { key: 's', axis: 'forward', dir: -1 },
-  { key: 'q', axis: 'up', dir: 1 },
-  { key: 'e', axis: 'up', dir: -1 },
-] as const;
-
-private readonly ROTATION_KEYS = [
-  { key: 'j', delta: 'theta', dir: -1 },
-  { key: 'l', delta: 'theta', dir: 1 },
-  { key: 'i', delta: 'phi', dir: -1 },
-  { key: 'k', delta: 'phi', dir: 1 },
-] as const;
-
-private readonly ZOOM_KEYS = [
-  { key: 'z', factor: 1 - 0.1 },
-  { key: 'x', factor: 1 + 0.1 },
-] as const;
-
-private readonly KEY_SPEED = {
-  pan: 10.0,
-  zoom: 0.1,
-  rotate: 0.05,
-};
-
     private targetNext: THREE.Vector3 | null = null;
     private radiusNext: number | null = null;
     private animStartTime = 0;
     private animDuration = 0;
     private startTarget = new THREE.Vector3();
     private startRadius = 0;
-
     private isOrthographic = false;
     private orthoCamera: THREE.OrthographicCamera | null = null;
 
-    constructor(
-        camera: THREE.Camera,
-        domElement: HTMLElement,
-        config: Partial<CameraControlsConfig> = {},
-    ) {
+    constructor(camera: THREE.Camera, domElement: HTMLElement, config: Partial<CameraControlsConfig> = {}) {
         this.camera = camera;
         this.domElement = domElement;
-
         this.config = {
-            enableRotate: true,
-            enableZoom: true,
-            enablePan: true,
-            rotateSpeed: 1.0,
-            zoomSpeed: 1.0,
-            panSpeed: 1.0,
-            minDistance: 10,
-            maxDistance: 10000,
-            ...config,
+            enableRotate: true, enableZoom: true, enablePan: true,
+            rotateSpeed: 1.0, zoomSpeed: 1.0, panSpeed: 1.0, minDistance: 10, maxDistance: 10000, ...config,
         };
-
         this.target = new THREE.Vector3();
         this.spherical = new THREE.Spherical();
         this.sphericalDelta = new THREE.Spherical();
         this.panOffset = new THREE.Vector3();
-
         this.updateSpherical();
-
-        // Add keyboard listeners
         this.onKeyDown = this.onKeyDown.bind(this);
         this.onKeyUp = this.onKeyUp.bind(this);
         window.addEventListener('keydown', this.onKeyDown);
         window.addEventListener('keyup', this.onKeyUp);
     }
 
-    private onKeyDown(e: KeyboardEvent): void {
-        this.keyState.set(e.key.toLowerCase(), true);
-    }
-
-    private onKeyUp(e: KeyboardEvent): void {
-        this.keyState.set(e.key.toLowerCase(), false);
-    }
-
+    private onKeyDown(e: KeyboardEvent): void { this.keyState.set(e.key.toLowerCase(), true); }
+    private onKeyUp(e: KeyboardEvent): void { this.keyState.set(e.key.toLowerCase(), false); }
     private updateSpherical(): void {
         const offset = new THREE.Vector3().copy(this.camera.position).sub(this.target);
         this.spherical.setFromVector3(offset);
@@ -129,72 +86,50 @@ private readonly KEY_SPEED = {
         this.panOffset.add(up.multiplyScalar(dy * this.config.panSpeed * 0.1));
     }
 
-    zoom(factor: number): void {
-        if (!this.config.enableZoom) return;
-        this.scale *= factor;
-    }
+    zoom(factor: number): void { if (!this.config.enableZoom) return; this.scale *= factor; }
 
-update(): void {
-    const camRight = new THREE.Vector3();
-    const camForward = new THREE.Vector3();
-    const camUp = this.camera.up.clone();
-    const tempVec = new THREE.Vector3();
+    update(): void {
+        const camRight = new THREE.Vector3();
+        const camForward = new THREE.Vector3();
+        const camUp = this.camera.up.clone();
+        const tempVec = new THREE.Vector3();
 
-    camRight.setFromMatrixColumn(this.camera.matrix, 0);
-    camForward.setFromMatrixColumn(this.camera.matrix, 2).negate();
+        camRight.setFromMatrixColumn(this.camera.matrix, 0);
+        camForward.setFromMatrixColumn(this.camera.matrix, 2).negate();
 
-    for (const { key, axis, dir } of this.PANNING_KEYS) {
-      if (this.keyState.get(key)) {
-        const vec = axis === 'right' ? camRight : axis === 'forward' ? camForward : camUp;
-        tempVec.copy(vec).multiplyScalar(dir * this.KEY_SPEED.pan);
-        this.panOffset.add(tempVec);
-      }
-    }
+        for (const { key, axis, dir } of KEY_CONFIG.pan) {
+            if (this.keyState.get(key)) {
+                const vec = axis === 'right' ? camRight : axis === 'forward' ? camForward : camUp;
+                this.panOffset.add(tempVec.copy(vec).multiplyScalar(dir * KEY_CONFIG.speed.pan));
+            }
+        }
 
-    for (const { key, delta, dir } of this.ROTATION_KEYS) {
-      if (this.keyState.get(key)) {
-        this.sphericalDelta[delta] += dir * this.KEY_SPEED.rotate;
-      }
-    }
+        for (const { key, delta, dir } of KEY_CONFIG.rotate) {
+            if (this.keyState.get(key)) this.sphericalDelta[delta] += dir * KEY_CONFIG.speed.rotate;
+        }
 
-    for (const { key, factor } of this.ZOOM_KEYS) {
-      if (this.keyState.get(key)) {
-        this.scale *= factor;
-      }
-    }
+        for (const { key, factor } of KEY_CONFIG.zoom) {
+            if (this.keyState.get(key)) this.scale *= factor;
+        }
 
         this.spherical.theta += this.sphericalDelta.theta;
         this.spherical.phi += this.sphericalDelta.phi;
         this.spherical.phi = Math.max(0.01, Math.min(Math.PI - 0.01, this.spherical.phi));
         this.spherical.radius *= this.scale;
-        this.spherical.radius = Math.max(
-            this.config.minDistance,
-            Math.min(this.config.maxDistance, this.spherical.radius),
-        );
-
+        this.spherical.radius = Math.max(this.config.minDistance, Math.min(this.config.maxDistance, this.spherical.radius));
         this.target.add(this.panOffset);
 
         if (this.targetNext) {
             const elapsed = performance.now() - this.animStartTime;
             const t = Math.min(elapsed / this.animDuration, 1);
             const eased = 1 - Math.pow(1 - t, 3);
-
             this.target.lerpVectors(this.startTarget, this.targetNext, eased);
-            if (this.radiusNext) {
-                this.spherical.radius =
-                    this.startRadius + (this.radiusNext - this.startRadius) * eased;
-            }
-
-            if (t >= 1) {
-                this.targetNext = null;
-                this.radiusNext = null;
-            }
+            if (this.radiusNext) this.spherical.radius = this.startRadius + (this.radiusNext - this.startRadius) * eased;
+            if (t >= 1) { this.targetNext = null; this.radiusNext = null; }
         }
 
-        const offset = new THREE.Vector3().setFromSpherical(this.spherical);
-        this.camera.position.copy(this.target).add(offset);
+        this.camera.position.copy(this.target).add(new THREE.Vector3().setFromSpherical(this.spherical));
         this.camera.lookAt(this.target);
-
         this.sphericalDelta.set(0, 0, 0);
         this.scale = 1;
         this.panOffset.set(0, 0, 0);
@@ -208,70 +143,35 @@ update(): void {
         this.panOffset.add(up.multiplyScalar(dy));
     }
 
-    flyTo(target: THREE.Vector3, distance: number, duration: number = 1.5): void {
-        this.setTargetSmooth(target, distance, duration);
-    }
+    flyTo(target: THREE.Vector3, distance: number, duration: number = 1.5): void { this.setTargetSmooth(target, distance, duration); }
 
     zoomTo(target: THREE.Vector3, distance: number, duration: number = 1.5): void {
         const top = this.zoomStack.at(-1);
-        if (top && top.target.distanceTo(target) < distance * 0.1) {
-            this.zoomOut();
-            return;
-        }
-
+        if (top && top.target.distanceTo(target) < distance * 0.1) { this.zoomOut(); return; }
         this.zoomStack.push({ target: this.target.clone(), distance: this.spherical.radius, phi: this.spherical.phi, theta: this.spherical.theta });
         if (this.zoomStack.length > this.MAX_ZOOM_DEPTH) this.zoomStack.shift();
-
         this.flyTo(target, distance, duration);
     }
 
     zoomToSurface3D(surface: Surface, duration: number = 1.5): void {
         if (!surface.bounds3D) return;
-
         const bounds = surface.bounds3D;
         const center = bounds.center;
         const size = bounds.size;
         const maxDim = Math.max(size.x, size.y, size.z);
         const distance = maxDim * 2.5;
-
         const top = this.zoomStack.at(-1);
-        if (top && center.distanceTo(top.target) < distance * 0.1) {
-            this.zoomOut();
-            return;
-        }
-
-        this.zoomStack.push({
-            target: this.target.clone(),
-            distance: this.spherical.radius,
-            phi: this.spherical.phi,
-            theta: this.spherical.theta,
-        });
-
-        if (this.zoomStack.length > this.MAX_ZOOM_DEPTH) {
-            this.zoomStack.shift();
-        }
-
+        if (top && center.distanceTo(top.target) < distance * 0.1) { this.zoomOut(); return; }
+        this.zoomStack.push({ target: this.target.clone(), distance: this.spherical.radius, phi: this.spherical.phi, theta: this.spherical.theta });
+        if (this.zoomStack.length > this.MAX_ZOOM_DEPTH) this.zoomStack.shift();
         this.flyTo(center, distance, duration);
     }
 
-    zoomOut(): void {
-        if (this.zoomStack.length === 0) return;
-        const prev = this.zoomStack.pop()!;
-        this.flyTo(prev.target, prev.distance);
-    }
-
-    getZoomDepth(): number {
-        return this.zoomStack.length;
-    }
-    canZoomOut(): boolean {
-        return this.zoomStack.length > 0;
-    }
-    get hasZoomHistory(): boolean {
-        return this.canZoomOut();
-    }
-    flyBack(): void {
-        this.zoomOut();
-    }
+    zoomOut(): void { if (this.zoomStack.length === 0) return; const entry = this.zoomStack.pop()!; this.flyTo(entry.target, entry.distance); }
+    getZoomDepth(): number { return this.zoomStack.length; }
+    canZoomOut(): boolean { return this.zoomStack.length > 0; }
+    get hasZoomHistory(): boolean { return this.canZoomOut(); }
+    flyBack(): void { this.zoomOut(); }
 
     setTargetSmooth(target: THREE.Vector3, radius: number, duration: number = 1.0): void {
         this.startTarget.copy(this.target);
@@ -282,47 +182,25 @@ update(): void {
         this.animDuration = duration * 1000;
     }
 
-    setTarget(x: number, y: number, z: number): void {
-        this.target.set(x, y, z);
-        this.updateSpherical();
-    }
+    setTarget(x: number, y: number, z: number): void { this.target.set(x, y, z); this.updateSpherical(); }
 
     toggleOrthographic(): void {
         this.isOrthographic = !this.isOrthographic;
         if (this.isOrthographic) {
             if (!this.orthoCamera) {
                 const renderer = this.domElement.ownerDocument.defaultView;
-                const aspect = renderer
-                    ? this.domElement.clientWidth / this.domElement.clientHeight
-                    : 1;
+                const aspect = renderer ? this.domElement.clientWidth / this.domElement.clientHeight : 1;
                 const frustum = this.spherical.radius;
-                this.orthoCamera = new THREE.OrthographicCamera(
-                    -frustum * aspect,
-                    frustum * aspect,
-                    frustum,
-                    -frustum,
-                    0.1,
-                    100000,
-                );
+                this.orthoCamera = new THREE.OrthographicCamera(-frustum * aspect, frustum * aspect, frustum, -frustum, 0.1, 100000);
             }
             this.orthoCamera.position.copy(this.camera.position);
             this.orthoCamera.quaternion.copy(this.camera.quaternion);
         }
     }
 
-    get isUsingOrthographic(): boolean {
-        return this.isOrthographic;
-    }
-
-    getOrthoCamera(): THREE.OrthographicCamera | null {
-        return this.orthoCamera;
-    }
-
-    reset(): void {
-        this.target.set(0, 0, 0);
-        this.spherical.set(500, Math.PI / 4, 0);
-        this.updateSpherical();
-    }
+    get isUsingOrthographic(): boolean { return this.isOrthographic; }
+    getOrthoCamera(): THREE.OrthographicCamera | null { return this.orthoCamera; }
+    reset(): void { this.target.set(0, 0, 0); this.spherical.set(500, Math.PI / 4, 0); this.updateSpherical(); }
 
     dispose(): void {
         this.zoomStack = [];

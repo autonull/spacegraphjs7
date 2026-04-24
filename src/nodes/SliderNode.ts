@@ -88,9 +88,12 @@ export class SliderNode extends Node {
         this.group.add(this.thumb);
         this.group.add(this.valueLabel);
 
-        this.isTouchable = true;
-        this.isDraggable = () => false;
+this.isTouchable = true;
         this.updatePosition(this.position.x, this.position.y, this.position.z);
+    }
+
+    isDraggable(_localPos: THREE.Vector3): boolean {
+        return false;
     }
 
     private formatValue(v: number): string {
@@ -113,10 +116,6 @@ export class SliderNode extends Node {
         ctx.fillText(this.formatValue(this.value), 64, 16);
         (this.labelMaterial.map as THREE.CanvasTexture).dispose();
         this.labelMaterial.map = new THREE.CanvasTexture(canvas);
-    }
-
-    isDraggable(_localPos: THREE.Vector3): boolean {
-        return false;
     }
 
     private updateThumbPosition(): void {
@@ -185,6 +184,24 @@ export class SliderNode extends Node {
             if (data.value !== undefined) {
                 this.value = data.value;
             }
+            if (data.min !== undefined) this.min = data.min;
+            if (data.max !== undefined) this.max = data.max;
+            if (data.width !== undefined || data.height !== undefined) {
+                this.width = data.width ?? this.width;
+                this.height = data.height ?? this.height;
+                this.thumbSize = this.height * 1.5;
+                this.track.geometry.dispose();
+                this.track.geometry = new THREE.BoxGeometry(this.width, this.height, 4);
+                this.thumb.geometry.dispose();
+                this.thumb.geometry = new THREE.BoxGeometry(this.thumbSize, this.height, 6);
+                this.updateThumbPosition();
+            }
+            if (data.showValue !== undefined) {
+                this.showValue = data.showValue;
+                this.valueLabel.visible = this.showValue;
+            }
+            if (data.trackColor !== undefined) this.trackMaterial.color.setHex(data.trackColor);
+            if (data.thumbColor !== undefined) this.thumbMaterial.color.setHex(data.thumbColor);
         }
         return this;
     }

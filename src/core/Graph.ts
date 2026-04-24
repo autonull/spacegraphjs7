@@ -21,40 +21,29 @@ export class Graph extends EventEmitter<GraphEventMap> {
     public nodes: Map<string, Node> = new Map();
     public edges: Map<string, Edge> = new Map();
 
-    constructor(sg: SpaceGraph) {
-        super();
-        this.sg = sg;
-    }
+    constructor(sg: SpaceGraph) { super(); this.sg = sg; }
 
-    registerNodeType(type: string, ctor: import('./TypeRegistry').NodeConstructor): void {
-        TypeRegistry.getInstance().registerNode(type, ctor);
-    }
-
-    registerEdgeType(type: string, ctor: import('./TypeRegistry').EdgeConstructor): void {
-        TypeRegistry.getInstance().registerEdge(type, ctor);
-    }
+    registerNodeType(type: string, ctor: import('./TypeRegistry').NodeConstructor): void { TypeRegistry.getInstance().registerNode(type, ctor); }
+    registerEdgeType(type: string, ctor: import('./TypeRegistry').EdgeConstructor): void { TypeRegistry.getInstance().registerEdge(type, ctor); }
 
     addNode(specOrNode: NodeSpec | Node): Node | null {
-        if (typeof (specOrNode as Node).updatePosition === 'function') {
+        if ('updatePosition' in specOrNode) {
             const node = specOrNode as Node;
-            this.nodes.set(node.id, node);
-            this.sg?.renderer.scene.add(node.object);
-            node.start();
-            this.emitWithTimestamp('node:added', { node });
-            return node;
+            return this._addNode(node.id, node);
         }
 
         const spec = specOrNode as NodeSpec;
         if (this.nodes.has(spec.id)) return this.updateNode(spec.id, spec);
 
         const NodeType = TypeRegistry.getInstance().getNodeConstructor(spec.type);
-        if (!NodeType) {
-            logger.warn('Node type "%s" not registered.', spec.type);
-            return null;
-        }
+        if (!NodeType) { logger.warn('Node type "%s" not registered.', spec.type); return null; }
 
         const node = new NodeType(this.sg, spec);
-        this.nodes.set(spec.id, node);
+        return this._addNode(spec.id, node);
+    }
+
+    private _addNode(id: string, node: Node): Node {
+        this.nodes.set(id, node);
         this.sg?.renderer.scene.add(node.object);
         node.start();
         this.emitWithTimestamp('node:added', { node });
@@ -64,58 +53,38 @@ export class Graph extends EventEmitter<GraphEventMap> {
     updateNode(id: string, updates: Partial<NodeSpec>): Node | null {
         const node = this.nodes.get(id);
         if (!node) return null;
-
-        if (typeof node.updateSpec === 'function') {
-            node.updateSpec(updates);
-        } else {
+        if (typeof node.updateSpec === 'function') node.updateSpec(updates);
+        else {
             if (updates.data) node.data = { ...node.data, ...updates.data };
-            if (updates.position) {
-                const [x, y, z] = updates.position;
-                node.updatePosition(x, y, z);
-            }
+            if (updates.position) node.updatePosition(updates.position[0], updates.position[1], updates.position[2]);
         }
-
         return node;
     }
 
     addEdge(specOrEdge: EdgeSpec | Edge): Edge | null {
-        if (
-            'source' in specOrEdge &&
-            specOrEdge.source instanceof Object &&
-            'position' in specOrEdge.source
-        ) {
+        if ('source' in specOrEdge && specOrEdge.source instanceof Object && 'position' in specOrEdge.source) {
             const edge = specOrEdge as Edge;
-            this.edges.set(edge.id, edge);
-            this.sg?.renderer.scene.add(edge.line);
-            edge.start();
-            this.emitWithTimestamp('edge:added', { edge });
-            return edge;
+            return this._addEdge(edge.id, edge);
         }
 
         const spec = specOrEdge as EdgeSpec;
-        if (!spec?.id || typeof spec.source !== 'string' || typeof spec.target !== 'string') {
-            logger.warn('Edge missing critical topology attributes (id/source/target).');
-            return null;
-        }
-
+        if (!spec?.id || typeof spec.source !== 'string' || typeof spec.target !== 'string')
+            { logger.warn('Edge missing critical topology attributes (id/source/target).'); return null; }
         if (this.edges.has(spec.id)) return this.updateEdge(spec.id, spec);
 
         const sourceNode = this.nodes.get(spec.source);
         const targetNode = this.nodes.get(spec.target);
-
-        if (!sourceNode || !targetNode) {
-            logger.warn('Edge "%s" rejected: missing source or target node.', spec.id);
-            return null;
-        }
+        if (!sourceNode || !targetNode) { logger.warn('Edge "%s" rejected: missing source or target node.', spec.id); return null; }
 
         const EdgeType = TypeRegistry.getInstance().getEdgeConstructor(spec.type ?? 'Edge');
-        if (!EdgeType) {
-            logger.warn('Edge type "%s" not registered.', spec.type);
-            return null;
-        }
+        if (!EdgeType) { logger.warn('Edge type "%s" not registered.', spec.type); return null; }
 
         const edge = new EdgeType(this.sg, spec, sourceNode, targetNode);
-        this.edges.set(spec.id, edge);
+        return this._addEdge(spec.id, edge);
+    }
+
+    private _addEdge(id: string, edge: Edge): Edge {
+        this.edges.set(id, edge);
         this.sg?.renderer.scene.add(edge.line);
         edge.start();
         this.emitWithTimestamp('edge:added', { edge });
@@ -125,109 +94,55 @@ export class Graph extends EventEmitter<GraphEventMap> {
     updateEdge(id: string, updates: Partial<EdgeSpec>): Edge | null {
         const edge = this.edges.get(id);
         if (!edge) return null;
-
-        if (typeof edge.updateSpec === 'function') {
-            edge.updateSpec(updates);
-        } else if (updates.data) {
-            edge.data = { ...edge.data, ...updates.data };
-        }
+        if (typeof edge.updateSpec === 'function') edge.updateSpec(updates);
+        else if (updates.data) edge.data = { ...edge.data, ...updates.data };
 
         if (updates.source || updates.target) {
             const sourceNode = this.nodes.get(updates.source ?? edge.source.id);
             const targetNode = this.nodes.get(updates.target ?? edge.target.id);
-            if (sourceNode && targetNode) {
-                edge.source = sourceNode;
-                edge.target = targetNode;
-                edge.update();
-            }
+            if (sourceNode && targetNode) { edge.source = sourceNode; edge.target = targetNode; edge.update(); }
         }
-
         return edge;
     }
 
     removeNode(id: string): void {
         const node = this.nodes.get(id);
         if (!node) return;
-
         this.sg?.renderer.scene.remove(node.object);
         this.nodes.delete(id);
         this.emitWithTimestamp('node:removed', { id });
-
         for (const [edgeId, edge] of this.edges) {
-            if (edge.source.id === id || edge.target.id === id) {
-                this.emitWithTimestamp('edge:removed', { id: edgeId });
-                edge.dispose?.();
-                this.edges.delete(edgeId);
-            }
+            if (edge.source.id === id || edge.target.id === id) { this.emitWithTimestamp('edge:removed', { id: edgeId }); edge.dispose?.(); this.edges.delete(edgeId); }
         }
-
         node.dispose?.();
     }
 
     removeEdge(id: string): void {
         const edge = this.edges.get(id);
         if (!edge) return;
-
         this.sg?.renderer.scene.remove(edge.line);
-        if (edge.arrowheads.source) {
-            this.sg?.renderer.scene.remove(edge.arrowheads.source);
-        }
-        if (edge.arrowheads.target) {
-            this.sg?.renderer.scene.remove(edge.arrowheads.target);
-        }
-
         this.edges.delete(id);
         this.emitWithTimestamp('edge:removed', { id });
         edge.dispose?.();
     }
 
     clear(): void {
-        for (const edge of this.edges.values()) {
-            edge.dispose?.();
-        }
-        for (const node of this.nodes.values()) {
-            node.dispose?.();
-        }
+        for (const edge of this.edges.values()) edge.dispose?.();
+        for (const node of this.nodes.values()) node.dispose?.();
         this.edges.clear();
         this.nodes.clear();
     }
 
-    getNodes(): IterableIterator<Node> {
-        return this.nodes.values();
-    }
+    getNodes(): IterableIterator<Node> { return this.nodes.values(); }
+    getEdges(): IterableIterator<Edge> { return this.edges.values(); }
+    getNode(id: string): Node | undefined { return this.nodes.get(id); }
+    getEdge(id: string): Edge | undefined { return this.edges.get(id); }
+    hasNode(id: string): boolean { return this.nodes.has(id); }
+    hasEdge(id: string): boolean { return this.edges.has(id); }
+    getNodeCount(): number { return this.nodes.size; }
+    getEdgeCount(): number { return this.edges.size; }
 
-    getEdges(): IterableIterator<Edge> {
-        return this.edges.values();
-    }
-
-    getNode(id: string): Node | undefined {
-        return this.nodes.get(id);
-    }
-
-    getEdge(id: string): Edge | undefined {
-        return this.edges.get(id);
-    }
-
-    hasNode(id: string): boolean {
-        return this.nodes.has(id);
-    }
-
-    hasEdge(id: string): boolean {
-        return this.edges.has(id);
-    }
-
-    getNodeCount(): number {
-        return this.nodes.size;
-    }
-
-    getEdgeCount(): number {
-        return this.edges.size;
-    }
-
-    query(predicate: (node: Node) => boolean): Node[] {
-        return [...this.nodes.values()].filter(predicate);
-    }
-
+    query(predicate: (node: Node) => boolean): Node[] { return [...this.nodes.values()].filter(predicate); }
     neighbors(nodeId: string): Node[] {
         const neighborSet = new Set<Node>();
         for (const edge of this.edges.values()) {
@@ -237,46 +152,22 @@ export class Graph extends EventEmitter<GraphEventMap> {
         return [...neighborSet];
     }
 
-    getConnectedEdges(nodeId: string): Edge[] {
-        return [...this.edges.values()].filter(
-            ({ source, target }) => source.id === nodeId || target.id === nodeId,
-        );
-    }
-
-    getIncomingEdges(nodeId: string): Edge[] {
-        return [...this.edges.values()].filter(({ target }) => target.id === nodeId);
-    }
-
-    getOutgoingEdges(nodeId: string): Edge[] {
-        return [...this.edges.values()].filter(({ source }) => source.id === nodeId);
-    }
+    getConnectedEdges(nodeId: string): Edge[] { return [...this.edges.values()].filter(({ source, target }) => source.id === nodeId || target.id === nodeId); }
+    getIncomingEdges(nodeId: string): Edge[] { return [...this.edges.values()].filter(({ target }) => target.id === nodeId); }
+    getOutgoingEdges(nodeId: string): Edge[] { return [...this.edges.values()].filter(({ source }) => source.id === nodeId); }
 
     toJSON(): GraphSpec {
         return {
             nodes: [...this.nodes.values()].map(({ id, type, label, position, data }) => ({
-                id,
-                type,
-                label,
-                position: [position.x, position.y, position.z] as [number, number, number],
-                data: data ? safeClone(data) : {},
+                id, type, label, position: [position.x, position.y, position.z] as [number, number, number], data: data ? safeClone(data) : {} ,
             })),
             edges: [...this.edges.values()].map(({ id, source, target, type, data }) => ({
-                id,
-                source: source.id,
-                target: target.id,
-                type: type ?? 'Edge',
-                data: data ? safeClone(data) : {},
+                id, source: source.id, target: target.id, type: type ?? 'Edge', data: data ? safeClone(data) : {} ,
             })),
         };
     }
 
-    export(): GraphExport {
-        return this.toJSON() as GraphExport;
-    }
-
-fromJSON(spec: GraphSpec): void {
-    this.clear();
-    if (spec.nodes) for (const nodeSpec of spec.nodes) this.addNode(nodeSpec);
-    if (spec.edges) for (const edgeSpec of spec.edges) this.addEdge(edgeSpec);
-  }
+    export(): GraphExport { return this.toJSON() as GraphExport; }
+    from(spec: GraphSpec): void { this.clear(); if (spec.nodes) for (const nodeSpec of spec.nodes) this.addNode(nodeSpec); if (spec.edges) for (const edgeSpec of spec.edges) this.addEdge(edgeSpec); }
+    fromJSON = this.from;
 }

@@ -37,7 +37,7 @@ export type SurfaceEventMap = {
     pointerdown: { surface: Surface; event: PointerEvent };
     pointerup: { surface: Surface; event: PointerEvent };
     updated: { surface: Surface; changes: unknown };
-    destroying: { surface: Surface };
+    'surface:destroying': { surface: Surface; timestamp: number };
     [key: string]: unknown;
 };
 
@@ -74,10 +74,10 @@ export abstract class Surface extends EventEmitter<SurfaceEventMap> {
         this.activity *= Math.exp(-_dt / this.ACTIVITY_DECAY_RATE);
     }
 
-    pulse(intensity: number = 1.0): void {
+    pulse(intensity = 1.0): void {
         this.activity = Math.max(this.activity, intensity);
         if ('lastActivityTime' in this) {
-            (this as any).lastActivityTime = performance.now();
+            (this as unknown as { lastActivityTime: number }).lastActivityTime = performance.now();
         }
     }
 
@@ -123,7 +123,7 @@ export abstract class Surface extends EventEmitter<SurfaceEventMap> {
 
     requireSpaceGraph(): SpaceGraph {
         if (!this.sg) {
-            throw new Error(`Surface '${this.id}' requires SpaceGraph but sg is not initialized`);
+            throw new Error(`Surface "${this.id}" requires SpaceGraph but sg is not initialized`);
         }
         return this.sg;
     }

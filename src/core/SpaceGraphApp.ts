@@ -143,64 +143,54 @@ export class SpaceGraphApp {
         return app;
     }
 
-    public setTheme(theme: Partial<SpaceGraphAppOptions['theme']>) {
+public setTheme(theme: Partial<SpaceGraphAppOptions['theme']>) {
         setTheme(this, theme ?? {});
     }
 
-public setMode(mode: 'default' | 'select' | 'connect') {
-const interaction = this.sg.pluginManager.getPlugin('interaction') as InteractionPlugin;
-if (interaction) interaction.mode = mode;
-}
-
-private _clearNodeStyle(node: Node): void {
-if (node instanceof HtmlNode && this.options.selectionHighlightClass) {
-node.domElement.classList.remove(this.options.selectionHighlightClass);
-} else if (this.options.selectionHighlightColor && this.originalColors.has(node)) {
-node.updateSpec({ data: { color: this.originalColors.get(node) } });
-}
-}
-
-private _applyNodeStyle(node: Node): void {
-if (node instanceof HtmlNode && this.options.selectionHighlightClass) {
-node.domElement.classList.add(this.options.selectionHighlightClass);
-} else if (
-this.options.selectionHighlightColor &&
-node.data?.color !== undefined &&
-typeof node.updateSpec === 'function'
-) {
-this.originalColors.set(node, node.data.color as number);
-node.updateSpec({
-data: { ...node.data, color: this.options.selectionHighlightColor },
-});
-}
-}
-
-private _clearEdgeStyle(edge: Edge): void {
-if (this.options.selectionHighlightEdgeColor && this.originalEdgeColors.has(edge)) {
-edge.updateSpec({ data: { color: this.originalEdgeColors.get(edge) } });
-}
-}
-
-private _applyEdgeStyle(edge: Edge): void {
-if (
-this.options.selectionHighlightEdgeColor &&
-edge.data?.color !== undefined &&
-typeof edge.updateSpec === 'function'
-) {
-this.originalEdgeColors.set(edge, edge.data.color as number);
-edge.updateSpec({
-data: { ...edge.data, color: this.options.selectionHighlightEdgeColor },
-});
-}
-}
-
-public clearSelectionStyles() {
-        for (const node of this.currentSelected) this._clearNodeStyle(node);
-        this.originalColors.clear();
-
-        for (const edge of this.currentSelectedEdges) this._clearEdgeStyle(edge);
-        this.originalEdgeColors.clear();
+    public setMode(mode: 'default' | 'select' | 'connect') {
+        const interaction = this.sg.pluginManager.getPlugin('interaction') as InteractionPlugin;
+        if (interaction) interaction.mode = mode;
     }
+
+    private _clearNodeStyle(node: Node): void {
+        if (node instanceof HtmlNode && this.options.selectionHighlightClass) {
+            node.domElement.classList.remove(this.options.selectionHighlightClass);
+        } else if (this.originalColors.has(node)) {
+            node.updateSpec({ data: { color: this.originalColors.get(node) } });        }
+    }
+
+    private _applyNodeStyle(node: Node): void {
+        if (node instanceof HtmlNode && this.options.selectionHighlightClass) {
+            node.domElement.classList.add(this.options.selectionHighlightClass);
+        } else if (        this.options.selectionHighlightColor &&
+            node.data?.color !== undefined
+        ) {
+            this.originalColors.set(node, node.data.color as number);
+            node.updateSpec({
+                data: { color: this.options.selectionHighlightColor },
+            });        }
+    }
+
+    private _clearEdgeStyle(edge: Edge): void {
+        if (this.originalEdgeColors.has(edge)) {
+            edge.updateSpec({ data: { color: this.originalEdgeColors.get(edge) } });        }
+    }
+
+    private _applyEdgeStyle(edge: Edge): void {
+        if (
+            this.options.selectionHighlightEdgeColor &&
+            edge.data?.color !== undefined
+        ) {
+            this.originalEdgeColors.set(edge, edge.data.color as number);
+            edge.updateSpec({
+                data: { color: this.options.selectionHighlightEdgeColor },
+            });        }
+    }
+
+    public clearSelectionStyles() {
+        for (const node of this.currentSelected) this._clearNodeStyle(node);
+        this.originalColors.clear();        for (const edge of this.currentSelectedEdges) this._clearEdgeStyle(edge);
+        this.originalEdgeColors.clear();    }
 
     public applySelectionStyles() {
         for (const node of this.currentSelected) this._applyNodeStyle(node);
@@ -251,9 +241,9 @@ public addToolbarAction(config: AppButtonConfig) {
     }
 
 public importData(data: any) {
-this.sg.import(data);
-this._emitSelectionChanged();
-}
+        this.sg.import(data);
+        this._emitSelectionChanged();
+    }
 
     public focusOnNodes(nodeIds: string[], padding = 100, duration = 1.5) {
         const nodes = nodeIds

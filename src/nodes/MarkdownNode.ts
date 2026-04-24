@@ -105,15 +105,15 @@ export class MarkdownNode extends BaseContentNode {
                     .then(({ marked }) => {
                         contentDiv.innerHTML = marked.parse(md as string) as string;
 
-                        if (typeof ResizeObserver === 'undefined') {
-                            setTimeout(() => {
-                                const actualHeight = this.domElement.offsetHeight;
-                                if (actualHeight > 0) {
-                                    const w = (this.data?.width as number) ?? 300;
-                                    this.updateBackingGeometry(w, actualHeight);
-                                }
-                            }, 50);
-                        }
+                        // Always trigger geometry update after markdown content changes
+                        // This ensures the backing geometry is updated whether or not ResizeObserver is available
+                        setTimeout(() => {
+                            const actualHeight = this.domElement.offsetHeight;
+                            if (actualHeight > 0) {
+                                const w = (this.data?.width as number) ?? 300;
+                                this.updateBackingGeometry(w, actualHeight);
+                            }
+                        }, 50);
                     })
                     .catch((err) => {
                         contentDiv.innerHTML = 'Failed to load markdown renderer';
