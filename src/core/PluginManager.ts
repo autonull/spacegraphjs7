@@ -8,76 +8,70 @@ import { wrapError } from '../utils/error';
 import { TypeRegistry } from './TypeRegistry';
 
 export interface Plugin {
-    readonly id: string;
-    readonly name: string;
-    readonly version: string;
-    init(sg: SpaceGraph, graph: Graph, events: EventSystem): void | Promise<void>;
-    onPreRender?(delta: number): void;
-    onPostRender?(delta: number): void;
-    onNodeAdded?(node: Node): void;
-    onNodeRemoved?(node: Node): void;
-    onEdgeAdded?(edge: Edge): void;
-    onEdgeRemoved?(edge: Edge): void;
-    dispose?(): void;
-    export?(): unknown;
-    import?(data: unknown): void;
+  readonly id: string;
+  readonly name: string;
+  readonly version: string;
+  init(sg: SpaceGraph, graph: Graph, events: EventSystem): void | Promise<void>;
+  onPreRender?(delta: number): void;
+  onPostRender?(delta: number): void;
+  onNodeAdded?(node: Node): void;
+  onNodeRemoved?(node: Node): void;
+  onEdgeAdded?(edge: Edge): void;
+  onEdgeRemoved?(edge: Edge): void;
+  dispose?(): void;
+  export?(): unknown;
+  import?(data: unknown): void;
 }
 
 const logger = createLogger('PluginManager');
 
 export class PluginManager {
-    private readonly sg: SpaceGraph;
-    public readonly plugins = new Map<string, Plugin>();
+  private readonly plugins: Map<string, Plugin> = new Map();
 
-    constructor(sg: SpaceGraph) {
-        this.sg = sg;
+  constructor(private readonly sg: SpaceGraph) {}
+
+  register(name: string, plugin: Plugin): this {
+    if (!name || typeof name !== 'string') {
+      throw new Error(`[SpaceGraph] Plugin Registration Error: Invalid plugin name "${name}".`);
     }
-
-    register(name: string, plugin: Plugin): void {
-        if (!name || typeof name !== 'string') {
-            throw new Error(
-                `[SpaceGraph] Plugin Registration Error: Invalid plugin name "${name}". Name must be a non-empty string.`,
-            );
-        }
-        if (!plugin) {
-            throw new Error(
-                `[SpaceGraph] Plugin Registration Error: Plugin "${name}" is undefined or null.`,
-            );
-        }
-        this.plugins.set(name, plugin);
+    if (!plugin) {
+      throw new Error(`[SpaceGraph] Plugin Registration Error: Plugin "${name}" is undefined or null.`);
     }
+    this.plugins.set(name, plugin);
+    return this;
+  }
 
-    registerNodeType(type: string, cls: import('./TypeRegistry').NodeConstructor): void {
-        TypeRegistry.getInstance().registerNode(type, cls);
-    }
+  unregister(name: string): boolean {
+    const plugin = this.plugins.get(name);
+    if (!plugin) return false;
+    plugin.dispose?.();
+    this.plugins.delete(name);
+    return true;
+  }
 
-    getNodeType(type: string): import('./TypeRegistry').NodeConstructor | undefined {
-        return TypeRegistry.getInstance().getNodeConstructor(type);
-    }
+  get<T extends Plugin = Plugin>(name: string): T | undefined {
+    return this.plugins.get(name) as T | undefined;
+  }
 
-    registerEdgeType(type: string, cls: import('./TypeRegistry').EdgeConstructor): void {
-        TypeRegistry.getInstance().registerEdge(type, cls);
-    }
+  has(name: string): boolean {
+    return this.plugins.has(name);
+  }
 
-    getEdgeType(type: string): import('./TypeRegistry').EdgeConstructor | undefined {
-        return TypeRegistry.getInstance().getEdgeConstructor(type);
-    }
+  names(): string[] {
+    return [...this.plugins.keys()];
+  }
 
-    getPlugin(name: string): Plugin | undefined {
-        return this.plugins.get(name);
-    }
+  entries(): IterableIterator<[string, Plugin]> {
+    return this.plugins.entries();
+  }
 
-    hasPlugin(name: string): boolean {
-        return this.plugins.has(name);
-    }
+  values(): IterableIterator<Plugin> {
+    return this.plugins.values();
+  }
 
-    getPluginNames(): string[] {
-        return [...this.plugins.keys()];
-    }
-
-async initAll(): Promise<void> {
+  async initAll(): Promise<void> {
     const errors: Error[] = [];
-    for (const [name, plugin] of this.plugins.entries()) {
+    for (const [name, plugin] of this.plugins) {
       try {
         await plugin.init(this.sg, this.sg.graph, this.sg.events);
       } catch (err) {
@@ -93,69 +87,81 @@ async initAll(): Promise<void> {
     if (errors.length > 0) {
       const err = new Error(
         `[SpaceGraph] PluginManager initAll fails with ${errors.length} error(s).`,
-      );
-      (err as Error & { errors: Error[] }).errors = errors;
+      ) as Error & { errors: Error[] };
+      err.errors = errors;
       throw err;
     }
   }
 
-    updateAll(delta: number): void {
-        for (const plugin of this.plugins.values()) {
-            try {
-                plugin.onPreRender?.(delta);
-            } catch (err) {
-                logger.error('Plugin onPreRender error:', err);
-            }
-        }
-        for (const plugin of this.plugins.values()) {
-            try {
-                plugin.onPostRender?.(delta);
-            } catch (err) {
-                logger.error('Plugin onPostRender error:', err);
-            }
-        }
+  updateAll(delta: number): void {
+    for (const plugin of this.plugins.values()) {
+      try {
+        plugin.onPreRender?.(delta);
+      } catch (err) {
+        logger.error('Plugin onPreRender error:', err);
+      }
     }
+    for (const plugin of this.plugins.values()) {
+      try {
+        plugin.onPostRender?.(delta);
+      } catch (err) {
+        logger.error('Plugin onPostRender error:', err);
+      }
+    }
+  }
 
-    unregister(name: string): boolean {
-        const plugin = this.plugins.get(name);
-        if (!plugin) return false;
-        plugin.dispose?.();
-        this.plugins.delete(name);
-        return true;
+  disposePlugins(): void {
+    for (const plugin of this.plugins.values()) {
+      plugin.dispose?.();
     }
+    this.plugins.clear();
+  }
 
-    disposePlugins(): void {
-        for (const plugin of this.plugins.values()) {
-            plugin.dispose?.();
+  export(): Record<string, unknown> {
+    const state: Record<string, unknown> = {};
+    for (const [name, plugin] of this.plugins) {
+      if (plugin.export) {
+        try {
+          state[name] = plugin.export();
+        } catch (err) {
+          logger.error('Failed to export plugin "%s".', name, err);
         }
-        this.plugins.clear();
+      }
     }
+    return state;
+  }
 
-    export(): Record<string, unknown> {
-        const state: Record<string, unknown> = {};
-        for (const [name, plugin] of this.plugins.entries()) {
-            if (plugin.export) {
-                try {
-                    state[name] = plugin.export();
-                } catch (err) {
-                    logger.error('Failed to export plugin "%s".', name, err);
-                }
-            }
+  import(data: Record<string, unknown>): void {
+    if (!data) return;
+    for (const [name, state] of Object.entries(data)) {
+      const plugin = this.plugins.get(name);
+      if (plugin?.import) {
+        try {
+          plugin.import(state);
+        } catch (err) {
+          logger.error('Failed to import state for plugin "%s".', name, err);
         }
-        return state;
+      }
     }
+  }
 
-    import(data: Record<string, unknown>): void {
-        if (!data) return;
-        for (const [name, pluginState] of Object.entries(data)) {
-            const plugin = this.plugins.get(name);
-            if (plugin?.import) {
-                try {
-                    plugin.import(pluginState);
-                } catch (err) {
-                    logger.error('Failed to import state for plugin "%s".', name, err);
-                }
-            }
-        }
-    }
+  registerNodeType(type: string, cls: import('./TypeRegistry').NodeConstructor): void {
+    TypeRegistry.getInstance().registerNode(type, cls);
+  }
+
+  getNodeType(type: string): import('./TypeRegistry').NodeConstructor | undefined {
+    return TypeRegistry.getInstance().getNodeConstructor(type);
+  }
+
+  registerEdgeType(type: string, cls: import('./TypeRegistry').EdgeConstructor): void {
+    TypeRegistry.getInstance().registerEdge(type, cls);
+  }
+
+  getEdgeType(type: string): import('./TypeRegistry').EdgeConstructor | undefined {
+    return TypeRegistry.getInstance().getEdgeConstructor(type);
+  }
+
+  getPlugin = this.get;
+  hasPlugin = this.has;
+  getPluginNames = this.names;
 }
