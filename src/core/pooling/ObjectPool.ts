@@ -5,6 +5,7 @@ export class ObjectPool<T> {
   private readonly createFn: () => T;
   private readonly resetFn: (obj: T) => void;
   private readonly maxPoolSize: number;
+  private _acquiredCount = 0;
 
   constructor(createFn: () => T, resetFn: (obj: T) => void, initialSize = 100, maxPoolSize = 10000) {
     this.createFn = createFn;
@@ -14,6 +15,7 @@ export class ObjectPool<T> {
   }
 
   acquire(): T {
+    this._acquiredCount++;
     return this.available.pop() ?? this.createFn();
   }
 
@@ -23,12 +25,19 @@ export class ObjectPool<T> {
     this.available.push(obj);
   }
 
-  get size(): number {
-    return this.available.length;
-  }
+  get size(): number { return this.available.length; }
+  get acquiredCount(): number { return this._acquiredCount; }
+  get poolSize(): number { return this.available.length; }
 
-  clear(): void {
-    this.available.length = 0;
+  clear(): void { this.available.length = 0; }
+
+  stats(): { available: number; acquired: number; utilization: number } {
+    const total = this.maxPoolSize;
+    return {
+      available: this.available.length,
+      acquired: this._acquiredCount,
+      utilization: total > 0 ? (total - this.available.length) / total : 0,
+    };
   }
 }
 
@@ -106,4 +115,41 @@ export function withPooledMatrix4<T>(pool: MathPool, fn: (m: THREE.Matrix4) => T
 export function withPooledBox3<T>(pool: MathPool, fn: (b: THREE.Box3) => T): T {
   const b = pool.acquireBox3();
   try { return fn(b); } finally { pool.releaseBox3(b); }
+}
+
+export function withPooledQuaternion<T>(pool: MathPool, fn: (q: THREE.Quaternion) => T): T {
+  const q = pool.acquireQuaternion();
+  try { return fn(q); } finally { pool.releaseQuaternion(q); }
+}
+
+export function withPooledColor<T>(pool: MathPool, fn: (c: THREE.Color) => T): T {
+  const c = pool.acquireColor();
+  try { return fn(c); } finally { pool.releaseColor(c); }
+}
+
+export class ScopedPoolAccess<T> {
+  private pool: ObjectPool<T>;
+  private obj: T | null = null;
+  private released = false;
+
+  constructor(pool: ObjectPool<T>) {
+    this.pool = pool;
+  }
+
+  acquire(): T {
+    if (this.obj) return this.obj;
+    this.obj = this.pool.acquire();
+    return this.obj;
+  }
+
+  release(): void {
+    if (this.obj && !this.released) {
+      this.pool.release(this.obj);
+      this.released = true;
+    }
+  }
+
+  [Symbol.dispose](): void {
+    this.release();
+  }
 }

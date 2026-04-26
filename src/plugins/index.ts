@@ -30,6 +30,8 @@ export { ErgonomicsPlugin, type ErgonomicsConfig } from './ErgonomicsPlugin';
 export { VisionOverlayPlugin } from './VisionOverlayPlugin';
 export { HUDPlugin, type HUDElementOptions } from './HUDPlugin';
 export { HistoryPlugin, type HistoryPluginOptions } from './HistoryPlugin';
+export { FractalZoomPlugin } from './FractalZoomPlugin';
+export { ZoomUIPlugin } from './ZoomUIPlugin';
 export { LayoutContainer } from './LayoutContainer';
 export {
   HoverMetaWidget,

@@ -17,19 +17,19 @@ export interface InputAction { id: string; label: string; handler: InputActionHa
 export interface InputBinding { id: string; action: string; sources: string[]; eventType: InputEventType; predicate?: (event: InputEvent) => boolean; priority?: number; }
 
 export interface InputContext {
-    graph: SpaceGraph; events: EventSystem;
-    getState: () => InputState; setActiveInput: (source: string) => void;
-    disableInput: (source: string) => void; enableInput: (source: string) => void; isInputEnabled: (source: string) => boolean;
-    updateState: (partial: Partial<InputState>) => void; emit: (eventType: string, data: unknown) => void; emitBatched: (eventType: string, data: unknown) => void;
+  sg: SpaceGraph; events: EventSystem;
+  getState: () => InputState; setActiveInput: (source: string) => void;
+  disableInput: (source: string) => void; enableInput: (source: string) => void; isInputEnabled: (source: string) => boolean;
+  updateState: (partial: Partial<InputState>) => void; emit: (eventType: string, data: unknown) => void; emitBatched: (eventType: string, data: unknown) => void;
 }
 
 export interface InputState { activeInput: string | null; disabledInputs: Set<string>; pointerPosition: { x: number; y: number }; pointerDown: boolean; keysPressed: Set<string>; touchCount: number; }
 export interface InputSourceConfig { id: string; element: HTMLElement; enabled?: boolean; capture?: boolean; }
-export interface InputManagerOptions { graph: SpaceGraph; events: EventSystem; sources?: InputSourceConfig[]; }
+export interface InputManagerOptions { sg: SpaceGraph; events: EventSystem; sources?: InputSourceConfig[]; }
 
 export class InputManager {
-    private graph: SpaceGraph;
-    private events: EventSystem;
+  private sg: SpaceGraph;
+  private events: EventSystem;
     private state: InputState;
     private sources: Map<string, InputSource> = new Map();
     private actions: Map<string, InputAction> = new Map();
@@ -38,30 +38,30 @@ export class InputManager {
     private fingerManager: FingerManager;
     private fingerings: Array<{ fingering: Fingering; priority: number }> = [];
 
-    constructor(options: InputManagerOptions) {
-        this.graph = options.graph;
-        this.events = options.events;
-        this.state = { activeInput: null, disabledInputs: new Set(), pointerPosition: { x: 0, y: 0 }, pointerDown: false, keysPressed: new Set(), touchCount: 0 };
-        this.fingerManager = new FingerManager();
-        if (options.sources) for (const config of options.sources) this.addSource(config);
-    }
+  constructor(options: InputManagerOptions) {
+    this.sg = options.sg;
+    this.events = options.events;
+    this.state = { activeInput: null, disabledInputs: new Set(), pointerPosition: { x: 0, y: 0 }, pointerDown: false, keysPressed: new Set(), touchCount: 0 };
+    this.fingerManager = new FingerManager();
+    if (options.sources) for (const config of options.sources) this.addSource(config);
+  }
 
     registerFingering(fingering: Fingering, priority: number): void { this.fingerings.push({ fingering, priority }); this.fingerings.sort((a, b) => b.priority - a.priority); }
     getFingerManager(): FingerManager { return this.fingerManager; }
 
-    get context(): InputContext {
-        return {
-            graph: this.graph, events: this.events,
-            getState: () => this.state,
-            setActiveInput: (source: string) => { this.state.activeInput = source; },
-            disableInput: (source: string) => { this.state.disabledInputs.add(source); },
-            enableInput: (source: string) => { this.state.disabledInputs.delete(source); },
-            isInputEnabled: (source: string) => !this.state.disabledInputs.has(source),
-            updateState: (partial: Partial<InputState>) => { Object.assign(this.state, partial); },
-            emit: (eventType: string, data: unknown) => { this.events.emit(eventType, data); },
-            emitBatched: (eventType: string, data: unknown) => { this.events.emitBatched(eventType, data); },
-        };
-    }
+  get context(): InputContext {
+    return {
+      sg: this.sg, events: this.events,
+      getState: () => this.state,
+      setActiveInput: (source: string) => { this.state.activeInput = source; },
+      disableInput: (source: string) => { this.state.disabledInputs.add(source); },
+      enableInput: (source: string) => { this.state.disabledInputs.delete(source); },
+      isInputEnabled: (source: string) => !this.state.disabledInputs.has(source),
+      updateState: (partial: Partial<InputState>) => { Object.assign(this.state, partial); },
+      emit: (eventType: string, data: unknown) => { this.events.emit(eventType, data); },
+      emitBatched: (eventType: string, data: unknown) => { this.events.emitBatched(eventType, data); },
+    };
+  }
 
     addSource(config: InputSourceConfig): InputSource { const source = new InputSource(config, this); this.sources.set(config.id, source); return source; }
     removeSource(id: string): void { const source = this.sources.get(id); if (source) { source.dispose(); this.sources.delete(id); } }
@@ -91,7 +91,7 @@ export class InputManager {
     }
 
     private computeWorldRay(ndc: { x: number; y: number }): THREE.Ray {
-        const camera = this.graph.renderer.camera;
+        const camera = this.sg.renderer.camera;
         const ray = new THREE.Ray();
         ray.origin.setFromMatrixPosition(camera.matrixWorld);
         ray.direction.set(ndc.x, ndc.y, 0.5).unproject(camera).sub(ray.origin).normalize();

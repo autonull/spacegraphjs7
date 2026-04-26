@@ -1,17 +1,15 @@
 import { Graph } from './core/Graph';
 import { Renderer } from './core/Renderer';
 import { PluginManager } from './core/PluginManager';
-import { CameraControls, type CameraControlsConfig } from './core/CameraControls';
+import { CameraControls } from './core/CameraControls';
 import { EventSystem } from './core/events/EventSystem';
 import { VisionManager } from './core/VisionManager';
 import { ObjectPoolManager } from './core/ObjectPoolManager';
 import { InputManager } from './input/InputManager';
 import { applyDefaultInputConfig, type DefaultInputConfig } from './input/DefaultInputConfig';
 import { CameraOrbitingFingering, CameraPanningFingering, CameraZoomingFingering } from './input/fingerings';
-import { createLogger, safeClone } from './utils';
-import { wrapError } from './utils/error';
+import { createLogger, safeClone, wrapError, CameraUtils, DOMUtils } from './utils';
 import { MathPool } from './core/pooling/ObjectPool';
-import { CameraUtils, DOMUtils } from './utils';
 import { FingeringPriority, Performance } from './core/constants';
 import {
   DEFAULT_NODE_TYPES,
@@ -20,12 +18,12 @@ import {
   DEFAULT_SYSTEM_PLUGINS,
   createQuickGraphSpec,
 } from './core/defaults';
-import type { GraphSpec, SpaceGraphOptions, SpecUpdate } from './types';
+import type { GraphSpec, SpaceGraphOptions, SpecUpdate, GraphImportData } from './types';
 
 const logger = createLogger('SpaceGraph');
 
 export class SpaceGraph {
-  public static instances: Set<SpaceGraph> = new Set();
+  public static instances = new Set<SpaceGraph>();
   public container: HTMLElement;
   public renderer!: Renderer;
   public graph!: Graph;
@@ -37,8 +35,8 @@ export class SpaceGraph {
   public input!: InputManager;
   public options: SpaceGraphOptions;
   private animationFrameId?: number;
-  private lastTimestamp: number = 0;
-  private _animating: boolean = false;
+  private lastTimestamp = 0;
+  private _animating = false;
 
   constructor(container: HTMLElement, options: SpaceGraphOptions = {}) {
     this.options = options;
@@ -58,7 +56,7 @@ export class SpaceGraph {
     this.cameraControls = new CameraControls(
       this.renderer.camera,
       this.container,
-      this.options.cameraControls as Partial<CameraControlsConfig>,
+      this.options.cameraControls as Partial<import('./core/CameraControls').CameraControlsConfig>,
     );
   }
 
@@ -67,7 +65,7 @@ export class SpaceGraph {
       ? (this.options.input as DefaultInputConfig | undefined)
       : {};
     const config = inputConfig && typeof inputConfig !== 'boolean' ? inputConfig : {};
-    this.input = new InputManager({ graph: this.graph, events: this.events });
+    this.input = new InputManager({ sg: this, events: this.events });
     applyDefaultInputConfig(this.input, this, config);
   }
 
@@ -79,16 +77,8 @@ export class SpaceGraph {
 
   static async create(container: string | HTMLElement, spec: GraphSpec, options?: SpaceGraphOptions): Promise<SpaceGraph> {
     const element = SpaceGraph.getContainerElement(container);
-    if (!element) {
-      throw new Error(
-        `[SpaceGraph] Initialization Error: Container not found for selector/element "${container}". ` +
-        `Make sure the element exists in the DOM before calling create().`,
-      );
-    }
-
-    if (!SpaceGraph.checkWebGL()) {
-      logger.warn('WebGL not supported on this device. Rendering may fail or perform poorly.');
-    }
+    if (!element) throw new Error(`[SpaceGraph] Container not found for "${container}"`);
+    if (!SpaceGraph.checkWebGL()) logger.warn('WebGL not supported - rendering may fail');
 
     const graph = new SpaceGraph(element, options);
     await graph.init();
@@ -105,9 +95,8 @@ export class SpaceGraph {
 
   private _registerDefaults(): void {
     for (const cls of DEFAULT_NODE_TYPES) this.pluginManager.registerNodeType(cls.name, cls);
-    for (const cls of DEFAULT_EDGE_TYPES) {
+    for (const cls of DEFAULT_EDGE_TYPES)
       this.pluginManager.registerEdgeType(cls.name, cls as import('./core/TypeRegistry').EdgeConstructor);
-    }
     for (const [cls, name] of DEFAULT_LAYOUT_PLUGINS) this.pluginManager.register(name, new cls());
     for (const [cls, name] of DEFAULT_SYSTEM_PLUGINS) this.pluginManager.register(name, new cls());
     this._registerFingerings();
@@ -129,13 +118,13 @@ export class SpaceGraph {
     spec.edges?.forEach(u => u.id && this.graph.updateEdge(u.id, u));
   }
 
-  export(): GraphSpec & { camera?: { position: [number, number, number]; target: [number, number, number] }; plugins?: Record<string, any> } {
-    const spec: any = {
+  export(): GraphSpec & { camera?: { position: [number, number, number]; target: [number, number, number] }; plugins?: Record<string, unknown> } {
+    const spec: GraphSpec & { camera?: { position: [number, number, number]; target: [number, number, number] }; plugins?: Record<string, unknown> } = {
       nodes: [...this.graph.nodes.values()].map(node => ({
         id: node.id,
         type: node.constructor.name,
         label: node.label,
-        position: [node.position.x, node.position.y, node.position.z],
+        position: [node.position.x, node.position.y, node.position.z] as [number, number, number],
         data: safeClone(node.data),
       })),
       edges: Array.from(this.graph.edges.values()).map(edge => ({
@@ -164,9 +153,9 @@ export class SpaceGraph {
     return spec;
   }
 
-  import(data: any): void {
+  import(data: GraphImportData): void {
     this.graph.clear();
-    this.loadSpec(data);
+    this.loadSpec(data as GraphSpec);
 
     if (data.camera && this.cameraControls?.target) {
       this.renderer.camera.position.set(...data.camera.position);
@@ -182,7 +171,7 @@ export class SpaceGraph {
       this.cameraControls.update();
     }
 
-    if (data.plugins) this.pluginManager.import(data.plugins);
+    if (data.plugins) this.pluginManager.import(data.plugins as Record<string, any>);
   }
 
   fitView(padding: number = 100, duration: number = 1.5): void {
@@ -250,7 +239,7 @@ export class SpaceGraph {
     }
   }
 
-  public static async load(container: string | HTMLElement, data: unknown, options: SpaceGraphOptions = {}): Promise<SpaceGraph> {
+  public static async load(container: string | HTMLElement, data: GraphImportData, options: SpaceGraphOptions = {}): Promise<SpaceGraph> {
     const element = SpaceGraph.getContainerElement(container);
     if (!element) throw new Error(`[SpaceGraph] Import Error: Container not found for "${container}".`);
 

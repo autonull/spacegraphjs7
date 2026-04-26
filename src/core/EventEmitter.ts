@@ -5,66 +5,66 @@ const logger = createLogger('EventEmitter');
 export interface Disposable { dispose(): void; }
 
 export class EventEmitter<T extends Record<string, unknown>> {
-    private eventHandlers = new Map<keyof T, Set<(event: T[keyof T]) => void>>();
-    private batchedEvents = new Map<keyof T, unknown[]>();
-    private batchFrameId: number | ReturnType<typeof setTimeout> | null = null;
+  private handlers = new Map<keyof T, Set<(event: any) => void>>();
+  private batched = new Map<keyof T, any[]>();
+  private batchId: number | ReturnType<typeof setTimeout> | null = null;
 
-    on<K extends keyof T>(event: K, handler: (event: T[K]) => void): Disposable {
-        const handlers = this.eventHandlers.get(event) ?? new Set();
-        if (!this.eventHandlers.has(event)) this.eventHandlers.set(event, handlers);
-        handlers.add(handler as (event: T[keyof T]) => void);
-        return { dispose: () => { handlers.delete(handler as (event: T[keyof T]) => void); } };
+  on<K extends keyof T>(event: K, handler: (event: T[K]) => void): Disposable {
+    const set = this.handlers.get(event) ?? new Set();
+    if (!this.handlers.has(event)) this.handlers.set(event, set);
+    set.add(handler);
+    return { dispose: () => set.delete(handler) };
+  }
+
+  off<K extends keyof T>(event: K, handler?: (event: T[K]) => void): void {
+    if (!handler) { this.handlers.delete(event); return; }
+    this.handlers.get(event)?.delete(handler);
+  }
+
+  protected emit<K extends keyof T>(event: K, data: T[K]): void {
+    for (const h of this.handlers.get(event) ?? []) {
+      try { h(data); } catch (e) { logger.error('Event handler failed:', event, e); }
     }
+  }
 
-    off<K extends keyof T>(event: K, handler?: (event: T[K]) => void): void {
-        if (handler === undefined) { this.eventHandlers.delete(event); return; }
-        this.eventHandlers.get(event)?.delete(handler as (event: T[keyof T]) => void);
+  emitBatched<K extends keyof T>(event: K, data: T[K]): void {
+    const arr = this.batched.get(event) ?? [];
+    if (!this.batched.has(event)) this.batched.set(event, arr);
+    arr.push(data);
+    if (!this.batchId) {
+      this.batchId = typeof window !== 'undefined' && 'requestAnimationFrame' in window
+        ? requestAnimationFrame(() => this.flushBatch())
+        : setTimeout(() => this.flushBatch(), 0);
     }
+  }
 
-    protected emit<K extends keyof T>(event: K, data: T[K]): void {
-        for (const handler of this.eventHandlers.get(event) ?? []) {
-            try { handler(data); } catch (err) { logger.error(`Event handler for %s failed:`, event, err); }
-        }
+  private flushBatch(): void {
+    this.batchId = null;
+    for (const [event, arr] of this.batched) {
+      for (const data of arr) this.emit(event, data);
     }
+    this.batched.clear();
+  }
 
-    emitBatched<K extends keyof T>(event: K, data: T[K]): void {
-        const events = this.batchedEvents.get(event) ?? [];
-        if (!this.batchedEvents.has(event)) this.batchedEvents.set(event, events);
-        events.push(data);
-        if (this.batchFrameId === null) {
-            this.batchFrameId = typeof window !== 'undefined' && 'requestAnimationFrame' in window
-                ? requestAnimationFrame(() => this.flushBatch())
-                : setTimeout(() => this.flushBatch(), 0);
-        }
+  protected emitWithTimestamp<K extends keyof T>(event: K, data: T[K] & { timestamp?: number }): void {
+    const eventData = { ...data, timestamp: Date.now() } as T[K];
+    for (const h of this.handlers.get(event) ?? []) {
+      try { h(eventData); } catch (e) { logger.error('Event handler failed:', event, e); }
     }
+  }
 
-    private flushBatch(): void {
-        this.batchFrameId = null;
-        for (const [event, events] of this.batchedEvents) {
-            for (const data of events) this.emit(event, data as T[typeof event]);
-        }
-        this.batchedEvents.clear();
+  removeAllListeners(): void { this.handlers.clear(); }
+  listenerCount<K extends keyof T>(event: K): number { return this.handlers.get(event)?.size ?? 0; }
+  hasListeners<K extends keyof T>(event: K): boolean { return this.listenerCount(event) > 0; }
+  eventNames(): IterableIterator<keyof T> { return this.handlers.keys(); }
+
+  clear(): void {
+    if (this.batchId) {
+      if (typeof this.batchId === 'number') cancelAnimationFrame(this.batchId);
+      else clearTimeout(this.batchId);
+      this.batchId = null;
     }
-
-    protected emitWithTimestamp<K extends keyof T>(event: K, data: Omit<T[K] & { timestamp: number }, 'timestamp'>): void {
-        const eventData = { ...data, timestamp: Date.now() } as T[K];
-        for (const handler of this.eventHandlers.get(event) ?? []) {
-            try { handler(eventData); } catch (err) { logger.error(`Event handler for %s failed:`, event, err); }
-        }
-    }
-
-    removeAllListeners(): void { this.eventHandlers.clear(); }
-    listenerCount<K extends keyof T>(event: K): number { return this.eventHandlers.get(event)?.size ?? 0; }
-    hasListeners<K extends keyof T>(event: K): boolean { return this.listenerCount(event) > 0; }
-    eventNames(): IterableIterator<keyof T> { return this.eventHandlers.keys(); }
-
-    clear(): void {
-        if (this.batchFrameId !== null) {
-            if (typeof this.batchFrameId === 'number') cancelAnimationFrame(this.batchFrameId);
-            else clearTimeout(this.batchFrameId);
-            this.batchFrameId = null;
-        }
-        this.batchedEvents.clear();
-        this.eventHandlers.clear();
-    }
+    this.batched.clear();
+    this.handlers.clear();
+  }
 }

@@ -97,3 +97,37 @@ export function throttle<T extends (...args: unknown[]) => void>(fn: T, limit: n
     if (now - last >= limit) { last = now; fn(...args); }
   };
 }
+
+// Memoization utilities
+export function memoize<T extends (...args: unknown[]) => unknown>(fn: T): T {
+  const cache = new Map<string, ReturnType<T>>();
+  return ((...args: Parameters<T>) => {
+    const key = JSON.stringify(args);
+    if (cache.has(key)) return cache.get(key);
+    const result = fn(...args) as ReturnType<T>;
+    cache.set(key, result);
+    return result;
+  }) as T;
+}
+
+export function memoizeWithKey<T extends (...args: unknown[]) => unknown, K = string>(
+  fn: T,
+  keyFn: (...args: Parameters<T>) => K,
+): T {
+  const cache = new Map<K, ReturnType<T>>();
+  return ((...args: Parameters<T>) => {
+    const key = keyFn(...args);
+    if (cache.has(key)) return cache.get(key);
+    const result = fn(...args) as ReturnType<T>;
+    cache.set(key, result);
+    return result;
+  }) as T;
+}
+
+export function invalidateMemoization<T>(cache: Map<unknown, T>, key: unknown): void {
+  cache.delete(key);
+}
+
+export function clearMemoization<T>(cache: Map<unknown, T>): void {
+  cache.clear();
+}

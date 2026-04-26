@@ -25,26 +25,34 @@ const KEY_CONFIG = {
 } as const;
 
 export class CameraControls {
-    readonly camera: THREE.Camera;
-    readonly domElement: HTMLElement;
-    target: THREE.Vector3;
-    spherical: THREE.Spherical;
+  readonly camera: THREE.Camera;
+  readonly domElement: HTMLElement;
+  target: THREE.Vector3;
+  spherical: THREE.Spherical;
 
-    private config: CameraControlsConfig;
-    private sphericalDelta = new THREE.Spherical();
-    private scale = 1;
-    private panOffset = new THREE.Vector3();
-    private zoomStack: Array<{ target: THREE.Vector3; distance: number; phi: number; theta: number }> = [];
-    private readonly MAX_ZOOM_DEPTH = 8;
-    private keyState = new Map<string, boolean>();
-    private targetNext: THREE.Vector3 | null = null;
-    private radiusNext: number | null = null;
-    private animStartTime = 0;
-    private animDuration = 0;
-    private startTarget = new THREE.Vector3();
-    private startRadius = 0;
-    private isOrthographic = false;
-    private orthoCamera: THREE.OrthographicCamera | null = null;
+  private config: CameraControlsConfig;
+  private sphericalDelta = new THREE.Spherical();
+  private scale = 1;
+  private panOffset = new THREE.Vector3();
+  private zoomStack: Array<{ target: THREE.Vector3; distance: number; phi: number; theta: number }> = [];
+  private readonly MAX_ZOOM_DEPTH = 8;
+  private keyState = new Map<string, boolean>();
+  private targetNext: THREE.Vector3 | null = null;
+  private radiusNext: number | null = null;
+  private animStartTime = 0;
+  private animDuration = 0;
+  private startTarget = new THREE.Vector3();
+  private startRadius = 0;
+  private isOrthographic = false;
+  private orthoCamera: THREE.OrthographicCamera | null = null;
+  
+  // Cached vectors for update loop - avoids per-frame allocations
+  private _camRight = new THREE.Vector3();
+  private _camForward = new THREE.Vector3();
+  private _camUp = new THREE.Vector3();
+  private _tempVec = new THREE.Vector3();
+  private _tempOffset = new THREE.Vector3();
+  private _tempSide = new THREE.Vector3();
 
     constructor(camera: THREE.Camera, domElement: HTMLElement, config: Partial<CameraControlsConfig> = {}) {
         this.camera = camera;
@@ -66,10 +74,7 @@ export class CameraControls {
 
     private onKeyDown(e: KeyboardEvent): void { this.keyState.set(e.key.toLowerCase(), true); }
     private onKeyUp(e: KeyboardEvent): void { this.keyState.set(e.key.toLowerCase(), false); }
-    private updateSpherical(): void {
-        const offset = new THREE.Vector3().copy(this.camera.position).sub(this.target);
-        this.spherical.setFromVector3(offset);
-    }
+
 
     rotate(dx: number, dy: number): void {
         if (!this.config.enableRotate) return;
@@ -77,71 +82,72 @@ export class CameraControls {
         this.sphericalDelta.phi -= dy * this.config.rotateSpeed * 0.005;
     }
 
-    pan(dx: number, dy: number): void {
-        if (!this.config.enablePan) return;
-        const offset = new THREE.Vector3().copy(this.camera.position).sub(this.target);
-        const side = new THREE.Vector3().crossVectors(this.camera.up, offset).normalize();
-        const up = this.camera.up.clone().normalize();
-        this.panOffset.add(side.multiplyScalar(-dx * this.config.panSpeed * 0.1));
-        this.panOffset.add(up.multiplyScalar(dy * this.config.panSpeed * 0.1));
-    }
+  pan(dx: number, dy: number): void {
+    if (!this.config.enablePan) return;
+    this._tempOffset.copy(this.camera.position).sub(this.target);
+    this._tempSide.crossVectors(this.camera.up, this._tempOffset).normalize();
+    this._camUp.copy(this.camera.up).normalize();
+    this.panOffset.add(this._tempSide.multiplyScalar(-dx * this.config.panSpeed * 0.1));
+    this.panOffset.add(this._camUp.multiplyScalar(dy * this.config.panSpeed * 0.1));
+  }
 
     zoom(factor: number): void { if (!this.config.enableZoom) return; this.scale *= factor; }
 
-    update(): void {
-        const camRight = new THREE.Vector3();
-        const camForward = new THREE.Vector3();
-        const camUp = this.camera.up.clone();
-        const tempVec = new THREE.Vector3();
+  update(): void {
+    this._camRight.setFromMatrixColumn(this.camera.matrix, 0);
+    this._camForward.setFromMatrixColumn(this.camera.matrix, 2).negate();
+    this._camUp.copy(this.camera.up);
 
-        camRight.setFromMatrixColumn(this.camera.matrix, 0);
-        camForward.setFromMatrixColumn(this.camera.matrix, 2).negate();
-
-        for (const { key, axis, dir } of KEY_CONFIG.pan) {
-            if (this.keyState.get(key)) {
-                const vec = axis === 'right' ? camRight : axis === 'forward' ? camForward : camUp;
-                this.panOffset.add(tempVec.copy(vec).multiplyScalar(dir * KEY_CONFIG.speed.pan));
-            }
-        }
-
-        for (const { key, delta, dir } of KEY_CONFIG.rotate) {
-            if (this.keyState.get(key)) this.sphericalDelta[delta] += dir * KEY_CONFIG.speed.rotate;
-        }
-
-        for (const { key, factor } of KEY_CONFIG.zoom) {
-            if (this.keyState.get(key)) this.scale *= factor;
-        }
-
-        this.spherical.theta += this.sphericalDelta.theta;
-        this.spherical.phi += this.sphericalDelta.phi;
-        this.spherical.phi = Math.max(0.01, Math.min(Math.PI - 0.01, this.spherical.phi));
-        this.spherical.radius *= this.scale;
-        this.spherical.radius = Math.max(this.config.minDistance, Math.min(this.config.maxDistance, this.spherical.radius));
-        this.target.add(this.panOffset);
-
-        if (this.targetNext) {
-            const elapsed = performance.now() - this.animStartTime;
-            const t = Math.min(elapsed / this.animDuration, 1);
-            const eased = 1 - Math.pow(1 - t, 3);
-            this.target.lerpVectors(this.startTarget, this.targetNext, eased);
-            if (this.radiusNext) this.spherical.radius = this.startRadius + (this.radiusNext - this.startRadius) * eased;
-            if (t >= 1) { this.targetNext = null; this.radiusNext = null; }
-        }
-
-        this.camera.position.copy(this.target).add(new THREE.Vector3().setFromSpherical(this.spherical));
-        this.camera.lookAt(this.target);
-        this.sphericalDelta.set(0, 0, 0);
-        this.scale = 1;
-        this.panOffset.set(0, 0, 0);
+    for (const { key, axis, dir } of KEY_CONFIG.pan) {
+      if (this.keyState.get(key)) {
+        const vec = axis === 'right' ? this._camRight : axis === 'forward' ? this._camForward : this._camUp;
+        this.panOffset.add(this._tempVec.copy(vec).multiplyScalar(dir * KEY_CONFIG.speed.pan));
+      }
     }
 
-    panBy(dx: number, dy: number): void {
-        const offset = new THREE.Vector3().copy(this.camera.position).sub(this.target);
-        const side = new THREE.Vector3().crossVectors(this.camera.up, offset).normalize();
-        const up = this.camera.up.clone().normalize();
-        this.panOffset.add(side.multiplyScalar(-dx));
-        this.panOffset.add(up.multiplyScalar(dy));
+    for (const { key, delta, dir } of KEY_CONFIG.rotate) {
+      if (this.keyState.get(key)) this.sphericalDelta[delta] += dir * KEY_CONFIG.speed.rotate;
     }
+
+    for (const { key, factor } of KEY_CONFIG.zoom) {
+      if (this.keyState.get(key)) this.scale *= factor;
+    }
+
+    this.spherical.theta += this.sphericalDelta.theta;
+    this.spherical.phi += this.sphericalDelta.phi;
+    this.spherical.phi = Math.max(0.01, Math.min(Math.PI - 0.01, this.spherical.phi));
+    this.spherical.radius *= this.scale;
+    this.spherical.radius = Math.max(this.config.minDistance, Math.min(this.config.maxDistance, this.spherical.radius));
+    this.target.add(this.panOffset);
+
+    if (this.targetNext) {
+      const elapsed = performance.now() - this.animStartTime;
+      const t = Math.min(elapsed / this.animDuration, 1);
+      const eased = 1 - Math.pow(1 - t, 3);
+      this.target.lerpVectors(this.startTarget, this.targetNext, eased);
+      if (this.radiusNext) this.spherical.radius = this.startRadius + (this.radiusNext - this.startRadius) * eased;
+      if (t >= 1) { this.targetNext = null; this.radiusNext = null; }
+    }
+
+    this.camera.position.copy(this.target).add(this._tempVec.setFromSpherical(this.spherical));
+    this.camera.lookAt(this.target);
+    this.sphericalDelta.set(0, 0, 0);
+    this.scale = 1;
+    this.panOffset.set(0, 0, 0);
+  }
+
+  panBy(dx: number, dy: number): void {
+    this._tempOffset.copy(this.camera.position).sub(this.target);
+    this._tempSide.crossVectors(this.camera.up, this._tempOffset).normalize();
+    this._camUp.copy(this.camera.up).normalize();
+    this.panOffset.add(this._tempSide.multiplyScalar(-dx));
+    this.panOffset.add(this._camUp.multiplyScalar(dy));
+  }
+
+  updateSpherical(): void {
+    this._tempOffset.copy(this.camera.position).sub(this.target);
+    this.spherical.setFromVector3(this._tempOffset);
+  }
 
     flyTo(target: THREE.Vector3, distance: number, duration: number = 1.5): void { this.setTargetSmooth(target, distance, duration); }
 

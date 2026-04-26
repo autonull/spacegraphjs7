@@ -13,7 +13,7 @@ import { DragHandler } from './interaction/DragHandler';
 import { ConnectionHandler } from './interaction/ConnectionHandler';
 import { ResizeHandler } from './interaction/ResizeHandler';
 import { KeyboardShortcuts } from './interaction/KeyboardShortcuts';
-import { type Pressable, type Zoomable, type PickResult } from '../input/interfaces/Tangible';
+import { type PickResult } from '../input/interfaces/Tangible';
 import { NodeDraggingFingering, HoverFingering, BoxSelectingFingering, ResizeFingering, WiringFingering, PinchZoomFingering, WidgetFingering } from '../input/fingerings';
 
 export class InteractionPlugin implements Plugin {

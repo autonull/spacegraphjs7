@@ -7,57 +7,57 @@ import type { NodeSpec, NodeData, AnimationProps } from '../types';
 import type { ControlState } from '../plugins/interaction/ControlStateBorder';
 
 export type NodeEventMap = {
-    'node:updated': { node: Node; changes: Partial<NodeSpec>; timestamp: number };
-    'node:destroying': { node: Node; timestamp: number };
+  'node:updated': { node: Node; changes: Partial<NodeSpec>; timestamp: number };
+  'node:destroying': { node: Node; timestamp: number };
 };
 
 export abstract class Node extends Surface {
-    readonly id: string;
-    readonly type: string;
-    public sg?: SpaceGraph;
-    public label?: string;
-    public data: NodeData;
-    public position: THREE.Vector3;
-    public rotation: THREE.Vector3;
-    public scale: THREE.Vector3;
-    public controlState: ControlState = 'normal';
-    abstract readonly object: THREE.Object3D;
-    callbacks?: {
-        onPointerEnter?: (node: Node) => void;
-        onPointerLeave?: (node: Node) => void;
-        onClick?: (node: Node) => void;
-        onDoubleClick?: (node: Node) => void;
-        onDragStart?: (node: Node) => void;
-        onDragging?: (node: Node) => void;
-        onDragStop?: (node: Node) => void;
-    };
-    actions?: Array<{ icon: string; label: string; action: string }>;
+  readonly id: string;
+  readonly type: string;
+  public sg?: SpaceGraph;
+  public label?: string;
+  public data: NodeData;
+  public position: THREE.Vector3;
+  public rotation: THREE.Vector3;
+  public scale: THREE.Vector3;
+  public controlState: ControlState = 'normal';
+  abstract readonly object: THREE.Object3D;
+  callbacks?: {
+    onPointerEnter?: (node: Node) => void;
+    onPointerLeave?: (node: Node) => void;
+    onClick?: (node: Node) => void;
+    onDoubleClick?: (node: Node) => void;
+    onDragStart?: (node: Node) => void;
+    onDragging?: (node: Node) => void;
+    onDragStop?: (node: Node) => void;
+  };
+  actions?: Array<{ icon: string; label: string; action: string }>;
 
-get worldMatrix(): THREE.Matrix4 {
-        return this.object.matrixWorld;
-    }
+  get worldMatrix(): THREE.Matrix4 {
+    return this.object.matrixWorld;
+  }
 
-private static _parseVector3(spec: number[] | undefined, defaults: [number, number, number]): THREE.Vector3 {
-        return new THREE.Vector3(
-            spec?.[0] ?? defaults[0],
-            spec?.[1] ?? defaults[1],
-            spec?.[2] ?? defaults[2],
-        );
-    }
+  private static _parseVector3(spec: number[] | undefined, defaults: [number, number, number]): THREE.Vector3 {
+    return new THREE.Vector3(
+      spec?.[0] ?? defaults[0],
+      spec?.[1] ?? defaults[1],
+      spec?.[2] ?? defaults[2],
+    );
+  }
 
-constructor(sgOrSpec?: SpaceGraph | NodeSpec, maybeSpec?: NodeSpec) {
-        super();
-        const isSpecOnly = !!(sgOrSpec && 'id' in sgOrSpec);
-        this.sg = isSpecOnly ? undefined : (sgOrSpec as SpaceGraph);
-        const spec = isSpecOnly ? (sgOrSpec as NodeSpec) : maybeSpec;
-        this.id = spec?.id ?? '';
-        this.type = spec?.type ?? '';
-        this.label = spec?.label;
-        this.data = spec?.data ?? {};
-        this.position = Node._parseVector3(spec?.position, [0, 0, 0]);
-        this.rotation = Node._parseVector3(spec?.rotation, [0, 0, 0]);
-        this.scale = Node._parseVector3(spec?.scale, [1, 1, 1]);
-    }
+  constructor(sgOrSpec?: SpaceGraph | NodeSpec, maybeSpec?: NodeSpec) {
+    super();
+    const isSpecOnly = !!(sgOrSpec && 'id' in sgOrSpec);
+    this.sg = isSpecOnly ? undefined : (sgOrSpec as SpaceGraph);
+    const spec = isSpecOnly ? (sgOrSpec as NodeSpec) : maybeSpec;
+    this.id = spec?.id ?? '';
+    this.type = spec?.type ?? '';
+    this.label = spec?.label;
+    this.data = spec?.data ?? {};
+    this.position = Node._parseVector3(spec?.position, [0, 0, 0]);
+    this.rotation = Node._parseVector3(spec?.rotation, [0, 0, 0]);
+    this.scale = Node._parseVector3(spec?.scale, [1, 1, 1]);
+  }
 
     get bounds(): Rect {
         const box = new THREE.Box3().setFromObject(this.object);

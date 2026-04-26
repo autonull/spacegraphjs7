@@ -28,6 +28,10 @@ export {
   deepEqual,
   debounce,
   throttle,
+  memoize,
+  memoizeWithKey,
+  invalidateMemoization,
+  clearMemoization,
   isObject,
   isFunction,
   isString,
@@ -40,7 +44,16 @@ export {
 
 export { logger, createLogger, setLogLevel, type LogLevel, type Logger } from './logger';
 
-export { SpaceGraphError, wrapError, wrapAndThrow, type SpaceGraphErrorOptions } from './error';
+export {
+  SpaceGraphError,
+  NotImplementedError,
+  ValidationError,
+  ConfigurationError,
+  wrapError,
+  wrapAndThrow,
+  createErrorFactory,
+  type SpaceGraphErrorOptions,
+} from './error';
 export { createElement, createElementNS, type DOMElementOptions, DOMUtils } from './DOMUtils';
 export { calculateFitView, type FitViewResult, type Point, CameraUtils } from './CameraUtils';
 export {

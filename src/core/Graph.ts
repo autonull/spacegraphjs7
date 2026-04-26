@@ -148,7 +148,7 @@ export class Graph extends EventEmitter<GraphEventMap> {
     this.nodes.clear();
   }
 
-  // Query methods
+  // Query methods - use iterators to avoid array creation
   getNode(id: string): Node | undefined { return this.nodes.get(id); }
   getEdge(id: string): Edge | undefined { return this.edges.get(id); }
   hasNode(id: string): boolean { return this.nodes.has(id); }
@@ -157,20 +157,57 @@ export class Graph extends EventEmitter<GraphEventMap> {
   getEdgeCount(): number { return this.edges.size; }
   getNodes(): IterableIterator<Node> { return this.nodes.values(); }
   getEdges(): IterableIterator<Edge> { return this.edges.values(); }
+  
+  // Array creation methods - use sparingly in hot paths
   nodeArray(): Node[] { return [...this.nodes.values()]; }
   edgeArray(): Edge[] { return [...this.edges.values()]; }
 
-  // Query helpers
-  query(predicate: (node: Node) => boolean): Node[] { return this.nodeArray().filter(predicate); }
-  queryByType(type: string): Node[] { return this.nodeArray().filter(n => n.type === type); }
+  // Query helpers - return arrays, use iterator versions for performance-critical code
+  query(predicate: (node: Node) => boolean): Node[] {
+    const result: Node[] = [];
+    for (const node of this.nodes.values()) {
+      if (predicate(node)) result.push(node);
+    }
+    return result;
+  }
+  
+  queryByType(type: string): Node[] {
+    const result: Node[] = [];
+    for (const node of this.nodes.values()) {
+      if (node.type === type) result.push(node);
+    }
+    return result;
+  }
+  
   queryByLabel(label: string, exact = true): Node[] {
-    return this.nodeArray().filter(n => exact ? n.label === label : n.label?.includes(label));
+    const result: Node[] = [];
+    for (const node of this.nodes.values()) {
+      if (exact ? node.label === label : node.label?.includes(label)) result.push(node);
+    }
+    return result;
   }
+  
   queryByData(predicate: (data: Record<string, unknown>) => boolean): Node[] {
-    return this.nodeArray().filter(n => predicate(n.data));
+    const result: Node[] = [];
+    for (const node of this.nodes.values()) {
+      if (predicate(node.data)) result.push(node);
+    }
+    return result;
   }
-  findNode(predicate: (node: Node) => boolean): Node | undefined { return this.nodeArray().find(predicate); }
-  findEdge(predicate: (edge: Edge) => boolean): Edge | undefined { return this.edgeArray().find(predicate); }
+  
+  findNode(predicate: (node: Node) => boolean): Node | undefined {
+    for (const node of this.nodes.values()) {
+      if (predicate(node)) return node;
+    }
+    return undefined;
+  }
+  
+  findEdge(predicate: (edge: Edge) => boolean): Edge | undefined {
+    for (const edge of this.edges.values()) {
+      if (predicate(edge)) return edge;
+    }
+    return undefined;
+  }
 
   // Neighborhood queries
   getNeighbors(nodeId: string, direction: EdgeDirection = 'both'): Node[] {
@@ -190,11 +227,19 @@ export class Graph extends EventEmitter<GraphEventMap> {
   }
 
   getEdgesForNode(nodeId: string, direction: EdgeDirection = 'both'): Edge[] {
-    return this.edgeArray().filter(({ source, target }) => {
-      const isSource = source.id === nodeId;
-      const isTarget = target.id === nodeId;
-      return direction === 'both' ? isSource || isTarget : direction === 'outgoing' ? isSource : isTarget;
-    });
+    const result: Edge[] = [];
+    for (const edge of this.edges.values()) {
+      const isSource = edge.source.id === nodeId;
+      const isTarget = edge.target.id === nodeId;
+      if (direction === 'both' && (isSource || isTarget)) {
+        result.push(edge);
+      } else if (direction === 'outgoing' && isSource) {
+        result.push(edge);
+      } else if (direction === 'incoming' && isTarget) {
+        result.push(edge);
+      }
+    }
+    return result;
   }
 
   // Convenience aliases
@@ -203,11 +248,14 @@ export class Graph extends EventEmitter<GraphEventMap> {
   getIncomingEdges(nodeId: string): Edge[] { return this.getEdgesForNode(nodeId, 'incoming'); }
   getOutgoingEdges(nodeId: string): Edge[] { return this.getEdgesForNode(nodeId, 'outgoing'); }
 
-  // Iteration
-  forEachNode(callback: (node: Node) => void): void { this.nodeArray().forEach(callback); }
-  forEachEdge(callback: (edge: Edge) => void): void { this.edgeArray().forEach(callback); }
-  iteratorNodes(): IterableIterator<Node> { return this.nodes.values(); }
-  iteratorEdges(): IterableIterator<Edge> { return this.edges.values(); }
+  // Iteration - direct iteration without array creation
+  forEachNode(callback: (node: Node) => void): void {
+    for (const node of this.nodes.values()) callback(node);
+  }
+  
+  forEachEdge(callback: (edge: Edge) => void): void {
+    for (const edge of this.edges.values()) callback(edge);
+  }
 
   // Serialization
   toJSON(): GraphSpec {

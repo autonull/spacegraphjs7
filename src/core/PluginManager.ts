@@ -23,6 +23,15 @@ export interface Plugin {
   import?(data: unknown): void;
 }
 
+export interface PluginMetadata {
+  id: string;
+  name: string;
+  version: string;
+  description?: string;
+  author?: string;
+  dependencies?: string[];
+}
+
 const logger = createLogger('PluginManager');
 
 export class PluginManager {

@@ -127,13 +127,10 @@ export class Renderer {
     this.projScreenMatrix.multiplyMatrices(this.camera.projectionMatrix, this.camera.matrixWorldInverse);
     this.frustum.setFromProjectionMatrix(this.projScreenMatrix);
 
-    const nodes = this.sg.graph.nodes.values();
-    let node: any;
-    while ((node = nodes.next()) && !node.done) {
-      const n = node.value;
-      const visible = this.frustum.containsPoint(n.position);
-      if (n instanceof DOMNode) n.setVisibility(visible);
-      else n.object.visible = visible;
+    for (const node of this.sg.graph.nodes.values()) {
+      const visible = this.frustum.containsPoint(node.position);
+      if (node instanceof DOMNode) node.setVisibility(visible);
+      else node.object.visible = visible;
     }
   }
 

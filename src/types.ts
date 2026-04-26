@@ -1,8 +1,5 @@
-// Core type utilities
+// Core utilities
 export type Primitive = string | number | boolean | null | undefined;
-export type DeepPartial<T> = { [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P] };
-export type DeepReadonly<T> = { readonly [P in keyof T]: T[P] extends object ? DeepReadonly<T[P]> : T[P] };
-export type DeepRequired<T> = { [P in keyof T]-?: T[P] extends object ? DeepRequired<T[P]> : T[P] };
 export type MaybePromise<T> = T | Promise<T>;
 export type Constructor<T, Args extends unknown[] = unknown[]> = new (...args: Args) => T;
 export type AbstractConstructor<T, Args extends unknown[] = unknown[]> = abstract new (...args: Args) => T;
@@ -17,7 +14,7 @@ export interface Colorable { color?: string | number; }
 export interface Opacity { opacity?: number; }
 export interface Themable { theme?: 'light' | 'dark'; }
 
-// Type modifiers
+// Type composition helpers
 export type WithDimensions<T> = T & Dimensions;
 export type WithColorable<T> = T & Colorable;
 export type WithOpacity<T> = T & Opacity;
@@ -54,17 +51,21 @@ export type HtmlNodeData = WithDimensions<BaseNodeData> & {
 };
 
 export type ImageNodeData = WithDimensions<WithOpacity<BaseNodeData>> & { url?: string; };
+
 export type GroupNodeData = WithDimensions<WithColorable<WithOpacity<BaseNodeData>>> & {
   depth?: number;
   wireframe?: boolean;
   title?: string;
 };
+
 export type NoteNodeData = WithDimensions<WithColorable<BaseNodeData>> & {
   text?: string;
   textColor?: string | number;
   fontSize?: number;
 };
+
 export type CanvasNodeData = WithDimensions<BaseNodeData> & { dpi?: number; };
+
 export type TextMeshNodeData = WithColorable<BaseNodeData> & {
   text?: string;
   fontUrl?: string;
@@ -72,19 +73,24 @@ export type TextMeshNodeData = WithColorable<BaseNodeData> & {
   height?: number;
   align?: 'left' | 'center' | 'right';
 };
+
 export type DataNodeData = WithThemable<BaseNodeData> & { data?: unknown; expanded?: boolean; maxHeight?: number; };
+
 export type VideoNodeData = WithDimensions<BaseNodeData> & {
   url?: string;
   autoplay?: boolean;
   loop?: boolean;
   muted?: boolean;
 };
+
 export type IFrameNodeData = WithDimensions<BaseNodeData> & { src?: string; scrolling?: 'yes' | 'no' | 'auto'; };
+
 export type ChartNodeData = WithDimensions<WithThemable<BaseNodeData>> & {
   chartType?: 'bar' | 'line' | 'pie' | 'scatter' | 'radar';
   chartData?: unknown;
   chartOptions?: unknown;
 };
+
 export type MarkdownNodeData = WithDimensions<WithThemable<BaseNodeData>> & { content?: string; fontSize?: number; };
 
 export interface GlobeNodeData extends BaseNodeData {
@@ -107,17 +113,20 @@ export interface AudioNodeData extends BaseNodeData, Colorable {
 }
 
 export type MathNodeData = WithDimensions<WithColorable<BaseNodeData>> & { math?: string; fontSize?: number; };
+
 export interface ProcessNodeData extends BaseNodeData, Dimensions {
   pid?: string | number;
   name?: string;
   cpu?: number;
   memory?: number;
 }
+
 export interface CodeEditorNodeData extends BaseNodeData, Dimensions {
   code?: string;
   language?: string;
   theme?: string;
 }
+
 export type InstancedShapeNodeData = WithSize<WithColorable<WithOpacity<BaseNodeData>>> & {
   shape?: 'box' | 'sphere' | 'circle' | 'plane';
 };
@@ -212,10 +221,249 @@ export interface AnimationProps {
   onUpdate?: () => void;
 }
 
-// Export
+// Export/Import
 export interface GraphExport {
   nodes: Array<{ id: string; type: string; label?: string; position: [number, number, number]; data: unknown }>;
   edges: Array<{ id: string; source: string; target: string; type: string; data: unknown }>;
   camera?: { position: [number, number, number]; target: [number, number, number] };
   plugins?: Record<string, unknown>;
+}
+
+export type GraphImportData = GraphExport;
+
+// Layout types
+export interface LayoutConfig {
+  name: string;
+  options?: Record<string, unknown>;
+}
+
+export interface LayoutOptions {
+  animate?: boolean;
+  duration?: number;
+  easing?: string;
+}
+
+// Ergonomics
+export interface ErgonomicsConfig {
+  enableFittsLaw?: boolean;
+  minTargetSize?: number;
+  maxReachDistance?: number;
+  preferredZone?: 'center' | 'top' | 'bottom';
+}
+
+// HUD
+export interface HUDElementOptions {
+  type: string;
+  position?: [number, number];
+  size?: [number, number];
+  data?: Record<string, unknown>;
+}
+
+// History
+export interface HistoryPluginOptions {
+  maxHistory?: number;
+  autoSave?: boolean;
+  saveInterval?: number;
+}
+
+// Hover
+export interface HoverMetaWidgetOptions {
+  showLabel?: boolean;
+  showType?: boolean;
+  showData?: boolean;
+}
+
+export interface HoverAction {
+  icon: string;
+  label: string;
+  action: string;
+}
+
+// Mermaid
+export type MermaidThemeName = 'default' | 'forest' | 'dark' | 'neutral';
+export type MermaidLayoutType = 'graph' | 'flowchart' | 'sequence' | 'class' | 'state' | 'gantt';
+export type MermaidNodeShape = 'default' | 'circle' | 'ellipse' | 'rect' | 'diamond';
+export type LayoutName = string;
+export type GeometryFamily = string;
+
+// App
+export interface SpaceGraphAppOptions {
+  container?: string | HTMLElement;
+  theme?: 'light' | 'dark';
+  plugins?: string[];
+  initialLayout?: string;
+}
+
+// Logging
+export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+export interface Logger {
+  debug(...args: unknown[]): void;
+  info(...args: unknown[]): void;
+  warn(...args: unknown[]): void;
+  error(...args: unknown[]): void;
+}
+
+// Disposable
+export interface Disposable {
+  dispose(): void;
+}
+
+// Hit result
+export interface HitResult {
+  surface: any;
+  point: any;
+  localPoint: any;
+  distance: number;
+  normal?: any;
+  uv?: any;
+  face?: any;
+}
+
+// Rect and Bounds
+export interface Rect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export interface Bounds3D {
+  min: any;
+  max: any;
+  center: any;
+  size: any;
+  containsPoint(p: any): boolean;
+  intersectsRay(ray: any): boolean;
+}
+
+// Plugin
+export interface Plugin {
+  readonly id: string;
+  readonly name: string;
+  readonly version: string;
+  init(sg: any, graph: any, events: any): void | Promise<void>;
+  onPreRender?(delta: number): void;
+  onPostRender?(delta: number): void;
+  onNodeAdded?(node: any): void;
+  onNodeRemoved?(node: any): void;
+  onEdgeAdded?(edge: any): void;
+  onEdgeRemoved?(edge: any): void;
+  dispose?(): void;
+  export?(): unknown;
+  import?(data: unknown): void;
+}
+
+// Constructors
+export type NodeConstructor = new (sg: any, spec: any) => any;
+export type EdgeConstructor = new (sg: any, spec: any, source: any, target: any) => any;
+
+// Vision
+export type VisionCategory = 'wcag' | 'overlap' | 'fitts' | 'all';
+export interface VisionOptions {
+  enabled?: boolean;
+  categories?: VisionCategory[];
+  threshold?: number;
+}
+export interface VisionReport {
+  score: number;
+  issues: Array<{ type: string; severity: number; message: string }>;
+}
+export interface VisionScore {
+  wcag: number;
+  overlap: number;
+  fitts: number;
+  overall: number;
+}
+
+// Render options
+export interface RenderOptions {
+  antialias?: boolean;
+  alpha?: boolean;
+  backgroundColor?: string | number;
+  pixelRatio?: number;
+}
+
+// SpaceGraph events
+export interface SpaceGraphEvents {
+  'node:added': any;
+  'node:removed': any;
+  'node:updated': any;
+  'edge:added': any;
+  'edge:removed': any;
+  'edge:updated': any;
+}
+
+// Maps
+export type NodeConstructorMap = Map<string, NodeConstructor>;
+export type EdgeConstructorMap = Map<string, EdgeConstructor>;
+
+// Hit test result
+export interface HitTestResult {
+  node?: any;
+  edge?: any;
+  point: any;
+  distance: number;
+}
+
+// Grid
+export interface GridModel {
+  rows: number;
+  cols: number;
+  cellWidth: number;
+  cellHeight: number;
+}
+
+// Common types
+export type NodeType = string;
+export type EdgeType = string;
+
+// Callback types
+export type NodeCallback<T = any> = (node: T) => void;
+export type EdgeCallback<T = any> = (edge: T) => void;
+export type GraphCallback<T = any> = (graph: T) => void;
+
+// Predicate types
+export type NodePredicate<T = any> = (node: T) => boolean;
+export type EdgePredicate<T = any> = (edge: T) => boolean;
+
+// Result types
+export type Result<T, E = Error> = { success: true; data: T } | { success: false; error: E };
+export type Option<T> = { value: T } | { value: null };
+
+// Async utilities
+export type AsyncFunction<T = any> = () => Promise<T>;
+export type DebounceOptions = { leading?: boolean; trailing?: boolean; maxWait?: number };
+export type ThrottleOptions = { leading?: boolean; trailing?: boolean };
+
+// Event handling
+export type EventHandler<T = any> = (event: T) => void;
+export type EventMap = Record<string, any>;
+export type WildcardEventHandler<T = any> = (event: string, data: T) => void;
+
+// Disposer
+export type Disposer = () => void;
+export type CleanupFunction = () => void | Promise<void>;
+
+// Factory functions
+export type Factory<T, Args extends any[] = any[]> = (...args: Args) => T;
+export type AsyncFactory<T, Args extends any[] = any[]> = (...args: Args) => Promise<T>;
+
+// Cache
+export interface CacheOptions {
+  maxAge?: number;
+  maxSize?: number;
+  strategy?: 'lru' | 'fifo' | 'lfu';
+}
+
+// Observer
+export interface Observer<T> {
+  next(value: T): void;
+  error?(error: Error): void;
+  complete?(): void;
+}
+
+// Subscription
+export interface Subscription {
+  unsubscribe(): void;
+  closed: boolean;
 }
