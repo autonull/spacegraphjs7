@@ -29,44 +29,34 @@ export class Edge extends Surface {
 
     readonly id: string;
     readonly type: string;
-    public sg?: SpaceGraph;
-    public source: Node;
-    public target: Node;
-    public data: EdgeData;
-    public line: Line2;
-    public geometry: LineGeometry;
+    sg?: SpaceGraph;
+    source: Node;
+    target: Node;
+    data: EdgeData;
+    line: Line2;
+    geometry: LineGeometry;
 
-    public get object(): Line2 {
-        return this.line;
-    }
+    get object(): Line2 { return this.line; }
 
-    public get position(): THREE.Vector3 {
+    get position(): THREE.Vector3 {
         if (!this.source || !this.target) return new THREE.Vector3();
         return new THREE.Vector3().addVectors(this.source.position, this.target.position).multiplyScalar(0.5);
     }
 
-    public get rotation(): THREE.Euler {
-        return new THREE.Euler();
-    }
+    get rotation(): THREE.Euler { return new THREE.Euler(); }
+    get scale(): THREE.Vector3 { return new THREE.Vector3(1, 1, 1); }
+    get worldMatrix(): THREE.Matrix4 { return new THREE.Matrix4(); }
 
-    public get scale(): THREE.Vector3 {
-        return new THREE.Vector3(1, 1, 1);
-    }
-
-    public get worldMatrix(): THREE.Matrix4 {
-        return new THREE.Matrix4();
-    }
-
-    public arrowheads: { source: THREE.Mesh | null; target: THREE.Mesh | null } = { source: null, target: null };
-    public isHighlighted = false;
-    public isHovered = false;
-    public lastActivityTime = 0;
+    arrowheads: { source: THREE.Mesh | null; target: THREE.Mesh | null } = { source: null, target: null };
+    isHighlighted = false;
+    isHovered = false;
+    lastActivityTime = 0;
 
     private _colorStart = new THREE.Color();
     private _colorEnd = new THREE.Color();
     private _direction = new THREE.Vector3();
 
-constructor(
+    constructor(
         sgOrSpec: SpaceGraph | EdgeSpec,
         specOrSource: EdgeSpec | Node,
         sourceOrTarget?: Node,
@@ -85,10 +75,7 @@ constructor(
         this.target = target;
         this.data = { ...DEFAULT_EDGE_DATA, ...spec.data };
 
-        const hasGradient = this.data.gradientColors?.length === 2;
-        if (!hasGradient && this.data.color === undefined) {
-            this.data.color = DEFAULT_EDGE_DATA.color;
-        }
+        if (!this.data.gradientColors?.length && this.data.color === undefined) this.data.color = DEFAULT_EDGE_DATA.color;
 
         this.geometry = new LineGeometry();
         this.geometry.setPositions([0, 0, 0, 0, 0, 0.001]);
@@ -131,20 +118,14 @@ constructor(
     }
 
     requireSpaceGraph(): SpaceGraph {
-        if (!this.sg) {
-            throw new Error(`Edge '${this.id}' requires SpaceGraph but sg is not initialized`);
-        }
+        if (!this.sg) throw new Error(`Edge '${this.id}' requires SpaceGraph but sg is not initialized`);
         return this.sg;
     }
 
     private _createArrowheads(): void {
         const { arrowhead } = this.data;
-        if (arrowhead === true || arrowhead === 'target' || arrowhead === 'both') {
-            this.arrowheads.target = this._createSingleArrowhead();
-        }
-        if (arrowhead === 'source' || arrowhead === 'both') {
-            this.arrowheads.source = this._createSingleArrowhead();
-        }
+        if (arrowhead === true || arrowhead === 'target' || arrowhead === 'both') this.arrowheads.target = this._createSingleArrowhead();
+        if (arrowhead === 'source' || arrowhead === 'both') this.arrowheads.source = this._createSingleArrowhead();
     }
 
     private _createSingleArrowhead(): THREE.Mesh {
@@ -223,17 +204,9 @@ constructor(
         const { position: sourcePos } = this.source;
         const { position: targetPos } = this.target;
 
-        if (![sourcePos, targetPos].every((p) => isFinite(p.x) && isFinite(p.y) && isFinite(p.z)))
-            return;
+        if (![sourcePos, targetPos].every((p) => isFinite(p.x) && isFinite(p.y) && isFinite(p.z))) return;
 
-        this.geometry.setPositions([
-            sourcePos.x,
-            sourcePos.y,
-            sourcePos.z,
-            targetPos.x,
-            targetPos.y,
-            targetPos.z,
-        ]);
+        this.geometry.setPositions([sourcePos.x, sourcePos.y, sourcePos.z, targetPos.x, targetPos.y, targetPos.z]);
 
         if (this.geometry.attributes.position.count === 0) return;
 
@@ -251,83 +224,66 @@ constructor(
         const { position: targetPos } = this.target;
         const scene = this.sg.renderer.scene;
 
-        const updateArrowhead = (
-            arrowhead: THREE.Mesh | null,
-            endPos: THREE.Vector3,
-            startPos: THREE.Vector3,
-        ) => {
+        const updateArrowhead = (arrowhead: THREE.Mesh | null, endPos: THREE.Vector3, startPos: THREE.Vector3) => {
             if (!arrowhead) return;
             arrowhead.position.copy(endPos);
             this._direction.subVectors(endPos, startPos).normalize();
             arrowhead.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), this._direction);
-            if (scene && arrowhead.parent !== scene) {
-                scene.add(arrowhead);
-            }
+            if (scene && arrowhead.parent !== scene) scene.add(arrowhead);
         };
 
         updateArrowhead(this.arrowheads.target, targetPos, sourcePos);
         updateArrowhead(this.arrowheads.source, sourcePos, targetPos);
     }
 
-private _setArrowheadStyle(arrowhead: THREE.Mesh | null, opacity: number, color?: number): void {
+    private _setArrowheadStyle(arrowhead: THREE.Mesh | null, opacity: number, color?: number): void {
         if (arrowhead?.material instanceof THREE.MeshBasicMaterial) {
             if (color !== undefined) arrowhead.material.color.setHex(color);
             arrowhead.material.opacity = opacity;
         }
     }
 
-setHighlight(highlight: boolean): void {
+    setHighlight(highlight: boolean): void {
         this.isHighlighted = highlight;
         const mat = this.line?.material;
         if (!mat) return;
 
         mat.opacity = highlight ? Edge.HIGHLIGHT_OPACITY : Edge.DEFAULT_OPACITY;
-        const thicknessMultiplier =
-            this.data.gradientColors?.length === 2 && mat.vertexColors ? 2.0 : 1.5;
-        mat.linewidth = highlight
-            ? (this.data.thickness ?? Defaults.EDGE_THICKNESS) * thicknessMultiplier
-            : (this.data.thickness ?? Defaults.EDGE_THICKNESS);
+        const thicknessMultiplier = this.data.gradientColors?.length === 2 && mat.vertexColors ? 2.0 : 1.5;
+        mat.linewidth = highlight ? (this.data.thickness ?? Defaults.EDGE_THICKNESS) * thicknessMultiplier : (this.data.thickness ?? Defaults.EDGE_THICKNESS);
 
-        if (!mat.vertexColors)
-            mat.color.set(highlight ? Edge.HIGHLIGHT_COLOR : (this.data.color ?? EdgeColors.DEFAULT));
+        if (!mat.vertexColors) mat.color.set(highlight ? Edge.HIGHLIGHT_COLOR : (this.data.color ?? EdgeColors.DEFAULT));
         mat.needsUpdate = true;
 
-        const arrowheadColor = highlight
-            ? Edge.HIGHLIGHT_COLOR
-            : (this.data.arrowheadColor ?? this.data.color ?? EdgeColors.DEFAULT);
+        const arrowheadColor = highlight ? Edge.HIGHLIGHT_COLOR : (this.data.arrowheadColor ?? this.data.color ?? EdgeColors.DEFAULT);
         this._setArrowheadStyle(this.arrowheads.source, Edge.HIGHLIGHT_OPACITY, arrowheadColor);
         this._setArrowheadStyle(this.arrowheads.target, Edge.HIGHLIGHT_OPACITY, arrowheadColor);
 
         if (highlight && this.isHovered) this.setHoverStyle(false, true);
     }
 
-setHoverStyle(hovered: boolean, force = false): void {
-    if (!force && this.isHighlighted) return;
-    const mat = this.line?.material;
-    if (!mat) return;
+    setHoverStyle(hovered: boolean, force = false): void {
+        if (!force && this.isHighlighted) return;
+        const mat = this.line?.material;
+        if (!mat) return;
 
-    this.isHovered = hovered;
-    const baseThickness = this.data.thickness ?? 3;
+        this.isHovered = hovered;
+        const baseThickness = this.data.thickness ?? 3;
 
-    mat.opacity = hovered ? Math.min(1.0, Edge.DEFAULT_OPACITY + Edge.HOVER_OPACITY_BOOST) : Edge.DEFAULT_OPACITY;
-    mat.linewidth = hovered ? baseThickness * Edge.HOVER_THICKNESS_MULT : baseThickness;
-    mat.needsUpdate = true;
+        mat.opacity = hovered ? Math.min(1.0, Edge.DEFAULT_OPACITY + Edge.HOVER_OPACITY_BOOST) : Edge.DEFAULT_OPACITY;
+        mat.linewidth = hovered ? baseThickness * Edge.HOVER_THICKNESS_MULT : baseThickness;
+        mat.needsUpdate = true;
 
-    if (!this.isHighlighted) {
-        const hoverOpacity = hovered ? Math.min(1.0, Edge.DEFAULT_OPACITY + Edge.HOVER_OPACITY_BOOST) : Edge.DEFAULT_OPACITY;
-        this._setArrowheadStyle(this.arrowheads.source, hoverOpacity);
-        this._setArrowheadStyle(this.arrowheads.target, hoverOpacity);
+        if (!this.isHighlighted) {
+            const hoverOpacity = hovered ? Math.min(1.0, Edge.DEFAULT_OPACITY + Edge.HOVER_OPACITY_BOOST) : Edge.DEFAULT_OPACITY;
+            this._setArrowheadStyle(this.arrowheads.source, hoverOpacity);
+            this._setArrowheadStyle(this.arrowheads.target, hoverOpacity);
+        }
     }
-}
 
     get bounds(): Rect {
         const box = new THREE.Box3().setFromObject(this.line);
-        return {
-            x: box.min.x,
-            y: box.min.y,
-            width: box.max.x - box.min.x,
-            height: box.max.y - box.min.y,
-        };
+        return { x: box.min.x, y: box.min.y, width: box.max.x - box.min.x, height: box.max.y - box.min.y };
     }
 
     get bounds3D(): Bounds3D {
@@ -344,18 +300,10 @@ setHoverStyle(hovered: boolean, force = false): void {
         return {
             min,
             max,
-            get center() {
-                return new THREE.Vector3().addVectors(this.min, this.max).multiplyScalar(0.5);
-            },
-            get size() {
-                return new THREE.Vector3().subVectors(this.max, this.min);
-            },
-            containsPoint(_p: THREE.Vector3) {
-                return false;
-            },
-            intersectsRay(_ray: THREE.Ray) {
-                return false;
-            },
+            get center() { return new THREE.Vector3().addVectors(this.min, this.max).multiplyScalar(0.5); },
+            get size() { return new THREE.Vector3().subVectors(this.max, this.min); },
+            containsPoint() { return false; },
+            intersectsRay() { return false; },
         };
     }
 
@@ -368,15 +316,9 @@ setHoverStyle(hovered: boolean, force = false): void {
         const intersects = raycaster.intersectObject(this.line, true);
         raycaster.params.Line = { threshold: originalThreshold };
 
-        if (intersects.length > 0) {
-            return {
-                surface: this,
-                point: intersects[0].point,
-                localPoint: intersects[0].point.clone(),
-                distance: intersects[0].distance,
-            };
-        }
-        return null;
+        return intersects.length > 0
+            ? { surface: this, point: intersects[0].point, localPoint: intersects[0].point.clone(), distance: intersects[0].distance }
+            : null;
     }
 
     start(): void {
@@ -385,10 +327,7 @@ setHoverStyle(hovered: boolean, force = false): void {
     }
 
     stop(): void {}
-
-    delete(): void {
-        this.dispose();
-    }
+    delete(): void { this.dispose(); }
 
     onPreRender(dt: number): void {
         super.onPreRender(dt);

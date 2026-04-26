@@ -1,5 +1,5 @@
 import type { VisionContext } from '../types';
-import type { HeuristicsConfig } from './strategies/HeuristicsStrategy';
+import type { HeuristicsConfig } from '../strategies/HeuristicsStrategy';
 
 export interface VisionAnalyzerResult {
     score?: number;

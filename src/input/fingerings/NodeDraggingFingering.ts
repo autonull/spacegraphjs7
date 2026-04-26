@@ -62,7 +62,7 @@ export class NodeDraggingFingering extends BaseFingering {
         this.dragNode!.object?.position.copy(this.dragNode!.position);
 
         this.sg.events.emit('interaction:drag', {
-            node: this.dragNode,
+            node: this.dragNode!,
             position: [targetPos.x, targetPos.y, targetPos.z] as [number, number, number],
         });
 
@@ -89,7 +89,7 @@ export class NodeDraggingFingering extends BaseFingering {
         this.dragNode!.object?.position.copy(this.dragNode!.position);
 
         this.sg.events.emit('interaction:drag', {
-            node: this.dragNode,
+            node: this.dragNode!,
             position: [this.dragNode!.position.x, this.dragNode!.position.y, this.dragNode!.position.z] as [number, number, number],
         });
 

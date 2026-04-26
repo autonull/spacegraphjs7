@@ -8,7 +8,7 @@ export class SpaceGraphError extends Error {
 
 export class NotImplementedError extends SpaceGraphError { constructor(feature = 'Not implemented') { super(feature, { operation: 'NotImplemented' }); this.name = 'NotImplementedError'; } }
 
-export function wrapError(error: unknown, options: Omit<SpaceGraphErrorOptions, 'cause'> & { cause?: unknown }): SpaceGraphError {
+export function wrapError(error: unknown, options: Omit<SpaceGraphErrorOptions, 'cause'> & { cause?: unknown }, logger?: { error(message: string, ...args: unknown[]): void }): SpaceGraphError {
     const namespace = options.namespace ?? 'SpaceGraph';
     const operation = options.operation;
     const reason = options.reason ?? (error instanceof Error ? error.message : String(error));

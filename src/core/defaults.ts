@@ -64,10 +64,13 @@ type PluginCtor = new () => Plugin;
 
 export const DEFAULT_NODE_TYPES = [ShapeNode, InstancedShapeNode, HtmlNode, ImageNode, GroupNode, NoteNode, DataNode, CanvasNode, TextMeshNode, VideoNode, IFrameNode, ChartNode, MarkdownNode, GlobeNode, SceneNode, AudioNode, MathNode, ProcessNode, CodeEditorNode, StackingNode, GridNode, SplitNode, BorderNode, SwitchNode, VirtualGridNode, PanelNode, PortNode, MermaidNode] as const;
 export const DEFAULT_EDGE_TYPES = [Edge, CurvedEdge, FlowEdge, LabeledEdge, DottedEdge, DynamicThicknessEdge, AnimatedEdge, BundledEdge, InterGraphEdge, Wire] as const;
-export const DEFAULT_LAYOUT_PLUGINS: [PluginCtor, string][] = [[ForceLayout, 'ForceLayout'], [CircularLayout, 'CircularLayout'], [GridLayout, 'GridLayout'], [HierarchicalLayout, 'HierarchicalLayout'], [RadialLayout, 'RadialLayout'], [TreeLayout, 'TreeLayout'], [SpectralLayout, 'SpectralLayout'], [GeoLayout, 'GeoLayout'], [GeoLayout, 'MapLayout'], [TimelineLayout, 'TimelineLayout'], [ClusterLayout, 'ClusterLayout']];
+export const DEFAULT_LAYOUT_PLUGINS: [PluginCtor, string][] = [[ForceLayout, 'ForceLayout'], [CircularLayout, 'CircularLayout'], [GridLayout, 'GridLayout'], [HierarchicalLayout, 'HierarchicalLayout'], [RadialLayout, 'RadialLayout'], [TreeLayout, 'TreeLayout'], [SpectralLayout, 'SpectralLayout'], [GeoLayout, 'GeoLayout'], [TimelineLayout, 'TimelineLayout'], [ClusterLayout, 'ClusterLayout']];
 export const DEFAULT_SYSTEM_PLUGINS: [PluginCtor, string][] = [[InteractionPlugin, 'InteractionPlugin'], [FractalZoomPlugin, 'FractalZoomPlugin'], [ZoomUIPlugin, 'ZoomUIPlugin'], [LODPlugin, 'LODPlugin'], [AutoLayoutPlugin, 'AutoLayoutPlugin'], [AutoColorPlugin, 'AutoColorPlugin'], [MinimapPlugin, 'MinimapPlugin'], [ErgonomicsPlugin, 'ErgonomicsPlugin'], [PhysicsPlugin, 'PhysicsPlugin'], [HUDPlugin, 'HUDPlugin'], [HistoryPlugin, 'HistoryPlugin']];
 
-export function createQuickGraphSpec(nodes: Array<{ id: string; label?: string; position?: [number, number, number]; data?: Record<string, unknown> }>, edges?: Array<{ id: string; source: string; target: string }>): GraphSpec {
+export function createQuickGraphSpec(
+    nodes: Array<{ id: string; label?: string; position?: [number, number, number]; data?: Record<string, unknown> }>,
+    edges?: Array<{ id: string; source: string; target: string }>
+): GraphSpec {
     return {
         nodes: nodes.map((n) => ({ id: n.id, type: 'ShapeNode', label: n.label, position: n.position, data: n.data })) as NodeSpec[],
         edges: (edges?.map((e) => ({ id: e.id, source: e.source, target: e.target, type: 'Edge' })) ?? []) as EdgeSpec[],

@@ -17,7 +17,7 @@ export const randomTree = (depth: number, maxChildren: number, opts?: GraphGener
     const addNode = (parentId: string | null, d: number): void => {
         if (d >= depth) return;
         const id = `node-${nodes.length}`;
-        const pos = parentId
+        const pos: [number, number, number] = parentId
             ? [(nodes.find((n) => n.id === parentId)?.position?.[0] ?? 0) + (rand() - 0.5) * 100, (nodes.find((n) => n.id === parentId)?.position?.[1] ?? 0) + (rand() - 0.5) * 100, 0]
             : [rand() * 100, rand() * 100, 0];
         nodes.push({ id, type: 'shape', position: pos, data: { depth: d } });

@@ -4,6 +4,7 @@ import type { Plugin } from '../core/PluginManager';
 import type { Graph } from '../core/Graph';
 import type { EventSystem } from '../core/events/EventSystem';
 import type { Node } from '../nodes/Node';
+import type { Edge } from '../edges/Edge';
 import { InteractionRaycaster } from './interaction/RaycasterHelper';
 import { CursorManager, type CursorMode } from './interaction/CursorManager';
 import { HoverManager } from './interaction/HoverManager';
@@ -13,15 +14,7 @@ import { ConnectionHandler } from './interaction/ConnectionHandler';
 import { ResizeHandler } from './interaction/ResizeHandler';
 import { KeyboardShortcuts } from './interaction/KeyboardShortcuts';
 import { type Pressable, type Zoomable, type PickResult } from '../input/interfaces/Tangible';
-import {
-    NodeDraggingFingering,
-    HoverFingering,
-    BoxSelectingFingering,
-    ResizeFingering,
-    WiringFingering,
-    PinchZoomFingering,
-    WidgetFingering,
-} from '../input/fingerings';
+import { NodeDraggingFingering, HoverFingering, BoxSelectingFingering, ResizeFingering, WiringFingering, PinchZoomFingering, WidgetFingering } from '../input/fingerings';
 
 export class InteractionPlugin implements Plugin {
     readonly id = 'interaction';
@@ -173,8 +166,8 @@ point: nodeResult.hit?.point ?? new THREE.Vector3(),
 distance: nodeResult.hit?.distance ?? 0,
 };
 
-if (node instanceof Pressable) {
-node.onPressStart?.(pickResult);
+if ('onPressStart' in node) {
+(node as any).onPressStart?.(pickResult);
 this.lastPressedNode = node;
 }
 
@@ -184,8 +177,8 @@ this.cursorManager.set('grabbing', 'drag');
 
 private _handleMiddleClick(node: Node, e: any): void {
 e.originalEvent?.preventDefault();
-if (node instanceof Zoomable && node.isZoomable?.()) {
-node.onZoomStart?.();
+if ('isZoomable' in node && (node as any).isZoomable?.()) {
+(node as any).onZoomStart?.();
 }
 const radius = Math.max(
 (((node.data as Record<string, unknown>)?.width as number) ?? 100) * 1.5,
@@ -212,7 +205,7 @@ this.sg.cameraControls.flyTo(node.position, radius);
         if (this.connectionHandler.isConnectingMode()) {
             this.connectionHandler.updateConnection();
             const hoverResult = this.raycaster.raycastNode();
-            this.hoverManager.updateNodeHover(hoverResult?.node ?? null);
+            this.hoverManager.updateHover(hoverResult?.node ?? null, null);
             return;
         }
 
@@ -239,8 +232,8 @@ this.sg.cameraControls.flyTo(node.position, radius);
                 point: new THREE.Vector3(),
                 distance: 0,
             };
-            if (this.lastPressedNode instanceof Pressable) {
-                this.lastPressedNode.onPressStop?.(pickResult);
+            if ('onPressStop' in this.lastPressedNode) {
+                (this.lastPressedNode as any).onPressStop?.(pickResult);
             }
             this.lastPressedNode = null;
         }

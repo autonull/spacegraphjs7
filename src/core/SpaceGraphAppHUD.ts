@@ -1,4 +1,5 @@
 import type { SpaceGraphApp } from './SpaceGraphApp';
+import type { AppButtonConfig } from './SpaceGraphApp';
 import type { Node as SGNode } from '../nodes/Node';
 import { DOMUtils } from '../utils/DOMUtils';
 import * as THREE from 'three';

@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import type { SpaceGraph } from '../../SpaceGraph';
 import type { InteractionRaycaster } from '../../plugins/interaction/RaycasterHelper';
 import type { SelectionManager } from '../../plugins/interaction/SelectionManager';
+import type { Finger } from '../Fingering';
 import { BaseFingering } from './BaseFingering';
 
 export class BoxSelectingFingering extends BaseFingering {

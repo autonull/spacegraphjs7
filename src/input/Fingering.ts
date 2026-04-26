@@ -1,6 +1,3 @@
-// SpaceGraphJS - Exclusive Input State Machine (Fingering)
-// Priority-based input acquisition system inspired by SGJ's Finger/Fingering
-
 import type * as THREE from 'three';
 
 export interface Finger {
@@ -17,9 +14,7 @@ export abstract class Fingering {
     abstract start(finger: Finger): boolean;
     abstract update(finger: Finger): boolean;
     abstract stop(finger: Finger): void;
-    defer(_finger: Finger): boolean {
-        return true;
-    }
+    defer(_finger: Finger): boolean { return true; }
     startMultiTouch?(finger1: Finger, finger2: Finger): boolean;
     updateMultiTouch?(finger1: Finger, finger2: Finger): boolean;
     stopMultiTouch?(): void;
@@ -41,32 +36,11 @@ export class FingerManager {
         return false;
     }
 
-    update(finger: Finger): void {
-        this.activeFingering?.update(finger);
-    }
-
-    end(finger: Finger): void {
-        this.activeFingering?.stop(finger);
-        this.activeFingering = null;
-    }
-
-    isActive(): boolean {
-        return this.activeFingering !== null;
-    }
-
-    getActive(): Fingering | null {
-        return this.activeFingering;
-    }
-
-    getFinger(pointerId: number): Finger | undefined {
-        return this.fingers.get(pointerId);
-    }
-
-    setFinger(pointerId: number, finger: Finger): void {
-        this.fingers.set(pointerId, finger);
-    }
-
-    deleteFinger(pointerId: number): void {
-        this.fingers.delete(pointerId);
-    }
+    update(finger: Finger): void { this.activeFingering?.update(finger); }
+    end(finger: Finger): void { this.activeFingering?.stop(finger); this.activeFingering = null; }
+    isActive(): boolean { return this.activeFingering !== null; }
+    getActive(): Fingering | null { return this.activeFingering; }
+    getFinger(pointerId: number): Finger | undefined { return this.fingers.get(pointerId); }
+    setFinger(pointerId: number, finger: Finger): void { this.fingers.set(pointerId, finger); }
+    deleteFinger(pointerId: number): void { this.fingers.delete(pointerId); }
 }

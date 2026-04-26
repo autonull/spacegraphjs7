@@ -34,7 +34,7 @@ export class WiringFingering extends BaseFingering {
         this.tempGeom = new THREE.BufferGeometry();
         this.tempGeom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
         this.tempLine = new THREE.Line(this.tempGeom, this.tempMaterial);
-        this.sg.scene.add(this.tempLine);
+        this.sg.renderer.scene.add(this.tempLine);
 
         return true;
     }
@@ -55,7 +55,7 @@ export class WiringFingering extends BaseFingering {
 
     stop(_finger: Finger): void {
         if (this.sourceNode && this.tempLine) {
-            this.sg.scene.remove(this.tempLine);
+            this.sg.renderer.scene.remove(this.tempLine);
             this.tempGeom?.dispose();
             this.tempLine = null;
             this.tempGeom = null;

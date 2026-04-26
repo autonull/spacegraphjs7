@@ -12,14 +12,18 @@ const logger = createLogger('Graph');
 type GraphEventMap = {
     'node:added': { node: Node; timestamp: number };
     'node:removed': { id: string; timestamp: number };
+    'node:updated': { node: Node; changes: Partial<NodeSpec>; timestamp: number };
     'edge:added': { edge: Edge; timestamp: number };
     'edge:removed': { id: string; timestamp: number };
+    'edge:updated': { edge: Edge; changes: Partial<EdgeSpec>; timestamp: number };
 };
 
+type EdgeDirection = 'incoming' | 'outgoing' | 'both';
+
 export class Graph extends EventEmitter<GraphEventMap> {
-    private readonly sg: SpaceGraph;
-    public nodes: Map<string, Node> = new Map();
-    public edges: Map<string, Edge> = new Map();
+    readonly sg: SpaceGraph;
+    readonly nodes: Map<string, Node> = new Map();
+    readonly edges: Map<string, Edge> = new Map();
 
     constructor(sg: SpaceGraph) { super(); this.sg = sg; }
 
@@ -27,10 +31,7 @@ export class Graph extends EventEmitter<GraphEventMap> {
     registerEdgeType(type: string, ctor: import('./TypeRegistry').EdgeConstructor): void { TypeRegistry.getInstance().registerEdge(type, ctor); }
 
     addNode(specOrNode: NodeSpec | Node): Node | null {
-        if ('updatePosition' in specOrNode) {
-            const node = specOrNode as Node;
-            return this._addNode(node.id, node);
-        }
+        if ('updatePosition' in specOrNode) return this._addNode((specOrNode as Node).id, specOrNode as Node);
 
         const spec = specOrNode as NodeSpec;
         if (this.nodes.has(spec.id)) return this.updateNode(spec.id, spec);
@@ -38,8 +39,7 @@ export class Graph extends EventEmitter<GraphEventMap> {
         const NodeType = TypeRegistry.getInstance().getNodeConstructor(spec.type);
         if (!NodeType) { logger.warn('Node type "%s" not registered.', spec.type); return null; }
 
-        const node = new NodeType(this.sg, spec);
-        return this._addNode(spec.id, node);
+        return this._addNode(spec.id, new NodeType(this.sg, spec));
     }
 
     private _addNode(id: string, node: Node): Node {
@@ -53,19 +53,16 @@ export class Graph extends EventEmitter<GraphEventMap> {
     updateNode(id: string, updates: Partial<NodeSpec>): Node | null {
         const node = this.nodes.get(id);
         if (!node) return null;
-        if (typeof node.updateSpec === 'function') node.updateSpec(updates);
-        else {
-            if (updates.data) node.data = { ...node.data, ...updates.data };
-            if (updates.position) node.updatePosition(updates.position[0], updates.position[1], updates.position[2]);
-        }
+        typeof node.updateSpec === 'function' ? node.updateSpec(updates) : Object.assign(node, {
+            data: { ...node.data, ...updates.data },
+            position: updates.position ? node.updatePosition(updates.position[0], updates.position[1], updates.position[2]) : undefined,
+        });
         return node;
     }
 
     addEdge(specOrEdge: EdgeSpec | Edge): Edge | null {
-        if ('source' in specOrEdge && specOrEdge.source instanceof Object && 'position' in specOrEdge.source) {
-            const edge = specOrEdge as Edge;
-            return this._addEdge(edge.id, edge);
-        }
+        if ('source' in specOrEdge && specOrEdge.source instanceof Object && 'position' in specOrEdge.source)
+            return this._addEdge((specOrEdge as Edge).id, specOrEdge as Edge);
 
         const spec = specOrEdge as EdgeSpec;
         if (!spec?.id || typeof spec.source !== 'string' || typeof spec.target !== 'string')
@@ -79,8 +76,7 @@ export class Graph extends EventEmitter<GraphEventMap> {
         const EdgeType = TypeRegistry.getInstance().getEdgeConstructor(spec.type ?? 'Edge');
         if (!EdgeType) { logger.warn('Edge type "%s" not registered.', spec.type); return null; }
 
-        const edge = new EdgeType(this.sg, spec, sourceNode, targetNode);
-        return this._addEdge(spec.id, edge);
+        return this._addEdge(spec.id, new EdgeType(this.sg, spec, sourceNode, targetNode));
     }
 
     private _addEdge(id: string, edge: Edge): Edge {
@@ -127,34 +123,65 @@ export class Graph extends EventEmitter<GraphEventMap> {
     }
 
     clear(): void {
-        for (const edge of this.edges.values()) edge.dispose?.();
-        for (const node of this.nodes.values()) node.dispose?.();
+        this.edges.forEach((edge) => edge.dispose?.());
+        this.nodes.forEach((node) => node.dispose?.());
         this.edges.clear();
         this.nodes.clear();
     }
 
+    iteratorNodes(): IterableIterator<Node> { return this.nodes.values(); }
+    iteratorEdges(): IterableIterator<Edge> { return this.edges.values(); }
+    getNode(id: string): Node | undefined { return this.nodes.get(id); }
     getNodes(): IterableIterator<Node> { return this.nodes.values(); }
     getEdges(): IterableIterator<Edge> { return this.edges.values(); }
-    getNode(id: string): Node | undefined { return this.nodes.get(id); }
     getEdge(id: string): Edge | undefined { return this.edges.get(id); }
     hasNode(id: string): boolean { return this.nodes.has(id); }
     hasEdge(id: string): boolean { return this.edges.has(id); }
     getNodeCount(): number { return this.nodes.size; }
     getEdgeCount(): number { return this.edges.size; }
 
-    query(predicate: (node: Node) => boolean): Node[] { return [...this.nodes.values()].filter(predicate); }
-    neighbors(nodeId: string): Node[] {
+    nodeArray(): Node[] { return [...this.nodes.values()]; }
+    edgeArray(): Edge[] { return [...this.edges.values()]; }
+
+    query(predicate: (node: Node) => boolean): Node[] { return this.nodeArray().filter(predicate); }
+    queryByType(type: string): Node[] { return this.nodeArray().filter((n) => n.type === type); }
+    queryByLabel(label: string, exact = true): Node[] {
+        return this.nodeArray().filter((n) => exact ? n.label === label : n.label?.includes(label));
+    }
+    queryByData(predicate: (data: Record<string, unknown>) => boolean): Node[] {
+        return this.nodeArray().filter((n) => predicate(n.data));
+    }
+
+    getNeighbors(nodeId: string, direction: EdgeDirection = 'both'): Node[] {
         const neighborSet = new Set<Node>();
         for (const edge of this.edges.values()) {
-            if (edge.source.id === nodeId) neighborSet.add(edge.target);
-            else if (edge.target.id === nodeId) neighborSet.add(edge.source);
+            const isSource = edge.source.id === nodeId;
+            const isTarget = edge.target.id === nodeId;
+            if (direction === 'both' && (isSource || isTarget)) neighborSet.add(isSource ? edge.target : edge.source);
+            else if (direction === 'outgoing' && isSource) neighborSet.add(edge.target);
+            else if (direction === 'incoming' && isTarget) neighborSet.add(edge.source);
         }
         return [...neighborSet];
     }
 
-    getConnectedEdges(nodeId: string): Edge[] { return [...this.edges.values()].filter(({ source, target }) => source.id === nodeId || target.id === nodeId); }
-    getIncomingEdges(nodeId: string): Edge[] { return [...this.edges.values()].filter(({ target }) => target.id === nodeId); }
-    getOutgoingEdges(nodeId: string): Edge[] { return [...this.edges.values()].filter(({ source }) => source.id === nodeId); }
+    getEdgesForNode(nodeId: string, direction: EdgeDirection = 'both'): Edge[] {
+        return this.edgeArray().filter(({ source, target }) => {
+            const isSource = source.id === nodeId;
+            const isTarget = target.id === nodeId;
+            return direction === 'both' ? isSource || isTarget : direction === 'outgoing' ? isSource : isTarget;
+        });
+    }
+
+    findNode(predicate: (node: Node) => boolean): Node | undefined { return this.nodeArray().find(predicate); }
+    findEdge(predicate: (edge: Edge) => boolean): Edge | undefined { return this.edgeArray().find(predicate); }
+
+    forEachNode(callback: (node: Node) => void): void { this.nodeArray().forEach(callback); }
+    forEachEdge(callback: (edge: Edge) => void): void { this.edgeArray().forEach(callback); }
+
+    neighbors(nodeId: string): Node[] { return this.getNeighbors(nodeId, 'both'); }
+    getConnectedEdges(nodeId: string): Edge[] { return this.getEdgesForNode(nodeId, 'both'); }
+    getIncomingEdges(nodeId: string): Edge[] { return this.getEdgesForNode(nodeId, 'incoming'); }
+    getOutgoingEdges(nodeId: string): Edge[] { return this.getEdgesForNode(nodeId, 'outgoing'); }
 
     toJSON(): GraphSpec {
         return {

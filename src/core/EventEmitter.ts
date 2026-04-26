@@ -55,6 +55,8 @@ export class EventEmitter<T extends Record<string, unknown>> {
 
     removeAllListeners(): void { this.eventHandlers.clear(); }
     listenerCount<K extends keyof T>(event: K): number { return this.eventHandlers.get(event)?.size ?? 0; }
+    hasListeners<K extends keyof T>(event: K): boolean { return this.listenerCount(event) > 0; }
+    eventNames(): IterableIterator<keyof T> { return this.eventHandlers.keys(); }
 
     clear(): void {
         if (this.batchFrameId !== null) {

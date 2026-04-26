@@ -5,19 +5,19 @@ import type { SpaceGraph } from '../SpaceGraph';
 import { InstancedNodeRenderer } from '../rendering/InstancedNodeRenderer';
 import { DOMNode } from '../nodes/DOMNode';
 
-const CSS_RENDERER_STYLES = { position: 'absolute', top: '0px', left: '0px', pointerEvents: 'none' } as const;
+const CSS_RENDERER_STYLES = Object.freeze({ position: 'absolute', top: '0px', left: '0px', pointerEvents: 'none' });
 const OPTIMIZER_CHECK_INTERVAL_MS = 250;
 
 export interface RenderOptions { antialias?: boolean; alpha?: boolean; backgroundColor?: string | number; pixelRatio?: number; }
 
 export class Renderer {
-    public sg: SpaceGraph;
-    public container: HTMLElement;
-    public scene: THREE.Scene;
-    public camera: THREE.PerspectiveCamera;
-    public renderer: THREE.WebGLRenderer;
-    public cssRenderer: CSS3DRenderer;
-    public instancedRenderer: InstancedNodeRenderer;
+    sg: SpaceGraph;
+    container: HTMLElement;
+    scene: THREE.Scene;
+    camera: THREE.PerspectiveCamera;
+    renderer: THREE.WebGLRenderer;
+    cssRenderer: CSS3DRenderer;
+    instancedRenderer: InstancedNodeRenderer;
     private _resizeObserver: ResizeObserver | null = null;
     private _threePatched = false;
     private renderScheduled = false;
@@ -55,7 +55,7 @@ export class Renderer {
         this._resizeObserver.observe(container);
     }
 
-    public init(): void {
+    init(): void {
         if (this._threePatched) return;
         THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
         THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
@@ -78,7 +78,7 @@ export class Renderer {
         requestAnimationFrame(() => { this.renderScheduled = false; this.render(); });
     }
 
-    public render(): void {
+    render(): void {
         this.instancedRenderer.update();
         for (const edge of this.sg.graph.edges.values()) edge.update?.();
         this.cssRenderer.render(this.scene, this.camera);
@@ -114,7 +114,7 @@ export class Renderer {
         });
     }
 
-    public dispose(): void {
+    dispose(): void {
         this._resizeObserver?.disconnect();
         this.instancedRenderer.dispose();
         this.renderer.dispose();

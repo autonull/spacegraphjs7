@@ -110,25 +110,11 @@ export {
 
 export { logger, createLogger, setLogLevel } from './utils';
 
-export {
-    calculateFitView,
-    type FitViewResult,
-    type Point,
-    CameraUtils as CameraUtilsClass,
-} from './utils';
+export { calculateFitView, type FitViewResult, type Point, CameraUtils as CameraUtilsClass } from './utils';
 
-export {
-    createElement,
-    type DOMElementOptions,
-    DOMUtils as DOMUtilsClass,
-} from './utils';
+export { createElement, type DOMElementOptions, DOMUtils as DOMUtilsClass } from './utils';
 
-export {
-    getRelativeLuminance,
-    getContrastRatio,
-    getCompliantColor,
-    hexToRgb,
-} from './utils';
+export { getRelativeLuminance, getContrastRatio, getCompliantColor, hexToRgb } from './utils';
 
 export { SpaceGraph } from './SpaceGraph';
 export { SpaceGraphApp } from './core/SpaceGraphApp';
@@ -170,38 +156,17 @@ export {
     MermaidPlugin,
 } from './plugins';
 
-export {
-    injectMermaidStyles,
-    DiagramParserFactory,
-    DiagramParseResult,
-    DiagramFormat,
-    DiagramNode,
-    DiagramEdge,
-    MermaidParser,
-    DOTParser,
-    GraphMLParser,
-    JSONDiagramParser,
-    LAYOUT_NAMES,
-    MERMAID_THEMES,
-    getLayoutLabel,
-} from './plugins/mermaid';
+export { injectMermaidStyles, DiagramParserFactory, DiagramParseResult, MermaidParser, DOTParser, GraphMLParser, JSONDiagramParser, LAYOUT_NAMES, MERMAID_THEMES, getLayoutLabel } from './plugins/mermaid';
+export type { DiagramFormat, DiagramNode, DiagramEdge } from './plugins/mermaid';
 
-export {
-    InstancedNodeRenderer,
-    GEOMETRY_FAMILIES,
-} from './rendering/InstancedNodeRenderer';
+export { InstancedNodeRenderer, GEOMETRY_FAMILIES } from './rendering/InstancedNodeRenderer';
 
 export { VisionSystem, HeuristicsStrategy } from './vision';
 
 export { SpatialIndex, BVH } from './core/spatial/SpatialIndex';
 
 export { ObjectPool, MathPool } from './core/pooling/ObjectPool';
-export {
-    withPooledVector3,
-    withPooledVector2,
-    withPooledMatrix4,
-    withPooledBox3,
-} from './core/pooling/ObjectPool';
+export { withPooledVector3, withPooledVector2, withPooledMatrix4, withPooledBox3 } from './core/pooling/ObjectPool';
 
 export { TypeRegistry } from './core/TypeRegistry';
 
@@ -340,9 +305,6 @@ export type {
     HoverMetaWidgetOptions,
     HoverAction,
     MermaidPluginOptions,
-    DiagramFormat,
-    DiagramNode,
-    DiagramEdge,
     MermaidThemeName,
     LayoutName,
     MermaidLayoutType,
@@ -354,7 +316,4 @@ export type {
     Logger,
 };
 
-export default {
-    SpaceGraph,
-    VERSION,
-};
+export default { SpaceGraph, VERSION };

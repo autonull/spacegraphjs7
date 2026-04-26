@@ -7,14 +7,12 @@ import { VisionManager } from './core/VisionManager';
 import { ObjectPoolManager } from './core/ObjectPoolManager';
 import { InputManager } from './input/InputManager';
 import { applyDefaultInputConfig, type DefaultInputConfig } from './input/DefaultInputConfig';
-import {
-    CameraOrbitingFingering,
-    CameraPanningFingering,
-    CameraZoomingFingering,
-} from './input/fingerings';
-import { createLogger } from './utils/logger';
+import { CameraOrbitingFingering, CameraPanningFingering, CameraZoomingFingering } from './input/fingerings';
+import { createLogger, safeClone } from './utils';
 import { wrapError } from './utils/error';
-import { safeClone } from './utils/math';
+import { MathPool } from './core/pooling/ObjectPool';
+import { CameraUtils, DOMUtils } from './utils';
+import { FingeringPriority, Performance } from './core/constants';
 import {
     DEFAULT_NODE_TYPES,
     DEFAULT_EDGE_TYPES,
@@ -22,12 +20,7 @@ import {
     DEFAULT_SYSTEM_PLUGINS,
     createQuickGraphSpec,
 } from './core/defaults';
-import { FingeringPriority, Performance } from './core/constants';
-
 import type { GraphSpec, SpaceGraphOptions, SpecUpdate } from './types';
-import { MathPool } from './core/pooling/ObjectPool';
-import { CameraUtils } from './utils/CameraUtils';
-import { DOMUtils } from './utils/DOMUtils';
 
 const logger = createLogger('SpaceGraph');
 

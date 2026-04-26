@@ -25,7 +25,7 @@ export interface DiagramEdge {
   label?: string;
   style?: EdgeStyle;
   color?: string;
-  arrowhead?: 'normal' | 'none' | 'tee' | 'odot' | 'crow' | 'diamond' | 'none';
+  arrowhead?: 'normal' | 'none' | 'tee' | 'odot' | 'crow' | 'diamond';
   direction?: 'forward' | 'back' | 'both' | 'none';
 }
 
@@ -277,7 +277,7 @@ export class DOTParser {
         label: edgeAttrs.label,
         style: this.mapDotStyle(edgeAttrs.style),
         color: edgeAttrs.color,
-        arrowhead: edgeAttrs.arrowhead || (isDirected ? 'normal' : 'none'),
+        arrowhead: (edgeAttrs.arrowhead || (isDirected ? 'normal' : 'none')) as DiagramEdge['arrowhead'],
       });
     }
 

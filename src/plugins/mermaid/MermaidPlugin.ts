@@ -1,3 +1,4 @@
+import * as THREE from 'three';
 import type { SpaceGraph } from '../../SpaceGraph';
 import type { Graph } from '../../core/Graph';
 import type { EventSystem } from '../../core/events/EventSystem';
@@ -84,14 +85,14 @@ export class MermaidPlugin extends BaseSystemPlugin {
 
   private initializeLayouts(): void {
     const configs: Array<{ name: LayoutName; create: () => BaseLayout; direction?: string }> = [
-      { name: 'force', create: () => new ForceLayout({ iterations: 100, repulsion: 5000 }), direction: undefined },
+      { name: 'force', create: () => new ForceLayout({ iterations: 100, repulsion: 5000 } as any), direction: undefined },
       { name: 'circular', create: () => new CircularLayout(), direction: undefined },
-      { name: 'grid', create: () => new GridLayout({ columns: 4, spacingX: 200, spacingY: 150 }), direction: undefined },
-      { name: 'hierarchical', create: () => new HierarchicalLayout({ direction: 'TB' }), direction: 'TB' },
+      { name: 'grid', create: () => new GridLayout({ columns: 4, spacingX: 200, spacingY: 150 } as any), direction: undefined },
+      { name: 'hierarchical', create: () => new HierarchicalLayout({ direction: 'TB' } as any), direction: 'TB' },
       { name: 'radial', create: () => new RadialLayout(), direction: undefined },
-      { name: 'tree', create: () => new TreeLayout({ direction: 'TB' }), direction: 'TB' },
+      { name: 'tree', create: () => new TreeLayout({ direction: 'TB' } as any), direction: 'TB' },
       { name: 'spectral', create: () => new SpectralLayout(), direction: undefined },
-      { name: 'cluster', create: () => new ClusterLayout({ clusterBy: 'cluster' }), direction: undefined },
+      { name: 'cluster', create: () => new ClusterLayout({ clusterBy: 'cluster' } as any), direction: undefined },
     ];
 
     for (const config of configs) {
@@ -248,8 +249,8 @@ export class MermaidPlugin extends BaseSystemPlugin {
 
     this.hudContainer.appendChild(container);
 
-    container.querySelector('#mermaid-zoom-in')?.addEventListener('click', () => this.sg.cameraControls.zoomBy(1.25));
-    container.querySelector('#mermaid-zoom-out')?.addEventListener('click', () => this.sg.cameraControls.zoomBy(0.8));
+    container.querySelector('#mermaid-zoom-in')?.addEventListener('click', () => this.sg.cameraControls.zoom(1.25));
+    container.querySelector('#mermaid-zoom-out')?.addEventListener('click', () => this.sg.cameraControls.zoom(0.8));
     container.querySelector('#mermaid-fit')?.addEventListener('click', () => this.sg.fitView(150, 1.5));
     container.querySelector('#mermaid-3d')?.addEventListener('click', () => this.toggle3D());
 
@@ -265,14 +266,14 @@ export class MermaidPlugin extends BaseSystemPlugin {
   private toggle3D(): void {
     const camera = this.sg.renderer.camera;
     if (camera.isPerspectiveCamera) {
-      const ortho = this.sg.renderer.createOrthographic();
+      const ortho = new (THREE as any).OrthographicCamera(-100, 100, 100, -100, 0.1, 10000);
       if (ortho) {
-        this.sg.cameraControls.switchCamera(ortho, { duration: 0.5 });
+        (this.sg.cameraControls as any).switchCamera?.(ortho, { duration: 0.5 });
       }
     } else {
-      const perspective = this.sg.renderer.createPerspective();
+      const perspective = new THREE.PerspectiveCamera(75, 1, 0.1, 10000);
       if (perspective) {
-        this.sg.cameraControls.switchCamera(perspective, { duration: 0.5 });
+        (this.sg.cameraControls as any).switchCamera?.(perspective, { duration: 0.5 });
       }
     }
     this.sg.renderer.scheduleRender();
@@ -507,7 +508,7 @@ export class MermaidPlugin extends BaseSystemPlugin {
   }
 
   showAlert(options: { type: 'info' | 'success' | 'warning' | 'error'; message: string; duration?: number }): void {
-    const hud = this.sg.pluginManager.getPlugin<HUDPlugin>('hud');
+    const hud = this.sg.pluginManager.getPlugin('hud') as HUDPlugin | undefined;
     hud?.showAlert(options as any);
   }
 

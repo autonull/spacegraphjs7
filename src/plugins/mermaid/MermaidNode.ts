@@ -1,13 +1,14 @@
-import type { NodeSpec, SpaceGraphNodeData } from '../../types';
+import type { NodeSpec, BaseNodeData, SpaceGraphNodeData } from '../../types';
 import type { SpaceGraph } from '../../SpaceGraph';
 import type { MermaidNodeShape } from './MermaidParser';
 import { HtmlNode } from '../../nodes/HtmlNode';
 
-export interface MermaidNodeData extends SpaceGraphNodeData {
+export interface MermaidNodeData extends BaseNodeData {
   shape?: MermaidNodeShape;
   label?: string;
   themeColors?: string[];
   nodeIndex?: number;
+  color?: string;
 }
 
 const SHAPE_STYLES: Record<MermaidNodeShape, string> = {

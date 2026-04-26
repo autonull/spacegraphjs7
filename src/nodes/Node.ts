@@ -23,13 +23,13 @@ export abstract class Node extends Surface {
     public controlState: ControlState = 'normal';
     abstract readonly object: THREE.Object3D;
     callbacks?: {
-        onPointerEnter?: () => void;
-        onPointerLeave?: () => void;
-        onClick?: (node: this) => void;
-        onDoubleClick?: (node: this) => void;
-        onDragStart?: (node: this) => void;
-        onDragging?: (node: this) => void;
-        onDragStop?: (node: this) => void;
+        onPointerEnter?: (node: Node) => void;
+        onPointerLeave?: (node: Node) => void;
+        onClick?: (node: Node) => void;
+        onDoubleClick?: (node: Node) => void;
+        onDragStart?: (node: Node) => void;
+        onDragging?: (node: Node) => void;
+        onDragStop?: (node: Node) => void;
     };
     actions?: Array<{ icon: string; label: string; action: string }>;
 

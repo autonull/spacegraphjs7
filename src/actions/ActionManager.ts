@@ -13,6 +13,7 @@ export class ActionManager {
     }
 
     execute<I, O>(id: string, ctx: I): O | undefined {
-        return this.actions.get(id)?.execute(ctx);
+        const action = this.actions.get(id) as Action<I, O> | undefined;
+        return action?.execute(ctx);
     }
 }

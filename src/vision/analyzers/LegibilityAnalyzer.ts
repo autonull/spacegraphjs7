@@ -16,7 +16,7 @@ export class LegibilityAnalyzer {
      * Analyze legibility of nodes
      */
     async analyze(context: VisionContext, config: HeuristicsConfig): Promise<LegibilityResult> {
-        const { failures, totalContrast, nodeCount } = context.nodes.reduce(
+        const { failures, totalContrast, nodeCount } = context.nodes.reduce<{ failures: ContrastFailure[]; totalContrast: number; nodeCount: number }>(
             (acc, node) => {
                 const result = this.analyzeNode(
                     node as {

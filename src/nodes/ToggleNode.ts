@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 import { Node } from './Node';
-import type { NodeSpec, NodeData } from '../types';
+import type { NodeSpec, BaseNodeData } from '../types';
 import type { SpaceGraph } from '../SpaceGraph';
 
-export interface ToggleNodeData extends NodeData {
+export interface ToggleNodeData extends BaseNodeData {
     value?: boolean;
     onColor?: number;
     offColor?: number;
@@ -16,7 +16,7 @@ export interface ToggleNodeData extends NodeData {
 export class ToggleNode extends Node {
     private readonly group: THREE.Group;
     private readonly mesh: THREE.Mesh;
-    private readonly label: THREE.Mesh;
+    private readonly labelMesh: THREE.Mesh;
     private onMaterial: THREE.MeshStandardMaterial;
     private offMaterial: THREE.MeshStandardMaterial;
     private labelMaterial: THREE.MeshBasicMaterial;
@@ -64,14 +64,14 @@ export class ToggleNode extends Node {
         const labelTexture = new THREE.CanvasTexture(labelCanvas);
         this.labelMaterial.map = labelTexture;
         const labelGeom = new THREE.PlaneGeometry(this.width * 0.7, this.height * 0.6);
-        this.label = new THREE.Mesh(labelGeom, this.labelMaterial);
-        this.label.position.z = this.depth / 2 + 0.1;
+        this.labelMesh = new THREE.Mesh(labelGeom, this.labelMaterial);
+        this.labelMesh.position.z = this.depth / 2 + 0.1;
 
         this.group = new THREE.Group();
         this.group.add(this.mesh);
-        this.group.add(this.label);
+        this.group.add(this.labelMesh);
 
-this.isTouchable = true;
+        this.isTouchable = true;
         this.updatePosition(this.position.x, this.position.y, this.position.z);
     }
 
@@ -109,10 +109,8 @@ this.isTouchable = true;
             return {
                 surface: this,
                 point: intersects[0].point,
-                localPoint: this.group.worldToLocal(intersects[0].point.clone()),
+                localPoint: this.worldToLocal(intersects[0].point.clone()),
                 distance: intersects[0].distance,
-                uv: intersects[0].uv,
-                face: intersects[0].face ?? undefined,
             };
         }
         return null;
@@ -120,15 +118,15 @@ this.isTouchable = true;
 
     onPointerEnter(): void {
         this._isHovered = true;
+        this.mesh.material = this._value ? this.offMaterial : this.onMaterial;
     }
 
     onPointerLeave(): void {
         this._isHovered = false;
+        this.mesh.material = this._value ? this.onMaterial : this.offMaterial;
     }
 
-    onPointerDown(): void {}
-
-    onPointerUp(): void {
+    onPointerDown(): void {
         this._value = !this._value;
         this.mesh.material = this._value ? this.onMaterial : this.offMaterial;
         this.updateLabel();
@@ -137,8 +135,10 @@ this.isTouchable = true;
         if (data?.onToggle) {
             data.onToggle(this._value);
         }
-        this.sg?.events.emit('node:click', { node: this, value: this._value });
+        this.sg?.events.emit('node:click', { node: this });
     }
+
+    onPointerUp(): void {}
 
     updateSpec(updates: Partial<NodeSpec>): this {
         super.updateSpec(updates);
@@ -165,7 +165,7 @@ this.isTouchable = true;
         this.offMaterial.dispose();
         this.labelMaterial.dispose();
         this.mesh.geometry.dispose();
-        this.label.geometry.dispose();
+        this.labelMesh.geometry.dispose();
         (this.labelMaterial.map as THREE.Texture)?.dispose();
         super.dispose();
     }

@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 import { Node } from './Node';
-import type { NodeSpec, NodeData } from '../types';
+import type { NodeSpec, BaseNodeData } from '../types';
 import type { SpaceGraph } from '../SpaceGraph';
 
-export interface ButtonNodeData extends NodeData {
+export interface ButtonNodeData extends BaseNodeData {
     label?: string;
     color?: number;
     hoverColor?: number;

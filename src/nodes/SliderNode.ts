@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 import { Node } from './Node';
-import type { NodeSpec, NodeData } from '../types';
+import type { NodeSpec, BaseNodeData } from '../types';
 import type { SpaceGraph } from '../SpaceGraph';
 
-export interface SliderNodeData extends NodeData {
+export interface SliderNodeData extends BaseNodeData {
     min?: number;
     max?: number;
     value?: number;

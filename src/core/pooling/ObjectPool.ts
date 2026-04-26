@@ -32,8 +32,6 @@ export class ObjectPool<T> {
   }
 }
 
-import * as THREE from 'three';
-
 export class MathPool {
   private static instance: MathPool;
   private readonly vector3Pool: ObjectPool<THREE.Vector3>;
