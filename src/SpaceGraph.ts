@@ -10,7 +10,7 @@ import { applyDefaultInputConfig, type DefaultInputConfig } from './input/Defaul
 import { CameraOrbitingFingering, CameraPanningFingering, CameraZoomingFingering } from './input/fingerings';
 import { createLogger, safeClone, wrapError, CameraUtils, DOMUtils } from './utils';
 import { MathPool } from './core/pooling/ObjectPool';
-import { FingeringPriority, Performance } from './core/constants';
+import { FingeringPriority } from './core/constants';
 import {
   DEFAULT_NODE_TYPES,
   DEFAULT_EDGE_TYPES,

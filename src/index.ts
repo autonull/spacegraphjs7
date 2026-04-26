@@ -1,10 +1,14 @@
 import './init';
 import { SpaceGraph } from './SpaceGraph';
 
+// Ergonomic API & Builders
+export * from './api';
+export * from './builder';
+
 // Core
 export { SpaceGraph } from './SpaceGraph';
 export { SpaceGraphApp } from './core/SpaceGraphApp';
-export { Graph } from './core/Graph';
+export { Graph, type EdgeDirection } from './core/Graph';
 export { Renderer } from './core/Renderer';
 export { CameraControls } from './core/CameraControls';
 export { EventSystem } from './core/events/EventSystem';
@@ -12,9 +16,10 @@ export { EventEmitter } from './core/EventEmitter';
 export { VisionManager } from './core/VisionManager';
 export { ObjectPoolManager } from './core/ObjectPoolManager';
 export { PluginManager } from './core/PluginManager';
-export type { Plugin as PluginInterface } from './core/PluginManager';
+export type { Plugin } from './core/PluginManager';
 export { Surface } from './core/Surface';
 export { TypeRegistry } from './core/TypeRegistry';
+export type { NodeConstructor, EdgeConstructor } from './core/TypeRegistry';
 
 // Constants
 export {
@@ -38,7 +43,7 @@ export {
   createQuickGraphSpec,
 } from './core/defaults';
 
-// Utils
+// Utils - Core utilities
 export {
   DEG2RAD,
   RAD2DEG,
@@ -51,6 +56,19 @@ export {
   smoothstep,
   mapRange,
   safeClone,
+  debounce,
+  throttle,
+  isDefined,
+  isPromise,
+  sleep,
+  retry,
+  groupBy,
+  unique,
+  flatten,
+  chunk,
+  hexToRgb,
+  rgbToHex,
+  wrapError,
 } from './utils';
 
 export { logger, createLogger, setLogLevel } from './utils/logger';
@@ -58,7 +76,7 @@ export { calculateFitView, CameraUtils } from './utils/CameraUtils';
 export type { FitViewResult, Point } from './utils/CameraUtils';
 export { createElement, DOMUtils } from './utils/DOMUtils';
 export type { DOMElementOptions } from './utils/DOMUtils';
-export { getRelativeLuminance, getContrastRatio, getCompliantColor, hexToRgb } from './utils/color';
+export { getRelativeLuminance, getContrastRatio, getCompliantColor } from './utils/color';
 
 // Input
 export { InputManager, FingerManager, Fingering, createParentTransform } from './input';

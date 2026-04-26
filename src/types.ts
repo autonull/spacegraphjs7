@@ -1,4 +1,4 @@
-// Core utilities
+// Core type utilities
 export type Primitive = string | number | boolean | null | undefined;
 export type MaybePromise<T> = T | Promise<T>;
 export type Constructor<T, Args extends unknown[] = unknown[]> = new (...args: Args) => T;
@@ -14,7 +14,7 @@ export interface Colorable { color?: string | number; }
 export interface Opacity { opacity?: number; }
 export interface Themable { theme?: 'light' | 'dark'; }
 
-// Type composition helpers
+// Composition helpers
 export type WithDimensions<T> = T & Dimensions;
 export type WithColorable<T> = T & Colorable;
 export type WithOpacity<T> = T & Opacity;
@@ -22,9 +22,20 @@ export type WithThemable<T> = T & Themable;
 export type WithSize<T> = T & { size?: number };
 export type WithPosition<T> = T & { position?: [number, number, number] };
 
+// Common patterns
+export type Maybe<T> = T | null | undefined;
+export type Nullable<T> = T | null;
+export type Undefinable<T> = T | undefined;
+export type Async<T> = Promise<T>;
+
 // Base data types
 export interface BaseNodeData { [key: string]: unknown; pinned?: boolean; visible?: boolean; }
 export interface BaseEdgeData { [key: string]: unknown; }
+
+// Aliases for common types
+export type AnyData = Record<string, unknown>;
+export type DataMap = Map<string, unknown>;
+export type DataRecord = Record<string, any>;
 
 export interface LabelLodLevel {
   distance?: number;
@@ -206,7 +217,20 @@ export interface SpaceGraphOptions {
     };
   };
   initialLayout?: string;
+  cameraControls?: Partial<import('./core/CameraControls').CameraControlsConfig>;
+  input?: DefaultInputConfig;
   [key: string]: unknown;
+}
+
+export interface DefaultInputConfig {
+  enableCameraOrbit?: boolean;
+  enableCameraPan?: boolean;
+  enableCameraZoom?: boolean;
+  enableHover?: boolean;
+  enableBoxSelect?: boolean;
+  enableDrag?: boolean;
+  enableWidgets?: boolean;
+  [key: string]: any;
 }
 
 // Animation
@@ -336,12 +360,9 @@ export interface Bounds3D {
   intersectsRay(ray: any): boolean;
 }
 
-// Plugin
-export interface Plugin {
-  readonly id: string;
-  readonly name: string;
-  readonly version: string;
-  init(sg: any, graph: any, events: any): void | Promise<void>;
+// Plugin system
+export interface PluginLifecycle {
+  init?(sg: any, graph: any, events: any): void | Promise<void>;
   onPreRender?(delta: number): void;
   onPostRender?(delta: number): void;
   onNodeAdded?(node: any): void;
@@ -353,11 +374,31 @@ export interface Plugin {
   import?(data: unknown): void;
 }
 
-// Constructors
-export type NodeConstructor = new (sg: any, spec: any) => any;
-export type EdgeConstructor = new (sg: any, spec: any, source: any, target: any) => any;
+export interface Plugin extends PluginLifecycle {
+  readonly id: string;
+  readonly name: string;
+  readonly version: string;
+}
 
-// Vision
+export interface PluginMetadata {
+  id: string;
+  name: string;
+  version: string;
+  description?: string;
+  author?: string;
+  dependencies?: string[];
+}
+
+// Constructors - re-export from core with proper typing
+import type { Node } from './nodes/Node';
+import type { Edge } from './edges/Edge';
+import type { SpaceGraph } from './SpaceGraph';
+import type { NodeSpec, EdgeSpec } from './types';
+
+export type NodeConstructor = new (sg: SpaceGraph, spec: NodeSpec) => Node;
+export type EdgeConstructor = new (sg: SpaceGraph, spec: EdgeSpec, source: Node, target: Node) => Edge;
+
+// Vision system
 export type VisionCategory = 'wcag' | 'overlap' | 'fitts' | 'all';
 export interface VisionOptions {
   enabled?: boolean;
@@ -393,27 +434,7 @@ export interface SpaceGraphEvents {
   'edge:updated': any;
 }
 
-// Maps
-export type NodeConstructorMap = Map<string, NodeConstructor>;
-export type EdgeConstructorMap = Map<string, EdgeConstructor>;
-
-// Hit test result
-export interface HitTestResult {
-  node?: any;
-  edge?: any;
-  point: any;
-  distance: number;
-}
-
-// Grid
-export interface GridModel {
-  rows: number;
-  cols: number;
-  cellWidth: number;
-  cellHeight: number;
-}
-
-// Common types
+// Type aliases for ergonomics
 export type NodeType = string;
 export type EdgeType = string;
 
@@ -430,40 +451,11 @@ export type EdgePredicate<T = any> = (edge: T) => boolean;
 export type Result<T, E = Error> = { success: true; data: T } | { success: false; error: E };
 export type Option<T> = { value: T } | { value: null };
 
-// Async utilities
-export type AsyncFunction<T = any> = () => Promise<T>;
-export type DebounceOptions = { leading?: boolean; trailing?: boolean; maxWait?: number };
-export type ThrottleOptions = { leading?: boolean; trailing?: boolean };
-
 // Event handling
 export type EventHandler<T = any> = (event: T) => void;
 export type EventMap = Record<string, any>;
 export type WildcardEventHandler<T = any> = (event: string, data: T) => void;
 
-// Disposer
+// Cleanup
 export type Disposer = () => void;
 export type CleanupFunction = () => void | Promise<void>;
-
-// Factory functions
-export type Factory<T, Args extends any[] = any[]> = (...args: Args) => T;
-export type AsyncFactory<T, Args extends any[] = any[]> = (...args: Args) => Promise<T>;
-
-// Cache
-export interface CacheOptions {
-  maxAge?: number;
-  maxSize?: number;
-  strategy?: 'lru' | 'fifo' | 'lfu';
-}
-
-// Observer
-export interface Observer<T> {
-  next(value: T): void;
-  error?(error: Error): void;
-  complete?(): void;
-}
-
-// Subscription
-export interface Subscription {
-  unsubscribe(): void;
-  closed: boolean;
-}

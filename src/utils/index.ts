@@ -1,80 +1,64 @@
+// Utility functions - consolidated and optimized
+// Re-export from specialized modules
+
+// Core utilities defined inline
 export {
   DEG2RAD,
   RAD2DEG,
-  PI,
-  TAU,
-  EPSILON,
   clamp,
-  clamp01,
   lerp,
-  lerpClamped,
-  inverseLerp,
+  mergeDeep,
+  toHexColor,
   randomRange,
   randomInt,
-  randomBool,
-  randomPick,
   smoothstep,
-  smootherstep,
   mapRange,
-  round,
-  approx,
-  sign,
-  abs,
-  min,
-  max,
-  sum,
-  mean,
   safeClone,
-  deepEqual,
   debounce,
   throttle,
-  memoize,
-  memoizeWithKey,
-  invalidateMemoization,
-  clearMemoization,
-  isObject,
-  isFunction,
-  isString,
-  isNumber,
-  isBoolean,
-  isArray,
-  isPlainObject,
-  mergeDeep,
-} from './math';
+  isDefined,
+  isPromise,
+  sleep,
+  retry,
+  groupBy,
+  unique,
+  flatten,
+  chunk,
+  hexToRgb,
+  rgbToHex,
+  wrapError,
+} from './core';
 
+// Logger
 export { logger, createLogger, setLogLevel, type LogLevel, type Logger } from './logger';
 
+// Camera utilities
+export { calculateFitView, CameraUtils, type FitViewResult, type Point } from './CameraUtils';
+
+// DOM utilities
+export { createElement, createElementNS, DOMUtils, type DOMElementOptions } from './DOMUtils';
+
+// Color utilities
+export { getRelativeLuminance, getContrastRatio, getCompliantColor } from './color';
+
+// Error utilities
+export { wrapError as wrapErrorDetailed } from './error';
+
+// Math utilities
+export { clamp01, lerp3, min3, max3, clamp180, angleDiff, randomThreeVector } from './math';
+
+// Performance utilities
 export {
-  SpaceGraphError,
-  NotImplementedError,
-  ValidationError,
-  ConfigurationError,
-  wrapError,
-  wrapAndThrow,
-  createErrorFactory,
-  type SpaceGraphErrorOptions,
-} from './error';
-export { createElement, createElementNS, type DOMElementOptions, DOMUtils } from './DOMUtils';
-export { calculateFitView, type FitViewResult, type Point, CameraUtils } from './CameraUtils';
-export {
-    calculateDistance,
-    calculateMidpoint,
-    calculatePinchZoom,
-    calculatePan,
-    calculateAngle,
-    isClick,
-    normalizeWheel,
-    type DragCallback,
-    type PinchCallback,
-    type RotateCallback,
-    GestureManager,
-} from './GestureManager';
-export { disposeObject3D, ThreeDisposer } from './ThreeDisposer';
-export {
-    getRelativeLuminance,
-    getContrastRatio,
-    getCompliantColor,
-    hexToRgb,
-    toHexColor,
-    sortByFrequency,
-} from './color';
+  PerformanceMonitor,
+  ObjectPool,
+  memoize,
+  batch,
+  batchAsync,
+  requestIdleCallbackPolyfill,
+  cancelIdleCallbackPolyfill,
+  throttleByTime,
+  debounceByTime,
+  getMemoryUsage,
+  measure,
+  measureAsync,
+} from './performance';
