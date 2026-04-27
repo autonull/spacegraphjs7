@@ -1,57 +1,114 @@
-// Utility functions - consolidated and optimized
-// Re-export from specialized modules
+// utils/index.ts - Consolidated utility exports
+// All utilities re-exported from single source for better tree-shaking
 
-// Core utilities defined inline
+// Math utilities (consolidated)
 export {
+  // Constants
   DEG2RAD,
   RAD2DEG,
+  PI,
+  TAU,
+  EPSILON,
+
+  // Type guards
+  isObject,
+  isFunction,
+  isString,
+  isNumber,
+  isBoolean,
+  isArray,
+  isPlainObject,
+
+  // Math functions
   clamp,
+  clamp01,
   lerp,
-  mergeDeep,
-  toHexColor,
+  lerpClamped,
+  inverseLerp,
+  smoothstep,
+  smootherstep,
+  mapRange,
+  round,
+  approx,
+  sign,
+  abs,
+  min,
+  max,
+  sum,
+  mean,
+
+  // Vector math
+  lerp3,
+  min3,
+  max3,
+  clamp180,
+  angleDiff,
+  randomThreeVector,
+
+  // Random
   randomRange,
   randomInt,
-  smoothstep,
-  mapRange,
+  randomBool,
+  randomPick,
+
+  // Color
+  hexToRgb,
+  rgbToHex,
+  toHexColor,
+
+  // Object utilities
+  mergeDeep,
   safeClone,
+  deepEqual,
+
+  // Function utilities
   debounce,
   throttle,
-  isDefined,
-  isPromise,
-  sleep,
-  retry,
+
+  // Memoization
+  memoize,
+  memoizeWithKey,
+  invalidateMemoization,
+  clearMemoization,
+
+  // Array utilities
   groupBy,
   unique,
   flatten,
   chunk,
-  hexToRgb,
-  rgbToHex,
+
+  // Promise utilities
+  isPromise,
+  sleep,
+  retry,
+
+  // Error handling
   wrapError,
-} from './core';
+
+  // Type utilities
+  isDefined,
+} from './math';
 
 // Logger
-export { logger, createLogger, setLogLevel, type LogLevel, type Logger } from './logger';
+export { logger, createLogger, setLogLevel } from './logger';
+export type { LogLevel, Logger } from './logger';
 
 // Camera utilities
-export { calculateFitView, CameraUtils, type FitViewResult, type Point } from './CameraUtils';
+export { calculateFitView, CameraUtils } from './CameraUtils';
+export type { FitViewResult, Point } from './CameraUtils';
 
 // DOM utilities
-export { createElement, createElementNS, DOMUtils, type DOMElementOptions } from './DOMUtils';
+export { createElement, createElementNS, DOMUtils } from './DOMUtils';
+export type { DOMElementOptions } from './DOMUtils';
 
-// Color utilities
+// Color utilities (WCAG)
 export { getRelativeLuminance, getContrastRatio, getCompliantColor } from './color';
-
-// Error utilities
-export { wrapError as wrapErrorDetailed } from './error';
-
-// Math utilities
-export { clamp01, lerp3, min3, max3, clamp180, angleDiff, randomThreeVector } from './math';
 
 // Performance utilities
 export {
   PerformanceMonitor,
   ObjectPool,
-  memoize,
+  memoize as perfMemoize,
   batch,
   batchAsync,
   requestIdleCallbackPolyfill,
@@ -62,3 +119,15 @@ export {
   measure,
   measureAsync,
 } from './performance';
+
+// Error utilities
+export { wrapError as wrapErrorDetailed } from './error';
+
+// Gesture utilities
+export { GestureManager } from './GestureManager';
+
+// Graph generators
+export { generateGrid, generateCircle, generateChain, generateStar, generateTree } from './graphGenerators';
+
+// Three.js disposal
+export { disposeThreeObject } from './ThreeDisposer';

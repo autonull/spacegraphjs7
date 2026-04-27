@@ -1,25 +1,36 @@
+// SpaceGraphJS v7.0.0 - Aggressively Refactored
 import './init';
-import { SpaceGraph } from './SpaceGraph';
-
-// Ergonomic API & Builders
-export * from './api';
-export * from './builder';
+import { SpaceGraph as SG } from './SpaceGraph';
 
 // Core
 export { SpaceGraph } from './SpaceGraph';
-export { SpaceGraphApp } from './core/SpaceGraphApp';
-export { Graph, type EdgeDirection } from './core/Graph';
+export { Graph } from './core/Graph';
 export { Renderer } from './core/Renderer';
 export { CameraControls } from './core/CameraControls';
 export { EventSystem } from './core/events/EventSystem';
 export { EventEmitter } from './core/EventEmitter';
 export { VisionManager } from './core/VisionManager';
 export { ObjectPoolManager } from './core/ObjectPoolManager';
-export { PluginManager } from './core/PluginManager';
-export type { Plugin } from './core/PluginManager';
+export { PluginManager, type Plugin } from './core/PluginManager';
 export { Surface } from './core/Surface';
-export { TypeRegistry } from './core/TypeRegistry';
-export type { NodeConstructor, EdgeConstructor } from './core/TypeRegistry';
+export { TypeRegistry, type NodeConstructor, type EdgeConstructor } from './core/TypeRegistry';
+
+// App
+export { SpaceGraphApp } from './core/SpaceGraphApp';
+export type { SpaceGraphAppOptions, AppButtonConfig } from './core/SpaceGraphApp';
+
+// Builder API
+export {
+  NodeBuilder,
+  EdgeBuilder,
+  GraphSpecBuilder,
+  graph,
+  quickGraph,
+  Patterns,
+  Animate,
+  Layout,
+  Camera,
+} from './builder';
 
 // Constants
 export {
@@ -43,7 +54,7 @@ export {
   createQuickGraphSpec,
 } from './core/defaults';
 
-// Utils - Core utilities
+// Utils
 export {
   DEG2RAD,
   RAD2DEG,
@@ -72,117 +83,24 @@ export {
 } from './utils';
 
 export { logger, createLogger, setLogLevel } from './utils/logger';
-export { calculateFitView, CameraUtils } from './utils/CameraUtils';
-export type { FitViewResult, Point } from './utils/CameraUtils';
+export { calculateFitValue, CameraUtils } from './utils/CameraUtils';
+export type { FitValueResult, Point } from './utils/CameraUtils';
 export { createElement, DOMUtils } from './utils/DOMUtils';
 export type { DOMElementOptions } from './utils/DOMUtils';
 export { getRelativeLuminance, getContrastRatio, getCompliantColor } from './utils/color';
 
 // Input
 export { InputManager, FingerManager, Fingering, createParentTransform } from './input';
-export type {
-  CameraOrbitingFingering,
-  CameraPanningFingering,
-  CameraZoomingFingering,
-} from './input/fingerings';
+export type { CameraOrbitingFingering, CameraPanningFingering, CameraZoomingFingering } from './input/fingerings';
 
-// Plugins
-export {
-  ForceLayout,
-  GridLayout,
-  CircularLayout,
-  HierarchicalLayout,
-  RadialLayout,
-  TreeLayout,
-  SpectralLayout,
-  GeoLayout,
-  TimelineLayout,
-  ClusterLayout,
-  InteractionPlugin,
-  LODPlugin,
-  AutoLayoutPlugin,
-  AutoColorPlugin,
-  PhysicsPlugin,
-  MinimapPlugin,
-  ErgonomicsPlugin,
-  VisionOverlayPlugin,
-  HUDPlugin,
-  HistoryPlugin,
-  FractalZoomPlugin,
-  ZoomUIPlugin,
-  LayoutContainer,
-  HoverMetaWidget,
-  MermaidPlugin,
-  injectMermaidStyles,
-  DiagramParserFactory,
-  DiagramParseResult,
-  MermaidParser,
-  DOTParser,
-  GraphMLParser,
-  JSONDiagramParser,
-  LAYOUT_NAMES,
-  MERMAID_THEMES,
-  getLayoutLabel,
-} from './plugins';
+// Plugins - Re-export from plugins/index.ts
+export * from './plugins';
 
-export type {
-  ForceLayoutConfig,
-  DiagramFormat,
-  DiagramNode,
-  DiagramEdge,
-  MermaidPluginOptions,
-} from './plugins';
+// Nodes - Re-export from nodes/index.ts
+export * from './nodes';
 
-// Nodes
-export {
-  Node,
-  InstancedNode,
-  ShapeNode,
-  ButtonNode,
-  SliderNode,
-  ToggleNode,
-  HtmlNode,
-  InstancedShapeNode,
-  ImageNode,
-  GroupNode,
-  NoteNode,
-  CanvasNode,
-  TextMeshNode,
-  DataNode,
-  VideoNode,
-  IFrameNode,
-  ChartNode,
-  MarkdownNode,
-  GlobeNode,
-  SceneNode,
-  AudioNode,
-  MathNode,
-  ProcessNode,
-  CodeEditorNode,
-  StackingNode,
-  GridNode,
-  SplitNode,
-  BorderNode,
-  SwitchNode,
-  VirtualGridNode,
-  PanelNode,
-  PortNode,
-  DOMNode,
-} from './nodes';
-
-// Edges
-export {
-  Edge,
-  CurvedEdge,
-  FlowEdge,
-  LabeledEdge,
-  DottedEdge,
-  DynamicThicknessEdge,
-  AnimatedEdge,
-  BundledEdge,
-  InterGraphEdge,
-  Wire,
-} from './edges';
+// Edges - Re-export from edges/index.ts
+export * from './edges';
 
 // Rendering
 export { InstancedNodeRenderer, GEOMETRY_FAMILIES } from './rendering/InstancedNodeRenderer';
@@ -197,12 +115,7 @@ export { SpatialIndex, BVH } from './core/spatial/SpatialIndex';
 
 // Pooling
 export { ObjectPool, MathPool } from './core/pooling/ObjectPool';
-export {
-  withPooledVector3,
-  withPooledVector2,
-  withPooledMatrix4,
-  withPooledBox3,
-} from './core/pooling/ObjectPool';
+export { withPooledVector3, withPooledVector2, withPooledMatrix4, withPooledBox3 } from './core/pooling/ObjectPool';
 
 // Types
 export type {
@@ -210,7 +123,6 @@ export type {
   RenderOptions,
   SpaceGraphEvents,
   Disposable,
-  Plugin,
   LayoutConfig,
   LayoutOptions,
   VisionOptions,
@@ -229,8 +141,6 @@ export type {
   HitResult,
   Rect,
   GridModel,
-  NodeConstructor,
-  EdgeConstructor,
   ErgonomicsConfig,
   HUDElementOptions,
   HistoryPluginOptions,
@@ -250,4 +160,4 @@ export type {
 export const VERSION = '7.0.0';
 
 // Default export
-export default { SpaceGraph, VERSION };
+export default SG;

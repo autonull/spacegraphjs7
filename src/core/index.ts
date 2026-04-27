@@ -15,22 +15,22 @@ export type { NodeConstructor, EdgeConstructor } from './core/TypeRegistry';
 
 // Constants
 export {
-  AnimationDuration,
-  ZoomConfig,
-  FingeringPriority,
-  InteractionThresholds,
-  Performance,
-  Defaults,
-  EdgeColors,
-  InputConfig,
-  WCAG,
+    AnimationDuration,
+    ZoomConfig,
+    FingeringPriority,
+    InteractionThresholds,
+    Performance,
+    Defaults,
+    EdgeColors,
+    InputConfig,
+    WCAG,
 } from './core/constants';
 
 // Defaults
 export {
-  DEFAULT_NODE_TYPES,
-  DEFAULT_EDGE_TYPES,
-  DEFAULT_LAYOUT_PLUGINS,
-  DEFAULT_SYSTEM_PLUGINS,
-  createQuickGraphSpec,
+    DEFAULT_NODE_TYPES,
+    DEFAULT_EDGE_TYPES,
+    DEFAULT_LAYOUT_PLUGINS,
+    DEFAULT_SYSTEM_PLUGINS,
+    createQuickGraphSpec,
 } from './core/defaults';

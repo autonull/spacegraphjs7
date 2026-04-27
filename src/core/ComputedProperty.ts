@@ -18,8 +18,11 @@ export class ComputedProperty<T> extends Property<T> {
     private recompute(): void {
         if (this.computing) return;
         this.computing = true;
-        try { super.value = this.compute(); }
-        finally { this.computing = false; }
+        try {
+            super.value = this.compute();
+        } finally {
+            this.computing = false;
+        }
     }
 
     dispose(): void {

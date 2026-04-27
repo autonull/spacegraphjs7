@@ -22,8 +22,13 @@ export abstract class BaseAction<I, O> implements Action<I, O> {
     readonly icon?: string;
 }
 
-export const sortByRelevance = <I, O>(actions: Action<I, O>[], ctx: ActionContext): Action<I, O>[] =>
-    [...actions].sort((a, b) => b.applies(ctx) - a.applies(ctx));
+export const sortByRelevance = <I, O>(
+    actions: Action<I, O>[],
+    ctx: ActionContext,
+): Action<I, O>[] => [...actions].sort((a, b) => b.applies(ctx) - a.applies(ctx));
 
-export const filterRelevant = <I, O>(actions: Action<I, O>[], ctx: ActionContext, minScore = 0): Action<I, O>[] =>
-    actions.filter((a) => a.applies(ctx) > minScore);
+export const filterRelevant = <I, O>(
+    actions: Action<I, O>[],
+    ctx: ActionContext,
+    minScore = 0,
+): Action<I, O>[] => actions.filter((a) => a.applies(ctx) > minScore);

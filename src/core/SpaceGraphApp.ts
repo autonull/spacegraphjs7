@@ -1,7 +1,5 @@
 import { SpaceGraph } from '../SpaceGraph';
-import type { GraphSpec } from '../types';
-import type { Node } from '../nodes/Node';
-import type { Edge } from '../edges/Edge';
+import type { GraphSpec, Node, Edge } from '../types';
 import { HUDPlugin } from '../plugins/HUDPlugin';
 import { InteractionPlugin } from '../plugins/InteractionPlugin';
 import { MinimapPlugin } from '../plugins/MinimapPlugin';
@@ -13,6 +11,8 @@ import {
     renderButtons,
     renderToolbarActions,
     updateStatsHUD,
+    renderTitleCard,
+    renderToolbar,
 } from './SpaceGraphAppHUD';
 import { setupInteractionHandlers, setupHotkeys } from './SpaceGraphAppInteraction';
 import { setupDefaultHUD, setTheme } from './SpaceGraphAppTheme';
@@ -106,7 +106,6 @@ export class SpaceGraphApp {
             container,
             resolvedOptions.spec ?? { nodes: [], edges: [] },
         );
-
         const app = new SpaceGraphApp(sg, resolvedOptions);
 
         if (resolvedOptions.actions) app.buttons.push(...resolvedOptions.actions);
@@ -118,13 +117,13 @@ export class SpaceGraphApp {
         app.hud = new HUDPlugin();
         app.sg.pluginManager.register('HUDPlugin', app.hud);
 
-        if (app.options.enableInteraction) {
+        if (resolvedOptions.enableInteraction) {
             const interaction = new InteractionPlugin();
             app.sg.pluginManager.register('InteractionPlugin', interaction);
             setTimeout(() => setupInteractionHandlers(app), 0);
         }
 
-        if (app.options.enableMinimap) {
+        if (resolvedOptions.enableMinimap) {
             app.sg.pluginManager.register('MinimapPlugin', new MinimapPlugin());
         }
 
@@ -132,7 +131,7 @@ export class SpaceGraphApp {
         addGrid(app);
         setupDefaultHUD(app, theme);
 
-        if (app.options.enableSearch) {
+        if (resolvedOptions.enableSearch) {
             setupSearchHUD(app, theme);
         }
 
@@ -143,7 +142,7 @@ export class SpaceGraphApp {
         return app;
     }
 
-public setTheme(theme: Partial<SpaceGraphAppOptions['theme']>) {
+    public setTheme(theme: Partial<SpaceGraphAppOptions['theme']>) {
         setTheme(this, theme ?? {});
     }
 
@@ -156,48 +155,45 @@ public setTheme(theme: Partial<SpaceGraphAppOptions['theme']>) {
         if (node instanceof HtmlNode && this.options.selectionHighlightClass) {
             node.domElement.classList.remove(this.options.selectionHighlightClass);
         } else if (this.originalColors.has(node)) {
-            node.updateSpec({ data: { color: this.originalColors.get(node) } });        }
+            node.updateSpec({ data: { color: this.originalColors.get(node) } });
+        }
     }
 
     private _applyNodeStyle(node: Node): void {
         if (node instanceof HtmlNode && this.options.selectionHighlightClass) {
             node.domElement.classList.add(this.options.selectionHighlightClass);
-        } else if (        this.options.selectionHighlightColor &&
-            node.data?.color !== undefined
-        ) {
+        } else if (this.options.selectionHighlightColor && node.data?.color !== undefined) {
             this.originalColors.set(node, node.data.color as number);
-            node.updateSpec({
-                data: { color: this.options.selectionHighlightColor },
-            });        }
+            node.updateSpec({ data: { color: this.options.selectionHighlightColor } });
+        }
     }
 
     private _clearEdgeStyle(edge: Edge): void {
         if (this.originalEdgeColors.has(edge)) {
-            edge.updateSpec({ data: { color: this.originalEdgeColors.get(edge) } });        }
+            edge.updateSpec({ data: { color: this.originalEdgeColors.get(edge) } });
+        }
     }
 
     private _applyEdgeStyle(edge: Edge): void {
-        if (
-            this.options.selectionHighlightEdgeColor &&
-            edge.data?.color !== undefined
-        ) {
+        if (this.options.selectionHighlightEdgeColor && edge.data?.color !== undefined) {
             this.originalEdgeColors.set(edge, edge.data.color as number);
-            edge.updateSpec({
-                data: { color: this.options.selectionHighlightEdgeColor },
-            });        }
+            edge.updateSpec({ data: { color: this.options.selectionHighlightEdgeColor } });
+        }
     }
 
     public clearSelectionStyles() {
         for (const node of this.currentSelected) this._clearNodeStyle(node);
-        this.originalColors.clear();        for (const edge of this.currentSelectedEdges) this._clearEdgeStyle(edge);
-        this.originalEdgeColors.clear();    }
+        this.originalColors.clear();
+        for (const edge of this.currentSelectedEdges) this._clearEdgeStyle(edge);
+        this.originalEdgeColors.clear();
+    }
 
     public applySelectionStyles() {
         for (const node of this.currentSelected) this._applyNodeStyle(node);
         for (const edge of this.currentSelectedEdges) this._applyEdgeStyle(edge);
     }
 
-public addToolbarAction(config: AppButtonConfig) {
+    public addToolbarAction(config: AppButtonConfig) {
         this.toolbarActions.push(config);
         renderToolbarActions(this);
     }
@@ -240,7 +236,7 @@ public addToolbarAction(config: AppButtonConfig) {
         return this.sg.export();
     }
 
-public importData(data: any) {
+    public importData(data: any) {
         this.sg.import(data);
         this._emitSelectionChanged();
     }
@@ -257,7 +253,7 @@ public importData(data: any) {
         }
     }
 
-public addNode(nodeSpec: any) {
+    public addNode(nodeSpec: any) {
         this.sg.graph.addNode(nodeSpec);
         this._emitSelectionChanged();
     }
@@ -316,3 +312,13 @@ public addNode(nodeSpec: any) {
         this.hud.dispose();
     }
 }
+
+// Re-export helpers
+export {
+    renderTitleCard,
+    renderToolbar,
+    renderButtons,
+    renderToolbarActions,
+    setupSearchHUD,
+    updateStatsHUD,
+};

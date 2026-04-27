@@ -29,7 +29,9 @@ export class ConnectNodesAction extends BaseAction<{ sourceId: string; targetId:
     readonly id = 'connect-nodes';
     readonly label = 'Connect';
     readonly icon = 'link';
-    applies(ctx: ActionContext): number { return nodeApplies(ctx) && (ctx.selection as { id: string }[])?.length ? 2 : 0; }
+    applies(ctx: ActionContext): number {
+        return nodeApplies(ctx) && (ctx.selection as { id: string }[])?.length ? 2 : 0;
+    }
     execute(_ctx: { sourceId: string; targetId: string }): string {
         throw new NotImplementedError('ConnectNodesAction.execute');
     }
@@ -39,7 +41,9 @@ export class SelectAllAction extends BaseAction<unknown, string[]> {
     readonly id = 'select-all';
     readonly label = 'Select All';
     readonly icon = 'grid';
-    applies(ctx: ActionContext): number { return ctx.graph ? 0.5 : 0; }
+    applies(ctx: ActionContext): number {
+        return ctx.graph ? 0.5 : 0;
+    }
     execute(_ctx: unknown): string[] {
         throw new NotImplementedError('SelectAllAction.execute');
     }
@@ -49,13 +53,18 @@ export class ZoomToFitAction extends BaseAction<unknown, void> {
     readonly id = 'zoom-to-fit';
     readonly label = 'Zoom to Fit';
     readonly icon = 'maximize';
-    applies(ctx: ActionContext): number { return ctx.graph ? 0.3 : 0; }
+    applies(ctx: ActionContext): number {
+        return ctx.graph ? 0.3 : 0;
+    }
     execute(_ctx: unknown): void {
         throw new NotImplementedError('ZoomToFitAction.execute');
     }
 }
 
 export const BUILT_IN_ACTIONS = [
-    new DeleteNodeAction(), new DuplicateNodeAction(), new ConnectNodesAction(),
-    new SelectAllAction(), new ZoomToFitAction(),
+    new DeleteNodeAction(),
+    new DuplicateNodeAction(),
+    new ConnectNodesAction(),
+    new SelectAllAction(),
+    new ZoomToFitAction(),
 ];

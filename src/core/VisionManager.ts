@@ -115,17 +115,17 @@ export class VisionManager {
         logger.info('Autonomous fixes dispatched.');
     }
 
-public stopAutonomousCorrection(): void {
-    if (this.autonomousTimer) {
-      clearInterval(this.autonomousTimer);
-      this.autonomousTimer = null;
-      logger.info('Stopped autonomous correction loop');
+    public stopAutonomousCorrection(): void {
+        if (this.autonomousTimer) {
+            clearInterval(this.autonomousTimer);
+            this.autonomousTimer = null;
+            logger.info('Stopped autonomous correction loop');
+        }
     }
-  }
 
-  public dispose(): void {
-    this.stopAutonomousCorrection();
-    this.isAnalyzing = false;
-    logger.info('VisionManager disposed');
-  }
+    public dispose(): void {
+        this.stopAutonomousCorrection();
+        this.isAnalyzing = false;
+        logger.info('VisionManager disposed');
+    }
 }

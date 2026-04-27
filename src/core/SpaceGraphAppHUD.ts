@@ -105,22 +105,22 @@ function createStatBlock(label: string, id: string, value: string, color?: strin
 }
 
 function createDivider(): HTMLElement {
-  return DOMUtils.createElement('div', {
-    style: { width: '1px', height: '24px', background: BORDER_SUBTLE },
-  });
+    return DOMUtils.createElement('div', {
+        style: { width: '1px', height: '24px', background: BORDER_SUBTLE },
+    });
 }
 
 function createModeToggle(app: SpaceGraphApp, theme: any): HTMLElement {
-  const container = DOMUtils.createElement('div', {
-    style: {
-      display: 'flex',
-      gap: '4px',
-      background: BG_GLASS,
-      borderRadius: '99px',
-      padding: '2px',
-      border: BORDER_GLASS,
-    },
-  });
+    const container = DOMUtils.createElement('div', {
+        style: {
+            display: 'flex',
+            gap: '4px',
+            background: BG_GLASS,
+            borderRadius: '99px',
+            padding: '2px',
+            border: BORDER_GLASS,
+        },
+    });
 
     const modeButtons: Record<string, HTMLButtonElement> = {};
     const updateModeStyles = (activeMode: string) => {
@@ -144,11 +144,11 @@ function createModeToggle(app: SpaceGraphApp, theme: any): HTMLElement {
                 border: 'none',
                 padding: '6px 16px',
                 borderRadius: '99px',
-color: SECONDARY_TEXT_COLOR,
-      fontWeight: 'bold',
-      fontSize: '12px',
-      cursor: 'pointer',
-      transition: 'all 0.2s ease',
+                color: SECONDARY_TEXT_COLOR,
+                fontWeight: 'bold',
+                fontSize: '12px',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
             },
         });
         btn.onclick = () => {
@@ -166,33 +166,33 @@ color: SECONDARY_TEXT_COLOR,
 }
 
 function createZoomControls(app: SpaceGraphApp, theme: any): HTMLElement {
-  const container = DOMUtils.createElement('div', {
-    style: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '2px',
-      background: BG_GLASS,
-      borderRadius: '99px',
-      padding: '2px 4px',
-      border: BORDER_GLASS,
-    },
-  });
-
-  const createBtn = (label: string, isZoomIn: boolean) => {
-    const btn = DOMUtils.createElement('button', {
-      textContent: label,
-      style: {
-        background: 'transparent',
-        border: 'none',
-        padding: '6px 12px',
-        borderRadius: '99px',
-        color: 'white',
-        fontWeight: 'bold',
-        fontSize: '16px',
-        cursor: 'pointer',
-      },
+    const container = DOMUtils.createElement('div', {
+        style: {
+            display: 'flex',
+            alignItems: 'center',
+            gap: '2px',
+            background: BG_GLASS,
+            borderRadius: '99px',
+            padding: '2px 4px',
+            border: BORDER_GLASS,
+        },
     });
-    btn.onmouseenter = () => (btn.style.background = BG_HOVER);
+
+    const createBtn = (label: string, isZoomIn: boolean) => {
+        const btn = DOMUtils.createElement('button', {
+            textContent: label,
+            style: {
+                background: 'transparent',
+                border: 'none',
+                padding: '6px 12px',
+                borderRadius: '99px',
+                color: 'white',
+                fontWeight: 'bold',
+                fontSize: '16px',
+                cursor: 'pointer',
+            },
+        });
+        btn.onmouseenter = () => (btn.style.background = BG_HOVER);
         btn.onmouseleave = () => (btn.style.background = 'transparent');
         btn.onclick = () => {
             if (!app.sg.cameraControls) return;
@@ -286,28 +286,26 @@ export function renderToolbarActions(app: SpaceGraphApp) {
 }
 
 function createStyledButton(btn: AppButtonConfig, isToolbar: boolean, theme: any): HTMLElement {
-  const bgNormal = isToolbar ? 'transparent' : theme.backgroundColor;
-  const bgHover = BG_HOVER;
+    const bgNormal = isToolbar ? 'transparent' : theme.backgroundColor;
+    const bgHover = BG_HOVER;
 
-  const btnEl = DOMUtils.createElement('button', {
-    id: `sg-${isToolbar ? 'toolbar-' : ''}btn-${btn.id}`,
-    style: {
-      background: bgNormal,
-      border: isToolbar
-        ? '1px solid rgba(255,255,255,0.2)'
-        : BORDER_GLASS,
-      padding: isToolbar ? '6px 12px' : '10px 16px',
-      borderRadius: isToolbar ? '99px' : '8px',
-      color: 'white',
-      fontFamily: 'sans-serif',
-      fontSize: isToolbar ? '13px' : '14px',
-      cursor: 'pointer',
-      transition: 'all 0.2s ease',
-      display: 'flex',
-      alignItems: 'center',
-      gap: isToolbar ? '6px' : '8px',
-    },
-  });
+    const btnEl = DOMUtils.createElement('button', {
+        id: `sg-${isToolbar ? 'toolbar-' : ''}btn-${btn.id}`,
+        style: {
+            background: bgNormal,
+            border: isToolbar ? '1px solid rgba(255,255,255,0.2)' : BORDER_GLASS,
+            padding: isToolbar ? '6px 12px' : '10px 16px',
+            borderRadius: isToolbar ? '99px' : '8px',
+            color: 'white',
+            fontFamily: 'sans-serif',
+            fontSize: isToolbar ? '13px' : '14px',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+            display: 'flex',
+            alignItems: 'center',
+            gap: isToolbar ? '6px' : '8px',
+        },
+    });
 
     if (btn.icon) {
         btnEl.appendChild(DOMUtils.createElement('span', { innerHTML: btn.icon }));
