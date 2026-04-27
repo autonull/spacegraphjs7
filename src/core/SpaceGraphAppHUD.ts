@@ -159,8 +159,8 @@ function createModeToggle(app: SpaceGraphApp, theme: any): HTMLElement {
         container.appendChild(btn);
     });
 
-    const interaction = app.sg.pluginManager.getPlugin('interaction') as any;
-    updateModeStyles(interaction ? interaction.mode : 'default');
+  const interaction = app.sg.pluginManager.getPlugin('interaction');
+  updateModeStyles(interaction ? (interaction as any).mode : 'default');
 
     return container;
 }
@@ -233,12 +233,12 @@ function createZoomControls(app: SpaceGraphApp, theme: any): HTMLElement {
     if (app.sg.cameraControls)
         zoomSlider.value = (5010 - app.sg.cameraControls.spherical.radius).toString();
 
-    const sliderHandler = () => {
-        if (app.sg.cameraControls)
-            zoomSlider.value = (5010 - app.sg.cameraControls.spherical.radius).toString();
-    };
-    app.sg.events.on('camera:move', sliderHandler);
-    (app as any)._zoomSliderHandler = sliderHandler;
+const sliderHandler = () => {
+  if (app.sg.cameraControls)
+    zoomSlider.value = (5010 - app.sg.cameraControls.spherical.radius).toString();
+};
+app.sg.events.on('camera:move', sliderHandler);
+app._zoomSliderHandler = sliderHandler;
 
     container.append(createBtn('-', false), zoomSlider, createBtn('+', true));
     return container;
@@ -388,14 +388,14 @@ export function setupSearchHUD(app: SpaceGraphApp, theme: any) {
             timestamp: Date.now(),
         });
 
-        if (matches.length === 1 && app.sg.cameraControls) {
-            const node = matches[0];
-            const targetPos = node.position.clone();
-            const targetRadius = node.data?.width
-                ? Math.max((node.data as any).width * 1.5, 150)
-                : 150;
-            app.sg.cameraControls.flyTo(targetPos, targetRadius);
-        }
+if (matches.length === 1 && app.sg.cameraControls) {
+  const node = matches[0];
+  const targetPos = node.position.clone();
+  const targetRadius = node.data?.width
+    ? Math.max(node.data.width * 1.5, 150)
+    : 150;
+  app.sg.cameraControls.flyTo(targetPos, targetRadius);
+}
     });
 
     container.appendChild(input);
@@ -408,14 +408,14 @@ export function setupSearchHUD(app: SpaceGraphApp, theme: any) {
 }
 
 export function updateStatsHUD(app: SpaceGraphApp) {
-    if (typeof document === 'undefined') return;
+  if (typeof document === 'undefined') return;
 
-    const countEl = document.getElementById('sg-app-selected-count');
-    if (countEl) {
-        countEl.textContent = (
-            (app as any).currentSelected.length + (app as any).currentSelectedEdges.length
-        ).toString();
-    }
+  const countEl = document.getElementById('sg-app-selected-count');
+  if (countEl) {
+    countEl.textContent = (
+      app.currentSelected.length + app.currentSelectedEdges.length
+    ).toString();
+  }
 
     const nodeCountEl = document.getElementById('sg-app-node-count');
     if (nodeCountEl) {

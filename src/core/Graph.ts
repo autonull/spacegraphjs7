@@ -45,14 +45,10 @@ export class Graph extends EventEmitter<GraphEventMap> {
         return this._addNode(spec.id, new NodeType(this.sg, spec));
     }
 
-    addEdge(spec: EdgeSpec | Edge): Edge | null {
-        if (
-            'source' in spec &&
-            (spec as any).source instanceof Object &&
-            'position' in (spec as any).source
-        ) {
-            return this._addEdge((spec as Edge).id, spec as Edge);
-        }
+  addEdge(spec: EdgeSpec | Edge): Edge | null {
+    if ('source' in spec && spec.source instanceof Object && 'position' in spec.source) {
+      return this._addEdge((spec as Edge).id, spec as Edge);
+    }
 
         const edgeSpec = spec as EdgeSpec;
         if (

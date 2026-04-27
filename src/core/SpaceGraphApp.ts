@@ -57,16 +57,16 @@ export interface AppButtonConfig {
 }
 
 export class SpaceGraphApp {
-    public readonly sg: SpaceGraph;
-    public readonly options: SpaceGraphAppOptions;
-    public hud!: HUDPlugin;
-    private currentSelected = new Set<Node>();
-    private currentSelectedEdges = new Set<Edge>();
-    private originalColors = new Map<Node, number>();
-    private originalEdgeColors = new Map<Edge, number>();
-    public buttons: AppButtonConfig[] = [];
-    public toolbarActions: AppButtonConfig[] = [];
-    private _zoomSliderHandler?: () => void;
+  public readonly sg: SpaceGraph;
+  public readonly options: SpaceGraphAppOptions;
+  public hud!: HUDPlugin;
+  public currentSelected: Node[] = [];
+  public currentSelectedEdges: Edge[] = [];
+  private originalColors = new Map<Node, number>();
+  private originalEdgeColors = new Map<Edge, number>();
+  public buttons: AppButtonConfig[] = [];
+  public toolbarActions: AppButtonConfig[] = [];
+  private _zoomSliderHandler?: () => void;
 
     private _emitSelectionChanged(): void {
         this.sg.events.emit('selection:changed', {
