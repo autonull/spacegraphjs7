@@ -127,4 +127,21 @@ export abstract class Surface extends EventEmitter<SurfaceEventMap> {
         }
         return this.sg;
     }
+
+    // Ergonomic helpers
+    get isDisposed(): boolean {
+        return !this.visible;
+    }
+
+    hasAncestor(predicate: (s: Surface) => boolean): boolean {
+        return !!this.findAncestor(predicate);
+    }
+
+    distanceTo(other: Surface): number {
+        return this.position.distanceTo(other.position);
+    }
+
+    angleTo(other: Surface): number {
+        return this.position.angleTo(other.position);
+    }
 }

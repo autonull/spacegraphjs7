@@ -38,6 +38,20 @@ export class Edge extends Surface {
 
     get object(): Line2 { return this.line; }
 
+    get isValid(): boolean {
+        return !!(this.source?.position && this.target?.position);
+    }
+
+    get midpoint(): THREE.Vector3 {
+        return this.isValid
+            ? new THREE.Vector3().addVectors(this.source.position, this.target.position).multiplyScalar(0.5)
+            : new THREE.Vector3();
+    }
+
+    get length(): number {
+        return this.isValid ? this.source.position.distanceTo(this.target.position) : 0;
+    }
+
     get position(): THREE.Vector3 {
         if (!this.source || !this.target) return new THREE.Vector3();
         return new THREE.Vector3().addVectors(this.source.position, this.target.position).multiplyScalar(0.5);

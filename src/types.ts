@@ -120,11 +120,26 @@ export interface SpaceGraphOptions {
   input?: DefaultInputConfig;
   [key: string]: unknown;
 }
+
+// Detailed input configuration (merged from DefaultInputConfig.ts)
 export interface DefaultInputConfig {
-  enableCameraOrbit?: boolean; enableCameraPan?: boolean; enableCameraZoom?: boolean;
-  enableHover?: boolean; enableBoxSelect?: boolean; enableDrag?: boolean; enableWidgets?: boolean;
-  [key: string]: any;
+  camera?: CameraInputConfig;
+  interaction?: InteractionInputConfig;
+  history?: HistoryInputConfig;
 }
+export interface CameraInputConfig {
+  enableCameraOrbit?: boolean; enableCameraPan?: boolean; enableCameraZoom?: boolean;
+  rotationSpeed?: number; panSpeed?: number; zoomSpeed?: number;
+  damping?: number; minRadius?: number; maxRadius?: number;
+}
+export interface InteractionInputConfig {
+  enableHover?: boolean; enableBoxSelect?: boolean; enableDrag?: boolean; enableWidgets?: boolean;
+  clickThreshold?: number;
+}
+export interface HistoryInputConfig {
+  enabled?: boolean;
+}
+
 export interface RenderOptions { antialias?: boolean; alpha?: boolean; backgroundColor?: string | number; pixelRatio?: number; }
 export interface AnimationProps {
   x?: number; y?: number; z?: number; scale?: number;

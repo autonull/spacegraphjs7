@@ -51,7 +51,10 @@ export {
   randomBool,
   randomPick,
 
-  // Color
+  // Color (consolidated from color.ts)
+  getRelativeLuminance,
+  getContrastRatio,
+  getCompliantColor,
   hexToRgb,
   rgbToHex,
   toHexColor,
@@ -101,9 +104,6 @@ export type { FitViewResult, Point } from './CameraUtils';
 export { createElement, createElementNS, DOMUtils } from './DOMUtils';
 export type { DOMElementOptions } from './DOMUtils';
 
-// Color utilities (WCAG)
-export { getRelativeLuminance, getContrastRatio, getCompliantColor } from './color';
-
 // Performance utilities
 export {
   PerformanceMonitor,
@@ -121,13 +121,19 @@ export {
 } from './performance';
 
 // Error utilities
-export { wrapError as wrapErrorDetailed } from './error';
+export { wrapError as wrapErrorDetailed, SpaceGraphError, NotImplementedError, ValidationError, ConfigurationError } from './error';
 
 // Gesture utilities
 export { GestureManager } from './GestureManager';
 
-// Graph generators
-export { generateGrid, generateCircle, generateChain, generateStar, generateTree } from './graphGenerators';
+// Graph generators (consolidated)
+export {
+  randomTree,
+  randomMesh,
+  scaleFreeGraph,
+  smallWorld,
+  lattice2D,
+} from './graphGenerators';
 
 // Three.js disposal
 export { disposeThreeObject } from './ThreeDisposer';

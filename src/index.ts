@@ -15,11 +15,7 @@ export { PluginManager, type Plugin } from './core/PluginManager';
 export { Surface } from './core/Surface';
 export { TypeRegistry, type NodeConstructor, type EdgeConstructor } from './core/TypeRegistry';
 
-// App
-export { SpaceGraphApp } from './core/SpaceGraphApp';
-export type { SpaceGraphAppOptions, AppButtonConfig } from './core/SpaceGraphApp';
-
-// Builder API
+// Builder API - consolidated from builder.ts
 export {
   NodeBuilder,
   EdgeBuilder,

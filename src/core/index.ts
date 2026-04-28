@@ -1,18 +1,18 @@
 // Core module exports
-export { SpaceGraph } from './SpaceGraph';
-export { Graph } from './core/Graph';
-export { Renderer } from './core/Renderer';
-export { RenderContext } from './core/RenderContext';
-export { CameraControls } from './core/CameraControls';
-export { EventSystem } from './core/events/EventSystem';
-export { EventEmitter } from './core/EventEmitter';
-export { VisionManager } from './core/VisionManager';
-export { ObjectPoolManager } from './core/ObjectPoolManager';
-export { PluginManager } from './core/PluginManager';
-export type { Plugin } from './core/PluginManager';
-export { Surface } from './core/Surface';
-export { TypeRegistry } from './core/TypeRegistry';
-export type { NodeConstructor, EdgeConstructor } from './core/TypeRegistry';
+export { SpaceGraph } from '../SpaceGraph';
+export { Graph } from './Graph';
+export { Renderer } from './Renderer';
+export { RenderContext } from './RenderContext';
+export { CameraControls } from './CameraControls';
+export { EventSystem } from './events/EventSystem';
+export { EventEmitter } from './EventEmitter';
+export { VisionManager } from './VisionManager';
+export { ObjectPoolManager } from './ObjectPoolManager';
+export { PluginManager } from './PluginManager';
+export type { Plugin } from './PluginManager';
+export { Surface } from './Surface';
+export { TypeRegistry } from './TypeRegistry';
+export type { NodeConstructor, EdgeConstructor } from './TypeRegistry';
 
 // Constants
 export {
@@ -25,7 +25,7 @@ export {
     EdgeColors,
     InputConfig,
     WCAG,
-} from './core/constants';
+} from './constants';
 
 // Defaults
 export {
@@ -34,4 +34,4 @@ export {
     DEFAULT_LAYOUT_PLUGINS,
     DEFAULT_SYSTEM_PLUGINS,
     createQuickGraphSpec,
-} from './core/defaults';
+} from './defaults';

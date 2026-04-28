@@ -70,16 +70,16 @@ export class PluginManager {
         return this.plugins.has(name);
     }
 
-    names(): string[] {
-        return [...this.plugins.keys()];
+    get pluginNames(): string[] {
+        return Array.from(this.plugins.keys());
     }
 
-    entries(): IterableIterator<[string, Plugin]> {
-        return this.plugins.entries();
+    get pluginCount(): number {
+        return this.plugins.size;
     }
 
-    values(): IterableIterator<Plugin> {
-        return this.plugins.values();
+    *[Symbol.iterator](): Generator<[string, Plugin]> {
+        yield* this.plugins.entries();
     }
 
     async initAll(): Promise<void> {
@@ -176,5 +176,20 @@ export class PluginManager {
 
     getPlugin = this.get;
     hasPlugin = this.has;
-    getPluginNames = this.names;
+    getPluginNames = this.pluginNames;
+
+    find(predicate: (plugin: Plugin) => boolean): Plugin | undefined {
+        for (const plugin of this.plugins.values()) {
+            if (predicate(plugin)) return plugin;
+        }
+        return undefined;
+    }
+
+    filter(predicate: (plugin: Plugin) => boolean): Plugin[] {
+        const result: Plugin[] = [];
+        for (const plugin of this.plugins.values()) {
+            if (predicate(plugin)) result.push(plugin);
+        }
+        return result;
+    }
 }

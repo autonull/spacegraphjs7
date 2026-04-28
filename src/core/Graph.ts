@@ -156,6 +156,33 @@ export class Graph extends EventEmitter<GraphEventMap> {
         this.nodes.clear();
     }
 
+    // Node lookup shortcuts - ergonomic API
+    get nodeCount(): number {
+        return this.nodes.size;
+    }
+    get edgeCount(): number {
+        return this.edges.size;
+    }
+    get isEmpty(): boolean {
+        return this.nodes.size === 0;
+    }
+
+    // Backward compatible methods (deprecated but kept for test compatibility)
+    getNodeCount(): number {
+        return this.nodes.size;
+    }
+    getEdgeCount(): number {
+        return this.edges.size;
+    }
+
+    // Quick access to node/edge arrays (caches result)
+    nodeArray(): Node[] {
+        return [...this.nodes.values()];
+    }
+    edgeArray(): Edge[] {
+        return [...this.edges.values()];
+    }
+
     // Query methods - use iterators to avoid array creation
     getNode(id: string): Node | undefined {
         return this.nodes.get(id);
@@ -169,25 +196,11 @@ export class Graph extends EventEmitter<GraphEventMap> {
     hasEdge(id: string): boolean {
         return this.edges.has(id);
     }
-    getNodeCount(): number {
-        return this.nodes.size;
-    }
-    getEdgeCount(): number {
-        return this.edges.size;
-    }
     getNodes(): IterableIterator<Node> {
         return this.nodes.values();
     }
     getEdges(): IterableIterator<Edge> {
         return this.edges.values();
-    }
-
-    // Array creation methods - use sparingly in hot paths
-    nodeArray(): Node[] {
-        return [...this.nodes.values()];
-    }
-    edgeArray(): Edge[] {
-        return [...this.edges.values()];
     }
 
     // Query helpers - return arrays, use iterator versions for performance-critical code

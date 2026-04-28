@@ -4,4 +4,4 @@ export { FingerManager, Fingering } from './Fingering';
 export type { Finger } from './Fingering';
 export { createParentTransform } from './SurfaceTransform';
 export type { SurfaceTransform } from './SurfaceTransform';
-export type { DefaultInputConfig, CameraInputConfig, InteractionInputConfig, HistoryInputConfig } from './DefaultInputConfig';
+export type { DefaultInputConfig, CameraInputConfig, InteractionInputConfig, HistoryInputConfig } from '../types';

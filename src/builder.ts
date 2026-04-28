@@ -6,10 +6,12 @@ export class NodeBuilder {
   private spec: NodeSpec;
   constructor(id: string, type: string = 'ShapeNode') { this.spec = { id, type }; }
   label(label: string): this { this.spec.label = label; return this; }
-  position(x: number, y: number, z: number): this { this.spec.position = [x, y, z]; return this; }
-  rotation(x: number, y: number, z: number): this { this.spec.rotation = [x, y, z]; return this; }
-  scale(x: number, y: number, z: number): this { this.spec.scale = [x, y, z]; return this; }
+  position(x: number, y: number, z: number = 0): this { this.spec.position = [x, y, z]; return this; }
+  rotation(x: number, y: number, z: number = 0): this { this.spec.rotation = [x, y, z]; return this; }
+  scale(x: number, y: number, z: number = 1): this { this.spec.scale = [x, y, z]; return this; }
   data(data: Record<string, unknown>): this { this.spec.data = data; return this; }
+  size(size: number): this { this.spec.data = { ...this.spec.data, size }; return this; }
+  color(color: number | string): this { this.spec.data = { ...this.spec.data, color }; return this; }
   params(params: Record<string, unknown>): this { this.spec.parameters = params; return this; }
   build(): NodeSpec { return this.spec; }
 }
@@ -18,6 +20,10 @@ export class EdgeBuilder {
   private spec: EdgeSpec;
   constructor(id: string, source: string, target: string, type: string = 'Edge') { this.spec = { id, source, target, type }; }
   data(data: Record<string, unknown>): this { this.spec.data = data; return this; }
+  label(label: string): this { this.spec.data = { ...this.spec.data, label }; return this; }
+  thickness(thickness: number): this { this.spec.data = { ...this.spec.data, thickness }; return this; }
+  dashed(dashed: boolean = true): this { this.spec.data = { ...this.spec.data, dashed }; return this; }
+  arrowhead(arrowhead: boolean | 'source' | 'target' | 'both' = true): this { this.spec.data = { ...this.spec.data, arrowhead }; return this; }
   build(): EdgeSpec { return this.spec; }
 }
 
@@ -53,6 +59,11 @@ export class GraphSpecBuilder {
     return this;
   }
 
+  connectStar(centerId: string, spokeIds: string[]): this {
+    spokeIds.forEach((spokeId) => this.addEdge({ id: `edge-${centerId}-${spokeId}`, source: centerId, target: spokeId }));
+    return this;
+  }
+
   build(): GraphSpec { return { nodes: this.nodes, edges: this.edges }; }
 
   async create(container: string | HTMLElement, options?: SpaceGraphOptions): Promise<SpaceGraph> {
@@ -64,7 +75,7 @@ export class GraphSpecBuilder {
 // Fluent API factory
 export function graph(): GraphSpecBuilder { return new GraphSpecBuilder(); }
 
-// Quick graph
+// Quick graph - create graph with minimal syntax
 export async function quickGraph(
   container: string | HTMLElement,
   nodes: Array<{ id: string; label?: string; position?: [number, number, number]; data?: Record<string, unknown> }>,
@@ -75,7 +86,7 @@ export async function quickGraph(
   return SpaceGraph.quickGraph(container, nodes, edges, options);
 }
 
-// Pre-built patterns
+// Pre-built patterns with chainable API
 export const Patterns = {
   circle(count: number, radius: number = 100, label?: string): GraphSpecBuilder {
     const builder = graph();
@@ -143,61 +154,65 @@ export const Patterns = {
   },
 };
 
-// Animation helpers
+// Animation helpers - chainable GSAP utilities
 export const Animate = {
-  async move(sg: SpaceGraph, nodeId: string, to: { x?: number; y?: number; z?: number }, duration: number = 1000): Promise<void> {
+  move(sg: SpaceGraph, nodeId: string, to: { x?: number; y?: number; z?: number }, duration: number = 1000): Promise<void> {
     const node = sg.graph.getNode(nodeId);
-    if (!node) return;
-    const { gsap } = await import('gsap');
-    gsap.to(node.position, {
-      x: to.x ?? node.position.x, y: to.y ?? node.position.y, z: to.z ?? node.position.z,
-      duration: duration / 1000, ease: 'power2.inOut',
-      onUpdate: () => node.updatePosition(node.position.x, node.position.y, node.position.z),
-    });
+    if (!node) return Promise.resolve();
+    return import('gsap').then(({ gsap }) => new Promise(resolve => {
+      gsap.to(node.position, {
+        x: to.x ?? node.position.x, y: to.y ?? node.position.y, z: to.z ?? node.position.z,
+        duration: duration / 1000, ease: 'power2.inOut',
+        onUpdate: () => node.updatePosition(node.position.x, node.position.y, node.position.z),
+        onComplete: resolve,
+      });
+    }));
   },
 
-  async fade(sg: SpaceGraph, nodeId: string, to: number, duration: number = 500): Promise<void> {
+  fade(sg: SpaceGraph, nodeId: string, to: number, duration: number = 500): Promise<void> {
     const node = sg.graph.getNode(nodeId);
-    if (!node) return;
-    const { gsap } = await import('gsap');
-    gsap.to(node.data, { opacity: to, duration: duration / 1000, ease: 'power2.inOut' });
+    if (!node) return Promise.resolve();
+    return import('gsap').then(({ gsap }) => new Promise(resolve => {
+      gsap.to(node.data, { opacity: to, duration: duration / 1000, ease: 'power2.inOut', onComplete: resolve });
+    }));
   },
 
-  async scale(sg: SpaceGraph, nodeId: string, to: number, duration: number = 500): Promise<void> {
+  scale(sg: SpaceGraph, nodeId: string, to: number, duration: number = 500): Promise<void> {
     const node = sg.graph.getNode(nodeId);
-    if (!node) return;
-    const { gsap } = await import('gsap');
-    gsap.to(node.object.scale, { x: to, y: to, z: to, duration: duration / 1000, ease: 'power2.inOut' });
+    if (!node) return Promise.resolve();
+    return import('gsap').then(({ gsap }) => new Promise(resolve => {
+      gsap.to(node.object.scale, { x: to, y: to, z: to, duration: duration / 1000, ease: 'power2.inOut', onComplete: resolve });
+    }));
   },
 };
 
-// Layout helpers
+// Layout helpers - unified layout application
 export const Layout = {
   async apply(sg: SpaceGraph, layoutName: string, options?: Record<string, unknown>): Promise<void> {
     const plugin = sg.pluginManager.getPlugin(layoutName);
     if (!plugin) throw new Error(`Layout "${layoutName}" not found`);
     if ('applyLayout' in plugin) await (plugin as any).applyLayout(options);
   },
-  async force(sg: SpaceGraph, options?: { duration?: number; easing?: string }): Promise<void> { await Layout.apply(sg, 'ForceLayout', options); },
-  async circular(sg: SpaceGraph, options?: { duration?: number; easing?: string }): Promise<void> { await Layout.apply(sg, 'CircularLayout', options); },
-  async grid(sg: SpaceGraph, options?: { duration?: number; easing?: string }): Promise<void> { await Layout.apply(sg, 'GridLayout', options); },
-  async hierarchy(sg: SpaceGraph, options?: { duration?: number; easing?: string }): Promise<void> { await Layout.apply(sg, 'HierarchicalLayout', options); },
+  force(sg: SpaceGraph, options?: { duration?: number; easing?: string }): Promise<void> { return Layout.apply(sg, 'ForceLayout', options); },
+  circular(sg: SpaceGraph, options?: { duration?: number; easing?: string }): Promise<void> { return Layout.apply(sg, 'CircularLayout', options); },
+  grid(sg: SpaceGraph, options?: { duration?: number; easing?: string }): Promise<void> { return Layout.apply(sg, 'GridLayout', options); },
+  hierarchy(sg: SpaceGraph, options?: { duration?: number; easing?: string }): Promise<void> { return Layout.apply(sg, 'HierarchicalLayout', options); },
+  radial(sg: SpaceGraph, options?: { duration?: number; easing?: string }): Promise<void> { return Layout.apply(sg, 'RadialLayout', options); },
 };
 
-// Camera helpers
+// Camera helpers - ergonomic camera operations
 export const Camera = {
   fitView(sg: SpaceGraph, padding?: number, duration?: number): void { sg.fitView(padding, duration); },
 
-  async flyTo(sg: SpaceGraph, position: [number, number, number], target: [number, number, number], duration: number = 1.5): Promise<void> {
-    const { gsap } = await import('gsap');
-    const start = { x: sg.renderer.camera.position.x, y: sg.renderer.camera.position.y, z: sg.renderer.camera.position.z };
-    return new Promise(resolve => {
+  flyTo(sg: SpaceGraph, position: [number, number, number], target: [number, number, number], duration: number = 1.5): Promise<void> {
+    return import('gsap').then(({ gsap }) => new Promise(resolve => {
+      const start = { x: sg.renderer.camera.position.x, y: sg.renderer.camera.position.y, z: sg.renderer.camera.position.z };
       gsap.to(start, {
         x: position[0], y: position[1], z: position[2], duration, ease: 'power2.inOut',
         onUpdate: () => { sg.renderer.camera.position.set(start.x, start.y, start.z); sg.cameraControls.update(); },
         onComplete: resolve,
       });
-    });
+    }));
   },
 
   focus(sg: SpaceGraph, nodeIds: string[], padding: number = 100, duration: number = 1.5): void {
