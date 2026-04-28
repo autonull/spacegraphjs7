@@ -13,6 +13,15 @@ export type NodeEventMap = {
   'blur': { node: Node };
 };
 
+export interface VisibilityContext {
+    cameraFrustum: THREE.Frustum;
+    viewportBounds: { width: number; height: number };
+    minPixelSize: number;
+    cameraPosition: THREE.Vector3;
+}
+
+export type LODLevel = 'high' | 'medium' | 'low' | 'hidden';
+
 export abstract class Node extends Surface {
   readonly id: string;
   readonly type: string;
@@ -112,6 +121,35 @@ export abstract class Node extends Surface {
             };
         }
         return null;
+    }
+
+    isVisible(context: VisibilityContext): boolean {
+        if (!this.visible) return false;
+
+        const box = new THREE.Box3().setFromObject(this.object);
+        if (!context.cameraFrustum.intersectsBox(box)) return false;
+
+        const pixelSize = this.getScreenPixelSize(context.viewportBounds);
+        if (pixelSize < context.minPixelSize) return false;
+
+        return true;
+    }
+
+    getScreenPixelSize(viewport: { width: number; height: number }): number {
+        const bounds = this.bounds3D.size;
+        const heightPercent = (bounds.y / viewport.height) * 100;
+        const widthPercent = (bounds.x / viewport.width) * 100;
+        return Math.min(heightPercent, widthPercent);
+    }
+
+    computeLOD(context: VisibilityContext): LODLevel {
+        if (!this.visible) return 'hidden';
+        const pixelSize = this.getScreenPixelSize(context.viewportBounds);
+        if (pixelSize < 0.5) return 'hidden';
+        const distance = this.position.distanceTo(context.cameraPosition);
+        if (distance < 100) return 'high';
+        if (distance < 500) return 'medium';
+        return 'low';
     }
 
     start(): void {

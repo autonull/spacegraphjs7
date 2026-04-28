@@ -30,6 +30,7 @@ import { SwitchNode } from '../nodes/SwitchNode';
 import { VirtualGridNode } from '../nodes/VirtualGridNode';
 import { PanelNode } from '../nodes/PanelNode';
 import { PortNode } from '../nodes/PortNode';
+import { TabContainerNode } from '../nodes/TabContainerNode';
 import { MermaidNode } from '../plugins/mermaid/MermaidNode';
 
 // Edge types
@@ -68,6 +69,11 @@ import { HUDPlugin } from '../plugins/HUDPlugin';
 import { HistoryPlugin } from '../plugins/HistoryPlugin';
 import { FractalZoomPlugin } from '../plugins/FractalZoomPlugin';
 import { ZoomUIPlugin } from '../plugins/ZoomUIPlugin';
+import { ScrollPanelNode } from '../nodes/ScrollPanelNode';
+import { ColorPickerNode } from '../nodes/ColorPickerNode';
+import { DropdownNode } from '../nodes/DropdownNode';
+import { ProgressBarNode } from '../nodes/ProgressBarNode';
+import { MeterNode } from '../nodes/MeterNode';
 
 type PluginCtor = new () => Plugin;
 
@@ -100,7 +106,13 @@ export const DEFAULT_NODE_TYPES = [
     VirtualGridNode,
     PanelNode,
     PortNode,
+    TabContainerNode,
     MermaidNode,
+    ScrollPanelNode,
+    ColorPickerNode,
+    DropdownNode,
+    ProgressBarNode,
+    MeterNode,
 ] as const;
 
 // Default edge types - automatically registered

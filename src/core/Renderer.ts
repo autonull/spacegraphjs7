@@ -3,7 +3,8 @@ import { CSS3DRenderer } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
 import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from 'three-mesh-bvh';
 import type { SpaceGraph } from '../SpaceGraph';
 import { InstancedNodeRenderer } from '../rendering/InstancedNodeRenderer';
-import { DOMNode } from '../nodes/DOMNode';
+import { RenderContext } from './RenderContext';
+import type { Node } from '../nodes/Node';
 
 const CSS_STYLES = {
     position: 'absolute',
@@ -26,11 +27,11 @@ export class Renderer {
     public renderer: THREE.WebGLRenderer;
     public cssRenderer: CSS3DRenderer;
     public instancedRenderer: InstancedNodeRenderer;
+    public renderContext: RenderContext;
 
     private _resizeObserver: ResizeObserver | null = null;
     private _threePatched = false;
     private renderScheduled = false;
-    private frustum: THREE.Frustum;
     private projScreenMatrix: THREE.Matrix4;
     private lastOptTime = 0;
     private optFrames = 0;
@@ -69,8 +70,13 @@ export class Renderer {
         container.appendChild(this.cssRenderer.domElement);
 
         this.instancedRenderer = new InstancedNodeRenderer(sg, this.scene);
-        this.frustum = new THREE.Frustum();
         this.projScreenMatrix = new THREE.Matrix4();
+
+        this.renderContext = new RenderContext(
+            this.camera,
+            { width: container.clientWidth, height: container.clientHeight },
+            0.5,
+        );
 
         this._resizeObserver = new ResizeObserver(() => this.onResize());
         this._resizeObserver.observe(container);
@@ -90,22 +96,57 @@ export class Renderer {
         this.camera.updateProjectionMatrix();
         this.renderer.setSize(w, h);
         this.cssRenderer.setSize(w, h);
+        this.renderContext?.updateViewport({ width: w, height: h });
     }
 
     scheduleRender(): void {
         if (this.renderScheduled) return;
         this.renderScheduled = true;
-        requestAnimationFrame(() => {
+        requestAnimationFrame((ts) => {
             this.renderScheduled = false;
-            this.render();
+            this.render(ts);
         });
     }
 
-    render(): void {
+    render(timestamp: number = 0): void {
+        if (timestamp > 0) {
+            this.beginFrameOptimization(timestamp);
+            this.renderContext?.startFrame(timestamp);
+        }
+
+        this.camera.updateMatrixWorld();
+        this.projScreenMatrix.multiplyMatrices(
+            this.camera.projectionMatrix,
+            this.camera.matrixWorldInverse,
+        );
+        this.renderContext?.updateFrustum(this.projScreenMatrix);
+        this.renderContext?.updateCameraPosition();
+
         this.instancedRenderer.update();
         for (const edge of this.sg.graph.edges.values()) edge.update?.();
+
+        if (this.renderContext) {
+            for (const node of this.sg.graph.nodes.values()) {
+                if (this.renderContext.shouldRender(node)) {
+                    this.applyLOD(node);
+                    node.object.visible = true;
+                } else {
+                    node.object.visible = false;
+                }
+            }
+        }
+
         this.cssRenderer.render(this.scene, this.camera);
         this.renderer.render(this.scene, this.camera);
+
+        if (timestamp > 0) {
+            this.renderContext?.endFrame();
+        }
+    }
+
+    private applyLOD(node: Node): void {
+        const lod = node.computeLOD(this.renderContext?.visibilityContext ?? {} as any);
+        node.object.visible = node.visible && lod !== 'hidden';
     }
 
     beginFrameOptimization(timestamp: number): void {
@@ -127,21 +168,6 @@ export class Renderer {
 
     getFPS(): number {
         return this.fps;
-    }
-
-    updateCulling(): void {
-        this.camera.updateMatrixWorld();
-        this.projScreenMatrix.multiplyMatrices(
-            this.camera.projectionMatrix,
-            this.camera.matrixWorldInverse,
-        );
-        this.frustum.setFromProjectionMatrix(this.projScreenMatrix);
-
-        for (const node of this.sg.graph.nodes.values()) {
-            const visible = this.frustum.containsPoint(node.position);
-            if (node instanceof DOMNode) node.setVisibility(visible);
-            else node.object.visible = visible;
-        }
     }
 
     async exportPNG(scale = 1): Promise<Blob> {

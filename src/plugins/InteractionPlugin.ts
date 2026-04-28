@@ -32,6 +32,7 @@ export class InteractionPlugin implements Plugin {
     private resizeHandler!: ResizeHandler;
     private keyboardShortcuts!: KeyboardShortcuts;
     private focusManager!: FocusManager;
+    private copiedNodes: Node[] = [];
 
     private _mode: 'default' | 'select' | 'connect' = 'default';
     private pointerDownPosition = new THREE.Vector2();
@@ -289,6 +290,7 @@ this.sg.cameraControls.flyTo(node.position, radius);
                 if (this.connectionHandler.isConnectingMode()) {
                     this.connectionHandler.cancelConnection();
                 } else {
+                    this.focusManager.blur();
                     this.selectionManager.clear();
                 }
                 break;
@@ -303,6 +305,34 @@ this.sg.cameraControls.flyTo(node.position, radius);
                     e.preventDefault();
                     const allNodes = Array.from(this.sg.graph.nodes.values());
                     this.keyboardShortcuts.handleSelectAll(allNodes);
+                }
+                break;
+
+            case 'c':
+                if ((e.ctrlKey || e.metaKey) && selectedNodes.length > 0) {
+                    e.preventDefault();
+                    this.copiedNodes = [...selectedNodes];
+                }
+                break;
+
+            case 'v':
+                if ((e.ctrlKey || e.metaKey) && this.copiedNodes.length > 0) {
+                    e.preventDefault();
+                    this._handlePaste();
+                }
+                break;
+
+            case 'z':
+                if (e.ctrlKey || e.metaKey) {
+                    e.preventDefault();
+                    this.sg.events.emit('history:undo' as keyof import('../../core/events/EventSystem').SpaceGraphEvents, {});
+                }
+                break;
+
+            case 'y':
+                if (e.ctrlKey || e.metaKey) {
+                    e.preventDefault();
+                    this.sg.events.emit('history:redo' as keyof import('../../core/events/EventSystem').SpaceGraphEvents, {});
                 }
                 break;
 
@@ -408,6 +438,29 @@ this.sg.cameraControls.flyTo(node.position, radius);
 
     private startContextMenu(_node: Node, _e: any): void {
         // Context menu handling delegated to events
+    }
+
+    private _handlePaste(): void {
+        const addedNodes: Node[] = [];
+        for (const sourceNode of this.copiedNodes) {
+            const sourceSpec = sourceNode.toJSON();
+            sourceSpec.id = `${sourceSpec.id}_copy_${Date.now()}`;
+            sourceSpec.position = [
+                (sourceSpec.position[0] ?? 0) + 20,
+                (sourceSpec.position[1] ?? 0) + 20,
+                sourceSpec.position[2] ?? 0,
+            ];
+            const newNode = this.sg.graph.addNode(sourceSpec);
+            if (newNode) {
+                addedNodes.push(newNode);
+            }
+        }
+        if (addedNodes.length > 0) {
+            this.selectionManager.clear();
+            for (const node of addedNodes) {
+                this.selectionManager.addNode(node);
+            }
+        }
     }
 
     dispose(): void {

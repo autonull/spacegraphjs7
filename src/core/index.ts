@@ -2,6 +2,7 @@
 export { SpaceGraph } from './SpaceGraph';
 export { Graph } from './core/Graph';
 export { Renderer } from './core/Renderer';
+export { RenderContext } from './core/RenderContext';
 export { CameraControls } from './core/CameraControls';
 export { EventSystem } from './core/events/EventSystem';
 export { EventEmitter } from './core/EventEmitter';
