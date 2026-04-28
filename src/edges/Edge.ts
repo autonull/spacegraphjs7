@@ -3,75 +3,73 @@ import { Line2 } from 'three/examples/jsm/lines/Line2.js';
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
 import { Surface, type HitResult, type Rect, type Bounds3D } from '../core/Surface';
+import { Defaults, EdgeColors } from '../core/constants';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { EdgeSpec, EdgeData } from '../types';
 import type { Node } from '../nodes/Node';
 
 export const DEFAULT_EDGE_DATA: EdgeData = Object.freeze({
-    color: 0x00d0ff,
-    thickness: 3,
-    thicknessInstanced: 0.5,
+    color: EdgeColors.DEFAULT,
+    thickness: Defaults.EDGE_THICKNESS,
+    thicknessInstanced: Defaults.INSTANCED_THICKNESS,
     arrowhead: false,
-    arrowheadSize: 10,
+    arrowheadSize: Defaults.ARROWHEAD_SIZE,
     dashed: false,
     dashScale: 1,
-    dashSize: 3,
-    gapSize: 1,
+    dashSize: Defaults.DASH_SIZE,
+    gapSize: Defaults.GAP_SIZE,
 });
 
 export class Edge extends Surface {
-    static HIGHLIGHT_COLOR = 0x00ffff;
+    static HIGHLIGHT_COLOR = EdgeColors.HIGHLIGHT;
     static DEFAULT_OPACITY = 0.8;
     static HIGHLIGHT_OPACITY = 1.0;
-    static DEFAULT_HOVER_OPACITY_BOOST = 0.1;
-    static DEFAULT_HOVER_THICKNESS_MULTIPLIER = 1.1;
+    static HOVER_OPACITY_BOOST = 0.1;
+    static HOVER_THICKNESS_MULT = 1.1;
 
     readonly id: string;
     readonly type: string;
-    public sg?: SpaceGraph;
-    public source: Node;
-    public target: Node;
-    public data: EdgeData;
-    public line: Line2;
-    public geometry: LineGeometry;
+    sg?: SpaceGraph;
+    source: Node;
+    target: Node;
+    data: EdgeData;
+    line: Line2;
+    geometry: LineGeometry;
 
-    public get object(): Line2 {
-        return this.line;
+    get object(): Line2 { return this.line; }
+
+    get isValid(): boolean {
+        return !!(this.source?.position && this.target?.position);
     }
 
-    public get position(): THREE.Vector3 {
+    get midpoint(): THREE.Vector3 {
+        return this.isValid
+            ? new THREE.Vector3().addVectors(this.source.position, this.target.position).multiplyScalar(0.5)
+            : new THREE.Vector3();
+    }
+
+    get length(): number {
+        return this.isValid ? this.source.position.distanceTo(this.target.position) : 0;
+    }
+
+    get position(): THREE.Vector3 {
         if (!this.source || !this.target) return new THREE.Vector3();
-        return new THREE.Vector3()
-            .addVectors(this.source.position, this.target.position)
-            .multiplyScalar(0.5);
+        return new THREE.Vector3().addVectors(this.source.position, this.target.position).multiplyScalar(0.5);
     }
 
-    public get rotation(): THREE.Euler {
-        return new THREE.Euler();
-    }
+    get rotation(): THREE.Euler { return new THREE.Euler(); }
+    get scale(): THREE.Vector3 { return new THREE.Vector3(1, 1, 1); }
+    get worldMatrix(): THREE.Matrix4 { return new THREE.Matrix4(); }
 
-    public get scale(): THREE.Vector3 {
-        return new THREE.Vector3(1, 1, 1);
-    }
-
-    public get worldMatrix(): THREE.Matrix4 {
-        return new THREE.Matrix4();
-    }
-
-    public arrowheads: { source: THREE.Mesh | null; target: THREE.Mesh | null } = {
-        source: null,
-        target: null,
-    };
-    public isHighlighted = false;
-    public isHovered = false;
-    public lastActivityTime = 0;
+    arrowheads: { source: THREE.Mesh | null; target: THREE.Mesh | null } = { source: null, target: null };
+    isHighlighted = false;
+    isHovered = false;
+    lastActivityTime = 0;
 
     private _colorStart = new THREE.Color();
     private _colorEnd = new THREE.Color();
     private _direction = new THREE.Vector3();
 
-    constructor(spec: EdgeSpec, source: Node, target: Node);
-    constructor(sg: SpaceGraph, spec: EdgeSpec, source: Node, target: Node);
     constructor(
         sgOrSpec: SpaceGraph | EdgeSpec,
         specOrSource: EdgeSpec | Node,
@@ -84,22 +82,19 @@ export class Edge extends Surface {
         const spec = isSpecFirst ? (sgOrSpec as EdgeSpec) : (specOrSource as EdgeSpec);
         const source = isSpecFirst ? (specOrSource as Node) : (sourceOrTarget as Node);
         const target = isSpecFirst ? (sourceOrTarget as Node) : (targetOrNothing as Node);
+
         this.id = spec.id;
         this.type = spec.type ?? 'Edge';
         this.source = source;
         this.target = target;
         this.data = { ...DEFAULT_EDGE_DATA, ...spec.data };
 
-        const hasGradient = this.data.gradientColors?.length === 2;
-        if (!hasGradient && this.data.color === undefined) {
-            this.data.color = DEFAULT_EDGE_DATA.color;
-        }
+        if (!this.data.gradientColors?.length && this.data.color === undefined) this.data.color = DEFAULT_EDGE_DATA.color;
 
         this.geometry = new LineGeometry();
         this.geometry.setPositions([0, 0, 0, 0, 0, 0.001]);
 
-        const { thickness, dashed, dashScale, dashSize, gapSize, gradientColors, color } =
-            this.data;
+        const { thickness, dashed, dashScale, dashSize, gapSize, gradientColors, color } = this.data;
         const materialConfig: Record<string, unknown> = {
             linewidth: thickness ?? 3,
             transparent: true,
@@ -117,16 +112,12 @@ export class Edge extends Surface {
             this._colorStart.set(gradientColors[0]);
             this._colorEnd.set(gradientColors[1]);
             this.geometry.setColors([
-                this._colorStart.r,
-                this._colorStart.g,
-                this._colorStart.b,
-                this._colorEnd.r,
-                this._colorEnd.g,
-                this._colorEnd.b,
+                this._colorStart.r, this._colorStart.g, this._colorStart.b,
+                this._colorEnd.r, this._colorEnd.g, this._colorEnd.b,
             ]);
         } else {
             materialConfig.vertexColors = false;
-            materialConfig.color = color ?? 0x00d0ff;
+            materialConfig.color = color ?? EdgeColors.DEFAULT;
         }
 
         const material = new LineMaterial(materialConfig);
@@ -141,27 +132,21 @@ export class Edge extends Surface {
     }
 
     requireSpaceGraph(): SpaceGraph {
-        if (!this.sg) {
-            throw new Error(`Edge '${this.id}' requires SpaceGraph but sg is not initialized`);
-        }
+        if (!this.sg) throw new Error(`Edge '${this.id}' requires SpaceGraph but sg is not initialized`);
         return this.sg;
     }
 
     private _createArrowheads(): void {
         const { arrowhead } = this.data;
-        if (arrowhead === true || arrowhead === 'target' || arrowhead === 'both') {
-            this.arrowheads.target = this._createSingleArrowhead();
-        }
-        if (arrowhead === 'source' || arrowhead === 'both') {
-            this.arrowheads.source = this._createSingleArrowhead();
-        }
+        if (arrowhead === true || arrowhead === 'target' || arrowhead === 'both') this.arrowheads.target = this._createSingleArrowhead();
+        if (arrowhead === 'source' || arrowhead === 'both') this.arrowheads.source = this._createSingleArrowhead();
     }
 
     private _createSingleArrowhead(): THREE.Mesh {
-        const size = this.data.arrowheadSize ?? 10;
+        const size = this.data.arrowheadSize ?? Defaults.ARROWHEAD_SIZE;
         const geometry = new THREE.ConeGeometry(size / 2, size, 8);
         const material = new THREE.MeshBasicMaterial({
-            color: this.data.arrowheadColor ?? this.data.color ?? 0x00d0ff,
+            color: this.data.arrowheadColor ?? this.data.color ?? EdgeColors.DEFAULT,
             opacity: Edge.DEFAULT_OPACITY,
             transparent: true,
             depthTest: false,
@@ -211,7 +196,7 @@ export class Edge extends Surface {
         } else if (this.line.material.vertexColors) {
             this.line.material.vertexColors = false;
             this.line.material.needsUpdate = true;
-            this.line.material.color.set(this.data.color ?? 0x00d0ff);
+            this.line.material.color.set(this.data.color ?? EdgeColors.DEFAULT);
         }
     }
 
@@ -233,17 +218,9 @@ export class Edge extends Surface {
         const { position: sourcePos } = this.source;
         const { position: targetPos } = this.target;
 
-        if (![sourcePos, targetPos].every((p) => isFinite(p.x) && isFinite(p.y) && isFinite(p.z)))
-            return;
+        if (![sourcePos, targetPos].every((p) => isFinite(p.x) && isFinite(p.y) && isFinite(p.z))) return;
 
-        this.geometry.setPositions([
-            sourcePos.x,
-            sourcePos.y,
-            sourcePos.z,
-            targetPos.x,
-            targetPos.y,
-            targetPos.z,
-        ]);
+        this.geometry.setPositions([sourcePos.x, sourcePos.y, sourcePos.z, targetPos.x, targetPos.y, targetPos.z]);
 
         if (this.geometry.attributes.position.count === 0) return;
 
@@ -261,22 +238,23 @@ export class Edge extends Surface {
         const { position: targetPos } = this.target;
         const scene = this.sg.renderer.scene;
 
-        const updateArrowhead = (
-            arrowhead: THREE.Mesh | null,
-            endPos: THREE.Vector3,
-            startPos: THREE.Vector3,
-        ) => {
+        const updateArrowhead = (arrowhead: THREE.Mesh | null, endPos: THREE.Vector3, startPos: THREE.Vector3) => {
             if (!arrowhead) return;
             arrowhead.position.copy(endPos);
             this._direction.subVectors(endPos, startPos).normalize();
             arrowhead.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), this._direction);
-            if (scene && arrowhead.parent !== scene) {
-                scene.add(arrowhead);
-            }
+            if (scene && arrowhead.parent !== scene) scene.add(arrowhead);
         };
 
         updateArrowhead(this.arrowheads.target, targetPos, sourcePos);
         updateArrowhead(this.arrowheads.source, sourcePos, targetPos);
+    }
+
+    private _setArrowheadStyle(arrowhead: THREE.Mesh | null, opacity: number, color?: number): void {
+        if (arrowhead?.material instanceof THREE.MeshBasicMaterial) {
+            if (color !== undefined) arrowhead.material.color.setHex(color);
+            arrowhead.material.opacity = opacity;
+        }
     }
 
     setHighlight(highlight: boolean): void {
@@ -285,30 +263,15 @@ export class Edge extends Surface {
         if (!mat) return;
 
         mat.opacity = highlight ? Edge.HIGHLIGHT_OPACITY : Edge.DEFAULT_OPACITY;
-        const thicknessMultiplier =
-            this.data.gradientColors?.length === 2 && mat.vertexColors ? 2.0 : 1.5;
-        mat.linewidth = highlight
-            ? (this.data.thickness ?? 3) * thicknessMultiplier
-            : (this.data.thickness ?? 3);
+        const thicknessMultiplier = this.data.gradientColors?.length === 2 && mat.vertexColors ? 2.0 : 1.5;
+        mat.linewidth = highlight ? (this.data.thickness ?? Defaults.EDGE_THICKNESS) * thicknessMultiplier : (this.data.thickness ?? Defaults.EDGE_THICKNESS);
 
-        if (!mat.vertexColors)
-            mat.color.set(highlight ? Edge.HIGHLIGHT_COLOR : (this.data.color ?? 0x00d0ff));
+        if (!mat.vertexColors) mat.color.set(highlight ? Edge.HIGHLIGHT_COLOR : (this.data.color ?? EdgeColors.DEFAULT));
         mat.needsUpdate = true;
 
-        const highlightArrowhead = (arrowhead: THREE.Mesh | null) => {
-            if (arrowhead?.material instanceof THREE.MeshBasicMaterial) {
-                arrowhead.material.color.set(
-                    highlight
-                        ? Edge.HIGHLIGHT_COLOR
-                        : (this.data.arrowheadColor ?? this.data.color ?? 0x00d0ff),
-                );
-                arrowhead.material.opacity = highlight
-                    ? Edge.HIGHLIGHT_OPACITY
-                    : Edge.DEFAULT_OPACITY;
-            }
-        };
-        highlightArrowhead(this.arrowheads.source);
-        highlightArrowhead(this.arrowheads.target);
+        const arrowheadColor = highlight ? Edge.HIGHLIGHT_COLOR : (this.data.arrowheadColor ?? this.data.color ?? EdgeColors.DEFAULT);
+        this._setArrowheadStyle(this.arrowheads.source, Edge.HIGHLIGHT_OPACITY, arrowheadColor);
+        this._setArrowheadStyle(this.arrowheads.target, Edge.HIGHLIGHT_OPACITY, arrowheadColor);
 
         if (highlight && this.isHovered) this.setHoverStyle(false, true);
     }
@@ -321,35 +284,20 @@ export class Edge extends Surface {
         this.isHovered = hovered;
         const baseThickness = this.data.thickness ?? 3;
 
-        mat.opacity = hovered
-            ? Math.min(1.0, Edge.DEFAULT_OPACITY + Edge.DEFAULT_HOVER_OPACITY_BOOST)
-            : Edge.DEFAULT_OPACITY;
-        mat.linewidth = hovered
-            ? baseThickness * Edge.DEFAULT_HOVER_THICKNESS_MULTIPLIER
-            : baseThickness;
+        mat.opacity = hovered ? Math.min(1.0, Edge.DEFAULT_OPACITY + Edge.HOVER_OPACITY_BOOST) : Edge.DEFAULT_OPACITY;
+        mat.linewidth = hovered ? baseThickness * Edge.HOVER_THICKNESS_MULT : baseThickness;
         mat.needsUpdate = true;
 
         if (!this.isHighlighted) {
-            const hoverArrowhead = (arrowhead: THREE.Mesh | null) => {
-                if (arrowhead?.material instanceof THREE.MeshBasicMaterial) {
-                    arrowhead.material.opacity = hovered
-                        ? Math.min(1.0, Edge.DEFAULT_OPACITY + Edge.DEFAULT_HOVER_OPACITY_BOOST)
-                        : Edge.DEFAULT_OPACITY;
-                }
-            };
-            hoverArrowhead(this.arrowheads.source);
-            hoverArrowhead(this.arrowheads.target);
+            const hoverOpacity = hovered ? Math.min(1.0, Edge.DEFAULT_OPACITY + Edge.HOVER_OPACITY_BOOST) : Edge.DEFAULT_OPACITY;
+            this._setArrowheadStyle(this.arrowheads.source, hoverOpacity);
+            this._setArrowheadStyle(this.arrowheads.target, hoverOpacity);
         }
     }
 
     get bounds(): Rect {
         const box = new THREE.Box3().setFromObject(this.line);
-        return {
-            x: box.min.x,
-            y: box.min.y,
-            width: box.max.x - box.min.x,
-            height: box.max.y - box.min.y,
-        };
+        return { x: box.min.x, y: box.min.y, width: box.max.x - box.min.x, height: box.max.y - box.min.y };
     }
 
     get bounds3D(): Bounds3D {
@@ -366,18 +314,10 @@ export class Edge extends Surface {
         return {
             min,
             max,
-            get center() {
-                return new THREE.Vector3().addVectors(this.min, this.max).multiplyScalar(0.5);
-            },
-            get size() {
-                return new THREE.Vector3().subVectors(this.max, this.min);
-            },
-            containsPoint(_p: THREE.Vector3) {
-                return false;
-            },
-            intersectsRay(_ray: THREE.Ray) {
-                return false;
-            },
+            get center() { return new THREE.Vector3().addVectors(this.min, this.max).multiplyScalar(0.5); },
+            get size() { return new THREE.Vector3().subVectors(this.max, this.min); },
+            containsPoint() { return false; },
+            intersectsRay() { return false; },
         };
     }
 
@@ -390,15 +330,9 @@ export class Edge extends Surface {
         const intersects = raycaster.intersectObject(this.line, true);
         raycaster.params.Line = { threshold: originalThreshold };
 
-        if (intersects.length > 0) {
-            return {
-                surface: this,
-                point: intersects[0].point,
-                localPoint: intersects[0].point.clone(),
-                distance: intersects[0].distance,
-            };
-        }
-        return null;
+        return intersects.length > 0
+            ? { surface: this, point: intersects[0].point, localPoint: intersects[0].point.clone(), distance: intersects[0].distance }
+            : null;
     }
 
     start(): void {
@@ -407,10 +341,7 @@ export class Edge extends Surface {
     }
 
     stop(): void {}
-
-    delete(): void {
-        this.dispose();
-    }
+    delete(): void { this.dispose(); }
 
     onPreRender(dt: number): void {
         super.onPreRender(dt);
@@ -423,7 +354,8 @@ export class Edge extends Surface {
     }
 
     dispose(): void {
-        this.emit('destroying', { surface: this });
+        this.emit('surface:destroying', { surface: this, timestamp: Date.now() });
+        this.emit('edge:destroying', { edge: this, timestamp: Date.now() });
         this.line?.geometry?.dispose();
         this.line?.material?.dispose();
         this.line?.parent?.remove(this.line);

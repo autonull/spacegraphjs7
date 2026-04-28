@@ -30,9 +30,31 @@ export { ErgonomicsPlugin, type ErgonomicsConfig } from './ErgonomicsPlugin';
 export { VisionOverlayPlugin } from './VisionOverlayPlugin';
 export { HUDPlugin, type HUDElementOptions } from './HUDPlugin';
 export { HistoryPlugin, type HistoryPluginOptions } from './HistoryPlugin';
+export { FractalZoomPlugin } from './FractalZoomPlugin';
+export { ZoomUIPlugin } from './ZoomUIPlugin';
 export { LayoutContainer } from './LayoutContainer';
 export {
-    HoverMetaWidget,
-    type HoverMetaWidgetOptions,
-    type HoverAction,
+  HoverMetaWidget,
+  type HoverMetaWidgetOptions,
+  type HoverAction,
 } from './interaction/HoverMetaWidget';
+
+export { MermaidPlugin, type MermaidPluginOptions, injectMermaidStyles } from './mermaid';
+export {
+  DiagramParserFactory,
+  DiagramParseResult,
+  DiagramFormat,
+  DiagramNode,
+  DiagramEdge,
+  MermaidParser,
+  DOTParser,
+  GraphMLParser,
+  JSONDiagramParser,
+  LAYOUT_NAMES,
+  MERMAID_THEMES,
+  getLayoutLabel,
+  type MermaidThemeName,
+  type LayoutName,
+  type MermaidLayoutType,
+  type MermaidNodeShape,
+} from './mermaid';

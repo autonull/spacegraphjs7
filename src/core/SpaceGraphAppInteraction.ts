@@ -1,24 +1,20 @@
 import type { SpaceGraphApp } from './SpaceGraphApp';
 
 export function setupInteractionHandlers(app: SpaceGraphApp) {
-    app.sg.events.on('interaction:selection', ({ nodes, edges }) => {
-        app.clearSelectionStyles();
-        (app as any).currentSelected = nodes || [];
-        (app as any).currentSelectedEdges = edges || [];
-        app.applySelectionStyles();
-        app.sg.events.emit('selection:changed', {
-            nodes: (app as any).currentSelected,
-            edges: (app as any).currentSelectedEdges,
-            timestamp: Date.now(),
-        });
-
-        if (app.options.onNodeSelect) {
-            app.options.onNodeSelect((app as any).currentSelected);
-        }
-        if (app.options.onEdgeSelect) {
-            app.options.onEdgeSelect((app as any).currentSelectedEdges);
-        }
+  app.sg.events.on('interaction:selection', ({ nodes, edges }) => {
+    app.clearSelectionStyles();
+    app.currentSelected = nodes || [];
+    app.currentSelectedEdges = edges || [];
+    app.applySelectionStyles();
+    app.sg.events.emit('selection:changed', {
+      nodes: app.currentSelected,
+      edges: app.currentSelectedEdges,
+      timestamp: Date.now(),
     });
+
+    if (app.options.onNodeSelect) app.options.onNodeSelect(app.currentSelected);
+    if (app.options.onEdgeSelect) app.options.onEdgeSelect(app.currentSelectedEdges);
+  });
 
     app.sg.events.on('interaction:edgecreate', ({ source, target }) => {
         if (app.options.onEdgeCreate) {
@@ -34,57 +30,46 @@ export function setupInteractionHandlers(app: SpaceGraphApp) {
         }
     });
 
-    app.sg.events.on('graph:click', () => {
-        app.clearSelectionStyles();
-        (app as any).currentSelected = [];
-        (app as any).currentSelectedEdges = [];
-        app.sg.events.emit('selection:changed', {
-            nodes: (app as any).currentSelected,
-            edges: (app as any).currentSelectedEdges,
-            timestamp: Date.now(),
-        });
-
-        if (app.options.onNodeSelect) app.options.onNodeSelect([]);
-        if (app.options.onEdgeSelect) app.options.onEdgeSelect([]);
+  app.sg.events.on('graph:click', () => {
+    app.clearSelectionStyles();
+    app.currentSelected = [];
+    app.currentSelectedEdges = [];
+    app.sg.events.emit('selection:changed', {
+      nodes: app.currentSelected,
+      edges: app.currentSelectedEdges,
+      timestamp: Date.now(),
     });
+    if (app.options.onNodeSelect) app.options.onNodeSelect([]);
+    if (app.options.onEdgeSelect) app.options.onEdgeSelect([]);
+  });
 
-    app.sg.events.on('node:click', ({ node }) => {
-        app.clearSelectionStyles();
-        (app as any).currentSelected = [node];
-        (app as any).currentSelectedEdges = [];
-        app.applySelectionStyles();
-        app.sg.events.emit('selection:changed', {
-            nodes: (app as any).currentSelected,
-            edges: (app as any).currentSelectedEdges,
-            timestamp: Date.now(),
-        });
-
-        if (app.options.onNodeSelect) {
-            app.options.onNodeSelect((app as any).currentSelected);
-        }
-        if (app.options.onEdgeSelect) {
-            app.options.onEdgeSelect([]);
-        }
+  app.sg.events.on('node:click', ({ node }) => {
+    app.clearSelectionStyles();
+    app.currentSelected = [node];
+    app.currentSelectedEdges = [];
+    app.applySelectionStyles();
+    app.sg.events.emit('selection:changed', {
+      nodes: app.currentSelected,
+      edges: app.currentSelectedEdges,
+      timestamp: Date.now(),
     });
+    if (app.options.onNodeSelect) app.options.onNodeSelect(app.currentSelected);
+    if (app.options.onEdgeSelect) app.options.onEdgeSelect([]);
+  });
 
-    app.sg.events.on('edge:click', ({ edge }) => {
-        app.clearSelectionStyles();
-        (app as any).currentSelected = [];
-        (app as any).currentSelectedEdges = [edge];
-        app.applySelectionStyles();
-        app.sg.events.emit('selection:changed', {
-            nodes: (app as any).currentSelected,
-            edges: (app as any).currentSelectedEdges,
-            timestamp: Date.now(),
-        });
-
-        if (app.options.onNodeSelect) {
-            app.options.onNodeSelect([]);
-        }
-        if (app.options.onEdgeSelect) {
-            app.options.onEdgeSelect((app as any).currentSelectedEdges);
-        }
+  app.sg.events.on('edge:click', ({ edge }) => {
+    app.clearSelectionStyles();
+    app.currentSelected = [];
+    app.currentSelectedEdges = [edge];
+    app.applySelectionStyles();
+    app.sg.events.emit('selection:changed', {
+      nodes: app.currentSelected,
+      edges: app.currentSelectedEdges,
+      timestamp: Date.now(),
     });
+    if (app.options.onNodeSelect) app.options.onNodeSelect([]);
+    if (app.options.onEdgeSelect) app.options.onEdgeSelect(app.currentSelectedEdges);
+  });
 
     app.sg.events.on('node:dblclick', ({ node }) => {
         if (app.options.onNodeDblClick) {

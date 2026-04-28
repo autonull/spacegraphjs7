@@ -71,6 +71,10 @@ export abstract class BaseLayout implements Plugin {
     protected events!: EventSystem;
     protected config: LayoutConfig = {};
 
+    constructor(config: LayoutConfig = {}) {
+        this.config = { ...this.defaultConfig(), ...config };
+    }
+
     /**
      * Get default configuration for this layout
      */
@@ -82,7 +86,6 @@ export abstract class BaseLayout implements Plugin {
     init(_sg: SpaceGraph, graph: Graph, events: EventSystem): void {
         this.graph = graph;
         this.events = events;
-        this.config = { ...this.defaultConfig() };
     }
 
     /**

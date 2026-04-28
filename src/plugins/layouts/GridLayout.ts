@@ -35,12 +35,12 @@ export class GridLayout extends BaseLayout {
         const cols = columns > 0 ? columns : Math.ceil(Math.sqrt(nodes.length));
         const targetPos = new THREE.Vector3();
 
-        nodes.forEach((node, i) => {
+        for (const [i, node] of nodes.entries()) {
             const col = i % cols;
             const row = Math.floor(i / cols);
             targetPos.set(offsetX + col * spacingX, offsetY - row * spacingY, node.position.z);
             this.applyPosition(node, targetPos, { animate, duration });
-        });
+        }
 
         this.updateEdges();
         this.emitLayoutApplied({ duration });

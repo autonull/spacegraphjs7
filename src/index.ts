@@ -1,220 +1,159 @@
+// SpaceGraphJS v7.0.0 - Aggressively Refactored
 import './init';
-import { SpaceGraph } from './SpaceGraph';
+import { SpaceGraph as SG } from './SpaceGraph';
 
-export {
-    DEG2RAD,
-    RAD2DEG,
-    clamp,
-    lerp,
-    mergeDeep,
-    toHexColor,
-    randomRange,
-    randomInt,
-    smoothstep,
-    mapRange,
-    safeClone,
-} from './utils';
-
-export { logger, createLogger, setLogLevel, type LogLevel, type Logger } from './utils';
-export { calculateFitView as CameraUtils, createElement as DOMUtils } from './utils';
-export { getRelativeLuminance, getContrastRatio, getCompliantColor, hexToRgb } from './utils';
-
-export { SpaceGraph };
-export type { SpaceGraphOptions } from './types';
-export { SpaceGraphApp } from './core/SpaceGraphApp';
-export type { SpaceGraphAppOptions, AppButtonConfig } from './core/SpaceGraphApp';
+// Core
+export { SpaceGraph } from './SpaceGraph';
 export { Graph } from './core/Graph';
 export { Renderer } from './core/Renderer';
-export type { RenderOptions } from './core/Renderer';
 export { CameraControls } from './core/CameraControls';
-export { EventSystem, type SpaceGraphEvents } from './core/events/EventSystem';
-export { EventEmitter, type Disposable } from './core/EventEmitter';
+export { EventSystem } from './core/events/EventSystem';
+export { EventEmitter } from './core/EventEmitter';
 export { VisionManager } from './core/VisionManager';
-export type { VisionCategory } from './vision/VisionAutoFixer';
 export { ObjectPoolManager } from './core/ObjectPoolManager';
+export { PluginManager, type Plugin } from './core/PluginManager';
+export { Surface } from './core/Surface';
+export { TypeRegistry, type NodeConstructor, type EdgeConstructor } from './core/TypeRegistry';
 
+// Builder API - consolidated from builder.ts
 export {
-    PluginManager,
-    type Plugin,
-    BaseLayout,
-    type LayoutConfig,
-    type LayoutOptions,
-} from './plugins';
+  NodeBuilder,
+  EdgeBuilder,
+  GraphSpecBuilder,
+  graph,
+  quickGraph,
+  Patterns,
+  Animate,
+  Layout,
+  Camera,
+} from './builder';
 
+// Constants
 export {
-    ForceLayout,
-    type ForceLayoutConfig,
-    GridLayout,
-    CircularLayout,
-    HierarchicalLayout,
-    RadialLayout,
-    TreeLayout,
-    SpectralLayout,
-    GeoLayout,
-    TimelineLayout,
-    ClusterLayout,
-    InteractionPlugin,
-    LODPlugin,
-    AutoLayoutPlugin,
-    AutoColorPlugin,
-    PhysicsPlugin,
-    MinimapPlugin,
-    ErgonomicsPlugin,
-    type ErgonomicsConfig,
-    VisionOverlayPlugin,
-    HUDPlugin,
-    type HUDElementOptions,
-    HistoryPlugin,
-    type HistoryPluginOptions,
-    LayoutContainer,
-    HoverMetaWidget,
-    type HoverMetaWidgetOptions,
-    type HoverAction,
-} from './plugins';
+  AnimationDuration,
+  ZoomConfig,
+  FingeringPriority,
+  InteractionThresholds,
+  Performance,
+  Defaults,
+  EdgeColors,
+  InputConfig,
+  WCAG,
+} from './core/constants';
 
+// Defaults
 export {
-    InstancedNodeRenderer,
-    GEOMETRY_FAMILIES,
-    type GeometryFamily,
-} from './rendering/InstancedNodeRenderer';
+  DEFAULT_NODE_TYPES,
+  DEFAULT_EDGE_TYPES,
+  DEFAULT_LAYOUT_PLUGINS,
+  DEFAULT_SYSTEM_PLUGINS,
+  createQuickGraphSpec,
+} from './core/defaults';
 
+// Utils
+export {
+  DEG2RAD,
+  RAD2DEG,
+  clamp,
+  lerp,
+  mergeDeep,
+  toHexColor,
+  randomRange,
+  randomInt,
+  smoothstep,
+  mapRange,
+  safeClone,
+  debounce,
+  throttle,
+  isDefined,
+  isPromise,
+  sleep,
+  retry,
+  groupBy,
+  unique,
+  flatten,
+  chunk,
+  hexToRgb,
+  rgbToHex,
+  wrapError,
+} from './utils';
+
+export { logger, createLogger, setLogLevel } from './utils/logger';
+export { calculateFitValue, CameraUtils } from './utils/CameraUtils';
+export type { FitValueResult, Point } from './utils/CameraUtils';
+export { createElement, DOMUtils } from './utils/DOMUtils';
+export type { DOMElementOptions } from './utils/DOMUtils';
+export { getRelativeLuminance, getContrastRatio, getCompliantColor } from './utils/color';
+
+// Input
+export { InputManager, FingerManager, Fingering, createParentTransform } from './input';
+export type { CameraOrbitingFingering, CameraPanningFingering, CameraZoomingFingering } from './input/fingerings';
+
+// Plugins - Re-export from plugins/index.ts
+export * from './plugins';
+
+// Nodes - Re-export from nodes/index.ts
+export * from './nodes';
+
+// Edges - Re-export from edges/index.ts
+export * from './edges';
+
+// Rendering
+export { InstancedNodeRenderer, GEOMETRY_FAMILIES } from './rendering/InstancedNodeRenderer';
+export type { GeometryFamily as GeometryFamilyType } from './rendering/InstancedNodeRenderer';
+
+// Vision
 export { VisionSystem, HeuristicsStrategy } from './vision';
-export type {
-    VisionOptions,
-    VisionReport,
-    VisionScore,
-    LegibilityResult,
-    OverlapResult,
-    HierarchyResult,
-    ErgonomicsResult,
-} from './vision';
+export type { VisionCategory } from './vision';
 
+// Spatial
 export { SpatialIndex, BVH } from './core/spatial/SpatialIndex';
 
+// Pooling
 export { ObjectPool, MathPool } from './core/pooling/ObjectPool';
-export {
-    withPooledVector3,
-    withPooledVector2,
-    withPooledMatrix4,
-    withPooledBox3,
-} from './core/pooling/ObjectPool';
+export { withPooledVector3, withPooledVector2, withPooledMatrix4, withPooledBox3 } from './core/pooling/ObjectPool';
 
-export { TypeRegistry } from './core/TypeRegistry';
-export type { NodeConstructor, EdgeConstructor } from './core/TypeRegistry';
-
-export { InputManager, FingerManager, Fingering, createParentTransform } from './input';
+// Types
 export type {
-    InputEvent,
-    InputEventType,
-    InputAction,
-    InputBinding,
-    InputContext,
-    InputState,
-    KeyEventData,
-    PointerEventData,
-    WheelEventData,
-    TouchEventData,
-    Finger,
-    SurfaceTransform,
-    DefaultInputConfig,
-    CameraInputConfig,
-    InteractionInputConfig,
-    HistoryInputConfig,
-} from './input';
-
-export type {
-    GraphSpec,
-    NodeSpec,
-    EdgeSpec,
-    SpecUpdate,
-    SpaceGraphNodeData,
-    BaseNodeData,
-    BaseEdgeData,
-    Dimensions,
-    Colorable,
-    Opacity,
-    Themable,
-    CanvasNodeData,
-    ChartNodeData,
-    DataNodeData,
-    GlobeNodeData,
-    GroupNodeData,
-    HtmlNodeData,
-    IFrameNodeData,
-    ImageNodeData,
-    InstancedShapeNodeData,
-    MarkdownNodeData,
-    MathNodeData,
-    NoteNodeData,
-    SceneNodeData,
-    ShapeNodeData,
-    TextMeshNodeData,
-    VideoNodeData,
-    AudioNodeData,
-    ProcessNodeData,
-    CodeEditorNodeData,
-    NodeData,
-    EdgeData,
-    GraphExport,
-    GraphEvent,
-    NodeEvent,
-    EdgeEvent,
-    LabelLodLevel,
+  SpaceGraphOptions,
+  RenderOptions,
+  SpaceGraphEvents,
+  Disposable,
+  LayoutConfig,
+  LayoutOptions,
+  VisionOptions,
+  VisionReport,
+  VisionScore,
+  GraphSpec,
+  NodeSpec,
+  EdgeSpec,
+  SpecUpdate,
+  GraphExport,
+  GraphImportData,
+  GraphEvent,
+  NodeEvent,
+  EdgeEvent,
+  LabelLodLevel,
+  HitResult,
+  Rect,
+  GridModel,
+  ErgonomicsConfig,
+  HUDElementOptions,
+  HistoryPluginOptions,
+  HoverMetaWidgetOptions,
+  HoverAction,
+  MermaidThemeName,
+  MermaidLayoutType,
+  MermaidNodeShape,
+  GeometryFamily,
+  LayoutName,
+  SpaceGraphAppOptions,
+  LogLevel,
+  Logger,
 } from './types';
 
-export {
-    Node,
-    InstancedNode,
-    ShapeNode,
-    HtmlNode,
-    InstancedShapeNode,
-    ImageNode,
-    GroupNode,
-    NoteNode,
-    CanvasNode,
-    TextMeshNode,
-    DataNode,
-    VideoNode,
-    IFrameNode,
-    ChartNode,
-    MarkdownNode,
-    GlobeNode,
-    SceneNode,
-    AudioNode,
-    MathNode,
-    ProcessNode,
-    CodeEditorNode,
-    StackingNode,
-    GridNode,
-    SplitNode,
-    BorderNode,
-    SwitchNode,
-    VirtualGridNode,
-    PanelNode,
-    PortNode,
-    DOMNode,
-} from './nodes';
-export type { GridModel } from './nodes/VirtualGridNode';
-
-export {
-    Edge,
-    CurvedEdge,
-    FlowEdge,
-    LabeledEdge,
-    DottedEdge,
-    DynamicThicknessEdge,
-    AnimatedEdge,
-    BundledEdge,
-    InterGraphEdge,
-    Wire,
-} from './edges';
-
-export { Surface } from './core/Surface';
-export type { HitResult, Rect } from './core/Surface';
-
+// Version
 export const VERSION = '7.0.0';
 
-export default {
-    SpaceGraph,
-    VERSION,
-};
+// Default export
+export default SG;

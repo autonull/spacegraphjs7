@@ -24,7 +24,7 @@ export interface SpaceGraphEvents {
     };
     'camera:move': { position: [number, number, number]; target: [number, number, number] };
     'selection:changed': { nodes: string[]; edges: string[]; timestamp: number };
-    'node:click': { node: import('../../nodes/Node').Node; event: MouseEvent };
+    'node:click': { node: import('../../nodes/Node').Node; event?: MouseEvent };
     'graph:click': { event: MouseEvent };
     'node:contextmenu': { node: import('../../nodes/Node').Node; event: MouseEvent };
     'graph:contextmenu': { event: MouseEvent };
@@ -45,6 +45,7 @@ export interface SpaceGraphEvents {
     'node:pointerleave': { node: any };
     'edge:pointerenter': { edge: any; event?: any };
     'edge:pointerleave': { edge: any };
+    'focus:changed': { node: import('../../nodes/Node').Node; focused: boolean };
     [key: string]: unknown;
     [key: symbol]: unknown;
 }

@@ -1,13 +1,9 @@
 import * as THREE from 'three';
-import type { SpaceGraph } from '../../SpaceGraph';
 import type { Node } from '../../nodes/Node';
-import type { Finger, Fingering } from '../Fingering';
-import type { InteractionRaycaster } from '../../plugins/interaction/RaycasterHelper';
+import type { Finger } from '../Fingering';
+import { BaseFingering } from './BaseFingering';
 
-export class ResizeFingering implements Fingering {
-    private sg: SpaceGraph;
-    private raycaster: InteractionRaycaster;
-    private isResizing = false;
+export class ResizeFingering extends BaseFingering {
     private resizedNode: Node | null = null;
     private startPos = { x: 0, y: 0 };
     private startSize = { width: 0, height: 0 };
@@ -16,11 +12,6 @@ export class ResizeFingering implements Fingering {
 
     private static MIN_SIZE = 40;
     private static MAX_SIZE = 2000;
-
-    constructor(sg: SpaceGraph, raycaster: InteractionRaycaster) {
-        this.sg = sg;
-        this.raycaster = raycaster;
-    }
 
     start(finger: Finger): boolean {
         if (finger.buttons !== 1) return false;
@@ -35,7 +26,7 @@ export class ResizeFingering implements Fingering {
         );
         if (!resizeHandle) return false;
 
-        this.isResizing = true;
+        this.active = true;
         this.resizedNode = result.node;
         this.startPos = { x: finger.position.x, y: finger.position.y };
         this.startSize = {
@@ -49,12 +40,12 @@ export class ResizeFingering implements Fingering {
         this.screenScaleY = nodeScreenSize.height / canvas.clientHeight;
 
         this.resizedNode.pulse(1.0);
-        this.sg.events.emit('resize:start', { node: this.resizedNode });
+        this.emit('resize:start', { node: this.resizedNode });
         return true;
     }
 
     update(finger: Finger): boolean {
-        if (!this.isResizing || !this.resizedNode) return false;
+        if (!this.active || !this.resizedNode) return false;
 
         const deltaX = finger.position.x - this.startPos.x;
         const deltaY = finger.position.y - this.startPos.y;
@@ -79,20 +70,16 @@ export class ResizeFingering implements Fingering {
             },
         });
 
-        this.sg.events.emit('resize:update', {
-            node: this.resizedNode,
-            width: newWidth,
-            height: newHeight,
-        });
+        this.emit('resize:update', { node: this.resizedNode, width: newWidth, height: newHeight });
 
         return true;
     }
 
     stop(_finger: Finger): void {
         if (this.resizedNode) {
-            this.sg.events.emit('resize:end', { node: this.resizedNode });
+            this.emit('resize:end', { node: this.resizedNode });
         }
-        this.isResizing = false;
+        this.active = false;
         this.resizedNode = null;
     }
 

@@ -4,53 +4,73 @@ import { ThreeDisposer } from '../utils/ThreeDisposer';
 import { Surface, type HitResult, type Rect, type Bounds3D } from '../core/Surface';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec, NodeData, AnimationProps } from '../types';
+import type { ControlState } from '../plugins/interaction/ControlStateBorder';
 
 export type NodeEventMap = {
-    'node:updated': { node: Node; changes: Partial<NodeSpec>; timestamp: number };
-    'node:destroying': { node: Node; timestamp: number };
+  'node:updated': { node: Node; changes: Partial<NodeSpec>; timestamp: number };
+  'node:destroying': { node: Node; timestamp: number };
+  'focus': { node: Node };
+  'blur': { node: Node };
 };
 
+export interface VisibilityContext {
+    cameraFrustum: THREE.Frustum;
+    viewportBounds: { width: number; height: number };
+    minPixelSize: number;
+    cameraPosition: THREE.Vector3;
+}
+
+export type LODLevel = 'high' | 'medium' | 'low' | 'hidden';
+
 export abstract class Node extends Surface {
-    readonly id: string;
-    readonly type: string;
-    public sg?: SpaceGraph;
-    public label?: string;
-    public data: NodeData;
-    public position: THREE.Vector3;
-    public rotation: THREE.Vector3;
-    public scale: THREE.Vector3;
-    abstract readonly object: THREE.Object3D;
+  readonly id: string;
+  readonly type: string;
+  public sg?: SpaceGraph;
+  public label?: string;
+  public data: NodeData;
+  public position: THREE.Vector3;
+  public rotation: THREE.Vector3;
+  public scale: THREE.Vector3;
+  public controlState: ControlState = 'normal';
+  public focusable = false;
+  public focused = false;
+  abstract readonly object: THREE.Object3D;
+  callbacks?: {
+    onPointerEnter?: (node: Node) => void;
+    onPointerLeave?: (node: Node) => void;
+    onClick?: (node: Node) => void;
+    onDoubleClick?: (node: Node) => void;
+    onDragStart?: (node: Node) => void;
+    onDragging?: (node: Node) => void;
+    onDragStop?: (node: Node) => void;
+  };
+  actions?: Array<{ icon: string; label: string; action: string }>;
 
-    get worldMatrix(): THREE.Matrix4 {
-        return this.object.matrixWorld;
-    }
+  get worldMatrix(): THREE.Matrix4 {
+    return this.object.matrixWorld;
+  }
 
-    constructor(sg?: SpaceGraph, spec?: NodeSpec);
-    constructor(sgOrSpec?: SpaceGraph | NodeSpec, maybeSpec?: NodeSpec) {
-        super();
-        const isSpecOnly = !!(sgOrSpec && 'id' in sgOrSpec);
-        this.sg = isSpecOnly ? undefined : (sgOrSpec as SpaceGraph);
-        const spec = isSpecOnly ? (sgOrSpec as NodeSpec) : maybeSpec;
-        this.id = spec?.id ?? '';
-        this.type = spec?.type ?? '';
-        this.label = spec?.label;
-        this.data = spec?.data ?? {};
-        this.position = new THREE.Vector3(
-            spec?.position?.[0] ?? 0,
-            spec?.position?.[1] ?? 0,
-            spec?.position?.[2] ?? 0,
-        );
-        this.rotation = new THREE.Vector3(
-            spec?.rotation?.[0] ?? 0,
-            spec?.rotation?.[1] ?? 0,
-            spec?.rotation?.[2] ?? 0,
-        );
-        this.scale = new THREE.Vector3(
-            spec?.scale?.[0] ?? 1,
-            spec?.scale?.[1] ?? 1,
-            spec?.scale?.[2] ?? 1,
-        );
-    }
+  private static _parseVector3(spec: number[] | undefined, defaults: [number, number, number]): THREE.Vector3 {
+    return new THREE.Vector3(
+      spec?.[0] ?? defaults[0],
+      spec?.[1] ?? defaults[1],
+      spec?.[2] ?? defaults[2],
+    );
+  }
+
+  constructor(sgOrSpec?: SpaceGraph | NodeSpec, maybeSpec?: NodeSpec) {
+    super();
+    const isSpecOnly = !!(sgOrSpec && 'id' in sgOrSpec);
+    this.sg = isSpecOnly ? undefined : (sgOrSpec as SpaceGraph);
+    const spec = isSpecOnly ? (sgOrSpec as NodeSpec) : maybeSpec;
+    this.id = spec?.id ?? '';
+    this.type = spec?.type ?? '';
+    this.label = spec?.label;
+    this.data = spec?.data ?? {};
+    this.position = Node._parseVector3(spec?.position, [0, 0, 0]);
+    this.rotation = Node._parseVector3(spec?.rotation, [0, 0, 0]);
+    this.scale = Node._parseVector3(spec?.scale, [1, 1, 1]);
+  }
 
     get bounds(): Rect {
         const box = new THREE.Box3().setFromObject(this.object);
@@ -103,6 +123,35 @@ export abstract class Node extends Surface {
         return null;
     }
 
+    isVisible(context: VisibilityContext): boolean {
+        if (!this.visible) return false;
+
+        const box = new THREE.Box3().setFromObject(this.object);
+        if (!context.cameraFrustum.intersectsBox(box)) return false;
+
+        const pixelSize = this.getScreenPixelSize(context.viewportBounds);
+        if (pixelSize < context.minPixelSize) return false;
+
+        return true;
+    }
+
+    getScreenPixelSize(viewport: { width: number; height: number }): number {
+        const bounds = this.bounds3D.size;
+        const heightPercent = (bounds.y / viewport.height) * 100;
+        const widthPercent = (bounds.x / viewport.width) * 100;
+        return Math.min(heightPercent, widthPercent);
+    }
+
+    computeLOD(context: VisibilityContext): LODLevel {
+        if (!this.visible) return 'hidden';
+        const pixelSize = this.getScreenPixelSize(context.viewportBounds);
+        if (pixelSize < 0.5) return 'hidden';
+        const distance = this.position.distanceTo(context.cameraPosition);
+        if (distance < 100) return 'high';
+        if (distance < 500) return 'medium';
+        return 'low';
+    }
+
     start(): void {
         this.pulse(0.5);
     }
@@ -148,7 +197,7 @@ export abstract class Node extends Surface {
             changes.scale = updates.scale;
         }
 
-        if (Object.keys(changes).length > 0) {
+        if (changes.label || changes.data || changes.position || changes.rotation || changes.scale) {
             this.emit('node:updated', { node: this, changes, timestamp: Date.now() });
         }
 
@@ -170,52 +219,61 @@ export abstract class Node extends Surface {
         return true;
     }
 
-    animate(props: AnimationProps): this {
-        const { scale, ...positionProps } = props;
+    focus(): void {
+        this.focused = true;
+        this.emit('focus', { node: this });
+    }
 
-        gsap.to(this.position, {
-            ...positionProps,
-            onUpdate: () => void this.object.position.copy(this.position),
+    blur(): void {
+        this.focused = false;
+        this.emit('blur', { node: this });
+    }
+
+    onFocus?(): void;
+    onBlur?(): void;
+
+animate(props: AnimationProps): this {
+    const { scale, ...positionProps } = props;
+
+    gsap.to(this.position, {
+        ...positionProps,
+        onUpdate: () => { this.object.position.copy(this.position); },
+    });
+
+    if (scale !== undefined) {
+        gsap.to(this.object.scale, {
+            x: scale,
+            y: scale,
+            z: scale,
+            duration: props.duration,
+            ease: props.ease,
+            delay: props.delay,
         });
-
-        if (scale !== undefined) {
-            gsap.to(this.object.scale, {
-                x: scale,
-                y: scale,
-                z: scale,
-                duration: props.duration,
-                ease: props.ease,
-                delay: props.delay,
-            });
-        }
-
-        return this;
     }
 
-    applyPosition(
-        target: THREE.Vector3,
-        {
-            animate = true,
-            duration = 1.0,
-            delay = 0,
-        }: { animate?: boolean; duration?: number; delay?: number } = {},
-    ): this {
-        if (animate && typeof process === 'undefined') {
-            gsap.to(this.position, {
-                x: target.x,
-                y: target.y,
-                z: target.z,
-                duration,
-                ease: 'power2.out',
-                delay,
-                onUpdate: () => void this.object.position.copy(this.position),
-            });
-        } else {
-            this.position.copy(target);
-            this.object.position.copy(target);
-        }
-        return this;
+    return this;
+}
+
+applyPosition(
+    target: THREE.Vector3,
+    { animate = true, duration = 1.0, delay = 0 }: { animate?: boolean; duration?: number; delay?: number } = {},
+): this {
+    if (animate && typeof process !== 'undefined') {
+        gsap.to(this.position, {
+            x: target.x,
+            y: target.y,
+            z: target.z,
+            duration,
+            ease: 'power2.out',
+            delay,
+            onUpdate: () => { this.object.position.copy(this.position); },
+        });
+    } else {
+        this.position.copy(target);
+        this.object.position.copy(target);
     }
+    return this;
+}
 
     toJSON(): NodeSpec {
         return {
@@ -238,6 +296,7 @@ export abstract class Node extends Surface {
     }
 
     dispose(): void {
+        this.emit('surface:destroying', { surface: this, timestamp: Date.now() });
         this.emit('node:destroying', { node: this, timestamp: Date.now() });
         this.object.parent?.remove(this.object);
         ThreeDisposer.dispose(this.object);

@@ -1,7 +1,14 @@
 import type { SpaceGraphApp } from './SpaceGraphApp';
+import type { AppButtonConfig } from './SpaceGraphApp';
 import type { Node as SGNode } from '../nodes/Node';
 import { DOMUtils } from '../utils/DOMUtils';
 import * as THREE from 'three';
+
+const SECONDARY_TEXT_COLOR = '#94a3b8';
+const BORDER_GLASS = '1px solid rgba(255,255,255,0.1)';
+const BORDER_SUBTLE = 'rgba(255,255,255,0.1)';
+const BG_GLASS = 'rgba(255,255,255,0.05)';
+const BG_HOVER = 'rgba(255,255,255,0.1)';
 
 export function renderTitleCard(app: SpaceGraphApp, theme: any) {
     app.hud.removeElement('app-title-card');
@@ -99,7 +106,7 @@ function createStatBlock(label: string, id: string, value: string, color?: strin
 
 function createDivider(): HTMLElement {
     return DOMUtils.createElement('div', {
-        style: { width: '1px', height: '24px', background: 'rgba(255,255,255,0.1)' },
+        style: { width: '1px', height: '24px', background: BORDER_SUBTLE },
     });
 }
 
@@ -108,10 +115,10 @@ function createModeToggle(app: SpaceGraphApp, theme: any): HTMLElement {
         style: {
             display: 'flex',
             gap: '4px',
-            background: 'rgba(255,255,255,0.05)',
+            background: BG_GLASS,
             borderRadius: '99px',
             padding: '2px',
-            border: '1px solid rgba(255,255,255,0.1)',
+            border: BORDER_GLASS,
         },
     });
 
@@ -122,7 +129,7 @@ function createModeToggle(app: SpaceGraphApp, theme: any): HTMLElement {
                 mode === activeMode
                     ? `linear-gradient(135deg, ${theme.primaryColor}, ${theme.secondaryColor})`
                     : 'transparent';
-            btn.style.color = mode === activeMode ? 'white' : '#94a3b8';
+            btn.style.color = mode === activeMode ? 'white' : SECONDARY_TEXT_COLOR;
         }
     };
 
@@ -137,7 +144,7 @@ function createModeToggle(app: SpaceGraphApp, theme: any): HTMLElement {
                 border: 'none',
                 padding: '6px 16px',
                 borderRadius: '99px',
-                color: '#94a3b8',
+                color: SECONDARY_TEXT_COLOR,
                 fontWeight: 'bold',
                 fontSize: '12px',
                 cursor: 'pointer',
@@ -152,8 +159,8 @@ function createModeToggle(app: SpaceGraphApp, theme: any): HTMLElement {
         container.appendChild(btn);
     });
 
-    const interaction = app.sg.pluginManager.getPlugin('interaction') as any;
-    updateModeStyles(interaction ? interaction.mode : 'default');
+  const interaction = app.sg.pluginManager.getPlugin('interaction');
+  updateModeStyles(interaction ? (interaction as any).mode : 'default');
 
     return container;
 }
@@ -164,10 +171,10 @@ function createZoomControls(app: SpaceGraphApp, theme: any): HTMLElement {
             display: 'flex',
             alignItems: 'center',
             gap: '2px',
-            background: 'rgba(255,255,255,0.05)',
+            background: BG_GLASS,
             borderRadius: '99px',
             padding: '2px 4px',
-            border: '1px solid rgba(255,255,255,0.1)',
+            border: BORDER_GLASS,
         },
     });
 
@@ -185,7 +192,7 @@ function createZoomControls(app: SpaceGraphApp, theme: any): HTMLElement {
                 cursor: 'pointer',
             },
         });
-        btn.onmouseenter = () => (btn.style.background = 'rgba(255,255,255,0.1)');
+        btn.onmouseenter = () => (btn.style.background = BG_HOVER);
         btn.onmouseleave = () => (btn.style.background = 'transparent');
         btn.onclick = () => {
             if (!app.sg.cameraControls) return;
@@ -226,12 +233,12 @@ function createZoomControls(app: SpaceGraphApp, theme: any): HTMLElement {
     if (app.sg.cameraControls)
         zoomSlider.value = (5010 - app.sg.cameraControls.spherical.radius).toString();
 
-    const sliderHandler = () => {
-        if (app.sg.cameraControls)
-            zoomSlider.value = (5010 - app.sg.cameraControls.spherical.radius).toString();
-    };
-    app.sg.events.on('camera:move', sliderHandler);
-    (app as any)._zoomSliderHandler = sliderHandler;
+const sliderHandler = () => {
+  if (app.sg.cameraControls)
+    zoomSlider.value = (5010 - app.sg.cameraControls.spherical.radius).toString();
+};
+app.sg.events.on('camera:move', sliderHandler);
+app._zoomSliderHandler = sliderHandler;
 
     container.append(createBtn('-', false), zoomSlider, createBtn('+', true));
     return container;
@@ -280,15 +287,13 @@ export function renderToolbarActions(app: SpaceGraphApp) {
 
 function createStyledButton(btn: AppButtonConfig, isToolbar: boolean, theme: any): HTMLElement {
     const bgNormal = isToolbar ? 'transparent' : theme.backgroundColor;
-    const bgHover = 'rgba(255,255,255,0.1)';
+    const bgHover = BG_HOVER;
 
     const btnEl = DOMUtils.createElement('button', {
         id: `sg-${isToolbar ? 'toolbar-' : ''}btn-${btn.id}`,
         style: {
             background: bgNormal,
-            border: isToolbar
-                ? '1px solid rgba(255,255,255,0.2)'
-                : '1px solid rgba(255,255,255,0.1)',
+            border: isToolbar ? '1px solid rgba(255,255,255,0.2)' : BORDER_GLASS,
             padding: isToolbar ? '6px 12px' : '10px 16px',
             borderRadius: isToolbar ? '99px' : '8px',
             color: 'white',
@@ -383,14 +388,14 @@ export function setupSearchHUD(app: SpaceGraphApp, theme: any) {
             timestamp: Date.now(),
         });
 
-        if (matches.length === 1 && app.sg.cameraControls) {
-            const node = matches[0];
-            const targetPos = node.position.clone();
-            const targetRadius = node.data?.width
-                ? Math.max((node.data as any).width * 1.5, 150)
-                : 150;
-            app.sg.cameraControls.flyTo(targetPos, targetRadius);
-        }
+if (matches.length === 1 && app.sg.cameraControls) {
+  const node = matches[0];
+  const targetPos = node.position.clone();
+  const targetRadius = node.data?.width
+    ? Math.max(node.data.width * 1.5, 150)
+    : 150;
+  app.sg.cameraControls.flyTo(targetPos, targetRadius);
+}
     });
 
     container.appendChild(input);
@@ -403,14 +408,14 @@ export function setupSearchHUD(app: SpaceGraphApp, theme: any) {
 }
 
 export function updateStatsHUD(app: SpaceGraphApp) {
-    if (typeof document === 'undefined') return;
+  if (typeof document === 'undefined') return;
 
-    const countEl = document.getElementById('sg-app-selected-count');
-    if (countEl) {
-        countEl.textContent = (
-            (app as any).currentSelected.length + (app as any).currentSelectedEdges.length
-        ).toString();
-    }
+  const countEl = document.getElementById('sg-app-selected-count');
+  if (countEl) {
+    countEl.textContent = (
+      app.currentSelected.length + app.currentSelectedEdges.length
+    ).toString();
+  }
 
     const nodeCountEl = document.getElementById('sg-app-node-count');
     if (nodeCountEl) {

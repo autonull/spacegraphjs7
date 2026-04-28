@@ -1,4 +1,4 @@
-import type { SpaceGraph } from '../SpaceGraph';
+import type { SpaceGraph, DefaultInputConfig } from '../types';
 import type {
     InputManager,
     InputEvent,
@@ -6,36 +6,11 @@ import type {
     InputAction,
     InputBinding,
     InputEventType,
-} from './InputManager';
-import type {
     KeyEventData,
     PointerEventData,
     WheelEventData,
     TouchEventData,
 } from './InputManager';
-
-export interface CameraInputConfig {
-    rotationSpeed?: number;
-    panSpeed?: number;
-    zoomSpeed?: number;
-    damping?: number;
-    minRadius?: number;
-    maxRadius?: number;
-}
-
-export interface InteractionInputConfig {
-    clickThreshold?: number;
-}
-
-export interface HistoryInputConfig {
-    enabled?: boolean;
-}
-
-export interface DefaultInputConfig {
-    camera?: CameraInputConfig;
-    interaction?: InteractionInputConfig;
-    history?: HistoryInputConfig;
-}
 
 const CAMERA_EVENTS: InputEventType[] = [
     'mousedown',

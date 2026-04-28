@@ -3,6 +3,7 @@
 
 import * as THREE from 'three';
 import { EventEmitter } from './EventEmitter';
+import type { SpaceGraph } from '../SpaceGraph';
 
 export interface HitResult {
     surface: Surface;
@@ -36,13 +37,14 @@ export type SurfaceEventMap = {
     pointerdown: { surface: Surface; event: PointerEvent };
     pointerup: { surface: Surface; event: PointerEvent };
     updated: { surface: Surface; changes: unknown };
-    destroying: { surface: Surface };
+    'surface:destroying': { surface: Surface; timestamp: number };
     [key: string]: unknown;
 };
 
 export abstract class Surface extends EventEmitter<SurfaceEventMap> {
     abstract readonly id: string;
     abstract readonly type: string;
+    abstract sg?: SpaceGraph;
     abstract bounds: Rect;
     abstract get bounds3D(): Bounds3D;
     abstract hitTest(ray: THREE.Raycaster): HitResult | null;
@@ -72,10 +74,10 @@ export abstract class Surface extends EventEmitter<SurfaceEventMap> {
         this.activity *= Math.exp(-_dt / this.ACTIVITY_DECAY_RATE);
     }
 
-    pulse(intensity: number = 1.0): void {
+    pulse(intensity = 1.0): void {
         this.activity = Math.max(this.activity, intensity);
         if ('lastActivityTime' in this) {
-            (this as any).lastActivityTime = performance.now();
+            (this as unknown as { lastActivityTime: number }).lastActivityTime = performance.now();
         }
     }
 
@@ -117,5 +119,29 @@ export abstract class Surface extends EventEmitter<SurfaceEventMap> {
     worldToLocal(worldPos: THREE.Vector3): THREE.Vector3 {
         const inverse = this.worldMatrix.clone().invert();
         return worldPos.clone().applyMatrix4(inverse);
+    }
+
+    requireSpaceGraph(): SpaceGraph {
+        if (!this.sg) {
+            throw new Error(`Surface "${this.id}" requires SpaceGraph but sg is not initialized`);
+        }
+        return this.sg;
+    }
+
+    // Ergonomic helpers
+    get isDisposed(): boolean {
+        return !this.visible;
+    }
+
+    hasAncestor(predicate: (s: Surface) => boolean): boolean {
+        return !!this.findAncestor(predicate);
+    }
+
+    distanceTo(other: Surface): number {
+        return this.position.distanceTo(other.position);
+    }
+
+    angleTo(other: Surface): number {
+        return this.position.angleTo(other.position);
     }
 }

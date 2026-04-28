@@ -211,7 +211,7 @@ describe('Graph', () => {
 
             expect(() => {
                 registry.createNode({ id: 'test', type: 'UnknownType' });
-            }).toThrow('Unknown node type: UnknownType');
+            }).toThrow('TypeRegistry: Unknown node type');
         });
     });
 

@@ -5,6 +5,9 @@ import type { N8nWorkflowJSON, N8nWorkflowDiff, ExecutionState, OSProcessUpdate 
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
 import type { GraphSpec } from 'spacegraphjs';
 import { N8nCollaborationPlugin } from './N8nCollaborationPlugin';
+import { pkgLogger } from './logger';
+
+const log = pkgLogger('[N8nBridge]');
 
 export class N8nBridge {
     private sg: SpaceGraph;
@@ -31,7 +34,7 @@ export class N8nBridge {
         this.wsClient = new WebSocket(this.serverUrl);
 
         this.wsClient.onopen = () => {
-            console.log('[N8nBridge] Connected to server');
+            log.info('Connected to server');
         };
 
         this.wsClient.onmessage = (event) => {
@@ -39,12 +42,12 @@ export class N8nBridge {
                 const message = JSON.parse(event.data);
                 this.handleMessage(message);
             } catch (e) {
-                console.error('[N8nBridge] Failed to parse message', e);
+                log.error('Failed to parse message', e);
             }
         };
 
         this.wsClient.onclose = () => {
-            console.warn('[N8nBridge] Disconnected from server. Reconnecting in 5s...');
+            log.warn('Disconnected from server. Reconnecting in 5s...');
             setTimeout(() => this.connect(), 5000);
         };
     }
@@ -65,7 +68,7 @@ export class N8nBridge {
         if (handler) {
             handler();
         } else {
-            console.warn('[N8nBridge] Unknown message type:', message.type);
+            log.warn('Unknown message type:', message.type);
         }
     }
 
@@ -129,9 +132,9 @@ export class N8nBridge {
     private send(message: any) {
         if (this.wsClient && this.wsClient.readyState === 1) { // 1 = WebSocket.OPEN
             this.wsClient.send(JSON.stringify(message));
-        } else {
-            console.warn('[N8nBridge] WebSocket is not open. Cannot send message:', message);
-        }
+            } else {
+                log.warn('WebSocket is not open. Cannot send message:', message);
+            }
     }
 
     // RxJS observables for reactive UI updates

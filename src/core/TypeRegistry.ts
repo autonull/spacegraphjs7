@@ -13,63 +13,66 @@ export type EdgeConstructor = new (
 
 export class TypeRegistry {
     private static instance: TypeRegistry;
-    private readonly nodeTypes = new Map<string, NodeConstructor>();
-    private readonly edgeTypes = new Map<string, EdgeConstructor>();
+    private nodeTypes = new Map<string, NodeConstructor>();
+    private edgeTypes = new Map<string, EdgeConstructor>();
 
     private constructor() {}
 
     static getInstance(): TypeRegistry {
-        return TypeRegistry.instance ?? (TypeRegistry.instance = new TypeRegistry());
+        return (TypeRegistry.instance ??= new TypeRegistry());
     }
 
-    registerNode(typeName: string, constructor: NodeConstructor): void {
-        if (this.nodeTypes.has(typeName)) {
-            return;
-        }
-        this.nodeTypes.set(typeName, constructor);
+    registerNode(type: string, ctor: NodeConstructor): this {
+        if (!this.nodeTypes.has(type)) this.nodeTypes.set(type, ctor);
+        return this;
     }
 
-    registerEdge(typeName: string, constructor: EdgeConstructor): void {
-        if (this.edgeTypes.has(typeName)) {
-            return;
-        }
-        this.edgeTypes.set(typeName, constructor);
+    registerEdge(type: string, ctor: EdgeConstructor): this {
+        if (!this.edgeTypes.has(type)) this.edgeTypes.set(type, ctor);
+        return this;
     }
 
-    getNodeConstructor(typeName: string): NodeConstructor | undefined {
-        return this.nodeTypes.get(typeName);
+    getNodeConstructor(type: string): NodeConstructor | undefined {
+        return this.nodeTypes.get(type);
     }
 
-    getEdgeConstructor(typeName: string): EdgeConstructor | undefined {
-        return this.edgeTypes.get(typeName);
+    getEdgeConstructor(type: string): EdgeConstructor | undefined {
+        return this.edgeTypes.get(type);
     }
 
-    hasNode(typeName: string): boolean {
-        return this.nodeTypes.has(typeName);
+    hasNode(type: string): boolean {
+        return this.nodeTypes.has(type);
     }
-
-    hasEdge(typeName: string): boolean {
-        return this.edgeTypes.has(typeName);
+    hasEdge(type: string): boolean {
+        return this.edgeTypes.has(type);
     }
-
     getNodeTypes(): string[] {
-        return Array.from(this.nodeTypes.keys());
+        return [...this.nodeTypes.keys()];
     }
-
     getEdgeTypes(): string[] {
-        return Array.from(this.edgeTypes.keys());
+        return [...this.edgeTypes.keys()];
     }
 
-    createNode(sgOrSpec: SpaceGraph | NodeSpec, maybeSpec?: NodeSpec): Node {
-        const spec = 'type' in sgOrSpec ? (sgOrSpec as NodeSpec) : maybeSpec!;
-        const sg = 'type' in sgOrSpec ? undefined : (sgOrSpec as SpaceGraph);
-        const constructor = this.getNodeConstructor(spec.type);
-        if (!constructor) {
+    registerNodeType(name: string, ctor: NodeConstructor): void {
+        this.registerNode(name, ctor);
+    }
+
+    registerEdgeType(name: string, ctor: EdgeConstructor): void {
+        this.registerEdge(name, ctor);
+    }
+
+    createNode(sgOrSpec: SpaceGraph | NodeSpec, specOrSg?: NodeSpec | SpaceGraph): Node {
+        const isSpecFirst = 'type' in sgOrSpec;
+        const nodeSpec = isSpecFirst ? (sgOrSpec as NodeSpec) : (specOrSg as NodeSpec);
+        const sg = isSpecFirst ? (specOrSg as SpaceGraph) : (sgOrSpec as SpaceGraph);
+
+        if (!nodeSpec?.type) throw new Error('Node spec must include type');
+        const ctor = this.getNodeConstructor(nodeSpec.type);
+        if (!ctor)
             throw new Error(
-                `Unknown node type: ${spec.type}. Registered: ${this.getNodeTypes().join(', ')}`,
+                `TypeRegistry: Unknown node type "${nodeSpec.type}". Registered: [${this.getNodeTypes().join(', ')}]`,
             );
-        }
-        return new constructor(sg!, spec);
+        return new ctor(sg, nodeSpec);
     }
 
     createEdge(
@@ -78,18 +81,19 @@ export class TypeRegistry {
         sourceOrTarget?: Node,
         targetOrNothing?: Node,
     ): Edge {
-        const isSpecFirst = 'source' in (sgOrSpec as object);
-        const spec = isSpecFirst ? (sgOrSpec as EdgeSpec) : (specOrSource as EdgeSpec);
-        const sg = isSpecFirst ? undefined : (sgOrSpec as SpaceGraph);
+        const isSpecFirst = 'source' in (sgOrSpec as any);
+        const edgeSpec = isSpecFirst ? (sgOrSpec as EdgeSpec) : (specOrSource as EdgeSpec);
+        const sg = isSpecFirst ? (sourceOrTarget as SpaceGraph) : (sgOrSpec as SpaceGraph);
         const source = isSpecFirst ? (specOrSource as Node) : (sourceOrTarget as Node);
         const target = isSpecFirst ? (sourceOrTarget as Node) : (targetOrNothing as Node);
-        const constructor = this.getEdgeConstructor(spec.type);
-        if (!constructor) {
+
+        if (!edgeSpec?.type) throw new Error('Edge spec must include type');
+        const ctor = this.getEdgeConstructor(edgeSpec.type ?? 'Edge');
+        if (!ctor)
             throw new Error(
-                `Unknown edge type: ${spec.type}. Registered: ${this.getEdgeTypes().join(', ')}`,
+                `TypeRegistry: Unknown edge type "${edgeSpec.type}". Registered: [${this.getEdgeTypes().join(', ')}]`,
             );
-        }
-        return new constructor(sg!, spec, source, target);
+        return new ctor(sg, edgeSpec, source, target);
     }
 
     clear(): void {
@@ -98,10 +102,7 @@ export class TypeRegistry {
     }
 }
 
-export function registerNode(typeName: string, constructor: NodeConstructor): void {
-    TypeRegistry.getInstance().registerNode(typeName, constructor);
-}
-
-export function registerEdge(typeName: string, constructor: EdgeConstructor): void {
-    TypeRegistry.getInstance().registerEdge(typeName, constructor);
-}
+export const registerNode = (type: string, ctor: NodeConstructor) =>
+    TypeRegistry.getInstance().registerNode(type, ctor);
+export const registerEdge = (type: string, ctor: EdgeConstructor) =>
+    TypeRegistry.getInstance().registerEdge(type, ctor);
