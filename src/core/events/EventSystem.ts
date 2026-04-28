@@ -45,6 +45,7 @@ export interface SpaceGraphEvents {
     'node:pointerleave': { node: any };
     'edge:pointerenter': { edge: any; event?: any };
     'edge:pointerleave': { edge: any };
+    'focus:changed': { node: import('../../nodes/Node').Node; focused: boolean };
     [key: string]: unknown;
     [key: symbol]: unknown;
 }

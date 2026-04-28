@@ -13,6 +13,7 @@ import { DragHandler } from './interaction/DragHandler';
 import { ConnectionHandler } from './interaction/ConnectionHandler';
 import { ResizeHandler } from './interaction/ResizeHandler';
 import { KeyboardShortcuts } from './interaction/KeyboardShortcuts';
+import { FocusManager } from './interaction/FocusManager';
 import { type PickResult } from '../input/interfaces/Tangible';
 import { NodeDraggingFingering, HoverFingering, BoxSelectingFingering, ResizeFingering, WiringFingering, PinchZoomFingering, WidgetFingering } from '../input/fingerings';
 
@@ -30,6 +31,7 @@ export class InteractionPlugin implements Plugin {
     private connectionHandler!: ConnectionHandler;
     private resizeHandler!: ResizeHandler;
     private keyboardShortcuts!: KeyboardShortcuts;
+    private focusManager!: FocusManager;
 
     private _mode: 'default' | 'select' | 'connect' = 'default';
     private pointerDownPosition = new THREE.Vector2();
@@ -57,6 +59,7 @@ export class InteractionPlugin implements Plugin {
         this.connectionHandler = new ConnectionHandler(sg, this.raycaster);
         this.resizeHandler = new ResizeHandler(sg, this.raycaster);
         this.keyboardShortcuts = new KeyboardShortcuts(sg);
+        this.focusManager = new FocusManager(sg);
 
         this.cursorManager.setContainer(this.sg.renderer.renderer.domElement);
         this.keyboardShortcuts.setSelectionChangeHandler((_selection) => {
@@ -310,6 +313,15 @@ this.sg.cameraControls.flyTo(node.position, radius);
                     if (hoveredNode) {
                         this.keyboardShortcuts.handleZoomIn(hoveredNode);
                     }
+                }
+                break;
+
+            case 'Tab':
+                e.preventDefault();
+                if (e.shiftKey) {
+                    this.focusManager.focusPrevious();
+                } else {
+                    this.focusManager.focusNext();
                 }
                 break;
         }

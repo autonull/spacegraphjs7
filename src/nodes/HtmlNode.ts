@@ -14,6 +14,7 @@ public static CONTENT_SCALE_RANGE = { min: 0.3, max: 3.0 };
 public size = { width: 160, height: 70 };
     public billboard = false;
     public labelLod: LabelLodLevel[] = [];
+    public override focusable = true;
     private resizeHandle: HTMLElement | null = null;
     private contentWrapper: HTMLElement | null = null;
     private controlsWrapper: HTMLElement | null = null;
@@ -339,6 +340,16 @@ this.setSize(w, h);
 
     setSelectedStyle(selected: boolean): void {
         this.domElement?.classList.toggle('selected', selected);
+    }
+
+    focus(): void {
+        super.focus();
+        this.domElement?.classList.add('focused');
+    }
+
+    blur(): void {
+        super.blur();
+        this.domElement?.classList.remove('focused');
     }
 
     updatePosition(x: number, y: number, z: number): this {

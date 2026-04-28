@@ -76,6 +76,9 @@ export type NodeData =
   | TextMeshNodeData | DataNodeData | VideoNodeData | IFrameNodeData | ChartNodeData | MarkdownNodeData
   | GlobeNodeData | SceneNodeData | AudioNodeData | MathNodeData | ProcessNodeData | CodeEditorNodeData | InstancedShapeNodeData;
 
+// Unified SpaceGraph Node Data
+export type SpaceGraphNodeData = NodeData & HtmlNodeData;
+
 // Edge Data
 export interface EdgeData extends BaseEdgeData {
   color?: number; gradientColors?: [string, string]; thickness?: number; thicknessInstanced?: number;

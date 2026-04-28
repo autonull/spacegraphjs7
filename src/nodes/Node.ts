@@ -9,6 +9,8 @@ import type { ControlState } from '../plugins/interaction/ControlStateBorder';
 export type NodeEventMap = {
   'node:updated': { node: Node; changes: Partial<NodeSpec>; timestamp: number };
   'node:destroying': { node: Node; timestamp: number };
+  'focus': { node: Node };
+  'blur': { node: Node };
 };
 
 export abstract class Node extends Surface {
@@ -21,6 +23,8 @@ export abstract class Node extends Surface {
   public rotation: THREE.Vector3;
   public scale: THREE.Vector3;
   public controlState: ControlState = 'normal';
+  public focusable = false;
+  public focused = false;
   abstract readonly object: THREE.Object3D;
   callbacks?: {
     onPointerEnter?: (node: Node) => void;
@@ -176,6 +180,19 @@ export abstract class Node extends Surface {
     isDraggable(_localPos: THREE.Vector3): boolean {
         return true;
     }
+
+    focus(): void {
+        this.focused = true;
+        this.emit('focus', { node: this });
+    }
+
+    blur(): void {
+        this.focused = false;
+        this.emit('blur', { node: this });
+    }
+
+    onFocus?(): void;
+    onBlur?(): void;
 
 animate(props: AnimationProps): this {
     const { scale, ...positionProps } = props;
