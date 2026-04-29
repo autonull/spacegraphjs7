@@ -1,10 +1,14 @@
-// builder.ts - Aggressively ergonomic API
+// builder.ts - Ergonomic Graph Builder API
 import type { SpaceGraph } from './SpaceGraph';
 import type { GraphSpec, NodeSpec, EdgeSpec, SpaceGraphOptions } from './types';
 
+const TAU = Math.PI * 2;
+
+// ============= Node Builder =============
 export class NodeBuilder {
   private spec: NodeSpec;
   constructor(id: string, type: string = 'ShapeNode') { this.spec = { id, type }; }
+
   label(label: string): this { this.spec.label = label; return this; }
   position(x: number, y: number, z: number = 0): this { this.spec.position = [x, y, z]; return this; }
   rotation(x: number, y: number, z: number = 0): this { this.spec.rotation = [x, y, z]; return this; }
@@ -12,70 +16,112 @@ export class NodeBuilder {
   data(data: Record<string, unknown>): this { this.spec.data = data; return this; }
   size(size: number): this { this.spec.data = { ...this.spec.data, size }; return this; }
   color(color: number | string): this { this.spec.data = { ...this.spec.data, color }; return this; }
+  opacity(opacity: number): this { this.spec.data = { ...this.spec.data, opacity }; return this; }
   params(params: Record<string, unknown>): this { this.spec.parameters = params; return this; }
+
+  // Ergonomic shorthand methods
+  at(x: number, y: number, z?: number): this { return this.position(x, y, z ?? 0); }
+  rotate(x: number, y: number, z?: number): this { return this.rotation(x, y, z ?? 0); }
+  scaleTo(x: number, y?: number, z?: number): this { return this.scale(x, y ?? x, z ?? x); }
+
   build(): NodeSpec { return this.spec; }
+
+  // Fluent: convert to spec directly
+  toSpec(): NodeSpec { return this.spec; }
 }
 
+// ============= Edge Builder =============
 export class EdgeBuilder {
   private spec: EdgeSpec;
   constructor(id: string, source: string, target: string, type: string = 'Edge') { this.spec = { id, source, target, type }; }
+
   data(data: Record<string, unknown>): this { this.spec.data = data; return this; }
   label(label: string): this { this.spec.data = { ...this.spec.data, label }; return this; }
   thickness(thickness: number): this { this.spec.data = { ...this.spec.data, thickness }; return this; }
   dashed(dashed: boolean = true): this { this.spec.data = { ...this.spec.data, dashed }; return this; }
   arrowhead(arrowhead: boolean | 'source' | 'target' | 'both' = true): this { this.spec.data = { ...this.spec.data, arrowhead }; return this; }
+  color(color: number | string): this { this.spec.data = { ...this.spec.data, color }; return this; }
+
   build(): EdgeSpec { return this.spec; }
+  toSpec(): EdgeSpec { return this.spec; }
 }
 
+// ============= Graph Spec Builder =============
 export class GraphSpecBuilder {
   private nodes: NodeSpec[] = [];
   private edges: EdgeSpec[] = [];
 
+  // Fluent node building
   node(id: string, type?: string): NodeBuilder {
     const builder = new NodeBuilder(id, type);
     this.nodes.push(builder.build());
     return builder;
   }
 
+  // Add pre-built node
   addNode(node: NodeSpec): this { this.nodes.push(node); return this; }
+
+  // Fluent edge building
   edge(id: string, source: string, target: string, type?: string): EdgeBuilder {
     const builder = new EdgeBuilder(id, source, target, type);
     this.edges.push(builder.build());
     return builder;
   }
+
+  // Add pre-built edge
   addEdge(edge: EdgeSpec): this { this.edges.push(edge); return this; }
 
-  addNodes(nodes: Array<{ id: string; type?: string; label?: string }>): this {
-    nodes.forEach(({ id, type, label }) => {
-      const builder = new NodeBuilder(id, type);
-      this.nodes.push((label ? builder.label(label) : builder).build());
-    });
+  // Batch add nodes - supports multiple input formats
+  addNodes(
+    nodes: Array<{ id: string; type?: string; label?: string } | string>,
+  ): this {
+    for (const n of nodes) {
+      if (isString(n)) this.node(n, 'ShapeNode');
+      else this.node(n.id, n.type).label(n.label ?? '');
+    }
     return this;
   }
 
+  // Convenience: connect two nodes
+  connect(source: string, target: string, id?: string): this {
+    this.edge(id ?? `e-${source}-${target}`, source, target);
+    return this;
+  }
+
+  // Connect chain of nodes: a -> b -> c -> d
   connectChain(nodeIds: string[]): this {
-    for (let i = 1; i < nodeIds.length; i++)
-      this.addEdge({ id: `edge-${nodeIds[i - 1]}-${nodeIds[i]}`, source: nodeIds[i - 1], target: nodeIds[i] });
+    for (let i = 1; i < nodeIds.length; i++) {
+      this.edge(`edge-${nodeIds[i - 1]}-${nodeIds[i]}`, nodeIds[i - 1], nodeIds[i]);
+    }
     return this;
   }
 
+  // Connect star: center -> all spokes
   connectStar(centerId: string, spokeIds: string[]): this {
-    spokeIds.forEach((spokeId) => this.addEdge({ id: `edge-${centerId}-${spokeId}`, source: centerId, target: spokeId }));
+    spokeIds.forEach(spokeId => this.edge(`edge-${centerId}-${spokeId}`, centerId, spokeId));
     return this;
   }
 
-  build(): GraphSpec { return { nodes: this.nodes, edges: this.edges }; }
+  // Build graph spec
+  build(): GraphSpec {
+    return { nodes: this.nodes, edges: this.edges };
+  }
 
+  // Async create SpaceGraph instance
   async create(container: string | HTMLElement, options?: SpaceGraphOptions): Promise<SpaceGraph> {
     const { SpaceGraph } = await import('./SpaceGraph');
     return SpaceGraph.create(container, this.build(), options);
   }
+
+  // Convert to raw spec
+  toSpec(): GraphSpec { return this.build(); }
 }
 
-// Fluent API factory
-export function graph(): GraphSpecBuilder { return new GraphSpecBuilder(); }
+// ============= Factory Functions =============
+// Main graph builder factory
+export const graph = (): GraphSpecBuilder => new GraphSpecBuilder();
 
-// Quick graph - create graph with minimal syntax
+// Quick graph - minimal syntax for rapid prototyping
 export async function quickGraph(
   container: string | HTMLElement,
   nodes: Array<{ id: string; label?: string; position?: [number, number, number]; data?: Record<string, unknown> }>,
@@ -86,19 +132,22 @@ export async function quickGraph(
   return SpaceGraph.quickGraph(container, nodes, edges, options);
 }
 
-// Pre-built patterns with chainable API
+// ============= Pre-built Patterns =============
 export const Patterns = {
+  // Circle of nodes
   circle(count: number, radius: number = 100, label?: string): GraphSpecBuilder {
     const builder = graph();
-    const angleStep = (2 * Math.PI) / count;
+    const angleStep = TAU / count;
     for (let i = 0; i < count; i++) {
       const angle = i * angleStep;
-      builder.node(`node-${i}`, 'ShapeNode', `${label || 'Node'} ${i}`).position(Math.cos(angle) * radius, 0, Math.sin(angle) * radius);
+      builder.node(`node-${i}`, 'ShapeNode', `${label || 'Node'} ${i}`)
+        .position(Math.cos(angle) * radius, 0, Math.sin(angle) * radius);
       if (i > 0) builder.addEdge({ id: `edge-${i}`, source: `node-${i - 1}`, target: `node-${i}` });
     }
     return builder;
   },
 
+  // Grid layout
   grid(rows: number, cols: number, spacing: number = 100): GraphSpecBuilder {
     const builder = graph();
     for (let row = 0; row < rows; row++) {
@@ -112,6 +161,7 @@ export const Patterns = {
     return builder;
   },
 
+  // Hierarchical tree
   hierarchy(levels: number[], spacing: number = 100): GraphSpecBuilder {
     const builder = graph();
     let nodeId = 0, prevLevelStart = 0;
@@ -132,6 +182,7 @@ export const Patterns = {
     return builder;
   },
 
+  // Linear chain
   chain(count: number, spacing: number = 100): GraphSpecBuilder {
     const builder = graph();
     for (let i = 0; i < count; i++) {
@@ -141,20 +192,42 @@ export const Patterns = {
     return builder;
   },
 
+  // Star/hub-and-spoke
   star(spokes: number, radius: number = 100): GraphSpecBuilder {
     const builder = graph();
-    const angleStep = (2 * Math.PI) / spokes;
+    const angleStep = TAU / spokes;
     builder.node('center', 'ShapeNode', 'Center').position(0, 0, 0);
     for (let i = 0; i < spokes; i++) {
       const angle = i * angleStep;
-      builder.node(`spoke-${i}`, 'ShapeNode', `Spoke ${i}`).position(Math.cos(angle) * radius, 0, Math.sin(angle) * radius);
+      builder.node(`spoke-${i}`, 'ShapeNode', `Spoke ${i}`)
+        .position(Math.cos(angle) * radius, 0, Math.sin(angle) * radius);
       builder.addEdge({ id: `edge-${i}`, source: 'center', target: `spoke-${i}` });
+    }
+    return builder;
+  },
+
+  // Binary tree
+  binaryTree(depth: number, spacing: number = 100): GraphSpecBuilder {
+    const builder = graph();
+    const addNode = (level: number, index: number): string => {
+      const id = `node-${level}-${index}`;
+      const x = (index - (2 ** level - 1) / 2) * spacing;
+      const y = level * spacing;
+      builder.node(id, 'ShapeNode', id).position(x, 0, -y);
+      if (level > 0) {
+        const parentIndex = Math.floor((index - 1) / 2);
+        builder.addEdge({ id: `e-${id}-p`, source: `node-${level - 1}-${parentIndex}`, target: id });
+      }
+      return id;
+    };
+    for (let l = 0; l < depth; l++) {
+      for (let i = 0; i < 2 ** l; i++) addNode(l, i);
     }
     return builder;
   },
 };
 
-// Animation helpers - chainable GSAP utilities
+// ============= Animation Helpers =============
 export const Animate = {
   move(sg: SpaceGraph, nodeId: string, to: { x?: number; y?: number; z?: number }, duration: number = 1000): Promise<void> {
     const node = sg.graph.getNode(nodeId);
@@ -186,7 +259,7 @@ export const Animate = {
   },
 };
 
-// Layout helpers - unified layout application
+// ============= Layout Helpers =============
 export const Layout = {
   async apply(sg: SpaceGraph, layoutName: string, options?: Record<string, unknown>): Promise<void> {
     const plugin = sg.pluginManager.getPlugin(layoutName);
@@ -200,7 +273,7 @@ export const Layout = {
   radial(sg: SpaceGraph, options?: { duration?: number; easing?: string }): Promise<void> { return Layout.apply(sg, 'RadialLayout', options); },
 };
 
-// Camera helpers - ergonomic camera operations
+// ============= Camera Helpers =============
 export const Camera = {
   fitView(sg: SpaceGraph, padding?: number, duration?: number): void { sg.fitView(padding, duration); },
 

@@ -1,9 +1,9 @@
-// types.ts - Consolidated ergonomic types
+// types.ts - Ergonomic TypeScript types
 import type { Node } from './nodes/Node';
 import type { Edge } from './edges/Edge';
 import type { SpaceGraph } from './SpaceGraph';
 
-// Utilities
+// ============= Utility Types =============
 export type Maybe<T> = T | null | undefined;
 export type MaybePromise<T> = T | Promise<T>;
 export type Constructor<T, Args extends unknown[] = unknown[]> = new (...args: Args) => T;
@@ -12,8 +12,9 @@ export type EventHandler<T = any> = (event: T) => void;
 export type Disposer = () => void;
 export type Nullable<T> = T | null;
 export type Optional<T> = Partial<T>;
+export type Awaited<T> = T extends Promise<infer U> ? U : T;
 
-// Geometry
+// ============= Geometry Types =============
 export interface Rect { x: number; y: number; width: number; height: number; }
 export interface Point2D { x: number; y: number; }
 export interface Point3D { x: number; y: number; z: number; }
@@ -23,13 +24,12 @@ export interface Bounds3D {
   intersectsRay(ray: any): boolean;
 }
 
-// Base Data
+// ============= Base Data Types =============
 export interface BaseNodeData { [key: string]: unknown; pinned?: boolean; visible?: boolean; }
 export interface BaseEdgeData { [key: string]: unknown; }
-
 export interface LabelLodLevel { distance?: number; scale?: number; style?: string; min?: number; max?: number; label?: string; }
 
-// Node Data Types
+// ============= Node Data Types =============
 export interface ShapeNodeData extends BaseNodeData {
   shape?: 'box' | 'sphere' | 'circle' | 'plane' | 'cone' | 'cylinder' | 'torus' | 'ring';
   size?: number; color?: string | number; opacity?: number; wireframe?: boolean; transparent?: boolean; side?: 'front' | 'back' | 'double';
@@ -79,7 +79,7 @@ export type NodeData =
 // Unified SpaceGraph Node Data
 export type SpaceGraphNodeData = NodeData & HtmlNodeData;
 
-// Edge Data
+// ============= Edge Data Types =============
 export interface EdgeData extends BaseEdgeData {
   color?: number; gradientColors?: [string, string]; thickness?: number; thicknessInstanced?: number;
   arrowhead?: boolean | 'source' | 'target' | 'both'; arrowheadSize?: number; arrowheadColor?: number;
@@ -87,7 +87,7 @@ export interface EdgeData extends BaseEdgeData {
   label?: string; labelColor?: string; fontSize?: number; labelLod?: LabelLodLevel[];
 }
 
-// Specifications
+// ============= Specification Types =============
 export interface NodeSpec<T extends NodeData = NodeData> {
   id: string; type: string; label?: string;
   position?: [number, number, number]; rotation?: [number, number, number]; scale?: [number, number, number];
@@ -102,7 +102,7 @@ export interface GraphSpec {
 }
 export interface SpecUpdate { nodes?: Partial<NodeSpec>[]; edges?: Partial<EdgeSpec>[]; }
 
-// Events
+// ============= Event Types =============
 export type GraphEvent = 'node:added' | 'node:removed' | 'node:updated' | 'edge:added' | 'edge:removed' | 'edge:updated';
 export type NodeEvent = 'node:updated' | 'node:destroying';
 export type EdgeEvent = 'edge:updated' | 'edge:destroying';
@@ -111,7 +111,7 @@ export interface SpaceGraphEvents {
   'edge:added': any; 'edge:removed': any; 'edge:updated': any;
 }
 
-// Options
+// ============= Options Types =============
 export interface SpaceGraphOptions {
   onnxExecutionProviders?: string[];
   vision?: { wasmPaths?: string; heuristics?: { wcagThreshold?: number; overlapPadding?: number; fittsLawTargetSize?: number } };
@@ -121,7 +121,7 @@ export interface SpaceGraphOptions {
   [key: string]: unknown;
 }
 
-// Detailed input configuration (merged from DefaultInputConfig.ts)
+// Input configuration
 export interface DefaultInputConfig {
   camera?: CameraInputConfig;
   interaction?: InteractionInputConfig;
@@ -136,9 +136,7 @@ export interface InteractionInputConfig {
   enableHover?: boolean; enableBoxSelect?: boolean; enableDrag?: boolean; enableWidgets?: boolean;
   clickThreshold?: number;
 }
-export interface HistoryInputConfig {
-  enabled?: boolean;
-}
+export interface HistoryInputConfig { enabled?: boolean; }
 
 export interface RenderOptions { antialias?: boolean; alpha?: boolean; backgroundColor?: string | number; pixelRatio?: number; }
 export interface AnimationProps {
@@ -146,7 +144,7 @@ export interface AnimationProps {
   duration?: number; ease?: string; delay?: number; onUpdate?: () => void;
 }
 
-// Export/Import
+// ============= Export/Import Types =============
 export interface GraphExport {
   nodes: Array<{ id: string; type: string; label?: string; position: [number, number, number]; data: unknown }>;
   edges: Array<{ id: string; source: string; target: string; type: string; data: unknown }>;
@@ -155,7 +153,7 @@ export interface GraphExport {
 }
 export type GraphImportData = GraphExport;
 
-// Plugin System
+// ============= Plugin System Types =============
 export interface PluginLifecycle {
   init?(sg: any, graph: any, events: any): void | Promise<void>;
   onPreRender?(delta: number): void; onPostRender?(delta: number): void;
@@ -165,23 +163,30 @@ export interface PluginLifecycle {
 }
 export interface Plugin extends PluginLifecycle { readonly id: string; readonly name: string; readonly version: string; }
 
-// Constructors
+// ============= Constructor Types =============
 export type NodeConstructor = new (sg: SpaceGraph, spec: NodeSpec) => Node;
 export type EdgeConstructor = new (sg: SpaceGraph, spec: EdgeSpec, source: Node, target: Node) => Edge;
 
-// Vision
+// ============= Vision Types =============
 export type VisionCategory = 'wcag' | 'overlap' | 'fitts' | 'all';
 export interface VisionOptions { enabled?: boolean; categories?: VisionCategory[]; threshold?: number; }
 export interface VisionReport { score: number; issues: Array<{ type: string; severity: number; message: string }>; }
 export interface VisionScore { wcag: number; overlap: number; fitts: number; overall: number; }
 
-// Aliases
+// ============= Alias Types =============
 export type NodeType = string;
 export type EdgeType = string;
 export type GeometryFamily = string;
 export type HitResult = any;
-export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 export type LayoutName = string;
 export type MermaidThemeName = 'default' | 'forest' | 'dark' | 'neutral';
 export type MermaidLayoutType = 'graph' | 'flowchart' | 'sequence' | 'class' | 'state' | 'gantt';
 export type MermaidNodeShape = 'default' | 'circle' | 'ellipse' | 'rect' | 'diamond';
+
+// ============= Layout Types =============
+export interface LayoutConfig { type: LayoutName; options?: LayoutOptions; }
+export interface LayoutOptions extends Record<string, unknown> { duration?: number; easing?: string; }
+
+// ============= Utility Aliases =============
+export type { LogLevel as LogLevel } from './utils/logger';
+export type { Logger as Logger } from './utils/logger';

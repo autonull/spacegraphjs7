@@ -1,7 +1,7 @@
 // utils/index.ts - Consolidated utility exports
 // All utilities re-exported from single source for better tree-shaking
 
-// Math utilities (consolidated)
+// Math utilities
 export {
   // Constants
   DEG2RAD,
@@ -18,6 +18,7 @@ export {
   isBoolean,
   isArray,
   isPlainObject,
+  isDefined,
 
   // Math functions
   clamp,
@@ -51,13 +52,13 @@ export {
   randomBool,
   randomPick,
 
-  // Color (consolidated from color.ts)
-  getRelativeLuminance,
-  getContrastRatio,
-  getCompliantColor,
+  // Color
   hexToRgb,
   rgbToHex,
   toHexColor,
+  getRelativeLuminance,
+  getContrastRatio,
+  getCompliantColor,
 
   // Object utilities
   mergeDeep,
@@ -88,8 +89,13 @@ export {
   // Error handling
   wrapError,
 
-  // Type utilities
-  isDefined,
+  // Functional utilities
+  pipe,
+  compose,
+  partial,
+  curry,
+  once,
+  cacheWithTTL,
 } from './math';
 
 // Logger
@@ -126,7 +132,7 @@ export { wrapError as wrapErrorDetailed, SpaceGraphError, NotImplementedError, V
 // Gesture utilities
 export { GestureManager } from './GestureManager';
 
-// Graph generators (consolidated)
+// Graph generators
 export {
   randomTree,
   randomMesh,

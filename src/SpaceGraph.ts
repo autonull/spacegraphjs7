@@ -1,4 +1,4 @@
-// SpaceGraph.ts - Aggressively optimized core
+// SpaceGraph.ts - Core graph visualization engine
 import { Graph } from './core/Graph';
 import { Renderer } from './core/Renderer';
 import { PluginManager } from './core/PluginManager';
@@ -17,8 +17,13 @@ import type { GraphSpec, SpaceGraphOptions, SpecUpdate, GraphImportData } from '
 const logger = createLogger('SpaceGraph');
 
 export class SpaceGraph {
+  // Static registry of all instances
   public static instances = new Set<SpaceGraph>();
+
+  // DOM container
   public readonly container: HTMLElement;
+
+  // Core subsystems
   public renderer!: Renderer;
   public graph!: Graph;
   public pluginManager!: PluginManager;
@@ -27,8 +32,11 @@ export class SpaceGraph {
   public vision!: VisionManager;
   public poolManager!: ObjectPoolManager<any>;
   public input!: InputManager;
+
+  // Configuration
   public readonly options: SpaceGraphOptions;
 
+  // Animation state
   private animationFrameId?: number;
   private lastTimestamp = 0;
   private _animating = false;
@@ -57,6 +65,7 @@ export class SpaceGraph {
     applyDefaultInputConfig(this.input, this, config);
   }
 
+  // ============= Static Factory Methods =============
   static getContainerElement(container: string | HTMLElement): HTMLElement | null {
     return typeof container === 'string' ? (document.querySelector(container) as HTMLElement) : container;
   }
@@ -72,6 +81,63 @@ export class SpaceGraph {
     return graph;
   }
 
+  static async load(container: string | HTMLElement, data: GraphImportData, options: SpaceGraphOptions = {}): Promise<SpaceGraph> {
+    const element = SpaceGraph.getContainerElement(container);
+    if (!element) throw new Error(`[SpaceGraph] Container not found: "${container}"`);
+
+    const sg = new SpaceGraph(element, options);
+    try {
+      await sg.init();
+      sg.import(data).render();
+    } catch (err) {
+      throw wrapError(err, { namespace: 'SpaceGraph', operation: 'Import', reason: 'Failed to import data' }, logger);
+    }
+    return sg;
+  }
+
+  static async fromURL(url: string, container: string | HTMLElement, options: SpaceGraphOptions = {}): Promise<SpaceGraph> {
+    if (!url || typeof url !== 'string') throw new Error(`[SpaceGraph] Invalid URL: "${url}"`);
+    if (!container) throw new Error('[SpaceGraph] Container is required');
+
+    const sg = new SpaceGraph(container, options);
+    try {
+      await sg.init();
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
+      sg.loadSpec(await response.json() as GraphSpec).render();
+    } catch (err) {
+      throw wrapError(err, { namespace: 'SpaceGraph', operation: 'fromURL', reason: `Failed to load from ${url}` }, logger);
+    }
+    return sg;
+  }
+
+  static async quickGraph(
+    container: string | HTMLElement,
+    nodes: Array<{ id: string; label?: string; position?: [number, number, number]; data?: Record<string, unknown> }>,
+    edges?: Array<{ id: string; source: string; target: string }>,
+    options?: SpaceGraphOptions,
+  ): Promise<SpaceGraph> {
+    return SpaceGraph.create(container, createQuickGraphSpec(nodes, edges), options);
+  }
+
+  static async fromManifest(origin: string, container: string | HTMLElement, options: SpaceGraphOptions = {}): Promise<SpaceGraph> {
+    const manifestUrl = `${origin}/.well-known/zui-manifest.json`;
+    const response = await fetch(manifestUrl);
+    if (!response.ok) throw new Error(`Failed to fetch manifest: ${response.statusText}`);
+    const manifest = (await response.json()) as Record<string, any>;
+
+    let spec: GraphSpec;
+    if (manifest.spec) spec = manifest.spec as GraphSpec;
+    else if (manifest.spec_url) {
+      const specResponse = await fetch(manifest.spec_url as string);
+      if (!specResponse.ok) throw new Error(`Failed to fetch spec: ${specResponse.statusText}`);
+      spec = await specResponse.json();
+    } else throw new Error('Manifest must include spec or spec_url');
+
+    return SpaceGraph.create(container, spec, { ...options, initialLayout: manifest.initial_layout });
+  }
+
+  // ============= Instance Methods =============
   async init(): Promise<void> {
     this.renderer.init();
     this._registerDefaults();
@@ -92,6 +158,7 @@ export class SpaceGraph {
     this.input.registerFingering(createCameraFingering(this.cameraControls, 'zoom'), FingeringPriority.CAMERA_ZOOM);
   }
 
+  // ============= Graph Manipulation =============
   loadSpec(spec: GraphSpec): this {
     spec.nodes?.forEach(node => this.graph.addNode(node));
     spec.edges?.forEach(edge => this.graph.addEdge(edge));
@@ -152,6 +219,7 @@ export class SpaceGraph {
     return this;
   }
 
+  // ============= Camera Controls =============
   fitView(padding: number = 100, duration: number = 1.5): this {
     const nodes = Array.from(this.graph.nodes.values());
     const fit = CameraUtils.calculateFitValue(nodes, this.renderer.camera, padding);
@@ -159,6 +227,16 @@ export class SpaceGraph {
     return this;
   }
 
+  // Convenience: get/set camera position
+  get cameraPosition(): [number, number, number] {
+    return [this.renderer.camera.position.x, this.renderer.camera.position.y, this.renderer.camera.position.z];
+  }
+
+  get cameraTarget(): [number, number, number] {
+    return this.cameraControls ? [this.cameraControls.target.x, this.cameraControls.target.y, this.cameraControls.target.z] : [0, 0, 0];
+  }
+
+  // ============= Animation Loop =============
   animate(timestamp: number = 0): void {
     if (!this._animating) return;
     this.animationFrameId = requestAnimationFrame(t => this.animate(t));
@@ -184,12 +262,21 @@ export class SpaceGraph {
     return this;
   }
 
-  dispose(): void {
+  pause(): void {
+    this._animating = false;
     if (this.animationFrameId) {
       cancelAnimationFrame(this.animationFrameId);
       this.animationFrameId = undefined;
     }
-    this._animating = false;
+  }
+
+  resume(): this {
+    return this.render();
+  }
+
+  // ============= Lifecycle =============
+  dispose(): void {
+    this.pause();
     this.pluginManager.disposePlugins();
     this.graph.clear();
 
@@ -201,6 +288,10 @@ export class SpaceGraph {
     SpaceGraph.instances.delete(this);
   }
 
+  // Alias for dispose() - more JavaScript-idiomatic
+  destroy(): void { this.dispose(); }
+
+  // ============= Utility =============
   private static checkWebGL(): boolean {
     try {
       const canvas = DOMUtils.createElement('canvas');
@@ -208,59 +299,12 @@ export class SpaceGraph {
     } catch { return false; }
   }
 
-  static async load(container: string | HTMLElement, data: GraphImportData, options: SpaceGraphOptions = {}): Promise<SpaceGraph> {
-    const element = SpaceGraph.getContainerElement(container);
-    if (!element) throw new Error(`[SpaceGraph] Container not found: "${container}"`);
+  // Check if currently rendering
+  get isRendering(): boolean { return this._animating; }
 
-    const sg = new SpaceGraph(element, options);
-    try {
-      await sg.init();
-      sg.import(data).render();
-    } catch (err) {
-      throw wrapError(err, { namespace: 'SpaceGraph', operation: 'Import', reason: 'Failed to import data' }, logger);
-    }
-    return sg;
-  }
+  // Get node count
+  get nodeCount(): number { return this.graph.nodes.size; }
 
-  static async fromURL(url: string, container: string | HTMLElement, options: SpaceGraphOptions = {}): Promise<SpaceGraph> {
-    if (!url || typeof url !== 'string') throw new Error(`[SpaceGraph] Invalid URL: "${url}"`);
-    if (!container) throw new Error('[SpaceGraph] Container is required');
-
-    const sg = new SpaceGraph(container, options);
-    try {
-      await sg.init();
-      const response = await fetch(url);
-      if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
-      sg.loadSpec(await response.json() as GraphSpec).render();
-    } catch (err) {
-      throw wrapError(err, { namespace: 'SpaceGraph', operation: 'fromURL', reason: `Failed to load from ${url}` }, logger);
-    }
-    return sg;
-  }
-
-  static async quickGraph(
-    container: string | HTMLElement,
-    nodes: Array<{ id: string; label?: string; position?: [number, number, number]; data?: Record<string, unknown> }>,
-    edges?: Array<{ id: string; source: string; target: string }>,
-    options?: SpaceGraphOptions,
-  ): Promise<SpaceGraph> {
-    return SpaceGraph.create(container, createQuickGraphSpec(nodes, edges), options);
-  }
-
-  static async fromManifest(origin: string, container: string | HTMLElement, options: SpaceGraphOptions = {}): Promise<SpaceGraph> {
-    const manifestUrl = `${origin}/.well-known/zui-manifest.json`;
-    const response = await fetch(manifestUrl);
-    if (!response.ok) throw new Error(`Failed to fetch manifest: ${response.statusText}`);
-    const manifest = (await response.json()) as Record<string, any>;
-
-    let spec: GraphSpec;
-    if (manifest.spec) spec = manifest.spec as GraphSpec;
-    else if (manifest.spec_url) {
-      const specResponse = await fetch(manifest.spec_url as string);
-      if (!specResponse.ok) throw new Error(`Failed to fetch spec: ${specResponse.statusText}`);
-      spec = await specResponse.json();
-    } else throw new Error('Manifest must include spec or spec_url');
-
-    return SpaceGraph.create(container, spec, { ...options, initialLayout: manifest.initial_layout });
-  }
+  // Get edge count
+  get edgeCount(): number { return this.graph.edges.size; }
 }

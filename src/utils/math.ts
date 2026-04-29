@@ -1,4 +1,4 @@
-// math.ts - Consolidated math and utility functions
+// math.ts - Modern ES2022+ math and utility functions
 // Type-safe, performant, and deduplicated
 
 // ============= Constants =============
@@ -34,7 +34,7 @@ export const smoothstep = (e0: number, e1: number, x: number): number => {
 };
 export const smootherstep = (e0: number, e1: number, x: number): number => {
   const t = clamp((x - e0) / (e1 - e0), 0, 1);
-  return t * t * t * (t * (t * 6 - 15) + 10);
+  return t * t * (t * (t * 6 - 15) + 10);
 };
 export const mapRange = (v: number, inMin: number, inMax: number, outMin: number, outMax: number): number =>
   inMax === inMin ? outMin : ((v - inMin) * (outMax - outMin)) / (inMax - inMin) + outMin;
@@ -89,6 +89,13 @@ export function hexToRgb(hex: string | number): { r: number; g: number; b: numbe
 
 export function rgbToHex(r: number, g: number, b: number): string {
   return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+}
+
+export function toHexColor(color: string | number): string {
+  if (typeof color === 'number') {
+    return `#${color.toString(16).padStart(6, '0')}`;
+  }
+  return color.startsWith('#') ? color : `#${color}`;
 }
 
 // ============= Object Utilities =============
@@ -274,10 +281,64 @@ export function isDefined<T>(value: T | null | undefined): value is T {
   return value !== null && value !== undefined;
 }
 
-// ============= Color Utilities =============
-export function toHexColor(color: string | number): string {
-  if (typeof color === 'number') {
-    return `#${color.toString(16).padStart(6, '0')}`;
-  }
-  return color.startsWith('#') ? color : `#${color}`;
-}
+// ============= Functional Utilities =============
+// Pipe for method chaining
+export const pipe = <T>(value: T): { and: <R>(fn: (v: T) => R) => R } => ({
+  and: <R>(fn: (v: T) => R) => fn(value),
+}) as any;
+
+// Compose functions right-to-left
+export const compose = <Fns extends ((...args: any[]) => any)[]>(...fns: Fns) => {
+  return (...args: Parameters<Fns[0]>) => {
+    let result = fns[0](...args);
+    for (let i = 1; i < fns.length; i++) {
+      result = fns[i](result);
+    }
+    return result;
+  };
+};
+
+// Partial application
+export const partial = <T extends (...args: any[]) => any>(
+  fn: T,
+  ...args: Parameters<T>
+): (...args: Parameters<T>) => ReturnType<T> => {
+  return (...rest: Parameters<T>) => fn(...args, ...rest);
+};
+
+// Curry a function
+export const curry = <T extends (...args: any[]) => any>(fn: T): any => {
+  return (...args: any[]) => {
+    if (args.length >= fn.length) return fn(...args);
+    return (...more: any[]) => fn(...args, ...more);
+  };
+};
+
+// Once - execute function only once
+export const once = <T extends (...args: any[]) => any>(fn: T): T => {
+  let called = false;
+  let result: any;
+  return ((...args: any[]) => {
+    if (!called) {
+      called = true;
+      result = fn(...args);
+    }
+    return result;
+  }) as T;
+};
+
+// Cache with TTL
+export const cacheWithTTL = <T extends (...args: any[]) => any>(
+  fn: T,
+  ttl: number = 60000,
+): T => {
+  const cache = new Map<string, { value: any; expires: number }>();
+  return ((...args: any[]) => {
+    const key = JSON.stringify(args);
+    const entry = cache.get(key);
+    if (entry && entry.expires > Date.now()) return entry.value;
+    const value = fn(...args);
+    cache.set(key, { value, expires: Date.now() + ttl });
+    return value;
+  }) as T;
+};

@@ -1,8 +1,8 @@
-// SpaceGraphJS v7.0.0 - Aggressively Refactored
+// SpaceGraphJS v7 - Ergonomic Developer API
 import './init';
 import { SpaceGraph as SG } from './SpaceGraph';
 
-// Core
+// Core classes
 export { SpaceGraph } from './SpaceGraph';
 export { Graph } from './core/Graph';
 export { Renderer } from './core/Renderer';
@@ -15,7 +15,7 @@ export { PluginManager, type Plugin } from './core/PluginManager';
 export { Surface } from './core/Surface';
 export { TypeRegistry, type NodeConstructor, type EdgeConstructor } from './core/TypeRegistry';
 
-// Builder API - consolidated from builder.ts
+// Builder API - fluent graph construction
 export {
   NodeBuilder,
   EdgeBuilder,
@@ -28,7 +28,7 @@ export {
   Camera,
 } from './builder';
 
-// Constants
+// Constants - one-stop import
 export {
   AnimationDuration,
   ZoomConfig,
@@ -39,6 +39,7 @@ export {
   EdgeColors,
   InputConfig,
   WCAG,
+  CONSTANTS,
 } from './core/constants';
 
 // Defaults
@@ -50,70 +51,132 @@ export {
   createQuickGraphSpec,
 } from './core/defaults';
 
-// Utils
+// Utility functions - consolidated
 export {
+  // Math constants
   DEG2RAD,
   RAD2DEG,
+  PI,
+  TAU,
+  EPSILON,
+
+  // Type guards
+  isObject,
+  isFunction,
+  isString,
+  isNumber,
+  isBoolean,
+  isArray,
+  isPlainObject,
+  isDefined,
+
+  // Math utilities
   clamp,
+  clamp01,
   lerp,
-  mergeDeep,
-  toHexColor,
+  lerpClamped,
+  inverseLerp,
+  smoothstep,
+  smootherstep,
+  mapRange,
+  round,
+  approx,
+  sign,
+  abs,
+  min,
+  max,
+  sum,
+  mean,
+
+  // 3D math
+  lerp3,
+  min3,
+  max3,
+  clamp180,
+  angleDiff,
+
+  // Random
   randomRange,
   randomInt,
-  smoothstep,
-  mapRange,
+  randomBool,
+  randomPick,
+
+  // Color
+  toHexColor,
+  hexToRgb,
+  rgbToHex,
+  getRelativeLuminance,
+  getContrastRatio,
+  getCompliantColor,
+
+  // Object
+  mergeDeep,
   safeClone,
+  deepEqual,
+
+  // Function
   debounce,
   throttle,
-  isDefined,
-  isPromise,
-  sleep,
-  retry,
+
+  // Memoization
+  memoize,
+  memoizeWithKey,
+
+  // Array
   groupBy,
   unique,
   flatten,
   chunk,
-  hexToRgb,
-  rgbToHex,
+
+  // Promise
+  isPromise,
+  sleep,
+  retry,
+
+  // Error
   wrapError,
 } from './utils';
 
-export { logger, createLogger, setLogLevel } from './utils/logger';
-export { calculateFitValue, CameraUtils } from './utils/CameraUtils';
-export type { FitValueResult, Point } from './utils/CameraUtils';
-export { createElement, DOMUtils } from './utils/DOMUtils';
-export type { DOMElementOptions } from './utils/DOMUtils';
-export { getRelativeLuminance, getContrastRatio, getCompliantColor } from './utils/color';
+export { logger, createLogger, setLogLevel, type LogLevel, type Logger } from './utils/logger';
+export { calculateFitValue, CameraUtils, type FitValueResult, type Point } from './utils/CameraUtils';
+export { createElement, DOMUtils, type DOMElementOptions } from './utils/DOMUtils';
+export { disposeThreeObject } from './utils/ThreeDisposer';
 
-// Input
-export { InputManager, FingerManager, Fingering, createParentTransform } from './input';
-export { createCameraFingering, type CameraAction } from './input/fingerings';
+// Input system
+export {
+  InputManager,
+  FingerManager,
+  Fingering,
+  createParentTransform,
+  createCameraFingering,
+  type CameraAction,
+} from './input';
 
-// Plugins - Re-export from plugins/index.ts
+// Plugins
 export * from './plugins';
 
-// Nodes - Re-export from nodes/index.ts
+// Nodes
 export * from './nodes';
 
-// Edges - Re-export from edges/index.ts
+// Edges
 export * from './edges';
 
 // Rendering
-export { InstancedNodeRenderer, GEOMETRY_FAMILIES } from './rendering/InstancedNodeRenderer';
-export type { GeometryFamily as GeometryFamilyType } from './rendering/InstancedNodeRenderer';
+export { InstancedNodeRenderer, GEOMETRY_FAMILIES, type GeometryFamily as GeometryFamilyType } from './rendering/InstancedNodeRenderer';
 
-// Vision
-export { VisionSystem, HeuristicsStrategy } from './vision';
-export type { VisionCategory } from './vision';
+// Vision system
+export { VisionSystem, HeuristicsStrategy, type VisionCategory } from './vision';
 
-// Spatial
+// Spatial indexing
 export { SpatialIndex, BVH } from './core/spatial/SpatialIndex';
 
-// Pooling
-export { ObjectPool, MathPool } from './core/pooling/ObjectPool';
-export { withPooledVector3, withPooledVector2, withPooledMatrix4, withPooledBox3 } from './core/pooling/ObjectPool';
+// Object pooling
+export { ObjectPool, MathPool, withPooledVector3, withPooledVector2, withPooledMatrix4, withPooledBox3 } from './core/pooling/ObjectPool';
 
-// Types
+// Graph utilities
+export { randomTree, randomMesh, scaleFreeGraph, smallWorld, lattice2D } from './utils/graphGenerators';
+
+// Types - comprehensive
 export type {
   SpaceGraphOptions,
   RenderOptions,
