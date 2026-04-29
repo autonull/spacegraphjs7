@@ -87,7 +87,7 @@ export { getRelativeLuminance, getContrastRatio, getCompliantColor } from './uti
 
 // Input
 export { InputManager, FingerManager, Fingering, createParentTransform } from './input';
-export type { CameraOrbitingFingering, CameraPanningFingering, CameraZoomingFingering } from './input/fingerings';
+export { createCameraFingering, type CameraAction } from './input/fingerings';
 
 // Plugins - Re-export from plugins/index.ts
 export * from './plugins';

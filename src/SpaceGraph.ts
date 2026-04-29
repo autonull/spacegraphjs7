@@ -7,7 +7,7 @@ import { EventSystem } from './core/events/EventSystem';
 import { VisionManager } from './core/VisionManager';
 import { InputManager } from './input/InputManager';
 import { applyDefaultInputConfig } from './input/DefaultInputConfig';
-import { CameraOrbitingFingering, CameraPanningFingering, CameraZoomingFingering } from './input/fingerings';
+import { createCameraFingering, FingeringPriority } from './input/fingerings';
 import { createLogger, safeClone, wrapError, CameraUtils, DOMUtils } from './utils';
 import { MathPool } from './core/pooling/ObjectPool';
 import { FingeringPriority, Performance } from './core/constants';
@@ -87,9 +87,9 @@ export class SpaceGraph {
   }
 
   private _registerFingerings(): void {
-    this.input.registerFingering(new CameraOrbitingFingering(this.cameraControls), FingeringPriority.CAMERA_ORBIT);
-    this.input.registerFingering(new CameraPanningFingering(this.cameraControls), FingeringPriority.CAMERA_PAN);
-    this.input.registerFingering(new CameraZoomingFingering(this.cameraControls), FingeringPriority.CAMERA_ZOOM);
+    this.input.registerFingering(createCameraFingering(this.cameraControls, 'orbit'), FingeringPriority.CAMERA_ORBIT);
+    this.input.registerFingering(createCameraFingering(this.cameraControls, 'pan'), FingeringPriority.CAMERA_PAN);
+    this.input.registerFingering(createCameraFingering(this.cameraControls, 'zoom'), FingeringPriority.CAMERA_ZOOM);
   }
 
   loadSpec(spec: GraphSpec): this {

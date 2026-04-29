@@ -1,65 +1,47 @@
 import type { CameraControls } from '../../core/CameraControls';
-import type { Finger, Fingering } from '../Fingering';
+import type { Fingering, Finger } from '../Fingering';
 
-type CameraAction = 'orbit' | 'pan' | 'zoom';
+export type CameraAction = 'orbit' | 'pan' | 'zoom';
 
-interface CameraFingeringState {
+interface CameraFingeringConfig {
     action: CameraAction;
-    active: boolean;
-    startPos: { x: number; y: number };
+    button: number;
 }
 
-const FINGER_BUTTONS: Record<CameraAction, number> = {
-    orbit: 1,
-    pan: 4,
-    zoom: 2,
-};
+const CAMERA_FINGERING_CONFIGS: CameraFingeringConfig[] = [
+    { action: 'orbit', button: 1 },
+    { action: 'pan', button: 4 },
+    { action: 'zoom', button: 2 },
+];
 
 export class CameraFingering implements Fingering {
     private camera: CameraControls;
-    private states = new Map<CameraAction, CameraFingeringState>();
+    private activeConfig: CameraFingeringConfig | null = null;
+    private startPos = { x: 0, y: 0 };
 
     constructor(camera: CameraControls) {
         this.camera = camera;
-        this.initStates();
     }
 
-    private initStates(): void {
-        (['orbit', 'pan', 'zoom'] as CameraAction[]).forEach(action => {
-            this.states.set(action, { action, active: false, startPos: { x: 0, y: 0 } });
-        });
-    }
-
-    private getActionForButton(buttons: number): CameraAction | null {
-        for (const [action, btn] of Object.entries(FINGER_BUTTONS)) {
-            if (btn === buttons) return action as CameraAction;
-        }
-        return null;
-    }
-
-    private getState(action: CameraAction): CameraFingeringState {
-        return this.states.get(action)!;
+    private getConfigForButton(buttons: number): CameraFingeringConfig | null {
+        return CAMERA_FINGERING_CONFIGS.find(c => c.button === buttons) ?? null;
     }
 
     start(finger: Finger): boolean {
-        const action = this.getActionForButton(finger.buttons);
-        if (!action) return false;
+        const config = this.getConfigForButton(finger.buttons);
+        if (!config) return false;
 
-        const state = this.getState(action);
-        state.active = true;
-        state.startPos = { x: finger.position.x, y: finger.position.y };
+        this.activeConfig = config;
+        this.startPos = { x: finger.position.x, y: finger.position.y };
         return true;
     }
 
     update(finger: Finger): boolean {
-        const action = this.getActionForButton(finger.buttons);
-        if (!action) return false;
+        if (!this.activeConfig) return false;
 
-        const state = this.getState(action);
-        if (!state.active) return false;
-
-        const dx = finger.position.x - state.startPos.x;
-        const dy = finger.position.y - state.startPos.y;
+        const dx = finger.position.x - this.startPos.x;
+        const dy = finger.position.y - this.startPos.y;
+        const { action } = this.activeConfig;
 
         switch (action) {
             case 'orbit':
@@ -75,14 +57,12 @@ export class CameraFingering implements Fingering {
             }
         }
 
-        state.startPos = { x: finger.position.x, y: finger.position.y };
+        this.startPos = { x: finger.position.x, y: finger.position.y };
         return true;
     }
 
     stop(_finger: Finger): void {
-        for (const state of this.states.values()) {
-            state.active = false;
-        }
+        this.activeConfig = null;
     }
 
     defer(_finger: Finger): boolean {
@@ -90,20 +70,7 @@ export class CameraFingering implements Fingering {
     }
 }
 
-export class CameraOrbitingFingering extends CameraFingering {
-    constructor(camera: CameraControls) {
-        super(camera);
-    }
-}
-
-export class CameraPanningFingering extends CameraFingering {
-    constructor(camera: CameraControls) {
-        super(camera);
-    }
-}
-
-export class CameraZoomingFingering extends CameraFingering {
-    constructor(camera: CameraControls) {
-        super(camera);
-    }
+export function createCameraFingering(camera: CameraControls, _action: CameraAction): CameraFingering {
+    const fingering = new CameraFingering(camera);
+    return fingering;
 }
