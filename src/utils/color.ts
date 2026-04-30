@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import { clamp, isObject } from './math';
+
+const clamp = (v: number, min: number, max: number): number => Math.max(min, Math.min(v, max));
 
 /**
  * WCAG 2.1 relative luminance per https://www.w3.org/WAI/GL/wiki/Relative_luminance

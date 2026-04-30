@@ -89,25 +89,8 @@ export const randomPick = <T>(arr: T[]): T => arr[Math.floor(Math.random() * arr
 
 // ============= Color Conversions =============
 // Note: Advanced color functions (WCAG, etc.) are in color.ts
-export function hexToRgb(hex: string | number): { r: number; g: number; b: number } {
-    const num = typeof hex === 'string' ? parseInt(hex.replace('#', ''), 16) : hex;
-    return {
-        r: (num >> 16) & 255,
-        g: (num >> 8) & 255,
-        b: num & 255,
-    };
-}
-
-export function rgbToHex(r: number, g: number, b: number): string {
-    return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
-}
-
-export function toHexColor(color: string | number): string {
-    if (typeof color === 'number') {
-        return `#${color.toString(16).padStart(6, '0')}`;
-    }
-    return color.startsWith('#') ? color : `#${color}`;
-}
+// Re-export from color.ts for backward compatibility
+export { hexToRgb, rgbToHex, toHexColor } from './color';
 
 // ============= Object Utilities =============
 export function mergeDeep<T extends Record<string, unknown>>(

@@ -51,6 +51,8 @@ export class PerformanceMonitor {
   }
 }
 
+// memoize exported from math.ts to avoid duplication
+
 /**
  * Object pool for reducing allocations
  */
@@ -90,28 +92,7 @@ export class ObjectPool<T> {
   }
 }
 
-/**
- * Memoization decorator factory
- */
-export function memoize<T extends (...args: any[]) => any>(fn: T, cacheSize: number = 100): T {
-  const cache = new Map<string, ReturnType<T>>();
-  
-  return function(...args: any[]) {
-    const key = JSON.stringify(args);
-    if (cache.has(key)) {
-      return cache.get(key);
-    }
-    
-    const result = fn(...args);
-    
-    if (cache.size >= cacheSize) {
-      cache.delete(cache.keys().next().value);
-    }
-    
-    cache.set(key, result);
-    return result;
-  } as T;
-}
+// memoize exported from math.ts (see utils/index.ts)
 
 /**
  * Batch operations for better performance
@@ -165,39 +146,22 @@ export function cancelIdleCallbackPolyfill(handle: number): void {
 }
 
 /**
- * Throttle function by time
+ * Throttle function by time (alias for throttle from math.ts)
  */
-export function throttleByTime<T extends (...args: any[]) => any>(fn: T, limit: number): T {
-  let lastCall = 0;
-  let timeout: ReturnType<typeof setTimeout> | null = null;
-  
-  return function(...args: any[]) {
-    const now = Date.now();
-    
-    if (now - lastCall >= limit) {
-      lastCall = now;
-      fn(...args);
-    } else if (!timeout) {
-      timeout = setTimeout(() => {
-        lastCall = Date.now();
-        timeout = null;
-        fn(...args);
-      }, limit - (now - lastCall));
-    }
-  } as T;
-}
+export const throttleByTime = <T extends (...args: any[]) => any>(fn: T, limit: number): T =>
+  (() => {
+    let last = 0;
+    return (...args: any[]) => {
+      const now = Date.now();
+      if (now - last >= limit) { last = now; fn(...args); }
+    };
+  })() as T;
 
 /**
- * Debounce function by time
+ * Debounce function by time (alias for debounce from math.ts)
  */
-export function debounceByTime<T extends (...args: any[]) => any>(fn: T, delay: number): T {
-  let timeout: ReturnType<typeof setTimeout> | null = null;
-  
-  return function(...args: any[]) {
-    if (timeout) clearTimeout(timeout);
-    timeout = setTimeout(() => fn(...args), delay);
-  } as T;
-}
+export const debounceByTime = <T extends (...args: any[]) => any>(fn: T, delay: number): T =>
+  (() => { let t: ReturnType<typeof setTimeout>; return (...args: any[]) => { if (t) clearTimeout(t); t = setTimeout(() => fn(...args), delay); }; })() as T;
 
 /**
  * Track memory usage (if available)

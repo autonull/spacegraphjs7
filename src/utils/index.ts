@@ -111,7 +111,6 @@ export type { DOMElementOptions } from './DOMUtils';
 export {
     PerformanceMonitor,
     ObjectPool,
-    memoize as perfMemoize,
     batch,
     batchAsync,
     requestIdleCallbackPolyfill,
