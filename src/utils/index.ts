@@ -3,99 +3,96 @@
 
 // Math utilities
 export {
-  // Constants
-  DEG2RAD,
-  RAD2DEG,
-  PI,
-  TAU,
-  EPSILON,
+    // Constants
+    DEG2RAD,
+    RAD2DEG,
+    PI,
+    TAU,
+    EPSILON,
 
-  // Type guards
-  isObject,
-  isFunction,
-  isString,
-  isNumber,
-  isBoolean,
-  isArray,
-  isPlainObject,
-  isDefined,
+    // Type guards
+    isObject,
+    isFunction,
+    isString,
+    isNumber,
+    isBoolean,
+    isArray,
+    isPlainObject,
+    isDefined,
 
-  // Math functions
-  clamp,
-  clamp01,
-  lerp,
-  lerpClamped,
-  inverseLerp,
-  smoothstep,
-  smootherstep,
-  mapRange,
-  round,
-  approx,
-  sign,
-  abs,
-  min,
-  max,
-  sum,
-  mean,
+    // Math functions
+    clamp,
+    clamp01,
+    lerp,
+    lerpClamped,
+    inverseLerp,
+    smoothstep,
+    smootherstep,
+    mapRange,
+    round,
+    approx,
+    sign,
+    abs,
+    min,
+    max,
+    sum,
+    mean,
 
-  // Vector math
-  lerp3,
-  min3,
-  max3,
-  clamp180,
-  angleDiff,
-  randomThreeVector,
+    // Vector math
+    lerp3,
+    min3,
+    max3,
+    clamp180,
+    angleDiff,
+    randomThreeVector,
 
-  // Random
-  randomRange,
-  randomInt,
-  randomBool,
-  randomPick,
+    // Random
+    randomRange,
+    randomInt,
+    randomBool,
+    randomPick,
 
-  // Color
-  hexToRgb,
-  rgbToHex,
-  toHexColor,
-  getRelativeLuminance,
-  getContrastRatio,
-  getCompliantColor,
+    // Color
+    hexToRgb,
+    rgbToHex,
+    toHexColor,
+    getRelativeLuminance,
+    getContrastRatio,
+    getCompliantColor,
 
-  // Object utilities
-  mergeDeep,
-  safeClone,
-  deepEqual,
+    // Object utilities
+    mergeDeep,
+    safeClone,
+    deepEqual,
 
-  // Function utilities
-  debounce,
-  throttle,
+    // Function utilities
+    debounce,
+    throttle,
 
-  // Memoization
-  memoize,
-  memoizeWithKey,
-  invalidateMemoization,
-  clearMemoization,
+    // Memoization
+    memoize,
+    memoizeWithKey,
+    invalidateMemoization,
+    clearMemoization,
 
-  // Array utilities
-  groupBy,
-  unique,
-  flatten,
-  chunk,
+    // Array utilities
+    groupBy,
+    unique,
+    flatten,
+    chunk,
 
-  // Promise utilities
-  isPromise,
-  sleep,
-  retry,
+    // Promise utilities
+    isPromise,
+    sleep,
+    retry,
 
-  // Error handling
-  wrapError,
-
-  // Functional utilities
-  pipe,
-  compose,
-  partial,
-  curry,
-  once,
-  cacheWithTTL,
+    // Functional utilities
+    pipe,
+    compose,
+    partial,
+    curry,
+    once,
+    cacheWithTTL,
 } from './math';
 
 // Logger
@@ -112,34 +109,36 @@ export type { DOMElementOptions } from './DOMUtils';
 
 // Performance utilities
 export {
-  PerformanceMonitor,
-  ObjectPool,
-  memoize as perfMemoize,
-  batch,
-  batchAsync,
-  requestIdleCallbackPolyfill,
-  cancelIdleCallbackPolyfill,
-  throttleByTime,
-  debounceByTime,
-  getMemoryUsage,
-  measure,
-  measureAsync,
+    PerformanceMonitor,
+    ObjectPool,
+    memoize as perfMemoize,
+    batch,
+    batchAsync,
+    requestIdleCallbackPolyfill,
+    cancelIdleCallbackPolyfill,
+    throttleByTime,
+    debounceByTime,
+    getMemoryUsage,
+    measure,
+    measureAsync,
 } from './performance';
 
-// Error utilities
-export { wrapError as wrapErrorDetailed, SpaceGraphError, NotImplementedError, ValidationError, ConfigurationError } from './error';
+// Error utilities - unified error handling
+export {
+    wrapError,
+    SpaceGraphError,
+    NotImplementedError,
+    ValidationError,
+    ConfigurationError,
+    createErrorFactory,
+} from './error';
+export type { SpaceGraphErrorOptions } from './error';
 
 // Gesture utilities
 export { GestureManager } from './GestureManager';
 
 // Graph generators
-export {
-  randomTree,
-  randomMesh,
-  scaleFreeGraph,
-  smallWorld,
-  lattice2D,
-} from './graphGenerators';
+export { randomTree, randomMesh, scaleFreeGraph, smallWorld, lattice2D } from './graphGenerators';
 
 // Three.js disposal
 export { disposeThreeObject } from './ThreeDisposer';
