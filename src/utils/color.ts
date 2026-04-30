@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { clamp } from './math';
+import { clamp, isObject } from './math';
 
 /**
  * WCAG 2.1 relative luminance per https://www.w3.org/WAI/GL/wiki/Relative_luminance
@@ -121,6 +121,10 @@ export function toHexColor(numColor: number | string): string {
     }
     if (typeof numColor !== 'number' || isNaN(numColor) || numColor < 0) return '#000000';
     return `#${Math.floor(numColor).toString(16).padStart(6, '0')}`;
+}
+
+export function rgbToHex(r: number, g: number, b: number): string {
+    return `#${((1 << 24) + (clamp(r, 0, 255) << 16) + (clamp(g, 0, 255) << 8) + clamp(b, 0, 255)).toString(16).slice(1)}`;
 }
 
 export function sortByFrequency<T>(items: T[]): T[] {

@@ -138,7 +138,7 @@ export {
 } from './utils';
 
 export { logger, createLogger, setLogLevel, type LogLevel, type Logger } from './utils/logger';
-export { calculateFitValue, CameraUtils, type FitValueResult, type Point } from './utils/CameraUtils';
+export { calculateFitView, type FitViewResult, type Point } from './utils/CameraUtils';
 export { createElement, DOMUtils, type DOMElementOptions } from './utils/DOMUtils';
 export { disposeThreeObject } from './utils/ThreeDisposer';
 

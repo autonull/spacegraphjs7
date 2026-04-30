@@ -88,6 +88,7 @@ export const randomBool = (): boolean => Math.random() > 0.5;
 export const randomPick = <T>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
 
 // ============= Color Conversions =============
+// Note: Advanced color functions (WCAG, etc.) are in color.ts
 export function hexToRgb(hex: string | number): { r: number; g: number; b: number } {
     const num = typeof hex === 'string' ? parseInt(hex.replace('#', ''), 16) : hex;
     return {

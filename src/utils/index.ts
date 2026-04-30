@@ -100,7 +100,7 @@ export { logger, createLogger, setLogLevel } from './logger';
 export type { LogLevel, Logger } from './logger';
 
 // Camera utilities
-export { calculateFitView, CameraUtils } from './CameraUtils';
+export { calculateFitView } from './CameraUtils';
 export type { FitViewResult, Point } from './CameraUtils';
 
 // DOM utilities

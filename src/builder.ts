@@ -21,6 +21,7 @@ abstract class BaseBuilder<T> {
     build(): T {
         return this.spec;
     }
+    /** @alias build() */
     toSpec(): T {
         return this.spec;
     }

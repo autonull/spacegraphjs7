@@ -8,7 +8,7 @@ import { VisionManager } from './core/VisionManager';
 import { InputManager } from './input/InputManager';
 import { applyDefaultInputConfig } from './input/DefaultInputConfig';
 import { createCameraFingering, FingeringPriority } from './input/fingerings';
-import { createLogger, safeClone, wrapError, CameraUtils, DOMUtils } from './utils';
+import { createLogger, safeClone, wrapError, calculateFitView, DOMUtils } from './utils';
 import { MathPool } from './core/pooling/ObjectPool';
 import { FingeringPriority, Performance } from './core/constants';
 import {
@@ -315,7 +315,7 @@ export class SpaceGraph {
     // ============= Camera Controls =============
     fitView(padding: number = 100, duration: number = 1.5): this {
         const nodes = Array.from(this.graph.nodes.values());
-        const fit = CameraUtils.calculateFitValue(nodes, this.renderer.camera, padding);
+        const fit = calculateFitView(nodes, this.renderer.camera, padding);
         if (fit) this.cameraControls.flyTo(fit.center, fit.cameraZ, duration);
         return this;
     }
@@ -427,5 +427,41 @@ export class SpaceGraph {
     // Ergonomic: iterate edges
     forEdges(callback: (edge: Edge) => void): void {
         for (const edge of this.graph.edges.values()) callback(edge);
+    }
+
+    // Ergonomic: find nodes by predicate
+    findNodes(predicate: (node: Node) => boolean): Node[] {
+        const results: Node[] = [];
+        for (const node of this.graph.nodes.values()) {
+            if (predicate(node)) results.push(node);
+        }
+        return results;
+    }
+
+    // Ergonomic: find first node matching predicate
+    findNode(predicate: (node: Node) => boolean): Node | undefined {
+        for (const node of this.graph.nodes.values()) {
+            if (predicate(node)) return node;
+        }
+        return undefined;
+    }
+
+    // Ergonomic: get nodes by type
+    getNodesByType(type: string): Node[] {
+        return this.findNodes((node) => node.constructor.name === type);
+    }
+
+    // Ergonomic: find edges by predicate
+    findEdges(predicate: (edge: Edge) => boolean): Edge[] {
+        const results: Edge[] = [];
+        for (const edge of this.graph.edges.values()) {
+            if (predicate(edge)) results.push(edge);
+        }
+        return results;
+    }
+
+    // Ergonomic: get edges connected to a node
+    getEdgesForNode(nodeId: string): Edge[] {
+        return this.findEdges((edge) => edge.source.id === nodeId || edge.target.id === nodeId);
     }
 }
