@@ -1,7 +1,7 @@
 // utils/index.ts - Consolidated utility exports
 // All utilities re-exported from single source for better tree-shaking
 
-// Math utilities
+// Math utilities (from math.ts)
 export {
     // Constants
     DEG2RAD,
@@ -93,6 +93,19 @@ export {
     curry,
     once,
     cacheWithTTL,
+
+    // DX utilities
+    tap,
+    tapAsync,
+    tryCatch,
+    tryCatchAsync,
+    trace,
+    log,
+    pick,
+    omit,
+    when,
+    ifElse,
+    match,
 } from './math';
 
 // Logger

@@ -7,7 +7,7 @@ import { EventSystem } from './core/events/EventSystem';
 import { VisionManager } from './core/VisionManager';
 import { InputManager } from './input/InputManager';
 import { applyDefaultInputConfig } from './input/DefaultInputConfig';
-import { createCameraFingering, FingeringPriority } from './input/fingerings';
+import { createCameraFingering } from './input/fingerings';
 import { createLogger, safeClone, wrapError, calculateFitView, DOMUtils } from './utils';
 import { MathPool } from './core/pooling/ObjectPool';
 import { FingeringPriority, Performance } from './core/constants';
@@ -421,34 +421,27 @@ export class SpaceGraph {
 
     // Ergonomic: iterate nodes
     forNodes(callback: (node: Node) => void): void {
-        for (const node of this.graph.nodes.values()) callback(node);
+        this.graph.forEachNode(callback);
     }
 
     // Ergonomic: iterate edges
     forEdges(callback: (edge: Edge) => void): void {
-        for (const edge of this.graph.edges.values()) callback(edge);
+        this.graph.forEachEdge(callback);
     }
 
     // Ergonomic: find nodes by predicate
     findNodes(predicate: (node: Node) => boolean): Node[] {
-        const results: Node[] = [];
-        for (const node of this.graph.nodes.values()) {
-            if (predicate(node)) results.push(node);
-        }
-        return results;
+        return this.graph.query(predicate);
     }
 
     // Ergonomic: find first node matching predicate
     findNode(predicate: (node: Node) => boolean): Node | undefined {
-        for (const node of this.graph.nodes.values()) {
-            if (predicate(node)) return node;
-        }
-        return undefined;
+        return this.graph.findNode(predicate);
     }
 
     // Ergonomic: get nodes by type
     getNodesByType(type: string): Node[] {
-        return this.findNodes((node) => node.constructor.name === type);
+        return this.graph.queryByType(type);
     }
 
     // Ergonomic: find edges by predicate
@@ -462,6 +455,203 @@ export class SpaceGraph {
 
     // Ergonomic: get edges connected to a node
     getEdgesForNode(nodeId: string): Edge[] {
-        return this.findEdges((edge) => edge.source.id === nodeId || edge.target.id === nodeId);
+        return this.graph.getEdgesForNode(nodeId);
+    }
+
+    // ========== Ergonomic Shortcuts ==========
+    // Add node with fluent API - returns node for chaining
+    add(spec: NodeSpec | Node): Node | null {
+        return this.graph.addNode(spec);
+    }
+
+    // Add edge with fluent API - returns edge for chaining
+    connect(source: string, target: string, data?: Record<string, unknown>): Edge | null {
+        const edgeSpec = {
+            id: `edge-${source}-${target}`,
+            source,
+            target,
+            data,
+        };
+        return this.graph.addEdge(edgeSpec);
+    }
+
+    // Remove by predicate
+    removeWhere(predicate: (node: Node) => boolean): number {
+        let count = 0;
+        this.graph.nodes.forEach((node, id) => {
+            if (predicate(node)) {
+                this.graph.removeNode(id);
+                count++;
+            }
+        });
+        return count;
+    }
+
+    // Update nodes matching criteria
+    updateWhere(
+        predicate: (node: Node) => boolean,
+        updates: Partial<NodeSpec>,
+    ): Node[] {
+        const updated: Node[] = [];
+        this.graph.nodes.forEach((node) => {
+            if (predicate(node)) {
+                const updatedNode = this.graph.updateNode(node.id, updates);
+                if (updatedNode) updated.push(updatedNode);
+            }
+        });
+        return updated;
+    }
+
+    // Batch add nodes
+    addNodes(specs: NodeSpec[]): Node[] {
+        const results: Node[] = [];
+        for (const spec of specs) {
+            const node = this.graph.addNode(spec);
+            if (node) results.push(node);
+        }
+        return results;
+    }
+
+    // Batch add edges
+    addEdges(specs: EdgeSpec[]): Edge[] {
+        const results: Edge[] = [];
+        for (const spec of specs) {
+            const edge = this.graph.addEdge(spec);
+            if (edge) results.push(edge);
+        }
+        return results;
+    }
+
+    // Traverse graph - depth-first
+    traverse(callback: (node: Node, depth: number) => void, startId?: string): void {
+        const visited = new Set<string>();
+        const traverseRecursive = (nodeId: string, depth: number) => {
+            if (visited.has(nodeId)) return;
+            visited.add(nodeId);
+            const node = this.graph.getNode(nodeId);
+            if (!node) return;
+            callback(node, depth);
+            for (const neighbor of this.graph.neighbors(nodeId)) {
+                traverseRecursive(neighbor.id, depth + 1);
+            }
+        };
+        if (startId) traverseRecursive(startId, 0);
+        else for (const node of this.graph.nodes.values()) {
+            traverseRecursive(node.id, 0);
+        }
+    }
+
+    // Get subgraph within distance
+    getSubgraph(centerId: string, radius: number): { nodes: Node[]; edges: Edge[] } {
+        const center = this.graph.getNode(centerId);
+        if (!center) return { nodes: [], edges: [] };
+
+        const inRadius = new Set<string>();
+        const centerPos = center.position;
+
+        for (const [id, node] of this.graph.nodes) {
+            const dist = node.position.distanceTo(centerPos);
+            if (dist <= radius) inRadius.add(id);
+        }
+
+        const nodes = [...inRadius].map((id) => this.graph.getNode(id)!).filter(Boolean);
+        const edges = [...inRadius].flatMap((id) => this.graph.getEdgesForNode(id))
+            .filter((e) => inRadius.has(e.source.id) && inRadius.has(e.target.id));
+
+        return { nodes, edges };
+    }
+
+    // Watch for changes - returns unsubscribe
+    watch(
+        type: 'node:added' | 'node:removed' | 'node:updated' | 'edge:added' | 'edge:removed' | 'edge:updated',
+        callback: (data: any) => void,
+    ): () => void {
+        const handler = (data: any) => callback(data);
+        this.events.on(type, handler);
+        return () => this.events.off(type, handler);
+    }
+
+    // Get stats
+    get stats() {
+        return {
+            nodes: this.graph.nodes.size,
+            edges: this.graph.edges.size,
+            plugins: this.pluginManager.pluginCount,
+        };
+    }
+
+    // Ergonomic: Get all nodes as array
+    get nodes(): Node[] {
+        return [...this.graph.nodes.values()];
+    }
+
+    // Ergonomic: Get all edges as array
+    get edges(): Edge[] {
+        return [...this.graph.edges.values()];
+    }
+
+    // Ergonomic: Quick layout application
+    async layout(name: string, options?: Record<string, unknown>): Promise<void> {
+        const plugin = this.pluginManager.getPlugin(name);
+        if (plugin && 'applyLayout' in plugin) {
+            await (plugin as { applyLayout: (opts?: Record<string, unknown>) => Promise<void> }).applyLayout(options);
+        }
+    }
+
+    // Ergonomic: Batch update nodes
+    batch(fn: (sg: SpaceGraph) => void): void {
+        fn(this);
+    }
+
+    // Ergonomic: Freeze rendering during batch updates
+    freeze(): { release: () => void } {
+        this.pause();
+        return {
+            release: () => this.render(),
+        };
+    }
+
+    // Ergonomic: Selection shortcuts
+    select(nodeId: string): this {
+        const node = this.graph.getNode(nodeId);
+        if (node) node.focus();
+        return this;
+    }
+
+    deselect(nodeId: string): this {
+        const node = this.graph.getNode(nodeId);
+        if (node) node.blur();
+        return this;
+    }
+
+    selectAll(): this {
+        for (const node of this.graph.nodes.values()) node.focus();
+        return this;
+    }
+
+    deselectAll(): this {
+        for (const node of this.graph.nodes.values()) node.blur();
+        return this;
+    }
+
+    // Ergonomic: Toggle node visibility
+    toggleVisibility(nodeId: string): boolean {
+        const node = this.graph.getNode(nodeId);
+        if (!node) return false;
+        const visible = !(node.data as Record<string, unknown>).visible;
+        node.updateSpec({ data: { ...node.data, visible } });
+        return visible;
+    }
+
+    // Ergonomic: Quick node lookup
+    $(id: string): Node | undefined {
+        return this.graph.getNode(id);
+    }
+
+    // Ergonomic: Get node or throw
+    require(id: string): Node {
+        const node = this.graph.getNode(id);
+        if (!node) throw new Error(`Node not found: ${id}`);
+        return node;
     }
 }

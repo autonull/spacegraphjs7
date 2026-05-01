@@ -1,4 +1,5 @@
 // Performance optimization utilities
+import { throttle, debounce } from './math';
 
 /**
  * Performance monitor for tracking FPS and memory
@@ -145,23 +146,8 @@ export function cancelIdleCallbackPolyfill(handle: number): void {
   }
 }
 
-/**
- * Throttle function by time (alias for throttle from math.ts)
- */
-export const throttleByTime = <T extends (...args: any[]) => any>(fn: T, limit: number): T =>
-  (() => {
-    let last = 0;
-    return (...args: any[]) => {
-      const now = Date.now();
-      if (now - last >= limit) { last = now; fn(...args); }
-    };
-  })() as T;
-
-/**
- * Debounce function by time (alias for debounce from math.ts)
- */
-export const debounceByTime = <T extends (...args: any[]) => any>(fn: T, delay: number): T =>
-  (() => { let t: ReturnType<typeof setTimeout>; return (...args: any[]) => { if (t) clearTimeout(t); t = setTimeout(() => fn(...args), delay); }; })() as T;
+export const throttleByTime = throttle;
+export const debounceByTime = debounce;
 
 /**
  * Track memory usage (if available)

@@ -247,7 +247,7 @@ export class SpaceGraphApp {
             .filter((n): n is NonNullable<typeof n> => n != null);
         if (nodes.length === 0) return;
 
-        const fit = CameraUtils.calculateFitView(nodes, this.sg.renderer.camera, padding);
+        const fit = calculateFitView(nodes, this.sg.renderer.camera, padding);
         if (fit) {
             this.sg.cameraControls.flyTo(fit.center, fit.cameraZ, duration);
         }

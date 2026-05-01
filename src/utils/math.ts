@@ -236,6 +236,16 @@ export function chunk<T>(array: T[], size: number): T[][] {
     return result;
 }
 
+export function sortByFrequency<T>(items: T[]): T[] {
+    const counts = new Map<T, number>();
+    for (const item of items) {
+        counts.set(item, (counts.get(item) || 0) + 1);
+    }
+    return Array.from(counts.entries())
+        .sort((a, b) => b[1] - a[1])
+        .map((x) => x[0]);
+}
+
 // ============= Promise Utilities =============
 export function isPromise<T>(value: any): value is Promise<T> {
     return value instanceof Promise;
@@ -276,13 +286,23 @@ export function isDefined<T>(value: T | null | undefined): value is T {
 }
 
 // ============= Functional Utilities =============
-// Pipe for method chaining
-export const pipe = <T>(value: T): { and: <R>(fn: (v: T) => R) => R } =>
-    ({
-        and: <R>(fn: (v: T) => R) => fn(value),
-    }) as any;
+interface PipeChain<T> {
+    value: T;
+    and<R>(fn: (v: T) => R): PipeChain<R>;
+    result<R>(fn: (v: T) => R): R;
+}
 
-// Compose functions right-to-left
+export const pipe = <T>(value: T): PipeChain<T> =>
+    ({
+        value,
+        and<R>(fn: (v: T) => R): PipeChain<R> {
+            return pipe(fn(this.value));
+        },
+        result<R>(fn: (v: T) => R): R {
+            return fn(this.value);
+        },
+    } as PipeChain<T>);
+
 export const compose = <Fns extends ((...args: any[]) => any)[]>(...fns: Fns) => {
     return (...args: Parameters<Fns[0]>) => {
         let result = fns[0](...args);
@@ -334,3 +354,86 @@ export const cacheWithTTL = <T extends (...args: any[]) => any>(fn: T, ttl: numb
         return value;
     }) as T;
 };
+
+// ============= Developer Experience Utilities =============
+// Tap - side-effect in chain (like Ruby)
+export const tap = <T>(fn: (value: T) => void) => (value: T): T => {
+    fn(value);
+    return value;
+};
+
+// Tap async
+export const tapAsync = async <T>(fn: (value: T) => void | Promise<void>) => async (value: T): Promise<T> => {
+    await fn(value);
+    return value;
+};
+
+// Try-catch - safe execution with fallback
+export const tryCatch = <T, E = Error>(
+    fn: () => T,
+    onError: (error: E) => T,
+): (() => T) => {
+    return () => {
+        try {
+            return fn();
+        } catch (e) {
+            return onError(e as E);
+        }
+    };
+};
+
+// Try-catch async
+export const tryCatchAsync = async <T, E = Error>(
+    fn: () => Promise<T>,
+    onError: (error: E) => T,
+): Promise<T> => {
+    try {
+        return await fn();
+    } catch (e) {
+        return onError(e as E);
+    }
+};
+
+// Trace - conditional logging
+export const trace = <T>(label: string, condition: boolean = true) => (value: T): T => {
+    if (condition) console.trace(label, value);
+    return value;
+};
+
+// Log with label
+export const log = <T>(label: string) => (value: T): T => {
+    console.log(label, value);
+    return value;
+};
+
+// Pick - create subset of object
+export const pick = <T extends Record<string, unknown>, K extends keyof T>(
+    keys: K[],
+) => (obj: T): Pick<T, K> => {
+    const result = {} as Pick<T, K>;
+    for (const k of keys) {
+        if (k in obj) result[k] = obj[k];
+    }
+    return result;
+};
+
+// Omit - remove keys from object
+export const omit = <T extends Record<string, unknown>, K extends keyof T>(
+    keys: K[],
+) => (obj: T): Omit<T, K> => {
+    const result = { ...obj };
+    for (const k of keys) delete result[k];
+    return result as Omit<T, K>;
+};
+
+// Conditionally transform
+export const when = <T>(condition: boolean, transform: (value: T) => T) => (value: T): T =>
+    condition ? transform(value) : value;
+
+// Choose based on condition
+export const ifElse = <T>(condition: boolean, whenTrue: T, whenFalse: T): T =>
+    condition ? whenTrue : whenFalse;
+
+// Switch-like pattern
+export const match = <T, R>(value: T) => (cases: Partial<Record<T, R>> | Record<string, R>, defaultCase: R): R =>
+    (value in cases ? cases[value] : defaultCase);

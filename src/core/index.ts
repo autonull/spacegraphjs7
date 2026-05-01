@@ -1,5 +1,6 @@
 // Core module exports
-export { SpaceGraph } from '../SpaceGraph';
+// Note: SpaceGraph is exported from the main index.ts, not here
+// Import directly: import { SpaceGraph } from '../SpaceGraph';
 export { Graph } from './Graph';
 export { Renderer } from './Renderer';
 export { RenderContext } from './RenderContext';

@@ -158,6 +158,9 @@ export * from './plugins';
 // Nodes
 export * from './nodes';
 
+// Widget System
+export { WidgetNode, type WidgetNodeData } from './nodes/WidgetNode';
+
 // Edges
 export * from './edges';
 

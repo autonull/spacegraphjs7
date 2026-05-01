@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-
-const clamp = (v: number, min: number, max: number): number => Math.max(min, Math.min(v, max));
+import { clamp, sortByFrequency } from './math';
+export { sortByFrequency };
 
 /**
  * WCAG 2.1 relative luminance per https://www.w3.org/WAI/GL/wiki/Relative_luminance
@@ -126,14 +126,4 @@ export function toHexColor(numColor: number | string): string {
 
 export function rgbToHex(r: number, g: number, b: number): string {
     return `#${((1 << 24) + (clamp(r, 0, 255) << 16) + (clamp(g, 0, 255) << 8) + clamp(b, 0, 255)).toString(16).slice(1)}`;
-}
-
-export function sortByFrequency<T>(items: T[]): T[] {
-    const counts = new Map<T, number>();
-    for (const item of items) {
-        counts.set(item, (counts.get(item) || 0) + 1);
-    }
-    return Array.from(counts.entries())
-        .sort((a, b) => b[1] - a[1])
-        .map((x) => x[0]);
 }

@@ -147,8 +147,8 @@ describe('SpaceGraphJS v7.0 Integration', () => {
 
             graph.fromJSON(spec);
 
-            expect(graph.getNodeCount()).toBe(2);
-            expect(graph.getEdgeCount()).toBe(1);
+            expect(graph.nodeCount).toBe(2);
+            expect(graph.edgeCount).toBe(1);
             expect(graph.hasNode('node1')).toBe(true);
             expect(graph.hasNode('node2')).toBe(true);
             expect(graph.hasEdge('edge1')).toBe(true);
@@ -184,8 +184,8 @@ describe('SpaceGraphJS v7.0 Integration', () => {
 
             graph.removeNode('n1');
 
-            expect(graph.getNodeCount()).toBe(1);
-            expect(graph.getEdgeCount()).toBe(0);
+            expect(graph.nodeCount).toBe(1);
+            expect(graph.edgeCount).toBe(0);
         });
     });
 

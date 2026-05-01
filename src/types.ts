@@ -201,6 +201,16 @@ export interface InstancedShapeNodeData extends BaseNodeData {
     opacity?: number;
 }
 
+// Unified Widget Data
+export interface WidgetNodeData extends BaseNodeData {
+    width?: number;
+    height?: number;
+    depth?: number;
+    disabled?: boolean;
+    tabIndex?: number;
+    ariaLabel?: string;
+}
+
 export type NodeData =
     | ShapeNodeData
     | HtmlNodeData
@@ -220,7 +230,8 @@ export type NodeData =
     | MathNodeData
     | ProcessNodeData
     | CodeEditorNodeData
-    | InstancedShapeNodeData;
+    | InstancedShapeNodeData
+    | WidgetNodeData;
 
 // Unified SpaceGraph Node Data
 export type SpaceGraphNodeData = NodeData & HtmlNodeData;
@@ -445,14 +456,24 @@ export type IdCallback = (id: string) => void;
 export type AsyncCallback<T = void> = () => Promise<T> | T;
 
 // ============= Layout Types =============
-export interface LayoutConfig {
-    type: LayoutName;
-    options?: LayoutOptions;
-}
-export interface LayoutOptions extends Record<string, unknown> {
-    duration?: number;
-    easing?: string;
-}
+// Note: Layout-specific options are defined in plugins/layouts/BaseLayout.ts
+// Use import { LayoutOptions } from './plugins/layouts/BaseLayout' for full options
+
+// ============= Ergonomic Factory Types =============
+export type NodeFactoryFn = (id: string, ...args: unknown[]) => NodeSpec;
+export type EdgeFactoryFn = (source: string, target: string, ...args: unknown[]) => EdgeSpec;
+
+// ============= Shortcut Type Aliases =============
+export type ID = string;
+export type Coordinate2D = [number, number];
+export type Coordinate3D = [number, number, number];
+export type Position = Coordinate3D;
+export type Size = { width: number; height: number };
+export type Bounds = { min: Coordinate3D; max: Coordinate3D };
+
+// ============= Event Handler Type =============
+export type EventHandler<T = unknown> = (event: T) => void;
+export type EventUnsubscribe = () => void;
 
 // ============= Utility Aliases =============
 export type { LogLevel as LogLevel } from './utils/logger';

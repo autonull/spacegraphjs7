@@ -1,96 +1,55 @@
 import * as THREE from 'three';
-import { Node } from './Node';
-import type { NodeSpec, BaseNodeData } from '../types';
+import { WidgetNode, type WidgetNodeData } from './WidgetNode';
+import type { NodeSpec } from '../types';
 import type { SpaceGraph } from '../SpaceGraph';
 
-export interface ToggleNodeData extends BaseNodeData {
+export interface ToggleNodeData extends WidgetNodeData {
     value?: boolean;
     onColor?: number;
     offColor?: number;
-    width?: number;
-    height?: number;
-    depth?: number;
     onToggle?: (value: boolean) => void;
 }
 
-export class ToggleNode extends Node {
-    private readonly group: THREE.Group;
-    private readonly mesh: THREE.Mesh;
-    private readonly labelMesh: THREE.Mesh;
-    private onMaterial: THREE.MeshStandardMaterial;
-    private offMaterial: THREE.MeshStandardMaterial;
-    private labelMaterial: THREE.MeshBasicMaterial;
+export class ToggleNode extends WidgetNode {
     private _value = false;
-    private _isHovered = false;
-    private width = 60;
-    private height = 30;
-    private depth = 10;
-
-    get object(): THREE.Object3D {
-        return this.group;
-    }
+    private _onColor = 0x44ff88;
+    private _offColor = 0x666666;
+    private _onToggle?: (value: boolean) => void;
 
     constructor(sg: SpaceGraph, spec: NodeSpec) {
-        super(sg, spec);
-
         const data = spec.data as ToggleNodeData;
-        this.width = data?.width ?? 60;
-        this.height = data?.height ?? 30;
-        this.depth = data?.depth ?? 10;
+        super(sg, spec, data);
+
         this._value = data?.value ?? false;
-        const onColor = data?.onColor ?? 0x44ff88;
-        const offColor = data?.offColor ?? 0x666666;
+        this._onColor = data?.onColor ?? this._onColor;
+        this._offColor = data?.offColor ?? this._offColor;
+        this._onToggle = data?.onToggle;
 
-        this.onMaterial = new THREE.MeshStandardMaterial({ color: onColor });
-        this.offMaterial = new THREE.MeshStandardMaterial({ color: offColor });
-        this.labelMaterial = new THREE.MeshBasicMaterial({
-            color: 0xffffff,
-            transparent: true,
-            opacity: 0.9,
-        });
+        this.baseMaterial.color.setHex(this._value ? this._onColor : this._offColor);
+    }
 
-        const geometry = new THREE.BoxGeometry(this.width, this.height, this.depth);
-        this.mesh = new THREE.Mesh(geometry, this._value ? this.onMaterial : this.offMaterial);
+    protected getBaseColor(_data: WidgetNodeData | undefined): number {
+        return this._value ? this._onColor : this._offColor;
+    }
 
-        const labelCanvas = document.createElement('canvas');
-        labelCanvas.width = 64;
-        labelCanvas.height = 32;
-        const ctx = labelCanvas.getContext('2d')!;
+    protected getHoverColor(): number {
+        return this._value ? this._offColor : this._onColor;
+    }
+
+    protected getPressedColor(): number {
+        return this.getHoverColor();
+    }
+
+    protected createLabelContent(ctx: CanvasRenderingContext2D, _text: string): void {
         ctx.fillStyle = '#ffffff';
         ctx.font = 'bold 16px Arial';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(this._value ? 'ON' : 'OFF', 32, 16);
-        const labelTexture = new THREE.CanvasTexture(labelCanvas);
-        this.labelMaterial.map = labelTexture;
-        const labelGeom = new THREE.PlaneGeometry(this.width * 0.7, this.height * 0.6);
-        this.labelMesh = new THREE.Mesh(labelGeom, this.labelMaterial);
-        this.labelMesh.position.z = this.depth / 2 + 0.1;
-
-        this.group = new THREE.Group();
-        this.group.add(this.mesh);
-        this.group.add(this.labelMesh);
-
-        this.isTouchable = true;
-        this.updatePosition(this.position.x, this.position.y, this.position.z);
+        ctx.fillText(this._value ? 'ON' : 'OFF', this._width / 2, this._height / 2);
     }
 
-    isDraggable(_localPos: THREE.Vector3): boolean {
-        return false;
-    }
-
-    private updateLabel(): void {
-        const canvas = document.createElement('canvas');
-        canvas.width = 64;
-        canvas.height = 32;
-        const ctx = canvas.getContext('2d')!;
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 16px Arial';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(this._value ? 'ON' : 'OFF', 32, 16);
-        (this.labelMaterial.map as THREE.CanvasTexture).dispose();
-        this.labelMaterial.map = new THREE.CanvasTexture(canvas);
+    protected getLabelText(): string {
+        return this._value ? 'ON' : 'OFF';
     }
 
     get value(): boolean {
@@ -99,9 +58,23 @@ export class ToggleNode extends Node {
 
     set value(v: boolean) {
         this._value = v;
-        this.mesh.material = v ? this.onMaterial : this.offMaterial;
+        this.baseMaterial.color.setHex(this._value ? this._onColor : this._offColor);
         this.updateLabel();
     }
+
+    onPointerDown(): void {
+        if (this._disabled) return;
+        this._value = !this._value;
+        this.baseMaterial.color.setHex(this._value ? this._onColor : this._offColor);
+        this.updateLabel();
+
+        if (this._onToggle) {
+            this._onToggle(this._value);
+        }
+        this.sg?.events.emit('node:click', { node: this });
+    }
+
+    onPointerUp(): void {}
 
     hitTest(raycaster: THREE.Raycaster): import('../core/Surface').HitResult | null {
         const intersects = raycaster.intersectObject(this.mesh, false);
@@ -116,30 +89,6 @@ export class ToggleNode extends Node {
         return null;
     }
 
-    onPointerEnter(): void {
-        this._isHovered = true;
-        this.mesh.material = this._value ? this.offMaterial : this.onMaterial;
-    }
-
-    onPointerLeave(): void {
-        this._isHovered = false;
-        this.mesh.material = this._value ? this.onMaterial : this.offMaterial;
-    }
-
-    onPointerDown(): void {
-        this._value = !this._value;
-        this.mesh.material = this._value ? this.onMaterial : this.offMaterial;
-        this.updateLabel();
-
-        const data = this.data as ToggleNodeData;
-        if (data?.onToggle) {
-            data.onToggle(this._value);
-        }
-        this.sg?.events.emit('node:click', { node: this });
-    }
-
-    onPointerUp(): void {}
-
     updateSpec(updates: Partial<NodeSpec>): this {
         super.updateSpec(updates);
         if (updates.data) {
@@ -147,26 +96,22 @@ export class ToggleNode extends Node {
             if (data.value !== undefined) {
                 this.value = data.value;
             }
-            if (data.width !== undefined || data.height !== undefined || data.depth !== undefined) {
-                this.width = data.width ?? this.width;
-                this.height = data.height ?? this.height;
-                this.depth = data.depth ?? this.depth;
-                this.mesh.geometry.dispose();
-                this.mesh.geometry = new THREE.BoxGeometry(this.width, this.height, this.depth);
+            if (data.onColor !== undefined) {
+                this._onColor = data.onColor;
+                if (this._value) this.baseMaterial.color.setHex(this._onColor);
             }
-            if (data.onColor !== undefined) this.onMaterial.color.setHex(data.onColor);
-            if (data.offColor !== undefined) this.offMaterial.color.setHex(data.offColor);
+            if (data.offColor !== undefined) {
+                this._offColor = data.offColor;
+                if (!this._value) this.baseMaterial.color.setHex(this._offColor);
+            }
+            if (data.onToggle !== undefined) {
+                this._onToggle = data.onToggle;
+            }
         }
         return this;
     }
 
     dispose(): void {
-        this.onMaterial.dispose();
-        this.offMaterial.dispose();
-        this.labelMaterial.dispose();
-        this.mesh.geometry.dispose();
-        this.labelMesh.geometry.dispose();
-        (this.labelMaterial.map as THREE.Texture)?.dispose();
         super.dispose();
     }
 }

@@ -1,4 +1,5 @@
 export { Node } from './Node';
+export { WidgetNode } from './WidgetNode';
 export { InstancedNode } from './InstancedNode';
 export { InstancedShapeNode } from './InstancedShapeNode';
 export { ShapeNode } from './ShapeNode';

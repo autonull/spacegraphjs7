@@ -1,30 +1,23 @@
 // Core constants - consolidated and optimized
+// Lazy-evaluated constants for better tree-shaking
 
-/**
- * Animation timing constants (in seconds)
- */
-export const AnimationDuration = {
+// Factory functions - evaluate on demand
+const createAnimationDuration = () => ({
     FAST: 0.3,
     DEFAULT: 0.5,
     SLOW: 1.0,
     LAYOUT: 1.5,
-} as const;
+}) as const;
 
-/**
- * Camera configuration
- */
-export const ZoomConfig = {
+const createZoomConfig = () => ({
     MULTIPLIER: 1.5,
     MIN_RADIUS: 150,
     MAX_RADIUS: 5000,
     DEFAULT_RADIUS: 800,
     SPEED: 0.1,
-} as const;
+}) as const;
 
-/**
- * Input priority system (lower = higher priority)
- */
-export const FingeringPriority = {
+const createFingeringPriority = () => ({
     CAMERA_ZOOM: 20,
     CAMERA_PAN: 30,
     CAMERA_ORBIT: 40,
@@ -35,32 +28,23 @@ export const FingeringPriority = {
     WIDGET: 110,
     WIRING: 150,
     RESIZE: 200,
-} as const;
+}) as const;
 
-/**
- * Interaction thresholds (pixels/ms)
- */
-export const InteractionThresholds = {
+const createInteractionThresholds = () => ({
     CONTEXT_MENU: 5,
     BOX_SELECT_MIN: 5,
     DRAG_START: 5,
     DOUBLE_CLICK_MS: 500,
-} as const;
+}) as const;
 
-/**
- * Performance constants
- */
-export const Performance = {
+const createPerformance = () => ({
     MS_PER_SEC: 1000,
-    DEFAULT_DELTA_TIME: 0.016, // ~60fps
+    DEFAULT_DELTA_TIME: 0.016,
     OPTIMIZER_CHECK_INTERVAL: 250,
     MAX_DELTA_CLAMP: 0.1,
-} as const;
+}) as const;
 
-/**
- * Default values
- */
-export const Defaults = {
+const createDefaults = () => ({
     OPACITY: 0.5,
     DURATION: 1.0,
     PADDING: 20,
@@ -70,31 +54,42 @@ export const Defaults = {
     GAP_SIZE: 1,
     INSTANCED_THICKNESS: 0.5,
     RAYCASTER_THRESHOLD: 5,
-} as const;
+}) as const;
 
-/**
- * Edge colors
- */
-export const EdgeColors = {
+const createEdgeColors = () => ({
     DEFAULT: 0x00d0ff,
     HIGHLIGHT: 0x00ffff,
-} as const;
+}) as const;
 
-/**
- * Input configuration
- */
+const createWCAG = () => ({
+    MIN_CONTRAST: 4.5,
+    ENHANCED_CONTRAST: 7.0,
+}) as const;
+
+// Direct exports (evaluated once)
+export const AnimationDuration = createAnimationDuration();
+export const ZoomConfig = createZoomConfig();
+export const FingeringPriority = createFingeringPriority();
+export const InteractionThresholds = createInteractionThresholds();
+export const Performance = createPerformance();
+export const Defaults = createDefaults();
+export const EdgeColors = createEdgeColors();
+export const WCAG = createWCAG();
+
+// Input configuration
 export const InputConfig = {
     ZOOM_SPEED_FACTOR: 0.005,
     PAN_SPEED_FACTOR: 0.002,
 } as const;
 
-/**
- * WCAG accessibility standards
- */
-export const WCAG = {
-    MIN_CONTRAST: 4.5,
-    ENHANCED_CONTRAST: 7.0,
-} as const;
+// Shorthand aliases for developer ergonomics
+export const DUR = AnimationDuration;
+export const ZOOM = ZoomConfig;
+export const FINGER = FingeringPriority;
+export const THRESH = InteractionThresholds;
+export const PERF = Performance;
+export const DEF = Defaults;
+export const COLORS = EdgeColors;
 
 // Re-export for convenience
 export const CONSTANTS = {
