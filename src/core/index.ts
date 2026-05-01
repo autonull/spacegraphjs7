@@ -10,6 +10,7 @@ export { EventEmitter } from './EventEmitter';
 export { VisionManager } from './VisionManager';
 export { ObjectPoolManager } from './ObjectPoolManager';
 export { PluginManager } from './PluginManager';
+export { ErgonomicsAPI } from './Ergonomics';
 export type { Plugin } from './PluginManager';
 export { Surface } from './Surface';
 export { TypeRegistry } from './TypeRegistry';

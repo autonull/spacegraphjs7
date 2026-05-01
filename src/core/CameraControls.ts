@@ -255,9 +255,6 @@ export class CameraControls {
     get hasZoomHistory(): boolean {
         return this.canZoomOut();
     }
-    flyBack(): void {
-        this.zoomOut();
-    }
 
     setTargetSmooth(target: THREE.Vector3, radius: number, duration: number = 1.0): void {
         this.startTarget.copy(this.target);

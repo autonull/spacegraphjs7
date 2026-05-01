@@ -1,4 +1,4 @@
-import { EventEmitter } from '../EventEmitter';
+import { EventEmitter, type Disposable } from '../EventEmitter';
 
 export interface SpaceGraphEvents {
     'node:added': { node: import('../../nodes/Node').Node; timestamp: number };
@@ -50,26 +50,6 @@ export interface SpaceGraphEvents {
     [key: symbol]: unknown;
 }
 
-export class EventSystem extends EventEmitter<SpaceGraphEvents> {
-    emit<K extends keyof SpaceGraphEvents>(type: K, event: SpaceGraphEvents[K]): void {
-        super.emit(type, event);
-    }
+export class EventSystem extends EventEmitter<SpaceGraphEvents> {}
 
-    emitBatched<K extends keyof SpaceGraphEvents>(type: K, event: SpaceGraphEvents[K]): void {
-        super.emitBatched(type, event);
-    }
-
-    on<K extends keyof SpaceGraphEvents>(
-        type: K,
-        handler: (event: SpaceGraphEvents[K]) => void,
-    ): { dispose(): void } {
-        return super.on(type, handler);
-    }
-
-    off<K extends keyof SpaceGraphEvents>(
-        type: K,
-        handler?: (event: SpaceGraphEvents[K]) => void,
-    ): void {
-        super.off(type, handler);
-    }
-}
+export type { Disposable };

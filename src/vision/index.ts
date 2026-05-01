@@ -1,7 +1,8 @@
 // SpaceGraphJS - Vision Module Exports
+// VisionManager exported from core/VisionManager and core/index.ts
+// Use: import { VisionManager } from '../core/VisionManager';
 
 export { VisionSystem } from './VisionSystem';
-export { VisionManager } from '../core/VisionManager';
 export { VisionAutoFixer, type VisionCategory } from './VisionAutoFixer';
 export { VisionModelLoader, type ModelLoadResult } from './VisionModelLoader';
 

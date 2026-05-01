@@ -5,6 +5,8 @@ import { PluginManager } from './core/PluginManager';
 import { CameraControls } from './core/CameraControls';
 import { EventSystem } from './core/events/EventSystem';
 import { VisionManager } from './core/VisionManager';
+import { ObjectPoolManager } from './core/ObjectPoolManager';
+import { ErgonomicsAPI } from './core/Ergonomics';
 import { InputManager } from './input/InputManager';
 import { applyDefaultInputConfig } from './input/DefaultInputConfig';
 import { createCameraFingering } from './input/fingerings';
@@ -38,6 +40,7 @@ export class SpaceGraph {
     public vision!: VisionManager;
     public poolManager!: ObjectPoolManager<any>;
     public input!: InputManager;
+    public ergo!: ErgonomicsAPI;
 
     #animationFrameId?: number;
     #lastTimestamp = 0;
@@ -57,6 +60,7 @@ export class SpaceGraph {
         this.pluginManager = new PluginManager(this);
         this.renderer = new Renderer(this, this.container);
         this.graph = new Graph(this);
+        this.ergo = new ErgonomicsAPI(this);
         this.cameraControls = new CameraControls(
             this.renderer.camera,
             this.container,
@@ -419,147 +423,52 @@ export class SpaceGraph {
         return this.graph.edges.size;
     }
 
-    // Ergonomic: iterate nodes
-    forNodes(callback: (node: Node) => void): void {
-        this.graph.forEachNode(callback);
-    }
+    // ============= Ergonomic API (delegated to ErgonomicsAPI) =============
+    forNodes(callback: (node: Node) => void): void { this.ergo.forNodes(callback); }
+    forEdges(callback: (edge: Edge) => void): void { this.ergo.forEdges(callback); }
+    findNodes(predicate: (node: Node) => boolean): Node[] { return this.ergo.findNodes(predicate); }
+    findNode(predicate: (node: Node) => boolean): Node | undefined { return this.ergo.findNode(predicate); }
+    getNodesByType(type: string): Node[] { return this.ergo.getNodesByType(type); }
+    findEdges(predicate: (edge: Edge) => boolean): Edge[] { return this.ergo.findEdges(predicate); }
+    getEdgesForNode(nodeId: string): Edge[] { return this.ergo.getEdgesForNode(nodeId); }
+    add(spec: NodeSpec | Node): Node | null { return this.ergo.add(spec); }
+    connect(source: string, target: string, data?: Record<string, unknown>): Edge | null { return this.ergo.connect(source, target, data); }
+    removeWhere(predicate: (node: Node) => boolean): number { return this.ergo.removeWhere(predicate); }
+    updateWhere(predicate: (node: Node) => boolean, updates: Partial<NodeSpec>): Node[] { return this.ergo.updateWhere(predicate, updates); }
+    addNodes(specs: NodeSpec[]): Node[] { return this.ergo.addNodes(specs); }
+    addEdges(specs: EdgeSpec[]): Edge[] { return this.ergo.addEdges(specs); }
+    traverse(callback: (node: Node, depth: number) => void, startId?: string): void { this.ergo.traverse(callback, startId); }
+    getSubgraph(centerId: string, radius: number): { nodes: Node[]; edges: Edge[] } { return this.ergo.getSubgraph(centerId, radius); }
+    batch(fn: (sg: SpaceGraph) => void): void { this.ergo.batch(fn); }
+    freeze(): { release: () => void } { return this.ergo.freeze(); }
+    select(nodeId: string): this { this.ergo.select(nodeId); return this; }
+    deselect(nodeId: string): this { this.ergo.deselect(nodeId); return this; }
+    selectAll(): this { this.ergo.selectAll(); return this; }
+    deselectAll(): this { this.ergo.deselectAll(); return this; }
+    toggleVisibility(nodeId: string): boolean { return this.ergo.toggleVisibility(nodeId); }
+    $(id: string): Node | undefined { return this.ergo.$(id); }
+    require(id: string): Node { return this.ergo.require(id); }
+    forEach(callback: (node: Node) => void): void { this.ergo.forEach(callback); }
+    map<T>(callback: (node: Node) => T): T[] { return this.ergo.map(callback); }
+    filter(callback: (node: Node) => boolean): Node[] { return this.ergo.filter(callback); }
+    where(key: string, value: unknown): Node[] { return this.ergo.where(key, value); }
+    adjacent(nodeId: string): Node[] { return this.ergo.adjacent(nodeId); }
+    connections(nodeId: string): Edge[] { return this.ergo.connections(nodeId); }
+    suspend(): { resume: () => void } { return this.ergo.suspend(); }
+    transaction(updates: (sg: this) => void): void { this.ergo.transaction(updates); }
+    cloneNode(id: string, newId?: string): Node | null { return this.ergo.cloneNode(id, newId); }
+    move(id: string, x: number, y: number, z: number = 0): Node | null { return this.ergo.move(id, x, y, z); }
+    translate(id: string, dx: number, dy: number, dz: number = 0): Node | null { return this.ergo.translate(id, dx, dy, dz); }
+    label(id: string, text: string): Node | null { return this.ergo.label(id, text); }
+    color(id: string, color: string | number): Node | null { return this.ergo.color(id, color); }
+    show(id: string, visible?: boolean): Node | null { return this.ergo.show(id, visible ?? true); }
+    hide(id: string): Node | null { return this.ergo.hide(id); }
 
-    // Ergonomic: iterate edges
-    forEdges(callback: (edge: Edge) => void): void {
-        this.graph.forEachEdge(callback);
-    }
-
-    // Ergonomic: find nodes by predicate
-    findNodes(predicate: (node: Node) => boolean): Node[] {
-        return this.graph.query(predicate);
-    }
-
-    // Ergonomic: find first node matching predicate
-    findNode(predicate: (node: Node) => boolean): Node | undefined {
-        return this.graph.findNode(predicate);
-    }
-
-    // Ergonomic: get nodes by type
-    getNodesByType(type: string): Node[] {
-        return this.graph.queryByType(type);
-    }
-
-    // Ergonomic: find edges by predicate
-    findEdges(predicate: (edge: Edge) => boolean): Edge[] {
-        const results: Edge[] = [];
-        for (const edge of this.graph.edges.values()) {
-            if (predicate(edge)) results.push(edge);
-        }
-        return results;
-    }
-
-    // Ergonomic: get edges connected to a node
-    getEdgesForNode(nodeId: string): Edge[] {
-        return this.graph.getEdgesForNode(nodeId);
-    }
-
-    // ========== Ergonomic Shortcuts ==========
-    // Add node with fluent API - returns node for chaining
-    add(spec: NodeSpec | Node): Node | null {
-        return this.graph.addNode(spec);
-    }
-
-    // Add edge with fluent API - returns edge for chaining
-    connect(source: string, target: string, data?: Record<string, unknown>): Edge | null {
-        const edgeSpec = {
-            id: `edge-${source}-${target}`,
-            source,
-            target,
-            data,
-        };
-        return this.graph.addEdge(edgeSpec);
-    }
-
-    // Remove by predicate
-    removeWhere(predicate: (node: Node) => boolean): number {
-        let count = 0;
-        this.graph.nodes.forEach((node, id) => {
-            if (predicate(node)) {
-                this.graph.removeNode(id);
-                count++;
-            }
-        });
-        return count;
-    }
-
-    // Update nodes matching criteria
-    updateWhere(
-        predicate: (node: Node) => boolean,
-        updates: Partial<NodeSpec>,
-    ): Node[] {
-        const updated: Node[] = [];
-        this.graph.nodes.forEach((node) => {
-            if (predicate(node)) {
-                const updatedNode = this.graph.updateNode(node.id, updates);
-                if (updatedNode) updated.push(updatedNode);
-            }
-        });
-        return updated;
-    }
-
-    // Batch add nodes
-    addNodes(specs: NodeSpec[]): Node[] {
-        const results: Node[] = [];
-        for (const spec of specs) {
-            const node = this.graph.addNode(spec);
-            if (node) results.push(node);
-        }
-        return results;
-    }
-
-    // Batch add edges
-    addEdges(specs: EdgeSpec[]): Edge[] {
-        const results: Edge[] = [];
-        for (const spec of specs) {
-            const edge = this.graph.addEdge(spec);
-            if (edge) results.push(edge);
-        }
-        return results;
-    }
-
-    // Traverse graph - depth-first
-    traverse(callback: (node: Node, depth: number) => void, startId?: string): void {
-        const visited = new Set<string>();
-        const traverseRecursive = (nodeId: string, depth: number) => {
-            if (visited.has(nodeId)) return;
-            visited.add(nodeId);
-            const node = this.graph.getNode(nodeId);
-            if (!node) return;
-            callback(node, depth);
-            for (const neighbor of this.graph.neighbors(nodeId)) {
-                traverseRecursive(neighbor.id, depth + 1);
-            }
-        };
-        if (startId) traverseRecursive(startId, 0);
-        else for (const node of this.graph.nodes.values()) {
-            traverseRecursive(node.id, 0);
-        }
-    }
-
-    // Get subgraph within distance
-    getSubgraph(centerId: string, radius: number): { nodes: Node[]; edges: Edge[] } {
-        const center = this.graph.getNode(centerId);
-        if (!center) return { nodes: [], edges: [] };
-
-        const inRadius = new Set<string>();
-        const centerPos = center.position;
-
-        for (const [id, node] of this.graph.nodes) {
-            const dist = node.position.distanceTo(centerPos);
-            if (dist <= radius) inRadius.add(id);
-        }
-
-        const nodes = [...inRadius].map((id) => this.graph.getNode(id)!).filter(Boolean);
-        const edges = [...inRadius].flatMap((id) => this.graph.getEdgesForNode(id))
-            .filter((e) => inRadius.has(e.source.id) && inRadius.has(e.target.id));
-
-        return { nodes, edges };
-    }
+    // ============= Quick Properties =============
+    get size(): number { return this.graph.nodes.size; }
+    get isEmpty(): boolean { return this.graph.nodes.size === 0; }
+    get nodes(): Node[] { return [...this.graph.nodes.values()]; }
+    get edges(): Edge[] { return [...this.graph.edges.values()]; }
 
     // Watch for changes - returns unsubscribe
     watch(
@@ -580,17 +489,7 @@ export class SpaceGraph {
         };
     }
 
-    // Ergonomic: Get all nodes as array
-    get nodes(): Node[] {
-        return [...this.graph.nodes.values()];
-    }
-
-    // Ergonomic: Get all edges as array
-    get edges(): Edge[] {
-        return [...this.graph.edges.values()];
-    }
-
-    // Ergonomic: Quick layout application
+    // Quick layout application
     async layout(name: string, options?: Record<string, unknown>): Promise<void> {
         const plugin = this.pluginManager.getPlugin(name);
         if (plugin && 'applyLayout' in plugin) {
@@ -598,60 +497,49 @@ export class SpaceGraph {
         }
     }
 
-    // Ergonomic: Batch update nodes
-    batch(fn: (sg: SpaceGraph) => void): void {
-        fn(this);
+    // Focus and animate camera to node
+    focusNode(id: string, _padding: number = 100, duration: number = 1): this {
+        const node = this.graph.getNode(id);
+        if (node) {
+            const pos = node.position;
+            this.cameraControls.flyTo(pos, this.renderer.camera.position.length(), duration);
+        }
+        return this;
     }
 
-    // Ergonomic: Freeze rendering during batch updates
-    freeze(): { release: () => void } {
-        this.pause();
+    // Zoom to fit all nodes
+    zoomFit(padding: number = 100, duration: number = 1.5): this {
+        return this.fitView(padding, duration) as this;
+    }
+
+    // Center camera on point
+    center(x: number, y: number, z: number = 0): this {
+        this.cameraControls.target.set(x, y, z);
+        this.cameraControls.update();
+        return this;
+    }
+
+    // Reset camera to default
+    resetCamera(): this {
+        this.renderer.camera.position.set(0, 500, 500);
+        this.cameraControls.target.set(0, 0, 0);
+        this.cameraControls.update();
+        return this;
+    }
+
+    // Get camera position
+    get camera(): { position: [number, number, number]; target: [number, number, number] } {
         return {
-            release: () => this.render(),
+            position: [this.renderer.camera.position.x, this.renderer.camera.position.y, this.renderer.camera.position.z],
+            target: [this.cameraControls.target.x, this.cameraControls.target.y, this.cameraControls.target.z],
         };
     }
 
-    // Ergonomic: Selection shortcuts
-    select(nodeId: string): this {
-        const node = this.graph.getNode(nodeId);
-        if (node) node.focus();
+    // Set camera position
+    setCamera(position: [number, number, number], target?: [number, number, number]): this {
+        this.renderer.camera.position.set(...position);
+        if (target) this.cameraControls.target.set(...target);
+        this.cameraControls.update();
         return this;
-    }
-
-    deselect(nodeId: string): this {
-        const node = this.graph.getNode(nodeId);
-        if (node) node.blur();
-        return this;
-    }
-
-    selectAll(): this {
-        for (const node of this.graph.nodes.values()) node.focus();
-        return this;
-    }
-
-    deselectAll(): this {
-        for (const node of this.graph.nodes.values()) node.blur();
-        return this;
-    }
-
-    // Ergonomic: Toggle node visibility
-    toggleVisibility(nodeId: string): boolean {
-        const node = this.graph.getNode(nodeId);
-        if (!node) return false;
-        const visible = !(node.data as Record<string, unknown>).visible;
-        node.updateSpec({ data: { ...node.data, visible } });
-        return visible;
-    }
-
-    // Ergonomic: Quick node lookup
-    $(id: string): Node | undefined {
-        return this.graph.getNode(id);
-    }
-
-    // Ergonomic: Get node or throw
-    require(id: string): Node {
-        const node = this.graph.getNode(id);
-        if (!node) throw new Error(`Node not found: ${id}`);
-        return node;
     }
 }

@@ -1,15 +1,17 @@
 // utils/index.ts - Consolidated utility exports
 // All utilities re-exported from single source for better tree-shaking
 
-// Math utilities (from math.ts)
+// Re-export constants from core (includes math constants)
 export {
-    // Constants
-    DEG2RAD,
-    RAD2DEG,
-    PI,
-    TAU,
-    EPSILON,
+    DEG2RAD, RAD2DEG, PI, TAU, EPSILON, RAD, DEG,
+    AnimationDuration, ZoomConfig, FingeringPriority,
+    InteractionThresholds, Performance, Defaults,
+    EdgeColors, WCAG, InputConfig,
+    DUR, ZOOM, FINGER, THRESH, PERF, DEF, COLORS, CONSTANTS,
+} from '../core/constants';
 
+// Math utilities (from math.ts) - excluding constants which come from core
+export {
     // Type guards
     isObject,
     isFunction,

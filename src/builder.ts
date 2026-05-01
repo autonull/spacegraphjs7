@@ -88,6 +88,25 @@ export class NodeBuilder extends BaseBuilder<NodeSpec> {
     center(): this { return this.position(0, 0, 0); }
     origin(): this { return this.position(0, 0, 0); }
 
+    // Dimension helpers
+    width(w: number): this { this.mergeData({ width: w }); return this; }
+    height(h: number): this { this.mergeData({ height: h }); return this; }
+    depth(d: number): this { this.mergeData({ depth: d }); return this; }
+    dimensions(w: number, h: number, d?: number): this { this.mergeData({ width: w, height: h, depth: d }); return this; }
+
+    // Style helpers
+    className(cls: string): this { this.mergeData({ className: cls }); return this; }
+    style(css: Record<string, string>): this { this.mergeData({ style: css }); return this; }
+    click(fn: () => void): this { this.mergeData({ onClick: fn }); return this; }
+    hover(fn: (hovered: boolean) => void): this { this.mergeData({ onHover: fn }); return this; }
+    drag(fn: (dx: number, dy: number) => void): this { this.mergeData({ onDrag: fn }); return this; }
+
+    // Shape shortcut
+    shape(s: 'box' | 'sphere' | 'circle' | 'plane' | 'cone' | 'cylinder' | 'torus' | 'ring'): this {
+        this.mergeData({ shape: s });
+        return this;
+    }
+
     // Fluent chain: build and add to spec
     then<G extends GraphSpecBuilder>(builder: G): G {
         builder.addNode(this.spec);
@@ -213,6 +232,35 @@ export class GraphSpecBuilder {
         return this;
     }
 
+    // Fluent: iterate over nodes
+    eachNode(fn: (spec: NodeSpec, index: number) => void): this {
+        this.#nodes.forEach(fn);
+        return this;
+    }
+    eachEdge(fn: (spec: EdgeSpec, index: number) => void): this {
+        this.#edges.forEach(fn);
+        return this;
+    }
+
+    // Fluent: filter nodes/edges
+    filterNodes(predicate: (spec: NodeSpec) => boolean): this {
+        this.#nodes = this.#nodes.filter(predicate);
+        return this;
+    }
+    filterEdges(predicate: (spec: EdgeSpec) => boolean): this {
+        this.#edges = this.#edges.filter(predicate);
+        return this;
+    }
+
+    // Fluent: map nodes
+    mapNodes<T>(fn: (spec: NodeSpec) => T): T[] {
+        return this.#nodes.map(fn);
+    }
+
+    // Get counts
+    get nodeCount(): number { return this.#nodes.length; }
+    get edgeCount(): number { return this.#edges.length; }
+
     build(): GraphSpec { return { nodes: this.#nodes, edges: this.#edges }; }
 
     async create(container: string | HTMLElement, options?: SpaceGraphOptions): Promise<SpaceGraph> {
@@ -220,6 +268,12 @@ export class GraphSpecBuilder {
         return SpaceGraph.create(container, this.build(), options);
     }
     toSpec(): GraphSpec { return this.build(); }
+
+    // Chain with existing SpaceGraph instance
+    loadInto(sg: SpaceGraph): this {
+        sg.loadSpec(this.build()).render();
+        return this;
+    }
 }
 
 // ============= Factory Functions =============
@@ -420,6 +474,99 @@ export const Patterns = {
                     Math.random() * spread - spread / 2,
                     Math.random() * spread - spread / 2,
                 );
+        }
+        return builder;
+    },
+
+    // Spiral layout
+    spiral(turns: number, pointsPerTurn: number = 10, spacing: number = 50): GraphSpecBuilder {
+        const builder = graph();
+        const totalPoints = turns * pointsPerTurn;
+        for (let i = 0; i < totalPoints; i++) {
+            const angle = (i / pointsPerTurn) * TAU;
+            const radius = i * (spacing / pointsPerTurn);
+            builder
+                .node(`node-${i}`)
+                .type('ShapeNode')
+                .label(`Node ${i}`)
+                .position(Math.cos(angle) * radius, 0, Math.sin(angle) * radius);
+        }
+        return builder;
+    },
+
+    // Honeycomb/hexagonal grid
+    honeycomb(rings: number, spacing: number = 80): GraphSpecBuilder {
+        const builder = graph();
+        const hexPositions: [number, number][] = [];
+        for (let q = -rings; q <= rings; q++) {
+            const r1 = Math.max(-rings, -q - rings);
+            const r2 = Math.min(rings, -q + rings);
+            for (let r = r1; r <= r2; r++) {
+                const x = spacing * (3 / 2 * q);
+                const z = spacing * (Math.sqrt(3) / 2 * q + Math.sqrt(3) * r);
+                hexPositions.push([x, z]);
+            }
+        }
+        hexPositions.forEach(([x, z], i) => {
+            builder.node(`node-${i}`).type('ShapeNode').label(`Node ${i}`).position(x, 0, z);
+        });
+        // Add edges between adjacent hexagons
+        for (let i = 0; i < hexPositions.length; i++) {
+            for (let j = i + 1; j < hexPositions.length; j++) {
+                const [x1, z1] = hexPositions[i];
+                const [x2, z2] = hexPositions[j];
+                const dist = Math.sqrt((x2 - x1) ** 2 + (z2 - z1) ** 2);
+                if (dist < spacing * 1.1) {
+                    builder.addEdge({ id: `e-${i}-${j}`, source: `node-${i}`, target: `node-${j}` });
+                }
+            }
+        }
+        return builder;
+    },
+
+    // Tree (parent-child hierarchy)
+    tree(
+        children: number[],
+        spacingX: number = 80,
+        spacingY: number = 100,
+    ): GraphSpecBuilder {
+        const builder = graph();
+        let nodeId = 0;
+        const bfs = (level: number, startIdx: number, count: number) => {
+            const y = level * spacingY;
+            const width = count * spacingX;
+            for (let i = 0; i < count; i++) {
+                const x = (i - (count - 1) / 2) * spacingX - width / 2;
+                const id = `node-${nodeId++}`;
+                builder.node(id).type('ShapeNode').label(id).position(x, 0, y);
+                if (level > 0) {
+                    const parentIdx = startIdx + Math.floor(i * children[level - 1] / count);
+                    builder.addEdge({ id: `e-${id}-parent`, source: `node-${parentIdx}`, target: id });
+                }
+            }
+        };
+        children.forEach((count, level) => bfs(level, 0, count));
+        return builder;
+    },
+
+    // Force-directed cluster
+    clusters(count: number, nodesPerCluster: number, spread: number = 300): GraphSpecBuilder {
+        const builder = graph();
+        for (let c = 0; c < count; c++) {
+            const cx = (c % 3) * spread - spread;
+            const cz = Math.floor(c / 3) * spread - spread;
+            for (let i = 0; i < nodesPerCluster; i++) {
+                const id = `node-${c}-${i}`;
+                builder.node(id).type('ShapeNode').label(`C${c}-${i}`).position(
+                    cx + Math.random() * 100 - 50,
+                    Math.random() * 100 - 50,
+                    cz + Math.random() * 100 - 50,
+                );
+                // Add some intra-cluster edges
+                if (i > 0) {
+                    builder.addEdge({ id: `e-${c}-${i}`, source: `node-${c}-${i - 1}`, target: id });
+                }
+            }
         }
         return builder;
     },

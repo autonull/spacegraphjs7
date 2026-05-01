@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { DEG2RAD } from './math';
+import { DEG2RAD } from '../core/constants';
 
 export interface Point {
     x: number;

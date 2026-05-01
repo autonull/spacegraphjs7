@@ -1,7 +1,18 @@
 // Core constants - consolidated and optimized
 // Lazy-evaluated constants for better tree-shaking
 
-// Factory functions - evaluate on demand
+// ============= Math Constants =============
+export const DEG2RAD = Math.PI / 180;
+export const RAD2DEG = 180 / Math.PI;
+export const PI = Math.PI;
+export const TAU = PI * 2;
+export const EPSILON = 1e-6;
+
+// Shorthand aliases for developer ergonomics
+export const RAD = DEG2RAD;
+export const DEG = RAD2DEG;
+
+// ============= Animation Duration =============
 const createAnimationDuration = () => ({
     FAST: 0.3,
     DEFAULT: 0.5,

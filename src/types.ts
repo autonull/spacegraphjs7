@@ -9,13 +9,18 @@ export type Maybe<T> = T | null | undefined;
 export type MaybePromise<T> = T | Promise<T>;
 export type Constructor<T, Args extends unknown[] = unknown[]> = new (...args: Args) => T;
 export type Predicate<T> = (value: T) => boolean;
-export type EventHandler<T = unknown> = (event: T) => void;
 export type Disposer = () => void;
 export type Nullable<T> = T | null;
 export type Optional<T> = Partial<T>;
 export type Awaited<T> = T extends Promise<infer U> ? U : T;
 export type ValueOf<T> = T[keyof T];
 export type KeysOf<T> = keyof T;
+
+// Common callback types
+export type NodeCallback<T = Node> = (node: T) => void;
+export type EdgeCallback<T = Edge> = (edge: T) => void;
+export type IdCallback = (id: string) => void;
+export type AsyncCallback<T = void> = () => Promise<T> | T;
 
 // ============= Geometry Types =============
 export interface Rect {
@@ -449,14 +454,8 @@ export type EdgeSpecWithData<T extends EdgeData = EdgeData> = EdgeSpec<T> & { da
 export type DeepPartial<T> = { [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P] };
 export type DeepRequired<T> = { [P in keyof T]-?: T[P] extends object ? DeepRequired<T[P]> : T[P] };
 
-// ============= Callback Types =============
-export type NodeCallback<T = Node> = (node: T) => void;
-export type EdgeCallback<T = Edge> = (edge: T) => void;
-export type IdCallback = (id: string) => void;
-export type AsyncCallback<T = void> = () => Promise<T> | T;
-
 // ============= Layout Types =============
-// Note: Layout-specific options are defined in plugins/layouts/BaseLayout.ts
+ // Note: Layout-specific options are defined in plugins/layouts/BaseLayout.ts
 // Use import { LayoutOptions } from './plugins/layouts/BaseLayout' for full options
 
 // ============= Ergonomic Factory Types =============

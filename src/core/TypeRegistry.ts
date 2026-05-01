@@ -53,14 +53,6 @@ export class TypeRegistry {
         return [...this.edgeTypes.keys()];
     }
 
-    registerNodeType(name: string, ctor: NodeConstructor): void {
-        this.registerNode(name, ctor);
-    }
-
-    registerEdgeType(name: string, ctor: EdgeConstructor): void {
-        this.registerEdge(name, ctor);
-    }
-
     createNode(sgOrSpec: SpaceGraph | NodeSpec, specOrSg?: NodeSpec | SpaceGraph): Node {
         const isSpecFirst = 'type' in sgOrSpec;
         const nodeSpec = isSpecFirst ? (sgOrSpec as NodeSpec) : (specOrSg as NodeSpec);

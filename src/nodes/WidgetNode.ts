@@ -63,7 +63,7 @@ export abstract class WidgetNode extends Node {
     protected abstract createLabelContent(ctx: CanvasRenderingContext2D, text: string): void;
     protected abstract getLabelText(): string;
 
-    protected initLabel(data: WidgetNodeData | undefined): void {
+    protected initLabel(_data: WidgetNodeData | undefined): void {
         const text = this.getLabelText();
         if (!text) return;
 

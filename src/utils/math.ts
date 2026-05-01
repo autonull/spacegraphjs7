@@ -1,12 +1,6 @@
 // math.ts - Modern ES2022+ math and utility functions
 // Type-safe, performant, and deduplicated
-
-// ============= Constants =============
-export const DEG2RAD = Math.PI / 180;
-export const RAD2DEG = 180 / Math.PI;
-export const PI = Math.PI;
-export const TAU = PI * 2;
-export const EPSILON = 1e-6;
+import { EPSILON } from '../core/constants';
 
 // ============= Type Guards =============
 export const isObject = (item: unknown): item is Record<string, unknown> =>

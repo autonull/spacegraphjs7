@@ -26,7 +26,7 @@ export class EventEmitter<T extends Record<string, unknown>> {
         this.handlers.get(event)?.delete(handler);
     }
 
-    protected emit<K extends keyof T>(event: K, data: T[K]): void {
+    emit<K extends keyof T>(event: K, data: T[K]): void {
         for (const h of this.handlers.get(event) ?? []) {
             try {
                 h(data);
@@ -56,7 +56,7 @@ export class EventEmitter<T extends Record<string, unknown>> {
         this.batched.clear();
     }
 
-    protected emitWithTimestamp<K extends keyof T>(
+    emitWithTimestamp<K extends keyof T>(
         event: K,
         data: T[K] & { timestamp?: number },
     ): void {
