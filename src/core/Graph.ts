@@ -413,6 +413,71 @@ get isEmpty(): boolean {
         return [...this.nodes.values()].filter(n => !hasIncoming.has(n.id));
     }
 
+    // Ergonomic: Get nodes by type
+    getNodesByType(type: string): Node[] {
+        return this.queryByType(type);
+    }
+
+    // Ergonomic: Get nodes by label prefix
+    getNodesByLabelPrefix(prefix: string): Node[] {
+        return this.queryByLabel(prefix, false);
+    }
+
+    // Ergonomic: Get connected component count
+    getConnectedComponentCount(): number {
+        const visited = new Set<string>();
+        let count = 0;
+
+        for (const nodeId of this.nodes.keys()) {
+            if (!visited.has(nodeId)) {
+                const component = this.getConnectedComponent(nodeId);
+                component.forEach(n => visited.add(n.id));
+                count++;
+            }
+        }
+        return count;
+    }
+
+    // Ergonomic: Check if graph is connected
+    get isConnected(): boolean {
+        if (this.nodes.size === 0) return true;
+        return this.getConnectedComponentCount() === 1;
+    }
+
+    // Ergonomic: Get node degree (total connections)
+    getNodeDegree(nodeId: string): number {
+        return this.getEdgesForNode(nodeId).length;
+    }
+
+    // Ergonomic: Get nodes with degree >= threshold
+    getHubNodes(minDegree: number): Node[] {
+        const result: Node[] = [];
+        for (const node of this.nodes.values()) {
+            if (this.getNodeDegree(node.id) >= minDegree) result.push(node);
+        }
+        return result;
+    }
+
+    // Ergonomic: Batch add nodes
+    addNodes(specs: NodeSpec[]): Node[] {
+        const added: Node[] = [];
+        for (const spec of specs) {
+            const node = this.addNode(spec);
+            if (node) added.push(node);
+        }
+        return added;
+    }
+
+    // Ergonomic: Batch add edges
+    addEdges(specs: EdgeSpec[]): Edge[] {
+        const added: Edge[] = [];
+        for (const spec of specs) {
+            const edge = this.addEdge(spec);
+            if (edge) added.push(edge);
+        }
+        return added;
+    }
+
     // Serialization
     toJSON(): GraphSpec {
         return {
@@ -444,6 +509,198 @@ get isEmpty(): boolean {
     }
 
     fromJSON = this.from;
+
+    // ============= Ergonomic Traversal Methods =============
+    traverse(callback: (node: Node, depth: number) => void, startId?: string): void {
+        const visited = new Set<string>();
+        const traverseRecursive = (nodeId: string, depth: number) => {
+            if (visited.has(nodeId)) return;
+            visited.add(nodeId);
+            const node = this.nodes.get(nodeId);
+            if (!node) return;
+            callback(node, depth);
+            for (const neighbor of this.neighbors(nodeId)) {
+                traverseRecursive(neighbor.id, depth + 1);
+            }
+        };
+        if (startId) traverseRecursive(startId, 0);
+        else for (const node of this.nodes.values()) traverseRecursive(node.id, 0);
+    }
+
+    bfs(callback: (node: Node, depth: number) => void, startId?: string): void {
+        const start = startId ? [this.nodes.get(startId)] : [...this.nodes.values()];
+        const visited = new Set<string>();
+        const queue: Array<{ node: Node; depth: number }> = [];
+        for (const node of start) if (node) queue.push({ node, depth: 0 });
+        while (queue.length) {
+            const { node, depth } = queue.shift()!;
+            if (visited.has(node.id)) continue;
+            visited.add(node.id);
+            callback(node, depth);
+            for (const neighbor of this.neighbors(node.id)) {
+                if (!visited.has(neighbor.id)) queue.push({ node: neighbor, depth: depth + 1 });
+            }
+        }
+    }
+
+    dfs(callback: (node: Node, depth: number) => void, startId?: string): void {
+        const visited = new Set<string>();
+        const stack: Array<{ node: Node; depth: number }> = [];
+        const start = startId ? this.nodes.get(startId) : [...this.nodes.values()][0];
+        if (start) stack.push({ node: start, depth: 0 });
+        while (stack.length) {
+            const { node, depth } = stack.pop()!;
+            if (visited.has(node.id)) continue;
+            visited.add(node.id);
+            callback(node, depth);
+            for (const neighbor of this.neighbors(node.id)) {
+                if (!visited.has(neighbor.id)) stack.push({ node: neighbor, depth: depth + 1 });
+            }
+        }
+    }
+
+    getConnectedComponentInRadius(centerId: string, radius: number): { nodes: Node[]; edges: Edge[] } {
+        const center = this.nodes.get(centerId);
+        if (!center) return { nodes: [], edges: [] };
+        const inRadius = new Set<string>();
+        const centerPos = center.position;
+        for (const [id, node] of this.nodes) {
+            if (node.position.distanceTo(centerPos) <= radius) inRadius.add(id);
+        }
+        const nodes = [...inRadius].map((id) => this.nodes.get(id)!).filter(Boolean);
+        const edges = [...inRadius].flatMap((id) => this.getEdgesForNode(id))
+            .filter((e) => inRadius.has(e.source.id) && inRadius.has(e.target.id));
+        return { nodes, edges };
+    }
+
+    findPath(from: string, to: string): Node[] | null {
+        const visited = new Set<string>();
+        const queue: Array<{ id: string; path: Node[] }> = [{ id: from, path: [] }];
+        while (queue.length) {
+            const { id, path } = queue.shift()!;
+            if (visited.has(id)) continue;
+            visited.add(id);
+            const node = this.nodes.get(id);
+            if (!node) continue;
+            const newPath = [...path, node];
+            if (id === to) return newPath;
+            for (const neighbor of this.neighbors(id)) {
+                if (!visited.has(neighbor.id)) queue.push({ id: neighbor.id, path: newPath });
+            }
+        }
+        return null;
+    }
+
+    batchUpdate(fn: (graph: Graph) => void): void {
+        fn(this);
+    }
+
+    snapshot(): Map<string, { position: THREE.Vector3; data: NodeData }> {
+        const snap = new Map<string, { position: THREE.Vector3; data: NodeData }>();
+        for (const [id, node] of this.nodes) {
+            snap.set(id, { position: node.position.clone(), data: { ...node.data } });
+        }
+        return snap;
+    }
+
+    restore(snapshot: Map<string, { position: THREE.Vector3; data: NodeData }>): void {
+        for (const [id, state] of snapshot) {
+            const node = this.nodes.get(id);
+            if (node) {
+                node.position.copy(state.position);
+                node.object.position.copy(state.position);
+                node.data = { ...state.data };
+            }
+        }
+    }
+
+    getStats(): { nodes: number; edges: number; avgDegree: number; components: number; density: number } {
+        const nodeCount = this.nodes.size;
+        const edgeCount = this.edges.size;
+        const degrees = new Map<string, number>();
+        for (const edge of this.edges.values()) {
+            degrees.set(edge.source.id, (degrees.get(edge.source.id) ?? 0) + 1);
+            degrees.set(edge.target.id, (degrees.get(edge.target.id) ?? 0) + 1);
+        }
+        const totalDegree = Array.from(degrees.values()).reduce((a, b) => a + b, 0);
+        const avgDegree = nodeCount > 0 ? totalDegree / nodeCount : 0;
+        const maxPossibleEdges = nodeCount * (nodeCount - 1);
+        const density = maxPossibleEdges > 0 ? edgeCount / maxPossibleEdges : 0;
+        const visited = new Set<string>();
+        let components = 0;
+        for (const nodeId of this.nodes.keys()) {
+            if (!visited.has(nodeId)) {
+                const component = this.getConnectedComponent(nodeId);
+                component.forEach(n => visited.add(n.id));
+                components++;
+            }
+        }
+        return { nodes: nodeCount, edges: edgeCount, avgDegree, components, density };
+    }
+
+    getNodesByData(predicate: (data: NodeData) => boolean): Node[] {
+        const result: Node[] = [];
+        for (const node of this.nodes.values()) {
+            if (predicate(node.data)) result.push(node);
+        }
+        return result;
+    }
+
+    getNodesNear(position: THREE.Vector3, radius: number): Node[] {
+        const result: Node[] = [];
+        for (const node of this.nodes.values()) {
+            if (node.position.distanceTo(position) <= radius) result.push(node);
+        }
+        return result;
+    }
+
+    getNodeDegrees(): Map<string, number> {
+        const degrees = new Map<string, number>();
+        for (const edge of this.edges.values()) {
+            degrees.set(edge.source.id, (degrees.get(edge.source.id) ?? 0) + 1);
+            degrees.set(edge.target.id, (degrees.get(edge.target.id) ?? 0) + 1);
+        }
+        return degrees;
+    }
+
+    getHubs(minDegree: number): Node[] {
+        const degrees = this.getNodeDegrees();
+        return [...this.nodes.values()].filter(n => (degrees.get(n.id) ?? 0) >= minDegree);
+    }
+
+    getIsolatedNodes(): Node[] {
+        const degrees = this.getNodeDegrees();
+        return [...this.nodes.values()].filter(n => (degrees.get(n.id) ?? 0) === 0);
+    }
+
+    removeNodesByType(type: string): number {
+        const toRemove = [...this.nodes.values()].filter(n => n.type === type);
+        toRemove.forEach(n => this.removeNode(n.id));
+        return toRemove.length;
+    }
+
+    removeNodesByData(predicate: (data: NodeData) => boolean): number {
+        const toRemove = this.getNodesByData(predicate);
+        toRemove.forEach(n => this.removeNode(n.id));
+        return toRemove.length;
+    }
+
+    merge(other: Graph): void {
+        for (const node of other.nodes.values()) {
+            if (!this.nodes.has(node.id)) {
+                this.addNode({ ...node.toJSON() });
+            }
+        }
+        for (const edge of other.edges.values()) {
+            if (!this.edges.has(edge.id)) {
+                const source = this.nodes.get(edge.source.id);
+                const target = this.nodes.get(edge.target.id);
+                if (source && target) {
+                    this.addEdge({ ...edge.toJSON() as EdgeSpec });
+                }
+            }
+        }
+    }
 
     private _addNode(id: string, node: Node): Node {
         this.nodes.set(id, node);

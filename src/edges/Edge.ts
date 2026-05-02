@@ -212,6 +212,63 @@ export class Edge extends Surface {
         return this;
     }
 
+    // Ergonomic convenience methods
+    highlight(): this {
+        this.setHighlight(true);
+        return this;
+    }
+
+    unhighlight(): this {
+        this.setHighlight(false);
+        return this;
+    }
+
+    setThickness(thickness: number): this {
+        this.data.thickness = thickness;
+        this.line.material.linewidth = thickness;
+        return this;
+    }
+
+    setColor(color: number | string): this {
+        this.data.color = color as any;
+        this.line.material.color.set(color as any);
+        return this;
+    }
+
+    setDashed(dashed: boolean): this {
+        this.data.dashed = dashed;
+        this.line.material.dashed = dashed;
+        if (dashed) this.line.computeLineDistances();
+        return this;
+    }
+
+    setArrowhead(arrowhead: boolean | 'source' | 'target' | 'both'): this {
+        this.data.arrowhead = arrowhead;
+        return this;
+    }
+
+    getOtherNode(node: Node): Node | undefined {
+        if (node.id === this.source.id) return this.target;
+        if (node.id === this.target.id) return this.source;
+        return undefined;
+    }
+
+    isConnectedTo(nodeId: string): boolean {
+        return this.source.id === nodeId || this.target.id === nodeId;
+    }
+
+    swap(): void {
+        const temp = this.source;
+        this.source = this.target;
+        this.target = temp;
+        this.update();
+    }
+
+    reverse(): this {
+        this.swap();
+        return this;
+    }
+
     update(): void {
         if (!this.line || !this.source || !this.target) return;
 

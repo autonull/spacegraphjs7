@@ -1,4 +1,5 @@
 // SpaceGraphJS v7 - Ergonomic Developer API
+// Optimized for developer experience with unified exports and convenient shortcuts
 import './init';
 export { SpaceGraph, VERSION } from './SpaceGraph';
 
@@ -18,16 +19,20 @@ export type {
   LogLevel, Logger,
 } from './core';
 
-// Builder
+// Builder - Ergonomic chainable API
 export {
   NodeBuilder, EdgeBuilder, GraphSpecBuilder, graph, quickGraph, Patterns,
-  Animate, Layout, Camera, NodeFactory, EdgeFactory, widget, button, toggle, slider
+  Animate, Layout, Camera, NodeFactory, EdgeFactory, widget, button, toggle, slider,
+  NodeFactoryExtended, Presets, DataUtils, Batch
 } from './builder';
 
-// Utils
+// Utils - Comprehensive utilities including easing, math, color, and more
 export * from './utils';
 
-// Input
+// Easing - Top-level convenience export for animations
+export { ease } from './utils/math';
+
+// Input System
 export { InputManager, FingerManager, Fingering, createParentTransform, createCameraFingering } from './input';
 export type { CameraAction, InputEvent, InputEventType, InputAction, InputBinding, InputContext, InputState } from './input';
 
@@ -42,14 +47,14 @@ export * from './edges';
 export { InstancedNodeRenderer, GEOMETRY_FAMILIES } from './rendering/InstancedNodeRenderer';
 export type { GeometryFamily as GeometryFamilyType } from './rendering/InstancedNodeRenderer';
 
-// Vision
+// Vision System
 export { VisionSystem, HeuristicsStrategy } from './vision';
 export type { VisionCategory, VisionOptions, VisionReport, VisionScore } from './vision';
 
 // Pooling helpers
 export { withPooledVector3, withPooledVector2, withPooledMatrix4, withPooledBox3 } from './core/pooling/ObjectPool';
 
-// Types - comprehensive type exports
+// Types - Comprehensive type exports
 export type {
   SpaceGraphOptions, RenderOptions, SpaceGraphEvents, Disposable,
   LayoutConfig, LayoutOptions, VisionOptions, VisionReport, VisionScore,
@@ -69,5 +74,19 @@ export type {
 export { WidgetNode } from './nodes/WidgetNode';
 export type { WidgetNodeData } from './nodes/WidgetNode';
 
+// Convenience: Create a SpaceGraph instance with sensible defaults
+export const createSpaceGraph = (options?: import('./types').SpaceGraphOptions) => new SpaceGraph(options);
+
+// Convenience: Quick graph spec generator
+export const createGraph = import('./builder').then(m => m.graph);
+
 // Default export
 export { SpaceGraph as default } from './SpaceGraph';
+
+// Type augmentation for global ease access
+declare global {
+  interface Window {
+    ease: typeof import('./utils/math').ease;
+    SpaceGraph: typeof import('./SpaceGraph').SpaceGraph;
+  }
+}

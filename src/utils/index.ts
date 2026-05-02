@@ -54,61 +54,38 @@ export {
     randomBool,
     randomPick,
 
-    // Color
+    // Object utilities
+    safeClone,
+    deepEqual,
+} from './math';
+
+// Color
+export {
     hexToRgb,
     rgbToHex,
     toHexColor,
     getRelativeLuminance,
     getContrastRatio,
     getCompliantColor,
-
-    // Object utilities
-    mergeDeep,
-    safeClone,
-    deepEqual,
-
-    // Function utilities
-    debounce,
-    throttle,
-
-    // Memoization
-    memoize,
-    memoizeWithKey,
-    invalidateMemoization,
-    clearMemoization,
-
-    // Array utilities
-    groupBy,
-    unique,
-    flatten,
-    chunk,
-
-    // Promise utilities
-    isPromise,
-    sleep,
-    retry,
-
-    // Functional utilities
-    pipe,
-    compose,
-    partial,
-    curry,
-    once,
-    cacheWithTTL,
-
-    // DX utilities
-    tap,
-    tapAsync,
-    tryCatch,
-    tryCatchAsync,
-    trace,
-    log,
-    pick,
-    omit,
-    when,
-    ifElse,
-    match,
-} from './math';
+    lerpColor,
+    lerpColorHex,
+    blendColors,
+    hexToHsl,
+    hslToHex,
+    adjustHue,
+    adjustSaturation,
+    adjustLightness,
+    darken,
+    lighten,
+    saturate,
+    desaturate,
+    generateGradient,
+    ColorStop,
+    generatePalette,
+    generateGradientPalette,
+    toCssGradient,
+    parseColor,
+} from './color';
 
 // Logger
 export { logger, createLogger, setLogLevel } from './logger';

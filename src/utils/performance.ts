@@ -1,5 +1,11 @@
 // Performance optimization utilities
 import { throttle, debounce } from './math';
+import { ObjectPool as CoreObjectPool } from '../core/pooling/ObjectPool';
+
+/**
+ * @deprecated Use CoreObjectPool from core/pooling/ObjectPool
+ */
+export const ObjectPool = CoreObjectPool;
 
 /**
  * Performance monitor for tracking FPS and memory
@@ -51,49 +57,6 @@ export class PerformanceMonitor {
     this.history = [];
   }
 }
-
-// memoize exported from math.ts to avoid duplication
-
-/**
- * Object pool for reducing allocations
- */
-export class ObjectPool<T> {
-  private pool: T[] = [];
-  private createFn: () => T;
-  private resetFn?: (obj: T) => void;
-  private maxSize: number;
-
-  constructor(createFn: () => T, maxSize: number = 100, resetFn?: (obj: T) => void) {
-    this.createFn = createFn;
-    this.resetFn = resetFn;
-    this.maxSize = maxSize;
-  }
-
-  acquire(): T {
-    if (this.pool.length > 0) {
-      const obj = this.pool.pop()!;
-      this.resetFn?.(obj);
-      return obj;
-    }
-    return this.createFn();
-  }
-
-  release(obj: T): void {
-    if (this.pool.length < this.maxSize) {
-      this.pool.push(obj);
-    }
-  }
-
-  clear(): void {
-    this.pool = [];
-  }
-
-  size(): number {
-    return this.pool.length;
-  }
-}
-
-// memoize exported from math.ts (see utils/index.ts)
 
 /**
  * Batch operations for better performance

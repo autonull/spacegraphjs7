@@ -431,3 +431,72 @@ export const ifElse = <T>(condition: boolean, whenTrue: T, whenFalse: T): T =>
 // Switch-like pattern
 export const match = <T, R>(value: T) => (cases: Partial<Record<T, R>> | Record<string, R>, defaultCase: R): R =>
     (value in cases ? cases[value] : defaultCase);
+
+// ============= Easing Functions =============
+export const ease = {
+    linear: (t: number) => t,
+    quadIn: (t: number) => t * t,
+    quadOut: (t: number) => t * (2 - t),
+    quadInOut: (t: number) => (t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t),
+    cubicIn: (t: number) => t * t * t,
+    cubicOut: (t: number) => (--t) * t * t + 1,
+    cubicInOut: (t: number) => (t < 0.5 ? 4 * t * t * t : (t - 1) * (2 * t - 2) * (2 * t - 2) + 1),
+    quartIn: (t: number) => t * t * t * t,
+    quartOut: (t: number) => 1 - (--t) * t * t * t,
+    quartInOut: (t: number) => (t < 0.5 ? 8 * t * t * t * t : 1 - 8 * (--t) * t * t * t),
+    quintIn: (t: number) => t * t * t * t * t,
+    quintOut: (t: number) => 1 + (--t) * t * t * t * t,
+    quintInOut: (t: number) => (t < 0.5 ? 16 * t * t * t * t * t : 1 + 16 * (--t) * t * t * t * t),
+    sineIn: (t: number) => 1 - Math.cos(t * Math.PI / 2),
+    sineOut: (t: number) => Math.sin(t * Math.PI / 2),
+    sineInOut: (t: number) => -(Math.cos(Math.PI * t) - 1) / 2,
+    expoIn: (t: number) => t === 0 ? 0 : Math.pow(2, 10 * (t - 1)),
+    expoOut: (t: number) => t === 1 ? 1 : 1 - Math.pow(2, -10 * t),
+    expoInOut: (t: number) => t === 0 ? 0 : t === 1 ? 1 : t < 0.5 ? Math.pow(2, 20 * t - 10) / 2 : (2 - Math.pow(2, 10 * t - 10)) / 2,
+    circIn: (t: number) => 1 - Math.sqrt(1 - t * t),
+    circOut: (t: number) => Math.sqrt(1 - (--t) * t),
+    circInOut: (t: number) => t < 0.5 ? (1 - Math.sqrt(1 - 4 * t * t)) / 2 : (Math.sqrt(1 - 4 * (t - 1) * (t - 1)) + 1) / 2,
+    elasticIn: (t: number) => t === 0 ? 0 : t === 1 ? 1 : -Math.pow(2, 10 * t - 10) * Math.sin((t * 10 - 10.75) * ((2 * Math.PI) / 3)),
+    elasticOut: (t: number) => t === 0 ? 0 : t === 1 ? 1 : Math.pow(2, -10 * t) * Math.sin((t * 10 - 0.75) * ((2 * Math.PI) / 3)) + 1,
+    elasticInOut: (t: number) => t === 0 ? 0 : t === 1 ? 1 : t < 0.5 ? -(Math.pow(2, 20 * t - 10) * Math.sin((20 * t - 11.125) * ((2 * Math.PI) / 4.5))) / 2 : (Math.pow(2, -20 * t + 10) * Math.sin((20 * t - 11.125) * ((2 * Math.PI) / 4.5))) / 2 + 1,
+    backIn: (t: number) => { const c1 = 1.70158, c3 = c1 + 1; return c3 * t * t * t - c1 * t * t; },
+    backOut: (t: number) => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2); },
+    backInOut: (t: number) => { const c1 = 1.70158, c2 = c1 * 1.525; return t < 0.5 ? (Math.pow(2 * t, 2) * ((c2 + 1) * 2 * t - c2)) / 2 : (Math.pow(2 * t - 2, 2) * ((c2 + 1) * (t * 2 - 2) + c2) + 2) / 2; },
+    bounceIn: (t: number) => 1 - ease.bounceOut(1 - t),
+    bounceOut: (t: number) => { const n1 = 7.5625, d1 = 2.75; return t < 1 / d1 ? n1 * t * t : t < 2 / d1 ? n1 * (t -= 1.5 / d1) * t + 0.75 : t < 2.5 / d1 ? n1 * (t -= 2.25 / d1) * t + 0.9375 : n1 * (t -= 2.625 / d1) * t + 0.984375; },
+    bounceInOut: (t: number) => t < 0.5 ? (1 - ease.bounceOut(1 - 2 * t)) / 2 : (1 + ease.bounceOut(2 * t - 1)) / 2,
+};
+
+// ============= Spatial Utilities =============
+export const distance2D = (x1: number, y1: number, x2: number, y2: number): number =>
+    Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+
+export const distance3D = (x1: number, y1: number, z1: number, x2: number, y2: number, z2: number): number =>
+    Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2 + (z2 - z1) ** 2);
+
+export const pointInRect = (px: number, py: number, rx: number, ry: number, rw: number, rh: number): boolean =>
+    px >= rx && px <= rx + rw && py >= ry && py <= ry + rh;
+
+export const rectsIntersect = (r1: { x: number; y: number; w: number; h: number }, r2: { x: number; y: number; w: number; h: number }): boolean =>
+    r1.x < r2.x + r2.w && r1.x + r1.w > r2.x && r1.y < r2.y + r2.h && r1.y + r1.h > r2.y;
+
+// ============= Id Generation =============
+export const generateId = (prefix = ''): string => `${prefix}${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+
+export const generateNumericId = (): number => Date.now() * 1000 + Math.floor(Math.random() * 1000);
+
+// ============= Validation Utilities =============
+export const isValidNumber = (v: unknown): v is number => typeof v === 'number' && !isNaN(v) && isFinite(v);
+export const isValidString = (v: unknown): v is string => typeof v === 'string' && v.length > 0;
+export const isValidArray = <T>(v: unknown): v is T[] => Array.isArray(v);
+
+// ============= Object Utilities =============
+export const deepClone = <T>(obj: T): T => JSON.parse(JSON.stringify(obj));
+export const shallowClone = <T>(obj: T): T => Object.assign({}, obj);
+
+export const merge = <T extends Record<string, unknown>>(target: T, ...sources: Partial<T>[]): T => {
+    for (const source of sources) Object.keys(source ?? {}).forEach(key => { if (source[key] !== undefined) (target as Record<string, unknown>)[key] = source[key] as never; });
+    return target;
+};
+
+export const equals = <T>(a: T, b: T): boolean => JSON.stringify(a) === JSON.stringify(b);

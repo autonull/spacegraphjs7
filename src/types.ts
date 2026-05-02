@@ -47,12 +47,38 @@ export interface Bounds3D {
     intersectsRay(ray: Raycaster): boolean;
 }
 
-// ============= Base Data Types =============
+// ============= Unified Node Data Base =============
 export interface BaseNodeData {
     [key: string]: unknown;
     pinned?: boolean;
     visible?: boolean;
 }
+
+// Consolidated dimension properties shared by most node types
+export interface NodeDimensions {
+    width?: number;
+    height?: number;
+    depth?: number;
+}
+
+// Consolidated visual properties shared by most node types
+export interface NodeVisual {
+    color?: string | number;
+    opacity?: number;
+    transparent?: boolean;
+    wireframe?: boolean;
+}
+
+// Consolidated interaction properties
+export interface NodeInteraction {
+    draggable?: boolean;
+    selectable?: boolean;
+    focusable?: boolean;
+}
+
+// All node data types share these core properties
+export type CoreNodeData = BaseNodeData & NodeDimensions & NodeVisual & NodeInteraction;
+
 export interface BaseEdgeData {
     [key: string]: unknown;
 }
@@ -65,96 +91,68 @@ export interface LabelLodLevel {
     label?: string;
 }
 
-// ============= Node Data Types =============
-export interface ShapeNodeData extends BaseNodeData {
+// ============= Node Data Types (Consolidated) =============
+export interface ShapeNodeData extends CoreNodeData {
     shape?: 'box' | 'sphere' | 'circle' | 'plane' | 'cone' | 'cylinder' | 'torus' | 'ring';
     size?: number;
-    color?: string | number;
-    opacity?: number;
-    wireframe?: boolean;
-    transparent?: boolean;
     side?: 'front' | 'back' | 'double';
 }
-export interface HtmlNodeData extends BaseNodeData {
-    width?: number;
-    height?: number;
+export interface HtmlNodeData extends CoreNodeData {
     html?: string;
     className?: string;
     pointerEvents?: 'none' | 'auto';
     labelLod?: LabelLodLevel[];
 }
-export interface ImageNodeData extends BaseNodeData {
-    width?: number;
-    height?: number;
-    opacity?: number;
+export interface ImageNodeData extends CoreNodeData {
     url?: string;
 }
-export interface GroupNodeData extends BaseNodeData {
-    width?: number;
-    height?: number;
-    color?: string | number;
-    opacity?: number;
+export interface GroupNodeData extends CoreNodeData {
     depth?: number;
-    wireframe?: boolean;
     title?: string;
 }
-export interface NoteNodeData extends BaseNodeData {
-    width?: number;
-    height?: number;
-    color?: string | number;
+export interface NoteNodeData extends CoreNodeData {
     text?: string;
     textColor?: string | number;
     fontSize?: number;
 }
-export interface CanvasNodeData extends BaseNodeData {
-    width?: number;
-    height?: number;
+export interface CanvasNodeData extends CoreNodeData {
     dpi?: number;
 }
-export interface TextMeshNodeData extends BaseNodeData {
-    color?: string | number;
+export interface TextMeshNodeData extends CoreNodeData {
     text?: string;
     fontUrl?: string;
     size?: number;
     height?: number;
     align?: 'left' | 'center' | 'right';
 }
-export interface DataNodeData extends BaseNodeData {
+export interface DataNodeData extends CoreNodeData {
     theme?: 'light' | 'dark';
     data?: unknown;
     expanded?: boolean;
     maxHeight?: number;
 }
-export interface VideoNodeData extends BaseNodeData {
-    width?: number;
-    height?: number;
+export interface VideoNodeData extends CoreNodeData {
     url?: string;
     autoplay?: boolean;
     loop?: boolean;
     muted?: boolean;
 }
-export interface IFrameNodeData extends BaseNodeData {
-    width?: number;
-    height?: number;
+export interface IFrameNodeData extends CoreNodeData {
     src?: string;
     scrolling?: 'yes' | 'no' | 'auto';
 }
-export interface ChartNodeData extends BaseNodeData {
-    width?: number;
-    height?: number;
+export interface ChartNodeData extends CoreNodeData {
     theme?: 'light' | 'dark';
     chartType?: 'bar' | 'line' | 'pie' | 'scatter' | 'radar';
     chartData?: unknown;
     chartOptions?: unknown;
 }
-export interface MarkdownNodeData extends BaseNodeData {
-    width?: number;
-    height?: number;
+export interface MarkdownNodeData extends CoreNodeData {
     theme?: 'light' | 'dark';
     content?: string;
     fontSize?: number;
 }
-export interface GlobeNodeData extends BaseNodeData {
+export interface GlobeNodeData extends CoreNodeData {
     radius?: number;
     resolution?: number;
     textureUrl?: string;
@@ -166,51 +164,38 @@ export interface GlobeNodeData extends BaseNodeData {
         label?: string;
     }[];
 }
-export interface SceneNodeData extends BaseNodeData {
+export interface SceneNodeData extends CoreNodeData {
     url?: string;
     targetSize?: number;
     autoCenter?: boolean;
 }
-export interface AudioNodeData extends BaseNodeData {
-    color?: string | number;
+export interface AudioNodeData extends CoreNodeData {
     src?: string;
     autoplay?: boolean;
     loop?: boolean;
 }
-export interface MathNodeData extends BaseNodeData {
-    width?: number;
-    height?: number;
-    color?: string | number;
+export interface MathNodeData extends CoreNodeData {
     math?: string;
     fontSize?: number;
 }
-export interface ProcessNodeData extends BaseNodeData {
-    width?: number;
-    height?: number;
+export interface ProcessNodeData extends CoreNodeData {
     pid?: string | number;
     name?: string;
     cpu?: number;
     memory?: number;
 }
-export interface CodeEditorNodeData extends BaseNodeData {
-    width?: number;
-    height?: number;
+export interface CodeEditorNodeData extends CoreNodeData {
     code?: string;
     language?: string;
     theme?: string;
 }
-export interface InstancedShapeNodeData extends BaseNodeData {
+export interface InstancedShapeNodeData extends CoreNodeData {
     shape?: 'box' | 'sphere' | 'circle' | 'plane';
     size?: number;
-    color?: string | number;
-    opacity?: number;
 }
 
 // Unified Widget Data
-export interface WidgetNodeData extends BaseNodeData {
-    width?: number;
-    height?: number;
-    depth?: number;
+export interface WidgetNodeData extends CoreNodeData {
     disabled?: boolean;
     tabIndex?: number;
     ariaLabel?: string;

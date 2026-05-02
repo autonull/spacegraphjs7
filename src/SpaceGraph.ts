@@ -423,91 +423,91 @@ export class SpaceGraph {
         return this.graph.edges.size;
     }
 
-    // ============= Ergonomic API (delegated to ErgonomicsAPI) =============
+    // ============= Ergonomic API (delegated to ErgonomicsAPI, which delegates to Graph) =============
     // Quick access
-    $(id: string): Node | undefined { return this.ergo.$(id); }
+    $(id: string): Node | undefined { return this.graph.getNode(id); }
     $$(id: string): Node { return this.ergo.require(id); }
-    $optional(id: string): Node | null { return this.ergo.$optional(id); }
+    $optional(id: string): Node | null { return this.graph.getNode(id) ?? null; }
 
-    // Query
-    findNodes(predicate: (node: Node) => boolean): Node[] { return this.ergo.findNodes(predicate); }
-    findNode(predicate: (node: Node) => boolean): Node | undefined { return this.ergo.findNode(predicate); }
-    getNodesByType(type: string): Node[] { return this.ergo.getNodesByType(type); }
-    findEdges(predicate: (edge: Edge) => boolean): Edge[] { return this.ergo.findEdges(predicate); }
-    getEdgesForNode(nodeId: string): Edge[] { return this.ergo.getEdgesForNode(nodeId); }
-    where(key: string, value: unknown): Node[] { return this.ergo.where(key, value); }
-    has(key: string, value?: unknown): Node[] { return this.ergo.has(key, value); }
-    neighbors(nodeId: string): Node[] { return this.ergo.neighbors(nodeId); }
-    adjacent(nodeId: string): Node[] { return this.ergo.adjacent(nodeId); }
-    connections(nodeId: string): Edge[] { return this.ergo.connections(nodeId); }
-    inEdges(nodeId: string): Edge[] { return this.ergo.inEdges(nodeId); }
-    outEdges(nodeId: string): Edge[] { return this.ergo.outEdges(nodeId); }
+    // Query - delegate to graph
+    findNodes(predicate: (node: Node) => boolean): Node[] { return this.graph.query(predicate); }
+    findNode(predicate: (node: Node) => boolean): Node | undefined { return this.graph.findNode(predicate); }
+    getNodesByType(type: string): Node[] { return this.graph.queryByType(type); }
+    findEdges(predicate: (edge: Edge) => boolean): Edge[] { const e = this.graph.findEdge(predicate); return e ? [e] : []; }
+    getEdgesForNode(nodeId: string): Edge[] { return this.graph.getEdgesForNode(nodeId); }
+    where(key: string, value: unknown): Node[] { return this.graph.query((n) => (n.data as Record<string, unknown>)[key] === value); }
+    has(key: string, value?: unknown): Node[] { return value !== undefined ? this.where(key, value) : this.graph.query((n) => key in n.data); }
+    neighbors(nodeId: string): Node[] { return this.graph.neighbors(nodeId); }
+    adjacent(nodeId: string): Node[] { return this.graph.neighbors(nodeId); }
+    connections(nodeId: string): Edge[] { return this.graph.getEdgesForNode(nodeId); }
+    inEdges(nodeId: string): Edge[] { return this.graph.getIncomingEdges(nodeId); }
+    outEdges(nodeId: string): Edge[] { return this.graph.getOutgoingEdges(nodeId); }
 
     // Iterators
-    forNodes(callback: (node: Node) => void): void { this.ergo.forNodes(callback); }
-    forEdges(callback: (edge: Edge) => void): void { this.ergo.forEdges(callback); }
-    forEach(callback: (node: Node) => void): void { this.ergo.forEach(callback); }
-    each(callback: (node: Node) => void): void { this.ergo.each(callback); }
-    map<T>(callback: (node: Node) => T): T[] { return this.ergo.map(callback); }
-    filter(callback: (node: Node) => boolean): Node[] { return this.ergo.filter(callback); }
-    some(callback: (node: Node) => boolean): boolean { return this.ergo.some(callback); }
-    every(callback: (node: Node) => boolean): boolean { return this.ergo.every(callback); }
+    forNodes(callback: (node: Node) => void): void { this.graph.forEachNode(callback); }
+    forEdges(callback: (edge: Edge) => void): void { this.graph.forEachEdge(callback); }
+    forEach(callback: (node: Node) => void): void { this.graph.forEachNode(callback); }
+    each(callback: (node: Node) => void): void { this.graph.forEachNode(callback); }
+    map<T>(callback: (node: Node) => T): T[] { return this.graph.mapNodes(callback); }
+    filter(callback: (node: Node) => boolean): Node[] { return this.graph.query(callback); }
+    some(callback: (node: Node) => boolean): boolean { return this.graph.findNode(callback) !== undefined; }
+    every(callback: (node: Node) => boolean): boolean { return this.graph.query((n) => !callback(n)).length === 0; }
 
     // Node operations
-    add(spec: NodeSpec | Node): Node | null { return this.ergo.add(spec); }
-    create(spec: string | NodeSpec): Node | null { return this.ergo.create(spec); }
-    remove(id: string): boolean { return this.ergo.remove(id); }
-    addNodes(specs: NodeSpec[]): Node[] { return this.ergo.addNodes(specs); }
-    removeWhere(predicate: (node: Node) => boolean): number { return this.ergo.removeWhere(predicate); }
-    updateWhere(predicate: (node: Node) => boolean, updates: Partial<NodeSpec>): Node[] { return this.ergo.updateWhere(predicate, updates); }
+    add(spec: NodeSpec | Node): Node | null { return this.graph.addNode(spec); }
+    create(spec: string | NodeSpec): Node | null { return typeof spec === 'string' ? this.graph.addNode({ id: spec, type: 'ShapeNode' }) : this.graph.addNode(spec); }
+    remove(id: string): boolean { this.graph.removeNode(id); return true; }
+    addNodes(specs: NodeSpec[]): Node[] { return this.graph.addNodes(specs); }
+    removeWhere(predicate: (node: Node) => boolean): number { const nodes = this.graph.query(predicate); nodes.forEach((n) => this.graph.removeNode(n.id)); return nodes.length; }
+    updateWhere(predicate: (node: Node) => boolean, updates: Partial<NodeSpec>): Node[] { return this.graph.query(predicate).map((n) => this.graph.updateNode(n.id, updates)).filter(Boolean) as Node[]; }
 
     // Edge operations
-    connect(source: string, target: string, data?: Record<string, unknown>): Edge | null { return this.ergo.connect(source, target, data); }
-    connectTo(source: string, targets: string | string[], data?: Record<string, unknown>): Edge[] { return this.ergo.connectTo(source, targets, data); }
-    connectFrom(sources: string | string[], target: string, data?: Record<string, unknown>): Edge[] { return this.ergo.connectFrom(sources, target, data); }
-    disconnect(source: string, target: string): boolean { return this.ergo.disconnect(source, target); }
-    addEdges(specs: EdgeSpec[]): Edge[] { return this.ergo.addEdges(specs); }
+    connect(source: string, target: string, data?: Record<string, unknown>): Edge | null { return this.graph.addEdge({ id: `edge-${source}-${target}`, source, target, data }); }
+    connectTo(source: string, targets: string | string[], data?: Record<string, unknown>): Edge[] { const arr = Array.isArray(targets) ? targets : [targets]; return arr.map((t) => this.connect(source, t, data)).filter(Boolean) as Edge[]; }
+    connectFrom(sources: string | string[], target: string, data?: Record<string, unknown>): Edge[] { const arr = Array.isArray(sources) ? sources : [sources]; return arr.map((s) => this.connect(s, target, data)).filter(Boolean) as Edge[]; }
+    disconnect(source: string, target: string): boolean { return this.graph.removeEdge(`edge-${source}-${target}`); }
+    addEdges(specs: EdgeSpec[]): Edge[] { return this.graph.addEdges(specs); }
 
     // Traversal
-    traverse(callback: (node: Node, depth: number) => void, startId?: string): void { this.ergo.traverse(callback, startId); }
-    bfs(callback: (node: Node, depth: number) => void, startId?: string): void { this.ergo.bfs(callback, startId); }
-    dfs(callback: (node: Node, depth: number) => void, startId?: string): void { this.ergo.dfs(callback, startId); }
-    getSubgraph(centerId: string, radius: number): { nodes: Node[]; edges: Edge[] } { return this.ergo.getSubgraph(centerId, radius); }
-    path(from: string, to: string): Node[] | null { return this.ergo.path(from, to); }
+    traverse(callback: (node: Node, depth: number) => void, startId?: string): void { this.graph.traverse(callback, startId); }
+    bfs(callback: (node: Node, depth: number) => void, startId?: string): void { this.graph.bfs(callback, startId); }
+    dfs(callback: (node: Node, depth: number) => void, startId?: string): void { this.graph.dfs(callback, startId); }
+    getSubgraph(centerId: string, radius: number): { nodes: Node[]; edges: Edge[] } { return this.graph.getConnectedComponentInRadius(centerId, radius); }
+    path(from: string, to: string): Node[] | null { return this.graph.findPath(from, to); }
 
     // Batch
-    batch(fn: (sg: SpaceGraph) => void): void { this.ergo.batch(fn); }
-    freeze(): { release: () => void } { return this.ergo.freeze(); }
-    suspend(): { resume: () => void } { return this.ergo.suspend(); }
-    transaction(updates: (sg: this) => void): void { this.ergo.transaction(updates); }
+    batch(fn: (sg: SpaceGraph) => void): void { fn(this); }
+    freeze(): { release: () => void } { this.pause(); return { release: () => this.render() }; }
+    suspend(): { resume: () => void } { this.pause(); return { resume: () => this.render() }; }
+    transaction(updates: (sg: this) => void): void { this.pause(); try { updates(this); } finally { this.render(); } }
 
     // Selection
-    select(nodeId: string): this { this.ergo.select(nodeId); return this; }
-    deselect(nodeId: string): this { this.ergo.deselect(nodeId); return this; }
-    selectAll(): this { this.ergo.selectAll(); return this; }
-    deselectAll(): this { this.ergo.deselectAll(); return this; }
-    get selected(): Node[] { return this.ergo.selected; }
+    select(nodeId: string): this { this.graph.getNode(nodeId)?.focus(); return this; }
+    deselect(nodeId: string): this { this.graph.getNode(nodeId)?.blur(); return this; }
+    selectAll(): this { this.graph.forEachNode((n) => n.focus()); return this; }
+    deselectAll(): this { this.graph.forEachNode((n) => n.blur()); return this; }
+    get selected(): Node[] { return this.graph.query((n) => n.focused); }
 
     // Visibility
-    toggleVisibility(nodeId: string): boolean { return this.ergo.toggleVisibility(nodeId); }
-    toggle(nodeId: string): boolean { return this.ergo.toggle(nodeId); }
-    show(id: string, visible?: boolean): Node | null { return this.ergo.show(id, visible ?? true); }
-    hide(id: string): Node | null { return this.ergo.hide(id); }
+    toggleVisibility(nodeId: string): boolean { const n = this.graph.getNode(nodeId); if (!n) return false; const v = !(n.data as Record<string, unknown>).visible; n.updateSpec({ data: { ...n.data, visible: v } }); return v; }
+    toggle(nodeId: string): boolean { return this.toggleVisibility(nodeId); }
+    show(id: string, visible = true): Node | null { const n = this.graph.getNode(id); if (!n) return null; n.updateSpec({ data: { ...n.data, visible } }); return n; }
+    hide(id: string): Node | null { return this.show(id, false); }
 
     // Quick node utilities
-    require(id: string): Node { return this.ergo.require(id); }
-    clone(id: string, newId?: string): Node | null { return this.ergo.clone(id, newId); }
-    move(id: string, x: number, y: number, z: number = 0): Node | null { return this.ergo.move(id, x, y, z); }
-    translate(id: string, dx: number, dy: number, dz: number = 0): Node | null { return this.ergo.translate(id, dx, dy, dz); }
-    shift(id: string, dx: number, dy: number, dz: number = 0): Node | null { return this.ergo.shift(id, dx, dy, dz); }
-    label(id: string, text: string): Node | null { return this.ergo.label(id, text); }
-    text(id: string, text: string): Node | null { return this.ergo.text(id, text); }
-    color(id: string, color: string | number): Node | null { return this.ergo.color(id, color); }
-    fill(id: string, color: string | number): Node | null { return this.ergo.fill(id, color); }
-    data(id: string, key: string, value?: unknown): unknown { return this.ergo.data(id, key, value); }
-    attr(id: string, key: string, value?: unknown): unknown { return this.ergo.attr(id, key, value); }
-    rotate(id: string, x: number, y: number, z: number): Node | null { return this.ergo.rotate(id, x, y, z); }
-    scale(id: string, x: number, y?: number, z?: number): Node | null { return this.ergo.scale(id, x, y, z); }
+    require(id: string): Node { const n = this.graph.getNode(id); if (!n) throw new Error(`Node not found: ${id}`); return n; }
+    clone(id: string, newId?: string): Node | null { const orig = this.graph.getNode(id); if (!orig) return null; return this.graph.addNode({ id: newId ?? `${id}-copy`, type: orig.type, label: orig.label, position: [orig.position.x + 50, orig.position.y, orig.position.z + 50], data: { ...orig.data } }); }
+    move(id: string, x: number, y: number, z = 0): Node | null { const n = this.graph.getNode(id); if (!n) return null; n.updatePosition(x, y, z); return n; }
+    translate(id: string, dx: number, dy: number, dz = 0): Node | null { const n = this.graph.getNode(id); if (!n) return null; n.updatePosition(n.position.x + dx, n.position.y + dy, n.position.z + dz); return n; }
+    shift(id: string, dx: number, dy: number, dz = 0): Node | null { return this.translate(id, dx, dy, dz); }
+    label(id: string, text: string): Node | null { const n = this.graph.getNode(id); if (!n) return null; n.updateSpec({ label: text }); return n; }
+    text(id: string, text: string): Node | null { return this.label(id, text); }
+    color(id: string, color: string | number): Node | null { const n = this.graph.getNode(id); if (!n) return null; n.updateSpec({ data: { ...n.data, color } }); return n; }
+    fill(id: string, color: string | number): Node | null { return this.color(id, color); }
+    data(id: string, key: string, value?: unknown): unknown { const n = this.graph.getNode(id); if (!n) return undefined; if (value !== undefined) { n.updateSpec({ data: { ...n.data, [key]: value } }); return value; } return n.data[key]; }
+    attr(id: string, key: string, value?: unknown): unknown { return this.data(id, key, value); }
+    rotate(id: string, x: number, y: number, z: number): Node | null { const n = this.graph.getNode(id); if (!n) return null; n.updateSpec({ rotation: [x, y, z] }); return n; }
+    scale(id: string, x: number, y?: number, z?: number): Node | null { const n = this.graph.getNode(id); if (!n) return null; n.updateSpec({ scale: [x, y ?? x, z ?? x] }); return n; }
 
     // ============= Quick Properties =============
     get size(): number { return this.graph.nodes.size; }
