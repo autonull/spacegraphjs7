@@ -17,13 +17,13 @@ abstract class BaseBuilder<T> {
         return this;
     }
 
-    build(): T {
-        return this.spec;
-    }
+    build(): T { return this.spec; }
     /** @alias build() */
-    toSpec(): T {
-        return this.spec;
-    }
+    toSpec(): T { return this.spec; }
+    /** @alias build() */
+    val(): T { return this.spec; }
+    /** @alias build() */
+    get(): T { return this.spec; }
 
     protected mergeData(updates: Record<string, unknown>): void {
         (this.spec as any).data = { ...((this.spec as any).data ?? {}), ...updates };
@@ -36,10 +36,9 @@ export class NodeBuilder extends BaseBuilder<NodeSpec> {
         super({ id, type });
     }
 
-    label(label: string): this {
-        this.spec.label = label;
-        return this;
-    }
+    // Core setters
+    label(label: string): this { this.spec.label = label; return this; }
+    text(label: string): this { return this.label(label); }
     position(x: number, y: number, z: number = 0): this {
         this.spec.position = [x, y, z];
         return this;
@@ -52,47 +51,51 @@ export class NodeBuilder extends BaseBuilder<NodeSpec> {
         this.spec.scale = [x, y, z];
         return this;
     }
-    size(size: number): this {
-        this.mergeData({ size });
-        return this;
-    }
-    color(color: number | string): this {
-        this.mergeData({ color });
-        return this;
-    }
-    opacity(opacity: number): this {
-        this.mergeData({ opacity });
-        return this;
-    }
-    params(params: Record<string, unknown>): this {
-        this.spec.parameters = params;
-        return this;
-    }
-    type(type: string): this {
-        this.spec.type = type;
-        return this;
-    }
-    visible(visible: boolean): this {
-        this.mergeData({ visible });
-        return this;
-    }
-    pinned(pinned: boolean): this {
-        this.mergeData({ pinned });
-        return this;
-    }
 
-    // Ergonomic short forms
-    at(x: number, y: number, z?: number): this { return this.position(x, y, z ?? 0); }
-    rotate(x: number, y: number, z?: number): this { return this.rotation(x, y, z ?? 0); }
-    scaleTo(x: number, y?: number, z?: number): this { return this.scale(x, y ?? x, z ?? x); }
-    center(): this { return this.position(0, 0, 0); }
-    origin(): this { return this.position(0, 0, 0); }
-
-    // Dimension helpers
+    // Dimension shortcuts
+    size(size: number): this { this.mergeData({ size }); return this; }
     width(w: number): this { this.mergeData({ width: w }); return this; }
     height(h: number): this { this.mergeData({ height: h }); return this; }
     depth(d: number): this { this.mergeData({ depth: d }); return this; }
     dimensions(w: number, h: number, d?: number): this { this.mergeData({ width: w, height: h, depth: d }); return this; }
+
+    // Style shortcuts
+    color(color: number | string): this { this.mergeData({ color }); return this; }
+    fill(color: number | string): this { return this.color(color); }
+    opacity(opacity: number): this { this.mergeData({ opacity }); return this; }
+
+    // Shape shortcuts
+    shape(s: 'box' | 'sphere' | 'circle' | 'plane' | 'cone' | 'cylinder' | 'torus' | 'ring'): this {
+        this.mergeData({ shape: s });
+        return this;
+    }
+
+    // Type and params
+    type(type: string): this { this.spec.type = type; return this; }
+    params(params: Record<string, unknown>): this { this.spec.parameters = params; return this; }
+
+    // Visibility
+    visible(visible: boolean): this { this.mergeData({ visible }); return this; }
+    pinned(pinned: boolean): this { this.mergeData({ pinned }); return this; }
+
+    // Short position forms
+    at(x: number, y: number, z?: number): this { return this.position(x, y, z ?? 0); }
+    pos(x: number, y: number, z?: number): this { return this.position(x, y, z ?? 0); }
+    xy(x: number, y: number): this { return this.position(x, y, 0); }
+    xyz(x: number, y: number, z: number): this { return this.position(x, y, z); }
+
+    // Short rotation forms
+    rotate(x: number, y: number, z?: number): this { return this.rotation(x, y, z ?? 0); }
+    rot(x: number, y: number, z?: number): this { return this.rotation(x, y, z ?? 0); }
+
+    // Short scale forms
+    scaleTo(x: number, y?: number, z?: number): this { return this.scale(x, y ?? x, z ?? x); }
+    scaleToUniform(s: number): this { return this.scale(s, s, s); }
+
+    // Origin shortcuts
+    center(): this { return this.position(0, 0, 0); }
+    origin(): this { return this.position(0, 0, 0); }
+    zero(): this { return this.position(0, 0, 0); }
 
     // Style helpers
     className(cls: string): this { this.mergeData({ className: cls }); return this; }
@@ -101,17 +104,20 @@ export class NodeBuilder extends BaseBuilder<NodeSpec> {
     hover(fn: (hovered: boolean) => void): this { this.mergeData({ onHover: fn }); return this; }
     drag(fn: (dx: number, dy: number) => void): this { this.mergeData({ onDrag: fn }); return this; }
 
-    // Shape shortcut
-    shape(s: 'box' | 'sphere' | 'circle' | 'plane' | 'cone' | 'cylinder' | 'torus' | 'ring'): this {
-        this.mergeData({ shape: s });
-        return this;
-    }
+    // Event shortcuts
+    onClick(fn: () => void): this { this.mergeData({ onClick: fn }); return this; }
+    onHover(fn: (hovered: boolean) => void): this { this.mergeData({ onHover: fn }); return this; }
+    onDrag(fn: (dx: number, dy: number) => void): this { this.mergeData({ onDrag: fn }); return this; }
+    onChange(fn: (value: unknown) => void): this { this.mergeData({ onChange: fn }); return this; }
 
     // Fluent chain: build and add to spec
     then<G extends GraphSpecBuilder>(builder: G): G {
         builder.addNode(this.spec);
         return builder;
     }
+
+    // Pipe for chaining
+    pipe<T>(fn: (builder: this) => T): T { return fn(this); }
 }
 
 // ============= Widget Builder - extends NodeBuilder for unified patterns =============

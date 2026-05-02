@@ -39,6 +39,9 @@ export {
   type HoverAction,
 } from './interaction/HoverMetaWidget';
 
+export { InteractionManager, type InteractionState } from './interaction/InteractionManager';
+export type { FocusableNode } from './interaction/InteractionManager';
+
 export { MermaidPlugin, type MermaidPluginOptions, injectMermaidStyles } from './mermaid';
 export {
   DiagramParserFactory,
