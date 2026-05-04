@@ -1,6 +1,5 @@
 // SpaceGraphJS v7 - Ergonomic Developer API
 // Optimized for developer experience with unified exports and convenient shortcuts
-import './init';
 export { SpaceGraph, VERSION } from './SpaceGraph';
 
 // Core module exports
@@ -24,10 +23,13 @@ export { EventSystem as Event, EventEmitter as Emitter, ErgonomicsAPI as Ergo, O
 // Builder module exports
 export {
   GraphSpecBuilder, NodeBuilder, EdgeBuilder, Patterns,
-  Animate, Camera, graph, quickGraph,
+  Animate, Camera, graph,
   NodeFactory, EdgeFactory, Layout,
   NodeFactoryExtended, Presets, DataUtils, Batch,
   widget, button, toggle, slider,
+  // Convenience shortcuts
+  nodeSpec, edgeSpec, at, box, sphere, circle,
+  connect, arrow, dashed, curved, $, layout,
 } from './builder';
 
 // Input module exports  

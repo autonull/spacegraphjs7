@@ -4,7 +4,6 @@ import type { Node } from '../nodes/Node';
 import type { Edge } from '../edges/Edge';
 import type { NodeSpec, EdgeSpec, Predicate } from '../types';
 import type SpaceGraph from '../SpaceGraph';
-import type THREE from 'three';
 
 type NodePredicate = Predicate<Node>;
 
@@ -27,9 +26,9 @@ export class ErgonomicsAPI {
     has(key: string, value?: unknown): Node[] { return value !== undefined ? this.where(key, value) : this.sg.graph.query((n) => key in n.data); }
 
     // ============= Graph Topology =============
-    adjacent(nodeId: string): Node[] { return this.sg.graph.neighbors(nodeId); }
+    adjacent = this.neighbors;
     neighbors(nodeId: string): Node[] { return this.sg.graph.neighbors(nodeId); }
-    connections(nodeId: string): Edge[] { return this.sg.graph.getEdgesForNode(nodeId); }
+    connections = this.getEdgesForNode;
     inEdges(nodeId: string): Edge[] { return this.sg.graph.getIncomingEdges(nodeId); }
     outEdges(nodeId: string): Edge[] { return this.sg.graph.getOutgoingEdges(nodeId); }
 

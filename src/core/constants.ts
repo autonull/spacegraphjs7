@@ -13,25 +13,25 @@ export const RAD = DEG2RAD;
 export const DEG = RAD2DEG;
 
 // ============= Animation Duration =============
-const createAnimationDuration = () => ({
+const AnimationDurationDefaults = {
     FAST: 0.3,
     DEFAULT: 0.5,
     SLOW: 1.0,
     LAYOUT: 1.5,
     SNAP: 0.15,
     SPRING: 0.8,
-}) as const;
+} as const;
 
-const createZoomConfig = () => ({
+const ZoomConfigDefaults = {
     MULTIPLIER: 1.5,
     MIN_RADIUS: 150,
     MAX_RADIUS: 5000,
     DEFAULT_RADIUS: 800,
     SPEED: 0.1,
     SMOOTH: 0.08,
-}) as const;
+} as const;
 
-const createFingeringPriority = () => ({
+const FingeringPriorityDefaults = {
     CAMERA_ZOOM: 20,
     CAMERA_PAN: 30,
     CAMERA_ORBIT: 40,
@@ -42,27 +42,27 @@ const createFingeringPriority = () => ({
     WIDGET: 110,
     WIRING: 150,
     RESIZE: 200,
-}) as const;
+} as const;
 
-const createInteractionThresholds = () => ({
+const InteractionThresholdsDefaults = {
     CONTEXT_MENU: 5,
     BOX_SELECT_MIN: 5,
     DRAG_START: 5,
     DOUBLE_CLICK_MS: 500,
     LONG_PRESS_MS: 500,
     TAP_TOLERANCE: 10,
-}) as const;
+} as const;
 
-const createPerformance = () => ({
+const PerformanceDefaults = {
     MS_PER_SEC: 1000,
     DEFAULT_DELTA_TIME: 0.016,
     OPTIMIZER_CHECK_INTERVAL: 250,
     MAX_DELTA_CLAMP: 0.1,
     FRAME_BUDGET_MS: 16.67,
     IDLE_FRAME_BUDGET_MS: 50,
-}) as const;
+} as const;
 
-const createDefaults = () => ({
+const DefaultsValues = {
     OPACITY: 0.5,
     DURATION: 1.0,
     PADDING: 20,
@@ -75,23 +75,23 @@ const createDefaults = () => ({
     CAMERA_FOV: 60,
     CAMERA_NEAR: 1,
     CAMERA_FAR: 10000,
-}) as const;
+} as const;
 
-const createEdgeColors = () => ({
+const EdgeColorsDefaults = {
     DEFAULT: 0x00d0ff,
     HIGHLIGHT: 0x00ffff,
     SELECTED: 0x00ff88,
     INCOMING: 0xffaa00,
     OUTGOING: 0xff6600,
     INACTIVE: 0x666666,
-}) as const;
+} as const;
 
-const createWCAG = () => ({
+const WCAGDefaults = {
     MIN_CONTRAST: 4.5,
     ENHANCED_CONTRAST: 7.0,
     LARGE_TEXT: 3.0,
     UI_COMPONENTS: 3.0,
-}) as const;
+} as const;
 
 // Spatial constants
 export const Spatial = {
@@ -133,33 +133,33 @@ export const Easing = {
     SNAP: 'backOut',
 } as const;
 
-// Re-export for ES modules
-export type AnimationDuration = ReturnType<typeof createAnimationDuration>;
-export type ZoomConfig = ReturnType<typeof createZoomConfig>;
-export type FingeringPriority = ReturnType<typeof createFingeringPriority>;
-export type InteractionThresholds = ReturnType<typeof createInteractionThresholds>;
-export type Performance = ReturnType<typeof createPerformance>;
-export type Defaults = ReturnType<typeof createDefaults>;
-export type EdgeColors = ReturnType<typeof createEdgeColors>;
-export type WCAG = ReturnType<typeof createWCAG>;
+// Type exports - intentionally named with Type suffix for clarity
+export type AnimationDuration = typeof AnimationDurationDefaults;
+export type ZoomConfig = typeof ZoomConfigDefaults;
+export type FingeringPriority = typeof FingeringPriorityDefaults;
+export type InteractionThresholds = typeof InteractionThresholdsDefaults;
+export type Performance = typeof PerformanceDefaults;
+export type Defaults = typeof DefaultsValues;
+export type EdgeColors = typeof EdgeColorsDefaults;
+export type WCAG = typeof WCAGDefaults;
 
-// Direct exports (evaluated once)
-export const AnimationDuration = createAnimationDuration();
-export const ZoomConfig = createZoomConfig();
-export const FingeringPriority = createFingeringPriority();
-export const InteractionThresholds = createInteractionThresholds();
-export const Performance = createPerformance();
-export const Defaults = createDefaults();
-export const EdgeColors = createEdgeColors();
-export const WCAG = createWCAG();
+// Value exports - using Object.freeze for immutability
+export const AnimationDuration = Object.freeze({ ...AnimationDurationDefaults });
+export const ZoomConfig = Object.freeze({ ...ZoomConfigDefaults });
+export const FingeringPriority = Object.freeze({ ...FingeringPriorityDefaults });
+export const InteractionThresholds = Object.freeze({ ...InteractionThresholdsDefaults });
+export const Performance = Object.freeze({ ...PerformanceDefaults });
+export const Defaults = Object.freeze({ ...DefaultsValues });
+export const EdgeColors = Object.freeze({ ...EdgeColorsDefaults });
+export const WCAG = Object.freeze({ ...WCAGDefaults });
 
 // Input configuration
-export const InputConfig = {
+export const InputConfig = Object.freeze({
     ZOOM_SPEED_FACTOR: 0.005,
     PAN_SPEED_FACTOR: 0.002,
     ORBIT_SPEED_FACTOR: 0.005,
     WHEEL_MULTIPLIER: 1,
-} as const;
+});
 
 // Shorthand aliases for developer ergonomics
 export const DUR = AnimationDuration;
@@ -170,8 +170,8 @@ export const PERF = Performance;
 export const DEF = Defaults;
 export const COLORS = EdgeColors;
 
-// Re-export for convenience
-export const CONSTANTS = {
+// Unified constants object
+export const CONSTANTS = Object.freeze({
     AnimationDuration,
     ZoomConfig,
     FingeringPriority,
@@ -185,4 +185,9 @@ export const CONSTANTS = {
     NodeDefaults,
     LayoutDefaults,
     Easing,
-} as const;
+    DEG2RAD,
+    RAD2DEG,
+    PI,
+    TAU,
+    EPSILON,
+}) as Readonly<typeof AnimationDurationDefaults & typeof ZoomConfigDefaults & typeof Spatial>;

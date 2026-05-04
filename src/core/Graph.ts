@@ -251,7 +251,7 @@ get isEmpty(): boolean {
 
     // Neighborhood and edge queries
     neighbors(nodeId: string): Node[] { return this.getNeighbors(nodeId, 'both'); }
-    getConnectedEdges(nodeId: string): Edge[] { return this.getEdgesForNode(nodeId, 'both'); }
+    getConnectedEdges = this.getEdgesForNode;
     getIncomingEdges(nodeId: string): Edge[] { return this.getEdgesForNode(nodeId, 'incoming'); }
     getOutgoingEdges(nodeId: string): Edge[] { return this.getEdgesForNode(nodeId, 'outgoing'); }
 

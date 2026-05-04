@@ -491,7 +491,7 @@ export const isValidString = (v: unknown): v is string => typeof v === 'string' 
 export const isValidArray = <T>(v: unknown): v is T[] => Array.isArray(v);
 
 // ============= Object Utilities =============
-export const deepClone = <T>(obj: T): T => JSON.parse(JSON.stringify(obj));
+export const deepClone = safeClone;
 export const shallowClone = <T>(obj: T): T => Object.assign({}, obj);
 
 export const merge = <T extends Record<string, unknown>>(target: T, ...sources: Partial<T>[]): T => {
@@ -499,4 +499,4 @@ export const merge = <T extends Record<string, unknown>>(target: T, ...sources: 
     return target;
 };
 
-export const equals = <T>(a: T, b: T): boolean => JSON.stringify(a) === JSON.stringify(b);
+export const equals = deepEqual;

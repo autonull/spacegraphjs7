@@ -58,14 +58,14 @@ export {
     createQuickGraphSpec,
 } from './defaults';
 
-// Type exports
+// Type exports - types are co-located with values in constants.ts
 export type {
-    AnimationDuration as AnimationDurationType,
-    ZoomConfig as ZoomConfigType,
-    FingeringPriority as FingeringPriorityType,
-    InteractionThresholds as InteractionThresholdsType,
-    Performance as PerformanceType,
-    Defaults as DefaultsType,
-    EdgeColors as EdgeColorsType,
-    WCAG as WCAGType,
+    AnimationDuration,
+    ZoomConfig,
+    FingeringPriority,
+    InteractionThresholds,
+    Performance,
+    Defaults,
+    EdgeColors,
+    WCAG,
 } from './constants';

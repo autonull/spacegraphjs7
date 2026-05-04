@@ -9,34 +9,25 @@ import { GraphBuilder } from './graph';
 export const graph = (): GraphBuilder => new GraphBuilder();
 
 // Widget factory - quick creation of UI elements
+// Uses NodeFactory internally for consistency
 export const widget = (id: string, type: 'button' | 'toggle' | 'slider' = 'button'): WidgetBuilder => {
     const typeMap = { button: 'ButtonNode', toggle: 'ToggleNode', slider: 'SliderNode' };
     return new WidgetBuilder(id, typeMap[type]);
 };
 
-// Convenience widget creators
-export const button = (id: string, label?: string): WidgetBuilder =>
-    new WidgetBuilder(id, 'ButtonNode').label(label ?? id).width(120).height(40);
+// Convenience widget creators - delegate to NodeFactory for consistency
+export const button = (id: string, label?: string): NodeBuilder =>
+    NodeFactory.button(id, label);
 
-export const toggle = (id: string, value = false): WidgetBuilder =>
-    new WidgetBuilder(id, 'ToggleNode').data({ value }).width(60).height(30);
+export const toggle = (id: string, value = false): NodeBuilder =>
+    NodeFactory.toggle(id, value);
 
-export const slider = (id: string, min = 0, max = 1, value = 0.5): WidgetBuilder =>
-    new WidgetBuilder(id, 'SliderNode').data({ min, max, value }).width(200).height(20);
-
-// Quick graph creation - create a SpaceGraph instance with nodes and edges
-export async function quickGraph(
-    container: string | HTMLElement,
-    nodes: Array<{ id: string; label?: string; position?: [number, number, number]; data?: Record<string, unknown> }>,
-    edges?: Array<{ id: string; source: string; target: string }>,
-    options?: SpaceGraphOptions,
-): Promise<SpaceGraph> {
-    const { SpaceGraph } = await import('../SpaceGraph');
-    return SpaceGraph.quickGraph(container, nodes, edges, options);
-}
+export const slider = (id: string, min = 0, max = 1, value = 0.5): NodeBuilder =>
+    NodeFactory.slider(id, min, max, value);
 
 // Node factory - unified factory for all node types
-export const NodeFactory = {
+// Provides consistent interface for all node creation
+export const NodeFactory = Object.freeze({
     // Primitives
     shape(id: string, shape: 'box' | 'sphere' | 'circle' | 'cone' | 'cylinder' = 'box'): NodeBuilder {
         return new NodeBuilder(id, 'ShapeNode').data({ shape });
@@ -144,10 +135,10 @@ export const NodeFactory = {
     batch(specs: NodeSpec[]): NodeBuilder[] {
         return specs.map(spec => NodeFactory.fromSpec(spec));
     },
-};
+});
 
 // Edge factory - quick creation of common edge types
-export const EdgeFactory = {
+export const EdgeFactory = Object.freeze({
     simple(source: string, target: string): EdgeSpec {
         return { id: `e-${source}-${target}`, source, target };
     },
@@ -166,18 +157,17 @@ export const EdgeFactory = {
             { id: `e-${target}-${source}`, source: target, target: source },
         ];
     },
-    // Create edges from node connections
     fromConnections(connections: Array<{ source: string; target: string }>): EdgeSpec[] {
         return connections.map((c) => EdgeFactory.simple(c.source, c.target));
     },
-};
+});
 
 // Layout application helpers - unified layout API
-export const Layout = {
+export const Layout = Object.freeze({
     async apply(sg: SpaceGraph, layoutName: string, options?: Record<string, unknown>): Promise<void> {
         const plugin = sg.pluginManager.getPlugin(layoutName);
         if (!plugin) throw new Error(`Layout "${layoutName}" not found`);
-        if ('applyLayout' in plugin) await (plugin as any).applyLayout(options);
+        if ('applyLayout' in plugin) await (plugin as { applyLayout: (opts?: Record<string, unknown>) => Promise<void> }).applyLayout(options);
     },
     force: (sg: SpaceGraph, options?: Record<string, unknown>) => Layout.apply(sg, 'ForceLayout', options),
     circular: (sg: SpaceGraph, options?: Record<string, unknown>) => Layout.apply(sg, 'CircularLayout', options),
@@ -187,13 +177,10 @@ export const Layout = {
     tree: (sg: SpaceGraph, options?: Record<string, unknown>) => Layout.apply(sg, 'TreeLayout', options),
     spectral: (sg: SpaceGraph, options?: Record<string, unknown>) => Layout.apply(sg, 'SpectralLayout', options),
     cluster: (sg: SpaceGraph, options?: Record<string, unknown>) => Layout.apply(sg, 'ClusterLayout', options),
-};
+});
 
-// Extended Node Factory - alias for backward compatibility
-export const NodeFactoryExtended = NodeFactory;
-
-// Preset configurations
-export const Presets = {
+// Preset configurations - quick starting points for common node types
+export const Presets = Object.freeze({
     minimal(id: string): NodeBuilder {
         return new NodeBuilder(id, 'ShapeNode').size(50);
     },
@@ -212,10 +199,10 @@ export const Presets = {
     label(id: string, text = ''): NodeBuilder {
         return new NodeBuilder(id, 'NoteNode').data({ text, width: 100, height: 30 }).style({ fontSize: 14 });
     },
-};
+});
 
-// Data utilities for node specs
-export const DataUtils = {
+// Data utilities for node specs - fluent data manipulation
+export const DataUtils = Object.freeze({
     setDefault(node: NodeBuilder, key: string, value: unknown): NodeBuilder {
         return node.data({ [key]: value });
     },
@@ -240,10 +227,10 @@ export const DataUtils = {
     setSelectable(node: NodeBuilder, selectable = true): NodeBuilder {
         return node.data({ selectable });
     },
-};
+});
 
-// Batch operations
-export const Batch = {
+// Batch operations - efficient bulk creation
+export const Batch = Object.freeze({
     createNodes(specs: Array<{ id: string; type?: string; position?: [number, number, number]; data?: Record<string, unknown> }>): NodeBuilder[] {
         return specs.map(spec => new NodeBuilder(spec.id, spec.type ?? 'ShapeNode').position(spec.position).data(spec.data));
     },
@@ -270,4 +257,7 @@ export const Batch = {
         }
         return nodes;
     },
-};
+});
+
+// Re-export NodeFactory as NodeFactoryExtended for backwards compatibility
+export { NodeFactory as NodeFactoryExtended };

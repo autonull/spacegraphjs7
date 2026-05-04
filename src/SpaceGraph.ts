@@ -524,10 +524,10 @@ export class SpaceGraph {
     selectable = (id: string, selectable = true) => { this.ergo.data(id, 'selectable', selectable); return this.graph.getNode(id); }
 
     // ============= Quick Properties =============
-    get count(): number { return this.graph.nodes.size; }
+    get count(): number { return this.nodeCount; }
     get isEmpty(): boolean { return this.graph.nodes.size === 0; }
-    get nodes(): Node[] { return [...this.graph.nodes.values()]; }
-    get edges(): Edge[] { return [...this.graph.edges.values()]; }
+    get nodes(): Node[] { return this.graph.nodeArray(); }
+    get edges(): Edge[] { return this.graph.edgeArray(); }
 
     // Watch for changes - returns unsubscribe
     watch(
@@ -566,10 +566,8 @@ export class SpaceGraph {
         return this;
     }
 
-    // Zoom to fit all nodes
-    zoomFit(padding: number = 100, duration: number = 1.5): this {
-        return this.fitView(padding, duration) as this;
-    }
+    // Zoom to fit all nodes (alias for fitView)
+    zoomFit = this.fitView;
 
     // Center camera on point
     center(x: number, y: number, z: number = 0): this {
