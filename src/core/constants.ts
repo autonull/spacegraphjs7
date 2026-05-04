@@ -18,6 +18,8 @@ const createAnimationDuration = () => ({
     DEFAULT: 0.5,
     SLOW: 1.0,
     LAYOUT: 1.5,
+    SNAP: 0.15,
+    SPRING: 0.8,
 }) as const;
 
 const createZoomConfig = () => ({
@@ -26,6 +28,7 @@ const createZoomConfig = () => ({
     MAX_RADIUS: 5000,
     DEFAULT_RADIUS: 800,
     SPEED: 0.1,
+    SMOOTH: 0.08,
 }) as const;
 
 const createFingeringPriority = () => ({
@@ -46,6 +49,8 @@ const createInteractionThresholds = () => ({
     BOX_SELECT_MIN: 5,
     DRAG_START: 5,
     DOUBLE_CLICK_MS: 500,
+    LONG_PRESS_MS: 500,
+    TAP_TOLERANCE: 10,
 }) as const;
 
 const createPerformance = () => ({
@@ -53,6 +58,8 @@ const createPerformance = () => ({
     DEFAULT_DELTA_TIME: 0.016,
     OPTIMIZER_CHECK_INTERVAL: 250,
     MAX_DELTA_CLAMP: 0.1,
+    FRAME_BUDGET_MS: 16.67,
+    IDLE_FRAME_BUDGET_MS: 50,
 }) as const;
 
 const createDefaults = () => ({
@@ -65,17 +72,76 @@ const createDefaults = () => ({
     GAP_SIZE: 1,
     INSTANCED_THICKNESS: 0.5,
     RAYCASTER_THRESHOLD: 5,
+    CAMERA_FOV: 60,
+    CAMERA_NEAR: 1,
+    CAMERA_FAR: 10000,
 }) as const;
 
 const createEdgeColors = () => ({
     DEFAULT: 0x00d0ff,
     HIGHLIGHT: 0x00ffff,
+    SELECTED: 0x00ff88,
+    INCOMING: 0xffaa00,
+    OUTGOING: 0xff6600,
+    INACTIVE: 0x666666,
 }) as const;
 
 const createWCAG = () => ({
     MIN_CONTRAST: 4.5,
     ENHANCED_CONTRAST: 7.0,
+    LARGE_TEXT: 3.0,
+    UI_COMPONENTS: 3.0,
 }) as const;
+
+// Spatial constants
+export const Spatial = {
+    NEAR_DISTANCE: 100,
+    FAR_DISTANCE: 5000,
+    PICKING_threshold: 5,
+    AUTO_CULLING_DISTANCE: 2000,
+    LOD_DISTANCE: [200, 500, 1000, 2000],
+} as const;
+
+// Node defaults
+export const NodeDefaults = {
+    SIZE: 50,
+    HEIGHT: 50,
+    WIDTH: 50,
+    DEPTH: 50,
+    OPACITY: 1.0,
+    COLOR: 0x4488ff,
+    HOVER_COLOR: 0x66aaff,
+    SELECTED_COLOR: 0x00ff88,
+} as const;
+
+// Layout defaults
+export const LayoutDefaults = {
+    STRENGTH: -100,
+    DISTANCE: 200,
+    ITERATIONS: 300,
+    THETA: 0.8,
+    GRAVITY: 0.1,
+    MAX_SPEED: 50,
+} as const;
+
+// Animation easing presets
+export const Easing = {
+    DEFAULT: 'quadOut',
+    SMOOTH: 'sineOut',
+    BOUNCE: 'bounceOut',
+    ELASTIC: 'elasticOut',
+    SNAP: 'backOut',
+} as const;
+
+// Re-export for ES modules
+export type AnimationDuration = ReturnType<typeof createAnimationDuration>;
+export type ZoomConfig = ReturnType<typeof createZoomConfig>;
+export type FingeringPriority = ReturnType<typeof createFingeringPriority>;
+export type InteractionThresholds = ReturnType<typeof createInteractionThresholds>;
+export type Performance = ReturnType<typeof createPerformance>;
+export type Defaults = ReturnType<typeof createDefaults>;
+export type EdgeColors = ReturnType<typeof createEdgeColors>;
+export type WCAG = ReturnType<typeof createWCAG>;
 
 // Direct exports (evaluated once)
 export const AnimationDuration = createAnimationDuration();
@@ -91,6 +157,8 @@ export const WCAG = createWCAG();
 export const InputConfig = {
     ZOOM_SPEED_FACTOR: 0.005,
     PAN_SPEED_FACTOR: 0.002,
+    ORBIT_SPEED_FACTOR: 0.005,
+    WHEEL_MULTIPLIER: 1,
 } as const;
 
 // Shorthand aliases for developer ergonomics
@@ -113,4 +181,8 @@ export const CONSTANTS = {
     EdgeColors,
     InputConfig,
     WCAG,
+    Spatial,
+    NodeDefaults,
+    LayoutDefaults,
+    Easing,
 } as const;

@@ -110,4 +110,9 @@ export class WidgetBuilder extends NodeBuilder {
     max(max: number): this { this.mergeData({ max }); return this; }
     showValue(show = true): this { this.mergeData({ showValue: show }); return this; }
     disabled(disabled = true): this { this.mergeData({ disabled }); return this; }
+
+    value<V = unknown>(value: V): this { this.mergeData({ value }); return this; }
+    labelAlign(align: 'left' | 'center' | 'right'): this { this.mergeData({ labelAlign: align }); return this; }
+    placeholder(text: string): this { this.mergeData({ placeholder: text }); return this; }
+    step(step: number): this { this.mergeData({ step }); return this; }
 }

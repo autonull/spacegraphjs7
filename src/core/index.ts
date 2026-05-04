@@ -5,8 +5,7 @@ export { Graph } from './Graph';
 export { Renderer } from './Renderer';
 export { RenderContext } from './RenderContext';
 export { CameraControls } from './CameraControls';
-export { EventSystem } from './events/EventSystem';
-export { EventEmitter } from './EventEmitter';
+export { EventSystem, EventEmitter } from './events/EventSystem';
 export { VisionManager } from './VisionManager';
 export { ObjectPoolManager } from './ObjectPoolManager';
 export { PluginManager } from './PluginManager';
@@ -16,7 +15,7 @@ export { Surface } from './Surface';
 export { TypeRegistry } from './TypeRegistry';
 export type { NodeConstructor, EdgeConstructor } from './TypeRegistry';
 
-// Constants
+// Constants - comprehensive set for developer ergonomics
 export {
     AnimationDuration,
     ZoomConfig,
@@ -27,6 +26,27 @@ export {
     EdgeColors,
     InputConfig,
     WCAG,
+    Spatial,
+    NodeDefaults,
+    LayoutDefaults,
+    Easing,
+    CONSTANTS,
+    // Shorthand aliases
+    DUR,
+    ZOOM,
+    FINGER,
+    THRESH,
+    PERF,
+    DEF,
+    COLORS,
+    // Math constants
+    DEG2RAD,
+    RAD2DEG,
+    PI,
+    TAU,
+    EPSILON,
+    RAD,
+    DEG,
 } from './constants';
 
 // Defaults
@@ -37,3 +57,15 @@ export {
     DEFAULT_SYSTEM_PLUGINS,
     createQuickGraphSpec,
 } from './defaults';
+
+// Type exports
+export type {
+    AnimationDuration as AnimationDurationType,
+    ZoomConfig as ZoomConfigType,
+    FingeringPriority as FingeringPriorityType,
+    InteractionThresholds as InteractionThresholdsType,
+    Performance as PerformanceType,
+    Defaults as DefaultsType,
+    EdgeColors as EdgeColorsType,
+    WCAG as WCAGType,
+} from './constants';

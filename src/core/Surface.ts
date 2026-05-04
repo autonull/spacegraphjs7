@@ -4,6 +4,9 @@
 import * as THREE from 'three';
 import { EventEmitter } from './EventEmitter';
 import type { SpaceGraph } from '../SpaceGraph';
+import type { Rect, Bounds3D } from '../types';
+
+export type { Rect, Bounds3D };
 
 export interface HitResult {
     surface: Surface;
@@ -13,22 +16,6 @@ export interface HitResult {
     normal?: THREE.Vector3;
     uv?: THREE.Vector2;
     face?: THREE.Face;
-}
-
-export interface Bounds3D {
-    min: THREE.Vector3;
-    max: THREE.Vector3;
-    get center(): THREE.Vector3;
-    get size(): THREE.Vector3;
-    containsPoint(p: THREE.Vector3): boolean;
-    intersectsRay(ray: THREE.Ray): boolean;
-}
-
-export interface Rect {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
 }
 
 export type SurfaceEventMap = {

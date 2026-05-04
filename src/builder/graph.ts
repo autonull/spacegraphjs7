@@ -205,4 +205,29 @@ export class GraphBuilder {
         sg.loadSpec(this.build()).render();
         return this;
     }
+
+    clone(): GraphBuilder {
+        const builder = new GraphBuilder();
+        builder.#nodes = this.#nodes.map(n => ({ ...n, data: { ...n.data }, id: `${n.id}-copy` }));
+        builder.#edges = this.#edges.map(e => ({ ...e, data: { ...e.data }, id: `${e.id}-copy` }));
+        return builder;
+    }
+
+    mirrorNodes(axis: 'x' | 'y' | 'z' = 'x'): this {
+        for (const node of this.#nodes) {
+            if (axis === 'x') node.position = [-(node.position?.[0] ?? 0), node.position?.[1] ?? 0, node.position?.[2] ?? 0];
+            else if (axis === 'y') node.position = [node.position?.[0] ?? 0, -(node.position?.[1] ?? 0), node.position?.[2] ?? 0];
+            else node.position = [node.position?.[0] ?? 0, node.position?.[1] ?? 0, -(node.position?.[2] ?? 0)];
+        }
+        return this;
+    }
+
+    reverseEdges(): this {
+        for (const edge of this.#edges) {
+            const temp = edge.source;
+            edge.source = edge.target;
+            edge.target = temp;
+        }
+        return this;
+    }
 }

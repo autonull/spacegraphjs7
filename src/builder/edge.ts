@@ -31,4 +31,11 @@ export class EdgeBuilder extends BaseBuilder<EdgeSpec> {
         });
         return builder;
     }
+
+    curved(): this { this.spec.type = 'CurvedEdge'; return this; }
+    flow(): this { this.spec.type = 'FlowEdge'; return this; }
+    dotted(): this { this.mergeData({ dashed: true }); return this; }
+    animated(): this { this.spec.type = 'AnimatedEdge'; return this; }
+    bundled(): this { this.spec.type = 'BundledEdge'; return this; }
+    labeled(): this { this.spec.type = 'LabeledEdge'; return this; }
 }

@@ -8,6 +8,7 @@ export {
     InteractionThresholds, Performance, Defaults,
     EdgeColors, WCAG, InputConfig,
     DUR, ZOOM, FINGER, THRESH, PERF, DEF, COLORS, CONSTANTS,
+    Spatial, NodeDefaults, LayoutDefaults, Easing,
 } from '../core/constants';
 
 // Math utilities (from math.ts) - excluding constants which come from core

@@ -23,14 +23,28 @@ export class TypeRegistry {
     }
 
     registerNode(type: string, ctor: NodeConstructor): this {
-        if (!this.nodeTypes.has(type)) this.nodeTypes.set(type, ctor);
+        this.nodeTypes.set(type, ctor);
         return this;
     }
 
     registerEdge(type: string, ctor: EdgeConstructor): this {
-        if (!this.edgeTypes.has(type)) this.edgeTypes.set(type, ctor);
+        this.edgeTypes.set(type, ctor);
         return this;
     }
+
+    // Register multiple at once
+    registerNodes(types: Record<string, NodeConstructor>): this {
+        for (const [type, ctor] of Object.entries(types)) this.nodeTypes.set(type, ctor);
+        return this;
+    }
+    registerEdges(types: Record<string, EdgeConstructor>): this {
+        for (const [type, ctor] of Object.entries(types)) this.edgeTypes.set(type, ctor);
+        return this;
+    }
+
+    // Unregister
+    unregisterNode(type: string): boolean { return this.nodeTypes.delete(type); }
+    unregisterEdge(type: string): boolean { return this.edgeTypes.delete(type); }
 
     getNodeConstructor(type: string): NodeConstructor | undefined {
         return this.nodeTypes.get(type);
@@ -53,13 +67,30 @@ export class TypeRegistry {
         return [...this.edgeTypes.keys()];
     }
 
+    // Get all types as arrays
+    getNodeTypeList(): Array<{ type: string; ctor: NodeConstructor }> {
+        return [...this.nodeTypes.entries()].map(([type, ctor]) => ({ type, ctor }));
+    }
+    getEdgeTypeList(): Array<{ type: string; ctor: EdgeConstructor }> {
+        return [...this.edgeTypes.entries()].map(([type, ctor]) => ({ type, ctor }));
+    }
+
+    // Check if a spec type exists (handles aliases)
+    resolveNodeType(type: string): string {
+        if (this.nodeTypes.has(type)) return type;
+        // Try common aliases
+        const aliases: Record<string, string> = { node: 'ShapeNode', shape: 'ShapeNode', edge: 'Edge', wire: 'Edge' };
+        return aliases[type] ?? type;
+    }
+
     createNode(sgOrSpec: SpaceGraph | NodeSpec, specOrSg?: NodeSpec | SpaceGraph): Node {
         const isSpecFirst = 'type' in sgOrSpec;
         const nodeSpec = isSpecFirst ? (sgOrSpec as NodeSpec) : (specOrSg as NodeSpec);
         const sg = isSpecFirst ? (specOrSg as SpaceGraph) : (sgOrSpec as SpaceGraph);
 
         if (!nodeSpec?.type) throw new Error('Node spec must include type');
-        const ctor = this.getNodeConstructor(nodeSpec.type);
+        const type = this.resolveNodeType(nodeSpec.type);
+        const ctor = this.getNodeConstructor(type);
         if (!ctor)
             throw new Error(
                 `TypeRegistry: Unknown node type "${nodeSpec.type}". Registered: [${this.getNodeTypes().join(', ')}]`,
@@ -92,9 +123,24 @@ export class TypeRegistry {
         this.nodeTypes.clear();
         this.edgeTypes.clear();
     }
+
+    // Snapshot/restore for testing
+    snapshot(): { nodes: Map<string, NodeConstructor>; edges: Map<string, EdgeConstructor> } {
+        return { nodes: new Map(this.nodeTypes), edges: new Map(this.edgeTypes) };
+    }
+    restore(snapshot: { nodes: Map<string, NodeConstructor>; edges: Map<string, EdgeConstructor> }): void {
+        this.nodeTypes = new Map(snapshot.nodes);
+        this.edgeTypes = new Map(snapshot.edges);
+    }
 }
 
 export const registerNode = (type: string, ctor: NodeConstructor) =>
     TypeRegistry.getInstance().registerNode(type, ctor);
 export const registerEdge = (type: string, ctor: EdgeConstructor) =>
     TypeRegistry.getInstance().registerEdge(type, ctor);
+
+// Quick lookup
+export const getNodeTypes = () => TypeRegistry.getInstance().getNodeTypes();
+export const getEdgeTypes = () => TypeRegistry.getInstance().getEdgeTypes();
+export const hasNodeType = (type: string) => TypeRegistry.getInstance().hasNode(type);
+export const hasEdgeType = (type: string) => TypeRegistry.getInstance().hasEdge(type);

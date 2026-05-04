@@ -176,27 +176,15 @@ get isEmpty(): boolean {
         return [...this.edges.values()];
     }
 
-    // Query methods - use iterators to avoid array creation
-    getNode(id: string): Node | undefined {
-        return this.nodes.get(id);
-    }
-    getEdge(id: string): Edge | undefined {
-        return this.edges.get(id);
-    }
-    hasNode(id: string): boolean {
-        return this.nodes.has(id);
-    }
-    hasEdge(id: string): boolean {
-        return this.edges.has(id);
-    }
-    getNodes(): IterableIterator<Node> {
-        return this.nodes.values();
-    }
-    getEdges(): IterableIterator<Edge> {
-        return this.edges.values();
-    }
+    // Core query methods
+    getNode(id: string): Node | undefined { return this.nodes.get(id); }
+    getEdge(id: string): Edge | undefined { return this.edges.get(id); }
+    hasNode(id: string): boolean { return this.nodes.has(id); }
+    hasEdge(id: string): boolean { return this.edges.has(id); }
+    getNodes(): IterableIterator<Node> { return this.nodes.values(); }
+    getEdges(): IterableIterator<Edge> { return this.edges.values(); }
 
-    // Query helpers - return arrays, use iterator versions for performance-critical code
+    // Unified query - supports multiple filter types
     query(predicate: (node: Node) => boolean): Node[] {
         const result: Node[] = [];
         for (const node of this.nodes.values()) {
@@ -204,38 +192,23 @@ get isEmpty(): boolean {
         }
         return result;
     }
-
     queryByType(type: string): Node[] {
-        const result: Node[] = [];
-        for (const node of this.nodes.values()) {
-            if (node.type === type) result.push(node);
-        }
-        return result;
+        return this.query(node => node.type === type);
     }
-
     queryByLabel(label: string, exact = true): Node[] {
-        const result: Node[] = [];
-        for (const node of this.nodes.values()) {
-            if (exact ? node.label === label : node.label?.includes(label)) result.push(node);
-        }
-        return result;
+        return this.query(exact ? node => node.label === label : node => node.label?.includes(label));
     }
-
     queryByData(predicate: (data: Record<string, unknown>) => boolean): Node[] {
-        const result: Node[] = [];
-        for (const node of this.nodes.values()) {
-            if (predicate(node.data)) result.push(node);
-        }
-        return result;
+        return this.query(node => predicate(node.data));
     }
 
+    // Find single result
     findNode(predicate: (node: Node) => boolean): Node | undefined {
         for (const node of this.nodes.values()) {
             if (predicate(node)) return node;
         }
         return undefined;
     }
-
     findEdge(predicate: (edge: Edge) => boolean): Edge | undefined {
         for (const edge of this.edges.values()) {
             if (predicate(edge)) return edge;
@@ -276,21 +249,13 @@ get isEmpty(): boolean {
         return result;
     }
 
-    // Convenience aliases
-    neighbors(nodeId: string): Node[] {
-        return this.getNeighbors(nodeId, 'both');
-    }
-    getConnectedEdges(nodeId: string): Edge[] {
-        return this.getEdgesForNode(nodeId, 'both');
-    }
-    getIncomingEdges(nodeId: string): Edge[] {
-        return this.getEdgesForNode(nodeId, 'incoming');
-    }
-    getOutgoingEdges(nodeId: string): Edge[] {
-        return this.getEdgesForNode(nodeId, 'outgoing');
-    }
+    // Neighborhood and edge queries
+    neighbors(nodeId: string): Node[] { return this.getNeighbors(nodeId, 'both'); }
+    getConnectedEdges(nodeId: string): Edge[] { return this.getEdgesForNode(nodeId, 'both'); }
+    getIncomingEdges(nodeId: string): Edge[] { return this.getEdgesForNode(nodeId, 'incoming'); }
+    getOutgoingEdges(nodeId: string): Edge[] { return this.getEdgesForNode(nodeId, 'outgoing'); }
 
-    // Shortcuts: check existence quickly
+    // Check if nodes are connected
     hasNeighbor(nodeId: string, targetId: string, direction: EdgeDirection = 'both'): boolean {
         for (const edge of this.edges.values()) {
             const isSource = edge.source.id === nodeId;
@@ -306,32 +271,27 @@ get isEmpty(): boolean {
         return false;
     }
 
-    // Get nodes by bounds lookup
-    getNodesInArea(center: THREE.Vector3, radius: number): Node[] {
+    // Spatial queries
+    getNodesNear(position: THREE.Vector3, radius: number): Node[] {
         const results: Node[] = [];
         for (const node of this.nodes.values()) {
-            if (node.position.distanceTo(center) <= radius) results.push(node);
+            if (node.position.distanceTo(position) <= radius) results.push(node);
         }
         return results;
     }
 
-    // Batch operations - filter nodes
-    filterNodes(predicate: (node: Node) => boolean): Node[] {
-        return this.query(predicate);
-    }
-
-    // Batch operations - map nodes
+    // Iteration helpers - alias for query
+    filterNodes = this.query;
     mapNodes<T>(predicate: (node: Node) => T): T[] {
         const results: T[] = [];
         for (const node of this.nodes.values()) results.push(predicate(node));
         return results;
     }
 
-    // Iteration - direct iteration without array creation
+    // Direct iteration
     forEachNode(callback: (node: Node) => void): void {
         for (const node of this.nodes.values()) callback(node);
     }
-
     forEachEdge(callback: (edge: Edge) => void): void {
         for (const edge of this.edges.values()) callback(edge);
     }
@@ -447,15 +407,6 @@ get isEmpty(): boolean {
     // Ergonomic: Get node degree (total connections)
     getNodeDegree(nodeId: string): number {
         return this.getEdgesForNode(nodeId).length;
-    }
-
-    // Ergonomic: Get nodes with degree >= threshold
-    getHubNodes(minDegree: number): Node[] {
-        const result: Node[] = [];
-        for (const node of this.nodes.values()) {
-            if (this.getNodeDegree(node.id) >= minDegree) result.push(node);
-        }
-        return result;
     }
 
     // Ergonomic: Batch add nodes
@@ -639,19 +590,7 @@ get isEmpty(): boolean {
     }
 
     getNodesByData(predicate: (data: NodeData) => boolean): Node[] {
-        const result: Node[] = [];
-        for (const node of this.nodes.values()) {
-            if (predicate(node.data)) result.push(node);
-        }
-        return result;
-    }
-
-    getNodesNear(position: THREE.Vector3, radius: number): Node[] {
-        const result: Node[] = [];
-        for (const node of this.nodes.values()) {
-            if (node.position.distanceTo(position) <= radius) result.push(node);
-        }
-        return result;
+        return this.query(node => predicate(node.data));
     }
 
     getNodeDegrees(): Map<string, number> {
@@ -665,16 +604,16 @@ get isEmpty(): boolean {
 
     getHubs(minDegree: number): Node[] {
         const degrees = this.getNodeDegrees();
-        return [...this.nodes.values()].filter(n => (degrees.get(n.id) ?? 0) >= minDegree);
+        return this.query(n => (degrees.get(n.id) ?? 0) >= minDegree);
     }
 
     getIsolatedNodes(): Node[] {
         const degrees = this.getNodeDegrees();
-        return [...this.nodes.values()].filter(n => (degrees.get(n.id) ?? 0) === 0);
+        return this.query(n => (degrees.get(n.id) ?? 0) === 0);
     }
 
     removeNodesByType(type: string): number {
-        const toRemove = [...this.nodes.values()].filter(n => n.type === type);
+        const toRemove = this.queryByType(type);
         toRemove.forEach(n => this.removeNode(n.id));
         return toRemove.length;
     }
