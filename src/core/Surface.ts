@@ -3,6 +3,10 @@
 
 import * as THREE from 'three';
 import { EventEmitter } from './EventEmitter';
+import type { SpaceGraph } from '../SpaceGraph';
+import type { Rect, Bounds3D } from '../types';
+
+export type { Rect, Bounds3D };
 
 export interface HitResult {
     surface: Surface;
@@ -14,35 +18,20 @@ export interface HitResult {
     face?: THREE.Face;
 }
 
-export interface Bounds3D {
-    min: THREE.Vector3;
-    max: THREE.Vector3;
-    get center(): THREE.Vector3;
-    get size(): THREE.Vector3;
-    containsPoint(p: THREE.Vector3): boolean;
-    intersectsRay(ray: THREE.Ray): boolean;
-}
-
-export interface Rect {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-}
-
 export type SurfaceEventMap = {
     pointerenter: { surface: Surface };
     pointerleave: { surface: Surface };
     pointerdown: { surface: Surface; event: PointerEvent };
     pointerup: { surface: Surface; event: PointerEvent };
     updated: { surface: Surface; changes: unknown };
-    destroying: { surface: Surface };
+    'surface:destroying': { surface: Surface; timestamp: number };
     [key: string]: unknown;
 };
 
 export abstract class Surface extends EventEmitter<SurfaceEventMap> {
     abstract readonly id: string;
     abstract readonly type: string;
+    abstract sg?: SpaceGraph;
     abstract bounds: Rect;
     abstract get bounds3D(): Bounds3D;
     abstract hitTest(ray: THREE.Raycaster): HitResult | null;
@@ -72,10 +61,10 @@ export abstract class Surface extends EventEmitter<SurfaceEventMap> {
         this.activity *= Math.exp(-_dt / this.ACTIVITY_DECAY_RATE);
     }
 
-    pulse(intensity: number = 1.0): void {
+    pulse(intensity = 1.0): void {
         this.activity = Math.max(this.activity, intensity);
         if ('lastActivityTime' in this) {
-            (this as any).lastActivityTime = performance.now();
+            (this as unknown as { lastActivityTime: number }).lastActivityTime = performance.now();
         }
     }
 
@@ -117,5 +106,29 @@ export abstract class Surface extends EventEmitter<SurfaceEventMap> {
     worldToLocal(worldPos: THREE.Vector3): THREE.Vector3 {
         const inverse = this.worldMatrix.clone().invert();
         return worldPos.clone().applyMatrix4(inverse);
+    }
+
+    requireSpaceGraph(): SpaceGraph {
+        if (!this.sg) {
+            throw new Error(`Surface "${this.id}" requires SpaceGraph but sg is not initialized`);
+        }
+        return this.sg;
+    }
+
+    // Ergonomic helpers
+    get isDisposed(): boolean {
+        return !this.visible;
+    }
+
+    hasAncestor(predicate: (s: Surface) => boolean): boolean {
+        return !!this.findAncestor(predicate);
+    }
+
+    distanceTo(other: Surface): number {
+        return this.position.distanceTo(other.position);
+    }
+
+    angleTo(other: Surface): number {
+        return this.position.angleTo(other.position);
     }
 }

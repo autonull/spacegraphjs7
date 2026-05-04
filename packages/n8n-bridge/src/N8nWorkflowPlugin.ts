@@ -1,6 +1,9 @@
 import type { SpaceGraph, SpaceGraphPlugin } from 'spacegraphjs';
 import gsap from 'gsap';
 import { N8nBridge } from './spacegraph-n8n-bridge';
+import { pkgLogger } from './logger';
+
+const log = pkgLogger('[N8nWorkflowPlugin]');
 import type { ExecutionState } from './types';
 import { ExecutionLogPanel } from './nodes/ExecutionLogPanel';
 import { N8nAiNode } from './nodes/N8nAiNode';
@@ -154,7 +157,7 @@ export class N8nWorkflowPlugin implements SpaceGraphPlugin {
     private applyExecutionVisuals(state: ExecutionState) {
         if (!state.nodeId) {
             if (state.status === 'success' || state.status === 'error') {
-                 console.log(`[N8nWorkflowPlugin] Workflow execution ${state.executionId} finished with status: ${state.status}`);
+                 log.info(`Workflow execution ${state.executionId} finished with status: ${state.status}`);
             }
             return;
         }
@@ -189,7 +192,7 @@ export class N8nWorkflowPlugin implements SpaceGraphPlugin {
     }
 
     showHeatmap(executionId: string): void {
-        console.log(`[N8nWorkflowPlugin] Showing heatmap for execution ${executionId}`);
+        log.info(`Showing heatmap for execution ${executionId}`);
 
         const nodes = Array.from(this.sg.graph.nodes.values());
         const durations = new Map(nodes.map(n => [n.id, Math.random() * 5000 + 10]));

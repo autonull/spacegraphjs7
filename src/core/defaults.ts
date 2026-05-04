@@ -1,3 +1,8 @@
+// Consolidated default registrations
+import type { Plugin } from '../core/PluginManager';
+import type { GraphSpec, NodeSpec, EdgeSpec } from '../types';
+
+// Node types
 import { ShapeNode } from '../nodes/ShapeNode';
 import { InstancedShapeNode } from '../nodes/InstancedShapeNode';
 import { HtmlNode } from '../nodes/HtmlNode';
@@ -25,7 +30,10 @@ import { SwitchNode } from '../nodes/SwitchNode';
 import { VirtualGridNode } from '../nodes/VirtualGridNode';
 import { PanelNode } from '../nodes/PanelNode';
 import { PortNode } from '../nodes/PortNode';
+import { TabContainerNode } from '../nodes/TabContainerNode';
+import { MermaidNode } from '../plugins/mermaid/MermaidNode';
 
+// Edge types
 import { Edge } from '../edges/Edge';
 import { CurvedEdge } from '../edges/CurvedEdge';
 import { FlowEdge } from '../edges/FlowEdge';
@@ -37,6 +45,7 @@ import { BundledEdge } from '../edges/BundledEdge';
 import { InterGraphEdge } from '../edges/InterGraphEdge';
 import { Wire } from '../edges/Wire';
 
+// Layout plugins
 import { ForceLayout } from '../plugins/layouts/ForceLayout';
 import { CircularLayout } from '../plugins/layouts/CircularLayout';
 import { GridLayout } from '../plugins/layouts/GridLayout';
@@ -48,6 +57,7 @@ import { GeoLayout } from '../plugins/layouts/GeoLayout';
 import { TimelineLayout } from '../plugins/layouts/TimelineLayout';
 import { ClusterLayout } from '../plugins/layouts/ClusterLayout';
 
+// System plugins
 import { InteractionPlugin } from '../plugins/InteractionPlugin';
 import { LODPlugin } from '../plugins/LODPlugin';
 import { AutoLayoutPlugin } from '../plugins/AutoLayoutPlugin';
@@ -59,12 +69,15 @@ import { HUDPlugin } from '../plugins/HUDPlugin';
 import { HistoryPlugin } from '../plugins/HistoryPlugin';
 import { FractalZoomPlugin } from '../plugins/FractalZoomPlugin';
 import { ZoomUIPlugin } from '../plugins/ZoomUIPlugin';
-
-import type { Plugin } from '../core/PluginManager';
-import type { GraphSpec, NodeSpec, EdgeSpec } from '../types';
+import { ScrollPanelNode } from '../nodes/ScrollPanelNode';
+import { ColorPickerNode } from '../nodes/ColorPickerNode';
+import { DropdownNode } from '../nodes/DropdownNode';
+import { ProgressBarNode } from '../nodes/ProgressBarNode';
+import { MeterNode } from '../nodes/MeterNode';
 
 type PluginCtor = new () => Plugin;
 
+// Default node types - automatically registered
 export const DEFAULT_NODE_TYPES = [
     ShapeNode,
     InstancedShapeNode,
@@ -93,8 +106,16 @@ export const DEFAULT_NODE_TYPES = [
     VirtualGridNode,
     PanelNode,
     PortNode,
+    TabContainerNode,
+    MermaidNode,
+    ScrollPanelNode,
+    ColorPickerNode,
+    DropdownNode,
+    ProgressBarNode,
+    MeterNode,
 ] as const;
 
+// Default edge types - automatically registered
 export const DEFAULT_EDGE_TYPES = [
     Edge,
     CurvedEdge,
@@ -108,6 +129,7 @@ export const DEFAULT_EDGE_TYPES = [
     Wire,
 ] as const;
 
+// Default layout plugins - automatically registered
 export const DEFAULT_LAYOUT_PLUGINS: [PluginCtor, string][] = [
     [ForceLayout, 'ForceLayout'],
     [CircularLayout, 'CircularLayout'],
@@ -117,11 +139,11 @@ export const DEFAULT_LAYOUT_PLUGINS: [PluginCtor, string][] = [
     [TreeLayout, 'TreeLayout'],
     [SpectralLayout, 'SpectralLayout'],
     [GeoLayout, 'GeoLayout'],
-    [GeoLayout, 'MapLayout'],
     [TimelineLayout, 'TimelineLayout'],
     [ClusterLayout, 'ClusterLayout'],
 ];
 
+// Default system plugins - automatically registered
 export const DEFAULT_SYSTEM_PLUGINS: [PluginCtor, string][] = [
     [InteractionPlugin, 'InteractionPlugin'],
     [FractalZoomPlugin, 'FractalZoomPlugin'],
@@ -136,6 +158,7 @@ export const DEFAULT_SYSTEM_PLUGINS: [PluginCtor, string][] = [
     [HistoryPlugin, 'HistoryPlugin'],
 ];
 
+// Quick graph specification builder
 export function createQuickGraphSpec(
     nodes: Array<{
         id: string;
@@ -143,11 +166,7 @@ export function createQuickGraphSpec(
         position?: [number, number, number];
         data?: Record<string, unknown>;
     }>,
-    edges?: Array<{
-        id: string;
-        source: string;
-        target: string;
-    }>,
+    edges?: Array<{ id: string; source: string; target: string }>,
 ): GraphSpec {
     return {
         nodes: nodes.map((n) => ({

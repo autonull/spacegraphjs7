@@ -1,32 +1,71 @@
-// SpaceGraphJS - Core Module Exports
-
-// Event System
-export { EventSystem } from './events/EventSystem';
-export type { SpaceGraphEvents } from './events/EventSystem';
-
-// Plugin System
-export { PluginManager, type Plugin } from './PluginManager';
-
-// Type Registry
+// Core module exports
+// Note: SpaceGraph is exported from the main index.ts, not here
+// Import directly: import { SpaceGraph } from '../SpaceGraph';
+export { Graph } from './Graph';
+export { Renderer } from './Renderer';
+export { RenderContext } from './RenderContext';
+export { CameraControls } from './CameraControls';
+export { EventSystem, EventEmitter } from './events/EventSystem';
+export { VisionManager } from './VisionManager';
+export { ObjectPoolManager } from './ObjectPoolManager';
+export { PluginManager } from './PluginManager';
+export { ErgonomicsAPI } from './Ergonomics';
+export type { Plugin } from './PluginManager';
+export { Surface } from './Surface';
 export { TypeRegistry } from './TypeRegistry';
 export type { NodeConstructor, EdgeConstructor } from './TypeRegistry';
 
-// Camera Controls
-export { CameraControls } from './CameraControls';
-export type { CameraControlsConfig } from './CameraControls';
-
-// Object Pool
-export { ObjectPool, MathPool } from './pooling/ObjectPool';
+// Constants - comprehensive set for developer ergonomics
 export {
-    withPooledVector3,
-    withPooledVector2,
-    withPooledMatrix4,
-    withPooledBox3,
-} from './pooling/ObjectPool';
+    AnimationDuration,
+    ZoomConfig,
+    FingeringPriority,
+    InteractionThresholds,
+    Performance,
+    Defaults,
+    EdgeColors,
+    InputConfig,
+    WCAG,
+    Spatial,
+    NodeDefaults,
+    LayoutDefaults,
+    Easing,
+    CONSTANTS,
+    // Shorthand aliases
+    DUR,
+    ZOOM,
+    FINGER,
+    THRESH,
+    PERF,
+    DEF,
+    COLORS,
+    // Math constants
+    DEG2RAD,
+    RAD2DEG,
+    PI,
+    TAU,
+    EPSILON,
+    RAD,
+    DEG,
+} from './constants';
 
-// Spatial Index
-export { SpatialIndex, BVH } from './spatial/SpatialIndex';
+// Defaults
+export {
+    DEFAULT_NODE_TYPES,
+    DEFAULT_EDGE_TYPES,
+    DEFAULT_LAYOUT_PLUGINS,
+    DEFAULT_SYSTEM_PLUGINS,
+    createQuickGraphSpec,
+} from './defaults';
 
-// Re-export main SpaceGraph from parent
-export { SpaceGraph } from '../SpaceGraph';
-export type { SpaceGraphOptions } from '../types';
+// Type exports - types are co-located with values in constants.ts
+export type {
+    AnimationDuration,
+    ZoomConfig,
+    FingeringPriority,
+    InteractionThresholds,
+    Performance,
+    Defaults,
+    EdgeColors,
+    WCAG,
+} from './constants';

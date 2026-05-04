@@ -3,16 +3,16 @@ import { CSS3DRenderer } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
 import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from 'three-mesh-bvh';
 import type { SpaceGraph } from '../SpaceGraph';
 import { InstancedNodeRenderer } from '../rendering/InstancedNodeRenderer';
-import { DOMNode } from '../nodes/DOMNode';
+import { RenderContext } from './RenderContext';
+import type { Node } from '../nodes/Node';
 
-const CSS_RENDERER_STYLES = {
+const CSS_STYLES = {
     position: 'absolute',
     top: '0px',
     left: '0px',
     pointerEvents: 'none',
 } as const;
-
-const OPTIMIZER_CHECK_INTERVAL_MS = 250;
+const OPT_INTERVAL_MS = 250;
 
 export interface RenderOptions {
     antialias?: boolean;
@@ -22,35 +22,32 @@ export interface RenderOptions {
 }
 
 export class Renderer {
-    public sg: SpaceGraph;
-    public container: HTMLElement;
     public scene: THREE.Scene;
     public camera: THREE.PerspectiveCamera;
     public renderer: THREE.WebGLRenderer;
     public cssRenderer: CSS3DRenderer;
     public instancedRenderer: InstancedNodeRenderer;
+    public renderContext: RenderContext;
 
     private _resizeObserver: ResizeObserver | null = null;
     private _threePatched = false;
     private renderScheduled = false;
-
-    private frustum: THREE.Frustum;
     private projScreenMatrix: THREE.Matrix4;
+    private lastOptTime = 0;
+    private optFrames = 0;
+    private fps = 60;
+    private timeSinceLastOptCheck = 0;
 
-    private lastOptTime: number = 0;
-    private optFrames: number = 0;
-    private fps: number = 60;
-    private timeSinceLastOptCheck: number = 0;
-
-    constructor(sg: SpaceGraph, container: HTMLElement, options: RenderOptions = {}) {
-        this.sg = sg;
-        this.container = container;
-
+    constructor(
+        public sg: SpaceGraph,
+        public container: HTMLElement,
+        options: RenderOptions = {},
+    ) {
         const pixelRatio = options.pixelRatio ?? Math.min(window.devicePixelRatio, 2);
-        const backgroundColor = options.backgroundColor ?? 0x1a1a2e;
+        const bgColor = options.backgroundColor ?? 0x1a1a2e;
 
         this.scene = new THREE.Scene();
-        this.scene.background = new THREE.Color(backgroundColor);
+        this.scene.background = new THREE.Color(bgColor);
 
         const aspect = container.clientWidth / (container.clientHeight || 1);
         this.camera = new THREE.PerspectiveCamera(75, aspect, 0.1, 10000);
@@ -63,58 +60,93 @@ export class Renderer {
         });
         this.renderer.setSize(container.clientWidth, container.clientHeight);
         this.renderer.setPixelRatio(pixelRatio);
-        this.renderer.setClearColor(backgroundColor, (options.alpha ?? true) ? 0 : 1);
+        this.renderer.setClearColor(bgColor, (options.alpha ?? true) ? 0 : 1);
         container.appendChild(this.renderer.domElement);
         container.style.position = 'relative';
 
         this.cssRenderer = new CSS3DRenderer();
         this.cssRenderer.setSize(container.clientWidth, container.clientHeight);
-        Object.assign(this.cssRenderer.domElement.style, CSS_RENDERER_STYLES);
+        Object.assign(this.cssRenderer.domElement.style, CSS_STYLES);
         container.appendChild(this.cssRenderer.domElement);
 
         this.instancedRenderer = new InstancedNodeRenderer(sg, this.scene);
-
-        this.frustum = new THREE.Frustum();
         this.projScreenMatrix = new THREE.Matrix4();
+
+        this.renderContext = new RenderContext(
+            this.camera,
+            { width: container.clientWidth, height: container.clientHeight },
+            0.5,
+        );
 
         this._resizeObserver = new ResizeObserver(() => this.onResize());
         this._resizeObserver.observe(container);
     }
 
-    public init() {
+    init(): void {
         if (this._threePatched) return;
-        THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
-        THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
-        THREE.Mesh.prototype.raycast = acceleratedRaycast;
+        THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree as any;
+        THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree as any;
+        THREE.Mesh.prototype.raycast = acceleratedRaycast as any;
         this._threePatched = true;
     }
 
-    private onResize() {
-        if (!this.container) return;
-        const { clientWidth: width, clientHeight: height } = this.container;
-
-        this.camera.aspect = width / height;
+    private onResize(): void {
+        const { clientWidth: w, clientHeight: h } = this.container;
+        this.camera.aspect = w / h;
         this.camera.updateProjectionMatrix();
-        this.renderer.setSize(width, height);
-        this.cssRenderer.setSize(width, height);
+        this.renderer.setSize(w, h);
+        this.cssRenderer.setSize(w, h);
+        this.renderContext?.updateViewport({ width: w, height: h });
     }
 
     scheduleRender(): void {
         if (this.renderScheduled) return;
         this.renderScheduled = true;
-        requestAnimationFrame(() => {
+        requestAnimationFrame((ts) => {
             this.renderScheduled = false;
-            this.render();
+            this.render(ts);
         });
     }
 
-    public render() {
-        this.instancedRenderer.update();
-        for (const [, edge] of this.sg.graph.edges) {
-            edge.update?.();
+    render(timestamp: number = 0): void {
+        if (timestamp > 0) {
+            this.beginFrameOptimization(timestamp);
+            this.renderContext?.startFrame(timestamp);
         }
+
+        this.camera.updateMatrixWorld();
+        this.projScreenMatrix.multiplyMatrices(
+            this.camera.projectionMatrix,
+            this.camera.matrixWorldInverse,
+        );
+        this.renderContext?.updateFrustum(this.projScreenMatrix);
+        this.renderContext?.updateCameraPosition();
+
+        this.instancedRenderer.update();
+        for (const edge of this.sg.graph.edges.values()) edge.update?.();
+
+        if (this.renderContext) {
+            for (const node of this.sg.graph.nodes.values()) {
+                if (this.renderContext.shouldRender(node)) {
+                    this.applyLOD(node);
+                    node.object.visible = true;
+                } else {
+                    node.object.visible = false;
+                }
+            }
+        }
+
         this.cssRenderer.render(this.scene, this.camera);
         this.renderer.render(this.scene, this.camera);
+
+        if (timestamp > 0) {
+            this.renderContext?.endFrame();
+        }
+    }
+
+    private applyLOD(node: Node): void {
+        const lod = node.computeLOD(this.renderContext?.visibilityContext ?? {} as any);
+        node.object.visible = node.visible && lod !== 'hidden';
     }
 
     beginFrameOptimization(timestamp: number): void {
@@ -126,7 +158,8 @@ export class Renderer {
         this.lastOptTime = timestamp;
         this.optFrames++;
         this.timeSinceLastOptCheck += delta;
-        if (this.timeSinceLastOptCheck >= OPTIMIZER_CHECK_INTERVAL_MS) {
+
+        if (this.timeSinceLastOptCheck >= OPT_INTERVAL_MS) {
             this.fps = (this.optFrames * 1000) / this.timeSinceLastOptCheck;
             this.optFrames = 0;
             this.timeSinceLastOptCheck = 0;
@@ -137,38 +170,18 @@ export class Renderer {
         return this.fps;
     }
 
-    updateCulling(): void {
-        this.camera.updateMatrixWorld();
-        this.projScreenMatrix.multiplyMatrices(
-            this.camera.projectionMatrix,
-            this.camera.matrixWorldInverse,
-        );
-        this.frustum.setFromProjectionMatrix(this.projScreenMatrix);
-        for (const node of this.sg.graph.nodes.values()) {
-            const inFrustum = this.frustum.containsPoint(node.position);
-            if (node instanceof DOMNode) {
-                node.setVisibility(inFrustum);
-            } else {
-                node.object.visible = inFrustum;
-            }
-        }
-    }
-
     async exportPNG(scale = 1): Promise<Blob> {
         this.render();
-        return new Promise((resolve, reject) => {
+        return new Promise<Blob>((resolve, reject) => {
             this.renderer.domElement.toBlob(
-                (blob) => {
-                    if (blob) resolve(blob);
-                    else reject(new Error('toBlob failed'));
-                },
+                (blob) => (blob ? resolve(blob) : reject(new Error('toBlob failed'))),
                 'image/png',
                 scale,
             );
         });
     }
 
-    public dispose() {
+    dispose(): void {
         this._resizeObserver?.disconnect();
         this.instancedRenderer.dispose();
         this.renderer.dispose();

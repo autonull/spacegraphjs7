@@ -1,18 +1,17 @@
 import { SpaceGraph } from '../SpaceGraph';
-import type { GraphSpec } from '../types';
-import type { Node } from '../nodes/Node';
-import type { Edge } from '../edges/Edge';
+import type { GraphSpec, Node, Edge } from '../types';
 import { HUDPlugin } from '../plugins/HUDPlugin';
 import { InteractionPlugin } from '../plugins/InteractionPlugin';
 import { MinimapPlugin } from '../plugins/MinimapPlugin';
 import { HtmlNode } from '../nodes/HtmlNode';
-import { CameraUtils } from '../utils/CameraUtils';
 import {
     addGrid,
     setupSearchHUD,
     renderButtons,
     renderToolbarActions,
     updateStatsHUD,
+    renderTitleCard,
+    renderToolbar,
 } from './SpaceGraphAppHUD';
 import { setupInteractionHandlers, setupHotkeys } from './SpaceGraphAppInteraction';
 import { setupDefaultHUD, setTheme } from './SpaceGraphAppTheme';
@@ -57,16 +56,24 @@ export interface AppButtonConfig {
 }
 
 export class SpaceGraphApp {
-    public readonly sg: SpaceGraph;
-    public readonly options: SpaceGraphAppOptions;
-    public hud!: HUDPlugin;
-    private currentSelected: Node[] = [];
-    private currentSelectedEdges: Edge[] = [];
-    private originalColors = new Map<Node, number>();
-    private originalEdgeColors = new Map<Edge, number>();
-    public buttons: AppButtonConfig[] = [];
-    public toolbarActions: AppButtonConfig[] = [];
-    private _zoomSliderHandler?: () => void;
+  public readonly sg: SpaceGraph;
+  public readonly options: SpaceGraphAppOptions;
+  public hud!: HUDPlugin;
+  public currentSelected: Node[] = [];
+  public currentSelectedEdges: Edge[] = [];
+  private originalColors = new Map<Node, number>();
+  private originalEdgeColors = new Map<Edge, number>();
+  public buttons: AppButtonConfig[] = [];
+  public toolbarActions: AppButtonConfig[] = [];
+  private _zoomSliderHandler?: () => void;
+
+    private _emitSelectionChanged(): void {
+        this.sg.events.emit('selection:changed', {
+            nodes: [...this.currentSelected].map((n) => n.id),
+            edges: [...this.currentSelectedEdges].map((e) => e.id),
+            timestamp: Date.now(),
+        });
+    }
 
     private constructor(sg: SpaceGraph, options: SpaceGraphAppOptions) {
         this.sg = sg;
@@ -98,7 +105,6 @@ export class SpaceGraphApp {
             container,
             resolvedOptions.spec ?? { nodes: [], edges: [] },
         );
-
         const app = new SpaceGraphApp(sg, resolvedOptions);
 
         if (resolvedOptions.actions) app.buttons.push(...resolvedOptions.actions);
@@ -110,13 +116,13 @@ export class SpaceGraphApp {
         app.hud = new HUDPlugin();
         app.sg.pluginManager.register('HUDPlugin', app.hud);
 
-        if (app.options.enableInteraction) {
+        if (resolvedOptions.enableInteraction) {
             const interaction = new InteractionPlugin();
             app.sg.pluginManager.register('InteractionPlugin', interaction);
             setTimeout(() => setupInteractionHandlers(app), 0);
         }
 
-        if (app.options.enableMinimap) {
+        if (resolvedOptions.enableMinimap) {
             app.sg.pluginManager.register('MinimapPlugin', new MinimapPlugin());
         }
 
@@ -124,7 +130,7 @@ export class SpaceGraphApp {
         addGrid(app);
         setupDefaultHUD(app, theme);
 
-        if (app.options.enableSearch) {
+        if (resolvedOptions.enableSearch) {
             setupSearchHUD(app, theme);
         }
 
@@ -144,52 +150,46 @@ export class SpaceGraphApp {
         if (interaction) interaction.mode = mode;
     }
 
-    public clearSelectionStyles() {
-        for (const node of this.currentSelected) {
-            if (node instanceof HtmlNode && this.options.selectionHighlightClass) {
-                node.domElement.classList.remove(this.options.selectionHighlightClass);
-            } else if (this.options.selectionHighlightColor && this.originalColors.has(node)) {
-                node.updateSpec({ data: { color: this.originalColors.get(node) } });
-            }
+    private _clearNodeStyle(node: Node): void {
+        if (node instanceof HtmlNode && this.options.selectionHighlightClass) {
+            node.domElement.classList.remove(this.options.selectionHighlightClass);
+        } else if (this.originalColors.has(node)) {
+            node.updateSpec({ data: { color: this.originalColors.get(node) } });
         }
-        this.originalColors.clear();
+    }
 
-        for (const edge of this.currentSelectedEdges) {
-            if (this.options.selectionHighlightEdgeColor && this.originalEdgeColors.has(edge)) {
-                edge.updateSpec({ data: { color: this.originalEdgeColors.get(edge) } });
-            }
+    private _applyNodeStyle(node: Node): void {
+        if (node instanceof HtmlNode && this.options.selectionHighlightClass) {
+            node.domElement.classList.add(this.options.selectionHighlightClass);
+        } else if (this.options.selectionHighlightColor && node.data?.color !== undefined) {
+            this.originalColors.set(node, node.data.color as number);
+            node.updateSpec({ data: { color: this.options.selectionHighlightColor } });
         }
+    }
+
+    private _clearEdgeStyle(edge: Edge): void {
+        if (this.originalEdgeColors.has(edge)) {
+            edge.updateSpec({ data: { color: this.originalEdgeColors.get(edge) } });
+        }
+    }
+
+    private _applyEdgeStyle(edge: Edge): void {
+        if (this.options.selectionHighlightEdgeColor && edge.data?.color !== undefined) {
+            this.originalEdgeColors.set(edge, edge.data.color as number);
+            edge.updateSpec({ data: { color: this.options.selectionHighlightEdgeColor } });
+        }
+    }
+
+    public clearSelectionStyles() {
+        for (const node of this.currentSelected) this._clearNodeStyle(node);
+        this.originalColors.clear();
+        for (const edge of this.currentSelectedEdges) this._clearEdgeStyle(edge);
         this.originalEdgeColors.clear();
     }
 
     public applySelectionStyles() {
-        for (const node of this.currentSelected) {
-            if (node instanceof HtmlNode && this.options.selectionHighlightClass) {
-                node.domElement.classList.add(this.options.selectionHighlightClass);
-            } else if (
-                this.options.selectionHighlightColor &&
-                node.data?.color !== undefined &&
-                typeof node.updateSpec === 'function'
-            ) {
-                this.originalColors.set(node, node.data.color as number);
-                node.updateSpec({
-                    data: { ...node.data, color: this.options.selectionHighlightColor },
-                });
-            }
-        }
-
-        for (const edge of this.currentSelectedEdges) {
-            if (
-                this.options.selectionHighlightEdgeColor &&
-                edge.data?.color !== undefined &&
-                typeof edge.updateSpec === 'function'
-            ) {
-                this.originalEdgeColors.set(edge, edge.data.color as number);
-                edge.updateSpec({
-                    data: { ...edge.data, color: this.options.selectionHighlightEdgeColor },
-                });
-            }
-        }
+        for (const node of this.currentSelected) this._applyNodeStyle(node);
+        for (const edge of this.currentSelectedEdges) this._applyEdgeStyle(edge);
     }
 
     public addToolbarAction(config: AppButtonConfig) {
@@ -237,11 +237,7 @@ export class SpaceGraphApp {
 
     public importData(data: any) {
         this.sg.import(data);
-        this.sg.events.emit('selection:changed', {
-            nodes: this.currentSelected.map((n) => n.id),
-            edges: this.currentSelectedEdges.map((e) => e.id),
-            timestamp: Date.now(),
-        });
+        this._emitSelectionChanged();
     }
 
     public focusOnNodes(nodeIds: string[], padding = 100, duration = 1.5) {
@@ -250,7 +246,7 @@ export class SpaceGraphApp {
             .filter((n): n is NonNullable<typeof n> => n != null);
         if (nodes.length === 0) return;
 
-        const fit = CameraUtils.calculateFitView(nodes, this.sg.renderer.camera, padding);
+        const fit = calculateFitView(nodes, this.sg.renderer.camera, padding);
         if (fit) {
             this.sg.cameraControls.flyTo(fit.center, fit.cameraZ, duration);
         }
@@ -258,11 +254,7 @@ export class SpaceGraphApp {
 
     public addNode(nodeSpec: any) {
         this.sg.graph.addNode(nodeSpec);
-        this.sg.events.emit('selection:changed', {
-            nodes: this.currentSelected.map((n) => n.id),
-            edges: this.currentSelectedEdges.map((e) => e.id),
-            timestamp: Date.now(),
-        });
+        this._emitSelectionChanged();
     }
 
     public updateNode(nodeId: string, nodeSpec: any) {
@@ -272,24 +264,15 @@ export class SpaceGraphApp {
     public removeNode(nodeId: string) {
         const node = this.sg.graph.getNode(nodeId);
         if (node) {
-            const index = this.currentSelected.indexOf(node);
-            if (index > -1) this.currentSelected.splice(index, 1);
+            this.currentSelected.delete(node);
             this.sg.graph.removeNode(nodeId);
-            this.sg.events.emit('selection:changed', {
-                nodes: this.currentSelected.map((n) => n.id),
-                edges: this.currentSelectedEdges.map((e) => e.id),
-                timestamp: Date.now(),
-            });
+            this._emitSelectionChanged();
         }
     }
 
     public addEdge(edgeSpec: any) {
         this.sg.graph.addEdge(edgeSpec);
-        this.sg.events.emit('selection:changed', {
-            nodes: this.currentSelected.map((n) => n.id),
-            edges: this.currentSelectedEdges.map((e) => e.id),
-            timestamp: Date.now(),
-        });
+        this._emitSelectionChanged();
     }
 
     public updateEdge(edgeId: string, edgeSpec: any) {
@@ -299,34 +282,25 @@ export class SpaceGraphApp {
     public removeEdge(edgeId: string) {
         const edge = this.sg.graph.getEdge(edgeId);
         if (edge) {
-            const index = this.currentSelectedEdges.indexOf(edge);
-            if (index > -1) this.currentSelectedEdges.splice(index, 1);
+            this.currentSelectedEdges.delete(edge);
             this.sg.graph.removeEdge(edgeId);
-            this.sg.events.emit('selection:changed', {
-                nodes: this.currentSelected.map((n) => n.id),
-                edges: this.currentSelectedEdges.map((e) => e.id),
-                timestamp: Date.now(),
-            });
+            this._emitSelectionChanged();
         }
     }
 
     public clearSelection() {
         this.clearSelectionStyles();
-        this.currentSelected = [];
-        this.currentSelectedEdges = [];
-        this.sg.events.emit('selection:changed', {
-            nodes: [],
-            edges: [],
-            timestamp: Date.now(),
-        });
+        this.currentSelected.clear();
+        this.currentSelectedEdges.clear();
+        this._emitSelectionChanged();
     }
 
     public getSelectedNodes(): Node[] {
-        return this.currentSelected;
+        return [...this.currentSelected];
     }
 
     public getSelectedEdges(): Edge[] {
-        return this.currentSelectedEdges;
+        return [...this.currentSelectedEdges];
     }
 
     public dispose() {
@@ -337,3 +311,13 @@ export class SpaceGraphApp {
         this.hud.dispose();
     }
 }
+
+// Re-export helpers
+export {
+    renderTitleCard,
+    renderToolbar,
+    renderButtons,
+    renderToolbarActions,
+    setupSearchHUD,
+    updateStatsHUD,
+};

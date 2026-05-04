@@ -71,31 +71,31 @@
                 init();
             }
 
-            function init() {
-                try {
-                    const sg = fractalDemo();
-                    window._sg = sg;
+async function init() {
+  try {
+    const sg = await fractalDemo();
+    window._sg = sg;
 
-                    // Remove loading indicator once ready
-                    sg.events.on('fractal:level-change', () => {
-                        const loading = document.querySelector('.loading');
-                        if (loading) loading.remove();
-                    });
+    // Remove loading indicator once ready
+    sg.events.on('fractal:level-change', () => {
+      const loading = document.querySelector('.loading');
+      if (loading) loading.remove();
+    });
 
-                    // Fallback: remove loading after 2 seconds
-                    setTimeout(() => {
-                        const loading = document.querySelector('.loading');
-                        if (loading) loading.remove();
-                    }, 2000);
-                } catch (error) {
-                    console.error('Failed to initialize fractal demo:', error);
-                    const loading = document.querySelector('.loading');
-                    if (loading) {
-                        loading.textContent = 'Error loading demo. Check console.';
-                        loading.style.color = '#ff4466';
-                    }
-                }
-            }
+    // Fallback: remove loading after 2 seconds
+    setTimeout(() => {
+      const loading = document.querySelector('.loading');
+      if (loading) loading.remove();
+    }, 2000);
+  } catch (error) {
+    console.error('Failed to initialize fractal demo:', error);
+    const loading = document.querySelector('.loading');
+    if (loading) {
+      loading.textContent = 'Error loading demo. Check console.';
+      loading.style.color = '#ff4466';
+    }
+  }
+}
         </script>
     </body>
 </html>

@@ -7,12 +7,14 @@ import { createQuickControls, type QuickControlButton } from './QuickControls';
 import { BaseContentNode } from './BaseContentNode';
 
 export class HtmlNode extends BaseContentNode {
-    public static MIN_SIZE = { width: 80, height: 40 };
-    public static CONTENT_SCALE_RANGE = { min: 0.3, max: 3.0 };
+public static MIN_SIZE = { width: 80, height: 40 };
+public static DEFAULT_SIZE = { width: 200, height: 100 };
+public static CONTENT_SCALE_RANGE = { min: 0.3, max: 3.0 };
 
-    public size = { width: 160, height: 70 };
+public size = { width: 160, height: 70 };
     public billboard = false;
     public labelLod: LabelLodLevel[] = [];
+    public override focusable = true;
     private resizeHandle: HTMLElement | null = null;
     private contentWrapper: HTMLElement | null = null;
     private controlsWrapper: HTMLElement | null = null;
@@ -257,11 +259,12 @@ export class HtmlNode extends BaseContentNode {
         return this;
     }
 
-    private _handleSizeUpdate(data: SpaceGraphNodeData): void {
-        const w = (data.width as number) ?? (this.data.width as number) ?? 200;
-        const h = (data.height as number) ?? (this.data.height as number) ?? 100;
-        this.setSize(w, h);
-    }
+private _handleSizeUpdate(data: SpaceGraphNodeData): void {
+const { DEFAULT_SIZE } = HtmlNode;
+const w = (data.width as number) ?? (this.data.width as number) ?? DEFAULT_SIZE.width;
+const h = (data.height as number) ?? (this.data.height as number) ?? DEFAULT_SIZE.height;
+this.setSize(w, h);
+}
 
     setSize(width: number, height: number, scaleContent = false): void {
         const oldSize = { ...this.size };
@@ -337,6 +340,16 @@ export class HtmlNode extends BaseContentNode {
 
     setSelectedStyle(selected: boolean): void {
         this.domElement?.classList.toggle('selected', selected);
+    }
+
+    focus(): void {
+        super.focus();
+        this.domElement?.classList.add('focused');
+    }
+
+    blur(): void {
+        super.blur();
+        this.domElement?.classList.remove('focused');
     }
 
     updatePosition(x: number, y: number, z: number): this {
