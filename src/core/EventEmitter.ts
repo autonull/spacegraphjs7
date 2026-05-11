@@ -26,14 +26,16 @@ export class EventEmitter<T extends Record<string, unknown>> {
         this.handlers.get(event)?.delete(handler);
     }
 
-    emit<K extends keyof T>(event: K, data: T[K]): void {
-        for (const h of this.handlers.get(event) ?? []) {
-            try {
-                h(data);
-            } catch (e) {
-                logger.error('Event handler failed:', event, e);
-            }
+    // Helper to safely invoke handlers
+    private invokeHandlers(handlers: Set<(event: any) => void>, data: any): void {
+        for (const h of handlers) {
+            try { h(data); }
+            catch (e) { logger.error('Event handler failed:', e); }
         }
+    }
+
+    emit<K extends keyof T>(event: K, data: T[K]): void {
+        this.invokeHandlers(this.handlers.get(event) ?? [], data);
     }
 
     emitBatched<K extends keyof T>(event: K, data: T[K]): void {
@@ -51,23 +53,13 @@ export class EventEmitter<T extends Record<string, unknown>> {
     private flushBatch(): void {
         this.batchId = null;
         for (const [event, arr] of this.batched) {
-            for (const data of arr) this.emit(event, data);
+            for (const data of arr) this.invokeHandlers(this.handlers.get(event) ?? [], data);
         }
         this.batched.clear();
     }
 
-    emitWithTimestamp<K extends keyof T>(
-        event: K,
-        data: T[K] & { timestamp?: number },
-    ): void {
-        const eventData = { ...data, timestamp: Date.now() } as T[K];
-        for (const h of this.handlers.get(event) ?? []) {
-            try {
-                h(eventData);
-            } catch (e) {
-                logger.error('Event handler failed:', event, e);
-            }
-        }
+    emitWithTimestamp<K extends keyof T>(event: K, data: T[K] & { timestamp?: number }): void {
+        this.invokeHandlers(this.handlers.get(event) ?? [], { ...data, timestamp: Date.now() });
     }
 
     removeAllListeners(): void {

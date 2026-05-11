@@ -108,18 +108,12 @@ export class PluginManager {
 
     updateAll(delta: number): void {
         for (const plugin of this.plugins.values()) {
-            try {
-                plugin.onPreRender?.(delta);
-            } catch (err) {
-                logger.error('Plugin onPreRender error:', err);
-            }
+            try { plugin.onPreRender?.(delta); }
+            catch (err) { logger.error('Plugin onPreRender error:', err); }
         }
         for (const plugin of this.plugins.values()) {
-            try {
-                plugin.onPostRender?.(delta);
-            } catch (err) {
-                logger.error('Plugin onPostRender error:', err);
-            }
+            try { plugin.onPostRender?.(delta); }
+            catch (err) { logger.error('Plugin onPostRender error:', err); }
         }
     }
 
@@ -134,11 +128,8 @@ export class PluginManager {
         const state: Record<string, unknown> = {};
         for (const [name, plugin] of this.plugins) {
             if (plugin.export) {
-                try {
-                    state[name] = plugin.export();
-                } catch (err) {
-                    logger.error('Failed to export plugin "%s".', name, err);
-                }
+                try { state[name] = plugin.export(); }
+                catch (err) { logger.error('Failed to export plugin "%s".', name, err); }
             }
         }
         return state;
@@ -149,11 +140,8 @@ export class PluginManager {
         for (const [name, state] of Object.entries(data)) {
             const plugin = this.plugins.get(name);
             if (plugin?.import) {
-                try {
-                    plugin.import(state);
-                } catch (err) {
-                    logger.error('Failed to import state for plugin "%s".', name, err);
-                }
+                try { plugin.import(state); }
+                catch (err) { logger.error('Failed to import state for plugin "%s".', name, err); }
             }
         }
     }
