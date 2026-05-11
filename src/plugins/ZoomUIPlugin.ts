@@ -133,26 +133,19 @@ export class ZoomUIPlugin implements Plugin {
         }
     }
 
-    private updateCursor(level: number): void {
-        if (!this.sg?.container) return;
+private updateCursor(level: number): void {
+    if (!this.sg?.container) return;
 
-        const cursorStyles: Record<number, string> = {
-            0: 'grab', // Overview
-            1: 'grab', // Cluster
-            2: 'default', // Detail
-            3: 'crosshair', // Micro
-            4: 'crosshair', // Nano
-        };
+    const cursorStyles: Record<number, string> = {
+      0: 'grab',
+      1: 'grab',
+      2: 'default',
+      3: 'crosshair',
+      4: 'crosshair',
+    };
 
-        const cursor = cursorStyles[level] || 'default';
-        this.sg.container.style.cursor = cursor;
-
-        // Update all child elements
-        const children = this.sg.container.querySelectorAll('*');
-        children.forEach((child) => {
-            (child as HTMLElement).style.cursor = cursor;
-        });
-    }
+    this.sg.container.style.cursor = cursorStyles[level] || 'default';
+  }
 
     private showHint(): void {
         if (this.hintElement) {

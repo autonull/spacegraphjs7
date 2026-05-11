@@ -71,7 +71,7 @@ export class HierarchicalLayout extends BaseLayout {
 
         for (const [lv, ids] of byLevel) {
             const totalWidth = (ids.length - 1) * nodeSpacing;
-            ids.forEach((id, i) => {
+            for (const [i, id] of ids.entries()) {
                 const node = nodes.get(id) as Node;
                 const primary = lv * levelHeight;
                 const secondary = -totalWidth / 2 + i * nodeSpacing;
@@ -88,7 +88,7 @@ export class HierarchicalLayout extends BaseLayout {
                     }
                 })();
                 this.applyPosition(node, new THREE.Vector3(x, y, z), { animate, duration });
-            });
+            }
         }
 
         let orphanX = 0;

@@ -122,4 +122,10 @@ export class VisionManager {
             logger.info('Stopped autonomous correction loop');
         }
     }
+
+    public dispose(): void {
+        this.stopAutonomousCorrection();
+        this.isAnalyzing = false;
+        logger.info('VisionManager disposed');
+    }
 }

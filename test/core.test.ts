@@ -15,8 +15,8 @@ describe('Graph', () => {
     describe('Graph', () => {
         it('should create an empty graph', () => {
             const graph = new Graph();
-            expect(graph.getNodeCount()).toBe(0);
-            expect(graph.getEdgeCount()).toBe(0);
+            expect(graph.nodeCount).toBe(0);
+            expect(graph.edgeCount).toBe(0);
         });
 
         it('should add and retrieve nodes', () => {
@@ -36,7 +36,7 @@ describe('Graph', () => {
 
             graph.addNode(node);
 
-            expect(graph.getNodeCount()).toBe(1);
+            expect(graph.nodeCount).toBe(1);
             expect(graph.getNode('test-node')).toBe(node);
             expect(graph.hasNode('test-node')).toBe(true);
         });
@@ -96,12 +96,12 @@ describe('Graph', () => {
             );
             graph.addEdge(edge);
 
-            expect(graph.getEdgeCount()).toBe(1);
+            expect(graph.edgeCount).toBe(1);
 
             graph.removeNode('node1');
 
-            expect(graph.getNodeCount()).toBe(1);
-            expect(graph.getEdgeCount()).toBe(0);
+            expect(graph.nodeCount).toBe(1);
+            expect(graph.edgeCount).toBe(0);
         });
     });
 
@@ -211,7 +211,7 @@ describe('Graph', () => {
 
             expect(() => {
                 registry.createNode({ id: 'test', type: 'UnknownType' });
-            }).toThrow('Unknown node type: UnknownType');
+            }).toThrow('TypeRegistry: Unknown node type');
         });
     });
 

@@ -53,11 +53,16 @@ const DEMO_METADATA: Record<string, { name: string; icon: string; description: s
         icon: '⚙️',
         description: 'Visualizes n8n workflow automation graphs',
     },
-    'single-node.html': {
-        name: 'Single Node',
-        icon: '⬤',
-        description: 'Basic single node demonstration',
-    },
+'single-node.html': {
+    name: 'Single Node',
+    icon: '⬤',
+    description: 'Basic single node demonstration',
+  },
+  'mermaid.html': {
+    name: 'Mermaid',
+    icon: '📊',
+    description: 'Mermaid diagram renderer with all layouts and HUD controls',
+  },
 };
 
 // Convert filename to display name (fallback for unknown demos)

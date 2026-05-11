@@ -1,7 +1,11 @@
 export { Node } from './Node';
+export { WidgetNode } from './WidgetNode';
 export { InstancedNode } from './InstancedNode';
 export { InstancedShapeNode } from './InstancedShapeNode';
 export { ShapeNode } from './ShapeNode';
+export { ButtonNode } from './ButtonNode';
+export { SliderNode } from './SliderNode';
+export { ToggleNode } from './ToggleNode';
 export { HtmlNode } from './HtmlNode';
 export { ImageNode } from './ImageNode';
 export { GroupNode } from './GroupNode';

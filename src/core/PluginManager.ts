@@ -4,6 +4,7 @@ import type { Edge } from '../edges/Edge';
 import type { EventSystem } from './events/EventSystem';
 import type { Graph } from './Graph';
 import { createLogger } from '../utils/logger';
+import { wrapError } from '../utils/error';
 import { TypeRegistry } from './TypeRegistry';
 
 export interface Plugin {
@@ -22,20 +23,26 @@ export interface Plugin {
     import?(data: unknown): void;
 }
 
+export interface PluginMetadata {
+    id: string;
+    name: string;
+    version: string;
+    description?: string;
+    author?: string;
+    dependencies?: string[];
+}
+
 const logger = createLogger('PluginManager');
 
 export class PluginManager {
-    private readonly sg: SpaceGraph;
-    public readonly plugins = new Map<string, Plugin>();
+    private readonly plugins: Map<string, Plugin> = new Map();
 
-    constructor(sg: SpaceGraph) {
-        this.sg = sg;
-    }
+    constructor(private readonly sg: SpaceGraph) {}
 
-    register(name: string, plugin: Plugin): void {
+    register(name: string, plugin: Plugin): this {
         if (!name || typeof name !== 'string') {
             throw new Error(
-                `[SpaceGraph] Plugin Registration Error: Invalid plugin name "${name}". Name must be a non-empty string.`,
+                `[SpaceGraph] Plugin Registration Error: Invalid plugin name "${name}".`,
             );
         }
         if (!plugin) {
@@ -44,6 +51,99 @@ export class PluginManager {
             );
         }
         this.plugins.set(name, plugin);
+        return this;
+    }
+
+    unregister(name: string): boolean {
+        const plugin = this.plugins.get(name);
+        if (!plugin) return false;
+        plugin.dispose?.();
+        this.plugins.delete(name);
+        return true;
+    }
+
+    get<T extends Plugin = Plugin>(name: string): T | undefined {
+        return this.plugins.get(name) as T | undefined;
+    }
+
+    has(name: string): boolean {
+        return this.plugins.has(name);
+    }
+
+    get pluginNames(): string[] {
+        return Array.from(this.plugins.keys());
+    }
+
+    get pluginCount(): number {
+        return this.plugins.size;
+    }
+
+    *[Symbol.iterator](): Generator<[string, Plugin]> {
+        yield* this.plugins.entries();
+    }
+
+    async initAll(): Promise<void> {
+        const errors: Error[] = [];
+        for (const [name, plugin] of this.plugins) {
+            try {
+                await plugin.init(this.sg, this.sg.graph, this.sg.events);
+            } catch (err) {
+                const wrapped = wrapError(err, {
+                    namespace: 'SpaceGraph',
+                    operation: 'Plugin Initialization',
+                    reason: `Failed to initialize plugin "${name}"`,
+                });
+                logger.error(wrapped.message);
+                errors.push(wrapped);
+            }
+        }
+        if (errors.length > 0) {
+            const err = new Error(
+                `[SpaceGraph] PluginManager initAll fails with ${errors.length} error(s).`,
+            ) as Error & { errors: Error[] };
+            err.errors = errors;
+            throw err;
+        }
+    }
+
+    updateAll(delta: number): void {
+        for (const plugin of this.plugins.values()) {
+            try { plugin.onPreRender?.(delta); }
+            catch (err) { logger.error('Plugin onPreRender error:', err); }
+        }
+        for (const plugin of this.plugins.values()) {
+            try { plugin.onPostRender?.(delta); }
+            catch (err) { logger.error('Plugin onPostRender error:', err); }
+        }
+    }
+
+    disposePlugins(): void {
+        for (const plugin of this.plugins.values()) {
+            plugin.dispose?.();
+        }
+        this.plugins.clear();
+    }
+
+    export(): Record<string, unknown> {
+        const state: Record<string, unknown> = {};
+        for (const [name, plugin] of this.plugins) {
+            if (plugin.export) {
+                try { state[name] = plugin.export(); }
+                catch (err) { logger.error('Failed to export plugin "%s".', name, err); }
+            }
+        }
+        return state;
+    }
+
+    import(data: Record<string, unknown>): void {
+        if (!data) return;
+        for (const [name, state] of Object.entries(data)) {
+            const plugin = this.plugins.get(name);
+            if (plugin?.import) {
+                try { plugin.import(state); }
+                catch (err) { logger.error('Failed to import state for plugin "%s".', name, err); }
+            }
+        }
     }
 
     registerNodeType(type: string, cls: import('./TypeRegistry').NodeConstructor): void {
@@ -62,98 +162,22 @@ export class PluginManager {
         return TypeRegistry.getInstance().getEdgeConstructor(type);
     }
 
-    getPlugin(name: string): Plugin | undefined {
-        return this.plugins.get(name);
-    }
+    getPlugin = this.get;
+    hasPlugin = this.has;
+    getPluginNames = this.pluginNames;
 
-    hasPlugin(name: string): boolean {
-        return this.plugins.has(name);
-    }
-
-    getPluginNames(): string[] {
-        return [...this.plugins.keys()];
-    }
-
-    async initAll(): Promise<void> {
-        const errors: Error[] = [];
-        for (const [name, plugin] of this.plugins.entries()) {
-            try {
-                await plugin.init(this.sg, this.sg.graph, this.sg.events);
-            } catch (err) {
-                const message = err instanceof Error ? err.message : String(err);
-                const wrappedError = new Error(
-                    `[SpaceGraph] Plugin Initialization Error: Failed to initialize plugin "${name}". Reason: ${message}`,
-                );
-                logger.error(wrappedError.message);
-                errors.push(wrappedError);
-            }
-        }
-        if (errors.length > 0) {
-            const err = new Error(
-                `[SpaceGraph] PluginManager initAll fails with ${errors.length} error(s).`,
-            );
-            (err as Error & { errors: Error[] }).errors = errors;
-            throw err;
-        }
-    }
-
-    updateAll(delta: number): void {
+    find(predicate: (plugin: Plugin) => boolean): Plugin | undefined {
         for (const plugin of this.plugins.values()) {
-            try {
-                plugin.onPreRender?.(delta);
-            } catch (err) {
-                logger.error('Plugin onPreRender error:', err);
-            }
+            if (predicate(plugin)) return plugin;
         }
+        return undefined;
+    }
+
+    filter(predicate: (plugin: Plugin) => boolean): Plugin[] {
+        const result: Plugin[] = [];
         for (const plugin of this.plugins.values()) {
-            try {
-                plugin.onPostRender?.(delta);
-            } catch (err) {
-                logger.error('Plugin onPostRender error:', err);
-            }
+            if (predicate(plugin)) result.push(plugin);
         }
-    }
-
-    unregister(name: string): boolean {
-        const plugin = this.plugins.get(name);
-        if (!plugin) return false;
-        plugin.dispose?.();
-        this.plugins.delete(name);
-        return true;
-    }
-
-    disposePlugins(): void {
-        for (const plugin of this.plugins.values()) {
-            plugin.dispose?.();
-        }
-        this.plugins.clear();
-    }
-
-    export(): Record<string, unknown> {
-        const state: Record<string, unknown> = {};
-        for (const [name, plugin] of this.plugins.entries()) {
-            if (plugin.export) {
-                try {
-                    state[name] = plugin.export();
-                } catch (err) {
-                    logger.error('Failed to export plugin "%s".', name, err);
-                }
-            }
-        }
-        return state;
-    }
-
-    import(data: Record<string, unknown>): void {
-        if (!data) return;
-        for (const [name, pluginState] of Object.entries(data)) {
-            const plugin = this.plugins.get(name);
-            if (plugin?.import) {
-                try {
-                    plugin.import(pluginState);
-                } catch (err) {
-                    logger.error('Failed to import state for plugin "%s".', name, err);
-                }
-            }
-        }
+        return result;
     }
 }

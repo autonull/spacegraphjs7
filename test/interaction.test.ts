@@ -74,7 +74,7 @@ class TestSurface extends Surface {
 describe('Event Consumption Model', () => {
     it('should initialize events with consumed=false', () => {
         const mockSg = createMockSpaceGraph();
-        const manager = new InputManager({ graph: mockSg, events: mockSg.events });
+        const manager = new InputManager({ sg: mockSg, events: mockSg.events });
         const source = manager.addSource({ id: 'test', element: document.createElement('div') });
 
         const event = (source as any).normalizeEvent('pointerdown', {
@@ -94,7 +94,7 @@ describe('Event Consumption Model', () => {
 
     it('should stop propagation when event.consumed=true', () => {
         const mockSg = createMockSpaceGraph();
-        const manager = new InputManager({ graph: mockSg, events: mockSg.events });
+        const manager = new InputManager({ sg: mockSg, events: mockSg.events });
 
         const callOrder: string[] = [];
 
@@ -142,7 +142,7 @@ describe('Event Consumption Model', () => {
 
     it('should allow propagation when not consumed', () => {
         const mockSg = createMockSpaceGraph();
-        const manager = new InputManager({ graph: mockSg, events: mockSg.events });
+        const manager = new InputManager({ sg: mockSg, events: mockSg.events });
 
         const callOrder: string[] = [];
 

@@ -1,116 +1,158 @@
-// SpaceGraphJS - Type Definitions
-// Single source of truth for all type declarations
+// types.ts - Ergonomic TypeScript types
+import type { Node } from './nodes/Node';
+import type { Edge } from './edges/Edge';
+import type { SpaceGraph } from './SpaceGraph';
+import type { Vector3, Raycaster } from 'three';
 
-// ============================================================================
-// Base Interfaces
-// ============================================================================
+// ============= Utility Types =============
+export type Maybe<T> = T | null | undefined;
+export type MaybePromise<T> = T | Promise<T>;
+export type Constructor<T, Args extends unknown[] = unknown[]> = new (...args: Args) => T;
+export type Predicate<T> = (value: T) => boolean;
+export type Disposer = () => void;
+export type Nullable<T> = T | null;
+export type Optional<T> = Partial<T>;
+export type Awaited<T> = T extends Promise<infer U> ? U : T;
+export type ValueOf<T> = T[keyof T];
+export type KeysOf<T> = keyof T;
 
-export interface Dimensions {
-    width?: number;
-    height?: number;
+// Common callback types
+export type NodeCallback<T = Node> = (node: T) => void;
+export type EdgeCallback<T = Edge> = (edge: T) => void;
+export type IdCallback = (id: string) => void;
+export type AsyncCallback<T = void> = () => Promise<T> | T;
+
+// ============= Geometry Types =============
+export interface Rect {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+}
+export interface Point2D {
+    x: number;
+    y: number;
+}
+export interface Point3D {
+    x: number;
+    y: number;
+    z: number;
+}
+export interface Bounds3D {
+    min: Vector3;
+    max: Vector3;
+    center: Vector3;
+    size: Vector3;
+    containsPoint(point: Vector3): boolean;
+    intersectsRay(ray: Raycaster): boolean;
 }
 
-export interface Colorable {
-    color?: string | number;
-}
-
-export interface Opacity {
-    opacity?: number;
-}
-
-export interface Themable {
-    theme?: 'light' | 'dark';
-}
-
-// ============================================================================
-// Node Data Types
-// ============================================================================
-
-export interface LabelLodLevel {
-    distance: number;
-    scale?: number;
-    style?: string;
-}
-
+// ============= Unified Node Data Base =============
 export interface BaseNodeData {
     [key: string]: unknown;
     pinned?: boolean;
     visible?: boolean;
 }
 
-export interface ShapeNodeData extends BaseNodeData, Colorable, Opacity {
-    shape?: 'box' | 'sphere' | 'circle' | 'plane' | 'cone' | 'cylinder' | 'torus' | 'ring';
-    size?: number;
-    wireframe?: boolean;
-    transparent?: boolean;
-    side?: 'front' | 'back' | 'double';
+// Consolidated dimension properties shared by most node types
+export interface NodeDimensions {
+    width?: number;
+    height?: number;
+    depth?: number;
 }
 
-export interface HtmlNodeData extends BaseNodeData, Dimensions {
+// Consolidated visual properties shared by most node types
+export interface NodeVisual {
+    color?: string | number;
+    opacity?: number;
+    transparent?: boolean;
+    wireframe?: boolean;
+}
+
+// Consolidated interaction properties
+export interface NodeInteraction {
+    draggable?: boolean;
+    selectable?: boolean;
+    focusable?: boolean;
+}
+
+// All node data types share these core properties
+export type CoreNodeData = BaseNodeData & NodeDimensions & NodeVisual & NodeInteraction;
+
+export interface BaseEdgeData {
+    [key: string]: unknown;
+}
+export interface LabelLodLevel {
+    distance?: number;
+    scale?: number;
+    style?: string;
+    min?: number;
+    max?: number;
+    label?: string;
+}
+
+// ============= Node Data Types (Consolidated) =============
+export interface ShapeNodeData extends CoreNodeData {
+    shape?: 'box' | 'sphere' | 'circle' | 'plane' | 'cone' | 'cylinder' | 'torus' | 'ring';
+    size?: number;
+    side?: 'front' | 'back' | 'double';
+}
+export interface HtmlNodeData extends CoreNodeData {
     html?: string;
     className?: string;
     pointerEvents?: 'none' | 'auto';
     labelLod?: LabelLodLevel[];
 }
-
-export interface ImageNodeData extends BaseNodeData, Dimensions, Opacity {
+export interface ImageNodeData extends CoreNodeData {
     url?: string;
 }
-
-export interface GroupNodeData extends BaseNodeData, Dimensions, Colorable, Opacity {
+export interface GroupNodeData extends CoreNodeData {
     depth?: number;
-    wireframe?: boolean;
     title?: string;
 }
-
-export interface NoteNodeData extends BaseNodeData, Dimensions, Colorable {
+export interface NoteNodeData extends CoreNodeData {
     text?: string;
     textColor?: string | number;
     fontSize?: number;
 }
-
-export interface CanvasNodeData extends BaseNodeData, Dimensions {
+export interface CanvasNodeData extends CoreNodeData {
     dpi?: number;
 }
-
-export interface TextMeshNodeData extends BaseNodeData, Colorable {
+export interface TextMeshNodeData extends CoreNodeData {
     text?: string;
     fontUrl?: string;
     size?: number;
     height?: number;
     align?: 'left' | 'center' | 'right';
 }
-
-export interface DataNodeData extends BaseNodeData, Themable {
+export interface DataNodeData extends CoreNodeData {
+    theme?: 'light' | 'dark';
     data?: unknown;
     expanded?: boolean;
     maxHeight?: number;
 }
-
-export interface VideoNodeData extends BaseNodeData, Dimensions {
+export interface VideoNodeData extends CoreNodeData {
     url?: string;
     autoplay?: boolean;
     loop?: boolean;
     muted?: boolean;
 }
-
-export interface IFrameNodeData extends BaseNodeData, Dimensions {
+export interface IFrameNodeData extends CoreNodeData {
     src?: string;
     scrolling?: 'yes' | 'no' | 'auto';
 }
-
-export interface ChartNodeData extends BaseNodeData, Dimensions, Themable {
+export interface ChartNodeData extends CoreNodeData {
+    theme?: 'light' | 'dark';
     chartType?: 'bar' | 'line' | 'pie' | 'scatter' | 'radar';
     chartData?: unknown;
     chartOptions?: unknown;
 }
-
-export interface MarkdownNodeData extends BaseNodeData, Dimensions, Themable {
+export interface MarkdownNodeData extends CoreNodeData {
+    theme?: 'light' | 'dark';
     content?: string;
     fontSize?: number;
 }
-
-export interface GlobeNodeData extends BaseNodeData {
+export interface GlobeNodeData extends CoreNodeData {
     radius?: number;
     resolution?: number;
     textureUrl?: string;
@@ -122,43 +164,43 @@ export interface GlobeNodeData extends BaseNodeData {
         label?: string;
     }[];
 }
-
-export interface SceneNodeData extends BaseNodeData {
+export interface SceneNodeData extends CoreNodeData {
     url?: string;
     targetSize?: number;
     autoCenter?: boolean;
 }
-
-export interface AudioNodeData extends BaseNodeData, Colorable {
+export interface AudioNodeData extends CoreNodeData {
     src?: string;
     autoplay?: boolean;
     loop?: boolean;
 }
-
-export interface MathNodeData extends BaseNodeData, Dimensions, Colorable {
+export interface MathNodeData extends CoreNodeData {
     math?: string;
     fontSize?: number;
 }
-
-export interface ProcessNodeData extends BaseNodeData, Dimensions {
+export interface ProcessNodeData extends CoreNodeData {
     pid?: string | number;
     name?: string;
     cpu?: number;
     memory?: number;
 }
-
-export interface CodeEditorNodeData extends BaseNodeData, Dimensions {
+export interface CodeEditorNodeData extends CoreNodeData {
     code?: string;
     language?: string;
     theme?: string;
 }
-
-export interface InstancedShapeNodeData extends BaseNodeData, Colorable, Opacity {
+export interface InstancedShapeNodeData extends CoreNodeData {
     shape?: 'box' | 'sphere' | 'circle' | 'plane';
     size?: number;
 }
 
-// Union of all node data types
+// Unified Widget Data
+export interface WidgetNodeData extends CoreNodeData {
+    disabled?: boolean;
+    tabIndex?: number;
+    ariaLabel?: string;
+}
+
 export type NodeData =
     | ShapeNodeData
     | HtmlNodeData
@@ -178,18 +220,13 @@ export type NodeData =
     | MathNodeData
     | ProcessNodeData
     | CodeEditorNodeData
-    | InstancedShapeNodeData;
+    | InstancedShapeNodeData
+    | WidgetNodeData;
 
-export type SpaceGraphNodeData = NodeData;
+// Unified SpaceGraph Node Data
+export type SpaceGraphNodeData = NodeData & HtmlNodeData;
 
-// ============================================================================
-// Edge Data Types
-// ============================================================================
-
-export interface BaseEdgeData {
-    [key: string]: unknown;
-}
-
+// ============= Edge Data Types =============
 export interface EdgeData extends BaseEdgeData {
     color?: number;
     gradientColors?: [string, string];
@@ -204,14 +241,11 @@ export interface EdgeData extends BaseEdgeData {
     gapSize?: number;
     label?: string;
     labelColor?: string;
-    fontSize?: string;
+    fontSize?: number;
     labelLod?: LabelLodLevel[];
 }
 
-// ============================================================================
-// Spec Types
-// ============================================================================
-
+// ============= Specification Types =============
 export interface NodeSpec<T extends NodeData = NodeData> {
     id: string;
     type: string;
@@ -222,46 +256,24 @@ export interface NodeSpec<T extends NodeData = NodeData> {
     data?: T;
     parameters?: Record<string, unknown>;
 }
-
 export interface EdgeSpec<T extends EdgeData = EdgeData> {
     id: string;
     source: string;
     target: string;
-    type: string;
+    type?: string;
     data?: T;
 }
-
 export interface GraphSpec {
-    nodes: NodeSpec[];
-    edges: EdgeSpec[];
+    nodes?: NodeSpec[];
+    edges?: EdgeSpec[];
+    camera?: { position: [number, number, number]; target: [number, number, number] };
+}
+export interface SpecUpdate {
+    nodes?: Partial<NodeSpec>[];
+    edges?: Partial<EdgeSpec>[];
 }
 
-export interface GraphExport {
-    nodes: Array<{
-        id: string;
-        type: string;
-        label?: string;
-        position: [number, number, number];
-        data: unknown;
-    }>;
-    edges: Array<{
-        id: string;
-        source: string;
-        target: string;
-        type: string;
-        data: unknown;
-    }>;
-    camera?: {
-        position: [number, number, number];
-        target: [number, number, number];
-    };
-    plugins?: Record<string, unknown>;
-}
-
-// ============================================================================
-// Event Types
-// ============================================================================
-
+// ============= Event Types =============
 export type GraphEvent =
     | 'node:added'
     | 'node:removed'
@@ -269,15 +281,18 @@ export type GraphEvent =
     | 'edge:added'
     | 'edge:removed'
     | 'edge:updated';
+export type NodeEvent = 'node:updated' | 'node:destroying';
+export type EdgeEvent = 'edge:updated' | 'edge:destroying';
+export interface SpaceGraphEvents {
+    'node:added': any;
+    'node:removed': any;
+    'node:updated': any;
+    'edge:added': any;
+    'edge:removed': any;
+    'edge:updated': any;
+}
 
-export type NodeEvent = 'updated' | 'destroying';
-
-export type EdgeEvent = 'updated' | 'destroying';
-
-// ============================================================================
-// Plugin & Configuration Types
-// ============================================================================
-
+// ============= Options Types =============
 export interface SpaceGraphOptions {
     onnxExecutionProviders?: string[];
     vision?: {
@@ -288,16 +303,46 @@ export interface SpaceGraphOptions {
             fittsLawTargetSize?: number;
         };
     };
+    initialLayout?: string;
+    cameraControls?: Partial<import('./core/CameraControls').CameraControlsConfig>;
+    input?: DefaultInputConfig;
     [key: string]: unknown;
 }
 
-export interface SpecUpdate {
-    nodes?: Partial<NodeSpec>[];
-    edges?: Partial<EdgeSpec>[];
+// Input configuration
+export interface DefaultInputConfig {
+    camera?: CameraInputConfig;
+    interaction?: InteractionInputConfig;
+    history?: HistoryInputConfig;
+}
+export interface CameraInputConfig {
+    enableCameraOrbit?: boolean;
+    enableCameraPan?: boolean;
+    enableCameraZoom?: boolean;
+    rotationSpeed?: number;
+    panSpeed?: number;
+    zoomSpeed?: number;
+    damping?: number;
+    minRadius?: number;
+    maxRadius?: number;
+}
+export interface InteractionInputConfig {
+    enableHover?: boolean;
+    enableBoxSelect?: boolean;
+    enableDrag?: boolean;
+    enableWidgets?: boolean;
+    clickThreshold?: number;
+}
+export interface HistoryInputConfig {
+    enabled?: boolean;
 }
 
-// ISpaceGraphPlugin removed - use Plugin from core/PluginManager instead
-
+export interface RenderOptions {
+    antialias?: boolean;
+    alpha?: boolean;
+    backgroundColor?: string | number;
+    pixelRatio?: number;
+}
 export interface AnimationProps {
     x?: number;
     y?: number;
@@ -308,3 +353,112 @@ export interface AnimationProps {
     delay?: number;
     onUpdate?: () => void;
 }
+
+// ============= Export/Import Types =============
+export interface GraphExport {
+    nodes: Array<{
+        id: string;
+        type: string;
+        label?: string;
+        position: [number, number, number];
+        data: unknown;
+    }>;
+    edges: Array<{ id: string; source: string; target: string; type: string; data: unknown }>;
+    camera?: { position: [number, number, number]; target: [number, number, number] };
+    plugins?: Record<string, unknown>;
+}
+export type GraphImportData = GraphExport;
+
+// ============= Plugin System Types =============
+export interface PluginLifecycle {
+    init?(sg: any, graph: any, events: any): void | Promise<void>;
+    onPreRender?(delta: number): void;
+    onPostRender?(delta: number): void;
+    onNodeAdded?(node: any): void;
+    onNodeRemoved?(node: any): void;
+    onEdgeAdded?(edge: any): void;
+    onEdgeRemoved?(edge: any): void;
+    dispose?(): void;
+    export?(): unknown;
+    import?(data: unknown): void;
+}
+export interface Plugin extends PluginLifecycle {
+    readonly id: string;
+    readonly name: string;
+    readonly version: string;
+}
+
+// ============= Constructor Types =============
+export type NodeConstructor = new (sg: SpaceGraph, spec: NodeSpec) => Node;
+export type EdgeConstructor = new (
+    sg: SpaceGraph,
+    spec: EdgeSpec,
+    source: Node,
+    target: Node,
+) => Edge;
+
+// ============= Vision Types =============
+export type VisionCategory = 'wcag' | 'overlap' | 'fitts' | 'all';
+export interface VisionOptions {
+    enabled?: boolean;
+    categories?: VisionCategory[];
+    threshold?: number;
+}
+export interface VisionReport {
+    score: number;
+    issues: Array<{ type: string; severity: number; message: string }>;
+}
+export interface VisionScore {
+    wcag: number;
+    overlap: number;
+    fitts: number;
+    overall: number;
+}
+
+// ============= Alias Types =============
+export type NodeType = string;
+export type EdgeType = string;
+export type GeometryFamily = string;
+export interface HitResult {
+    type: 'node' | 'edge' | 'none';
+    distance?: number;
+    node?: Node;
+    edge?: Edge;
+    point?: Point3D;
+}
+export type LayoutName = string;
+export type MermaidThemeName = 'default' | 'forest' | 'dark' | 'neutral';
+export type MermaidLayoutType = 'graph' | 'flowchart' | 'sequence' | 'class' | 'state' | 'gantt';
+export type MermaidNodeShape = 'default' | 'circle' | 'ellipse' | 'rect' | 'diamond';
+
+// ============= Ergonomic Type Helpers =============
+export type NodeSpecWithPosition<T extends NodeData = NodeData> = NodeSpec<T> & {
+    position: [number, number, number];
+};
+export type EdgeSpecWithData<T extends EdgeData = EdgeData> = EdgeSpec<T> & { data: T };
+export type DeepPartial<T> = { [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P] };
+export type DeepRequired<T> = { [P in keyof T]-?: T[P] extends object ? DeepRequired<T[P]> : T[P] };
+
+// ============= Layout Types =============
+ // Note: Layout-specific options are defined in plugins/layouts/BaseLayout.ts
+// Use import { LayoutOptions } from './plugins/layouts/BaseLayout' for full options
+
+// ============= Ergonomic Factory Types =============
+export type NodeFactoryFn = (id: string, ...args: unknown[]) => NodeSpec;
+export type EdgeFactoryFn = (source: string, target: string, ...args: unknown[]) => EdgeSpec;
+
+// ============= Shortcut Type Aliases =============
+export type ID = string;
+export type Coordinate2D = [number, number];
+export type Coordinate3D = [number, number, number];
+export type Position = Coordinate3D;
+export type Size = { width: number; height: number };
+export type Bounds = { min: Coordinate3D; max: Coordinate3D };
+
+// ============= Event Handler Type =============
+export type EventHandler<T = unknown> = (event: T) => void;
+export type EventUnsubscribe = () => void;
+
+// ============= Utility Aliases =============
+export type { LogLevel as LogLevel } from './utils/logger';
+export type { Logger as Logger } from './utils/logger';

@@ -1,10 +1,8 @@
 import * as THREE from 'three';
-import { DEG2RAD } from './math';
+import { DEG2RAD } from '../core/constants';
+import type { Point2D } from '../types';
 
-export interface Point {
-    x: number;
-    y: number;
-}
+export type { Point2D };
 
 export interface FitViewResult {
     center: THREE.Vector3;
@@ -39,6 +37,3 @@ export function calculateFitView(
 
     return { center, cameraZ: Math.max(cameraZ + padding, minDistance) };
 }
-
-/** @deprecated Use `calculateFitView` directly */
-export const CameraUtils = { calculateFitView };

@@ -34,7 +34,7 @@ export class PanelNode extends HtmlNode {
             const cameraPos = this.sg.renderer.camera.position;
             const direction = new THREE.Vector3().subVectors(cameraPos, this.position);
             this.rotation.y = Math.atan2(direction.x, direction.z);
-            this.object.rotation.copy(this.rotation);
+            this.object.rotation.set(this.rotation.x, this.rotation.y, this.rotation.z);
         }
     }
 

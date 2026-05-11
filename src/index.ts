@@ -1,220 +1,180 @@
-import './init';
-import { SpaceGraph } from './SpaceGraph';
+// SpaceGraphJS v7 - Ergonomic Developer API
+// Optimized for developer experience with unified exports and convenient shortcuts
+export { SpaceGraph, VERSION } from './SpaceGraph';
+
+// Core module exports
+export {
+  Graph, Renderer, CameraControls, PluginManager, Surface, TypeRegistry, ErgonomicsAPI,
+  EventSystem, EventEmitter, VisionManager, ObjectPoolManager,
+  AnimationDuration, ZoomConfig, FingeringPriority, InteractionThresholds, Performance,
+  Defaults, EdgeColors, WCAG, InputConfig, CONSTANTS,
+  Spatial, NodeDefaults, LayoutDefaults, Easing,
+  DEG2RAD, RAD2DEG, PI, TAU, EPSILON, DUR, ZOOM, FINGER, THRESH, PERF, DEF, COLORS,
+} from './core';
 
 export {
-    DEG2RAD,
-    RAD2DEG,
-    clamp,
-    lerp,
-    mergeDeep,
-    toHexColor,
-    randomRange,
-    randomInt,
-    smoothstep,
-    mapRange,
-    safeClone,
-} from './utils';
+  DEFAULT_NODE_TYPES, DEFAULT_EDGE_TYPES, DEFAULT_LAYOUT_PLUGINS, DEFAULT_SYSTEM_PLUGINS, createQuickGraphSpec,
+  SpatialIndex, BVH, ObjectPool, MathPool,
+} from './core';
 
-export { logger, createLogger, setLogLevel, type LogLevel, type Logger } from './utils';
-export { calculateFitView as CameraUtils, createElement as DOMUtils } from './utils';
-export { getRelativeLuminance, getContrastRatio, getCompliantColor, hexToRgb } from './utils';
+// Core aliases for convenience
+export { EventSystem as Event, EventEmitter as Emitter, ErgonomicsAPI as Ergo, ObjectPoolManager as Pools };
 
-export { SpaceGraph };
-export type { SpaceGraphOptions } from './types';
-export { SpaceGraphApp } from './core/SpaceGraphApp';
-export type { SpaceGraphAppOptions, AppButtonConfig } from './core/SpaceGraphApp';
-export { Graph } from './core/Graph';
-export { Renderer } from './core/Renderer';
-export type { RenderOptions } from './core/Renderer';
-export { CameraControls } from './core/CameraControls';
-export { EventSystem, type SpaceGraphEvents } from './core/events/EventSystem';
-export { EventEmitter, type Disposable } from './core/EventEmitter';
-export { VisionManager } from './core/VisionManager';
-export type { VisionCategory } from './vision/VisionAutoFixer';
-export { ObjectPoolManager } from './core/ObjectPoolManager';
-
+// Builder module exports
 export {
-    PluginManager,
-    type Plugin,
-    BaseLayout,
-    type LayoutConfig,
-    type LayoutOptions,
-} from './plugins';
+  GraphSpecBuilder, NodeBuilder, EdgeBuilder, Patterns,
+  Animate, Camera, graph,
+  NodeFactory, EdgeFactory, Layout,
+  NodeFactoryExtended, Presets, DataUtils, Batch,
+  widget, button, toggle, slider,
+  // Convenience shortcuts
+  nodeSpec, edgeSpec, at, box, sphere, circle,
+  connect, arrow, dashed, curved, $, layout,
+} from './builder';
 
-export {
-    ForceLayout,
-    type ForceLayoutConfig,
-    GridLayout,
-    CircularLayout,
-    HierarchicalLayout,
-    RadialLayout,
-    TreeLayout,
-    SpectralLayout,
-    GeoLayout,
-    TimelineLayout,
-    ClusterLayout,
-    InteractionPlugin,
-    LODPlugin,
-    AutoLayoutPlugin,
-    AutoColorPlugin,
-    PhysicsPlugin,
-    MinimapPlugin,
-    ErgonomicsPlugin,
-    type ErgonomicsConfig,
-    VisionOverlayPlugin,
-    HUDPlugin,
-    type HUDElementOptions,
-    HistoryPlugin,
-    type HistoryPluginOptions,
-    LayoutContainer,
-    HoverMetaWidget,
-    type HoverMetaWidgetOptions,
-    type HoverAction,
-} from './plugins';
+// Input module exports  
+export { InputManager, Fingering, createParentTransform, createCameraFingering } from './input';
 
-export {
-    InstancedNodeRenderer,
-    GEOMETRY_FAMILIES,
-    type GeometryFamily,
-} from './rendering/InstancedNodeRenderer';
+// Utils module exports
+export * from './utils';
 
+// Vision module exports
 export { VisionSystem, HeuristicsStrategy } from './vision';
-export type {
-    VisionOptions,
-    VisionReport,
-    VisionScore,
-    LegibilityResult,
-    OverlapResult,
-    HierarchyResult,
-    ErgonomicsResult,
-} from './vision';
-
-export { SpatialIndex, BVH } from './core/spatial/SpatialIndex';
-
-export { ObjectPool, MathPool } from './core/pooling/ObjectPool';
 export {
-    withPooledVector3,
-    withPooledVector2,
-    withPooledMatrix4,
-    withPooledBox3,
-} from './core/pooling/ObjectPool';
+  type VisionStrategy,
+  type VisionReport,
+  type VisionOptions,
+  type VisionBenchmark,
+  type VisionCategory,
+  type VisionScore,
+  type VisionIssue,
+} from './vision/types';
 
-export { TypeRegistry } from './core/TypeRegistry';
-export type { NodeConstructor, EdgeConstructor } from './core/TypeRegistry';
+// Rendering exports
+export { InstancedNodeRenderer, GEOMETRY_FAMILIES } from './rendering/InstancedNodeRenderer';
 
-export { InputManager, FingerManager, Fingering, createParentTransform } from './input';
-export type {
-    InputEvent,
-    InputEventType,
-    InputAction,
-    InputBinding,
-    InputContext,
-    InputState,
-    KeyEventData,
-    PointerEventData,
-    WheelEventData,
-    TouchEventData,
-    Finger,
-    SurfaceTransform,
-    DefaultInputConfig,
-    CameraInputConfig,
-    InteractionInputConfig,
-    HistoryInputConfig,
-} from './input';
-
-export type {
-    GraphSpec,
-    NodeSpec,
-    EdgeSpec,
-    SpecUpdate,
-    SpaceGraphNodeData,
-    BaseNodeData,
-    BaseEdgeData,
-    Dimensions,
-    Colorable,
-    Opacity,
-    Themable,
-    CanvasNodeData,
-    ChartNodeData,
-    DataNodeData,
-    GlobeNodeData,
-    GroupNodeData,
-    HtmlNodeData,
-    IFrameNodeData,
-    ImageNodeData,
-    InstancedShapeNodeData,
-    MarkdownNodeData,
-    MathNodeData,
-    NoteNodeData,
-    SceneNodeData,
-    ShapeNodeData,
-    TextMeshNodeData,
-    VideoNodeData,
-    AudioNodeData,
-    ProcessNodeData,
-    CodeEditorNodeData,
-    NodeData,
-    EdgeData,
-    GraphExport,
-    GraphEvent,
-    NodeEvent,
-    EdgeEvent,
-    LabelLodLevel,
-} from './types';
-
+// Nodes exports - consolidated core node types
 export {
-    Node,
-    InstancedNode,
-    ShapeNode,
-    HtmlNode,
-    InstancedShapeNode,
-    ImageNode,
-    GroupNode,
-    NoteNode,
-    CanvasNode,
-    TextMeshNode,
-    DataNode,
-    VideoNode,
-    IFrameNode,
-    ChartNode,
-    MarkdownNode,
-    GlobeNode,
-    SceneNode,
-    AudioNode,
-    MathNode,
-    ProcessNode,
-    CodeEditorNode,
-    StackingNode,
-    GridNode,
-    SplitNode,
-    BorderNode,
-    SwitchNode,
-    VirtualGridNode,
-    PanelNode,
-    PortNode,
-    DOMNode,
+  Node,
+  WidgetNode,
+  ShapeNode,
+  InstancedNode,
+  InstancedShapeNode,
+  ButtonNode,
+  SliderNode,
+  ToggleNode,
+  HtmlNode,
+  ImageNode,
+  GroupNode,
+  NoteNode,
+  CanvasNode,
+  TextMeshNode,
+  DataNode,
+  VideoNode,
+  IFrameNode,
+  ChartNode,
+  MarkdownNode,
+  GlobeNode,
+  SceneNode,
+  AudioNode,
+  MathNode,
+  ProcessNode,
+  CodeEditorNode,
+  DOMNode,
+  LayoutNode,
+  StackingNode,
+  GridNode,
+  SplitNode,
+  BorderNode,
+  SwitchNode,
+  VirtualGridNode,
+  PanelNode,
+  PortNode,
 } from './nodes';
-export type { GridModel } from './nodes/VirtualGridNode';
 
+// Edges exports - consolidated edge types
 export {
-    Edge,
-    CurvedEdge,
-    FlowEdge,
-    LabeledEdge,
-    DottedEdge,
-    DynamicThicknessEdge,
-    AnimatedEdge,
-    BundledEdge,
-    InterGraphEdge,
-    Wire,
+  Edge,
+  CurvedEdge,
+  FlowEdge,
+  LabeledEdge,
+  DottedEdge,
+  DynamicThicknessEdge,
+  AnimatedEdge,
+  BundledEdge,
+  InterGraphEdge,
+  Wire,
 } from './edges';
 
-export { Surface } from './core/Surface';
-export type { HitResult, Rect } from './core/Surface';
+// Layout exports
+export { BaseLayout } from './plugins/layouts/BaseLayout';
+export { ForceLayout, GridLayout, CircularLayout, HierarchicalLayout, RadialLayout, TreeLayout, SpectralLayout, GeoLayout, TimelineLayout, ClusterLayout } from './plugins/layouts';
 
-export const VERSION = '7.0.0';
+// Plugin exports
+export {
+  InteractionPlugin,
+  LODPlugin,
+  AutoLayoutPlugin,
+  AutoColorPlugin,
+  PhysicsPlugin,
+  MinimapPlugin,
+  VisionOverlayPlugin,
+  HUDPlugin,
+  HistoryPlugin,
+  FractalZoomPlugin,
+  ZoomUIPlugin,
+  LayoutContainer,
+} from './plugins';
 
-export default {
-    SpaceGraph,
-    VERSION,
-};
+// HUD exports
+export { DOMOverlayPlugin } from './plugins/DOMOverlayPlugin';
+export {
+  HUD_ZINDEX,
+  HUD_COLORS,
+  HUD_STYLES,
+  getHUDPosition,
+  type HUDPositionKey,
+} from './plugins/hud/HUDStyles';
+export { withPooledVector3, withPooledVector2, withPooledMatrix4, withPooledBox3 } from './core/pooling/ObjectPool';
+
+// Type exports
+export type {
+  Plugin, NodeConstructor, EdgeConstructor,
+  LogLevel, Logger,
+  InputEvent, InputEventType, InputAction, InputBinding, InputContext, InputState,
+  GeometryFamily as GeometryFamilyType,
+  VisionCategory, VisionOptions, VisionReport, VisionScore,
+  SpaceGraphOptions, RenderOptions, GraphSpec, NodeSpec, EdgeSpec,
+  SpecUpdate, GraphExport, GraphImportData, HitResult,
+  LabelLodLevel, Rect, GridModel, DeepPartial,
+  Maybe, MaybePromise, Predicate, EventHandler, Disposer,
+  Point2D, Point3D, Bounds3D,
+  NodeCallback, EdgeCallback, IdCallback, AsyncCallback,
+  ID, Coordinate2D, Coordinate3D, Position, Size, Bounds,
+} from './types';
+
+// Widget types
+export type { WidgetNodeData } from './nodes/WidgetNode';
+
+// Convenience factory functions
+export const createSpaceGraph = (options?: import('./types').SpaceGraphOptions) => new SpaceGraph(options);
+export const createGraph = import('./builder').then(m => m.graph);
+
+// Shorthand factories for quick graph creation
+export const sg = createSpaceGraph;
+export const qg = createGraph;
+
+// Quick node creation shortcuts
+export const node = (id: string, type = 'ShapeNode', position?: [number, number, number]) => ({ id, type, position });
+export const edge = (id: string, source: string, target: string) => ({ id, source, target });
+
+// Default export
+export { SpaceGraph as default } from './SpaceGraph';
+
+// Type augmentation for global ease access
+declare global {
+  interface Window {
+    ease: typeof import('./utils/math').ease;
+    SpaceGraph: typeof import('./SpaceGraph').SpaceGraph;
+  }
+}

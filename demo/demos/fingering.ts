@@ -1,7 +1,8 @@
-import { createDemoWithNodes, shapeNode, edge, htmlNode } from '../framework';
+import { createDemoWithNodes, shapeNode, edge, htmlNode, SpaceGraph } from '../framework';
+import { logger } from '../../src/utils/logger';
 
-export default function fingeringDemo() {
-    const sg = createDemoWithNodes(
+export default async function fingeringDemo(): Promise<SpaceGraph> {
+  const sg = await createDemoWithNodes(
         [
             shapeNode('node1', [-200, 0, 0], { color: 0x4488ff, size: 60 }),
             shapeNode('node2', [200, 0, 0], { color: 0xff4488, size: 60 }),
@@ -11,15 +12,15 @@ export default function fingeringDemo() {
     );
 
     sg.events.on('interaction:dragstart', ({ node }) => {
-        console.log('Drag started:', node.id);
+        logger.debug('Drag started:', node.id);
     });
 
     sg.events.on('interaction:dragend', ({ node }) => {
-        console.log('Drag ended:', node.id);
+        logger.debug('Drag ended:', node.id);
     });
 
     sg.events.on('node:pointerenter', ({ node }) => {
-        console.log('Hover:', node.id);
+        logger.debug('Hover:', node.id);
     });
 
     return sg;

@@ -43,37 +43,37 @@ export class ClusterLayout extends BaseLayout {
         const numClusters = clusterKeys.length;
         const targetPos = new THREE.Vector3();
 
-        clusterKeys.forEach((key, clusterIndex) => {
-            const clusterNodes = clusters.get(key)!;
-            const numNodes = clusterNodes.length;
-            const macroAngle = (Math.PI * 2 * clusterIndex) / numClusters;
-            const macroR = numClusters > 1 ? clusterRadius : 0;
-            const centerX = Math.cos(macroAngle) * macroR;
-            const centerY = Math.sin(macroAngle) * macroR;
+for (const [clusterIndex, key] of clusterKeys.entries()) {
+      const clusterNodes = clusters.get(key)!;
+      const numNodes = clusterNodes.length;
+      const macroAngle = (Math.PI * 2 * clusterIndex) / numClusters;
+      const macroR = numClusters > 1 ? clusterRadius : 0;
+      const centerX = Math.cos(macroAngle) * macroR;
+      const centerY = Math.sin(macroAngle) * macroR;
 
-            clusterNodes.forEach((node, nodeIndex) => {
-                if (numNodes === 1) {
-                    targetPos.set(centerX, centerY, 0);
-                } else if (numNodes < 10) {
-                    const microAngle = (Math.PI * 2 * nodeIndex) / numNodes;
-                    targetPos.set(
-                        centerX + Math.cos(microAngle) * nodeRadius,
-                        centerY + Math.sin(microAngle) * nodeRadius,
-                        0,
-                    );
-                } else {
-                    const phi = (1 + Math.sqrt(5)) / 2;
-                    const microAngle = (nodeIndex * 2 * Math.PI) / (phi * phi);
-                    const microR = nodeRadius * Math.sqrt(nodeIndex / numNodes);
-                    targetPos.set(
-                        centerX + Math.cos(microAngle) * microR,
-                        centerY + Math.sin(microAngle) * microR,
-                        (Math.random() - 0.5) * nodeRadius * 0.2,
-                    );
-                }
-                this.applyPosition(node, targetPos, { animate, duration });
-            });
-        });
+      for (const [nodeIndex, node] of clusterNodes.entries()) {
+        if (numNodes === 1) {
+          targetPos.set(centerX, centerY, 0);
+        } else if (numNodes < 10) {
+          const microAngle = (Math.PI * 2 * nodeIndex) / numNodes;
+          targetPos.set(
+            centerX + Math.cos(microAngle) * nodeRadius,
+            centerY + Math.sin(microAngle) * nodeRadius,
+            0,
+          );
+        } else {
+          const phi = (1 + Math.sqrt(5)) / 2;
+          const microAngle = (nodeIndex * 2 * Math.PI) / (phi * phi);
+          const microR = nodeRadius * Math.sqrt(nodeIndex / numNodes);
+          targetPos.set(
+            centerX + Math.cos(microAngle) * microR,
+            centerY + Math.sin(microAngle) * microR,
+            (Math.random() - 0.5) * nodeRadius * 0.2,
+          );
+        }
+        this.applyPosition(node, targetPos, { animate, duration });
+      }
+    }
 
         this.updateEdges();
     }

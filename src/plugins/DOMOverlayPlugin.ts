@@ -37,11 +37,11 @@ export abstract class DOMOverlayPlugin extends BaseSystemPlugin {
         parent.appendChild(this.container);
     }
 
-    dispose(): void {
-        if (this.container?.parentElement) {
-            this.container.parentElement.removeChild(this.container);
-        }
-        this.container = null;
-        if (super.dispose) super.dispose();
+  dispose(): void {
+    if (this.container?.parentElement) {
+      this.container.parentElement.removeChild(this.container);
     }
+    this.container = null;
+    super.dispose?.();
+  }
 }

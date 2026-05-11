@@ -1,38 +1,136 @@
+// utils/index.ts - Consolidated utility exports
+// All utilities re-exported from single source for better tree-shaking
+
+// Re-export constants from core (includes math constants)
 export {
-    DEG2RAD,
-    RAD2DEG,
+    DEG2RAD, RAD2DEG, PI, TAU, EPSILON, RAD, DEG,
+    AnimationDuration, ZoomConfig, FingeringPriority,
+    InteractionThresholds, Performance, Defaults,
+    EdgeColors, WCAG, InputConfig,
+    DUR, ZOOM, FINGER, THRESH, PERF, DEF, COLORS, CONSTANTS,
+    Spatial, NodeDefaults, LayoutDefaults, Easing,
+} from '../core/constants';
+
+// Math utilities (from math.ts) - excluding constants which come from core
+export {
+    // Type guards
+    isObject,
+    isFunction,
+    isString,
+    isNumber,
+    isBoolean,
+    isArray,
+    isPlainObject,
+    isDefined,
+
+    // Math functions
     clamp,
+    clamp01,
     lerp,
-    mergeDeep,
+    lerpClamped,
+    inverseLerp,
+    smoothstep,
+    smootherstep,
+    mapRange,
+    round,
+    approx,
+    sign,
+    abs,
+    min,
+    max,
+    sum,
+    mean,
+
+    // Vector math
+    lerp3,
+    min3,
+    max3,
+    clamp180,
+    angleDiff,
+    randomThreeVector,
+
+    // Random
     randomRange,
     randomInt,
-    smoothstep,
-    mapRange,
+    randomBool,
+    randomPick,
+
+    // Object utilities
     safeClone,
+    deepEqual,
 } from './math';
 
-export { logger, createLogger, setLogLevel, type LogLevel, type Logger } from './logger';
-export { createElement, createElementNS, type DOMElementOptions, DOMUtils } from './DOMUtils';
-export { calculateFitView, type FitViewResult, type Point, CameraUtils } from './CameraUtils';
+// Color
 export {
-    calculateDistance,
-    calculateMidpoint,
-    calculatePinchZoom,
-    calculatePan,
-    calculateAngle,
-    isClick,
-    normalizeWheel,
-    type DragCallback,
-    type PinchCallback,
-    type RotateCallback,
-    GestureManager,
-} from './GestureManager';
-export { disposeObject3D, ThreeDisposer } from './ThreeDisposer';
-export {
+    hexToRgb,
+    rgbToHex,
+    toHexColor,
     getRelativeLuminance,
     getContrastRatio,
     getCompliantColor,
-    hexToRgb,
-    toHexColor,
-    sortByFrequency,
+    lerpColor,
+    lerpColorHex,
+    blendColors,
+    hexToHsl,
+    hslToHex,
+    adjustHue,
+    adjustSaturation,
+    adjustLightness,
+    darken,
+    lighten,
+    saturate,
+    desaturate,
+    generateGradient,
+    ColorStop,
+    generatePalette,
+    generateGradientPalette,
+    toCssGradient,
+    parseColor,
 } from './color';
+
+// Logger
+export { logger, createLogger, setLogLevel } from './logger';
+export type { LogLevel, Logger } from './logger';
+
+// Camera utilities
+export { calculateFitView } from './CameraUtils';
+export type { FitViewResult, Point } from './CameraUtils';
+
+// DOM utilities
+export { createElement, createElementNS, DOMUtils } from './DOMUtils';
+export type { DOMElementOptions } from './DOMUtils';
+
+// Performance utilities
+export {
+    PerformanceMonitor,
+    ObjectPool,
+    batch,
+    batchAsync,
+    requestIdleCallbackPolyfill,
+    cancelIdleCallbackPolyfill,
+    throttleByTime,
+    debounceByTime,
+    getMemoryUsage,
+    measure,
+    measureAsync,
+} from './performance';
+
+// Error utilities - unified error handling
+export {
+    wrapError,
+    SpaceGraphError,
+    NotImplementedError,
+    ValidationError,
+    ConfigurationError,
+    createErrorFactory,
+} from './error';
+export type { SpaceGraphErrorOptions } from './error';
+
+// Gesture utilities
+export { GestureManager } from './GestureManager';
+
+// Graph generators
+export { randomTree, randomMesh, scaleFreeGraph, smallWorld, lattice2D } from './graphGenerators';
+
+// Three.js disposal
+export { disposeThreeObject } from './ThreeDisposer';

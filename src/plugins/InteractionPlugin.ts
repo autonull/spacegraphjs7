@@ -13,14 +13,9 @@ import { DragHandler } from './interaction/DragHandler';
 import { ConnectionHandler } from './interaction/ConnectionHandler';
 import { ResizeHandler } from './interaction/ResizeHandler';
 import { KeyboardShortcuts } from './interaction/KeyboardShortcuts';
-import {
-    NodeDraggingFingering,
-    HoverFingering,
-    BoxSelectingFingering,
-    ResizeFingering,
-    WiringFingering,
-    PinchZoomFingering,
-} from '../input/fingerings';
+import { FocusManager } from './interaction/FocusManager';
+import { type PickResult } from '../input/interfaces/Tangible';
+import { NodeDraggingFingering, HoverFingering, BoxSelectingFingering, ResizeFingering, WiringFingering, PinchZoomFingering, WidgetFingering } from '../input/fingerings';
 
 export class InteractionPlugin implements Plugin {
     readonly id = 'interaction';
@@ -36,10 +31,13 @@ export class InteractionPlugin implements Plugin {
     private connectionHandler!: ConnectionHandler;
     private resizeHandler!: ResizeHandler;
     private keyboardShortcuts!: KeyboardShortcuts;
+    private focusManager!: FocusManager;
+    private copiedNodes: Node[] = [];
 
     private _mode: 'default' | 'select' | 'connect' = 'default';
     private pointerDownPosition = new THREE.Vector2();
     private lastZoomedId: string | null = null;
+    private lastPressedNode: Node | null = null;
 
     get mode(): 'default' | 'select' | 'connect' {
         return this._mode;
@@ -62,6 +60,7 @@ export class InteractionPlugin implements Plugin {
         this.connectionHandler = new ConnectionHandler(sg, this.raycaster);
         this.resizeHandler = new ResizeHandler(sg, this.raycaster);
         this.keyboardShortcuts = new KeyboardShortcuts(sg);
+        this.focusManager = new FocusManager(sg);
 
         this.cursorManager.setContainer(this.sg.renderer.renderer.domElement);
         this.keyboardShortcuts.setSelectionChangeHandler((_selection) => {
@@ -74,6 +73,9 @@ export class InteractionPlugin implements Plugin {
 
     private registerFingerings(): void {
         const inputManager = this.sg.input;
+
+        const widgetFingering = new WidgetFingering(this.sg, this.raycaster);
+        inputManager.registerFingering(widgetFingering, 110);
 
         const resizeFingering = new ResizeFingering(this.sg, this.raycaster);
         inputManager.registerFingering(resizeFingering, 200);
@@ -108,60 +110,86 @@ export class InteractionPlugin implements Plugin {
         this.sg.events.on('input:interaction:contextmenu', (e: any) => this.handleContextMenu(e));
     }
 
-    private handlePointerDown(e: any): void {
-        this.pointerDownPosition.set(e.x, e.y);
-        this.raycaster.updateMousePosition(e.x, e.y);
+private handlePointerDown(e: any): void {
+this.pointerDownPosition.set(e.x, e.y);
+this.raycaster.updateMousePosition(e.x, e.y);
 
-        if (e.button === 2 || e.shiftKey) {
-            e.originalEvent?.preventDefault();
-        }
+if (e.button === 2 || e.shiftKey) {
+e.originalEvent?.preventDefault();
+}
 
-        if (this.connectionHandler.isConnectingMode()) {
-            return;
-        }
+if (this.connectionHandler.isConnectingMode()) {
+return;
+}
 
-        const nodeResult = this.raycaster.raycastNode();
-        this.raycaster.raycastEdge();
+const nodeResult = this.raycaster.raycastNode();
+this.raycaster.raycastEdge();
 
-        if (e.button === 2 && nodeResult?.node) {
-            this.startContextMenu(nodeResult.node, e);
-            return;
-        }
+if (e.button === 2 && nodeResult?.node) {
+this.startContextMenu(nodeResult.node, e);
+return;
+}
 
-        if (e.shiftKey && e.button === 0) {
-            this.selectionManager.startBoxSelection(e.x, e.y);
-            this.cursorManager.set('crosshair', 'box-select');
-            return;
-        }
+if (e.shiftKey && e.button === 0) {
+this._handleBoxSelectionStart(e);
+return;
+}
 
-        if (nodeResult?.node && e.button === 0) {
-            const isResizeHandle = this.checkResizeHandle(nodeResult.node, e);
-            if (isResizeHandle) {
-                this.resizeHandler.startResize(nodeResult.node, e.x, e.y);
-                this.cursorManager.set('nwse-resize', 'resize');
-                return;
-            }
+if (nodeResult?.node && e.button === 0) {
+this._handleLeftClick(nodeResult, e);
+}
 
-            if (this._mode === 'connect') {
-                this.connectionHandler.startConnection(nodeResult.node);
-                this.cursorManager.set('crosshair', 'connection');
-                return;
-            }
+if (nodeResult?.node && e.button === 1) {
+this._handleMiddleClick(nodeResult.node, e);
+}
+}
 
-            this.dragHandler.startDrag(nodeResult.node);
-            this.cursorManager.set('grabbing', 'drag');
-        }
+private _handleBoxSelectionStart(e: any): void {
+this.selectionManager.startBoxSelection(e.x, e.y);
+this.cursorManager.set('crosshair', 'box-select');
+}
 
-        if (nodeResult?.node && e.button === 1) {
-            e.originalEvent?.preventDefault();
-            const node = nodeResult.node;
-            const radius = Math.max(
-                (((node.data as Record<string, unknown>)?.width as number) ?? 100) * 1.5,
-                150,
-            );
-            this.sg.cameraControls.flyTo(node.position, radius);
-        }
-    }
+private _handleLeftClick(nodeResult: any, e: any): void {
+const isResizeHandle = this.checkResizeHandle(nodeResult.node, e);
+if (isResizeHandle) {
+this.resizeHandler.startResize(nodeResult.node, e.x, e.y);
+this.cursorManager.set('nwse-resize', 'resize');
+return;
+}
+
+if (this._mode === 'connect') {
+this.connectionHandler.startConnection(nodeResult.node);
+this.cursorManager.set('crosshair', 'connection');
+return;
+}
+
+const node = nodeResult.node;
+const pickResult: PickResult = {
+node,
+point: nodeResult.hit?.point ?? new THREE.Vector3(),
+distance: nodeResult.hit?.distance ?? 0,
+};
+
+if ('onPressStart' in node) {
+(node as any).onPressStart?.(pickResult);
+this.lastPressedNode = node;
+}
+
+this.dragHandler.startDrag(nodeResult.node);
+this.cursorManager.set('grabbing', 'drag');
+}
+
+private _handleMiddleClick(node: Node, e: any): void {
+e.originalEvent?.preventDefault();
+if ('isZoomable' in node && (node as any).isZoomable?.()) {
+(node as any).onZoomStart?.();
+}
+const radius = Math.max(
+(((node.data as Record<string, unknown>)?.width as number) ?? 100) * 1.5,
+150,
+);
+this.sg.cameraControls.flyTo(node.position, radius);
+}
 
     private handlePointerMove(e: any): void {
         this.raycaster.updateMousePosition(e.x, e.y);
@@ -181,7 +209,7 @@ export class InteractionPlugin implements Plugin {
         if (this.connectionHandler.isConnectingMode()) {
             this.connectionHandler.updateConnection();
             const hoverResult = this.raycaster.raycastNode();
-            this.hoverManager.updateNodeHover(hoverResult?.node ?? null);
+            this.hoverManager.updateHover(hoverResult?.node ?? null, null);
             return;
         }
 
@@ -194,11 +222,26 @@ export class InteractionPlugin implements Plugin {
         const edgeResult = this.raycaster.raycastEdge();
         this.hoverManager.updateHover(nodeResult?.node ?? null, edgeResult?.edge ?? null);
 
-        const cursorMode: CursorMode = nodeResult?.node ? 'grab' : 'auto';
+        let cursorMode: CursorMode = 'auto';
+        if (nodeResult?.node) {
+            cursorMode = (nodeResult.node as any).isTouchable ? 'pointer' : 'grab';
+        }
         this.cursorManager.set(cursorMode, 'hover');
     }
 
     private handlePointerUp(_e: any): void {
+        if (this.lastPressedNode) {
+            const pickResult: PickResult = {
+                node: this.lastPressedNode,
+                point: new THREE.Vector3(),
+                distance: 0,
+            };
+            if ('onPressStop' in this.lastPressedNode) {
+                (this.lastPressedNode as any).onPressStop?.(pickResult);
+            }
+            this.lastPressedNode = null;
+        }
+
         if (this.dragHandler.isDraggingNode()) {
             this.dragHandler.endDrag();
             this.cursorManager.clear('drag');
@@ -247,6 +290,7 @@ export class InteractionPlugin implements Plugin {
                 if (this.connectionHandler.isConnectingMode()) {
                     this.connectionHandler.cancelConnection();
                 } else {
+                    this.focusManager.blur();
                     this.selectionManager.clear();
                 }
                 break;
@@ -264,6 +308,34 @@ export class InteractionPlugin implements Plugin {
                 }
                 break;
 
+            case 'c':
+                if ((e.ctrlKey || e.metaKey) && selectedNodes.length > 0) {
+                    e.preventDefault();
+                    this.copiedNodes = [...selectedNodes];
+                }
+                break;
+
+            case 'v':
+                if ((e.ctrlKey || e.metaKey) && this.copiedNodes.length > 0) {
+                    e.preventDefault();
+                    this._handlePaste();
+                }
+                break;
+
+            case 'z':
+                if (e.ctrlKey || e.metaKey) {
+                    e.preventDefault();
+                    this.sg.events.emit('history:undo' as keyof import('../../core/events/EventSystem').SpaceGraphEvents, {});
+                }
+                break;
+
+            case 'y':
+                if (e.ctrlKey || e.metaKey) {
+                    e.preventDefault();
+                    this.sg.events.emit('history:redo' as keyof import('../../core/events/EventSystem').SpaceGraphEvents, {});
+                }
+                break;
+
             case ' ':
                 if (!isEditingText) {
                     e.preventDefault();
@@ -271,6 +343,15 @@ export class InteractionPlugin implements Plugin {
                     if (hoveredNode) {
                         this.keyboardShortcuts.handleZoomIn(hoveredNode);
                     }
+                }
+                break;
+
+            case 'Tab':
+                e.preventDefault();
+                if (e.shiftKey) {
+                    this.focusManager.focusPrevious();
+                } else {
+                    this.focusManager.focusNext();
                 }
                 break;
         }
@@ -357,6 +438,29 @@ export class InteractionPlugin implements Plugin {
 
     private startContextMenu(_node: Node, _e: any): void {
         // Context menu handling delegated to events
+    }
+
+    private _handlePaste(): void {
+        const addedNodes: Node[] = [];
+        for (const sourceNode of this.copiedNodes) {
+            const sourceSpec = sourceNode.toJSON();
+            sourceSpec.id = `${sourceSpec.id}_copy_${Date.now()}`;
+            sourceSpec.position = [
+                (sourceSpec.position[0] ?? 0) + 20,
+                (sourceSpec.position[1] ?? 0) + 20,
+                sourceSpec.position[2] ?? 0,
+            ];
+            const newNode = this.sg.graph.addNode(sourceSpec);
+            if (newNode) {
+                addedNodes.push(newNode);
+            }
+        }
+        if (addedNodes.length > 0) {
+            this.selectionManager.clear();
+            for (const node of addedNodes) {
+                this.selectionManager.addNode(node);
+            }
+        }
     }
 
     dispose(): void {

@@ -48,14 +48,3 @@ export function isClick(startPos: Point, endPos: Point, threshold: number = 5): 
 export function normalizeWheel(delta: number, sensitivity: number = 1): number {
     return Math.sign(delta) * Math.min(Math.abs(delta), 100) * sensitivity;
 }
-
-/** @deprecated Use the individual functions directly */
-export const GestureManager = {
-    calculateDistance,
-    calculateMidpoint,
-    calculatePinchZoom,
-    calculatePan,
-    calculateAngle,
-    isClick,
-    normalizeWheel,
-};

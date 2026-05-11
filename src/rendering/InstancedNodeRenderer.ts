@@ -33,6 +33,17 @@ interface GeometryFamilyState {
 const tempMatrix = new THREE.Matrix4();
 const tempColor = new THREE.Color();
 
+const GEOMETRY_FACTORIES: Record<GeometryFamily, () => THREE.BufferGeometry> = {
+  [GEOMETRY_FAMILIES.SPHERE]: () => new THREE.SphereGeometry(20, 16, 16),
+  [GEOMETRY_FAMILIES.BOX]: () => new THREE.BoxGeometry(40, 40, 40),
+  [GEOMETRY_FAMILIES.CYLINDER]: () => new THREE.CylinderGeometry(20, 20, 40, 16),
+  [GEOMETRY_FAMILIES.PLANE]: () => new THREE.PlaneGeometry(40, 40),
+  [GEOMETRY_FAMILIES.CONE]: () => new THREE.ConeGeometry(20, 40, 16),
+  [GEOMETRY_FAMILIES.TORUS]: () => new THREE.TorusGeometry(15, 5, 8, 16),
+  [GEOMETRY_FAMILIES.RING]: () => new THREE.RingGeometry(10, 20, 16),
+  [GEOMETRY_FAMILIES.CIRCLE]: () => new THREE.CircleGeometry(20, 32),
+};
+
 export class InstancedNodeRenderer {
     private sg: SpaceGraph;
     private scene: THREE.Scene;
@@ -94,39 +105,10 @@ export class InstancedNodeRenderer {
     private createGeometryAndMaterial(family: GeometryFamily): {
         geometry: THREE.BufferGeometry;
         material: THREE.Material;
-    } {
-        let geometry: THREE.BufferGeometry;
+} {
+    const geometry = GEOMETRY_FACTORIES[family]?.() ?? GEOMETRY_FACTORIES[GEOMETRY_FAMILIES.SPHERE]();
 
-        switch (family) {
-            case GEOMETRY_FAMILIES.SPHERE:
-                geometry = new THREE.SphereGeometry(20, 16, 16);
-                break;
-            case GEOMETRY_FAMILIES.BOX:
-                geometry = new THREE.BoxGeometry(40, 40, 40);
-                break;
-            case GEOMETRY_FAMILIES.CYLINDER:
-                geometry = new THREE.CylinderGeometry(20, 20, 40, 16);
-                break;
-            case GEOMETRY_FAMILIES.PLANE:
-                geometry = new THREE.PlaneGeometry(40, 40);
-                break;
-            case GEOMETRY_FAMILIES.CONE:
-                geometry = new THREE.ConeGeometry(20, 40, 16);
-                break;
-            case GEOMETRY_FAMILIES.TORUS:
-                geometry = new THREE.TorusGeometry(15, 5, 8, 16);
-                break;
-            case GEOMETRY_FAMILIES.RING:
-                geometry = new THREE.RingGeometry(10, 20, 16);
-                break;
-            case GEOMETRY_FAMILIES.CIRCLE:
-                geometry = new THREE.CircleGeometry(20, 32);
-                break;
-            default:
-                geometry = new THREE.SphereGeometry(20, 16, 16);
-        }
-
-        const material = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const material = new THREE.MeshBasicMaterial({ color: 0xffffff });
 
         return { geometry, material };
     }

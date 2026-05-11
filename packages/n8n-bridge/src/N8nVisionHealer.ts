@@ -1,5 +1,8 @@
 import type { VisionManager, VisionReport, SpaceGraph } from 'spacegraphjs';
 import type { N8nBridge } from './spacegraph-n8n-bridge';
+import { pkgLogger } from './logger';
+
+const log = pkgLogger('[N8nVisionHealer]');
 
 export class N8nVisionHealer {
     private bridge: N8nBridge;
@@ -13,11 +16,11 @@ export class N8nVisionHealer {
     }
 
     async healLayout(_workflowId: string): Promise<VisionReport> {
-        console.log(`[N8nVisionHealer] Initiating vision analysis for workflow...`);
+        log.info('Initiating vision analysis for workflow...');
         let report = await this.vision.analyzeVision();
 
         if (report.layoutScore < 70) {
-            console.log(`[N8nVisionHealer] Layout score ${report.layoutScore} is low. Attempting auto-fix via ForceLayout...`);
+            log.info(`Layout score ${report.layoutScore} is low. Attempting auto-fix via ForceLayout...`);
             const forceLayout = this.sg.pluginManager.getPlugin?.('ForceLayout') || (this.sg.pluginManager as any).get?.('ForceLayout');
 
             if (forceLayout?.update) {
@@ -26,7 +29,7 @@ export class N8nVisionHealer {
             } else if (forceLayout?.run) {
                 await forceLayout.run();
             } else {
-                console.warn('[N8nVisionHealer] ForceLayout plugin not found or missing update method.');
+                log.warn('ForceLayout plugin not found or missing update method.');
             }
 
             // Re-score after running physics
@@ -34,13 +37,13 @@ export class N8nVisionHealer {
         }
 
         if (report.overlap?.overlaps?.length > 0) {
-            console.log(`[N8nVisionHealer] Overlaps detected. Triggering ErgonomicsPlugin to fix...`);
+            log.info('Overlaps detected. Triggering ErgonomicsPlugin to fix...');
             const ergonomics = this.sg.pluginManager.getPlugin?.('ErgonomicsPlugin') || (this.sg.pluginManager as any).get?.('ErgonomicsPlugin');
 
             if (ergonomics?.fixOverlaps) {
                 await ergonomics.fixOverlaps();
             } else {
-                console.warn('[N8nVisionHealer] ErgonomicsPlugin not found or missing fixOverlaps method.');
+                log.warn('ErgonomicsPlugin not found or missing fixOverlaps method.');
             }
             // Re-score again
             report = await this.vision.analyzeVision();
@@ -51,7 +54,7 @@ export class N8nVisionHealer {
             this.bridge.pushNodePositionUpdate(node.id, node.position.x, -node.position.y);
         });
 
-        console.log(`[N8nVisionHealer] Healing complete. Final score: ${report.layoutScore}`);
+        log.info(`Healing complete. Final score: ${report.layoutScore}`);
         return report;
     }
 }

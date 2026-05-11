@@ -12,22 +12,23 @@ import { MathPool } from '../src/core/pooling/ObjectPool';
 import { VisionSystem } from '../src/vision/VisionSystem';
 import { ForceLayout } from '../src/plugins/layouts/ForceLayout';
 import { PluginManager, type Plugin } from '../src/core/PluginManager';
+import { SpaceGraph } from '../src/SpaceGraph';
 import * as THREE from 'three';
 
 /**
  * Test Node implementation
  */
 class TestNode extends Node {
-    private _object: THREE.Object3D;
+  private _object: THREE.Object3D;
 
-    constructor(sgOrSpec: any, maybeSpec?: any) {
-        const spec = sgOrSpec?.type ? sgOrSpec : maybeSpec;
-        super(sgOrSpec?.type ? sgOrSpec : undefined, spec);
-        this._object = new THREE.Mesh(
-            new THREE.SphereGeometry(10, 16, 16),
-            new THREE.MeshBasicMaterial({ color: 0x3366ff }),
-        );
-        this._object.position.copy(this.position);
+  constructor(sgOrSpec: any, maybeSpec?: any) {
+    const spec = sgOrSpec?.type ? sgOrSpec : maybeSpec;
+    super(sgOrSpec?.type ? sgOrSpec : undefined, spec);
+    this._object = new THREE.Mesh(
+      new THREE.SphereGeometry(10, 16, 16),
+      new THREE.MeshBasicMaterial({ color: 0x3366ff }),
+    );
+    this._object.position.copy(this.position);
     }
 
     get object(): THREE.Object3D {
@@ -98,27 +99,33 @@ class TestEdge extends Edge {
  * Integration Test Suite
  */
 describe('SpaceGraphJS v7.0 Integration', () => {
-    let graph: Graph;
-    let events: EventSystem;
-    let registry: TypeRegistry;
+  let graph: Graph;
+  let mockSg: SpaceGraph;
+  let events: EventSystem;
+  let registry: TypeRegistry;
 
-    beforeEach(() => {
-        graph = new Graph();
-        events = new EventSystem();
-        registry = TypeRegistry.getInstance();
+  beforeEach(() => {
+    // Create a minimal mock SpaceGraph instance
+    mockSg = {
+      graph: null as any,
+      renderer: { scene: new THREE.Scene() } as any,
+      events: new EventSystem(),
+    } as any;
 
-        // Register test types with both Graph and TypeRegistry
-        graph.registerNodeType('TestNode', TestNode);
-        graph.registerEdgeType('TestEdge', TestEdge);
-        registry.registerNode('TestNode', TestNode);
-        registry.registerEdge('TestEdge', TestEdge);
-    });
+    graph = new Graph(mockSg);
+    events = mockSg.events;
+    registry = TypeRegistry.getInstance();
 
-    afterEach(() => {
-        graph.clear();
-        events.clear();
-        registry.clear();
-    });
+    // Register test types with TypeRegistry
+    registry.registerNode('TestNode', TestNode);
+    registry.registerEdge('TestEdge', TestEdge);
+  });
+
+  afterEach(() => {
+    graph.clear();
+    events.clear();
+    registry.clear();
+  });
 
     describe('Graph Operations', () => {
         it('should create graph and load from spec', () => {
@@ -140,8 +147,8 @@ describe('SpaceGraphJS v7.0 Integration', () => {
 
             graph.fromJSON(spec);
 
-            expect(graph.getNodeCount()).toBe(2);
-            expect(graph.getEdgeCount()).toBe(1);
+            expect(graph.nodeCount).toBe(2);
+            expect(graph.edgeCount).toBe(1);
             expect(graph.hasNode('node1')).toBe(true);
             expect(graph.hasNode('node2')).toBe(true);
             expect(graph.hasEdge('edge1')).toBe(true);
@@ -177,8 +184,8 @@ describe('SpaceGraphJS v7.0 Integration', () => {
 
             graph.removeNode('n1');
 
-            expect(graph.getNodeCount()).toBe(1);
-            expect(graph.getEdgeCount()).toBe(0);
+            expect(graph.nodeCount).toBe(1);
+            expect(graph.edgeCount).toBe(0);
         });
     });
 

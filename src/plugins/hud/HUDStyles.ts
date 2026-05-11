@@ -22,7 +22,15 @@ export const HUD_COLORS = {
     success: '#10b981',
     warning: '#f59e0b',
     error: '#ef4444',
+    // Convenience accessors
+    get successBg() { return this.success + '20'; },
+    get warningBg() { return this.warning + '20'; },
+    get errorBg() { return this.error + '20'; },
 } as const;
+
+// Type-safe style builder for HUD elements
+export type HUDStyleKey = keyof typeof HUD_STYLES;
+export type HUDPositionKey = keyof typeof HUD_POSITIONS;
 
 export const HUD_STYLES = {
     base: {
@@ -96,6 +104,12 @@ export const HUD_POSITIONS = {
     'right-center': { top: '50%', right: '16px', transform: 'translateY(-50%)' },
     'center': { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' },
 } as const;
+
+// Helper to get position styles with optional offset
+export const getHUDPosition = (position: HUDPositionKey, offsetX = 0, offsetY = 0) => {
+    const base = HUD_POSITIONS[position];
+    return { ...base, left: offsetX ? `calc(${base.left} + ${offsetX}px)` : base.left, top: offsetY ? `calc(${base.top} + ${offsetY}px)` : base.top };
+};
 
 export const HUD_ANIMATIONS = {
     fadeIn: {

@@ -7,38 +7,20 @@ export class GridLayout extends BaseLayout {
     readonly version = '1.0.0';
 
     protected defaultConfig(): LayoutConfig {
-        return {
-            columns: 0,
-            spacingX: 200,
-            spacingY: 200,
-            offsetX: 0,
-            offsetY: 0,
-            animate: true,
-            duration: 1.0,
-        };
+        return { columns: 0, spacingX: 200, spacingY: 200, offsetX: 0, offsetY: 0, animate: true, duration: 1.0 };
     }
 
-    async apply(options?: LayoutOptions): Promise<void> {
-        const {
-            columns = this.config.columns as number,
-            spacingX = this.config.spacingX as number,
-            spacingY = this.config.spacingY as number,
-            offsetX = this.config.offsetX as number,
-            offsetY = this.config.offsetY as number,
-            animate = this.config.animate ?? true,
-            duration = this.config.duration ?? 1.0,
-        } = options ?? {};
-
-        const nodes = this.getNonPinnedNodes();
+    apply(options?: LayoutOptions): void {
+        const { columns = 0, spacingX = 200, spacingY = 200, offsetX = 0, offsetY = 0, animate = true, duration = 1.0, skipPinned = true } = { ...this.config, ...options } as any;
+        const nodes = Array.from(this.graph.getNodes()).filter(n => !skipPinned || !n.data.pinned);
         if (!nodes.length) return;
 
         const cols = columns > 0 ? columns : Math.ceil(Math.sqrt(nodes.length));
-        const targetPos = new THREE.Vector3();
 
         nodes.forEach((node, i) => {
             const col = i % cols;
             const row = Math.floor(i / cols);
-            targetPos.set(offsetX + col * spacingX, offsetY - row * spacingY, node.position.z);
+            const targetPos = new THREE.Vector3(offsetX + col * spacingX, offsetY - row * spacingY, node.position.z);
             this.applyPosition(node, targetPos, { animate, duration });
         });
 
