@@ -7,6 +7,7 @@ import type { EdgeData, EdgeSpec } from '../types';
 import type { Node } from '../nodes/Node';
 
 export class BundledEdge extends Edge {
+    static readonly typeName = 'BundledEdge';
     private strands: THREE.Line[] = [];
     private strandCount: number;
     private spread: number;

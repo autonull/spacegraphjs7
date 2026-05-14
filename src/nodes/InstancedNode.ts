@@ -6,6 +6,7 @@ import type { SpaceGraph } from '../SpaceGraph';
 import type { GeometryFamily } from '../rendering/InstancedNodeRenderer';
 
 export class InstancedNode extends BaseInstancedNode {
+    static readonly typeName = 'InstancedNode';
     protected geometryFamily: GeometryFamily;
     private readonly _group: THREE.Group;
 

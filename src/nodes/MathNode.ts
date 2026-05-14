@@ -26,6 +26,7 @@ async function loadKatex() {
 }
 
 export class MathNode extends BaseContentNode {
+    static readonly typeName = 'MathNode';
     private mathContent: string = '\\int_0^\\infty e^{-x^2} dx = \\frac{\\sqrt{\\pi}}{2}';
 
     constructor(sg: SpaceGraph, spec: NodeSpec) {

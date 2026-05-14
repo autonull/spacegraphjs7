@@ -6,6 +6,7 @@ import type { NodeSpec } from '../types';
 import type { SpaceGraph } from '../SpaceGraph';
 
 export class TextMeshNode extends Node {
+    static readonly typeName = 'TextMeshNode';
     private _object = new THREE.Object3D();
     get object() {
         return this._object;

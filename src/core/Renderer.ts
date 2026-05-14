@@ -83,6 +83,12 @@ export class Renderer {
     }
 
     init(): void {
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
+        this.scene.add(ambientLight);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
+        directionalLight.position.set(1, 1, 1).normalize();
+        this.scene.add(directionalLight);
+
         if (this._threePatched) return;
         THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree as any;
         THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree as any;
@@ -111,8 +117,8 @@ export class Renderer {
     render(timestamp: number = 0): void {
         if (timestamp > 0) {
             this.beginFrameOptimization(timestamp);
-            this.renderContext?.startFrame(timestamp);
         }
+        this.renderContext?.startFrame(timestamp);
 
         this.camera.updateMatrixWorld();
         this.projScreenMatrix.multiplyMatrices(
@@ -129,7 +135,6 @@ export class Renderer {
             for (const node of this.sg.graph.nodes.values()) {
                 if (this.renderContext.shouldRender(node)) {
                     this.applyLOD(node);
-                    node.object.visible = true;
                 } else {
                     node.object.visible = false;
                 }
@@ -139,9 +144,7 @@ export class Renderer {
         this.cssRenderer.render(this.scene, this.camera);
         this.renderer.render(this.scene, this.camera);
 
-        if (timestamp > 0) {
-            this.renderContext?.endFrame();
-        }
+        this.renderContext?.endFrame();
     }
 
     private applyLOD(node: Node): void {

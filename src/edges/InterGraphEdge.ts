@@ -6,6 +6,7 @@ import type { EdgeData, EdgeSpec } from '../types';
 import type { Node } from '../nodes/Node';
 
 export class InterGraphEdge extends Edge {
+    static readonly typeName = 'InterGraphEdge';
     public isInterGraphEdge = true;
     private svgNamespace = 'http://www.w3.org/2000/svg';
     private svgLine: SVGPathElement;

@@ -8,6 +8,7 @@ import { createLogger } from '../utils/logger';
 const logger = createLogger('MarkdownNode');
 
 export class MarkdownNode extends BaseContentNode {
+    static readonly typeName = 'MarkdownNode';
     private _ro?: ResizeObserver;
 
     constructor(sg: SpaceGraph, spec: NodeSpec) {

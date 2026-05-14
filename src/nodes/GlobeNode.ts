@@ -5,6 +5,7 @@ import type { NodeSpec, GlobeNodeData } from '../types';
 import type { SpaceGraph } from '../SpaceGraph';
 
 export class GlobeNode extends Node {
+    static readonly typeName = 'GlobeNode';
     private readonly _object: THREE.Group;
 
     get object(): THREE.Object3D {

@@ -5,6 +5,7 @@ import type { SpaceGraph } from '../SpaceGraph';
 import { BaseContentNode } from './BaseContentNode';
 
 export class ProcessNode extends BaseContentNode {
+    static readonly typeName = 'ProcessNode';
     private cpuBar: HTMLDivElement;
     private memBar: HTMLDivElement;
     private cpuText: HTMLSpanElement;

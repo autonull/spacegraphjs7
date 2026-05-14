@@ -11,6 +11,7 @@ export interface ButtonNodeData extends WidgetNodeData {
 }
 
 export class ButtonNode extends WidgetNode {
+    static readonly typeName = 'ButtonNode';
     private _label = '';
     private _color = 0x4488ff;
     private _hoverColor = 0x66aaff;

@@ -21,6 +21,7 @@ export const DEFAULT_EDGE_DATA: EdgeData = Object.freeze({
 });
 
 export class Edge extends Surface {
+    static readonly typeName = 'Edge';
     static HIGHLIGHT_COLOR = EdgeColors.HIGHLIGHT;
     static DEFAULT_OPACITY = 0.8;
     static HIGHLIGHT_OPACITY = 1.0;

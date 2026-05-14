@@ -18,6 +18,7 @@ import { BaseContentNode } from './BaseContentNode';
  *   title     : optional chart title string
  */
 export class ChartNode extends BaseContentNode {
+    static readonly typeName = 'ChartNode';
     public canvasEl: HTMLCanvasElement;
     private chartInstance: unknown = null;
     private titleEl: HTMLElement | null = null;

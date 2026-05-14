@@ -15,6 +15,7 @@ export interface SliderNodeData extends WidgetNodeData {
 }
 
 export class SliderNode extends WidgetNode {
+    static readonly typeName = 'SliderNode';
     private _value = 0.5;
     private _min = 0;
     private _max = 1;

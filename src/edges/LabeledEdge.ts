@@ -18,6 +18,7 @@ import type { Node } from '../nodes/Node';
  *   labelLod  : Array of { distance, scale, style } for LOD-based visibility/scaling
  */
 export class LabeledEdge extends Edge {
+    static readonly typeName = 'LabeledEdge';
     private labelEl: HTMLElement;
     private labelObject: CSS2DObject;
     public labelLod: LabelLodLevel[] = [];

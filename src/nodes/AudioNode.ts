@@ -5,6 +5,7 @@ import type { SpaceGraph } from '../SpaceGraph';
 import { BaseContentNode } from './BaseContentNode';
 
 export class AudioNode extends BaseContentNode {
+    static readonly typeName = 'AudioNode';
     public audioElement: HTMLAudioElement;
 
     constructor(sg: SpaceGraph, spec: NodeSpec) {

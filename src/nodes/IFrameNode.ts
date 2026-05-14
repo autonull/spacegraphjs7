@@ -4,6 +4,7 @@ import type { SpaceGraph } from '../SpaceGraph';
 import { BaseContentNode } from './BaseContentNode';
 
 export class IFrameNode extends BaseContentNode {
+    static readonly typeName = 'IFrameNode';
     public iframeEl: HTMLIFrameElement;
 
     constructor(sg: SpaceGraph, spec: NodeSpec) {

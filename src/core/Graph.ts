@@ -219,33 +219,17 @@ get isEmpty(): boolean {
     // Neighborhood queries
     getNeighbors(nodeId: string, direction: EdgeDirection = 'both'): Node[] {
         const neighbors = new Set<Node>();
-        for (const edge of this.edges.values()) {
-            const isSource = edge.source.id === nodeId;
-            const isTarget = edge.target.id === nodeId;
-            if (direction === 'both' && (isSource || isTarget)) {
-                neighbors.add(isSource ? edge.target : edge.source);
-            } else if (direction === 'outgoing' && isSource) {
-                neighbors.add(edge.target);
-            } else if (direction === 'incoming' && isTarget) {
-                neighbors.add(edge.source);
-            }
-        }
+        this.forEachMatchingEdge(nodeId, direction, (edge, isSource) => {
+            neighbors.add(isSource ? edge.target : edge.source);
+        });
         return [...neighbors];
     }
 
     getEdgesForNode(nodeId: string, direction: EdgeDirection = 'both'): Edge[] {
         const result: Edge[] = [];
-        for (const edge of this.edges.values()) {
-            const isSource = edge.source.id === nodeId;
-            const isTarget = edge.target.id === nodeId;
-            if (direction === 'both' && (isSource || isTarget)) {
-                result.push(edge);
-            } else if (direction === 'outgoing' && isSource) {
-                result.push(edge);
-            } else if (direction === 'incoming' && isTarget) {
-                result.push(edge);
-            }
-        }
+        this.forEachMatchingEdge(nodeId, direction, (edge) => {
+            result.push(edge);
+        });
         return result;
     }
 
@@ -257,18 +241,40 @@ get isEmpty(): boolean {
 
     // Check if nodes are connected
     hasNeighbor(nodeId: string, targetId: string, direction: EdgeDirection = 'both'): boolean {
+        let found = false;
+        this.forEachMatchingEdge(nodeId, direction, (edge, isSource) => {
+            if ((isSource ? edge.target.id : edge.source.id) === targetId) {
+                found = true;
+                return true; // Stop iteration
+            }
+        });
+        return found;
+    }
+
+    /** @internal Helper for edge iteration with filtering */
+    private forEachMatchingEdge(
+        nodeId: string,
+        direction: EdgeDirection,
+        callback: (edge: Edge, isSource: boolean) => void | boolean,
+    ): void {
         for (const edge of this.edges.values()) {
             const isSource = edge.source.id === nodeId;
             const isTarget = edge.target.id === nodeId;
+            let match = false;
+            const callbackIsSource = isSource;
+
             if (direction === 'both' && (isSource || isTarget)) {
-                return isSource ? edge.target.id === targetId : edge.source.id === targetId;
-            } else if (direction === 'outgoing' && isSource && edge.target.id === targetId) {
-                return true;
-            } else if (direction === 'incoming' && isTarget && edge.source.id === targetId) {
-                return true;
+                match = true;
+            } else if (direction === 'outgoing' && isSource) {
+                match = true;
+            } else if (direction === 'incoming' && isTarget) {
+                match = true;
+            }
+
+            if (match) {
+                if (callback(edge, callbackIsSource) === true) break;
             }
         }
-        return false;
     }
 
     // Spatial queries

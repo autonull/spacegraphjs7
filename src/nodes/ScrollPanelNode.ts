@@ -4,6 +4,7 @@ import type { NodeSpec, SpaceGraphNodeData } from '../types';
 import { DOMUtils } from '../utils/DOMUtils';
 
 export class ScrollPanelNode extends HtmlNode {
+    static readonly typeName = 'ScrollPanelNode';
     private scrollContent: HTMLElement | null = null;
 
     constructor(sg: SpaceGraph, spec: NodeSpec) {
