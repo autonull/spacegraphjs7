@@ -132,6 +132,7 @@ for (const [i, child] of children.entries()) {
 };
 
 export class LayoutNode extends GroupNode {
+    static readonly typeName = 'LayoutNode';
     private strategy: LayoutStrategy;
     private params: Record<string, unknown>;
 

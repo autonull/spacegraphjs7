@@ -4,6 +4,7 @@ import type { NodeSpec, SpaceGraphNodeData } from '../types';
 import { DOMUtils } from '../utils/DOMUtils';
 
 export class ColorPickerNode extends HtmlNode {
+    static readonly typeName = 'ColorPickerNode';
     private colorInput: HTMLInputElement | null = null;
     private colorPreview: HTMLElement | null = null;
     private hexInput: HTMLInputElement | null = null;

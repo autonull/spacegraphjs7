@@ -148,6 +148,10 @@ export class PluginManager {
 
     registerNodeType(type: string, cls: import('./TypeRegistry').NodeConstructor): void {
         TypeRegistry.getInstance().registerNode(type, cls);
+        // Also register using static typeName if available to survive minification
+        if ('typeName' in cls && typeof (cls as any).typeName === 'string') {
+            TypeRegistry.getInstance().registerNode((cls as any).typeName, cls);
+        }
     }
 
     getNodeType(type: string): import('./TypeRegistry').NodeConstructor | undefined {
@@ -156,6 +160,10 @@ export class PluginManager {
 
     registerEdgeType(type: string, cls: import('./TypeRegistry').EdgeConstructor): void {
         TypeRegistry.getInstance().registerEdge(type, cls);
+        // Also register using static typeName if available to survive minification
+        if ('typeName' in cls && typeof (cls as any).typeName === 'string') {
+            TypeRegistry.getInstance().registerEdge((cls as any).typeName, cls);
+        }
     }
 
     getEdgeType(type: string): import('./TypeRegistry').EdgeConstructor | undefined {

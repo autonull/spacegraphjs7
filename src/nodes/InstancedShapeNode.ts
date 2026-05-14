@@ -15,6 +15,7 @@ const rotationHelper = new THREE.Quaternion();
 const scaleHelper = new THREE.Vector3(1, 1, 1);
 
 export class InstancedShapeNode extends BaseInstancedNode {
+    static readonly typeName = 'InstancedShapeNode';
     private instanceIndex: number = -1;
 
     constructor(sg: SpaceGraph, spec: NodeSpec) {

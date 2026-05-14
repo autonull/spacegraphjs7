@@ -7,6 +7,7 @@ import type { NodeSpec } from '../types';
 import type { SpaceGraph } from '../SpaceGraph';
 
 export class DOMNode extends Node {
+    static readonly typeName = 'DOMNode';
     public readonly domElement: HTMLElement;
     public readonly cssObject: CSS3DObject;
     public readonly meshMaterial: THREE.MeshBasicMaterial;

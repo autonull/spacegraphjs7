@@ -15,6 +15,7 @@ import { BaseContentNode } from './BaseContentNode';
  *   theme     : 'dark' | 'light' (default 'dark')
  */
 export class DataNode extends BaseContentNode {
+    static readonly typeName = 'DataNode';
     private contentContainer!: HTMLElement;
 
     constructor(sg: SpaceGraph, spec: NodeSpec) {

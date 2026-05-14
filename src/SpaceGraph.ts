@@ -190,19 +190,21 @@ export class SpaceGraph {
     }
 
     #registerDefaults(): void {
-        DEFAULT_NODE_TYPES.forEach((cls) => this.pluginManager.registerNodeType(cls.name, cls));
-        DEFAULT_EDGE_TYPES.forEach((cls) =>
+        for (const cls of DEFAULT_NODE_TYPES) {
+            this.pluginManager.registerNodeType((cls as any).typeName || cls.name, cls);
+        }
+        for (const cls of DEFAULT_EDGE_TYPES) {
             this.pluginManager.registerEdgeType(
-                cls.name,
+                (cls as any).typeName || cls.name,
                 cls as import('./core/TypeRegistry').EdgeConstructor,
-            ),
-        );
-        DEFAULT_LAYOUT_PLUGINS.forEach(([cls, name]) =>
-            this.pluginManager.register(name, new cls()),
-        );
-        DEFAULT_SYSTEM_PLUGINS.forEach(([cls, name]) =>
-            this.pluginManager.register(name, new cls()),
-        );
+            );
+        }
+        for (const [cls, name] of DEFAULT_LAYOUT_PLUGINS) {
+            this.pluginManager.register(name, new cls());
+        }
+        for (const [cls, name] of DEFAULT_SYSTEM_PLUGINS) {
+            this.pluginManager.register(name, new cls());
+        }
         this.#registerFingerings();
     }
 
@@ -223,8 +225,16 @@ export class SpaceGraph {
 
     // ============= Graph Manipulation =============
     loadSpec(spec: GraphSpec): this {
-        spec.nodes?.forEach((node) => this.graph.addNode(node));
-        spec.edges?.forEach((edge) => this.graph.addEdge(edge));
+        if (spec.nodes) {
+            for (const node of spec.nodes) {
+                this.graph.addNode(node);
+            }
+        }
+        if (spec.edges) {
+            for (const edge of spec.edges) {
+                this.graph.addEdge(edge);
+            }
+        }
         return this;
     }
 
@@ -362,7 +372,6 @@ export class SpaceGraph {
         for (const edge of this.graph.edges.values()) (edge as any).onPreRender?.(delta);
 
         this.cameraControls.update();
-        this.renderer.updateCulling();
         this.renderer.render();
     }
 

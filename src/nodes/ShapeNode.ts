@@ -19,6 +19,7 @@ const GEOMETRY_FACTORIES: Record<ShapeType, (size: number) => THREE.BufferGeomet
 };
 
 export class ShapeNode extends Node {
+    static readonly typeName = 'ShapeNode';
     private readonly mesh: THREE.Mesh;
     private meshGeometry: THREE.BufferGeometry;
     private meshMaterial: THREE.MeshStandardMaterial;
@@ -46,6 +47,8 @@ export class ShapeNode extends Node {
             color,
             emissive: 0x000000,
             emissiveIntensity: 0,
+            metalness: 0.5,
+            roughness: 0.5,
         });
         this.mesh = new THREE.Mesh(this.meshGeometry, this.meshMaterial);
 
@@ -70,8 +73,8 @@ export class ShapeNode extends Node {
         if (updates.data) {
             const data = updates.data as ShapeNodeData;
 
-            if (data.color && typeof data.color === 'number') {
-                this.meshMaterial.color.setHex(data.color);
+            if (data.color !== undefined) {
+                this.meshMaterial.color.set(data.color as any);
             }
 
             if (data.shape && data.shape !== this.shapeType) {

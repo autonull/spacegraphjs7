@@ -4,6 +4,7 @@ import type { NodeSpec } from '../types';
 import type { SpaceGraph } from '../SpaceGraph';
 
 export class ImageNode extends TexturedMeshNode {
+    static readonly typeName = 'ImageNode';
     constructor(sg: SpaceGraph, spec: NodeSpec) {
         const w = (spec.data?.width as number) ?? 100;
         const h = (spec.data?.height as number) ?? 100;

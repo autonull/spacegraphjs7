@@ -9,6 +9,7 @@ export interface MeterThreshold {
 }
 
 export class MeterNode extends HtmlNode {
+    static readonly typeName = 'MeterNode';
     private valueDisplay: HTMLElement | null = null;
     private sparklineCanvas: HTMLCanvasElement | null = null;
     private sparklineCtx: CanvasRenderingContext2D | null = null;

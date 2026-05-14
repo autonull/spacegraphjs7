@@ -10,6 +10,7 @@ export interface TabInfo {
 }
 
 export class TabContainerNode extends HtmlNode {
+    static readonly typeName = 'TabContainerNode';
     private tabs: TabInfo[] = [];
     private activeTabId: string = '';
     private tabBarElement: HTMLElement | null = null;

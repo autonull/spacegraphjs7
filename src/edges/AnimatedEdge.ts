@@ -6,6 +6,7 @@ import type { EdgeData, EdgeSpec } from '../types';
 import type { Node } from '../nodes/Node';
 
 export class AnimatedEdge extends Edge {
+    static readonly typeName = 'AnimatedEdge';
     private particle: THREE.Mesh;
     private progress = 0;
     private speed = 0.01;

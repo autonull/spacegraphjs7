@@ -11,6 +11,7 @@ export interface ToggleNodeData extends WidgetNodeData {
 }
 
 export class ToggleNode extends WidgetNode {
+    static readonly typeName = 'ToggleNode';
     private _value = false;
     private _onColor = 0x44ff88;
     private _offColor = 0x666666;

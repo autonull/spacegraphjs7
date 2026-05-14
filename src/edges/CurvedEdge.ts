@@ -6,6 +6,7 @@ import type { EdgeData, EdgeSpec } from '../types';
 import type { Node } from '../nodes/Node';
 
 export class CurvedEdge extends Edge {
+    static readonly typeName = 'CurvedEdge';
     private curve: THREE.QuadraticBezierCurve3;
     private positionsBuffer: Float32Array;
     private _controlPoint = new THREE.Vector3();

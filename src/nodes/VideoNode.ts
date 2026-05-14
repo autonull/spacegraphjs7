@@ -8,6 +8,7 @@ import type { SpaceGraph } from '../SpaceGraph';
 const logger = createLogger('VideoNode');
 
 export class VideoNode extends TexturedMeshNode {
+    static readonly typeName = 'VideoNode';
     public videoEl: HTMLVideoElement;
     private videoTexture: THREE.VideoTexture;
 

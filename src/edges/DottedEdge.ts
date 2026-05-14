@@ -15,6 +15,7 @@ import type { Node } from '../nodes/Node';
  *   thickness : line width (default 2)
  */
 export class DottedEdge extends Edge {
+    static readonly typeName = 'DottedEdge';
     constructor(sg: SpaceGraph, spec: EdgeSpec, source: Node, target: Node) {
         const dottedSpec: EdgeSpec = {
             ...spec,

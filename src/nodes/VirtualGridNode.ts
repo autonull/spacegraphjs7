@@ -14,6 +14,7 @@ export interface GridModel<T> {
 }
 
 export class VirtualGridNode<T = unknown> extends GroupNode {
+    static readonly typeName = 'VirtualGridNode';
     model!: GridModel<T>;
     cellRenderer!: (x: number, y: number, value: T) => NodeSpec;
     visibleCells = new Map<string, Node>();

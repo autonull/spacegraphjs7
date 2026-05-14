@@ -7,6 +7,7 @@ import { createQuickControls, type QuickControlButton } from './QuickControls';
 import { BaseContentNode } from './BaseContentNode';
 
 export class HtmlNode extends BaseContentNode {
+    static readonly typeName = 'HtmlNode';
 public static MIN_SIZE = { width: 80, height: 40 };
 public static DEFAULT_SIZE = { width: 200, height: 100 };
 public static CONTENT_SCALE_RANGE = { min: 0.3, max: 3.0 };

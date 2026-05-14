@@ -4,6 +4,7 @@ import type { NodeSpec, SpaceGraphNodeData } from '../types';
 import { DOMUtils } from '../utils/DOMUtils';
 
 export class ProgressBarNode extends HtmlNode {
+    static readonly typeName = 'ProgressBarNode';
     private progressBar: HTMLElement | null = null;
     private progressFill: HTMLElement | null = null;
     private progressValue = 0;

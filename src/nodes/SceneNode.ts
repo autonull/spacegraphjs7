@@ -9,6 +9,7 @@ import type { SpaceGraph } from '../SpaceGraph';
 const logger = createLogger('SceneNode');
 
 export class SceneNode extends Node {
+    static readonly typeName = 'SceneNode';
     private _object = new THREE.Object3D();
     get object(): THREE.Object3D {
         return this._object;

@@ -16,6 +16,7 @@ type DrawFn = (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) => void
  *            Custom draw function called on construction and on redraw().
  */
 export class CanvasNode extends TexturedMeshNode {
+    static readonly typeName = 'CanvasNode';
     private canvas: HTMLCanvasElement;
     private ctx: CanvasRenderingContext2D;
     private canvasTexture!: THREE.CanvasTexture;

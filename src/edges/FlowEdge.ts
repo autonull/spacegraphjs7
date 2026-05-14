@@ -6,6 +6,7 @@ import type { EdgeData, EdgeSpec } from '../types';
 import type { Node } from '../nodes/Node';
 
 export class FlowEdge extends Edge {
+    static readonly typeName = 'FlowEdge';
     private dashOffset = 0;
     private flowSpeed = 1.0;
     private isFlowing = true;

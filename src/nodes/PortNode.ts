@@ -28,6 +28,7 @@ const PORT_COLORS: Record<PortType, number> = {
 };
 
 export class PortNode<T = unknown> extends ShapeNode {
+    static readonly typeName = 'PortNode';
     private connections: Wire<T>[] = [];
     private onReceive: ((wire: Wire<T>, data: T) => void) | null = null;
     private portType: PortType = 'any';

@@ -19,6 +19,7 @@ import type { Node } from '../nodes/Node';
  *   segments  : tube radial segments (default 6)
  */
 export class DynamicThicknessEdge extends Edge {
+    static readonly typeName = 'DynamicThicknessEdge';
     private cylinder!: THREE.Mesh;
     private _initialized = false;
 

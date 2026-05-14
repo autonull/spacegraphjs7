@@ -10,6 +10,7 @@ export interface DropdownOption {
 }
 
 export class DropdownNode extends HtmlNode {
+    static readonly typeName = 'DropdownNode';
     private selectElement: HTMLSelectElement | null = null;
     private options: DropdownOption[] = [];
     private selectedValue: string = '';

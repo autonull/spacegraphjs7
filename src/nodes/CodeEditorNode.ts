@@ -20,6 +20,7 @@ const logger = createLogger('CodeEditorNode');
  *   height   : pixel height (default 400)
  */
 export class CodeEditorNode extends BaseContentNode {
+    static readonly typeName = 'CodeEditorNode';
     private editorContainer: HTMLDivElement;
     private editorInstance: unknown = null;
 

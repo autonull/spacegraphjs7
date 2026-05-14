@@ -14,6 +14,7 @@ export type BorderRegion =
     | 'SE';
 
 export class BorderNode extends LayoutNode {
+    static readonly typeName = 'BorderNode';
     regions = new Map<BorderRegion, string>();
 
     constructor(sg?: SpaceGraph, spec?: NodeSpec) {
