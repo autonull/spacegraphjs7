@@ -17,10 +17,16 @@ export interface InputAction { id: string; label: string; handler: InputActionHa
 export interface InputBinding { id: string; action: string; sources: string[]; eventType: InputEventType; predicate?: (event: InputEvent) => boolean; priority?: number; }
 
 export interface InputContext {
-  sg: SpaceGraph; events: EventSystem;
-  getState: () => InputState; setActiveInput: (source: string) => void;
-  disableInput: (source: string) => void; enableInput: (source: string) => void; isInputEnabled: (source: string) => boolean;
-  updateState: (partial: Partial<InputState>) => void; emit: (eventType: string, data: unknown) => void; emitBatched: (eventType: string, data: unknown) => void;
+    sg: SpaceGraph;
+    events: EventSystem;
+    getState: () => InputState;
+    setActiveInput: (source: string) => void;
+    disableInput: (source: string) => void;
+    enableInput: (source: string) => void;
+    isInputEnabled: (source: string) => boolean;
+    updateState: (partial: Partial<InputState>) => void;
+    emit: (eventType: string, data: unknown) => void;
+    emitBatched: (eventType: string, data: unknown) => void;
 }
 
 export interface InputState { activeInput: string | null; disabledInputs: Set<string>; pointerPosition: { x: number; y: number }; pointerDown: boolean; keysPressed: Set<string>; touchCount: number; }
@@ -28,8 +34,8 @@ export interface InputSourceConfig { id: string; element: HTMLElement; enabled?:
 export interface InputManagerOptions { sg: SpaceGraph; events: EventSystem; sources?: InputSourceConfig[]; }
 
 export class InputManager {
-  private sg: SpaceGraph;
-  private events: EventSystem;
+    private sg: SpaceGraph;
+    private events: EventSystem;
     private state: InputState;
     private sources: Map<string, InputSource> = new Map();
     private actions: Map<string, InputAction> = new Map();
@@ -38,30 +44,56 @@ export class InputManager {
     private fingerManager: FingerManager;
     private fingerings: Array<{ fingering: Fingering; priority: number }> = [];
 
-  constructor(options: InputManagerOptions) {
-    this.sg = options.sg;
-    this.events = options.events;
-    this.state = { activeInput: null, disabledInputs: new Set(), pointerPosition: { x: 0, y: 0 }, pointerDown: false, keysPressed: new Set(), touchCount: 0 };
-    this.fingerManager = new FingerManager();
-    if (options.sources) for (const config of options.sources) this.addSource(config);
-  }
+    constructor(options: InputManagerOptions) {
+        this.sg = options.sg;
+        this.events = options.events;
+        this.state = {
+            activeInput: null,
+            disabledInputs: new Set(),
+            pointerPosition: { x: 0, y: 0 },
+            pointerDown: false,
+            keysPressed: new Set(),
+            touchCount: 0,
+        };
+        this.fingerManager = new FingerManager();
+        if (options.sources) for (const config of options.sources) this.addSource(config);
+    }
 
-    registerFingering(fingering: Fingering, priority: number): void { this.fingerings.push({ fingering, priority }); this.fingerings.sort((a, b) => b.priority - a.priority); }
-    getFingerManager(): FingerManager { return this.fingerManager; }
+    registerFingering(fingering: Fingering, priority: number): void {
+        this.fingerings.push({ fingering, priority });
+        this.fingerings.sort((a, b) => b.priority - a.priority);
+    }
 
-  get context(): InputContext {
-    return {
-      sg: this.sg, events: this.events,
-      getState: () => this.state,
-      setActiveInput: (source: string) => { this.state.activeInput = source; },
-      disableInput: (source: string) => { this.state.disabledInputs.add(source); },
-      enableInput: (source: string) => { this.state.disabledInputs.delete(source); },
-      isInputEnabled: (source: string) => !this.state.disabledInputs.has(source),
-      updateState: (partial: Partial<InputState>) => { Object.assign(this.state, partial); },
-      emit: (eventType: string, data: unknown) => { this.events.emit(eventType, data); },
-      emitBatched: (eventType: string, data: unknown) => { this.events.emitBatched(eventType, data); },
-    };
-  }
+    getFingerManager(): FingerManager {
+        return this.fingerManager;
+    }
+
+    get context(): InputContext {
+        return {
+            sg: this.sg,
+            events: this.events,
+            getState: () => this.state,
+            setActiveInput: (source: string) => {
+                this.state.activeInput = source;
+            },
+            disableInput: (source: string) => {
+                this.state.disabledInputs.add(source);
+            },
+            enableInput: (source: string) => {
+                this.state.disabledInputs.delete(source);
+            },
+            isInputEnabled: (source: string) => !this.state.disabledInputs.has(source),
+            updateState: (partial: Partial<InputState>) => {
+                Object.assign(this.state, partial);
+            },
+            emit: (eventType: string, data: unknown) => {
+                this.events.emit(eventType, data);
+            },
+            emitBatched: (eventType: string, data: unknown) => {
+                this.events.emitBatched(eventType, data);
+            },
+        };
+    }
 
     addSource(config: InputSourceConfig): InputSource { const source = new InputSource(config, this); this.sources.set(config.id, source); return source; }
     removeSource(id: string): void { const source = this.sources.get(id); if (source) { source.dispose(); this.sources.delete(id); } }
@@ -136,24 +168,65 @@ export class InputManager {
 }
 
 export class InputSource {
-    private id: string; private element: HTMLElement; private manager: InputManager; private enabled = true;
-    private boundHandlers: Array<{ type: string; original: (e: unknown) => void; handler: (e: unknown) => void; }> = [];
+    private id: string;
+    private element: HTMLElement;
+    private manager: InputManager;
+    private enabled = true;
+    private boundHandlers: Array<{
+        type: string;
+        original: (e: unknown) => void;
+        handler: (e: unknown) => void;
+    }> = [];
 
-    constructor(config: InputSourceConfig, manager: InputManager) { this.id = config.id; this.element = config.element; this.manager = manager; this.enabled = config.enabled !== false; }
-    getId(): string { return this.id; }
-    setEnabled(enabled: boolean): void { this.enabled = enabled; }
-    isEnabled(): boolean { return this.enabled; }
+    constructor(config: InputSourceConfig, manager: InputManager) {
+        this.id = config.id;
+        this.element = config.element;
+        this.manager = manager;
+        this.enabled = config.enabled !== false;
+    }
+
+    getId(): string {
+        return this.id;
+    }
+
+    setEnabled(enabled: boolean): void {
+        this.enabled = enabled;
+    }
+
+    isEnabled(): boolean {
+        return this.enabled;
+    }
 
     on<T extends InputEventType>(type: T, handler: (event: InputEvent) => void): void {
         const originalHandler = handler;
-        const wrappedHandler = (e: unknown) => { if (!this.enabled) return; const event = this.normalizeEvent(type, e); if (event) { handler(event); this.manager.handleEvent(event); } };
-        this.boundHandlers.push({ type, original: originalHandler as (e: unknown) => void, handler: wrappedHandler as (e: unknown) => void });
+        const wrappedHandler = (e: unknown) => {
+            if (!this.enabled) return;
+            const event = this.normalizeEvent(type, e);
+            if (event) {
+                handler(event);
+                this.manager.handleEvent(event);
+            }
+        };
+        this.boundHandlers.push({
+            type,
+            original: originalHandler as (e: unknown) => void,
+            handler: wrappedHandler as (e: unknown) => void,
+        });
         this.element.addEventListener(type, wrappedHandler, { passive: false });
     }
 
     off(type: string, handler?: (e: unknown) => void): void {
-        if (handler) { const bound = this.boundHandlers.find((h) => h.type === type && h.original === handler); if (bound) { this.element.removeEventListener(type, bound.handler); this.boundHandlers = this.boundHandlers.filter((h) => h !== bound); } }
-        else { const toRemove = this.boundHandlers.filter((h) => h.type === type); for (const h of toRemove) this.element.removeEventListener(type, h.handler); this.boundHandlers = this.boundHandlers.filter((h) => h.type !== type); }
+        if (handler) {
+            const bound = this.boundHandlers.find((h) => h.type === type && h.original === handler);
+            if (bound) {
+                this.element.removeEventListener(type, bound.handler);
+                this.boundHandlers = this.boundHandlers.filter((h) => h !== bound);
+            }
+        } else {
+            const toRemove = this.boundHandlers.filter((h) => h.type === type);
+            for (const h of toRemove) this.element.removeEventListener(type, h.handler);
+            this.boundHandlers = this.boundHandlers.filter((h) => h.type !== type);
+        }
     }
 
     private normalizeEvent(type: InputEventType, originalEvent: unknown): InputEvent | null {

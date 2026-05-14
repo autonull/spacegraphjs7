@@ -1,5 +1,5 @@
 // builder/factories.ts - Factory functions for nodes, edges, widgets
-import type { EdgeSpec, SpaceGraphOptions, NodeSpec } from '../types';
+import type { EdgeSpec, NodeSpec } from '../types';
 import type { SpaceGraph } from '../SpaceGraph';
 import { NodeBuilder } from './node';
 import { WidgetBuilder } from './node';
