@@ -227,12 +227,24 @@ function makeSpaceGraph() {
         export: SpaceGraph.prototype.export,
         import: SpaceGraph.prototype.import,
         loadSpec: SpaceGraph.prototype.loadSpec,
+        exportNodes: (SpaceGraph.prototype as any).exportNodes,
+        exportEdges: (SpaceGraph.prototype as any).exportEdges,
+        exportCameraState: (SpaceGraph.prototype as any).exportCameraState,
+        exportPluginState: (SpaceGraph.prototype as any).exportPluginState,
+        importCameraState: (SpaceGraph.prototype as any).importCameraState,
+        importPluginState: (SpaceGraph.prototype as any).importPluginState,
     };
 
     // Bind prototype methods to this mock object
     sg.export = sg.export.bind(sg);
     sg.import = sg.import.bind(sg);
     sg.loadSpec = sg.loadSpec.bind(sg);
+    sg.exportNodes = sg.exportNodes?.bind(sg);
+    sg.exportEdges = sg.exportEdges?.bind(sg);
+    sg.exportCameraState = sg.exportCameraState?.bind(sg);
+    sg.exportPluginState = sg.exportPluginState?.bind(sg);
+    sg.importCameraState = sg.importCameraState?.bind(sg);
+    sg.importPluginState = sg.importPluginState?.bind(sg);
 
     return sg;
 }

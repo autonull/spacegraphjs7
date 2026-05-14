@@ -84,7 +84,7 @@ export class TypeRegistry {
     }
 
     createNode(sgOrSpec: SpaceGraph | NodeSpec, specOrSg?: NodeSpec | SpaceGraph): Node {
-        const isSpecFirst = 'type' in sgOrSpec;
+        const isSpecFirst = sgOrSpec && 'type' in sgOrSpec;
         const nodeSpec = isSpecFirst ? (sgOrSpec as NodeSpec) : (specOrSg as NodeSpec);
         const sg = isSpecFirst ? (specOrSg as SpaceGraph) : (sgOrSpec as SpaceGraph);
 
@@ -104,7 +104,7 @@ export class TypeRegistry {
         sourceOrTarget?: Node,
         targetOrNothing?: Node,
     ): Edge {
-        const isSpecFirst = 'source' in (sgOrSpec as any);
+        const isSpecFirst = sgOrSpec && 'source' in sgOrSpec;
         const edgeSpec = isSpecFirst ? (sgOrSpec as EdgeSpec) : (specOrSource as EdgeSpec);
         const sg = isSpecFirst ? (sourceOrTarget as SpaceGraph) : (sgOrSpec as SpaceGraph);
         const source = isSpecFirst ? (specOrSource as Node) : (sourceOrTarget as Node);

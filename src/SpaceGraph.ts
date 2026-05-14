@@ -238,65 +238,94 @@ export class SpaceGraph {
         camera?: { position: [number, number, number]; target: [number, number, number] };
         plugins?: Record<string, unknown>;
     } {
-        const spec: GraphSpec & { camera?: any; plugins?: any } = {
-            nodes: [...this.graph.nodes.values()].map((node) => ({
-                id: node.id,
-                type: node.constructor.name,
-                label: node.label,
-                position: [node.position.x, node.position.y, node.position.z] as [
-                    number,
-                    number,
-                    number,
-                ],
-                data: safeClone(node.data),
-            })),
-            edges: Array.from(this.graph.edges.values()).map((edge) => ({
-                id: edge.id,
-                type: edge.constructor.name,
-                source: edge.source.id,
-                target: edge.target.id,
-                data: safeClone(edge.data),
-            })),
+        const spec: GraphSpec & {
+            camera?: { position: [number, number, number]; target: [number, number, number] };
+            plugins?: Record<string, unknown>;
+        } = {
+            nodes: this.exportNodes(),
+            edges: this.exportEdges(),
         };
 
-        if (this.cameraControls?.target) {
-            const { camera } = this.renderer;
-            const { target } = this.cameraControls;
-            spec.camera = {
-                position: [camera.position.x, camera.position.y, camera.position.z],
-                target: [target.x, target.y, target.z],
-            };
-        }
+        const cameraState = this.exportCameraState();
+        if (cameraState) spec.camera = cameraState;
 
-        const pluginState = this.pluginManager.export();
-        if (pluginState && Object.keys(pluginState).length > 0) spec.plugins = pluginState;
+        const pluginState = this.exportPluginState();
+        if (pluginState) spec.plugins = pluginState;
+
         return spec;
+    }
+
+    exportNodes(): GraphSpec['nodes'] {
+        return [...this.graph.nodes.values()].map((node) => ({
+            id: node.id,
+            type: node.constructor.name,
+            label: node.label,
+            position: [node.position.x, node.position.y, node.position.z],
+            data: safeClone(node.data),
+        }));
+    }
+
+    exportEdges(): GraphSpec['edges'] {
+        return Array.from(this.graph.edges.values()).map((edge) => ({
+            id: edge.id,
+            type: edge.constructor.name,
+            source: edge.source.id,
+            target: edge.target.id,
+            data: safeClone(edge.data),
+        }));
+    }
+
+    exportCameraState():
+        | { position: [number, number, number]; target: [number, number, number] }
+        | undefined {
+        if (!this.cameraControls?.target) return undefined;
+        const { camera } = this.renderer;
+        const { target } = this.cameraControls;
+        return {
+            position: [camera.position.x, camera.position.y, camera.position.z],
+            target: [target.x, target.y, target.z],
+        };
+    }
+
+    exportPluginState(): Record<string, unknown> | undefined {
+        const state = this.pluginManager.export();
+        return state && Object.keys(state).length > 0 ? state : undefined;
     }
 
     import(data: GraphImportData): this {
         this.graph.clear();
         this.loadSpec(data as GraphSpec);
 
-        if (data.camera && this.cameraControls?.target) {
-            const { camera } = this.renderer;
-            const { target } = this.cameraControls;
-            camera.position.set(...data.camera.position);
-            target.set(...data.camera.target);
+        if (data.camera) this.importCameraState(data.camera);
+        if (data.plugins) this.importPluginState(data.plugins as Record<string, unknown>);
 
-            const diff = MathPool.getInstance()
-                .acquireVector3()
-                .subVectors(camera.position, target);
-            this.cameraControls.spherical.radius = diff.length();
-            const radius = this.cameraControls.spherical.radius;
-            const ratio = radius > 0 ? Math.max(-1, Math.min(1, diff.y / radius)) : 0;
-            this.cameraControls.spherical.phi = Math.acos(ratio);
-            this.cameraControls.spherical.theta = Math.atan2(diff.x, diff.z);
-            MathPool.getInstance().releaseVector3(diff);
-            this.cameraControls.update();
-        }
-
-        if (data.plugins) this.pluginManager.import(data.plugins as Record<string, any>);
         return this;
+    }
+
+    importCameraState(cameraState: {
+        position: [number, number, number];
+        target: [number, number, number];
+    }): void {
+        if (!this.cameraControls?.target) return;
+
+        const { camera } = this.renderer;
+        const { target } = this.cameraControls;
+
+        camera.position.set(...cameraState.position);
+        target.set(...cameraState.target);
+
+        const diff = MathPool.getInstance().acquireVector3().subVectors(camera.position, target);
+        this.cameraControls.spherical.radius = diff.length();
+        const radius = this.cameraControls.spherical.radius;
+        const ratio = radius > 0 ? Math.max(-1, Math.min(1, diff.y / radius)) : 0;
+        this.cameraControls.spherical.phi = Math.acos(ratio);
+        this.cameraControls.spherical.theta = Math.atan2(diff.x, diff.z);
+        MathPool.getInstance().releaseVector3(diff);
+        this.cameraControls.update();
+    }
+
+    importPluginState(pluginState: Record<string, unknown>): void {
+        this.pluginManager.import(pluginState);
     }
 
     // ============= Node/Edge Access =============
