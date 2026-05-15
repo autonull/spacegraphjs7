@@ -10,6 +10,8 @@ export { VisionManager } from './VisionManager';
 export { ObjectPoolManager } from './ObjectPoolManager';
 export { PluginManager } from './PluginManager';
 export { ErgonomicsAPI } from './Ergonomics';
+export { SpatialIndex, BVH } from './spatial/SpatialIndex';
+export { ObjectPool, MathPool } from './pooling/ObjectPool';
 export type { Plugin } from './PluginManager';
 export { Surface } from './Surface';
 export { TypeRegistry } from './TypeRegistry';

@@ -61,6 +61,7 @@ export {
 } from './math';
 
 // Color
+export type { ColorStop } from './color';
 export {
     hexToRgb,
     rgbToHex,
@@ -81,7 +82,6 @@ export {
     saturate,
     desaturate,
     generateGradient,
-    ColorStop,
     generatePalette,
     generateGradientPalette,
     toCssGradient,
@@ -127,10 +127,19 @@ export {
 export type { SpaceGraphErrorOptions } from './error';
 
 // Gesture utilities
-export { GestureManager } from './GestureManager';
+export {
+    calculateDistance,
+    calculateMidpoint,
+    calculatePinchZoom,
+    calculatePan,
+    calculateAngle,
+    isClick,
+    normalizeWheel,
+} from './GestureManager';
+export type { Point as GesturePoint, DragCallback, PinchCallback, RotateCallback } from './GestureManager';
 
 // Graph generators
 export { randomTree, randomMesh, scaleFreeGraph, smallWorld, lattice2D } from './graphGenerators';
 
 // Three.js disposal
-export { disposeThreeObject } from './ThreeDisposer';
+export { ThreeDisposer } from './ThreeDisposer';

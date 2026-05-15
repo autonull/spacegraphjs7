@@ -113,6 +113,7 @@ export { ForceLayout, GridLayout, CircularLayout, HierarchicalLayout, RadialLayo
 // Plugin exports
 export {
   InteractionPlugin,
+  HoverMetaWidget,
   LODPlugin,
   AutoLayoutPlugin,
   AutoColorPlugin,
@@ -124,6 +125,9 @@ export {
   FractalZoomPlugin,
   ZoomUIPlugin,
   LayoutContainer,
+  DiagramParserFactory,
+  MermaidPlugin,
+  injectMermaidStyles,
 } from './plugins';
 
 // HUD exports

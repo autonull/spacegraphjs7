@@ -26,6 +26,8 @@ import type { Edge } from './edges/Edge';
 
 const logger = createLogger('SpaceGraph');
 
+export const VERSION = '7.0.0';
+
 export class SpaceGraph {
     public static instances = new Set<SpaceGraph>();
 

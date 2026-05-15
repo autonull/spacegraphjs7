@@ -40,6 +40,10 @@ export class HUDPlugin extends BaseSystemPlugin {
         this.alerts.create();
 
         this.subscribeToEvents();
+
+        // Initial update
+        this.updateNodeCount();
+        this.updateCamera();
     }
 
     private createContainer(): void {

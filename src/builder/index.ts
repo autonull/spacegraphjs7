@@ -1,5 +1,6 @@
 // builder/index.ts - Unified builder API
-export { BaseBuilder, GenericBuilder } from './base';
+export { BaseBuilder } from './base';
+export type { GenericBuilder } from './base';
 export { NodeBuilder, WidgetBuilder } from './node';
 export { EdgeBuilder } from './edge';
 export { GraphBuilder as GraphSpecBuilder, GraphBuilder } from './graph';
