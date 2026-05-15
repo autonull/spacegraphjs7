@@ -385,6 +385,7 @@
 
     async function init() {
       sg = await SpaceGraph.create('#container', { nodes: [], edges: [] });
+      window._sg = sg;
 
       mermaidPlugin = new MermaidPlugin({
         defaultLayout: 'hierarchical',

@@ -1,9 +1,16 @@
-export {
-  DiagramParserFactory,
+export type {
   DiagramParseResult,
   DiagramFormat,
   DiagramNode,
   DiagramEdge,
+  MermaidThemeName,
+  LayoutName,
+  MermaidLayoutType,
+  MermaidNodeShape,
+} from './MermaidParser';
+
+export {
+  DiagramParserFactory,
   MermaidParser,
   DOTParser,
   GraphMLParser,
@@ -11,10 +18,6 @@ export {
   LAYOUT_NAMES,
   MERMAID_THEMES,
   getLayoutLabel,
-  type MermaidThemeName,
-  type LayoutName,
-  type MermaidLayoutType,
-  type MermaidNodeShape,
 } from './MermaidParser';
 
 export { MermaidNode, type MermaidNodeData, createMermaidNode } from './MermaidNode';

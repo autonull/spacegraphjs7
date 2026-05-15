@@ -8,13 +8,15 @@ import { HUD_ZINDEX, HUD_COLORS } from '../hud/HUDStyles';
 import { HUDDOMFactory } from '../hud/HUDDOMFactory';
 import {
   DiagramParserFactory,
+  LAYOUT_NAMES,
+  MERMAID_THEMES,
+  getLayoutLabel,
+} from './MermaidParser';
+import type {
   DiagramParseResult,
   DiagramFormat,
   MermaidThemeName,
   LayoutName,
-  LAYOUT_NAMES,
-  MERMAID_THEMES,
-  getLayoutLabel,
 } from './MermaidParser';
 import {
   ForceLayout,

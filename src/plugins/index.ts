@@ -56,13 +56,15 @@ export {
 export { InteractionManager, type InteractionState } from './interaction/InteractionManager';
 export type { FocusableNode } from './interaction/InteractionManager';
 
-export { MermaidPlugin, type MermaidPluginOptions, injectMermaidStyles } from './mermaid';
 export {
+  MermaidPlugin,
+  type MermaidPluginOptions,
+  injectMermaidStyles,
   DiagramParserFactory,
-  DiagramParseResult,
-  DiagramFormat,
-  DiagramNode,
-  DiagramEdge,
+  type DiagramParseResult,
+  type DiagramFormat,
+  type DiagramNode,
+  type DiagramEdge,
   MermaidParser,
   DOTParser,
   GraphMLParser,

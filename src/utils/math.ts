@@ -1,6 +1,8 @@
 // math.ts - Modern ES2022+ math and utility functions
 // Type-safe, performant, and deduplicated
-import { EPSILON } from '../core/constants';
+import { EPSILON, PI, TAU, DEG2RAD, RAD2DEG } from '../core/constants';
+
+export { EPSILON, PI, TAU, DEG2RAD, RAD2DEG };
 
 // ============= Type Guards =============
 export const isObject = (item: unknown): item is Record<string, unknown> =>

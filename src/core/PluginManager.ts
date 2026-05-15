@@ -93,7 +93,7 @@ export class PluginManager {
                     operation: 'Plugin Initialization',
                     reason: `Failed to initialize plugin "${name}"`,
                 });
-                logger.error(wrapped.message);
+                logger.error(`${wrapped.message}: ${err instanceof Error ? err.stack : String(err)}`);
                 errors.push(wrapped);
             }
         }

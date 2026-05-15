@@ -158,6 +158,12 @@ export class Graph extends EventEmitter<GraphEventMap> {
     }
 
     // Node lookup shortcuts - ergonomic API
+    getNodeCount(): number {
+        return this.nodes.size;
+    }
+    getEdgeCount(): number {
+        return this.edges.size;
+    }
     get nodeCount(): number {
         return this.nodes.size;
     }
