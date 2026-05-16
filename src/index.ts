@@ -1,6 +1,7 @@
 // SpaceGraphJS v7 - Ergonomic Developer API
 // Optimized for developer experience with unified exports and convenient shortcuts
 export { SpaceGraph, VERSION } from './SpaceGraph';
+export { SpaceGraphApp } from './core/SpaceGraphApp';
 
 // Core module exports
 export {

@@ -3,11 +3,12 @@ import { spawn } from 'child_process';
 import * as fs from 'fs';
 
 async function main() {
-    console.log('Starting dev server...');
-    const viteProcess = spawn('npx', ['vite', '--config', 'vite.demo.config.ts', '--port', '5174'], { stdio: 'pipe' });
+    const PORT = 5188;
+    console.log(`Starting dev server on port ${PORT}...`);
+    const viteProcess = spawn('npx', ['vite', '--config', 'vite.demo.config.ts', '--port', PORT.toString(), '--strictPort'], { stdio: 'pipe' });
 
     // Wait for the server to start
-    await new Promise((resolve) => setTimeout(resolve, 3000));
+    await new Promise((resolve) => setTimeout(resolve, 5000));
 
     // Listen to output to make sure it is starting correctly
     viteProcess.stdout.on('data', (data) => {
@@ -50,7 +51,7 @@ async function main() {
 
         for (const demo of demos) {
             console.log(`Verifying demo: ${demo}`);
-            await page.goto(`http://localhost:5174/demo/${demo}`);
+            await page.goto(`http://localhost:${PORT}/demo/${demo}`);
 
             // Wait based on whether the demo is expected to create a canvas
             if (demo !== 'index.html' && !demo.startsWith('../examples/')) {
@@ -66,10 +67,10 @@ async function main() {
                 await page.waitForTimeout(3000);
             } else {
                 // Index is just an HTML page with links, wait for it to render
-                await page.waitForFunction(() => !!document.querySelector('button'), {
-                    timeout: 10000,
+                await page.waitForFunction(() => !!document.querySelector('#demo-select'), {
+                    timeout: 15000,
                 });
-                await page.waitForTimeout(1000); // Give it time to load the first demo's canvas
+                await page.waitForTimeout(2000); // Give it time to load
             }
 
             const name = demo.split('/').pop().replace('.html', '');
