@@ -129,10 +129,13 @@ export class Renderer {
         this.renderContext?.updateCameraPosition();
 
         this.instancedRenderer.update();
-        for (const edge of this.sg.graph.edges.values()) edge.update?.();
+        for (const edge of this.sg.graph.edges.values()) {
+            if (edge) edge.update?.();
+        }
 
         if (this.renderContext) {
             for (const node of this.sg.graph.nodes.values()) {
+                if (!node) continue;
                 if (this.renderContext.shouldRender(node)) {
                     this.applyLOD(node);
                 } else {

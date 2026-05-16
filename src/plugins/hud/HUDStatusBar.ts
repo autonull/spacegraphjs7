@@ -31,11 +31,11 @@ export class HUDStatusBar {
         });
 
         this.statusBar.innerHTML = `
-            <span id="sg-status-selection">Selection: 0 nodes</span>
-            <span id="sg-status-nodes">Nodes: 0</span>
-            <span id="sg-status-edges">Edges: 0</span>
+            <span id="sg-status-selection" style="display: none">Selection: 0 nodes</span>
+            <span id="sg-status-nodes" style="display: none">Nodes: 0</span>
+            <span id="sg-status-edges" style="display: none">Edges: 0</span>
             <span id="sg-status-camera">Camera: 2D</span>
-            <span id="sg-status-layout">Layout: Idle</span>
+            <span id="sg-status-layout" style="display: none">Layout: Idle</span>
         `;
 
         this.statusBar.style.zIndex = HUD_ZINDEX.HUD;
@@ -46,6 +46,7 @@ export class HUDStatusBar {
         const el = HUDDOMFactory.getElementById('sg-status-selection');
         if (el) {
             el.textContent = `Selection: ${nodeCount} node${nodeCount !== 1 ? 's' : ''}`;
+            el.style.display = nodeCount > 0 ? 'inline' : 'none';
         }
     }
 
@@ -53,8 +54,19 @@ export class HUDStatusBar {
         const nodesEl = HUDDOMFactory.getElementById('sg-status-nodes');
         const edgesEl = HUDDOMFactory.getElementById('sg-status-edges');
 
-        if (nodesEl) nodesEl.textContent = `Nodes: ${nodes}`;
-        if (edgesEl) edgesEl.textContent = `Edges: ${edges}`;
+        if (nodesEl) {
+            nodesEl.textContent = `Nodes: ${nodes}`;
+            nodesEl.style.display = nodes > 0 ? 'inline' : 'none';
+        }
+        if (edgesEl) {
+            edgesEl.textContent = `Edges: ${edges}`;
+            edgesEl.style.display = edges > 0 ? 'inline' : 'none';
+        }
+
+        // Hide status bar completely if empty
+        if (this.statusBar) {
+            this.statusBar.style.display = (nodes === 0 && edges === 0) ? 'none' : 'flex';
+        }
     }
 
     updateCamera(is3D: boolean): void {
@@ -68,6 +80,7 @@ export class HUDStatusBar {
         const el = HUDDOMFactory.getElementById('sg-status-layout');
         if (el) {
             el.textContent = `Layout: ${isActive ? 'Running' : 'Idle'}`;
+            el.style.display = isActive ? 'inline' : 'none';
         }
     }
 

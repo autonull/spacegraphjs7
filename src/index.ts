@@ -18,7 +18,7 @@ export {
 } from './core';
 
 // Core aliases for convenience
-export { EventSystem as Event, EventEmitter as Emitter, ErgonomicsAPI as Ergo, ObjectPoolManager as Pools };
+export { EventSystem as Event, EventEmitter as Emitter, ErgonomicsAPI as Ergo, ObjectPoolManager as Pools } from './core';
 
 // Builder module exports
 export {

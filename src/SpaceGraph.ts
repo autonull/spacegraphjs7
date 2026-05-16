@@ -330,13 +330,17 @@ export class SpaceGraph {
 
     // ============= Camera Controls =============
     fitView(padding: number = 100, duration: number = 1.5): this {
+        if (!this.graph || !this.renderer?.camera || !this.cameraControls) return this;
         const nodes = Array.from(this.graph.nodes.values());
-        const fit = calculateFitView(nodes, this.renderer.camera, padding);
+        if (nodes.length === 0) return this;
+
+        const fit = calculateFitView(nodes, this.renderer.camera as any, padding);
         if (fit) this.cameraControls.flyTo(fit.center, fit.cameraZ, duration);
         return this;
     }
 
     get cameraPosition(): [number, number, number] {
+        if (!this.renderer?.camera) return [0, 0, 0];
         return [
             this.renderer.camera.position.x,
             this.renderer.camera.position.y,
@@ -370,10 +374,14 @@ export class SpaceGraph {
         this.#lastTimestamp = timestamp;
 
         this.pluginManager.updateAll(delta);
-        for (const node of this.graph.nodes.values()) node.onPreRender?.(delta);
-        for (const edge of this.graph.edges.values()) (edge as any).onPreRender?.(delta);
+        for (const node of this.graph.nodes.values()) {
+            if (node) node.onPreRender?.(delta);
+        }
+        for (const edge of this.graph.edges.values()) {
+            if (edge) (edge as any).onPreRender?.(delta);
+        }
 
-        this.cameraControls.update();
+        this.cameraControls?.update();
         this.renderer.render();
     }
 
