@@ -173,10 +173,10 @@ We are tracking multiple inbound shipments across the Atlantic. Key indicators s
             { id: 'e3', source: 'earth', target: 'satellite-img', type: 'AnimatedEdge', data: { color: 0x10b981, speed: 0.01, particleColor: 0xffffff } }
         ];
 
-        const sg = SpaceGraph.create('#container', { nodes, edges });
+        const sg = await SpaceGraph.create('#container', { nodes, edges });
 
         // Spin the globe slowly
-        sg.events.on('prerender', () => {
+        sg.events.on('render', () => {
              const earth = sg.graph.nodes.get('earth');
              if (earth && earth.object) {
                  earth.object.rotation.y += 0.002;

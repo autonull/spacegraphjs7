@@ -182,7 +182,7 @@
             }
         }
 
-        const app = new SpaceGraphApp('#container', {
+        const app = await SpaceGraphApp.create('#container', {
             spec: { nodes, edges },
             title: 'Server Topology',
             description: 'Hold <strong>Shift + Drag</strong> to box select nodes. Double-click a node to fly to it.',

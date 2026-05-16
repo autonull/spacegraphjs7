@@ -130,10 +130,10 @@
             }
         }
 
-        const sg = SpaceGraph.create('#container', { nodes, edges });
+        const sg = await SpaceGraph.create('#container', { nodes, edges });
 
         // Enable minimap plugin
-        const minimap = sg.pluginManager.getPlugin('minimap-plugin');
+        const minimap = sg.pluginManager.getPlugin('MinimapPlugin');
         if (minimap) {
              minimap.settings.zoom = 4000; // Increase zoom to see the whole sprawling graph
              minimap.settings.size = 200;  // Make the minimap a bit bigger

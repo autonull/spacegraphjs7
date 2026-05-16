@@ -151,7 +151,7 @@
             { id: 'e5', source: 'child-1', target: 'child-2', type: 'DottedEdge', data: { color: 0xffffff } }
         ];
 
-        const sg = SpaceGraph.create('#container', { nodes, edges });
+        const sg = await SpaceGraph.create('#container', { nodes, edges });
 
         const layout = sg.pluginManager.getPlugin('ForceLayout');
         if (layout) {
