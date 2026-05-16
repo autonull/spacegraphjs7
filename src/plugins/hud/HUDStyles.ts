@@ -13,9 +13,9 @@ export const HUD_ZINDEX = {
 } as const;
 
 export const HUD_COLORS = {
-    background: 'rgba(15, 23, 42, 0.95)',
-    surface: '#1e293b',
-    border: '#334155',
+    background: 'rgba(15, 23, 42, 0.65)',
+    surface: 'rgba(30, 41, 59, 0.5)',
+    border: 'rgba(51, 65, 85, 0.4)',
     text: '#f1f5f9',
     textMuted: '#94a3b8',
     primary: '#8b5cf6',
@@ -90,6 +90,7 @@ export const HUD_STYLES = {
     statusBar: {
         background: HUD_COLORS.background,
         borderTop: `1px solid ${HUD_COLORS.border}`,
+        backdropFilter: 'blur(8px)',
     },
 } as const;
 

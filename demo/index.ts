@@ -63,6 +63,66 @@ const DEMO_METADATA: Record<string, { name: string; icon: string; description: s
     icon: '📊',
     description: 'Mermaid diagram renderer with all layouts and HUD controls',
   },
+  'benchmark.html': {
+    name: 'Performance Benchmark',
+    icon: '⏱️',
+    description: 'Formal performance verification running a dynamic network of 1000 interconnected nodes.',
+  },
+  'kitchen-sink.html': {
+    name: 'Kitchen Sink',
+    icon: '🚰',
+    description: 'A comprehensive test of nearly every node type and edge type in a single view.',
+  },
+  'viewport-serialization.html': {
+    name: 'Viewport State',
+    icon: '💾',
+    description: 'Save and restore camera and node states across instances.',
+  },
+  'inter-graph-edges.html': {
+    name: 'Inter-graph Edges',
+    icon: '🔗',
+    description: 'Connect nodes seamlessly across different SpaceGraph instances on the same page.',
+  },
+  'minimap.html': {
+    name: 'Minimap',
+    icon: '🗺️',
+    description: 'Navigation aid showing a high-level overview of the entire graph space.',
+  },
+  'mixed-topology.html': {
+    name: 'Mixed Topology',
+    icon: '🕸️',
+    description: 'A complex web of interconnected nodes demonstrating various relationship types.',
+  },
+  'data-viz.html': {
+    name: 'Data Visualization',
+    icon: '📈',
+    description: 'Using DataNodes and ChartNodes to visualize live metrics and datasets.',
+  },
+  'media-nodes.html': {
+    name: 'Media Nodes',
+    icon: '🎬',
+    description: 'Showcase of Image, Video, and Audio nodes within the 3D space.',
+  },
+  'process-nodes.html': {
+    name: 'Process Flow',
+    icon: '⎇',
+    description: 'Visualizing logical processes and decision trees.',
+  },
+  'fully-featured-app.html': {
+    name: 'Full Application',
+    icon: '📱',
+    description: 'A complete application interface built entirely within SpaceGraphJS.',
+  },
+  'complex-navigation.html': {
+    name: 'Advanced Navigation',
+    icon: '🧭',
+    description: 'Demonstrating camera constraints, smooth transitions, and focal points.',
+  },
+  'complex-hud-layout.html': {
+    name: 'Advanced HUD',
+    icon: '🎮',
+    description: 'Complex HUD arrangements with multiple overlays and telemetry.',
+  },
 };
 
 // Convert filename to display name (fallback for unknown demos)

@@ -70,6 +70,7 @@ export class AnimatedEdge extends Edge {
 
     update() {
         super.update();
+        if (!this.particle) return;
 
         this.progress += this.reverse ? -this.speed : this.speed;
 

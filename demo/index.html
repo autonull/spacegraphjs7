@@ -52,7 +52,10 @@
     <body>
         <div id="menu">
             <select id="demo-select"></select>
-            <span id="demo-title" style="color: #666; font-size: 12px; margin-left: 8px"></span>
+            <input type="text" id="demo-search" placeholder="Search demos..." style="background: #1a1a1a; border: 1px solid #333; color: #ccc; padding: 6px 12px; border-radius: 4px; font-size: 13px; outline: none; margin-left: 10px;">
+            <span id="demo-title" style="color: #666; font-size: 12px; margin-left: 15px; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase;"></span>
+            <div style="flex-grow: 1;"></div>
+            <a href="gallery.html" style="color: #8b5cf6; text-decoration: none; font-size: 12px; font-weight: 600; margin-right: 10px;">Visual Gallery</a>
         </div>
         <div id="app"></div>
 
@@ -70,15 +73,23 @@
             const select = document.getElementById('demo-select');
             const title = document.getElementById('demo-title');
 
-            demoList.forEach((d, i) => {
-                const opt = document.createElement('option');
-                opt.value = String(i);
-                opt.textContent = d.name;
-                select.appendChild(opt);
-            });
+            function updateSelect(filter = '') {
+                select.innerHTML = '';
+                const filtered = demoList.filter(d => d.name.toLowerCase().includes(filter.toLowerCase()));
 
-            async function loadDemo(index) {
-                const demo = demoList[index];
+                filtered.forEach((d) => {
+                    const opt = document.createElement('option');
+                    opt.value = d.name;
+                    opt.textContent = d.name;
+                    select.appendChild(opt);
+                });
+                return filtered;
+            }
+
+            updateSelect();
+
+            async function loadDemo(name) {
+                const demo = demoList.find(d => d.name === name);
                 if (!demo) return;
 
                 title.textContent = demo.name;
@@ -96,10 +107,23 @@
             }
 
             select.addEventListener('change', (e) => {
-                loadDemo(parseInt(e.target.value));
+                const url = new URL(window.location.href);
+                url.searchParams.set('demo', e.target.value);
+                window.history.pushState({}, '', url);
+                loadDemo(e.target.value);
             });
 
-            loadDemo(0);
+            document.getElementById('demo-search').addEventListener('input', (e) => {
+                const filtered = updateSelect(e.target.value);
+                if (filtered.length > 0) {
+                    // Don't auto-load while typing, but update selection if current is gone
+                }
+            });
+
+            const params = new URLSearchParams(window.location.search);
+            const initialDemo = params.get('demo') || demoList[0].name;
+            select.value = initialDemo;
+            loadDemo(initialDemo);
         </script>
     </body>
 </html>

@@ -96,6 +96,80 @@ export function addOverlayPanel(
   });
 }
 
+/**
+ * Creates a professional HUD panel for demos with optional stats and controls.
+ */
+export function createProfessionalPanel(sg: SpaceGraph, options: {
+    title: string;
+    description: string;
+    metrics?: string[];
+    controls?: { label: string, action: () => void }[];
+}) {
+    sg.events.on('ready', () => {
+        const panel = document.createElement('div');
+        Object.assign(panel.style, {
+            position: 'fixed',
+            top: '60px',
+            left: '20px',
+            width: '300px',
+            background: 'rgba(15, 23, 42, 0.8)',
+            backdropFilter: 'blur(12px)',
+            color: '#f8fafc',
+            padding: '24px',
+            borderRadius: '16px',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3)',
+            fontFamily: 'system-ui, -apple-system, sans-serif',
+            zIndex: '10000',
+        });
+
+        let html = `
+            <h2 style="margin: 0 0 8px 0; font-size: 18px; font-weight: 700; background: linear-gradient(135deg, #60a5fa, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">${options.title}</h2>
+            <p style="margin: 0 0 20px 0; font-size: 13px; color: #94a3b8; line-height: 1.5;">${options.description}</p>
+        `;
+
+        if (options.metrics && options.metrics.length > 0) {
+            html += `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 16px;">`;
+            options.metrics.forEach(m => {
+                html += `
+                    <div>
+                        <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; margin-bottom: 2px;">${m}</div>
+                        <div id="metric-${m.toLowerCase().replace(/ /g, '-')}" style="font-size: 14px; font-weight: 600; color: #e2e8f0;">--</div>
+                    </div>
+                `;
+            });
+            html += `</div>`;
+        }
+
+        if (options.controls && options.controls.length > 0) {
+            html += `<div style="display: flex; flex-direction: column; gap: 8px;">`;
+            options.controls.forEach((c, i) => {
+                html += `<button id="control-btn-${i}" style="width: 100%; padding: 10px; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 8px; color: #60a5fa; font-weight: 600; font-size: 13px; cursor: pointer; transition: all 0.2s;">${c.label}</button>`;
+            });
+            html += `</div>`;
+        }
+
+        panel.innerHTML = html;
+        document.body.appendChild(panel);
+
+        // Bind events
+        options.controls?.forEach((c, i) => {
+            const btn = document.getElementById(`control-btn-${i}`);
+            if (btn) {
+                btn.addEventListener('click', c.action);
+                btn.addEventListener('mouseenter', () => {
+                    btn.style.background = 'rgba(59, 130, 246, 0.2)';
+                    btn.style.borderColor = 'rgba(59, 130, 246, 0.4)';
+                });
+                btn.addEventListener('mouseleave', () => {
+                    btn.style.background = 'rgba(59, 130, 246, 0.1)';
+                    btn.style.borderColor = 'rgba(59, 130, 246, 0.2)';
+                });
+            }
+        });
+    });
+}
+
 export class DemoBuilder {
   private _nodes: any[] = [];
   private _edges: any[] = [];

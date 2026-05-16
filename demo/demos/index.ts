@@ -37,3 +37,11 @@ export { default as nodeWiringDemo } from './node-wiring';
 export { default as widgetButtonDemo } from './widget-button';
 export { default as widgetSliderDemo } from './widget-slider';
 export { default as widgetToggleDemo } from './widget-toggle';
+
+// Complex & Feature Demos
+export { default as systemArchitectureDemo } from './system-architecture';
+export { default as multiAgentWorkflowDemo } from './multi-agent-workflow';
+export { default as performanceDemo } from './performance';
+export { default as codeEditorDemo } from './code-editor';
+export { default as visionAiDemo } from './vision-ai';
+export { default as physicsDemo } from './physics';
