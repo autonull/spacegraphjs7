@@ -51,7 +51,7 @@
     <script type="module">
         import { SpaceGraph } from '../src/index.ts';
 
-        const graph1 = SpaceGraph.create('#container-left', {
+        const graph1 = await SpaceGraph.create('#container-left', {
             nodes: [
                 { id: 'node1', type: 'ShapeNode', label: 'Node 1', position: [-50, 0, 0], data: { shape: 'box', color: 0x44aa88 } },
                 { id: 'node2', type: 'ShapeNode', label: 'Node 2', position: [50, 0, 0], data: { shape: 'box', color: 0x44aa88 } }
@@ -61,7 +61,7 @@
             ]
         });
 
-        const graph2 = SpaceGraph.create('#container-right', {
+        const graph2 = await SpaceGraph.create('#container-right', {
             nodes: [
                 { id: 'node3', type: 'ShapeNode', label: 'Node 3', position: [-50, 0, 0], data: { shape: 'sphere', color: 0xaa4488 } },
                 { id: 'node4', type: 'ShapeNode', label: 'Node 4', position: [50, 0, 0], data: { shape: 'sphere', color: 0xaa4488 } }

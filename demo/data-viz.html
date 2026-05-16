@@ -170,7 +170,7 @@
             { id: 'e5', source: 'chart-line', target: 'chart-pie', type: 'DottedEdge', data: { color: '#94a3b8' } }
         ];
 
-        const sg = SpaceGraph.create('#container', { nodes, edges });
+        const sg = await SpaceGraph.create('#container', { nodes, edges });
 
         sg.render();
         sg.fitView(150);

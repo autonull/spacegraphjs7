@@ -29,7 +29,7 @@ pnpm install spacegraphjs three
 
 ## Examples
 
-Check out the interactive examples in the `examples/` directory or run `pnpm run dev` to see them in action.
+Check out the interactive examples in the `demo/` directory or run `pnpm run dev` to see them in action.
 
 ## Documentation
 
@@ -59,7 +59,7 @@ MIT — See [LICENSE](./LICENSE)
 ```typescript
 import { SpaceGraph } from 'spacegraphjs';
 
-const graph = SpaceGraph.create('#container', {
+const graph = await SpaceGraph.create('#container', {
     nodes: [
         { id: 'a', type: 'ShapeNode', label: 'Node A', position: [0, 0, 0] },
         { id: 'b', type: 'ShapeNode', label: 'Node B', position: [150, 0, 0] },

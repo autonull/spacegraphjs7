@@ -65,28 +65,29 @@ import { SpaceGraph } from 'spacegraphjs';
 
 const container = document.getElementById('container')!;
 
-const graph = SpaceGraph.create(container, {
+// SpaceGraph.create is an async factory that initializes the engine and loads the spec.
+const graph = await SpaceGraph.create(container, {
     nodes: [
         {
             id: 'node-a',
             type: 'ShapeNode',
             label: 'Node A',
             position: [0, 0, 0],
-            data: { color: 0x3366ff },
+            data: { color: '#3366ff' },
         },
         {
             id: 'node-b',
             type: 'ShapeNode',
             label: 'Node B',
             position: [200, 0, 0],
-            data: { color: 0xff6633 },
+            data: { color: '#ff6633' },
         },
         {
             id: 'node-c',
             type: 'ShapeNode',
             label: 'Node C',
             position: [100, 150, 0],
-            data: { color: 0x33ff66 },
+            data: { color: '#33ff66' },
         },
     ],
     edges: [
@@ -111,6 +112,7 @@ const graph = SpaceGraph.create(container, {
     ],
 });
 
+// The graph is ready to render.
 graph.render();
 
 console.log('🚀 SpaceGraph initialized!');
@@ -200,7 +202,7 @@ The vision plugin will analyze your graph on build and report:
 ### Try Different Node Types
 
 ```typescript
-const graph = SpaceGraph.create(container, {
+const graph = await SpaceGraph.create(container, {
     nodes: [
         {
             id: 'html-node',
@@ -208,8 +210,8 @@ const graph = SpaceGraph.create(container, {
             label: 'HTML Content',
             position: [0, 0, 0],
             data: {
-                content:
-                    '<div style="padding: 20px; background: white; border-radius: 8px;"><h3>Hello</h3><p>Rich HTML content</p></div>',
+                html:
+                    '<div style="padding: 20px; background: white; border-radius: 8px; color: black;"><h3>Hello</h3><p>Rich HTML content</p></div>',
             },
         },
         {
@@ -218,7 +220,7 @@ const graph = SpaceGraph.create(container, {
             label: 'Image',
             position: [200, 0, 0],
             data: {
-                src: 'https://picsum.photos/200/150',
+                url: 'https://picsum.photos/200/150',
             },
         },
     ],
@@ -231,11 +233,16 @@ const graph = SpaceGraph.create(container, {
 ```typescript
 import { ForceLayout } from 'spacegraphjs';
 
-const layout = new ForceLayout(graph, {
-    nodeDistance: 150,
+// Get a layout plugin instance
+const layout = new ForceLayout({
+    repulsion: 8000,
     iterations: 100,
 });
 
+// Initialize with the graph context
+layout.init(graph, graph.graph, graph.events);
+
+// Apply the layout
 await layout.apply();
 ```
 

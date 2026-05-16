@@ -1,7 +1,7 @@
 import { SpaceGraph } from '../src/SpaceGraph';
 import type { GraphSpec } from '../src/types';
 
-export type { SpaceGraph };
+export { SpaceGraph };
 
 export async function createDemo(
   spec: GraphSpec,
