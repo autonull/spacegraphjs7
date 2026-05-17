@@ -19,7 +19,7 @@ export class Wire<T = unknown> extends Edge {
             target: target.id,
             data: { color: 0x44aaff, thickness: 2 },
         };
-        super(spec, source, target);
+        super(spec, source as any, target as any);
         this.sourcePort = source;
         this.targetPort = target;
     }

@@ -11,7 +11,7 @@ type NodeLike = {
 };
 
 export class GroupNode extends Node {
-    static readonly typeName = 'GroupNode';
+    static typeName: string = 'GroupNode';
     public readonly isGroupNode = true;
     private _object = new THREE.Object3D();
     get object() {

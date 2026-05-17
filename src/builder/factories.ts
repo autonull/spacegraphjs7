@@ -130,7 +130,7 @@ export const NodeFactory = Object.freeze({
 
     // Utilities
     fromSpec(spec: NodeSpec): NodeBuilder {
-        return new NodeBuilder(spec.id, spec.type).position(spec.position).data(spec.data);
+        return new NodeBuilder(spec.id, spec.type).position(spec.position).data(spec.data as any);
     },
     batch(specs: NodeSpec[]): NodeBuilder[] {
         return specs.map(spec => NodeFactory.fromSpec(spec));
@@ -185,7 +185,7 @@ export const Presets = Object.freeze({
         return new NodeBuilder(id, 'ShapeNode').size(50);
     },
     card(id: string, title?: string): NodeBuilder {
-        return new NodeBuilder(id, 'PanelNode').data({ title, width: 200, height: 150 }).style({ padding: 10 });
+        return new NodeBuilder(id, 'PanelNode').data({ title, width: 200, height: 150 }).style({ padding: '10px' });
     },
     buttonPrimary(id: string, label = 'Click'): NodeBuilder {
         return new NodeBuilder(id, 'ButtonNode').data({ label, variant: 'primary' }).size(120, 40);
@@ -197,7 +197,7 @@ export const Presets = Object.freeze({
         return new NodeBuilder(id, 'HtmlNode').data({ html: `<input placeholder="${placeholder}">`, width: 200, height: 40 });
     },
     label(id: string, text = ''): NodeBuilder {
-        return new NodeBuilder(id, 'NoteNode').data({ text, width: 100, height: 30 }).style({ fontSize: 14 });
+        return new NodeBuilder(id, 'NoteNode').data({ text, width: 100, height: 30 }).style({ fontSize: '14px' });
     },
 });
 
@@ -232,7 +232,7 @@ export const DataUtils = Object.freeze({
 // Batch operations - efficient bulk creation
 export const Batch = Object.freeze({
     createNodes(specs: Array<{ id: string; type?: string; position?: [number, number, number]; data?: Record<string, unknown> }>): NodeBuilder[] {
-        return specs.map(spec => new NodeBuilder(spec.id, spec.type ?? 'ShapeNode').position(spec.position).data(spec.data));
+        return specs.map(spec => new NodeBuilder(spec.id, spec.type ?? 'ShapeNode').position(spec.position).data(spec.data as any));
     },
     createEdges(connections: Array<{ source: string; target: string }>): EdgeSpec[] {
         return connections.map((c, i) => ({ id: `e-${i}`, source: c.source, target: c.target }));

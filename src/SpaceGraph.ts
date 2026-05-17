@@ -20,7 +20,7 @@ import {
     DEFAULT_SYSTEM_PLUGINS,
     createQuickGraphSpec,
 } from './core/defaults';
-import type { GraphSpec, SpaceGraphOptions, SpecUpdate, GraphImportData } from './types';
+import type { GraphSpec, SpaceGraphOptions, SpecUpdate, GraphImportData, NodeSpec, EdgeSpec } from './types';
 import type { Node } from './nodes/Node';
 import type { Edge } from './edges/Edge';
 
@@ -53,6 +53,9 @@ export class SpaceGraph {
         this.container = container;
         this.#init();
         SpaceGraph.instances.add(this);
+        if (typeof window !== 'undefined') {
+            (window as any).SpaceGraph = SpaceGraph;
+        }
     }
 
     #init(): void {
@@ -83,7 +86,7 @@ export class SpaceGraph {
     static async create(
         container: string | HTMLElement,
         spec: GraphSpec,
-        options?: SpaceGraphOptions,
+        options: SpaceGraphOptions = {},
     ): Promise<SpaceGraph> {
         const element = SpaceGraph.getContainerElement(container);
         if (!element) {
@@ -146,7 +149,10 @@ export class SpaceGraph {
         if (!url || typeof url !== 'string') throw new Error(`[SpaceGraph] Invalid URL: "${url}"`);
         if (!container) throw new Error('[SpaceGraph] Container is required');
 
-        const sg = new SpaceGraph(container, options);
+        const element = SpaceGraph.getContainerElement(container);
+        if (!element) throw new Error(`[SpaceGraph] Container not found: "${container}"`);
+
+        const sg = new SpaceGraph(element, options);
         try {
             await sg.init();
             const response = await fetch(url);
@@ -214,7 +220,7 @@ export class SpaceGraph {
 
     #registerDefaults(): void {
         for (const cls of DEFAULT_NODE_TYPES) {
-            this.pluginManager.registerNodeType((cls as any).typeName || cls.name, cls);
+            this.pluginManager.registerNodeType((cls as any).typeName || cls.name, cls as any);
         }
         for (const cls of DEFAULT_EDGE_TYPES) {
             this.pluginManager.registerEdgeType(
@@ -340,10 +346,12 @@ export class SpaceGraph {
         return this.graph.getEdge(id);
     }
     removeNode(id: string): boolean {
-        return this.graph.removeNode(id);
+        this.graph.removeNode(id);
+        return true;
     }
     removeEdge(id: string): boolean {
-        return this.graph.removeEdge(id);
+        this.graph.removeEdge(id);
+        return true;
     }
     clear(): void {
         this.graph.clear();

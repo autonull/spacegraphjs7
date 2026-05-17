@@ -3,7 +3,7 @@
 import type { Node } from '../nodes/Node';
 import type { Edge } from '../edges/Edge';
 import type { NodeSpec, EdgeSpec, Predicate } from '../types';
-import type SpaceGraph from '../SpaceGraph';
+import type { SpaceGraph } from '../SpaceGraph';
 
 type NodePredicate = Predicate<Node>;
 
@@ -22,8 +22,8 @@ export class ErgonomicsAPI {
     findEdges(predicate: (edge: Edge) => boolean): Edge[] { const e = this.sg.graph.findEdge(predicate); return e ? [e] : []; }
     getEdgesForNode(nodeId: string): Edge[] { return this.sg.graph.getEdgesForNode(nodeId); }
 
-    where(key: string, value: unknown): Node[] { return this.sg.graph.query((n) => (n.data as Record<string, unknown>)[key] === value); }
-    has(key: string, value?: unknown): Node[] { return value !== undefined ? this.where(key, value) : this.sg.graph.query((n) => key in n.data); }
+    where(key: string, value: unknown): Node[] { return this.sg.graph.query((n: Node) => (n.data as Record<string, unknown>)[key] === value); }
+    has(key: string, value?: unknown): Node[] { return value !== undefined ? this.where(key, value) : this.sg.graph.query((n: Node) => key in n.data); }
 
     // ============= Graph Topology =============
     adjacent = this.neighbors;
@@ -42,22 +42,22 @@ export class ErgonomicsAPI {
     map<T>(callback: (node: Node) => T): T[] { return this.sg.graph.mapNodes(callback); }
     filter(callback: (node: Node) => boolean): Node[] { return this.sg.graph.query(callback); }
     some(callback: (node: Node) => boolean): boolean { return this.sg.graph.findNode(callback) !== undefined; }
-    every(callback: (node: Node) => boolean): boolean { return this.sg.graph.query((n) => !callback(n)).length === 0; }
-    reduce<T>(callback: (acc: T, node: Node) => T, initial: T): T { let acc = initial; this.sg.graph.forEachNode((n) => acc = callback(acc, n)); return acc; }
+    every(callback: (node: Node) => boolean): boolean { return this.sg.graph.query((n: Node) => !callback(n)).length === 0; }
+    reduce<T>(callback: (acc: T, node: Node) => T, initial: T): T { let acc = initial; this.sg.graph.forEachNode((n: Node) => acc = callback(acc, n)); return acc; }
 
     // ============= Node Manipulation =============
     add(spec: NodeSpec | Node): Node | null { return this.sg.graph.addNode(spec); }
     addNodes(specs: NodeSpec[]): Node[] { return this.sg.graph.addNodes(specs); }
     create(spec: string | NodeSpec): Node | null { return typeof spec === 'string' ? this.sg.graph.addNode({ id: spec, type: 'ShapeNode' }) : this.sg.graph.addNode(spec); }
     remove(id: string): boolean { this.sg.graph.removeNode(id); return true; }
-    removeWhere(predicate: NodePredicate): number { const nodes = this.sg.graph.query(predicate); nodes.forEach((n) => this.sg.graph.removeNode(n.id)); return nodes.length; }
-    updateWhere(predicate: NodePredicate, updates: Partial<NodeSpec>): Node[] { return this.sg.graph.query(predicate).map((n) => this.sg.graph.updateNode(n.id, updates)).filter(Boolean) as Node[]; }
+    removeWhere(predicate: NodePredicate): number { const nodes = this.sg.graph.query(predicate); nodes.forEach((n: Node) => this.sg.graph.removeNode(n.id)); return nodes.length; }
+    updateWhere(predicate: NodePredicate, updates: Partial<NodeSpec>): Node[] { return this.sg.graph.query(predicate).map((n: Node) => this.sg.graph.updateNode(n.id, updates)).filter(Boolean) as Node[]; }
 
     // ============= Edge Manipulation =============
     connect(source: string, target: string, data?: Record<string, unknown>): Edge | null { return this.sg.graph.addEdge({ id: `edge-${source}-${target}`, source, target, data }); }
     connectTo(source: string, to: string | string[], data?: Record<string, unknown>): Edge[] { const arr = Array.isArray(to) ? to : [to]; return arr.map((t) => this.connect(source, t, data)).filter(Boolean) as Edge[]; }
     connectFrom(from: string | string[], target: string, data?: Record<string, unknown>): Edge[] { const arr = Array.isArray(from) ? from : [from]; return arr.map((f) => this.connect(f, target, data)).filter(Boolean) as Edge[]; }
-    disconnect(source: string, target: string): boolean { return this.sg.graph.removeEdge(`edge-${source}-${target}`); }
+    disconnect(source: string, target: string): boolean { this.sg.graph.removeEdge(`edge-${source}-${target}`); return true; }
     addEdges(specs: EdgeSpec[]): Edge[] { return this.sg.graph.addEdges(specs); }
 
     // ============= Traversal =============
@@ -147,14 +147,14 @@ export class ErgonomicsAPI {
     cx(id: string, x: number): Node | null { const n = this.sg.graph.getNode(id); if (!n) return null; n.updatePosition(x, n.position.y, n.position.z); return n; }
     cy(id: string, y: number): Node | null { const n = this.sg.graph.getNode(id); if (!n) return null; n.updatePosition(n.position.x, y, n.position.z); return n; }
     cz(id: string, z: number): Node | null { const n = this.sg.graph.getNode(id); if (!n) return null; n.updatePosition(n.position.x, n.position.y, z); return n; }
-    center(): { x: number; y: number; z: number } { let x = 0, y = 0, z = 0; this.sg.graph.forEachNode((n) => { x += n.position.x; y += n.position.y; z += n.position.z; }); const n = this.sg.graph.nodes.size || 1; return { x: x / n, y: y / n, z: z / n }; }
+    center(): { x: number; y: number; z: number } { let x = 0, y = 0, z = 0; this.sg.graph.forEachNode((n: Node) => { x += n.position.x; y += n.position.y; z += n.position.z; }); const n = this.sg.graph.nodes.size || 1; return { x: x / n, y: y / n, z: z / n }; }
 
     // ============= Selection =============
     select(nodeId: string): this { this.sg.graph.getNode(nodeId)?.focus(); return this; }
     deselect(nodeId: string): this { this.sg.graph.getNode(nodeId)?.blur(); return this; }
-    selectAll(): this { this.sg.graph.forEachNode((n) => n.focus()); return this; }
-    deselectAll(): this { this.sg.graph.forEachNode((n) => n.blur()); return this; }
-    get selected(): Node[] { return this.sg.graph.query((n) => n.focused); }
+    selectAll(): this { this.sg.graph.forEachNode((n: Node) => n.focus()); return this; }
+    deselectAll(): this { this.sg.graph.forEachNode((n: Node) => n.blur()); return this; }
+    get selected(): Node[] { return this.sg.graph.query((n: Node) => n.focused); }
 
     // ============= Aggregates =============
     get count(): number { return this.sg.graph.nodes.size; }

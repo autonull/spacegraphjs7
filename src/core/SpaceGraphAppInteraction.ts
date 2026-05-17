@@ -3,17 +3,17 @@ import type { SpaceGraphApp } from './SpaceGraphApp';
 export function setupInteractionHandlers(app: SpaceGraphApp) {
   app.sg.events.on('interaction:selection', ({ nodes, edges }) => {
     app.clearSelectionStyles();
-    app.currentSelected = nodes || [];
-    app.currentSelectedEdges = edges || [];
+    app.currentSelected = new Set(nodes || []);
+    app.currentSelectedEdges = new Set(edges || []);
     app.applySelectionStyles();
     app.sg.events.emit('selection:changed', {
-      nodes: app.currentSelected,
-      edges: app.currentSelectedEdges,
+      nodes: [...app.currentSelected],
+      edges: [...app.currentSelectedEdges],
       timestamp: Date.now(),
     });
 
-    if (app.options.onNodeSelect) app.options.onNodeSelect(app.currentSelected);
-    if (app.options.onEdgeSelect) app.options.onEdgeSelect(app.currentSelectedEdges);
+    if (app.options.onNodeSelect) app.options.onNodeSelect([...app.currentSelected]);
+    if (app.options.onEdgeSelect) app.options.onEdgeSelect([...app.currentSelectedEdges]);
   });
 
     app.sg.events.on('interaction:edgecreate', ({ source, target }) => {
@@ -32,11 +32,11 @@ export function setupInteractionHandlers(app: SpaceGraphApp) {
 
   app.sg.events.on('graph:click', () => {
     app.clearSelectionStyles();
-    app.currentSelected = [];
-    app.currentSelectedEdges = [];
+    app.currentSelected = new Set();
+    app.currentSelectedEdges = new Set();
     app.sg.events.emit('selection:changed', {
-      nodes: app.currentSelected,
-      edges: app.currentSelectedEdges,
+      nodes: [],
+      edges: [],
       timestamp: Date.now(),
     });
     if (app.options.onNodeSelect) app.options.onNodeSelect([]);
@@ -45,30 +45,30 @@ export function setupInteractionHandlers(app: SpaceGraphApp) {
 
   app.sg.events.on('node:click', ({ node }) => {
     app.clearSelectionStyles();
-    app.currentSelected = [node];
-    app.currentSelectedEdges = [];
+    app.currentSelected = new Set([node]);
+    app.currentSelectedEdges = new Set();
     app.applySelectionStyles();
     app.sg.events.emit('selection:changed', {
-      nodes: app.currentSelected,
-      edges: app.currentSelectedEdges,
+      nodes: [node],
+      edges: [],
       timestamp: Date.now(),
     });
-    if (app.options.onNodeSelect) app.options.onNodeSelect(app.currentSelected);
+    if (app.options.onNodeSelect) app.options.onNodeSelect([node]);
     if (app.options.onEdgeSelect) app.options.onEdgeSelect([]);
   });
 
   app.sg.events.on('edge:click', ({ edge }) => {
     app.clearSelectionStyles();
-    app.currentSelected = [];
-    app.currentSelectedEdges = [edge];
+    app.currentSelected = new Set();
+    app.currentSelectedEdges = new Set([edge]);
     app.applySelectionStyles();
     app.sg.events.emit('selection:changed', {
-      nodes: app.currentSelected,
-      edges: app.currentSelectedEdges,
+      nodes: [],
+      edges: [edge],
       timestamp: Date.now(),
     });
     if (app.options.onNodeSelect) app.options.onNodeSelect([]);
-    if (app.options.onEdgeSelect) app.options.onEdgeSelect(app.currentSelectedEdges);
+    if (app.options.onEdgeSelect) app.options.onEdgeSelect([edge]);
   });
 
     app.sg.events.on('node:dblclick', ({ node }) => {
@@ -153,29 +153,20 @@ export function setupHotkeys(app: SpaceGraphApp) {
         if (e.key === 'Escape') {
             app.hideModal();
             app.hud.hideContextMenu();
-            app.clearSelectionStyles();
-            (app as any).currentSelected = [];
-            (app as any).currentSelectedEdges = [];
+            app.clearSelection();
             app.setMode('default');
-            app.sg.events.emit('selection:changed', {
-                nodes: (app as any).currentSelected,
-                edges: (app as any).currentSelectedEdges,
-                timestamp: Date.now(),
-            });
-            if (app.options.onNodeSelect) app.options.onNodeSelect([]);
-            if (app.options.onEdgeSelect) app.options.onEdgeSelect([]);
         }
 
         if (
             (e.key === 'Delete' || e.key === 'Backspace') &&
-            ((app as any).currentSelected.length > 0 ||
-                (app as any).currentSelectedEdges.length > 0)
+            (app.currentSelected.size > 0 ||
+                app.currentSelectedEdges.size > 0)
         ) {
             if (!(app.options.hotkeys && app.options.hotkeys[e.key])) {
-                for (const edge of [...(app as any).currentSelectedEdges]) {
+                for (const edge of [...app.currentSelectedEdges]) {
                     app.removeEdge(edge.id);
                 }
-                for (const node of [...(app as any).currentSelected]) {
+                for (const node of [...app.currentSelected]) {
                     app.removeNode(node.id);
                 }
             }

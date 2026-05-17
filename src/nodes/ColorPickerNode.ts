@@ -86,7 +86,8 @@ export class ColorPickerNode extends HtmlNode {
         return this.colorInput?.value ?? '#4ecdc4';
     }
 
-    setColor(color: string): void {
+    setColor(color: string): this {
         this._onColorChange(color);
+        return this;
     }
 }

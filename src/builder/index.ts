@@ -22,7 +22,8 @@ export {
 } from './factories';
 
 // Re-export types for convenience
-export type { NodeSpec, EdgeSpec, GraphSpec } from '../types';
+import type { NodeSpec, EdgeSpec, GraphSpec } from '../types';
+export type { NodeSpec, EdgeSpec, GraphSpec };
 
 // ============= Convenience Shortcuts =============
 // Quick node spec creators - lightweight spec objects for fast graph construction

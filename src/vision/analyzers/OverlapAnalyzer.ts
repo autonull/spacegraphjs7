@@ -39,6 +39,7 @@ export class OverlapAnalyzer {
 
     // Find all overlaps
     const overlapPairs = spatialIndex.findAllOverlaps();
+    console.log(`[OverlapAnalyzer] Found ${overlapPairs.length} potential overlap pairs from spatial index.`);
     
     // Refine overlaps with precise bounds checking
     const checked = new Set<string>();
@@ -50,6 +51,7 @@ export class OverlapAnalyzer {
       checked.add(key);
 
       const penetration = this.computePenetration(nodeA, nodeB);
+      console.log(`[OverlapAnalyzer] Checking ${nodeA.id} vs ${nodeB.id}: penetration=${penetration}`);
       if (penetration > 0) {
         acc.push({ nodeA: nodeA.id, nodeB: nodeB.id, penetration });
       }

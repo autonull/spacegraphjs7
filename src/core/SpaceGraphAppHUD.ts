@@ -413,7 +413,7 @@ export function updateStatsHUD(app: SpaceGraphApp) {
   const countEl = document.getElementById('sg-app-selected-count');
   if (countEl) {
     countEl.textContent = (
-      app.currentSelected.length + app.currentSelectedEdges.length
+      app.currentSelected.size + app.currentSelectedEdges.size
     ).toString();
   }
 

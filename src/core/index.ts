@@ -61,13 +61,4 @@ export {
 } from './defaults';
 
 // Type exports - types are co-located with values in constants.ts
-export type {
-    AnimationDuration,
-    ZoomConfig,
-    FingeringPriority,
-    InteractionThresholds,
-    Performance,
-    Defaults,
-    EdgeColors,
-    WCAG,
-} from './constants';
+// (Duplicate identifiers removed as they are already exported as values)

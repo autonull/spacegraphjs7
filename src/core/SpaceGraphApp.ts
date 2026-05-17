@@ -1,5 +1,6 @@
 import { SpaceGraph } from '../SpaceGraph';
 import type { GraphSpec, Node, Edge } from '../types';
+import { calculateFitView } from '../utils';
 import { HUDPlugin } from '../plugins/HUDPlugin';
 import { InteractionPlugin } from '../plugins/InteractionPlugin';
 import { MinimapPlugin } from '../plugins/MinimapPlugin';
@@ -59,13 +60,13 @@ export class SpaceGraphApp {
   public readonly sg: SpaceGraph;
   public readonly options: SpaceGraphAppOptions;
   public hud!: HUDPlugin;
-  public currentSelected: Node[] = [];
-  public currentSelectedEdges: Edge[] = [];
+  public currentSelected = new Set<Node>();
+  public currentSelectedEdges = new Set<Edge>();
   private originalColors = new Map<Node, number>();
   private originalEdgeColors = new Map<Edge, number>();
   public buttons: AppButtonConfig[] = [];
   public toolbarActions: AppButtonConfig[] = [];
-  private _zoomSliderHandler?: () => void;
+  public _zoomSliderHandler?: () => void;
 
     private _emitSelectionChanged(): void {
         this.sg.events.emit('selection:changed', {

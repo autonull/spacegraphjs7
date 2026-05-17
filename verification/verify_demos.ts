@@ -55,24 +55,22 @@ async function main() {
             console.log(`Verifying demo: ${demo}`);
             await page.goto(`http://localhost:${PORT}/${demo}`);
 
-            // Wait based on whether the demo is expected to create a canvas
-            if (demo.includes('?demo=') || (demo !== 'index.html' && !demo.startsWith('../examples/'))) {
-                // Let the module load and create the canvas
-                await page.waitForFunction(() => !!document.querySelector('canvas'), {
-                    timeout: 10000,
+            // Wait for stability based on demo type
+            if (demo.startsWith('index.html')) {
+                // Index/Gallery mode: wait for the initial demo to finish loading via our custom flag
+                await page.waitForFunction(() => (window as any).__DEMO_READY === true, {
+                    timeout: 20000,
                 });
-                await page.waitForTimeout(2000); // Give the graph 2 seconds to stabilize its layout
-            } else if (demo.startsWith('../examples/')) {
-                // Examples are loaded using an iframe or different structure if index.html isn't the root container
-                // but let's wait a bit and just assert rendering based on file name or generic delay.
-                // Assuming Examples just load a canvas.
-                await page.waitForTimeout(3000);
+                await page.waitForTimeout(1000);
             } else {
-                // Index is just an HTML page with links, wait for it to render
-                await page.waitForFunction(() => !!document.querySelector('#demo-select'), {
+                // Standalone demos: wait for canvas
+                await page.waitForFunction(() => {
+                    const canvas = document.querySelector('canvas');
+                    return canvas && canvas.width > 0 && canvas.height > 0;
+                }, {
                     timeout: 15000,
                 });
-                await page.waitForTimeout(2000); // Give it time to load
+                await page.waitForTimeout(2000);
             }
 
             const name = demo.replace('index.html?demo=', 'gallery-').split('/').pop().replace('.html', '');

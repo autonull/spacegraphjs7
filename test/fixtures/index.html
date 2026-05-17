@@ -62,8 +62,9 @@
                     n1.data.pinned = true;
                     n2.data.pinned = true;
                     // Place them physically overlapping in Frustum bounds
+                    // ShapeNodes have default size, so 1.0 unit separation is definitely an overlap
                     n1.updatePosition(0, 0, 0);
-                    n2.updatePosition(5, 5, 0);
+                    n2.updatePosition(1, 1, 0);
                 }
             }, 500);
 

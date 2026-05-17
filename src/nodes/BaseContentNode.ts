@@ -18,6 +18,7 @@ export interface BaseContentNodeConfig {
 }
 
 export abstract class BaseContentNode extends DOMNode {
+    static typeName: string = 'BaseContentNode';
     constructor(sg: SpaceGraph, spec: NodeSpec, config: BaseContentNodeConfig) {
         const {
             tag = 'div',

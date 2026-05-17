@@ -10,7 +10,7 @@ export class AnimatedEdge extends Edge {
     private particle: THREE.Mesh;
     private progress = 0;
     private speed = 0.01;
-    private reverse = false;
+    private isReversed = false;
 
     constructor(sg: SpaceGraph, spec: EdgeSpec, source: Node, target: Node) {
         super(sg, spec, source, target);
@@ -23,7 +23,7 @@ export class AnimatedEdge extends Edge {
             particleColor?: number;
         };
         this.speed = data?.speed ?? 0.01;
-        this.reverse = data?.reverse ?? false;
+        this.isReversed = data?.reverse ?? false;
 
         if (this.object.material instanceof THREE.LineBasicMaterial) {
             this.object.material.color.setHex(data?.color ?? 0x444444);
@@ -39,7 +39,7 @@ export class AnimatedEdge extends Edge {
         this.particle = new THREE.Mesh(particleGeom, particleMat);
         this.object.add(this.particle);
 
-        this.progress = this.reverse ? 1 : 0;
+        this.progress = this.isReversed ? 1 : 0;
     }
 
     updateSpec(updates: Partial<EdgeSpec>): this {
@@ -53,7 +53,7 @@ export class AnimatedEdge extends Edge {
                 particleSize?: number;
             };
             if (data.speed !== undefined) this.speed = data.speed;
-            if (data.reverse !== undefined) this.reverse = data.reverse;
+            if (data.reverse !== undefined) this.isReversed = data.reverse;
 
             if (data.particleColor) {
                 (this.particle.material as THREE.MeshBasicMaterial).color.setHex(
@@ -72,7 +72,7 @@ export class AnimatedEdge extends Edge {
         super.update();
         if (!this.particle) return;
 
-        this.progress += this.reverse ? -this.speed : this.speed;
+        this.progress += this.isReversed ? -this.speed : this.speed;
 
         if (this.progress > 1) this.progress = 0;
         if (this.progress < 0) this.progress = 1;

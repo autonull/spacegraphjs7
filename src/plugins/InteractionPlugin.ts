@@ -325,14 +325,14 @@ this.sg.cameraControls.flyTo(node.position, radius);
             case 'z':
                 if (e.ctrlKey || e.metaKey) {
                     e.preventDefault();
-                     (this.sg.events as any).emit('history:undo' as keyof import('../../core/events/EventSystem').SpaceGraphEvents, {});
+                     (this.sg.events as any).emit('history:undo' as any, {});
                 }
                 break;
 
             case 'y':
                 if (e.ctrlKey || e.metaKey) {
                     e.preventDefault();
-                     (this.sg.events as any).emit('history:redo' as keyof import('../../core/events/EventSystem').SpaceGraphEvents, {});
+                     (this.sg.events as any).emit('history:redo' as any, {});
                 }
                 break;
 
