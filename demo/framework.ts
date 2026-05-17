@@ -15,6 +15,7 @@ export async function createDemo(
     console.error("Could not find container 'app' or 'container'");
   }
   const sg = await SpaceGraph.create(container!, spec);
+  (window as any)._sg = sg;
   return sg;
 }
 

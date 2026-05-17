@@ -325,14 +325,14 @@ this.sg.cameraControls.flyTo(node.position, radius);
             case 'z':
                 if (e.ctrlKey || e.metaKey) {
                     e.preventDefault();
-                    this.sg.events.emit('history:undo' as keyof import('../../core/events/EventSystem').SpaceGraphEvents, {});
+                     (this.sg.events as any).emit('history:undo' as keyof import('../../core/events/EventSystem').SpaceGraphEvents, {});
                 }
                 break;
 
             case 'y':
                 if (e.ctrlKey || e.metaKey) {
                     e.preventDefault();
-                    this.sg.events.emit('history:redo' as keyof import('../../core/events/EventSystem').SpaceGraphEvents, {});
+                     (this.sg.events as any).emit('history:redo' as keyof import('../../core/events/EventSystem').SpaceGraphEvents, {});
                 }
                 break;
 
@@ -364,14 +364,14 @@ this.sg.cameraControls.flyTo(node.position, radius);
 
         const edgeResult = this.raycaster.raycastEdge();
         if (edgeResult?.edge) {
-            this.sg.events.emit('edge:dblclick', { edge: edgeResult.edge } as any);
+             (this.sg.events as any).emit('edge:dblclick', { edge: edgeResult.edge } as any);
             this.handleZoomNavigation(edgeResult.edge.target, `edge:${edgeResult.edge.id}`);
             return;
         }
 
         const nodeResult = this.raycaster.raycastNode();
         if (nodeResult?.node) {
-            this.sg.events.emit('node:dblclick', { node: nodeResult.node } as any);
+             (this.sg.events as any).emit('node:dblclick', { node: nodeResult.node } as any);
             this.handleZoomNavigation(nodeResult.node, nodeResult.node.id);
         }
     }
@@ -386,7 +386,7 @@ this.sg.cameraControls.flyTo(node.position, radius);
 
         const edgeResult = this.raycaster.raycastEdge();
         if (edgeResult?.edge) {
-            this.sg.events.emit('edge:contextmenu', {
+             (this.sg.events as any).emit('edge:contextmenu', {
                 edge: edgeResult.edge,
                 event: e.originalEvent,
             });
@@ -395,12 +395,12 @@ this.sg.cameraControls.flyTo(node.position, radius);
 
         const nodeResult = this.raycaster.raycastNode();
         if (nodeResult?.node) {
-            this.sg.events.emit('node:contextmenu', {
+             (this.sg.events as any).emit('node:contextmenu', {
                 node: nodeResult.node,
                 event: e.originalEvent,
             });
         } else {
-            this.sg.events.emit('graph:contextmenu', { event: e.originalEvent });
+             (this.sg.events as any).emit('graph:contextmenu', { event: e.originalEvent });
         }
     }
 
@@ -424,7 +424,7 @@ this.sg.cameraControls.flyTo(node.position, radius);
 
         const controls = this.sg.cameraControls;
         if (this.lastZoomedId === zoomId && controls.hasZoomHistory) {
-            controls.flyBack();
+             (controls as any).flyBack();
             this.lastZoomedId = null;
         } else {
             controls.zoomTo(targetPos, targetRadius);
@@ -446,9 +446,9 @@ this.sg.cameraControls.flyTo(node.position, radius);
             const sourceSpec = sourceNode.toJSON();
             sourceSpec.id = `${sourceSpec.id}_copy_${Date.now()}`;
             sourceSpec.position = [
-                (sourceSpec.position[0] ?? 0) + 20,
-                (sourceSpec.position[1] ?? 0) + 20,
-                sourceSpec.position[2] ?? 0,
+                ((sourceSpec.position![0]) ?? 0) + 20,
+                ((sourceSpec.position![1]) ?? 0) + 20,
+                (sourceSpec.position![2]) ?? 0,
             ];
             const newNode = this.sg.graph.addNode(sourceSpec);
             if (newNode) {

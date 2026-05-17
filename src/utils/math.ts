@@ -431,7 +431,7 @@ export const ifElse = <T>(condition: boolean, whenTrue: T, whenFalse: T): T =>
     condition ? whenTrue : whenFalse;
 
 // Switch-like pattern
-export const match = <T, R>(value: T) => (cases: Partial<Record<T, R>> | Record<string, R>, defaultCase: R): R =>
+export const match = <T extends string | number | symbol, R>(value: T) => (cases: any, defaultCase: R): R =>
     (value in cases ? cases[value] : defaultCase);
 
 // ============= Easing Functions =============

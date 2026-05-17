@@ -268,7 +268,7 @@ const h = (data.height as number) ?? (this.data.height as number) ?? DEFAULT_SIZ
 this.setSize(w, h);
 }
 
-    setSize(width: number, height: number, scaleContent = false): void {
+    setSize(width: number, height: number, depth?: number): this {
         const oldSize = { ...this.size };
         const oldArea = oldSize.width * oldSize.height;
 

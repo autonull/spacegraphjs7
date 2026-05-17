@@ -86,13 +86,34 @@ export class SpaceGraph {
         options?: SpaceGraphOptions,
     ): Promise<SpaceGraph> {
         const element = SpaceGraph.getContainerElement(container);
-        if (!element) throw new Error(`[SpaceGraph] Container not found: "${container}"`);
-        if (!SpaceGraph.checkWebGL()) logger.warn('WebGL not supported');
+        if (!element) {
+            const error = new Error(`[SpaceGraph] Container not found: "${container}". Please ensure the element exists in the DOM before calling SpaceGraph.create().`);
+            logger.error(error.message);
+            throw error;
+        }
 
-        const sg = new SpaceGraph(element, options);
-        await sg.init();
-        sg.loadSpec(spec).render();
-        return sg;
+        if (!SpaceGraph.checkWebGL()) {
+            logger.warn('WebGL is not supported by your browser or hardware. Some features may not work as expected.');
+        }
+
+        try {
+            const sg = new SpaceGraph(element, options);
+            await sg.init();
+
+            if (!spec || (!spec.nodes && !spec.edges)) {
+                logger.warn('[SpaceGraph] Loading an empty graph specification.');
+            }
+
+            sg.loadSpec(spec).render();
+            return sg;
+        } catch (err) {
+            const wrapped = wrapError(err, {
+                namespace: 'SpaceGraph',
+                operation: 'Initialization',
+                reason: 'Initialization failed during SpaceGraph.create()',
+            }, logger);
+            throw wrapped;
+        }
     }
 
     static async load(

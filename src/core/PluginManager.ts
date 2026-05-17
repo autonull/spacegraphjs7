@@ -84,23 +84,30 @@ export class PluginManager {
 
     async initAll(): Promise<void> {
         const errors: Error[] = [];
+        const initPromises: Promise<void>[] = [];
+
         for (const [name, plugin] of this.plugins) {
-            try {
-                await plugin.init(this.sg, this.sg.graph, this.sg.events);
-            } catch (err) {
-                const wrapped = wrapError(err, {
-                    namespace: 'SpaceGraph',
-                    operation: 'Plugin Initialization',
-                    reason: `Failed to initialize plugin "${name}"`,
-                });
-                logger.error(`${wrapped.message}: ${err instanceof Error ? err.stack : String(err)}`);
-                errors.push(wrapped);
-            }
+            const promise = (async () => {
+                try {
+                    await plugin.init(this.sg, this.sg.graph, this.sg.events);
+                } catch (err) {
+                    const wrapped = wrapError(err, {
+                        namespace: 'SpaceGraph',
+                        operation: 'Plugin Initialization',
+                        reason: `Failed to initialize plugin "${name}" (v${plugin.version}). Check if dependencies are met or configuration is valid.`,
+                    });
+                    logger.error(`${wrapped.message}: ${err instanceof Error ? err.stack : String(err)}`);
+                    errors.push(wrapped);
+                }
+            })();
+            initPromises.push(promise);
         }
+
+        await Promise.all(initPromises);
+
         if (errors.length > 0) {
-            const err = new Error(
-                `[SpaceGraph] PluginManager initAll fails with ${errors.length} error(s).`,
-            ) as Error & { errors: Error[] };
+            const errorMessage = `[SpaceGraph] PluginManager failed to initialize ${errors.length} plugin(s): ${errors.map(e => e.message).join('; ')}`;
+            const err = new Error(errorMessage) as Error & { errors: Error[] };
             err.errors = errors;
             throw err;
         }

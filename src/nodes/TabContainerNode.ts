@@ -9,7 +9,7 @@ export interface TabInfo {
     closable?: boolean;
 }
 
-export class TabContainerNode extends HtmlNode {
+export class TabContainerNode extends (HtmlNode as any) {
     static readonly typeName = 'TabContainerNode';
     private tabs: TabInfo[] = [];
     private activeTabId: string = '';
@@ -92,12 +92,12 @@ export class TabContainerNode extends HtmlNode {
     }
 
     private _showActiveTab(): void {
-        if (this.contentWrapper) {
-            this.contentWrapper.innerHTML = '';
+        if (((this as any).contentWrapper)) {
+            ((this as any).contentWrapper).innerHTML = '';
             
             const contentEl = this.tabContentMap.get(this.activeTabId);
             if (contentEl) {
-                this.contentWrapper.appendChild(contentEl);
+                ((this as any).contentWrapper).appendChild(contentEl);
             }
         }
 

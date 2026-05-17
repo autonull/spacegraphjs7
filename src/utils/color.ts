@@ -326,7 +326,7 @@ export function parseColor(color: string | number): number {
     if (color.startsWith('#')) return parseInt(color.slice(1), 16);
     if (color.startsWith('rgb')) {
         const match = color.match(/\d+/g);
-        if (match?.length >= 3) return (parseInt(match[0]) << 16) | (parseInt(match[1]) << 8) | parseInt(match[2]);
+        if ((match?.length ?? 0) >= 3) return (parseInt(match![0]) << 16) | (parseInt(match![1]) << 8) | parseInt(match![2]);
     }
     const named = NAMED_COLORS[color.toLowerCase()];
     return named ? parseInt(named.slice(1), 16) : 0;

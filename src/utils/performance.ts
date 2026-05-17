@@ -90,7 +90,7 @@ export function requestIdleCallbackPolyfill(callback: (deadline: { didTimeout: b
   
   // Fallback for environments without requestIdleCallback
   const start = Date.now();
-  return window.setTimeout(() => {
+  return ((window as any).setTimeout)(() => {
     callback({
       didTimeout: false,
       timeRemaining: () => Math.max(0, 50 - (Date.now() - start)),
@@ -105,7 +105,7 @@ export function cancelIdleCallbackPolyfill(handle: number): void {
   if (typeof window !== 'undefined' && 'cancelIdleCallback' in window) {
     window.cancelIdleCallback(handle);
   } else {
-    window.clearTimeout(handle);
+    ((window as any).clearTimeout)(handle);
   }
 }
 

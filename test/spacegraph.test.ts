@@ -261,7 +261,7 @@ describe('Node base class', () => {
     });
 
     it('creates a node with correct id and position', () => {
-        const n = new Node(sg, { id: 'n1', type: 'Node', position: [1, 2, 3] });
+        const n = new (Node as any)(sg, { id: 'n1', type: 'Node', position: [1, 2, 3] });
         expect(n.id).toBe('n1');
         expect(n.position.toArray()).toEqual([1, 2, 3]);
     });
@@ -273,7 +273,7 @@ describe('Node base class', () => {
     });
 
     it('updateSpec patches label and merges data', () => {
-        const n = new Node(sg, { id: 'n1', type: 'Node', label: 'old', data: { x: 1 } });
+        const n = new (Node as any)(sg, { id: 'n1', type: 'Node', label: 'old', data: { x: 1 } });
         n.updateSpec({ label: 'new', data: { y: 2 } });
         expect(n.label).toBe('new');
         expect(n.data.x).toBe(1);
@@ -806,9 +806,9 @@ describe('GridLayout', () => {
     it('places correct number of nodes per row', async () => {
         const layout = new GridLayout();
         layout.init(sg, sg.graph, sg.events);
-        (layout.config as any).columns = 3;
-        (layout.config as any).spacingX = 100;
-        (layout.config as any).spacingY = 100;
+        (((layout as any).config) as any).columns = 3;
+        (((layout as any).config) as any).spacingX = 100;
+        (((layout as any).config) as any).spacingY = 100;
         await layout.apply();
         const positions = [...sg.graph.nodes.values()].map((n: any) => n.position.x);
         expect(positions[0]).toBe(0);
@@ -820,8 +820,8 @@ describe('GridLayout', () => {
     it('row 1 is below row 0 (negative Y)', async () => {
         const layout = new GridLayout();
         layout.init(sg, sg.graph, sg.events);
-        (layout.config as any).columns = 2;
-        (layout.config as any).spacingY = 150;
+        (((layout as any).config) as any).columns = 2;
+        (((layout as any).config) as any).spacingY = 150;
         await layout.apply();
         const nodes = [...sg.graph.nodes.values()];
         expect(nodes[2].position.y).toBeLessThan(nodes[0].position.y);
@@ -841,8 +841,8 @@ describe('CircularLayout', () => {
     it('places all nodes at the target radius', async () => {
         const layout = new CircularLayout();
         layout.init(sg, sg.graph, sg.events);
-        (layout.config as any).radiusX = 200;
-        (layout.config as any).radiusY = 200;
+        (((layout as any).config) as any).radiusX = 200;
+        (((layout as any).config) as any).radiusY = 200;
         await layout.apply();
         for (const n of sg.graph.nodes.values()) {
             const r = Math.sqrt(n.position.x ** 2 + n.position.y ** 2);
@@ -867,8 +867,8 @@ describe('HierarchicalLayout', () => {
     it('root has higher Y than children (top-down)', async () => {
         const layout = new HierarchicalLayout();
         layout.init(sg, sg.graph, sg.events);
-        (layout.config as any).rootId = 'A';
-        (layout.config as any).levelHeight = 150;
+        (((layout as any).config) as any).rootId = 'A';
+        (((layout as any).config) as any).levelHeight = 150;
         await layout.apply();
         const yA = sg.graph.nodes.get('A').position.y;
         const yB = sg.graph.nodes.get('B').position.y;
@@ -880,7 +880,7 @@ describe('HierarchicalLayout', () => {
     it('works with bottom-up direction', async () => {
         const layout = new HierarchicalLayout();
         layout.init(sg, sg.graph, sg.events);
-        (layout.config as any).direction = 'bottom-up';
+        (((layout as any).config) as any).direction = 'bottom-up';
         await expect(layout.apply()).resolves.not.toThrow();
     });
 });
@@ -901,7 +901,7 @@ describe('RadialLayout', () => {
     it('places root at origin', async () => {
         const layout = new RadialLayout();
         layout.init(sg, sg.graph, sg.events);
-        (layout.config as any).rootId = 'root';
+        (((layout as any).config) as any).rootId = 'root';
         await layout.apply();
         const root = sg.graph.nodes.get('root');
         expect(root.position.x).toBe(0);
@@ -911,7 +911,7 @@ describe('RadialLayout', () => {
     it('places children at baseRadius distance', async () => {
         const layout = new RadialLayout();
         layout.init(sg, sg.graph, sg.events);
-        (layout.config as any).baseRadius = 300;
+        (((layout as any).config) as any).baseRadius = 300;
         await layout.apply();
         const c1 = sg.graph.nodes.get('c1');
         const r = Math.sqrt(c1.position.x ** 2 + c1.position.y ** 2);
@@ -934,7 +934,7 @@ describe('PhysicsPlugin', () => {
     it('does not move nodes when disabled', () => {
         const plugin = new PhysicsPlugin();
         plugin.settings.enabled = false;
-        plugin.init(sg);
+        plugin.init(sg, sg.graph, sg.events);
         const before = sg.graph.nodes.get('p1').position.y;
         plugin.onPreRender(1 / 60);
         expect(sg.graph.nodes.get('p1').position.y).toBe(before);
@@ -945,7 +945,7 @@ describe('PhysicsPlugin', () => {
         plugin.settings.enabled = true;
         plugin.settings.gravity = -100;
         plugin.settings.groundY = -10000;
-        plugin.init(sg);
+        plugin.init(sg, sg.graph, sg.events);
         const before = sg.graph.nodes.get('p1').position.y;
         for (let i = 0; i < 10; i++) plugin.onPreRender(1 / 60);
         expect(sg.graph.nodes.get('p1').position.y).toBeLessThan(before);
@@ -953,7 +953,7 @@ describe('PhysicsPlugin', () => {
 
     it('pin/unpin do not throw', () => {
         const plugin = new PhysicsPlugin();
-        plugin.init(sg);
+        plugin.init(sg, sg.graph, sg.events);
         expect(() => {
             plugin.pin('p1');
             plugin.unpin('p1');
@@ -968,12 +968,12 @@ describe('ErgonomicsPlugin', () => {
     });
 
     it('initialises without throwing', () => {
-        expect(() => new ErgonomicsPlugin().init(sg)).not.toThrow();
+        expect(() => new ErgonomicsPlugin().init(sg, sg.graph, sg.events)).not.toThrow();
     });
 
     it('updateConfig merges only changed settings', () => {
         const p = new ErgonomicsPlugin();
-        p.init(sg);
+        p.init(sg, sg.graph, sg.events);
         p.updateConfig({ panSpeed: 2.5 });
         expect(p.config.panSpeed).toBe(2.5);
         expect(p.config.dampingFactor).toBe(0.12);
@@ -981,7 +981,7 @@ describe('ErgonomicsPlugin', () => {
 
     it('increments totalInteractions on node:drag event', () => {
         const p = new ErgonomicsPlugin();
-        p.init(sg);
+        p.init(sg, sg.graph, sg.events);
 
         const node = sg.graph.addNode({ id: 'test1', type: 'ShapeNode', position: [0, 0, 0] });
 
@@ -1002,7 +1002,7 @@ describe('ErgonomicsPlugin', () => {
 
     it('getMetrics returns a copy', () => {
         const p = new ErgonomicsPlugin();
-        p.init(sg);
+        p.init(sg, sg.graph, sg.events);
         const m1 = p.getMetrics();
 
         const node = sg.graph.addNode({ id: 'test2', type: 'ShapeNode', position: [0, 0, 0] });
@@ -1361,7 +1361,7 @@ describe('PhysicsPlugin', () => {
     beforeEach(() => {
         sg = makeSpaceGraph();
         physics = new PhysicsPlugin();
-        physics.init(sg);
+        physics.init(sg, sg.graph, sg.events);
         physics.settings.enabled = true;
         physics.settings.gravity = 0; // Turn off gravity for isolated test
         sg.pluginManager.register('PhysicsPlugin', physics);
@@ -1413,7 +1413,7 @@ describe('ErgonomicsPlugin', () => {
     beforeEach(() => {
         sg = makeSpaceGraph();
         ergo = new ErgonomicsPlugin();
-        ergo.init(sg);
+        ergo.init(sg, sg.graph, sg.events);
         sg.pluginManager.register('ErgonomicsPlugin', ergo);
 
         vi.useFakeTimers();
@@ -1606,9 +1606,9 @@ describe('Layout Engines', () => {
     it('GridLayout correctly places nodes in a mathematical grid', async () => {
         const layout = new GridLayout();
         layout.init(sg, sg.graph, sg.events);
-        (layout.config as any).spacingX = 100;
-        (layout.config as any).spacingY = 50;
-        (layout.config as any).columns = 2;
+        (((layout as any).config) as any).spacingX = 100;
+        (((layout as any).config) as any).spacingY = 50;
+        (((layout as any).config) as any).columns = 2;
 
         const n0 = sg.graph.addNode({ id: 'n0', type: 'ShapeNode', position: [0, 0, 0] });
         const n1 = sg.graph.addNode({ id: 'n1', type: 'ShapeNode', position: [0, 0, 0] });
@@ -1637,8 +1637,8 @@ describe('Layout Engines', () => {
     it('CircularLayout evenly distributes nodes in an ellipse', async () => {
         const layout = new CircularLayout();
         layout.init(sg, sg.graph, sg.events);
-        (layout.config as any).radiusX = 100;
-        (layout.config as any).radiusY = 200;
+        (((layout as any).config) as any).radiusX = 100;
+        (((layout as any).config) as any).radiusY = 200;
 
         const n0 = sg.graph.addNode({ id: 'nc0', type: 'ShapeNode', position: [0, 0, 0] });
         const n1 = sg.graph.addNode({ id: 'nc1', type: 'ShapeNode', position: [0, 0, 0] });
@@ -1667,8 +1667,8 @@ describe('Layout Engines', () => {
     it('HierarchicalLayout calculates tree depth using BFS', async () => {
         const layout = new HierarchicalLayout();
         layout.init(sg, sg.graph, sg.events);
-        (layout.config as any).levelHeight = 100;
-        (layout.config as any).nodeSpacing = 50;
+        (((layout as any).config) as any).levelHeight = 100;
+        (((layout as any).config) as any).nodeSpacing = 50;
 
         // Root
         const r = sg.graph.addNode({ id: 'root', type: 'ShapeNode', position: [0, 0, 0] });

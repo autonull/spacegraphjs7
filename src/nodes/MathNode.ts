@@ -25,7 +25,7 @@ async function loadKatex() {
     return katexPromise;
 }
 
-export class MathNode extends BaseContentNode {
+export class MathNode extends (BaseContentNode as any) {
     static readonly typeName = 'MathNode';
     private mathContent: string = '\\int_0^\\infty e^{-x^2} dx = \\frac{\\sqrt{\\pi}}{2}';
 

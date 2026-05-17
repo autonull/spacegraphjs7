@@ -8,7 +8,7 @@ export interface MeterThreshold {
     color: string;
 }
 
-export class MeterNode extends HtmlNode {
+export class MeterNode extends (HtmlNode as any) {
     static readonly typeName = 'MeterNode';
     private valueDisplay: HTMLElement | null = null;
     private sparklineCanvas: HTMLCanvasElement | null = null;

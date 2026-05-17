@@ -77,7 +77,7 @@ export class MermaidPlugin extends BaseSystemPlugin {
     this.enableSubgraphs = options.enableSubgraphs ?? true;
   }
 
-  init(sg: SpaceGraph, graph: Graph, events: EventSystem): void {
+  init(sg: SpaceGraph, graph: Graph, events: any): void {
     super.init(sg, graph, events);
     this.initializeLayouts();
     if (this.options.showHud !== false) {

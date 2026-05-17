@@ -27,7 +27,7 @@ const PORT_COLORS: Record<PortType, number> = {
     any: 0xb2bec3,
 };
 
-export class PortNode<T = unknown> extends ShapeNode {
+export class PortNode<T = unknown> extends (ShapeNode as any) {
     static readonly typeName = 'PortNode';
     private connections: Wire<T>[] = [];
     private onReceive: ((wire: Wire<T>, data: T) => void) | null = null;
@@ -51,8 +51,8 @@ export class PortNode<T = unknown> extends ShapeNode {
 
     private _updateAppearance(): void {
         const color = PORT_COLORS[this.portType];
-        if (this.material) {
-            this.material.color.setHex(color);
+        if (((this as any).material)) {
+            ((this as any).material).color.setHex(color);
         }
     }
 

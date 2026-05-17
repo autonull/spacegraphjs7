@@ -3,7 +3,7 @@ import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec, SpaceGraphNodeData } from '../types';
 import { DOMUtils } from '../utils/DOMUtils';
 
-export class ScrollPanelNode extends HtmlNode {
+export class ScrollPanelNode extends (HtmlNode as any) {
     static readonly typeName = 'ScrollPanelNode';
     private scrollContent: HTMLElement | null = null;
 

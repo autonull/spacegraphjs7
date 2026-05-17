@@ -13,7 +13,7 @@ export interface GridModel<T> {
     getColCount(): number;
 }
 
-export class VirtualGridNode<T = unknown> extends GroupNode {
+export class VirtualGridNode<T = unknown> extends (GroupNode as any) {
     static readonly typeName = 'VirtualGridNode';
     model!: GridModel<T>;
     cellRenderer!: (x: number, y: number, value: T) => NodeSpec;

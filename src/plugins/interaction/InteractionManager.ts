@@ -157,7 +157,7 @@ export class InteractionManager {
     // ============= Utility =============
     getFocusableNodes(): Focusable[] {
         return [...this.sg.graph.nodes.values()]
-            .filter((n): n is Focusable => 'focusable' in n && (n as Focusable).focusable);
+            .filter((n: any): n is Focusable => 'focusable' in n && (n as Focusable).focusable);
     }
 
     getHovered(): Node | Edge | null {

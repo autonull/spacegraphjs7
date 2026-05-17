@@ -108,7 +108,7 @@ export const HUD_POSITIONS = {
 
 // Helper to get position styles with optional offset
 export const getHUDPosition = (position: HUDPositionKey, offsetX = 0, offsetY = 0) => {
-    const base = HUD_POSITIONS[position];
+    const base: any = HUD_POSITIONS[position];
     return { ...base, left: offsetX ? `calc(${base.left} + ${offsetX}px)` : base.left, top: offsetY ? `calc(${base.top} + ${offsetY}px)` : base.top };
 };
 
