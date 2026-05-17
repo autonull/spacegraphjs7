@@ -7,7 +7,7 @@ import type { NodeSpec } from '../types';
 
 import * as THREE from 'three';
 
-export class PanelNode extends HtmlNode {
+export class PanelNode extends (HtmlNode as any) {
     static readonly typeName = 'PanelNode';
     fixed = false;
     billboard = true;

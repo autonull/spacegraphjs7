@@ -79,7 +79,7 @@ export class HoverMetaWidget implements Plugin {
         this.overlay.appendChild(this.buttonContainer);
     }
 
-    init(sg: SpaceGraph, _graph: Graph, _events: EventSystem): void {
+    init(sg: SpaceGraph, _graph: Graph, _events: any): void {
         this.sg = sg;
         document.body.appendChild(this.overlay);
 

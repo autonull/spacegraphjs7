@@ -97,7 +97,7 @@ export abstract class Node extends Surface {
             containsPoint(p: THREE.Vector3) {
                 return box.containsPoint(p);
             },
-            intersectsRay(ray: THREE.Ray) {
+            intersectsRay(ray: any) {
                 return ray.intersectsBox(box);
             },
         };
@@ -252,7 +252,7 @@ export abstract class Node extends Surface {
     }
 
     setHighlight(highlight = true): this {
-        this.controlState = highlight ? 'highlight' : 'normal';
+         (this as any).controlState = highlight ? 'highlight' : 'normal';
         return this;
     }
 
@@ -276,7 +276,7 @@ export abstract class Node extends Surface {
             gsap.to(this.position, {
                 x: target.x, y: target.y, z: target.z,
                 duration, ease: 'power2.out',
-                onUpdate: () => this.object?.position.copy(this.position),
+                onUpdate: () => { this.object?.position.copy(this.position); },
             });
         } else {
             this.position.copy(target);
@@ -462,7 +462,7 @@ animate(props: AnimationProps): this {
         this.rotation.x += x;
         this.rotation.y += y;
         this.rotation.z += z;
-        this.object.rotation.copy(this.rotation);
+        this.object.rotation.copy(this.rotation as any);
         return this;
     }
 

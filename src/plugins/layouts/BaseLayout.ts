@@ -69,7 +69,7 @@ export interface LayoutComposerConfig {
 
 export class LayoutComposer {
     private graph!: Graph;
-    private events!: EventSystem;
+    private events!: any;
 
     init(sg: SpaceGraph, graph: Graph, events: EventSystem): void {
         this.graph = graph;
@@ -114,7 +114,7 @@ export abstract class BaseLayout implements Plugin {
     abstract readonly version: string;
 
     protected graph!: Graph;
-    protected events!: EventSystem;
+    protected events!: any;
     protected config: LayoutConfig = {};
 
     constructor(config: LayoutConfig = {}) {
@@ -123,7 +123,7 @@ export abstract class BaseLayout implements Plugin {
 
     protected abstract defaultConfig(): LayoutConfig;
 
-    init(_sg: SpaceGraph, graph: Graph, events: EventSystem): void {
+    init(_sg: SpaceGraph, graph: Graph, events: any): void {
         this.graph = graph;
         this.events = events;
     }

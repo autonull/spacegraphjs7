@@ -7,7 +7,7 @@ import { createLogger } from '../utils/logger';
 
 const logger = createLogger('MarkdownNode');
 
-export class MarkdownNode extends BaseContentNode {
+export class MarkdownNode extends (BaseContentNode as any) {
     static readonly typeName = 'MarkdownNode';
     private _ro?: ResizeObserver;
 
@@ -49,13 +49,13 @@ export class MarkdownNode extends BaseContentNode {
         const contentDiv = DOMUtils.createElement('div');
         this.domElement.appendChild(contentDiv);
 
-        contentDiv.innerHTML = 'Loading markdown...';
+         (contentDiv as any).innerHTML = 'Loading markdown...';
         import('marked')
             .then(({ marked }) => {
-                contentDiv.innerHTML = marked.parse(md as string) as string;
+                 (contentDiv as any).innerHTML = marked.parse(md as string) as string;
             })
             .catch((err) => {
-                contentDiv.innerHTML = 'Failed to load markdown renderer';
+                 (contentDiv as any).innerHTML = 'Failed to load markdown renderer';
                 logger.error('Failed to load marked:', err);
             });
 
@@ -99,12 +99,12 @@ export class MarkdownNode extends BaseContentNode {
         if (updates.data?.markdown !== undefined || updates.label !== undefined) {
             const md = (updates.data?.markdown as string) ?? updates.label ?? '';
             const contentDiv = Array.from(this.domElement.children).find(
-                (el) => el.tagName.toLowerCase() === 'div',
+                 (el: any) => el.tagName.toLowerCase() === "div",
             );
             if (contentDiv) {
                 import('marked')
                     .then(({ marked }) => {
-                        contentDiv.innerHTML = marked.parse(md as string) as string;
+                         (contentDiv as any).innerHTML = marked.parse(md as string) as string;
 
                         // Always trigger geometry update after markdown content changes
                         // This ensures the backing geometry is updated whether or not ResizeObserver is available
@@ -117,7 +117,7 @@ export class MarkdownNode extends BaseContentNode {
                         }, 50);
                     })
                     .catch((err) => {
-                        contentDiv.innerHTML = 'Failed to load markdown renderer';
+                         (contentDiv as any).innerHTML = 'Failed to load markdown renderer';
                         logger.error('Failed to load marked:', err);
                     });
             }

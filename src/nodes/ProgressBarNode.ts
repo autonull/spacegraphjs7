@@ -3,7 +3,7 @@ import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec, SpaceGraphNodeData } from '../types';
 import { DOMUtils } from '../utils/DOMUtils';
 
-export class ProgressBarNode extends HtmlNode {
+export class ProgressBarNode extends (HtmlNode as any) {
     static readonly typeName = 'ProgressBarNode';
     private progressBar: HTMLElement | null = null;
     private progressFill: HTMLElement | null = null;

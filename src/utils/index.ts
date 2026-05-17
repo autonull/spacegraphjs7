@@ -94,7 +94,7 @@ export type { LogLevel, Logger } from './logger';
 
 // Camera utilities
 export { calculateFitView } from './CameraUtils';
-export type { FitViewResult, Point } from './CameraUtils';
+export type { FitViewResult } from './CameraUtils';
 
 // DOM utilities
 export { createElement, createElementNS, DOMUtils } from './DOMUtils';

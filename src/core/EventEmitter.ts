@@ -6,7 +6,7 @@ export interface Disposable {
     dispose(): void;
 }
 
-export class EventEmitter<T extends Record<string, unknown>> {
+export class EventEmitter<T extends Record<string, any> = any> {
     private handlers = new Map<keyof T, Set<(event: any) => void>>();
     private batched = new Map<keyof T, any[]>();
     private batchId: number | ReturnType<typeof setTimeout> | null = null;

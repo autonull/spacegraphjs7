@@ -26,14 +26,14 @@
     "scripts": {
         "dev": "pnpm dlx vite --host",
         "dev:demo": "pnpm dlx vite --config vite.demo.config.ts --port 5173",
-        "build": "vite build",
-        "build:lib": "vite build",
-        "build:demo": "vite build",
+        "build": "pnpm run build:lib && pnpm run build:demo",
+        "build:lib": "vite build --config vite.lib.config.ts",
+        "build:demo": "vite build --config vite.demo.config.ts",
         "prepublishOnly": "pnpm run clean && pnpm run build && pnpm run test",
         "clean": "rm -rf dist/ dist-demo/",
         "verify": "tsx verification/verify_demos.ts",
         "test": "vitest run",
-        "test:vision": "mkdir -p test/fixtures/dist && cp -r dist/* test/fixtures/dist/ && playwright test test/vision.spec.ts",
+        "test:vision": "mkdir -p test/fixtures/dist && cp -r dist/* test/fixtures/dist/ && cp -r public/*.onnx test/fixtures/dist/ && playwright test test/vision.spec.ts",
         "vision": "pnpm run test:vision",
         "lint": "eslint 'src/**/*.{ts,js}' --ignore-pattern 'dist'",
         "format": "prettier --write .",
@@ -88,6 +88,7 @@
         "typescript": "^5.3.2",
         "typescript-eslint": "^8.56.1",
         "vite": "^5.0.0",
+        "vite-plugin-dts": "^5.0.0",
         "vitest": "^4.0.18"
     },
     "workspaces": [

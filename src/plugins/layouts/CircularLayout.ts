@@ -10,7 +10,7 @@ export class CircularLayout extends BaseLayout {
         return { radiusX: 300, radiusY: 300, startAngle: 0, z: 0, animate: true, duration: 1.0 };
     }
 
-    apply(options?: LayoutOptions): void {
+    async apply(options?: LayoutOptions): Promise<void> {
         const { radiusX = 300, radiusY = 300, startAngle = 0, z = 0, animate = true, duration = 1.0, skipPinned = true } = { ...this.config, ...options } as any;
         const nodes = Array.from(this.graph.getNodes()).filter(n => !skipPinned || !n.data.pinned);
         if (!nodes.length) return;

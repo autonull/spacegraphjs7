@@ -256,7 +256,7 @@ export class ErgonomicsPlugin extends BaseSystemPlugin {
                     const winner = scoreA >= scoreB ? configA : configB;
 
                     this.updateConfig({ ...baselineConfig, ...winner });
-                    this.sg.events.emit(
+                     (this.sg.events as any).emit(
                         'ergonomics:calibrated' as keyof import('../core/events/EventSystem').SpaceGraphEvents,
                         { winner, scores },
                     );
