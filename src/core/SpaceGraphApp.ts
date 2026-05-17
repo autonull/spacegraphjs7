@@ -126,7 +126,7 @@ export class SpaceGraphApp {
             app.sg.pluginManager.register('MinimapPlugin', new MinimapPlugin());
         }
 
-        app.sg.pluginManager.initAll();
+        await app.sg.pluginManager.initAll();
         addGrid(app);
         setupDefaultHUD(app, theme);
 

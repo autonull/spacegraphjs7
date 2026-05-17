@@ -128,6 +128,10 @@ export abstract class BaseLayout implements Plugin {
         this.events = events;
     }
 
+    get settings(): LayoutConfig {
+        return this.config;
+    }
+
     abstract apply(options?: LayoutOptions): Promise<void>;
 
     /**

@@ -63,16 +63,33 @@ export class Graph extends EventEmitter<GraphEventMap> {
 
         if (this.edges.has(edgeSpec.id)) return this.updateEdge(edgeSpec.id, edgeSpec);
 
-        const source = this.nodes.get(edgeSpec.source);
-        const target = this.nodes.get(edgeSpec.target);
+        let source = this.nodes.get(edgeSpec.source);
+        let target = this.nodes.get(edgeSpec.target);
+
+        // Try to resolve nodes across all instances if not found locally
+        if (!source || !target) {
+            for (const instance of (this.sg.constructor as typeof import('../SpaceGraph').SpaceGraph)
+                .instances) {
+                if (!source) source = instance.graph.nodes.get(edgeSpec.source);
+                if (!target) target = instance.graph.nodes.get(edgeSpec.target);
+                if (source && target) break;
+            }
+        }
+
         if (!source || !target) {
             logger.warn('Edge "%s" rejected: missing source or target node.', edgeSpec.id);
             return null;
         }
 
-        const EdgeType = TypeRegistry.getInstance().getEdgeConstructor(edgeSpec.type ?? 'Edge');
+        // Use InterGraphEdge if source and target are in different graphs
+        let type = edgeSpec.type ?? 'Edge';
+        if (source.sg !== target.sg) {
+            type = 'InterGraphEdge';
+        }
+
+        const EdgeType = TypeRegistry.getInstance().getEdgeConstructor(type);
         if (!EdgeType) {
-            logger.warn('Edge type "%s" not registered.', edgeSpec.type);
+            logger.warn('Edge type "%s" not registered.', type);
             return null;
         }
 
