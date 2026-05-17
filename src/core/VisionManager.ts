@@ -32,8 +32,12 @@ export class VisionManager {
         this.visionSystem = new VisionSystem(sg.options?.vision);
     }
 
+    private _modelsLoadedOverride: boolean | null = null;
     public get modelsLoaded(): boolean {
-        return this.modelLoader.isLoaded;
+        return this._modelsLoadedOverride ?? this.modelLoader.isLoaded;
+    }
+    public set modelsLoaded(value: boolean) {
+        this._modelsLoadedOverride = value;
     }
 
     public get strategy(): string {

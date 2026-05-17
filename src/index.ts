@@ -41,14 +41,10 @@ export * from './utils';
 
 // Vision module exports
 export { VisionSystem, HeuristicsStrategy } from './vision';
-export {
-  type VisionStrategy,
-  type VisionReport,
-  type VisionOptions,
-  type VisionBenchmark,
-  type VisionCategory,
-  type VisionScore,
-  type VisionIssue,
+export type {
+  VisionStrategy,
+  VisionBenchmark,
+  VisionIssue,
 } from './vision/types';
 
 // Rendering exports
@@ -146,12 +142,11 @@ export { withPooledVector3, withPooledVector2, withPooledMatrix4, withPooledBox3
 export type {
   Plugin, NodeConstructor, EdgeConstructor,
   LogLevel, Logger,
-  InputEvent, InputEventType, InputAction, InputBinding, InputContext, InputState,
   GeometryFamily as GeometryFamilyType,
   VisionCategory, VisionOptions, VisionReport, VisionScore,
   SpaceGraphOptions, RenderOptions, GraphSpec, NodeSpec, EdgeSpec,
   SpecUpdate, GraphExport, GraphImportData, HitResult,
-  LabelLodLevel, Rect, GridModel, DeepPartial,
+  LabelLodLevel, Rect, DeepPartial,
   Maybe, MaybePromise, Predicate, EventHandler, Disposer,
   Point2D, Point3D, Bounds3D,
   NodeCallback, EdgeCallback, IdCallback, AsyncCallback,
@@ -162,7 +157,8 @@ export type {
 export type { WidgetNodeData } from './nodes/WidgetNode';
 
 // Convenience factory functions
-export const createSpaceGraph = (options?: import('./types').SpaceGraphOptions) => new SpaceGraph(options);
+import { SpaceGraph } from './SpaceGraph';
+export const createSpaceGraph = (container: HTMLElement, options?: import('./types').SpaceGraphOptions) => new SpaceGraph(container, options);
 export const createGraph = import('./builder').then(m => m.graph);
 
 // Shorthand factories for quick graph creation

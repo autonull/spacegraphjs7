@@ -35,7 +35,7 @@ export class EventEmitter<T extends Record<string, any> = any> {
     }
 
     emit<K extends keyof T>(event: K, data: T[K]): void {
-        this.invokeHandlers(this.handlers.get(event) ?? [], data);
+        this.invokeHandlers(this.handlers.get(event) ?? new Set(), data);
     }
 
     emitBatched<K extends keyof T>(event: K, data: T[K]): void {
@@ -53,13 +53,16 @@ export class EventEmitter<T extends Record<string, any> = any> {
     private flushBatch(): void {
         this.batchId = null;
         for (const [event, arr] of this.batched) {
-            for (const data of arr) this.invokeHandlers(this.handlers.get(event) ?? [], data);
+            const handlers = this.handlers.get(event);
+            if (handlers) {
+                for (const data of arr) this.invokeHandlers(handlers, data);
+            }
         }
         this.batched.clear();
     }
 
     emitWithTimestamp<K extends keyof T>(event: K, data: T[K] & { timestamp?: number }): void {
-        this.invokeHandlers(this.handlers.get(event) ?? [], { ...data, timestamp: Date.now() });
+        this.invokeHandlers(this.handlers.get(event) ?? new Set(), { ...data, timestamp: Date.now() });
     }
 
     removeAllListeners(): void {

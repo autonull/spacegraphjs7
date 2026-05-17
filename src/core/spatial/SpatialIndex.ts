@@ -20,6 +20,7 @@ export class SpatialIndex {
     constructor(cellSize = 100) {
         if (cellSize <= 0) throw new Error('cellSize must be positive');
         this.cellSize = cellSize;
+        console.log(`[SpatialIndex] Initialized with cellSize=${this.cellSize}`);
     }
 
     private getGridCoords(position: THREE.Vector3): { x: number; y: number; z: number } {
@@ -54,7 +55,9 @@ export class SpatialIndex {
 
     private insertNode(node: NodeLike, box: THREE.Box3): void {
         if (node.object) {
+            node.object.updateMatrixWorld(true);
             box.setFromObject(node.object);
+            console.log(`[SpatialIndex] Inserting node ${node.id} with bounds: min=(${box.min.x},${box.min.y},${box.min.z}), max=(${box.max.x},${box.max.y},${box.max.z})`);
             this.nodeBounds.set(node, box.clone());
             const minX = Math.floor(box.min.x / this.cellSize);
             const maxX = Math.floor(box.max.x / this.cellSize);
@@ -62,6 +65,7 @@ export class SpatialIndex {
             const maxY = Math.floor(box.max.y / this.cellSize);
             const minZ = Math.floor(box.min.z / this.cellSize);
             const maxZ = Math.floor(box.max.z / this.cellSize);
+            console.log(`[SpatialIndex] Node ${node.id} cell range: X=[${minX},${maxX}], Y=[${minY},${maxY}], Z=[${minZ},${maxZ}]`);
             const cells = new Set<string>();
             for (let x = minX; x <= maxX; x++) {
                 for (let y = minY; y <= maxY; y++) {
@@ -76,8 +80,14 @@ export class SpatialIndex {
         } else {
             const { x, y, z } = this.getGridCoords(node.position);
             const key = this.getCellKey(x, y, z);
+
+            // For nodes without objects, create a small representative box
+            const pointBox = new THREE.Box3().setFromCenterAndSize(node.position, new THREE.Vector3(1, 1, 1));
+            this.nodeBounds.set(node, pointBox);
+
             this.nodeCells.set(node, new Set([key]));
             this.getOrCreateCell(x, y, z).nodes.add(node);
+            console.log(`[SpatialIndex] Inserting point-node ${node.id} at cell ${key}`);
         }
     }
 
@@ -155,6 +165,7 @@ export class SpatialIndex {
                 for (let j = i + 1; j < nodes.length; j++) {
                     const a = nodes[i],
                         b = nodes[j];
+                    if (a.id === b.id) continue;
                     const key = a.id < b.id ? `${a.id}-${b.id}` : `${b.id}-${a.id}`;
                     if (checked.has(key)) continue;
                     checked.add(key);

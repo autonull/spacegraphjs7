@@ -74,7 +74,7 @@ export class PortNode<T = unknown> extends (ShapeNode as any) {
         this._updateAppearance();
     }
 
-    canConnectTo(target: PortNode<unknown>): boolean {
+    canConnectTo(target: PortNode<any>): boolean {
         if (this.portDirection === target.getPortDirection()) {
             return false;
         }

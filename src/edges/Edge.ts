@@ -21,7 +21,7 @@ export const DEFAULT_EDGE_DATA: EdgeData = Object.freeze({
 });
 
 export class Edge extends Surface {
-    static readonly typeName = 'Edge';
+    static typeName: string = 'Edge';
     static HIGHLIGHT_COLOR = EdgeColors.HIGHLIGHT;
     static DEFAULT_OPACITY = 0.8;
     static HIGHLIGHT_OPACITY = 1.0;
@@ -420,6 +420,16 @@ export class Edge extends Surface {
     activityDecay(now: number, window: number = 2000): number {
         const dt = now - this.lastActivityTime;
         return dt > 0 ? 1 / (1 + dt / window) : 0;
+    }
+
+    toJSON(): EdgeSpec {
+        return {
+            id: this.id,
+            source: this.source.id,
+            target: this.target.id,
+            type: this.type,
+            data: { ...this.data },
+        };
     }
 
     dispose(): void {

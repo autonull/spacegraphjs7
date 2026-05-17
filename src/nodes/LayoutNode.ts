@@ -132,7 +132,7 @@ for (const [i, child] of children.entries()) {
 };
 
 export class LayoutNode extends (GroupNode as any) {
-    static readonly typeName = 'LayoutNode';
+    static typeName: string = 'LayoutNode';
     private strategy: LayoutStrategy;
     private params: Record<string, unknown>;
 
@@ -155,7 +155,7 @@ export class LayoutNode extends (GroupNode as any) {
 
     onPreRender(_dt: number): void {
         super.onPreRender(_dt);
-        const childNodes = this.children.filter((c): c is Node => (c as any).isNode === true);
+        const childNodes = this.children.filter((c: any): c is Node => (c as any).isNode === true);
          (this as any).strategy(childNodes, this, this.params);
     }
 }

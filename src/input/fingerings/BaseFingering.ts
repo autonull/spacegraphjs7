@@ -1,4 +1,4 @@
-import type * as THREE from 'three';
+import * as THREE from 'three';
 import type { SpaceGraph } from '../../SpaceGraph';
 import type { InteractionRaycaster } from '../../plugins/interaction/RaycasterHelper';
 import type { Finger, Fingering } from '../Fingering';
@@ -130,11 +130,11 @@ export abstract class BaseFingering implements Fingering {
         this.sg.events.emit(event, data);
     }
 
-    protected raycastNodes(): ReturnType<InteractionRaycaster['raycastNodes']> {
-        return this.raycaster.raycastNodes();
+    protected raycastNode(): ReturnType<InteractionRaycaster['raycastNode']> {
+        return this.raycaster.raycastNode();
     }
 
-    protected raycastEdges(): ReturnType<InteractionRaycaster['raycastEdges']> {
-        return this.raycaster.raycastEdges();
+    protected raycastEdge(): ReturnType<InteractionRaycaster['raycastEdge']> {
+        return this.raycaster.raycastEdge();
     }
 }

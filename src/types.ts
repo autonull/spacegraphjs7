@@ -2,6 +2,8 @@
 import type { Node } from './nodes/Node';
 import type { Edge } from './edges/Edge';
 import type { SpaceGraph } from './SpaceGraph';
+
+export type { Node, Edge, SpaceGraph };
 import type { Vector3, Raycaster } from 'three';
 
 // ============= Utility Types =============

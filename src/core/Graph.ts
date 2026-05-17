@@ -1,4 +1,4 @@
-import type { NodeSpec, EdgeSpec, GraphSpec } from '../types';
+import type { NodeSpec, EdgeSpec, GraphSpec, NodeData } from '../types';
 import type { Node } from '../nodes/Node';
 import type { Edge } from '../edges/Edge';
 import type { SpaceGraph } from '../SpaceGraph';
@@ -145,11 +145,11 @@ export class Graph extends EventEmitter<GraphEventMap> {
 
         this.sg?.renderer.scene.remove(node.object);
         this.nodes.delete(id);
-        this.emitWithTimestamp('node:removed', { id });
+        this.emitWithTimestamp('node:removed', { id, timestamp: Date.now() });
 
         for (const [edgeId, edge] of this.edges) {
             if (edge.source.id === id || edge.target.id === id) {
-                this.emitWithTimestamp('edge:removed', { id: edgeId });
+                this.emitWithTimestamp('edge:removed', { id: edgeId, timestamp: Date.now() });
                 edge.dispose?.();
                 this.edges.delete(edgeId);
             }
@@ -163,7 +163,7 @@ export class Graph extends EventEmitter<GraphEventMap> {
 
         this.sg?.renderer.scene.remove(edge.line);
         this.edges.delete(id);
-        this.emitWithTimestamp('edge:removed', { id });
+        this.emitWithTimestamp('edge:removed', { id, timestamp: Date.now() });
         edge.dispose?.();
     }
 
@@ -219,7 +219,7 @@ get isEmpty(): boolean {
         return this.query(node => node.type === type);
     }
     queryByLabel(label: string, exact = true): Node[] {
-        return this.query(exact ? node => node.label === label : node => node.label?.includes(label));
+        return this.query(exact ? node => node.label === label : node => !!node.label?.includes(label));
     }
     queryByData(predicate: (data: Record<string, unknown>) => boolean): Node[] {
         return this.query(node => predicate(node.data));
@@ -615,7 +615,7 @@ get isEmpty(): boolean {
         this.nodes.set(id, node);
         this.sg?.renderer.scene.add(node.object);
         node.start();
-        this.emitWithTimestamp('node:added', { node });
+        this.emitWithTimestamp('node:added', { node, timestamp: Date.now() });
         return node;
     }
 
@@ -623,7 +623,7 @@ get isEmpty(): boolean {
         this.edges.set(id, edge);
         this.sg?.renderer.scene.add(edge.line);
         edge.start();
-        this.emitWithTimestamp('edge:added', { edge });
+        this.emitWithTimestamp('edge:added', { edge, timestamp: Date.now() });
         return edge;
     }
 }

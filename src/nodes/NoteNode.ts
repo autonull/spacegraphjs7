@@ -14,8 +14,8 @@ import { BaseContentNode } from './BaseContentNode';
  *   height     : pixel height (default 160)
  *   editable   : boolean — whether text is directly editable (default true)
  */
-export class NoteNode extends (BaseContentNode as any) {
-    static readonly typeName = 'NoteNode';
+export class NoteNode extends BaseContentNode {
+    static typeName: string = 'NoteNode';
     constructor(sg: SpaceGraph, spec: NodeSpec) {
         const color = (spec.data?.color ?? '#fef08a') as string;
 

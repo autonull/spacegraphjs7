@@ -10,8 +10,12 @@ export class NodeBuilder extends BaseBuilder<NodeSpec> {
     label(label: string): this { this.spec.label = label; return this; }
     text(label: string): this { return this.label(label); }
     title(label: string): this { return this.label(label); }
-    position(x: number, y: number, z = 0): this {
-        this.spec.position = [x, y, z];
+    position(x: number | [number, number, number] | undefined, y?: number, z = 0): this {
+        if (Array.isArray(x)) {
+            this.spec.position = x;
+        } else if (typeof x === 'number' && typeof y === 'number') {
+            this.spec.position = [x, y, z];
+        }
         return this;
     }
     rotation(x: number, y: number, z = 0): this {
@@ -23,7 +27,14 @@ export class NodeBuilder extends BaseBuilder<NodeSpec> {
         return this;
     }
 
-    size(size: number): this { this.mergeData({ size }); return this; }
+    size(size: number, height?: number): this {
+        if (typeof height === 'number') {
+            this.mergeData({ width: size, height });
+        } else {
+            this.mergeData({ size });
+        }
+        return this;
+    }
     width(w: number): this { this.mergeData({ width: w }); return this; }
     height(h: number): this { this.mergeData({ height: h }); return this; }
     depth(d: number): this { this.mergeData({ depth: d }); return this; }

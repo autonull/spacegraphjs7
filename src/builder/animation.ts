@@ -22,7 +22,7 @@ export const Animate = {
                 z: to.z ?? node.position.z,
                 duration: duration / 1000,
                 ease: 'power2.inOut',
-                onUpdate: () => node.updatePosition(node.position.x, node.position.y, node.position.z),
+                onUpdate: () => { node.updatePosition(node.position.x, node.position.y, node.position.z); },
                 onComplete: resolve,
             });
         });

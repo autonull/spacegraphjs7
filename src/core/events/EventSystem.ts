@@ -1,5 +1,6 @@
 // events/EventSystem.ts - Event types re-export for backwards compatibility
 import { EventEmitter, type Disposable } from '../EventEmitter';
+export type { SpaceGraphEvents } from '../../types';
 
 export type { Disposable };
 

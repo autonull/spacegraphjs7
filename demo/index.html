@@ -96,6 +96,7 @@
                 const demo = demoList.find(d => d.name === name);
                 if (!demo) return;
 
+                window.__DEMO_READY = false;
                 title.textContent = demo.name;
 
                 document.getElementById('app').innerHTML = '';
@@ -108,6 +109,12 @@
                 }
 
                 currentDemo = await demo.create();
+
+                // Allow a brief moment for the first frame to render
+                setTimeout(() => {
+                    window.__DEMO_READY = true;
+                    console.log(`Demo "${name}" is ready.`);
+                }, 500);
             }
 
             select.addEventListener('change', (e) => {
@@ -128,6 +135,8 @@
             const initialDemo = params.get('demo') || demoList[0].name;
             select.value = initialDemo;
             loadDemo(initialDemo);
+
+            window.SpaceGraph = SpaceGraph;
 
             // Vision health indicator loop
             const indicator = document.getElementById('health-indicator');

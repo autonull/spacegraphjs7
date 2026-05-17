@@ -7,7 +7,7 @@ import { createQuickControls, type QuickControlButton } from './QuickControls';
 import { BaseContentNode } from './BaseContentNode';
 
 export class HtmlNode extends BaseContentNode {
-    static readonly typeName = 'HtmlNode';
+    static typeName: string = 'HtmlNode';
     public readonly isHtmlNode = true;
 public static MIN_SIZE = { width: 80, height: 40 };
 public static DEFAULT_SIZE = { width: 200, height: 100 };
@@ -268,7 +268,7 @@ const h = (data.height as number) ?? (this.data.height as number) ?? DEFAULT_SIZ
 this.setSize(w, h);
 }
 
-    setSize(width: number, height: number, depth?: number): this {
+    setSize(width: number, height: number, scaleContent: boolean | number = true): this {
         const oldSize = { ...this.size };
         const oldArea = oldSize.width * oldSize.height;
 
@@ -280,12 +280,13 @@ this.setSize(w, h);
 
         this.updateBackingGeometry(this.size.width, this.size.height);
 
-        if (scaleContent && oldArea > 0) {
+        if (scaleContent === true && oldArea > 0) {
             const scaleFactor = Math.sqrt((this.size.width * this.size.height) / oldArea);
             this.setContentScale(((this.data?.contentScale as number) ?? 1.0) * scaleFactor);
         }
 
         this.data = { ...this.data, width: this.size.width, height: this.size.height };
+        return this;
     }
 
     setContentScale(scale: number): void {

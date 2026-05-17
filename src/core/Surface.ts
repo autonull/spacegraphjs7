@@ -81,6 +81,15 @@ export abstract class Surface extends EventEmitter<SurfaceEventMap> {
         return null;
     }
 
+    findAncestor(predicate: (s: Surface) => boolean): Surface | null {
+        let current: Surface | undefined = this;
+        while (current) {
+            if (predicate(current)) return current;
+            current = current.parent;
+        }
+        return null;
+    }
+
     ancestors(): Surface[] {
         const result: Surface[] = [];
         let current: Surface | undefined = this.parent;
