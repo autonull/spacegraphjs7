@@ -34,6 +34,7 @@ export abstract class Node extends Surface {
   public controlState: ControlState = 'normal';
   public focusable = false;
   public focused = false;
+  public readonly isNode = true;
   abstract readonly object: THREE.Object3D;
   callbacks?: {
     onPointerEnter?: (node: Node) => void;
@@ -366,19 +367,19 @@ animate(props: AnimationProps): this {
     }
 
     lookAt(target: THREE.Vector3 | Node): this {
-        const targetPos = target instanceof Node ? target.position : target;
+        const targetPos = (target && 'position' in target) ? (target as any).position : target;
         this.object.lookAt(targetPos);
         return this;
     }
 
     getDistanceTo(other: Node | THREE.Vector3): number {
-        const otherPos = other instanceof Node ? other.position : other;
+        const otherPos = (other && 'position' in other) ? (other as any).position : other;
         return this.position.distanceTo(otherPos);
     }
 
     getAngleTo(other: Node | THREE.Vector3): number {
-        const otherPos = other instanceof Node ? other.position : other;
-        const dir = otherPos.clone().sub(this.position);
+        const otherPos = (other && 'position' in other) ? (other as any).position : other;
+        const dir = (otherPos as THREE.Vector3).clone().sub(this.position);
         return Math.atan2(dir.y, dir.x);
     }
 
@@ -464,6 +465,14 @@ animate(props: AnimationProps): this {
         this.object.rotation.copy(this.rotation);
         return this;
     }
+
+  getWorldPosition(target: THREE.Vector3): THREE.Vector3 {
+    if (this.object) {
+      this.object.updateMatrixWorld();
+      return this.object.getWorldPosition(target);
+    }
+    return target.copy(this.position);
+  }
 
     setFixed(fixed = true): this {
         this.data.fixed = fixed;

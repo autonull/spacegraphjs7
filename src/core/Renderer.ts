@@ -103,6 +103,13 @@ export class Renderer {
         this.renderer.setSize(w, h);
         this.cssRenderer.setSize(w, h);
         this.renderContext?.updateViewport({ width: w, height: h });
+
+        const resolution = new THREE.Vector2(w, h);
+        for (const edge of this.sg.graph.edges.values()) {
+            if (edge.line?.material && (edge.line.material as any).isLineMaterial) {
+                (edge.line.material as any).resolution.copy(resolution);
+            }
+        }
     }
 
     scheduleRender(): void {

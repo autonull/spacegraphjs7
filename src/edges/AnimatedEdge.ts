@@ -77,9 +77,15 @@ export class AnimatedEdge extends Edge {
         if (this.progress > 1) this.progress = 0;
         if (this.progress < 0) this.progress = 1;
 
+        const sourcePos = new THREE.Vector3();
+        const targetPos = new THREE.Vector3();
+        this.source.getWorldPosition(sourcePos);
+        this.target.getWorldPosition(targetPos);
+
+        // Particle is a child of the edge line, which is in world space
         this.particle.position.lerpVectors(
-            this.source.position,
-            this.target.position,
+            sourcePos,
+            targetPos,
             this.progress,
         );
     }

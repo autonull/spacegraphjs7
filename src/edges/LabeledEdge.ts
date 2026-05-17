@@ -59,10 +59,16 @@ export class LabeledEdge extends Edge {
     }
 
     private _positionLabel() {
-        if (!this.source?.position || !this.target?.position) return;
+        if (!this.source || !this.target) return;
+        const sourcePos = new THREE.Vector3();
+        const targetPos = new THREE.Vector3();
+        this.source.getWorldPosition(sourcePos);
+        this.target.getWorldPosition(targetPos);
+
         const mid = new THREE.Vector3()
-            .addVectors(this.source.position, this.target.position)
+            .addVectors(sourcePos, targetPos)
             .multiplyScalar(0.5);
+        // labelObject is child of this.object, which is in world space
         this.labelObject.position.copy(mid).sub(this.object.position);
     }
 
@@ -79,8 +85,13 @@ export class LabeledEdge extends Edge {
         const camera = this.sg?.renderer?.camera;
         if (!camera) return;
 
+        const sourcePos = new THREE.Vector3();
+        const targetPos = new THREE.Vector3();
+        this.source.getWorldPosition(sourcePos);
+        this.target.getWorldPosition(targetPos);
+
         const midPoint = new THREE.Vector3()
-            .addVectors(this.source.position, this.target.position)
+            .addVectors(sourcePos, targetPos)
             .multiplyScalar(0.5);
         const distanceToCamera = midPoint.distanceTo(camera.position);
 

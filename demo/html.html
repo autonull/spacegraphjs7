@@ -12,11 +12,58 @@
             }
             body {
                 overflow: hidden;
-                background-color: #1a1a2e;
+                background-color: #050510;
+                font-family: system-ui, -apple-system, sans-serif;
             }
             #container {
                 width: 100vw;
                 height: 100vh;
+            }
+
+            /* Glassmorphism Classes */
+            .glass {
+                background: rgba(255, 255, 255, 0.05) !important;
+                backdrop-filter: blur(12px) !important;
+                border: 1px solid rgba(255, 255, 255, 0.1) !important;
+                border-radius: 16px !important;
+                color: white !important;
+            }
+
+            .glass-header {
+                background: rgba(255, 255, 255, 0.1);
+                padding: 10px 15px;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                font-weight: bold;
+                font-size: 14px;
+            }
+
+            .glass-content {
+                padding: 20px;
+                font-size: 13px;
+                line-height: 1.6;
+            }
+
+            .glass-btn {
+                background: rgba(59, 130, 246, 0.5);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                color: white;
+                padding: 8px 16px;
+                border-radius: 8px;
+                cursor: pointer;
+                transition: background 0.2s;
+            }
+            .glass-btn:hover {
+                background: rgba(59, 130, 246, 0.8);
+            }
+
+            /* Pulse animation */
+            @keyframes pulse-blue {
+                0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }
+                70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
+                100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+            }
+            .pulse-card {
+                animation: pulse-blue 2s infinite;
             }
         </style>
     </head>
@@ -29,44 +76,85 @@
                 const graph = await SpaceGraph.create('#container', {
                     nodes: [
                         {
-                            id: 'n1',
+                            id: 'ui-panel',
                             type: 'HtmlNode',
-                            label: 'Card 1',
-                            position: [0, 100, 0],
+                            position: [0, 0, 0],
                             data: {
-                                color: 'rgba(255, 50, 50, 0.8)',
-                                description: 'I am an HTML element',
-                            },
+                                width: 400,
+                                height: 320,
+                                className: 'glass pulse-card',
+                                html: `
+                                    <div class="glass-header">Control Center v7.0</div>
+                                    <div class="glass-content">
+                                        <p>This node is a fully interactive HTML fragment. You can use standard CSS for effects like glassmorphism and animations.</p>
+                                        <div style="margin-top: 15px; display: flex; gap: 10px;">
+                                            <button class="glass-btn" data-sg-interactive="true" onclick="alert('System Primed')">Execute</button>
+                                            <button class="glass-btn" data-sg-interactive="true" style="background:rgba(239, 68, 68, 0.5)" onclick="console.log('Abort')">Abort</button>
+                                        </div>
+                                        <div style="margin-top: 20px;">
+                                            <label style="display:block; font-size:11px; margin-bottom:5px;">System Load</label>
+                                            <div style="width:100%; height:6px; background:rgba(255,255,255,0.1); border-radius:3px; overflow:hidden;">
+                                                <div style="width:65%; height:100%; background:#3b82f6;"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `
+                            }
                         },
                         {
-                            id: 'n2',
+                            id: 'status-card',
                             type: 'HtmlNode',
-                            label: 'Card 2',
-                            position: [150, -50, 0],
+                            position: [350, 150, 50],
                             data: {
-                                color: 'rgba(50, 255, 50, 0.8)',
-                                description: 'Rendered in 3D',
-                            },
+                                width: 220,
+                                height: 140,
+                                className: 'glass',
+                                html: `
+                                    <div style="padding: 15px; text-align:center;">
+                                        <div style="font-size:24px; margin-bottom:10px;">🛡️</div>
+                                        <div style="font-weight:bold;">Firewall Active</div>
+                                        <div style="color:#10b981; font-size:12px; margin-top:5px;">Secure Channel</div>
+                                    </div>
+                                `
+                            }
                         },
                         {
-                            id: 'n3',
+                            id: 'settings-card',
                             type: 'HtmlNode',
-                            label: 'Card 3',
-                            position: [-150, -50, 0],
+                            position: [-350, -150, -50],
                             data: {
-                                color: 'rgba(50, 50, 255, 0.8)',
-                                description: 'Connected together',
-                            },
-                        },
+                                width: 220,
+                                height: 180,
+                                className: 'glass',
+                                html: `
+                                    <div style="padding: 15px;">
+                                        <h3 style="margin:0 0 10px 0; font-size:14px;">Settings</h3>
+                                        <div style="display:flex; flex-direction:column; gap:8px;">
+                                            <div style="display:flex; justify-content:space-between; font-size:12px;">
+                                                <span>Dark Mode</span>
+                                                <input type="checkbox" checked data-sg-interactive="true">
+                                            </div>
+                                            <div style="display:flex; justify-content:space-between; font-size:12px;">
+                                                <span>Auto-Save</span>
+                                                <input type="checkbox" data-sg-interactive="true">
+                                            </div>
+                                            <div style="margin-top:10px;">
+                                                <input type="range" style="width:100%;" data-sg-interactive="true">
+                                            </div>
+                                        </div>
+                                    </div>
+                                `
+                            }
+                        }
                     ],
                     edges: [
-                        { id: 'e1', source: 'n1', target: 'n2', type: 'Edge' },
-                        { id: 'e2', source: 'n2', target: 'n3', type: 'Edge' },
-                        { id: 'e3', source: 'n3', target: 'n1', type: 'Edge' },
+                        { id: 'e1', source: 'ui-panel', target: 'status-card', type: 'CurvedEdge', data: { color: '#3b82f6', thickness: 3 } },
+                        { id: 'e2', source: 'ui-panel', target: 'settings-card', type: 'CurvedEdge', data: { color: '#6366f1', thickness: 3 } }
                     ],
                 });
 
                 window._sg = graph;
+                graph.fitView(150);
                 window.addEventListener('beforeunload', () => graph.dispose());
             } catch (error) {
                 console.error('[html.html] Failed to create graph:', error);

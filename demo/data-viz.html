@@ -171,6 +171,7 @@
         ];
 
         const sg = await SpaceGraph.create('#container', { nodes, edges });
+        window.sg = sg;
 
         sg.render();
         sg.fitView(150);

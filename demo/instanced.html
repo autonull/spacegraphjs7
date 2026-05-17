@@ -87,7 +87,7 @@
                     const now = performance.now();
                     if (now - lastTime >= 1000) {
                         const fps = (frames * 1000) / (now - lastTime);
-                        statusEl.textContent = `Rendered 10,000 instanced nodes | FPS: ${fps.toFixed(1)}`;
+                        statusEl.textContent = `Rendered ${RENDER_SIZE} instanced nodes | FPS: ${fps.toFixed(1)}`;
                         frames = 0;
                         lastTime = now;
                     }

@@ -12,6 +12,7 @@ type NodeLike = {
 
 export class GroupNode extends Node {
     static readonly typeName = 'GroupNode';
+    public readonly isGroupNode = true;
     private _object = new THREE.Object3D();
     get object() {
         return this._object;
@@ -107,7 +108,7 @@ export class GroupNode extends Node {
             visited.add(currentParent);
 
             const parentNode = this.sg.graph.nodes.get(currentParent);
-            if (parentNode instanceof GroupNode && parentNode.data._lastLodVisible === false) {
+            if (parentNode && (parentNode as any).isGroupNode && parentNode.data._lastLodVisible === false) {
                 return true;
             }
             currentParent = this._getParentId(parentNode);
