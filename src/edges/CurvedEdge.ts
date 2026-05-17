@@ -14,10 +14,15 @@ export class CurvedEdge extends Edge {
     constructor(sg: SpaceGraph, spec: EdgeSpec, source: Node, target: Node) {
         super(sg, spec, source, target);
 
+        const sourcePos = new THREE.Vector3();
+        const targetPos = new THREE.Vector3();
+        this.source.getWorldPosition(sourcePos);
+        this.target.getWorldPosition(targetPos);
+
         this.curve = new THREE.QuadraticBezierCurve3(
-            this.source.position,
-            this.getControlPoint(),
-            this.target.position,
+            sourcePos.clone(),
+            this.getControlPoint(sourcePos, targetPos),
+            targetPos.clone(),
         );
 
         const points = this.curve.getPoints(20);
@@ -29,14 +34,21 @@ export class CurvedEdge extends Edge {
         this.object.geometry = this.geometry;
     }
 
-    private getControlPoint(): THREE.Vector3 {
+    private getControlPoint(sourcePos: THREE.Vector3, targetPos: THREE.Vector3): THREE.Vector3 {
         const curveStrength = ((this.data as EdgeData)?.curveStrength as number) ?? 50;
-        const dir = this._controlPoint.subVectors(this.target.position, this.source.position);
+        const dir = new THREE.Vector3().subVectors(targetPos, sourcePos);
         const normal = dir.clone().setZ(0).normalize();
-        return new THREE.Vector3()
-            .addVectors(this.source.position, this.target.position)
-            .multiplyScalar(0.5)
-            .add(normal.multiplyScalar(curveStrength));
+
+        // Handle vertical lines or degenerate cases for normal
+        if (normal.lengthSq() === 0) normal.set(1, 0, 0);
+
+        const cp = new THREE.Vector3()
+            .addVectors(sourcePos, targetPos)
+            .multiplyScalar(0.5);
+
+        // Offset normal to get curved effect
+        const offset = new THREE.Vector3(-normal.y, normal.x, 0).multiplyScalar(curveStrength);
+        return cp.add(offset);
     }
 
     update() {
@@ -44,9 +56,14 @@ export class CurvedEdge extends Edge {
 
         if (!this.curve) return;
 
-        this.curve.v0.copy(this.source.position);
-        this.curve.v1.copy(this.getControlPoint());
-        this.curve.v2.copy(this.target.position);
+        const sourcePos = new THREE.Vector3();
+        const targetPos = new THREE.Vector3();
+        this.source.getWorldPosition(sourcePos);
+        this.target.getWorldPosition(targetPos);
+
+        this.curve.v0.copy(sourcePos);
+        this.curve.v1.copy(this.getControlPoint(sourcePos, targetPos));
+        this.curve.v2.copy(targetPos);
 
         const points = this.curve.getPoints(20);
         let offset = 0;

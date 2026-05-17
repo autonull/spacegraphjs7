@@ -151,16 +151,16 @@ export class SpaceGraphApp {
     }
 
     private _clearNodeStyle(node: Node): void {
-        if (node instanceof HtmlNode && this.options.selectionHighlightClass) {
-            node.domElement.classList.remove(this.options.selectionHighlightClass);
+        if ((node as any).isHtmlNode && this.options.selectionHighlightClass) {
+            (node as any).domElement.classList.remove(this.options.selectionHighlightClass);
         } else if (this.originalColors.has(node)) {
             node.updateSpec({ data: { color: this.originalColors.get(node) } });
         }
     }
 
     private _applyNodeStyle(node: Node): void {
-        if (node instanceof HtmlNode && this.options.selectionHighlightClass) {
-            node.domElement.classList.add(this.options.selectionHighlightClass);
+        if ((node as any).isHtmlNode && this.options.selectionHighlightClass) {
+            (node as any).domElement.classList.add(this.options.selectionHighlightClass);
         } else if (this.options.selectionHighlightColor && node.data?.color !== undefined) {
             this.originalColors.set(node, node.data.color as number);
             node.updateSpec({ data: { color: this.options.selectionHighlightColor } });

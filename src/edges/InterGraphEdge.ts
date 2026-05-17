@@ -61,7 +61,7 @@ export class InterGraphEdge extends Edge {
     private projectToScreen(node: Node, targetVector: THREE.Vector3) {
         const sg = node.sg;
         if (!sg?.renderer) return;
-        targetVector.copy(node.position);
+        node.getWorldPosition(targetVector);
         targetVector.project(sg.renderer.camera);
 
         const rect = sg.renderer.renderer.domElement.getBoundingClientRect();

@@ -273,8 +273,11 @@ export class Edge extends Surface {
     update(): void {
         if (!this.line || !this.source || !this.target) return;
 
-        const { position: sourcePos } = this.source;
-        const { position: targetPos } = this.target;
+        const sourcePos = new THREE.Vector3();
+        const targetPos = new THREE.Vector3();
+
+        this.source.getWorldPosition(sourcePos);
+        this.target.getWorldPosition(targetPos);
 
         if (![sourcePos, targetPos].every((p) => isFinite(p.x) && isFinite(p.y) && isFinite(p.z))) return;
 
@@ -290,10 +293,13 @@ export class Edge extends Surface {
 
     private _updateArrowheads(): void {
         if (!this.sg?.renderer?.scene) return;
-        if (!this.source?.position || !this.target?.position) return;
+        if (!this.source || !this.target) return;
 
-        const { position: sourcePos } = this.source;
-        const { position: targetPos } = this.target;
+        const sourcePos = new THREE.Vector3();
+        const targetPos = new THREE.Vector3();
+        this.source.getWorldPosition(sourcePos);
+        this.target.getWorldPosition(targetPos);
+
         const scene = this.sg.renderer.scene;
 
         const updateArrowhead = (arrowhead: THREE.Mesh | null, endPos: THREE.Vector3, startPos: THREE.Vector3) => {
@@ -359,15 +365,20 @@ export class Edge extends Surface {
     }
 
     get bounds3D(): Bounds3D {
+        const sourcePos = new THREE.Vector3();
+        const targetPos = new THREE.Vector3();
+        this.source.getWorldPosition(sourcePos);
+        this.target.getWorldPosition(targetPos);
+
         const min = new THREE.Vector3(
-            Math.min(this.source.position.x, this.target.position.x),
-            Math.min(this.source.position.y, this.target.position.y),
-            Math.min(this.source.position.z, this.target.position.z),
+            Math.min(sourcePos.x, targetPos.x),
+            Math.min(sourcePos.y, targetPos.y),
+            Math.min(sourcePos.z, targetPos.z),
         );
         const max = new THREE.Vector3(
-            Math.max(this.source.position.x, this.target.position.x),
-            Math.max(this.source.position.y, this.target.position.y),
-            Math.max(this.source.position.z, this.target.position.z),
+            Math.max(sourcePos.x, targetPos.x),
+            Math.max(sourcePos.y, targetPos.y),
+            Math.max(sourcePos.z, targetPos.z),
         );
         return {
             min,

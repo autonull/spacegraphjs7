@@ -48,9 +48,9 @@ export class LODPlugin extends BaseSystemPlugin {
         const hiddenParentIds = new Set<string>();
 
         for (const node of nodes) {
-            if (node instanceof GroupNode) {
+            if ((node as any).isGroupNode) {
                 const distance = cameraPosition.distanceTo(node.position);
-                node.updateLod(distance);
+                (node as any).updateLod(distance);
                 if ((node.data as Record<string, unknown>)._lastLodVisible === false) {
                     hiddenParentIds.add(node.id);
                 }
@@ -68,11 +68,11 @@ export class LODPlugin extends BaseSystemPlugin {
         for (const node of nodes) {
             const isHiddenByParent = this._isNodeHiddenByParent(node, hiddenParentIds);
 
-            if (node instanceof DOMNode) {
+            if ((node as any).isDOMNode) {
                 const distance = cameraPosition.distanceTo(node.position);
-                node.setVisibility(!isHiddenByParent && distance <= this.maxDistance);
-                if (!isHiddenByParent) node.updateLod(distance);
-            } else if (!(node instanceof GroupNode)) {
+                (node as any).setVisibility(!isHiddenByParent && distance <= this.maxDistance);
+                if (!isHiddenByParent) (node as any).updateLod(distance);
+            } else if (!(node as any).isGroupNode) {
                 node.object.visible = !isHiddenByParent;
             }
         }
@@ -105,11 +105,11 @@ export class LODPlugin extends BaseSystemPlugin {
 
             const sourceHidden =
                 edge.source?.object?.visible === false ||
-                (edge.source instanceof DOMNode && !edge.source.cssObject.visible);
+                ((edge.source as any).isDOMNode && !(edge.source as any).cssObject.visible);
 
             const targetHidden =
                 edge.target?.object?.visible === false ||
-                (edge.target instanceof DOMNode && !edge.target.cssObject.visible);
+                ((edge.target as any).isDOMNode && !(edge.target as any).cssObject.visible);
 
             edge.object.visible = !(sourceHidden || targetHidden);
         }

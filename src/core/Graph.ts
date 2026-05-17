@@ -47,7 +47,7 @@ export class Graph extends EventEmitter<GraphEventMap> {
     }
 
   addEdge(spec: EdgeSpec | Edge): Edge | null {
-    if ('source' in spec && spec.source instanceof Object && 'position' in spec.source) {
+    if ('source' in spec && spec.source && typeof spec.source === 'object' && 'position' in (spec.source as any)) {
       return this._addEdge((spec as Edge).id, spec as Edge);
     }
 

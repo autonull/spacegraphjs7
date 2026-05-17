@@ -155,7 +155,7 @@ export class LayoutNode extends GroupNode {
 
     onPreRender(_dt: number): void {
         super.onPreRender(_dt);
-        const childNodes = this.children.filter((c): c is Node => c instanceof Node);
+        const childNodes = this.children.filter((c): c is Node => (c as any).isNode === true);
         this.strategy(childNodes, this, this.params);
     }
 }
