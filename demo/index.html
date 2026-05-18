@@ -91,6 +91,7 @@
         <div id="app"></div>
 
         <script type="module">
+            import { SpaceGraph } from '../src/index.ts';
             const DEMOS = import.meta.glob('./demos/*.ts', { eager: true });
 
             const demoList = Object.keys(DEMOS).map((path) => {
