@@ -45,4 +45,5 @@ export { default as performanceDemo } from './performance';
 export { default as codeEditorDemo } from './code-editor';
 export { default as visionAiDemo } from './vision-ai';
 export { default as physicsDemo } from './physics';
+export { default as fractalDebugDemo } from './fractal-debug';
 export { default as n8nDemo } from './n8n';

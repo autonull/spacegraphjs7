@@ -56,15 +56,13 @@ const HINT_STYLE = `
 }`;
 
 export function createDemoHint(sg: SpaceGraph, keyboardHtml: string): void {
-  sg.events.on('ready', () => {
-    const style = document.createElement('style');
-    style.textContent = HINT_STYLE;
-    document.head.appendChild(style);
-    const hint = document.createElement('div');
-    hint.className = 'demo-hint';
-    hint.innerHTML = keyboardHtml;
-    document.body.appendChild(hint);
-  });
+  const style = document.createElement('style');
+  style.textContent = HINT_STYLE;
+  document.head.appendChild(style);
+  const hint = document.createElement('div');
+  hint.className = 'demo-hint';
+  hint.innerHTML = keyboardHtml;
+  sg.container.appendChild(hint);
 }
 
 export function addOverlayPanel(
@@ -73,10 +71,9 @@ export function addOverlayPanel(
   cssProps: Record<string, string> = {},
   innerHTML = '',
 ): void {
-  sg.events.on('ready', () => {
-    const panel = document.createElement('div');
-    Object.assign(panel.style, {
-      position: 'fixed',
+  const panel = document.createElement('div');
+  Object.assign(panel.style, {
+      position: 'absolute',
       background: 'rgba(0,0,0,0.7)',
       color: '#ffffff',
       padding: '15px',
@@ -92,9 +89,8 @@ export function addOverlayPanel(
         : { bottom: '20px', left: '20px' }),
       ...cssProps,
     });
-    if (innerHTML) panel.innerHTML = innerHTML;
-    document.body.appendChild(panel);
-  });
+  if (innerHTML) panel.innerHTML = innerHTML;
+  sg.container.appendChild(panel);
 }
 
 /**
@@ -106,10 +102,9 @@ export function createProfessionalPanel(sg: SpaceGraph, options: {
     metrics?: string[];
     controls?: { label: string, action: () => void }[];
 }) {
-    sg.events.on('ready', () => {
-        const panel = document.createElement('div');
-        Object.assign(panel.style, {
-            position: 'fixed',
+    const panel = document.createElement('div');
+    Object.assign(panel.style, {
+            position: 'absolute',
             top: '60px',
             left: '20px',
             width: '300px',
@@ -150,24 +145,23 @@ export function createProfessionalPanel(sg: SpaceGraph, options: {
             html += `</div>`;
         }
 
-        panel.innerHTML = html;
-        document.body.appendChild(panel);
+    panel.innerHTML = html;
+    sg.container.appendChild(panel);
 
-        // Bind events
-        options.controls?.forEach((c, i) => {
-            const btn = document.getElementById(`control-btn-${i}`);
-            if (btn) {
-                btn.addEventListener('click', c.action);
-                btn.addEventListener('mouseenter', () => {
-                    btn.style.background = 'rgba(59, 130, 246, 0.2)';
-                    btn.style.borderColor = 'rgba(59, 130, 246, 0.4)';
-                });
-                btn.addEventListener('mouseleave', () => {
-                    btn.style.background = 'rgba(59, 130, 246, 0.1)';
-                    btn.style.borderColor = 'rgba(59, 130, 246, 0.2)';
-                });
-            }
-        });
+    // Bind events
+    options.controls?.forEach((c, i) => {
+        const btn = document.getElementById(`control-btn-${i}`);
+        if (btn) {
+            btn.addEventListener('click', c.action);
+            btn.addEventListener('mouseenter', () => {
+                btn.style.background = 'rgba(59, 130, 246, 0.2)';
+                btn.style.borderColor = 'rgba(59, 130, 246, 0.4)';
+            });
+            btn.addEventListener('mouseleave', () => {
+                btn.style.background = 'rgba(59, 130, 246, 0.1)';
+                btn.style.borderColor = 'rgba(59, 130, 246, 0.2)';
+            });
+        }
     });
 }
 
