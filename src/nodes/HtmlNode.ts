@@ -62,21 +62,39 @@ public size = { width: 160, height: 70 };
     private _createInnerContent(spec: NodeSpec): void {
         const wrapper = DOMUtils.createElement('div');
         wrapper.className = 'node-inner-wrapper';
+        Object.assign(wrapper.style, {
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+        });
 
         const contentWrapper = DOMUtils.createElement('div');
         contentWrapper.className = 'node-content';
+        Object.assign(contentWrapper.style, {
+            width: '100%',
+            flexGrow: '1',
+            display: 'flex',
+            flexDirection: 'column',
+        });
         const data = (spec.data as SpaceGraphNodeData) ?? {};
         contentWrapper.style.transform = `scale(${(data.contentScale as number) ?? 1.0})`;
         contentWrapper.style.transformOrigin = 'center center';
 
         if (data.html) {
             contentWrapper.innerHTML = data.html as string;
-            Object.assign(this.domElement.style, {
-                display: 'block',
-                padding: '0',
-                border: 'none',
-                backgroundColor: 'transparent',
-            });
+            // If the user provided a custom className, we assume they want to handle styling there.
+            // Otherwise, we default to a clean container for the custom HTML.
+            if (!spec.data?.className && !spec.data?.style) {
+                Object.assign(this.domElement.style, {
+                    display: 'block',
+                    padding: '0',
+                    border: 'none',
+                    backgroundColor: 'transparent',
+                    backdropFilter: 'none',
+                    boxShadow: 'none',
+                });
+            }
         } else if (data.editable) {
             contentWrapper.contentEditable = 'true';
             contentWrapper.spellcheck = false;

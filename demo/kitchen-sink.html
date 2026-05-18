@@ -40,21 +40,30 @@
 
         const nodes = [
             // Major Node Types
-            { id: 'shape-node', type: 'ShapeNode', position: [0, 0, 0], data: { shape: 'box', color: '#ef4444' } },
-            { id: 'group-node', type: 'GroupNode', position: [200, 0, -50], data: { width: 150, height: 150, depth: 50, color: '#3b82f6' } },
-            { id: 'image-node', type: 'ImageNode', position: [-200, 0, 0], data: {
+            { id: 'shape-node', type: 'ShapeNode', position: [0, 0, 0], data: { shape: 'box', color: '#ef4444', size: 60 } },
+            { id: 'group-node', type: 'GroupNode', position: [300, 0, -50], data: { width: 150, height: 150, depth: 50, color: '#3b82f6' } },
+            { id: 'image-node', type: 'ImageNode', position: [-300, 0, 0], data: {
                 url: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj4KICA8cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzMzNjZmZiIgLz4KICA8Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI0MCIgZmlsbD0iI2ZmZmZmZiIgLz4KICA8dGV4dCB4PSI1MCIgeT0iNTUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIyNCIgZmlsbD0iIzMzNjZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+U0c8L3RleHQ+Cjwvc3ZnPg=='
             }},
             {
                 id: 'html-node',
                 type: 'HtmlNode',
-                position: [0, 200, 0],
+                position: [0, 300, 0],
                 data: {
                     width: 200, height: 100,
                     html: `<div style="background: rgba(30,41,59,0.9); padding: 20px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;"><h3 data-testid="html-content">HTML Node</h3></div>`
                 }
             },
-            { id: 'text-mesh-node', type: 'TextMeshNode', position: [0, -200, 0], label: 'Text Mesh', data: { color: '#eab308', size: 24 } }
+            { id: 'text-mesh-node', type: 'TextMeshNode', position: [0, -300, 0], label: 'Text Mesh', data: { color: '#eab308', size: 24 } },
+
+            // Fractal size variance examples
+            { id: 'micro-node', type: 'ShapeNode', position: [100, 100, 50], data: { shape: 'sphere', size: 8, color: '#facc15' }, label: 'Micro' },
+            { id: 'mega-console', type: 'HtmlNode', position: [0, 0, -500], data: {
+                width: 1200, height: 800,
+                html: `<div style="background: rgba(15,23,42,0.5); border: 2px solid rgba(255,255,255,0.1); height:100%; padding:40px; border-radius:24px;">
+                    <h1 style="font-size:48px; color:rgba(255,255,255,0.1);">BACKGROUND DASHBOARD</h1>
+                </div>`
+            }}
         ];
 
         const edges = [
