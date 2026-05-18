@@ -56,6 +56,7 @@ export class VisionOverlayPlugin extends DOMOverlayPlugin {
 
     private async runAnalysis(): Promise<void> {
         try {
+            if (!this.sg || !this.sg.vision) return;
             if (!this.modelsLoaded) {
                 this.updateDOMState('Loading AI Models...');
                 await this.sg.vision.loadModels({

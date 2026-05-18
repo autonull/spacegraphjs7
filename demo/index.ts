@@ -78,6 +78,11 @@ const DEMO_METADATA: Record<string, { name: string; icon: string; description: s
     icon: '💾',
     description: 'Save and restore camera and node states across instances.',
   },
+    'vision-self-healing.html': {
+        name: 'Vision Self-Healing',
+        icon: '👁️',
+        description: 'AI vision system that detects and fixes UI issues in real-time.',
+    },
   'inter-graph-edges.html': {
     name: 'Inter-graph Edges',
     icon: '🔗',

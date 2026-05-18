@@ -28,6 +28,7 @@ export interface VisionIssue {
   category: 'legibility' | 'overlap' | 'hierarchy' | 'ergonomics';
   message: string;
   nodeIds?: string[];
+  targetFile?: string;
 }
 
 /**

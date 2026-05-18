@@ -26,13 +26,14 @@ function buildVisionReport(
 
     const issuesList: VisionIssue[] = issues.map((i) => ({
         severity: i.severity,
-        category: (i.type === 'overlap'
+        category: (i.type === 'overlap' || i.category === 'overlap'
             ? 'overlap'
-            : i.type === 'legibility'
+            : i.type === 'legibility' || i.category === 'legibility'
               ? 'legibility'
               : 'ergonomics') as VisionIssue['category'],
         message: i.message,
-        nodeIds: i.nodeA ? [i.nodeA, i.nodeB] : i.nodeId ? [i.nodeId] : undefined,
+        nodeIds: i.nodeIds ? i.nodeIds : (i.nodeA ? [i.nodeA, i.nodeB] : i.nodeId ? [i.nodeId] : undefined),
+        targetFile: i.targetFile,
     }));
 
     const overallScore = clampValue((layoutScore + legibilityScore) / 2, 0, 100);
@@ -105,12 +106,12 @@ export async function runVisionAnalysis(outputDir: string): Promise<VisionReport
                         .waitForFunction(
                             () => {
                                 const w = window as {
-                                    SpaceGraph?: { instances: Set<unknown> };
+                                    SpaceGraph?: { instances: Set<any> };
                                 };
                                 return (
-                                    w.SpaceGraph &&
+                                    (w.SpaceGraph &&
                                     w.SpaceGraph.instances &&
-                                    w.SpaceGraph.instances.size > 0
+                                    w.SpaceGraph.instances.size > 0)
                                 );
                             },
                             { timeout: 5000 },
@@ -126,15 +127,17 @@ export async function runVisionAnalysis(outputDir: string): Promise<VisionReport
 
                     const fileAnalysis = await page.evaluate(async () => {
                         const w = window as {
-                            __SPACEGRAPH_INSTANCES__?: Array<{
-                                vision: {
-                                    stopAutonomousCorrection: () => void;
-                                    analyzeVision: () => Promise<import('./types').VisionReport>;
-                                };
-                            }>;
+                            SpaceGraph: {
+                                instances: Set<{
+                                    vision: {
+                                        stopAutonomousCorrection: () => void;
+                                        analyzeVision: () => Promise<import('./types').VisionReport>;
+                                    };
+                                }>;
+                            };
                         };
-                        const instances = w.__SPACEGRAPH_INSTANCES__;
-                        if (!instances)
+                        const instances = Array.from(w.SpaceGraph.instances);
+                        if (!instances || instances.length === 0)
                             return { overlaps: 0, legibilityIssues: 0, localIssues: [] };
 
                         let overlaps = 0;
@@ -150,15 +153,23 @@ export async function runVisionAnalysis(outputDir: string): Promise<VisionReport
 
                             localIssues.push(
                                 ...report.overlap.overlaps.map((o: any) => ({
-                                    type: 'overlap',
+                                    category: 'overlap',
                                     severity: 'warning' as const,
-                                    nodeA: o.nodeA,
-                                    nodeB: o.nodeB,
+                                    nodeIds: [o.nodeA, o.nodeB],
                                     message: `Bounding box overlap detected between nodes ${o.nodeA} and ${o.nodeB}.`,
+                                    type: 'overlap'
                                 })),
                             );
 
-                            localIssues.push(...report.legibility.failures);
+                            localIssues.push(...report.legibility.failures.map(f => ({
+                                category: 'legibility',
+                                severity: f.severity,
+                                nodeIds: [f.nodeId],
+                                message: `Low contrast on node ${f.nodeId}: ${f.contrast}`,
+                                type: 'legibility'
+                            })));
+
+                            localIssues.push(...report.overall.issues);
                         }
 
                         return { overlaps, legibilityIssues, localIssues };
@@ -170,6 +181,9 @@ export async function runVisionAnalysis(outputDir: string): Promise<VisionReport
                             0,
                             legibilityScore - fileAnalysis.legibilityIssues * 10,
                         );
+                        fileAnalysis.localIssues.forEach((issue: any) => {
+                            issue.targetFile = relativePath;
+                        });
                         issues.push(...fileAnalysis.localIssues);
                     }
                 } catch (e) {
