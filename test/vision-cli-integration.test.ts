@@ -34,9 +34,10 @@ describe('Vision-CLI Integration', () => {
             const output = execSync(cmd).toString();
 
             // 3. Verify output contains expected data
-            expect(output).toContain('⚠️ Detected 1 visual issues');
-            expect(output).toContain('[OVERLAP] Overlap detected');
-            expect(output).toContain('Target File: test.html');
+            expect(output).toContain('🚨 Found 1 visual regression');
+            expect(output).toContain('[OVERLAP]');
+            expect(output).toContain('Overlap detected');
+            expect(output).toContain('Location: test.html');
             expect(output).toContain('Dry-run enabled');
 
         } finally {

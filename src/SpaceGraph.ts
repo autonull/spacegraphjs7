@@ -216,6 +216,7 @@ export class SpaceGraph {
         this.renderer.init();
         this.#registerDefaults();
         await this.pluginManager.initAll();
+        this.events.emit('ready', { timestamp: Date.now() });
     }
 
     #registerDefaults(): void {
