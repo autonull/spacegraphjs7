@@ -2,25 +2,31 @@ import { createDemoWithNodes, shapeNode, edge, addOverlayPanel, SpaceGraph } fro
 
 export default async function fractalDemo(): Promise<SpaceGraph> {
   const LEVELS = ['Overview', 'Cluster', 'Detail', 'Micro', 'Nano'];
-  let currentLevel = 0;
 
   const sg = await createDemoWithNodes(
     [
-      shapeNode('node1', [-200, 0, 0], { color: 0x4488ff, size: 60 }),
-      shapeNode('node2', [200, 0, 0], { color: 0xff4488, size: 60 }),
-      shapeNode('node3', [0, 150, 0], { color: 0x44ff88, size: 60 }),
-      shapeNode('node4', [0, -150, 0], { color: 0xffaa44, size: 60 }),
-      shapeNode('node5', [-100, 75, 0], { color: 0xaa44ff, size: 60 }),
-      shapeNode('node6', [100, 75, 0], { color: 0x44ffff, size: 60 }),
+      { id: 'world', type: 'GroupNode', position: [0, 0, 0], data: { label: 'The World', width: 1000, height: 1000, depth: 100, color: 0x1e1e3f } },
+
+      // Level 1: Clusters inside world
+      { id: 'cluster-a', type: 'GroupNode', position: [-250, 0, 0], data: { parent: 'world', label: 'Cluster A', width: 400, height: 400, depth: 50, color: 0x3b82f6, lodThreshold: 2000 } },
+      { id: 'cluster-b', type: 'GroupNode', position: [250, 0, 0], data: { parent: 'world', label: 'Cluster B', width: 400, height: 400, depth: 50, color: 0x10b981, lodThreshold: 2000 } },
+
+      // Level 2: Detailed nodes inside clusters
+      shapeNode('node-a1', [-350, 100, 0], { parent: 'cluster-a', color: 0x60a5fa, size: 40 }),
+      shapeNode('node-a2', [-150, -100, 0], { parent: 'cluster-a', color: 0x60a5fa, size: 40 }),
+
+      shapeNode('node-b1', [150, 100, 0], { parent: 'cluster-b', color: 0x34d399, size: 40 }),
+      shapeNode('node-b2', [350, -100, 0], { parent: 'cluster-b', color: 0x34d399, size: 40 }),
+
+      // Micro-level: Small details inside nodes
+      shapeNode('detail-a1-1', [-370, 120, 10], { parent: 'node-a1', color: 0xffffff, size: 10 }),
+      shapeNode('detail-a1-2', [-330, 80, 10], { parent: 'node-a1', color: 0xffffff, size: 10 }),
     ],
     [
-      edge('node1', 'node2'),
-      edge('node1', 'node3'),
-      edge('node2', 'node3'),
-      edge('node3', 'node4'),
-      edge('node4', 'node5'),
-      edge('node5', 'node6'),
-      edge('node6', 'node1'),
+      edge('cluster-a', 'cluster-b'),
+      edge('node-a1', 'node-a2'),
+      edge('node-b1', 'node-b2'),
+      edge('node-a1', 'node-b1'),
     ],
   );
 

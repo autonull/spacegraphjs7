@@ -84,6 +84,7 @@ export class VisionManager {
         }
 
         this.isAnalyzing = false;
+        this.sg.events.emit('vision:analysis-complete' as any, report);
         return report;
     }
 

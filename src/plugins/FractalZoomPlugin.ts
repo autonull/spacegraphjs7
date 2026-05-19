@@ -141,7 +141,8 @@ export class FractalZoomPlugin implements Plugin {
             // Update LODPlugin if available
             const lodPlugin = this.sg.pluginManager.getPlugin('lod') as any;
             if (lodPlugin?.setZoomLevel) {
-                lodPlugin.setZoomLevel(newLevel, this.config.levels[newLevel]?.detailThreshold);
+                const threshold = this.config.levels[newLevel]?.detailThreshold ?? 0.5;
+                lodPlugin.setZoomLevel(newLevel, threshold);
             }
         }
 

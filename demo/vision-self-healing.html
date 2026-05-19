@@ -45,6 +45,10 @@
             <span class="feature-tag">Auto-Fix</span>
         </div>
         <p style="margin-top: 15px; font-style: italic; font-size: 0.8rem;">Try moving nodes to overlap them, or change their colors to be hard to read. Watch the Vision Overlay react and offer to fix them.</p>
+        <div id="vision-status" style="margin-top: 15px; display: flex; align-items: center; gap: 10px; font-size: 0.8rem; font-weight: bold; padding: 8px; border-radius: 4px; background: rgba(255,255,255,0.05);">
+            <div id="status-dot" style="width: 8px; height: 8px; border-radius: 50%; background: #666;"></div>
+            <span id="status-text">ANALYSIS PENDING</span>
+        </div>
     </div>
     <div id="container"></div>
     <script type="module" src="./vision-self-healing.ts"></script>

@@ -46,6 +46,60 @@ async function init() {
     // Expose for debugging
     (window as any).sg = sg;
 
+    // Add button for manual "mess-up"
+    const info = document.getElementById('info');
+    if (info) {
+        const messUpBtn = document.createElement('button');
+        messUpBtn.id = 'mess-up-btn';
+        messUpBtn.textContent = 'Programmatically Create Issues';
+        messUpBtn.style.marginTop = '15px';
+        messUpBtn.style.width = '100%';
+        messUpBtn.style.padding = '10px';
+        messUpBtn.style.background = 'rgba(239, 68, 68, 0.2)';
+        messUpBtn.style.border = '1px solid rgba(239, 68, 68, 0.4)';
+        messUpBtn.style.borderRadius = '6px';
+        messUpBtn.style.color = '#f87171';
+        messUpBtn.style.fontWeight = '600';
+        messUpBtn.style.cursor = 'pointer';
+
+        messUpBtn.addEventListener('click', () => {
+            console.log('Messing up the graph...');
+            // 1. Create overlaps
+            sg.graph.updateNode('node1', { position: [5, 5, 0] });
+            sg.graph.updateNode('node2', { position: [-5, -5, 0] });
+
+            // 2. Create bad contrast
+            sg.graph.updateNode('node3', {
+                data: {
+                    color: 0xeeeeee,
+                    labelColor: 0xffffff
+                }
+            });
+
+            // 3. Move another node to overlap
+            sg.graph.updateNode('node4', { position: [195, 5, 0] }); // Near node3
+
+            sg.events.emit('graph:updated' as any, {});
+        });
+
+        info.appendChild(messUpBtn);
+
+        // Update vision status in real-time
+        const statusDot = document.getElementById('status-dot');
+        const statusText = document.getElementById('status-text');
+
+        sg.events.on('vision:analysis-complete' as any, (report: any) => {
+            if (statusDot && statusText) {
+                const score = report.overall.score;
+                statusText.textContent = `VISION HEALTH: ${Math.round(score)}%`;
+
+                if (score >= 90) statusDot.style.background = '#4ade80';
+                else if (score >= 70) statusDot.style.background = '#facc15';
+                else statusDot.style.background = '#f87171';
+            }
+        });
+    }
+
     console.log('Vision Self-Healing demo initialized.');
 }
 
