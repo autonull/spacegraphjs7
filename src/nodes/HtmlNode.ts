@@ -24,6 +24,7 @@ public size = { width: 160, height: 70 };
     constructor(sg: SpaceGraph, spec: NodeSpec) {
         const width = (spec.data?.width as number) ?? 200;
         const height = (spec.data?.height as number) ?? 100;
+        const bgColor = (spec.data?.color as string) ?? (spec.data?.backgroundColor as string) ?? 'rgba(51, 102, 255, 0.8)';
 
         super(sg, spec, {
             defaultWidth: 200,
@@ -31,12 +32,12 @@ public size = { width: 160, height: 70 };
             materialParams: { visible: false },
             className: `spacegraph-html-node node-common ${(spec.data?.className as string) ?? ''}`,
             customStyles: {
-                backgroundColor: (spec.data?.color as string) ?? 'rgba(51, 102, 255, 0.8)',
+                backgroundColor: bgColor,
                 color: 'white',
                 border: '2px solid white',
                 padding: '0',
-                justifyContent: 'center',
-                alignItems: 'center',
+                display: 'flex',
+                flexDirection: 'column',
                 pointerEvents: (spec.data?.pointerEvents as string) ?? 'auto',
                 ...((spec.data?.style as Record<string, string>) ?? {}),
             },
@@ -64,7 +65,7 @@ public size = { width: 160, height: 70 };
         if (data.billboard) this.billboard = data.billboard as boolean;
         if (data.labelLod) this.labelLod = data.labelLod as LabelLodLevel[];
 
-        this._applyNodeBgColor((spec.data?.color as string) ?? 'rgba(51, 102, 255, 0.8)');
+        this._applyNodeBgColor(bgColor);
     }
 
     private _createInnerContent(spec: NodeSpec): void {
@@ -86,6 +87,8 @@ public size = { width: 160, height: 70 };
             flexGrow: '1',
             display: 'flex',
             flexDirection: 'column',
+            position: 'relative',
+            zIndex: '1',
         });
         const data = (spec.data as SpaceGraphNodeData) ?? {};
         contentWrapper.style.transform = `scale(${(data.contentScale as number) ?? 1.0})`;
@@ -93,11 +96,11 @@ public size = { width: 160, height: 70 };
 
         if (data.html) {
             contentWrapper.innerHTML = data.html as string;
-            // If the user provided a custom className, we assume they want to handle styling there.
-            // Otherwise, we default to a clean container for the custom HTML.
-            if (!spec.data?.className && !spec.data?.style) {
+            // If the user provided custom HTML but no specific styling, we ensure it doesn't have
+            // the default "box" appearance if that's what was intended by the data.html paradigm.
+            // However, we should be careful not to break the "glass" look if className is provided.
+            if (spec.data?.useRawHtml === true || (!spec.data?.className && !spec.data?.style && !spec.data?.color && !spec.data?.backgroundColor)) {
                 Object.assign(this.domElement.style, {
-                    display: 'block',
                     padding: '0',
                     border: 'none',
                     backgroundColor: 'transparent',

@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Simple HTML Node Test</title>
+        <style>
+            body { margin: 0; overflow: hidden; background: #111; }
+            #container { width: 100vw; height: 100vh; }
+        </style>
+    </head>
+    <body>
+        <div id="container"></div>
+        <script type="module">
+            import { SpaceGraph } from '../src/index.ts';
+
+            async function init() {
+                const graph = await SpaceGraph.create('#container', {
+                    nodes: [
+                        {
+                            id: 'test-node',
+                            type: 'HtmlNode',
+                            position: [0, 0, 0],
+                            data: {
+                                width: 300,
+                                height: 200,
+                                html: '<div style="padding: 20px; background: red; color: white; height: 100%;">HELLO WORLD</div>'
+                            }
+                        }
+                    ]
+                });
+                graph.fitView(100);
+            }
+
+            init().catch(console.error);
+        </script>
+    </body>
+</html>
