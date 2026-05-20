@@ -61,12 +61,20 @@ export class Renderer {
         this.renderer.setSize(container.clientWidth, container.clientHeight);
         this.renderer.setPixelRatio(pixelRatio);
         this.renderer.setClearColor(bgColor, (options.alpha ?? true) ? 0 : 1);
+        Object.assign(this.renderer.domElement.style, {
+            position: 'absolute',
+            top: '0px',
+            left: '0px',
+            zIndex: '0',
+        });
         container.appendChild(this.renderer.domElement);
         container.style.position = 'relative';
 
         this.cssRenderer = new CSS3DRenderer();
         this.cssRenderer.setSize(container.clientWidth, container.clientHeight);
         Object.assign(this.cssRenderer.domElement.style, CSS_STYLES);
+        this.cssRenderer.domElement.style.zIndex = '1';
+        this.cssRenderer.domElement.style.pointerEvents = 'none';
         container.appendChild(this.cssRenderer.domElement);
 
         this.instancedRenderer = new InstancedNodeRenderer(sg, this.scene);

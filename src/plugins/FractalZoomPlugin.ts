@@ -12,6 +12,7 @@ export interface ZoomLevel {
     maxDistance: number;
     detailThreshold: number;
     label: string;
+    semanticImportance?: number;
 }
 
 export interface FractalZoomConfig {
@@ -56,6 +57,7 @@ export class FractalZoomPlugin implements Plugin {
     private transitionProgress: number = 0;
     private lastDistance: number = 0;
     private scrollAccumulator: number = 0;
+    private focusedNodeId: string | null = null;
     private readonly SCROLL_THRESHOLD = 0.5;
 
     get currentZoomLevel(): number {
@@ -77,9 +79,20 @@ export class FractalZoomPlugin implements Plugin {
 
         // Listen to camera movement
         this.sg.events.on('camera:move', () => this.checkZoomLevel());
+        this.sg.events.on('camera:fly:progress', (p: number) => {
+            this.transitionProgress = p;
+            this.sg.events.emit('fractal:transition-progress', p);
+        });
 
         // Listen to wheel events for fractal zoom
         this.sg.events.on('input:interaction:wheel', (e: any) => this.handleWheel(e));
+
+        // Listen to node clicks for semantic focus
+        this.sg.events.on('node:click', (data: any) => {
+            if (data?.node) {
+                this.focusedNodeId = data.node.id;
+            }
+        });
     }
 
     private handleWheel(event: any): void {
@@ -144,6 +157,8 @@ export class FractalZoomPlugin implements Plugin {
                 const threshold = this.config.levels[newLevel]?.detailThreshold ?? 0.5;
                 lodPlugin.setZoomLevel(newLevel, threshold);
             }
+
+            this.updateSemanticEdges(newLevel);
         }
 
         this.sg.events.emit('fractal:level-change', {
@@ -179,12 +194,36 @@ export class FractalZoomPlugin implements Plugin {
     zoomTo(distance: number, level?: number): void {
         if (!this.sg?.cameraControls) return;
 
-        const target = this.sg.cameraControls.target.clone();
+        let target = this.sg.cameraControls.target.clone();
+
+        // If we have a focused node, use it as the target for zoom-in
+        if (this.focusedNodeId) {
+            const node = this.sg.graph.nodes.get(this.focusedNodeId);
+            if (node) {
+                target.copy(node.position);
+            }
+        }
 
         this.sg.cameraControls.flyTo(target, distance, this.config.transitionDuration);
 
         if (level !== undefined) {
             this.updateLevel(level);
+        }
+    }
+
+    private updateSemanticEdges(level: number): void {
+        const importanceThreshold = this.config.levels[level]?.semanticImportance ?? 0;
+
+        for (const edge of this.sg.graph.edges.values()) {
+            const edgeImportance = (edge.data?.importance as number) ?? 1.0;
+
+            // If edge importance is lower than threshold, hide it
+            if (edgeImportance < importanceThreshold) {
+                if (edge.object) edge.object.visible = false;
+            } else {
+                // Let other plugins (like LOD) decide base on other factors,
+                // but we at least allow it.
+            }
         }
     }
 

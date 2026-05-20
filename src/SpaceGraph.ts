@@ -73,6 +73,7 @@ export class SpaceGraph {
                 import('./core/CameraControls').CameraControlsConfig
             >,
         );
+        this.cameraControls.sg = this;
         const config = (this.options.input as Record<string, any>) ?? {};
         this.input = new InputManager({ sg: this, events: this.events });
         applyDefaultInputConfig(this.input, this, config);

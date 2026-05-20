@@ -29,7 +29,7 @@ export class VisionManager {
         }
         this.modelLoader = new VisionModelLoader(providers);
         this.autoFixer = new VisionAutoFixer(sg);
-        this.visionSystem = new VisionSystem(sg.options?.vision);
+        this.visionSystem = new VisionSystem(sg.options?.vision, this.modelLoader);
     }
 
     private _modelsLoadedOverride: boolean | null = null;
@@ -68,6 +68,7 @@ export class VisionManager {
         const report = await this.visionSystem.analyze(this.sg.graph, this.sg.renderer.camera);
 
         logger.info('Analysis complete. Overall Score: %d', report.overall.score);
+        console.log(`[VisionManager] Analysis complete. Overall Score: ${report.overall.score}, Overlaps: ${report.overlap.overlapCount}`);
 
         if (report.overall.score < 90) {
             logger.warn('Quality below threshold, triggering autonomous fix...');

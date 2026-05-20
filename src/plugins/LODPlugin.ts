@@ -15,7 +15,7 @@ export class LODPlugin extends BaseSystemPlugin {
     readonly name = 'Level of Detail';
     readonly version = '1.0.0';
 
-    private maxDistance = 3000;
+    public maxDistance = 3000;
     private currentZoomLevel: number = 0;
     private detailThreshold: number = 0.5;
 
@@ -67,13 +67,38 @@ export class LODPlugin extends BaseSystemPlugin {
     ): void {
         for (const node of nodes) {
             const isHiddenByParent = this._isNodeHiddenByParent(node, hiddenParentIds);
+            const distance = cameraPosition.distanceTo(node.position);
 
             if ((node as any).isDOMNode) {
-                const distance = cameraPosition.distanceTo(node.position);
-                (node as any).setVisibility(!isHiddenByParent && distance <= this.maxDistance);
-                if (!isHiddenByParent) (node as any).updateLod(distance);
+                const visible = !isHiddenByParent && distance <= this.maxDistance;
+                (node as any).setVisibility(visible);
+
+                if (visible) {
+                    // Calculate alpha based on distance if near maxDistance
+                    const transitionRange = 500;
+                    let opacity = 1.0;
+                    if (distance > this.maxDistance - transitionRange) {
+                        opacity = 1.0 - (distance - (this.maxDistance - transitionRange)) / transitionRange;
+                    }
+                    if ((node as any).setOpacity) {
+                        (node as any).setOpacity(Math.max(0, opacity));
+                    }
+                    (node as any).updateLod(distance);
+                }
             } else if (!(node as any).isGroupNode) {
                 node.object.visible = !isHiddenByParent;
+                if (node.object.visible) {
+                    const transitionRange = 500;
+                    let opacity = 1.0;
+                    if (distance > this.maxDistance - transitionRange) {
+                        opacity = 1.0 - (distance - (this.maxDistance - transitionRange)) / transitionRange;
+                    }
+                    if ((node.object as any).material) {
+                        const mat = (node.object as any).material;
+                        mat.opacity = opacity;
+                        mat.transparent = opacity < 1.0;
+                    }
+                }
             }
         }
     }

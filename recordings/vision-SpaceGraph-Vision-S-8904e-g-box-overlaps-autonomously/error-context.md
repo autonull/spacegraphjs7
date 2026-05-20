@@ -65,53 +65,60 @@ Resolved to value: undefined
   42 |         // Allow layout to settle
   43 |         await page.waitForTimeout(2000);
   44 |
-  45 |         await page.evaluate(() => { const sg = Array.from((window as any).SpaceGraph.instances)[0] as any; if (sg && sg.vision) sg.vision.modelsLoaded = true; });
-  46 |         const visionAssert = createVisionAssert(page);
-  47 |
-> 48 |         await expect(visionAssert.noOverlap()).rejects.toThrow(/Expected no overlaps/);
-     |               ^ Error: expect(received).rejects.toThrow()
-  49 |     });
-  50 |
-  51 |     test('n8n workflow renders without overlaps', async ({ page }) => {
-  52 |         page.on('console', msg => console.log(`[Browser 2] ${msg.text()}`));
-  53 |         await page.goto('http://localhost:5176/demo/n8n-workflow.html', { waitUntil: 'networkidle' });
+  45 |         await page.evaluate(() => {
+  46 |             const sg = Array.from((window as any).SpaceGraph.instances)[0] as any;
+  47 |             if (sg && sg.vision) {
+  48 |                 sg.vision.modelsLoaded = true;
+  49 |                 // Force hybrid strategy to test AI + heuristics
+  50 |                 sg.vision.visionSystem.setStrategy('hybrid');
+  51 |             }
+  52 |         });
+  53 |         const visionAssert = createVisionAssert(page);
   54 |
-  55 |         // Wait for SpaceGraph instances to register
-  56 |         await page.waitForFunction(() => {
-  57 |             const w = window as any;
-  58 |             return w.SpaceGraph && w.SpaceGraph.instances && w.SpaceGraph.instances.size > 0;
-  59 |         }, { timeout: 15000 });
-  60 |
-  61 |         // trigger auto layout to resolve overlaps
-  62 |         await page.evaluate(async () => {
-  63 |             console.log('Evaluating Layout...');
-  64 |             const SpaceGraph = (window as any).SpaceGraph;
-  65 |             const sg = Array.from(SpaceGraph.instances as Set<any>)[0];
-  66 |             const forceLayout = sg.pluginManager.getPlugin('ForceLayout');
+> 55 |         await expect(visionAssert.noOverlap()).rejects.toThrow(/Expected no overlaps/);
+     |               ^ Error: expect(received).rejects.toThrow()
+  56 |     });
+  57 |
+  58 |     test('n8n workflow renders without overlaps', async ({ page }) => {
+  59 |         page.on('console', msg => console.log(`[Browser 2] ${msg.text()}`));
+  60 |         await page.goto('http://localhost:5176/demo/n8n-workflow.html', { waitUntil: 'networkidle' });
+  61 |
+  62 |         // Wait for SpaceGraph instances to register
+  63 |         await page.waitForFunction(() => {
+  64 |             const w = window as any;
+  65 |             return w.SpaceGraph && w.SpaceGraph.instances && w.SpaceGraph.instances.size > 0;
+  66 |         }, { timeout: 15000 });
   67 |
-  68 |             if (forceLayout && forceLayout.update) {
-  69 |                 console.log('Applying ForceLayout...');
-  70 |                 // Run enough iterations for the force layout physics to completely separate nodes
-  71 |                 // The n8n graph has wide nodes, so we need more separation force
-  72 |                 forceLayout.settings.repulsion = 500000;
-  73 |                 forceLayout.settings.linkDistance = 1000;
-  74 |                 for (let i = 0; i < 3000; i++) {
-  75 |                     forceLayout.update(0.016);
-  76 |                 }
-  77 |                 await new Promise(r => setTimeout(r, 100));
-  78 |             }
-  79 |         });
-  80 |
-  81 |         // Allow layout to settle
-  82 |         await page.waitForTimeout(3000);
-  83 |         await page.evaluate(() => { const sg = Array.from((window as any).SpaceGraph.instances)[0] as any; if(sg.vision) sg.vision.modelsLoaded = true; });
-  84 |
-  85 |         const visionAssert = createVisionAssert(page);
-  86 |
-  87 |         await expect(visionAssert.noOverlap()).resolves.toBeUndefined();
-  88 |         console.log('n8n test finished successfully');
-  89 |     });
-  90 |
-  91 | });
-  92 |
+  68 |         // trigger auto layout to resolve overlaps
+  69 |         await page.evaluate(async () => {
+  70 |             console.log('Evaluating Layout...');
+  71 |             const SpaceGraph = (window as any).SpaceGraph;
+  72 |             const sg = Array.from(SpaceGraph.instances as Set<any>)[0];
+  73 |             const forceLayout = sg.pluginManager.getPlugin('ForceLayout');
+  74 |
+  75 |             if (forceLayout && forceLayout.update) {
+  76 |                 console.log('Applying ForceLayout...');
+  77 |                 // Run enough iterations for the force layout physics to completely separate nodes
+  78 |                 // The n8n graph has wide nodes, so we need more separation force
+  79 |                 forceLayout.settings.repulsion = 500000;
+  80 |                 forceLayout.settings.linkDistance = 1000;
+  81 |                 for (let i = 0; i < 3000; i++) {
+  82 |                     forceLayout.update(0.016);
+  83 |                 }
+  84 |                 await new Promise(r => setTimeout(r, 100));
+  85 |             }
+  86 |         });
+  87 |
+  88 |         // Allow layout to settle
+  89 |         await page.waitForTimeout(3000);
+  90 |         await page.evaluate(() => { const sg = Array.from((window as any).SpaceGraph.instances)[0] as any; if(sg.vision) sg.vision.modelsLoaded = true; });
+  91 |
+  92 |         const visionAssert = createVisionAssert(page);
+  93 |
+  94 |         await expect(visionAssert.noOverlap()).resolves.toBeUndefined();
+  95 |         console.log('n8n test finished successfully');
+  96 |     });
+  97 |
+  98 | });
+  99 |
 ```

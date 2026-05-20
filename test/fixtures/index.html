@@ -45,14 +45,17 @@
             // Load the ODN, TLA, and CHE inference models for Vision validation
             setTimeout(async () => {
                 await sg.vision.loadModels({
-                    odn: '/dist/odn_model.onnx',
-                    tla: '/dist/tla_model.onnx',
-                    che: '/dist/che_model.onnx',
+                    odn: './dist/odn_model.onnx',
+                    tla: './dist/tla_model.onnx',
+                    che: './dist/che_model.onnx',
+                    vhs: './dist/vhs_model.onnx',
+                    eqa: './dist/eqa_model.onnx',
                 });
             }, 50);
 
             // Wait for graph to be ready and layout to apply, then override positions to force overlaps.
             setTimeout(() => {
+                console.log('[Fixture] Forcing overlaps...');
                 const n1 = sg.graph.nodes.get('n1');
                 const n2 = sg.graph.nodes.get('n2');
                 if (n1 && n2) {
@@ -65,8 +68,10 @@
                     // ShapeNodes have default size, so 1.0 unit separation is definitely an overlap
                     n1.updatePosition(0, 0, 0);
                     n2.updatePosition(1, 1, 0);
+                    console.log('[Fixture] Nodes n1 and n2 set to overlap at (0,0,0) and (1,1,0)');
+                    sg.events.emit('graph:updated');
                 }
-            }, 500);
+            }, 1000);
 
             window.sg = sg;
 

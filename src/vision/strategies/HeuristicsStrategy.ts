@@ -80,6 +80,7 @@ export class HeuristicsStrategy implements VisionStrategy {
     }
 
     async analyze(graph: unknown, camera: unknown): Promise<VisionReport> {
+        console.log('[HeuristicsStrategy] Starting analysis...');
         const context: VisionContext = {
             graph,
             camera,
