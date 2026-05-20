@@ -63,6 +63,9 @@ export class HUDPlugin extends BaseSystemPlugin {
         this.sg.events.on('edge:removed', () => this.updateNodeCount());
         this.sg.events.on('selection:changed', (e: any) => this.updateSelection(e));
         this.sg.events.on('camera:moved', () => this.updateCamera());
+
+        this.sg.events.on('fractal:level-change', (e: any) => this.updateFractalLevel(e));
+        this.sg.events.on('fractal:transition-progress', (p: number) => this.updateFractalProgress(p));
     }
 
     private updateNodeCount(): void {
@@ -78,6 +81,37 @@ export class HUDPlugin extends BaseSystemPlugin {
     private updateCamera(): void {
         const is3D = this.sg.renderer.camera.isPerspectiveCamera;
         this.statusBar?.updateCamera(is3D);
+    }
+
+    private updateFractalLevel(data: any): void {
+        const indicator = document.getElementById('level-text');
+        if (indicator) {
+            indicator.textContent = data.label;
+            indicator.style.color = '#8b5cf6';
+            setTimeout(() => { indicator.style.color = '#fff'; }, 500);
+        }
+    }
+
+    private updateFractalProgress(progress: number): void {
+        let progressBar = document.getElementById('fractal-zoom-progress');
+        if (!progressBar) {
+            const container = document.querySelector('.fractal-level-indicator');
+            if (container) {
+                const wrapper = document.createElement('div');
+                wrapper.style.cssText = 'height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin-top: 10px; overflow: hidden;';
+                progressBar = document.createElement('div');
+                progressBar.id = 'fractal-zoom-progress';
+                progressBar.style.cssText = 'height: 100%; width: 0%; background: #8b5cf6; transition: width 0.1s ease;';
+                wrapper.appendChild(progressBar);
+                container.appendChild(wrapper);
+            }
+        }
+        if (progressBar) {
+            progressBar.style.width = `${progress * 100}%`;
+            if (progress >= 1 || progress <= 0) {
+                setTimeout(() => { if (progressBar) progressBar.style.width = '0%'; }, 200);
+            }
+        }
     }
 
     addElement(options: HUDElementOptions): void {

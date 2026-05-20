@@ -56,7 +56,10 @@ export class SpatialIndex {
     private insertNode(node: NodeLike, box: THREE.Box3): void {
         if (node.object) {
             node.object.updateMatrixWorld(true);
+            const wasVisible = node.object.visible;
+            node.object.visible = true;
             box.setFromObject(node.object);
+            node.object.visible = wasVisible;
             console.log(`[SpatialIndex] Inserting node ${node.id} with bounds: min=(${box.min.x},${box.min.y},${box.min.z}), max=(${box.max.x},${box.max.y},${box.max.z})`);
             this.nodeBounds.set(node, box.clone());
             const minX = Math.floor(box.min.x / this.cellSize);

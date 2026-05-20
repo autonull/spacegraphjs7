@@ -40,6 +40,7 @@ const KEY_CONFIG = {
 export class CameraControls {
     readonly camera: THREE.Camera;
     readonly domElement: HTMLElement;
+    public sg?: any; // To emit events
     target: THREE.Vector3;
     spherical: THREE.Spherical;
 
@@ -169,6 +170,11 @@ export class CameraControls {
             const elapsed = performance.now() - this.animStartTime;
             const t = Math.min(elapsed / this.animDuration, 1);
             const eased = 1 - Math.pow(1 - t, 3);
+
+            if (this.sg?.events) {
+                this.sg.events.emit('camera:fly:progress', t);
+            }
+
             this.target.lerpVectors(this.startTarget, this.targetNext, eased);
             if (this.radiusNext)
                 this.spherical.radius =
@@ -176,6 +182,9 @@ export class CameraControls {
             if (t >= 1) {
                 this.targetNext = null;
                 this.radiusNext = null;
+                if (this.sg?.events) {
+                    this.sg.events.emit('camera:fly:end');
+                }
             }
         }
 

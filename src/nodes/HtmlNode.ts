@@ -49,6 +49,14 @@ public size = { width: 160, height: 70 };
 
         this._createInnerContent(spec);
         this._createControls();
+
+        if (spec.data?.title) {
+            const bar = this.createTitleBar(
+                spec.data.title as string,
+                (spec.data.theme as 'dark' | 'light') ?? 'dark',
+            );
+            this.domElement.insertBefore(bar, this.domElement.firstChild);
+        }
         this._createResizeHandle();
 
         const data = (spec.data as SpaceGraphNodeData) ?? {};
@@ -64,9 +72,11 @@ public size = { width: 160, height: 70 };
         wrapper.className = 'node-inner-wrapper';
         Object.assign(wrapper.style, {
             width: '100%',
-            height: '100%',
+            flex: '1',
             display: 'flex',
             flexDirection: 'column',
+            minHeight: '40px',
+            overflow: 'auto',
         });
 
         const contentWrapper = DOMUtils.createElement('div');
@@ -99,7 +109,7 @@ public size = { width: 160, height: 70 };
             contentWrapper.contentEditable = 'true';
             contentWrapper.spellcheck = false;
             contentWrapper.dataset.sgInteractive = 'true';
-            contentWrapper.textContent = (data.content as string) ?? spec.label ?? 'HTML Node';
+            contentWrapper.innerHTML = (data.content as string) ?? spec.label ?? 'HTML Node';
 
             let debounceTimer: ReturnType<typeof setTimeout>;
             contentWrapper.addEventListener('input', () => {
@@ -141,7 +151,7 @@ public size = { width: 160, height: 70 };
                 { passive: false },
             );
         } else {
-            contentWrapper.textContent = (data.content as string) ?? spec.label ?? 'HTML Node';
+            contentWrapper.innerHTML = (data.content as string) ?? spec.label ?? 'HTML Node';
         }
 
         wrapper.appendChild(contentWrapper);
@@ -233,8 +243,9 @@ public size = { width: 160, height: 70 };
             const data = updates.data as SpaceGraphNodeData;
             const handlers: Record<string, () => void> = {
                 color: () => {
-                    this.domElement.style.backgroundColor = data.color as string;
-                    this._applyNodeBgColor(data.color as string);
+                    const color = typeof data.color === 'number' ? '#' + data.color.toString(16).padStart(6, '0') : data.color as string;
+                    this.domElement.style.backgroundColor = color;
+                    this._applyNodeBgColor(color);
                 },
                 className: () => {
                     this.domElement.className = `spacegraph-html-node node-common ${data.className as string}`;
@@ -412,6 +423,7 @@ this.setSize(w, h);
                 this.contentWrapper.style.transform = `scale(${baseScale})`;
             }
             this.domElement.style.visibility = '';
+            this.domElement.style.display = 'flex';
             return;
         }
 
@@ -429,6 +441,9 @@ this.setSize(w, h);
                 this.domElement.style.visibility = level.style?.includes('visibility:hidden')
                     ? 'hidden'
                     : '';
+                this.domElement.style.display = level.style?.includes('display:none')
+                    ? 'none'
+                    : 'flex';
                 if (this.contentWrapper) {
                     const baseScale = (this.data?.contentScale as number) ?? 1.0;
                     this.contentWrapper.style.transform = `scale(${baseScale * (level.scale ?? 1.0)})`;
@@ -440,6 +455,7 @@ this.setSize(w, h);
 
         if (!ruleApplied) {
             this.domElement.style.visibility = '';
+            this.domElement.style.display = 'flex';
             if (this.contentWrapper) {
                 const baseScale = (this.data?.contentScale as number) ?? 1.0;
                 this.contentWrapper.style.transform = `scale(${baseScale})`;

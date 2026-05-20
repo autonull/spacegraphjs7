@@ -39,13 +39,14 @@ export class DOMNode extends Node {
         Object.assign(this.domElement.style, {
             width: `${width}px`,
             height: `${height}px`,
+            position: 'absolute',
+            pointerEvents: 'auto',
             backgroundColor: 'var(--node-bg, ' + bgColor + ')',
             color: textColor,
             border: `1px solid ${borderColor}`,
             borderRadius: '8px',
             boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
             boxSizing: 'border-box',
-            pointerEvents: 'auto',
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
@@ -215,6 +216,16 @@ export class DOMNode extends Node {
         this.cssObject.visible = visible;
         this.domElement.style.display = visible ? 'flex' : 'none';
         this.backingMesh.visible = visible;
+    }
+
+    public override setOpacity(opacity: number): this {
+        this.domElement.style.opacity = opacity.toString();
+        if (this.meshMaterial) {
+            this.meshMaterial.opacity = opacity * 0.1; // Maintain the 0.1 base translucency scale
+            this.meshMaterial.transparent = true;
+            this.meshMaterial.needsUpdate = true;
+        }
+        return super.setOpacity(opacity);
     }
 
     public updateLod(_distance: number): void {}

@@ -3,6 +3,9 @@
 
 import type { VisionStrategy, VisionReport, VisionOptions, VisionBenchmark } from './types';
 import { HeuristicsStrategy } from './strategies/HeuristicsStrategy';
+import { OnnxStrategy } from './strategies/OnnxStrategy';
+import { HybridStrategy } from './strategies/HybridStrategy';
+import type { VisionModelLoader } from './VisionModelLoader';
 
 /**
  * Vision System
@@ -13,7 +16,7 @@ export class VisionSystem {
     private currentStrategy: VisionStrategy;
     private options: VisionOptions;
 
-    constructor(options: VisionOptions = {}) {
+    constructor(options: VisionOptions = {}, modelLoader?: VisionModelLoader) {
         this.options = options;
         this.strategies = new Map();
 
@@ -21,9 +24,12 @@ export class VisionSystem {
         const heuristics = new HeuristicsStrategy(options.heuristics);
         this.strategies.set('heuristics', heuristics);
 
-        // ONNX strategy would be registered here if models are available
-        // this.strategies.set('onnx', new OnnxStrategy(options.models));
-        // this.strategies.set('hybrid', new HybridStrategy(heuristics, onnx));
+        if (modelLoader) {
+            const onnx = new OnnxStrategy(modelLoader);
+            const hybrid = new HybridStrategy(heuristics, onnx);
+            this.strategies.set('onnx', onnx);
+            this.strategies.set('hybrid', hybrid);
+        }
 
         // Set default strategy
         const strategyName = options.strategy ?? 'heuristics';

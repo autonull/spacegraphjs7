@@ -84,7 +84,11 @@ export abstract class Node extends Surface {
     }
 
     get bounds3D(): Bounds3D {
+        const wasVisible = this.object.visible;
+        this.object.visible = true;
         const box = new THREE.Box3().setFromObject(this.object);
+        this.object.visible = wasVisible;
+
         return {
             min: box.min,
             max: box.max,
