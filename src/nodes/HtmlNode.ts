@@ -24,31 +24,40 @@ public size = { width: 160, height: 70 };
     constructor(sg: SpaceGraph, spec: NodeSpec) {
         const width = (spec.data?.width as number) ?? 200;
         const height = (spec.data?.height as number) ?? 100;
+        const bgColor = (spec.data?.backgroundColor as string) ?? (spec.data?.color as string) ?? 'rgba(51, 102, 255, 0.8)';
+        const useRawHtml = spec.data?.useRawHtml === true;
 
         super(sg, spec, {
             defaultWidth: 200,
             defaultHeight: 100,
             materialParams: { visible: false },
-            className: `spacegraph-html-node node-common ${(spec.data?.className as string) ?? ''}`,
+            className: `spacegraph-html-node ${(spec.data?.className as string) ?? ''}`,
             customStyles: {
-                backgroundColor: (spec.data?.color as string) ?? 'rgba(51, 102, 255, 0.8)',
+                backgroundColor: useRawHtml ? 'transparent' : bgColor,
                 color: 'white',
-                border: '2px solid white',
+                border: useRawHtml ? 'none' : '2px solid white',
+                boxShadow: useRawHtml ? 'none' : '0 8px 32px rgba(0,0,0,0.5)',
                 padding: '0',
-                justifyContent: 'center',
-                alignItems: 'center',
+                display: 'flex',
+                flexDirection: 'column',
                 pointerEvents: (spec.data?.pointerEvents as string) ?? 'auto',
                 ...((spec.data?.style as Record<string, string>) ?? {}),
             },
             updatePositionOnInit: true,
         });
 
-        this.size = { width, height };
         this.domElement.id = `node-html-${spec.id}`;
+        this.domElement.style.setProperty('--node-bg', useRawHtml ? 'transparent' : bgColor);
         this.domElement.dataset.nodeId = spec.id;
+        this.domElement.classList.add('html-node-container');
+
+        this.setSize(width, height, false);
 
         this._createInnerContent(spec);
-        this._createControls();
+
+        if (spec.data?.showControls !== false) {
+            this._createControls();
+        }
 
         if (spec.data?.title) {
             const bar = this.createTitleBar(
@@ -64,28 +73,35 @@ public size = { width: 160, height: 70 };
         if (data.billboard) this.billboard = data.billboard as boolean;
         if (data.labelLod) this.labelLod = data.labelLod as LabelLodLevel[];
 
-        this._applyNodeBgColor((spec.data?.color as string) ?? 'rgba(51, 102, 255, 0.8)');
+        this._applyNodeBgColor(useRawHtml ? 'transparent' : bgColor);
     }
 
     private _createInnerContent(spec: NodeSpec): void {
+        const useRawHtml = spec.data?.useRawHtml === true;
         const wrapper = DOMUtils.createElement('div');
         wrapper.className = 'node-inner-wrapper';
         Object.assign(wrapper.style, {
             width: '100%',
-            flex: '1',
+            flex: '1 1 auto',
+            minHeight: '0',
             display: 'flex',
             flexDirection: 'column',
-            minHeight: '40px',
             overflow: 'auto',
+            position: 'relative',
+            boxSizing: 'border-box',
         });
 
         const contentWrapper = DOMUtils.createElement('div');
         contentWrapper.className = 'node-content';
         Object.assign(contentWrapper.style, {
             width: '100%',
-            flexGrow: '1',
+            flex: '1 0 auto',
             display: 'flex',
             flexDirection: 'column',
+            position: 'relative',
+            zIndex: '1',
+            boxSizing: 'border-box',
+            pointerEvents: 'auto',
         });
         const data = (spec.data as SpaceGraphNodeData) ?? {};
         contentWrapper.style.transform = `scale(${(data.contentScale as number) ?? 1.0})`;
@@ -93,11 +109,8 @@ public size = { width: 160, height: 70 };
 
         if (data.html) {
             contentWrapper.innerHTML = data.html as string;
-            // If the user provided a custom className, we assume they want to handle styling there.
-            // Otherwise, we default to a clean container for the custom HTML.
-            if (!spec.data?.className && !spec.data?.style) {
+            if (useRawHtml || (!spec.data?.className && !spec.data?.style && !spec.data?.color && !spec.data?.backgroundColor)) {
                 Object.assign(this.domElement.style, {
-                    display: 'block',
                     padding: '0',
                     border: 'none',
                     backgroundColor: 'transparent',
@@ -247,8 +260,13 @@ public size = { width: 160, height: 70 };
                     this.domElement.style.backgroundColor = color;
                     this._applyNodeBgColor(color);
                 },
+                backgroundColor: () => {
+                    const color = typeof data.backgroundColor === 'number' ? '#' + data.backgroundColor.toString(16).padStart(6, '0') : data.backgroundColor as string;
+                    this.domElement.style.backgroundColor = color;
+                    this._applyNodeBgColor(color);
+                },
                 className: () => {
-                    this.domElement.className = `spacegraph-html-node node-common ${data.className as string}`;
+                    this.domElement.className = `spacegraph-html-node ${data.className as string}`;
                 },
                 pointerEvents: () => {
                     this.domElement.style.pointerEvents = data.pointerEvents as string;
@@ -407,7 +425,8 @@ this.setSize(w, h);
     }
 
     setBackgroundColor(color: string): void {
-        this.data = { ...this.data, color };
+        this.data = { ...this.data, backgroundColor: color };
+        this.domElement.style.backgroundColor = color;
         this._applyNodeBgColor(color);
         this.sg?.events.emit('node:dataChanged', {
             node: this,
