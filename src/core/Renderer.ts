@@ -74,7 +74,6 @@ export class Renderer {
         this.cssRenderer.setSize(container.clientWidth, container.clientHeight);
         Object.assign(this.cssRenderer.domElement.style, CSS_STYLES);
         this.cssRenderer.domElement.style.zIndex = '1';
-        this.cssRenderer.domElement.style.pointerEvents = 'none';
         container.appendChild(this.cssRenderer.domElement);
 
         this.instancedRenderer = new InstancedNodeRenderer(sg, this.scene);

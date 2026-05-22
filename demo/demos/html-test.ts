@@ -8,10 +8,11 @@ export default async function htmlTestDemo(): Promise<SpaceGraph> {
                 type: 'HtmlNode',
                 position: [-250, 150, 0],
                 data: {
-                    width: 200,
-                    height: 100,
+                    width: 300,
+                    height: 150,
                     useRawHtml: true,
-                    html: '<div style="background: linear-gradient(to right, red, orange); color: white; padding: 10px; border-radius: 10px; height: 100%; display: flex; align-items: center; justify-content: center; font-weight: bold;">RAW HTML</div>'
+                    showControls: false,
+                    html: '<div style="background: white; color: black; padding: 20px; border: 10px solid #ff00ff; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: 900; font-family: Arial;">RAW HTML</div>'
                 }
             },
             {
