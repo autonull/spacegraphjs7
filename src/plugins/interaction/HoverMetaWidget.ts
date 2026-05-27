@@ -1,7 +1,6 @@
 import type { SpaceGraph } from '../../SpaceGraph';
 import type { Plugin } from '../../core/PluginManager';
 import type { Graph } from '../../core/Graph';
-import type { EventSystem } from '../../core/events/EventSystem';
 import type { Node } from '../../nodes/Node';
 
 export interface HoverAction {

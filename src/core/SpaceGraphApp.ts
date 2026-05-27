@@ -4,7 +4,6 @@ import { calculateFitView } from '../utils';
 import { HUDPlugin } from '../plugins/HUDPlugin';
 import { InteractionPlugin } from '../plugins/InteractionPlugin';
 import { MinimapPlugin } from '../plugins/MinimapPlugin';
-import { HtmlNode } from '../nodes/HtmlNode';
 import {
     addGrid,
     setupSearchHUD,

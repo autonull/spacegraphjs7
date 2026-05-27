@@ -1,4 +1,4 @@
-import type { VisionStrategy, VisionReport, VisionContext } from '../types';
+import type { VisionStrategy, VisionReport } from '../types';
 import { HeuristicsStrategy } from './HeuristicsStrategy';
 import { OnnxStrategy } from './OnnxStrategy';
 

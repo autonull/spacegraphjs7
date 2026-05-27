@@ -194,7 +194,7 @@ export class FractalZoomPlugin implements Plugin {
     zoomTo(distance: number, level?: number): void {
         if (!this.sg?.cameraControls) return;
 
-        let target = this.sg.cameraControls.target.clone();
+        const target = this.sg.cameraControls.target.clone();
 
         // If we have a focused node, use it as the target for zoom-in
         if (this.focusedNodeId) {
