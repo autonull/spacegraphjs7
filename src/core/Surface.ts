@@ -82,6 +82,7 @@ export abstract class Surface extends EventEmitter<SurfaceEventMap> {
     }
 
     findAncestor(predicate: (s: Surface) => boolean): Surface | null {
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
         let current: Surface | undefined = this;
         while (current) {
             if (predicate(current)) return current;

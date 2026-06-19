@@ -1,8 +1,6 @@
 import * as THREE from 'three';
 import { BaseSystemPlugin } from './BaseSystemPlugin';
 import type { Node } from '../nodes/Node';
-import { DOMNode } from '../nodes/DOMNode';
-import { GroupNode } from '../nodes/GroupNode';
 
 type NodeLike = {
     data?: Record<string, unknown>;

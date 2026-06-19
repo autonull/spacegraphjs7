@@ -1,7 +1,6 @@
 import * as THREE from 'three';
 import type { SpaceGraph } from '../../SpaceGraph';
 import type { Graph } from '../../core/Graph';
-import type { EventSystem } from '../../core/events/EventSystem';
 import { BaseSystemPlugin } from '../BaseSystemPlugin';
 import { HUDPlugin } from '../HUDPlugin';
 import { HUD_ZINDEX, HUD_COLORS } from '../hud/HUDStyles';

@@ -154,7 +154,7 @@ export class OnnxStrategy implements VisionStrategy {
             const output = await session.run({ hierarchy_features: tensor });
             const score = (output.hierarchy_score.data as Float32Array)[0] * 100;
             return { hasRoot: true, rootIds: [], depth: 3, levels: [], score };
-        } catch (e) {
+        } catch {
             return { hasRoot: false, rootIds: [], depth: 0, levels: [], score: 50 };
         }
     }
@@ -179,7 +179,7 @@ export class OnnxStrategy implements VisionStrategy {
                 smallTargets: smallTargets.map(n => ({ nodeId: n.id, size: n.data?.size ?? 0, recommended: 44 })),
                 score
             };
-        } catch (e) {
+        } catch {
             return { fittsLawCompliant: true, averageTargetSize: 44, smallTargets: [], score: 50 };
         }
     }
