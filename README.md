@@ -9,8 +9,6 @@
 SpaceGraphJS is a Zoomable User Interface (ZUI) library powered by AI vision.
 It sees what it builds, verifies quality autonomously, and self-corrects in 30 seconds.
 
-**98% faster iteration. Pixel-perfect. Pure FOSS.**
-
 ## Quickstart
 
 ```bash
@@ -44,38 +42,7 @@ Check out the interactive examples in the `demo/` directory or run `pnpm run dev
 - Matrix: https://matrix.to/#/#spacegraphjs:matrix.org
 - GitHub: https://github.com/autonull/spacegraphjs
 
-## License
-
-MIT — See [LICENSE](./LICENSE)
-
 ---
-
-## What You Get
-
-### 🖥️ Software: The Fastest ZUI Library
-
-**For Developers:**
-
-```typescript
-import { SpaceGraph } from 'spacegraphjs';
-
-const graph = await SpaceGraph.create('#container', {
-    nodes: [
-        { id: 'a', type: 'ShapeNode', label: 'Node A', position: [0, 0, 0] },
-        { id: 'b', type: 'ShapeNode', label: 'Node B', position: [150, 0, 0] },
-    ],
-    edges: [{ id: 'e1', source: 'a', target: 'b', type: 'Edge' }],
-});
-
-graph.render();
-```
-
-**Results:**
-
-- ⚡ **60 FPS at 1000 nodes** (120 FPS target)
-- 📦 **Prefer smaller bundle size**
-- 🧠 **AI vision** that catches UI bugs automatically
-- ⏱️ **<30 seconds** to first render
 
 **Install:**
 
@@ -126,10 +93,6 @@ SpaceGraph Mini — A pocket-sized computer running SpaceGraphOS.
 - **Layout Quality Corpus** — 100K+ labeled graph layouts (CC-BY-4.0)
 - **UI Vision Benchmark** — 10K UI screenshots (MIT + CC-BY-4.0)
 
-**Collaborations:** 6+ target labs (Stanford, MIT, UW, Berkeley, SFU)
-
-**Funding:** $2M+ target (NSF, ERC, Google, Mozilla, NLnet)
-
 ---
 
 ## Why This Exists
@@ -168,94 +131,6 @@ Human specifies → AI builds → Vision verifies → AI self-corrects → Done
 - **ODN** — Overlap detection
 - **VHS** — Visual hierarchy scoring
 - **EQA** — Ergonomics quality assessment
-
----
-
-## The Impact
-
-### For You (User)
-
-| Benefit             | Traditional | SpaceGraphJS  | Improvement   |
-| ------------------- | ----------- | ------------- | ------------- |
-| Time to first graph | 5-10 min    | **<30 sec**   | 10-20x faster |
-| Iteration time      | 30 min      | **30 sec**    | 60x faster    |
-| Bug detection       | Manual      | **Automatic** | 95% auto-fix  |
-
-### For Science
-
-| Contribution               | Impact                                |
-| -------------------------- | ------------------------------------- |
-| **Vision-Closed paradigm** | New field of AI-assisted development  |
-| **100K+ layout dataset**   | Enables reproducible research         |
-| **Open hardware platform** | Accessible AI research for all labs   |
-| **175K LOC synthesis**     | Model for future codebase unification |
-
-### For Industry
-
-| Benefit                | Value                           |
-| ---------------------- | ------------------------------- |
-| **Faster development** | 60x iteration speedup           |
-| **Better UX**          | Autonomous quality verification |
-| **Lower costs**        | Open source, no licensing       |
-| **Talent attraction**  | Cutting-edge technology         |
-
----
-
-## The Plan
-
-### Phase A: Software Excellence (Days 0-30)
-
-**Goal:** Best-in-class ZUI library
-
-| Week | Focus          | Deliverable                        |
-| ---- | -------------- | ---------------------------------- |
-| 1-2  | Core rendering | Working demo (3 nodes, 3 edges)    |
-| 3-4  | API design     | <10 method public API              |
-| 5-6  | Performance    | 60 FPS at 1000 nodes               |
-| 7-8  | Polish         | Beautiful defaults, error messages |
-
-**Launch:** Day 30 (pnpm publish `spacegraphjs@alpha`)
-
----
-
-### Phase B: Hardware Excellence (Months 2-6)
-
-**Goal:** Most open, capable dev platform
-
-| Month | Focus       | Deliverable                        |
-| ----- | ----------- | ---------------------------------- |
-| 2-3   | Design      | Schematics, CAD files              |
-| 4-5   | Prototyping | Working prototype                  |
-| 6     | Validation  | FCC/CE certified, production-ready |
-
-**Launch:** Month 6 (Crowd Supply campaign)
-
----
-
-### Phase C: Growth (Months 6-12)
-
-**Goal:** Industry adoption
-
-| Metric                | Target   |
-| --------------------- | -------- |
-| pnpm downloads/month   | 5,000+   |
-| GitHub stars          | 500+     |
-| External contributors | 25+      |
-| Monthly revenue       | $45,000+ |
-
----
-
-### Phase D: Research (Months 12-36)
-
-**Goal:** Seminal academic contribution
-
-| Deliverable          | Target                           |
-| -------------------- | -------------------------------- |
-| Research papers      | 4+ (CHI, UIST, MSR, TEI)         |
-| Citations            | 250+                             |
-| Datasets             | 2 (100K+ layouts, 10K UI images) |
-| Lab collaborations   | 6+                               |
-| University adoptions | 100+                             |
 
 ---
 
@@ -327,32 +202,6 @@ All designs published under open licenses:
 | **SpaceGraphOS**     | AGPL v3                    |
 
 **Pure FOSS. No enterprise tiers. No restrictions.**
-
----
-
-## The Team
-
-**Founder:** autonull
-
-**Contributors:** [View on GitHub](https://github.com/autonull/spacegraphjs/graphs/contributors)
-
-**Advisors:** [Coming Soon]
-
----
-
-## Funding
-
-**Supported by:**
-
-- Individual sponsors ([Join](https://github.com/sponsors/autonull))
-- Future: NSF, ERC, Google, Mozilla, NLnet grants
-
-**Revenue Streams:**
-
-- SpaceGraph Mini hardware ($249)
-- Workshops & training ($1,500-$10,000)
-- Consulting ($150-200/hour)
-- Donations (GitHub Sponsors, Open Collective)
 
 ---
 
