@@ -16,11 +16,12 @@
     <body>
         <div id="container"></div>
         <script type="module">
-            import { SpaceGraph } from '../src/index.ts';
+            import { SpaceGraph } from '@src/index.ts';
             try {
-                const graph = SpaceGraph.create('#container', { nodes: [], edges: [] });
-                graph.render();
+                const graph = await SpaceGraph.create('#container', { nodes: [], edges: [] });
+                window._sg = graph;
                 console.log('✓ Empty graph works');
+                window.addEventListener('beforeunload', () => graph.dispose());
             } catch (e) {
                 console.error('✗ Empty graph failed:', e);
             }

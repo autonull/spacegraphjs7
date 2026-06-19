@@ -8,7 +8,7 @@ Before contributing, it's vital to understand the **Vision-Closed** development 
 
 In SpaceGraphJS, **the AI builds with you**.
 
-When you boot the local dev server (`npm run dev`), the `VisionManager` automatically layers on top of your graph. The manager continuously feeds screenshots of the DOM to ONNX machine-learning models (like LQ-Net for layout, ODN for overlap, etc.). When a visual regression is detected—such as poorly contrasted text or overlapping nodes—the AI generates semantic DOM patches automatically. 
+When you boot the local dev server (`pnpm run dev`), the `VisionManager` automatically layers on top of your graph. The manager continuously feeds screenshots of the DOM to ONNX machine-learning models (like LQ-Net for layout, ODN for overlap, etc.). When a visual regression is detected—such as poorly contrasted text or overlapping nodes—the AI generates semantic DOM patches automatically.
 
 **As a contributor**, your goal is to *extend* the graph rendering engine and *trust* the AI to verify visual invariants. 
 
@@ -24,12 +24,12 @@ To start contributing, set up your standard NodeJS environment.
 
 2. **Install Dependencies**
    ```bash
-   npm install
+   pnpm install
    ```
 
 3. **Run the Interactive Examples**
    ```bash
-   npm run dev
+   pnpm run dev
    ```
    Navigate to `http://localhost:5173/examples/index.html` to see the live templates, including the `VisionOverlayPlugin` in action.
 
@@ -58,14 +58,14 @@ We maintain high quality standards. Before opening a PR, ensure you have:
    - If adding visual layout logic, implement an invariant test inside `test/vision.spec.ts` using the `visionAssert` utility!
 3. **Run CI checks locally**.
    ```bash
-   npm run lint
-   npm run format:check
-   npm run test
-   npm run vision
+   pnpm run lint
+   pnpm run format:check
+   pnpm run test
+   pnpm run vision
    ```
 4. **Tested the build output**
    ```bash
-   npm run build
+   pnpm run build
    ```
 
 After submitting a PR, wait for the GitHub Actions to complete. If the `Playwright Vision Tests` fail, it means your pull request introduced a visual defect (e.g. contrast failure) globally!
@@ -93,7 +93,7 @@ SpaceGraphJS relies on localized ONNX models to evaluate UI quality (Layout, Con
    python3 train_vision_models.py
    ```
    This will output new `.onnx` files into the `public/` directory.
-5. **Test locally:** Run `npm run test:vision` to see if your new weights improve the Playwright assertions.
+5. **Test locally:** Run `pnpm run test:vision` to see if your new weights improve the Playwright assertions.
 
 ## 🐞 Reporting Bugs
 

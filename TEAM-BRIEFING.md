@@ -90,7 +90,7 @@ Human specifies → AI builds → Vision verifies → AI self-corrects → Done
 │  ═══════════════════════════════════════════════════════════════════    │
 │  Week 1-2: Core rendering (3 nodes, 3 edges demo)                      │
 │  Week 5-6: Performance (60 FPS at 1000 nodes)                          │
-│  Week 7-8: Polish + Launch (npm publish alpha)                         │
+│  Week 7-8: Polish + Launch (pnpm publish alpha)                         │
 │                                                                          │
 │  MONTHS 2-6: HARDWARE EXCELLENCE                                       │
 │  ═══════════════════════════════════════════════════════════════════    │
@@ -189,9 +189,9 @@ Human specifies → AI builds → Vision verifies → AI self-corrects → Done
 | Timeframe    | Success Criteria                | Verification                |
 | ------------ | ------------------------------- | --------------------------- |
 | **Day 14**   | Working demo (3 nodes, 3 edges) | Demo renders without errors |
-| **Day 30**   | npm publish (alpha)             | Package on npmjs.com        |
+| **Day 30**   | pnpm publish (alpha)             | Package on npmjs.com        |
 | **Month 6**  | Hardware prototype              | 10 units working            |
-| **Month 12** | 5K npm downloads/month          | npm trends                  |
+| **Month 12** | 5K pnpm downloads/month          | pnpm trends                  |
 | **Month 36** | 250+ paper citations            | Google Scholar              |
 
 ---
@@ -279,7 +279,7 @@ Human specifies → AI builds → Vision verifies → AI self-corrects → Done
 | Day 1: First commit | Favorite meal |
 | Day 7: First render | Day off |
 | Day 14: Working demo | Nice dinner |
-| Month 1: npm publish | Weekend trip |
+| Month 1: pnpm publish | Weekend trip |
 | Month 6: Hardware prototype | Celebration event |
 
 ---

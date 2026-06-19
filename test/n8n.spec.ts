@@ -17,7 +17,7 @@ test.describe('SpaceGraph n8n Integration E2E', () => {
         // Build the bridge
         console.log('Building n8n bridge...');
         await new Promise((resolve, reject) => {
-            const buildProcess = spawn('npm', ['run', 'build', '-w', 'packages/n8n-bridge'], {
+            const buildProcess = spawn('pnpm', ['run', 'build', '-w', 'packages/n8n-bridge'], {
                 stdio: 'ignore'
             });
             buildProcess.on('close', (code) => {

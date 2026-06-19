@@ -107,7 +107,7 @@ const graph = new SpaceGraph({
 **DO NOT SPEND TIME ON:**
 
 - ❌ README polish
-- ❌ npm publishing
+- ❌ pnpm publishing
 - ❌ GitHub Actions
 - ❌ Content calendar
 
@@ -548,8 +548,8 @@ HARDWARE:
 ```bash
 # Day 1: Core rendering
 mkdir spacegraphjs && cd spacegraphjs
-npm init -y
-npm install three
+pnpm create -y
+pnpm install three
 
 # Create src/SpaceGraph.ts
 # Make it render 3 beautiful spheres

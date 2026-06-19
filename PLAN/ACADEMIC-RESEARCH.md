@@ -434,7 +434,7 @@ and independent researchers worldwide.
 0:01-0:02  Solution: Embed AI vision
 0:02-0:03  Demo: 30-second fix
 0:03-0:04  Results: 60x faster
-0:04-0:05  Try it: npm install spacegraphjs
+0:04-0:05  Try it: pnpm install spacegraphjs
 ```
 
 **Slides:** 5 slides maximum
@@ -624,7 +624,7 @@ https://spacegraphjs.dev
 
 | Metric                | Target (Year 3) |
 | --------------------- | --------------- |
-| npm downloads/month   | 25,000+         |
+| pnpm downloads/month   | 25,000+         |
 | GitHub stars          | 2,000+          |
 | External contributors | 100+            |
 | Industry adoptions    | 50+ companies   |

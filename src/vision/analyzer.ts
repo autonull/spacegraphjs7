@@ -1,31 +1,71 @@
+import { clamp as clampValue } from '../utils/math';
 import { spawn } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
+import { createLogger } from '../utils/logger';
+import type { VisionReport, VisionIssue, Overlap, ContrastFailure } from './types';
 
-export interface VisionReport {
-    layoutScore: number;
-    legibilityScore: number;
-    issues: VisionIssue[];
-}
+const logger = createLogger('Vision');
 
-export interface VisionIssue {
-    type: 'overlap' | 'legibility' | 'color';
-    severity: 'error' | 'warning';
-    message: string;
+function buildVisionReport(
+    layoutScore: number,
+    legibilityScore: number,
+    issues: any[],
+): VisionReport {
+    const overlaps: Overlap[] = issues
+        .filter((i) => i.type === 'overlap')
+        .map((i) => ({ nodeA: i.nodeA, nodeB: i.nodeB, penetration: 0 }));
+
+    const failures: ContrastFailure[] = issues
+        .filter((i) => i.type === 'legibility')
+        .map((i) => ({
+            nodeId: i.nodeId ?? 'unknown',
+            contrast: 0,
+            severity: i.severity === 'info' ? 'warning' : i.severity,
+        }));
+
+    const issuesList: VisionIssue[] = issues.map((i) => ({
+        severity: i.severity,
+        category: (i.type === 'overlap' || i.category === 'overlap'
+            ? 'overlap'
+            : i.type === 'legibility' || i.category === 'legibility'
+              ? 'legibility'
+              : 'ergonomics') as VisionIssue['category'],
+        message: i.message,
+        nodeIds: i.nodeIds ? i.nodeIds : (i.nodeA ? [i.nodeA, i.nodeB] : i.nodeId ? [i.nodeId] : undefined),
+        targetFile: i.targetFile,
+    }));
+
+    const overallScore = clampValue((layoutScore + legibilityScore) / 2, 0, 100);
+    const grade =
+        overallScore >= 90
+            ? 'A'
+            : overallScore >= 80
+              ? 'B'
+              : overallScore >= 70
+                ? 'C'
+                : overallScore >= 60
+                  ? 'D'
+                  : 'F';
+
+    return {
+        legibility: { wcagAA: legibilityScore >= 90, averageContrast: legibilityScore, failures },
+        overlap: { hasOverlaps: overlaps.length > 0, overlapCount: overlaps.length, overlaps },
+        hierarchy: { hasRoot: false, rootIds: [], depth: 0, levels: [], score: 0 },
+        ergonomics: { fittsLawCompliant: true, averageTargetSize: 0, smallTargets: [], score: 0 },
+        overall: { score: overallScore, grade, issues: issuesList },
+    };
 }
 
 export async function runVisionAnalysis(outputDir: string): Promise<VisionReport> {
-    const report: VisionReport = {
-        layoutScore: 100,
-        legibilityScore: 100,
-        issues: [],
-    };
+    let layoutScore = 100;
+    let legibilityScore = 100;
+    const issues: any[] = [];
 
-    // Find all HTML files in the output directory
     const htmlFiles = findHtmlFiles(outputDir);
     if (htmlFiles.length === 0) {
-        console.warn('[Vision] No HTML files found in output directory to analyze.');
-        return report;
+        logger.warn('No HTML files found in output directory to analyze.');
+        return buildVisionReport(layoutScore, legibilityScore, issues);
     }
 
     try {
@@ -36,38 +76,42 @@ export async function runVisionAnalysis(outputDir: string): Promise<VisionReport
 
         let serverProcess;
         try {
-            // Start Vite dev server to host the fixture and resolve bare module imports automatically
-            console.log(`[Vision] Starting static server for ${outputDir}...`);
-            serverProcess = spawn('npx', ['vite', 'serve', outputDir, '--port', '5175', '--strictPort', '--no-open'], {
-                stdio: 'ignore',
-            });
-            await new Promise((resolve) => setTimeout(resolve, 2000)); // wait for server to start
+            logger.info(`Starting static server for ${outputDir}...`);
+            serverProcess = spawn(
+                'npx',
+                ['vite', 'serve', outputDir, '--port', '5175', '--strictPort', '--no-open'],
+                { stdio: 'ignore' },
+            );
+            await new Promise((resolve) => setTimeout(resolve, 2000));
 
             for (const file of htmlFiles) {
                 const relativePath = path.relative(outputDir, file).replace(/\\/g, '/');
                 const url = `http://localhost:5175/${relativePath}`;
-                console.log(`[Vision] Analyzing ${url}`);
+                logger.info(`Analyzing ${url}`);
 
                 try {
                     page.on('console', (msg) =>
-                        console.log(`[Browser] ${msg.type()}: ${msg.text()}`),
+                        logger.debug(`[Browser] ${msg.type()}: ${msg.text()}`),
                     );
-                    page.on('pageerror', (err) => console.error(`[Browser Error] ${err.message}`));
-                    page.on('requestfailed', request =>
-                        console.error(`[Browser] Request failed: ${request.url()} (${request.failure()?.errorText})`)
+                    page.on('pageerror', (err) => logger.error(`[Browser Error] ${err.message}`));
+                    page.on('requestfailed', (request) =>
+                        logger.error(
+                            `[Browser] Request failed: ${request.url()} (${request.failure()?.errorText})`,
+                        ),
                     );
 
                     await page.goto(url, { waitUntil: 'networkidle', timeout: 10000 });
 
-                    // Wait for SpaceGraph instances to register
                     const hasGraph = await page
                         .waitForFunction(
                             () => {
-                                const w = window as any;
+                                const w = window as {
+                                    SpaceGraph?: { instances: Set<any> };
+                                };
                                 return (
-                                        w.SpaceGraph &&
-                                        w.SpaceGraph.instances &&
-                                        w.SpaceGraph.instances.size > 0
+                                    (w.SpaceGraph &&
+                                    w.SpaceGraph.instances &&
+                                    w.SpaceGraph.instances.size > 0)
                                 );
                             },
                             { timeout: 5000 },
@@ -75,20 +119,25 @@ export async function runVisionAnalysis(outputDir: string): Promise<VisionReport
                         .catch(() => false);
 
                     if (!hasGraph) {
-                        console.log(
-                            `[Vision] No SpaceGraph instance found on ${relativePath}, skipping.`,
-                        );
+                        logger.debug(`No SpaceGraph instance found on ${relativePath}, skipping.`);
                         continue;
                     }
 
-                    // Give layout algorithms time to settle
                     await page.waitForTimeout(1000);
 
-                    // Analyze nodes inside the page context
                     const fileAnalysis = await page.evaluate(async () => {
-                        const w = window as any;
-                        const instances = w.__SPACEGRAPH_INSTANCES__;
-                        if (!instances)
+                        const w = window as {
+                            SpaceGraph: {
+                                instances: Set<{
+                                    vision: {
+                                        stopAutonomousCorrection: () => void;
+                                        analyzeVision: () => Promise<import('./types').VisionReport>;
+                                    };
+                                }>;
+                            };
+                        };
+                        const instances = Array.from(w.SpaceGraph.instances);
+                        if (!instances || instances.length === 0)
                             return { overlaps: 0, legibilityIssues: 0, localIssues: [] };
 
                         let overlaps = 0;
@@ -96,45 +145,49 @@ export async function runVisionAnalysis(outputDir: string): Promise<VisionReport
                         const localIssues: any[] = [];
 
                         for (const sg of instances) {
-                            // Turn off autonomous mode for the test so we can do a single frame analysis
                             sg.vision.stopAutonomousCorrection();
-
-                            // Grab the real heuristics + ONNX validated report from the library Engine
                             const report = await sg.vision.analyzeVision();
 
                             overlaps += report.overlap.overlaps.length;
                             legibilityIssues += report.legibility.failures.length;
 
-                            // Map overlap format to expected Playwright output
                             localIssues.push(
                                 ...report.overlap.overlaps.map((o: any) => ({
-                                    type: 'overlap',
-                                    severity: 'warning',
-                                    nodeA: o.nodeA,
-                                    nodeB: o.nodeB,
+                                    category: 'overlap',
+                                    severity: 'warning' as const,
+                                    nodeIds: [o.nodeA, o.nodeB],
                                     message: `Bounding box overlap detected between nodes ${o.nodeA} and ${o.nodeB}.`,
+                                    type: 'overlap'
                                 })),
                             );
 
-                            localIssues.push(...report.legibility.failures);
+                            localIssues.push(...report.legibility.failures.map(f => ({
+                                category: 'legibility',
+                                severity: f.severity,
+                                nodeIds: [f.nodeId],
+                                message: `Low contrast on node ${f.nodeId}: ${f.contrast}`,
+                                type: 'legibility'
+                            })));
+
+                            localIssues.push(...report.overall.issues);
                         }
 
                         return { overlaps, legibilityIssues, localIssues };
                     });
 
                     if (fileAnalysis) {
-                        report.layoutScore = Math.max(
+                        layoutScore = Math.max(0, layoutScore - fileAnalysis.overlaps * 5);
+                        legibilityScore = Math.max(
                             0,
-                            report.layoutScore - fileAnalysis.overlaps * 5,
+                            legibilityScore - fileAnalysis.legibilityIssues * 10,
                         );
-                        report.legibilityScore = Math.max(
-                            0,
-                            report.legibilityScore - fileAnalysis.legibilityIssues * 10,
-                        );
-                        report.issues.push(...fileAnalysis.localIssues);
+                        fileAnalysis.localIssues.forEach((issue: any) => {
+                            issue.targetFile = relativePath;
+                        });
+                        issues.push(...fileAnalysis.localIssues);
                     }
                 } catch (e) {
-                    console.error(`[Vision] Error analyzing ${relativePath}:`, e);
+                    logger.error(`Error analyzing ${relativePath}:`, e);
                 }
             }
         } finally {
@@ -144,10 +197,10 @@ export async function runVisionAnalysis(outputDir: string): Promise<VisionReport
         }
         await browser.close();
     } catch (e) {
-        console.error('[Vision] Failed to run playwright analysis:', e);
+        logger.error('Failed to run playwright analysis:', e);
     }
 
-    return report;
+    return buildVisionReport(layoutScore, legibilityScore, issues);
 }
 
 function findHtmlFiles(dir: string, fileList: string[] = []): string[] {

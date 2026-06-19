@@ -26,22 +26,22 @@ jobs:
               uses: actions/setup-node@v4
               with:
                   node-version: '20'
-                  cache: 'npm'
+                  cache: 'pnpm'
 
             - name: Install dependencies
-              run: npm ci
+              run: pnpm ci
 
             - name: Lint
-              run: npm run lint
+              run: pnpm run lint
 
             - name: Format check
-              run: npm run format:check
+              run: pnpm run format:check
 
             - name: Type check
-              run: npx tsc --noEmit
+              run: pnpm dlx tsc --noEmit
 
             - name: Run tests
-              run: npm test
+              run: pnpm test
 
             - name: Upload coverage
               uses: codecov/codecov-action@v3
@@ -59,13 +59,13 @@ jobs:
               uses: actions/setup-node@v4
               with:
                   node-version: '20'
-                  cache: 'npm'
+                  cache: 'pnpm'
 
             - name: Install dependencies
-              run: npm ci
+              run: pnpm ci
 
             - name: Build
-              run: npm run build
+              run: pnpm run build
 
             - name: Verify build output
               run: |
@@ -89,16 +89,16 @@ jobs:
               uses: actions/setup-node@v4
               with:
                   node-version: '20'
-                  cache: 'npm'
+                  cache: 'pnpm'
 
             - name: Install dependencies
-              run: npm ci
+              run: pnpm ci
 
             - name: Build
-              run: npm run build
+              run: pnpm run build
 
             - name: Run vision tests
-              run: npm run test:vision
+              run: pnpm run test:vision
 
             - name: Upload vision reports
               uses: actions/upload-artifact@v4
@@ -129,19 +129,19 @@ jobs:
               uses: actions/setup-node@v4
               with:
                   node-version: '20'
-                  cache: 'npm'
+                  cache: 'pnpm'
 
             - name: Install dependencies
-              run: npm ci
+              run: pnpm ci
 
             - name: Install Playwright
-              run: npx playwright install --with-deps chromium
+              run: pnpm dlx playwright install --with-deps chromium
 
             - name: Build
-              run: npm run build
+              run: pnpm run build
 
             - name: Start dev server
-              run: npm run dev &
+              run: pnpm run dev &
               env:
                   PORT: 5173
 
@@ -149,7 +149,7 @@ jobs:
               run: sleep 5
 
             - name: Run visual regression tests
-              run: npm run test:e2e
+              run: pnpm run test:e2e
 
             - name: Upload screenshots
               uses: actions/upload-artifact@v4
@@ -186,20 +186,20 @@ jobs:
               uses: actions/setup-node@v4
               with:
                   node-version: '20'
-                  cache: 'npm'
+                  cache: 'pnpm'
                   registry-url: 'https://registry.npmjs.org'
 
             - name: Install dependencies
-              run: npm ci
+              run: pnpm ci
 
             - name: Build
-              run: npm run build
+              run: pnpm run build
 
             - name: Run tests
-              run: npm test
+              run: pnpm test
 
-            - name: Publish to npm
-              run: npm publish --provenance --access public
+            - name: Publish to pnpm
+              run: pnpm publish --provenance --access public
               env:
                   NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
@@ -236,16 +236,16 @@ jobs:
               uses: actions/setup-node@v4
               with:
                   node-version: '20'
-                  cache: 'npm'
+                  cache: 'pnpm'
 
             - name: Install dependencies
-              run: npm ci
+              run: pnpm ci
 
             - name: Build
-              run: npm run build
+              run: pnpm run build
 
             - name: Run vision analysis
-              run: npm run vision
+              run: pnpm run vision
 
             - name: Check quality thresholds
               run: |
@@ -427,7 +427,7 @@ If applicable, add screenshots.
 ```yaml
 version: 2
 updates:
-    - package-ecosystem: 'npm'
+    - package-ecosystem: 'pnpm'
       directory: '/'
       schedule:
           interval: 'weekly'

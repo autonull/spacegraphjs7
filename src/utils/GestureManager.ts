@@ -3,54 +3,48 @@ export interface Point {
     y: number;
 }
 
-export class GestureManager {
-    /**
-     * Calculates the distance between two points, used for pinch-to-zoom.
-     */
-    static calculateDistance({ x: x1, y: y1 }: Point, { x: x2, y: y2 }: Point): number {
-        const dx = x1 - x2;
-        const dy = y1 - y2;
-        return Math.hypot(dx, dy);
-    }
+export type DragCallback = (delta: Point) => void;
+export type PinchCallback = (scale: number, center: Point) => void;
+export type RotateCallback = (angle: number, center: Point) => void;
 
-    /**
-     * Calculates the midpoint between two points, used for two-finger pan.
-     */
-    static calculateMidpoint({ x: x1, y: y1 }: Point, { x: x2, y: y2 }: Point): Point {
-        return {
-            x: (x1 + x2) / 2,
-            y: (y1 + y2) / 2,
-        };
-    }
+export function calculateDistance(p1: Point, p2: Point): number {
+    return Math.hypot(p1.x - p2.x, p1.y - p2.y);
+}
 
-    /**
-     * Calculates the new zoom radius based on pinch distance delta.
-     */
-    static calculatePinchZoom(
-        currentDistance: number,
-        previousDistance: number,
-        currentRadius: number,
-        zoomSpeedFactor: number = 0.005,
-        minRadius: number = 10,
-        maxRadius: number = 5000
-    ): number {
-        const zoomDelta = (currentDistance - previousDistance) * (currentRadius * zoomSpeedFactor);
-        return Math.max(minRadius, Math.min(maxRadius, currentRadius - zoomDelta));
-    }
+export function calculateMidpoint(p1: Point, p2: Point): Point {
+    return { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 };
+}
 
-    /**
-     * Calculates the pan velocity based on midpoint movement.
-     */
-    static calculatePan(
-        { x: cx, y: cy }: Point,
-        { x: px, y: py }: Point,
-        currentRadius: number,
-        panSpeedFactor: number = 0.002
-    ): Point {
-        const panSpeed = currentRadius * panSpeedFactor;
-        return {
-            x: -(cx - px) * panSpeed,
-            y: (cy - py) * panSpeed
-        };
-    }
+export function calculatePinchZoom(
+    currentDistance: number,
+    previousDistance: number,
+    currentRadius: number,
+    zoomSpeedFactor: number = 0.005,
+    minRadius: number = 10,
+    maxRadius: number = 5000,
+): number {
+    const zoomDelta = (currentDistance - previousDistance) * (currentRadius * zoomSpeedFactor);
+    return Math.max(minRadius, Math.min(maxRadius, currentRadius - zoomDelta));
+}
+
+export function calculatePan(
+    current: Point,
+    previous: Point,
+    currentRadius: number,
+    panSpeedFactor: number = 0.002,
+): Point {
+    const panSpeed = currentRadius * panSpeedFactor;
+    return { x: -(current.x - previous.x) * panSpeed, y: (current.y - previous.y) * panSpeed };
+}
+
+export function calculateAngle(p1: Point, p2: Point): number {
+    return Math.atan2(p2.y - p1.y, p2.x - p1.x);
+}
+
+export function isClick(startPos: Point, endPos: Point, threshold: number = 5): boolean {
+    return calculateDistance(startPos, endPos) < threshold;
+}
+
+export function normalizeWheel(delta: number, sensitivity: number = 1): number {
+    return Math.sign(delta) * Math.min(Math.abs(delta), 100) * sensitivity;
 }

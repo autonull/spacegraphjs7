@@ -5,7 +5,7 @@ The Vite plugin integrates AI vision analysis into your build process. SpaceGrap
 ## Installation
 
 ```bash
-npm install spacegraphjs
+pnpm install spacegraphjs
 ```
 
 ## Configuration
@@ -54,7 +54,7 @@ export default defineConfig({
 Because the analyzer requires a browser to realistically render the HTML context, ensure you have Playwright browsers installed:
 
 ```bash
-npx playwright install
+pnpm dlx playwright install
 ```
 
 ### Path Errors

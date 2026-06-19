@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>SpaceGraphJS HTML Demo</title>
+        <title>SpaceGraphJS HTML Demo - Advanced Interactivity</title>
         <style>
             * {
                 margin: 0;
@@ -12,57 +12,283 @@
             }
             body {
                 overflow: hidden;
-                background-color: #1a1a2e;
+                background-color: #050510;
+                font-family: system-ui, -apple-system, sans-serif;
             }
             #container {
                 width: 100vw;
                 height: 100vh;
+            }
+
+            /* Glassmorphism Classes */
+            .glass {
+                background: rgba(255, 255, 255, 0.05) !important;
+                backdrop-filter: blur(12px) !important;
+                border: 1px solid rgba(255, 255, 255, 0.1) !important;
+                border-radius: 16px !important;
+                color: white !important;
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            }
+
+            .glass-header {
+                background: rgba(255, 255, 255, 0.1);
+                padding: 10px 15px;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                font-weight: bold;
+                font-size: 14px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            .glass-content {
+                padding: 20px;
+                font-size: 13px;
+                line-height: 1.6;
+            }
+
+            .glass-btn {
+                background: rgba(59, 130, 246, 0.5);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                color: white;
+                padding: 8px 16px;
+                border-radius: 8px;
+                cursor: pointer;
+                transition: all 0.2s;
+                font-weight: 600;
+            }
+            .glass-btn:hover {
+                background: rgba(59, 130, 246, 0.8);
+                transform: translateY(-1px);
+            }
+            .glass-btn:active {
+                transform: translateY(0);
+            }
+
+            .input-group {
+                margin-bottom: 12px;
+            }
+            .input-group label {
+                display: block;
+                font-size: 11px;
+                color: rgba(255, 255, 255, 0.6);
+                margin-bottom: 4px;
+            }
+
+            input[type="text"], input[type="range"] {
+                width: 100%;
+                background: rgba(255, 255, 255, 0.05);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 4px;
+                color: white;
+                padding: 4px 8px;
+            }
+
+            /* Circular Node Style */
+            .circle-node {
+                border-radius: 50% !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                text-align: center !important;
+            }
+
+            /* Pulse animation */
+            @keyframes pulse-blue {
+                0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }
+                70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
+                100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+            }
+            .pulse-card {
+                animation: pulse-blue 2s infinite;
             }
         </style>
     </head>
     <body>
         <div id="container"></div>
         <script type="module">
-            import { SpaceGraph } from '../src/index.ts';
+            import { SpaceGraph } from '@src/index.ts';
 
-            const graph = SpaceGraph.create('#container', {
-                nodes: [
-                    {
-                        id: 'n1',
-                        type: 'HtmlNode',
-                        label: 'Card 1',
-                        position: [0, 100, 0],
-                        data: {
-                            color: 'rgba(255, 50, 50, 0.8)',
-                            description: 'I am an HTML element',
+            try {
+                const graph = await SpaceGraph.create('#container', {
+                    nodes: [
+                        {
+                            id: 'control-center',
+                            type: 'HtmlNode',
+                            position: [0, 0, 0],
+                            data: {
+                                width: 500,
+                                height: 350,
+                                className: 'glass pulse-card',
+                                html: `
+                                    <div class="glass-header">
+                                        <span>Command Console v7.2</span>
+                                        <span style="font-size:10px; opacity:0.7; color:#10b981;">● SYSTEM READY</span>
+                                    </div>
+                                    <div class="glass-content">
+                                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                                            <div>
+                                                <div class="input-group">
+                                                    <label>REACTOR STATUS</label>
+                                                    <div style="display:flex; gap:5px;">
+                                                        <button class="glass-btn" style="flex:1;" data-sg-interactive="true">START</button>
+                                                        <button class="glass-btn" style="flex:1; background:rgba(239, 68, 68, 0.5);" data-sg-interactive="true">STOP</button>
+                                                    </div>
+                                                </div>
+                                                <div class="input-group">
+                                                    <label>ENERGY OUTPUT</label>
+                                                    <input type="range" data-sg-interactive="true" value="65">
+                                                </div>
+                                                <div class="input-group">
+                                                    <label>COOLANT TEMP</label>
+                                                    <div style="height:20px; background:rgba(255,255,255,0.05); border-radius:4px; position:relative; overflow:hidden;">
+                                                        <div style="width:42%; height:100%; background:linear-gradient(90deg, #3b82f6, #60a5fa);"></div>
+                                                        <span style="position:absolute; right:5px; top:2px; font-size:10px; font-weight:bold;">42°C</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <div class="input-group">
+                                                    <label>ACCESS LEVEL</label>
+                                                    <select style="width:100%; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:white; padding:5px; border-radius:4px;" data-sg-interactive="true">
+                                                        <option>Observer</option>
+                                                        <option selected>Operator</option>
+                                                        <option>Administrator</option>
+                                                    </select>
+                                                </div>
+                                                <div class="input-group">
+                                                    <label>TARGET COORDINATES</label>
+                                                    <input type="text" value="34.0522° N, 118.2437° W" data-sg-interactive="true" style="font-size:10px;">
+                                                </div>
+                                                <div class="input-group">
+                                                    <label>SYSTEM LOG</label>
+                                                    <div style="height:60px; background:rgba(0,0,0,0.3); border-radius:4px; padding:5px; font-family:monospace; font-size:9px; overflow-y:auto; color:#10b981;" data-sg-interactive="true">
+                                                        > Boot sequence complete<br>
+                                                        > Connection established<br>
+                                                        > Vision engine online<br>
+                                                        > Monitoring started...
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `
+                            }
                         },
-                    },
-                    {
-                        id: 'n2',
-                        type: 'HtmlNode',
-                        label: 'Card 2',
-                        position: [150, -50, 0],
-                        data: { color: 'rgba(50, 255, 50, 0.8)', description: 'Rendered in 3D' },
-                    },
-                    {
-                        id: 'n3',
-                        type: 'HtmlNode',
-                        label: 'Card 3',
-                        position: [-150, -50, 0],
-                        data: {
-                            color: 'rgba(50, 50, 255, 0.8)',
-                            description: 'Connected together',
+                        {
+                            id: 'settings-square',
+                            type: 'HtmlNode',
+                            position: [450, 250, 100],
+                            data: {
+                                width: 280,
+                                height: 280,
+                                className: 'glass',
+                                html: `
+                                    <div class="glass-header">Visual Styles</div>
+                                    <div class="glass-content">
+                                        <div class="input-group">
+                                            <label>PRIMARY ACCENT</label>
+                                            <input type="color" value="#3b82f6" data-sg-interactive="true" style="height:40px; border:none; padding:0; background:none; cursor:pointer;">
+                                        </div>
+                                        <div class="input-group" style="display:flex; justify-content:space-between; align-items:center;">
+                                            <span style="font-size:12px;">Bloom Effect</span>
+                                            <input type="checkbox" checked data-sg-interactive="true">
+                                        </div>
+                                        <div class="input-group" style="display:flex; justify-content:space-between; align-items:center;">
+                                            <span style="font-size:12px;">Dynamic Grid</span>
+                                            <input type="checkbox" data-sg-interactive="true">
+                                        </div>
+                                        <button class="glass-btn" style="width:100%; margin-top:10px;" data-sg-interactive="true">APPLY CHANGES</button>
+                                    </div>
+                                `
+                            }
                         },
-                    },
-                ],
-                edges: [
-                    { id: 'e1', source: 'n1', target: 'n2', type: 'Edge' },
-                    { id: 'e2', source: 'n2', target: 'n3', type: 'Edge' },
-                    { id: 'e3', source: 'n3', target: 'n1', type: 'Edge' },
-                ],
-            });
+                        {
+                            id: 'circular-status-big',
+                            type: 'HtmlNode',
+                            position: [-400, -200, 50],
+                            data: {
+                                width: 220,
+                                height: 220,
+                                className: 'glass circle-node pulse-card',
+                                style: {
+                                    border: '3px solid #60a5fa'
+                                },
+                                html: `
+                                    <div style="text-align:center;">
+                                        <div style="font-size:48px;">🔋</div>
+                                        <div style="font-weight:bold; font-size:24px;">92%</div>
+                                        <div style="font-size:10px; opacity:0.6;">REMAINING</div>
+                                    </div>
+                                `
+                            }
+                        },
+                        {
+                            id: 'mini-label-1',
+                            type: 'HtmlNode',
+                            position: [200, -350, 0],
+                            data: {
+                                width: 80,
+                                height: 40,
+                                className: 'glass',
+                                html: '<div style="display:flex; align-items:center; justify-content:center; height:100%; font-size:10px; font-weight:bold;">S-01</div>'
+                            }
+                        },
+                        {
+                            id: 'mini-label-2',
+                            type: 'HtmlNode',
+                            position: [300, -350, 0],
+                            data: {
+                                width: 80,
+                                height: 40,
+                                className: 'glass',
+                                html: '<div style="display:flex; align-items:center; justify-content:center; height:100%; font-size:10px; font-weight:bold;">S-02</div>'
+                            }
+                        },
+                        {
+                            id: 'mega-display',
+                            type: 'HtmlNode',
+                            position: [0, 500, -200],
+                            data: {
+                                width: 800,
+                                height: 150,
+                                className: 'glass',
+                                html: `
+                                    <div style="display:flex; align-items:center; justify-content:space-around; height:100%; padding:20px;">
+                                        <div style="text-align:center;">
+                                            <div style="font-size:12px; opacity:0.6;">THROUGHPUT</div>
+                                            <div style="font-size:32px; font-weight:bold; color:#10b981;">1.2 GB/s</div>
+                                        </div>
+                                        <div style="width:2px; height:60%; background:rgba(255,255,255,0.1);"></div>
+                                        <div style="text-align:center;">
+                                            <div style="font-size:12px; opacity:0.6;">LATENCY</div>
+                                            <div style="font-size:32px; font-weight:bold; color:#f59e0b;">14 ms</div>
+                                        </div>
+                                        <div style="width:2px; height:60%; background:rgba(255,255,255,0.1);"></div>
+                                        <div style="text-align:center;">
+                                            <div style="font-size:12px; opacity:0.6;">ACTIVE USERS</div>
+                                            <div style="font-size:32px; font-weight:bold; color:#3b82f6;">2,481</div>
+                                        </div>
+                                    </div>
+                                `
+                            }
+                        }
+                    ],
+                    edges: [
+                        { id: 'e1', source: 'control-center', target: 'settings-square', type: 'CurvedEdge', data: { color: '#3b82f6', thickness: 3 } },
+                        { id: 'e2', source: 'control-center', target: 'circular-status-big', type: 'CurvedEdge', data: { color: '#10b981', thickness: 3 } },
+                        { id: 'e3', source: 'control-center', target: 'mega-display', type: 'Edge', data: { color: '#8b5cf6', thickness: 2, dashed: true } },
+                        { id: 'e4', source: 'settings-square', target: 'mini-label-1', type: 'Edge', data: { color: '#3b82f6', thickness: 1 } },
+                        { id: 'e5', source: 'settings-square', target: 'mini-label-2', type: 'Edge', data: { color: '#3b82f6', thickness: 1 } }
+                    ],
+                });
 
-            graph.render();
+                window._sg = graph;
+                graph.fitView(150);
+                window.addEventListener('beforeunload', () => graph.dispose());
+            } catch (error) {
+                console.error('[html.html] Failed to create graph:', error);
+            }
         </script>
     </body>
 </html>

@@ -42,7 +42,14 @@ test.describe('SpaceGraph Vision System E2E', () => {
         // Allow layout to settle
         await page.waitForTimeout(2000);
 
-        await page.evaluate(() => { const sg = Array.from((window as any).SpaceGraph.instances)[0] as any; if (sg && sg.vision) sg.vision.modelsLoaded = true; });
+        await page.evaluate(() => {
+            const sg = Array.from((window as any).SpaceGraph.instances)[0] as any;
+            if (sg && sg.vision) {
+                sg.vision.modelsLoaded = true;
+                // Force hybrid strategy to test AI + heuristics
+                sg.vision.visionSystem.setStrategy('hybrid');
+            }
+        });
         const visionAssert = createVisionAssert(page);
 
         await expect(visionAssert.noOverlap()).rejects.toThrow(/Expected no overlaps/);

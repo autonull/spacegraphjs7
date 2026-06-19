@@ -20,7 +20,7 @@ I simulated the plan step-by-step. Here's what I found:
 
 1. **No troubleshooting guide** — What if demo shows blank screen?
 2. **No visual progress indicators** — How do you know it's working?
-3. **No LICENSE/README creation** — Required for npm publish
+3. **No LICENSE/README creation** — Required for pnpm publish
 4. **No git initialization** — Should track progress
 5. **No "expected output"** — What should you see each day?
 6. **No error handling** — Code fails silently
@@ -40,8 +40,8 @@ I simulated the plan step-by-step. Here's what I found:
 node --version
 # Expected: v18.x.x or higher
 
-# Check npm version
-npm --version
+# Check pnpm version
+pnpm --version
 # Expected: 9.x.x or higher
 
 # Check Git (for version control)
@@ -91,7 +91,7 @@ git commit -m "Initial commit: project structure"
 **□ 1.1 Create package.json**
 
 ```bash
-npm init -y
+pnpm create -y
 ```
 
 Then edit package.json:
@@ -232,7 +232,7 @@ export interface GraphSpec {
 **□ 1.6 Install Dependencies**
 
 ```bash
-npm install
+pnpm install
 ```
 
 **Expected output:**
@@ -245,7 +245,7 @@ added 42 packages in 8s
 
 ```bash
 # This will fail (no src/SpaceGraph.ts yet) but confirms setup
-npm run build
+pnpm run build
 ```
 
 **Expected error:**
@@ -294,7 +294,7 @@ The first self-building UI framework.
 ## Quickstart
 
 ```bash
-npm install spacegraphjs three
+pnpm install spacegraphjs three
 ```
 ````
 
@@ -313,7 +313,7 @@ git add .
 git commit -m "Day 1: Project setup with package.json, tsconfig, vite config"
 ````
 
-**Checkpoint:** `npm install` works, `npm run build` shows expected TypeScript error.
+**Checkpoint:** `pnpm install` works, `pnpm run build` shows expected TypeScript error.
 
 ---
 
@@ -516,7 +516,7 @@ export class SpaceGraph {
 **□ 2.2 Test TypeScript Compilation**
 
 ```bash
-npm run build
+pnpm run build
 ```
 
 **Expected output:**
@@ -530,7 +530,7 @@ npm run build
 - Check that src/SpaceGraph.ts exists
 - Check that src/types.ts exists
 - Check that src/index.ts imports are correct
-- Run `npm install` again
+- Run `pnpm install` again
 
 **□ 2.3 Git Commit**
 
@@ -539,7 +539,7 @@ git add .
 git commit -m "Day 2: Core SpaceGraph class with basic rendering"
 ```
 
-**Checkpoint:** `npm run build` completes successfully, creates dist/ directory.
+**Checkpoint:** `pnpm run build` completes successfully, creates dist/ directory.
 
 ---
 
@@ -664,7 +664,7 @@ export default defineConfig({
 **□ 3.4 Test the Demo**
 
 ```bash
-npm run dev
+pnpm run dev
 ```
 
 Then open: http://localhost:5173/demo/index.html
@@ -900,17 +900,17 @@ Use this time to:
 2. Check browser console for errors
 3. Try a different browser
 
-## npm install fails
+## pnpm install fails
 
 1. Delete node_modules: `rm -rf node_modules`
 2. Delete package-lock.json: `rm package-lock.json`
-3. Reinstall: `npm install`
+3. Reinstall: `pnpm install`
 
 ## TypeScript errors
 
-1. Check TypeScript version: `npx tsc --version`
+1. Check TypeScript version: `pnpm dlx tsc --version`
 2. Should be 5.x.x
-3. Run: `npm install` to get correct versions
+3. Run: `pnpm install` to get correct versions
 ```
 
 ---
@@ -944,7 +944,7 @@ Follow [LAUNCH-SEQUENCED.md](./LAUNCH-SEQUENCED.md)
 | **Expected output**          | Know when you're on track                       |
 | **"If this fails" sections** | What to do when stuck                           |
 | **Git commits**              | Track progress, easy rollback                   |
-| **LICENSE/README**           | Required for npm publish                        |
+| **LICENSE/README**           | Required for pnpm publish                        |
 
 ---
 

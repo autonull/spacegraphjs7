@@ -1,375 +1,456 @@
-import * as THREE from 'three';
+// SpaceGraph.ts - Core graph visualization engine
 import { Graph } from './core/Graph';
 import { Renderer } from './core/Renderer';
 import { PluginManager } from './core/PluginManager';
 import { CameraControls } from './core/CameraControls';
-import { EventManager } from './core/EventManager';
+import { EventSystem } from './core/events/EventSystem';
 import { VisionManager } from './core/VisionManager';
 import { ObjectPoolManager } from './core/ObjectPoolManager';
-import { CullingManager } from './core/CullingManager';
-import { AdvancedRenderingOptimizer } from './core/AdvancedRenderingOptimizer';
-import { ShapeNode } from './nodes/ShapeNode';
-import { InstancedShapeNode } from './nodes/InstancedShapeNode';
-import { HtmlNode } from './nodes/HtmlNode';
-import { ImageNode } from './nodes/ImageNode';
-import { GroupNode } from './nodes/GroupNode';
-import { NoteNode } from './nodes/NoteNode';
-import { DataNode } from './nodes/DataNode';
-import { CanvasNode } from './nodes/CanvasNode';
-import { TextMeshNode } from './nodes/TextMeshNode';
-import { VideoNode } from './nodes/VideoNode';
-import { IFrameNode } from './nodes/IFrameNode';
-import { ChartNode } from './nodes/ChartNode';
-import { MarkdownNode } from './nodes/MarkdownNode';
-import { GlobeNode } from './nodes/GlobeNode';
-import { SceneNode } from './nodes/SceneNode';
-import { AudioNode } from './nodes/AudioNode';
-import { MathNode } from './nodes/MathNode';
-import { ProcessNode } from './nodes/ProcessNode';
-import { CodeEditorNode } from './nodes/CodeEditorNode';
-import { Edge } from './edges/Edge';
-import { CurvedEdge } from './edges/CurvedEdge';
-import { FlowEdge } from './edges/FlowEdge';
-import { LabeledEdge } from './edges/LabeledEdge';
-import { DottedEdge } from './edges/DottedEdge';
-import { DynamicThicknessEdge } from './edges/DynamicThicknessEdge';
-import { AnimatedEdge } from './edges/AnimatedEdge';
-import { BundledEdge } from './edges/BundledEdge';
-import { InterGraphEdge } from './edges/InterGraphEdge';
-import { ForceLayout } from './plugins/ForceLayout';
-import { CircularLayout } from './plugins/CircularLayout';
-import { GridLayout } from './plugins/GridLayout';
-import { HierarchicalLayout } from './plugins/HierarchicalLayout';
-import { RadialLayout } from './plugins/RadialLayout';
-import { TreeLayout } from './plugins/TreeLayout';
-import { SpectralLayout } from './plugins/SpectralLayout';
-import { GeoLayout } from './plugins/GeoLayout';
-import { TimelineLayout } from './plugins/TimelineLayout';
-import { ClusterLayout } from './plugins/ClusterLayout';
-import { InteractionPlugin } from './plugins/InteractionPlugin';
-import { LODPlugin } from './plugins/LODPlugin';
-import { AutoLayoutPlugin } from './plugins/AutoLayoutPlugin';
-import { AutoColorPlugin } from './plugins/AutoColorPlugin';
-import { MinimapPlugin } from './plugins/MinimapPlugin';
-import { ErgonomicsPlugin } from './plugins/ErgonomicsPlugin';
-import { PhysicsPlugin } from './plugins/PhysicsPlugin';
-import { HUDPlugin } from './plugins/HUDPlugin';
-import { HistoryPlugin } from './plugins/HistoryPlugin';
-import type { GraphSpec, SpaceGraphOptions, SpecUpdate } from './types';
-import { CameraUtils } from './utils/CameraUtils';
-import { DOMUtils } from './utils/DOMUtils';
+import { ErgonomicsAPI } from './core/Ergonomics';
+import { InputManager } from './input/InputManager';
+import { applyDefaultInputConfig } from './input/DefaultInputConfig';
+import { createCameraFingering } from './input/fingerings';
+import { createLogger, safeClone, wrapError, calculateFitView, DOMUtils } from './utils';
+import { MathPool } from './core/pooling/ObjectPool';
+import { FingeringPriority, Performance } from './core/constants';
+import {
+    DEFAULT_NODE_TYPES,
+    DEFAULT_EDGE_TYPES,
+    DEFAULT_LAYOUT_PLUGINS,
+    DEFAULT_SYSTEM_PLUGINS,
+    createQuickGraphSpec,
+} from './core/defaults';
+import type { GraphSpec, SpaceGraphOptions, SpecUpdate, GraphImportData, NodeSpec, EdgeSpec } from './types';
+import type { Node } from './nodes/Node';
+import type { Edge } from './edges/Edge';
+
+const logger = createLogger('SpaceGraph');
+
+export const VERSION = '7.0.0';
 
 export class SpaceGraph {
-    public static instances: Set<SpaceGraph> = new Set();
-    public container: HTMLElement;
-    public renderer: Renderer;
-    public graph: Graph;
-    public pluginManager: PluginManager;
-    public cameraControls: CameraControls;
-    public events: EventManager;
-    public vision: VisionManager;
-    public poolManager: ObjectPoolManager<any>;
-    public cullingManager: CullingManager;
-    public optimizer: AdvancedRenderingOptimizer;
-    private animationFrameId?: number;
-    private lastTimestamp: number = 0;
+    public static instances = new Set<SpaceGraph>();
 
-    constructor(container: HTMLElement, _options: SpaceGraphOptions = {}) {
+    public readonly container: HTMLElement;
+    public readonly options: SpaceGraphOptions;
+
+    public renderer!: Renderer;
+    public graph!: Graph;
+    public pluginManager!: PluginManager;
+    public cameraControls!: CameraControls;
+    public events!: EventSystem;
+    public vision!: VisionManager;
+    public poolManager!: ObjectPoolManager<any>;
+    public input!: InputManager;
+    public ergo!: ErgonomicsAPI;
+
+    #animationFrameId?: number;
+    #lastTimestamp = 0;
+    #animating = false;
+
+    constructor(container: HTMLElement, options: SpaceGraphOptions = {}) {
+        this.options = options;
         this.container = container;
-        // Object Pool
-        this.poolManager = new ObjectPoolManager();
+        this.#init();
+        SpaceGraph.instances.add(this);
+        if (typeof window !== 'undefined') {
+            (window as any).SpaceGraph = SpaceGraph;
+        }
+    }
 
-        // Advanced Rendering Optimizer & Culling
-        this.cullingManager = new CullingManager(this);
-        this.optimizer = new AdvancedRenderingOptimizer(this);
-        this.events = new EventManager(this);
+    #init(): void {
+        this.poolManager = new ObjectPoolManager();
+        this.events = new EventSystem();
         this.vision = new VisionManager(this);
         this.pluginManager = new PluginManager(this);
-        this.renderer = new Renderer(this, container);
+        this.renderer = new Renderer(this, this.container);
         this.graph = new Graph(this);
-        this.cameraControls = new CameraControls(this);
-
-        // Register instance for cross-graph analysis and interactions
-        SpaceGraph.instances.add(this);
+        this.ergo = new ErgonomicsAPI(this);
+        this.cameraControls = new CameraControls(
+            this.renderer.camera,
+            this.container,
+            this.options.cameraControls as Partial<
+                import('./core/CameraControls').CameraControlsConfig
+            >,
+        );
+        this.cameraControls.sg = this;
+        const config = (this.options.input as Record<string, any>) ?? {};
+        this.input = new InputManager({ sg: this, events: this.events });
+        applyDefaultInputConfig(this.input, this, config);
     }
 
+    // ============= Static Factory Methods =============
     static getContainerElement(container: string | HTMLElement): HTMLElement | null {
-        return typeof container === 'string'
-            ? (document.querySelector(container) as HTMLElement)
-            : container;
+        return typeof container === 'string' ? document.querySelector(container) : container;
     }
 
-    static create(container: string | HTMLElement, spec: GraphSpec): SpaceGraph {
+    static async create(
+        container: string | HTMLElement,
+        spec: GraphSpec,
+        options: SpaceGraphOptions = {},
+    ): Promise<SpaceGraph> {
         const element = SpaceGraph.getContainerElement(container);
-
         if (!element) {
-            throw new Error(
-                `[SpaceGraph] Initialization Error: Container not found for selector/element "${container}". ` +
-                `Make sure the element exists in the DOM before calling create().`
-            );
+            const error = new Error(`[SpaceGraph] Container not found: "${container}". Please ensure the element exists in the DOM before calling SpaceGraph.create().`);
+            logger.error(error.message);
+            throw error;
         }
 
         if (!SpaceGraph.checkWebGL()) {
-            console.warn('[SpaceGraph] Warning: WebGL not supported on this device. Rendering may fail or perform poorly.');
+            logger.warn('WebGL is not supported by your browser or hardware. Some features may not work as expected.');
         }
 
-        const graph = new SpaceGraph(element);
+        try {
+            const sg = new SpaceGraph(element, options);
+            await sg.init();
 
-        // Return a promise-like behavior or throw synchronously if possible,
-        // but `create` is currently synchronous returning SpaceGraph.
-        // We will improve the unhandled promise rejection by explicitly throwing.
-        graph.init()
-            .then(() => {
-                graph.loadSpec(spec);
-                graph.render();
-            })
-            .catch((err) => {
-                const message = err instanceof Error ? err.message : String(err);
-                throw new Error(`[SpaceGraph] Initialization Error: Core systems failed to initialize. Reason: ${message}`, { cause: err });
-            });
+            if (!spec || (!spec.nodes && !spec.edges)) {
+                logger.warn('[SpaceGraph] Loading an empty graph specification.');
+            }
 
-        return graph;
+            sg.loadSpec(spec).render();
+            return sg;
+        } catch (err) {
+            const wrapped = wrapError(err, {
+                namespace: 'SpaceGraph',
+                operation: 'Initialization',
+                reason: 'Initialization failed during SpaceGraph.create()',
+            }, logger);
+            throw wrapped;
+        }
     }
 
-    async init() {
+    static async load(
+        container: string | HTMLElement,
+        data: GraphImportData,
+        options: SpaceGraphOptions = {},
+    ): Promise<SpaceGraph> {
+        const element = SpaceGraph.getContainerElement(container);
+        if (!element) throw new Error(`[SpaceGraph] Container not found: "${container}"`);
+
+        const sg = new SpaceGraph(element, options);
+        try {
+            await sg.init();
+            sg.import(data).render();
+        } catch (err) {
+            throw wrapError(
+                err,
+                { namespace: 'SpaceGraph', operation: 'Import', reason: 'Failed to import data' },
+                logger,
+            );
+        }
+        return sg;
+    }
+
+    static async fromURL(
+        url: string,
+        container: string | HTMLElement,
+        options: SpaceGraphOptions = {},
+    ): Promise<SpaceGraph> {
+        if (!url || typeof url !== 'string') throw new Error(`[SpaceGraph] Invalid URL: "${url}"`);
+        if (!container) throw new Error('[SpaceGraph] Container is required');
+
+        const element = SpaceGraph.getContainerElement(container);
+        if (!element) throw new Error(`[SpaceGraph] Container not found: "${container}"`);
+
+        const sg = new SpaceGraph(element, options);
+        try {
+            await sg.init();
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
+            sg.loadSpec((await response.json()) as GraphSpec).render();
+        } catch (err) {
+            throw wrapError(
+                err,
+                {
+                    namespace: 'SpaceGraph',
+                    operation: 'fromURL',
+                    reason: `Failed to load from ${url}`,
+                },
+                logger,
+            );
+        }
+        return sg;
+    }
+
+    static async quickGraph(
+        container: string | HTMLElement,
+        nodes: Array<{
+            id: string;
+            label?: string;
+            position?: [number, number, number];
+            data?: Record<string, unknown>;
+        }>,
+        edges?: Array<{ id: string; source: string; target: string }>,
+        options?: SpaceGraphOptions,
+    ): Promise<SpaceGraph> {
+        return SpaceGraph.create(container, createQuickGraphSpec(nodes, edges), options);
+    }
+
+    static async fromManifest(
+        origin: string,
+        container: string | HTMLElement,
+        options: SpaceGraphOptions = {},
+    ): Promise<SpaceGraph> {
+        const manifestUrl = `${origin}/.well-known/zui-manifest.json`;
+        const response = await fetch(manifestUrl);
+        if (!response.ok) throw new Error(`Failed to fetch manifest: ${response.statusText}`);
+        const manifest = (await response.json()) as Record<string, any>;
+
+        let spec: GraphSpec;
+        if (manifest.spec) spec = manifest.spec as GraphSpec;
+        else if (manifest.spec_url) {
+            const specResponse = await fetch(manifest.spec_url as string);
+            if (!specResponse.ok)
+                throw new Error(`Failed to fetch spec: ${specResponse.statusText}`);
+            spec = await specResponse.json();
+        } else throw new Error('Manifest must include spec or spec_url');
+
+        return SpaceGraph.create(container, spec, {
+            ...options,
+            initialLayout: manifest.initial_layout,
+        });
+    }
+
+    // ============= Instance Methods =============
+    async init(): Promise<void> {
         this.renderer.init();
-
-        // Register built-in node types
-        this.pluginManager.registerNodeType('ShapeNode', ShapeNode);
-        this.pluginManager.registerNodeType('InstancedShapeNode', InstancedShapeNode);
-        this.pluginManager.registerNodeType('HtmlNode', HtmlNode);
-        this.pluginManager.registerNodeType('ImageNode', ImageNode);
-        this.pluginManager.registerNodeType('GroupNode', GroupNode);
-        this.pluginManager.registerNodeType('NoteNode', NoteNode);
-        this.pluginManager.registerNodeType('DataNode', DataNode);
-        this.pluginManager.registerNodeType('CanvasNode', CanvasNode);
-        this.pluginManager.registerNodeType('TextMeshNode', TextMeshNode);
-        this.pluginManager.registerNodeType('VideoNode', VideoNode);
-        this.pluginManager.registerNodeType('IFrameNode', IFrameNode);
-        this.pluginManager.registerNodeType('ChartNode', ChartNode);
-        this.pluginManager.registerNodeType('MarkdownNode', MarkdownNode);
-        this.pluginManager.registerNodeType('GlobeNode', GlobeNode);
-        this.pluginManager.registerNodeType('SceneNode', SceneNode);
-        this.pluginManager.registerNodeType('AudioNode', AudioNode);
-        this.pluginManager.registerNodeType('MathNode', MathNode);
-        this.pluginManager.registerNodeType('ProcessNode', ProcessNode);
-        this.pluginManager.registerNodeType('CodeEditorNode', CodeEditorNode);
-
-        // Register built-in edge types
-        this.pluginManager.registerEdgeType('Edge', Edge);
-        this.pluginManager.registerEdgeType('CurvedEdge', CurvedEdge);
-        this.pluginManager.registerEdgeType('FlowEdge', FlowEdge);
-        this.pluginManager.registerEdgeType('LabeledEdge', LabeledEdge);
-        this.pluginManager.registerEdgeType('DottedEdge', DottedEdge);
-        this.pluginManager.registerEdgeType('DynamicThicknessEdge', DynamicThicknessEdge);
-        this.pluginManager.registerEdgeType('AnimatedEdge', AnimatedEdge);
-        this.pluginManager.registerEdgeType('BundledEdge', BundledEdge);
-        this.pluginManager.registerEdgeType('InterGraphEdge', InterGraphEdge);
-
-        // Register built-in plugins (Layouts)
-        this.pluginManager.register('ForceLayout', new ForceLayout());
-        this.pluginManager.register('CircularLayout', new CircularLayout());
-        this.pluginManager.register('GridLayout', new GridLayout());
-        this.pluginManager.register('HierarchicalLayout', new HierarchicalLayout());
-        this.pluginManager.register('RadialLayout', new RadialLayout());
-        this.pluginManager.register('TreeLayout', new TreeLayout());
-        this.pluginManager.register('SpectralLayout', new SpectralLayout());
-        this.pluginManager.register('GeoLayout', new GeoLayout());
-        this.pluginManager.register('MapLayout', new GeoLayout()); // Alias
-        this.pluginManager.register('TimelineLayout', new TimelineLayout());
-        this.pluginManager.register('ClusterLayout', new ClusterLayout());
-
-        // Register built-in plugins (Systems)
-        this.pluginManager.register('InteractionPlugin', new InteractionPlugin());
-        this.pluginManager.register('LODPlugin', new LODPlugin());
-        this.pluginManager.register('AutoLayoutPlugin', new AutoLayoutPlugin());
-        this.pluginManager.register('AutoColorPlugin', new AutoColorPlugin());
-        this.pluginManager.register('MinimapPlugin', new MinimapPlugin());
-        this.pluginManager.register('ErgonomicsPlugin', new ErgonomicsPlugin());
-        this.pluginManager.register('PhysicsPlugin', new PhysicsPlugin());
-        this.pluginManager.register('HUDPlugin', new HUDPlugin());
-        this.pluginManager.register('HistoryPlugin', new HistoryPlugin());
-
+        this.#registerDefaults();
         await this.pluginManager.initAll();
+        this.events.emit('ready', { timestamp: Date.now() });
     }
 
-    loadSpec(spec: GraphSpec): void {
-        if (spec.nodes && spec.nodes.length > 0) {
-            for (const nodeSpec of spec.nodes) {
-                this.graph.addNode(nodeSpec);
-            }
+    #registerDefaults(): void {
+        for (const cls of DEFAULT_NODE_TYPES) {
+            this.pluginManager.registerNodeType((cls as any).typeName || cls.name, cls as any);
         }
-
-        if (spec.edges && spec.edges.length > 0) {
-            for (const edgeSpec of spec.edges) {
-                this.graph.addEdge(edgeSpec);
-            }
+        for (const cls of DEFAULT_EDGE_TYPES) {
+            this.pluginManager.registerEdgeType(
+                (cls as any).typeName || cls.name,
+                cls as import('./core/TypeRegistry').EdgeConstructor,
+            );
         }
+        for (const [cls, name] of DEFAULT_LAYOUT_PLUGINS) {
+            this.pluginManager.register(name, new cls());
+        }
+        for (const [cls, name] of DEFAULT_SYSTEM_PLUGINS) {
+            this.pluginManager.register(name, new cls());
+        }
+        this.#registerFingerings();
     }
 
-    update(spec: SpecUpdate): void {
+    #registerFingerings(): void {
+        this.input.registerFingering(
+            createCameraFingering(this.cameraControls, 'orbit'),
+            FingeringPriority.CAMERA_ORBIT,
+        );
+        this.input.registerFingering(
+            createCameraFingering(this.cameraControls, 'pan'),
+            FingeringPriority.CAMERA_PAN,
+        );
+        this.input.registerFingering(
+            createCameraFingering(this.cameraControls, 'zoom'),
+            FingeringPriority.CAMERA_ZOOM,
+        );
+    }
+
+    // ============= Graph Manipulation =============
+    loadSpec(spec: GraphSpec): this {
         if (spec.nodes) {
-            for (const nodeUpdate of spec.nodes) {
-                if (nodeUpdate.id) {
-                    this.graph.updateNode(nodeUpdate.id, nodeUpdate);
-                }
+            for (const node of spec.nodes) {
+                this.graph.addNode(node);
             }
         }
-
         if (spec.edges) {
-            for (const edgeUpdate of spec.edges) {
-                if (edgeUpdate.id) {
-                    this.graph.updateEdge(edgeUpdate.id, edgeUpdate);
-                }
+            for (const edge of spec.edges) {
+                this.graph.addEdge(edge);
             }
         }
+        return this;
     }
 
-    export(): GraphSpec & { camera?: { position: [number, number, number], target: [number, number, number] }, plugins?: Record<string, any> } {
-        const spec: any = {
-            nodes: [],
-            edges: []
-        };
+    update(spec: SpecUpdate): this {
+        spec.nodes?.forEach((u) => u.id && this.graph.updateNode(u.id, u));
+        spec.edges?.forEach((u) => u.id && this.graph.updateEdge(u.id, u));
+        return this;
+    }
 
-        for (const node of this.graph.nodes.values()) {
-            spec.nodes.push({
+    export(): GraphSpec & {
+        camera?: { position: [number, number, number]; target: [number, number, number] };
+        plugins?: Record<string, unknown>;
+    } {
+        const spec: GraphSpec & { camera?: any; plugins?: any } = {
+            nodes: [...this.graph.nodes.values()].map((node) => ({
                 id: node.id,
                 type: node.constructor.name,
                 label: node.label,
-                position: [node.position.x, node.position.y, node.position.z],
-                data: JSON.parse(JSON.stringify(node.data || {}))
-            });
-        }
-
-        for (const edge of this.graph.edges) {
-            spec.edges.push({
+                position: [node.position.x, node.position.y, node.position.z] as [
+                    number,
+                    number,
+                    number,
+                ],
+                data: safeClone(node.data),
+            })),
+            edges: Array.from(this.graph.edges.values()).map((edge) => ({
                 id: edge.id,
                 type: edge.constructor.name,
                 source: edge.source.id,
                 target: edge.target.id,
-                data: JSON.parse(JSON.stringify(edge.data || {}))
-            });
-        }
+                data: safeClone(edge.data),
+            })),
+        };
 
-        if (this.cameraControls && this.cameraControls.target) {
+        if (this.cameraControls?.target) {
+            const { camera } = this.renderer;
+            const { target } = this.cameraControls;
             spec.camera = {
-                position: [
-                    this.renderer.camera.position.x,
-                    this.renderer.camera.position.y,
-                    this.renderer.camera.position.z
-                ],
-                target: [
-                    this.cameraControls.target.x,
-                    this.cameraControls.target.y,
-                    this.cameraControls.target.z
-                ]
+                position: [camera.position.x, camera.position.y, camera.position.z],
+                target: [target.x, target.y, target.z],
             };
         }
 
         const pluginState = this.pluginManager.export();
-        if (Object.keys(pluginState).length > 0) {
-            spec.plugins = pluginState;
-        }
-
+        if (pluginState && Object.keys(pluginState).length > 0) spec.plugins = pluginState;
         return spec;
     }
 
-    import(data: any): void {
+    import(data: GraphImportData): this {
         this.graph.clear();
-        this.loadSpec(data);
+        this.loadSpec(data as GraphSpec);
 
-        if (data.camera && this.cameraControls && this.cameraControls.target) {
-            this.renderer.camera.position.set(
-                data.camera.position[0],
-                data.camera.position[1],
-                data.camera.position[2]
-            );
-            this.cameraControls.target.set(
-                data.camera.target[0],
-                data.camera.target[1],
-                data.camera.target[2]
-            );
+        if (data.camera && this.cameraControls?.target) {
+            const { camera } = this.renderer;
+            const { target } = this.cameraControls;
+            camera.position.set(...data.camera.position);
+            target.set(...data.camera.target);
 
-            // Recompute spherical based on new position/target
-            const diff = MathPool.getInstance().acquireVector3().subVectors(this.renderer.camera.position, this.cameraControls.target);
+            const diff = MathPool.getInstance()
+                .acquireVector3()
+                .subVectors(camera.position, target);
             this.cameraControls.spherical.radius = diff.length();
-            this.cameraControls.spherical.phi = Math.acos(diff.y / this.cameraControls.spherical.radius);
+            const radius = this.cameraControls.spherical.radius;
+            const ratio = radius > 0 ? Math.max(-1, Math.min(1, diff.y / radius)) : 0;
+            this.cameraControls.spherical.phi = Math.acos(ratio);
             this.cameraControls.spherical.theta = Math.atan2(diff.x, diff.z);
             MathPool.getInstance().releaseVector3(diff);
-
             this.cameraControls.update();
         }
 
-        if (data.plugins) {
-            this.pluginManager.import(data.plugins);
-        }
+        if (data.plugins) this.pluginManager.import(data.plugins as Record<string, any>);
+        return this;
     }
 
-    fitView(padding: number = 100, duration: number = 1.5): void {
+    // ============= Node/Edge Access =============
+    getNode(id: string): Node | undefined {
+        return this.graph.getNode(id);
+    }
+    getEdge(id: string): Edge | undefined {
+        return this.graph.getEdge(id);
+    }
+    removeNode(id: string): boolean {
+        this.graph.removeNode(id);
+        return true;
+    }
+    removeEdge(id: string): boolean {
+        this.graph.removeEdge(id);
+        return true;
+    }
+    clear(): void {
+        this.graph.clear();
+    }
+
+    // ============= Camera Controls =============
+    fitView(padding: number = 100, duration: number = 1.5): this {
+        if (!this.graph || !this.renderer?.camera || !this.cameraControls) return this;
         const nodes = Array.from(this.graph.nodes.values());
-        const fit = CameraUtils.calculateFitView(nodes, this.renderer.camera, padding);
-        if (fit) {
-            this.cameraControls.flyTo(fit.center, fit.cameraZ, duration);
-        }
+        if (nodes.length === 0) return this;
+
+        const fit = calculateFitView(nodes, this.renderer.camera as any, padding);
+        if (fit) this.cameraControls.flyTo(fit.center, fit.cameraZ, duration);
+        return this;
     }
 
-    animate(timestamp: number = 0) {
-        this.animationFrameId = requestAnimationFrame((t) => this.animate(t));
+    get cameraPosition(): [number, number, number] {
+        if (!this.renderer?.camera) return [0, 0, 0];
+        return [
+            this.renderer.camera.position.x,
+            this.renderer.camera.position.y,
+            this.renderer.camera.position.z,
+        ];
+    }
 
-        this.optimizer.beginFrame(timestamp);
+    get cameraTarget(): [number, number, number] {
+        return this.cameraControls
+            ? [
+                  this.cameraControls.target.x,
+                  this.cameraControls.target.y,
+                  this.cameraControls.target.z,
+              ]
+            : [0, 0, 0];
+    }
 
-        // Calculate actual frame delta in seconds, capped at 0.1s to prevent huge jumps
-        let delta = 0.016;
-        if (this.lastTimestamp > 0 && timestamp > 0) {
-            delta = Math.min((timestamp - this.lastTimestamp) / 1000, 0.1);
-        }
-        this.lastTimestamp = timestamp;
+    // ============= Animation Loop =============
+    animate(timestamp: number = 0): void {
+        if (!this.#animating) return;
+        this.#animationFrameId = requestAnimationFrame((t) => this.animate(t));
+        this.renderer.beginFrameOptimization(timestamp);
+
+        const delta =
+            this.#lastTimestamp > 0 && timestamp > 0
+                ? Math.min(
+                      (timestamp - this.#lastTimestamp) / Performance.MS_PER_SEC,
+                      Performance.MAX_DELTA_CLAMP,
+                  )
+                : Performance.DEFAULT_DELTA_TIME;
+        this.#lastTimestamp = timestamp;
 
         this.pluginManager.updateAll(delta);
-        this.cameraControls.update();
+        for (const node of this.graph.nodes.values()) {
+            if (node) node.onPreRender?.(delta);
+        }
+        for (const edge of this.graph.edges.values()) {
+            if (edge) (edge as any).onPreRender?.(delta);
+        }
 
-        this.cullingManager.update();
-
+        this.cameraControls?.update();
         this.renderer.render();
     }
 
-    render(): void {
-        if (!this.animationFrameId) {
-            this.animate();
+    render(): this {
+        this.#animating = true;
+        this.#animationFrameId ??= requestAnimationFrame((t) => this.animate(t));
+        return this;
+    }
+
+    pause(): void {
+        this.#animating = false;
+        if (this.#animationFrameId) {
+            cancelAnimationFrame(this.#animationFrameId);
+            this.#animationFrameId = undefined;
         }
     }
 
-    dispose(): void {
-        if (this.animationFrameId) {
-            cancelAnimationFrame(this.animationFrameId);
-            this.animationFrameId = undefined;
-        }
+    resume(): this {
+        return this.render();
+    }
 
-        // Dispose plugins and graphics resources
+    // ============= Lifecycle =============
+    dispose(): void {
+        this.pause();
         this.pluginManager.disposePlugins();
-        // Empty graph
         this.graph.clear();
 
-        // Clean up DOM elements
-        if (this.renderer) {
-            if (
-                this.renderer.renderer &&
-                this.container.contains(this.renderer.renderer.domElement)
-            ) {
-                this.container.removeChild(this.renderer.renderer.domElement);
-            }
-            if (
-                this.renderer.cssRenderer &&
-                this.container.contains(this.renderer.cssRenderer.domElement)
-            ) {
-                this.container.removeChild(this.renderer.cssRenderer.domElement);
-            }
-        }
-
-        // Clean up instance registry
+        [this.renderer?.renderer, this.renderer?.cssRenderer]?.forEach((r) => {
+            r?.domElement?.remove?.();
+        });
         SpaceGraph.instances.delete(this);
     }
 
+    destroy(): void {
+        this.dispose();
+    }
+
+    // ============= Utility =============
     private static checkWebGL(): boolean {
         try {
             const canvas = DOMUtils.createElement('canvas');
@@ -382,64 +463,190 @@ export class SpaceGraph {
         }
     }
 
-    /**
-     * Creates a new SpaceGraph instance, initializes it asynchronously, and imports the provided data state.
-     */
-    public static async import(
-        container: string | HTMLElement,
-        data: any,
-        options: SpaceGraphOptions = {}
-    ): Promise<SpaceGraph> {
-        const element = SpaceGraph.getContainerElement(container);
-
-        if (!element) {
-            throw new Error(
-                `[SpaceGraph] Import Error: Container not found for selector/element "${container}".`
-            );
-        }
-
-        const sg = new SpaceGraph(element, options);
-        try {
-            await sg.init();
-            sg.import(data);
-            sg.render();
-        } catch (err) {
-            console.error('[SpaceGraph] Import Runtime Error: Failed to import data or start rendering loop.', err);
-        }
-        return sg;
+    get isRendering(): boolean {
+        return this.#animating;
+    }
+    get nodeCount(): number {
+        return this.graph.nodes.size;
+    }
+    get edgeCount(): number {
+        return this.graph.edges.size;
     }
 
-    /**
-     * Initializes a SpaceGraph instance and loads graph spec from a URL representing JSON.
-     */
-    public static async fromURL(
-        url: string,
-        container: HTMLElement,
-        options: SpaceGraphOptions = {},
-    ): Promise<SpaceGraph> {
-        if (!url || typeof url !== 'string') {
-            throw new Error(`[SpaceGraph] fromURL Error: Invalid URL "${url}".`);
-        }
-        if (!container) {
-            throw new Error(`[SpaceGraph] fromURL Error: Container element is undefined or null.`);
-        }
+    // ============= Ergonomic API (delegated to ErgonomicsAPI) =============
+    // Direct passthrough - all ergonomics API methods available directly on SpaceGraph
+    $ = (id: string) => this.ergo.$(id);
+    $$ = (id: string) => this.ergo.$$(id);
+    $optional = (id: string) => this.ergo.$optional(id);
+    at = (id: string) => this.ergo.$(id);
+    must = (id: string) => this.ergo.require(id);
 
-        const sg = new SpaceGraph(container, options);
-        try {
-            await sg.init();
-            const response = await fetch(url);
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status} ${response.statusText}`);
-            }
-            const spec: GraphSpec = await response.json();
-            sg.loadSpec(spec);
-            sg.render();
-        } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
-            const wrappedError = new Error(`[SpaceGraph] fromURL Error: Failed to load graph from ${url}. Reason: ${message}`, { cause: error });
-            console.error(wrappedError);
-            throw wrappedError;
+    // Fluent API shortcuts
+    addNode(spec: NodeSpec | Node): this { this.graph.addNode(spec); return this; }
+    addEdge(spec: EdgeSpec | Edge): this { this.graph.addEdge(spec); return this; }
+
+    // Query - delegate to graph
+    findNodes = (predicate: (node: Node) => boolean) => this.ergo.findNodes(predicate);
+    findNode = (predicate: (node: Node) => boolean) => this.ergo.findNode(predicate);
+    getNodesByType = (type: string) => this.ergo.getNodesByType(type);
+    findEdges = (predicate: (edge: Edge) => boolean) => this.ergo.findEdges(predicate);
+    getEdgesForNode = (nodeId: string) => this.ergo.getEdgesForNode(nodeId);
+    where = (key: string, value: unknown) => this.ergo.where(key, value);
+    has = (key: string, value?: unknown) => this.ergo.has(key, value);
+    neighbors = (nodeId: string) => this.ergo.neighbors(nodeId);
+    adjacent = (nodeId: string) => this.ergo.adjacent(nodeId);
+    connections = (nodeId: string) => this.ergo.connections(nodeId);
+    inEdges = (nodeId: string) => this.ergo.inEdges(nodeId);
+    outEdges = (nodeId: string) => this.ergo.outEdges(nodeId);
+
+    // Iterators
+    forNodes = (callback: (node: Node) => void) => this.ergo.forNodes(callback);
+    forEdges = (callback: (edge: Edge) => void) => this.ergo.forEdges(callback);
+    forEach = (callback: (node: Node) => void) => this.ergo.forEach(callback);
+    each = (callback: (node: Node) => void) => this.ergo.each(callback);
+    map = <T>(callback: (node: Node) => T) => this.ergo.map<T>(callback);
+    filter = (callback: (node: Node) => boolean) => this.ergo.filter(callback);
+    some = (callback: (node: Node) => boolean) => this.ergo.some(callback);
+    every = (callback: (node: Node) => boolean) => this.ergo.every(callback);
+
+    // Node operations
+    add = (spec: NodeSpec | Node) => this.ergo.add(spec);
+    create = (spec: string | NodeSpec) => this.ergo.create(spec);
+    remove = (id: string) => this.ergo.remove(id);
+    addNodes = (specs: NodeSpec[]) => this.ergo.addNodes(specs);
+    removeWhere = (predicate: (node: Node) => boolean) => this.ergo.removeWhere(predicate);
+    updateWhere = (predicate: (node: Node) => boolean, updates: Partial<NodeSpec>) => this.ergo.updateWhere(predicate, updates);
+
+    // Edge operations
+    connect = (source: string, target: string, data?: Record<string, unknown>) => this.ergo.connect(source, target, data);
+    connectTo = (source: string, targets: string | string[], data?: Record<string, unknown>) => this.ergo.connectTo(source, targets, data);
+    connectFrom = (sources: string | string[], target: string, data?: Record<string, unknown>) => this.ergo.connectFrom(sources, target, data);
+    disconnect = (source: string, target: string) => this.ergo.disconnect(source, target);
+    addEdges = (specs: EdgeSpec[]) => this.ergo.addEdges(specs);
+
+    // Traversal
+    traverse = (callback: (node: Node, depth: number) => void, startId?: string) => this.ergo.traverse(callback, startId);
+    bfs = (callback: (node: Node, depth: number) => void, startId?: string) => this.ergo.bfs(callback, startId);
+    dfs = (callback: (node: Node, depth: number) => void, startId?: string) => this.ergo.dfs(callback, startId);
+    getSubgraph = (centerId: string, radius: number) => this.ergo.getSubgraph(centerId, radius);
+    path = (from: string, to: string) => this.ergo.path(from, to);
+
+    // Batch
+    batch = (fn: (sg: SpaceGraph) => void) => this.ergo.batch(fn);
+    freeze = () => this.ergo.freeze();
+    suspend = () => this.ergo.suspend();
+    transaction = (updates: (sg: SpaceGraph) => void) => this.ergo.transaction(updates);
+
+    // Selection
+    select = (nodeId: string) => { this.ergo.select(nodeId); return this; }
+    deselect = (nodeId: string) => { this.ergo.deselect(nodeId); return this; }
+    selectAll = () => { this.ergo.selectAll(); return this; }
+    deselectAll = () => { this.ergo.deselectAll(); return this; }
+    get selected() { return this.ergo.selected; }
+
+    // Visibility
+    toggleVisibility = (nodeId: string) => this.ergo.toggleVisibility(nodeId);
+    toggle = (nodeId: string) => this.ergo.toggle(nodeId);
+    show = (id: string, visible = true) => { this.ergo.show(id, visible); return this.graph.getNode(id); }
+    hide = (id: string) => { this.ergo.hide(id); return this.graph.getNode(id); }
+
+    // Quick node utilities
+    require = (id: string) => this.ergo.require(id);
+    clone = (id: string, newId?: string) => this.ergo.clone(id, newId);
+    move = (id: string, x: number, y: number, z = 0) => this.ergo.move(id, x, y, z);
+    translate = (id: string, dx: number, dy: number, dz = 0) => this.ergo.translate(id, dx, dy, dz);
+    shift = (id: string, dx: number, dy: number, dz = 0) => this.ergo.shift(id, dx, dy, dz);
+    label = (id: string, text: string) => this.ergo.label(id, text);
+    text = (id: string, text: string) => this.ergo.text(id, text);
+    color = (id: string, color: string | number) => this.ergo.color(id, color);
+    fill = (id: string, color: string | number) => this.ergo.fill(id, color);
+    data = (id: string, key: string, value?: unknown) => this.ergo.data(id, key, value);
+    attr = (id: string, key: string, value?: unknown) => this.ergo.attr(id, key, value);
+    rotate = (id: string, x: number, y: number, z: number) => this.ergo.rotate(id, x, y, z);
+    scale = (id: string, x: number, y?: number, z?: number) => this.ergo.scale(id, x, y, z);
+    setSize = (id: string, size: number) => this.ergo.size(id, size);
+    opacity = (id: string, opacity: number) => this.ergo.opacity(id, opacity);
+    visible = (id: string) => (this.graph.getNode(id)?.data as Record<string, unknown>)?.visible !== false;
+    isPinned = (id: string) => (this.graph.getNode(id)?.data as Record<string, unknown>)?.pinned === true;
+    pinned = (id: string) => { this.ergo.data(id, 'pinned', true); return this.graph.getNode(id); }
+    unpin = (id: string) => { this.ergo.data(id, 'pinned', false); return this.graph.getNode(id); }
+    draggable = (id: string, draggable = true) => { this.ergo.data(id, 'draggable', draggable); return this.graph.getNode(id); }
+    selectable = (id: string, selectable = true) => { this.ergo.data(id, 'selectable', selectable); return this.graph.getNode(id); }
+
+    // ============= Quick Properties =============
+    get count(): number { return this.nodeCount; }
+    get isEmpty(): boolean { return this.graph.nodes.size === 0; }
+    get nodes(): Node[] { return this.graph.nodeArray(); }
+    get edges(): Edge[] { return this.graph.edgeArray(); }
+
+    // Watch for changes - returns unsubscribe
+    watch(
+        type: 'node:added' | 'node:removed' | 'node:updated' | 'edge:added' | 'edge:removed' | 'edge:updated',
+        callback: (data: any) => void,
+    ): () => void {
+        const handler = (data: any) => callback(data);
+        this.events.on(type, handler);
+        return () => this.events.off(type, handler);
+    }
+
+    // Get stats
+    get stats() {
+        return {
+            nodes: this.graph.nodes.size,
+            edges: this.graph.edges.size,
+            plugins: this.pluginManager.pluginCount,
+        };
+    }
+
+    // Quick layout application
+    async layout(name: string, options?: Record<string, unknown>): Promise<void> {
+        const plugin = this.pluginManager.getPlugin(name);
+        if (plugin && 'applyLayout' in plugin) {
+            await (plugin as { applyLayout: (opts?: Record<string, unknown>) => Promise<void> }).applyLayout(options);
         }
-        return sg;
+    }
+
+    // Focus and animate camera to node
+    focusNode(id: string, _padding: number = 100, duration: number = 1): this {
+        const node = this.graph.getNode(id);
+        if (node) {
+            const pos = node.position;
+            this.cameraControls.flyTo(pos, this.renderer.camera.position.length(), duration);
+        }
+        return this;
+    }
+
+    // Zoom to fit all nodes (alias for fitView)
+    zoomFit = this.fitView;
+
+    // Center camera on point
+    center(x: number, y: number, z: number = 0): this {
+        this.cameraControls.target.set(x, y, z);
+        this.cameraControls.update();
+        return this;
+    }
+
+    // Reset camera to default
+    resetCamera(): this {
+        this.renderer.camera.position.set(0, 500, 500);
+        this.cameraControls.target.set(0, 0, 0);
+        this.cameraControls.update();
+        return this;
+    }
+
+    // Get camera position
+    get camera(): { position: [number, number, number]; target: [number, number, number] } {
+        return {
+            position: [this.renderer.camera.position.x, this.renderer.camera.position.y, this.renderer.camera.position.z],
+            target: [this.cameraControls.target.x, this.cameraControls.target.y, this.cameraControls.target.z],
+        };
+    }
+
+    // Set camera position
+    setCamera(position: [number, number, number], target?: [number, number, number]): this {
+        this.renderer.camera.position.set(...position);
+        if (target) this.cameraControls.target.set(...target);
+        this.cameraControls.update();
+        return this;
     }
 }

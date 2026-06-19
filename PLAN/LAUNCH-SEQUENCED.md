@@ -1,6 +1,6 @@
 # SpaceGraphJS — Launch Plan (Properly Sequenced)
 
-**Goal:** Ship a **working** prototype before publishing to npm.  
+**Goal:** Ship a **working** prototype before publishing to pnpm.
 **Principle:** Never publish what you haven't tested.
 
 ---
@@ -10,7 +10,7 @@
 | Phase  | Task               | Time | Gates                  |
 | ------ | ------------------ | ---- | ---------------------- |
 | **P0** | Working prototype  | 4-6h | Must render a graph    |
-| **P1** | npm package prep   | 2h   | Must pass install test |
+| **P1** | ppnpm package prep   | 2h   | Must pass install test |
 | **P2** | Documentation      | 3h   | QUICKSTART must work   |
 | **P3** | Publish + announce | 2h   | Only if P0-P2 pass     |
 | **P4** | Community setup    | 1h   | Matrix, Sponsors       |
@@ -30,13 +30,13 @@
 ```bash
 # Create a clean test project
 mkdir /tmp/sg-prototype && cd /tmp/sg-prototype
-npm init -y
+pnpm create -y
 
 # Install Three.js (peer dependency)
-npm install three
+pnpm install three
 
 # Link local spacegraphjs (DON'T publish yet)
-npm link /path/to/spacegraphjs
+pnpm link /path/to/spacegraphjs
 ```
 
 **Test file:** `test-prototype.html`
@@ -196,7 +196,7 @@ graph.render();
 **If you find bugs:**
 
 1. Fix them
-2. Rebuild: `npm run build`
+2. Rebuild: `pnpm run build`
 3. Re-test: Reload test file
 4. Repeat until all tests pass
 
@@ -204,7 +204,7 @@ graph.render();
 
 ---
 
-## Phase 1: npm Package Preparation (2 hours)
+## Phase 1: pnpm Package Preparation (2 hours)
 
 ### □ 1.1 Prepare package.json
 
@@ -252,7 +252,7 @@ graph.render();
 
 ```bash
 # Clean build
-npm run build
+pnpm run build
 
 # Verify output
 ls -la dist/
@@ -279,10 +279,10 @@ ls dist/types/
 
 ```bash
 # See what will be published
-npm pack --dry-run
+pnpm pack --dry-run
 
 # Create actual tarball
-npm pack
+pnpm pack
 
 # Inspect contents
 tar -tzf spacegraphjs-6.0.0-alpha.1.tgz
@@ -308,12 +308,12 @@ tar -tzf spacegraphjs-6.0.0-alpha.1.tgz
 
 ```bash
 # Create completely fresh test directory
-rm -rf /tmp/sg-npm-test
-mkdir /tmp/sg-npm-test && cd /tmp/sg-npm-test
+rm -rf /tmp/sg-pnpm-test
+mkdir /tmp/sg-pnpm-test && cd /tmp/sg-pnpm-test
 
-# Install from tarball (simulates npm install)
-npm install /path/to/spacegraphjs-6.0.0-alpha.1.tgz
-npm install three
+# Install from tarball (simulates pnpm install)
+pnpm install /path/to/spacegraphjs-6.0.0-alpha.1.tgz
+pnpm install three
 
 # Create test file
 cat > test.mjs << 'EOF'
@@ -369,7 +369,7 @@ node test.mjs
 ````markdown
 # SpaceGraphJS
 
-[![npm](https://img.shields.io/npm/v/spacegraphjs.svg)](https://www.npmjs.com/package/spacegraphjs)
+[![pnpm](https://img.shields.io/pnpm/v/spacegraphjs.svg)](https://www.npmjs.com/package/spacegraphjs)
 [![Matrix](https://img.shields.io/matrix/spacegraphjs:matrix.org)](https://matrix.to/#/#spacegraphjs:matrix.org)
 
 ## The First Self-Building UI Framework
@@ -382,7 +382,7 @@ It sees what it builds, verifies quality autonomously, and self-corrects.
 ## Quickstart
 
 ```bash
-npm install spacegraphjs three
+pnpm install spacegraphjs three
 ```
 ````
 
@@ -417,14 +417,14 @@ MIT
 
 ## Phase 3: Publish + Announce (2 hours)
 
-### □ 3.1 Publish to npm (30 min)
+### □ 3.1 Publish to pnpm (30 min)
 
 ```bash
 # Login (if not already)
-npm login
+pnpm login
 
 # Publish alpha (not latest!)
-npm publish --tag alpha
+pnpm publish --tag alpha
 
 # Verify on npmjs.com
 # https://www.npmjs.com/package/spacegraphjs
@@ -432,12 +432,12 @@ npm publish --tag alpha
 
 # Test public install
 mkdir /tmp/sg-public-test && cd /tmp/sg-public-test
-npm install spacegraphjs@alpha three
+pnpm install spacegraphjs@alpha three
 ````
 
 **Checklist:**
 
-- [ ] `npm publish --tag alpha` completes
+- [ ] `pnpm publish --tag alpha` completes
 - [ ] Package visible on npmjs.com
 - [ ] Tag is `alpha` (not `latest`)
 - [ ] Public install works
@@ -455,7 +455,7 @@ npm install spacegraphjs@alpha three
 1. The problem (AI iteration hell) — 2 paragraphs
 2. The insight (vision-closed development) — 1 paragraph
 3. The solution (SpaceGraphJS) — 2 paragraphs
-4. Try it (npm install command) — 1 paragraph
+4. Try it (pnpm install command) — 1 paragraph
 5. Join us (links) — 1 paragraph
 
 **Total:** ~500 words, 2 hours max
@@ -464,7 +464,7 @@ npm install spacegraphjs@alpha three
 
 - [ ] Article is published
 - [ ] Link works
-- [ ] npm install command is correct
+- [ ] pnpm install command is correct
 - [ ] GitHub and Matrix links work
 
 ---
@@ -480,7 +480,7 @@ npm install spacegraphjs@alpha three
 4. Set description: "SpaceGraphJS community — self-building UI framework"
 5. Set avatar (logo if you have one)
 6. Copy join link: https://matrix.to/#/#spacegraphjs:matrix.org
-7. Add to README.md and npm package
+7. Add to README.md and ppnpm package
 ```
 
 **Checklist:**
@@ -522,9 +522,9 @@ npm install spacegraphjs@alpha three
 Title: SpaceGraphJS Alpha is Live!
 
 Body:
-The first self-building UI framework is now available on npm.
+The first self-building UI framework is now available on pnpm.
 
-Try it: npm install spacegraphjs@alpha
+Try it: pnpm install spacegraphjs@alpha
 Quickstart: [link to QUICKSTART.md]
 Community: https://matrix.to/#/#spacegraphjs:matrix.org
 ```
@@ -534,7 +534,7 @@ Community: https://matrix.to/#/#spacegraphjs:matrix.org
 ```
 🚀 SpaceGraphJS Alpha is live!
 
-npm install spacegraphjs@alpha
+pnpm install spacegraphjs@alpha
 
 Quickstart: [link]
 GitHub: [link]
@@ -549,8 +549,8 @@ GitHub: [link]
 | Gate       | Requirement         | Test                                |
 | ---------- | ------------------- | ----------------------------------- |
 | **Gate 0** | Prototype works     | Test file renders 3 nodes + 3 edges |
-| **Gate 1** | Build succeeds      | `npm run build` completes           |
-| **Gate 2** | Fresh install works | `npm install` in empty directory    |
+| **Gate 1** | Build succeeds      | `pnpm run build` completes           |
+| **Gate 2** | Fresh install works | `pnpm install` in empty directory    |
 | **Gate 3** | QUICKSTART works    | Stranger can follow in <10 min      |
 | **Gate 4** | All tests pass      | No console errors in test file      |
 
@@ -570,7 +570,7 @@ Day 1 (4-6h):
 └── STOP IF BUGS FOUND
 
 Day 2 (6-8h):
-├── Phase 1: npm prep (2h)
+├── Phase 1: pnpm prep (2h)
 │   ├── 1.1 package.json (30 min)
 │   ├── 1.2 Build and verify (1h)
 │   └── 1.3 Fresh install test (30 min)
@@ -580,7 +580,7 @@ Day 2 (6-8h):
 │   └── 2.2 README.md (1h)
 │
 ├── Phase 3: Publish (2h)
-│   ├── 3.1 npm publish (30 min)
+│   ├── 3.1 pnpm publish (30 min)
 │   └── 3.2 Launch article (1.5h)
 │
 └── Phase 4: Community (1h)
@@ -599,7 +599,7 @@ Day 3 (if needed):
 
 | Metric            | Target       | Why                          |
 | ----------------- | ------------ | ---------------------------- |
-| npm downloads     | 50           | Validates install works      |
+| pnpm downloads     | 50           | Validates install works      |
 | Matrix members    | 10           | Validates community interest |
 | GitHub stars      | 10           | Validates project appeal     |
 | 1 external issue  | Yes          | Validates engagement         |
@@ -660,7 +660,7 @@ Day 3 (if needed):
 │  • README.md under 150 lines                                │
 │                                                              │
 │  PHASE 3: PUBLISH (2h)                                      │
-│  • npm publish --tag alpha                                  │
+│  • pnpm publish --tag alpha                                  │
 │  • Launch article on Dev.to                                 │
 │                                                              │
 │  PHASE 4: COMMUNITY (1h)                                    │

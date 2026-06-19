@@ -8,25 +8,25 @@
 
 ### □ Code Quality
 
-- [ ] All tests pass: `npm test`
-- [ ] Vision tests pass: `npm run test:vision`
-- [ ] No linting errors: `npm run lint`
-- [ ] Formatting is correct: `npm run format:check`
-- [ ] TypeScript compiles: `npx tsc --noEmit`
-- [ ] Build succeeds: `npm run build`
+- [ ] All tests pass: `pnpm test`
+- [ ] Vision tests pass: `pnpm run test:vision`
+- [ ] No linting errors: `pnpm run lint`
+- [ ] Formatting is correct: `pnpm run format:check`
+- [ ] TypeScript compiles: `pnpm dlx tsc --noEmit`
+- [ ] Build succeeds: `pnpm run build`
 
 ### □ Documentation
 
 - [ ] CHANGELOG.md is updated
 - [ ] README.md reflects new version
 - [ ] QUICKSTART.md is tested and working
-- [ ] API docs generated: `npm run docs`
+- [ ] API docs generated: `pnpm run docs`
 - [ ] Migration guide added (if breaking changes)
 - [ ] Code examples are up to date
 
 ### □ Vision Analysis
 
-- [ ] Run vision analysis: `npm run vision`
+- [ ] Run vision analysis: `pnpm run vision`
 - [ ] All quality thresholds met
 - [ ] Vision report saved to `vision/reports/v6.0.0-alpha.1.json`
 
@@ -54,9 +54,9 @@
 ```bash
 # Clean install test
 rm -rf node_modules package-lock.json
-npm install
-npm run build
-npm test
+pnpm install
+pnpm run build
+pnpm test
 ```
 
 - [ ] Clean install works
@@ -81,26 +81,26 @@ git push origin v6.0.0-alpha.1
 - [ ] Tag pushed to GitHub
 - [ ] GitHub Actions release workflow triggered
 
-### □ Publish to npm
+### □ Publish to pnpm
 
 ```bash
 # Login (if session expired)
-npm login
+pnpm login
 
 # For alpha/beta releases
-npm publish --tag alpha
+pnpm publish --tag alpha
 
 # For stable releases
-npm publish --access public
+pnpm publish --access public
 
 # Verify on npmjs.com
 # https://www.npmjs.com/package/spacegraphjs
 ```
 
-- [ ] Published to npm
+- [ ] Published to pnpm
 - [ ] Package visible on npmjs.com
 - [ ] Version tag is correct
-- [ ] Install test works: `npm install spacegraphjs@<version>`
+- [ ] Install test works: `pnpm install spacegraphjs@<version>`
 
 ### □ GitHub Release
 
@@ -134,7 +134,7 @@ What's new:
 • [Feature 2]
 • [Bug fix]
 
-Install: npm install spacegraphjs@alpha
+Install: pnpm install spacegraphjs@alpha
 Changelog: https://github.com/autonull/spacegraphjs/releases/tag/v6.0.0-alpha.1
 ```
 
@@ -220,7 +220,7 @@ newCode();
 ## Install
 
 ```bash
-npm install spacegraphjs@alpha
+pnpm install spacegraphjs@alpha
 ```
 
 ## Full Changelog
@@ -244,8 +244,8 @@ If a critical bug is discovered post-release:
 ### □ Rollback (if critical)
 
 ```bash
-# Deprecate version on npm
-npm deprecate spacegraphjs@6.0.0-alpha.1 "Critical bug, use v6.0.0-alpha.2"
+# Deprecate version on pnpm
+pnpm deprecate spacegraphjs@6.0.0-alpha.1 "Critical bug, use v6.0.0-alpha.2"
 
 # Delete tag (if not yet widely adopted)
 git tag -d v6.0.0-alpha.1
@@ -255,7 +255,7 @@ git push origin :refs/tags/v6.0.0-alpha.1
 # https://github.com/autonull/spacegraphjs/releases
 ````
 
-- [ ] Version deprecated on npm
+- [ ] Version deprecated on pnpm
 - [ ] Tag deleted (if applicable)
 - [ ] Release deleted (if applicable)
 - [ ] Announcement posted
@@ -314,7 +314,7 @@ Track these for each release:
 
 | Metric                   | Target | Actual |
 | ------------------------ | ------ | ------ |
-| npm downloads (week 1)   | 500    | \_\_\_ |
+| pnpm downloads (week 1)   | 500    | \_\_\_ |
 | GitHub stars (week 1)    | 10     | \_\_\_ |
 | Issues opened (week 1)   | <5     | \_\_\_ |
 | Matrix growth (week 1)   | 20     | \_\_\_ |

@@ -3,30 +3,28 @@ import { runVisionAnalysis } from './analyzer';
 export const visionAssert = {
     noOverlap: async (outputDir: string) => {
         const report = await runVisionAnalysis(outputDir);
-        const overlapIssues = report.issues.filter((i) => i.type === 'overlap');
-        if (overlapIssues.length > 0) {
+        if (report.overlap.overlaps.length > 0) {
             throw new Error(
-                `Vision Assertion Failed: Expected no overlaps, but found ${overlapIssues.length}. Details: ${overlapIssues.map((i) => i.message).join(', ')}`,
+                `Vision Assertion Failed: Expected no overlaps, but found ${report.overlap.overlapCount}. Details: ${report.overlap.overlaps.map((o) => `${o.nodeA} <-> ${o.nodeB}`).join(', ')}`,
             );
         }
     },
 
     allTextLegible: async (outputDir: string) => {
         const report = await runVisionAnalysis(outputDir);
-        const legibilityIssues = report.issues.filter((i) => i.type === 'legibility');
-        if (legibilityIssues.length > 0) {
+        if (report.legibility.failures.length > 0) {
             throw new Error(
-                `Vision Assertion Failed: Expected all text to be legible, but found ${legibilityIssues.length} issues. Details: ${legibilityIssues.map((i) => i.message).join(', ')}`,
+                `Vision Assertion Failed: Expected all text to be legible, but found ${report.legibility.failures.length} issues. Details: ${report.legibility.failures.map((f) => `${f.nodeId} (contrast: ${f.contrast})`).join(', ')}`,
             );
         }
     },
 
     wcagCompliance: async (outputDir: string, level: 'A' | 'AA' | 'AAA' = 'AA') => {
         const report = await runVisionAnalysis(outputDir);
-        const colorIssues = report.issues.filter((i) => i.type === 'color');
-        if (colorIssues.length > 0) {
+        const contrastFailures = report.legibility.failures.filter((f) => f.severity === 'error');
+        if (contrastFailures.length > 0) {
             throw new Error(
-                `Vision Assertion Failed: Expected WCAG ${level} compliance, but found ${colorIssues.length} color/contrast issues. Details: ${colorIssues.map((i) => i.message).join(', ')}`,
+                `Vision Assertion Failed: Expected WCAG ${level} compliance, but found ${contrastFailures.length} contrast failures. Details: ${contrastFailures.map((f) => `${f.nodeId} (contrast: ${f.contrast})`).join(', ')}`,
             );
         }
     },

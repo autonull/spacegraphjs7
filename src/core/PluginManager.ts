@@ -1,110 +1,198 @@
 import type { SpaceGraph } from '../SpaceGraph';
-import type { ISpaceGraphPlugin } from '../types';
+import type { Node } from '../nodes/Node';
+import type { Edge } from '../edges/Edge';
+import type { EventSystem } from './events/EventSystem';
+import type { Graph } from './Graph';
+import { createLogger } from '../utils/logger';
+import { wrapError } from '../utils/error';
+import { TypeRegistry } from './TypeRegistry';
+
+export interface Plugin {
+    readonly id: string;
+    readonly name: string;
+    readonly version: string;
+    init(sg: SpaceGraph, graph: Graph, events: EventSystem): void | Promise<void>;
+    onPreRender?(delta: number): void;
+    onPostRender?(delta: number): void;
+    onNodeAdded?(node: Node): void;
+    onNodeRemoved?(node: Node): void;
+    onEdgeAdded?(edge: Edge): void;
+    onEdgeRemoved?(edge: Edge): void;
+    dispose?(): void;
+    export?(): unknown;
+    import?(data: unknown): void;
+}
+
+export interface PluginMetadata {
+    id: string;
+    name: string;
+    version: string;
+    description?: string;
+    author?: string;
+    dependencies?: string[];
+}
+
+const logger = createLogger('PluginManager');
 
 export class PluginManager {
-    private sg: SpaceGraph;
-    public plugins: Map<string, ISpaceGraphPlugin> = new Map();
-    private nodeTypes: Map<string, any> = new Map();
-    private edgeTypes: Map<string, any> = new Map();
+    private readonly plugins: Map<string, Plugin> = new Map();
 
-    constructor(sg: SpaceGraph) {
-        this.sg = sg;
-    }
+    constructor(private readonly sg: SpaceGraph) {}
 
-    register(name: string, plugin: ISpaceGraphPlugin): void {
+    register(name: string, plugin: Plugin): this {
         if (!name || typeof name !== 'string') {
-            throw new Error(`[SpaceGraph] Plugin Registration Error: Invalid plugin name "${name}". Name must be a non-empty string.`);
+            throw new Error(
+                `[SpaceGraph] Plugin Registration Error: Invalid plugin name "${name}".`,
+            );
         }
         if (!plugin) {
-            throw new Error(`[SpaceGraph] Plugin Registration Error: Plugin "${name}" is undefined or null.`);
+            throw new Error(
+                `[SpaceGraph] Plugin Registration Error: Plugin "${name}" is undefined or null.`,
+            );
         }
         this.plugins.set(name, plugin);
+        return this;
     }
 
-    registerNodeType(type: string, cls: any): void {
-        this.nodeTypes.set(type, cls);
+    unregister(name: string): boolean {
+        const plugin = this.plugins.get(name);
+        if (!plugin) return false;
+        plugin.dispose?.();
+        this.plugins.delete(name);
+        return true;
     }
 
-    getNodeType(type: string): any {
-        return this.nodeTypes.get(type);
+    get<T extends Plugin = Plugin>(name: string): T | undefined {
+        return this.plugins.get(name) as T | undefined;
     }
 
-    registerEdgeType(type: string, cls: any): void {
-        this.edgeTypes.set(type, cls);
+    has(name: string): boolean {
+        return this.plugins.has(name);
     }
 
-    getEdgeType(type: string): any {
-        return this.edgeTypes.get(type);
+    get pluginNames(): string[] {
+        return Array.from(this.plugins.keys());
     }
 
-    getPlugin(name: string): ISpaceGraphPlugin | undefined {
-        return this.plugins.get(name);
+    get pluginCount(): number {
+        return this.plugins.size;
+    }
+
+    *[Symbol.iterator](): Generator<[string, Plugin]> {
+        yield* this.plugins.entries();
     }
 
     async initAll(): Promise<void> {
         const errors: Error[] = [];
-        for (const [name, plugin] of this.plugins.entries()) {
-            if (plugin.init) {
+        const initPromises: Promise<void>[] = [];
+
+        for (const [name, plugin] of this.plugins) {
+            const promise = (async () => {
                 try {
-                    await plugin.init(this.sg);
+                    await plugin.init(this.sg, this.sg.graph, this.sg.events);
                 } catch (err) {
-                    const message = err instanceof Error ? err.message : String(err);
-                    const wrappedError = new Error(`[SpaceGraph] Plugin Initialization Error: Failed to initialize plugin "${name}". Reason: ${message}`);
-                    console.error(wrappedError);
-                    errors.push(wrappedError);
+                    const wrapped = wrapError(err, {
+                        namespace: 'SpaceGraph',
+                        operation: 'Plugin Initialization',
+                        reason: `Failed to initialize plugin "${name}" (v${plugin.version}). Check if dependencies are met or configuration is valid.`,
+                    });
+                    logger.error(`${wrapped.message}: ${err instanceof Error ? err.stack : String(err)}`);
+                    errors.push(wrapped);
                 }
-            }
+            })();
+            initPromises.push(promise);
         }
+
+        await Promise.all(initPromises);
+
         if (errors.length > 0) {
-            throw new AggregateError(errors, `[SpaceGraph] PluginManager initAll failed with ${errors.length} error(s).`);
+            const errorMessage = `[SpaceGraph] PluginManager failed to initialize ${errors.length} plugin(s): ${errors.map(e => e.message).join('; ')}`;
+            const err = new Error(errorMessage) as Error & { errors: Error[] };
+            err.errors = errors;
+            throw err;
         }
     }
 
     updateAll(delta: number): void {
         for (const plugin of this.plugins.values()) {
-            if (plugin.onPreRender) {
-                plugin.onPreRender(delta);
-            }
-            if (plugin.onPostRender) {
-                plugin.onPostRender(delta);
-            }
+            try { plugin.onPreRender?.(delta); }
+            catch (err) { logger.error('Plugin onPreRender error:', err); }
+        }
+        for (const plugin of this.plugins.values()) {
+            try { plugin.onPostRender?.(delta); }
+            catch (err) { logger.error('Plugin onPostRender error:', err); }
         }
     }
 
     disposePlugins(): void {
         for (const plugin of this.plugins.values()) {
-            if (plugin.dispose) {
-                plugin.dispose();
-            }
+            plugin.dispose?.();
         }
         this.plugins.clear();
     }
 
-    export(): Record<string, any> {
-        const state: Record<string, any> = {};
-        for (const [name, plugin] of this.plugins.entries()) {
+    export(): Record<string, unknown> {
+        const state: Record<string, unknown> = {};
+        for (const [name, plugin] of this.plugins) {
             if (plugin.export) {
-                try {
-                    state[name] = plugin.export();
-                } catch (err) {
-                    console.error(`[SpaceGraph] Failed to export plugin "${name}".`, err);
-                }
+                try { state[name] = plugin.export(); }
+                catch (err) { logger.error('Failed to export plugin "%s".', name, err); }
             }
         }
         return state;
     }
 
-    import(data: Record<string, any>): void {
+    import(data: Record<string, unknown>): void {
         if (!data) return;
-        for (const [name, pluginState] of Object.entries(data)) {
+        for (const [name, state] of Object.entries(data)) {
             const plugin = this.plugins.get(name);
-            if (plugin && plugin.import) {
-                try {
-                    plugin.import(pluginState);
-                } catch (err) {
-                    console.error(`[SpaceGraph] Failed to import state for plugin "${name}".`, err);
-                }
+            if (plugin?.import) {
+                try { plugin.import(state); }
+                catch (err) { logger.error('Failed to import state for plugin "%s".', name, err); }
             }
         }
+    }
+
+    registerNodeType(type: string, cls: import('./TypeRegistry').NodeConstructor): void {
+        TypeRegistry.getInstance().registerNode(type, cls);
+        // Also register using static typeName if available to survive minification
+        if ('typeName' in cls && typeof (cls as any).typeName === 'string') {
+            TypeRegistry.getInstance().registerNode((cls as any).typeName, cls);
+        }
+    }
+
+    getNodeType(type: string): import('./TypeRegistry').NodeConstructor | undefined {
+        return TypeRegistry.getInstance().getNodeConstructor(type);
+    }
+
+    registerEdgeType(type: string, cls: import('./TypeRegistry').EdgeConstructor): void {
+        TypeRegistry.getInstance().registerEdge(type, cls);
+        // Also register using static typeName if available to survive minification
+        if ('typeName' in cls && typeof (cls as any).typeName === 'string') {
+            TypeRegistry.getInstance().registerEdge((cls as any).typeName, cls);
+        }
+    }
+
+    getEdgeType(type: string): import('./TypeRegistry').EdgeConstructor | undefined {
+        return TypeRegistry.getInstance().getEdgeConstructor(type);
+    }
+
+    getPlugin = this.get;
+    hasPlugin = this.has;
+    getPluginNames = this.pluginNames;
+
+    find(predicate: (plugin: Plugin) => boolean): Plugin | undefined {
+        for (const plugin of this.plugins.values()) {
+            if (predicate(plugin)) return plugin;
+        }
+        return undefined;
+    }
+
+    filter(predicate: (plugin: Plugin) => boolean): Plugin[] {
+        const result: Plugin[] = [];
+        for (const plugin of this.plugins.values()) {
+            if (predicate(plugin)) result.push(plugin);
+        }
+        return result;
     }
 }

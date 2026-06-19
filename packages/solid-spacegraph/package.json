@@ -12,7 +12,7 @@
     },
     "peerDependencies": {
         "solid-js": "^1.8.0",
-        "spacegraphjs": "file:../.."
+        "spacegraphjs": "workspace:*"
     },
     "devDependencies": {
         "solid-js": "^1.8.0",

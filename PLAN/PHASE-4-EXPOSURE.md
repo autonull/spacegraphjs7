@@ -152,7 +152,7 @@ const WELCOME_MESSAGE = `
 Quick links:
 • Docs: https://spacegraphjs.dev
 • GitHub: https://github.com/autonull/spacegraphjs
-• Quickstart: npm install spacegraphjs
+• Quickstart: pnpm install spacegraphjs
 • Contributing: CONTRIBUTING.md
 
 Channels:
@@ -218,8 +218,8 @@ Pseudocode or architecture ideas (optional)
 ```bash
 git clone https://github.com/autonull/spacegraphjs
 cd spacegraphjs
-npm install
-npm run dev
+pnpm install
+pnpm run dev
 ```
 ````
 
@@ -234,8 +234,8 @@ npm run dev
 1. Fork the repo
 2. Create a branch: `git checkout -b feature/your-feature`
 3. Make changes
-4. Run tests: `npm test`
-5. Run vision checks: `npm run vision`
+4. Run tests: `pnpm test`
+5. Run vision checks: `pnpm run vision`
 6. Submit PR
 
 ## Code Style
@@ -279,7 +279,7 @@ Description: "intall" → "install" in line 12
 
 | Week | Milestone | Deliverables | Success Metric |
 |------|-----------|--------------|----------------|
-| **Week 1** | npm Launch | • npm package published<br>• README with quickstart<br>• Matrix room created | • 100 npm downloads<br>• 10 Matrix members |
+| **Week 1** | pnpm Launch | • ppnpm package published<br>• README with quickstart<br>• Matrix room created | • 100 pnpm downloads<br>• 10 Matrix members |
 | **Week 2** | Content Launch | • Article 1 (Manifesto)<br>• Article 2 (Architecture)<br>• TypeDoc published | • 500 article views<br>• 5 GitHub stars |
 | **Week 3** | Vision Demo | • Video 1 (Vision Demo)<br>• Vite plugin working<br>• Vitest assertions | • 100 video views<br>• 3 external PRs |
 | **Week 4** | Example Gallery | • 10 working demos<br>• CONTRIBUTING.md<br>• First community issue | • 20 demo forks<br>• 1 community demo |
@@ -290,10 +290,10 @@ Description: "intall" → "install" in line 12
 
 | Week | Milestone | Deliverables | Success Metric |
 |------|-----------|--------------|----------------|
-| **Week 5** | Performance Deep Dive | • Article 3 (Performance)<br>• Benchmark suite<br>• LOD demo | • 1000 npm downloads<br>• 25 GitHub stars |
+| **Week 5** | Performance Deep Dive | • Article 3 (Performance)<br>• Benchmark suite<br>• LOD demo | • 1000 pnpm downloads<br>• 25 GitHub stars |
 | **Week 6** | Community Showcase #1 | • First user project featured<br>• Matrix AMA session<br>• GitHub Discussions active | • 50 Matrix members<br>• 3 user projects shared |
 | **Week 7** | Contributor Push | • Article 4 (Contributor Guide)<br>• 5 good first issues<br>• First external PR merged | • 5 external contributors<br>• 10 GitHub stars |
-| **Week 8** | Tutorial Video | • Video 2 (Custom Node Type)<br>• Example gallery expanded to 15 | • 500 video views<br>• 2000 npm downloads |
+| **Week 8** | Tutorial Video | • Video 2 (Custom Node Type)<br>• Example gallery expanded to 15 | • 500 video views<br>• 2000 pnpm downloads |
 
 ---
 
@@ -304,7 +304,7 @@ Description: "intall" → "install" in line 12
 | **Week 9** | Vision Model Deep Dive | • Article 5 (Vision Training)<br>• Model architecture docs<br>• Training data samples | • 30 GitHub stars<br>• 1 vision model contributor |
 | **Week 10** | Community Showcase #2 | • Second user project<br>• Matrix community call<br>• Roadmap discussion | • 100 Matrix members<br>• 5 user projects |
 | **Week 11** | Roadmap v6.1 | • Article 6 (Roadmap)<br>• GitHub milestone<br>• Community voting on features | • 50 GitHub stars<br>• 10 roadmap comments |
-| **Week 12** | 90-Day Retrospective | • Video 3 (Retrospective)<br>• Metrics report<br>• v6.1 release planning | • 5000 npm downloads<br>• 100 GitHub stars<br>• 200 Matrix members |
+| **Week 12** | 90-Day Retrospective | • Video 3 (Retrospective)<br>• Metrics report<br>• v6.1 release planning | • 5000 pnpm downloads<br>• 100 GitHub stars<br>• 200 Matrix members |
 
 ---
 
@@ -312,7 +312,7 @@ Description: "intall" → "install" in line 12
 
 | Metric | Target | Measurement |
 |--------|--------|-------------|
-| **npm Downloads** | 5,000 cumulative | `npm trends spacegraphjs` |
+| **pnpm Downloads** | 5,000 cumulative | `pnpm trends spacegraphjs` |
 | **GitHub Stars** | 100 | GitHub Insights |
 | **GitHub Forks** | 25 | GitHub Insights |
 | **External Contributors** | 10 | GitHub Contributors |
@@ -341,7 +341,7 @@ Description: "intall" → "install" in line 12
 ✅ **Good First Issues** strategy
 
 ### 90-Day Go-to-Market Calendar
-✅ **Month 1:** Foundation & Launch (npm, content, vision demo, examples)
+✅ **Month 1:** Foundation & Launch (pnpm, content, vision demo, examples)
 ✅ **Month 2:** Growth & Engagement (performance, community showcase, contributor push)
 ✅ **Month 3:** Momentum & Sustainability (vision models, roadmap, retrospective)
 

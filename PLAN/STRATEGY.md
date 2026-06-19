@@ -48,7 +48,7 @@
 
 | Strengths                                    | Weaknesses                  |
 | -------------------------------------------- | --------------------------- |
-| ✅ Web-first (Three.js) = runs everywhere    | ❌ No npm package initially |
+| ✅ Web-first (Three.js) = runs everywhere    | ❌ No ppnpm package initially |
 | ✅ Vite build = modern bundler compatibility | ❌ No CDN distribution      |
 | ✅ Plugin architecture = extensible          | ❌ No integrations roadmap  |
 
@@ -91,7 +91,7 @@
 **Target Path:**
 
 ```bash
-npm install spacegraphjs three
+pnpm install spacegraphjs three
 # Open browser, see graph
 ```
 
@@ -99,7 +99,7 @@ npm install spacegraphjs three
 
 | #      | Friction               | Severity    | Fix                 |
 | ------ | ---------------------- | ----------- | ------------------- |
-| F1     | No npm package         | 🔴 Critical | Publish alpha       |
+| F1     | No ppnpm package         | 🔴 Critical | Publish alpha       |
 | F2     | No quickstart          | 🔴 Critical | Write QUICKSTART.md |
 | F3     | No live demo           | 🔴 Critical | Create CodeSandbox  |
 | F4     | Vision not in workflow | 🔴 Critical | Vite plugin         |
@@ -113,7 +113,7 @@ npm install spacegraphjs three
 
 | Tier         | Integration            | When                |
 | ------------ | ---------------------- | ------------------- |
-| **P0**       | npm                    | Week 1              |
+| **P0**       | pnpm                    | Week 1              |
 | **P0**       | Vite Plugin (Vision)   | Week 1              |
 | **P1**       | TypeDoc                | Week 2              |
 | **P1**       | Vitest Assertions      | Week 2              |
@@ -146,7 +146,7 @@ npm install spacegraphjs three
 
 | Week          | Milestone       | Success Metric                      |
 | ------------- | --------------- | ----------------------------------- |
-| **Week 1**    | npm Launch      | 100 downloads, 10 Matrix            |
+| **Week 1**    | pnpm Launch      | 100 downloads, 10 Matrix            |
 | **Week 2**    | Content Launch  | 500 article views, 5 stars          |
 | **Week 3**    | Vision Demo     | 100 video views, 3 PRs              |
 | **Week 4**    | Example Gallery | 20 demo forks, 1 community demo     |

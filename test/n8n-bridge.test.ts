@@ -155,7 +155,7 @@ describe('n8n-bridge Unit Tests', () => {
 
             // Dynamic import the actual module now so it uses the mocked WebSocket
             return import('../packages/n8n-bridge/src/spacegraph-n8n-bridge.ts').then(({ N8nBridge }) => {
-                const bridge = new N8nBridge(sg);
+                const bridge = new (N8nBridge as any)(sg);
 
                 bridge.pushNodePositionUpdate('test-node', 150, 300);
 
@@ -213,7 +213,7 @@ describe('n8n-bridge Unit Tests', () => {
 
             expect(mockVisionManager.analyzeVision).toHaveBeenCalledTimes(2);
             expect(mockForceLayout.update).toHaveBeenCalledTimes(100);
-            expect(report.layoutScore).toBe(80);
+            expect(((report as any).layoutScore)).toBe(80);
         });
     });
 });
@@ -233,8 +233,8 @@ describe('N8n Nodes LOD Tests', () => {
             position: [0, 0, 0] as [number, number, number],
         } as any;
 
-        const node = new N8nScheduleNode(sg, spec);
-        node.parameters = { cronExpression: '0 0 * * *' };
+        const node = new (N8nScheduleNode as any)(sg, spec);
+        ((node as any).parameters) = { cronExpression: '0 0 * * *' };
 
         expect(node.domElement).toBeDefined();
 
@@ -275,8 +275,8 @@ describe('N8n Nodes LOD Tests', () => {
             position: [0, 0, 0] as [number, number, number],
         } as any;
 
-        const node = new N8nCredentialNode(sg, spec);
-        node.parameters = { service: 'AWS', apiKey: 'test-key' };
+        const node = new (N8nCredentialNode as any)(sg, spec);
+        ((node as any).parameters) = { service: 'AWS', apiKey: 'test-key' };
 
         expect(node.domElement).toBeDefined();
 
@@ -319,8 +319,8 @@ describe('N8n Nodes LOD Tests', () => {
             position: [0, 0, 0] as [number, number, number],
         } as any;
 
-        const node = new N8nHitlNode(sg, spec);
-        node.parameters = { taskSummary: 'Please approve the transaction', status: 'waiting' };
+        const node = new (N8nHitlNode as any)(sg, spec);
+        ((node as any).parameters) = { taskSummary: 'Please approve the transaction', status: 'waiting' };
 
         expect(node.domElement).toBeDefined();
 
@@ -362,7 +362,7 @@ describe('N8n Nodes LOD Tests', () => {
             position: [0, 0, 0] as [number, number, number],
         } as any;
 
-        const node = new ExecutionLogPanel(sg, spec);
+        const node = new (ExecutionLogPanel as any)(sg, spec);
 
         expect(node.domElement).toBeDefined();
 
@@ -400,8 +400,8 @@ describe('N8n Nodes LOD Tests', () => {
             position: [0, 0, 0] as [number, number, number],
         } as any;
 
-        const node = new N8nCodeNode(sg, spec);
-        node.parameters = { jsCode: 'console.log("hello");\nreturn items;' };
+        const node = new (N8nCodeNode as any)(sg, spec);
+        ((node as any).parameters) = { jsCode: 'console.log("hello");\nreturn items;' };
 
         expect(node.domElement).toBeDefined();
 
@@ -445,8 +445,8 @@ describe('N8n Nodes LOD Tests', () => {
             position: [0, 0, 0] as [number, number, number],
         } as any;
 
-        const node = new N8nHttpNode(sg, spec);
-        node.parameters = { requestMethod: 'POST', url: 'https://api.github.com' };
+        const node = new (N8nHttpNode as any)(sg, spec);
+        ((node as any).parameters) = { requestMethod: 'POST', url: 'https://api.github.com' };
 
         expect(node.domElement).toBeDefined();
 
@@ -486,8 +486,8 @@ describe('N8n Nodes LOD Tests', () => {
             position: [0, 0, 0] as [number, number, number],
         } as any;
 
-        const node = new N8nAiNode(sg, spec);
-        node.parameters = { model: 'gpt-4', prompt: 'You are a helpful assistant.' };
+        const node = new (N8nAiNode as any)(sg, spec);
+        ((node as any).parameters) = { model: 'gpt-4', prompt: 'You are a helpful assistant.' };
 
         expect(node.domElement).toBeDefined();
 
@@ -532,7 +532,7 @@ describe('N8n Nodes LOD Tests', () => {
             position: [0, 0, 0] as [number, number, number],
         } as any;
 
-        const node = new N8nPaletteNode(sg, spec);
+        const node = new (N8nPaletteNode as any)(sg, spec);
 
         expect(node.domElement).toBeDefined();
 
@@ -566,8 +566,8 @@ describe('N8n Nodes LOD Tests', () => {
             position: [0, 0, 0] as [number, number, number],
         } as any;
 
-        const node = new N8nVisionOptimizerNode(sg, spec);
-        node.parameters = { score: 85 };
+        const node = new (N8nVisionOptimizerNode as any)(sg, spec);
+        ((node as any).parameters) = { score: 85 };
 
         expect(node.domElement).toBeDefined();
 

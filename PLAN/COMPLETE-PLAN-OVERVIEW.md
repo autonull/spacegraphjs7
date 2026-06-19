@@ -8,7 +8,7 @@
 
 ## The Goal
 
-**Ship a working npm package that:**
+**Ship a working ppnpm package that:**
 
 1. ✅ Installs without errors
 2. ✅ Renders a graph in <5 minutes
@@ -42,9 +42,9 @@ The plan is structured:
 │                                                                          │
 │  ┌────────────────────────────────────────────────────────────────┐    │
 │  │  Day 0: Environment Setup (1h)                                 │    │
-│  │  ├─ Verify Node.js 18+, npm 9+, git 2+                        │    │
+│  │  ├─ Verify Node.js 18+, pnpm 9+, git 2+                        │    │
 │  │  ├─ Create project, git init, .gitignore                      │    │
-│  │  └─ Check npm package name availability                       │    │
+│  │  └─ Check ppnpm package name availability                       │    │
 │  └────────────────────────────────────────────────────────────────┘    │
 │                                    │                                    │
 │                                    ▼                                    │
@@ -74,7 +74,7 @@ The plan is structured:
 │  │  Days 3-4: Basic Demo (6h)                                     │    │
 │  │  ├─ demo/index.html (status overlay, container)               │    │
 │  │  ├─ demo/main.ts (3 nodes, 3 edges, error handling)           │    │
-│  │  ├─ Test: npm run dev → http://localhost:5173/demo/           │    │
+│  │  ├─ Test: pnpm run dev → http://localhost:5173/demo/           │    │
 │  │  ├─ Expected: 3 colored spheres connected by lines            │    │
 │  │  └─ Git commit                                                │    │
 │  └────────────────────────────────────────────────────────────────┘    │
@@ -113,7 +113,7 @@ The plan is structured:
 │  ┌────────────────────────────────────────────────────────────────┐    │
 │  │  Days 11-12: Fresh Install Test (4h)                           │    │
 │  │  ├─ rm -rf node_modules, build from scratch                   │    │
-│  │  ├─ npm install in empty directory                            │    │
+│  │  ├─ pnpm install in empty directory                            │    │
 │  │  ├─ Verify import works                                       │    │
 │  │  ├─ Verify types resolve                                      │    │
 │  │  └─ Git commit                                                │    │
@@ -146,10 +146,10 @@ The plan is structured:
 │                                    │                                    │
 │                                    ▼                                    │
 │  ┌────────────────────────────────────────────────────────────────┐    │
-│  │  Phase 1: npm Package Prep (2h)                                │    │
+│  │  Phase 1: pnpm Package Prep (2h)                                │    │
 │  │  ├─ Verify package.json fields                                │    │
-│  │  ├─ npm pack --dry-run                                        │    │
-│  │  └─ npm login check                                           │    │
+│  │  ├─ pnpm pack --dry-run                                        │    │
+│  │  └─ pnpm login check                                           │    │
 │  └────────────────────────────────────────────────────────────────┘    │
 │                                    │                                    │
 │                                    ▼                                    │
@@ -163,7 +163,7 @@ The plan is structured:
 │                                    ▼                                    │
 │  ┌────────────────────────────────────────────────────────────────┐    │
 │  │  Phase 3: Publish + Announce (2h)                              │    │
-│  │  ├─ npm publish --tag alpha                                   │    │
+│  │  ├─ pnpm publish --tag alpha                                   │    │
 │  │  ├─ Verify on npmjs.com                                       │    │
 │  │  ├─ Test public install                                       │    │
 │  │  ├─ GitHub Discussions announcement                           │    │
@@ -179,7 +179,7 @@ The plan is structured:
 │  └────────────────────────────────────────────────────────────────┘    │
 │                                                                          │
 │  ═══════════════════════════════════════════════════════════════════    │
-│  PHASE B COMPLETE: Launched on npm, community presence                  │
+│  PHASE B COMPLETE: Launched on pnpm, community presence                  │
 │  ═══════════════════════════════════════════════════════════════════    │
 │                                                                          │
 │  TOTAL: 66 hours over 17 days (11-24 days part-time)                   │
@@ -233,14 +233,14 @@ The plan is structured:
 | Milestone | Description               | When   | Gate                    |
 | --------- | ------------------------- | ------ | ----------------------- |
 | **M0**    | Environment verified      | Day 0  | Node 18+, git           |
-| **M1**    | package.json created      | Day 1  | npm install works       |
-| **M2**    | SpaceGraph class compiles | Day 2  | npm run build           |
+| **M1**    | package.json created      | Day 1  | pnpm install works       |
+| **M2**    | SpaceGraph class compiles | Day 2  | pnpm run build           |
 | **M3**    | Demo renders              | Day 4  | 3 nodes + 3 edges       |
 | **M4**    | Camera controls work      | Day 5  | Rotate, zoom            |
 | **M5**    | All tests pass            | Day 7  | No console errors       |
 | **M6**    | Fresh install works       | Day 12 | Empty directory         |
 | **M7**    | QUICKSTART verified       | Day 14 | <10 min, stranger       |
-| **M8**    | Published to npm          | Day 16 | npm publish --tag alpha |
+| **M8**    | Published to pnpm          | Day 16 | pnpm publish --tag alpha |
 
 **Do not skip milestones. Do not publish until M7 passes.**
 
@@ -292,7 +292,7 @@ cat PLAN/ENHANCED-BUILD-PLAN.md
 
 # Step 5: Day 0 — Environment setup
 node --version  # Should be v18+
-npm --version   # Should be 9+
+pnpm --version   # Should be 9+
 git --version   # Should be 2+
 
 # Step 6: Create project
@@ -309,7 +309,7 @@ git init
 **If everything goes wrong:**
 
 1. **Code doesn't work:** → Fix before launch (Days 6-7 buffer)
-2. **npm publish fails:** → Fix package.json, try alternative name
+2. **pnpm publish fails:** → Fix package.json, try alternative name
 3. **No adoption:** → Month 2 content marketing, improve docs
 4. **Critical bug:** → Hotfix within 48 hours, transparent communication
 
@@ -327,7 +327,7 @@ git init
 | ------------------------ | ----------------------------------------------- |
 | What is this?            | Complete plan to build + launch SpaceGraphJS    |
 | How long?                | 66 hours over 16-17 days (part-time)            |
-| What do I need?          | Node.js 18+, npm 9+, git 2+, text editor        |
+| What do I need?          | Node.js 18+, pnpm 9+, git 2+, text editor        |
 | Where do I start?        | README-PLAN.md → ENHANCED-BUILD-PLAN.md         |
 | What if things go wrong? | CONTINGENCY-PLAN.md has recovery procedures     |
 | Will this succeed?       | Yes — if you follow the plan and pass all gates |

@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Quick Start - SpaceGraphJS</title>
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                background: #0a0a0a;
+                color: #e0e0e0;
+                overflow: hidden;
+            }
+            #container {
+                width: 100vw;
+                height: 100vh;
+            }
+            .overlay {
+                position: fixed;
+                top: 20px;
+                left: 20px;
+                z-index: 1000;
+                background: rgba(15, 23, 42, 0.95);
+                border: 1px solid #334155;
+                border-radius: 12px;
+                padding: 20px;
+                max-width: 380px;
+            }
+            .overlay h1 {
+                font-size: 18px;
+                color: #fff;
+                margin-bottom: 8px;
+            }
+            .overlay p {
+                font-size: 13px;
+                color: #94a3b8;
+                margin-bottom: 16px;
+                line-height: 1.5;
+            }
+            .feature-list {
+                margin-top: 16px;
+            }
+            .feature {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                margin-bottom: 10px;
+                font-size: 13px;
+                color: #cbd5e1;
+            }
+            .feature-icon {
+                font-size: 18px;
+            }
+            .code-block {
+                margin-top: 16px;
+                padding: 12px;
+                background: rgba(30, 41, 59, 0.8);
+                border-radius: 6px;
+                font-family: monospace;
+                font-size: 11px;
+                color: #34d399;
+                overflow-x: auto;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="container"></div>
+
+        <div class="overlay">
+            <h1>Quick Start Guide</h1>
+            <p>
+                This demo shows the essential SpaceGraphJS setup with the most commonly used
+                plugins.
+            </p>
+
+            <div class="feature-list">
+                <div class="feature">
+                    <span class="feature-icon">✓</span>
+                    <span>HoverMetaWidget for node actions</span>
+                </div>
+                <div class="feature">
+                    <span class="feature-icon">✓</span>
+                    <span>Minimap for navigation</span>
+                </div>
+                <div class="feature">
+                    <span class="feature-icon">✓</span>
+                    <span>History for undo/redo</span>
+                </div>
+                <div class="feature">
+                    <span class="feature-icon">✓</span>
+                    <span>Force layout for auto-arrangement</span>
+                </div>
+            </div>
+
+            <div class="code-block">
+                <div>// Try it yourself:</div>
+                <div>1. Hover over nodes</div>
+                <div>2. Click action buttons</div>
+                <div>3. Drag to reposition</div>
+                <div>4. Use minimap to navigate</div>
+                <div>5. Ctrl+Z for undo</div>
+            </div>
+        </div>
+
+        <script type="module">
+            import {
+                SpaceGraph,
+                HoverMetaWidget,
+                MinimapPlugin,
+                HistoryPlugin,
+                ForceLayout,
+            } from '@src/index.ts';
+
+            // Sample data structure
+            const sampleData = {
+                nodes: [
+                    {
+                        id: 'main',
+                        type: 'HtmlNode',
+                        label: 'Main Hub',
+                        position: [0, 0, 0],
+                        data: {
+                            color: 'rgba(59, 130, 246, 0.95)',
+                            width: 200,
+                            height: 100,
+                            description: 'Central node',
+                        },
+                    },
+                    {
+                        id: 'child-1',
+                        type: 'HtmlNode',
+                        label: 'Child 1',
+                        position: [-200, 150, 0],
+                        data: {
+                            color: 'rgba(139, 92, 246, 0.85)',
+                            width: 160,
+                            height: 80,
+                        },
+                    },
+                    {
+                        id: 'child-2',
+                        type: 'HtmlNode',
+                        label: 'Child 2',
+                        position: [200, 150, 0],
+                        data: {
+                            color: 'rgba(139, 92, 246, 0.85)',
+                            width: 160,
+                            height: 80,
+                        },
+                    },
+                    {
+                        id: 'child-3',
+                        type: 'HtmlNode',
+                        label: 'Child 3',
+                        position: [0, 200, 0],
+                        data: {
+                            color: 'rgba(139, 92, 246, 0.85)',
+                            width: 160,
+                            height: 80,
+                        },
+                    },
+                ],
+                edges: [
+                    { id: 'e1', source: 'main', target: 'child-1', type: 'CurvedEdge' },
+                    { id: 'e2', source: 'main', target: 'child-2', type: 'CurvedEdge' },
+                    { id: 'e3', source: 'main', target: 'child-3', type: 'CurvedEdge' },
+                ],
+            };
+
+            async function init() {
+                // Create SpaceGraph instance
+                const sg = await SpaceGraph.create('#container', sampleData);
+                window._sg = sg;
+
+                // 1. Register History Plugin (for undo/redo)
+                const history = new HistoryPlugin({ maxHistorySize: 50 });
+                sg.pluginManager.register('HistoryPlugin', history);
+                history.init(sg, sg.graph, sg.events);
+
+                // 2. Register Minimap Plugin (for navigation)
+                const minimap = new MinimapPlugin({
+                    position: 'bottom-right',
+                    size: 180,
+                    alpha: 0.9,
+                });
+                sg.pluginManager.register('MinimapPlugin', minimap);
+                minimap.init(sg, sg.graph, sg.events);
+
+                // 3. Register HoverMetaWidget (for node actions)
+                const hoverMeta = new HoverMetaWidget({
+                    enabled: true,
+                    hideDelay: 400,
+                    fadeDelay: 3500,
+                    showBorder: true,
+                });
+                sg.pluginManager.register('HoverMetaWidget', hoverMeta);
+                hoverMeta.init(sg, sg.graph, sg.events);
+
+                // 4. Apply initial layout
+                const forceLayout = new ForceLayout({
+                    iterations: 50,
+                    repulsion: 8000,
+                    attraction: 0.02,
+                });
+                forceLayout.init(sg, sg.graph, sg.events);
+                await forceLayout.apply();
+
+                // Focus camera on graph after layout is applied
+                setTimeout(() => {
+                    sg.fitView(150, 2.0);
+                }, 100);
+
+                // Handle meta actions
+                sg.events.on('node:metaaction', ({ node, action }) => {
+                    console.log('Action:', action, 'on node:', node.id);
+
+                    if (action === 'focus') {
+                        sg.fitView(150, 2.0);
+                    }
+                });
+
+                // Expose for debugging
+                window.sg = sg;
+                window._historyPlugin = history;
+
+                console.log('[quickstart] Graph created:', {
+                    nodes: sg.graph.nodes.size,
+                    edges: sg.graph.edges.size,
+                    plugins: Array.from(sg.pluginManager.plugins.keys()),
+                });
+            }
+
+            init().catch((err) => {
+                console.error('[quickstart] Init error:', err);
+            });
+        </script>
+    </body>
+</html>

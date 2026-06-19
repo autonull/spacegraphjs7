@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kitchen Sink - SpaceGraphJS</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { overflow: hidden; background-color: #0f172a; font-family: system-ui, -apple-system, sans-serif; color: white; }
+        #container { width: 100vw; height: 100vh; }
+
+        #test-output {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px;
+            border-radius: 4px;
+            pointer-events: none;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .my-selected-node { border: 2px solid #22c55e !important; box-shadow: 0 0 30px rgba(34, 197, 94, 0.5) !important; }
+    </style>
+</head>
+<body>
+    <div id="container"></div>
+    <div id="test-output">
+        <div id="selected-nodes">Selected: 0</div>
+        <div id="camera-state">Camera: 0,0,0 Z: 0</div>
+        <div id="last-event">Last Event: none</div>
+        <div id="node-dragged">Dragged: false</div>
+    </div>
+
+    <script type="module">
+        import { SpaceGraphApp } from '../src/core/SpaceGraphApp.ts';
+
+        const nodes = [
+            // Major Node Types
+            { id: 'shape-node', type: 'ShapeNode', position: [0, 0, 0], data: { shape: 'box', color: '#ef4444', size: 60 } },
+            { id: 'group-node', type: 'GroupNode', position: [300, 0, -50], data: { width: 150, height: 150, depth: 50, color: '#3b82f6' } },
+            { id: 'image-node', type: 'ImageNode', position: [-300, 0, 0], data: {
+                url: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj4KICA8cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzMzNjZmZiIgLz4KICA8Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI0MCIgZmlsbD0iI2ZmZmZmZiIgLz4KICA8dGV4dCB4PSI1MCIgeT0iNTUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIyNCIgZmlsbD0iIzMzNjZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+U0c8L3RleHQ+Cjwvc3ZnPg=='
+            }},
+            {
+                id: 'html-node',
+                type: 'HtmlNode',
+                position: [0, 300, 0],
+                data: {
+                    width: 200, height: 100,
+                    html: `<div style="background: rgba(30,41,59,0.9); padding: 20px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;"><h3 data-testid="html-content">HTML Node</h3></div>`
+                }
+            },
+            { id: 'text-mesh-node', type: 'TextMeshNode', position: [0, -300, 0], label: 'Text Mesh', data: { color: '#eab308', size: 24 } },
+
+            // Fractal size variance examples
+            { id: 'micro-node', type: 'ShapeNode', position: [100, 100, 50], data: { shape: 'sphere', size: 8, color: '#facc15' }, label: 'Micro' },
+            { id: 'mega-console', type: 'HtmlNode', position: [0, 0, -500], data: {
+                width: 1200, height: 800,
+                html: `<div style="background: rgba(15,23,42,0.5); border: 2px solid rgba(255,255,255,0.1); height:100%; padding:40px; border-radius:24px;">
+                    <h1 style="font-size:48px; color:rgba(255,255,255,0.1);">BACKGROUND DASHBOARD</h1>
+                </div>`
+            }}
+        ];
+
+        const edges = [
+            // Major Edge Types
+            { id: 'e1', source: 'shape-node', target: 'group-node', type: 'FlowEdge', data: { color: '#22c55e', flowSpeed: 2.0 } },
+            { id: 'e2', source: 'shape-node', target: 'image-node', type: 'AnimatedEdge', data: { color: '#8b5cf6', speed: 2.0 } },
+            { id: 'e3', source: 'shape-node', target: 'html-node', type: 'CurvedEdge', data: { color: '#94a3b8' } },
+            { id: 'e4', source: 'shape-node', target: 'text-mesh-node', type: 'Edge', data: { color: '#ef4444' } }
+        ];
+
+        const app = await SpaceGraphApp.create('#container', {
+            spec: { nodes, edges },
+            title: 'Kitchen Sink',
+            description: 'All major nodes and edges.',
+            selectionHighlightClass: 'my-selected-node',
+            selectionHighlightColor: 0x22c55e,
+            enableGrid: true,
+            onNodeSelect: (selectedNodes) => {
+                document.getElementById('selected-nodes').textContent = `Selected: ${selectedNodes.length}`;
+                document.getElementById('last-event').textContent = 'Last Event: select';
+            },
+            onNodeDblClick: (node) => {
+                document.getElementById('last-event').textContent = `Last Event: dblclick ${node.id}`;
+            }
+        });
+
+        // Expose app for E2E tests to manipulate directly if needed, but we mostly want to rely on UI
+        window.app = app;
+
+        app.sg.render();
+
+
+        // Track Camera updates for E2E tests
+        const updateCameraText = () => {
+            const camera = app.sg.renderer.camera;
+            if (camera) {
+                const pos = camera.position;
+                let targetDist = 0;
+                if (app.sg.cameraControls && app.sg.cameraControls.target) {
+                    targetDist = app.sg.cameraControls.target.distanceTo(pos);
+                }
+                document.getElementById('camera-state').textContent = `Camera: ${Math.round(pos.x)},${Math.round(pos.y)},${Math.round(pos.z)} Z: ${Math.round(targetDist)}`;
+            }
+        };
+
+        app.sg.events.on('camera:move', updateCameraText);
+        if (app.sg.cameraControls && app.sg.cameraControls.controls) {
+            app.sg.cameraControls.controls.addEventListener('change', updateCameraText);
+        }
+
+        // Track Node Drags
+        app.sg.events.on('node:drag', (e) => {
+            document.getElementById('node-dragged').textContent = `Dragged: ${e.node.id}`;
+        });
+
+    </script>
+</body>
+</html>

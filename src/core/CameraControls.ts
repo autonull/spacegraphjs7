@@ -1,316 +1,322 @@
+// SpaceGraphJS - Camera Controls
+// Pure camera state machine - all input handled via Fingering
+
 import * as THREE from 'three';
-import gsap from 'gsap';
-import type { SpaceGraph } from '../SpaceGraph';
-import { GestureManager } from '../utils/GestureManager';
-import { CameraUtils } from '../utils/CameraUtils';
+import type { Surface } from './Surface';
+
+export interface CameraControlsConfig {
+    enableRotate: boolean;
+    enableZoom: boolean;
+    enablePan: boolean;
+    rotateSpeed: number;
+    zoomSpeed: number;
+    panSpeed: number;
+    minDistance: number;
+    maxDistance: number;
+}
+
+const KEY_CONFIG = {
+    pan: [
+        { key: 'a', axis: 'right', dir: -1 },
+        { key: 'd', axis: 'right', dir: 1 },
+        { key: 'w', axis: 'forward', dir: 1 },
+        { key: 's', axis: 'forward', dir: -1 },
+        { key: 'q', axis: 'up', dir: 1 },
+        { key: 'e', axis: 'up', dir: -1 },
+    ] as const,
+    rotate: [
+        { key: 'j', delta: 'theta', dir: -1 },
+        { key: 'l', delta: 'theta', dir: 1 },
+        { key: 'i', delta: 'phi', dir: -1 },
+        { key: 'k', delta: 'phi', dir: 1 },
+    ] as const,
+    zoom: [
+        { key: 'z', factor: 0.9 },
+        { key: 'x', factor: 1.1 },
+    ] as const,
+    speed: { pan: 10.0, zoom: 0.1, rotate: 0.05 },
+} as const;
 
 export class CameraControls {
-    private sg: SpaceGraph;
-    private isDragging = false;
-    private dragMode: 'rotate' | 'pan' = 'rotate';
-    private previousMousePosition = { x: 0, y: 0 };
-    public spherical = { theta: 0, phi: Math.PI / 2, radius: 500 };
-    public target = new THREE.Vector3(0, 0, 0);
+    readonly camera: THREE.Camera;
+    readonly domElement: HTMLElement;
+    public sg?: any; // To emit events
+    target: THREE.Vector3;
+    spherical: THREE.Spherical;
 
-    private damping = 0.9;
-    private velocity = { x: 0, y: 0 };
-    private panVelocity = { x: 0, y: 0 };
+    private config: CameraControlsConfig;
+    private sphericalDelta = new THREE.Spherical();
+    private scale = 1;
+    private panOffset = new THREE.Vector3();
+    private zoomStack: Array<{
+        target: THREE.Vector3;
+        distance: number;
+        phi: number;
+        theta: number;
+    }> = [];
+    private readonly MAX_ZOOM_DEPTH = 8;
+    private keyState = new Map<string, boolean>();
+    private targetNext: THREE.Vector3 | null = null;
+    private radiusNext: number | null = null;
+    private animStartTime = 0;
+    private animDuration = 0;
+    private startTarget = new THREE.Vector3();
+    private startRadius = 0;
+    private isOrthographic = false;
+    private orthoCamera: THREE.OrthographicCamera | null = null;
 
-    // Touch tracking
-    private activeTouches: Map<number, { x: number; y: number }> = new Map();
-    private prevPinchDistance = 0;
-    private prevPinchMidpoint = { x: 0, y: 0 };
+    // Cached vectors for update loop - avoids per-frame allocations
+    private _camRight = new THREE.Vector3();
+    private _camForward = new THREE.Vector3();
+    private _camUp = new THREE.Vector3();
+    private _tempVec = new THREE.Vector3();
+    private _tempOffset = new THREE.Vector3();
+    private _tempSide = new THREE.Vector3();
 
-    // Public wrapper for controls toggling, expected by some plugins
-    public controls = {
-        enabled: true,
-        moveTo: (x: number, y: number, z: number, animate: boolean = true) => {
-            const target = new THREE.Vector3(x, y, z);
-            if (animate) {
-                this.flyTo(target, this.spherical.radius, 1.0);
-            } else {
-                this.target.copy(target);
-                this.updateCameraPosition();
-            }
-        }
-    };
-
-    constructor(sg: SpaceGraph) {
-        this.sg = sg;
-        this.setupControls();
-    }
-
-    private updateCameraPosition() {
-        const camera = this.sg.renderer.camera;
-        camera.position.x =
-            this.target.x +
-            this.spherical.radius * Math.sin(this.spherical.phi) * Math.sin(this.spherical.theta);
-        camera.position.y = this.target.y + this.spherical.radius * Math.cos(this.spherical.phi);
-        camera.position.z =
-            this.target.z +
-            this.spherical.radius * Math.sin(this.spherical.phi) * Math.cos(this.spherical.theta);
-        camera.lookAt(this.target);
-
-        // Emitting this constantly during drag causes heavy React/Solid UI thrashing.
-        // We batch it to requestAnimationFrame cadence.
-        this.sg.events.emitBatched('camera:move', {
-            position: camera.position,
-            target: this.target.clone(),
-        });
-    }
-
-    public flyTo(targetPos: THREE.Vector3, targetRadius: number, duration: number = 1.5): void {
-        // Animate both the look-at target and the spherical radius
-        gsap.to(this.target, {
-            x: targetPos.x,
-            y: targetPos.y,
-            z: targetPos.z,
-            duration,
-            ease: 'power2.inOut',
-        });
-
-        gsap.to(this.spherical, {
-            radius: targetRadius,
-            duration,
-            ease: 'power2.inOut',
-            onUpdate: () => {
-                this.updateCameraPosition();
-            },
-        });
-    }
-
-    public update() {
-        let changed = false;
-
-        if (
-            !this.isDragging &&
-            (Math.abs(this.velocity.x) > 0.0001 || Math.abs(this.velocity.y) > 0.0001)
-        ) {
-            this.spherical.theta -= this.velocity.x;
-            this.spherical.phi = Math.max(
-                0.1,
-                Math.min(Math.PI - 0.1, this.spherical.phi + this.velocity.y),
-            );
-
-            this.velocity.x *= this.damping;
-            this.velocity.y *= this.damping;
-            changed = true;
-        }
-
-        if (
-            !this.isDragging &&
-            (Math.abs(this.panVelocity.x) > 0.0001 || Math.abs(this.panVelocity.y) > 0.0001)
-        ) {
-            const translation = CameraUtils.calculatePanTranslation(this.sg.renderer.camera, this.panVelocity);
-            this.target.add(translation);
-
-            this.panVelocity.x *= this.damping;
-            this.panVelocity.y *= this.damping;
-            changed = true;
-        }
-
-        if (changed) {
-            this.updateCameraPosition();
-        }
-    }
-
-    private setupControls() {
-        const canvas = this.sg.renderer.renderer.domElement;
-
-        canvas.addEventListener('contextmenu', (e) => {
-            e.preventDefault();
-        });
-
-        canvas.addEventListener('mousedown', (e) => {
-            if (!this.controls.enabled) return;
-            this.isDragging = true;
-            this.dragMode = e.button === 2 ? 'pan' : 'rotate';
-            this.previousMousePosition = { x: e.clientX, y: e.clientY };
-            if (this.dragMode === 'rotate') this.velocity = { x: 0, y: 0 };
-            if (this.dragMode === 'pan') this.panVelocity = { x: 0, y: 0 };
-        });
-
-        canvas.addEventListener('mousemove', (e) => {
-            if (!this.isDragging || !this.controls.enabled) return;
-
-            const deltaX = e.clientX - this.previousMousePosition.x;
-            const deltaY = e.clientY - this.previousMousePosition.y;
-
-            if (this.dragMode === 'rotate') {
-                this.velocity.x = deltaX * 0.005;
-                this.velocity.y = deltaY * 0.005;
-
-                this.spherical.theta -= this.velocity.x;
-                this.spherical.phi = Math.max(
-                    0.1,
-                    Math.min(Math.PI - 0.1, this.spherical.phi + this.velocity.y),
-                );
-            } else if (this.dragMode === 'pan') {
-                // Calculate pan distance based on camera distance to maintain perceived speed
-                const panSpeed = this.spherical.radius * 0.002;
-                this.panVelocity.x = -deltaX * panSpeed;
-                this.panVelocity.y = deltaY * panSpeed;
-
-                const translation = CameraUtils.calculatePanTranslation(this.sg.renderer.camera, this.panVelocity);
-                this.target.add(translation);
-            }
-
-            this.updateCameraPosition();
-            this.previousMousePosition = { x: e.clientX, y: e.clientY };
-        });
-
-        canvas.addEventListener('mouseup', () => {
-            this.isDragging = false;
-        });
-
-        canvas.addEventListener('mouseleave', () => {
-            this.isDragging = false;
-        });
-
-        // --- Touch Gestures ---
-
-        canvas.addEventListener(
-            'touchstart',
-            (e) => {
-                if (!this.controls.enabled) return;
-                // e.preventDefault(); // allow default to handle taps, let InteractionPlugin catch taps
-                for (let i = 0; i < e.changedTouches.length; i++) {
-                    const touch = e.changedTouches[i];
-                    this.activeTouches.set(touch.identifier, {
-                        x: touch.clientX,
-                        y: touch.clientY,
-                    });
-                }
-
-                if (this.activeTouches.size === 1) {
-                    this.isDragging = true;
-                    this.dragMode = 'rotate';
-                    const t = Array.from(this.activeTouches.values())[0];
-                    this.previousMousePosition = { x: t.x, y: t.y };
-                    this.velocity = { x: 0, y: 0 };
-                } else if (this.activeTouches.size === 2) {
-                    // Initiate pinch/pan
-                    this.isDragging = true;
-                    this.dragMode = 'pan'; // 2 fingers pan by default + pinched
-                    const t = Array.from(this.activeTouches.values());
-
-                    // Initial distance between two fingers
-                    this.prevPinchDistance = GestureManager.calculateDistance(t[0], t[1]);
-
-                    // Midpoint
-                    this.prevPinchMidpoint = GestureManager.calculateMidpoint(t[0], t[1]);
-                    this.panVelocity = { x: 0, y: 0 };
-                }
-            },
-            { passive: false },
-        ); // Needs to be false to optionally preventDefault on move
-
-        canvas.addEventListener(
-            'touchmove',
-            (e) => {
-                if (!this.controls.enabled) return;
-                e.preventDefault(); // Stop page scrolling when manipulating graph
-
-                for (let i = 0; i < e.changedTouches.length; i++) {
-                    const touch = e.changedTouches[i];
-                    this.activeTouches.set(touch.identifier, {
-                        x: touch.clientX,
-                        y: touch.clientY,
-                    });
-                }
-
-                if (!this.isDragging) return;
-
-                if (this.activeTouches.size === 1) {
-                    this._handleSingleTouch();
-                } else if (this.activeTouches.size === 2) {
-                    this._handleDoubleTouch();
-                }
-            },
-            { passive: false },
-        );
-
-        const handleTouchEnd = (e: TouchEvent) => {
-            for (let i = 0; i < e.changedTouches.length; i++) {
-                this.activeTouches.delete(e.changedTouches[i].identifier);
-            }
-
-            if (this.activeTouches.size === 0) {
-                this.isDragging = false;
-            } else if (this.activeTouches.size === 1) {
-                // Drop down to 1 finger rotation safely
-                const remains = Array.from(this.activeTouches.values())[0];
-                this.dragMode = 'rotate';
-                this.previousMousePosition = { x: remains.x, y: remains.y };
-            }
+    constructor(
+        camera: THREE.Camera,
+        domElement: HTMLElement,
+        config: Partial<CameraControlsConfig> = {},
+    ) {
+        this.camera = camera;
+        this.domElement = domElement;
+        this.config = {
+            enableRotate: true,
+            enableZoom: true,
+            enablePan: true,
+            rotateSpeed: 1.0,
+            zoomSpeed: 1.0,
+            panSpeed: 1.0,
+            minDistance: 10,
+            maxDistance: 10000,
+            ...config,
         };
+        this.target = new THREE.Vector3();
+        this.spherical = new THREE.Spherical();
+        this.sphericalDelta = new THREE.Spherical();
+        this.panOffset = new THREE.Vector3();
+        this.updateSpherical();
+        this.onKeyDown = this.onKeyDown.bind(this);
+        this.onKeyUp = this.onKeyUp.bind(this);
+        window.addEventListener('keydown', this.onKeyDown);
+        window.addEventListener('keyup', this.onKeyUp);
+    }
 
-        canvas.addEventListener('touchend', handleTouchEnd);
-        canvas.addEventListener('touchcancel', handleTouchEnd);
+    private onKeyDown(e: KeyboardEvent): void {
+        this.keyState.set(e.key.toLowerCase(), true);
+    }
+    private onKeyUp(e: KeyboardEvent): void {
+        this.keyState.set(e.key.toLowerCase(), false);
+    }
 
-        // --- Mouse Wheel ---
-        canvas.addEventListener(
-            'wheel',
-            (e) => {
-                if (!this.controls.enabled) return;
-                this.spherical.radius = Math.max(
-                    10,
-                    Math.min(5000, this.spherical.radius + e.deltaY),
+    rotate(dx: number, dy: number): void {
+        if (!this.config.enableRotate) return;
+        this.sphericalDelta.theta -= dx * this.config.rotateSpeed * 0.005;
+        this.sphericalDelta.phi -= dy * this.config.rotateSpeed * 0.005;
+    }
+
+    pan(dx: number, dy: number): void {
+        if (!this.config.enablePan) return;
+        this._tempOffset.copy(this.camera.position).sub(this.target);
+        this._tempSide.crossVectors(this.camera.up, this._tempOffset).normalize();
+        this._camUp.copy(this.camera.up).normalize();
+        this.panOffset.add(this._tempSide.multiplyScalar(-dx * this.config.panSpeed * 0.1));
+        this.panOffset.add(this._camUp.multiplyScalar(dy * this.config.panSpeed * 0.1));
+    }
+
+    zoom(factor: number): void {
+        if (!this.config.enableZoom) return;
+        this.scale *= factor;
+    }
+
+    update(): void {
+        this._camRight.setFromMatrixColumn(this.camera.matrix, 0);
+        this._camForward.setFromMatrixColumn(this.camera.matrix, 2).negate();
+        this._camUp.copy(this.camera.up);
+
+        for (const { key, axis, dir } of KEY_CONFIG.pan) {
+            if (this.keyState.get(key)) {
+                const vec =
+                    axis === 'right'
+                        ? this._camRight
+                        : axis === 'forward'
+                          ? this._camForward
+                          : this._camUp;
+                this.panOffset.add(
+                    this._tempVec.copy(vec).multiplyScalar(dir * KEY_CONFIG.speed.pan),
                 );
-                this.updateCameraPosition();
-                e.preventDefault();
-            },
-            { passive: false },
-        );
+            }
+        }
 
-        this.updateCameraPosition();
+        for (const { key, delta, dir } of KEY_CONFIG.rotate) {
+            if (this.keyState.get(key)) this.sphericalDelta[delta] += dir * KEY_CONFIG.speed.rotate;
+        }
+
+        for (const { key, factor } of KEY_CONFIG.zoom) {
+            if (this.keyState.get(key)) this.scale *= factor;
+        }
+
+        this.spherical.theta += this.sphericalDelta.theta;
+        this.spherical.phi += this.sphericalDelta.phi;
+        this.spherical.phi = Math.max(0.01, Math.min(Math.PI - 0.01, this.spherical.phi));
+        this.spherical.radius *= this.scale;
+        this.spherical.radius = Math.max(
+            this.config.minDistance,
+            Math.min(this.config.maxDistance, this.spherical.radius),
+        );
+        this.target.add(this.panOffset);
+
+        if (this.targetNext) {
+            const elapsed = performance.now() - this.animStartTime;
+            const t = Math.min(elapsed / this.animDuration, 1);
+            const eased = 1 - Math.pow(1 - t, 3);
+
+            if (this.sg?.events) {
+                this.sg.events.emit('camera:fly:progress', t);
+            }
+
+            this.target.lerpVectors(this.startTarget, this.targetNext, eased);
+            if (this.radiusNext)
+                this.spherical.radius =
+                    this.startRadius + (this.radiusNext - this.startRadius) * eased;
+            if (t >= 1) {
+                this.targetNext = null;
+                this.radiusNext = null;
+                if (this.sg?.events) {
+                    this.sg.events.emit('camera:fly:end');
+                }
+            }
+        }
+
+        this.camera.position.copy(this.target).add(this._tempVec.setFromSpherical(this.spherical));
+        this.camera.lookAt(this.target);
+        this.sphericalDelta.set(0, 0, 0);
+        this.scale = 1;
+        this.panOffset.set(0, 0, 0);
     }
 
-    private _handleSingleTouch() {
-        const t = Array.from(this.activeTouches.values())[0];
-        const deltaX = t.x - this.previousMousePosition.x;
-        const deltaY = t.y - this.previousMousePosition.y;
-
-        this.velocity.x = deltaX * 0.005;
-        this.velocity.y = deltaY * 0.005;
-
-        this.spherical.theta -= this.velocity.x;
-        this.spherical.phi = Math.max(
-            0.1,
-            Math.min(Math.PI - 0.1, this.spherical.phi + this.velocity.y),
-        );
-
-        this.previousMousePosition = { x: t.x, y: t.y };
-        this.updateCameraPosition();
+    panBy(dx: number, dy: number): void {
+        this._tempOffset.copy(this.camera.position).sub(this.target);
+        this._tempSide.crossVectors(this.camera.up, this._tempOffset).normalize();
+        this._camUp.copy(this.camera.up).normalize();
+        this.panOffset.add(this._tempSide.multiplyScalar(-dx));
+        this.panOffset.add(this._camUp.multiplyScalar(dy));
     }
 
-    private _handleDoubleTouch() {
-        const t = Array.from(this.activeTouches.values());
+    updateSpherical(): void {
+        this._tempOffset.copy(this.camera.position).sub(this.target);
+        this.spherical.setFromVector3(this._tempOffset);
+    }
 
-        // 1. Pinch-to-zoom calculation
-        const distance = GestureManager.calculateDistance(t[0], t[1]);
-        this.spherical.radius = GestureManager.calculatePinchZoom(
-            distance,
-            this.prevPinchDistance,
-            this.spherical.radius
-        );
-        this.prevPinchDistance = distance;
+    flyTo(target: THREE.Vector3, distance: number, duration: number = 1.5): void {
+        this.setTargetSmooth(target, distance, duration);
+    }
 
-        // 2. Midpoint 2-finger panning calculation
-        const currentMidpoint = GestureManager.calculateMidpoint(t[0], t[1]);
-        const panVel = GestureManager.calculatePan(
-            currentMidpoint,
-            this.prevPinchMidpoint,
-            this.spherical.radius
-        );
+    zoomTo(target: THREE.Vector3, distance: number, duration: number = 1.5): void {
+        const top = this.zoomStack.at(-1);
+        if (top && top.target.distanceTo(target) < distance * 0.1) {
+            this.zoomOut();
+            return;
+        }
+        this.zoomStack.push({
+            target: this.target.clone(),
+            distance: this.spherical.radius,
+            phi: this.spherical.phi,
+            theta: this.spherical.theta,
+        });
+        if (this.zoomStack.length > this.MAX_ZOOM_DEPTH) this.zoomStack.shift();
+        this.flyTo(target, distance, duration);
+    }
 
-        this.panVelocity.x = panVel.x;
-        this.panVelocity.y = panVel.y;
+    zoomToSurface3D(surface: Surface, duration: number = 1.5): void {
+        if (!surface.bounds3D) return;
+        const bounds = surface.bounds3D;
+        const center = bounds.center;
+        const size = bounds.size;
+        const maxDim = Math.max(size.x, size.y, size.z);
+        const distance = maxDim * 2.5;
+        const top = this.zoomStack.at(-1);
+        if (top && center.distanceTo(top.target) < distance * 0.1) {
+            this.zoomOut();
+            return;
+        }
+        this.zoomStack.push({
+            target: this.target.clone(),
+            distance: this.spherical.radius,
+            phi: this.spherical.phi,
+            theta: this.spherical.theta,
+        });
+        if (this.zoomStack.length > this.MAX_ZOOM_DEPTH) this.zoomStack.shift();
+        this.flyTo(center, distance, duration);
+    }
 
-        const translation = CameraUtils.calculatePanTranslation(this.sg.renderer.camera, this.panVelocity);
-        this.target.add(translation);
+    zoomOut(): void {
+        if (this.zoomStack.length === 0) return;
+        const entry = this.zoomStack.pop()!;
+        this.flyTo(entry.target, entry.distance);
+    }
+    getZoomDepth(): number {
+        return this.zoomStack.length;
+    }
+    canZoomOut(): boolean {
+        return this.zoomStack.length > 0;
+    }
+    get hasZoomHistory(): boolean {
+        return this.canZoomOut();
+    }
 
-        this.prevPinchMidpoint = currentMidpoint;
-        this.updateCameraPosition();
+    setTargetSmooth(target: THREE.Vector3, radius: number, duration: number = 1.0): void {
+        this.startTarget.copy(this.target);
+        this.startRadius = this.spherical.radius;
+        this.targetNext = target.clone();
+        this.radiusNext = radius;
+        this.animStartTime = performance.now();
+        this.animDuration = duration * 1000;
+    }
+
+    setTarget(x: number, y: number, z: number): void {
+        this.target.set(x, y, z);
+        this.updateSpherical();
+    }
+
+    toggleOrthographic(): void {
+        this.isOrthographic = !this.isOrthographic;
+        if (this.isOrthographic) {
+            if (!this.orthoCamera) {
+                const renderer = this.domElement.ownerDocument.defaultView;
+                const aspect = renderer
+                    ? this.domElement.clientWidth / this.domElement.clientHeight
+                    : 1;
+                const frustum = this.spherical.radius;
+                this.orthoCamera = new THREE.OrthographicCamera(
+                    -frustum * aspect,
+                    frustum * aspect,
+                    frustum,
+                    -frustum,
+                    0.1,
+                    100000,
+                );
+            }
+            this.orthoCamera.position.copy(this.camera.position);
+            this.orthoCamera.quaternion.copy(this.camera.quaternion);
+        }
+    }
+
+    get isUsingOrthographic(): boolean {
+        return this.isOrthographic;
+    }
+    getOrthoCamera(): THREE.OrthographicCamera | null {
+        return this.orthoCamera;
+    }
+    reset(): void {
+        this.target.set(0, 0, 0);
+        this.spherical.set(500, Math.PI / 4, 0);
+        this.updateSpherical();
+    }
+
+    dispose(): void {
+        this.zoomStack = [];
+        window.removeEventListener('keydown', this.onKeyDown);
+        window.removeEventListener('keyup', this.onKeyUp);
     }
 }

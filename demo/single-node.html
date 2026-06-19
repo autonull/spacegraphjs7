@@ -16,14 +16,15 @@
     <body>
         <div id="container"></div>
         <script type="module">
-            import { SpaceGraph } from '../src/index.ts';
+            import { SpaceGraph } from '@src/index.ts';
             try {
-                const graph = SpaceGraph.create('#container', {
+                const graph = await SpaceGraph.create('#container', {
                     nodes: [{ id: 'a', type: 'ShapeNode', label: 'Single', position: [0, 0, 0] }],
                     edges: [],
                 });
-                graph.render();
+                window._sg = graph;
                 console.log('✓ Single node works');
+                window.addEventListener('beforeunload', () => graph.dispose());
             } catch (e) {
                 console.error('✗ Single node failed:', e);
             }

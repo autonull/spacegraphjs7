@@ -1,16 +1,27 @@
+import { BaseSystemPlugin } from './BaseSystemPlugin';
 import type { SpaceGraph } from '../SpaceGraph';
-import type { ISpaceGraphPlugin } from '../types';
+import type { Graph } from '../core/Graph';
+import type { EventSystem } from '../core/events/EventSystem';
+import type { ForceLayout } from './layouts/ForceLayout';
+import { createLogger } from '../utils/logger';
 
-export class AutoLayoutPlugin implements ISpaceGraphPlugin {
+const logger = createLogger('AutoLayoutPlugin');
+
+interface VisionIssue {
+    type: 'overlap' | 'legibility' | 'color';
+    nodeA?: string;
+    nodeB?: string;
+    nodeId?: string;
+}
+
+export class AutoLayoutPlugin extends BaseSystemPlugin {
     readonly id = 'auto-layout';
     readonly name = 'Auto Layout';
     readonly version = '1.0.0';
 
-    private sg!: SpaceGraph;
-
-    init(sg: SpaceGraph): void {
-        this.sg = sg;
-        console.log(`[AutoLayoutPlugin] Initialized ${this.name} v${this.version}`);
+    init(sg: SpaceGraph, graph: Graph, events: EventSystem): void {
+        super.init(sg, graph, events);
+        logger.debug(`Initialized ${this.name} v${this.version}`);
     }
 
     onPreRender(_delta: number): void {
@@ -19,53 +30,64 @@ export class AutoLayoutPlugin implements ISpaceGraphPlugin {
         // overlapping nodes and poor visual groupings.
     }
 
-    public applyVisionCorrection(issues: any[]): void {
-        console.log(`[AutoLayoutPlugin] Received ${issues.length} vision issues to auto-fix.`);
+    public applyVisionCorrection(issues: VisionIssue[]): void {
+        logger.debug(`Received ${issues.length} vision issues to auto-fix.`);
         const overlapIssues = issues.filter((i) => i.type === 'overlap');
         if (overlapIssues.length > 0) {
             this.fixOverlaps(overlapIssues);
         }
     }
 
-    public fixOverlaps(overlaps: any[]): void {
-        console.log(`[AutoLayoutPlugin] Auto-fixing ${overlaps.length} overlaps...`);
-        const layoutPlugin: any = this.sg.pluginManager.getPlugin('ForceLayout');
+    public fixOverlaps(overlaps: VisionIssue[]): void {
+        logger.debug(`Auto-fixing ${overlaps.length} overlaps...`);
+        const layoutPlugin = this.sg.pluginManager.getPlugin('ForceLayout') as
+            | ForceLayout
+            | undefined;
 
-        if (layoutPlugin && typeof layoutPlugin.update === 'function') {
-            // Temporarily increase repulsion to push overlapping nodes apart
-            const originalRepulsion = layoutPlugin.settings.repulsion || 10000;
-            layoutPlugin.settings.repulsion = originalRepulsion * 5;
+        if (
+            layoutPlugin &&
+            typeof (layoutPlugin as ForceLayout & { step?: () => void }).step === 'function'
+        ) {
+            const layout = layoutPlugin as ForceLayout & {
+                step: () => void;
+                config: Record<string, unknown>;
+            };
+            const originalRepulsion = (layout.config?.repulsion as number) ?? 10000;
+            layout.config.repulsion = originalRepulsion * 5;
 
-            // Run a few steps of physics to separate nodes rapidly
             for (let i = 0; i < 50; i++) {
-                layoutPlugin.update();
+                layout.step();
             }
 
-            // Restore settings
-            layoutPlugin.settings.repulsion = originalRepulsion;
+            layout.config.repulsion = originalRepulsion;
         } else {
-            // Fallback if no physics layout plugin: manually push nodes apart
             for (const issue of overlaps) {
-                const nodeA = this.sg.graph.nodes.get(issue.nodeA);
-                const nodeB = this.sg.graph.nodes.get(issue.nodeB);
-                if (nodeA && nodeB) {
-                    const dir = nodeB.position.clone().sub(nodeA.position);
-                    if (dir.lengthSq() < 0.01) {
-                        dir.set(Math.random() - 0.5, Math.random() - 0.5, 0);
-                    }
-
-                    // Move them apart by a fixed amount along the axis between them
-                    dir.normalize().multiplyScalar(30);
-                    nodeB.position.add(dir);
-                    nodeA.position.sub(dir);
-                    nodeA.object.position.copy(nodeA.position);
-                    nodeB.object.position.copy(nodeB.position);
-                }
+                this.fixSingleOverlap(issue);
             }
         }
     }
 
+    private fixSingleOverlap(issue: VisionIssue): void {
+        if (!issue.nodeA || !issue.nodeB) return;
+
+        const nodeA = this.sg.graph.nodes.get(issue.nodeA);
+        const nodeB = this.sg.graph.nodes.get(issue.nodeB);
+
+        if (nodeA && nodeB && nodeA.object && nodeB.object) {
+            const dir = nodeB.position.clone().sub(nodeA.position);
+            if (dir.lengthSq() < 0.01) {
+                dir.set(Math.random() - 0.5, Math.random() - 0.5, 0);
+            }
+
+            dir.normalize().multiplyScalar(30);
+            nodeB.position.add(dir);
+            nodeA.position.sub(dir);
+            nodeA.object.position.copy(nodeA.position);
+            nodeB.object.position.copy(nodeB.position);
+        }
+    }
+
     dispose(): void {
-        console.log(`[AutoLayoutPlugin] Disposing ${this.name}`);
+        logger.debug(`Disposing ${this.name}`);
     }
 }

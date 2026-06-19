@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Alignment Test - SpaceGraphJS</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #050510; color: white; font-family: sans-serif; }
+        #container { width: 100vw; height: 100vh; }
+        .controls { position: absolute; top: 20px; left: 20px; z-index: 10; background: rgba(0,0,0,0.7); padding: 15px; border-radius: 8px; }
+    </style>
+</head>
+<body>
+    <div id="container"></div>
+    <div class="controls">
+        <h3>Alignment Test</h3>
+        <p>Testing edges between local and nested nodes.</p>
+        <button id="btn-move">Move Group</button>
+    </div>
+    <script type="module">
+        import { SpaceGraph } from '../src/index.ts';
+        import * as THREE from 'three';
+
+        const nodes = [
+            { id: 'root-1', type: 'ShapeNode', position: [-200, 0, 0], data: { shape: 'box', color: 0xff0000, size: 50 } },
+            { id: 'group-1', type: 'GroupNode', position: [200, 100, 0], data: { width: 200, height: 200, depth: 50, color: 0x444444 } },
+            { id: 'child-1', type: 'ShapeNode', position: [50, 50, 0], data: { parent: 'group-1', shape: 'sphere', color: 0x00ff00, size: 30 } },
+            { id: 'html-1', type: 'HtmlNode', position: [0, -200, 0], data: { width: 150, height: 80, html: '<div style="padding:10px; background:blue;">HTML Node</div>' } }
+        ];
+
+        const edges = [
+            { id: 'e1', source: 'root-1', target: 'child-1', type: 'Edge', data: { color: 0xffff00, thickness: 5 } },
+            { id: 'e2', source: 'child-1', target: 'html-1', type: 'Edge', data: { color: 0x00ffff, thickness: 5 } },
+            { id: 'e3', source: 'root-1', target: 'html-1', type: 'Edge', data: { color: 0xff00ff, thickness: 5 } }
+        ];
+
+        const sg = await SpaceGraph.create('#container', { nodes, edges });
+        window._sg = sg;
+
+        sg.render();
+        sg.fitView(150);
+
+        document.getElementById('btn-move').onclick = () => {
+            const group = sg.graph.nodes.get('group-1');
+            if (group) {
+                group.updatePosition(group.position.x, group.position.y + 50, group.position.z);
+            }
+        };
+    </script>
+</body>
+</html>

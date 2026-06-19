@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpaceGraphJS - Vision Self-Healing</title>
+    <style>
+        body { margin: 0; padding: 0; background: #0f0f13; color: #eee; font-family: system-ui, sans-serif; overflow: hidden; }
+        #container { width: 100vw; height: 100vh; }
+        #info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.7);
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 400px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+            pointer-events: none;
+            z-index: 100;
+        }
+        h1 { margin: 0 0 10px 0; font-size: 1.5rem; color: #3b82f6; }
+        p { margin: 0 0 15px 0; font-size: 0.9rem; line-height: 1.4; color: #ccc; }
+        .feature-tag {
+            display: inline-block;
+            background: rgba(59, 130, 246, 0.2);
+            color: #60a5fa;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="info">
+        <h1>Vision Self-Healing</h1>
+        <p>This demo showcases the <b>Vision-Closed Development</b> loop. The AI vision system continuously monitors the UI for issues like node overlaps and low legibility.</p>
+        <div>
+            <span class="feature-tag">LQ-Net</span>
+            <span class="feature-tag">ODN</span>
+            <span class="feature-tag">TLA</span>
+            <span class="feature-tag">Auto-Fix</span>
+        </div>
+        <p style="margin-top: 15px; font-style: italic; font-size: 0.8rem;">Try moving nodes to overlap them, or change their colors to be hard to read. Watch the Vision Overlay react and offer to fix them.</p>
+        <div id="vision-status" style="margin-top: 15px; display: flex; align-items: center; gap: 10px; font-size: 0.8rem; font-weight: bold; padding: 8px; border-radius: 4px; background: rgba(255,255,255,0.05);">
+            <div id="status-dot" style="width: 8px; height: 8px; border-radius: 50%; background: #666;"></div>
+            <span id="status-text">ANALYSIS PENDING</span>
+        </div>
+    </div>
+    <div id="container"></div>
+    <script type="module" src="./vision-self-healing.ts"></script>
+</body>
+</html>

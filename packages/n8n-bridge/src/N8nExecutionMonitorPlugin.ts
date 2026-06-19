@@ -201,7 +201,7 @@ export class N8nExecutionMonitorPlugin implements SpaceGraphPlugin {
 
         if (!state.nodeId) {
             if (state.status === 'success' || state.status === 'error') {
-                 console.log(`[N8nExecutionMonitorPlugin] Workflow execution ${state.executionId} finished: ${state.status}`);
+                 console.info(`[N8nExecutionMonitorPlugin] Workflow execution ${state.executionId} finished: ${state.status}`);
             }
             return;
         }

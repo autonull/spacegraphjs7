@@ -6,5 +6,7 @@ export default defineConfig({
     reporter: 'list',
     use: {
         headless: true,
+        video: 'on',
     },
+    outputDir: 'recordings/',
 });

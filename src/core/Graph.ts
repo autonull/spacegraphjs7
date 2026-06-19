@@ -1,287 +1,629 @@
+import type { NodeSpec, EdgeSpec, GraphSpec, NodeData } from '../types';
+import type { Node } from '../nodes/Node';
+import type { Edge } from '../edges/Edge';
 import type { SpaceGraph } from '../SpaceGraph';
-import type { NodeSpec, EdgeSpec, GraphSpec } from '../types';
+import * as THREE from 'three';
+import { createLogger } from '../utils/logger';
+import { safeClone } from '../utils/math';
+import { TypeRegistry } from './TypeRegistry';
+import { EventEmitter } from './EventEmitter';
 
-export class Graph {
-    public sg: SpaceGraph;
-    public nodes: Map<string, any> = new Map();
-    public edges: any[] = [];
+const logger = createLogger('Graph');
 
-    constructor(sg: SpaceGraph) {
-        this.sg = sg;
+type GraphEventMap = {
+    'node:added': { node: Node; timestamp: number };
+    'node:removed': { id: string; timestamp: number };
+    'node:updated': { node: Node; changes: Partial<NodeSpec>; timestamp: number };
+    'edge:added': { edge: Edge; timestamp: number };
+    'edge:removed': { id: string; timestamp: number };
+    'edge:updated': { edge: Edge; changes: Partial<EdgeSpec>; timestamp: number };
+};
+
+export type EdgeDirection = 'incoming' | 'outgoing' | 'both';
+
+export class Graph extends EventEmitter<GraphEventMap> {
+    readonly nodes: Map<string, Node> = new Map();
+    readonly edges: Map<string, Edge> = new Map();
+
+    constructor(readonly sg: SpaceGraph) {
+        super();
     }
 
-    private _notifyPlugins(hookName: string, arg: any) {
-        for (const plugin of this.sg.pluginManager['plugins'].values()) {
-            if (typeof (plugin as any)[hookName] === 'function') {
-                try {
-                    (plugin as any)[hookName](arg);
-                } catch (err) {
-                    console.error(
-                        `[SpaceGraph] Plugin ${plugin.constructor.name} failed ${hookName}:`,
-                        err,
-                    );
-                }
-            }
-        }
-    }
-
-    addNode(spec: NodeSpec) {
-        if (this.nodes.has(spec.id)) {
-            return this.updateNode(spec.id, spec);
+    addNode(spec: NodeSpec | Node): Node | null {
+        if ('updatePosition' in spec) {
+            const node = spec as Node;
+            return this._addNode(node.id, node);
         }
 
-        const NodeType = this.sg.pluginManager.getNodeType(spec.type);
+        if (this.nodes.has(spec.id)) return this.updateNode(spec.id, spec);
+
+        const NodeType = TypeRegistry.getInstance().getNodeConstructor(spec.type);
         if (!NodeType) {
-            console.warn(`[SpaceGraph] Node type "${spec.type}" not registered.`);
+            logger.warn('Node type "%s" not registered.', spec.type);
             return null;
         }
-        const node = new NodeType(this.sg, spec);
-        this.nodes.set(spec.id, node);
-        this.sg.renderer.scene.add(node.object);
-        this.sg.events.emit('node:added', { node });
-        this._notifyPlugins('onNodeAdded', node);
-        return node;
+
+        return this._addNode(spec.id, new NodeType(this.sg, spec));
     }
 
-    updateNode(id: string, updates: Partial<NodeSpec>) {
+  addEdge(spec: EdgeSpec | Edge): Edge | null {
+    if ('source' in spec && spec.source && typeof spec.source === 'object' && 'position' in (spec.source as any)) {
+      return this._addEdge((spec as Edge).id, spec as Edge);
+    }
+
+        const edgeSpec = spec as EdgeSpec;
+        if (
+            !edgeSpec?.id ||
+            typeof edgeSpec.source !== 'string' ||
+            typeof edgeSpec.target !== 'string'
+        ) {
+            logger.warn('Edge missing critical topology attributes (id/source/target).');
+            return null;
+        }
+
+        if (this.edges.has(edgeSpec.id)) return this.updateEdge(edgeSpec.id, edgeSpec);
+
+        let source = this.nodes.get(edgeSpec.source);
+        let target = this.nodes.get(edgeSpec.target);
+
+        // Try to resolve nodes across all instances if not found locally
+        if (!source || !target) {
+            for (const instance of (this.sg.constructor as typeof import('../SpaceGraph').SpaceGraph)
+                .instances) {
+                if (!source) source = instance.graph.nodes.get(edgeSpec.source);
+                if (!target) target = instance.graph.nodes.get(edgeSpec.target);
+                if (source && target) break;
+            }
+        }
+
+        if (!source || !target) {
+            logger.warn('Edge "%s" rejected: missing source or target node.', edgeSpec.id);
+            return null;
+        }
+
+        // Use InterGraphEdge if source and target are in different graphs
+        let type = edgeSpec.type ?? 'Edge';
+        if (source.sg !== target.sg) {
+            type = 'InterGraphEdge';
+        }
+
+        const EdgeType = TypeRegistry.getInstance().getEdgeConstructor(type);
+        if (!EdgeType) {
+            logger.warn('Edge type "%s" not registered.', type);
+            return null;
+        }
+
+        return this._addEdge(edgeSpec.id, new EdgeType(this.sg, edgeSpec, source, target));
+    }
+
+    updateNode(id: string, updates: Partial<NodeSpec>): Node | null {
         const node = this.nodes.get(id);
         if (!node) return null;
 
         if (typeof node.updateSpec === 'function') {
             node.updateSpec(updates);
         } else {
-            // Fallback for custom nodes that don't implement updateSpec
-            if (updates.data) node.data = { ...node.data, ...updates.data };
-            if (updates.position)
-                node.updatePosition(updates.position[0], updates.position[1], updates.position[2]);
+            Object.assign(node, {
+                data: { ...node.data, ...updates.data },
+                position: updates.position
+                    ? node.updatePosition(
+                          updates.position[0],
+                          updates.position[1],
+                          updates.position[2],
+                      )
+                    : undefined,
+            });
         }
-
         return node;
     }
 
-    addEdge(spec: EdgeSpec) {
-        if (
-            !spec ||
-            !spec.id ||
-            typeof spec.source !== 'string' ||
-            typeof spec.target !== 'string'
-        ) {
-            console.warn(
-                `[SpaceGraph] Edge missing critical topology attributes (id/source/target).`,
-            );
-            return null;
-        }
-
-        const existingIndex = this.edges.findIndex((e) => e.id === spec.id);
-        if (existingIndex !== -1) {
-            return this.updateEdge(spec.id, spec);
-        }
-
-        let sourceNode = this.nodes.get(spec.source);
-        let targetNode = this.nodes.get(spec.target);
-
-        // If not found locally, search across other registered instances for InterGraphEdge
-        if (!sourceNode || !targetNode) {
-            for (const inst of this.sg.constructor.prototype.constructor.instances || []) {
-                if (!sourceNode && inst.graph.nodes.has(spec.source)) {
-                    sourceNode = inst.graph.nodes.get(spec.source);
-                }
-                if (!targetNode && inst.graph.nodes.has(spec.target)) {
-                    targetNode = inst.graph.nodes.get(spec.target);
-                }
-                if (sourceNode && targetNode) break;
-            }
-        }
-
-        if (!sourceNode || !targetNode) {
-            console.warn(
-                `[SpaceGraph] Edge "${spec.id}" rejected: missing source or target node within graph bounds.`,
-            );
-            return null;
-        }
-
-        let EdgeType = this.sg.pluginManager.getEdgeType(spec.type);
-        if (!EdgeType) {
-            console.warn(`[SpaceGraph] Edge type "${spec.type}" not registered.`);
-            return null;
-        }
-
-        let edge;
-        if (sourceNode.sg !== targetNode.sg) {
-            const InterGraphEdgeClass = this.sg.pluginManager.getEdgeType('InterGraphEdge');
-            if (InterGraphEdgeClass) {
-                 EdgeType = InterGraphEdgeClass;
-            } else {
-                 console.warn('[SpaceGraph] InterGraphEdge not registered. Falling back to default edge.');
-            }
-            edge = new EdgeType(this.sg, spec, sourceNode, targetNode);
-            (edge as any).isInterGraphEdge = true;
-        } else {
-            edge = new EdgeType(this.sg, spec, sourceNode, targetNode);
-            this.sg.renderer.scene.add(edge.object);
-        }
-
-        this.edges.push(edge);
-        this.sg.events.emit('edge:added', { edge });
-        this._notifyPlugins('onEdgeAdded', edge);
-        return edge;
-    }
-
-    updateEdge(id: string, updates: Partial<EdgeSpec>) {
-        const edge = this.edges.find((e) => e.id === id);
+    updateEdge(id: string, updates: Partial<EdgeSpec>): Edge | null {
+        const edge = this.edges.get(id);
         if (!edge) return null;
 
         if (typeof edge.updateSpec === 'function') {
             edge.updateSpec(updates);
-        } else {
-            if (updates.data) edge.data = { ...edge.data, ...updates.data };
+        } else if (updates.data) {
+            edge.data = { ...edge.data, ...updates.data };
         }
 
-        // If source or target changes, we usually need to re-evaluate it
         if (updates.source || updates.target) {
-            const sourceNode = this.nodes.get(updates.source || edge.source.id);
-            const targetNode = this.nodes.get(updates.target || edge.target.id);
-            if (sourceNode && targetNode) {
-                edge.source = sourceNode;
-                edge.target = targetNode;
+            const source = this.nodes.get(updates.source ?? edge.source.id);
+            const target = this.nodes.get(updates.target ?? edge.target.id);
+            if (source && target) {
+                edge.source = source;
+                edge.target = target;
                 edge.update();
             }
         }
-
         return edge;
     }
 
-    removeNode(id: string) {
+    removeNode(id: string): void {
         const node = this.nodes.get(id);
-        if (node) {
-            this.sg.renderer.scene.remove(node.object);
-            this.nodes.delete(id);
-            this.sg.events.emit('node:removed', { id });
-            this._notifyPlugins('onNodeRemoved', id);
+        if (!node) return;
 
-            // Remove connected edges safely traversing backwards
-            for (let i = this.edges.length - 1; i >= 0; i--) {
-                const edge = this.edges[i];
-                if (edge.source.id === id || edge.target.id === id) {
-                    this.sg.renderer.scene.remove(edge.object);
-                    this.sg.events.emit('edge:removed', { id: edge.id });
-                    this._notifyPlugins('onEdgeRemoved', edge.id);
-                    if (typeof edge.dispose === 'function') edge.dispose();
-                    this.edges.splice(i, 1);
-                }
-            }
+        this.sg?.renderer.scene.remove(node.object);
+        this.nodes.delete(id);
+        this.emitWithTimestamp('node:removed', { id, timestamp: Date.now() });
 
-            if (typeof node.dispose === 'function') {
-                node.dispose();
+        for (const [edgeId, edge] of this.edges) {
+            if (edge.source.id === id || edge.target.id === id) {
+                this.emitWithTimestamp('edge:removed', { id: edgeId, timestamp: Date.now() });
+                edge.dispose?.();
+                this.edges.delete(edgeId);
             }
         }
+        node.dispose?.();
     }
 
-    removeEdge(id: string) {
-        const index = this.edges.findIndex((edge) => edge.id === id);
-        if (index !== -1) {
-            const edge = this.edges[index];
-            this.sg.renderer.scene.remove(edge.object);
-            this.edges.splice(index, 1);
-            this.sg.events.emit('edge:removed', { id });
-            this._notifyPlugins('onEdgeRemoved', id);
-            if (typeof edge.dispose === 'function') edge.dispose();
-        }
+    removeEdge(id: string): void {
+        const edge = this.edges.get(id);
+        if (!edge) return;
+
+        this.sg?.renderer.scene.remove(edge.line);
+        this.edges.delete(id);
+        this.emitWithTimestamp('edge:removed', { id, timestamp: Date.now() });
+        edge.dispose?.();
     }
 
-    clear() {
-        for (const edge of this.edges) {
-            this.sg.renderer.scene.remove(edge.object);
-            if (typeof edge.dispose === 'function') edge.dispose();
-        }
-        this.edges = [];
-
-        for (const node of this.nodes.values()) {
-            this.sg.renderer.scene.remove(node.object);
-            if (typeof node.dispose === 'function') node.dispose();
-        }
+    clear(): void {
+        this.edges.forEach((edge) => edge.dispose?.());
+        this.nodes.forEach((node) => node.dispose?.());
+        this.edges.clear();
         this.nodes.clear();
     }
 
-    getNode(id: string): any {
-        return this.nodes.get(id);
+    // Node lookup shortcuts - ergonomic API
+    getNodeCount(): number {
+        return this.nodes.size;
+    }
+    getEdgeCount(): number {
+        return this.edges.size;
+    }
+    get nodeCount(): number {
+        return this.nodes.size;
+    }
+    get edgeCount(): number {
+        return this.edges.size;
+    }
+get isEmpty(): boolean {
+        return this.nodes.size === 0;
     }
 
-    getEdge(id: string): any {
-        return this.edges.find((e) => e.id === id);
+    // Quick access to node/edge arrays (caches result)
+    nodeArray(): Node[] {
+        return [...this.nodes.values()];
+    }
+    edgeArray(): Edge[] {
+        return [...this.edges.values()];
     }
 
-    query(predicate: (node: any) => boolean): any[] {
-        const result = [];
+    // Core query methods
+    getNode(id: string): Node | undefined { return this.nodes.get(id); }
+    getEdge(id: string): Edge | undefined { return this.edges.get(id); }
+    hasNode(id: string): boolean { return this.nodes.has(id); }
+    hasEdge(id: string): boolean { return this.edges.has(id); }
+    getNodes(): IterableIterator<Node> { return this.nodes.values(); }
+    getEdges(): IterableIterator<Edge> { return this.edges.values(); }
+
+    // Unified query - supports multiple filter types
+    query(predicate: (node: Node) => boolean): Node[] {
+        const result: Node[] = [];
         for (const node of this.nodes.values()) {
-            if (predicate(node)) {
-                result.push(node);
+            if (predicate(node)) result.push(node);
+        }
+        return result;
+    }
+    queryByType(type: string): Node[] {
+        return this.query(node => node.type === type);
+    }
+    queryByLabel(label: string, exact = true): Node[] {
+        return this.query(exact ? node => node.label === label : node => !!node.label?.includes(label));
+    }
+    queryByData(predicate: (data: Record<string, unknown>) => boolean): Node[] {
+        return this.query(node => predicate(node.data));
+    }
+
+    // Find single result
+    findNode(predicate: (node: Node) => boolean): Node | undefined {
+        for (const node of this.nodes.values()) {
+            if (predicate(node)) return node;
+        }
+        return undefined;
+    }
+    findEdge(predicate: (edge: Edge) => boolean): Edge | undefined {
+        for (const edge of this.edges.values()) {
+            if (predicate(edge)) return edge;
+        }
+        return undefined;
+    }
+
+    // Neighborhood queries
+    getNeighbors(nodeId: string, direction: EdgeDirection = 'both'): Node[] {
+        const neighbors = new Set<Node>();
+        this.forEachMatchingEdge(nodeId, direction, (edge, isSource) => {
+            neighbors.add(isSource ? edge.target : edge.source);
+        });
+        return [...neighbors];
+    }
+
+    getEdgesForNode(nodeId: string, direction: EdgeDirection = 'both'): Edge[] {
+        const result: Edge[] = [];
+        this.forEachMatchingEdge(nodeId, direction, (edge) => {
+            result.push(edge);
+        });
+        return result;
+    }
+
+    // Neighborhood and edge queries
+    neighbors(nodeId: string): Node[] { return this.getNeighbors(nodeId, 'both'); }
+    getConnectedEdges = this.getEdgesForNode;
+    getIncomingEdges(nodeId: string): Edge[] { return this.getEdgesForNode(nodeId, 'incoming'); }
+    getOutgoingEdges(nodeId: string): Edge[] { return this.getEdgesForNode(nodeId, 'outgoing'); }
+
+    // Check if nodes are connected
+    hasNeighbor(nodeId: string, targetId: string, direction: EdgeDirection = 'both'): boolean {
+        let found = false;
+        this.forEachMatchingEdge(nodeId, direction, (edge, isSource) => {
+            if ((isSource ? edge.target.id : edge.source.id) === targetId) {
+                found = true;
+                return true; // Stop iteration
+            }
+        });
+        return found;
+    }
+
+    /** @internal Helper for edge iteration with filtering */
+    private forEachMatchingEdge(
+        nodeId: string,
+        direction: EdgeDirection,
+        callback: (edge: Edge, isSource: boolean) => void | boolean,
+    ): void {
+        for (const edge of this.edges.values()) {
+            const isSource = edge.source.id === nodeId;
+            const isTarget = edge.target.id === nodeId;
+            let match = false;
+            const callbackIsSource = isSource;
+
+            if (direction === 'both' && (isSource || isTarget)) {
+                match = true;
+            } else if (direction === 'outgoing' && isSource) {
+                match = true;
+            } else if (direction === 'incoming' && isTarget) {
+                match = true;
+            }
+
+            if (match) {
+                if (callback(edge, callbackIsSource) === true) break;
+            }
+        }
+    }
+
+    // Spatial queries
+    getNodesNear(position: THREE.Vector3, radius: number): Node[] {
+        const results: Node[] = [];
+        for (const node of this.nodes.values()) {
+            if (node.position.distanceTo(position) <= radius) results.push(node);
+        }
+        return results;
+    }
+
+    // Iteration helpers - alias for query
+    filterNodes = this.query;
+    mapNodes<T>(predicate: (node: Node) => T): T[] {
+        const results: T[] = [];
+        for (const node of this.nodes.values()) results.push(predicate(node));
+        return results;
+    }
+
+    // Direct iteration
+    forEachNode(callback: (node: Node) => void): void {
+        for (const node of this.nodes.values()) callback(node);
+    }
+    forEachEdge(callback: (edge: Edge) => void): void {
+        for (const edge of this.edges.values()) callback(edge);
+    }
+
+    // Ergonomic: Group nodes by data property
+    groupByData(key: string): Map<unknown, Node[]> {
+        const groups = new Map<unknown, Node[]>();
+        for (const node of this.nodes.values()) {
+            const value = (node.data as Record<string, unknown>)[key];
+            if (value !== undefined) {
+                const list = groups.get(value) ?? [];
+                list.push(node);
+                groups.set(value, list);
+            }
+        }
+        return groups;
+    }
+
+    // ============= Shared Calculations =============
+    private computeDegrees(): Map<string, number> {
+        const degrees = new Map<string, number>();
+        for (const edge of this.edges.values()) {
+            degrees.set(edge.source.id, (degrees.get(edge.source.id) ?? 0) + 1);
+            degrees.set(edge.target.id, (degrees.get(edge.target.id) ?? 0) + 1);
+        }
+        return degrees;
+    }
+
+    // ============= Node Degree Utilities =============
+    getNodeDegrees(): Map<string, number> { return this.computeDegrees(); }
+    getNodeDegree(nodeId: string): number { return this.getEdgesForNode(nodeId).length; }
+    getHubs(minDegree: number): Node[] {
+        const degrees = this.getNodeDegrees();
+        return this.query(n => (degrees.get(n.id) ?? 0) >= minDegree);
+    }
+    getIsolatedNodes(): Node[] {
+        const degrees = this.getNodeDegrees();
+        return this.query(n => (degrees.get(n.id) ?? 0) === 0);
+    }
+
+    // ============= Connected Component Utilities =============
+    getConnectedComponent(startNodeId: string): Node[] {
+        const visited = new Set<string>();
+        const queue = [startNodeId];
+        const result: Node[] = [];
+
+        while (queue.length > 0) {
+            const id = queue.shift()!;
+            if (visited.has(id)) continue;
+            visited.add(id);
+
+            const node = this.nodes.get(id);
+            if (node) result.push(node);
+
+            for (const neighbor of this.neighbors(id)) {
+                if (!visited.has(neighbor.id)) queue.push(neighbor.id);
             }
         }
         return result;
     }
 
-    neighbors(nodeId: string): any[] {
-        const result = [];
-        for (const edge of this.edges) {
-            if (edge.source.id === nodeId) result.push(edge.target);
-            else if (edge.target.id === nodeId) result.push(edge.source);
+    getConnectedComponentInRadius(centerId: string, radius: number): { nodes: Node[]; edges: Edge[] } {
+        const center = this.nodes.get(centerId);
+        if (!center) return { nodes: [], edges: [] };
+        const inRadius = new Set<string>();
+        const centerPos = center.position;
+        for (const [id, node] of this.nodes) {
+            if (node.position.distanceTo(centerPos) <= radius) inRadius.add(id);
         }
-        return result;
-    }
-
-    // --- Serialization ---
-
-    public toJSON(): GraphSpec {
-        const safeClone = (obj: any) => {
-            if (!obj) return {};
-            try {
-                return structuredClone(obj);
-            } catch {
-                return JSON.parse(JSON.stringify(obj));
-            }
-        };
-
-        const nodes: NodeSpec[] = [];
-        for (const node of this.nodes.values()) {
-            nodes.push({
-                id: node.id,
-                type: node.type,
-                label: node.label,
-                position: [node.position.x, node.position.y, node.position.z],
-                data: safeClone(node.data),
-            });
-        }
-
-        const edges: EdgeSpec[] = [];
-        for (const edge of this.edges) {
-            edges.push({
-                id: edge.id,
-                source: edge.source.id,
-                target: edge.target.id,
-                type: edge.type,
-                data: safeClone(edge.data),
-            });
-        }
-
+        const nodes = [...inRadius].map((id) => this.nodes.get(id)!).filter(Boolean);
+        const edges = [...inRadius].flatMap((id) => this.getEdgesForNode(id))
+            .filter((e) => inRadius.has(e.source.id) && inRadius.has(e.target.id));
         return { nodes, edges };
     }
 
-    public fromJSON(spec: GraphSpec): void {
+    getConnectedComponentCount(): number {
+        const visited = new Set<string>();
+        let count = 0;
+
+        for (const nodeId of this.nodes.keys()) {
+            if (!visited.has(nodeId)) {
+                const component = this.getConnectedComponent(nodeId);
+                component.forEach(n => visited.add(n.id));
+                count++;
+            }
+        }
+        return count;
+    }
+
+    get isConnected(): boolean {
+        return this.nodes.size === 0 || this.getConnectedComponentCount() === 1;
+    }
+
+    // ============= Graph Statistics =============
+    getStats(): { nodes: number; edges: number; avgDegree: number; components: number; density: number } {
+        const nodeCount = this.nodes.size;
+        const edgeCount = this.edges.size;
+        const degrees = this.computeDegrees();
+        const totalDegree = [...degrees.values()].reduce((a, b) => a + b, 0);
+        const avgDegree = nodeCount > 0 ? totalDegree / nodeCount : 0;
+        const density = nodeCount > 1 ? edgeCount / (nodeCount * (nodeCount - 1)) : 0;
+        return { nodes: nodeCount, edges: edgeCount, avgDegree, components: this.getConnectedComponentCount(), density };
+    }
+
+    // Serialization
+    toJSON(): GraphSpec {
+        return {
+            nodes: [...this.nodes.values()].map(({ id, type, label, position, data }) => ({
+                id,
+                type,
+                label,
+                position: [position.x, position.y, position.z] as [number, number, number],
+                data: data ? safeClone(data) : {},
+            })),
+            edges: [...this.edges.values()].map(({ id, source, target, type, data }) => ({
+                id,
+                source: source.id,
+                target: target.id,
+                type: type ?? 'Edge',
+                data: data ? safeClone(data) : {},
+            })),
+        };
+    }
+    export = this.toJSON;
+    from(spec: GraphSpec): void {
         this.clear();
+        if (spec.nodes) for (const nodeSpec of spec.nodes) this.addNode(nodeSpec);
+        if (spec.edges) for (const edgeSpec of spec.edges) this.addEdge(edgeSpec);
+    }
+    fromJSON = this.from;
 
-        // Add nodes
-        if (spec.nodes) {
-            for (const nodeSpec of spec.nodes) {
-                this.addNode(nodeSpec);
+    // ============= Traversal =============
+    traverse(callback: (node: Node, depth: number) => void, startId?: string): void {
+        const visited = new Set<string>();
+        const traverseRecursive = (nodeId: string, depth: number) => {
+            if (visited.has(nodeId)) return;
+            visited.add(nodeId);
+            const node = this.nodes.get(nodeId);
+            if (!node) return;
+            callback(node, depth);
+            for (const neighbor of this.neighbors(nodeId)) traverseRecursive(neighbor.id, depth + 1);
+        };
+        if (startId) traverseRecursive(startId, 0);
+        else for (const node of this.nodes.values()) traverseRecursive(node.id, 0);
+    }
+
+    bfs(callback: (node: Node, depth: number) => void, startId?: string): void {
+        const start = startId ? [this.nodes.get(startId)] : [...this.nodes.values()];
+        const visited = new Set<string>();
+        const queue: Array<{ node: Node; depth: number }> = [];
+        for (const node of start) if (node) queue.push({ node, depth: 0 });
+        while (queue.length) {
+            const { node, depth } = queue.shift()!;
+            if (visited.has(node.id)) continue;
+            visited.add(node.id);
+            callback(node, depth);
+            for (const neighbor of this.neighbors(node.id)) {
+                if (!visited.has(neighbor.id)) queue.push({ node: neighbor, depth: depth + 1 });
             }
         }
+    }
 
-        // Add edges
-        if (spec.edges) {
-            for (const edgeSpec of spec.edges) {
-                this.addEdge(edgeSpec);
+    dfs(callback: (node: Node, depth: number) => void, startId?: string): void {
+        const visited = new Set<string>();
+        const stack: Array<{ node: Node; depth: number }> = [];
+        const start = startId ? this.nodes.get(startId) : [...this.nodes.values()][0];
+        if (start) stack.push({ node: start, depth: 0 });
+        while (stack.length) {
+            const { node, depth } = stack.pop()!;
+            if (visited.has(node.id)) continue;
+            visited.add(node.id);
+            callback(node, depth);
+            for (const neighbor of this.neighbors(node.id)) {
+                if (!visited.has(neighbor.id)) stack.push({ node: neighbor, depth: depth + 1 });
             }
         }
+    }
+
+    findPath(from: string, to: string): Node[] | null {
+        const visited = new Set<string>();
+        const queue: Array<{ id: string; path: Node[] }> = [{ id: from, path: [] }];
+        while (queue.length) {
+            const { id, path } = queue.shift()!;
+            if (visited.has(id)) continue;
+            visited.add(id);
+            const node = this.nodes.get(id);
+            if (!node) continue;
+            const newPath = [...path, node];
+            if (id === to) return newPath;
+            for (const neighbor of this.neighbors(id)) {
+                if (!visited.has(neighbor.id)) queue.push({ id: neighbor.id, path: newPath });
+            }
+        }
+        return null;
+    }
+
+    // ============= Snapshot/Restore =============
+    snapshot(): Map<string, { position: THREE.Vector3; data: NodeData }> {
+        const snap = new Map<string, { position: THREE.Vector3; data: NodeData }>();
+        for (const [id, node] of this.nodes) {
+            snap.set(id, { position: node.position.clone(), data: { ...node.data } });
+        }
+        return snap;
+    }
+
+    restore(snapshot: Map<string, { position: THREE.Vector3; data: NodeData }>): void {
+        for (const [id, state] of snapshot) {
+            const node = this.nodes.get(id);
+            if (node) {
+                node.position.copy(state.position);
+                node.object.position.copy(state.position);
+                node.data = { ...state.data };
+            }
+        }
+    }
+
+    // ============= Node Queries =============
+    getNodesByData(predicate: (data: NodeData) => boolean): Node[] {
+        return this.query(node => predicate(node.data));
+    }
+
+    getNodesByType(type: string): Node[] { return this.queryByType(type); }
+    getNodesByLabelPrefix(prefix: string): Node[] { return this.queryByLabel(prefix, false); }
+    getLeafNodes(): Node[] {
+        const hasOutgoing = new Set<string>();
+        for (const edge of this.edges.values()) hasOutgoing.add(edge.source.id);
+        return [...this.nodes.values()].filter(n => !hasOutgoing.has(n.id));
+    }
+    getRootNodes(): Node[] {
+        const hasIncoming = new Set<string>();
+        for (const edge of this.edges.values()) hasIncoming.add(edge.target.id);
+        return [...this.nodes.values()].filter(n => !hasIncoming.has(n.id));
+    }
+
+    topologicalSort(): Node[] {
+        const inDegree = new Map<string, number>();
+        for (const node of this.nodes.keys()) inDegree.set(node, 0);
+        for (const edge of this.edges.values()) {
+            inDegree.set(edge.target.id, (inDegree.get(edge.target.id) ?? 0) + 1);
+        }
+        const queue: string[] = [];
+        for (const [id, degree] of inDegree) if (degree === 0) queue.push(id);
+        const result: Node[] = [];
+        while (queue.length > 0) {
+            const id = queue.shift()!;
+            const node = this.nodes.get(id);
+            if (node) result.push(node);
+            for (const edge of this.edges.values()) {
+                if (edge.source.id === id) {
+                    const newDegree = (inDegree.get(edge.target.id) ?? 1) - 1;
+                    inDegree.set(edge.target.id, newDegree);
+                    if (newDegree === 0) queue.push(edge.target.id);
+                }
+            }
+        }
+        return result;
+    }
+
+    // ============= Batch Operations =============
+    batchUpdate(fn: (graph: Graph) => void): void { fn(this); }
+    addNodes(specs: NodeSpec[]): Node[] { return specs.map(s => this.addNode(s)).filter(Boolean) as Node[]; }
+    addEdges(specs: EdgeSpec[]): Edge[] { return specs.map(s => this.addEdge(s)).filter(Boolean) as Edge[]; }
+
+    // ============= Removal Utilities =============
+    removeNodesByType(type: string): number {
+        const toRemove = this.queryByType(type);
+        toRemove.forEach(n => this.removeNode(n.id));
+        return toRemove.length;
+    }
+    removeNodesByData(predicate: (data: NodeData) => boolean): number {
+        const toRemove = this.getNodesByData(predicate);
+        toRemove.forEach(n => this.removeNode(n.id));
+        return toRemove.length;
+    }
+
+    // ============= Graph Merge =============
+    merge(other: Graph): void {
+        for (const node of other.nodes.values()) {
+            if (!this.nodes.has(node.id)) this.addNode({ ...node.toJSON() });
+        }
+        for (const edge of other.edges.values()) {
+            if (!this.edges.has(edge.id)) {
+                const source = this.nodes.get(edge.source.id);
+                const target = this.nodes.get(edge.target.id);
+                if (source && target) this.addEdge({ ...edge.toJSON() as EdgeSpec });
+            }
+        }
+    }
+
+    // ============= Private Helpers =============
+    private _addNode(id: string, node: Node): Node {
+        this.nodes.set(id, node);
+        this.sg?.renderer.scene.add(node.object);
+        node.start();
+        this.emitWithTimestamp('node:added', { node, timestamp: Date.now() });
+        return node;
+    }
+
+    private _addEdge(id: string, edge: Edge): Edge {
+        this.edges.set(id, edge);
+        this.sg?.renderer.scene.add(edge.line);
+        edge.start();
+        this.emitWithTimestamp('edge:added', { edge, timestamp: Date.now() });
+        return edge;
     }
 }

@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>SpaceGraphJS Demo</title>
+        <title>SpaceGraphJS</title>
         <style>
             * {
                 margin: 0;
@@ -11,30 +11,187 @@
                 box-sizing: border-box;
             }
             body {
+                background: #0d0d0d;
+                color: #eee;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
                 overflow: hidden;
-                background-color: #1a1a2e;
             }
-            #container {
-                width: 100vw;
-                height: 100vh;
-            }
-            #status {
+            #menu {
                 position: fixed;
-                top: 10px;
-                left: 10px;
-                background: rgba(0, 0, 0, 0.8);
-                color: #0f0;
-                padding: 10px;
-                font-family: monospace;
-                font-size: 12px;
-                z-index: 1000;
+                top: 0;
+                left: 0;
+                right: 0;
+                height: 40px;
+                background: #111;
+                border-bottom: 1px solid #222;
+                display: flex;
+                align-items: center;
+                padding: 0 16px;
+                gap: 8px;
+                z-index: 10000;
+            }
+            #menu select {
+                background: #1a1a1a;
+                border: 1px solid #333;
+                color: #ccc;
+                padding: 6px 12px;
                 border-radius: 4px;
+                font-size: 13px;
+                cursor: pointer;
+            }
+            #menu select:hover {
+                border-color: #8b5cf6;
+            }
+            #app {
+                width: 100vw;
+                height: calc(100vh - 40px);
+                margin-top: 40px;
+            }
+
+            /* Glassmorphism Classes */
+            .glass {
+                background: rgba(255, 255, 255, 0.05) !important;
+                backdrop-filter: blur(12px) !important;
+                border: 1px solid rgba(255, 255, 255, 0.1) !important;
+                border-radius: 16px !important;
+                color: white !important;
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            }
+
+            .circle-node {
+                border-radius: 50% !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                text-align: center !important;
+            }
+
+            @keyframes pulse-blue {
+                0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }
+                70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
+                100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+            }
+            .pulse-card {
+                animation: pulse-blue 2s infinite;
             }
         </style>
     </head>
     <body>
-        <div id="status">SpaceGraphJS Demo - Loading...</div>
-        <div id="container"></div>
-        <script type="module" src="./main.ts"></script>
+        <div id="menu">
+            <select id="demo-select"></select>
+            <input type="text" id="demo-search" placeholder="Search demos..." style="background: #1a1a1a; border: 1px solid #333; color: #ccc; padding: 6px 12px; border-radius: 4px; font-size: 13px; outline: none; margin-left: 10px;">
+            <span id="demo-title" style="color: #666; font-size: 12px; margin-left: 15px; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase;"></span>
+            <div id="vision-health" style="display: flex; align-items: center; gap: 6px; margin-right: 20px; font-size: 11px; font-weight: 600;">
+                <div id="health-indicator" style="width: 8px; height: 8px; border-radius: 50%; background: #666;"></div>
+                <span id="health-label" style="color: #666;">AI VISION: INITIALIZING...</span>
+            </div>
+            <div style="flex-grow: 1;"></div>
+            <a href="gallery.html" style="color: #8b5cf6; text-decoration: none; font-size: 12px; font-weight: 600; margin-right: 10px;">Visual Gallery</a>
+        </div>
+        <div id="app"></div>
+
+        <script type="module">
+            import { SpaceGraph } from '../src/index.ts';
+            const DEMOS = import.meta.glob('./demos/*.ts', { eager: true });
+
+            const demoList = Object.keys(DEMOS).map((path) => {
+                const name = path.replace('./demos/', '').replace('.ts', '');
+                const mod = DEMOS[path];
+                return { name, create: mod.default || mod };
+            });
+
+            let currentDemo = null;
+
+            const select = document.getElementById('demo-select');
+            const title = document.getElementById('demo-title');
+
+            function updateSelect(filter = '') {
+                select.innerHTML = '';
+                const filtered = demoList.filter(d => d.name.toLowerCase().includes(filter.toLowerCase()));
+
+                filtered.forEach((d) => {
+                    const opt = document.createElement('option');
+                    opt.value = d.name;
+                    opt.textContent = d.name;
+                    select.appendChild(opt);
+                });
+                return filtered;
+            }
+
+            updateSelect();
+
+            async function loadDemo(name) {
+                const demo = demoList.find(d => d.name === name);
+                if (!demo) return;
+
+                window.__DEMO_READY = false;
+                title.textContent = demo.name;
+
+                document.getElementById('app').innerHTML = '';
+
+                if (currentDemo?.stop) {
+                    currentDemo.stop();
+                }
+                if (currentDemo?.dispose) {
+                    currentDemo.dispose();
+                }
+
+                currentDemo = await demo.create();
+
+                // Allow a brief moment for the first frame to render
+                setTimeout(() => {
+                    window.__DEMO_READY = true;
+                    console.log(`Demo "${name}" is ready.`);
+                }, 500);
+            }
+
+            select.addEventListener('change', (e) => {
+                const url = new URL(window.location.href);
+                url.searchParams.set('demo', e.target.value);
+                window.history.pushState({}, '', url);
+                loadDemo(e.target.value);
+            });
+
+            document.getElementById('demo-search').addEventListener('input', (e) => {
+                const filtered = updateSelect(e.target.value);
+                if (filtered.length > 0) {
+                    // Don't auto-load while typing, but update selection if current is gone
+                }
+            });
+
+            const params = new URLSearchParams(window.location.search);
+            const initialDemo = params.get('demo') || demoList[0].name;
+            select.value = initialDemo;
+            loadDemo(initialDemo);
+
+            window.SpaceGraph = SpaceGraph;
+
+            // Vision health indicator loop
+            const indicator = document.getElementById('health-indicator');
+            const label = document.getElementById('health-label');
+
+            setInterval(async () => {
+                const sg = window._sg || (currentDemo?.sg);
+                if (!sg || !sg.vision) return;
+
+                if (!sg.vision.modelsLoaded) {
+                    label.textContent = 'AI VISION: LOADING MODELS...';
+                    indicator.style.background = '#f59e0b';
+                    return;
+                }
+
+                try {
+                    const report = await sg.vision.analyzeVision();
+                    const score = report.overall.score;
+                    label.textContent = `AI VISION: ${score}% HEALTHY`;
+
+                    if (score >= 90) indicator.style.background = '#10b981';
+                    else if (score >= 70) indicator.style.background = '#f59e0b';
+                    else indicator.style.background = '#ef4444';
+                } catch (e) {
+                    // Silently fail if analysis is already in progress
+                }
+            }, 5000);
+        </script>
     </body>
 </html>

@@ -7,7 +7,7 @@
     "types": "dist/index.d.ts",
     "peerDependencies": {
         "vue": "^3.0.0",
-        "spacegraphjs": "file:../.."
+        "spacegraphjs": "workspace:*"
     },
     "devDependencies": {
         "typescript": "^5.0.0",

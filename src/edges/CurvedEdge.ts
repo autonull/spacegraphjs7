@@ -1,62 +1,76 @@
 import * as THREE from 'three';
+import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
 import { Edge } from './Edge';
 import type { SpaceGraph } from '../SpaceGraph';
-import type { EdgeSpec } from '../types';
+import type { EdgeData, EdgeSpec } from '../types';
 import type { Node } from '../nodes/Node';
 
 export class CurvedEdge extends Edge {
+    static readonly typeName = 'CurvedEdge';
     private curve: THREE.QuadraticBezierCurve3;
     private positionsBuffer: Float32Array;
+    private _controlPoint = new THREE.Vector3();
 
     constructor(sg: SpaceGraph, spec: EdgeSpec, source: Node, target: Node) {
         super(sg, spec, source, target);
 
-        // Swap the default geometry with our curve geometry
+        const sourcePos = new THREE.Vector3();
+        const targetPos = new THREE.Vector3();
+        this.source.getWorldPosition(sourcePos);
+        this.target.getWorldPosition(targetPos);
+
         this.curve = new THREE.QuadraticBezierCurve3(
-            this.source.position,
-            this.getControlPoint(),
-            this.target.position,
+            sourcePos.clone(),
+            this.getControlPoint(sourcePos, targetPos),
+            targetPos.clone(),
         );
 
         const points = this.curve.getPoints(20);
-        this.positionsBuffer = new Float32Array(points.length * 3);
-        for (let i = 0; i < points.length; i++) {
-            this.positionsBuffer[i * 3] = points[i].x;
-            this.positionsBuffer[i * 3 + 1] = points[i].y;
-            this.positionsBuffer[i * 3 + 2] = points[i].z;
-        }
+        this.positionsBuffer = new Float32Array(points.flatMap((p) => [p.x, p.y, p.z]));
 
-        this.geometry = new THREE.BufferGeometry();
-        this.geometry.setAttribute('position', new THREE.BufferAttribute(this.positionsBuffer, 3));
+        this.geometry = new LineGeometry();
+        this.geometry.setPositions(Array.from(this.positionsBuffer));
         this.object.geometry.dispose();
         this.object.geometry = this.geometry;
     }
 
-    private getControlPoint(): THREE.Vector3 {
-        const mid = new THREE.Vector3()
-            .addVectors(this.source.position, this.target.position)
+    private getControlPoint(sourcePos: THREE.Vector3, targetPos: THREE.Vector3): THREE.Vector3 {
+        const curveStrength = ((this.data as EdgeData)?.curveStrength as number) ?? 50;
+        const dir = new THREE.Vector3().subVectors(targetPos, sourcePos);
+        const normal = dir.clone().setZ(0).normalize();
+
+        // Handle vertical lines or degenerate cases for normal
+        if (normal.lengthSq() === 0) normal.set(1, 0, 0);
+
+        const cp = new THREE.Vector3()
+            .addVectors(sourcePos, targetPos)
             .multiplyScalar(0.5);
 
-        // Calculate a normal vector to push the curve outwards
-        const dir = new THREE.Vector3().subVectors(this.target.position, this.source.position);
-        const normal = new THREE.Vector3(-dir.y, dir.x, 0).normalize();
-
-        // Determine curve strength based on edge data or default
-        const curveStrength = this.data.curveStrength || 50;
-        return mid.add(normal.multiplyScalar(curveStrength));
+        // Offset normal to get curved effect
+        const offset = new THREE.Vector3(-normal.y, normal.x, 0).multiplyScalar(curveStrength);
+        return cp.add(offset);
     }
 
     update() {
-        this.curve.v0.copy(this.source.position);
-        this.curve.v1.copy(this.getControlPoint());
-        this.curve.v2.copy(this.target.position);
+        super.update();
+
+        if (!this.curve) return;
+
+        const sourcePos = new THREE.Vector3();
+        const targetPos = new THREE.Vector3();
+        this.source.getWorldPosition(sourcePos);
+        this.target.getWorldPosition(targetPos);
+
+        this.curve.v0.copy(sourcePos);
+        this.curve.v1.copy(this.getControlPoint(sourcePos, targetPos));
+        this.curve.v2.copy(targetPos);
 
         const points = this.curve.getPoints(20);
-
-        for (let i = 0; i < points.length; i++) {
-            this.positionsBuffer[i * 3] = points[i].x;
-            this.positionsBuffer[i * 3 + 1] = points[i].y;
-            this.positionsBuffer[i * 3 + 2] = points[i].z;
+        let offset = 0;
+        for (const p of points) {
+            this.positionsBuffer[offset++] = p.x;
+            this.positionsBuffer[offset++] = p.y;
+            this.positionsBuffer[offset++] = p.z;
         }
 
         this.geometry.attributes.position.needsUpdate = true;

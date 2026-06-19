@@ -1,0 +1,14 @@
+import { createDemoWithNodes, shapeNode, edge, SpaceGraph } from '../framework';
+
+export default async function fingeringDragDemo(): Promise<SpaceGraph> {
+  return await createDemoWithNodes(
+        [
+            shapeNode('a', [-150, 50, 0], { color: 0xff6644 }),
+            shapeNode('b', [0, 50, 0], { color: 0x44ff88 }),
+            shapeNode('c', [150, 50, 0], { color: 0x4488ff }),
+            shapeNode('d', [-75, -100, 0], { color: 0xaa44ff }),
+            shapeNode('e', [75, -100, 0], { color: 0xffaa44 }),
+        ],
+        [edge('a', 'b'), edge('b', 'c'), edge('a', 'd'), edge('d', 'e'), edge('e', 'c')],
+    );
+}

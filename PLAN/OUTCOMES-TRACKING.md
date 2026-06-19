@@ -50,7 +50,7 @@
 | Initial render (100 nodes) | N/A      | <100ms      | <50ms        | **<20ms**    | ⏳     |
 | FPS (1000 nodes)           | N/A      | 60 FPS      | 120 FPS      | **120 FPS**  | ⏳     |
 | Memory (1000 nodes)        | N/A      | <100MB      | <50MB        | **<25MB**    | ⏳     |
-| npm downloads/mo           | 0        | 500         | 5,000        | **25,000**   | ⏳     |
+| pnpm downloads/mo           | 0        | 500         | 5,000        | **25,000**   | ⏳     |
 
 **Deliverables:**
 

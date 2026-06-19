@@ -9,7 +9,7 @@
 | Phase      | Days  | Focus              | Outcome                 |
 | ---------- | ----- | ------------------ | ----------------------- |
 | **Build**  | 0-14  | Core development   | Working, tested library |
-| **Launch** | 15-17 | Publish + announce | npm package, community  |
+| **Launch** | 15-17 | Publish + announce | ppnpm package, community  |
 
 **Total time:** 66 hours over 17 days (part-time, 4h/day)
 
@@ -24,7 +24,7 @@
 ```bash
 # Verify prerequisites
 node --version  # Should be v18+
-npm --version   # Should be 9+
+pnpm --version   # Should be 9+
 git --version   # Should be 2+
 
 # Create project
@@ -57,10 +57,10 @@ git commit -m "Initial commit: project structure"
 
 **Goal:** Complete build configuration
 
-**Step 1: Initialize npm**
+**Step 1: Initialize pnpm**
 
 ```bash
-npm init -y
+pnpm create -y
 ```
 
 **Step 2: Edit package.json**
@@ -201,7 +201,7 @@ export interface GraphSpec {
 **Step 6: Install dependencies**
 
 ```bash
-npm install
+pnpm install
 ```
 
 **Step 7: Create LICENSE**
@@ -242,7 +242,7 @@ The first self-building UI framework.
 ## Quickstart
 
 ```bash
-npm install spacegraphjs three
+pnpm install spacegraphjs three
 ```
 ````
 
@@ -261,8 +261,8 @@ git commit -m "Day 1: Project setup with package.json, tsconfig, vite config"
 
 **✅ Success Criteria:**
 
-- [ ] `npm install` works without errors
-- [ ] `npm run build` shows expected TypeScript error (no source yet)
+- [ ] `pnpm install` works without errors
+- [ ] `pnpm run build` shows expected TypeScript error (no source yet)
 - [ ] Git commit successful
 
 ---
@@ -455,7 +455,7 @@ export class SpaceGraph {
 **Test build:**
 
 ```bash
-npm run build
+pnpm run build
 ```
 
 **Expected output:**
@@ -477,7 +477,7 @@ git commit -m "Day 2: Core SpaceGraph class with basic rendering"
 
 **✅ Success Criteria:**
 
-- [ ] `npm run build` completes without errors
+- [ ] `pnpm run build` completes without errors
 - [ ] `dist/` directory created with spacegraphjs.js and types/
 - [ ] Git commit successful
 
@@ -597,7 +597,7 @@ try {
 **Step 4: Test the demo**
 
 ```bash
-npm run dev
+pnpm run dev
 # Open http://localhost:5173/demo/index.html
 ```
 
@@ -797,17 +797,17 @@ Create `demo/large.html`:
 2. Check browser console for errors
 3. Try a different browser
 
-## npm install fails
+## pnpm install fails
 
 1. Delete node_modules: `rm -rf node_modules`
 2. Delete package-lock.json: `rm package-lock.json`
-3. Reinstall: `npm install`
+3. Reinstall: `pnpm install`
 
 ## TypeScript errors
 
-1. Check TypeScript version: `npx tsc --version`
+1. Check TypeScript version: `pnpm dlx tsc --version`
 2. Should be 5.x.x
-3. Run: `npm install` to get correct versions
+3. Run: `pnpm install` to get correct versions
 ```
 
 **Commit:**
@@ -973,7 +973,7 @@ git commit -m "Days 8-10: Polish - labels, improved controls, performance"
 **Step 1: Clean build**
 
 ```bash
-npm run clean && npm run build
+pnpm run clean && pnpm run build
 ```
 
 **Step 2: Test fresh install**
@@ -984,11 +984,11 @@ rm -rf /tmp/sg-test
 mkdir /tmp/sg-test && cd /tmp/sg-test
 
 # Initialize
-npm init -y
+pnpm create -y
 
 # Install from local package
-npm install /path/to/spacegraphjs
-npm install three
+pnpm install /path/to/spacegraphjs
+pnpm install three
 
 # Create test file
 cat > test.mjs << 'EOF'
@@ -1001,7 +1001,7 @@ node test.mjs
 # Expected: "Import successful: function"
 
 # Verify types
-npx tsc --noEmit test.mjs
+pnpm dlx tsc --noEmit test.mjs
 ```
 
 ```bash
@@ -1036,7 +1036,7 @@ git commit -m "Days 11-12: Fresh install test passes"
 ## Install
 
 ```bash
-npm install spacegraphjs three
+pnpm install spacegraphjs three
 ```
 ````
 
@@ -1105,7 +1105,7 @@ git commit -m "Days 13-14: QUICKSTART.md verified"
 
 ```bash
 # Clean build
-npm run clean && npm run build
+pnpm run clean && pnpm run build
 
 # Verify types
 ls dist/types/index.d.ts
@@ -1113,25 +1113,25 @@ ls dist/types/index.d.ts
 # Test fresh install
 rm -rf /tmp/final-test
 mkdir /tmp/final-test && cd /tmp/final-test
-npm install /path/to/spacegraphjs
-npm install three
+pnpm install /path/to/spacegraphjs
+pnpm install three
 # Verify import works
 
 gzip -c dist/spacegraphjs.js | wc -c
 
 # Run demo one more time
-npm run dev
+pnpm run dev
 # Open demo/index.html in Chrome and Firefox
 
-# npm login check
-npm whoami
+# pnpm login check
+pnpm whoami
 ```
 
 **✅ Success Criteria:**
 
 - [ ] All checks pass
 - [ ] Demo works in Chrome and Firefox
-- [ ] npm login valid
+- [ ] pnpm login valid
 
 ---
 
@@ -1150,7 +1150,7 @@ Edit package.json:
 **Step 2: Publish**
 
 ```bash
-npm publish --tag alpha
+pnpm publish --tag alpha
 ```
 
 **Step 3: Verify**
@@ -1167,14 +1167,14 @@ Should show:
 
 ```bash
 mkdir /tmp/public-test && cd /tmp/public-test
-npm install spacegraphjs@alpha three
+pnpm install spacegraphjs@alpha three
 ```
 
 **Commit:**
 
 ```bash
 git add .
-git commit -m "Day 16: Published to npm as spacegraphjs@alpha"
+git commit -m "Day 16: Published to pnpm as spacegraphjs@alpha"
 ```
 
 **✅ Success Criteria:**
@@ -1192,9 +1192,9 @@ git commit -m "Day 16: Published to npm as spacegraphjs@alpha"
 ```markdown
 🚀 SpaceGraphJS Alpha is Live!
 
-The first self-building UI framework is now available on npm.
+The first self-building UI framework is now available on pnpm.
 
-Try it: npm install spacegraphjs@alpha
+Try it: pnpm install spacegraphjs@alpha
 Quickstart: [link to QUICKSTART.md]
 Community: https://matrix.to/#/#spacegraphjs:matrix.org
 ```
@@ -1204,7 +1204,7 @@ Community: https://matrix.to/#/#spacegraphjs:matrix.org
 ```
 🚀 SpaceGraphJS Alpha is live!
 
-npm install spacegraphjs@alpha
+pnpm install spacegraphjs@alpha
 
 Quickstart: [link]
 GitHub: [link]
@@ -1223,7 +1223,7 @@ GitHub: [link]
 | Day       | Focus            | Time    | Success Criteria          |
 | --------- | ---------------- | ------- | ------------------------- |
 | **0**     | Environment      | 1h      | Node 18+, git initialized |
-| **1**     | Project Setup    | 4h      | npm install works         |
+| **1**     | Project Setup    | 4h      | pnpm install works         |
 | **2**     | SpaceGraph Class | 4h      | Build succeeds            |
 | **3-4**   | Demo             | 6h      | 3 nodes + 3 edges render  |
 | **5**     | Testing          | 3h      | Edge cases pass           |
@@ -1232,7 +1232,7 @@ GitHub: [link]
 | **11-12** | Fresh Install    | 4h      | Works in empty directory  |
 | **13-14** | QUICKSTART       | 4h      | <10 min for stranger      |
 | **15**    | Final Check      | 2h      | All checks pass           |
-| **16**    | Publish          | 2h      | On npm                    |
+| **16**    | Publish          | 2h      | On pnpm                    |
 | **17**    | Announce         | 2h      | Community knows           |
 | **TOTAL** |                  | **66h** | **Launch complete**       |
 

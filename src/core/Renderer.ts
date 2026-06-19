@@ -2,69 +2,210 @@ import * as THREE from 'three';
 import { CSS3DRenderer } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
 import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from 'three-mesh-bvh';
 import type { SpaceGraph } from '../SpaceGraph';
+import { InstancedNodeRenderer } from '../rendering/InstancedNodeRenderer';
+import { RenderContext } from './RenderContext';
+import type { Node } from '../nodes/Node';
+
+const CSS_STYLES = {
+    position: 'absolute',
+    top: '0px',
+    left: '0px',
+    pointerEvents: 'none',
+} as const;
+const OPT_INTERVAL_MS = 250;
+
+export interface RenderOptions {
+    antialias?: boolean;
+    alpha?: boolean;
+    backgroundColor?: string | number;
+    pixelRatio?: number;
+}
 
 export class Renderer {
-    public sg: SpaceGraph;
-    public container: HTMLElement;
     public scene: THREE.Scene;
     public camera: THREE.PerspectiveCamera;
     public renderer: THREE.WebGLRenderer;
     public cssRenderer: CSS3DRenderer;
+    public instancedRenderer: InstancedNodeRenderer;
+    public renderContext: RenderContext;
 
-    constructor(sg: SpaceGraph, container: HTMLElement) {
-        this.sg = sg;
-        this.container = container;
+    private _resizeObserver: ResizeObserver | null = null;
+    private _threePatched = false;
+    private renderScheduled = false;
+    private projScreenMatrix: THREE.Matrix4;
+    private lastOptTime = 0;
+    private optFrames = 0;
+    private fps = 60;
+    private timeSinceLastOptCheck = 0;
 
-        // Scene setup
+    constructor(
+        public sg: SpaceGraph,
+        public container: HTMLElement,
+        options: RenderOptions = {},
+    ) {
+        const pixelRatio = options.pixelRatio ?? Math.min(window.devicePixelRatio, 2);
+        const bgColor = options.backgroundColor ?? 0x1a1a2e;
+
         this.scene = new THREE.Scene();
-        this.scene.background = new THREE.Color(0x1a1a2e);
+        this.scene.background = new THREE.Color(bgColor);
 
-        // Camera setup
-        const aspect = this.container.clientWidth / this.container.clientHeight;
+        const aspect = container.clientWidth / (container.clientHeight || 1);
         this.camera = new THREE.PerspectiveCamera(75, aspect, 0.1, 10000);
         this.camera.position.set(0, 0, 500);
 
-        // WebGL Renderer setup
-        this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-        this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
-        this.renderer.setPixelRatio(window.devicePixelRatio);
-        this.container.appendChild(this.renderer.domElement);
+        this.renderer = new THREE.WebGLRenderer({
+            antialias: options.antialias ?? true,
+            alpha: options.alpha ?? true,
+            preserveDrawingBuffer: true,
+        });
+        this.renderer.setSize(container.clientWidth, container.clientHeight);
+        this.renderer.setPixelRatio(pixelRatio);
+        this.renderer.setClearColor(bgColor, (options.alpha ?? true) ? 0 : 1);
+        Object.assign(this.renderer.domElement.style, {
+            position: 'absolute',
+            top: '0px',
+            left: '0px',
+            zIndex: '0',
+        });
+        container.appendChild(this.renderer.domElement);
+        container.style.position = 'relative';
 
-        // CSS3D Renderer setup
         this.cssRenderer = new CSS3DRenderer();
-        this.cssRenderer.setSize(this.container.clientWidth, this.container.clientHeight);
-        this.cssRenderer.domElement.style.position = 'absolute';
-        this.cssRenderer.domElement.style.top = '0px';
-        this.cssRenderer.domElement.style.pointerEvents = 'none'; // let WebGL handle primary pointer events initially
-        this.container.appendChild(this.cssRenderer.domElement);
+        this.cssRenderer.setSize(container.clientWidth, container.clientHeight);
+        Object.assign(this.cssRenderer.domElement.style, CSS_STYLES);
+        this.cssRenderer.domElement.style.zIndex = '1';
+        container.appendChild(this.cssRenderer.domElement);
 
-        // Handle resize
-        window.addEventListener('resize', () => this.onResize());
+        this.instancedRenderer = new InstancedNodeRenderer(sg, this.scene);
+        this.projScreenMatrix = new THREE.Matrix4();
+
+        this.renderContext = new RenderContext(
+            this.camera,
+            { width: container.clientWidth, height: container.clientHeight },
+            0.5,
+        );
+
+        this._resizeObserver = new ResizeObserver(() => this.onResize());
+        this._resizeObserver.observe(container);
     }
 
-    public init() {
-        console.log('[SpaceGraph Renderer] Initialized');
+    init(): void {
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
+        this.scene.add(ambientLight);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
+        directionalLight.position.set(1, 1, 1).normalize();
+        this.scene.add(directionalLight);
 
-        // Wire up global accelerated raycasting
-        THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
-        THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
-        THREE.Mesh.prototype.raycast = acceleratedRaycast;
+        if (this._threePatched) return;
+        THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree as any;
+        THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree as any;
+        THREE.Mesh.prototype.raycast = acceleratedRaycast as any;
+        this._threePatched = true;
     }
 
-    private onResize() {
-        if (!this.container) return;
-        const width = this.container.clientWidth;
-        const height = this.container.clientHeight;
-
-        this.camera.aspect = width / height;
+    private onResize(): void {
+        const { clientWidth: w, clientHeight: h } = this.container;
+        this.camera.aspect = w / h;
         this.camera.updateProjectionMatrix();
+        this.renderer.setSize(w, h);
+        this.cssRenderer.setSize(w, h);
+        this.renderContext?.updateViewport({ width: w, height: h });
 
-        this.renderer.setSize(width, height);
-        this.cssRenderer.setSize(width, height);
+        const resolution = new THREE.Vector2(w, h);
+        for (const edge of this.sg.graph.edges.values()) {
+            if (edge.line?.material && (edge.line.material as any).isLineMaterial) {
+                (edge.line.material as any).resolution.copy(resolution);
+            }
+        }
     }
 
-    public render() {
-        this.renderer.render(this.scene, this.camera);
+    scheduleRender(): void {
+        if (this.renderScheduled) return;
+        this.renderScheduled = true;
+        requestAnimationFrame((ts) => {
+            this.renderScheduled = false;
+            this.render(ts);
+        });
+    }
+
+    render(timestamp: number = 0): void {
+        if (timestamp > 0) {
+            this.beginFrameOptimization(timestamp);
+        }
+        this.renderContext?.startFrame(timestamp);
+
+        this.camera.updateMatrixWorld();
+        this.projScreenMatrix.multiplyMatrices(
+            this.camera.projectionMatrix,
+            this.camera.matrixWorldInverse,
+        );
+        this.renderContext?.updateFrustum(this.projScreenMatrix);
+        this.renderContext?.updateCameraPosition();
+
+        this.instancedRenderer.update();
+        for (const edge of this.sg.graph.edges.values()) {
+            if (edge) edge.update?.();
+        }
+
+        if (this.renderContext) {
+            for (const node of this.sg.graph.nodes.values()) {
+                if (!node) continue;
+                if (this.renderContext.shouldRender(node)) {
+                    this.applyLOD(node);
+                } else {
+                    node.object.visible = false;
+                }
+            }
+        }
+
         this.cssRenderer.render(this.scene, this.camera);
+        this.renderer.render(this.scene, this.camera);
+
+        this.renderContext?.endFrame();
+    }
+
+    private applyLOD(node: Node): void {
+        const lod = node.computeLOD(this.renderContext?.visibilityContext ?? {} as any);
+        node.object.visible = node.visible && lod !== 'hidden';
+    }
+
+    beginFrameOptimization(timestamp: number): void {
+        if (this.lastOptTime === 0) {
+            this.lastOptTime = timestamp;
+            return;
+        }
+        const delta = timestamp - this.lastOptTime;
+        this.lastOptTime = timestamp;
+        this.optFrames++;
+        this.timeSinceLastOptCheck += delta;
+
+        if (this.timeSinceLastOptCheck >= OPT_INTERVAL_MS) {
+            this.fps = (this.optFrames * 1000) / this.timeSinceLastOptCheck;
+            this.optFrames = 0;
+            this.timeSinceLastOptCheck = 0;
+        }
+    }
+
+    getFPS(): number {
+        return this.fps;
+    }
+
+    async exportPNG(scale = 1): Promise<Blob> {
+        this.render();
+        return new Promise<Blob>((resolve, reject) => {
+            this.renderer.domElement.toBlob(
+                (blob) => (blob ? resolve(blob) : reject(new Error('toBlob failed'))),
+                'image/png',
+                scale,
+            );
+        });
+    }
+
+    dispose(): void {
+        this._resizeObserver?.disconnect();
+        this.instancedRenderer.dispose();
+        this.renderer.dispose();
+        this.cssRenderer.domElement.remove();
+        this.renderer.domElement.remove();
     }
 }
