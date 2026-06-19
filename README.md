@@ -1,11 +1,5 @@
 # SpaceGraphJS
 
-[![pnpm](https://img.shields.io/pnpm/v/spacegraphjs.svg)](https://www.npmjs.com/package/spacegraphjs)
-[![Matrix](https://img.shields.io/matrix/spacegraphjs:matrix.org)](https://matrix.to/#/#spacegraphjs:matrix.org)
-[![GitHub Sponsors](https://img.shields.io/github/sponsors/autonull)](https://github.com/sponsors/autonull)
-
-## The First Self-Building UI Framework
-
 SpaceGraphJS is a Zoomable User Interface (ZUI) library powered by AI vision.
 It sees what it builds, verifies quality autonomously, and self-corrects in 30 seconds.
 
@@ -37,11 +31,6 @@ Check out the interactive examples in the `demo/` directory or run `pnpm run dev
 - [CONTRIBUTING.md](./CONTRIBUTING.md) — How to contribute
 - [PLAN/SPACEGRAPH_OS.md](./PLAN/SPACEGRAPH_OS.md) — Fractal ZUI & OS architecture vision
 
-## Community
-
-- Matrix: https://matrix.to/#/#spacegraphjs:matrix.org
-- GitHub: https://github.com/autonull/spacegraphjs
-
 ---
 
 **Install:**
@@ -49,33 +38,6 @@ Check out the interactive examples in the `demo/` directory or run `pnpm run dev
 ```bash
 pnpm install spacegraphjs three
 ```
-
----
-
-### 🔧 Hardware: The Most Open Dev Platform
-
-**For Researchers & Engineers:**
-
-SpaceGraph Mini — A pocket-sized computer running SpaceGraphOS.
-
-**Specs:**
-
-- 🧠 RK3588 SoC with **12 TOPS NPU** (6x faster than competitors)
-- 💾 **32GB RAM** (4x more than competitors)
-- 🌡️ **<40°C passive** cooling (20°C cooler)
-- ⚡ **<8 second** boot time
-- 🔓 **Fully open** (schematics, CAD, BOM published)
-- 💰 **$249** (40% cheaper)
-
-**Everything Open:**
-
-- ✅ Schematics (CERN OHL v2)
-- ✅ CAD files (CC-BY-SA)
-- ✅ Firmware (MIT)
-- ✅ OS (AGPL v3)
-
-**Pre-order:** Coming Month 4
-
 ---
 
 ### 📚 Research: Seminal Contribution
@@ -187,21 +149,6 @@ All designs published under open licenses:
 | **Matrix** | [#spacegraphjs:matrix.org](https://matrix.to/#/#spacegraphjs:matrix.org)     | 200+ target         |
 | **GitHub** | [github.com/autonull/spacegraphjs](https://github.com/autonull/spacegraphjs) | 2,000+ stars target |
 | **pnpm**    | [npmjs.com/package/spacegraphjs](https://npmjs.com/package/spacegraphjs)     | 25K+/month target   |
-
----
-
-## License
-
-| Component            | License                    |
-| -------------------- | -------------------------- |
-| **Software**         | MIT                        |
-| **Vision Models**    | MIT                        |
-| **Model Weights**    | CC-BY-4.0                  |
-| **Documentation**    | CC-BY-SA 4.0               |
-| **Hardware Designs** | CERN OHL v2 / CC-BY-SA 4.0 |
-| **SpaceGraphOS**     | AGPL v3                    |
-
-**Pure FOSS. No enterprise tiers. No restrictions.**
 
 ---
 
