@@ -4,6 +4,39 @@
 
 ---
 
+## Table of Contents
+
+- [Executive Summary](#executive-summary)
+- [Month 2: Feedback & Fundamentals](#month-2-feedback--fundamentals)
+  - [Goal: Learn from users](#goal-learn-from-users)
+- [Month 3: Content & Distribution](#month-3-content--distribution)
+  - [Goal: 500 cumulative npm downloads](#goal-500-cumulative-npm-downloads)
+- [Month 4: Hardware Integration](#month-4-hardware-integration)
+  - [Goal: $15,000 monthly revenue](#goal-15000-monthly-revenue)
+- [Month 5: Community Scaling](#month-5-community-scaling)
+  - [Goal: 10 external contributors by Month 6](#goal-10-external-contributors-by-month-6)
+- [Month 6: Maturity](#month-6-maturity)
+  - [Goal: Sustainable operations](#goal-sustainable-operations)
+- [Revenue Acceleration](#revenue-acceleration)
+  - [Month-by-Month Breakdown](#month-by-month-breakdown)
+- [Key Performance Indicators (KPIs)](#key-performance-indicators-kpis)
+  - [Adoption Metrics](#adoption-metrics)
+  - [Community Metrics](#community-metrics)
+  - [Revenue Metrics](#revenue-metrics)
+  - [Quality Metrics](#quality-metrics)
+- [Feedback Loops](#feedback-loops)
+  - [User → Product](#user--product)
+  - [Community → Growth](#community--growth)
+- [Risk Mitigation (Post-Launch)](#risk-mitigation-post-launch)
+  - [Month 2-3 Risks](#month-2-3-risks)
+  - [Month 4-6 Risks](#month-4-6-risks)
+- [Success Checklist (Month 6)](#success-checklist-month-6)
+- [The Genius Insight](#the-genius-insight)
+- [Start Here (Month 2+)](#start-here-month-2)
+- [Summary: Enhancement Plan](#summary-enhancement-plan)
+
+---
+
 ## Executive Summary
 
 **Phase A + B (Days 0-17):** Build + Launch → **Initial Success**

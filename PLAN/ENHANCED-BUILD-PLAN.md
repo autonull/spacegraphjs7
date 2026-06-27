@@ -5,6 +5,24 @@
 
 ---
 
+## Table of Contents
+
+- [Mental Simulation Results](#mental-simulation-results)
+  - [✅ What Works](#-what-works)
+  - [❌ What's Missing](#-whats-missing)
+- [Enhanced Plan (With Fixes)](#enhanced-plan-with-fixes)
+  - [Day 0: Environment Setup (1 hour) ← NEW](#day-0-environment-setup-1-hour--new)
+  - [Day 1: Project Setup (4 hours)](#day-1-project-setup-4-hours)
+  - [Day 2: Core SpaceGraph Class (4 hours)](#day-2-core-spacegraph-class-4-hours)
+  - [Day 3-4: Basic Demo (4-6 hours)](#day-3-4-basic-demo-4-6-hours)
+  - [Day 5: Testing + Edge Cases (3 hours)](#day-5-testing--edge-cases-3-hours)
+  - [Day 6-7: Buffer + Troubleshooting (variable)](#day-6-7-buffer--troubleshooting-variable)
+- [Days 8-14: Polish + Launch Prep](#days-8-14-polish--launch-prep)
+- [Days 15-17: Launch](#days-15-17-launch)
+- [Summary of Enhancements](#summary-of-enhancements)
+
+---
+
 ## Mental Simulation Results
 
 I simulated the plan step-by-step. Here's what I found:
