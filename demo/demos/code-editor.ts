@@ -1,4 +1,4 @@
-import { createDemoWithNodes, SpaceGraph } from '../framework';
+import { type SpaceGraph, createDemoWithNodes } from '../framework';
 
 export default async function codeEditorDemo(): Promise<SpaceGraph> {
   const initialCode = `// SpaceGraphJS System Application

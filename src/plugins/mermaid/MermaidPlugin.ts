@@ -2,9 +2,20 @@ import * as THREE from 'three';
 import type { SpaceGraph } from '../../SpaceGraph';
 import type { Graph } from '../../core/Graph';
 import { BaseSystemPlugin } from '../BaseSystemPlugin';
-import { HUDPlugin } from '../HUDPlugin';
-import { HUD_ZINDEX, HUD_COLORS } from '../hud/HUDStyles';
+import type { HUDPlugin } from '../HUDPlugin';
 import { HUDDOMFactory } from '../hud/HUDDOMFactory';
+import { HUD_COLORS, HUD_ZINDEX } from '../hud/HUDStyles';
+import {
+  type BaseLayout,
+  CircularLayout,
+  ClusterLayout,
+  ForceLayout,
+  GridLayout,
+  HierarchicalLayout,
+  RadialLayout,
+  SpectralLayout,
+  TreeLayout,
+} from '../layouts';
 import {
   DiagramParserFactory,
   LAYOUT_NAMES,
@@ -12,22 +23,11 @@ import {
   getLayoutLabel,
 } from './MermaidParser';
 import type {
-  DiagramParseResult,
   DiagramFormat,
-  MermaidThemeName,
+  DiagramParseResult,
   LayoutName,
+  MermaidThemeName,
 } from './MermaidParser';
-import {
-  ForceLayout,
-  CircularLayout,
-  GridLayout,
-  HierarchicalLayout,
-  RadialLayout,
-  TreeLayout,
-  SpectralLayout,
-  ClusterLayout,
-  BaseLayout,
-} from '../layouts';
 
 export interface MermaidPluginOptions {
   defaultLayout?: LayoutName;
@@ -61,10 +61,10 @@ export class MermaidPlugin extends BaseSystemPlugin {
   private currentTheme: MermaidThemeName = 'default';
   private currentFormat: DiagramFormat = 'mermaid';
   private hudContainer: HTMLElement | null = null;
-  private diagramContent: string = '';
+  private diagramContent = '';
   private parseResult: DiagramParseResult | null = null;
-  private autoAnimate: boolean = true;
-  private enableSubgraphs: boolean = true;
+  private autoAnimate = true;
+  private enableSubgraphs = true;
   private options: MermaidPluginOptions;
 
   constructor(options: MermaidPluginOptions = {}) {
@@ -86,14 +86,30 @@ export class MermaidPlugin extends BaseSystemPlugin {
 
   private initializeLayouts(): void {
     const configs: Array<{ name: LayoutName; create: () => BaseLayout; direction?: string }> = [
-      { name: 'force', create: () => new ForceLayout({ iterations: 100, repulsion: 5000 } as any), direction: undefined },
+      {
+        name: 'force',
+        create: () => new ForceLayout({ iterations: 100, repulsion: 5000 } as any),
+        direction: undefined,
+      },
       { name: 'circular', create: () => new CircularLayout(), direction: undefined },
-      { name: 'grid', create: () => new GridLayout({ columns: 4, spacingX: 200, spacingY: 150 } as any), direction: undefined },
-      { name: 'hierarchical', create: () => new HierarchicalLayout({ direction: 'TB' } as any), direction: 'TB' },
+      {
+        name: 'grid',
+        create: () => new GridLayout({ columns: 4, spacingX: 200, spacingY: 150 } as any),
+        direction: undefined,
+      },
+      {
+        name: 'hierarchical',
+        create: () => new HierarchicalLayout({ direction: 'TB' } as any),
+        direction: 'TB',
+      },
       { name: 'radial', create: () => new RadialLayout(), direction: undefined },
       { name: 'tree', create: () => new TreeLayout({ direction: 'TB' } as any), direction: 'TB' },
       { name: 'spectral', create: () => new SpectralLayout(), direction: undefined },
-      { name: 'cluster', create: () => new ClusterLayout({ clusterBy: 'cluster' } as any), direction: undefined },
+      {
+        name: 'cluster',
+        create: () => new ClusterLayout({ clusterBy: 'cluster' } as any),
+        direction: undefined,
+      },
     ];
 
     for (const config of configs) {
@@ -127,7 +143,7 @@ export class MermaidPlugin extends BaseSystemPlugin {
       <div class="mermaid-hud-title">Format</div>
       <div class="mermaid-hud-section-content">
         <select id="mermaid-format-select" class="mermaid-hud-select">
-          ${formats.map(f => `<option value="${f}" ${f === this.currentFormat ? 'selected' : ''}>${f.toUpperCase()}</option>`).join('')}
+          ${formats.map((f) => `<option value="${f}" ${f === this.currentFormat ? 'selected' : ''}>${f.toUpperCase()}</option>`).join('')}
         </select>
       </div>
     `;
@@ -149,11 +165,13 @@ export class MermaidPlugin extends BaseSystemPlugin {
       <div class="mermaid-hud-title">Layout</div>
       <div class="mermaid-hud-section-content">
         <select id="mermaid-layout-select" class="mermaid-hud-select">
-          ${LAYOUT_NAMES.map(name => `
+          ${LAYOUT_NAMES.map(
+            (name) => `
             <option value="${name}" ${name === this.currentLayout ? 'selected' : ''}>
               ${getLayoutLabel(name)}
             </option>
-          `).join('')}
+          `
+          ).join('')}
         </select>
         <button id="mermaid-apply-layout" class="mermaid-hud-button">Apply Layout</button>
         <div id="mermaid-suggested-layout" class="mermaid-hud-hint"></div>
@@ -184,7 +202,7 @@ export class MermaidPlugin extends BaseSystemPlugin {
       <div class="mermaid-hud-title">Theme</div>
       <div class="mermaid-hud-section-content">
         <select id="mermaid-theme-select" class="mermaid-hud-select">
-          ${themes.map(t => `<option value="${t}" ${t === this.currentTheme ? 'selected' : ''}>${t.charAt(0).toUpperCase() + t.slice(1)}</option>`).join('')}
+          ${themes.map((t) => `<option value="${t}" ${t === this.currentTheme ? 'selected' : ''}>${t.charAt(0).toUpperCase() + t.slice(1)}</option>`).join('')}
         </select>
         <div class="mermaid-hud-row">
           <button id="mermaid-prev-theme" class="mermaid-hud-button-small">◀</button>
@@ -250,9 +268,15 @@ export class MermaidPlugin extends BaseSystemPlugin {
 
     this.hudContainer.appendChild(container);
 
-    container.querySelector('#mermaid-zoom-in')?.addEventListener('click', () => this.sg.cameraControls.zoom(1.25));
-    container.querySelector('#mermaid-zoom-out')?.addEventListener('click', () => this.sg.cameraControls.zoom(0.8));
-    container.querySelector('#mermaid-fit')?.addEventListener('click', () => this.sg.fitView(150, 1.5));
+    container
+      .querySelector('#mermaid-zoom-in')
+      ?.addEventListener('click', () => this.sg.cameraControls.zoom(1.25));
+    container
+      .querySelector('#mermaid-zoom-out')
+      ?.addEventListener('click', () => this.sg.cameraControls.zoom(0.8));
+    container
+      .querySelector('#mermaid-fit')
+      ?.addEventListener('click', () => this.sg.fitView(150, 1.5));
     container.querySelector('#mermaid-3d')?.addEventListener('click', () => this.toggle3D());
 
     container.querySelector('#mermaid-auto-animate')?.addEventListener('change', (e) => {
@@ -350,7 +374,7 @@ export class MermaidPlugin extends BaseSystemPlugin {
         type: edgeType,
         data: {
           label: edge.label,
-          color: edge.color ? parseInt(edge.color.replace('#', ''), 16) : theme.edgeColor,
+          color: edge.color ? Number.parseInt(edge.color.replace('#', ''), 16) : theme.edgeColor,
           arrowhead: edge.arrowhead !== 'none',
           dashed: edge.style === 'dashed',
           style: edge.style,
@@ -365,9 +389,9 @@ export class MermaidPlugin extends BaseSystemPlugin {
     const clusterColors = CLUSTER_COLORS;
 
     this.parseResult!.clusters.forEach((cluster, index) => {
-      const clusterNodeIds = this.parseResult!.nodes
-        .filter(n => n.cluster === cluster.id)
-        .map(n => n.id);
+      const clusterNodeIds = this.parseResult!.nodes.filter((n) => n.cluster === cluster.id).map(
+        (n) => n.id
+      );
 
       if (clusterNodeIds.length === 0) return;
 
@@ -381,7 +405,10 @@ export class MermaidPlugin extends BaseSystemPlugin {
         data: {
           width: 400,
           height: 300,
-          color: parseInt(clusterColors[colorIndex].replace(/rgba?\((\d+),\s*(\d+),\s*(\d+).*/, '$1$2$3'), 16),
+          color: Number.parseInt(
+            clusterColors[colorIndex].replace(/rgba?\((\d+),\s*(\d+),\s*(\d+).*/, '$1$2$3'),
+            16
+          ),
           depth: 50,
           label: cluster.label,
           clusterId: cluster.id,
@@ -423,19 +450,24 @@ export class MermaidPlugin extends BaseSystemPlugin {
   }
 
   private async applyClusterLayouts(): Promise<void> {
-    const clusterNodes = Array.from(this.graph.getNodes()).filter(n => n.id.startsWith('cluster-'));
+    const clusterNodes = Array.from(this.graph.getNodes()).filter((n) =>
+      n.id.startsWith('cluster-')
+    );
 
     for (const clusterNode of clusterNodes) {
       const clusterId = (clusterNode.data as { clusterId?: string }).clusterId;
       if (!clusterId) continue;
 
       const memberNodes = Array.from(this.graph.getNodes()).filter(
-        n => (n.data as { cluster?: string })?.cluster === clusterId
+        (n) => (n.data as { cluster?: string })?.cluster === clusterId
       );
 
       if (memberNodes.length === 0) continue;
 
-      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      let minX = Number.POSITIVE_INFINITY,
+        minY = Number.POSITIVE_INFINITY,
+        maxX = Number.NEGATIVE_INFINITY,
+        maxY = Number.NEGATIVE_INFINITY;
       for (const mn of memberNodes) {
         minX = Math.min(minX, mn.position.x);
         minY = Math.min(minY, mn.position.y);
@@ -476,7 +508,7 @@ export class MermaidPlugin extends BaseSystemPlugin {
     for (const node of this.graph.getNodes()) {
       if (node.type === 'MermaidNode') {
         const data = node.data as Record<string, unknown>;
-        const color = data.color as string || nodeColors[nodeIndex % nodeColors.length];
+        const color = (data.color as string) || nodeColors[nodeIndex % nodeColors.length];
 
         if (typeof (node as any).updateNodeColor === 'function') {
           (node as any).updateNodeColor();
@@ -508,7 +540,11 @@ export class MermaidPlugin extends BaseSystemPlugin {
     return this.parseResult;
   }
 
-  showAlert(options: { type: 'info' | 'success' | 'warning' | 'error'; message: string; duration?: number }): void {
+  showAlert(options: {
+    type: 'info' | 'success' | 'warning' | 'error';
+    message: string;
+    duration?: number;
+  }): void {
     const hud = this.sg.pluginManager.getPlugin('hud') as HUDPlugin | undefined;
     hud?.showAlert(options as any);
   }

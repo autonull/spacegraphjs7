@@ -1,9 +1,33 @@
-import type { NodeSpec, EdgeSpec } from '../../types';
+import type { EdgeSpec, NodeSpec } from '../../types';
 
 export type DiagramFormat = 'mermaid' | 'dot' | 'graphml' | 'json';
 export type MermaidLayoutType = 'TD' | 'TB' | 'BT' | 'LR' | 'RL';
-export type MermaidNodeShape = 'rect' | 'round' | 'stadium' | 'circle' | 'diamond' | 'hexagon' | 'parallelogram' | 'parallelogram_alt' | 'trapezoid' | 'subroutine' | 'cylinder';
-export type DotShape = 'box' | 'ellipse' | 'oval' | 'circle' | 'point' | 'diamond' | 'trapezium' | 'parallelogram' | 'house' | 'hexagon' | 'octagon' | 'doublecircle' | 'doubleoctagon';
+export type MermaidNodeShape =
+  | 'rect'
+  | 'round'
+  | 'stadium'
+  | 'circle'
+  | 'diamond'
+  | 'hexagon'
+  | 'parallelogram'
+  | 'parallelogram_alt'
+  | 'trapezoid'
+  | 'subroutine'
+  | 'cylinder';
+export type DotShape =
+  | 'box'
+  | 'ellipse'
+  | 'oval'
+  | 'circle'
+  | 'point'
+  | 'diamond'
+  | 'trapezium'
+  | 'parallelogram'
+  | 'house'
+  | 'hexagon'
+  | 'octagon'
+  | 'doublecircle'
+  | 'doubleoctagon';
 export type EdgeStyle = 'solid' | 'dashed' | 'dotted' | 'bold' | 'tapered';
 
 export interface DiagramNode {
@@ -66,10 +90,14 @@ export function nodeToSpec(node: DiagramNode, index: number, themeColors: string
 }
 
 export function edgeToSpec(edge: DiagramEdge, index: number): EdgeSpec {
-  const edgeType = edge.style === 'dotted' || edge.style === 'dashed' ? 'DottedEdge' :
-                   edge.label ? 'LabeledEdge' :
-                   edge.style === 'solid' ? 'Edge' :
-                   'CurvedEdge';
+  const edgeType =
+    edge.style === 'dotted' || edge.style === 'dashed'
+      ? 'DottedEdge'
+      : edge.label
+        ? 'LabeledEdge'
+        : edge.style === 'solid'
+          ? 'Edge'
+          : 'CurvedEdge';
 
   return {
     id: edge.id || `edge-${index}`,
@@ -78,7 +106,7 @@ export function edgeToSpec(edge: DiagramEdge, index: number): EdgeSpec {
     type: edgeType,
     data: {
       label: edge.label,
-      color: edge.color ? parseInt(edge.color.replace('#', ''), 16) : undefined,
+      color: edge.color ? Number.parseInt(edge.color.replace('#', ''), 16) : undefined,
       arrowhead: edge.arrowhead !== 'none',
       dashed: edge.style === 'dashed' || edge.style === 'dotted',
       style: edge.style,
@@ -87,7 +115,11 @@ export function edgeToSpec(edge: DiagramEdge, index: number): EdgeSpec {
 }
 
 const DIRECTION_MAP: Record<string, MermaidLayoutType> = {
-  'TD': 'TD', 'TB': 'TB', 'BT': 'BT', 'LR': 'LR', 'RL': 'RL',
+  TD: 'TD',
+  TB: 'TB',
+  BT: 'BT',
+  LR: 'LR',
+  RL: 'RL',
 };
 
 export class MermaidParser {
@@ -104,7 +136,10 @@ export class MermaidParser {
     this.defaultDirection = 'TD';
     this.currentCluster = null;
 
-    const lines = mermaidCode.split('\n').map(l => l.trim()).filter(l => l && !l.startsWith('%%'));
+    const lines = mermaidCode
+      .split('\n')
+      .map((l) => l.trim())
+      .filter((l) => l && !l.startsWith('%%'));
 
     for (const line of lines) {
       if (line.startsWith('graph ') || line.startsWith('flowchart ')) {
@@ -129,9 +164,15 @@ export class MermaidParser {
     }
 
     for (const line of lines) {
-      if (!line.startsWith('graph ') && !line.startsWith('flowchart ') &&
-          !line.startsWith('subgraph ') && line !== 'end' &&
-          !line.includes('-->') && !line.includes('-.->') && !line.includes('---')) {
+      if (
+        !line.startsWith('graph ') &&
+        !line.startsWith('flowchart ') &&
+        !line.startsWith('subgraph ') &&
+        line !== 'end' &&
+        !line.includes('-->') &&
+        !line.includes('-.->') &&
+        !line.includes('---')
+      ) {
         this.parseNode(line);
       }
     }
@@ -140,8 +181,8 @@ export class MermaidParser {
   }
 
   private parseDirection(line: string): MermaidLayoutType {
-    const match = line.match(/^graph\s+(TD|TB|BT|LR|RL)/) ||
-                  line.match(/^flowchart\s+(TD|TB|BT|LR|RL)/);
+    const match =
+      line.match(/^graph\s+(TD|TB|BT|LR|RL)/) || line.match(/^flowchart\s+(TD|TB|BT|LR|RL)/);
     if (match) {
       this.defaultDirection = DIRECTION_MAP[match[1]] || 'TD';
     }
@@ -186,9 +227,15 @@ export class MermaidParser {
   private parseEdge(line: string): void {
     const patterns = [
       { regex: /^([A-Za-z0-9_]+)\s*-->\s*([A-Za-z0-9_]+)/, style: 'solid' as EdgeStyle },
-      { regex: /^([A-Za-z0-9_]+)\s*-->\s*\|([^|]+)\|\s*([A-Za-z0-9_]+)/, style: 'solid' as EdgeStyle },
+      {
+        regex: /^([A-Za-z0-9_]+)\s*-->\s*\|([^|]+)\|\s*([A-Za-z0-9_]+)/,
+        style: 'solid' as EdgeStyle,
+      },
       { regex: /^([A-Za-z0-9_]+)\s*-\.->\s*([A-Za-z0-9_]+)/, style: 'dotted' as EdgeStyle },
-      { regex: /^([A-Za-z0-9_]+)\s*-.->\s*\|([^|]+)\|\s*([A-Za-z0-9_]+)/, style: 'dotted' as EdgeStyle },
+      {
+        regex: /^([A-Za-z0-9_]+)\s*-.->\s*\|([^|]+)\|\s*([A-Za-z0-9_]+)/,
+        style: 'dotted' as EdgeStyle,
+      },
       { regex: /^([A-Za-z0-9_]+)\s*==>\s*([A-Za-z0-9_]+)/, style: 'bold' as EdgeStyle },
       { regex: /^([A-Za-z0-9_]+)\s*---?\s*([A-Za-z0-9_]+)/, style: 'solid' as EdgeStyle },
     ];
@@ -229,7 +276,8 @@ export class MermaidParser {
   }
 
   private buildResult(): DiagramParseResult {
-    const suggestedLayout = this.defaultDirection === 'LR' || this.defaultDirection === 'RL' ? 'tree' : 'hierarchical';
+    const suggestedLayout =
+      this.defaultDirection === 'LR' || this.defaultDirection === 'RL' ? 'tree' : 'hierarchical';
 
     return {
       nodes: Array.from(this.nodes.values()),
@@ -247,7 +295,9 @@ export class DOTParser {
     const edges: DiagramEdge[] = [];
     const clusters = new Map<string, DiagramCluster>();
 
-    const graphMatch = dotCode.match(/^\s*(digraph|graph|strict\s+digraph|strict\s+graph)\s*(\w+)?\s*\{([\s\S]*)\}\s*$/m);
+    const graphMatch = dotCode.match(
+      /^\s*(digraph|graph|strict\s+digraph|strict\s+graph)\s*(\w+)?\s*\{([\s\S]*)\}\s*$/m
+    );
     if (!graphMatch) {
       return this.emptyResult();
     }
@@ -277,7 +327,8 @@ export class DOTParser {
         label: edgeAttrs.label,
         style: this.mapDotStyle(edgeAttrs.style),
         color: edgeAttrs.color,
-        arrowhead: (edgeAttrs.arrowhead || (isDirected ? 'normal' : 'none')) as DiagramEdge['arrowhead'],
+        arrowhead: (edgeAttrs.arrowhead ||
+          (isDirected ? 'normal' : 'none')) as DiagramEdge['arrowhead'],
       });
     }
 
@@ -301,7 +352,10 @@ export class DOTParser {
     let simpleMatch;
     while ((simpleMatch = simpleNodeRegex.exec(graphContent)) !== null) {
       const nodeId = simpleMatch[1];
-      if (!nodes.has(nodeId) && !['graph', 'digraph', 'subgraph', 'strict', 'node', 'edge'].includes(nodeId)) {
+      if (
+        !nodes.has(nodeId) &&
+        !['graph', 'digraph', 'subgraph', 'strict', 'node', 'edge'].includes(nodeId)
+      ) {
         nodes.set(nodeId, { id: nodeId, label: nodeId, shape: 'rect' });
       }
     }
@@ -321,7 +375,7 @@ export class DOTParser {
     if (attrMatch) {
       const pairs = attrMatch[1].split(',');
       for (const pair of pairs) {
-        const [key, value] = pair.split('=').map(s => s.trim());
+        const [key, value] = pair.split('=').map((s) => s.trim());
         if (key && value) {
           attrs[key.trim()] = value.replace(/^["']|["']$/g, '');
         }
@@ -332,25 +386,40 @@ export class DOTParser {
 
   private mapDotShape(shape?: string): string {
     const map: Record<string, string> = {
-      box: 'rect', rectangle: 'rect', ellipse: 'round', oval: 'round',
-      circle: 'circle', diamond: 'diamond', trapezium: 'trapezoid',
-      parallelogram: 'parallelogram', house: 'rect', hexagon: 'hexagon',
-      octagon: 'hexagon', doublecircle: 'circle', doubleoctagon: 'circle',
+      box: 'rect',
+      rectangle: 'rect',
+      ellipse: 'round',
+      oval: 'round',
+      circle: 'circle',
+      diamond: 'diamond',
+      trapezium: 'trapezoid',
+      parallelogram: 'parallelogram',
+      house: 'rect',
+      hexagon: 'hexagon',
+      octagon: 'hexagon',
+      doublecircle: 'circle',
+      doubleoctagon: 'circle',
     };
-    return shape ? (map[shape] || 'rect') : 'rect';
+    return shape ? map[shape] || 'rect' : 'rect';
   }
 
   private mapDotStyle(style?: string): EdgeStyle {
     const map: Record<string, EdgeStyle> = {
-      dashed: 'dashed', dotted: 'dotted', solid: 'solid', bold: 'bold',
+      dashed: 'dashed',
+      dotted: 'dotted',
+      solid: 'solid',
+      bold: 'bold',
     };
-    return style ? (map[style] || 'solid') : 'solid';
+    return style ? map[style] || 'solid' : 'solid';
   }
 
   private emptyResult(): DiagramParseResult {
     return {
-      nodes: [], edges: [], clusters: [],
-      format: 'dot', suggestedLayout: 'hierarchical',
+      nodes: [],
+      edges: [],
+      clusters: [],
+      format: 'dot',
+      suggestedLayout: 'hierarchical',
     };
   }
 }
@@ -371,7 +440,7 @@ export class GraphMLParser {
 
     const keyMap = new Map<string, string>();
     const keys = doc.querySelectorAll('key');
-    keys.forEach(key => {
+    keys.forEach((key) => {
       const id = key.getAttribute('id');
       const attrName = key.getAttribute('attr.name');
       if (id && attrName) keyMap.set(id, attrName);
@@ -382,13 +451,13 @@ export class GraphMLParser {
     const edgedefault = graphEl?.getAttribute('edgedefault') || 'directed';
 
     const nodeEls = doc.querySelectorAll('node');
-    nodeEls.forEach(nodeEl => {
+    nodeEls.forEach((nodeEl) => {
       const id = nodeEl.getAttribute('id') || '';
       let label = id;
       let cluster: string | undefined;
 
       const dataEls = nodeEl.querySelectorAll('data');
-      dataEls.forEach(data => {
+      dataEls.forEach((data) => {
         const key = data.getAttribute('key');
         const keyName = keyMap.get(key || '') || key;
         const value = data.textContent || '';
@@ -414,7 +483,7 @@ export class GraphMLParser {
       let color: string | undefined;
 
       const dataEls = edgeEl.querySelectorAll('data');
-      dataEls.forEach(data => {
+      dataEls.forEach((data) => {
         const key = data.getAttribute('key');
         const keyName = keyMap.get(key || '') || key;
         const value = data.textContent || '';
@@ -424,18 +493,21 @@ export class GraphMLParser {
 
       edges.push({
         id: `edge-${index}`,
-        source, target, label, color,
+        source,
+        target,
+        label,
+        color,
         arrowhead: edgedefault === 'directed' ? 'normal' : 'none',
       });
     });
 
     const subgraphEls = doc.querySelectorAll('graph[data]');
-    subgraphEls.forEach(subgraphEl => {
+    subgraphEls.forEach((subgraphEl) => {
       const dataEls = subgraphEl.querySelectorAll('data');
       let clusterId = '';
       let clusterLabel = '';
 
-      dataEls.forEach(data => {
+      dataEls.forEach((data) => {
         const key = data.getAttribute('key');
         const keyName = keyMap.get(key || '') || key;
         const value = data.textContent || '';
@@ -459,17 +531,26 @@ export class GraphMLParser {
 
   private mapGraphMLShape(type: string): string {
     const map: Record<string, string> = {
-      rectangle: 'rect', box: 'rect', ellipse: 'round', oval: 'round',
-      circle: 'circle', diamond: 'diamond', hexagon: 'hexagon',
-      trapezium: 'trapezoid', parallelogram: 'parallelogram',
+      rectangle: 'rect',
+      box: 'rect',
+      ellipse: 'round',
+      oval: 'round',
+      circle: 'circle',
+      diamond: 'diamond',
+      hexagon: 'hexagon',
+      trapezium: 'trapezoid',
+      parallelogram: 'parallelogram',
     };
     return map[type] || 'rect';
   }
 
   private emptyResult(): DiagramParseResult {
     return {
-      nodes: [], edges: [], clusters: [],
-      format: 'graphml', suggestedLayout: 'hierarchical',
+      nodes: [],
+      edges: [],
+      clusters: [],
+      format: 'graphml',
+      suggestedLayout: 'hierarchical',
     };
   }
 }
@@ -489,15 +570,17 @@ export class JSONDiagramParser {
         height: n.height,
       }));
 
-      const edges: DiagramEdge[] = (data.edges || data.links || data.connections || []).map((e: any, i: number) => ({
-        id: e.id || `edge-${i}`,
-        source: e.source || e.from || e.src,
-        target: e.target || e.to || e.dst,
-        label: e.label || e.text,
-        style: e.style || (e.dashed ? 'dashed' : e.dotted ? 'dotted' : 'solid'),
-        color: e.color || e.stroke,
-        arrowhead: e.arrow !== false ? 'normal' : 'none',
-      }));
+      const edges: DiagramEdge[] = (data.edges || data.links || data.connections || []).map(
+        (e: any, i: number) => ({
+          id: e.id || `edge-${i}`,
+          source: e.source || e.from || e.src,
+          target: e.target || e.to || e.dst,
+          label: e.label || e.text,
+          style: e.style || (e.dashed ? 'dashed' : e.dotted ? 'dotted' : 'solid'),
+          color: e.color || e.stroke,
+          arrowhead: e.arrow !== false ? 'normal' : 'none',
+        })
+      );
 
       const clusters: DiagramCluster[] = (data.clusters || data.groups || []).map((c: any) => ({
         id: c.id || c.name,
@@ -511,13 +594,17 @@ export class JSONDiagramParser {
         edges,
         clusters,
         format: 'json',
-        suggestedLayout: data.suggestedLayout || (data.directed !== false ? 'hierarchical' : 'force'),
+        suggestedLayout:
+          data.suggestedLayout || (data.directed !== false ? 'hierarchical' : 'force'),
         metadata: data.metadata,
       };
     } catch {
       return {
-        nodes: [], edges: [], clusters: [],
-        format: 'json', suggestedLayout: 'hierarchical',
+        nodes: [],
+        edges: [],
+        clusters: [],
+        format: 'json',
+        suggestedLayout: 'hierarchical',
       };
     }
   }
@@ -539,18 +626,28 @@ export class DiagramParserFactory {
 
     const trimmed = content.trim();
 
-    if (trimmed.startsWith('graph ') || trimmed.startsWith('flowchart ') ||
-        trimmed.startsWith('sequenceDiagram') || trimmed.startsWith('classDiagram') ||
-        trimmed.startsWith('stateDiagram') || trimmed.startsWith('erDiagram') ||
-        trimmed.startsWith('gantt') || trimmed.startsWith('pie')) {
+    if (
+      trimmed.startsWith('graph ') ||
+      trimmed.startsWith('flowchart ') ||
+      trimmed.startsWith('sequenceDiagram') ||
+      trimmed.startsWith('classDiagram') ||
+      trimmed.startsWith('stateDiagram') ||
+      trimmed.startsWith('erDiagram') ||
+      trimmed.startsWith('gantt') ||
+      trimmed.startsWith('pie')
+    ) {
       return this.parsers.mermaid.parse(content);
     }
 
-    if (trimmed.startsWith('digraph') || trimmed.startsWith('graph') && trimmed.includes('->')) {
+    if (trimmed.startsWith('digraph') || (trimmed.startsWith('graph') && trimmed.includes('->'))) {
       return this.parsers.dot.parse(content);
     }
 
-    if (trimmed.startsWith('<?xml') || trimmed.includes('<graphml') || trimmed.includes('<GraphML')) {
+    if (
+      trimmed.startsWith('<?xml') ||
+      trimmed.includes('<graphml') ||
+      trimmed.includes('<GraphML')
+    ) {
       return this.parsers.graphml.parse(content);
     }
 
@@ -569,7 +666,8 @@ export class DiagramParserFactory {
     const trimmed = content.trim();
 
     if (trimmed.startsWith('graph ') || trimmed.startsWith('flowchart ')) return 'mermaid';
-    if (trimmed.startsWith('digraph') || (trimmed.startsWith('graph') && trimmed.includes('->'))) return 'dot';
+    if (trimmed.startsWith('digraph') || (trimmed.startsWith('graph') && trimmed.includes('->')))
+      return 'dot';
     if (trimmed.startsWith('<?xml') || trimmed.includes('<graphml')) return 'graphml';
     if (trimmed.startsWith('{')) return 'json';
 
@@ -606,11 +704,7 @@ export const MERMAID_THEMES = {
     backgroundColor: 'rgba(6, 78, 59, 0.95)',
   },
   neutral: {
-    nodeColors: [
-      'rgba(71, 85, 105, 0.9)',
-      'rgba(100, 116, 139, 0.9)',
-      'rgba(148, 163, 184, 0.9)',
-    ],
+    nodeColors: ['rgba(71, 85, 105, 0.9)', 'rgba(100, 116, 139, 0.9)', 'rgba(148, 163, 184, 0.9)'],
     edgeColor: 0x475569,
     textColor: '#f1f5f9',
     backgroundColor: 'rgba(30, 41, 59, 0.95)',
@@ -632,16 +726,28 @@ export const MERMAID_THEMES = {
 export type MermaidThemeName = keyof typeof MERMAID_THEMES;
 
 export const LAYOUT_NAMES = [
-  'force', 'circular', 'grid', 'hierarchical', 'radial', 'tree', 'spectral', 'cluster',
+  'force',
+  'circular',
+  'grid',
+  'hierarchical',
+  'radial',
+  'tree',
+  'spectral',
+  'cluster',
 ] as const;
 
-export type LayoutName = typeof LAYOUT_NAMES[number];
+export type LayoutName = (typeof LAYOUT_NAMES)[number];
 
 export function getLayoutLabel(name: LayoutName): string {
   const labels: Record<LayoutName, string> = {
-    force: 'Force Directed', circular: 'Circular', grid: 'Grid',
-    hierarchical: 'Hierarchical', radial: 'Radial', tree: 'Tree',
-    spectral: 'Spectral', cluster: 'Cluster',
+    force: 'Force Directed',
+    circular: 'Circular',
+    grid: 'Grid',
+    hierarchical: 'Hierarchical',
+    radial: 'Radial',
+    tree: 'Tree',
+    spectral: 'Spectral',
+    cluster: 'Cluster',
   };
   return labels[name];
 }

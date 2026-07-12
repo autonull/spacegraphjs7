@@ -1,5 +1,5 @@
-import { createDemoWithNodes, shapeNode, addOverlayPanel, SpaceGraph } from '../framework';
 import { logger } from '../../src/utils/logger';
+import { type SpaceGraph, addOverlayPanel, createDemoWithNodes, shapeNode } from '../framework';
 
 export default async function interactiveDemo(): Promise<SpaceGraph> {
   const nodes = [
@@ -20,7 +20,7 @@ export default async function interactiveDemo(): Promise<SpaceGraph> {
   • Middle drag = pan<br>
   • Right drag = zoom<br>
   • Shift+drag = box select<br>
-  • Alt+drag = create edge`,
+  • Alt+drag = create edge`
   );
 
   sg.events.on('interaction:dragstart', ({ node }: any) => {

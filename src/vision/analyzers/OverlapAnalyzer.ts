@@ -2,10 +2,10 @@
 // Spatial index-based overlap detection
 
 import * as THREE from 'three';
-import type { VisionContext } from '../types';
-import type { OverlapResult, Overlap } from '../types';
-import type { HeuristicsConfig } from '../strategies/HeuristicsStrategy';
 import { SpatialIndex } from '../../core/spatial/SpatialIndex';
+import type { HeuristicsConfig } from '../strategies/HeuristicsStrategy';
+import type { VisionContext } from '../types';
+import type { Overlap, OverlapResult } from '../types';
 
 /**
  * Overlap Analyzer
@@ -15,10 +15,7 @@ export class OverlapAnalyzer {
   /**
    * Analyze node overlaps
    */
-  async analyze(
-    context: VisionContext,
-    config: HeuristicsConfig
-  ): Promise<OverlapResult> {
+  async analyze(context: VisionContext, config: HeuristicsConfig): Promise<OverlapResult> {
     const nodes = context.nodes as Array<{
       id: string;
       object?: THREE.Object3D;
@@ -29,7 +26,7 @@ export class OverlapAnalyzer {
       return {
         hasOverlaps: false,
         overlapCount: 0,
-        overlaps: []
+        overlaps: [],
       };
     }
 
@@ -39,8 +36,10 @@ export class OverlapAnalyzer {
 
     // Find all overlaps
     const overlapPairs = spatialIndex.findAllOverlaps();
-    console.log(`[OverlapAnalyzer] Found ${overlapPairs.length} potential overlap pairs from spatial index.`);
-    
+    console.log(
+      `[OverlapAnalyzer] Found ${overlapPairs.length} potential overlap pairs from spatial index.`
+    );
+
     // Refine overlaps with precise bounds checking
     const checked = new Set<string>();
 
@@ -51,7 +50,9 @@ export class OverlapAnalyzer {
       checked.add(key);
 
       const penetration = this.computePenetration(nodeA, nodeB);
-      console.log(`[OverlapAnalyzer] Checking ${nodeA.id} vs ${nodeB.id}: penetration=${penetration}`);
+      console.log(
+        `[OverlapAnalyzer] Checking ${nodeA.id} vs ${nodeB.id}: penetration=${penetration}`
+      );
       if (penetration > 0) {
         acc.push({ nodeA: nodeA.id, nodeB: nodeB.id, penetration });
       }
@@ -61,7 +62,7 @@ export class OverlapAnalyzer {
     return {
       hasOverlaps: overlaps.length > 0,
       overlapCount: overlaps.length,
-      overlaps
+      overlaps,
     };
   }
 

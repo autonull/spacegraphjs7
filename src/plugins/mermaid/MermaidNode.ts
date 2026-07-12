@@ -1,7 +1,7 @@
-import type { NodeSpec, BaseNodeData, SpaceGraphNodeData } from '../../types';
 import type { SpaceGraph } from '../../SpaceGraph';
-import type { MermaidNodeShape } from './MermaidParser';
 import { HtmlNode } from '../../nodes/HtmlNode';
+import type { BaseNodeData, NodeSpec, SpaceGraphNodeData } from '../../types';
+import type { MermaidNodeShape } from './MermaidParser';
 
 export interface MermaidNodeData extends BaseNodeData {
   shape?: MermaidNodeShape;
@@ -84,7 +84,7 @@ const DEFAULT_STYLE = `
 
 export class MermaidNode extends HtmlNode {
   private shape: MermaidNodeShape = 'rect';
-  private nodeIndex: number = 0;
+  private nodeIndex = 0;
   private themeColors: string[] = [];
 
   constructor(sg: SpaceGraph, spec: NodeSpec) {
@@ -157,7 +157,8 @@ export class MermaidNode extends HtmlNode {
 
   updateLabel(newLabel: string): void {
     const data = this.data as MermaidNodeData;
-    const bgColor = (data?.color as string) ?? this.themeColors[this.nodeIndex % this.themeColors.length];
+    const bgColor =
+      (data?.color as string) ?? this.themeColors[this.nodeIndex % this.themeColors.length];
     const shapeStyle = SHAPE_STYLES[this.shape] || SHAPE_STYLES.rect;
 
     this.updateSpec({
@@ -176,7 +177,8 @@ export class MermaidNode extends HtmlNode {
 
   setSelectedStyle(selected: boolean): void {
     const data = this.data as MermaidNodeData;
-    const bgColor = (data?.color as string) ?? this.themeColors[this.nodeIndex % this.themeColors.length];
+    const bgColor =
+      (data?.color as string) ?? this.themeColors[this.nodeIndex % this.themeColors.length];
     const shapeStyle = SHAPE_STYLES[this.shape] || SHAPE_STYLES.rect;
     const label = (data?.label as string) ?? this.label ?? '';
 

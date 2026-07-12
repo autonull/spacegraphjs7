@@ -1,17 +1,17 @@
-import { createDemoWithNodes, htmlNode, edge, SpaceGraph } from '../framework';
+import { type SpaceGraph, createDemoWithNodes, edge, htmlNode } from '../framework';
 
 export default async function htmlNodeDemo(): Promise<SpaceGraph> {
-    const sg = await createDemoWithNodes(
-        [
-            {
-                id: 'hero-node',
-                type: 'HtmlNode',
-                position: [0, 0, 0],
-                data: {
-                    width: 500,
-                    height: 350,
-                    className: 'glass pulse-card',
-                    html: `
+  const sg = await createDemoWithNodes(
+    [
+      {
+        id: 'hero-node',
+        type: 'HtmlNode',
+        position: [0, 0, 0],
+        data: {
+          width: 500,
+          height: 350,
+          className: 'glass pulse-card',
+          html: `
                         <div style="background: rgba(255, 255, 255, 0.1); padding: 10px 15px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); font-weight: bold; font-size: 14px; display: flex; justify-content: space-between; align-items: center;">
                             <span>Command Console v7.2</span>
                             <span style="font-size:10px; opacity:0.7; color:#10b981;">● SYSTEM READY</span>
@@ -63,18 +63,18 @@ export default async function htmlNodeDemo(): Promise<SpaceGraph> {
                                 </div>
                             </div>
                         </div>
-                    `
-                }
-            },
-            {
-                id: 'stats-node',
-                type: 'HtmlNode',
-                position: [450, 250, 100],
-                data: {
-                    width: 280,
-                    height: 280,
-                    className: 'glass',
-                    html: `
+                    `,
+        },
+      },
+      {
+        id: 'stats-node',
+        type: 'HtmlNode',
+        position: [450, 250, 100],
+        data: {
+          width: 280,
+          height: 280,
+          className: 'glass',
+          html: `
                         <div style="background: rgba(255, 255, 255, 0.1); padding: 10px 15px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); font-weight: bold; font-size: 14px;">Visual Styles</div>
                         <div style="padding: 20px;">
                             <div style="margin-bottom: 12px;">
@@ -91,36 +91,33 @@ export default async function htmlNodeDemo(): Promise<SpaceGraph> {
                             </div>
                             <button style="width:100%; margin-top:10px; background: rgba(59, 130, 246, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); color: white; padding: 8px 16px; border-radius: 8px; cursor: pointer;" data-sg-interactive="true">APPLY CHANGES</button>
                         </div>
-                    `
-                }
-            },
-            {
-                id: 'battery-node',
-                type: 'HtmlNode',
-                position: [-400, -200, 50],
-                data: {
-                    width: 220,
-                    height: 220,
-                    className: 'glass circle-node pulse-card',
-                    style: {
-                        border: '3px solid #60a5fa'
-                    },
-                    html: `
+                    `,
+        },
+      },
+      {
+        id: 'battery-node',
+        type: 'HtmlNode',
+        position: [-400, -200, 50],
+        data: {
+          width: 220,
+          height: 220,
+          className: 'glass circle-node pulse-card',
+          style: {
+            border: '3px solid #60a5fa',
+          },
+          html: `
                         <div style="text-align:center;">
                             <div style="font-size:48px;">🔋</div>
                             <div style="font-weight:bold; font-size:24px;">92%</div>
                             <div style="font-size:10px; opacity:0.6;">REMAINING</div>
                         </div>
-                    `
-                }
-            }
-        ],
-        [
-            edge('hero-node', 'stats-node'),
-            edge('hero-node', 'battery-node')
-        ]
-    );
+                    `,
+        },
+      },
+    ],
+    [edge('hero-node', 'stats-node'), edge('hero-node', 'battery-node')]
+  );
 
-    sg.fitView(150);
-    return sg;
+  sg.fitView(150);
+  return sg;
 }

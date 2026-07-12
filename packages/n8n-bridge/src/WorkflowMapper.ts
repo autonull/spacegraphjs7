@@ -1,5 +1,5 @@
 import type { GraphSpec } from 'spacegraphjs';
-import type { N8nWorkflowJSON, N8nNodeSpec, N8nConnectionSpec } from './types';
+import type { N8nConnectionSpec, N8nNodeSpec, N8nWorkflowJSON } from './types';
 
 export class WorkflowMapper {
   // Map n8n node type string -> SpaceGraph node type class name
@@ -17,14 +17,14 @@ export class WorkflowMapper {
       vectorStore: 'ChartNode',
       subWorkflow: 'GroupNode',
       switch: 'ShapeNode',
-      'if': 'ShapeNode',
+      if: 'ShapeNode',
       merge: 'ShapeNode',
       set: 'DataNode',
       noop: 'DataNode',
       credential: 'N8nCredentialNode',
       wait: 'N8nHitlNode',
       hitl: 'N8nHitlNode',
-      SpaceGraphVisionOptimizerNode: 'N8nVisionOptimizerNode'
+      SpaceGraphVisionOptimizerNode: 'N8nVisionOptimizerNode',
     };
 
     const typeKey = Object.keys(typeMapping).find((key) => n8nType.includes(key));
@@ -41,7 +41,7 @@ export class WorkflowMapper {
         label: n8nNode.name,
         position: [n8nNode.position[0], -n8nNode.position[1], 0] as [number, number, number], // Invert Y for 3D coordinates
         parameters: n8nNode.parameters,
-        n8nType: n8nNode.type
+        n8nType: n8nNode.type,
       };
     });
 
@@ -59,16 +59,19 @@ export class WorkflowMapper {
             if (!targetNode) return [];
             const targetId = targetNode.id || targetNode.name;
 
-            const edgeType = outputType === 'false' || outputType === 'true' ? 'CurvedEdge' : 'FlowEdge';
+            const edgeType =
+              outputType === 'false' || outputType === 'true' ? 'CurvedEdge' : 'FlowEdge';
 
-            return [{
-              id: `edge-${edgeIdCounter++}`,
-              source: sourceId,
-              target: targetId,
-              type: edgeType,
-              n8nOutputIndex: t.index,
-              n8nOutputType: outputType
-            }];
+            return [
+              {
+                id: `edge-${edgeIdCounter++}`,
+                source: sourceId,
+                target: targetId,
+                type: edgeType,
+                n8nOutputIndex: t.index,
+                n8nOutputType: outputType,
+              },
+            ];
           })
         )
       );
@@ -77,25 +80,25 @@ export class WorkflowMapper {
     return {
       nodes,
       edges,
-      layout: { type: 'HierarchicalLayout', direction: 'LR' }
+      layout: { type: 'HierarchicalLayout', direction: 'LR' },
     };
   }
 
   // Map SpaceGraph node type class name -> n8n node type string
   static resolveN8nType(sgType: string): string {
     const typeMap: Record<string, string> = {
-      'N8nTriggerNode': 'n8n-nodes-base.webhook',
-      'N8nScheduleNode': 'n8n-nodes-base.scheduleTrigger',
-      'N8nHttpNode': 'n8n-nodes-base.httpRequest',
-      'N8nAiNode': '@n8n/n8n-nodes-langchain.agent',
-      'N8nCodeNode': 'n8n-nodes-base.code',
-      'ChartNode': '@n8n/n8n-nodes-langchain.vectorStorePinecone',
-      'GroupNode': 'n8n-nodes-base.subWorkflow',
-      'ShapeNode': 'n8n-nodes-base.if',
-      'DataNode': 'n8n-nodes-base.set',
-      'N8nCredentialNode': 'n8n-nodes-base.credential',
-      'N8nHitlNode': 'n8n-nodes-base.wait',
-      'N8nVisionOptimizerNode': 'n8n-nodes-base.spaceGraphVisionOptimizer'
+      N8nTriggerNode: 'n8n-nodes-base.webhook',
+      N8nScheduleNode: 'n8n-nodes-base.scheduleTrigger',
+      N8nHttpNode: 'n8n-nodes-base.httpRequest',
+      N8nAiNode: '@n8n/n8n-nodes-langchain.agent',
+      N8nCodeNode: 'n8n-nodes-base.code',
+      ChartNode: '@n8n/n8n-nodes-langchain.vectorStorePinecone',
+      GroupNode: 'n8n-nodes-base.subWorkflow',
+      ShapeNode: 'n8n-nodes-base.if',
+      DataNode: 'n8n-nodes-base.set',
+      N8nCredentialNode: 'n8n-nodes-base.credential',
+      N8nHitlNode: 'n8n-nodes-base.wait',
+      N8nVisionOptimizerNode: 'n8n-nodes-base.spaceGraphVisionOptimizer',
     };
     return typeMap[sgType] || 'n8n-nodes-base.noop';
   }
@@ -112,7 +115,7 @@ export class WorkflowMapper {
         type,
         typeVersion: 1,
         position: sgNode.position ? [sgNode.position[0], -sgNode.position[1]] : [0, 0],
-        parameters: (sgNode as any).parameters || {}
+        parameters: (sgNode as any).parameters || {},
       };
     });
 
@@ -135,7 +138,7 @@ export class WorkflowMapper {
         connections[sourceNode.name][outputType][0].push({
           node: targetNode.name,
           type: 'main',
-          index: outputIndex
+          index: outputIndex,
         });
       }
     });
@@ -147,7 +150,7 @@ export class WorkflowMapper {
       nodes,
       connections,
       settings: {},
-      tags: []
+      tags: [],
     };
   }
 }

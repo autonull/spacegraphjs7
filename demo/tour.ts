@@ -1,32 +1,39 @@
-import { SpaceGraph } from '../src/index';
+import type { SpaceGraph } from '../src/index';
 
 /**
  * Demo Tour Automator
  * Automatically cycles through demos and performs interactions for verification.
  */
 export class DemoTour {
-    private sg: SpaceGraph | null = null;
-    private demos = [
-        'quickstart', 'layouts', 'interaction', 'large',
-        'fractal', 'plugins', 'mermaid', 'html',
-        'instanced', 'single-node'
-    ];
-    private currentIndex = 0;
-    private isRunning = false;
+  private sg: SpaceGraph | null = null;
+  private demos = [
+    'quickstart',
+    'layouts',
+    'interaction',
+    'large',
+    'fractal',
+    'plugins',
+    'mermaid',
+    'html',
+    'instanced',
+    'single-node',
+  ];
+  private currentIndex = 0;
+  private isRunning = false;
 
-    constructor() {}
+  constructor() {}
 
-    async start(): Promise<void> {
-        if (this.isRunning) return;
-        this.isRunning = true;
-        this.showOverlay();
-        await this.runStep();
-    }
+  async start(): Promise<void> {
+    if (this.isRunning) return;
+    this.isRunning = true;
+    this.showOverlay();
+    await this.runStep();
+  }
 
-    private showOverlay(): void {
-        const overlay = document.createElement('div');
-        overlay.id = 'tour-overlay';
-        overlay.style.cssText = `
+  private showOverlay(): void {
+    const overlay = document.createElement('div');
+    overlay.id = 'tour-overlay';
+    overlay.style.cssText = `
             position: fixed;
             top: 20px;
             left: 50%;
@@ -45,58 +52,59 @@ export class DemoTour {
             align-items: center;
             gap: 15px;
         `;
-        overlay.innerHTML = `
+    overlay.innerHTML = `
             <span id="tour-status">AUTOMATED TOUR ACTIVE</span>
             <span id="tour-demo-name" style="color: white; opacity: 0.8;"></span>
             <div id="tour-progress" style="width: 100px; height: 4px; background: #333; border-radius: 2px; overflow: hidden;">
                 <div id="tour-progress-bar" style="width: 0%; height: 100%; background: #58a6ff; transition: width 0.3s;"></div>
             </div>
         `;
-        document.body.appendChild(overlay);
+    document.body.appendChild(overlay);
+  }
+
+  private async runStep(): Promise<void> {
+    if (!this.isRunning) return;
+
+    const demo = this.demos[this.currentIndex];
+    const statusEl = document.getElementById('tour-demo-name');
+    const progressEl = document.getElementById('tour-progress-bar');
+
+    if (statusEl) statusEl.textContent = `|  Viewing: ${demo.toUpperCase()}`;
+    if (progressEl)
+      progressEl.style.width = `${((this.currentIndex + 1) / this.demos.length) * 100}%`;
+
+    // Wait at current demo
+    await new Promise((resolve) => setTimeout(resolve, 3000));
+
+    this.currentIndex++;
+    if (this.currentIndex >= this.demos.length) {
+      this.stop();
+      return;
     }
 
-    private async runStep(): Promise<void> {
-        if (!this.isRunning) return;
+    // Navigate to next
+    window.location.href = `${demo}.html?tour=true&index=${this.currentIndex}`;
+  }
 
-        const demo = this.demos[this.currentIndex];
-        const statusEl = document.getElementById('tour-demo-name');
-        const progressEl = document.getElementById('tour-progress-bar');
+  stop(): void {
+    this.isRunning = false;
+    const overlay = document.getElementById('tour-overlay');
+    if (overlay) overlay.remove();
+    alert('Tour Complete! All demos verified.');
+  }
 
-        if (statusEl) statusEl.textContent = `|  Viewing: ${demo.toUpperCase()}`;
-        if (progressEl) progressEl.style.width = `${((this.currentIndex + 1) / this.demos.length) * 100}%`;
-
-        // Wait at current demo
-        await new Promise(resolve => setTimeout(resolve, 3000));
-
-        this.currentIndex++;
-        if (this.currentIndex >= this.demos.length) {
-            this.stop();
-            return;
-        }
-
-        // Navigate to next
-        window.location.href = `${demo}.html?tour=true&index=${this.currentIndex}`;
+  static handleAutoStart(): void {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('tour') === 'true') {
+      const tour = new DemoTour();
+      const index = Number.parseInt(urlParams.get('index') || '0');
+      tour['currentIndex'] = index;
+      tour.start();
     }
-
-    stop(): void {
-        this.isRunning = false;
-        const overlay = document.getElementById('tour-overlay');
-        if (overlay) overlay.remove();
-        alert('Tour Complete! All demos verified.');
-    }
-
-    static handleAutoStart(): void {
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('tour') === 'true') {
-            const tour = new DemoTour();
-            const index = parseInt(urlParams.get('index') || '0');
-            tour['currentIndex'] = index;
-            tour.start();
-        }
-    }
+  }
 }
 
 // Auto-start if requested
 if (typeof window !== 'undefined') {
-    window.addEventListener('load', () => DemoTour.handleAutoStart());
+  window.addEventListener('load', () => DemoTour.handleAutoStart());
 }

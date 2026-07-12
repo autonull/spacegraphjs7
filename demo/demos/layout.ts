@@ -1,4 +1,4 @@
-import { createDemoWithNodes, shapeNode, SpaceGraph } from '../framework';
+import { type SpaceGraph, createDemoWithNodes, shapeNode } from '../framework';
 
 export default async function layoutDemo(): Promise<SpaceGraph> {
   const nodes: any[] = [];
@@ -8,13 +8,13 @@ export default async function layoutDemo(): Promise<SpaceGraph> {
 
   const sg = await createDemoWithNodes(nodes);
 
-    // Apply layout after init
-    setTimeout(() => {
-        const layoutPlugin = sg.pluginManager.getPlugin('AutoLayoutPlugin') as any;
-        if (layoutPlugin?.applyLayout) {
-            layoutPlugin.applyLayout('GridLayout', { columns: 4, cellWidth: 120, cellHeight: 100 });
-        }
-    }, 100);
+  // Apply layout after init
+  setTimeout(() => {
+    const layoutPlugin = sg.pluginManager.getPlugin('AutoLayoutPlugin') as any;
+    if (layoutPlugin?.applyLayout) {
+      layoutPlugin.applyLayout('GridLayout', { columns: 4, cellWidth: 120, cellHeight: 100 });
+    }
+  }, 100);
 
-    return sg;
+  return sg;
 }

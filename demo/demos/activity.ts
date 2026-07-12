@@ -1,4 +1,4 @@
-import { createDemoWithNodes, shapeNode, addOverlayPanel, SpaceGraph } from '../framework';
+import { type SpaceGraph, addOverlayPanel, createDemoWithNodes, shapeNode } from '../framework';
 
 export default async function activityDemo(): Promise<SpaceGraph> {
   const nodes = [];

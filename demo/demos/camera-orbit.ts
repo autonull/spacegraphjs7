@@ -1,4 +1,4 @@
-import { createDemoWithNodes, shapeNode, createDemoHint, SpaceGraph } from '../framework';
+import { type SpaceGraph, createDemoHint, createDemoWithNodes, shapeNode } from '../framework';
 
 export default async function cameraOrbitDemo(): Promise<SpaceGraph> {
   const sg = await createDemoWithNodes([
@@ -9,7 +9,10 @@ export default async function cameraOrbitDemo(): Promise<SpaceGraph> {
     shapeNode('west', [-200, 0, 0], { color: 0xaa44ff, size: 40 }),
   ]);
 
-  createDemoHint(sg, `<strong>Orbit:</strong> <kbd>Left Mouse</kbd> &nbsp;|&nbsp; <strong>Pan:</strong> <kbd>Right Mouse</kbd> &nbsp;|&nbsp; <strong>Zoom:</strong> <kbd>Scroll</kbd>`);
+  createDemoHint(
+    sg,
+    `<strong>Orbit:</strong> <kbd>Left Mouse</kbd> &nbsp;|&nbsp; <strong>Pan:</strong> <kbd>Right Mouse</kbd> &nbsp;|&nbsp; <strong>Zoom:</strong> <kbd>Scroll</kbd>`
+  );
 
   return sg;
 }

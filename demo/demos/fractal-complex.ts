@@ -1,4 +1,4 @@
-import { createDemoWithNodes, edge, addOverlayPanel, SpaceGraph } from '../framework';
+import { type SpaceGraph, addOverlayPanel, createDemoWithNodes, edge } from '../framework';
 
 export default async function fractalComplexDemo(): Promise<SpaceGraph> {
   const LEVELS = [
@@ -10,7 +10,7 @@ export default async function fractalComplexDemo(): Promise<SpaceGraph> {
     'Structural',
     'Microscopic',
     'Atomic',
-    'Subatomic'
+    'Subatomic',
   ];
 
   const nodes: any[] = [];
@@ -23,7 +23,7 @@ export default async function fractalComplexDemo(): Promise<SpaceGraph> {
     { id: 'galaxy-gamma', pos: [-2000, -1500, 800], color: 0x44ff88 },
   ];
 
-  galaxyCenters.forEach(g => {
+  galaxyCenters.forEach((g) => {
     nodes.push({
       id: g.id,
       type: 'GroupNode',
@@ -34,26 +34,26 @@ export default async function fractalComplexDemo(): Promise<SpaceGraph> {
         height: 800,
         depth: 800,
         color: g.color,
-        lodThreshold: 2000
-      }
+        lodThreshold: 2000,
+      },
     });
 
     for (let i = 0; i < 20; i++) {
-        const starId = `${g.id}-star-${i}`;
-        nodes.push({
-            id: starId,
-            type: 'ShapeNode',
-            position: [
-                g.pos[0] + (Math.random() - 0.5) * 3000,
-                g.pos[1] + (Math.random() - 0.5) * 3000,
-                g.pos[2] + (Math.random() - 0.5) * 3000,
-            ],
-            data: {
-                color: 0xffffff,
-                size: Math.random() * 5 + 2,
-                opacity: 0.5 + Math.random() * 0.5
-            }
-        });
+      const starId = `${g.id}-star-${i}`;
+      nodes.push({
+        id: starId,
+        type: 'ShapeNode',
+        position: [
+          g.pos[0] + (Math.random() - 0.5) * 3000,
+          g.pos[1] + (Math.random() - 0.5) * 3000,
+          g.pos[2] + (Math.random() - 0.5) * 3000,
+        ],
+        data: {
+          color: 0xffffff,
+          size: Math.random() * 5 + 2,
+          opacity: 0.5 + Math.random() * 0.5,
+        },
+      });
     }
   });
 
@@ -66,7 +66,7 @@ export default async function fractalComplexDemo(): Promise<SpaceGraph> {
     { id: 'cluster-2', pos: [300, -100, 100], color: 0x44ffff },
   ];
 
-  clusters.forEach(c => {
+  clusters.forEach((c) => {
     nodes.push({
       id: c.id,
       type: 'GroupNode',
@@ -78,8 +78,8 @@ export default async function fractalComplexDemo(): Promise<SpaceGraph> {
         height: 300,
         depth: 300,
         color: c.color,
-        lodThreshold: 800
-      }
+        lodThreshold: 800,
+      },
     });
     edges.push(edge('galaxy-alpha', c.id, 'DottedEdge'));
   });
@@ -92,13 +92,13 @@ export default async function fractalComplexDemo(): Promise<SpaceGraph> {
     label: 'SOL SYSTEM',
     position: solPos,
     data: {
-        parent: 'cluster-1',
-        width: 150,
-        height: 150,
-        depth: 150,
-        color: 0xffaa44,
-        lodThreshold: 300
-    }
+      parent: 'cluster-1',
+      width: 150,
+      height: 150,
+      depth: 150,
+      color: 0xffaa44,
+      lodThreshold: 300,
+    },
   });
   edges.push(edge('cluster-1', 'sol-system'));
 
@@ -108,11 +108,11 @@ export default async function fractalComplexDemo(): Promise<SpaceGraph> {
     label: 'THE SUN',
     position: solPos,
     data: {
-        parent: 'sol-system',
-        radius: 20,
-        color: 0xffcc33,
-        segments: 32
-    }
+      parent: 'sol-system',
+      radius: 20,
+      color: 0xffcc33,
+      segments: 32,
+    },
   });
 
   // --- Level 3: Planetary (Earth) ---
@@ -123,11 +123,12 @@ export default async function fractalComplexDemo(): Promise<SpaceGraph> {
     label: 'EARTH',
     position: earthPos,
     data: {
-        parent: 'sol-system',
-        radius: 8,
-        textureUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cd/Land_ocean_ice_2048.jpg/1024px-Land_ocean_ice_2048.jpg',
-        segments: 32
-    }
+      parent: 'sol-system',
+      radius: 8,
+      textureUrl:
+        'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cd/Land_ocean_ice_2048.jpg/1024px-Land_ocean_ice_2048.jpg',
+      segments: 32,
+    },
   });
 
   // --- Level 4: City-State ---
@@ -137,16 +138,16 @@ export default async function fractalComplexDemo(): Promise<SpaceGraph> {
     label: 'PLANETARY ARCHIVE',
     position: [earthPos[0] + 5, earthPos[1] + 5, earthPos[2] + 5],
     data: {
-        parent: 'earth',
-        width: 15,
-        theme: 'dark',
-        data: {
-            status: 'Operational',
-            capacity: '98.4 ZB',
-            uptime: '99.999%',
-            nodes: 12408
-        }
-    }
+      parent: 'earth',
+      width: 15,
+      theme: 'dark',
+      data: {
+        status: 'Operational',
+        capacity: '98.4 ZB',
+        uptime: '99.999%',
+        nodes: 12408,
+      },
+    },
   });
 
   const sg = await createDemoWithNodes(nodes, edges);
@@ -155,20 +156,20 @@ export default async function fractalComplexDemo(): Promise<SpaceGraph> {
   const fractalPlugin = sg.pluginManager.getPlugin('FractalZoomPlugin');
   if (fractalPlugin) {
     (fractalPlugin as any).config.levels = [
-        { level: 0, minDistance: 4000, maxDistance: 20000, detailThreshold: 0.1, label: LEVELS[0] },
-        { level: 1, minDistance: 2000, maxDistance: 4000, detailThreshold: 0.2, label: LEVELS[1] },
-        { level: 2, minDistance: 800, maxDistance: 2000, detailThreshold: 0.3, label: LEVELS[2] },
-        { level: 3, minDistance: 300, maxDistance: 800, detailThreshold: 0.4, label: LEVELS[3] },
-        { level: 4, minDistance: 100, maxDistance: 300, detailThreshold: 0.5, label: LEVELS[4] },
-        { level: 5, minDistance: 40, maxDistance: 100, detailThreshold: 0.6, label: LEVELS[5] },
-        { level: 6, minDistance: 15, maxDistance: 40, detailThreshold: 0.7, label: LEVELS[6] },
-        { level: 7, minDistance: 5, maxDistance: 15, detailThreshold: 0.8, label: LEVELS[7] },
-        { level: 8, minDistance: 0, maxDistance: 5, detailThreshold: 0.9, label: LEVELS[8] },
+      { level: 0, minDistance: 4000, maxDistance: 20000, detailThreshold: 0.1, label: LEVELS[0] },
+      { level: 1, minDistance: 2000, maxDistance: 4000, detailThreshold: 0.2, label: LEVELS[1] },
+      { level: 2, minDistance: 800, maxDistance: 2000, detailThreshold: 0.3, label: LEVELS[2] },
+      { level: 3, minDistance: 300, maxDistance: 800, detailThreshold: 0.4, label: LEVELS[3] },
+      { level: 4, minDistance: 100, maxDistance: 300, detailThreshold: 0.5, label: LEVELS[4] },
+      { level: 5, minDistance: 40, maxDistance: 100, detailThreshold: 0.6, label: LEVELS[5] },
+      { level: 6, minDistance: 15, maxDistance: 40, detailThreshold: 0.7, label: LEVELS[6] },
+      { level: 7, minDistance: 5, maxDistance: 15, detailThreshold: 0.8, label: LEVELS[7] },
+      { level: 8, minDistance: 0, maxDistance: 5, detailThreshold: 0.9, label: LEVELS[8] },
     ];
     (fractalPlugin as any).updateLevel(0);
   }
 
-  sg.cameraControls.flyTo(new (sg.graph.nodes.get('galaxy-alpha') as any).position, 6000, 0);
+  sg.cameraControls.flyTo(new (sg.graph.nodes.get('galaxy-alpha') as any).position(), 6000, 0);
 
   addOverlayPanel(
     sg,
@@ -176,7 +177,7 @@ export default async function fractalComplexDemo(): Promise<SpaceGraph> {
     { pointerEvents: 'none', background: 'rgba(10, 10, 25, 0.8)', border: '1px solid #4488ff' },
     `<div style="font-size: 10px; opacity: 0.6; margin-bottom: 4px; letter-spacing: 0.1em; text-transform: uppercase;">Cosmic Navigation</div>
   <div style="font-size: 20px; font-weight: 800; color: #4488ff;" id="level-text">${LEVELS[0]}</div>
-  <div style="font-size: 11px; opacity: 0.5; margin-top: 4px;" id="level-hint">Deep fractal zoom active</div>`,
+  <div style="font-size: 11px; opacity: 0.5; margin-top: 4px;" id="level-hint">Deep fractal zoom active</div>`
   );
 
   sg.events.on('fractal:level-change', ({ to, label }: any) => {
@@ -197,7 +198,7 @@ export default async function fractalComplexDemo(): Promise<SpaceGraph> {
     • Double-click nodes to semantic zoom<br>
     • Watch as galaxies reveal planets<br>
     • Pure Spec-driven architecture
-  </div>`,
+  </div>`
   );
 
   sg.events.on('prerender', () => {
@@ -209,11 +210,11 @@ export default async function fractalComplexDemo(): Promise<SpaceGraph> {
 
     const earth = sg.graph.nodes.get('earth');
     if (earth) {
-        earth.object.rotation.y += 0.005;
-        const time = Date.now() * 0.0005;
-        earth.position.x = solPos[0] + Math.cos(time) * 60;
-        earth.position.z = solPos[2] + Math.sin(time) * 60;
-        earth.updatePosition(earth.position.x, earth.position.y, earth.position.z);
+      earth.object.rotation.y += 0.005;
+      const time = Date.now() * 0.0005;
+      earth.position.x = solPos[0] + Math.cos(time) * 60;
+      earth.position.z = solPos[2] + Math.sin(time) * 60;
+      earth.updatePosition(earth.position.x, earth.position.y, earth.position.z);
     }
   });
 

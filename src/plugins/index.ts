@@ -1,9 +1,9 @@
 export { PluginManager, type Plugin } from '../core/PluginManager';
 export {
-    BaseSystemPlugin,
-    hasMethod,
-    createLoggerPrefix,
-    type SubscriptionHandle,
+  BaseSystemPlugin,
+  hasMethod,
+  createLoggerPrefix,
+  type SubscriptionHandle,
 } from './BaseSystemPlugin';
 export { DOMOverlayPlugin, type DOMOverlayOptions } from './DOMOverlayPlugin';
 export { BaseLayout } from './layouts/BaseLayout';
@@ -36,13 +36,13 @@ export { LayoutContainer } from './LayoutContainer';
 
 // HUD System - Styles, colors, positions, and factory utilities
 export {
-    HUD_ZINDEX,
-    HUD_COLORS,
-    HUD_STYLES,
-    HUD_POSITIONS,
-    HUD_ANIMATIONS,
-    getHUDPosition,
-    type HUDPositionKey,
+  HUD_ZINDEX,
+  HUD_COLORS,
+  HUD_STYLES,
+  HUD_POSITIONS,
+  HUD_ANIMATIONS,
+  getHUDPosition,
+  type HUDPositionKey,
 } from './hud/HUDStyles';
 export { HUDDOMFactory } from './hud/HUDDOMFactory';
 export type { AlertOptions } from './hud/HUDAlerts';

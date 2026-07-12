@@ -1,4 +1,4 @@
-import { SpaceGraph, GraphSpec } from 'spacegraphjs';
+import { type GraphSpec, SpaceGraph } from 'spacegraphjs';
 import { N8nWorkflowPlugin } from '../src/N8nWorkflowPlugin';
 
 let container = document.getElementById('spacegraph-container');
@@ -18,20 +18,18 @@ const spec: GraphSpec = {
       type: 'N8nTriggerNode',
       label: 'Webhook Trigger',
       position: [-200, 0, 0],
-      parameters: { status: 'success' }
+      parameters: { status: 'success' },
     },
     {
       id: 'http',
       type: 'N8nHttpNode',
       label: 'Send Notification',
       position: [200, 0, 0],
-      parameters: { requestMethod: 'POST', url: 'https://api.slack.com/webhook' }
-    }
+      parameters: { requestMethod: 'POST', url: 'https://api.slack.com/webhook' },
+    },
   ],
-  edges: [
-    { id: 'e1', source: 'trigger', target: 'http', type: 'FlowEdge' }
-  ],
-  layout: { type: 'ForceLayout' }
+  edges: [{ id: 'e1', source: 'trigger', target: 'http', type: 'FlowEdge' }],
+  layout: { type: 'ForceLayout' },
 };
 
 const sg = SpaceGraph.create(container, spec);

@@ -1,6 +1,6 @@
-import { DOMUtils } from '../utils/DOMUtils';
-import type { NodeSpec } from '../types';
 import type { SpaceGraph } from '../SpaceGraph';
+import type { NodeSpec } from '../types';
+import { DOMUtils } from '../utils/DOMUtils';
 
 import { BaseContentNode } from './BaseContentNode';
 
@@ -18,188 +18,188 @@ import { BaseContentNode } from './BaseContentNode';
  *   title     : optional chart title string
  */
 export class ChartNode extends BaseContentNode {
-    static readonly typeName = 'ChartNode';
-    public canvasEl: HTMLCanvasElement;
-    private chartInstance: unknown = null;
-    private titleEl: HTMLElement | null = null;
+  static readonly typeName = 'ChartNode';
+  public canvasEl: HTMLCanvasElement;
+  private chartInstance: unknown = null;
+  private titleEl: HTMLElement | null = null;
 
-    constructor(sg: SpaceGraph, spec: NodeSpec) {
-        const w = (spec.data?.width as number) ?? 300;
-        const h = (spec.data?.height as number) ?? 200;
-        const theme = (spec.data?.theme as string) ?? 'dark';
-        const title = spec.label ?? (spec.data?.title as string) ?? '';
-        const totalH = h + ((title as string) ? 32 : 0);
+  constructor(sg: SpaceGraph, spec: NodeSpec) {
+    const w = (spec.data?.width as number) ?? 300;
+    const h = (spec.data?.height as number) ?? 200;
+    const theme = (spec.data?.theme as string) ?? 'dark';
+    const title = spec.label ?? (spec.data?.title as string) ?? '';
+    const totalH = h + ((title as string) ? 32 : 0);
 
-        super(sg, spec, {
-            defaultWidth: w,
-            defaultHeight: totalH,
-            defaultTheme: theme as 'dark' | 'light',
-            materialParams: { opacity: 0.1 },
-            className: `spacegraph-chart-node theme-${theme}`,
-            createTitleBar: title || undefined,
-        });
+    super(sg, spec, {
+      defaultWidth: w,
+      defaultHeight: totalH,
+      defaultTheme: theme as 'dark' | 'light',
+      materialParams: { opacity: 0.1 },
+      className: `spacegraph-chart-node theme-${theme}`,
+      createTitleBar: title || undefined,
+    });
 
-        const canvasContainer = DOMUtils.createElement('div');
-        Object.assign(canvasContainer.style, {
-            position: 'relative',
-            flexGrow: '1',
-            width: '100%',
-            height: '100%',
-        });
+    const canvasContainer = DOMUtils.createElement('div');
+    Object.assign(canvasContainer.style, {
+      position: 'relative',
+      flexGrow: '1',
+      width: '100%',
+      height: '100%',
+    });
 
-        this.canvasEl = DOMUtils.createElement('canvas', {
-            style: { display: 'block', width: '100%', height: '100%' },
-        });
-        canvasContainer.appendChild(this.canvasEl);
-        this.domElement.appendChild(canvasContainer);
+    this.canvasEl = DOMUtils.createElement('canvas', {
+      style: { display: 'block', width: '100%', height: '100%' },
+    });
+    canvasContainer.appendChild(this.canvasEl);
+    this.domElement.appendChild(canvasContainer);
 
-        if (title) {
-            this.titleEl = this.domElement.querySelector('.sg-node-title') as HTMLElement;
-        }
-
-        this._renderChart(spec);
+    if (title) {
+      this.titleEl = this.domElement.querySelector('.sg-node-title') as HTMLElement;
     }
 
-    private async _renderChart(spec: Partial<NodeSpec>) {
-        const chartType = (spec.data?.chartType as string) ?? 'bar';
-        const labels = (spec.data?.labels as string[]) ?? [];
-        const datasets = (spec.data?.datasets as Record<string, unknown>[]) ?? [];
+    this._renderChart(spec);
+  }
 
-        let Chart: unknown;
-        try {
-            Chart = (await import('chart.js')).Chart;
-            const auto = await import('chart.js/auto');
-            Chart = auto.default ?? Chart;
-        } catch {
-            Chart = null;
-        }
+  private async _renderChart(spec: Partial<NodeSpec>) {
+    const chartType = (spec.data?.chartType as string) ?? 'bar';
+    const labels = (spec.data?.labels as string[]) ?? [];
+    const datasets = (spec.data?.datasets as Record<string, unknown>[]) ?? [];
 
-        const theme = (spec.data?.theme as string) ?? 'dark';
-        const isDark = theme === 'dark';
-        const textColor = isDark ? '#94a3b8' : '#64748b';
-        const gridColor = isDark ? '#1e293b' : '#e2e8f0';
-
-        if (Chart) {
-            (this.chartInstance as { destroy?: () => void })?.destroy?.();
-
-            const customOptions = (spec.data?.chartOptions as Record<string, unknown>) ?? {};
-
-            const baseOptions = {
-                responsive: true,
-                maintainAspectRatio: false,
-                animation: false,
-                plugins: {
-                    legend: { labels: { color: textColor, font: { size: 11 } } },
-                },
-                scales:
-                    chartType === 'pie' || chartType === 'radar'
-                        ? undefined
-                        : {
-                              x: { ticks: { color: textColor }, grid: { color: gridColor } },
-                              y: { ticks: { color: textColor }, grid: { color: gridColor } },
-                          },
-            };
-
-            const formattedDatasets = datasets.map((ds: Record<string, unknown>, i: number) => ({
-                label: ds.label ?? `Series ${i + 1}`,
-                data: ds.data ?? [],
-                backgroundColor: ds.color ?? `hsl(${i * 60}, 70%, 55%)`,
-                borderColor: ds.borderColor ?? ds.color ?? `hsl(${i * 60}, 70%, 55%)`,
-                borderWidth: ds.borderWidth ?? 1,
-                ...ds,
-            }));
-
-            this.chartInstance = new (Chart as new (...args: unknown[]) => unknown)(this.canvasEl, {
-                type: chartType,
-                data: { labels, datasets: formattedDatasets },
-                options: { ...baseOptions, ...customOptions },
-            });
-        } else {
-            this._renderFallback(labels as string[], datasets as Record<string, unknown>[], theme);
-        }
+    let Chart: unknown;
+    try {
+      Chart = (await import('chart.js')).Chart;
+      const auto = await import('chart.js/auto');
+      Chart = auto.default ?? Chart;
+    } catch {
+      Chart = null;
     }
 
-    private _renderFallback(labels: string[], datasets: Record<string, unknown>[], theme: string) {
-        const ctx = this.canvasEl.getContext('2d');
-        if (!ctx) return;
+    const theme = (spec.data?.theme as string) ?? 'dark';
+    const isDark = theme === 'dark';
+    const textColor = isDark ? '#94a3b8' : '#64748b';
+    const gridColor = isDark ? '#1e293b' : '#e2e8f0';
 
-        const rect = this.canvasEl.getBoundingClientRect();
-        const w = rect.width ?? (this.data?.width as number) ?? 300;
-        const h = rect.height ?? (this.data?.height as number) ?? 200;
+    if (Chart) {
+      (this.chartInstance as { destroy?: () => void })?.destroy?.();
 
-        this.canvasEl.width = w;
-        this.canvasEl.height = h;
+      const customOptions = (spec.data?.chartOptions as Record<string, unknown>) ?? {};
 
-        ctx.clearRect(0, 0, w, h);
+      const baseOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: false,
+        plugins: {
+          legend: { labels: { color: textColor, font: { size: 11 } } },
+        },
+        scales:
+          chartType === 'pie' || chartType === 'radar'
+            ? undefined
+            : {
+                x: { ticks: { color: textColor }, grid: { color: gridColor } },
+                y: { ticks: { color: textColor }, grid: { color: gridColor } },
+              },
+      };
 
-        const isDark = theme === 'dark';
-        ctx.fillStyle = isDark ? '#0f172a' : '#ffffff';
-        ctx.fillRect(0, 0, w, h);
+      const formattedDatasets = datasets.map((ds: Record<string, unknown>, i: number) => ({
+        label: ds.label ?? `Series ${i + 1}`,
+        data: ds.data ?? [],
+        backgroundColor: ds.color ?? `hsl(${i * 60}, 70%, 55%)`,
+        borderColor: ds.borderColor ?? ds.color ?? `hsl(${i * 60}, 70%, 55%)`,
+        borderWidth: ds.borderWidth ?? 1,
+        ...ds,
+      }));
 
-        const data: number[] = (datasets[0]?.data as number[]) ?? [];
-        if (!data.length) {
-            ctx.fillStyle = '#475569';
-            ctx.font = '14px sans-serif';
-            ctx.textAlign = 'center';
-            ctx.fillText('No data', w / 2, h / 2);
-            return;
-        }
+      this.chartInstance = new (Chart as new (...args: unknown[]) => unknown)(this.canvasEl, {
+        type: chartType,
+        data: { labels, datasets: formattedDatasets },
+        options: { ...baseOptions, ...customOptions },
+      });
+    } else {
+      this._renderFallback(labels as string[], datasets as Record<string, unknown>[], theme);
+    }
+  }
 
-        const max = Math.max(...data, 1);
-        const barW = (w - 20) / data.length;
-        const pad = 10;
+  private _renderFallback(labels: string[], datasets: Record<string, unknown>[], theme: string) {
+    const ctx = this.canvasEl.getContext('2d');
+    if (!ctx) return;
 
-        for (let i = 0; i < data.length; i++) {
-            const val = data[i];
-            const barH = (val / max) * (h - 30);
-            ctx.fillStyle = (datasets[0]?.color as string) ?? `hsl(${i * 40}, 70%, 55%)`;
-            ctx.fillRect(pad + i * barW + 2, h - barH - 20, barW - 4, barH);
+    const rect = this.canvasEl.getBoundingClientRect();
+    const w = rect.width ?? (this.data?.width as number) ?? 300;
+    const h = rect.height ?? (this.data?.height as number) ?? 200;
 
-            if (labels[i]) {
-                ctx.fillStyle = isDark ? '#64748b' : '#94a3b8';
-                ctx.font = '10px sans-serif';
-                ctx.textAlign = 'center';
-                ctx.fillText(labels[i], pad + i * barW + barW / 2, h - 5);
-            }
-        }
+    this.canvasEl.width = w;
+    this.canvasEl.height = h;
+
+    ctx.clearRect(0, 0, w, h);
+
+    const isDark = theme === 'dark';
+    ctx.fillStyle = isDark ? '#0f172a' : '#ffffff';
+    ctx.fillRect(0, 0, w, h);
+
+    const data: number[] = (datasets[0]?.data as number[]) ?? [];
+    if (!data.length) {
+      ctx.fillStyle = '#475569';
+      ctx.font = '14px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('No data', w / 2, h / 2);
+      return;
     }
 
-    updateSpec(updates: Partial<NodeSpec>): this {
-        super.updateSpec(updates);
+    const max = Math.max(...data, 1);
+    const barW = (w - 20) / data.length;
+    const pad = 10;
 
-        if (updates.label !== undefined && this.titleEl) {
-            this.titleEl.textContent = updates.label;
-        }
+    for (let i = 0; i < data.length; i++) {
+      const val = data[i];
+      const barH = (val / max) * (h - 30);
+      ctx.fillStyle = (datasets[0]?.color as string) ?? `hsl(${i * 40}, 70%, 55%)`;
+      ctx.fillRect(pad + i * barW + 2, h - barH - 20, barW - 4, barH);
 
-        if (updates.data) {
-            if (updates.data.width || updates.data.height) {
-                const w = Number(updates.data.width ?? this.data?.width ?? 300);
-                const h = Number(updates.data.height ?? this.data?.height ?? 200);
-                const title = (updates.label ?? this.label ?? this.data?.title ?? '') as string;
-                const totalH = h + (title ? 32 : 0);
+      if (labels[i]) {
+        ctx.fillStyle = isDark ? '#64748b' : '#94a3b8';
+        ctx.font = '10px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(labels[i], pad + i * barW + barW / 2, h - 5);
+      }
+    }
+  }
 
-                this.domElement.style.width = `${w}px`;
-                this.domElement.style.height = `${totalH}px`;
+  updateSpec(updates: Partial<NodeSpec>): this {
+    super.updateSpec(updates);
 
-                this.updateBackingGeometry(w, totalH);
-            }
-
-            if (
-                updates.data.datasets ||
-                updates.data.labels ||
-                updates.data.chartType ||
-                updates.data.theme ||
-                updates.data.chartOptions
-            ) {
-                this._renderChart({ data: { ...this.data, ...updates.data } });
-            }
-        }
-
-        return this;
+    if (updates.label !== undefined && this.titleEl) {
+      this.titleEl.textContent = updates.label;
     }
 
-    dispose(): void {
-        (this.chartInstance as { destroy?: () => void })?.destroy?.();
-        super.dispose();
+    if (updates.data) {
+      if (updates.data.width || updates.data.height) {
+        const w = Number(updates.data.width ?? this.data?.width ?? 300);
+        const h = Number(updates.data.height ?? this.data?.height ?? 200);
+        const title = (updates.label ?? this.label ?? this.data?.title ?? '') as string;
+        const totalH = h + (title ? 32 : 0);
+
+        this.domElement.style.width = `${w}px`;
+        this.domElement.style.height = `${totalH}px`;
+
+        this.updateBackingGeometry(w, totalH);
+      }
+
+      if (
+        updates.data.datasets ||
+        updates.data.labels ||
+        updates.data.chartType ||
+        updates.data.theme ||
+        updates.data.chartOptions
+      ) {
+        this._renderChart({ data: { ...this.data, ...updates.data } });
+      }
     }
+
+    return this;
+  }
+
+  dispose(): void {
+    (this.chartInstance as { destroy?: () => void })?.destroy?.();
+    super.dispose();
+  }
 }

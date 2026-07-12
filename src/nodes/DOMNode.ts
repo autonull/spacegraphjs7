@@ -1,275 +1,273 @@
 import * as THREE from 'three';
 import { CSS3DObject } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
 
-import { Node } from './Node';
-import { DOMUtils } from '../utils/DOMUtils';
-import type { NodeSpec } from '../types';
 import type { SpaceGraph } from '../SpaceGraph';
+import type { NodeSpec } from '../types';
+import { DOMUtils } from '../utils/DOMUtils';
+import { Node } from './Node';
 
 export class DOMNode extends Node {
-    static typeName: string = 'DOMNode';
-    public readonly isDOMNode = true;
-    public readonly domElement: HTMLElement;
-    public readonly cssObject: CSS3DObject;
-    public readonly meshMaterial: THREE.MeshBasicMaterial;
-    public readonly backingMesh: THREE.Mesh;
-    private _meshGeometry: THREE.PlaneGeometry;
-    private readonly _object: THREE.Group;
+  static typeName = 'DOMNode';
+  public readonly isDOMNode = true;
+  public readonly domElement: HTMLElement;
+  public readonly cssObject: CSS3DObject;
+  public readonly meshMaterial: THREE.MeshBasicMaterial;
+  public readonly backingMesh: THREE.Mesh;
+  private _meshGeometry: THREE.PlaneGeometry;
+  private readonly _object: THREE.Group;
 
-    get object(): THREE.Object3D {
-        return this._object;
+  get object(): THREE.Object3D {
+    return this._object;
+  }
+
+  get meshGeometry(): THREE.PlaneGeometry {
+    return this._meshGeometry;
+  }
+
+  /** Helper to set up standard FZUI container styles. */
+  protected setupContainerStyles(
+    width: number,
+    height: number,
+    theme: 'dark' | 'light' = 'dark',
+    customStyles: Partial<CSSStyleDeclaration> = {}
+  ): void {
+    const isDark = theme === 'dark';
+    const bgColor = isDark ? '#1e293b' : '#ffffff';
+    const borderColor = isDark ? '#334155' : '#e2e8f0';
+    const textColor = isDark ? '#f8fafc' : '#0f172a';
+
+    Object.assign(this.domElement.style, {
+      width: `${width}px`,
+      height: `${height}px`,
+      position: 'absolute',
+      pointerEvents: 'auto',
+      backgroundColor: 'var(--node-bg, ' + bgColor + ')',
+      color: textColor,
+      border: `1px solid ${borderColor}`,
+      borderRadius: '8px',
+      boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+      boxSizing: 'border-box',
+      display: 'flex',
+      flexDirection: 'column',
+      overflow: 'hidden',
+      fontFamily: 'sans-serif',
+      ...customStyles,
+    });
+  }
+
+  /** Helper to create a standard FZUI title bar. */
+  protected createTitleBar(title: string, theme: 'dark' | 'light' = 'dark'): HTMLElement {
+    const isDark = theme === 'dark';
+    const headerColor = isDark ? '#0f172a' : '#f1f5f9';
+    const borderColor = isDark ? '#334155' : '#e2e8f0';
+    const titleColor = isDark ? '#94a3b8' : '#64748b';
+
+    const titleBar = DOMUtils.createElement('div');
+    Object.assign(titleBar.style, {
+      background: headerColor,
+      padding: '8px 12px',
+      fontWeight: '600',
+      fontSize: '13px',
+      color: titleColor,
+      borderBottom: `1px solid ${borderColor}`,
+      display: 'flex',
+      alignItems: 'center',
+      flexShrink: '0',
+      userSelect: 'none',
+    });
+
+    const titleSpan = DOMUtils.createElement('span');
+    titleSpan.textContent = title;
+    titleSpan.className = 'sg-node-title';
+    titleBar.appendChild(titleSpan);
+
+    return titleBar;
+  }
+
+  constructor(
+    sg: SpaceGraph,
+    spec: NodeSpec,
+    domElement: HTMLElement,
+    width = 200,
+    height = 100,
+    materialParams?: THREE.MeshBasicMaterialParameters
+  ) {
+    super(sg, spec);
+
+    this._object = new THREE.Group();
+    this.domElement = domElement;
+    this.cssObject = new CSS3DObject(this.domElement);
+    this.object.add(this.cssObject);
+
+    this._meshGeometry = new THREE.PlaneGeometry(width, height);
+
+    const defaultTranslucency =
+      materialParams?.visible === false ? {} : { color: 0x000000, opacity: 0.1, transparent: true };
+    this.meshMaterial = new THREE.MeshBasicMaterial({
+      side: THREE.DoubleSide,
+      ...defaultTranslucency,
+      ...materialParams,
+    });
+
+    this.backingMesh = new THREE.Mesh(this.meshGeometry, this.meshMaterial);
+    this.object.add(this.backingMesh);
+
+    this._setupPointerEventRelay(sg);
+  }
+
+  /** Relay pointer events from this DOM element to the WebGL canvas. */
+  private _setupPointerEventRelay(sg: SpaceGraph): void {
+    if (!sg?.renderer?.renderer?.domElement) return;
+
+    const canvas = sg.renderer.renderer.domElement as HTMLCanvasElement;
+    const el = this.domElement;
+
+    const relayPointer = (type: string, src: PointerEvent) => {
+      canvas.dispatchEvent(
+        new PointerEvent(type, {
+          bubbles: false,
+          cancelable: true,
+          clientX: src.clientX,
+          clientY: src.clientY,
+          pointerId: src.pointerId,
+          pointerType: src.pointerType,
+          isPrimary: src.isPrimary,
+          button: src.button,
+          buttons: src.buttons,
+          ctrlKey: src.ctrlKey,
+          shiftKey: src.shiftKey,
+          altKey: src.altKey,
+          metaKey: src.metaKey,
+        })
+      );
+    };
+
+    el.addEventListener('mouseenter', (e) => {
+      canvas.dispatchEvent(
+        new PointerEvent('pointermove', {
+          bubbles: false,
+          clientX: e.clientX,
+          clientY: e.clientY,
+          ctrlKey: e.ctrlKey,
+          shiftKey: e.shiftKey,
+          altKey: e.altKey,
+        })
+      );
+    });
+
+    el.addEventListener('mouseleave', () => {
+      canvas.dispatchEvent(
+        new PointerEvent('pointermove', {
+          bubbles: false,
+          clientX: -99999,
+          clientY: -99999,
+        })
+      );
+    });
+
+    el.addEventListener('pointerdown', (e) => {
+      el.setPointerCapture(e.pointerId);
+      relayPointer('pointerdown', e);
+    });
+
+    el.addEventListener('pointermove', (e) => {
+      relayPointer('pointermove', e);
+    });
+    el.addEventListener('pointerup', (e) => {
+      relayPointer('pointerup', e);
+    });
+    el.addEventListener('pointercancel', (e) => {
+      relayPointer('pointercancel', e);
+    });
+
+    el.addEventListener('dblclick', (e) => {
+      canvas.dispatchEvent(
+        new MouseEvent('dblclick', {
+          bubbles: false,
+          cancelable: true,
+          clientX: e.clientX,
+          clientY: e.clientY,
+        })
+      );
+    });
+
+    el.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      canvas.dispatchEvent(
+        new MouseEvent('contextmenu', {
+          bubbles: false,
+          cancelable: true,
+          clientX: e.clientX,
+          clientY: e.clientY,
+        })
+      );
+    });
+  }
+
+  protected updateBackingGeometry(width: number, height: number): void {
+    this._meshGeometry.dispose();
+    this._meshGeometry = new THREE.PlaneGeometry(width, height);
+    this.backingMesh.geometry = this._meshGeometry;
+  }
+
+  public setVisibility(visible: boolean): void {
+    this.cssObject.visible = visible;
+    this.domElement.style.display = visible ? 'flex' : 'none';
+    this.backingMesh.visible = visible;
+  }
+
+  public override setOpacity(opacity: number): this {
+    this.domElement.style.opacity = opacity.toString();
+    if (this.meshMaterial) {
+      this.meshMaterial.opacity = opacity * 0.1; // Maintain the 0.1 base translucency scale
+      this.meshMaterial.transparent = true;
+      this.meshMaterial.needsUpdate = true;
+    }
+    return super.setOpacity(opacity);
+  }
+
+  public updateLod(_distance: number): void {}
+
+  isDraggable(localPos: THREE.Vector3): boolean {
+    const interactive = this.domElement.querySelectorAll('[data-sg-interactive="true"]');
+    if (!interactive || interactive.length === 0) return true;
+
+    const rect = this.domElement.getBoundingClientRect();
+    const width = rect.width;
+    const height = rect.height;
+
+    const px = localPos.x + width / 2;
+    const py = height / 2 - localPos.y;
+
+    for (const el of interactive) {
+      const elRect = el.getBoundingClientRect();
+
+      const localElLeft = elRect.left - rect.left;
+      const localElRight = elRect.right - rect.left;
+      const localElTop = elRect.top - rect.top;
+      const localElBottom = elRect.bottom - rect.top;
+
+      if (px >= localElLeft && px <= localElRight && py >= localElTop && py <= localElBottom) {
+        return false;
+      }
     }
 
-    get meshGeometry(): THREE.PlaneGeometry {
-        return this._meshGeometry;
+    return true;
+  }
+
+  onPreRender(dt: number): void {
+    super.onPreRender(dt);
+    if (this.activity > 0.01) {
+      this.domElement.style.boxShadow = `0 0 ${this.activity * 20}px rgba(68,136,255,${this.activity * 0.5})`;
+    } else {
+      this.domElement.style.boxShadow = 'none';
     }
+  }
 
-    /** Helper to set up standard FZUI container styles. */
-    protected setupContainerStyles(
-        width: number,
-        height: number,
-        theme: 'dark' | 'light' = 'dark',
-        customStyles: Partial<CSSStyleDeclaration> = {},
-    ): void {
-        const isDark = theme === 'dark';
-        const bgColor = isDark ? '#1e293b' : '#ffffff';
-        const borderColor = isDark ? '#334155' : '#e2e8f0';
-        const textColor = isDark ? '#f8fafc' : '#0f172a';
-
-        Object.assign(this.domElement.style, {
-            width: `${width}px`,
-            height: `${height}px`,
-            position: 'absolute',
-            pointerEvents: 'auto',
-            backgroundColor: 'var(--node-bg, ' + bgColor + ')',
-            color: textColor,
-            border: `1px solid ${borderColor}`,
-            borderRadius: '8px',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-            boxSizing: 'border-box',
-            display: 'flex',
-            flexDirection: 'column',
-            overflow: 'hidden',
-            fontFamily: 'sans-serif',
-            ...customStyles,
-        });
-    }
-
-    /** Helper to create a standard FZUI title bar. */
-    protected createTitleBar(title: string, theme: 'dark' | 'light' = 'dark'): HTMLElement {
-        const isDark = theme === 'dark';
-        const headerColor = isDark ? '#0f172a' : '#f1f5f9';
-        const borderColor = isDark ? '#334155' : '#e2e8f0';
-        const titleColor = isDark ? '#94a3b8' : '#64748b';
-
-        const titleBar = DOMUtils.createElement('div');
-        Object.assign(titleBar.style, {
-            background: headerColor,
-            padding: '8px 12px',
-            fontWeight: '600',
-            fontSize: '13px',
-            color: titleColor,
-            borderBottom: `1px solid ${borderColor}`,
-            display: 'flex',
-            alignItems: 'center',
-            flexShrink: '0',
-            userSelect: 'none',
-        });
-
-        const titleSpan = DOMUtils.createElement('span');
-        titleSpan.textContent = title;
-        titleSpan.className = 'sg-node-title';
-        titleBar.appendChild(titleSpan);
-
-        return titleBar;
-    }
-
-    constructor(
-        sg: SpaceGraph,
-        spec: NodeSpec,
-        domElement: HTMLElement,
-        width: number = 200,
-        height: number = 100,
-        materialParams?: THREE.MeshBasicMaterialParameters,
-    ) {
-        super(sg, spec);
-
-        this._object = new THREE.Group();
-        this.domElement = domElement;
-        this.cssObject = new CSS3DObject(this.domElement);
-        this.object.add(this.cssObject);
-
-        this._meshGeometry = new THREE.PlaneGeometry(width, height);
-
-        const defaultTranslucency =
-            materialParams?.visible === false
-                ? {}
-                : { color: 0x000000, opacity: 0.1, transparent: true };
-        this.meshMaterial = new THREE.MeshBasicMaterial({
-            side: THREE.DoubleSide,
-            ...defaultTranslucency,
-            ...materialParams,
-        });
-
-        this.backingMesh = new THREE.Mesh(this.meshGeometry, this.meshMaterial);
-        this.object.add(this.backingMesh);
-
-        this._setupPointerEventRelay(sg);
-    }
-
-    /** Relay pointer events from this DOM element to the WebGL canvas. */
-    private _setupPointerEventRelay(sg: SpaceGraph): void {
-        if (!sg?.renderer?.renderer?.domElement) return;
-
-        const canvas = sg.renderer.renderer.domElement as HTMLCanvasElement;
-        const el = this.domElement;
-
-        const relayPointer = (type: string, src: PointerEvent) => {
-            canvas.dispatchEvent(
-                new PointerEvent(type, {
-                    bubbles: false,
-                    cancelable: true,
-                    clientX: src.clientX,
-                    clientY: src.clientY,
-                    pointerId: src.pointerId,
-                    pointerType: src.pointerType,
-                    isPrimary: src.isPrimary,
-                    button: src.button,
-                    buttons: src.buttons,
-                    ctrlKey: src.ctrlKey,
-                    shiftKey: src.shiftKey,
-                    altKey: src.altKey,
-                    metaKey: src.metaKey,
-                }),
-            );
-        };
-
-        el.addEventListener('mouseenter', (e) => {
-            canvas.dispatchEvent(
-                new PointerEvent('pointermove', {
-                    bubbles: false,
-                    clientX: e.clientX,
-                    clientY: e.clientY,
-                    ctrlKey: e.ctrlKey,
-                    shiftKey: e.shiftKey,
-                    altKey: e.altKey,
-                }),
-            );
-        });
-
-        el.addEventListener('mouseleave', () => {
-            canvas.dispatchEvent(
-                new PointerEvent('pointermove', {
-                    bubbles: false,
-                    clientX: -99999,
-                    clientY: -99999,
-                }),
-            );
-        });
-
-        el.addEventListener('pointerdown', (e) => {
-            el.setPointerCapture(e.pointerId);
-            relayPointer('pointerdown', e);
-        });
-
-        el.addEventListener('pointermove', (e) => {
-            relayPointer('pointermove', e);
-        });
-        el.addEventListener('pointerup', (e) => {
-            relayPointer('pointerup', e);
-        });
-        el.addEventListener('pointercancel', (e) => {
-            relayPointer('pointercancel', e);
-        });
-
-        el.addEventListener('dblclick', (e) => {
-            canvas.dispatchEvent(
-                new MouseEvent('dblclick', {
-                    bubbles: false,
-                    cancelable: true,
-                    clientX: e.clientX,
-                    clientY: e.clientY,
-                }),
-            );
-        });
-
-        el.addEventListener('contextmenu', (e) => {
-            e.preventDefault();
-            canvas.dispatchEvent(
-                new MouseEvent('contextmenu', {
-                    bubbles: false,
-                    cancelable: true,
-                    clientX: e.clientX,
-                    clientY: e.clientY,
-                }),
-            );
-        });
-    }
-
-    protected updateBackingGeometry(width: number, height: number): void {
-        this._meshGeometry.dispose();
-        this._meshGeometry = new THREE.PlaneGeometry(width, height);
-        this.backingMesh.geometry = this._meshGeometry;
-    }
-
-    public setVisibility(visible: boolean): void {
-        this.cssObject.visible = visible;
-        this.domElement.style.display = visible ? 'flex' : 'none';
-        this.backingMesh.visible = visible;
-    }
-
-    public override setOpacity(opacity: number): this {
-        this.domElement.style.opacity = opacity.toString();
-        if (this.meshMaterial) {
-            this.meshMaterial.opacity = opacity * 0.1; // Maintain the 0.1 base translucency scale
-            this.meshMaterial.transparent = true;
-            this.meshMaterial.needsUpdate = true;
-        }
-        return super.setOpacity(opacity);
-    }
-
-    public updateLod(_distance: number): void {}
-
-    isDraggable(localPos: THREE.Vector3): boolean {
-        const interactive = this.domElement.querySelectorAll('[data-sg-interactive="true"]');
-        if (!interactive || interactive.length === 0) return true;
-
-        const rect = this.domElement.getBoundingClientRect();
-        const width = rect.width;
-        const height = rect.height;
-
-        const px = localPos.x + width / 2;
-        const py = height / 2 - localPos.y;
-
-        for (const el of interactive) {
-            const elRect = el.getBoundingClientRect();
-
-            const localElLeft = elRect.left - rect.left;
-            const localElRight = elRect.right - rect.left;
-            const localElTop = elRect.top - rect.top;
-            const localElBottom = elRect.bottom - rect.top;
-
-            if (px >= localElLeft && px <= localElRight && py >= localElTop && py <= localElBottom) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    onPreRender(dt: number): void {
-        super.onPreRender(dt);
-        if (this.activity > 0.01) {
-            this.domElement.style.boxShadow = `0 0 ${this.activity * 20}px rgba(68,136,255,${this.activity * 0.5})`;
-        } else {
-            this.domElement.style.boxShadow = 'none';
-        }
-    }
-
-    dispose(): void {
-        this.domElement.parentNode?.removeChild(this.domElement);
-        this.meshGeometry?.dispose();
-        this.meshMaterial?.dispose();
-        super.dispose();
-    }
+  dispose(): void {
+    this.domElement.parentNode?.removeChild(this.domElement);
+    this.meshGeometry?.dispose();
+    this.meshMaterial?.dispose();
+    super.dispose();
+  }
 }

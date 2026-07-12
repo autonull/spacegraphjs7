@@ -1,10 +1,10 @@
+import type { SpaceGraph } from './SpaceGraph';
+import type { Edge } from './edges/Edge';
 // types.ts - Ergonomic TypeScript types
 import type { Node } from './nodes/Node';
-import type { Edge } from './edges/Edge';
-import type { SpaceGraph } from './SpaceGraph';
 
 export type { Node, Edge, SpaceGraph };
-import type { Vector3, Raycaster } from 'three';
+import type { Raycaster, Vector3 } from 'three';
 
 // ============= Utility Types =============
 export type Maybe<T> = T | null | undefined;
@@ -26,395 +26,395 @@ export type AsyncCallback<T = void> = () => Promise<T> | T;
 
 // ============= Geometry Types =============
 export interface Rect {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
 }
 export interface Point2D {
-    x: number;
-    y: number;
+  x: number;
+  y: number;
 }
 export interface Point3D {
-    x: number;
-    y: number;
-    z: number;
+  x: number;
+  y: number;
+  z: number;
 }
 export interface Bounds3D {
-    min: Vector3;
-    max: Vector3;
-    center: Vector3;
-    size: Vector3;
-    containsPoint(point: Vector3): boolean;
-    intersectsRay(ray: Raycaster): boolean;
+  min: Vector3;
+  max: Vector3;
+  center: Vector3;
+  size: Vector3;
+  containsPoint(point: Vector3): boolean;
+  intersectsRay(ray: Raycaster): boolean;
 }
 
 // ============= Unified Node Data Base =============
 export interface BaseNodeData {
-    [key: string]: unknown;
-    pinned?: boolean;
-    visible?: boolean;
+  [key: string]: unknown;
+  pinned?: boolean;
+  visible?: boolean;
 }
 
 // Consolidated dimension properties shared by most node types
 export interface NodeDimensions {
-    width?: number;
-    height?: number;
-    depth?: number;
+  width?: number;
+  height?: number;
+  depth?: number;
 }
 
 // Consolidated visual properties shared by most node types
 export interface NodeVisual {
-    color?: string | number;
-    opacity?: number;
-    transparent?: boolean;
-    wireframe?: boolean;
+  color?: string | number;
+  opacity?: number;
+  transparent?: boolean;
+  wireframe?: boolean;
 }
 
 // Consolidated interaction properties
 export interface NodeInteraction {
-    draggable?: boolean;
-    selectable?: boolean;
-    focusable?: boolean;
+  draggable?: boolean;
+  selectable?: boolean;
+  focusable?: boolean;
 }
 
 // All node data types share these core properties
 export type CoreNodeData = BaseNodeData & NodeDimensions & NodeVisual & NodeInteraction;
 
 export interface BaseEdgeData {
-    [key: string]: unknown;
+  [key: string]: unknown;
 }
 export interface LabelLodLevel {
-    distance?: number;
-    scale?: number;
-    style?: string;
-    min?: number;
-    max?: number;
-    label?: string;
+  distance?: number;
+  scale?: number;
+  style?: string;
+  min?: number;
+  max?: number;
+  label?: string;
 }
 
 // ============= Node Data Types (Consolidated) =============
 export interface ShapeNodeData extends CoreNodeData {
-    shape?: 'box' | 'sphere' | 'circle' | 'plane' | 'cone' | 'cylinder' | 'torus' | 'ring';
-    size?: number;
-    side?: 'front' | 'back' | 'double';
+  shape?: 'box' | 'sphere' | 'circle' | 'plane' | 'cone' | 'cylinder' | 'torus' | 'ring';
+  size?: number;
+  side?: 'front' | 'back' | 'double';
 }
 export interface HtmlNodeData extends CoreNodeData {
-    html?: string;
-    className?: string;
-    pointerEvents?: 'none' | 'auto';
-    labelLod?: LabelLodLevel[];
+  html?: string;
+  className?: string;
+  pointerEvents?: 'none' | 'auto';
+  labelLod?: LabelLodLevel[];
 }
 export interface ImageNodeData extends CoreNodeData {
-    url?: string;
+  url?: string;
 }
 export interface GroupNodeData extends CoreNodeData {
-    depth?: number;
-    title?: string;
+  depth?: number;
+  title?: string;
 }
 export interface NoteNodeData extends CoreNodeData {
-    text?: string;
-    textColor?: string | number;
-    fontSize?: number;
+  text?: string;
+  textColor?: string | number;
+  fontSize?: number;
 }
 export interface CanvasNodeData extends CoreNodeData {
-    dpi?: number;
+  dpi?: number;
 }
 export interface TextMeshNodeData extends CoreNodeData {
-    text?: string;
-    fontUrl?: string;
-    size?: number;
-    height?: number;
-    align?: 'left' | 'center' | 'right';
+  text?: string;
+  fontUrl?: string;
+  size?: number;
+  height?: number;
+  align?: 'left' | 'center' | 'right';
 }
 export interface DataNodeData extends CoreNodeData {
-    theme?: 'light' | 'dark';
-    data?: unknown;
-    expanded?: boolean;
-    maxHeight?: number;
+  theme?: 'light' | 'dark';
+  data?: unknown;
+  expanded?: boolean;
+  maxHeight?: number;
 }
 export interface VideoNodeData extends CoreNodeData {
-    url?: string;
-    autoplay?: boolean;
-    loop?: boolean;
-    muted?: boolean;
+  url?: string;
+  autoplay?: boolean;
+  loop?: boolean;
+  muted?: boolean;
 }
 export interface IFrameNodeData extends CoreNodeData {
-    src?: string;
-    scrolling?: 'yes' | 'no' | 'auto';
+  src?: string;
+  scrolling?: 'yes' | 'no' | 'auto';
 }
 export interface ChartNodeData extends CoreNodeData {
-    theme?: 'light' | 'dark';
-    chartType?: 'bar' | 'line' | 'pie' | 'scatter' | 'radar';
-    chartData?: unknown;
-    chartOptions?: unknown;
+  theme?: 'light' | 'dark';
+  chartType?: 'bar' | 'line' | 'pie' | 'scatter' | 'radar';
+  chartData?: unknown;
+  chartOptions?: unknown;
 }
 export interface MarkdownNodeData extends CoreNodeData {
-    theme?: 'light' | 'dark';
-    content?: string;
-    fontSize?: number;
+  theme?: 'light' | 'dark';
+  content?: string;
+  fontSize?: number;
 }
 export interface GlobeNodeData extends CoreNodeData {
-    radius?: number;
-    resolution?: number;
-    textureUrl?: string;
-    markers?: {
-        lat: number;
-        lng: number;
-        size?: number;
-        color?: number | string;
-        label?: string;
-    }[];
+  radius?: number;
+  resolution?: number;
+  textureUrl?: string;
+  markers?: {
+    lat: number;
+    lng: number;
+    size?: number;
+    color?: number | string;
+    label?: string;
+  }[];
 }
 export interface SceneNodeData extends CoreNodeData {
-    url?: string;
-    targetSize?: number;
-    autoCenter?: boolean;
+  url?: string;
+  targetSize?: number;
+  autoCenter?: boolean;
 }
 export interface AudioNodeData extends CoreNodeData {
-    src?: string;
-    autoplay?: boolean;
-    loop?: boolean;
+  src?: string;
+  autoplay?: boolean;
+  loop?: boolean;
 }
 export interface MathNodeData extends CoreNodeData {
-    math?: string;
-    fontSize?: number;
+  math?: string;
+  fontSize?: number;
 }
 export interface ProcessNodeData extends CoreNodeData {
-    pid?: string | number;
-    name?: string;
-    cpu?: number;
-    memory?: number;
+  pid?: string | number;
+  name?: string;
+  cpu?: number;
+  memory?: number;
 }
 export interface CodeEditorNodeData extends CoreNodeData {
-    code?: string;
-    language?: string;
-    theme?: string;
+  code?: string;
+  language?: string;
+  theme?: string;
 }
 export interface InstancedShapeNodeData extends CoreNodeData {
-    shape?: 'box' | 'sphere' | 'circle' | 'plane';
-    size?: number;
+  shape?: 'box' | 'sphere' | 'circle' | 'plane';
+  size?: number;
 }
 
 // Unified Widget Data
 export interface WidgetNodeData extends CoreNodeData {
-    disabled?: boolean;
-    tabIndex?: number;
-    ariaLabel?: string;
+  disabled?: boolean;
+  tabIndex?: number;
+  ariaLabel?: string;
 }
 
 export type NodeData =
-    | ShapeNodeData
-    | HtmlNodeData
-    | ImageNodeData
-    | GroupNodeData
-    | NoteNodeData
-    | CanvasNodeData
-    | TextMeshNodeData
-    | DataNodeData
-    | VideoNodeData
-    | IFrameNodeData
-    | ChartNodeData
-    | MarkdownNodeData
-    | GlobeNodeData
-    | SceneNodeData
-    | AudioNodeData
-    | MathNodeData
-    | ProcessNodeData
-    | CodeEditorNodeData
-    | InstancedShapeNodeData
-    | WidgetNodeData;
+  | ShapeNodeData
+  | HtmlNodeData
+  | ImageNodeData
+  | GroupNodeData
+  | NoteNodeData
+  | CanvasNodeData
+  | TextMeshNodeData
+  | DataNodeData
+  | VideoNodeData
+  | IFrameNodeData
+  | ChartNodeData
+  | MarkdownNodeData
+  | GlobeNodeData
+  | SceneNodeData
+  | AudioNodeData
+  | MathNodeData
+  | ProcessNodeData
+  | CodeEditorNodeData
+  | InstancedShapeNodeData
+  | WidgetNodeData;
 
 // Unified SpaceGraph Node Data
 export type SpaceGraphNodeData = NodeData & HtmlNodeData;
 
 // ============= Edge Data Types =============
 export interface EdgeData extends BaseEdgeData {
-    color?: number;
-    gradientColors?: [string, string];
-    thickness?: number;
-    thicknessInstanced?: number;
-    arrowhead?: boolean | 'source' | 'target' | 'both';
-    arrowheadSize?: number;
-    arrowheadColor?: number;
-    dashed?: boolean;
-    dashScale?: number;
-    dashSize?: number;
-    gapSize?: number;
-    label?: string;
-    labelColor?: string;
-    fontSize?: number;
-    labelLod?: LabelLodLevel[];
+  color?: number;
+  gradientColors?: [string, string];
+  thickness?: number;
+  thicknessInstanced?: number;
+  arrowhead?: boolean | 'source' | 'target' | 'both';
+  arrowheadSize?: number;
+  arrowheadColor?: number;
+  dashed?: boolean;
+  dashScale?: number;
+  dashSize?: number;
+  gapSize?: number;
+  label?: string;
+  labelColor?: string;
+  fontSize?: number;
+  labelLod?: LabelLodLevel[];
 }
 
 // ============= Specification Types =============
 export interface NodeSpec<T extends NodeData = NodeData> {
-    id: string;
-    type: string;
-    label?: string;
-    position?: [number, number, number];
-    rotation?: [number, number, number];
-    scale?: [number, number, number];
-    data?: T;
-    parameters?: Record<string, unknown>;
+  id: string;
+  type: string;
+  label?: string;
+  position?: [number, number, number];
+  rotation?: [number, number, number];
+  scale?: [number, number, number];
+  data?: T;
+  parameters?: Record<string, unknown>;
 }
 export interface EdgeSpec<T extends EdgeData = EdgeData> {
-    id: string;
-    source: string;
-    target: string;
-    type?: string;
-    data?: T;
+  id: string;
+  source: string;
+  target: string;
+  type?: string;
+  data?: T;
 }
 export interface GraphSpec {
-    nodes?: NodeSpec[];
-    edges?: EdgeSpec[];
-    camera?: { position: [number, number, number]; target: [number, number, number] };
+  nodes?: NodeSpec[];
+  edges?: EdgeSpec[];
+  camera?: { position: [number, number, number]; target: [number, number, number] };
 }
 export interface SpecUpdate {
-    nodes?: Partial<NodeSpec>[];
-    edges?: Partial<EdgeSpec>[];
+  nodes?: Partial<NodeSpec>[];
+  edges?: Partial<EdgeSpec>[];
 }
 
 // ============= Event Types =============
 export type GraphEvent =
-    | 'node:added'
-    | 'node:removed'
-    | 'node:updated'
-    | 'edge:added'
-    | 'edge:removed'
-    | 'edge:updated';
+  | 'node:added'
+  | 'node:removed'
+  | 'node:updated'
+  | 'edge:added'
+  | 'edge:removed'
+  | 'edge:updated';
 export type NodeEvent = 'node:updated' | 'node:destroying';
 export type EdgeEvent = 'edge:updated' | 'edge:destroying';
 export interface SpaceGraphEvents {
-    'node:added': any;
-    'node:removed': any;
-    'node:updated': any;
-    'edge:added': any;
-    'edge:removed': any;
-    'edge:updated': any;
+  'node:added': any;
+  'node:removed': any;
+  'node:updated': any;
+  'edge:added': any;
+  'edge:removed': any;
+  'edge:updated': any;
 }
 
 // ============= Options Types =============
 export interface SpaceGraphOptions {
-    onnxExecutionProviders?: string[];
-    vision?: {
-        wasmPaths?: string;
-        heuristics?: {
-            wcagThreshold?: number;
-            overlapPadding?: number;
-            fittsLawTargetSize?: number;
-        };
+  onnxExecutionProviders?: string[];
+  vision?: {
+    wasmPaths?: string;
+    heuristics?: {
+      wcagThreshold?: number;
+      overlapPadding?: number;
+      fittsLawTargetSize?: number;
     };
-    initialLayout?: string;
-    cameraControls?: Partial<import('./core/CameraControls').CameraControlsConfig>;
-    input?: DefaultInputConfig;
-    [key: string]: unknown;
+  };
+  initialLayout?: string;
+  cameraControls?: Partial<import('./core/CameraControls').CameraControlsConfig>;
+  input?: DefaultInputConfig;
+  [key: string]: unknown;
 }
 
 // Input configuration
 export interface DefaultInputConfig {
-    camera?: CameraInputConfig;
-    interaction?: InteractionInputConfig;
-    history?: HistoryInputConfig;
+  camera?: CameraInputConfig;
+  interaction?: InteractionInputConfig;
+  history?: HistoryInputConfig;
 }
 export interface CameraInputConfig {
-    enableCameraOrbit?: boolean;
-    enableCameraPan?: boolean;
-    enableCameraZoom?: boolean;
-    rotationSpeed?: number;
-    panSpeed?: number;
-    zoomSpeed?: number;
-    damping?: number;
-    minRadius?: number;
-    maxRadius?: number;
+  enableCameraOrbit?: boolean;
+  enableCameraPan?: boolean;
+  enableCameraZoom?: boolean;
+  rotationSpeed?: number;
+  panSpeed?: number;
+  zoomSpeed?: number;
+  damping?: number;
+  minRadius?: number;
+  maxRadius?: number;
 }
 export interface InteractionInputConfig {
-    enableHover?: boolean;
-    enableBoxSelect?: boolean;
-    enableDrag?: boolean;
-    enableWidgets?: boolean;
-    clickThreshold?: number;
+  enableHover?: boolean;
+  enableBoxSelect?: boolean;
+  enableDrag?: boolean;
+  enableWidgets?: boolean;
+  clickThreshold?: number;
 }
 export interface HistoryInputConfig {
-    enabled?: boolean;
+  enabled?: boolean;
 }
 
 export interface RenderOptions {
-    antialias?: boolean;
-    alpha?: boolean;
-    backgroundColor?: string | number;
-    pixelRatio?: number;
+  antialias?: boolean;
+  alpha?: boolean;
+  backgroundColor?: string | number;
+  pixelRatio?: number;
 }
 export interface AnimationProps {
-    x?: number;
-    y?: number;
-    z?: number;
-    scale?: number;
-    duration?: number;
-    ease?: string;
-    delay?: number;
-    onUpdate?: () => void;
+  x?: number;
+  y?: number;
+  z?: number;
+  scale?: number;
+  duration?: number;
+  ease?: string;
+  delay?: number;
+  onUpdate?: () => void;
 }
 
 // ============= Export/Import Types =============
 export interface GraphExport {
-    nodes: Array<{
-        id: string;
-        type: string;
-        label?: string;
-        position: [number, number, number];
-        data: unknown;
-    }>;
-    edges: Array<{ id: string; source: string; target: string; type: string; data: unknown }>;
-    camera?: { position: [number, number, number]; target: [number, number, number] };
-    plugins?: Record<string, unknown>;
+  nodes: Array<{
+    id: string;
+    type: string;
+    label?: string;
+    position: [number, number, number];
+    data: unknown;
+  }>;
+  edges: Array<{ id: string; source: string; target: string; type: string; data: unknown }>;
+  camera?: { position: [number, number, number]; target: [number, number, number] };
+  plugins?: Record<string, unknown>;
 }
 export type GraphImportData = GraphExport;
 
 // ============= Plugin System Types =============
 export interface PluginLifecycle {
-    init?(sg: any, graph: any, events: any): void | Promise<void>;
-    onPreRender?(delta: number): void;
-    onPostRender?(delta: number): void;
-    onNodeAdded?(node: any): void;
-    onNodeRemoved?(node: any): void;
-    onEdgeAdded?(edge: any): void;
-    onEdgeRemoved?(edge: any): void;
-    dispose?(): void;
-    export?(): unknown;
-    import?(data: unknown): void;
+  init?(sg: any, graph: any, events: any): void | Promise<void>;
+  onPreRender?(delta: number): void;
+  onPostRender?(delta: number): void;
+  onNodeAdded?(node: any): void;
+  onNodeRemoved?(node: any): void;
+  onEdgeAdded?(edge: any): void;
+  onEdgeRemoved?(edge: any): void;
+  dispose?(): void;
+  export?(): unknown;
+  import?(data: unknown): void;
 }
 export interface Plugin extends PluginLifecycle {
-    readonly id: string;
-    readonly name: string;
-    readonly version: string;
+  readonly id: string;
+  readonly name: string;
+  readonly version: string;
 }
 
 // ============= Constructor Types =============
 export type NodeConstructor = new (sg: SpaceGraph, spec: NodeSpec) => Node;
 export type EdgeConstructor = new (
-    sg: SpaceGraph,
-    spec: EdgeSpec,
-    source: Node,
-    target: Node,
+  sg: SpaceGraph,
+  spec: EdgeSpec,
+  source: Node,
+  target: Node
 ) => Edge;
 
 // ============= Vision Types =============
 export type VisionCategory = 'wcag' | 'overlap' | 'fitts' | 'all';
 export interface VisionOptions {
-    enabled?: boolean;
-    categories?: VisionCategory[];
-    threshold?: number;
+  enabled?: boolean;
+  categories?: VisionCategory[];
+  threshold?: number;
 }
 export interface VisionReport {
-    score: number;
-    issues: Array<{ type: string; severity: number; message: string }>;
+  score: number;
+  issues: Array<{ type: string; severity: number; message: string }>;
 }
 export interface VisionScore {
-    wcag: number;
-    overlap: number;
-    fitts: number;
-    overall: number;
+  wcag: number;
+  overlap: number;
+  fitts: number;
+  overall: number;
 }
 
 // ============= Alias Types =============
@@ -422,11 +422,11 @@ export type NodeType = string;
 export type EdgeType = string;
 export type GeometryFamily = string;
 export interface HitResult {
-    type: 'node' | 'edge' | 'none';
-    distance?: number;
-    node?: Node;
-    edge?: Edge;
-    point?: Point3D;
+  type: 'node' | 'edge' | 'none';
+  distance?: number;
+  node?: Node;
+  edge?: Edge;
+  point?: Point3D;
 }
 export type LayoutName = string;
 export type MermaidThemeName = 'default' | 'forest' | 'dark' | 'neutral';
@@ -435,14 +435,14 @@ export type MermaidNodeShape = 'default' | 'circle' | 'ellipse' | 'rect' | 'diam
 
 // ============= Ergonomic Type Helpers =============
 export type NodeSpecWithPosition<T extends NodeData = NodeData> = NodeSpec<T> & {
-    position: [number, number, number];
+  position: [number, number, number];
 };
 export type EdgeSpecWithData<T extends EdgeData = EdgeData> = EdgeSpec<T> & { data: T };
 export type DeepPartial<T> = { [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P] };
 export type DeepRequired<T> = { [P in keyof T]-?: T[P] extends object ? DeepRequired<T[P]> : T[P] };
 
 // ============= Layout Types =============
- // Note: Layout-specific options are defined in plugins/layouts/BaseLayout.ts
+// Note: Layout-specific options are defined in plugins/layouts/BaseLayout.ts
 // Use import { LayoutOptions } from './plugins/layouts/BaseLayout' for full options
 
 // ============= Ergonomic Factory Types =============
@@ -462,5 +462,5 @@ export type EventHandler<T = unknown> = (event: T) => void;
 export type EventUnsubscribe = () => void;
 
 // ============= Utility Aliases =============
-export type { LogLevel as LogLevel } from './utils/logger';
-export type { Logger as Logger } from './utils/logger';
+export type { LogLevel } from './utils/logger';
+export type { Logger } from './utils/logger';

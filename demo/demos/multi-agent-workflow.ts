@@ -1,4 +1,4 @@
-import { createDemoWithNodes, SpaceGraph } from '../framework';
+import { type SpaceGraph, createDemoWithNodes } from '../framework';
 
 export default async function multiAgentWorkflowDemo(): Promise<SpaceGraph> {
   const markdownContentRouter = `
@@ -135,7 +135,10 @@ export default async function multiAgentWorkflowDemo(): Promise<SpaceGraph> {
       type: 'NoteNode',
       label: 'User Request',
       position: [0, 650, 0],
-      data: { text: 'Analyze the Q3 revenue data and then write a python script to export it.', color: '#ef4444' },
+      data: {
+        text: 'Analyze the Q3 revenue data and then write a python script to export it.',
+        color: '#ef4444',
+      },
     },
     {
       id: 'control-panel',
@@ -164,11 +167,29 @@ export default async function multiAgentWorkflowDemo(): Promise<SpaceGraph> {
     },
 
     // Orchestrator Routing
-    { id: 'e-route-dev', source: 'group-orchestrator', target: 'group-dev', type: 'FlowEdge', data: { color: 0x3b82f6, flowSpeed: 2 } },
-    { id: 'e-route-data', source: 'group-orchestrator', target: 'group-data', type: 'FlowEdge', data: { color: 0x3b82f6, flowSpeed: 2 } },
+    {
+      id: 'e-route-dev',
+      source: 'group-orchestrator',
+      target: 'group-dev',
+      type: 'FlowEdge',
+      data: { color: 0x3b82f6, flowSpeed: 2 },
+    },
+    {
+      id: 'e-route-data',
+      source: 'group-orchestrator',
+      target: 'group-data',
+      type: 'FlowEdge',
+      data: { color: 0x3b82f6, flowSpeed: 2 },
+    },
 
     // Collaboration between agents
-    { id: 'e-collab', source: 'group-data', target: 'group-dev', type: 'DottedEdge', data: { color: 0xf59e0b, dashSize: 5, gapSize: 5 } },
+    {
+      id: 'e-collab',
+      source: 'group-data',
+      target: 'group-dev',
+      type: 'DottedEdge',
+      data: { color: 0xf59e0b, dashSize: 5, gapSize: 5 },
+    },
   ];
 
   const sg = await createDemoWithNodes(nodes, edges);
@@ -191,7 +212,12 @@ export default async function multiAgentWorkflowDemo(): Promise<SpaceGraph> {
 
           // 1. Orchestrator Processing
           setTimeout(() => {
-            if (statusNode) statusNode.updateSpec({ data: { data: { status: 'Routing', lastTask: 'Parse Input', memoryUsage: '128MB' } } });
+            if (statusNode)
+              statusNode.updateSpec({
+                data: {
+                  data: { status: 'Routing', lastTask: 'Parse Input', memoryUsage: '128MB' },
+                },
+              });
 
             const eIn = sg.graph.edges.find((e) => e.id === 'e-in');
             if (eIn) eIn.updateSpec({ data: { speed: 0.05 } });
@@ -199,7 +225,16 @@ export default async function multiAgentWorkflowDemo(): Promise<SpaceGraph> {
 
           // 2. Data Agent execution
           setTimeout(() => {
-            if (statusNode) statusNode.updateSpec({ data: { data: { status: 'Delegated', lastTask: 'Sent to Data Agent', memoryUsage: '80MB' } } });
+            if (statusNode)
+              statusNode.updateSpec({
+                data: {
+                  data: {
+                    status: 'Delegated',
+                    lastTask: 'Sent to Data Agent',
+                    memoryUsage: '80MB',
+                  },
+                },
+              });
 
             const eRouteData = sg.graph.edges.find((e) => e.id === 'e-route-data');
             if (eRouteData) eRouteData.updateSpec({ data: { flowSpeed: 5, color: '#8b5cf6' } });
@@ -249,7 +284,12 @@ export default async function multiAgentWorkflowDemo(): Promise<SpaceGraph> {
 
           // 5. Completion
           setTimeout(() => {
-            if (statusNode) statusNode.updateSpec({ data: { data: { status: 'Complete', lastTask: 'Workflow Finished', memoryUsage: '40MB' } } });
+            if (statusNode)
+              statusNode.updateSpec({
+                data: {
+                  data: { status: 'Complete', lastTask: 'Workflow Finished', memoryUsage: '40MB' },
+                },
+              });
 
             const eRouteData = sg.graph.edges.find((e) => e.id === 'e-route-data');
             if (eRouteData) eRouteData.updateSpec({ data: { flowSpeed: 2, color: 0x3b82f6 } });

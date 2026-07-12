@@ -1,126 +1,115 @@
 {
-    "name": "spacegraphjs",
-    "version": "7.0.0",
-    "type": "module",
-    "main": "./dist/spacegraphjs.js",
-    "module": "./dist/spacegraphjs.js",
-    "exports": {
-        ".": {
-            "import": "./dist/spacegraphjs.js",
-            "require": "./dist/spacegraphjs.cjs"
-        },
-        "./vision": {
-            "import": "./dist/vision.js",
-            "require": "./dist/vision.cjs"
-        },
-        "./vision-test": {
-            "import": "./dist/vision-test.js",
-            "require": "./dist/vision-test.cjs"
-        }
+  "name": "spacegraphjs",
+  "version": "7.0.0",
+  "type": "module",
+  "main": "./dist/spacegraphjs.js",
+  "module": "./dist/spacegraphjs.js",
+  "exports": {
+    ".": {
+      "import": "./dist/spacegraphjs.js",
+      "require": "./dist/spacegraphjs.cjs"
     },
-    "files": [
-        "dist",
-        "README.md",
-        "LICENSE"
-    ],
-    "scripts": {
-        "dev": "pnpm dlx vite --host",
-        "dev:demo": "pnpm dlx vite --config vite.demo.config.ts --port 5173",
-        "build": "pnpm run build:lib && pnpm run build:demo",
-        "build:lib": "vite build --config vite.lib.config.ts",
-        "build:demo": "vite build --config vite.demo.config.ts",
-        "prepublishOnly": "pnpm run clean && pnpm run build && pnpm run test",
-        "clean": "rm -rf dist/ dist-demo/",
-        "verify": "tsx verification/verify_demos.ts",
-        "test": "vitest run",
-        "test:vision": "mkdir -p test/fixtures/dist && cp -r dist/* test/fixtures/dist/ && cp -r public/*.onnx test/fixtures/dist/ && playwright test test/vision.spec.ts",
-        "vision": "pnpm run test:vision",
-        "lint": "eslint 'src/**/*.{ts,js}' --ignore-pattern 'dist'",
-        "format": "prettier --write .",
-        "format:check": "prettier --check .",
-        "docs": "typedoc --options typedoc.json",
-        "test:screenshots": "mkdir -p test/screenshots && playwright test test/e2e/demo-screenshots.spec.ts --reporter=list",
-        "test:demo-errors": "playwright test test/e2e/demo-errors.spec.ts --reporter=list",
-        "test:all-demos": "pnpm run test:demo-errors && pnpm run test:screenshots",
-        "test:behavioral": "playwright test test/e2e/behavioral.spec.ts --reporter=list",
-        "test:full": "pnpm test"
+    "./vision": {
+      "import": "./dist/vision.js",
+      "require": "./dist/vision.cjs"
     },
-    "peerDependencies": {
-        "chart.js": "^4.5.1",
-        "katex": "^0.16.33",
-        "marked": "^17.0.3",
-        "three": ">=0.150.0"
+    "./vision-test": {
+      "import": "./dist/vision-test.js",
+      "require": "./dist/vision-test.cjs"
+    }
+  },
+  "files": ["dist", "README.md", "LICENSE"],
+  "scripts": {
+    "dev": "pnpm dlx vite --host",
+    "dev:demo": "pnpm dlx vite --config vite.demo.config.ts --port 5173",
+    "build": "pnpm run build:lib && pnpm run build:demo",
+    "build:lib": "vite build --config vite.lib.config.ts",
+    "build:demo": "vite build --config vite.demo.config.ts",
+    "prepublishOnly": "pnpm run clean && pnpm run build && pnpm run test",
+    "clean": "rm -rf dist/ dist-demo/",
+    "verify": "tsx verification/verify_demos.ts",
+    "test": "vitest run",
+    "test:vision": "mkdir -p test/fixtures/dist && cp -r dist/* test/fixtures/dist/ && cp -r public/*.onnx test/fixtures/dist/ && playwright test test/vision.spec.ts",
+    "vision": "pnpm run test:vision",
+    "lint": "eslint 'src/**/*.{ts,js}' --ignore-pattern 'dist'",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "docs": "typedoc --options typedoc.json",
+    "test:screenshots": "mkdir -p test/screenshots && playwright test test/e2e/demo-screenshots.spec.ts --reporter=list",
+    "test:demo-errors": "playwright test test/e2e/demo-errors.spec.ts --reporter=list",
+    "test:all-demos": "pnpm run test:demo-errors && pnpm run test:screenshots",
+    "test:behavioral": "playwright test test/e2e/behavioral.spec.ts --reporter=list",
+    "test:full": "pnpm test"
+  },
+  "peerDependencies": {
+    "chart.js": "^4.5.1",
+    "katex": "^0.16.33",
+    "marked": "^17.0.3",
+    "three": ">=0.150.0"
+  },
+  "peerDependenciesMeta": {
+    "chart.js": {
+      "optional": true
     },
-    "peerDependenciesMeta": {
-        "chart.js": {
-            "optional": true
-        },
-        "katex": {
-            "optional": true
-        },
-        "marked": {
-            "optional": true
-        }
+    "katex": {
+      "optional": true
     },
-    "devDependencies": {
-        "@eslint/js": "^10.0.1",
-        "@playwright/test": "^1.58.2",
-        "@types/jsdom": "^28.0.0",
-        "@types/katex": "^0.16.8",
-        "@types/marked": "^5.0.2",
-        "@types/node": "^20.10.0",
-        "@types/three": "^0.160.0",
-        "@typescript-eslint/eslint-plugin": "^8.56.1",
-        "@typescript-eslint/parser": "^8.56.1",
-        "@vitest/coverage-v8": "^4.0.18",
-        "canvas": "^3.2.3",
-        "chart.js": "^4.5.1",
-        "eslint": "^10.0.2",
-        "http-server": "^14.1.1",
-        "jsdom": "^28.1.0",
-        "katex": "^0.16.38",
-        "marked": "^17.0.4",
-        "playwright": "^1.58.2",
-        "prettier": "^3.8.1",
-        "three": "^0.160.0",
-        "tsx": "^4.21.0",
-        "typedoc": "^0.28.17",
-        "typescript": "^5.3.2",
-        "typescript-eslint": "^8.56.1",
-        "vite": "^5.0.0",
-        "vite-plugin-dts": "^5.0.0",
-        "vitest": "^4.0.18"
-    },
-    "workspaces": [
-        "packages/*"
-    ],
-    "license": "MIT",
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/autonull/spacegraphjs.git"
-    },
-    "keywords": [
-        "zui",
-        "graph",
-        "visualization",
-        "three.js"
-    ],
-    "dependencies": {
-        "@monaco-editor/loader": "^1.7.0",
-        "gsap": "^3.14.2",
-        "mitt": "^3.0.1",
-        "onnxruntime-web": "^1.24.2",
-        "three-mesh-bvh": "^0.9.9"
-    },
-    "description": "[![pnpm](https://img.shields.io/pnpm/v/spacegraphjs.svg)](https://www.npmjs.com/package/spacegraphjs) [![Matrix](https://img.shields.io/matrix/spacegraphjs:matrix.org)](https://matrix.to/#/#spacegraphjs:matrix.org) [![GitHub Sponsors](https://img.shields.io/github/sponsors/autonull)](https://github.com/sponsors/autonull)",
-    "directories": {
-        "doc": "docs",
-        "example": "examples",
-        "test": "test"
-    },
-    "author": "",
-    "bugs": {
-        "url": "https://github.com/autonull/spacegraphjs/issues"
-    },
-    "homepage": "https://github.com/autonull/spacegraphjs#readme"
+    "marked": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.58.2",
+    "@types/jsdom": "^28.0.0",
+    "@types/katex": "^0.16.8",
+    "@types/marked": "^5.0.2",
+    "@types/node": "^20.10.0",
+    "@types/three": "^0.160.0",
+    "@typescript-eslint/eslint-plugin": "^8.56.1",
+    "@typescript-eslint/parser": "^8.56.1",
+    "@vitest/coverage-v8": "^4.0.18",
+    "canvas": "^3.2.3",
+    "chart.js": "^4.5.1",
+    "eslint": "^10.0.2",
+    "http-server": "^14.1.1",
+    "jsdom": "^28.1.0",
+    "katex": "^0.16.38",
+    "marked": "^17.0.4",
+    "playwright": "^1.58.2",
+    "prettier": "^3.8.1",
+    "three": "^0.160.0",
+    "tsx": "^4.21.0",
+    "typedoc": "^0.28.17",
+    "typescript": "^5.3.2",
+    "typescript-eslint": "^8.56.1",
+    "vite": "^5.0.0",
+    "vite-plugin-dts": "^5.0.0",
+    "vitest": "^4.0.18"
+  },
+  "workspaces": ["packages/*"],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/autonull/spacegraphjs.git"
+  },
+  "keywords": ["zui", "graph", "visualization", "three.js"],
+  "dependencies": {
+    "@monaco-editor/loader": "^1.7.0",
+    "gsap": "^3.14.2",
+    "mitt": "^3.0.1",
+    "onnxruntime-web": "^1.24.2",
+    "three-mesh-bvh": "^0.9.9"
+  },
+  "description": "[![pnpm](https://img.shields.io/pnpm/v/spacegraphjs.svg)](https://www.npmjs.com/package/spacegraphjs) [![Matrix](https://img.shields.io/matrix/spacegraphjs:matrix.org)](https://matrix.to/#/#spacegraphjs:matrix.org) [![GitHub Sponsors](https://img.shields.io/github/sponsors/autonull)](https://github.com/sponsors/autonull)",
+  "directories": {
+    "doc": "docs",
+    "example": "examples",
+    "test": "test"
+  },
+  "author": "",
+  "bugs": {
+    "url": "https://github.com/autonull/spacegraphjs/issues"
+  },
+  "homepage": "https://github.com/autonull/spacegraphjs#readme"
 }

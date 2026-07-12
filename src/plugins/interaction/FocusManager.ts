@@ -5,86 +5,81 @@ import { createLogger } from '../../utils/logger';
 const logger = createLogger('FocusManager');
 
 export interface FocusableNode extends Node {
-    focusable: boolean;
-    focused: boolean;
-    focus(): void;
-    blur(): void;
+  focusable: boolean;
+  focused: boolean;
+  focus(): void;
+  blur(): void;
 }
 
 export class FocusManager {
-    private readonly sg: SpaceGraph;
-    private focusStack: FocusableNode[] = [];
-    private focusedNode: FocusableNode | null = null;
+  private readonly sg: SpaceGraph;
+  private focusStack: FocusableNode[] = [];
+  private focusedNode: FocusableNode | null = null;
 
-    constructor(sg: SpaceGraph) {
-        this.sg = sg;
+  constructor(sg: SpaceGraph) {
+    this.sg = sg;
+  }
+
+  getFocusedNode(): FocusableNode | null {
+    return this.focusedNode;
+  }
+
+  focus(node: FocusableNode): void {
+    if (!node.focusable) {
+      logger.warn(`Cannot focus non-focusable node: ${node.id}`);
+      return;
     }
 
-    getFocusedNode(): FocusableNode | null {
-        return this.focusedNode;
-    }
+    if (this.focusedNode === node) return;
 
-    focus(node: FocusableNode): void {
-        if (!node.focusable) {
-            logger.warn(`Cannot focus non-focusable node: ${node.id}`);
-            return;
-        }
+    this.blur();
 
-        if (this.focusedNode === node) return;
+    this.focusedNode = node;
+    node.focus();
+    this.focusStack.push(node);
 
-        this.blur();
+    this.sg.events.emit('focus:changed', { node, focused: true });
+    logger.debug(`Focused node: ${node.id}`);
+  }
 
-        this.focusedNode = node;
-        node.focus();
-        this.focusStack.push(node);
+  blur(): void {
+    if (!this.focusedNode) return;
 
-        this.sg.events.emit('focus:changed', { node, focused: true });
-        logger.debug(`Focused node: ${node.id}`);
-    }
+    const node = this.focusedNode;
+    this.focusedNode = null;
+    node.blur();
 
-    blur(): void {
-        if (!this.focusedNode) return;
+    this.sg.events.emit('focus:changed', { node, focused: false });
+    logger.debug(`Blurred node: ${node.id}`);
+  }
 
-        const node = this.focusedNode;
-        this.focusedNode = null;
-        node.blur();
+  focusNext(): void {
+    const focusableNodes = this.getFocusableNodes();
+    if (focusableNodes.length === 0) return;
 
-        this.sg.events.emit('focus:changed', { node, focused: false });
-        logger.debug(`Blurred node: ${node.id}`);
-    }
+    const currentIndex = this.focusedNode ? focusableNodes.indexOf(this.focusedNode) : -1;
+    const nextIndex = (currentIndex + 1) % focusableNodes.length;
+    this.focus(focusableNodes[nextIndex]);
+  }
 
-    focusNext(): void {
-        const focusableNodes = this.getFocusableNodes();
-        if (focusableNodes.length === 0) return;
+  focusPrevious(): void {
+    const focusableNodes = this.getFocusableNodes();
+    if (focusableNodes.length === 0) return;
 
-        const currentIndex = this.focusedNode
-            ? focusableNodes.indexOf(this.focusedNode)
-            : -1;
-        const nextIndex = (currentIndex + 1) % focusableNodes.length;
-        this.focus(focusableNodes[nextIndex]);
-    }
+    const currentIndex = this.focusedNode ? focusableNodes.indexOf(this.focusedNode) : 0;
+    const prevIndex = (currentIndex - 1 + focusableNodes.length) % focusableNodes.length;
+    this.focus(focusableNodes[prevIndex]);
+  }
 
-    focusPrevious(): void {
-        const focusableNodes = this.getFocusableNodes();
-        if (focusableNodes.length === 0) return;
+  private getFocusableNodes(): FocusableNode[] {
+    const allNodes = Array.from(this.sg.graph.nodes.values());
+    return allNodes.filter(
+      (n): n is FocusableNode => 'focusable' in n && (n as FocusableNode).focusable
+    ) as FocusableNode[];
+  }
 
-        const currentIndex = this.focusedNode
-            ? focusableNodes.indexOf(this.focusedNode)
-            : 0;
-        const prevIndex = (currentIndex - 1 + focusableNodes.length) % focusableNodes.length;
-        this.focus(focusableNodes[prevIndex]);
-    }
-
-    private getFocusableNodes(): FocusableNode[] {
-        const allNodes = Array.from(this.sg.graph.nodes.values());
-        return allNodes.filter(
-            (n): n is FocusableNode =>
-                'focusable' in n && (n as FocusableNode).focusable,
-        ) as FocusableNode[];
-    }
-
-    dispose(): void {
-        this.blur();
-        this.focusStack = [];
-    }
+  dispose(): void {
+    this.blur();
+    this.focusStack = [];
+  }
 }

@@ -1,5 +1,5 @@
-import { createDemoWithNodes, SpaceGraph } from '../framework';
 import { VisionOverlayPlugin } from '../../src/index';
+import { type SpaceGraph, createDemoWithNodes } from '../framework';
 
 export default async function visionAiDemo(): Promise<SpaceGraph> {
   const nodes = [

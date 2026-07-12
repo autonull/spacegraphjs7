@@ -1,7 +1,7 @@
-import { Edge } from './Edge';
 import type { SpaceGraph } from '../SpaceGraph';
-import type { EdgeData, EdgeSpec } from '../types';
 import type { Node } from '../nodes/Node';
+import type { EdgeData, EdgeSpec } from '../types';
+import { Edge } from './Edge';
 
 /**
  * DottedEdge — Dashed/dotted line edge.
@@ -15,19 +15,19 @@ import type { Node } from '../nodes/Node';
  *   thickness : line width (default 2)
  */
 export class DottedEdge extends Edge {
-    static readonly typeName = 'DottedEdge';
-    constructor(sg: SpaceGraph, spec: EdgeSpec, source: Node, target: Node) {
-        const dottedSpec: EdgeSpec = {
-            ...spec,
-            data: {
-                dashed: true,
-                dashSize: 8,
-                gapSize: 6,
-                color: 0x888888,
-                thickness: 2,
-                ...spec.data,
-            } as EdgeData,
-        };
-        super(sg, dottedSpec, source, target);
-    }
+  static readonly typeName = 'DottedEdge';
+  constructor(sg: SpaceGraph, spec: EdgeSpec, source: Node, target: Node) {
+    const dottedSpec: EdgeSpec = {
+      ...spec,
+      data: {
+        dashed: true,
+        dashSize: 8,
+        gapSize: 6,
+        color: 0x888888,
+        thickness: 2,
+        ...spec.data,
+      } as EdgeData,
+    };
+    super(sg, dottedSpec, source, target);
+  }
 }

@@ -1,4 +1,4 @@
-import { createDemoWithNodes, shapeNode, addOverlayPanel, SpaceGraph } from '../framework';
+import { type SpaceGraph, addOverlayPanel, createDemoWithNodes, shapeNode } from '../framework';
 
 export default async function fractalDebugDemo(): Promise<SpaceGraph> {
   const LEVELS = ['Alpha', 'Beta', 'Gamma'];
@@ -9,14 +9,14 @@ export default async function fractalDebugDemo(): Promise<SpaceGraph> {
       type: 'GroupNode',
       label: 'DEBUG GROUP',
       position: [0, 0, 0],
-      data: { width: 500, height: 500, depth: 500, color: 0xff0000, lodThreshold: 1000 }
+      data: { width: 500, height: 500, depth: 500, color: 0xff0000, lodThreshold: 1000 },
     },
     {
       id: 'debug-child',
       type: 'ShapeNode',
       position: [0, 0, 0],
-      data: { parent: 'debug-group', color: 0x00ff00, size: 50 }
-    }
+      data: { parent: 'debug-group', color: 0x00ff00, size: 50 },
+    },
   ];
 
   const sg = await createDemoWithNodes(nodes);
@@ -34,12 +34,15 @@ export default async function fractalDebugDemo(): Promise<SpaceGraph> {
   document.body.appendChild(levelText);
 
   if (fractalPlugin) {
-    console.log('Fractal plugin found, current levels:', (fractalPlugin as any).config.levels.map((l:any) => l.label));
+    console.log(
+      'Fractal plugin found, current levels:',
+      (fractalPlugin as any).config.levels.map((l: any) => l.label)
+    );
 
     // Override
     (fractalPlugin as any).config.levels = [
-        { level: 0, minDistance: 1000, maxDistance: 5000, detailThreshold: 0.1, label: 'Alpha' },
-        { level: 1, minDistance: 0, maxDistance: 1000, detailThreshold: 0.5, label: 'Beta' },
+      { level: 0, minDistance: 1000, maxDistance: 5000, detailThreshold: 0.1, label: 'Alpha' },
+      { level: 1, minDistance: 0, maxDistance: 1000, detailThreshold: 0.5, label: 'Beta' },
     ];
 
     // Attempt to force update

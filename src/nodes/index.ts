@@ -26,13 +26,13 @@ export { CodeEditorNode } from './CodeEditorNode';
 export { DOMNode } from './DOMNode';
 export { TexturedMeshNode } from './TexturedMeshNode';
 export {
-    LayoutNode,
-    gridStrategy,
-    stackingStrategy,
-    splitStrategy,
-    borderStrategy,
-    switchStrategy,
-    type LayoutStrategy,
+  LayoutNode,
+  gridStrategy,
+  stackingStrategy,
+  splitStrategy,
+  borderStrategy,
+  switchStrategy,
+  type LayoutStrategy,
 } from './LayoutNode';
 export { StackingNode } from './StackingNode';
 export { GridNode } from './GridNode';

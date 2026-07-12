@@ -1,16 +1,23 @@
-import type { Plugin } from '../core/PluginManager';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { Graph } from '../core/Graph';
+import type { Plugin } from '../core/PluginManager';
 import type { EventSystem } from '../core/events/EventSystem';
-import type { Node } from '../nodes/Node';
 import type { Edge } from '../edges/Edge';
+import type { Node } from '../nodes/Node';
 
 export interface SubscriptionHandle {
   dispose(): void;
 }
 
-export function hasMethod<T>(obj: T, method: string): obj is T & Record<string, (...args: unknown[]) => unknown> {
-  return !!obj && method in (obj as object) && typeof (obj as Record<string, unknown>)[method] === 'function';
+export function hasMethod<T>(
+  obj: T,
+  method: string
+): obj is T & Record<string, (...args: unknown[]) => unknown> {
+  return (
+    !!obj &&
+    method in (obj as object) &&
+    typeof (obj as Record<string, unknown>)[method] === 'function'
+  );
 }
 
 export function createLoggerPrefix(name: string): string {
@@ -60,7 +67,7 @@ export abstract class BaseSystemPlugin implements Plugin {
   }
 
   protected disposeSubscriptions(): void {
-    this.subscriptions.forEach(sub => sub.dispose());
+    this.subscriptions.forEach((sub) => sub.dispose());
     this.subscriptions = [];
   }
 

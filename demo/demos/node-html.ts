@@ -1,13 +1,13 @@
-import { createDemoWithNodes, htmlNode, edge, SpaceGraph } from '../framework';
+import { type SpaceGraph, createDemoWithNodes, edge, htmlNode } from '../framework';
 
 export default async function nodeHtmlDemo(): Promise<SpaceGraph> {
   return await createDemoWithNodes(
-        [
-            htmlNode('html-main', [0, 0, 0], {
-                width: 600,
-                height: 400,
-                className: 'glass pulse-card',
-                html: `
+    [
+      htmlNode('html-main', [0, 0, 0], {
+        width: 600,
+        height: 400,
+        className: 'glass pulse-card',
+        html: `
                     <div style="padding: 20px; height: 100%; display: flex; flex-direction: column;">
                         <h2 style="margin: 0 0 15px 0; color: #60a5fa;">System Command Center</h2>
                         <div style="flex-grow: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
@@ -40,31 +40,31 @@ export default async function nodeHtmlDemo(): Promise<SpaceGraph> {
                              <input type="checkbox" data-sg-interactive="true" checked>
                         </div>
                     </div>
-                `
-            }),
-            htmlNode('html-status-1', [-400, 200, 100], {
-                width: 120,
-                height: 120,
-                className: 'glass circle-node',
-                html: '<div style="text-align: center;"><div style="font-size: 24px;">📡</div><div style="font-size: 10px; margin-top: 5px;">SATELLITE A</div></div>'
-            }),
-            htmlNode('html-status-2', [400, -200, -100], {
-                width: 120,
-                height: 120,
-                className: 'glass circle-node',
-                html: '<div style="text-align: center;"><div style="font-size: 24px;">🔋</div><div style="font-size: 10px; margin-top: 5px;">98%</div></div>'
-            }),
-            htmlNode('html-small-label', [0, -300, 50], {
-                width: 100,
-                height: 40,
-                className: 'glass',
-                html: '<div style="display: flex; align-items: center; justify-content: center; height: 100%; font-size: 12px; font-weight: bold;">NODE_X_01</div>'
-            })
-        ],
-        [
-            edge('html-main', 'html-status-1'),
-            edge('html-main', 'html-status-2'),
-            edge('html-main', 'html-small-label')
-        ],
-    );
+                `,
+      }),
+      htmlNode('html-status-1', [-400, 200, 100], {
+        width: 120,
+        height: 120,
+        className: 'glass circle-node',
+        html: '<div style="text-align: center;"><div style="font-size: 24px;">📡</div><div style="font-size: 10px; margin-top: 5px;">SATELLITE A</div></div>',
+      }),
+      htmlNode('html-status-2', [400, -200, -100], {
+        width: 120,
+        height: 120,
+        className: 'glass circle-node',
+        html: '<div style="text-align: center;"><div style="font-size: 24px;">🔋</div><div style="font-size: 10px; margin-top: 5px;">98%</div></div>',
+      }),
+      htmlNode('html-small-label', [0, -300, 50], {
+        width: 100,
+        height: 40,
+        className: 'glass',
+        html: '<div style="display: flex; align-items: center; justify-content: center; height: 100%; font-size: 12px; font-weight: bold;">NODE_X_01</div>',
+      }),
+    ],
+    [
+      edge('html-main', 'html-status-1'),
+      edge('html-main', 'html-status-2'),
+      edge('html-main', 'html-small-label'),
+    ]
+  );
 }

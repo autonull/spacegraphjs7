@@ -1,6 +1,6 @@
-// Performance optimization utilities
-import { throttle, debounce } from './math';
 import { ObjectPool as CoreObjectPool } from '../core/pooling/ObjectPool';
+// Performance optimization utilities
+import { debounce, throttle } from './math';
 
 /**
  * @deprecated Use CoreObjectPool from core/pooling/ObjectPool
@@ -17,25 +17,25 @@ export class PerformanceMonitor {
   private history: number[] = [];
   private historySize: number;
 
-  constructor(historySize: number = 60) {
+  constructor(historySize = 60) {
     this.historySize = historySize;
   }
 
   update(): number {
     this.frames++;
     const now = performance.now();
-    
+
     if (now - this.lastTime >= 1000) {
       this.fps = this.frames;
       this.frames = 0;
       this.lastTime = now;
       this.history.push(this.fps);
-      
+
       if (this.history.length > this.historySize) {
         this.history.shift();
       }
     }
-    
+
     return this.fps;
   }
 
@@ -44,7 +44,9 @@ export class PerformanceMonitor {
   }
 
   getAverageFPS(): number {
-    return this.history.length === 0 ? 0 : this.history.reduce((a, b) => a + b, 0) / this.history.length;
+    return this.history.length === 0
+      ? 0
+      : this.history.reduce((a, b) => a + b, 0) / this.history.length;
   }
 
   getMinFPS(): number {
@@ -73,7 +75,7 @@ export function batch<T>(items: T[], batchSize: number, fn: (batch: T[]) => void
 export async function batchAsync<T>(
   items: T[],
   batchSize: number,
-  fn: (batch: T[]) => Promise<void>,
+  fn: (batch: T[]) => Promise<void>
 ): Promise<void> {
   for (let i = 0; i < items.length; i += batchSize) {
     await fn(items.slice(i, i + batchSize));
@@ -83,14 +85,17 @@ export async function batchAsync<T>(
 /**
  * Request idle callback wrapper
  */
-export function requestIdleCallbackPolyfill(callback: (deadline: { didTimeout: boolean; timeRemaining: () => number }) => void, timeout?: number): number {
+export function requestIdleCallbackPolyfill(
+  callback: (deadline: { didTimeout: boolean; timeRemaining: () => number }) => void,
+  timeout?: number
+): number {
   if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
     return window.requestIdleCallback(callback, { timeout });
   }
-  
+
   // Fallback for environments without requestIdleCallback
   const start = Date.now();
-  return ((window as any).setTimeout)(() => {
+  return (window as any).setTimeout(() => {
     callback({
       didTimeout: false,
       timeRemaining: () => Math.max(0, 50 - (Date.now() - start)),
@@ -105,7 +110,7 @@ export function cancelIdleCallbackPolyfill(handle: number): void {
   if (typeof window !== 'undefined' && 'cancelIdleCallback' in window) {
     window.cancelIdleCallback(handle);
   } else {
-    ((window as any).clearTimeout)(handle);
+    (window as any).clearTimeout(handle);
   }
 }
 
@@ -139,7 +144,9 @@ export function measure<T>(fn: () => T): { result: T; duration: number } {
 /**
  * Async measure execution time
  */
-export async function measureAsync<T>(fn: () => Promise<T>): Promise<{ result: T; duration: number }> {
+export async function measureAsync<T>(
+  fn: () => Promise<T>
+): Promise<{ result: T; duration: number }> {
   const start = performance.now();
   const result = await fn();
   const duration = performance.now() - start;

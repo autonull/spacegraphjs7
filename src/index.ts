@@ -5,35 +5,101 @@ export { SpaceGraphApp } from './core/SpaceGraphApp';
 
 // Core module exports
 export {
-  Graph, Renderer, CameraControls, PluginManager, Surface, TypeRegistry, ErgonomicsAPI,
-  EventSystem, EventEmitter, VisionManager, ObjectPoolManager,
-  AnimationDuration, ZoomConfig, FingeringPriority, InteractionThresholds, Performance,
-  Defaults, EdgeColors, WCAG, InputConfig, CONSTANTS,
-  Spatial, NodeDefaults, LayoutDefaults, Easing,
-  DEG2RAD, RAD2DEG, PI, TAU, EPSILON, DUR, ZOOM, FINGER, THRESH, PERF, DEF, COLORS,
+  Graph,
+  Renderer,
+  CameraControls,
+  PluginManager,
+  Surface,
+  TypeRegistry,
+  ErgonomicsAPI,
+  EventSystem,
+  EventEmitter,
+  VisionManager,
+  ObjectPoolManager,
+  AnimationDuration,
+  ZoomConfig,
+  FingeringPriority,
+  InteractionThresholds,
+  Performance,
+  Defaults,
+  EdgeColors,
+  WCAG,
+  InputConfig,
+  CONSTANTS,
+  Spatial,
+  NodeDefaults,
+  LayoutDefaults,
+  Easing,
+  DEG2RAD,
+  RAD2DEG,
+  PI,
+  TAU,
+  EPSILON,
+  DUR,
+  ZOOM,
+  FINGER,
+  THRESH,
+  PERF,
+  DEF,
+  COLORS,
 } from './core';
 
 export {
-  DEFAULT_NODE_TYPES, DEFAULT_EDGE_TYPES, DEFAULT_LAYOUT_PLUGINS, DEFAULT_SYSTEM_PLUGINS, createQuickGraphSpec,
-  SpatialIndex, BVH, ObjectPool, MathPool,
+  DEFAULT_NODE_TYPES,
+  DEFAULT_EDGE_TYPES,
+  DEFAULT_LAYOUT_PLUGINS,
+  DEFAULT_SYSTEM_PLUGINS,
+  createQuickGraphSpec,
+  SpatialIndex,
+  BVH,
+  ObjectPool,
+  MathPool,
 } from './core';
 
 // Core aliases for convenience
-export { EventSystem as Event, EventEmitter as Emitter, ErgonomicsAPI as Ergo, ObjectPoolManager as Pools } from './core';
+export {
+  EventSystem as Event,
+  EventEmitter as Emitter,
+  ErgonomicsAPI as Ergo,
+  ObjectPoolManager as Pools,
+} from './core';
 
 // Builder module exports
 export {
-  GraphSpecBuilder, NodeBuilder, EdgeBuilder, Patterns,
-  Animate, Camera, graph,
-  NodeFactory, EdgeFactory, Layout,
-  NodeFactoryExtended, Presets, DataUtils, Batch,
-  widget, button, toggle, slider,
+  GraphSpecBuilder,
+  NodeBuilder,
+  EdgeBuilder,
+  Patterns,
+  Animate,
+  Camera,
+  graph,
+  NodeFactory,
+  EdgeFactory,
+  Layout,
+  NodeFactoryExtended,
+  Presets,
+  DataUtils,
+  Batch,
+  widget,
+  button,
+  toggle,
+  slider,
   // Convenience shortcuts
-  nodeSpec, edgeSpec, at, box, sphere, circle,
-  connect, arrow, dashed, curved, $, layout,
+  nodeSpec,
+  edgeSpec,
+  at,
+  box,
+  sphere,
+  circle,
+  connect,
+  arrow,
+  dashed,
+  curved,
+  $,
+  layout,
 } from './builder';
 
-// Input module exports  
+// Input module exports
 export { InputManager, Fingering, createParentTransform, createCameraFingering } from './input';
 
 // Utils module exports
@@ -105,7 +171,18 @@ export {
 
 // Layout exports
 export { BaseLayout } from './plugins/layouts/BaseLayout';
-export { ForceLayout, GridLayout, CircularLayout, HierarchicalLayout, RadialLayout, TreeLayout, SpectralLayout, GeoLayout, TimelineLayout, ClusterLayout } from './plugins/layouts';
+export {
+  ForceLayout,
+  GridLayout,
+  CircularLayout,
+  HierarchicalLayout,
+  RadialLayout,
+  TreeLayout,
+  SpectralLayout,
+  GeoLayout,
+  TimelineLayout,
+  ClusterLayout,
+} from './plugins/layouts';
 
 // Plugin exports
 export {
@@ -136,21 +213,55 @@ export {
   getHUDPosition,
   type HUDPositionKey,
 } from './plugins/hud/HUDStyles';
-export { withPooledVector3, withPooledVector2, withPooledMatrix4, withPooledBox3 } from './core/pooling/ObjectPool';
+export {
+  withPooledVector3,
+  withPooledVector2,
+  withPooledMatrix4,
+  withPooledBox3,
+} from './core/pooling/ObjectPool';
 
 // Type exports
 export type {
-  Plugin, NodeConstructor, EdgeConstructor,
-  LogLevel, Logger,
+  Plugin,
+  NodeConstructor,
+  EdgeConstructor,
+  LogLevel,
+  Logger,
   GeometryFamily as GeometryFamilyType,
-  VisionCategory, VisionOptions, VisionReport, VisionScore,
-  SpaceGraphOptions, RenderOptions, GraphSpec, NodeSpec, EdgeSpec,
-  SpecUpdate, GraphExport, GraphImportData, HitResult,
-  LabelLodLevel, Rect, DeepPartial,
-  Maybe, MaybePromise, Predicate, EventHandler, Disposer,
-  Point2D, Point3D, Bounds3D,
-  NodeCallback, EdgeCallback, IdCallback, AsyncCallback,
-  ID, Coordinate2D, Coordinate3D, Position, Size, Bounds,
+  VisionCategory,
+  VisionOptions,
+  VisionReport,
+  VisionScore,
+  SpaceGraphOptions,
+  RenderOptions,
+  GraphSpec,
+  NodeSpec,
+  EdgeSpec,
+  SpecUpdate,
+  GraphExport,
+  GraphImportData,
+  HitResult,
+  LabelLodLevel,
+  Rect,
+  DeepPartial,
+  Maybe,
+  MaybePromise,
+  Predicate,
+  EventHandler,
+  Disposer,
+  Point2D,
+  Point3D,
+  Bounds3D,
+  NodeCallback,
+  EdgeCallback,
+  IdCallback,
+  AsyncCallback,
+  ID,
+  Coordinate2D,
+  Coordinate3D,
+  Position,
+  Size,
+  Bounds,
 } from './types';
 
 // Widget types
@@ -158,15 +269,22 @@ export type { WidgetNodeData } from './nodes/WidgetNode';
 
 // Convenience factory functions
 import { SpaceGraph } from './SpaceGraph';
-export const createSpaceGraph = (container: HTMLElement, options?: import('./types').SpaceGraphOptions) => new SpaceGraph(container, options);
-export const createGraph = import('./builder').then(m => m.graph);
+export const createSpaceGraph = (
+  container: HTMLElement,
+  options?: import('./types').SpaceGraphOptions
+) => new SpaceGraph(container, options);
+export const createGraph = import('./builder').then((m) => m.graph);
 
 // Shorthand factories for quick graph creation
 export const sg = createSpaceGraph;
 export const qg = createGraph;
 
 // Quick node creation shortcuts
-export const node = (id: string, type = 'ShapeNode', position?: [number, number, number]) => ({ id, type, position });
+export const node = (id: string, type = 'ShapeNode', position?: [number, number, number]) => ({
+  id,
+  type,
+  position,
+});
 export const edge = (id: string, source: string, target: string) => ({ id, source, target });
 
 // Default export

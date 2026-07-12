@@ -1,115 +1,113 @@
 import * as THREE from 'three';
-import { Edge } from './Edge';
-import { DOMUtils } from '../utils/DOMUtils';
 import type { SpaceGraph } from '../SpaceGraph';
-import type { EdgeData, EdgeSpec } from '../types';
 import type { Node } from '../nodes/Node';
+import type { EdgeData, EdgeSpec } from '../types';
+import { DOMUtils } from '../utils/DOMUtils';
+import { Edge } from './Edge';
 
 export class InterGraphEdge extends Edge {
-    static readonly typeName = 'InterGraphEdge';
-    public isInterGraphEdge = true;
-    private svgNamespace = 'http://www.w3.org/2000/svg';
-    private svgLine: SVGPathElement;
-    private svgContainer: SVGSVGElement;
-    private animationFrameId?: number;
+  static readonly typeName = 'InterGraphEdge';
+  public isInterGraphEdge = true;
+  private svgNamespace = 'http://www.w3.org/2000/svg';
+  private svgLine: SVGPathElement;
+  private svgContainer: SVGSVGElement;
+  private animationFrameId?: number;
 
-    constructor(sg: SpaceGraph, spec: EdgeSpec, source: Node, target: Node) {
-        super(sg, spec, source, target);
+  constructor(sg: SpaceGraph, spec: EdgeSpec, source: Node, target: Node) {
+    super(sg, spec, source, target);
 
-        if (this.object.parent) {
-            this.object.parent.remove(this.object);
-        }
-
-        this.svgContainer = this.getGlobalSvgContainer();
-        this.svgLine = DOMUtils.createElementNS(this.svgNamespace, 'path') as SVGPathElement;
-
-        const data = spec.data as EdgeData & { color?: number | string };
-        const colorHex = data?.color ?? 0x666666;
-        const colorHexStr =
-            typeof colorHex === 'number' ? `#${colorHex.toString(16).padStart(6, '0')}` : colorHex;
-
-        this.svgLine.setAttribute('stroke', colorHexStr);
-        this.svgLine.setAttribute('stroke-width', '2');
-        this.svgLine.setAttribute('fill', 'none');
-        this.svgLine.setAttribute('stroke-dasharray', '5, 5');
-
-        this.svgContainer.appendChild(this.svgLine);
-
-        this.startUpdateLoop();
+    if (this.object.parent) {
+      this.object.parent.remove(this.object);
     }
 
-    private getGlobalSvgContainer(): SVGSVGElement {
-        let svg = document.getElementById('spacegraph-intergraph-overlay') as SVGSVGElement | null;
-        if (!svg) {
-            svg = DOMUtils.createElementNS(this.svgNamespace, 'svg', {
-                id: 'spacegraph-intergraph-overlay',
-                style: {
-                    position: 'fixed',
-                    top: '0',
-                    left: '0',
-                    width: '100vw',
-                    height: '100vh',
-                    pointerEvents: 'none',
-                    zIndex: '9999',
-                },
-            }) as SVGSVGElement;
-            document.body.appendChild(svg);
-        }
-        return svg;
+    this.svgContainer = this.getGlobalSvgContainer();
+    this.svgLine = DOMUtils.createElementNS(this.svgNamespace, 'path') as SVGPathElement;
+
+    const data = spec.data as EdgeData & { color?: number | string };
+    const colorHex = data?.color ?? 0x666666;
+    const colorHexStr =
+      typeof colorHex === 'number' ? `#${colorHex.toString(16).padStart(6, '0')}` : colorHex;
+
+    this.svgLine.setAttribute('stroke', colorHexStr);
+    this.svgLine.setAttribute('stroke-width', '2');
+    this.svgLine.setAttribute('fill', 'none');
+    this.svgLine.setAttribute('stroke-dasharray', '5, 5');
+
+    this.svgContainer.appendChild(this.svgLine);
+
+    this.startUpdateLoop();
+  }
+
+  private getGlobalSvgContainer(): SVGSVGElement {
+    let svg = document.getElementById('spacegraph-intergraph-overlay') as SVGSVGElement | null;
+    if (!svg) {
+      svg = DOMUtils.createElementNS(this.svgNamespace, 'svg', {
+        id: 'spacegraph-intergraph-overlay',
+        style: {
+          position: 'fixed',
+          top: '0',
+          left: '0',
+          width: '100vw',
+          height: '100vh',
+          pointerEvents: 'none',
+          zIndex: '9999',
+        },
+      }) as SVGSVGElement;
+      document.body.appendChild(svg);
     }
+    return svg;
+  }
 
-    private projectToScreen(node: Node, targetVector: THREE.Vector3) {
-        const sg = node.sg;
-        if (!sg?.renderer) return;
-        node.getWorldPosition(targetVector);
-        targetVector.project(sg.renderer.camera);
+  private projectToScreen(node: Node, targetVector: THREE.Vector3) {
+    const sg = node.sg;
+    if (!sg?.renderer) return;
+    node.getWorldPosition(targetVector);
+    targetVector.project(sg.renderer.camera);
 
-        const rect = sg.renderer.renderer.domElement.getBoundingClientRect();
+    const rect = sg.renderer.renderer.domElement.getBoundingClientRect();
 
-        targetVector.x = (targetVector.x * 0.5 + 0.5) * rect.width + rect.left;
-        targetVector.y = (targetVector.y * -0.5 + 0.5) * rect.height + rect.top;
-        targetVector.z = 0;
+    targetVector.x = (targetVector.x * 0.5 + 0.5) * rect.width + rect.left;
+    targetVector.y = (targetVector.y * -0.5 + 0.5) * rect.height + rect.top;
+    targetVector.z = 0;
+  }
+
+  private updateSvgLine() {
+    const sourcePos = new THREE.Vector3();
+    const targetPos = new THREE.Vector3();
+
+    this.projectToScreen(this.source, sourcePos);
+    this.projectToScreen(this.target, targetPos);
+
+    const path = `M ${sourcePos.x} ${sourcePos.y} L ${targetPos.x} ${targetPos.y}`;
+    this.svgLine.setAttribute('d', path);
+  }
+
+  private startUpdateLoop() {
+    const loop = () => {
+      this.updateSvgLine();
+      this.animationFrameId = requestAnimationFrame(loop);
+    };
+    loop();
+  }
+
+  update() {
+    // Handled by update loop
+  }
+
+  updateSpec(updates: Partial<EdgeSpec>): this {
+    super.updateSpec(updates);
+    if (updates.data?.color) {
+      const colorHex = updates.data.color;
+      const colorHexStr =
+        typeof colorHex === 'number' ? `#${colorHex.toString(16).padStart(6, '0')}` : colorHex;
+      this.svgLine.setAttribute('stroke', colorHexStr);
     }
+    return this;
+  }
 
-    private updateSvgLine() {
-        const sourcePos = new THREE.Vector3();
-        const targetPos = new THREE.Vector3();
-
-        this.projectToScreen(this.source, sourcePos);
-        this.projectToScreen(this.target, targetPos);
-
-        const path = `M ${sourcePos.x} ${sourcePos.y} L ${targetPos.x} ${targetPos.y}`;
-        this.svgLine.setAttribute('d', path);
-    }
-
-    private startUpdateLoop() {
-        const loop = () => {
-            this.updateSvgLine();
-            this.animationFrameId = requestAnimationFrame(loop);
-        };
-        loop();
-    }
-
-    update() {
-        // Handled by update loop
-    }
-
-    updateSpec(updates: Partial<EdgeSpec>): this {
-        super.updateSpec(updates);
-        if (updates.data?.color) {
-            const colorHex = updates.data.color;
-            const colorHexStr =
-                typeof colorHex === 'number'
-                    ? `#${colorHex.toString(16).padStart(6, '0')}`
-                    : colorHex;
-            this.svgLine.setAttribute('stroke', colorHexStr);
-        }
-        return this;
-    }
-
-    dispose() {
-        if (this.animationFrameId) cancelAnimationFrame(this.animationFrameId);
-        this.svgLine.parentNode?.removeChild(this.svgLine);
-        super.dispose();
-    }
+  dispose() {
+    if (this.animationFrameId) cancelAnimationFrame(this.animationFrameId);
+    this.svgLine.parentNode?.removeChild(this.svgLine);
+    super.dispose();
+  }
 }

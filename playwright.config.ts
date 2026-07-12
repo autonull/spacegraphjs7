@@ -1,12 +1,12 @@
 import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
-    testDir: './test',
-    testMatch: /.*\.spec\.ts/,
-    reporter: 'list',
-    use: {
-        headless: true,
-        video: 'on',
-    },
-    outputDir: 'recordings/',
+  testDir: './test',
+  testMatch: /.*\.spec\.ts/,
+  reporter: 'list',
+  use: {
+    headless: true,
+    video: 'on',
+  },
+  outputDir: 'recordings/',
 });

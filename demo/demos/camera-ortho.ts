@@ -1,4 +1,4 @@
-import { createDemo, createDemoHint, SpaceGraph } from '../framework';
+import { type SpaceGraph, createDemo, createDemoHint } from '../framework';
 
 export default async function cameraOrthoDemo(): Promise<SpaceGraph> {
   const sg = await createDemo({
@@ -25,7 +25,10 @@ export default async function cameraOrthoDemo(): Promise<SpaceGraph> {
     edges: [],
   });
 
-  createDemoHint(sg, `<strong>Orbit:</strong> <kbd>Left Mouse</kbd> &nbsp;|&nbsp; <strong>Pan:</strong> <kbd>Right Mouse</kbd> &nbsp;|&nbsp; <strong>Zoom:</strong> <kbd>Scroll</kbd>`);
+  createDemoHint(
+    sg,
+    `<strong>Orbit:</strong> <kbd>Left Mouse</kbd> &nbsp;|&nbsp; <strong>Pan:</strong> <kbd>Right Mouse</kbd> &nbsp;|&nbsp; <strong>Zoom:</strong> <kbd>Scroll</kbd>`
+  );
 
   return sg;
 }

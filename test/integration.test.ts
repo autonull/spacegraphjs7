@@ -1,19 +1,19 @@
 // SpaceGraphJS v7.0 - Integration Test
 // Demonstrates end-to-end functionality of the v7 architecture
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { Graph } from '../src/core/Graph';
-import { Node } from '../src/nodes/Node';
-import { Edge } from '../src/edges/Edge';
-import { EventSystem } from '../src/core/events/EventSystem';
-import { TypeRegistry } from '../src/core/TypeRegistry';
-import { SpatialIndex } from '../src/core/spatial/SpatialIndex';
-import { MathPool } from '../src/core/pooling/ObjectPool';
-import { VisionSystem } from '../src/vision/VisionSystem';
-import { ForceLayout } from '../src/plugins/layouts/ForceLayout';
-import { PluginManager, type Plugin } from '../src/core/PluginManager';
-import { SpaceGraph } from '../src/SpaceGraph';
 import * as THREE from 'three';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { SpaceGraph } from '../src/SpaceGraph';
+import { Graph } from '../src/core/Graph';
+import { type Plugin, PluginManager } from '../src/core/PluginManager';
+import { TypeRegistry } from '../src/core/TypeRegistry';
+import { EventSystem } from '../src/core/events/EventSystem';
+import { MathPool } from '../src/core/pooling/ObjectPool';
+import { SpatialIndex } from '../src/core/spatial/SpatialIndex';
+import { Edge } from '../src/edges/Edge';
+import { Node } from '../src/nodes/Node';
+import { ForceLayout } from '../src/plugins/layouts/ForceLayout';
+import { VisionSystem } from '../src/vision/VisionSystem';
 
 /**
  * Test Node implementation
@@ -26,73 +26,73 @@ class TestNode extends Node {
     super(sgOrSpec?.type ? sgOrSpec : undefined, spec);
     this._object = new THREE.Mesh(
       new THREE.SphereGeometry(10, 16, 16),
-      new THREE.MeshBasicMaterial({ color: 0x3366ff }),
+      new THREE.MeshBasicMaterial({ color: 0x3366ff })
     );
     this._object.position.copy(this.position);
-    }
+  }
 
-    get object(): THREE.Object3D {
-        return this._object;
-    }
+  get object(): THREE.Object3D {
+    return this._object;
+  }
 
-    update(spec: any): void {
-        super.update(spec);
-        if (spec.data?.color) {
-            (this._object as THREE.Mesh).material.color.setHex(spec.data.color);
-        }
+  update(spec: any): void {
+    super.update(spec);
+    if (spec.data?.color) {
+      (this._object as THREE.Mesh).material.color.setHex(spec.data.color);
     }
+  }
 
-    dispose(): void {
-        (this._object as THREE.Mesh).geometry.dispose();
-        (this._object as THREE.Mesh).material.dispose();
-        super.dispose();
-    }
+  dispose(): void {
+    (this._object as THREE.Mesh).geometry.dispose();
+    (this._object as THREE.Mesh).material.dispose();
+    super.dispose();
+  }
 }
 
 /**
  * Test Edge implementation
  */
 class TestEdge extends Edge {
-    private _object: THREE.Object3D;
+  private _object: THREE.Object3D;
 
-    constructor(sgOrSpec: any, specOrSource: any, sourceOrTarget?: Node, targetOrNothing?: Node) {
-        const isSpecFirst = sgOrSpec?.source !== undefined;
-        if (isSpecFirst) {
-            super(sgOrSpec, specOrSource, sourceOrTarget);
-        } else {
-            super(sgOrSpec, specOrSource, sourceOrTarget, targetOrNothing);
-        }
-        this._object = new THREE.Line(
-            new THREE.BufferGeometry(),
-            new THREE.LineBasicMaterial({ color: 0x00d0ff }),
-        );
-        this.updatePositions();
+  constructor(sgOrSpec: any, specOrSource: any, sourceOrTarget?: Node, targetOrNothing?: Node) {
+    const isSpecFirst = sgOrSpec?.source !== undefined;
+    if (isSpecFirst) {
+      super(sgOrSpec, specOrSource, sourceOrTarget);
+    } else {
+      super(sgOrSpec, specOrSource, sourceOrTarget, targetOrNothing);
     }
+    this._object = new THREE.Line(
+      new THREE.BufferGeometry(),
+      new THREE.LineBasicMaterial({ color: 0x00d0ff })
+    );
+    this.updatePositions();
+  }
 
-    get object(): THREE.Object3D {
-        return this._object;
-    }
+  get object(): THREE.Object3D {
+    return this._object;
+  }
 
-    updatePositions(): void {
-        const positions = new Float32Array([
-            this.source.position.x,
-            this.source.position.y,
-            this.source.position.z,
-            this.target.position.x,
-            this.target.position.y,
-            this.target.position.z,
-        ]);
-        (this._object.geometry as THREE.BufferGeometry).setAttribute(
-            'position',
-            new THREE.BufferAttribute(positions, 3),
-        );
-    }
+  updatePositions(): void {
+    const positions = new Float32Array([
+      this.source.position.x,
+      this.source.position.y,
+      this.source.position.z,
+      this.target.position.x,
+      this.target.position.y,
+      this.target.position.z,
+    ]);
+    (this._object.geometry as THREE.BufferGeometry).setAttribute(
+      'position',
+      new THREE.BufferAttribute(positions, 3)
+    );
+  }
 
-    dispose(): void {
-        this._object.geometry.dispose();
-        (this._object.material as THREE.Material).dispose();
-        super.dispose();
-    }
+  dispose(): void {
+    this._object.geometry.dispose();
+    (this._object.material as THREE.Material).dispose();
+    super.dispose();
+  }
 }
 
 /**
@@ -127,274 +127,274 @@ describe('SpaceGraphJS v7.0 Integration', () => {
     registry.clear();
   });
 
-    describe('Graph Operations', () => {
-        it('should create graph and load from spec', () => {
-            const spec = {
-                nodes: [
-                    {
-                        id: 'node1',
-                        type: 'TestNode',
-                        position: [0, 0, 0] as [number, number, number],
-                    },
-                    {
-                        id: 'node2',
-                        type: 'TestNode',
-                        position: [100, 0, 0] as [number, number, number],
-                    },
-                ],
-                edges: [{ id: 'edge1', type: 'TestEdge', source: 'node1', target: 'node2' }],
-            };
+  describe('Graph Operations', () => {
+    it('should create graph and load from spec', () => {
+      const spec = {
+        nodes: [
+          {
+            id: 'node1',
+            type: 'TestNode',
+            position: [0, 0, 0] as [number, number, number],
+          },
+          {
+            id: 'node2',
+            type: 'TestNode',
+            position: [100, 0, 0] as [number, number, number],
+          },
+        ],
+        edges: [{ id: 'edge1', type: 'TestEdge', source: 'node1', target: 'node2' }],
+      };
 
-            graph.fromJSON(spec);
+      graph.fromJSON(spec);
 
-            expect(graph.nodeCount).toBe(2);
-            expect(graph.edgeCount).toBe(1);
-            expect(graph.hasNode('node1')).toBe(true);
-            expect(graph.hasNode('node2')).toBe(true);
-            expect(graph.hasEdge('edge1')).toBe(true);
-        });
-
-        it('should emit events on graph changes', () => {
-            const nodeAdded = vi.fn();
-            const edgeAdded = vi.fn();
-
-            graph.on('node:added', nodeAdded);
-            graph.on('edge:added', edgeAdded);
-
-            const node = new TestNode({ id: 'n1', type: 'TestNode' });
-            graph.addNode(node);
-
-            expect(nodeAdded).toHaveBeenCalledTimes(1);
-            expect(nodeAdded.mock.calls[0][0].node.id).toBe('n1');
-            expect(nodeAdded.mock.calls[0][0].timestamp).toBeDefined();
-        });
-
-        it('should remove connected edges when removing node', () => {
-            graph.fromJSON({
-                nodes: [
-                    { id: 'n1', type: 'TestNode', position: [0, 0, 0] as [number, number, number] },
-                    {
-                        id: 'n2',
-                        type: 'TestNode',
-                        position: [100, 0, 0] as [number, number, number],
-                    },
-                ],
-                edges: [{ id: 'e1', type: 'TestEdge', source: 'n1', target: 'n2' }],
-            });
-
-            graph.removeNode('n1');
-
-            expect(graph.nodeCount).toBe(1);
-            expect(graph.edgeCount).toBe(0);
-        });
+      expect(graph.nodeCount).toBe(2);
+      expect(graph.edgeCount).toBe(1);
+      expect(graph.hasNode('node1')).toBe(true);
+      expect(graph.hasNode('node2')).toBe(true);
+      expect(graph.hasEdge('edge1')).toBe(true);
     });
 
-    describe('Spatial Index', () => {
-        it('should detect overlapping nodes', () => {
-            const nodes = [
-                new TestNode({ id: 'n1', type: 'TestNode', position: [0, 0, 0] }),
-                new TestNode({ id: 'n2', type: 'TestNode', position: [5, 5, 0] }), // Close enough to overlap
-            ];
+    it('should emit events on graph changes', () => {
+      const nodeAdded = vi.fn();
+      const edgeAdded = vi.fn();
 
-            const index = new SpatialIndex(50);
-            index.build(nodes);
+      graph.on('node:added', nodeAdded);
+      graph.on('edge:added', edgeAdded);
 
-            const overlaps = index.findAllOverlaps();
-            expect(overlaps.length).toBeGreaterThan(0);
-        });
+      const node = new TestNode({ id: 'n1', type: 'TestNode' });
+      graph.addNode(node);
 
-        it('should query nodes in radius', () => {
-            const nodes = [
-                new TestNode({ id: 'n1', type: 'TestNode', position: [0, 0, 0] }),
-                new TestNode({ id: 'n2', type: 'TestNode', position: [50, 0, 0] }),
-                new TestNode({ id: 'n3', type: 'TestNode', position: [200, 0, 0] }),
-            ];
-
-            const index = new SpatialIndex(100);
-            index.build(nodes);
-
-            const center = new THREE.Vector3(0, 0, 0);
-            const results = index.queryRadius(center, 100);
-
-            expect(results.length).toBe(2); // n1 and n2
-        });
+      expect(nodeAdded).toHaveBeenCalledTimes(1);
+      expect(nodeAdded.mock.calls[0][0].node.id).toBe('n1');
+      expect(nodeAdded.mock.calls[0][0].timestamp).toBeDefined();
     });
 
-    describe('Object Pool', () => {
-        it('should reuse pooled vectors', () => {
-            const pool = MathPool.getInstance();
+    it('should remove connected edges when removing node', () => {
+      graph.fromJSON({
+        nodes: [
+          { id: 'n1', type: 'TestNode', position: [0, 0, 0] as [number, number, number] },
+          {
+            id: 'n2',
+            type: 'TestNode',
+            position: [100, 0, 0] as [number, number, number],
+          },
+        ],
+        edges: [{ id: 'e1', type: 'TestEdge', source: 'n1', target: 'n2' }],
+      });
 
-            const v1 = pool.acquireVector3();
-            v1.set(10, 20, 30);
-            pool.releaseVector3(v1);
+      graph.removeNode('n1');
 
-            const v2 = pool.acquireVector3();
-            expect(v2.x).toBe(0); // Should be reset
-            expect(v2.y).toBe(0);
-            expect(v2.z).toBe(0);
-        });
+      expect(graph.nodeCount).toBe(1);
+      expect(graph.edgeCount).toBe(0);
+    });
+  });
 
-        it('should track pool statistics', () => {
-            const pool = MathPool.getInstance();
-            const stats = pool.getStats();
+  describe('Spatial Index', () => {
+    it('should detect overlapping nodes', () => {
+      const nodes = [
+        new TestNode({ id: 'n1', type: 'TestNode', position: [0, 0, 0] }),
+        new TestNode({ id: 'n2', type: 'TestNode', position: [5, 5, 0] }), // Close enough to overlap
+      ];
 
-            expect(stats.vector3).toBeGreaterThan(0);
-            expect(stats.vector2).toBeGreaterThan(0);
-        });
+      const index = new SpatialIndex(50);
+      index.build(nodes);
+
+      const overlaps = index.findAllOverlaps();
+      expect(overlaps.length).toBeGreaterThan(0);
     });
 
-    describe('Vision System', () => {
-        it('should analyze graph with heuristics', async () => {
-            const vision = new VisionSystem({
-                strategy: 'heuristics',
-                heuristics: {
-                    wcagThreshold: 4.5,
-                    overlapPadding: 10,
-                    fittsLawTargetSize: 44,
-                },
-            });
+    it('should query nodes in radius', () => {
+      const nodes = [
+        new TestNode({ id: 'n1', type: 'TestNode', position: [0, 0, 0] }),
+        new TestNode({ id: 'n2', type: 'TestNode', position: [50, 0, 0] }),
+        new TestNode({ id: 'n3', type: 'TestNode', position: [200, 0, 0] }),
+      ];
 
-            // Create a simple graph
-            const testGraph = new Graph();
-            testGraph.fromJSON({
-                nodes: [
-                    { id: 'n1', type: 'TestNode', position: [0, 0, 0] as [number, number, number] },
-                    {
-                        id: 'n2',
-                        type: 'TestNode',
-                        position: [100, 0, 0] as [number, number, number],
-                    },
-                ],
-                edges: [],
-            });
+      const index = new SpatialIndex(100);
+      index.build(nodes);
 
-            const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
-            camera.position.set(0, 0, 500);
+      const center = new THREE.Vector3(0, 0, 0);
+      const results = index.queryRadius(center, 100);
 
-            const report = await vision.analyze(testGraph, camera);
+      expect(results.length).toBe(2); // n1 and n2
+    });
+  });
 
-            expect(report.overall.score).toBeDefined();
-            expect(report.overall.grade).toBeDefined();
-            expect(report.legibility).toBeDefined();
-            expect(report.overlap).toBeDefined();
-        });
+  describe('Object Pool', () => {
+    it('should reuse pooled vectors', () => {
+      const pool = MathPool.getInstance();
+
+      const v1 = pool.acquireVector3();
+      v1.set(10, 20, 30);
+      pool.releaseVector3(v1);
+
+      const v2 = pool.acquireVector3();
+      expect(v2.x).toBe(0); // Should be reset
+      expect(v2.y).toBe(0);
+      expect(v2.z).toBe(0);
     });
 
-    describe('Plugin System', () => {
-        it('should register and initialize plugins', async () => {
-            const testGraph = new Graph();
-            const testEvents = new EventSystem();
-            const mockSg = { graph: testGraph, events: testEvents } as any;
-            const plugins = new PluginManager(mockSg);
+    it('should track pool statistics', () => {
+      const pool = MathPool.getInstance();
+      const stats = pool.getStats();
 
-            const forceLayout = new ForceLayout();
-            plugins.register('force-layout', forceLayout);
+      expect(stats.vector3).toBeGreaterThan(0);
+      expect(stats.vector2).toBeGreaterThan(0);
+    });
+  });
 
-            expect(plugins.hasPlugin('force-layout')).toBe(true);
-        });
+  describe('Vision System', () => {
+    it('should analyze graph with heuristics', async () => {
+      const vision = new VisionSystem({
+        strategy: 'heuristics',
+        heuristics: {
+          wcagThreshold: 4.5,
+          overlapPadding: 10,
+          fittsLawTargetSize: 44,
+        },
+      });
 
-        it('should call plugin hooks', async () => {
-            const testGraph = new Graph();
-            const testEvents = new EventSystem();
-            const mockSg = { graph: testGraph, events: testEvents } as any;
-            const plugins = new PluginManager(mockSg);
+      // Create a simple graph
+      const testGraph = new Graph();
+      testGraph.fromJSON({
+        nodes: [
+          { id: 'n1', type: 'TestNode', position: [0, 0, 0] as [number, number, number] },
+          {
+            id: 'n2',
+            type: 'TestNode',
+            position: [100, 0, 0] as [number, number, number],
+          },
+        ],
+        edges: [],
+      });
 
-            let preRenderCalled = false;
+      const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+      camera.position.set(0, 0, 500);
 
-            const testPlugin: Plugin = {
-                id: 'test-plugin',
-                name: 'Test Plugin',
-                version: '1.0.0',
-                init: () => {},
-                onPreRender: () => {
-                    preRenderCalled = true;
-                },
-            };
+      const report = await vision.analyze(testGraph, camera);
 
-            plugins.register('test-plugin', testPlugin);
-            plugins.updateAll(0.016);
+      expect(report.overall.score).toBeDefined();
+      expect(report.overall.grade).toBeDefined();
+      expect(report.legibility).toBeDefined();
+      expect(report.overlap).toBeDefined();
+    });
+  });
 
-            expect(preRenderCalled).toBe(true);
-        });
+  describe('Plugin System', () => {
+    it('should register and initialize plugins', async () => {
+      const testGraph = new Graph();
+      const testEvents = new EventSystem();
+      const mockSg = { graph: testGraph, events: testEvents } as any;
+      const plugins = new PluginManager(mockSg);
+
+      const forceLayout = new ForceLayout();
+      plugins.register('force-layout', forceLayout);
+
+      expect(plugins.hasPlugin('force-layout')).toBe(true);
     });
 
-    describe('Force Layout', () => {
-        it('should apply force-directed layout', async () => {
-            graph.fromJSON({
-                nodes: [
-                    { id: 'n1', type: 'TestNode', position: [0, 0, 0] as [number, number, number] },
-                    {
-                        id: 'n2',
-                        type: 'TestNode',
-                        position: [10, 0, 0] as [number, number, number],
-                    },
-                    {
-                        id: 'n3',
-                        type: 'TestNode',
-                        position: [20, 0, 0] as [number, number, number],
-                    },
-                ],
-                edges: [
-                    { id: 'e1', type: 'TestEdge', source: 'n1', target: 'n2' },
-                    { id: 'e2', type: 'TestEdge', source: 'n2', target: 'n3' },
-                ],
-            });
+    it('should call plugin hooks', async () => {
+      const testGraph = new Graph();
+      const testEvents = new EventSystem();
+      const mockSg = { graph: testGraph, events: testEvents } as any;
+      const plugins = new PluginManager(mockSg);
 
-            const mockSg = { graph, events } as any;
-            const plugins = new PluginManager(mockSg);
+      let preRenderCalled = false;
 
-            const layout = new ForceLayout();
-            plugins.register('force-layout', layout);
-            await layout.init(mockSg, graph, events);
+      const testPlugin: Plugin = {
+        id: 'test-plugin',
+        name: 'Test Plugin',
+        version: '1.0.0',
+        init: () => {},
+        onPreRender: () => {
+          preRenderCalled = true;
+        },
+      };
 
-            // Get initial positions
-            const n1 = graph.getNode('n1')!;
-            const n2 = graph.getNode('n2')!;
-            const n3 = graph.getNode('n3')!;
+      plugins.register('test-plugin', testPlugin);
+      plugins.updateAll(0.016);
 
-            const initialDist12 = n1.position.distanceTo(n2.position);
-            const initialDist23 = n2.position.distanceTo(n3.position);
+      expect(preRenderCalled).toBe(true);
+    });
+  });
 
-            // Apply layout
-            await layout.apply({ animate: false });
+  describe('Force Layout', () => {
+    it('should apply force-directed layout', async () => {
+      graph.fromJSON({
+        nodes: [
+          { id: 'n1', type: 'TestNode', position: [0, 0, 0] as [number, number, number] },
+          {
+            id: 'n2',
+            type: 'TestNode',
+            position: [10, 0, 0] as [number, number, number],
+          },
+          {
+            id: 'n3',
+            type: 'TestNode',
+            position: [20, 0, 0] as [number, number, number],
+          },
+        ],
+        edges: [
+          { id: 'e1', type: 'TestEdge', source: 'n1', target: 'n2' },
+          { id: 'e2', type: 'TestEdge', source: 'n2', target: 'n3' },
+        ],
+      });
 
-            // Nodes should be spread out after layout (repulsion should increase distances)
-            const finalDist12 = n1.position.distanceTo(n2.position);
-            const finalDist23 = n2.position.distanceTo(n3.position);
+      const mockSg = { graph, events } as any;
+      const plugins = new PluginManager(mockSg);
 
-            // At least one distance should have increased due to repulsion
-            expect(finalDist12 >= initialDist12 || finalDist23 >= initialDist23).toBe(true);
-        });
+      const layout = new ForceLayout();
+      plugins.register('force-layout', layout);
+      await layout.init(mockSg, graph, events);
+
+      // Get initial positions
+      const n1 = graph.getNode('n1')!;
+      const n2 = graph.getNode('n2')!;
+      const n3 = graph.getNode('n3')!;
+
+      const initialDist12 = n1.position.distanceTo(n2.position);
+      const initialDist23 = n2.position.distanceTo(n3.position);
+
+      // Apply layout
+      await layout.apply({ animate: false });
+
+      // Nodes should be spread out after layout (repulsion should increase distances)
+      const finalDist12 = n1.position.distanceTo(n2.position);
+      const finalDist23 = n2.position.distanceTo(n3.position);
+
+      // At least one distance should have increased due to repulsion
+      expect(finalDist12 >= initialDist12 || finalDist23 >= initialDist23).toBe(true);
+    });
+  });
+
+  describe('Type Registry', () => {
+    it('should create nodes from specs', () => {
+      const node = registry.createNode({
+        id: 'test-1',
+        type: 'TestNode',
+        position: [10, 20, 30] as [number, number, number],
+        data: { color: 0xff0000 },
+      });
+
+      expect(node.id).toBe('test-1');
+      expect(node.type).toBe('TestNode');
+      expect(node.position.x).toBe(10);
     });
 
-    describe('Type Registry', () => {
-        it('should create nodes from specs', () => {
-            const node = registry.createNode({
-                id: 'test-1',
-                type: 'TestNode',
-                position: [10, 20, 30] as [number, number, number],
-                data: { color: 0xff0000 },
-            });
+    it('should create edges from specs', () => {
+      const source = registry.createNode({ id: 's1', type: 'TestNode' });
+      const target = registry.createNode({ id: 't1', type: 'TestNode' });
 
-            expect(node.id).toBe('test-1');
-            expect(node.type).toBe('TestNode');
-            expect(node.position.x).toBe(10);
-        });
+      const edge = registry.createEdge(
+        { id: 'e1', type: 'TestEdge', source: 's1', target: 't1' },
+        source,
+        target
+      );
 
-        it('should create edges from specs', () => {
-            const source = registry.createNode({ id: 's1', type: 'TestNode' });
-            const target = registry.createNode({ id: 't1', type: 'TestNode' });
-
-            const edge = registry.createEdge(
-                { id: 'e1', type: 'TestEdge', source: 's1', target: 't1' },
-                source,
-                target,
-            );
-
-            expect(edge.id).toBe('e1');
-            expect(edge.type).toBe('TestEdge');
-            expect(edge.source.id).toBe('s1');
-            expect(edge.target.id).toBe('t1');
-        });
+      expect(edge.id).toBe('e1');
+      expect(edge.type).toBe('TestEdge');
+      expect(edge.source.id).toBe('s1');
+      expect(edge.target.id).toBe('t1');
     });
+  });
 });

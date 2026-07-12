@@ -1,15 +1,52 @@
-import { createDemoWithNodes, shapeNode, edge, addOverlayPanel, SpaceGraph } from '../framework';
+import {
+  type SpaceGraph,
+  addOverlayPanel,
+  createDemoWithNodes,
+  edge,
+  shapeNode,
+} from '../framework';
 
 export default async function fractalDemo(): Promise<SpaceGraph> {
   const LEVELS = ['Overview', 'Cluster', 'Detail', 'Micro', 'Nano'];
 
   const sg = await createDemoWithNodes(
     [
-      { id: 'world', type: 'GroupNode', position: [0, 0, 0], data: { label: 'The World', width: 1000, height: 1000, depth: 100, color: 0x1e1e3f } },
+      {
+        id: 'world',
+        type: 'GroupNode',
+        position: [0, 0, 0],
+        data: { label: 'The World', width: 1000, height: 1000, depth: 100, color: 0x1e1e3f },
+      },
 
       // Level 1: Clusters inside world
-      { id: 'cluster-a', type: 'GroupNode', position: [-250, 0, 0], data: { parent: 'world', label: 'Cluster A', width: 400, height: 400, depth: 50, color: 0x3b82f6, lodThreshold: 2000 } },
-      { id: 'cluster-b', type: 'GroupNode', position: [250, 0, 0], data: { parent: 'world', label: 'Cluster B', width: 400, height: 400, depth: 50, color: 0x10b981, lodThreshold: 2000 } },
+      {
+        id: 'cluster-a',
+        type: 'GroupNode',
+        position: [-250, 0, 0],
+        data: {
+          parent: 'world',
+          label: 'Cluster A',
+          width: 400,
+          height: 400,
+          depth: 50,
+          color: 0x3b82f6,
+          lodThreshold: 2000,
+        },
+      },
+      {
+        id: 'cluster-b',
+        type: 'GroupNode',
+        position: [250, 0, 0],
+        data: {
+          parent: 'world',
+          label: 'Cluster B',
+          width: 400,
+          height: 400,
+          depth: 50,
+          color: 0x10b981,
+          lodThreshold: 2000,
+        },
+      },
 
       // Level 2: Detailed nodes inside clusters
       shapeNode('node-a1', [-350, 100, 0], { parent: 'cluster-a', color: 0x60a5fa, size: 40 }),
@@ -27,7 +64,7 @@ export default async function fractalDemo(): Promise<SpaceGraph> {
       edge('node-a1', 'node-a2'),
       edge('node-b1', 'node-b2'),
       edge('node-a1', 'node-b1'),
-    ],
+    ]
   );
 
   const zoomIndicator = addOverlayPanel(
@@ -36,7 +73,7 @@ export default async function fractalDemo(): Promise<SpaceGraph> {
     { pointerEvents: 'none' },
     `<div style="font-size: 12px; opacity: 0.7; margin-bottom: 4px;">ZOOM LEVEL</div>
   <div style="font-size: 18px; font-weight: bold;" id="level-text">${LEVELS[0]}</div>
-  <div style="font-size: 12px; opacity: 0.5; margin-top: 4px;" id="level-hint">Pinch zoom or scroll</div>`,
+  <div style="font-size: 12px; opacity: 0.5; margin-top: 4px;" id="level-hint">Pinch zoom or scroll</div>`
   );
 
   sg.events.on('fractal:level-change', ({ to, label }: any) => {
@@ -69,7 +106,7 @@ export default async function fractalDemo(): Promise<SpaceGraph> {
     • <code>+</code> / <code>-</code> keys<br>
     • Watch the indicator change<br>
     • Each level reveals more detail
-  </div>`,
+  </div>`
   );
 
   return sg;

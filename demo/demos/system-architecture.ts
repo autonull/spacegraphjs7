@@ -1,4 +1,4 @@
-import { createDemoWithNodes, SpaceGraph } from '../framework';
+import { type SpaceGraph, createDemoWithNodes } from '../framework';
 
 export default async function systemArchitectureDemo(): Promise<SpaceGraph> {
   const nodes = [
@@ -9,7 +9,8 @@ export default async function systemArchitectureDemo(): Promise<SpaceGraph> {
       position: [0, 0, 0],
       data: {
         radius: 150,
-        textureUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cd/Land_ocean_ice_2048.jpg/1024px-Land_ocean_ice_2048.jpg',
+        textureUrl:
+          'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cd/Land_ocean_ice_2048.jpg/1024px-Land_ocean_ice_2048.jpg',
         segments: 64,
         markers: [
           { lat: 40.7128, lng: -74.006, size: 5, color: 0x3b82f6 }, // US East
@@ -219,9 +220,27 @@ export default async function systemArchitectureDemo(): Promise<SpaceGraph> {
     },
 
     // Monitoring Connections
-    { id: 'e-mon1', source: 'control-panel', target: 'global-router', type: 'DottedEdge', data: { color: 0x64748b } },
-    { id: 'e-mon2', source: 'metrics-chart', target: 'global-router', type: 'CurvedEdge', data: { color: 0x64748b } },
-    { id: 'e-mon3', source: 'error-chart', target: 'global-router', type: 'CurvedEdge', data: { color: 0x64748b } },
+    {
+      id: 'e-mon1',
+      source: 'control-panel',
+      target: 'global-router',
+      type: 'DottedEdge',
+      data: { color: 0x64748b },
+    },
+    {
+      id: 'e-mon2',
+      source: 'metrics-chart',
+      target: 'global-router',
+      type: 'CurvedEdge',
+      data: { color: 0x64748b },
+    },
+    {
+      id: 'e-mon3',
+      source: 'error-chart',
+      target: 'global-router',
+      type: 'CurvedEdge',
+      data: { color: 0x64748b },
+    },
   ];
 
   const sg = await createDemoWithNodes(nodes, edges);

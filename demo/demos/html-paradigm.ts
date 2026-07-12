@@ -1,17 +1,17 @@
-import { createDemoWithNodes, edge, SpaceGraph } from '../framework';
+import { type SpaceGraph, createDemoWithNodes, edge } from '../framework';
 
 export default async function htmlParadigmDemo(): Promise<SpaceGraph> {
-    const sg = await createDemoWithNodes(
-        [
-            {
-                id: 'center-hub',
-                type: 'HtmlNode',
-                position: [0, 0, 0],
-                data: {
-                    width: 1000,
-                    height: 700,
-                    useRawHtml: true,
-                    html: `
+  const sg = await createDemoWithNodes(
+    [
+      {
+        id: 'center-hub',
+        type: 'HtmlNode',
+        position: [0, 0, 0],
+        data: {
+          width: 1000,
+          height: 700,
+          useRawHtml: true,
+          html: `
                         <div style="padding: 50px; display: flex; flex-direction: column; height: 100%; font-family: 'Segoe UI', system-ui, sans-serif; color: #e2e8f0; background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%); border: 2px solid #3b82f6; border-radius: 24px; box-shadow: 0 0 50px rgba(59, 130, 246, 0.3); box-sizing: border-box;">
                             <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px;">
                                 <div>
@@ -67,18 +67,18 @@ export default async function htmlParadigmDemo(): Promise<SpaceGraph> {
                                 <button data-sg-interactive="true" style="flex: 1; padding: 22px; background: #334155; color: #e2e8f0; border: 1px solid #475569; border-radius: 12px; font-weight: 700; font-size: 16px; cursor: pointer;">System Diagnostics</button>
                             </footer>
                         </div>
-                    `
-                }
-            },
-            {
-                id: 'satellite-view',
-                type: 'HtmlNode',
-                position: [1100, 200, -100],
-                data: {
-                    width: 600,
-                    height: 500,
-                    useRawHtml: true,
-                    html: `
+                    `,
+        },
+      },
+      {
+        id: 'satellite-view',
+        type: 'HtmlNode',
+        position: [1100, 200, -100],
+        data: {
+          width: 600,
+          height: 500,
+          useRawHtml: true,
+          html: `
                         <div style="background: #000; border-radius: 30px; overflow: hidden; height: 100%; border: 4px solid #334155; box-shadow: 0 40px 60px rgba(0,0,0,0.9); display: flex; flex-direction: column; font-family: system-ui, sans-serif;">
                             <div style="flex-grow: 1; background: #111; position: relative; display: flex; align-items: center; justify-content: center; color: white; overflow: hidden;">
                                 <div style="font-size: 180px; opacity: 0.6; filter: drop-shadow(0 0 30px #3b82f6);">🛰️</div>
@@ -105,19 +105,19 @@ export default async function htmlParadigmDemo(): Promise<SpaceGraph> {
                                 <p style="margin: 8px 0 0 0; color: #94a3b8; font-size: 16px;">Sector: 7G | Status: Online | Fuel: 94%</p>
                             </div>
                         </div>
-                    `
-                }
-            },
-            {
-                id: 'settings-node',
-                type: 'HtmlNode',
-                position: [-800, -100, 100],
-                data: {
-                    width: 450,
-                    height: 480,
-                    title: 'Configuration Terminal',
-                    backgroundColor: '#0f172a',
-                    html: `
+                    `,
+        },
+      },
+      {
+        id: 'settings-node',
+        type: 'HtmlNode',
+        position: [-800, -100, 100],
+        data: {
+          width: 450,
+          height: 480,
+          title: 'Configuration Terminal',
+          backgroundColor: '#0f172a',
+          html: `
                         <div style="padding: 25px; color: #e2e8f0; font-family: system-ui, sans-serif;">
                             <div style="margin-bottom: 25px;">
                                 <label style="display: block; font-size: 12px; color: #64748b; margin-bottom: 8px; font-weight: 800; text-transform: uppercase;">Active Theme</label>
@@ -157,32 +157,32 @@ export default async function htmlParadigmDemo(): Promise<SpaceGraph> {
 
                             <button data-sg-interactive="true" style="width: 100%; margin-top: 25px; padding: 15px; background: #10b981; color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer;">SAVE CONFIGURATION</button>
                         </div>
-                    `
-                }
-            },
-            {
-                id: 'mini-status',
-                type: 'HtmlNode',
-                position: [0, -350, 0],
-                data: {
-                    width: 120,
-                    height: 60,
-                    useRawHtml: true,
-                    html: `
+                    `,
+        },
+      },
+      {
+        id: 'mini-status',
+        type: 'HtmlNode',
+        position: [0, -350, 0],
+        data: {
+          width: 120,
+          height: 60,
+          useRawHtml: true,
+          html: `
                         <div style="background: #10b981; color: white; height: 100%; border-radius: 30px; display: flex; align-items: center; justify-content: center; font-weight: bold; box-shadow: 0 0 15px rgba(16, 185, 129, 0.5);">
                             ONLINE
                         </div>
-                    `
-                }
-            }
-        ],
-        [
-            edge('center-hub', 'satellite-view'),
-            edge('center-hub', 'settings-node'),
-            edge('center-hub', 'mini-status')
-        ]
-    );
+                    `,
+        },
+      },
+    ],
+    [
+      edge('center-hub', 'satellite-view'),
+      edge('center-hub', 'settings-node'),
+      edge('center-hub', 'mini-status'),
+    ]
+  );
 
-    sg.fitView(150);
-    return sg;
+  sg.fitView(150);
+  return sg;
 }

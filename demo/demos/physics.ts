@@ -1,5 +1,5 @@
-import { createDemoWithNodes, SpaceGraph } from '../framework';
 import { PhysicsPlugin } from '../../src/index';
+import { type SpaceGraph, createDemoWithNodes } from '../framework';
 
 export default async function physicsDemo(): Promise<SpaceGraph> {
   const nodes: any[] = [];
