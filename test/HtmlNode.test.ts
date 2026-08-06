@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { SpaceGraph } from '../src/SpaceGraph';
 import { HtmlNode } from '../src/nodes/HtmlNode';
 
 describe('HtmlNode Unit Tests', () => {

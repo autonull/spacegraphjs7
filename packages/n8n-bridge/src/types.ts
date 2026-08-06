@@ -1,5 +1,3 @@
-import type { GraphSpec } from 'spacegraphjs';
-
 export interface N8nNodeSpec {
   parameters: Record<string, any>;
   name: string;

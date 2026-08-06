@@ -2,19 +2,14 @@
 // Tests for event consumption, zoom stack, keyboard controls, drag, activity, etc.
 
 import * as THREE from 'three';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { CameraControls, type CameraControlsConfig } from '../src/core/CameraControls';
+import { describe, expect, it, vi } from 'vitest';
+import { CameraControls } from '../src/core/CameraControls';
 import { type HitResult, type Rect, Surface } from '../src/core/Surface';
-import { DEFAULT_EDGE_DATA, Edge } from '../src/edges/Edge';
+import { Edge } from '../src/edges/Edge';
 import { Wire } from '../src/edges/Wire';
 import { type Finger, FingerManager, Fingering } from '../src/input/Fingering';
-import {
-  type InputAction,
-  type InputBinding,
-  type InputEvent,
-  InputManager,
-} from '../src/input/InputManager';
-import { type SurfaceTransform, createParentTransform } from '../src/input/SurfaceTransform';
+import { type InputEvent, InputManager } from '../src/input/InputManager';
+import { createParentTransform } from '../src/input/SurfaceTransform';
 import { Node } from '../src/nodes/Node';
 import { LayoutContainer } from '../src/plugins/LayoutContainer';
 import { DragHandler } from '../src/plugins/interaction/DragHandler';

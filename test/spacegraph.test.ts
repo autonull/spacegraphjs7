@@ -24,18 +24,16 @@ import { DynamicThicknessEdge } from '../src/edges/DynamicThicknessEdge';
 // Edge types
 import { Edge } from '../src/edges/Edge';
 
+import { VisionManager } from '../src/core/VisionManager';
+import { ErgonomicsPlugin } from '../src/plugins/ErgonomicsPlugin';
+// Extended plugins
+import { PhysicsPlugin } from '../src/plugins/PhysicsPlugin';
 import { CircularLayout } from '../src/plugins/layouts/CircularLayout';
 // Layout plugins
 import { ForceLayout } from '../src/plugins/layouts/ForceLayout';
 import { GridLayout } from '../src/plugins/layouts/GridLayout';
 import { HierarchicalLayout } from '../src/plugins/layouts/HierarchicalLayout';
 import { RadialLayout } from '../src/plugins/layouts/RadialLayout';
-
-import { CameraControls } from '../src/core/CameraControls';
-import { VisionManager } from '../src/core/VisionManager';
-import { ErgonomicsPlugin } from '../src/plugins/ErgonomicsPlugin';
-// Extended plugins
-import { PhysicsPlugin } from '../src/plugins/PhysicsPlugin';
 
 import { SpaceGraph } from '../src/SpaceGraph';
 // ---------------------------------------------------------------------------

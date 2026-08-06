@@ -2,7 +2,7 @@
 // Run with: pnpm dlx vitest run test/core.test.ts
 
 import * as THREE from 'three';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { Graph } from '../src/core/Graph';
 import { TypeRegistry } from '../src/core/TypeRegistry';
 import { EventSystem } from '../src/core/events/EventSystem';

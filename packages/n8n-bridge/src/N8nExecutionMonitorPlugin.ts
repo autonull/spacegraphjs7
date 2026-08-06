@@ -1,5 +1,5 @@
 import gsap from 'gsap';
-import type { NodeSpec, SpaceGraph, SpaceGraphPlugin, SpecUpdate } from 'spacegraphjs';
+import type { NodeSpec, SpaceGraph, SpaceGraphPlugin } from 'spacegraphjs';
 import { N8nBridge } from './spacegraph-n8n-bridge';
 import type { ExecutionState, OSProcessUpdate } from './types';
 

@@ -1,4 +1,4 @@
-import { type SpaceGraph, createDemoWithNodes, edge, shapeNode } from '../framework';
+import { type SpaceGraph, createDemoWithNodes, shapeNode } from '../framework';
 
 export default async function edgeDottedDemo(): Promise<SpaceGraph> {
   const nodes = [

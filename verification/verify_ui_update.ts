@@ -1,5 +1,4 @@
 import { spawn } from 'child_process';
-import * as fs from 'fs';
 import { chromium, expect } from '@playwright/test';
 
 async function main() {
