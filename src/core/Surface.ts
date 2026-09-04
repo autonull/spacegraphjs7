@@ -6,7 +6,7 @@ import type { SpaceGraph } from '../SpaceGraph';
 import type { Bounds3D, Rect } from '../types';
 import { EventEmitter } from './EventEmitter';
 
-export type { Rect, Bounds3D };
+export type { Bounds3D, Rect };
 
 export interface HitResult {
   surface: Surface;

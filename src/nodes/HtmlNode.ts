@@ -2,9 +2,8 @@ import type { SpaceGraph } from '../SpaceGraph';
 import type { LabelLodLevel, NodeSpec, SpaceGraphNodeData } from '../types';
 import { DOMUtils } from '../utils/DOMUtils';
 import { clamp } from '../utils/math';
-import { type QuickControlButton, createQuickControls } from './QuickControls';
-
 import { BaseContentNode } from './BaseContentNode';
+import { createQuickControls, type QuickControlButton } from './QuickControls';
 
 export class HtmlNode extends BaseContentNode {
   static typeName = 'HtmlNode';

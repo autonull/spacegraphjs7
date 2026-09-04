@@ -3,11 +3,11 @@
 
 import * as THREE from 'three';
 import { describe, expect, it, vi } from 'vitest';
-import { Graph } from '../src/core/Graph';
-import { TypeRegistry } from '../src/core/TypeRegistry';
 import { EventSystem } from '../src/core/events/EventSystem';
+import { Graph } from '../src/core/Graph';
 import { MathPool } from '../src/core/pooling/ObjectPool';
 import { SpatialIndex } from '../src/core/spatial/SpatialIndex';
+import { TypeRegistry } from '../src/core/TypeRegistry';
 import { Edge } from '../src/edges/Edge';
 import { Node } from '../src/nodes/Node';
 

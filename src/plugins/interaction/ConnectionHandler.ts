@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import type { SpaceGraph } from '../../SpaceGraph';
 import type { Node } from '../../nodes/Node';
+import type { SpaceGraph } from '../../SpaceGraph';
 import type { EdgeSpec } from '../../types';
 import type { InteractionRaycaster } from './RaycasterHelper';
 

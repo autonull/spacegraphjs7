@@ -1,6 +1,6 @@
+import { expect, test } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
-import { expect, test } from '@playwright/test';
 
 const TOP_DEMOS = [
   'quickstart',

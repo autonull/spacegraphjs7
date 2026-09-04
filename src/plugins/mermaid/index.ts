@@ -1,24 +1,22 @@
+export { createMermaidNode, MermaidNode, type MermaidNodeData } from './MermaidNode';
 export type {
-  DiagramParseResult,
+  DiagramEdge,
   DiagramFormat,
   DiagramNode,
-  DiagramEdge,
-  MermaidThemeName,
+  DiagramParseResult,
   LayoutName,
   MermaidLayoutType,
   MermaidNodeShape,
+  MermaidThemeName,
 } from './MermaidParser';
-
 export {
   DiagramParserFactory,
-  MermaidParser,
   DOTParser,
   GraphMLParser,
+  getLayoutLabel,
   JSONDiagramParser,
   LAYOUT_NAMES,
   MERMAID_THEMES,
-  getLayoutLabel,
+  MermaidParser,
 } from './MermaidParser';
-
-export { MermaidNode, type MermaidNodeData, createMermaidNode } from './MermaidNode';
-export { MermaidPlugin, type MermaidPluginOptions, injectMermaidStyles } from './MermaidPlugin';
+export { injectMermaidStyles, MermaidPlugin, type MermaidPluginOptions } from './MermaidPlugin';

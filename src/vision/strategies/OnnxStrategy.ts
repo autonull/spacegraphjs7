@@ -1,6 +1,5 @@
 import { Tensor } from 'onnxruntime-web';
 import * as THREE from 'three';
-import type { VisionModelLoader } from '../VisionModelLoader';
 import type {
   ErgonomicsResult,
   HierarchyResult,
@@ -10,6 +9,7 @@ import type {
   VisionReport,
   VisionStrategy,
 } from '../types';
+import type { VisionModelLoader } from '../VisionModelLoader';
 
 export class OnnxStrategy implements VisionStrategy {
   readonly id = 'onnx';

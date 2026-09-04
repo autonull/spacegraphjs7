@@ -1,8 +1,8 @@
 // SpaceGraphJS - PortNode
 // Typed connectable data ports for visual programming
 
-import type { SpaceGraph } from '../SpaceGraph';
 import type { Wire } from '../edges/Wire';
+import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec } from '../types';
 import { ShapeNode } from './ShapeNode';
 

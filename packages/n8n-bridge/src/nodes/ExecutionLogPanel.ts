@@ -1,6 +1,5 @@
+import type { NodeSpec, SpaceGraph } from 'spacegraphjs';
 import { HtmlNode } from 'spacegraphjs';
-import type { SpaceGraph } from 'spacegraphjs';
-import type { NodeSpec } from 'spacegraphjs';
 
 export class ExecutionLogPanel extends HtmlNode {
   private logsContainer: HTMLDivElement;

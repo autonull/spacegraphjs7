@@ -1,8 +1,7 @@
 import * as THREE from 'three';
 import type { Node as SGNode } from '../nodes/Node';
 import { DOMUtils } from '../utils/DOMUtils';
-import type { SpaceGraphApp } from './SpaceGraphApp';
-import type { AppButtonConfig } from './SpaceGraphApp';
+import type { AppButtonConfig, SpaceGraphApp } from './SpaceGraphApp';
 
 const SECONDARY_TEXT_COLOR = '#94a3b8';
 const BORDER_GLASS = '1px solid rgba(255,255,255,0.1)';

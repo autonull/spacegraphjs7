@@ -1,4 +1,4 @@
-import { type SpaceGraph, createDemo, createDemoHint } from '../framework';
+import { createDemo, createDemoHint, type SpaceGraph } from '../framework';
 
 export default async function cameraOrthoDemo(): Promise<SpaceGraph> {
   const sg = await createDemo({

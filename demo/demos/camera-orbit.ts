@@ -1,4 +1,4 @@
-import { type SpaceGraph, createDemoHint, createDemoWithNodes, shapeNode } from '../framework';
+import { createDemoHint, createDemoWithNodes, type SpaceGraph, shapeNode } from '../framework';
 
 export default async function cameraOrbitDemo(): Promise<SpaceGraph> {
   const sg = await createDemoWithNodes([

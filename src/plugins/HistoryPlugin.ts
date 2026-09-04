@@ -1,6 +1,6 @@
-import type { SpaceGraph } from '../SpaceGraph';
-import type { Graph } from '../core/Graph';
 import type { EventSystem } from '../core/events/EventSystem';
+import type { Graph } from '../core/Graph';
+import type { SpaceGraph } from '../SpaceGraph';
 import type { GraphSpec } from '../types';
 import { BaseSystemPlugin } from './BaseSystemPlugin';
 

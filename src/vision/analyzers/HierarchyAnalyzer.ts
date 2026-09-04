@@ -3,8 +3,7 @@
 
 import { clamp as clampValue } from '../../utils/math';
 import type { HeuristicsConfig } from '../strategies/HeuristicsStrategy';
-import type { VisionContext } from '../types';
-import type { HierarchyResult } from '../types';
+import type { HierarchyResult, VisionContext } from '../types';
 
 /**
  * Hierarchy Analyzer

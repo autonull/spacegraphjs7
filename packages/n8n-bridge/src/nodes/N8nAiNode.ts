@@ -1,6 +1,5 @@
+import type { NodeSpec, SpaceGraph, SpecUpdate } from 'spacegraphjs';
 import { HtmlNode } from 'spacegraphjs';
-import type { SpaceGraph } from 'spacegraphjs';
-import type { NodeSpec, SpecUpdate } from 'spacegraphjs';
 
 export class N8nAiNode extends HtmlNode {
   readonly lodThresholds = {

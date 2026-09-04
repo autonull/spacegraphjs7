@@ -1,8 +1,7 @@
 import * as THREE from 'three';
-import type { SpaceGraph } from '../SpaceGraph';
+import type { EventSystem } from '../core/events/EventSystem';
 import type { Graph } from '../core/Graph';
 import type { Plugin } from '../core/PluginManager';
-import type { EventSystem } from '../core/events/EventSystem';
 import type { Edge } from '../edges/Edge';
 import {
   BoxSelectingFingering,
@@ -15,6 +14,7 @@ import {
 } from '../input/fingerings';
 import type { PickResult } from '../input/interfaces/Tangible';
 import type { Node } from '../nodes/Node';
+import type { SpaceGraph } from '../SpaceGraph';
 import { ConnectionHandler } from './interaction/ConnectionHandler';
 import { CursorManager, type CursorMode } from './interaction/CursorManager';
 import { DragHandler } from './interaction/DragHandler';

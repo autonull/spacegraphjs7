@@ -4,8 +4,7 @@
 import * as THREE from 'three';
 import { SpatialIndex } from '../../core/spatial/SpatialIndex';
 import type { HeuristicsConfig } from '../strategies/HeuristicsStrategy';
-import type { VisionContext } from '../types';
-import type { Overlap, OverlapResult } from '../types';
+import type { Overlap, OverlapResult, VisionContext } from '../types';
 
 /**
  * Overlap Analyzer

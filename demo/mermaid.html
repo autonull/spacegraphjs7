@@ -214,11 +214,11 @@
 
   <script type="module">
     import {
-      SpaceGraph,
+      DiagramParserFactory,
+      injectMermaidStyles,
       MermaidPlugin,
       MinimapPlugin,
-      injectMermaidStyles,
-      DiagramParserFactory,
+      SpaceGraph,
     } from '@src/index.ts';
 
     injectMermaidStyles();
@@ -416,7 +416,7 @@
       renderDiagram();
     }
 
-    window.renderDiagram = function() {
+    window.renderDiagram = () => {
       const code = document.getElementById('code').value;
       if (mermaidPlugin && code.trim()) {
         const detectedFormat = DiagramParserFactory.detectFormat(code);

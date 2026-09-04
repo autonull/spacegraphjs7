@@ -1,6 +1,7 @@
 // builder/animation.ts - Animation helpers
-import type { SpaceGraph } from '../SpaceGraph';
+
 import type { Node } from '../nodes/Node';
+import type { SpaceGraph } from '../SpaceGraph';
 
 type GsapModule = typeof import('gsap');
 let gsapCache: GsapModule | null = null;

@@ -44,4 +44,4 @@ export function setTheme(
   renderToolbarActions(app);
 }
 
-export { updateStatsHUD, renderButtons, renderToolbarActions, setupSearchHUD };
+export { renderButtons, renderToolbarActions, setupSearchHUD, updateStatsHUD };

@@ -163,7 +163,7 @@ export class CameraControls {
     if (this.targetNext) {
       const elapsed = performance.now() - this.animStartTime;
       const t = Math.min(elapsed / this.animDuration, 1);
-      const eased = 1 - Math.pow(1 - t, 3);
+      const eased = 1 - (1 - t) ** 3;
 
       if (this.sg?.events) {
         this.sg.events.emit('camera:fly:progress', t);

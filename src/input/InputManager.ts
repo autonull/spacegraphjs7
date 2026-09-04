@@ -1,7 +1,7 @@
 import * as THREE from 'three';
-import type { SpaceGraph } from '../SpaceGraph';
 import type { EventSystem } from '../core/events/EventSystem';
-import { type Finger, FingerManager, type Fingering } from './Fingering';
+import type { SpaceGraph } from '../SpaceGraph';
+import { type Finger, type Fingering, FingerManager } from './Fingering';
 
 export type InputEventType =
   | 'keydown'

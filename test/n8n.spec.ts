@@ -1,7 +1,7 @@
+import { expect, test } from '@playwright/test';
 import { spawn } from 'child_process';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { expect, test } from '@playwright/test';
 import { createVisionAssert } from '../src/vision/assert';
 
 const __filename = fileURLToPath(import.meta.url);

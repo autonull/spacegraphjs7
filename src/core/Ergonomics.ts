@@ -1,8 +1,8 @@
-import type { SpaceGraph } from '../SpaceGraph';
 import type { Edge } from '../edges/Edge';
 // Ergonomics.ts - Ergonomic query and manipulation API
 // Delegates to Graph for core operations
 import type { Node } from '../nodes/Node';
+import type { SpaceGraph } from '../SpaceGraph';
 import type { EdgeSpec, NodeSpec, Predicate } from '../types';
 
 type NodePredicate = Predicate<Node>;

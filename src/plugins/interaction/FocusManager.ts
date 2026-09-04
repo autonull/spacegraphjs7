@@ -1,5 +1,5 @@
-import type { SpaceGraph } from '../../SpaceGraph';
 import type { Node } from '../../nodes/Node';
+import type { SpaceGraph } from '../../SpaceGraph';
 import { createLogger } from '../../utils/logger';
 
 const logger = createLogger('FocusManager');

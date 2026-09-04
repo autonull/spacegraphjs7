@@ -1,7 +1,7 @@
 import type React from 'react';
 import { useEffect, useRef } from 'react';
-import { SpaceGraph } from 'spacegraphjs';
 import type { GraphSpec, SpaceGraphOptions } from 'spacegraphjs';
+import { SpaceGraph } from 'spacegraphjs';
 
 export interface SpaceGraphProps {
   spec?: GraphSpec;

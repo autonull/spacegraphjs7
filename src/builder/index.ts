@@ -1,29 +1,31 @@
 // builder/index.ts - Unified builder API
-export { BaseBuilder } from './base';
-export type { GenericBuilder } from './base';
-export { NodeBuilder, WidgetBuilder } from './node';
-export { EdgeBuilder } from './edge';
-export { GraphBuilder as GraphSpecBuilder, GraphBuilder } from './graph';
-export { Patterns } from './patterns';
+
 export { Animate, Camera } from './animation';
+export type { GenericBuilder } from './base';
+export { BaseBuilder } from './base';
+export { EdgeBuilder } from './edge';
 export {
-  graph,
-  widget,
+  Batch,
   button,
-  toggle,
-  slider,
-  NodeFactory,
+  DataUtils,
   EdgeFactory,
+  graph,
   Layout,
+  NodeFactory,
   NodeFactoryExtended,
   Presets,
-  DataUtils,
-  Batch,
+  slider,
+  toggle,
+  widget,
 } from './factories';
+export { GraphBuilder as GraphSpecBuilder, GraphBuilder } from './graph';
+export { NodeBuilder, WidgetBuilder } from './node';
+export { Patterns } from './patterns';
 
 // Re-export types for convenience
 import type { EdgeSpec, GraphSpec, NodeSpec } from '../types';
-export type { NodeSpec, EdgeSpec, GraphSpec };
+
+export type { EdgeSpec, GraphSpec, NodeSpec };
 
 // ============= Convenience Shortcuts =============
 // Quick node spec creators - lightweight spec objects for fast graph construction

@@ -1,4 +1,4 @@
-import { type SpaceGraph, createDemoWithNodes } from '../framework';
+import { createDemoWithNodes, type SpaceGraph } from '../framework';
 
 export default async function multiAgentWorkflowDemo(): Promise<SpaceGraph> {
   const markdownContentRouter = `

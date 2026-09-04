@@ -1,7 +1,7 @@
 import type * as THREE from 'three';
-import type { SpaceGraph } from '../../SpaceGraph';
 import type { Edge } from '../../edges/Edge';
 import type { Node } from '../../nodes/Node';
+import type { SpaceGraph } from '../../SpaceGraph';
 import { DOMUtils } from '../../utils/DOMUtils';
 import { applyControlStateStyles } from './ControlStateBorder';
 

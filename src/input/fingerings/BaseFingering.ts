@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import type { SpaceGraph } from '../../SpaceGraph';
 import type { InteractionRaycaster } from '../../plugins/interaction/RaycasterHelper';
+import type { SpaceGraph } from '../../SpaceGraph';
 import type { Finger, Fingering } from '../Fingering';
 
 export abstract class BaseFingering implements Fingering {

@@ -1,7 +1,7 @@
-import type { SpaceGraph } from '../../SpaceGraph';
 import type { Edge } from '../../edges/Edge';
 import type { Node } from '../../nodes/Node';
-import { type ControlState, applyControlStateStyles } from './ControlStateBorder';
+import type { SpaceGraph } from '../../SpaceGraph';
+import { applyControlStateStyles, type ControlState } from './ControlStateBorder';
 
 export class HoverManager {
   private hoveredNode: Node | null = null;

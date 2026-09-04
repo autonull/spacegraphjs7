@@ -1,5 +1,5 @@
-import type { SpaceGraph } from '../SpaceGraph';
 import type { Node } from '../nodes/Node';
+import type { SpaceGraph } from '../SpaceGraph';
 import type { EdgeData, EdgeSpec } from '../types';
 import { Edge } from './Edge';
 

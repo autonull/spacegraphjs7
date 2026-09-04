@@ -1,8 +1,8 @@
 import {
-  type SpaceGraph,
   addOverlayPanel,
   createDemoWithNodes,
   edge,
+  type SpaceGraph,
   shapeNode,
 } from '../framework';
 

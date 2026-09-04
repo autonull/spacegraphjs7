@@ -1,4 +1,4 @@
-import { type SpaceGraph, createDemo } from '../framework';
+import { createDemo, type SpaceGraph } from '../framework';
 
 export default async function layoutForceDemo(): Promise<SpaceGraph> {
   const nodes = Array.from({ length: 20 }, (_, i) => ({

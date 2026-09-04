@@ -1,6 +1,5 @@
 import * as THREE from 'three';
-import type { Node } from '../nodes/Node';
-import type { LODLevel, VisibilityContext } from '../nodes/Node';
+import type { LODLevel, Node, VisibilityContext } from '../nodes/Node';
 
 export interface FrameStats {
   deltaTime: number;

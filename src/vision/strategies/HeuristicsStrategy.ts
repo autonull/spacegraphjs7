@@ -6,8 +6,15 @@ import { ErgonomicsAnalyzer } from '../analyzers/ErgonomicsAnalyzer';
 import { HierarchyAnalyzer } from '../analyzers/HierarchyAnalyzer';
 import { LegibilityAnalyzer } from '../analyzers/LegibilityAnalyzer';
 import { OverlapAnalyzer } from '../analyzers/OverlapAnalyzer';
-import type { VisionContext, VisionReport, VisionStrategy } from '../types';
-import type { ErgonomicsResult, HierarchyResult, LegibilityResult, OverlapResult } from '../types';
+import type {
+  ErgonomicsResult,
+  HierarchyResult,
+  LegibilityResult,
+  OverlapResult,
+  VisionContext,
+  VisionReport,
+  VisionStrategy,
+} from '../types';
 
 export interface HeuristicsConfig {
   wcagThreshold: number;

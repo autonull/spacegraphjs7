@@ -1,8 +1,8 @@
 import * as THREE from 'three';
-import type { SpaceGraph } from '../SpaceGraph';
 import type { CameraControls } from '../core/CameraControls';
-import type { Graph } from '../core/Graph';
 import type { EventSystem } from '../core/events/EventSystem';
+import type { Graph } from '../core/Graph';
+import type { SpaceGraph } from '../SpaceGraph';
 import { DOMUtils } from '../utils/DOMUtils';
 import { BaseSystemPlugin } from './BaseSystemPlugin';
 

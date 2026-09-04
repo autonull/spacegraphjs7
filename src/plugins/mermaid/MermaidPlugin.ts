@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import type { SpaceGraph } from '../../SpaceGraph';
 import type { Graph } from '../../core/Graph';
+import type { SpaceGraph } from '../../SpaceGraph';
 import { BaseSystemPlugin } from '../BaseSystemPlugin';
 import type { HUDPlugin } from '../HUDPlugin';
 import { HUDDOMFactory } from '../hud/HUDDOMFactory';
@@ -16,17 +16,17 @@ import {
   SpectralLayout,
   TreeLayout,
 } from '../layouts';
-import {
-  DiagramParserFactory,
-  LAYOUT_NAMES,
-  MERMAID_THEMES,
-  getLayoutLabel,
-} from './MermaidParser';
 import type {
   DiagramFormat,
   DiagramParseResult,
   LayoutName,
   MermaidThemeName,
+} from './MermaidParser';
+import {
+  DiagramParserFactory,
+  getLayoutLabel,
+  LAYOUT_NAMES,
+  MERMAID_THEMES,
 } from './MermaidParser';
 
 export interface MermaidPluginOptions {

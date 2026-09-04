@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
-import type { SpaceGraph } from '../SpaceGraph';
 import type { Node } from '../nodes/Node';
+import type { SpaceGraph } from '../SpaceGraph';
 import type { EdgeData, EdgeSpec } from '../types';
 import { Edge } from './Edge';
 

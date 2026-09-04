@@ -1,5 +1,5 @@
-import type { SpaceGraph } from '../../SpaceGraph';
 import { HtmlNode } from '../../nodes/HtmlNode';
+import type { SpaceGraph } from '../../SpaceGraph';
 import type { BaseNodeData, NodeSpec, SpaceGraphNodeData } from '../../types';
 import type { MermaidNodeShape } from './MermaidParser';
 

@@ -1,6 +1,6 @@
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec } from '../types';
-import { LayoutNode, gridStrategy } from './LayoutNode';
+import { gridStrategy, LayoutNode } from './LayoutNode';
 
 export class GridNode extends LayoutNode {
   static readonly typeName = 'GridNode';

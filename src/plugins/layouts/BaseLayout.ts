@@ -2,11 +2,11 @@
 // Abstract base class for layout plugins with common helpers
 
 import * as THREE from 'three';
-import type { SpaceGraph } from '../../SpaceGraph';
+import type { EventSystem } from '../../core/events/EventSystem';
 import type { Graph } from '../../core/Graph';
 import type { Plugin } from '../../core/PluginManager';
-import type { EventSystem } from '../../core/events/EventSystem';
 import type { Node } from '../../nodes/Node';
+import type { SpaceGraph } from '../../SpaceGraph';
 
 /**
  * Layout configuration

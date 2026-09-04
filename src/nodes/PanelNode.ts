@@ -1,11 +1,10 @@
 // SpaceGraphJS - PanelNode
 // Draggable window panel with move/resize fingerings, inspired by SGJ's Windo
 
+import * as THREE from 'three';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec } from '../types';
 import { HtmlNode } from './HtmlNode';
-
-import * as THREE from 'three';
 
 export class PanelNode extends (HtmlNode as any) {
   static readonly typeName = 'PanelNode';

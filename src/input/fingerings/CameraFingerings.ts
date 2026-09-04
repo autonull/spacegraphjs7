@@ -52,7 +52,7 @@ export class CameraFingering implements Fingering {
         break;
       case 'zoom': {
         const factor = dy > 0 ? 1.02 : 1 / 1.02;
-        this.camera.zoom(Math.pow(factor, Math.abs(dy) * 0.1));
+        this.camera.zoom(factor ** (Math.abs(dy) * 0.1));
         break;
       }
     }

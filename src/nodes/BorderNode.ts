@@ -1,6 +1,6 @@
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec } from '../types';
-import { LayoutNode, borderStrategy } from './LayoutNode';
+import { borderStrategy, LayoutNode } from './LayoutNode';
 
 export type BorderRegion =
   | 'NORTH'

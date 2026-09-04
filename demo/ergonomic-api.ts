@@ -1,5 +1,5 @@
 // Example usage of the ergonomic API
-import { Animate, Camera, Layout, Patterns, graph, quickGraph } from '../index';
+import { Animate, Camera, graph, Layout, Patterns, quickGraph } from '../index';
 
 /**
  * Example 1: Simple graph creation with builder pattern

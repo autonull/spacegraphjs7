@@ -1,7 +1,7 @@
-import type { SpaceGraph } from '../SpaceGraph';
+import type { EventSystem } from '../core/events/EventSystem';
 import type { Graph } from '../core/Graph';
 import type { Plugin } from '../core/PluginManager';
-import type { EventSystem } from '../core/events/EventSystem';
+import type { SpaceGraph } from '../SpaceGraph';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('FractalZoom');

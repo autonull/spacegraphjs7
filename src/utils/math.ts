@@ -2,7 +2,7 @@
 // Type-safe, performant, and deduplicated
 import { DEG2RAD, EPSILON, PI, RAD2DEG, TAU } from '../core/constants';
 
-export { EPSILON, PI, TAU, DEG2RAD, RAD2DEG };
+export { DEG2RAD, EPSILON, PI, RAD2DEG, TAU };
 
 // ============= Type Guards =============
 export const isObject = (item: unknown): item is Record<string, unknown> =>
@@ -264,7 +264,7 @@ export async function retry<T>(
     } catch (error) {
       lastError = error as Error;
       if (i < maxRetries) {
-        await sleep(delay * Math.pow(factor, i));
+        await sleep(delay * factor ** i);
       }
     }
   }
@@ -461,16 +461,10 @@ export const ease = {
   sineIn: (t: number) => 1 - Math.cos((t * Math.PI) / 2),
   sineOut: (t: number) => Math.sin((t * Math.PI) / 2),
   sineInOut: (t: number) => -(Math.cos(Math.PI * t) - 1) / 2,
-  expoIn: (t: number) => (t === 0 ? 0 : Math.pow(2, 10 * (t - 1))),
-  expoOut: (t: number) => (t === 1 ? 1 : 1 - Math.pow(2, -10 * t)),
+  expoIn: (t: number) => (t === 0 ? 0 : 2 ** (10 * (t - 1))),
+  expoOut: (t: number) => (t === 1 ? 1 : 1 - 2 ** (-10 * t)),
   expoInOut: (t: number) =>
-    t === 0
-      ? 0
-      : t === 1
-        ? 1
-        : t < 0.5
-          ? Math.pow(2, 20 * t - 10) / 2
-          : (2 - Math.pow(2, 10 * t - 10)) / 2,
+    t === 0 ? 0 : t === 1 ? 1 : t < 0.5 ? 2 ** (20 * t - 10) / 2 : (2 - 2 ** (10 * t - 10)) / 2,
   circIn: (t: number) => 1 - Math.sqrt(1 - t * t),
   circOut: (t: number) => Math.sqrt(1 - --t * t),
   circInOut: (t: number) =>
@@ -480,22 +474,21 @@ export const ease = {
       ? 0
       : t === 1
         ? 1
-        : -Math.pow(2, 10 * t - 10) * Math.sin((t * 10 - 10.75) * ((2 * Math.PI) / 3)),
+        : -(2 ** (10 * t - 10)) * Math.sin((t * 10 - 10.75) * ((2 * Math.PI) / 3)),
   elasticOut: (t: number) =>
     t === 0
       ? 0
       : t === 1
         ? 1
-        : Math.pow(2, -10 * t) * Math.sin((t * 10 - 0.75) * ((2 * Math.PI) / 3)) + 1,
+        : 2 ** (-10 * t) * Math.sin((t * 10 - 0.75) * ((2 * Math.PI) / 3)) + 1,
   elasticInOut: (t: number) =>
     t === 0
       ? 0
       : t === 1
         ? 1
         : t < 0.5
-          ? -(Math.pow(2, 20 * t - 10) * Math.sin((20 * t - 11.125) * ((2 * Math.PI) / 4.5))) / 2
-          : (Math.pow(2, -20 * t + 10) * Math.sin((20 * t - 11.125) * ((2 * Math.PI) / 4.5))) / 2 +
-            1,
+          ? -(2 ** (20 * t - 10) * Math.sin((20 * t - 11.125) * ((2 * Math.PI) / 4.5))) / 2
+          : (2 ** (-20 * t + 10) * Math.sin((20 * t - 11.125) * ((2 * Math.PI) / 4.5))) / 2 + 1,
   backIn: (t: number) => {
     const c1 = 1.70158,
       c3 = c1 + 1;
@@ -504,14 +497,14 @@ export const ease = {
   backOut: (t: number) => {
     const c1 = 1.70158,
       c3 = c1 + 1;
-    return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+    return 1 + c3 * (t - 1) ** 3 + c1 * (t - 1) ** 2;
   },
   backInOut: (t: number) => {
     const c1 = 1.70158,
       c2 = c1 * 1.525;
     return t < 0.5
-      ? (Math.pow(2 * t, 2) * ((c2 + 1) * 2 * t - c2)) / 2
-      : (Math.pow(2 * t - 2, 2) * ((c2 + 1) * (t * 2 - 2) + c2) + 2) / 2;
+      ? ((2 * t) ** 2 * ((c2 + 1) * 2 * t - c2)) / 2
+      : ((2 * t - 2) ** 2 * ((c2 + 1) * (t * 2 - 2) + c2) + 2) / 2;
   },
   bounceIn: (t: number) => 1 - ease.bounceOut(1 - t),
   bounceOut: (t: number) => {

@@ -1,11 +1,10 @@
 import { BehaviorSubject, type Observable, Subject } from 'rxjs';
-import type { SpaceGraph } from 'spacegraphjs';
-import type { GraphSpec } from 'spacegraphjs';
+import type { GraphSpec, SpaceGraph } from 'spacegraphjs';
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
-import { N8nCollaborationPlugin } from './N8nCollaborationPlugin';
-import { WorkflowMapper } from './WorkflowMapper';
 import { pkgLogger } from './logger';
+import { N8nCollaborationPlugin } from './N8nCollaborationPlugin';
 import type { ExecutionState, N8nWorkflowDiff, N8nWorkflowJSON, OSProcessUpdate } from './types';
+import { WorkflowMapper } from './WorkflowMapper';
 
 const log = pkgLogger('[N8nBridge]');
 

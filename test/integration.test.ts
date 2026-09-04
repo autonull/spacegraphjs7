@@ -3,16 +3,16 @@
 
 import * as THREE from 'three';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { SpaceGraph } from '../src/SpaceGraph';
+import { EventSystem } from '../src/core/events/EventSystem';
 import { Graph } from '../src/core/Graph';
 import { type Plugin, PluginManager } from '../src/core/PluginManager';
-import { TypeRegistry } from '../src/core/TypeRegistry';
-import { EventSystem } from '../src/core/events/EventSystem';
 import { MathPool } from '../src/core/pooling/ObjectPool';
 import { SpatialIndex } from '../src/core/spatial/SpatialIndex';
+import { TypeRegistry } from '../src/core/TypeRegistry';
 import { Edge } from '../src/edges/Edge';
 import { Node } from '../src/nodes/Node';
 import { ForceLayout } from '../src/plugins/layouts/ForceLayout';
+import type { SpaceGraph } from '../src/SpaceGraph';
 import { VisionSystem } from '../src/vision/VisionSystem';
 
 /**

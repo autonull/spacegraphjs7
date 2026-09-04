@@ -1,9 +1,10 @@
-import type { SpaceGraph } from './SpaceGraph';
 import type { Edge } from './edges/Edge';
 // types.ts - Ergonomic TypeScript types
 import type { Node } from './nodes/Node';
+import type { SpaceGraph } from './SpaceGraph';
 
-export type { Node, Edge, SpaceGraph };
+export type { Edge, Node, SpaceGraph };
+
 import type { Raycaster, Vector3 } from 'three';
 
 // ============= Utility Types =============
@@ -462,5 +463,4 @@ export type EventHandler<T = unknown> = (event: T) => void;
 export type EventUnsubscribe = () => void;
 
 // ============= Utility Aliases =============
-export type { LogLevel } from './utils/logger';
-export type { Logger } from './utils/logger';
+export type { Logger, LogLevel } from './utils/logger';

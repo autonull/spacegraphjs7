@@ -1,7 +1,7 @@
 import type * as THREE from 'three';
-import type { SpaceGraph } from '../SpaceGraph';
 import type { Edge } from '../edges/Edge';
 import type { Node } from '../nodes/Node';
+import type { SpaceGraph } from '../SpaceGraph';
 import type { EdgeSpec, GraphSpec, NodeData, NodeSpec } from '../types';
 import { createLogger } from '../utils/logger';
 import { safeClone } from '../utils/math';

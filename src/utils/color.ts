@@ -1,5 +1,6 @@
 import type * as THREE from 'three';
 import { clamp, sortByFrequency } from './math';
+
 export { sortByFrequency };
 
 /**
@@ -22,9 +23,9 @@ export function getRelativeLuminance(
       ? (color as { r: number; g: number; b: number }).b
       : (color as THREE.Color).b / 255;
 
-  const rLinear = r <= 0.03928 ? r / 12.92 : Math.pow((r + 0.055) / 1.055, 2.4);
-  const gLinear = g <= 0.03928 ? g / 12.92 : Math.pow((g + 0.055) / 1.055, 2.4);
-  const bLinear = b <= 0.03928 ? b / 12.92 : Math.pow((b + 0.055) / 1.055, 2.4);
+  const rLinear = r <= 0.03928 ? r / 12.92 : ((r + 0.055) / 1.055) ** 2.4;
+  const gLinear = g <= 0.03928 ? g / 12.92 : ((g + 0.055) / 1.055) ** 2.4;
+  const bLinear = b <= 0.03928 ? b / 12.92 : ((b + 0.055) / 1.055) ** 2.4;
 
   return 0.2126 * rLinear + 0.7152 * gLinear + 0.0722 * bLinear;
 }

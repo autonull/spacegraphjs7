@@ -1,25 +1,25 @@
 import { CameraControls } from './core/CameraControls';
-import { ErgonomicsAPI } from './core/Ergonomics';
-// SpaceGraph.ts - Core graph visualization engine
-import { Graph } from './core/Graph';
-import { ObjectPoolManager } from './core/ObjectPoolManager';
-import { PluginManager } from './core/PluginManager';
-import { Renderer } from './core/Renderer';
-import { VisionManager } from './core/VisionManager';
 import { FingeringPriority, Performance } from './core/constants';
 import {
+  createQuickGraphSpec,
   DEFAULT_EDGE_TYPES,
   DEFAULT_LAYOUT_PLUGINS,
   DEFAULT_NODE_TYPES,
   DEFAULT_SYSTEM_PLUGINS,
-  createQuickGraphSpec,
 } from './core/defaults';
+import { ErgonomicsAPI } from './core/Ergonomics';
 import { EventSystem } from './core/events/EventSystem';
+// SpaceGraph.ts - Core graph visualization engine
+import { Graph } from './core/Graph';
+import { ObjectPoolManager } from './core/ObjectPoolManager';
+import { PluginManager } from './core/PluginManager';
 import { MathPool } from './core/pooling/ObjectPool';
+import { Renderer } from './core/Renderer';
+import { VisionManager } from './core/VisionManager';
 import type { Edge } from './edges/Edge';
 import { applyDefaultInputConfig } from './input/DefaultInputConfig';
-import { InputManager } from './input/InputManager';
 import { createCameraFingering } from './input/fingerings';
+import { InputManager } from './input/InputManager';
 import type { Node } from './nodes/Node';
 import type {
   EdgeSpec,
@@ -29,7 +29,7 @@ import type {
   SpaceGraphOptions,
   SpecUpdate,
 } from './types';
-import { DOMUtils, calculateFitView, createLogger, safeClone, wrapError } from './utils';
+import { calculateFitView, createLogger, DOMUtils, safeClone, wrapError } from './utils';
 
 const logger = createLogger('SpaceGraph');
 

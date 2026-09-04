@@ -1,6 +1,6 @@
-import type { SpaceGraph } from '../SpaceGraph';
-import type { Graph } from '../core/Graph';
 import type { EventSystem } from '../core/events/EventSystem';
+import type { Graph } from '../core/Graph';
+import type { SpaceGraph } from '../SpaceGraph';
 import { createLogger } from '../utils/logger';
 import { BaseSystemPlugin } from './BaseSystemPlugin';
 import { type AlertOptions, HUDAlerts } from './hud/HUDAlerts';
@@ -12,7 +12,7 @@ import type { HUDElementOptions } from './hud/types';
 
 const logger = createLogger('HUDPlugin');
 
-export type { HUDElementOptions, AlertOptions };
+export type { AlertOptions, HUDElementOptions };
 
 export class HUDPlugin extends BaseSystemPlugin {
   readonly id = 'hud';

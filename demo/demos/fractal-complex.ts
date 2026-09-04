@@ -1,4 +1,4 @@
-import { type SpaceGraph, addOverlayPanel, createDemoWithNodes, edge } from '../framework';
+import { addOverlayPanel, createDemoWithNodes, edge, type SpaceGraph } from '../framework';
 
 export default async function fractalComplexDemo(): Promise<SpaceGraph> {
   const LEVELS = [

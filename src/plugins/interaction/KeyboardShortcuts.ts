@@ -1,6 +1,6 @@
-import type { SpaceGraph } from '../../SpaceGraph';
 import type { Edge } from '../../edges/Edge';
 import type { Node } from '../../nodes/Node';
+import type { SpaceGraph } from '../../SpaceGraph';
 
 export interface SelectionState {
   nodes: Set<Node>;

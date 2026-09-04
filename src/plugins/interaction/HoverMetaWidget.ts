@@ -1,7 +1,7 @@
-import type { SpaceGraph } from '../../SpaceGraph';
 import type { Graph } from '../../core/Graph';
 import type { Plugin } from '../../core/PluginManager';
 import type { Node } from '../../nodes/Node';
+import type { SpaceGraph } from '../../SpaceGraph';
 
 export interface HoverAction {
   icon: string;

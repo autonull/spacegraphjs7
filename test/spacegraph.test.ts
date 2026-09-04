@@ -1,6 +1,10 @@
 import * as THREE from 'three';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
+import { VisionManager } from '../src/core/VisionManager';
+import { DottedEdge } from '../src/edges/DottedEdge';
+import { DynamicThicknessEdge } from '../src/edges/DynamicThicknessEdge';
+// Edge types
+import { Edge } from '../src/edges/Edge';
 import { AudioNode } from '../src/nodes/AudioNode';
 import { CanvasNode } from '../src/nodes/CanvasNode';
 import { ChartNode } from '../src/nodes/ChartNode';
@@ -18,28 +22,21 @@ import { SceneNode } from '../src/nodes/SceneNode';
 import { ShapeNode } from '../src/nodes/ShapeNode';
 import { TextMeshNode } from '../src/nodes/TextMeshNode';
 import { VideoNode } from '../src/nodes/VideoNode';
-
-import { DottedEdge } from '../src/edges/DottedEdge';
-import { DynamicThicknessEdge } from '../src/edges/DynamicThicknessEdge';
-// Edge types
-import { Edge } from '../src/edges/Edge';
-
-import { VisionManager } from '../src/core/VisionManager';
 import { ErgonomicsPlugin } from '../src/plugins/ErgonomicsPlugin';
-// Extended plugins
-import { PhysicsPlugin } from '../src/plugins/PhysicsPlugin';
+// ---------------------------------------------------------------------------
+// Lightweight mock SpaceGraph — no browser APIs, no WebGL required
+// ---------------------------------------------------------------------------
+import { InteractionPlugin } from '../src/plugins/InteractionPlugin';
 import { CircularLayout } from '../src/plugins/layouts/CircularLayout';
 // Layout plugins
 import { ForceLayout } from '../src/plugins/layouts/ForceLayout';
 import { GridLayout } from '../src/plugins/layouts/GridLayout';
 import { HierarchicalLayout } from '../src/plugins/layouts/HierarchicalLayout';
 import { RadialLayout } from '../src/plugins/layouts/RadialLayout';
-
+// Extended plugins
+import { PhysicsPlugin } from '../src/plugins/PhysicsPlugin';
 import { SpaceGraph } from '../src/SpaceGraph';
-// ---------------------------------------------------------------------------
-// Lightweight mock SpaceGraph — no browser APIs, no WebGL required
-// ---------------------------------------------------------------------------
-import { InteractionPlugin } from '../src/plugins/InteractionPlugin';
+
 function makeSpaceGraph() {
   const scene = {
     add: vi.fn(),

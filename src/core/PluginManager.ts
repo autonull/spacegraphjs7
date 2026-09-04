@@ -1,11 +1,11 @@
-import type { SpaceGraph } from '../SpaceGraph';
 import type { Edge } from '../edges/Edge';
 import type { Node } from '../nodes/Node';
+import type { SpaceGraph } from '../SpaceGraph';
 import { wrapError } from '../utils/error';
 import { createLogger } from '../utils/logger';
+import type { EventSystem } from './events/EventSystem';
 import type { Graph } from './Graph';
 import { TypeRegistry } from './TypeRegistry';
-import type { EventSystem } from './events/EventSystem';
 
 export interface Plugin {
   readonly id: string;

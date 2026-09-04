@@ -2,8 +2,7 @@ import type { SpaceGraph } from '../SpaceGraph';
 // builder/factories.ts - Factory functions for nodes, edges, widgets
 import type { EdgeSpec, NodeSpec } from '../types';
 import { GraphBuilder } from './graph';
-import { NodeBuilder } from './node';
-import { WidgetBuilder } from './node';
+import { NodeBuilder, WidgetBuilder } from './node';
 
 // Graph spec builder - fluent API for creating graphs
 export const graph = (): GraphBuilder => new GraphBuilder();

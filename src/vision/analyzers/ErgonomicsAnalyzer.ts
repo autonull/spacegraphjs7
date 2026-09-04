@@ -4,8 +4,7 @@
 import * as THREE from 'three';
 import { clamp } from '../../utils/math';
 import type { HeuristicsConfig } from '../strategies/HeuristicsStrategy';
-import type { VisionContext } from '../types';
-import type { ErgonomicsResult, TargetIssue } from '../types';
+import type { ErgonomicsResult, TargetIssue, VisionContext } from '../types';
 
 /**
  * Ergonomics Analyzer

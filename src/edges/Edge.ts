@@ -2,10 +2,10 @@ import * as THREE from 'three';
 import { Line2 } from 'three/examples/jsm/lines/Line2.js';
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
-import type { SpaceGraph } from '../SpaceGraph';
-import { type Bounds3D, type HitResult, type Rect, Surface } from '../core/Surface';
 import { Defaults, EdgeColors } from '../core/constants';
+import { type Bounds3D, type HitResult, type Rect, Surface } from '../core/Surface';
 import type { Node } from '../nodes/Node';
+import type { SpaceGraph } from '../SpaceGraph';
 import type { EdgeData, EdgeSpec } from '../types';
 
 export const DEFAULT_EDGE_DATA: EdgeData = Object.freeze({

@@ -3,8 +3,8 @@
 </template>
 
 <script setup lang="ts">
-import { SpaceGraph } from 'spacegraphjs';
 import type { GraphSpec, SpaceGraphOptions } from 'spacegraphjs';
+import { SpaceGraph } from 'spacegraphjs';
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
 const props = defineProps<{

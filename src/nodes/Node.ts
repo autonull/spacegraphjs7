@@ -1,8 +1,8 @@
 import gsap from 'gsap';
 import * as THREE from 'three';
-import type { SpaceGraph } from '../SpaceGraph';
 import { type Bounds3D, type HitResult, type Rect, Surface } from '../core/Surface';
 import type { ControlState } from '../plugins/interaction/ControlStateBorder';
+import type { SpaceGraph } from '../SpaceGraph';
 import type { AnimationProps, NodeData, NodeSpec } from '../types';
 import { ThreeDisposer } from '../utils/ThreeDisposer';
 

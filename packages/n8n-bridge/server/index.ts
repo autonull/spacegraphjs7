@@ -141,7 +141,7 @@ async function handleMessage(ws: WebSocket, clients: Set<WebSocket>, message: an
       log.info(`Node ${message.nodeId} moved to ${message.position}`);
       // Stub for patching workflow JSON in n8n DB
       break;
-    case 'execute:trigger':
+    case 'execute:trigger': {
       log.info(`Triggering execution ${message.executionId} for workflow ${message.workflowId}`);
 
       // Mock sequence of execution events
@@ -205,6 +205,7 @@ async function handleMessage(ws: WebSocket, clients: Set<WebSocket>, message: an
         });
       }, delay + 500);
       break;
+    }
     default:
       log.warn('Unknown message type:', message.type);
   }

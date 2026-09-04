@@ -1,4 +1,4 @@
-import { type SpaceGraph, createDemoWithNodes, edge } from '../framework';
+import { createDemoWithNodes, edge, type SpaceGraph } from '../framework';
 
 export default async function htmlNodeDemo(): Promise<SpaceGraph> {
   const sg = await createDemoWithNodes(

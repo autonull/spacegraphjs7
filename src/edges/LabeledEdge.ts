@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import type { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
 import { CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
-import type { SpaceGraph } from '../SpaceGraph';
 import type { Node } from '../nodes/Node';
+import type { SpaceGraph } from '../SpaceGraph';
 import type { EdgeData, EdgeSpec, LabelLodLevel } from '../types';
 import { DOMUtils } from '../utils/DOMUtils';
 import { Edge } from './Edge';

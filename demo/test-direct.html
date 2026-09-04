@@ -18,6 +18,7 @@
         <div id="container" style="width: 800px; height: 600px; border: 2px solid #0f0"></div>
         <script type="module">
             import { SpaceGraph } from '@src/index.ts';
+
             const status = document.getElementById('status');
             try {
                 const g = await SpaceGraph.create('#container', {

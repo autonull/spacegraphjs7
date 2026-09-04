@@ -1,5 +1,5 @@
-import { spawn } from 'child_process';
 import { chromium, expect } from '@playwright/test';
+import { spawn } from 'child_process';
 
 async function main() {
   console.log('Starting dev server for UI Verification...');

@@ -1,6 +1,6 @@
 import { createEffect, onCleanup, onMount } from 'solid-js';
-import { SpaceGraph } from 'spacegraphjs';
 import type { GraphSpec, SpaceGraphOptions } from 'spacegraphjs';
+import { SpaceGraph } from 'spacegraphjs';
 
 export interface SpaceGraphProps {
   spec?: GraphSpec;

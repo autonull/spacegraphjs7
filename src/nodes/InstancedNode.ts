@@ -1,7 +1,6 @@
 import * as THREE from 'three';
-
-import type { SpaceGraph } from '../SpaceGraph';
 import type { GeometryFamily } from '../rendering/InstancedNodeRenderer';
+import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec } from '../types';
 import { BaseInstancedNode } from './BaseInstancedNode';
 

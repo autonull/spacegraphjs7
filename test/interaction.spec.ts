@@ -1,6 +1,3 @@
-import { spawn } from 'child_process';
-import path from 'path';
-import { fileURLToPath } from 'url';
 /**
  * Interaction E2E tests — verifies drag-to-move, hover metawidget visibility,
  * and metawidget action events using Playwright mouse simulation.
@@ -11,6 +8,9 @@ import { fileURLToPath } from 'url';
  *   window._lastMetaAction    — { nodeId, action } of the last metawidget click
  */
 import { expect, test } from '@playwright/test';
+import { spawn } from 'child_process';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

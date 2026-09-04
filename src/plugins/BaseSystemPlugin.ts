@@ -1,9 +1,9 @@
-import type { SpaceGraph } from '../SpaceGraph';
+import type { EventSystem } from '../core/events/EventSystem';
 import type { Graph } from '../core/Graph';
 import type { Plugin } from '../core/PluginManager';
-import type { EventSystem } from '../core/events/EventSystem';
 import type { Edge } from '../edges/Edge';
 import type { Node } from '../nodes/Node';
+import type { SpaceGraph } from '../SpaceGraph';
 
 export interface SubscriptionHandle {
   dispose(): void;

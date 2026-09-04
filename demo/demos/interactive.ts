@@ -1,5 +1,5 @@
 import { logger } from '../../src/utils/logger';
-import { type SpaceGraph, addOverlayPanel, createDemoWithNodes, shapeNode } from '../framework';
+import { addOverlayPanel, createDemoWithNodes, type SpaceGraph, shapeNode } from '../framework';
 
 export default async function interactiveDemo(): Promise<SpaceGraph> {
   const nodes = [

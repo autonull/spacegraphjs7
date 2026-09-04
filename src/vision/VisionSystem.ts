@@ -1,11 +1,11 @@
 // SpaceGraphJS - Vision System
 // Strategy pattern for vision analysis with heuristics and ONNX support
 
-import type { VisionModelLoader } from './VisionModelLoader';
 import { HeuristicsStrategy } from './strategies/HeuristicsStrategy';
 import { HybridStrategy } from './strategies/HybridStrategy';
 import { OnnxStrategy } from './strategies/OnnxStrategy';
 import type { VisionBenchmark, VisionOptions, VisionReport, VisionStrategy } from './types';
+import type { VisionModelLoader } from './VisionModelLoader';
 
 /**
  * Vision System

@@ -1,9 +1,9 @@
 import type { SpaceGraph } from '../SpaceGraph';
 import { createLogger } from '../utils/logger';
+import type { VisionReport } from '../vision/types';
 import { VisionAutoFixer, type VisionCategory } from '../vision/VisionAutoFixer';
 import { VisionModelLoader } from '../vision/VisionModelLoader';
 import { VisionSystem } from '../vision/VisionSystem';
-import type { VisionReport } from '../vision/types';
 
 const logger = createLogger('VisionManager');
 

@@ -4,8 +4,7 @@
 import * as THREE from 'three';
 import { getContrastRatio, getRelativeLuminance } from '../../utils/color';
 import type { HeuristicsConfig } from '../strategies/HeuristicsStrategy';
-import type { VisionContext } from '../types';
-import type { ContrastFailure, LegibilityResult } from '../types';
+import type { ContrastFailure, LegibilityResult, VisionContext } from '../types';
 
 /**
  * Legibility Analyzer

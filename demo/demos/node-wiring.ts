@@ -1,5 +1,5 @@
 import { logger } from '../../src/utils/logger';
-import { type SpaceGraph, createDemoWithNodes, shapeNode } from '../framework';
+import { createDemoWithNodes, type SpaceGraph, shapeNode } from '../framework';
 
 export default async function nodeWiringDemo(): Promise<SpaceGraph> {
   const sg = await createDemoWithNodes([

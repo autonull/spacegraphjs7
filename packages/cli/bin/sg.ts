@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 
-import fs from 'fs';
-import path from 'path';
 import chalk from 'chalk';
 import { Command } from 'commander';
+import fs from 'fs';
 import inquirer from 'inquirer';
+import path from 'path';
 
 const program = new Command();
 

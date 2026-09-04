@@ -7,13 +7,13 @@ import { CameraControls } from '../src/core/CameraControls';
 import { type HitResult, type Rect, Surface } from '../src/core/Surface';
 import { Edge } from '../src/edges/Edge';
 import { Wire } from '../src/edges/Wire';
-import { type Finger, FingerManager, Fingering } from '../src/input/Fingering';
+import { type Finger, Fingering, FingerManager } from '../src/input/Fingering';
 import { type InputEvent, InputManager } from '../src/input/InputManager';
 import { createParentTransform } from '../src/input/SurfaceTransform';
 import { Node } from '../src/nodes/Node';
-import { LayoutContainer } from '../src/plugins/LayoutContainer';
 import { DragHandler } from '../src/plugins/interaction/DragHandler';
 import { InteractionRaycaster } from '../src/plugins/interaction/RaycasterHelper';
+import { LayoutContainer } from '../src/plugins/LayoutContainer';
 
 // Mock SpaceGraph for tests
 function createMockSpaceGraph() {

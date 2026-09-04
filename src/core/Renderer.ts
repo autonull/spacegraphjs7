@@ -1,9 +1,9 @@
 import * as THREE from 'three';
-import { acceleratedRaycast, computeBoundsTree, disposeBoundsTree } from 'three-mesh-bvh';
 import { CSS3DRenderer } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
-import type { SpaceGraph } from '../SpaceGraph';
+import { acceleratedRaycast, computeBoundsTree, disposeBoundsTree } from 'three-mesh-bvh';
 import type { Node } from '../nodes/Node';
 import { InstancedNodeRenderer } from '../rendering/InstancedNodeRenderer';
+import type { SpaceGraph } from '../SpaceGraph';
 import { RenderContext } from './RenderContext';
 
 const CSS_STYLES = {

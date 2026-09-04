@@ -1,4 +1,4 @@
-import { type SpaceGraph, createDemoWithNodes, shapeNode } from '../framework';
+import { createDemoWithNodes, type SpaceGraph, shapeNode } from '../framework';
 
 const SHAPES = ['box', 'sphere', 'cylinder', 'cone', 'torus', 'plane', 'circle', 'ring'];
 

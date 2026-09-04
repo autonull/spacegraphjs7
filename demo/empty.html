@@ -17,6 +17,7 @@
         <div id="container"></div>
         <script type="module">
             import { SpaceGraph } from '@src/index.ts';
+
             try {
                 const graph = await SpaceGraph.create('#container', { nodes: [], edges: [] });
                 window._sg = graph;

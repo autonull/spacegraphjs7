@@ -1,10 +1,10 @@
-export { Edge } from './Edge';
-export { CurvedEdge } from './CurvedEdge';
-export { FlowEdge } from './FlowEdge';
-export { LabeledEdge } from './LabeledEdge';
-export { DottedEdge } from './DottedEdge';
-export { DynamicThicknessEdge } from './DynamicThicknessEdge';
 export { AnimatedEdge } from './AnimatedEdge';
 export { BundledEdge } from './BundledEdge';
+export { CurvedEdge } from './CurvedEdge';
+export { DottedEdge } from './DottedEdge';
+export { DynamicThicknessEdge } from './DynamicThicknessEdge';
+export { Edge } from './Edge';
+export { FlowEdge } from './FlowEdge';
 export { InterGraphEdge } from './InterGraphEdge';
+export { LabeledEdge } from './LabeledEdge';
 export { Wire } from './Wire';

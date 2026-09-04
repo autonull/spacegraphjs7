@@ -4,6 +4,7 @@ import { pkgLogger } from './logger';
 import { N8nBridge } from './spacegraph-n8n-bridge';
 
 const log = pkgLogger('[N8nWorkflowPlugin]');
+
 import { ExecutionLogPanel } from './nodes/ExecutionLogPanel';
 import { N8nAiNode } from './nodes/N8nAiNode';
 import { N8nCodeNode } from './nodes/N8nCodeNode';
