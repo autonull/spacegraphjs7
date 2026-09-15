@@ -51,6 +51,16 @@ export class N8nPaletteNode extends HtmlNode {
     this.renderHtmlContent(level);
   }
 
+  updateSpec(spec: SpecUpdate): void {
+    super.updateSpec(spec);
+    const level = this.domElement?.querySelector('div[draggable]')
+      ? 'full'
+      : this.domElement?.querySelector('span')
+        ? 'label'
+        : 'icon';
+    this.renderHtmlContent(level);
+  }
+
   private renderHtmlContent(level: string) {
     if (!this.domElement) return;
 
@@ -123,15 +133,5 @@ export class N8nPaletteNode extends HtmlNode {
         border: '2px solid #555',
       });
     }
-  }
-
-  updateSpec(spec: SpecUpdate): void {
-    super.updateSpec(spec);
-    const level = this.domElement?.querySelector('div[draggable]')
-      ? 'full'
-      : this.domElement?.querySelector('span')
-        ? 'label'
-        : 'icon';
-    this.renderHtmlContent(level);
   }
 }

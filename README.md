@@ -38,6 +38,7 @@ Check out the interactive examples in the `demo/` directory or run `pnpm run dev
 ```bash
 pnpm install spacegraphjs three
 ```
+
 ---
 
 ### 📚 Research: Seminal Contribution
@@ -145,10 +146,10 @@ All designs published under open licenses:
 ## Community
 
 | Channel    | Link                                                                         | Members             |
-| ---------- | ---------------------------------------------------------------------------- | ------------------- |
+|------------|------------------------------------------------------------------------------|---------------------|
 | **Matrix** | [#spacegraphjs:matrix.org](https://matrix.to/#/#spacegraphjs:matrix.org)     | 200+ target         |
 | **GitHub** | [github.com/autonull/spacegraphjs](https://github.com/autonull/spacegraphjs) | 2,000+ stars target |
-| **pnpm**    | [npmjs.com/package/spacegraphjs](https://npmjs.com/package/spacegraphjs)     | 25K+/month target   |
+| **pnpm**   | [npmjs.com/package/spacegraphjs](https://npmjs.com/package/spacegraphjs)     | 25K+/month target   |
 
 ---
 
@@ -189,7 +190,7 @@ pnpm install spacegraphjs three
 ## Quick Links
 
 | I Want To...                 | Go Here                                                  |
-| ---------------------------- | -------------------------------------------------------- |
+|------------------------------|----------------------------------------------------------|
 | **Get started in 5 min**     | [QUICKSTART.md](./QUICKSTART.md)                         |
 | **Understand the full plan** | [PLAN/INDEX.md](./PLAN/INDEX.md)                         |
 | **See ambitious targets**    | [PLAN/AMBITIOUS-SUCCESS.md](./PLAN/AMBITIOUS-SUCCESS.md) |

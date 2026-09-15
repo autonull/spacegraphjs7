@@ -39,6 +39,18 @@ export class N8nAiNode extends HtmlNode {
     this.renderHtmlContent(level);
   }
 
+  updateSpec(spec: SpecUpdate): void {
+    super.updateSpec(spec);
+    const level = this.domElement?.querySelector('textarea')
+      ? 'full'
+      : this.domElement?.querySelector('div[style*="italic"]')
+        ? 'summary'
+        : this.domElement?.querySelector('span')
+          ? 'label'
+          : 'icon';
+    this.renderHtmlContent(level);
+  }
+
   private renderHtmlContent(level: string) {
     if (!this.domElement) return;
 
@@ -192,17 +204,5 @@ export class N8nAiNode extends HtmlNode {
         border: '1px solid #7e57c2',
       });
     }
-  }
-
-  updateSpec(spec: SpecUpdate): void {
-    super.updateSpec(spec);
-    const level = this.domElement?.querySelector('textarea')
-      ? 'full'
-      : this.domElement?.querySelector('div[style*="italic"]')
-        ? 'summary'
-        : this.domElement?.querySelector('span')
-          ? 'label'
-          : 'icon';
-    this.renderHtmlContent(level);
   }
 }

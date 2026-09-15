@@ -8,12 +8,11 @@ import type { SpaceGraph } from '../../SpaceGraph';
  * Consolidates all raycasting logic into a single reusable class
  */
 export class InteractionRaycaster {
-  private readonly raycaster = new THREE.Raycaster();
-  private readonly mouse = new THREE.Vector2();
-  private readonly sg: SpaceGraph;
-
   private static NODE_THRESHOLD = 5;
   private static LINE_THRESHOLD = 5;
+  readonly raycaster = new THREE.Raycaster();
+  readonly mouse = new THREE.Vector2();
+  readonly sg: SpaceGraph;
 
   constructor(sg: SpaceGraph) {
     this.sg = sg;
@@ -68,6 +67,10 @@ export class InteractionRaycaster {
     return this.raycaster.ray.intersectPlane(plane, intersection) ? intersection : null;
   }
 
+  getRaycaster(): THREE.Raycaster {
+    return this.raycaster;
+  }
+
   private getAllNodeMeshes(): THREE.Object3D[] {
     const meshes: THREE.Object3D[] = [];
     for (const node of this.sg.graph.nodes.values()) {
@@ -96,9 +99,5 @@ export class InteractionRaycaster {
       current = current.parent;
     }
     return null;
-  }
-
-  getRaycaster(): THREE.Raycaster {
-    return this.raycaster;
   }
 }

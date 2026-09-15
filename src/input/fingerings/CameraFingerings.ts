@@ -1,4 +1,4 @@
-import type { CameraControls } from '../../core/CameraControls';
+import type { CameraControls } from 'spacegraphjs/core';
 import type { Finger, Fingering } from '../Fingering';
 
 export type CameraAction = 'orbit' | 'pan' | 'zoom';
@@ -21,10 +21,6 @@ export class CameraFingering implements Fingering {
 
   constructor(camera: CameraControls) {
     this.camera = camera;
-  }
-
-  private getConfigForButton(buttons: number): CameraFingeringConfig | null {
-    return CAMERA_FINGERING_CONFIGS.find((c) => c.button === buttons) ?? null;
   }
 
   start(finger: Finger): boolean {
@@ -67,6 +63,10 @@ export class CameraFingering implements Fingering {
 
   defer(_finger: Finger): boolean {
     return false;
+  }
+
+  private getConfigForButton(buttons: number): CameraFingeringConfig | null {
+    return CAMERA_FINGERING_CONFIGS.find((c) => c.button === buttons) ?? null;
   }
 }
 

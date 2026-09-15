@@ -109,92 +109,13 @@ export class ErgonomicsPlugin extends BaseSystemPlugin {
    * Full CalibrationManager implementation is deferred to future effort.
    */
   public calibrating = false;
+  private activeSessions: Map<string, InteractionSession> = new Map();
+  private cameraSession: CameraSession | null = null;
 
   init(sg: SpaceGraph, graph: Graph, events: EventSystem): void {
     super.init(sg, graph, events);
     this._applyConfig();
     this._listenToInteractions();
-  }
-
-  private _applyConfig(): void {
-    // Hook into camera controls if available
-    const cam = this.sg.cameraControls;
-    if (!cam) return;
-    if ('dampingFactor' in cam) cam.dampingFactor = this.config.dampingFactor;
-    if ('panSpeed' in cam) cam.panSpeed = this.config.panSpeed;
-    if ('zoomSpeed' in cam) cam.zoomSpeed = this.config.zoomSpeed;
-  }
-
-  private activeSessions: Map<string, InteractionSession> = new Map();
-  private cameraSession: CameraSession | null = null;
-
-  private _listenToInteractions(): void {
-    this.sg.events.on('interaction:dragstart', (payload) => {
-      if (!payload?.node) return;
-      this.activeSessions.set(`drag-${payload.node.id}`, new InteractionSession());
-    });
-
-    this.sg.events.on('interaction:drag', (payload) => {
-      if (!payload?.node) return;
-      const session = this.activeSessions.get(`drag-${payload.node.id}`);
-      session?.addPoint(payload.node.position.x, payload.node.position.y);
-    });
-
-    this.sg.events.on('interaction:dragend', (payload) => {
-      if (!payload?.node) return;
-      const session = this.activeSessions.get(`drag-${payload.node.id}`);
-      if (session) {
-        session.close();
-        this._accumulateMetrics(session);
-        this.activeSessions.delete(`drag-${payload.node.id}`);
-      }
-    });
-
-    this.sg.events.on('camera:move', (payload) => {
-      if (!payload?.position) return;
-      const pos = payload.position as [number, number, number];
-      this._handleCameraMovement(pos[0], pos[1]);
-    });
-  }
-
-  private _handleCameraMovement(x: number, y: number): void {
-    if (!this.cameraSession) {
-      this.cameraSession = {
-        session: new InteractionSession(),
-        lastActivity: Date.now(),
-      };
-    } else {
-      clearTimeout(this.cameraSession.timeoutHandle);
-    }
-
-    this.cameraSession.session.addPoint(x, y, Date.now());
-    this.cameraSession.lastActivity = Date.now();
-
-    this.cameraSession.timeoutHandle = setTimeout(() => {
-      if (
-        this.cameraSession &&
-        Date.now() - this.cameraSession.lastActivity >= ERGONOMICS_CONFIG.SESSION_TIMEOUT_MS
-      ) {
-        this.cameraSession.session.close();
-        this._accumulateMetrics(this.cameraSession.session);
-        this.cameraSession = null;
-      }
-    }, ERGONOMICS_CONFIG.SESSION_TIMEOUT_MS);
-  }
-
-  private _accumulateMetrics(session: InteractionSession): void {
-    const { efficiency, jitter } = session.getMetrics();
-
-    this.metrics.avgEfficiency =
-      ERGONOMICS_CONFIG.EMA_ALPHA * efficiency +
-      (1 - ERGONOMICS_CONFIG.EMA_ALPHA) * this.metrics.avgEfficiency;
-    this.metrics.avgJitter =
-      ERGONOMICS_CONFIG.EMA_ALPHA * jitter +
-      (1 - ERGONOMICS_CONFIG.EMA_ALPHA) * this.metrics.avgJitter;
-
-    if (session.path.length > 1) {
-      this.metrics.totalInteractions++;
-    }
   }
 
   /** Update config and re-apply to camera. */
@@ -265,5 +186,83 @@ export class ErgonomicsPlugin extends BaseSystemPlugin {
 
   onPreRender(_delta: number): void {
     // Handled by event accumulation directly
+  }
+
+  private _applyConfig(): void {
+    // Hook into camera controls if available
+    const cam = this.sg.cameraControls;
+    if (!cam) return;
+    if ('dampingFactor' in cam) cam.dampingFactor = this.config.dampingFactor;
+    if ('panSpeed' in cam) cam.panSpeed = this.config.panSpeed;
+    if ('zoomSpeed' in cam) cam.zoomSpeed = this.config.zoomSpeed;
+  }
+
+  private _listenToInteractions(): void {
+    this.sg.events.on('interaction:dragstart', (payload) => {
+      if (!payload?.node) return;
+      this.activeSessions.set(`drag-${payload.node.id}`, new InteractionSession());
+    });
+
+    this.sg.events.on('interaction:drag', (payload) => {
+      if (!payload?.node) return;
+      const session = this.activeSessions.get(`drag-${payload.node.id}`);
+      session?.addPoint(payload.node.position.x, payload.node.position.y);
+    });
+
+    this.sg.events.on('interaction:dragend', (payload) => {
+      if (!payload?.node) return;
+      const session = this.activeSessions.get(`drag-${payload.node.id}`);
+      if (session) {
+        session.close();
+        this._accumulateMetrics(session);
+        this.activeSessions.delete(`drag-${payload.node.id}`);
+      }
+    });
+
+    this.sg.events.on('camera:move', (payload) => {
+      if (!payload?.position) return;
+      const pos = payload.position as [number, number, number];
+      this._handleCameraMovement(pos[0], pos[1]);
+    });
+  }
+
+  private _handleCameraMovement(x: number, y: number): void {
+    if (!this.cameraSession) {
+      this.cameraSession = {
+        session: new InteractionSession(),
+        lastActivity: Date.now(),
+      };
+    } else {
+      clearTimeout(this.cameraSession.timeoutHandle);
+    }
+
+    this.cameraSession.session.addPoint(x, y, Date.now());
+    this.cameraSession.lastActivity = Date.now();
+
+    this.cameraSession.timeoutHandle = setTimeout(() => {
+      if (
+        this.cameraSession &&
+        Date.now() - this.cameraSession.lastActivity >= ERGONOMICS_CONFIG.SESSION_TIMEOUT_MS
+      ) {
+        this.cameraSession.session.close();
+        this._accumulateMetrics(this.cameraSession.session);
+        this.cameraSession = null;
+      }
+    }, ERGONOMICS_CONFIG.SESSION_TIMEOUT_MS);
+  }
+
+  private _accumulateMetrics(session: InteractionSession): void {
+    const { efficiency, jitter } = session.getMetrics();
+
+    this.metrics.avgEfficiency =
+      ERGONOMICS_CONFIG.EMA_ALPHA * efficiency +
+      (1 - ERGONOMICS_CONFIG.EMA_ALPHA) * this.metrics.avgEfficiency;
+    this.metrics.avgJitter =
+      ERGONOMICS_CONFIG.EMA_ALPHA * jitter +
+      (1 - ERGONOMICS_CONFIG.EMA_ALPHA) * this.metrics.avgJitter;
+
+    if (session.path.length > 1) {
+      this.metrics.totalInteractions++;
+    }
   }
 }

@@ -20,6 +20,30 @@ export class DropdownNode extends HtmlNode {
     this._setupDropdown();
   }
 
+  getValue(): string {
+    return this.selectedValue;
+  }
+
+  setValue(value: string): void {
+    if (this.selectElement && this.options.some((o) => o.id === value)) {
+      this.selectElement.value = value;
+      this._onSelectionChange(value);
+    }
+  }
+
+  setOptions(options: DropdownOption[]): void {
+    this.options = options;
+    if (!this.selectElement) return;
+    this.selectElement.innerHTML = '';
+    for (const opt of options) {
+      const option = DOMUtils.createElement('option') as HTMLOptionElement;
+      option.value = opt.id;
+      option.textContent = opt.label;
+      if (opt.value !== undefined) option.value = String(opt.value);
+      this.selectElement.appendChild(option);
+    }
+  }
+
   private _setupDropdown(): void {
     const data = this.data as SpaceGraphNodeData;
     this.options = (data?.options as DropdownOption[]) ?? [
@@ -69,29 +93,5 @@ export class DropdownNode extends HtmlNode {
       value,
       label: option?.label,
     });
-  }
-
-  getValue(): string {
-    return this.selectedValue;
-  }
-
-  setValue(value: string): void {
-    if (this.selectElement && this.options.some((o) => o.id === value)) {
-      this.selectElement.value = value;
-      this._onSelectionChange(value);
-    }
-  }
-
-  setOptions(options: DropdownOption[]): void {
-    this.options = options;
-    if (!this.selectElement) return;
-    this.selectElement.innerHTML = '';
-    for (const opt of options) {
-      const option = DOMUtils.createElement('option') as HTMLOptionElement;
-      option.value = opt.id;
-      option.textContent = opt.label;
-      if (opt.value !== undefined) option.value = String(opt.value);
-      this.selectElement.appendChild(option);
-    }
   }
 }

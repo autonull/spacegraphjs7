@@ -54,24 +54,6 @@ export class MathNode extends (BaseContentNode as any) {
     this.renderMath();
   }
 
-  private async renderMath() {
-    try {
-      const katex = await loadKatex();
-      (
-        katex as {
-          render: (math: string, el: HTMLElement, opts: Record<string, unknown>) => void;
-        }
-      ).render(this.mathContent, this.domElement, {
-        throwOnError: false,
-        displayMode: true,
-        output: 'html',
-      });
-    } catch (e) {
-      logger.error('Failed to render LaTeX:', e);
-      this.domElement.textContent = this.mathContent;
-    }
-  }
-
   updateSpec(updates: Partial<NodeSpec>): this {
     super.updateSpec(updates);
 
@@ -94,5 +76,23 @@ export class MathNode extends (BaseContentNode as any) {
       this.renderMath();
     }
     return this;
+  }
+
+  private async renderMath() {
+    try {
+      const katex = await loadKatex();
+      (
+        katex as {
+          render: (math: string, el: HTMLElement, opts: Record<string, unknown>) => void;
+        }
+      ).render(this.mathContent, this.domElement, {
+        throwOnError: false,
+        displayMode: true,
+        output: 'html',
+      });
+    } catch (e) {
+      logger.error('Failed to render LaTeX:', e);
+      this.domElement.textContent = this.mathContent;
+    }
   }
 }

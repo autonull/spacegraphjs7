@@ -33,25 +33,35 @@ export abstract class Surface extends EventEmitter<SurfaceEventMap> {
   abstract readonly type: string;
   abstract sg?: SpaceGraph;
   abstract bounds: Rect;
-  abstract get bounds3D(): Bounds3D;
-  abstract hitTest(ray: THREE.Raycaster): HitResult | null;
-
-  abstract get position(): THREE.Vector3;
-  abstract get rotation(): THREE.Euler | THREE.Vector3;
-  abstract get scale(): THREE.Vector3;
-  abstract get worldMatrix(): THREE.Matrix4;
-
-  abstract start(): void;
-  abstract stop(): void;
-  abstract delete(): void;
-
   parent?: Surface;
   children: Surface[] = [];
   visible = true;
   isTouchable = true;
   activity = 0;
+  readonly ACTIVITY_DECAY_RATE = 0.5;
 
-  private readonly ACTIVITY_DECAY_RATE = 0.5;
+  abstract get bounds3D(): Bounds3D;
+
+  abstract get position(): THREE.Vector3;
+
+  abstract get rotation(): THREE.Euler | THREE.Vector3;
+
+  abstract get scale(): THREE.Vector3;
+
+  abstract get worldMatrix(): THREE.Matrix4;
+
+  // Ergonomic helpers
+  get isDisposed(): boolean {
+    return !this.visible;
+  }
+
+  abstract hitTest(ray: THREE.Raycaster): HitResult | null;
+
+  abstract start(): void;
+
+  abstract stop(): void;
+
+  abstract delete(): void;
 
   isDraggable(_localPos: THREE.Vector3): boolean {
     return true;
@@ -123,11 +133,6 @@ export abstract class Surface extends EventEmitter<SurfaceEventMap> {
       throw new Error(`Surface "${this.id}" requires SpaceGraph but sg is not initialized`);
     }
     return this.sg;
-  }
-
-  // Ergonomic helpers
-  get isDisposed(): boolean {
-    return !this.visible;
   }
 
   hasAncestor(predicate: (s: Surface) => boolean): boolean {

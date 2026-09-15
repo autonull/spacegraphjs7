@@ -8,18 +8,16 @@ import type { InteractionRaycaster } from './RaycasterHelper';
  * Handles interactive node resizing with screen-space calibration
  */
 export class ResizeHandler {
+  private static MIN_NODE_SIZE = 40;
+  private static MAX_NODE_SIZE = 2000;
   private isResizing = false;
   private resizedNode: Node | null = null;
   private resizeStartPointerPos = { x: 0, y: 0 };
   private resizeStartNodeSize = { width: 0, height: 0 };
   private resizeNodeScreenScaleX = 1;
   private resizeNodeScreenScaleY = 1;
-
-  private readonly sg: SpaceGraph;
-  private readonly raycaster: InteractionRaycaster;
-
-  private static MIN_NODE_SIZE = 40;
-  private static MAX_NODE_SIZE = 2000;
+  readonly sg: SpaceGraph;
+  readonly raycaster: InteractionRaycaster;
 
   constructor(sg: SpaceGraph, raycaster: InteractionRaycaster) {
     this.sg = sg;
@@ -93,6 +91,14 @@ export class ResizeHandler {
     this.resizedNode = null;
   }
 
+  isResizingNode(): boolean {
+    return this.isResizing;
+  }
+
+  getResizedNode(): Node | null {
+    return this.resizedNode;
+  }
+
   private getNodeScreenSize(node: Node): { width: number; height: number } {
     const box = new THREE.Box3().setFromObject(node.object!);
     const size = box.getSize(new THREE.Vector3());
@@ -108,13 +114,5 @@ export class ResizeHandler {
       width: (size.x / visibleWidth) * canvas.clientWidth,
       height: (size.y / visibleHeight) * canvas.clientHeight,
     };
-  }
-
-  isResizingNode(): boolean {
-    return this.isResizing;
-  }
-
-  getResizedNode(): Node | null {
-    return this.resizedNode;
   }
 }

@@ -10,7 +10,7 @@ const logger = createLogger('VideoNode');
 export class VideoNode extends TexturedMeshNode {
   static readonly typeName = 'VideoNode';
   public videoEl: HTMLVideoElement;
-  private videoTexture: THREE.VideoTexture;
+  readonly videoTexture: THREE.VideoTexture;
 
   constructor(sg: SpaceGraph, spec: NodeSpec) {
     const w = (spec.data?.width as number) ?? 320;
@@ -45,6 +45,7 @@ export class VideoNode extends TexturedMeshNode {
   play() {
     this.videoEl.play();
   }
+
   pause() {
     this.videoEl.pause();
   }

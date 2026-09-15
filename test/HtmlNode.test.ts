@@ -1,5 +1,5 @@
+import { HtmlNode } from 'spacegraphjs/nodes';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { HtmlNode } from '../src/nodes/HtmlNode';
 
 describe('HtmlNode Unit Tests', () => {
   let sg: any;

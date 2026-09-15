@@ -1,4 +1,4 @@
-import { logger } from '../../src/utils/logger';
+import { logger } from '../../src';
 import { createDemoWithNodes, edge, type SpaceGraph, shapeNode } from '../framework';
 
 export default async function fingeringDemo(): Promise<SpaceGraph> {

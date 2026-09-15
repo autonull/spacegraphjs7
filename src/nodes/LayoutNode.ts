@@ -138,7 +138,7 @@ export const switchStrategy: LayoutStrategy = (children, _parent, params) => {
 export class LayoutNode extends (GroupNode as any) {
   static typeName = 'LayoutNode';
   private strategy: LayoutStrategy;
-  private params: Record<string, unknown>;
+  readonly params: Record<string, unknown>;
 
   constructor(
     sg: SpaceGraph,

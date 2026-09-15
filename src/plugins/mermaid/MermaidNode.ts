@@ -1,4 +1,4 @@
-import { HtmlNode } from '../../nodes/HtmlNode';
+import { HtmlNode } from 'spacegraphjs/nodes';
 import type { SpaceGraph } from '../../SpaceGraph';
 import type { BaseNodeData, NodeSpec, SpaceGraphNodeData } from '../../types';
 import type { MermaidNodeShape } from './MermaidParser';
@@ -83,8 +83,8 @@ const DEFAULT_STYLE = `
 `;
 
 export class MermaidNode extends HtmlNode {
-  private shape: MermaidNodeShape = 'rect';
-  private nodeIndex = 0;
+  readonly shape: MermaidNodeShape = 'rect';
+  readonly nodeIndex = 0;
   private themeColors: string[] = [];
 
   constructor(sg: SpaceGraph, spec: NodeSpec) {

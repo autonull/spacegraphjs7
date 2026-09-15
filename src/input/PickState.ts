@@ -34,15 +34,19 @@ export class PickState {
   getPickedNode(): Node | null {
     return this.lastPickedNode;
   }
+
   getPickedEdge(): Edge | null {
     return this.lastPickedEdge;
   }
+
   getIsDragging(): boolean {
     return this.isDragging;
   }
+
   setThreshold(pixels: number): void {
     this.dragThreshold = pixels;
   }
+
   clear(): void {
     this.lastPickedNode = null;
     this.lastPickedEdge = null;

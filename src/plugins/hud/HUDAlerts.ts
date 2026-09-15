@@ -1,5 +1,5 @@
+import { DOMUtils } from 'spacegraphjs/utils';
 import type { SpaceGraph } from '../../SpaceGraph';
-import { DOMUtils } from '../../utils/DOMUtils';
 import { HUDDOMFactory } from './HUDDOMFactory';
 import { HUD_COLORS, HUD_STYLES, HUD_ZINDEX } from './HUDStyles';
 
@@ -20,7 +20,7 @@ const ALERT_VARIANTS: Record<AlertVariant, { border: string; icon: string }> = {
 
 export class HUDAlerts {
   private alertsContainer: HTMLElement | null = null;
-  private sg: SpaceGraph;
+  readonly sg: SpaceGraph;
 
   constructor(sg: SpaceGraph) {
     this.sg = sg;

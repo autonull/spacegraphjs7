@@ -19,6 +19,14 @@ export abstract class DOMOverlayPlugin extends BaseSystemPlugin {
     this.attachOverlay();
   }
 
+  dispose(): void {
+    if (this.container?.parentElement) {
+      this.container.parentElement.removeChild(this.container);
+    }
+    this.container = null;
+    super.dispose?.();
+  }
+
   protected abstract getOverlayOptions(): DOMOverlayOptions;
 
   protected createOverlay(): void {
@@ -35,13 +43,5 @@ export abstract class DOMOverlayPlugin extends BaseSystemPlugin {
     const parent = renderer.renderer.domElement.parentElement as HTMLElement;
     parent.style.position = 'relative';
     parent.appendChild(this.container);
-  }
-
-  dispose(): void {
-    if (this.container?.parentElement) {
-      this.container.parentElement.removeChild(this.container);
-    }
-    this.container = null;
-    super.dispose?.();
   }
 }

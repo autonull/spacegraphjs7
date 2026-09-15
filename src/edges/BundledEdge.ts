@@ -1,17 +1,17 @@
+import { MathPool } from 'spacegraphjs/core';
+import { ThreeDisposer } from 'spacegraphjs/utils';
 import * as THREE from 'three';
-import { MathPool } from '../core/pooling/ObjectPool';
 import type { Node } from '../nodes/Node';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { EdgeData, EdgeSpec } from '../types';
-import { ThreeDisposer } from '../utils/ThreeDisposer';
 import { Edge } from './Edge';
 
 export class BundledEdge extends Edge {
   static readonly typeName = 'BundledEdge';
   private strands: THREE.Line[] = [];
-  private strandCount: number;
+  readonly strandCount: number;
   private spread: number;
-  private _group: THREE.Group;
+  readonly _group: THREE.Group;
 
   constructor(sg: SpaceGraph, spec: EdgeSpec, source: Node, target: Node) {
     super(sg, spec, source, target);

@@ -19,7 +19,7 @@
       technical reason related to 'this' binding. Use arrow functions for callbacks and utility functions only.
     - Consider modern JavaScript language syntax
 
-- Few comments: rely on self-documenting code.  Do not remove JSDocs containing essential Type details
+- Few comments: rely on self-documenting code. Do not remove JSDocs containing essential Type details
 
 - Purpose: professional, not explanatory/educational
 

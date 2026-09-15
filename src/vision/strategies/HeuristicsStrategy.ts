@@ -1,11 +1,13 @@
 // SpaceGraphJS - Heuristics Strategy
 // Vision analysis using WCAG, spatial indexing, and Fitts's law
 
+import {
+  ErgonomicsAnalyzer,
+  HierarchyAnalyzer,
+  LegibilityAnalyzer,
+  OverlapAnalyzer,
+} from 'spacegraphjs/vision';
 import { clamp } from '../../utils/math';
-import { ErgonomicsAnalyzer } from '../analyzers/ErgonomicsAnalyzer';
-import { HierarchyAnalyzer } from '../analyzers/HierarchyAnalyzer';
-import { LegibilityAnalyzer } from '../analyzers/LegibilityAnalyzer';
-import { OverlapAnalyzer } from '../analyzers/OverlapAnalyzer';
 import type {
   ErgonomicsResult,
   HierarchyResult,
@@ -70,7 +72,7 @@ export class HeuristicsStrategy implements VisionStrategy {
   readonly id = 'heuristics';
   readonly name = 'Heuristics Only';
 
-  private config: HeuristicsConfig;
+  readonly config: HeuristicsConfig;
   private analyzers = [
     new LegibilityAnalyzer(),
     new OverlapAnalyzer(),

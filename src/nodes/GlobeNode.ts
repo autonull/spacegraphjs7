@@ -6,15 +6,10 @@ import { Node } from './Node';
 
 export class GlobeNode extends Node {
   static readonly typeName = 'GlobeNode';
-  private readonly _object: THREE.Group;
-
-  get object(): THREE.Object3D {
-    return this._object;
-  }
-
-  private mesh!: THREE.Mesh;
-  private wireframe?: THREE.Mesh;
-  private markersGroup!: THREE.Group;
+  readonly _object: THREE.Group;
+  readonly mesh!: THREE.Mesh;
+  readonly wireframe?: THREE.Mesh;
+  readonly markersGroup!: THREE.Group;
   private textureLoader = new THREE.TextureLoader();
 
   constructor(sg: SpaceGraph, spec: NodeSpec) {
@@ -74,31 +69,8 @@ export class GlobeNode extends Node {
     this.updatePosition(this.position.x, this.position.y, this.position.z);
   }
 
-  private _renderMarkers(markers: GlobeNodeData['markers'], radius: number) {
-    while (this.markersGroup.children.length > 0) {
-      const child = this.markersGroup.children[0] as THREE.Mesh;
-      this.markersGroup.remove(child);
-      child.geometry.dispose();
-      (child.material as THREE.Material).dispose();
-    }
-
-    for (const marker of markers ?? []) {
-      const { lat, lng, size = 2, color = 0xff0000 } = marker;
-
-      const phi = (90 - lat) * (Math.PI / 180);
-      const theta = (lng + 180) * (Math.PI / 180);
-
-      const x = -(radius * Math.sin(phi) * Math.cos(theta));
-      const z = radius * Math.sin(phi) * Math.sin(theta);
-      const y = radius * Math.cos(phi);
-
-      const geo = new THREE.SphereGeometry(size, 8, 8);
-      const mat = new THREE.MeshBasicMaterial({ color });
-      const mesh = new THREE.Mesh(geo, mat);
-
-      mesh.position.set(x, y, z);
-      this.markersGroup.add(mesh);
-    }
+  get object(): THREE.Object3D {
+    return this._object;
   }
 
   updateSpec(updates: Partial<NodeSpec>): this {
@@ -157,5 +129,32 @@ export class GlobeNode extends Node {
     }
 
     super.dispose();
+  }
+
+  private _renderMarkers(markers: GlobeNodeData['markers'], radius: number) {
+    while (this.markersGroup.children.length > 0) {
+      const child = this.markersGroup.children[0] as THREE.Mesh;
+      this.markersGroup.remove(child);
+      child.geometry.dispose();
+      (child.material as THREE.Material).dispose();
+    }
+
+    for (const marker of markers ?? []) {
+      const { lat, lng, size = 2, color = 0xff0000 } = marker;
+
+      const phi = (90 - lat) * (Math.PI / 180);
+      const theta = (lng + 180) * (Math.PI / 180);
+
+      const x = -(radius * Math.sin(phi) * Math.cos(theta));
+      const z = radius * Math.sin(phi) * Math.sin(theta);
+      const y = radius * Math.cos(phi);
+
+      const geo = new THREE.SphereGeometry(size, 8, 8);
+      const mat = new THREE.MeshBasicMaterial({ color });
+      const mesh = new THREE.Mesh(geo, mat);
+
+      mesh.position.set(x, y, z);
+      this.markersGroup.add(mesh);
+    }
   }
 }

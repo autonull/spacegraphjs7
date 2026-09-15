@@ -3,6 +3,7 @@ export interface ActionContext {
   graph?: unknown;
   selection?: { id: string }[];
   mode?: string;
+
   [key: string]: unknown;
 }
 
@@ -10,16 +11,20 @@ export interface Action<I = unknown, O = unknown> {
   readonly id: string;
   readonly label: string;
   readonly icon?: string;
+
   applies(context: ActionContext): number;
+
   execute(context: I): O;
 }
 
 export abstract class BaseAction<I, O> implements Action<I, O> {
   abstract readonly id: string;
   abstract readonly label: string;
-  abstract applies(context: ActionContext): number;
-  abstract execute(context: I): O;
   readonly icon?: string;
+
+  abstract applies(context: ActionContext): number;
+
+  abstract execute(context: I): O;
 }
 
 export const sortByRelevance = <I, O>(

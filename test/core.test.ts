@@ -1,13 +1,11 @@
 // SpaceGraphJS - Basic Unit Tests
 // Run with: pnpm dlx vitest run test/core.test.ts
 
+import { MathPool, SpatialIndex, TypeRegistry } from 'spacegraphjs/core';
 import * as THREE from 'three';
 import { describe, expect, it, vi } from 'vitest';
 import { EventSystem } from '../src/core/events/EventSystem';
 import { Graph } from '../src/core/Graph';
-import { MathPool } from '../src/core/pooling/ObjectPool';
-import { SpatialIndex } from '../src/core/spatial/SpatialIndex';
-import { TypeRegistry } from '../src/core/TypeRegistry';
 import { Edge } from '../src/edges/Edge';
 import { Node } from '../src/nodes/Node';
 
@@ -80,6 +78,7 @@ describe('Graph', () => {
         get object() {
           return new THREE.Object3D();
         }
+
         updatePositions() {}
       }
 

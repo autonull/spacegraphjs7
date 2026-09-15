@@ -1,4 +1,4 @@
-import type { SpaceGraph } from '../src/index';
+import type { SpaceGraph } from '../src';
 
 /**
  * Demo Tour Automator
@@ -23,11 +23,28 @@ export class DemoTour {
 
   constructor() {}
 
+  static handleAutoStart(): void {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('tour') === 'true') {
+      const tour = new DemoTour();
+      const index = Number.parseInt(urlParams.get('index') || '0');
+      tour['currentIndex'] = index;
+      tour.start();
+    }
+  }
+
   async start(): Promise<void> {
     if (this.isRunning) return;
     this.isRunning = true;
     this.showOverlay();
     await this.runStep();
+  }
+
+  stop(): void {
+    this.isRunning = false;
+    const overlay = document.getElementById('tour-overlay');
+    if (overlay) overlay.remove();
+    alert('Tour Complete! All demos verified.');
   }
 
   private showOverlay(): void {
@@ -84,23 +101,6 @@ export class DemoTour {
 
     // Navigate to next
     window.location.href = `${demo}.html?tour=true&index=${this.currentIndex}`;
-  }
-
-  stop(): void {
-    this.isRunning = false;
-    const overlay = document.getElementById('tour-overlay');
-    if (overlay) overlay.remove();
-    alert('Tour Complete! All demos verified.');
-  }
-
-  static handleAutoStart(): void {
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('tour') === 'true') {
-      const tour = new DemoTour();
-      const index = Number.parseInt(urlParams.get('index') || '0');
-      tour['currentIndex'] = index;
-      tour.start();
-    }
   }
 }
 

@@ -1,4 +1,4 @@
-import { logger } from '../../src/utils/logger';
+import { logger } from '../../src';
 import { createDemoWithNodes, type SpaceGraph, shapeNode } from '../framework';
 
 export default async function nodeWiringDemo(): Promise<SpaceGraph> {

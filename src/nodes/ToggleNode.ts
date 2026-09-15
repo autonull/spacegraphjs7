@@ -12,7 +12,6 @@ export interface ToggleNodeData extends WidgetNodeData {
 
 export class ToggleNode extends WidgetNode {
   static readonly typeName = 'ToggleNode';
-  private _value = false;
   private _onColor = 0x44ff88;
   private _offColor = 0x666666;
   private _onToggle?: (value: boolean) => void;
@@ -29,29 +28,7 @@ export class ToggleNode extends WidgetNode {
     this.baseMaterial.color.setHex(this._value ? this._onColor : this._offColor);
   }
 
-  protected getBaseColor(_data: WidgetNodeData | undefined): number {
-    return this._value ? this._onColor : this._offColor;
-  }
-
-  protected getHoverColor(): number {
-    return this._value ? this._offColor : this._onColor;
-  }
-
-  protected getPressedColor(): number {
-    return this.getHoverColor();
-  }
-
-  protected createLabelContent(ctx: CanvasRenderingContext2D, _text: string): void {
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 16px Arial';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(this._value ? 'ON' : 'OFF', this._width / 2, this._height / 2);
-  }
-
-  protected getLabelText(): string {
-    return this._value ? 'ON' : 'OFF';
-  }
+  private _value = false;
 
   get value(): boolean {
     return this._value;
@@ -114,5 +91,29 @@ export class ToggleNode extends WidgetNode {
 
   dispose(): void {
     super.dispose();
+  }
+
+  protected getBaseColor(_data: WidgetNodeData | undefined): number {
+    return this._value ? this._onColor : this._offColor;
+  }
+
+  protected getHoverColor(): number {
+    return this._value ? this._offColor : this._onColor;
+  }
+
+  protected getPressedColor(): number {
+    return this.getHoverColor();
+  }
+
+  protected createLabelContent(ctx: CanvasRenderingContext2D, _text: string): void {
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 16px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(this._value ? 'ON' : 'OFF', this._width / 2, this._height / 2);
+  }
+
+  protected getLabelText(): string {
+    return this._value ? 'ON' : 'OFF';
   }
 }

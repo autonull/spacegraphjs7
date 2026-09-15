@@ -9,7 +9,7 @@ export class InterGraphEdge extends Edge {
   static readonly typeName = 'InterGraphEdge';
   public isInterGraphEdge = true;
   private svgNamespace = 'http://www.w3.org/2000/svg';
-  private svgLine: SVGPathElement;
+  readonly svgLine: SVGPathElement;
   private svgContainer: SVGSVGElement;
   private animationFrameId?: number;
 
@@ -36,6 +36,27 @@ export class InterGraphEdge extends Edge {
     this.svgContainer.appendChild(this.svgLine);
 
     this.startUpdateLoop();
+  }
+
+  update() {
+    // Handled by update loop
+  }
+
+  updateSpec(updates: Partial<EdgeSpec>): this {
+    super.updateSpec(updates);
+    if (updates.data?.color) {
+      const colorHex = updates.data.color;
+      const colorHexStr =
+        typeof colorHex === 'number' ? `#${colorHex.toString(16).padStart(6, '0')}` : colorHex;
+      this.svgLine.setAttribute('stroke', colorHexStr);
+    }
+    return this;
+  }
+
+  dispose() {
+    if (this.animationFrameId) cancelAnimationFrame(this.animationFrameId);
+    this.svgLine.parentNode?.removeChild(this.svgLine);
+    super.dispose();
   }
 
   private getGlobalSvgContainer(): SVGSVGElement {
@@ -88,26 +109,5 @@ export class InterGraphEdge extends Edge {
       this.animationFrameId = requestAnimationFrame(loop);
     };
     loop();
-  }
-
-  update() {
-    // Handled by update loop
-  }
-
-  updateSpec(updates: Partial<EdgeSpec>): this {
-    super.updateSpec(updates);
-    if (updates.data?.color) {
-      const colorHex = updates.data.color;
-      const colorHexStr =
-        typeof colorHex === 'number' ? `#${colorHex.toString(16).padStart(6, '0')}` : colorHex;
-      this.svgLine.setAttribute('stroke', colorHexStr);
-    }
-    return this;
-  }
-
-  dispose() {
-    if (this.animationFrameId) cancelAnimationFrame(this.animationFrameId);
-    this.svgLine.parentNode?.removeChild(this.svgLine);
-    super.dispose();
   }
 }

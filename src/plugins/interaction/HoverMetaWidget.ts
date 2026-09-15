@@ -1,5 +1,5 @@
+import type { Plugin } from 'spacegraphjs/core';
 import type { Graph } from '../../core/Graph';
-import type { Plugin } from '../../core/PluginManager';
 import type { Node } from '../../nodes/Node';
 import type { SpaceGraph } from '../../SpaceGraph';
 
@@ -107,6 +107,12 @@ export class HoverMetaWidget implements Plugin {
     this.startFadeTimer();
   }
 
+  dispose(): void {
+    if (this.hideTimeout) clearTimeout(this.hideTimeout);
+    if (this.fadeTimeout) clearTimeout(this.fadeTimeout);
+    this.overlay.remove();
+  }
+
   private showForNode(node: Node): void {
     if (this.hideTimeout) {
       clearTimeout(this.hideTimeout);
@@ -200,11 +206,5 @@ export class HoverMetaWidget implements Plugin {
         }
       }, this.opts.fadeDelay);
     }
-  }
-
-  dispose(): void {
-    if (this.hideTimeout) clearTimeout(this.hideTimeout);
-    if (this.fadeTimeout) clearTimeout(this.fadeTimeout);
-    this.overlay.remove();
   }
 }

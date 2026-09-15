@@ -1,4 +1,5 @@
 import { type GraphSpec, SpaceGraph } from 'spacegraphjs';
+import { N8nWorkflowPlugin } from '../src/N8nWorkflowPlugin';
 
 const container = document.getElementById('spacegraph-container');
 if (!container) throw new Error('Container not found');
@@ -68,8 +69,6 @@ const spec: GraphSpec = {
   ],
   layout: { type: 'HierarchicalLayout' },
 };
-
-import { N8nWorkflowPlugin } from '../src/N8nWorkflowPlugin';
 
 const sg = new SpaceGraph(container);
 sg.pluginManager.register('N8nWorkflowPlugin', new N8nWorkflowPlugin());

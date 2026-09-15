@@ -16,6 +16,7 @@ export class Property<T> extends EventEmitter<{ change: PropertyChange<T> }> imp
   get value(): T {
     return this._value;
   }
+
   set value(v: T) {
     if (v === this._value && !Object.is(v, this._value)) return;
     this.emit('change', { oldValue: this._value, newValue: v, property: this });
@@ -25,12 +26,15 @@ export class Property<T> extends EventEmitter<{ change: PropertyChange<T> }> imp
   get(): T {
     return this._value;
   }
+
   set(v: T): void {
     this.value = v;
   }
+
   subscribe(handler: (change: PropertyChange<T>) => void): Disposable {
     return this.on('change', handler);
   }
+
   dispose(): void {
     if (this.disposed) return;
     this.disposed = true;

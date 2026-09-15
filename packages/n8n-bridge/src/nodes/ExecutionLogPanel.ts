@@ -2,14 +2,13 @@ import type { NodeSpec, SpaceGraph } from 'spacegraphjs';
 import { HtmlNode } from 'spacegraphjs';
 
 export class ExecutionLogPanel extends HtmlNode {
-  private logsContainer: HTMLDivElement;
-
   readonly lodThresholds = {
     icon: 800,
     label: 400,
     summary: 150,
     full: 0,
   };
+  private logsContainer: HTMLDivElement;
 
   constructor(sg: SpaceGraph, spec: NodeSpec) {
     super(sg, spec);

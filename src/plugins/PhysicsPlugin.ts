@@ -1,5 +1,5 @@
+import { MathPool } from 'spacegraphjs/core';
 import type * as THREE from 'three';
-import { MathPool } from '../core/pooling/ObjectPool';
 import type { Node } from '../nodes/Node';
 import { BaseSystemPlugin } from './BaseSystemPlugin';
 
@@ -18,9 +18,6 @@ export class PhysicsPlugin extends BaseSystemPlugin {
   readonly id = 'physics';
   readonly name = 'Physics Plugin';
   readonly version = '1.0.0';
-
-  private prev = new Map<string, THREE.Vector3>();
-
   public settings = {
     enabled: false,
     gravity: -9.8,
@@ -33,10 +30,27 @@ export class PhysicsPlugin extends BaseSystemPlugin {
     collisionRadius: 20,
     repulsion: 100,
   };
+  private prev = new Map<string, THREE.Vector3>();
 
   onPreRender(delta: number): void {
     if (!this.settings.enabled) return;
     this._step(Math.min(delta, 0.05));
+  }
+
+  /** Pin a node so physics won't move it. */
+  pin(nodeId: string): void {
+    const node = this.sg.graph.nodes.get(nodeId);
+    if (node) node.data.physicsStatic = true;
+  }
+
+  /** Unpin a node. */
+  unpin(nodeId: string): void {
+    const node = this.sg.graph.nodes.get(nodeId);
+    if (node) delete node.data.physicsStatic;
+  }
+
+  dispose(): void {
+    this.prev.clear();
   }
 
   private _step(dt: number) {
@@ -139,21 +153,5 @@ export class PhysicsPlugin extends BaseSystemPlugin {
     }
 
     for (const [, edge] of this.sg.graph.edges) edge.update?.();
-  }
-
-  /** Pin a node so physics won't move it. */
-  pin(nodeId: string): void {
-    const node = this.sg.graph.nodes.get(nodeId);
-    if (node) node.data.physicsStatic = true;
-  }
-
-  /** Unpin a node. */
-  unpin(nodeId: string): void {
-    const node = this.sg.graph.nodes.get(nodeId);
-    if (node) delete node.data.physicsStatic;
-  }
-
-  dispose(): void {
-    this.prev.clear();
   }
 }

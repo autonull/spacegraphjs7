@@ -13,13 +13,8 @@ type NodeLike = {
 export class GroupNode extends Node {
   static typeName = 'GroupNode';
   public readonly isGroupNode = true;
-  private _object = new THREE.Object3D();
-  get object() {
-    return this._object;
-  }
-
   private meshGeometry: THREE.BoxGeometry;
-  private meshMaterial: THREE.MeshBasicMaterial;
+  readonly meshMaterial: THREE.MeshBasicMaterial;
 
   constructor(sg: SpaceGraph, spec: NodeSpec) {
     super(sg, spec);
@@ -48,6 +43,12 @@ export class GroupNode extends Node {
 
     this._object.add(mesh);
     this.updatePosition(this.position.x, this.position.y, this.position.z);
+  }
+
+  private _object = new THREE.Object3D();
+
+  get object() {
+    return this._object;
   }
 
   updateSpec(updates: Partial<NodeSpec>): this {
@@ -93,6 +94,20 @@ export class GroupNode extends Node {
     this.data._lastLodVisible = shouldShowChildren;
   }
 
+  dispose(): void {
+    this.meshGeometry?.dispose();
+    this.meshMaterial?.dispose();
+    const mesh = this._object.children[0] as THREE.Mesh;
+    if (mesh) {
+      const edges = mesh.children[0] as THREE.LineSegments;
+      if (edges) {
+        edges.geometry.dispose();
+        (edges.material as THREE.Material).dispose();
+      }
+    }
+    super.dispose();
+  }
+
   private _getParentId(node?: Node): string | undefined {
     if (!node) return undefined;
     const n = node as unknown as NodeLike;
@@ -119,19 +134,5 @@ export class GroupNode extends Node {
     }
 
     return false;
-  }
-
-  dispose(): void {
-    this.meshGeometry?.dispose();
-    this.meshMaterial?.dispose();
-    const mesh = this._object.children[0] as THREE.Mesh;
-    if (mesh) {
-      const edges = mesh.children[0] as THREE.LineSegments;
-      if (edges) {
-        edges.geometry.dispose();
-        (edges.material as THREE.Material).dispose();
-      }
-    }
-    super.dispose();
   }
 }

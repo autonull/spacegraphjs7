@@ -251,6 +251,7 @@ export type {
 
 // Convenience factory functions
 import { SpaceGraph } from './SpaceGraph';
+
 export const createSpaceGraph = (
   container: HTMLElement,
   options?: import('./types').SpaceGraphOptions

@@ -1,10 +1,10 @@
 import gsap from 'gsap';
+import { ThreeDisposer } from 'spacegraphjs/utils';
 import * as THREE from 'three';
 import { type Bounds3D, type HitResult, type Rect, Surface } from '../core/Surface';
 import type { ControlState } from '../plugins/interaction/ControlStateBorder';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { AnimationProps, NodeData, NodeSpec } from '../types';
-import { ThreeDisposer } from '../utils/ThreeDisposer';
 
 export type NodeEventMap = {
   'node:updated': { node: Node; changes: Partial<NodeSpec>; timestamp: number };
@@ -47,21 +47,6 @@ export abstract class Node extends Surface {
   };
   actions?: Array<{ icon: string; label: string; action: string }>;
 
-  get worldMatrix(): THREE.Matrix4 {
-    return this.object.matrixWorld;
-  }
-
-  private static _parseVector3(
-    spec: number[] | undefined,
-    defaults: [number, number, number]
-  ): THREE.Vector3 {
-    return new THREE.Vector3(
-      spec?.[0] ?? defaults[0],
-      spec?.[1] ?? defaults[1],
-      spec?.[2] ?? defaults[2]
-    );
-  }
-
   constructor(sgOrSpec?: SpaceGraph | NodeSpec, maybeSpec?: NodeSpec) {
     super();
     const isSpecOnly = !!(sgOrSpec && 'id' in sgOrSpec);
@@ -74,6 +59,10 @@ export abstract class Node extends Surface {
     this.position = Node._parseVector3(spec?.position, [0, 0, 0]);
     this.rotation = Node._parseVector3(spec?.rotation, [0, 0, 0]);
     this.scale = Node._parseVector3(spec?.scale, [1, 1, 1]);
+  }
+
+  get worldMatrix(): THREE.Matrix4 {
+    return this.object.matrixWorld;
   }
 
   get bounds(): Rect {
@@ -108,6 +97,17 @@ export abstract class Node extends Surface {
         return ray.intersectsBox(box);
       },
     };
+  }
+
+  private static _parseVector3(
+    spec: number[] | undefined,
+    defaults: [number, number, number]
+  ): THREE.Vector3 {
+    return new THREE.Vector3(
+      spec?.[0] ?? defaults[0],
+      spec?.[1] ?? defaults[1],
+      spec?.[2] ?? defaults[2]
+    );
   }
 
   hitTest(raycaster: THREE.Raycaster): HitResult | null {
@@ -330,6 +330,7 @@ export abstract class Node extends Surface {
   }
 
   onFocus?(): void;
+
   onBlur?(): void;
 
   animate(props: AnimationProps): this {

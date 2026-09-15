@@ -10,8 +10,8 @@ export interface ModelLoadResult {
 }
 
 export class VisionModelLoader {
-  private readonly sessions: Map<string, InferenceSession> = new Map();
-  private readonly executionProviders: string[];
+  readonly sessions: Map<string, InferenceSession> = new Map();
+  readonly executionProviders: string[];
 
   constructor(executionProviders: string[] = ['wasm']) {
     this.executionProviders = executionProviders;
@@ -19,6 +19,10 @@ export class VisionModelLoader {
 
   public get isLoaded(): boolean {
     return this.sessions.size > 0;
+  }
+
+  static configureWasmPaths(wasmPaths: string): void {
+    env.wasm.wasmPaths = wasmPaths;
   }
 
   public getSession(key: string): InferenceSession | undefined {
@@ -48,9 +52,5 @@ export class VisionModelLoader {
     }
 
     return results;
-  }
-
-  static configureWasmPaths(wasmPaths: string): void {
-    env.wasm.wasmPaths = wasmPaths;
   }
 }

@@ -9,6 +9,26 @@ export class GraphBuilder {
   #nodes: NodeSpec[] = [];
   #edges: EdgeSpec[] = [];
 
+  get nodes(): NodeSpec[] {
+    return this.#nodes;
+  }
+
+  get edges(): EdgeSpec[] {
+    return this.#edges;
+  }
+
+  get nodeCount(): number {
+    return this.#nodes.length;
+  }
+
+  get edgeCount(): number {
+    return this.#edges.length;
+  }
+
+  get isEmpty(): boolean {
+    return this.#nodes.length === 0;
+  }
+
   node(id: string, type?: string): NodeBuilder {
     const builder = new NodeBuilder(id, type);
     this.#nodes.push(builder.build());
@@ -19,11 +39,13 @@ export class GraphBuilder {
     this.#nodes.push(node);
     return this;
   }
+
   edge(id: string, source: string, target: string, type?: string): EdgeBuilder {
     const builder = new EdgeBuilder(id, source, target, type);
     this.#edges.push(builder.build());
     return builder;
   }
+
   addEdge(edge: EdgeSpec): this {
     this.#edges.push(edge);
     return this;
@@ -41,20 +63,24 @@ export class GraphBuilder {
     this.edge(id ?? `e-${source}-${target}`, source, target);
     return this;
   }
+
   connectChain(nodeIds: string[]): this {
     for (let i = 1; i < nodeIds.length; i++) {
       this.edge(`edge-${nodeIds[i - 1]}-${nodeIds[i]}`, nodeIds[i - 1], nodeIds[i]);
     }
     return this;
   }
+
   connectStar(centerId: string, spokeIds: string[]): this {
     spokeIds.forEach((spokeId) => this.edge(`edge-${centerId}-${spokeId}`, centerId, spokeId));
     return this;
   }
+
   connectAll(pairs: Array<[string, string]>): this {
     pairs.forEach(([s, t]) => this.connect(s, t));
     return this;
   }
+
   bidirectional(pairs: Array<[string, string]>): this {
     pairs.forEach(([s, t]) => {
       this.edge(`e-${s}-${t}`, s, t);
@@ -62,6 +88,7 @@ export class GraphBuilder {
     });
     return this;
   }
+
   complete(nodeIds: string[]): this {
     for (let i = 0; i < nodeIds.length; i++) {
       for (let j = i + 1; j < nodeIds.length; j++) {
@@ -75,6 +102,7 @@ export class GraphBuilder {
     this.#nodes.forEach(fn);
     return this;
   }
+
   eachEdge(fn: (spec: EdgeSpec, index: number) => void): this {
     this.#edges.forEach(fn);
     return this;
@@ -84,6 +112,7 @@ export class GraphBuilder {
     this.#nodes = this.#nodes.filter(predicate);
     return this;
   }
+
   filterEdges(predicate: (spec: EdgeSpec) => boolean): this {
     this.#edges = this.#edges.filter(predicate);
     return this;
@@ -93,6 +122,7 @@ export class GraphBuilder {
     this.#nodes = this.#nodes.map(fn);
     return this;
   }
+
   transformEdges(fn: (spec: EdgeSpec) => EdgeSpec): this {
     this.#edges = this.#edges.map(fn);
     return this;
@@ -102,6 +132,7 @@ export class GraphBuilder {
     this.#nodes = this.#nodes.map((n) => ({ ...n, data: { ...n.data, ...style } }));
     return this;
   }
+
   typeAllNodes(type: string): this {
     this.#nodes = this.#nodes.map((n) => ({ ...n, type }));
     return this;
@@ -190,6 +221,7 @@ export class GraphBuilder {
     }
     return this;
   }
+
   opacityNodes(opacity: number): this {
     for (const node of this.#nodes) {
       node.data = { ...node.data, opacity };
@@ -201,30 +233,16 @@ export class GraphBuilder {
     this.#nodes = this.#nodes.filter((n) => n.type === type);
     return this;
   }
+
   filterByLabel(pattern: RegExp): this {
     this.#nodes = this.#nodes.filter((n) => n.label && pattern.test(n.label));
     return this;
   }
 
-  get nodes(): NodeSpec[] {
-    return this.#nodes;
-  }
-  get edges(): EdgeSpec[] {
-    return this.#edges;
-  }
-  get nodeCount(): number {
-    return this.#nodes.length;
-  }
-  get edgeCount(): number {
-    return this.#edges.length;
-  }
-  get isEmpty(): boolean {
-    return this.#nodes.length === 0;
-  }
-
   build(): GraphSpec {
     return { nodes: this.#nodes, edges: this.#edges };
   }
+
   toSpec(): GraphSpec {
     return this.build();
   }

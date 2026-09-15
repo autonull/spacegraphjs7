@@ -51,6 +51,16 @@ export class NodeDraggingFingering extends BaseFingering {
     }
   }
 
+  stop(_finger: Finger): void {
+    if (this.dragNode) {
+      this.dragNode.pulse(0.5);
+      this.emit('interaction:dragend', { node: this.dragNode });
+    }
+    this.active = false;
+    this.dragNode = null;
+    this.lastFingerY = undefined;
+  }
+
   private updatePlanarDrag(finger: Finger): boolean {
     if (!finger.worldRay) return false;
 
@@ -100,15 +110,5 @@ export class NodeDraggingFingering extends BaseFingering {
     });
 
     return true;
-  }
-
-  stop(_finger: Finger): void {
-    if (this.dragNode) {
-      this.dragNode.pulse(0.5);
-      this.emit('interaction:dragend', { node: this.dragNode });
-    }
-    this.active = false;
-    this.dragNode = null;
-    this.lastFingerY = undefined;
   }
 }

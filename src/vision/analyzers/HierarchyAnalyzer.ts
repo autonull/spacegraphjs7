@@ -1,8 +1,8 @@
 // SpaceGraphJS - Hierarchy Analyzer
 // Graph topology analysis for hierarchy detection
 
+import type { HeuristicsConfig } from 'spacegraphjs/vision';
 import { clamp as clampValue } from '../../utils/math';
-import type { HeuristicsConfig } from '../strategies/HeuristicsStrategy';
 import type { HierarchyResult, VisionContext } from '../types';
 
 /**

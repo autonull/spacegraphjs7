@@ -12,7 +12,7 @@ export interface SelectionState {
  * Centralizes all keyboard shortcut logic
  */
 export class KeyboardShortcuts {
-  private readonly sg: SpaceGraph;
+  readonly sg: SpaceGraph;
   private onSelectionChange?: (selection: SelectionState) => void;
 
   constructor(sg: SpaceGraph) {

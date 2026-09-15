@@ -7,11 +7,7 @@ import { BaseInstancedNode } from './BaseInstancedNode';
 export class InstancedNode extends BaseInstancedNode {
   static readonly typeName = 'InstancedNode';
   protected geometryFamily: GeometryFamily;
-  private readonly _group: THREE.Group;
-
-  override get object(): THREE.Object3D {
-    return this._group;
-  }
+  readonly _group: THREE.Group;
 
   constructor(sg: SpaceGraph, spec: NodeSpec, family: GeometryFamily) {
     super(sg, spec);
@@ -19,6 +15,19 @@ export class InstancedNode extends BaseInstancedNode {
     this.geometryFamily = family;
     this.registerInstance();
     this.updateInstanceTransform();
+  }
+
+  override get object(): THREE.Object3D {
+    return this._group;
+  }
+
+  dispose(): void {
+    super.dispose();
+    const instancedRenderer = this.sg!.renderer.instancedRenderer;
+    if (instancedRenderer && this.instanceSlot !== -1) {
+      instancedRenderer.releaseSlot(this.geometryFamily, this.instanceSlot);
+      this.instanceSlot = -1;
+    }
   }
 
   protected registerInstance() {
@@ -43,15 +52,6 @@ export class InstancedNode extends BaseInstancedNode {
         this._group.scale,
         this.colorHex
       );
-    }
-  }
-
-  dispose(): void {
-    super.dispose();
-    const instancedRenderer = this.sg!.renderer.instancedRenderer;
-    if (instancedRenderer && this.instanceSlot !== -1) {
-      instancedRenderer.releaseSlot(this.geometryFamily, this.instanceSlot);
-      this.instanceSlot = -1;
     }
   }
 }

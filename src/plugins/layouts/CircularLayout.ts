@@ -6,10 +6,6 @@ export class CircularLayout extends BaseLayout {
   readonly name = 'Circular Layout';
   readonly version = '1.0.0';
 
-  protected defaultConfig(): LayoutConfig {
-    return { radiusX: 300, radiusY: 300, startAngle: 0, z: 0, animate: true, duration: 1.0 };
-  }
-
   async apply(options?: LayoutOptions): Promise<void> {
     const {
       radiusX = 300,
@@ -31,5 +27,9 @@ export class CircularLayout extends BaseLayout {
 
     this.updateEdges();
     this.emitLayoutApplied({ duration });
+  }
+
+  protected defaultConfig(): LayoutConfig {
+    return { radiusX: 300, radiusY: 300, startAngle: 0, z: 0, animate: true, duration: 1.0 };
   }
 }

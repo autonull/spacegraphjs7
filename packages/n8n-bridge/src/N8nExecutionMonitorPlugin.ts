@@ -97,6 +97,16 @@ export class N8nExecutionMonitorPlugin implements SpaceGraphPlugin {
     this.handleTimelineScrub(0);
   }
 
+  update(_delta: number): void {
+    // Continuous updates are handled by the nodes themselves
+  }
+
+  dispose(): void {
+    if (this.bridge) {
+      this.bridge.dispose();
+    }
+  }
+
   private handleTimelineScrub(index: number) {
     if (!this.isReplaying || this.timelineHistory.length === 0) return;
 
@@ -196,10 +206,6 @@ export class N8nExecutionMonitorPlugin implements SpaceGraphPlugin {
     }
   }
 
-  update(_delta: number): void {
-    // Continuous updates are handled by the nodes themselves
-  }
-
   private applyExecutionVisuals(state: ExecutionState) {
     // Record history
     if (!this.isReplaying) {
@@ -273,12 +279,6 @@ export class N8nExecutionMonitorPlugin implements SpaceGraphPlugin {
           (edge as any).stopDataFlow();
         }
       });
-    }
-  }
-
-  dispose(): void {
-    if (this.bridge) {
-      this.bridge.dispose();
     }
   }
 }

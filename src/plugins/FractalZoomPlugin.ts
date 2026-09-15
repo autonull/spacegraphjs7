@@ -1,6 +1,6 @@
+import type { Plugin } from 'spacegraphjs/core';
 import type { EventSystem } from '../core/events/EventSystem';
 import type { Graph } from '../core/Graph';
-import type { Plugin } from '../core/PluginManager';
 import type { SpaceGraph } from '../SpaceGraph';
 import { createLogger } from '../utils/logger';
 
@@ -58,7 +58,11 @@ export class FractalZoomPlugin implements Plugin {
   private lastDistance = 0;
   private scrollAccumulator = 0;
   private focusedNodeId: string | null = null;
-  private readonly SCROLL_THRESHOLD = 0.5;
+  readonly SCROLL_THRESHOLD = 0.5;
+
+  constructor(config: Partial<FractalZoomConfig> = {}) {
+    this.config = { ...DEFAULT_CONFIG, ...config };
+  }
 
   get currentZoomLevel(): number {
     return this.currentLevel;
@@ -66,10 +70,6 @@ export class FractalZoomPlugin implements Plugin {
 
   get currentZoomLabel(): string {
     return this.config.levels[this.currentLevel]?.label || 'Unknown';
-  }
-
-  constructor(config: Partial<FractalZoomConfig> = {}) {
-    this.config = { ...DEFAULT_CONFIG, ...config };
   }
 
   init(sg: SpaceGraph, _graph: Graph, _events: EventSystem): void {
@@ -94,6 +94,56 @@ export class FractalZoomPlugin implements Plugin {
       }
     });
   }
+
+  zoomIn(): void {
+    if (this.currentLevel < this.config.levels.length - 1) {
+      const nextLevel = this.currentLevel + 1;
+      const targetDistance =
+        (this.config.levels[nextLevel].minDistance + this.config.levels[nextLevel].maxDistance) / 2;
+      this.zoomTo(targetDistance, nextLevel);
+    }
+  }
+
+  zoomOut(): void {
+    if (this.currentLevel > 0) {
+      const prevLevel = this.currentLevel - 1;
+      const targetDistance =
+        (this.config.levels[prevLevel].minDistance + this.config.levels[prevLevel].maxDistance) / 2;
+      this.zoomTo(targetDistance, prevLevel);
+    }
+  }
+
+  zoomTo(distance: number, level?: number): void {
+    if (!this.sg?.cameraControls) return;
+
+    const target = this.sg.cameraControls.target.clone();
+
+    // If we have a focused node, use it as the target for zoom-in
+    if (this.focusedNodeId) {
+      const node = this.sg.graph.nodes.get(this.focusedNodeId);
+      if (node) {
+        target.copy(node.position);
+      }
+    }
+
+    this.sg.cameraControls.flyTo(target, distance, this.config.transitionDuration);
+
+    if (level !== undefined) {
+      this.updateLevel(level);
+    }
+  }
+
+  onPreRender(_delta: number): void {
+    if (this.isTransitioning) {
+      this.transitionProgress += _delta / this.config.transitionDuration;
+      if (this.transitionProgress >= 1) {
+        this.isTransitioning = false;
+        this.transitionProgress = 0;
+      }
+    }
+  }
+
+  dispose(): void {}
 
   private handleWheel(event: any): void {
     if (!event?.deltaY) return;
@@ -167,44 +217,6 @@ export class FractalZoomPlugin implements Plugin {
     });
   }
 
-  zoomIn(): void {
-    if (this.currentLevel < this.config.levels.length - 1) {
-      const nextLevel = this.currentLevel + 1;
-      const targetDistance =
-        (this.config.levels[nextLevel].minDistance + this.config.levels[nextLevel].maxDistance) / 2;
-      this.zoomTo(targetDistance, nextLevel);
-    }
-  }
-
-  zoomOut(): void {
-    if (this.currentLevel > 0) {
-      const prevLevel = this.currentLevel - 1;
-      const targetDistance =
-        (this.config.levels[prevLevel].minDistance + this.config.levels[prevLevel].maxDistance) / 2;
-      this.zoomTo(targetDistance, prevLevel);
-    }
-  }
-
-  zoomTo(distance: number, level?: number): void {
-    if (!this.sg?.cameraControls) return;
-
-    const target = this.sg.cameraControls.target.clone();
-
-    // If we have a focused node, use it as the target for zoom-in
-    if (this.focusedNodeId) {
-      const node = this.sg.graph.nodes.get(this.focusedNodeId);
-      if (node) {
-        target.copy(node.position);
-      }
-    }
-
-    this.sg.cameraControls.flyTo(target, distance, this.config.transitionDuration);
-
-    if (level !== undefined) {
-      this.updateLevel(level);
-    }
-  }
-
   private updateSemanticEdges(level: number): void {
     const importanceThreshold = this.config.levels[level]?.semanticImportance ?? 0;
 
@@ -220,16 +232,4 @@ export class FractalZoomPlugin implements Plugin {
       }
     }
   }
-
-  onPreRender(_delta: number): void {
-    if (this.isTransitioning) {
-      this.transitionProgress += _delta / this.config.transitionDuration;
-      if (this.transitionProgress >= 1) {
-        this.isTransitioning = false;
-        this.transitionProgress = 0;
-      }
-    }
-  }
-
-  dispose(): void {}
 }

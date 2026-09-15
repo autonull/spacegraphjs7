@@ -26,17 +26,6 @@ export class EventEmitter<T extends Record<string, any> = any> {
     this.handlers.get(event)?.delete(handler);
   }
 
-  // Helper to safely invoke handlers
-  private invokeHandlers(handlers: Set<(event: any) => void>, data: any): void {
-    for (const h of handlers) {
-      try {
-        h(data);
-      } catch (e) {
-        logger.error('Event handler failed:', e);
-      }
-    }
-  }
-
   emit<K extends keyof T>(event: K, data: T[K]): void {
     this.invokeHandlers(this.handlers.get(event) ?? new Set(), data);
   }
@@ -53,17 +42,6 @@ export class EventEmitter<T extends Record<string, any> = any> {
     }
   }
 
-  private flushBatch(): void {
-    this.batchId = null;
-    for (const [event, arr] of this.batched) {
-      const handlers = this.handlers.get(event);
-      if (handlers) {
-        for (const data of arr) this.invokeHandlers(handlers, data);
-      }
-    }
-    this.batched.clear();
-  }
-
   emitWithTimestamp<K extends keyof T>(event: K, data: T[K] & { timestamp?: number }): void {
     this.invokeHandlers(this.handlers.get(event) ?? new Set(), { ...data, timestamp: Date.now() });
   }
@@ -71,12 +49,15 @@ export class EventEmitter<T extends Record<string, any> = any> {
   removeAllListeners(): void {
     this.handlers.clear();
   }
+
   listenerCount<K extends keyof T>(event: K): number {
     return this.handlers.get(event)?.size ?? 0;
   }
+
   hasListeners<K extends keyof T>(event: K): boolean {
     return this.listenerCount(event) > 0;
   }
+
   eventNames(): IterableIterator<keyof T> {
     return this.handlers.keys();
   }
@@ -89,5 +70,27 @@ export class EventEmitter<T extends Record<string, any> = any> {
     }
     this.batched.clear();
     this.handlers.clear();
+  }
+
+  // Helper to safely invoke handlers
+  private invokeHandlers(handlers: Set<(event: any) => void>, data: any): void {
+    for (const h of handlers) {
+      try {
+        h(data);
+      } catch (e) {
+        logger.error('Event handler failed:', e);
+      }
+    }
+  }
+
+  private flushBatch(): void {
+    this.batchId = null;
+    for (const [event, arr] of this.batched) {
+      const handlers = this.handlers.get(event);
+      if (handlers) {
+        for (const data of arr) this.invokeHandlers(handlers, data);
+      }
+    }
+    this.batched.clear();
   }
 }

@@ -39,6 +39,20 @@ export class N8nHttpNode extends HtmlNode {
     this.renderHtmlContent(level);
   }
 
+  updateSpec(spec: SpecUpdate): void {
+    super.updateSpec(spec);
+    // We use innerHTML check just to get a hint of what's rendered, or could store currentLOD.
+    // Assuming current LOD based on presence of URL input.
+    const level = this.domElement?.querySelector('input')
+      ? 'full'
+      : this.domElement?.querySelector('pre')
+        ? 'summary'
+        : this.domElement?.querySelector('span')
+          ? 'label'
+          : 'icon';
+    this.renderHtmlContent(level);
+  }
+
   private getMethodColor(method: string): string {
     const colors: Record<string, string> = {
       POST: '#4caf50',
@@ -237,19 +251,5 @@ export class N8nHttpNode extends HtmlNode {
         border: `2px solid ${methodColor}`,
       });
     }
-  }
-
-  updateSpec(spec: SpecUpdate): void {
-    super.updateSpec(spec);
-    // We use innerHTML check just to get a hint of what's rendered, or could store currentLOD.
-    // Assuming current LOD based on presence of URL input.
-    const level = this.domElement?.querySelector('input')
-      ? 'full'
-      : this.domElement?.querySelector('pre')
-        ? 'summary'
-        : this.domElement?.querySelector('span')
-          ? 'label'
-          : 'icon';
-    this.renderHtmlContent(level);
   }
 }

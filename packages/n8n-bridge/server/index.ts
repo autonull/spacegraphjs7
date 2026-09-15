@@ -6,12 +6,11 @@ import { ExecutionService, Workflow } from 'n8n-core';
 // import { LoadNodeDetailsFromDisk } from 'n8n-core';
 import type { IWorkflowBase } from 'n8n-workflow';
 import { WebSocket, WebSocketServer } from 'ws';
+import pkgLogger from '../src/logger';
 import { handleRequest } from './n8n-api-proxy';
 
 const executionService = new ExecutionService();
 let nodeTypes: any;
-
-import pkgLogger from '../src/logger';
 
 const log = pkgLogger('[N8nBridgeServer]');
 

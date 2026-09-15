@@ -2,7 +2,7 @@
 export abstract class BaseBuilder<T> {
   protected spec: T;
 
-  constructor(spec: T) {
+  protected constructor(spec: T) {
     this.spec = spec;
   }
 
@@ -14,18 +14,17 @@ export abstract class BaseBuilder<T> {
   build(): T {
     return this.spec;
   }
+
   toSpec(): T {
     return this.spec;
   }
+
   val(): T {
     return this.spec;
   }
+
   get(): T {
     return this.spec;
-  }
-
-  protected mergeData(updates: Record<string, unknown>): void {
-    (this.spec as any).data = { ...((this.spec as any).data ?? {}), ...updates };
   }
 
   transform(fn: (spec: T) => T): this {
@@ -36,6 +35,10 @@ export abstract class BaseBuilder<T> {
   validate(fn: (spec: T) => boolean): this {
     if (!fn(this.spec)) throw new Error('Validation failed');
     return this;
+  }
+
+  protected mergeData(updates: Record<string, unknown>): void {
+    (this.spec as any).data = { ...((this.spec as any).data ?? {}), ...updates };
   }
 }
 

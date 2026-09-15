@@ -8,12 +8,15 @@ import { applyControlStateStyles, type ControlState } from './ControlStateBorder
 interface Focusable {
   focusable: boolean;
   focused: boolean;
+
   focus(): void;
+
   blur(): void;
 }
 
 interface Interactable {
   onPointerEnter?(node: Node): void;
+
   onPointerLeave?(node: Node): void;
 }
 
@@ -27,12 +30,31 @@ export interface InteractionState {
 const HOVER_SCALE = 1.1;
 
 export class InteractionManager {
+  constructor(readonly sg: SpaceGraph) {}
+
   private _focused: Focusable | null = null;
+
+  get focused(): Focusable | null {
+    return this._focused;
+  }
+
   private _hoveredNode: Node | null = null;
+
+  get hoveredNode(): Node | null {
+    return this._hoveredNode;
+  }
+
   private _hoveredEdge: Edge | null = null;
+
+  get hoveredEdge(): Edge | null {
+    return this._hoveredEdge;
+  }
+
   private _pressed: Node | null = null;
 
-  constructor(private readonly sg: SpaceGraph) {}
+  get pressed(): Node | null {
+    return this._pressed;
+  }
 
   // ============= State Access =============
   get state(): InteractionState {
@@ -42,19 +64,6 @@ export class InteractionManager {
       hoveredEdge: this._hoveredEdge,
       pressed: this._pressed,
     };
-  }
-
-  get focused(): Focusable | null {
-    return this._focused;
-  }
-  get hoveredNode(): Node | null {
-    return this._hoveredNode;
-  }
-  get hoveredEdge(): Edge | null {
-    return this._hoveredEdge;
-  }
-  get pressed(): Node | null {
-    return this._pressed;
   }
 
   // ============= Hover Management =============

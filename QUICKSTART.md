@@ -143,7 +143,7 @@ Open http://localhost:5173 — you should see three connected nodes.
 ## Interactive Controls
 
 | Action           | Control            |
-| ---------------- | ------------------ |
+|------------------|--------------------|
 | **Rotate**       | Left-click + drag  |
 | **Pan**          | Right-click + drag |
 | **Zoom**         | Scroll wheel       |
@@ -271,7 +271,7 @@ test('meets WCAG AA', async () => {
 ## Examples
 
 | Example                                 | Description             |
-| --------------------------------------- | ----------------------- |
+|-----------------------------------------|-------------------------|
 | [Basic Graph](./examples/basic)         | Simple nodes and edges  |
 | [HTML Nodes](./examples/html-nodes)     | Rich HTML content       |
 | [Image Nodes](./examples/images)        | Image textures          |
@@ -325,7 +325,8 @@ pnpm install three
 1. **Explore the API** — Read the [API Reference](./docs/api)
 2. **Build something** — Create your first project
 3. **Join the community** — Say hi on Matrix
-4. **Contribute** — Check out [good first issues](https://github.com/autonull/spacegraphjs/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+4. **Contribute** — Check
+   out [good first issues](https://github.com/autonull/spacegraphjs/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
 
 ---
 

@@ -45,16 +45,16 @@ export class CameraControls {
   spherical: THREE.Spherical;
 
   private config: CameraControlsConfig;
-  private sphericalDelta = new THREE.Spherical();
+  readonly sphericalDelta = new THREE.Spherical();
   private scale = 1;
-  private panOffset = new THREE.Vector3();
+  readonly panOffset = new THREE.Vector3();
   private zoomStack: Array<{
     target: THREE.Vector3;
     distance: number;
     phi: number;
     theta: number;
   }> = [];
-  private readonly MAX_ZOOM_DEPTH = 8;
+  readonly MAX_ZOOM_DEPTH = 8;
   private keyState = new Map<string, boolean>();
   private targetNext: THREE.Vector3 | null = null;
   private radiusNext: number | null = null;
@@ -102,11 +102,12 @@ export class CameraControls {
     window.addEventListener('keyup', this.onKeyUp);
   }
 
-  private onKeyDown(e: KeyboardEvent): void {
-    this.keyState.set(e.key.toLowerCase(), true);
+  get hasZoomHistory(): boolean {
+    return this.canZoomOut();
   }
-  private onKeyUp(e: KeyboardEvent): void {
-    this.keyState.set(e.key.toLowerCase(), false);
+
+  get isUsingOrthographic(): boolean {
+    return this.isOrthographic;
   }
 
   rotate(dx: number, dy: number): void {
@@ -248,14 +249,13 @@ export class CameraControls {
     const entry = this.zoomStack.pop()!;
     this.flyTo(entry.target, entry.distance);
   }
+
   getZoomDepth(): number {
     return this.zoomStack.length;
   }
+
   canZoomOut(): boolean {
     return this.zoomStack.length > 0;
-  }
-  get hasZoomHistory(): boolean {
-    return this.canZoomOut();
   }
 
   setTargetSmooth(target: THREE.Vector3, radius: number, duration = 1.0): void {
@@ -293,12 +293,10 @@ export class CameraControls {
     }
   }
 
-  get isUsingOrthographic(): boolean {
-    return this.isOrthographic;
-  }
   getOrthoCamera(): THREE.OrthographicCamera | null {
     return this.orthoCamera;
   }
+
   reset(): void {
     this.target.set(0, 0, 0);
     this.spherical.set(500, Math.PI / 4, 0);
@@ -309,5 +307,13 @@ export class CameraControls {
     this.zoomStack = [];
     window.removeEventListener('keydown', this.onKeyDown);
     window.removeEventListener('keyup', this.onKeyUp);
+  }
+
+  private onKeyDown(e: KeyboardEvent): void {
+    this.keyState.set(e.key.toLowerCase(), true);
+  }
+
+  private onKeyUp(e: KeyboardEvent): void {
+    this.keyState.set(e.key.toLowerCase(), false);
   }
 }

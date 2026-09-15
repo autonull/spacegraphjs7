@@ -7,18 +7,6 @@ export class HierarchicalLayout extends BaseLayout {
   readonly name = 'Hierarchical Layout';
   readonly version = '1.0.0';
 
-  protected defaultConfig(): LayoutConfig {
-    return {
-      rootId: '',
-      levelHeight: 200,
-      nodeSpacing: 150,
-      z: 0,
-      direction: 'top-down',
-      animate: true,
-      duration: 1.0,
-    };
-  }
-
   async apply(options?: LayoutOptions): Promise<void> {
     const {
       rootId = this.config.rootId as string,
@@ -105,5 +93,17 @@ export class HierarchicalLayout extends BaseLayout {
     }
 
     this.updateEdges();
+  }
+
+  protected defaultConfig(): LayoutConfig {
+    return {
+      rootId: '',
+      levelHeight: 200,
+      nodeSpacing: 150,
+      z: 0,
+      direction: 'top-down',
+      animate: true,
+      duration: 1.0,
+    };
   }
 }

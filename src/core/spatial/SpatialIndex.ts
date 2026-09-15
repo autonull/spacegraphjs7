@@ -13,9 +13,9 @@ interface NodeLike {
 
 export class SpatialIndex {
   private cellSize: number;
-  private readonly cells = new Map<string, SpatialCell>();
-  private readonly nodeBounds = new Map<NodeLike, THREE.Box3>();
-  private readonly nodeCells = new Map<NodeLike, Set<string>>();
+  readonly cells = new Map<string, SpatialCell>();
+  readonly nodeBounds = new Map<NodeLike, THREE.Box3>();
+  readonly nodeCells = new Map<NodeLike, Set<string>>();
 
   constructor(cellSize = 100) {
     if (cellSize <= 0) throw new Error('cellSize must be positive');
@@ -23,81 +23,11 @@ export class SpatialIndex {
     console.log(`[SpatialIndex] Initialized with cellSize=${this.cellSize}`);
   }
 
-  private getGridCoords(position: THREE.Vector3): { x: number; y: number; z: number } {
-    return {
-      x: Math.floor(position.x / this.cellSize),
-      y: Math.floor(position.y / this.cellSize),
-      z: Math.floor(position.z / this.cellSize),
-    };
-  }
-
-  private getCellKey(x: number, y: number, z: number): string {
-    return `${x},${y},${z}`;
-  }
-
-  private getOrCreateCell(x: number, y: number, z: number): SpatialCell {
-    const key = this.getCellKey(x, y, z);
-    let cell = this.cells.get(key);
-    if (!cell) {
-      cell = { nodes: new Set() };
-      this.cells.set(key, cell);
-    }
-    return cell;
-  }
-
   build(nodes: NodeLike[]): void {
     this.clear();
     const box = new THREE.Box3();
     for (const node of nodes) {
       this.insertNode(node, box);
-    }
-  }
-
-  private insertNode(node: NodeLike, box: THREE.Box3): void {
-    if (node.object) {
-      node.object.updateMatrixWorld(true);
-      const wasVisible = node.object.visible;
-      node.object.visible = true;
-      box.setFromObject(node.object);
-      node.object.visible = wasVisible;
-      console.log(
-        `[SpatialIndex] Inserting node ${node.id} with bounds: min=(${box.min.x},${box.min.y},${box.min.z}), max=(${box.max.x},${box.max.y},${box.max.z})`
-      );
-      this.nodeBounds.set(node, box.clone());
-      const minX = Math.floor(box.min.x / this.cellSize);
-      const maxX = Math.floor(box.max.x / this.cellSize);
-      const minY = Math.floor(box.min.y / this.cellSize);
-      const maxY = Math.floor(box.max.y / this.cellSize);
-      const minZ = Math.floor(box.min.z / this.cellSize);
-      const maxZ = Math.floor(box.max.z / this.cellSize);
-      console.log(
-        `[SpatialIndex] Node ${node.id} cell range: X=[${minX},${maxX}], Y=[${minY},${maxY}], Z=[${minZ},${maxZ}]`
-      );
-      const cells = new Set<string>();
-      for (let x = minX; x <= maxX; x++) {
-        for (let y = minY; y <= maxY; y++) {
-          for (let z = minZ; z <= maxZ; z++) {
-            const key = this.getCellKey(x, y, z);
-            cells.add(key);
-            this.getOrCreateCell(x, y, z).nodes.add(node);
-          }
-        }
-      }
-      this.nodeCells.set(node, cells);
-    } else {
-      const { x, y, z } = this.getGridCoords(node.position);
-      const key = this.getCellKey(x, y, z);
-
-      // For nodes without objects, create a small representative box
-      const pointBox = new THREE.Box3().setFromCenterAndSize(
-        node.position,
-        new THREE.Vector3(1, 1, 1)
-      );
-      this.nodeBounds.set(node, pointBox);
-
-      this.nodeCells.set(node, new Set([key]));
-      this.getOrCreateCell(x, y, z).nodes.add(node);
-      console.log(`[SpatialIndex] Inserting point-node ${node.id} at cell ${key}`);
     }
   }
 
@@ -214,6 +144,76 @@ export class SpatialIndex {
       this.build(allNodes);
     }
   }
+
+  private getGridCoords(position: THREE.Vector3): { x: number; y: number; z: number } {
+    return {
+      x: Math.floor(position.x / this.cellSize),
+      y: Math.floor(position.y / this.cellSize),
+      z: Math.floor(position.z / this.cellSize),
+    };
+  }
+
+  private getCellKey(x: number, y: number, z: number): string {
+    return `${x},${y},${z}`;
+  }
+
+  private getOrCreateCell(x: number, y: number, z: number): SpatialCell {
+    const key = this.getCellKey(x, y, z);
+    let cell = this.cells.get(key);
+    if (!cell) {
+      cell = { nodes: new Set() };
+      this.cells.set(key, cell);
+    }
+    return cell;
+  }
+
+  private insertNode(node: NodeLike, box: THREE.Box3): void {
+    if (node.object) {
+      node.object.updateMatrixWorld(true);
+      const wasVisible = node.object.visible;
+      node.object.visible = true;
+      box.setFromObject(node.object);
+      node.object.visible = wasVisible;
+      console.log(
+        `[SpatialIndex] Inserting node ${node.id} with bounds: min=(${box.min.x},${box.min.y},${box.min.z}), max=(${box.max.x},${box.max.y},${box.max.z})`
+      );
+      this.nodeBounds.set(node, box.clone());
+      const minX = Math.floor(box.min.x / this.cellSize);
+      const maxX = Math.floor(box.max.x / this.cellSize);
+      const minY = Math.floor(box.min.y / this.cellSize);
+      const maxY = Math.floor(box.max.y / this.cellSize);
+      const minZ = Math.floor(box.min.z / this.cellSize);
+      const maxZ = Math.floor(box.max.z / this.cellSize);
+      console.log(
+        `[SpatialIndex] Node ${node.id} cell range: X=[${minX},${maxX}], Y=[${minY},${maxY}], Z=[${minZ},${maxZ}]`
+      );
+      const cells = new Set<string>();
+      for (let x = minX; x <= maxX; x++) {
+        for (let y = minY; y <= maxY; y++) {
+          for (let z = minZ; z <= maxZ; z++) {
+            const key = this.getCellKey(x, y, z);
+            cells.add(key);
+            this.getOrCreateCell(x, y, z).nodes.add(node);
+          }
+        }
+      }
+      this.nodeCells.set(node, cells);
+    } else {
+      const { x, y, z } = this.getGridCoords(node.position);
+      const key = this.getCellKey(x, y, z);
+
+      // For nodes without objects, create a small representative box
+      const pointBox = new THREE.Box3().setFromCenterAndSize(
+        node.position,
+        new THREE.Vector3(1, 1, 1)
+      );
+      this.nodeBounds.set(node, pointBox);
+
+      this.nodeCells.set(node, new Set([key]));
+      this.getOrCreateCell(x, y, z).nodes.add(node);
+      console.log(`[SpatialIndex] Inserting point-node ${node.id} at cell ${key}`);
+    }
+  }
 }
 
 interface BVHNode {
@@ -240,6 +240,13 @@ export class BVH {
       }
     }
     this.root = this.buildTree(nodes, bounds, 0);
+  }
+
+  query(box: THREE.Box3): Node[] {
+    const result: Node[] = [];
+    if (!this.root) return result;
+    this.queryRecursive(this.root, box, result);
+    return result;
   }
 
   private buildTree(nodes: Node[], bounds: THREE.Box3, depth: number): BVHNode {
@@ -273,13 +280,6 @@ export class BVH {
     node.left = this.buildTree(leftNodes, leftBounds, depth + 1);
     node.right = this.buildTree(rightNodes, rightBounds, depth + 1);
     return node;
-  }
-
-  query(box: THREE.Box3): Node[] {
-    const result: Node[] = [];
-    if (!this.root) return result;
-    this.queryRecursive(this.root, box, result);
-    return result;
   }
 
   private queryRecursive(node: BVHNode, box: THREE.Box3, result: Node[]): void {

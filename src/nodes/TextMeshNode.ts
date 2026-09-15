@@ -7,11 +7,6 @@ import { Node } from './Node';
 
 export class TextMeshNode extends Node {
   static readonly typeName = 'TextMeshNode';
-  private _object = new THREE.Object3D();
-  get object() {
-    return this._object;
-  }
-
   private sprite: THREE.Sprite;
   private spriteMat: THREE.SpriteMaterial;
   private currentText: string;
@@ -25,6 +20,37 @@ export class TextMeshNode extends Node {
     this._object.add(this.sprite);
 
     this.updatePosition(this.position.x, this.position.y, this.position.z);
+  }
+
+  private _object = new THREE.Object3D();
+
+  get object() {
+    return this._object;
+  }
+
+  updateSpec(updates: Partial<NodeSpec>): this {
+    super.updateSpec(updates);
+    const newText = (updates.data?.text as string) ?? updates.label ?? null;
+    if (newText !== null && newText !== this.currentText) {
+      this.currentText = newText;
+      this._object.remove(this.sprite);
+      this.spriteMat.map?.dispose();
+      this.spriteMat.dispose();
+      const merged = {
+        data: { ...this.data, ...updates.data },
+        label: updates.label ?? this.label,
+      };
+      this.sprite = this._buildSprite(merged);
+      this.spriteMat = this.sprite.material as THREE.SpriteMaterial;
+      this._object.add(this.sprite);
+    }
+    return this;
+  }
+
+  dispose(): void {
+    this.spriteMat.map?.dispose();
+    this.spriteMat.dispose();
+    super.dispose();
   }
 
   private _buildSprite(spec: Partial<NodeSpec>): THREE.Sprite {
@@ -65,30 +91,5 @@ export class TextMeshNode extends Node {
     const aspect = canvas.width / canvas.height || 1;
     spr.scale.set(aspect * fontSize * scale * 0.8, fontSize * scale * 0.8, 1);
     return spr;
-  }
-
-  updateSpec(updates: Partial<NodeSpec>): this {
-    super.updateSpec(updates);
-    const newText = (updates.data?.text as string) ?? updates.label ?? null;
-    if (newText !== null && newText !== this.currentText) {
-      this.currentText = newText;
-      this._object.remove(this.sprite);
-      this.spriteMat.map?.dispose();
-      this.spriteMat.dispose();
-      const merged = {
-        data: { ...this.data, ...updates.data },
-        label: updates.label ?? this.label,
-      };
-      this.sprite = this._buildSprite(merged);
-      this.spriteMat = this.sprite.material as THREE.SpriteMaterial;
-      this._object.add(this.sprite);
-    }
-    return this;
-  }
-
-  dispose(): void {
-    this.spriteMat.map?.dispose();
-    this.spriteMat.dispose();
-    super.dispose();
   }
 }

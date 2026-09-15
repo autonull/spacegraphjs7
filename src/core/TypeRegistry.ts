@@ -37,6 +37,7 @@ export class TypeRegistry {
     for (const [type, ctor] of Object.entries(types)) this.nodeTypes.set(type, ctor);
     return this;
   }
+
   registerEdges(types: Record<string, EdgeConstructor>): this {
     for (const [type, ctor] of Object.entries(types)) this.edgeTypes.set(type, ctor);
     return this;
@@ -46,6 +47,7 @@ export class TypeRegistry {
   unregisterNode(type: string): boolean {
     return this.nodeTypes.delete(type);
   }
+
   unregisterEdge(type: string): boolean {
     return this.edgeTypes.delete(type);
   }
@@ -61,12 +63,15 @@ export class TypeRegistry {
   hasNode(type: string): boolean {
     return this.nodeTypes.has(type);
   }
+
   hasEdge(type: string): boolean {
     return this.edgeTypes.has(type);
   }
+
   getNodeTypes(): string[] {
     return [...this.nodeTypes.keys()];
   }
+
   getEdgeTypes(): string[] {
     return [...this.edgeTypes.keys()];
   }
@@ -75,6 +80,7 @@ export class TypeRegistry {
   getNodeTypeList(): Array<{ type: string; ctor: NodeConstructor }> {
     return [...this.nodeTypes.entries()].map(([type, ctor]) => ({ type, ctor }));
   }
+
   getEdgeTypeList(): Array<{ type: string; ctor: EdgeConstructor }> {
     return [...this.edgeTypes.entries()].map(([type, ctor]) => ({ type, ctor }));
   }
@@ -137,6 +143,7 @@ export class TypeRegistry {
   snapshot(): { nodes: Map<string, NodeConstructor>; edges: Map<string, EdgeConstructor> } {
     return { nodes: new Map(this.nodeTypes), edges: new Map(this.edgeTypes) };
   }
+
   restore(snapshot: {
     nodes: Map<string, NodeConstructor>;
     edges: Map<string, EdgeConstructor>;

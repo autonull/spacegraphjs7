@@ -58,6 +58,10 @@ export class BoxSelectingFingering extends BaseFingering {
     this.active = false;
   }
 
+  defer(_finger: Finger): boolean {
+    return false;
+  }
+
   private computeSelectionFrustum(start: THREE.Vector2, end: THREE.Vector2): THREE.Frustum {
     const camera = this.sg.renderer.camera as THREE.PerspectiveCamera | THREE.OrthographicCamera;
 
@@ -91,9 +95,5 @@ export class BoxSelectingFingering extends BaseFingering {
 
     frustum.setFromProjectionMatrix(viewProjection);
     return frustum;
-  }
-
-  defer(_finger: Finger): boolean {
-    return false;
   }
 }

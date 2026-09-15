@@ -19,18 +19,6 @@ export abstract class BaseFingering implements Fingering {
     this.raycaster = raycaster;
   }
 
-  abstract start(finger: Finger): boolean;
-  abstract update(finger: Finger): boolean;
-  abstract stop(finger: Finger): void;
-
-  defer(_finger: Finger): boolean {
-    return true;
-  }
-
-  isActive(): boolean {
-    return this.active;
-  }
-
   protected get scene(): THREE.Scene {
     return this.sg.renderer.scene;
   }
@@ -41,6 +29,20 @@ export abstract class BaseFingering implements Fingering {
 
   protected get container(): HTMLElement {
     return this.sg.container;
+  }
+
+  abstract start(finger: Finger): boolean;
+
+  abstract update(finger: Finger): boolean;
+
+  abstract stop(finger: Finger): void;
+
+  defer(_finger: Finger): boolean {
+    return true;
+  }
+
+  isActive(): boolean {
+    return this.active;
   }
 
   protected getDelta(): { x: number; y: number } {

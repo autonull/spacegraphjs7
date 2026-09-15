@@ -1,5 +1,4 @@
 import type { NodeSpec, SpaceGraph, SpecUpdate } from 'spacegraphjs';
-
 import { HtmlNode } from 'spacegraphjs';
 
 export class N8nCredentialNode extends HtmlNode {
@@ -37,6 +36,18 @@ export class N8nCredentialNode extends HtmlNode {
     else if (distance > this.lodThresholds.label) level = 'label';
     else if (distance > this.lodThresholds.summary) level = 'summary';
 
+    this.renderHtmlContent(level);
+  }
+
+  updateSpec(spec: SpecUpdate): void {
+    super.updateSpec(spec);
+    const level = this.domElement?.querySelector('input')
+      ? 'full'
+      : this.domElement?.querySelector('div[style*="12px"]')
+        ? 'summary'
+        : this.domElement?.querySelector('span')
+          ? 'icon'
+          : 'label';
     this.renderHtmlContent(level);
   }
 
@@ -171,17 +182,5 @@ export class N8nCredentialNode extends HtmlNode {
         border: '2px solid #e91e63',
       });
     }
-  }
-
-  updateSpec(spec: SpecUpdate): void {
-    super.updateSpec(spec);
-    const level = this.domElement?.querySelector('input')
-      ? 'full'
-      : this.domElement?.querySelector('div[style*="12px"]')
-        ? 'summary'
-        : this.domElement?.querySelector('span')
-          ? 'icon'
-          : 'label';
-    this.renderHtmlContent(level);
   }
 }

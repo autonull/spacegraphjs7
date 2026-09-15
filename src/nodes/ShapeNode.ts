@@ -20,17 +20,13 @@ const GEOMETRY_FACTORIES: Record<ShapeType, (size: number) => THREE.BufferGeomet
 
 export class ShapeNode extends Node {
   static readonly typeName = 'ShapeNode';
-  private readonly mesh: THREE.Mesh;
+  readonly mesh: THREE.Mesh;
   private meshGeometry: THREE.BufferGeometry;
-  private meshMaterial: THREE.MeshStandardMaterial;
+  readonly meshMaterial: THREE.MeshStandardMaterial;
   private labelSprite?: THREE.Sprite;
   private shapeType: ShapeType = 'sphere';
   private nodeSize = 40;
-  private readonly _object: THREE.Group;
-
-  get object(): THREE.Object3D {
-    return this._object;
-  }
+  readonly _object: THREE.Group;
 
   constructor(sg: SpaceGraph, spec: NodeSpec) {
     super(sg, spec);
@@ -63,8 +59,8 @@ export class ShapeNode extends Node {
     this.updatePosition(this.position.x, this.position.y, this.position.z);
   }
 
-  private createGeometry(shape: ShapeType, size: number): THREE.BufferGeometry {
-    return GEOMETRY_FACTORIES[shape]?.(size) ?? GEOMETRY_FACTORIES.sphere(size);
+  get object(): THREE.Object3D {
+    return this._object;
   }
 
   updateSpec(updates: Partial<NodeSpec>): this {
@@ -112,32 +108,6 @@ export class ShapeNode extends Node {
     return this;
   }
 
-  private disposeGeometry(): void {
-    this.meshGeometry?.dispose();
-  }
-
-  private createLabel(text: string): THREE.Sprite {
-    const canvas = DOMUtils.createElement('canvas');
-    const context = canvas.getContext('2d');
-
-    canvas.width = 256;
-    canvas.height = 64;
-
-    if (context) {
-      context.font = '24px Arial';
-      context.fillStyle = 'white';
-      context.textAlign = 'center';
-      context.fillText(text, canvas.width / 2, canvas.height / 2 + 8);
-    }
-
-    const texture = new THREE.CanvasTexture(canvas);
-    const material = new THREE.SpriteMaterial({ map: texture, depthTest: false });
-    const sprite = new THREE.Sprite(material);
-    sprite.scale.set(this.nodeSize * 1.5, this.nodeSize * 0.4, 1);
-
-    return sprite;
-  }
-
   getBoundingSphereRadius(): number {
     return this.nodeSize / 2;
   }
@@ -162,5 +132,35 @@ export class ShapeNode extends Node {
       this.labelSprite.material.dispose();
     }
     super.dispose();
+  }
+
+  private createGeometry(shape: ShapeType, size: number): THREE.BufferGeometry {
+    return GEOMETRY_FACTORIES[shape]?.(size) ?? GEOMETRY_FACTORIES.sphere(size);
+  }
+
+  private disposeGeometry(): void {
+    this.meshGeometry?.dispose();
+  }
+
+  private createLabel(text: string): THREE.Sprite {
+    const canvas = DOMUtils.createElement('canvas');
+    const context = canvas.getContext('2d');
+
+    canvas.width = 256;
+    canvas.height = 64;
+
+    if (context) {
+      context.font = '24px Arial';
+      context.fillStyle = 'white';
+      context.textAlign = 'center';
+      context.fillText(text, canvas.width / 2, canvas.height / 2 + 8);
+    }
+
+    const texture = new THREE.CanvasTexture(canvas);
+    const material = new THREE.SpriteMaterial({ map: texture, depthTest: false });
+    const sprite = new THREE.Sprite(material);
+    sprite.scale.set(this.nodeSize * 1.5, this.nodeSize * 0.4, 1);
+
+    return sprite;
   }
 }

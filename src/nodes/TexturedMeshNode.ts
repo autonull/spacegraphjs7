@@ -14,11 +14,7 @@ export abstract class TexturedMeshNode extends Node {
   protected planeGeometry: THREE.PlaneGeometry;
   protected planeMaterial: THREE.MeshBasicMaterial;
 
-  get object(): THREE.Object3D {
-    return this._object;
-  }
-
-  constructor(sg: SpaceGraph, spec: NodeSpec, width: number, height: number) {
+  protected constructor(sg: SpaceGraph, spec: NodeSpec, width: number, height: number) {
     super(sg, spec);
 
     this._object = new THREE.Group();
@@ -32,11 +28,8 @@ export abstract class TexturedMeshNode extends Node {
     this.updatePosition(this.position.x, this.position.y, this.position.z);
   }
 
-  protected setTexture(texture: THREE.Texture): void {
-    this.texture?.dispose();
-    this.texture = texture;
-    this.planeMaterial.map = texture;
-    this.planeMaterial.needsUpdate = true;
+  get object(): THREE.Object3D {
+    return this._object;
   }
 
   dispose(): void {
@@ -44,5 +37,12 @@ export abstract class TexturedMeshNode extends Node {
     this.planeGeometry?.dispose();
     this.planeMaterial?.dispose();
     super.dispose();
+  }
+
+  protected setTexture(texture: THREE.Texture): void {
+    this.texture?.dispose();
+    this.texture = texture;
+    this.planeMaterial.map = texture;
+    this.planeMaterial.needsUpdate = true;
   }
 }

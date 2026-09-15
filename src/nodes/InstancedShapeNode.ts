@@ -24,6 +24,21 @@ export class InstancedShapeNode extends BaseInstancedNode {
     this.updatePosition(this.position.x, this.position.y, this.position.z);
   }
 
+  dispose(): void {
+    if (this.instanceIndex !== -1) {
+      const mesh = instancedMeshRegistry.get(this.sg!);
+      if (mesh) {
+        scaleHelper.set(0, 0, 0);
+        matrixHelper.compose(this.position, rotationHelper, scaleHelper);
+        mesh.setMatrixAt(this.instanceIndex, matrixHelper);
+        mesh.instanceMatrix.needsUpdate = true;
+        scaleHelper.set(1, 1, 1);
+      }
+    }
+    nodeIndexRegistry.delete(this);
+    super.dispose();
+  }
+
   protected registerInstance() {
     const capacity = capacityRegistry.get(this.sg!) ?? 0;
     const count = nodeCountRegistry.get(this.sg!) ?? 0;
@@ -40,6 +55,11 @@ export class InstancedShapeNode extends BaseInstancedNode {
     this.updateInstanceMatrix();
     this.updateInstanceColor();
     mesh.count = nodeCountRegistry.get(this.sg!)!;
+  }
+
+  protected updateInstanceTransform() {
+    this.updateInstanceMatrix();
+    this.updateInstanceColor();
   }
 
   private rebuildInstancedMesh(newCapacity: number) {
@@ -101,25 +121,5 @@ export class InstancedShapeNode extends BaseInstancedNode {
     if (mesh.instanceColor) {
       mesh.instanceColor.needsUpdate = true;
     }
-  }
-
-  protected updateInstanceTransform() {
-    this.updateInstanceMatrix();
-    this.updateInstanceColor();
-  }
-
-  dispose(): void {
-    if (this.instanceIndex !== -1) {
-      const mesh = instancedMeshRegistry.get(this.sg!);
-      if (mesh) {
-        scaleHelper.set(0, 0, 0);
-        matrixHelper.compose(this.position, rotationHelper, scaleHelper);
-        mesh.setMatrixAt(this.instanceIndex, matrixHelper);
-        mesh.instanceMatrix.needsUpdate = true;
-        scaleHelper.set(1, 1, 1);
-      }
-    }
-    nodeIndexRegistry.delete(this);
-    super.dispose();
   }
 }

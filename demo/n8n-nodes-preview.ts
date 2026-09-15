@@ -1,4 +1,4 @@
-import { N8nWorkflowPlugin } from '../packages/n8n-bridge/src/N8nWorkflowPlugin';
+import { N8nWorkflowPlugin } from '../packages/n8n-bridge/src';
 import { type GraphSpec, SpaceGraph } from '../src';
 
 const container = document.getElementById('spacegraph-container');

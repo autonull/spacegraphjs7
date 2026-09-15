@@ -7,16 +7,6 @@ export class ClusterLayout extends BaseLayout {
   readonly name = 'Cluster Layout';
   readonly version = '1.0.0';
 
-  protected defaultConfig(): LayoutConfig {
-    return {
-      clusterBy: 'category',
-      clusterRadius: 300,
-      nodeRadius: 100,
-      animate: true,
-      duration: 1.5,
-    };
-  }
-
   async apply(options?: LayoutOptions): Promise<void> {
     const {
       clusterBy = this.config.clusterBy as string,
@@ -75,5 +65,15 @@ export class ClusterLayout extends BaseLayout {
     }
 
     this.updateEdges();
+  }
+
+  protected defaultConfig(): LayoutConfig {
+    return {
+      clusterBy: 'category',
+      clusterRadius: 300,
+      nodeRadius: 100,
+      animate: true,
+      duration: 1.5,
+    };
   }
 }

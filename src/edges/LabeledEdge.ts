@@ -19,9 +19,9 @@ import { Edge } from './Edge';
  */
 export class LabeledEdge extends Edge {
   static readonly typeName = 'LabeledEdge';
-  private labelEl: HTMLElement;
-  private labelObject: CSS2DObject;
   public labelLod: LabelLodLevel[] = [];
+  readonly labelEl: HTMLElement;
+  readonly labelObject: CSS2DObject;
 
   constructor(sg: SpaceGraph, spec: EdgeSpec, source: Node, target: Node) {
     super(sg, spec, source, target);
@@ -56,18 +56,6 @@ export class LabeledEdge extends Edge {
     }
 
     this._positionLabel();
-  }
-
-  private _positionLabel() {
-    if (!this.source || !this.target) return;
-    const sourcePos = new THREE.Vector3();
-    const targetPos = new THREE.Vector3();
-    this.source.getWorldPosition(sourcePos);
-    this.target.getWorldPosition(targetPos);
-
-    const mid = new THREE.Vector3().addVectors(sourcePos, targetPos).multiplyScalar(0.5);
-    // labelObject is child of this.object, which is in world space
-    this.labelObject.position.copy(mid).sub(this.object.position);
   }
 
   updateLod(_distance: number): void {
@@ -134,5 +122,17 @@ export class LabeledEdge extends Edge {
   dispose(): void {
     this.labelEl.parentNode?.removeChild(this.labelEl);
     super.dispose();
+  }
+
+  private _positionLabel() {
+    if (!this.source || !this.target) return;
+    const sourcePos = new THREE.Vector3();
+    const targetPos = new THREE.Vector3();
+    this.source.getWorldPosition(sourcePos);
+    this.target.getWorldPosition(targetPos);
+
+    const mid = new THREE.Vector3().addVectors(sourcePos, targetPos).multiplyScalar(0.5);
+    // labelObject is child of this.object, which is in world space
+    this.labelObject.position.copy(mid).sub(this.object.position);
   }
 }

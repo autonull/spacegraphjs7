@@ -16,6 +16,34 @@ export class ProgressBarNode extends (HtmlNode as any) {
     this._setupProgressBar();
   }
 
+  setValue(value: number): void {
+    if (this.indeterminate) {
+      this._stopIndeterminate();
+    }
+    this._setProgress(value);
+    this.data = { ...this.data, value };
+    this.sg?.events.emit('node:dataChanged', { node: this, property: 'value', value });
+  }
+
+  setIndeterminate(indeterminate: boolean): void {
+    this.indeterminate = indeterminate;
+    if (indeterminate) {
+      this._startIndeterminate();
+    } else {
+      this._stopIndeterminate();
+      this._setProgress(this.progressValue);
+    }
+  }
+
+  getValue(): number {
+    return this.progressValue;
+  }
+
+  dispose(): void {
+    this._stopIndeterminate();
+    super.dispose();
+  }
+
   private _setupProgressBar(): void {
     const data = this.data as SpaceGraphNodeData;
     this.progressValue = (data?.value as number) ?? 0;
@@ -76,38 +104,10 @@ export class ProgressBarNode extends (HtmlNode as any) {
     }, 1500);
   }
 
-  setValue(value: number): void {
-    if (this.indeterminate) {
-      this._stopIndeterminate();
-    }
-    this._setProgress(value);
-    this.data = { ...this.data, value };
-    this.sg?.events.emit('node:dataChanged', { node: this, property: 'value', value });
-  }
-
-  setIndeterminate(indeterminate: boolean): void {
-    this.indeterminate = indeterminate;
-    if (indeterminate) {
-      this._startIndeterminate();
-    } else {
-      this._stopIndeterminate();
-      this._setProgress(this.progressValue);
-    }
-  }
-
   private _stopIndeterminate(): void {
     if (this.indeterminateAnim !== null) {
       clearInterval(this.indeterminateAnim);
       this.indeterminateAnim = null;
     }
-  }
-
-  getValue(): number {
-    return this.progressValue;
-  }
-
-  dispose(): void {
-    this._stopIndeterminate();
-    super.dispose();
   }
 }

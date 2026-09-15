@@ -1,10 +1,10 @@
 // SpaceGraphJS - Base Layout Plugin
 // Abstract base class for layout plugins with common helpers
 
+import type { Plugin } from 'spacegraphjs/core';
 import * as THREE from 'three';
 import type { EventSystem } from '../../core/events/EventSystem';
 import type { Graph } from '../../core/Graph';
-import type { Plugin } from '../../core/PluginManager';
 import type { Node } from '../../nodes/Node';
 import type { SpaceGraph } from '../../SpaceGraph';
 
@@ -15,6 +15,7 @@ export interface LayoutConfig {
   animate?: boolean;
   duration?: number;
   skipPinned?: boolean;
+
   [key: string]: unknown;
 }
 
@@ -55,6 +56,7 @@ export interface LayoutOptions {
   scaleFactor?: number;
   staggerLayout?: boolean;
   staggerAmount?: number;
+
   [key: string]: unknown;
 }
 
@@ -121,18 +123,18 @@ export abstract class BaseLayout implements Plugin {
     this.config = { ...this.defaultConfig(), ...config };
   }
 
-  protected abstract defaultConfig(): LayoutConfig;
+  get settings(): LayoutConfig {
+    return this.config;
+  }
 
   init(_sg: SpaceGraph, graph: Graph, events: any): void {
     this.graph = graph;
     this.events = events;
   }
 
-  get settings(): LayoutConfig {
-    return this.config;
-  }
-
   abstract apply(options?: LayoutOptions): Promise<void>;
+
+  protected abstract defaultConfig(): LayoutConfig;
 
   /**
    * Template method: Apply positions to nodes using a calculator function.

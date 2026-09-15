@@ -1,11 +1,11 @@
+import { DOMUtils } from 'spacegraphjs/utils';
 import type { SpaceGraph } from '../../SpaceGraph';
-import { DOMUtils } from '../../utils/DOMUtils';
 import { HUDDOMFactory } from './HUDDOMFactory';
 import { HUD_STYLES, HUD_ZINDEX } from './HUDStyles';
 
 export class HUDStatusBar {
   private statusBar: HTMLElement | null = null;
-  private sg: SpaceGraph;
+  readonly sg: SpaceGraph;
 
   constructor(sg: SpaceGraph) {
     this.sg = sg;

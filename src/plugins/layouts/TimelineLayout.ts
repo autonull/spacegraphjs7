@@ -7,19 +7,6 @@ export class TimelineLayout extends BaseLayout {
   readonly name = 'Timeline Layout';
   readonly version = '1.0.0';
 
-  protected defaultConfig(): LayoutConfig {
-    return {
-      timeField: 'timestamp',
-      orientation: 'horizontal',
-      spacing: 200,
-      scaleFactor: 0.1,
-      animate: true,
-      duration: 1.5,
-      staggerLayout: true,
-      staggerAmount: 150,
-    };
-  }
-
   async apply(options?: LayoutOptions): Promise<void> {
     const {
       timeField = this.config.timeField as string,
@@ -84,5 +71,18 @@ export class TimelineLayout extends BaseLayout {
     }
 
     this.updateEdges();
+  }
+
+  protected defaultConfig(): LayoutConfig {
+    return {
+      timeField: 'timestamp',
+      orientation: 'horizontal',
+      spacing: 200,
+      scaleFactor: 0.1,
+      animate: true,
+      duration: 1.5,
+      staggerLayout: true,
+      staggerAmount: 150,
+    };
   }
 }

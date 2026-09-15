@@ -31,11 +31,7 @@ export abstract class WidgetNode extends Node {
   protected _isHovered = false;
   protected _isPressed = false;
 
-  get object(): THREE.Object3D {
-    return this.group;
-  }
-
-  constructor(sg: SpaceGraph, spec: NodeSpec, data: WidgetNodeData) {
+  protected constructor(sg: SpaceGraph, spec: NodeSpec, data: WidgetNodeData) {
     super(sg, spec);
 
     this._width = data?.width ?? this._width;
@@ -57,49 +53,8 @@ export abstract class WidgetNode extends Node {
     this.updatePosition(this.position.x, this.position.y, this.position.z);
   }
 
-  protected abstract getBaseColor(data: WidgetNodeData | undefined): number;
-  protected abstract getHoverColor(): number;
-  protected abstract getPressedColor(): number;
-  protected abstract createLabelContent(ctx: CanvasRenderingContext2D, text: string): void;
-  protected abstract getLabelText(): string;
-
-  protected initLabel(_data: WidgetNodeData | undefined): void {
-    const text = this.getLabelText();
-    if (!text) return;
-
-    const canvas = document.createElement('canvas');
-    canvas.width = this._width * 2;
-    canvas.height = this._height * 2;
-    const ctx = canvas.getContext('2d')!;
-    this.createLabelContent(ctx, text);
-
-    const texture = new THREE.CanvasTexture(canvas);
-    const labelWidth = this._width * 0.8;
-    const labelHeight = this._height * 0.5;
-    this.labelMaterial = new THREE.MeshBasicMaterial({
-      map: texture,
-      transparent: true,
-      depthTest: false,
-    });
-    this.labelMesh = new THREE.Mesh(
-      new THREE.PlaneGeometry(labelWidth, labelHeight),
-      this.labelMaterial
-    );
-    this.labelMesh.position.z = this._depth / 2 + 0.1;
-    this.group.add(this.labelMesh);
-  }
-
-  protected updateLabel(): void {
-    if (!this.labelMaterial?.map) return;
-
-    const canvas = document.createElement('canvas');
-    canvas.width = this._width * 2;
-    canvas.height = this._height * 2;
-    const ctx = canvas.getContext('2d')!;
-    this.createLabelContent(ctx, this.getLabelText());
-
-    (this.labelMaterial.map as THREE.CanvasTexture).dispose();
-    this.labelMaterial.map = new THREE.CanvasTexture(canvas);
+  get object(): THREE.Object3D {
+    return this.group;
   }
 
   isDraggable(_localPos: THREE.Vector3): boolean {
@@ -143,16 +98,6 @@ export abstract class WidgetNode extends Node {
     this.mesh.position.z = -2;
   }
 
-  protected onPointerUpCore(): void {
-    this._isPressed = false;
-    this.mesh.position.z = 0;
-    this.baseMaterial.color.setHex(
-      this._isHovered
-        ? this.getHoverColor()
-        : this.getBaseColor((this.data as WidgetNodeData) ?? undefined)
-    );
-  }
-
   updateSpec(updates: Partial<NodeSpec>): this {
     super.updateSpec(updates);
     if (updates.data) {
@@ -181,5 +126,64 @@ export abstract class WidgetNode extends Node {
     this.labelMaterial?.dispose();
     (this.labelMaterial?.map as THREE.Texture)?.dispose();
     super.dispose();
+  }
+
+  protected abstract getBaseColor(data: WidgetNodeData | undefined): number;
+
+  protected abstract getHoverColor(): number;
+
+  protected abstract getPressedColor(): number;
+
+  protected abstract createLabelContent(ctx: CanvasRenderingContext2D, text: string): void;
+
+  protected abstract getLabelText(): string;
+
+  protected initLabel(_data: WidgetNodeData | undefined): void {
+    const text = this.getLabelText();
+    if (!text) return;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = this._width * 2;
+    canvas.height = this._height * 2;
+    const ctx = canvas.getContext('2d')!;
+    this.createLabelContent(ctx, text);
+
+    const texture = new THREE.CanvasTexture(canvas);
+    const labelWidth = this._width * 0.8;
+    const labelHeight = this._height * 0.5;
+    this.labelMaterial = new THREE.MeshBasicMaterial({
+      map: texture,
+      transparent: true,
+      depthTest: false,
+    });
+    this.labelMesh = new THREE.Mesh(
+      new THREE.PlaneGeometry(labelWidth, labelHeight),
+      this.labelMaterial
+    );
+    this.labelMesh.position.z = this._depth / 2 + 0.1;
+    this.group.add(this.labelMesh);
+  }
+
+  protected updateLabel(): void {
+    if (!this.labelMaterial?.map) return;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = this._width * 2;
+    canvas.height = this._height * 2;
+    const ctx = canvas.getContext('2d')!;
+    this.createLabelContent(ctx, this.getLabelText());
+
+    (this.labelMaterial.map as THREE.CanvasTexture).dispose();
+    this.labelMaterial.map = new THREE.CanvasTexture(canvas);
+  }
+
+  protected onPointerUpCore(): void {
+    this._isPressed = false;
+    this.mesh.position.z = 0;
+    this.baseMaterial.color.setHex(
+      this._isHovered
+        ? this.getHoverColor()
+        : this.getBaseColor((this.data as WidgetNodeData) ?? undefined)
+    );
   }
 }

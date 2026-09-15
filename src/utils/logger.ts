@@ -4,10 +4,14 @@
  */
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+
 export interface Logger {
   debug(message: string, ...args: unknown[]): void;
+
   info(message: string, ...args: unknown[]): void;
+
   warn(message: string, ...args: unknown[]): void;
+
   error(message: string, ...args: unknown[]): void;
 }
 
@@ -17,6 +21,7 @@ let currentLevel: LogLevel = 'info';
 export function setLogLevel(level: LogLevel): void {
   currentLevel = level;
 }
+
 export function createLogger(namespace: string): Logger {
   const prefix = `[${namespace}]`;
   const shouldLog = (level: LogLevel): boolean => LOG_LEVELS[level] >= LOG_LEVELS[currentLevel];

@@ -65,6 +65,10 @@ export class AutoLayoutPlugin extends BaseSystemPlugin {
     }
   }
 
+  dispose(): void {
+    logger.debug(`Disposing ${this.name}`);
+  }
+
   private fixSingleOverlap(issue: VisionIssue): void {
     if (!issue.nodeA || !issue.nodeB) return;
 
@@ -83,9 +87,5 @@ export class AutoLayoutPlugin extends BaseSystemPlugin {
       nodeA.object.position.copy(nodeA.position);
       nodeB.object.position.copy(nodeB.position);
     }
-  }
-
-  dispose(): void {
-    logger.debug(`Disposing ${this.name}`);
   }
 }

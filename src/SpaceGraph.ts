@@ -1,4 +1,11 @@
-import { CameraControls } from './core/CameraControls';
+import {
+  CameraControls,
+  MathPool,
+  ObjectPoolManager,
+  PluginManager,
+  VisionManager,
+} from 'spacegraphjs/core';
+import { InputManager } from 'spacegraphjs/input';
 import { FingeringPriority, Performance } from './core/constants';
 import {
   createQuickGraphSpec,
@@ -11,15 +18,10 @@ import { ErgonomicsAPI } from './core/Ergonomics';
 import { EventSystem } from './core/events/EventSystem';
 // SpaceGraph.ts - Core graph visualization engine
 import { Graph } from './core/Graph';
-import { ObjectPoolManager } from './core/ObjectPoolManager';
-import { PluginManager } from './core/PluginManager';
-import { MathPool } from './core/pooling/ObjectPool';
 import { Renderer } from './core/Renderer';
-import { VisionManager } from './core/VisionManager';
 import type { Edge } from './edges/Edge';
 import { applyDefaultInputConfig } from './input/DefaultInputConfig';
 import { createCameraFingering } from './input/fingerings';
-import { InputManager } from './input/InputManager';
 import type { Node } from './nodes/Node';
 import type {
   EdgeSpec,
@@ -50,7 +52,8 @@ export class SpaceGraph {
   public poolManager!: ObjectPoolManager<any>;
   public input!: InputManager;
   public ergo!: ErgonomicsAPI;
-
+  // Zoom to fit all nodes (alias for fitView)
+  zoomFit = this.fitView;
   #animationFrameId?: number;
   #lastTimestamp = 0;
   #animating = false;
@@ -65,23 +68,77 @@ export class SpaceGraph {
     }
   }
 
-  #init(): void {
-    this.poolManager = new ObjectPoolManager();
-    this.events = new EventSystem();
-    this.vision = new VisionManager(this);
-    this.pluginManager = new PluginManager(this);
-    this.renderer = new Renderer(this, this.container);
-    this.graph = new Graph(this);
-    this.ergo = new ErgonomicsAPI(this);
-    this.cameraControls = new CameraControls(
-      this.renderer.camera,
-      this.container,
-      this.options.cameraControls as Partial<import('./core/CameraControls').CameraControlsConfig>
-    );
-    this.cameraControls.sg = this;
-    const config = (this.options.input as Record<string, any>) ?? {};
-    this.input = new InputManager({ sg: this, events: this.events });
-    applyDefaultInputConfig(this.input, this, config);
+  get cameraPosition(): [number, number, number] {
+    if (!this.renderer?.camera) return [0, 0, 0];
+    return [
+      this.renderer.camera.position.x,
+      this.renderer.camera.position.y,
+      this.renderer.camera.position.z,
+    ];
+  }
+
+  get cameraTarget(): [number, number, number] {
+    return this.cameraControls
+      ? [this.cameraControls.target.x, this.cameraControls.target.y, this.cameraControls.target.z]
+      : [0, 0, 0];
+  }
+
+  get isRendering(): boolean {
+    return this.#animating;
+  }
+
+  get nodeCount(): number {
+    return this.graph.nodes.size;
+  }
+
+  get edgeCount(): number {
+    return this.graph.edges.size;
+  }
+
+  get selected() {
+    return this.ergo.selected;
+  }
+
+  // ============= Quick Properties =============
+  get count(): number {
+    return this.nodeCount;
+  }
+
+  get isEmpty(): boolean {
+    return this.graph.nodes.size === 0;
+  }
+
+  get nodes(): Node[] {
+    return this.graph.nodeArray();
+  }
+
+  get edges(): Edge[] {
+    return this.graph.edgeArray();
+  }
+
+  // Get stats
+  get stats() {
+    return {
+      nodes: this.graph.nodes.size,
+      edges: this.graph.edges.size,
+      plugins: this.pluginManager.pluginCount,
+    };
+  }
+
+  // Get camera position
+  get camera(): { position: [number, number, number]; target: [number, number, number] } {
+    return {
+      position: [
+        this.renderer.camera.position.x,
+        this.renderer.camera.position.y,
+        this.renderer.camera.position.z,
+      ],
+      target: [
+        this.cameraControls.target.x,
+        this.cameraControls.target.y,
+        this.cameraControls.target.z,
+      ],
+    };
   }
 
   // ============= Static Factory Methods =============
@@ -224,46 +281,25 @@ export class SpaceGraph {
     });
   }
 
+  // ============= Utility =============
+  private static checkWebGL(): boolean {
+    try {
+      const canvas = DOMUtils.createElement('canvas');
+      return !!(
+        window.WebGLRenderingContext &&
+        (canvas.getContext('webgl') || canvas.getContext('experimental-webgl'))
+      );
+    } catch {
+      return false;
+    }
+  }
+
   // ============= Instance Methods =============
   async init(): Promise<void> {
     this.renderer.init();
     this.#registerDefaults();
     await this.pluginManager.initAll();
     this.events.emit('ready', { timestamp: Date.now() });
-  }
-
-  #registerDefaults(): void {
-    for (const cls of DEFAULT_NODE_TYPES) {
-      this.pluginManager.registerNodeType((cls as any).typeName || cls.name, cls as any);
-    }
-    for (const cls of DEFAULT_EDGE_TYPES) {
-      this.pluginManager.registerEdgeType(
-        (cls as any).typeName || cls.name,
-        cls as import('./core/TypeRegistry').EdgeConstructor
-      );
-    }
-    for (const [cls, name] of DEFAULT_LAYOUT_PLUGINS) {
-      this.pluginManager.register(name, new cls());
-    }
-    for (const [cls, name] of DEFAULT_SYSTEM_PLUGINS) {
-      this.pluginManager.register(name, new cls());
-    }
-    this.#registerFingerings();
-  }
-
-  #registerFingerings(): void {
-    this.input.registerFingering(
-      createCameraFingering(this.cameraControls, 'orbit'),
-      FingeringPriority.CAMERA_ORBIT
-    );
-    this.input.registerFingering(
-      createCameraFingering(this.cameraControls, 'pan'),
-      FingeringPriority.CAMERA_PAN
-    );
-    this.input.registerFingering(
-      createCameraFingering(this.cameraControls, 'zoom'),
-      FingeringPriority.CAMERA_ZOOM
-    );
   }
 
   // ============= Graph Manipulation =============
@@ -350,17 +386,21 @@ export class SpaceGraph {
   getNode(id: string): Node | undefined {
     return this.graph.getNode(id);
   }
+
   getEdge(id: string): Edge | undefined {
     return this.graph.getEdge(id);
   }
+
   removeNode(id: string): boolean {
     this.graph.removeNode(id);
     return true;
   }
+
   removeEdge(id: string): boolean {
     this.graph.removeEdge(id);
     return true;
   }
+
   clear(): void {
     this.graph.clear();
   }
@@ -374,21 +414,6 @@ export class SpaceGraph {
     const fit = calculateFitView(nodes, this.renderer.camera as any, padding);
     if (fit) this.cameraControls.flyTo(fit.center, fit.cameraZ, duration);
     return this;
-  }
-
-  get cameraPosition(): [number, number, number] {
-    if (!this.renderer?.camera) return [0, 0, 0];
-    return [
-      this.renderer.camera.position.x,
-      this.renderer.camera.position.y,
-      this.renderer.camera.position.z,
-    ];
-  }
-
-  get cameraTarget(): [number, number, number] {
-    return this.cameraControls
-      ? [this.cameraControls.target.x, this.cameraControls.target.y, this.cameraControls.target.z]
-      : [0, 0, 0];
   }
 
   // ============= Animation Loop =============
@@ -417,6 +442,8 @@ export class SpaceGraph {
     this.cameraControls?.update();
     this.renderer.render();
   }
+
+  // ============= Ergonomic API (delegated to ErgonomicsAPI) =============
 
   render(): this {
     this.#animating = true;
@@ -452,35 +479,15 @@ export class SpaceGraph {
     this.dispose();
   }
 
-  // ============= Utility =============
-  private static checkWebGL(): boolean {
-    try {
-      const canvas = DOMUtils.createElement('canvas');
-      return !!(
-        window.WebGLRenderingContext &&
-        (canvas.getContext('webgl') || canvas.getContext('experimental-webgl'))
-      );
-    } catch {
-      return false;
-    }
-  }
-
-  get isRendering(): boolean {
-    return this.#animating;
-  }
-  get nodeCount(): number {
-    return this.graph.nodes.size;
-  }
-  get edgeCount(): number {
-    return this.graph.edges.size;
-  }
-
-  // ============= Ergonomic API (delegated to ErgonomicsAPI) =============
   // Direct passthrough - all ergonomics API methods available directly on SpaceGraph
   $ = (id: string) => this.ergo.$(id);
+
   $$ = (id: string) => this.ergo.$$(id);
+
   $optional = (id: string) => this.ergo.$optional(id);
+
   at = (id: string) => this.ergo.$(id);
+
   must = (id: string) => this.ergo.require(id);
 
   // Fluent API shortcuts
@@ -488,6 +495,7 @@ export class SpaceGraph {
     this.graph.addNode(spec);
     return this;
   }
+
   addEdge(spec: EdgeSpec | Edge): this {
     this.graph.addEdge(spec);
     return this;
@@ -495,61 +503,95 @@ export class SpaceGraph {
 
   // Query - delegate to graph
   findNodes = (predicate: (node: Node) => boolean) => this.ergo.findNodes(predicate);
+
   findNode = (predicate: (node: Node) => boolean) => this.ergo.findNode(predicate);
+
   getNodesByType = (type: string) => this.ergo.getNodesByType(type);
+
   findEdges = (predicate: (edge: Edge) => boolean) => this.ergo.findEdges(predicate);
+
   getEdgesForNode = (nodeId: string) => this.ergo.getEdgesForNode(nodeId);
+
   where = (key: string, value: unknown) => this.ergo.where(key, value);
+
   has = (key: string, value?: unknown) => this.ergo.has(key, value);
+
   neighbors = (nodeId: string) => this.ergo.neighbors(nodeId);
+
   adjacent = (nodeId: string) => this.ergo.adjacent(nodeId);
+
   connections = (nodeId: string) => this.ergo.connections(nodeId);
+
   inEdges = (nodeId: string) => this.ergo.inEdges(nodeId);
+
   outEdges = (nodeId: string) => this.ergo.outEdges(nodeId);
 
   // Iterators
   forNodes = (callback: (node: Node) => void) => this.ergo.forNodes(callback);
+
   forEdges = (callback: (edge: Edge) => void) => this.ergo.forEdges(callback);
+
   forEach = (callback: (node: Node) => void) => this.ergo.forEach(callback);
+
   each = (callback: (node: Node) => void) => this.ergo.each(callback);
+
   map = <T>(callback: (node: Node) => T) => this.ergo.map<T>(callback);
+
   filter = (callback: (node: Node) => boolean) => this.ergo.filter(callback);
+
   some = (callback: (node: Node) => boolean) => this.ergo.some(callback);
+
   every = (callback: (node: Node) => boolean) => this.ergo.every(callback);
 
   // Node operations
   add = (spec: NodeSpec | Node) => this.ergo.add(spec);
+
   create = (spec: string | NodeSpec) => this.ergo.create(spec);
+
   remove = (id: string) => this.ergo.remove(id);
+
   addNodes = (specs: NodeSpec[]) => this.ergo.addNodes(specs);
+
   removeWhere = (predicate: (node: Node) => boolean) => this.ergo.removeWhere(predicate);
+
   updateWhere = (predicate: (node: Node) => boolean, updates: Partial<NodeSpec>) =>
     this.ergo.updateWhere(predicate, updates);
 
   // Edge operations
   connect = (source: string, target: string, data?: Record<string, unknown>) =>
     this.ergo.connect(source, target, data);
+
   connectTo = (source: string, targets: string | string[], data?: Record<string, unknown>) =>
     this.ergo.connectTo(source, targets, data);
+
   connectFrom = (sources: string | string[], target: string, data?: Record<string, unknown>) =>
     this.ergo.connectFrom(sources, target, data);
+
   disconnect = (source: string, target: string) => this.ergo.disconnect(source, target);
+
   addEdges = (specs: EdgeSpec[]) => this.ergo.addEdges(specs);
 
   // Traversal
   traverse = (callback: (node: Node, depth: number) => void, startId?: string) =>
     this.ergo.traverse(callback, startId);
+
   bfs = (callback: (node: Node, depth: number) => void, startId?: string) =>
     this.ergo.bfs(callback, startId);
+
   dfs = (callback: (node: Node, depth: number) => void, startId?: string) =>
     this.ergo.dfs(callback, startId);
+
   getSubgraph = (centerId: string, radius: number) => this.ergo.getSubgraph(centerId, radius);
+
   path = (from: string, to: string) => this.ergo.path(from, to);
 
   // Batch
   batch = (fn: (sg: SpaceGraph) => void) => this.ergo.batch(fn);
+
   freeze = () => this.ergo.freeze();
+
   suspend = () => this.ergo.suspend();
+
   transaction = (updates: (sg: SpaceGraph) => void) => this.ergo.transaction(updates);
 
   // Selection
@@ -557,29 +599,32 @@ export class SpaceGraph {
     this.ergo.select(nodeId);
     return this;
   };
+
   deselect = (nodeId: string) => {
     this.ergo.deselect(nodeId);
     return this;
   };
+
   selectAll = () => {
     this.ergo.selectAll();
     return this;
   };
+
   deselectAll = () => {
     this.ergo.deselectAll();
     return this;
   };
-  get selected() {
-    return this.ergo.selected;
-  }
 
   // Visibility
   toggleVisibility = (nodeId: string) => this.ergo.toggleVisibility(nodeId);
+
   toggle = (nodeId: string) => this.ergo.toggle(nodeId);
+
   show = (id: string, visible = true) => {
     this.ergo.show(id, visible);
     return this.graph.getNode(id);
   };
+
   hide = (id: string) => {
     this.ergo.hide(id);
     return this.graph.getNode(id);
@@ -587,54 +632,60 @@ export class SpaceGraph {
 
   // Quick node utilities
   require = (id: string) => this.ergo.require(id);
+
   clone = (id: string, newId?: string) => this.ergo.clone(id, newId);
+
   move = (id: string, x: number, y: number, z = 0) => this.ergo.move(id, x, y, z);
+
   translate = (id: string, dx: number, dy: number, dz = 0) => this.ergo.translate(id, dx, dy, dz);
+
   shift = (id: string, dx: number, dy: number, dz = 0) => this.ergo.shift(id, dx, dy, dz);
+
   label = (id: string, text: string) => this.ergo.label(id, text);
+
   text = (id: string, text: string) => this.ergo.text(id, text);
+
   color = (id: string, color: string | number) => this.ergo.color(id, color);
+
   fill = (id: string, color: string | number) => this.ergo.fill(id, color);
+
   data = (id: string, key: string, value?: unknown) => this.ergo.data(id, key, value);
+
   attr = (id: string, key: string, value?: unknown) => this.ergo.attr(id, key, value);
+
   rotate = (id: string, x: number, y: number, z: number) => this.ergo.rotate(id, x, y, z);
+
   scale = (id: string, x: number, y?: number, z?: number) => this.ergo.scale(id, x, y, z);
+
   setSize = (id: string, size: number) => this.ergo.size(id, size);
+
   opacity = (id: string, opacity: number) => this.ergo.opacity(id, opacity);
+
   visible = (id: string) =>
     (this.graph.getNode(id)?.data as Record<string, unknown>)?.visible !== false;
+
   isPinned = (id: string) =>
     (this.graph.getNode(id)?.data as Record<string, unknown>)?.pinned === true;
+
   pinned = (id: string) => {
     this.ergo.data(id, 'pinned', true);
     return this.graph.getNode(id);
   };
+
   unpin = (id: string) => {
     this.ergo.data(id, 'pinned', false);
     return this.graph.getNode(id);
   };
+
   draggable = (id: string, draggable = true) => {
     this.ergo.data(id, 'draggable', draggable);
     return this.graph.getNode(id);
   };
+
   selectable = (id: string, selectable = true) => {
     this.ergo.data(id, 'selectable', selectable);
     return this.graph.getNode(id);
   };
-
-  // ============= Quick Properties =============
-  get count(): number {
-    return this.nodeCount;
-  }
-  get isEmpty(): boolean {
-    return this.graph.nodes.size === 0;
-  }
-  get nodes(): Node[] {
-    return this.graph.nodeArray();
-  }
-  get edges(): Edge[] {
-    return this.graph.edgeArray();
-  }
 
   // Watch for changes - returns unsubscribe
   watch(
@@ -650,15 +701,6 @@ export class SpaceGraph {
     const handler = (data: any) => callback(data);
     this.events.on(type, handler);
     return () => this.events.off(type, handler);
-  }
-
-  // Get stats
-  get stats() {
-    return {
-      nodes: this.graph.nodes.size,
-      edges: this.graph.edges.size,
-      plugins: this.pluginManager.pluginCount,
-    };
   }
 
   // Quick layout application
@@ -681,9 +723,6 @@ export class SpaceGraph {
     return this;
   }
 
-  // Zoom to fit all nodes (alias for fitView)
-  zoomFit = this.fitView;
-
   // Center camera on point
   center(x: number, y: number, z = 0): this {
     this.cameraControls.target.set(x, y, z);
@@ -699,27 +738,64 @@ export class SpaceGraph {
     return this;
   }
 
-  // Get camera position
-  get camera(): { position: [number, number, number]; target: [number, number, number] } {
-    return {
-      position: [
-        this.renderer.camera.position.x,
-        this.renderer.camera.position.y,
-        this.renderer.camera.position.z,
-      ],
-      target: [
-        this.cameraControls.target.x,
-        this.cameraControls.target.y,
-        this.cameraControls.target.z,
-      ],
-    };
-  }
-
   // Set camera position
   setCamera(position: [number, number, number], target?: [number, number, number]): this {
     this.renderer.camera.position.set(...position);
     if (target) this.cameraControls.target.set(...target);
     this.cameraControls.update();
     return this;
+  }
+
+  #init(): void {
+    this.poolManager = new ObjectPoolManager();
+    this.events = new EventSystem();
+    this.vision = new VisionManager(this);
+    this.pluginManager = new PluginManager(this);
+    this.renderer = new Renderer(this, this.container);
+    this.graph = new Graph(this);
+    this.ergo = new ErgonomicsAPI(this);
+    this.cameraControls = new CameraControls(
+      this.renderer.camera,
+      this.container,
+      this.options.cameraControls as Partial<import('./core/CameraControls').CameraControlsConfig>
+    );
+    this.cameraControls.sg = this;
+    const config = (this.options.input as Record<string, any>) ?? {};
+    this.input = new InputManager({ sg: this, events: this.events });
+    applyDefaultInputConfig(this.input, this, config);
+  }
+
+  #registerDefaults(): void {
+    for (const cls of DEFAULT_NODE_TYPES) {
+      this.pluginManager.registerNodeType((cls as any).typeName || cls.name, cls as any);
+    }
+    for (const cls of DEFAULT_EDGE_TYPES) {
+      this.pluginManager.registerEdgeType(
+        (cls as any).typeName || cls.name,
+        cls as import('./core/TypeRegistry').EdgeConstructor
+      );
+    }
+    for (const [cls, name] of DEFAULT_LAYOUT_PLUGINS) {
+      this.pluginManager.register(name, new cls());
+    }
+    for (const [cls, name] of DEFAULT_SYSTEM_PLUGINS) {
+      this.pluginManager.register(name, new cls());
+    }
+    this.#registerFingerings();
+  }
+
+  #registerFingerings(): void {
+    this.input.registerFingering(
+      createCameraFingering(this.cameraControls, 'orbit'),
+      FingeringPriority.CAMERA_ORBIT
+    );
+    this.input.registerFingering(
+      createCameraFingering(this.cameraControls, 'pan'),
+      FingeringPriority.CAMERA_PAN
+    );
+    this.input.registerFingering(
+      createCameraFingering(this.cameraControls, 'zoom'),
+      FingeringPriority.CAMERA_ZOOM
+    );
   }
 }

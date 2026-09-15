@@ -56,6 +56,111 @@ export class InstancedNodeRenderer {
     this.initializeGeometries();
   }
 
+  public update() {
+    for (const [, state] of this.familyStates) {
+      if (state.needsMatrixUpdate) {
+        state.mesh.instanceMatrix.needsUpdate = true;
+        state.needsMatrixUpdate = false;
+      }
+
+      if (state.needsColorUpdate && state.mesh.instanceColor) {
+        state.mesh.instanceColor.needsUpdate = true;
+        state.needsColorUpdate = false;
+      }
+    }
+  }
+
+  public getMesh(family: GeometryFamily): THREE.InstancedMesh | undefined {
+    return this.familyStates.get(family)?.mesh;
+  }
+
+  public getNextAvailableSlot(family: GeometryFamily): number {
+    const state = this.familyStates.get(family);
+    if (!state) return -1;
+
+    if (state.freeSlots.length === 0) {
+      this.expandFamily(family);
+      const expandedState = this.familyStates.get(family);
+      if (expandedState && expandedState.freeSlots.length > 0) {
+        return expandedState.freeSlots.pop()!;
+      }
+      return -1;
+    }
+
+    const slot = state.freeSlots.pop()!;
+    state.activeCount++;
+    state.mesh.count = state.activeCount;
+    return slot;
+  }
+
+  public registerNode(nodeId: string, family: GeometryFamily, slot: number) {
+    const state = this.familyStates.get(family);
+    if (!state || slot < 0 || slot >= state.slots.length) return;
+
+    state.slots[slot].nodeId = nodeId;
+    state.slots[slot].inUse = true;
+    this.nodeToSlot.set(nodeId, { family, slot });
+  }
+
+  public updateInstanceAt(
+    family: GeometryFamily,
+    slot: number,
+    position: THREE.Vector3,
+    quaternion: THREE.Quaternion,
+    scale: THREE.Vector3,
+    color: number
+  ) {
+    const state = this.familyStates.get(family);
+    if (!state || slot < 0 || slot >= state.slots.length) return;
+
+    tempMatrix.compose(position, quaternion, scale);
+    state.mesh.setMatrixAt(slot, tempMatrix);
+
+    tempColor.setHex(color);
+    state.mesh.setColorAt(slot, tempColor);
+
+    state.needsMatrixUpdate = true;
+    state.needsColorUpdate = true;
+  }
+
+  public releaseSlot(family: GeometryFamily, slot: number) {
+    const state = this.familyStates.get(family);
+    if (!state || slot < 0 || slot >= state.slots.length) return;
+
+    const nodeId = state.slots[slot].nodeId;
+    state.slots[slot].nodeId = '';
+    state.slots[slot].inUse = false;
+    state.freeSlots.push(slot);
+    state.activeCount--;
+    state.mesh.count = state.activeCount;
+    state.needsMatrixUpdate = true;
+
+    this.nodeToSlot.delete(nodeId);
+  }
+
+  public dispose() {
+    for (const state of this.familyStates.values()) {
+      this.scene.remove(state.mesh);
+      state.mesh.geometry.dispose();
+      (state.mesh.material as THREE.Material).dispose();
+      state.mesh.dispose();
+    }
+    this.familyStates.clear();
+    this.nodeToSlot.clear();
+  }
+
+  public isNodeInstanced(nodeId: string): boolean {
+    return this.nodeToSlot.has(nodeId);
+  }
+
+  public getStats(): Map<GeometryFamily, { active: number; capacity: number }> {
+    const stats = new Map<GeometryFamily, { active: number; capacity: number }>();
+    for (const [family, state] of this.familyStates) {
+      stats.set(family, { active: state.activeCount, capacity: state.slots.length });
+    }
+    return stats;
+  }
+
   private initializeGeometries() {
     const families: GeometryFamily[] = [
       GEOMETRY_FAMILIES.SPHERE,
@@ -181,110 +286,5 @@ export class InstancedNodeRenderer {
 
     this.familyStates.set(family, newState);
     this.scene.add(newMesh);
-  }
-
-  public update() {
-    for (const [, state] of this.familyStates) {
-      if (state.needsMatrixUpdate) {
-        state.mesh.instanceMatrix.needsUpdate = true;
-        state.needsMatrixUpdate = false;
-      }
-
-      if (state.needsColorUpdate && state.mesh.instanceColor) {
-        state.mesh.instanceColor.needsUpdate = true;
-        state.needsColorUpdate = false;
-      }
-    }
-  }
-
-  public getMesh(family: GeometryFamily): THREE.InstancedMesh | undefined {
-    return this.familyStates.get(family)?.mesh;
-  }
-
-  public getNextAvailableSlot(family: GeometryFamily): number {
-    const state = this.familyStates.get(family);
-    if (!state) return -1;
-
-    if (state.freeSlots.length === 0) {
-      this.expandFamily(family);
-      const expandedState = this.familyStates.get(family);
-      if (expandedState && expandedState.freeSlots.length > 0) {
-        return expandedState.freeSlots.pop()!;
-      }
-      return -1;
-    }
-
-    const slot = state.freeSlots.pop()!;
-    state.activeCount++;
-    state.mesh.count = state.activeCount;
-    return slot;
-  }
-
-  public registerNode(nodeId: string, family: GeometryFamily, slot: number) {
-    const state = this.familyStates.get(family);
-    if (!state || slot < 0 || slot >= state.slots.length) return;
-
-    state.slots[slot].nodeId = nodeId;
-    state.slots[slot].inUse = true;
-    this.nodeToSlot.set(nodeId, { family, slot });
-  }
-
-  public updateInstanceAt(
-    family: GeometryFamily,
-    slot: number,
-    position: THREE.Vector3,
-    quaternion: THREE.Quaternion,
-    scale: THREE.Vector3,
-    color: number
-  ) {
-    const state = this.familyStates.get(family);
-    if (!state || slot < 0 || slot >= state.slots.length) return;
-
-    tempMatrix.compose(position, quaternion, scale);
-    state.mesh.setMatrixAt(slot, tempMatrix);
-
-    tempColor.setHex(color);
-    state.mesh.setColorAt(slot, tempColor);
-
-    state.needsMatrixUpdate = true;
-    state.needsColorUpdate = true;
-  }
-
-  public releaseSlot(family: GeometryFamily, slot: number) {
-    const state = this.familyStates.get(family);
-    if (!state || slot < 0 || slot >= state.slots.length) return;
-
-    const nodeId = state.slots[slot].nodeId;
-    state.slots[slot].nodeId = '';
-    state.slots[slot].inUse = false;
-    state.freeSlots.push(slot);
-    state.activeCount--;
-    state.mesh.count = state.activeCount;
-    state.needsMatrixUpdate = true;
-
-    this.nodeToSlot.delete(nodeId);
-  }
-
-  public dispose() {
-    for (const state of this.familyStates.values()) {
-      this.scene.remove(state.mesh);
-      state.mesh.geometry.dispose();
-      (state.mesh.material as THREE.Material).dispose();
-      state.mesh.dispose();
-    }
-    this.familyStates.clear();
-    this.nodeToSlot.clear();
-  }
-
-  public isNodeInstanced(nodeId: string): boolean {
-    return this.nodeToSlot.has(nodeId);
-  }
-
-  public getStats(): Map<GeometryFamily, { active: number; capacity: number }> {
-    const stats = new Map<GeometryFamily, { active: number; capacity: number }>();
-    for (const [family, state] of this.familyStates) {
-      stats.set(family, { active: state.activeCount, capacity: state.slots.length });
-    }
-    return stats;
   }
 }

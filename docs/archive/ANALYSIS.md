@@ -340,11 +340,11 @@ export class DataManager {
 
 ```typescript
 export class RenderingManager {
-    private readonly renderer: THREE.WebGLRenderer;
-    private readonly cssRenderer: CSS2DRenderer;
-    private readonly css3DRenderer: CSS3DRenderer;
-    private readonly scene: THREE.Scene;
-    private readonly camera: THREE.PerspectiveCamera;
+    readonly renderer: THREE.WebGLRenderer;
+    readonly cssRenderer: CSS2DRenderer;
+    readonly css3DRenderer: CSS3DRenderer;
+    readonly scene: THREE.Scene;
+    readonly camera: THREE.PerspectiveCamera;
 
     // Performance optimization systems
     private objectPoolManager: ObjectPoolManager;
@@ -384,10 +384,10 @@ export class RenderingManager {
 
 ```typescript
 export class ObjectPool<T> {
-    private readonly createFn: () => T;
-    private readonly resetFn?: (obj: T) => void;
-    private readonly pool: T[] = [];
-    private readonly maxSize: number;
+    readonly createFn: () => T;
+    readonly resetFn?: (obj: T) => void;
+    readonly pool: T[] = [];
+    readonly maxSize: number;
 
     acquire(): T {
         if (this.pool.length > 0) {

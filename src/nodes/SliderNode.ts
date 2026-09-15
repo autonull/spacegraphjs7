@@ -16,16 +16,14 @@ export interface SliderNodeData extends WidgetNodeData {
 
 export class SliderNode extends WidgetNode {
   static readonly typeName = 'SliderNode';
-  private _value = 0.5;
   private _min = 0;
   private _max = 1;
   private _thumbSize = 20;
   private _showValue = true;
-
-  private track!: THREE.Mesh;
-  private thumb!: THREE.Mesh;
-  private trackMaterial!: THREE.MeshStandardMaterial;
-  private thumbMaterial!: THREE.MeshStandardMaterial;
+  readonly track!: THREE.Mesh;
+  readonly thumb!: THREE.Mesh;
+  readonly trackMaterial!: THREE.MeshStandardMaterial;
+  readonly thumbMaterial!: THREE.MeshStandardMaterial;
   private _onChange?: (value: number) => void;
 
   constructor(sg: SpaceGraph, spec: NodeSpec) {
@@ -60,48 +58,7 @@ export class SliderNode extends WidgetNode {
     this.baseMaterial.visible = false;
   }
 
-  protected getBaseColor(_data: WidgetNodeData | undefined): number {
-    return 0x333333;
-  }
-
-  protected getHoverColor(): number {
-    return 0x333333;
-  }
-
-  protected getPressedColor(): number {
-    return 0x333333;
-  }
-
-  protected createLabelContent(ctx: CanvasRenderingContext2D, _text: string): void {
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 20px Arial';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(this.formatValue(this.value), this._width / 2, this._height / 2);
-  }
-
-  protected getLabelText(): string {
-    return this._showValue ? this.formatValue(this.value) : '';
-  }
-
-  protected formatValue(v: number): string {
-    if (Number.isInteger(this._min) && Number.isInteger(this._max)) {
-      return Math.round(v).toString();
-    }
-    return v.toFixed(2);
-  }
-
-  protected updateThumbPosition(): void {
-    const range = this._width - this._thumbSize;
-    const x = -range / 2 + this._value * range;
-    this.thumb.position.x = x;
-  }
-
-  protected valueFromX(x: number): number {
-    const range = this._width - this._thumbSize;
-    const normalized = (x + this._width / 2 - this._thumbSize / 2) / range;
-    return Math.max(0, Math.min(1, normalized));
-  }
+  private _value = 0.5;
 
   get value(): number {
     return this._min + this._value * (this._max - this._min);
@@ -190,5 +147,48 @@ export class SliderNode extends WidgetNode {
     this.track.geometry.dispose();
     this.thumb.geometry.dispose();
     super.dispose();
+  }
+
+  protected getBaseColor(_data: WidgetNodeData | undefined): number {
+    return 0x333333;
+  }
+
+  protected getHoverColor(): number {
+    return 0x333333;
+  }
+
+  protected getPressedColor(): number {
+    return 0x333333;
+  }
+
+  protected createLabelContent(ctx: CanvasRenderingContext2D, _text: string): void {
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 20px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(this.formatValue(this.value), this._width / 2, this._height / 2);
+  }
+
+  protected getLabelText(): string {
+    return this._showValue ? this.formatValue(this.value) : '';
+  }
+
+  protected formatValue(v: number): string {
+    if (Number.isInteger(this._min) && Number.isInteger(this._max)) {
+      return Math.round(v).toString();
+    }
+    return v.toFixed(2);
+  }
+
+  protected updateThumbPosition(): void {
+    const range = this._width - this._thumbSize;
+    const x = -range / 2 + this._value * range;
+    this.thumb.position.x = x;
+  }
+
+  protected valueFromX(x: number): number {
+    const range = this._width - this._thumbSize;
+    const normalized = (x + this._width / 2 - this._thumbSize / 2) / range;
+    return Math.max(0, Math.min(1, normalized));
   }
 }

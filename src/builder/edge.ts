@@ -12,42 +12,52 @@ export class EdgeBuilder extends BaseBuilder<EdgeSpec> {
     this.mergeData({ label });
     return this;
   }
+
   thickness(thickness: number): this {
     this.mergeData({ thickness });
     return this;
   }
+
   dashed(dashed = true): this {
     this.mergeData({ dashed });
     return this;
   }
+
   arrowhead(arrowhead: boolean | 'source' | 'target' | 'both' = true): this {
     this.mergeData({ arrowhead });
     return this;
   }
+
   color(color: number | string): this {
     this.mergeData({ color });
     return this;
   }
+
   type(type: string): this {
     this.spec.type = type;
     return this;
   }
+
   dashScale(scale: number): this {
     this.mergeData({ dashScale: scale });
     return this;
   }
+
   gapSize(size: number): this {
     this.mergeData({ gapSize: size });
     return this;
   }
+
   arrowSize(size: number): this {
     this.mergeData({ arrowheadSize: size });
     return this;
   }
+
   noArrow(): this {
     this.mergeData({ arrowhead: false });
     return this;
   }
+
   bothArrows(): this {
     this.mergeData({ arrowhead: 'both' });
     return this;
@@ -69,22 +79,27 @@ export class EdgeBuilder extends BaseBuilder<EdgeSpec> {
     this.spec.type = 'CurvedEdge';
     return this;
   }
+
   flow(): this {
     this.spec.type = 'FlowEdge';
     return this;
   }
+
   dotted(): this {
     this.mergeData({ dashed: true });
     return this;
   }
+
   animated(): this {
     this.spec.type = 'AnimatedEdge';
     return this;
   }
+
   bundled(): this {
     this.spec.type = 'BundledEdge';
     return this;
   }
+
   labeled(): this {
     this.spec.type = 'LabeledEdge';
     return this;

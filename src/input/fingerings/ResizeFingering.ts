@@ -4,14 +4,13 @@ import type { Finger } from '../Fingering';
 import { BaseFingering } from './BaseFingering';
 
 export class ResizeFingering extends BaseFingering {
+  private static MIN_SIZE = 40;
+  private static MAX_SIZE = 2000;
   private resizedNode: Node | null = null;
   private startPos = { x: 0, y: 0 };
   private startSize = { width: 0, height: 0 };
   private screenScaleX = 1;
   private screenScaleY = 1;
-
-  private static MIN_SIZE = 40;
-  private static MAX_SIZE = 2000;
 
   start(finger: Finger): boolean {
     if (finger.buttons !== 1) return false;

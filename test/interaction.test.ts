@@ -1,19 +1,24 @@
 // SpaceGraphJS - Interaction Unit Tests
 // Tests for event consumption, zoom stack, keyboard controls, drag, activity, etc.
 
+import { CameraControls } from 'spacegraphjs/core';
+import {
+  createParentTransform,
+  type Finger,
+  Fingering,
+  FingerManager,
+  type InputEvent,
+  InputManager,
+} from 'spacegraphjs/input';
+import { LayoutContainer } from 'spacegraphjs/plugins';
 import * as THREE from 'three';
 import { describe, expect, it, vi } from 'vitest';
-import { CameraControls } from '../src/core/CameraControls';
 import { type HitResult, type Rect, Surface } from '../src/core/Surface';
 import { Edge } from '../src/edges/Edge';
 import { Wire } from '../src/edges/Wire';
-import { type Finger, Fingering, FingerManager } from '../src/input/Fingering';
-import { type InputEvent, InputManager } from '../src/input/InputManager';
-import { createParentTransform } from '../src/input/SurfaceTransform';
 import { Node } from '../src/nodes/Node';
 import { DragHandler } from '../src/plugins/interaction/DragHandler';
 import { InteractionRaycaster } from '../src/plugins/interaction/RaycasterHelper';
-import { LayoutContainer } from '../src/plugins/LayoutContainer';
 
 // Mock SpaceGraph for tests
 function createMockSpaceGraph() {
@@ -48,6 +53,7 @@ function createMockSpaceGraph() {
 // Concrete test node
 class TestNode extends Node {
   readonly object = new THREE.Object3D();
+
   constructor() {
     super({ id: 'test', type: 'TestNode' } as any);
   }
@@ -58,11 +64,15 @@ class TestSurface extends Surface {
   readonly id = 'test-surface';
   readonly type = 'TestSurface';
   bounds: Rect = { x: 0, y: 0, width: 100, height: 100 };
+
   hitTest(_ray: THREE.Raycaster): HitResult | null {
     return null;
   }
+
   start(): void {}
+
   stop(): void {}
+
   delete(): void {}
 }
 
@@ -370,14 +380,17 @@ describe('FingerManager', () => {
       started = false;
       updated = false;
       stopped = false;
+
       start(_finger: Finger): boolean {
         this.started = true;
         return true;
       }
+
       update(_finger: Finger): boolean {
         this.updated = true;
         return true;
       }
+
       stop(_finger: Finger): void {
         this.stopped = true;
       }
@@ -402,12 +415,15 @@ describe('FingerManager', () => {
 
     class TestFingering extends Fingering {
       stopped = false;
+
       start(_f: Finger) {
         return true;
       }
+
       update(_f: Finger) {
         return true;
       }
+
       stop(_f: Finger) {
         this.stopped = true;
       }
@@ -437,10 +453,13 @@ describe('FingerManager', () => {
       start(_f: Finger) {
         return true;
       }
+
       update(_f: Finger) {
         return true;
       }
+
       stop(_f: Finger) {}
+
       defer(_f: Finger): boolean {
         return false;
       }
@@ -450,9 +469,11 @@ describe('FingerManager', () => {
       start(_f: Finger) {
         return true;
       }
+
       update(_f: Finger) {
         return true;
       }
+
       stop(_f: Finger) {}
     }
 
@@ -486,6 +507,7 @@ describe('LayoutContainer', () => {
     const mockEvents = { emit: vi.fn() };
 
     let layoutCalled = false;
+
     class TestLayout extends LayoutContainer {
       protected doLayout(_dt: number): void {
         layoutCalled = true;
@@ -509,6 +531,7 @@ describe('LayoutContainer', () => {
     const mockEvents = { emit: vi.fn() };
 
     let layoutCalled = false;
+
     class TestLayout extends LayoutContainer {
       protected doLayout(_dt: number): void {
         layoutCalled = true;
@@ -605,6 +628,7 @@ describe('Wire', () => {
 
     const portSource = new (class extends TestNode {
       private _connections: Wire[] = [];
+
       connect(t: any) {
         const w = new Wire(this as any, t);
         this._connections.push(w);
@@ -613,13 +637,16 @@ describe('Wire', () => {
     })();
     const portTarget = new (class extends TestNode {
       private _onReceive: ((w: Wire, d: any) => void) | null = null;
+
       listen(cb: (w: Wire, d: any) => void) {
         this._onReceive = cb;
         return this;
       }
+
       getReceiveHandler() {
         return this._onReceive;
       }
+
       disconnect(_w: Wire) {}
     })();
 

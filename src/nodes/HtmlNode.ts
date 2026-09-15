@@ -7,11 +7,10 @@ import { createQuickControls, type QuickControlButton } from './QuickControls';
 
 export class HtmlNode extends BaseContentNode {
   static typeName = 'HtmlNode';
-  public readonly isHtmlNode = true;
   public static MIN_SIZE = { width: 80, height: 40 };
   public static DEFAULT_SIZE = { width: 200, height: 100 };
   public static CONTENT_SCALE_RANGE = { min: 0.3, max: 3.0 };
-
+  public readonly isHtmlNode = true;
   public size = { width: 160, height: 70 };
   public billboard = false;
   public labelLod: LabelLodLevel[] = [];
@@ -76,6 +75,239 @@ export class HtmlNode extends BaseContentNode {
     if (data.labelLod) this.labelLod = data.labelLod as LabelLodLevel[];
 
     this._applyNodeBgColor(useRawHtml ? 'transparent' : bgColor);
+  }
+
+  updateSpec(updates: Partial<NodeSpec>): this {
+    super.updateSpec(updates);
+
+    if (updates.data) {
+      const data = updates.data as SpaceGraphNodeData;
+      const handlers: Record<string, () => void> = {
+        color: () => {
+          const color =
+            typeof data.color === 'number'
+              ? '#' + data.color.toString(16).padStart(6, '0')
+              : (data.color as string);
+          this.domElement.style.backgroundColor = color;
+          this._applyNodeBgColor(color);
+        },
+        backgroundColor: () => {
+          const color =
+            typeof data.backgroundColor === 'number'
+              ? '#' + data.backgroundColor.toString(16).padStart(6, '0')
+              : (data.backgroundColor as string);
+          this.domElement.style.backgroundColor = color;
+          this._applyNodeBgColor(color);
+        },
+        className: () => {
+          this.domElement.className = `spacegraph-html-node ${data.className as string}`;
+        },
+        pointerEvents: () => {
+          this.domElement.style.pointerEvents = data.pointerEvents as string;
+        },
+        width: () => this._handleSizeUpdate(data),
+        height: () => this._handleSizeUpdate(data),
+        contentScale: () => {
+          this.setContentScale(data.contentScale as number);
+        },
+        billboard: () => {
+          this.billboard = data.billboard as boolean;
+        },
+        labelLod: () => {
+          this.labelLod = data.labelLod as LabelLodLevel[];
+        },
+        html: () => {
+          if (this.contentWrapper) this.contentWrapper.innerHTML = data.html as string;
+        },
+        content: () => {
+          if (this.contentWrapper && !this.contentWrapper.isContentEditable) {
+            this.contentWrapper.textContent = data.content as string;
+          }
+        },
+      };
+
+      for (const key of Object.keys(data)) {
+        handlers[key]?.();
+      }
+    }
+
+    if (
+      updates.label !== undefined &&
+      this.contentWrapper &&
+      !this.contentWrapper.isContentEditable
+    ) {
+      this.contentWrapper.textContent = updates.label;
+    }
+
+    return this;
+  }
+
+  setSize(width: number, height: number, scaleContent: boolean | number = true): this {
+    const oldSize = { ...this.size };
+    const oldArea = oldSize.width * oldSize.height;
+
+    this.size.width = Math.max(HtmlNode.MIN_SIZE.width, width);
+    this.size.height = Math.max(HtmlNode.MIN_SIZE.height, height);
+
+    this.domElement.style.width = `${this.size.width}px`;
+    this.domElement.style.height = `${this.size.height}px`;
+
+    this.updateBackingGeometry(this.size.width, this.size.height);
+
+    if (scaleContent === true && oldArea > 0) {
+      const scaleFactor = Math.sqrt((this.size.width * this.size.height) / oldArea);
+      this.setContentScale(((this.data?.contentScale as number) ?? 1.0) * scaleFactor);
+    }
+
+    this.data = { ...this.data, width: this.size.width, height: this.size.height };
+    return this;
+  }
+
+  setContentScale(scale: number): void {
+    const clampedScale = clamp(
+      scale,
+      HtmlNode.CONTENT_SCALE_RANGE.min,
+      HtmlNode.CONTENT_SCALE_RANGE.max
+    );
+    this.data = { ...this.data, contentScale: clampedScale };
+
+    if (this.contentWrapper) {
+      this.contentWrapper.style.transform = `scale(${clampedScale})`;
+    }
+
+    this.sg?.events.emit('node:dataChanged', {
+      node: this,
+      property: 'contentScale',
+      value: clampedScale,
+    });
+  }
+
+  adjustContentScale(deltaFactor: number): void {
+    this.setContentScale(((this.data?.contentScale as number) ?? 1.0) * deltaFactor);
+  }
+
+  adjustNodeSize(factor: number): void {
+    this.setSize(this.size.width * factor, this.size.height * factor, false);
+  }
+
+  startResize(): void {
+    this.domElement?.classList.add('resizing');
+    this.data.pinned = true;
+    this.sg?.events.emit('node:resizestart', { node: this });
+  }
+
+  resize(newWidth: number, newHeight: number): void {
+    this.setSize(newWidth, newHeight);
+    this.sg?.events.emit('node:resized', { node: this, size: { ...this.size } });
+  }
+
+  endResize(): void {
+    this.domElement?.classList.remove('resizing');
+    this.data.pinned = false;
+    this.sg?.events.emit('node:resizeend', { node: this, finalSize: { ...this.size } });
+  }
+
+  startDrag(): void {
+    this.domElement?.classList.add('dragging');
+  }
+
+  endDrag(): void {
+    this.domElement?.classList.remove('dragging');
+  }
+
+  setSelectedStyle(selected: boolean): void {
+    this.domElement?.classList.toggle('selected', selected);
+  }
+
+  focus(): void {
+    super.focus();
+    this.domElement?.classList.add('focused');
+  }
+
+  blur(): void {
+    super.blur();
+    this.domElement?.classList.remove('focused');
+  }
+
+  updatePosition(x: number, y: number, z: number): this {
+    super.updatePosition(x, y, z);
+
+    if (this.billboard && this.sg?.renderer?.camera) {
+      this.cssObject.quaternion.copy(this.sg.renderer.camera.quaternion);
+    }
+
+    return this;
+  }
+
+  getBoundingSphereRadius(): number {
+    return Math.sqrt(this.size.width ** 2 + this.size.height ** 2) / 2;
+  }
+
+  getResizeHandle(): HTMLElement | null {
+    return this.resizeHandle;
+  }
+
+  setBackgroundColor(color: string): void {
+    this.data = { ...this.data, backgroundColor: color };
+    this.domElement.style.backgroundColor = color;
+    this._applyNodeBgColor(color);
+    this.sg?.events.emit('node:dataChanged', {
+      node: this,
+      property: 'backgroundColor',
+      value: color,
+    });
+  }
+
+  updateLod(_distance: number): void {
+    if (!this.labelLod.length) {
+      if (this.contentWrapper) {
+        const baseScale = (this.data?.contentScale as number) ?? 1.0;
+        this.contentWrapper.style.transform = `scale(${baseScale})`;
+      }
+      this.domElement.style.visibility = '';
+      this.domElement.style.display = 'flex';
+      return;
+    }
+
+    const sortedLodLevels = [...this.labelLod].sort(
+      (a, b) => (b.distance ?? 0) - (a.distance ?? 0)
+    );
+    const camera = this.sg?.renderer?.camera;
+    if (!camera) return;
+
+    const distanceToCamera = this.position.distanceTo(camera.position);
+
+    let ruleApplied = false;
+    for (const level of sortedLodLevels) {
+      if (distanceToCamera >= (level.distance ?? 0)) {
+        this.domElement.style.visibility = level.style?.includes('visibility:hidden')
+          ? 'hidden'
+          : '';
+        this.domElement.style.display = level.style?.includes('display:none') ? 'none' : 'flex';
+        if (this.contentWrapper) {
+          const baseScale = (this.data?.contentScale as number) ?? 1.0;
+          this.contentWrapper.style.transform = `scale(${baseScale * (level.scale ?? 1.0)})`;
+        }
+        ruleApplied = true;
+        break;
+      }
+    }
+
+    if (!ruleApplied) {
+      this.domElement.style.visibility = '';
+      this.domElement.style.display = 'flex';
+      if (this.contentWrapper) {
+        const baseScale = (this.data?.contentScale as number) ?? 1.0;
+        this.contentWrapper.style.transform = `scale(${baseScale})`;
+      }
+    }
+  }
+
+  dispose(): void {
+    this.resizeHandle?.remove();
+    this.controlsWrapper?.remove();
+    this.contentWrapper?.remove();
+    super.dispose();
   }
 
   private _createInnerContent(spec: NodeSpec): void {
@@ -255,71 +487,6 @@ export class HtmlNode extends BaseContentNode {
     });
   }
 
-  updateSpec(updates: Partial<NodeSpec>): this {
-    super.updateSpec(updates);
-
-    if (updates.data) {
-      const data = updates.data as SpaceGraphNodeData;
-      const handlers: Record<string, () => void> = {
-        color: () => {
-          const color =
-            typeof data.color === 'number'
-              ? '#' + data.color.toString(16).padStart(6, '0')
-              : (data.color as string);
-          this.domElement.style.backgroundColor = color;
-          this._applyNodeBgColor(color);
-        },
-        backgroundColor: () => {
-          const color =
-            typeof data.backgroundColor === 'number'
-              ? '#' + data.backgroundColor.toString(16).padStart(6, '0')
-              : (data.backgroundColor as string);
-          this.domElement.style.backgroundColor = color;
-          this._applyNodeBgColor(color);
-        },
-        className: () => {
-          this.domElement.className = `spacegraph-html-node ${data.className as string}`;
-        },
-        pointerEvents: () => {
-          this.domElement.style.pointerEvents = data.pointerEvents as string;
-        },
-        width: () => this._handleSizeUpdate(data),
-        height: () => this._handleSizeUpdate(data),
-        contentScale: () => {
-          this.setContentScale(data.contentScale as number);
-        },
-        billboard: () => {
-          this.billboard = data.billboard as boolean;
-        },
-        labelLod: () => {
-          this.labelLod = data.labelLod as LabelLodLevel[];
-        },
-        html: () => {
-          if (this.contentWrapper) this.contentWrapper.innerHTML = data.html as string;
-        },
-        content: () => {
-          if (this.contentWrapper && !this.contentWrapper.isContentEditable) {
-            this.contentWrapper.textContent = data.content as string;
-          }
-        },
-      };
-
-      for (const key of Object.keys(data)) {
-        handlers[key]?.();
-      }
-    }
-
-    if (
-      updates.label !== undefined &&
-      this.contentWrapper &&
-      !this.contentWrapper.isContentEditable
-    ) {
-      this.contentWrapper.textContent = updates.label;
-    }
-
-    return this;
-  }
-
   private _handleSizeUpdate(data: SpaceGraphNodeData): void {
     const { DEFAULT_SIZE } = HtmlNode;
     const w = (data.width as number) ?? (this.data.width as number) ?? DEFAULT_SIZE.width;
@@ -327,175 +494,7 @@ export class HtmlNode extends BaseContentNode {
     this.setSize(w, h);
   }
 
-  setSize(width: number, height: number, scaleContent: boolean | number = true): this {
-    const oldSize = { ...this.size };
-    const oldArea = oldSize.width * oldSize.height;
-
-    this.size.width = Math.max(HtmlNode.MIN_SIZE.width, width);
-    this.size.height = Math.max(HtmlNode.MIN_SIZE.height, height);
-
-    this.domElement.style.width = `${this.size.width}px`;
-    this.domElement.style.height = `${this.size.height}px`;
-
-    this.updateBackingGeometry(this.size.width, this.size.height);
-
-    if (scaleContent === true && oldArea > 0) {
-      const scaleFactor = Math.sqrt((this.size.width * this.size.height) / oldArea);
-      this.setContentScale(((this.data?.contentScale as number) ?? 1.0) * scaleFactor);
-    }
-
-    this.data = { ...this.data, width: this.size.width, height: this.size.height };
-    return this;
-  }
-
-  setContentScale(scale: number): void {
-    const clampedScale = clamp(
-      scale,
-      HtmlNode.CONTENT_SCALE_RANGE.min,
-      HtmlNode.CONTENT_SCALE_RANGE.max
-    );
-    this.data = { ...this.data, contentScale: clampedScale };
-
-    if (this.contentWrapper) {
-      this.contentWrapper.style.transform = `scale(${clampedScale})`;
-    }
-
-    this.sg?.events.emit('node:dataChanged', {
-      node: this,
-      property: 'contentScale',
-      value: clampedScale,
-    });
-  }
-
-  adjustContentScale(deltaFactor: number): void {
-    this.setContentScale(((this.data?.contentScale as number) ?? 1.0) * deltaFactor);
-  }
-
-  adjustNodeSize(factor: number): void {
-    this.setSize(this.size.width * factor, this.size.height * factor, false);
-  }
-
-  startResize(): void {
-    this.domElement?.classList.add('resizing');
-    this.data.pinned = true;
-    this.sg?.events.emit('node:resizestart', { node: this });
-  }
-
-  resize(newWidth: number, newHeight: number): void {
-    this.setSize(newWidth, newHeight);
-    this.sg?.events.emit('node:resized', { node: this, size: { ...this.size } });
-  }
-
-  endResize(): void {
-    this.domElement?.classList.remove('resizing');
-    this.data.pinned = false;
-    this.sg?.events.emit('node:resizeend', { node: this, finalSize: { ...this.size } });
-  }
-
-  startDrag(): void {
-    this.domElement?.classList.add('dragging');
-  }
-
-  endDrag(): void {
-    this.domElement?.classList.remove('dragging');
-  }
-
-  setSelectedStyle(selected: boolean): void {
-    this.domElement?.classList.toggle('selected', selected);
-  }
-
-  focus(): void {
-    super.focus();
-    this.domElement?.classList.add('focused');
-  }
-
-  blur(): void {
-    super.blur();
-    this.domElement?.classList.remove('focused');
-  }
-
-  updatePosition(x: number, y: number, z: number): this {
-    super.updatePosition(x, y, z);
-
-    if (this.billboard && this.sg?.renderer?.camera) {
-      this.cssObject.quaternion.copy(this.sg.renderer.camera.quaternion);
-    }
-
-    return this;
-  }
-
-  getBoundingSphereRadius(): number {
-    return Math.sqrt(this.size.width ** 2 + this.size.height ** 2) / 2;
-  }
-
-  getResizeHandle(): HTMLElement | null {
-    return this.resizeHandle;
-  }
-
   private _applyNodeBgColor(color: string): void {
     this.domElement.style.setProperty('--node-bg', color);
-  }
-
-  setBackgroundColor(color: string): void {
-    this.data = { ...this.data, backgroundColor: color };
-    this.domElement.style.backgroundColor = color;
-    this._applyNodeBgColor(color);
-    this.sg?.events.emit('node:dataChanged', {
-      node: this,
-      property: 'backgroundColor',
-      value: color,
-    });
-  }
-
-  updateLod(_distance: number): void {
-    if (!this.labelLod.length) {
-      if (this.contentWrapper) {
-        const baseScale = (this.data?.contentScale as number) ?? 1.0;
-        this.contentWrapper.style.transform = `scale(${baseScale})`;
-      }
-      this.domElement.style.visibility = '';
-      this.domElement.style.display = 'flex';
-      return;
-    }
-
-    const sortedLodLevels = [...this.labelLod].sort(
-      (a, b) => (b.distance ?? 0) - (a.distance ?? 0)
-    );
-    const camera = this.sg?.renderer?.camera;
-    if (!camera) return;
-
-    const distanceToCamera = this.position.distanceTo(camera.position);
-
-    let ruleApplied = false;
-    for (const level of sortedLodLevels) {
-      if (distanceToCamera >= (level.distance ?? 0)) {
-        this.domElement.style.visibility = level.style?.includes('visibility:hidden')
-          ? 'hidden'
-          : '';
-        this.domElement.style.display = level.style?.includes('display:none') ? 'none' : 'flex';
-        if (this.contentWrapper) {
-          const baseScale = (this.data?.contentScale as number) ?? 1.0;
-          this.contentWrapper.style.transform = `scale(${baseScale * (level.scale ?? 1.0)})`;
-        }
-        ruleApplied = true;
-        break;
-      }
-    }
-
-    if (!ruleApplied) {
-      this.domElement.style.visibility = '';
-      this.domElement.style.display = 'flex';
-      if (this.contentWrapper) {
-        const baseScale = (this.data?.contentScale as number) ?? 1.0;
-        this.contentWrapper.style.transform = `scale(${baseScale})`;
-      }
-    }
-  }
-
-  dispose(): void {
-    this.resizeHandle?.remove();
-    this.controlsWrapper?.remove();
-    this.contentWrapper?.remove();
-    super.dispose();
   }
 }

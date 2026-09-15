@@ -1,8 +1,8 @@
+import { DOMUtils } from 'spacegraphjs/utils';
 import type * as THREE from 'three';
 import type { Edge } from '../../edges/Edge';
 import type { Node } from '../../nodes/Node';
 import type { SpaceGraph } from '../../SpaceGraph';
-import { DOMUtils } from '../../utils/DOMUtils';
 import { applyControlStateStyles } from './ControlStateBorder';
 
 export class SelectionManager {
@@ -11,26 +11,8 @@ export class SelectionManager {
   private selectionBoxEl: HTMLElement | null = null;
   private isBoxSelecting = false;
 
-  constructor(private readonly sg: SpaceGraph) {
+  constructor(readonly sg: SpaceGraph) {
     this.createSelectionBoxElement();
-  }
-
-  private createSelectionBoxElement(): void {
-    if (typeof document === 'undefined') return;
-    this.selectionBoxEl = DOMUtils.createElement('div');
-    Object.assign(this.selectionBoxEl.style, {
-      position: 'absolute',
-      border: '1px solid rgba(139, 92, 246, 0.8)',
-      backgroundColor: 'rgba(139, 92, 246, 0.2)',
-      pointerEvents: 'none',
-      display: 'none',
-      zIndex: '9999',
-    });
-    const domElement = this.sg.renderer.renderer.domElement;
-    if (domElement.parentElement) {
-      domElement.parentElement.style.position = 'relative';
-      domElement.parentElement.appendChild(this.selectionBoxEl);
-    }
   }
 
   startBoxSelection(startX: number, startY: number): void {
@@ -64,6 +46,73 @@ export class SelectionManager {
     this.updateSelectionInBox(left, top, width, height);
   }
 
+  endBoxSelection(): void {
+    this.isBoxSelecting = false;
+    if (this.selectionBoxEl) this.selectionBoxEl.style.display = 'none';
+  }
+
+  addNode(node: Node): void {
+    this.selectedNodes.add(node);
+    node.controlState = 'selected';
+    this.updateNodeVisual(node, 'selected');
+    this.emitSelectionChange();
+  }
+
+  removeNode(node: Node): void {
+    this.selectedNodes.delete(node);
+    node.controlState = 'normal';
+    this.updateNodeVisual(node, 'normal');
+    this.emitSelectionChange();
+  }
+
+  clear(): void {
+    for (const n of this.selectedNodes) {
+      n.controlState = 'normal';
+      this.updateNodeVisual(n, 'normal');
+    }
+    this.selectedNodes.clear();
+    this.selectedEdges.clear();
+    this.emitSelectionChange();
+  }
+
+  getSelectedNodes(): Set<Node> {
+    return this.selectedNodes;
+  }
+
+  getSelectedEdges(): Set<Edge> {
+    return this.selectedEdges;
+  }
+
+  isBoxSelectingActive(): boolean {
+    return this.isBoxSelecting;
+  }
+
+  getSelectionBoxElement(): HTMLElement | null {
+    return this.selectionBoxEl;
+  }
+
+  dispose(): void {
+    this.selectionBoxEl?.parentElement?.removeChild(this.selectionBoxEl);
+  }
+
+  private createSelectionBoxElement(): void {
+    if (typeof document === 'undefined') return;
+    this.selectionBoxEl = DOMUtils.createElement('div');
+    Object.assign(this.selectionBoxEl.style, {
+      position: 'absolute',
+      border: '1px solid rgba(139, 92, 246, 0.8)',
+      backgroundColor: 'rgba(139, 92, 246, 0.2)',
+      pointerEvents: 'none',
+      display: 'none',
+      zIndex: '9999',
+    });
+    const domElement = this.sg.renderer.renderer.domElement;
+    if (domElement.parentElement) {
+      domElement.parentElement.style.position = 'relative';
+      domElement.parentElement.appendChild(this.selectionBoxEl);
+    }
+  }
+
   private updateSelectionInBox(left: number, top: number, width: number, height: number): void {
     const box = { left, top, right: left + width, bottom: top + height };
     for (const node of this.sg.graph.nodes.values()) {
@@ -83,34 +132,6 @@ export class SelectionManager {
     return { x: (vector.x * 0.5 + 0.5) * width, y: (-vector.y * 0.5 + 0.5) * height };
   }
 
-  endBoxSelection(): void {
-    this.isBoxSelecting = false;
-    if (this.selectionBoxEl) this.selectionBoxEl.style.display = 'none';
-  }
-
-  addNode(node: Node): void {
-    this.selectedNodes.add(node);
-    node.controlState = 'selected';
-    this.updateNodeVisual(node, 'selected');
-    this.emitSelectionChange();
-  }
-  removeNode(node: Node): void {
-    this.selectedNodes.delete(node);
-    node.controlState = 'normal';
-    this.updateNodeVisual(node, 'normal');
-    this.emitSelectionChange();
-  }
-
-  clear(): void {
-    for (const n of this.selectedNodes) {
-      n.controlState = 'normal';
-      this.updateNodeVisual(n, 'normal');
-    }
-    this.selectedNodes.clear();
-    this.selectedEdges.clear();
-    this.emitSelectionChange();
-  }
-
   private updateNodeVisual(node: Node, state: 'selected' | 'normal'): void {
     const el = node.object?.userData?.domElement;
     if (el) applyControlStateStyles(el as HTMLElement, state);
@@ -122,21 +143,5 @@ export class SelectionManager {
       edges: [...this.selectedEdges].map((e) => e.id),
       timestamp: Date.now(),
     });
-  }
-
-  getSelectedNodes(): Set<Node> {
-    return this.selectedNodes;
-  }
-  getSelectedEdges(): Set<Edge> {
-    return this.selectedEdges;
-  }
-  isBoxSelectingActive(): boolean {
-    return this.isBoxSelecting;
-  }
-  getSelectionBoxElement(): HTMLElement | null {
-    return this.selectionBoxEl;
-  }
-  dispose(): void {
-    this.selectionBoxEl?.parentElement?.removeChild(this.selectionBoxEl);
   }
 }

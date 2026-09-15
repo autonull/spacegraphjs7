@@ -23,6 +23,27 @@ export class MeterNode extends (HtmlNode as any) {
     this._setupMeter();
   }
 
+  setValue(value: number): void {
+    this.value = value;
+    if (this.valueDisplay) {
+      this.valueDisplay.textContent = String(value);
+      this.valueDisplay.style.color = this._getThresholdColor(value);
+    }
+
+    this.history.push(value);
+    if (this.history.length > this.maxHistory) {
+      this.history.shift();
+    }
+    this._drawSparkline();
+
+    this.data = { ...this.data, value };
+    this.sg?.events.emit('node:dataChanged', { node: this, property: 'value', value });
+  }
+
+  getValue(): number {
+    return this.value;
+  }
+
   private _setupMeter(): void {
     const data = this.data as SpaceGraphNodeData;
     this.value = (data?.value as number) ?? 0;
@@ -57,23 +78,6 @@ export class MeterNode extends (HtmlNode as any) {
     return '#4ecdc4';
   }
 
-  setValue(value: number): void {
-    this.value = value;
-    if (this.valueDisplay) {
-      this.valueDisplay.textContent = String(value);
-      this.valueDisplay.style.color = this._getThresholdColor(value);
-    }
-
-    this.history.push(value);
-    if (this.history.length > this.maxHistory) {
-      this.history.shift();
-    }
-    this._drawSparkline();
-
-    this.data = { ...this.data, value };
-    this.sg?.events.emit('node:dataChanged', { node: this, property: 'value', value });
-  }
-
   private _drawSparkline(): void {
     if (this.history.length < 2 || !this.sparklineCanvas) return;
     const ctx = this.sparklineCtx;
@@ -94,9 +98,5 @@ export class MeterNode extends (HtmlNode as any) {
     ctx.strokeStyle = '#4ecdc4';
     ctx.lineWidth = 2;
     ctx.stroke();
-  }
-
-  getValue(): number {
-    return this.value;
   }
 }

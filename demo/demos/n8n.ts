@@ -1,6 +1,5 @@
-import { N8nExecutionMonitorPlugin } from '../../packages/n8n-bridge/src/N8nExecutionMonitorPlugin';
-import { N8nWorkflowPlugin } from '../../packages/n8n-bridge/src/N8nWorkflowPlugin';
-import { SpaceGraph } from '../framework';
+import { N8nExecutionMonitorPlugin, N8nWorkflowPlugin } from '../../packages/n8n-bridge/src';
+import { SpaceGraph } from '../../src';
 
 export default async function n8nDemo(): Promise<SpaceGraph> {
   const nodes = [

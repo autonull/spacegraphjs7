@@ -7,18 +7,6 @@ export class RadialLayout extends BaseLayout {
   readonly name = 'Radial Layout';
   readonly version = '1.0.0';
 
-  protected defaultConfig(): LayoutConfig {
-    return {
-      rootId: '',
-      baseRadius: 200,
-      radiusStep: 180,
-      z: 0,
-      startAngle: 0,
-      animate: true,
-      duration: 1.0,
-    };
-  }
-
   async apply(options?: LayoutOptions): Promise<void> {
     const {
       rootId = this.config.rootId as string,
@@ -56,6 +44,7 @@ export class RadialLayout extends BaseLayout {
       minAngle: number;
       maxAngle: number;
     }
+
     const queue: QueueItem[] = [
       {
         id: resolvedRootId,
@@ -108,5 +97,17 @@ export class RadialLayout extends BaseLayout {
     }
 
     this.updateEdges();
+  }
+
+  protected defaultConfig(): LayoutConfig {
+    return {
+      rootId: '',
+      baseRadius: 200,
+      radiusStep: 180,
+      z: 0,
+      startAngle: 0,
+      animate: true,
+      duration: 1.0,
+    };
   }
 }

@@ -1,9 +1,9 @@
 // SpaceGraphJS - Ergonomics Analyzer
 // Fitts's law analysis for interactive targets
 
+import type { HeuristicsConfig } from 'spacegraphjs/vision';
 import * as THREE from 'three';
 import { clamp } from '../../utils/math';
-import type { HeuristicsConfig } from '../strategies/HeuristicsStrategy';
 import type { ErgonomicsResult, TargetIssue, VisionContext } from '../types';
 
 /**

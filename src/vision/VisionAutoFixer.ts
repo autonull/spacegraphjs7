@@ -9,7 +9,7 @@ export interface VisionCategory {
 }
 
 export class VisionAutoFixer {
-  private readonly sg: SpaceGraph;
+  readonly sg: SpaceGraph;
 
   constructor(sg: SpaceGraph) {
     this.sg = sg;

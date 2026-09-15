@@ -84,10 +84,12 @@ if (typeof (globalThis as any).OffscreenCanvas === 'undefined') {
   (globalThis as any).OffscreenCanvas = class {
     width: number;
     height: number;
+
     constructor(w = 0, h = 0) {
       this.width = w;
       this.height = h;
     }
+
     getContext(type: string) {
       if (hasNodeCanvas && createCanvas)
         return createCanvas(this.width || 1, this.height || 1).getContext(type);

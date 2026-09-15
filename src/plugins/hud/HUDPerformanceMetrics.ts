@@ -1,11 +1,11 @@
+import { DOMUtils } from 'spacegraphjs/utils';
 import type { SpaceGraph } from '../../SpaceGraph';
-import { DOMUtils } from '../../utils/DOMUtils';
 import { HUDDOMFactory } from './HUDDOMFactory';
 import { HUD_COLORS, HUD_STYLES, HUD_ZINDEX } from './HUDStyles';
 
 export class HUDPerformanceMetrics {
   private metricsEl: HTMLElement | null = null;
-  private sg: SpaceGraph;
+  readonly sg: SpaceGraph;
   private frames = 0;
   private lastTime = performance.now();
   private fps = 0;
@@ -45,6 +45,21 @@ export class HUDPerformanceMetrics {
 
     HUDDOMFactory.appendToRenderer(this.sg, this.metricsEl);
     this.startMonitoring();
+  }
+
+  updateDrawCalls(count: number): void {
+    const el = HUDDOMFactory.getElementById('sg-draw-calls');
+    if (el) {
+      el.textContent = count.toString();
+    }
+  }
+
+  dispose(): void {
+    this.monitoring = false;
+    if (this.metricsEl?.parentElement) {
+      this.metricsEl.parentElement.removeChild(this.metricsEl);
+    }
+    this.metricsEl = null;
   }
 
   private startMonitoring(): void {
@@ -93,20 +108,5 @@ export class HUDPerformanceMetrics {
     }
 
     requestAnimationFrame(() => this.measure());
-  }
-
-  updateDrawCalls(count: number): void {
-    const el = HUDDOMFactory.getElementById('sg-draw-calls');
-    if (el) {
-      el.textContent = count.toString();
-    }
-  }
-
-  dispose(): void {
-    this.monitoring = false;
-    if (this.metricsEl?.parentElement) {
-      this.metricsEl.parentElement.removeChild(this.metricsEl);
-    }
-    this.metricsEl = null;
   }
 }

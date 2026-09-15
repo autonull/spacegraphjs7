@@ -8,7 +8,7 @@ export class WiringFingering extends BaseFingering {
   private sourceNode: Node | null = null;
   private tempLine: THREE.Line | null = null;
   private tempGeom: THREE.BufferGeometry | null = null;
-  private readonly tempMaterial = new THREE.LineBasicMaterial({ color: 0x8b5cf6, linewidth: 2 });
+  readonly tempMaterial = new THREE.LineBasicMaterial({ color: 0x8b5cf6, linewidth: 2 });
 
   start(finger: Finger): boolean {
     if (finger.buttons !== 1) return false;

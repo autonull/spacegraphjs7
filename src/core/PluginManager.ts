@@ -11,15 +11,25 @@ export interface Plugin {
   readonly id: string;
   readonly name: string;
   readonly version: string;
+
   init(sg: SpaceGraph, graph: Graph, events: EventSystem): void | Promise<void>;
+
   onPreRender?(delta: number): void;
+
   onPostRender?(delta: number): void;
+
   onNodeAdded?(node: Node): void;
+
   onNodeRemoved?(node: Node): void;
+
   onEdgeAdded?(edge: Edge): void;
+
   onEdgeRemoved?(edge: Edge): void;
+
   dispose?(): void;
+
   export?(): unknown;
+
   import?(data: unknown): void;
 }
 
@@ -35,9 +45,20 @@ export interface PluginMetadata {
 const logger = createLogger('PluginManager');
 
 export class PluginManager {
-  private readonly plugins: Map<string, Plugin> = new Map();
+  getPlugin = this.get;
+  hasPlugin = this.has;
+  getPluginNames = this.pluginNames;
+  readonly plugins: Map<string, Plugin> = new Map();
 
-  constructor(private readonly sg: SpaceGraph) {}
+  constructor(readonly sg: SpaceGraph) {}
+
+  get pluginNames(): string[] {
+    return Array.from(this.plugins.keys());
+  }
+
+  get pluginCount(): number {
+    return this.plugins.size;
+  }
 
   register(name: string, plugin: Plugin): this {
     if (!name || typeof name !== 'string') {
@@ -66,14 +87,6 @@ export class PluginManager {
 
   has(name: string): boolean {
     return this.plugins.has(name);
-  }
-
-  get pluginNames(): string[] {
-    return Array.from(this.plugins.keys());
-  }
-
-  get pluginCount(): number {
-    return this.plugins.size;
   }
 
   *[Symbol.iterator](): Generator<[string, Plugin]> {
@@ -186,10 +199,6 @@ export class PluginManager {
   getEdgeType(type: string): import('./TypeRegistry').EdgeConstructor | undefined {
     return TypeRegistry.getInstance().getEdgeConstructor(type);
   }
-
-  getPlugin = this.get;
-  hasPlugin = this.has;
-  getPluginNames = this.pluginNames;
 
   find(predicate: (plugin: Plugin) => boolean): Plugin | undefined {
     for (const plugin of this.plugins.values()) {

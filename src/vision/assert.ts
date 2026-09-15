@@ -4,6 +4,30 @@ import type { VisionReport } from './types';
 export class VisionAssert {
   constructor(private page: Page) {}
 
+  async noOverlap() {
+    const report = await this.getReport();
+    expect(
+      report.overlap.overlaps,
+      `Expected no overlaps, but found ${report.overlap.overlapCount}`
+    ).toHaveLength(0);
+  }
+
+  async isLegible() {
+    const report = await this.getReport();
+    expect(
+      report.legibility.failures,
+      `Expected all text to be legible, found ${report.legibility.failures.length} issues.`
+    ).toHaveLength(0);
+  }
+
+  async expectedLayoutScore(minScore: number) {
+    const report = await this.getReport();
+    expect(
+      report.overall.score,
+      `Expected overall score >= ${minScore}, got ${report.overall.score}`
+    ).toBeGreaterThanOrEqual(minScore);
+  }
+
   private async getReport(): Promise<VisionReport> {
     const report = await this.page.evaluate(async () => {
       if (!(window as any).SpaceGraph || !(window as any).SpaceGraph.instances) {
@@ -64,30 +88,6 @@ export class VisionAssert {
     });
 
     return report;
-  }
-
-  async noOverlap() {
-    const report = await this.getReport();
-    expect(
-      report.overlap.overlaps,
-      `Expected no overlaps, but found ${report.overlap.overlapCount}`
-    ).toHaveLength(0);
-  }
-
-  async isLegible() {
-    const report = await this.getReport();
-    expect(
-      report.legibility.failures,
-      `Expected all text to be legible, found ${report.legibility.failures.length} issues.`
-    ).toHaveLength(0);
-  }
-
-  async expectedLayoutScore(minScore: number) {
-    const report = await this.getReport();
-    expect(
-      report.overall.score,
-      `Expected overall score >= ${minScore}, got ${report.overall.score}`
-    ).toBeGreaterThanOrEqual(minScore);
   }
 }
 

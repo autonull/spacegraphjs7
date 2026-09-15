@@ -31,12 +31,15 @@
 
 ### 1.1 Vision Statement
 
-SpaceGraphJS is a **self-building, self-optimizing Zoomable User Interface (ZUI) library** that synthesizes five complete implementations (175,000+ LOC) into a unified TypeScript codebase powered by AI vision. By giving AI the ability to **see, analyze, and self-correct** its output, we eliminate the iterative correction bottleneck and enable exponential development velocity.
+SpaceGraphJS is a **self-building, self-optimizing Zoomable User Interface (ZUI) library** that synthesizes five
+complete implementations (175,000+ LOC) into a unified TypeScript codebase powered by AI vision. By giving AI the
+ability to **see, analyze, and self-correct** its output, we eliminate the iterative correction bottleneck and enable
+exponential development velocity.
 
 ### 1.2 Key Innovations
 
 | Innovation                 | Description                                     | Impact                      |
-| -------------------------- | ----------------------------------------------- | --------------------------- |
+|----------------------------|-------------------------------------------------|-----------------------------|
 | **Vision-Closed Loop**     | AI sees output, verifies quality, self-corrects | 98% faster iteration        |
 | **Automated Verification** | Playwright screenshot testing for all demos     | Visual regression detection |
 | **17 Plugins**             | Unified from 5 codebases + 6 new vision plugins | Complete feature set        |
@@ -72,7 +75,7 @@ Human Spec → AI Build → Vision Verify → AI Self-Correct → Done (1-3x)
 ### 1.4 Success Metrics
 
 | Metric            | Target               | Measurement            |
-| ----------------- | -------------------- | ---------------------- |
+|-------------------|----------------------|------------------------|
 | Initial render    | <100 ms (100 nodes)  | Performance.now()      |
 | Frame rate        | 60 FPS (1000 nodes)  | RAF timing             |
 | Memory            | <50 MB (1000 nodes)  | DevTools heap          |
@@ -88,7 +91,8 @@ Human Spec → AI Build → Vision Verify → AI Self-Correct → Done (1-3x)
 
 ### 2.1 The Problem: Blind AI Development
 
-Traditional AI-assisted development suffers from a **fundamental perception gap**: the AI cannot see what it builds. This creates a broken feedback loop:
+Traditional AI-assisted development suffers from a **fundamental perception gap**: the AI cannot see what it builds.
+This creates a broken feedback loop:
 
 ```
 ┌──────────────┐     ┌──────────┐     ┌───────────┐     ┌────────────┐     ┌─────────┐
@@ -572,7 +576,7 @@ expect(report.layout.overall).toBeGreaterThan(80);
 ### 3.1 Complete Repository Matrix
 
 | Repository        | Branch                        | Language   | Files | LOC      | Status     | Key Features                                 |
-| ----------------- | ----------------------------- | ---------- | ----- | -------- | ---------- | -------------------------------------------- |
+|-------------------|-------------------------------|------------|-------|----------|------------|----------------------------------------------|
 | **spacegraphjs**  | main                          | JavaScript | 115   | ~65,000  | Production | 18 nodes, 8 edges, 12 layouts, 11 plugins    |
 | **spacegraphjs3** | feature/svg-node-scaling      | TypeScript | 81    | ~35,000  | Production | SolidJS, Managers, Performance systems       |
 | **spacegraphjs4** | fix-demo-rendering            | JavaScript | 50    | ~8,300   | Production | Surface graph, Verlet physics, UI components |
@@ -1575,7 +1579,8 @@ See Section 6.2 for complete TypeScript type definitions.
 
 ## Conclusion
 
-SpaceGraphJS represents the **complete synthesis** of five codebases (175,000+ LOC) into a unified, self-building ZUI library. Key additions from the spacegraphjs implementation branch include:
+SpaceGraphJS represents the **complete synthesis** of five codebases (175,000+ LOC) into a unified, self-building ZUI
+library. Key additions from the spacegraphjs implementation branch include:
 
 **Architectural Improvements:**
 
@@ -1597,7 +1602,8 @@ SpaceGraphJS represents the **complete synthesis** of five codebases (175,000+ L
 - Plugin-based node type registration
 - Modular demo system with verification
 
-By embedding AI vision at every layer and adding automated visual verification, we transform development from a slow, iterative process into a fast, autonomous, quality-assured system.
+By embedding AI vision at every layer and adding automated visual verification, we transform development from a slow,
+iterative process into a fast, autonomous, quality-assured system.
 
 **Expected Impact:**
 
@@ -1607,4 +1613,5 @@ By embedding AI vision at every layer and adding automated visual verification, 
 - **100% WCAG AA compliance** automated
 - **0 unapproved visual regressions** via screenshot testing
 
-This specification provides the complete blueprint for building the next generation of ZUI libraries—where AI doesn't just write code, but **sees, verifies, and self-corrects** its output autonomously.
+This specification provides the complete blueprint for building the next generation of ZUI libraries—where AI doesn't
+just write code, but **sees, verifies, and self-corrects** its output autonomously.

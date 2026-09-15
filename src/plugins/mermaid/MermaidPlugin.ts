@@ -76,12 +76,233 @@ export class MermaidPlugin extends BaseSystemPlugin {
     this.enableSubgraphs = options.enableSubgraphs ?? true;
   }
 
+  static get HUD_STYLES(): string {
+    return `
+      .mermaid-hud-container {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        pointer-events: auto;
+        z-index: ${HUD_ZINDEX.HUD};
+        max-width: 260px;
+      }
+
+      .mermaid-hud-section {
+        background: ${HUD_COLORS.background};
+        border: 1px solid ${HUD_COLORS.border};
+        border-radius: 12px;
+        padding: 12px 14px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+      }
+
+      .mermaid-hud-title {
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        color: ${HUD_COLORS.primary};
+        margin-bottom: 8px;
+        padding-bottom: 6px;
+        border-bottom: 1px solid ${HUD_COLORS.border};
+      }
+
+      .mermaid-hud-section-content {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .mermaid-hud-select {
+        width: 100%;
+        padding: 8px 10px;
+        background: ${HUD_COLORS.surface};
+        border: 1px solid ${HUD_COLORS.border};
+        border-radius: 6px;
+        color: ${HUD_COLORS.text};
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .mermaid-hud-select:hover { border-color: ${HUD_COLORS.primary}; }
+      .mermaid-hud-select:focus {
+        outline: none;
+        border-color: ${HUD_COLORS.primary};
+        box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
+      }
+
+      .mermaid-hud-button {
+        width: 100%;
+        padding: 9px 14px;
+        background: rgba(139, 92, 246, 0.2);
+        border: 1px solid ${HUD_COLORS.primary};
+        border-radius: 6px;
+        color: ${HUD_COLORS.text};
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .mermaid-hud-button:hover {
+        background: rgba(139, 92, 246, 0.35);
+        transform: translateY(-1px);
+      }
+
+      .mermaid-hud-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .mermaid-hud-button-small {
+        flex: 1;
+        padding: 7px 10px;
+        background: ${HUD_COLORS.surface};
+        border: 1px solid ${HUD_COLORS.border};
+        border-radius: 5px;
+        color: ${HUD_COLORS.text};
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+
+      .mermaid-hud-button-small:hover {
+        border-color: ${HUD_COLORS.primary};
+        background: rgba(139, 92, 246, 0.1);
+      }
+
+      .mermaid-hud-checkbox {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        color: ${HUD_COLORS.textMuted};
+        cursor: pointer;
+      }
+
+      .mermaid-hud-checkbox input {
+        accent-color: ${HUD_COLORS.primary};
+        width: 14px;
+        height: 14px;
+      }
+
+      .mermaid-hud-hint {
+        font-size: 10px;
+        color: ${HUD_COLORS.textMuted};
+        font-style: italic;
+        text-align: center;
+        padding: 4px;
+        background: rgba(0,0,0,0.2);
+        border-radius: 4px;
+      }
+    `;
+  }
+
   init(sg: SpaceGraph, graph: Graph, events: any): void {
     super.init(sg, graph, events);
     this.initializeLayouts();
     if (this.options.showHud !== false) {
       this.createHUD();
     }
+  }
+
+  parseAndRender(content: string, format?: DiagramFormat): void {
+    this.diagramContent = content;
+    const detectedFormat = format || DiagramParserFactory.detectFormat(content);
+    this.currentFormat = detectedFormat;
+
+    this.parseResult = DiagramParserFactory.parse(content, detectedFormat);
+    this.renderDiagram();
+  }
+
+  async applyCurrentLayout(): Promise<void> {
+    const layoutInstance = this.layouts.get(this.currentLayout);
+    if (layoutInstance) {
+      const layoutOptions: Record<string, unknown> = {};
+
+      if (this.currentLayout === 'cluster' && this.enableSubgraphs) {
+        layoutOptions.clusterBy = 'cluster';
+      }
+
+      if (layoutInstance.direction) {
+        layoutOptions.direction = layoutInstance.direction;
+      }
+
+      await layoutInstance.instance.apply(layoutOptions);
+
+      if (this.enableSubgraphs && this.parseResult?.clusters.length) {
+        await this.applyClusterLayouts();
+      }
+
+      this.sg.fitView(150, 1.5);
+    }
+  }
+
+  async applyLayout(layoutName: LayoutName): Promise<void> {
+    this.currentLayout = layoutName;
+    await this.applyCurrentLayout();
+  }
+
+  applyTheme(themeName?: MermaidThemeName): void {
+    if (themeName) this.currentTheme = themeName;
+
+    const theme = MERMAID_THEMES[this.currentTheme];
+    const nodeColors = theme.nodeColors;
+
+    let nodeIndex = 0;
+    for (const node of this.graph.getNodes()) {
+      if (node.type === 'MermaidNode') {
+        const data = node.data as Record<string, unknown>;
+        const color = (data.color as string) || nodeColors[nodeIndex % nodeColors.length];
+
+        if (typeof (node as any).updateNodeColor === 'function') {
+          (node as any).updateNodeColor();
+        } else if (typeof node.updateSpec === 'function') {
+          node.updateSpec({
+            data: { ...node.data, color, themeColors: nodeColors, nodeIndex },
+          });
+        }
+      }
+      nodeIndex++;
+    }
+
+    this.showAlert({ type: 'success', message: `Theme: ${this.currentTheme}`, duration: 1000 });
+  }
+
+  getCurrentLayout(): LayoutName {
+    return this.currentLayout;
+  }
+
+  getCurrentTheme(): MermaidThemeName {
+    return this.currentTheme;
+  }
+
+  getCurrentFormat(): DiagramFormat {
+    return this.currentFormat;
+  }
+
+  getParseResult(): DiagramParseResult | null {
+    return this.parseResult;
+  }
+
+  showAlert(options: {
+    type: 'info' | 'success' | 'warning' | 'error';
+    message: string;
+    duration?: number;
+  }): void {
+    const hud = this.sg.pluginManager.getPlugin('hud') as HUDPlugin | undefined;
+    hud?.showAlert(options as any);
+  }
+
+  dispose(): void {
+    if (this.hudContainer?.parentElement) {
+      this.hudContainer.parentElement.removeChild(this.hudContainer);
+    }
+    this.hudContainer = null;
   }
 
   private initializeLayouts(): void {
@@ -304,15 +525,6 @@ export class MermaidPlugin extends BaseSystemPlugin {
     this.sg.renderer.scheduleRender();
   }
 
-  parseAndRender(content: string, format?: DiagramFormat): void {
-    this.diagramContent = content;
-    const detectedFormat = format || DiagramParserFactory.detectFormat(content);
-    this.currentFormat = detectedFormat;
-
-    this.parseResult = DiagramParserFactory.parse(content, detectedFormat);
-    this.renderDiagram();
-  }
-
   private renderDiagram(): void {
     if (!this.parseResult) return;
 
@@ -426,29 +638,6 @@ export class MermaidPlugin extends BaseSystemPlugin {
     }
   }
 
-  async applyCurrentLayout(): Promise<void> {
-    const layoutInstance = this.layouts.get(this.currentLayout);
-    if (layoutInstance) {
-      const layoutOptions: Record<string, unknown> = {};
-
-      if (this.currentLayout === 'cluster' && this.enableSubgraphs) {
-        layoutOptions.clusterBy = 'cluster';
-      }
-
-      if (layoutInstance.direction) {
-        layoutOptions.direction = layoutInstance.direction;
-      }
-
-      await layoutInstance.instance.apply(layoutOptions);
-
-      if (this.enableSubgraphs && this.parseResult?.clusters.length) {
-        await this.applyClusterLayouts();
-      }
-
-      this.sg.fitView(150, 1.5);
-    }
-  }
-
   private async applyClusterLayouts(): Promise<void> {
     const clusterNodes = Array.from(this.graph.getNodes()).filter((n) =>
       n.id.startsWith('cluster-')
@@ -492,198 +681,10 @@ export class MermaidPlugin extends BaseSystemPlugin {
       });
     }
   }
-
-  async applyLayout(layoutName: LayoutName): Promise<void> {
-    this.currentLayout = layoutName;
-    await this.applyCurrentLayout();
-  }
-
-  applyTheme(themeName?: MermaidThemeName): void {
-    if (themeName) this.currentTheme = themeName;
-
-    const theme = MERMAID_THEMES[this.currentTheme];
-    const nodeColors = theme.nodeColors;
-
-    let nodeIndex = 0;
-    for (const node of this.graph.getNodes()) {
-      if (node.type === 'MermaidNode') {
-        const data = node.data as Record<string, unknown>;
-        const color = (data.color as string) || nodeColors[nodeIndex % nodeColors.length];
-
-        if (typeof (node as any).updateNodeColor === 'function') {
-          (node as any).updateNodeColor();
-        } else if (typeof node.updateSpec === 'function') {
-          node.updateSpec({
-            data: { ...node.data, color, themeColors: nodeColors, nodeIndex },
-          });
-        }
-      }
-      nodeIndex++;
-    }
-
-    this.showAlert({ type: 'success', message: `Theme: ${this.currentTheme}`, duration: 1000 });
-  }
-
-  getCurrentLayout(): LayoutName {
-    return this.currentLayout;
-  }
-
-  getCurrentTheme(): MermaidThemeName {
-    return this.currentTheme;
-  }
-
-  getCurrentFormat(): DiagramFormat {
-    return this.currentFormat;
-  }
-
-  getParseResult(): DiagramParseResult | null {
-    return this.parseResult;
-  }
-
-  showAlert(options: {
-    type: 'info' | 'success' | 'warning' | 'error';
-    message: string;
-    duration?: number;
-  }): void {
-    const hud = this.sg.pluginManager.getPlugin('hud') as HUDPlugin | undefined;
-    hud?.showAlert(options as any);
-  }
-
-  dispose(): void {
-    if (this.hudContainer?.parentElement) {
-      this.hudContainer.parentElement.removeChild(this.hudContainer);
-    }
-    this.hudContainer = null;
-  }
-
-  static get HUD_STYLES(): string {
-    return `
-      .mermaid-hud-container {
-        position: absolute;
-        top: 16px;
-        right: 16px;
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        pointer-events: auto;
-        z-index: ${HUD_ZINDEX.HUD};
-        max-width: 260px;
-      }
-
-      .mermaid-hud-section {
-        background: ${HUD_COLORS.background};
-        border: 1px solid ${HUD_COLORS.border};
-        border-radius: 12px;
-        padding: 12px 14px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-      }
-
-      .mermaid-hud-title {
-        font-size: 10px;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.8px;
-        color: ${HUD_COLORS.primary};
-        margin-bottom: 8px;
-        padding-bottom: 6px;
-        border-bottom: 1px solid ${HUD_COLORS.border};
-      }
-
-      .mermaid-hud-section-content {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-      }
-
-      .mermaid-hud-select {
-        width: 100%;
-        padding: 8px 10px;
-        background: ${HUD_COLORS.surface};
-        border: 1px solid ${HUD_COLORS.border};
-        border-radius: 6px;
-        color: ${HUD_COLORS.text};
-        font-size: 12px;
-        cursor: pointer;
-        transition: all 0.2s;
-      }
-
-      .mermaid-hud-select:hover { border-color: ${HUD_COLORS.primary}; }
-      .mermaid-hud-select:focus {
-        outline: none;
-        border-color: ${HUD_COLORS.primary};
-        box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
-      }
-
-      .mermaid-hud-button {
-        width: 100%;
-        padding: 9px 14px;
-        background: rgba(139, 92, 246, 0.2);
-        border: 1px solid ${HUD_COLORS.primary};
-        border-radius: 6px;
-        color: ${HUD_COLORS.text};
-        font-size: 12px;
-        font-weight: 500;
-        cursor: pointer;
-        transition: all 0.2s;
-      }
-
-      .mermaid-hud-button:hover {
-        background: rgba(139, 92, 246, 0.35);
-        transform: translateY(-1px);
-      }
-
-      .mermaid-hud-row {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-      }
-
-      .mermaid-hud-button-small {
-        flex: 1;
-        padding: 7px 10px;
-        background: ${HUD_COLORS.surface};
-        border: 1px solid ${HUD_COLORS.border};
-        border-radius: 5px;
-        color: ${HUD_COLORS.text};
-        font-size: 13px;
-        cursor: pointer;
-        transition: all 0.15s;
-      }
-
-      .mermaid-hud-button-small:hover {
-        border-color: ${HUD_COLORS.primary};
-        background: rgba(139, 92, 246, 0.1);
-      }
-
-      .mermaid-hud-checkbox {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 12px;
-        color: ${HUD_COLORS.textMuted};
-        cursor: pointer;
-      }
-
-      .mermaid-hud-checkbox input {
-        accent-color: ${HUD_COLORS.primary};
-        width: 14px;
-        height: 14px;
-      }
-
-      .mermaid-hud-hint {
-        font-size: 10px;
-        color: ${HUD_COLORS.textMuted};
-        font-style: italic;
-        text-align: center;
-        padding: 4px;
-        background: rgba(0,0,0,0.2);
-        border-radius: 4px;
-      }
-    `;
-  }
 }
 
 let stylesInjected = false;
+
 export function injectMermaidStyles(): void {
   if (stylesInjected || typeof document === 'undefined') return;
 

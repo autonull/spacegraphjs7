@@ -2,7 +2,8 @@
 
 ## From Solid Constraints to Infinite Possibilities
 
-> "We stand at the precipice of a phase change in human-computer interaction. The solid DOM paradigm that served us for 30 years has reached its limits. The future is liquid."
+> "We stand at the precipice of a phase change in human-computer interaction. The solid DOM paradigm that served us for
+> 30 years has reached its limits. The future is liquid."
 
 ---
 
@@ -406,8 +407,7 @@ Revenue share: 70/30 (developer/platform)
 
 ### 1. Data Analytics & BI
 
-**Before**: Multiple dashboards, tabs, lost context
-**After**: Infinite analytics canvas
+**Before**: Multiple dashboards, tabs, lost context **After**: Infinite analytics canvas
 
 ```typescript
 // CEO view (zoomed out): Company KPIs
@@ -423,8 +423,7 @@ Revenue share: 70/30 (developer/platform)
 
 ### 2. Software Development & DevOps
 
-**Before**: IDE + terminal + logs + monitoring = separate tools
-**After**: Unified development canvas
+**Before**: IDE + terminal + logs + monitoring = separate tools **After**: Unified development canvas
 
 ```typescript
 // Zoomed out: System architecture diagram
@@ -442,8 +441,7 @@ Revenue share: 70/30 (developer/platform)
 
 ### 3. Digital Twins & IoT
 
-**Before**: Separate screens for different systems
-**After**: Living digital twin
+**Before**: Separate screens for different systems **After**: Living digital twin
 
 ```typescript
 // Factory floor digital twin:
@@ -460,8 +458,7 @@ Revenue share: 70/30 (developer/platform)
 
 ### 4. Education & Learning
 
-**Before**: Linear textbooks, disconnected videos
-**After**: Explorable knowledge graphs
+**Before**: Linear textbooks, disconnected videos **After**: Explorable knowledge graphs
 
 ```typescript
 // Biology course as liquid UI:
@@ -499,8 +496,7 @@ Revenue share: 70/30 (developer/platform)
 
 ### 6. Knowledge Management
 
-**Before**: Wikis, docs, notes—disconnected silos
-**After**: Living knowledge graph
+**Before**: Wikis, docs, notes—disconnected silos **After**: Living knowledge graph
 
 ```typescript
 // Company knowledge as liquid graph:
@@ -525,7 +521,8 @@ Revenue share: 70/30 (developer/platform)
 
 **Stop building walls. Start building bridges.**
 
-The tools you use today will be obsolete tomorrow. Not because they're bad, but because they're **solid** in a **liquid** world.
+The tools you use today will be obsolete tomorrow. Not because they're bad, but because they're **solid** in a
+**liquid** world.
 
 Learn SpaceGraph. Build liquid interfaces. Teach others.
 
@@ -533,7 +530,8 @@ Learn SpaceGraph. Build liquid interfaces. Teach others.
 
 **Stop designing pages. Start designing spaces.**
 
-Your creativity is constrained by rectangular screens and fixed layouts. Break free. Design in 3D. Design at multiple scales. Design for exploration.
+Your creativity is constrained by rectangular screens and fixed layouts. Break free. Design in 3D. Design at multiple
+scales. Design for exploration.
 
 Think spatially. Think fractally. Think liquid.
 
@@ -541,7 +539,8 @@ Think spatially. Think fractally. Think liquid.
 
 **Stop buying tools. Start building capabilities.**
 
-Your competitors are still using dashboards from 2010. You have the opportunity to leapfrog them with interfaces that make their tools look like stone tablets.
+Your competitors are still using dashboards from 2010. You have the opportunity to leapfrog them with interfaces that
+make their tools look like stone tablets.
 
 Invest in liquid UI. Your customers will thank you. Your competitors will fear you.
 

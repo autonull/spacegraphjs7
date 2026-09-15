@@ -13,15 +13,108 @@ export class DOMNode extends Node {
   public readonly cssObject: CSS3DObject;
   public readonly meshMaterial: THREE.MeshBasicMaterial;
   public readonly backingMesh: THREE.Mesh;
+  readonly _object: THREE.Group;
+
+  constructor(
+    sg: SpaceGraph,
+    spec: NodeSpec,
+    domElement: HTMLElement,
+    width = 200,
+    height = 100,
+    materialParams?: THREE.MeshBasicMaterialParameters
+  ) {
+    super(sg, spec);
+
+    this._object = new THREE.Group();
+    this.domElement = domElement;
+    this.cssObject = new CSS3DObject(this.domElement);
+    this.object.add(this.cssObject);
+
+    this._meshGeometry = new THREE.PlaneGeometry(width, height);
+
+    const defaultTranslucency =
+      materialParams?.visible === false ? {} : { color: 0x000000, opacity: 0.1, transparent: true };
+    this.meshMaterial = new THREE.MeshBasicMaterial({
+      side: THREE.DoubleSide,
+      ...defaultTranslucency,
+      ...materialParams,
+    });
+
+    this.backingMesh = new THREE.Mesh(this.meshGeometry, this.meshMaterial);
+    this.object.add(this.backingMesh);
+
+    this._setupPointerEventRelay(sg);
+  }
+
   private _meshGeometry: THREE.PlaneGeometry;
-  private readonly _object: THREE.Group;
+
+  get meshGeometry(): THREE.PlaneGeometry {
+    return this._meshGeometry;
+  }
 
   get object(): THREE.Object3D {
     return this._object;
   }
 
-  get meshGeometry(): THREE.PlaneGeometry {
-    return this._meshGeometry;
+  public setVisibility(visible: boolean): void {
+    this.cssObject.visible = visible;
+    this.domElement.style.display = visible ? 'flex' : 'none';
+    this.backingMesh.visible = visible;
+  }
+
+  public override setOpacity(opacity: number): this {
+    this.domElement.style.opacity = opacity.toString();
+    if (this.meshMaterial) {
+      this.meshMaterial.opacity = opacity * 0.1; // Maintain the 0.1 base translucency scale
+      this.meshMaterial.transparent = true;
+      this.meshMaterial.needsUpdate = true;
+    }
+    return super.setOpacity(opacity);
+  }
+
+  public updateLod(_distance: number): void {}
+
+  isDraggable(localPos: THREE.Vector3): boolean {
+    const interactive = this.domElement.querySelectorAll('[data-sg-interactive="true"]');
+    if (!interactive || interactive.length === 0) return true;
+
+    const rect = this.domElement.getBoundingClientRect();
+    const width = rect.width;
+    const height = rect.height;
+
+    const px = localPos.x + width / 2;
+    const py = height / 2 - localPos.y;
+
+    for (const el of interactive) {
+      const elRect = el.getBoundingClientRect();
+
+      const localElLeft = elRect.left - rect.left;
+      const localElRight = elRect.right - rect.left;
+      const localElTop = elRect.top - rect.top;
+      const localElBottom = elRect.bottom - rect.top;
+
+      if (px >= localElLeft && px <= localElRight && py >= localElTop && py <= localElBottom) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  onPreRender(dt: number): void {
+    super.onPreRender(dt);
+    if (this.activity > 0.01) {
+      this.domElement.style.boxShadow = `0 0 ${this.activity * 20}px rgba(68,136,255,${this.activity * 0.5})`;
+    } else {
+      this.domElement.style.boxShadow = 'none';
+    }
+  }
+
+  dispose(): void {
+    this.domElement.parentNode?.removeChild(this.domElement);
+    this.meshGeometry?.dispose();
+    this.meshMaterial?.dispose();
+    super.dispose();
   }
 
   /** Helper to set up standard FZUI container styles. */
@@ -84,35 +177,10 @@ export class DOMNode extends Node {
     return titleBar;
   }
 
-  constructor(
-    sg: SpaceGraph,
-    spec: NodeSpec,
-    domElement: HTMLElement,
-    width = 200,
-    height = 100,
-    materialParams?: THREE.MeshBasicMaterialParameters
-  ) {
-    super(sg, spec);
-
-    this._object = new THREE.Group();
-    this.domElement = domElement;
-    this.cssObject = new CSS3DObject(this.domElement);
-    this.object.add(this.cssObject);
-
+  protected updateBackingGeometry(width: number, height: number): void {
+    this._meshGeometry.dispose();
     this._meshGeometry = new THREE.PlaneGeometry(width, height);
-
-    const defaultTranslucency =
-      materialParams?.visible === false ? {} : { color: 0x000000, opacity: 0.1, transparent: true };
-    this.meshMaterial = new THREE.MeshBasicMaterial({
-      side: THREE.DoubleSide,
-      ...defaultTranslucency,
-      ...materialParams,
-    });
-
-    this.backingMesh = new THREE.Mesh(this.meshGeometry, this.meshMaterial);
-    this.object.add(this.backingMesh);
-
-    this._setupPointerEventRelay(sg);
+    this.backingMesh.geometry = this._meshGeometry;
   }
 
   /** Relay pointer events from this DOM element to the WebGL canvas. */
@@ -202,72 +270,5 @@ export class DOMNode extends Node {
         })
       );
     });
-  }
-
-  protected updateBackingGeometry(width: number, height: number): void {
-    this._meshGeometry.dispose();
-    this._meshGeometry = new THREE.PlaneGeometry(width, height);
-    this.backingMesh.geometry = this._meshGeometry;
-  }
-
-  public setVisibility(visible: boolean): void {
-    this.cssObject.visible = visible;
-    this.domElement.style.display = visible ? 'flex' : 'none';
-    this.backingMesh.visible = visible;
-  }
-
-  public override setOpacity(opacity: number): this {
-    this.domElement.style.opacity = opacity.toString();
-    if (this.meshMaterial) {
-      this.meshMaterial.opacity = opacity * 0.1; // Maintain the 0.1 base translucency scale
-      this.meshMaterial.transparent = true;
-      this.meshMaterial.needsUpdate = true;
-    }
-    return super.setOpacity(opacity);
-  }
-
-  public updateLod(_distance: number): void {}
-
-  isDraggable(localPos: THREE.Vector3): boolean {
-    const interactive = this.domElement.querySelectorAll('[data-sg-interactive="true"]');
-    if (!interactive || interactive.length === 0) return true;
-
-    const rect = this.domElement.getBoundingClientRect();
-    const width = rect.width;
-    const height = rect.height;
-
-    const px = localPos.x + width / 2;
-    const py = height / 2 - localPos.y;
-
-    for (const el of interactive) {
-      const elRect = el.getBoundingClientRect();
-
-      const localElLeft = elRect.left - rect.left;
-      const localElRight = elRect.right - rect.left;
-      const localElTop = elRect.top - rect.top;
-      const localElBottom = elRect.bottom - rect.top;
-
-      if (px >= localElLeft && px <= localElRight && py >= localElTop && py <= localElBottom) {
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  onPreRender(dt: number): void {
-    super.onPreRender(dt);
-    if (this.activity > 0.01) {
-      this.domElement.style.boxShadow = `0 0 ${this.activity * 20}px rgba(68,136,255,${this.activity * 0.5})`;
-    } else {
-      this.domElement.style.boxShadow = 'none';
-    }
-  }
-
-  dispose(): void {
-    this.domElement.parentNode?.removeChild(this.domElement);
-    this.meshGeometry?.dispose();
-    this.meshMaterial?.dispose();
-    super.dispose();
   }
 }

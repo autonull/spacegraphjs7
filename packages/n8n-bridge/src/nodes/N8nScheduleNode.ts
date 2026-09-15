@@ -1,22 +1,20 @@
 import gsapPkg from 'gsap';
 import type { NodeSpec, SpaceGraph, SpecUpdate } from 'spacegraphjs';
+import { HtmlNode } from 'spacegraphjs';
 import * as THREE from 'three';
 
 const gsap = gsapPkg.gsap || gsapPkg;
 
-import { HtmlNode } from 'spacegraphjs';
-
 export class N8nScheduleNode extends HtmlNode {
-  private orbitDot?: THREE.Mesh;
-  private orbitPivot?: THREE.Group;
-  private orbitTween?: gsap.core.Tween;
-
   readonly lodThresholds = {
     icon: 800,
     label: 400,
     summary: 150,
     full: 0,
   };
+  private orbitDot?: THREE.Mesh;
+  private orbitPivot?: THREE.Group;
+  private orbitTween?: gsap.core.Tween;
 
   constructor(sg: SpaceGraph, spec: NodeSpec) {
     super(sg, {
@@ -38,6 +36,34 @@ export class N8nScheduleNode extends HtmlNode {
     // We will mix 3D shapes with HTML rendering for this specific node.
     // We initialize the 3D parts here.
     this._init3DOrbit();
+  }
+
+  updateLod(distance: number): void {
+    super.updateLod(distance);
+
+    let level = 'full';
+    if (distance > this.lodThresholds.icon) level = 'icon';
+    else if (distance > this.lodThresholds.label) level = 'label';
+    else if (distance > this.lodThresholds.summary) level = 'summary';
+
+    this.renderHtmlContent(level);
+
+    // Show orbit only at higher distances or if we want it always.
+    // For now, keep it visible.
+    if (this.orbitPivot) {
+      this.orbitPivot.visible = level === 'icon' || level === 'label';
+    }
+  }
+
+  updateSpec(spec: SpecUpdate): void {
+    super.updateSpec(spec);
+    const level = this.domElement?.children[0]?.textContent === '🕐' ? 'icon' : 'full';
+    this.renderHtmlContent(level);
+  }
+
+  dispose(): void {
+    super.dispose();
+    this.orbitTween?.kill();
   }
 
   private _init3DOrbit() {
@@ -65,23 +91,6 @@ export class N8nScheduleNode extends HtmlNode {
       ease: 'linear',
     });
     this.renderHtmlContent('full');
-  }
-
-  updateLod(distance: number): void {
-    super.updateLod(distance);
-
-    let level = 'full';
-    if (distance > this.lodThresholds.icon) level = 'icon';
-    else if (distance > this.lodThresholds.label) level = 'label';
-    else if (distance > this.lodThresholds.summary) level = 'summary';
-
-    this.renderHtmlContent(level);
-
-    // Show orbit only at higher distances or if we want it always.
-    // For now, keep it visible.
-    if (this.orbitPivot) {
-      this.orbitPivot.visible = level === 'icon' || level === 'label';
-    }
   }
 
   private renderHtmlContent(level: string) {
@@ -161,16 +170,5 @@ export class N8nScheduleNode extends HtmlNode {
         border: '2px solid #ff9800',
       });
     }
-  }
-
-  updateSpec(spec: SpecUpdate): void {
-    super.updateSpec(spec);
-    const level = this.domElement?.children[0]?.textContent === '🕐' ? 'icon' : 'full';
-    this.renderHtmlContent(level);
-  }
-
-  dispose(): void {
-    super.dispose();
-    this.orbitTween?.kill();
   }
 }

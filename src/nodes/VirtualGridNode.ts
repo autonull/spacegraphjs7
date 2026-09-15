@@ -9,7 +9,9 @@ import type { Node } from './Node';
 
 export interface GridModel<T> {
   getCell(x: number, y: number): T | null;
+
   getRowCount(): number;
+
   getColCount(): number;
 }
 

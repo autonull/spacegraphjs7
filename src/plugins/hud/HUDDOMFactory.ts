@@ -1,5 +1,5 @@
+import { DOMUtils } from 'spacegraphjs/utils';
 import type { SpaceGraph } from '../../SpaceGraph';
-import { DOMUtils } from '../../utils/DOMUtils';
 import { HUD_ANIMATIONS, HUD_STYLES } from './HUDStyles';
 
 /**

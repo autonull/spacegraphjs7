@@ -4,17 +4,16 @@ import { HtmlNode } from 'spacegraphjs';
 import * as THREE from 'three';
 
 export class N8nTriggerNode extends HtmlNode {
-  private portalMesh?: THREE.Mesh;
-  private orbitTween?: gsap.core.Tween;
-  private glowTween?: gsap.core.Tween;
-  private currentLevel?: string;
-
   readonly lodThresholds = {
     icon: 800,
     label: 400,
     summary: 150,
     full: 0,
   };
+  private portalMesh?: THREE.Mesh;
+  private orbitTween?: gsap.core.Tween;
+  private glowTween?: gsap.core.Tween;
+  private currentLevel?: string;
 
   constructor(sg: SpaceGraph, spec: NodeSpec) {
     super(sg, {
@@ -34,6 +33,72 @@ export class N8nTriggerNode extends HtmlNode {
     });
 
     this._init3DPortal();
+  }
+
+  updateLod(distance: number): void {
+    super.updateLod(distance);
+
+    let level = 'full';
+    if (distance > this.lodThresholds.icon) level = 'icon';
+    else if (distance > this.lodThresholds.label) level = 'label';
+    else if (distance > this.lodThresholds.summary) level = 'summary';
+
+    if (this.currentLevel !== level) {
+      this.currentLevel = level;
+      this.renderHtmlContent(level);
+    }
+
+    // Manage visibility of 3D parts
+    const isDistant = level === 'icon' || level === 'label';
+    if (this.object.children.length > 0) {
+      // The HTML container might have CSS3DObject attached, we only want to toggle the 3D meshes we added.
+      // HTML node adds a CSS3DObject. Our group is the last child.
+      this.object.children.forEach((child) => {
+        if (child instanceof THREE.Group) {
+          child.visible = isDistant;
+        }
+      });
+    }
+  }
+
+  updateSpec(spec: SpecUpdate): void {
+    super.updateSpec(spec);
+
+    if (spec.parameters?.status === 'running' && this.portalMesh) {
+      this.orbitTween ??= gsap.to(this.portalMesh.rotation, {
+        z: this.portalMesh.rotation.z + Math.PI * 2,
+        duration: 2,
+        repeat: -1,
+        ease: 'linear',
+      });
+      this.glowTween ??= gsap.to(this.portalMesh.material, {
+        opacity: 1,
+        duration: 0.5,
+        yoyo: true,
+        repeat: -1,
+      });
+    } else if (this.portalMesh) {
+      this.orbitTween?.kill();
+      this.glowTween?.kill();
+      this.orbitTween = this.glowTween = undefined;
+      (this.portalMesh.material as THREE.MeshBasicMaterial).opacity = 0.5;
+    }
+
+    const level = this.domElement?.querySelector('button')
+      ? 'full'
+      : this.domElement?.querySelector('div[style*="Live Traffic"]')
+        ? 'summary'
+        : this.domElement?.querySelector('span')
+          ? 'label'
+          : 'icon';
+    this.currentLevel = level;
+    this.renderHtmlContent(level);
+  }
+
+  dispose(): void {
+    super.dispose();
+    this.orbitTween?.kill();
+    this.glowTween?.kill();
   }
 
   private _init3DPortal() {
@@ -86,32 +151,6 @@ export class N8nTriggerNode extends HtmlNode {
     group.add(this.portalMesh);
 
     this.object.add(group);
-  }
-
-  updateLod(distance: number): void {
-    super.updateLod(distance);
-
-    let level = 'full';
-    if (distance > this.lodThresholds.icon) level = 'icon';
-    else if (distance > this.lodThresholds.label) level = 'label';
-    else if (distance > this.lodThresholds.summary) level = 'summary';
-
-    if (this.currentLevel !== level) {
-      this.currentLevel = level;
-      this.renderHtmlContent(level);
-    }
-
-    // Manage visibility of 3D parts
-    const isDistant = level === 'icon' || level === 'label';
-    if (this.object.children.length > 0) {
-      // The HTML container might have CSS3DObject attached, we only want to toggle the 3D meshes we added.
-      // HTML node adds a CSS3DObject. Our group is the last child.
-      this.object.children.forEach((child) => {
-        if (child instanceof THREE.Group) {
-          child.visible = isDistant;
-        }
-      });
-    }
   }
 
   private renderHtmlContent(level: string) {
@@ -300,45 +339,5 @@ export class N8nTriggerNode extends HtmlNode {
         border: '2px solid #4caf50',
       });
     }
-  }
-
-  updateSpec(spec: SpecUpdate): void {
-    super.updateSpec(spec);
-
-    if (spec.parameters?.status === 'running' && this.portalMesh) {
-      this.orbitTween ??= gsap.to(this.portalMesh.rotation, {
-        z: this.portalMesh.rotation.z + Math.PI * 2,
-        duration: 2,
-        repeat: -1,
-        ease: 'linear',
-      });
-      this.glowTween ??= gsap.to(this.portalMesh.material, {
-        opacity: 1,
-        duration: 0.5,
-        yoyo: true,
-        repeat: -1,
-      });
-    } else if (this.portalMesh) {
-      this.orbitTween?.kill();
-      this.glowTween?.kill();
-      this.orbitTween = this.glowTween = undefined;
-      (this.portalMesh.material as THREE.MeshBasicMaterial).opacity = 0.5;
-    }
-
-    const level = this.domElement?.querySelector('button')
-      ? 'full'
-      : this.domElement?.querySelector('div[style*="Live Traffic"]')
-        ? 'summary'
-        : this.domElement?.querySelector('span')
-          ? 'label'
-          : 'icon';
-    this.currentLevel = level;
-    this.renderHtmlContent(level);
-  }
-
-  dispose(): void {
-    super.dispose();
-    this.orbitTween?.kill();
-    this.glowTween?.kill();
   }
 }

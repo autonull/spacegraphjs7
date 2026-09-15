@@ -8,7 +8,8 @@
 
 ## Welcome to SpaceGraphJS
 
-This document is your complete briefing on the SpaceGraphJS project. Everything you need to understand the vision, plan, and your role is contained here and in the referenced documents.
+This document is your complete briefing on the SpaceGraphJS project. Everything you need to understand the vision, plan,
+and your role is contained here and in the referenced documents.
 
 **Reading Time:** 30-45 minutes for complete understanding
 
@@ -69,7 +70,7 @@ Human specifies → AI builds → Vision verifies → AI self-corrects → Done
 ### What You're Helping Build
 
 | Component     | What It Is                    | Your Impact                   |
-| ------------- | ----------------------------- | ----------------------------- |
+|---------------|-------------------------------|-------------------------------|
 | **Software**  | Fastest ZUI library           | 60 FPS at 1000 nodes          |
 | **Hardware**  | SpaceGraph Mini dev platform  | Most open, most capable, $249 |
 | **Research**  | 4 papers, 2 datasets          | Seminal academic contribution |
@@ -119,7 +120,7 @@ Human specifies → AI builds → Vision verifies → AI self-corrects → Done
 ### Current Status
 
 | Phase                  | Status         | Next Milestone        |
-| ---------------------- | -------------- | --------------------- |
+|------------------------|----------------|-----------------------|
 | **Planning**           | ✅ Complete    | Team review           |
 | **Phase A (Software)** | ⏳ Not Started | Day 1: Project setup  |
 | **Phase B (Hardware)** | ⏳ Not Started | Month 2: Design start |
@@ -154,8 +155,8 @@ Human specifies → AI builds → Vision verifies → AI self-corrects → Done
 
 ### Must Read (Core Team)
 
-| Document                                                         | Purpose                  | Read Time | Priority    |
-| ---------------------------------------------------------------- | ------------------------ | --------- | ----------- |
+| Document                                                         | Purpose                  | Read Time | Priority     |
+|------------------------------------------------------------------|--------------------------|-----------|--------------|
 | **[README.md](../README.md)**                                    | Vision & user benefits   | 5 min     | ★ Essential |
 | **[PLAN/MASTER-PLAN.md](./PLAN/MASTER-PLAN.md)**                 | Complete execution plan  | 10 min    | ★ Essential |
 | **[PLAN/ENHANCED-BUILD-PLAN.md](./PLAN/ENHANCED-BUILD-PLAN.md)** | Day-by-day build guide   | 10 min    | ★ Essential |
@@ -165,7 +166,7 @@ Human specifies → AI builds → Vision verifies → AI self-corrects → Done
 ### Should Read (Extended Team)
 
 | Document                                                   | Purpose                  | Read Time | Priority    |
-| ---------------------------------------------------------- | ------------------------ | --------- | ----------- |
+|------------------------------------------------------------|--------------------------|-----------|-------------|
 | [PLAN/AMBITIOUS-SUCCESS.md](./PLAN/AMBITIOUS-SUCCESS.md)   | 10x targets              | 10 min    | Recommended |
 | [PLAN/ACADEMIC-RESEARCH.md](./PLAN/ACADEMIC-RESEARCH.md)   | Research program         | 15 min    | Recommended |
 | [PLAN/CONTINGENCY-PLAN.md](./PLAN/CONTINGENCY-PLAN.md)     | Risk mitigation          | 10 min    | Recommended |
@@ -174,7 +175,7 @@ Human specifies → AI builds → Vision verifies → AI self-corrects → Done
 ### Reference (As Needed)
 
 | Document                                               | Purpose             | When          |
-| ------------------------------------------------------ | ------------------- | ------------- |
+|--------------------------------------------------------|---------------------|---------------|
 | [PLAN/ENHANCEMENT-PLAN.md](./PLAN/ENHANCEMENT-PLAN.md) | Growth strategy     | Months 2-6    |
 | [PLAN/PLAN-ANALYSIS.md](./PLAN/PLAN-ANALYSIS.md)       | Why each component  | Understanding |
 | [PLAN/PACKAGE-TEMPLATE.md](./PLAN/PACKAGE-TEMPLATE.md) | Config templates    | Day 1         |
@@ -187,11 +188,11 @@ Human specifies → AI builds → Vision verifies → AI self-corrects → Done
 ### What Success Looks Like
 
 | Timeframe    | Success Criteria                | Verification                |
-| ------------ | ------------------------------- | --------------------------- |
+|--------------|---------------------------------|-----------------------------|
 | **Day 14**   | Working demo (3 nodes, 3 edges) | Demo renders without errors |
-| **Day 30**   | pnpm publish (alpha)             | Package on npmjs.com        |
+| **Day 30**   | pnpm publish (alpha)            | Package on npmjs.com        |
 | **Month 6**  | Hardware prototype              | 10 units working            |
-| **Month 12** | 5K pnpm downloads/month          | pnpm trends                  |
+| **Month 12** | 5K pnpm downloads/month         | pnpm trends                 |
 | **Month 36** | 250+ paper citations            | Google Scholar              |
 
 ---
@@ -199,7 +200,7 @@ Human specifies → AI builds → Vision verifies → AI self-corrects → Done
 ### 10x Targets (Industry-Defining)
 
 | Metric                     | Best Competitor | Our Target  | Improvement |
-| -------------------------- | --------------- | ----------- | ----------- |
+|----------------------------|-----------------|-------------|-------------|
 | Initial render (100 nodes) | 200ms           | **20ms**    | 10x faster  |
 | FPS (1000 nodes)           | 60 FPS          | **120 FPS** | 2x smoother |
 | Memory (1000 nodes)        | 100MB           | **25MB**    | 4x lighter  |
@@ -210,7 +211,7 @@ Human specifies → AI builds → Vision verifies → AI self-corrects → Done
 ### Non-Negotiables
 
 | Principle                    | What It Means                                     |
-| ---------------------------- | ------------------------------------------------- |
+|------------------------------|---------------------------------------------------|
 | **Product Excellence First** | 95% effort on product, 5% on everything else      |
 | **Pure FOSS**                | MIT license, no enterprise tiers, no restrictions |
 | **Radical Openness**         | All designs published (source, schematics, CAD)   |
@@ -225,7 +226,7 @@ Human specifies → AI builds → Vision verifies → AI self-corrects → Done
 ### Review Cadence
 
 | Meeting              | Frequency      | Duration | Purpose                                   |
-| -------------------- | -------------- | -------- | ----------------------------------------- |
+|----------------------|----------------|----------|-------------------------------------------|
 | **Daily Standup**    | Daily          | 15 min   | Yesterday's progress, today's priorities  |
 | **Weekly Review**    | Friday         | 1 hour   | All metrics, at-risk outcomes, next week  |
 | **Monthly Review**   | Last Friday    | 4 hours  | Strategic adjustments, stakeholder update |
@@ -236,7 +237,7 @@ Human specifies → AI builds → Vision verifies → AI self-corrects → Done
 ### Communication
 
 | Channel                | Purpose                       | Link                                         |
-| ---------------------- | ----------------------------- | -------------------------------------------- |
+|------------------------|-------------------------------|----------------------------------------------|
 | **GitHub Issues**      | Bug reports, feature requests | github.com/autonull/spacegraphjs/issues      |
 | **GitHub Discussions** | General discussion            | github.com/autonull/spacegraphjs/discussions |
 | **Matrix**             | Real-time chat                | #spacegraphjs:matrix.org                     |
@@ -247,7 +248,7 @@ Human specifies → AI builds → Vision verifies → AI self-corrects → Done
 ### Buffers & Resilience
 
 | Level         | Buffer          | Purpose                               |
-| ------------- | --------------- | ------------------------------------- |
+|---------------|-----------------|---------------------------------------|
 | **Task**      | +50% time       | Daily overruns, unexpected complexity |
 | **Week**      | 30% uncommitted | Sick days, meetings, fatigue          |
 | **Milestone** | 1 slip allowed  | Complex tasks, external dependencies  |
@@ -289,7 +290,7 @@ Human specifies → AI builds → Vision verifies → AI self-corrects → Done
 ### Root Level (User-Facing)
 
 | File                                  | Purpose                       | Status      |
-| ------------------------------------- | ----------------------------- | ----------- |
+|---------------------------------------|-------------------------------|-------------|
 | [README.md](../README.md)             | Vision, benefits, quick start | ✅ Complete |
 | [QUICKSTART.md](../QUICKSTART.md)     | 5-minute getting started      | ✅ Complete |
 | [CONTRIBUTING.md](../CONTRIBUTING.md) | How to contribute             | ✅ Complete |
@@ -301,7 +302,7 @@ Human specifies → AI builds → Vision verifies → AI self-corrects → Done
 #### Core Execution (5 files)
 
 | File                                                    | Purpose                       | Status      |
-| ------------------------------------------------------- | ----------------------------- | ----------- |
+|---------------------------------------------------------|-------------------------------|-------------|
 | [MASTER-PLAN.md](./PLAN/MASTER-PLAN.md)                 | Complete execution plan       | ✅ Complete |
 | [ENHANCED-BUILD-PLAN.md](./PLAN/ENHANCED-BUILD-PLAN.md) | Day-by-day build (Days 0-14)  | ✅ Complete |
 | [LAUNCH-SEQUENCED.md](./PLAN/LAUNCH-SEQUENCED.md)       | Launch checklist (Days 15-17) | ✅ Complete |
@@ -311,7 +312,7 @@ Human specifies → AI builds → Vision verifies → AI self-corrects → Done
 #### Strategy & Reference (10 files)
 
 | File                                                          | Purpose                       | Status      |
-| ------------------------------------------------------------- | ----------------------------- | ----------- |
+|---------------------------------------------------------------|-------------------------------|-------------|
 | [AMBITIOUS-SUCCESS.md](./PLAN/AMBITIOUS-SUCCESS.md)           | 10x industry-defining targets | ✅ Complete |
 | [PRODUCT-EXCELLENCE.md](./PLAN/PRODUCT-EXCELLENCE.md)         | Product-first philosophy      | ✅ Complete |
 | [ACADEMIC-RESEARCH.md](./PLAN/ACADEMIC-RESEARCH.md)           | Research program (4+ papers)  | ✅ Complete |
@@ -326,7 +327,7 @@ Human specifies → AI builds → Vision verifies → AI self-corrects → Done
 #### Phase Audits (5 files - Reference)
 
 | File                                                          | Purpose               | Status      |
-| ------------------------------------------------------------- | --------------------- | ----------- |
+|---------------------------------------------------------------|-----------------------|-------------|
 | [PHASE-1-AUDIT.md](./PLAN/PHASE-1-AUDIT.md)                   | 6-U SWOT analysis     | ✅ Complete |
 | [PHASE-2-USABILITY.md](./PLAN/PHASE-2-USABILITY.md)           | Usability strategy    | ✅ Complete |
 | [PHASE-3-DISTRIBUTION.md](./PLAN/PHASE-3-DISTRIBUTION.md)     | Distribution channels | ✅ Complete |
@@ -335,11 +336,11 @@ Human specifies → AI builds → Vision verifies → AI self-corrects → Done
 
 #### Deferred (Month 2+) (5 files)
 
-| File                                                | Purpose                 | Status        |
-| --------------------------------------------------- | ----------------------- | ------------- |
-| [GITHUB-ACTIONS.md](./PLAN/GITHUB-ACTIONS.md)       | CI/CD workflows         | ✅ Complete   |
-| [CONTENT-TEMPLATES.md](./PLAN/CONTENT-TEMPLATES.md) | Article/video templates | ✅ Complete   |
-| [RELEASE-CHECKLIST.md](./PLAN/RELEASE-CHECKLIST.md) | Release procedure       | ✅ Complete   |
+| File                                                | Purpose                 | Status       |
+|-----------------------------------------------------|-------------------------|--------------|
+| [GITHUB-ACTIONS.md](./PLAN/GITHUB-ACTIONS.md)       | CI/CD workflows         | ✅ Complete  |
+| [CONTENT-TEMPLATES.md](./PLAN/CONTENT-TEMPLATES.md) | Article/video templates | ✅ Complete  |
+| [RELEASE-CHECKLIST.md](./PLAN/RELEASE-CHECKLIST.md) | Release procedure       | ✅ Complete  |
 | [LAUNCH-8HOURS.md](./PLAN/LAUNCH-8HOURS.md)         | Superseded (skip)       | ⏸️ Superseded |
 | [WEEK-1-CHECKLIST.md](./PLAN/WEEK-1-CHECKLIST.md)   | Superseded (skip)       | ⏸️ Superseded |
 

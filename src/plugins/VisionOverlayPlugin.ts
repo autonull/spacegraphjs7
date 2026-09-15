@@ -9,14 +9,23 @@ export class VisionOverlayPlugin extends DOMOverlayPlugin {
   readonly id = 'vision-overlay';
   readonly name = 'Vision Overlay';
   readonly version = '1.0.0';
-
-  private lastReport: VisionReport | null = null;
-  private modelsLoaded = false;
-
   public settings = {
     enabled: true,
     pollingRate: 3000,
   };
+  private lastReport: VisionReport | null = null;
+  private modelsLoaded = false;
+
+  init(): void | Promise<void> {
+    super.init(this.sg, this.graph, this.events);
+    this.updateDOM();
+    setTimeout(() => this.startPolling(), 1000);
+  }
+
+  dispose(): void {
+    this.settings.enabled = false;
+    super.dispose();
+  }
 
   protected getOverlayOptions(): DOMOverlayOptions {
     return {
@@ -40,12 +49,6 @@ export class VisionOverlayPlugin extends DOMOverlayPlugin {
         transition: 'all 0.3s ease',
       },
     };
-  }
-
-  init(): void | Promise<void> {
-    super.init(this.sg, this.graph, this.events);
-    this.updateDOM();
-    setTimeout(() => this.startPolling(), 1000);
   }
 
   private startPolling(): void {
@@ -158,10 +161,5 @@ export class VisionOverlayPlugin extends DOMOverlayPlugin {
       `;
       document.head.appendChild(style);
     }
-  }
-
-  dispose(): void {
-    this.settings.enabled = false;
-    super.dispose();
   }
 }

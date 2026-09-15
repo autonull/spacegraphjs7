@@ -16,7 +16,7 @@ import { BaseContentNode } from './BaseContentNode';
  */
 export class DataNode extends BaseContentNode {
   static readonly typeName = 'DataNode';
-  private contentContainer!: HTMLElement;
+  readonly contentContainer!: HTMLElement;
 
   constructor(sg: SpaceGraph, spec: NodeSpec) {
     const maxH = (spec.data?.maxHeight as number) ?? 300;
@@ -49,6 +49,34 @@ export class DataNode extends BaseContentNode {
 
     this.domElement.appendChild(this.contentContainer);
     this._renderData(spec.data?.data ?? spec.data?.fields, spec.data?.expanded !== false, theme);
+  }
+
+  updateSpec(updates: Partial<NodeSpec>): this {
+    super.updateSpec(updates);
+
+    if (updates.label !== undefined) {
+      const titleSpan = this.domElement.querySelector('.sg-node-title');
+      if (titleSpan) titleSpan.textContent = updates.label;
+    }
+
+    if (updates.data) {
+      const theme = (updates.data.theme as string) ?? (this.data?.theme as string) ?? 'dark';
+
+      if (updates.data.width || updates.data.maxHeight) {
+        const w = (updates.data.width as number) ?? (this.data?.width as number) ?? 250;
+        const h = (updates.data.maxHeight as number) ?? (this.data?.maxHeight as number) ?? 300;
+        this.domElement.style.width = `${w}px`;
+        this.domElement.style.maxHeight = `${h}px`;
+        this.updateBackingGeometry(w, h);
+      }
+
+      if (updates.data.data !== undefined || updates.data.fields !== undefined) {
+        const payload = updates.data.data ?? updates.data.fields;
+        this._renderData(payload, updates.data.expanded !== false, theme);
+      }
+    }
+
+    return this;
   }
 
   private _renderData(data: unknown, expandTopLevel: boolean, theme: string) {
@@ -190,33 +218,5 @@ export class DataNode extends BaseContentNode {
       default:
         return theme === 'dark' ? '#e2e8f0' : '#334155';
     }
-  }
-
-  updateSpec(updates: Partial<NodeSpec>): this {
-    super.updateSpec(updates);
-
-    if (updates.label !== undefined) {
-      const titleSpan = this.domElement.querySelector('.sg-node-title');
-      if (titleSpan) titleSpan.textContent = updates.label;
-    }
-
-    if (updates.data) {
-      const theme = (updates.data.theme as string) ?? (this.data?.theme as string) ?? 'dark';
-
-      if (updates.data.width || updates.data.maxHeight) {
-        const w = (updates.data.width as number) ?? (this.data?.width as number) ?? 250;
-        const h = (updates.data.maxHeight as number) ?? (this.data?.maxHeight as number) ?? 300;
-        this.domElement.style.width = `${w}px`;
-        this.domElement.style.maxHeight = `${h}px`;
-        this.updateBackingGeometry(w, h);
-      }
-
-      if (updates.data.data !== undefined || updates.data.fields !== undefined) {
-        const payload = updates.data.data ?? updates.data.fields;
-        this._renderData(payload, updates.data.expanded !== false, theme);
-      }
-    }
-
-    return this;
   }
 }

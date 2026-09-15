@@ -1,21 +1,58 @@
 // Consolidated default registrations
+
+import {
+  AnimatedEdge,
+  BundledEdge,
+  CurvedEdge,
+  DottedEdge,
+  DynamicThicknessEdge,
+  InterGraphEdge,
+  LabeledEdge,
+} from 'spacegraphjs/edges';
+import {
+  BorderNode,
+  CanvasNode,
+  CodeEditorNode,
+  IFrameNode,
+  InstancedShapeNode,
+  MarkdownNode,
+  ProcessNode,
+  StackingNode,
+  SwitchNode,
+  TextMeshNode,
+  VirtualGridNode,
+} from 'spacegraphjs/nodes';
+// System plugins
+// Layout plugins
+import {
+  AutoColorPlugin,
+  AutoLayoutPlugin,
+  CircularLayout,
+  ClusterLayout,
+  ErgonomicsPlugin,
+  ForceLayout,
+  FractalZoomPlugin,
+  GeoLayout,
+  GridLayout,
+  HierarchicalLayout,
+  HistoryPlugin,
+  InteractionPlugin,
+  MinimapPlugin,
+  PhysicsPlugin,
+  RadialLayout,
+  SpectralLayout,
+  TimelineLayout,
+  TreeLayout,
+  ZoomUIPlugin,
+} from 'spacegraphjs/plugins';
+import { MermaidNode } from 'spacegraphjs/plugins/mermaid';
 import type { Plugin } from '../core/PluginManager';
-import { AnimatedEdge } from '../edges/AnimatedEdge';
-import { BundledEdge } from '../edges/BundledEdge';
-import { CurvedEdge } from '../edges/CurvedEdge';
-import { DottedEdge } from '../edges/DottedEdge';
-import { DynamicThicknessEdge } from '../edges/DynamicThicknessEdge';
 // Edge types
 import { Edge } from '../edges/Edge';
 import { FlowEdge } from '../edges/FlowEdge';
-import { InterGraphEdge } from '../edges/InterGraphEdge';
-import { LabeledEdge } from '../edges/LabeledEdge';
 import { Wire } from '../edges/Wire';
 import { AudioNode } from '../nodes/AudioNode';
-import { BorderNode } from '../nodes/BorderNode';
-import { CanvasNode } from '../nodes/CanvasNode';
 import { ChartNode } from '../nodes/ChartNode';
-import { CodeEditorNode } from '../nodes/CodeEditorNode';
 import { ColorPickerNode } from '../nodes/ColorPickerNode';
 import { DataNode } from '../nodes/DataNode';
 import { DropdownNode } from '../nodes/DropdownNode';
@@ -23,52 +60,22 @@ import { GlobeNode } from '../nodes/GlobeNode';
 import { GridNode } from '../nodes/GridNode';
 import { GroupNode } from '../nodes/GroupNode';
 import { HtmlNode } from '../nodes/HtmlNode';
-import { IFrameNode } from '../nodes/IFrameNode';
 import { ImageNode } from '../nodes/ImageNode';
-import { InstancedShapeNode } from '../nodes/InstancedShapeNode';
-import { MarkdownNode } from '../nodes/MarkdownNode';
 import { MathNode } from '../nodes/MathNode';
 import { MeterNode } from '../nodes/MeterNode';
 import { NoteNode } from '../nodes/NoteNode';
 import { PanelNode } from '../nodes/PanelNode';
 import { PortNode } from '../nodes/PortNode';
-import { ProcessNode } from '../nodes/ProcessNode';
 import { ProgressBarNode } from '../nodes/ProgressBarNode';
 import { SceneNode } from '../nodes/SceneNode';
 import { ScrollPanelNode } from '../nodes/ScrollPanelNode';
 // Node types
 import { ShapeNode } from '../nodes/ShapeNode';
 import { SplitNode } from '../nodes/SplitNode';
-import { StackingNode } from '../nodes/StackingNode';
-import { SwitchNode } from '../nodes/SwitchNode';
 import { TabContainerNode } from '../nodes/TabContainerNode';
-import { TextMeshNode } from '../nodes/TextMeshNode';
 import { VideoNode } from '../nodes/VideoNode';
-import { VirtualGridNode } from '../nodes/VirtualGridNode';
-import { AutoColorPlugin } from '../plugins/AutoColorPlugin';
-import { AutoLayoutPlugin } from '../plugins/AutoLayoutPlugin';
-import { ErgonomicsPlugin } from '../plugins/ErgonomicsPlugin';
-import { FractalZoomPlugin } from '../plugins/FractalZoomPlugin';
-import { HistoryPlugin } from '../plugins/HistoryPlugin';
 import { HUDPlugin } from '../plugins/HUDPlugin';
-// System plugins
-import { InteractionPlugin } from '../plugins/InteractionPlugin';
 import { LODPlugin } from '../plugins/LODPlugin';
-import { CircularLayout } from '../plugins/layouts/CircularLayout';
-import { ClusterLayout } from '../plugins/layouts/ClusterLayout';
-// Layout plugins
-import { ForceLayout } from '../plugins/layouts/ForceLayout';
-import { GeoLayout } from '../plugins/layouts/GeoLayout';
-import { GridLayout } from '../plugins/layouts/GridLayout';
-import { HierarchicalLayout } from '../plugins/layouts/HierarchicalLayout';
-import { RadialLayout } from '../plugins/layouts/RadialLayout';
-import { SpectralLayout } from '../plugins/layouts/SpectralLayout';
-import { TimelineLayout } from '../plugins/layouts/TimelineLayout';
-import { TreeLayout } from '../plugins/layouts/TreeLayout';
-import { MinimapPlugin } from '../plugins/MinimapPlugin';
-import { MermaidNode } from '../plugins/mermaid/MermaidNode';
-import { PhysicsPlugin } from '../plugins/PhysicsPlugin';
-import { ZoomUIPlugin } from '../plugins/ZoomUIPlugin';
 import type { EdgeSpec, GraphSpec, NodeSpec } from '../types';
 
 type PluginCtor = new () => Plugin;

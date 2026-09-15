@@ -13,10 +13,10 @@ export class ConnectionHandler {
   private connectSourceNode: Node | null = null;
   private connectTempLine: THREE.Line | null = null;
   private connectTempLineGeom: THREE.BufferGeometry | null = null;
-  private readonly tempMaterial = new THREE.LineBasicMaterial({ color: 0x8b5cf6, linewidth: 2 });
+  readonly tempMaterial = new THREE.LineBasicMaterial({ color: 0x8b5cf6, linewidth: 2 });
 
-  private readonly sg: SpaceGraph;
-  private readonly raycaster: InteractionRaycaster;
+  readonly sg: SpaceGraph;
+  readonly raycaster: InteractionRaycaster;
 
   constructor(sg: SpaceGraph, raycaster: InteractionRaycaster) {
     this.sg = sg;
@@ -107,6 +107,18 @@ export class ConnectionHandler {
     this.sg.events.emit('connection:cancelled', {});
   }
 
+  isConnectingMode(): boolean {
+    return this.isConnecting;
+  }
+
+  getSourceNode(): Node | null {
+    return this.connectSourceNode;
+  }
+
+  dispose(): void {
+    this.cleanupConnection();
+  }
+
   private cleanupConnection(): void {
     if (this.connectTempLine) {
       this.sg.renderer.scene.remove(this.connectTempLine);
@@ -118,17 +130,5 @@ export class ConnectionHandler {
 
     this.isConnecting = false;
     this.connectSourceNode = null;
-  }
-
-  isConnectingMode(): boolean {
-    return this.isConnecting;
-  }
-
-  getSourceNode(): Node | null {
-    return this.connectSourceNode;
-  }
-
-  dispose(): void {
-    this.cleanupConnection();
   }
 }

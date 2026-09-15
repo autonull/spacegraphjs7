@@ -32,7 +32,7 @@ export class Renderer {
   private _resizeObserver: ResizeObserver | null = null;
   private _threePatched = false;
   private renderScheduled = false;
-  private projScreenMatrix: THREE.Matrix4;
+  readonly projScreenMatrix: THREE.Matrix4;
   private lastOptTime = 0;
   private optFrames = 0;
   private fps = 60;
@@ -103,22 +103,6 @@ export class Renderer {
     this._threePatched = true;
   }
 
-  private onResize(): void {
-    const { clientWidth: w, clientHeight: h } = this.container;
-    this.camera.aspect = w / h;
-    this.camera.updateProjectionMatrix();
-    this.renderer.setSize(w, h);
-    this.cssRenderer.setSize(w, h);
-    this.renderContext?.updateViewport({ width: w, height: h });
-
-    const resolution = new THREE.Vector2(w, h);
-    for (const edge of this.sg.graph.edges.values()) {
-      if (edge.line?.material && (edge.line.material as any).isLineMaterial) {
-        (edge.line.material as any).resolution.copy(resolution);
-      }
-    }
-  }
-
   scheduleRender(): void {
     if (this.renderScheduled) return;
     this.renderScheduled = true;
@@ -164,11 +148,6 @@ export class Renderer {
     this.renderContext?.endFrame();
   }
 
-  private applyLOD(node: Node): void {
-    const lod = node.computeLOD(this.renderContext?.visibilityContext ?? ({} as any));
-    node.object.visible = node.visible && lod !== 'hidden';
-  }
-
   beginFrameOptimization(timestamp: number): void {
     if (this.lastOptTime === 0) {
       this.lastOptTime = timestamp;
@@ -207,5 +186,26 @@ export class Renderer {
     this.renderer.dispose();
     this.cssRenderer.domElement.remove();
     this.renderer.domElement.remove();
+  }
+
+  private onResize(): void {
+    const { clientWidth: w, clientHeight: h } = this.container;
+    this.camera.aspect = w / h;
+    this.camera.updateProjectionMatrix();
+    this.renderer.setSize(w, h);
+    this.cssRenderer.setSize(w, h);
+    this.renderContext?.updateViewport({ width: w, height: h });
+
+    const resolution = new THREE.Vector2(w, h);
+    for (const edge of this.sg.graph.edges.values()) {
+      if (edge.line?.material && (edge.line.material as any).isLineMaterial) {
+        (edge.line.material as any).resolution.copy(resolution);
+      }
+    }
+  }
+
+  private applyLOD(node: Node): void {
+    const lod = node.computeLOD(this.renderContext?.visibilityContext ?? ({} as any));
+    node.object.visible = node.visible && lod !== 'hidden';
   }
 }

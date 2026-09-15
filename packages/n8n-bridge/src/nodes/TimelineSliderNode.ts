@@ -42,6 +42,18 @@ export class TimelineSliderNode extends HtmlNode {
     this.renderHtmlContent(level);
   }
 
+  updateSpec(spec: SpecUpdate): void {
+    super.updateSpec(spec);
+    const level = this.domElement?.querySelector('input[type="range"]')
+      ? 'full'
+      : this.domElement?.querySelector('span[style*="background: #9c27b0"]')
+        ? 'summary'
+        : this.domElement?.querySelector('span')
+          ? 'label'
+          : 'icon';
+    this.renderHtmlContent(level);
+  }
+
   private renderHtmlContent(level: string) {
     if (!this.domElement) return;
 
@@ -161,17 +173,5 @@ export class TimelineSliderNode extends HtmlNode {
         border: '2px solid #9c27b0',
       });
     }
-  }
-
-  updateSpec(spec: SpecUpdate): void {
-    super.updateSpec(spec);
-    const level = this.domElement?.querySelector('input[type="range"]')
-      ? 'full'
-      : this.domElement?.querySelector('span[style*="background: #9c27b0"]')
-        ? 'summary'
-        : this.domElement?.querySelector('span')
-          ? 'label'
-          : 'icon';
-    this.renderHtmlContent(level);
   }
 }

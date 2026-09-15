@@ -145,7 +145,7 @@ export abstract class Fingering {
 
 export class FingerManager {
     private activeFingering: Fingering | null = null;
-    private readonly fingers = new Map<number, Finger>(); // pointerId → Finger
+    readonly fingers = new Map<number, Finger>(); // pointerId → Finger
 
     test(next: Fingering, finger: Finger): boolean {
         if (this.activeFingering?.defer(finger) ?? true) {
@@ -833,7 +833,7 @@ this.hoverManager.update(); // or call via InteractionPlugin.onPreRender()
 ```typescript
 // In CameraControls:
 private zoomStack: Array<{ target: THREE.Vector3; distance: number }> = [];
-private readonly MAX_ZOOM_DEPTH = 8;
+readonly MAX_ZOOM_DEPTH = 8;
 
 zoomTo(target: THREE.Vector3, distance: number, duration: number = 1.5): void {
     // If zooming to same target, zoom out instead
@@ -1302,7 +1302,7 @@ export class Wire<T = unknown> {
 ```typescript
 // In Node base class:
 activity = 0; // 0 = idle, 1 = hot
-private readonly ACTIVITY_DECAY_RATE = 0.5; // per second (2-second half-life)
+readonly ACTIVITY_DECAY_RATE = 0.5; // per second (2-second half-life)
 
 onPreRender(dt: number): void {
     this.activity *= Math.exp(-dt / this.ACTIVITY_DECAY_RATE);

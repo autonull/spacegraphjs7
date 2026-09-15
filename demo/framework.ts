@@ -1,5 +1,5 @@
-import { SpaceGraph } from '../src/SpaceGraph';
-import type { GraphSpec } from '../src/types';
+import type { GraphSpec } from '../src';
+import { SpaceGraph } from '../src';
 
 export { SpaceGraph };
 

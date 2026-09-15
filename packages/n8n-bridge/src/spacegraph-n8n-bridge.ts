@@ -29,46 +29,17 @@ export class N8nBridge {
     collabPlugin.init(this.sg);
   }
 
-  private connect() {
-    this.wsClient = new WebSocket(this.serverUrl);
-
-    this.wsClient.onopen = () => {
-      log.info('Connected to server');
-    };
-
-    this.wsClient.onmessage = (event) => {
-      try {
-        const message = JSON.parse(event.data);
-        this.handleMessage(message);
-      } catch (e) {
-        log.error('Failed to parse message', e);
-      }
-    };
-
-    this.wsClient.onclose = () => {
-      log.warn('Disconnected from server. Reconnecting in 5s...');
-      setTimeout(() => this.connect(), 5000);
-    };
+  // RxJS observables for reactive UI updates
+  get executionState(): Observable<ExecutionState | null> {
+    return this.executionState$.asObservable();
   }
 
-  private handleMessage(message: any) {
-    const handlers: Record<string, () => void> = {
-      'workflow:loaded': () => {
-        const spec = WorkflowMapper.toGraphSpec(message.data as N8nWorkflowJSON);
-        this.sg.loadSpec(spec);
-      },
-      'execution:progress': () => this.executionState$.next(message.data as ExecutionState),
-      'execution:complete': () => this.executionState$.next(message.data as ExecutionState),
-      'workflow:diff': () => this.workflowDiff$.next(message.data as N8nWorkflowDiff),
-      'os:process:update': () => this.osProcess$.next(message.data as OSProcessUpdate),
-    };
+  get workflowDiffs(): Observable<N8nWorkflowDiff> {
+    return this.workflowDiff$.asObservable();
+  }
 
-    const handler = handlers[message.type];
-    if (handler) {
-      handler();
-    } else {
-      log.warn('Unknown message type:', message.type);
-    }
+  get osProcessUpdates(): Observable<OSProcessUpdate> {
+    return this.osProcess$.asObservable();
   }
 
   // Load a workflow by ID from the n8n server -> render in SpaceGraph
@@ -128,29 +99,60 @@ export class N8nBridge {
     });
   }
 
+  dispose(): void {
+    if (this.wsClient) {
+      this.wsClient.close();
+    }
+  }
+
+  private connect() {
+    this.wsClient = new WebSocket(this.serverUrl);
+
+    this.wsClient.onopen = () => {
+      log.info('Connected to server');
+    };
+
+    this.wsClient.onmessage = (event) => {
+      try {
+        const message = JSON.parse(event.data);
+        this.handleMessage(message);
+      } catch (e) {
+        log.error('Failed to parse message', e);
+      }
+    };
+
+    this.wsClient.onclose = () => {
+      log.warn('Disconnected from server. Reconnecting in 5s...');
+      setTimeout(() => this.connect(), 5000);
+    };
+  }
+
+  private handleMessage(message: any) {
+    const handlers: Record<string, () => void> = {
+      'workflow:loaded': () => {
+        const spec = WorkflowMapper.toGraphSpec(message.data as N8nWorkflowJSON);
+        this.sg.loadSpec(spec);
+      },
+      'execution:progress': () => this.executionState$.next(message.data as ExecutionState),
+      'execution:complete': () => this.executionState$.next(message.data as ExecutionState),
+      'workflow:diff': () => this.workflowDiff$.next(message.data as N8nWorkflowDiff),
+      'os:process:update': () => this.osProcess$.next(message.data as OSProcessUpdate),
+    };
+
+    const handler = handlers[message.type];
+    if (handler) {
+      handler();
+    } else {
+      log.warn('Unknown message type:', message.type);
+    }
+  }
+
   private send(message: any) {
     if (this.wsClient && this.wsClient.readyState === 1) {
       // 1 = WebSocket.OPEN
       this.wsClient.send(JSON.stringify(message));
     } else {
       log.warn('WebSocket is not open. Cannot send message:', message);
-    }
-  }
-
-  // RxJS observables for reactive UI updates
-  get executionState(): Observable<ExecutionState | null> {
-    return this.executionState$.asObservable();
-  }
-  get workflowDiffs(): Observable<N8nWorkflowDiff> {
-    return this.workflowDiff$.asObservable();
-  }
-  get osProcessUpdates(): Observable<OSProcessUpdate> {
-    return this.osProcess$.asObservable();
-  }
-
-  dispose(): void {
-    if (this.wsClient) {
-      this.wsClient.close();
     }
   }
 }

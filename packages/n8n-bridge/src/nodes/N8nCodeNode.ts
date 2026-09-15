@@ -39,6 +39,18 @@ export class N8nCodeNode extends HtmlNode {
     this.renderHtmlContent(level);
   }
 
+  updateSpec(spec: SpecUpdate): void {
+    super.updateSpec(spec);
+    const level = this.domElement?.querySelector('textarea')
+      ? 'full'
+      : this.domElement?.querySelector('pre')
+        ? 'summary'
+        : this.domElement?.querySelector('div[style*="24px"]')
+          ? 'label'
+          : 'icon';
+    this.renderHtmlContent(level);
+  }
+
   private renderHtmlContent(level: string) {
     if (!this.domElement) return;
 
@@ -170,17 +182,5 @@ export class N8nCodeNode extends HtmlNode {
       this.domElement.append(header, editorContainer);
       setStyles(this.domElement, { background: '#1e1e1e', borderLeft: '4px solid #fbc02d' });
     }
-  }
-
-  updateSpec(spec: SpecUpdate): void {
-    super.updateSpec(spec);
-    const level = this.domElement?.querySelector('textarea')
-      ? 'full'
-      : this.domElement?.querySelector('pre')
-        ? 'summary'
-        : this.domElement?.querySelector('div[style*="24px"]')
-          ? 'label'
-          : 'icon';
-    this.renderHtmlContent(level);
   }
 }

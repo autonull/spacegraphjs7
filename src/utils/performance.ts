@@ -15,7 +15,7 @@ export class PerformanceMonitor {
   private lastTime = 0;
   private fps = 0;
   private history: number[] = [];
-  private historySize: number;
+  readonly historySize: number;
 
   constructor(historySize = 60) {
     this.historySize = historySize;

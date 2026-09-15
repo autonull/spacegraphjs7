@@ -1,5 +1,5 @@
+import { ObjectPoolManager } from 'spacegraphjs/core';
 import { describe, expect, it, vi } from 'vitest';
-import { ObjectPoolManager } from '../src/core/ObjectPoolManager';
 
 describe('ObjectPoolManager', () => {
   it('should initialize a new pool', () => {

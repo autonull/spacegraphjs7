@@ -1,5 +1,5 @@
+import { MathPool } from 'spacegraphjs/core';
 import * as THREE from 'three';
-import { MathPool } from '../core/pooling/ObjectPool';
 import type { Node } from '../nodes/Node';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { EdgeSpec } from '../types';
@@ -20,8 +20,8 @@ import { Edge } from './Edge';
  */
 export class DynamicThicknessEdge extends Edge {
   static readonly typeName = 'DynamicThicknessEdge';
-  private cylinder!: THREE.Mesh;
-  private _initialized = false;
+  readonly cylinder!: THREE.Mesh;
+  readonly _initialized = false;
 
   constructor(sg: SpaceGraph, spec: EdgeSpec, source: Node, target: Node) {
     super(sg, spec, source, target);

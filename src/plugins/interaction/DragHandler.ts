@@ -11,19 +11,19 @@ export class DragHandler {
   private isDragging = false;
   private dragNode: Node | null = null;
   private draggingNodes: Set<Node> = new Set();
-  private readonly dragPlane = new THREE.Plane();
-  private readonly dragOffset = new THREE.Vector3();
-  private readonly nodeDragOffsets = new Map<Node, THREE.Vector3>();
-  private readonly intersection = new THREE.Vector3();
+  readonly dragPlane = new THREE.Plane();
+  readonly dragOffset = new THREE.Vector3();
+  readonly nodeDragOffsets = new Map<Node, THREE.Vector3>();
+  readonly intersection = new THREE.Vector3();
   private dragStartZ = 0;
   private previousDragPosition = { x: 0, y: 0 };
   private dragStiffness = 1.0;
   private preserveDistance = false;
   private initialPickDistance = 0;
-  private readonly rayFrom = new THREE.Vector3();
+  readonly rayFrom = new THREE.Vector3();
 
-  private readonly sg: SpaceGraph;
-  private readonly raycaster: InteractionRaycaster;
+  readonly sg: SpaceGraph;
+  readonly raycaster: InteractionRaycaster;
 
   constructor(sg: SpaceGraph, raycaster: InteractionRaycaster) {
     this.sg = sg;
@@ -86,6 +86,27 @@ export class DragHandler {
     this.updateNodePosition(targetPosition);
     this.updateDraggingNodes(targetPosition);
     this.emitDragEvent();
+  }
+
+  endDrag(): void {
+    if (!this.isDragging) return;
+
+    if (this.dragNode) {
+      this.sg.events.emit('interaction:dragend', { node: this.dragNode } as any);
+    }
+
+    this.isDragging = false;
+    this.dragNode = null;
+    this.draggingNodes.clear();
+    this.nodeDragOffsets.clear();
+  }
+
+  isDraggingNode(): boolean {
+    return this.isDragging;
+  }
+
+  getDraggingNodes(): Set<Node> {
+    return this.draggingNodes;
   }
 
   private calculateTargetPosition(enableZAxis: boolean): THREE.Vector3 | null {
@@ -164,26 +185,5 @@ export class DragHandler {
         number,
       ],
     });
-  }
-
-  endDrag(): void {
-    if (!this.isDragging) return;
-
-    if (this.dragNode) {
-      this.sg.events.emit('interaction:dragend', { node: this.dragNode } as any);
-    }
-
-    this.isDragging = false;
-    this.dragNode = null;
-    this.draggingNodes.clear();
-    this.nodeDragOffsets.clear();
-  }
-
-  isDraggingNode(): boolean {
-    return this.isDragging;
-  }
-
-  getDraggingNodes(): Set<Node> {
-    return this.draggingNodes;
   }
 }

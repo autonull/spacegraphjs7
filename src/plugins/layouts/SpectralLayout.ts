@@ -11,10 +11,6 @@ export class SpectralLayout extends BaseLayout {
   readonly name = 'Spectral Layout';
   readonly version = '1.0.0';
 
-  protected defaultConfig(): LayoutConfig {
-    return { scale: 400, animate: true, duration: 1.5, dimensions: 3 };
-  }
-
   /**
    * Apply spectral layout using power iteration to compute eigenvectors.
    * Uses the adjacency matrix and degree information to position nodes in 2D/3D space.
@@ -110,5 +106,9 @@ export class SpectralLayout extends BaseLayout {
     }
 
     this.updateEdges();
+  }
+
+  protected defaultConfig(): LayoutConfig {
+    return { scale: 400, animate: true, duration: 1.5, dimensions: 3 };
   }
 }

@@ -21,7 +21,7 @@ export class ChartNode extends BaseContentNode {
   static readonly typeName = 'ChartNode';
   public canvasEl: HTMLCanvasElement;
   private chartInstance: unknown = null;
-  private titleEl: HTMLElement | null = null;
+  readonly titleEl: HTMLElement | null = null;
 
   constructor(sg: SpaceGraph, spec: NodeSpec) {
     const w = (spec.data?.width as number) ?? 300;
@@ -58,6 +58,45 @@ export class ChartNode extends BaseContentNode {
     }
 
     this._renderChart(spec);
+  }
+
+  updateSpec(updates: Partial<NodeSpec>): this {
+    super.updateSpec(updates);
+
+    if (updates.label !== undefined && this.titleEl) {
+      this.titleEl.textContent = updates.label;
+    }
+
+    if (updates.data) {
+      if (updates.data.width || updates.data.height) {
+        const w = Number(updates.data.width ?? this.data?.width ?? 300);
+        const h = Number(updates.data.height ?? this.data?.height ?? 200);
+        const title = (updates.label ?? this.label ?? this.data?.title ?? '') as string;
+        const totalH = h + (title ? 32 : 0);
+
+        this.domElement.style.width = `${w}px`;
+        this.domElement.style.height = `${totalH}px`;
+
+        this.updateBackingGeometry(w, totalH);
+      }
+
+      if (
+        updates.data.datasets ||
+        updates.data.labels ||
+        updates.data.chartType ||
+        updates.data.theme ||
+        updates.data.chartOptions
+      ) {
+        this._renderChart({ data: { ...this.data, ...updates.data } });
+      }
+    }
+
+    return this;
+  }
+
+  dispose(): void {
+    (this.chartInstance as { destroy?: () => void })?.destroy?.();
+    super.dispose();
   }
 
   private async _renderChart(spec: Partial<NodeSpec>) {
@@ -162,44 +201,5 @@ export class ChartNode extends BaseContentNode {
         ctx.fillText(labels[i], pad + i * barW + barW / 2, h - 5);
       }
     }
-  }
-
-  updateSpec(updates: Partial<NodeSpec>): this {
-    super.updateSpec(updates);
-
-    if (updates.label !== undefined && this.titleEl) {
-      this.titleEl.textContent = updates.label;
-    }
-
-    if (updates.data) {
-      if (updates.data.width || updates.data.height) {
-        const w = Number(updates.data.width ?? this.data?.width ?? 300);
-        const h = Number(updates.data.height ?? this.data?.height ?? 200);
-        const title = (updates.label ?? this.label ?? this.data?.title ?? '') as string;
-        const totalH = h + (title ? 32 : 0);
-
-        this.domElement.style.width = `${w}px`;
-        this.domElement.style.height = `${totalH}px`;
-
-        this.updateBackingGeometry(w, totalH);
-      }
-
-      if (
-        updates.data.datasets ||
-        updates.data.labels ||
-        updates.data.chartType ||
-        updates.data.theme ||
-        updates.data.chartOptions
-      ) {
-        this._renderChart({ data: { ...this.data, ...updates.data } });
-      }
-    }
-
-    return this;
-  }
-
-  dispose(): void {
-    (this.chartInstance as { destroy?: () => void })?.destroy?.();
-    super.dispose();
   }
 }

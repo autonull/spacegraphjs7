@@ -1,10 +1,6 @@
 import gsap from 'gsap';
 import type { SpaceGraph, SpaceGraphPlugin } from 'spacegraphjs';
 import { pkgLogger } from './logger';
-import { N8nBridge } from './spacegraph-n8n-bridge';
-
-const log = pkgLogger('[N8nWorkflowPlugin]');
-
 import { ExecutionLogPanel } from './nodes/ExecutionLogPanel';
 import { N8nAiNode } from './nodes/N8nAiNode';
 import { N8nCodeNode } from './nodes/N8nCodeNode';
@@ -16,12 +12,92 @@ import { N8nScheduleNode } from './nodes/N8nScheduleNode';
 import { N8nTriggerNode } from './nodes/N8nTriggerNode';
 import { N8nVisionOptimizerNode } from './nodes/N8nVisionOptimizerNode';
 import { TimelineSliderNode } from './nodes/TimelineSliderNode';
+import { N8nBridge } from './spacegraph-n8n-bridge';
 import type { ExecutionState } from './types';
+
+const log = pkgLogger('[N8nWorkflowPlugin]');
 
 export class N8nWorkflowPlugin implements SpaceGraphPlugin {
   name = 'N8nWorkflowPlugin';
   private bridge!: N8nBridge;
   private sg!: SpaceGraph;
+
+  init(sg: SpaceGraph): void {
+    this.sg = sg;
+    this.bridge = new N8nBridge(sg);
+
+    // Register nodes here to avoid core modifications and decouple N8N bridge from main lib.
+    sg.pluginManager.registerNodeType('ExecutionLogPanel', ExecutionLogPanel);
+    sg.pluginManager.registerNodeType('N8nAiNode', N8nAiNode);
+    sg.pluginManager.registerNodeType('N8nCodeNode', N8nCodeNode);
+    sg.pluginManager.registerNodeType('N8nCredentialNode', N8nCredentialNode);
+    sg.pluginManager.registerNodeType('N8nHitlNode', N8nHitlNode);
+    sg.pluginManager.registerNodeType('N8nHttpNode', N8nHttpNode);
+    sg.pluginManager.registerNodeType('N8nPaletteNode', N8nPaletteNode);
+    sg.pluginManager.registerNodeType('N8nScheduleNode', N8nScheduleNode);
+    sg.pluginManager.registerNodeType('N8nTriggerNode', N8nTriggerNode);
+    sg.pluginManager.registerNodeType('N8nVisionOptimizerNode', N8nVisionOptimizerNode);
+    sg.pluginManager.registerNodeType('TimelineSliderNode', TimelineSliderNode);
+
+    this.bridge.executionState.subscribe((state: ExecutionState | null) => {
+      if (state) this.applyExecutionVisuals(state);
+    });
+
+    window.addEventListener('keydown', this.onKeyDown);
+  }
+
+  update(_delta: number): void {
+    // Continuous updates if needed
+  }
+
+  showHeatmap(executionId: string): void {
+    log.info(`Showing heatmap for execution ${executionId}`);
+
+    const nodes = Array.from(this.sg.graph.nodes.values());
+    const durations = new Map(nodes.map((n) => [n.id, Math.random() * 5000 + 10]));
+    const maxDuration = Math.max(...durations.values(), 1);
+
+    const toHex = (n: number) =>
+      Math.round(n * 255)
+        .toString(16)
+        .padStart(2, '0');
+
+    const updateSpecs = nodes.map((node) => {
+      const duration = durations.get(node.id) || 0;
+      const normalized = duration / maxDuration;
+
+      const h = 240 - normalized * 240;
+      const s = 1.0,
+        l = 0.5;
+
+      const c = (1 - Math.abs(2 * l - 1)) * s;
+      const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+      const m = l - c / 2;
+      let [r, g, b] = [0, 0, 0];
+
+      if (h < 60) [r, g, b] = [c, x, 0];
+      else if (h < 120) [r, g, b] = [x, c, 0];
+      else if (h < 180) [r, g, b] = [0, c, x];
+      else if (h < 240) [r, g, b] = [0, x, c];
+      else if (h < 300) [r, g, b] = [x, 0, c];
+      else [r, g, b] = [c, 0, x];
+
+      return {
+        id: node.id,
+        color: `#${toHex(r + m)}${toHex(g + m)}${toHex(b + m)}`,
+        parameters: { ...node.parameters, executionDuration: duration },
+      };
+    });
+
+    this.sg.update({ nodes: updateSpecs });
+  }
+
+  dispose(): void {
+    window.removeEventListener('keydown', this.onKeyDown);
+    if (this.bridge) {
+      this.bridge.dispose();
+    }
+  }
 
   private onKeyDown = (e: KeyboardEvent) => {
     if (e.key === '/') {
@@ -204,34 +280,6 @@ export class N8nWorkflowPlugin implements SpaceGraphPlugin {
     }
   }
 
-  init(sg: SpaceGraph): void {
-    this.sg = sg;
-    this.bridge = new N8nBridge(sg);
-
-    // Register nodes here to avoid core modifications and decouple N8N bridge from main lib.
-    sg.pluginManager.registerNodeType('ExecutionLogPanel', ExecutionLogPanel);
-    sg.pluginManager.registerNodeType('N8nAiNode', N8nAiNode);
-    sg.pluginManager.registerNodeType('N8nCodeNode', N8nCodeNode);
-    sg.pluginManager.registerNodeType('N8nCredentialNode', N8nCredentialNode);
-    sg.pluginManager.registerNodeType('N8nHitlNode', N8nHitlNode);
-    sg.pluginManager.registerNodeType('N8nHttpNode', N8nHttpNode);
-    sg.pluginManager.registerNodeType('N8nPaletteNode', N8nPaletteNode);
-    sg.pluginManager.registerNodeType('N8nScheduleNode', N8nScheduleNode);
-    sg.pluginManager.registerNodeType('N8nTriggerNode', N8nTriggerNode);
-    sg.pluginManager.registerNodeType('N8nVisionOptimizerNode', N8nVisionOptimizerNode);
-    sg.pluginManager.registerNodeType('TimelineSliderNode', TimelineSliderNode);
-
-    this.bridge.executionState.subscribe((state: ExecutionState | null) => {
-      if (state) this.applyExecutionVisuals(state);
-    });
-
-    window.addEventListener('keydown', this.onKeyDown);
-  }
-
-  update(_delta: number): void {
-    // Continuous updates if needed
-  }
-
   private applyExecutionVisuals(state: ExecutionState) {
     if (!state.nodeId) {
       if (state.status === 'success' || state.status === 'error') {
@@ -273,55 +321,6 @@ export class N8nWorkflowPlugin implements SpaceGraphPlugin {
 
       const conf = anims[state.status] || { scale: 1, duration: 0.2 };
       gsap.to(node.object.scale, { x: conf.scale, y: conf.scale, z: conf.scale, ...conf });
-    }
-  }
-
-  showHeatmap(executionId: string): void {
-    log.info(`Showing heatmap for execution ${executionId}`);
-
-    const nodes = Array.from(this.sg.graph.nodes.values());
-    const durations = new Map(nodes.map((n) => [n.id, Math.random() * 5000 + 10]));
-    const maxDuration = Math.max(...durations.values(), 1);
-
-    const toHex = (n: number) =>
-      Math.round(n * 255)
-        .toString(16)
-        .padStart(2, '0');
-
-    const updateSpecs = nodes.map((node) => {
-      const duration = durations.get(node.id) || 0;
-      const normalized = duration / maxDuration;
-
-      const h = 240 - normalized * 240;
-      const s = 1.0,
-        l = 0.5;
-
-      const c = (1 - Math.abs(2 * l - 1)) * s;
-      const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
-      const m = l - c / 2;
-      let [r, g, b] = [0, 0, 0];
-
-      if (h < 60) [r, g, b] = [c, x, 0];
-      else if (h < 120) [r, g, b] = [x, c, 0];
-      else if (h < 180) [r, g, b] = [0, c, x];
-      else if (h < 240) [r, g, b] = [0, x, c];
-      else if (h < 300) [r, g, b] = [x, 0, c];
-      else [r, g, b] = [c, 0, x];
-
-      return {
-        id: node.id,
-        color: `#${toHex(r + m)}${toHex(g + m)}${toHex(b + m)}`,
-        parameters: { ...node.parameters, executionDuration: duration },
-      };
-    });
-
-    this.sg.update({ nodes: updateSpecs });
-  }
-
-  dispose(): void {
-    window.removeEventListener('keydown', this.onKeyDown);
-    if (this.bridge) {
-      this.bridge.dispose();
     }
   }
 }

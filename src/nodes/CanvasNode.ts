@@ -17,9 +17,9 @@ type DrawFn = (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) => void
  */
 export class CanvasNode extends TexturedMeshNode {
   static readonly typeName = 'CanvasNode';
-  private canvas: HTMLCanvasElement;
-  private ctx: CanvasRenderingContext2D;
-  private canvasTexture!: THREE.CanvasTexture;
+  readonly canvas: HTMLCanvasElement;
+  readonly ctx: CanvasRenderingContext2D;
+  readonly canvasTexture!: THREE.CanvasTexture;
   private drawFn?: DrawFn;
 
   constructor(sg: SpaceGraph, spec: NodeSpec) {
@@ -40,6 +40,27 @@ export class CanvasNode extends TexturedMeshNode {
     this.setTexture(this.canvasTexture);
   }
 
+  /** Expose the raw 2D context for external drawing. Call redraw() after modifying. */
+  get context(): CanvasRenderingContext2D {
+    return this.ctx;
+  }
+
+  /** Redraw the canvas using the draw function (or default renderer) and mark the texture as needing an update. */
+  redraw(drawFn?: DrawFn): void {
+    if (drawFn) this.drawFn = drawFn;
+    this._draw();
+    this.canvasTexture.needsUpdate = true;
+  }
+
+  updateSpec(updates: Partial<NodeSpec>): this {
+    super.updateSpec(updates);
+    if (updates.data?.draw) {
+      this.drawFn = updates.data.draw as DrawFn | undefined;
+      this.redraw();
+    }
+    return this;
+  }
+
   private _draw() {
     const { ctx, canvas } = this;
     if (!ctx) return;
@@ -57,26 +78,5 @@ export class CanvasNode extends TexturedMeshNode {
       ctx.textBaseline = 'middle';
       ctx.fillText(this.label, canvas.width / 2, canvas.height / 2);
     }
-  }
-
-  /** Redraw the canvas using the draw function (or default renderer) and mark the texture as needing an update. */
-  redraw(drawFn?: DrawFn): void {
-    if (drawFn) this.drawFn = drawFn;
-    this._draw();
-    this.canvasTexture.needsUpdate = true;
-  }
-
-  /** Expose the raw 2D context for external drawing. Call redraw() after modifying. */
-  get context(): CanvasRenderingContext2D {
-    return this.ctx;
-  }
-
-  updateSpec(updates: Partial<NodeSpec>): this {
-    super.updateSpec(updates);
-    if (updates.data?.draw) {
-      this.drawFn = updates.data.draw as DrawFn | undefined;
-      this.redraw();
-    }
-    return this;
   }
 }

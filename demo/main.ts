@@ -1,4 +1,4 @@
-import { SpaceGraph } from '../src/index';
+import { SpaceGraph } from '../src';
 
 let sg: SpaceGraph | null = null;
 

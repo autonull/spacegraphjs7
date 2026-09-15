@@ -36,4 +36,5 @@ async function main() {
   viteProcess.kill();
   process.exit(0);
 }
+
 main();

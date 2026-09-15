@@ -27,19 +27,9 @@ export class ForceLayout extends BaseLayout {
   private velocities = new Map<string, THREE.Vector3>();
   private currentIteration = 0;
 
-  protected defaultConfig(): ForceLayoutConfig {
-    return {
-      repulsion: 10000,
-      attraction: 0.01,
-      damping: 0.9,
-      gravity: 0.1,
-      minDistance: 50,
-      maxDistance: 1000,
-      iterations: 50,
-      temperature: 100,
-      animate: true,
-      duration: 1.0,
-    };
+  private get simulationProgress(): number {
+    const total = (this.config as ForceLayoutConfig).iterations;
+    return total > 0 ? this.currentIteration / total : 0;
   }
 
   async apply(options?: LayoutOptions): Promise<void> {
@@ -65,6 +55,25 @@ export class ForceLayout extends BaseLayout {
 
     this.updateEdges();
     this.emitLayoutApplied({ duration });
+  }
+
+  dispose(): void {
+    this.velocities.clear();
+  }
+
+  protected defaultConfig(): ForceLayoutConfig {
+    return {
+      repulsion: 10000,
+      attraction: 0.01,
+      damping: 0.9,
+      gravity: 0.1,
+      minDistance: 50,
+      maxDistance: 1000,
+      iterations: 50,
+      temperature: 100,
+      animate: true,
+      duration: 1.0,
+    };
   }
 
   private simulateStep(nodes: Node[]): void {
@@ -123,14 +132,5 @@ export class ForceLayout extends BaseLayout {
       if (velocity.length() > maxMove) velocity.setLength(maxMove);
       node.position.add(velocity);
     }
-  }
-
-  private get simulationProgress(): number {
-    const total = (this.config as ForceLayoutConfig).iterations;
-    return total > 0 ? this.currentIteration / total : 0;
-  }
-
-  dispose(): void {
-    this.velocities.clear();
   }
 }

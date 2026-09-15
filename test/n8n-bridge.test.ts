@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { N8nVisionHealer } from '../packages/n8n-bridge/src/N8nVisionHealer';
+import type { N8nWorkflowJSON } from '../packages/n8n-bridge/src';
+import { N8nVisionHealer, WorkflowMapper } from '../packages/n8n-bridge/src';
 import { ExecutionLogPanel } from '../packages/n8n-bridge/src/nodes/ExecutionLogPanel';
 import { N8nAiNode } from '../packages/n8n-bridge/src/nodes/N8nAiNode';
 import { N8nCodeNode } from '../packages/n8n-bridge/src/nodes/N8nCodeNode';
@@ -9,8 +10,6 @@ import { N8nHttpNode } from '../packages/n8n-bridge/src/nodes/N8nHttpNode';
 import { N8nPaletteNode } from '../packages/n8n-bridge/src/nodes/N8nPaletteNode';
 import { N8nScheduleNode } from '../packages/n8n-bridge/src/nodes/N8nScheduleNode';
 import { N8nVisionOptimizerNode } from '../packages/n8n-bridge/src/nodes/N8nVisionOptimizerNode';
-import type { N8nWorkflowJSON } from '../packages/n8n-bridge/src/types';
-import { WorkflowMapper } from '../packages/n8n-bridge/src/WorkflowMapper';
 import type { SpaceGraph } from '../src/SpaceGraph';
 
 describe('n8n-bridge Unit Tests', () => {
@@ -136,6 +135,7 @@ describe('n8n-bridge Unit Tests', () => {
         readyState = 1;
         send = mockSend;
         close = vi.fn();
+
         constructor(public url: string) {
           setTimeout(() => this.onopen?.(), 10);
         }

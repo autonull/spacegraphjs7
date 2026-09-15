@@ -21,7 +21,7 @@ const logger = createLogger('CodeEditorNode');
  */
 export class CodeEditorNode extends BaseContentNode {
   static readonly typeName = 'CodeEditorNode';
-  private editorContainer: HTMLDivElement;
+  readonly editorContainer: HTMLDivElement;
   private editorInstance: unknown = null;
 
   constructor(sg: SpaceGraph, spec: NodeSpec) {
@@ -56,37 +56,6 @@ export class CodeEditorNode extends BaseContentNode {
     this.domElement.appendChild(this.editorContainer);
 
     this.initEditor(spec);
-  }
-
-  private initEditor(spec: NodeSpec) {
-    loader
-      .init()
-      .then((monaco) => {
-        this.editorInstance = monaco.editor.create(this.editorContainer, {
-          value: (spec.data?.code as string) ?? '// Write code here...',
-          language: (spec.data?.language as string) ?? 'typescript',
-          theme: (spec.data?.theme as string) ?? 'vs-dark',
-          automaticLayout: true,
-          minimap: { enabled: false },
-          scrollBeyondLastLine: false,
-          fontSize: 14,
-        });
-
-        (
-          this.editorInstance as {
-            onDidChangeModelContent: (cb: () => void) => void;
-            getValue: () => string;
-          }
-        ).onDidChangeModelContent(() => {
-          this.data.code = (this.editorInstance as { getValue: () => string }).getValue();
-        });
-      })
-      .catch((err) => {
-        logger.error('Failed to load Monaco editor:', err);
-        this.editorContainer.textContent = 'Failed to load editor.';
-        this.editorContainer.style.color = 'red';
-        this.editorContainer.style.padding = '20px';
-      });
   }
 
   updateSpec(updates: Partial<NodeSpec>): this {
@@ -136,5 +105,36 @@ export class CodeEditorNode extends BaseContentNode {
   dispose(): void {
     (this.editorInstance as { dispose?: () => void })?.dispose?.();
     super.dispose();
+  }
+
+  private initEditor(spec: NodeSpec) {
+    loader
+      .init()
+      .then((monaco) => {
+        this.editorInstance = monaco.editor.create(this.editorContainer, {
+          value: (spec.data?.code as string) ?? '// Write code here...',
+          language: (spec.data?.language as string) ?? 'typescript',
+          theme: (spec.data?.theme as string) ?? 'vs-dark',
+          automaticLayout: true,
+          minimap: { enabled: false },
+          scrollBeyondLastLine: false,
+          fontSize: 14,
+        });
+
+        (
+          this.editorInstance as {
+            onDidChangeModelContent: (cb: () => void) => void;
+            getValue: () => string;
+          }
+        ).onDidChangeModelContent(() => {
+          this.data.code = (this.editorInstance as { getValue: () => string }).getValue();
+        });
+      })
+      .catch((err) => {
+        logger.error('Failed to load Monaco editor:', err);
+        this.editorContainer.textContent = 'Failed to load editor.';
+        this.editorContainer.style.color = 'red';
+        this.editorContainer.style.padding = '20px';
+      });
   }
 }

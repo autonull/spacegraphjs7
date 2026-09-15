@@ -6,12 +6,15 @@ export class ActionManager {
   register(action: Action): void {
     this.actions.set(action.id, action);
   }
+
   unregister(id: string): void {
     this.actions.delete(id);
   }
+
   get(id: string): Action | undefined {
     return this.actions.get(id);
   }
+
   getAll(): Action[] {
     return [...this.actions.values()];
   }

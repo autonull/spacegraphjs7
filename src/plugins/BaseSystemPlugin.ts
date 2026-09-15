@@ -1,6 +1,6 @@
+import type { Plugin } from 'spacegraphjs/core';
 import type { EventSystem } from '../core/events/EventSystem';
 import type { Graph } from '../core/Graph';
-import type { Plugin } from '../core/PluginManager';
 import type { Edge } from '../edges/Edge';
 import type { Node } from '../nodes/Node';
 import type { SpaceGraph } from '../SpaceGraph';
@@ -41,6 +41,28 @@ export abstract class BaseSystemPlugin implements Plugin {
     this.events = events;
   }
 
+  onPreRender?(_delta: number): void {}
+
+  onPostRender?(_delta: number): void {}
+
+  onNodeAdded?(_node: Node): void {}
+
+  onNodeRemoved?(_node: Node): void {}
+
+  onEdgeAdded?(_edge: Edge): void {}
+
+  onEdgeRemoved?(_edge: Edge): void {}
+
+  dispose(): void {
+    this.disposeSubscriptions();
+  }
+
+  export?(): unknown {
+    return undefined;
+  }
+
+  import?(_data: unknown): void {}
+
   protected subscribe(handle: SubscriptionHandle): void {
     this.subscriptions.push(handle);
   }
@@ -70,21 +92,4 @@ export abstract class BaseSystemPlugin implements Plugin {
     this.subscriptions.forEach((sub) => sub.dispose());
     this.subscriptions = [];
   }
-
-  onPreRender?(_delta: number): void {}
-  onPostRender?(_delta: number): void {}
-  onNodeAdded?(_node: Node): void {}
-  onNodeRemoved?(_node: Node): void {}
-  onEdgeAdded?(_edge: Edge): void {}
-  onEdgeRemoved?(_edge: Edge): void {}
-
-  dispose(): void {
-    this.disposeSubscriptions();
-  }
-
-  export?(): unknown {
-    return undefined;
-  }
-
-  import?(_data: unknown): void {}
 }

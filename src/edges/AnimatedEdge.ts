@@ -1,13 +1,13 @@
+import { ThreeDisposer } from 'spacegraphjs/utils';
 import * as THREE from 'three';
 import type { Node } from '../nodes/Node';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { EdgeData, EdgeSpec } from '../types';
-import { ThreeDisposer } from '../utils/ThreeDisposer';
 import { Edge } from './Edge';
 
 export class AnimatedEdge extends Edge {
   static readonly typeName = 'AnimatedEdge';
-  private particle: THREE.Mesh;
+  readonly particle: THREE.Mesh;
   private progress = 0;
   private speed = 0.01;
   private isReversed = false;

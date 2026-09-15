@@ -16,9 +16,9 @@ export class HistoryPlugin extends BaseSystemPlugin {
 
   private pastStack: GraphSpec[] = [];
   private futureStack: GraphSpec[] = [];
-  private maxHistorySize: number;
+  readonly maxHistorySize: number;
   private isRestoring = false;
-  private isEnabled = true;
+  readonly isEnabled = true;
 
   private lastSnapshotTime = 0;
   private snapshotDebounce = 500;
@@ -57,27 +57,6 @@ export class HistoryPlugin extends BaseSystemPlugin {
     );
   }
 
-  private handleKeydown(e: any): void {
-    if (!this.isEnabled) return;
-
-    const tag = (e.originalEvent?.target as HTMLElement)?.tagName;
-    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
-
-    if (e.ctrlKey || e.metaKey) {
-      if (e.key === 'z') {
-        e.originalEvent?.preventDefault();
-        if (e.shiftKey) {
-          this.redo();
-        } else {
-          this.undo();
-        }
-      } else if (e.key === 'y') {
-        e.originalEvent?.preventDefault();
-        this.redo();
-      }
-    }
-  }
-
   public pushSnapshot() {
     if (!this.isEnabled || this.isRestoring) return;
 
@@ -89,18 +68,6 @@ export class HistoryPlugin extends BaseSystemPlugin {
     }
 
     this.futureStack = [];
-  }
-
-  private debouncedSnapshot() {
-    if (!this.isEnabled || this.isRestoring) return;
-
-    if (this.debounceTimer) {
-      clearTimeout(this.debounceTimer);
-    }
-
-    this.debounceTimer = setTimeout(() => {
-      this.pushSnapshot();
-    }, this.snapshotDebounce);
   }
 
   public undo() {
@@ -149,5 +116,38 @@ export class HistoryPlugin extends BaseSystemPlugin {
     }
     this.pastStack = [];
     this.futureStack = [];
+  }
+
+  private handleKeydown(e: any): void {
+    if (!this.isEnabled) return;
+
+    const tag = (e.originalEvent?.target as HTMLElement)?.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+
+    if (e.ctrlKey || e.metaKey) {
+      if (e.key === 'z') {
+        e.originalEvent?.preventDefault();
+        if (e.shiftKey) {
+          this.redo();
+        } else {
+          this.undo();
+        }
+      } else if (e.key === 'y') {
+        e.originalEvent?.preventDefault();
+        this.redo();
+      }
+    }
+  }
+
+  private debouncedSnapshot() {
+    if (!this.isEnabled || this.isRestoring) return;
+
+    if (this.debounceTimer) {
+      clearTimeout(this.debounceTimer);
+    }
+
+    this.debounceTimer = setTimeout(() => {
+      this.pushSnapshot();
+    }, this.snapshotDebounce);
   }
 }

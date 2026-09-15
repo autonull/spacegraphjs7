@@ -6,17 +6,6 @@ export class GeoLayout extends BaseLayout {
   readonly name = 'Geospatial Layout';
   readonly version = '1.0.0';
 
-  protected defaultConfig(): LayoutConfig {
-    return {
-      projection: 'sphere',
-      radius: 500,
-      mapWidth: 1000,
-      mapHeight: 500,
-      animate: true,
-      duration: 1.5,
-    };
-  }
-
   async apply(options?: LayoutOptions): Promise<void> {
     const {
       projection = this.config.projection as string,
@@ -59,5 +48,16 @@ export class GeoLayout extends BaseLayout {
     }
 
     this.updateEdges();
+  }
+
+  protected defaultConfig(): LayoutConfig {
+    return {
+      projection: 'sphere',
+      radius: 500,
+      mapWidth: 1000,
+      mapHeight: 500,
+      animate: true,
+      duration: 1.5,
+    };
   }
 }

@@ -1,11 +1,10 @@
 import * as THREE from 'three';
 
 export class ObjectPool<T> {
-  private readonly available: T[] = [];
-  private readonly createFn: () => T;
-  private readonly resetFn: (obj: T) => void;
-  private readonly maxPoolSize: number;
-  private _acquiredCount = 0;
+  readonly available: T[] = [];
+  readonly createFn: () => T;
+  readonly resetFn: (obj: T) => void;
+  readonly maxPoolSize: number;
 
   constructor(
     createFn: () => T,
@@ -19,6 +18,20 @@ export class ObjectPool<T> {
     for (let i = 0; i < initialSize; i++) this.available.push(createFn());
   }
 
+  private _acquiredCount = 0;
+
+  get acquiredCount(): number {
+    return this._acquiredCount;
+  }
+
+  get size(): number {
+    return this.available.length;
+  }
+
+  get poolSize(): number {
+    return this.available.length;
+  }
+
   acquire(): T {
     this._acquiredCount++;
     return this.available.pop() ?? this.createFn();
@@ -28,16 +41,6 @@ export class ObjectPool<T> {
     if (this.available.length >= this.maxPoolSize) return;
     this.resetFn(obj);
     this.available.push(obj);
-  }
-
-  get size(): number {
-    return this.available.length;
-  }
-  get acquiredCount(): number {
-    return this._acquiredCount;
-  }
-  get poolSize(): number {
-    return this.available.length;
   }
 
   clear(): void {
@@ -56,12 +59,12 @@ export class ObjectPool<T> {
 
 export class MathPool {
   private static instance: MathPool;
-  private readonly vector3Pool: ObjectPool<THREE.Vector3>;
-  private readonly vector2Pool: ObjectPool<THREE.Vector2>;
-  private readonly matrix4Pool: ObjectPool<THREE.Matrix4>;
-  private readonly quaternionPool: ObjectPool<THREE.Quaternion>;
-  private readonly colorPool: ObjectPool<THREE.Color>;
-  private readonly box3Pool: ObjectPool<THREE.Box3>;
+  readonly vector3Pool: ObjectPool<THREE.Vector3>;
+  readonly vector2Pool: ObjectPool<THREE.Vector2>;
+  readonly matrix4Pool: ObjectPool<THREE.Matrix4>;
+  readonly quaternionPool: ObjectPool<THREE.Quaternion>;
+  readonly colorPool: ObjectPool<THREE.Color>;
+  readonly box3Pool: ObjectPool<THREE.Box3>;
 
   private constructor() {
     this.vector3Pool = new ObjectPool(
@@ -109,36 +112,47 @@ export class MathPool {
   acquireVector3(): THREE.Vector3 {
     return this.vector3Pool.acquire();
   }
+
   releaseVector3(v: THREE.Vector3): void {
     this.vector3Pool.release(v);
   }
+
   acquireVector2(): THREE.Vector2 {
     return this.vector2Pool.acquire();
   }
+
   releaseVector2(v: THREE.Vector2): void {
     this.vector2Pool.release(v);
   }
+
   acquireMatrix4(): THREE.Matrix4 {
     return this.matrix4Pool.acquire();
   }
+
   releaseMatrix4(m: THREE.Matrix4): void {
     this.matrix4Pool.release(m);
   }
+
   acquireQuaternion(): THREE.Quaternion {
     return this.quaternionPool.acquire();
   }
+
   releaseQuaternion(q: THREE.Quaternion): void {
     this.quaternionPool.release(q);
   }
+
   acquireColor(): THREE.Color {
     return this.colorPool.acquire();
   }
+
   releaseColor(c: THREE.Color): void {
     this.colorPool.release(c);
   }
+
   acquireBox3(): THREE.Box3 {
     return this.box3Pool.acquire();
   }
+
   releaseBox3(b: THREE.Box3): void {
     this.box3Pool.release(b);
   }

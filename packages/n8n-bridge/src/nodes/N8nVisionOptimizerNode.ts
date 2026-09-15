@@ -39,6 +39,18 @@ export class N8nVisionOptimizerNode extends HtmlNode {
     this.renderHtmlContent(level);
   }
 
+  updateSpec(spec: SpecUpdate): void {
+    super.updateSpec(spec);
+    const level = this.domElement?.querySelector('button')
+      ? 'full'
+      : this.domElement?.querySelector('span[style*="Score:"]')
+        ? 'summary'
+        : this.domElement?.querySelector('span')
+          ? 'label'
+          : 'icon';
+    this.renderHtmlContent(level);
+  }
+
   private renderHtmlContent(level: string) {
     if (!this.domElement) return;
 
@@ -167,17 +179,5 @@ export class N8nVisionOptimizerNode extends HtmlNode {
       this.domElement.append(header, scoreBox, fixBtn);
       setStyles(this.domElement, { background: '#607d8b', border: '2px solid #455a64' });
     }
-  }
-
-  updateSpec(spec: SpecUpdate): void {
-    super.updateSpec(spec);
-    const level = this.domElement?.querySelector('button')
-      ? 'full'
-      : this.domElement?.querySelector('span[style*="Score:"]')
-        ? 'summary'
-        : this.domElement?.querySelector('span')
-          ? 'label'
-          : 'icon';
-    this.renderHtmlContent(level);
   }
 }

@@ -7,16 +7,6 @@ export class TreeLayout extends BaseLayout {
   readonly name = 'Tree Layout';
   readonly version = '1.0.0';
 
-  protected defaultConfig(): LayoutConfig {
-    return {
-      levelHeight: 150,
-      nodeSpacing: 100,
-      orientation: 'vertical',
-      animate: true,
-      duration: 1.0,
-    };
-  }
-
   async apply(options?: LayoutOptions): Promise<void> {
     const {
       levelHeight = this.config.levelHeight as number,
@@ -91,5 +81,15 @@ export class TreeLayout extends BaseLayout {
     }
 
     this.updateEdges();
+  }
+
+  protected defaultConfig(): LayoutConfig {
+    return {
+      levelHeight: 150,
+      nodeSpacing: 100,
+      orientation: 'vertical',
+      animate: true,
+      duration: 1.0,
+    };
   }
 }

@@ -1,7 +1,7 @@
+import type { Plugin } from 'spacegraphjs/core';
 import * as THREE from 'three';
 import type { EventSystem } from '../core/events/EventSystem';
 import type { Graph } from '../core/Graph';
-import type { Plugin } from '../core/PluginManager';
 import type { Edge } from '../edges/Edge';
 import {
   BoxSelectingFingering,
@@ -41,11 +41,11 @@ export class InteractionPlugin implements Plugin {
   private keyboardShortcuts!: KeyboardShortcuts;
   private focusManager!: FocusManager;
   private copiedNodes: Node[] = [];
-
-  private _mode: 'default' | 'select' | 'connect' = 'default';
   private pointerDownPosition = new THREE.Vector2();
   private lastZoomedId: string | null = null;
   private lastPressedNode: Node | null = null;
+
+  private _mode: 'default' | 'select' | 'connect' = 'default';
 
   get mode(): 'default' | 'select' | 'connect' {
     return this._mode;
@@ -77,6 +77,11 @@ export class InteractionPlugin implements Plugin {
 
     this.registerFingerings();
     this.initInputHandlers();
+  }
+
+  dispose(): void {
+    this.selectionManager.dispose();
+    this.connectionHandler.dispose();
   }
 
   private registerFingerings(): void {
@@ -466,10 +471,5 @@ export class InteractionPlugin implements Plugin {
         this.selectionManager.addNode(node);
       }
     }
-  }
-
-  dispose(): void {
-    this.selectionManager.dispose();
-    this.connectionHandler.dispose();
   }
 }

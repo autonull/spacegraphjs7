@@ -1,4 +1,5 @@
 import { Tensor } from 'onnxruntime-web';
+import type { VisionModelLoader } from 'spacegraphjs/vision';
 import * as THREE from 'three';
 import type {
   ErgonomicsResult,
@@ -9,13 +10,12 @@ import type {
   VisionReport,
   VisionStrategy,
 } from '../types';
-import type { VisionModelLoader } from '../VisionModelLoader';
 
 export class OnnxStrategy implements VisionStrategy {
   readonly id = 'onnx';
   readonly name = 'AI Vision Models';
 
-  constructor(private readonly modelLoader: VisionModelLoader) {}
+  constructor(readonly modelLoader: VisionModelLoader) {}
 
   async analyze(graph: unknown, camera: unknown): Promise<VisionReport> {
     const nodes = this.extractNodes(graph);

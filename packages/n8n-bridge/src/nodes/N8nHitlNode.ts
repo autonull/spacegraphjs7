@@ -39,6 +39,18 @@ export class N8nHitlNode extends HtmlNode {
     this.renderHtmlContent(level);
   }
 
+  updateSpec(spec: SpecUpdate): void {
+    super.updateSpec(spec);
+    const level = this.domElement?.querySelector('button')
+      ? 'full'
+      : this.domElement?.querySelector('div[style*="maxHeight"]')
+        ? 'summary'
+        : this.domElement?.querySelector('span')
+          ? 'label'
+          : 'icon';
+    this.renderHtmlContent(level);
+  }
+
   private renderHtmlContent(level: string) {
     if (!this.domElement) return;
 
@@ -195,17 +207,5 @@ export class N8nHitlNode extends HtmlNode {
 
       setStyles(this.domElement, { background: '#ff9800', border: '2px solid #e65100' });
     }
-  }
-
-  updateSpec(spec: SpecUpdate): void {
-    super.updateSpec(spec);
-    const level = this.domElement?.querySelector('button')
-      ? 'full'
-      : this.domElement?.querySelector('div[style*="maxHeight"]')
-        ? 'summary'
-        : this.domElement?.querySelector('span')
-          ? 'label'
-          : 'icon';
-    this.renderHtmlContent(level);
   }
 }

@@ -15,6 +15,12 @@ export class ComputedProperty<T> extends Property<T> {
     }
   }
 
+  dispose(): void {
+    for (const d of this.disposables) d.dispose();
+    this.disposables = [];
+    super.dispose();
+  }
+
   private recompute(): void {
     if (this.computing) return;
     this.computing = true;
@@ -23,11 +29,5 @@ export class ComputedProperty<T> extends Property<T> {
     } finally {
       this.computing = false;
     }
-  }
-
-  dispose(): void {
-    for (const d of this.disposables) d.dispose();
-    this.disposables = [];
-    super.dispose();
   }
 }

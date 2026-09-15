@@ -68,6 +68,18 @@ export class ProcessNode extends (BaseContentNode as any) {
     this.updateBars(cpu, mem);
   }
 
+  updateSpec(updates: Partial<NodeSpec>): this {
+    super.updateSpec(updates);
+    if (updates.data) {
+      const cpu =
+        (updates.data.cpu as number) ?? Number.parseFloat(this.cpuText.textContent ?? '0');
+      const mem =
+        (updates.data.memory as number) ?? Number.parseFloat(this.memText.textContent ?? '0');
+      this.updateBars(cpu, mem);
+    }
+    return this;
+  }
+
   private createStatRow(label: string) {
     const container = DOMUtils.createElement('div');
     container.style.display = 'flex';
@@ -127,17 +139,5 @@ export class ProcessNode extends (BaseContentNode as any) {
 
     const scale = 1.0 + (mem / 100) * 0.5;
     this.object.scale.set(scale, scale, scale);
-  }
-
-  updateSpec(updates: Partial<NodeSpec>): this {
-    super.updateSpec(updates);
-    if (updates.data) {
-      const cpu =
-        (updates.data.cpu as number) ?? Number.parseFloat(this.cpuText.textContent ?? '0');
-      const mem =
-        (updates.data.memory as number) ?? Number.parseFloat(this.memText.textContent ?? '0');
-      this.updateBars(cpu, mem);
-    }
-    return this;
   }
 }

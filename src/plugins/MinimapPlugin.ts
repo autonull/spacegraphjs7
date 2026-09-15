@@ -1,5 +1,5 @@
+import type { CameraControls } from 'spacegraphjs/core';
 import * as THREE from 'three';
-import type { CameraControls } from '../core/CameraControls';
 import type { EventSystem } from '../core/events/EventSystem';
 import type { Graph } from '../core/Graph';
 import type { SpaceGraph } from '../SpaceGraph';
@@ -21,9 +21,6 @@ export class MinimapPlugin extends BaseSystemPlugin {
   readonly id = 'minimap';
   readonly name = 'Minimap';
   readonly version = '1.0.0';
-
-  private orthoCamera!: THREE.OrthographicCamera;
-
   public settings = {
     position: 'bottom-right' as 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left',
     size: 160,
@@ -32,6 +29,13 @@ export class MinimapPlugin extends BaseSystemPlugin {
     alpha: 0.8,
     zoom: 1500,
   };
+  private orthoCamera!: THREE.OrthographicCamera;
+  private isDragging = false;
+  private container!: HTMLElement;
+  private canvas!: HTMLCanvasElement;
+  private ctx!: CanvasRenderingContext2D;
+  private indicatorColor = 'rgba(139, 92, 246, 0.8)';
+  private borderColor = 'rgba(255, 255, 255, 0.1)';
 
   init(sg: SpaceGraph, graph: Graph, events: EventSystem): void {
     super.init(sg, graph, events);
@@ -45,20 +49,28 @@ export class MinimapPlugin extends BaseSystemPlugin {
     }
   }
 
+  onPostRender(_delta: number): void {
+    if (!this.sg || !this.sg.renderer || !this.sg.renderer.renderer) return;
+    this._renderMinimap();
+  }
+
+  dispose(): void {
+    const dom = this.sg.renderer.renderer?.domElement;
+    if (dom) {
+      dom.removeEventListener('pointerdown', this._onPointerDown);
+      dom.removeEventListener('pointermove', this._onPointerMove);
+    }
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('pointerup', this._onPointerUp);
+    }
+  }
+
   private _buildCamera() {
     const z = this.settings.zoom;
     this.orthoCamera = new THREE.OrthographicCamera(-z, z, z, -z, 1, 10000);
     this.orthoCamera.position.set(0, 0, 1000);
     this.orthoCamera.lookAt(0, 0, 0);
   }
-
-  private isDragging = false;
-
-  private container!: HTMLElement;
-  private canvas!: HTMLCanvasElement;
-  private ctx!: CanvasRenderingContext2D;
-  private indicatorColor = 'rgba(139, 92, 246, 0.8)';
-  private borderColor = 'rgba(255, 255, 255, 0.1)';
 
   private _getBounds() {
     const canvas = this.sg.renderer.renderer.domElement;
@@ -141,11 +153,6 @@ export class MinimapPlugin extends BaseSystemPlugin {
     this._renderMinimap();
     e.stopPropagation();
   };
-
-  onPostRender(_delta: number): void {
-    if (!this.sg || !this.sg.renderer || !this.sg.renderer.renderer) return;
-    this._renderMinimap();
-  }
 
   private _renderMinimap() {
     const renderer = this.sg.renderer.renderer;
@@ -260,17 +267,6 @@ export class MinimapPlugin extends BaseSystemPlugin {
       indicator.style.top = `${mapY - mapH / 2}px`;
       indicator.style.width = `${mapW}px`;
       indicator.style.height = `${mapH}px`;
-    }
-  }
-
-  dispose(): void {
-    const dom = this.sg.renderer.renderer?.domElement;
-    if (dom) {
-      dom.removeEventListener('pointerdown', this._onPointerDown);
-      dom.removeEventListener('pointermove', this._onPointerMove);
-    }
-    if (typeof window !== 'undefined') {
-      window.removeEventListener('pointerup', this._onPointerUp);
     }
   }
 }

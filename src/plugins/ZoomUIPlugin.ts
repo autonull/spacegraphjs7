@@ -1,7 +1,7 @@
 import gsap from 'gsap';
+import type { Plugin } from 'spacegraphjs/core';
 import type { EventSystem } from '../core/events/EventSystem';
 import type { Graph } from '../core/Graph';
-import type { Plugin } from '../core/PluginManager';
 import type { SpaceGraph } from '../SpaceGraph';
 
 export interface ZoomUIConfig {
@@ -67,6 +67,13 @@ export class ZoomUIPlugin implements Plugin {
     if (this.config.showHint) {
       this.showHint();
     }
+  }
+
+  onPreRender(_delta: number): void {}
+
+  dispose(): void {
+    this.levelIndicator?.remove();
+    this.hintElement?.remove();
   }
 
   private createLevelIndicator(): void {
@@ -215,12 +222,5 @@ export class ZoomUIPlugin implements Plugin {
         },
       });
     }
-  }
-
-  onPreRender(_delta: number): void {}
-
-  dispose(): void {
-    this.levelIndicator?.remove();
-    this.hintElement?.remove();
   }
 }

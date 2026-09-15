@@ -12,28 +12,6 @@ export class ScrollPanelNode extends (HtmlNode as any) {
     this._setupScrollPanel();
   }
 
-  private _setupScrollPanel(): void {
-    const data = this.data as SpaceGraphNodeData;
-    const direction = (data?.scrollDirection as 'vertical' | 'horizontal' | 'both') ?? 'vertical';
-    this.domElement.style.overflow = 'auto';
-    this._createScrollContent(direction);
-  }
-
-  private _createScrollContent(direction: 'vertical' | 'horizontal' | 'both'): void {
-    const overflow = direction === 'both' ? 'auto' : direction;
-    this.scrollContent = DOMUtils.createElement('div');
-    Object.assign(this.scrollContent.style, {
-      position: 'absolute',
-      top: '0',
-      left: '0',
-      right: '0',
-      bottom: '0',
-      overflow,
-      padding: '8px',
-    });
-    this.domElement.appendChild(this.scrollContent);
-  }
-
   scrollTo(x: number, y: number, animate = true): void {
     if (!this.scrollContent) return;
     if (animate) {
@@ -58,5 +36,27 @@ export class ScrollPanelNode extends (HtmlNode as any) {
       x: this.scrollContent?.scrollLeft ?? 0,
       y: this.scrollContent?.scrollTop ?? 0,
     };
+  }
+
+  private _setupScrollPanel(): void {
+    const data = this.data as SpaceGraphNodeData;
+    const direction = (data?.scrollDirection as 'vertical' | 'horizontal' | 'both') ?? 'vertical';
+    this.domElement.style.overflow = 'auto';
+    this._createScrollContent(direction);
+  }
+
+  private _createScrollContent(direction: 'vertical' | 'horizontal' | 'both'): void {
+    const overflow = direction === 'both' ? 'auto' : direction;
+    this.scrollContent = DOMUtils.createElement('div');
+    Object.assign(this.scrollContent.style, {
+      position: 'absolute',
+      top: '0',
+      left: '0',
+      right: '0',
+      bottom: '0',
+      overflow,
+      padding: '8px',
+    });
+    this.domElement.appendChild(this.scrollContent);
   }
 }

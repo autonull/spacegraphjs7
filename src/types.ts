@@ -1,11 +1,10 @@
+import type { Raycaster, Vector3 } from 'three';
 import type { Edge } from './edges/Edge';
 // types.ts - Ergonomic TypeScript types
 import type { Node } from './nodes/Node';
 import type { SpaceGraph } from './SpaceGraph';
 
 export type { Edge, Node, SpaceGraph };
-
-import type { Raycaster, Vector3 } from 'three';
 
 // ============= Utility Types =============
 export type Maybe<T> = T | null | undefined;
@@ -32,29 +31,35 @@ export interface Rect {
   width: number;
   height: number;
 }
+
 export interface Point2D {
   x: number;
   y: number;
 }
+
 export interface Point3D {
   x: number;
   y: number;
   z: number;
 }
+
 export interface Bounds3D {
   min: Vector3;
   max: Vector3;
   center: Vector3;
   size: Vector3;
+
   containsPoint(point: Vector3): boolean;
+
   intersectsRay(ray: Raycaster): boolean;
 }
 
 // ============= Unified Node Data Base =============
 export interface BaseNodeData {
-  [key: string]: unknown;
   pinned?: boolean;
   visible?: boolean;
+
+  [key: string]: unknown;
 }
 
 // Consolidated dimension properties shared by most node types
@@ -85,6 +90,7 @@ export type CoreNodeData = BaseNodeData & NodeDimensions & NodeVisual & NodeInte
 export interface BaseEdgeData {
   [key: string]: unknown;
 }
+
 export interface LabelLodLevel {
   distance?: number;
   scale?: number;
@@ -100,27 +106,33 @@ export interface ShapeNodeData extends CoreNodeData {
   size?: number;
   side?: 'front' | 'back' | 'double';
 }
+
 export interface HtmlNodeData extends CoreNodeData {
   html?: string;
   className?: string;
   pointerEvents?: 'none' | 'auto';
   labelLod?: LabelLodLevel[];
 }
+
 export interface ImageNodeData extends CoreNodeData {
   url?: string;
 }
+
 export interface GroupNodeData extends CoreNodeData {
   depth?: number;
   title?: string;
 }
+
 export interface NoteNodeData extends CoreNodeData {
   text?: string;
   textColor?: string | number;
   fontSize?: number;
 }
+
 export interface CanvasNodeData extends CoreNodeData {
   dpi?: number;
 }
+
 export interface TextMeshNodeData extends CoreNodeData {
   text?: string;
   fontUrl?: string;
@@ -128,33 +140,39 @@ export interface TextMeshNodeData extends CoreNodeData {
   height?: number;
   align?: 'left' | 'center' | 'right';
 }
+
 export interface DataNodeData extends CoreNodeData {
   theme?: 'light' | 'dark';
   data?: unknown;
   expanded?: boolean;
   maxHeight?: number;
 }
+
 export interface VideoNodeData extends CoreNodeData {
   url?: string;
   autoplay?: boolean;
   loop?: boolean;
   muted?: boolean;
 }
+
 export interface IFrameNodeData extends CoreNodeData {
   src?: string;
   scrolling?: 'yes' | 'no' | 'auto';
 }
+
 export interface ChartNodeData extends CoreNodeData {
   theme?: 'light' | 'dark';
   chartType?: 'bar' | 'line' | 'pie' | 'scatter' | 'radar';
   chartData?: unknown;
   chartOptions?: unknown;
 }
+
 export interface MarkdownNodeData extends CoreNodeData {
   theme?: 'light' | 'dark';
   content?: string;
   fontSize?: number;
 }
+
 export interface GlobeNodeData extends CoreNodeData {
   radius?: number;
   resolution?: number;
@@ -167,31 +185,37 @@ export interface GlobeNodeData extends CoreNodeData {
     label?: string;
   }[];
 }
+
 export interface SceneNodeData extends CoreNodeData {
   url?: string;
   targetSize?: number;
   autoCenter?: boolean;
 }
+
 export interface AudioNodeData extends CoreNodeData {
   src?: string;
   autoplay?: boolean;
   loop?: boolean;
 }
+
 export interface MathNodeData extends CoreNodeData {
   math?: string;
   fontSize?: number;
 }
+
 export interface ProcessNodeData extends CoreNodeData {
   pid?: string | number;
   name?: string;
   cpu?: number;
   memory?: number;
 }
+
 export interface CodeEditorNodeData extends CoreNodeData {
   code?: string;
   language?: string;
   theme?: string;
 }
+
 export interface InstancedShapeNodeData extends CoreNodeData {
   shape?: 'box' | 'sphere' | 'circle' | 'plane';
   size?: number;
@@ -259,6 +283,7 @@ export interface NodeSpec<T extends NodeData = NodeData> {
   data?: T;
   parameters?: Record<string, unknown>;
 }
+
 export interface EdgeSpec<T extends EdgeData = EdgeData> {
   id: string;
   source: string;
@@ -266,11 +291,13 @@ export interface EdgeSpec<T extends EdgeData = EdgeData> {
   type?: string;
   data?: T;
 }
+
 export interface GraphSpec {
   nodes?: NodeSpec[];
   edges?: EdgeSpec[];
   camera?: { position: [number, number, number]; target: [number, number, number] };
 }
+
 export interface SpecUpdate {
   nodes?: Partial<NodeSpec>[];
   edges?: Partial<EdgeSpec>[];
@@ -286,6 +313,7 @@ export type GraphEvent =
   | 'edge:updated';
 export type NodeEvent = 'node:updated' | 'node:destroying';
 export type EdgeEvent = 'edge:updated' | 'edge:destroying';
+
 export interface SpaceGraphEvents {
   'node:added': any;
   'node:removed': any;
@@ -309,6 +337,7 @@ export interface SpaceGraphOptions {
   initialLayout?: string;
   cameraControls?: Partial<import('./core/CameraControls').CameraControlsConfig>;
   input?: DefaultInputConfig;
+
   [key: string]: unknown;
 }
 
@@ -318,6 +347,7 @@ export interface DefaultInputConfig {
   interaction?: InteractionInputConfig;
   history?: HistoryInputConfig;
 }
+
 export interface CameraInputConfig {
   enableCameraOrbit?: boolean;
   enableCameraPan?: boolean;
@@ -329,6 +359,7 @@ export interface CameraInputConfig {
   minRadius?: number;
   maxRadius?: number;
 }
+
 export interface InteractionInputConfig {
   enableHover?: boolean;
   enableBoxSelect?: boolean;
@@ -336,6 +367,7 @@ export interface InteractionInputConfig {
   enableWidgets?: boolean;
   clickThreshold?: number;
 }
+
 export interface HistoryInputConfig {
   enabled?: boolean;
 }
@@ -346,6 +378,7 @@ export interface RenderOptions {
   backgroundColor?: string | number;
   pixelRatio?: number;
 }
+
 export interface AnimationProps {
   x?: number;
   y?: number;
@@ -370,21 +403,32 @@ export interface GraphExport {
   camera?: { position: [number, number, number]; target: [number, number, number] };
   plugins?: Record<string, unknown>;
 }
+
 export type GraphImportData = GraphExport;
 
 // ============= Plugin System Types =============
 export interface PluginLifecycle {
   init?(sg: any, graph: any, events: any): void | Promise<void>;
+
   onPreRender?(delta: number): void;
+
   onPostRender?(delta: number): void;
+
   onNodeAdded?(node: any): void;
+
   onNodeRemoved?(node: any): void;
+
   onEdgeAdded?(edge: any): void;
+
   onEdgeRemoved?(edge: any): void;
+
   dispose?(): void;
+
   export?(): unknown;
+
   import?(data: unknown): void;
 }
+
 export interface Plugin extends PluginLifecycle {
   readonly id: string;
   readonly name: string;
@@ -402,15 +446,18 @@ export type EdgeConstructor = new (
 
 // ============= Vision Types =============
 export type VisionCategory = 'wcag' | 'overlap' | 'fitts' | 'all';
+
 export interface VisionOptions {
   enabled?: boolean;
   categories?: VisionCategory[];
   threshold?: number;
 }
+
 export interface VisionReport {
   score: number;
   issues: Array<{ type: string; severity: number; message: string }>;
 }
+
 export interface VisionScore {
   wcag: number;
   overlap: number;
@@ -422,6 +469,7 @@ export interface VisionScore {
 export type NodeType = string;
 export type EdgeType = string;
 export type GeometryFamily = string;
+
 export interface HitResult {
   type: 'node' | 'edge' | 'none';
   distance?: number;
@@ -429,6 +477,7 @@ export interface HitResult {
   edge?: Edge;
   point?: Point3D;
 }
+
 export type LayoutName = string;
 export type MermaidThemeName = 'default' | 'forest' | 'dark' | 'neutral';
 export type MermaidLayoutType = 'graph' | 'flowchart' | 'sequence' | 'class' | 'state' | 'gantt';

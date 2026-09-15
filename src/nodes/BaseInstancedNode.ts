@@ -7,13 +7,9 @@ import { Node } from './Node';
 export abstract class BaseInstancedNode extends Node {
   protected instanceSlot = -1;
   protected colorHex: number;
-  private readonly _object: THREE.Object3D;
+  readonly _object: THREE.Object3D;
 
-  get object(): THREE.Object3D {
-    return this._object;
-  }
-
-  constructor(sg: SpaceGraph, spec: NodeSpec, defaultColor = 0x3366ff) {
+  protected constructor(sg: SpaceGraph, spec: NodeSpec, defaultColor = 0x3366ff) {
     super(sg, spec);
     this._object = new THREE.Object3D();
     this.colorHex = spec.data?.color
@@ -21,8 +17,9 @@ export abstract class BaseInstancedNode extends Node {
       : defaultColor;
   }
 
-  protected abstract registerInstance(): void;
-  protected abstract updateInstanceTransform(): void;
+  get object(): THREE.Object3D {
+    return this._object;
+  }
 
   updatePosition(x: number, y: number, z: number): this {
     super.updatePosition(x, y, z);
@@ -38,4 +35,8 @@ export abstract class BaseInstancedNode extends Node {
     }
     return this;
   }
+
+  protected abstract registerInstance(): void;
+
+  protected abstract updateInstanceTransform(): void;
 }

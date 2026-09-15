@@ -10,15 +10,10 @@ const logger = createLogger('SceneNode');
 
 export class SceneNode extends Node {
   static readonly typeName = 'SceneNode';
-  private _object = new THREE.Object3D();
-  get object(): THREE.Object3D {
-    return this._object;
-  }
-
   private modelRoot?: THREE.Group;
   private loader: GLTFLoader;
   private proxyMesh?: THREE.Mesh;
-  private wrapper: THREE.Group;
+  readonly wrapper: THREE.Group;
   private rotationSpeed = 0;
 
   constructor(sg: SpaceGraph, spec: NodeSpec) {
@@ -40,6 +35,60 @@ export class SceneNode extends Node {
     }
 
     this.updatePosition(this.position.x, this.position.y, this.position.z);
+  }
+
+  private _object = new THREE.Object3D();
+
+  get object(): THREE.Object3D {
+    return this._object;
+  }
+
+  update() {
+    if (this.rotationSpeed !== 0 && this.wrapper) {
+      this.wrapper.rotation.y += this.rotationSpeed;
+    }
+  }
+
+  updateSpec(updates: Partial<NodeSpec>): this {
+    super.updateSpec(updates);
+    if (updates.data?.url && (updates.data.url as string) !== this.data.url) {
+      if (this.modelRoot && this.modelRoot.parent) {
+        this.modelRoot.parent.remove(this.modelRoot);
+      }
+      this.loadModel(
+        updates.data.url as string,
+        (updates.data.targetSize as number) ?? 100,
+        (updates.data.autoCenter as boolean) ?? true
+      );
+    }
+
+    if (updates.data?.rotationSpeed !== undefined) {
+      this.rotationSpeed = updates.data.rotationSpeed as number;
+    }
+    return this;
+  }
+
+  dispose(): void {
+    if (this.modelRoot) {
+      this.modelRoot.traverse((child) => {
+        if ((child as THREE.Mesh).isMesh) {
+          const mesh = child as THREE.Mesh;
+          mesh.geometry.dispose();
+          if (mesh.geometry.disposeBoundsTree) mesh.geometry.disposeBoundsTree();
+          if (Array.isArray(mesh.material)) {
+            for (const m of mesh.material) m.dispose();
+          } else if (mesh.material) {
+            mesh.material.dispose();
+          }
+        }
+      });
+    }
+    if (this.proxyMesh) {
+      this.proxyMesh.geometry.dispose();
+      if (this.proxyMesh.geometry.disposeBoundsTree) this.proxyMesh.geometry.disposeBoundsTree();
+      (this.proxyMesh.material as THREE.Material).dispose();
+    }
+    super.dispose();
   }
 
   private loadModel(url: string, targetSize: number, autoCenter: boolean) {
@@ -92,53 +141,5 @@ export class SceneNode extends Node {
         logger.error('Node %s: Error loading model:', this.id, error);
       }
     );
-  }
-
-  update() {
-    if (this.rotationSpeed !== 0 && this.wrapper) {
-      this.wrapper.rotation.y += this.rotationSpeed;
-    }
-  }
-
-  updateSpec(updates: Partial<NodeSpec>): this {
-    super.updateSpec(updates);
-    if (updates.data?.url && (updates.data.url as string) !== this.data.url) {
-      if (this.modelRoot && this.modelRoot.parent) {
-        this.modelRoot.parent.remove(this.modelRoot);
-      }
-      this.loadModel(
-        updates.data.url as string,
-        (updates.data.targetSize as number) ?? 100,
-        (updates.data.autoCenter as boolean) ?? true
-      );
-    }
-
-    if (updates.data?.rotationSpeed !== undefined) {
-      this.rotationSpeed = updates.data.rotationSpeed as number;
-    }
-    return this;
-  }
-
-  dispose(): void {
-    if (this.modelRoot) {
-      this.modelRoot.traverse((child) => {
-        if ((child as THREE.Mesh).isMesh) {
-          const mesh = child as THREE.Mesh;
-          mesh.geometry.dispose();
-          if (mesh.geometry.disposeBoundsTree) mesh.geometry.disposeBoundsTree();
-          if (Array.isArray(mesh.material)) {
-            for (const m of mesh.material) m.dispose();
-          } else if (mesh.material) {
-            mesh.material.dispose();
-          }
-        }
-      });
-    }
-    if (this.proxyMesh) {
-      this.proxyMesh.geometry.dispose();
-      if (this.proxyMesh.geometry.disposeBoundsTree) this.proxyMesh.geometry.disposeBoundsTree();
-      (this.proxyMesh.material as THREE.Material).dispose();
-    }
-    super.dispose();
   }
 }

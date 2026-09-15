@@ -12,22 +12,31 @@ export interface Finger {
 
 export abstract class Fingering {
   abstract start(finger: Finger): boolean;
+
   abstract update(finger: Finger): boolean;
+
   abstract stop(finger: Finger): void;
+
   defer(_finger: Finger): boolean {
     return true;
   }
+
   startMultiTouch?(finger1: Finger, finger2: Finger): boolean;
+
   updateMultiTouch?(finger1: Finger, finger2: Finger): boolean;
+
   stopMultiTouch?(): void;
+
   onDragStart?(finger: Finger): void;
+
   onDragging?(finger: Finger): void;
+
   onDragStop?(finger: Finger): void;
 }
 
 export class FingerManager {
   private activeFingering: Fingering | null = null;
-  private readonly fingers = new Map<number, Finger>();
+  readonly fingers = new Map<number, Finger>();
 
   test(next: Fingering, finger: Finger): boolean {
     if (this.activeFingering?.defer(finger) ?? true) {
@@ -41,22 +50,28 @@ export class FingerManager {
   update(finger: Finger): void {
     this.activeFingering?.update(finger);
   }
+
   end(finger: Finger): void {
     this.activeFingering?.stop(finger);
     this.activeFingering = null;
   }
+
   isActive(): boolean {
     return this.activeFingering !== null;
   }
+
   getActive(): Fingering | null {
     return this.activeFingering;
   }
+
   getFinger(pointerId: number): Finger | undefined {
     return this.fingers.get(pointerId);
   }
+
   setFinger(pointerId: number, finger: Finger): void {
     this.fingers.set(pointerId, finger);
   }
+
   deleteFinger(pointerId: number): void {
     this.fingers.delete(pointerId);
   }

@@ -5,6 +5,7 @@ import type * as THREE from 'three';
 
 export interface SurfaceTransform {
   worldToLocal(world: THREE.Vector3): THREE.Vector3;
+
   localToWorld(local: THREE.Vector3): THREE.Vector3;
 }
 

@@ -1,26 +1,27 @@
 // SpaceGraphJS v7.0 - Integration Test
 // Demonstrates end-to-end functionality of the v7 architecture
 
+import {
+  MathPool,
+  type Plugin,
+  PluginManager,
+  SpatialIndex,
+  TypeRegistry,
+} from 'spacegraphjs/core';
+import { ForceLayout } from 'spacegraphjs/plugins';
+import { VisionSystem } from 'spacegraphjs/vision';
 import * as THREE from 'three';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventSystem } from '../src/core/events/EventSystem';
 import { Graph } from '../src/core/Graph';
-import { type Plugin, PluginManager } from '../src/core/PluginManager';
-import { MathPool } from '../src/core/pooling/ObjectPool';
-import { SpatialIndex } from '../src/core/spatial/SpatialIndex';
-import { TypeRegistry } from '../src/core/TypeRegistry';
 import { Edge } from '../src/edges/Edge';
 import { Node } from '../src/nodes/Node';
-import { ForceLayout } from '../src/plugins/layouts/ForceLayout';
 import type { SpaceGraph } from '../src/SpaceGraph';
-import { VisionSystem } from '../src/vision/VisionSystem';
 
 /**
  * Test Node implementation
  */
 class TestNode extends Node {
-  private _object: THREE.Object3D;
-
   constructor(sgOrSpec: any, maybeSpec?: any) {
     const spec = sgOrSpec?.type ? sgOrSpec : maybeSpec;
     super(sgOrSpec?.type ? sgOrSpec : undefined, spec);
@@ -30,6 +31,8 @@ class TestNode extends Node {
     );
     this._object.position.copy(this.position);
   }
+
+  readonly _object: THREE.Object3D;
 
   get object(): THREE.Object3D {
     return this._object;
@@ -53,8 +56,6 @@ class TestNode extends Node {
  * Test Edge implementation
  */
 class TestEdge extends Edge {
-  private _object: THREE.Object3D;
-
   constructor(sgOrSpec: any, specOrSource: any, sourceOrTarget?: Node, targetOrNothing?: Node) {
     const isSpecFirst = sgOrSpec?.source !== undefined;
     if (isSpecFirst) {
@@ -68,6 +69,8 @@ class TestEdge extends Edge {
     );
     this.updatePositions();
   }
+
+  readonly _object: THREE.Object3D;
 
   get object(): THREE.Object3D {
     return this._object;

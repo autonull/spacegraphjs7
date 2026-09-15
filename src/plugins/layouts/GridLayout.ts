@@ -6,18 +6,6 @@ export class GridLayout extends BaseLayout {
   readonly name = 'Grid Layout';
   readonly version = '1.0.0';
 
-  protected defaultConfig(): LayoutConfig {
-    return {
-      columns: 0,
-      spacingX: 200,
-      spacingY: 200,
-      offsetX: 0,
-      offsetY: 0,
-      animate: true,
-      duration: 1.0,
-    };
-  }
-
   async apply(options?: LayoutOptions): Promise<void> {
     const {
       columns = 0,
@@ -47,5 +35,17 @@ export class GridLayout extends BaseLayout {
 
     this.updateEdges();
     this.emitLayoutApplied({ duration });
+  }
+
+  protected defaultConfig(): LayoutConfig {
+    return {
+      columns: 0,
+      spacingX: 200,
+      spacingY: 200,
+      offsetX: 0,
+      offsetY: 0,
+      animate: true,
+      duration: 1.0,
+    };
   }
 }

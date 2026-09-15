@@ -14,6 +14,15 @@ export class ColorPickerNode extends HtmlNode {
     this._setupColorPicker();
   }
 
+  getColor(): string {
+    return this.colorInput?.value ?? '#4ecdc4';
+  }
+
+  setColor(color: string): this {
+    this._onColorChange(color);
+    return this;
+  }
+
   private _setupColorPicker(): void {
     const data = this.data as SpaceGraphNodeData;
     const color = (data?.color as string) ?? '#4ecdc4';
@@ -80,14 +89,5 @@ export class ColorPickerNode extends HtmlNode {
       this._onColorChange(hex);
       if (this.colorInput) this.colorInput.value = hex;
     }
-  }
-
-  getColor(): string {
-    return this.colorInput?.value ?? '#4ecdc4';
-  }
-
-  setColor(color: string): this {
-    this._onColorChange(color);
-    return this;
   }
 }

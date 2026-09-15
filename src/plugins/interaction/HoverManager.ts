@@ -6,9 +6,9 @@ import { applyControlStateStyles, type ControlState } from './ControlStateBorder
 export class HoverManager {
   private hoveredNode: Node | null = null;
   private hoveredEdge: Edge | null = null;
-  private readonly HOVER_SCALE = 1.1;
+  readonly HOVER_SCALE = 1.1;
 
-  constructor(private readonly sg: SpaceGraph) {}
+  constructor(readonly sg: SpaceGraph) {}
 
   updateHover(node: Node | null, edge: Edge | null): void {
     this.updateNodeHover(node);
@@ -35,6 +35,18 @@ export class HoverManager {
     }
   }
 
+  getHoveredNode(): Node | null {
+    return this.hoveredNode;
+  }
+
+  getHoveredEdge(): Edge | null {
+    return this.hoveredEdge;
+  }
+
+  clear(): void {
+    this.updateHover(null, null);
+  }
+
   private updateNodeState(node: Node, state: ControlState): void {
     const prevState = node.controlState;
     node.controlState = state;
@@ -49,15 +61,5 @@ export class HoverManager {
     this.hoveredEdge = edge;
     if (this.hoveredEdge)
       this.sg.events.emit('edge:pointerenter', { edge: this.hoveredEdge } as any);
-  }
-
-  getHoveredNode(): Node | null {
-    return this.hoveredNode;
-  }
-  getHoveredEdge(): Edge | null {
-    return this.hoveredEdge;
-  }
-  clear(): void {
-    this.updateHover(null, null);
   }
 }

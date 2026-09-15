@@ -1,6 +1,5 @@
+import { InteractionPlugin, MinimapPlugin } from 'spacegraphjs/plugins';
 import { HUDPlugin } from '../plugins/HUDPlugin';
-import { InteractionPlugin } from '../plugins/InteractionPlugin';
-import { MinimapPlugin } from '../plugins/MinimapPlugin';
 import { SpaceGraph } from '../SpaceGraph';
 import type { Edge, GraphSpec, Node } from '../types';
 import { calculateFitView } from '../utils';
@@ -61,19 +60,11 @@ export class SpaceGraphApp {
   public hud!: HUDPlugin;
   public currentSelected = new Set<Node>();
   public currentSelectedEdges = new Set<Edge>();
-  private originalColors = new Map<Node, number>();
-  private originalEdgeColors = new Map<Edge, number>();
   public buttons: AppButtonConfig[] = [];
   public toolbarActions: AppButtonConfig[] = [];
   public _zoomSliderHandler?: () => void;
-
-  private _emitSelectionChanged(): void {
-    this.sg.events.emit('selection:changed', {
-      nodes: [...this.currentSelected].map((n) => n.id),
-      edges: [...this.currentSelectedEdges].map((e) => e.id),
-      timestamp: Date.now(),
-    });
-  }
+  private originalColors = new Map<Node, number>();
+  private originalEdgeColors = new Map<Edge, number>();
 
   private constructor(sg: SpaceGraph, options: SpaceGraphAppOptions) {
     this.sg = sg;
@@ -144,36 +135,6 @@ export class SpaceGraphApp {
   public setMode(mode: 'default' | 'select' | 'connect') {
     const interaction = this.sg.pluginManager.getPlugin('interaction') as InteractionPlugin;
     if (interaction) interaction.mode = mode;
-  }
-
-  private _clearNodeStyle(node: Node): void {
-    if ((node as any).isHtmlNode && this.options.selectionHighlightClass) {
-      (node as any).domElement.classList.remove(this.options.selectionHighlightClass);
-    } else if (this.originalColors.has(node)) {
-      node.updateSpec({ data: { color: this.originalColors.get(node) } });
-    }
-  }
-
-  private _applyNodeStyle(node: Node): void {
-    if ((node as any).isHtmlNode && this.options.selectionHighlightClass) {
-      (node as any).domElement.classList.add(this.options.selectionHighlightClass);
-    } else if (this.options.selectionHighlightColor && node.data?.color !== undefined) {
-      this.originalColors.set(node, node.data.color as number);
-      node.updateSpec({ data: { color: this.options.selectionHighlightColor } });
-    }
-  }
-
-  private _clearEdgeStyle(edge: Edge): void {
-    if (this.originalEdgeColors.has(edge)) {
-      edge.updateSpec({ data: { color: this.originalEdgeColors.get(edge) } });
-    }
-  }
-
-  private _applyEdgeStyle(edge: Edge): void {
-    if (this.options.selectionHighlightEdgeColor && edge.data?.color !== undefined) {
-      this.originalEdgeColors.set(edge, edge.data.color as number);
-      edge.updateSpec({ data: { color: this.options.selectionHighlightEdgeColor } });
-    }
   }
 
   public clearSelectionStyles() {
@@ -300,6 +261,44 @@ export class SpaceGraphApp {
       this._zoomSliderHandler = undefined;
     }
     this.hud.dispose();
+  }
+
+  private _emitSelectionChanged(): void {
+    this.sg.events.emit('selection:changed', {
+      nodes: [...this.currentSelected].map((n) => n.id),
+      edges: [...this.currentSelectedEdges].map((e) => e.id),
+      timestamp: Date.now(),
+    });
+  }
+
+  private _clearNodeStyle(node: Node): void {
+    if ((node as any).isHtmlNode && this.options.selectionHighlightClass) {
+      (node as any).domElement.classList.remove(this.options.selectionHighlightClass);
+    } else if (this.originalColors.has(node)) {
+      node.updateSpec({ data: { color: this.originalColors.get(node) } });
+    }
+  }
+
+  private _applyNodeStyle(node: Node): void {
+    if ((node as any).isHtmlNode && this.options.selectionHighlightClass) {
+      (node as any).domElement.classList.add(this.options.selectionHighlightClass);
+    } else if (this.options.selectionHighlightColor && node.data?.color !== undefined) {
+      this.originalColors.set(node, node.data.color as number);
+      node.updateSpec({ data: { color: this.options.selectionHighlightColor } });
+    }
+  }
+
+  private _clearEdgeStyle(edge: Edge): void {
+    if (this.originalEdgeColors.has(edge)) {
+      edge.updateSpec({ data: { color: this.originalEdgeColors.get(edge) } });
+    }
+  }
+
+  private _applyEdgeStyle(edge: Edge): void {
+    if (this.options.selectionHighlightEdgeColor && edge.data?.color !== undefined) {
+      this.originalEdgeColors.set(edge, edge.data.color as number);
+      edge.updateSpec({ data: { color: this.options.selectionHighlightEdgeColor } });
+    }
   }
 }
 

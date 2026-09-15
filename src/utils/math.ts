@@ -284,7 +284,9 @@ export function isDefined<T>(value: T | null | undefined): value is T {
 // ============= Functional Utilities =============
 interface PipeChain<T> {
   value: T;
+
   and<R>(fn: (v: T) => R): PipeChain<R>;
+
   result<R>(fn: (v: T) => R): R;
 }
 

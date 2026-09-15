@@ -7,12 +7,14 @@ const logger = createLogger('FocusManager');
 export interface FocusableNode extends Node {
   focusable: boolean;
   focused: boolean;
+
   focus(): void;
+
   blur(): void;
 }
 
 export class FocusManager {
-  private readonly sg: SpaceGraph;
+  readonly sg: SpaceGraph;
   private focusStack: FocusableNode[] = [];
   private focusedNode: FocusableNode | null = null;
 
@@ -71,15 +73,15 @@ export class FocusManager {
     this.focus(focusableNodes[prevIndex]);
   }
 
+  dispose(): void {
+    this.blur();
+    this.focusStack = [];
+  }
+
   private getFocusableNodes(): FocusableNode[] {
     const allNodes = Array.from(this.sg.graph.nodes.values());
     return allNodes.filter(
       (n): n is FocusableNode => 'focusable' in n && (n as FocusableNode).focusable
     ) as FocusableNode[];
-  }
-
-  dispose(): void {
-    this.blur();
-    this.focusStack = [];
   }
 }

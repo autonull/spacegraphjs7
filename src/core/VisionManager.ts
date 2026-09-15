@@ -1,21 +1,25 @@
+import {
+  VisionAutoFixer,
+  type VisionCategory,
+  VisionModelLoader,
+  VisionSystem,
+} from 'spacegraphjs/vision';
 import type { SpaceGraph } from '../SpaceGraph';
 import { createLogger } from '../utils/logger';
 import type { VisionReport } from '../vision/types';
-import { VisionAutoFixer, type VisionCategory } from '../vision/VisionAutoFixer';
-import { VisionModelLoader } from '../vision/VisionModelLoader';
-import { VisionSystem } from '../vision/VisionSystem';
 
 const logger = createLogger('VisionManager');
 
 const DEFAULT_WASM_PATHS = 'https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/';
 
 export class VisionManager {
-  private readonly sg: SpaceGraph;
-  private readonly modelLoader: VisionModelLoader;
-  private readonly autoFixer: VisionAutoFixer;
-  private readonly visionSystem: VisionSystem;
+  readonly sg: SpaceGraph;
+  readonly modelLoader: VisionModelLoader;
+  readonly autoFixer: VisionAutoFixer;
+  readonly visionSystem: VisionSystem;
   private isAnalyzing = false;
   private autonomousTimer: ReturnType<typeof setInterval> | null = null;
+  private _modelsLoadedOverride: boolean | null = null;
 
   constructor(sg: SpaceGraph) {
     this.sg = sg;
@@ -28,10 +32,10 @@ export class VisionManager {
     this.visionSystem = new VisionSystem(sg.options?.vision, this.modelLoader);
   }
 
-  private _modelsLoadedOverride: boolean | null = null;
   public get modelsLoaded(): boolean {
     return this._modelsLoadedOverride ?? this.modelLoader.isLoaded;
   }
+
   public set modelsLoaded(value: boolean) {
     this._modelsLoadedOverride = value;
   }

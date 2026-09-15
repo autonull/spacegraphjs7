@@ -57,13 +57,6 @@ export class PortNode<T = unknown> extends (ShapeNode as any) {
     this._updateAppearance();
   }
 
-  private _updateAppearance(): void {
-    const color = PORT_COLORS[this.portType];
-    if ((this as any).material) {
-      (this as any).material.color.setHex(color);
-    }
-  }
-
   getPortType(): PortType {
     return this.portType;
   }
@@ -137,5 +130,12 @@ export class PortNode<T = unknown> extends (ShapeNode as any) {
     }
     this.connections = [];
     super.dispose();
+  }
+
+  private _updateAppearance(): void {
+    const color = PORT_COLORS[this.portType];
+    if ((this as any).material) {
+      (this as any).material.color.setHex(color);
+    }
   }
 }

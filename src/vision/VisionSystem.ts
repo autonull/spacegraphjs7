@@ -112,6 +112,13 @@ export class VisionSystem {
   }
 
   /**
+   * Get available strategies
+   */
+  getAvailableStrategies(): string[] {
+    return Array.from(this.strategies.keys());
+  }
+
+  /**
    * Compute accuracy score for a report
    * Measures analysis completeness: how many categories were successfully analyzed
    */
@@ -121,12 +128,5 @@ export class VisionSystem {
     const categories = ['legibility', 'overlap', 'hierarchy', 'ergonomics'] as const;
     const analyzed = categories.filter((cat) => cat in report).length;
     return analyzed / categories.length;
-  }
-
-  /**
-   * Get available strategies
-   */
-  getAvailableStrategies(): string[] {
-    return Array.from(this.strategies.keys());
   }
 }

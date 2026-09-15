@@ -7,8 +7,8 @@ import { Edge } from './Edge';
 
 export class CurvedEdge extends Edge {
   static readonly typeName = 'CurvedEdge';
-  private curve: THREE.QuadraticBezierCurve3;
-  private positionsBuffer: Float32Array;
+  readonly curve: THREE.QuadraticBezierCurve3;
+  readonly positionsBuffer: Float32Array;
   private _controlPoint = new THREE.Vector3();
 
   constructor(sg: SpaceGraph, spec: EdgeSpec, source: Node, target: Node) {
@@ -34,21 +34,6 @@ export class CurvedEdge extends Edge {
     this.object.geometry = this.geometry;
   }
 
-  private getControlPoint(sourcePos: THREE.Vector3, targetPos: THREE.Vector3): THREE.Vector3 {
-    const curveStrength = ((this.data as EdgeData)?.curveStrength as number) ?? 50;
-    const dir = new THREE.Vector3().subVectors(targetPos, sourcePos);
-    const normal = dir.clone().setZ(0).normalize();
-
-    // Handle vertical lines or degenerate cases for normal
-    if (normal.lengthSq() === 0) normal.set(1, 0, 0);
-
-    const cp = new THREE.Vector3().addVectors(sourcePos, targetPos).multiplyScalar(0.5);
-
-    // Offset normal to get curved effect
-    const offset = new THREE.Vector3(-normal.y, normal.x, 0).multiplyScalar(curveStrength);
-    return cp.add(offset);
-  }
-
   update() {
     super.update();
 
@@ -72,5 +57,20 @@ export class CurvedEdge extends Edge {
     }
 
     this.geometry.attributes.position.needsUpdate = true;
+  }
+
+  private getControlPoint(sourcePos: THREE.Vector3, targetPos: THREE.Vector3): THREE.Vector3 {
+    const curveStrength = ((this.data as EdgeData)?.curveStrength as number) ?? 50;
+    const dir = new THREE.Vector3().subVectors(targetPos, sourcePos);
+    const normal = dir.clone().setZ(0).normalize();
+
+    // Handle vertical lines or degenerate cases for normal
+    if (normal.lengthSq() === 0) normal.set(1, 0, 0);
+
+    const cp = new THREE.Vector3().addVectors(sourcePos, targetPos).multiplyScalar(0.5);
+
+    // Offset normal to get curved effect
+    const offset = new THREE.Vector3(-normal.y, normal.x, 0).multiplyScalar(curveStrength);
+    return cp.add(offset);
   }
 }

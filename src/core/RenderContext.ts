@@ -25,7 +25,6 @@ export class RenderContext {
   private frameCount = 0;
   private lastFpsUpdate = 0;
   private _lastTime = 0;
-  private _visibilityContext: VisibilityContext;
 
   constructor(
     private camera: THREE.PerspectiveCamera,
@@ -40,6 +39,12 @@ export class RenderContext {
     };
   }
 
+  readonly _visibilityContext: VisibilityContext;
+
+  get visibilityContext(): VisibilityContext {
+    return this._visibilityContext;
+  }
+
   updateFrustum(projScreenMatrix: THREE.Matrix4): void {
     this._visibilityContext.cameraFrustum.setFromProjectionMatrix(projScreenMatrix);
   }
@@ -50,10 +55,6 @@ export class RenderContext {
 
   updateViewport(viewport: { width: number; height: number }): void {
     this._visibilityContext.viewportBounds = viewport;
-  }
-
-  get visibilityContext(): VisibilityContext {
-    return this._visibilityContext;
   }
 
   startFrame(time: number): void {
@@ -81,6 +82,11 @@ export class RenderContext {
     return true;
   }
 
+  endFrame(): FrameStats {
+    this.stats.nodeCount = this.stats.renderedCount + this.stats.culledCount;
+    return this.stats;
+  }
+
   private computeLOD(node: Node): LODLevel {
     if (!node.visible) return 'hidden';
     const pixelSize = node.getScreenPixelSize(this._visibilityContext.viewportBounds);
@@ -89,10 +95,5 @@ export class RenderContext {
     if (distance < 100) return 'high';
     if (distance < 500) return 'medium';
     return 'low';
-  }
-
-  endFrame(): FrameStats {
-    this.stats.nodeCount = this.stats.renderedCount + this.stats.culledCount;
-    return this.stats;
   }
 }

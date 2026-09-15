@@ -1,5 +1,5 @@
+import type { HeuristicsStrategy } from 'spacegraphjs/vision';
 import type { VisionReport, VisionStrategy } from '../types';
-import type { HeuristicsStrategy } from './HeuristicsStrategy';
 import type { OnnxStrategy } from './OnnxStrategy';
 
 export class HybridStrategy implements VisionStrategy {
@@ -7,8 +7,8 @@ export class HybridStrategy implements VisionStrategy {
   readonly name = 'Hybrid (Heuristics + AI)';
 
   constructor(
-    private readonly heuristics: HeuristicsStrategy,
-    private readonly onnx: OnnxStrategy
+    readonly heuristics: HeuristicsStrategy,
+    readonly onnx: OnnxStrategy
   ) {}
 
   async analyze(graph: unknown, camera: unknown): Promise<VisionReport> {

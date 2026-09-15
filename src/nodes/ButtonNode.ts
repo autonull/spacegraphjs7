@@ -29,30 +29,6 @@ export class ButtonNode extends WidgetNode {
     this._onClick = data?.onClick;
   }
 
-  protected getBaseColor(_data: WidgetNodeData | undefined): number {
-    return this._color;
-  }
-
-  protected getHoverColor(): number {
-    return this._hoverColor;
-  }
-
-  protected getPressedColor(): number {
-    return this._pressedColor;
-  }
-
-  protected createLabelContent(ctx: CanvasRenderingContext2D, text: string): void {
-    ctx.fillStyle = 'white';
-    ctx.font = 'bold 32px Arial';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(text, this._width, this._height);
-  }
-
-  protected getLabelText(): string {
-    return this._label;
-  }
-
   onPointerUp(): void {
     if (this._isPressed) {
       this.onPointerUpCore();
@@ -91,5 +67,29 @@ export class ButtonNode extends WidgetNode {
 
   dispose(): void {
     super.dispose();
+  }
+
+  protected getBaseColor(_data: WidgetNodeData | undefined): number {
+    return this._color;
+  }
+
+  protected getHoverColor(): number {
+    return this._hoverColor;
+  }
+
+  protected getPressedColor(): number {
+    return this._pressedColor;
+  }
+
+  protected createLabelContent(ctx: CanvasRenderingContext2D, text: string): void {
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 32px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, this._width, this._height);
+  }
+
+  protected getLabelText(): string {
+    return this._label;
   }
 }

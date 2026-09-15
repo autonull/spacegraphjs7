@@ -1000,7 +1000,7 @@ export class CameraControls {
         phi: number; // Spherical elevation
         theta: number; // Spherical azimuth
     }> = [];
-    private readonly MAX_ZOOM_DEPTH = 8;
+    readonly MAX_ZOOM_DEPTH = 8;
 
     zoomToSurface3D(surface: Surface, duration: number = 1.5): void {
         const bounds = surface.bounds3D;

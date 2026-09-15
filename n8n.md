@@ -1,6 +1,8 @@
 # SpaceGraphJS + n8n Integration — Development Plan
 
-> **Goal**: Integrate n8n as a programmatic dependency within SpaceGraphJS, making SpaceGraphJS the primary 3D/ZUI front-end for n8n workflow design, execution, monitoring, and autonomous AI-driven orchestration — while maintaining zero Python dependencies and targeting 60 FPS at 1,000+ nodes.
+> **Goal**: Integrate n8n as a programmatic dependency within SpaceGraphJS, making SpaceGraphJS the primary 3D/ZUI
+> front-end for n8n workflow design, execution, monitoring, and autonomous AI-driven orchestration — while maintaining
+> zero Python dependencies and targeting 60 FPS at 1,000+ nodes.
 
 ---
 
@@ -48,16 +50,16 @@
 
 ### Key Architectural Decisions
 
-| Decision | Rationale |
-|---|---|
-| `pnpm install n8n` — no fork | Preserves upstream upgradability; overrides via env + prototype patches only |
-| **n8n used as a library, never as a server** | We call `Workflow`, `ExecutionService`, etc. directly; zero n8n UI, zero auth |
+| Decision                                             | Rationale                                                                               |
+|------------------------------------------------------|-----------------------------------------------------------------------------------------|
+| `pnpm install n8n` — no fork                         | Preserves upstream upgradability; overrides via env + prototype patches only            |
+| **n8n used as a library, never as a server**         | We call `Workflow`, `ExecutionService`, etc. directly; zero n8n UI, zero auth           |
 | Anti-tethering bootstrap runs before all n8n imports | Env vars + prototype no-ops kill telemetry, user-management, license SDK at import time |
-| Auth / user-management fully disabled via env | `N8N_USER_MANAGEMENT_DISABLED=true` + in-memory SQLite → n8n never prompts for an owner |
-| Bridge as a **singleton service** | Single source of truth for workflow↔graph state sync |
-| RxJS observables for state sync | n8n emits events; SpaceGraph reacts without polling |
-| One n8n `Workflow` → one `SpaceGraph` canvas | 1:1 mapping; sub-workflows → nested `GroupNode` instances |
-| All new SpaceGraph nodes extend existing base types | No breakage to the existing plugin/registration system |
+| Auth / user-management fully disabled via env        | `N8N_USER_MANAGEMENT_DISABLED=true` + in-memory SQLite → n8n never prompts for an owner |
+| Bridge as a **singleton service**                    | Single source of truth for workflow↔graph state sync                                    |
+| RxJS observables for state sync                      | n8n emits events; SpaceGraph reacts without polling                                     |
+| One n8n `Workflow` → one `SpaceGraph` canvas         | 1:1 mapping; sub-workflows → nested `GroupNode` instances                               |
+| All new SpaceGraph nodes extend existing base types  | No breakage to the existing plugin/registration system                                  |
 
 ---
 
@@ -75,7 +77,8 @@ pnpm install n8n rxjs
 
 ### 2.2 Environment Configuration
 
-Create `packages/n8n-bridge/.env.example`. These **must be set before any n8n import** (see §17 for the bootstrap loader).
+Create `packages/n8n-bridge/.env.example`. These **must be set before any n8n import** (see §17 for the bootstrap
+loader).
 
 ```env
 # ── Library / headless mode ─────────────────────────────────────────
@@ -125,11 +128,14 @@ build: {
 },
 ```
 
-> **Note**: n8n's execution engine runs in Node.js (the bridge server process). The browser bundle only imports data-model types (`n8n-workflow`) and communicates via a local WebSocket. Heavy server-side modules are externalized from the browser bundle to keep it under 200 KB.
+> **Note**: n8n's execution engine runs in Node.js (the bridge server process). The browser bundle only imports
+> data-model types (`n8n-workflow`) and communicates via a local WebSocket. Heavy server-side modules are externalized
+> from the browser bundle to keep it under 200 KB.
 
 ### 2.4 Package Workspace
 
 Add `packages/n8n-bridge/` to the monorepo workspace. It exports:
+
 - `spacegraph-n8n-bridge.ts` — the primary bridge module
 - `N8nWorkflowPlugin.ts` — SpaceGraph plugin wrapper
 - `N8nNode.ts`, `N8nEdge.ts` — SpaceGraph entities
@@ -141,7 +147,8 @@ Add `packages/n8n-bridge/` to the monorepo workspace. It exports:
 
 **Effort**: ~3–4 days | **Prerequisite**: None (foundational)
 
-This module is the integration seam. It owns all state synchronization between n8n's data model and SpaceGraph's graph state.
+This module is the integration seam. It owns all state synchronization between n8n's data model and SpaceGraph's graph
+state.
 
 ### 3.1 Core Classes
 
@@ -203,6 +210,7 @@ export class WorkflowMapper {
 #### `N8nBridgeServer` (Node.js process)
 
 Runs as a small Express/WS server (`packages/n8n-bridge/server/index.ts`) that:
+
 1. Loads `bootstrap.ts` **before any n8n imports** (kills auth/telemetry/license at import time)
 2. Instantiates n8n's `Workflow` + `ExecutionService` directly — **no `N8n.start()`, no HTTP server, no auth**
 3. Streams execution events over WebSocket to the browser
@@ -232,7 +240,10 @@ export async function runWorkflow(workflowData: IWorkflowBase) {
 }
 ```
 
-> **Why not `N8n.start()`?** Starting n8n's full `App` class spins up an HTTP server, boots user management, checks for an owner, fires telemetry, and may prompt for account setup — exactly the "freemium tethering" we want to avoid. By importing only `ExecutionService` and `Workflow` directly we get n8n's workflow execution engine with zero server baggage.
+> **Why not `N8n.start()`?** Starting n8n's full `App` class spins up an HTTP server, boots user management, checks for
+> an owner, fires telemetry, and may prompt for account setup — exactly the "freemium tethering" we want to avoid. By
+> importing only `ExecutionService` and `Workflow` directly we get n8n's workflow execution engine with zero server
+> baggage.
 
 ### 3.2 State Synchronization Protocol
 
@@ -264,30 +275,32 @@ Browser (SpaceGraph)          n8n Bridge Server          n8n Engine
 
 See [§10 Node & Edge Type Mapping](#10-node--edge-type-mapping) for the full table. The high-level rule:
 
-| n8n Node Category | SpaceGraph Node Type | Rationale |
-|---|---|---|
+| n8n Node Category       | SpaceGraph Node Type                        | Rationale                           |
+|-------------------------|---------------------------------------------|-------------------------------------|
 | Trigger (Webhook, Cron) | `N8nTriggerNode` (new, extends `ShapeNode`) | Distinct visual (portal/clock icon) |
-| AI / LLM | `N8nAiNode` (new, extends `HtmlNode`) | Needs embedded prompt textarea |
-| Data Transform | `DataNode` (existing) | Pure data pass-through node |
-| HTTP Request | `N8nHttpNode` (new, extends `HtmlNode`) | URL bar + response preview |
-| Sub-workflow | `GroupNode` (existing) | Fractal nesting is native |
-| Code (JS) | `N8nCodeNode` (new, extends `HtmlNode`) | Monaco editor embed |
-| Merge / IF / Switch | `ShapeNode` (existing) | Geometric shapes per branching type |
-| Output / Set / NoOp | `DataNode` (existing) | Minimal, data-centric |
+| AI / LLM                | `N8nAiNode` (new, extends `HtmlNode`)       | Needs embedded prompt textarea      |
+| Data Transform          | `DataNode` (existing)                       | Pure data pass-through node         |
+| HTTP Request            | `N8nHttpNode` (new, extends `HtmlNode`)     | URL bar + response preview          |
+| Sub-workflow            | `GroupNode` (existing)                      | Fractal nesting is native           |
+| Code (JS)               | `N8nCodeNode` (new, extends `HtmlNode`)     | Monaco editor embed                 |
+| Merge / IF / Switch     | `ShapeNode` (existing)                      | Geometric shapes per branching type |
+| Output / Set / NoOp     | `DataNode` (existing)                       | Minimal, data-centric               |
 
 ### 4.2 Edge Rendering
 
-| n8n Connection Type | SpaceGraph Edge Type | Visual Treatment |
-|---|---|---|
-| Normal data flow | `FlowEdge` | Animated data pulse particles |
-| Conditional branch (IF true/false) | `CurvedEdge` with color tint | Green/red color coding |
-| Optional / fallback | `DottedEdge` | Dashed line |
-| High-volume / batched | `DynamicThicknessEdge` | Thickness scales with throughput |
-| Error output | `AnimatedEdge` | Red pulsing animation |
+| n8n Connection Type                | SpaceGraph Edge Type         | Visual Treatment                 |
+|------------------------------------|------------------------------|----------------------------------|
+| Normal data flow                   | `FlowEdge`                   | Animated data pulse particles    |
+| Conditional branch (IF true/false) | `CurvedEdge` with color tint | Green/red color coding           |
+| Optional / fallback                | `DottedEdge`                 | Dashed line                      |
+| High-volume / batched              | `DynamicThicknessEdge`       | Thickness scales with throughput |
+| Error output                       | `AnimatedEdge`               | Red pulsing animation            |
 
 ### 4.3 Auto-Layout on Import
 
-When a workflow is loaded, apply `HierarchicalLayout` by default (matches n8n's left-to-right DAG). Users can switch to `ForceLayout` (complex webs), `TimelineLayout` (sequential pipelines), or `ClusterLayout` (agent groupings) via a toolbar.
+When a workflow is loaded, apply `HierarchicalLayout` by default (matches n8n's left-to-right DAG). Users can switch to
+`ForceLayout` (complex webs), `TimelineLayout` (sequential pipelines), or `ClusterLayout` (agent groupings) via a
+toolbar.
 
 ```typescript
 // In WorkflowMapper.toGraphSpec()
@@ -333,21 +346,24 @@ export class N8nWorkflowPlugin implements SpaceGraphPlugin {
 
 ### 5.1 Execution State Visuals
 
-Each n8n node transitions through execution states; SpaceGraph maps these to visual states on the corresponding SpaceGraph node:
+Each n8n node transitions through execution states; SpaceGraph maps these to visual states on the corresponding
+SpaceGraph node:
 
-| n8n Execution State | SpaceGraph Visual |
-|---|---|
-| `waiting` | Node slightly dimmed, opacity 0.6 |
-| `running` | GSAP pulse animation + blue glow via `AutoColorPlugin` |
-| `success` | Flash green → settle to teal accent |
-| `error` | Flash red + `AnimatedEdge` on all outgoing edges turn red |
-| `skipped` | Gray with dashed outline |
+| n8n Execution State | SpaceGraph Visual                                         |
+|---------------------|-----------------------------------------------------------|
+| `waiting`           | Node slightly dimmed, opacity 0.6                         |
+| `running`           | GSAP pulse animation + blue glow via `AutoColorPlugin`    |
+| `success`           | Flash green → settle to teal accent                       |
+| `error`             | Flash red + `AnimatedEdge` on all outgoing edges turn red |
+| `skipped`           | Gray with dashed outline                                  |
 
-Implementation: subscribe to `bridge.executionState` in `N8nWorkflowPlugin.update()` and call `sg.graph.updateNode(id, { color, animation })`.
+Implementation: subscribe to `bridge.executionState` in `N8nWorkflowPlugin.update()` and call
+`sg.graph.updateNode(id, { color, animation })`.
 
 ### 5.2 Data Flow Particles
 
-During execution, `FlowEdge` instances should emit animated particles representing data packets moving between nodes. Extend `FlowEdge` with:
+During execution, `FlowEdge` instances should emit animated particles representing data packets moving between nodes.
+Extend `FlowEdge` with:
 
 ```typescript
 // src/edges/FlowEdge.ts — new method
@@ -360,6 +376,7 @@ Particle count scales with `throughput` metadata from n8n execution events.
 ### 5.3 Execution Log Panel
 
 Add an `HtmlNode`-based `ExecutionLogPanel` that:
+
 - Appears as a floating node anchored to the bottom-right of the viewport
 - Streams execution logs from the bridge WebSocket
 - Supports filtering by node ID (click a node → filter logs to that node)
@@ -368,6 +385,7 @@ Add an `HtmlNode`-based `ExecutionLogPanel` that:
 ### 5.4 Bottleneck Heatmap
 
 Post-execution, overlay a heatmap on nodes using `AutoColorPlugin`'s color assignment:
+
 - Color nodes by `executionDuration` (cool blue → warm red)
 - Label edges with throughput counts via `LabeledEdge`
 
@@ -376,6 +394,7 @@ Trigger via: `sg.pluginManager.get('N8nWorkflowPlugin').showHeatmap(executionId)
 ### 5.5 Timeline Replay
 
 Implement a replay mode that scrubs through an execution's timeline:
+
 - Use `TimelineLayout` to reposition nodes along a time axis
 - Replay state transitions frame-by-frame
 - Allow scrubbing via a `HtmlNode`-embedded slider widget
@@ -386,7 +405,8 @@ Implement a replay mode that scrubs through an execution's timeline:
 
 **Effort**: ~4–5 days | **Prerequisite**: Phase 1
 
-This phase delivers the ZUI's signature ergonomic advantage: editing node parameters by zooming in, not opening modal dialogs.
+This phase delivers the ZUI's signature ergonomic advantage: editing node parameters by zooming in, not opening modal
+dialogs.
 
 ### 6.1 LOD-Driven Widget Reveal
 
@@ -403,6 +423,7 @@ readonly lodThresholds = {
 ```
 
 The "full" level renders a live HTML form (via CSS2DRenderer / HtmlNode pattern) with:
+
 - **LLM nodes**: model selector dropdown, prompt textarea, temperature slider, max-tokens number input
 - **HTTP nodes**: method dropdown, URL text field, headers table, body JSON editor
 - **Code nodes**: embedded Monaco editor (lazy-loaded via dynamic import)
@@ -425,6 +446,7 @@ Debounce 300ms to avoid thrashing.
 ### 6.3 Credential Management Widget
 
 Build `N8nCredentialNode` (new node type) that:
+
 - Renders as a locked padlock icon when zoomed out
 - Zooms in to reveal OAuth/API-key form fields
 - Calls n8n's credential store API (`POST /api/v1/credentials`) on save
@@ -432,7 +454,9 @@ Build `N8nCredentialNode` (new node type) that:
 
 ### 6.4 Node Palette (Sidebar Panel)
 
-Implement a draggable `HtmlNode`-based palette panel listing all 300+ n8n node types, grouped into categories that match n8n's own taxonomy. Adding a node: drag from palette → drop on canvas → bridge creates node in n8n workflow + renders SpaceGraph node at drop position.
+Implement a draggable `HtmlNode`-based palette panel listing all 300+ n8n node types, grouped into categories that match
+n8n's own taxonomy. Adding a node: drag from palette → drop on canvas → bridge creates node in n8n workflow + renders
+SpaceGraph node at drop position.
 
 Categories: Core, AI/LLM, Data, HTTP/API, Database, Messaging, File, Developer, Triggers.
 
@@ -447,12 +471,14 @@ This phase connects SpaceGraphJS's existing `VisionManager` / `VisionOverlayPlug
 ### 7.1 Vision Model Usage
 
 The existing ONNX vision pipeline (`VisionManager`) already provides:
+
 - **LQ-Net** — Layout Quality score
 - **ODN** — Overlap Detection
 - **TLA** — Text Legibility Assessment
 - **CHE** — Color Harmony Evaluation
 
 For the n8n integration, trigger the vision pipeline automatically:
+
 1. **After workflow load** — score initial layout; auto-apply `HierarchicalLayout` if score < 60
 2. **After execution** — re-score with heatmap overlay to detect color harmony violations
 3. **After user edits** — 500ms debounced re-score; show `VisionOverlayPlugin` badge
@@ -517,11 +543,14 @@ This phase ensures the SpaceGraph+n8n combo matches and exceeds the capabilities
 
 ### 8.1 RAG Pipeline Template
 
-Provide a ready-made workflow template: `Input → Embedder → VectorStore → Retriever → LLM → Output`. Each node maps to n8n's built-in AI nodes. Rendered via `HierarchicalLayout`; zooming into VectorStore shows index statistics as a live `ChartNode`.
+Provide a ready-made workflow template: `Input → Embedder → VectorStore → Retriever → LLM → Output`. Each node maps to
+n8n's built-in AI nodes. Rendered via `HierarchicalLayout`; zooming into VectorStore shows index statistics as a live
+`ChartNode`.
 
 ### 8.2 Multi-Agent Orchestration View
 
 When a workflow contains sub-workflows (n8n sub-workflow nodes):
+
 - Render as `GroupNode` (existing) with fractal nesting
 - Zoom in to reveal the agent's internal workflow as a nested SpaceGraph
 - Animate handoff edges between agents during execution with `AnimatedEdge`
@@ -529,6 +558,7 @@ When a workflow contains sub-workflows (n8n sub-workflow nodes):
 ### 8.3 Human-in-the-Loop Nodes
 
 Implement `N8nHitlNode`:
+
 - Zooms in to reveal: output text from previous step, approve/reject buttons, free-text comment field
 - On approve → resumes n8n execution (`POST /api/v1/executions/:id/resume`)
 - Visually: shows a "🔴 WAITING" badge until resolved
@@ -536,13 +566,15 @@ Implement `N8nHitlNode`:
 ### 8.4 Webhook Entry-Point Portals
 
 `N8nWebhookNode` renders as a glowing portal with live traffic counter:
+
 - Shows last 5 received payload previews (scrollable, embeded in `HtmlNode`)
 - Incoming traffic → `AnimatedEdge` pulses on the outgoing edge
 - Test webhook via "Send Test Request" button embedded in node widget
 
 ### 8.5 Cron / Schedule Nodes as Orbital Timers
 
-`N8nScheduleNode` renders with an orbiting GSAP animation showing the next-run countdown. In the minimap (`MinimapPlugin`), schedule nodes are highlighted with a clock icon.
+`N8nScheduleNode` renders with an orbiting GSAP animation showing the next-run countdown. In the minimap
+(`MinimapPlugin`), schedule nodes are highlighted with a clock icon.
 
 ### 8.6 Export / Import
 
@@ -554,6 +586,7 @@ Implement `N8nHitlNode`:
 ### 8.7 Real-Time Collaboration
 
 Use `Y.js` (CRDT library) over WebSocket for multi-user editing:
+
 - Node position changes, param edits, and execution triggers are all CRDTs
 - `VisionOverlayPlugin` scores are shared across sessions
 - No additional server required — use n8n's existing WebSocket server as transport
@@ -567,6 +600,7 @@ Use `Y.js` (CRDT library) over WebSocket for multi-user editing:
 ### 9.1 Workflows as Bootable Apps
 
 In `PLAN/SPACEGRAPH_OS.md`, processes are nodes. n8n workflows become "process nodes" in SpaceGraphOS:
+
 - Each workflow has a status: `stopped | starting | running | errored`
 - `N8nWorkflowPlugin` emits lifecycle events compatible with the OS process graph
 - Workflows can be "launched" from the OS graph by double-clicking
@@ -574,6 +608,7 @@ In `PLAN/SPACEGRAPH_OS.md`, processes are nodes. n8n workflows become "process n
 ### 9.2 Fractal LOD: Infinite Drill-Down
 
 Leverage the P1 roadmap item "Fractal LOD zooming":
+
 - A `GroupNode` containing a workflow's sub-graph seamlessly reveals itself at sufficient zoom
 - Depth is unlimited: a sub-workflow can itself contain sub-workflows as `GroupNode`s
 - `LODPlugin` governs the transition; `VisionManager` verifies legibility at each zoom level
@@ -600,6 +635,7 @@ A dedicated "System Processes" `GroupNode` on the OS canvas shows all running n8
 ### 9.4 Hardware Acceleration Hooks (SpaceGraph Mini)
 
 When running on RK3588:
+
 - Route ONNX vision inference to the NPU via `onnxruntime-node` with EP=`RknnExecutionProvider`
 - n8n AI node execution offloaded to NPU-accelerated local models
 - Target: vision analysis latency < 50ms (currently ~200ms on CPU)
@@ -610,85 +646,94 @@ When running on RK3588:
 
 ### n8n Node → SpaceGraph Node Type
 
-| n8n Node Type | SpaceGraph Type | New? | Notes |
-|---|---|---|---|
-| Webhook | `N8nTriggerNode` | ✅ New | Portal visual, live traffic counter |
-| Schedule/Cron | `N8nScheduleNode` | ✅ New | Orbiting animation, countdown |
-| HTTP Request | `N8nHttpNode` | ✅ New | URL bar + mini response preview |
-| Code (JS) | `N8nCodeNode` | ✅ New | Monaco editor at full zoom level |
-| AI Agent | `N8nAiNode` | ✅ New | Prompt textarea, model picker |
-| LLM Chain | `N8nAiNode` | ✅ New | Reuses same type, different config schema |
-| Vector Store (all) | `ChartNode` (existing) | — | Show index stats as live chart |
-| Sub-workflow | `GroupNode` (existing) | — | Fractal nesting is native |
-| IF / Switch | `ShapeNode` (existing) | — | Diamond geometry |
-| Merge | `ShapeNode` (existing) | — | Funnel geometry |
-| Set / NoOp | `DataNode` (existing) | — | Lightweight, data-centric |
-| Credentials | `N8nCredentialNode` | ✅ New | Secure form fields |
-| Wait / HITL | `N8nHitlNode` | ✅ New | Approve/reject buttons embedded |
-| Email / Slack / API | `N8nHttpNode` | — | Reuse, configure with service icon |
-| SpaceGraph Vision Optimizer | `N8nVisionOptimizerNode` | ✅ New | Calls VisionManager |
+| n8n Node Type               | SpaceGraph Type          | New?   | Notes                                     |
+|-----------------------------|--------------------------|--------|-------------------------------------------|
+| Webhook                     | `N8nTriggerNode`         | ✅ New | Portal visual, live traffic counter       |
+| Schedule/Cron               | `N8nScheduleNode`        | ✅ New | Orbiting animation, countdown             |
+| HTTP Request                | `N8nHttpNode`            | ✅ New | URL bar + mini response preview           |
+| Code (JS)                   | `N8nCodeNode`            | ✅ New | Monaco editor at full zoom level          |
+| AI Agent                    | `N8nAiNode`              | ✅ New | Prompt textarea, model picker             |
+| LLM Chain                   | `N8nAiNode`              | ✅ New | Reuses same type, different config schema |
+| Vector Store (all)          | `ChartNode` (existing)   | —      | Show index stats as live chart            |
+| Sub-workflow                | `GroupNode` (existing)   | —      | Fractal nesting is native                 |
+| IF / Switch                 | `ShapeNode` (existing)   | —      | Diamond geometry                          |
+| Merge                       | `ShapeNode` (existing)   | —      | Funnel geometry                           |
+| Set / NoOp                  | `DataNode` (existing)    | —      | Lightweight, data-centric                 |
+| Credentials                 | `N8nCredentialNode`      | ✅ New | Secure form fields                        |
+| Wait / HITL                 | `N8nHitlNode`            | ✅ New | Approve/reject buttons embedded           |
+| Email / Slack / API         | `N8nHttpNode`            | —      | Reuse, configure with service icon        |
+| SpaceGraph Vision Optimizer | `N8nVisionOptimizerNode` | ✅ New | Calls VisionManager                       |
 
 ### n8n Connection → SpaceGraph Edge Type
 
-| n8n Connection | SpaceGraph Edge Type | Visual Behavior |
-|---|---|---|
-| Normal data flow | `FlowEdge` | Animated particles proportional to throughput |
-| IF true branch | `CurvedEdge` | Green tint |
-| IF false branch | `CurvedEdge` | Red tint |
-| Optional / fallback | `DottedEdge` | Gray dashed |
-| Error output | `AnimatedEdge` | Red pulsing animation |
-| High-volume batch | `DynamicThicknessEdge` | Thickness = log(count) |
-| Credential reference | `DottedEdge` | Purple tint, flows to credential node |
+| n8n Connection       | SpaceGraph Edge Type   | Visual Behavior                               |
+|----------------------|------------------------|-----------------------------------------------|
+| Normal data flow     | `FlowEdge`             | Animated particles proportional to throughput |
+| IF true branch       | `CurvedEdge`           | Green tint                                    |
+| IF false branch      | `CurvedEdge`           | Red tint                                      |
+| Optional / fallback  | `DottedEdge`           | Gray dashed                                   |
+| Error output         | `AnimatedEdge`         | Red pulsing animation                         |
+| High-volume batch    | `DynamicThicknessEdge` | Thickness = log(count)                        |
+| Credential reference | `DottedEdge`           | Purple tint, flows to credential node         |
 
 ---
 
 ## 11. New Node Types to Implement
 
-All new nodes live in `src/nodes/` and extend existing base classes. Register in `SpaceGraph.ts`'s `init()` method (or in `N8nWorkflowPlugin.init()`).
+All new nodes live in `src/nodes/` and extend existing base classes. Register in `SpaceGraph.ts`'s `init()` method (or
+in `N8nWorkflowPlugin.init()`).
 
 ### `N8nTriggerNode`
+
 - Extends: `ShapeNode`
 - Visual: Hexagonal shape + portal glow effect (GSAP)
 - LOD levels: icon (🔗) → label+type → full traffic stats panel
 - File: `src/nodes/N8nTriggerNode.ts`
 
 ### `N8nScheduleNode`
+
 - Extends: `ShapeNode`
 - Visual: Circle with GSAP-animated orbiting dot showing countdown
 - LOD levels: icon (🕐) → next-run time → full cron expression editor
 - File: `src/nodes/N8nScheduleNode.ts`
 
 ### `N8nHttpNode`
+
 - Extends: `HtmlNode`
 - Visual: Card with method badge (GET/POST/etc.) + domain label
 - LOD levels: method badge → URL summary → full request/response editor
 - File: `src/nodes/N8nHttpNode.ts`
 
 ### `N8nAiNode`
+
 - Extends: `HtmlNode`
 - Visual: Gradient card (violet/blue) + "AI" badge
 - LOD levels: model name → prompt preview → full prompt + params editor
 - File: `src/nodes/N8nAiNode.ts`
 
 ### `N8nCodeNode`
+
 - Extends: `HtmlNode`
 - Visual: Dark-theme card with syntax-highlighted snippet preview
 - LOD levels: "JS" badge → first 3 lines of code → full Monaco editor (lazy import)
 - File: `src/nodes/N8nCodeNode.ts`
 
 ### `N8nCredentialNode`
+
 - Extends: `ShapeNode`
 - Visual: Lock icon, color-coded by credential type
 - LOD levels: lock icon → service name → masked fields + test button
 - File: `src/nodes/N8nCredentialNode.ts`
 
 ### `N8nHitlNode`
+
 - Extends: `HtmlNode`
 - Visual: Orange "WAITING" badge + embedded approve/reject UI
 - LOD levels: status badge → decision summary → full input + approve/reject
 - File: `src/nodes/N8nHitlNode.ts`
 
 ### `N8nVisionOptimizerNode`
+
 - Extends: `HtmlNode`
 - Visual: Eye icon + live vision score gauge
 - LOD levels: score badge → score breakdown → full vision report + auto-fix controls
@@ -699,16 +744,19 @@ All new nodes live in `src/nodes/` and extend existing base classes. Register in
 ## 12. New Plugins to Implement
 
 ### `N8nWorkflowPlugin`
+
 - **Location**: `packages/n8n-bridge/src/N8nWorkflowPlugin.ts`
 - **Responsibilities**: Bridge lifecycle, node type registration, execution visual updates
 - **Implements**: `SpaceGraphPlugin`
 
 ### `N8nExecutionMonitorPlugin`
+
 - **Location**: `packages/n8n-bridge/src/N8nExecutionMonitorPlugin.ts`
 - **Responsibilities**: Receive execution events, apply state visuals, manage `FlowEdge` particle animation
 - **Implements**: `SpaceGraphPlugin`
 
 ### `N8nCollaborationPlugin`
+
 - **Location**: `packages/n8n-bridge/src/N8nCollaborationPlugin.ts`
 - **Dependencies**: `yjs`, `y-websocket`
 - **Responsibilities**: Multi-user CRDT state sync for node positions, param changes, and run triggers
@@ -756,15 +804,15 @@ spacegraph7/
 
 ## 14. Performance Targets & Constraints
 
-| Metric | Target | Strategy |
-|---|---|---|
-| FPS at 1,000 n8n nodes | ≥ 60 FPS | `CullingManager` + LODPlugin; virtualize off-screen nodes |
-| Browser bundle size | < 200 KB | Externalize n8n server modules; lazy-import Monaco |
-| Vision analysis latency | < 200ms (CPU), < 50ms (NPU) | Existing ONNX pipeline; RK3588 NPU path for OS deployment |
-| Workflow sync latency | < 100ms | WS debounced at 300ms for param edits; positions sync immediately |
-| Time-to-first-render | < 3s from workflow load | `WorkflowMapper` runs sync; BVH culling from frame 1 |
-| Sub-30s vision heal loop | < 30s end-to-end | Vision → auto-layout → re-score pipeline target |
-| 1000+ node workflow | Lazy load off-screen nodes | `CullingManager` + BVH (`three-mesh-bvh`) already in place |
+| Metric                   | Target                      | Strategy                                                          |
+|--------------------------|-----------------------------|-------------------------------------------------------------------|
+| FPS at 1,000 n8n nodes   | ≥ 60 FPS                    | `CullingManager` + LODPlugin; virtualize off-screen nodes         |
+| Browser bundle size      | < 200 KB                    | Externalize n8n server modules; lazy-import Monaco                |
+| Vision analysis latency  | < 200ms (CPU), < 50ms (NPU) | Existing ONNX pipeline; RK3588 NPU path for OS deployment         |
+| Workflow sync latency    | < 100ms                     | WS debounced at 300ms for param edits; positions sync immediately |
+| Time-to-first-render     | < 3s from workflow load     | `WorkflowMapper` runs sync; BVH culling from frame 1              |
+| Sub-30s vision heal loop | < 30s end-to-end            | Vision → auto-layout → re-score pipeline target                   |
+| 1000+ node workflow      | Lazy load off-screen nodes  | `CullingManager` + BVH (`three-mesh-bvh`) already in place        |
 
 ---
 
@@ -774,12 +822,12 @@ spacegraph7/
 
 Extend existing test suite (`test/`) with:
 
-| Test | Coverage |
-|---|---|
-| `WorkflowMapper.toGraphSpec()` | Round-trip fidelity for all n8n node types |
-| `N8nBridge.pushNodePositionUpdate()` | WS message format correctness |
-| `N8nVisionHealer.healLayout()` | Mock vision scores → correct layout plugin invoked |
-| LOD threshold logic on new node types | Correct widget shown at each camera distance |
+| Test                                  | Coverage                                           |
+|---------------------------------------|----------------------------------------------------|
+| `WorkflowMapper.toGraphSpec()`        | Round-trip fidelity for all n8n node types         |
+| `N8nBridge.pushNodePositionUpdate()`  | WS message format correctness                      |
+| `N8nVisionHealer.healLayout()`        | Mock vision scores → correct layout plugin invoked |
+| LOD threshold logic on new node types | Correct widget shown at each camera distance       |
 
 ### Integration Tests (Playwright)
 
@@ -801,11 +849,13 @@ test('execution state changes node colors correctly', async ({ page }) => {
 
 ### Bridge Server Tests
 
-Use `supertest` to test the HTTP proxy and WebSocket relay in isolation, with n8n running against an in-memory SQLite DB.
+Use `supertest` to test the HTTP proxy and WebSocket relay in isolation, with n8n running against an in-memory SQLite
+DB.
 
 ### Vision Regression Gate
 
 Add to existing GitHub Actions CI (`.github/workflows/`):
+
 ```yaml
 - name: n8n workflow vision test
   run: pnpm run test:vision -- --grep "n8n"
@@ -871,22 +921,27 @@ Phase 0 (Bridge)
 
 ## 17. n8n as a Pure Library — Anti-Tethering Strategy
 
-> **Core principle**: We use n8n's execution engine (its `Workflow`, `ExecutionService`, `NodeTypes` registry, scheduler, etc.) exactly as we would use any pnpm library — import, instantiate, call. We **never** start n8n's HTTP server, never touch its user/owner setup, never call home. SpaceGraph owns the UI entirely; n8n owns the execution graph.
+> **Core principle**: We use n8n's execution engine (its `Workflow`, `ExecutionService`, `NodeTypes` registry,
+> scheduler, etc.) exactly as we would use any pnpm library — import, instantiate, call. We **never** start n8n's HTTP
+> server, never touch its user/owner setup, never call home. SpaceGraph owns the UI entirely; n8n owns the execution
+> graph.
 
 ### 17.1 Why "Library Mode" and Not the Full Server
 
-| Full `N8n.start()` (what we avoid) | Library mode (what we do) |
-|---|---|
-| Boots HTTP server on 5678 | No HTTP server; execution is in-process |
-| Demands owner account setup | No user model at all |
-| Fires telemetry/diagnostics on startup | Killed at env-set time before any import |
+| Full `N8n.start()` (what we avoid)        | Library mode (what we do)                        |
+|-------------------------------------------|--------------------------------------------------|
+| Boots HTTP server on 5678                 | No HTTP server; execution is in-process          |
+| Demands owner account setup               | No user model at all                             |
+| Fires telemetry/diagnostics on startup    | Killed at env-set time before any import         |
 | Checks license SDK, logs renewal warnings | Silenced: `N8N_LOG_LEVEL=warn` + prototype no-op |
-| Loads all 300+ node types eagerly | We register only the types we need |
-| Starts webhook registration loop | `N8N_SKIP_WEBHOOK_DEREGISTRATION_SHUTDOWN=true` |
+| Loads all 300+ node types eagerly         | We register only the types we need               |
+| Starts webhook registration loop          | `N8N_SKIP_WEBHOOK_DEREGISTRATION_SHUTDOWN=true`  |
 
 ### 17.2 `bootstrap.ts` — Must Be First Import
 
-`packages/n8n-bridge/src/bootstrap.ts` is the **anti-tethering boot loader**. It must be imported as the very first line of `server/index.ts` (before any other n8n import), so env vars and prototype patches are in place before n8n modules initialise their static singletons.
+`packages/n8n-bridge/src/bootstrap.ts` is the **anti-tethering boot loader**. It must be imported as the very first line
+of `server/index.ts` (before any other n8n import), so env vars and prototype patches are in place before n8n modules
+initialise their static singletons.
 
 ```typescript
 // packages/n8n-bridge/src/bootstrap.ts
@@ -964,7 +1019,9 @@ import('n8n-core').then(({ UserManagementService }) => {
 }).catch(() => {});
 ```
 
-> **Node.js note**: Dynamic `import()` inside `bootstrap.ts` runs after static module initialisation; sync env-var setting (step 1) happens first and is what matters for static constructors. The prototype patches (step 3) are belt-and-suspenders for the small number of services that read env vars lazily at method-call time.
+> **Node.js note**: Dynamic `import()` inside `bootstrap.ts` runs after static module initialisation; sync env-var
+> setting (step 1) happens first and is what matters for static constructors. The prototype patches (step 3) are
+> belt-and-suspenders for the small number of services that read env vars lazily at method-call time.
 
 ### 17.3 Programmatic Workflow Execution (No Server)
 
@@ -1026,11 +1083,13 @@ workflowData.nodes.forEach(node => {
 });
 ```
 
-For highly sensitive credentials, keep them outside n8n entirely: pass them as node input data from a SpaceGraph-managed encrypted store and inject them at execution time via a custom `ICredentialType` adapter.
+For highly sensitive credentials, keep them outside n8n entirely: pass them as node input data from a SpaceGraph-managed
+encrypted store and inject them at execution time via a custom `ICredentialType` adapter.
 
 ### 17.5 Resetting State Between Runs
 
-Since the SQLite DB is in `/tmp` and wiped on each `bootstrap.ts` load, state never accumulates. For long-running server processes (dev server hot-reload), add a hook:
+Since the SQLite DB is in `/tmp` and wiped on each `bootstrap.ts` load, state never accumulates. For long-running server
+processes (dev server hot-reload), add a hook:
 
 ```typescript
 // bridge server — hot-reload safety
@@ -1055,13 +1114,13 @@ echo "0.0.0.0 license.n8n.io"   >> /etc/hosts
 
 ### 17.7 Feasibility & Upgrade Notes
 
-| Concern | Assessment |
-|---|---|
-| **Effort** | Core bootstrap + direct import wiring: ~1–2 days. Prototype patches: a few hours, test against target n8n version. |
-| **Stability** | Works against n8n ≥1.30 (tested pattern). Pin `"n8n": "~1.X.0"` in package.json; review changelog on minor bumps. |
-| **Fair-source compliance** | n8n is [fair-source licensed](https://fairsource.dev/). Personal/internal use with no redistribution: unambiguously fine. |
-| **Fork vs. patch** | Prefer env-var + prototype patch (zero maintenance overhead). Fork only if n8n adds a hard auth gate that cannot be patched. |
-| **Upstream upgrades** | `bootstrap.ts` acts as a single upgrade compatibility shim — one file to update when internals change. |
+| Concern                    | Assessment                                                                                                                   |
+|----------------------------|------------------------------------------------------------------------------------------------------------------------------|
+| **Effort**                 | Core bootstrap + direct import wiring: ~1–2 days. Prototype patches: a few hours, test against target n8n version.           |
+| **Stability**              | Works against n8n ≥1.30 (tested pattern). Pin `"n8n": "~1.X.0"` in package.json; review changelog on minor bumps.            |
+| **Fair-source compliance** | n8n is [fair-source licensed](https://fairsource.dev/). Personal/internal use with no redistribution: unambiguously fine.    |
+| **Fork vs. patch**         | Prefer env-var + prototype patch (zero maintenance overhead). Fork only if n8n adds a hard auth gate that cannot be patched. |
+| **Upstream upgrades**      | `bootstrap.ts` acts as a single upgrade compatibility shim — one file to update when internals change.                       |
 
 ---
 
@@ -1069,34 +1128,34 @@ echo "0.0.0.0 license.n8n.io"   >> /etc/hosts
 
 Key existing SpaceGraphJS APIs consumed by this integration:
 
-| API | Location | Usage |
-|---|---|---|
-| `SpaceGraph.create(container, spec)` | `src/SpaceGraph.ts:94` | Entry point for rendering a workflow |
-| `graph.addNode(nodeSpec)` | `src/core/Graph.ts` | Add n8n node to canvas |
-| `graph.updateNode(id, patch)` | `src/core/Graph.ts` | Update execution state colors |
-| `pluginManager.registerNodeType(name, cls)` | `src/core/PluginManager.ts` | Register new n8n node types |
-| `VisionManager.analyzeVision()` | `src/core/VisionManager.ts` | Trigger vision quality check |
-| `cameraControls.flyTo(target, z, dur)` | `src/core/CameraControls.ts` | Zoom to a specific node |
-| `EventManager` (mitt-based) | `src/core/EventManager.ts` | Subscribe to node/edge events |
-| `FlowEdge` | `src/edges/FlowEdge.ts` | Primary data flow edge |
-| `HierarchicalLayout` | `src/plugins/HierarchicalLayout.ts` | Default workflow layout |
-| `LODPlugin` | `src/plugins/LODPlugin.ts` | Distance-based widget reveal |
-| `VisionOverlayPlugin` | `src/plugins/VisionOverlayPlugin.ts` | Live quality score UI |
-| `ErgonomicsPlugin` | `src/plugins/ErgonomicsPlugin.ts` | Auto-fix overlaps |
+| API                                         | Location                             | Usage                                |
+|---------------------------------------------|--------------------------------------|--------------------------------------|
+| `SpaceGraph.create(container, spec)`        | `src/SpaceGraph.ts:94`               | Entry point for rendering a workflow |
+| `graph.addNode(nodeSpec)`                   | `src/core/Graph.ts`                  | Add n8n node to canvas               |
+| `graph.updateNode(id, patch)`               | `src/core/Graph.ts`                  | Update execution state colors        |
+| `pluginManager.registerNodeType(name, cls)` | `src/core/PluginManager.ts`          | Register new n8n node types          |
+| `VisionManager.analyzeVision()`             | `src/core/VisionManager.ts`          | Trigger vision quality check         |
+| `cameraControls.flyTo(target, z, dur)`      | `src/core/CameraControls.ts`         | Zoom to a specific node              |
+| `EventManager` (mitt-based)                 | `src/core/EventManager.ts`           | Subscribe to node/edge events        |
+| `FlowEdge`                                  | `src/edges/FlowEdge.ts`              | Primary data flow edge               |
+| `HierarchicalLayout`                        | `src/plugins/HierarchicalLayout.ts`  | Default workflow layout              |
+| `LODPlugin`                                 | `src/plugins/LODPlugin.ts`           | Distance-based widget reveal         |
+| `VisionOverlayPlugin`                       | `src/plugins/VisionOverlayPlugin.ts` | Live quality score UI                |
+| `ErgonomicsPlugin`                          | `src/plugins/ErgonomicsPlugin.ts`    | Auto-fix overlaps                    |
 
 ---
 
 ## Appendix B: Open Questions & Risks
 
-| Risk | Mitigation |
-|---|---|
-| n8n's ESM/CJS compatibility in Vite | Vite aliases + `build.rollupOptions.external` for server-side modules |
-| Monaco editor bundle size (>4MB) | Dynamic import; only loaded when user zooms into a Code node |
-| n8n API versioning breaking bridge | Pin n8n version in `package.json`; abstract behind typed bridge interface |
-| WebGL + heavy DOM (Monaco, charts) performance | Virtual scrolling + `CullingManager`; test at 1000 nodes in CI |
-| Real-time collaboration CRDT conflicts | Y.js handles automatically; test with 3+ concurrent users |
-| Credential security in browser context | Never expose raw credentials to browser; always call bridge server proxy |
-| n8n internal API changes (non-public `ExecutionService`) | Pin semver (`"n8n": "1.x.x"` fixed minor), monitor changelog, wrap in thin adapter |
-| SQLite in `/tmp` wiped between reboots | Acceptable: we re-load workflow JSON from source of truth each startup; no user state needed |
-| `@n8n_io/license-sdk` logs polluting console | `N8N_LOG_LEVEL=warn` + prototype no-op in `bootstrap.ts` silences all license SDK output |
-| n8n adds mandatory auth in a future version | `bootstrap.ts` prototype patches act as the last-resort override; fork only if absolutely required |
+| Risk                                                     | Mitigation                                                                                         |
+|----------------------------------------------------------|----------------------------------------------------------------------------------------------------|
+| n8n's ESM/CJS compatibility in Vite                      | Vite aliases + `build.rollupOptions.external` for server-side modules                              |
+| Monaco editor bundle size (>4MB)                         | Dynamic import; only loaded when user zooms into a Code node                                       |
+| n8n API versioning breaking bridge                       | Pin n8n version in `package.json`; abstract behind typed bridge interface                          |
+| WebGL + heavy DOM (Monaco, charts) performance           | Virtual scrolling + `CullingManager`; test at 1000 nodes in CI                                     |
+| Real-time collaboration CRDT conflicts                   | Y.js handles automatically; test with 3+ concurrent users                                          |
+| Credential security in browser context                   | Never expose raw credentials to browser; always call bridge server proxy                           |
+| n8n internal API changes (non-public `ExecutionService`) | Pin semver (`"n8n": "1.x.x"` fixed minor), monitor changelog, wrap in thin adapter                 |
+| SQLite in `/tmp` wiped between reboots                   | Acceptable: we re-load workflow JSON from source of truth each startup; no user state needed       |
+| `@n8n_io/license-sdk` logs polluting console             | `N8N_LOG_LEVEL=warn` + prototype no-op in `bootstrap.ts` silences all license SDK output           |
+| n8n adds mandatory auth in a future version              | `bootstrap.ts` prototype patches act as the last-resort override; fork only if absolutely required |

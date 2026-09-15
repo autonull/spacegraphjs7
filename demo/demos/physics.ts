@@ -1,4 +1,4 @@
-import { PhysicsPlugin } from '../../src/index';
+import { PhysicsPlugin } from '../../src';
 import { createDemoWithNodes, type SpaceGraph } from '../framework';
 
 export default async function physicsDemo(): Promise<SpaceGraph> {

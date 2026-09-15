@@ -1,5 +1,5 @@
+import { ProcessNode } from 'spacegraphjs/nodes';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { ProcessNode } from '../src/nodes/ProcessNode';
 
 describe('ProcessNode', () => {
   let sg: any;
@@ -8,12 +8,25 @@ describe('ProcessNode', () => {
     // Simple mock of SpaceGraph for node testing
     sg = {
       renderer: {
-        scene: { add: () => {}, remove: () => {} },
-        cssScene: { add: () => {}, remove: () => {} },
+        scene: {
+          add: () => {},
+          remove: () => {},
+        },
+        cssScene: {
+          add: () => {},
+          remove: () => {},
+        },
       },
-      events: { emit: () => {} },
-      cullingManager: { registerNode: () => {}, unregisterNode: () => {} },
-      poolManager: { release: () => {} },
+      events: {
+        emit: () => {},
+      },
+      cullingManager: {
+        registerNode: () => {},
+        unregisterNode: () => {},
+      },
+      poolManager: {
+        release: () => {},
+      },
     };
   });
 
