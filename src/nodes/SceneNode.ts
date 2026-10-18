@@ -3,6 +3,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec } from '../types';
+import { ensureThreeMeshBvh } from '../core/bvh';
 import { createLogger } from '../utils/logger';
 import { Node } from './Node';
 
@@ -94,7 +95,7 @@ export class SceneNode extends Node {
   private loadModel(url: string, targetSize: number, autoCenter: boolean) {
     this.loader.load(
       url,
-      (gltf) => {
+      async (gltf) => {
         this.modelRoot = gltf.scene;
 
         const box = new THREE.Box3().setFromObject(this.modelRoot);
@@ -121,6 +122,7 @@ export class SceneNode extends Node {
         const finalSize = new THREE.Vector3();
         finalBox.getSize(finalSize);
 
+        await ensureThreeMeshBvh();
         const proxyGeo = new THREE.BoxGeometry(finalSize.x, finalSize.y, finalSize.z);
         if (proxyGeo.computeBoundsTree) proxyGeo.computeBoundsTree();
 
