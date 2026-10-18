@@ -84,6 +84,8 @@ export declare class SpaceGraph {
   show(id: string, visible?: boolean): unknown
   setPositions(positions: Record<string, [number, number, number]>): this
   setProjection(projection: 'perspective' | 'orthographic'): this
+  setOrbitEnabled(enabled: boolean): this
+  setPolar(phi: number, theta: number, duration?: number): this
   setZoom(value: number): this
   select(target: string | readonly string[] | null): this
   clearSelection(): this

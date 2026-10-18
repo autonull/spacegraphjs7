@@ -803,6 +803,18 @@ export class SpaceGraph {
     return this;
   }
 
+  // Enable or disable camera orbit; orthographic projection never orbits regardless of this flag.
+  setOrbitEnabled(enabled: boolean): this {
+    this.cameraControls?.setOrbitEnabled(enabled);
+    return this;
+  }
+
+  // Point the camera at a polar (from +Y) and azimuth angle, animating when a duration is given.
+  setPolar(phi: number, theta: number, duration = 0): this {
+    this.cameraControls?.setPolar(phi, theta, duration);
+    return this;
+  }
+
   // Normalized 0..1 zoom where 1 is closest; the host maps it to semantic levels.
   get zoom(): number {
     return this.renderer.getZoom();

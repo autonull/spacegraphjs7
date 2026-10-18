@@ -66,10 +66,14 @@ export class CameraControls {
   private keyState = new Map<string, boolean>();
   private targetNext: THREE.Vector3 | null = null;
   private radiusNext: number | null = null;
+  private phiNext: number | null = null;
+  private thetaNext: number | null = null;
   private animStartTime = 0;
   private animDuration = 0;
   private startTarget = new THREE.Vector3();
   private startRadius = 0;
+  private startPhi = 0;
+  private startTheta = 0;
   private isOrthographic = false;
   private orthoCamera: THREE.OrthographicCamera | null = null;
   private perspectiveCamera: THREE.Camera;
@@ -184,7 +188,7 @@ export class CameraControls {
     }
     this.target.add(this.panOffset);
 
-    if (this.targetNext) {
+    if (this.targetNext || this.phiNext !== null) {
       const elapsed = performance.now() - this.animStartTime;
       const t = Math.min(elapsed / this.animDuration, 1);
       const eased = 1 - (1 - t) ** 3;
@@ -193,12 +197,18 @@ export class CameraControls {
         this.sg.events.emit('camera:fly:progress', t);
       }
 
-      this.target.lerpVectors(this.startTarget, this.targetNext, eased);
+      if (this.targetNext) this.target.lerpVectors(this.startTarget, this.targetNext, eased);
       if (this.radiusNext)
         this.spherical.radius = this.startRadius + (this.radiusNext - this.startRadius) * eased;
+      if (this.phiNext !== null)
+        this.spherical.phi = this.startPhi + (this.phiNext - this.startPhi) * eased;
+      if (this.thetaNext !== null)
+        this.spherical.theta = this.startTheta + (this.thetaNext - this.startTheta) * eased;
       if (t >= 1) {
         this.targetNext = null;
         this.radiusNext = null;
+        this.phiNext = null;
+        this.thetaNext = null;
         if (this.sg?.events) {
           this.sg.events.emit('camera:fly:end');
         }
@@ -210,7 +220,8 @@ export class CameraControls {
     this.sphericalDelta.set(0, 0, 0);
     this.scale = 1;
     this.panOffset.set(0, 0, 0);
-    if (this.targetNext || [...this.keyState.values()].some(Boolean)) this.sg?.requestFrame?.();
+    if (this.targetNext || this.phiNext !== null || [...this.keyState.values()].some(Boolean))
+      this.sg?.requestFrame?.();
   }
 
   panBy(dx: number, dy: number): void {
@@ -295,6 +306,30 @@ export class CameraControls {
   setTarget(x: number, y: number, z: number): void {
     this.target.set(x, y, z);
     this.updateSpherical();
+  }
+
+  // Gate orbit input without swapping the camera; ortho never orbits regardless (see rotate()).
+  setOrbitEnabled(enabled: boolean): void {
+    this.config.enableRotate = enabled;
+  }
+
+  // Point the camera at a polar (from +Y) and azimuth angle, animating when a duration is given.
+  setPolar(phi: number, theta: number, duration = 0): void {
+    const targetPhi = Math.max(0.01, Math.min(Math.PI - 0.01, phi));
+    if (duration <= 0) {
+      this.spherical.phi = targetPhi;
+      this.spherical.theta = theta;
+      this.phiNext = null;
+      this.thetaNext = null;
+    } else {
+      this.startPhi = this.spherical.phi;
+      this.startTheta = this.spherical.theta;
+      this.phiNext = targetPhi;
+      this.thetaNext = theta;
+      this.animStartTime = performance.now();
+      this.animDuration = duration * 1000;
+    }
+    this.sg?.requestFrame?.();
   }
 
   toggleOrthographic(): void {

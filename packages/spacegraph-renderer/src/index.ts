@@ -24,6 +24,11 @@ const CAPABILITIES: RendererCapabilities = {
   maxRecommendedNodes: 300,
 };
 
+// Camera polar angles (from +Y). FLAT looks straight down the graph plane (the 2D baseline);
+// TILT raises the camera ~29° so the hierarchy Z reads as depth in 3D.
+const FLAT_PHI = Math.PI / 2;
+const TILT_PHI = Math.PI / 2 - 0.5;
+
 type Handler<K extends keyof RendererEventMap> = (payload: RendererEventMap[K]) => void;
 type CoreViewport = { zoom: number; center: [number, number, number]; band?: string };
 
@@ -64,6 +69,7 @@ export class SpaceGraphRenderer implements GraphRenderer {
     });
     this.#sg = sg;
     this.#bind();
+    this.#applyProjection(options.projection);
     if (this.#model) this.setModel(this.#model);
     this.#emit('ready', undefined);
   }
@@ -106,7 +112,19 @@ export class SpaceGraphRenderer implements GraphRenderer {
   }
 
   setProjection(projection: Projection): void {
-    this.#sg?.setProjection(projection === '2d' ? 'orthographic' : 'perspective');
+    if (!this.#sg) return;
+    this.#sg.setProjection(projection === '2d' ? 'orthographic' : 'perspective');
+    this.#applyProjection(projection);
+  }
+
+  // A flat top-down pose is the legible 2D baseline; 3D tilts the camera so the hierarchy Z reads as
+  // depth, and only 3D orbits. The renderer owns camera framing and animation (contract rule 1).
+  #applyProjection(projection: Projection): void {
+    const sg = this.#sg;
+    if (!sg) return;
+    const perspective = projection === '3d';
+    sg.setOrbitEnabled(perspective);
+    sg.setPolar(perspective ? TILT_PHI : FLAT_PHI, 0, 0.5);
   }
 
   setSelection(ids: readonly string[]): void {
