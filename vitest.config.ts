@@ -6,6 +6,17 @@ export default defineConfig({
     alias: [
       { find: /^spacegraphjs$/, replacement: resolve(__dirname, 'src/index.ts') },
       { find: /^spacegraphjs\/(.+)$/, replacement: resolve(__dirname, 'src/$1') },
+      // Workspace packages resolve from source under Vitest without a pnpm link (the documented alias fallback).
+      { find: /^@spacegraphjs\/renderer$/, replacement: resolve(__dirname, 'packages/renderer/src/index.ts') },
+      {
+        find: /^@spacegraphjs\/spacegraph-renderer$/,
+        replacement: resolve(__dirname, 'packages/spacegraph-renderer/src/index.ts'),
+      },
+      {
+        find: /^@spacegraphjs\/cytoscape-renderer$/,
+        replacement: resolve(__dirname, 'packages/cytoscape-renderer/src/index.ts'),
+      },
+      { find: /^@spacegraphjs\/svg-renderer$/, replacement: resolve(__dirname, 'packages/svg-renderer/src/index.ts') },
     ],
   },
   test: {
