@@ -46,7 +46,7 @@ export class LabeledEdge extends Edge {
       color: data?.labelColor ?? theme?.edge?.labelColor ?? theme?.label?.color ?? '#ffffff',
       fontSize,
       fontFamily: theme?.label?.fontFamily ?? 'sans-serif',
-      background: 'rgba(0,0,0,0.55)',
+      background: data?.labelBackground ?? theme?.edge?.labelBackground ?? 'rgba(0,0,0,0.55)',
       padding: '1px 5px',
       borderRadius: '3px',
       pointerEvents: 'none',

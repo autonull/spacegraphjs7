@@ -10,7 +10,7 @@ import {
   type Unsubscribe,
 } from '@spacegraphjs/renderer';
 import type { GraphSpec, SpaceGraph } from 'spacegraphjs/activity';
-import { edgeSpec, nodeSpec } from './mapping';
+import { edgeSpec, nodeSpec, spaceGraphTheme } from './mapping';
 
 const CAPABILITIES: RendererCapabilities = {
   contractVersion: CONTRACT_VERSION,
@@ -70,7 +70,7 @@ export class SpaceGraphRenderer implements GraphRenderer {
         backgroundColor: options.theme.background,
         preserveDrawingBuffer: true,
       },
-      theme: { background: options.theme.background },
+      theme: spaceGraphTheme(options.theme),
       cameraControls: { enableRotate: !ortho },
     });
     this.#sg = sg;
@@ -128,6 +128,7 @@ export class SpaceGraphRenderer implements GraphRenderer {
 
   setTheme(theme: RenderTheme): void {
     this.#theme = theme;
+    if (this.#sg) this.#sg.options.theme = spaceGraphTheme(theme);
     if (this.#model) this.setModel(this.#model);
   }
 
@@ -242,5 +243,5 @@ function idsOf(payload: unknown): readonly string[] {
   return (payload as { ids?: readonly string[] } | undefined)?.ids ?? [];
 }
 
-export { edgeSpec, nodeSpec, parseColor, statusColor } from './mapping';
+export { edgeSpec, nodeSpec, parseColor, spaceGraphTheme, statusColor } from './mapping';
 export type { GraphRenderer } from '@spacegraphjs/renderer';

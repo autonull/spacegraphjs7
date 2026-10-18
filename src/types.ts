@@ -278,6 +278,8 @@ export interface EdgeData extends BaseEdgeData {
   gapSize?: number;
   label?: string;
   labelColor?: string;
+  /** Background pill colour behind an edge label. */
+  labelBackground?: string;
   fontSize?: number;
   /** Optional pick radius (px) for easier edge clicking. Defaults to the raycaster line threshold. */
   hitWidth?: number;
@@ -410,6 +412,8 @@ export interface SpaceGraphTheme {
   edge?: {
     color?: string | number;
     labelColor?: string;
+    /** Background pill colour behind an edge label; defaults to a translucent black. */
+    labelBackground?: string;
   };
   /** Label typography shared by node and edge labels. */
   label?: {

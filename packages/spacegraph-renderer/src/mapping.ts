@@ -1,9 +1,25 @@
 import type { RenderEdge, RenderNode, RenderTheme } from '@spacegraphjs/renderer';
-import type { EdgeSpec, NodeData, NodeSpec } from 'spacegraphjs/activity';
+import type { EdgeSpec, NodeData, NodeSpec, SpaceGraphTheme } from 'spacegraphjs/activity';
 
 // The adapter never interprets host semantics: it maps a render-facing node/edge to a core spec.
 
 const FALLBACK_COLOR = 0x888888;
+
+/**
+ * RF.6 — map the renderer-facing theme onto the core theme so selection/focus/hover outlines, edge
+ * colours, the edge-label pill, and label typography all follow the host instead of core defaults.
+ */
+export function spaceGraphTheme(theme: RenderTheme): SpaceGraphTheme {
+  return {
+    background: theme.background,
+    node: { stroke: parseColor(theme.border) },
+    edge: { color: parseColor(theme.edge), labelColor: theme.textMuted, labelBackground: theme.surface },
+    label: { color: theme.text, fontFamily: theme.fontFamily, fontSize: theme.fontSize },
+    selection: parseColor(theme.selection),
+    hover: parseColor(theme.focus),
+    focus: parseColor(theme.focus),
+  };
+}
 
 export function statusColor(status: RenderNode['status'], theme: RenderTheme): number {
   switch (status) {

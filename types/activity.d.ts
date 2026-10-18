@@ -46,9 +46,19 @@ export interface SpaceGraphOptions {
     preserveDrawingBuffer?: boolean
     projection?: 'perspective' | 'orthographic'
   }
-  theme?: { background?: string | number }
+  theme?: {
+    background?: string | number
+    node?: { fill?: string | number; stroke?: string | number }
+    edge?: { color?: string | number; labelColor?: string; labelBackground?: string }
+    label?: { color?: string; fontFamily?: string; fontSize?: number }
+    selection?: string | number
+    hover?: string | number
+    focus?: string | number
+  }
   [key: string]: unknown
 }
+
+export type SpaceGraphTheme = NonNullable<SpaceGraphOptions['theme']>
 
 export interface GraphViewport {
   zoom: number

@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import type { RenderEdge, RenderNode, RenderTheme } from '@spacegraphjs/renderer';
-import { edgeSpec, nodeSpec, parseColor, statusColor } from './mapping';
+import { edgeSpec, nodeSpec, parseColor, spaceGraphTheme, statusColor } from './mapping';
 
 const theme: RenderTheme = {
   background: '#101014',
@@ -97,5 +97,19 @@ describe('edgeSpec', () => {
   test('mutes and dashes inferred edges and marks directed ones', () => {
     const spec = edgeSpec(edge({ confidence: 'inferred', directed: true }), theme);
     expect(spec.data).toMatchObject({ dashed: true, thickness: 1, arrowhead: 'target', color: 0x4b5563 });
+  });
+});
+
+describe('spaceGraphTheme (RF.6)', () => {
+  test('maps the host theme onto the core theme surface', () => {
+    expect(spaceGraphTheme(theme)).toEqual({
+      background: '#101014',
+      node: { stroke: 0x3a3a44 },
+      edge: { color: 0x6b7280, labelColor: '#a0a0aa', labelBackground: '#1b1b22' },
+      label: { color: '#f5f5f7', fontFamily: 'ui-sans-serif', fontSize: 13 },
+      selection: 0x60a5fa,
+      hover: 0x93c5fd,
+      focus: 0x93c5fd,
+    });
   });
 });

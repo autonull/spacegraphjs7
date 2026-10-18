@@ -54,5 +54,8 @@ export function applyEdgeTheme(data: EdgeData, theme?: SpaceGraphTheme): EdgeDat
   if (next.labelColor === undefined && theme.edge.labelColor !== undefined) {
     next.labelColor = theme.edge.labelColor;
   }
+  if (next.labelBackground === undefined && theme.edge.labelBackground !== undefined) {
+    next.labelBackground = theme.edge.labelBackground;
+  }
   return next;
 }
