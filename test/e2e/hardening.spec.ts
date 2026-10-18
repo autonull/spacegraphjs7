@@ -20,6 +20,8 @@ test.describe('SpaceGraph hardening (L1.5-L1.7, L1.14)', () => {
 
     expect(await page.evaluate(() => (window as any).__sg.projection)).toBe('orthographic');
     expect(await page.evaluate(() => (window as any).__sg.nodeCount)).toBe(3);
+    // Edge labels render through the CSS2D layer.
+    await expect(page.locator('.sg-edge-label').first()).toBeVisible({ timeout: 10_000 });
 
     expect(errors.filter((e) => !e.includes('favicon'))).toEqual([]);
   });

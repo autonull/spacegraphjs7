@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
 import { CSS3DRenderer } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
 import { Node } from '../nodes/Node';
 import { InstancedNodeRenderer } from '../rendering/InstancedNodeRenderer';
@@ -28,6 +29,7 @@ export class Renderer {
   public orthographicCamera: THREE.OrthographicCamera;
   public renderer: THREE.WebGLRenderer;
   public cssRenderer: CSS3DRenderer;
+  public css2dRenderer: CSS2DRenderer;
   public instancedRenderer: InstancedNodeRenderer;
   public renderContext: RenderContext;
 
@@ -83,6 +85,13 @@ export class Renderer {
     Object.assign(this.cssRenderer.domElement.style, CSS_STYLES);
     this.cssRenderer.domElement.style.zIndex = '1';
     container.appendChild(this.cssRenderer.domElement);
+
+    // CSS2D layer for edge labels; keeps text at a constant screen size across zoom.
+    this.css2dRenderer = new CSS2DRenderer();
+    this.css2dRenderer.setSize(container.clientWidth, container.clientHeight);
+    Object.assign(this.css2dRenderer.domElement.style, CSS_STYLES);
+    this.css2dRenderer.domElement.style.zIndex = '2';
+    container.appendChild(this.css2dRenderer.domElement);
 
     this.instancedRenderer = new InstancedNodeRenderer(sg, this.scene);
     this.projScreenMatrix = new THREE.Matrix4();
@@ -198,6 +207,7 @@ export class Renderer {
     }
 
     this.cssRenderer.render(this.scene, camera);
+    this.css2dRenderer.render(this.scene, camera);
     this.renderer.render(this.scene, camera);
 
     this.renderContext?.endFrame();
@@ -239,6 +249,7 @@ export class Renderer {
     this._resizeObserver?.disconnect();
     this.instancedRenderer.dispose();
     this.renderer.dispose();
+    this.css2dRenderer.domElement.remove();
     this.cssRenderer.domElement.remove();
     this.renderer.domElement.remove();
   }
@@ -268,6 +279,7 @@ export class Renderer {
     }
     this.renderer.setSize(w, h);
     this.cssRenderer.setSize(w, h);
+    this.css2dRenderer.setSize(w, h);
     this.renderContext?.updateViewport({ width: w, height: h });
 
     const resolution = new THREE.Vector2(w, h);
