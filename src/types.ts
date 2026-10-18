@@ -321,6 +321,13 @@ export interface SpaceGraphEvents {
   'edge:added': any;
   'edge:removed': any;
   'edge:updated': any;
+  'graph:cleared': any;
+  'selection:changed': any;
+  'node:selection-changed': any;
+  'node:click': any;
+  'edge:click': any;
+  'background:click': any;
+  'node:dblclick': any;
 }
 
 // ============= Options Types =============
@@ -339,6 +346,8 @@ export interface SpaceGraphOptions {
   input?: DefaultInputConfig;
   /** Render host chrome (HUD, minimap, zoom UI). Off by default so embedded graphs stay bare. */
   chrome?: boolean;
+  /** Fly the camera to a node on double click. Defaults to true; embedded graphs often set false. */
+  doubleClickFocus?: boolean;
   /** Renderer options: background, transparency, antialias, pixel ratio, drawing-buffer retention. */
   render?: RenderOptions;
   /** Shared theme. `theme.background` takes precedence over `render.backgroundColor`. */

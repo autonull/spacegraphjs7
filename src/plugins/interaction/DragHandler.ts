@@ -45,10 +45,8 @@ export class DragHandler {
     this.draggingNodes.clear();
     this.draggingNodes.add(node);
 
-    const selectedNodes = (
-      this.sg.events.emit as (type: string, ...args: unknown[]) => { nodes?: Set<Node> } | undefined
-    )('selection:getSelectedNodes')?.nodes;
-    if (selectedNodes && selectedNodes.size > 1 && selectedNodes.has(node)) {
+    const selectedNodes = new Set(this.sg.selectedNodes);
+    if (selectedNodes.size > 1 && selectedNodes.has(node)) {
       for (const selectedNode of selectedNodes) {
         if (selectedNode !== node && selectedNode.object) {
           this.draggingNodes.add(selectedNode);

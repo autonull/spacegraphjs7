@@ -47,7 +47,9 @@ export {
 } from './defaults';
 export { ErgonomicsAPI } from './Ergonomics';
 export { EventEmitter, EventSystem } from './events/EventSystem';
+export { forwardGraphEvents } from './forwardEvents';
 export { Graph } from './Graph';
+export { Selection } from './Selection';
 export { ObjectPoolManager } from './ObjectPoolManager';
 export type { Plugin } from './PluginManager';
 export { PluginManager } from './PluginManager';

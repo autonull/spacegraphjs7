@@ -17,6 +17,7 @@ type GraphEventMap = {
   'edge:added': { edge: Edge; timestamp: number };
   'edge:removed': { id: string; timestamp: number };
   'edge:updated': { edge: Edge; changes: Partial<EdgeSpec>; timestamp: number };
+  'graph:cleared': { timestamp: number };
 };
 
 export type EdgeDirection = 'incoming' | 'outgoing' | 'both';
@@ -136,6 +137,7 @@ export class Graph extends EventEmitter<GraphEventMap> {
           : undefined,
       });
     }
+    this.emitWithTimestamp('node:updated', { node, changes: updates, timestamp: Date.now() });
     return node;
   }
 
@@ -194,6 +196,21 @@ export class Graph extends EventEmitter<GraphEventMap> {
     this.nodes.forEach((node) => node.dispose?.());
     this.edges.clear();
     this.nodes.clear();
+    this.emitWithTimestamp('graph:cleared', { timestamp: Date.now() });
+  }
+
+  setPositions(positions: Record<string, [number, number, number]>): void {
+    for (const [id, position] of Object.entries(positions)) {
+      const node = this.nodes.get(id);
+      if (!node) continue;
+      node.position.set(position[0], position[1], position[2]);
+      node.object?.position.copy(node.position);
+    }
+    for (const edge of this.edges.values()) edge.update?.();
+  }
+
+  pinAll(pinned = true): void {
+    for (const node of this.nodes.values()) node.setPinned(pinned);
   }
 
   // Node lookup shortcuts - ergonomic API

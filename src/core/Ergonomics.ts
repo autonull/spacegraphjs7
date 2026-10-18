@@ -25,7 +25,7 @@ export class ErgonomicsAPI {
   }
 
   get selected(): Node[] {
-    return this.sg.graph.query((n: Node) => n.focused);
+    return this.sg.selectedNodes;
   }
 
   // ============= Aggregates =============
@@ -501,22 +501,22 @@ export class ErgonomicsAPI {
 
   // ============= Selection =============
   select(nodeId: string): this {
-    this.sg.graph.getNode(nodeId)?.focus();
+    this.sg.selection.select(nodeId);
     return this;
   }
 
   deselect(nodeId: string): this {
-    this.sg.graph.getNode(nodeId)?.blur();
+    this.sg.selection.deselect(nodeId);
     return this;
   }
 
   selectAll(): this {
-    this.sg.graph.forEachNode((n: Node) => n.focus());
+    this.sg.selection.select([...this.sg.graph.nodes.keys()]);
     return this;
   }
 
   deselectAll(): this {
-    this.sg.graph.forEachNode((n: Node) => n.blur());
+    this.sg.selection.clear();
     return this;
   }
 

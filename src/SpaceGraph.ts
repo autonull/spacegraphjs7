@@ -18,8 +18,10 @@ import {
 import { ErgonomicsAPI } from './core/Ergonomics';
 import { EventSystem } from './core/events/EventSystem';
 // SpaceGraph.ts - Core graph visualization engine
+import { forwardGraphEvents } from './core/forwardEvents';
 import { Graph } from './core/Graph';
 import { Renderer } from './core/Renderer';
+import { Selection } from './core/Selection';
 import type { Edge } from './edges/Edge';
 import { applyDefaultInputConfig } from './input/DefaultInputConfig';
 import { createCameraFingering } from './input/fingerings';
@@ -53,6 +55,7 @@ export class SpaceGraph {
   public poolManager!: ObjectPoolManager<any>;
   public input!: InputManager;
   public ergo!: ErgonomicsAPI;
+  public selection!: Selection;
   // Zoom to fit all nodes (alias for fitView)
   zoomFit = this.fitView;
   #animationFrameId?: number;
@@ -96,8 +99,14 @@ export class SpaceGraph {
     return this.graph.edges.size;
   }
 
-  get selected() {
-    return this.ergo.selected;
+  get selected(): string[] {
+    return this.selection.list;
+  }
+
+  get selectedNodes(): Node[] {
+    return this.selection.list
+      .map((id) => this.graph.getNode(id))
+      .filter((node): node is Node => node !== undefined);
   }
 
   // ============= Quick Properties =============
@@ -596,23 +605,33 @@ export class SpaceGraph {
   transaction = (updates: (sg: SpaceGraph) => void) => this.ergo.transaction(updates);
 
   // Selection
-  select = (nodeId: string) => {
-    this.ergo.select(nodeId);
+  select = (target: string | readonly string[] | null) => {
+    this.selection.select(target);
     return this;
   };
 
-  deselect = (nodeId: string) => {
-    this.ergo.deselect(nodeId);
+  clearSelection = () => {
+    this.selection.clear();
+    return this;
+  };
+
+  toggleSelection = (id: string) => {
+    this.selection.toggle(id);
+    return this;
+  };
+
+  deselect = (id: string) => {
+    this.selection.deselect(id);
     return this;
   };
 
   selectAll = () => {
-    this.ergo.selectAll();
+    this.selection.select([...this.graph.nodes.keys()]);
     return this;
   };
 
   deselectAll = () => {
-    this.ergo.deselectAll();
+    this.selection.clear();
     return this;
   };
 
@@ -714,6 +733,23 @@ export class SpaceGraph {
     }
   }
 
+  // Apply absolute positions without animation. Hosts own layout; nothing auto-runs on mutation.
+  setPositions(positions: Record<string, [number, number, number]>): this {
+    this.graph.setPositions(positions);
+    return this;
+  }
+
+  // Pin every node so an implicit layout cannot move host-assigned positions.
+  pinAll(pinned = true): this {
+    this.graph.pinAll(pinned);
+    return this;
+  }
+
+  // Apply a named layout exactly once. Unlike an auto-layout plugin it never reruns on mutation.
+  layoutOnce(name: string, options?: Record<string, unknown>): Promise<void> {
+    return this.layout(name, options);
+  }
+
   // Focus and animate camera to node
   focusNode(id: string, _padding = 100, duration = 1): this {
     const node = this.graph.getNode(id);
@@ -757,6 +793,7 @@ export class SpaceGraph {
       backgroundColor: this.options.theme?.background ?? this.options.render?.backgroundColor,
     });
     this.graph = new Graph(this);
+    this.selection = new Selection(this);
     this.ergo = new ErgonomicsAPI(this);
     this.cameraControls = new CameraControls(
       this.renderer.camera,
@@ -767,6 +804,7 @@ export class SpaceGraph {
     const config = (this.options.input as Record<string, any>) ?? {};
     this.input = new InputManager({ sg: this, events: this.events });
     applyDefaultInputConfig(this.input, this, config);
+    forwardGraphEvents(this.graph, this.events);
   }
 
   #registerDefaults(): void {

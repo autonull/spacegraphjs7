@@ -25,6 +25,8 @@ import { InteractionRaycaster } from './interaction/RaycasterHelper';
 import { ResizeHandler } from './interaction/ResizeHandler';
 import { SelectionManager } from './interaction/SelectionManager';
 
+const CLICK_MOVE_THRESHOLD = 5;
+
 export class InteractionPlugin implements Plugin {
   readonly id = 'interaction';
   readonly name = 'Interaction Controls';
@@ -44,6 +46,8 @@ export class InteractionPlugin implements Plugin {
   private pointerDownPosition = new THREE.Vector2();
   private lastZoomedId: string | null = null;
   private lastPressedNode: Node | null = null;
+  private pointerDownNode: Node | null = null;
+  private pointerDownEdge: Edge | null = null;
 
   private _mode: 'default' | 'select' | 'connect' = 'default';
 
@@ -136,7 +140,9 @@ export class InteractionPlugin implements Plugin {
     }
 
     const nodeResult = this.raycaster.raycastNode();
-    this.raycaster.raycastEdge();
+    const edgeResult = this.raycaster.raycastEdge();
+    this.pointerDownNode = nodeResult?.node ?? null;
+    this.pointerDownEdge = edgeResult?.edge ?? null;
 
     if (e.button === 2 && nodeResult?.node) {
       this.startContextMenu(nodeResult.node, e);
@@ -242,7 +248,12 @@ export class InteractionPlugin implements Plugin {
     this.cursorManager.set(cursorMode, 'hover');
   }
 
-  private handlePointerUp(_e: any): void {
+  private handlePointerUp(e: any): void {
+    const wasBoxSelecting = this.selectionManager.isBoxSelectingActive();
+    const wasConnecting = this.connectionHandler.isConnectingMode();
+    const wasResizing = this.resizeHandler.isResizingNode();
+    const moved = this.pointerDownPosition.distanceTo(new THREE.Vector2(e.x, e.y));
+
     if (this.lastPressedNode) {
       const pickResult: PickResult = {
         node: this.lastPressedNode,
@@ -283,6 +294,26 @@ export class InteractionPlugin implements Plugin {
     }
 
     this.cursorManager.clear('hover');
+
+    const suppressed = wasBoxSelecting || wasConnecting || wasResizing;
+    if (!suppressed && moved <= CLICK_MOVE_THRESHOLD) this.#emitClick(e);
+    this.pointerDownNode = null;
+    this.pointerDownEdge = null;
+  }
+
+  #emitClick(e: any): void {
+    const node = this.pointerDownNode;
+    const edge = this.pointerDownEdge;
+    if (node) {
+      if (!e.shiftKey && !e.ctrlKey && !e.metaKey) this.sg.selection.select(node.id);
+      this.sg.events.emit('node:click', { id: node.id, originalEvent: e.originalEvent });
+      return;
+    }
+    if (edge) {
+      this.sg.events.emit('edge:click', { id: edge.id, originalEvent: e.originalEvent });
+      return;
+    }
+    this.sg.events.emit('background:click', { originalEvent: e.originalEvent });
   }
 
   private handleKeyDown(e: any): void {
@@ -304,7 +335,7 @@ export class InteractionPlugin implements Plugin {
           this.connectionHandler.cancelConnection();
         } else {
           this.focusManager.blur();
-          this.selectionManager.clear();
+          this.sg.selection.clear();
         }
         break;
 
@@ -419,6 +450,7 @@ export class InteractionPlugin implements Plugin {
 
   private handleZoomNavigation(target: Node | Edge, zoomId: string): void {
     if (!target || !this.sg.cameraControls) return;
+    if (this.sg.options.doubleClickFocus === false) return;
 
     const targetPos =
       'position' in target

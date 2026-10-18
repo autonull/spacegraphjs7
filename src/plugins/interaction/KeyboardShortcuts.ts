@@ -60,12 +60,7 @@ export class KeyboardShortcuts {
   }
 
   handleSelectAll(nodes: Node[]): void {
-    for (const node of nodes) {
-      this.sg.events.emit(
-        'selection:addNode' as keyof import('../../core/events/EventSystem').SpaceGraphEvents,
-        node as never
-      );
-    }
+    this.sg.selection.select(nodes.map((node) => node.id));
   }
 
   handleZoomIn(node: Node): void {
