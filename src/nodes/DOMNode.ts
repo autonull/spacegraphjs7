@@ -67,10 +67,19 @@ export class DOMNode extends Node {
     this.backingMesh.visible = visible;
   }
 
-  // DOM nodes draw their interaction outline on the element, not as a mesh BoxHelper.
+  // DOM nodes draw their interaction outline on the element, not as a mesh BoxHelper, using the
+  // resolved theme colours so a host theme controls the ring (RF.6).
   protected override syncVisual(): void {
     const state: ControlState = this.focused ? 'focus' : this.controlState;
-    applyControlStateStyles(this.domElement, state, this.lastVisualState);
+    const color =
+      state === 'focus'
+        ? this.resolvedTheme.focus
+        : state === 'selected'
+          ? this.resolvedTheme.selection
+          : state === 'hovered'
+            ? this.resolvedTheme.hover
+            : undefined;
+    applyControlStateStyles(this.domElement, state, this.lastVisualState, color);
     this.lastVisualState = state;
   }
 

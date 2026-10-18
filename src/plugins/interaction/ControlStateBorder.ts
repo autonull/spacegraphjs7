@@ -46,24 +46,32 @@ export const getBorderStyles = (state: ControlState): ControlStateStyle =>
 export const applyControlStateStyles = (
   element: HTMLElement,
   state: ControlState,
-  prevState?: ControlState
+  prevState?: ControlState,
+  color?: string | number
 ): void => {
   const style = getBorderStyles(state);
-  if (style.borderColor !== 'transparent') {
-    element.style.outline = `${style.borderWidth}px ${style.borderStyle} ${style.borderColor}`;
+  const borderColor =
+    color !== undefined && style.borderColor !== 'transparent' ? cssColor(color) : style.borderColor;
+  if (borderColor !== 'transparent') {
+    element.style.outline = `${style.borderWidth}px ${style.borderStyle} ${borderColor}`;
     if (style.glowColor) element.style.boxShadow = `0 0 ${style.glowRadius}px ${style.glowColor}`;
   } else {
     element.style.outline = 'none';
     element.style.boxShadow = 'none';
   }
   if (style.opacity !== undefined) element.style.opacity = String(style.opacity);
-  if (prevState && prevState !== state) animateStateTransition(element, prevState, state);
+  if (prevState && prevState !== state) animateStateTransition(element, prevState, state, borderColor);
 };
+
+// The theme carries outline colours as either a CSS string or a packed hex number.
+const cssColor = (value: string | number): string =>
+  typeof value === 'number' ? `#${value.toString(16).padStart(6, '0')}` : value;
 
 const animateStateTransition = (
   element: HTMLElement,
   from: ControlState,
-  to: ControlState
+  to: ControlState,
+  toColor?: string
 ): void => {
   const fromStyle = getBorderStyles(from);
   const toStyle = getBorderStyles(to);
@@ -71,7 +79,7 @@ const animateStateTransition = (
     element.animate(
       [
         { outline: `${fromStyle.borderWidth}px ${fromStyle.borderStyle} ${fromStyle.borderColor}` },
-        { outline: `${toStyle.borderWidth}px ${toStyle.borderStyle} ${toStyle.borderColor}` },
+        { outline: `${toStyle.borderWidth}px ${toStyle.borderStyle} ${toColor ?? toStyle.borderColor}` },
       ],
       { duration: 200, easing: 'ease-out', fill: 'forwards' }
     );

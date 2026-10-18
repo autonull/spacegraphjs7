@@ -84,9 +84,22 @@ describe('L1.11/L1.15 DOM nodes use a DOM outline, not a mesh BoxHelper', () => 
     });
     node.setControlState('selected');
     expect(node.outlineObject).toBeUndefined();
-    expect(node.domElement.style.outline).toContain('solid');
+    // The default theme's selection colour.
+    expect(node.domElement.style.outline).toBe('2px solid #00ff88');
 
     node.setControlState('normal');
     expect(node.domElement.style.outline).toBe('none');
+  });
+
+  it('uses the resolved theme selection and focus colours', () => {
+    const sg = fakeSg();
+    sg.options.theme = { selection: '#123456', focus: '#abcdef' };
+    const node = new DOMNode(sg as unknown as SpaceGraph, { id: 'd', type: 'DOMNode', data: {} });
+
+    node.setControlState('selected');
+    expect(node.domElement.style.outline).toBe('2px solid #123456');
+
+    node.focus();
+    expect(node.domElement.style.outline).toBe('2px solid #abcdef');
   });
 });
