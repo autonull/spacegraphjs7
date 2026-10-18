@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import { CSS3DRenderer } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
-import { acceleratedRaycast, computeBoundsTree, disposeBoundsTree } from 'three-mesh-bvh';
 import type { Node } from '../nodes/Node';
 import { InstancedNodeRenderer } from '../rendering/InstancedNodeRenderer';
 import type { SpaceGraph } from '../SpaceGraph';
@@ -30,7 +29,6 @@ export class Renderer {
   public renderContext: RenderContext;
 
   private _resizeObserver: ResizeObserver | null = null;
-  private _threePatched = false;
   private renderScheduled = false;
   readonly projScreenMatrix: THREE.Matrix4;
   private lastOptTime = 0;
@@ -95,12 +93,6 @@ export class Renderer {
     const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
     directionalLight.position.set(1, 1, 1).normalize();
     this.scene.add(directionalLight);
-
-    if (this._threePatched) return;
-    THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree as any;
-    THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree as any;
-    THREE.Mesh.prototype.raycast = acceleratedRaycast as any;
-    this._threePatched = true;
   }
 
   scheduleRender(): void {

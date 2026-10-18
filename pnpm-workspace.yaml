@@ -1,5 +1,7 @@
 packages:
   - 'packages/*'
+  # Out of scope for the session-graph prototype: irrelevant integration package with a heavy dep tree.
+  - '!packages/n8n-bridge'
 overrides:
   '@anthropic-ai/sdk@>=0.79.0 <0.91.1': '>=0.91.1'
   '@azure/identity@<4.2.1': '>=4.2.1'

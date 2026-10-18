@@ -84,7 +84,6 @@ export {
   TAU,
   THRESH,
   TypeRegistry,
-  VisionManager,
   WCAG,
   ZOOM,
   ZoomConfig,
@@ -241,8 +240,7 @@ export type {
 } from './types';
 // Utils module exports
 export * from './utils';
-// Vision module exports
-export { HeuristicsStrategy, VisionSystem } from './vision';
+// Vision module exports (opt-in: import from the `spacegraphjs/vision` subpath; not re-exported here)
 export type {
   VisionBenchmark,
   VisionIssue,

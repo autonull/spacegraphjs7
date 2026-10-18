@@ -1,4 +1,3 @@
-import { Tensor } from 'onnxruntime-web';
 import type { VisionModelLoader } from 'spacegraphjs/vision';
 import * as THREE from 'three';
 import type {
@@ -16,6 +15,11 @@ export class OnnxStrategy implements VisionStrategy {
   readonly name = 'AI Vision Models';
 
   constructor(readonly modelLoader: VisionModelLoader) {}
+
+  private async tensor(data: Float32Array, dims: number[]) {
+    const { Tensor } = await import('onnxruntime-web');
+    return new Tensor('float32', data, dims);
+  }
 
   async analyze(graph: unknown, camera: unknown): Promise<VisionReport> {
     const nodes = this.extractNodes(graph);
@@ -88,7 +92,7 @@ export class OnnxStrategy implements VisionStrategy {
       const weight = (node.data?.fontWeight ?? 400) / 1000.0;
 
       const input = new Float32Array([bg.r, bg.g, bg.b, fg.r, fg.g, fg.b, size, weight]);
-      const tensor = new Tensor('float32', input, [1, 8]);
+      const tensor = await this.tensor(input, [1, 8]);
 
       try {
         const output = await session.run({ text_features: tensor });
@@ -144,7 +148,7 @@ export class OnnxStrategy implements VisionStrategy {
           b2.max.x / 1000,
           b2.max.y / 1000,
         ]);
-        const tensor = new Tensor('float32', input, [1, 8]);
+        const tensor = await this.tensor(input, [1, 8]);
 
         try {
           const output = await session.run({ boxes: tensor });
@@ -184,7 +188,7 @@ export class OnnxStrategy implements VisionStrategy {
     const edges = (context.graph as any).edges?.size ?? 0;
 
     const input = new Float32Array([0.5, 0.5, nodes.length / 1000, edges / 2000]);
-    const tensor = new Tensor('float32', input, [1, 4]);
+    const tensor = await this.tensor(input, [1, 4]);
 
     try {
       const output = await session.run({ hierarchy_features: tensor });
@@ -205,7 +209,7 @@ export class OnnxStrategy implements VisionStrategy {
     const pctSmall = smallTargets.length / Math.max(1, nodes.length);
 
     const input = new Float32Array([pctSmall, nodes.length / 1000, 1.0, 1.0]);
-    const tensor = new Tensor('float32', input, [1, 4]);
+    const tensor = await this.tensor(input, [1, 4]);
 
     try {
       const output = await session.run({ ergonomic_features: tensor });
@@ -241,7 +245,7 @@ export class OnnxStrategy implements VisionStrategy {
       const c3 = new THREE.Color(nodes[i + 2].data?.color ?? 0xffffff);
 
       const input = new Float32Array([c1.r, c1.g, c1.b, c2.r, c2.g, c2.b, c3.r, c3.g, c3.b]);
-      const tensor = new Tensor('float32', input, [1, 9]);
+      const tensor = await this.tensor(input, [1, 9]);
 
       try {
         const output = await session.run({ color_neighborhood: tensor });

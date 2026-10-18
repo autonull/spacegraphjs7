@@ -45,10 +45,10 @@ export interface PluginMetadata {
 const logger = createLogger('PluginManager');
 
 export class PluginManager {
+  readonly plugins: Map<string, Plugin> = new Map();
   getPlugin = this.get;
   hasPlugin = this.has;
   getPluginNames = this.pluginNames;
-  readonly plugins: Map<string, Plugin> = new Map();
 
   constructor(readonly sg: SpaceGraph) {}
 

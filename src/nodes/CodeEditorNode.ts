@@ -1,5 +1,3 @@
-import loader from '@monaco-editor/loader';
-
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec } from '../types';
 import { DOMUtils } from '../utils/DOMUtils';
@@ -8,6 +6,8 @@ import { createLogger } from '../utils/logger';
 import { BaseContentNode } from './BaseContentNode';
 
 const logger = createLogger('CodeEditorNode');
+
+const loadMonaco = () => import('@monaco-editor/loader').then(({ default: loader }) => loader.init());
 
 /**
  * CodeEditorNode — Embeds a full Monaco editor into the ZUI.
@@ -83,7 +83,7 @@ export class CodeEditorNode extends BaseContentNode {
       }
       if (updates.data.language !== undefined && this.editorInstance) {
         const lang = updates.data.language;
-        loader.init().then((monaco) => {
+        loadMonaco().then((monaco) => {
           monaco.editor.setModelLanguage(
             (this.editorInstance as { getModel: () => unknown }).getModel() as Parameters<
               typeof monaco.editor.setModelLanguage
@@ -108,9 +108,7 @@ export class CodeEditorNode extends BaseContentNode {
   }
 
   private initEditor(spec: NodeSpec) {
-    loader
-      .init()
-      .then((monaco) => {
+    loadMonaco().then((monaco) => {
         this.editorInstance = monaco.editor.create(this.editorContainer, {
           value: (spec.data?.code as string) ?? '// Write code here...',
           language: (spec.data?.language as string) ?? 'typescript',

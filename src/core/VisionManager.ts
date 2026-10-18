@@ -45,7 +45,7 @@ export class VisionManager {
   }
 
   public async loadModels(modelPaths: Record<string, string>): Promise<void> {
-    VisionModelLoader.configureWasmPaths(this.sg.options?.vision?.wasmPaths ?? DEFAULT_WASM_PATHS);
+    await VisionModelLoader.configureWasmPaths(this.sg.options?.vision?.wasmPaths ?? DEFAULT_WASM_PATHS);
     const results = await this.modelLoader.loadModels(modelPaths);
     const failed = results.filter((r) => !r.success);
     if (failed.length > 0) {

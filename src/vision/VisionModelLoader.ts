@@ -1,4 +1,4 @@
-import { env, InferenceSession } from 'onnxruntime-web';
+import type { InferenceSession } from 'onnxruntime-web';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('VisionModelLoader');
@@ -21,7 +21,8 @@ export class VisionModelLoader {
     return this.sessions.size > 0;
   }
 
-  static configureWasmPaths(wasmPaths: string): void {
+  static async configureWasmPaths(wasmPaths: string): Promise<void> {
+    const { env } = await import('onnxruntime-web');
     env.wasm.wasmPaths = wasmPaths;
   }
 
@@ -34,6 +35,7 @@ export class VisionModelLoader {
   }
 
   async loadModels(modelPaths: Record<string, string>): Promise<ModelLoadResult[]> {
+    const { InferenceSession } = await import('onnxruntime-web');
     const results: ModelLoadResult[] = [];
 
     for (const [key, path] of Object.entries(modelPaths)) {
