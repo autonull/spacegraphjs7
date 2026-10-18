@@ -178,9 +178,14 @@ export class PluginManager {
 
   registerNodeType(type: string, cls: import('./TypeRegistry').NodeConstructor): void {
     TypeRegistry.getInstance().registerNode(type, cls);
-    // Also register using static typeName if available to survive minification
-    if ('typeName' in cls && typeof (cls as any).typeName === 'string') {
-      TypeRegistry.getInstance().registerNode((cls as any).typeName, cls);
+    // Also register using the class's own static typeName (to survive minification). Inherited
+    // static fields must be ignored: subclasses inherit their base `typeName`, so honouring them
+    // would make the last subclass replace the base constructor.
+    if (
+      Object.prototype.hasOwnProperty.call(cls, 'typeName') &&
+      typeof (cls as { typeName?: unknown }).typeName === 'string'
+    ) {
+      TypeRegistry.getInstance().registerNode((cls as unknown as { typeName: string }).typeName, cls);
     }
   }
 
@@ -190,9 +195,12 @@ export class PluginManager {
 
   registerEdgeType(type: string, cls: import('./TypeRegistry').EdgeConstructor): void {
     TypeRegistry.getInstance().registerEdge(type, cls);
-    // Also register using static typeName if available to survive minification
-    if ('typeName' in cls && typeof (cls as any).typeName === 'string') {
-      TypeRegistry.getInstance().registerEdge((cls as any).typeName, cls);
+    // Own `typeName` only; see registerNodeType.
+    if (
+      Object.prototype.hasOwnProperty.call(cls, 'typeName') &&
+      typeof (cls as { typeName?: unknown }).typeName === 'string'
+    ) {
+      TypeRegistry.getInstance().registerEdge((cls as unknown as { typeName: string }).typeName, cls);
     }
   }
 

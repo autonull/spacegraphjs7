@@ -23,6 +23,11 @@ pnpm install spacegraphjs three
 
 Check out the interactive examples in the `demo/` directory or run `pnpm run dev` to see them in action.
 
+The [renderer contract demo](./demo/contract.html) (`pnpm run dev:demo`, then `/contract.html`) is the
+non-OpenCode reference host: one synthetic activity model through the SpaceGraph adapter, the
+Cytoscape adapter, and the static SVG renderer, using `LaneLayout`, `ZoomBands`, `Trail`, and
+`AccessibilityLayer` from the public entry points.
+
 ## Documentation
 
 - **[ROADMAP.md](./ROADMAP.md)** — What's built, what's next (start here for software work)

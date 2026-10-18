@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Renderer contract demo — SpaceGraphJS</title>
+        <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            :root {
+                --bg: #0b0f17;
+                --surface: #151b26;
+                --surface-muted: #1f2733;
+                --text: #e6ecf5;
+                --muted: #9aa7b8;
+                --border: #2b3544;
+                --accent: #3b82f6;
+                --focus: #93c5fd;
+                --success: #22c55e;
+                --warning: #f59e0b;
+                --error: #ef4444;
+            }
+            :root[data-theme='light'] {
+                --bg: #f7f8fa;
+                --surface: #ffffff;
+                --surface-muted: #e9edf3;
+                --text: #101828;
+                --muted: #5b6675;
+                --border: #c6cfdb;
+                --accent: #2563eb;
+                --focus: #60a5fa;
+                --success: #15803d;
+                --warning: #b45309;
+                --error: #b91c1c;
+            }
+            html, body { height: 100%; }
+            body {
+                display: flex;
+                flex-direction: column;
+                background: var(--bg);
+                color: var(--text);
+                font-family: ui-sans-serif, system-ui, sans-serif;
+                font-size: 14px;
+                overflow: hidden;
+            }
+            header {
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+                gap: 10px 18px;
+                padding: 12px 16px;
+                border-bottom: 1px solid var(--border);
+                background: var(--surface);
+            }
+            header h1 { font-size: 15px; font-weight: 650; }
+            header .sub { color: var(--muted); font-size: 12px; }
+            .controls { display: flex; flex-wrap: wrap; gap: 14px; margin-inline-start: auto; }
+            .group { display: flex; align-items: center; gap: 4px; }
+            .group > span { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+            button {
+                font: inherit;
+                font-size: 12px;
+                color: var(--text);
+                background: var(--surface-muted);
+                border: 1px solid var(--border);
+                border-radius: 6px;
+                padding: 5px 9px;
+                cursor: pointer;
+            }
+            button:hover:not(:disabled) { border-color: var(--accent); }
+            button[aria-pressed='true'] { background: var(--accent); border-color: var(--accent); color: #fff; }
+            button:disabled { opacity: 0.45; cursor: not-allowed; }
+            button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+            main { flex: 1; display: flex; min-height: 0; }
+            #stage { position: relative; flex: 1; min-width: 0; background: var(--bg); }
+            #canvas { width: 100%; height: 100%; }
+            #svg { width: 100%; height: 100%; overflow: auto; padding: 18px; }
+            #svg svg { max-width: 100%; height: auto; display: block; margin: 0 auto; }
+            aside {
+                width: 320px;
+                flex: 0 0 320px;
+                border-inline-start: 1px solid var(--border);
+                background: var(--surface);
+                display: flex;
+                flex-direction: column;
+                min-height: 0;
+            }
+            #side-head { padding: 10px 12px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; }
+            #trail { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+            .trail-back { padding: 3px 8px; }
+            .crumb {
+                background: none;
+                border: none;
+                color: var(--muted);
+                padding: 2px 4px;
+                font-size: 12px;
+            }
+            .crumb[aria-current='true'] { color: var(--text); text-decoration: underline; }
+            #band { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+            #detail { padding: 12px; overflow: auto; min-height: 0; }
+            #detail h2 { font-size: 15px; margin-bottom: 4px; overflow-wrap: anywhere; }
+            #detail p { margin-bottom: 8px; line-height: 1.45; overflow-wrap: anywhere; }
+            .muted { color: var(--muted); font-size: 12px; }
+            .connections { list-style: none; display: flex; flex-direction: column; gap: 4px; margin-top: 10px; }
+            .connection {
+                width: 100%;
+                text-align: start;
+                background: var(--surface-muted);
+                font-size: 12px;
+                overflow-wrap: anywhere;
+            }
+            footer {
+                padding: 8px 16px;
+                border-top: 1px solid var(--border);
+                background: var(--surface);
+                color: var(--muted);
+                font-size: 12px;
+            }
+            .demo-card {
+                width: 100%;
+                height: 100%;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                gap: 2px;
+                padding: 8px 10px;
+                text-align: start;
+                background: var(--surface);
+                color: var(--text);
+                border-radius: 6px;
+                border-inline-start: 3px solid var(--border);
+            }
+            .demo-card b { font-size: 12px; font-weight: 650; }
+            .demo-card span { font-size: 11px; color: var(--muted); overflow-wrap: anywhere; }
+            .demo-card[data-status='success'] { border-inline-start-color: var(--success); }
+            .demo-card[data-status='warning'] { border-inline-start-color: var(--warning); }
+            .demo-card[data-status='error'] { border-inline-start-color: var(--error); }
+            #canvas .node-inner-wrapper, #canvas .node-content { height: 100%; }
+            .sg-edge-label {
+                background: var(--surface) !important;
+                color: var(--muted) !important;
+                border: 1px solid var(--border);
+            }
+        </style>
+    </head>
+    <body>
+        <header>
+            <div>
+                <h1>Renderer contract demo</h1>
+                <div class="sub">One activity model · three renderers · no host imports</div>
+            </div>
+            <div class="controls">
+                <div class="group">
+                    <span>Scene</span>
+                    <button id="scene-pipeline" type="button" aria-pressed="true">Pipeline</button>
+                    <button id="scene-host" type="button" aria-pressed="false">Second host</button>
+                </div>
+                <div class="group" role="group" aria-label="Renderer">
+                    <span>Renderer</span>
+                    <button id="renderer-spacegraph" type="button" aria-pressed="true">SpaceGraph</button>
+                    <button id="renderer-cytoscape" type="button" aria-pressed="false">Cytoscape</button>
+                    <button id="renderer-svg" type="button" aria-pressed="false">Static SVG</button>
+                </div>
+                <div class="group" role="group" aria-label="Projection">
+                    <span>View</span>
+                    <button id="projection-2d" type="button" aria-pressed="true">2D</button>
+                    <button id="projection-3d" type="button" aria-pressed="false">3D</button>
+                </div>
+                <div class="group" role="group" aria-label="Theme">
+                    <span>Theme</span>
+                    <button id="theme-dark" type="button" aria-pressed="true">Dark</button>
+                    <button id="theme-light" type="button" aria-pressed="false">Light</button>
+                </div>
+                <div class="group" role="group" aria-label="Text direction">
+                    <span>Dir</span>
+                    <button id="direction-ltr" type="button" aria-pressed="true">LTR</button>
+                    <button id="direction-rtl" type="button" aria-pressed="false">RTL</button>
+                </div>
+                <div class="group">
+                    <button id="fit" type="button">Fit</button>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <div id="stage" data-renderer="spacegraph">
+                <div id="canvas"></div>
+                <div id="svg" hidden></div>
+                <div id="a11y"></div>
+            </div>
+            <aside aria-label="Inspection">
+                <div id="side-head">
+                    <nav id="trail" aria-label="Trail"></nav>
+                    <div id="band">Band: Overview · zoom 0%</div>
+                </div>
+                <div id="detail"><p class="muted">Select a node to inspect it.</p></div>
+            </aside>
+        </main>
+
+        <footer>
+            Click a card to inspect it · Focus the hidden node list and use Arrow keys, Enter to select, Escape
+            to clear · Edge rows follow a connection and label its confidence · The graph never runs an
+            automatic layout; positions come from <code>LaneLayout</code>.
+        </footer>
+
+        <script type="module" src="./contract-demo.ts"></script>
+    </body>
+</html>

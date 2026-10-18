@@ -14,6 +14,7 @@ import {
   DEFAULT_LAYOUT_PLUGINS,
   DEFAULT_NODE_TYPES,
   DEFAULT_SYSTEM_PLUGINS,
+  nodeTypeName,
 } from './core/defaults';
 import { ErgonomicsAPI } from './core/Ergonomics';
 import { EventSystem } from './core/events/EventSystem';
@@ -936,7 +937,7 @@ export class SpaceGraph {
 
   #registerDefaults(): void {
     for (const cls of DEFAULT_NODE_TYPES) {
-      this.pluginManager.registerNodeType((cls as any).typeName || cls.name, cls as any);
+      this.pluginManager.registerNodeType(nodeTypeName(cls), cls as any);
     }
     for (const cls of DEFAULT_EDGE_TYPES) {
       this.pluginManager.registerEdgeType(

@@ -166,6 +166,27 @@ Comprehensive plugin system demonstration with toggle controls.
 
 ### Advanced Demos
 
+#### **Renderer Contract** (`contract.html`)
+
+A non-OpenCode host built only from the public surface: `@spacegraphjs/renderer` plus the generic
+controllers. The same synthetic activity model renders through the SpaceGraph adapter, the Cytoscape
+adapter, and the static SVG renderer.
+
+**Showcases:**
+
+- `RenderModel` consumed by three renderer leaves, with capability gating (Cytoscape disables 3D)
+- `LaneLayout` positions (no automatic layout in either renderer)
+- `ZoomBands` viewport bands, `Trail` breadcrumbs, `AccessibilityLayer` keyboard traversal
+- HTML activity cards, light/dark themes, and LTR/RTL text direction
+
+**Controls:**
+
+- Switch scene, renderer, projection, theme, and text direction from the header
+- Click a card or a trail crumb to inspect; edge rows follow a connection and show its confidence
+- Focus the hidden node list for Arrow/Home/End traversal, Enter to select, Escape to clear
+
+---
+
 #### **Large** (`large.html`)
 
 Large-scale graph with many nodes and edges for performance testing.

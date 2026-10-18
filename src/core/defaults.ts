@@ -120,6 +120,15 @@ export const DEFAULT_NODE_TYPES = [
   MeterNode,
 ] as const;
 
+// Node registration name: use the class's own `typeName` only. Static fields are inherited, so a
+// subclass without its own (MermaidNode extends HtmlNode) would otherwise register under — and
+// replace — its parent's constructor.
+export function nodeTypeName(cls: { name: string; typeName?: string }): string {
+  return Object.prototype.hasOwnProperty.call(cls, 'typeName') && cls.typeName
+    ? cls.typeName
+    : cls.name;
+}
+
 // Default edge types - automatically registered
 export const DEFAULT_EDGE_TYPES = [
   Edge,

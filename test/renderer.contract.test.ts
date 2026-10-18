@@ -3,7 +3,7 @@ import { CONTRACT_VERSION, negotiateContract, supports, type GraphRenderer } fro
 import { SpaceGraphRenderer } from '@spacegraphjs/spacegraph-renderer';
 import { CytoscapeRenderer } from '@spacegraphjs/cytoscape-renderer';
 import { renderToSVG } from '@spacegraphjs/svg-renderer';
-import { activityHostFixture } from './fixtures/activity-host';
+import { activityHostFixture } from '../demo/activity-host';
 
 // L1.22 — headless half of the shared conformance suite. It proves the structural and capability
 // contract for every interactive adapter without a browser. Mount/click/resize/dispose/HTML-card

@@ -130,6 +130,12 @@ const DEMO_METADATA: Record<string, { name: string; icon: string; description: s
     icon: '🎮',
     description: 'Complex HUD arrangements with multiple overlays and telemetry.',
   },
+  'contract.html': {
+    name: 'Renderer Contract',
+    icon: '🧩',
+    description:
+      'One host-neutral activity model through the SpaceGraph, Cytoscape, and static SVG renderers, with LaneLayout, ZoomBands, Trail, and AccessibilityLayer.',
+  },
 };
 
 // Convert filename to display name (fallback for unknown demos)
