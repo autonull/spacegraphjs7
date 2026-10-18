@@ -29,9 +29,14 @@ export function nodeSpec(node: RenderNode, theme: RenderTheme): NodeSpec {
   const color = statusColor(node.status, theme);
   const position: [number, number, number] = [node.position[0], node.position[1], node.position[2]];
   if (node.html) {
+    // P8.9: wrap host markup in a directional container so bidi text renders correctly; the host's
+    // markup is never parsed or evaluated, only placed inside the wrapper.
+    const html = theme.direction
+      ? `<div dir="${theme.direction}" style="width:100%;height:100%">${node.html}</div>`
+      : node.html;
     const data: NodeData = {
       ...node.data,
-      html: node.html,
+      html,
       pointerEvents: 'auto',
       width: node.size?.[0] ?? 220,
       height: node.size?.[1] ?? 72,

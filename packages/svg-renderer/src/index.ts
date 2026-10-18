@@ -63,7 +63,8 @@ export function renderToSVG(model: RenderModel, options: SvgOptions = {}): strin
 
   return [
     `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"`,
-    ` role="img" aria-label="Activity graph" style="font-family:${escapeXml(theme.fontFamily)}">`,
+    ` role="img" aria-label="Activity graph"${theme.direction === 'rtl' ? ' direction="rtl"' : ''}`,
+    ` style="font-family:${escapeXml(theme.fontFamily)}">`,
     `<defs><marker id="sgs-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">`,
     `<path d="M 0 0 L 10 5 L 0 10 z" fill="${escapeXml(theme.edge)}"/></marker></defs>`,
     `<rect width="${width}" height="${height}" fill="${escapeXml(theme.background)}"/>`,
@@ -72,6 +73,50 @@ export function renderToSVG(model: RenderModel, options: SvgOptions = {}): strin
     '</svg>',
   ].join('');
 }
+
+/** P8.3: a serializable snapshot of a `RenderModel` for shareable artifacts and static previews. */
+export function serializeRenderModel(model: RenderModel): string {
+  return JSON.stringify(model);
+}
+
+/**
+ * P8.3: parses a serialized model, returning `undefined` rather than throwing on malformed input, so a
+ * host can fall back instead of crashing on a stored or shared artifact.
+ */
+export function parseRenderModel(json: string): RenderModel | undefined {
+  try {
+    const value: unknown = JSON.parse(json);
+
+    return isRenderModel(value) ? value : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function isRenderModel(value: unknown): value is RenderModel {
+  return (
+    isRecord(value) &&
+    Array.isArray(value.nodes) &&
+    value.nodes.every(isRenderNode) &&
+    Array.isArray(value.edges) &&
+    value.edges.every(isRenderEdge)
+  );
+}
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+const isPosition = (value: unknown): value is [number, number, number] =>
+  Array.isArray(value) && value.length === 3 && value.every((item) => typeof item === 'number');
+
+const isRenderNode = (value: unknown): value is RenderNode =>
+  isRecord(value) && typeof value.id === 'string' && typeof value.label === 'string' && isPosition(value.position);
+
+const isRenderEdge = (value: unknown): value is RenderEdge =>
+  isRecord(value) &&
+  typeof value.id === 'string' &&
+  typeof value.source === 'string' &&
+  typeof value.target === 'string';
 
 export class InlineGraph {
   #container: HTMLElement;

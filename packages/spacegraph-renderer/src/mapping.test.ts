@@ -70,6 +70,12 @@ describe('nodeSpec', () => {
     expect(spec.data).toMatchObject({ html: '<b>hi</b>', width: 200, height: 80, pointerEvents: 'auto' });
   });
 
+  test('wraps host markup in a directional container for RTL (P8.9)', () => {
+    const spec = nodeSpec(node({ html: '<b>مرحبا</b>', shape: 'card' }), { ...theme, direction: 'rtl' });
+    expect(spec.data.html).toContain('dir="rtl"');
+    expect(spec.data.html).toContain('<b>مرحبا</b>');
+  });
+
   test('renders other shapes as ShapeNode with a status color', () => {
     const spec = nodeSpec(node({ status: 'error', shape: 'dot', size: [2, 2, 2] }), theme);
     expect(spec.type).toBe('ShapeNode');

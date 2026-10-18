@@ -236,16 +236,19 @@ export class CytoscapeRenderer implements GraphRenderer {
       .filter((node) => node.html && node.visible !== false)
       .slice(0, this.capabilities.maxDomNodes);
     const wanted = new Set(cards.map((node) => node.id));
+    const direction = this.#theme?.direction ?? '';
 
     for (const node of cards) {
       const existing = this.#cards.get(node.id);
       if (existing) {
         if (existing.innerHTML !== node.html) existing.innerHTML = node.html!;
+        if (existing.dir !== direction) existing.dir = direction;
         continue;
       }
       const element = document.createElement('div');
       element.dataset.slot = 'cytoscape-card';
       element.dataset.node = node.id;
+      if (direction) element.dir = direction;
       element.style.cssText =
         'position:absolute;top:0;left:0;transform-origin:center;pointer-events:auto;will-change:transform;';
       element.innerHTML = node.html!;

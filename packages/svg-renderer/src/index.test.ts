@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import type { RenderModel } from '@spacegraphjs/renderer';
-import { renderToSVG, statusColor, DEFAULT_SVG_THEME } from './index';
+import { parseRenderModel, renderToSVG, serializeRenderModel, statusColor, DEFAULT_SVG_THEME } from './index';
 
 const model: RenderModel = {
   nodes: [
@@ -53,5 +53,28 @@ describe('statusColor', () => {
   test('maps statuses to theme colors', () => {
     expect(statusColor('error', DEFAULT_SVG_THEME)).toBe('#ef4444');
     expect(statusColor(undefined, DEFAULT_SVG_THEME)).toBe('#2a2a33');
+  });
+});
+
+describe('renderToSVG right-to-left (P8.9)', () => {
+  test('marks the svg direction when the theme is rtl', () => {
+    expect(renderToSVG(model, { theme: { direction: 'rtl' } })).toContain('direction="rtl"');
+    expect(renderToSVG(model, { theme: { direction: 'ltr' } })).not.toContain('direction="rtl"');
+  });
+});
+
+describe('serializeRenderModel / parseRenderModel (P8.3)', () => {
+  test('round-trips a model through JSON', () => {
+    const round = parseRenderModel(serializeRenderModel(model));
+    expect(round).toBeDefined();
+    expect(round!.nodes.map((node) => node.id)).toEqual(['a', 'b', 'c']);
+    expect(round!.edges.map((edge) => edge.id)).toEqual(['e1', 'e2']);
+  });
+
+  test('returns undefined on malformed or non-model JSON', () => {
+    expect(parseRenderModel('not json')).toBeUndefined();
+    expect(parseRenderModel('{"nodes":[]}')).toBeUndefined();
+    expect(parseRenderModel('{"nodes":[{"id":"a"}],"edges":[]}')).toBeUndefined();
+    expect(parseRenderModel('{"nodes":[{"id":"a","label":"a","position":[0,0,0]}],"edges":[]}')).toBeDefined();
   });
 });

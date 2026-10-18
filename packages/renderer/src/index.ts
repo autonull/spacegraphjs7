@@ -7,6 +7,25 @@
 
 export const CONTRACT_VERSION = 1
 
+/** Versions this contract package implements; adapters declare theirs via `capabilities.contractVersion`. */
+export const SUPPORTED_CONTRACT_VERSIONS: readonly number[] = [CONTRACT_VERSION]
+
+export function supportsContractVersion(version: number): boolean {
+  return SUPPORTED_CONTRACT_VERSIONS.includes(version)
+}
+
+export type ContractNegotiation = { ok: true } | { ok: false; message: string }
+
+/** P8.7: a host checks this before rendering so a mismatched adapter fails with a clear message. */
+export function negotiateContract(version: number): ContractNegotiation {
+  return supportsContractVersion(version)
+    ? { ok: true }
+    : {
+        ok: false,
+        message: `Renderer contract version ${version} is not supported (this host implements ${CONTRACT_VERSION}).`,
+      }
+}
+
 export type Projection = '2d' | '3d'
 
 export type NodeStatus = 'neutral' | 'pending' | 'running' | 'success' | 'warning' | 'error'

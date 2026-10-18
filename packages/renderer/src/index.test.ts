@@ -1,5 +1,12 @@
 import { describe, expect, test } from 'bun:test';
-import { CONTRACT_VERSION, supports, type RendererCapabilities } from './index';
+import {
+  CONTRACT_VERSION,
+  negotiateContract,
+  SUPPORTED_CONTRACT_VERSIONS,
+  supports,
+  supportsContractVersion,
+  type RendererCapabilities,
+} from './index';
 
 const capabilities = (overrides: Partial<RendererCapabilities> = {}): RendererCapabilities => ({
   contractVersion: CONTRACT_VERSION,
@@ -35,5 +42,19 @@ describe('@spacegraphjs/renderer contract', () => {
   test('supports treats capability fields as authoritative, not inferred from contract version', () => {
     expect(supports(capabilities({ domNodes: false }), 'domNodes')).toBe(false);
     expect(supports(capabilities({ minimap: true }), 'minimap')).toBe(true);
+  });
+
+  test('contract version negotiation accepts the implemented version', () => {
+    expect(SUPPORTED_CONTRACT_VERSIONS).toContain(CONTRACT_VERSION);
+    expect(supportsContractVersion(CONTRACT_VERSION)).toBe(true);
+    expect(negotiateContract(CONTRACT_VERSION)).toEqual({ ok: true });
+  });
+
+  test('contract version negotiation fails gracefully on a mismatch', () => {
+    const future = CONTRACT_VERSION + 1;
+    expect(supportsContractVersion(future)).toBe(false);
+    const result = negotiateContract(future);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.message).toContain(String(future));
   });
 });
