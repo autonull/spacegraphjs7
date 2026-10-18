@@ -146,18 +146,23 @@ export const DEFAULT_LAYOUT_PLUGINS: [PluginCtor, string][] = [
   [ClusterLayout, 'ClusterLayout'],
 ];
 
+// Chrome plugins render host-level affordances: HUD telemetry, minimap, zoom indicator and hint.
+// Embedded graphs opt in with `chrome: true`; the default stays canvas plus CSS3D layer only.
+export const DEFAULT_CHROME_PLUGINS: [PluginCtor, string][] = [
+  [FractalZoomPlugin, 'FractalZoomPlugin'],
+  [ZoomUIPlugin, 'ZoomUIPlugin'],
+  [MinimapPlugin, 'MinimapPlugin'],
+  [HUDPlugin, 'HUDPlugin'],
+];
+
 // Default system plugins - automatically registered
 export const DEFAULT_SYSTEM_PLUGINS: [PluginCtor, string][] = [
   [InteractionPlugin, 'InteractionPlugin'],
-  [FractalZoomPlugin, 'FractalZoomPlugin'],
-  [ZoomUIPlugin, 'ZoomUIPlugin'],
   [LODPlugin, 'LODPlugin'],
   [AutoLayoutPlugin, 'AutoLayoutPlugin'],
   [AutoColorPlugin, 'AutoColorPlugin'],
-  [MinimapPlugin, 'MinimapPlugin'],
   [ErgonomicsPlugin, 'ErgonomicsPlugin'],
   [PhysicsPlugin, 'PhysicsPlugin'],
-  [HUDPlugin, 'HUDPlugin'],
   [HistoryPlugin, 'HistoryPlugin'],
 ];
 

@@ -39,6 +39,7 @@ export {
 // Defaults
 export {
   createQuickGraphSpec,
+  DEFAULT_CHROME_PLUGINS,
   DEFAULT_EDGE_TYPES,
   DEFAULT_LAYOUT_PLUGINS,
   DEFAULT_NODE_TYPES,

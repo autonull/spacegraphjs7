@@ -9,6 +9,7 @@ import { InputManager } from './input';
 import { FingeringPriority, Performance } from './core/constants';
 import {
   createQuickGraphSpec,
+  DEFAULT_CHROME_PLUGINS,
   DEFAULT_EDGE_TYPES,
   DEFAULT_LAYOUT_PLUGINS,
   DEFAULT_NODE_TYPES,
@@ -751,7 +752,10 @@ export class SpaceGraph {
     this.events = new EventSystem();
     this.vision = new VisionManager(this);
     this.pluginManager = new PluginManager(this);
-    this.renderer = new Renderer(this, this.container);
+    this.renderer = new Renderer(this, this.container, {
+      ...this.options.render,
+      backgroundColor: this.options.theme?.background ?? this.options.render?.backgroundColor,
+    });
     this.graph = new Graph(this);
     this.ergo = new ErgonomicsAPI(this);
     this.cameraControls = new CameraControls(
@@ -780,6 +784,11 @@ export class SpaceGraph {
     }
     for (const [cls, name] of DEFAULT_SYSTEM_PLUGINS) {
       this.pluginManager.register(name, new cls());
+    }
+    if (this.options.chrome) {
+      for (const [cls, name] of DEFAULT_CHROME_PLUGINS) {
+        this.pluginManager.register(name, new cls());
+      }
     }
     this.#registerFingerings();
   }

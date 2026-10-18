@@ -3,6 +3,7 @@ import { CSS3DRenderer } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
 import type { Node } from '../nodes/Node';
 import { InstancedNodeRenderer } from '../rendering/InstancedNodeRenderer';
 import type { SpaceGraph } from '../SpaceGraph';
+import type { RenderOptions } from '../types';
 import { RenderContext } from './RenderContext';
 
 const CSS_STYLES = {
@@ -12,13 +13,6 @@ const CSS_STYLES = {
   pointerEvents: 'none',
 } as const;
 const OPT_INTERVAL_MS = 250;
-
-export interface RenderOptions {
-  antialias?: boolean;
-  alpha?: boolean;
-  backgroundColor?: string | number;
-  pixelRatio?: number;
-}
 
 export class Renderer {
   public scene: THREE.Scene;
@@ -42,10 +36,12 @@ export class Renderer {
     options: RenderOptions = {}
   ) {
     const pixelRatio = options.pixelRatio ?? Math.min(window.devicePixelRatio, 2);
+    const transparent = options.transparent ?? false;
+    const alpha = options.alpha ?? true;
     const bgColor = options.backgroundColor ?? 0x1a1a2e;
 
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(bgColor);
+    this.scene.background = transparent ? null : new THREE.Color(bgColor);
 
     const aspect = container.clientWidth / (container.clientHeight || 1);
     this.camera = new THREE.PerspectiveCamera(75, aspect, 0.1, 10000);
@@ -53,12 +49,12 @@ export class Renderer {
 
     this.renderer = new THREE.WebGLRenderer({
       antialias: options.antialias ?? true,
-      alpha: options.alpha ?? true,
-      preserveDrawingBuffer: true,
+      alpha: alpha || transparent,
+      preserveDrawingBuffer: options.preserveDrawingBuffer ?? true,
     });
     this.renderer.setSize(container.clientWidth, container.clientHeight);
     this.renderer.setPixelRatio(pixelRatio);
-    this.renderer.setClearColor(bgColor, (options.alpha ?? true) ? 0 : 1);
+    this.renderer.setClearColor(bgColor, transparent ? 0 : alpha ? 0 : 1);
     Object.assign(this.renderer.domElement.style, {
       position: 'absolute',
       top: '0px',

@@ -337,8 +337,18 @@ export interface SpaceGraphOptions {
   initialLayout?: string;
   cameraControls?: Partial<import('./core/CameraControls').CameraControlsConfig>;
   input?: DefaultInputConfig;
+  /** Render host chrome (HUD, minimap, zoom UI). Off by default so embedded graphs stay bare. */
+  chrome?: boolean;
+  /** Renderer options: background, transparency, antialias, pixel ratio, drawing-buffer retention. */
+  render?: RenderOptions;
+  /** Shared theme. `theme.background` takes precedence over `render.backgroundColor`. */
+  theme?: SpaceGraphTheme;
 
   [key: string]: unknown;
+}
+
+export interface SpaceGraphTheme {
+  background?: string | number;
 }
 
 // Input configuration
@@ -377,6 +387,10 @@ export interface RenderOptions {
   alpha?: boolean;
   backgroundColor?: string | number;
   pixelRatio?: number;
+  /** Render onto a transparent surface so the host's own background shows through. */
+  transparent?: boolean;
+  /** Keep the drawing buffer readable for screenshots. Defaults to true. */
+  preserveDrawingBuffer?: boolean;
 }
 
 export interface AnimationProps {
