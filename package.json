@@ -41,6 +41,7 @@
     "clean": "rm -rf dist/ dist-demo/",
     "verify": "tsx verification/verify_demos.ts",
     "test": "vitest run",
+    "test:boundaries": "vitest run test/boundaries.test.ts",
     "test:vision": "mkdir -p test/fixtures/dist && cp -r dist/* test/fixtures/dist/ && cp -r public/*.onnx test/fixtures/dist/ && playwright test test/vision.spec.ts",
     "vision": "pnpm run test:vision",
     "lint": "eslint 'src/**/*.{ts,js}' --ignore-pattern 'dist'",
