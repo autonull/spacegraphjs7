@@ -92,6 +92,7 @@ export class CytoscapeRenderer implements GraphRenderer {
         if (element.empty()) cy.add(spec);
         else {
           element.data(spec.data);
+          element.classes(spec.classes ?? []);
           element.position({ x: node.position[0], y: node.position[1] });
         }
         element.style('display', node.visible === false ? 'none' : 'element');
@@ -101,7 +102,10 @@ export class CytoscapeRenderer implements GraphRenderer {
         const element = cy.getElementById(edge.id);
         const spec = edgeElement(edge, theme);
         if (element.empty()) cy.add(spec);
-        else element.data(spec.data);
+        else {
+          element.data(spec.data);
+          element.classes(spec.classes ?? []);
+        }
       }
     });
 

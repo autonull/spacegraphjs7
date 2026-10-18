@@ -47,6 +47,7 @@ export class SpaceGraphRenderer implements GraphRenderer {
   #model: RenderModel | null = null;
   #nodes = new Set<string>();
   #edges = new Set<string>();
+  #nodeTypes = new Map<string, string>();
   #handlers = new Map<keyof RendererEventMap, Set<Handler<never>>>();
   #disposers: Unsubscribe[] = [];
   #applyingSelection = false;
@@ -86,8 +87,22 @@ export class SpaceGraphRenderer implements GraphRenderer {
     if (!sg || !theme) return;
 
     const liveNodes = new Set(model.nodes.map((n) => n.id));
+    const nodes = model.nodes.map((node) => nodeSpec(node, theme));
+
+    // Semantic zoom changes a node's representation (a phase is a panel at execution and a counted chip
+    // at overview). The core upserts by id and never remodels, so drop any node whose spec type changed
+    // first; loadSpec then recreates it with the new type.
+    for (const node of nodes) {
+      const previous = this.#nodeTypes.get(node.id);
+      if (previous && previous !== node.type) sg.removeNode(node.id);
+      this.#nodeTypes.set(node.id, node.type);
+    }
+
     for (const id of this.#nodes) {
-      if (!liveNodes.has(id)) sg.removeNode(id);
+      if (!liveNodes.has(id)) {
+        sg.removeNode(id);
+        this.#nodeTypes.delete(id);
+      }
     }
     this.#nodes = liveNodes;
 
@@ -98,7 +113,7 @@ export class SpaceGraphRenderer implements GraphRenderer {
     this.#edges = liveEdges;
 
     const spec: GraphSpec = {
-      nodes: model.nodes.map((node) => nodeSpec(node, theme)),
+      nodes,
       edges: model.edges.map((edge) => edgeSpec(edge, theme)),
     };
     sg.loadSpec(spec);
@@ -179,6 +194,7 @@ export class SpaceGraphRenderer implements GraphRenderer {
     this.#sg = null;
     this.#nodes.clear();
     this.#edges.clear();
+    this.#nodeTypes.clear();
   }
 
   #bind(): void {
