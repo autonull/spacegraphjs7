@@ -36,13 +36,12 @@ holds the types and `CONTRACT_VERSION`; three optional leaves implement it — t
 (`@spacegraphjs/cytoscape-renderer`, 2D only), and the static SVG renderer
 (`@spacegraphjs/svg-renderer`). The core never imports the contract; the adapters are thin leaves.
 The lean entry is `spacegraphjs/activity`, which keeps `three` off the critical path until a graph
-mounts. Naming rules and the full surface are in [CHANGELOG.md](./CHANGELOG.md); integration steps are
-in the [host integration guide](./docs/host-integration.md).
+mounts. Naming rules are in [AGENTS.md](./AGENTS.md); integration steps are in the
+[host integration guide](./docs/host-integration.md).
 
 ## Documentation
 
 - **[ROADMAP.md](./ROADMAP.md)** — What's built, what's next (start here for software work)
-- [CHANGELOG.md](./CHANGELOG.md) — Breaking changes, the renderer contract, and the naming rules
 - [Host integration guide](./docs/host-integration.md) — Reuse the renderer contract from another host
 - [Vision Plugin](./docs/vision-plugin.md) — AI vision integration guide
 - [QUICKSTART.md](./QUICKSTART.md) — 5-minute getting started guide
