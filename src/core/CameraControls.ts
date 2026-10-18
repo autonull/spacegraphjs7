@@ -2,6 +2,7 @@
 // Pure camera state machine - all input handled via Fingering
 
 import * as THREE from 'three';
+import type { KeyboardScope } from '../types';
 import type { Surface } from './Surface';
 
 export interface CameraControlsConfig {
@@ -13,7 +14,11 @@ export interface CameraControlsConfig {
   panSpeed: number;
   minDistance: number;
   maxDistance: number;
+  keyboard: KeyboardScope;
 }
+
+// Keys typed into these never drive the camera.
+const EDITABLE_SELECTOR = 'input, textarea, select, [contenteditable=""], [contenteditable="true"], .monaco-editor';
 
 const KEY_CONFIG = {
   pan: [
@@ -68,6 +73,8 @@ export class CameraControls {
   private isOrthographic = false;
   private orthoCamera: THREE.OrthographicCamera | null = null;
   private perspectiveCamera: THREE.Camera;
+  private keyboardScope: KeyboardScope = 'container';
+  private keyboardTarget: EventTarget | null = null;
 
   // Cached vectors for update loop - avoids per-frame allocations
   private _camRight = new THREE.Vector3();
@@ -94,6 +101,7 @@ export class CameraControls {
       panSpeed: 1.0,
       minDistance: 10,
       maxDistance: 10000,
+      keyboard: 'container',
       ...config,
     };
     this.target = new THREE.Vector3();
@@ -103,8 +111,7 @@ export class CameraControls {
     this.updateSpherical();
     this.onKeyDown = this.onKeyDown.bind(this);
     this.onKeyUp = this.onKeyUp.bind(this);
-    window.addEventListener('keydown', this.onKeyDown);
-    window.addEventListener('keyup', this.onKeyUp);
+    this.setKeyboardScope(this.config.keyboard);
   }
 
   get hasZoomHistory(): boolean {
@@ -119,6 +126,7 @@ export class CameraControls {
     if (!this.config.enableRotate || this.isOrthographic) return;
     this.sphericalDelta.theta -= dx * this.config.rotateSpeed * 0.005;
     this.sphericalDelta.phi -= dy * this.config.rotateSpeed * 0.005;
+    this.sg?.requestFrame?.();
   }
 
   pan(dx: number, dy: number): void {
@@ -128,11 +136,13 @@ export class CameraControls {
     this._camUp.copy(this.camera.up).normalize();
     this.panOffset.add(this._tempSide.multiplyScalar(-dx * this.config.panSpeed * 0.1));
     this.panOffset.add(this._camUp.multiplyScalar(dy * this.config.panSpeed * 0.1));
+    this.sg?.requestFrame?.();
   }
 
   zoom(factor: number): void {
     if (!this.config.enableZoom) return;
     this.scale *= factor;
+    this.sg?.requestFrame?.();
   }
 
   update(): void {
@@ -200,6 +210,7 @@ export class CameraControls {
     this.sphericalDelta.set(0, 0, 0);
     this.scale = 1;
     this.panOffset.set(0, 0, 0);
+    if (this.targetNext || [...this.keyState.values()].some(Boolean)) this.sg?.requestFrame?.();
   }
 
   panBy(dx: number, dy: number): void {
@@ -278,6 +289,7 @@ export class CameraControls {
     this.radiusNext = radius;
     this.animStartTime = performance.now();
     this.animDuration = duration * 1000;
+    this.sg?.requestFrame?.();
   }
 
   setTarget(x: number, y: number, z: number): void {
@@ -333,15 +345,37 @@ export class CameraControls {
 
   dispose(): void {
     this.zoomStack = [];
-    window.removeEventListener('keydown', this.onKeyDown);
-    window.removeEventListener('keyup', this.onKeyUp);
+    this.setKeyboardScope(false);
+  }
+
+  // Scope camera keyboard input: off, the graph container, or the whole window.
+  setKeyboardScope(scope: KeyboardScope): void {
+    if (this.keyboardTarget) {
+      this.keyboardTarget.removeEventListener('keydown', this.onKeyDown as EventListener);
+      this.keyboardTarget.removeEventListener('keyup', this.onKeyUp as EventListener);
+      this.keyboardTarget = null;
+    }
+    this.keyboardScope = scope;
+    this.keyState.clear();
+    if (scope === false) return;
+    this.keyboardTarget = scope === 'window' ? window : this.domElement;
+    this.keyboardTarget.addEventListener('keydown', this.onKeyDown as EventListener);
+    this.keyboardTarget.addEventListener('keyup', this.onKeyUp as EventListener);
   }
 
   private onKeyDown(e: KeyboardEvent): void {
+    if (this.#isEditable(e)) return;
     this.keyState.set(e.key.toLowerCase(), true);
+    this.sg?.requestFrame?.();
   }
 
   private onKeyUp(e: KeyboardEvent): void {
     this.keyState.set(e.key.toLowerCase(), false);
+  }
+
+  #isEditable(e: KeyboardEvent): boolean {
+    const target = e.target as HTMLElement | null;
+    if (!target?.closest) return false;
+    return !!target.closest(EDITABLE_SELECTOR);
   }
 }

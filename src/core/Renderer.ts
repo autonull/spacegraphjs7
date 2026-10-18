@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { CSS3DRenderer } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
-import type { Node } from '../nodes/Node';
+import { Node } from '../nodes/Node';
 import { InstancedNodeRenderer } from '../rendering/InstancedNodeRenderer';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { CameraViewport, Projection, RenderOptions } from '../types';
@@ -188,14 +188,12 @@ export class Renderer {
       if (edge) edge.update?.();
     }
 
-    if (this.renderContext) {
+    Node.lodFrame++;
+    const ctx = this.renderContext;
+    if (ctx) {
       for (const node of this.sg.graph.nodes.values()) {
         if (!node) continue;
-        if (this.renderContext.shouldRender(node)) {
-          this.applyLOD(node);
-        } else {
-          node.object.visible = false;
-        }
+        node.object.visible = ctx.shouldRender(node) && node.visible;
       }
     }
 
@@ -278,10 +276,6 @@ export class Renderer {
         (edge.line.material as any).resolution.copy(resolution);
       }
     }
-  }
-
-  private applyLOD(node: Node): void {
-    const lod = node.computeLOD(this.renderContext?.visibilityContext ?? ({} as any));
-    node.object.visible = node.visible && lod !== 'hidden';
+    this.sg.requestFrame?.();
   }
 }

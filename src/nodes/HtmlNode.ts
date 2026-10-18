@@ -117,10 +117,16 @@ export class HtmlNode extends BaseContentNode {
           this.labelLod = data.labelLod as LabelLodLevel[];
         },
         html: () => {
-          if (this.contentWrapper) this.contentWrapper.innerHTML = data.html as string;
+          if (this.contentWrapper && this.contentWrapper.innerHTML !== data.html) {
+            this.contentWrapper.innerHTML = data.html as string;
+          }
         },
         content: () => {
-          if (this.contentWrapper && !this.contentWrapper.isContentEditable) {
+          if (
+            this.contentWrapper &&
+            !this.contentWrapper.isContentEditable &&
+            this.contentWrapper.textContent !== data.content
+          ) {
             this.contentWrapper.textContent = data.content as string;
           }
         },

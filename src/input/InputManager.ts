@@ -376,6 +376,7 @@ export class InputSource {
       if (event) {
         handler(event);
         this.manager.handleEvent(event);
+        this.manager.sg.requestFrame();
       }
     };
     this.boundHandlers.push({

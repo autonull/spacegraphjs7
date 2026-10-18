@@ -144,16 +144,41 @@ export abstract class Node extends Surface {
   }
 
   getScreenPixelSize(viewport: { width: number; height: number }): number {
-    const bounds = this.bounds3D.size;
+    const bounds = this.#lodBounds().getSize(new THREE.Vector3());
     const heightPercent = (bounds.y / viewport.height) * 100;
     const widthPercent = (bounds.x / viewport.width) * 100;
     return Math.min(heightPercent, widthPercent);
   }
 
+  // Bounds recomputed at most once per render frame; the renderer advances the frame token.
+  static lodFrame = 0;
+  #lodBoundsFrame = -1;
+  #lodBoundsBox?: THREE.Box3;
+
+  #lodBounds(): THREE.Box3 {
+    if (this.#lodBoundsFrame !== Node.lodFrame || !this.#lodBoundsBox) {
+      this.#lodBoundsBox = new THREE.Box3().setFromObject(this.object);
+      this.#lodBoundsFrame = Node.lodFrame;
+    }
+    return this.#lodBoundsBox;
+  }
+
   computeLOD(context: VisibilityContext): LODLevel {
     if (!this.visible) return 'hidden';
+    const data = this.data as Record<string, unknown>;
+    const zoom = this.sg?.renderer?.getZoom?.();
+    const minZoom = data.minZoom as number | undefined;
+    const maxZoom = data.maxZoom as number | undefined;
+    if (
+      zoom !== undefined &&
+      ((minZoom !== undefined && zoom < minZoom) || (maxZoom !== undefined && zoom > maxZoom))
+    ) {
+      return 'hidden';
+    }
     const pixelSize = this.getScreenPixelSize(context.viewportBounds);
-    if (pixelSize < 0.5) return 'hidden';
+    if (pixelSize < (context.minPixelSize ?? 0.5)) return 'hidden';
+    const override = data.lod as LODLevel | undefined;
+    if (override) return override;
     const distance = this.position.distanceTo(context.cameraPosition);
     if (distance < 100) return 'high';
     if (distance < 500) return 'medium';
@@ -207,6 +232,7 @@ export abstract class Node extends Surface {
 
     if (changes.label || changes.data || changes.position || changes.rotation || changes.scale) {
       this.emit('node:updated', { node: this, changes, timestamp: Date.now() });
+      this.sg?.requestFrame?.();
     }
 
     return this;

@@ -74,11 +74,10 @@ export class InteractionRaycaster {
   private getAllNodeMeshes(): THREE.Object3D[] {
     const meshes: THREE.Object3D[] = [];
     for (const node of this.sg.graph.nodes.values()) {
-      if (node.object) {
-        node.object.traverse((child: THREE.Object3D) => {
-          if (child instanceof THREE.Mesh) meshes.push(child);
-        });
-      }
+      if (!node.object || !node.visible || !node.object.visible) continue;
+      node.object.traverse((child: THREE.Object3D) => {
+        if (child instanceof THREE.Mesh) meshes.push(child);
+      });
     }
     return meshes;
   }

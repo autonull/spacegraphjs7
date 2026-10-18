@@ -1,0 +1,72 @@
+<!doctype html>
+<html>
+    <head>
+        <title>SpaceGraph Hardening Demo</title>
+        <style>
+            * { margin: 0; box-sizing: border-box; }
+            body { font-family: system-ui, sans-serif; background: #10131a; color: #cdd6e4; }
+            #container { width: 100vw; height: 100vh; }
+            #status {
+                position: fixed; left: 8px; top: 8px; z-index: 10;
+                padding: 6px 10px; border-radius: 6px; font-size: 12px;
+                background: rgba(0, 0, 0, 0.6); pointer-events: none; white-space: pre;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="container"></div>
+        <div id="status">booting…</div>
+        <script type="module">
+            import { SpaceGraph } from '@src/index.ts';
+
+            const status = (text) => { document.getElementById('status').textContent = text; };
+            window.__zoomEvents = 0;
+
+            try {
+                const nodes = [
+                    { id: 'a', type: 'ShapeNode', label: 'A', position: [-200, 0, 0] },
+                    { id: 'b', type: 'ShapeNode', label: 'B', position: [0, 120, 0] },
+                    { id: 'c', type: 'ShapeNode', label: 'C', position: [200, -80, 0] },
+                ];
+                const edges = [
+                    { id: 'ab', type: 'LabeledEdge', source: 'a', target: 'b', data: { label: 'a→b' } },
+                    { id: 'bc', type: 'LabeledEdge', source: 'b', target: 'c', data: { label: 'b→c' } },
+                ];
+
+                const sg = await SpaceGraph.create('#container', { nodes, edges }, {
+                    chrome: false,
+                    keyboard: 'container',
+                    global: true,
+                    render: { projection: 'orthographic', renderMode: 'on-demand' },
+                });
+                window.__sg = sg;
+                sg.events.on('zoom:change', () => { window.__zoomEvents++; });
+                sg.fitView();
+
+                // Mount/dispose cycles against throwaway containers: the WebGL context,
+                // ResizeObserver, and listeners for each must be released.
+                window.__cycle = (count) => {
+                    for (let i = 0; i < count; i++) {
+                        const host = document.createElement('div');
+                        host.style.width = '300px';
+                        host.style.height = '200px';
+                        document.body.appendChild(host);
+                        const temp = new SpaceGraph(host, { chrome: false, render: { renderMode: 'on-demand' } });
+                        temp.init();
+                        temp.dispose();
+                        host.remove();
+                    }
+                    return { instances: SpaceGraph.instances.size, canvases: document.querySelectorAll('canvas').length };
+                };
+                window.__disposeMain = () => { sg.dispose(); };
+
+                window.__ready = true;
+                status(`ready · ortho=${sg.projection}`);
+            } catch (e) {
+                window.__error = String(e && e.message ? e.message : e);
+                status('error: ' + window.__error);
+                console.error(e);
+            }
+        </script>
+    </body>
+</html>

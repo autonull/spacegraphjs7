@@ -207,10 +207,12 @@ export class Graph extends EventEmitter<GraphEventMap> {
       node.object?.position.copy(node.position);
     }
     for (const edge of this.edges.values()) edge.update?.();
+    this.sg?.requestFrame?.();
   }
 
   pinAll(pinned = true): void {
     for (const node of this.nodes.values()) node.setPinned(pinned);
+    this.sg?.requestFrame?.();
   }
 
   // Node lookup shortcuts - ergonomic API

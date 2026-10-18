@@ -64,6 +64,10 @@ export class SpaceGraph {
   #animationFrameId?: number;
   #lastTimestamp = 0;
   #animating = false;
+  #initialized = false;
+  #disposed = false;
+  #scheduled = false;
+  #continuousMode = false;
   #lastZoom = -1;
   #lastCenter: [number, number, number] = [Number.NaN, Number.NaN, Number.NaN];
 
@@ -71,9 +75,9 @@ export class SpaceGraph {
     this.options = options;
     this.container = container;
     this.#init();
-    SpaceGraph.instances.add(this);
-    if (typeof window !== 'undefined') {
-      (window as any).SpaceGraph = SpaceGraph;
+    if (options.global) {
+      SpaceGraph.instances.add(this);
+      if (typeof window !== 'undefined') (window as any).SpaceGraph = SpaceGraph;
     }
   }
 
@@ -311,6 +315,8 @@ export class SpaceGraph {
 
   // ============= Instance Methods =============
   async init(): Promise<void> {
+    if (this.#initialized || this.#disposed) return;
+    this.#initialized = true;
     this.renderer.init();
     this.#registerDefaults();
     await this.pluginManager.initAll();
@@ -430,14 +436,18 @@ export class SpaceGraph {
     if (fit) {
       this.cameraControls.flyTo(fit.center, fit.cameraZ, duration);
       this.#reportViewport(true);
+      this.requestFrame();
     }
     return this;
   }
 
   // ============= Animation Loop =============
   animate(timestamp = 0): void {
-    if (!this.#animating) return;
-    this.#animationFrameId = requestAnimationFrame((t) => this.animate(t));
+    if (this.#disposed) return;
+    if (this.#continuousMode) {
+      if (!this.#animating) return;
+      this.#animationFrameId = requestAnimationFrame((t) => this.animate(t));
+    }
     this.renderer.beginFrameOptimization(timestamp);
 
     const delta =
@@ -462,11 +472,26 @@ export class SpaceGraph {
     this.renderer.render();
   }
 
+  // Paint one frame. Continuous mode already runs a loop; on-demand coalesces into a single frame.
+  requestFrame(): void {
+    if (this.#disposed || this.#continuousMode || this.#scheduled) return;
+    this.#scheduled = true;
+    this.#animationFrameId = requestAnimationFrame((t) => {
+      this.#scheduled = false;
+      this.animate(t);
+    });
+  }
+
   // ============= Ergonomic API (delegated to ErgonomicsAPI) =============
 
   render(): this {
+    if (this.#disposed) return this;
     this.#animating = true;
-    this.#animationFrameId ??= requestAnimationFrame((t) => this.animate(t));
+    if (this.#continuousMode) {
+      this.#animationFrameId ??= requestAnimationFrame((t) => this.animate(t));
+    } else {
+      this.requestFrame();
+    }
     return this;
   }
 
@@ -476,6 +501,7 @@ export class SpaceGraph {
       cancelAnimationFrame(this.#animationFrameId);
       this.#animationFrameId = undefined;
     }
+    this.#scheduled = false;
   }
 
   resume(): this {
@@ -484,13 +510,16 @@ export class SpaceGraph {
 
   // ============= Lifecycle =============
   dispose(): void {
+    if (this.#disposed) return;
+    this.#disposed = true;
     this.pause();
-    this.pluginManager.disposePlugins();
-    this.graph.clear();
-
-    [this.renderer?.renderer, this.renderer?.cssRenderer]?.forEach((r) => {
-      r?.domElement?.remove?.();
-    });
+    this.pluginManager?.disposePlugins();
+    this.input?.dispose();
+    this.cameraControls?.dispose();
+    this.vision?.dispose();
+    this.graph?.clear();
+    this.renderer?.dispose();
+    this.events?.clear();
     SpaceGraph.instances.delete(this);
   }
 
@@ -770,6 +799,7 @@ export class SpaceGraph {
     this.cameraControls?.setCamera(this.renderer.camera);
     this.events.emit('projection:change', { projection });
     this.#reportViewport(true);
+    this.requestFrame();
     return this;
   }
 
@@ -782,6 +812,7 @@ export class SpaceGraph {
     this.renderer.setZoom(value);
     this.cameraControls?.update();
     this.#reportViewport(true);
+    this.requestFrame();
     return this;
   }
 
@@ -810,6 +841,7 @@ export class SpaceGraph {
       const pos = node.position;
       this.cameraControls.flyTo(pos, this.renderer.camera.position.length(), duration);
       this.#reportViewport(true);
+      this.requestFrame();
     }
     return this;
   }
@@ -819,6 +851,7 @@ export class SpaceGraph {
     this.cameraControls.target.set(x, y, z);
     this.cameraControls.update();
     this.#reportViewport(true);
+    this.requestFrame();
     return this;
   }
 
@@ -828,6 +861,7 @@ export class SpaceGraph {
     this.cameraControls.target.set(0, 0, 0);
     this.cameraControls.update();
     this.#reportViewport(true);
+    this.requestFrame();
     return this;
   }
 
@@ -837,10 +871,12 @@ export class SpaceGraph {
     if (target) this.cameraControls.target.set(...target);
     this.cameraControls.update();
     this.#reportViewport(true);
+    this.requestFrame();
     return this;
   }
 
   #init(): void {
+    this.#continuousMode = (this.options.render?.renderMode ?? 'on-demand') === 'continuous';
     this.poolManager = new ObjectPoolManager();
     this.events = new EventSystem();
     this.vision = new VisionManager(this);
@@ -852,16 +888,36 @@ export class SpaceGraph {
     this.graph = new Graph(this);
     this.selection = new Selection(this);
     this.ergo = new ErgonomicsAPI(this);
+    const keyboard = this.options.keyboard ?? 'container';
+    if (keyboard === 'container' && !this.container.hasAttribute('tabindex')) {
+      this.container.tabIndex = 0;
+    }
     this.cameraControls = new CameraControls(
       this.renderer.camera,
       this.container,
-      this.options.cameraControls as Partial<import('./core/CameraControls').CameraControlsConfig>
+      { keyboard, ...this.options.cameraControls } as Partial<
+        import('./core/CameraControls').CameraControlsConfig
+      >
     );
     this.cameraControls.sg = this;
     const config = (this.options.input as Record<string, any>) ?? {};
     this.input = new InputManager({ sg: this, events: this.events });
     applyDefaultInputConfig(this.input, this, config);
     forwardGraphEvents(this.graph, this.events);
+    // On-demand mode repaints when the graph or selection changes.
+    const schedule = () => this.requestFrame();
+    for (const event of [
+      'node:added',
+      'node:removed',
+      'node:updated',
+      'edge:added',
+      'edge:removed',
+      'edge:updated',
+      'graph:cleared',
+      'selection:changed',
+    ] as const) {
+      this.events.on(event, schedule);
+    }
   }
 
   #registerDefaults(): void {

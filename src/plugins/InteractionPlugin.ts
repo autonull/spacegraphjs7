@@ -5,7 +5,6 @@ import type { Graph } from '../core/Graph';
 import type { Edge } from '../edges/Edge';
 import {
   BoxSelectingFingering,
-  HoverFingering,
   NodeDraggingFingering,
   PinchZoomFingering,
   ResizeFingering,
@@ -109,9 +108,6 @@ export class InteractionPlugin implements Plugin {
       this.selectionManager
     );
     inputManager.registerFingering(boxSelectFingering, 80);
-
-    const hoverFingering = new HoverFingering(this.sg, this.raycaster);
-    inputManager.registerFingering(hoverFingering, 60);
 
     const pinchZoomFingering = new PinchZoomFingering(this.sg);
     inputManager.registerFingering(pinchZoomFingering, 50);

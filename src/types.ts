@@ -337,6 +337,12 @@ export interface SpaceGraphEvents {
 // Orthographic is the legibility baseline for 2D hosts; perspective stays the 3D experiment.
 export type Projection = 'perspective' | 'orthographic';
 
+// Camera keyboard input scope: off, the graph container, or the whole window.
+export type KeyboardScope = false | 'container' | 'window';
+
+// Continuous drives every animation frame; on-demand paints on mutations, camera moves, and resize.
+export type RenderMode = 'continuous' | 'on-demand';
+
 // Normalized (0..1) camera report: 1 is closest. `band` is host policy, never set by the core.
 export interface CameraViewport {
   zoom: number;
@@ -359,6 +365,11 @@ export interface SpaceGraphOptions {
   initialLayout?: string;
   cameraControls?: Partial<import('./core/CameraControls').CameraControlsConfig>;
   input?: DefaultInputConfig;
+  /** Register the instance on `window.SpaceGraph` and `SpaceGraph.instances`. Off by default so
+   * multiple embedded graphs stay isolated. */
+  global?: boolean;
+  /** Where camera keyboard input listens. `container` (default) scopes it to the graph element. */
+  keyboard?: KeyboardScope;
   /** Render host chrome (HUD, minimap, zoom UI). Off by default so embedded graphs stay bare. */
   chrome?: boolean;
   /** Fly the camera to a node on double click. Defaults to true; embedded graphs often set false. */
@@ -417,6 +428,8 @@ export interface RenderOptions {
   preserveDrawingBuffer?: boolean;
   /** Starting projection. Defaults to perspective; hosts that want 2D set orthographic. */
   projection?: Projection;
+  /** Render scheduling. `on-demand` (default) paints on mutation/camera/resize; `continuous` runs every frame. */
+  renderMode?: RenderMode;
 }
 
 export interface AnimationProps {

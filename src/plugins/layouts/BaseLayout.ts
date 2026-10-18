@@ -117,6 +117,7 @@ export abstract class BaseLayout implements Plugin {
 
   protected graph!: Graph;
   protected events!: any;
+  protected sg!: SpaceGraph;
   protected config: LayoutConfig = {};
 
   constructor(config: LayoutConfig = {}) {
@@ -127,7 +128,8 @@ export abstract class BaseLayout implements Plugin {
     return this.config;
   }
 
-  init(_sg: SpaceGraph, graph: Graph, events: any): void {
+  init(sg: SpaceGraph, graph: Graph, events: any): void {
+    this.sg = sg;
     this.graph = graph;
     this.events = events;
   }
@@ -188,37 +190,13 @@ export abstract class BaseLayout implements Plugin {
   }
 
   /**
-   * Helper: Apply position to a node with optional animation
+   * Helper: Apply position to a node. Deterministic and synchronous: hosts that want
+   * animation drive it from their own frame loop, not a global tween library.
    */
-  protected applyPosition(
-    node: Node,
-    target: THREE.Vector3,
-    options: { animate?: boolean; duration?: number } = {}
-  ): void {
-    const { animate = this.config.animate ?? true, duration = this.config.duration ?? 1.0 } =
-      options;
-
-    if (animate && typeof window !== 'undefined') {
-      const gsap = (window as Window & { gsap?: { to: (...args: unknown[]) => void } }).gsap;
-      if (gsap) {
-        gsap.to(node.position, {
-          x: target.x,
-          y: target.y,
-          z: target.z,
-          duration,
-          ease: 'power2.out',
-          onUpdate: () => {
-            node.object.position.copy(node.position);
-          },
-        });
-      } else {
-        node.position.copy(target);
-        node.object.position.copy(target);
-      }
-    } else {
-      node.position.copy(target);
-      node.object.position.copy(target);
-    }
+  protected applyPosition(node: Node, target: THREE.Vector3, _options: { animate?: boolean; duration?: number } = {}): void {
+    node.position.copy(target);
+    node.object.position.copy(target);
+    this.sg?.requestFrame?.();
   }
 
   /**
@@ -292,6 +270,7 @@ export abstract class BaseLayout implements Plugin {
    */
   protected updateEdges(): void {
     for (const edge of this.graph.getEdges()) (edge as { update?: () => void }).update?.();
+    this.sg?.requestFrame?.();
   }
 
   /**

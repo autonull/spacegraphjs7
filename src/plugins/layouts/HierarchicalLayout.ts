@@ -58,8 +58,9 @@ export class HierarchicalLayout extends BaseLayout {
     }
 
     for (const [lv, ids] of byLevel) {
-      const totalWidth = (ids.length - 1) * nodeSpacing;
-      for (const [i, id] of ids.entries()) {
+      const placed = ids.filter((id) => !(nodes.get(id) as Node).data.pinned);
+      const totalWidth = (placed.length - 1) * nodeSpacing;
+      for (const [i, id] of placed.entries()) {
         const node = nodes.get(id) as Node;
         const primary = lv * levelHeight;
         const secondary = -totalWidth / 2 + i * nodeSpacing;
@@ -82,14 +83,13 @@ export class HierarchicalLayout extends BaseLayout {
     let orphanX = 0;
     const maxLevel = Math.max(...level.values(), 0);
     for (const [id, node] of nodes) {
-      if (!visited.has(id)) {
-        this.applyPosition(
-          node as Node,
-          new THREE.Vector3(orphanX, -(maxLevel + 1) * levelHeight, z),
-          { animate: false }
-        );
-        orphanX += nodeSpacing;
-      }
+      if (visited.has(id) || (node as Node).data.pinned) continue;
+      this.applyPosition(
+        node as Node,
+        new THREE.Vector3(orphanX, -(maxLevel + 1) * levelHeight, z),
+        { animate: false }
+      );
+      orphanX += nodeSpacing;
     }
 
     this.updateEdges();

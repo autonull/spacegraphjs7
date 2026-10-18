@@ -94,12 +94,6 @@ export class RenderContext {
   }
 
   private computeLOD(node: Node): LODLevel {
-    if (!node.visible) return 'hidden';
-    const pixelSize = node.getScreenPixelSize(this._visibilityContext.viewportBounds);
-    if (pixelSize < this._visibilityContext.minPixelSize) return 'hidden';
-    const distance = node.position.distanceTo(this._visibilityContext.cameraPosition);
-    if (distance < 100) return 'high';
-    if (distance < 500) return 'medium';
-    return 'low';
+    return node.computeLOD(this._visibilityContext);
   }
 }
