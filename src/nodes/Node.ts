@@ -2,6 +2,7 @@ import gsap from 'gsap';
 import { ThreeDisposer } from '../utils';
 import * as THREE from 'three';
 import { type Bounds3D, type HitResult, type Rect, Surface } from '../core/Surface';
+import { resolveTheme, applyNodeTheme, type ResolvedTheme } from '../core/theme';
 import type { ControlState } from '../plugins/interaction/ControlStateBorder';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { AnimationProps, NodeData, NodeSpec } from '../types';
@@ -35,6 +36,10 @@ export abstract class Node extends Surface {
   public focusable = false;
   public focused = false;
   public readonly isNode = true;
+  public readonly resolvedTheme: ResolvedTheme;
+  /** Box outline drawn around a mesh node for focus/selection/hover. Undefined until shown. */
+  public outlineObject?: THREE.BoxHelper;
+  protected lastVisualState?: ControlState;
   abstract readonly object: THREE.Object3D;
   callbacks?: {
     onPointerEnter?: (node: Node) => void;
@@ -55,7 +60,8 @@ export abstract class Node extends Surface {
     this.id = spec?.id ?? '';
     this.type = spec?.type ?? '';
     this.label = spec?.label;
-    this.data = spec?.data ?? {};
+    this.data = applyNodeTheme(spec?.data ?? {}, this.sg?.options?.theme);
+    this.resolvedTheme = resolveTheme(this.sg?.options?.theme);
     this.position = Node._parseVector3(spec?.position, [0, 0, 0]);
     this.rotation = Node._parseVector3(spec?.rotation, [0, 0, 0]);
     this.scale = Node._parseVector3(spec?.scale, [1, 1, 1]);
@@ -347,12 +353,56 @@ export abstract class Node extends Surface {
 
   focus(): void {
     this.focused = true;
+    this.syncVisual();
     this.emit('focus', { node: this });
   }
 
   blur(): void {
     this.focused = false;
+    this.syncVisual();
     this.emit('blur', { node: this });
+  }
+
+  /** Single writer for `controlState` so mesh/DOM visuals stay in sync with interaction state. */
+  setControlState(state: ControlState): this {
+    if (this.controlState === state) return this;
+    this.controlState = state;
+    this.syncVisual();
+    return this;
+  }
+
+  // Show or hide the node's interaction visual (mesh outline or DOM outline) for the current state.
+  protected syncVisual(): void {
+    const state = this.focused ? 'focus' : this.controlState;
+    this.setOutlineState(state);
+  }
+
+  protected setOutlineState(state: ControlState): void {
+    const color =
+      state === 'focus'
+        ? this.resolvedTheme.focus
+        : state === 'selected'
+          ? this.resolvedTheme.selection
+          : state === 'hovered'
+            ? this.resolvedTheme.hover
+            : undefined;
+    const scene = this.sg?.renderer?.scene;
+    if (color === undefined || !scene) {
+      if (this.outlineObject) this.outlineObject.visible = false;
+      return;
+    }
+    if (!this.outlineObject) {
+      this.outlineObject = new THREE.BoxHelper(this.object, color as THREE.ColorRepresentation);
+      (this.outlineObject.material as THREE.LineBasicMaterial).depthTest = false;
+      this.outlineObject.renderOrder = 1000;
+      scene.add(this.outlineObject);
+    }
+    (this.outlineObject.material as THREE.LineBasicMaterial).color.set(
+      color as THREE.ColorRepresentation
+    );
+    this.outlineObject.visible = true;
+    this.outlineObject.update();
+    this.sg?.requestFrame?.();
   }
 
   onFocus?(): void;
@@ -683,6 +733,12 @@ export abstract class Node extends Surface {
     this.emit('surface:destroying', { surface: this, timestamp: Date.now() });
     this.emit('node:destroying', { node: this, timestamp: Date.now() });
     this.object.parent?.remove(this.object);
+    if (this.outlineObject) {
+      this.outlineObject.parent?.remove(this.outlineObject);
+      this.outlineObject.geometry?.dispose();
+      (this.outlineObject.material as THREE.Material)?.dispose();
+      this.outlineObject = undefined;
+    }
     ThreeDisposer.dispose(this.object);
     this.removeAllListeners();
   }

@@ -5,6 +5,7 @@ import { Node } from '../nodes/Node';
 import { InstancedNodeRenderer } from '../rendering/InstancedNodeRenderer';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { CameraViewport, Projection, RenderOptions } from '../types';
+import { declutterLabels, type LabelRect } from '../utils/labelDeclutter';
 import { RenderContext } from './RenderContext';
 import { clamp, denormalizeZoom, normalizeZoom, type ZoomRange } from './zoom';
 
@@ -15,6 +16,7 @@ const CSS_STYLES = {
   pointerEvents: 'none',
 } as const;
 const OPT_INTERVAL_MS = 250;
+const LABEL_DECLUTTER_CAP = 200;
 const FOV = 75;
 const NEAR = 0.1;
 const FAR = 10000;
@@ -208,9 +210,29 @@ export class Renderer {
 
     this.cssRenderer.render(this.scene, camera);
     this.css2dRenderer.render(this.scene, camera);
+    this.#declutterLabels();
     this.renderer.render(this.scene, camera);
 
     this.renderContext?.endFrame();
+  }
+
+  // Hide edge labels that would overlap a higher-priority neighbour this frame. Cheap for small
+  // label counts; skipped entirely above the cap so large graphs never pay the cost.
+  #declutterLabels(): void {
+    const edges = this.sg.graph.edges.values();
+    const entries: Array<{ id: string; el: HTMLElement; rect: LabelRect }> = [];
+    for (const edge of edges) {
+      const el = edge?.labelElement;
+      if (!el) continue;
+      const { left, top, width, height } = el.getBoundingClientRect();
+      entries.push({ id: edge.id, el, rect: { id: edge.id, left, top, width, height } });
+      if (entries.length > LABEL_DECLUTTER_CAP) break;
+    }
+    if (entries.length < 2) return;
+    const hidden = declutterLabels(entries.map((entry) => entry.rect));
+    for (const entry of entries) {
+      entry.el.style.opacity = hidden.has(entry.id) ? '0' : '';
+    }
   }
 
   beginFrameOptimization(timestamp: number): void {

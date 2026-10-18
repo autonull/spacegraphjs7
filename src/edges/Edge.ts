@@ -3,6 +3,7 @@ import { Line2 } from 'three/examples/jsm/lines/Line2.js';
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
 import { Defaults, EdgeColors } from '../core/constants';
+import { applyEdgeTheme } from '../core/theme';
 import { type Bounds3D, type HitResult, type Rect, Surface } from '../core/Surface';
 import type { Node } from '../nodes/Node';
 import type { SpaceGraph } from '../SpaceGraph';
@@ -64,7 +65,7 @@ export class Edge extends Surface {
     this.type = spec.type ?? 'Edge';
     this.source = source;
     this.target = target;
-    this.data = { ...DEFAULT_EDGE_DATA, ...spec.data };
+    this.data = { ...DEFAULT_EDGE_DATA, ...applyEdgeTheme(spec.data ?? {}, this.sg?.options?.theme) };
 
     if (!this.data.gradientColors?.length && this.data.color === undefined)
       this.data.color = DEFAULT_EDGE_DATA.color;
@@ -115,6 +116,11 @@ export class Edge extends Surface {
 
   get object(): Line2 {
     return this.line;
+  }
+
+  /** CSS label element for labelled edges; undefined for plain edges (used for label decluttering). */
+  get labelElement(): HTMLElement | undefined {
+    return undefined;
   }
 
   get isValid(): boolean {
@@ -352,7 +358,7 @@ export class Edge extends Surface {
     if (!this.visible || !this.isTouchable) return null;
 
     const originalThreshold = raycaster.params.Line?.threshold ?? 1;
-    raycaster.params.Line = { threshold: 5 };
+    raycaster.params.Line = { threshold: this.data.hitWidth ?? 5 };
 
     const intersects = raycaster.intersectObject(this.line, true);
     raycaster.params.Line = { threshold: originalThreshold };

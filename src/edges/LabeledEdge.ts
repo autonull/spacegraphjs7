@@ -36,12 +36,16 @@ export class LabeledEdge extends Edge {
     const color = spec.data?.color ?? 0x888888;
     (this.object.material as LineMaterial).color.setHex(color);
 
+    const theme = this.sg?.options?.theme;
+    const fontSize =
+      data?.fontSize ??
+      (theme?.label?.fontSize !== undefined ? `${theme.label.fontSize}px` : '12px');
     this.labelEl = DOMUtils.createElement('div');
     this.labelEl.className = 'sg-edge-label';
     Object.assign(this.labelEl.style, {
-      color: data?.labelColor ?? '#ffffff',
-      fontSize: data?.fontSize ?? '12px',
-      fontFamily: 'sans-serif',
+      color: data?.labelColor ?? theme?.edge?.labelColor ?? theme?.label?.color ?? '#ffffff',
+      fontSize,
+      fontFamily: theme?.label?.fontFamily ?? 'sans-serif',
       background: 'rgba(0,0,0,0.55)',
       padding: '1px 5px',
       borderRadius: '3px',
@@ -59,6 +63,10 @@ export class LabeledEdge extends Edge {
 
     this.ready = true;
     this._positionLabel();
+  }
+
+  get labelElement(): HTMLElement {
+    return this.labelEl;
   }
 
   updateLod(_distance: number): void {

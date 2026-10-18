@@ -36,7 +36,7 @@ export class ShapeNode extends Node {
     const data = spec.data as ShapeNodeData;
     this.shapeType = (data?.shape as ShapeType) ?? 'sphere';
     this.nodeSize = data?.size ?? 40;
-    const color = (data?.color as THREE.ColorRepresentation) ?? 0x3366ff;
+    const color = (this.data?.color as THREE.ColorRepresentation) ?? 0x3366ff;
 
     this.meshGeometry = this.createGeometry(this.shapeType, this.nodeSize);
     this.meshMaterial = new THREE.MeshStandardMaterial({
@@ -150,8 +150,9 @@ export class ShapeNode extends Node {
     canvas.height = 64;
 
     if (context) {
-      context.font = '24px Arial';
-      context.fillStyle = 'white';
+      const { color, fontFamily, fontSize } = this.resolvedTheme.label ?? {};
+      context.font = `${fontSize ?? 24}px ${fontFamily ?? 'Arial'}`;
+      context.fillStyle = color ?? 'white';
       context.textAlign = 'center';
       context.fillText(text, canvas.width / 2, canvas.height / 2 + 8);
     }

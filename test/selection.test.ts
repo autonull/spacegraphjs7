@@ -1,12 +1,21 @@
 import { describe, expect, it } from 'vitest';
 import { Selection } from '../src/core/Selection';
 
-type FakeNode = { id: string; controlState: string; object: { userData: Record<string, unknown> } };
+type FakeNode = { id: string; controlState: string; setControlState(state: string): void };
 
 function makeSg(nodeIds: string[] = [], edgeIds: string[] = []) {
   const emitted: Array<{ type: string; payload: any }> = [];
   const nodes = new Map<string, FakeNode>(
-    nodeIds.map((id) => [id, { id, controlState: 'normal', object: { userData: {} } }])
+    nodeIds.map((id) => {
+      const node: FakeNode = {
+        id,
+        controlState: 'normal',
+        setControlState(state) {
+          node.controlState = state;
+        },
+      };
+      return [id, node];
+    })
   );
   const edges = new Map<string, { id: string }>(edgeIds.map((id) => [id, { id }]));
   const sg = {

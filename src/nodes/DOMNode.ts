@@ -2,8 +2,12 @@ import * as THREE from 'three';
 import { CSS3DObject } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
 
 import type { SpaceGraph } from '../SpaceGraph';
-import type { NodeSpec } from '../types';
+import type { DOMNodeData, NodeSpec } from '../types';
 import { DOMUtils } from '../utils/DOMUtils';
+import {
+  applyControlStateStyles,
+  type ControlState,
+} from '../plugins/interaction/ControlStateBorder';
 import { Node } from './Node';
 
 export class DOMNode extends Node {
@@ -18,7 +22,7 @@ export class DOMNode extends Node {
   constructor(
     sg: SpaceGraph,
     spec: NodeSpec,
-    domElement: HTMLElement,
+    domElement?: HTMLElement,
     width = 200,
     height = 100,
     materialParams?: THREE.MeshBasicMaterialParameters
@@ -26,7 +30,8 @@ export class DOMNode extends Node {
     super(sg, spec);
 
     this._object = new THREE.Group();
-    this.domElement = domElement;
+    this.domElement =
+      domElement ?? (spec.data as DOMNodeData | undefined)?.element ?? DOMUtils.createElement('div');
     this.cssObject = new CSS3DObject(this.domElement);
     this.object.add(this.cssObject);
 
@@ -60,6 +65,23 @@ export class DOMNode extends Node {
     this.cssObject.visible = visible;
     this.domElement.style.display = visible ? 'flex' : 'none';
     this.backingMesh.visible = visible;
+  }
+
+  // DOM nodes draw their interaction outline on the element, not as a mesh BoxHelper.
+  protected override syncVisual(): void {
+    const state: ControlState = this.focused ? 'focus' : this.controlState;
+    applyControlStateStyles(this.domElement, state, this.lastVisualState);
+    this.lastVisualState = state;
+  }
+
+  // Adopt the spec-supplied element once; never swap a mounted element on update.
+  override updateSpec(updates: Partial<NodeSpec>): this {
+    if (updates.data && 'element' in updates.data) {
+      const data = { ...updates.data };
+      delete (data as Record<string, unknown>).element;
+      return super.updateSpec({ ...updates, data });
+    }
+    return super.updateSpec(updates);
   }
 
   public override setOpacity(opacity: number): this {

@@ -3,7 +3,7 @@
 import type { Edge } from '../../edges/Edge';
 import type { Node } from '../../nodes/Node';
 import type { SpaceGraph } from '../../SpaceGraph';
-import { applyControlStateStyles, type ControlState } from './ControlStateBorder';
+import type { ControlState } from './ControlStateBorder';
 
 interface Focusable {
   focusable: boolean;
@@ -191,10 +191,7 @@ export class InteractionManager {
 
   // ============= Private =============
   private setNodeState(node: Node, state: ControlState): void {
-    const prev = node.controlState;
-    node.controlState = state;
-    const el = node.object?.userData?.domElement;
-    if (el) applyControlStateStyles(el as HTMLElement, state, prev);
+    node.setControlState(state);
   }
 }
 

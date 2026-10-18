@@ -1,4 +1,11 @@
-export type ControlState = 'normal' | 'hovered' | 'pressed' | 'dragging' | 'selected' | 'disabled';
+export type ControlState =
+  | 'normal'
+  | 'focus'
+  | 'hovered'
+  | 'pressed'
+  | 'dragging'
+  | 'selected'
+  | 'disabled';
 
 export interface ControlStateStyle {
   borderColor: string;
@@ -12,6 +19,7 @@ export interface ControlStateStyle {
 
 export const STATE_STYLES: Record<ControlState, ControlStateStyle> = {
   normal: { borderColor: 'transparent', borderWidth: 0, borderStyle: 'solid', animation: 'none' },
+  focus: { borderColor: '#8B5CF6', borderWidth: 2, borderStyle: 'solid', animation: 'none' },
   hovered: { borderColor: '#8B5CF6', borderWidth: 2, borderStyle: 'dashed', animation: 'pulse' },
   pressed: { borderColor: '#3B82F6', borderWidth: 3, borderStyle: 'solid', animation: 'none' },
   dragging: {

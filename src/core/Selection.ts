@@ -55,7 +55,7 @@ export class Selection {
   private applyNodeState(id: string, selected: boolean): void {
     const node = this.sg.graph.nodes.get(id);
     if (!node) return;
-    node.controlState = selected ? 'selected' : 'normal';
+    node.setControlState(selected ? 'selected' : 'normal');
     this.sg.events.emit('node:selection-changed', { id, selected });
   }
 }

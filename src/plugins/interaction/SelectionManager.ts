@@ -3,17 +3,15 @@ import type * as THREE from 'three';
 import type { Edge } from '../../edges/Edge';
 import type { Node } from '../../nodes/Node';
 import type { SpaceGraph } from '../../SpaceGraph';
-import { applyControlStateStyles, type ControlState } from './ControlStateBorder';
 
 // Visual + box-select adapter over the single core Selection. Owns no membership state.
+// Node interaction outlines are applied by the nodes themselves (Node.setControlState).
 export class SelectionManager {
   private selectionBoxEl: HTMLElement | null = null;
   private isBoxSelecting = false;
-  private readonly visualState = new Map<string, ControlState>();
 
   constructor(readonly sg: SpaceGraph) {
     this.createSelectionBoxElement();
-    this.sg.events.on('selection:changed', (event: any) => this.syncVisuals(event.ids ?? []));
   }
 
   startBoxSelection(startX: number, startY: number): void {
@@ -86,22 +84,6 @@ export class SelectionManager {
 
   dispose(): void {
     this.selectionBoxEl?.parentElement?.removeChild(this.selectionBoxEl);
-  }
-
-  private syncVisuals(ids: readonly string[]): void {
-    const next = new Set(ids);
-    for (const id of this.visualState.keys()) if (!next.has(id)) this.applyVisual(id, 'normal');
-    for (const id of next) this.applyVisual(id, 'selected');
-  }
-
-  private applyVisual(id: string, state: ControlState): void {
-    const node = this.sg.graph.getNode(id);
-    if (!node) return;
-    const prev = this.visualState.get(id);
-    if (prev === state) return;
-    this.visualState.set(id, state);
-    const el = node.object?.userData?.domElement;
-    if (el) applyControlStateStyles(el as HTMLElement, state, prev);
   }
 
   private updateSelectionInBox(left: number, top: number, width: number, height: number): void {

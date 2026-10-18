@@ -58,6 +58,10 @@ export interface Bounds3D {
 export interface BaseNodeData {
   pinned?: boolean;
   visible?: boolean;
+  /** Per-node LOD override honoured by `Node.computeLOD` (and the normalised zoom band). */
+  lod?: 'high' | 'medium' | 'low' | 'hidden';
+  minZoom?: number;
+  maxZoom?: number;
 
   [key: string]: unknown;
 }
@@ -221,6 +225,11 @@ export interface InstancedShapeNodeData extends CoreNodeData {
   size?: number;
 }
 
+export interface DOMNodeData extends CoreNodeData {
+  /** Adopt a caller-supplied element instead of creating one. Never replaced on update. */
+  element?: HTMLElement;
+}
+
 // Unified Widget Data
 export interface WidgetNodeData extends CoreNodeData {
   disabled?: boolean;
@@ -248,6 +257,7 @@ export type NodeData =
   | ProcessNodeData
   | CodeEditorNodeData
   | InstancedShapeNodeData
+  | DOMNodeData
   | WidgetNodeData;
 
 // Unified SpaceGraph Node Data
@@ -269,6 +279,8 @@ export interface EdgeData extends BaseEdgeData {
   label?: string;
   labelColor?: string;
   fontSize?: number;
+  /** Optional pick radius (px) for easier edge clicking. Defaults to the raycaster line threshold. */
+  hitWidth?: number;
   labelLod?: LabelLodLevel[];
 }
 
@@ -385,6 +397,26 @@ export interface SpaceGraphOptions {
 
 export interface SpaceGraphTheme {
   background?: string | number;
+  /** Defaults applied to nodes that do not set their own colour. */
+  node?: {
+    fill?: string | number;
+    stroke?: string | number;
+  };
+  /** Defaults applied to edges that do not set their own colour. */
+  edge?: {
+    color?: string | number;
+    labelColor?: string;
+  };
+  /** Label typography shared by node and edge labels. */
+  label?: {
+    color?: string;
+    fontFamily?: string;
+    fontSize?: number;
+  };
+  /** Outline colours for interaction states (mesh outlines and edge highlight). */
+  selection?: string | number;
+  hover?: string | number;
+  focus?: string | number;
 }
 
 // Input configuration

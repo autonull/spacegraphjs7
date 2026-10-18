@@ -55,6 +55,7 @@ import { AudioNode } from '../nodes/AudioNode';
 import { ChartNode } from '../nodes/ChartNode';
 import { ColorPickerNode } from '../nodes/ColorPickerNode';
 import { DataNode } from '../nodes/DataNode';
+import { DOMNode } from '../nodes/DOMNode';
 import { DropdownNode } from '../nodes/DropdownNode';
 import { GlobeNode } from '../nodes/GlobeNode';
 import { GridNode } from '../nodes/GridNode';
@@ -85,6 +86,7 @@ export const DEFAULT_NODE_TYPES = [
   ShapeNode,
   InstancedShapeNode,
   HtmlNode,
+  DOMNode,
   ImageNode,
   GroupNode,
   NoteNode,
