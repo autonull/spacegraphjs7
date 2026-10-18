@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import type { RenderEdge, RenderNode, RenderTheme } from '@spacegraphjs/renderer';
-import { cytoscapeStyle, edgeElement, nodeElement, statusColor } from './mapping';
+import { cytoscapeStyle, edgeElement, nodeElement, normalizeTheme, statusColor } from './mapping';
 
 const theme: RenderTheme = {
   background: '#101014',
@@ -88,5 +88,20 @@ describe('cytoscapeStyle', () => {
     expect(edgeBase?.style).toMatchObject({ 'line-color': 'data(color)', 'target-arrow-shape': 'none' });
     expect(sheet.some((block) => block.selector === 'edge.inferred, edge.dashed')).toBe(true);
     expect(sheet.some((block) => block.selector === 'node:selected')).toBe(true);
+  });
+});
+
+describe('normalizeTheme', () => {
+  test('drops alpha from 8-digit hex that Cytoscape rejects', () => {
+    const normalized = normalizeTheme({ ...theme, background: '#f2f2f2ff', edgeMuted: '#80808080' });
+    expect(normalized.background).toBe('#f2f2f2');
+    expect(normalized.edgeMuted).toBe('#808080');
+    expect(normalized.text).toBe('#f5f5f7');
+  });
+
+  test('expands 3-digit hex and leaves non-hex colors untouched', () => {
+    const normalized = normalizeTheme({ ...theme, accent: '#abc', edge: 'rgb(1, 2, 3)' });
+    expect(normalized.accent).toBe('#aabbcc');
+    expect(normalized.edge).toBe('rgb(1, 2, 3)');
   });
 });

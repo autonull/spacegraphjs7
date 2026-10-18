@@ -25,6 +25,34 @@ export function isCard(shape: RenderNode['shape']): boolean {
   return shape === 'card' || shape === 'panel';
 }
 
+/** Cytoscape rejects 8-digit hex while host theme tokens are often `#rrggbbaa`, so normalize every color. */
+export function normalizeTheme(theme: RenderTheme): RenderTheme {
+  return {
+    ...theme,
+    background: hex6(theme.background),
+    surface: hex6(theme.surface),
+    surfaceMuted: hex6(theme.surfaceMuted),
+    text: hex6(theme.text),
+    textMuted: hex6(theme.textMuted),
+    border: hex6(theme.border),
+    accent: hex6(theme.accent),
+    success: hex6(theme.success),
+    warning: hex6(theme.warning),
+    error: hex6(theme.error),
+    edge: hex6(theme.edge),
+    edgeMuted: hex6(theme.edgeMuted),
+    selection: hex6(theme.selection),
+    focus: hex6(theme.focus),
+  };
+}
+
+function hex6(color: string): string {
+  const match = /^#([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i.exec(color.trim());
+  if (!match) return color;
+  const value = match[1]!;
+  return value.length === 3 ? `#${[...value].map((character) => character + character).join('')}` : `#${value.slice(0, 6)}`;
+}
+
 function nodeSize(node: RenderNode): [number, number] {
   const [width, height] = node.size ?? [];
   if (isCard(node.shape)) return [width ?? 200, height ?? 64];

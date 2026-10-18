@@ -10,7 +10,7 @@ import {
   type Unsubscribe,
 } from '@spacegraphjs/renderer';
 import type { Core } from 'cytoscape';
-import { cytoscapeStyle, edgeElement, nodeElement } from './mapping';
+import { cytoscapeStyle, edgeElement, nodeElement, normalizeTheme } from './mapping';
 
 const CAPABILITIES: RendererCapabilities = {
   contractVersion: CONTRACT_VERSION,
@@ -48,7 +48,7 @@ export class CytoscapeRenderer implements GraphRenderer {
   ): Promise<void> {
     if (this.#cy) return;
     const { default: cytoscape } = await import('cytoscape');
-    this.#theme = options.theme;
+    this.#theme = normalizeTheme(options.theme);
     if (getComputedStyle(container).position === 'static') container.style.position = 'relative';
 
     const canvas = document.createElement('div');
@@ -63,7 +63,7 @@ export class CytoscapeRenderer implements GraphRenderer {
     const cy = cytoscape({
       container: canvas,
       elements: [],
-      style: cytoscapeStyle(options.theme),
+      style: cytoscapeStyle(this.#theme),
       layout: { name: 'preset', fit: false },
       wheelSensitivity: 0.2,
     });
@@ -112,10 +112,10 @@ export class CytoscapeRenderer implements GraphRenderer {
   }
 
   setTheme(theme: RenderTheme): void {
-    this.#theme = theme;
+    this.#theme = normalizeTheme(theme);
     const cy = this.#cy;
     if (!cy) return;
-    cy.style(cytoscapeStyle(theme));
+    cy.style(cytoscapeStyle(this.#theme));
     if (this.#model) this.setModel(this.#model);
   }
 
