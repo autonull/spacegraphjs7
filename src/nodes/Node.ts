@@ -71,6 +71,11 @@ export abstract class Node extends Surface {
     return this.object.matrixWorld;
   }
 
+  /** Node opacity from `data.opacity`, defaulting to fully opaque. */
+  get opacity(): number {
+    return typeof this.data?.opacity === 'number' ? this.data.opacity : 1;
+  }
+
   get bounds(): Rect {
     const box = new THREE.Box3().setFromObject(this.object);
     return {

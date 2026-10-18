@@ -56,6 +56,7 @@ export class ShapeNode extends Node {
       this._object.add(this.labelSprite);
     }
 
+    this.applyOpacity();
     this.updatePosition(this.position.x, this.position.y, this.position.z);
   }
 
@@ -89,6 +90,10 @@ export class ShapeNode extends Node {
           this.labelSprite.position.y = -this.nodeSize * 0.8;
         }
       }
+
+      if (data.opacity !== undefined || data.transparent !== undefined) {
+        this.applyOpacity();
+      }
     }
 
     if (updates.label !== undefined) {
@@ -110,6 +115,16 @@ export class ShapeNode extends Node {
 
   getBoundingSphereRadius(): number {
     return this.nodeSize / 2;
+  }
+
+  // Dimming is data-driven: `data.opacity` fades the mesh (and its label) so a host can de-emphasise a
+  // node without replacing it. Cards fade through their own markup instead.
+  private applyOpacity(): void {
+    const opacity = this.opacity;
+    this.meshMaterial.opacity = opacity;
+    this.meshMaterial.transparent = opacity < 1 || this.data?.transparent === true;
+    this.meshMaterial.needsUpdate = true;
+    if (this.labelSprite) this.labelSprite.material.opacity = opacity;
   }
 
   onPreRender(dt: number): void {
