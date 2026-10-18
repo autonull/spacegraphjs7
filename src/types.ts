@@ -365,8 +365,9 @@ export interface SpaceGraphOptions {
   initialLayout?: string;
   cameraControls?: Partial<import('./core/CameraControls').CameraControlsConfig>;
   input?: DefaultInputConfig;
-  /** Register the instance on `window.SpaceGraph` and `SpaceGraph.instances`. Off by default so
-   * multiple embedded graphs stay isolated. */
+  /** Register the instance on `window.SpaceGraph` and `SpaceGraph.instances` for developer tooling
+   * (vision/inspection). Off by default, and never consulted by graph semantics: instances are fully
+   * isolated, so edges only resolve nodes in the same graph. */
   global?: boolean;
   /** Where camera keyboard input listens. `container` (default) scopes it to the graph element. */
   keyboard?: KeyboardScope;

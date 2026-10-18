@@ -136,20 +136,8 @@ function makeSpaceGraph() {
         }
         if (!EdgeType) return null;
       }
-      let src = this.nodes.get(spec.source);
-      let tgt = this.nodes.get(spec.target);
-
-      if (!src || !tgt) {
-        for (const inst of SpaceGraph.instances || []) {
-          if (!src && inst.graph.nodes.has(spec.source)) {
-            src = inst.graph.nodes.get(spec.source);
-          }
-          if (!tgt && inst.graph.nodes.has(spec.target)) {
-            tgt = inst.graph.nodes.get(spec.target);
-          }
-          if (src && tgt) break;
-        }
-      }
+      const src = this.nodes.get(spec.source);
+      const tgt = this.nodes.get(spec.target);
 
       if (!src || !tgt) return null;
       const edge = new EdgeType(sg, spec, src, tgt);
@@ -1067,39 +1055,41 @@ describe('Graph Serialization', () => {
     expect(sg2.graph.nodes.get('a').position.x).toBe(10);
   });
 
-  it('creates InterGraphEdges when adding an edge between different instances', async () => {
+  it('keeps graphs isolated: an edge to a node in another instance is rejected', async () => {
     const sg1 = makeSpaceGraph();
     const sg2 = makeSpaceGraph();
 
     sg1.graph.addNode({ id: 'a', type: 'ShapeNode', label: 'A', position: [10, 20, 30] });
     sg2.graph.addNode({ id: 'b', type: 'ShapeNode', label: 'B', position: [40, 50, 60] });
 
-    // Add sg reference to makeSpaceGraph mocked nodes to mimic real nodes
-    sg1.graph.getNode('a').sg = sg1;
-    sg2.graph.getNode('b').sg = sg2;
-
-    // Register mocked instances directly into SpaceGraph static registry
+    // Both instances are in the static registry, yet an edge may only resolve local endpoints.
     SpaceGraph.instances.add(sg1);
     SpaceGraph.instances.add(sg2);
 
-    // Mock getting InterGraphEdge plugin since we are using makeSpaceGraph mock
-    class MockInterGraphEdge extends Edge {
-      isInterGraphEdge = true;
-    }
+    const edge = sg1.graph.addEdge({ id: 'e1', source: 'a', target: 'b', type: 'Edge' });
 
-    sg1.pluginManager.getEdgeType = (type: string) =>
-      type === 'InterGraphEdge' ? MockInterGraphEdge : Edge;
+    expect(edge).toBeNull();
+    expect(sg1.graph.edges.size).toBe(0);
 
-    const edge = sg1.graph.addEdge({
-      id: 'e1',
-      source: 'a',
-      target: 'b',
-      type: 'InterGraphEdge',
-    });
+    SpaceGraph.instances.delete(sg1);
+    SpaceGraph.instances.delete(sg2);
+  });
 
-    expect(edge).toBeTruthy();
-    expect((edge as any).isInterGraphEdge).toBe(true);
-    expect(sg1.graph.edges.size).toBe(1);
+  it('runs two instances with duplicate node ids independently', async () => {
+    const sg1 = makeSpaceGraph();
+    const sg2 = makeSpaceGraph();
+
+    sg1.graph.addNode({ id: 'dup', type: 'ShapeNode', label: 'one', position: [0, 0, 0] });
+    sg2.graph.addNode({ id: 'dup', type: 'ShapeNode', label: 'two', position: [100, 0, 0] });
+
+    expect(sg1.graph.getNode('dup')).not.toBe(sg2.graph.getNode('dup'));
+    expect(sg1.graph.getNode('dup').position.x).toBe(0);
+    expect(sg2.graph.getNode('dup').position.x).toBe(100);
+
+    sg1.graph.removeNode('dup');
+
+    expect(sg1.graph.getNode('dup')).toBeUndefined();
+    expect(sg2.graph.getNode('dup')).toBeDefined();
   });
 
   it('imports graph data correctly', () => {

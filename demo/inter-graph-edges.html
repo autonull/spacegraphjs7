@@ -71,17 +71,8 @@
             ]
         });
 
-        // Add inter-graph edge programmatically once both graphs are loaded
-        setTimeout(() => {
-             graph1.graph.addEdge({
-                  id: 'inter1',
-                  source: 'node2',
-                  target: 'node3',
-                  type: 'Edge', // It will automatically become an InterGraphEdge
-                  data: { color: 0xffff00 }
-             });
-        }, 500);
-
+        // Instances are isolated: an edge only resolves nodes within the same graph, so no
+        // cross-instance edge can be created here. The two graphs pan, zoom, and select independently.
     </script>
 </body>
 

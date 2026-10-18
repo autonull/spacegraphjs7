@@ -85,9 +85,10 @@ const DEMO_METADATA: Record<string, { name: string; icon: string; description: s
     description: 'AI vision system that detects and fixes UI issues in real-time.',
   },
   'inter-graph-edges.html': {
-    name: 'Inter-graph Edges',
+    name: 'Instance Isolation',
     icon: '🔗',
-    description: 'Connect nodes seamlessly across different SpaceGraph instances on the same page.',
+    description:
+      'Two SpaceGraph instances on one page stay independent: separate cameras and selection, and no cross-graph edges.',
   },
   'minimap.html': {
     name: 'Minimap',
