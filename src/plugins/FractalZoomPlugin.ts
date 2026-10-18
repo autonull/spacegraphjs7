@@ -44,6 +44,7 @@ const DEFAULT_CONFIG: FractalZoomConfig = {
   enableSmoothTransitions: true,
 };
 
+/** @deprecated Use `ZoomBandsPlugin`, which delegates to the headless `ZoomBands` controller. */
 export class FractalZoomPlugin implements Plugin {
   readonly id = 'fractal-zoom';
   readonly name = 'Fractal Zoom';

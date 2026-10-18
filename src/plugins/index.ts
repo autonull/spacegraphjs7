@@ -70,4 +70,5 @@ export {
 } from './mermaid';
 export { PhysicsPlugin } from './PhysicsPlugin';
 export { VisionOverlayPlugin } from './VisionOverlayPlugin';
+export { ZoomBandsPlugin } from './ZoomBandsPlugin';
 export { ZoomUIPlugin } from './ZoomUIPlugin';

@@ -20,6 +20,10 @@
     "./utils": "./src/utils/index.ts",
     "./types": "./src/types.ts",
     "./builder": "./src/builder.ts",
+    "./zoom": "./src/zoom/index.ts",
+    "./layout": "./src/layout/index.ts",
+    "./a11y": "./src/a11y/index.ts",
+    "./navigation": "./src/navigation/index.ts",
     "./vision": "./src/vision/index.ts"
   },
   "files": [

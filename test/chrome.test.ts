@@ -7,7 +7,7 @@ const systemNames = DEFAULT_SYSTEM_PLUGINS.map(([, name]) => name);
 describe('default plugin registry', () => {
   it('keeps chrome plugins opt-in', () => {
     expect(chromeNames).toEqual([
-      'FractalZoomPlugin',
+      'ZoomBandsPlugin',
       'ZoomUIPlugin',
       'MinimapPlugin',
       'HUDPlugin',

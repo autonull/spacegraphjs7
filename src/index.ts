@@ -168,6 +168,7 @@ export {
   MinimapPlugin,
   PhysicsPlugin,
   VisionOverlayPlugin,
+  ZoomBandsPlugin,
   ZoomUIPlugin,
 } from './plugins';
 // HUD exports

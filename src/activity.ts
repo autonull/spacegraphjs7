@@ -16,4 +16,5 @@ export { GridLayout } from './plugins/layouts/GridLayout';
 export { HierarchicalLayout } from './plugins/layouts/HierarchicalLayout';
 export { TimelineLayout } from './plugins/layouts/TimelineLayout';
 export { LODPlugin } from './plugins/LODPlugin';
+export { ZoomBandsPlugin } from './plugins/ZoomBandsPlugin';
 export * from './types';

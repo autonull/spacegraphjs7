@@ -330,6 +330,7 @@ export interface SpaceGraphEvents {
   'node:dblclick': any;
   'camera:change': CameraViewport;
   'zoom:change': { zoom: number; previous: number };
+  'zoomband:change': { band: string; normalized: number; zoom: number; label?: string; timestamp: number };
   'projection:change': { projection: Projection };
 }
 
