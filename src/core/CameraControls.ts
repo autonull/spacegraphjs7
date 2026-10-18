@@ -322,6 +322,15 @@ export class CameraControls {
     this.sg?.requestFrame?.();
   }
 
+  // Abandon any in-flight camera animation so an explicit programmatic move is authoritative.
+  cancelTweens(): void {
+    this.targetNext = null;
+    this.radiusNext = null;
+    this.phiNext = null;
+    this.thetaNext = null;
+    this.zoomNext = null;
+  }
+
   setTarget(x: number, y: number, z: number): void {
     this.target.set(x, y, z);
     this.updateSpherical();

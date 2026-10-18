@@ -121,6 +121,7 @@ export class WebGLRenderer {
 
   setProjection(projection: Projection, target?: THREE.Vector3): this {
     if (projection === this._projection) return this;
+    this.sg.cameraControls?.cancelTweens();
     const from = this.camera;
     this._projection = projection;
     const to = this.camera;
@@ -149,6 +150,7 @@ export class WebGLRenderer {
 
   setZoom(value: number): this {
     const v = clamp(value, 0, 1);
+    this.sg.cameraControls?.cancelTweens();
     if (this._projection === 'orthographic') {
       this.orthographicCamera.zoom = denormalizeZoom(v, ORTHO_ZOOM);
       this.orthographicCamera.updateProjectionMatrix();

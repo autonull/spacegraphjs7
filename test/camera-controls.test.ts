@@ -91,4 +91,16 @@ describe('orthographic fit zoom', () => {
     controls.update();
     expect(controls.spherical.radius).toBeCloseTo(300, 6);
   });
+
+  it('cancels an in-flight zoom so an explicit value is not overwritten', () => {
+    const now = vi.spyOn(performance, 'now');
+    now.mockReturnValue(0);
+    const { controls, camera } = makeOrthoControls();
+    controls.flyTo(new THREE.Vector3(0, 0, 0), 500, 1, 2);
+    controls.cancelTweens();
+    camera.zoom = 8;
+    now.mockReturnValue(500);
+    controls.update();
+    expect(camera.zoom).toBeCloseTo(8, 6);
+  });
 });
