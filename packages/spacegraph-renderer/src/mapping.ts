@@ -56,7 +56,8 @@ export function nodeSpec(node: RenderNode, theme: RenderTheme): NodeSpec {
       pointerEvents: 'auto',
       width: node.size?.[0] ?? 220,
       height: node.size?.[1] ?? 72,
-      color,
+      // Host markup draws its own surface; the node's box stays neutral so status reads as an accent.
+      color: parseColor(theme.surface),
     };
     return { id: node.id, type: 'HtmlNode', label: node.label, position, data };
   }
