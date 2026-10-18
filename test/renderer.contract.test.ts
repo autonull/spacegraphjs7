@@ -1,7 +1,9 @@
 import { describe, expect, test } from 'vitest';
-import { CONTRACT_VERSION, supports, type GraphRenderer } from '@spacegraphjs/renderer';
+import { CONTRACT_VERSION, negotiateContract, supports, type GraphRenderer } from '@spacegraphjs/renderer';
 import { SpaceGraphRenderer } from '@spacegraphjs/spacegraph-renderer';
 import { CytoscapeRenderer } from '@spacegraphjs/cytoscape-renderer';
+import { renderToSVG } from '@spacegraphjs/svg-renderer';
+import { activityHostFixture } from './fixtures/activity-host';
 
 // L1.22 — headless half of the shared conformance suite. It proves the structural and capability
 // contract for every interactive adapter without a browser. Mount/click/resize/dispose/HTML-card
@@ -119,3 +121,38 @@ const theme = {
   fontFamily: 'ui-sans-serif',
   fontSize: 13,
 };
+
+describe('second-host fixture (P8.6)', () => {
+  const model = activityHostFixture();
+
+  test('every adapter accepts a host-neutral model without throwing', () => {
+    for (const { create } of adapters) {
+      const renderer = create();
+      expect(() => {
+        renderer.setModel(model);
+        renderer.setSelection(['tool:edit']);
+      }).not.toThrow();
+    }
+  });
+
+  test('renders the fixture to static SVG with its content', () => {
+    const svg = renderToSVG(model);
+    expect(svg).toContain('src/billing/invoice.ts');
+    expect(svg).toContain('retry #1');
+    expect(svg).toContain('expected 2 to equal 3');
+  });
+});
+
+describe('contract version negotiation (P8.7)', () => {
+  test('every adapter negotiates the current contract version', () => {
+    for (const { create } of adapters) {
+      expect(negotiateContract(create().capabilities.contractVersion)).toEqual({ ok: true });
+    }
+  });
+
+  test('a future version is rejected with a clear message, not a crash', () => {
+    const result = negotiateContract(CONTRACT_VERSION + 1);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.message).toContain(String(CONTRACT_VERSION + 1));
+  });
+});

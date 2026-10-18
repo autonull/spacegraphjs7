@@ -26,6 +26,7 @@ Check out the interactive examples in the `demo/` directory or run `pnpm run dev
 ## Documentation
 
 - **[ROADMAP.md](./ROADMAP.md)** — What's built, what's next (start here for software work)
+- [Host integration guide](./docs/host-integration.md) — Reuse the renderer contract from another host
 - [Vision Plugin](./docs/vision-plugin.md) — AI vision integration guide
 - [QUICKSTART.md](./QUICKSTART.md) — 5-minute getting started guide
 - [CONTRIBUTING.md](./CONTRIBUTING.md) — How to contribute
