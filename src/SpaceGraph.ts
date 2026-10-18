@@ -428,9 +428,14 @@ export class SpaceGraph {
   }
 
   // ============= Camera Controls =============
-  fitView(padding = 100, duration = 1.5): this {
+  fitView(padding = 100, duration = 1.5, ids?: readonly string[]): this {
     if (!this.graph || !this.renderer?.camera || !this.cameraControls) return this;
-    const nodes = Array.from(this.graph.nodes.values());
+    const nodes = ids
+      ? ids.flatMap((id) => {
+          const node = this.graph.nodes.get(id);
+          return node ? [node] : [];
+        })
+      : Array.from(this.graph.nodes.values());
     if (nodes.length === 0) return this;
 
     const fit = calculateFitView(nodes, this.renderer.camera, padding);

@@ -105,7 +105,7 @@ export declare class SpaceGraph {
   select(target: string | readonly string[] | null): this
   clearSelection(): this
   clear(): void
-  fitView(padding?: number, duration?: number): this
+  fitView(padding?: number, duration?: number, ids?: readonly string[]): this
   focusNode(id: string, padding?: number, duration?: number): this
   watch(type: string, handler: (data: any) => void): () => void
   render(): this

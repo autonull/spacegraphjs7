@@ -162,7 +162,8 @@ export class CytoscapeRenderer implements GraphRenderer {
     }
     const elements = cy.collection();
     for (const id of ids) elements.merge(cy.getElementById(id));
-    cy.fit(elements);
+    if (elements.length === 0) cy.fit();
+    else cy.fit(elements);
   }
 
   focus(id: string): void {

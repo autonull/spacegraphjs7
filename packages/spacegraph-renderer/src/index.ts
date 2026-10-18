@@ -168,8 +168,8 @@ export class SpaceGraphRenderer implements GraphRenderer {
     }
   }
 
-  fit(_ids?: readonly string[]): void {
-    this.#sg?.fitView();
+  fit(ids?: readonly string[]): void {
+    this.#sg?.fitView(100, 1.5, ids);
   }
 
   focus(id: string): void {
