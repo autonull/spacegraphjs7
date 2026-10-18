@@ -1,0 +1,38 @@
+import { describe, expect, test } from 'bun:test';
+import { CONTRACT_VERSION, supports } from '@spacegraphjs/renderer';
+import { SpaceGraphRenderer } from './index';
+
+describe('@spacegraphjs/spacegraph-renderer', () => {
+  test('declares its capabilities without lying about minimap support', () => {
+    const capabilities = new SpaceGraphRenderer().capabilities;
+    expect(capabilities.contractVersion).toBe(CONTRACT_VERSION);
+    expect(supports(capabilities, '2d')).toBe(true);
+    expect(supports(capabilities, '3d')).toBe(true);
+    expect(supports(capabilities, 'domNodes')).toBe(true);
+    expect(supports(capabilities, 'edgeLabels')).toBe(true);
+    expect(supports(capabilities, 'minimap')).toBe(false);
+    expect(capabilities.maxDomNodes).toBe(40);
+  });
+
+  test('selection and model calls are no-ops before mount', () => {
+    const renderer = new SpaceGraphRenderer();
+    expect(() => {
+      renderer.setSelection(['a']);
+      renderer.setProjection('2d');
+      renderer.setViewport({ zoom: 0.5, center: [0, 0, 0] });
+      renderer.fit();
+      renderer.focus('a');
+      renderer.resize();
+      renderer.dispose();
+    }).not.toThrow();
+  });
+
+  test('on() returns a working unsubscribe before mount', () => {
+    const renderer = new SpaceGraphRenderer();
+    const seen: string[] = [];
+    const off = renderer.on('ready', () => seen.push('ready'));
+    expect(typeof off).toBe('function');
+    off();
+    expect(seen).toEqual([]);
+  });
+});

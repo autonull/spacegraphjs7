@@ -104,7 +104,7 @@ export class ResizeHandler {
     const size = box.getSize(new THREE.Vector3());
 
     const canvas = this.sg.renderer.renderer.domElement;
-    const fov = this.sg.renderer.camera.fov * (Math.PI / 180);
+    const fov = (this.sg.renderer.camera as THREE.PerspectiveCamera).fov * (Math.PI / 180);
     const distance = this.sg.renderer.camera.position.distanceTo(node.position);
 
     const visibleHeight = 2 * Math.tan(fov / 2) * distance;

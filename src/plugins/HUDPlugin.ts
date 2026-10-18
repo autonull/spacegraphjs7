@@ -181,7 +181,7 @@ export class HUDPlugin extends BaseSystemPlugin {
   }
 
   private updateCamera(): void {
-    const is3D = this.sg.renderer.camera.isPerspectiveCamera;
+    const is3D = (this.sg.renderer.camera as { isPerspectiveCamera?: boolean }).isPerspectiveCamera === true;
     this.statusBar?.updateCamera(is3D);
   }
 

@@ -510,7 +510,7 @@ export class MermaidPlugin extends BaseSystemPlugin {
   }
 
   private toggle3D(): void {
-    const camera = this.sg.renderer.camera;
+    const camera = this.sg.renderer.camera as THREE.PerspectiveCamera;
     if (camera.isPerspectiveCamera) {
       const ortho = new (THREE as any).OrthographicCamera(-100, 100, 100, -100, 0.1, 10000);
       if (ortho) {

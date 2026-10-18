@@ -242,7 +242,7 @@ export class MinimapPlugin extends BaseSystemPlugin {
     this.container.style.height = `${size}px`;
 
     // Calculate the main camera frustum bounds in world space
-    const mainCam = this.sg.renderer.camera;
+    const mainCam = this.sg.renderer.camera as THREE.PerspectiveCamera;
     // z-plane distance from camera to controls target
     const dist = mainCam.position.distanceTo(this.sg.cameraControls.target);
     const vFov = (mainCam.fov * Math.PI) / 180;

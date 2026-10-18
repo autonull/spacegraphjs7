@@ -36,7 +36,25 @@ export interface GraphSpec {
 
 export interface SpaceGraphOptions {
   initialLayout?: string
+  chrome?: boolean
+  doubleClickFocus?: boolean
+  render?: {
+    backgroundColor?: string | number
+    transparent?: boolean
+    antialias?: boolean
+    pixelRatio?: number
+    preserveDrawingBuffer?: boolean
+    projection?: 'perspective' | 'orthographic'
+  }
+  theme?: { background?: string | number }
   [key: string]: unknown
+}
+
+export interface GraphViewport {
+  zoom: number
+  center: [number, number, number]
+  distance: number
+  band?: string
 }
 
 export declare class SpaceGraph {
@@ -46,6 +64,10 @@ export declare class SpaceGraph {
   readonly nodeCount: number
   readonly edgeCount: number
   readonly isEmpty: boolean
+  readonly selected: string[]
+  readonly zoom: number
+  readonly viewport: GraphViewport
+  events: EventEmitter
   static instances: Set<SpaceGraph>
   static create(
     container: string | HTMLElement,
@@ -56,15 +78,32 @@ export declare class SpaceGraph {
   loadSpec(spec: GraphSpec): this
   addNode(spec: NodeSpec): this
   addEdge(spec: EdgeSpec): this
+  removeNode(id: string): boolean
+  removeEdge(id: string): boolean
+  hide(id: string): unknown
+  show(id: string, visible?: boolean): unknown
+  setPositions(positions: Record<string, [number, number, number]>): this
+  setProjection(projection: 'perspective' | 'orthographic'): this
+  setZoom(value: number): this
+  select(target: string | readonly string[] | null): this
+  clearSelection(): this
+  clear(): void
   fitView(padding?: number, duration?: number): this
   focusNode(id: string, padding?: number, duration?: number): this
+  watch(type: string, handler: (data: any) => void): () => void
   render(): this
+  pause(): void
   dispose(): void
   destroy(): void
 }
 
 export declare class Graph {}
-export declare class EventEmitter {}
+export declare class EventEmitter {
+  on(type: string, handler: (payload: any) => void): void
+  off(type: string, handler: (payload: any) => void): void
+  emit(type: string, payload?: any): void
+  clear(): void
+}
 export declare class ShapeNode {}
 export declare class HtmlNode {}
 export declare class DOMNode {}

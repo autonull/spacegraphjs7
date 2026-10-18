@@ -328,6 +328,20 @@ export interface SpaceGraphEvents {
   'edge:click': any;
   'background:click': any;
   'node:dblclick': any;
+  'camera:change': CameraViewport;
+  'zoom:change': { zoom: number; previous: number };
+  'projection:change': { projection: Projection };
+}
+
+// Orthographic is the legibility baseline for 2D hosts; perspective stays the 3D experiment.
+export type Projection = 'perspective' | 'orthographic';
+
+// Normalized (0..1) camera report: 1 is closest. `band` is host policy, never set by the core.
+export interface CameraViewport {
+  zoom: number;
+  center: [number, number, number];
+  distance: number;
+  band?: string;
 }
 
 // ============= Options Types =============
@@ -400,6 +414,8 @@ export interface RenderOptions {
   transparent?: boolean;
   /** Keep the drawing buffer readable for screenshots. Defaults to true. */
   preserveDrawingBuffer?: boolean;
+  /** Starting projection. Defaults to perspective; hosts that want 2D set orthographic. */
+  projection?: Projection;
 }
 
 export interface AnimationProps {

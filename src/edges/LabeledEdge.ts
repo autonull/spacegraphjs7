@@ -22,6 +22,8 @@ export class LabeledEdge extends Edge {
   public labelLod: LabelLodLevel[] = [];
   readonly labelEl: HTMLElement;
   readonly labelObject: CSS2DObject;
+  // The base Edge constructor calls update(), which is overridden here, before the label fields exist.
+  private ready = false;
 
   constructor(sg: SpaceGraph, spec: EdgeSpec, source: Node, target: Node) {
     super(sg, spec, source, target);
@@ -55,10 +57,12 @@ export class LabeledEdge extends Edge {
       this.labelLod = data.labelLod;
     }
 
+    this.ready = true;
     this._positionLabel();
   }
 
   updateLod(_distance: number): void {
+    if (!this.ready) return;
     if (!this.labelLod || this.labelLod.length === 0) {
       this.labelEl.style.visibility = '';
       this.labelEl.style.transform = '';
@@ -96,6 +100,7 @@ export class LabeledEdge extends Edge {
   }
 
   update(): void {
+    if (!this.ready) return;
     super.update();
     this._positionLabel();
     this.updateLod(0);
@@ -125,7 +130,7 @@ export class LabeledEdge extends Edge {
   }
 
   private _positionLabel() {
-    if (!this.source || !this.target) return;
+    if (!this.source || !this.target || !this.labelObject) return;
     const sourcePos = new THREE.Vector3();
     const targetPos = new THREE.Vector3();
     this.source.getWorldPosition(sourcePos);

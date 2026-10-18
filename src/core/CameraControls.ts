@@ -37,8 +37,11 @@ const KEY_CONFIG = {
   speed: { pan: 10.0, zoom: 0.1, rotate: 0.05 },
 } as const;
 
+const MIN_ORTHO_ZOOM = 0.01;
+const MAX_ORTHO_ZOOM = 100;
+
 export class CameraControls {
-  readonly camera: THREE.Camera;
+  camera!: THREE.Camera;
   readonly domElement: HTMLElement;
   public sg?: any; // To emit events
   target: THREE.Vector3;
@@ -64,6 +67,7 @@ export class CameraControls {
   private startRadius = 0;
   private isOrthographic = false;
   private orthoCamera: THREE.OrthographicCamera | null = null;
+  private perspectiveCamera: THREE.Camera;
 
   // Cached vectors for update loop - avoids per-frame allocations
   private _camRight = new THREE.Vector3();
@@ -78,8 +82,9 @@ export class CameraControls {
     domElement: HTMLElement,
     config: Partial<CameraControlsConfig> = {}
   ) {
-    this.camera = camera;
+    this.perspectiveCamera = camera;
     this.domElement = domElement;
+    this.setCamera(camera);
     this.config = {
       enableRotate: true,
       enableZoom: true,
@@ -111,7 +116,7 @@ export class CameraControls {
   }
 
   rotate(dx: number, dy: number): void {
-    if (!this.config.enableRotate) return;
+    if (!this.config.enableRotate || this.isOrthographic) return;
     this.sphericalDelta.theta -= dx * this.config.rotateSpeed * 0.005;
     this.sphericalDelta.phi -= dy * this.config.rotateSpeed * 0.005;
   }
@@ -144,7 +149,9 @@ export class CameraControls {
     }
 
     for (const { key, delta, dir } of KEY_CONFIG.rotate) {
-      if (this.keyState.get(key)) this.sphericalDelta[delta] += dir * KEY_CONFIG.speed.rotate;
+      if (!this.isOrthographic && this.keyState.get(key)) {
+        this.sphericalDelta[delta] += dir * KEY_CONFIG.speed.rotate;
+      }
     }
 
     for (const { key, factor } of KEY_CONFIG.zoom) {
@@ -154,11 +161,17 @@ export class CameraControls {
     this.spherical.theta += this.sphericalDelta.theta;
     this.spherical.phi += this.sphericalDelta.phi;
     this.spherical.phi = Math.max(0.01, Math.min(Math.PI - 0.01, this.spherical.phi));
-    this.spherical.radius *= this.scale;
-    this.spherical.radius = Math.max(
-      this.config.minDistance,
-      Math.min(this.config.maxDistance, this.spherical.radius)
-    );
+    if (this.isOrthographic) {
+      const cam = this.camera as THREE.OrthographicCamera;
+      cam.zoom = THREE.MathUtils.clamp(cam.zoom / this.scale, MIN_ORTHO_ZOOM, MAX_ORTHO_ZOOM);
+      cam.updateProjectionMatrix();
+    } else {
+      this.spherical.radius *= this.scale;
+      this.spherical.radius = Math.max(
+        this.config.minDistance,
+        Math.min(this.config.maxDistance, this.spherical.radius)
+      );
+    }
     this.target.add(this.panOffset);
 
     if (this.targetNext) {
@@ -273,23 +286,38 @@ export class CameraControls {
   }
 
   toggleOrthographic(): void {
-    this.isOrthographic = !this.isOrthographic;
     if (this.isOrthographic) {
-      if (!this.orthoCamera) {
-        const renderer = this.domElement.ownerDocument.defaultView;
-        const aspect = renderer ? this.domElement.clientWidth / this.domElement.clientHeight : 1;
-        const frustum = this.spherical.radius;
-        this.orthoCamera = new THREE.OrthographicCamera(
-          -frustum * aspect,
-          frustum * aspect,
-          frustum,
-          -frustum,
-          0.1,
-          100000
-        );
-      }
-      this.orthoCamera.position.copy(this.camera.position);
-      this.orthoCamera.quaternion.copy(this.camera.quaternion);
+      this.setCamera(this.perspectiveCamera);
+      return;
+    }
+    if (!this.orthoCamera) {
+      const aspect = this.domElement.clientHeight
+        ? this.domElement.clientWidth / this.domElement.clientHeight
+        : 1;
+      const height = 2 * this.spherical.radius * Math.tan(THREE.MathUtils.degToRad(75 / 2));
+      const width = height * aspect;
+      this.orthoCamera = new THREE.OrthographicCamera(
+        -width / 2,
+        width / 2,
+        height / 2,
+        -height / 2,
+        0.1,
+        100000
+      );
+    }
+    this.orthoCamera.position.copy(this.camera.position);
+    this.orthoCamera.quaternion.copy(this.camera.quaternion);
+    this.setCamera(this.orthoCamera);
+  }
+
+  // Point the controls at the renderer's active camera; ortho behaviour follows the camera type.
+  setCamera(camera: THREE.Camera): void {
+    this.camera = camera;
+    if ((camera as THREE.OrthographicCamera).isOrthographicCamera) {
+      this.orthoCamera = camera as THREE.OrthographicCamera;
+      this.isOrthographic = true;
+    } else {
+      this.isOrthographic = false;
     }
   }
 

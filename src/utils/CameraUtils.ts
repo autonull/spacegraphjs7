@@ -11,7 +11,7 @@ export interface FitViewResult {
 
 export function calculateFitView(
   nodes: Array<{ position: THREE.Vector3 }>,
-  camera: THREE.PerspectiveCamera,
+  camera: THREE.Camera,
   padding = 100,
   minDistance = 200
 ): FitViewResult | null {
@@ -31,8 +31,8 @@ export function calculateFitView(
   box.getSize(size);
 
   const maxDim = Math.max(size.x, size.y, size.z);
-  const fovRad = camera.fov * DEG2RAD;
-  const aspect = camera.aspect;
+  const { fov = 75, aspect = 1 } = camera as Partial<THREE.PerspectiveCamera>;
+  const fovRad = fov * DEG2RAD;
   const cameraZ = Math.abs(maxDim / (2 * Math.tan(fovRad / 2) * Math.max(1, aspect)));
 
   return { center, cameraZ: Math.max(cameraZ + padding, minDistance) };

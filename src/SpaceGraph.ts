@@ -27,10 +27,12 @@ import { applyDefaultInputConfig } from './input/DefaultInputConfig';
 import { createCameraFingering } from './input/fingerings';
 import type { Node } from './nodes/Node';
 import type {
+  CameraViewport,
   EdgeSpec,
   GraphImportData,
   GraphSpec,
   NodeSpec,
+  Projection,
   SpaceGraphOptions,
   SpecUpdate,
 } from './types';
@@ -58,9 +60,12 @@ export class SpaceGraph {
   public selection!: Selection;
   // Zoom to fit all nodes (alias for fitView)
   zoomFit = this.fitView;
+  zoomToFit = this.fitView;
   #animationFrameId?: number;
   #lastTimestamp = 0;
   #animating = false;
+  #lastZoom = -1;
+  #lastCenter: [number, number, number] = [Number.NaN, Number.NaN, Number.NaN];
 
   constructor(container: HTMLElement, options: SpaceGraphOptions = {}) {
     this.options = options;
@@ -422,7 +427,10 @@ export class SpaceGraph {
     if (nodes.length === 0) return this;
 
     const fit = calculateFitView(nodes, this.renderer.camera as any, padding);
-    if (fit) this.cameraControls.flyTo(fit.center, fit.cameraZ, duration);
+    if (fit) {
+      this.cameraControls.flyTo(fit.center, fit.cameraZ, duration);
+      this.#reportViewport(true);
+    }
     return this;
   }
 
@@ -450,6 +458,7 @@ export class SpaceGraph {
     }
 
     this.cameraControls?.update();
+    this.#reportViewport();
     this.renderer.render();
   }
 
@@ -750,12 +759,57 @@ export class SpaceGraph {
     return this.layout(name, options);
   }
 
+  // ============= Projection and zoom telemetry (L1.12/L1.13) =============
+  get projection(): Projection {
+    return this.renderer.projection;
+  }
+
+  // Switch the active camera between parallel (2D) and perspective (3D) projection.
+  setProjection(projection: Projection): this {
+    this.renderer.setProjection(projection, this.cameraControls?.target);
+    this.cameraControls?.setCamera(this.renderer.camera);
+    this.events.emit('projection:change', { projection });
+    this.#reportViewport(true);
+    return this;
+  }
+
+  // Normalized 0..1 zoom where 1 is closest; the host maps it to semantic levels.
+  get zoom(): number {
+    return this.renderer.getZoom();
+  }
+
+  setZoom(value: number): this {
+    this.renderer.setZoom(value);
+    this.cameraControls?.update();
+    this.#reportViewport(true);
+    return this;
+  }
+
+  get viewport(): CameraViewport {
+    return this.renderer.getViewport();
+  }
+
+  #reportViewport(force = false): void {
+    if (!this.renderer || !this.events) return;
+    const viewport = this.renderer.getViewport();
+    const zoomChanged = Math.abs(viewport.zoom - this.#lastZoom) > 1e-4;
+    const moved = viewport.center.some((v, i) => Math.abs(v - this.#lastCenter[i]) > 1e-3);
+    if (!force && !zoomChanged && !moved) return;
+    if (zoomChanged) {
+      this.events.emit('zoom:change', { zoom: viewport.zoom, previous: this.#lastZoom });
+    }
+    this.events.emit('camera:change', viewport);
+    this.#lastZoom = viewport.zoom;
+    this.#lastCenter = viewport.center;
+  }
+
   // Focus and animate camera to node
   focusNode(id: string, _padding = 100, duration = 1): this {
     const node = this.graph.getNode(id);
     if (node) {
       const pos = node.position;
       this.cameraControls.flyTo(pos, this.renderer.camera.position.length(), duration);
+      this.#reportViewport(true);
     }
     return this;
   }
@@ -764,6 +818,7 @@ export class SpaceGraph {
   center(x: number, y: number, z = 0): this {
     this.cameraControls.target.set(x, y, z);
     this.cameraControls.update();
+    this.#reportViewport(true);
     return this;
   }
 
@@ -772,6 +827,7 @@ export class SpaceGraph {
     this.renderer.camera.position.set(0, 500, 500);
     this.cameraControls.target.set(0, 0, 0);
     this.cameraControls.update();
+    this.#reportViewport(true);
     return this;
   }
 
@@ -780,6 +836,7 @@ export class SpaceGraph {
     this.renderer.camera.position.set(...position);
     if (target) this.cameraControls.target.set(...target);
     this.cameraControls.update();
+    this.#reportViewport(true);
     return this;
   }
 

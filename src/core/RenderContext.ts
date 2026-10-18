@@ -27,7 +27,7 @@ export class RenderContext {
   private _lastTime = 0;
 
   constructor(
-    private camera: THREE.PerspectiveCamera,
+    private camera: THREE.Camera,
     private viewport: { width: number; height: number },
     minPixelSize = 0.5
   ) {
@@ -40,6 +40,12 @@ export class RenderContext {
   }
 
   readonly _visibilityContext: VisibilityContext;
+
+  // Swapped when the host toggles projection so culling follows the active camera.
+  setCamera(camera: THREE.Camera): void {
+    this.camera = camera;
+    this._visibilityContext.cameraPosition.copy(camera.position);
+  }
 
   get visibilityContext(): VisibilityContext {
     return this._visibilityContext;
