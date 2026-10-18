@@ -109,11 +109,17 @@ renderer.setTheme(theme);
 
 - Selection, click, hover, and viewport come from `renderer.on(event, handler)`; the payloads are
   string IDs and primitives.
+- `spacegraphjs/control` (`GraphController`) owns the interaction state shared across frameworks:
+  selection, focus, the navigation trail, zoom bands, and search. Construct it with your bands,
+  `setModel(renderModel)`, and `bind(renderer)`; subscribe with `onChange(snapshot)` and re-render
+  your framework from the snapshot. It reads a minimal `{ id, label, kind, summary, status }` node
+  shape, so any `RenderModel` is accepted. The controller owns no DOM and no framework; the host still
+  supplies the detail panel.
 - `spacegraphjs/a11y` (`AccessibilityLayer`) is a visually hidden, ordered DOM mirror with roving
   tabindex and arrow traversal. Pass it minimal `{ id, label, kind, status, interactive }` items
   (mapped from `RenderModel.nodes`) so keyboard users reach what the canvas draws.
 - `spacegraphjs/navigation` (`Trail`) is a breadcrumb/focus history that reconciles by ID across model
-  updates.
+  updates; `GraphController` drives it for you, but it is usable on its own.
 
 ## 7. Persistence and export
 

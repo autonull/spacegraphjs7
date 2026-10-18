@@ -176,7 +176,8 @@ adapter, and the static SVG renderer.
 
 - `RenderModel` consumed by three renderer leaves, with capability gating (Cytoscape disables 3D)
 - `LaneLayout` positions (no automatic layout in either renderer)
-- `ZoomBands` viewport bands, `Trail` breadcrumbs, `AccessibilityLayer` keyboard traversal
+- `GraphController` (`spacegraphjs/control`) drives selection, trail, zoom bands, and search;
+  `AccessibilityLayer` provides keyboard traversal
 - HTML activity cards, light/dark themes, and LTR/RTL text direction
 
 **Controls:**

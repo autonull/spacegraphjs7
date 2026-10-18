@@ -25,8 +25,9 @@ Check out the interactive examples in the `demo/` directory or run `pnpm run dev
 
 The [renderer contract demo](./demo/contract.html) (`pnpm run dev:demo`, then `/contract.html`) is the
 non-OpenCode reference host: one synthetic activity model through the SpaceGraph adapter, the
-Cytoscape adapter, and the static SVG renderer, using `LaneLayout`, `ZoomBands`, `Trail`, and
-`AccessibilityLayer` from the public entry points.
+Cytoscape adapter, and the static SVG renderer, using `LaneLayout` and the `GraphController`
+(`spacegraphjs/control`) for selection, trail, zoom bands, and search, plus `AccessibilityLayer` from
+the public entry points.
 
 ## Renderer contract
 

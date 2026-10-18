@@ -50,9 +50,9 @@
   `WebGLRenderer` (alias `Renderer` is deprecated).
 - `@spacegraphjs/spacegraph-renderer` is the only package that imports both the core and the contract.
   `@spacegraphjs/cytoscape-renderer` and `@spacegraphjs/svg-renderer` stay off the core.
-- Generic capabilities (zoom bands, lane layout, accessibility, navigation trail) live in the core as
-  optional subpaths with minimal structural types, not the contract. If a capability is generic, add
-  it to the core first; do not special-case a renderer in a host.
+- Generic capabilities (zoom bands, lane layout, accessibility, navigation trail, view controller) live
+  in the core as optional subpaths with minimal structural types, not the contract. If a capability is
+  generic, add it to the core first; do not special-case a renderer in a host.
 - Do not use "engine" for a renderer backend.
 
 ### Naming
@@ -67,5 +67,5 @@
 | Cytoscape adapter | `@spacegraphjs/cytoscape-renderer` |
 | Static SVG renderer | `@spacegraphjs/svg-renderer` |
 | Lean core entry | `spacegraphjs/activity` |
-| Generic utilities | `spacegraphjs/zoom`, `spacegraphjs/layout`, `spacegraphjs/a11y`, `spacegraphjs/navigation` |
+| Generic utilities | `spacegraphjs/zoom`, `spacegraphjs/layout`, `spacegraphjs/a11y`, `spacegraphjs/navigation`, `spacegraphjs/control` |
 

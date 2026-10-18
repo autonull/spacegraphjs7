@@ -1,8 +1,8 @@
 // L1.29 — a non-OpenCode reference demo for the renderer contract.
 //
 // One host-neutral activity model feeds three renderers: the SpaceGraph adapter, the Cytoscape
-// adapter, and the static SVG renderer. The reusable controllers are the library's own: LaneLayout
-// for positions, ZoomBands for viewport bands, Trail for breadcrumbs, and AccessibilityLayer for
+// adapter, and the static SVG renderer. The reusable pieces are the library's own: LaneLayout for
+// positions, GraphController for selection/trail/zoom bands/search, and AccessibilityLayer for
 // keyboard traversal. Nothing here imports OpenCode or uses session vocabulary.
 
 import {
@@ -18,9 +18,8 @@ import { CytoscapeRenderer } from '@spacegraphjs/cytoscape-renderer';
 import { SpaceGraphRenderer } from '@spacegraphjs/spacegraph-renderer';
 import { InlineGraph } from '@spacegraphjs/svg-renderer';
 import { AccessibilityLayer } from 'spacegraphjs/a11y';
+import { GraphController } from 'spacegraphjs/control';
 import { LaneLayout } from 'spacegraphjs/layout';
-import { Trail } from 'spacegraphjs/navigation';
-import { ZoomBands } from 'spacegraphjs/zoom';
 import { activityHostFixture } from './activity-host';
 
 type RendererID = 'spacegraph' | 'cytoscape' | 'svg';
@@ -187,15 +186,16 @@ function sceneModel(name: SceneName): RenderModel {
   return name === 'host' ? hostScene() : pipelineScene();
 }
 
-const bands = new ZoomBands({
-  bands: [
-    { id: 'overview', min: 0, max: 0.45, label: 'Overview' },
-    { id: 'detail', min: 0.45, max: 1, label: 'Detail' },
-  ],
-  hysteresis: 0.02,
+const controller = new GraphController({
+  bands: {
+    bands: [
+      { id: 'overview', min: 0, max: 0.45, label: 'Overview' },
+      { id: 'detail', min: 0.45, max: 1, label: 'Detail' },
+    ],
+    hysteresis: 0.02,
+  },
+  trailMaxDepth: 8,
 });
-
-const trail = new Trail({ maxDepth: 8 });
 
 let sceneName: SceneName = 'pipeline';
 let rendererID: RendererID = 'spacegraph';
@@ -203,7 +203,6 @@ let projection: Projection = '2d';
 let themeName: ThemeName = 'dark';
 let direction: 'ltr' | 'rtl' = 'ltr';
 let model: RenderModel = pipelineScene();
-let selection: readonly string[] = [];
 let renderer: GraphRenderer | null = null;
 let inline: InlineGraph | null = null;
 let a11y: AccessibilityLayer | null = null;
@@ -218,6 +217,7 @@ async function setRenderer(id: RendererID): Promise<void> {
   const canvas = el('canvas');
   const svg = el('svg');
 
+  controller.unbind();
   renderer?.dispose();
   renderer = null;
   inline?.dispose();
@@ -243,12 +243,6 @@ async function setRenderer(id: RendererID): Promise<void> {
   renderer = next;
   if (!supports(next.capabilities, '3d')) projection = '2d';
 
-  next.on('selectionChange', ({ ids }) => select(ids));
-  next.on('viewportChange', (viewport) => {
-    bands.feedNormalized(viewport.zoom);
-    renderBand();
-  });
-
   await next.mount(canvas, { theme: currentTheme(), projection });
   if (generation !== mountGeneration) {
     next.dispose();
@@ -256,7 +250,7 @@ async function setRenderer(id: RendererID): Promise<void> {
   }
 
   next.setModel(model);
-  next.setSelection(selection);
+  controller.bind(next);
   next.fit();
   el('stage').dataset.renderer = id;
   renderBand();
@@ -291,8 +285,8 @@ function setDirection(next: 'ltr' | 'rtl'): void {
 async function setScene(name: SceneName): Promise<void> {
   sceneName = name;
   model = sceneModel(name);
+  controller.setModel(model);
 
-  const byId = new Map(model.nodes.map((node) => [node.id, { id: node.id, label: node.label, kind: node.kind }]));
   a11y?.setItems(
     model.nodes.map((node) => ({
       id: node.id,
@@ -304,7 +298,7 @@ async function setScene(name: SceneName): Promise<void> {
   );
 
   const root = model.nodes[0];
-  trail.reset(root ? byId.get(root.id) : undefined);
+  controller.trail.reset(root ? { id: root.id, label: root.label, kind: root.kind } : undefined);
   select(root ? [root.id] : [], false);
 
   if (rendererID === 'svg') {
@@ -317,28 +311,17 @@ async function setScene(name: SceneName): Promise<void> {
 }
 
 function select(ids: readonly string[], record = true): void {
-  const known = new Set(model.nodes.map((node) => node.id));
-  selection = ids.filter((id) => known.has(id));
-
-  renderer?.setSelection(selection);
-  a11y?.setSelected(selection);
-
-  if (record && selection.length === 1) {
-    const node = model.nodes.find((candidate) => candidate.id === selection[0]);
-    if (node) trail.push({ id: node.id, label: node.label, kind: node.kind });
-  }
-
-  renderDetail();
-  renderTrail();
+  controller.select(ids, record);
 }
 
 function renderBand(): void {
-  const snapshot = bands.snapshot();
+  const snapshot = controller.bands.snapshot();
   const percent = Math.round(snapshot.normalized * 100);
   el('band').textContent = `Band: ${snapshot.label ?? snapshot.band} · zoom ${percent}%`;
 }
 
 function renderTrail(): void {
+  const trail = controller.trail;
   const nav = el('trail');
   const back = document.createElement('button');
   back.type = 'button';
@@ -346,10 +329,7 @@ function renderTrail(): void {
   back.className = 'trail-back';
   back.disabled = !trail.canGoBack;
   back.dataset.role = 'trail-back';
-  back.addEventListener('click', () => {
-    const entry = trail.back();
-    if (entry) select([entry.id], false);
-  });
+  back.addEventListener('click', () => controller.back());
 
   const crumbs = trail.entries.map((entry) => {
     const crumb = document.createElement('button');
@@ -367,7 +347,7 @@ function renderTrail(): void {
 
 function renderDetail(): void {
   const detail = el('detail');
-  const node = model.nodes.find((candidate) => candidate.id === selection[0]);
+  const node = controller.selectedNode;
   if (!node) {
     const empty = document.createElement('p');
     empty.className = 'muted';
@@ -388,17 +368,15 @@ function renderDetail(): void {
 
   const connections = document.createElement('ul');
   connections.className = 'connections';
-  for (const link of model.edges.filter((candidate) => candidate.source === node.id || candidate.target === node.id)) {
-    const otherID = link.source === node.id ? link.target : link.source;
-    const other = model.nodes.find((candidate) => candidate.id === otherID);
+  for (const { edge: link, node: other } of controller.connections(node.id)) {
     const item = document.createElement('li');
     const follow = document.createElement('button');
     follow.type = 'button';
     follow.className = 'connection';
-    follow.dataset.id = otherID;
+    follow.dataset.id = other.id;
     follow.dataset.confidence = link.confidence ?? 'explicit';
-    follow.textContent = `${link.kind} · ${link.confidence ?? 'explicit'} → ${other?.label ?? otherID}`;
-    follow.addEventListener('click', () => select([otherID]));
+    follow.textContent = `${link.kind} · ${link.confidence ?? 'explicit'} → ${other.label}`;
+    follow.addEventListener('click', () => select([other.id]));
     item.append(follow);
     connections.append(item);
   }
@@ -465,11 +443,12 @@ function api() {
     nodeCount: () => model.nodes.length,
     renderer: () => rendererID,
     projection: () => projection,
-    selection: () => selection,
-    trail: () => trail.toLabels(),
-    band: () => bands.band,
+    selection: () => controller.selection,
+    trail: () => controller.trail.toLabels(),
+    band: () => controller.band,
     select: (id: string) => select([id]),
     clear: () => select([]),
+    back: () => controller.back(),
     setRenderer,
     setProjection,
     setScene,
@@ -487,7 +466,12 @@ async function main(): Promise<void> {
   });
 
   document.documentElement.dataset.theme = themeName;
-  bands.onChange(() => renderBand());
+  controller.onChange(() => {
+    a11y?.setSelected(controller.selection);
+    renderBand();
+    renderTrail();
+    renderDetail();
+  });
   wireControls();
   await setScene('pipeline');
   await setRenderer('spacegraph');
