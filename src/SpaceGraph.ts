@@ -4,8 +4,8 @@ import {
   ObjectPoolManager,
   PluginManager,
   VisionManager,
-} from 'spacegraphjs/core';
-import { InputManager } from 'spacegraphjs/input';
+} from './core';
+import { InputManager } from './input';
 import { FingeringPriority, Performance } from './core/constants';
 import {
   createQuickGraphSpec,

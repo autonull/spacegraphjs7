@@ -1,5 +1,5 @@
 import gsap from 'gsap';
-import { ThreeDisposer } from 'spacegraphjs/utils';
+import { ThreeDisposer } from '../utils';
 import * as THREE from 'three';
 import { type Bounds3D, type HitResult, type Rect, Surface } from '../core/Surface';
 import type { ControlState } from '../plugins/interaction/ControlStateBorder';

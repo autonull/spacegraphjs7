@@ -1,4 +1,4 @@
-import { MathPool } from 'spacegraphjs/core';
+import { MathPool } from '../core';
 import type * as THREE from 'three';
 import type { Node } from '../nodes/Node';
 import { BaseSystemPlugin } from './BaseSystemPlugin';

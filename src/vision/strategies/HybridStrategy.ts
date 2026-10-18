@@ -1,4 +1,4 @@
-import type { HeuristicsStrategy } from 'spacegraphjs/vision';
+import type { HeuristicsStrategy } from '..';
 import type { VisionReport, VisionStrategy } from '../types';
 import type { OnnxStrategy } from './OnnxStrategy';
 

@@ -12,9 +12,9 @@
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
-    "baseUrl": ".",
     "paths": {
-      "spacegraphjs/*": ["src/*"]
+      "spacegraphjs": ["./src/index.ts"],
+      "spacegraphjs/*": ["./src/*"]
     }
   },
   "include": ["src", "test"],

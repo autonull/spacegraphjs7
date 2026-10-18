@@ -2,21 +2,25 @@
   "name": "spacegraphjs",
   "version": "7.0.0",
   "type": "module",
-  "main": "./dist/spacegraphjs.js",
-  "module": "./dist/spacegraphjs.js",
+  "main": "./src/index.ts",
+  "module": "./src/index.ts",
+  "types": "./src/index.ts",
   "exports": {
-    ".": {
-      "import": "./dist/spacegraphjs.js",
-      "require": "./dist/spacegraphjs.cjs"
+    ".": "./src/index.ts",
+    "./activity": {
+      "types": "./types/activity.d.ts",
+      "default": "./src/activity.ts"
     },
-    "./vision": {
-      "import": "./dist/vision.js",
-      "require": "./dist/vision.cjs"
-    },
-    "./vision-test": {
-      "import": "./dist/vision-test.js",
-      "require": "./dist/vision-test.cjs"
-    }
+    "./core": "./src/core/index.ts",
+    "./edges": "./src/edges/index.ts",
+    "./nodes": "./src/nodes/index.ts",
+    "./plugins": "./src/plugins/index.ts",
+    "./plugins/mermaid": "./src/plugins/mermaid/index.ts",
+    "./input": "./src/input/index.ts",
+    "./utils": "./src/utils/index.ts",
+    "./types": "./src/types.ts",
+    "./builder": "./src/builder.ts",
+    "./vision": "./src/vision/index.ts"
   },
   "files": [
     "dist",

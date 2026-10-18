@@ -1,4 +1,4 @@
-import { HtmlNode } from 'spacegraphjs/nodes';
+import { HtmlNode } from '../../nodes';
 import type { SpaceGraph } from '../../SpaceGraph';
 import type { BaseNodeData, NodeSpec, SpaceGraphNodeData } from '../../types';
 import type { MermaidNodeShape } from './MermaidParser';

@@ -1,4 +1,4 @@
-import type { Plugin } from 'spacegraphjs/core';
+import type { Plugin } from '../../core';
 import type { Graph } from '../../core/Graph';
 import type { Node } from '../../nodes/Node';
 import type { SpaceGraph } from '../../SpaceGraph';

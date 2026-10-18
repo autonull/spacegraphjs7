@@ -1,7 +1,7 @@
 // SpaceGraphJS - Legibility Analyzer
 // WCAG contrast analysis for text and UI elements
 
-import type { HeuristicsConfig } from 'spacegraphjs/vision';
+import type { HeuristicsConfig } from '..';
 import * as THREE from 'three';
 import { getContrastRatio, getRelativeLuminance } from '../../utils/color';
 import type { ContrastFailure, LegibilityResult, VisionContext } from '../types';

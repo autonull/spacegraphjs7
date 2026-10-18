@@ -1,4 +1,4 @@
-import type { Plugin } from 'spacegraphjs/core';
+import type { Plugin } from '../core';
 import type { EventSystem } from '../core/events/EventSystem';
 import type { Graph } from '../core/Graph';
 import type { Edge } from '../edges/Edge';

@@ -1,7 +1,7 @@
 // SpaceGraphJS - Base Layout Plugin
 // Abstract base class for layout plugins with common helpers
 
-import type { Plugin } from 'spacegraphjs/core';
+import type { Plugin } from '../../core';
 import * as THREE from 'three';
 import type { EventSystem } from '../../core/events/EventSystem';
 import type { Graph } from '../../core/Graph';

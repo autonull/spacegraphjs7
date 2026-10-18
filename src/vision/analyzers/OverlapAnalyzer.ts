@@ -1,8 +1,8 @@
 // SpaceGraphJS - Overlap Analyzer
 // Spatial index-based overlap detection
 
-import { SpatialIndex } from 'spacegraphjs/core';
-import type { HeuristicsConfig } from 'spacegraphjs/vision';
+import { SpatialIndex } from '../../core';
+import type { HeuristicsConfig } from '..';
 import * as THREE from 'three';
 import type { Overlap, OverlapResult, VisionContext } from '../types';
 

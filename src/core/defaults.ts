@@ -8,7 +8,7 @@ import {
   DynamicThicknessEdge,
   InterGraphEdge,
   LabeledEdge,
-} from 'spacegraphjs/edges';
+} from '../edges';
 import {
   BorderNode,
   CanvasNode,
@@ -21,7 +21,7 @@ import {
   SwitchNode,
   TextMeshNode,
   VirtualGridNode,
-} from 'spacegraphjs/nodes';
+} from '../nodes';
 // System plugins
 // Layout plugins
 import {
@@ -44,8 +44,8 @@ import {
   TimelineLayout,
   TreeLayout,
   ZoomUIPlugin,
-} from 'spacegraphjs/plugins';
-import { MermaidNode } from 'spacegraphjs/plugins/mermaid';
+} from '../plugins';
+import { MermaidNode } from '../plugins/mermaid';
 import type { Plugin } from '../core/PluginManager';
 // Edge types
 import { Edge } from '../edges/Edge';

@@ -3,7 +3,7 @@ import {
   type VisionCategory,
   VisionModelLoader,
   VisionSystem,
-} from 'spacegraphjs/vision';
+} from '../vision';
 import type { SpaceGraph } from '../SpaceGraph';
 import { createLogger } from '../utils/logger';
 import type { VisionReport } from '../vision/types';

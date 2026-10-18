@@ -1,4 +1,4 @@
-import type { CameraControls } from 'spacegraphjs/core';
+import type { CameraControls } from '../core';
 import * as THREE from 'three';
 import type { EventSystem } from '../core/events/EventSystem';
 import type { Graph } from '../core/Graph';

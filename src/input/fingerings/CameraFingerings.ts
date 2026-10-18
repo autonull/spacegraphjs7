@@ -1,4 +1,4 @@
-import type { CameraControls } from 'spacegraphjs/core';
+import type { CameraControls } from '../../core';
 import type { Finger, Fingering } from '../Fingering';
 
 export type CameraAction = 'orbit' | 'pan' | 'zoom';

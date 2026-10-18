@@ -1,4 +1,4 @@
-import type { VisionModelLoader } from 'spacegraphjs/vision';
+import type { VisionModelLoader } from '..';
 import * as THREE from 'three';
 import type {
   ErgonomicsResult,

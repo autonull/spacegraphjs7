@@ -1,5 +1,5 @@
-import { MathPool } from 'spacegraphjs/core';
-import { ThreeDisposer } from 'spacegraphjs/utils';
+import { MathPool } from '../core';
+import { ThreeDisposer } from '../utils';
 import * as THREE from 'three';
 import type { Node } from '../nodes/Node';
 import type { SpaceGraph } from '../SpaceGraph';

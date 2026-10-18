@@ -6,7 +6,7 @@ import {
   HierarchyAnalyzer,
   LegibilityAnalyzer,
   OverlapAnalyzer,
-} from 'spacegraphjs/vision';
+} from '..';
 import { clamp } from '../../utils/math';
 import type {
   ErgonomicsResult,

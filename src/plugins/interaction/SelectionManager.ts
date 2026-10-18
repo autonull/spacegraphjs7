@@ -1,4 +1,4 @@
-import { DOMUtils } from 'spacegraphjs/utils';
+import { DOMUtils } from '../../utils';
 import type * as THREE from 'three';
 import type { Edge } from '../../edges/Edge';
 import type { Node } from '../../nodes/Node';

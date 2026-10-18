@@ -1,4 +1,4 @@
-import type { HeuristicsConfig } from 'spacegraphjs/vision';
+import type { HeuristicsConfig } from '..';
 import type { VisionContext } from '../types';
 
 export interface VisionAnalyzerResult {
