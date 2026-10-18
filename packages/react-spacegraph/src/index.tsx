@@ -1,76 +1,82 @@
-import type React from 'react';
-import { useEffect, useRef } from 'react';
-import type { GraphSpec, SpaceGraphOptions } from 'spacegraphjs';
-import { SpaceGraph } from 'spacegraphjs';
+// P8.2 — a React binding over the renderer contract and the `spacegraphjs/control` view controller.
+// It owns only the React lifecycle; the mount/update/dispose policy lives in the framework-agnostic
+// `GraphBinding`. It is written without JSX so the same source runs under the headless vitest suite.
 
-export interface SpaceGraphProps {
-  spec?: GraphSpec;
-  url?: string;
-  options?: SpaceGraphOptions;
+import { createElement, useEffect, useRef, type CSSProperties, type ReactElement } from 'react';
+import type { GraphRenderer, Projection, RenderModel, RenderTheme } from '@spacegraphjs/renderer';
+import { GraphBinding, type ControlSnapshot, type GraphControllerOptions } from 'spacegraphjs/control';
+
+export interface GraphViewProps {
+  /** Builds an unmounted contract renderer. Called once per mount; the binding owns its lifecycle. */
+  createRenderer: () => GraphRenderer;
+  model: RenderModel;
+  theme: RenderTheme;
+  projection?: Projection;
+  selection?: readonly string[];
+  bands?: GraphControllerOptions['bands'];
+  trailMaxDepth?: number;
   className?: string;
-  style?: React.CSSProperties;
-  onReady?: (sg: SpaceGraph) => void;
+  style?: CSSProperties;
+  onReady?: (renderer: GraphRenderer) => void;
+  onChange?: (snapshot: ControlSnapshot) => void;
+  onError?: (error: unknown) => void;
 }
 
-export const SpaceGraphComponent = ({
-  spec,
-  url,
-  options,
-  className,
-  style,
-  onReady,
-}: SpaceGraphProps) => {
+export const GraphView = (props: GraphViewProps): ReactElement => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const sgRef = useRef<SpaceGraph | null>(null);
+  const bindingRef = useRef<GraphBinding<RenderTheme> | null>(null);
+
+  // Mount once per container. Prop changes flow through the effects below; a StrictMode double-invoke
+  // disposes the first binding, whose pending mount then disposes its own renderer.
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    let renderer: GraphRenderer | undefined;
+    const binding = new GraphBinding<RenderTheme>({
+      createRenderer: () => {
+        renderer = props.createRenderer();
+        return renderer;
+      },
+      theme: props.theme,
+      model: props.model,
+      projection: props.projection,
+      selection: props.selection,
+      bands: props.bands,
+      trailMaxDepth: props.trailMaxDepth,
+      onReady: () => {
+        if (renderer) props.onReady?.(renderer);
+      },
+      onChange: props.onChange,
+      onError: props.onError,
+    });
+    bindingRef.current = binding;
+    void binding.mount(container);
+    return () => {
+      binding.dispose();
+      if (bindingRef.current === binding) bindingRef.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
-    if (!containerRef.current) return;
+    bindingRef.current?.setModel(props.model);
+  }, [props.model]);
 
-    let isMounted = true;
+  useEffect(() => {
+    bindingRef.current?.setTheme(props.theme);
+  }, [props.theme]);
 
-    const init = async () => {
-      try {
-        let sg: SpaceGraph;
-        if (url) {
-          sg = await SpaceGraph.fromURL(url, containerRef.current!, options);
-        } else {
-          sg = new SpaceGraph(containerRef.current!, options);
-          if (spec) sg.graph.fromJSON(spec);
-        }
+  useEffect(() => {
+    if (props.projection) bindingRef.current?.setProjection(props.projection);
+  }, [props.projection]);
 
-        await sg.init();
+  useEffect(() => {
+    bindingRef.current?.setSelection(props.selection ?? []);
+  }, [props.selection]);
 
-        if (!isMounted) {
-          sg.dispose();
-          return;
-        }
-
-        sg.render();
-        sgRef.current = sg;
-        if (onReady) onReady(sg);
-      } catch (err) {
-        console.error('[ReactSpaceGraph] Initialization failed', err);
-      }
-    };
-
-    init();
-
-    return () => {
-      isMounted = false;
-      if (sgRef.current) {
-        sgRef.current.dispose();
-        sgRef.current = null;
-      }
-    };
-  }, [spec, url]); // Simple implementation. Advanced would diff spec.
-
-  return (
-    <div
-      ref={containerRef}
-      className={className}
-      style={{ width: '100%', height: '100%', ...style }}
-    />
-  );
+  return createElement('div', {
+    ref: containerRef,
+    className: props.className,
+    style: { width: '100%', height: '100%', ...props.style },
+  });
 };
-
-export default SpaceGraphComponent;

@@ -2,17 +2,17 @@
   "compilerOptions": {
     "target": "es2020",
     "module": "esnext",
-    "moduleResolution": "node",
-    "declaration": true,
-    "outDir": "./dist",
-    "rootDir": "./src",
+    "moduleResolution": "bundler",
+    "noEmit": true,
     "strict": true,
-    "jsx": "react",
+    "jsx": "react-jsx",
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "paths": {
-      "spacegraphjs": ["../../src/index.ts"]
+      "spacegraphjs": ["../../src/index.ts"],
+      "spacegraphjs/*": ["../../src/*"],
+      "@spacegraphjs/renderer": ["../../packages/renderer/src/index.ts"]
     }
   },
   "include": ["src/**/*"]

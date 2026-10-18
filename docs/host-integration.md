@@ -120,6 +120,11 @@ renderer.setTheme(theme);
   (mapped from `RenderModel.nodes`) so keyboard users reach what the canvas draws.
 - `spacegraphjs/navigation` (`Trail`) is a breadcrumb/focus history that reconciles by ID across model
   updates; `GraphController` drives it for you, but it is usable on its own.
+- `GraphBinding` (also `spacegraphjs/control`) owns the renderer lifecycle for one container: construct
+  it with `createRenderer`, `theme`, `model`, and `projection`, then `mount(container)`; the setters
+  push updates and `dispose()` tears down the renderer and the controller. A mount that resolves after
+  an unmount disposes its own renderer, so it is StrictMode/HMR safe. `react-spacegraph` and
+  `solid-spacegraph` are thin lifecycle wrappers over it.
 
 ## 7. Persistence and export
 
@@ -141,9 +146,13 @@ renderer.setTheme(theme);
 7. Mount `AccessibilityLayer` over `RenderModel.nodes`; mount `Trail` for breadcrumbs.
 8. Offer `renderToSVG`/JSON export.
 
+For a framework host, skip steps 5–6's manual wiring: mount `GraphView` from `react-spacegraph` or
+`solid-spacegraph` with `createRenderer`, `model`, `theme`, and `projection`. Both wrap `GraphBinding`
+(so `mount`/`dispose` are StrictMode-safe) and call `onReady(renderer)` once the adapter is live.
+
 ## 9. Versioning
 
 `CONTRACT_VERSION` is an integer; breaking changes bump it. Adapters declare theirs in
 `capabilities.contractVersion`. Call `negotiateContract(version)` and surface the result — a mismatch is
 a clear message, not a runtime failure. For a non-OpenCode page, see the fixture in
-`test/fixtures/activity-host.ts`; the runnable two-adapter library demo is the L1.29 task.
+`demo/activity-host.ts`; the runnable two-adapter library demo is `demo/contract.html`.

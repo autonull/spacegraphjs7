@@ -1,67 +1,70 @@
-import { createEffect, onCleanup, onMount } from 'solid-js';
-import type { GraphSpec, SpaceGraphOptions } from 'spacegraphjs';
-import { SpaceGraph } from 'spacegraphjs';
+// P8.2 — a Solid binding over the renderer contract and the `spacegraphjs/control` view controller.
+// It owns only the Solid lifecycle; the mount/update/dispose policy lives in the framework-agnostic
+// `GraphBinding`. It is written without JSX so the same source runs under the headless vitest suite.
 
-export interface SpaceGraphProps {
-  spec?: GraphSpec;
-  url?: string;
-  options?: SpaceGraphOptions;
+import { createEffect, onCleanup, onMount } from 'solid-js';
+import type { GraphRenderer, Projection, RenderModel, RenderTheme } from '@spacegraphjs/renderer';
+import { GraphBinding, type ControlSnapshot, type GraphControllerOptions } from 'spacegraphjs/control';
+
+export interface GraphViewProps {
+  /** Builds an unmounted contract renderer. Called once per mount; the binding owns its lifecycle. */
+  createRenderer: () => GraphRenderer;
+  model: RenderModel;
+  theme: RenderTheme;
+  projection?: Projection;
+  selection?: readonly string[];
+  bands?: GraphControllerOptions['bands'];
+  trailMaxDepth?: number;
   class?: string;
-  style?: any;
-  onReady?: (sg: SpaceGraph) => void;
+  style?: Record<string, string>;
+  onReady?: (renderer: GraphRenderer) => void;
+  onChange?: (snapshot: ControlSnapshot) => void;
+  onError?: (error: unknown) => void;
 }
 
-export const SpaceGraphComponent = (props: SpaceGraphProps) => {
-  let containerRef: HTMLDivElement | undefined;
-  let sgInstance: SpaceGraph | null = null;
+export const GraphView = (props: GraphViewProps) => {
+  const container = document.createElement('div');
+  container.style.width = '100%';
+  container.style.height = '100%';
+  if (props.class) container.className = props.class;
+  if (props.style) Object.assign(container.style, props.style);
+
+  let binding: GraphBinding<RenderTheme> | undefined;
 
   onMount(() => {
-    if (!containerRef) return;
-
-    const init = async () => {
-      try {
-        if (props.url) {
-          sgInstance = await SpaceGraph.fromURL(props.url, containerRef!, props.options);
-        } else {
-          sgInstance = new SpaceGraph(containerRef!, props.options);
-          if (props.spec) {
-            sgInstance.graph.fromJSON(props.spec);
-          }
-        }
-        await sgInstance.init();
-        sgInstance.render();
-        if (props.onReady) props.onReady(sgInstance);
-      } catch (err) {
-        console.error('[SolidSpaceGraph] Initialization failed', err);
-      }
-    };
-
-    init();
+    let renderer: GraphRenderer | undefined;
+    binding = new GraphBinding<RenderTheme>({
+      createRenderer: () => {
+        renderer = props.createRenderer();
+        return renderer;
+      },
+      theme: props.theme,
+      model: props.model,
+      projection: props.projection,
+      selection: props.selection,
+      bands: props.bands,
+      trailMaxDepth: props.trailMaxDepth,
+      onReady: () => {
+        if (renderer) props.onReady?.(renderer);
+      },
+      onChange: props.onChange,
+      onError: props.onError,
+    });
+    void binding.mount(container);
   });
 
+  createEffect(() => binding?.setModel(props.model));
+  createEffect(() => binding?.setTheme(props.theme));
   createEffect(() => {
-    if (sgInstance && props.spec && !props.url) {
-      // Very naive diffing: just replace the graph.
-      // Better implementations would map Solid's reactive state to SpaceGraph's mutable state natively.
-      sgInstance.graph.clear();
-      sgInstance.graph.fromJSON(props.spec);
-    }
+    const projection = props.projection;
+    if (projection) binding?.setProjection(projection);
   });
+  createEffect(() => binding?.setSelection(props.selection ?? []));
 
   onCleanup(() => {
-    if (sgInstance) {
-      sgInstance.dispose();
-      sgInstance = null;
-    }
+    binding?.dispose();
+    binding = undefined;
   });
 
-  return (
-    <div
-      ref={containerRef}
-      class={props.class}
-      style={{ width: '100%', height: '100%', ...props.style }}
-    />
-  );
+  return container;
 };
-
-export default SpaceGraphComponent;

@@ -1,9 +1,11 @@
 {
   "name": "react-spacegraph",
   "version": "1.0.0",
-  "description": "React component adapter for SpaceGraphJS",
-  "main": "dist/index.cjs",
-  "module": "dist/index.mjs",
+  "description": "React binding for the SpaceGraphJS renderer contract",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "import": "./dist/index.mjs",
@@ -11,13 +13,16 @@
     }
   },
   "peerDependencies": {
-    "react": "^18.0.0",
-    "react-dom": "^18.0.0",
+    "react": ">=18",
+    "react-dom": ">=18",
     "spacegraphjs": "workspace:*"
   },
   "devDependencies": {
+    "@spacegraphjs/renderer": "workspace:*",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
     "typescript": "^5.0.0",
     "vite": "^5.0.0"
   },

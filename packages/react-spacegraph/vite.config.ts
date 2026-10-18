@@ -10,7 +10,7 @@ export default defineConfig({
       fileName: (format) => `index.${format === 'es' ? 'mjs' : 'cjs'}`,
     },
     rollupOptions: {
-      external: ['react', 'react-dom', 'spacegraphjs'],
+      external: ['react', 'react-dom', 'spacegraphjs', '@spacegraphjs/renderer'],
       output: {
         globals: {
           react: 'React',

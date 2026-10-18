@@ -3,7 +3,7 @@
     "strict": true,
     "target": "ESNext",
     "module": "ESNext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "jsx": "preserve",
@@ -12,7 +12,9 @@
     "noEmit": true,
     "skipLibCheck": true,
     "paths": {
-      "spacegraphjs": ["../../src/index.ts"]
+      "spacegraphjs": ["../../src/index.ts"],
+      "spacegraphjs/*": ["../../src/*"],
+      "@spacegraphjs/renderer": ["../../packages/renderer/src/index.ts"]
     }
   },
   "include": ["src/**/*"]

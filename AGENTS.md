@@ -53,6 +53,9 @@
 - Generic capabilities (zoom bands, lane layout, accessibility, navigation trail, view controller) live
   in the core as optional subpaths with minimal structural types, not the contract. If a capability is
   generic, add it to the core first; do not special-case a renderer in a host.
+- `react-spacegraph` and `solid-spacegraph` are framework bindings over the contract and
+  `spacegraphjs/control`; they wrap `GraphBinding` (the framework-agnostic mount/update/dispose policy),
+  not core internals.
 - Do not use "engine" for a renderer backend.
 
 ### Naming

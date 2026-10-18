@@ -12,7 +12,7 @@ export default defineConfig({
       fileName: (format) => `index.${format === 'es' ? 'mjs' : 'cjs'}`,
     },
     rollupOptions: {
-      external: ['solid-js', 'solid-js/web', 'spacegraphjs'],
+      external: ['solid-js', 'solid-js/web', 'spacegraphjs', '@spacegraphjs/renderer'],
       output: {
         globals: {
           'solid-js': 'Solid',

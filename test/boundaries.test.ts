@@ -53,4 +53,15 @@ describe('package boundaries', () => {
     expect(imports).toContain('@spacegraphjs/renderer');
     expect(imports).toContain('spacegraphjs/activity');
   });
+
+  it('keeps the framework bindings on the contract and the controller, not core internals', () => {
+    for (const dir of ['packages/react-spacegraph/src', 'packages/solid-spacegraph/src']) {
+      const imports = staticImportsIn(dir);
+      expect(imports).toContain('@spacegraphjs/renderer');
+      expect(imports).toContain('spacegraphjs/control');
+      for (const specifier of ['spacegraphjs', 'spacegraphjs/core', 'spacegraphjs/activity']) {
+        expect(imports).not.toContain(specifier);
+      }
+    }
+  });
 });
