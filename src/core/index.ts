@@ -55,7 +55,7 @@ export type { Plugin } from './PluginManager';
 export { PluginManager } from './PluginManager';
 export { MathPool, ObjectPool } from './pooling/ObjectPool';
 export { RenderContext } from './RenderContext';
-export { Renderer } from './Renderer';
+export { WebGLRenderer, Renderer } from './WebGLRenderer';
 export { Surface } from './Surface';
 export { BVH, SpatialIndex } from './spatial/SpatialIndex';
 export type { EdgeConstructor, NodeConstructor } from './TypeRegistry';

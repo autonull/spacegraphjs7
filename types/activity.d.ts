@@ -54,6 +54,7 @@ export interface GraphViewport {
   zoom: number
   center: [number, number, number]
   distance: number
+  extent?: { width: number; height: number }
   band?: string
 }
 
@@ -67,6 +68,10 @@ export declare class SpaceGraph {
   readonly selected: string[]
   readonly zoom: number
   readonly viewport: GraphViewport
+  cameraControls: {
+    target: { x: number; y: number; z: number }
+    setTarget(x: number, y: number, z: number): void
+  }
   events: EventEmitter
   static instances: Set<SpaceGraph>
   static create(

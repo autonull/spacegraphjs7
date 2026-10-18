@@ -1,5 +1,5 @@
-import type { CameraControls } from '../core';
 import * as THREE from 'three';
+import type { CameraControls } from '../core';
 import type { EventSystem } from '../core/events/EventSystem';
 import type { Graph } from '../core/Graph';
 import type { SpaceGraph } from '../SpaceGraph';
@@ -9,13 +9,19 @@ import { BaseSystemPlugin } from './BaseSystemPlugin';
 /**
  * MinimapPlugin — Renders a thumbnail overview of the graph in a corner overlay.
  *
+ * Container-scoped (the overlay lives inside the graph container, not `document.body`) and safe to
+ * embed: it can be toggled at runtime and the scene pass is throttled so enabling it does not double
+ * frame cost. The viewport rectangle is derived from the active camera (orthographic or perspective).
+ *
  * Plugin settings:
- *   position : 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left'
- *   size     : pixel size of the square minimap (default 160)
- *   margin   : px from the edge of the screen (default 12)
- *   bgColor  : minimap background (default 0x0a0a0a)
- *   alpha    : minimap opacity 0–1 (default 0.8)
- *   zoom     : orthographic half-size (default 1500)
+ *   position   : 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left'
+ *   size       : pixel size of the square minimap (default 160)
+ *   margin     : px from the edge of the container (default 12)
+ *   bgColor    : minimap background (default 0x0a0a0a)
+ *   alpha      : minimap opacity 0–1 (default 0.8)
+ *   zoom       : minimum orthographic half-size (default 1500)
+ *   enabled    : render the minimap at all (default true)
+ *   intervalMs : minimum ms between minimap scene passes (default 100)
  */
 export class MinimapPlugin extends BaseSystemPlugin {
   readonly id = 'minimap';
@@ -28,44 +34,62 @@ export class MinimapPlugin extends BaseSystemPlugin {
     bgColor: 0x0a0a0a,
     alpha: 0.8,
     zoom: 1500,
+    enabled: true,
+    intervalMs: 100,
   };
   private orthoCamera!: THREE.OrthographicCamera;
   private isDragging = false;
-  private container!: HTMLElement;
-  private canvas!: HTMLCanvasElement;
-  private ctx!: CanvasRenderingContext2D;
-  private indicatorColor = 'rgba(139, 92, 246, 0.8)';
-  private borderColor = 'rgba(255, 255, 255, 0.1)';
+  private container?: HTMLElement;
+  private indicator?: HTMLElement;
+  private halfSize = 1500;
+  private elapsed = 0;
+  private readonly indicatorColor = 'rgba(139, 92, 246, 0.8)';
+  private readonly borderColor = 'rgba(255, 255, 255, 0.1)';
 
   init(sg: SpaceGraph, graph: Graph, events: EventSystem): void {
     super.init(sg, graph, events);
+    this.halfSize = this.settings.zoom;
     this._buildCamera();
 
     const dom = this.sg.renderer.renderer.domElement;
     dom.addEventListener('pointerdown', this._onPointerDown);
     dom.addEventListener('pointermove', this._onPointerMove);
-    if (typeof window !== 'undefined') {
-      window.addEventListener('pointerup', this._onPointerUp);
-    }
+    window.addEventListener('pointerup', this._onPointerUp);
   }
 
-  onPostRender(_delta: number): void {
-    if (!this.sg || !this.sg.renderer || !this.sg.renderer.renderer) return;
-    this._renderMinimap();
+  /** Turn the minimap on or off without disposing the plugin. */
+  setEnabled(enabled: boolean): void {
+    this.settings.enabled = enabled;
+    if (this.container) this.container.style.display = enabled ? '' : 'none';
+    this.sg.requestFrame?.();
+  }
+
+  onPostRender(delta: number): void {
+    if (!this.settings.enabled) return;
+    if (!this.sg?.renderer?.renderer) return;
+
+    this.elapsed += delta * 1000;
+    if (this.elapsed >= this.settings.intervalMs) {
+      this.elapsed = 0;
+      this._renderMinimap();
+    }
+    this._updateOverlay();
   }
 
   dispose(): void {
-    const dom = this.sg.renderer.renderer?.domElement;
+    const dom = this.sg?.renderer?.renderer?.domElement;
     if (dom) {
       dom.removeEventListener('pointerdown', this._onPointerDown);
       dom.removeEventListener('pointermove', this._onPointerMove);
     }
-    if (typeof window !== 'undefined') {
-      window.removeEventListener('pointerup', this._onPointerUp);
-    }
+    window.removeEventListener('pointerup', this._onPointerUp);
+    this.container?.remove();
+    this.container = undefined;
+    this.indicator = undefined;
+    super.dispose();
   }
 
-  private _buildCamera() {
+  private _buildCamera(): void {
     const z = this.settings.zoom;
     this.orthoCamera = new THREE.OrthographicCamera(-z, z, z, -z, 1, 10000);
     this.orthoCamera.position.set(0, 0, 1000);
@@ -96,177 +120,161 @@ export class MinimapPlugin extends BaseSystemPlugin {
         left = cw - size - margin;
         bottom = margin;
     }
-    const top = ch - bottom - size;
-    return { left, top, bottom, size, cw, ch };
+    return { left, top: ch - bottom - size, bottom, size, cw, ch };
   }
 
   private _pointerToWorld(px: number, py: number) {
     const { left, top, size } = this._getBounds();
     const nx = ((px - left) / size) * 2 - 1;
     const ny = -(((py - top) / size) * 2 - 1);
-    const z = this.settings.zoom;
     return {
-      x: this.orthoCamera.position.x + nx * z,
-      y: this.orthoCamera.position.y + ny * z,
+      x: this.orthoCamera.position.x + nx * this.halfSize,
+      y: this.orthoCamera.position.y + ny * this.halfSize,
     };
   }
 
-  private _onPointerDown = (e: PointerEvent) => {
+  private _inBounds(e: PointerEvent): boolean {
     const { left, top, size } = this._getBounds();
-    if (
-      e.clientX >= left &&
-      e.clientX <= left + size &&
-      e.clientY >= top &&
-      e.clientY <= top + size
-    ) {
-      this.isDragging = true;
-      const controls = this.sg.cameraControls as CameraControls & { enabled?: boolean };
-      controls.enabled = false;
+    return (
+      e.clientX >= left && e.clientX <= left + size && e.clientY >= top && e.clientY <= top + size
+    );
+  }
 
-      const pt = this._pointerToWorld(e.clientX, e.clientY);
-      controls.setTarget(pt.x, pt.y, 0);
-
-      // Re-render minimap immediately to update indicator
-      this._renderMinimap();
-
-      e.stopPropagation();
-      e.preventDefault();
-    }
+  private _onPointerDown = (e: PointerEvent) => {
+    if (!this.settings.enabled || !this._inBounds(e)) return;
+    this.isDragging = true;
+    const controls = this.sg.cameraControls as (CameraControls & { enabled?: boolean }) | undefined;
+    if (controls) controls.enabled = false;
+    const pt = this._pointerToWorld(e.clientX, e.clientY);
+    controls?.setTarget?.(pt.x, pt.y, 0);
+    this._updateOverlay();
+    e.stopPropagation();
+    e.preventDefault();
   };
 
   private _onPointerUp = () => {
-    if (this.isDragging) {
-      this.isDragging = false;
-      (this.sg.cameraControls as CameraControls & { enabled?: boolean }).enabled = true;
-      this.sg.renderer.renderer.domElement.style.cursor = 'auto';
-    }
+    if (!this.isDragging) return;
+    this.isDragging = false;
+    const controls = this.sg.cameraControls as (CameraControls & { enabled?: boolean }) | undefined;
+    if (controls) controls.enabled = true;
+    this.sg.renderer.renderer.domElement.style.cursor = 'auto';
   };
 
   private _onPointerMove = (e: PointerEvent) => {
     if (!this.isDragging) return;
     const pt = this._pointerToWorld(e.clientX, e.clientY);
-    (
-      this.sg.cameraControls as CameraControls & {
-        setTarget: (x: number, y: number, z: number) => void;
-      }
-    ).setTarget(pt.x, pt.y, 0);
-    this._renderMinimap();
+    (this.sg.cameraControls as CameraControls | undefined)?.setTarget?.(pt.x, pt.y, 0);
+    this._updateOverlay();
     e.stopPropagation();
   };
 
-  private _renderMinimap() {
+  // Scene pass: fit the minimap camera to the graph and render one thumbnail frame. Throttled.
+  private _renderMinimap(): void {
     const renderer = this.sg.renderer.renderer;
     if (!renderer) return;
 
-    const canvas = renderer.domElement;
-    const cw = canvas.clientWidth;
-    const ch = canvas.clientHeight;
     const pr = renderer.getPixelRatio();
+    const { left, bottom, size, cw, ch } = this._getBounds();
 
-    const { left, top, bottom, size } = this._getBounds();
-
-    // 1. Center ortho camera around the main scene nodes
     const nodes = Array.from(this.sg.graph.nodes.values());
+    let half = this.settings.zoom;
     if (nodes.length) {
       const box = new THREE.Box3();
-      for (const n of nodes) {
-        box.expandByPoint(n.position);
-      }
+      for (const node of nodes) if (node?.position) box.expandByPoint(node.position);
       const center = new THREE.Vector3();
+      const dimensions = new THREE.Vector3();
       box.getCenter(center);
-
+      box.getSize(dimensions);
+      half = Math.max(this.settings.zoom, Math.max(dimensions.x, dimensions.y) * 0.6 + 40);
       this.orthoCamera.position.set(center.x, center.y, 1000);
       this.orthoCamera.lookAt(center.x, center.y, 0);
-
-      // Adjust zoom dynamically based on graph size if needed, or stick to setting
-      const graphSize = new THREE.Vector3();
-      box.getSize(graphSize);
-
-      // Base zoom on max dim + padding, or user setting if larger
-      this.orthoCamera.left = -this.settings.zoom;
-      this.orthoCamera.right = this.settings.zoom;
-      this.orthoCamera.top = this.settings.zoom;
-      this.orthoCamera.bottom = -this.settings.zoom;
-      this.orthoCamera.updateProjectionMatrix();
     }
+    this.halfSize = half;
+    this.orthoCamera.left = -half;
+    this.orthoCamera.right = half;
+    this.orthoCamera.top = half;
+    this.orthoCamera.bottom = -half;
+    this.orthoCamera.updateProjectionMatrix();
 
-    // 2. Render 3D Scene to Minimap Viewport
     renderer.setViewport(left * pr, bottom * pr, size * pr, size * pr);
     renderer.setScissor(left * pr, bottom * pr, size * pr, size * pr);
     renderer.setScissorTest(true);
     renderer.setClearColor(this.settings.bgColor, this.settings.alpha);
-    renderer.clearColor();
+    renderer.clear(true, true, false);
     renderer.render(this.sg.renderer.scene, this.orthoCamera);
     renderer.setScissorTest(false);
-
-    // 3. Draw Overlay (Border + Viewport Indicator) using an explicit overlay div or context
-    // Instead of managing a separate 2D canvas context every frame, we can use CSS3DRenderer DOM manipulation
-    // or just calculate the rect and let the user know. The simplest and most robust way in this WebGL loop
-    // is to add an explicit HTML element overlay matching the viewport over the canvas, but since we are drawing
-    // straight to WebGL viewport, we'll initialize a dedicated DOM container for the minimap borders/indicator.
-
-    this._updateOverlay(left, top, size, cw, ch);
-
-    // Restore main viewport
     renderer.setViewport(0, 0, cw * pr, ch * pr);
   }
 
-  private _updateOverlay(left: number, top: number, size: number, _cw: number, _ch: number) {
-    if (typeof document === 'undefined') return;
+  // Overlay pass: border + main-camera viewport rectangle. Cheap; runs every frame.
+  private _updateOverlay(): void {
+    if (typeof document === 'undefined' || !this.settings.enabled) return;
+    const { left, top, size } = this._getBounds();
 
     if (!this.container) {
       this.container = DOMUtils.createElement('div');
-      this.container.style.position = 'absolute';
-      this.container.style.pointerEvents = 'none'; // let pointer events pass through to webgl canvas handler
-      this.container.style.border = `2px solid ${this.borderColor}`;
-      this.container.style.borderRadius = '8px';
-      this.container.style.boxSizing = 'border-box';
-      this.container.style.overflow = 'hidden';
-      this.container.style.zIndex = '9997'; // Below HUD but above WebGL
+      Object.assign(this.container.style, {
+        position: 'absolute',
+        pointerEvents: 'none',
+        border: `2px solid ${this.borderColor}`,
+        borderRadius: '8px',
+        boxSizing: 'border-box',
+        overflow: 'hidden',
+        zIndex: '9997',
+      });
 
-      const indicator = DOMUtils.createElement('div');
-      indicator.id = 'sg-minimap-indicator';
-      indicator.style.position = 'absolute';
-      indicator.style.border = `1px solid ${this.indicatorColor}`;
-      indicator.style.backgroundColor = 'rgba(139, 92, 246, 0.1)';
-      indicator.style.boxSizing = 'border-box';
+      this.indicator = DOMUtils.createElement('div');
+      this.indicator.id = 'sg-minimap-indicator';
+      Object.assign(this.indicator.style, {
+        position: 'absolute',
+        border: `1px solid ${this.indicatorColor}`,
+        backgroundColor: 'rgba(139, 92, 246, 0.1)',
+        boxSizing: 'border-box',
+      });
 
-      this.container.appendChild(indicator);
+      this.container.appendChild(this.indicator);
       this.sg.renderer.container.appendChild(this.container);
     }
 
-    // Update container bounds
-    this.container.style.left = `${left}px`;
-    this.container.style.top = `${top}px`;
-    this.container.style.width = `${size}px`;
-    this.container.style.height = `${size}px`;
+    Object.assign(this.container.style, {
+      left: `${left}px`,
+      top: `${top}px`,
+      width: `${size}px`,
+      height: `${size}px`,
+    });
 
-    // Calculate the main camera frustum bounds in world space
-    const mainCam = this.sg.renderer.camera as THREE.PerspectiveCamera;
-    // z-plane distance from camera to controls target
-    const dist = mainCam.position.distanceTo(this.sg.cameraControls.target);
-    const vFov = (mainCam.fov * Math.PI) / 180;
-    const visibleHeight = 2 * Math.tan(vFov / 2) * dist;
-    const visibleWidth = visibleHeight * mainCam.aspect;
-
+    const world = this._visibleWorldSize();
     const target = this.sg.cameraControls.target;
+    const span = this.halfSize * 2;
+    const mapX = ((target.x - this.orthoCamera.position.x) / span) * size + size / 2;
+    const mapY = -((target.y - this.orthoCamera.position.y) / span) * size + size / 2;
+    const mapW = (world.width / span) * size;
+    const mapH = (world.height / span) * size;
 
-    // Map target to minimap coordinates
-    const mapX =
-      ((target.x - this.orthoCamera.position.x) / (this.settings.zoom * 2)) * size + size / 2;
-    // y is inverted
-    const mapY =
-      -((target.y - this.orthoCamera.position.y) / (this.settings.zoom * 2)) * size + size / 2;
-
-    const mapW = (visibleWidth / (this.settings.zoom * 2)) * size;
-    const mapH = (visibleHeight / (this.settings.zoom * 2)) * size;
-
-    const indicator = this.container.querySelector('#sg-minimap-indicator') as HTMLElement;
-    if (indicator) {
-      indicator.style.left = `${mapX - mapW / 2}px`;
-      indicator.style.top = `${mapY - mapH / 2}px`;
-      indicator.style.width = `${mapW}px`;
-      indicator.style.height = `${mapH}px`;
+    if (this.indicator) {
+      Object.assign(this.indicator.style, {
+        left: `${mapX - mapW / 2}px`,
+        top: `${mapY - mapH / 2}px`,
+        width: `${mapW}px`,
+        height: `${mapH}px`,
+      });
     }
+  }
+
+  // Visible world extent of the active camera, correct for both ortho and perspective.
+  private _visibleWorldSize(): { width: number; height: number } {
+    const camera = this.sg.renderer.camera;
+    const target = this.sg.cameraControls.target;
+    if ((camera as THREE.OrthographicCamera).isOrthographicCamera) {
+      const ortho = camera as THREE.OrthographicCamera;
+      return {
+        width: (ortho.right - ortho.left) / ortho.zoom,
+        height: (ortho.top - ortho.bottom) / ortho.zoom,
+      };
+    }
+    const perspective = camera as THREE.PerspectiveCamera;
+    const dist = perspective.position.distanceTo(target);
+    const height = 2 * Math.tan((perspective.fov * Math.PI) / 360) * dist;
+    return { width: height * perspective.aspect, height };
   }
 }

@@ -30,7 +30,12 @@ const FLAT_PHI = Math.PI / 2;
 const TILT_PHI = Math.PI / 2 - 0.5;
 
 type Handler<K extends keyof RendererEventMap> = (payload: RendererEventMap[K]) => void;
-type CoreViewport = { zoom: number; center: [number, number, number]; band?: string };
+type CoreViewport = {
+  zoom: number;
+  center: [number, number, number];
+  extent?: { width: number; height: number };
+  band?: string;
+};
 
 // Wraps the lean SpaceGraphJS core behind the dependency-free contract. It is the only package that
 // imports both the core and the contract; the core never imports the contract.
@@ -141,6 +146,10 @@ export class SpaceGraphRenderer implements GraphRenderer {
 
   setViewport(viewport: RendererViewport): void {
     this.#sg?.setZoom(viewport.zoom);
+    if (viewport.center) {
+      const [x, y, z] = viewport.center;
+      this.#sg?.cameraControls?.setTarget(x, y, z);
+    }
   }
 
   fit(_ids?: readonly string[]): void {
@@ -190,7 +199,12 @@ export class SpaceGraphRenderer implements GraphRenderer {
   }
 
   #emitViewport(viewport: CoreViewport): void {
-    this.#emit('viewportChange', { zoom: viewport.zoom, center: viewport.center, band: viewport.band });
+    this.#emit('viewportChange', {
+      zoom: viewport.zoom,
+      center: viewport.center,
+      extent: viewport.extent,
+      band: viewport.band,
+    });
     if (viewport.band && viewport.band !== this.#band) {
       this.#band = viewport.band;
       this.#emit('bandChange', { band: viewport.band, zoom: viewport.zoom });

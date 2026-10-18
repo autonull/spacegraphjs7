@@ -79,6 +79,8 @@ export type RendererCapabilities = {
 export type RendererViewport = {
   zoom: number
   center: [number, number, number]
+  /** Visible world extent in the graph's XY plane, when the renderer can report it (host minimaps). */
+  extent?: { width: number; height: number }
   band?: string
 }
 

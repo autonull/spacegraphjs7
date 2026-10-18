@@ -138,7 +138,14 @@ export class CytoscapeRenderer implements GraphRenderer {
   setViewport(viewport: RendererViewport): void {
     const cy = this.#cy;
     if (!cy) return;
-    cy.zoom(viewport.zoom);
+    if (viewport.zoom) cy.zoom(viewport.zoom);
+    if (viewport.center) {
+      const el = cy.container();
+      const zoom = cy.zoom();
+      const width = el?.clientWidth ?? 0;
+      const height = el?.clientHeight ?? 0;
+      cy.pan({ x: width / 2 - viewport.center[0] * zoom, y: height / 2 - viewport.center[1] * zoom });
+    }
     this.#renderOverlay();
   }
 
@@ -209,8 +216,16 @@ export class CytoscapeRenderer implements GraphRenderer {
   #emitViewport(): void {
     const cy = this.#cy;
     if (!cy) return;
+    const zoom = cy.zoom();
     const pan = cy.pan();
-    this.#emit('viewportChange', { zoom: cy.zoom(), center: [pan.x, pan.y, 0] });
+    const el = cy.container();
+    const width = el?.clientWidth ?? 0;
+    const height = el?.clientHeight ?? 0;
+    this.#emit('viewportChange', {
+      zoom,
+      center: [(width / 2 - pan.x) / zoom, (height / 2 - pan.y) / zoom, 0],
+      extent: { width: width / zoom, height: height / zoom },
+    });
   }
 
   #syncCards(): void {

@@ -26,7 +26,7 @@ const DEFAULT_DISTANCE = 500;
 const PERSPECTIVE_DISTANCE: ZoomRange = { min: 10, max: 10000, closerIsLarger: false };
 const ORTHO_ZOOM: ZoomRange = { min: 0.01, max: 100, closerIsLarger: true };
 
-export class Renderer {
+export class WebGLRenderer {
   public scene: THREE.Scene;
   public perspectiveCamera: THREE.PerspectiveCamera;
   public orthographicCamera: THREE.OrthographicCamera;
@@ -79,6 +79,7 @@ export class Renderer {
       top: '0px',
       left: '0px',
       zIndex: '0',
+      touchAction: 'none',
     });
     container.appendChild(this.renderer.domElement);
     container.style.position = 'relative';
@@ -163,7 +164,25 @@ export class Renderer {
       zoom: this.getZoom(),
       center: cc ? [cc.target.x, cc.target.y, cc.target.z] : [0, 0, 0],
       distance: cc ? cc.spherical.radius : this.camera.position.length(),
+      extent: this.getWorldExtent(),
     };
+  }
+
+  /** Visible world width/height in the camera's XY plane, for host-side minimaps. */
+  getWorldExtent(): { width: number; height: number } {
+    const el = this.renderer.domElement;
+    const aspect = (el.clientWidth || 1) / (el.clientHeight || 1);
+    if (this._projection === 'orthographic') {
+      const cam = this.orthographicCamera;
+      return {
+        width: (cam.right - cam.left) / cam.zoom,
+        height: (cam.top - cam.bottom) / cam.zoom,
+      };
+    }
+    const cam = this.perspectiveCamera;
+    const dist = this.sg.cameraControls?.spherical.radius ?? cam.position.length();
+    const height = 2 * Math.tan((cam.fov * Math.PI) / 360) * dist;
+    return { width: height * aspect, height };
   }
 
   init(): void {
@@ -217,22 +236,30 @@ export class Renderer {
     this.renderContext?.endFrame();
   }
 
-  // Hide edge labels that would overlap a higher-priority neighbour this frame. Cheap for small
-  // label counts; skipped entirely above the cap so large graphs never pay the cost.
+  // Hide edge labels that would overlap a higher-priority neighbour or a DOM card this frame. Cheap
+  // for small label counts; skipped entirely above the cap so large graphs never pay the cost.
   #declutterLabels(): void {
-    const edges = this.sg.graph.edges.values();
-    const entries: Array<{ id: string; el: HTMLElement; rect: LabelRect }> = [];
-    for (const edge of edges) {
+    const entries: Array<{ el?: HTMLElement; rect: LabelRect }> = [];
+    for (const edge of this.sg.graph.edges.values()) {
       const el = edge?.labelElement;
       if (!el) continue;
       const { left, top, width, height } = el.getBoundingClientRect();
-      entries.push({ id: edge.id, el, rect: { id: edge.id, left, top, width, height } });
-      if (entries.length > LABEL_DECLUTTER_CAP) break;
+      entries.push({ el, rect: { id: `edge:${edge.id}`, left, top, width, height } });
+      if (entries.length >= LABEL_DECLUTTER_CAP) break;
+    }
+    // DOM cards are obstacles, never hidden: a label overlapping a card loses.
+    for (const node of this.sg.graph.nodes.values()) {
+      const el = (node as { domElement?: HTMLElement } | undefined)?.domElement;
+      if (!el || !node.object.visible) continue;
+      const { left, top, width, height } = el.getBoundingClientRect();
+      if (width === 0 || height === 0) continue;
+      entries.push({ rect: { id: `node:${node.id}`, left, top, width, height, priority: 1 } });
+      if (entries.length >= LABEL_DECLUTTER_CAP * 2) break;
     }
     if (entries.length < 2) return;
     const hidden = declutterLabels(entries.map((entry) => entry.rect));
     for (const entry of entries) {
-      entry.el.style.opacity = hidden.has(entry.id) ? '0' : '';
+      if (entry.el) entry.el.style.opacity = hidden.has(entry.rect.id) ? '0' : '';
     }
   }
 
@@ -314,3 +341,6 @@ export class Renderer {
     this.sg.requestFrame?.();
   }
 }
+
+/** @deprecated Renamed to {@link WebGLRenderer}; resolve the contract/adapters via `@spacegraphjs/renderer`. */
+export { WebGLRenderer as Renderer };

@@ -42,6 +42,14 @@ describe('L1.17 label declutter', () => {
     ]);
     expect([...hidden]).toEqual(['a']);
   });
+
+  it('hides a label that overlaps a DOM card (higher priority) but never the card', () => {
+    const hidden = declutterLabels([
+      { id: 'edge:e', left: 0, top: 0, width: 40, height: 12 },
+      { id: 'node:card', left: 0, top: 0, width: 120, height: 60, priority: 1 },
+    ]);
+    expect([...hidden]).toEqual(['edge:e']);
+  });
 });
 
 describe('L1.17 edge hit area', () => {

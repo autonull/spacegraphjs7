@@ -127,6 +127,7 @@ export class InputManager {
   private enabled = true;
   readonly fingerManager: FingerManager;
   private fingerings: Array<{ fingering: Fingering; priority: number }> = [];
+  private multiFingering: Fingering | null = null;
 
   constructor(options: InputManagerOptions) {
     this.sg = options.sg;
@@ -304,8 +305,25 @@ export class InputManager {
     };
 
     switch (event.type) {
-      case 'pointerdown':
+      case 'pointerdown': {
         this.fingerManager.setFinger(finger.pointerId, finger);
+        const pointer = event.originalEvent as PointerEvent | undefined;
+        if (pointer?.isTrusted !== false && data.target instanceof Element) {
+          data.target.setPointerCapture?.(finger.pointerId);
+        }
+
+        const fingers = [...this.fingerManager.fingers.values()];
+        if (!this.multiFingering && fingers.length >= 2) {
+          for (const { fingering } of this.fingerings) {
+            if (fingering.startMultiTouch?.(fingers[0], fingers[1])) {
+              this.multiFingering = fingering;
+              this.fingerManager.end(fingers[0]);
+              event.consumed = true;
+              return;
+            }
+          }
+        }
+
         for (const { fingering } of this.fingerings) {
           if (this.fingerManager.test(fingering, finger)) {
             event.consumed = true;
@@ -313,25 +331,37 @@ export class InputManager {
           }
         }
         break;
+      }
       case 'pointermove': {
         const existing = this.fingerManager.getFinger(finger.pointerId);
-        if (existing) {
-          Object.assign(existing, {
-            position: finger.position,
-            ndc: finger.ndc,
-            buttons: finger.buttons,
-            worldRay: finger.worldRay,
-          });
+        if (!existing) break;
+        Object.assign(existing, {
+          position: finger.position,
+          ndc: finger.ndc,
+          buttons: finger.buttons,
+          worldRay: finger.worldRay,
+        });
+        if (this.multiFingering) {
+          const fingers = [...this.fingerManager.fingers.values()];
+          if (fingers.length >= 2) this.multiFingering.updateMultiTouch?.(fingers[0], fingers[1]);
+        } else {
           this.fingerManager.update(existing);
         }
         break;
       }
       case 'pointerup': {
         const existing = this.fingerManager.getFinger(finger.pointerId);
-        if (existing) {
-          this.fingerManager.end(existing);
-          this.fingerManager.deleteFinger(finger.pointerId);
+        if (!existing) break;
+        const pointer = event.originalEvent as PointerEvent | undefined;
+        if (pointer?.isTrusted !== false && data.target instanceof Element) {
+          data.target.releasePointerCapture?.(finger.pointerId);
         }
+        if (this.multiFingering) {
+          this.multiFingering.stopMultiTouch?.();
+          this.multiFingering = null;
+        }
+        this.fingerManager.end(existing);
+        this.fingerManager.deleteFinger(finger.pointerId);
         break;
       }
     }

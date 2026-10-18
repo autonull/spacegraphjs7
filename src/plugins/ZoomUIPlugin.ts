@@ -1,8 +1,9 @@
 import gsap from 'gsap';
-import type { Plugin } from '../core';
+import type { Disposable } from '../core/EventEmitter';
 import type { EventSystem } from '../core/events/EventSystem';
 import type { Graph } from '../core/Graph';
 import type { SpaceGraph } from '../SpaceGraph';
+import type { Plugin } from '../core';
 
 export interface ZoomUIConfig {
   showHint: boolean;
@@ -32,6 +33,20 @@ const LEVEL_COLORS = [
   'hsl(288, 80%, 60%)',
 ];
 
+const POSITION_STYLES = {
+  'top-right': { top: '20px', right: '20px', left: 'auto', bottom: 'auto' },
+  'top-left': { top: '20px', left: '20px', right: 'auto', bottom: 'auto' },
+  'bottom-right': { bottom: '20px', right: '20px', top: 'auto', left: 'auto' },
+  'bottom-left': { bottom: '20px', left: '20px', top: 'auto', right: 'auto' },
+} as const;
+
+/**
+ * ZoomUIPlugin — a container-scoped zoom-level indicator and one-time hint.
+ *
+ * Both overlays live inside the graph container (not `document.body`) so they clean up with the
+ * graph and never escape an embedded host. `dispose()` releases the level listener and the hint
+ * timer.
+ */
 export class ZoomUIPlugin implements Plugin {
   readonly id = 'zoom-ui';
   readonly name = 'Zoom UI';
@@ -42,7 +57,8 @@ export class ZoomUIPlugin implements Plugin {
   private currentLevel = 0;
   private levelIndicator: HTMLElement | null = null;
   private hintElement: HTMLElement | null = null;
-  private cursorElement: HTMLElement | null = null;
+  private hintTimer: ReturnType<typeof setTimeout> | null = null;
+  private levelSubscription: Disposable | null = null;
 
   constructor(config: Partial<ZoomUIConfig> = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config };
@@ -51,45 +67,35 @@ export class ZoomUIPlugin implements Plugin {
   init(sg: SpaceGraph, _graph: Graph, _events: EventSystem): void {
     this.sg = sg;
 
-    // Listen to zoom level changes
-    this.sg.events.on('fractal:level-change', (e: any) => {
+    this.levelSubscription = this.sg.events.on('fractal:level-change', (e: any) => {
       this.currentLevel = e.to;
       this.updateLevelIndicator(e.to, e.label);
       this.updateCursor(e.to);
     });
 
-    // Create UI elements
-    if (this.config.showLevelIndicator) {
-      this.createLevelIndicator();
-    }
-
-    // Show initial hint
-    if (this.config.showHint) {
-      this.showHint();
-    }
+    if (this.config.showLevelIndicator) this.createLevelIndicator();
+    if (this.config.showHint) this.showHint();
   }
 
   onPreRender(_delta: number): void {}
 
   dispose(): void {
+    this.levelSubscription?.dispose();
+    this.levelSubscription = null;
+    if (this.hintTimer) clearTimeout(this.hintTimer);
+    this.hintTimer = null;
     this.levelIndicator?.remove();
     this.hintElement?.remove();
+    this.levelIndicator = null;
+    this.hintElement = null;
   }
 
   private createLevelIndicator(): void {
-    this.levelIndicator = document.createElement('div');
-    this.levelIndicator.className = 'fractal-level-indicator';
+    const el = document.createElement('div');
+    el.className = 'fractal-level-indicator';
 
-    const position = this.config.levelIndicatorPosition;
-    const positionStyles = {
-      'top-right': { top: '20px', right: '20px', left: 'auto', bottom: 'auto' },
-      'top-left': { top: '20px', left: '20px', right: 'auto', bottom: 'auto' },
-      'bottom-right': { bottom: '20px', right: '20px', top: 'auto', left: 'auto' },
-      'bottom-left': { bottom: '20px', left: '20px', top: 'auto', right: 'auto' },
-    };
-
-    Object.assign(this.levelIndicator.style, {
-      position: 'fixed',
+    Object.assign(el.style, {
+      position: 'absolute',
       background: 'rgba(0, 0, 0, 0.85)',
       color: '#ffffff',
       padding: '14px 22px',
@@ -101,48 +107,39 @@ export class ZoomUIPlugin implements Plugin {
       border: '1px solid rgba(255, 255, 255, 0.1)',
       boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
       transition: 'all 0.3s ease',
-      ...positionStyles[position],
+      ...POSITION_STYLES[this.config.levelIndicatorPosition],
     });
 
-    this.levelIndicator.innerHTML = `
+    el.innerHTML = `
       <div style="font-size: 11px; opacity: 0.6; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Zoom Level</div>
       <div style="font-size: 20px; font-weight: bold; transition: color 0.3s ease;" id="level-text">Overview</div>
       <div style="font-size: 11px; opacity: 0.5; margin-top: 6px;" id="level-hint">Scroll or pinch to zoom</div>
     `;
 
-    document.body.appendChild(this.levelIndicator);
+    this.levelIndicator = el;
+    this.sg.container.appendChild(el);
   }
 
   private updateLevelIndicator(level: number, label: string): void {
     if (!this.levelIndicator) return;
+    const levelText = this.levelIndicator.querySelector('#level-text') as HTMLElement | null;
+    if (!levelText) return;
 
-    const levelText = this.levelIndicator.querySelector('#level-text') as HTMLElement;
-    if (levelText) {
-      // Animate color change
-      gsap.to(levelText, {
-        color: LEVEL_COLORS[level % LEVEL_COLORS.length],
-        duration: 0.3,
-        ease: 'power2.out',
-      });
-
-      // Pulse animation
-      gsap.fromTo(
-        levelText,
-        { scale: 1.1 },
-        {
-          scale: 1,
-          duration: 0.4,
-          ease: 'elastic.out(1, 0.3)',
-        }
-      );
-
-      levelText.textContent = label;
-    }
+    gsap.to(levelText, {
+      color: LEVEL_COLORS[level % LEVEL_COLORS.length],
+      duration: 0.3,
+      ease: 'power2.out',
+    });
+    gsap.fromTo(
+      levelText,
+      { scale: 1.1 },
+      { scale: 1, duration: 0.4, ease: 'elastic.out(1, 0.3)' }
+    );
+    levelText.textContent = label;
   }
 
   private updateCursor(level: number): void {
     if (!this.sg?.container) return;
-
     const cursorStyles: Record<number, string> = {
       0: 'grab',
       1: 'grab',
@@ -150,19 +147,16 @@ export class ZoomUIPlugin implements Plugin {
       3: 'crosshair',
       4: 'crosshair',
     };
-
     this.sg.container.style.cursor = cursorStyles[level] || 'default';
   }
 
   private showHint(): void {
-    if (this.hintElement) {
-      this.hintElement.remove();
-    }
+    this.hintElement?.remove();
 
-    this.hintElement = document.createElement('div');
-    this.hintElement.className = 'fractal-zoom-hint';
-    Object.assign(this.hintElement.style, {
-      position: 'fixed',
+    const el = document.createElement('div');
+    el.className = 'fractal-zoom-hint';
+    Object.assign(el.style, {
+      position: 'absolute',
       bottom: '30px',
       left: '50%',
       transform: 'translateX(-50%) translateY(20px)',
@@ -178,49 +172,28 @@ export class ZoomUIPlugin implements Plugin {
       opacity: '0',
       transition: 'all 0.4s ease',
     });
-
-    this.hintElement.innerHTML = `
+    el.innerHTML = `
       <span style="opacity: 0.8;">🔍</span>
       <span style="margin-left: 8px;">Scroll or pinch to zoom through levels</span>
     `;
 
-    document.body.appendChild(this.hintElement);
+    this.hintElement = el;
+    this.sg.container.appendChild(el);
 
-    // Fade in
-    gsap.to(this.hintElement, {
-      opacity: 1,
-      y: 0,
-      duration: 0.4,
-      ease: 'power2.out',
-    });
+    gsap.to(el, { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out' });
 
-    // Fade out after duration
-    setTimeout(() => {
-      if (this.hintElement) {
-        gsap.to(this.hintElement, {
-          opacity: 0,
-          y: 20,
-          duration: 0.4,
-          ease: 'power2.in',
-          onComplete: () => {
-            this.hintElement?.remove();
-            this.hintElement = null;
-          },
-        });
-      }
-    }, this.config.hintDuration);
-  }
-
-  private hideHint(): void {
-    if (this.hintElement) {
+    this.hintTimer = setTimeout(() => {
+      if (!this.hintElement) return;
       gsap.to(this.hintElement, {
         opacity: 0,
-        duration: 0.3,
+        y: 20,
+        duration: 0.4,
+        ease: 'power2.in',
         onComplete: () => {
           this.hintElement?.remove();
           this.hintElement = null;
         },
       });
-    }
+    }, this.config.hintDuration);
   }
 }

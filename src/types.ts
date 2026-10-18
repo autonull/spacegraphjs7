@@ -360,6 +360,8 @@ export interface CameraViewport {
   zoom: number;
   center: [number, number, number];
   distance: number;
+  /** Visible world extent in the camera's XY plane, for host minimaps. */
+  extent?: { width: number; height: number };
   band?: string;
 }
 
@@ -387,10 +389,12 @@ export interface SpaceGraphOptions {
   chrome?: boolean;
   /** Fly the camera to a node on double click. Defaults to true; embedded graphs often set false. */
   doubleClickFocus?: boolean;
-  /** Renderer options: background, transparency, antialias, pixel ratio, drawing-buffer retention. */
+  /** WebGL render options: background, transparency, antialias, pixel ratio, drawing-buffer retention. */
   render?: RenderOptions;
   /** Shared theme. `theme.background` takes precedence over `render.backgroundColor`. */
   theme?: SpaceGraphTheme;
+  /** Extra plugin instances to register at init, after the defaults. */
+  plugins?: Plugin[];
 
   [key: string]: unknown;
 }

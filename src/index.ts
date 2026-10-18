@@ -79,6 +79,7 @@ export {
   PluginManager,
   RAD2DEG,
   Renderer,
+  WebGLRenderer,
   Spatial,
   SpatialIndex,
   Surface,

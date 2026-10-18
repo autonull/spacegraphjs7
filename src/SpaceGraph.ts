@@ -20,11 +20,11 @@ import { EventSystem } from './core/events/EventSystem';
 // SpaceGraph.ts - Core graph visualization engine
 import { forwardGraphEvents } from './core/forwardEvents';
 import { Graph } from './core/Graph';
-import { Renderer } from './core/Renderer';
+import { WebGLRenderer } from './core/WebGLRenderer';
 import { Selection } from './core/Selection';
 import type { Edge } from './edges/Edge';
 import { applyDefaultInputConfig } from './input/DefaultInputConfig';
-import { createCameraFingering } from './input/fingerings';
+import { createCameraFingering, PinchZoomFingering } from './input/fingerings';
 import type { Node } from './nodes/Node';
 import type {
   CameraViewport,
@@ -48,7 +48,7 @@ export class SpaceGraph {
   public readonly container: HTMLElement;
   public readonly options: SpaceGraphOptions;
 
-  public renderer!: Renderer;
+  public renderer!: WebGLRenderer;
   public graph!: Graph;
   public pluginManager!: PluginManager;
   public cameraControls!: CameraControls;
@@ -895,7 +895,7 @@ export class SpaceGraph {
     this.events = new EventSystem();
     this.vision = new VisionManager(this);
     this.pluginManager = new PluginManager(this);
-    this.renderer = new Renderer(this, this.container, {
+    this.renderer = new WebGLRenderer(this, this.container, {
       ...this.options.render,
       backgroundColor: this.options.theme?.background ?? this.options.render?.backgroundColor,
     });
@@ -955,6 +955,9 @@ export class SpaceGraph {
         this.pluginManager.register(name, new cls());
       }
     }
+    for (const plugin of this.options.plugins ?? []) {
+      this.pluginManager.register(plugin.id, plugin as Parameters<PluginManager['register']>[1]);
+    }
     this.#registerFingerings();
   }
 
@@ -971,5 +974,6 @@ export class SpaceGraph {
       createCameraFingering(this.cameraControls, 'zoom'),
       FingeringPriority.CAMERA_ZOOM
     );
+    this.input.registerFingering(new PinchZoomFingering(this), FingeringPriority.PINCH_ZOOM);
   }
 }
