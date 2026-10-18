@@ -57,3 +57,38 @@ describe('U3.15 orbit gating and camera pose', () => {
     expect(controls.spherical.phi).toBeCloseTo(Math.PI / 4, 6);
   });
 });
+
+describe('orthographic fit zoom', () => {
+  const makeOrthoControls = () => {
+    const container = document.createElement('div');
+    const camera = new THREE.OrthographicCamera(-500, 500, 500, -500, 0.1, 10000);
+    camera.position.set(0, 0, 500);
+    const controls = new CameraControls(camera, container, { keyboard: false });
+    controls.update();
+    return { controls, camera };
+  };
+
+  it('animates the frustum zoom toward the target value', () => {
+    const now = vi.spyOn(performance, 'now');
+    now.mockReturnValue(0);
+    const { controls, camera } = makeOrthoControls();
+    controls.flyTo(new THREE.Vector3(0, 0, 0), 500, 1, 2);
+    now.mockReturnValue(500);
+    controls.update();
+    expect(camera.zoom).toBeGreaterThan(1);
+    expect(camera.zoom).toBeLessThan(2);
+    now.mockReturnValue(1000);
+    controls.update();
+    expect(camera.zoom).toBeCloseTo(2, 6);
+  });
+
+  it('ignores a zoom target for a perspective camera', () => {
+    const now = vi.spyOn(performance, 'now');
+    now.mockReturnValue(0);
+    const { controls } = makeControls();
+    controls.flyTo(new THREE.Vector3(0, 0, 0), 300, 1, 2);
+    now.mockReturnValue(1000);
+    controls.update();
+    expect(controls.spherical.radius).toBeCloseTo(300, 6);
+  });
+});

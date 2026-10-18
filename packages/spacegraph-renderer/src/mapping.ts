@@ -42,9 +42,11 @@ export function nodeSpec(node: RenderNode, theme: RenderTheme): NodeSpec {
   const data: NodeData = {
     ...node.data,
     shape: shapeFor(node.shape),
-    size: node.size?.[0] ?? 1,
     color,
   };
+  // Only override the core's default shape size when the host supplied one; forcing 1 renders a
+  // sub-pixel node (and edges to it look like they dangle).
+  if (node.size) data.size = node.size[0];
   return { id: node.id, type: 'ShapeNode', label: node.label, position, data };
 }
 

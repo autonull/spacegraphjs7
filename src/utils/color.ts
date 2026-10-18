@@ -373,10 +373,16 @@ const NAMED_COLORS: Record<string, string> = {
 };
 
 export function parseColor(color: string | number): number {
-  if (typeof color === 'number') return color;
-  if (color.startsWith('#')) return Number.parseInt(color.slice(1), 16);
-  if (color.startsWith('rgb')) {
-    const match = color.match(/\d+/g);
+  if (typeof color === 'number') return color & 0xffffff;
+  const hex = color.trim();
+  if (hex.startsWith('#')) {
+    const body = hex.slice(1);
+    if (body.length === 3) return Number.parseInt(body.replace(/./g, (c) => c + c), 16);
+    if (body.length === 6 || body.length === 8) return Number.parseInt(body.slice(0, 6), 16);
+    return 0;
+  }
+  if (hex.startsWith('rgb')) {
+    const match = hex.match(/\d+/g);
     if ((match?.length ?? 0) >= 3)
       return (
         (Number.parseInt(match![0]) << 16) |
@@ -384,6 +390,6 @@ export function parseColor(color: string | number): number {
         Number.parseInt(match![2])
       );
   }
-  const named = NAMED_COLORS[color.toLowerCase()];
+  const named = NAMED_COLORS[hex.toLowerCase()];
   return named ? Number.parseInt(named.slice(1), 16) : 0;
 }

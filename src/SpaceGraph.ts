@@ -432,9 +432,11 @@ export class SpaceGraph {
     const nodes = Array.from(this.graph.nodes.values());
     if (nodes.length === 0) return this;
 
-    const fit = calculateFitView(nodes, this.renderer.camera as any, padding);
+    const fit = calculateFitView(nodes, this.renderer.camera, padding);
     if (fit) {
-      this.cameraControls.flyTo(fit.center, fit.cameraZ, duration);
+      // Orthographic fit carries a frustum zoom; keep the camera radius (distance does not scale ortho).
+      const distance = fit.zoom !== undefined ? this.cameraControls.spherical.radius : fit.cameraZ;
+      this.cameraControls.flyTo(fit.center, distance, duration, fit.zoom);
       this.#reportViewport(true);
       this.requestFrame();
     }

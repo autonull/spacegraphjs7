@@ -68,12 +68,14 @@ export class CameraControls {
   private radiusNext: number | null = null;
   private phiNext: number | null = null;
   private thetaNext: number | null = null;
+  private zoomNext: number | null = null;
   private animStartTime = 0;
   private animDuration = 0;
   private startTarget = new THREE.Vector3();
   private startRadius = 0;
   private startPhi = 0;
   private startTheta = 0;
+  private startZoom = 1;
   private isOrthographic = false;
   private orthoCamera: THREE.OrthographicCamera | null = null;
   private perspectiveCamera: THREE.Camera;
@@ -188,7 +190,7 @@ export class CameraControls {
     }
     this.target.add(this.panOffset);
 
-    if (this.targetNext || this.phiNext !== null) {
+    if (this.targetNext || this.phiNext !== null || this.zoomNext !== null) {
       const elapsed = performance.now() - this.animStartTime;
       const t = Math.min(elapsed / this.animDuration, 1);
       const eased = 1 - (1 - t) ** 3;
@@ -204,11 +206,17 @@ export class CameraControls {
         this.spherical.phi = this.startPhi + (this.phiNext - this.startPhi) * eased;
       if (this.thetaNext !== null)
         this.spherical.theta = this.startTheta + (this.thetaNext - this.startTheta) * eased;
+      if (this.zoomNext !== null) {
+        const ortho = this.camera as THREE.OrthographicCamera;
+        ortho.zoom = this.startZoom + (this.zoomNext - this.startZoom) * eased;
+        ortho.updateProjectionMatrix();
+      }
       if (t >= 1) {
         this.targetNext = null;
         this.radiusNext = null;
         this.phiNext = null;
         this.thetaNext = null;
+        this.zoomNext = null;
         if (this.sg?.events) {
           this.sg.events.emit('camera:fly:end');
         }
@@ -220,7 +228,12 @@ export class CameraControls {
     this.sphericalDelta.set(0, 0, 0);
     this.scale = 1;
     this.panOffset.set(0, 0, 0);
-    if (this.targetNext || this.phiNext !== null || [...this.keyState.values()].some(Boolean))
+    if (
+      this.targetNext ||
+      this.phiNext !== null ||
+      this.zoomNext !== null ||
+      [...this.keyState.values()].some(Boolean)
+    )
       this.sg?.requestFrame?.();
   }
 
@@ -237,8 +250,8 @@ export class CameraControls {
     this.spherical.setFromVector3(this._tempOffset);
   }
 
-  flyTo(target: THREE.Vector3, distance: number, duration = 1.5): void {
-    this.setTargetSmooth(target, distance, duration);
+  flyTo(target: THREE.Vector3, distance: number, duration = 1.5, zoom?: number): void {
+    this.setTargetSmooth(target, distance, duration, zoom);
   }
 
   zoomTo(target: THREE.Vector3, distance: number, duration = 1.5): void {
@@ -293,11 +306,17 @@ export class CameraControls {
     return this.zoomStack.length > 0;
   }
 
-  setTargetSmooth(target: THREE.Vector3, radius: number, duration = 1.0): void {
+  setTargetSmooth(target: THREE.Vector3, radius: number, duration = 1.0, zoom?: number): void {
     this.startTarget.copy(this.target);
     this.startRadius = this.spherical.radius;
     this.targetNext = target.clone();
     this.radiusNext = radius;
+    if (zoom !== undefined && this.isOrthographic) {
+      this.startZoom = (this.camera as THREE.OrthographicCamera).zoom;
+      this.zoomNext = THREE.MathUtils.clamp(zoom, MIN_ORTHO_ZOOM, MAX_ORTHO_ZOOM);
+    } else {
+      this.zoomNext = null;
+    }
     this.animStartTime = performance.now();
     this.animDuration = duration * 1000;
     this.sg?.requestFrame?.();

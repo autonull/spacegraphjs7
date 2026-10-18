@@ -5,6 +5,7 @@ import { Node } from '../nodes/Node';
 import { InstancedNodeRenderer } from '../rendering/InstancedNodeRenderer';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { CameraViewport, Projection, RenderOptions } from '../types';
+import { parseColor } from '../utils/color';
 import { declutterLabels, type LabelRect } from '../utils/labelDeclutter';
 import { RenderContext } from './RenderContext';
 import { clamp, denormalizeZoom, normalizeZoom, type ZoomRange } from './zoom';
@@ -52,7 +53,7 @@ export class Renderer {
     const pixelRatio = options.pixelRatio ?? Math.min(window.devicePixelRatio, 2);
     const transparent = options.transparent ?? false;
     const alpha = options.alpha ?? true;
-    const bgColor = options.backgroundColor ?? 0x1a1a2e;
+    const bgColor = parseColor(options.backgroundColor ?? 0x1a1a2e);
 
     this.scene = new THREE.Scene();
     this.scene.background = transparent ? null : new THREE.Color(bgColor);

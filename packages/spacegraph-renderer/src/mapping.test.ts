@@ -75,6 +75,11 @@ describe('nodeSpec', () => {
     expect(spec.type).toBe('ShapeNode');
     expect(spec.data).toMatchObject({ shape: 'circle', size: 2, color: 0xef4444 });
   });
+
+  test('lets the core choose a shape size when the host omits one', () => {
+    const spec = nodeSpec(node({ shape: 'panel' }), theme);
+    expect(spec.data).not.toHaveProperty('size');
+  });
 });
 
 describe('edgeSpec', () => {
