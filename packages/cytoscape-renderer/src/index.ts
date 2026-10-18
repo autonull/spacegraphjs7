@@ -40,6 +40,7 @@ export class CytoscapeRenderer implements GraphRenderer {
   #edges = new Set<string>();
   #cards = new Map<string, HTMLDivElement>();
   #handlers = new Map<keyof RendererEventMap, Set<Handler<never>>>();
+  #applyingSelection = false;
 
   async mount(
     container: HTMLElement,
@@ -125,8 +126,13 @@ export class CytoscapeRenderer implements GraphRenderer {
   setSelection(ids: readonly string[]): void {
     const cy = this.#cy;
     if (!cy) return;
-    cy.elements().unselect();
-    for (const id of ids) cy.getElementById(id).select();
+    this.#applyingSelection = true;
+    try {
+      cy.elements().unselect();
+      for (const id of ids) cy.getElementById(id).select();
+    } finally {
+      this.#applyingSelection = false;
+    }
   }
 
   setViewport(viewport: RendererViewport): void {
@@ -186,9 +192,10 @@ export class CytoscapeRenderer implements GraphRenderer {
       if (event.target === cy) this.#emit('backgroundClick', undefined);
     });
     cy.on('dbltap', 'node', (event) => this.#emit('nodeDoubleClick', { id: event.target.id() }));
-    cy.on('select unselect', () =>
-      this.#emit('selectionChange', { ids: cy.$(':selected').map((element) => element.id()) })
-    );
+    cy.on('select unselect', () => {
+      if (this.#applyingSelection) return;
+      this.#emit('selectionChange', { ids: cy.$(':selected').map((element) => element.id()) });
+    });
     cy.on('mouseover', 'node, edge', (event) =>
       this.#emit('hoverChange', { id: event.target.id(), kind: event.target.isNode() ? 'node' : 'edge' })
     );

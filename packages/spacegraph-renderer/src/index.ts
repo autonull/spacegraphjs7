@@ -39,6 +39,7 @@ export class SpaceGraphRenderer implements GraphRenderer {
   #edges = new Set<string>();
   #handlers = new Map<keyof RendererEventMap, Set<Handler<never>>>();
   #disposers: Unsubscribe[] = [];
+  #applyingSelection = false;
   #band: string | undefined;
 
   async mount(
@@ -111,8 +112,13 @@ export class SpaceGraphRenderer implements GraphRenderer {
   setSelection(ids: readonly string[]): void {
     const sg = this.#sg;
     if (!sg) return;
-    if (ids.length === 0) sg.clearSelection();
-    else sg.select([...ids]);
+    this.#applyingSelection = true;
+    try {
+      if (ids.length === 0) sg.clearSelection();
+      else sg.select([...ids]);
+    } finally {
+      this.#applyingSelection = false;
+    }
   }
 
   setViewport(viewport: RendererViewport): void {
@@ -158,7 +164,10 @@ export class SpaceGraphRenderer implements GraphRenderer {
     on('edge:click', (payload) => this.#emit('edgeClick', { id: idOf(payload) }));
     on('background:click', () => this.#emit('backgroundClick', undefined));
     on('node:dblclick', (payload) => this.#emit('nodeDoubleClick', { id: idOf(payload) }));
-    on('selection:changed', (payload) => this.#emit('selectionChange', { ids: idsOf(payload) }));
+    on('selection:changed', (payload) => {
+      if (this.#applyingSelection) return;
+      this.#emit('selectionChange', { ids: idsOf(payload) });
+    });
     on('camera:change', (payload) => this.#emitViewport(payload as CoreViewport));
   }
 

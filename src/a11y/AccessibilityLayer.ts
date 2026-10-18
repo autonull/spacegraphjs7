@@ -18,6 +18,8 @@ export interface AccessibilityLayerOptions {
   onSelect?: (id: string) => void;
   /** Called when Escape is pressed on the list (e.g. go back or clear focus). */
   onEscape?: () => void;
+  /** Localized announcement for a selection change; defaults to English. */
+  formatSelection?: (labels: readonly string[]) => string;
 }
 
 const HIDDEN_STYLE =
@@ -81,7 +83,10 @@ export class AccessibilityLayer {
     const labels = this.#items
       .filter((item) => this.#selected.has(item.id))
       .map((item) => item.label);
-    this.announce(labels.length ? `Selected ${labels.join(', ')}` : 'Selection cleared');
+    this.announce(
+      this.#options.formatSelection?.(labels) ??
+        (labels.length ? `Selected ${labels.join(', ')}` : 'Selection cleared')
+    );
   }
 
   focus(id?: string): void {

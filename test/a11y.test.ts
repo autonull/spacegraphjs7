@@ -77,6 +77,14 @@ describe('AccessibilityLayer', () => {
     layer.dispose();
   });
 
+  it('lets the host localize the selection announcement', () => {
+    const layer = new AccessibilityLayer(container, { formatSelection: (labels) => `Sélection ${labels.join(', ')}` });
+    layer.setItems([{ id: 'a', label: 'Alpha' }]);
+    layer.setSelected(['a']);
+    expect(container.querySelector('[aria-live="polite"]')!.textContent).toBe('Sélection Alpha');
+    layer.dispose();
+  });
+
   it('focuses a named item and stops handling keys after dispose', () => {
     const onSelect = vi.fn();
     const layer = new AccessibilityLayer(container, { onSelect });
