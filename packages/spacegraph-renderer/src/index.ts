@@ -168,8 +168,11 @@ export class SpaceGraphRenderer implements GraphRenderer {
     }
   }
 
+  // Programmatic framing is immediate (duration 0): a deterministic jump rather than an animation the
+  // host cannot sequence. The renderer owns framing per contract rule 1, and a still frame after a fit
+  // is what the capture waits on (LE.1).
   fit(ids?: readonly string[]): void {
-    this.#sg?.fitView(100, 1.5, ids);
+    this.#sg?.fitView(100, 0, ids);
   }
 
   focus(id: string): void {
