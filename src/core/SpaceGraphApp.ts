@@ -198,7 +198,10 @@ export class SpaceGraphApp {
       .filter((n): n is NonNullable<typeof n> => n != null);
     if (nodes.length === 0) return;
 
-    const fit = calculateFitView(nodes, this.sg.renderer.camera, padding);
+    const isPerspective = this.sg.renderer.projection === 'perspective';
+    const targetPhi = isPerspective ? depthTreatment(this.sg.depth).phi : undefined;
+
+    const fit = calculateFitView(nodes, this.sg.renderer.camera, padding, 200, targetPhi);
     if (fit) {
       this.sg.cameraControls.flyTo(fit.center, fit.cameraZ, duration);
     }

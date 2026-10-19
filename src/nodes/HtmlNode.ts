@@ -1,3 +1,4 @@
+import * as THREE from 'three';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { LabelLodLevel, NodeSpec, SpaceGraphNodeData } from '../types';
 import { DOMUtils } from '../utils/DOMUtils';
@@ -249,8 +250,22 @@ export class HtmlNode extends BaseContentNode {
   }
 
   protected faceCamera(): void {
-    if (this.billboard && this.sg?.renderer?.camera) {
-      this.cssObject.quaternion.copy(this.sg.renderer.camera.quaternion);
+    if (this.billboard && this.sg?.renderer?.camera && this.sg?.cameraControls) {
+      const camera = this.sg.renderer.camera;
+      const target = this.sg.cameraControls.target;
+      const objPos = this.position;
+
+      // Vector from object to camera in world space
+      const toCamera = new THREE.Vector3().subVectors(camera.position, objPos);
+      // Project onto XZ plane for billboarding (ignore vertical component)
+      toCamera.y = 0;
+
+      if (toCamera.lengthSq() > 0.0001) {
+        toCamera.normalize();
+        // Calculate Y-rotation to face camera (like a billboard on a pole)
+        const angle = Math.atan2(toCamera.x, toCamera.z);
+        this.cssObject.quaternion.setFromAxisAngle(new THREE.Vector3(0, 1, 0), angle);
+      }
     }
   }
 

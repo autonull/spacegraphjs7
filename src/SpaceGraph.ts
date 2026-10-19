@@ -441,7 +441,12 @@ export class SpaceGraph {
       : Array.from(this.graph.nodes.values());
     if (nodes.length === 0) return this;
 
-    const fit = calculateFitView(nodes, this.renderer.camera, padding);
+    // For perspective cameras, pass the target phi from the current depth treatment to account
+    // for tilt foreshortening when computing the fit distance.
+    const isPerspective = this.renderer.projection === 'perspective';
+    const targetPhi = isPerspective ? depthTreatment(this.#depth).phi : undefined;
+
+    const fit = calculateFitView(nodes, this.renderer.camera, padding, 200, targetPhi);
     if (fit) {
       // T1.8: the fitted frame becomes the orthographic zoom reference, so later zoom is bounded
       // relative to content instead of the absolute 0.01..100 frustum range.

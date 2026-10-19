@@ -17,11 +17,17 @@ export interface FitNode {
   data?: Record<string, unknown>;
 }
 
+/**
+ * Calculate a view that fits the given nodes. For perspective cameras, optionally provide the
+ * camera's polar angle (phi from +Y) to account for tilt foreshortening.
+ */
 export function calculateFitView(
   nodes: FitNode[],
   camera: THREE.Camera,
   padding = 100,
-  minDistance = 200
+  minDistance = 200,
+  /** Camera polar angle from +Y (radians). When provided for perspective, adjusts distance for tilt. */
+  phi?: number
 ): FitViewResult | null {
   if (!nodes || nodes.length === 0) return null;
 
@@ -59,7 +65,13 @@ export function calculateFitView(
   const fovRad = fov * DEG2RAD;
   const cameraZ = Math.abs(maxDim / (2 * Math.tan(fovRad / 2) * Math.max(1, aspect)));
 
-  return { center, cameraZ: Math.max(cameraZ + padding, minDistance) };
+  // For perspective cameras with tilt (phi < PI/2), the view of the XY plane is foreshortened.
+  // Move the camera closer by sin(phi) to compensate and frame the same content.
+  const adjustedZ = phi !== undefined && phi < Math.PI / 2
+    ? cameraZ * Math.sin(phi)
+    : cameraZ;
+
+  return { center, cameraZ: Math.max(adjustedZ + padding, minDistance) };
 }
 
 /** Half-extents reported by a node's spec; cards carry width/height, shapes a single size. */
