@@ -58,6 +58,9 @@ export function nodeSpec(node: RenderNode, theme: RenderTheme): NodeSpec {
       height: node.size?.[1] ?? 72,
       // Host markup draws its own surface; the node's box stays neutral so status reads as an accent.
       color: parseColor(theme.surface),
+      // T1.10: markup that inherits its colour (lane labels) must follow the host text token, not the
+      // core's hard-coded white, which vanishes on the light canvas.
+      style: { color: theme.text },
     };
     return { id: node.id, type: 'HtmlNode', label: node.label, position, data };
   }

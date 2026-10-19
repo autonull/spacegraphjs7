@@ -92,6 +92,27 @@ describe('orthographic fit zoom', () => {
     expect(controls.spherical.radius).toBeCloseTo(300, 6);
   });
 
+  it('bounds orthographic zoom to the fitted frame so the canvas never empties', () => {
+    const now = vi.spyOn(performance, 'now');
+    now.mockReturnValue(0);
+    const { controls, camera } = makeOrthoControls();
+    controls.setOrthoZoomRange(1);
+    expect(controls.getOrthoZoomRange()).toEqual({ min: 1 / 3, max: 2.5 });
+
+    controls.flyTo(new THREE.Vector3(0, 0, 0), 500, 1, 0.001);
+    now.mockReturnValue(1000);
+    controls.update();
+    expect(camera.zoom).toBeCloseTo(1 / 3, 6);
+
+    controls.flyTo(new THREE.Vector3(0, 0, 0), 500, 1, 99);
+    now.mockReturnValue(2000);
+    controls.update();
+    expect(camera.zoom).toBeCloseTo(2.5, 6);
+
+    controls.setOrthoZoomRange();
+    expect(controls.getOrthoZoomRange()).toBeNull();
+  });
+
   it('cancels an in-flight zoom so an explicit value is not overwritten', () => {
     const now = vi.spyOn(performance, 'now');
     now.mockReturnValue(0);

@@ -141,10 +141,17 @@ export class WebGLRenderer {
     return this;
   }
 
+  // T1.8: the orthographic range follows the last fitted frame, so normalized zoom covers only the
+  // useful band and the host's 0..1 control can never reach an empty canvas.
+  #orthoRange(): ZoomRange {
+    const range = this.sg?.cameraControls?.getOrthoZoomRange?.();
+    return range ? { min: range.min, max: range.max, closerIsLarger: true } : ORTHO_ZOOM;
+  }
+
   // Normalized 0..1 zoom; 1 is closest. Perspective uses camera distance, ortho uses frustum zoom.
   getZoom(): number {
     if (this._projection === 'orthographic') {
-      return normalizeZoom(this.orthographicCamera.zoom, ORTHO_ZOOM);
+      return normalizeZoom(this.orthographicCamera.zoom, this.#orthoRange());
     }
     const distance = this.sg.cameraControls?.spherical.radius ?? this.camera.position.length();
     return normalizeZoom(distance, PERSPECTIVE_DISTANCE);
@@ -154,7 +161,7 @@ export class WebGLRenderer {
     const v = clamp(value, 0, 1);
     this.sg.cameraControls?.cancelTweens();
     if (this._projection === 'orthographic') {
-      this.orthographicCamera.zoom = denormalizeZoom(v, ORTHO_ZOOM);
+      this.orthographicCamera.zoom = denormalizeZoom(v, this.#orthoRange());
       this.orthographicCamera.updateProjectionMatrix();
     } else if (this.sg.cameraControls) {
       this.sg.cameraControls.spherical.radius = denormalizeZoom(v, PERSPECTIVE_DISTANCE);

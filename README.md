@@ -1,221 +1,589 @@
 # SpaceGraphJS
 
-SpaceGraphJS is a Zoomable User Interface (ZUI) library powered by AI vision.
-It sees what it builds, verifies quality autonomously, and self-corrects in 30 seconds.
+**A zoomable user interface engine for spatial software.**  
+Render graphs in 2D or 3D, treat every object as a node, and let the interface verify its own visual quality.
 
-## Quickstart
-
-```bash
-pnpm install spacegraphjs three
-```
-
-[See QUICKSTART.md](./QUICKSTART.md) for a 5-minute guide.
-
-## Features
-
-- 🎨 18 node types, 8 edge types, 16 layout engines
-- 👁️ 6 AI vision models (LQ-Net, TLA, CHE, ODN, VHS, EQA)
-- ⚡ 60 FPS at 1000 nodes
-- 🔧 Vision-closed development (self-correcting UI)
-- 📦 Pure FOSS (MIT license)
-
-## Examples
-
-Check out the interactive examples in the `demo/` directory or run `pnpm run dev` to see them in action.
-
-The [renderer contract demo](./demo/contract.html) (`pnpm run dev:demo`, then `/contract.html`) is the
-non-OpenCode reference host: one synthetic activity model through the SpaceGraph adapter, the
-Cytoscape adapter, and the static SVG renderer, using `LaneLayout` and the `GraphController`
-(`spacegraphjs/control`) for selection, trail, zoom bands, and search, plus `AccessibilityLayer` from
-the public entry points.
-
-## Renderer contract
-
-A host renders a graph through a dependency-free port, not through the core. `@spacegraphjs/renderer`
-holds the types and `CONTRACT_VERSION`; three optional leaves implement it — the SpaceGraph adapter
-(`@spacegraphjs/spacegraph-renderer`, 2D + 3D), the Cytoscape adapter
-(`@spacegraphjs/cytoscape-renderer`, 2D only), and the static SVG renderer
-(`@spacegraphjs/svg-renderer`). The core never imports the contract; the adapters are thin leaves.
-The lean entry is `spacegraphjs/activity`, which keeps `three` off the critical path until a graph
-mounts. Naming rules are in [AGENTS.md](./AGENTS.md); integration steps are in the
-[host integration guide](./docs/host-integration.md).
-
-## Documentation
-
-- **[ROADMAP.md](./ROADMAP.md)** — What's built, what's next (start here for software work)
-- [Host integration guide](./docs/host-integration.md) — Reuse the renderer contract from another host
-- [Vision Plugin](./docs/vision-plugin.md) — AI vision integration guide
-- [QUICKSTART.md](./QUICKSTART.md) — 5-minute getting started guide
-- [CONTRIBUTING.md](./CONTRIBUTING.md) — How to contribute
-- [PLAN/SPACEGRAPH_OS.md](./PLAN/SPACEGRAPH_OS.md) — Fractal ZUI & OS architecture vision
+SpaceGraphJS is built on WebGL and a dependency-free renderer contract, so the same graph can run in the SpaceGraph adapter, a Cytoscape fallback, or a static SVG export.
 
 ---
 
-**Install:**
+## 🌌 What It Is
 
-```bash
-pnpm install spacegraphjs three
-```
+Most interfaces are pages. SpaceGraphJS treats an interface as a **navigable graph**:
 
----
+- **Nodes** are content, controls, media, documents, or entire subgraphs.
+- **Edges** express relationships and flow.
+- **Zoom** is navigation: overview first, detail on approach.
+- **Vision** closes the loop: analyze the render, report issues, correct or patch.
 
-### 📚 Research: Seminal Contribution
+It works as a full engine (`spacegraphjs`), as a lean canvas entry (`spacegraphjs/activity`), or as the rendering layer inside another host through `@spacegraphjs/renderer`.
 
-**For Academics:**
-
-**4 Research Papers:**
-
-1. **Vision-Closed Development** (CHI/UIST 2026) — 60x faster AI iteration
-2. **ZUI Performance** (WebSci/WWW 2026) — 60 FPS at 1000 nodes
-3. **Open Hardware** (TEI/ISWC 2026) — Accessible AI research platform
-
-**2 Open Datasets:**
-
-- **Layout Quality Corpus** — 100K+ labeled graph layouts (CC-BY-4.0)
-- **UI Vision Benchmark** — 10K UI screenshots (MIT + CC-BY-4.0)
-
----
-
-## Why This Exists
-
-### The Problem
-
-**AI-assisted development has a fundamental flaw:**
-
-The AI cannot see what it builds.
-
-```
-Traditional AI Development:
-Human describes → AI codes → Human views → Human describes → AI guesses → Repeat (10-20x)
-                                ↓
-                        30 minutes per iteration
-                        Exhausting. Imprecise. Discouraging.
-```
-
-### The Solution
-
-**Vision-Closed Development:**
-
-```
-Vision-Closed Development:
-Human specifies → AI builds → Vision verifies → AI self-corrects → Done
-                                ↓
-                        30 seconds per iteration
-                        Autonomous. Precise. Empowering.
-```
-
-**6 AI Vision Models:**
-
-- **LQ-Net** — Layout quality scoring
-- **TLA** — Text legibility analysis
-- **CHE** — Color harmony evaluation
-- **ODN** — Overlap detection
-- **VHS** — Visual hierarchy scoring
-- **EQA** — Ergonomics quality assessment
+| Pillar                 | What it gives you                                                                                             |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------- |
+| 🎨 **Spatial canvas**  | Infinite pan/zoom, orthographic or perspective camera, on-demand or continuous rendering                      |
+| 🧱 **Rich primitives** | Shapes, text, HTML, Markdown, code editors, images, video, audio, charts, 3D globes, form controls            |
+| 🔗 **Relation model**  | Curved, dotted, flow, bundled, animated, labeled, and inter-graph edges                                       |
+| 🧠 **Layout**          | Force, hierarchical, tree, radial, circular, grid, spectral, cluster, timeline, geo, and headless lane layout |
+| 👁️ **Vision**          | Legibility, overlap, hierarchy, and ergonomics analysis with auto-fix                                         |
+| 🎮 **Interaction**     | Selection, focus, fit, navigation trail, semantic zoom bands, search, graph queries                           |
+| ♿ **Accessibility**   | Hidden DOM mirror, roving tabindex, keyboard traversal, live announcements, RTL support                       |
+| 🧩 **Extensibility**   | Plugin system, custom node/edge types, custom layouts, renderer adapters                                      |
+| 🧭 **Host contract**   | Framework-agnostic `RenderModel`, capability negotiation, React/Solid/Vue bindings                            |
 
 ---
 
-## How to Contribute
+## 📊 Project Status
 
-### Developers
+**Alpha.** The rendering core, node and edge libraries, layout plugins, plugin system, camera and input handling, vision analyzers, renderer contract, adapters, and framework bindings are implemented. The project is currently in a developer-experience and API-stability pass before a stable release.
 
-```bash
-# 1. Clone
-git clone https://github.com/autonull/spacegraphjs
-cd spacegraphjs
+Practical expectations:
 
-# 2. Install
-pnpm install
-
-# 3. Run demo
-pnpm run dev
-
-# 4. Find a good first issue
-# https://github.com/autonull/spacegraphjs/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22
-
-# 5. Submit PR
-```
-
-### Researchers
-
-**Interested in collaboration?**
-
-Email: research@spacegraphjs.dev
-
-**Topics:**
-
-- Vision-Closed Development paradigm
-- AI-assisted software engineering
-- ZUI performance optimization
-- Open hardware for AI research
-
-### Hardware Enthusiasts
-
-**Want to build your own?**
-
-All designs published under open licenses:
-
-- Schematics: [github.com/autonull/spacegraph-hardware](https://github.com/autonull/spacegraph-hardware)
-- CAD files: CC-BY-SA 4.0
-- BOM: Fully documented
+- Public APIs may still move. Pin a version for production use.
+- Heuristic vision analysis works today. The ONNX inference path is wired, but model weights are still being finalized.
+- The renderer contract is versioned and negotiable; adapters declare what they support.
+- Issues and design discussion are welcome while the surface stabilizes.
 
 ---
 
-## Community
+## 🎯 Why It Exists
 
-| Channel    | Link                                                                         | Members             |
-|------------|------------------------------------------------------------------------------|---------------------|
-| **Matrix** | [#spacegraphjs:matrix.org](https://matrix.to/#/#spacegraphjs:matrix.org)     | 200+ target         |
-| **GitHub** | [github.com/autonull/spacegraphjs](https://github.com/autonull/spacegraphjs) | 2,000+ stars target |
-| **pnpm**   | [npmjs.com/package/spacegraphjs](https://npmjs.com/package/spacegraphjs)     | 25K+/month target   |
+Traditional UI work separates the builder from the viewer:
 
----
+| Conventional loop | Vision-closed loop      |
+| ----------------- | ----------------------- |
+| Write code        | Specify the graph       |
+| Open a browser    | Render the graph        |
+| Inspect visually  | Analyze the render      |
+| Guess at the fix  | Correct or emit a patch |
+| Repeat            | Repeat only when needed |
 
-## Start Now
-
-```bash
-# Install
-pnpm install spacegraphjs three
-
-# Quickstart
-# See QUICKSTART.md for 5-minute guide
-
-# Documentation
-# See PLAN/ for complete strategy
-
-# Community
-# Join Matrix: https://matrix.to/#/#spacegraphjs:matrix.org
-```
+The important idea is not autonomous replacement of the developer. It is **making visual quality observable to the system that produced it**. A graph engine can measure contrast, overlap, hierarchy, and target size because it owns the scene. That makes visual regressions testable, and it makes self-correction possible.
 
 ---
 
-## The Ultimate Goal
+## 🏗️ Architecture
 
-**We are building a world where:**
+| Layer                | Responsibility                                        | Key pieces                                                                                                                    |
+| -------------------- | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| **Host application** | Owns domain data, persistence, detail panels, routing | Your React, Solid, Vue, or vanilla app                                                                                        |
+| **Bindings**         | Lifecycle, controller wiring, framework reactivity    | `GraphBinding`; `react-spacegraph` and `solid-spacegraph` over the contract; `vue-spacegraph` over the full engine            |
+| **Contract**         | Dependency-free types and capability negotiation      | `@spacegraphjs/renderer` — `GraphRenderer`, `RenderModel`, `RenderTheme`, `CONTRACT_VERSION`                                  |
+| **Adapters**         | Geometry, hit-testing, camera, rendering              | `@spacegraphjs/spacegraph-renderer` (2D + 3D), `@spacegraphjs/cytoscape-renderer` (2D), `@spacegraphjs/svg-renderer` (static) |
+| **Core engine**      | Graph model, WebGL renderer, plugins, input, vision   | `spacegraphjs` — `SpaceGraph`, `Graph`, `WebGLRenderer`, `PluginManager`, `VisionManager`                                     |
+| **Platform**         | GPU, browser APIs, optional inference                 | Three.js, WebGL, ONNX Runtime Web                                                                                             |
 
-- Interfaces are **visible**, not hidden
-- Computing is **comprehensible**, not opaque
-- Development is **autonomous**, not exhausting
-- Hardware is **open**, not proprietary
-- Research is **accessible**, not gatekept
+Two ways to adopt it:
 
-**This is not just a library. This is a paradigm shift.**
+| Mode              | You import                                | You own                                                        |
+| ----------------- | ----------------------------------------- | -------------------------------------------------------------- |
+| **Full engine**   | `spacegraphjs`                            | Little: the engine owns the graph, camera, plugins, and vision |
+| **Host contract** | `@spacegraphjs/renderer` plus one adapter | Data mapping, positions, persistence, detail UI, layout policy |
 
-**Stop describing. Start specifying.**
+The data path is deliberately narrow:
+
+**your domain model → host adapter → `RenderModel` → contract renderer → canvas or SVG**
+
+Design rules that keep the layers honest:
+
+- The core **never imports** the renderer contract. Adapters are thin leaves.
+- Absolute positions are authoritative. The renderer never auto-layouts.
+- Events carry string IDs and primitives. No library objects cross the boundary.
+- HTML is host-provided and sanitized. The renderer positions markup; it never evaluates it.
+- Hosts own persistence, routing, and detail content. The library keeps no session state.
+- Capabilities are checked before an affordance is offered. Unsupported actions are disabled with an explanation.
 
 ---
 
-## Quick Links
+## 📦 Package Map
 
-| I Want To...                 | Go Here                                                  |
-|------------------------------|----------------------------------------------------------|
-| **Get started in 5 min**     | [QUICKSTART.md](./QUICKSTART.md)                         |
-| **Understand the full plan** | [PLAN/INDEX.md](./PLAN/INDEX.md)                         |
-| **See ambitious targets**    | [PLAN/AMBITIOUS-SUCCESS.md](./PLAN/AMBITIOUS-SUCCESS.md) |
-| **Contribute code**          | [CONTRIBUTING.md](./CONTRIBUTING.md)                     |
-| **Read research program**    | [PLAN/ACADEMIC-RESEARCH.md](./PLAN/ACADEMIC-RESEARCH.md) |
-| **Track outcomes**           | [PLAN/OUTCOMES-TRACKING.md](./PLAN/OUTCOMES-TRACKING.md) |
+| Package                                                                                       | Role                                                               |
+| --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| `spacegraphjs`                                                                                | Full engine: nodes, edges, layouts, plugins, vision, ergonomic API |
+| `spacegraphjs/activity`                                                                       | Lean entry that keeps `three` off the critical path                |
+| `spacegraphjs/core`, `/nodes`, `/edges`, `/plugins`, `/input`, `/utils`, `/builder`, `/types` | Focused subpath exports                                            |
+| `spacegraphjs/zoom`, `/layout`, `/a11y`, `/navigation`, `/depth`, `/control`                  | Generic capabilities with minimal structural types                 |
+| `spacegraphjs/vision`                                                                         | Vision analyzers, strategies, auto-fix, model loading              |
+| `@spacegraphjs/renderer`                                                                      | Dependency-free renderer contract                                  |
+| `@spacegraphjs/spacegraph-renderer`                                                           | SpaceGraph adapter: orthographic 2D and perspective 3D             |
+| `@spacegraphjs/cytoscape-renderer`                                                            | Cytoscape adapter: 2D fallback and benchmark                       |
+| `@spacegraphjs/svg-renderer`                                                                  | Static SVG export and inline subgraphs; not interactive            |
+| `react-spacegraph`                                                                            | `GraphView` binding over the contract and controller               |
+| `solid-spacegraph`                                                                            | Solid binding over the same policy                                 |
+| `vue-spacegraph`                                                                              | Vue 3 adapter                                                      |
+| `@spacegraphjs/cli`                                                                           | `sg fix`: apply vision-generated patches                           |
+| `create-spacegraph`                                                                           | Scaffolder, also exposed as `sg6`                                  |
+| `n8n-bridge`                                                                                  | Experimental n8n workflow integration                              |
 
 ---
 
-**SpaceGraphJS — The First Self-Building UI Framework**
+## 🚀 Getting Started
+
+Install with `pnpm add spacegraphjs three`. Three.js is a required peer. Optional peers activate specific nodes: `chart.js` for charts, `katex` for math, `marked` for Markdown.
+
+### Your first graph
+
+1. Put a container in the DOM and give it real dimensions.
+2. Import `SpaceGraph` from `spacegraphjs`, or from `spacegraphjs/activity` for a lean canvas.
+3. Build a spec with nodes (`id`, `type`, `label`, `position`, `data`) and edges (`id`, `source`, `target`).
+4. Await `SpaceGraph.create(container, spec, options)`. It initializes the engine and loads the graph.
+5. Call `render()`. In the default on-demand mode, later mutations repaint automatically.
+6. Use `fitView()`, `focusNode(id)`, `select(id)`, or `setPositions(...)` to frame and drive the scene.
+
+### See it run
+
+Run `pnpm run dev` for the engine demos. Run `pnpm run dev:demo` and open `/contract.html` for the non-OpenCode reference host, which drives the SpaceGraph adapter, the Cytoscape adapter, and the static SVG renderer from one synthetic model.
+
+### Most-used calls
+
+| Goal     | Call                                                                  |
+| -------- | --------------------------------------------------------------------- |
+| Create   | `SpaceGraph.create(container, spec, options)`                         |
+| Render   | `graph.render()`                                                      |
+| Add      | `graph.addNode(...)`, `graph.addEdge(...)`                            |
+| Query    | `graph.$(id)`, `graph.findNodes(...)`, `graph.neighbors(id)`          |
+| Frame    | `graph.fitView()`, `graph.focusNode(id)`, `graph.center(x, y, z)`     |
+| Select   | `graph.select(ids)`, `graph.toggleSelection(id)`, `graph.selectAll()` |
+| Batch    | `graph.batch(fn)`, `graph.transaction(fn)`                            |
+| React    | `graph.watch(event, callback)`                                        |
+| Persist  | `graph.export()`, `graph.import(data)`                                |
+| Teardown | `graph.dispose()`                                                     |
+
+### Common options
+
+| Option              | Effect                                                                            |
+| ------------------- | --------------------------------------------------------------------------------- |
+| `render.renderMode` | `on-demand` (default) or `continuous`                                             |
+| `render.projection` | `orthographic` or `perspective`                                                   |
+| `render.depth`      | `flat`, `layered`, `depth-stack`, or `orbit`                                      |
+| `theme`             | Background, node fill/stroke, edge colors, label typography, interaction outlines |
+| `keyboard`          | `false`, `container` (default), or `window`                                       |
+| `chrome`            | Enable HUD, minimap, and zoom UI chrome; off by default                           |
+| `plugins`           | Extra plugin instances registered after defaults                                  |
+| `global`            | Expose the instance for developer tooling; off by default                         |
+| `vision`            | Heuristic thresholds and ONNX WASM paths                                          |
+
+### Entry points
+
+| Need              | Import                                                                       |
+| ----------------- | ---------------------------------------------------------------------------- |
+| Everything        | `spacegraphjs`                                                               |
+| Lean graph canvas | `spacegraphjs/activity`                                                      |
+| Contract only     | `@spacegraphjs/renderer`                                                     |
+| Framework binding | `react-spacegraph`, `solid-spacegraph`, or `vue-spacegraph`                  |
+| Headless helpers  | `spacegraphjs/layout`, `/zoom`, `/navigation`, `/a11y`, `/depth`, `/control` |
+
+### The host path
+
+If you are embedding a graph in an existing product, avoid the full engine:
+
+1. Map your data to a `RenderModel`.
+2. Pick a renderer adapter and negotiate the contract version.
+3. Mount it behind a dynamic import.
+4. Bind a `GraphController` for selection, trail, bands, and search.
+5. Mount `AccessibilityLayer` over the same node list.
+6. Export with `renderToSVG` or serialize the model.
+
+This path keeps your vocabulary, your layout policy, and your persistence out of the library.
+
+### Renderer contract
+
+The contract is types plus tiny helpers, small enough to read in one sitting.
+
+| Contract piece         | Purpose                                                                                                                                |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `GraphRenderer`        | `mount`, `setModel`, `setTheme`, `setProjection`, `setDepth`, `setSelection`, `setViewport`, `fit`, `focus`, `resize`, `on`, `dispose` |
+| `RenderModel`          | `nodes`, `edges`, optional `extent`                                                                                                    |
+| `RenderNode`           | `id`, `kind`, `label`, `summary`, `html`, `position`, `size`, `status`, `visible`, `interactive`, `shape`, `data`                      |
+| `RenderEdge`           | `id`, `source`, `target`, `kind`, `label`, `confidence`, `visible`, `directed`, `style`                                                |
+| `RenderTheme`          | Colors, typography, and `direction`                                                                                                    |
+| `RendererCapabilities` | Projections, depths, DOM node support, edge labels, clusters, minimap, recommended limits                                              |
+| `RendererEventMap`     | `ready`, clicks, double-click, background, hover, selection, viewport, band, error                                                     |
+
+Call `negotiateContract(version)` before rendering, and gate affordances with `supports(capabilities, ...)` and `supportsDepth(capabilities, ...)`. Renderers must no-op on an unsupported depth mode, never throw. Absolute positions are authoritative; `data` is serializable; HTML is sanitized by the host; no library objects cross the boundary.
+
+A host typically maps data, dynamic-imports one adapter, negotiates the version, mounts with a theme and projection, pushes model and view state, subscribes to events, and disposes on unmount. A failed mount can fall back to another adapter on the same container with the model intact.
+
+---
+
+## 🧱 Core Data Model
+
+| Type                | Fields                                                  |
+| ------------------- | ------------------------------------------------------- |
+| **Node**            | `id`, `type`, `label`, `position` (`[x, y, z]`), `data` |
+| **Edge**            | `id`, `type`, `source`, `target`, `label`, `data`       |
+| **GraphSpec**       | `nodes`, `edges`                                        |
+| **SpecUpdate**      | Partial node and edge updates by `id`                   |
+| **GraphImportData** | Spec plus optional `camera` and plugin state            |
+
+Per-node flags live in `data` and are honored by the engine: `visible`, `draggable`, `selectable`, `pinned`.
+
+Export captures positions, node data, edge data, camera pose, and plugin state. Import replaces the graph and restores the camera. Stable IDs are the contract that makes updates, selection, and the navigation trail survive.
+
+---
+
+## 🧩 Node Library
+
+| Category             | Types                                                                                                                                                           |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Shapes and text**  | `ShapeNode`, `TextMeshNode`, `TexturedMeshNode`, `InstancedShapeNode`, `InstancedNode`                                                                          |
+| **Content**          | `HtmlNode`, `DOMNode`, `MarkdownNode`, `MermaidNode`, `CodeEditorNode`, `IFrameNode`, `NoteNode`                                                                |
+| **Media**            | `ImageNode`, `VideoNode`, `AudioNode`, `CanvasNode`, `GlobeNode`                                                                                                |
+| **Data and process** | `ChartNode`, `GridNode`, `VirtualGridNode`, `DataNode`, `ProcessNode`                                                                                           |
+| **Controls**         | `ButtonNode`, `ToggleNode`, `SwitchNode`, `SliderNode`, `ColorPickerNode`, `DropdownNode`, `ProgressBarNode`, `MeterNode`                                       |
+| **Structure**        | `GroupNode`, `PanelNode`, `BorderNode`, `LayoutNode`, `SplitNode`, `StackingNode`, `PortNode`, `SceneNode`, `WidgetNode`, `TabContainerNode`, `ScrollPanelNode` |
+
+Most of these types are registered by default and usable by type name; constructors are also exported from `spacegraphjs/nodes` where available. `LayoutNode` exposes border, grid, split, stacking, and switch strategies. `InstancedNode` and `InstancedShapeNode` batch repeated geometry for dense scenes.
+
+All nodes share `id`, `type`, `label`, `position`, and `data`. Optional peers activate chart, math, Markdown, and code-editor content.
+
+---
+
+## 🔗 Edge Library
+
+| Type                   | Use                              |
+| ---------------------- | -------------------------------- |
+| `Edge`                 | Straight connection              |
+| `Wire`                 | Minimal wire                     |
+| `CurvedEdge`           | Smooth curve                     |
+| `DottedEdge`           | Dotted or dashed relation        |
+| `FlowEdge`             | Directional flow animation       |
+| `BundledEdge`          | Hierarchical bundling            |
+| `AnimatedEdge`         | Custom animation loop            |
+| `DynamicThicknessEdge` | Thickness encodes data           |
+| `LabeledEdge`          | Text label on the connection     |
+| `InterGraphEdge`       | Reference across graph instances |
+
+Edges resolve only nodes in the same graph. Graph instances are isolated at the model level; `InterGraphEdge` renders a screen-space overlay for cross-canvas presentation but does not merge graph models.
+
+---
+
+## 🧠 Layout
+
+| Layout               | Best for                                    |
+| -------------------- | ------------------------------------------- |
+| `ForceLayout`        | Organic clusters and physics feel           |
+| `HierarchicalLayout` | Dependencies, org charts, directed flow     |
+| `TreeLayout`         | Strict trees                                |
+| `RadialLayout`       | Hub-and-spoke and mind maps                 |
+| `CircularLayout`     | Cycles and rings                            |
+| `GridLayout`         | Matrices and calendars                      |
+| `SpectralLayout`     | Spectral graph drawing                      |
+| `ClusterLayout`      | Community grouping                          |
+| `TimelineLayout`     | Temporal sequences                          |
+| `GeoLayout`          | Geographic projection                       |
+| `LaneLayout`         | Headless lanes → Y, ordinals → X, depth → Z |
+| `BaseLayout`         | Custom layout extension point               |
+
+Two placement modes matter:
+
+- **Plugin layouts** run when you invoke them with `layout(name)` or `layoutOnce(name)`; they do not re-run on every mutation. `AutoLayoutPlugin` is a default hook for vision-driven overlap repair, not a general auto-layout loop.
+- **`LaneLayout`** is deterministic and append-only: placing a known ID returns its stored position, so streaming data never moves earlier items.
+
+Hosts can always own placement directly with `setPositions(...)`, `pinAll(...)`, and `layoutOnce(...)`. Request a named layout explicitly when data arrives.
+
+---
+
+## 👁️ Vision
+
+The vision system analyzes the scene the engine owns, then reports or corrects issues.
+
+> **Render → Analyze → Score → Correct or patch → Re-render**
+
+| Analyzer             | Checks                                   |
+| -------------------- | ---------------------------------------- |
+| `LegibilityAnalyzer` | WCAG contrast, text legibility           |
+| `OverlapAnalyzer`    | Node penetration and overlapping regions |
+| `HierarchyAnalyzer`  | Root presence, depth, level clarity      |
+| `ErgonomicsAnalyzer` | Target sizes and Fitts' Law compliance   |
+
+| Strategy     | Behavior                                        |
+| ------------ | ----------------------------------------------- |
+| `heuristics` | Fast, deterministic checks; the working default |
+| `onnx`       | Model inference through ONNX Runtime Web        |
+| `hybrid`     | Combines heuristic and model results            |
+
+The heuristic path is the supported default. ONNX loading, execution providers, and model management are implemented, but the shipped weights are placeholders while the training pipeline is finalized. Treat ONNX scoring as experimental until that lands.
+
+A `VisionReport` carries a legibility result, an overlap result, a hierarchy result, an ergonomics result, and an overall score with a grade and categorized issues.
+
+### The loop
+
+1. **Analyze** with `graph.vision.analyzeVision()`, which returns a `VisionReport`.
+2. **Inspect** the overall score, grade, and categorized issues.
+3. **Correct** with `graph.vision.autoFix(category, report)`.
+4. **Automate** with `graph.vision.startAutonomousCorrection()` and `graph.vision.stopAutonomousCorrection()`.
+5. **Apply a report** with `graph.vision.applyAutonomousFixes(report)`.
+
+Model management uses `graph.vision.loadModels(paths)` and `graph.vision.modelsLoaded`; `graph.vision.strategy` reports the active strategy.
+
+### Quality gates
+
+- `createVisionAssert(page)` exposes Playwright assertions: `noOverlap()`, `isLegible()`, and `expectedLayoutScore(minScore)`.
+- The Vite plugin `spacegraphVision(...)` runs analysis after a build and can emit `spacegraph-autofix-patch.json`.
+- `sg fix` consumes that patch, with a `--dry-run` mode.
+- `VisionOverlayPlugin` surfaces scores and fixes inside a running app.
+
+Vision is a verification tool, not a guarantee. Use it alongside unit, interaction, and visual-regression tests.
+
+---
+
+## 🎮 Interaction and State
+
+`GraphController` is the framework-agnostic state machine shared by hosts. It owns no DOM and does not own the renderer lifecycle.
+
+| Concern           | Surface                                                               |
+| ----------------- | --------------------------------------------------------------------- |
+| **Selection**     | `select`, `toggle`, `clear`; `selection` and `selectedNode` getters   |
+| **Focus and fit** | `focus(id)`, `fit(ids)`                                               |
+| **Trail**         | `back()`, `forward()`, `trail`; reconciles by ID across model updates |
+| **Semantic zoom** | `bands`, `band`, `zoom`, `feedNormalized(zoom)`                       |
+| **Search**        | `search(query, limit)` ranked by label, summary, kind, then ID        |
+| **Queries**       | `connections(id)` for incident edges and neighboring nodes            |
+| **Reactivity**    | `onChange(snapshot)` emits on selection, trail, or band changes       |
+| **Lifecycle**     | `bind(renderer)`, `unbind()`, `dispose()`                             |
+
+`GraphBinding` wraps the controller and the renderer lifecycle for one container. It owns `mount`, updates, and `dispose`; a mount that resolves after unmount disposes its own renderer, so it is StrictMode and HMR safe. React and Solid bindings are thin wrappers over it.
+
+---
+
+## ♿ Accessibility
+
+`AccessibilityLayer` builds a visually hidden, ordered DOM mirror of the graph.
+
+- Roving tabindex with Arrow Up/Down, Home, and End.
+- Enter or Space activates an item; Escape is host-defined.
+- `aria-live` announces selection changes.
+- Non-interactive items are listed but skipped by traversal.
+- The contract theme carries `direction: 'rtl'`; adapters honor it for SVG and DOM cards without mirroring graph coordinates.
+
+Pass it the same minimal node list the renderer uses: `id`, `label`, `kind`, `status`, `interactive`.
+
+---
+
+## 🔍 Zoom, Depth, and Projection
+
+| Capability         | Surface                                                                                  |
+| ------------------ | ---------------------------------------------------------------------------------------- |
+| **Zoom**           | `zoom` (normalized 0..1), `setZoom(value)`, `viewport`                                   |
+| **Semantic bands** | `ZoomBands` maps normalized zoom to named bands with hysteresis                          |
+| **Projection**     | `projection`, `setProjection('orthographic' \| 'perspective')`                           |
+| **Depth**          | `depth`, `setDepth(mode)`; modes are `flat`, `layered`, `depth-stack`, `orbit`           |
+| **Depth fade**     | `applySceneFade()` uses content depth and camera distance, not absolute distance         |
+| **Orbit control**  | `setOrbitEnabled(enabled)`, `setPolar(phi, theta, duration)`                             |
+| **Camera**         | `fitView`, `focusNode`, `center`, `resetCamera`, `setCamera`, `camera`, `cameraPosition` |
+
+`flat` is the orthographic baseline. `layered` and `depth-stack` add readable perspective ordering. `orbit` is the free-perspective experiment. Depth is a spectrum, not a 2D/3D switch.
+
+---
+
+## 🎨 Theming
+
+The core theme is a small token object:
+
+| Token group                                             | Controls                         |
+| ------------------------------------------------------- | -------------------------------- |
+| `background`                                            | Scene background                 |
+| `node.fill`, `node.stroke`                              | Default node surface and outline |
+| `edge.color`, `edge.labelColor`, `edge.labelBackground` | Edge stroke and label treatment  |
+| `label.color`, `label.fontFamily`, `label.fontSize`     | Shared label typography          |
+| `selection`, `hover`, `focus`                           | Interaction outlines             |
+
+The contract's `RenderTheme` is broader: surface, muted surface, text, muted text, border, accent, success, warning, error, edge, muted edge, selection, focus, font family, font size, and direction. Map your design tokens once and re-resolve on color-scheme change; remounting is not required.
+
+The library never reads CSS custom properties. Pass resolved values.
+
+---
+
+## 🛠️ Developer Experience
+
+### Declarative builder
+
+`graph`, `node`, `edge`, `connect`, `layout`, `Presets`, `Patterns`, `Animate`, `Batch`, and `DataUtils` build specs without hand-writing JSON. Convenience factories cover shapes and controls: `box`, `circle`, `sphere`, `button`, `slider`, `toggle`, `widget`.
+
+### Ergonomic API
+
+The main `SpaceGraph` instance is also a fluent toolkit:
+
+- **Access**: `$(id)`, `$$(id)`, `at(id)`, `must(id)`.
+- **Query**: `findNodes`, `findNode`, `getNodesByType`, `findEdges`, `getEdgesForNode`, `where`, `has`.
+- **Traversal**: `neighbors`, `adjacent`, `connections`, `inEdges`, `outEdges`, `traverse`, `bfs`, `dfs`, `path`, `getSubgraph`.
+- **Mutation**: `addNode`, `addEdge`, `add`, `addNodes`, `addEdges`, `connect`, `connectTo`, `connectFrom`, `disconnect`, `remove`, `removeWhere`, `updateWhere`.
+- **Iteration**: `forNodes`, `forEdges`, `forEach`, `each`, `map`, `filter`, `some`, `every`.
+- **Node utilities**: `move`, `translate`, `shift`, `label`, `text`, `color`, `fill`, `data`, `attr`, `rotate`, `scale`, `setSize`, `opacity`, `clone`, `require`.
+- **Visibility and flags**: `show`, `hide`, `toggle`, `visible`, `pinned`, `unpin`, `draggable`, `selectable`.
+- **Batching**: `batch`, `transaction`, `freeze`, `suspend` coalesce renders.
+- **Reactivity**: `watch(event, callback)` returns an unsubscribe function.
+
+### Lifecycle
+
+`init()`, `render()`, `pause()`, `resume()`, `dispose()`, and `destroy()` cover startup, frame control, and teardown. `SpaceGraph.create` is the async factory that initializes and loads in one step. `SpaceGraph.load`, `fromURL`, `fromManifest`, and `quickGraph` cover other data sources.
+
+`fromManifest` reads `/.well-known/zui-manifest.json`, which can inline a spec or point to one.
+
+### Events
+
+The event system covers:
+
+- Graph mutation: `node:added`, `node:removed`, `node:updated`, `edge:added`, `edge:removed`, `edge:updated`, `graph:cleared`.
+- Interaction: `node:click`, `edge:click`, `background:click`, `node:dblclick`, `node:selection-changed`, `selection:changed`.
+- Camera and view: `camera:change`, `zoom:change`, `zoomband:change`, `projection:change`, `depth:change`.
+- Lifecycle and vision: `ready`, `vision:analysis-complete`.
+
+### Export, import, persistence
+
+- `export()` returns the spec plus camera and plugin state.
+- `import(data)` replaces the graph and restores the camera.
+- `loadSpec(spec)` and `update(spec)` add or patch in place.
+- The contract side adds `serializeRenderModel`, `parseRenderModel`, `renderToSVG` (pure, runs in Node), and `InlineGraph`.
+- Persistence is yours: persist selection, band, projection, and renderer choice in your own view state.
+
+---
+
+## 🔌 Plugins
+
+| Plugin                           | Purpose                                              |
+| -------------------------------- | ---------------------------------------------------- |
+| `AutoColorPlugin`                | Harmony-aware color assignment and vision correction |
+| `AutoLayoutPlugin`               | Re-layout and overlap repair                         |
+| `FractalZoomPlugin`              | Recursive detail expansion                           |
+| `HistoryPlugin`                  | Undo and redo                                        |
+| `InteractionPlugin`              | Drag, click, hover, and interaction policy           |
+| `HoverMetaWidget`                | Rich hover cards                                     |
+| `HUDPlugin` / `DOMOverlayPlugin` | Heads-up display                                     |
+| `LayoutContainer`                | Constrained layout regions                           |
+| `LODPlugin`                      | Level-of-detail simplification                       |
+| `MermaidPlugin`                  | Mermaid, DOT, GraphML, and JSON diagram parsing      |
+| `MinimapPlugin`                  | Overview navigator                                   |
+| `PhysicsPlugin`                  | Force simulation                                     |
+| `VisionOverlayPlugin`            | Visual quality markers and fixes                     |
+| `ZoomBandsPlugin`                | Band indicators                                      |
+| `ZoomUIPlugin`                   | Zoom controls                                        |
+| `ErgonomicsPlugin`               | Runtime ergonomics hints                             |
+
+Plugins receive initialization, pre/post render, node and edge mutation, export/import, and disposal hooks. Core plugins are registered by default; add extra instances through `options.plugins`.
+
+---
+
+## 🧪 Testing and Quality Gates
+
+| Check                   | Command                     |
+| ----------------------- | --------------------------- |
+| Unit tests              | `pnpm test`                 |
+| Architecture boundaries | `pnpm run test:boundaries`  |
+| Vision assertions       | `pnpm run test:vision`      |
+| Demo screenshots        | `pnpm run test:screenshots` |
+| Demo error scan         | `pnpm run test:demo-errors` |
+| Behavioral demos        | `pnpm run test:behavioral`  |
+| All demo checks         | `pnpm run test:all-demos`   |
+| Lint                    | `pnpm run lint`             |
+| Format check            | `pnpm run format:check`     |
+| Build                   | `pnpm run build`            |
+| API docs                | `pnpm run docs`             |
+
+The boundary test is important: it enforces that the core never imports a renderer package. Keep it green when adding a capability. Add vision invariants for layout work, and interaction tests for camera or input changes.
+
+---
+
+## ⚡ Performance Design
+
+Performance comes from several mechanisms rather than a single benchmark claim:
+
+- **Instanced geometry** for repeated node shapes.
+- **Object pooling** for vectors, matrices, and temporary math objects.
+- **BVH-accelerated raycasting** for hit-testing, plus a spatial index for overlap queries.
+- **Level of detail** through `LODPlugin`.
+- **On-demand rendering** as the default: paint on mutation, camera movement, or resize.
+- **Continuous mode** when animation needs every frame.
+
+When adding hot-path code, avoid per-frame allocation, prefer sets for membership, and cache expensive derived values.
+
+---
+
+## 🗂️ Project Layout
+
+| Path                                | Contents                                                                                        |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `src/core`                          | Engine, graph, renderer, camera, events, plugin manager, vision manager, pooling, spatial index |
+| `src/input`                         | Input manager and fingerings                                                                    |
+| `src/nodes`                         | Node implementations                                                                            |
+| `src/edges`                         | Edge implementations                                                                            |
+| `src/plugins`                       | Layouts, physics, HUD, minimap, Mermaid, LOD, zoom, vision overlay                              |
+| `src/vision`                        | Analyzers, strategies, auto-fix, model loading, Vite plugin, assertions                         |
+| `src/control`                       | `GraphController`, `GraphBinding`                                                               |
+| `src/a11y`                          | `AccessibilityLayer`                                                                            |
+| `src/navigation`                    | `Trail`                                                                                         |
+| `src/zoom`                          | `ZoomBands`                                                                                     |
+| `src/layout`                        | `LaneLayout`                                                                                    |
+| `src/depth`                         | Depth modes, treatments, and fade                                                               |
+| `src/builder.ts`, `src/activity.ts` | Declarative builder and lean entry                                                              |
+| `packages`                          | Contract, adapters, bindings, CLI, scaffolder, n8n bridge                                       |
+| `demo`                              | Interactive examples and the contract reference host                                            |
+| `test`                              | Unit, boundary, interaction, vision, and Playwright suites                                      |
+| `verification`                      | Screenshot, benchmark, and demo verification scripts                                            |
+| `PLAN`                              | Strategy, research, release, and long-term architecture notes                                   |
+
+---
+
+## 📚 Documentation Map
+
+| Need                               | Read                               |
+| ---------------------------------- | ---------------------------------- |
+| Five-minute start                  | `QUICKSTART.md`                    |
+| Host integration, contract-first   | `docs/host-integration.md`         |
+| Vision plugin details              | `docs/vision-plugin.md`            |
+| Component naming and surface rules | `AGENTS.md`                        |
+| Roadmap and status                 | `ROADMAP.md`                       |
+| Strategy and phases                | `PLAN/INDEX.md`                    |
+| Research direction                 | `PLAN/ACADEMIC-RESEARCH.md`        |
+| Product and design notes           | `PRODUCT.md`, `DESIGN.md`, `UI.md` |
+| Contributing                       | `CONTRIBUTING.md`                  |
+| Generated API reference            | `pnpm run docs`                    |
+
+---
+
+## 🤝 Contributing and Community
+
+The most useful contributions right now are API stabilization, performance work, accessibility, renderer adapters, and tests that pin down behavior.
+
+A practical contribution loop:
+
+1. Clone the repository and install with `pnpm install`.
+2. Run `pnpm run dev` for the engine demos, or `pnpm run dev:demo` and open `/contract.html` for the contract reference host.
+3. Pick an issue, or start from a failing test.
+4. Add or update tests. Use `createVisionAssert(page)` for visual invariants and Playwright specs for interaction.
+5. Run `pnpm run lint`, `pnpm run format:check`, `pnpm test`, and the relevant demo or vision suite.
+6. Open a pull request with a clear summary and the tests that cover the change.
+
+Useful channels:
+
+| Channel | Link                                                                                       |
+| ------- | ------------------------------------------------------------------------------------------ |
+| GitHub  | [github.com/autonull/spacegraphjs](https://github.com/autonull/spacegraphjs)               |
+| Issues  | [github.com/autonull/spacegraphjs/issues](https://github.com/autonull/spacegraphjs/issues) |
+| Matrix  | [#spacegraphjs:matrix.org](https://matrix.to/#/#spacegraphjs:matrix.org)                   |
+| npm     | [npmjs.com/package/spacegraphjs](https://npmjs.com/package/spacegraphjs)                   |
+
+---
+
+## 🔭 Long-Term Vision
+
+SpaceGraphJS is the rendering primitive for a larger idea: **software whose structure is visible and navigable**.
+
+The direction, explicitly exploratory rather than shipped:
+
+- **Fractal ZUI**: nodes that contain subgraphs, revealing detail as you approach and collapsing back as you leave.
+- **Semantic navigation**: traverse relationships, not just camera coordinates; a double-click on an edge becomes a spatial move.
+- **Compositional views**: inter-graph edges connect separate canvases into one spatial workspace.
+- **Self-verifying interfaces**: vision checks become a normal CI gate for visual quality, not a manual review step.
+- **Spatial shells**: the same primitives applied to files, processes, tools, and agents, with the OS itself rendered as a graph.
+- **Open research**: accessible hardware and inference paths for visual verification, so the loop is not tied to a single vendor or cloud.
+
+None of this requires replacing the current library. It extends the same model: nodes, edges, zoom, and a contract that keeps hosts in control.
+
+---
+
+## 📄 License
+
+MIT. Free for commercial and private use.
+
+**SpaceGraphJS — spatial software that can see itself.**

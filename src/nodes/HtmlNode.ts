@@ -237,12 +237,21 @@ export class HtmlNode extends BaseContentNode {
 
   updatePosition(x: number, y: number, z: number): this {
     super.updatePosition(x, y, z);
+    this.faceCamera();
 
+    return this;
+  }
+
+  onPreRender(dt: number): void {
+    super.onPreRender(dt);
+    // T1.3: a billboard stays screen-facing when the camera pose changes after the node was placed.
+    this.faceCamera();
+  }
+
+  protected faceCamera(): void {
     if (this.billboard && this.sg?.renderer?.camera) {
       this.cssObject.quaternion.copy(this.sg.renderer.camera.quaternion);
     }
-
-    return this;
   }
 
   getBoundingSphereRadius(): number {

@@ -38,7 +38,7 @@ import type {
   SpaceGraphOptions,
   SpecUpdate,
 } from './types';
-import { depthTreatment } from './depth/DepthCues';
+import { depthTreatment, sceneFadeDensity } from './depth/DepthCues';
 import { calculateFitView, createLogger, DOMUtils, safeClone, wrapError } from './utils';
 
 const logger = createLogger('SpaceGraph');
@@ -443,6 +443,9 @@ export class SpaceGraph {
 
     const fit = calculateFitView(nodes, this.renderer.camera, padding);
     if (fit) {
+      // T1.8: the fitted frame becomes the orthographic zoom reference, so later zoom is bounded
+      // relative to content instead of the absolute 0.01..100 frustum range.
+      if (fit.zoom !== undefined) this.cameraControls?.setOrthoZoomRange(fit.zoom);
       // Orthographic fit carries a frustum zoom; keep the camera radius (distance does not scale ortho).
       const distance = fit.zoom !== undefined ? this.cameraControls.spherical.radius : fit.cameraZ;
       this.cameraControls.flyTo(fit.center, distance, duration, fit.zoom);
@@ -835,10 +838,21 @@ export class SpaceGraph {
     const treatment = depthTreatment(depth);
     this.renderer.setProjection(treatment.projection, this.cameraControls?.target);
     this.cameraControls?.setCamera(this.renderer.camera);
-    this.renderer.setDepthFade(treatment.fade);
+    this.applySceneFade();
     this.cameraControls?.setOrbitEnabled(treatment.orbit);
     this.cameraControls?.setPolar(treatment.phi, 0, duration);
     this.events.emit('projection:change', { projection: treatment.projection });
+  }
+
+  // T1.3: the fade is relative to the scene, not to an absolute camera distance. The content depth
+  // extent sets the span and the current camera radius keeps the curve stable across fits.
+  applySceneFade(): this {
+    const treatment = depthTreatment(this.#depth);
+    const depths = [...this.graph.nodes.values()].map((node) => node.position.z);
+    const sceneDepth = depths.length > 0 ? Math.max(...depths) - Math.min(...depths) : 0;
+    const cameraDistance = this.cameraControls?.spherical.radius ?? 0;
+    this.renderer.setDepthFade(sceneFadeDensity(treatment.fade, cameraDistance, sceneDepth));
+    return this;
   }
 
   // Enable or disable camera orbit; orthographic projection never orbits regardless of this flag.
@@ -872,6 +886,7 @@ export class SpaceGraph {
 
   #reportViewport(force = false): void {
     if (!this.renderer || !this.events) return;
+    if (this.#depth !== 'flat') this.applySceneFade();
     const viewport = this.renderer.getViewport();
     const zoomChanged = Math.abs(viewport.zoom - this.#lastZoom) > 1e-4;
     const moved = viewport.center.some((v, i) => Math.abs(v - this.#lastCenter[i]) > 1e-3);

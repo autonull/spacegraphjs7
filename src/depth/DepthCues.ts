@@ -17,14 +17,21 @@ export interface DepthTreatment {
   phi: number;
   /** Whether free orbit input is enabled. */
   orbit: boolean;
-  /** Exponential fog density for depth attenuation; `0` disables the fade. */
+  /**
+   * Scene-relative attenuation strength; `0` disables the fade. The renderer converts it to a fog
+   * density from the current camera distance and content depth (see `sceneFadeDensity`), so the same
+   * scene reads the same at every fit instead of fading with absolute camera distance.
+   */
   fade: number;
 }
 
+/** The perspective modes stay shallow enough to keep cards readable; orbit is the labelled experiment. */
+export const MAX_READABLE_TILT = 0.3;
+
 const TREATMENTS: Record<DepthMode, DepthTreatment> = {
   flat: { projection: 'orthographic', phi: Math.PI / 2, orbit: false, fade: 0 },
-  layered: { projection: 'perspective', phi: Math.PI / 2 - 0.15, orbit: false, fade: 0.0012 },
-  'depth-stack': { projection: 'perspective', phi: Math.PI / 2 - 0.45, orbit: false, fade: 0.0032 },
+  layered: { projection: 'perspective', phi: Math.PI / 2 - 0.15, orbit: false, fade: 0.5 },
+  'depth-stack': { projection: 'perspective', phi: Math.PI / 2 - MAX_READABLE_TILT, orbit: false, fade: 0.9 },
   orbit: { projection: 'perspective', phi: Math.PI / 2 - 0.5, orbit: true, fade: 0 },
 };
 
@@ -36,4 +43,13 @@ export function depthTreatment(mode: DepthMode): DepthTreatment {
 export function depthFade(distance: number, density: number): number {
   if (density <= 0) return 1;
   return Math.max(0, Math.min(1, Math.exp(-((density * Math.max(distance, 0)) ** 2))));
+}
+
+/**
+ * Fog density for a scene-relative fade. Scaling by the camera-to-content span keeps the visible
+ * attenuation stable across fits and zoom levels instead of making a distant fit fade the whole scene.
+ */
+export function sceneFadeDensity(strength: number, cameraDistance: number, sceneDepth: number): number {
+  if (strength <= 0) return 0;
+  return strength / Math.max(cameraDistance + sceneDepth, 1);
 }

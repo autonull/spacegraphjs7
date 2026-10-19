@@ -45,6 +45,9 @@ const KEY_CONFIG = {
 const MIN_ORTHO_ZOOM = 0.01;
 const MAX_ORTHO_ZOOM = 100;
 
+/** T1.8: how far past the fitted frame the orthographic camera may travel before the scene empties. */
+export const ORTHO_ZOOM_SPAN = { out: 1 / 3, in: 2.5 };
+
 export class CameraControls {
   camera!: THREE.Camera;
   readonly domElement: HTMLElement;
@@ -81,6 +84,7 @@ export class CameraControls {
   private perspectiveCamera: THREE.Camera;
   private keyboardScope: KeyboardScope = 'container';
   private keyboardTarget: EventTarget | null = null;
+  private orthoZoomRange: { min: number; max: number } | null = null;
 
   // Cached vectors for update loop - avoids per-frame allocations
   private _camRight = new THREE.Vector3();
@@ -179,7 +183,7 @@ export class CameraControls {
     this.spherical.phi = Math.max(0.01, Math.min(Math.PI - 0.01, this.spherical.phi));
     if (this.isOrthographic) {
       const cam = this.camera as THREE.OrthographicCamera;
-      cam.zoom = THREE.MathUtils.clamp(cam.zoom / this.scale, MIN_ORTHO_ZOOM, MAX_ORTHO_ZOOM);
+      cam.zoom = this.clampOrthoZoom(cam.zoom / this.scale);
       cam.updateProjectionMatrix();
     } else {
       this.spherical.radius *= this.scale;
@@ -302,6 +306,25 @@ export class CameraControls {
     return this.zoomStack.length;
   }
 
+  /** T1.8: the fitted frame is the zoom reference; limits keep the camera a couple of steps from it. */
+  setOrthoZoomRange(fitZoom?: number): void {
+    this.orthoZoomRange = fitZoom
+      ? { min: fitZoom * ORTHO_ZOOM_SPAN.out, max: fitZoom * ORTHO_ZOOM_SPAN.in }
+      : null;
+  }
+
+  getOrthoZoomRange(): { min: number; max: number } | null {
+    return this.orthoZoomRange;
+  }
+
+  private clampOrthoZoom(zoom: number): number {
+    const range = this.orthoZoomRange;
+    const min = Math.max(MIN_ORTHO_ZOOM, range?.min ?? MIN_ORTHO_ZOOM);
+    const max = Math.min(MAX_ORTHO_ZOOM, range?.max ?? MAX_ORTHO_ZOOM);
+
+    return THREE.MathUtils.clamp(zoom, min, max);
+  }
+
   canZoomOut(): boolean {
     return this.zoomStack.length > 0;
   }
@@ -313,7 +336,7 @@ export class CameraControls {
     this.radiusNext = radius;
     if (zoom !== undefined && this.isOrthographic) {
       this.startZoom = (this.camera as THREE.OrthographicCamera).zoom;
-      this.zoomNext = THREE.MathUtils.clamp(zoom, MIN_ORTHO_ZOOM, MAX_ORTHO_ZOOM);
+      this.zoomNext = this.clampOrthoZoom(zoom);
     } else {
       this.zoomNext = null;
     }

@@ -1,5 +1,11 @@
 import { describe, expect, test } from 'vitest';
-import { DEPTH_MODES, depthFade, depthTreatment } from '../src/depth/DepthCues';
+import {
+  DEPTH_MODES,
+  MAX_READABLE_TILT,
+  depthFade,
+  depthTreatment,
+  sceneFadeDensity,
+} from '../src/depth/DepthCues';
 
 // LE.15 — the depth-cue primitives are pure: a mode maps to a projection/pose/fade, and the fade curve
 // attenuates with distance. No DOM, no WebGL.
@@ -20,7 +26,9 @@ describe('depth treatment', () => {
   test('the camera tilts further as depth increases, and flat looks straight down', () => {
     expect(depthTreatment('flat').phi).toBeCloseTo(Math.PI / 2);
     expect(depthTreatment('layered').phi).toBeGreaterThan(depthTreatment('depth-stack').phi);
-    expect(depthTreatment('depth-stack').phi).toBeGreaterThan(depthTreatment('orbit').phi);
+    // Layered/depth-stack are capped for card legibility; orbit remains the labelled experiment.
+    expect(depthTreatment('depth-stack').phi).toBeCloseTo(Math.PI / 2 - MAX_READABLE_TILT);
+    expect(depthTreatment('orbit').phi).toBeLessThan(depthTreatment('depth-stack').phi);
   });
 
   test('depth-stack fades harder than layered', () => {
@@ -44,5 +52,26 @@ describe('depth fade', () => {
 
   test('a denser fade attenuates sooner', () => {
     expect(depthFade(500, 0.006)).toBeLessThan(depthFade(500, 0.002));
+  });
+});
+
+describe('scene-relative fade', () => {
+  test('is disabled for zero strength and never divides by zero', () => {
+    expect(sceneFadeDensity(0, 1000, 200)).toBe(0);
+    expect(Number.isFinite(sceneFadeDensity(0.5, 0, 0))).toBe(true);
+  });
+
+  test('keeps the same visible attenuation when the fit distance scales the scene', () => {
+    // The density shrinks as the camera and scene grow, so the fog factor at the content plane stays
+    // in the same band instead of fading the whole graph out at a distant fit.
+    const near = depthFade(500, sceneFadeDensity(0.5, 500, 200));
+    const far = depthFade(5000, sceneFadeDensity(0.5, 5000, 200));
+
+    expect(Math.abs(near - far)).toBeLessThan(0.15);
+    expect(near).toBeGreaterThan(0.5);
+  });
+
+  test('at a fixed camera distance a deeper scene fades more gradually', () => {
+    expect(sceneFadeDensity(0.5, 1000, 400)).toBeLessThan(sceneFadeDensity(0.5, 1000, 100));
   });
 });

@@ -116,6 +116,8 @@ export interface HtmlNodeData extends CoreNodeData {
   className?: string;
   pointerEvents?: 'none' | 'auto';
   labelLod?: LabelLodLevel[];
+  /** Inline container overrides; hosts use this to hand the renderer host text colours. */
+  style?: Record<string, string>;
 }
 
 export interface ImageNodeData extends CoreNodeData {
