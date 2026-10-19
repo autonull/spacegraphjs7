@@ -11,8 +11,14 @@ export interface FitViewResult {
   zoom?: number;
 }
 
+/** A node's placement plus the dimensions it occupies around that placement. */
+export interface FitNode {
+  position: THREE.Vector3;
+  data?: Record<string, unknown>;
+}
+
 export function calculateFitView(
-  nodes: Array<{ position: THREE.Vector3 }>,
+  nodes: FitNode[],
   camera: THREE.Camera,
   padding = 100,
   minDistance = 200
@@ -21,8 +27,12 @@ export function calculateFitView(
 
   const box = new THREE.Box3();
   for (const node of nodes) {
-    if (node?.position) {
-      box.expandByPoint(node.position);
+    if (!node?.position) continue;
+    box.expandByPoint(node.position);
+    const extent = nodeExtent(node);
+    if (extent) {
+      box.expandByPoint(node.position.clone().add(extent));
+      box.expandByPoint(node.position.clone().sub(extent));
     }
   }
 
@@ -50,4 +60,14 @@ export function calculateFitView(
   const cameraZ = Math.abs(maxDim / (2 * Math.tan(fovRad / 2) * Math.max(1, aspect)));
 
   return { center, cameraZ: Math.max(cameraZ + padding, minDistance) };
+}
+
+/** Half-extents reported by a node's spec; cards carry width/height, shapes a single size. */
+function nodeExtent(node: FitNode): THREE.Vector3 | undefined {
+  const data = node.data ?? {};
+  const size = typeof data.size === 'number' ? data.size : undefined;
+  const width = typeof data.width === 'number' ? data.width : size;
+  const height = typeof data.height === 'number' ? data.height : size;
+  if (width === undefined && height === undefined) return undefined;
+  return new THREE.Vector3((width ?? 0) / 2, (height ?? 0) / 2, (size ?? 0) / 2);
 }

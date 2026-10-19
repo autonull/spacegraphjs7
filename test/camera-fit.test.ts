@@ -45,4 +45,13 @@ describe('calculateFitView', () => {
     expect(fit!.center.x).toBeCloseTo(100, 6);
     expect(fit!.center.y).toBeCloseTo(50, 6);
   });
+
+  it('expands the box by node extents so edge cards are not clipped', () => {
+    const camera = () => new THREE.PerspectiveCamera(75, 1, 0.1, 10000);
+    const card = (x: number) => ({ position: new THREE.Vector3(x, 0, 0), data: { width: 200, height: 60 } });
+    const plain = calculateFitView(nodes([[-200, 0, 0], [200, 0, 0]]), camera());
+    const sized = calculateFitView([card(-200), card(200)], camera());
+    expect(sized!.cameraZ).toBeGreaterThan(plain!.cameraZ);
+    expect(sized!.center.x).toBeCloseTo(0, 6);
+  });
 });
