@@ -17,4 +17,6 @@ export { HierarchicalLayout } from './plugins/layouts/HierarchicalLayout';
 export { TimelineLayout } from './plugins/layouts/TimelineLayout';
 export { LODPlugin } from './plugins/LODPlugin';
 export { ZoomBandsPlugin } from './plugins/ZoomBandsPlugin';
+export { DEPTH_MODES, depthFade, depthTreatment } from './depth/DepthCues';
+export type { DepthTreatment } from './depth/DepthCues';
 export * from './types';

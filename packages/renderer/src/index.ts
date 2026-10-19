@@ -5,7 +5,7 @@
  * A host builds a `RenderModel`, a renderer adapter renders it, and the two never share library objects.
  */
 
-export const CONTRACT_VERSION = 1
+export const CONTRACT_VERSION = 2
 
 /** Versions this contract package implements; adapters declare theirs via `capabilities.contractVersion`. */
 export const SUPPORTED_CONTRACT_VERSIONS: readonly number[] = [CONTRACT_VERSION]
@@ -27,6 +27,15 @@ export function negotiateContract(version: number): ContractNegotiation {
 }
 
 export type Projection = '2d' | '3d'
+
+/**
+ * LE.14 — depth is a spectrum, not a 2D/3D toggle. `flat` is the orthographic baseline; `layered` and
+ * `depth-stack` add depth ordering under a shallow camera; `orbit` is the free-perspective experiment.
+ */
+export type DepthMode = 'flat' | 'layered' | 'depth-stack' | 'orbit'
+
+/** Canonical depth order, shallowest first; hosts render choosers in this order. */
+export const DEPTH_MODES: readonly DepthMode[] = ['flat', 'layered', 'depth-stack', 'orbit']
 
 export type NodeStatus = 'neutral' | 'pending' | 'running' | 'success' | 'warning' | 'error'
 
@@ -87,6 +96,8 @@ export type RenderTheme = {
 export type RendererCapabilities = {
   contractVersion: number
   projections: readonly Projection[]
+  /** Depth treatments this renderer can honour, in `DepthMode` terms. */
+  depths: readonly DepthMode[]
   domNodes: boolean
   maxDomNodes: number
   edgeLabels: boolean
@@ -124,6 +135,8 @@ export type GraphRenderer = {
   setModel(model: RenderModel): void
   setTheme(theme: RenderTheme): void
   setProjection(projection: Projection): void
+  /** Apply a depth treatment; a renderer that does not support the mode must no-op, never throw. */
+  setDepth(depth: DepthMode): void
   setSelection(ids: readonly string[]): void
   setViewport(viewport: RendererViewport): void
   fit(ids?: readonly string[]): void
@@ -141,4 +154,9 @@ export function supports(capabilities: RendererCapabilities, capability: Rendere
   return capability === '2d' || capability === '3d'
     ? capabilities.projections.includes(capability)
     : capabilities[capability]
+}
+
+/** Whether a renderer can honour a depth treatment; hosts gate the depth chooser on this. */
+export function supportsDepth(capabilities: RendererCapabilities, depth: DepthMode): boolean {
+  return capabilities.depths.includes(depth)
 }

@@ -1,5 +1,6 @@
 import {
   CONTRACT_VERSION,
+  type DepthMode,
   type GraphRenderer,
   type Projection,
   type RendererCapabilities,
@@ -15,6 +16,7 @@ import { edgeSpec, nodeSpec, spaceGraphTheme } from './mapping';
 const CAPABILITIES: RendererCapabilities = {
   contractVersion: CONTRACT_VERSION,
   projections: ['2d', '3d'],
+  depths: ['flat', 'layered', 'depth-stack', 'orbit'],
   domNodes: true,
   maxDomNodes: 40,
   edgeLabels: true,
@@ -23,11 +25,6 @@ const CAPABILITIES: RendererCapabilities = {
   minimap: false,
   maxRecommendedNodes: 300,
 };
-
-// Camera polar angles (from +Y). FLAT looks straight down the graph plane (the 2D baseline);
-// TILT raises the camera ~29° so the hierarchy Z reads as depth in 3D.
-const FLAT_PHI = Math.PI / 2;
-const TILT_PHI = Math.PI / 2 - 0.5;
 
 type Handler<K extends keyof RendererEventMap> = (payload: RendererEventMap[K]) => void;
 type CoreViewport = {
@@ -75,7 +72,7 @@ export class SpaceGraphRenderer implements GraphRenderer {
     });
     this.#sg = sg;
     this.#bind();
-    this.#applyProjection(options.projection);
+    this.#applyDepth(options.projection === '2d' ? 'flat' : 'orbit');
     if (this.#model) this.setModel(this.#model);
     this.#emit('ready', undefined);
   }
@@ -133,19 +130,18 @@ export class SpaceGraphRenderer implements GraphRenderer {
   }
 
   setProjection(projection: Projection): void {
-    if (!this.#sg) return;
-    this.#sg.setProjection(projection === '2d' ? 'orthographic' : 'perspective');
-    this.#applyProjection(projection);
+    // Projection is the coarse depth selection: 2D is the flat baseline, 3D is the orbit experiment.
+    this.#applyDepth(projection === '2d' ? 'flat' : 'orbit');
   }
 
-  // A flat top-down pose is the legible 2D baseline; 3D tilts the camera so the hierarchy Z reads as
-  // depth, and only 3D orbits. The renderer owns camera framing and animation (contract rule 1).
-  #applyProjection(projection: Projection): void {
-    const sg = this.#sg;
-    if (!sg) return;
-    const perspective = projection === '3d';
-    sg.setOrbitEnabled(perspective);
-    sg.setPolar(perspective ? TILT_PHI : FLAT_PHI, 0, 0.5);
+  setDepth(depth: DepthMode): void {
+    this.#applyDepth(depth);
+  }
+
+  // The core owns camera framing and depth treatment (contract rule 1); the adapter only translates the
+  // requested depth into the core call.
+  #applyDepth(depth: DepthMode): void {
+    this.#sg?.setDepth(depth);
   }
 
   setSelection(ids: readonly string[]): void {

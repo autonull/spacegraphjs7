@@ -45,6 +45,7 @@ export interface SpaceGraphOptions {
     pixelRatio?: number
     preserveDrawingBuffer?: boolean
     projection?: 'perspective' | 'orthographic'
+    depth?: 'flat' | 'layered' | 'depth-stack' | 'orbit'
   }
   theme?: {
     background?: string | number
@@ -99,6 +100,8 @@ export declare class SpaceGraph {
   show(id: string, visible?: boolean): unknown
   setPositions(positions: Record<string, [number, number, number]>): this
   setProjection(projection: 'perspective' | 'orthographic'): this
+  readonly depth: 'flat' | 'layered' | 'depth-stack' | 'orbit'
+  setDepth(depth: 'flat' | 'layered' | 'depth-stack' | 'orbit'): this
   setOrbitEnabled(enabled: boolean): this
   setPolar(phi: number, theta: number, duration?: number): this
   setZoom(value: number): this

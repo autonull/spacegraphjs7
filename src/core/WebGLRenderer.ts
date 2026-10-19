@@ -37,6 +37,7 @@ export class WebGLRenderer {
   public renderContext: RenderContext;
 
   private _projection: Projection;
+  private _bgColor: number;
   private _resizeObserver: ResizeObserver | null = null;
   private renderScheduled = false;
   readonly projScreenMatrix: THREE.Matrix4;
@@ -54,6 +55,7 @@ export class WebGLRenderer {
     const transparent = options.transparent ?? false;
     const alpha = options.alpha ?? true;
     const bgColor = parseColor(options.backgroundColor ?? 0x1a1a2e);
+    this._bgColor = bgColor;
 
     this.scene = new THREE.Scene();
     this.scene.background = transparent ? null : new THREE.Color(bgColor);
@@ -187,9 +189,15 @@ export class WebGLRenderer {
     return { width: height * aspect, height };
   }
 
+  /** LE.14: exponential depth attenuation toward the theme background; `density <= 0` clears the fog. */
+  setDepthFade(density: number): this {
+    this.scene.fog = density > 0 ? new THREE.FogExp2(this._bgColor, density) : null;
+    this.sg.requestFrame?.();
+    return this;
+  }
+
   init(): void {
-    const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
-    this.scene.add(ambientLight);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);    this.scene.add(ambientLight);
     const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
     directionalLight.position.set(1, 1, 1).normalize();
     this.scene.add(directionalLight);

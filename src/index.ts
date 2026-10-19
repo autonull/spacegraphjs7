@@ -244,6 +244,9 @@ export type {
 } from './types';
 // Utils module exports
 export * from './utils';
+// Depth-cue primitives (LE.15)
+export { DEPTH_MODES, depthFade, depthTreatment } from './depth/DepthCues';
+export type { DepthTreatment } from './depth/DepthCues';
 // Vision module exports (opt-in: import from the `spacegraphjs/vision` subpath; not re-exported here)
 export type {
   VisionBenchmark,

@@ -29,6 +29,7 @@ import { createCameraFingering, PinchZoomFingering } from './input/fingerings';
 import type { Node } from './nodes/Node';
 import type {
   CameraViewport,
+  DepthMode,
   EdgeSpec,
   GraphImportData,
   GraphSpec,
@@ -37,6 +38,7 @@ import type {
   SpaceGraphOptions,
   SpecUpdate,
 } from './types';
+import { depthTreatment } from './depth/DepthCues';
 import { calculateFitView, createLogger, DOMUtils, safeClone, wrapError } from './utils';
 
 const logger = createLogger('SpaceGraph');
@@ -67,6 +69,7 @@ export class SpaceGraph {
   #animating = false;
   #initialized = false;
   #disposed = false;
+  #depth: DepthMode = 'flat';
   #scheduled = false;
   #continuousMode = false;
   #lastZoom = -1;
@@ -811,6 +814,33 @@ export class SpaceGraph {
     return this;
   }
 
+  // ============= Depth spectrum (LE.14) =============
+  get depth(): DepthMode {
+    return this.#depth;
+  }
+
+  // Apply a depth treatment: it owns the projection, camera pose, orbit gating, and depth fade. `flat`
+  // is the orthographic baseline; the perspective modes tilt the camera so Z reads as depth.
+  setDepth(depth: DepthMode): this {
+    const previous = this.#depth;
+    this.#applyDepth(depth, previous !== depth ? 0.5 : 0);
+    this.#depth = depth;
+    if (previous !== depth) this.events.emit('depth:change', { depth, previous });
+    this.#reportViewport(true);
+    this.requestFrame();
+    return this;
+  }
+
+  #applyDepth(depth: DepthMode, duration: number): void {
+    const treatment = depthTreatment(depth);
+    this.renderer.setProjection(treatment.projection, this.cameraControls?.target);
+    this.cameraControls?.setCamera(this.renderer.camera);
+    this.renderer.setDepthFade(treatment.fade);
+    this.cameraControls?.setOrbitEnabled(treatment.orbit);
+    this.cameraControls?.setPolar(treatment.phi, 0, duration);
+    this.events.emit('projection:change', { projection: treatment.projection });
+  }
+
   // Enable or disable camera orbit; orthographic projection never orbits regardless of this flag.
   setOrbitEnabled(enabled: boolean): this {
     this.cameraControls?.setOrbitEnabled(enabled);
@@ -920,6 +950,8 @@ export class SpaceGraph {
       >
     );
     this.cameraControls.sg = this;
+    this.#applyDepth(this.options.render?.depth ?? 'flat', 0);
+    this.#depth = this.options.render?.depth ?? 'flat';
     const config = (this.options.input as Record<string, any>) ?? {};
     this.input = new InputManager({ sg: this, events: this.events });
     applyDefaultInputConfig(this.input, this, config);

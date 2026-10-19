@@ -346,10 +346,15 @@ export interface SpaceGraphEvents {
   'zoom:change': { zoom: number; previous: number };
   'zoomband:change': { band: string; normalized: number; zoom: number; label?: string; timestamp: number };
   'projection:change': { projection: Projection };
+  'depth:change': { depth: DepthMode; previous: DepthMode };
 }
 
 // Orthographic is the legibility baseline for 2D hosts; perspective stays the 3D experiment.
 export type Projection = 'perspective' | 'orthographic';
+
+// Depth is a spectrum, not a 2D/3D toggle: `flat` is the orthographic baseline, `layered`/`depth-stack`
+// add depth ordering with a shallow camera, and `orbit` is the free-perspective experiment.
+export type DepthMode = 'flat' | 'layered' | 'depth-stack' | 'orbit';
 
 // Camera keyboard input scope: off, the graph container, or the whole window.
 export type KeyboardScope = false | 'container' | 'window';
@@ -469,6 +474,8 @@ export interface RenderOptions {
   preserveDrawingBuffer?: boolean;
   /** Starting projection. Defaults to perspective; hosts that want 2D set orthographic. */
   projection?: Projection;
+  /** Starting depth treatment; overrides `projection` when set. See `DepthMode`. */
+  depth?: DepthMode;
   /** Render scheduling. `on-demand` (default) paints on mutation/camera/resize; `continuous` runs every frame. */
   renderMode?: RenderMode;
 }

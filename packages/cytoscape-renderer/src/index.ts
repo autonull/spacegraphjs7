@@ -1,5 +1,6 @@
 import {
   CONTRACT_VERSION,
+  type DepthMode,
   type GraphRenderer,
   type Projection,
   type RendererCapabilities,
@@ -14,8 +15,10 @@ import { cytoscapeStyle, edgeElement, nodeElement, normalizeTheme } from './mapp
 
 const CAPABILITIES: RendererCapabilities = {
   contractVersion: CONTRACT_VERSION,
-  // Cytoscape is the 2D fallback: no 3D, no minimap. Cards render through a capped DOM overlay.
+  // Cytoscape is the 2D fallback: only the flat depth, no 3D, no minimap. Cards render through a
+  // capped DOM overlay.
   projections: ['2d'],
+  depths: ['flat'],
   domNodes: true,
   maxDomNodes: 20,
   edgeLabels: true,
@@ -125,6 +128,10 @@ export class CytoscapeRenderer implements GraphRenderer {
 
   setProjection(_projection: Projection): void {
     // 2D only; the capability declares no 3D so the host disables that affordance.
+  }
+
+  setDepth(_depth: DepthMode): void {
+    // Only the flat treatment is supported; the capability declares the rest so the host disables them.
   }
 
   setSelection(ids: readonly string[]): void {

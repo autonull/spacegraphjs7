@@ -1,5 +1,12 @@
 import { describe, expect, test } from 'vitest';
-import { CONTRACT_VERSION, negotiateContract, supports, type GraphRenderer } from '@spacegraphjs/renderer';
+import {
+  CONTRACT_VERSION,
+  negotiateContract,
+  supports,
+  supportsDepth,
+  type DepthMode,
+  type GraphRenderer,
+} from '@spacegraphjs/renderer';
 import { SpaceGraphRenderer } from '@spacegraphjs/spacegraph-renderer';
 import { CytoscapeRenderer } from '@spacegraphjs/cytoscape-renderer';
 import { renderToSVG } from '@spacegraphjs/svg-renderer';
@@ -14,6 +21,7 @@ const METHOD_NAMES = [
   'setModel',
   'setTheme',
   'setProjection',
+  'setDepth',
   'setSelection',
   'setViewport',
   'fit',
@@ -50,12 +58,23 @@ describe.each(adapters)('renderer contract: $name', ({ create }) => {
     expect(capabilities.maxRecommendedNodes).toBeGreaterThan(0);
   });
 
+  test('declares the depth treatments it can honour', () => {
+    const capabilities = create().capabilities;
+    expect(capabilities.depths.length).toBeGreaterThan(0);
+    expect(supportsDepth(capabilities, 'flat')).toBe(true);
+    for (const depth of capabilities.depths) {
+      expect(['flat', 'layered', 'depth-stack', 'orbit'] as DepthMode[]).toContain(depth);
+      expect(supportsDepth(capabilities, depth)).toBe(true);
+    }
+  });
+
   test('calls before mount are no-ops and never throw', () => {
     const renderer = create();
     expect(() => {
       renderer.setModel({ nodes: [], edges: [] });
       renderer.setTheme({ ...theme });
       renderer.setProjection('2d');
+      renderer.setDepth('depth-stack');
       renderer.setSelection(['a']);
       renderer.setViewport({ zoom: 0.5, center: [0, 0, 0] });
       renderer.fit(['a']);
@@ -100,6 +119,18 @@ describe('capability differences are declared, not assumed', () => {
     // Neither adapter lies about a minimap it cannot yet provide (L1.27).
     expect(supports(spacegraph, 'minimap')).toBe(false);
     expect(supports(cytoscape, 'minimap')).toBe(false);
+  });
+
+  test('the depth spectrum is declared honestly: SpaceGraph has every mode, Cytoscape only flat', () => {
+    const spacegraph = new SpaceGraphRenderer().capabilities;
+    const cytoscape = new CytoscapeRenderer().capabilities;
+    for (const depth of ['flat', 'layered', 'depth-stack', 'orbit'] as DepthMode[]) {
+      expect(supportsDepth(spacegraph, depth)).toBe(true);
+    }
+    expect(supportsDepth(cytoscape, 'flat')).toBe(true);
+    for (const depth of ['layered', 'depth-stack', 'orbit'] as DepthMode[]) {
+      expect(supportsDepth(cytoscape, depth)).toBe(false);
+    }
   });
 });
 
