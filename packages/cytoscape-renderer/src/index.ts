@@ -53,11 +53,15 @@ export class CytoscapeRenderer implements GraphRenderer {
     if (this.#cy) return;
     const { default: cytoscape } = await import('cytoscape');
     this.#theme = normalizeTheme(options.theme);
-    if (getComputedStyle(container).position === 'static') container.style.position = 'relative';
+    // The container's own document, not the global one: a host may mount into an iframe or a detached
+    // tree, and a node consumer may have no global document at all.
+    const doc = container.ownerDocument;
+    const view = doc.defaultView;
+    if (view?.getComputedStyle(container).position === 'static') container.style.position = 'relative';
 
-    const canvas = document.createElement('div');
+    const canvas = doc.createElement('div');
     canvas.style.cssText = 'position:absolute;inset:0;';
-    const overlay = document.createElement('div');
+    const overlay = doc.createElement('div');
     overlay.dataset.slot = 'cytoscape-cards';
     overlay.style.cssText = 'position:absolute;inset:0;overflow:hidden;pointer-events:none;';
     container.append(canvas, overlay);
@@ -263,7 +267,7 @@ export class CytoscapeRenderer implements GraphRenderer {
         if (existing.dir !== direction) existing.dir = direction;
         continue;
       }
-      const element = document.createElement('div');
+      const element = (overlay.ownerDocument ?? document).createElement('div');
       element.dataset.slot = 'cytoscape-card';
       element.dataset.node = node.id;
       if (direction) element.dir = direction;

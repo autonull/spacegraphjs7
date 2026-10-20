@@ -9,3 +9,5 @@ coverage
 docs/api
 dist-demo
 recordings
+tsconfig.tsbuildinfo
+packages/*/tsconfig.tsbuildinfo

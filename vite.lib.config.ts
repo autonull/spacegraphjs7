@@ -1,14 +1,18 @@
-import { resolve } from 'path';
+import { resolve } from 'node:path';
 import { defineConfig } from 'vite';
 import dts from 'vite-plugin-dts';
+import { LIBRARY_ENTRIES } from './script/library-entries';
 
 export default defineConfig({
   build: {
     lib: {
-      entry: resolve(__dirname, 'src/index.ts'),
-      name: 'SpaceGraph',
-      fileName: (format) => `spacegraphjs.${format === 'es' ? 'js' : 'cjs'}`,
-      formats: ['es', 'cjs'],
+      // One bundle per export subpath, so a consumer can import `spacegraphjs/layout` without pulling
+      // the whole library. Shared code lands in common chunks that the entries import relatively.
+      entry: Object.fromEntries(
+        LIBRARY_ENTRIES.map((entry) => [entry.name, resolve(import.meta.dirname, entry.source)]),
+      ),
+      formats: ['es'],
+      fileName: (_format, name) => `${name}.js`,
     },
     outDir: 'dist',
     emptyOutDir: true,
@@ -22,6 +26,7 @@ export default defineConfig({
         'chart.js',
         'katex',
         'marked',
+        '@monaco-editor/loader',
       ],
       output: {
         globals: {
@@ -36,6 +41,6 @@ export default defineConfig({
   },
   // @ts-expect-error
   plugins: [
-    dts({ insertTypesEntry: true, exclude: ['test/**', 'demo/**'], skipDiagnostics: true }),
+    dts({ insertTypesEntry: true, exclude: ['test/**', 'demo/**', 'script/**'], skipDiagnostics: true }),
   ],
 });

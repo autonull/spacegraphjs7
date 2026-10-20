@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>SpaceGraphJS published consumer</title>
+    <style>
+      body {
+        margin: 0;
+        background: #0b0f17;
+        color: #e6ecf5;
+        font-family: system-ui, sans-serif;
+      }
+      .row {
+        display: flex;
+        gap: 8px;
+        padding: 8px;
+      }
+      .cell {
+        flex: 1;
+        height: 320px;
+        border: 1px solid #2b3544;
+        position: relative;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="row">
+      <div class="cell" id="spacegraph"></div>
+      <div class="cell" id="cytoscape"></div>
+    </div>
+    <script type="module" src="./browser.ts"></script>
+  </body>
+</html>

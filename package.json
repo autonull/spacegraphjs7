@@ -1,35 +1,116 @@
 {
   "name": "spacegraphjs",
-  "version": "7.0.0",
+  "version": "7.1.0",
   "type": "module",
-  "main": "./src/index.ts",
-  "module": "./src/index.ts",
-  "types": "./src/index.ts",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts",
-    "./activity": {
-      "types": "./types/activity.d.ts",
-      "default": "./src/activity.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
     },
-    "./core": "./src/core/index.ts",
-    "./edges": "./src/edges/index.ts",
-    "./nodes": "./src/nodes/index.ts",
-    "./plugins": "./src/plugins/index.ts",
-    "./plugins/mermaid": "./src/plugins/mermaid/index.ts",
-    "./input": "./src/input/index.ts",
-    "./utils": "./src/utils/index.ts",
-    "./types": "./src/types.ts",
-    "./builder": "./src/builder.ts",
-    "./zoom": "./src/zoom/index.ts",
-    "./layout": "./src/layout/index.ts",
-    "./levels": "./src/levels/index.ts",
-    "./representations": "./src/representations/index.ts",
-    "./a11y": "./src/a11y/index.ts",
-    "./navigation": "./src/navigation/index.ts",
-    "./overlays": "./src/overlays/index.ts",
-    "./depth": "./src/depth/index.ts",
-    "./control": "./src/control/index.ts",
-    "./vision": "./src/vision/index.ts"
+    "./activity": {
+      "types": "./dist/activity.d.ts",
+      "import": "./dist/activity.js",
+      "default": "./dist/activity.js"
+    },
+    "./core": {
+      "types": "./dist/core/index.d.ts",
+      "import": "./dist/core.js",
+      "default": "./dist/core.js"
+    },
+    "./edges": {
+      "types": "./dist/edges/index.d.ts",
+      "import": "./dist/edges.js",
+      "default": "./dist/edges.js"
+    },
+    "./nodes": {
+      "types": "./dist/nodes/index.d.ts",
+      "import": "./dist/nodes.js",
+      "default": "./dist/nodes.js"
+    },
+    "./plugins": {
+      "types": "./dist/plugins/index.d.ts",
+      "import": "./dist/plugins.js",
+      "default": "./dist/plugins.js"
+    },
+    "./plugins/mermaid": {
+      "types": "./dist/plugins/mermaid/index.d.ts",
+      "import": "./dist/plugins-mermaid.js",
+      "default": "./dist/plugins-mermaid.js"
+    },
+    "./input": {
+      "types": "./dist/input/index.d.ts",
+      "import": "./dist/input.js",
+      "default": "./dist/input.js"
+    },
+    "./utils": {
+      "types": "./dist/utils/index.d.ts",
+      "import": "./dist/utils.js",
+      "default": "./dist/utils.js"
+    },
+    "./types": {
+      "types": "./dist/types.d.ts",
+      "import": "./dist/types.js",
+      "default": "./dist/types.js"
+    },
+    "./builder": {
+      "types": "./dist/builder.d.ts",
+      "import": "./dist/builder.js",
+      "default": "./dist/builder.js"
+    },
+    "./zoom": {
+      "types": "./dist/zoom/index.d.ts",
+      "import": "./dist/zoom.js",
+      "default": "./dist/zoom.js"
+    },
+    "./layout": {
+      "types": "./dist/layout/index.d.ts",
+      "import": "./dist/layout.js",
+      "default": "./dist/layout.js"
+    },
+    "./levels": {
+      "types": "./dist/levels/index.d.ts",
+      "import": "./dist/levels.js",
+      "default": "./dist/levels.js"
+    },
+    "./representations": {
+      "types": "./dist/representations/index.d.ts",
+      "import": "./dist/representations.js",
+      "default": "./dist/representations.js"
+    },
+    "./a11y": {
+      "types": "./dist/a11y/index.d.ts",
+      "import": "./dist/a11y.js",
+      "default": "./dist/a11y.js"
+    },
+    "./navigation": {
+      "types": "./dist/navigation/index.d.ts",
+      "import": "./dist/navigation.js",
+      "default": "./dist/navigation.js"
+    },
+    "./overlays": {
+      "types": "./dist/overlays/index.d.ts",
+      "import": "./dist/overlays.js",
+      "default": "./dist/overlays.js"
+    },
+    "./depth": {
+      "types": "./dist/depth/index.d.ts",
+      "import": "./dist/depth.js",
+      "default": "./dist/depth.js"
+    },
+    "./control": {
+      "types": "./dist/control/index.d.ts",
+      "import": "./dist/control.js",
+      "default": "./dist/control.js"
+    },
+    "./vision": {
+      "types": "./dist/vision/index.d.ts",
+      "import": "./dist/vision.js",
+      "default": "./dist/vision.js"
+    }
   },
   "files": [
     "dist",
@@ -37,27 +118,31 @@
     "LICENSE"
   ],
   "scripts": {
+    "build": "pnpm run build:lib && pnpm run build:packages && pnpm run build:demo",
+    "build:demo": "vite build --config vite.demo.config.ts",
+    "build:lib": "vite build --config vite.lib.config.ts",
+    "build:packages": "tsx script/build-packages.ts",
+    "clean": "rm -rf dist/ dist-demo/ packages/*/dist/",
     "dev": "pnpm dlx vite --host",
     "dev:demo": "pnpm dlx vite --config vite.demo.config.ts --port 5173",
-    "build": "pnpm run build:lib && pnpm run build:demo",
-    "build:lib": "vite build --config vite.lib.config.ts",
-    "build:demo": "vite build --config vite.demo.config.ts",
-    "prepublishOnly": "pnpm run clean && pnpm run build && pnpm run test",
-    "clean": "rm -rf dist/ dist-demo/",
-    "verify": "tsx verification/verify_demos.ts",
-    "test": "vitest run",
-    "test:boundaries": "vitest run test/boundaries.test.ts",
-    "test:vision": "mkdir -p test/fixtures/dist && cp -r dist/* test/fixtures/dist/ && cp -r public/*.onnx test/fixtures/dist/ && playwright test test/vision.spec.ts",
-    "vision": "pnpm run test:vision",
-    "lint": "eslint 'src/**/*.{ts,js}' --ignore-pattern 'dist'",
+    "docs": "typedoc --options typedoc.json",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "docs": "typedoc --options typedoc.json",
-    "test:screenshots": "mkdir -p test/screenshots && playwright test test/e2e/demo-screenshots.spec.ts --reporter=list",
-    "test:demo-errors": "playwright test test/e2e/demo-errors.spec.ts --reporter=list",
+    "lint": "eslint 'src/**/*.{ts,js}' --ignore-pattern 'dist'",
+    "prepublishOnly": "pnpm run clean && pnpm run build && pnpm run test",
+    "test": "vitest run",
     "test:all-demos": "pnpm run test:demo-errors && pnpm run test:screenshots",
     "test:behavioral": "playwright test test/e2e/behavioral.spec.ts --reporter=list",
-    "test:full": "pnpm test"
+    "test:boundaries": "vitest run test/boundaries.test.ts",
+    "test:demo-errors": "playwright test test/e2e/demo-errors.spec.ts --reporter=list",
+    "test:exports": "vitest run test/package-exports.test.ts",
+    "test:full": "pnpm test",
+    "test:publish": "tsx script/publish-check.ts",
+    "test:screenshots": "mkdir -p test/screenshots && playwright test test/e2e/demo-screenshots.spec.ts --reporter=list",
+    "test:vision": "mkdir -p test/fixtures/dist && cp -r dist/* test/fixtures/dist/ && cp -r public/*.onnx test/fixtures/dist/ && playwright test test/vision.spec.ts",
+    "verify": "tsx verification/verify_demos.ts",
+    "vision": "pnpm run test:vision",
+    "write:exports": "tsx script/write-exports.ts"
   },
   "peerDependencies": {
     "chart.js": "^4.5.1",
