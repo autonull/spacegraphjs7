@@ -165,6 +165,21 @@ export class SpaceGraphRenderer implements GraphRenderer {
     }
   }
 
+  // The camera's frame, read back from the core. A host that must place the camera exactly (a
+  // permalink, a reduced-motion jump, a capture) reads it here instead of assuming a zoom.
+  getViewport(): RendererViewport {
+    const sg = this.#sg;
+    if (!sg) return { zoom: 1, center: [0, 0, 0] };
+
+    const viewport = sg.viewport;
+    return {
+      zoom: viewport.zoom,
+      center: viewport.center,
+      extent: viewport.extent,
+      band: viewport.band,
+    };
+  }
+
   // Programmatic framing is immediate (duration 0): a deterministic jump rather than an animation the
   // host cannot sequence. The renderer owns framing per contract rule 1, and a still frame after a fit
   // is what the capture waits on (LE.1).

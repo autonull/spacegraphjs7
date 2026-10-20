@@ -25,4 +25,9 @@ host-provided and sanitized; the renderer never fetches or evaluates them. Capab
 affordances via `supports`; unsupported capabilities are disabled with an explanation, never silently
 broken.
 
+The camera is a two-way surface: `setViewport` places it and `getViewport` reads it back, so a host
+that must place the camera exactly (a permalink, a reduced-motion jump) never has to guess the
+renderer's zoom scale. `getViewport` is optional: a renderer that cannot report its camera leaves it
+undefined, and a host reads that as "no read-back", never as a broken camera.
+
 Tests: `bun test` from this directory.

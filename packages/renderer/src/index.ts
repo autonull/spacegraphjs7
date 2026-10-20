@@ -149,6 +149,13 @@ export type GraphRenderer = {
   setDepth(depth: DepthMode): void
   setSelection(ids: readonly string[]): void
   setViewport(viewport: RendererViewport): void
+  /**
+   * The camera's current frame. A host that must place the camera exactly — a permalink, a
+   * reduced-motion jump, a capture — reads it back instead of guessing. Optional: a renderer that
+   * cannot report its camera leaves it undefined, and a host reads that as "no read-back", never as
+   * a broken camera.
+   */
+  getViewport?(): RendererViewport
   fit(ids?: readonly string[], options?: FitOptions): void
   focus(id: string): void
   resize(): void

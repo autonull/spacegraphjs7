@@ -165,6 +165,25 @@ export class CytoscapeRenderer implements GraphRenderer {
     this.#renderOverlay();
   }
 
+  // The camera's frame, read back from Cytoscape. The world centre is the middle of the container
+  // minus the pan, divided by the zoom.
+  getViewport(): RendererViewport {
+    const cy = this.#cy;
+    if (!cy) return { zoom: 1, center: [0, 0, 0] };
+
+    const zoom = cy.zoom() || 1;
+    const pan = cy.pan();
+    const el = cy.container();
+    const width = el?.clientWidth ?? 0;
+    const height = el?.clientHeight ?? 0;
+
+    return {
+      zoom,
+      center: [(width / 2 - pan.x) / zoom, (height / 2 - pan.y) / zoom, 0],
+      extent: { width: width / zoom, height: height / zoom },
+    };
+  }
+
   fit(ids?: readonly string[], options?: FitOptions): void {
     const cy = this.#cy;
     if (!cy) return;
@@ -184,7 +203,13 @@ export class CytoscapeRenderer implements GraphRenderer {
   }
 
   focus(id: string): void {
-    this.#cy?.center(this.#cy.getElementById(id));
+    const cy = this.#cy;
+    if (!cy) return;
+    // The id is the host's model id; the adapter resolves it against the render model it was given.
+    // An unknown id centres nothing rather than computing a viewport from an empty collection.
+    const element = cy.getElementById(id);
+    if (element.empty()) return;
+    cy.center(element);
   }
 
   resize(): void {
@@ -236,18 +261,8 @@ export class CytoscapeRenderer implements GraphRenderer {
   }
 
   #emitViewport(): void {
-    const cy = this.#cy;
-    if (!cy) return;
-    const zoom = cy.zoom();
-    const pan = cy.pan();
-    const el = cy.container();
-    const width = el?.clientWidth ?? 0;
-    const height = el?.clientHeight ?? 0;
-    this.#emit('viewportChange', {
-      zoom,
-      center: [(width / 2 - pan.x) / zoom, (height / 2 - pan.y) / zoom, 0],
-      extent: { width: width / zoom, height: height / zoom },
-    });
+    if (!this.#cy) return;
+    this.#emit('viewportChange', this.getViewport());
   }
 
   #syncCards(): void {

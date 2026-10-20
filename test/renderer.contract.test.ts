@@ -93,6 +93,15 @@ describe.each(adapters)('renderer contract: $name', ({ create }) => {
     expect(seen).toEqual([]);
   });
 
+  test('reports the camera frame, so a host can place the camera exactly', () => {
+    const renderer = create();
+    expect(typeof renderer.getViewport).toBe('function');
+    const viewport = renderer.getViewport!();
+    expect(viewport.zoom).toBeTypeOf('number');
+    expect(viewport.center).toHaveLength(3);
+    for (const value of viewport.center) expect(value).toBeTypeOf('number');
+  });
+
   test('dispose is idempotent, and calls after dispose are no-ops', () => {
     const renderer = create();
     expect(() => {
