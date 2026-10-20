@@ -147,6 +147,57 @@ function memberPositions(
 }
 
 /**
+ * The nodes of a model bucketed by the turn they belong to, in model order. A layout that filtered
+ * the whole node list once per turn was quadratic, and a long session paid for it (T6.6): one pass
+ * builds the buckets, and every turn reads its own.
+ */
+function nodesByTurn<Node extends LayoutNode, Edge extends LayoutEdge, Name extends string>(
+    model: LayoutModel<Node, Edge>,
+    config: LayoutConfig<Node, Edge, Name>,
+): Map<string, Node[]> {
+    const byTurn = new Map<string, Node[]>();
+
+    for (const node of model.nodes) {
+        const turn = config.turnIdFn(node);
+
+        if (!turn) continue;
+
+        const bucket = byTurn.get(turn);
+
+        if (bucket) bucket.push(node);
+        else byTurn.set(turn, [node]);
+    }
+
+    return byTurn;
+}
+
+/**
+ * The members of a turn's column: the nodes the turn owns, in model order, with the turn node
+ * itself included even when it does not name its own turn.
+ */
+function turnColumnNodes<Node extends LayoutNode>(
+    members: readonly Node[],
+    turnID: string,
+    order: ReadonlyMap<string, number>,
+    model: { nodes: readonly Node[] },
+): Node[] {
+    const turnIndex = order.get(turnID);
+
+    if (turnIndex === undefined) return [...members];
+
+    const turnNode = model.nodes[turnIndex]!;
+
+    if (members.some((node) => node.id === turnID)) return [...members];
+
+    const merged = [...members];
+    const at = merged.findIndex((node) => (order.get(node.id) ?? 0) > turnIndex);
+
+    merged.splice(at < 0 ? merged.length : at, 0, turnNode);
+
+    return merged;
+}
+
+/**
  * The chronological blocks shared by the timeline and the hierarchy: the root group first (the
  * root and any node without an owning turn), then one block per turn with its header leading its
  * members in model order.
@@ -221,18 +272,30 @@ function lanesLayout<Node extends LayoutNode, Edge extends LayoutEdge, Name exte
 
     const groups: Node[][] = [];
 
-    const rootGroup = nodes.filter(
-        (node) => node.id === model.root || (!config.turnIdFn(node) && !owners.has(node.id)),
-    );
+    // One pass over the visible nodes builds the root group and the per-turn buckets. Filtering the
+    // whole node list once per turn was quadratic, and a long session paid for it (T6.6).
+    const byTurn = new Map<string, Node[]>();
+    const rootGroup: Node[] = [];
+
+    const bucket = (key: string, node: Node) => {
+        const list = byTurn.get(key);
+
+        if (list) list.push(node);
+        else byTurn.set(key, [node]);
+    };
+
+    for (const node of nodes) {
+        const turn = config.turnIdFn(node);
+        const owner = owners.get(node.id);
+
+        if (turn) bucket(turn, node);
+        if (owner) bucket(owner, node);
+        if (node.id === model.root || (!turn && !owner)) rootGroup.push(node);
+    }
 
     if (rootGroup.length > 0) groups.push(rootGroup);
 
-    for (const turnID of model.turns)
-        groups.push(
-            nodes.filter(
-                (node) => config.turnIdFn(node) === turnID || owners.get(node.id) === turnID,
-            ),
-        );
+    for (const turnID of model.turns) groups.push(byTurn.get(turnID) ?? []);
 
     const clusters = new Map<string, LayoutBounds>();
     let columnX = 0;
@@ -277,14 +340,11 @@ function lanesLayout<Node extends LayoutNode, Edge extends LayoutEdge, Name exte
     }
 
     // Turn bands span all of a turn's members and the turn node itself.
+    const allByTurn = nodesByTurn(model, config);
+
     for (const turnID of model.turns) {
         const members = memberPositions(
-            [
-                turnID,
-                ...model.nodes
-                    .filter((node) => config.turnIdFn(node) === turnID)
-                    .map((node) => node.id),
-            ],
+            [turnID, ...(allByTurn.get(turnID) ?? []).map((node) => node.id)],
             positions,
         );
 
@@ -357,11 +417,13 @@ function timelineLayout<Node extends LayoutNode, Edge extends LayoutEdge, Name e
         turnIndex += 1;
     }
 
-    // Each turn gets its own column band
+    // Each turn gets its own column band. The members come from one pass over the model, not one
+    // filter per turn (T6.6).
+    const byTurn = nodesByTurn(model, config);
+    const order = new Map(model.nodes.map((node, index) => [node.id, index]));
+
     for (const turnID of model.turns) {
-        const turnNodes = model.nodes.filter(
-            (node) => config.turnIdFn(node) === turnID || node.id === turnID,
-        );
+        const turnNodes = turnColumnNodes(byTurn.get(turnID) ?? [], turnID, order, model);
 
         if (turnNodes.length === 0) continue;
 

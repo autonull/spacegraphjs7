@@ -40,6 +40,8 @@ export abstract class ModelAdapter<
 > {
   protected readonly config: AdapterConfig<Node, Edge, Level, Domain>;
   protected readonly geometry: AdapterGeometry;
+  /** The nodes of a model by id, built once per model: a band per turn must not re-index the model. */
+  readonly #indexes = new WeakMap<object, ReadonlyMap<string, Node>>();
 
   constructor(config: AdapterConfig<Node, Edge, Level, Domain> = {}) {
     this.config = config;
@@ -182,7 +184,7 @@ export abstract class ModelAdapter<
     positions: ReadonlyMap<string, AdapterPosition>,
     visible: ReadonlySet<string>,
   ): AdapterBounds | undefined {
-    const byID = new Map(model.nodes.map((node) => [node.id, node]));
+    const byID = this.nodeIndex(model);
     const boxes = ids.flatMap((id) => {
       if (!visible.has(id)) return [];
       const position = positions.get(id);
@@ -218,6 +220,19 @@ export abstract class ModelAdapter<
     };
   }
 
+  /** The model's nodes by id, built once per model. */
+  protected nodeIndex(model: Domain): ReadonlyMap<string, Node> {
+    const cached = this.#indexes.get(model);
+
+    if (cached) return cached;
+
+    const index = new Map(model.nodes.map((node) => [node.id, node]));
+
+    this.#indexes.set(model, index);
+
+    return index;
+  }
+
   /** A derived cluster that is collapsed at this level draws as a counted chip. */
   protected isClusterChip(node: Node, level: Level): boolean {
     if (node.derived !== true) return false;
@@ -238,27 +253,28 @@ export abstract class ModelAdapter<
   ): RenderNode[] {
     if (!labels || labels.length === 0 || nodes.length === 0) return [];
 
-    const left = Math.min(
-      ...nodes.map((node) => {
-        const position = positions.get(node.id);
-        const width = this.config.nodeSizeFn?.(node)?.[0] ?? 0;
+    const leftOf = (node: Node) => {
+      const position = positions.get(node.id);
+      const width = this.config.nodeSizeFn?.(node)?.[0] ?? 0;
 
-        return (position?.x ?? 0) - width / 2;
-      }),
-    );
-    const x = left - this.geometry.laneGutter - this.geometry.laneLabelSize[0] / 2;
+      return (position?.x ?? 0) - width / 2;
+    };
 
-    return labels.map((lane) => ({
-      id: `lane:${lane.id}`,
-      kind: 'lane',
-      label: lane.label,
-      shape: 'panel' as const,
-      interactive: false,
-      html: `<div data-lane="${escapeHtml(lane.id)}" style="display:flex;align-items:center;height:100%;box-sizing:border-box;padding:0 10px;font-family:inherit;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--lane-label-color);opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(lane.label)}</div>`,
-      size: this.geometry.laneLabelSize,
-      position: [x, lane.y, ZERO.z - 1],
-      data: { lane: lane.id, colorToken: 'textMuted' },
-    }));
+    const left = Math.min(...nodes.map(leftOf));
+
+    return labels.map((lane) => {
+      return {
+        id: `lane:${lane.id}`,
+        kind: 'lane',
+        label: lane.label,
+        shape: 'panel' as const,
+        interactive: false,
+        html: `<div data-lane="${escapeHtml(lane.id)}" style="display:flex;align-items:center;height:100%;box-sizing:border-box;padding:0 10px;font-family:inherit;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--lane-label-color);opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(lane.label)}</div>`,
+        size: this.geometry.laneLabelSize,
+        position: [left - this.geometry.laneGutter - this.geometry.laneLabelSize[0] / 2, lane.y, ZERO.z - 1],
+        data: { lane: lane.id, colorToken: 'textMuted' },
+      };
+    });
   }
 
   /** A non-interactive row or column caption for a summary representation. */

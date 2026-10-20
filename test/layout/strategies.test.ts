@@ -181,3 +181,45 @@ describe('Strategies.laneAnchors', () => {
         ]);
     });
 });
+
+describe('Strategies.layoutGraph — cost', () => {
+    // A layout that filtered the whole node list once per turn was quadratic: a long session paid
+    // for it (T6.6). The cost is measured in callbacks, not in milliseconds, so the guard is
+    // deterministic on any machine.
+    function wideModel(turns: number): TestModel {
+        const nodes: TestNode[] = [{ id: 'root', kind: 'root' }];
+        const turnIDs: string[] = [];
+
+        for (let turn = 0; turn < turns; turn++) {
+            const turnID = `t${turn}`;
+
+            turnIDs.push(turnID);
+            nodes.push({ id: turnID, kind: 'turn', turnID });
+
+            for (let member = 0; member < 4; member++)
+                nodes.push({ id: `${turnID}-n${member}`, kind: 'work', turnID });
+        }
+
+        return { root: 'root', turns: turnIDs, nodes, edges: [] };
+    }
+
+    it.each(['lanes', 'timeline', 'hierarchy'] as const)(
+        'asks each node for its turn a bounded number of times (%s)',
+        (strategy) => {
+            const model = wideModel(40);
+            let calls = 0;
+            const config: LayoutConfig<TestNode, TestEdge> = {
+                ...CONFIG,
+                turnIdFn: (node) => {
+                    calls += 1;
+
+                    return node.turnID;
+                },
+            };
+
+            Strategies.layoutGraph(model, config, { strategy });
+
+            expect(calls).toBeLessThanOrEqual(model.nodes.length * 3 + 8);
+        },
+    );
+});
