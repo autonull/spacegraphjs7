@@ -104,6 +104,7 @@ Design rules that keep the layers honest:
 | `spacegraphjs/zoom`, `/layout`, `/a11y`, `/navigation`, `/depth`, `/control`                  | Generic capabilities with minimal structural types                 |
 | `spacegraphjs/vision`                                                                         | Vision analyzers, strategies, auto-fix, model loading              |
 | `@spacegraphjs/renderer`                                                                      | Dependency-free renderer contract                                  |
+| `@spacegraphjs/adapter`                                                                        | Host-agnostic model → `RenderModel` pipeline and conformance suite  |
 | `@spacegraphjs/spacegraph-renderer`                                                           | SpaceGraph adapter: orthographic 2D and perspective 3D             |
 | `@spacegraphjs/cytoscape-renderer`                                                            | Cytoscape adapter: 2D fallback and benchmark                       |
 | `@spacegraphjs/svg-renderer`                                                                  | Static SVG export and inline subgraphs; not interactive            |

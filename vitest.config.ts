@@ -8,6 +8,7 @@ export default defineConfig({
       { find: /^spacegraphjs\/(.+)$/, replacement: resolve(__dirname, 'src/$1') },
       // Workspace packages resolve from source under Vitest without a pnpm link (the documented alias fallback).
       { find: /^@spacegraphjs\/renderer$/, replacement: resolve(__dirname, 'packages/renderer/src/index.ts') },
+      { find: /^@spacegraphjs\/adapter$/, replacement: resolve(__dirname, 'packages/adapter/src/index.ts') },
       {
         find: /^@spacegraphjs\/spacegraph-renderer$/,
         replacement: resolve(__dirname, 'packages/spacegraph-renderer/src/index.ts'),

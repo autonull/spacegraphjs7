@@ -51,6 +51,14 @@ describe('package boundaries', () => {
     }
   });
 
+  it('keeps the model adapter on the contract only', () => {
+    const imports = staticImportsIn('packages/adapter/src');
+    expect(imports).toContain('@spacegraphjs/renderer');
+    for (const specifier of ['spacegraphjs', 'spacegraphjs/core', 'spacegraphjs/activity', 'cytoscape']) {
+      expect(imports).not.toContain(specifier);
+    }
+  });
+
   it('only the SpaceGraph adapter imports the core and the contract together', () => {
     const imports = staticImportsIn('packages/spacegraph-renderer/src');
     expect(imports).toContain('@spacegraphjs/renderer');
