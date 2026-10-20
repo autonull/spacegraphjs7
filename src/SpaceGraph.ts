@@ -29,6 +29,7 @@ import { createCameraFingering, PinchZoomFingering } from './input/fingerings';
 import type { Node } from './nodes/Node';
 import type {
   CameraViewport,
+  CardFacingMode,
   DepthMode,
   EdgeSpec,
   GraphImportData,
@@ -71,6 +72,7 @@ export class SpaceGraph {
   #initialized = false;
   #disposed = false;
   #depth: DepthMode = 'flat';
+  #cardFacing: CardFacingMode = 'auto';
   #scheduled = false;
   #continuousMode = false;
   #lastZoom = -1;
@@ -867,8 +869,10 @@ export class SpaceGraph {
   // is the orthographic baseline; the perspective modes tilt the camera so Z reads as depth.
   setDepth(depth: DepthMode): this {
     const previous = this.#depth;
-    this.#applyDepth(depth, previous !== depth ? 0.5 : 0);
+    // The depth is stored before the treatment is applied: the treatment reads it (the card facing and
+    // the fade resolve against the depth that is coming, not the one that was).
     this.#depth = depth;
+    this.#applyDepth(depth, previous !== depth ? 0.5 : 0);
     if (previous !== depth) this.events.emit('depth:change', { depth, previous });
     this.#reportViewport(true);
     this.requestFrame();
@@ -879,11 +883,33 @@ export class SpaceGraph {
     const treatment = depthTreatment(depth);
     this.renderer.setProjection(treatment.projection, this.cameraControls?.target);
     this.cameraControls?.setCamera(this.renderer.camera);
-    this.renderer.setCardFacing(treatment.facing);
+    this.#applyCardFacing();
     this.applySceneFade();
     this.cameraControls?.setOrbitEnabled(treatment.orbit);
     this.cameraControls?.setPolar(treatment.phi, 0, duration);
     this.events.emit('projection:change', { projection: treatment.projection });
+  }
+
+  // ============= Card facing (T1.19) =============
+  get cardFacing(): CardFacingMode {
+    return this.#cardFacing;
+  }
+
+  /**
+   * How the DOM cards face the camera. `auto` follows the depth treatment; `plane` lays every card
+   * in the content plane, so a tilted camera shears them — the perspective working, not a defect —
+   * and `camera` turns them to face the reader.
+   */
+  setCardFacing(facing: CardFacingMode): this {
+    this.#cardFacing = facing;
+    this.#applyCardFacing();
+    this.requestFrame();
+    return this;
+  }
+
+  #applyCardFacing(): void {
+    const resolved = this.#cardFacing === 'auto' ? depthTreatment(this.#depth).facing : this.#cardFacing;
+    this.renderer.setCardFacing(resolved);
   }
 
   // T1.3: the fade is relative to the scene, not to an absolute camera distance. The content depth
@@ -1007,8 +1033,8 @@ export class SpaceGraph {
       >
     );
     this.cameraControls.sg = this;
-    this.#applyDepth(this.options.render?.depth ?? 'flat', 0);
     this.#depth = this.options.render?.depth ?? 'flat';
+    this.#applyDepth(this.#depth, 0);
     const config = (this.options.input as Record<string, any>) ?? {};
     this.input = new InputManager({ sg: this, events: this.events });
     applyDefaultInputConfig(this.input, this, config);

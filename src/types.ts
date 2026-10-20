@@ -363,6 +363,9 @@ export type DepthMode = 'flat' | 'layered' | 'depth-stack' | 'orbit';
 // treatments face the camera and keep the text readable.
 export type CardFacing = 'plane' | 'camera';
 
+// The facing a host may ask for: the two resolved values, or `auto` to follow the depth treatment.
+export type CardFacingMode = CardFacing | 'auto';
+
 // Camera keyboard input scope: off, the graph container, or the whole window.
 export type KeyboardScope = false | 'container' | 'window';
 

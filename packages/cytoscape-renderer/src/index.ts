@@ -29,6 +29,9 @@ const CAPABILITIES: RendererCapabilities = {
   // Cytoscape's zoom is a linear scale factor with no ceiling of its own; the host's policy bounds
   // it. The range is declared so a host can tell "at the limit" from "the renderer refused".
   zoomRange: { min: 0, max: Number.POSITIVE_INFINITY },
+  // Cytoscape draws in screen space: its cards are always screen-aligned, so there is no camera
+  // facing to change. Declared, so a host hides the control instead of offering a no-op.
+  cardFacing: false,
 };
 
 type Handler<K extends keyof RendererEventMap> = (payload: RendererEventMap[K]) => void;

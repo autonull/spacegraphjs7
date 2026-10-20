@@ -1,6 +1,6 @@
 {
   "name": "@spacegraphjs/adapter",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Host-agnostic model adapter: turns a domain graph model into the renderer contract's RenderModel",
   "type": "module",
   "sideEffects": false,

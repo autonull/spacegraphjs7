@@ -37,6 +37,13 @@ export type DepthMode = 'flat' | 'layered' | 'depth-stack' | 'orbit'
 /** Canonical depth order, shallowest first; hosts render choosers in this order. */
 export const DEPTH_MODES: readonly DepthMode[] = ['flat', 'layered', 'depth-stack', 'orbit']
 
+/**
+ * How the DOM cards face the camera. `plane` lays every card in the content plane, so a tilted
+ * camera shears them — that shear is the perspective working, not a defect. `camera` turns them to
+ * face the reader, which is what a legible tilted view needs. `auto` follows the depth treatment.
+ */
+export type CardFacing = 'auto' | 'plane' | 'camera'
+
 export type NodeStatus = 'neutral' | 'pending' | 'running' | 'success' | 'warning' | 'error'
 
 export type RenderNode = {
@@ -112,6 +119,12 @@ export type RendererCapabilities = {
    * Optional: a renderer that leaves it out is bounded by the host's own policy alone.
    */
   zoomRange?: { min: number; max: number }
+  /**
+   * The renderer can change how the DOM cards face the camera. A renderer that draws its cards in
+   * screen space, or has no camera at all, leaves it out — and a host hides the control rather than
+   * offering one the renderer cannot honour.
+   */
+  cardFacing?: boolean
 }
 
 export type RendererViewport = {
@@ -164,6 +177,12 @@ export type GraphRenderer = {
    * a broken camera.
    */
   getViewport?(): RendererViewport
+  /**
+   * How the DOM cards face the camera. Optional: a renderer that draws no cards, or draws them in
+   * screen space, leaves it out — and a host reads that as "not changeable", never as a broken
+   * camera.
+   */
+  setCardFacing?(facing: CardFacing): void
   fit(ids?: readonly string[], options?: FitOptions): void
   focus(id: string): void
   resize(): void

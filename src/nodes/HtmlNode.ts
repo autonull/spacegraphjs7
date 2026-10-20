@@ -255,7 +255,11 @@ export class HtmlNode extends BaseContentNode {
     const renderer = this.sg?.renderer;
     const camera = renderer?.camera;
     if (!renderer || !camera) return;
-    if (!this.billboard && renderer.cardFacing !== 'camera') return;
+    // The renderer decides, not the node: 'camera' turns every card to face the reader, and 'plane'
+    // lays the whole scene in the content plane — a tilted camera then shears every card the way it
+    // shears the mesh edges, and that shear is the perspective working (T1.19). A node's own
+    // `billboard` flag used to override this; the renderer's policy is the single switch now.
+    if (renderer.cardFacing !== 'camera') return;
 
     // The CSS3D pipeline composes the camera's view matrix with the node's world matrix, so a
     // screen-aligned node carries the camera's rotation — not its inverse. The inverse turned the

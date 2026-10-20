@@ -40,7 +40,7 @@ function screenRotation(card: HtmlNode, camera: THREE.Camera): THREE.Quaternion 
 describe('a card that faces the camera', () => {
   test('is screen-aligned under a tilted camera', () => {
     const camera = tiltedCamera();
-    const card = makeCard(camera, 'plane', true);
+    const card = makeCard(camera, 'camera', true);
 
     expect(screenRotation(card, camera).angleTo(new THREE.Quaternion())).toBeCloseTo(0, 6);
   });
@@ -50,14 +50,14 @@ describe('a card that faces the camera', () => {
     camera.position.set(0, 0, 640);
     camera.lookAt(0, 0, 0);
     camera.updateMatrixWorld(true);
-    const card = makeCard(camera, 'plane', true);
+    const card = makeCard(camera, 'camera', true);
 
     expect(screenRotation(card, camera).angleTo(new THREE.Quaternion())).toBeCloseTo(0, 6);
   });
 
   test('follows the camera when the pose changes', () => {
     const camera = tiltedCamera();
-    const card = makeCard(camera, 'plane', true);
+    const card = makeCard(camera, 'camera', true);
 
     camera.position.set(-320, 480, 520);
     camera.lookAt(0, 0, 0);
@@ -72,6 +72,13 @@ describe('a card that does not face the camera', () => {
   test('stays flat on the content plane', () => {
     const camera = tiltedCamera();
     const card = makeCard(camera, 'plane');
+
+    expect(card.cssObject.quaternion.angleTo(new THREE.Quaternion())).toBeCloseTo(0, 6);
+  });
+
+  test('stays flat even when it asked to billboard: the renderer decides', () => {
+    const camera = tiltedCamera();
+    const card = makeCard(camera, 'plane', true);
 
     expect(card.cssObject.quaternion.angleTo(new THREE.Quaternion())).toBeCloseTo(0, 6);
   });

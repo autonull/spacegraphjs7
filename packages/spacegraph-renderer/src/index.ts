@@ -1,5 +1,6 @@
 import {
   CONTRACT_VERSION,
+  type CardFacing,
   type DepthMode,
   type FitOptions,
   type GraphRenderer,
@@ -28,6 +29,9 @@ const CAPABILITIES: RendererCapabilities = {
   // The core's zoom is normalized over the fitted band: 0 is the farthest the band allows and 1 the
   // closest. A host that zooms past 1 is asking for a zoom the renderer cannot deliver.
   zoomRange: { min: 0, max: 1 },
+  // The core's DOM cards can face the camera or lie in the content plane, so a host can show the
+  // raw perspective of a tilted camera.
+  cardFacing: true,
 };
 
 type Handler<K extends keyof RendererEventMap> = (payload: RendererEventMap[K]) => void;
@@ -140,6 +144,11 @@ export class SpaceGraphRenderer implements GraphRenderer {
 
   setDepth(depth: DepthMode): void {
     this.#applyDepth(depth);
+  }
+
+  // The core owns the camera and the cards; the adapter only translates the request.
+  setCardFacing(facing: CardFacing): void {
+    this.#sg?.setCardFacing(facing);
   }
 
   // The core owns camera framing and depth treatment (contract rule 1); the adapter only translates the

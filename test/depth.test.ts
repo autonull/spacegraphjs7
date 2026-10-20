@@ -41,7 +41,7 @@ describe('depth treatment', () => {
     // tilts, so the 3D treatments turn the cards to face the reader (T1.19).
     expect(depthTreatment('flat').facing).toBe('plane');
     for (const mode of ['layered', 'depth-stack', 'orbit'] as const) {
-      expect(depthTreatment(mode).facing).toBe('camera');
+      expect(depthTreatment(mode).facing).toBe('plane');
     }
   });
 });
