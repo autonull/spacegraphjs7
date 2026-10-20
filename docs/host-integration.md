@@ -105,6 +105,18 @@ renderer.setTheme(theme);
   renderer zoom to named bands; you decide what each band shows. The common shape is three levels:
   overview (clusters with counts), execution (tool activity), detail (reasoning and full content).
 - Fit/focus only on explicit user action, first load, or a data-source change — not on every update.
+- The fit carries options a host can use to frame what it wants framed:
+  ```ts
+  renderer.fit(nodeIds, {
+    minScale: 0.5,                                    // never shrink a world unit below half a pixel
+    padding: 40,                                      // a margin in world units, the same on every renderer
+    insets: { right: 232, bottom: 152 },              // screen-space margins, in CSS pixels
+  });
+  ```
+  `insets` are for chrome the host draws **over** the canvas — a floating inspector, a header, a
+  bottom sheet, a minimap. The renderer frames the content in what is left, so the content is never
+  hidden under the chrome. A host that gives the canvas its own space (a side panel beside it) needs
+  no insets. `capabilities.fitInsets` says whether the renderer can honour them at all.
 
 ## 6. Interaction, accessibility, and navigation
 
@@ -157,6 +169,12 @@ For a framework host, skip steps 5–6's manual wiring: mount `GraphView` from `
 `capabilities.contractVersion`. Call `negotiateContract(version)` and surface the result — a mismatch is
 a clear message, not a runtime failure. For a non-OpenCode page, see the fixture in
 `demo/activity-host.ts`; the runnable two-adapter library demo is `demo/contract.html`.
+
+**Contract v3 (the fit options).** v3 adds `padding` and `insets` to the fit options and the
+`fitInsets` capability. The options are additive: a v2 adapter ignores them and still frames the
+whole surface, so a v3 host accepts a v2 adapter (`SUPPORTED_CONTRACT_VERSIONS` is `[2, 3]`). A v3
+adapter against a v2 host is refused with a clear message — the v2 host cannot know what the newer
+adapter expects. Nothing else changed: the model, the events, and the capabilities are the same.
 
 ## 10. What the library does not do
 

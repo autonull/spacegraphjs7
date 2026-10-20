@@ -3,6 +3,7 @@ import { describe, expect, test } from 'vitest';
 import {
   CONTRACT_VERSION,
   negotiateContract,
+  SUPPORTED_CONTRACT_VERSIONS,
   supports,
   supportsDepth,
   type DepthMode,
@@ -195,5 +196,25 @@ describe('contract version negotiation (P8.7)', () => {
     const result = negotiateContract(CONTRACT_VERSION + 1);
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.message).toContain(String(CONTRACT_VERSION + 1));
+  });
+
+  test('a v2 adapter is still accepted, so a host can roll the contract forward', () => {
+    expect(negotiateContract(2)).toEqual({ ok: true });
+    expect(SUPPORTED_CONTRACT_VERSIONS).toContain(2);
+  });
+});
+
+describe('the fit options (T6.10)', () => {
+  test('both adapters can frame content inside screen-space insets', () => {
+    for (const { create } of adapters) {
+      expect(create().capabilities.fitInsets).toBe(true);
+    }
+  });
+
+  test('a fit with insets does not throw on either adapter', () => {
+    for (const { create } of adapters) {
+      const renderer = create();
+      expect(() => renderer.fit(undefined, { insets: { top: 10, right: 20, bottom: 30, left: 40 } })).not.toThrow();
+    }
   });
 });

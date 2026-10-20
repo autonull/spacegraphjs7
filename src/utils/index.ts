@@ -32,7 +32,7 @@ export {
   ZOOM,
   ZoomConfig,
 } from '../core/constants';
-export type { FitViewResult } from './CameraUtils';
+export type { FitInsets, FitSurface, FitViewResult } from './CameraUtils';
 // Camera utilities
 export { calculateFitView } from './CameraUtils';
 // Color

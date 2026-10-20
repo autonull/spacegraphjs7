@@ -154,6 +154,37 @@ test.describe('the second host (T6.12)', () => {
         noErrors(errors);
     });
 
+    test('keeps the framed content clear of the minimap drawn over the canvas', async ({ page }) => {
+        const errors = await boot(page);
+
+        // The camera flies to a new frame over 1.5s, so the frame is measured once it has settled.
+        await page.setViewportSize({ width: 1440, height: 900 });
+        await page.waitForTimeout(2_200);
+
+        // T6.10: the minimap is chrome over the canvas, so the fit keeps the content out of its way.
+        // The force layout spreads over the whole stage, so it is the view that reaches the corner.
+        await page.locator('[data-view="force"]').click();
+        await page.waitForTimeout(2_200);
+
+        const overlap = await page.evaluate(() => {
+            const minimap = document.querySelector<SVGSVGElement>('#minimap');
+            if (!minimap) return -1;
+            const map = minimap.getBoundingClientRect();
+            let total = 0;
+            for (const card of document.querySelectorAll<HTMLElement>('.html-node-container')) {
+                const rect = card.getBoundingClientRect();
+                const width = Math.min(rect.right, map.right) - Math.max(rect.left, map.left);
+                const height = Math.min(rect.bottom, map.bottom) - Math.max(rect.top, map.top);
+                if (width > 0 && height > 0) total += width * height;
+            }
+            return total;
+        });
+
+        expect(overlap).toBe(0);
+
+        noErrors(errors);
+    });
+
     test('captures the gallery for the review packet', async ({ page }) => {
         const errors = await boot(page);
 

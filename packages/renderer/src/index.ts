@@ -5,10 +5,16 @@
  * A host builds a `RenderModel`, a renderer adapter renders it, and the two never share library objects.
  */
 
-export const CONTRACT_VERSION = 2
+export const CONTRACT_VERSION = 3
 
-/** Versions this contract package implements; adapters declare theirs via `capabilities.contractVersion`. */
-export const SUPPORTED_CONTRACT_VERSIONS: readonly number[] = [CONTRACT_VERSION]
+/**
+ * Versions this contract package implements; adapters declare theirs via `capabilities.contractVersion`.
+ *
+ * A v2 adapter is still accepted: it ignores the fit options v3 added, and a host that wants them
+ * checks `capabilities.fitInsets` before it asks. A v3 adapter against a v2 host is refused with a
+ * clear message (see `negotiateContract`) — the host cannot know what the newer adapter expects.
+ */
+export const SUPPORTED_CONTRACT_VERSIONS: readonly number[] = [2, 3]
 
 export function supportsContractVersion(version: number): boolean {
   return SUPPORTED_CONTRACT_VERSIONS.includes(version)
@@ -22,7 +28,7 @@ export function negotiateContract(version: number): ContractNegotiation {
     ? { ok: true }
     : {
         ok: false,
-        message: `Renderer contract version ${version} is not supported (this host implements ${CONTRACT_VERSION}).`,
+        message: `Renderer contract version ${version} is not supported (this host implements ${SUPPORTED_CONTRACT_VERSIONS.join(", ")}).`,
       }
 }
 
@@ -125,6 +131,12 @@ export type RendererCapabilities = {
    * offering one the renderer cannot honour.
    */
   cardFacing?: boolean
+  /**
+   * The renderer can frame content inside screen-space insets (`fit` with `insets`). Optional: a
+   * renderer that cannot leaves it out, and a host reads that as "not honoured" — the frame simply
+   * fills the surface — rather than as a broken camera.
+   */
+  fitInsets?: boolean
 }
 
 export type RendererViewport = {
@@ -135,6 +147,16 @@ export type RendererViewport = {
   band?: string
 }
 
+/**
+ * Screen-space margins, in CSS pixels of the renderer's surface, that the framed content must stay
+ * clear of: an inspector drawn over the canvas, a floating header, a bottom sheet, a minimap.
+ *
+ * A host that draws its chrome *over* the canvas says where the chrome is; the renderer frames the
+ * content in what is left. A host that gives the canvas its own space (a side panel beside it)
+ * needs no insets at all.
+ */
+export type FitInsets = { top?: number; right?: number; bottom?: number; left?: number }
+
 /** What a fit must honour beyond the content it frames. */
 export type FitOptions = {
   /**
@@ -143,6 +165,17 @@ export type FitOptions = {
    * too small to read.
    */
   minScale?: number
+  /**
+   * The margin around the framed content, in the graph's own world units — the same units the
+   * layout places cards in. Two renderers that frame the same content at the same scale give the
+   * same margin, so the frame does not change when the host switches renderer.
+   *
+   * A renderer without its own default (the SpaceGraph core uses 100 world units) is free to keep
+   * one; a host that wants both renderers to agree passes the padding explicitly.
+   */
+  padding?: number
+  /** Screen-space margins the framed content must stay clear of, in CSS pixels. */
+  insets?: FitInsets
 }
 
 export type RendererEventMap = {

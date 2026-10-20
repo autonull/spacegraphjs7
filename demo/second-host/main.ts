@@ -23,6 +23,8 @@ type RendererID = 'spacegraph' | 'cytoscape' | 'svg';
 type ThemeName = 'dark' | 'light';
 
 const MINIMAP = { width: 220, height: 140 };
+/** The gap between the minimap and the stage's edges (`inset-block-end: 12px`). */
+const MINIMAP_GAP = 12;
 const DEPTHS: readonly DepthMode[] = ['flat', 'layered', 'depth-stack', 'orbit'];
 
 const TOKENS = {
@@ -263,9 +265,13 @@ function paint() {
 /**
  * The camera follows the content: a view change replaces the model, so the camera is framed again.
  * The floor keeps a card legible — half its natural size, which is what the lane views are read at.
+ * The minimap is drawn over the canvas, so the frame keeps the content clear of it (T6.10).
  */
 function fitCamera() {
-    renderer?.fit(undefined, { minScale: 0.5 });
+    renderer?.fit(undefined, {
+        minScale: 0.5,
+        insets: { right: MINIMAP.width + MINIMAP_GAP, bottom: MINIMAP.height + MINIMAP_GAP },
+    });
 }
 
 async function mountRenderer(id: RendererID): Promise<void> {

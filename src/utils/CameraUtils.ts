@@ -17,6 +17,38 @@ export interface FitNode {
   data?: Record<string, unknown>;
 }
 
+/** The surface the camera frames, in CSS pixels. */
+export interface FitSurface {
+  width: number;
+  height: number;
+}
+
+/** Screen-space margins the framed content must stay clear of, in CSS pixels. */
+export interface FitInsets {
+  top: number;
+  right: number;
+  bottom: number;
+  left: number;
+}
+
+/** The part of the surface the content may use once the insets are taken out, in CSS pixels. */
+interface UsableRegion {
+  width: number;
+  height: number;
+}
+
+/**
+ * The region of the surface the content may use. Without a surface, or without insets, the content
+ * may use the whole surface and the region is undefined.
+ */
+function usableRegion(surface?: FitSurface, insets?: FitInsets): UsableRegion | undefined {
+  if (!surface || !insets) return undefined;
+  const width = surface.width - insets.left - insets.right;
+  const height = surface.height - insets.top - insets.bottom;
+  if (width <= 0 || height <= 0) return undefined;
+  return { width, height };
+}
+
 /**
  * Calculate a view that fits the given nodes. For perspective cameras, optionally provide the
  * camera's polar angle (phi from +Y) to account for tilt foreshortening.
@@ -24,6 +56,11 @@ export interface FitNode {
  * `minZoom` is a floor on the orthographic frustum zoom. When the content needs a smaller zoom to
  * fit, the floor applies instead: the frame then shows the content's start corner and the reader
  * pans the rest, rather than reading text too small to make out.
+ *
+ * `surface` and `insets` frame the content inside the region the insets leave free: the content
+ * stays clear of the chrome a host draws over the canvas (an inspector, a header, a bottom sheet).
+ * The orthographic path honours them exactly; the perspective path honours them approximately,
+ * because a tilted camera has no single screen-to-world scale.
  */
 export function calculateFitView(
   nodes: FitNode[],
@@ -34,6 +71,10 @@ export function calculateFitView(
   phi?: number,
   /** The smallest frustum zoom the fit may use; the frame then starts at the content's corner. */
   minZoom?: number,
+  /** The surface the camera frames, in CSS pixels. */
+  surface?: FitSurface,
+  /** Screen-space margins the content must stay clear of, in CSS pixels. */
+  insets?: FitInsets,
 ): FitViewResult | null {
   if (!nodes || nodes.length === 0) return null;
 
@@ -54,6 +95,8 @@ export function calculateFitView(
   const size = new THREE.Vector3();
   box.getSize(size);
 
+  const usable = usableRegion(surface, insets);
+
   const ortho = camera as THREE.OrthographicCamera;
   if (ortho.isOrthographicCamera) {
     // The frame is the base frustum scaled by zoom and looks down -Z, so fit the X/Y bounds.
@@ -62,18 +105,32 @@ export function calculateFitView(
     const fitZoom = Math.min(
       baseHeight / (size.y + 2 * padding),
       baseWidth / (size.x + 2 * padding),
+      // The content and its margin must also fit the region the insets leave free.
+      ...(usable && surface
+        ? [
+            (baseHeight * usable.width) / ((size.x + 2 * padding) * surface.height),
+            (baseHeight * usable.height) / ((size.y + 2 * padding) * surface.height),
+          ]
+        : []),
     );
     const zoom = minZoom === undefined ? fitZoom : Math.max(minZoom, fitZoom);
 
-    if (zoom === fitZoom) return { center, cameraZ: minDistance, zoom };
+    // CSS pixels per world unit at the chosen zoom: the frustum covers the surface.
+    const pxPerWorld = surface && surface.height > 0 ? (surface.height * zoom) / baseHeight : 0;
+    // The usable region's centre, in world units, relative to the surface's centre.
+    const offsetX = usable && pxPerWorld > 0 ? (insets!.left - insets!.right) / 2 / pxPerWorld : 0;
+    const offsetY = usable && pxPerWorld > 0 ? (insets!.top - insets!.bottom) / 2 / pxPerWorld : 0;
+
+    if (zoom === fitZoom)
+      return { center: new THREE.Vector3(center.x - offsetX, center.y + offsetY, center.z), cameraZ: minDistance, zoom };
 
     // The floor applies: the content no longer fits, so the frame starts at its beginning and the
     // axis that still fits stays centred.
-    const visibleWidth = baseWidth / zoom;
-    const visibleHeight = baseHeight / zoom;
+    const visibleWidth = usable && pxPerWorld > 0 ? usable.width / pxPerWorld : baseWidth / zoom;
+    const visibleHeight = usable && pxPerWorld > 0 ? usable.height / pxPerWorld : baseHeight / zoom;
     const anchored = new THREE.Vector3(
-      size.x + 2 * padding > visibleWidth ? box.min.x - padding + visibleWidth / 2 : center.x,
-      size.y + 2 * padding > visibleHeight ? box.min.y - padding + visibleHeight / 2 : center.y,
+      size.x + 2 * padding > visibleWidth ? box.min.x - padding - offsetX + visibleWidth / 2 : center.x - offsetX,
+      size.y + 2 * padding > visibleHeight ? box.min.y - padding + offsetY + visibleHeight / 2 : center.y + offsetY,
       center.z,
     );
 
@@ -83,15 +140,30 @@ export function calculateFitView(
   const maxDim = Math.max(size.x, size.y, size.z);
   const { fov = 75, aspect = 1 } = camera as Partial<THREE.PerspectiveCamera>;
   const fovRad = fov * DEG2RAD;
-  const cameraZ = Math.abs(maxDim / (2 * Math.tan(fovRad / 2) * Math.max(1, aspect)));
+  let cameraZ = Math.abs(maxDim / (2 * Math.tan(fovRad / 2) * Math.max(1, aspect)));
 
   // For perspective cameras with tilt (phi < PI/2), the view of the XY plane is foreshortened.
   // Move the camera closer by sin(phi) to compensate and frame the same content.
-  const adjustedZ = phi !== undefined && phi < Math.PI / 2
-    ? cameraZ * Math.sin(phi)
-    : cameraZ;
+  const tilt = phi !== undefined && phi < Math.PI / 2 ? Math.sin(phi) : 1;
+  cameraZ *= tilt;
 
-  return { center, cameraZ: Math.max(adjustedZ + padding, minDistance) };
+  // The content must fit the region the insets leave free, so the camera steps back.
+  if (usable && surface) cameraZ *= Math.max(surface.width / usable.width, surface.height / usable.height);
+
+  // The frame centres the content in that region. The world size the camera sees at the target
+  // plane gives the screen-to-world scale (approximate for a tilted camera).
+  if (usable && surface) {
+    const visibleHeight = 2 * cameraZ * Math.tan(fovRad / 2);
+    const visibleWidth = visibleHeight * aspect;
+    const pxPerWorldX = visibleWidth > 0 ? surface.width / visibleWidth : 0;
+    const pxPerWorldY = visibleHeight > 0 ? surface.height / (visibleHeight * tilt) : 0;
+    if (pxPerWorldX > 0 && pxPerWorldY > 0) {
+      center.x -= (insets!.left - insets!.right) / 2 / pxPerWorldX;
+      center.y += (insets!.top - insets!.bottom) / 2 / pxPerWorldY;
+    }
+  }
+
+  return { center, cameraZ: Math.max(cameraZ + padding, minDistance) };
 }
 
 /** Half-extents reported by a node's spec; cards carry width/height, shapes a single size. */

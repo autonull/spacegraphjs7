@@ -41,11 +41,12 @@ import type {
 } from './types';
 import { depthTreatment, sceneFadeDensity } from './depth/DepthCues';
 import { calculateFitView, createLogger, DOMUtils, safeClone, wrapError } from './utils';
+import type { FitInsets } from './utils';
 import type { OrthographicCamera } from 'three';
 
 const logger = createLogger('SpaceGraph');
 
-export const VERSION = '7.0.0';
+export const VERSION = '8.4.0';
 
 export class SpaceGraph {
   public static instances = new Set<SpaceGraph>();
@@ -434,11 +435,17 @@ export class SpaceGraph {
   }
 
   // ============= Camera Controls =============
+  /**
+   * Frame the given nodes (all of them by default).
+   *
+   * `padding` is a margin in world units; `options.insets` are screen-space margins, in CSS pixels,
+   * that the content must stay clear of — the chrome a host draws over the canvas.
+   */
   fitView(
     padding = 100,
     duration = 1.5,
     ids?: readonly string[],
-    options?: { minScale?: number },
+    options?: { minScale?: number; insets?: FitInsets },
   ): this {
     if (!this.graph || !this.renderer?.camera || !this.cameraControls) return this;
     const nodes = ids
@@ -466,6 +473,8 @@ export class SpaceGraph {
       200,
       targetPhi,
       this.#minZoomFor(options?.minScale),
+      { width: this.renderer.container?.clientWidth ?? 0, height: this.renderer.container?.clientHeight ?? 0 },
+      options?.insets,
     );
     if (fit) {
       // T1.8: the fitted frame becomes the orthographic zoom reference, so later zoom is bounded

@@ -6,6 +6,7 @@
 
 import {
     ContrastAuditor,
+    CONTRACT_VERSION,
     negotiateContract,
     type RendererCapabilities,
     type RenderModel,
@@ -125,7 +126,7 @@ export const CAPABILITIES: readonly Capability[] = [
             const negotiation = negotiateContract(2);
 
             return [
-                `contract v2 · negotiation ${negotiation.ok ? 'accepted' : 'refused'}`,
+                `contract v${CONTRACT_VERSION} · a v2 adapter is still ${negotiation.ok ? 'accepted' : 'refused'}`,
                 `model: ${context.model.nodes.length} nodes, ${context.model.edges.length} edges`,
                 `renderer: ${context.rendererName ?? 'none mounted'} · ${
                     context.capabilities?.projections.join(' + ') ?? 'no projection'

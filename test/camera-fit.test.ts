@@ -75,3 +75,99 @@ describe('calculateFitView', () => {
     expect(fit!.center.y).toBeCloseTo(50, 6);
   });
 });
+
+describe('calculateFitView with screen-space insets', () => {
+  const surface = { width: 1000, height: 1000 };
+  const content = nodes([[-500, 0, 0], [500, 0, 0]]);
+
+  it('frames the content inside the region the insets leave free', () => {
+    const camera = orthoCamera(1);
+    const plain = calculateFitView(content, camera, 100, 200, undefined, undefined, surface);
+    const inset = calculateFitView(content, camera, 100, 200, undefined, undefined, surface, {
+      top: 0,
+      right: 200,
+      bottom: 0,
+      left: 0,
+    });
+
+    // The content is 1000 units wide and the margin 200, so the plain fit zooms to 1000/1200.
+    expect(plain!.zoom).toBeCloseTo(1000 / 1200, 6);
+    // The region is 800 wide, so the content has to shrink into it.
+    expect(inset!.zoom).toBeCloseTo((1000 * 800) / (1200 * 1000), 6);
+    expect(inset!.zoom!).toBeLessThan(plain!.zoom!);
+  });
+
+  it('centres the content in the region, not on the surface', () => {
+    const camera = orthoCamera(1);
+    const fit = calculateFitView(content, camera, 100, 200, undefined, undefined, surface, {
+      top: 0,
+      right: 200,
+      bottom: 0,
+      left: 0,
+    });
+
+    // The region runs from 0 to 800 CSS pixels, so the content's centre lands on 400 of them. The
+    // camera centre is the world point that maps there: 400 = (0 - center) * 0.667 + 500.
+    const pxPerWorld = (surface.height * fit!.zoom!) / 1000;
+    expect(fit!.center.x).toBeCloseTo((500 - 400) / pxPerWorld, 6);
+  });
+
+  it('moves the frame down when the top carries an inset', () => {
+    const camera = orthoCamera(1);
+    const fit = calculateFitView(content, camera, 100, 200, undefined, undefined, surface, {
+      top: 100,
+      right: 0,
+      bottom: 0,
+      left: 0,
+    });
+
+    // The region runs from 100 to 1000 CSS pixels, so the content's centre lands on 550 of them.
+    const pxPerWorld = (surface.height * fit!.zoom!) / 1000;
+    expect(fit!.center.y).toBeCloseTo((550 - 500) / pxPerWorld, 6);
+  });
+
+  it('anchors the floor at the region corner, so the reader pans forward inside it', () => {
+    const camera = orthoCamera(1);
+    const fit = calculateFitView(content, camera, 100, 200, undefined, 0.9, surface, {
+      top: 0,
+      right: 200,
+      bottom: 0,
+      left: 0,
+    });
+
+    // The floor applies, so the frame starts at the content's first corner inside the region.
+    expect(fit!.zoom).toBe(0.9);
+    const pxPerWorld = (surface.height * fit!.zoom!) / 1000;
+    const visibleWidth = (surface.width - 200) / pxPerWorld;
+    const offsetX = (0 - 200) / 2 / pxPerWorld;
+    // The region's left edge in world units, where the content's first corner has to land.
+    expect(fit!.center.x + offsetX - visibleWidth / 2).toBeCloseTo(-500 - 100, 6);
+  });
+
+  it('ignores the insets without a surface to measure them against', () => {
+    const camera = orthoCamera(1);
+    const withSurface = calculateFitView(content, camera, 100, 200, undefined, undefined, surface);
+    const withoutSurface = calculateFitView(content, camera, 100, 200, undefined, undefined, undefined, {
+      top: 0,
+      right: 200,
+      bottom: 0,
+      left: 0,
+    });
+
+    expect(withoutSurface!.zoom).toBeCloseTo(withSurface!.zoom!, 6);
+    expect(withoutSurface!.center.x).toBeCloseTo(withSurface!.center.x, 6);
+  });
+
+  it('steps a perspective camera back so the content fits the region', () => {
+    const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 10000);
+    const plain = calculateFitView(content, camera, 100, 200, undefined, undefined, surface);
+    const inset = calculateFitView(content, camera, 100, 200, undefined, undefined, surface, {
+      top: 0,
+      right: 200,
+      bottom: 0,
+      left: 0,
+    });
+
+    expect(inset!.cameraZ).toBeGreaterThan(plain!.cameraZ);
+  });
+});

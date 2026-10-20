@@ -32,6 +32,9 @@ const CAPABILITIES: RendererCapabilities = {
   // The core's DOM cards can face the camera or lie in the content plane, so a host can show the
   // raw perspective of a tilted camera.
   cardFacing: true,
+  // The core's fit measures the surface it has and can keep the content clear of chrome the host
+  // draws over the canvas.
+  fitInsets: true,
 };
 
 type Handler<K extends keyof RendererEventMap> = (payload: RendererEventMap[K]) => void;
@@ -196,7 +199,17 @@ export class SpaceGraphRenderer implements GraphRenderer {
   // host cannot sequence. The renderer owns framing per contract rule 1, and a still frame after a fit
   // is what the capture waits on (LE.1).
   fit(ids?: readonly string[], options?: FitOptions): void {
-    this.#sg?.fitView(100, 0, ids, options);
+    this.#sg?.fitView(options?.padding ?? 100, 0, ids, {
+      minScale: options?.minScale,
+      insets: options?.insets
+        ? {
+            top: options.insets.top ?? 0,
+            right: options.insets.right ?? 0,
+            bottom: options.insets.bottom ?? 0,
+            left: options.insets.left ?? 0,
+          }
+        : undefined,
+    });
   }
 
   focus(id: string): void {

@@ -366,7 +366,7 @@ Vision is a verification tool, not a guarantee. Use it alongside unit, interacti
 | Concern           | Surface                                                               |
 | ----------------- | --------------------------------------------------------------------- |
 | **Selection**     | `select`, `toggle`, `clear`; `selection` and `selectedNode` getters   |
-| **Focus and fit** | `focus(id)`, `fit(ids)`                                               |
+| **Focus and fit** | `focus(id)`, `fit(ids, options)` — `minScale`, `padding`, `insets`  |
 | **Trail**         | `back()`, `forward()`, `trail`; reconciles by ID across model updates |
 | **Semantic zoom** | `bands`, `band`, `zoom`, `feedNormalized(zoom)`                       |
 | **Search**        | `search(query, limit)` ranked by label, summary, kind, then ID        |

@@ -12,6 +12,7 @@ import {
   type Unsubscribe,
 } from '@spacegraphjs/renderer';
 import type { Core } from 'cytoscape';
+import { frameInRegion } from './fit';
 import { cytoscapeStyle, edgeElement, nodeElement, normalizeTheme } from './mapping';
 
 const CAPABILITIES: RendererCapabilities = {
@@ -32,9 +33,15 @@ const CAPABILITIES: RendererCapabilities = {
   // Cytoscape draws in screen space: its cards are always screen-aligned, so there is no camera
   // facing to change. Declared, so a host hides the control instead of offering a no-op.
   cardFacing: false,
+  // Cytoscape's zoom is a linear scale in pixels per world unit, so the adapter can frame the
+  // content inside screen-space insets exactly.
+  fitInsets: true,
 };
 
 type Handler<K extends keyof RendererEventMap> = (payload: RendererEventMap[K]) => void;
+
+/** Cytoscape's own fit margin, in CSS pixels, on each side of the framed content. */
+const FIT_MARGIN = 30;
 
 // Wraps Cytoscape.js behind the dependency-free contract. It imports `@spacegraphjs/renderer` and
 // `cytoscape` only; it never imports SpaceGraphJS core.
@@ -202,14 +209,36 @@ export class CytoscapeRenderer implements GraphRenderer {
     if (elements.length === 0) cy.fit();
     else cy.fit(elements);
 
+    const framed = elements.length > 0 ? elements : cy.elements();
+    const box = framed.boundingBox();
+    if (!box) return;
+
     // The floor: zoom in rather than shrink the content past legibility, and start the frame at the
     // content's first corner so the reader pans forward (T1.18).
     const minScale = options?.minScale;
-    if (minScale === undefined || cy.zoom() >= minScale) return;
+    if (minScale !== undefined && cy.zoom() < minScale) {
+      cy.zoom(minScale);
+      cy.pan({ x: -box.x1 * minScale, y: -box.y1 * minScale });
+    }
 
-    cy.zoom(minScale);
-    const box = (elements.length > 0 ? elements : cy.elements()).boundingBox();
-    cy.pan({ x: -box.x1 * minScale, y: -box.y1 * minScale });
+    const insets = options?.insets;
+    const padding = options?.padding;
+    if (padding === undefined && !insets) return;
+
+    // The region the content may use: the surface minus the chrome the host draws over the canvas.
+    const surface = cy.container();
+    const frame = frameInRegion({
+      content: { x: box.x1, y: box.y1, width: box.w, height: box.h },
+      surface: { width: surface?.clientWidth ?? 0, height: surface?.clientHeight ?? 0 },
+      insets,
+      padding,
+      margin: FIT_MARGIN,
+      minScale: options?.minScale,
+    });
+    if (!frame) return;
+
+    cy.zoom(frame.zoom);
+    cy.pan(frame.pan);
   }
 
   focus(id: string): void {
