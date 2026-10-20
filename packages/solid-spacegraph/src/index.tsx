@@ -68,3 +68,12 @@ export const GraphView = (props: GraphViewProps) => {
 
   return container;
 };
+
+export { CodeDiffOverlay, type CodeDiffOverlayProps } from './CodeDiffOverlay';
+export {
+  ScopedSubgraphOverlay,
+  type ScopedSubgraphApi,
+  type ScopedSubgraphOverlayProps,
+  type ScopedSubgraphScope,
+  type ScopedSubgraphSlot,
+} from './ScopedSubgraphOverlay';
