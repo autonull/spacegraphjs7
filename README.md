@@ -133,6 +133,8 @@ Install with `pnpm add spacegraphjs three`. Three.js is a required peer. Optiona
 
 Run `pnpm run dev` for the engine demos. Run `pnpm run dev:demo` and open `/contract.html` for the non-OpenCode reference host, which drives the SpaceGraph adapter, the Cytoscape adapter, and the static SVG renderer from one synthetic model.
 
+The OpenCode host demo (`bun run graph:dev`, the real shell against a canonical fixture with no model provider) and the component-test harness are indexed next to it in `docs/spacegraph/demos.md` of the OpenCode fork.
+
 ### Most-used calls
 
 | Goal     | Call                                                                  |
