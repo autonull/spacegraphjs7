@@ -125,3 +125,31 @@ describe('orthographic fit zoom', () => {
     expect(camera.zoom).toBeCloseTo(8, 6);
   });
 });
+
+describe('T1.19 a target move is a pan, not a re-aim', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it('keeps the camera pose when the target moves sideways', () => {
+    const { controls, camera } = makeControls();
+    const before = camera.quaternion.clone();
+
+    controls.setTarget(120, -80, 0);
+    controls.update();
+
+    // The camera moved with the target, so the view direction — and the pose — is unchanged.
+    expect(camera.quaternion.angleTo(before)).toBeCloseTo(0, 6);
+    expect(controls.target.x).toBeCloseTo(120, 6);
+    expect(controls.target.y).toBeCloseTo(-80, 6);
+  });
+
+  it('keeps a top-down camera top-down', () => {
+    const { controls, camera } = makeControls();
+
+    controls.setTarget(400, 300, 0);
+    controls.update();
+
+    expect(controls.spherical.phi).toBeCloseTo(Math.PI / 2, 6);
+    expect(controls.spherical.theta).toBeCloseTo(0, 6);
+    expect(camera.position.z).toBeCloseTo(500, 6);
+  });
+});

@@ -355,6 +355,12 @@ export class CameraControls {
   }
 
   setTarget(x: number, y: number, z: number): void {
+    // The camera moves with the target: a jump to a node is a pan, not a re-aim. Leaving the camera
+    // in place and looking at the new target tilts the view, so a top-down camera stops being
+    // top-down (T1.19).
+    this.camera.position.x += x - this.target.x;
+    this.camera.position.y += y - this.target.y;
+    this.camera.position.z += z - this.target.z;
     this.target.set(x, y, z);
     this.updateSpherical();
   }
