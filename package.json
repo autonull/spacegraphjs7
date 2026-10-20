@@ -22,6 +22,8 @@
     "./builder": "./src/builder.ts",
     "./zoom": "./src/zoom/index.ts",
     "./layout": "./src/layout/index.ts",
+    "./levels": "./src/levels/index.ts",
+    "./representations": "./src/representations/index.ts",
     "./a11y": "./src/a11y/index.ts",
     "./navigation": "./src/navigation/index.ts",
     "./depth": "./src/depth/index.ts",
