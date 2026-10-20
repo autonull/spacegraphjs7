@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { ShapeNode } from '../src/nodes/ShapeNode';
 import type { SpaceGraph } from '../src/SpaceGraph';

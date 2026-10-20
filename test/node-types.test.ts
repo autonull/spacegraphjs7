@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_EDGE_TYPES, DEFAULT_NODE_TYPES, nodeTypeName } from '../src/core/defaults';
 import { CurvedEdge } from '../src/edges/CurvedEdge';

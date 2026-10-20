@@ -32,7 +32,6 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
-    pool: 'vmThreads',
     // Only run unit tests here (keep Playwright E2E specs out of Vitest). The framework bindings carry
     // their own lifecycle tests beside their source (P8.2).
     include: ['test/**/*.test.ts', 'packages/*/test/**/*.test.ts'],

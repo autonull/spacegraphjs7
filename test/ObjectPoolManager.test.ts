@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { ObjectPoolManager } from 'spacegraphjs/core';
 import { describe, expect, it, vi } from 'vitest';
 

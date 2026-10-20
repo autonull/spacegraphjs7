@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { CHILD_EDGE_KIND, extractSubgraph } from '../../src/overlays';
 

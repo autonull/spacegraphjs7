@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_CHROME_PLUGINS, DEFAULT_SYSTEM_PLUGINS } from '../src/core/defaults';
 

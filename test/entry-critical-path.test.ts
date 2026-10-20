@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it, vi } from 'vitest';
 
 const recorders = vi.hoisted(() => ({ onnx: vi.fn(), monaco: vi.fn() }));

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, test } from 'vitest';
 import type { RenderNode } from '@spacegraphjs/renderer';
 import { adapterConformance } from '../src/conformance';
