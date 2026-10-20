@@ -1,20 +1,28 @@
 // Generic layout strategies: deterministic, append-only placement of nodes in a lanes band, a
-// chronological timeline, and a hierarchical outline. The core owns the geometry; the host owns the
-// vocabulary (box sizes, lane names, depths, turn grouping) through the config.
+// chronological timeline, a hierarchical outline, a tree, and a force simulation. The core owns the
+// geometry; the host owns the vocabulary (box sizes, lane names, depths, turn grouping) through the
+// config.
 //
-// The three strategies are policies over one primitive: `LaneLayout` places items into columns and
-// rows, and a strategy decides which column and row an item belongs to. Nothing here measures a
-// card.
+// A strategy decides which boxes exist and what they mean; a placement engine (`src/layout/
+// placement.ts`) decides where a box goes. The three grid-shaped views share one engine, and the
+// tree and the force simulation are engines of their own. Nothing here measures a card.
 
-import { LaneLayout } from './LaneLayout';
-
-type Position = { x: number; y: number; z: number };
+import { ForcePlacement, type ForceMeta } from './force';
+import { GridPlacement, type GridMeta } from './grid';
+import type { PlacementItem, Position } from './placement';
+import { TreePlacement, type TreeMeta } from './tree';
 
 type LayoutBounds = { min: Position; max: Position };
 
-type LayoutStrategy = 'lanes' | 'timeline' | 'hierarchy';
+type LayoutStrategy = 'lanes' | 'timeline' | 'hierarchy' | 'tree' | 'force';
 
-const LAYOUT_STRATEGIES: readonly LayoutStrategy[] = ['lanes', 'timeline', 'hierarchy'];
+const LAYOUT_STRATEGIES: readonly LayoutStrategy[] = [
+    'lanes',
+    'timeline',
+    'hierarchy',
+    'tree',
+    'force',
+];
 
 interface LayoutNode {
     id: string;
@@ -71,6 +79,10 @@ interface LayoutConfig<
     ownerTurnFn?: (model: LayoutModel<Node, Edge>, node: Node) => string | undefined;
     /** The members of a derived cluster chip; undefined when the node is not a cluster. */
     clusterOfFn?: (node: Node) => readonly string[] | undefined;
+    /** The parent of a node in the tree layout; undefined for a root. */
+    parentOfFn?: (model: LayoutModel<Node, Edge>, node: Node) => string | undefined;
+    /** The ids a node is pulled towards in the force layout. */
+    forceLinksFn?: (model: LayoutModel<Node, Edge>, node: Node) => readonly string[];
     /** The measurements the strategies lay out against. */
     geometry: LayoutGeometry;
 }
@@ -95,6 +107,12 @@ interface LayoutOptions<Node extends LayoutNode = LayoutNode> {
     include?: (node: Node) => boolean;
     /** Overrides the minimum width of a turn column in the lanes layout. */
     minColumnWidth?: number;
+    /**
+     * The positions the previous layout assigned. A layout that cannot keep its boxes where they
+     * were — the tree re-centres a parent, the force simulation relaxes — reads them here, so a
+     * streamed session never moves a node the reader is looking at.
+     */
+    previous?: ReadonlyMap<string, Position>;
 }
 
 interface GraphLayout {
@@ -156,10 +174,8 @@ function memberPositions(
 }
 
 /** The placed positions of a layout, as the map the bands and the bounds are read from. */
-function placedPositions(layout: LaneLayout): Map<string, Position> {
-    return new Map(
-        Object.entries(layout.positions).map(([id, [x, y, z]]) => [id, { x, y, z }]),
-    );
+function placedPositions(positions: ReadonlyMap<string, Position>): Map<string, Position> {
+    return new Map(positions);
 }
 
 /**
@@ -268,12 +284,13 @@ function lanesLayout<Node extends LayoutNode, Edge extends LayoutEdge, Name exte
     const laneHeight = config.geometry.standardSize[1] + laneGap;
     const minColumnWidth = options.minColumnWidth ?? config.geometry.standardSize[0];
 
-    const layout = new LaneLayout({
+    const layout = new GridPlacement({
         lanes: config.laneList,
         lanePitch: laneHeight,
         step: gap,
         groupGap: turnGap,
         depthStep,
+        minColumnWidth,
     });
 
     // A host that draws a subset (a level, a lens) restricts the nodes that consume space.
@@ -319,22 +336,27 @@ function lanesLayout<Node extends LayoutNode, Edge extends LayoutEdge, Name exte
 
     for (const turnID of model.turns) columns.push([turnID, byTurn.get(turnID) ?? []]);
 
+    const items: PlacementItem<GridMeta>[] = [];
+
+    // Every turn is a column, including an empty one: the column is the turn's place in the
+    // session, and a session does not close the gap of a turn that drew nothing. An empty column is
+    // declared, so the grid still opens and closes it.
     for (const [column, members] of columns) {
-        layout.open(column);
+        if (members.length === 0) {
+            items.push({ id: column, width: 0, meta: { group: column, empty: true } });
+            continue;
+        }
 
         for (const node of members)
-            layout.place({
+            items.push({
                 id: node.id,
-                lane: config.laneOfFn(node),
-                group: column,
                 width: config.nodeSizeFn(node)[0],
                 depth: depthOf(config.depthMap, node.kind),
+                meta: { group: column, lane: config.laneOfFn(node) },
             });
-
-        layout.close(column, Math.max(layout.width(column), minColumnWidth));
     }
 
-    const positions = placedPositions(layout);
+    const positions = placedPositions(layout.place(items));
     const clusters = new Map<string, LayoutBounds>();
 
     // Derived clusters keep their membership order; their bounds drive the host's bands.
@@ -389,29 +411,21 @@ function timelineLayout<Node extends LayoutNode, Edge extends LayoutEdge, Name e
     const turnColumnWidth =
         columns * (config.geometry.standardSize[0] + gap) + config.geometry.padding;
 
-    const layout = new LaneLayout({ lanePitch: rowHeight, step: gap, groupGap: 0, depthStep });
+    const layout = new GridPlacement({ lanePitch: rowHeight, step: gap, groupGap: 0, depthStep });
+    const items: PlacementItem<GridMeta>[] = [];
 
     // The leading block (the root group, or the first turn when the model has none) opens the timeline.
     const [leading] = turnBlocks(model, config);
 
-    if (leading && leading.length > 0) {
-        layout.open(SESSION_COLUMN, turnColumnWidth);
-
-        for (let i = 0; i < leading.length; i += columns) {
-            const row = Math.floor(i / columns);
-
+    if (leading && leading.length > 0)
+        for (let i = 0; i < leading.length; i += columns)
             for (const node of leading.slice(i, i + columns))
-                layout.place({
+                items.push({
                     id: node.id,
-                    row,
-                    group: SESSION_COLUMN,
                     width: config.nodeSizeFn(node)[0],
                     depth: depthOf(config.depthMap, node.kind),
+                    meta: { group: SESSION_COLUMN, row: Math.floor(i / columns), columnWidth: turnColumnWidth },
                 });
-        }
-
-        layout.close(SESSION_COLUMN);
-    }
 
     // Each turn gets its own column band. The members come from one pass over the model, not one
     // filter per turn (T6.6).
@@ -426,25 +440,17 @@ function timelineLayout<Node extends LayoutNode, Edge extends LayoutEdge, Name e
 
         columnsByTurn.set(turnID, turnNodes);
 
-        layout.open(turnID, turnColumnWidth);
-
-        for (let i = 0; i < turnNodes.length; i += columns) {
-            const row = Math.floor(i / columns);
-
+        for (let i = 0; i < turnNodes.length; i += columns)
             for (const node of turnNodes.slice(i, i + columns))
-                layout.place({
+                items.push({
                     id: node.id,
-                    row,
-                    group: turnID,
                     width: config.nodeSizeFn(node)[0],
                     depth: depthOf(config.depthMap, node.kind),
+                    meta: { group: turnID, row: Math.floor(i / columns), columnWidth: turnColumnWidth },
                 });
-        }
-
-        layout.close(turnID);
     }
 
-    const positions = placedPositions(layout);
+    const positions = placedPositions(layout.place(items));
     const clusters = new Map<string, LayoutBounds>();
 
     // The root band spans the leading block
@@ -514,42 +520,46 @@ function hierarchyLayout<Node extends LayoutNode, Edge extends LayoutEdge, Name 
         config.geometry.standardSize[0] +
         config.geometry.padding;
 
-    const layout = new LaneLayout({ lanePitch: rowHeight, step: options.gap ?? 24, groupGap: 0, depthStep });
+    const layout = new GridPlacement({
+        lanePitch: rowHeight,
+        step: options.gap ?? 24,
+        groupGap: 0,
+        depthStep,
+    });
+    const items: PlacementItem<GridMeta>[] = [];
     let column = 0;
 
     for (const nodes of turnBlocks(model, config)) {
         let row = 0;
         let group = `column:${column}`;
 
-        layout.open(group, columnWidth);
-
         for (const node of nodes) {
             if (row >= rowsPerColumn) {
-                layout.close(group);
                 row = 0;
                 column += 1;
                 group = `column:${column}`;
-                layout.open(group, columnWidth);
             }
 
             const depth = depthOf(config.depthMap, node.kind);
 
-            layout.place({
+            items.push({
                 id: node.id,
-                row,
-                group,
-                indent: depth * indentStep,
                 width: config.geometry.standardSize[0],
                 depth,
+                meta: {
+                    group,
+                    row,
+                    indent: depth * indentStep,
+                    columnWidth,
+                },
             });
             row += 1;
         }
 
-        layout.close(group);
         column += 1;
     }
 
-    const positions = placedPositions(layout);
+    const positions = placedPositions(layout.place(items));
     const all = [...positions.values()];
 
     return {
@@ -557,6 +567,84 @@ function hierarchyLayout<Node extends LayoutNode, Edge extends LayoutEdge, Name 
         clusters: new Map(),
         bounds: all.length > 0 ? boundsOf(all) : ZERO_BOUNDS,
         strategy: 'hierarchy',
+    };
+}
+
+/**
+ * Tree: a box hangs under its parent, the tree grows downward, and a parent sits over the middle of
+ * its children. The parent relation is the host's: the tree reads the edges it binds, not the
+ * kinds.
+ *
+ * A tidy tree re-centres a parent when a child is appended, which would move a node the reader is
+ * looking at, so the layout keeps the positions it already assigned (`previous`) and only the new
+ * boxes take a slot.
+ */
+function treeLayout<Node extends LayoutNode, Edge extends LayoutEdge, Name extends string>(
+    model: LayoutModel<Node, Edge>,
+    config: LayoutConfig<Node, Edge, Name>,
+    options: LayoutOptions<Node>,
+): GraphLayout {
+    const layout = new TreePlacement({
+        columnPitch: config.geometry.standardSize[0] + (options.gap ?? 24),
+        rowPitch: config.geometry.standardSize[1] + (options.rowGap ?? 24),
+        depthStep: options.depthStep ?? 64,
+    });
+
+    const items: PlacementItem<TreeMeta>[] = model.nodes.map((node) => ({
+        id: node.id,
+        width: config.nodeSizeFn(node)[0],
+        depth: depthOf(config.depthMap, node.kind),
+        meta: { parent: config.parentOfFn?.(model, node) },
+    }));
+
+    const positions = placedPositions(layout.place(items, options.previous));
+    const all = [...positions.values()];
+
+    return {
+        positions,
+        clusters: new Map(),
+        bounds: all.length > 0 ? boundsOf(all) : ZERO_BOUNDS,
+        strategy: 'tree',
+    };
+}
+
+/**
+ * Force: a simulation. The nodes push each other apart and the edges pull them together, so the
+ * shape of the session decides where its parts sit.
+ *
+ * The layout contract says "no physics", because a live simulation jitters while the session
+ * streams. So the simulation is deterministic — a fixed seed, a fixed number of steps, the model's
+ * own order — and it is frozen: the boxes the layout already placed keep their position, and only
+ * the new ones relax against them.
+ */
+function forceLayout<Node extends LayoutNode, Edge extends LayoutEdge, Name extends string>(
+    model: LayoutModel<Node, Edge>,
+    config: LayoutConfig<Node, Edge, Name>,
+    options: LayoutOptions<Node>,
+): GraphLayout {
+    const layout = new ForcePlacement({
+        spacing: config.geometry.standardSize[0] + (options.gap ?? 24),
+        depthStep: options.depthStep ?? 64,
+    });
+
+    const items: PlacementItem<ForceMeta>[] = model.nodes.map((node) => ({
+        id: node.id,
+        width: config.nodeSizeFn(node)[0],
+        depth: depthOf(config.depthMap, node.kind),
+        meta: {
+            links: config.forceLinksFn?.(model, node),
+            radius: config.nodeSizeFn(node)[0] / 2,
+        },
+    }));
+
+    const positions = placedPositions(layout.place(items, options.previous));
+    const all = [...positions.values()];
+
+    return {
+        positions,
+        clusters: new Map(),
+        bounds: all.length > 0 ? boundsOf(all) : ZERO_BOUNDS,
+        strategy: 'force',
     };
 }
 
@@ -571,6 +659,10 @@ function layoutGraph<Node extends LayoutNode, Edge extends LayoutEdge, Name exte
     if (strategy === 'hierarchy') return hierarchyLayout(model, config, options);
 
     if (strategy === 'timeline') return timelineLayout(model, config, options);
+
+    if (strategy === 'tree') return treeLayout(model, config, options);
+
+    if (strategy === 'force') return forceLayout(model, config, options);
 
     return lanesLayout(model, config, options);
 }
