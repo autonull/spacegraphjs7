@@ -25,6 +25,9 @@ const CAPABILITIES: RendererCapabilities = {
   // The minimap is a chrome plugin pending L1.27; declare it unavailable rather than lie.
   minimap: false,
   maxRecommendedNodes: 300,
+  // The core's zoom is normalized over the fitted band: 0 is the farthest the band allows and 1 the
+  // closest. A host that zooms past 1 is asking for a zoom the renderer cannot deliver.
+  zoomRange: { min: 0, max: 1 },
 };
 
 type Handler<K extends keyof RendererEventMap> = (payload: RendererEventMap[K]) => void;

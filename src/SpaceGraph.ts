@@ -447,6 +447,11 @@ export class SpaceGraph {
       : Array.from(this.graph.nodes.values());
     if (nodes.length === 0) return this;
 
+    // The frame is measured against the surface as it is *now*. The ResizeObserver that syncs the
+    // frustum with the container runs asynchronously, so a fit that measured first would frame the
+    // content for the previous surface and the frame would change when the observer arrived (T6.20).
+    this.renderer.syncSize();
+
     // For perspective cameras, pass the target phi from the current depth treatment to account
     // for tilt foreshortening when computing the fit distance.
     const isPerspective = this.renderer.projection === 'perspective';

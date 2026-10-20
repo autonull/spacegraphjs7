@@ -104,6 +104,14 @@ export type RendererCapabilities = {
   clusterNodes: boolean
   minimap: boolean
   maxRecommendedNodes: number
+  /**
+   * The viewport zoom values this renderer accepts, in the renderer's own zoom scale. A host clamps
+   * its zoom control to the range and disables the control at the ends, so the reader is never
+   * offered a zoom the renderer cannot deliver — and a control that stops responding says so.
+   *
+   * Optional: a renderer that leaves it out is bounded by the host's own policy alone.
+   */
+  zoomRange?: { min: number; max: number }
 }
 
 export type RendererViewport = {

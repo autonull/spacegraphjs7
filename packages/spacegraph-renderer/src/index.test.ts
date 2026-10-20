@@ -14,6 +14,13 @@ describe('@spacegraphjs/spacegraph-renderer', () => {
     expect(capabilities.maxDomNodes).toBe(40);
   });
 
+  test('declares the zoom range its normalized zoom cannot leave', () => {
+    // The core's zoom is normalized over the fitted band: 0 is the farthest and 1 the closest. A
+    // host that zooms past 1 asks for a zoom the renderer cannot deliver (T6.20).
+    const capabilities = new SpaceGraphRenderer().capabilities;
+    expect(capabilities.zoomRange).toEqual({ min: 0, max: 1 });
+  });
+
   test('selection and model calls are no-ops before mount', () => {
     const renderer = new SpaceGraphRenderer();
     expect(() => {

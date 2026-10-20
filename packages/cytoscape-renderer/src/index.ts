@@ -26,6 +26,9 @@ const CAPABILITIES: RendererCapabilities = {
   clusterNodes: true,
   minimap: false,
   maxRecommendedNodes: 1000,
+  // Cytoscape's zoom is a linear scale factor with no ceiling of its own; the host's policy bounds
+  // it. The range is declared so a host can tell "at the limit" from "the renderer refused".
+  zoomRange: { min: 0, max: Number.POSITIVE_INFINITY },
 };
 
 type Handler<K extends keyof RendererEventMap> = (payload: RendererEventMap[K]) => void;
@@ -187,6 +190,10 @@ export class CytoscapeRenderer implements GraphRenderer {
   fit(ids?: readonly string[], options?: FitOptions): void {
     const cy = this.#cy;
     if (!cy) return;
+    // The frame is measured against the surface as it is *now*: Cytoscape's viewport keeps the size
+    // it was last resized to, so a fit that measured first would frame the content for the previous
+    // surface (T6.20).
+    cy.resize();
     const elements = cy.collection();
     for (const id of ids ?? []) elements.merge(cy.getElementById(id));
     if (elements.length === 0) cy.fit();

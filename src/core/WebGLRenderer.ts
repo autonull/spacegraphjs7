@@ -108,7 +108,7 @@ export class WebGLRenderer {
       0.5
     );
 
-    this._resizeObserver = new ResizeObserver(() => this.onResize());
+    this._resizeObserver = new ResizeObserver(() => this.syncSize());
     this._resizeObserver.observe(container);
   }
 
@@ -137,7 +137,7 @@ export class WebGLRenderer {
       this.#fitOrthoFrustum(distance, this.container.clientWidth / (this.container.clientHeight || 1));
     }
     this.renderContext?.setCamera(to);
-    this.onResize();
+    this.syncSize();
     return this;
   }
 
@@ -331,7 +331,15 @@ export class WebGLRenderer {
     this.orthographicCamera.updateProjectionMatrix();
   }
 
-  private onResize(): void {
+  /**
+   * Re-measure the container and update the camera's frustum, the drawing buffers and the edge
+   * resolution to match it.
+   *
+   * The ResizeObserver calls this, but it delivers its notification asynchronously: a fit that
+   * measures before it runs frames the content for a surface that no longer exists, and the frame
+   * then changes when the observer arrives. A fit therefore syncs the size first (T6.20).
+   */
+  syncSize(): void {
     const { clientWidth: w, clientHeight: h } = this.container;
     const aspect = w / (h || 1);
     if (this._projection === 'orthographic') {
