@@ -30,9 +30,8 @@ import {
     type BuildLevel,
     type BuildModel,
     type BuildNode,
+    type HostView,
 } from './model';
-
-export type HostView = 'lanes' | 'timeline' | 'hierarchy' | 'ribbon' | 'matrix';
 
 export interface MirrorState {
     /** The nodes the accessibility mirror lists. */
@@ -59,6 +58,8 @@ export interface CapabilityContext {
     readonly capabilities?: RendererCapabilities;
     /** The layout of the current view. */
     layout(): GraphLayout;
+    /** The layout of another view, over the same model. */
+    layoutOf(view: HostView): GraphLayout;
     /** The render model of the current view. */
     renderModel(): RenderModel;
     /** The accessibility mirror's state. */
@@ -104,6 +105,14 @@ function summaryConfig() {
         levelFilter: (node: BuildNode) => node.kind !== 'stage',
         categoryMap: OUTCOME_COLUMNS,
     };
+}
+
+/** The size of a layout's content, in the units the renderer draws. */
+function extent(layout: GraphLayout): string {
+    const width = layout.bounds.max.x - layout.bounds.min.x;
+    const height = layout.bounds.max.y - layout.bounds.min.y;
+
+    return `${Math.round(width)} × ${Math.round(height)}`;
 }
 
 export const CAPABILITIES: readonly Capability[] = [
@@ -208,13 +217,28 @@ export const CAPABILITIES: readonly Capability[] = [
         view: 'lanes',
         run: (context) => {
             const layout = context.layout();
-            const width = layout.bounds.max.x - layout.bounds.min.x;
-            const height = layout.bounds.max.y - layout.bounds.min.y;
 
             return [
                 `${layout.strategy} · ${layout.positions.size} nodes placed`,
-                `bounds ${Math.round(width)} × ${Math.round(height)}`,
+                `bounds ${extent(layout)}`,
                 `lanes: ${LAYOUT_CONFIG.laneList.join(', ')}`,
+            ];
+        },
+    },
+    {
+        id: 'placements',
+        title: 'The placement engines',
+        modules: ['spacegraphjs/layout'],
+        summary: 'A tree and a force simulation place the same boxes in two different shapes.',
+        view: 'tree',
+        run: (context) => {
+            const tree = context.layoutOf('tree');
+            const force = context.layoutOf('force');
+
+            return [
+                `tree · ${tree.positions.size} boxes placed · bounds ${extent(tree)}`,
+                `force · ${force.positions.size} boxes placed · bounds ${extent(force)}`,
+                `the same ${tree.positions.size} boxes, two shapes`,
             ];
         },
     },

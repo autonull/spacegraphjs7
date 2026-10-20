@@ -157,6 +157,29 @@ describe('the second host', () => {
         expect(renderModel.nodes[0]!.html).toContain('&lt;img');
     });
 
+    it('places the same boxes as a tree and as a force simulation', () => {
+        const host = new SecondHost();
+        const tree = host.layoutOf('tree');
+        const force = host.layoutOf('force');
+
+        expect(tree.positions.size).toBe(host.model.nodes.length);
+        expect(force.positions.size).toBe(host.model.nodes.length);
+
+        // The tree hangs every stage under the release, and the work under its stage.
+        const release = tree.positions.get('release')!;
+        const plan = tree.positions.get('stage:plan')!;
+        const scope = tree.positions.get('plan:scope')!;
+
+        expect(plan.y).toBeLessThan(release.y);
+        expect(scope.y).toBeLessThan(plan.y);
+
+        // The same model always yields the same positions.
+        const again = host.layoutOf('force');
+        for (const [id, position] of force.positions) {
+            expect(again.positions.get(id), id).toEqual(position);
+        }
+    });
+
     it('scopes the overlay to one neighbourhood', () => {
         const host = new SecondHost();
         const scope = host.scope('stage:verify');

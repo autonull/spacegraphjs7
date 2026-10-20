@@ -10,7 +10,32 @@ import type { NodeStatus, RenderEdge } from '@spacegraphjs/renderer';
 import { Levels, type LevelConfig } from 'spacegraphjs/levels';
 import type { LayoutConfig } from 'spacegraphjs/layout';
 
-export type BuildLevel = 'overview' | 'execution' | 'detail';
+export type BuildLevel = 'overview' | 'execution' | 'detail'
+
+/** The layouts the host can draw. The two summaries are the host's own; the rest are the library's. */
+export type HostView = 'ribbon' | 'matrix' | 'lanes' | 'timeline' | 'hierarchy' | 'tree' | 'force'
+
+/** The views in the order the picker shows them: the summaries first, then the geometries. */
+export const HOST_VIEWS: readonly HostView[] = [
+    'ribbon',
+    'matrix',
+    'lanes',
+    'timeline',
+    'hierarchy',
+    'tree',
+    'force',
+]
+
+/** The views with no lane gutter: a summary has rows and columns, and the two free geometries have
+ * no lanes at all — a card's place in the tree or the simulation says nothing about its lane. */
+export const LANELESS_VIEWS: readonly HostView[] = ['ribbon', 'matrix', 'tree', 'force']
+
+/**
+ * The leaves a tree block holds before it folds to the next row. Two, not the library's default of
+ * four: the pipeline's stages each own a row of work, and four leaves per block make the tree wider
+ * than the canvas, so the frame shows its beginning and the reader pans the rest.
+ */
+export const TREE_COLUMNS = 2;
 export type BuildStatus = 'queued' | 'running' | 'passed' | 'changed' | 'failed' | 'retried';
 export type BuildKind = 'stage' | 'step' | 'note' | 'tool' | 'artifact' | 'failure' | 'retry';
 export type BuildLane = 'plan' | 'fetch' | 'compile' | 'test' | 'package' | 'publish';
@@ -188,6 +213,25 @@ export const LEVELS: LevelConfig<BuildLevel, BuildKind, BuildEdgeKind, BuildNode
     isClusterExpanded: (level) => level !== 'overview',
 };
 
+/** The parent of a node: the `part-of` edge that names it. The tree hangs a node under its parent. */
+function parentOf(model: BuildModel, id: string): string | undefined {
+    return model.edges.find((edge) => edge.kind === 'part-of' && edge.source === id)?.target;
+}
+
+/**
+ * The nodes the force layout pulls a node towards: the structure around it — what it belongs to and
+ * what came before it. A link is a claim about the pipeline's shape, not about cause, so the
+ * evidence edge stays out of it.
+ */
+function structureLinks(model: BuildModel, id: string): readonly string[] {
+    return model.edges.flatMap((edge) => {
+        if (edge.kind === 'evidence') return [];
+        if (edge.source === id) return [edge.target];
+        if (edge.target === id) return [edge.source];
+        return [];
+    });
+}
+
 /** The host's lane names and the box each node occupies. */
 export const LAYOUT_CONFIG: LayoutConfig<BuildNode, BuildEdge, BuildLane> = {
     nodeSizeFn: (node) => node.size,
@@ -195,6 +239,8 @@ export const LAYOUT_CONFIG: LayoutConfig<BuildNode, BuildEdge, BuildLane> = {
     laneOfFn: (node) => node.lane,
     depthMap: { stage: 0, step: 1, note: 1, tool: 1, artifact: 2, failure: 2, retry: 2 },
     turnIdFn: (node) => node.stage,
+    parentOfFn: (model, node) => parentOf(model, node.id),
+    forceLinksFn: (model, node) => structureLinks(model, node.id),
     geometry: { standardSize: CARD, indentStep: 120, depthLevels: 3, padding: 24 },
 };
 

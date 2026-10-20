@@ -9,20 +9,23 @@ import type { DepthMode } from 'spacegraphjs/depth';
 import { Strategies, type GraphLayout } from 'spacegraphjs/layout';
 import { extractSubgraph, type CodeDiff, type ScopedSubgraph } from 'spacegraphjs/overlays';
 import { Representations } from 'spacegraphjs/representations';
-import type { CapabilityContext, HostView, MirrorState } from './gallery';
+import type { CapabilityContext, MirrorState } from './gallery';
 import {
     adapterConfig,
     BANDS,
     BuildAdapter,
     buildModel,
+    LANELESS_VIEWS,
     LAYOUT_CONFIG,
     OUTCOME_COLUMNS,
     OUTCOME_INDEX,
     STAGE_LABELS,
+    TREE_COLUMNS,
     type BuildEdge,
     type BuildLevel,
     type BuildModel,
     type BuildNode,
+    type HostView,
 } from './model';
 
 function summaryConfig() {
@@ -114,10 +117,15 @@ export class SecondHost {
 
     /** The layout of the current view, produced by the library's strategies or representations. */
     layout(): GraphLayout {
-        if (this.view === 'ribbon') {
+        return this.layoutOf(this.view);
+    }
+
+    /** The layout of any view, over the same model. */
+    layoutOf(view: HostView): GraphLayout {
+        if (view === 'ribbon') {
             return Representations.ribbonLayout(this.summaryModel(), summaryConfig());
         }
-        if (this.view === 'matrix') {
+        if (view === 'matrix') {
             return Representations.matrixLayout(this.summaryModel(), summaryConfig());
         }
 
@@ -129,13 +137,13 @@ export class SecondHost {
                 turns: this.model.turns,
             },
             LAYOUT_CONFIG,
-            { strategy: this.view },
+            { strategy: view, treeColumns: TREE_COLUMNS },
         );
     }
 
     /** The lane captions, anchored to the lane each node sits in. */
     laneLabels(layout: GraphLayout): AdapterLaneLabel[] {
-        if (this.view === 'ribbon' || this.view === 'matrix') return [];
+        if (LANELESS_VIEWS.includes(this.view)) return [];
 
         const top = new Map<string, number>();
 
@@ -289,6 +297,7 @@ export class SecondHost {
             depth: this.depth,
             selection: this.controller.selection,
             layout: () => this.layout(),
+            layoutOf: (view: HostView) => this.layoutOf(view),
             renderModel: () => this.renderModel(),
             mirror: () => this.mirrorState(),
             diffs: () => this.diffs(),

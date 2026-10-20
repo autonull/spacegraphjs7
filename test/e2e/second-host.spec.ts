@@ -15,6 +15,7 @@ const CAPABILITIES = [
     'adapter',
     'levels',
     'layout',
+    'placements',
     'representations',
     'navigation',
     'bands',
@@ -136,17 +137,45 @@ test.describe('the second host (T6.12)', () => {
         noErrors(errors);
     });
 
+    test('draws the same pipeline as a tree and as a force simulation', async ({ page }) => {
+        const errors = await boot(page);
+
+        await page.locator('[data-capability="placements"]').click();
+
+        const evidence = await page.evaluate(() => (window as any).__secondHost.evidence());
+        expect(evidence.join(' ')).toContain('tree');
+        expect(evidence.join(' ')).toContain('force');
+        expect(await page.evaluate(() => (window as any).__secondHost.view())).toBe('tree');
+
+        await page.locator('[data-view="force"]').click();
+        expect(await page.evaluate(() => (window as any).__secondHost.view())).toBe('force');
+        await expect(page.locator('#state')).toContainText('force');
+
+        noErrors(errors);
+    });
+
     test('captures the gallery for the review packet', async ({ page }) => {
         const errors = await boot(page);
 
+        // The camera flies to a new frame over 1.5s, so a capture taken sooner catches it mid-flight.
+        const SETTLED = 2_200;
+
         await page.setViewportSize({ width: 1440, height: 900 });
-        await page.waitForTimeout(600);
+        await page.waitForTimeout(SETTLED);
         mkdirSync(SHOT_DIR, { recursive: true });
         await page.screenshot({ path: resolve(SHOT_DIR, '26-second-host.png') });
 
         await page.locator('[data-capability="layout"]').click();
-        await page.waitForTimeout(600);
+        await page.waitForTimeout(SETTLED);
         await page.screenshot({ path: resolve(SHOT_DIR, '27-second-host-lanes.png') });
+
+        await page.locator('[data-view="tree"]').click();
+        await page.waitForTimeout(SETTLED);
+        await page.screenshot({ path: resolve(SHOT_DIR, '26-second-host-tree.png') });
+
+        await page.locator('[data-view="force"]').click();
+        await page.waitForTimeout(SETTLED);
+        await page.screenshot({ path: resolve(SHOT_DIR, '26-second-host-force.png') });
 
         noErrors(errors);
     });

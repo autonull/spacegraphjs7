@@ -61,6 +61,7 @@
             header .sub { color: var(--sh-text-muted); font-size: 12px; }
             .controls { display: flex; flex-wrap: wrap; gap: 14px; margin-inline-start: auto; }
             .group { display: flex; align-items: center; gap: 4px; }
+            #views { display: flex; gap: 4px; }
             .group > span { color: var(--sh-text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
             button {
                 font: inherit;
@@ -240,6 +241,10 @@
                 <div class="sub">Plain TypeScript · no framework · no OpenCode · one model of its own</div>
             </div>
             <div class="controls">
+                <div class="group" role="group" aria-label="Layout">
+                    <span>Layout</span>
+                    <nav id="views" aria-label="Layouts"></nav>
+                </div>
                 <div class="group" role="group" aria-label="Renderer">
                     <span>Renderer</span>
                     <button id="renderer-spacegraph" type="button" aria-pressed="true">SpaceGraph</button>

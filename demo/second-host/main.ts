@@ -17,7 +17,7 @@ import { Navigation } from 'spacegraphjs/navigation';
 import { ScopedOverlay, extractSubgraph, renderCodeDiff } from 'spacegraphjs/overlays';
 import { CAPABILITIES, type Capability } from './gallery';
 import { SecondHost } from './host';
-import { searchableFields } from './model';
+import { HOST_VIEWS, searchableFields, type HostView } from './model';
 
 type RendererID = 'spacegraph' | 'cytoscape' | 'svg';
 type ThemeName = 'dark' | 'light';
@@ -309,6 +309,7 @@ function runCapability(capability: Capability) {
         renderer?.setDepth(capability.depth);
     }
 
+    syncViews();
     paint();
     if (reframed) fitCamera();
 
@@ -355,6 +356,35 @@ function renderGallery() {
     );
 }
 
+/** The layout picker: the same model in every shape the host can draw. */
+function renderViews() {
+    el('views').replaceChildren(
+        ...HOST_VIEWS.map((view) => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.dataset.view = view;
+            button.textContent = view;
+            button.addEventListener('click', () => setView(view));
+            return button;
+        }),
+    );
+
+    syncViews();
+}
+
+function syncViews() {
+    for (const button of el('views').querySelectorAll<HTMLButtonElement>('[data-view]')) {
+        button.setAttribute('aria-pressed', String(button.dataset.view === host.view));
+    }
+}
+
+function setView(view: HostView) {
+    host.view = view;
+    syncViews();
+    paint();
+    fitCamera();
+}
+
 async function main(): Promise<void> {
     document.documentElement.dataset.theme = themeName;
 
@@ -372,6 +402,7 @@ async function main(): Promise<void> {
     });
 
     renderGallery();
+    renderViews();
 
     for (const id of ['spacegraph', 'cytoscape', 'svg'] as const) {
         el(`renderer-${id}`).addEventListener('click', () => void mountRenderer(id));
@@ -420,6 +451,10 @@ async function main(): Promise<void> {
         evidence: () => [...el('evidence').children].map((child) => child.textContent ?? ''),
         renderer: () => rendererID,
         view: () => host.view,
+        views: () => [...HOST_VIEWS],
+        setView: (view: string) => {
+            if ((HOST_VIEWS as readonly string[]).includes(view)) setView(view as HostView);
+        },
         level: () => host.level,
         selection: () => host.controller.selection,
         overlayOpen: () => !el('overlay').hidden,
