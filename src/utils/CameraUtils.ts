@@ -20,6 +20,10 @@ export interface FitNode {
 /**
  * Calculate a view that fits the given nodes. For perspective cameras, optionally provide the
  * camera's polar angle (phi from +Y) to account for tilt foreshortening.
+ *
+ * `minZoom` is a floor on the orthographic frustum zoom. When the content needs a smaller zoom to
+ * fit, the floor applies instead: the frame then shows the content's start corner and the reader
+ * pans the rest, rather than reading text too small to make out.
  */
 export function calculateFitView(
   nodes: FitNode[],
@@ -27,7 +31,9 @@ export function calculateFitView(
   padding = 100,
   minDistance = 200,
   /** Camera polar angle from +Y (radians). When provided for perspective, adjusts distance for tilt. */
-  phi?: number
+  phi?: number,
+  /** The smallest frustum zoom the fit may use; the frame then starts at the content's corner. */
+  minZoom?: number,
 ): FitViewResult | null {
   if (!nodes || nodes.length === 0) return null;
 
@@ -53,11 +59,25 @@ export function calculateFitView(
     // The frame is the base frustum scaled by zoom and looks down -Z, so fit the X/Y bounds.
     const baseHeight = ortho.top - ortho.bottom || 1;
     const baseWidth = ortho.right - ortho.left || baseHeight;
-    const zoom = Math.min(
+    const fitZoom = Math.min(
       baseHeight / (size.y + 2 * padding),
-      baseWidth / (size.x + 2 * padding)
+      baseWidth / (size.x + 2 * padding),
     );
-    return { center, cameraZ: minDistance, zoom };
+    const zoom = minZoom === undefined ? fitZoom : Math.max(minZoom, fitZoom);
+
+    if (zoom === fitZoom) return { center, cameraZ: minDistance, zoom };
+
+    // The floor applies: the content no longer fits, so the frame starts at its beginning and the
+    // axis that still fits stays centred.
+    const visibleWidth = baseWidth / zoom;
+    const visibleHeight = baseHeight / zoom;
+    const anchored = new THREE.Vector3(
+      size.x + 2 * padding > visibleWidth ? box.min.x - padding + visibleWidth / 2 : center.x,
+      size.y + 2 * padding > visibleHeight ? box.min.y - padding + visibleHeight / 2 : center.y,
+      center.z,
+    );
+
+    return { center: anchored, cameraZ: minDistance, zoom };
   }
 
   const maxDim = Math.max(size.x, size.y, size.z);

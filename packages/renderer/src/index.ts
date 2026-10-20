@@ -114,6 +114,16 @@ export type RendererViewport = {
   band?: string
 }
 
+/** What a fit must honour beyond the content it frames. */
+export type FitOptions = {
+  /**
+   * The smallest on-screen size of one world unit, in CSS pixels. A fit zooms in rather than shrink
+   * the content below it: a view that cannot show everything legibly is panned, not shrunk to text
+   * too small to read.
+   */
+  minScale?: number
+}
+
 export type RendererEventMap = {
   ready: void
   nodeClick: { id: string }
@@ -139,7 +149,7 @@ export type GraphRenderer = {
   setDepth(depth: DepthMode): void
   setSelection(ids: readonly string[]): void
   setViewport(viewport: RendererViewport): void
-  fit(ids?: readonly string[]): void
+  fit(ids?: readonly string[], options?: FitOptions): void
   focus(id: string): void
   resize(): void
   on<K extends keyof RendererEventMap>(event: K, handler: (payload: RendererEventMap[K]) => void): Unsubscribe

@@ -250,23 +250,12 @@ export class HtmlNode extends BaseContentNode {
   }
 
   protected faceCamera(): void {
-    if (this.billboard && this.sg?.renderer?.camera && this.sg?.cameraControls) {
-      const camera = this.sg.renderer.camera;
-      const target = this.sg.cameraControls.target;
-      const objPos = this.position;
+    if (!this.billboard || !this.sg?.renderer?.camera) return;
 
-      // Vector from object to camera in world space
-      const toCamera = new THREE.Vector3().subVectors(camera.position, objPos);
-      // Project onto XZ plane for billboarding (ignore vertical component)
-      toCamera.y = 0;
-
-      if (toCamera.lengthSq() > 0.0001) {
-        toCamera.normalize();
-        // Calculate Y-rotation to face camera (like a billboard on a pole)
-        const angle = Math.atan2(toCamera.x, toCamera.z);
-        this.cssObject.quaternion.setFromAxisAngle(new THREE.Vector3(0, 1, 0), angle);
-      }
-    }
+    // A billboard stays screen-aligned: its rotation cancels the camera's, so a tilted camera does
+    // not turn a wide box into a trapezoid. A top-down camera has no rotation to cancel, so the box
+    // stays flat on the content plane (T1.3).
+    this.cssObject.quaternion.copy(this.sg.renderer.camera.quaternion).invert();
   }
 
   getBoundingSphereRadius(): number {

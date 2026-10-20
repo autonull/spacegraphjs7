@@ -78,7 +78,10 @@ export type CardTemplate<Node extends AdapterNode = AdapterNode, Level extends s
   context: CardContext,
 ) => string;
 
-/** The host-owned markup of a band. */
+/**
+ * The host-owned markup of a band. The bounds are the box the band draws: the members' boxes unioned
+ * and padded, so the band encloses its members and its header has a strip of its own, clear of them.
+ */
 export type BandTemplate<Node extends AdapterNode = AdapterNode> = (
   node: Node,
   count: number,
@@ -93,7 +96,10 @@ export interface AdapterGeometry {
   panelSize: [number, number, number];
   /** The opacity of a node outside the focused neighbourhood. */
   dimOpacity: number;
-  /** The padding around a band so its members sit inside it. */
+  /**
+   * The padding around a band so its members sit inside it. The header sits in the band's own strip,
+   * so the padding is at least the header's height: the header never lands on a card.
+   */
   bandPadding: number;
   /** The footprint of a lane gutter label. */
   laneLabelSize: [number, number, number];
@@ -141,6 +147,11 @@ export interface AdapterConfig<
   isClusterExpanded?: (level: Level) => boolean;
   /** The neighbours of a node, for the focus neighbourhood. */
   neighbors?: (model: Domain, id: string) => readonly string[];
+  /**
+   * The box a node occupies in the graph's coordinate space. Bands are sized around the boxes of
+   * their members, not around their centres, so a band encloses what it groups.
+   */
+  nodeSizeFn?: (node: Node) => readonly [number, number];
   /** The sizes and offsets the pipeline measures against. */
   geometry?: Partial<AdapterGeometry>;
 }

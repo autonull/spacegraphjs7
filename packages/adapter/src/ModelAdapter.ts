@@ -21,7 +21,7 @@ const DEFAULT_GEOMETRY: AdapterGeometry = {
   chipSize: [132, 44, 0],
   panelSize: [132, 44, 0],
   dimOpacity: 0.3,
-  bandPadding: 28,
+  bandPadding: 24,
   laneLabelSize: [132, 28, 0],
   laneGutter: 20,
   axisLabelSize: [132, 24, 0],
@@ -86,10 +86,12 @@ export abstract class ModelAdapter<
   }
 
   /** The markup of a band. Optional: the default is a translucent rounded box with a header. */
-  protected defaultBandTemplate(node: Node, count: number, _bounds: AdapterBounds): string {
+  protected defaultBandTemplate(node: Node, count: number, bounds: AdapterBounds): string {
     const header = escapeHtml(node.label);
+    const width = Math.round(bounds.max.x - bounds.min.x);
+    const height = Math.round(bounds.max.y - bounds.min.y);
 
-    return `<div data-band="${node.kind}" style="width:100%;height:100%;box-sizing:border-box;border:1px dashed currentColor;border-radius:12px;opacity:.28;pointer-events:none;position:relative;font-family:inherit"><span style="position:absolute;top:4px;left:10px;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase">${header} · ${count}</span></div>`;
+    return `<div data-band="${node.kind}" style="width:${width}px;height:${height}px;box-sizing:border-box;border:1px dashed currentColor;border-radius:12px;opacity:.28;pointer-events:none;position:relative;font-family:inherit"><span style="position:absolute;bottom:2px;left:8px;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase">${header} · ${count}</span></div>`;
   }
 
   /** Builds the renderer model of a domain model at one level. */
@@ -148,7 +150,7 @@ export abstract class ModelAdapter<
     const bands = (options.bands ?? this.config.bands ?? false)
       ? this.buildBands(model, level, options.positions, renderBand, visible)
       : [];
-    const lanes = this.buildLaneLabels(options.laneLabels ?? this.config.laneLabels, content);
+    const lanes = this.buildLaneLabels(options.laneLabels ?? this.config.laneLabels, visibleNodes, options.positions);
     const axes = (options.axisLabels ?? this.config.axisLabels ?? []).map((label) => this.buildAxisLabel(label));
     const edges = (options.bundle ?? this.config.bundleEdges ?? false)
       ? this.bundleEdges(model, rawEdges)
@@ -169,6 +171,53 @@ export abstract class ModelAdapter<
     return budget ?? 0;
   }
 
+  /**
+   * The box a band draws: the boxes of its members unioned and padded. A band sized around the
+   * member centres instead would be smaller than the cards it groups, and its header would land on
+   * the first card (T1.17). The padding is the header's strip: the header clears the members.
+   */
+  protected bandBox(
+    model: Domain,
+    ids: readonly string[],
+    positions: ReadonlyMap<string, AdapterPosition>,
+    visible: ReadonlySet<string>,
+  ): AdapterBounds | undefined {
+    const byID = new Map(model.nodes.map((node) => [node.id, node]));
+    const boxes = ids.flatMap((id) => {
+      if (!visible.has(id)) return [];
+      const position = positions.get(id);
+      if (!position) return [];
+      const node = byID.get(id);
+      const size = node ? this.config.nodeSizeFn?.(node) : undefined;
+      const halfWidth = (size?.[0] ?? 0) / 2;
+      const halfHeight = (size?.[1] ?? 0) / 2;
+
+      return [
+        {
+          min: { x: position.x - halfWidth, y: position.y - halfHeight, z: 0 },
+          max: { x: position.x + halfWidth, y: position.y + halfHeight, z: 0 },
+        },
+      ];
+    });
+
+    if (boxes.length === 0) return undefined;
+
+    const padding = this.geometry.bandPadding;
+
+    return {
+      min: {
+        x: Math.min(...boxes.map((box) => box.min.x)) - padding,
+        y: Math.min(...boxes.map((box) => box.min.y)) - padding,
+        z: 0,
+      },
+      max: {
+        x: Math.max(...boxes.map((box) => box.max.x)) + padding,
+        y: Math.max(...boxes.map((box) => box.max.y)) + padding,
+        z: 0,
+      },
+    };
+  }
+
   /** A derived cluster that is collapsed at this level draws as a counted chip. */
   protected isClusterChip(node: Node, level: Level): boolean {
     if (node.derived !== true) return false;
@@ -179,16 +228,25 @@ export abstract class ModelAdapter<
 
   /**
    * The lane gutter: one non-interactive label chip per lane, left-aligned to the drawn content, so
-   * the spatial grammar is visible without a screen-space overlay.
+   * the spatial grammar is visible without a screen-space overlay. The gutter clears the left edge
+   * of the content's boxes, not their centres, so a caption never lands on the first card (T1.17).
    */
   protected buildLaneLabels(
     labels: readonly AdapterLaneLabel[] | undefined,
-    content: readonly RenderNode[],
+    nodes: readonly Node[],
+    positions: ReadonlyMap<string, AdapterPosition>,
   ): RenderNode[] {
-    if (!labels || labels.length === 0 || content.length === 0) return [];
+    if (!labels || labels.length === 0 || nodes.length === 0) return [];
 
-    const minX = Math.min(...content.map((node) => node.position[0]));
-    const x = minX - this.geometry.laneGutter - this.geometry.laneLabelSize[0] / 2;
+    const left = Math.min(
+      ...nodes.map((node) => {
+        const position = positions.get(node.id);
+        const width = this.config.nodeSizeFn?.(node)?.[0] ?? 0;
+
+        return (position?.x ?? 0) - width / 2;
+      }),
+    );
+    const x = left - this.geometry.laneGutter - this.geometry.laneLabelSize[0] / 2;
 
     return labels.map((lane) => ({
       id: `lane:${lane.id}`,

@@ -1,6 +1,7 @@
 import {
   CONTRACT_VERSION,
   type DepthMode,
+  type FitOptions,
   type GraphRenderer,
   type Projection,
   type RendererCapabilities,
@@ -160,17 +161,22 @@ export class CytoscapeRenderer implements GraphRenderer {
     this.#renderOverlay();
   }
 
-  fit(ids?: readonly string[]): void {
+  fit(ids?: readonly string[], options?: FitOptions): void {
     const cy = this.#cy;
     if (!cy) return;
-    if (!ids || ids.length === 0) {
-      cy.fit();
-      return;
-    }
     const elements = cy.collection();
-    for (const id of ids) elements.merge(cy.getElementById(id));
+    for (const id of ids ?? []) elements.merge(cy.getElementById(id));
     if (elements.length === 0) cy.fit();
     else cy.fit(elements);
+
+    // The floor: zoom in rather than shrink the content past legibility, and start the frame at the
+    // content's first corner so the reader pans forward (T1.18).
+    const minScale = options?.minScale;
+    if (minScale === undefined || cy.zoom() >= minScale) return;
+
+    cy.zoom(minScale);
+    const box = (elements.length > 0 ? elements : cy.elements()).boundingBox();
+    cy.pan({ x: -box.x1 * minScale, y: -box.y1 * minScale });
   }
 
   focus(id: string): void {
@@ -283,7 +289,8 @@ export class CytoscapeRenderer implements GraphRenderer {
       const node = cy.getElementById(id);
       if (node.empty()) continue;
       const point = node.renderedPosition();
-      element.style.transform = `translate(${point.x}px, ${point.y}px) translate(-50%, -50%)`;
+      // The overlay is placed in world units, so it scales with the viewport like every other node.
+      element.style.transform = `translate(${point.x}px, ${point.y}px) translate(-50%, -50%) scale(${cy.zoom()})`;
     }
   }
 

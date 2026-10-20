@@ -162,4 +162,22 @@ describe('the model adapter pipeline', () => {
     expect(seen.length).toBe(1);
     expect(model.nodes[0]?.html).toContain('Group');
   });
+
+  test('a band box encloses the members it groups, and its padding is the header slot (T1.17)', () => {
+    let box: AdapterBounds | undefined;
+
+    class BandAdapter extends TestAdapter {
+      buildBands(model: TestModel, _level: string, positions: Map<string, { x: number; y: number; z: number }>, renderBand: (node: TestNode, count: number, bounds: AdapterBounds) => string): RenderNode[] {
+        box = this.bandBox(model, ['card-1', 'card-2'], positions, new Set(MODEL.nodes.map((node) => node.id)));
+
+        return [{ id: 'band:cards', kind: 'band', label: 'Cards', shape: 'panel', position: [0, 0, 0], html: renderBand(MODEL.nodes[1]!, 2, box!) }];
+      }
+    }
+
+    new BandAdapter({ cardBudget: 8, nodeSizeFn: () => [200, 60] }).build(MODEL, { level: 'fine', positions: POSITIONS, bands: true });
+
+    // The members span x 100..500 and y -30..30; the band is padded by 24 around them.
+    expect(box?.min).toEqual({ x: 76, y: -54, z: 0 });
+    expect(box?.max).toEqual({ x: 524, y: 54, z: 0 });
+  });
 });

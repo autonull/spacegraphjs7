@@ -54,4 +54,23 @@ describe('calculateFitView', () => {
     expect(sized!.cameraZ).toBeGreaterThan(plain!.cameraZ);
     expect(sized!.center.x).toBeCloseTo(0, 6);
   });
+
+  it('keeps a legible minimum zoom and starts the frame at the content corner', () => {
+    const camera = orthoCamera(1);
+    const fit = calculateFitView(nodes([[0, 0, 0], [4000, 100, 0]]), camera, 100, 200, undefined, 0.5);
+
+    // The content needs a smaller zoom to fit, so the floor applies.
+    expect(fit!.zoom).toBe(0.5);
+    // The frame shows the content's beginning; the axis that still fits stays centred.
+    expect(fit!.center.x).toBeCloseTo(0 - 100 + 1000, 6);
+    expect(fit!.center.y).toBeCloseTo(50, 6);
+  });
+
+  it('frames the whole content when the floor is below the fit', () => {
+    const camera = orthoCamera(1);
+    const fit = calculateFitView(nodes([[-100, -50, 0], [300, 150, 0]]), camera, 100, 200, undefined, 0.05);
+
+    expect(fit!.center.x).toBeCloseTo(100, 6);
+    expect(fit!.center.y).toBeCloseTo(50, 6);
+  });
 });

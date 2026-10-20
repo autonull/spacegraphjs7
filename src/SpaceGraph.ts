@@ -40,6 +40,7 @@ import type {
 } from './types';
 import { depthTreatment, sceneFadeDensity } from './depth/DepthCues';
 import { calculateFitView, createLogger, DOMUtils, safeClone, wrapError } from './utils';
+import type { OrthographicCamera } from 'three';
 
 const logger = createLogger('SpaceGraph');
 
@@ -431,7 +432,12 @@ export class SpaceGraph {
   }
 
   // ============= Camera Controls =============
-  fitView(padding = 100, duration = 1.5, ids?: readonly string[]): this {
+  fitView(
+    padding = 100,
+    duration = 1.5,
+    ids?: readonly string[],
+    options?: { minScale?: number },
+  ): this {
     if (!this.graph || !this.renderer?.camera || !this.cameraControls) return this;
     const nodes = ids
       ? ids.flatMap((id) => {
@@ -446,7 +452,14 @@ export class SpaceGraph {
     const isPerspective = this.renderer.projection === 'perspective';
     const targetPhi = isPerspective ? depthTreatment(this.#depth).phi : undefined;
 
-    const fit = calculateFitView(nodes, this.renderer.camera, padding, 200, targetPhi);
+    const fit = calculateFitView(
+      nodes,
+      this.renderer.camera,
+      padding,
+      200,
+      targetPhi,
+      this.#minZoomFor(options?.minScale),
+    );
     if (fit) {
       // T1.8: the fitted frame becomes the orthographic zoom reference, so later zoom is bounded
       // relative to content instead of the absolute 0.01..100 frustum range.
@@ -458,6 +471,22 @@ export class SpaceGraph {
       this.requestFrame();
     }
     return this;
+  }
+
+  /**
+   * The frustum zoom at which one world unit is `minScale` CSS pixels tall on screen. A fit uses it
+   * as a floor, so a view too large for the frame is panned instead of shrunk past legibility.
+   */
+  #minZoomFor(minScale: number | undefined): number | undefined {
+    if (minScale === undefined) return undefined;
+
+    const camera = this.renderer?.camera as OrthographicCamera | undefined;
+    if (!camera?.isOrthographicCamera) return undefined;
+
+    const baseHeight = camera.top - camera.bottom || 1;
+    const height = this.renderer.container?.clientHeight || 1;
+
+    return (minScale * baseHeight) / height;
   }
 
   // ============= Animation Loop =============
