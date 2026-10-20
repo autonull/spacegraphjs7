@@ -85,8 +85,7 @@ describe('AccessibilityLayer', () => {
     layer.dispose();
   });
 
-  it('focuses a named item and stops handling keys after dispose', () => {
-    const onSelect = vi.fn();
+  it('focuses a named item and stops handling keys after dispose', () => {    const onSelect = vi.fn();
     const layer = new AccessibilityLayer(container, { onSelect });
     layer.setItems([{ id: 'a', label: 'A' }, { id: 'b', label: 'B' }]);
     layer.focus('b');
@@ -96,5 +95,49 @@ describe('AccessibilityLayer', () => {
     expect(list.children).toHaveLength(0);
     key(list, 'Enter');
     expect(onSelect).not.toHaveBeenCalled();
+  });
+  it('lists the connections next to the nodes', () => {
+    const layer = new AccessibilityLayer(container, { edgeLabel: 'Verbindungen' });
+    layer.setItems([{ id: 'a', label: 'Alpha' }, { id: 'b', label: 'Beta' }]);
+    layer.setEdges([
+      { id: 'e1', source: 'a', target: 'b', kind: 'writes', label: 'Alpha writes Beta' },
+      { id: 'e2', source: 'b', target: 'c', kind: 'produces' },
+    ]);
+
+    const list = container.querySelector('ul[aria-label="Verbindungen"]')!;
+    expect(list).not.toBeNull();
+    expect(list.querySelectorAll('li')).toHaveLength(2);
+    expect(list.querySelector('li[data-edge="e1"]')!.textContent).toBe('Alpha writes Beta — writes');
+    expect(list.querySelector('li[data-edge="e2"]')!.textContent).toBe('b to c — produces');
+    layer.dispose();
+  });
+
+  it('announces the connections of the selected nodes', () => {
+    const layer = new AccessibilityLayer(container, {
+      edgeAnnouncer: (edges) => (edges.length ? `Connections: ${edges.map((edge) => edge.id).join(', ')}` : ''),
+    });
+    layer.setItems([{ id: 'a', label: 'Alpha' }, { id: 'b', label: 'Beta' }]);
+    layer.setEdges([
+      { id: 'e1', source: 'a', target: 'b' },
+      { id: 'e2', source: 'b', target: 'c' },
+    ]);
+
+    layer.setSelected(['a']);
+    expect(container.querySelector('[aria-live="polite"]')!.textContent).toBe('Selected Alpha Connections: e1');
+
+    layer.setSelected(null);
+    expect(container.querySelector('[aria-live="polite"]')!.textContent).toBe('Selection cleared');
+    layer.dispose();
+  });
+
+  it('drops the connection list when the edges are cleared', () => {
+    const layer = new AccessibilityLayer(container);
+    layer.setEdges([{ id: 'e1', source: 'a', target: 'b' }]);
+    expect(container.querySelector('li[data-edge="e1"]')).not.toBeNull();
+
+    layer.setEdges([]);
+    expect(container.querySelector('li[data-edge="e1"]')).toBeNull();
+    expect(layer.edges).toEqual([]);
+    layer.dispose();
   });
 });

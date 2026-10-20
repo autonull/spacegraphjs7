@@ -12,6 +12,15 @@ export interface AccessibleItem {
   interactive?: boolean;
 }
 
+export interface AccessibleEdge {
+  id: string;
+  source: string;
+  target: string;
+  kind?: string;
+  /** The text a screen reader reads for the connection; the host composes it. */
+  label?: string;
+}
+
 export interface AccessibilityLayerOptions {
   label?: string;
   /** Called with the id when the user activates an item (Enter/Space). */
@@ -20,6 +29,10 @@ export interface AccessibilityLayerOptions {
   onEscape?: () => void;
   /** Localized announcement for a selection change; defaults to English. */
   formatSelection?: (labels: readonly string[]) => string;
+  /** The label of the connection list; defaults to English. */
+  edgeLabel?: string;
+  /** Localized announcement for the connections of the selected nodes; defaults to none. */
+  edgeAnnouncer?: (edges: readonly AccessibleEdge[]) => string;
 }
 
 const HIDDEN_STYLE =
@@ -31,7 +44,9 @@ export class AccessibilityLayer {
   readonly #options: AccessibilityLayerOptions;
   readonly #list: HTMLUListElement;
   readonly #live: HTMLDivElement;
+  #edgeList: HTMLUListElement | undefined;
   #items: AccessibleItem[] = [];
+  #edges: AccessibleEdge[] = [];
   #focusIndex = 0;
   readonly #selected = new Set<string>();
   readonly #onKeyDown = (event: KeyboardEvent) => this.#handleKeyDown(event);
@@ -65,6 +80,37 @@ export class AccessibilityLayer {
     return this.#items[this.#focusIndex]?.id;
   }
 
+  get edges(): readonly AccessibleEdge[] {
+    return this.#edges;
+  }
+
+  /** Lists the connections of the graph next to the nodes, so the structure is reachable. */
+  setEdges(edges: readonly AccessibleEdge[]): void {
+    this.#edges = [...edges];
+    if (this.#edges.length === 0) {
+      this.#edgeList?.remove();
+      this.#edgeList = undefined;
+      return;
+    }
+    if (!this.#edgeList) {
+      this.#edgeList = document.createElement('ul');
+      this.#edgeList.style.listStyle = 'none';
+      this.#edgeList.style.margin = '0';
+      this.#edgeList.setAttribute('aria-label', this.#options.edgeLabel ?? 'Connections');
+      this.#container.insertBefore(this.#edgeList, this.#live);
+    }
+    this.#edgeList.replaceChildren(
+      ...this.#edges.map((edge) => {
+        const li = document.createElement('li');
+        li.dataset.edge = edge.id;
+        li.textContent = [edge.label ?? `${edge.source} to ${edge.target}`, edge.kind]
+          .filter(Boolean)
+          .join(' — ');
+        return li;
+      })
+    );
+  }
+
   setItems(items: readonly AccessibleItem[]): void {
     const currentId = this.currentId;
     const focusIndex = currentId ? items.findIndex((item) => item.id === currentId) : -1;
@@ -83,10 +129,11 @@ export class AccessibilityLayer {
     const labels = this.#items
       .filter((item) => this.#selected.has(item.id))
       .map((item) => item.label);
-    this.announce(
+    const selection =
       this.#options.formatSelection?.(labels) ??
-        (labels.length ? `Selected ${labels.join(', ')}` : 'Selection cleared')
-    );
+      (labels.length ? `Selected ${labels.join(', ')}` : 'Selection cleared');
+    const connections = this.#options.edgeAnnouncer?.(this.#edgesForSelection());
+    this.announce(connections ? `${selection} ${connections}` : selection);
   }
 
   focus(id?: string): void {
@@ -105,6 +152,8 @@ export class AccessibilityLayer {
     this.#disposed = true;
     this.#list.removeEventListener('keydown', this.#onKeyDown);
     this.#list.replaceChildren();
+    this.#edgeList?.remove();
+    this.#edgeList = undefined;
     this.#live.textContent = '';
     this.#container.removeAttribute('role');
     this.#container.removeAttribute('aria-label');
@@ -132,6 +181,13 @@ export class AccessibilityLayer {
       event.preventDefault();
       this.#options.onEscape?.();
     }
+  }
+
+  #edgesForSelection(): AccessibleEdge[] {
+    if (this.#selected.size === 0) return [];
+    return this.#edges.filter(
+      (edge) => this.#selected.has(edge.source) || this.#selected.has(edge.target)
+    );
   }
 
   #firstInteractive(from: number, step: number, exclusive = false): number {
