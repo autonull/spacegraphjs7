@@ -99,6 +99,8 @@ interface LayoutOptions<Node extends LayoutNode = LayoutNode> {
     depthStep?: number;
     /** The cards per wrapped row before a turn's block folds to the next row. */
     columns?: number;
+    /** The leaves a tree block holds before it folds to the next row. */
+    treeColumns?: number;
     /** The vertical distance between rows. */
     rowGap?: number;
     /** The rows per column before the outline wraps into the next column. */
@@ -588,6 +590,7 @@ function treeLayout<Node extends LayoutNode, Edge extends LayoutEdge, Name exten
         columnPitch: config.geometry.standardSize[0] + (options.gap ?? 24),
         rowPitch: config.geometry.standardSize[1] + (options.rowGap ?? 24),
         depthStep: options.depthStep ?? 64,
+        columns: options.treeColumns,
     });
 
     const items: PlacementItem<TreeMeta>[] = model.nodes.map((node) => ({

@@ -86,6 +86,28 @@ describe('the tree placement', () => {
         expect(Math.abs(after.get('b')!.x - after.get('root')!.x)).toBeLessThanOrEqual(100);
     });
 
+    it('folds a block to the next row when it holds more leaves than the column count', () => {
+        const wide = new TreePlacement({ columnPitch: 100, rowPitch: 40, columns: 4 });
+        const narrow = new TreePlacement({ columnPitch: 100, rowPitch: 40, columns: 2 });
+        const boxes = [
+            item('root'),
+            item('a', { parent: 'root' }),
+            item('b', { parent: 'root' }),
+            item('c', { parent: 'root' }),
+        ];
+
+        const widePositions = wide.place(boxes);
+        const narrowPositions = narrow.place(boxes);
+
+        // Three leaves in one row of four columns: the block is one row deep.
+        expect(widePositions.get('c')!.x - widePositions.get('a')!.x).toBe(200);
+        expect(widePositions.get('c')!.y).toBe(widePositions.get('a')!.y);
+
+        // Two leaves per row: the third leaf folds to the next row, in the first column.
+        expect(narrowPositions.get('c')!.x).toBe(narrowPositions.get('a')!.x);
+        expect(narrowPositions.get('c')!.y).toBeLessThan(narrowPositions.get('a')!.y);
+    });
+
     it('keeps two boxes from overlapping', () => {
         const engine = new TreePlacement({ columnPitch: 100, rowPitch: 40 });
         const positions = engine.place([
