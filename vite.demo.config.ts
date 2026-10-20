@@ -32,10 +32,15 @@ export default defineConfig({
     outDir: '../dist-demo',
     emptyOutDir: true,
     rollupOptions: {
+      external: ['yjs', 'y-websocket', 'rxjs'],
+      input: {
+        main: resolve(__dirname, 'demo/index.html'),
+        contract: resolve(__dirname, 'demo/contract.html'),
+      },
       output: {
-        manualChunks: {
-          three: ['three'],
-          monaco: ['@monaco-editor/loader'],
+        manualChunks(id) {
+          if (id.includes('three')) return 'three';
+          if (id.includes('@monaco-editor/loader')) return 'monaco';
         },
       },
     },
