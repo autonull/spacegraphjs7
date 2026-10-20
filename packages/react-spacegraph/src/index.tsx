@@ -80,12 +80,3 @@ export const GraphView = (props: GraphViewProps): ReactElement => {
     style: { width: '100%', height: '100%', ...props.style },
   });
 };
-
-export { CodeDiffOverlay, type CodeDiffOverlayProps } from './CodeDiffOverlay';
-export {
-  ScopedSubgraphOverlay,
-  type ScopedSubgraphApi,
-  type ScopedSubgraphOverlayProps,
-  type ScopedSubgraphScope,
-  type ScopedSubgraphSlot,
-} from './ScopedSubgraphOverlay';
