@@ -142,7 +142,8 @@
     "test:vision": "mkdir -p test/fixtures/dist && cp -r dist/* test/fixtures/dist/ && cp -r public/*.onnx test/fixtures/dist/ && playwright test test/vision.spec.ts",
     "verify": "tsx verification/verify_demos.ts",
     "vision": "pnpm run test:vision",
-    "write:exports": "tsx script/write-exports.ts"
+    "write:exports": "tsx script/write-exports.ts",
+    "build:all": "tsx script/build-all.ts"
   },
   "peerDependencies": {
     "chart.js": "^4.5.1",

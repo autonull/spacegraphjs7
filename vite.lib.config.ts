@@ -1,7 +1,7 @@
 import { resolve } from 'node:path';
 import { defineConfig } from 'vite';
 import dts from 'vite-plugin-dts';
-import { LIBRARY_ENTRIES } from './script/library-entries';
+import { LIBRARY_ENTRIES } from './script/library-entries.ts';
 
 export default defineConfig({
   build: {

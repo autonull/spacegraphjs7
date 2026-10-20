@@ -3,48 +3,60 @@ name: CI
 on:
     push:
         branches: [main]
+        tags: ['v*', '@spacegraphjs/*']
     pull_request:
         branches: [main]
+    workflow_dispatch:
 
 jobs:
-    build_and_test:
+    library:
         runs-on: ubuntu-latest
 
         steps:
             - uses: actions/checkout@v4
 
+            - name: Setup pnpm
+              uses: pnpm/action-setup@v4
+              with:
+                  version: 10
+
             - name: Setup Node.js
               uses: actions/setup-node@v4
               with:
-                  node-version: '18'
-                  cache: 'npm'
+                  node-version: '22'
+                  cache: 'pnpm'
+
+            - name: Setup Bun
+              uses: oven-sh/setup-bun@v2
+              with:
+                  bun-version: '1.4.3'
 
             - name: Install dependencies
-              run: npm ci
+              run: pnpm install --no-frozen-lockfile
 
-            - name: Lint and Format
-              run: |
-                  npm run lint
-                  npm run format:check
-
+            # The library's own typecheck: `src`, `test` and the five leaf packages (T4.4).
             - name: Typecheck
-              run: npx tsc --noEmit
+              run: pnpm exec tsc --noEmit -p tsconfig.json
 
-            - name: Build Library
-              run: npm run build
+            - name: Build the published packages
+              run: |
+                  pnpm run build:lib
+                  pnpm run build:packages
 
-            - name: Unit Tests
-              run: npm test
+            - name: Unit tests
+              run: pnpm run test
+
+            - name: Leaf package tests
+              run: |
+                  for p in renderer adapter spacegraph-renderer cytoscape-renderer svg-renderer; do
+                      echo "--- packages/$p ---"
+                      (cd "packages/$p" && bun test)
+                  done
 
             - name: Install Playwright Browsers
-              run: npx playwright install --with-deps chromium
+              run: pnpm exec playwright install --with-deps chromium
 
-            - name: Vision E2E Tests (ONNX)
-              run: npm run test:vision
-
-            - name: Bundle Size Check
-              run: |
-                  echo "## Bundle Size Report" >> $GITHUB_STEP_SUMMARY
-                  echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-                  ls -lh dist/ >> $GITHUB_STEP_SUMMARY
-                  echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            # The published surface, proven from the packed tarballs in a clean consumer outside the
+            # monorepo (T4.2). A deliberately broken adapter fails here.
+            - name: Publish check
+              run: pnpm run test:publish
