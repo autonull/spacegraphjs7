@@ -12,6 +12,7 @@ export default defineConfig({
       { find: /^spacegraphjs$/, replacement: resolve(__dirname, 'src/index.ts') },
       { find: /^spacegraphjs\/(.+)$/, replacement: resolve(__dirname, 'src/$1') },
       { find: /^@spacegraphjs\/renderer$/, replacement: resolve(__dirname, 'packages/renderer/src/index.ts') },
+      { find: /^@spacegraphjs\/adapter$/, replacement: resolve(__dirname, 'packages/adapter/src/index.ts') },
       {
         find: /^@spacegraphjs\/spacegraph-renderer$/,
         replacement: resolve(__dirname, 'packages/spacegraph-renderer/src/index.ts'),
@@ -26,7 +27,7 @@ export default defineConfig({
   },
   server: {
     port: 5173,
-    open: true,
+    open: !process.env.CI,
   },
   build: {
     outDir: '../dist-demo',
@@ -36,6 +37,7 @@ export default defineConfig({
       input: {
         main: resolve(__dirname, 'demo/index.html'),
         contract: resolve(__dirname, 'demo/contract.html'),
+        secondHost: resolve(__dirname, 'demo/second-host.html'),
       },
       output: {
         manualChunks(id) {

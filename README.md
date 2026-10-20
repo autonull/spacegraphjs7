@@ -187,6 +187,36 @@ If you are embedding a graph in an existing product, avoid the full engine:
 
 This path keeps your vocabulary, your layout policy, and your persistence out of the library.
 
+### The second host
+
+`demo/second-host/` is that path, worked out end to end by a host that is not OpenCode: plain
+TypeScript, no framework, a release pipeline as its own vocabulary, and a gallery in which every
+generic module runs against that model and reports what it produced.
+
+```
+pnpm run dev:demo      # then open /second-host.html
+```
+
+| Capability              | Library surface                                                                 |
+| ----------------------- | --------------------------------------------------------------------------------- |
+| The renderer contract   | `@spacegraphjs/renderer`                                                          |
+| Theme and contrast      | `@spacegraphjs/renderer`                                                          |
+| The three renderers     | `@spacegraphjs/spacegraph-renderer`, `@spacegraphjs/cytoscape-renderer`, `@spacegraphjs/svg-renderer` |
+| The model adapter       | `@spacegraphjs/adapter`                                                           |
+| Semantic levels         | `spacegraphjs/levels`                                                             |
+| Layout strategies       | `spacegraphjs/layout`                                                             |
+| Summary representations | `spacegraphjs/representations`                                                    |
+| Search, minimap, trail  | `spacegraphjs/navigation`                                                         |
+| Zoom bands, controller  | `spacegraphjs/control`, `spacegraphjs/zoom`                                       |
+| The accessibility mirror | `spacegraphjs/a11y`                                                               |
+| The depth spectrum      | `spacegraphjs/depth`                                                              |
+| The scoped overlay      | `spacegraphjs/overlays`                                                           |
+| The code diff           | `spacegraphjs/overlays`                                                           |
+
+Its checks are part of the library's own suite: `test/second-host/` runs every capability against
+the real model and fails if the host reaches for an OpenCode module, a framework, or a library
+surface the gallery does not claim; `test/e2e/second-host.spec.ts` drives the page in a browser.
+
 ### Renderer contract
 
 The contract is types plus tiny helpers, small enough to read in one sitting.

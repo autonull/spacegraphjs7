@@ -16,11 +16,12 @@
       "spacegraphjs": ["./src/index.ts"],
       "spacegraphjs/*": ["./src/*"],
       "@spacegraphjs/renderer": ["./packages/renderer/src/index.ts"],
+      "@spacegraphjs/adapter": ["./packages/adapter/src/index.ts"],
       "@spacegraphjs/spacegraph-renderer": ["./packages/spacegraph-renderer/src/index.ts"],
       "@spacegraphjs/cytoscape-renderer": ["./packages/cytoscape-renderer/src/index.ts"],
       "@spacegraphjs/svg-renderer": ["./packages/svg-renderer/src/index.ts"]
     }
   },
-  "include": ["src", "test"],
+  "include": ["src", "test", "demo/second-host"],
   "exclude": ["node_modules", "dist"]
 }

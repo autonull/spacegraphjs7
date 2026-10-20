@@ -56,6 +56,11 @@ jobs:
             - name: Install Playwright Browsers
               run: pnpm exec playwright install --with-deps chromium
 
+            # The second host (T6.12): a framework-free host outside OpenCode that runs every generic
+            # module against a model of its own. A broken adapter or a broken capability fails here.
+            - name: Second host
+              run: pnpm exec playwright test --config playwright.demo.config.ts test/e2e/second-host.spec.ts
+
             # The published surface, proven from the packed tarballs in a clean consumer outside the
             # monorepo (T4.2). A deliberately broken adapter fails here.
             - name: Publish check
