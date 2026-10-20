@@ -52,6 +52,12 @@ export interface AdapterLaneLabel {
   id: string;
   label: string;
   y: number;
+  /**
+   * The node the label is anchored to. Without it the label sits left of the leftmost drawn content,
+   * which is wrong when the drawn content is not contiguous: a map that draws a window of a longer
+   * session anchors its gutter to that window, not to the session root far to the left.
+   */
+  anchorNodeId?: string;
 }
 
 /** A row or column caption for a summary representation. */

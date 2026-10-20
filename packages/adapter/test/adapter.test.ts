@@ -1,7 +1,8 @@
 // @vitest-environment node
 import { describe, expect, test } from 'vitest';
-import type { RenderNode } from '@spacegraphjs/renderer';
+import type { RenderModel, RenderNode } from '@spacegraphjs/renderer';
 import { adapterConformance } from '../src/conformance';
+import { diffRenderModels } from '../src/diff';
 import { ModelAdapter } from '../src/ModelAdapter';
 import type { AdapterBounds } from '../src/types';
 
@@ -118,6 +119,19 @@ describe('the model adapter pipeline', () => {
     expect(model.nodes[0]?.html).not.toContain('<script>');
   });
 
+  test('the lane gutter follows the node it is anchored to', () => {
+    const model = adapter.build(MODEL, {
+      level: 'fine',
+      positions: POSITIONS,
+      laneLabels: [{ id: 'top', label: 'Top', y: 0, anchorNodeId: 'card-2' }],
+    });
+    const label = model.nodes.find((node) => node.id === 'lane:top');
+
+    // The gutter sits left of the anchored node, not left of the leftmost drawn content.
+    expect(label?.position[0]).toBeLessThan(POSITIONS.get('card-2')!.x);
+    expect(label?.position[0]).toBeGreaterThan(POSITIONS.get('card-1')!.x - 400);
+  });
+
   test('fades a card outside the focus neighbourhood without touching its content', () => {
     const model = adapter.build(MODEL, { level: 'fine', positions: POSITIONS, focus: 'card-1' });
     const dimmed = model.nodes.find((node) => node.id === 'group-1');
@@ -180,5 +194,51 @@ describe('the model adapter pipeline', () => {
     // The members span x 100..500 and y -30..30; the band is padded by 24 around them.
     expect(box?.min).toEqual({ x: 76, y: -54, z: 0 });
     expect(box?.max).toEqual({ x: 524, y: 54, z: 0 });
+  });
+});
+
+describe('diffRenderModels', () => {
+  const before: RenderModel = {
+    nodes: [
+      { id: 'a', kind: 'card', label: 'A', status: 'neutral', shape: 'card', position: [0, 0, 0] },
+      { id: 'b', kind: 'card', label: 'B', status: 'neutral', shape: 'card', position: [10, 0, 0] },
+    ],
+    edges: [{ id: 'e1', source: 'a', target: 'b', kind: 'sequence', confidence: 'explicit', directed: true }],
+  };
+
+  test('an unchanged model has nothing to say', () => {
+    expect(diffRenderModels(before, before)).toEqual({
+      added: [],
+      removed: [],
+      changed: [],
+      edgesAdded: [],
+      edgesRemoved: [],
+    });
+  });
+
+  test('it names the nodes that arrived, left, or moved', () => {
+    const after: RenderModel = {
+      nodes: [
+        { id: 'a', kind: 'card', label: 'A', status: 'neutral', shape: 'card', position: [0, 0, 0] },
+        { id: 'b', kind: 'card', label: 'B!', status: 'neutral', shape: 'card', position: [10, 0, 0] },
+        { id: 'c', kind: 'card', label: 'C', status: 'neutral', shape: 'card', position: [20, 0, 0] },
+      ],
+      edges: [],
+    };
+    const diff = diffRenderModels(before, after);
+
+    expect(diff.added).toEqual(['c']);
+    expect(diff.removed).toEqual([]);
+    expect(diff.changed).toEqual(['b']);
+    expect(diff.edgesRemoved).toEqual(['e1']);
+  });
+
+  test('a moved node counts as changed', () => {
+    const after: RenderModel = {
+      ...before,
+      nodes: before.nodes.map((node) => (node.id === 'a' ? { ...node, position: [5, 0, 0] } : node)),
+    };
+
+    expect(diffRenderModels(before, after).changed).toEqual(['a']);
   });
 });

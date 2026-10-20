@@ -253,6 +253,8 @@ export abstract class ModelAdapter<
   ): RenderNode[] {
     if (!labels || labels.length === 0 || nodes.length === 0) return [];
 
+    const byID = new Map(nodes.map((node) => [node.id, node]));
+
     const leftOf = (node: Node) => {
       const position = positions.get(node.id);
       const width = this.config.nodeSizeFn?.(node)?.[0] ?? 0;
@@ -263,6 +265,10 @@ export abstract class ModelAdapter<
     const left = Math.min(...nodes.map(leftOf));
 
     return labels.map((lane) => {
+      // A label may name the node it belongs beside: a map that draws a window of a longer session
+      // keeps its gutter with that window instead of with the session root far to the left.
+      const anchor = lane.anchorNodeId ? byID.get(lane.anchorNodeId) : undefined;
+
       return {
         id: `lane:${lane.id}`,
         kind: 'lane',
@@ -271,7 +277,11 @@ export abstract class ModelAdapter<
         interactive: false,
         html: `<div data-lane="${escapeHtml(lane.id)}" style="display:flex;align-items:center;height:100%;box-sizing:border-box;padding:0 10px;font-family:inherit;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--lane-label-color);opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(lane.label)}</div>`,
         size: this.geometry.laneLabelSize,
-        position: [left - this.geometry.laneGutter - this.geometry.laneLabelSize[0] / 2, lane.y, ZERO.z - 1],
+        position: [
+          (anchor ? leftOf(anchor) : left) - this.geometry.laneGutter - this.geometry.laneLabelSize[0] / 2,
+          lane.y,
+          ZERO.z - 1,
+        ],
         data: { lane: lane.id, colorToken: 'textMuted' },
       };
     });
