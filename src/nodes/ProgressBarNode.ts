@@ -11,7 +11,7 @@ export class ProgressBarNode extends (HtmlNode as any) {
   private indeterminate = false;
   private indeterminateAnim: number | null = null;
 
-  constructor(sg: SpaceGraph, spec: NodeSpec) {
+  constructor(sg: SpaceGraph | undefined, spec: NodeSpec) {
     super(sg, spec);
     this._setupProgressBar();
   }

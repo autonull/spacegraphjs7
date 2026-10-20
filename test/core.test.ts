@@ -75,8 +75,8 @@ describe('Graph', () => {
       }
 
       class TestEdge extends Edge {
-        get object() {
-          return new THREE.Object3D();
+        get object(): Edge['object'] {
+          return new THREE.Object3D() as unknown as Edge['object'];
         }
 
         updatePositions() {}

@@ -11,7 +11,7 @@ export class ProcessNode extends (BaseContentNode as any) {
   private cpuText: HTMLSpanElement;
   private memText: HTMLSpanElement;
 
-  constructor(sg: SpaceGraph, spec: NodeSpec) {
+  constructor(sg: SpaceGraph | undefined, spec: NodeSpec) {
     super(sg, spec, {
       defaultWidth: 200,
       defaultHeight: 120,

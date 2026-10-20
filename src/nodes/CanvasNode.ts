@@ -22,7 +22,7 @@ export class CanvasNode extends TexturedMeshNode {
   readonly canvasTexture!: THREE.CanvasTexture;
   private drawFn?: DrawFn;
 
-  constructor(sg: SpaceGraph, spec: NodeSpec) {
+  constructor(sg: SpaceGraph | undefined, spec: NodeSpec) {
     const w = (spec.data?.width ?? 256) as number;
     const h = (spec.data?.height ?? 256) as number;
     super(sg, spec, w * 0.5, h * 0.5);

@@ -20,7 +20,7 @@ export class HtmlNode extends BaseContentNode {
   private contentWrapper: HTMLElement | null = null;
   private controlsWrapper: HTMLElement | null = null;
 
-  constructor(sg: SpaceGraph, spec: NodeSpec) {
+  constructor(sg: SpaceGraph | undefined, spec: NodeSpec) {
     const width = (spec.data?.width as number) ?? 200;
     const height = (spec.data?.height as number) ?? 100;
     const bgColor =

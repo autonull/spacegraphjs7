@@ -11,7 +11,7 @@ export class MarkdownNode extends (BaseContentNode as any) {
   static readonly typeName = 'MarkdownNode';
   private _ro?: ResizeObserver;
 
-  constructor(sg: SpaceGraph, spec: NodeSpec) {
+  constructor(sg: SpaceGraph | undefined, spec: NodeSpec) {
     const w = (spec.data?.width as number) ?? 300;
     const color = (spec.data?.color as string) ?? '#1e293b';
     const txtColor = (spec.data?.textColor as string) ?? '#f1f5f9';

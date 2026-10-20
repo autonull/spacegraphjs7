@@ -11,7 +11,7 @@ export class TextMeshNode extends Node {
   private spriteMat: THREE.SpriteMaterial;
   private currentText: string;
 
-  constructor(sg: SpaceGraph, spec: NodeSpec) {
+  constructor(sg: SpaceGraph | undefined, spec: NodeSpec) {
     super(sg, spec);
 
     this.currentText = (spec.data?.text as string) ?? spec.label ?? '';

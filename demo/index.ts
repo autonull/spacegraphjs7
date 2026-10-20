@@ -48,11 +48,6 @@ const DEMO_METADATA: Record<string, { name: string; icon: string; description: s
     icon: '🚀',
     description: 'Essential setup with common plugins - start here!',
   },
-  'n8n-workflow.html': {
-    name: 'n8n Workflow',
-    icon: '⚙️',
-    description: 'Visualizes n8n workflow automation graphs',
-  },
   'single-node.html': {
     name: 'Single Node',
     icon: '⬤',

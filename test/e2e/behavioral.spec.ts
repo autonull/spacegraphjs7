@@ -167,9 +167,9 @@ test.describe('Behavioral E2E: Plugin System', () => {
       if (!sg?.pluginManager) return false;
       // Try different ways plugins might be stored
       const pm = sg.pluginManager;
-      return (
-        pm.plugins?.has('ForceLayout') ??
-        pm.getPlugin?.('ForceLayout') !== undefined ??
+      return Boolean(
+        pm.plugins?.has('ForceLayout') ||
+        pm.getPlugin?.('ForceLayout') !== undefined ||
         pm.plugins?.size > 0
       );
     });

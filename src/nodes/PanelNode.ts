@@ -17,7 +17,7 @@ export class PanelNode extends (HtmlNode as any) {
   private dragStartPos = { x: 0, y: 0 };
   private resizeStartSize = { width: 0, height: 0 };
 
-  constructor(sg: SpaceGraph, spec: NodeSpec) {
+  constructor(sg: SpaceGraph | undefined, spec: NodeSpec) {
     super(sg, spec);
     if (spec?.data) {
       const d = spec.data as Record<string, unknown>;

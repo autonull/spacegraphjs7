@@ -31,7 +31,7 @@ export abstract class WidgetNode extends Node {
   protected _isHovered = false;
   protected _isPressed = false;
 
-  protected constructor(sg: SpaceGraph, spec: NodeSpec, data: WidgetNodeData) {
+  protected constructor(sg: SpaceGraph | undefined, spec: NodeSpec, data: WidgetNodeData) {
     super(sg, spec);
 
     this._width = data?.width ?? this._width;

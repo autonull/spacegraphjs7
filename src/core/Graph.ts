@@ -31,7 +31,7 @@ export class Graph extends EventEmitter<GraphEventMap> {
   export = this.toJSON;
   fromJSON = this.from;
 
-  constructor(readonly sg: SpaceGraph) {
+  constructor(readonly sg?: SpaceGraph) {
     super();
   }
 

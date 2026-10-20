@@ -13,7 +13,7 @@ export class InterGraphEdge extends Edge {
   private svgContainer: SVGSVGElement;
   private animationFrameId?: number;
 
-  constructor(sg: SpaceGraph, spec: EdgeSpec, source: Node, target: Node) {
+  constructor(sg: SpaceGraph | undefined, spec: EdgeSpec, source: Node, target: Node) {
     super(sg, spec, source, target);
 
     if (this.object.parent) {

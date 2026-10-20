@@ -23,7 +23,7 @@ export class ChartNode extends BaseContentNode {
   private chartInstance: unknown = null;
   readonly titleEl: HTMLElement | null = null;
 
-  constructor(sg: SpaceGraph, spec: NodeSpec) {
+  constructor(sg: SpaceGraph | undefined, spec: NodeSpec) {
     const w = (spec.data?.width as number) ?? 300;
     const h = (spec.data?.height as number) ?? 200;
     const theme = (spec.data?.theme as string) ?? 'dark';

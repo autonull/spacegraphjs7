@@ -246,7 +246,6 @@ demo/
 ├── html.html           # HTML nodes
 ├── instanced.html      # Instanced rendering
 ├── large.html          # Large graphs
-├── n8n-workflow.html   # n8n workflows
 ├── single-node.html    # Single node
 ├── empty.html          # Empty canvas
 ├── README.md           # Documentation

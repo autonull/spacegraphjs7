@@ -25,7 +25,7 @@ export class LabeledEdge extends Edge {
   // The base Edge constructor calls update(), which is overridden here, before the label fields exist.
   private ready = false;
 
-  constructor(sg: SpaceGraph, spec: EdgeSpec, source: Node, target: Node) {
+  constructor(sg: SpaceGraph | undefined, spec: EdgeSpec, source: Node, target: Node) {
     super(sg, spec, source, target);
 
     const data = spec.data as EdgeData & {

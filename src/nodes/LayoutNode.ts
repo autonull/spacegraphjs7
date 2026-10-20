@@ -141,7 +141,7 @@ export class LayoutNode extends (GroupNode as any) {
   readonly params: Record<string, unknown>;
 
   constructor(
-    sg: SpaceGraph,
+    sg: SpaceGraph | undefined,
     spec: NodeSpec,
     strategy: LayoutStrategy,
     params: Record<string, unknown> = {}

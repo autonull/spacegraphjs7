@@ -26,7 +26,7 @@ export class SliderNode extends WidgetNode {
   readonly thumbMaterial!: THREE.MeshStandardMaterial;
   private _onChange?: (value: number) => void;
 
-  constructor(sg: SpaceGraph, spec: NodeSpec) {
+  constructor(sg: SpaceGraph | undefined, spec: NodeSpec) {
     const data = spec.data as SliderNodeData;
     super(sg, spec, data);
 

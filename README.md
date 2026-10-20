@@ -113,7 +113,6 @@ Design rules that keep the layers honest:
 | `vue-spacegraph`                                                                              | Vue 3 adapter                                                      |
 | `@spacegraphjs/cli`                                                                           | `sg fix`: apply vision-generated patches                           |
 | `create-spacegraph`                                                                           | Scaffolder, also exposed as `sg6`                                  |
-| `n8n-bridge`                                                                                  | Experimental n8n workflow integration                              |
 
 ---
 
@@ -519,7 +518,7 @@ When adding hot-path code, avoid per-frame allocation, prefer sets for membershi
 | `src/layout`                        | `LaneLayout`                                                                                    |
 | `src/depth`                         | Depth modes, treatments, and fade                                                               |
 | `src/builder.ts`, `src/activity.ts` | Declarative builder and lean entry                                                              |
-| `packages`                          | Contract, adapters, bindings, CLI, scaffolder, n8n bridge                                       |
+| `packages`                          | Contract, adapters, bindings, CLI, scaffolder                                       |
 | `demo`                              | Interactive examples and the contract reference host                                            |
 | `test`                              | Unit, boundary, interaction, vision, and Playwright suites                                      |
 | `verification`                      | Screenshot, benchmark, and demo verification scripts                                            |

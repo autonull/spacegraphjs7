@@ -2,6 +2,7 @@ import { InteractionPlugin, MinimapPlugin } from '../plugins';
 import { HUDPlugin } from '../plugins/HUDPlugin';
 import { SpaceGraph } from '../SpaceGraph';
 import type { Edge, GraphSpec, Node } from '../types';
+import { depthTreatment } from '../depth';
 import { calculateFitView } from '../utils';
 import {
   addGrid,

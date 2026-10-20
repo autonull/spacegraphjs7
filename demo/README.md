@@ -200,10 +200,6 @@ Large-scale graph with many nodes and edges for performance testing.
 
 ---
 
-#### **n8n Workflow** (`n8n-workflow.html`)
-
-Visualizes n8n workflow automation graphs.
-
 **Showcases:**
 
 - Workflow visualization

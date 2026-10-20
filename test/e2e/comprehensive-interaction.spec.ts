@@ -81,7 +81,7 @@ test.describe('Camera Controls', () => {
     const canvas = page.locator('canvas').first();
     const box = await canvas.boundingBox();
 
-    await page.mouse.wheel(box!.x + 400, box!.y + 300, 0, -100);
+    await page.mouse.wheel(0, -100);
     await page.waitForTimeout(300);
 
     await expect(canvas).toBeVisible();
@@ -156,7 +156,7 @@ test.describe('Rapid Interactions', () => {
     const box = await canvas.boundingBox();
 
     for (let i = 0; i < 10; i++) {
-      await page.mouse.wheel(box!.x + 400, box!.y + 300, 0, i % 2 === 0 ? -50 : 50);
+      await page.mouse.wheel(0, i % 2 === 0 ? -50 : 50);
       await page.waitForTimeout(50);
     }
 

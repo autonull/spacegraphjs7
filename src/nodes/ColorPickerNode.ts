@@ -9,7 +9,7 @@ export class ColorPickerNode extends HtmlNode {
   private colorPreview: HTMLElement | null = null;
   private hexInput: HTMLInputElement | null = null;
 
-  constructor(sg: SpaceGraph, spec: NodeSpec) {
+  constructor(sg: SpaceGraph | undefined, spec: NodeSpec) {
     super(sg, spec);
     this._setupColorPicker();
   }

@@ -49,7 +49,7 @@ export class Edge extends Surface {
   private _direction = new THREE.Vector3();
 
   constructor(
-    sgOrSpec: SpaceGraph | EdgeSpec,
+    sgOrSpec: SpaceGraph | EdgeSpec | undefined,
     specOrSource: EdgeSpec | Node,
     sourceOrTarget?: Node,
     targetOrNothing?: Node

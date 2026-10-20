@@ -7,7 +7,7 @@ export class ScrollPanelNode extends (HtmlNode as any) {
   static readonly typeName = 'ScrollPanelNode';
   private scrollContent: HTMLElement | null = null;
 
-  constructor(sg: SpaceGraph, spec: NodeSpec) {
+  constructor(sg: SpaceGraph | undefined, spec: NodeSpec) {
     super(sg, spec);
     this._setupScrollPanel();
   }

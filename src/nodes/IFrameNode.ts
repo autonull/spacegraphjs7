@@ -7,7 +7,7 @@ export class IFrameNode extends BaseContentNode {
   static readonly typeName = 'IFrameNode';
   public iframeEl: HTMLIFrameElement;
 
-  constructor(sg: SpaceGraph, spec: NodeSpec) {
+  constructor(sg: SpaceGraph | undefined, spec: NodeSpec) {
     super(sg, spec, {
       tag: 'iframe',
       defaultWidth: 480,

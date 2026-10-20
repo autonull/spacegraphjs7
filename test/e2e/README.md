@@ -47,7 +47,7 @@ pnpm run test:all-demos
 
 ## Demo Coverage
 
-- **17 HTML Demos**: debug, empty, fractal, html, instanced, interaction, interaction-meta, large, layouts, n8n-workflow, plugins, quickstart, single-node, test-direct, verification-fixed, verification, working-test
+- **17 HTML Demos**: debug, empty, fractal, html, instanced, interaction, interaction-meta, large, layouts, plugins, quickstart, single-node, test-direct, verification-fixed, verification, working-test
 - **8 TypeScript Demos**: activity, basic, edges, fingering, fractal, html-node, interactive, layout
 
 **Total: 25 demos automatically tested**

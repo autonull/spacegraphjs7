@@ -12,7 +12,7 @@ export class FlowEdge extends Edge {
   private isFlowing = true;
   private baseSpeed = 1.0;
 
-  constructor(sg: SpaceGraph, spec: EdgeSpec, source: Node, target: Node) {
+  constructor(sg: SpaceGraph | undefined, spec: EdgeSpec, source: Node, target: Node) {
     super(sg, spec, source, target);
 
     const data = spec.data as EdgeData & {

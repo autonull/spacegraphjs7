@@ -18,7 +18,7 @@ export class ButtonNode extends WidgetNode {
   private _pressedColor = 0x2266dd;
   private _onClick?: () => void;
 
-  constructor(sg: SpaceGraph, spec: NodeSpec) {
+  constructor(sg: SpaceGraph | undefined, spec: NodeSpec) {
     const data = spec.data as ButtonNodeData;
     super(sg, spec, data);
 

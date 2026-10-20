@@ -18,7 +18,7 @@ export class MeterNode extends (HtmlNode as any) {
   private history: number[] = [];
   private maxHistory = 50;
 
-  constructor(sg: SpaceGraph, spec: NodeSpec) {
+  constructor(sg: SpaceGraph | undefined, spec: NodeSpec) {
     super(sg, spec);
     this._setupMeter();
   }

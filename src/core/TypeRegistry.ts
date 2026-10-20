@@ -3,9 +3,9 @@ import type { Node } from '../nodes/Node';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { EdgeSpec, NodeSpec } from '../types';
 
-export type NodeConstructor = new (sg: SpaceGraph, spec: NodeSpec) => Node;
+export type NodeConstructor = new (sg: SpaceGraph | undefined, spec: NodeSpec) => Node;
 export type EdgeConstructor = new (
-  sg: SpaceGraph,
+  sg: SpaceGraph | undefined,
   spec: EdgeSpec,
   source: Node,
   target: Node

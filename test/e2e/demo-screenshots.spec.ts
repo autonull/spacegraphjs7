@@ -24,7 +24,7 @@ function isExpectedError(msg: string): boolean {
 const demoDir = path.join(__dirname, '../../demo');
 const htmlDemos = fs
   .readdirSync(demoDir)
-  .filter((f: string) => f.endsWith('.html') && !f.includes('index') && !f.includes('n8n'))
+  .filter((f: string) => f.endsWith('.html') && !f.includes('index'))
   .map((f: string) => f.replace('.html', ''));
 
 test.describe('Demo Screenshots & Rendering Verification', () => {

@@ -14,7 +14,7 @@ export abstract class TexturedMeshNode extends Node {
   protected planeGeometry: THREE.PlaneGeometry;
   protected planeMaterial: THREE.MeshBasicMaterial;
 
-  protected constructor(sg: SpaceGraph, spec: NodeSpec, width: number, height: number) {
+  protected constructor(sg: SpaceGraph | undefined, spec: NodeSpec, width: number, height: number) {
     super(sg, spec);
 
     this._object = new THREE.Group();

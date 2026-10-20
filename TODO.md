@@ -77,7 +77,6 @@ analyzer code is already well-structured (`OverlapAnalyzer.ts`, `LegibilityAnaly
 - [ ] **`pnpm run lint`** — fix or suppress remaining lint issues
 - [ ] **Framework bindings** — update React/Solid/Vue wrappers to actually provide hooks. One working binding beats
   three placeholders
-- [ ] **n8n bridge** — audit what it provides, verify it deploys, style its UI with retro theme
 
 ---
 

@@ -28,7 +28,7 @@ export class ShapeNode extends Node {
   private nodeSize = 40;
   readonly _object: THREE.Group;
 
-  constructor(sg: SpaceGraph, spec: NodeSpec) {
+  constructor(sg: SpaceGraph | undefined, spec: NodeSpec) {
     super(sg, spec);
 
     this._object = new THREE.Group();

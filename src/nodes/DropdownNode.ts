@@ -15,7 +15,7 @@ export class DropdownNode extends HtmlNode {
   private options: DropdownOption[] = [];
   private selectedValue = '';
 
-  constructor(sg: SpaceGraph, spec: NodeSpec) {
+  constructor(sg: SpaceGraph | undefined, spec: NodeSpec) {
     super(sg, spec);
     this._setupDropdown();
   }

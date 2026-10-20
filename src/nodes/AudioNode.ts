@@ -8,7 +8,7 @@ export class AudioNode extends BaseContentNode {
   static readonly typeName = 'AudioNode';
   public audioElement: HTMLAudioElement;
 
-  constructor(sg: SpaceGraph, spec: NodeSpec) {
+  constructor(sg: SpaceGraph | undefined, spec: NodeSpec) {
     super(sg, spec, {
       defaultWidth: 300,
       defaultHeight: 100,

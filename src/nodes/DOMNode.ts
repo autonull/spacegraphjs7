@@ -20,7 +20,7 @@ export class DOMNode extends Node {
   readonly _object: THREE.Group;
 
   constructor(
-    sg: SpaceGraph,
+    sg: SpaceGraph | undefined,
     spec: NodeSpec,
     domElement?: HTMLElement,
     width = 200,
@@ -215,7 +215,7 @@ export class DOMNode extends Node {
   }
 
   /** Relay pointer events from this DOM element to the WebGL canvas. */
-  private _setupPointerEventRelay(sg: SpaceGraph): void {
+  private _setupPointerEventRelay(sg: SpaceGraph | undefined): void {
     if (!sg?.renderer?.renderer?.domElement) return;
 
     const canvas = sg.renderer.renderer.domElement as HTMLCanvasElement;

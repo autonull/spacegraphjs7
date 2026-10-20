@@ -23,7 +23,6 @@ export { default as layoutCircularDemo } from './layout-circular';
 export { default as layoutForceDemo } from './layout-force';
 export { default as layoutGridDemo } from './layout-grid';
 export { default as multiAgentWorkflowDemo } from './multi-agent-workflow';
-export { default as n8nDemo } from './n8n';
 export { default as nodeBoxSelectDemo } from './node-boxselect';
 export { default as nodeDragDemo } from './node-drag';
 export { default as nodeGroupDemo } from './node-group';

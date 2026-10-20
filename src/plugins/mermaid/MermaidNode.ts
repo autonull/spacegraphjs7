@@ -84,7 +84,7 @@ const DEFAULT_STYLE = `
 
 export class MermaidNode extends HtmlNode {
   readonly shape: MermaidNodeShape = 'rect';
-  readonly nodeIndex = 0;
+  readonly nodeIndex: number = 0;
   private themeColors: string[] = [];
 
   constructor(sg: SpaceGraph, spec: NodeSpec) {

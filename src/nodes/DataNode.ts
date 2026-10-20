@@ -18,7 +18,7 @@ export class DataNode extends BaseContentNode {
   static readonly typeName = 'DataNode';
   readonly contentContainer!: HTMLElement;
 
-  constructor(sg: SpaceGraph, spec: NodeSpec) {
+  constructor(sg: SpaceGraph | undefined, spec: NodeSpec) {
     const maxH = (spec.data?.maxHeight as number) ?? 300;
     const theme = (spec.data?.theme as string) ?? 'dark';
 

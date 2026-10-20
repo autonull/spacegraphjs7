@@ -1,11 +1,5 @@
 import * as THREE from 'three';
-
-declare module 'three' {
-  interface BufferGeometry {
-    computeBoundsTree?: () => void;
-    disposeBoundsTree?: () => void;
-  }
-}
+import type {} from 'three-mesh-bvh';
 
 let patched = false;
 
@@ -14,8 +8,8 @@ let patched = false;
 export async function ensureThreeMeshBvh(): Promise<void> {
   if (patched) return;
   const bvh = await import('three-mesh-bvh');
-  THREE.BufferGeometry.prototype.computeBoundsTree = bvh.computeBoundsTree as () => void;
-  THREE.BufferGeometry.prototype.disposeBoundsTree = bvh.disposeBoundsTree as () => void;
+  THREE.BufferGeometry.prototype.computeBoundsTree = bvh.computeBoundsTree;
+  THREE.BufferGeometry.prototype.disposeBoundsTree = bvh.disposeBoundsTree;
   THREE.Mesh.prototype.raycast = bvh.acceleratedRaycast as typeof THREE.Mesh.prototype.raycast;
   patched = true;
 }

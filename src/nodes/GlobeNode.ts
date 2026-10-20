@@ -12,7 +12,7 @@ export class GlobeNode extends Node {
   readonly markersGroup!: THREE.Group;
   private textureLoader = new THREE.TextureLoader();
 
-  constructor(sg: SpaceGraph, spec: NodeSpec) {
+  constructor(sg: SpaceGraph | undefined, spec: NodeSpec) {
     super(sg, spec);
 
     this._object = new THREE.Group();

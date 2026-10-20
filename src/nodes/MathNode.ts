@@ -29,7 +29,7 @@ export class MathNode extends (BaseContentNode as any) {
   static readonly typeName = 'MathNode';
   private mathContent = '\\int_0^\\infty e^{-x^2} dx = \\frac{\\sqrt{\\pi}}{2}';
 
-  constructor(sg: SpaceGraph, spec: NodeSpec) {
+  constructor(sg: SpaceGraph | undefined, spec: NodeSpec) {
     super(sg, spec, {
       defaultWidth: 300,
       defaultHeight: 100,

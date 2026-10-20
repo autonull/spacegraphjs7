@@ -12,7 +12,7 @@ export class VideoNode extends TexturedMeshNode {
   public videoEl: HTMLVideoElement;
   readonly videoTexture: THREE.VideoTexture;
 
-  constructor(sg: SpaceGraph, spec: NodeSpec) {
+  constructor(sg: SpaceGraph | undefined, spec: NodeSpec) {
     const w = (spec.data?.width as number) ?? 320;
     const h = (spec.data?.height as number) ?? 180;
     super(sg, spec, w, h);

@@ -16,7 +16,7 @@ export class ToggleNode extends WidgetNode {
   private _offColor = 0x666666;
   private _onToggle?: (value: boolean) => void;
 
-  constructor(sg: SpaceGraph, spec: NodeSpec) {
+  constructor(sg: SpaceGraph | undefined, spec: NodeSpec) {
     const data = spec.data as ToggleNodeData;
     super(sg, spec, data);
 

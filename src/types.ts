@@ -539,9 +539,9 @@ export interface Plugin extends PluginLifecycle {
 }
 
 // ============= Constructor Types =============
-export type NodeConstructor = new (sg: SpaceGraph, spec: NodeSpec) => Node;
+export type NodeConstructor = new (sg: SpaceGraph | undefined, spec: NodeSpec) => Node;
 export type EdgeConstructor = new (
-  sg: SpaceGraph,
+  sg: SpaceGraph | undefined,
   spec: EdgeSpec,
   source: Node,
   target: Node

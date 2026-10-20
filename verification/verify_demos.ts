@@ -38,7 +38,6 @@ async function main() {
     const demos = [
       'index.html',
       'index.html?demo=basic',
-      'index.html?demo=n8n',
       'index.html?demo=fractal',
       'empty.html',
       'single-node.html',

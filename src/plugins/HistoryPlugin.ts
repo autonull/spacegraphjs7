@@ -18,7 +18,7 @@ export class HistoryPlugin extends BaseSystemPlugin {
   private futureStack: GraphSpec[] = [];
   readonly maxHistorySize: number;
   private isRestoring = false;
-  readonly isEnabled = true;
+  readonly isEnabled: boolean;
 
   private lastSnapshotTime = 0;
   private snapshotDebounce = 500;

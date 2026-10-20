@@ -16,7 +16,7 @@ export class GroupNode extends Node {
   private meshGeometry: THREE.BoxGeometry;
   readonly meshMaterial: THREE.MeshBasicMaterial;
 
-  constructor(sg: SpaceGraph, spec: NodeSpec) {
+  constructor(sg: SpaceGraph | undefined, spec: NodeSpec) {
     super(sg, spec);
 
     const data = spec.data as GroupNodeData;

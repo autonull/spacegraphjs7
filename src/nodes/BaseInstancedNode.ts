@@ -9,7 +9,7 @@ export abstract class BaseInstancedNode extends Node {
   protected colorHex: number;
   readonly _object: THREE.Object3D;
 
-  protected constructor(sg: SpaceGraph, spec: NodeSpec, defaultColor = 0x3366ff) {
+  protected constructor(sg: SpaceGraph | undefined, spec: NodeSpec, defaultColor = 0x3366ff) {
     super(sg, spec);
     this._object = new THREE.Object3D();
     this.colorHex = spec.data?.color

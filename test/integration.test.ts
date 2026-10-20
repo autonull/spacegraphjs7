@@ -17,6 +17,9 @@ import { Graph } from '../src/core/Graph';
 import { Edge } from '../src/edges/Edge';
 import { Node } from '../src/nodes/Node';
 import type { SpaceGraph } from '../src/SpaceGraph';
+import type { NodeSpec } from '../src/types';
+
+type TestMesh = THREE.Mesh & { material: THREE.MeshBasicMaterial };
 
 /**
  * Test Node implementation
@@ -38,16 +41,16 @@ class TestNode extends Node {
     return this._object;
   }
 
-  update(spec: any): void {
-    super.update(spec);
-    if (spec.data?.color) {
-      (this._object as THREE.Mesh).material.color.setHex(spec.data.color);
-    }
+  updateSpec(updates: Partial<NodeSpec>): this {
+    super.updateSpec(updates);
+    const color = updates.data?.color;
+    if (color) (this._object as TestMesh).material.color.setHex(color as number);
+    return this;
   }
 
   dispose(): void {
-    (this._object as THREE.Mesh).geometry.dispose();
-    (this._object as THREE.Mesh).material.dispose();
+    (this._object as TestMesh).geometry.dispose();
+    (this._object as TestMesh).material.dispose();
     super.dispose();
   }
 }
@@ -72,8 +75,8 @@ class TestEdge extends Edge {
 
   readonly _object: THREE.Object3D;
 
-  get object(): THREE.Object3D {
-    return this._object;
+  get object(): Edge['object'] {
+    return this._object as unknown as Edge['object'];
   }
 
   updatePositions(): void {
@@ -85,15 +88,15 @@ class TestEdge extends Edge {
       this.target.position.y,
       this.target.position.z,
     ]);
-    (this._object.geometry as THREE.BufferGeometry).setAttribute(
+    (this._object as THREE.Mesh).geometry.setAttribute(
       'position',
       new THREE.BufferAttribute(positions, 3)
     );
   }
 
   dispose(): void {
-    this._object.geometry.dispose();
-    (this._object.material as THREE.Material).dispose();
+    (this._object as TestMesh).geometry.dispose();
+    (this._object as TestMesh).material.dispose();
     super.dispose();
   }
 }

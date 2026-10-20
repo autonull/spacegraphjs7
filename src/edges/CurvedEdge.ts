@@ -11,7 +11,7 @@ export class CurvedEdge extends Edge {
   readonly positionsBuffer: Float32Array;
   private _controlPoint = new THREE.Vector3();
 
-  constructor(sg: SpaceGraph, spec: EdgeSpec, source: Node, target: Node) {
+  constructor(sg: SpaceGraph | undefined, spec: EdgeSpec, source: Node, target: Node) {
     super(sg, spec, source, target);
 
     const sourcePos = new THREE.Vector3();

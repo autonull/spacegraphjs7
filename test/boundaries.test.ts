@@ -10,7 +10,7 @@ const STATIC_IMPORT = /(?:^|\n)\s*import\s+(?:[\s\S]*?\sfrom\s+)?['"]([^'"]+)['"
 
 function staticImportsIn(dir: string): string[] {
   const base = resolve(root, dir);
-  return readdirSync(base, { recursive: true })
+  return readdirSync(base, { recursive: true, encoding: 'utf8' })
     .filter((entry) => /\.tsx?$/.test(entry) && !/\.(test|spec)\.tsx?$/.test(entry))
     .flatMap((entry) =>
       [...readFileSync(resolve(base, entry), 'utf8').matchAll(STATIC_IMPORT)].map((m) => m[1]!)

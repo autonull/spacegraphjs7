@@ -6,9 +6,7 @@ let hasNodeCanvas = false;
 
 try {
   // Try CommonJS require if available
-  // @ts-expect-error
   if (typeof (globalThis as any).require === 'function') {
-    // @ts-expect-error
     const c = (globalThis as any).require('canvas');
     if (c) {
       createCanvas = c.createCanvas;

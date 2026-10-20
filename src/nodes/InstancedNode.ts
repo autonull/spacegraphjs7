@@ -9,7 +9,7 @@ export class InstancedNode extends BaseInstancedNode {
   protected geometryFamily: GeometryFamily;
   readonly _group: THREE.Group;
 
-  constructor(sg: SpaceGraph, spec: NodeSpec, family: GeometryFamily) {
+  constructor(sg: SpaceGraph | undefined, spec: NodeSpec, family: GeometryFamily) {
     super(sg, spec);
     this._group = new THREE.Group();
     this.geometryFamily = family;

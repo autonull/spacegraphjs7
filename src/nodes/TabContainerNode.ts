@@ -17,7 +17,7 @@ export class TabContainerNode extends (HtmlNode as any) {
   private contentAreaElement: HTMLElement | null = null;
   private tabContentMap: Map<string, HTMLElement> = new Map();
 
-  constructor(sg: SpaceGraph, spec: NodeSpec) {
+  constructor(sg: SpaceGraph | undefined, spec: NodeSpec) {
     super(sg, spec);
     this._initializeTabs();
   }

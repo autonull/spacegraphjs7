@@ -27,9 +27,12 @@ describe('Vision-CLI Integration', () => {
       // 2. Run CLI in dry-run mode and capture output
       // We use the built JS file if it exists, otherwise we can try tsx
       const cliPath = path.resolve(process.cwd(), 'packages/cli/dist/bin/sg.js');
+      const tsxCli = path.resolve(process.cwd(), 'node_modules/tsx/dist/cli.mjs');
       const cmd = fs.existsSync(cliPath)
         ? `node ${cliPath} fix --dry-run`
-        : `npx tsx packages/cli/bin/sg.ts fix --dry-run`;
+        : fs.existsSync(tsxCli)
+          ? `node ${tsxCli} packages/cli/bin/sg.ts fix --dry-run`
+          : `npx tsx packages/cli/bin/sg.ts fix --dry-run`;
 
       const output = execSync(cmd).toString();
 

@@ -18,7 +18,7 @@ export class InstancedShapeNode extends BaseInstancedNode {
   static readonly typeName = 'InstancedShapeNode';
   private instanceIndex = -1;
 
-  constructor(sg: SpaceGraph, spec: NodeSpec) {
+  constructor(sg: SpaceGraph | undefined, spec: NodeSpec) {
     super(sg, spec);
     this.registerInstance();
     this.updatePosition(this.position.x, this.position.y, this.position.z);

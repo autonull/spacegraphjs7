@@ -13,7 +13,7 @@ import {
 import { LayoutContainer } from 'spacegraphjs/plugins';
 import * as THREE from 'three';
 import { describe, expect, it, vi } from 'vitest';
-import { type HitResult, type Rect, Surface } from '../src/core/Surface';
+import { type Bounds3D, type HitResult, type Rect, Surface } from '../src/core/Surface';
 import { Edge } from '../src/edges/Edge';
 import { Wire } from '../src/edges/Wire';
 import { Node } from '../src/nodes/Node';
@@ -63,7 +63,46 @@ class TestNode extends Node {
 class TestSurface extends Surface {
   readonly id = 'test-surface';
   readonly type = 'TestSurface';
+  readonly sg = undefined;
   bounds: Rect = { x: 0, y: 0, width: 100, height: 100 };
+
+  get bounds3D(): Bounds3D {
+    const box = new THREE.Box3(
+      new THREE.Vector3(0, 0, 0),
+      new THREE.Vector3(this.bounds.width, this.bounds.height, 0)
+    );
+    return {
+      min: box.min,
+      max: box.max,
+      get center() {
+        return new THREE.Vector3().addVectors(this.min, this.max).multiplyScalar(0.5);
+      },
+      get size() {
+        return new THREE.Vector3().subVectors(this.max, this.min);
+      },
+      containsPoint: (point: THREE.Vector3) => box.containsPoint(point),
+      intersectsRay: (ray: THREE.Raycaster) => {
+        const hit = new THREE.Vector3();
+        return ray.ray.intersectBox(box, hit) !== null;
+      },
+    };
+  }
+
+  get position() {
+    return new THREE.Vector3();
+  }
+
+  get rotation() {
+    return new THREE.Euler();
+  }
+
+  get scale() {
+    return new THREE.Vector3(1, 1, 1);
+  }
+
+  get worldMatrix() {
+    return new THREE.Matrix4();
+  }
 
   hitTest(_ray: THREE.Raycaster): HitResult | null {
     return null;
@@ -400,6 +439,7 @@ describe('FingerManager', () => {
     const finger: Finger = {
       pointerId: 1,
       position: { x: 0, y: 0 },
+      ndc: { x: 0, y: 0 },
       buttons: 1,
       state: 'down',
       target: null,
@@ -434,6 +474,7 @@ describe('FingerManager', () => {
     const finger: Finger = {
       pointerId: 1,
       position: { x: 0, y: 0 },
+      ndc: { x: 0, y: 0 },
       buttons: 1,
       state: 'down',
       target: null,
@@ -482,6 +523,7 @@ describe('FingerManager', () => {
     const finger: Finger = {
       pointerId: 1,
       position: { x: 0, y: 0 },
+      ndc: { x: 0, y: 0 },
       buttons: 1,
       state: 'down',
       target: null,

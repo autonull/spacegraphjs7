@@ -21,9 +21,9 @@ import { Edge } from './Edge';
 export class DynamicThicknessEdge extends Edge {
   static readonly typeName = 'DynamicThicknessEdge';
   readonly cylinder!: THREE.Mesh;
-  readonly _initialized = false;
+  readonly _initialized: boolean = false;
 
-  constructor(sg: SpaceGraph, spec: EdgeSpec, source: Node, target: Node) {
+  constructor(sg: SpaceGraph | undefined, spec: EdgeSpec, source: Node, target: Node) {
     super(sg, spec, source, target);
 
     this.object.visible = false;

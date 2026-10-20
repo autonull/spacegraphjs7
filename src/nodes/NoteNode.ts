@@ -17,7 +17,7 @@ import { BaseContentNode } from './BaseContentNode';
 export class NoteNode extends BaseContentNode {
   static typeName = 'NoteNode';
 
-  constructor(sg: SpaceGraph, spec: NodeSpec) {
+  constructor(sg: SpaceGraph | undefined, spec: NodeSpec) {
     const color = (spec.data?.color ?? '#fef08a') as string;
 
     super(sg, spec, {

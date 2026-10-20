@@ -17,7 +17,7 @@ export class SceneNode extends Node {
   readonly wrapper: THREE.Group;
   private rotationSpeed = 0;
 
-  constructor(sg: SpaceGraph, spec: NodeSpec) {
+  constructor(sg: SpaceGraph | undefined, spec: NodeSpec) {
     super(sg, spec);
 
     const url = (spec.data?.url as string) ?? undefined;

@@ -27,7 +27,7 @@ test.describe('Demo Interaction Tests', () => {
     const box = await canvas.boundingBox();
     await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2);
     await page.waitForTimeout(500);
-    const lastHovered = await page.evaluate(() => window._lastHoverNodeId);
+    const lastHovered = await page.evaluate(() => (window as any)._lastHoverNodeId);
     expect(lastHovered).not.toBeNull();
   });
 
@@ -97,12 +97,6 @@ test.describe('Demo Interaction Tests', () => {
 
   test('large - renders large graph', async ({ page }) => {
     await page.goto('http://localhost:5173/demo/large.html');
-    await page.waitForTimeout(3000);
-    await expect(page.locator('canvas').first()).toBeVisible();
-  });
-
-  test('n8n-workflow - renders workflow', async ({ page }) => {
-    await page.goto('http://localhost:5173/demo/n8n-workflow.html');
     await page.waitForTimeout(3000);
     await expect(page.locator('canvas').first()).toBeVisible();
   });
