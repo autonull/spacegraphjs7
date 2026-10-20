@@ -35,6 +35,15 @@ describe('depth treatment', () => {
   test('depth-stack fades harder than layered', () => {
     expect(depthTreatment('depth-stack').fade).toBeGreaterThan(depthTreatment('layered').fade);
   });
+
+  test('the tilted treatments face the camera and the flat baseline does not', () => {
+    // A card lying in the content plane is sheared into a quadrilateral as soon as the camera
+    // tilts, so the 3D treatments turn the cards to face the reader (T1.19).
+    expect(depthTreatment('flat').facing).toBe('plane');
+    for (const mode of ['layered', 'depth-stack', 'orbit'] as const) {
+      expect(depthTreatment(mode).facing).toBe('camera');
+    }
+  });
 });
 
 describe('depth fade', () => {

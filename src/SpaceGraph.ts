@@ -513,6 +513,9 @@ export class SpaceGraph {
     this.#lastTimestamp = timestamp;
 
     this.pluginManager.updateAll(delta);
+    // The camera moves before the nodes read it: a card that faces the camera must face the one it
+    // is drawn with, not the one from the previous frame (T1.19).
+    this.cameraControls?.update();
     for (const node of this.graph.nodes.values()) {
       if (node) node.onPreRender?.(delta);
     }
@@ -520,7 +523,6 @@ export class SpaceGraph {
       if (edge) (edge as any).onPreRender?.(delta);
     }
 
-    this.cameraControls?.update();
     this.#reportViewport();
     this.renderer.render();
   }
@@ -877,6 +879,7 @@ export class SpaceGraph {
     const treatment = depthTreatment(depth);
     this.renderer.setProjection(treatment.projection, this.cameraControls?.target);
     this.cameraControls?.setCamera(this.renderer.camera);
+    this.renderer.setCardFacing(treatment.facing);
     this.applySceneFade();
     this.cameraControls?.setOrbitEnabled(treatment.orbit);
     this.cameraControls?.setPolar(treatment.phi, 0, duration);

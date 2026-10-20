@@ -1,4 +1,4 @@
-import type { DepthMode, Projection } from '../types';
+import type { CardFacing, DepthMode, Projection } from '../types';
 
 export type { DepthMode };
 
@@ -23,16 +23,34 @@ export interface DepthTreatment {
    * scene reads the same at every fit instead of fading with absolute camera distance.
    */
   fade: number;
+  /**
+   * How the DOM cards face the camera. A card lying in the content plane is sheared into a
+   * quadrilateral as soon as the camera tilts, and its text stops being readable; the 3D treatments
+   * therefore face the camera (T1.19).
+   */
+  facing: CardFacing;
 }
 
 /** The perspective modes stay shallow enough to keep cards readable; orbit is the labelled experiment. */
 export const MAX_READABLE_TILT = 0.3;
 
 const TREATMENTS: Record<DepthMode, DepthTreatment> = {
-  flat: { projection: 'orthographic', phi: Math.PI / 2, orbit: false, fade: 0 },
-  layered: { projection: 'perspective', phi: Math.PI / 2 - 0.15, orbit: false, fade: 0.5 },
-  'depth-stack': { projection: 'perspective', phi: Math.PI / 2 - MAX_READABLE_TILT, orbit: false, fade: 0.9 },
-  orbit: { projection: 'perspective', phi: Math.PI / 2 - 0.5, orbit: true, fade: 0 },
+  flat: { projection: 'orthographic', phi: Math.PI / 2, orbit: false, fade: 0, facing: 'plane' },
+  layered: {
+    projection: 'perspective',
+    phi: Math.PI / 2 - 0.15,
+    orbit: false,
+    fade: 0.5,
+    facing: 'camera',
+  },
+  'depth-stack': {
+    projection: 'perspective',
+    phi: Math.PI / 2 - MAX_READABLE_TILT,
+    orbit: false,
+    fade: 0.9,
+    facing: 'camera',
+  },
+  orbit: { projection: 'perspective', phi: Math.PI / 2 - 0.5, orbit: true, fade: 0, facing: 'camera' },
 };
 
 export function depthTreatment(mode: DepthMode): DepthTreatment {

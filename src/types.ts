@@ -358,6 +358,11 @@ export type Projection = 'perspective' | 'orthographic';
 // add depth ordering with a shallow camera, and `orbit` is the free-perspective experiment.
 export type DepthMode = 'flat' | 'layered' | 'depth-stack' | 'orbit';
 
+// How a DOM card faces the camera: `plane` leaves it lying in the content plane, `camera` turns it to
+// face the reader. A tilted camera turns a flat card into a sheared quadrilateral, so the 3D depth
+// treatments face the camera and keep the text readable.
+export type CardFacing = 'plane' | 'camera';
+
 // Camera keyboard input scope: off, the graph container, or the whole window.
 export type KeyboardScope = false | 'container' | 'window';
 

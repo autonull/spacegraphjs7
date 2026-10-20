@@ -6,6 +6,8 @@ import { clamp } from '../utils/math';
 import { BaseContentNode } from './BaseContentNode';
 import { createQuickControls, type QuickControlButton } from './QuickControls';
 
+const PARENT_ROTATION = new THREE.Quaternion();
+
 export class HtmlNode extends BaseContentNode {
   static typeName = 'HtmlNode';
   public static MIN_SIZE = { width: 80, height: 40 };
@@ -250,12 +252,22 @@ export class HtmlNode extends BaseContentNode {
   }
 
   protected faceCamera(): void {
-    if (!this.billboard || !this.sg?.renderer?.camera) return;
+    const renderer = this.sg?.renderer;
+    const camera = renderer?.camera;
+    if (!renderer || !camera) return;
+    if (!this.billboard && renderer.cardFacing !== 'camera') return;
 
-    // A billboard stays screen-aligned: its rotation cancels the camera's, so a tilted camera does
-    // not turn a wide box into a trapezoid. A top-down camera has no rotation to cancel, so the box
-    // stays flat on the content plane (T1.3).
-    this.cssObject.quaternion.copy(this.sg.renderer.camera.quaternion).invert();
+    // The CSS3D pipeline composes the camera's view matrix with the node's world matrix, so a
+    // screen-aligned node carries the camera's rotation — not its inverse. The inverse turned the
+    // card twice and left it rolled and squashed (T1.19).
+    this.cssObject.quaternion.copy(camera.quaternion);
+
+    // The node's group normally carries no rotation, but a node that turns its own group (a panel
+    // that faces the camera) has to be turned back in that group's frame.
+    const parent = this.cssObject.parent;
+    if (!parent) return;
+    parent.getWorldQuaternion(PARENT_ROTATION).invert();
+    this.cssObject.quaternion.premultiply(PARENT_ROTATION);
   }
 
   getBoundingSphereRadius(): number {

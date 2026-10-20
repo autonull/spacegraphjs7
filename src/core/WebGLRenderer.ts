@@ -4,7 +4,7 @@ import { CSS3DRenderer } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
 import { Node } from '../nodes/Node';
 import { InstancedNodeRenderer } from '../rendering/InstancedNodeRenderer';
 import type { SpaceGraph } from '../SpaceGraph';
-import type { CameraViewport, Projection, RenderOptions } from '../types';
+import type { CameraViewport, CardFacing, Projection, RenderOptions } from '../types';
 import { parseColor } from '../utils/color';
 import { declutterLabels, type LabelRect } from '../utils/labelDeclutter';
 import { RenderContext } from './RenderContext';
@@ -37,6 +37,7 @@ export class WebGLRenderer {
   public renderContext: RenderContext;
 
   private _projection: Projection;
+  private _cardFacing: CardFacing = 'plane';
   private _bgColor: number;
   private _resizeObserver: ResizeObserver | null = null;
   private renderScheduled = false;
@@ -201,6 +202,21 @@ export class WebGLRenderer {
     this.scene.fog = density > 0 ? new THREE.FogExp2(this._bgColor, density) : null;
     this.sg.requestFrame?.();
     return this;
+  }
+
+  /**
+   * How the DOM cards face the camera. `plane` leaves a card lying in the content plane; `camera`
+   * turns it to face the reader, which is what a tilted depth treatment needs — a flat card is
+   * sheared into a quadrilateral and its text stops being readable (T1.19).
+   */
+  setCardFacing(facing: CardFacing): this {
+    this._cardFacing = facing;
+    this.sg.requestFrame?.();
+    return this;
+  }
+
+  get cardFacing(): CardFacing {
+    return this._cardFacing;
   }
 
   init(): void {
