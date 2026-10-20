@@ -134,6 +134,33 @@ describe('Strategies.layoutGraph — lanes', () => {
         expect(layout.clusters.has('t1')).toBe(true);
         expect(layout.clusters.has('t2')).toBe(true);
     });
+
+    it('draws a node that names both a turn and an owner in the owner\'s column', () => {
+        const model = makeModel();
+
+        model.nodes.push({ id: 'f2', kind: 'file', turnID: 't2' });
+        model.edges.push({ id: 'e2', source: 'a', target: 'f2', kind: 'writes' });
+
+        const layout = Strategies.layoutGraph(model, CONFIG);
+        const owned = layout.positions.get('f2')!;
+        const owner = layout.positions.get('a')!;
+        const other = layout.positions.get('b')!;
+
+        expect(owned.x).toBeGreaterThan(owner.x);
+        expect(owned.x).toBeLessThan(other.x);
+    });
+
+    it('keeps the place of a turn that drew nothing', () => {
+        const model = makeModel();
+        const span = (layout: { positions: ReadonlyMap<string, { x: number }> }) =>
+            layout.positions.get('b')!.x - layout.positions.get('a')!.x;
+        const without = span(Strategies.layoutGraph(model, CONFIG));
+        const withEmpty = span(
+            Strategies.layoutGraph({ ...model, turns: ['t1', 'empty', 't2'] }, CONFIG),
+        );
+
+        expect(withEmpty - without).toBe(CONFIG.geometry.standardSize[0] + 96);
+    });
 });
 
 describe('Strategies.layoutGraph — timeline', () => {

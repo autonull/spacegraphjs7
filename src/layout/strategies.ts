@@ -1,6 +1,12 @@
 // Generic layout strategies: deterministic, append-only placement of nodes in a lanes band, a
 // chronological timeline, and a hierarchical outline. The core owns the geometry; the host owns the
 // vocabulary (box sizes, lane names, depths, turn grouping) through the config.
+//
+// The three strategies are policies over one primitive: `LaneLayout` places items into columns and
+// rows, and a strategy decides which column and row an item belongs to. Nothing here measures a
+// card.
+
+import { LaneLayout } from './LaneLayout';
 
 type Position = { x: number; y: number; z: number };
 
@@ -100,6 +106,9 @@ interface GraphLayout {
 
 const ZERO_BOUNDS: LayoutBounds = { min: { x: 0, y: 0, z: 0 }, max: { x: 0, y: 0, z: 0 } };
 
+/** The column the session's own nodes share, before the first turn's column. */
+const SESSION_COLUMN = '__session__';
+
 function lookup<Key extends string, Value>(
     record: Readonly<Record<Key, Value>>,
     key: string,
@@ -144,6 +153,13 @@ function memberPositions(
     });
 
     return members.length > 0 ? boundsOf(members) : undefined;
+}
+
+/** The placed positions of a layout, as the map the bands and the bounds are read from. */
+function placedPositions(layout: LaneLayout): Map<string, Position> {
+    return new Map(
+        Object.entries(layout.positions).map(([id, [x, y, z]]) => [id, { x, y, z }]),
+    );
 }
 
 /**
@@ -252,15 +268,16 @@ function lanesLayout<Node extends LayoutNode, Edge extends LayoutEdge, Name exte
     const laneHeight = config.geometry.standardSize[1] + laneGap;
     const minColumnWidth = options.minColumnWidth ?? config.geometry.standardSize[0];
 
-    const positions = new Map<string, Position>();
+    const layout = new LaneLayout({
+        lanes: config.laneList,
+        lanePitch: laneHeight,
+        step: gap,
+        groupGap: turnGap,
+        depthStep,
+    });
 
     // A host that draws a subset (a level, a lens) restricts the nodes that consume space.
     const nodes = options.include ? model.nodes.filter(options.include) : model.nodes;
-
-    const yFor = (node: Node) => config.laneList.indexOf(config.laneOfFn(node)) * laneHeight;
-
-    const place = (node: Node, x: number) =>
-        positions.set(node.id, { x, y: yFor(node), z: depthOf(config.depthMap, node.kind) * depthStep });
 
     const owners = new Map<string, string>();
 
@@ -270,63 +287,55 @@ function lanesLayout<Node extends LayoutNode, Edge extends LayoutEdge, Name exte
         if (owner) owners.set(node.id, owner);
     }
 
-    const groups: Node[][] = [];
-
-    // One pass over the visible nodes builds the root group and the per-turn buckets. Filtering the
-    // whole node list once per turn was quadratic, and a long session paid for it (T6.6).
+    // One pass over the visible nodes builds the session column and the per-turn buckets.
+    // Filtering the whole node list once per turn was quadratic, and a long session paid for it
+    // (T6.6). A node that names both a turn and an owner belongs to the owner's column: it is
+    // anchored there, so that is where it is drawn.
     const byTurn = new Map<string, Node[]>();
-    const rootGroup: Node[] = [];
-
-    const bucket = (key: string, node: Node) => {
-        const list = byTurn.get(key);
-
-        if (list) list.push(node);
-        else byTurn.set(key, [node]);
-    };
+    const sessionColumn: Node[] = [];
 
     for (const node of nodes) {
         const turn = config.turnIdFn(node);
         const owner = owners.get(node.id);
+        const column =
+            node.id === model.root ? SESSION_COLUMN : (owner ?? turn ?? SESSION_COLUMN);
 
-        if (turn) bucket(turn, node);
-        if (owner) bucket(owner, node);
-        if (node.id === model.root || (!turn && !owner)) rootGroup.push(node);
+        if (column === SESSION_COLUMN) {
+            sessionColumn.push(node);
+            continue;
+        }
+
+        const bucket = byTurn.get(column);
+
+        if (bucket) bucket.push(node);
+        else byTurn.set(column, [node]);
     }
 
-    if (rootGroup.length > 0) groups.push(rootGroup);
+    // Every turn is a column, including an empty one: the column is the turn's place in the
+    // session, and a session does not close the gap of a turn that drew nothing.
+    const columns: [string, Node[]][] = [];
 
-    for (const turnID of model.turns) groups.push(byTurn.get(turnID) ?? []);
+    if (sessionColumn.length > 0) columns.push([SESSION_COLUMN, sessionColumn]);
 
+    for (const turnID of model.turns) columns.push([turnID, byTurn.get(turnID) ?? []]);
+
+    for (const [column, members] of columns) {
+        layout.open(column);
+
+        for (const node of members)
+            layout.place({
+                id: node.id,
+                lane: config.laneOfFn(node),
+                group: column,
+                width: config.nodeSizeFn(node)[0],
+                depth: depthOf(config.depthMap, node.kind),
+            });
+
+        layout.close(column, Math.max(layout.width(column), minColumnWidth));
+    }
+
+    const positions = placedPositions(layout);
     const clusters = new Map<string, LayoutBounds>();
-    let columnX = 0;
-
-    for (const group of groups) {
-        const cursors = new Map<string, number>();
-
-        const cursorFor = (lane: string) => {
-            if (!cursors.has(lane)) cursors.set(lane, columnX);
-
-            return cursors.get(lane)!;
-        };
-
-        const staged = group.map((node) => {
-            const lane = config.laneOfFn(node);
-            const start = cursorFor(lane);
-            const width = config.nodeSizeFn(node)[0];
-            cursors.set(lane, start + width + gap);
-
-            // Positions are node centres (the renderer places boxes on their centre), so add half-width.
-            return { node, x: start + width / 2 };
-        });
-
-        for (const entry of staged) place(entry.node, entry.x);
-
-        const width = Math.max(
-            ...[...cursors.values()].map((end) => end - gap - columnX),
-            minColumnWidth,
-        );
-        columnX += width + turnGap;
-    }
 
     // Derived clusters keep their membership order; their bounds drive the host's bands.
     for (const node of model.nodes) {
@@ -380,81 +389,86 @@ function timelineLayout<Node extends LayoutNode, Edge extends LayoutEdge, Name e
     const turnColumnWidth =
         columns * (config.geometry.standardSize[0] + gap) + config.geometry.padding;
 
-    const positions = new Map<string, Position>();
-    const clusters = new Map<string, LayoutBounds>();
-    let turnIndex = 0;
+    const layout = new LaneLayout({ lanePitch: rowHeight, step: gap, groupGap: 0, depthStep });
 
     // The leading block (the root group, or the first turn when the model has none) opens the timeline.
     const [leading] = turnBlocks(model, config);
 
     if (leading && leading.length > 0) {
-        let row = 0;
+        layout.open(SESSION_COLUMN, turnColumnWidth);
 
         for (let i = 0; i < leading.length; i += columns) {
-            let cursor = 0;
+            const row = Math.floor(i / columns);
 
-            for (const node of leading.slice(i, i + columns)) {
-                const width = config.nodeSizeFn(node)[0];
-                positions.set(node.id, {
-                    x: cursor + width / 2,
-                    y: row * rowHeight,
-                    z: depthOf(config.depthMap, node.kind) * depthStep,
+            for (const node of leading.slice(i, i + columns))
+                layout.place({
+                    id: node.id,
+                    row,
+                    group: SESSION_COLUMN,
+                    width: config.nodeSizeFn(node)[0],
+                    depth: depthOf(config.depthMap, node.kind),
                 });
-                cursor += width + gap;
-            }
-
-            row += 1;
         }
 
-        // The root band spans the leading block
-        const members = memberPositions(
-            [model.root, ...leading.map((node) => node.id)],
-            positions,
-        );
-
-        if (members) clusters.set('session', members);
-
-        turnIndex += 1;
+        layout.close(SESSION_COLUMN);
     }
 
     // Each turn gets its own column band. The members come from one pass over the model, not one
     // filter per turn (T6.6).
     const byTurn = nodesByTurn(model, config);
     const order = new Map(model.nodes.map((node, index) => [node.id, index]));
+    const columnsByTurn = new Map<string, Node[]>();
 
     for (const turnID of model.turns) {
         const turnNodes = turnColumnNodes(byTurn.get(turnID) ?? [], turnID, order, model);
 
         if (turnNodes.length === 0) continue;
 
-        const columnX = turnIndex * turnColumnWidth;
-        let row = 0;
+        columnsByTurn.set(turnID, turnNodes);
+
+        layout.open(turnID, turnColumnWidth);
 
         for (let i = 0; i < turnNodes.length; i += columns) {
-            let cursor = columnX;
+            const row = Math.floor(i / columns);
 
-            for (const node of turnNodes.slice(i, i + columns)) {
-                const width = config.nodeSizeFn(node)[0];
-                positions.set(node.id, {
-                    x: cursor + width / 2,
-                    y: row * rowHeight,
-                    z: depthOf(config.depthMap, node.kind) * depthStep,
+            for (const node of turnNodes.slice(i, i + columns))
+                layout.place({
+                    id: node.id,
+                    row,
+                    group: turnID,
+                    width: config.nodeSizeFn(node)[0],
+                    depth: depthOf(config.depthMap, node.kind),
                 });
-                cursor += width + gap;
-            }
-
-            row += 1;
         }
 
-        // Turn band spans this turn's column
+        layout.close(turnID);
+    }
+
+    const positions = placedPositions(layout);
+    const clusters = new Map<string, LayoutBounds>();
+
+    // The root band spans the leading block
+    if (leading && leading.length > 0) {
+        const members = memberPositions(
+            [model.root, ...leading.map((node) => node.id)],
+            positions,
+        );
+
+        if (members) clusters.set('session', members);
+    }
+
+    // Turn band spans this turn's column
+    for (const turnID of model.turns) {
+        const turnNodes = columnsByTurn.get(turnID);
+
+        if (!turnNodes) continue;
+
         const members = memberPositions(
             [turnID, ...turnNodes.filter((node) => node.id !== turnID).map((node) => node.id)],
             positions,
         );
 
         if (members) clusters.set(turnID, members);
-
-        turnIndex += 1;
     }
 
     // Derived clusters
@@ -500,30 +514,42 @@ function hierarchyLayout<Node extends LayoutNode, Edge extends LayoutEdge, Name 
         config.geometry.standardSize[0] +
         config.geometry.padding;
 
-    const positions = new Map<string, Position>();
+    const layout = new LaneLayout({ lanePitch: rowHeight, step: options.gap ?? 24, groupGap: 0, depthStep });
     let column = 0;
 
     for (const nodes of turnBlocks(model, config)) {
         let row = 0;
+        let group = `column:${column}`;
+
+        layout.open(group, columnWidth);
 
         for (const node of nodes) {
             if (row >= rowsPerColumn) {
+                layout.close(group);
                 row = 0;
                 column += 1;
+                group = `column:${column}`;
+                layout.open(group, columnWidth);
             }
 
             const depth = depthOf(config.depthMap, node.kind);
-            positions.set(node.id, {
-                x: column * columnWidth + depth * indentStep + config.geometry.standardSize[0] / 2,
-                y: row * rowHeight,
-                z: depth * depthStep,
+
+            layout.place({
+                id: node.id,
+                row,
+                group,
+                indent: depth * indentStep,
+                width: config.geometry.standardSize[0],
+                depth,
             });
             row += 1;
         }
 
+        layout.close(group);
         column += 1;
     }
 
+    const positions = placedPositions(layout);
     const all = [...positions.values()];
 
     return {

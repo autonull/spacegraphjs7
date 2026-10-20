@@ -30,7 +30,6 @@ type ActivityNode = {
   id: string;
   lane: string;
   group?: string;
-  ordinal: number;
   depth?: number;
   kind: string;
   label: string;
@@ -108,26 +107,26 @@ function edge(
 // verification, a retry, and recovery. It is deliberately generic — any agent UI can produce it.
 function pipelineNodes(): ActivityNode[] {
   return [
-    { id: 'root', lane: 'intent', ordinal: 0, kind: 'activity', label: 'Reconcile invoice totals', summary: 'A checkout total drifted by a cent.', shape: 'panel', status: 'neutral', size: [240, 72], html: card('activity', 'Reconcile invoice totals', 'neutral') },
-    { id: 'plan', lane: 'narrative', ordinal: 0, kind: 'note', label: 'Plan: trace totals, fix rounding, re-verify', summary: 'Three steps, one delegation.', shape: 'panel', status: 'success', size: [240, 72], html: card('plan', 'trace · fix · re-verify', 'success') },
+    { id: 'root', lane: 'intent', kind: 'activity', label: 'Reconcile invoice totals', summary: 'A checkout total drifted by a cent.', shape: 'panel', status: 'neutral', size: [240, 72], html: card('activity', 'Reconcile invoice totals', 'neutral') },
+    { id: 'plan', lane: 'narrative', kind: 'note', label: 'Plan: trace totals, fix rounding, re-verify', summary: 'Three steps, one delegation.', shape: 'panel', status: 'success', size: [240, 72], html: card('plan', 'trace · fix · re-verify', 'success') },
 
-    { id: 'search', lane: 'explore', ordinal: 0, kind: 'call', label: 'grep', summary: 'totals · 4 matches', status: 'success', shape: 'card', size: [240, 72], html: card('grep', 'totals · 4 matches') },
-    { id: 'read', lane: 'explore', ordinal: 1, kind: 'call', label: 'read', summary: 'src/billing/totals.ts', status: 'success', shape: 'card', size: [240, 72], html: card('read', 'src/billing/totals.ts') },
+    { id: 'search', lane: 'explore', kind: 'call', label: 'grep', summary: 'totals · 4 matches', status: 'success', shape: 'card', size: [240, 72], html: card('grep', 'totals · 4 matches') },
+    { id: 'read', lane: 'explore', kind: 'call', label: 'read', summary: 'src/billing/totals.ts', status: 'success', shape: 'card', size: [240, 72], html: card('read', 'src/billing/totals.ts') },
 
-    { id: 'edit', lane: 'edit', ordinal: 0, kind: 'call', label: 'edit', summary: 'src/billing/totals.ts', status: 'success', shape: 'card', size: [240, 72], html: card('edit', 'src/billing/totals.ts') },
-    { id: 'artifact', lane: 'artifacts', ordinal: 0, depth: 2, kind: 'artifact', label: 'src/billing/totals.ts', status: 'success', shape: 'card', size: [240, 72], html: card('artifact', 'src/billing/totals.ts') },
+    { id: 'edit', lane: 'edit', kind: 'call', label: 'edit', summary: 'src/billing/totals.ts', status: 'success', shape: 'card', size: [240, 72], html: card('edit', 'src/billing/totals.ts') },
+    { id: 'artifact', lane: 'artifacts', depth: 2, kind: 'artifact', label: 'src/billing/totals.ts', status: 'success', shape: 'card', size: [240, 72], html: card('artifact', 'src/billing/totals.ts') },
 
-    { id: 'delegate', lane: 'delegate', ordinal: 0, kind: 'call', label: 'delegate', summary: 'audit rounding', status: 'success', shape: 'card', size: [240, 72], html: card('delegate', 'audit rounding') },
-    { id: 'child', lane: 'delegate', ordinal: 1, depth: 2, kind: 'child', label: 'child run · completed', summary: 'found a half-cent drift', status: 'success', shape: 'badge', size: [240, 52], html: card('child run', 'completed · half-cent drift', 'success') },
+    { id: 'delegate', lane: 'delegate', kind: 'call', label: 'delegate', summary: 'audit rounding', status: 'success', shape: 'card', size: [240, 72], html: card('delegate', 'audit rounding') },
+    { id: 'child', lane: 'delegate', depth: 2, kind: 'child', label: 'child run · completed', summary: 'found a half-cent drift', status: 'success', shape: 'badge', size: [240, 52], html: card('child run', 'completed · half-cent drift', 'success') },
 
-    { id: 'verify', lane: 'verify', ordinal: 0, kind: 'call', label: 'test billing', summary: 'exit 1', status: 'error', shape: 'card', size: [240, 72], html: card('test billing', 'exit 1 · assertion failed', 'error') },
-    { id: 'failure', lane: 'verify', ordinal: 1, depth: 2, kind: 'failure', label: 'expected 12 to equal 13', status: 'error', shape: 'badge', size: [240, 52], html: card('failure', 'expected 12 to equal 13', 'error') },
-    { id: 'verify2', lane: 'verify', ordinal: 2, kind: 'call', label: 'test billing', summary: 'exit 0 · 12 passed', status: 'success', shape: 'card', size: [240, 72], html: card('test billing', 'exit 0 · 12 passed') },
+    { id: 'verify', lane: 'verify', kind: 'call', label: 'test billing', summary: 'exit 1', status: 'error', shape: 'card', size: [240, 72], html: card('test billing', 'exit 1 · assertion failed', 'error') },
+    { id: 'failure', lane: 'verify', depth: 2, kind: 'failure', label: 'expected 12 to equal 13', status: 'error', shape: 'badge', size: [240, 52], html: card('failure', 'expected 12 to equal 13', 'error') },
+    { id: 'verify2', lane: 'verify', kind: 'call', label: 'test billing', summary: 'exit 0 · 12 passed', status: 'success', shape: 'card', size: [240, 72], html: card('test billing', 'exit 0 · 12 passed') },
 
-    { id: 'retry', lane: 'narrative', ordinal: 1, kind: 'retry', label: 'retry #1', summary: 'round half-cents before summing', status: 'warning', shape: 'badge', size: [240, 52], html: card('retry #1', 'round half-cents first', 'warning') },
-    { id: 'edit2', lane: 'edit', ordinal: 1, kind: 'call', label: 'edit', summary: 'src/billing/rounding.ts', status: 'success', shape: 'card', size: [240, 72], html: card('edit', 'src/billing/rounding.ts') },
+    { id: 'retry', lane: 'narrative', kind: 'retry', label: 'retry #1', summary: 'round half-cents before summing', status: 'warning', shape: 'badge', size: [240, 52], html: card('retry #1', 'round half-cents first', 'warning') },
+    { id: 'edit2', lane: 'edit', kind: 'call', label: 'edit', summary: 'src/billing/rounding.ts', status: 'success', shape: 'card', size: [240, 72], html: card('edit', 'src/billing/rounding.ts') },
 
-    { id: 'done', lane: 'narrative', ordinal: 2, kind: 'note', label: 'Recovered', summary: 'Totals agree to the cent.', status: 'success', shape: 'panel', size: [240, 72], html: card('recovered', 'totals agree to the cent', 'success') },
+    { id: 'done', lane: 'narrative', kind: 'note', label: 'Recovered', summary: 'Totals agree to the cent.', status: 'success', shape: 'panel', size: [240, 72], html: card('recovered', 'totals agree to the cent', 'success') },
   ];
 }
 
@@ -150,13 +149,12 @@ function pipelineEdges(): RenderEdge[] {
 }
 
 function pipelineScene(): RenderModel {
-  const layout = new LaneLayout({ lanes: LANES, laneGap: 110, step: 300, depthStep: 64 });
+  const layout = new LaneLayout({ lanes: LANES, lanePitch: 110, step: 300, depthStep: 64 });
   const nodes = pipelineNodes();
   const positions = layout.placeAll(
     nodes.map((node) => ({
       id: node.id,
       lane: node.lane,
-      ordinal: node.ordinal,
       depth: node.depth,
     }))
   );

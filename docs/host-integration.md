@@ -97,9 +97,10 @@ renderer.setTheme(theme);
 
 ## 5. Layout and zoom policy
 
-- The contract supplies no layout. Compute deterministic, append-only positions yourself. For lanes,
-  ordinals, and reserved space, `spacegraphjs/layout` (`LaneLayout`) is a headless helper: lanes → Y,
-  ordinals → X, depth → Z.
+- The contract supplies no layout. Compute deterministic, append-only positions yourself.
+  `spacegraphjs/layout` is the headless helper: `LaneLayout` is a grid — columns advance on X, rows
+  on Y, every (column, row) cell keeps its own cursor, so a row advances by the widths of the items
+  it holds — and `Strategies` are the lanes, timeline and hierarchy views as policies over it.
 - Semantic zoom is **your** policy. The library's `spacegraphjs/zoom` (`ZoomBands`) maps a normalized
   renderer zoom to named bands; you decide what each band shows. The common shape is three levels:
   overview (clusters with counts), execution (tool activity), detail (reasoning and full content).
@@ -156,3 +157,10 @@ For a framework host, skip steps 5–6's manual wiring: mount `GraphView` from `
 `capabilities.contractVersion`. Call `negotiateContract(version)` and surface the result — a mismatch is
 a clear message, not a runtime failure. For a non-OpenCode page, see the fixture in
 `demo/activity-host.ts`; the runnable two-adapter library demo is `demo/contract.html`.
+
+## 10. What the library does not do
+
+`docs/limitations.md` lists the library's own limits — the mesh outline is a bounding box rather
+than a silhouette, the depth fade is a scene fog that DOM cards do not follow, DOM cards are the
+supported path for readable text, and the layout engine places without knowing the screen. Read it
+before you promise a host something the engine does not do.

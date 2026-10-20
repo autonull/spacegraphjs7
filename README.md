@@ -303,13 +303,13 @@ Edges resolve only nodes in the same graph. Graph instances are isolated at the 
 | `ClusterLayout`      | Community grouping                          |
 | `TimelineLayout`     | Temporal sequences                          |
 | `GeoLayout`          | Geographic projection                       |
-| `LaneLayout`         | Headless lanes → Y, ordinals → X, depth → Z |
+| `LaneLayout`         | Headless columns → X, rows → Y, depth → Z    |
 | `BaseLayout`         | Custom layout extension point               |
 
 Two placement modes matter:
 
 - **Plugin layouts** run when you invoke them with `layout(name)` or `layoutOnce(name)`; they do not re-run on every mutation. `AutoLayoutPlugin` is a default hook for vision-driven overlap repair, not a general auto-layout loop.
-- **`LaneLayout`** is deterministic and append-only: placing a known ID returns its stored position, so streaming data never moves earlier items.
+- **`LaneLayout`** is deterministic and append-only: placing a known ID returns its stored position, so streaming data never moves earlier items. It is a grid: columns advance on X, rows on Y, and every (column, row) cell keeps its own cursor, so a row advances by the widths of the items it holds while its neighbours stay put. A column's width is measured from the rows it holds, or declared when the host knows it up front. `spacegraphjs/layout` also exports `Strategies` — the lanes, timeline and hierarchy views — as policies over this one primitive.
 
 Hosts can always own placement directly with `setPositions(...)`, `pinAll(...)`, and `layoutOnce(...)`. Request a named layout explicitly when data arrives.
 
@@ -562,6 +562,7 @@ When adding hot-path code, avoid per-frame allocation, prefer sets for membershi
 | ---------------------------------- | ---------------------------------- |
 | Five-minute start                  | `QUICKSTART.md`                    |
 | Host integration, contract-first   | `docs/host-integration.md`         |
+| What the library does not do       | `docs/limitations.md`              |
 | Vision plugin details              | `docs/vision-plugin.md`            |
 | Component naming and surface rules | `AGENTS.md`                        |
 | Roadmap and status                 | `ROADMAP.md`                       |
