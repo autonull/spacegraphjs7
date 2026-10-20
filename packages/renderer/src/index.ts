@@ -160,3 +160,7 @@ export function supports(capabilities: RendererCapabilities, capability: Rendere
 export function supportsDepth(capabilities: RendererCapabilities, depth: DepthMode): boolean {
   return capabilities.depths.includes(depth)
 }
+
+// The theme bridge and the contrast auditor live beside the contract: they are pure, dependency-free,
+// and every renderer and host needs them.
+export * from './theme';

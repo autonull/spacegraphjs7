@@ -243,4 +243,5 @@ function idsOf(payload: unknown): readonly string[] {
 }
 
 export { edgeSpec, nodeSpec, parseColor, spaceGraphTheme, statusColor } from './mapping';
+export { RENDERER_THEME, resolveRendererTheme } from './theme';
 export type { GraphRenderer } from '@spacegraphjs/renderer';

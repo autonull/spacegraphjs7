@@ -33,7 +33,10 @@ describe('package boundaries', () => {
   });
 
   it('keeps the contract dependency-free', () => {
-    expect(staticImportsIn('packages/renderer/src')).toEqual([]);
+    // The contract may use its own modules; it may not reach for a package or a bare specifier.
+    expect(
+      staticImportsIn('packages/renderer/src').filter((specifier) => !specifier.startsWith('.')),
+    ).toEqual([]);
   });
 
   it('keeps the Cytoscape adapter off the core', () => {

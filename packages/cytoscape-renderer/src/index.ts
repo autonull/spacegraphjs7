@@ -295,4 +295,5 @@ export class CytoscapeRenderer implements GraphRenderer {
 }
 
 export { cytoscapeStyle, edgeElement, nodeElement, statusColor } from './mapping';
+export { CYTOSCAPE_THEME, CYTOSCAPE_TOKENS, CytoscapeThemeBridge } from './theme';
 export type { GraphRenderer } from '@spacegraphjs/renderer';
