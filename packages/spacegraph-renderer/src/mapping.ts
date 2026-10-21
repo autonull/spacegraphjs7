@@ -58,7 +58,11 @@ export function nodeSpec(node: RenderNode, theme: RenderTheme): NodeSpec {
       // T1.10: markup that inherits its colour (lane labels) must follow the host text token, not the
       // core's hard-coded white, which vanishes on the light canvas.
       // Lane labels use textMuted for sufficient contrast in both light and dark.
-      style: { color: node.data?.colorToken === 'textMuted' ? theme.textMuted : theme.text },
+      // A host's own inline style is merged over this one, never dropped by it.
+      style: {
+        color: node.data?.colorToken === 'textMuted' ? theme.textMuted : theme.text,
+        ...(node.data?.style as Record<string, string> | undefined),
+      },
       interactive,
     };
     return { id: node.id, type: 'HtmlNode', label: node.label, position, data };

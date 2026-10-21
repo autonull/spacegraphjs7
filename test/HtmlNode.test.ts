@@ -66,6 +66,22 @@ describe('HtmlNode Unit Tests', () => {
     expect(content?.innerHTML).toBe('<span>New Content</span>');
   });
 
+  it('re-flows the content when the host changes the card size, instead of scaling it', () => {
+    // The content is the host's markup: a card that changes what it says must show the new markup
+    // at its own size, not a magnified copy of the old one.
+    const node = new HtmlNode(sg as any, {
+      id: 'u',
+      type: 'HtmlNode',
+      data: { html: '<span>x</span>', width: 200, height: 100 },
+    } as any);
+
+    node.updateSpec({ data: { width: 400, height: 200 } });
+
+    const content = node.domElement.querySelector('.node-content') as HTMLElement;
+    expect(content.style.transform).toBe('scale(1)');
+    expect(node.domElement.style.width).toBe('400px');
+  });
+
   it('should handle backgroundColor in data updates', () => {
     const node = new HtmlNode(sg as any, { id: 'u', type: 'HtmlNode' } as any);
     node.updateSpec({ data: { backgroundColor: '#00ff00' } });

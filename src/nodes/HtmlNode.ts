@@ -283,9 +283,14 @@ export class HtmlNode extends BaseContentNode {
 
     const level = lodLevelAt(this.labelLod, this.position.distanceTo(camera.position));
     const baseScale = (this.data?.contentScale as number) ?? 1.0;
+    const hidden =
+      level?.style?.includes('display:none') === true || level?.style?.includes('visibility:hidden') === true;
 
     this.domElement.style.visibility = lodVisibility(level);
     this.domElement.style.display = level?.style?.includes('display:none') ? 'none' : 'flex';
+    // The edges of a hidden card must go with it: the plugin reads the CSS object's visibility to
+    // decide, and a card that only changed its CSS would leave its edges drawn.
+    this.cssObject.visible = !hidden;
     if (this.contentWrapper) {
       this.contentWrapper.style.transform = `scale(${baseScale * (level?.scale ?? 1.0)})`;
     }
@@ -499,9 +504,12 @@ export class HtmlNode extends BaseContentNode {
 
   private _handleSizeUpdate(data: SpaceGraphNodeData): void {
     const { DEFAULT_SIZE } = HtmlNode;
+    // A host-driven size change re-flows the card's content; it does not scale it. The content is
+    // the host's markup, and a card that changes tier must show the new tier, not a blown-up old one.
     this.setSize(
       this.dimension(data, 'width', DEFAULT_SIZE.width),
-      this.dimension(data, 'height', DEFAULT_SIZE.height)
+      this.dimension(data, 'height', DEFAULT_SIZE.height),
+      false,
     );
   }
 

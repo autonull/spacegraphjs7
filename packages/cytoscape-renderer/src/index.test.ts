@@ -35,6 +35,12 @@ describe('@spacegraphjs/cytoscape-renderer', () => {
     }).not.toThrow();
   });
 
+  test('reports no screen position before mount', () => {
+    // A host that anchors a surface to a node reads undefined, never a guess.
+    const renderer = new CytoscapeRenderer();
+    expect(renderer.getNodeScreenPosition?.('a')).toBeUndefined();
+  });
+
   test('on() returns a working unsubscribe before mount', () => {
     const renderer = new CytoscapeRenderer();
     const seen: string[] = [];

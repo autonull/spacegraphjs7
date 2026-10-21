@@ -189,6 +189,19 @@ export class CytoscapeRenderer extends BaseGraphRenderer implements GraphRendere
     };
   }
 
+  // Where a node sits on the screen, in pixels from the container's top left. Cytoscape already
+  // projects every node into the rendered viewport, so the anchor needs no second projection.
+  getNodeScreenPosition(id: string): { x: number; y: number } | undefined {
+    const cy = this.#cy;
+    if (!cy) return undefined;
+
+    const node = cy.getElementById(id);
+    if (node.empty()) return undefined;
+
+    const point = node.renderedPosition();
+    return { x: point.x, y: point.y };
+  }
+
   fit(ids?: readonly string[], options?: FitOptions): void {
     const cy = this.#cy;
     if (!cy) return;

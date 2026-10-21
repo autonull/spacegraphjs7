@@ -13,6 +13,7 @@ import {
   type Unsubscribe,
 } from '@spacegraphjs/renderer';
 import type { GraphSpec, SpaceGraph } from 'spacegraphjs/activity';
+import { worldToScreen } from 'spacegraphjs/utils';
 import { edgeSpec, nodeSpec, spaceGraphTheme } from './mapping';
 
 const CAPABILITIES: RendererCapabilities = {
@@ -182,6 +183,18 @@ export class SpaceGraphRenderer extends BaseGraphRenderer implements GraphRender
     };
   }
 
+  // Where a node sits on the screen, in pixels from the canvas' top left. The core owns the camera
+  // and the projection, so the anchor is exact for both the orthographic and the tilted view.
+  getNodeScreenPosition(id: string): { x: number; y: number } | undefined {
+    const sg = this.#sg;
+    if (!sg) return undefined;
+
+    const node = sg.graph.getNode(id);
+    if (!node) return undefined;
+
+    return worldToScreen(node.position, sg.renderer.camera, sg.renderer.renderer.domElement);
+  }
+
   // Programmatic framing is immediate (duration 0): a deterministic jump rather than an animation the
   // host cannot sequence. The renderer owns framing per contract rule 1, and a still frame after a fit
   // is what the capture waits on (LE.1).
@@ -228,6 +241,8 @@ export class SpaceGraphRenderer extends BaseGraphRenderer implements GraphRender
     on('edge:click', (payload) => this.emit('edgeClick', { id: idOf(payload) }));
     on('background:click', () => this.emit('backgroundClick', undefined));
     on('node:dblclick', (payload) => this.emit('nodeDoubleClick', { id: idOf(payload) }));
+    on('node:pointerenter', (payload) => this.emit('hoverChange', { id: nodeIdOf(payload), kind: 'node' }));
+    on('node:pointerleave', () => this.emit('hoverChange', {}));
     on('selection:changed', (payload) => {
       if (this.applyingSelection) return;
       this.emit('selectionChange', { ids: idsOf(payload) });
@@ -251,6 +266,11 @@ export class SpaceGraphRenderer extends BaseGraphRenderer implements GraphRender
 
 function idOf(payload: unknown): string {
   return (payload as { id?: string } | undefined)?.id ?? '';
+}
+
+/** The core's hover payloads carry the node, not its id. */
+function nodeIdOf(payload: unknown): string {
+  return (payload as { node?: { id?: string } } | undefined)?.node?.id ?? '';
 }
 
 function idsOf(payload: unknown): readonly string[] {

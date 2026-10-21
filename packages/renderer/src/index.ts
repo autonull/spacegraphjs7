@@ -211,6 +211,12 @@ export type GraphRenderer = {
    */
   getViewport?(): RendererViewport
   /**
+   * Where a node sits on the screen, in pixels from the canvas' top left. A host that anchors a
+   * detail surface to a node reads it here instead of projecting the world itself. Optional: a
+   * renderer that cannot place a node leaves it out, and a host reads that as "no anchor".
+   */
+  getNodeScreenPosition?(id: string): { x: number; y: number } | undefined
+  /**
    * How the DOM cards face the camera. Optional: a renderer that draws no cards, or draws them in
    * screen space, leaves it out — and a host reads that as "not changeable", never as a broken
    * camera.

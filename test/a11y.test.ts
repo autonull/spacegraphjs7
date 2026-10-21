@@ -130,6 +130,22 @@ describe('AccessibilityLayer', () => {
     layer.dispose();
   });
 
+  it('keeps the reader on the same node when the model changes under them', () => {
+    const layer = new AccessibilityLayer(container);
+    layer.setItems([{ id: 'a', label: 'Alpha' }, { id: 'b', label: 'Beta' }]);
+    layer.focus('b');
+    expect(document.activeElement).toBe(container.querySelector('li[data-id="b"]'));
+
+    // The same nodes, restated: the reader keeps their place and their focus.
+    layer.setItems([{ id: 'a', label: 'Alpha' }, { id: 'b', label: 'Beta' }]);
+    expect(document.activeElement).toBe(container.querySelector('li[data-id="b"]'));
+
+    // A different list: the reader lands on the node they were on.
+    layer.setItems([{ id: 'c', label: 'Gamma' }, { id: 'b', label: 'Beta' }]);
+    expect(document.activeElement).toBe(container.querySelector('li[data-id="b"]'));
+    layer.dispose();
+  });
+
   it('drops the connection list when the edges are cleared', () => {
     const layer = new AccessibilityLayer(container);
     layer.setEdges([{ id: 'e1', source: 'a', target: 'b' }]);

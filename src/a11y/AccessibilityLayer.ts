@@ -207,19 +207,42 @@ export class AccessibilityLayer {
 
   #render(): void {
     const focusedInteractive = this.#items[this.#focusIndex]?.interactive !== false;
+    const children = Array.from(this.#list.children) as HTMLLIElement[];
+    const unchanged =
+      children.length === this.#items.length &&
+      children.every((child, index) => child.dataset.id === this.#items[index]?.id);
+
+    // The same nodes in the same order: paint them where they are. Replacing the list would move
+    // the reader's focus to the body every time the model changes under them.
+    if (unchanged) {
+      children.forEach((li, index) => this.#paint(li, this.#items[index]!, index, focusedInteractive));
+      return;
+    }
+
+    const hadFocus = this.#list.contains(this.#list.ownerDocument.activeElement);
+
     this.#list.replaceChildren(
       ...this.#items.map((item, index) => {
-        const interactive = item.interactive !== false;
-        const focused = interactive && index === this.#focusIndex && focusedInteractive;
         const li = document.createElement('li');
-        li.dataset.id = item.id;
-        li.textContent = [item.label, item.kind, item.status].filter(Boolean).join(' — ');
-        li.setAttribute('aria-selected', String(this.#selected.has(item.id)));
-        if (!interactive) li.setAttribute('aria-disabled', 'true');
-        li.tabIndex = focused ? 0 : -1;
         li.addEventListener('click', () => this.#options.onSelect?.(item.id));
+        this.#paint(li, item, index, focusedInteractive);
         return li;
       })
     );
+
+    // The list's shape changed: keep the reader on the node they were on.
+    if (hadFocus) (this.#list.children[this.#focusIndex] as HTMLElement | undefined)?.focus();
+  }
+
+  #paint(li: HTMLLIElement, item: AccessibleItem, index: number, focusedInteractive: boolean): void {
+    const interactive = item.interactive !== false;
+    const focused = interactive && index === this.#focusIndex && focusedInteractive;
+
+    li.dataset.id = item.id;
+    li.textContent = [item.label, item.kind, item.status].filter(Boolean).join(' — ');
+    li.setAttribute('aria-selected', String(this.#selected.has(item.id)));
+    if (interactive) li.removeAttribute('aria-disabled');
+    else li.setAttribute('aria-disabled', 'true');
+    li.tabIndex = focused ? 0 : -1;
   }
 }
