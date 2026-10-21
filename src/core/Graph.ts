@@ -188,8 +188,7 @@ export class Graph extends EventEmitter<GraphEventMap> {
     for (const [id, position] of Object.entries(positions)) {
       const node = this.nodes.get(id);
       if (!node) continue;
-      node.position.set(position[0], position[1], position[2]);
-      node.object?.position.copy(node.position);
+      node.updatePosition(position[0], position[1], position[2]);
     }
     for (const edge of this.edges.values()) edge.update?.();
     this.sg?.requestFrame?.();

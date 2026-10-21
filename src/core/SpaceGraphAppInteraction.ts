@@ -62,7 +62,7 @@ export function setupInteractionHandlers(app: SpaceGraphApp) {
     if (app.options.onNodeDblClick) {
       app.options.onNodeDblClick(node);
     } else if (app.sg.cameraControls) {
-      focusNodeCamera(app.sg.cameraControls, node);
+      focusNodeCamera(app.sg, node);
     }
   });
 

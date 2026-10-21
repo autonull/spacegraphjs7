@@ -31,10 +31,17 @@ export class DragHandler {
     this.raycaster = raycaster;
   }
 
-  startDrag(node: Node, options?: { stiffness?: number; preserveDistance?: boolean }): boolean {
+  startDrag(
+    node: Node,
+    options?: { stiffness?: number; preserveDistance?: boolean; hitPoint?: THREE.Vector3 }
+  ): boolean {
     if (!node.object) return false;
 
-    const localPos = new THREE.Vector3();
+    // The drag starts where the pointer is, so a node that refuses to be dragged there (a card
+    // with a control under the cursor) is left alone.
+    const localPos = options?.hitPoint
+      ? node.object.worldToLocal(options.hitPoint.clone())
+      : new THREE.Vector3();
     if (!node.isDraggable(localPos)) return false;
 
     this.dragStiffness = options?.stiffness ?? 1.0;
@@ -155,10 +162,14 @@ export class DragHandler {
     if (!this.dragNode) return;
     if (this.dragStiffness < 1.0) {
       this.dragNode.position.lerp(targetPosition, this.dragStiffness);
+      this.dragNode.updatePosition(
+        this.dragNode.position.x,
+        this.dragNode.position.y,
+        this.dragNode.position.z
+      );
     } else {
-      this.dragNode.position.copy(targetPosition);
+      this.dragNode.updatePosition(targetPosition.x, targetPosition.y, targetPosition.z);
     }
-    this.dragNode.object?.updateMatrixWorld(true);
   }
 
   private updateDraggingNodes(targetPosition: THREE.Vector3): void {
@@ -167,8 +178,11 @@ export class DragHandler {
       if (otherNode !== this.dragNode && otherNode.object) {
         const offset = this.nodeDragOffsets.get(otherNode);
         if (offset) {
-          otherNode.position.copy(targetPosition).add(offset);
-          otherNode.object.updateMatrixWorld(true);
+          otherNode.updatePosition(
+            targetPosition.x + offset.x,
+            targetPosition.y + offset.y,
+            targetPosition.z + offset.z
+          );
         }
       }
     }

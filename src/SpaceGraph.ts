@@ -25,7 +25,9 @@ import { WebGLRenderer } from './core/WebGLRenderer';
 import { Selection } from './core/Selection';
 import type { Edge } from './edges/Edge';
 import { applyDefaultInputConfig } from './input/DefaultInputConfig';
+import { zoomCameraOnWheel } from './input/CameraWheel';
 import { createCameraFingering, PinchZoomFingering } from './input/fingerings';
+import type { WheelEventData } from './input/InputManager';
 import type { Node } from './nodes/Node';
 import type {
   CameraViewport,
@@ -953,10 +955,12 @@ export class SpaceGraph {
   #reportViewport(force = false): void {
     if (!this.renderer || !this.events) return;
     if (this.#depth !== 'flat') this.applySceneFade();
-    const viewport = this.renderer.getViewport();
-    const zoomChanged = Math.abs(viewport.zoom - this.#lastZoom) > 1e-4;
-    const moved = viewport.center.some((v, i) => Math.abs(v - this.#lastCenter[i]) > 1e-3);
+    // The camera's frame is cheap; the world extent is only worth measuring when it is reported.
+    const camera = this.renderer.getCameraState();
+    const zoomChanged = Math.abs(camera.zoom - this.#lastZoom) > 1e-4;
+    const moved = camera.center.some((v, i) => Math.abs(v - this.#lastCenter[i]) > 1e-3);
     if (!force && !zoomChanged && !moved) return;
+    const viewport = this.renderer.getViewport();
     if (zoomChanged) {
       this.events.emit('zoom:change', { zoom: viewport.zoom, previous: this.#lastZoom });
     }
@@ -1086,18 +1090,16 @@ export class SpaceGraph {
   }
 
   #registerFingerings(): void {
-    this.input.registerFingering(
-      createCameraFingering(this.cameraControls, 'orbit'),
-      FingeringPriority.CAMERA_ORBIT
-    );
-    this.input.registerFingering(
-      createCameraFingering(this.cameraControls, 'pan'),
-      FingeringPriority.CAMERA_PAN
-    );
-    this.input.registerFingering(
-      createCameraFingering(this.cameraControls, 'zoom'),
-      FingeringPriority.CAMERA_ZOOM
-    );
+    this.input.registerFingering(createCameraFingering(this.cameraControls), FingeringPriority.CAMERA);
     this.input.registerFingering(new PinchZoomFingering(this), FingeringPriority.PINCH_ZOOM);
+    // The wheel is not a pointer gesture, so the camera takes it from the event stream.
+    this.events.on('input:camera:wheel', (e) => this.#onCameraWheel(e as WheelEventData));
+  }
+
+  /** The wheel zooms the view about the point under the pointer. */
+  #onCameraWheel(e: WheelEventData): void {
+    const canvas = this.renderer.renderer.domElement;
+    zoomCameraOnWheel(this.cameraControls, canvas, e);
+    (e as { originalEvent?: { preventDefault?: () => void } }).originalEvent?.preventDefault?.();
   }
 }

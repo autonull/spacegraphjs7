@@ -137,7 +137,7 @@
                     // defaultActions can be overridden here or per-node via data.hoverActions
                 });
                 graph.pluginManager.register('HoverMetaWidget', metaWidget);
-                metaWidget.init(graph);
+                metaWidget.init(graph, graph.graph, graph.events);
 
                 // ── Event logging ──────────────────────────────────────────
                 const logEntries = document.getElementById('log-entries');

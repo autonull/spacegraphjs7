@@ -66,6 +66,6 @@ export class KeyboardShortcuts {
 
   handleZoomIn(node: Node): void {
     if (!node || !this.sg.cameraControls) return;
-    focusNodeCamera(this.sg.cameraControls, node);
+    focusNodeCamera(this.sg, node);
   }
 }

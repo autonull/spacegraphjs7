@@ -92,50 +92,46 @@ export class HtmlNode extends BaseContentNode {
   updateSpec(updates: Partial<NodeSpec>): this {
     super.updateSpec(updates);
 
-    if (updates.data) {
-      const data = updates.data as SpaceGraphNodeData;
-      const handlers: Record<string, () => void> = {
-        color: () => this._applyBackgroundColor(data.color as string | number),
-        backgroundColor: () => this._applyBackgroundColor(data.backgroundColor as string | number),
-        className: () => {
-          this.domElement.className = `spacegraph-html-node ${data.className as string}`;
-        },
-        pointerEvents: () => {
-          this.domElement.style.pointerEvents = data.pointerEvents as string;
-        },
-        width: () => this._handleSizeUpdate(data),
-        height: () => this._handleSizeUpdate(data),
-        contentScale: () => {
-          this.setContentScale(data.contentScale as number);
-        },
-        billboard: () => {
-          this.billboard = data.billboard as boolean;
-        },
-        labelLod: () => {
-          this.labelLod = data.labelLod as LabelLodLevel[];
-        },
-        html: () => {
-          if (this.contentWrapper && this.contentWrapper.innerHTML !== data.html) {
-            this.contentWrapper.innerHTML = data.html as string;
-          }
-        },
-        content: () => {
-          if (
-            this.contentWrapper &&
-            !this.contentWrapper.isContentEditable &&
-            this.contentWrapper.textContent !== data.content
-          ) {
-            this.contentWrapper.textContent = data.content as string;
-          }
-        },
-      };
+    const data = updates.data as SpaceGraphNodeData | undefined;
 
-      for (const key of Object.keys(data)) {
-        handlers[key]?.();
+    if (data) {
+      if (data.color !== undefined) this._applyBackgroundColor(data.color as string | number);
+      if (data.backgroundColor !== undefined) {
+        this._applyBackgroundColor(data.backgroundColor as string | number);
       }
+      if (data.className !== undefined) {
+        this.domElement.className = `spacegraph-html-node ${data.className as string}`;
+      }
+      if (data.pointerEvents !== undefined) {
+        this.domElement.style.pointerEvents = data.pointerEvents as string;
+      }
+      if (data.width !== undefined || data.height !== undefined) this._handleSizeUpdate(data);
+      if (data.contentScale !== undefined) this.setContentScale(data.contentScale as number);
+      if (data.billboard !== undefined) this.billboard = data.billboard as boolean;
+      if (data.labelLod !== undefined) this.labelLod = data.labelLod as LabelLodLevel[];
+      if (data.style !== undefined) Object.assign(this.domElement.style, data.style);
     }
 
-    if (
+    // The host's markup is the content. A label never replaces it: a card that shows a styled
+    // document keeps it when the model updates, and only a card without markup falls back to its
+    // label.
+    const hasMarkup = this.data?.html !== undefined || this.data?.content !== undefined;
+
+    if (data?.html !== undefined) {
+      if (this.contentWrapper && this.contentWrapper.innerHTML !== data.html) {
+        this.contentWrapper.innerHTML = data.html as string;
+        this.markInteractiveContent();
+      }
+    } else if (data?.content !== undefined) {
+      if (
+        this.contentWrapper &&
+        !this.contentWrapper.isContentEditable &&
+        this.contentWrapper.textContent !== data.content
+      ) {
+        this.contentWrapper.textContent = data.content as string;
+      }
+    } else if (
+      !hasMarkup &&
       updates.label !== undefined &&
       this.contentWrapper &&
       !this.contentWrapper.isContentEditable
@@ -311,8 +307,7 @@ export class HtmlNode extends BaseContentNode {
     super.dispose();
   }
 
-  private _createInnerContent(spec: NodeSpec): void {
-    const useRawHtml = spec.data?.useRawHtml === true;
+  private _createInnerContent(spec: NodeSpec): void {    const useRawHtml = spec.data?.useRawHtml === true;
     const wrapper = DOMUtils.createElement('div');
     wrapper.className = 'node-inner-wrapper';
     Object.assign(wrapper.style, {
@@ -405,6 +400,24 @@ export class HtmlNode extends BaseContentNode {
     wrapper.appendChild(contentWrapper);
     this.domElement.appendChild(wrapper);
     this.contentWrapper = contentWrapper;
+    this.markInteractiveContent();
+  }
+
+  /**
+   * The controls inside a card take the mouse: a slider the reader is moving must not drag the
+   * card out from under them. A host can mark its own controls with `data-sg-interactive`; the
+   * standard ones are marked here.
+   */
+  private markInteractiveContent(): void {
+    const controls = this.domElement.querySelectorAll(
+      'input, button, select, textarea, [role="slider"], [role="switch"], [contenteditable="true"]'
+    );
+
+    for (const control of controls) {
+      if (control.getAttribute('data-sg-interactive') === null) {
+        control.setAttribute('data-sg-interactive', 'true');
+      }
+    }
   }
 
   private _createControls(): void {

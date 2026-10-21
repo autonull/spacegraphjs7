@@ -390,7 +390,7 @@ export function setupSearchHUD(app: SpaceGraphApp, theme: any) {
     );
 
     if (matches.length === 1 && app.sg.cameraControls) {
-      focusNodeCamera(app.sg.cameraControls, matches[0]);
+      focusNodeCamera(app.sg, matches[0]);
     }
   });
 

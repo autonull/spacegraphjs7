@@ -1,6 +1,6 @@
 import type { Node } from '../../nodes/Node';
-import { NodeResizer } from '../../utils/nodeResize';
-import { worldToScreen } from '../../utils/projection';
+import { NodeResizer, nodeScreenSize } from '../../utils/nodeResize';
+import { worldToClient } from '../../utils/projection';
 import type { Finger } from '../Fingering';
 import { BaseFingering } from './BaseFingering';
 
@@ -10,7 +10,7 @@ export class ResizeFingering extends BaseFingering {
   start(finger: Finger): boolean {
     if (finger.buttons !== 1) return false;
 
-    const result = this.raycaster.raycastNode();
+    const result = this.pickNode(finger);
     if (!result?.node || !result.node.data?.width || !result.node.data?.height) return false;
 
     const resizeHandle = this.checkResizeHandle(result.node, finger.position.x, finger.position.y);
@@ -48,21 +48,22 @@ export class ResizeFingering extends BaseFingering {
     return false;
   }
 
-  private checkResizeHandle(node: Node, x: number, y: number): boolean {
-    const data = node.data as Record<string, unknown>;
-    const width = (data.width as number) ?? 200;
-    const height = (data.height as number) ?? 100;
+  private checkResizeHandle(node: Node, clientX: number, clientY: number): boolean {
     const handleSize = 20;
+    const size = nodeScreenSize(this.sg, node);
+    const pos = worldToClient(
+      node.position,
+      this.sg.renderer.camera,
+      this.sg.renderer.renderer.domElement
+    );
+    const right = pos.x + size.width / 2;
+    const bottom = pos.y + size.height / 2;
 
-    const pos = this.getScreenPosition(node);
-    const right = pos.x + width / 2;
-    const bottom = pos.y + height / 2;
-
-    return x >= right - handleSize && x <= right && y >= bottom - handleSize && y <= bottom;
-  }
-
-  private getScreenPosition(node: Node): { x: number; y: number } {
-    const canvas = this.sg.renderer.renderer.domElement;
-    return worldToScreen(node.position, this.sg.renderer.camera, canvas);
+    return (
+      clientX >= right - handleSize &&
+      clientX <= right &&
+      clientY >= bottom - handleSize &&
+      clientY <= bottom
+    );
   }
 }

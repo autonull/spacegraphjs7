@@ -1,22 +1,33 @@
 import type { CameraControls } from '../../core';
 import type { Finger, Fingering } from '../Fingering';
 
-export type CameraAction = 'orbit' | 'pan' | 'zoom';
+export type CameraAction = 'orbit' | 'pan';
 
-interface CameraFingeringConfig {
+/** The pointer's button mask: the bit that is set while the button is held. */
+const RIGHT_BUTTON = 2;
+const MIDDLE_BUTTON = 4;
+
+interface CameraGesture {
   action: CameraAction;
   button: number;
 }
 
-const CAMERA_FINGERING_CONFIGS: CameraFingeringConfig[] = [
-  { action: 'orbit', button: 1 },
-  { action: 'pan', button: 4 },
-  { action: 'zoom', button: 2 },
+/**
+ * The camera's mouse map. The right button pans the view and the middle button orbits it; the left
+ * button belongs to the nodes (drag, select, box-select) and the wheel zooms, which the camera
+ * handles itself because a wheel is not a pointer gesture.
+ */
+const CAMERA_GESTURES: readonly CameraGesture[] = [
+  { action: 'pan', button: RIGHT_BUTTON },
+  { action: 'orbit', button: MIDDLE_BUTTON },
 ];
 
 export class CameraFingering implements Fingering {
+  /** The camera uses buttons the nodes do not, so the generic interaction still runs. */
+  readonly claimsGesture = false;
+
   private camera: CameraControls;
-  private activeConfig: CameraFingeringConfig | null = null;
+  private activeGesture: CameraGesture | null = null;
   private startPos = { x: 0, y: 0 };
 
   constructor(camera: CameraControls) {
@@ -24,56 +35,37 @@ export class CameraFingering implements Fingering {
   }
 
   start(finger: Finger): boolean {
-    const config = this.getConfigForButton(finger.buttons);
-    if (!config) return false;
+    const gesture = CAMERA_GESTURES.find((g) => g.button === finger.buttons);
+    if (!gesture) return false;
 
-    this.activeConfig = config;
+    this.activeGesture = gesture;
     this.startPos = { x: finger.position.x, y: finger.position.y };
     return true;
   }
 
   update(finger: Finger): boolean {
-    if (!this.activeConfig) return false;
+    if (!this.activeGesture) return false;
 
     const dx = finger.position.x - this.startPos.x;
     const dy = finger.position.y - this.startPos.y;
-    const { action } = this.activeConfig;
 
-    switch (action) {
-      case 'orbit':
-        this.camera.rotate(dx, dy);
-        break;
-      case 'pan':
-        this.camera.pan(dx, dy);
-        break;
-      case 'zoom': {
-        const factor = dy > 0 ? 1.02 : 1 / 1.02;
-        this.camera.zoom(factor ** (Math.abs(dy) * 0.1));
-        break;
-      }
-    }
+    if (this.activeGesture.action === 'orbit') this.camera.rotate(dx, dy);
+    else this.camera.pan(dx, dy);
 
     this.startPos = { x: finger.position.x, y: finger.position.y };
     return true;
   }
 
   stop(_finger: Finger): void {
-    this.activeConfig = null;
+    this.activeGesture = null;
   }
 
+  /** The camera may hand the gesture over: a node interaction can claim the pointer. */
   defer(_finger: Finger): boolean {
-    return false;
-  }
-
-  private getConfigForButton(buttons: number): CameraFingeringConfig | null {
-    return CAMERA_FINGERING_CONFIGS.find((c) => c.button === buttons) ?? null;
+    return true;
   }
 }
 
-export function createCameraFingering(
-  camera: CameraControls,
-  _action: CameraAction
-): CameraFingering {
-  const fingering = new CameraFingering(camera);
-  return fingering;
+export function createCameraFingering(camera: CameraControls): CameraFingering {
+  return new CameraFingering(camera);
 }

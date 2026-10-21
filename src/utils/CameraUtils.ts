@@ -80,14 +80,34 @@ export function visibleWorldExtent(
 }
 
 /**
- * Fly the camera to a node, framing it at the distance that keeps it readable. The camera
- * controls clone the target, so the node's own position is not captured by the flight.
+ * How long the camera takes to frame a node. The frame is a step the reader asked for, so it is
+ * quick enough to feel like a response rather than a journey.
+ */
+export const AUTO_FOCUS_DURATION = 0.5;
+
+/**
+ * Frame a node. The frame is measured against the camera the graph has, so an orthographic graph
+ * zooms as well as re-centres: a focus that only moves the view is not a focus.
  */
 export function focusNodeCamera(
-  cameraControls: { flyTo(target: THREE.Vector3, distance: number): void },
-  node: { position: THREE.Vector3; data?: { width?: unknown } },
+  graph: {
+    renderer: { camera: THREE.Camera };
+    cameraControls: {
+      spherical: { radius: number };
+      flyTo(target: THREE.Vector3, distance: number, duration?: number, zoom?: number): void;
+    };
+  },
+  node: { id: string; position: THREE.Vector3; data?: { width?: unknown } },
+  options: { padding?: number; duration?: number } = {}
 ): void {
-  cameraControls.flyTo(node.position, focusRadiusOf(node));
+  const fit = calculateFitView([node], graph.renderer.camera, options.padding ?? 100, 200);
+  if (!fit) return;
+
+  // An orthographic frame carries a frustum zoom; the camera's distance does not scale it.
+  const distance =
+    fit.zoom !== undefined ? graph.cameraControls.spherical.radius : fit.cameraZ;
+
+  graph.cameraControls.flyTo(fit.center, distance, options.duration ?? AUTO_FOCUS_DURATION, fit.zoom);
 }
 
 export interface FitViewResult {

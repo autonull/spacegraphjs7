@@ -9,8 +9,6 @@ import { clientToNdc } from '../../utils/projection';
  * Consolidates all raycasting logic into a single reusable class
  */
 export class InteractionRaycaster {
-  private static NODE_THRESHOLD = 5;
-  private static LINE_THRESHOLD = 5;
   readonly raycaster = new THREE.Raycaster();
   readonly mouse = new THREE.Vector2();
   readonly sg: SpaceGraph;
@@ -19,43 +17,54 @@ export class InteractionRaycaster {
     this.sg = sg;
   }
 
+  /**
+   * Point the ray at a client position. The ray follows the pointer, so a drag that asks where the
+   * pointer is gets the pointer's own ray and not the one left over from the last pick.
+   */
   updateMousePosition(x: number, y: number): void {
     const canvas = this.sg.renderer.renderer.domElement;
     const ndc = clientToNdc(x, y, canvas.getBoundingClientRect());
     this.mouse.set(ndc.x, ndc.y);
+    this.raycaster.setFromCamera(this.mouse, this.sg.renderer.camera);
   }
 
   getMouseNDC(): THREE.Vector2 {
     return this.mouse.clone();
   }
 
+  /**
+   * The node under the pointer. Every surface answers a ray with its own `hitTest`, so the pick
+   * follows the node's own shape instead of a second, looser rule kept beside it.
+   */
   raycastNode(): { node: Node; point: THREE.Vector3 } | null {
     this.raycaster.setFromCamera(this.mouse, this.sg.renderer.camera);
-    this.raycaster.params.Line = { threshold: InteractionRaycaster.NODE_THRESHOLD };
 
-    const meshes = this.getAllNodeMeshes();
-    const intersects = this.raycaster.intersectObjects(meshes, false);
+    let closest: { node: Node; point: THREE.Vector3; distance: number } | null = null;
 
-    if (intersects.length === 0) return null;
+    for (const node of this.sg.graph.nodes.values()) {
+      const hit = node.hitTest(this.raycaster);
+      if (!hit) continue;
+      if (closest && hit.distance >= closest.distance) continue;
+      closest = { node, point: hit.point, distance: hit.distance };
+    }
 
-    const node = this.getNodeFromMesh(intersects[0].object);
-    if (node && !node.isTouchable) return null;
-    return node ? { node, point: intersects[0].point } : null;
+    return closest ? { node: closest.node, point: closest.point } : null;
   }
 
+  /** The edge under the pointer, by the same rule the nodes answer with. */
   raycastEdge(): { edge: Edge; point: THREE.Vector3 } | null {
     this.raycaster.setFromCamera(this.mouse, this.sg.renderer.camera);
-    this.raycaster.params.Line = { threshold: InteractionRaycaster.LINE_THRESHOLD };
 
-    const lineObjects = this.getEdgeObjects();
-    const edgeIntersects = this.raycaster.intersectObjects(lineObjects, false);
+    let closest: { edge: Edge; point: THREE.Vector3; distance: number } | null = null;
 
-    if (edgeIntersects.length === 0) return null;
+    for (const edge of this.sg.graph.edges.values()) {
+      const hit = edge.hitTest(this.raycaster);
+      if (!hit) continue;
+      if (closest && hit.distance >= closest.distance) continue;
+      closest = { edge, point: hit.point, distance: hit.distance };
+    }
 
-    const edge = [...this.sg.graph.edges.values()].find(
-      (e) => e.object === edgeIntersects[0].object
-    );
-    return edge ? { edge, point: edgeIntersects[0].point } : null;
+    return closest ? { edge: closest.edge, point: closest.point } : null;
   }
 
   raycastPlane(plane: THREE.Plane): THREE.Vector3 | null {
@@ -65,34 +74,5 @@ export class InteractionRaycaster {
 
   getRaycaster(): THREE.Raycaster {
     return this.raycaster;
-  }
-
-  private getAllNodeMeshes(): THREE.Object3D[] {
-    const meshes: THREE.Object3D[] = [];
-    for (const node of this.sg.graph.nodes.values()) {
-      if (!node.object || !node.visible || !node.object.visible) continue;
-      node.object.traverse((child: THREE.Object3D) => {
-        if (child instanceof THREE.Mesh) meshes.push(child);
-      });
-    }
-    return meshes;
-  }
-
-  private getEdgeObjects(): THREE.Object3D[] {
-    const lineObjects: THREE.Object3D[] = [];
-    for (const [, edge] of this.sg.graph.edges) {
-      if (edge.object) lineObjects.push(edge.object);
-    }
-    return lineObjects;
-  }
-
-  private getNodeFromMesh(mesh: THREE.Object3D): Node | null {
-    let current: THREE.Object3D | null = mesh;
-    while (current) {
-      const node = (current as THREE.Object3D & { userData?: { node?: Node } }).userData?.node;
-      if (node) return node;
-      current = current.parent;
-    }
-    return null;
   }
 }

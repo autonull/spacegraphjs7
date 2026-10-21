@@ -1,14 +1,12 @@
 import * as THREE from 'three';
 import type { EventSystem } from '../core/events/EventSystem';
+import { FingeringPriority } from '../core/constants';
 import type { Graph } from '../core/Graph';
 import type { Edge } from '../edges/Edge';
 import {
-  BoxSelectingFingering,
-  NodeDraggingFingering,
   PinchZoomFingering,
   ResizeFingering,
   WidgetFingering,
-  WiringFingering,
 } from '../input/fingerings';
 import type { PickResult } from '../input/interfaces/Tangible';
 import type { Node } from '../nodes/Node';
@@ -90,26 +88,13 @@ export class InteractionPlugin extends BaseSystemPlugin {
     const inputManager = this.sg.input;
 
     const widgetFingering = new WidgetFingering(this.sg, this.raycaster);
-    inputManager.registerFingering(widgetFingering, 110);
+    inputManager.registerFingering(widgetFingering, FingeringPriority.WIDGET);
 
     const resizeFingering = new ResizeFingering(this.sg, this.raycaster);
-    inputManager.registerFingering(resizeFingering, 200);
-
-    const wiringFingering = new WiringFingering(this.sg, this.raycaster);
-    inputManager.registerFingering(wiringFingering, 150);
-
-    const nodeDragFingering = new NodeDraggingFingering(this.sg, this.raycaster);
-    inputManager.registerFingering(nodeDragFingering, 100);
-
-    const boxSelectFingering = new BoxSelectingFingering(
-      this.sg,
-      this.raycaster,
-      this.selectionManager
-    );
-    inputManager.registerFingering(boxSelectFingering, 80);
+    inputManager.registerFingering(resizeFingering, FingeringPriority.RESIZE);
 
     const pinchZoomFingering = new PinchZoomFingering(this.sg);
-    inputManager.registerFingering(pinchZoomFingering, 50);
+    inputManager.registerFingering(pinchZoomFingering, FingeringPriority.PINCH_ZOOM);
   }
 
   private initInputHandlers(): void {
@@ -151,10 +136,6 @@ export class InteractionPlugin extends BaseSystemPlugin {
     if (nodeResult?.node && e.button === 0) {
       this._handleLeftClick(nodeResult);
     }
-
-    if (nodeResult?.node && e.button === 1) {
-      this._handleMiddleClick(nodeResult.node, e);
-    }
   }
 
   private _handleBoxSelectionStart(e: any): void {
@@ -181,7 +162,7 @@ export class InteractionPlugin extends BaseSystemPlugin {
       this.lastPressedNode = node;
     }
 
-    this.dragHandler.startDrag(nodeResult.node);
+    this.dragHandler.startDrag(nodeResult.node, { hitPoint: nodeResult.point });
     this.cursorManager.set('grabbing', 'drag');
   }
 
@@ -190,7 +171,7 @@ export class InteractionPlugin extends BaseSystemPlugin {
     if ('isZoomable' in node && (node as any).isZoomable?.()) {
       (node as any).onZoomStart?.();
     }
-    focusNodeCamera(this.sg.cameraControls, node);
+    focusNodeCamera(this.sg, node);
   }
 
   private handlePointerMove(e: any): void {
@@ -268,7 +249,11 @@ export class InteractionPlugin extends BaseSystemPlugin {
     this.cursorManager.clear('hover');
 
     const suppressed = wasBoxSelecting || wasConnecting;
-    if (!suppressed && moved <= CLICK_MOVE_THRESHOLD) this.#emitClick(e);
+    if (!suppressed && moved <= CLICK_MOVE_THRESHOLD) {
+      // The middle button is the camera's: a click on a node frames it, a drag orbits.
+      if (e.button === 1 && this.pointerDownNode) this._handleMiddleClick(this.pointerDownNode, e);
+      else this.#emitClick(e);
+    }
     this.pointerDownNode = null;
     this.pointerDownEdge = null;
   }

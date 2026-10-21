@@ -32,15 +32,10 @@ const ZoomConfigDefaults = {
 } as const;
 
 const FingeringPriorityDefaults = {
-  CAMERA_ZOOM: 20,
-  CAMERA_PAN: 30,
-  CAMERA_ORBIT: 40,
+  CAMERA: 40,
   PINCH_ZOOM: 50,
   HOVER: 60,
-  BOX_SELECT: 80,
-  DRAG: 100,
   WIDGET: 110,
-  WIRING: 150,
   RESIZE: 200,
 } as const;
 

@@ -10,33 +10,37 @@ import { worldToScreen } from '../../utils/projection';
 export class SelectionManager {
   private selectionBoxEl: HTMLElement | null = null;
   private isBoxSelecting = false;
+  /** The box's origin, in the canvas' own pixels. */
+  private boxStart = { x: 0, y: 0 };
 
   constructor(readonly sg: SpaceGraph) {
     this.createSelectionBoxElement();
   }
 
-  startBoxSelection(startX: number, startY: number): void {
+  startBoxSelection(clientX: number, clientY: number): void {
     this.isBoxSelecting = true;
+    this.boxStart = this.#canvasPoint(clientX, clientY);
+
     if (this.selectionBoxEl) {
       Object.assign(this.selectionBoxEl.style, {
         display: 'block',
-        left: `${startX}px`,
-        top: `${startY}px`,
+        left: `${this.boxStart.x}px`,
+        top: `${this.boxStart.y}px`,
         width: '0px',
         height: '0px',
       });
     }
   }
 
-  updateBoxSelection(currentX: number, currentY: number): void {
+  updateBoxSelection(clientX: number, clientY: number): void {
     if (!this.isBoxSelecting || !this.selectionBoxEl) return;
-    const rect = this.sg.renderer.renderer.domElement.getBoundingClientRect();
-    const startX = Number.parseFloat(this.selectionBoxEl.style.left);
-    const startY = Number.parseFloat(this.selectionBoxEl.style.top);
-    const left = Math.min(startX, currentX - rect.left);
-    const top = Math.min(startY, currentY - rect.top);
-    const width = Math.abs(currentX - rect.left - startX);
-    const height = Math.abs(currentY - rect.top - startY);
+
+    const current = this.#canvasPoint(clientX, clientY);
+    const left = Math.min(this.boxStart.x, current.x);
+    const top = Math.min(this.boxStart.y, current.y);
+    const width = Math.abs(current.x - this.boxStart.x);
+    const height = Math.abs(current.y - this.boxStart.y);
+
     Object.assign(this.selectionBoxEl.style, {
       left: `${left}px`,
       top: `${top}px`,
@@ -102,6 +106,12 @@ export class SelectionManager {
 
   private getProjectedPosition(position: THREE.Vector3): { x: number; y: number } {
     return worldToScreen(position, this.sg.renderer.camera, this.sg.renderer.renderer.domElement);
+  }
+
+  /** A client position in the canvas' own pixels. */
+  #canvasPoint(clientX: number, clientY: number): { x: number; y: number } {
+    const rect = this.sg.renderer.renderer.domElement.getBoundingClientRect();
+    return { x: clientX - rect.left, y: clientY - rect.top };
   }
 
   private createSelectionBoxElement(): void {

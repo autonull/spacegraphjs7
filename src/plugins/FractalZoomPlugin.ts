@@ -54,9 +54,7 @@ export class FractalZoomPlugin extends BaseSystemPlugin {
   private currentLevel = 0;
   private isTransitioning = false;
   private transitionProgress = 0;
-  private scrollAccumulator = 0;
   private focusedNodeId: string | null = null;
-  readonly SCROLL_THRESHOLD = 0.5;
 
   constructor(config: Partial<FractalZoomConfig> = {}) {
     super();
@@ -80,7 +78,8 @@ export class FractalZoomPlugin extends BaseSystemPlugin {
       this.transitionProgress = p;
       this.emit('fractal:transition-progress', p);
     });
-    this.on('input:interaction:wheel', (e: any) => this.handleWheel(e));
+    // The wheel belongs to the camera, which zooms the view about the pointer. This plugin zooms by
+    // band through its own commands; it does not also answer the wheel.
     this.on('node:click', (data: any) => {
       if (data?.node) {
         this.focusedNodeId = data.node.id;
@@ -133,25 +132,6 @@ export class FractalZoomPlugin extends BaseSystemPlugin {
         this.isTransitioning = false;
         this.transitionProgress = 0;
       }
-    }
-  }
-
-  private handleWheel(event: any): void {
-    if (!event?.deltaY) return;
-
-    // Accumulate scroll delta
-    this.scrollAccumulator -= event.deltaY * 0.001;
-
-    if (Math.abs(this.scrollAccumulator) >= this.SCROLL_THRESHOLD) {
-      const direction = Math.sign(this.scrollAccumulator);
-
-      if (direction > 0) {
-        this.zoomIn();
-      } else if (direction < 0) {
-        this.zoomOut();
-      }
-
-      this.scrollAccumulator = 0;
     }
   }
 

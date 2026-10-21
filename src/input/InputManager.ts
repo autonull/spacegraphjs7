@@ -58,6 +58,8 @@ export interface WheelEventData {
   deltaX: number;
   deltaY: number;
   deltaZ: number;
+  /** The wheel's unit: 0 is pixels, 1 is lines, 2 is pages. */
+  deltaMode: number;
 }
 
 export interface TouchEventData {
@@ -318,7 +320,7 @@ export class InputManager {
 
         for (const { fingering } of this.fingerings) {
           if (this.fingerManager.test(fingering, finger)) {
-            event.consumed = true;
+            if (fingering.claimsGesture ?? true) event.consumed = true;
             return;
           }
         }
@@ -390,13 +392,13 @@ export class InputSource {
     return this.enabled;
   }
 
-  on<T extends InputEventType>(type: T, handler: (event: InputEvent) => void): void {
+  on<T extends InputEventType>(type: T, handler?: (event: InputEvent) => void): void {
     const originalHandler = handler;
     const wrappedHandler = (e: unknown) => {
       if (!this.enabled) return;
       const event = this.normalizeEvent(type, e);
       if (event) {
-        handler(event);
+        handler?.(event);
         this.manager.handleEvent(event);
         this.manager.sg.requestFrame();
       }
@@ -486,7 +488,14 @@ export class InputSource {
   }
 
   private normalizeWheelEvent(e: WheelEvent): WheelEventData {
-    return { x: e.clientX, y: e.clientY, deltaX: e.deltaX, deltaY: e.deltaY, deltaZ: e.deltaZ };
+    return {
+      x: e.clientX,
+      y: e.clientY,
+      deltaX: e.deltaX,
+      deltaY: e.deltaY,
+      deltaZ: e.deltaZ,
+      deltaMode: e.deltaMode,
+    };
   }
 
   private normalizeTouchEvent(e: TouchEvent): TouchEventData {

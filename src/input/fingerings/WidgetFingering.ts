@@ -6,10 +6,10 @@ export class WidgetFingering extends BaseFingering {
   private widgetNode: Node | null = null;
   private isButtonDown = false;
 
-  start(_finger: Finger): boolean {
-    if (_finger.buttons !== 1) return false;
+  start(finger: Finger): boolean {
+    if (finger.buttons !== 1) return false;
 
-    const result = this.raycaster.raycastNode();
+    const result = this.pickNode(finger);
     if (!result?.node) return false;
 
     const node = result.node as any;
@@ -23,10 +23,10 @@ export class WidgetFingering extends BaseFingering {
     return false;
   }
 
-  update(_finger: Finger): boolean {
+  update(finger: Finger): boolean {
     if (!this.isButtonDown || !this.widgetNode) return true;
 
-    const result = this.raycaster.raycastNode();
+    const result = this.pickNode(finger);
     if (
       result?.node === this.widgetNode &&
       typeof (this.widgetNode as any).onPointerMove === 'function'
@@ -38,9 +38,9 @@ export class WidgetFingering extends BaseFingering {
     return true;
   }
 
-  stop(_finger: Finger): void {
+  stop(finger: Finger): void {
     if (this.isButtonDown && this.widgetNode) {
-      const result = this.raycaster.raycastNode();
+      const result = this.pickNode(finger);
       if (
         result?.node === this.widgetNode &&
         typeof (this.widgetNode as any).onPointerUp === 'function'

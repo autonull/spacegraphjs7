@@ -11,6 +11,13 @@ export interface Finger {
 }
 
 export abstract class Fingering {
+  /**
+   * Whether the gesture belongs to this fingering alone. A fingering that claims it keeps the
+   * generic interaction from acting on the same press: a resize handle is not also a node drag.
+   * The camera's gestures do not claim it; they use buttons the nodes do not.
+   */
+  readonly claimsGesture?: boolean;
+
   abstract start(finger: Finger): boolean;
 
   abstract update(finger: Finger): boolean;
@@ -38,13 +45,20 @@ export class FingerManager {
   private activeFingering: Fingering | null = null;
   readonly fingers = new Map<number, Finger>();
 
+  /**
+   * Offer the gesture to a fingering. The gesture changes hands only when the fingering that is
+   * offered it actually starts: a fingering that refuses the gesture leaves it with whoever had it.
+   * A fingering that owns the gesture may hold on to it (`defer` returns false).
+   */
   test(next: Fingering, finger: Finger): boolean {
-    if (this.activeFingering?.defer(finger) ?? true) {
-      this.activeFingering?.stop(finger);
-      this.activeFingering = next;
-      return next.start(finger);
-    }
-    return false;
+    const previous = this.activeFingering;
+
+    if (previous && !previous.defer(finger)) return false;
+    if (!next.start(finger)) return false;
+
+    previous?.stop(finger);
+    this.activeFingering = next;
+    return true;
   }
 
   update(finger: Finger): void {

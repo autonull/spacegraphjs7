@@ -4,6 +4,7 @@ import { CSS3DObject } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { DOMNodeData, NodeData, NodeSpec } from '../types';
 import { DOMUtils } from '../utils/DOMUtils';
+import { worldToScreen } from '../utils/projection';
 import { applyControlStateStyles } from '../plugins/interaction/ControlStateBorder';
 import { Node } from './Node';
 import { NODE_PALETTE } from './palette';
@@ -11,6 +12,8 @@ import { NODE_PALETTE } from './palette';
 export class DOMNode extends Node {
   static typeName: string = 'DOMNode';
   public readonly isDOMNode = true;
+  /** A card draws its hover as an outline; growing it would move the controls under the pointer. */
+  override readonly scalesOnHover = false;
   public readonly domElement: HTMLElement;
   public readonly cssObject: CSS3DObject;
   public readonly meshMaterial: THREE.MeshBasicMaterial;
@@ -103,25 +106,27 @@ export class DOMNode extends Node {
   public updateLod(_distance: number): void {}
 
   isDraggable(localPos: THREE.Vector3): boolean {
+    if (this.data?.draggable === false) return false;
+
     const interactive = this.domElement.querySelectorAll('[data-sg-interactive="true"]');
     if (!interactive || interactive.length === 0) return true;
 
-    const rect = this.domElement.getBoundingClientRect();
-    const width = rect.width;
-    const height = rect.height;
+    // The control and the pointer are both on the screen, so the test is made there: the local
+    // point is carried to the screen, where the control's own box is.
+    const canvas = this.sg?.renderer?.renderer?.domElement as HTMLCanvasElement | undefined;
+    const camera = this.sg?.renderer?.camera;
+    if (!canvas || !camera) return true;
 
-    const px = localPos.x + width / 2;
-    const py = height / 2 - localPos.y;
+    const world = this.object.localToWorld(localPos.clone());
+    const screen = worldToScreen(world, camera, canvas);
+    const rect = canvas.getBoundingClientRect();
+    const clientX = screen.x + rect.left;
+    const clientY = screen.y + rect.top;
 
     for (const el of interactive) {
       const elRect = el.getBoundingClientRect();
 
-      const localElLeft = elRect.left - rect.left;
-      const localElRight = elRect.right - rect.left;
-      const localElTop = elRect.top - rect.top;
-      const localElBottom = elRect.bottom - rect.top;
-
-      if (px >= localElLeft && px <= localElRight && py >= localElTop && py <= localElBottom) {
+      if (clientX >= elRect.left && clientX <= elRect.right && clientY >= elRect.top && clientY <= elRect.bottom) {
         return false;
       }
     }
@@ -285,6 +290,26 @@ export class DOMNode extends Node {
     el.addEventListener('pointerdown', (e) => {
       el.setPointerCapture(e.pointerId);
       relayPointer('pointerdown', e);
+    });
+
+    // The middle button belongs to the camera, not to the browser's autoscroll.
+    el.addEventListener('mousedown', (e) => {
+      if (e.button === 1) e.preventDefault();
+    });
+
+    el.addEventListener('wheel', (e) => {
+      canvas.dispatchEvent(
+        new WheelEvent('wheel', {
+          bubbles: false,
+          cancelable: true,
+          clientX: e.clientX,
+          clientY: e.clientY,
+          deltaX: e.deltaX,
+          deltaY: e.deltaY,
+          deltaZ: e.deltaZ,
+          deltaMode: e.deltaMode,
+        })
+      );
     });
 
     el.addEventListener('pointermove', (e) => {

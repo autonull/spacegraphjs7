@@ -1,6 +1,6 @@
 {
   "name": "@spacegraphjs/spacegraph-renderer",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "SpaceGraphJS adapter for the dependency-free @spacegraphjs/renderer contract",
   "type": "module",
   "sideEffects": false,

@@ -4,7 +4,7 @@
 import gsap from 'gsap';
 import * as THREE from 'three';
 import type { KeyboardScope } from '../types';
-import { fitOrthoFrustum } from '../utils/CameraUtils';
+import { fitOrthoFrustum, visibleWorldExtent } from '../utils/CameraUtils';
 import { clamp } from '../utils/math';
 import type { Surface } from './Surface';
 
@@ -144,16 +144,45 @@ export class CameraControls {
     this.sg?.requestFrame?.();
   }
 
+  /**
+   * The world units one screen pixel covers at the current zoom. A drag is measured in pixels and
+   * applied in world units, so the view follows the cursor at every zoom level.
+   */
+  get worldUnitsPerPixel(): number {
+    const height = this.sg?.renderer?.surfaceSize?.height || this.domElement.clientHeight || 1;
+    return visibleWorldExtent(this.camera, this.spherical.radius).height / height;
+  }
+
+  /** Pan by a screen delta: the view follows the cursor. */
   pan(dx: number, dy: number): void {
     if (!this.config.enablePan) return;
-    this.applyPan(dx * this.config.panSpeed * 0.1, dy * this.config.panSpeed * 0.1);
+    // A hand on the mouse outranks a camera that is still flying.
+    this.cancelTweens();
+    const scale = this.config.panSpeed * this.worldUnitsPerPixel;
+    this.applyPan(dx * scale, dy * scale);
     this.sg?.requestFrame?.();
   }
 
   zoom(factor: number): void {
     if (!this.config.enableZoom) return;
+    this.cancelTweens();
     this.scale *= factor;
     this.sg?.requestFrame?.();
+  }
+
+  /**
+   * Zoom by a factor about a point in NDC, so the content under the pointer stays under it. A
+   * factor above one moves the camera away (the view shows more), below one moves it closer.
+   */
+  zoomAt(ndc: { x: number; y: number }, factor: number): void {
+    if (!this.config.enableZoom) return;
+    const extent = visibleWorldExtent(this.camera, this.spherical.radius);
+    // The visible extent grows by the factor, so the target moves to keep the pointed-at place put.
+    this.shiftTarget(
+      ndc.x * (extent.width / 2) * (1 - factor),
+      ndc.y * (extent.height / 2) * (1 - factor)
+    );
+    this.zoom(factor);
   }
 
   update(): void {
@@ -249,11 +278,16 @@ export class CameraControls {
 
   /** Shift the camera sideways and upwards, along the camera's own axes. */
   private applyPan(dx: number, dy: number): void {
+    this.shiftTarget(-dx, dy);
+  }
+
+  /** Move the target along the camera's own axes, in world units. */
+  private shiftTarget(worldRight: number, worldUp: number): void {
     this._tempOffset.copy(this.camera.position).sub(this.target);
     this._tempSide.crossVectors(this.camera.up, this._tempOffset).normalize();
     this._camUp.copy(this.camera.up).normalize();
-    this.panOffset.add(this._tempSide.multiplyScalar(-dx));
-    this.panOffset.add(this._camUp.multiplyScalar(dy));
+    this.panOffset.add(this._tempSide.multiplyScalar(worldRight));
+    this.panOffset.add(this._camUp.multiplyScalar(worldUp));
   }
 
   updateSpherical(): void {

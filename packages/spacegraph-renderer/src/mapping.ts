@@ -39,6 +39,8 @@ function shapeFor(shape: RenderNode['shape']): string {
 export function nodeSpec(node: RenderNode, theme: RenderTheme): NodeSpec {
   const color = statusColor(node.status, theme);
   const position: [number, number, number] = [node.position[0], node.position[1], node.position[2]];
+  // A backdrop (a swimlane band, a lane label) is drawn, not lived in: it does not answer the pointer.
+  const interactive = node.interactive !== false;
   if (node.html) {
     // P8.9: wrap host markup in a directional container so bidi text renders correctly; the host's
     // markup is never parsed or evaluated, only placed inside the wrapper.
@@ -48,7 +50,7 @@ export function nodeSpec(node: RenderNode, theme: RenderTheme): NodeSpec {
     const data: NodeData = {
       ...node.data,
       html,
-      pointerEvents: 'auto',
+      pointerEvents: interactive ? 'auto' : 'none',
       width: node.size?.[0] ?? 220,
       height: node.size?.[1] ?? 72,
       // Host markup draws its own surface; the node's box stays neutral so status reads as an accent.
@@ -57,6 +59,7 @@ export function nodeSpec(node: RenderNode, theme: RenderTheme): NodeSpec {
       // core's hard-coded white, which vanishes on the light canvas.
       // Lane labels use textMuted for sufficient contrast in both light and dark.
       style: { color: node.data?.colorToken === 'textMuted' ? theme.textMuted : theme.text },
+      interactive,
     };
     return { id: node.id, type: 'HtmlNode', label: node.label, position, data };
   }
@@ -64,6 +67,7 @@ export function nodeSpec(node: RenderNode, theme: RenderTheme): NodeSpec {
     ...node.data,
     shape: shapeFor(node.shape),
     color,
+    interactive,
   };
   // Only override the core's default shape size when the host supplied one; forcing 1 renders a
   // sub-pixel node (and edges to it look like they dangle).

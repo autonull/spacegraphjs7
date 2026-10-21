@@ -18,6 +18,12 @@ export abstract class BaseFingering implements Fingering {
 
   abstract stop(finger: Finger): void;
 
+  /** The node under the finger. The ray follows the finger, so the pick is the finger's own. */
+  protected pickNode(finger: Finger): ReturnType<InteractionRaycaster['raycastNode']> {
+    this.raycaster.updateMousePosition(finger.position.x, finger.position.y);
+    return this.raycaster.raycastNode();
+  }
+
   defer(_finger: Finger): boolean {
     return true;
   }

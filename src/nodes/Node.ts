@@ -42,6 +42,11 @@ export abstract class Node extends Surface {
   public rotation: THREE.Vector3;
   public scale: THREE.Vector3;
   public controlState: ControlState = 'normal';
+  /**
+   * Whether hovering grows the node. A card draws its hover as an outline around itself, and a card
+   * that grows moves the controls under the reader's finger.
+   */
+  readonly scalesOnHover: boolean = true;
   public focusable = false;
   public focused = false;
   public readonly isNode = true;
@@ -70,6 +75,8 @@ export abstract class Node extends Surface {
     this.label = spec?.label;
     this.data = applyNodeTheme(spec?.data ?? {}, this.sg?.options?.theme);
     this.resolvedTheme = resolveTheme(this.sg?.options?.theme);
+    // A node that is not interactive is a backdrop: it does not answer the pointer.
+    if (this.data?.interactive === false) this.isTouchable = false;
     this.position = Node._parseVector3(spec?.position, [0, 0, 0]);
     this.rotation = Node._parseVector3(spec?.rotation, [0, 0, 0]);
     this.scale = Node._parseVector3(spec?.scale, [1, 1, 1]);
@@ -224,6 +231,9 @@ export abstract class Node extends Surface {
     if (updates.data !== undefined) {
       this.data = { ...this.data, ...updates.data };
       changes.data = updates.data;
+      if (updates.data.interactive !== undefined) {
+        this.isTouchable = updates.data.interactive !== false;
+      }
     }
 
     if (updates.position !== undefined) {
@@ -303,15 +313,13 @@ export abstract class Node extends Surface {
   updatePosition(x: number, y: number, z: number): this {
     this.position.set(x, y, z);
     this.object?.position.copy(this.position);
+    // The outline is a separate object: it has to be told the node moved, or it stays behind.
+    this.outlineObject?.update();
     return this;
   }
 
   moveBy(dx: number, dy: number, dz = 0): this {
-    this.position.x += dx;
-    this.position.y += dy;
-    this.position.z += dz;
-    this.object?.position.copy(this.position);
-    return this;
+    return this.updatePosition(this.position.x + dx, this.position.y + dy, this.position.z + dz);
   }
 
   moveTo(target: THREE.Vector3, animate = true, duration = 0.5): this {
@@ -339,6 +347,7 @@ export abstract class Node extends Surface {
   }
 
   isDraggable(_localPos: THREE.Vector3): boolean {
+    if (this.data?.draggable === false) return false;
     return true;
   }
 

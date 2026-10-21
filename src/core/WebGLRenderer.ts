@@ -45,6 +45,12 @@ export class WebGLRenderer {
   private _cardFacing: CardFacing = 'plane';
   private _bgColor: number;
   private _resizeObserver: ResizeObserver | null = null;
+  /**
+   * The surface size, as last measured. Reading `clientWidth` forces the browser to lay the page
+   * out, and the viewport is asked for it every frame; the size only changes when the surface
+   * does, so it is measured on the resize instead.
+   */
+  #size = { width: 1, height: 1 };
   private renderScheduled = false;
   readonly projScreenMatrix: THREE.Matrix4;
   private lastOptTime = 0;
@@ -107,6 +113,7 @@ export class WebGLRenderer {
       { width: container.clientWidth, height: container.clientHeight },
       0.5
     );
+    this.#size = { width: container.clientWidth, height: container.clientHeight };
 
     this._resizeObserver = new ResizeObserver(() => this.syncSize());
     this._resizeObserver.observe(container);
@@ -114,6 +121,11 @@ export class WebGLRenderer {
 
   get projection(): Projection {
     return this._projection;
+  }
+
+  /** The surface size, as last measured. Reading it costs nothing; measuring it costs a layout. */
+  get surfaceSize(): { width: number; height: number } {
+    return this.#size;
   }
 
   // The active camera. Both stay in sync; hosts switch with setProjection.
@@ -173,12 +185,16 @@ export class WebGLRenderer {
   }
 
   getViewport(): CameraViewport {
+    return { ...this.getCameraState(), extent: this.getWorldExtent() };
+  }
+
+  /** The camera's frame without the world extent: cheap enough to ask for every frame. */
+  getCameraState(): { zoom: number; center: [number, number, number]; distance: number } {
     const cc = this.sg.cameraControls;
     return {
       zoom: this.getZoom(),
       center: cc ? [cc.target.x, cc.target.y, cc.target.z] : [0, 0, 0],
       distance: cc ? cc.spherical.radius : this.camera.position.length(),
-      extent: this.getWorldExtent(),
     };
   }
 
@@ -187,8 +203,7 @@ export class WebGLRenderer {
     if (this._projection === 'orthographic') {
       return visibleWorldExtent(this.orthographicCamera, 0);
     }
-    const el = this.renderer.domElement;
-    const aspect = (el.clientWidth || 1) / (el.clientHeight || 1);
+    const aspect = (this.#size.width || 1) / (this.#size.height || 1);
     const cam = this.perspectiveCamera;
     const dist = this.sg.cameraControls?.spherical.radius ?? cam.position.length();
     return visibleWorldExtent(cam, dist, aspect);
@@ -365,6 +380,7 @@ export class WebGLRenderer {
    */
   syncSize(): void {
     const { clientWidth: w, clientHeight: h } = this.container;
+    this.#size = { width: w, height: h };
     const aspect = w / (h || 1);
     if (this._projection === 'orthographic') {
       const height = this.orthographicCamera.top - this.orthographicCamera.bottom || 1;

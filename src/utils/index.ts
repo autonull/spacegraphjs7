@@ -35,6 +35,7 @@ export {
 export type { FitInsets, FitSurface, FitViewResult } from './CameraUtils';
 // Camera utilities
 export {
+  AUTO_FOCUS_DURATION,
   calculateFitView,
   fitOrthoFrustum,
   focusNodeCamera,

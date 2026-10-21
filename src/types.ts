@@ -83,6 +83,8 @@ export interface NodeVisual {
 
 // Consolidated interaction properties
 export interface NodeInteraction {
+  /** Whether the node answers the pointer at all. A backdrop (a band, a label) does not. */
+  interactive?: boolean;
   draggable?: boolean;
   selectable?: boolean;
   focusable?: boolean;

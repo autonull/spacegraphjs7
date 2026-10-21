@@ -112,13 +112,17 @@ export function applyDefaultInputConfig(
   const canvasSource = inputManager.addSource({ id: 'canvas', element: canvas });
   const windowSource = inputManager.addSource({ id: 'window', element: body });
 
-  const forward = (action: string) => (e: InputEvent) =>
-    inputManager.getAction(action)?.handler(e, inputManager.context);
+  // The bindings are the one path from a DOM event to an action: the input manager routes the event
+  // to the fingerings first, so a gesture a fingering claims never reaches the generic interaction.
+  CAMERA_EVENTS.forEach((e) => canvasSource.on(e));
+  INTERACTION_EVENTS.forEach((e) => canvasSource.on(e));
+  windowSource.on('keydown');
+  windowSource.on('keyup');
 
-  CAMERA_EVENTS.forEach((e) => canvasSource.on(e, forward(`camera.${e}`)));
-  INTERACTION_EVENTS.forEach((e) => canvasSource.on(e, forward(`interaction.${e}`)));
-  windowSource.on('keydown', forward('interaction.keydown'));
-  windowSource.on('keyup', forward('interaction.keyup'));
+  // The middle button belongs to the camera, not to the browser's autoscroll.
+  canvas.addEventListener('mousedown', (e) => {
+    if (e.button === 1) e.preventDefault();
+  });
 
   createActions().forEach((a) => inputManager.registerAction(a));
   createBindings().forEach((b) => inputManager.addBinding(b));
