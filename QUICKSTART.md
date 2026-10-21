@@ -142,13 +142,14 @@ Open http://localhost:5173 — you should see three connected nodes.
 
 ## Interactive Controls
 
-| Action           | Control            |
-|------------------|--------------------|
-| **Rotate**       | Left-click + drag  |
-| **Pan**          | Right-click + drag |
-| **Zoom**         | Scroll wheel       |
-| **Select Node**  | Click on node      |
-| **Multi-select** | Shift + click      |
+| Action             | Control              |
+|--------------------|----------------------|
+| **Pan**            | Right-click + drag   |
+| **Orbit**          | Middle-click + drag  |
+| **Zoom**           | Scroll wheel         |
+| **Frame a node**   | Middle-click on node |
+| **Select Node**    | Click on node        |
+| **Multi-select**   | Shift + click        |
 
 ---
 

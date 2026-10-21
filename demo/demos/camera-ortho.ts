@@ -27,7 +27,7 @@ export default async function cameraOrthoDemo(): Promise<SpaceGraph> {
 
   createDemoHint(
     sg,
-    `<strong>Orbit:</strong> <kbd>Left Mouse</kbd> &nbsp;|&nbsp; <strong>Pan:</strong> <kbd>Right Mouse</kbd> &nbsp;|&nbsp; <strong>Zoom:</strong> <kbd>Scroll</kbd>`
+    `<strong>Pan:</strong> <kbd>Right Mouse</kbd> &nbsp;|&nbsp; <strong>Zoom:</strong> <kbd>Scroll</kbd> &nbsp;|&nbsp; <strong>Frame a node:</strong> <kbd>Middle Click</kbd>`
   );
 
   return sg;

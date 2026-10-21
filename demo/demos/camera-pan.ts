@@ -12,7 +12,7 @@ export default async function cameraPanDemo(): Promise<SpaceGraph> {
 
   createDemoHint(
     sg,
-    `<strong>Pan:</strong> <kbd>Right Mouse</kbd> or <kbd>Middle Mouse</kbd> &nbsp;|&nbsp; <strong>Orbit:</strong> <kbd>Left Mouse</kbd>`
+    `<strong>Pan:</strong> <kbd>Right Mouse</kbd> &nbsp;|&nbsp; <strong>Zoom:</strong> <kbd>Scroll Wheel</kbd>`
   );
 
   return sg;

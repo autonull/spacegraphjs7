@@ -86,7 +86,7 @@ async function main() {
     }, 100);
 
     console.log('[Demo] Graph instance:', sg);
-    console.log('[Demo] Controls: Left-click drag to rotate, scroll to zoom');
+    console.log('[Demo] Controls: Right-drag to pan, middle-drag to orbit, scroll to zoom');
 
     let selectedNodeId: string | null = null;
     const originalColors: Record<string, number> = {};
