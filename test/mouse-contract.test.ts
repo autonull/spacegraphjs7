@@ -4,9 +4,11 @@ import { CameraControls } from 'spacegraphjs/core'
 import { createCameraFingering, FingerManager } from 'spacegraphjs/input'
 import { ShapeNode } from 'spacegraphjs/nodes'
 import type { Node } from 'spacegraphjs/nodes'
+import { InteractionPlugin } from '../src/plugins/InteractionPlugin'
 import { InteractionRaycaster } from '../src/plugins/interaction/RaycasterHelper'
 import { zoomCameraOnWheel } from '../src/input/CameraWheel'
 import type { Finger, Fingering } from 'spacegraphjs/input'
+import type { DefaultInputConfig } from 'spacegraphjs/types'
 
 /**
  * The mouse contract of the graph: which button does what, and who owns a gesture.
@@ -149,6 +151,104 @@ describe('The pick under the pointer', () => {
     raycaster.updateMousePosition(400, 300)
 
     expect(raycaster.raycastNode()).toBeNull()
+  })
+})
+
+describe('The left button over the void', () => {
+  const makeInteraction = (nodes: Node[] = [], input?: DefaultInputConfig) => {
+    const canvas = document.createElement('canvas')
+    canvas.getBoundingClientRect = () =>
+      ({ left: 0, top: 0, width: 800, height: 600, right: 800, bottom: 600 }) as DOMRect
+    const camera = new THREE.PerspectiveCamera(75, 800 / 600, 0.1, 10000)
+    camera.position.set(0, 0, 500)
+    camera.lookAt(0, 0, 0)
+    camera.updateMatrixWorld(true)
+
+    const handlers = new Map<string, (e: any) => void>()
+    const pan = vi.fn()
+    const emit = vi.fn()
+    const sg = {
+      options: { input },
+      events: {
+        on: (name: string, handler: (e: any) => void) => handlers.set(name, handler),
+        emit,
+      },
+      renderer: { camera, renderer: { domElement: canvas } },
+      graph: { nodes: new Map(nodes.map((node) => [node.id, node])), edges: new Map() },
+      input: {
+        getState: () => ({ keysPressed: new Set<string>() }),
+        registerFingering: vi.fn(),
+      },
+      cameraControls: { pan, rotate: vi.fn() },
+      selection: { select: vi.fn(), clear: vi.fn() },
+    }
+
+    const plugin = new InteractionPlugin()
+    plugin.init(sg as never, sg.graph as never, sg.events as never)
+
+    const fire = (name: string, event: Record<string, unknown>) => handlers.get(name)?.(event)
+    const press = (event: Record<string, unknown>) => {
+      fire('input:interaction:pointerdown', { button: 0, shiftKey: false, ...event })
+    }
+    const move = (event: Record<string, unknown>) =>
+      fire('input:interaction:pointermove', { button: 0, shiftKey: false, ...event })
+    const release = (event: Record<string, unknown>) =>
+      fire('input:interaction:pointerup', { button: 0, shiftKey: false, ...event })
+
+    return { plugin, press, move, release, pan, emit }
+  }
+
+  const shape = (id: string, data: Record<string, unknown> = {}) =>
+    new ShapeNode(undefined, {
+      id,
+      type: 'ShapeNode',
+      position: [0, 0, 0],
+      data: { size: 40, ...data },
+    } as never)
+
+  it('pans the view when the left button drags over the background', () => {
+    const { press, move, pan } = makeInteraction()
+
+    press({ x: 700, y: 500 })
+    move({ x: 640, y: 460 })
+
+    expect(pan).toHaveBeenCalledWith(-60, -40)
+  })
+
+  it('keeps the click: a press and a release on the background is still a background click', () => {
+    const { press, release, emit } = makeInteraction()
+
+    press({ x: 700, y: 500 })
+    release({ x: 700, y: 500 })
+
+    expect(emit).toHaveBeenCalledWith('background:click', expect.anything())
+  })
+
+  it('does not pan when the drag started on a node', () => {
+    const { press, move, pan } = makeInteraction([shape('n1')])
+
+    press({ x: 400, y: 300 })
+    move({ x: 340, y: 260 })
+
+    expect(pan).not.toHaveBeenCalled()
+  })
+
+  it('does not pan when the shift key asks for a box selection', () => {
+    const { press, move, pan } = makeInteraction()
+
+    press({ x: 700, y: 500, shiftKey: true })
+    move({ x: 640, y: 460, shiftKey: true })
+
+    expect(pan).not.toHaveBeenCalled()
+  })
+
+  it('lets a host keep the old behaviour, where the left button only ever means the nodes', () => {
+    const { press, move, pan } = makeInteraction([], { interaction: { enableBackgroundPan: false } })
+
+    press({ x: 700, y: 500 })
+    move({ x: 640, y: 460 })
+
+    expect(pan).not.toHaveBeenCalled()
   })
 })
 

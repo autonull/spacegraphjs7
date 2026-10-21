@@ -11,6 +11,7 @@ import {
 import type { PickResult } from '../input/interfaces/Tangible';
 import type { Node } from '../nodes/Node';
 import type { SpaceGraph } from '../SpaceGraph';
+import type { InteractionInputConfig } from '../types';
 import { focusNodeCamera, focusRadiusOf } from '../utils/CameraUtils';
 import { BaseSystemPlugin } from './BaseSystemPlugin';
 import { ConnectionHandler } from './interaction/ConnectionHandler';
@@ -44,8 +45,15 @@ export class InteractionPlugin extends BaseSystemPlugin {
   private lastPressedNode: Node | null = null;
   private pointerDownNode: Node | null = null;
   private pointerDownEdge: Edge | null = null;
+  /** Where a background pan started, and the last point it reached. */
+  private backgroundPan: { x: number; y: number } | null = null;
 
   private _mode: 'default' | 'select' | 'connect' = 'default';
+
+  /** The host's input options. Every one of them is read; none of them is a promise. */
+  private get input(): InteractionInputConfig {
+    return this.sg.options.input?.interaction ?? {};
+  }
 
   get mode(): 'default' | 'select' | 'connect' {
     return this._mode;
@@ -129,12 +137,22 @@ export class InteractionPlugin extends BaseSystemPlugin {
     }
 
     if (e.shiftKey && e.button === 0) {
+      if (this.input.enableBoxSelect === false) return;
       this._handleBoxSelectionStart(e);
       return;
     }
 
     if (nodeResult?.node && e.button === 0) {
       this._handleLeftClick(nodeResult);
+      return;
+    }
+
+    // A left drag over the void pans the view. Over the background the left button has nothing
+    // else to do, and a hand on the mouse expects the map to follow; a click still clears the
+    // selection, because a click is not a drag.
+    if (e.button === 0 && !edgeResult?.edge && this.input.enableBackgroundPan !== false) {
+      this.backgroundPan = { x: e.x, y: e.y };
+      this.cursorManager.set('grabbing', 'pan');
     }
   }
 
@@ -162,6 +180,8 @@ export class InteractionPlugin extends BaseSystemPlugin {
       this.lastPressedNode = node;
     }
 
+    if (this.input.enableDrag === false) return;
+
     this.dragHandler.startDrag(nodeResult.node, { hitPoint: nodeResult.point });
     this.cursorManager.set('grabbing', 'drag');
   }
@@ -176,6 +196,13 @@ export class InteractionPlugin extends BaseSystemPlugin {
 
   private handlePointerMove(e: any): void {
     this.raycaster.updateMousePosition(e.x, e.y);
+
+    // A background pan owns the pointer: the map follows the hand, and the hover does not flicker
+    // over the cards the reader is dragging past.
+    if (this.backgroundPan) {
+      this.#panBackground(e);
+      return;
+    }
 
     if (this.dragHandler.isDraggingNode()) {
       const state = this.sg.input.getState();
@@ -198,7 +225,9 @@ export class InteractionPlugin extends BaseSystemPlugin {
 
     const nodeResult = this.raycaster.raycastNode();
     const edgeResult = this.raycaster.raycastEdge();
-    this.hoverManager.updateHover(nodeResult?.node ?? null, edgeResult?.edge ?? null);
+    if (this.input.enableHover !== false) {
+      this.hoverManager.updateHover(nodeResult?.node ?? null, edgeResult?.edge ?? null);
+    }
 
     let cursorMode: CursorMode = 'auto';
     if (nodeResult?.node) {
@@ -207,10 +236,22 @@ export class InteractionPlugin extends BaseSystemPlugin {
     this.cursorManager.set(cursorMode, 'hover');
   }
 
+  /** The camera follows the hand: the pointer's delta, in pixels, is the camera's delta. */
+  #panBackground(e: any): void {
+    const start = this.backgroundPan!;
+    this.backgroundPan = { x: e.x, y: e.y };
+    this.sg.cameraControls?.pan(e.x - start.x, e.y - start.y);
+  }
+
   private handlePointerUp(e: any): void {
     const wasBoxSelecting = this.selectionManager.isBoxSelectingActive();
     const wasConnecting = this.connectionHandler.isConnectingMode();
     const moved = this.pointerDownPosition.distanceTo(this.#pointerPosition.set(e.x, e.y));
+
+    if (this.backgroundPan) {
+      this.backgroundPan = null;
+      this.cursorManager.clear('pan');
+    }
 
     if (this.lastPressedNode) {
       const pickResult: PickResult = {
@@ -249,7 +290,7 @@ export class InteractionPlugin extends BaseSystemPlugin {
     this.cursorManager.clear('hover');
 
     const suppressed = wasBoxSelecting || wasConnecting;
-    if (!suppressed && moved <= CLICK_MOVE_THRESHOLD) {
+    if (!suppressed && moved <= (this.input.clickThreshold ?? CLICK_MOVE_THRESHOLD)) {
       // The middle button is the camera's: a click on a node frames it, a drag orbits.
       if (e.button === 1 && this.pointerDownNode) this._handleMiddleClick(this.pointerDownNode, e);
       else this.#emitClick(e);

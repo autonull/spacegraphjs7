@@ -460,33 +460,24 @@ export interface SpaceGraphTheme {
 
 // Input configuration
 export interface DefaultInputConfig {
-  camera?: CameraInputConfig;
   interaction?: InteractionInputConfig;
-  history?: HistoryInputConfig;
-}
-
-export interface CameraInputConfig {
-  enableCameraOrbit?: boolean;
-  enableCameraPan?: boolean;
-  enableCameraZoom?: boolean;
-  rotationSpeed?: number;
-  panSpeed?: number;
-  zoomSpeed?: number;
-  damping?: number;
-  minRadius?: number;
-  maxRadius?: number;
 }
 
 export interface InteractionInputConfig {
+  /** Hover feedback under the pointer. On by default. */
   enableHover?: boolean;
+  /** Shift + drag on the void draws a selection box. On by default. */
   enableBoxSelect?: boolean;
+  /** A left drag on a node moves it. On by default. */
   enableDrag?: boolean;
-  enableWidgets?: boolean;
+  /**
+   * A left drag on empty background pans the view. On by default: over the void the left button
+   * has nothing else to do, and a hand on the mouse expects the map to follow. A host that wants
+   * the old behaviour — the left button only ever means "the nodes" — turns this off.
+   */
+  enableBackgroundPan?: boolean;
+  /** How far the pointer may travel, in pixels, and still count as a click. Defaults to 5. */
   clickThreshold?: number;
-}
-
-export interface HistoryInputConfig {
-  enabled?: boolean;
 }
 
 export interface RenderOptions {

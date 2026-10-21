@@ -401,6 +401,16 @@ export class CameraControls {
     this.config.enableRotate = enabled;
   }
 
+  /** Gate the camera's pan: a host that gives the left button to the void can take the right one. */
+  setPanEnabled(enabled: boolean): void {
+    this.config.enablePan = enabled;
+  }
+
+  /** Gate the camera's zoom, so a host can own the wheel itself. */
+  setZoomEnabled(enabled: boolean): void {
+    this.config.enableZoom = enabled;
+  }
+
   // Point the camera at a polar (from +Y) and azimuth angle, animating when a duration is given.
   setPolar(phi: number, theta: number, duration = 0): void {
     const targetPhi = Math.max(0.01, Math.min(Math.PI - 0.01, phi));

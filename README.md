@@ -383,12 +383,15 @@ The mouse map belongs to the library, so every host gets the same gestures. A ho
 | Gesture                     | Does                                                                |
 | --------------------------- | ------------------------------------------------------------------- |
 | **Right button + drag**     | Pan the view; the view follows the cursor at every zoom             |
+| **Left button + drag on the void** | Pan the view; over the void the left button has nothing else to do |
 | **Wheel**                   | Zoom about the point under the pointer                              |
 | **Middle click on a node**  | Frame that node (auto-zoom, half a second)                          |
 | **Middle button + drag**    | Orbit (a perspective view only; an orthographic view has no orbit)  |
 | **Left click on a node**    | Select it                                                            |
 | **Left drag on a node**     | Move it                                                              |
 | **Shift + drag on the void**| Box-select                                                           |
+
+A host that wants the left button to mean only "the nodes" turns the void's pan off with `input: { interaction: { enableBackgroundPan: false } }`.
 
 A control inside a card (`data-sg-interactive="true"`, or any form control) takes the mouse: the card does not move under it, and the card's own background still drags the card. A card draws its hover as an outline around itself, so hovering never moves the controls under the reader's finger.
 

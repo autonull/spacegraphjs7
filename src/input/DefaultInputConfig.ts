@@ -1,4 +1,4 @@
-import type { DefaultInputConfig, SpaceGraph } from '../types';
+import type { SpaceGraph } from '../types';
 import type {
   InputAction,
   InputBinding,
@@ -101,11 +101,7 @@ function createBindings(): InputBinding[] {
   ];
 }
 
-export function applyDefaultInputConfig(
-  inputManager: InputManager,
-  sg: SpaceGraph,
-  _config: DefaultInputConfig = {}
-): void {
+export function applyDefaultInputConfig(inputManager: InputManager, sg: SpaceGraph): void {
   const canvas = sg.renderer.renderer.domElement;
   const body = typeof window !== 'undefined' ? window.document.body : document.body;
 

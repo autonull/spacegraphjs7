@@ -1042,9 +1042,8 @@ export class SpaceGraph {
     this.cameraControls.sg = this;
     this.#depth = this.options.render?.depth ?? 'flat';
     this.#applyDepth(this.#depth, 0);
-    const config = (this.options.input as Record<string, any>) ?? {};
     this.input = new InputManager({ sg: this, events: this.events });
-    applyDefaultInputConfig(this.input, this, config);
+    applyDefaultInputConfig(this.input, this);
     forwardGraphEvents(this.graph, this.events);
     // On-demand mode repaints when the graph or selection changes.
     const schedule = () => this.requestFrame();

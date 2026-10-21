@@ -1,9 +1,4 @@
-export type {
-  CameraInputConfig,
-  DefaultInputConfig,
-  HistoryInputConfig,
-  InteractionInputConfig,
-} from '../types';
+export type { DefaultInputConfig, InteractionInputConfig } from '../types';
 export type { Finger } from './Fingering';
 export { Fingering, FingerManager } from './Fingering';
 export { createCameraFingering } from './fingerings';

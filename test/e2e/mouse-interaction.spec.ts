@@ -60,6 +60,36 @@ test.describe('The mouse contract', () => {
     await expect.poll(async () => (await camera(page)).target).not.toEqual(before.target)
   })
 
+  test('the left button pans the view over the background', async ({ page }) => {
+    const before = await camera(page)
+    const canvas = page.locator('canvas').first()
+    const box = (await canvas.boundingBox())!
+
+    await page.mouse.move(box.x + box.width - 40, box.y + box.height - 40)
+    await page.mouse.down()
+    await page.mouse.move(box.x + box.width - 140, box.y + box.height - 140, { steps: 10 })
+    await page.mouse.up()
+
+    await expect.poll(async () => (await camera(page)).target).not.toEqual(before.target)
+  })
+
+  test('a click on the background still reports a background click', async ({ page }) => {
+    const canvas = page.locator('canvas').first()
+    const box = (await canvas.boundingBox())!
+
+    await page.evaluate(() => {
+      const sg = (window as any)._sg
+      ;(window as any).__backgroundClicks = 0
+      sg.events.on('background:click', () => {
+        ;(window as any).__backgroundClicks++
+      })
+    })
+
+    await page.mouse.click(box.x + box.width - 40, box.y + box.height - 40)
+
+    await expect.poll(() => page.evaluate(() => (window as any).__backgroundClicks)).toBe(1)
+  })
+
   test('the wheel zooms the view', async ({ page }) => {
     const before = await camera(page)
     const canvas = page.locator('canvas').first()
