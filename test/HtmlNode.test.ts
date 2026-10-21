@@ -72,4 +72,43 @@ describe('HtmlNode Unit Tests', () => {
 
     expect(node.domElement.style.getPropertyValue('--node-bg')).toBe('#00ff00');
   });
+
+  it('should keep the host markup when the model updates the label', () => {
+    const markup = '<div style="color: rgb(255, 0, 0)">Styled</div>';
+    const node = new HtmlNode(sg as any, {
+      id: 'u',
+      type: 'HtmlNode',
+      label: 'Label',
+      data: { html: markup },
+    } as any);
+
+    node.updateSpec({ label: 'Another label', data: { html: markup } });
+
+    const content = node.domElement.querySelector('.node-content');
+    expect(content?.innerHTML).toBe(markup);
+  });
+
+  it('should keep the host markup when the model updates the label alone', () => {
+    const markup = '<div style="color: rgb(255, 0, 0)">Styled</div>';
+    const node = new HtmlNode(sg as any, {
+      id: 'u',
+      type: 'HtmlNode',
+      label: 'Label',
+      data: { html: markup },
+    } as any);
+
+    node.updateSpec({ label: 'Another label' });
+
+    const content = node.domElement.querySelector('.node-content');
+    expect(content?.innerHTML).toBe(markup);
+  });
+
+  it('should fall back to the label when the node carries no markup', () => {
+    const node = new HtmlNode(sg as any, { id: 'u', type: 'HtmlNode', label: 'Label' } as any);
+
+    node.updateSpec({ label: 'Another label' });
+
+    const content = node.domElement.querySelector('.node-content');
+    expect(content?.textContent).toBe('Another label');
+  });
 });

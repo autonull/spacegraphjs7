@@ -58,6 +58,48 @@ describe('U3.15 orbit gating and camera pose', () => {
   });
 });
 
+describe('the pan and the zoom of the hand', () => {
+  it('pans by the world size of a pixel, so the view follows the cursor', () => {
+    const { controls } = makeControls();
+    const perPixel = controls.worldUnitsPerPixel;
+    controls.pan(10, 0);
+    controls.update();
+    expect(controls.target.x).toBeCloseTo(-10 * perPixel, 6);
+  });
+
+  it('keeps the point under the pointer where it is when zooming', () => {
+    const { controls, camera } = makeControls();
+    const ndc = { x: 0.5, y: 0 };
+    const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
+    const pointUnder = () => {
+      const ray = new THREE.Raycaster();
+      ray.setFromCamera(new THREE.Vector2(ndc.x, ndc.y), camera);
+      const hit = new THREE.Vector3();
+      ray.ray.intersectPlane(plane, hit);
+      return hit;
+    };
+
+    const before = pointUnder();
+    controls.zoomAt(ndc, 1.5);
+    controls.update();
+    const after = pointUnder();
+
+    expect(after.x).toBeCloseTo(before.x, 4);
+    expect(after.y).toBeCloseTo(before.y, 4);
+  });
+
+  it('gives up an animation in flight when the hand takes over', () => {
+    const now = vi.spyOn(performance, 'now');
+    now.mockReturnValue(0);
+    const { controls } = makeControls();
+    controls.flyTo(new THREE.Vector3(100, 100, 0), 500, 1);
+    controls.pan(10, 0);
+    now.mockReturnValue(1000);
+    controls.update();
+    expect(controls.target.x).toBeCloseTo(-10 * controls.worldUnitsPerPixel, 6);
+  });
+});
+
 describe('orthographic fit zoom', () => {
   const makeOrthoControls = () => {
     const container = document.createElement('div');
