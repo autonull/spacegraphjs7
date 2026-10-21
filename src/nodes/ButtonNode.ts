@@ -11,7 +11,7 @@ export interface ButtonNodeData extends WidgetNodeData {
 }
 
 export class ButtonNode extends WidgetNode {
-  static readonly typeName = 'ButtonNode';
+  static readonly typeName: string = 'ButtonNode';
   private _label = '';
   private _color = 0x4488ff;
   private _hoverColor = 0x66aaff;
@@ -63,10 +63,6 @@ export class ButtonNode extends WidgetNode {
       }
     }
     return this;
-  }
-
-  dispose(): void {
-    super.dispose();
   }
 
   protected getBaseColor(_data: WidgetNodeData | undefined): number {

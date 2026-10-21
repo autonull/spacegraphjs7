@@ -78,7 +78,7 @@ export class FocusManager {
     this.focusStack = [];
   }
 
-  private getFocusableNodes(): FocusableNode[] {
+  getFocusableNodes(): FocusableNode[] {
     const allNodes = Array.from(this.sg.graph.nodes.values());
     return allNodes.filter(
       (n): n is FocusableNode => 'focusable' in n && (n as FocusableNode).focusable

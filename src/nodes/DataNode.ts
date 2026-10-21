@@ -3,6 +3,7 @@ import type { NodeSpec } from '../types';
 import { DOMUtils } from '../utils/DOMUtils';
 
 import { BaseContentNode } from './BaseContentNode';
+import { paletteOf } from './palette';
 
 /**
  * DataNode — Displays arbitrary JSON/objects as a structured, interactive view.
@@ -15,7 +16,7 @@ import { BaseContentNode } from './BaseContentNode';
  *   theme     : 'dark' | 'light' (default 'dark')
  */
 export class DataNode extends BaseContentNode {
-  static readonly typeName = 'DataNode';
+  static readonly typeName: string = 'DataNode';
   readonly contentContainer!: HTMLElement;
 
   constructor(sg: SpaceGraph | undefined, spec: NodeSpec) {
@@ -43,7 +44,7 @@ export class DataNode extends BaseContentNode {
         overflowY: 'auto',
         flexGrow: '1',
         scrollbarWidth: 'thin',
-        scrollbarColor: theme === 'dark' ? '#475569 #1e293b' : '#cbd5e1 #f8fafc',
+        scrollbarColor: paletteOf(theme).scrollbar,
       },
     });
 
@@ -54,17 +55,16 @@ export class DataNode extends BaseContentNode {
   updateSpec(updates: Partial<NodeSpec>): this {
     super.updateSpec(updates);
 
-    if (updates.label !== undefined) {
-      const titleSpan = this.domElement.querySelector('.sg-node-title');
-      if (titleSpan) titleSpan.textContent = updates.label;
+    if (updates.label !== undefined && this.titleElement) {
+      this.titleElement.textContent = updates.label;
     }
 
     if (updates.data) {
       const theme = (updates.data.theme as string) ?? (this.data?.theme as string) ?? 'dark';
 
       if (updates.data.width || updates.data.maxHeight) {
-        const w = (updates.data.width as number) ?? (this.data?.width as number) ?? 250;
-        const h = (updates.data.maxHeight as number) ?? (this.data?.maxHeight as number) ?? 300;
+        const w = this.dimension(updates, 'width', 250);
+        const h = this.dimension(updates, 'maxHeight', 300);
         this.domElement.style.width = `${w}px`;
         this.domElement.style.maxHeight = `${h}px`;
         this.updateBackingGeometry(w, h);
@@ -83,7 +83,7 @@ export class DataNode extends BaseContentNode {
     this.contentContainer.innerHTML = '';
     if (data === undefined || data === null) {
       const empty = DOMUtils.createElement('div');
-      empty.style.color = theme === 'dark' ? '#64748b' : '#94a3b8';
+      empty.style.color = paletteOf(theme).faintText;
       empty.style.fontStyle = 'italic';
       empty.textContent = 'null';
       this.contentContainer.appendChild(empty);
@@ -114,7 +114,7 @@ export class DataNode extends BaseContentNode {
 
     if (keys.length === 0) {
       const emptySpan = DOMUtils.createElement('span');
-      emptySpan.style.color = theme === 'dark' ? '#64748b' : '#94a3b8';
+      emptySpan.style.color = paletteOf(theme).faintText;
       emptySpan.textContent = `${openBracket}${closeBracket}`;
       container.appendChild(emptySpan);
       return container;
@@ -135,12 +135,12 @@ export class DataNode extends BaseContentNode {
       display: 'inline-block',
       width: '12px',
       fontSize: '9px',
-      color: theme === 'dark' ? '#64748b' : '#94a3b8',
+      color: paletteOf(theme).faintText,
       transition: 'transform 0.1s',
     });
 
     const summary = DOMUtils.createElement('span');
-    summary.style.color = theme === 'dark' ? '#94a3b8' : '#64748b';
+    summary.style.color = paletteOf(theme).mutedText;
     summary.textContent = isArray
       ? `Array(${keys.length}) ${openBracket}`
       : `Object ${openBracket}`;
@@ -160,7 +160,7 @@ export class DataNode extends BaseContentNode {
 
       if (!isArray) {
         const keySpan = DOMUtils.createElement('span');
-        keySpan.style.color = theme === 'dark' ? '#7dd3fc' : '#0284c7';
+        keySpan.style.color = paletteOf(theme).keyText;
         keySpan.style.marginRight = '6px';
         keySpan.textContent = `"${key}":`;
         row.appendChild(keySpan);
@@ -177,7 +177,7 @@ export class DataNode extends BaseContentNode {
       if (index < keys.length - 1) {
         const comma = DOMUtils.createElement('span');
         comma.textContent = ',';
-        comma.style.color = theme === 'dark' ? '#64748b' : '#94a3b8';
+        comma.style.color = paletteOf(theme).faintText;
         row.appendChild(comma);
       }
 
@@ -185,7 +185,7 @@ export class DataNode extends BaseContentNode {
     }
 
     const closeSpan = DOMUtils.createElement('div');
-    closeSpan.style.color = theme === 'dark' ? '#94a3b8' : '#64748b';
+    closeSpan.style.color = paletteOf(theme).mutedText;
     closeSpan.style.paddingLeft = depth > 0 ? '12px' : '0';
     closeSpan.textContent = closeBracket;
     childrenDiv.appendChild(closeSpan);
@@ -207,16 +207,17 @@ export class DataNode extends BaseContentNode {
   }
 
   private _getColorForType(value: unknown, theme: string): string {
-    if (value === null) return theme === 'dark' ? '#94a3b8' : '#64748b';
+    const palette = paletteOf(theme);
+    if (value === null) return palette.mutedText;
     switch (typeof value) {
       case 'string':
-        return theme === 'dark' ? '#a3e635' : '#16a34a';
+        return palette.value.string;
       case 'number':
-        return theme === 'dark' ? '#fbbf24' : '#d97706';
+        return palette.value.number;
       case 'boolean':
-        return theme === 'dark' ? '#f472b6' : '#db2777';
+        return palette.value.boolean;
       default:
-        return theme === 'dark' ? '#e2e8f0' : '#334155';
+        return palette.value.other;
     }
   }
 }

@@ -3,12 +3,15 @@ import type { Node } from '../nodes/Node';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { EdgeData, EdgeSpec } from '../types';
 import { DOMUtils } from '../utils/DOMUtils';
+import { toCssColor } from '../utils/color';
+import { worldToClient } from '../utils/projection';
 import { Edge } from './Edge';
 
+const SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
+
 export class InterGraphEdge extends Edge {
-  static readonly typeName = 'InterGraphEdge';
+  static readonly typeName: string = 'InterGraphEdge';
   public isInterGraphEdge = true;
-  private svgNamespace = 'http://www.w3.org/2000/svg';
   readonly svgLine: SVGPathElement;
   private svgContainer: SVGSVGElement;
   private animationFrameId?: number;
@@ -21,14 +24,10 @@ export class InterGraphEdge extends Edge {
     }
 
     this.svgContainer = this.getGlobalSvgContainer();
-    this.svgLine = DOMUtils.createElementNS(this.svgNamespace, 'path') as SVGPathElement;
+    this.svgLine = DOMUtils.createElementNS(SVG_NAMESPACE, 'path') as SVGPathElement;
 
     const data = spec.data as EdgeData & { color?: number | string };
-    const colorHex = data?.color ?? 0x666666;
-    const colorHexStr =
-      typeof colorHex === 'number' ? `#${colorHex.toString(16).padStart(6, '0')}` : colorHex;
-
-    this.svgLine.setAttribute('stroke', colorHexStr);
+    this.svgLine.setAttribute('stroke', toCssColor(data?.color ?? 0x666666));
     this.svgLine.setAttribute('stroke-width', '2');
     this.svgLine.setAttribute('fill', 'none');
     this.svgLine.setAttribute('stroke-dasharray', '5, 5');
@@ -45,10 +44,7 @@ export class InterGraphEdge extends Edge {
   updateSpec(updates: Partial<EdgeSpec>): this {
     super.updateSpec(updates);
     if (updates.data?.color) {
-      const colorHex = updates.data.color;
-      const colorHexStr =
-        typeof colorHex === 'number' ? `#${colorHex.toString(16).padStart(6, '0')}` : colorHex;
-      this.svgLine.setAttribute('stroke', colorHexStr);
+      this.svgLine.setAttribute('stroke', toCssColor(updates.data.color as number | string));
     }
     return this;
   }
@@ -62,7 +58,7 @@ export class InterGraphEdge extends Edge {
   private getGlobalSvgContainer(): SVGSVGElement {
     let svg = document.getElementById('spacegraph-intergraph-overlay') as SVGSVGElement | null;
     if (!svg) {
-      svg = DOMUtils.createElementNS(this.svgNamespace, 'svg', {
+      svg = DOMUtils.createElementNS(SVG_NAMESPACE, 'svg', {
         id: 'spacegraph-intergraph-overlay',
         style: {
           position: 'fixed',
@@ -79,17 +75,18 @@ export class InterGraphEdge extends Edge {
     return svg;
   }
 
-  private projectToScreen(node: Node, targetVector: THREE.Vector3) {
+  private projectToScreen(node: Node, targetVector: THREE.Vector3): void {
     const sg = node.sg;
     if (!sg?.renderer) return;
     node.getWorldPosition(targetVector);
-    targetVector.project(sg.renderer.camera);
 
-    const rect = sg.renderer.renderer.domElement.getBoundingClientRect();
+    const screen = worldToClient(
+      targetVector,
+      sg.renderer.camera,
+      sg.renderer.renderer.domElement
+    );
 
-    targetVector.x = (targetVector.x * 0.5 + 0.5) * rect.width + rect.left;
-    targetVector.y = (targetVector.y * -0.5 + 0.5) * rect.height + rect.top;
-    targetVector.z = 0;
+    targetVector.set(screen.x, screen.y, 0);
   }
 
   private updateSvgLine() {

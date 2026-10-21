@@ -20,7 +20,7 @@ const loadMonaco = () => import('@monaco-editor/loader').then(({ default: loader
  *   height   : pixel height (default 400)
  */
 export class CodeEditorNode extends BaseContentNode {
-  static readonly typeName = 'CodeEditorNode';
+  static readonly typeName: string = 'CodeEditorNode';
   readonly editorContainer: HTMLDivElement;
   private editorInstance: unknown = null;
 
@@ -40,7 +40,7 @@ export class CodeEditorNode extends BaseContentNode {
       updatePositionOnInit: true,
     });
 
-    const titleBar = this.domElement.querySelector('.sg-node-title') as HTMLElement;
+    const titleBar = this.titleElement;
     if (titleBar) {
       titleBar.style.backgroundColor = isLight ? '#f3f3f3' : '#2d2d2d';
       titleBar.style.color = isLight ? '#333' : '#ccc';
@@ -63,11 +63,9 @@ export class CodeEditorNode extends BaseContentNode {
 
     if (updates.data) {
       if (updates.data.width || updates.data.height) {
-        const w = (updates.data.width as number) ?? (this.data?.width as number) ?? 600;
-        const h = (updates.data.height as number) ?? (this.data?.height as number) ?? 400;
-        this.domElement.style.width = `${w}px`;
-        this.domElement.style.height = `${h}px`;
-        this.updateBackingGeometry(w, h);
+        const w = this.dimension(updates, 'width', 600);
+        const h = this.dimension(updates, 'height', 400);
+        this.applySize(w, h);
         if (this.editorInstance) {
           (this.editorInstance as { layout: () => void }).layout();
         }
@@ -94,9 +92,8 @@ export class CodeEditorNode extends BaseContentNode {
       }
     }
 
-    if (updates.label !== undefined) {
-      const titleSpan = this.domElement.querySelector('.sg-node-title');
-      if (titleSpan) titleSpan.textContent = updates.label;
+    if (updates.label !== undefined && this.titleElement) {
+      this.titleElement.textContent = updates.label;
     }
 
     return this;

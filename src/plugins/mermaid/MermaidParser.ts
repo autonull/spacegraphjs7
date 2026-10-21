@@ -1,4 +1,5 @@
 import type { EdgeSpec, NodeSpec } from '../../types';
+import { parseColor } from '../../utils/color';
 
 export type DiagramFormat = 'mermaid' | 'dot' | 'graphml' | 'json';
 export type MermaidLayoutType = 'TD' | 'TB' | 'BT' | 'LR' | 'RL';
@@ -14,21 +15,13 @@ export type MermaidNodeShape =
   | 'trapezoid'
   | 'subroutine'
   | 'cylinder';
-export type DotShape =
-  | 'box'
-  | 'ellipse'
-  | 'oval'
-  | 'circle'
-  | 'point'
-  | 'diamond'
-  | 'trapezium'
-  | 'parallelogram'
-  | 'house'
-  | 'hexagon'
-  | 'octagon'
-  | 'doublecircle'
-  | 'doubleoctagon';
 export type EdgeStyle = 'solid' | 'dashed' | 'dotted' | 'bold' | 'tapered';
+
+/** The palette a diagram is drawn with: the node colours and the edge colour. */
+export interface DiagramTheme {
+  nodeColors: readonly string[];
+  edgeColor: number;
+}
 
 export interface DiagramNode {
   id: string;
@@ -69,46 +62,52 @@ export interface DiagramParseResult {
   metadata?: Record<string, unknown>;
 }
 
-export function nodeToSpec(node: DiagramNode, index: number, themeColors: string[]): NodeSpec {
+/** The node a parsed diagram draws, as a core spec. */
+export function nodeToSpec(node: DiagramNode, index: number, theme: DiagramTheme): NodeSpec {
+  const data: Record<string, unknown> = {
+    shape: node.shape as MermaidNodeShape,
+    label: node.label,
+    themeColors: theme.nodeColors,
+    nodeIndex: index,
+    color: node.color || theme.nodeColors[index % theme.nodeColors.length],
+    width: node.width || 160,
+    height: node.height || 60,
+    cluster: node.cluster,
+  };
+
+  if (node.style) {
+    data.style = node.style;
+    if (node.style === 'filled') data.filled = true;
+  }
+
   return {
     id: node.id,
     type: 'MermaidNode',
     label: node.label,
     position: [0, 0, 0] as [number, number, number],
-    data: {
-      shape: node.shape as MermaidNodeShape,
-      label: node.label,
-      themeColors,
-      nodeIndex: index,
-      color: node.color || themeColors[index % themeColors.length],
-      width: node.width,
-      height: node.height,
-      cluster: node.cluster,
-      style: node.style,
-    },
+    data,
   };
 }
 
-export function edgeToSpec(edge: DiagramEdge, index: number): EdgeSpec {
-  const edgeType =
+/** The edge a parsed diagram draws, as a core spec. */
+export function edgeToSpec(edge: DiagramEdge, index: number, theme: DiagramTheme): EdgeSpec {
+  const type =
     edge.style === 'dotted' || edge.style === 'dashed'
       ? 'DottedEdge'
       : edge.label
         ? 'LabeledEdge'
-        : edge.style === 'solid'
-          ? 'Edge'
-          : 'CurvedEdge';
+        : 'CurvedEdge';
 
   return {
     id: edge.id || `edge-${index}`,
     source: edge.source,
     target: edge.target,
-    type: edgeType,
+    type,
     data: {
       label: edge.label,
-      color: edge.color ? Number.parseInt(edge.color.replace('#', ''), 16) : undefined,
+      color: edge.color ? parseColor(edge.color) : theme.edgeColor,
       arrowhead: edge.arrowhead !== 'none',
-      dashed: edge.style === 'dashed' || edge.style === 'dotted',
+      dashed: edge.style === 'dashed',
       style: edge.style,
     },
   };
@@ -121,6 +120,45 @@ const DIRECTION_MAP: Record<string, MermaidLayoutType> = {
   LR: 'LR',
   RL: 'RL',
 };
+
+/**
+ * The foreign shape names the DOT and GraphML parsers read, mapped to the shape they draw as. The
+ * GraphML vocabulary is a subset of the DOT one, so both parsers share this table.
+ */
+const SHAPE_ALIASES: Record<string, string> = {
+  box: 'rect',
+  rectangle: 'rect',
+  house: 'rect',
+  ellipse: 'round',
+  oval: 'round',
+  circle: 'circle',
+  doublecircle: 'circle',
+  doubleoctagon: 'circle',
+  diamond: 'diamond',
+  trapezium: 'trapezoid',
+  parallelogram: 'parallelogram',
+  hexagon: 'hexagon',
+  octagon: 'hexagon',
+};
+
+function mapShape(shape?: string): string {
+  return (shape && SHAPE_ALIASES[shape]) || 'rect';
+}
+
+const EDGE_STYLES: Record<string, EdgeStyle> = {
+  dashed: 'dashed',
+  dotted: 'dotted',
+  solid: 'solid',
+  bold: 'bold',
+};
+
+function mapStyle(style?: string): EdgeStyle {
+  return (style && EDGE_STYLES[style]) || 'solid';
+}
+
+function emptyResult(format: DiagramFormat): DiagramParseResult {
+  return { nodes: [], edges: [], clusters: [], format, suggestedLayout: 'hierarchical' };
+}
 
 export class MermaidParser {
   private nodes: Map<string, DiagramNode> = new Map();
@@ -325,7 +363,7 @@ export class DOTParser {
         source: edgeMatch[1],
         target: edgeMatch[2],
         label: edgeAttrs.label,
-        style: this.mapDotStyle(edgeAttrs.style),
+        style: mapStyle(edgeAttrs.style),
         color: edgeAttrs.color,
         arrowhead: (edgeAttrs.arrowhead ||
           (isDirected ? 'normal' : 'none')) as DiagramEdge['arrowhead'],
@@ -341,7 +379,7 @@ export class DOTParser {
         nodes.set(nodeId, {
           id: nodeId,
           label: attrs.label || nodeId,
-          shape: this.mapDotShape(attrs.shape),
+          shape: mapShape(attrs.shape),
           cluster: attrs.subgraph,
           color: attrs.fillcolor || attrs.color,
         });
@@ -384,43 +422,8 @@ export class DOTParser {
     return attrs;
   }
 
-  private mapDotShape(shape?: string): string {
-    const map: Record<string, string> = {
-      box: 'rect',
-      rectangle: 'rect',
-      ellipse: 'round',
-      oval: 'round',
-      circle: 'circle',
-      diamond: 'diamond',
-      trapezium: 'trapezoid',
-      parallelogram: 'parallelogram',
-      house: 'rect',
-      hexagon: 'hexagon',
-      octagon: 'hexagon',
-      doublecircle: 'circle',
-      doubleoctagon: 'circle',
-    };
-    return shape ? map[shape] || 'rect' : 'rect';
-  }
-
-  private mapDotStyle(style?: string): EdgeStyle {
-    const map: Record<string, EdgeStyle> = {
-      dashed: 'dashed',
-      dotted: 'dotted',
-      solid: 'solid',
-      bold: 'bold',
-    };
-    return style ? map[style] || 'solid' : 'solid';
-  }
-
   private emptyResult(): DiagramParseResult {
-    return {
-      nodes: [],
-      edges: [],
-      clusters: [],
-      format: 'dot',
-      suggestedLayout: 'hierarchical',
-    };
+    return emptyResult('dot');
   }
 }
 
@@ -466,11 +469,7 @@ export class GraphMLParser {
       });
 
       const shapeEl = nodeEl.querySelector('shape, polygon');
-      let shape = 'rect';
-      if (shapeEl) {
-        const type = shapeEl.getAttribute('type') || '';
-        shape = this.mapGraphMLShape(type);
-      }
+      const shape = mapShape(shapeEl?.getAttribute('type') || undefined);
 
       nodes.set(id, { id, label, shape, cluster });
     });
@@ -529,29 +528,8 @@ export class GraphMLParser {
     };
   }
 
-  private mapGraphMLShape(type: string): string {
-    const map: Record<string, string> = {
-      rectangle: 'rect',
-      box: 'rect',
-      ellipse: 'round',
-      oval: 'round',
-      circle: 'circle',
-      diamond: 'diamond',
-      hexagon: 'hexagon',
-      trapezium: 'trapezoid',
-      parallelogram: 'parallelogram',
-    };
-    return map[type] || 'rect';
-  }
-
   private emptyResult(): DiagramParseResult {
-    return {
-      nodes: [],
-      edges: [],
-      clusters: [],
-      format: 'graphml',
-      suggestedLayout: 'hierarchical',
-    };
+    return emptyResult('graphml');
   }
 }
 
@@ -599,13 +577,7 @@ export class JSONDiagramParser {
         metadata: data.metadata,
       };
     } catch {
-      return {
-        nodes: [],
-        edges: [],
-        clusters: [],
-        format: 'json',
-        suggestedLayout: 'hierarchical',
-      };
+      return emptyResult('json');
     }
   }
 }
@@ -619,47 +591,14 @@ export class DiagramParserFactory {
   };
 
   static parse(content: string, format?: DiagramFormat): DiagramParseResult {
-    if (format) {
-      const parser = this.parsers[format];
-      if (parser) return parser.parse(content);
-    }
+    const detected = format ?? this.detectFormat(content);
+    const parser = this.parsers[detected];
 
-    const trimmed = content.trim();
-
-    if (
-      trimmed.startsWith('graph ') ||
-      trimmed.startsWith('flowchart ') ||
-      trimmed.startsWith('sequenceDiagram') ||
-      trimmed.startsWith('classDiagram') ||
-      trimmed.startsWith('stateDiagram') ||
-      trimmed.startsWith('erDiagram') ||
-      trimmed.startsWith('gantt') ||
-      trimmed.startsWith('pie')
-    ) {
-      return this.parsers.mermaid.parse(content);
-    }
-
-    if (trimmed.startsWith('digraph') || (trimmed.startsWith('graph') && trimmed.includes('->'))) {
-      return this.parsers.dot.parse(content);
-    }
-
-    if (
-      trimmed.startsWith('<?xml') ||
-      trimmed.includes('<graphml') ||
-      trimmed.includes('<GraphML')
-    ) {
-      return this.parsers.graphml.parse(content);
-    }
-
-    if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
-      return this.parsers.json.parse(content);
-    }
-
-    return this.parsers.mermaid.parse(content);
+    return parser ? parser.parse(content) : this.parsers.mermaid.parse(content);
   }
 
   static getSupportedFormats(): DiagramFormat[] {
-    return ['mermaid', 'dot', 'graphml', 'json'];
+    return Object.keys(this.parsers) as DiagramFormat[];
   }
 
   static detectFormat(content: string): DiagramFormat {
@@ -738,16 +677,17 @@ export const LAYOUT_NAMES = [
 
 export type LayoutName = (typeof LAYOUT_NAMES)[number];
 
+const LAYOUT_LABELS: Record<LayoutName, string> = {
+  force: 'Force Directed',
+  circular: 'Circular',
+  grid: 'Grid',
+  hierarchical: 'Hierarchical',
+  radial: 'Radial',
+  tree: 'Tree',
+  spectral: 'Spectral',
+  cluster: 'Cluster',
+};
+
 export function getLayoutLabel(name: LayoutName): string {
-  const labels: Record<LayoutName, string> = {
-    force: 'Force Directed',
-    circular: 'Circular',
-    grid: 'Grid',
-    hierarchical: 'Hierarchical',
-    radial: 'Radial',
-    tree: 'Tree',
-    spectral: 'Spectral',
-    cluster: 'Cluster',
-  };
-  return labels[name];
+  return LAYOUT_LABELS[name];
 }

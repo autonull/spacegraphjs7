@@ -4,20 +4,20 @@ import { CSS3DObject } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { DOMNodeData, NodeSpec } from '../types';
 import { DOMUtils } from '../utils/DOMUtils';
-import {
-  applyControlStateStyles,
-  type ControlState,
-} from '../plugins/interaction/ControlStateBorder';
+import { applyControlStateStyles } from '../plugins/interaction/ControlStateBorder';
 import { Node } from './Node';
+import { NODE_PALETTE } from './palette';
 
 export class DOMNode extends Node {
-  static typeName = 'DOMNode';
+  static typeName: string = 'DOMNode';
   public readonly isDOMNode = true;
   public readonly domElement: HTMLElement;
   public readonly cssObject: CSS3DObject;
   public readonly meshMaterial: THREE.MeshBasicMaterial;
   public readonly backingMesh: THREE.Mesh;
   readonly _object: THREE.Group;
+  /** The title text the node's title bar shows; the bar owns it, so the node can reach it. */
+  protected titleElement: HTMLElement | null = null;
 
   constructor(
     sg: SpaceGraph | undefined,
@@ -70,16 +70,13 @@ export class DOMNode extends Node {
   // DOM nodes draw their interaction outline on the element, not as a mesh BoxHelper, using the
   // resolved theme colours so a host theme controls the ring (RF.6).
   protected override syncVisual(): void {
-    const state: ControlState = this.focused ? 'focus' : this.controlState;
-    const color =
-      state === 'focus'
-        ? this.resolvedTheme.focus
-        : state === 'selected'
-          ? this.resolvedTheme.selection
-          : state === 'hovered'
-            ? this.resolvedTheme.hover
-            : undefined;
-    applyControlStateStyles(this.domElement, state, this.lastVisualState, color);
+    const state = this.visualState();
+    applyControlStateStyles(
+      this.domElement,
+      state,
+      this.lastVisualState,
+      this.controlStateColor(state)
+    );
     this.lastVisualState = state;
   }
 
@@ -143,8 +140,6 @@ export class DOMNode extends Node {
 
   dispose(): void {
     this.domElement.parentNode?.removeChild(this.domElement);
-    this.meshGeometry?.dispose();
-    this.meshMaterial?.dispose();
     super.dispose();
   }
 
@@ -155,19 +150,16 @@ export class DOMNode extends Node {
     theme: 'dark' | 'light' = 'dark',
     customStyles: Partial<CSSStyleDeclaration> = {}
   ): void {
-    const isDark = theme === 'dark';
-    const bgColor = isDark ? '#1e293b' : '#ffffff';
-    const borderColor = isDark ? '#334155' : '#e2e8f0';
-    const textColor = isDark ? '#f8fafc' : '#0f172a';
+    const palette = NODE_PALETTE[theme];
 
     Object.assign(this.domElement.style, {
       width: `${width}px`,
       height: `${height}px`,
       position: 'absolute',
       pointerEvents: 'auto',
-      backgroundColor: 'var(--node-bg, ' + bgColor + ')',
-      color: textColor,
-      border: `1px solid ${borderColor}`,
+      backgroundColor: 'var(--node-bg, ' + palette.surface + ')',
+      color: palette.text,
+      border: `1px solid ${palette.border}`,
       borderRadius: '8px',
       boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
       boxSizing: 'border-box',
@@ -181,19 +173,16 @@ export class DOMNode extends Node {
 
   /** Helper to create a standard FZUI title bar. */
   protected createTitleBar(title: string, theme: 'dark' | 'light' = 'dark'): HTMLElement {
-    const isDark = theme === 'dark';
-    const headerColor = isDark ? '#0f172a' : '#f1f5f9';
-    const borderColor = isDark ? '#334155' : '#e2e8f0';
-    const titleColor = isDark ? '#94a3b8' : '#64748b';
+    const palette = NODE_PALETTE[theme];
 
     const titleBar = DOMUtils.createElement('div');
     Object.assign(titleBar.style, {
-      background: headerColor,
+      background: palette.headerSurface,
       padding: '8px 12px',
       fontWeight: '600',
       fontSize: '13px',
-      color: titleColor,
-      borderBottom: `1px solid ${borderColor}`,
+      color: palette.mutedText,
+      borderBottom: `1px solid ${palette.border}`,
       display: 'flex',
       alignItems: 'center',
       flexShrink: '0',
@@ -204,6 +193,7 @@ export class DOMNode extends Node {
     titleSpan.textContent = title;
     titleSpan.className = 'sg-node-title';
     titleBar.appendChild(titleSpan);
+    this.titleElement = titleSpan;
 
     return titleBar;
   }
@@ -212,6 +202,21 @@ export class DOMNode extends Node {
     this._meshGeometry.dispose();
     this._meshGeometry = new THREE.PlaneGeometry(width, height);
     this.backingMesh.geometry = this._meshGeometry;
+  }
+
+  /**
+   * A dimension of the node after an update: the value the update carries, the value the node
+   * already holds, or the default.
+   */
+  protected dimension(updates: Partial<NodeSpec>, key: string, fallback: number): number {
+    return (updates.data?.[key] as number) ?? (this.data?.[key] as number) ?? fallback;
+  }
+
+  /** Resize the element and the backing geometry that frames it. */
+  protected applySize(width: number, height: number): void {
+    this.domElement.style.width = `${width}px`;
+    this.domElement.style.height = `${height}px`;
+    this.updateBackingGeometry(width, height);
   }
 
   /** Relay pointer events from this DOM element to the WebGL canvas. */
@@ -237,6 +242,17 @@ export class DOMNode extends Node {
           shiftKey: src.shiftKey,
           altKey: src.altKey,
           metaKey: src.metaKey,
+        })
+      );
+    };
+
+    const relayMouse = (type: string, src: MouseEvent) => {
+      canvas.dispatchEvent(
+        new MouseEvent(type, {
+          bubbles: false,
+          cancelable: true,
+          clientX: src.clientX,
+          clientY: src.clientY,
         })
       );
     };
@@ -280,26 +296,12 @@ export class DOMNode extends Node {
     });
 
     el.addEventListener('dblclick', (e) => {
-      canvas.dispatchEvent(
-        new MouseEvent('dblclick', {
-          bubbles: false,
-          cancelable: true,
-          clientX: e.clientX,
-          clientY: e.clientY,
-        })
-      );
+      relayMouse('dblclick', e);
     });
 
     el.addEventListener('contextmenu', (e) => {
       e.preventDefault();
-      canvas.dispatchEvent(
-        new MouseEvent('contextmenu', {
-          bubbles: false,
-          cancelable: true,
-          clientX: e.clientX,
-          clientY: e.clientY,
-        })
-      );
+      relayMouse('contextmenu', e);
     });
   }
 }

@@ -349,7 +349,6 @@ describe('Node Activity', () => {
 
 describe('Edge Activity', () => {
   it('should decay activity over time', () => {
-    const mockSg = createMockSpaceGraph();
     const source = new TestNode();
     const target = new TestNode();
     const edge = new Edge({ id: 'e1', type: 'Edge', source: 's1', target: 't1' }, source, target);
@@ -359,7 +358,6 @@ describe('Edge Activity', () => {
   });
 
   it('should pulse and track lastActivityTime', () => {
-    const mockSg = createMockSpaceGraph();
     const source = new TestNode();
     const target = new TestNode();
     const edge = new Edge({ id: 'e1', type: 'Edge', source: 's1', target: 't1' }, source, target);
@@ -650,7 +648,7 @@ describe('Surface', () => {
     const found = grandchild.findParent((s) => s === root);
     expect(found).toBe(root);
 
-    const notFound = grandchild.findParent((s) => false);
+    const notFound = grandchild.findParent(() => false);
     expect(notFound).toBeNull();
   });
 
@@ -662,9 +660,6 @@ describe('Surface', () => {
 
 describe('Wire', () => {
   it('should send data and trigger pulse', () => {
-    const mockSg = createMockSpaceGraph();
-    const source = new TestNode();
-    const target = new TestNode();
 
     (globalThis as any).__SG_Wire = Wire;
 

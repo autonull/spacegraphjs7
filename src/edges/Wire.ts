@@ -6,7 +6,7 @@ import type { EdgeSpec } from '../types';
 import { Edge } from './Edge';
 
 export class Wire<T = unknown> extends Edge {
-  static readonly typeName = 'Wire';
+  static readonly typeName: string = 'Wire';
   readonly sourcePort: PortNode<T>;
   readonly targetPort: PortNode<T>;
   private lastActivity = 0;

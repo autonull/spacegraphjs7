@@ -12,14 +12,12 @@
 
 - Terse syntax
     - Ternary, switch, nullish coalescing (`??`), optional chaining (`?.`), template literals
+    - Array methods (map, filter, reduce) over traditional loops for transformations
     - Destructuring for cleaner object/array access
     - Adhere to reasonable JavaScript code guidelines
-    - Don't arbitrarily change method functions to arrow functions. Keep the original function declaration style unless
-      there's a specific
-      technical reason related to 'this' binding. Use arrow functions for callbacks and utility functions only.
     - Consider modern JavaScript language syntax
 
-- Few comments: rely on self-documenting code. Do not remove JSDocs containing essential Type details
+- Few comments: rely on self-documenting code.  Do not remove JSDocs containing essential Type details
 
 - Purpose: professional, not explanatory/educational
 
@@ -40,35 +38,4 @@
 - Code structure: Keep functions focused (single responsibility), limit function length, organize methods logically,
   prefer composition over inheritance, maintain consistent class structure
 
-## Renderer surface
-
-- The core (`spacegraphjs` `src`) never imports `@spacegraphjs/renderer`,
-  `@spacegraphjs/spacegraph-renderer`, `@spacegraphjs/cytoscape-renderer`, or `cytoscape`.
-  `test/boundaries.test.ts` enforces this; run it with `bun run test:boundaries`.
-- `@spacegraphjs/renderer` is types plus tiny helpers, zero dependencies. `GraphRenderer` is the
-  contract interface; `RenderModel` is the renderer-facing data; the core WebGL class is
-  `WebGLRenderer` (alias `Renderer` is deprecated).
-- `@spacegraphjs/spacegraph-renderer` is the only package that imports both the core and the contract.
-  `@spacegraphjs/cytoscape-renderer` and `@spacegraphjs/svg-renderer` stay off the core.
-- Generic capabilities (zoom bands, lane layout, accessibility, navigation trail, view controller) live
-  in the core as optional subpaths with minimal structural types, not the contract. If a capability is
-  generic, add it to the core first; do not special-case a renderer in a host.
-- `react-spacegraph` and `solid-spacegraph` are framework bindings over the contract and
-  `spacegraphjs/control`; they wrap `GraphBinding` (the framework-agnostic mount/update/dispose policy),
-  not core internals.
-- Do not use "engine" for a renderer backend.
-
-### Naming
-
-| Concept | Name |
-|---|---|
-| Contract package | `@spacegraphjs/renderer` |
-| Contract interface | `GraphRenderer` |
-| Renderer-facing data | `RenderModel` |
-| Core WebGL class | `WebGLRenderer` (alias `Renderer`, deprecated) |
-| SpaceGraph adapter | `@spacegraphjs/spacegraph-renderer` |
-| Cytoscape adapter | `@spacegraphjs/cytoscape-renderer` |
-| Static SVG renderer | `@spacegraphjs/svg-renderer` |
-| Lean core entry | `spacegraphjs/activity` |
-| Generic utilities | `spacegraphjs/zoom`, `spacegraphjs/layout`, `spacegraphjs/a11y`, `spacegraphjs/navigation`, `spacegraphjs/control` |
-
+- Use `pnpm`/`pnpx`, not `npm`/`npx`

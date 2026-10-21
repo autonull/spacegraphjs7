@@ -3,6 +3,8 @@
 // minimal structural item so the core never imports the renderer contract; a host passes
 // `RenderModel.nodes` mapped to `{ id, label, kind, status, interactive }`.
 
+import { clamp } from '../utils/math';
+
 export interface AccessibleItem {
   id: string;
   label: string;
@@ -193,7 +195,7 @@ export class AccessibilityLayer {
   #firstInteractive(from: number, step: number, exclusive = false): number {
     const length = this.#items.length;
     if (!length) return 0;
-    const start = Math.max(0, Math.min(exclusive ? from + step : from, length - 1));
+    const start = clamp(exclusive ? from + step : from, 0, length - 1);
     for (let index = start; index >= 0 && index < length; index += step) {
       if (this.#items[index].interactive !== false) return index;
     }

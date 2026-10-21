@@ -34,7 +34,7 @@ export {
 } from '../core/constants';
 export type { FitInsets, FitSurface, FitViewResult } from './CameraUtils';
 // Camera utilities
-export { calculateFitView } from './CameraUtils';
+export { calculateFitView, focusRadiusOf, halfFovTangent, visibleHeightAtDistance } from './CameraUtils';
 // Color
 export type { ColorStop } from './color';
 export {
@@ -59,6 +59,7 @@ export {
   parseColor,
   rgbToHex,
   saturate,
+  toCssColor,
   toCssGradient,
   toHexColor,
 } from './color';
@@ -96,6 +97,11 @@ export { lattice2D, randomMesh, randomTree, scaleFreeGraph, smallWorld } from '.
 export type { Logger, LogLevel } from './logger';
 // Logger
 export { createLogger, logger, setLogLevel } from './logger';
+export type { NodeSize } from './nodeResize';
+// Node resize
+export { MAX_NODE_SIZE, MIN_NODE_SIZE, nodeScreenSize, NodeResizer } from './nodeResize';
+// Node parent
+export { parentIdOf } from './nodeParent';
 // Math utilities (from math.ts) - excluding constants which come from core
 export {
   abs,
@@ -154,6 +160,10 @@ export {
   requestIdleCallbackPolyfill,
   throttleByTime,
 } from './performance';
+// Projection helpers
+export { clientToNdc, projectToNdc, worldToClient, worldToScreen } from './projection';
+// Vector helpers
+export { directionBetween, latLngToVec3, midpoint, perpendicularTo } from './vector';
 
 // Three.js disposal
 export { ThreeDisposer } from './ThreeDisposer';

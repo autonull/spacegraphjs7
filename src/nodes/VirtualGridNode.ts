@@ -15,8 +15,8 @@ export interface GridModel<T> {
   getColCount(): number;
 }
 
-export class VirtualGridNode<T = unknown> extends (GroupNode as any) {
-  static readonly typeName = 'VirtualGridNode';
+export class VirtualGridNode<T = unknown> extends GroupNode {
+  static readonly typeName: string = 'VirtualGridNode';
   model!: GridModel<T>;
   cellRenderer!: (x: number, y: number, value: T) => NodeSpec;
   visibleCells = new Map<string, Node>();

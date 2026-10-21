@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import type { Node } from '../../nodes/Node';
+import { visibleHeightAtDistance } from '../../utils/CameraUtils';
 import type { Finger } from '../Fingering';
 import { BaseFingering } from './BaseFingering';
 
@@ -7,7 +8,6 @@ export class NodeDraggingFingering extends BaseFingering {
   private dragNode: Node | null = null;
   private dragPlane = new THREE.Plane();
   private dragOffset = new THREE.Vector3();
-  private startPos = { x: 0, y: 0 };
   private lastFingerY?: number;
   private enableZAxis = false;
 
@@ -21,7 +21,6 @@ export class NodeDraggingFingering extends BaseFingering {
     if (!result.node.isDraggable(localPos)) return false;
 
     this.dragNode = result.node;
-    this.startPos = { x: finger.position.x, y: finger.position.y };
     this.lastFingerY = finger.position.y;
 
     this.dragPlane.setFromNormalAndCoplanarPoint(
@@ -90,8 +89,7 @@ export class NodeDraggingFingering extends BaseFingering {
 
     let scaleFactor = dist * 0.002;
     if (camera instanceof THREE.PerspectiveCamera) {
-      const vFov = (camera.fov * Math.PI) / 180;
-      scaleFactor = (2 * Math.tan(vFov / 2) * dist) / window.innerHeight;
+      scaleFactor = visibleHeightAtDistance(camera.fov, dist) / window.innerHeight;
     }
 
     const cameraDir = camera.getWorldDirection(new THREE.Vector3());

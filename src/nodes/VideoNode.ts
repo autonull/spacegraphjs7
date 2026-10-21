@@ -8,7 +8,7 @@ import { TexturedMeshNode } from './TexturedMeshNode';
 const logger = createLogger('VideoNode');
 
 export class VideoNode extends TexturedMeshNode {
-  static readonly typeName = 'VideoNode';
+  static readonly typeName: string = 'VideoNode';
   public videoEl: HTMLVideoElement;
   readonly videoTexture: THREE.VideoTexture;
 

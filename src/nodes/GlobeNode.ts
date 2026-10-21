@@ -2,14 +2,16 @@ import * as THREE from 'three';
 
 import type { SpaceGraph } from '../SpaceGraph';
 import type { GlobeNodeData, NodeSpec } from '../types';
+import { latLngToVec3 } from '../utils/vector';
 import { Node } from './Node';
 
 export class GlobeNode extends Node {
-  static readonly typeName = 'GlobeNode';
+  static readonly typeName: string = 'GlobeNode';
   readonly _object: THREE.Group;
   readonly mesh!: THREE.Mesh;
   readonly wireframe?: THREE.Mesh;
   readonly markersGroup!: THREE.Group;
+  private readonly halo: THREE.Mesh;
   private textureLoader = new THREE.TextureLoader();
 
   constructor(sg: SpaceGraph | undefined, spec: NodeSpec) {
@@ -56,8 +58,8 @@ export class GlobeNode extends Node {
       side: THREE.BackSide,
       blending: THREE.AdditiveBlending,
     });
-    const halo = new THREE.Mesh(haloGeo, haloMat);
-    this.object.add(halo);
+    this.halo = new THREE.Mesh(haloGeo, haloMat);
+    this.object.add(this.halo);
 
     this.markersGroup = new THREE.Group();
     this.object.add(this.markersGroup);
@@ -111,26 +113,6 @@ export class GlobeNode extends Node {
     return this;
   }
 
-  dispose(): void {
-    this.mesh.geometry.dispose();
-    const mat = this.mesh.material as THREE.MeshBasicMaterial;
-    mat.map?.dispose();
-    mat.dispose();
-
-    this.wireframe?.geometry.dispose();
-    (this.wireframe?.material as THREE.Material)?.dispose();
-
-    const halo = this.object.children.find(
-      (c) => c !== this.mesh && c !== this.wireframe
-    ) as THREE.Mesh;
-    if (halo) {
-      halo.geometry.dispose();
-      (halo.material as THREE.Material).dispose();
-    }
-
-    super.dispose();
-  }
-
   private _renderMarkers(markers: GlobeNodeData['markers'], radius: number) {
     while (this.markersGroup.children.length > 0) {
       const child = this.markersGroup.children[0] as THREE.Mesh;
@@ -139,21 +121,17 @@ export class GlobeNode extends Node {
       (child.material as THREE.Material).dispose();
     }
 
+    const position = new THREE.Vector3();
     for (const marker of markers ?? []) {
       const { lat, lng, size = 2, color = 0xff0000 } = marker;
 
-      const phi = (90 - lat) * (Math.PI / 180);
-      const theta = (lng + 180) * (Math.PI / 180);
-
-      const x = -(radius * Math.sin(phi) * Math.cos(theta));
-      const z = radius * Math.sin(phi) * Math.sin(theta);
-      const y = radius * Math.cos(phi);
+      latLngToVec3(lat, lng, radius, position);
 
       const geo = new THREE.SphereGeometry(size, 8, 8);
       const mat = new THREE.MeshBasicMaterial({ color });
       const mesh = new THREE.Mesh(geo, mat);
 
-      mesh.position.set(x, y, z);
+      mesh.position.copy(position);
       this.markersGroup.add(mesh);
     }
   }

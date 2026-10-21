@@ -1,12 +1,7 @@
 import type * as THREE from 'three';
 import type { Node } from '../nodes/Node';
+import { parentIdOf } from '../utils/nodeParent';
 import { BaseSystemPlugin } from './BaseSystemPlugin';
-
-type NodeLike = {
-  data?: Record<string, unknown>;
-  parameters?: Record<string, unknown>;
-  parent?: string;
-};
 
 export class LODPlugin extends BaseSystemPlugin {
   readonly id = 'lod';
@@ -14,7 +9,6 @@ export class LODPlugin extends BaseSystemPlugin {
   readonly version = '1.0.0';
 
   public maxDistance = 3000;
-  private currentZoomLevel = 0;
   private detailThreshold = 0.5;
 
   onPreRender(_delta: number): void {
@@ -28,8 +22,7 @@ export class LODPlugin extends BaseSystemPlugin {
     this._updateEdgeVisibility();
   }
 
-  setZoomLevel(level: number, threshold?: number): void {
-    this.currentZoomLevel = level;
+  setZoomLevel(_level: number, threshold?: number): void {
     if (threshold !== undefined) {
       this.detailThreshold = threshold;
     }
@@ -102,7 +95,7 @@ export class LODPlugin extends BaseSystemPlugin {
   }
 
   private _isNodeHiddenByParent(node: Node, hiddenParentIds: Set<string>): boolean {
-    let currentParent = this._getParentId(node);
+    let currentParent = parentIdOf(node);
 
     while (currentParent) {
       if (hiddenParentIds.has(currentParent)) {
@@ -110,16 +103,10 @@ export class LODPlugin extends BaseSystemPlugin {
       }
 
       const parentNode = this.sg.graph.nodes.get(currentParent);
-      currentParent = this._getParentId(parentNode);
+      currentParent = parentIdOf(parentNode);
     }
 
     return false;
-  }
-
-  private _getParentId(node?: Node): string | undefined {
-    if (!node) return undefined;
-    const n = node as unknown as NodeLike;
-    return (n.data?.parent ?? n.parameters?.parent ?? n.parent) as string | undefined;
   }
 
   private _updateEdgeVisibility(): void {

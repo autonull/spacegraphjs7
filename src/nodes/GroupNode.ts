@@ -2,16 +2,11 @@ import * as THREE from 'three';
 
 import type { SpaceGraph } from '../SpaceGraph';
 import type { GroupNodeData, NodeSpec } from '../types';
+import { parentIdOf } from '../utils/nodeParent';
 import { Node } from './Node';
 
-type NodeLike = {
-  data?: Record<string, unknown>;
-  parameters?: Record<string, unknown>;
-  parent?: string;
-};
-
 export class GroupNode extends Node {
-  static typeName = 'GroupNode';
+  static typeName: string = 'GroupNode';
   public readonly isGroupNode = true;
   private meshGeometry: THREE.BoxGeometry;
   readonly meshMaterial: THREE.MeshBasicMaterial;
@@ -94,28 +89,8 @@ export class GroupNode extends Node {
     this.data._lastLodVisible = shouldShowChildren;
   }
 
-  dispose(): void {
-    this.meshGeometry?.dispose();
-    this.meshMaterial?.dispose();
-    const mesh = this._object.children[0] as THREE.Mesh;
-    if (mesh) {
-      const edges = mesh.children[0] as THREE.LineSegments;
-      if (edges) {
-        edges.geometry.dispose();
-        (edges.material as THREE.Material).dispose();
-      }
-    }
-    super.dispose();
-  }
-
-  private _getParentId(node?: Node): string | undefined {
-    if (!node) return undefined;
-    const n = node as unknown as NodeLike;
-    return (n.data?.parent as string) ?? (n.parameters?.parent as string) ?? n.parent;
-  }
-
   private _isAncestorHidden(): boolean {
-    let currentParent = this._getParentId(this);
+    let currentParent = parentIdOf(this);
     const visited = new Set<string>();
 
     while (currentParent && this.sg?.graph?.nodes) {
@@ -130,7 +105,7 @@ export class GroupNode extends Node {
       ) {
         return true;
       }
-      currentParent = this._getParentId(parentNode);
+      currentParent = parentIdOf(parentNode);
     }
 
     return false;

@@ -1,27 +1,26 @@
 import type * as THREE from 'three';
-import { clamp, sortByFrequency } from './math';
+import { clamp } from './math';
 
-export { sortByFrequency };
+/** The red, green, and blue channels of a packed colour. */
+function unpackRgb(value: number): [number, number, number] {
+  return [(value >> 16) & 255, (value >> 8) & 255, value & 255];
+}
+
+/** A packed colour from three channels. */
+function packRgb(r: number, g: number, b: number): number {
+  return (r << 16) | (g << 8) | b;
+}
 
 /**
  * WCAG 2.1 relative luminance per https://www.w3.org/WAI/GL/wiki/Relative_luminance
- * Accepts either THREE.Color or raw 0-255 RGB values.
+ * Accepts either THREE.Color or raw RGB channels.
  */
 export function getRelativeLuminance(
   color: THREE.Color | { r: number; g: number; b: number }
 ): number {
-  const r =
-    'r' in color
-      ? (color as { r: number; g: number; b: number }).r
-      : (color as THREE.Color).r / 255;
-  const g =
-    'g' in color
-      ? (color as { r: number; g: number; b: number }).g
-      : (color as THREE.Color).g / 255;
-  const b =
-    'b' in color
-      ? (color as { r: number; g: number; b: number }).b
-      : (color as THREE.Color).b / 255;
+  const r = color.r;
+  const g = color.g;
+  const b = color.b;
 
   const rLinear = r <= 0.03928 ? r / 12.92 : ((r + 0.055) / 1.055) ** 2.4;
   const gLinear = g <= 0.03928 ? g / 12.92 : ((g + 0.055) / 1.055) ** 2.4;
@@ -50,9 +49,7 @@ export function getCompliantColor(
   minRatio = 4.5,
   maxIterations = 20
 ): number {
-  let r = (hexColor >> 16) & 255;
-  let g = (hexColor >> 8) & 255;
-  let b = hexColor & 255;
+  let [r, g, b] = unpackRgb(hexColor);
 
   let currentLuminance = getRelativeLuminance({ r, g, b });
   let ratio = getContrastRatio(currentLuminance, textLuminance);
@@ -67,7 +64,7 @@ export function getCompliantColor(
     iterations++;
   }
 
-  return ratio < minRatio ? 0x333333 : (r << 16) | (g << 8) | b;
+  return ratio < minRatio ? 0x333333 : packRgb(r, g, b);
 }
 
 export function hexToRgb(
@@ -80,7 +77,7 @@ export function hexToRgb(
       b: hex & 255,
     };
   }
-  if (hex.startsWith('rgba')) {
+  if (hex.startsWith('rgb')) {
     const match = hex.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
     if (match) {
       return {
@@ -129,18 +126,19 @@ export function rgbToHex(r: number, g: number, b: number): string {
   return `#${((1 << 24) + (clamp(r, 0, 255) << 16) + (clamp(g, 0, 255) << 8) + clamp(b, 0, 255)).toString(16).slice(1)}`;
 }
 
+/** A packed hex colour or a CSS colour as a CSS colour string. */
+export function toCssColor(value: string | number): string {
+  return typeof value === 'number' ? `#${value.toString(16).padStart(6, '0')}` : value;
+}
+
 // ============= Color Interpolation =============
 export function lerpColor(c1: number, c2: number, t: number): number {
-  const r1 = (c1 >> 16) & 255,
-    g1 = (c1 >> 8) & 255,
-    b1 = c1 & 255;
-  const r2 = (c2 >> 16) & 255,
-    g2 = (c2 >> 8) & 255,
-    b2 = c2 & 255;
+  const [r1, g1, b1] = unpackRgb(c1);
+  const [r2, g2, b2] = unpackRgb(c2);
   const r = Math.round(r1 + (r2 - r1) * t);
   const g = Math.round(g1 + (g2 - g1) * t);
   const b = Math.round(b1 + (b2 - b1) * t);
-  return (r << 16) | (g << 8) | b;
+  return packRgb(r, g, b);
 }
 
 export function lerpColorHex(c1: string, c2: string, t: number): string {
@@ -159,12 +157,8 @@ export function blendColors(
   c2: number,
   mode: 'multiply' | 'screen' | 'overlay' = 'multiply'
 ): number {
-  const r1 = (c1 >> 16) & 255,
-    g1 = (c1 >> 8) & 255,
-    b1 = c1 & 255;
-  const r2 = (c2 >> 16) & 255,
-    g2 = (c2 >> 8) & 255,
-    b2 = c2 & 255;
+  const [r1, g1, b1] = unpackRgb(c1);
+  const [r2, g2, b2] = unpackRgb(c2);
   let r: number, g: number, b: number;
   switch (mode) {
     case 'screen':
@@ -182,14 +176,15 @@ export function blendColors(
       g = (g1 * g2) / 255;
       b = (b1 * b2) / 255;
   }
-  return (Math.round(r) << 16) | (Math.round(g) << 8) | Math.round(b);
+  return packRgb(Math.round(r), Math.round(g), Math.round(b));
 }
 
 // ============= HSL Manipulation =============
 export function hexToHsl(hex: number): { h: number; s: number; l: number } {
-  const r = ((hex >> 16) & 255) / 255,
-    g = ((hex >> 8) & 255) / 255,
-    b = (hex & 255) / 255;
+  const [red, green, blue] = unpackRgb(hex);
+  const r = red / 255,
+    g = green / 255,
+    b = blue / 255;
   const max = Math.max(r, g, b),
     min = Math.min(r, g, b);
   let h = 0,
@@ -232,7 +227,7 @@ export function hslToHex(h: number, s: number, l: number): number {
     g = hue2rgb(p, q, h);
     b = hue2rgb(p, q, h - 1 / 3);
   }
-  return (Math.round(r * 255) << 16) | (Math.round(g * 255) << 8) | Math.round(b * 255);
+  return packRgb(Math.round(r * 255), Math.round(g * 255), Math.round(b * 255));
 }
 
 export function adjustHue(hex: number, degrees: number): number {
@@ -290,7 +285,7 @@ export function generateGradient(stops: ColorStop[], steps = 10): number[] {
       if (typeof color === 'number') return color;
       const rgb = hexToRgb(color);
       if (!rgb) return 0;
-      return (rgb.r << 16) | (rgb.g << 8) | rgb.b;
+      return packRgb(rgb.r, rgb.g, rgb.b);
     };
     const c1 = getRgbValue(prevStop.color);
     const c2 = getRgbValue(nextStop.color);
@@ -375,20 +370,9 @@ const NAMED_COLORS: Record<string, string> = {
 export function parseColor(color: string | number): number {
   if (typeof color === 'number') return color & 0xffffff;
   const hex = color.trim();
-  if (hex.startsWith('#')) {
-    const body = hex.slice(1);
-    if (body.length === 3) return Number.parseInt(body.replace(/./g, (c) => c + c), 16);
-    if (body.length === 6 || body.length === 8) return Number.parseInt(body.slice(0, 6), 16);
-    return 0;
-  }
-  if (hex.startsWith('rgb')) {
-    const match = hex.match(/\d+/g);
-    if ((match?.length ?? 0) >= 3)
-      return (
-        (Number.parseInt(match![0]) << 16) |
-        (Number.parseInt(match![1]) << 8) |
-        Number.parseInt(match![2])
-      );
+  if (hex.startsWith('#') || hex.startsWith('rgb')) {
+    const rgb = hexToRgb(hex);
+    return rgb ? packRgb(rgb.r, rgb.g, rgb.b) : 0;
   }
   const named = NAMED_COLORS[hex.toLowerCase()];
   return named ? Number.parseInt(named.slice(1), 16) : 0;

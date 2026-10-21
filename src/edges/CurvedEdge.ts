@@ -3,21 +3,18 @@ import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
 import type { Node } from '../nodes/Node';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { EdgeData, EdgeSpec } from '../types';
+import { directionBetween, midpoint, perpendicularTo } from '../utils/vector';
 import { Edge } from './Edge';
 
 export class CurvedEdge extends Edge {
-  static readonly typeName = 'CurvedEdge';
+  static readonly typeName: string = 'CurvedEdge';
   readonly curve: THREE.QuadraticBezierCurve3;
   readonly positionsBuffer: Float32Array;
-  private _controlPoint = new THREE.Vector3();
 
   constructor(sg: SpaceGraph | undefined, spec: EdgeSpec, source: Node, target: Node) {
     super(sg, spec, source, target);
 
-    const sourcePos = new THREE.Vector3();
-    const targetPos = new THREE.Vector3();
-    this.source.getWorldPosition(sourcePos);
-    this.target.getWorldPosition(targetPos);
+    const { sourcePos, targetPos } = this.endpointPositions();
 
     this.curve = new THREE.QuadraticBezierCurve3(
       sourcePos.clone(),
@@ -39,10 +36,7 @@ export class CurvedEdge extends Edge {
 
     if (!this.curve) return;
 
-    const sourcePos = new THREE.Vector3();
-    const targetPos = new THREE.Vector3();
-    this.source.getWorldPosition(sourcePos);
-    this.target.getWorldPosition(targetPos);
+    const { sourcePos, targetPos } = this.endpointPositions();
 
     this.curve.v0.copy(sourcePos);
     this.curve.v1.copy(this.getControlPoint(sourcePos, targetPos));
@@ -61,16 +55,13 @@ export class CurvedEdge extends Edge {
 
   private getControlPoint(sourcePos: THREE.Vector3, targetPos: THREE.Vector3): THREE.Vector3 {
     const curveStrength = ((this.data as EdgeData)?.curveStrength as number) ?? 50;
-    const dir = new THREE.Vector3().subVectors(targetPos, sourcePos);
-    const normal = dir.clone().setZ(0).normalize();
+    const normal = directionBetween(sourcePos, targetPos).setZ(0).normalize();
 
     // Handle vertical lines or degenerate cases for normal
     if (normal.lengthSq() === 0) normal.set(1, 0, 0);
 
-    const cp = new THREE.Vector3().addVectors(sourcePos, targetPos).multiplyScalar(0.5);
-
     // Offset normal to get curved effect
-    const offset = new THREE.Vector3(-normal.y, normal.x, 0).multiplyScalar(curveStrength);
-    return cp.add(offset);
+    const offset = perpendicularTo(normal).multiplyScalar(curveStrength);
+    return midpoint(sourcePos, targetPos).add(offset);
   }
 }

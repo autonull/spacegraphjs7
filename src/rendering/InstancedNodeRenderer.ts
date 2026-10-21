@@ -45,13 +45,11 @@ const GEOMETRY_FACTORIES: Record<GeometryFamily, () => THREE.BufferGeometry> = {
 };
 
 export class InstancedNodeRenderer {
-  private sg: SpaceGraph;
   private scene: THREE.Scene;
   private familyStates: Map<GeometryFamily, GeometryFamilyState> = new Map();
   private nodeToSlot: Map<string, { family: GeometryFamily; slot: number }> = new Map();
 
-  constructor(sg: SpaceGraph, scene: THREE.Scene) {
-    this.sg = sg;
+  constructor(_sg: SpaceGraph, scene: THREE.Scene) {
     this.scene = scene;
     this.initializeGeometries();
   }

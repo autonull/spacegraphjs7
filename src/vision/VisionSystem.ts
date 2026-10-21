@@ -14,10 +14,8 @@ import type { VisionModelLoader } from './VisionModelLoader';
 export class VisionSystem {
   private strategies: Map<string, VisionStrategy>;
   private currentStrategy: VisionStrategy;
-  private options: VisionOptions;
 
   constructor(options: VisionOptions = {}, modelLoader?: VisionModelLoader) {
-    this.options = options;
     this.strategies = new Map();
 
     // Register built-in strategies

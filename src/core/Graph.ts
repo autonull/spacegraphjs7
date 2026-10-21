@@ -122,7 +122,7 @@ export class Graph extends EventEmitter<GraphEventMap> {
           : undefined,
       });
     }
-    this.emitWithTimestamp('node:updated', { node, changes: updates, timestamp: Date.now() });
+    this.emitWithTimestamp('node:updated', { node, changes: updates });
     return node;
   }
 
@@ -154,11 +154,11 @@ export class Graph extends EventEmitter<GraphEventMap> {
 
     this.sg?.renderer.scene.remove(node.object);
     this.nodes.delete(id);
-    this.emitWithTimestamp('node:removed', { id, timestamp: Date.now() });
+    this.emitWithTimestamp('node:removed', { id });
 
     for (const [edgeId, edge] of this.edges) {
       if (edge.source.id === id || edge.target.id === id) {
-        this.emitWithTimestamp('edge:removed', { id: edgeId, timestamp: Date.now() });
+        this.emitWithTimestamp('edge:removed', { id: edgeId });
         edge.dispose?.();
         this.edges.delete(edgeId);
       }
@@ -172,7 +172,7 @@ export class Graph extends EventEmitter<GraphEventMap> {
 
     this.sg?.renderer.scene.remove(edge.line);
     this.edges.delete(id);
-    this.emitWithTimestamp('edge:removed', { id, timestamp: Date.now() });
+    this.emitWithTimestamp('edge:removed', { id });
     edge.dispose?.();
   }
 
@@ -181,7 +181,7 @@ export class Graph extends EventEmitter<GraphEventMap> {
     this.nodes.forEach((node) => node.dispose?.());
     this.edges.clear();
     this.nodes.clear();
-    this.emitWithTimestamp('graph:cleared', { timestamp: Date.now() });
+    this.emitWithTimestamp('graph:cleared', {});
   }
 
   setPositions(positions: Record<string, [number, number, number]>): void {
@@ -245,11 +245,7 @@ export class Graph extends EventEmitter<GraphEventMap> {
 
   // Unified query - supports multiple filter types
   query(predicate: (node: Node) => boolean): Node[] {
-    const result: Node[] = [];
-    for (const node of this.nodes.values()) {
-      if (predicate(node)) result.push(node);
-    }
-    return result;
+    return [...this.nodes.values()].filter(predicate);
   }
 
   queryByType(type: string): Node[] {
@@ -268,17 +264,11 @@ export class Graph extends EventEmitter<GraphEventMap> {
 
   // Find single result
   findNode(predicate: (node: Node) => boolean): Node | undefined {
-    for (const node of this.nodes.values()) {
-      if (predicate(node)) return node;
-    }
-    return undefined;
+    return [...this.nodes.values()].find(predicate);
   }
 
   findEdge(predicate: (edge: Edge) => boolean): Edge | undefined {
-    for (const edge of this.edges.values()) {
-      if (predicate(edge)) return edge;
-    }
-    return undefined;
+    return [...this.edges.values()].find(predicate);
   }
 
   // Neighborhood queries
@@ -325,17 +315,13 @@ export class Graph extends EventEmitter<GraphEventMap> {
 
   // Spatial queries
   getNodesNear(position: THREE.Vector3, radius: number): Node[] {
-    const results: Node[] = [];
-    for (const node of this.nodes.values()) {
-      if (node.position.distanceTo(position) <= radius) results.push(node);
-    }
-    return results;
+    return [...this.nodes.values()].filter(
+      (node) => node.position.distanceTo(position) <= radius
+    );
   }
 
   mapNodes<T>(predicate: (node: Node) => T): T[] {
-    const results: T[] = [];
-    for (const node of this.nodes.values()) results.push(predicate(node));
-    return results;
+    return [...this.nodes.values()].map(predicate);
   }
 
   // Direct iteration
@@ -363,7 +349,12 @@ export class Graph extends EventEmitter<GraphEventMap> {
 
   // ============= Node Degree Utilities =============
   getNodeDegrees(): Map<string, number> {
-    return this.computeDegrees();
+    const degrees = new Map<string, number>();
+    for (const edge of this.edges.values()) {
+      degrees.set(edge.source.id, (degrees.get(edge.source.id) ?? 0) + 1);
+      degrees.set(edge.target.id, (degrees.get(edge.target.id) ?? 0) + 1);
+    }
+    return degrees;
   }
 
   getNodeDegree(nodeId: string): number {
@@ -383,22 +374,9 @@ export class Graph extends EventEmitter<GraphEventMap> {
   // ============= Connected Component Utilities =============
   getConnectedComponent(startNodeId: string): Node[] {
     const visited = new Set<string>();
-    const queue = [startNodeId];
-    const result: Node[] = [];
-
-    while (queue.length > 0) {
-      const id = queue.shift()!;
-      if (visited.has(id)) continue;
-      visited.add(id);
-
-      const node = this.nodes.get(id);
-      if (node) result.push(node);
-
-      for (const neighbor of this.neighbors(id)) {
-        if (!visited.has(neighbor.id)) queue.push(neighbor.id);
-      }
-    }
-    return result;
+    return this.#reachable(this.#linkIndex(), startNodeId, visited)
+      .map((id) => this.nodes.get(id))
+      .filter((node): node is Node => node !== undefined);
   }
 
   getConnectedComponentInRadius(
@@ -412,23 +390,24 @@ export class Graph extends EventEmitter<GraphEventMap> {
     for (const [id, node] of this.nodes) {
       if (node.position.distanceTo(centerPos) <= radius) inRadius.add(id);
     }
-    const nodes = [...inRadius].map((id) => this.nodes.get(id)!).filter(Boolean);
-    const edges = [...inRadius]
-      .flatMap((id) => this.getEdgesForNode(id))
-      .filter((e) => inRadius.has(e.source.id) && inRadius.has(e.target.id));
+    const nodes = [...inRadius]
+      .map((id) => this.nodes.get(id))
+      .filter((node): node is Node => node !== undefined);
+    const edges = [...this.edges.values()].filter(
+      (edge) => inRadius.has(edge.source.id) && inRadius.has(edge.target.id)
+    );
     return { nodes, edges };
   }
 
   getConnectedComponentCount(): number {
+    const links = this.#linkIndex();
     const visited = new Set<string>();
     let count = 0;
 
     for (const nodeId of this.nodes.keys()) {
-      if (!visited.has(nodeId)) {
-        const component = this.getConnectedComponent(nodeId);
-        component.forEach((n) => visited.add(n.id));
-        count++;
-      }
+      if (visited.has(nodeId)) continue;
+      count++;
+      this.#reachable(links, nodeId, visited);
     }
     return count;
   }
@@ -443,7 +422,7 @@ export class Graph extends EventEmitter<GraphEventMap> {
   } {
     const nodeCount = this.nodes.size;
     const edgeCount = this.edges.size;
-    const degrees = this.computeDegrees();
+    const degrees = this.getNodeDegrees();
     const totalDegree = [...degrees.values()].reduce((a, b) => a + b, 0);
     const avgDegree = nodeCount > 0 ? totalDegree / nodeCount : 0;
     const density = nodeCount > 1 ? edgeCount / (nodeCount * (nodeCount - 1)) : 0;
@@ -484,6 +463,7 @@ export class Graph extends EventEmitter<GraphEventMap> {
 
   // ============= Traversal =============
   traverse(callback: (node: Node, depth: number) => void, startId?: string): void {
+    const links = this.#linkIndex();
     const visited = new Set<string>();
     const traverseRecursive = (nodeId: string, depth: number) => {
       if (visited.has(nodeId)) return;
@@ -491,60 +471,95 @@ export class Graph extends EventEmitter<GraphEventMap> {
       const node = this.nodes.get(nodeId);
       if (!node) return;
       callback(node, depth);
-      for (const neighbor of this.neighbors(nodeId)) traverseRecursive(neighbor.id, depth + 1);
+      for (const neighbor of links.get(nodeId) ?? []) traverseRecursive(neighbor.id, depth + 1);
     };
     if (startId) traverseRecursive(startId, 0);
     else for (const node of this.nodes.values()) traverseRecursive(node.id, 0);
   }
 
   bfs(callback: (node: Node, depth: number) => void, startId?: string): void {
-    const start = startId ? [this.nodes.get(startId)] : [...this.nodes.values()];
-    const visited = new Set<string>();
-    const queue: Array<{ node: Node; depth: number }> = [];
-    for (const node of start) if (node) queue.push({ node, depth: 0 });
-    while (queue.length) {
-      const { node, depth } = queue.shift()!;
-      if (visited.has(node.id)) continue;
-      visited.add(node.id);
-      callback(node, depth);
-      for (const neighbor of this.neighbors(node.id)) {
-        if (!visited.has(neighbor.id)) queue.push({ node: neighbor, depth: depth + 1 });
+    const links = this.#linkIndex();
+    const starts = startId ? [this.nodes.get(startId)] : [...this.nodes.values()];
+    this.#walkBreadthFirst(
+      starts.filter((node): node is Node => node !== undefined),
+      links,
+      (node, depth) => {
+        callback(node, depth);
+        return undefined;
       }
-    }
+    );
   }
 
   dfs(callback: (node: Node, depth: number) => void, startId?: string): void {
+    const links = this.#linkIndex();
     const visited = new Set<string>();
     const stack: Array<{ node: Node; depth: number }> = [];
     const start = startId ? this.nodes.get(startId) : [...this.nodes.values()][0];
     if (start) stack.push({ node: start, depth: 0 });
+
     while (stack.length) {
       const { node, depth } = stack.pop()!;
       if (visited.has(node.id)) continue;
       visited.add(node.id);
       callback(node, depth);
-      for (const neighbor of this.neighbors(node.id)) {
+      for (const neighbor of links.get(node.id) ?? []) {
         if (!visited.has(neighbor.id)) stack.push({ node: neighbor, depth: depth + 1 });
       }
     }
   }
 
   findPath(from: string, to: string): Node[] | null {
+    const links = this.#linkIndex();
+    const start = this.nodes.get(from);
+    if (!start) return null;
+
+    const parent = new Map<string, string>();
+    const reached = this.#walkBreadthFirst([start], links, (node, _depth, from) => {
+      if (from) parent.set(node.id, from.id);
+      return node.id === to ? node : undefined;
+    });
+    if (!reached) return null;
+
+    const path = [reached];
+    let current = reached;
+    while (parent.has(current.id)) {
+      current = this.nodes.get(parent.get(current.id)!)!;
+      path.unshift(current);
+    }
+
+    return path;
+  }
+
+  /**
+   * Walk the graph breadth first from a set of starting nodes. The visitor sees every node the
+   * walk reaches, with the depth it sits at and the node it was reached from; returning a value
+   * stops the walk and hands that value back.
+   */
+  #walkBreadthFirst<T>(
+    starts: readonly Node[],
+    links: ReadonlyMap<string, Node[]>,
+    visit: (node: Node, depth: number, from: Node | null) => T | undefined
+  ): T | undefined {
     const visited = new Set<string>();
-    const queue: Array<{ id: string; path: Node[] }> = [{ id: from, path: [] }];
-    while (queue.length) {
-      const { id, path } = queue.shift()!;
-      if (visited.has(id)) continue;
-      visited.add(id);
-      const node = this.nodes.get(id);
-      if (!node) continue;
-      const newPath = [...path, node];
-      if (id === to) return newPath;
-      for (const neighbor of this.neighbors(id)) {
-        if (!visited.has(neighbor.id)) queue.push({ id: neighbor.id, path: newPath });
+    const queue: Array<{ node: Node; depth: number; from: Node | null }> = starts.map((node) => ({
+      node,
+      depth: 0,
+      from: null,
+    }));
+
+    for (let head = 0; head < queue.length; head++) {
+      const entry = queue[head]!;
+      if (visited.has(entry.node.id)) continue;
+      visited.add(entry.node.id);
+      const result = visit(entry.node, entry.depth, entry.from);
+      if (result !== undefined) return result;
+      for (const neighbor of links.get(entry.node.id) ?? []) {
+        if (visited.has(neighbor.id)) continue;
+        queue.push({ node: neighbor, depth: entry.depth + 1, from: entry.node });
       }
     }
-    return null;
+
+    return undefined;
   }
 
   // ============= Snapshot/Restore =============
@@ -581,15 +596,18 @@ export class Graph extends EventEmitter<GraphEventMap> {
   }
 
   getLeafNodes(): Node[] {
-    const hasOutgoing = new Set<string>();
-    for (const edge of this.edges.values()) hasOutgoing.add(edge.source.id);
-    return [...this.nodes.values()].filter((n) => !hasOutgoing.has(n.id));
+    return this.#nodesWithoutEdgeOn('source');
   }
 
   getRootNodes(): Node[] {
-    const hasIncoming = new Set<string>();
-    for (const edge of this.edges.values()) hasIncoming.add(edge.target.id);
-    return [...this.nodes.values()].filter((n) => !hasIncoming.has(n.id));
+    return this.#nodesWithoutEdgeOn('target');
+  }
+
+  /** The nodes with no edge on the given side. */
+  #nodesWithoutEdgeOn(side: 'source' | 'target'): Node[] {
+    const connected = new Set<string>();
+    for (const edge of this.edges.values()) connected.add(edge[side].id);
+    return [...this.nodes.values()].filter((node) => !connected.has(node.id));
   }
 
   topologicalSort(): Node[] {
@@ -631,15 +649,17 @@ export class Graph extends EventEmitter<GraphEventMap> {
 
   // ============= Removal Utilities =============
   removeNodesByType(type: string): number {
-    const toRemove = this.queryByType(type);
-    toRemove.forEach((n) => this.removeNode(n.id));
-    return toRemove.length;
+    return this.#removeNodes(this.queryByType(type));
   }
 
   removeNodesByData(predicate: (data: NodeData) => boolean): number {
-    const toRemove = this.getNodesByData(predicate);
-    toRemove.forEach((n) => this.removeNode(n.id));
-    return toRemove.length;
+    return this.#removeNodes(this.getNodesByData(predicate));
+  }
+
+  /** Remove a set of nodes and report how many went. */
+  #removeNodes(nodes: Node[]): number {
+    nodes.forEach((node) => this.removeNode(node.id));
+    return nodes.length;
   }
 
   // ============= Graph Merge =============
@@ -665,39 +685,62 @@ export class Graph extends EventEmitter<GraphEventMap> {
     for (const edge of this.edges.values()) {
       const isSource = edge.source.id === nodeId;
       const isTarget = edge.target.id === nodeId;
-      let match = false;
-      const callbackIsSource = isSource;
+      const matches =
+        direction === 'both'
+          ? isSource || isTarget
+          : direction === 'outgoing'
+            ? isSource
+            : isTarget;
 
-      if (direction === 'both' && (isSource || isTarget)) {
-        match = true;
-      } else if (direction === 'outgoing' && isSource) {
-        match = true;
-      } else if (direction === 'incoming' && isTarget) {
-        match = true;
+      if (matches && callback(edge, isSource) === true) break;
+    }
+  }
+
+  /**
+   * The nodes each node links to, in both directions. One index serves every traversal, so a walk
+   * costs one pass over the edges instead of one pass per node it visits.
+   */
+  #linkIndex(): Map<string, Node[]> {
+    const links = new Map<string, Node[]>();
+    const link = (from: string, to: Node) => {
+      const list = links.get(from);
+      if (!list) {
+        links.set(from, [to]);
+        return;
       }
+      if (!list.includes(to)) list.push(to);
+    };
 
-      if (match) {
-        if (callback(edge, callbackIsSource) === true) break;
+    for (const edge of this.edges.values()) {
+      link(edge.source.id, edge.target);
+      link(edge.target.id, edge.source);
+    }
+    return links;
+  }
+
+  /** The ids reachable from a start id, breadth first. The visited set is shared and extended. */
+  #reachable(links: Map<string, Node[]>, startId: string, visited: Set<string>): string[] {
+    const queue = [startId];
+    const reached: string[] = [];
+
+    for (let head = 0; head < queue.length; head++) {
+      const id = queue[head]!;
+      if (visited.has(id)) continue;
+      visited.add(id);
+      reached.push(id);
+      for (const neighbor of links.get(id) ?? []) {
+        if (!visited.has(neighbor.id)) queue.push(neighbor.id);
       }
     }
+    return reached;
   }
 
   // ============= Shared Calculations =============
-  private computeDegrees(): Map<string, number> {
-    const degrees = new Map<string, number>();
-    for (const edge of this.edges.values()) {
-      degrees.set(edge.source.id, (degrees.get(edge.source.id) ?? 0) + 1);
-      degrees.set(edge.target.id, (degrees.get(edge.target.id) ?? 0) + 1);
-    }
-    return degrees;
-  }
-
-  // ============= Private Helpers =============
   private _addNode(id: string, node: Node): Node {
     this.nodes.set(id, node);
     this.sg?.renderer.scene.add(node.object);
     node.start();
-    this.emitWithTimestamp('node:added', { node, timestamp: Date.now() });
+    this.emitWithTimestamp('node:added', { node });
     return node;
   }
 
@@ -705,7 +748,7 @@ export class Graph extends EventEmitter<GraphEventMap> {
     this.edges.set(id, edge);
     this.sg?.renderer.scene.add(edge.line);
     edge.start();
-    this.emitWithTimestamp('edge:added', { edge, timestamp: Date.now() });
+    this.emitWithTimestamp('edge:added', { edge });
     return edge;
   }
 }

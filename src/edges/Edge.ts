@@ -4,10 +4,17 @@ import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
 import { Defaults, EdgeColors } from '../core/constants';
 import { applyEdgeTheme } from '../core/theme';
-import { type Bounds3D, type HitResult, type Rect, Surface } from '../core/Surface';
+import { type Bounds3D, type HitResult, type Rect, Surface, createBounds3D, rectOf } from '../core/Surface';
 import type { Node } from '../nodes/Node';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { EdgeData, EdgeSpec } from '../types';
+import { midpoint } from '../utils/vector';
+
+/** The axis an arrowhead points along. */
+const ARROWHEAD_AXIS = new THREE.Vector3(0, 1, 0);
+
+const isFiniteVector = (vector: THREE.Vector3): boolean =>
+  isFinite(vector.x) && isFinite(vector.y) && isFinite(vector.z);
 
 export const DEFAULT_EDGE_DATA: EdgeData = Object.freeze({
   color: EdgeColors.DEFAULT,
@@ -22,7 +29,7 @@ export const DEFAULT_EDGE_DATA: EdgeData = Object.freeze({
 });
 
 export class Edge extends Surface {
-  static typeName = 'Edge';
+  static typeName: string = 'Edge';
   static HIGHLIGHT_COLOR = EdgeColors.HIGHLIGHT;
   static DEFAULT_OPACITY = 0.8;
   static HIGHLIGHT_OPACITY = 1.0;
@@ -46,7 +53,10 @@ export class Edge extends Surface {
   lastActivityTime = 0;
   private _colorStart = new THREE.Color();
   private _colorEnd = new THREE.Color();
+  private _gradientKey = '';
   private _direction = new THREE.Vector3();
+  private _sourcePos = new THREE.Vector3();
+  private _targetPos = new THREE.Vector3();
 
   constructor(
     sgOrSpec: SpaceGraph | EdgeSpec | undefined,
@@ -74,10 +84,11 @@ export class Edge extends Surface {
     this.geometry.setPositions([0, 0, 0, 0, 0, 0.001]);
 
     const { thickness, dashed, dashScale, dashSize, gapSize, gradientColors, color } = this.data;
+    const opacity = (this.data.opacity as number | undefined) ?? Edge.DEFAULT_OPACITY;
     const materialConfig: Record<string, unknown> = {
       linewidth: thickness ?? 3,
-      transparent: true,
-      opacity: Edge.DEFAULT_OPACITY,
+      transparent: opacity < 1,
+      opacity,
       depthTest: false,
       resolution: new THREE.Vector2(window.innerWidth, window.innerHeight),
       dashed: dashed ?? false,
@@ -127,12 +138,9 @@ export class Edge extends Surface {
     return !!(this.source?.position && this.target?.position);
   }
 
+  /** The point halfway between the edge's two ends. */
   get midpoint(): THREE.Vector3 {
-    return this.isValid
-      ? new THREE.Vector3()
-          .addVectors(this.source.position, this.target.position)
-          .multiplyScalar(0.5)
-      : new THREE.Vector3();
+    return this.position;
   }
 
   get length(): number {
@@ -141,9 +149,7 @@ export class Edge extends Surface {
 
   get position(): THREE.Vector3 {
     if (!this.source || !this.target) return new THREE.Vector3();
-    return new THREE.Vector3()
-      .addVectors(this.source.position, this.target.position)
-      .multiplyScalar(0.5);
+    return midpoint(this.source.position, this.target.position);
   }
 
   get rotation(): THREE.Euler {
@@ -159,64 +165,52 @@ export class Edge extends Surface {
   }
 
   get bounds(): Rect {
-    const box = new THREE.Box3().setFromObject(this.line);
-    return {
-      x: box.min.x,
-      y: box.min.y,
-      width: box.max.x - box.min.x,
-      height: box.max.y - box.min.y,
-    };
+    return rectOf(new THREE.Box3().setFromObject(this.line));
   }
 
   get bounds3D(): Bounds3D {
-    const sourcePos = new THREE.Vector3();
-    const targetPos = new THREE.Vector3();
-    this.source.getWorldPosition(sourcePos);
-    this.target.getWorldPosition(targetPos);
+    const { sourcePos, targetPos } = this.endpointPositions();
+    const box = new THREE.Box3().setFromPoints([sourcePos, targetPos]);
 
-    const min = new THREE.Vector3(
-      Math.min(sourcePos.x, targetPos.x),
-      Math.min(sourcePos.y, targetPos.y),
-      Math.min(sourcePos.z, targetPos.z)
-    );
-    const max = new THREE.Vector3(
-      Math.max(sourcePos.x, targetPos.x),
-      Math.max(sourcePos.y, targetPos.y),
-      Math.max(sourcePos.z, targetPos.z)
-    );
-    return {
-      min,
-      max,
-      get center() {
-        return new THREE.Vector3().addVectors(this.min, this.max).multiplyScalar(0.5);
-      },
-      get size() {
-        return new THREE.Vector3().subVectors(this.max, this.min);
-      },
-      containsPoint() {
-        return false;
-      },
-      intersectsRay() {
-        return false;
-      },
-    };
+    return createBounds3D(box.min, box.max);
   }
 
-  requireSpaceGraph(): SpaceGraph {
-    if (!this.sg)
-      throw new Error(`Edge '${this.id}' requires SpaceGraph but sg is not initialized`);
-    return this.sg;
+  protected get surfaceKind(): string {
+    return 'Edge';
+  }
+
+  /**
+   * The world positions of the edge's two ends. The vectors are reused, so a caller that keeps one
+   * has to copy it.
+   */
+  protected endpointPositions(): { sourcePos: THREE.Vector3; targetPos: THREE.Vector3 } {
+    this.source.getWorldPosition(this._sourcePos);
+    this.target.getWorldPosition(this._targetPos);
+    return { sourcePos: this._sourcePos, targetPos: this._targetPos };
   }
 
   updateSpec(updates: Partial<EdgeSpec>): this {
-    if (updates.data) {
-      this.data = { ...this.data, ...updates.data };
-      const { color, thickness, gradientColors } = updates.data;
+    if (!updates.data) return this;
 
-      if (typeof color === 'number') this.line.material.color.setHex(color);
-      if (typeof thickness === 'number') this.line.material.linewidth = thickness;
-      if (gradientColors) this._setGradientColors();
+    this.data = { ...this.data, ...updates.data };
+    const { color, thickness, gradientColors, dashed, dashSize, gapSize, opacity } = updates.data;
+    const material = this.line.material;
+
+    if (typeof color === 'number') material.color.setHex(color);
+    if (typeof thickness === 'number') material.linewidth = thickness;
+    if (gradientColors) this._setGradientColors();
+    if (typeof dashed === 'boolean') {
+      material.dashed = dashed;
+      if (dashed) this.line.computeLineDistances();
     }
+    if (typeof dashSize === 'number') material.dashSize = dashSize;
+    if (typeof gapSize === 'number') material.gapSize = gapSize;
+    if (typeof opacity === 'number') {
+      material.opacity = opacity;
+      material.transparent = opacity < 1;
+    }
+    if (dashSize !== undefined || gapSize !== undefined) this.line.computeLineDistances();
+
     return this;
   }
 
@@ -280,14 +274,9 @@ export class Edge extends Surface {
   update(): void {
     if (!this.line || !this.source || !this.target) return;
 
-    const sourcePos = new THREE.Vector3();
-    const targetPos = new THREE.Vector3();
+    const { sourcePos, targetPos } = this.endpointPositions();
 
-    this.source.getWorldPosition(sourcePos);
-    this.target.getWorldPosition(targetPos);
-
-    if (![sourcePos, targetPos].every((p) => isFinite(p.x) && isFinite(p.y) && isFinite(p.z)))
-      return;
+    if (!isFiniteVector(sourcePos) || !isFiniteVector(targetPos)) return;
 
     this.geometry.setPositions([
       sourcePos.x,
@@ -338,19 +327,17 @@ export class Edge extends Surface {
 
     this.isHovered = hovered;
     const baseThickness = this.data.thickness ?? 3;
-
-    mat.opacity = hovered
+    const opacity = hovered
       ? Math.min(1.0, Edge.DEFAULT_OPACITY + Edge.HOVER_OPACITY_BOOST)
       : Edge.DEFAULT_OPACITY;
+
+    mat.opacity = opacity;
     mat.linewidth = hovered ? baseThickness * Edge.HOVER_THICKNESS_MULT : baseThickness;
     mat.needsUpdate = true;
 
     if (!this.isHighlighted) {
-      const hoverOpacity = hovered
-        ? Math.min(1.0, Edge.DEFAULT_OPACITY + Edge.HOVER_OPACITY_BOOST)
-        : Edge.DEFAULT_OPACITY;
-      this._setArrowheadStyle(this.arrowheads.source, hoverOpacity);
-      this._setArrowheadStyle(this.arrowheads.target, hoverOpacity);
+      this._setArrowheadStyle(this.arrowheads.source, opacity);
+      this._setArrowheadStyle(this.arrowheads.target, opacity);
     }
   }
 
@@ -449,40 +436,39 @@ export class Edge extends Surface {
   private _setGradientColors(): void {
     if (!this.line?.material) return;
 
-    if (this.data.gradientColors?.length === 2) {
+    const gradient = this.data.gradientColors;
+    if (gradient?.length === 2) {
       if (!this.line.material.vertexColors) {
         this.line.material.vertexColors = true;
         this.line.material.needsUpdate = true;
       }
 
-      this._colorStart.set(this.data.gradientColors[0]);
-      this._colorEnd.set(this.data.gradientColors[1]);
+      // The gradient only changes when its colours do; rewriting the buffer every frame would
+      // re-upload it for every edge on every frame.
+      const key = `${gradient[0]}|${gradient[1]}`;
+      if (key === this._gradientKey) return;
+      this._gradientKey = key;
 
-      const colors = this.line.geometry.attributes.color?.array as Float32Array | undefined;
-      if (colors && colors.length >= 6) {
-        colors[0] = this._colorStart.r;
-        colors[1] = this._colorStart.g;
-        colors[2] = this._colorStart.b;
-        colors[3] = this._colorEnd.r;
-        colors[4] = this._colorEnd.g;
-        colors[5] = this._colorEnd.b;
-        this.line.geometry.attributes.color.needsUpdate = true;
-      } else {
-        const posAttribute = this.line.geometry.attributes.position;
-        if (posAttribute) {
-          const numPoints = posAttribute.count;
-          const newColors = new Float32Array(numPoints * 3);
-          for (let i = 0; i < numPoints; i++) {
-            const t = numPoints > 1 ? i / (numPoints - 1) : 0;
-            const interpolatedColor = this._colorStart.clone().lerp(this._colorEnd, t);
-            newColors[i * 3] = interpolatedColor.r;
-            newColors[i * 3 + 1] = interpolatedColor.g;
-            newColors[i * 3 + 2] = interpolatedColor.b;
-          }
-          this.geometry.setColors(newColors);
-        }
+      this._colorStart.set(gradient[0]);
+      this._colorEnd.set(gradient[1]);
+
+      const position = this.line.geometry.attributes.position;
+      if (!position) return;
+      const numPoints = position.count;
+      const newColors = new Float32Array(numPoints * 3);
+      for (let i = 0; i < numPoints; i++) {
+        const t = numPoints > 1 ? i / (numPoints - 1) : 0;
+        const interpolatedColor = this._colorStart.clone().lerp(this._colorEnd, t);
+        newColors[i * 3] = interpolatedColor.r;
+        newColors[i * 3 + 1] = interpolatedColor.g;
+        newColors[i * 3 + 2] = interpolatedColor.b;
       }
-    } else if (this.line.material.vertexColors) {
+      this.geometry.setColors(newColors);
+      return;
+    }
+
+    this._gradientKey = '';
+    if (this.line.material.vertexColors) {
       this.line.material.vertexColors = false;
       this.line.material.needsUpdate = true;
       this.line.material.color.set(this.data.color ?? EdgeColors.DEFAULT);
@@ -493,10 +479,7 @@ export class Edge extends Surface {
     if (!this.sg?.renderer?.scene) return;
     if (!this.source || !this.target) return;
 
-    const sourcePos = new THREE.Vector3();
-    const targetPos = new THREE.Vector3();
-    this.source.getWorldPosition(sourcePos);
-    this.target.getWorldPosition(targetPos);
+    const { sourcePos, targetPos } = this.endpointPositions();
 
     const scene = this.sg.renderer.scene;
 
@@ -508,7 +491,7 @@ export class Edge extends Surface {
       if (!arrowhead) return;
       arrowhead.position.copy(endPos);
       this._direction.subVectors(endPos, startPos).normalize();
-      arrowhead.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), this._direction);
+      arrowhead.quaternion.setFromUnitVectors(ARROWHEAD_AXIS, this._direction);
       if (scene && arrowhead.parent !== scene) scene.add(arrowhead);
     };
 

@@ -5,7 +5,7 @@ import { DOMUtils } from '../utils/DOMUtils';
 import { BaseContentNode } from './BaseContentNode';
 
 export class AudioNode extends BaseContentNode {
-  static readonly typeName = 'AudioNode';
+  static readonly typeName: string = 'AudioNode';
   public audioElement: HTMLAudioElement;
 
   constructor(sg: SpaceGraph | undefined, spec: NodeSpec) {
@@ -42,14 +42,14 @@ export class AudioNode extends BaseContentNode {
 
     this.domElement.appendChild(titleEl);
     this.domElement.appendChild(this.audioElement);
+    this.titleElement = titleEl;
   }
 
   updateSpec(updates: Partial<NodeSpec>): this {
     super.updateSpec(updates);
 
-    if (updates.label !== undefined) {
-      const titleEl = this.domElement.querySelector('.audio-node-title');
-      if (titleEl) titleEl.textContent = updates.label ?? 'Audio Player';
+    if (updates.label !== undefined && this.titleElement) {
+      this.titleElement.textContent = updates.label ?? 'Audio Player';
     }
 
     if (updates.data) {

@@ -41,6 +41,7 @@ import type {
 } from './types';
 import { depthTreatment, sceneFadeDensity } from './depth/DepthCues';
 import { calculateFitView, createLogger, DOMUtils, safeClone, wrapError } from './utils';
+import { clamp01 } from './utils/math';
 import type { FitInsets } from './utils';
 import type { OrthographicCamera } from 'three';
 
@@ -400,7 +401,7 @@ export class SpaceGraph {
       const diff = MathPool.getInstance().acquireVector3().subVectors(camera.position, target);
       this.cameraControls.spherical.radius = diff.length();
       const radius = this.cameraControls.spherical.radius;
-      const ratio = radius > 0 ? Math.max(-1, Math.min(1, diff.y / radius)) : 0;
+      const ratio = radius > 0 ? clamp01(diff.y / radius) : 0;
       this.cameraControls.spherical.phi = Math.acos(ratio);
       this.cameraControls.spherical.theta = Math.atan2(diff.x, diff.z);
       MathPool.getInstance().releaseVector3(diff);
@@ -730,12 +731,12 @@ export class SpaceGraph {
   };
 
   selectAll = () => {
-    this.selection.select([...this.graph.nodes.keys()]);
+    this.ergo.selectAll();
     return this;
   };
 
   deselectAll = () => {
-    this.selection.clear();
+    this.ergo.deselectAll();
     return this;
   };
 
@@ -791,25 +792,13 @@ export class SpaceGraph {
   isPinned = (id: string) =>
     (this.graph.getNode(id)?.data as Record<string, unknown>)?.pinned === true;
 
-  pinned = (id: string) => {
-    this.ergo.data(id, 'pinned', true);
-    return this.graph.getNode(id);
-  };
+  pinned = (id: string) => this.#setDataFlag(id, 'pinned', true);
 
-  unpin = (id: string) => {
-    this.ergo.data(id, 'pinned', false);
-    return this.graph.getNode(id);
-  };
+  unpin = (id: string) => this.#setDataFlag(id, 'pinned', false);
 
-  draggable = (id: string, draggable = true) => {
-    this.ergo.data(id, 'draggable', draggable);
-    return this.graph.getNode(id);
-  };
+  draggable = (id: string, draggable = true) => this.#setDataFlag(id, 'draggable', draggable);
 
-  selectable = (id: string, selectable = true) => {
-    this.ergo.data(id, 'selectable', selectable);
-    return this.graph.getNode(id);
-  };
+  selectable = (id: string, selectable = true) => this.#setDataFlag(id, 'selectable', selectable);
 
   // Watch for changes - returns unsubscribe
   watch(
@@ -991,30 +980,35 @@ export class SpaceGraph {
   // Center camera on point
   center(x: number, y: number, z = 0): this {
     this.cameraControls.target.set(x, y, z);
-    this.cameraControls.update();
-    this.#reportViewport(true);
-    this.requestFrame();
-    return this;
+    return this.#commitCamera();
   }
 
   // Reset camera to default
   resetCamera(): this {
     this.renderer.camera.position.set(0, 500, 500);
     this.cameraControls.target.set(0, 0, 0);
-    this.cameraControls.update();
-    this.#reportViewport(true);
-    this.requestFrame();
-    return this;
+    return this.#commitCamera();
   }
 
   // Set camera position
   setCamera(position: [number, number, number], target?: [number, number, number]): this {
     this.renderer.camera.position.set(...position);
     if (target) this.cameraControls.target.set(...target);
+    return this.#commitCamera();
+  }
+
+  /** Apply a camera change: the controls settle, the host learns the new frame, a frame is asked for. */
+  #commitCamera(): this {
     this.cameraControls.update();
     this.#reportViewport(true);
     this.requestFrame();
     return this;
+  }
+
+  /** Write a data flag onto a node and hand the node back. */
+  #setDataFlag(id: string, key: string, value: unknown): Node | undefined {
+    this.ergo.data(id, key, value);
+    return this.graph.getNode(id);
   }
 
   #init(): void {

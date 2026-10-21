@@ -1,10 +1,10 @@
-import * as THREE from 'three';
-import type { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
 import { CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
 import type { Node } from '../nodes/Node';
+import { lodLevelAt, lodVisibility } from '../core/lod';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { EdgeData, EdgeSpec, LabelLodLevel } from '../types';
 import { DOMUtils } from '../utils/DOMUtils';
+import { midpoint } from '../utils/vector';
 import { Edge } from './Edge';
 
 /**
@@ -18,7 +18,7 @@ import { Edge } from './Edge';
  *   labelLod  : Array of { distance, scale, style } for LOD-based visibility/scaling
  */
 export class LabeledEdge extends Edge {
-  static readonly typeName = 'LabeledEdge';
+  static readonly typeName: string = 'LabeledEdge';
   public labelLod: LabelLodLevel[] = [];
   readonly labelEl: HTMLElement;
   readonly labelObject: CSS2DObject;
@@ -26,15 +26,13 @@ export class LabeledEdge extends Edge {
   private ready = false;
 
   constructor(sg: SpaceGraph | undefined, spec: EdgeSpec, source: Node, target: Node) {
-    super(sg, spec, source, target);
+    super(sg, { ...spec, data: { color: 0x888888, ...spec.data } }, source, target);
 
     const data = spec.data as EdgeData & {
       labelColor?: string;
       fontSize?: string;
       labelLod?: LabelLodLevel[];
     };
-    const color = spec.data?.color ?? 0x888888;
-    (this.object.material as LineMaterial).color.setHex(color);
 
     const theme = this.sg?.options?.theme;
     const fontSize =
@@ -71,40 +69,15 @@ export class LabeledEdge extends Edge {
 
   updateLod(_distance: number): void {
     if (!this.ready) return;
-    if (!this.labelLod || this.labelLod.length === 0) {
-      this.labelEl.style.visibility = '';
-      this.labelEl.style.transform = '';
-      return;
-    }
 
-    const sortedLodLevels = [...this.labelLod].sort(
-      (a, b) => (b.distance ?? 0) - (a.distance ?? 0)
-    );
     const camera = this.sg?.renderer?.camera;
     if (!camera) return;
 
-    const sourcePos = new THREE.Vector3();
-    const targetPos = new THREE.Vector3();
-    this.source.getWorldPosition(sourcePos);
-    this.target.getWorldPosition(targetPos);
+    const { sourcePos, targetPos } = this.endpointPositions();
+    const level = lodLevelAt(this.labelLod, midpoint(sourcePos, targetPos).distanceTo(camera.position));
 
-    const midPoint = new THREE.Vector3().addVectors(sourcePos, targetPos).multiplyScalar(0.5);
-    const distanceToCamera = midPoint.distanceTo(camera.position);
-
-    let ruleApplied = false;
-    for (const level of sortedLodLevels) {
-      if (distanceToCamera >= (level.distance ?? 0)) {
-        this.labelEl.style.visibility = level.style?.includes('visibility:hidden') ? 'hidden' : '';
-        this.labelEl.style.transform = level.scale !== undefined ? `scale(${level.scale})` : '';
-        ruleApplied = true;
-        break;
-      }
-    }
-
-    if (!ruleApplied) {
-      this.labelEl.style.visibility = '';
-      this.labelEl.style.transform = '';
-    }
+    this.labelEl.style.visibility = lodVisibility(level);
+    this.labelEl.style.transform = level?.scale !== undefined ? `scale(${level.scale})` : '';
   }
 
   update(): void {
@@ -123,9 +96,6 @@ export class LabeledEdge extends Edge {
     if (data?.labelColor) {
       this.labelEl.style.color = data.labelColor;
     }
-    if (data?.color) {
-      (this.object.material as LineMaterial).color.setHex(data.color);
-    }
     if (data?.labelLod !== undefined) {
       this.labelLod = data.labelLod;
     }
@@ -139,13 +109,9 @@ export class LabeledEdge extends Edge {
 
   private _positionLabel() {
     if (!this.source || !this.target || !this.labelObject) return;
-    const sourcePos = new THREE.Vector3();
-    const targetPos = new THREE.Vector3();
-    this.source.getWorldPosition(sourcePos);
-    this.target.getWorldPosition(targetPos);
+    const { sourcePos, targetPos } = this.endpointPositions();
 
-    const mid = new THREE.Vector3().addVectors(sourcePos, targetPos).multiplyScalar(0.5);
     // labelObject is child of this.object, which is in world space
-    this.labelObject.position.copy(mid).sub(this.object.position);
+    this.labelObject.position.copy(midpoint(sourcePos, targetPos)).sub(this.object.position);
   }
 }

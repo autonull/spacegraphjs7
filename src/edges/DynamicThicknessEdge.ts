@@ -4,6 +4,7 @@ import type { Node } from '../nodes/Node';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { EdgeSpec } from '../types';
 import { clamp } from '../utils/math';
+import { directionBetween, midpoint } from '../utils/vector';
 import { Edge } from './Edge';
 
 /**
@@ -19,7 +20,7 @@ import { Edge } from './Edge';
  *   segments  : tube radial segments (default 6)
  */
 export class DynamicThicknessEdge extends Edge {
-  static readonly typeName = 'DynamicThicknessEdge';
+  static readonly typeName: string = 'DynamicThicknessEdge';
   readonly cylinder!: THREE.Mesh;
   readonly _initialized: boolean = false;
 
@@ -52,13 +53,10 @@ export class DynamicThicknessEdge extends Edge {
     const radius =
       (minRadius as number) + clampedWeight * ((maxRadius as number) - (minRadius as number));
 
-    const dir = pool.acquireVector3().subVectors(target.position, source.position);
+    const dir = directionBetween(source.position, target.position, pool.acquireVector3());
     const length = dir.length();
 
-    const midPoint = pool
-      .acquireVector3()
-      .addVectors(source.position, target.position)
-      .multiplyScalar(0.5);
+    const midPoint = midpoint(source.position, target.position, pool.acquireVector3());
 
     this.cylinder.position.copy(midPoint);
     this.cylinder.lookAt(target.position);

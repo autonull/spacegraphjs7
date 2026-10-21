@@ -1,4 +1,10 @@
-import type { RenderEdge, RenderNode, RenderTheme } from '@spacegraphjs/renderer';
+import {
+  parseColor as contractParseColor,
+  statusColor as contractStatusColor,
+  type RenderEdge,
+  type RenderNode,
+  type RenderTheme,
+} from '@spacegraphjs/renderer';
 import type { EdgeSpec, NodeData, NodeSpec, SpaceGraphTheme } from 'spacegraphjs/activity';
 
 // The adapter never interprets host semantics: it maps a render-facing node/edge to a core spec.
@@ -22,19 +28,7 @@ export function spaceGraphTheme(theme: RenderTheme): SpaceGraphTheme {
 }
 
 export function statusColor(status: RenderNode['status'], theme: RenderTheme): number {
-  switch (status) {
-    case 'success':
-      return parseColor(theme.success);
-    case 'warning':
-      return parseColor(theme.warning);
-    case 'error':
-      return parseColor(theme.error);
-    case 'running':
-    case 'pending':
-      return parseColor(theme.accent);
-    default:
-      return parseColor(theme.surfaceMuted);
-  }
+  return parseColor(contractStatusColor(status, theme));
 }
 
 function shapeFor(shape: RenderNode['shape']): string {
@@ -96,20 +90,5 @@ export function edgeSpec(edge: RenderEdge, theme: RenderTheme): EdgeSpec {
 }
 
 export function parseColor(value: string | undefined): number {
-  if (!value) return FALLBACK_COLOR;
-  const hex = value.trim();
-  if (hex.startsWith('#')) {
-    const body = hex.slice(1);
-    if (body.length === 3) {
-      return Number.parseInt(body.replace(/./g, (c) => c + c), 16);
-    }
-    if (body.length === 6) return Number.parseInt(body, 16);
-    if (body.length === 8) return Number.parseInt(body.slice(0, 6), 16);
-    return FALLBACK_COLOR;
-  }
-  const rgb = hex.match(/^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
-  if (rgb) {
-    return (Number(rgb[1]) << 16) | (Number(rgb[2]) << 8) | Number(rgb[3]);
-  }
-  return FALLBACK_COLOR;
+  return contractParseColor(value) ?? FALLBACK_COLOR;
 }

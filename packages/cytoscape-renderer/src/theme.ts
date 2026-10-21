@@ -1,6 +1,8 @@
 import {
   DEFAULT_THEME,
   resolveTheme,
+  themeVariable,
+  THEME_ROLES,
   type RenderTheme,
   type SemanticTokenMap,
 } from '@spacegraphjs/renderer';
@@ -13,23 +15,9 @@ import { normalizeTheme } from './mapping';
 export const CYTOSCAPE_THEME: RenderTheme = DEFAULT_THEME;
 
 /** The token map the bridge uses when the host maps no variable of its own. */
-export const CYTOSCAPE_TOKENS: SemanticTokenMap = {
-  background: '--sg-background',
-  surface: '--sg-surface',
-  surfaceMuted: '--sg-surface-muted',
-  text: '--sg-text',
-  textMuted: '--sg-text-muted',
-  border: '--sg-border',
-  accent: '--sg-accent',
-  success: '--sg-success',
-  warning: '--sg-warning',
-  error: '--sg-error',
-  edge: '--sg-edge',
-  edgeMuted: '--sg-edge-muted',
-  selection: '--sg-selection',
-  focus: '--sg-focus',
-  fontFamily: '--sg-font-family',
-};
+export const CYTOSCAPE_TOKENS: SemanticTokenMap = Object.fromEntries(
+  THEME_ROLES.map((role) => [role, themeVariable(role)])
+);
 
 /** Resolves the host's semantic tokens into the palette Cytoscape draws with. */
 export class CytoscapeThemeBridge {

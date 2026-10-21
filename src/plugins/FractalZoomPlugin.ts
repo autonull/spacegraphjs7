@@ -1,8 +1,8 @@
-import type { Plugin } from '../core';
 import type { EventSystem } from '../core/events/EventSystem';
 import type { Graph } from '../core/Graph';
 import type { SpaceGraph } from '../SpaceGraph';
 import { createLogger } from '../utils/logger';
+import { BaseSystemPlugin } from './BaseSystemPlugin';
 
 const logger = createLogger('FractalZoom');
 
@@ -45,23 +45,21 @@ const DEFAULT_CONFIG: FractalZoomConfig = {
 };
 
 /** @deprecated Use `ZoomBandsPlugin`, which delegates to the headless `ZoomBands` controller. */
-export class FractalZoomPlugin implements Plugin {
+export class FractalZoomPlugin extends BaseSystemPlugin {
   readonly id = 'fractal-zoom';
   readonly name = 'Fractal Zoom';
   readonly version = '1.0.0';
 
-  private sg!: SpaceGraph;
   private config: FractalZoomConfig;
   private currentLevel = 0;
-  private targetLevel = 0;
   private isTransitioning = false;
   private transitionProgress = 0;
-  private lastDistance = 0;
   private scrollAccumulator = 0;
   private focusedNodeId: string | null = null;
   readonly SCROLL_THRESHOLD = 0.5;
 
   constructor(config: Partial<FractalZoomConfig> = {}) {
+    super();
     this.config = { ...DEFAULT_CONFIG, ...config };
   }
 
@@ -73,23 +71,17 @@ export class FractalZoomPlugin implements Plugin {
     return this.config.levels[this.currentLevel]?.label || 'Unknown';
   }
 
-  init(sg: SpaceGraph, _graph: Graph, _events: EventSystem): void {
-    this.sg = sg;
-    this.lastDistance = this.getCameraDistance();
+  init(sg: SpaceGraph, graph: Graph, events: EventSystem): void {
+    super.init(sg, graph, events);
     this.updateLevel(0);
 
-    // Listen to camera movement
-    this.sg.events.on('camera:move', () => this.checkZoomLevel());
-    this.sg.events.on('camera:fly:progress', (p: number) => {
+    this.on('camera:move', () => this.checkZoomLevel());
+    this.on('camera:fly:progress', (p: number) => {
       this.transitionProgress = p;
-      this.sg.events.emit('fractal:transition-progress', p);
+      this.emit('fractal:transition-progress', p);
     });
-
-    // Listen to wheel events for fractal zoom
-    this.sg.events.on('input:interaction:wheel', (e: any) => this.handleWheel(e));
-
-    // Listen to node clicks for semantic focus
-    this.sg.events.on('node:click', (data: any) => {
+    this.on('input:interaction:wheel', (e: any) => this.handleWheel(e));
+    this.on('node:click', (data: any) => {
       if (data?.node) {
         this.focusedNodeId = data.node.id;
       }
@@ -144,8 +136,6 @@ export class FractalZoomPlugin implements Plugin {
     }
   }
 
-  dispose(): void {}
-
   private handleWheel(event: any): void {
     if (!event?.deltaY) return;
 
@@ -175,7 +165,6 @@ export class FractalZoomPlugin implements Plugin {
 
   private checkZoomLevel(): void {
     const distance = this.getCameraDistance();
-    this.lastDistance = distance;
 
     let newLevel = this.currentLevel;
     for (let i = 0; i < this.config.levels.length; i++) {
@@ -194,7 +183,6 @@ export class FractalZoomPlugin implements Plugin {
   private updateLevel(newLevel: number): void {
     const fromLevel = this.currentLevel;
     this.currentLevel = newLevel;
-    this.targetLevel = newLevel;
 
     if (fromLevel !== newLevel) {
       this.config.onLevelChange?.(fromLevel, newLevel);

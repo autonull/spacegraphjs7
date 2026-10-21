@@ -3,6 +3,8 @@
 
 import * as THREE from 'three';
 import type { KeyboardScope } from '../types';
+import { visibleHeightAtDistance } from '../utils/CameraUtils';
+import { clamp, ease } from '../utils/math';
 import type { Surface } from './Surface';
 
 export interface CameraControlsConfig {
@@ -82,7 +84,6 @@ export class CameraControls {
   private isOrthographic = false;
   private orthoCamera: THREE.OrthographicCamera | null = null;
   private perspectiveCamera: THREE.Camera;
-  private keyboardScope: KeyboardScope = 'container';
   private keyboardTarget: EventTarget | null = null;
   private orthoZoomRange: { min: number; max: number } | null = null;
 
@@ -141,11 +142,7 @@ export class CameraControls {
 
   pan(dx: number, dy: number): void {
     if (!this.config.enablePan) return;
-    this._tempOffset.copy(this.camera.position).sub(this.target);
-    this._tempSide.crossVectors(this.camera.up, this._tempOffset).normalize();
-    this._camUp.copy(this.camera.up).normalize();
-    this.panOffset.add(this._tempSide.multiplyScalar(-dx * this.config.panSpeed * 0.1));
-    this.panOffset.add(this._camUp.multiplyScalar(dy * this.config.panSpeed * 0.1));
+    this.applyPan(dx * this.config.panSpeed * 0.1, dy * this.config.panSpeed * 0.1);
     this.sg?.requestFrame?.();
   }
 
@@ -180,16 +177,17 @@ export class CameraControls {
 
     this.spherical.theta += this.sphericalDelta.theta;
     this.spherical.phi += this.sphericalDelta.phi;
-    this.spherical.phi = Math.max(0.01, Math.min(Math.PI - 0.01, this.spherical.phi));
+    this.spherical.phi = clamp(this.spherical.phi, 0.01, Math.PI - 0.01);
     if (this.isOrthographic) {
       const cam = this.camera as THREE.OrthographicCamera;
       cam.zoom = this.clampOrthoZoom(cam.zoom / this.scale);
       cam.updateProjectionMatrix();
     } else {
       this.spherical.radius *= this.scale;
-      this.spherical.radius = Math.max(
+      this.spherical.radius = clamp(
+        this.spherical.radius,
         this.config.minDistance,
-        Math.min(this.config.maxDistance, this.spherical.radius)
+        this.config.maxDistance
       );
     }
     this.target.add(this.panOffset);
@@ -197,7 +195,7 @@ export class CameraControls {
     if (this.targetNext || this.phiNext !== null || this.zoomNext !== null) {
       const elapsed = performance.now() - this.animStartTime;
       const t = Math.min(elapsed / this.animDuration, 1);
-      const eased = 1 - (1 - t) ** 3;
+      const eased = ease.cubicOut(t);
 
       if (this.sg?.events) {
         this.sg.events.emit('camera:fly:progress', t);
@@ -242,6 +240,11 @@ export class CameraControls {
   }
 
   panBy(dx: number, dy: number): void {
+    this.applyPan(dx, dy);
+  }
+
+  /** Shift the camera sideways and upwards, along the camera's own axes. */
+  private applyPan(dx: number, dy: number): void {
     this._tempOffset.copy(this.camera.position).sub(this.target);
     this._tempSide.crossVectors(this.camera.up, this._tempOffset).normalize();
     this._camUp.copy(this.camera.up).normalize();
@@ -259,6 +262,18 @@ export class CameraControls {
   }
 
   zoomTo(target: THREE.Vector3, distance: number, duration = 1.5): void {
+    this.zoomToPoint(target, distance, duration);
+  }
+
+  zoomToSurface3D(surface: Surface, duration = 1.5): void {
+    if (!surface.bounds3D) return;
+    const bounds = surface.bounds3D;
+    const maxDim = Math.max(bounds.size.x, bounds.size.y, bounds.size.z);
+    this.zoomToPoint(bounds.center, maxDim * 2.5, duration);
+  }
+
+  /** Move the camera to a point, remembering where it came from so a zoom-out returns there. */
+  private zoomToPoint(target: THREE.Vector3, distance: number, duration: number): void {
     const top = this.zoomStack.at(-1);
     if (top && top.target.distanceTo(target) < distance * 0.1) {
       this.zoomOut();
@@ -272,28 +287,6 @@ export class CameraControls {
     });
     if (this.zoomStack.length > this.MAX_ZOOM_DEPTH) this.zoomStack.shift();
     this.flyTo(target, distance, duration);
-  }
-
-  zoomToSurface3D(surface: Surface, duration = 1.5): void {
-    if (!surface.bounds3D) return;
-    const bounds = surface.bounds3D;
-    const center = bounds.center;
-    const size = bounds.size;
-    const maxDim = Math.max(size.x, size.y, size.z);
-    const distance = maxDim * 2.5;
-    const top = this.zoomStack.at(-1);
-    if (top && center.distanceTo(top.target) < distance * 0.1) {
-      this.zoomOut();
-      return;
-    }
-    this.zoomStack.push({
-      target: this.target.clone(),
-      distance: this.spherical.radius,
-      phi: this.spherical.phi,
-      theta: this.spherical.theta,
-    });
-    if (this.zoomStack.length > this.MAX_ZOOM_DEPTH) this.zoomStack.shift();
-    this.flyTo(center, distance, duration);
   }
 
   zoomOut(): void {
@@ -398,7 +391,8 @@ export class CameraControls {
       const aspect = this.domElement.clientHeight
         ? this.domElement.clientWidth / this.domElement.clientHeight
         : 1;
-      const height = 2 * this.spherical.radius * Math.tan(THREE.MathUtils.degToRad(75 / 2));
+      const perspective = this.perspectiveCamera as THREE.PerspectiveCamera;
+      const height = visibleHeightAtDistance(perspective.fov ?? 75, this.spherical.radius);
       const width = height * aspect;
       this.orthoCamera = new THREE.OrthographicCamera(
         -width / 2,
@@ -447,7 +441,6 @@ export class CameraControls {
       this.keyboardTarget.removeEventListener('keyup', this.onKeyUp as EventListener);
       this.keyboardTarget = null;
     }
-    this.keyboardScope = scope;
     this.keyState.clear();
     if (scope === false) return;
     this.keyboardTarget = scope === 'window' ? window : this.domElement;

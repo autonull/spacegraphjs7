@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import type { Edge } from '../../edges/Edge';
 import type { Node } from '../../nodes/Node';
-import { BaseLayout, type LayoutConfig, type LayoutOptions } from './BaseLayout';
+import { BaseLayout, type LayoutConfig } from './BaseLayout';
 
 export interface ForceLayoutConfig extends LayoutConfig {
   repulsion: number;
@@ -19,7 +19,7 @@ export interface ForceLayoutConfig extends LayoutConfig {
  * Simulates physical forces (repulsion between nodes, attraction along edges)
  * to produce aesthetically pleasing layouts with minimal edge crossings.
  */
-export class ForceLayout extends BaseLayout {
+export class ForceLayout extends BaseLayout<ForceLayoutConfig> {
   readonly id = 'force-layout';
   readonly name = 'Force Directed';
   readonly version = '1.0.0';
@@ -27,65 +27,51 @@ export class ForceLayout extends BaseLayout {
   private velocities = new Map<string, THREE.Vector3>();
   private currentIteration = 0;
 
+  private get forceConfig(): ForceLayoutConfig {
+    return this.config as ForceLayoutConfig;
+  }
+
   private get simulationProgress(): number {
-    const total = (this.config as ForceLayoutConfig).iterations;
+    const total = this.forceConfig.iterations;
     return total > 0 ? this.currentIteration / total : 0;
   }
 
-  async apply(options?: LayoutOptions): Promise<void> {
-    const { animate = this.config.animate ?? true, duration = this.config.duration ?? 1.0 } =
-      options ?? {};
-    const nodes = Array.from(this.graph.getNodes()) as Node[];
-    if (!nodes.length) return;
+  /** The simulation owns every node: it reads the pinned ones but never moves them. */
+  protected override ownedNodes(): Node[] {
+    return Array.from(this.graph.getNodes());
+  }
 
+  protected place(nodes: Node[], _config: ForceLayoutConfig): void {
     this.velocities.clear();
     this.currentIteration = 0;
     for (const node of nodes) this.velocities.set(node.id, new THREE.Vector3());
 
-    const totalIterations = (this.config as ForceLayoutConfig).iterations;
-    for (let i = 0; i < totalIterations; i++) {
+    const { iterations } = this.forceConfig;
+    for (let i = 0; i < iterations; i++) {
       this.currentIteration = i + 1;
-      this.simulateStep(nodes);
+      this.step(nodes);
     }
 
     for (const node of nodes) {
       if (this.isPinned(node)) continue;
-      this.applyPosition(node, node.position.clone(), { animate, duration });
+      this.syncPosition(node);
     }
-
-    this.updateEdges();
-    this.emitLayoutApplied({ duration });
   }
 
-  dispose(): void {
-    this.velocities.clear();
-  }
-
-  protected defaultConfig(): ForceLayoutConfig {
-    return {
-      repulsion: 10000,
-      attraction: 0.01,
-      damping: 0.9,
-      gravity: 0.1,
-      minDistance: 50,
-      maxDistance: 1000,
-      iterations: 50,
-      temperature: 100,
-      animate: true,
-      duration: 1.0,
-    };
-  }
-
-  private simulateStep(nodes: Node[]): void {
-    const config = this.config as ForceLayoutConfig;
+  /**
+   * Advance the simulation by one step: every node moves one tick towards its equilibrium.
+   */
+  step(nodes: Node[] = Array.from(this.graph.getNodes())): void {
+    if (!nodes.length) return;
+    const config = this.forceConfig;
     const forces = new Map<string, THREE.Vector3>();
     for (const node of nodes) forces.set(node.id, new THREE.Vector3());
 
     const maxForce = config.repulsion / (config.minDistance * config.minDistance);
     for (let i = 0; i < nodes.length; i++) {
       for (let j = i + 1; j < nodes.length; j++) {
-        const a = nodes[i],
-          b = nodes[j];
+        const a = nodes[i];
+        const b = nodes[j];
         const diff = new THREE.Vector3().subVectors(a.position, b.position);
         const distSq = diff.lengthSq();
         const dist = Math.sqrt(distSq);
@@ -115,13 +101,7 @@ export class ForceLayout extends BaseLayout {
       const force = forces.get(node.id)!;
       const dist = node.position.length();
       if (dist > 0)
-        force.add(
-          node.position
-            .clone()
-            .normalize()
-            .negate()
-            .multiplyScalar(config.gravity * dist)
-        );
+        force.add(node.position.clone().normalize().negate().multiplyScalar(config.gravity * dist));
     }
 
     for (const node of nodes) {
@@ -132,5 +112,25 @@ export class ForceLayout extends BaseLayout {
       if (velocity.length() > maxMove) velocity.setLength(maxMove);
       node.position.add(velocity);
     }
+  }
+
+  override dispose(): void {
+    super.dispose();
+    this.velocities.clear();
+  }
+
+  protected defaultConfig(): ForceLayoutConfig {
+    return {
+      repulsion: 10000,
+      attraction: 0.01,
+      damping: 0.9,
+      gravity: 0.1,
+      minDistance: 50,
+      maxDistance: 1000,
+      iterations: 50,
+      temperature: 100,
+      animate: true,
+      duration: 1.0,
+    };
   }
 }

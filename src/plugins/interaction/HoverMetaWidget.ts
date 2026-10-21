@@ -1,7 +1,9 @@
-import type { Plugin } from '../../core';
+import type { EventSystem } from '../../core/events/EventSystem';
 import type { Graph } from '../../core/Graph';
 import type { Node } from '../../nodes/Node';
 import type { SpaceGraph } from '../../SpaceGraph';
+import { worldToClient } from '../../utils/projection';
+import { BaseSystemPlugin } from '../BaseSystemPlugin';
 
 export interface HoverAction {
   icon: string;
@@ -25,7 +27,7 @@ const DEFAULT_ACTIONS: HoverAction[] = [
   { icon: '✕', label: 'Delete', action: 'delete' },
 ];
 
-export class HoverMetaWidget implements Plugin {
+export class HoverMetaWidget extends BaseSystemPlugin {
   readonly id = 'hover-meta-widget';
   readonly name = 'Hover Meta Widget';
   readonly version = '1.0.0';
@@ -33,13 +35,12 @@ export class HoverMetaWidget implements Plugin {
   opts: Required<HoverMetaWidgetOptions>;
   overlay: HTMLElement;
   buttonContainer: HTMLElement;
-  private sg!: SpaceGraph;
-  private hoveredNode: Node | null = null;
   private hideTimeout: ReturnType<typeof setTimeout> | null = null;
   private fadeTimeout: ReturnType<typeof setTimeout> | null = null;
   private isVisible = false;
 
   constructor(options: HoverMetaWidgetOptions = {}) {
+    super();
     this.opts = {
       enabled: options.enabled ?? true,
       hideDelay: options.hideDelay ?? 400,
@@ -78,18 +79,18 @@ export class HoverMetaWidget implements Plugin {
     this.overlay.appendChild(this.buttonContainer);
   }
 
-  init(sg: SpaceGraph, _graph: Graph, _events: any): void {
-    this.sg = sg;
+  init(sg: SpaceGraph, graph: Graph, events: EventSystem): void {
+    super.init(sg, graph, events);
     document.body.appendChild(this.overlay);
 
-    sg.events.on('node:pointerenter', ({ node }: any) => {
+    this.on('node:pointerenter', ({ node }: any) => {
       if (!this.opts.enabled) return;
       const nodeData = node.data as Record<string, unknown>;
       if (nodeData?.metaWidget === false) return;
       this.showForNode(node);
     });
 
-    sg.events.on('node:pointerleave', () => {
+    this.on('node:pointerleave', () => {
       this.scheduleHide();
     });
 
@@ -108,6 +109,7 @@ export class HoverMetaWidget implements Plugin {
   }
 
   dispose(): void {
+    super.dispose();
     if (this.hideTimeout) clearTimeout(this.hideTimeout);
     if (this.fadeTimeout) clearTimeout(this.fadeTimeout);
     this.overlay.remove();
@@ -119,7 +121,6 @@ export class HoverMetaWidget implements Plugin {
       this.hideTimeout = null;
     }
 
-    this.hoveredNode = node;
     this.buildButtons(node);
     this.positionOverlay(node);
 
@@ -171,15 +172,14 @@ export class HoverMetaWidget implements Plugin {
   }
 
   private positionOverlay(node: Node): void {
-    const pos = node.position.clone();
-    pos.project(this.sg.renderer.camera);
+    const screen = worldToClient(
+      node.position,
+      this.sg.renderer.camera,
+      this.sg.renderer.renderer.domElement
+    );
 
-    const rect = this.sg.renderer.renderer.domElement.getBoundingClientRect();
-    const x = (pos.x * 0.5 + 0.5) * rect.width;
-    const y = (-pos.y * 0.5 + 0.5) * rect.height;
-
-    this.overlay.style.left = `${x - this.overlay.offsetWidth / 2}px`;
-    this.overlay.style.top = `${y + 50}px`;
+    this.overlay.style.left = `${screen.x - this.overlay.offsetWidth / 2}px`;
+    this.overlay.style.top = `${screen.y + 50}px`;
   }
 
   private scheduleHide(): void {
@@ -194,7 +194,6 @@ export class HoverMetaWidget implements Plugin {
       this.overlay.style.display = 'none';
       this.isVisible = false;
     }, this.opts.fadeDuration);
-    this.hoveredNode = null;
   }
 
   private startFadeTimer(): void {

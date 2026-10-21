@@ -2,8 +2,6 @@ import { InteractionPlugin, MinimapPlugin } from '../plugins';
 import { HUDPlugin } from '../plugins/HUDPlugin';
 import { SpaceGraph } from '../SpaceGraph';
 import type { Edge, GraphSpec, Node } from '../types';
-import { depthTreatment } from '../depth';
-import { calculateFitView } from '../utils';
 import {
   addGrid,
   renderButtons,
@@ -64,8 +62,8 @@ export class SpaceGraphApp {
   public buttons: AppButtonConfig[] = [];
   public toolbarActions: AppButtonConfig[] = [];
   public _zoomSliderHandler?: () => void;
-  private originalColors = new Map<Node, number>();
-  private originalEdgeColors = new Map<Edge, number>();
+  private originalColors = new Map<Node | Edge, number>();
+  private originalEdgeColors = new Map<Node | Edge, number>();
 
   private constructor(sg: SpaceGraph, options: SpaceGraphAppOptions) {
     this.sg = sg;
@@ -194,18 +192,7 @@ export class SpaceGraphApp {
   }
 
   public focusOnNodes(nodeIds: string[], padding = 100, duration = 1.5) {
-    const nodes = nodeIds
-      .map((id) => this.sg.graph.getNode(id))
-      .filter((n): n is NonNullable<typeof n> => n != null);
-    if (nodes.length === 0) return;
-
-    const isPerspective = this.sg.renderer.projection === 'perspective';
-    const targetPhi = isPerspective ? depthTreatment(this.sg.depth).phi : undefined;
-
-    const fit = calculateFitView(nodes, this.sg.renderer.camera, padding, 200, targetPhi);
-    if (fit) {
-      this.sg.cameraControls.flyTo(fit.center, fit.cameraZ, duration);
-    }
+    this.sg.fitView(padding, duration, nodeIds);
   }
 
   public addNode(nodeSpec: any) {
@@ -278,31 +265,42 @@ export class SpaceGraphApp {
   private _clearNodeStyle(node: Node): void {
     if ((node as any).isHtmlNode && this.options.selectionHighlightClass) {
       (node as any).domElement.classList.remove(this.options.selectionHighlightClass);
-    } else if (this.originalColors.has(node)) {
-      node.updateSpec({ data: { color: this.originalColors.get(node) } });
+      return;
     }
+    this._restoreColor(node, this.originalColors);
   }
 
   private _applyNodeStyle(node: Node): void {
     if ((node as any).isHtmlNode && this.options.selectionHighlightClass) {
       (node as any).domElement.classList.add(this.options.selectionHighlightClass);
-    } else if (this.options.selectionHighlightColor && node.data?.color !== undefined) {
-      this.originalColors.set(node, node.data.color as number);
-      node.updateSpec({ data: { color: this.options.selectionHighlightColor } });
+      return;
     }
+    this._highlightColor(node, this.originalColors, this.options.selectionHighlightColor);
   }
 
   private _clearEdgeStyle(edge: Edge): void {
-    if (this.originalEdgeColors.has(edge)) {
-      edge.updateSpec({ data: { color: this.originalEdgeColors.get(edge) } });
-    }
+    this._restoreColor(edge, this.originalEdgeColors);
   }
 
   private _applyEdgeStyle(edge: Edge): void {
-    if (this.options.selectionHighlightEdgeColor && edge.data?.color !== undefined) {
-      this.originalEdgeColors.set(edge, edge.data.color as number);
-      edge.updateSpec({ data: { color: this.options.selectionHighlightEdgeColor } });
-    }
+    this._highlightColor(edge, this.originalEdgeColors, this.options.selectionHighlightEdgeColor);
+  }
+
+  /** Remember a surface's own colour, then paint it with the highlight colour. */
+  private _highlightColor(
+    surface: Node | Edge,
+    originals: Map<Node | Edge, number>,
+    color: number | undefined
+  ): void {
+    if (!color || surface.data?.color === undefined) return;
+    originals.set(surface, surface.data.color as number);
+    surface.updateSpec({ data: { color } });
+  }
+
+  /** Put a surface's own colour back. */
+  private _restoreColor(surface: Node | Edge, originals: Map<Node | Edge, number>): void {
+    if (!originals.has(surface)) return;
+    surface.updateSpec({ data: { color: originals.get(surface) } });
   }
 }
 

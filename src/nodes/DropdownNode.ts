@@ -10,7 +10,7 @@ export interface DropdownOption {
 }
 
 export class DropdownNode extends HtmlNode {
-  static readonly typeName = 'DropdownNode';
+  static readonly typeName: string = 'DropdownNode';
   private selectElement: HTMLSelectElement | null = null;
   private options: DropdownOption[] = [];
   private selectedValue = '';
@@ -35,12 +35,16 @@ export class DropdownNode extends HtmlNode {
     this.options = options;
     if (!this.selectElement) return;
     this.selectElement.innerHTML = '';
-    for (const opt of options) {
+    this._appendOptions();
+  }
+
+  private _appendOptions(): void {
+    for (const opt of this.options) {
       const option = DOMUtils.createElement('option') as HTMLOptionElement;
       option.value = opt.id;
       option.textContent = opt.label;
       if (opt.value !== undefined) option.value = String(opt.value);
-      this.selectElement.appendChild(option);
+      this.selectElement?.appendChild(option);
     }
   }
 
@@ -67,13 +71,7 @@ export class DropdownNode extends HtmlNode {
       cursor: 'pointer',
     });
 
-    for (const opt of this.options) {
-      const option = DOMUtils.createElement('option') as HTMLOptionElement;
-      option.value = opt.id;
-      option.textContent = opt.label;
-      if (opt.value !== undefined) option.value = String(opt.value);
-      this.selectElement.appendChild(option);
-    }
+    this._appendOptions();
 
     this.selectElement.value = this.selectedValue;
     this.selectElement.addEventListener('change', () => {
@@ -87,11 +85,6 @@ export class DropdownNode extends HtmlNode {
     this.selectedValue = value;
     const option = this.options.find((o) => o.id === value);
     this.data = { ...this.data, value };
-    this.sg?.events.emit('node:dataChanged', {
-      node: this,
-      property: 'value',
-      value,
-      label: option?.label,
-    });
+    this.emitDataChanged('value', value, { label: option?.label });
   }
 }

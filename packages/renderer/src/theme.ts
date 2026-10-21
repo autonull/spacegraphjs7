@@ -4,7 +4,7 @@
  * host supplies the reader.
  */
 
-import type { RenderTheme } from './index';
+import type { NodeStatus, RenderTheme } from './index';
 
 /** A renderer role mapped to the CSS variable that carries the host's value for it. */
 export type SemanticTokenMap = Readonly<Record<string, string>>;
@@ -35,7 +35,7 @@ export const DEFAULT_THEME: RenderTheme = {
 };
 
 /** The roles a theme carries; every one of them resolves to a colour or a font. */
-const THEME_ROLES = [
+export const THEME_ROLES = [
   'background',
   'surface',
   'surfaceMuted',
@@ -52,6 +52,23 @@ const THEME_ROLES = [
   'focus',
   'fontFamily',
 ] as const satisfies readonly (keyof RenderTheme)[];
+
+/** The roles that resolve to a colour. */
+export type ThemeColorRole = Exclude<(typeof THEME_ROLES)[number], 'fontFamily'>;
+
+/** The colour roles, in the order the theme lists them. */
+export const THEME_COLOR_ROLES: readonly ThemeColorRole[] = THEME_ROLES.filter(
+  (role): role is ThemeColorRole => role !== 'fontFamily'
+);
+
+/**
+ * The CSS variable a role conventionally lives in: the role's name in kebab case under the `--sg-`
+ * prefix. An adapter that maps a host's tokens reads them through this, so every renderer agrees on
+ * where a role comes from.
+ */
+export function themeVariable(role: keyof RenderTheme): string {
+  return `--sg-${role.replace(/[A-Z]/g, (character) => `-${character.toLowerCase()}`)}`;
+}
 
 /**
  * Resolves the renderer theme: the host's variables win, the renderer's own palette fills the gaps.
@@ -76,6 +93,31 @@ export function resolveTheme(
   }
 
   return resolved;
+}
+
+/**
+ * The theme role that carries a status' colour. Every renderer draws a status from the same role,
+ * so a host maps one token and every renderer agrees.
+ */
+export function statusRole(status: NodeStatus | undefined): ThemeColorRole {
+  switch (status) {
+    case 'success':
+      return 'success';
+    case 'warning':
+      return 'warning';
+    case 'error':
+      return 'error';
+    case 'running':
+    case 'pending':
+      return 'accent';
+    default:
+      return 'surfaceMuted';
+  }
+}
+
+/** The theme colour that represents a status. */
+export function statusColor(status: NodeStatus | undefined, theme: RenderTheme): string {
+  return theme[statusRole(status)];
 }
 
 /** The roles the canvas draws, and the contrast each must clear. */
@@ -146,13 +188,12 @@ export class ContrastAuditor {
 
   /** The measured ratio of every role against the canvas. */
   contrast(theme: RenderTheme): Record<ContrastRole, number | undefined> {
-    return {
-      text: contrastRatio(theme.text, theme.background),
-      textMuted: contrastRatio(theme.textMuted, theme.background),
-      edge: contrastRatio(theme.edge, theme.background),
-      edgeMuted: contrastRatio(theme.edgeMuted, theme.background),
-      selection: contrastRatio(theme.selection, theme.background),
-    };
+    return Object.fromEntries(
+      (Object.keys(CONTRAST_TARGETS) as ContrastRole[]).map((role) => [
+        role,
+        contrastRatio(theme[role], theme.background),
+      ])
+    ) as Record<ContrastRole, number | undefined>;
   }
 
   /** The roles that miss their target. */

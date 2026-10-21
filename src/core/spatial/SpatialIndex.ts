@@ -20,7 +20,6 @@ export class SpatialIndex {
   constructor(cellSize = 100) {
     if (cellSize <= 0) throw new Error('cellSize must be positive');
     this.cellSize = cellSize;
-    console.log(`[SpatialIndex] Initialized with cellSize=${this.cellSize}`);
   }
 
   build(nodes: NodeLike[]): void {
@@ -50,19 +49,9 @@ export class SpatialIndex {
 
   queryBox(box: THREE.Box3): NodeLike[] {
     const result = new Set<NodeLike>();
-    const minX = Math.floor(box.min.x / this.cellSize);
-    const maxX = Math.floor(box.max.x / this.cellSize);
-    const minY = Math.floor(box.min.y / this.cellSize);
-    const maxY = Math.floor(box.max.y / this.cellSize);
-    const minZ = Math.floor(box.min.z / this.cellSize);
-    const maxZ = Math.floor(box.max.z / this.cellSize);
-    for (let x = minX; x <= maxX; x++) {
-      for (let y = minY; y <= maxY; y++) {
-        for (let z = minZ; z <= maxZ; z++) {
-          for (const n of this.cells.get(this.getCellKey(x, y, z))?.nodes ?? []) result.add(n);
-        }
-      }
-    }
+    this.forEachCellInBox(box, (x, y, z) => {
+      for (const n of this.cells.get(this.getCellKey(x, y, z))?.nodes ?? []) result.add(n);
+    });
     return Array.from(result);
   }
 
@@ -147,10 +136,35 @@ export class SpatialIndex {
 
   private getGridCoords(position: THREE.Vector3): { x: number; y: number; z: number } {
     return {
-      x: Math.floor(position.x / this.cellSize),
-      y: Math.floor(position.y / this.cellSize),
-      z: Math.floor(position.z / this.cellSize),
+      x: this.cellIndex(position.x),
+      y: this.cellIndex(position.y),
+      z: this.cellIndex(position.z),
     };
+  }
+
+  /** The cell a coordinate falls into. */
+  private cellIndex(value: number): number {
+    return Math.floor(value / this.cellSize);
+  }
+
+  /** Every cell a box covers, in the same order the range is walked. */
+  private forEachCellInBox(
+    box: THREE.Box3,
+    visit: (x: number, y: number, z: number) => void
+  ): void {
+    const minX = this.cellIndex(box.min.x);
+    const maxX = this.cellIndex(box.max.x);
+    const minY = this.cellIndex(box.min.y);
+    const maxY = this.cellIndex(box.max.y);
+    const minZ = this.cellIndex(box.min.z);
+    const maxZ = this.cellIndex(box.max.z);
+    for (let x = minX; x <= maxX; x++) {
+      for (let y = minY; y <= maxY; y++) {
+        for (let z = minZ; z <= maxZ; z++) {
+          visit(x, y, z);
+        }
+      }
+    }
   }
 
   private getCellKey(x: number, y: number, z: number): string {
@@ -174,29 +188,12 @@ export class SpatialIndex {
       node.object.visible = true;
       box.setFromObject(node.object);
       node.object.visible = wasVisible;
-      console.log(
-        `[SpatialIndex] Inserting node ${node.id} with bounds: min=(${box.min.x},${box.min.y},${box.min.z}), max=(${box.max.x},${box.max.y},${box.max.z})`
-      );
       this.nodeBounds.set(node, box.clone());
-      const minX = Math.floor(box.min.x / this.cellSize);
-      const maxX = Math.floor(box.max.x / this.cellSize);
-      const minY = Math.floor(box.min.y / this.cellSize);
-      const maxY = Math.floor(box.max.y / this.cellSize);
-      const minZ = Math.floor(box.min.z / this.cellSize);
-      const maxZ = Math.floor(box.max.z / this.cellSize);
-      console.log(
-        `[SpatialIndex] Node ${node.id} cell range: X=[${minX},${maxX}], Y=[${minY},${maxY}], Z=[${minZ},${maxZ}]`
-      );
       const cells = new Set<string>();
-      for (let x = minX; x <= maxX; x++) {
-        for (let y = minY; y <= maxY; y++) {
-          for (let z = minZ; z <= maxZ; z++) {
-            const key = this.getCellKey(x, y, z);
-            cells.add(key);
-            this.getOrCreateCell(x, y, z).nodes.add(node);
-          }
-        }
-      }
+      this.forEachCellInBox(box, (x, y, z) => {
+        cells.add(this.getCellKey(x, y, z));
+        this.getOrCreateCell(x, y, z).nodes.add(node);
+      });
       this.nodeCells.set(node, cells);
     } else {
       const { x, y, z } = this.getGridCoords(node.position);
@@ -211,7 +208,6 @@ export class SpatialIndex {
 
       this.nodeCells.set(node, new Set([key]));
       this.getOrCreateCell(x, y, z).nodes.add(node);
-      console.log(`[SpatialIndex] Inserting point-node ${node.id} at cell ${key}`);
     }
   }
 }

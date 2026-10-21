@@ -1,101 +1,75 @@
 import * as THREE from 'three';
 import type { Node } from '../../nodes/Node';
-import { BaseLayout, type LayoutConfig, type LayoutOptions } from './BaseLayout';
+import { BaseLayout, type LayoutOptions } from './BaseLayout';
 
-export class HierarchicalLayout extends BaseLayout {
+export interface HierarchicalLayoutOptions extends LayoutOptions {
+  rootId: string;
+  levelHeight: number;
+  nodeSpacing: number;
+  z: number;
+  direction: string;
+}
+
+export class HierarchicalLayout extends BaseLayout<HierarchicalLayoutOptions> {
   readonly id = 'hierarchical-layout';
   readonly name = 'Hierarchical Layout';
   readonly version = '1.0.0';
 
-  async apply(options?: LayoutOptions): Promise<void> {
-    const {
-      rootId = this.config.rootId as string,
-      levelHeight = this.config.levelHeight as number,
-      nodeSpacing = this.config.nodeSpacing as number,
-      z = this.config.z as number,
-      direction = this.config.direction as string,
-      animate = this.config.animate ?? true,
-      duration = this.config.duration ?? 1.0,
-    } = options ?? {};
+  /** The hierarchy reads the whole graph; it leaves the pinned nodes where they are. */
+  protected override ownedNodes(): Node[] {
+    return Array.from(this.graph.getNodes());
+  }
 
-    const { nodes, edges } = this.graph;
-    if (!nodes.size) return;
-
-    const children: Map<string, string[]> = new Map();
-    const hasParent: Set<string> = new Set();
-    for (const [id] of nodes) children.set(id, []);
-    for (const edge of edges.values()) {
-      children.get(edge.source.id)?.push(edge.target.id);
-      hasParent.add(edge.target.id);
-    }
-
-    let resolvedRootId = rootId;
-    if (!resolvedRootId || !nodes.has(resolvedRootId)) {
-      const keys = [...nodes.keys()];
-      resolvedRootId = keys.find((id) => !hasParent.has(id)) ?? keys[0];
-    }
+  protected place(nodes: Node[], config: HierarchicalLayoutOptions): void {
+    const byId = new Map(nodes.map((node) => [node.id, node]));
+    const { children, rootId: resolvedRootId } = this.buildTree(config.rootId);
 
     const level = new Map<string, number>();
     const queue: string[] = [resolvedRootId];
     level.set(resolvedRootId, 0);
     const visited = new Set<string>([resolvedRootId]);
 
-    while (queue.length) {
-      const cur = queue.shift()!;
+    for (let head = 0; head < queue.length; head++) {
+      const cur = queue[head]!;
       for (const child of children.get(cur) ?? []) {
-        if (!visited.has(child)) {
-          visited.add(child);
-          level.set(child, (level.get(cur) ?? 0) + 1);
-          queue.push(child);
-        }
+        if (visited.has(child)) continue;
+        visited.add(child);
+        level.set(child, (level.get(cur) ?? 0) + 1);
+        queue.push(child);
       }
     }
 
     const byLevel = new Map<number, string[]>();
     for (const [id, lv] of level) {
-      if (!byLevel.has(lv)) byLevel.set(lv, []);
-      byLevel.get(lv)!.push(id);
+      const bucket = byLevel.get(lv);
+      if (bucket) bucket.push(id);
+      else byLevel.set(lv, [id]);
     }
 
     for (const [lv, ids] of byLevel) {
-      const placed = ids.filter((id) => !(nodes.get(id) as Node).data.pinned);
-      const totalWidth = (placed.length - 1) * nodeSpacing;
+      const placed = ids.filter((id) => !this.isPinned(byId.get(id)!));
+      const totalWidth = (placed.length - 1) * config.nodeSpacing;
       for (const [i, id] of placed.entries()) {
-        const node = nodes.get(id) as Node;
-        const primary = lv * levelHeight;
-        const secondary = -totalWidth / 2 + i * nodeSpacing;
-        const [x, y] = (() => {
-          switch (direction) {
-            case 'bottom-up':
-              return [secondary, primary];
-            case 'left-right':
-              return [primary, secondary];
-            case 'right-left':
-              return [-primary, secondary];
-            default:
-              return [secondary, -primary];
-          }
-        })();
-        this.applyPosition(node, new THREE.Vector3(x, y, z), { animate, duration });
+        const primary = lv * config.levelHeight;
+        const secondary = -totalWidth / 2 + i * config.nodeSpacing;
+        const [x, y] = orient(primary, secondary, config.direction);
+        this.applyPosition(byId.get(id)!, new THREE.Vector3(x, y, config.z));
       }
     }
 
     let orphanX = 0;
     const maxLevel = Math.max(...level.values(), 0);
-    for (const [id, node] of nodes) {
-      if (visited.has(id) || (node as Node).data.pinned) continue;
+    for (const node of nodes) {
+      if (visited.has(node.id) || this.isPinned(node)) continue;
       this.applyPosition(
-        node as Node,
-        new THREE.Vector3(orphanX, -(maxLevel + 1) * levelHeight, z),
-        { animate: false }
+        node,
+        new THREE.Vector3(orphanX, -(maxLevel + 1) * config.levelHeight, config.z)
       );
-      orphanX += nodeSpacing;
+      orphanX += config.nodeSpacing;
     }
-
-    this.updateEdges();
   }
 
-  protected defaultConfig(): LayoutConfig {
+  protected defaultConfig(): HierarchicalLayoutOptions {
     return {
       rootId: '',
       levelHeight: 200,
@@ -105,5 +79,19 @@ export class HierarchicalLayout extends BaseLayout {
       animate: true,
       duration: 1.0,
     };
+  }
+}
+
+/** The primary axis runs along the levels, the secondary across them; the direction picks the axes. */
+function orient(primary: number, secondary: number, direction: string): [number, number] {
+  switch (direction) {
+    case 'bottom-up':
+      return [secondary, primary];
+    case 'left-right':
+      return [primary, secondary];
+    case 'right-left':
+      return [-primary, secondary];
+    default:
+      return [secondary, -primary];
   }
 }

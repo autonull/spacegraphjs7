@@ -58,16 +58,6 @@ export function wrapError(
   });
 }
 
-export function wrapAndThrow<T extends SpaceGraphErrorOptions>(
-  error: unknown,
-  options: T,
-  logger?: { error(message: string, ...args: unknown[]): void }
-): never {
-  const wrapped = wrapError(error, options);
-  logger?.error(wrapped.message);
-  throw wrapped;
-}
-
 export function createErrorFactory(namespace: string) {
   return {
     validation: (field: string, message: string) => new ValidationError(field, message),

@@ -6,7 +6,7 @@ import { DOMUtils } from '../utils/DOMUtils';
 import { Node } from './Node';
 
 export class TextMeshNode extends Node {
-  static readonly typeName = 'TextMeshNode';
+  static readonly typeName: string = 'TextMeshNode';
   private sprite: THREE.Sprite;
   private spriteMat: THREE.SpriteMaterial;
   private currentText: string;
@@ -45,12 +45,6 @@ export class TextMeshNode extends Node {
       this._object.add(this.sprite);
     }
     return this;
-  }
-
-  dispose(): void {
-    this.spriteMat.map?.dispose();
-    this.spriteMat.dispose();
-    super.dispose();
   }
 
   private _buildSprite(spec: Partial<NodeSpec>): THREE.Sprite {

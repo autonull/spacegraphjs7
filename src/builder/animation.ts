@@ -1,6 +1,5 @@
 // builder/animation.ts - Animation helpers
 
-import type { Node } from '../nodes/Node';
 import type { SpaceGraph } from '../SpaceGraph';
 
 type GsapModule = typeof import('gsap');
@@ -11,6 +10,23 @@ const getGsap = async (): Promise<GsapModule> => {
   return gsapCache;
 };
 
+/** Tween a value and resolve when the tween ends. */
+async function tween(
+  target: object,
+  vars: Record<string, unknown>,
+  duration: number
+): Promise<void> {
+  const { gsap } = await getGsap();
+  return new Promise((resolve) => {
+    gsap.to(target, {
+      ...vars,
+      duration,
+      ease: 'power2.inOut',
+      onComplete: resolve,
+    });
+  });
+}
+
 export const Animate = {
   async move(
     sg: SpaceGraph,
@@ -20,50 +36,30 @@ export const Animate = {
   ): Promise<void> {
     const node = sg.graph.getNode(nodeId);
     if (!node) return;
-    const { gsap } = await getGsap();
-    return new Promise((resolve) => {
-      gsap.to(node.position, {
+    await tween(
+      node.position,
+      {
         x: to.x ?? node.position.x,
         y: to.y ?? node.position.y,
         z: to.z ?? node.position.z,
-        duration: duration / 1000,
-        ease: 'power2.inOut',
         onUpdate: () => {
           node.updatePosition(node.position.x, node.position.y, node.position.z);
         },
-        onComplete: resolve,
-      });
-    });
+      },
+      duration / 1000
+    );
   },
 
   async fade(sg: SpaceGraph, nodeId: string, to: number, duration = 500): Promise<void> {
     const node = sg.graph.getNode(nodeId);
     if (!node) return;
-    const { gsap } = await getGsap();
-    return new Promise((resolve) => {
-      gsap.to(node.data, {
-        opacity: to,
-        duration: duration / 1000,
-        ease: 'power2.inOut',
-        onComplete: resolve,
-      });
-    });
+    await tween(node.data, { opacity: to }, duration / 1000);
   },
 
   async scale(sg: SpaceGraph, nodeId: string, to: number, duration = 500): Promise<void> {
     const node = sg.graph.getNode(nodeId);
     if (!node) return;
-    const { gsap } = await getGsap();
-    return new Promise((resolve) => {
-      gsap.to(node.object.scale, {
-        x: to,
-        y: to,
-        z: to,
-        duration: duration / 1000,
-        ease: 'power2.inOut',
-        onComplete: resolve,
-      });
-    });
+    await tween(node.object.scale, { x: to, y: to, z: to }, duration / 1000);
   },
 
   async rotate(
@@ -74,17 +70,7 @@ export const Animate = {
   ): Promise<void> {
     const node = sg.graph.getNode(nodeId);
     if (!node) return;
-    const { gsap } = await getGsap();
-    return new Promise((resolve) => {
-      gsap.to(node.object.rotation, {
-        x: to.x ?? 0,
-        y: to.y ?? 0,
-        z: to.z ?? 0,
-        duration: duration / 1000,
-        ease: 'power2.inOut',
-        onComplete: resolve,
-      });
-    });
+    await tween(node.object.rotation, { x: to.x ?? 0, y: to.y ?? 0, z: to.z ?? 0 }, duration / 1000);
   },
 
   async color(sg: SpaceGraph, nodeId: string, to: string | number): Promise<void> {
@@ -125,69 +111,62 @@ export const Camera = {
     target: [number, number, number],
     duration = 1.5
   ): Promise<void> {
-    const { gsap } = await getGsap();
-    return new Promise((resolve) => {
-      const start = {
-        x: sg.renderer.camera.position.x,
-        y: sg.renderer.camera.position.y,
-        z: sg.renderer.camera.position.z,
-      };
-      gsap.to(start, {
+    const controls = sg.cameraControls;
+    const start = {
+      x: sg.renderer.camera.position.x,
+      y: sg.renderer.camera.position.y,
+      z: sg.renderer.camera.position.z,
+    };
+    await tween(
+      start,
+      {
         x: position[0],
         y: position[1],
         z: position[2],
-        duration,
-        ease: 'power2.inOut',
         onUpdate: () => {
           sg.renderer.camera.position.set(start.x, start.y, start.z);
-          sg.cameraControls.update();
+          controls.target.set(target[0], target[1], target[2]);
+          // The controls own the camera pose: the spherical follows the flight, so the next
+          // `update()` keeps the pose the flight put the camera in.
+          controls.updateSpherical();
+          controls.update();
         },
-        onComplete: resolve,
-      });
-    });
+      },
+      duration
+    );
   },
 
-  async focus(sg: SpaceGraph, nodeIds: string[], padding = 100): Promise<void> {
-    const nodes = nodeIds.map((id) => sg.graph.getNode(id)).filter(Boolean) as Node[];
-    if (nodes.length) sg.fitView(padding);
+  async focus(sg: SpaceGraph, nodeIds: string[], padding = 100, duration = 1.5): Promise<void> {
+    sg.fitView(padding, duration, nodeIds);
   },
 
   async orbit(sg: SpaceGraph, angle: number, duration = 1.5): Promise<void> {
-    const { gsap } = await getGsap();
-    return new Promise((resolve) => {
-      const startTheta = sg.cameraControls.spherical.theta;
-      gsap.to(
-        {},
-        {
-          duration,
-          ease: 'power2.inOut',
-          onUpdate: (self: any) => {
-            sg.cameraControls.spherical.theta = startTheta + self.progress() * angle;
-            sg.cameraControls.update();
-          },
-          onComplete: resolve,
-        }
-      );
-    });
+    const startTheta = sg.cameraControls.spherical.theta;
+    await tween(
+      {},
+      {
+        onUpdate: (self: any) => {
+          sg.cameraControls.spherical.theta = startTheta + self.progress() * angle;
+          sg.cameraControls.update();
+        },
+      },
+      duration
+    );
   },
 
   async zoomTo(sg: SpaceGraph, zoom: number, duration = 1): Promise<void> {
-    const { gsap } = await getGsap();
-    return new Promise((resolve) => {
-      const startRadius = sg.cameraControls.spherical.radius;
-      gsap.to(sg.cameraControls.spherical, {
+    const startRadius = sg.cameraControls.spherical.radius;
+    await tween(
+      sg.cameraControls.spherical,
+      {
         radius: startRadius * zoom,
-        duration,
-        ease: 'power2.inOut',
         onUpdate: () => sg.cameraControls.update(),
-        onComplete: resolve,
-      });
-    });
+      },
+      duration
+    );
   },
 
   reset(sg: SpaceGraph): void {
-    sg.renderer.camera.position.set(0, 500, 500);
-    sg.cameraControls.target.set(0, 0, 0);
-    sg.cameraControls.update();
+    sg.resetCamera();
   },
 };

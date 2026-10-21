@@ -8,15 +8,11 @@ export interface MeterThreshold {
   color: string;
 }
 
-export class MeterNode extends (HtmlNode as any) {
-  static readonly typeName = 'MeterNode';
+export class MeterNode extends HtmlNode {
+  static readonly typeName: string = 'MeterNode';
   private valueDisplay: HTMLElement | null = null;
-  private sparklineCanvas: HTMLCanvasElement | null = null;
-  private sparklineCtx: CanvasRenderingContext2D | null = null;
   private value = 0;
   private thresholds: MeterThreshold[] = [];
-  private history: number[] = [];
-  private maxHistory = 50;
 
   constructor(sg: SpaceGraph | undefined, spec: NodeSpec) {
     super(sg, spec);
@@ -30,14 +26,8 @@ export class MeterNode extends (HtmlNode as any) {
       this.valueDisplay.style.color = this._getThresholdColor(value);
     }
 
-    this.history.push(value);
-    if (this.history.length > this.maxHistory) {
-      this.history.shift();
-    }
-    this._drawSparkline();
-
     this.data = { ...this.data, value };
-    this.sg?.events.emit('node:dataChanged', { node: this, property: 'value', value });
+    this.emitDataChanged('value', value);
   }
 
   getValue(): number {
@@ -76,27 +66,5 @@ export class MeterNode extends (HtmlNode as any) {
       if (value >= t.value) return t.color;
     }
     return '#4ecdc4';
-  }
-
-  private _drawSparkline(): void {
-    if (this.history.length < 2 || !this.sparklineCanvas) return;
-    const ctx = this.sparklineCtx;
-    if (!ctx) return;
-
-    const w = this.sparklineCanvas.width;
-    const h = this.sparklineCanvas.height;
-    ctx.clearRect(0, 0, w, h);
-
-    ctx.beginPath();
-    const max = Math.max(...this.history, 100);
-    for (let i = 0; i < this.history.length; i++) {
-      const x = (i / (this.history.length - 1)) * w;
-      const y = h - (this.history[i] / max) * h;
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    }
-    ctx.strokeStyle = '#4ecdc4';
-    ctx.lineWidth = 2;
-    ctx.stroke();
   }
 }

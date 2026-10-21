@@ -1,12 +1,49 @@
 // SpaceGraphJS - Unified Surface Abstraction
 // Common base for all nodes and edges, inspired by SGJ's Surface hierarchy
 
-import type * as THREE from 'three';
+import * as THREE from 'three';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { Bounds3D, Rect } from '../types';
 import { EventEmitter } from './EventEmitter';
 
 export type { Bounds3D, Rect };
+
+/**
+ * The rectangle a box covers on screen.
+ */
+export function rectOf(box: THREE.Box3): Rect {
+  return {
+    x: box.min.x,
+    y: box.min.y,
+    width: box.max.x - box.min.x,
+    height: box.max.y - box.min.y,
+  };
+}
+
+/**
+ * The volume between two corners, with the optional tests a concrete surface answers with.
+ */
+export function createBounds3D(
+  min: THREE.Vector3,
+  max: THREE.Vector3,
+  test?: {
+    containsPoint(point: THREE.Vector3): boolean;
+    intersectsRay(ray: THREE.Raycaster): boolean;
+  }
+): Bounds3D {
+  return {
+    min,
+    max,
+    get center() {
+      return new THREE.Vector3().addVectors(this.min, this.max).multiplyScalar(0.5);
+    },
+    get size() {
+      return new THREE.Vector3().subVectors(this.max, this.min);
+    },
+    containsPoint: test?.containsPoint ?? (() => false),
+    intersectsRay: test?.intersectsRay ?? (() => false),
+  };
+}
 
 export interface HitResult {
   surface: Surface;
@@ -83,31 +120,17 @@ export abstract class Surface extends EventEmitter<SurfaceEventMap> {
   }
 
   findParent(predicate: (s: Surface) => boolean): Surface | null {
-    let current: Surface | undefined = this.parent;
-    while (current) {
-      if (predicate(current)) return current;
-      current = current.parent;
-    }
-    return null;
+    return this.ancestors().find(predicate) ?? null;
   }
 
   findAncestor(predicate: (s: Surface) => boolean): Surface | null {
-    // eslint-disable-next-line @typescript-eslint/no-this-alias
-    let current: Surface | undefined = this;
-    while (current) {
-      if (predicate(current)) return current;
-      current = current.parent;
-    }
-    return null;
+    if (predicate(this)) return this;
+    return this.findParent(predicate);
   }
 
   ancestors(): Surface[] {
     const result: Surface[] = [];
-    let current: Surface | undefined = this.parent;
-    while (current) {
-      result.push(current);
-      current = current.parent;
-    }
+    for (let current = this.parent; current; current = current.parent) result.push(current);
     return result;
   }
 
@@ -130,9 +153,16 @@ export abstract class Surface extends EventEmitter<SurfaceEventMap> {
 
   requireSpaceGraph(): SpaceGraph {
     if (!this.sg) {
-      throw new Error(`Surface "${this.id}" requires SpaceGraph but sg is not initialized`);
+      throw new Error(
+        `${this.surfaceKind} "${this.id}" requires SpaceGraph but sg is not initialized`
+      );
     }
     return this.sg;
+  }
+
+  /** The label this surface names itself with when it reports a missing SpaceGraph. */
+  protected get surfaceKind(): string {
+    return 'Surface';
   }
 
   hasAncestor(predicate: (s: Surface) => boolean): boolean {

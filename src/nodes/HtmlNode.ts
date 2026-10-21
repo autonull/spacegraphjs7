@@ -1,7 +1,9 @@
 import * as THREE from 'three';
+import { lodLevelAt, lodVisibility } from '../core/lod';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { LabelLodLevel, NodeSpec, SpaceGraphNodeData } from '../types';
 import { DOMUtils } from '../utils/DOMUtils';
+import { toCssColor } from '../utils/color';
 import { clamp } from '../utils/math';
 import { BaseContentNode } from './BaseContentNode';
 import { createQuickControls, type QuickControlButton } from './QuickControls';
@@ -9,7 +11,7 @@ import { createQuickControls, type QuickControlButton } from './QuickControls';
 const PARENT_ROTATION = new THREE.Quaternion();
 
 export class HtmlNode extends BaseContentNode {
-  static typeName = 'HtmlNode';
+  static typeName: string = 'HtmlNode';
   public static MIN_SIZE = { width: 80, height: 40 };
   public static DEFAULT_SIZE = { width: 200, height: 100 };
   public static CONTENT_SCALE_RANGE = { min: 0.3, max: 3.0 };
@@ -86,22 +88,8 @@ export class HtmlNode extends BaseContentNode {
     if (updates.data) {
       const data = updates.data as SpaceGraphNodeData;
       const handlers: Record<string, () => void> = {
-        color: () => {
-          const color =
-            typeof data.color === 'number'
-              ? '#' + data.color.toString(16).padStart(6, '0')
-              : (data.color as string);
-          this.domElement.style.backgroundColor = color;
-          this._applyNodeBgColor(color);
-        },
-        backgroundColor: () => {
-          const color =
-            typeof data.backgroundColor === 'number'
-              ? '#' + data.backgroundColor.toString(16).padStart(6, '0')
-              : (data.backgroundColor as string);
-          this.domElement.style.backgroundColor = color;
-          this._applyNodeBgColor(color);
-        },
+        color: () => this._applyBackgroundColor(data.color as string | number),
+        backgroundColor: () => this._applyBackgroundColor(data.backgroundColor as string | number),
         className: () => {
           this.domElement.className = `spacegraph-html-node ${data.className as string}`;
         },
@@ -158,10 +146,7 @@ export class HtmlNode extends BaseContentNode {
     this.size.width = Math.max(HtmlNode.MIN_SIZE.width, width);
     this.size.height = Math.max(HtmlNode.MIN_SIZE.height, height);
 
-    this.domElement.style.width = `${this.size.width}px`;
-    this.domElement.style.height = `${this.size.height}px`;
-
-    this.updateBackingGeometry(this.size.width, this.size.height);
+    this.applySize(this.size.width, this.size.height);
 
     if (scaleContent === true && oldArea > 0) {
       const scaleFactor = Math.sqrt((this.size.width * this.size.height) / oldArea);
@@ -184,11 +169,7 @@ export class HtmlNode extends BaseContentNode {
       this.contentWrapper.style.transform = `scale(${clampedScale})`;
     }
 
-    this.sg?.events.emit('node:dataChanged', {
-      node: this,
-      property: 'contentScale',
-      value: clampedScale,
-    });
+    this.emitDataChanged('contentScale', clampedScale);
   }
 
   adjustContentScale(deltaFactor: number): void {
@@ -286,55 +267,33 @@ export class HtmlNode extends BaseContentNode {
     this.data = { ...this.data, backgroundColor: color };
     this.domElement.style.backgroundColor = color;
     this._applyNodeBgColor(color);
-    this.sg?.events.emit('node:dataChanged', {
-      node: this,
-      property: 'backgroundColor',
-      value: color,
-    });
+    this.emitDataChanged('backgroundColor', color);
   }
 
   updateLod(_distance: number): void {
+    const camera = this.sg?.renderer?.camera;
     if (!this.labelLod.length) {
-      if (this.contentWrapper) {
-        const baseScale = (this.data?.contentScale as number) ?? 1.0;
-        this.contentWrapper.style.transform = `scale(${baseScale})`;
-      }
-      this.domElement.style.visibility = '';
-      this.domElement.style.display = 'flex';
+      this.resetLodStyles();
       return;
     }
-
-    const sortedLodLevels = [...this.labelLod].sort(
-      (a, b) => (b.distance ?? 0) - (a.distance ?? 0)
-    );
-    const camera = this.sg?.renderer?.camera;
     if (!camera) return;
 
-    const distanceToCamera = this.position.distanceTo(camera.position);
+    const level = lodLevelAt(this.labelLod, this.position.distanceTo(camera.position));
+    const baseScale = (this.data?.contentScale as number) ?? 1.0;
 
-    let ruleApplied = false;
-    for (const level of sortedLodLevels) {
-      if (distanceToCamera >= (level.distance ?? 0)) {
-        this.domElement.style.visibility = level.style?.includes('visibility:hidden')
-          ? 'hidden'
-          : '';
-        this.domElement.style.display = level.style?.includes('display:none') ? 'none' : 'flex';
-        if (this.contentWrapper) {
-          const baseScale = (this.data?.contentScale as number) ?? 1.0;
-          this.contentWrapper.style.transform = `scale(${baseScale * (level.scale ?? 1.0)})`;
-        }
-        ruleApplied = true;
-        break;
-      }
+    this.domElement.style.visibility = lodVisibility(level);
+    this.domElement.style.display = level?.style?.includes('display:none') ? 'none' : 'flex';
+    if (this.contentWrapper) {
+      this.contentWrapper.style.transform = `scale(${baseScale * (level?.scale ?? 1.0)})`;
     }
+  }
 
-    if (!ruleApplied) {
-      this.domElement.style.visibility = '';
-      this.domElement.style.display = 'flex';
-      if (this.contentWrapper) {
-        const baseScale = (this.data?.contentScale as number) ?? 1.0;
-        this.contentWrapper.style.transform = `scale(${baseScale})`;
-      }
+  private resetLodStyles(): void {
+    const baseScale = (this.data?.contentScale as number) ?? 1.0;
+    this.domElement.style.visibility = '';
+    this.domElement.style.display = 'flex';
+    if (this.contentWrapper) {
+      this.contentWrapper.style.transform = `scale(${baseScale})`;
     }
   }
 
@@ -404,11 +363,7 @@ export class HtmlNode extends BaseContentNode {
         clearTimeout(debounceTimer);
         debounceTimer = setTimeout(() => {
           this.data = { ...this.data, content: contentWrapper.innerHTML };
-          this.sg?.events.emit('node:dataChanged', {
-            node: this,
-            property: 'content',
-            value: contentWrapper.innerHTML,
-          });
+          this.emitDataChanged('content', contentWrapper.innerHTML);
         }, 300);
       });
 
@@ -531,5 +486,11 @@ export class HtmlNode extends BaseContentNode {
 
   private _applyNodeBgColor(color: string): void {
     this.domElement.style.setProperty('--node-bg', color);
+  }
+
+  private _applyBackgroundColor(color: string | number): void {
+    const css = toCssColor(color);
+    this.domElement.style.backgroundColor = css;
+    this._applyNodeBgColor(css);
   }
 }

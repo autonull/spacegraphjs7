@@ -15,7 +15,8 @@ import { BaseContentNode } from './BaseContentNode';
  *   editable   : boolean — whether text is directly editable (default true)
  */
 export class NoteNode extends BaseContentNode {
-  static typeName = 'NoteNode';
+  static typeName: string = 'NoteNode';
+  private bodyElement: HTMLElement | null = null;
 
   constructor(sg: SpaceGraph | undefined, spec: NodeSpec) {
     const color = (spec.data?.color ?? '#fef08a') as string;
@@ -66,17 +67,17 @@ export class NoteNode extends BaseContentNode {
 
     this.domElement.appendChild(titleEl);
     this.domElement.appendChild(bodyEl);
+    this.titleElement = titleEl;
+    this.bodyElement = bodyEl;
   }
 
   updateSpec(updates: Partial<NodeSpec>): this {
     super.updateSpec(updates);
-    if (updates.label !== undefined) {
-      const el = this.domElement.querySelector('.sg-note-title');
-      if (el) el.textContent = updates.label ?? '';
+    if (updates.label !== undefined && this.titleElement) {
+      this.titleElement.textContent = updates.label ?? '';
     }
-    if (updates.data?.text !== undefined) {
-      const el = this.domElement.querySelector('.sg-note-body');
-      if (el) el.textContent = updates.data.text as string;
+    if (updates.data?.text !== undefined && this.bodyElement) {
+      this.bodyElement.textContent = updates.data.text as string;
     }
     if (updates.data?.color) {
       this.domElement.style.background = updates.data.color as string;
@@ -86,6 +87,6 @@ export class NoteNode extends BaseContentNode {
 
   /** Programmatically read the current note body text (may have been edited inline). */
   getText(): string {
-    return (this.domElement.querySelector('.sg-note-body') as HTMLElement)?.innerText ?? '';
+    return this.bodyElement?.innerText ?? '';
   }
 }

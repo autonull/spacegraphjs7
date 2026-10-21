@@ -3,7 +3,7 @@ import type { NodeSpec } from '../types';
 import { gridStrategy, LayoutNode } from './LayoutNode';
 
 export class GridNode extends LayoutNode {
-  static readonly typeName = 'GridNode';
+  static readonly typeName: string = 'GridNode';
 
   constructor(sg?: SpaceGraph, spec?: NodeSpec) {
     super(sg!, spec as NodeSpec, gridStrategy, {

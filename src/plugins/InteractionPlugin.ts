@@ -1,4 +1,3 @@
-import type { Plugin } from '../core';
 import * as THREE from 'three';
 import type { EventSystem } from '../core/events/EventSystem';
 import type { Graph } from '../core/Graph';
@@ -14,6 +13,8 @@ import {
 import type { PickResult } from '../input/interfaces/Tangible';
 import type { Node } from '../nodes/Node';
 import type { SpaceGraph } from '../SpaceGraph';
+import { focusRadiusOf } from '../utils/CameraUtils';
+import { BaseSystemPlugin } from './BaseSystemPlugin';
 import { ConnectionHandler } from './interaction/ConnectionHandler';
 import { CursorManager, type CursorMode } from './interaction/CursorManager';
 import { DragHandler } from './interaction/DragHandler';
@@ -21,28 +22,26 @@ import { FocusManager } from './interaction/FocusManager';
 import { HoverManager } from './interaction/HoverManager';
 import { KeyboardShortcuts } from './interaction/KeyboardShortcuts';
 import { InteractionRaycaster } from './interaction/RaycasterHelper';
-import { ResizeHandler } from './interaction/ResizeHandler';
 import { SelectionManager } from './interaction/SelectionManager';
 
 const CLICK_MOVE_THRESHOLD = 5;
 
-export class InteractionPlugin implements Plugin {
+export class InteractionPlugin extends BaseSystemPlugin {
   readonly id = 'interaction';
   readonly name = 'Interaction Controls';
   readonly version = '1.0.0';
 
-  private sg!: SpaceGraph;
   private raycaster!: InteractionRaycaster;
   private cursorManager!: CursorManager;
   private hoverManager!: HoverManager;
   private selectionManager!: SelectionManager;
   private dragHandler!: DragHandler;
   private connectionHandler!: ConnectionHandler;
-  private resizeHandler!: ResizeHandler;
   private keyboardShortcuts!: KeyboardShortcuts;
   private focusManager!: FocusManager;
   private copiedNodes: Node[] = [];
   private pointerDownPosition = new THREE.Vector2();
+  readonly #pointerPosition = new THREE.Vector2();
   private lastZoomedId: string | null = null;
   private lastPressedNode: Node | null = null;
   private pointerDownNode: Node | null = null;
@@ -61,15 +60,14 @@ export class InteractionPlugin implements Plugin {
     }
   }
 
-  init(sg: SpaceGraph, _graph: Graph, _events: EventSystem): void {
-    this.sg = sg;
+  init(sg: SpaceGraph, graph: Graph, events: EventSystem): void {
+    super.init(sg, graph, events);
     this.raycaster = new InteractionRaycaster(sg);
     this.cursorManager = new CursorManager();
     this.hoverManager = new HoverManager(sg);
     this.selectionManager = new SelectionManager(sg);
     this.dragHandler = new DragHandler(sg, this.raycaster);
     this.connectionHandler = new ConnectionHandler(sg, this.raycaster);
-    this.resizeHandler = new ResizeHandler(sg, this.raycaster);
     this.keyboardShortcuts = new KeyboardShortcuts(sg);
     this.focusManager = new FocusManager(sg);
 
@@ -85,6 +83,7 @@ export class InteractionPlugin implements Plugin {
   dispose(): void {
     this.selectionManager.dispose();
     this.connectionHandler.dispose();
+    super.dispose();
   }
 
   private registerFingerings(): void {
@@ -118,7 +117,6 @@ export class InteractionPlugin implements Plugin {
     this.sg.events.on('input:interaction:pointermove', (e: any) => this.handlePointerMove(e));
     this.sg.events.on('input:interaction:pointerup', (e: any) => this.handlePointerUp(e));
     this.sg.events.on('input:interaction:keydown', (e: any) => this.handleKeyDown(e));
-    this.sg.events.on('input:interaction:keyup', (e: any) => this.handleKeyUp(e));
     this.sg.events.on('input:interaction:dblclick', (e: any) => this.handleDblClick(e));
     this.sg.events.on('input:interaction:contextmenu', (e: any) => this.handleContextMenu(e));
   }
@@ -141,7 +139,7 @@ export class InteractionPlugin implements Plugin {
     this.pointerDownEdge = edgeResult?.edge ?? null;
 
     if (e.button === 2 && nodeResult?.node) {
-      this.startContextMenu(nodeResult.node, e);
+      // The context menu is the host's; the plugin only claims the gesture.
       return;
     }
 
@@ -151,7 +149,7 @@ export class InteractionPlugin implements Plugin {
     }
 
     if (nodeResult?.node && e.button === 0) {
-      this._handleLeftClick(nodeResult, e);
+      this._handleLeftClick(nodeResult);
     }
 
     if (nodeResult?.node && e.button === 1) {
@@ -164,14 +162,7 @@ export class InteractionPlugin implements Plugin {
     this.cursorManager.set('crosshair', 'box-select');
   }
 
-  private _handleLeftClick(nodeResult: any, e: any): void {
-    const isResizeHandle = this.checkResizeHandle(nodeResult.node, e);
-    if (isResizeHandle) {
-      this.resizeHandler.startResize(nodeResult.node, e.x, e.y);
-      this.cursorManager.set('nwse-resize', 'resize');
-      return;
-    }
-
+  private _handleLeftClick(nodeResult: any): void {
     if (this._mode === 'connect') {
       this.connectionHandler.startConnection(nodeResult.node);
       this.cursorManager.set('crosshair', 'connection');
@@ -199,10 +190,7 @@ export class InteractionPlugin implements Plugin {
     if ('isZoomable' in node && (node as any).isZoomable?.()) {
       (node as any).onZoomStart?.();
     }
-    const radius = Math.max(
-      (((node.data as Record<string, unknown>)?.width as number) ?? 100) * 1.5,
-      150
-    );
+    const radius = focusRadiusOf(node);
     this.sg.cameraControls.flyTo(node.position, radius);
   }
 
@@ -228,11 +216,6 @@ export class InteractionPlugin implements Plugin {
       return;
     }
 
-    if (this.resizeHandler.isResizingNode()) {
-      this.resizeHandler.updateResize(e.x, e.y);
-      return;
-    }
-
     const nodeResult = this.raycaster.raycastNode();
     const edgeResult = this.raycaster.raycastEdge();
     this.hoverManager.updateHover(nodeResult?.node ?? null, edgeResult?.edge ?? null);
@@ -247,8 +230,7 @@ export class InteractionPlugin implements Plugin {
   private handlePointerUp(e: any): void {
     const wasBoxSelecting = this.selectionManager.isBoxSelectingActive();
     const wasConnecting = this.connectionHandler.isConnectingMode();
-    const wasResizing = this.resizeHandler.isResizingNode();
-    const moved = this.pointerDownPosition.distanceTo(new THREE.Vector2(e.x, e.y));
+    const moved = this.pointerDownPosition.distanceTo(this.#pointerPosition.set(e.x, e.y));
 
     if (this.lastPressedNode) {
       const pickResult: PickResult = {
@@ -284,14 +266,9 @@ export class InteractionPlugin implements Plugin {
       this.cursorManager.clear('connection');
     }
 
-    if (this.resizeHandler.isResizingNode()) {
-      this.resizeHandler.endResize();
-      this.cursorManager.clear('resize');
-    }
-
     this.cursorManager.clear('hover');
 
-    const suppressed = wasBoxSelecting || wasConnecting || wasResizing;
+    const suppressed = wasBoxSelecting || wasConnecting;
     if (!suppressed && moved <= CLICK_MOVE_THRESHOLD) this.#emitClick(e);
     this.pointerDownNode = null;
     this.pointerDownEdge = null;
@@ -397,8 +374,6 @@ export class InteractionPlugin implements Plugin {
     }
   }
 
-  private handleKeyUp(_e: any): void {}
-
   private handleDblClick(e: any): void {
     this.raycaster.updateMousePosition(e.x, e.y);
 
@@ -419,7 +394,7 @@ export class InteractionPlugin implements Plugin {
   private handleContextMenu(e: any): void {
     e.originalEvent?.preventDefault();
 
-    const distance = this.pointerDownPosition.distanceTo(new THREE.Vector2(e.x, e.y));
+    const distance = this.pointerDownPosition.distanceTo(this.#pointerPosition.set(e.x, e.y));
     if (distance > 5) return;
 
     this.raycaster.updateMousePosition(e.x, e.y);
@@ -448,17 +423,14 @@ export class InteractionPlugin implements Plugin {
     if (!target || !this.sg.cameraControls) return;
     if (this.sg.options.doubleClickFocus === false) return;
 
-    const targetPos =
-      'position' in target
-        ? (target as Node).position.clone()
-        : (target as Edge).target.position.clone();
-    const targetRadius =
-      'data' in target &&
-      typeof (target as Node).data === 'object' &&
-      (target as Node).data !== null &&
-      'width' in (target as Node).data
-        ? Math.max((((target as Node).data as Record<string, unknown>).width as number) * 1.5, 150)
-        : 150;
+    const isNode = 'position' in target;
+    const targetPos = isNode
+      ? (target as Node).position.clone()
+      : (target as Edge).target.position.clone();
+    const width = isNode
+      ? ((target as Node).data as Record<string, unknown>).width
+      : undefined;
+    const targetRadius = focusRadiusOf({ data: { width } });
 
     const controls = this.sg.cameraControls;
     if (this.lastZoomedId === zoomId && controls.hasZoomHistory) {
@@ -468,14 +440,6 @@ export class InteractionPlugin implements Plugin {
       controls.zoomTo(targetPos, targetRadius);
       this.lastZoomedId = zoomId;
     }
-  }
-
-  private checkResizeHandle(_node: Node, _e: any): boolean {
-    return false;
-  }
-
-  private startContextMenu(_node: Node, _e: any): void {
-    // Context menu handling delegated to events
   }
 
   private _handlePaste(): void {

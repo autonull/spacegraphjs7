@@ -27,6 +27,4 @@ export function denormalizeZoom(value: number, { min, max, closerIsLarger }: Zoo
   return logLerp(lo, hi, Math.min(1, Math.max(0, t)));
 }
 
-export function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
-}
+export { clamp } from '../utils/math';

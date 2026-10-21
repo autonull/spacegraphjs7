@@ -1,19 +1,32 @@
+import type { Edge } from '../edges/Edge';
+import type { Node } from '../nodes/Node';
+import { focusRadiusOf } from '../utils/CameraUtils';
 import type { SpaceGraphApp } from './SpaceGraphApp';
+
+/**
+ * The selection the app holds, the styles it draws with, and the news it breaks.
+ */
+function setSelection(app: SpaceGraphApp, nodes: Node[], edges: Edge[]): void {
+  app.clearSelectionStyles();
+  app.currentSelected = new Set(nodes);
+  app.currentSelectedEdges = new Set(edges);
+  app.applySelectionStyles();
+
+  const selectedNodes = [...app.currentSelected];
+  const selectedEdges = [...app.currentSelectedEdges];
+  app.sg.events.emit('selection:changed', {
+    nodes: selectedNodes,
+    edges: selectedEdges,
+    timestamp: Date.now(),
+  });
+
+  if (app.options.onNodeSelect) app.options.onNodeSelect([...selectedNodes]);
+  if (app.options.onEdgeSelect) app.options.onEdgeSelect([...selectedEdges]);
+}
 
 export function setupInteractionHandlers(app: SpaceGraphApp) {
   app.sg.events.on('interaction:selection', ({ nodes, edges }) => {
-    app.clearSelectionStyles();
-    app.currentSelected = new Set(nodes || []);
-    app.currentSelectedEdges = new Set(edges || []);
-    app.applySelectionStyles();
-    app.sg.events.emit('selection:changed', {
-      nodes: [...app.currentSelected],
-      edges: [...app.currentSelectedEdges],
-      timestamp: Date.now(),
-    });
-
-    if (app.options.onNodeSelect) app.options.onNodeSelect([...app.currentSelected]);
-    if (app.options.onEdgeSelect) app.options.onEdgeSelect([...app.currentSelectedEdges]);
+    setSelection(app, nodes || [], edges || []);
   });
 
   app.sg.events.on('interaction:edgecreate', ({ source, target }) => {
@@ -31,53 +44,22 @@ export function setupInteractionHandlers(app: SpaceGraphApp) {
   });
 
   app.sg.events.on('graph:click', () => {
-    app.clearSelectionStyles();
-    app.currentSelected = new Set();
-    app.currentSelectedEdges = new Set();
-    app.sg.events.emit('selection:changed', {
-      nodes: [],
-      edges: [],
-      timestamp: Date.now(),
-    });
-    if (app.options.onNodeSelect) app.options.onNodeSelect([]);
-    if (app.options.onEdgeSelect) app.options.onEdgeSelect([]);
+    setSelection(app, [], []);
   });
 
   app.sg.events.on('node:click', ({ node }) => {
-    app.clearSelectionStyles();
-    app.currentSelected = new Set([node]);
-    app.currentSelectedEdges = new Set();
-    app.applySelectionStyles();
-    app.sg.events.emit('selection:changed', {
-      nodes: [node],
-      edges: [],
-      timestamp: Date.now(),
-    });
-    if (app.options.onNodeSelect) app.options.onNodeSelect([node]);
-    if (app.options.onEdgeSelect) app.options.onEdgeSelect([]);
+    setSelection(app, [node], []);
   });
 
   app.sg.events.on('edge:click', ({ edge }) => {
-    app.clearSelectionStyles();
-    app.currentSelected = new Set();
-    app.currentSelectedEdges = new Set([edge]);
-    app.applySelectionStyles();
-    app.sg.events.emit('selection:changed', {
-      nodes: [],
-      edges: [edge],
-      timestamp: Date.now(),
-    });
-    if (app.options.onNodeSelect) app.options.onNodeSelect([]);
-    if (app.options.onEdgeSelect) app.options.onEdgeSelect([edge]);
+    setSelection(app, [], [edge]);
   });
 
   app.sg.events.on('node:dblclick', ({ node }) => {
     if (app.options.onNodeDblClick) {
       app.options.onNodeDblClick(node);
     } else if (app.sg.cameraControls) {
-      const targetPos = node.position.clone();
-      const targetRadius = node.data?.width ? Math.max(node.data.width * 1.5, 150) : 150;
-      app.sg.cameraControls.flyTo(targetPos, targetRadius);
+      app.sg.cameraControls.flyTo(node.position.clone(), focusRadiusOf(node));
     }
   });
 
@@ -90,38 +72,26 @@ export function setupInteractionHandlers(app: SpaceGraphApp) {
 
   app.sg.events.on('node:contextmenu', ({ node, event }) => {
     if (app.options.nodeContextMenu) {
-      const items = app.options.nodeContextMenu(node);
-      if (items && items.length > 0) {
-        app.hud.showContextMenu(event.clientX, event.clientY, items);
-      }
+      showContextMenu(app, event, app.options.nodeContextMenu(node));
     }
   });
 
   app.sg.events.on('edge:contextmenu', (data: any) => {
     const { edge, event } = data;
     if (app.options.edgeContextMenu) {
-      const items = app.options.edgeContextMenu(edge);
-      if (items && items.length > 0) {
-        app.hud.showContextMenu(event.clientX, event.clientY, items);
-      }
+      showContextMenu(app, event, app.options.edgeContextMenu(edge));
     }
   });
 
   app.sg.events.on('graph:contextmenu', ({ event }) => {
     if (app.options.graphContextMenu) {
-      const items = app.options.graphContextMenu();
-      if (items && items.length > 0) {
-        app.hud.showContextMenu(event.clientX, event.clientY, items);
-      }
+      showContextMenu(app, event, app.options.graphContextMenu());
     }
   });
 
   app.sg.events.on('node:pointerenter', ({ node, event: _event }) => {
     if (app.options.nodeTooltip) {
-      const content = app.options.nodeTooltip(node);
-      if (content) {
-        app.hud.showTooltip(app.sg.renderer.renderer.domElement, content as string);
-      }
+      showTooltip(app, app.options.nodeTooltip(node));
     }
   });
 
@@ -131,16 +101,29 @@ export function setupInteractionHandlers(app: SpaceGraphApp) {
 
   app.sg.events.on('edge:pointerenter', ({ edge, event: _event }) => {
     if (app.options.edgeTooltip) {
-      const content = app.options.edgeTooltip(edge);
-      if (content) {
-        app.hud.showTooltip(app.sg.renderer.renderer.domElement, content as string);
-      }
+      showTooltip(app, app.options.edgeTooltip(edge));
     }
   });
 
   app.sg.events.on('edge:pointerleave', () => {
     app.hud.hideTooltip();
   });
+}
+
+/** Show the host's context menu at the pointer, when the host offered one. */
+function showContextMenu(
+  app: SpaceGraphApp,
+  event: { clientX: number; clientY: number },
+  items: Array<{ label: string; action: () => void }> | undefined
+): void {
+  if (!items || items.length === 0) return;
+  app.hud.showContextMenu(event.clientX, event.clientY, items);
+}
+
+/** Show the host's tooltip over the canvas, when the host offered one. */
+function showTooltip(app: SpaceGraphApp, content: string | HTMLElement | undefined): void {
+  if (!content) return;
+  app.hud.showTooltip(app.sg.renderer.renderer.domElement, content as string);
 }
 
 export function setupHotkeys(app: SpaceGraphApp) {

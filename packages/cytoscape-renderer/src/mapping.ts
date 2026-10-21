@@ -1,25 +1,18 @@
 import type { EdgeDefinition, NodeDefinition, StylesheetJson } from 'cytoscape';
-import type { RenderEdge, RenderNode, RenderTheme } from '@spacegraphjs/renderer';
+import {
+  normalizeHexColor,
+  statusColor,
+  THEME_COLOR_ROLES,
+  type RenderEdge,
+  type RenderNode,
+  type RenderTheme,
+} from '@spacegraphjs/renderer';
 
 // The adapter never interprets host semantics: it maps render-facing nodes and edges to Cytoscape
 // elements. Enum-valued style props (shape, line-style, arrow) are driven by classes/selectors so the
 // stylesheet stays fully typed; only label/color/width/height come from `data()`.
 
-export function statusColor(status: RenderNode['status'], theme: RenderTheme): string {
-  switch (status) {
-    case 'success':
-      return theme.success;
-    case 'warning':
-      return theme.warning;
-    case 'error':
-      return theme.error;
-    case 'running':
-    case 'pending':
-      return theme.accent;
-    default:
-      return theme.surfaceMuted;
-  }
-}
+export { statusColor };
 
 export function isCard(shape: RenderNode['shape']): boolean {
   return shape === 'card' || shape === 'panel';
@@ -27,30 +20,11 @@ export function isCard(shape: RenderNode['shape']): boolean {
 
 /** Cytoscape rejects 8-digit hex while host theme tokens are often `#rrggbbaa`, so normalize every color. */
 export function normalizeTheme(theme: RenderTheme): RenderTheme {
-  return {
-    ...theme,
-    background: hex6(theme.background),
-    surface: hex6(theme.surface),
-    surfaceMuted: hex6(theme.surfaceMuted),
-    text: hex6(theme.text),
-    textMuted: hex6(theme.textMuted),
-    border: hex6(theme.border),
-    accent: hex6(theme.accent),
-    success: hex6(theme.success),
-    warning: hex6(theme.warning),
-    error: hex6(theme.error),
-    edge: hex6(theme.edge),
-    edgeMuted: hex6(theme.edgeMuted),
-    selection: hex6(theme.selection),
-    focus: hex6(theme.focus),
-  };
-}
-
-function hex6(color: string): string {
-  const match = /^#([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i.exec(color.trim());
-  if (!match) return color;
-  const value = match[1]!;
-  return value.length === 3 ? `#${[...value].map((character) => character + character).join('')}` : `#${value.slice(0, 6)}`;
+  const normalized: RenderTheme = { ...theme };
+  for (const role of THEME_COLOR_ROLES) {
+    normalized[role] = normalizeHexColor(theme[role]);
+  }
+  return normalized;
 }
 
 function nodeSize(node: RenderNode): [number, number] {

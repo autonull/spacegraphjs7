@@ -1,4 +1,5 @@
 import type { CardFacing, DepthMode, Projection } from '../types';
+import { clamp01 } from '../utils/math';
 
 export type { DepthMode };
 
@@ -60,7 +61,7 @@ export function depthTreatment(mode: DepthMode): DepthTreatment {
 /** Exponential depth attenuation in `(0, 1]`: 1 at the camera, approaching 0 far away. `density <= 0` is no fade. */
 export function depthFade(distance: number, density: number): number {
   if (density <= 0) return 1;
-  return Math.max(0, Math.min(1, Math.exp(-((density * Math.max(distance, 0)) ** 2))));
+  return clamp01(Math.exp(-((density * Math.max(distance, 0)) ** 2)));
 }
 
 /**

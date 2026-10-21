@@ -2,9 +2,6 @@
 import { describe, expect, it } from 'vitest';
 import { CHILD_EDGE_KIND, extractSubgraph } from '../../src/overlays';
 
-type TestNode = { id: string; kind: string; rank?: number };
-type TestEdge = { id: string; source: string; target: string; kind: string };
-
 const MODEL = {
     nodes: [
         { id: 'session', kind: 'session' },

@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import type { Edge } from '../../edges/Edge';
 import type { Node } from '../../nodes/Node';
 import type { SpaceGraph } from '../../SpaceGraph';
+import { clientToNdc } from '../../utils/projection';
 
 /**
  * Raycasting helper for InteractionPlugin
@@ -20,13 +21,8 @@ export class InteractionRaycaster {
 
   updateMousePosition(x: number, y: number): void {
     const canvas = this.sg.renderer.renderer.domElement;
-    const rect = canvas.getBoundingClientRect();
-    this.mouse.copy(
-      new THREE.Vector2(
-        ((x - rect.left) / rect.width) * 2 - 1,
-        -((y - rect.top) / rect.height) * 2 + 1
-      )
-    );
+    const ndc = clientToNdc(x, y, canvas.getBoundingClientRect());
+    this.mouse.set(ndc.x, ndc.y);
   }
 
   getMouseNDC(): THREE.Vector2 {

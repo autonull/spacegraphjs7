@@ -42,7 +42,10 @@ export class EventEmitter<T extends Record<string, any> = any> {
     }
   }
 
-  emitWithTimestamp<K extends keyof T>(event: K, data: T[K] & { timestamp?: number }): void {
+  emitWithTimestamp<K extends keyof T>(
+    event: K,
+    data: Omit<T[K], 'timestamp'> & { timestamp?: number }
+  ): void {
     this.invokeHandlers(this.handlers.get(event) ?? new Set(), { ...data, timestamp: Date.now() });
   }
 

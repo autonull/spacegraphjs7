@@ -3,6 +3,7 @@ import type * as THREE from 'three';
 import type { Edge } from '../../edges/Edge';
 import type { Node } from '../../nodes/Node';
 import type { SpaceGraph } from '../../SpaceGraph';
+import { worldToScreen } from '../../utils/projection';
 
 // Visual + box-select adapter over the single core Selection. Owns no membership state.
 // Node interaction outlines are applied by the nodes themselves (Node.setControlState).
@@ -100,9 +101,7 @@ export class SelectionManager {
   }
 
   private getProjectedPosition(position: THREE.Vector3): { x: number; y: number } {
-    const vector = position.clone().project(this.sg.renderer.camera);
-    const { clientWidth: width, clientHeight: height } = this.sg.renderer.renderer.domElement;
-    return { x: (vector.x * 0.5 + 0.5) * width, y: (-vector.y * 0.5 + 0.5) * height };
+    return worldToScreen(position, this.sg.renderer.camera, this.sg.renderer.renderer.domElement);
   }
 
   private createSelectionBoxElement(): void {

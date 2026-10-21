@@ -20,7 +20,6 @@ export class HistoryPlugin extends BaseSystemPlugin {
   private isRestoring = false;
   readonly isEnabled: boolean;
 
-  private lastSnapshotTime = 0;
   private snapshotDebounce = 500;
   private debounceTimer: any = null;
 

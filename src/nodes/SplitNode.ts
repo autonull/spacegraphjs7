@@ -2,8 +2,8 @@ import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec } from '../types';
 import { LayoutNode, splitStrategy } from './LayoutNode';
 
-export class SplitNode extends (LayoutNode as any) {
-  static readonly typeName = 'SplitNode';
+export class SplitNode extends LayoutNode {
+  static readonly typeName: string = 'SplitNode';
 
   constructor(sg?: SpaceGraph, spec?: NodeSpec) {
     super(sg!, spec as NodeSpec, splitStrategy, {

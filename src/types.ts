@@ -589,10 +589,8 @@ export interface HitResult {
   point?: Point3D;
 }
 
-export type LayoutName = string;
-export type MermaidThemeName = 'default' | 'forest' | 'dark' | 'neutral';
-export type MermaidLayoutType = 'graph' | 'flowchart' | 'sequence' | 'class' | 'state' | 'gantt';
-export type MermaidNodeShape = 'default' | 'circle' | 'ellipse' | 'rect' | 'diamond';
+// The mermaid vocabulary lives with the mermaid plugin (`LayoutName`, `MermaidThemeName`,
+// `MermaidLayoutType`, `MermaidNodeShape`); a second copy here would only shadow it.
 
 // ============= Ergonomic Type Helpers =============
 export type NodeSpecWithPosition<T extends NodeData = NodeData> = NodeSpec<T> & {

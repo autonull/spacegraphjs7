@@ -4,6 +4,7 @@ export type {
   DiagramFormat,
   DiagramNode,
   DiagramParseResult,
+  DiagramTheme,
   LayoutName,
   MermaidLayoutType,
   MermaidNodeShape,
@@ -12,11 +13,13 @@ export type {
 export {
   DiagramParserFactory,
   DOTParser,
-  GraphMLParser,
+  edgeToSpec,
   getLayoutLabel,
+  GraphMLParser,
   JSONDiagramParser,
   LAYOUT_NAMES,
   MERMAID_THEMES,
   MermaidParser,
+  nodeToSpec,
 } from './MermaidParser';
 export { injectMermaidStyles, MermaidPlugin, type MermaidPluginOptions } from './MermaidPlugin';

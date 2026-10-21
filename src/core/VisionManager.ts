@@ -66,8 +66,10 @@ export class VisionManager {
     const report = await this.visionSystem.analyze(this.sg.graph, this.sg.renderer.camera);
 
     logger.info('Analysis complete. Overall Score: %d', report.overall.score);
-    console.log(
-      `[VisionManager] Analysis complete. Overall Score: ${report.overall.score}, Overlaps: ${report.overlap.overlapCount}`
+    logger.info(
+      '[VisionManager] Analysis complete. Overall Score: %d, Overlaps: %d',
+      report.overall.score,
+      report.overlap.overlapCount
     );
 
     if (report.overall.score < 90) {

@@ -4,10 +4,11 @@ import * as THREE from 'three';
 import type { Node } from '../nodes/Node';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { EdgeData, EdgeSpec } from '../types';
+import { directionBetween, perpendicularTo } from '../utils/vector';
 import { Edge } from './Edge';
 
 export class BundledEdge extends Edge {
-  static readonly typeName = 'BundledEdge';
+  static readonly typeName: string = 'BundledEdge';
   private strands: THREE.Line[] = [];
   readonly strandCount: number;
   private spread: number;
@@ -77,16 +78,14 @@ export class BundledEdge extends Edge {
 
   update() {
     const pool = MathPool.getInstance();
-    const dir = pool.acquireVector3().subVectors(this.target.position, this.source.position);
+    const dir = directionBetween(this.source.position, this.target.position, pool.acquireVector3());
 
     if (dir.lengthSq() < 0.001) {
       pool.releaseVector3(dir);
       return;
     }
 
-    const ortho1 = pool.acquireVector3().set(-dir.y, dir.x, 0).normalize();
-    if (ortho1.lengthSq() < 0.001) ortho1.set(1, 0, 0);
-
+    const ortho1 = perpendicularTo(dir, pool.acquireVector3()).normalize();
     const ortho2 = pool.acquireVector3().crossVectors(dir, ortho1).normalize();
 
     const offsetVec = pool.acquireVector3();

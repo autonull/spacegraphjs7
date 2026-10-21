@@ -240,4 +240,6 @@ export function supportsDepth(capabilities: RendererCapabilities, depth: DepthMo
 
 // The theme bridge and the contrast auditor live beside the contract: they are pure, dependency-free,
 // and every renderer and host needs them.
+export * from './color';
+export * from './events';
 export * from './theme';

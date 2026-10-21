@@ -4,7 +4,7 @@ import type { NodeSpec } from '../types';
 import { BaseContentNode } from './BaseContentNode';
 
 export class IFrameNode extends BaseContentNode {
-  static readonly typeName = 'IFrameNode';
+  static readonly typeName: string = 'IFrameNode';
   public iframeEl: HTMLIFrameElement;
 
   constructor(sg: SpaceGraph | undefined, spec: NodeSpec) {
@@ -40,11 +40,7 @@ export class IFrameNode extends BaseContentNode {
     if (updates.data?.src) this.navigate(updates.data.src as string);
 
     if (updates.data?.width || updates.data?.height) {
-      const w = (updates.data.width as number) ?? (this.data?.width as number) ?? 480;
-      const h = (updates.data.height as number) ?? (this.data?.height as number) ?? 320;
-      this.iframeEl.style.width = `${w}px`;
-      this.iframeEl.style.height = `${h}px`;
-      this.updateBackingGeometry(w, h);
+      this.applySize(this.dimension(updates, 'width', 480), this.dimension(updates, 'height', 320));
     }
     return this;
   }

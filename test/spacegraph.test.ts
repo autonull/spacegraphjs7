@@ -1514,7 +1514,6 @@ describe('ErgonomicsPlugin', () => {
 
 describe('VisionManager Auto-Correction Loop', () => {
   let sg: any;
-  let visionManager: any;
   let autoLayout: any;
 
   beforeEach(() => {

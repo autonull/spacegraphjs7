@@ -27,6 +27,7 @@ export { MarkdownNode } from './MarkdownNode';
 export { MathNode } from './MathNode';
 export { Node } from './Node';
 export { NoteNode } from './NoteNode';
+export { type NodePalette, type NodeTheme, NODE_PALETTE, paletteOf } from './palette';
 export { PanelNode } from './PanelNode';
 export { PortNode } from './PortNode';
 export { ProcessNode } from './ProcessNode';

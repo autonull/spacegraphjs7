@@ -10,7 +10,7 @@ import { Node } from './Node';
 const logger = createLogger('SceneNode');
 
 export class SceneNode extends Node {
-  static readonly typeName = 'SceneNode';
+  static readonly typeName: string = 'SceneNode';
   private modelRoot?: THREE.Group;
   private loader: GLTFLoader;
   private proxyMesh?: THREE.Mesh;

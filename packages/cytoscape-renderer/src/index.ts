@@ -10,6 +10,7 @@ import {
   type RenderModel,
   type RenderTheme,
   type Unsubscribe,
+  RendererEventBus,
 } from '@spacegraphjs/renderer';
 import type { Core } from 'cytoscape';
 import { frameInRegion } from './fit';
@@ -56,7 +57,7 @@ export class CytoscapeRenderer implements GraphRenderer {
   #nodes = new Set<string>();
   #edges = new Set<string>();
   #cards = new Map<string, HTMLDivElement>();
-  #handlers = new Map<keyof RendererEventMap, Set<Handler<never>>>();
+  #events = new RendererEventBus();
   #applyingSelection = false;
 
   async mount(
@@ -257,10 +258,7 @@ export class CytoscapeRenderer implements GraphRenderer {
   }
 
   on<K extends keyof RendererEventMap>(event: K, handler: Handler<K>): Unsubscribe {
-    const set = this.#handlers.get(event) ?? new Set<Handler<never>>();
-    set.add(handler as Handler<never>);
-    this.#handlers.set(event, set);
-    return () => set.delete(handler as Handler<never>);
+    return this.#events.on(event, handler);
   }
 
   dispose(): void {
@@ -271,7 +269,7 @@ export class CytoscapeRenderer implements GraphRenderer {
     this.#canvas = null;
     this.#overlay = null;
     this.#cards.clear();
-    this.#handlers.clear();
+    this.#events.clear();
     this.#model = null;
     this.#nodes.clear();
     this.#edges.clear();
@@ -353,9 +351,7 @@ export class CytoscapeRenderer implements GraphRenderer {
   }
 
   #emit<K extends keyof RendererEventMap>(event: K, payload: RendererEventMap[K]): void {
-    for (const handler of this.#handlers.get(event) ?? new Set<Handler<never>>()) {
-      (handler as Handler<K>)(payload);
-    }
+    this.#events.emit(event, payload);
   }
 }
 

@@ -1,18 +1,12 @@
 import gsap from 'gsap';
 import { ThreeDisposer } from '../utils';
 import * as THREE from 'three';
-import { type Bounds3D, type HitResult, type Rect, Surface } from '../core/Surface';
+import { type Bounds3D, type HitResult, type Rect, Surface, createBounds3D, rectOf } from '../core/Surface';
 import { resolveTheme, applyNodeTheme, type ResolvedTheme } from '../core/theme';
+import { projectToNdc } from '../utils/projection';
 import type { ControlState } from '../plugins/interaction/ControlStateBorder';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { AnimationProps, NodeData, NodeSpec } from '../types';
-
-export type NodeEventMap = {
-  'node:updated': { node: Node; changes: Partial<NodeSpec>; timestamp: number };
-  'node:destroying': { node: Node; timestamp: number };
-  focus: { node: Node };
-  blur: { node: Node };
-};
 
 export interface VisibilityContext {
   cameraFrustum: THREE.Frustum;
@@ -23,7 +17,22 @@ export interface VisibilityContext {
 
 export type LODLevel = 'high' | 'medium' | 'low' | 'hidden';
 
+interface PositionTween {
+  x?: number;
+  y?: number;
+  z?: number;
+  duration?: number;
+  ease?: string;
+  delay?: number;
+  onComplete?: () => void;
+}
+
 export abstract class Node extends Surface {
+  /** Whether a move may be tweened; hosts that drive their own frame loop turn this off. */
+  private static get canAnimate(): boolean {
+    return typeof process !== 'undefined';
+  }
+
   readonly id: string;
   readonly type: string;
   public sg?: SpaceGraph;
@@ -50,7 +59,6 @@ export abstract class Node extends Surface {
     onDragging?: (node: Node) => void;
     onDragStop?: (node: Node) => void;
   };
-  actions?: Array<{ icon: string; label: string; action: string }>;
 
   constructor(sgOrSpec?: SpaceGraph | NodeSpec, maybeSpec?: NodeSpec) {
     super();
@@ -77,37 +85,16 @@ export abstract class Node extends Surface {
   }
 
   get bounds(): Rect {
-    const box = new THREE.Box3().setFromObject(this.object);
-    return {
-      x: box.min.x,
-      y: box.min.y,
-      width: box.max.x - box.min.x,
-      height: box.max.y - box.min.y,
-    };
+    return rectOf(new THREE.Box3().setFromObject(this.object));
   }
 
   get bounds3D(): Bounds3D {
-    const wasVisible = this.object.visible;
-    this.object.visible = true;
     const box = new THREE.Box3().setFromObject(this.object);
-    this.object.visible = wasVisible;
 
-    return {
-      min: box.min,
-      max: box.max,
-      get center() {
-        return new THREE.Vector3().addVectors(this.min, this.max).multiplyScalar(0.5);
-      },
-      get size() {
-        return new THREE.Vector3().subVectors(this.max, this.min);
-      },
-      containsPoint(p: THREE.Vector3) {
-        return box.containsPoint(p);
-      },
-      intersectsRay(ray: any) {
-        return ray.intersectsBox(box);
-      },
-    };
+    return createBounds3D(box.min, box.max, {
+      containsPoint: (point) => box.containsPoint(point),
+      intersectsRay: (ray) => ray.ray.intersectsBox(box),
+    });
   }
 
   private static _parseVector3(
@@ -123,23 +110,34 @@ export abstract class Node extends Surface {
 
   hitTest(raycaster: THREE.Raycaster): HitResult | null {
     if (!this.visible || !this.isTouchable) return null;
+    return this.hitTestObject(raycaster, this.object);
+  }
 
-    const intersects = raycaster.intersectObject(this.object, true);
-    if (intersects.length > 0) {
-      const hit = intersects[0];
-      return {
-        surface: this,
-        point: hit.point,
-        localPoint: this.object.worldToLocal(hit.point.clone()),
-        distance: hit.distance,
-        normal: hit.face?.normal
-          ?.clone()
-          .applyMatrix4(new THREE.Matrix4().extractRotation(this.object.matrixWorld)),
-        uv: hit.uv,
-        face: hit.face ?? undefined,
-      };
-    }
-    return null;
+  /**
+   * The first intersection of a ray with a part of this node, in the node's own coordinates.
+   */
+  protected hitTestObject(
+    raycaster: THREE.Raycaster,
+    target: THREE.Object3D,
+    { recursive = true, normal = true }: { recursive?: boolean; normal?: boolean } = {}
+  ): HitResult | null {
+    const intersects = raycaster.intersectObject(target, recursive);
+    if (!intersects.length) return null;
+
+    const hit = intersects[0];
+    return {
+      surface: this,
+      point: hit.point,
+      localPoint: this.object.worldToLocal(hit.point.clone()),
+      distance: hit.distance,
+      normal: normal
+        ? hit.face?.normal
+            ?.clone()
+            .applyMatrix4(new THREE.Matrix4().extractRotation(this.object.matrixWorld))
+        : undefined,
+      uv: hit.uv,
+      face: hit.face ?? undefined,
+    };
   }
 
   isVisible(context: VisibilityContext): boolean {
@@ -206,11 +204,13 @@ export abstract class Node extends Surface {
     this.dispose();
   }
 
-  requireSpaceGraph(): SpaceGraph {
-    if (!this.sg) {
-      throw new Error(`Node '${this.id}' requires SpaceGraph but sg is not initialized`);
-    }
-    return this.sg;
+  protected get surfaceKind(): string {
+    return 'Node';
+  }
+
+  /** Announce that one of this node's data fields changed. */
+  protected emitDataChanged(property: string, value: unknown, extra?: Record<string, unknown>): void {
+    this.sg?.events.emit('node:dataChanged', { node: this, property, value, ...extra });
   }
 
   updateSpec(updates: Partial<NodeSpec>): this {
@@ -307,7 +307,6 @@ export abstract class Node extends Surface {
   }
 
   moveBy(dx: number, dy: number, dz = 0): this {
-    this.position.addScalar(0);
     this.position.x += dx;
     this.position.y += dy;
     this.position.z += dz;
@@ -316,21 +315,8 @@ export abstract class Node extends Surface {
   }
 
   moveTo(target: THREE.Vector3, animate = true, duration = 0.5): this {
-    if (animate && typeof process !== 'undefined') {
-      gsap.to(this.position, {
-        x: target.x,
-        y: target.y,
-        z: target.z,
-        duration,
-        ease: 'power2.out',
-        onUpdate: () => {
-          this.object?.position.copy(this.position);
-        },
-      });
-    } else {
-      this.position.copy(target);
-      this.object?.position.copy(target);
-    }
+    if (!animate || !Node.canAnimate) return this.snapTo(target);
+    this.tweenPosition({ x: target.x, y: target.y, z: target.z, duration, ease: 'power2.out' });
     return this;
   }
 
@@ -378,19 +364,24 @@ export abstract class Node extends Surface {
 
   // Show or hide the node's interaction visual (mesh outline or DOM outline) for the current state.
   protected syncVisual(): void {
-    const state = this.focused ? 'focus' : this.controlState;
-    this.setOutlineState(state);
+    this.setOutlineState(this.visualState());
+  }
+
+  /** The interaction state the node's visuals reflect: focus wins over the control state. */
+  protected visualState(): ControlState {
+    return this.focused ? 'focus' : this.controlState;
+  }
+
+  /** The theme colour a control state draws with; undefined when the state carries no colour. */
+  protected controlStateColor(state: ControlState): string | number | undefined {
+    if (state === 'focus') return this.resolvedTheme.focus;
+    if (state === 'selected') return this.resolvedTheme.selection;
+    if (state === 'hovered') return this.resolvedTheme.hover;
+    return undefined;
   }
 
   protected setOutlineState(state: ControlState): void {
-    const color =
-      state === 'focus'
-        ? this.resolvedTheme.focus
-        : state === 'selected'
-          ? this.resolvedTheme.selection
-          : state === 'hovered'
-            ? this.resolvedTheme.hover
-            : undefined;
+    const color = this.controlStateColor(state);
     const scene = this.sg?.renderer?.scene;
     if (color === undefined || !scene) {
       if (this.outlineObject) this.outlineObject.visible = false;
@@ -410,19 +401,10 @@ export abstract class Node extends Surface {
     this.sg?.requestFrame?.();
   }
 
-  onFocus?(): void;
-
-  onBlur?(): void;
-
   animate(props: AnimationProps): this {
     const { scale, ...positionProps } = props;
 
-    gsap.to(this.position, {
-      ...positionProps,
-      onUpdate: () => {
-        this.object.position.copy(this.position);
-      },
-    });
+    this.tweenPosition(positionProps);
 
     if (scale !== undefined) {
       gsap.to(this.object.scale, {
@@ -443,16 +425,28 @@ export abstract class Node extends Surface {
     options: { duration?: number; ease?: string; delay?: number; onComplete?: () => void } = {}
   ): this {
     const { duration = 0.5, ease = 'power2.out', delay = 0, onComplete } = options;
+    this.tweenPosition({ ...targets, duration, ease, delay, onComplete });
+    return this;
+  }
+
+  /**
+   * Tween the node's position, keeping the world transform in step with it.
+   */
+  private tweenPosition(vars: PositionTween): void {
     gsap.to(this.position, {
-      ...targets,
-      duration,
-      ease,
-      delay,
+      ...vars,
       onUpdate: () => {
         this.object.position.copy(this.position);
       },
-      onComplete,
     });
+  }
+
+  /**
+   * Put the node at a position right away, with no tween.
+   */
+  private snapTo(target: THREE.Vector3): this {
+    this.position.copy(target);
+    this.object.position.copy(target);
     return this;
   }
 
@@ -481,19 +475,16 @@ export abstract class Node extends Surface {
   }
 
   lookAt(target: THREE.Vector3 | Node): this {
-    const targetPos = target && 'position' in target ? (target as any).position : target;
-    this.object.lookAt(targetPos);
+    this.object.lookAt(positionOf(target));
     return this;
   }
 
   getDistanceTo(other: Node | THREE.Vector3): number {
-    const otherPos = other && 'position' in other ? (other as any).position : other;
-    return this.position.distanceTo(otherPos);
+    return this.position.distanceTo(positionOf(other));
   }
 
   getAngleTo(other: Node | THREE.Vector3): number {
-    const otherPos = other && 'position' in other ? (other as any).position : other;
-    const dir = (otherPos as THREE.Vector3).clone().sub(this.position);
+    const dir = positionOf(other).clone().sub(this.position);
     return Math.atan2(dir.y, dir.x);
   }
 
@@ -503,13 +494,13 @@ export abstract class Node extends Surface {
 
   isOffscreen(camera: THREE.Camera, threshold = 0): boolean {
     this.object.updateMatrixWorld();
-    const pos = this.object.position.clone().project(camera);
+    const pos = projectToNdc(this.object.position, camera);
     const bounds = 1 + threshold;
     return pos.x < -bounds || pos.x > bounds || pos.y < -bounds || pos.y > bounds;
   }
 
   getScreenPosition(camera: THREE.Camera): { x: number; y: number; visible: boolean } {
-    const pos = this.position.clone().project(camera);
+    const pos = projectToNdc(this.position, camera);
     return {
       x: (pos.x + 1) / 2,
       y: (-pos.y + 1) / 2,
@@ -703,22 +694,15 @@ export abstract class Node extends Surface {
       delay = 0,
     }: { animate?: boolean; duration?: number; delay?: number } = {}
   ): this {
-    if (animate && typeof process !== 'undefined') {
-      gsap.to(this.position, {
-        x: target.x,
-        y: target.y,
-        z: target.z,
-        duration,
-        ease: 'power2.out',
-        delay,
-        onUpdate: () => {
-          this.object.position.copy(this.position);
-        },
-      });
-    } else {
-      this.position.copy(target);
-      this.object.position.copy(target);
-    }
+    if (!animate || !Node.canAnimate) return this.snapTo(target);
+    this.tweenPosition({
+      x: target.x,
+      y: target.y,
+      z: target.z,
+      duration,
+      ease: 'power2.out',
+      delay,
+    });
     return this;
   }
 
@@ -747,4 +731,9 @@ export abstract class Node extends Surface {
     ThreeDisposer.dispose(this.object);
     this.removeAllListeners();
   }
+}
+
+/** The position of a node or of a vector, so a caller may hand over either. */
+function positionOf(target: THREE.Vector3 | Node): THREE.Vector3 {
+  return 'position' in target ? target.position : target;
 }

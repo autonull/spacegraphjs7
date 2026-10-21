@@ -2,29 +2,13 @@ import { describe, expect, test } from 'bun:test';
 import {
   ContrastAuditor,
   contrastRatio,
+  DEFAULT_THEME,
   resolveTheme,
   type RenderTheme,
   type SemanticTokenMap,
 } from './index';
 
-const DEFAULTS: RenderTheme = {
-  background: '#101014',
-  surface: '#1b1b22',
-  surfaceMuted: '#2a2a33',
-  text: '#f5f5f7',
-  textMuted: '#a0a0aa',
-  border: '#3a3a44',
-  accent: '#3b82f6',
-  success: '#22c55e',
-  warning: '#f59e0b',
-  error: '#ef4444',
-  edge: '#6b7280',
-  edgeMuted: '#a0a0aa',
-  selection: '#60a5fa',
-  focus: '#93c5fd',
-  fontFamily: 'system-ui, sans-serif',
-  fontSize: 13,
-};
+const DEFAULTS: RenderTheme = DEFAULT_THEME;
 
 const TOKENS: SemanticTokenMap = {
   background: '--host-background',

@@ -6,8 +6,8 @@ import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec } from '../types';
 import { HtmlNode } from './HtmlNode';
 
-export class PanelNode extends (HtmlNode as any) {
-  static readonly typeName = 'PanelNode';
+export class PanelNode extends HtmlNode {
+  static readonly typeName: string = 'PanelNode';
   fixed = false;
   billboard = true;
   resizeBorder = 0.1;

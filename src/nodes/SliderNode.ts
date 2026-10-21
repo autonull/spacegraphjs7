@@ -1,6 +1,8 @@
 import * as THREE from 'three';
+import type { HitResult } from '../core/Surface';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec } from '../types';
+import { clamp01 } from '../utils/math';
 import { WidgetNode, type WidgetNodeData } from './WidgetNode';
 
 export interface SliderNodeData extends WidgetNodeData {
@@ -15,7 +17,7 @@ export interface SliderNodeData extends WidgetNodeData {
 }
 
 export class SliderNode extends WidgetNode {
-  static readonly typeName = 'SliderNode';
+  static readonly typeName: string = 'SliderNode';
   private _min = 0;
   private _max = 1;
   private _thumbSize = 20;
@@ -74,19 +76,8 @@ export class SliderNode extends WidgetNode {
     return false;
   }
 
-  hitTest(raycaster: THREE.Raycaster): import('../core/Surface').HitResult | null {
-    const intersects = raycaster.intersectObject(this.group, true);
-    if (intersects.length > 0) {
-      return {
-        surface: this,
-        point: intersects[0].point,
-        localPoint: this.group.worldToLocal(intersects[0].point.clone()),
-        distance: intersects[0].distance,
-        uv: intersects[0].uv,
-        face: intersects[0].face ?? undefined,
-      };
-    }
-    return null;
+  hitTest(raycaster: THREE.Raycaster): HitResult | null {
+    return this.hitTestObject(raycaster, this.group, { normal: false });
   }
 
   onPointerDown(): void {
@@ -121,8 +112,6 @@ export class SliderNode extends WidgetNode {
       if (data.min !== undefined) this._min = data.min;
       if (data.max !== undefined) this._max = data.max;
       if (data.width !== undefined || data.height !== undefined) {
-        this._width = data.width ?? this._width;
-        this._height = data.height ?? this._height;
         this._thumbSize = this._height * 1.5;
         this.track.geometry.dispose();
         this.track.geometry = new THREE.BoxGeometry(this._width, this._height, 4);
@@ -132,7 +121,7 @@ export class SliderNode extends WidgetNode {
       }
       if (data.showValue !== undefined) {
         this._showValue = data.showValue;
-        this.labelMesh!.visible = this._showValue;
+        if (this.labelMesh) this.labelMesh.visible = this._showValue;
       }
       if (data.trackColor !== undefined) this.trackMaterial.color.setHex(data.trackColor);
       if (data.color !== undefined) this.thumbMaterial.color.setHex(data.color);
@@ -189,6 +178,6 @@ export class SliderNode extends WidgetNode {
   protected valueFromX(x: number): number {
     const range = this._width - this._thumbSize;
     const normalized = (x + this._width / 2 - this._thumbSize / 2) / range;
-    return Math.max(0, Math.min(1, normalized));
+    return clamp01(normalized);
   }
 }

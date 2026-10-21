@@ -4,6 +4,7 @@ import type { EventSystem } from '../core/events/EventSystem';
 import type { Graph } from '../core/Graph';
 import type { SpaceGraph } from '../SpaceGraph';
 import { DOMUtils } from '../utils/DOMUtils';
+import { visibleHeightAtDistance } from '../utils/CameraUtils';
 import { BaseSystemPlugin } from './BaseSystemPlugin';
 
 /**
@@ -274,7 +275,7 @@ export class MinimapPlugin extends BaseSystemPlugin {
     }
     const perspective = camera as THREE.PerspectiveCamera;
     const dist = perspective.position.distanceTo(target);
-    const height = 2 * Math.tan((perspective.fov * Math.PI) / 360) * dist;
+    const height = visibleHeightAtDistance(perspective.fov, dist);
     return { width: height * perspective.aspect, height };
   }
 }

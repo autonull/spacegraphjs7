@@ -1,15 +1,9 @@
 import type { Edge } from '../edges/Edge';
 import type { Node } from '../nodes/Node';
 import type { SpaceGraph } from '../SpaceGraph';
-import type { EdgeSpec, NodeSpec } from '../types';
+import type { EdgeConstructor, EdgeSpec, NodeConstructor, NodeSpec } from '../types';
 
-export type NodeConstructor = new (sg: SpaceGraph | undefined, spec: NodeSpec) => Node;
-export type EdgeConstructor = new (
-  sg: SpaceGraph | undefined,
-  spec: EdgeSpec,
-  source: Node,
-  target: Node
-) => Edge;
+export type { EdgeConstructor, NodeConstructor };
 
 export class TypeRegistry {
   private static instance: TypeRegistry;
@@ -161,5 +155,3 @@ export const registerEdge = (type: string, ctor: EdgeConstructor) =>
 // Quick lookup
 export const getNodeTypes = () => TypeRegistry.getInstance().getNodeTypes();
 export const getEdgeTypes = () => TypeRegistry.getInstance().getEdgeTypes();
-export const hasNodeType = (type: string) => TypeRegistry.getInstance().hasNode(type);
-export const hasEdgeType = (type: string) => TypeRegistry.getInstance().hasEdge(type);

@@ -35,7 +35,6 @@ export const HUD_COLORS = {
 } as const;
 
 // Type-safe style builder for HUD elements
-export type HUDStyleKey = keyof typeof HUD_STYLES;
 export type HUDPositionKey = keyof typeof HUD_POSITIONS;
 
 export const HUD_STYLES = {

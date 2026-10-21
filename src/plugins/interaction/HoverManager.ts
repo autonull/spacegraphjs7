@@ -51,7 +51,7 @@ export class HoverManager {
     node.setControlState(state);
   }
 
-  private updateEdgeHover(edge: Edge | null): void {
+  updateEdgeHover(edge: Edge | null): void {
     if (edge === this.hoveredEdge) return;
     if (this.hoveredEdge)
       this.sg.events.emit('edge:pointerleave', { edge: this.hoveredEdge } as any);

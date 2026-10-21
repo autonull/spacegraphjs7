@@ -11,6 +11,7 @@ import {
   type RenderModel,
   type RenderTheme,
   type Unsubscribe,
+  RendererEventBus,
 } from '@spacegraphjs/renderer';
 import type { GraphSpec, SpaceGraph } from 'spacegraphjs/activity';
 import { edgeSpec, nodeSpec, spaceGraphTheme } from './mapping';
@@ -38,12 +39,6 @@ const CAPABILITIES: RendererCapabilities = {
 };
 
 type Handler<K extends keyof RendererEventMap> = (payload: RendererEventMap[K]) => void;
-type CoreViewport = {
-  zoom: number;
-  center: [number, number, number];
-  extent?: { width: number; height: number };
-  band?: string;
-};
 
 // Wraps the lean SpaceGraphJS core behind the dependency-free contract. It is the only package that
 // imports both the core and the contract; the core never imports the contract.
@@ -56,7 +51,7 @@ export class SpaceGraphRenderer implements GraphRenderer {
   #nodes = new Set<string>();
   #edges = new Set<string>();
   #nodeTypes = new Map<string, string>();
-  #handlers = new Map<keyof RendererEventMap, Set<Handler<never>>>();
+  #events = new RendererEventBus();
   #disposers: Unsubscribe[] = [];
   #applyingSelection = false;
   #band: string | undefined;
@@ -221,16 +216,13 @@ export class SpaceGraphRenderer implements GraphRenderer {
   }
 
   on<K extends keyof RendererEventMap>(event: K, handler: Handler<K>): Unsubscribe {
-    const set = this.#handlers.get(event) ?? new Set<Handler<never>>();
-    set.add(handler as Handler<never>);
-    this.#handlers.set(event, set);
-    return () => set.delete(handler as Handler<never>);
+    return this.#events.on(event, handler);
   }
 
   dispose(): void {
     for (const off of this.#disposers) off();
     this.#disposers = [];
-    this.#handlers.clear();
+    this.#events.clear();
     this.#sg?.dispose();
     this.#sg = null;
     this.#nodes.clear();
@@ -252,10 +244,10 @@ export class SpaceGraphRenderer implements GraphRenderer {
       if (this.#applyingSelection) return;
       this.#emit('selectionChange', { ids: idsOf(payload) });
     });
-    on('camera:change', (payload) => this.#emitViewport(payload as CoreViewport));
+    on('camera:change', (payload) => this.#emitViewport(payload as RendererViewport));
   }
 
-  #emitViewport(viewport: CoreViewport): void {
+  #emitViewport(viewport: RendererViewport): void {
     this.#emit('viewportChange', {
       zoom: viewport.zoom,
       center: viewport.center,
@@ -269,9 +261,7 @@ export class SpaceGraphRenderer implements GraphRenderer {
   }
 
   #emit<K extends keyof RendererEventMap>(event: K, payload: RendererEventMap[K]): void {
-    for (const handler of this.#handlers.get(event) ?? new Set<Handler<never>>()) {
-      (handler as Handler<K>)(payload);
-    }
+    this.#events.emit(event, payload);
   }
 }
 

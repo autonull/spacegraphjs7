@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type { EventSystem } from '../core/events/EventSystem';
 import type { SpaceGraph } from '../SpaceGraph';
+import { clientToNdc } from '../utils/projection';
 import { type Finger, type Fingering, FingerManager } from './Fingering';
 
 export type InputEventType =
@@ -144,8 +145,10 @@ export class InputManager {
     if (options.sources) for (const config of options.sources) this.addSource(config);
   }
 
+  private cachedContext?: InputContext;
+
   get context(): InputContext {
-    return {
+    this.cachedContext ??= {
       sg: this.sg,
       events: this.events,
       getState: () => this.state,
@@ -159,16 +162,11 @@ export class InputManager {
         this.state.disabledInputs.delete(source);
       },
       isInputEnabled: (source: string) => !this.state.disabledInputs.has(source),
-      updateState: (partial: Partial<InputState>) => {
-        Object.assign(this.state, partial);
-      },
-      emit: (eventType: string, data: unknown) => {
-        this.events.emit(eventType, data);
-      },
-      emitBatched: (eventType: string, data: unknown) => {
-        this.events.emitBatched(eventType, data);
-      },
+      updateState: (partial: Partial<InputState>) => this.updateState(partial),
+      emit: (eventType: string, data: unknown) => this.emit(eventType, data),
+      emitBatched: (eventType: string, data: unknown) => this.emitBatched(eventType, data),
     };
+    return this.cachedContext;
   }
 
   registerFingering(fingering: Fingering, priority: number): void {
@@ -285,13 +283,7 @@ export class InputManager {
     const target = data.target;
     const ndc =
       target instanceof Element
-        ? (() => {
-            const rect = target.getBoundingClientRect();
-            return {
-              x: ((data.x - rect.left) / rect.width) * 2 - 1,
-              y: -((data.y - rect.top) / rect.height) * 2 + 1,
-            };
-          })()
+        ? clientToNdc(data.x, data.y, target.getBoundingClientRect())
         : { x: (data.x / window.innerWidth) * 2 - 1, y: -(data.y / window.innerHeight) * 2 + 1 };
 
     const finger: Finger = {
@@ -439,39 +431,33 @@ export class InputSource {
   }
 
   private normalizeEvent(type: InputEventType, originalEvent: unknown): InputEvent | null {
-    const timestamp = Date.now();
-    const base = { type, source: this.id, timestamp, originalEvent, consumed: false };
-    const builders: Record<InputEventType, () => InputEvent> = {
-      keydown: () => ({ ...base, data: this.normalizeKeyEvent(originalEvent as KeyboardEvent) }),
-      keyup: () => ({ ...base, data: this.normalizeKeyEvent(originalEvent as KeyboardEvent) }),
-      mousedown: () => ({ ...base, data: this.normalizePointerEvent(originalEvent as MouseEvent) }),
-      mouseup: () => ({ ...base, data: this.normalizePointerEvent(originalEvent as MouseEvent) }),
-      mousemove: () => ({ ...base, data: this.normalizePointerEvent(originalEvent as MouseEvent) }),
-      mouseleave: () => ({
-        ...base,
-        data: this.normalizePointerEvent(originalEvent as MouseEvent),
-      }),
-      pointerdown: () => ({
-        ...base,
-        data: this.normalizePointerEvent(originalEvent as MouseEvent),
-      }),
-      pointerup: () => ({ ...base, data: this.normalizePointerEvent(originalEvent as MouseEvent) }),
-      pointermove: () => ({
-        ...base,
-        data: this.normalizePointerEvent(originalEvent as MouseEvent),
-      }),
-      wheel: () => ({ ...base, data: this.normalizeWheelEvent(originalEvent as WheelEvent) }),
-      touchstart: () => ({ ...base, data: this.normalizeTouchEvent(originalEvent as TouchEvent) }),
-      touchmove: () => ({ ...base, data: this.normalizeTouchEvent(originalEvent as TouchEvent) }),
-      touchend: () => ({ ...base, data: this.normalizeTouchEvent(originalEvent as TouchEvent) }),
-      touchcancel: () => ({ ...base, data: this.normalizeTouchEvent(originalEvent as TouchEvent) }),
-      dblclick: () => ({ ...base, data: this.normalizePointerEvent(originalEvent as MouseEvent) }),
-      contextmenu: () => ({
-        ...base,
-        data: this.normalizePointerEvent(originalEvent as MouseEvent),
-      }),
+    const data = this.normalizeData(type, originalEvent);
+    if (!data) return null;
+    return {
+      type,
+      source: this.id,
+      timestamp: Date.now(),
+      originalEvent,
+      consumed: false,
+      data,
     };
-    return builders[type]?.() ?? null;
+  }
+
+  private normalizeData(type: InputEventType, event: unknown): unknown | null {
+    switch (type) {
+      case 'keydown':
+      case 'keyup':
+        return this.normalizeKeyEvent(event as KeyboardEvent);
+      case 'wheel':
+        return this.normalizeWheelEvent(event as WheelEvent);
+      case 'touchstart':
+      case 'touchmove':
+      case 'touchend':
+      case 'touchcancel':
+        return this.normalizeTouchEvent(event as TouchEvent);
+      default:
+        return this.normalizePointerEvent(event as MouseEvent);
+    }
   }
 
   private normalizeKeyEvent(e: KeyboardEvent): KeyEventData {

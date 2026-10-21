@@ -6,6 +6,7 @@ import { InstancedNodeRenderer } from '../rendering/InstancedNodeRenderer';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { CameraViewport, CardFacing, Projection, RenderOptions } from '../types';
 import { parseColor } from '../utils/color';
+import { visibleHeightAtDistance } from '../utils/CameraUtils';
 import { declutterLabels, type LabelRect } from '../utils/labelDeclutter';
 import { RenderContext } from './RenderContext';
 import { clamp, denormalizeZoom, normalizeZoom, type ZoomRange } from './zoom';
@@ -88,17 +89,11 @@ export class WebGLRenderer {
     container.style.position = 'relative';
 
     this.cssRenderer = new CSS3DRenderer();
-    this.cssRenderer.setSize(container.clientWidth, container.clientHeight);
-    Object.assign(this.cssRenderer.domElement.style, CSS_STYLES);
-    this.cssRenderer.domElement.style.zIndex = '1';
-    container.appendChild(this.cssRenderer.domElement);
+    this.#mountCssLayer(container, this.cssRenderer, '1');
 
     // CSS2D layer for edge labels; keeps text at a constant screen size across zoom.
     this.css2dRenderer = new CSS2DRenderer();
-    this.css2dRenderer.setSize(container.clientWidth, container.clientHeight);
-    Object.assign(this.css2dRenderer.domElement.style, CSS_STYLES);
-    this.css2dRenderer.domElement.style.zIndex = '2';
-    container.appendChild(this.css2dRenderer.domElement);
+    this.#mountCssLayer(container, this.css2dRenderer, '2');
 
     this.instancedRenderer = new InstancedNodeRenderer(sg, this.scene);
     this.projScreenMatrix = new THREE.Matrix4();
@@ -193,7 +188,7 @@ export class WebGLRenderer {
     }
     const cam = this.perspectiveCamera;
     const dist = this.sg.cameraControls?.spherical.radius ?? cam.position.length();
-    const height = 2 * Math.tan((cam.fov * Math.PI) / 360) * dist;
+    const height = visibleHeightAtDistance(cam.fov, dist);
     return { width: height * aspect, height };
   }
 
@@ -337,8 +332,20 @@ export class WebGLRenderer {
     this.renderer.domElement.remove();
   }
 
+  /** Mount a CSS layer over the canvas, behind the chrome the host draws on top. */
+  #mountCssLayer(
+    container: HTMLElement,
+    layer: { domElement: HTMLElement; setSize(width: number, height: number): void },
+    zIndex: string
+  ): void {
+    layer.setSize(container.clientWidth, container.clientHeight);
+    Object.assign(layer.domElement.style, CSS_STYLES);
+    layer.domElement.style.zIndex = zIndex;
+    container.appendChild(layer.domElement);
+  }
+
   #fitOrthoFrustum(distance: number, aspect: number): void {
-    const height = 2 * Math.max(distance, 1e-3) * Math.tan(THREE.MathUtils.degToRad(FOV / 2));
+    const height = visibleHeightAtDistance(FOV, Math.max(distance, 1e-3));
     const width = height * (aspect || 1);
     this.orthographicCamera.left = -width / 2;
     this.orthographicCamera.right = width / 2;

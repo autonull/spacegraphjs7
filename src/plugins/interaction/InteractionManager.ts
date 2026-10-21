@@ -1,9 +1,14 @@
 // InteractionManager.ts - Unified interaction management
+//
+// A façade over the two managers that own the state: hover lives in HoverManager, focus lives in
+// FocusManager. The façade keeps one place to read the whole interaction state from, without a
+// second copy of the rules.
 
 import type { Edge } from '../../edges/Edge';
 import type { Node } from '../../nodes/Node';
 import type { SpaceGraph } from '../../SpaceGraph';
-import type { ControlState } from './ControlStateBorder';
+import { FocusManager, type FocusableNode } from './FocusManager';
+import { HoverManager } from './HoverManager';
 
 interface Focusable {
   focusable: boolean;
@@ -14,12 +19,6 @@ interface Focusable {
   blur(): void;
 }
 
-interface Interactable {
-  onPointerEnter?(node: Node): void;
-
-  onPointerLeave?(node: Node): void;
-}
-
 export interface InteractionState {
   focused: Focusable | null;
   hoveredNode: Node | null;
@@ -27,30 +26,27 @@ export interface InteractionState {
   pressed: Node | null;
 }
 
-const HOVER_SCALE = 1.1;
-
 export class InteractionManager {
-  constructor(readonly sg: SpaceGraph) {}
+  private readonly hoverManager: HoverManager;
+  private readonly focusManager: FocusManager;
+  private _pressed: Node | null = null;
 
-  private _focused: Focusable | null = null;
+  constructor(readonly sg: SpaceGraph) {
+    this.hoverManager = new HoverManager(sg);
+    this.focusManager = new FocusManager(sg);
+  }
 
   get focused(): Focusable | null {
-    return this._focused;
+    return this.focusManager.getFocusedNode();
   }
-
-  private _hoveredNode: Node | null = null;
 
   get hoveredNode(): Node | null {
-    return this._hoveredNode;
+    return this.hoverManager.getHoveredNode();
   }
-
-  private _hoveredEdge: Edge | null = null;
 
   get hoveredEdge(): Edge | null {
-    return this._hoveredEdge;
+    return this.hoverManager.getHoveredEdge();
   }
-
-  private _pressed: Node | null = null;
 
   get pressed(): Node | null {
     return this._pressed;
@@ -59,82 +55,45 @@ export class InteractionManager {
   // ============= State Access =============
   get state(): InteractionState {
     return {
-      focused: this._focused,
-      hoveredNode: this._hoveredNode,
-      hoveredEdge: this._hoveredEdge,
-      pressed: this._pressed,
+      focused: this.focused,
+      hoveredNode: this.hoveredNode,
+      hoveredEdge: this.hoveredEdge,
+      pressed: this.pressed,
     };
   }
 
   // ============= Hover Management =============
   hover(node: Node | null, edge: Edge | null): void {
-    this.hoverNode(node);
-    this.hoverEdge(edge);
+    this.hoverManager.updateHover(node, edge);
   }
 
   hoverNode(node: Node | null): void {
-    if (node === this._hoveredNode) return;
-
-    if (this._hoveredNode?.object) {
-      this.sg.events.emit('node:pointerleave', { node: this._hoveredNode });
-      this._hoveredNode.object.scale.divideScalar(HOVER_SCALE);
-      this.setNodeState(this._hoveredNode, 'normal');
-      (this._hoveredNode as Interactable)?.onPointerLeave?.(this._hoveredNode);
-    }
-
-    this._hoveredNode = node;
-
-    if (this._hoveredNode?.object) {
-      this.sg.events.emit('node:pointerenter', { node: this._hoveredNode });
-      this._hoveredNode.object.scale.multiplyScalar(HOVER_SCALE);
-      this.setNodeState(this._hoveredNode, 'hovered');
-      (this._hoveredNode as Interactable)?.onPointerEnter?.(this._hoveredNode);
-    }
+    this.hoverManager.updateNodeHover(node);
   }
 
   hoverEdge(edge: Edge | null): void {
-    if (edge === this._hoveredEdge) return;
-    if (this._hoveredEdge) this.sg.events.emit('edge:pointerleave', { edge: this._hoveredEdge });
-    this._hoveredEdge = edge;
-    if (this._hoveredEdge) this.sg.events.emit('edge:pointerenter', { edge: this._hoveredEdge });
+    this.hoverManager.updateEdgeHover(edge);
   }
 
   clearHover(): void {
-    this.hoverNode(null);
-    this.hoverEdge(null);
+    this.hoverManager.clear();
   }
 
   // ============= Focus Management =============
   focus(node: Focusable): void {
-    if (!node.focusable) return;
-    if (this._focused === node) return;
-
-    this.blur();
-    this._focused = node;
-    node.focus();
-    this.sg.events.emit('focus:changed', { node, focused: true });
+    this.focusManager.focus(node as FocusableNode);
   }
 
   blur(): void {
-    if (!this._focused) return;
-    const node = this._focused;
-    this._focused = null;
-    node.blur();
-    this.sg.events.emit('focus:changed', { node, focused: false });
+    this.focusManager.blur();
   }
 
   focusNext(): void {
-    const nodes = this.getFocusableNodes();
-    if (nodes.length === 0) return;
-    const current = this._focused ? nodes.indexOf(this._focused) : -1;
-    this.focus(nodes[(current + 1) % nodes.length]);
+    this.focusManager.focusNext();
   }
 
   focusPrevious(): void {
-    const nodes = this.getFocusableNodes();
-    if (nodes.length === 0) return;
-    const current = this._focused ? nodes.indexOf(this._focused) : 0;
-    this.focus(nodes[(current - 1 + nodes.length) % nodes.length]);
+    this.focusManager.focusPrevious();
   }
 
   // ============= Press Management =============
@@ -157,7 +116,7 @@ export class InteractionManager {
   }
 
   deselect(node: Node): void {
-    if ('blur' in node && node.focused) (node as any).blur();
+    if ('blur' in node && node.focused) (node as Focusable).blur();
   }
 
   selectAll(): void {
@@ -174,24 +133,17 @@ export class InteractionManager {
 
   // ============= Utility =============
   getFocusableNodes(): Focusable[] {
-    return [...this.sg.graph.nodes.values()].filter(
-      (n: any): n is Focusable => 'focusable' in n && (n as Focusable).focusable
-    );
+    return this.focusManager.getFocusableNodes();
   }
 
   getHovered(): Node | Edge | null {
-    return this._hoveredNode ?? this._hoveredEdge;
+    return this.hoveredNode ?? this.hoveredEdge;
   }
 
   clear(): void {
     this.blur();
     this.clearHover();
     this.release();
-  }
-
-  // ============= Private =============
-  private setNodeState(node: Node, state: ControlState): void {
-    node.setControlState(state);
   }
 }
 

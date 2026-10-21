@@ -1,4 +1,11 @@
-import type { RenderEdge, RenderModel, RenderNode, RenderTheme } from '@spacegraphjs/renderer';
+import {
+  DEFAULT_THEME,
+  statusColor,
+  type RenderEdge,
+  type RenderModel,
+  type RenderNode,
+  type RenderTheme,
+} from '@spacegraphjs/renderer';
 
 // Static SVG export and inline subgraphs. Contract-only: no browser, no renderer backend, no core
 // import. `renderToSVG` is pure and runs in Node; `InlineGraph` sets the resulting markup into a host
@@ -12,39 +19,12 @@ export type SvgOptions = {
 };
 
 export const DEFAULT_SVG_THEME: RenderTheme = {
-  background: '#101014',
-  surface: '#1b1b22',
-  surfaceMuted: '#2a2a33',
-  text: '#f5f5f7',
-  textMuted: '#a0a0aa',
-  border: '#3a3a44',
-  accent: '#3b82f6',
-  success: '#22c55e',
-  warning: '#f59e0b',
-  error: '#ef4444',
-  edge: '#6b7280',
+  ...DEFAULT_THEME,
   edgeMuted: '#4b5563',
-  selection: '#60a5fa',
-  focus: '#93c5fd',
   fontFamily: 'ui-sans-serif, system-ui, sans-serif',
-  fontSize: 13,
 };
 
-export function statusColor(status: RenderNode['status'], theme: RenderTheme): string {
-  switch (status) {
-    case 'success':
-      return theme.success;
-    case 'warning':
-      return theme.warning;
-    case 'error':
-      return theme.error;
-    case 'running':
-    case 'pending':
-      return theme.accent;
-    default:
-      return theme.surfaceMuted;
-  }
-}
+export { statusColor };
 
 export function renderToSVG(model: RenderModel, options: SvgOptions = {}): string {
   const theme = { ...DEFAULT_SVG_THEME, ...options.theme };

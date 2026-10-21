@@ -10,7 +10,6 @@ const __dirname = path.dirname(__filename);
 test.describe('SpaceGraph Vision System E2E', () => {
   test.setTimeout(60000);
 
-  const fixtureDir = path.resolve(__dirname, 'fixtures');
   let serverProcess: any;
 
   test.beforeAll(async () => {

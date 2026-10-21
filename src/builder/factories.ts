@@ -167,6 +167,11 @@ export const EdgeFactory = Object.freeze({
 });
 
 // Layout application helpers - unified layout API
+type LayoutApplier = (sg: SpaceGraph, options?: Record<string, unknown>) => Promise<void>;
+
+const applyLayout = (pluginName: string): LayoutApplier =>
+  (sg, options) => Layout.apply(sg, pluginName, options);
+
 export const Layout = Object.freeze({
   async apply(
     sg: SpaceGraph,
@@ -180,22 +185,14 @@ export const Layout = Object.freeze({
         plugin as { applyLayout: (opts?: Record<string, unknown>) => Promise<void> }
       ).applyLayout(options);
   },
-  force: (sg: SpaceGraph, options?: Record<string, unknown>) =>
-    Layout.apply(sg, 'ForceLayout', options),
-  circular: (sg: SpaceGraph, options?: Record<string, unknown>) =>
-    Layout.apply(sg, 'CircularLayout', options),
-  grid: (sg: SpaceGraph, options?: Record<string, unknown>) =>
-    Layout.apply(sg, 'GridLayout', options),
-  hierarchy: (sg: SpaceGraph, options?: Record<string, unknown>) =>
-    Layout.apply(sg, 'HierarchicalLayout', options),
-  radial: (sg: SpaceGraph, options?: Record<string, unknown>) =>
-    Layout.apply(sg, 'RadialLayout', options),
-  tree: (sg: SpaceGraph, options?: Record<string, unknown>) =>
-    Layout.apply(sg, 'TreeLayout', options),
-  spectral: (sg: SpaceGraph, options?: Record<string, unknown>) =>
-    Layout.apply(sg, 'SpectralLayout', options),
-  cluster: (sg: SpaceGraph, options?: Record<string, unknown>) =>
-    Layout.apply(sg, 'ClusterLayout', options),
+  force: applyLayout('ForceLayout'),
+  circular: applyLayout('CircularLayout'),
+  grid: applyLayout('GridLayout'),
+  hierarchy: applyLayout('HierarchicalLayout'),
+  radial: applyLayout('RadialLayout'),
+  tree: applyLayout('TreeLayout'),
+  spectral: applyLayout('SpectralLayout'),
+  cluster: applyLayout('ClusterLayout'),
 });
 
 // Preset configurations - quick starting points for common node types
@@ -215,11 +212,7 @@ export const Presets = Object.freeze({
     return new NodeBuilder(id, 'ButtonNode').data({ label, variant: 'secondary' }).size(120, 40);
   },
   input(id: string, placeholder = ''): NodeBuilder {
-    return new NodeBuilder(id, 'HtmlNode').data({
-      html: `<input placeholder="${placeholder}">`,
-      width: 200,
-      height: 40,
-    });
+    return NodeFactory.input(id, placeholder);
   },
   label(id: string, text = ''): NodeBuilder {
     return new NodeBuilder(id, 'NoteNode')

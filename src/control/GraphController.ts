@@ -5,6 +5,7 @@
 // re-renders; the host supplies the detail panel.
 
 import { Trail, type TrailNode, type TrailOptions } from '../navigation';
+import { searchBy } from '../navigation/search';
 import { ZoomBands, type ZoomBand, type ZoomBandChange, type ZoomBandsConfig } from '../zoom';
 
 export type ControlProjection = '2d' | '3d';
@@ -213,16 +214,7 @@ export class GraphController {
   }
 
   search(query: string, limit = 8): ControlNode[] {
-    const needle = query.trim().toLowerCase();
-    if (!needle) return [];
-    return this.#model.nodes
-      .flatMap((node) => {
-        const score = this.#score(node, needle);
-        return score < 0 ? [] : [{ node, score }];
-      })
-      .sort((a, b) => a.score - b.score)
-      .slice(0, limit)
-      .map((entry) => entry.node);
+    return searchBy(this.#model, query, (node, needle) => this.#score(node, needle), limit);
   }
 
   connections(id: string): readonly Connection[] {

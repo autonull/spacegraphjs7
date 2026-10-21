@@ -1,79 +1,49 @@
 import * as THREE from 'three';
 import type { Node } from '../../nodes/Node';
-import { BaseLayout, type LayoutConfig, type LayoutOptions } from './BaseLayout';
+import { BaseLayout, type LayoutOptions } from './BaseLayout';
 
-export class TimelineLayout extends BaseLayout {
+export interface TimelineLayoutOptions extends LayoutOptions {
+  timeField: string;
+  orientation: string;
+  spacing: number;
+  scaleFactor: number;
+  staggerLayout: boolean;
+  staggerAmount: number;
+}
+
+export class TimelineLayout extends BaseLayout<TimelineLayoutOptions> {
   readonly id = 'timeline-layout';
   readonly name = 'Timeline Layout';
   readonly version = '1.0.0';
 
-  async apply(options?: LayoutOptions): Promise<void> {
-    const {
-      timeField = this.config.timeField as string,
-      orientation = this.config.orientation as string,
-      spacing = this.config.spacing as number,
-      scaleFactor = this.config.scaleFactor as number,
-      animate = this.config.animate ?? true,
-      duration = this.config.duration ?? 1.5,
-      staggerLayout = this.config.staggerLayout as boolean,
-      staggerAmount = this.config.staggerAmount as number,
-    } = options ?? {};
+  protected place(nodes: Node[], config: TimelineLayoutOptions): void {
+    const timeline = nodes
+      .map((node) => ({ node, time: timeValue(node, config.timeField) }))
+      .sort((a, b) => a.time - b.time);
+    const minTime = timeline[0]?.time ?? 0;
 
-    const nodes = Array.from(this.graph.getNodes()).filter(
-      (n) => !(n.data as Record<string, unknown>).pinned
-    );
-    if (!nodes.length) return;
-
-    const temporalNodes = nodes.map((node) => {
-      let timeVal = 0;
-      if (node.data?.[timeField] !== undefined) {
-        const val = node.data[timeField];
-        timeVal =
-          val instanceof Date
-            ? val.getTime()
-            : typeof val === 'string'
-              ? isNaN(Date.parse(val))
-                ? 0
-                : Date.parse(val)
-              : typeof val === 'number'
-                ? val
-                : 0;
-      }
-      return { node: node as Node, timeVal };
-    });
-
-    temporalNodes.sort((a, b) => a.timeVal - b.timeVal);
-    const minTime = temporalNodes[0]?.timeVal ?? 0;
-    const targetPos = new THREE.Vector3();
-    let currentIndex = 0;
-
-    for (let i = 0; i < temporalNodes.length; i++) {
-      const { node, timeVal } = temporalNodes[i];
-      const hasValidTime = timeVal !== 0 || minTime !== 0;
-      const linearPos = hasValidTime ? (timeVal - minTime) * scaleFactor : currentIndex++ * spacing;
-      const staggerOffset = staggerLayout ? (i % 2 === 0 ? staggerAmount : -staggerAmount) : 0;
-
-      targetPos.set(
-        orientation === 'horizontal' ? linearPos : staggerOffset,
-        orientation === 'horizontal' ? staggerOffset : -linearPos,
+    const target = new THREE.Vector3();
+    let fallbackIndex = 0;
+    for (const [index, { node, time }] of timeline.entries()) {
+      const hasValidTime = time !== 0 || minTime !== 0;
+      const along = hasValidTime
+        ? (time - minTime) * config.scaleFactor
+        : fallbackIndex++ * config.spacing;
+      const stagger = config.staggerLayout
+        ? (index % 2 === 0 ? config.staggerAmount : -config.staggerAmount)
+        : 0;
+      target.set(
+        config.orientation === 'horizontal' ? along : stagger,
+        config.orientation === 'horizontal' ? stagger : -along,
         0
       );
-      this.applyPosition(node, targetPos, { animate, duration });
+      this.applyPosition(node, target);
     }
 
-    const sumPos = new THREE.Vector3();
-    for (const { node } of temporalNodes) sumPos.add(node.position);
-    sumPos.divideScalar(temporalNodes.length || 1);
-
-    for (const { node } of temporalNodes) {
-      targetPos.copy(node.position).sub(sumPos);
-      this.applyPosition(node, targetPos, { animate, duration });
-    }
-
-    this.updateEdges();
+    this.centerNodes(timeline.map((entry) => entry.node));
   }
 
-  protected defaultConfig(): LayoutConfig {
+  protected defaultConfig(): TimelineLayoutOptions {
     return {
       timeField: 'timestamp',
       orientation: 'horizontal',
@@ -85,4 +55,17 @@ export class TimelineLayout extends BaseLayout {
       staggerAmount: 150,
     };
   }
+}
+
+/** A node's place on the timeline: its timestamp in milliseconds, or 0 when it carries none. */
+function timeValue(node: Node, timeField: string): number {
+  const value = node.data?.[timeField];
+  if (value === undefined) return 0;
+  if (value instanceof Date) return value.getTime();
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') {
+    const parsed = Date.parse(value);
+    return Number.isNaN(parsed) ? 0 : parsed;
+  }
+  return 0;
 }

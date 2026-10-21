@@ -5,7 +5,7 @@ import type { NodeSpec } from '../types';
 import { BaseInstancedNode } from './BaseInstancedNode';
 
 export class InstancedNode extends BaseInstancedNode {
-  static readonly typeName = 'InstancedNode';
+  static readonly typeName: string = 'InstancedNode';
   protected geometryFamily: GeometryFamily;
   readonly _group: THREE.Group;
 

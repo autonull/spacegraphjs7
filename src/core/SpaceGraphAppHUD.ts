@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import type { Node as SGNode } from '../nodes/Node';
+import { searchBy } from '../navigation/search';
+import { focusRadiusOf } from '../utils/CameraUtils';
 import { DOMUtils } from '../utils/DOMUtils';
 import type { AppButtonConfig, SpaceGraphApp } from './SpaceGraphApp';
 
@@ -8,6 +9,21 @@ const BORDER_GLASS = '1px solid rgba(255,255,255,0.1)';
 const BORDER_SUBTLE = 'rgba(255,255,255,0.1)';
 const BG_GLASS = 'rgba(255,255,255,0.05)';
 const BG_HOVER = 'rgba(255,255,255,0.1)';
+
+/** The glass a host's chrome sits on: the theme's surface, blurred, with a hairline edge. */
+function glassPanel(theme: any): Partial<CSSStyleDeclaration> {
+  return {
+    background: theme.backgroundColor,
+    backdropFilter: 'blur(8px)',
+    border: BORDER_GLASS,
+  };
+}
+
+/** The camera distances the zoom slider spans. */
+const ZOOM_SLIDER_MIN = 10;
+const ZOOM_SLIDER_MAX = 5000;
+/** The slider runs backwards, so its value is the span the camera radius is measured against. */
+const ZOOM_SLIDER_SPAN = ZOOM_SLIDER_MAX + ZOOM_SLIDER_MIN;
 
 export function renderTitleCard(app: SpaceGraphApp, theme: any) {
   app.hud.removeElement('app-title-card');
@@ -19,11 +35,9 @@ export function renderTitleCard(app: SpaceGraphApp, theme: any) {
             ${app.options.description ? `<p style="font-size: 12px; color: #94a3b8; line-height: 1.5; margin: 0;">${app.options.description}</p>` : ''}
         `,
     style: {
-      background: theme.backgroundColor,
-      backdropFilter: 'blur(8px)',
+      ...glassPanel(theme),
       padding: '16px',
       borderRadius: '12px',
-      border: '1px solid rgba(255,255,255,0.1)',
       width: '300px',
       color: 'white',
       fontFamily: 'sans-serif',
@@ -39,11 +53,9 @@ export function renderToolbar(app: SpaceGraphApp, theme: any) {
 
   const container = DOMUtils.createElement('div', {
     style: {
-      background: theme.backgroundColor,
-      backdropFilter: 'blur(8px)',
+      ...glassPanel(theme),
       padding: '12px 24px',
       borderRadius: '99px',
-      border: '1px solid rgba(255,255,255,0.1)',
       display: 'flex',
       gap: '16px',
       alignItems: 'center',
@@ -197,8 +209,8 @@ function createZoomControls(app: SpaceGraphApp, theme: any): HTMLElement {
       if (!app.sg.cameraControls) return;
       const currentRadius = app.sg.cameraControls.spherical.radius;
       const targetRadius = Math.max(
-        10,
-        Math.min(5000, currentRadius + (isZoomIn ? -currentRadius * 0.5 : currentRadius * 0.5))
+        ZOOM_SLIDER_MIN,
+        Math.min(ZOOM_SLIDER_MAX, currentRadius + (isZoomIn ? -currentRadius * 0.5 : currentRadius * 0.5))
       );
       app.sg.cameraControls.flyTo(app.sg.cameraControls.target, targetRadius, 0.5);
     };
@@ -208,8 +220,8 @@ function createZoomControls(app: SpaceGraphApp, theme: any): HTMLElement {
   const zoomSlider = DOMUtils.createElement('input', {
     type: 'range',
     id: 'sg-app-zoom-slider',
-    min: '10',
-    max: '5000',
+    min: String(ZOOM_SLIDER_MIN),
+    max: String(ZOOM_SLIDER_MAX),
     step: '1',
     style: {
       width: '80px',
@@ -221,18 +233,16 @@ function createZoomControls(app: SpaceGraphApp, theme: any): HTMLElement {
 
   zoomSlider.oninput = () => {
     if (!app.sg.cameraControls) return;
-    const invertedRadius = 5010 - Number.parseFloat(zoomSlider.value);
+    const invertedRadius = ZOOM_SLIDER_SPAN - Number.parseFloat(zoomSlider.value);
     app.sg.cameraControls.spherical.radius = invertedRadius;
     app.sg.cameraControls.flyTo(app.sg.cameraControls.target, invertedRadius, 0);
   };
 
-  if (app.sg.cameraControls)
-    zoomSlider.value = (5010 - app.sg.cameraControls.spherical.radius).toString();
-
   const sliderHandler = () => {
     if (app.sg.cameraControls)
-      zoomSlider.value = (5010 - app.sg.cameraControls.spherical.radius).toString();
+      zoomSlider.value = (ZOOM_SLIDER_SPAN - app.sg.cameraControls.spherical.radius).toString();
   };
+  sliderHandler();
   app.sg.events.on('camera:move', sliderHandler);
   app._zoomSliderHandler = sliderHandler;
 
@@ -323,11 +333,9 @@ export function setupSearchHUD(app: SpaceGraphApp, theme: any) {
 
   const container = DOMUtils.createElement('div', {
     style: {
-      background: theme.backgroundColor,
-      backdropFilter: 'blur(8px)',
+      ...glassPanel(theme),
       padding: '8px 16px',
       borderRadius: '99px',
-      border: '1px solid rgba(255,255,255,0.1)',
       display: 'flex',
       alignItems: 'center',
       boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
@@ -368,13 +376,14 @@ export function setupSearchHUD(app: SpaceGraphApp, theme: any) {
       return;
     }
 
-    const matches: SGNode[] = [];
-    for (const node of app.sg.graph.nodes.values()) {
-      const label = String(node.data?.label || node.data?.title || node.id || '');
-      if (label.toLowerCase().includes(query)) {
-        matches.push(node);
+    const matches = searchBy(
+      { nodes: [...app.sg.graph.nodes.values()] },
+      query,
+      (node, needle) => {
+        const label = String(node.data?.label || node.data?.title || node.id || '');
+        return label.toLowerCase().includes(needle) ? 0 : -1;
       }
-    }
+    );
 
     app.clearSelectionStyles();
     app.applySelectionStyles();
@@ -386,9 +395,7 @@ export function setupSearchHUD(app: SpaceGraphApp, theme: any) {
 
     if (matches.length === 1 && app.sg.cameraControls) {
       const node = matches[0];
-      const targetPos = node.position.clone();
-      const targetRadius = node.data?.width ? Math.max(node.data.width * 1.5, 150) : 150;
-      app.sg.cameraControls.flyTo(targetPos, targetRadius);
+      app.sg.cameraControls.flyTo(node.position.clone(), focusRadiusOf(node));
     }
   });
 

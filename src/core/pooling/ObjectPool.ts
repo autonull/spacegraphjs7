@@ -62,8 +62,6 @@ export class MathPool {
   readonly vector3Pool: ObjectPool<THREE.Vector3>;
   readonly vector2Pool: ObjectPool<THREE.Vector2>;
   readonly matrix4Pool: ObjectPool<THREE.Matrix4>;
-  readonly quaternionPool: ObjectPool<THREE.Quaternion>;
-  readonly colorPool: ObjectPool<THREE.Color>;
   readonly box3Pool: ObjectPool<THREE.Box3>;
 
   private constructor() {
@@ -82,18 +80,6 @@ export class MathPool {
     this.matrix4Pool = new ObjectPool(
       () => new THREE.Matrix4(),
       (m) => m.identity(),
-      200,
-      5000
-    );
-    this.quaternionPool = new ObjectPool(
-      () => new THREE.Quaternion(),
-      (q) => q.set(0, 0, 0, 1),
-      500,
-      10000
-    );
-    this.colorPool = new ObjectPool(
-      () => new THREE.Color(),
-      (c) => c.setHex(0),
       200,
       5000
     );
@@ -133,22 +119,6 @@ export class MathPool {
     this.matrix4Pool.release(m);
   }
 
-  acquireQuaternion(): THREE.Quaternion {
-    return this.quaternionPool.acquire();
-  }
-
-  releaseQuaternion(q: THREE.Quaternion): void {
-    this.quaternionPool.release(q);
-  }
-
-  acquireColor(): THREE.Color {
-    return this.colorPool.acquire();
-  }
-
-  releaseColor(c: THREE.Color): void {
-    this.colorPool.release(c);
-  }
-
   acquireBox3(): THREE.Box3 {
     return this.box3Pool.acquire();
   }
@@ -161,8 +131,6 @@ export class MathPool {
     this.vector3Pool.clear();
     this.vector2Pool.clear();
     this.matrix4Pool.clear();
-    this.quaternionPool.clear();
-    this.colorPool.clear();
     this.box3Pool.clear();
   }
 
@@ -171,90 +139,44 @@ export class MathPool {
       vector3: this.vector3Pool.size,
       vector2: this.vector2Pool.size,
       matrix4: this.matrix4Pool.size,
-      quaternion: this.quaternionPool.size,
-      color: this.colorPool.size,
       box3: this.box3Pool.size,
     };
   }
 }
 
-export function withPooledVector3<T>(pool: MathPool, fn: (v: THREE.Vector3) => T): T {
-  const v = pool.acquireVector3();
+function pooled<V, R>(acquire: () => V, release: (value: V) => void, fn: (value: V) => R): R {
+  const value = acquire();
   try {
-    return fn(v);
+    return fn(value);
   } finally {
-    pool.releaseVector3(v);
+    release(value);
   }
 }
 
-export function withPooledVector2<T>(pool: MathPool, fn: (v: THREE.Vector2) => T): T {
-  const v = pool.acquireVector2();
-  try {
-    return fn(v);
-  } finally {
-    pool.releaseVector2(v);
-  }
-}
+export const withPooledVector3 = <T>(pool: MathPool, fn: (v: THREE.Vector3) => T): T =>
+  pooled(
+    () => pool.acquireVector3(),
+    (v) => pool.releaseVector3(v),
+    fn
+  );
 
-export function withPooledMatrix4<T>(pool: MathPool, fn: (m: THREE.Matrix4) => T): T {
-  const m = pool.acquireMatrix4();
-  try {
-    return fn(m);
-  } finally {
-    pool.releaseMatrix4(m);
-  }
-}
+export const withPooledVector2 = <T>(pool: MathPool, fn: (v: THREE.Vector2) => T): T =>
+  pooled(
+    () => pool.acquireVector2(),
+    (v) => pool.releaseVector2(v),
+    fn
+  );
 
-export function withPooledBox3<T>(pool: MathPool, fn: (b: THREE.Box3) => T): T {
-  const b = pool.acquireBox3();
-  try {
-    return fn(b);
-  } finally {
-    pool.releaseBox3(b);
-  }
-}
+export const withPooledMatrix4 = <T>(pool: MathPool, fn: (m: THREE.Matrix4) => T): T =>
+  pooled(
+    () => pool.acquireMatrix4(),
+    (m) => pool.releaseMatrix4(m),
+    fn
+  );
 
-export function withPooledQuaternion<T>(pool: MathPool, fn: (q: THREE.Quaternion) => T): T {
-  const q = pool.acquireQuaternion();
-  try {
-    return fn(q);
-  } finally {
-    pool.releaseQuaternion(q);
-  }
-}
-
-export function withPooledColor<T>(pool: MathPool, fn: (c: THREE.Color) => T): T {
-  const c = pool.acquireColor();
-  try {
-    return fn(c);
-  } finally {
-    pool.releaseColor(c);
-  }
-}
-
-export class ScopedPoolAccess<T> {
-  private pool: ObjectPool<T>;
-  private obj: T | null = null;
-  private released = false;
-
-  constructor(pool: ObjectPool<T>) {
-    this.pool = pool;
-  }
-
-  acquire(): T {
-    if (this.obj) return this.obj;
-    this.obj = this.pool.acquire();
-    return this.obj;
-  }
-
-  release(): void {
-    if (this.obj && !this.released) {
-      this.pool.release(this.obj);
-      this.released = true;
-    }
-  }
-
-  [Symbol.dispose](): void {
-    this.release();
-  }
-}
+export const withPooledBox3 = <T>(pool: MathPool, fn: (b: THREE.Box3) => T): T =>
+  pooled(
+    () => pool.acquireBox3(),
+    (b) => pool.releaseBox3(b),
+    fn
+  );

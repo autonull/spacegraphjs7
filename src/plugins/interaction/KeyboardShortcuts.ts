@@ -1,6 +1,7 @@
 import type { Edge } from '../../edges/Edge';
 import type { Node } from '../../nodes/Node';
 import type { SpaceGraph } from '../../SpaceGraph';
+import { focusRadiusOf } from '../../utils/CameraUtils';
 
 export interface SelectionState {
   nodes: Set<Node>;
@@ -65,10 +66,6 @@ export class KeyboardShortcuts {
 
   handleZoomIn(node: Node): void {
     if (!node || !this.sg.cameraControls) return;
-    const targetPos = node.position.clone();
-    const targetRadius = (node.data as Record<string, unknown>)?.width
-      ? Math.max(((node.data as Record<string, unknown>).width as number) * 1.5, 150)
-      : 150;
-    this.sg.cameraControls.flyTo(targetPos, targetRadius);
+    this.sg.cameraControls.flyTo(node.position.clone(), focusRadiusOf(node));
   }
 }

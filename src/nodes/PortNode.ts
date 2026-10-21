@@ -17,31 +17,12 @@ export type PortType =
   | 'any';
 export type PortDirection = 'input' | 'output';
 
-export interface PortTypeInfo {
-  type: PortType;
-  direction: PortDirection;
-  label?: string;
-  defaultValue?: unknown;
-}
-
-const PORT_COLORS: Record<PortType, number> = {
-  bool: 0xff6b6b,
-  int: 0x4ecdc4,
-  float: 0x45b7d9,
-  string: 0x96ceb4,
-  vector2: 0xffeaa7,
-  vector3: 0xdfe6e9,
-  color: 0xa29bfe,
-  any: 0xb2bec3,
-};
-
-export class PortNode<T = unknown> extends (ShapeNode as any) {
-  static readonly typeName = 'PortNode';
+export class PortNode<T = unknown> extends ShapeNode {
+  static readonly typeName: string = 'PortNode';
   private connections: Wire<T>[] = [];
   private onReceive: ((wire: Wire<T>, data: T) => void) | null = null;
   private portType: PortType = 'any';
   private portDirection: PortDirection = 'output';
-  private label = '';
 
   constructor(sg?: SpaceGraph, spec?: NodeSpec) {
     super(sg!, spec!);
@@ -52,9 +33,6 @@ export class PortNode<T = unknown> extends (ShapeNode as any) {
     const data = spec?.data as Record<string, unknown> | undefined;
     this.portType = (data?.portType as PortType) ?? 'any';
     this.portDirection = (data?.portDirection as PortDirection) ?? 'output';
-    this.label = (data?.label as string) ?? '';
-
-    this._updateAppearance();
   }
 
   getPortType(): PortType {
@@ -67,12 +45,10 @@ export class PortNode<T = unknown> extends (ShapeNode as any) {
 
   setPortType(type: PortType): void {
     this.portType = type;
-    this._updateAppearance();
   }
 
   setPortDirection(direction: PortDirection): void {
     this.portDirection = direction;
-    this._updateAppearance();
   }
 
   canConnectTo(target: PortNode<any>): boolean {
@@ -130,12 +106,5 @@ export class PortNode<T = unknown> extends (ShapeNode as any) {
     }
     this.connections = [];
     super.dispose();
-  }
-
-  private _updateAppearance(): void {
-    const color = PORT_COLORS[this.portType];
-    if ((this as any).material) {
-      (this as any).material.color.setHex(color);
-    }
   }
 }

@@ -3,8 +3,8 @@ import type { NodeSpec, SpaceGraphNodeData } from '../types';
 import { DOMUtils } from '../utils/DOMUtils';
 import { HtmlNode } from './HtmlNode';
 
-export class ProgressBarNode extends (HtmlNode as any) {
-  static readonly typeName = 'ProgressBarNode';
+export class ProgressBarNode extends HtmlNode {
+  static readonly typeName: string = 'ProgressBarNode';
   private progressBar: HTMLElement | null = null;
   private progressFill: HTMLElement | null = null;
   private progressValue = 0;
@@ -22,7 +22,7 @@ export class ProgressBarNode extends (HtmlNode as any) {
     }
     this._setProgress(value);
     this.data = { ...this.data, value };
-    this.sg?.events.emit('node:dataChanged', { node: this, property: 'value', value });
+    this.emitDataChanged('value', value);
   }
 
   setIndeterminate(indeterminate: boolean): void {

@@ -181,6 +181,53 @@ function placedPositions(positions: ReadonlyMap<string, Position>): Map<string, 
 }
 
 /**
+ * The result of a layout: the placed positions, the derived clusters, the bounds the placements
+ * span, and the strategy that produced them. Every strategy finishes the same way.
+ */
+function finishLayout(
+    positions: Map<string, Position>,
+    strategy: LayoutStrategy,
+    clusters: Map<string, LayoutBounds> = new Map(),
+): GraphLayout {
+    const all = [...positions.values()];
+
+    return {
+        positions,
+        clusters,
+        bounds: all.length > 0 ? boundsOf(all) : ZERO_BOUNDS,
+        strategy,
+    };
+}
+
+/**
+ * The nodes of a model bucketed by the turn they belong to, in model order, and the nodes that
+ * belong to no turn at all.
+ */
+function bucketByTurn<Node extends LayoutNode, Edge extends LayoutEdge, Name extends string>(
+    model: LayoutModel<Node, Edge>,
+    config: LayoutConfig<Node, Edge, Name>,
+): { global: Node[]; byTurn: Map<string, Node[]> } {
+    const global: Node[] = [];
+    const byTurn = new Map<string, Node[]>();
+
+    for (const node of model.nodes) {
+        const turn = config.turnIdFn(node);
+
+        if (!turn) {
+            global.push(node);
+            continue;
+        }
+
+        const bucket = byTurn.get(turn);
+
+        if (bucket) bucket.push(node);
+        else byTurn.set(turn, [node]);
+    }
+
+    return { global, byTurn };
+}
+
+/**
  * The nodes of a model bucketed by the turn they belong to, in model order. A layout that filtered
  * the whole node list once per turn was quadratic, and a long session paid for it (T6.6): one pass
  * builds the buckets, and every turn reads its own.
@@ -189,20 +236,7 @@ function nodesByTurn<Node extends LayoutNode, Edge extends LayoutEdge, Name exte
     model: LayoutModel<Node, Edge>,
     config: LayoutConfig<Node, Edge, Name>,
 ): Map<string, Node[]> {
-    const byTurn = new Map<string, Node[]>();
-
-    for (const node of model.nodes) {
-        const turn = config.turnIdFn(node);
-
-        if (!turn) continue;
-
-        const bucket = byTurn.get(turn);
-
-        if (bucket) bucket.push(node);
-        else byTurn.set(turn, [node]);
-    }
-
-    return byTurn;
+    return bucketByTurn(model, config).byTurn;
 }
 
 /**
@@ -240,23 +274,7 @@ function turnBlocks<Node extends LayoutNode, Edge extends LayoutEdge, Name exten
     model: LayoutModel<Node, Edge>,
     config: LayoutConfig<Node, Edge, Name>,
 ): Node[][] {
-    const global: Node[] = [];
-    const byTurn = new Map<string, Node[]>();
-
-    for (const node of model.nodes) {
-        const key = config.turnIdFn(node);
-
-        if (!key) {
-            global.push(node);
-            continue;
-        }
-
-        const bucket = byTurn.get(key);
-
-        if (bucket) bucket.push(node);
-        else byTurn.set(key, [node]);
-    }
-
+    const { global, byTurn } = bucketByTurn(model, config);
     const blocks: Node[][] = [];
 
     if (global.length > 0) blocks.push(global);
@@ -384,14 +402,7 @@ function lanesLayout<Node extends LayoutNode, Edge extends LayoutEdge, Name exte
         if (members) clusters.set(turnID, members);
     }
 
-    const all = [...positions.values()];
-
-    return {
-        positions,
-        clusters,
-        bounds: all.length > 0 ? boundsOf(all) : ZERO_BOUNDS,
-        strategy: 'lanes',
-    };
+    return finishLayout(positions, 'lanes', clusters);
 }
 
 /**
@@ -490,14 +501,7 @@ function timelineLayout<Node extends LayoutNode, Edge extends LayoutEdge, Name e
         if (bounds) clusters.set(node.id, bounds);
     }
 
-    const all = [...positions.values()];
-
-    return {
-        positions,
-        clusters,
-        bounds: all.length > 0 ? boundsOf(all) : ZERO_BOUNDS,
-        strategy: 'timeline',
-    };
+    return finishLayout(positions, 'timeline', clusters);
 }
 
 /**
@@ -561,15 +565,7 @@ function hierarchyLayout<Node extends LayoutNode, Edge extends LayoutEdge, Name 
         column += 1;
     }
 
-    const positions = placedPositions(layout.place(items));
-    const all = [...positions.values()];
-
-    return {
-        positions,
-        clusters: new Map(),
-        bounds: all.length > 0 ? boundsOf(all) : ZERO_BOUNDS,
-        strategy: 'hierarchy',
-    };
+    return finishLayout(placedPositions(layout.place(items)), 'hierarchy');
 }
 
 /**
@@ -600,15 +596,7 @@ function treeLayout<Node extends LayoutNode, Edge extends LayoutEdge, Name exten
         meta: { parent: config.parentOfFn?.(model, node) },
     }));
 
-    const positions = placedPositions(layout.place(items, options.previous));
-    const all = [...positions.values()];
-
-    return {
-        positions,
-        clusters: new Map(),
-        bounds: all.length > 0 ? boundsOf(all) : ZERO_BOUNDS,
-        strategy: 'tree',
-    };
+    return finishLayout(placedPositions(layout.place(items, options.previous)), 'tree');
 }
 
 /**
@@ -640,15 +628,7 @@ function forceLayout<Node extends LayoutNode, Edge extends LayoutEdge, Name exte
         },
     }));
 
-    const positions = placedPositions(layout.place(items, options.previous));
-    const all = [...positions.values()];
-
-    return {
-        positions,
-        clusters: new Map(),
-        bounds: all.length > 0 ? boundsOf(all) : ZERO_BOUNDS,
-        strategy: 'force',
-    };
+    return finishLayout(placedPositions(layout.place(items, options.previous)), 'force');
 }
 
 /** Lays a model out with the requested strategy. */

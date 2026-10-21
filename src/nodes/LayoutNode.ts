@@ -135,8 +135,8 @@ export const switchStrategy: LayoutStrategy = (children, _parent, params) => {
   }
 };
 
-export class LayoutNode extends (GroupNode as any) {
-  static typeName = 'LayoutNode';
+export class LayoutNode extends GroupNode {
+  static typeName: string = 'LayoutNode';
   private strategy: LayoutStrategy;
   readonly params: Record<string, unknown>;
 
@@ -159,7 +159,7 @@ export class LayoutNode extends (GroupNode as any) {
 
   onPreRender(_dt: number): void {
     super.onPreRender(_dt);
-    const childNodes = this.children.filter((c: any): c is Node => (c as any).isNode === true);
-    (this as any).strategy(childNodes, this, this.params);
+    const childNodes = this.children.filter((child): child is Node => (child as Node).isNode === true);
+    this.strategy(childNodes, this, this.params);
   }
 }

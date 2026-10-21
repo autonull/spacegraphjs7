@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import type { HitResult } from '../core/Surface';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { BaseNodeData, NodeSpec } from '../types';
 import { Node } from './Node';
@@ -61,19 +62,8 @@ export abstract class WidgetNode extends Node {
     return false;
   }
 
-  hitTest(raycaster: THREE.Raycaster): import('../core/Surface').HitResult | null {
-    const intersects = raycaster.intersectObject(this.mesh, false);
-    if (intersects.length > 0) {
-      return {
-        surface: this,
-        point: intersects[0].point,
-        localPoint: this.group.worldToLocal(intersects[0].point.clone()),
-        distance: intersects[0].distance,
-        uv: intersects[0].uv,
-        face: intersects[0].face ?? undefined,
-      };
-    }
-    return null;
+  hitTest(raycaster: THREE.Raycaster): HitResult | null {
+    return this.hitTestObject(raycaster, this.mesh, { recursive: false, normal: false });
   }
 
   onPointerEnter(): void {
@@ -119,15 +109,6 @@ export abstract class WidgetNode extends Node {
     return this;
   }
 
-  dispose(): void {
-    this.baseMaterial.dispose();
-    this.boxGeometry.dispose();
-    this.labelMesh?.geometry.dispose();
-    this.labelMaterial?.dispose();
-    (this.labelMaterial?.map as THREE.Texture)?.dispose();
-    super.dispose();
-  }
-
   protected abstract getBaseColor(data: WidgetNodeData | undefined): number;
 
   protected abstract getHoverColor(): number;
@@ -142,13 +123,7 @@ export abstract class WidgetNode extends Node {
     const text = this.getLabelText();
     if (!text) return;
 
-    const canvas = document.createElement('canvas');
-    canvas.width = this._width * 2;
-    canvas.height = this._height * 2;
-    const ctx = canvas.getContext('2d')!;
-    this.createLabelContent(ctx, text);
-
-    const texture = new THREE.CanvasTexture(canvas);
+    const texture = new THREE.CanvasTexture(this.drawLabel(text));
     const labelWidth = this._width * 0.8;
     const labelHeight = this._height * 0.5;
     this.labelMaterial = new THREE.MeshBasicMaterial({
@@ -167,14 +142,17 @@ export abstract class WidgetNode extends Node {
   protected updateLabel(): void {
     if (!this.labelMaterial?.map) return;
 
+    (this.labelMaterial.map as THREE.CanvasTexture).dispose();
+    this.labelMaterial.map = new THREE.CanvasTexture(this.drawLabel(this.getLabelText()));
+  }
+
+  /** The canvas the label text is drawn on, at twice the widget's size. */
+  private drawLabel(text: string): HTMLCanvasElement {
     const canvas = document.createElement('canvas');
     canvas.width = this._width * 2;
     canvas.height = this._height * 2;
-    const ctx = canvas.getContext('2d')!;
-    this.createLabelContent(ctx, this.getLabelText());
-
-    (this.labelMaterial.map as THREE.CanvasTexture).dispose();
-    this.labelMaterial.map = new THREE.CanvasTexture(canvas);
+    this.createLabelContent(canvas.getContext('2d')!, text);
+    return canvas;
   }
 
   protected onPointerUpCore(): void {

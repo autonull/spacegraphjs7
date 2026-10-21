@@ -82,6 +82,24 @@ const DEFAULT_STYLE = `
   box-shadow: 0 4px 12px rgba(0,0,0,0.3);
 `;
 
+/** The card markup of a mermaid node: the shape's style, the fill, and the label. */
+function cardMarkup(
+  label: string,
+  background: string,
+  shape: MermaidNodeShape,
+  border?: string
+): string {
+  const shapeStyle = SHAPE_STYLES[shape] || SHAPE_STYLES.rect;
+  const borderStyle = border ? `\n          border: ${border};` : '';
+
+  return `<div style="
+          ${DEFAULT_STYLE}
+          ${shapeStyle}
+          background: ${background};${borderStyle}
+          transform-origin: center center;
+        ">${label}</div>`;
+}
+
 export class MermaidNode extends HtmlNode {
   readonly shape: MermaidNodeShape = 'rect';
   readonly nodeIndex: number = 0;
@@ -97,8 +115,6 @@ export class MermaidNode extends HtmlNode {
     const colorIndex = nodeIndex % themeColors.length;
     const bgColor = themeColors[colorIndex] || themeColors[0];
 
-    const shapeStyle = SHAPE_STYLES[shape] || SHAPE_STYLES.rect;
-
     super(sg, {
       ...spec,
       data: {
@@ -106,12 +122,7 @@ export class MermaidNode extends HtmlNode {
         width: 160,
         height: 60,
         color: bgColor,
-        html: `<div style="
-          ${DEFAULT_STYLE}
-          ${shapeStyle}
-          background: ${bgColor};
-          transform-origin: center center;
-        ">${label}</div>`,
+        html: cardMarkup(label, bgColor, shape),
       } as SpaceGraphNodeData,
     });
 
@@ -137,20 +148,13 @@ export class MermaidNode extends HtmlNode {
     const colorIndex = this.nodeIndex % this.themeColors.length;
     const bgColor = this.themeColors[colorIndex] || this.themeColors[0];
 
-    const shapeStyle = SHAPE_STYLES[this.shape] || SHAPE_STYLES.rect;
-
     const label = (this.data as MermaidNodeData)?.label ?? this.label ?? '';
 
     this.updateSpec({
       data: {
         ...this.data,
         color: bgColor,
-        html: `<div style="
-          ${DEFAULT_STYLE}
-          ${shapeStyle}
-          background: ${bgColor};
-          transform-origin: center center;
-        ">${label}</div>`,
+        html: cardMarkup(label, bgColor, this.shape),
       },
     });
   }
@@ -159,18 +163,12 @@ export class MermaidNode extends HtmlNode {
     const data = this.data as MermaidNodeData;
     const bgColor =
       (data?.color as string) ?? this.themeColors[this.nodeIndex % this.themeColors.length];
-    const shapeStyle = SHAPE_STYLES[this.shape] || SHAPE_STYLES.rect;
 
     this.updateSpec({
       data: {
         ...this.data,
         label: newLabel,
-        html: `<div style="
-          ${DEFAULT_STYLE}
-          ${shapeStyle}
-          background: ${bgColor};
-          transform-origin: center center;
-        ">${newLabel}</div>`,
+        html: cardMarkup(newLabel, bgColor, this.shape),
       },
     });
   }
@@ -179,22 +177,14 @@ export class MermaidNode extends HtmlNode {
     const data = this.data as MermaidNodeData;
     const bgColor =
       (data?.color as string) ?? this.themeColors[this.nodeIndex % this.themeColors.length];
-    const shapeStyle = SHAPE_STYLES[this.shape] || SHAPE_STYLES.rect;
     const label = (data?.label as string) ?? this.label ?? '';
 
-    const borderColor = selected ? '#3b82f6' : 'rgba(255,255,255,0.3)';
-    const borderWidth = selected ? '3px' : '2px';
+    const border = selected ? '3px solid #3b82f6' : '2px solid rgba(255,255,255,0.3)';
 
     this.updateSpec({
       data: {
         ...this.data,
-        html: `<div style="
-          ${DEFAULT_STYLE}
-          ${shapeStyle}
-          background: ${bgColor};
-          border: ${borderWidth} solid ${borderColor};
-          transform-origin: center center;
-        ">${label}</div>`,
+        html: cardMarkup(label, bgColor, this.shape, border),
       },
     });
   }

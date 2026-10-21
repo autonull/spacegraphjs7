@@ -1,35 +1,31 @@
 import * as THREE from 'three';
-import { BaseLayout, type LayoutConfig, type LayoutOptions } from './BaseLayout';
+import type { Node } from '../../nodes/Node';
+import { BaseLayout, type LayoutOptions } from './BaseLayout';
 
-export class CircularLayout extends BaseLayout {
+export interface CircularLayoutOptions extends LayoutOptions {
+  radiusX: number;
+  radiusY: number;
+  startAngle: number;
+  z: number;
+}
+
+export class CircularLayout extends BaseLayout<CircularLayoutOptions> {
   readonly id = 'circular-layout';
   readonly name = 'Circular Layout';
   readonly version = '1.0.0';
 
-  async apply(options?: LayoutOptions): Promise<void> {
-    const {
-      radiusX = 300,
-      radiusY = 300,
-      startAngle = 0,
-      z = 0,
-      animate = true,
-      duration = 1.0,
-      skipPinned = true,
-    } = { ...this.config, ...options } as any;
-    const nodes = Array.from(this.graph.getNodes()).filter((n) => !skipPinned || !n.data.pinned);
-    if (!nodes.length) return;
-
-    nodes.forEach((node, i) => {
-      const angle = startAngle + (i / nodes.length) * (2 * Math.PI);
-      const targetPos = new THREE.Vector3(radiusX * Math.cos(angle), radiusY * Math.sin(angle), z);
-      this.applyPosition(node, targetPos, { animate, duration });
+  protected place(nodes: Node[], config: CircularLayoutOptions): void {
+    this.positionAll(nodes, (_node, index, total) => {
+      const angle = config.startAngle + (index / total) * (2 * Math.PI);
+      return new THREE.Vector3(
+        config.radiusX * Math.cos(angle),
+        config.radiusY * Math.sin(angle),
+        config.z
+      );
     });
-
-    this.updateEdges();
-    this.emitLayoutApplied({ duration });
   }
 
-  protected defaultConfig(): LayoutConfig {
+  protected defaultConfig(): CircularLayoutOptions {
     return { radiusX: 300, radiusY: 300, startAngle: 0, z: 0, animate: true, duration: 1.0 };
   }
 }

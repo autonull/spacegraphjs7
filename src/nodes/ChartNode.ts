@@ -3,6 +3,7 @@ import type { NodeSpec } from '../types';
 import { DOMUtils } from '../utils/DOMUtils';
 
 import { BaseContentNode } from './BaseContentNode';
+import { paletteOf } from './palette';
 
 /**
  * ChartNode — Canvas-based chart node.  Renders via Chart.js if available,
@@ -18,7 +19,7 @@ import { BaseContentNode } from './BaseContentNode';
  *   title     : optional chart title string
  */
 export class ChartNode extends BaseContentNode {
-  static readonly typeName = 'ChartNode';
+  static readonly typeName: string = 'ChartNode';
   public canvasEl: HTMLCanvasElement;
   private chartInstance: unknown = null;
   readonly titleEl: HTMLElement | null = null;
@@ -54,7 +55,7 @@ export class ChartNode extends BaseContentNode {
     this.domElement.appendChild(canvasContainer);
 
     if (title) {
-      this.titleEl = this.domElement.querySelector('.sg-node-title') as HTMLElement;
+      this.titleEl = this.titleElement;
     }
 
     this._renderChart(spec);
@@ -74,10 +75,7 @@ export class ChartNode extends BaseContentNode {
         const title = (updates.label ?? this.label ?? this.data?.title ?? '') as string;
         const totalH = h + (title ? 32 : 0);
 
-        this.domElement.style.width = `${w}px`;
-        this.domElement.style.height = `${totalH}px`;
-
-        this.updateBackingGeometry(w, totalH);
+        this.applySize(w, totalH);
       }
 
       if (
@@ -114,9 +112,9 @@ export class ChartNode extends BaseContentNode {
     }
 
     const theme = (spec.data?.theme as string) ?? 'dark';
-    const isDark = theme === 'dark';
-    const textColor = isDark ? '#94a3b8' : '#64748b';
-    const gridColor = isDark ? '#1e293b' : '#e2e8f0';
+    const palette = paletteOf(theme);
+    const textColor = palette.mutedText;
+    const gridColor = palette.gridLine;
 
     if (Chart) {
       (this.chartInstance as { destroy?: () => void })?.destroy?.();
@@ -171,8 +169,8 @@ export class ChartNode extends BaseContentNode {
 
     ctx.clearRect(0, 0, w, h);
 
-    const isDark = theme === 'dark';
-    ctx.fillStyle = isDark ? '#0f172a' : '#ffffff';
+    const palette = paletteOf(theme);
+    ctx.fillStyle = palette.canvasSurface;
     ctx.fillRect(0, 0, w, h);
 
     const data: number[] = (datasets[0]?.data as number[]) ?? [];
@@ -195,7 +193,7 @@ export class ChartNode extends BaseContentNode {
       ctx.fillRect(pad + i * barW + 2, h - barH - 20, barW - 4, barH);
 
       if (labels[i]) {
-        ctx.fillStyle = isDark ? '#64748b' : '#94a3b8';
+        ctx.fillStyle = palette.faintText;
         ctx.font = '10px sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText(labels[i], pad + i * barW + barW / 2, h - 5);

@@ -1,9 +1,8 @@
 import gsap from 'gsap';
-import type { Disposable } from '../core/EventEmitter';
 import type { EventSystem } from '../core/events/EventSystem';
 import type { Graph } from '../core/Graph';
 import type { SpaceGraph } from '../SpaceGraph';
-import type { Plugin } from '../core';
+import { BaseSystemPlugin } from './BaseSystemPlugin';
 
 export interface ZoomUIConfig {
   showHint: boolean;
@@ -47,28 +46,25 @@ const POSITION_STYLES = {
  * graph and never escape an embedded host. `dispose()` releases the level listener and the hint
  * timer.
  */
-export class ZoomUIPlugin implements Plugin {
+export class ZoomUIPlugin extends BaseSystemPlugin {
   readonly id = 'zoom-ui';
   readonly name = 'Zoom UI';
   readonly version = '1.0.0';
 
-  private sg!: SpaceGraph;
   private config: ZoomUIConfig;
-  private currentLevel = 0;
   private levelIndicator: HTMLElement | null = null;
   private hintElement: HTMLElement | null = null;
   private hintTimer: ReturnType<typeof setTimeout> | null = null;
-  private levelSubscription: Disposable | null = null;
 
   constructor(config: Partial<ZoomUIConfig> = {}) {
+    super();
     this.config = { ...DEFAULT_CONFIG, ...config };
   }
 
-  init(sg: SpaceGraph, _graph: Graph, _events: EventSystem): void {
-    this.sg = sg;
+  init(sg: SpaceGraph, graph: Graph, events: EventSystem): void {
+    super.init(sg, graph, events);
 
-    this.levelSubscription = this.sg.events.on('fractal:level-change', (e: any) => {
-      this.currentLevel = e.to;
+    this.on('fractal:level-change', (e: any) => {
       this.updateLevelIndicator(e.to, e.label);
       this.updateCursor(e.to);
     });
@@ -80,8 +76,7 @@ export class ZoomUIPlugin implements Plugin {
   onPreRender(_delta: number): void {}
 
   dispose(): void {
-    this.levelSubscription?.dispose();
-    this.levelSubscription = null;
+    super.dispose();
     if (this.hintTimer) clearTimeout(this.hintTimer);
     this.hintTimer = null;
     this.levelIndicator?.remove();

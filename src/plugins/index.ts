@@ -36,16 +36,19 @@ export { LayoutContainer } from './LayoutContainer';
 export { LODPlugin } from './LODPlugin';
 export type { LayoutConfig, LayoutOptions } from './layouts/BaseLayout';
 export { BaseLayout } from './layouts/BaseLayout';
-export { CircularLayout } from './layouts/CircularLayout';
-export { ClusterLayout } from './layouts/ClusterLayout';
+export { CircularLayout, type CircularLayoutOptions } from './layouts/CircularLayout';
+export { ClusterLayout, type ClusterLayoutOptions } from './layouts/ClusterLayout';
 export { ForceLayout, type ForceLayoutConfig } from './layouts/ForceLayout';
-export { GeoLayout } from './layouts/GeoLayout';
-export { GridLayout } from './layouts/GridLayout';
-export { HierarchicalLayout } from './layouts/HierarchicalLayout';
-export { RadialLayout } from './layouts/RadialLayout';
-export { SpectralLayout } from './layouts/SpectralLayout';
-export { TimelineLayout } from './layouts/TimelineLayout';
-export { TreeLayout } from './layouts/TreeLayout';
+export { GeoLayout, type GeoLayoutOptions } from './layouts/GeoLayout';
+export { GridLayout, type GridLayoutOptions } from './layouts/GridLayout';
+export {
+  HierarchicalLayout,
+  type HierarchicalLayoutOptions,
+} from './layouts/HierarchicalLayout';
+export { RadialLayout, type RadialLayoutOptions } from './layouts/RadialLayout';
+export { SpectralLayout, type SpectralLayoutOptions } from './layouts/SpectralLayout';
+export { TimelineLayout, type TimelineLayoutOptions } from './layouts/TimelineLayout';
+export { TreeLayout, type TreeLayoutOptions } from './layouts/TreeLayout';
 export { MinimapPlugin } from './MinimapPlugin';
 export {
   type DiagramEdge,

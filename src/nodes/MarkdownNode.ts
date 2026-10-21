@@ -7,9 +7,10 @@ import { BaseContentNode } from './BaseContentNode';
 
 const logger = createLogger('MarkdownNode');
 
-export class MarkdownNode extends (BaseContentNode as any) {
-  static readonly typeName = 'MarkdownNode';
+export class MarkdownNode extends BaseContentNode {
+  static readonly typeName: string = 'MarkdownNode';
   private _ro?: ResizeObserver;
+  private contentElement: HTMLElement;
 
   constructor(sg: SpaceGraph | undefined, spec: NodeSpec) {
     const w = (spec.data?.width as number) ?? 300;
@@ -48,16 +49,9 @@ export class MarkdownNode extends (BaseContentNode as any) {
 
     const contentDiv = DOMUtils.createElement('div');
     this.domElement.appendChild(contentDiv);
+    this.contentElement = contentDiv;
 
-    (contentDiv as any).innerHTML = 'Loading markdown...';
-    import('marked')
-      .then(({ marked }) => {
-        (contentDiv as any).innerHTML = marked.parse(md as string) as string;
-      })
-      .catch((err) => {
-        (contentDiv as any).innerHTML = 'Failed to load markdown renderer';
-        logger.error('Failed to load marked:', err);
-      });
+    this._renderMarkdown(md);
 
     if (typeof ResizeObserver !== 'undefined') {
       const ro = new ResizeObserver((entries) => {
@@ -81,6 +75,19 @@ export class MarkdownNode extends (BaseContentNode as any) {
     }
   }
 
+  private _renderMarkdown(markdown: string, afterRender?: () => void): void {
+    this.contentElement.innerHTML = 'Loading markdown...';
+    import('marked')
+      .then(({ marked }) => {
+        this.contentElement.innerHTML = marked.parse(markdown) as string;
+        afterRender?.();
+      })
+      .catch((err) => {
+        this.contentElement.innerHTML = 'Failed to load markdown renderer';
+        logger.error('Failed to load marked:', err);
+      });
+  }
+
   updateSpec(updates: Partial<NodeSpec>): this {
     super.updateSpec(updates);
 
@@ -98,31 +105,21 @@ export class MarkdownNode extends (BaseContentNode as any) {
 
     if (updates.data?.markdown !== undefined || updates.label !== undefined) {
       const md = (updates.data?.markdown as string) ?? updates.label ?? '';
-      const contentDiv = Array.from(this.domElement.children).find(
-        (el: any) => el.tagName.toLowerCase() === 'div'
-      );
-      if (contentDiv) {
-        import('marked')
-          .then(({ marked }) => {
-            (contentDiv as any).innerHTML = marked.parse(md as string) as string;
-
-            // Always trigger geometry update after markdown content changes
-            // This ensures the backing geometry is updated whether or not ResizeObserver is available
-            setTimeout(() => {
-              const actualHeight = this.domElement.offsetHeight;
-              if (actualHeight > 0) {
-                const w = (this.data?.width as number) ?? 300;
-                this.updateBackingGeometry(w, actualHeight);
-              }
-            }, 50);
-          })
-          .catch((err) => {
-            (contentDiv as any).innerHTML = 'Failed to load markdown renderer';
-            logger.error('Failed to load marked:', err);
-          });
-      }
+      this._renderMarkdown(md, () => this._syncGeometryToContent());
     }
     return this;
+  }
+
+  // Always trigger geometry update after markdown content changes
+  // This ensures the backing geometry is updated whether or not ResizeObserver is available
+  private _syncGeometryToContent(): void {
+    setTimeout(() => {
+      const actualHeight = this.domElement.offsetHeight;
+      if (actualHeight > 0) {
+        const w = (this.data?.width as number) ?? 300;
+        this.updateBackingGeometry(w, actualHeight);
+      }
+    }, 50);
   }
 
   dispose(): void {

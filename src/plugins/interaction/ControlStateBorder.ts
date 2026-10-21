@@ -1,3 +1,5 @@
+import { toCssColor } from '../../utils/color';
+
 export type ControlState =
   | 'normal'
   | 'focus'
@@ -51,7 +53,7 @@ export const applyControlStateStyles = (
 ): void => {
   const style = getBorderStyles(state);
   const borderColor =
-    color !== undefined && style.borderColor !== 'transparent' ? cssColor(color) : style.borderColor;
+    color !== undefined && style.borderColor !== 'transparent' ? toCssColor(color) : style.borderColor;
   if (borderColor !== 'transparent') {
     element.style.outline = `${style.borderWidth}px ${style.borderStyle} ${borderColor}`;
     if (style.glowColor) element.style.boxShadow = `0 0 ${style.glowRadius}px ${style.glowColor}`;
@@ -64,8 +66,6 @@ export const applyControlStateStyles = (
 };
 
 // The theme carries outline colours as either a CSS string or a packed hex number.
-const cssColor = (value: string | number): string =>
-  typeof value === 'number' ? `#${value.toString(16).padStart(6, '0')}` : value;
 
 const animateStateTransition = (
   element: HTMLElement,

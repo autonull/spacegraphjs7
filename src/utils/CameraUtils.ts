@@ -4,6 +4,30 @@ import type { Point2D } from '../types';
 
 export type { Point2D };
 
+/**
+ * The tangent of a perspective camera's half field of view: the ratio of a world unit's height on
+ * screen to its distance from the camera.
+ */
+export function halfFovTangent(fovDegrees: number): number {
+  return Math.tan((fovDegrees * DEG2RAD) / 2);
+}
+
+/**
+ * The world height a perspective camera sees at a distance: the vertical extent of its frustum.
+ */
+export function visibleHeightAtDistance(fovDegrees: number, distance: number): number {
+  return 2 * distance * halfFovTangent(fovDegrees);
+}
+
+/**
+ * The distance a camera needs to frame a node: wide enough to show the node's own width, and never
+ * tighter than the floor that keeps a card readable.
+ */
+export function focusRadiusOf(node: { data?: { width?: unknown } }, floor = 150): number {
+  const width = node.data?.width;
+  return typeof width === 'number' ? Math.max(width * 1.5, floor) : floor;
+}
+
 export interface FitViewResult {
   center: THREE.Vector3;
   cameraZ: number;
@@ -139,8 +163,8 @@ export function calculateFitView(
 
   const maxDim = Math.max(size.x, size.y, size.z);
   const { fov = 75, aspect = 1 } = camera as Partial<THREE.PerspectiveCamera>;
-  const fovRad = fov * DEG2RAD;
-  let cameraZ = Math.abs(maxDim / (2 * Math.tan(fovRad / 2) * Math.max(1, aspect)));
+  const halfHeight = halfFovTangent(fov);
+  let cameraZ = Math.abs(maxDim / (2 * halfHeight * Math.max(1, aspect)));
 
   // For perspective cameras with tilt (phi < PI/2), the view of the XY plane is foreshortened.
   // Move the camera closer by sin(phi) to compensate and frame the same content.
@@ -153,7 +177,7 @@ export function calculateFitView(
   // The frame centres the content in that region. The world size the camera sees at the target
   // plane gives the screen-to-world scale (approximate for a tilted camera).
   if (usable && surface) {
-    const visibleHeight = 2 * cameraZ * Math.tan(fovRad / 2);
+    const visibleHeight = visibleHeightAtDistance(fov, cameraZ);
     const visibleWidth = visibleHeight * aspect;
     const pxPerWorldX = visibleWidth > 0 ? surface.width / visibleWidth : 0;
     const pxPerWorldY = visibleHeight > 0 ? surface.height / (visibleHeight * tilt) : 0;

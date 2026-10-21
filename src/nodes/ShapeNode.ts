@@ -19,7 +19,7 @@ const GEOMETRY_FACTORIES: Record<ShapeType, (size: number) => THREE.BufferGeomet
 };
 
 export class ShapeNode extends Node {
-  static readonly typeName = 'ShapeNode';
+  static readonly typeName: string = 'ShapeNode';
   readonly mesh: THREE.Mesh;
   private meshGeometry: THREE.BufferGeometry;
   readonly meshMaterial: THREE.MeshStandardMaterial;
@@ -137,16 +137,6 @@ export class ShapeNode extends Node {
       this.meshMaterial.emissive.setHex(0x000000);
       this.meshMaterial.emissiveIntensity = 0;
     }
-  }
-
-  dispose(): void {
-    this.disposeGeometry();
-    this.meshMaterial?.dispose();
-    if (this.labelSprite) {
-      this.labelSprite.material.map?.dispose();
-      this.labelSprite.material.dispose();
-    }
-    super.dispose();
   }
 
   private createGeometry(shape: ShapeType, size: number): THREE.BufferGeometry {

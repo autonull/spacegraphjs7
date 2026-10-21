@@ -32,13 +32,6 @@ export abstract class TexturedMeshNode extends Node {
     return this._object;
   }
 
-  dispose(): void {
-    this.texture?.dispose();
-    this.planeGeometry?.dispose();
-    this.planeMaterial?.dispose();
-    super.dispose();
-  }
-
   protected setTexture(texture: THREE.Texture): void {
     this.texture?.dispose();
     this.texture = texture;

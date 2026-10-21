@@ -4,7 +4,7 @@ import { DOMUtils } from '../utils/DOMUtils';
 import { HtmlNode } from './HtmlNode';
 
 export class ColorPickerNode extends HtmlNode {
-  static readonly typeName = 'ColorPickerNode';
+  static readonly typeName: string = 'ColorPickerNode';
   private colorInput: HTMLInputElement | null = null;
   private colorPreview: HTMLElement | null = null;
   private hexInput: HTMLInputElement | null = null;
@@ -81,7 +81,7 @@ export class ColorPickerNode extends HtmlNode {
     if (this.colorPreview) this.colorPreview.style.backgroundColor = color;
     if (this.hexInput) this.hexInput.value = color.toUpperCase();
     this.data = { ...this.data, color };
-    this.sg?.events.emit('node:dataChanged', { node: this, property: 'color', value: color });
+    this.emitDataChanged('color', color);
   }
 
   private _onHexChange(hex: string): void {

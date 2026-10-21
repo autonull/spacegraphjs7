@@ -4,8 +4,8 @@ import { DOMUtils } from '../utils/DOMUtils';
 
 import { BaseContentNode } from './BaseContentNode';
 
-export class ProcessNode extends (BaseContentNode as any) {
-  static readonly typeName = 'ProcessNode';
+export class ProcessNode extends BaseContentNode {
+  static readonly typeName: string = 'ProcessNode';
   private cpuBar: HTMLDivElement;
   private memBar: HTMLDivElement;
   private cpuText: HTMLSpanElement;

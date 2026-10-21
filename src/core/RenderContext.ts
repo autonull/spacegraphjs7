@@ -28,7 +28,7 @@ export class RenderContext {
 
   constructor(
     private camera: THREE.Camera,
-    private viewport: { width: number; height: number },
+    viewport: { width: number; height: number },
     minPixelSize = 0.5
   ) {
     this._visibilityContext = {

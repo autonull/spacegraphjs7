@@ -6,7 +6,7 @@ import type { EdgeData, EdgeSpec } from '../types';
 import { Edge } from './Edge';
 
 export class AnimatedEdge extends Edge {
-  static readonly typeName = 'AnimatedEdge';
+  static readonly typeName: string = 'AnimatedEdge';
   readonly particle: THREE.Mesh;
   private progress = 0;
   private speed = 0.01;
@@ -25,11 +25,10 @@ export class AnimatedEdge extends Edge {
     this.speed = data?.speed ?? 0.01;
     this.isReversed = data?.reverse ?? false;
 
-    if (this.object.material instanceof THREE.LineBasicMaterial) {
-      this.object.material.color.setHex(data?.color ?? 0x444444);
-      this.object.material.transparent = true;
-      this.object.material.opacity = 0.4;
-    }
+    const material = this.object.material;
+    material.color.setHex(data?.color ?? 0x444444);
+    material.transparent = true;
+    material.opacity = 0.4;
 
     const particleGeom = new THREE.SphereGeometry(data?.particleSize ?? 3, 8, 8);
     const particleMat = new THREE.MeshBasicMaterial({
@@ -75,10 +74,7 @@ export class AnimatedEdge extends Edge {
     if (this.progress > 1) this.progress = 0;
     if (this.progress < 0) this.progress = 1;
 
-    const sourcePos = new THREE.Vector3();
-    const targetPos = new THREE.Vector3();
-    this.source.getWorldPosition(sourcePos);
-    this.target.getWorldPosition(targetPos);
+    const { sourcePos, targetPos } = this.endpointPositions();
 
     // Particle is a child of the edge line, which is in world space
     this.particle.position.lerpVectors(sourcePos, targetPos, this.progress);

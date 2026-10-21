@@ -1,4 +1,5 @@
 import type * as THREE from 'three';
+import type { HitResult } from '../core/Surface';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec } from '../types';
 import { WidgetNode, type WidgetNodeData } from './WidgetNode';
@@ -11,7 +12,7 @@ export interface ToggleNodeData extends WidgetNodeData {
 }
 
 export class ToggleNode extends WidgetNode {
-  static readonly typeName = 'ToggleNode';
+  static readonly typeName: string = 'ToggleNode';
   private _onColor = 0x44ff88;
   private _offColor = 0x666666;
   private _onToggle?: (value: boolean) => void;
@@ -54,17 +55,8 @@ export class ToggleNode extends WidgetNode {
 
   onPointerUp(): void {}
 
-  hitTest(raycaster: THREE.Raycaster): import('../core/Surface').HitResult | null {
-    const intersects = raycaster.intersectObject(this.mesh, false);
-    if (intersects.length > 0) {
-      return {
-        surface: this,
-        point: intersects[0].point,
-        localPoint: this.worldToLocal(intersects[0].point.clone()),
-        distance: intersects[0].distance,
-      };
-    }
-    return null;
+  hitTest(raycaster: THREE.Raycaster): HitResult | null {
+    return this.hitTestObject(raycaster, this.mesh, { recursive: false, normal: false });
   }
 
   updateSpec(updates: Partial<NodeSpec>): this {
@@ -87,10 +79,6 @@ export class ToggleNode extends WidgetNode {
       }
     }
     return this;
-  }
-
-  dispose(): void {
-    super.dispose();
   }
 
   protected getBaseColor(_data: WidgetNodeData | undefined): number {

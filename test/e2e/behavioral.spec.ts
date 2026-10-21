@@ -174,7 +174,7 @@ test.describe('Behavioral E2E: Plugin System', () => {
       );
     });
 
-    // At minimum, verify app didn't crash and has plugins
+    expect(hasPlugin).toBe(true);
     await expect(page.locator('canvas').first()).toBeVisible();
   });
 });

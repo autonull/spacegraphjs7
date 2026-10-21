@@ -9,12 +9,11 @@ export interface TabInfo {
   closable?: boolean;
 }
 
-export class TabContainerNode extends (HtmlNode as any) {
-  static readonly typeName = 'TabContainerNode';
+export class TabContainerNode extends HtmlNode {
+  static readonly typeName: string = 'TabContainerNode';
   private tabs: TabInfo[] = [];
   private activeTabId = '';
   private tabBarElement: HTMLElement | null = null;
-  private contentAreaElement: HTMLElement | null = null;
   private tabContentMap: Map<string, HTMLElement> = new Map();
 
   constructor(sg: SpaceGraph | undefined, spec: NodeSpec) {

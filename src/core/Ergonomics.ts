@@ -113,13 +113,9 @@ export class ErgonomicsAPI {
     this.sg.graph.forEachEdge(callback);
   }
 
-  forEach(callback: (node: Node) => void): void {
-    this.sg.graph.forEachNode(callback);
-  }
+  forEach = this.forNodes;
 
-  each(callback: (node: Node) => void): void {
-    this.sg.graph.forEachNode(callback);
-  }
+  each = this.forNodes;
 
   // ============= Array Methods =============
   map<T>(callback: (node: Node) => T): T[] {
@@ -135,13 +131,11 @@ export class ErgonomicsAPI {
   }
 
   every(callback: (node: Node) => boolean): boolean {
-    return this.sg.graph.query((n: Node) => !callback(n)).length === 0;
+    return [...this.sg.graph.getNodes()].every(callback);
   }
 
   reduce<T>(callback: (acc: T, node: Node) => T, initial: T): T {
-    let acc = initial;
-    this.sg.graph.forEachNode((n: Node) => (acc = callback(acc, n)));
-    return acc;
+    return [...this.sg.graph.getNodes()].reduce(callback, initial);
   }
 
   // ============= Node Manipulation =============
@@ -261,49 +255,39 @@ export class ErgonomicsAPI {
     position?: [number, number, number],
     data?: Record<string, unknown>
   ): Node | null {
-    return this.sg.graph.addNode({ id, type: 'ShapeNode', position: position ?? [0, 0, 0], data });
+    return this.addTyped(id, 'ShapeNode', data, position);
   }
 
   box(id: string, position?: [number, number, number], size = 50): Node | null {
-    return this.sg.graph.addNode({ id, type: 'ShapeNode', position, data: { size, shape: 'box' } });
+    return this.addTyped(id, 'ShapeNode', { size, shape: 'box' }, position);
   }
 
   sphere(id: string, position?: [number, number, number], size = 50): Node | null {
-    return this.sg.graph.addNode({
-      id,
-      type: 'ShapeNode',
-      position,
-      data: { size, shape: 'sphere' },
-    });
+    return this.addTyped(id, 'ShapeNode', { size, shape: 'sphere' }, position);
   }
 
   circle(id: string, position?: [number, number, number], size = 50): Node | null {
-    return this.sg.graph.addNode({
-      id,
-      type: 'ShapeNode',
-      position,
-      data: { size, shape: 'circle' },
-    });
+    return this.addTyped(id, 'ShapeNode', { size, shape: 'circle' }, position);
   }
 
   text(id: string, text: string, position?: [number, number, number]): Node | null {
-    return this.sg.graph.addNode({ id, type: 'TextMeshNode', position, data: { text } });
+    return this.addTyped(id, 'TextMeshNode', { text }, position);
   }
 
   image(id: string, url: string, position?: [number, number, number]): Node | null {
-    return this.sg.graph.addNode({ id, type: 'ImageNode', position, data: { url } });
+    return this.addTyped(id, 'ImageNode', { url }, position);
   }
 
   html(id: string, html: string, position?: [number, number, number]): Node | null {
-    return this.sg.graph.addNode({ id, type: 'HtmlNode', position, data: { html } });
+    return this.addTyped(id, 'HtmlNode', { html }, position);
   }
 
   group(id: string, position?: [number, number, number]): Node | null {
-    return this.sg.graph.addNode({ id, type: 'GroupNode', position });
+    return this.addTyped(id, 'GroupNode', undefined, position);
   }
 
   note(id: string, text: string, position?: [number, number, number]): Node | null {
-    return this.sg.graph.addNode({ id, type: 'NoteNode', position, data: { text } });
+    return this.addTyped(id, 'NoteNode', { text }, position);
   }
 
   widget(
@@ -311,11 +295,7 @@ export class ErgonomicsAPI {
     type: 'button' | 'slider' | 'toggle',
     position?: [number, number, number]
   ): Node | null {
-    return this.sg.graph.addNode({
-      id,
-      type: `${type.charAt(0).toUpperCase() + type.slice(1)}Node`,
-      position,
-    });
+    return this.addTyped(id, `${type.charAt(0).toUpperCase()}${type.slice(1)}Node`, undefined, position);
   }
 
   // ============= Node Utilities =============
@@ -332,17 +312,13 @@ export class ErgonomicsAPI {
   }
 
   move(id: string, x: number, y: number, z = 0): Node | null {
-    const n = this.sg.graph.getNode(id);
-    if (!n) return null;
-    n.updatePosition(x, y, z);
-    return n;
+    return this.withNode(id, (node) => node.updatePosition(x, y, z));
   }
 
   translate(id: string, dx: number, dy: number, dz = 0): Node | null {
-    const n = this.sg.graph.getNode(id);
-    if (!n) return null;
-    n.updatePosition(n.position.x + dx, n.position.y + dy, n.position.z + dz);
-    return n;
+    return this.withNode(id, (node) =>
+      node.updatePosition(node.position.x + dx, node.position.y + dy, node.position.z + dz)
+    );
   }
 
   shift(id: string, dx: number, dy: number, dz = 0): Node | null {
@@ -350,24 +326,15 @@ export class ErgonomicsAPI {
   }
 
   rotate(id: string, x: number, y: number, z: number): Node | null {
-    const n = this.sg.graph.getNode(id);
-    if (!n) return null;
-    n.updateSpec({ rotation: [x, y, z] });
-    return n;
+    return this.withNode(id, (node) => node.updateSpec({ rotation: [x, y, z] }));
   }
 
   scale(id: string, x: number, y?: number, z?: number): Node | null {
-    const n = this.sg.graph.getNode(id);
-    if (!n) return null;
-    n.updateSpec({ scale: [x, y ?? x, z ?? x] });
-    return n;
+    return this.withNode(id, (node) => node.updateSpec({ scale: [x, y ?? x, z ?? x] }));
   }
 
   label(id: string, text: string): Node | null {
-    const n = this.sg.graph.getNode(id);
-    if (!n) return null;
-    n.updateSpec({ label: text });
-    return n;
+    return this.withNode(id, (node) => node.updateSpec({ label: text }));
   }
 
   text$(id: string, text: string): Node | null {
@@ -375,10 +342,7 @@ export class ErgonomicsAPI {
   }
 
   color(id: string, color: string | number): Node | null {
-    const n = this.sg.graph.getNode(id);
-    if (!n) return null;
-    n.updateSpec({ data: { ...n.data, color } });
-    return n;
+    return this.withNode(id, (node) => node.updateSpec({ data: { color } }));
   }
 
   fill(id: string, color: string | number): Node | null {
@@ -387,10 +351,7 @@ export class ErgonomicsAPI {
 
   // ============= Visibility =============
   show(id: string, visible = true): Node | null {
-    const n = this.sg.graph.getNode(id);
-    if (!n) return null;
-    n.updateSpec({ data: { ...n.data, visible } });
-    return n;
+    return this.withNode(id, (node) => node.updateSpec({ data: { visible } }));
   }
 
   hide(id: string): Node | null {
@@ -398,11 +359,11 @@ export class ErgonomicsAPI {
   }
 
   toggleVisibility(nodeId: string): boolean {
-    const n = this.sg.graph.getNode(nodeId);
-    if (!n) return false;
-    const v = !(n.data as Record<string, unknown>).visible;
-    n.updateSpec({ data: { ...n.data, visible: v } });
-    return v;
+    const node = this.sg.graph.getNode(nodeId);
+    if (!node) return false;
+    const visible = !(node.data as Record<string, unknown>).visible;
+    node.updateSpec({ data: { visible } });
+    return visible;
   }
 
   toggle(nodeId: string): boolean {
@@ -410,23 +371,23 @@ export class ErgonomicsAPI {
   }
 
   opacity(id: string, opacity: number): Node | null {
-    return this.data(id, 'opacity', opacity) as unknown as Node | null;
+    return this.#writeFlag(id, 'opacity', opacity);
   }
 
   pinned(id: string): Node | null {
-    return this.data(id, 'pinned', true) as unknown as Node | null;
+    return this.#writeFlag(id, 'pinned', true);
   }
 
   unpin(id: string): Node | null {
-    return this.data(id, 'pinned', false) as unknown as Node | null;
+    return this.#writeFlag(id, 'pinned', false);
   }
 
   draggable(id: string, draggable = true): Node | null {
-    return this.data(id, 'draggable', draggable) as unknown as Node | null;
+    return this.#writeFlag(id, 'draggable', draggable);
   }
 
   selectable(id: string, selectable = true): Node | null {
-    return this.data(id, 'selectable', selectable) as unknown as Node | null;
+    return this.#writeFlag(id, 'selectable', selectable);
   }
 
   // ============= Data Access =============
@@ -440,20 +401,25 @@ export class ErgonomicsAPI {
     return n.data[key];
   }
 
+  /** A data flag written onto a node; the ergonomics API reports the value it wrote. */
+  #writeFlag(id: string, key: string, value: unknown): Node | null {
+    return this.data(id, key, value) as unknown as Node | null;
+  }
+
   attr(id: string, key: string, value?: unknown): unknown {
     return this.data(id, key, value);
   }
 
   size(id: string, size: number): Node | null {
-    return this.data(id, 'size', size) as unknown as Node | null;
+    return this.#writeFlag(id, 'size', size);
   }
 
   width(id: string, width: number): Node | null {
-    return this.data(id, 'width', width) as unknown as Node | null;
+    return this.#writeFlag(id, 'width', width);
   }
 
   height(id: string, height: number): Node | null {
-    return this.data(id, 'height', height) as unknown as Node | null;
+    return this.#writeFlag(id, 'height', height);
   }
 
   // ============= Position Utilities =============
@@ -466,24 +432,15 @@ export class ErgonomicsAPI {
   }
 
   cx(id: string, x: number): Node | null {
-    const n = this.sg.graph.getNode(id);
-    if (!n) return null;
-    n.updatePosition(x, n.position.y, n.position.z);
-    return n;
+    return this.withNode(id, (node) => node.updatePosition(x, node.position.y, node.position.z));
   }
 
   cy(id: string, y: number): Node | null {
-    const n = this.sg.graph.getNode(id);
-    if (!n) return null;
-    n.updatePosition(n.position.x, y, n.position.z);
-    return n;
+    return this.withNode(id, (node) => node.updatePosition(node.position.x, y, node.position.z));
   }
 
   cz(id: string, z: number): Node | null {
-    const n = this.sg.graph.getNode(id);
-    if (!n) return null;
-    n.updatePosition(n.position.x, n.position.y, z);
-    return n;
+    return this.withNode(id, (node) => node.updatePosition(node.position.x, node.position.y, z));
   }
 
   center(): { x: number; y: number; z: number } {
@@ -540,7 +497,8 @@ export class ErgonomicsAPI {
     type: 'force' | 'grid' | 'circular' | 'tree' | 'radial',
     options?: Record<string, unknown>
   ): Promise<void> {
-    return this.sg.layout(type, options);
+    const name = `${type.charAt(0).toUpperCase()}${type.slice(1)}Layout`;
+    return this.sg.layout(name, options);
   }
 
   // ============= Camera Shortcuts =============
@@ -579,5 +537,23 @@ export class ErgonomicsAPI {
 
   render(): void {
     this.sg.render();
+  }
+
+  /** Runs an action on a node and hands it back; null when the node does not exist. */
+  private withNode(id: string, action: (node: Node) => void): Node | null {
+    const node = this.sg.graph.getNode(id);
+    if (!node) return null;
+    action(node);
+    return node;
+  }
+
+  /** Adds a node of a type, with the data a host gave it. */
+  private addTyped(
+    id: string,
+    type: string,
+    data?: Record<string, unknown>,
+    position?: [number, number, number]
+  ): Node | null {
+    return this.sg.graph.addNode({ id, type, position, data });
   }
 }

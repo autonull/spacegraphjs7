@@ -25,8 +25,8 @@ async function loadKatex() {
   return katexPromise;
 }
 
-export class MathNode extends (BaseContentNode as any) {
-  static readonly typeName = 'MathNode';
+export class MathNode extends BaseContentNode {
+  static readonly typeName: string = 'MathNode';
   private mathContent = '\\int_0^\\infty e^{-x^2} dx = \\frac{\\sqrt{\\pi}}{2}';
 
   constructor(sg: SpaceGraph | undefined, spec: NodeSpec) {

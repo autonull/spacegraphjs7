@@ -2,8 +2,8 @@ import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec } from '../types';
 import { LayoutNode, switchStrategy } from './LayoutNode';
 
-export class SwitchNode extends (LayoutNode as any) {
-  static readonly typeName = 'SwitchNode';
+export class SwitchNode extends LayoutNode {
+  static readonly typeName: string = 'SwitchNode';
 
   constructor(sg?: SpaceGraph, spec?: NodeSpec) {
     super(sg!, spec as NodeSpec, switchStrategy, { activeIndex: 0 });

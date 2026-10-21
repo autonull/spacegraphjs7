@@ -14,7 +14,7 @@ import {
 } from '@spacegraphjs/renderer';
 import type { GraphController } from 'spacegraphjs/control';
 import { depthTreatment, type DepthMode } from 'spacegraphjs/depth';
-import { Strategies, type GraphLayout } from 'spacegraphjs/layout';
+import { type GraphLayout } from 'spacegraphjs/layout';
 import { Levels } from 'spacegraphjs/levels';
 import { Navigation } from 'spacegraphjs/navigation';
 import { extractSubgraph, parsePatch, type CodeDiff } from 'spacegraphjs/overlays';
