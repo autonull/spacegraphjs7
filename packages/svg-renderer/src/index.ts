@@ -1,5 +1,7 @@
 import {
   DEFAULT_THEME,
+  edgeStyleFor,
+  isCardShape,
   statusColor,
   type RenderEdge,
   type RenderModel,
@@ -160,7 +162,7 @@ function nodeSVG(node: RenderNode, theme: RenderTheme, bounds: Bounds): string {
     return `<g><circle cx="${x}" cy="${y}" r="${radius}" fill="${escapeXml(color)}" stroke="${escapeXml(theme.border)}"/>${title}</g>`;
   }
 
-  const card = node.shape === 'card' || node.shape === 'panel';
+  const card = isCardShape(node.shape);
   const badge = node.shape === 'badge';
   const width = node.size?.[0] ?? (card ? 200 : badge ? 96 : 120);
   const height = node.size?.[1] ?? (card ? 64 : badge ? 24 : 32);
@@ -174,15 +176,13 @@ function nodeSVG(node: RenderNode, theme: RenderTheme, bounds: Bounds): string {
 }
 
 function edgeSVG(edge: RenderEdge, source: RenderNode, target: RenderNode, theme: RenderTheme, bounds: Bounds): string {
-  const inferred = edge.confidence === 'inferred';
-  const color = inferred ? theme.edgeMuted : theme.edge;
-  const dashed = inferred || edge.style === 'dashed' || edge.style === 'dotted';
+  const style = edgeStyleFor(edge, theme);
   const x1 = source.position[0] + bounds.offsetX;
   const y1 = source.position[1] + bounds.offsetY;
   const x2 = target.position[0] + bounds.offsetX;
   const y2 = target.position[1] + bounds.offsetY;
   const marker = edge.directed ? ' marker-end="url(#sgs-arrow)"' : '';
-  return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${escapeXml(color)}" stroke-width="${inferred ? 1 : 2}"${dashed ? ' stroke-dasharray="5 4"' : ''}${marker}/>`;
+  return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${escapeXml(style.color)}" stroke-width="${style.width}"${style.dashed ? ' stroke-dasharray="5 4"' : ''}${marker}/>`;
 }
 
 function truncate(value: string, max: number): string {

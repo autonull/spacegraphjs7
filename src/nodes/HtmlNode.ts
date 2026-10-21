@@ -15,6 +15,13 @@ export class HtmlNode extends BaseContentNode {
   public static MIN_SIZE = { width: 80, height: 40 };
   public static DEFAULT_SIZE = { width: 200, height: 100 };
   public static CONTENT_SCALE_RANGE = { min: 0.3, max: 3.0 };
+  /** The wrapper a control node lays its parts out with: a gapped, padded column. */
+  protected static readonly CONTROL_WRAPPER_STYLE = {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px',
+    padding: '12px',
+  } as const;
   public readonly isHtmlNode = true;
   public size = { width: 160, height: 70 };
   public billboard = false;
@@ -479,9 +486,10 @@ export class HtmlNode extends BaseContentNode {
 
   private _handleSizeUpdate(data: SpaceGraphNodeData): void {
     const { DEFAULT_SIZE } = HtmlNode;
-    const w = (data.width as number) ?? (this.data.width as number) ?? DEFAULT_SIZE.width;
-    const h = (data.height as number) ?? (this.data.height as number) ?? DEFAULT_SIZE.height;
-    this.setSize(w, h);
+    this.setSize(
+      this.dimension(data, 'width', DEFAULT_SIZE.width),
+      this.dimension(data, 'height', DEFAULT_SIZE.height)
+    );
   }
 
   private _applyNodeBgColor(color: string): void {

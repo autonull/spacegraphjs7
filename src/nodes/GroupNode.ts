@@ -3,9 +3,9 @@ import * as THREE from 'three';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { GroupNodeData, NodeSpec } from '../types';
 import { parentIdOf } from '../utils/nodeParent';
-import { Node } from './Node';
+import { Object3DNode } from './Object3DNode';
 
-export class GroupNode extends Node {
+export class GroupNode extends Object3DNode {
   static typeName: string = 'GroupNode';
   public readonly isGroupNode = true;
   private meshGeometry: THREE.BoxGeometry;
@@ -38,12 +38,6 @@ export class GroupNode extends Node {
 
     this._object.add(mesh);
     this.updatePosition(this.position.x, this.position.y, this.position.z);
-  }
-
-  private _object = new THREE.Object3D();
-
-  get object() {
-    return this._object;
   }
 
   updateSpec(updates: Partial<NodeSpec>): this {

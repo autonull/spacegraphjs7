@@ -1,6 +1,7 @@
 import type { EventSystem } from '../core/events/EventSystem';
 import type { Graph } from '../core/Graph';
 import type { SpaceGraph } from '../SpaceGraph';
+import type { SelectionChangedPayload } from '../types';
 import { createLogger } from '../utils/logger';
 import { BaseSystemPlugin } from './BaseSystemPlugin';
 import { type AlertOptions, HUDAlerts } from './hud/HUDAlerts';
@@ -163,7 +164,7 @@ export class HUDPlugin extends BaseSystemPlugin {
     this.sg.events.on('node:removed', () => this.updateNodeCount());
     this.sg.events.on('edge:added', () => this.updateNodeCount());
     this.sg.events.on('edge:removed', () => this.updateNodeCount());
-    this.sg.events.on('selection:changed', (e: any) => this.updateSelection(e));
+    this.sg.events.on('selection:changed', (e) => this.updateSelection(e));
     this.sg.events.on('camera:moved', () => this.updateCamera());
 
     this.sg.events.on('fractal:level-change', (e: any) => this.updateFractalLevel(e));
@@ -174,10 +175,8 @@ export class HUDPlugin extends BaseSystemPlugin {
     this.statusBar?.updateNodeCount(this.sg.graph.getNodeCount(), this.sg.graph.getEdgeCount());
   }
 
-  private updateSelection(e: any): void {
-    const nodeCount = e.nodes?.size ?? 0;
-    const edgeCount = e.edges?.size ?? 0;
-    this.statusBar?.updateSelection(nodeCount, edgeCount);
+  private updateSelection(e: SelectionChangedPayload): void {
+    this.statusBar?.updateSelection(e.nodes.size, e.edges.size);
   }
 
   private updateCamera(): void {

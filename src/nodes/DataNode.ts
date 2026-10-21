@@ -55,16 +55,14 @@ export class DataNode extends BaseContentNode {
   updateSpec(updates: Partial<NodeSpec>): this {
     super.updateSpec(updates);
 
-    if (updates.label !== undefined && this.titleElement) {
-      this.titleElement.textContent = updates.label;
-    }
+    this.syncTitleLabel(updates);
 
     if (updates.data) {
       const theme = (updates.data.theme as string) ?? (this.data?.theme as string) ?? 'dark';
 
       if (updates.data.width || updates.data.maxHeight) {
-        const w = this.dimension(updates, 'width', 250);
-        const h = this.dimension(updates, 'maxHeight', 300);
+        const w = this.dimension(updates.data, 'width', 250);
+        const h = this.dimension(updates.data, 'maxHeight', 300);
         this.domElement.style.width = `${w}px`;
         this.domElement.style.maxHeight = `${h}px`;
         this.updateBackingGeometry(w, h);

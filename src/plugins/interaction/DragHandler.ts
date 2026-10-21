@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type { Node } from '../../nodes/Node';
 import type { SpaceGraph } from '../../SpaceGraph';
+import { nodeDragPayload } from './nodeDragPayload';
 import type { InteractionRaycaster } from './RaycasterHelper';
 
 /**
@@ -70,7 +71,7 @@ export class DragHandler {
     const ndc = this.raycaster.getMouseNDC();
     this.previousDragPosition = { x: ndc.x, y: ndc.y };
 
-    this.sg.events.emit('interaction:dragstart', { node } as any);
+    this.sg.events.emit('interaction:dragstart', nodeDragPayload(node));
     return true;
   }
 
@@ -90,7 +91,7 @@ export class DragHandler {
     if (!this.isDragging) return;
 
     if (this.dragNode) {
-      this.sg.events.emit('interaction:dragend', { node: this.dragNode } as any);
+      this.sg.events.emit('interaction:dragend', nodeDragPayload(this.dragNode));
     }
 
     this.isDragging = false;
@@ -175,13 +176,6 @@ export class DragHandler {
 
   private emitDragEvent(): void {
     if (!this.dragNode) return;
-    this.sg.events.emit('interaction:drag', {
-      node: this.dragNode,
-      position: [this.dragNode.position.x, this.dragNode.position.y, this.dragNode.position.z] as [
-        number,
-        number,
-        number,
-      ],
-    });
+    this.sg.events.emit('interaction:drag', nodeDragPayload(this.dragNode));
   }
 }

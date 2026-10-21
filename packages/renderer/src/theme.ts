@@ -4,6 +4,7 @@
  * host supplies the reader.
  */
 
+import { contrastRatioOf, relativeLuminance } from './color';
 import type { NodeStatus, RenderTheme } from './index';
 
 /** A renderer role mapped to the CSS variable that carries the host's value for it. */
@@ -160,12 +161,7 @@ function luminance(hex: string): number | undefined {
   const rgb = channel(hex);
 
   if (!rgb) return undefined;
-  const [r, g, b] = rgb.map((value) => {
-    const c = value / 255;
-    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
-  }) as [number, number, number];
-
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  return relativeLuminance(rgb[0] / 255, rgb[1] / 255, rgb[2] / 255);
 }
 
 /** The WCAG contrast ratio of two colours; undefined when a colour cannot be parsed. */
@@ -175,7 +171,7 @@ export function contrastRatio(foreground: string, background: string): number | 
 
   if (a === undefined || b === undefined) return undefined;
 
-  return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+  return contrastRatioOf(a, b);
 }
 
 /** Audits a resolved theme against the WCAG targets the canvas must clear. */

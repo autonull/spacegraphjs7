@@ -34,7 +34,16 @@ export {
 } from '../core/constants';
 export type { FitInsets, FitSurface, FitViewResult } from './CameraUtils';
 // Camera utilities
-export { calculateFitView, focusRadiusOf, halfFovTangent, visibleHeightAtDistance } from './CameraUtils';
+export {
+  calculateFitView,
+  fitOrthoFrustum,
+  focusNodeCamera,
+  focusRadiusOf,
+  halfFovTangent,
+  setOrthoFrustum,
+  visibleHeightAtDistance,
+  visibleWorldExtent,
+} from './CameraUtils';
 // Color
 export type { ColorStop } from './color';
 export {
@@ -43,6 +52,7 @@ export {
   adjustSaturation,
   blendColors,
   darken,
+  dataColor,
   desaturate,
   generateGradient,
   generateGradientPalette,

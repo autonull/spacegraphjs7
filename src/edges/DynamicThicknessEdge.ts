@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import type { Node } from '../nodes/Node';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { EdgeSpec } from '../types';
+import { dataColor } from '../utils/color';
 import { clamp } from '../utils/math';
 import { directionBetween, midpoint } from '../utils/vector';
 import { Edge } from './Edge';
@@ -68,9 +69,8 @@ export class DynamicThicknessEdge extends Edge {
 
   updateSpec(updates: Partial<EdgeSpec>): this {
     super.updateSpec(updates);
-    if (updates.data?.color) {
-      (this.cylinder.material as THREE.MeshBasicMaterial).color.setHex(updates.data.color);
-    }
+    const color = dataColor(updates.data?.color);
+    if (color) (this.cylinder.material as THREE.MeshBasicMaterial).color.set(color);
     return this;
   }
 

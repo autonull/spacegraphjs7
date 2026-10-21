@@ -1,16 +1,14 @@
 import {
+  BaseGraphRenderer,
   CONTRACT_VERSION,
   type DepthMode,
   type FitOptions,
   type GraphRenderer,
   type Projection,
   type RendererCapabilities,
-  type RendererEventMap,
   type RendererViewport,
   type RenderModel,
   type RenderTheme,
-  type Unsubscribe,
-  RendererEventBus,
 } from '@spacegraphjs/renderer';
 import type { Core } from 'cytoscape';
 import { frameInRegion } from './fit';
@@ -39,14 +37,12 @@ const CAPABILITIES: RendererCapabilities = {
   fitInsets: true,
 };
 
-type Handler<K extends keyof RendererEventMap> = (payload: RendererEventMap[K]) => void;
-
 /** Cytoscape's own fit margin, in CSS pixels, on each side of the framed content. */
 const FIT_MARGIN = 30;
 
 // Wraps Cytoscape.js behind the dependency-free contract. It imports `@spacegraphjs/renderer` and
 // `cytoscape` only; it never imports SpaceGraphJS core.
-export class CytoscapeRenderer implements GraphRenderer {
+export class CytoscapeRenderer extends BaseGraphRenderer implements GraphRenderer {
   readonly capabilities = CAPABILITIES;
 
   #cy: Core | null = null;
@@ -57,8 +53,6 @@ export class CytoscapeRenderer implements GraphRenderer {
   #nodes = new Set<string>();
   #edges = new Set<string>();
   #cards = new Map<string, HTMLDivElement>();
-  #events = new RendererEventBus();
-  #applyingSelection = false;
 
   async mount(
     container: HTMLElement,
@@ -92,7 +86,7 @@ export class CytoscapeRenderer implements GraphRenderer {
     this.#cy = cy;
     this.#bind();
     if (this.#model) this.setModel(this.#model);
-    this.#emit('ready', undefined);
+    this.emit('ready', undefined);
   }
 
   setModel(model: RenderModel): void {
@@ -156,13 +150,10 @@ export class CytoscapeRenderer implements GraphRenderer {
   setSelection(ids: readonly string[]): void {
     const cy = this.#cy;
     if (!cy) return;
-    this.#applyingSelection = true;
-    try {
+    this.applySelection(ids, () => {
       cy.elements().unselect();
       for (const id of ids) cy.getElementById(id).select();
-    } finally {
-      this.#applyingSelection = false;
-    }
+    });
   }
 
   setViewport(viewport: RendererViewport): void {
@@ -257,10 +248,6 @@ export class CytoscapeRenderer implements GraphRenderer {
     this.#renderOverlay();
   }
 
-  on<K extends keyof RendererEventMap>(event: K, handler: Handler<K>): Unsubscribe {
-    return this.#events.on(event, handler);
-  }
-
   dispose(): void {
     this.#cy?.destroy();
     this.#cy = null;
@@ -269,7 +256,7 @@ export class CytoscapeRenderer implements GraphRenderer {
     this.#canvas = null;
     this.#overlay = null;
     this.#cards.clear();
-    this.#events.clear();
+    this.events.clear();
     this.#model = null;
     this.#nodes.clear();
     this.#edges.clear();
@@ -277,20 +264,20 @@ export class CytoscapeRenderer implements GraphRenderer {
 
   #bind(): void {
     const cy = this.#cy!;
-    cy.on('tap', 'node', (event) => this.#emit('nodeClick', { id: event.target.id() }));
-    cy.on('tap', 'edge', (event) => this.#emit('edgeClick', { id: event.target.id() }));
+    cy.on('tap', 'node', (event) => this.emit('nodeClick', { id: event.target.id() }));
+    cy.on('tap', 'edge', (event) => this.emit('edgeClick', { id: event.target.id() }));
     cy.on('tap', (event) => {
-      if (event.target === cy) this.#emit('backgroundClick', undefined);
+      if (event.target === cy) this.emit('backgroundClick', undefined);
     });
-    cy.on('dbltap', 'node', (event) => this.#emit('nodeDoubleClick', { id: event.target.id() }));
+    cy.on('dbltap', 'node', (event) => this.emit('nodeDoubleClick', { id: event.target.id() }));
     cy.on('select unselect', () => {
-      if (this.#applyingSelection) return;
-      this.#emit('selectionChange', { ids: cy.$(':selected').map((element) => element.id()) });
+      if (this.applyingSelection) return;
+      this.emit('selectionChange', { ids: cy.$(':selected').map((element) => element.id()) });
     });
     cy.on('mouseover', 'node, edge', (event) =>
-      this.#emit('hoverChange', { id: event.target.id(), kind: event.target.isNode() ? 'node' : 'edge' })
+      this.emit('hoverChange', { id: event.target.id(), kind: event.target.isNode() ? 'node' : 'edge' })
     );
-    cy.on('mouseout', 'node, edge', () => this.#emit('hoverChange', { id: undefined }));
+    cy.on('mouseout', 'node, edge', () => this.emit('hoverChange', { id: undefined }));
     cy.on('zoom pan resize', () => {
       this.#renderOverlay();
       this.#emitViewport();
@@ -299,7 +286,7 @@ export class CytoscapeRenderer implements GraphRenderer {
 
   #emitViewport(): void {
     if (!this.#cy) return;
-    this.#emit('viewportChange', this.getViewport());
+    this.emit('viewportChange', this.getViewport());
   }
 
   #syncCards(): void {
@@ -348,10 +335,6 @@ export class CytoscapeRenderer implements GraphRenderer {
       // The overlay is placed in world units, so it scales with the viewport like every other node.
       element.style.transform = `translate(${point.x}px, ${point.y}px) translate(-50%, -50%) scale(${cy.zoom()})`;
     }
-  }
-
-  #emit<K extends keyof RendererEventMap>(event: K, payload: RendererEventMap[K]): void {
-    this.#events.emit(event, payload);
   }
 }
 

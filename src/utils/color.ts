@@ -13,20 +13,12 @@ function packRgb(r: number, g: number, b: number): number {
 
 /**
  * WCAG 2.1 relative luminance per https://www.w3.org/WAI/GL/wiki/Relative_luminance
- * Accepts either THREE.Color or raw RGB channels.
+ * Accepts either THREE.Color or raw RGB channels in 0..1.
  */
 export function getRelativeLuminance(
   color: THREE.Color | { r: number; g: number; b: number }
 ): number {
-  const r = color.r;
-  const g = color.g;
-  const b = color.b;
-
-  const rLinear = r <= 0.03928 ? r / 12.92 : ((r + 0.055) / 1.055) ** 2.4;
-  const gLinear = g <= 0.03928 ? g / 12.92 : ((g + 0.055) / 1.055) ** 2.4;
-  const bLinear = b <= 0.03928 ? b / 12.92 : ((b + 0.055) / 1.055) ** 2.4;
-
-  return 0.2126 * rLinear + 0.7152 * gLinear + 0.0722 * bLinear;
+  return relativeLuminance(color.r, color.g, color.b);
 }
 
 /**
@@ -34,6 +26,22 @@ export function getRelativeLuminance(
  * Formula: (L1 + 0.05) / (L2 + 0.05) where L1 is lighter.
  */
 export function getContrastRatio(l1: number, l2: number): number {
+  return contrastRatioOf(l1, l2);
+}
+
+/**
+ * The relative luminance of a colour whose channels are already in 0..1. The contract package
+ * owns the same primitive; the core keeps its own because the boundary test holds the core free
+ * of the contract.
+ */
+function relativeLuminance(r: number, g: number, b: number): number {
+  const linear = (channel: number): number =>
+    channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+  return 0.2126 * linear(r) + 0.7152 * linear(g) + 0.0722 * linear(b);
+}
+
+/** The contrast ratio between two relative luminances: `(L1 + 0.05) / (L2 + 0.05)`, L1 lighter. */
+function contrastRatioOf(l1: number, l2: number): number {
   const lighter = Math.max(l1, l2);
   const darker = Math.min(l1, l2);
   return (lighter + 0.05) / (darker + 0.05);
@@ -129,6 +137,14 @@ export function rgbToHex(r: number, g: number, b: number): string {
 /** A packed hex colour or a CSS colour as a CSS colour string. */
 export function toCssColor(value: string | number): string {
   return typeof value === 'number' ? `#${value.toString(16).padStart(6, '0')}` : value;
+}
+
+/**
+ * The colour a surface's data carries, as a CSS colour. A falsy colour — black included — is
+ * skipped, as it always has been: the result is undefined.
+ */
+export function dataColor(value: string | number | undefined): string | undefined {
+  return value ? toCssColor(value) : undefined;
 }
 
 // ============= Color Interpolation =============

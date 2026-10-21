@@ -2,6 +2,8 @@
 // spend on activity cards. The core owns the filtering and the budgets; the host owns the
 // vocabulary (which kind belongs to which level) and the level-specific edge rules.
 
+import { lookup } from '../utils/record';
+
 export type LabelMode = 'scale' | 'constant' | 'hide';
 
 export interface LevelNode {
@@ -56,13 +58,6 @@ type NodeLevels<Level extends string, Kind extends string> = {
     kindMinLevel: Readonly<Record<Kind, Level>>;
     levelRank: Readonly<Record<Level, number>>;
 };
-
-function lookup<Key extends string, Value>(
-    record: Readonly<Record<Key, Value>>,
-    key: string,
-): Value | undefined {
-    return (record as Readonly<Record<string, Value | undefined>>)[key];
-}
 
 function rankOf<Level extends string>(
     config: { levelRank: Readonly<Record<Level, number>> },

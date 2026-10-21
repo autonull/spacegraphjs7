@@ -1,6 +1,7 @@
 import type { Edge } from '../edges/Edge';
 import type { Node } from '../nodes/Node';
-import { focusRadiusOf } from '../utils/CameraUtils';
+import { focusNodeCamera } from '../utils/CameraUtils';
+import { selectionChanged } from './Selection';
 import type { SpaceGraphApp } from './SpaceGraphApp';
 
 /**
@@ -14,11 +15,13 @@ function setSelection(app: SpaceGraphApp, nodes: Node[], edges: Edge[]): void {
 
   const selectedNodes = [...app.currentSelected];
   const selectedEdges = [...app.currentSelectedEdges];
-  app.sg.events.emit('selection:changed', {
-    nodes: selectedNodes,
-    edges: selectedEdges,
-    timestamp: Date.now(),
-  });
+  app.sg.events.emit(
+    'selection:changed',
+    selectionChanged(
+      selectedNodes.map((node) => node.id),
+      selectedEdges.map((edge) => edge.id)
+    )
+  );
 
   if (app.options.onNodeSelect) app.options.onNodeSelect([...selectedNodes]);
   if (app.options.onEdgeSelect) app.options.onEdgeSelect([...selectedEdges]);
@@ -59,7 +62,7 @@ export function setupInteractionHandlers(app: SpaceGraphApp) {
     if (app.options.onNodeDblClick) {
       app.options.onNodeDblClick(node);
     } else if (app.sg.cameraControls) {
-      app.sg.cameraControls.flyTo(node.position.clone(), focusRadiusOf(node));
+      focusNodeCamera(app.sg.cameraControls, node);
     }
   });
 

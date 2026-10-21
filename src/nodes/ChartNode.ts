@@ -22,7 +22,11 @@ export class ChartNode extends BaseContentNode {
   static readonly typeName: string = 'ChartNode';
   public canvasEl: HTMLCanvasElement;
   private chartInstance: unknown = null;
-  readonly titleEl: HTMLElement | null = null;
+
+  /** The title bar's label element; null when the node has no title bar. */
+  get titleEl(): HTMLElement | null {
+    return this.titleElement;
+  }
 
   constructor(sg: SpaceGraph | undefined, spec: NodeSpec) {
     const w = (spec.data?.width as number) ?? 300;
@@ -54,24 +58,18 @@ export class ChartNode extends BaseContentNode {
     canvasContainer.appendChild(this.canvasEl);
     this.domElement.appendChild(canvasContainer);
 
-    if (title) {
-      this.titleEl = this.titleElement;
-    }
-
     this._renderChart(spec);
   }
 
   updateSpec(updates: Partial<NodeSpec>): this {
     super.updateSpec(updates);
 
-    if (updates.label !== undefined && this.titleEl) {
-      this.titleEl.textContent = updates.label;
-    }
+    this.syncTitleLabel(updates);
 
     if (updates.data) {
       if (updates.data.width || updates.data.height) {
-        const w = Number(updates.data.width ?? this.data?.width ?? 300);
-        const h = Number(updates.data.height ?? this.data?.height ?? 200);
+        const w = this.dimension(updates.data, 'width', 300);
+        const h = this.dimension(updates.data, 'height', 200);
         const title = (updates.label ?? this.label ?? this.data?.title ?? '') as string;
         const totalH = h + (title ? 32 : 0);
 

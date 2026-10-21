@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import type { Node } from '../nodes/Node';
 import type { SpaceGraph } from '../SpaceGraph';
-import { visibleHeightAtDistance } from './CameraUtils';
+import { visibleWorldExtent } from './CameraUtils';
 import { clamp } from './math';
 
 export const MIN_NODE_SIZE = 40;
@@ -20,15 +20,14 @@ export function nodeScreenSize(sg: SpaceGraph, node: Node): NodeSize {
   const size = box.getSize(new THREE.Vector3());
 
   const canvas = sg.renderer.renderer.domElement;
-  const fov = (sg.renderer.camera as THREE.PerspectiveCamera).fov;
-  const distance = sg.renderer.camera.position.distanceTo(node.position);
+  const camera = sg.renderer.camera as THREE.PerspectiveCamera;
+  const distance = camera.position.distanceTo(node.position);
 
-  const visibleHeight = visibleHeightAtDistance(fov, distance);
-  const visibleWidth = (visibleHeight * canvas.clientWidth) / canvas.clientHeight;
+  const extent = visibleWorldExtent(camera, distance, canvas.clientWidth / canvas.clientHeight);
 
   return {
-    width: (size.x / visibleWidth) * canvas.clientWidth,
-    height: (size.y / visibleHeight) * canvas.clientHeight,
+    width: (size.x / extent.width) * canvas.clientWidth,
+    height: (size.y / extent.height) * canvas.clientHeight,
   };
 }
 

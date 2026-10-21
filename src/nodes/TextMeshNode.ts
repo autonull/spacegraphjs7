@@ -3,9 +3,9 @@ import * as THREE from 'three';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec } from '../types';
 import { DOMUtils } from '../utils/DOMUtils';
-import { Node } from './Node';
+import { Object3DNode } from './Object3DNode';
 
-export class TextMeshNode extends Node {
+export class TextMeshNode extends Object3DNode {
   static readonly typeName: string = 'TextMeshNode';
   private sprite: THREE.Sprite;
   private spriteMat: THREE.SpriteMaterial;
@@ -20,12 +20,6 @@ export class TextMeshNode extends Node {
     this._object.add(this.sprite);
 
     this.updatePosition(this.position.x, this.position.y, this.position.z);
-  }
-
-  private _object = new THREE.Object3D();
-
-  get object() {
-    return this._object;
   }
 
   updateSpec(updates: Partial<NodeSpec>): this {

@@ -285,10 +285,9 @@ export const edge = (id: string, source: string, target: string) => ({ id, sourc
 // Default export
 export { SpaceGraph as default } from './SpaceGraph';
 
-// Type augmentation for global ease access
+// Type augmentation for global access
 declare global {
   interface Window {
-    ease: typeof import('./utils/math').ease;
     SpaceGraph: typeof import('./SpaceGraph').SpaceGraph;
   }
 }

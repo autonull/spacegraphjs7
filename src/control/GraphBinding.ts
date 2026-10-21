@@ -36,6 +36,57 @@ export interface GraphBindingOptions<TTheme = unknown> {
   onError?: (error: unknown) => void;
 }
 
+/**
+ * The props a framework binding takes. The framework owns the lifecycle; the binding owns the
+ * renderer. Each framework adds its own container props — `className` against `class`, the style
+ * type — so those stay out of here.
+ */
+export interface GraphViewPropsBase<
+  TTheme = unknown,
+  TRenderer extends BindingRenderer<TTheme> = BindingRenderer<TTheme>,
+  TModel extends ControlModel = ControlModel,
+> {
+  createRenderer: () => TRenderer;
+  model: TModel;
+  theme: TTheme;
+  projection?: ControlProjection;
+  selection?: readonly string[];
+  bands?: GraphControllerOptions['bands'];
+  trailMaxDepth?: number;
+  onReady?: (renderer: TRenderer) => void;
+  onChange?: (snapshot: ControlSnapshot) => void;
+  onError?: (error: unknown) => void;
+}
+
+/**
+ * The binding options for a set of binding props. The renderer the factory builds is handed to
+ * `onReady` once the binding mounts.
+ */
+export function bindingOptionsFrom<
+  TTheme,
+  TRenderer extends BindingRenderer<TTheme>,
+  TModel extends ControlModel,
+>(props: GraphViewPropsBase<TTheme, TRenderer, TModel>): GraphBindingOptions<TTheme> {
+  let renderer: TRenderer | undefined;
+  return {
+    createRenderer: () => {
+      renderer = props.createRenderer();
+      return renderer;
+    },
+    theme: props.theme,
+    model: props.model,
+    projection: props.projection,
+    selection: props.selection,
+    bands: props.bands,
+    trailMaxDepth: props.trailMaxDepth,
+    onReady: () => {
+      if (renderer) props.onReady?.(renderer);
+    },
+    onChange: props.onChange,
+    onError: props.onError,
+  };
+}
+
 const EMPTY_MODEL: ControlModel = { nodes: [], edges: [] };
 
 // One binding owns one container: `mount` creates the renderer and binds the controller, the setters

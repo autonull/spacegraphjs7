@@ -14,9 +14,7 @@ export class TreeLayout extends BaseLayout<TreeLayoutOptions> {
   readonly version = '1.0.0';
 
   /** The tree owns every node: it places the pinned ones too. */
-  protected override ownedNodes(): Node[] {
-    return Array.from(this.graph.getNodes());
-  }
+  protected override readonly ownsEveryNode = true;
 
   protected place(nodes: Node[], config: TreeLayoutOptions): void {
     const children = new Map<string, Node[]>();

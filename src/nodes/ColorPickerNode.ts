@@ -28,10 +28,7 @@ export class ColorPickerNode extends HtmlNode {
     const color = (data?.color as string) ?? '#4ecdc4';
 
     const wrapper = this.domElement;
-    wrapper.style.display = 'flex';
-    wrapper.style.flexDirection = 'column';
-    wrapper.style.gap = '8px';
-    wrapper.style.padding = '12px';
+    Object.assign(wrapper.style, HtmlNode.CONTROL_WRAPPER_STYLE);
 
     this.colorPreview = DOMUtils.createElement('div');
     Object.assign(this.colorPreview.style, {

@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import type { Node } from '../nodes/Node';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { EdgeData, EdgeSpec } from '../types';
+import { dataColor } from '../utils/color';
 import { directionBetween, perpendicularTo } from '../utils/vector';
 import { Edge } from './Edge';
 
@@ -65,10 +66,11 @@ export class BundledEdge extends Edge {
         opacity?: number;
       };
       if (data.spread !== undefined) this.spread = data.spread;
-      if (data.color !== undefined || data.opacity !== undefined) {
+      const color = dataColor(data.color);
+      if (color !== undefined || data.opacity !== undefined) {
         for (const strand of this.strands) {
           const mat = strand.material as THREE.LineBasicMaterial;
-          if (data.color) mat.color.setHex(data.color);
+          if (color) mat.color.set(color);
           if (data.opacity !== undefined) mat.opacity = data.opacity;
         }
       }

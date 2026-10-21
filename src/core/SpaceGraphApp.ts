@@ -12,6 +12,7 @@ import {
   updateStatsHUD,
 } from './SpaceGraphAppHUD';
 import { setupHotkeys, setupInteractionHandlers } from './SpaceGraphAppInteraction';
+import { selectionChanged } from './Selection';
 import { setTheme, setupDefaultHUD } from './SpaceGraphAppTheme';
 
 export interface SpaceGraphAppOptions {
@@ -63,7 +64,6 @@ export class SpaceGraphApp {
   public toolbarActions: AppButtonConfig[] = [];
   public _zoomSliderHandler?: () => void;
   private originalColors = new Map<Node | Edge, number>();
-  private originalEdgeColors = new Map<Node | Edge, number>();
 
   private constructor(sg: SpaceGraph, options: SpaceGraphAppOptions) {
     this.sg = sg;
@@ -137,15 +137,16 @@ export class SpaceGraphApp {
   }
 
   public clearSelectionStyles() {
-    for (const node of this.currentSelected) this._clearNodeStyle(node);
+    for (const node of this.currentSelected) this._clearStyle(node);
+    for (const edge of this.currentSelectedEdges) this._clearStyle(edge);
     this.originalColors.clear();
-    for (const edge of this.currentSelectedEdges) this._clearEdgeStyle(edge);
-    this.originalEdgeColors.clear();
   }
 
   public applySelectionStyles() {
-    for (const node of this.currentSelected) this._applyNodeStyle(node);
-    for (const edge of this.currentSelectedEdges) this._applyEdgeStyle(edge);
+    for (const node of this.currentSelected)
+      this._applyStyle(node, this.options.selectionHighlightColor);
+    for (const edge of this.currentSelectedEdges)
+      this._applyStyle(edge, this.options.selectionHighlightEdgeColor);
   }
 
   public addToolbarAction(config: AppButtonConfig) {
@@ -255,52 +256,42 @@ export class SpaceGraphApp {
   }
 
   private _emitSelectionChanged(): void {
-    this.sg.events.emit('selection:changed', {
-      nodes: [...this.currentSelected].map((n) => n.id),
-      edges: [...this.currentSelectedEdges].map((e) => e.id),
-      timestamp: Date.now(),
-    });
+    this.sg.events.emit(
+      'selection:changed',
+      selectionChanged(
+        [...this.currentSelected].map((node) => node.id),
+        [...this.currentSelectedEdges].map((edge) => edge.id)
+      )
+    );
   }
 
-  private _clearNodeStyle(node: Node): void {
-    if ((node as any).isHtmlNode && this.options.selectionHighlightClass) {
-      (node as any).domElement.classList.remove(this.options.selectionHighlightClass);
+  private _clearStyle(surface: Node | Edge): void {
+    if ((surface as any).isHtmlNode && this.options.selectionHighlightClass) {
+      (surface as any).domElement.classList.remove(this.options.selectionHighlightClass);
       return;
     }
-    this._restoreColor(node, this.originalColors);
+    this._restoreColor(surface);
   }
 
-  private _applyNodeStyle(node: Node): void {
-    if ((node as any).isHtmlNode && this.options.selectionHighlightClass) {
-      (node as any).domElement.classList.add(this.options.selectionHighlightClass);
+  private _applyStyle(surface: Node | Edge, color: number | undefined): void {
+    if ((surface as any).isHtmlNode && this.options.selectionHighlightClass) {
+      (surface as any).domElement.classList.add(this.options.selectionHighlightClass);
       return;
     }
-    this._highlightColor(node, this.originalColors, this.options.selectionHighlightColor);
-  }
-
-  private _clearEdgeStyle(edge: Edge): void {
-    this._restoreColor(edge, this.originalEdgeColors);
-  }
-
-  private _applyEdgeStyle(edge: Edge): void {
-    this._highlightColor(edge, this.originalEdgeColors, this.options.selectionHighlightEdgeColor);
+    this._highlightColor(surface, color);
   }
 
   /** Remember a surface's own colour, then paint it with the highlight colour. */
-  private _highlightColor(
-    surface: Node | Edge,
-    originals: Map<Node | Edge, number>,
-    color: number | undefined
-  ): void {
+  private _highlightColor(surface: Node | Edge, color: number | undefined): void {
     if (!color || surface.data?.color === undefined) return;
-    originals.set(surface, surface.data.color as number);
+    this.originalColors.set(surface, surface.data.color as number);
     surface.updateSpec({ data: { color } });
   }
 
   /** Put a surface's own colour back. */
-  private _restoreColor(surface: Node | Edge, originals: Map<Node | Edge, number>): void {
-    if (!originals.has(surface)) return;
-    surface.updateSpec({ data: { color: originals.get(surface) } });
+  private _restoreColor(surface: Node | Edge): void {
+    if (!this.originalColors.has(surface)) return;
+    surface.updateSpec({ data: { color: this.originalColors.get(surface) } });
   }
 }
 

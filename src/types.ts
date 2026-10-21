@@ -338,7 +338,7 @@ export interface SpaceGraphEvents {
   'edge:removed': any;
   'edge:updated': any;
   'graph:cleared': any;
-  'selection:changed': any;
+  'selection:changed': SelectionChangedPayload;
   'node:selection-changed': any;
   'node:click': any;
   'edge:click': any;
@@ -349,6 +349,20 @@ export interface SpaceGraphEvents {
   'zoomband:change': { band: string; normalized: number; zoom: number; label?: string; timestamp: number };
   'projection:change': { projection: Projection };
   'depth:change': { depth: DepthMode; previous: DepthMode };
+}
+
+/**
+ * The payload of a `selection:changed` event. The ids are the selection; the node and edge sets
+ * split it, so a consumer can count either without walking the ids.
+ */
+export interface SelectionChangedPayload {
+  /** Every selected id, nodes and edges together. */
+  ids: string[];
+  /** The ids of the selected nodes. */
+  nodes: Set<string>;
+  /** The ids of the selected edges. */
+  edges: Set<string>;
+  timestamp: number;
 }
 
 // Orthographic is the legibility baseline for 2D hosts; perspective stays the 3D experiment.

@@ -6,7 +6,11 @@ import { InstancedNodeRenderer } from '../rendering/InstancedNodeRenderer';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { CameraViewport, CardFacing, Projection, RenderOptions } from '../types';
 import { parseColor } from '../utils/color';
-import { visibleHeightAtDistance } from '../utils/CameraUtils';
+import {
+  fitOrthoFrustum,
+  setOrthoFrustum,
+  visibleWorldExtent,
+} from '../utils/CameraUtils';
 import { declutterLabels, type LabelRect } from '../utils/labelDeclutter';
 import { RenderContext } from './RenderContext';
 import { clamp, denormalizeZoom, normalizeZoom, type ZoomRange } from './zoom';
@@ -68,7 +72,7 @@ export class WebGLRenderer {
     this.orthographicCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, NEAR, ORTHO_FAR);
     this.orthographicCamera.position.copy(this.perspectiveCamera.position);
     this._projection = options.projection ?? 'perspective';
-    this.#fitOrthoFrustum(DEFAULT_DISTANCE, aspect);
+    this.#fitOrthographicFrustum(DEFAULT_DISTANCE, aspect);
 
     this.renderer = new THREE.WebGLRenderer({
       antialias: options.antialias ?? true,
@@ -130,7 +134,10 @@ export class WebGLRenderer {
         ? this.perspectiveCamera.position.distanceTo(target)
         : this.perspectiveCamera.position.length();
       this.orthographicCamera.zoom = 1;
-      this.#fitOrthoFrustum(distance, this.container.clientWidth / (this.container.clientHeight || 1));
+      this.#fitOrthographicFrustum(
+        distance,
+        this.container.clientWidth / (this.container.clientHeight || 1)
+      );
     }
     this.renderContext?.setCamera(to);
     this.syncSize();
@@ -177,19 +184,14 @@ export class WebGLRenderer {
 
   /** Visible world width/height in the camera's XY plane, for host-side minimaps. */
   getWorldExtent(): { width: number; height: number } {
+    if (this._projection === 'orthographic') {
+      return visibleWorldExtent(this.orthographicCamera, 0);
+    }
     const el = this.renderer.domElement;
     const aspect = (el.clientWidth || 1) / (el.clientHeight || 1);
-    if (this._projection === 'orthographic') {
-      const cam = this.orthographicCamera;
-      return {
-        width: (cam.right - cam.left) / cam.zoom,
-        height: (cam.top - cam.bottom) / cam.zoom,
-      };
-    }
     const cam = this.perspectiveCamera;
     const dist = this.sg.cameraControls?.spherical.radius ?? cam.position.length();
-    const height = visibleHeightAtDistance(cam.fov, dist);
-    return { width: height * aspect, height };
+    return visibleWorldExtent(cam, dist, aspect);
   }
 
   /** LE.14: exponential depth attenuation toward the theme background; `density <= 0` clears the fog. */
@@ -344,14 +346,13 @@ export class WebGLRenderer {
     container.appendChild(layer.domElement);
   }
 
-  #fitOrthoFrustum(distance: number, aspect: number): void {
-    const height = visibleHeightAtDistance(FOV, Math.max(distance, 1e-3));
-    const width = height * (aspect || 1);
-    this.orthographicCamera.left = -width / 2;
-    this.orthographicCamera.right = width / 2;
-    this.orthographicCamera.top = height / 2;
-    this.orthographicCamera.bottom = -height / 2;
-    this.orthographicCamera.updateProjectionMatrix();
+  #fitOrthographicFrustum(distance: number, aspect: number): void {
+    fitOrthoFrustum(
+      this.orthographicCamera,
+      this.perspectiveCamera.fov,
+      Math.max(distance, 1e-3),
+      aspect
+    );
   }
 
   /**
@@ -367,10 +368,7 @@ export class WebGLRenderer {
     const aspect = w / (h || 1);
     if (this._projection === 'orthographic') {
       const height = this.orthographicCamera.top - this.orthographicCamera.bottom || 1;
-      const width = height * aspect;
-      this.orthographicCamera.left = -width / 2;
-      this.orthographicCamera.right = width / 2;
-      this.orthographicCamera.updateProjectionMatrix();
+      setOrthoFrustum(this.orthographicCamera, height, aspect);
     } else {
       this.perspectiveCamera.aspect = aspect;
       this.perspectiveCamera.updateProjectionMatrix();

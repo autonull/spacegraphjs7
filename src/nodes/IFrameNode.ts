@@ -40,7 +40,10 @@ export class IFrameNode extends BaseContentNode {
     if (updates.data?.src) this.navigate(updates.data.src as string);
 
     if (updates.data?.width || updates.data?.height) {
-      this.applySize(this.dimension(updates, 'width', 480), this.dimension(updates, 'height', 320));
+      this.applySize(
+        this.dimension(updates.data, 'width', 480),
+        this.dimension(updates.data, 'height', 320)
+      );
     }
     return this;
   }

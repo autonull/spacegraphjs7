@@ -1,5 +1,7 @@
 import type { EdgeDefinition, NodeDefinition, StylesheetJson } from 'cytoscape';
 import {
+  edgeStyleFor,
+  isCardShape,
   normalizeHexColor,
   statusColor,
   THEME_COLOR_ROLES,
@@ -14,10 +16,6 @@ import {
 
 export { statusColor };
 
-export function isCard(shape: RenderNode['shape']): boolean {
-  return shape === 'card' || shape === 'panel';
-}
-
 /** Cytoscape rejects 8-digit hex while host theme tokens are often `#rrggbbaa`, so normalize every color. */
 export function normalizeTheme(theme: RenderTheme): RenderTheme {
   const normalized: RenderTheme = { ...theme };
@@ -29,13 +27,13 @@ export function normalizeTheme(theme: RenderTheme): RenderTheme {
 
 function nodeSize(node: RenderNode): [number, number] {
   const [width, height] = node.size ?? [];
-  if (isCard(node.shape)) return [width ?? 200, height ?? 64];
+  if (isCardShape(node.shape)) return [width ?? 200, height ?? 64];
   if (node.shape === 'dot') return [width ?? 16, height ?? 16];
   return [width ?? 32, height ?? 20];
 }
 
 function nodeClass(node: RenderNode): string {
-  if (isCard(node.shape)) return 'card';
+  if (isCardShape(node.shape)) return 'card';
   return node.shape === 'dot' ? 'dot' : 'badge';
 }
 
@@ -59,17 +57,17 @@ export function nodeElement(node: RenderNode, theme: RenderTheme): NodeDefinitio
 }
 
 export function edgeElement(edge: RenderEdge, theme: RenderTheme): EdgeDefinition {
-  const inferred = edge.confidence === 'inferred';
+  const style = edgeStyleFor(edge, theme);
   return {
     group: 'edges',
-    classes: [inferred ? 'inferred' : 'explicit', edge.directed ? 'directed' : 'undirected', edge.style ?? 'solid'],
+    classes: [style.inferred ? 'inferred' : 'explicit', edge.directed ? 'directed' : 'undirected', edge.style ?? 'solid'],
     data: {
       id: edge.id,
       source: edge.source,
       target: edge.target,
       label: edge.label ?? '',
-      color: inferred ? theme.edgeMuted : theme.edge,
-      width: inferred ? 1 : 2,
+      color: style.color,
+      width: style.width,
       confidence: edge.confidence ?? 'explicit',
     },
   };

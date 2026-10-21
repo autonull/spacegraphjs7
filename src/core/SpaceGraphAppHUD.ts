@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import { searchBy } from '../navigation/search';
-import { focusRadiusOf } from '../utils/CameraUtils';
+import { focusNodeCamera } from '../utils/CameraUtils';
 import { DOMUtils } from '../utils/DOMUtils';
+import { selectionChanged } from './Selection';
 import type { AppButtonConfig, SpaceGraphApp } from './SpaceGraphApp';
 
 const SECONDARY_TEXT_COLOR = '#94a3b8';
@@ -368,11 +369,7 @@ export function setupSearchHUD(app: SpaceGraphApp, theme: any) {
     const query = (e.target as HTMLInputElement).value.toLowerCase();
     if (!query) {
       app.clearSelectionStyles();
-      app.sg.events.emit('selection:changed', {
-        nodes: [],
-        edges: [],
-        timestamp: Date.now(),
-      });
+      app.sg.events.emit('selection:changed', selectionChanged([]));
       return;
     }
 
@@ -387,15 +384,13 @@ export function setupSearchHUD(app: SpaceGraphApp, theme: any) {
 
     app.clearSelectionStyles();
     app.applySelectionStyles();
-    app.sg.events.emit('selection:changed', {
-      nodes: matches.map((n) => n.id),
-      edges: [],
-      timestamp: Date.now(),
-    });
+    app.sg.events.emit(
+      'selection:changed',
+      selectionChanged(matches.map((match) => match.id))
+    );
 
     if (matches.length === 1 && app.sg.cameraControls) {
-      const node = matches[0];
-      app.sg.cameraControls.flyTo(node.position.clone(), focusRadiusOf(node));
+      focusNodeCamera(app.sg.cameraControls, matches[0]);
     }
   });
 

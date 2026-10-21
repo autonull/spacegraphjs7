@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import type { Node } from '../../nodes/Node';
 import type { InteractionRaycaster } from '../../plugins/interaction/RaycasterHelper';
 import type { SelectionManager } from '../../plugins/interaction/SelectionManager';
 import type { SpaceGraph } from '../../SpaceGraph';
@@ -36,10 +37,7 @@ export class BoxSelectingFingering extends BaseFingering {
     this.selectionManager.updateBoxSelection(finger.position.x, finger.position.y);
 
     const frustum = this.computeSelectionFrustum(this.startNDC, this.currentNDC);
-    const selected = Array.from(this.sg.graph.nodes.values()).filter(
-      (n) => n.bounds3D && frustum.containsPoint(n.position)
-    );
-    this.sg.events.emit('selection:preview', { nodes: selected });
+    this.sg.events.emit('selection:preview', { nodes: this.nodesInFrustum(frustum) });
 
     return true;
   }
@@ -48,9 +46,7 @@ export class BoxSelectingFingering extends BaseFingering {
     if (!this.active) return;
 
     const frustum = this.computeSelectionFrustum(this.startNDC, this.currentNDC);
-    const selected = Array.from(this.sg.graph.nodes.values()).filter(
-      (n) => n.bounds3D && frustum.containsPoint(n.position)
-    );
+    const selected = this.nodesInFrustum(frustum);
 
     this.selectionManager.endBoxSelection();
     this.sg.events.emit('selection:change', { nodes: selected });
@@ -60,6 +56,12 @@ export class BoxSelectingFingering extends BaseFingering {
 
   defer(_finger: Finger): boolean {
     return false;
+  }
+
+  private nodesInFrustum(frustum: THREE.Frustum): Node[] {
+    return Array.from(this.sg.graph.nodes.values()).filter(
+      (node) => node.bounds3D && frustum.containsPoint(node.position)
+    );
   }
 
   private computeSelectionFrustum(start: THREE.Vector2, end: THREE.Vector2): THREE.Frustum {

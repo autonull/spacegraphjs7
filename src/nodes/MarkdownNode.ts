@@ -66,12 +66,7 @@ export class MarkdownNode extends BaseContentNode {
       ro.observe(this.domElement);
       this._ro = ro;
     } else {
-      setTimeout(() => {
-        const actualHeight = this.domElement.offsetHeight ?? h;
-        if (actualHeight !== h && actualHeight > 0) {
-          this.updateBackingGeometry(w, actualHeight);
-        }
-      }, 50);
+      this._syncGeometryToContent(h);
     }
   }
 
@@ -112,13 +107,12 @@ export class MarkdownNode extends BaseContentNode {
 
   // Always trigger geometry update after markdown content changes
   // This ensures the backing geometry is updated whether or not ResizeObserver is available
-  private _syncGeometryToContent(): void {
+  private _syncGeometryToContent(unchangedHeight?: number): void {
     setTimeout(() => {
       const actualHeight = this.domElement.offsetHeight;
-      if (actualHeight > 0) {
-        const w = (this.data?.width as number) ?? 300;
-        this.updateBackingGeometry(w, actualHeight);
-      }
+      if (actualHeight <= 0) return;
+      if (actualHeight === unchangedHeight) return;
+      this.updateBackingGeometry((this.data?.width as number) ?? 300, actualHeight);
     }, 50);
   }
 

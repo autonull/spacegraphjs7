@@ -3,23 +3,16 @@
 // `GraphBinding`. It is written without JSX so the same source runs under the headless vitest suite.
 
 import { createElement, useEffect, useRef, type CSSProperties, type ReactElement } from 'react';
-import type { GraphRenderer, Projection, RenderModel, RenderTheme } from '@spacegraphjs/renderer';
-import { GraphBinding, type ControlSnapshot, type GraphControllerOptions } from 'spacegraphjs/control';
+import type { GraphRenderer, RenderModel, RenderTheme } from '@spacegraphjs/renderer';
+import {
+  bindingOptionsFrom,
+  GraphBinding,
+  type GraphViewPropsBase,
+} from 'spacegraphjs/control';
 
-export interface GraphViewProps {
-  /** Builds an unmounted contract renderer. Called once per mount; the binding owns its lifecycle. */
-  createRenderer: () => GraphRenderer;
-  model: RenderModel;
-  theme: RenderTheme;
-  projection?: Projection;
-  selection?: readonly string[];
-  bands?: GraphControllerOptions['bands'];
-  trailMaxDepth?: number;
+export interface GraphViewProps extends GraphViewPropsBase<RenderTheme, GraphRenderer, RenderModel> {
   className?: string;
   style?: CSSProperties;
-  onReady?: (renderer: GraphRenderer) => void;
-  onChange?: (snapshot: ControlSnapshot) => void;
-  onError?: (error: unknown) => void;
 }
 
 export const GraphView = (props: GraphViewProps): ReactElement => {
@@ -31,24 +24,7 @@ export const GraphView = (props: GraphViewProps): ReactElement => {
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
-    let renderer: GraphRenderer | undefined;
-    const binding = new GraphBinding<RenderTheme>({
-      createRenderer: () => {
-        renderer = props.createRenderer();
-        return renderer;
-      },
-      theme: props.theme,
-      model: props.model,
-      projection: props.projection,
-      selection: props.selection,
-      bands: props.bands,
-      trailMaxDepth: props.trailMaxDepth,
-      onReady: () => {
-        if (renderer) props.onReady?.(renderer);
-      },
-      onChange: props.onChange,
-      onError: props.onError,
-    });
+    const binding = new GraphBinding<RenderTheme>(bindingOptionsFrom(props));
     bindingRef.current = binding;
     void binding.mount(container);
     return () => {

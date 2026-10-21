@@ -5,7 +5,7 @@ import type { SpaceGraph } from '../SpaceGraph';
 import type { EdgeData, EdgeSpec, LabelLodLevel } from '../types';
 import { DOMUtils } from '../utils/DOMUtils';
 import { midpoint } from '../utils/vector';
-import { Edge } from './Edge';
+import { Edge, withEdgeData } from './Edge';
 
 /**
  * LabeledEdge — Straight edge with a mid-point text label rendered via CSS2D.
@@ -26,7 +26,7 @@ export class LabeledEdge extends Edge {
   private ready = false;
 
   constructor(sg: SpaceGraph | undefined, spec: EdgeSpec, source: Node, target: Node) {
-    super(sg, { ...spec, data: { color: 0x888888, ...spec.data } }, source, target);
+    super(sg, withEdgeData(spec, { color: 0x888888 }), source, target);
 
     const data = spec.data as EdgeData & {
       labelColor?: string;

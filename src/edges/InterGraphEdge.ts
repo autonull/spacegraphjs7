@@ -3,7 +3,7 @@ import type { Node } from '../nodes/Node';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { EdgeData, EdgeSpec } from '../types';
 import { DOMUtils } from '../utils/DOMUtils';
-import { toCssColor } from '../utils/color';
+import { dataColor, toCssColor } from '../utils/color';
 import { worldToClient } from '../utils/projection';
 import { Edge } from './Edge';
 
@@ -43,9 +43,8 @@ export class InterGraphEdge extends Edge {
 
   updateSpec(updates: Partial<EdgeSpec>): this {
     super.updateSpec(updates);
-    if (updates.data?.color) {
-      this.svgLine.setAttribute('stroke', toCssColor(updates.data.color as number | string));
-    }
+    const color = dataColor(updates.data?.color);
+    if (color) this.svgLine.setAttribute('stroke', color);
     return this;
   }
 

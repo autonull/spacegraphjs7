@@ -55,4 +55,11 @@ export abstract class BaseContentNode extends DOMNode {
       this.updatePosition(this.position.x, this.position.y, this.position.z);
     }
   }
+
+  /** Copy a new label onto the node's title bar. */
+  protected syncTitleLabel(updates: Partial<NodeSpec>): void {
+    if (updates.label !== undefined && this.titleElement) {
+      this.titleElement.textContent = updates.label;
+    }
+  }
 }

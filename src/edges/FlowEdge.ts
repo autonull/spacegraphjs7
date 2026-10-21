@@ -1,7 +1,7 @@
 import type { Node } from '../nodes/Node';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { EdgeData, EdgeSpec } from '../types';
-import { Edge } from './Edge';
+import { Edge, withEdgeData } from './Edge';
 
 /**
  * FlowEdge — A dashed line whose dashes march along the edge.
@@ -29,18 +29,14 @@ export class FlowEdge extends Edge {
 
     super(
       sg,
-      {
-        ...spec,
-        data: {
-          dashed: true,
-          dashSize: 5,
-          gapSize: 5,
-          color: 0x00ff00,
-          thickness: data?.lineWidth ?? 2,
-          opacity,
-          ...spec.data,
-        },
-      },
+      withEdgeData(spec, {
+        dashed: true,
+        dashSize: 5,
+        gapSize: 5,
+        color: 0x00ff00,
+        thickness: data?.lineWidth ?? 2,
+        opacity,
+      }),
       source,
       target
     );

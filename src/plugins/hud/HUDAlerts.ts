@@ -1,7 +1,7 @@
 import { DOMUtils } from '../../utils';
 import type { SpaceGraph } from '../../SpaceGraph';
 import { HUDDOMFactory } from './HUDDOMFactory';
-import { HUD_COLORS, HUD_STYLES, HUD_ZINDEX } from './HUDStyles';
+import { HUD_ANIMATIONS, HUD_COLORS, HUD_STYLES, HUD_ZINDEX } from './HUDStyles';
 
 export type AlertVariant = 'info' | 'success' | 'warning' | 'error';
 
@@ -85,11 +85,3 @@ export class HUDAlerts {
     this.alertsContainer = null;
   }
 }
-
-const HUD_ANIMATIONS = {
-  fadeIn: {
-    opacity: '0',
-    transform: 'translateY(-8px)',
-    transition: 'opacity 0.2s ease, transform 0.2s ease',
-  },
-} as const;

@@ -13,4 +13,10 @@ export {
   type GraphControllerOptions,
 } from './GraphController';
 export type { TrailNode, ZoomBand, ZoomBandChange, ZoomBandsConfig } from './GraphController';
-export { GraphBinding, type BindingRenderer, type GraphBindingOptions } from './GraphBinding';
+export {
+  bindingOptionsFrom,
+  GraphBinding,
+  type BindingRenderer,
+  type GraphBindingOptions,
+  type GraphViewPropsBase,
+} from './GraphBinding';

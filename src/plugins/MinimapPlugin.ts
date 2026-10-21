@@ -4,7 +4,7 @@ import type { EventSystem } from '../core/events/EventSystem';
 import type { Graph } from '../core/Graph';
 import type { SpaceGraph } from '../SpaceGraph';
 import { DOMUtils } from '../utils/DOMUtils';
-import { visibleHeightAtDistance } from '../utils/CameraUtils';
+import { visibleWorldExtent } from '../utils/CameraUtils';
 import { BaseSystemPlugin } from './BaseSystemPlugin';
 
 /**
@@ -267,15 +267,9 @@ export class MinimapPlugin extends BaseSystemPlugin {
     const camera = this.sg.renderer.camera;
     const target = this.sg.cameraControls.target;
     if ((camera as THREE.OrthographicCamera).isOrthographicCamera) {
-      const ortho = camera as THREE.OrthographicCamera;
-      return {
-        width: (ortho.right - ortho.left) / ortho.zoom,
-        height: (ortho.top - ortho.bottom) / ortho.zoom,
-      };
+      return visibleWorldExtent(camera, 0);
     }
     const perspective = camera as THREE.PerspectiveCamera;
-    const dist = perspective.position.distanceTo(target);
-    const height = visibleHeightAtDistance(perspective.fov, dist);
-    return { width: height * perspective.aspect, height };
+    return visibleWorldExtent(perspective, perspective.position.distanceTo(target));
   }
 }

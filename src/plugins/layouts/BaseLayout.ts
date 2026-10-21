@@ -30,6 +30,12 @@ export abstract class BaseLayout<
 > extends BaseSystemPlugin {
   protected config: Options;
 
+  /**
+   * A layout that owns the whole graph takes every node, pinned ones included. A tree, a
+   * simulation, a radial tree: they place the pinned nodes too.
+   */
+  protected readonly ownsEveryNode: boolean = false;
+
   constructor(config: Partial<Options> = {}) {
     super();
     this.config = { ...this.defaultConfig(), ...config } as Options;
@@ -59,7 +65,7 @@ export abstract class BaseLayout<
    * overrides this and takes every node.
    */
   protected ownedNodes(config: Options): Node[] {
-    return this.selectNodes(config.skipPinned ?? true);
+    return this.selectNodes(this.ownsEveryNode ? false : (config.skipPinned ?? true));
   }
 
   /** Where the layout puts its nodes. */

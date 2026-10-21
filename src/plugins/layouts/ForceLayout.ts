@@ -37,9 +37,7 @@ export class ForceLayout extends BaseLayout<ForceLayoutConfig> {
   }
 
   /** The simulation owns every node: it reads the pinned ones but never moves them. */
-  protected override ownedNodes(): Node[] {
-    return Array.from(this.graph.getNodes());
-  }
+  protected override readonly ownsEveryNode = true;
 
   protected place(nodes: Node[], _config: ForceLayoutConfig): void {
     this.velocities.clear();

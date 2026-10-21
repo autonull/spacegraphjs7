@@ -1,4 +1,5 @@
 import {
+  BaseGraphRenderer,
   CONTRACT_VERSION,
   type CardFacing,
   type DepthMode,
@@ -6,12 +7,10 @@ import {
   type GraphRenderer,
   type Projection,
   type RendererCapabilities,
-  type RendererEventMap,
   type RendererViewport,
   type RenderModel,
   type RenderTheme,
   type Unsubscribe,
-  RendererEventBus,
 } from '@spacegraphjs/renderer';
 import type { GraphSpec, SpaceGraph } from 'spacegraphjs/activity';
 import { edgeSpec, nodeSpec, spaceGraphTheme } from './mapping';
@@ -38,11 +37,9 @@ const CAPABILITIES: RendererCapabilities = {
   fitInsets: true,
 };
 
-type Handler<K extends keyof RendererEventMap> = (payload: RendererEventMap[K]) => void;
-
 // Wraps the lean SpaceGraphJS core behind the dependency-free contract. It is the only package that
 // imports both the core and the contract; the core never imports the contract.
-export class SpaceGraphRenderer implements GraphRenderer {
+export class SpaceGraphRenderer extends BaseGraphRenderer implements GraphRenderer {
   readonly capabilities = CAPABILITIES;
 
   #sg: SpaceGraph | null = null;
@@ -51,9 +48,7 @@ export class SpaceGraphRenderer implements GraphRenderer {
   #nodes = new Set<string>();
   #edges = new Set<string>();
   #nodeTypes = new Map<string, string>();
-  #events = new RendererEventBus();
   #disposers: Unsubscribe[] = [];
-  #applyingSelection = false;
   #band: string | undefined;
 
   async mount(
@@ -80,7 +75,7 @@ export class SpaceGraphRenderer implements GraphRenderer {
     this.#bind();
     this.#applyDepth(options.projection === '2d' ? 'flat' : 'orbit');
     if (this.#model) this.setModel(this.#model);
-    this.#emit('ready', undefined);
+    this.emit('ready', undefined);
   }
 
   setModel(model: RenderModel): void {
@@ -158,13 +153,10 @@ export class SpaceGraphRenderer implements GraphRenderer {
   setSelection(ids: readonly string[]): void {
     const sg = this.#sg;
     if (!sg) return;
-    this.#applyingSelection = true;
-    try {
+    this.applySelection(ids, () => {
       if (ids.length === 0) sg.clearSelection();
       else sg.select([...ids]);
-    } finally {
-      this.#applyingSelection = false;
-    }
+    });
   }
 
   setViewport(viewport: RendererViewport): void {
@@ -215,14 +207,10 @@ export class SpaceGraphRenderer implements GraphRenderer {
     this.#sg?.render();
   }
 
-  on<K extends keyof RendererEventMap>(event: K, handler: Handler<K>): Unsubscribe {
-    return this.#events.on(event, handler);
-  }
-
   dispose(): void {
     for (const off of this.#disposers) off();
     this.#disposers = [];
-    this.#events.clear();
+    this.events.clear();
     this.#sg?.dispose();
     this.#sg = null;
     this.#nodes.clear();
@@ -236,19 +224,19 @@ export class SpaceGraphRenderer implements GraphRenderer {
       sg.events.on(type, handler);
       this.#disposers.push(() => sg.events.off(type, handler));
     };
-    on('node:click', (payload) => this.#emit('nodeClick', { id: idOf(payload) }));
-    on('edge:click', (payload) => this.#emit('edgeClick', { id: idOf(payload) }));
-    on('background:click', () => this.#emit('backgroundClick', undefined));
-    on('node:dblclick', (payload) => this.#emit('nodeDoubleClick', { id: idOf(payload) }));
+    on('node:click', (payload) => this.emit('nodeClick', { id: idOf(payload) }));
+    on('edge:click', (payload) => this.emit('edgeClick', { id: idOf(payload) }));
+    on('background:click', () => this.emit('backgroundClick', undefined));
+    on('node:dblclick', (payload) => this.emit('nodeDoubleClick', { id: idOf(payload) }));
     on('selection:changed', (payload) => {
-      if (this.#applyingSelection) return;
-      this.#emit('selectionChange', { ids: idsOf(payload) });
+      if (this.applyingSelection) return;
+      this.emit('selectionChange', { ids: idsOf(payload) });
     });
     on('camera:change', (payload) => this.#emitViewport(payload as RendererViewport));
   }
 
   #emitViewport(viewport: RendererViewport): void {
-    this.#emit('viewportChange', {
+    this.emit('viewportChange', {
       zoom: viewport.zoom,
       center: viewport.center,
       extent: viewport.extent,
@@ -256,12 +244,8 @@ export class SpaceGraphRenderer implements GraphRenderer {
     });
     if (viewport.band && viewport.band !== this.#band) {
       this.#band = viewport.band;
-      this.#emit('bandChange', { band: viewport.band, zoom: viewport.zoom });
+      this.emit('bandChange', { band: viewport.band, zoom: viewport.zoom });
     }
-  }
-
-  #emit<K extends keyof RendererEventMap>(event: K, payload: RendererEventMap[K]): void {
-    this.#events.emit(event, payload);
   }
 }
 

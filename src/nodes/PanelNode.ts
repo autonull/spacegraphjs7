@@ -109,8 +109,8 @@ export class PanelNode extends HtmlNode {
       if (dir?.includes('s')) newHeight -= dy;
       if (dir?.includes('n')) newHeight += dy;
 
-      newWidth = Math.max(80, newWidth);
-      newHeight = Math.max(40, newHeight);
+      newWidth = Math.max(HtmlNode.MIN_SIZE.width, newWidth);
+      newHeight = Math.max(HtmlNode.MIN_SIZE.height, newHeight);
       this.setSize(newWidth, newHeight);
     }
   }

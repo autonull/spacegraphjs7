@@ -28,6 +28,68 @@ export function focusRadiusOf(node: { data?: { width?: unknown } }, floor = 150)
   return typeof width === 'number' ? Math.max(width * 1.5, floor) : floor;
 }
 
+/**
+ * Set an orthographic camera's frustum to a world height and an aspect, centred on the origin.
+ */
+export function setOrthoFrustum(
+  camera: THREE.OrthographicCamera,
+  height: number,
+  aspect: number
+): void {
+  const width = height * (aspect || 1);
+  camera.left = -width / 2;
+  camera.right = width / 2;
+  camera.top = height / 2;
+  camera.bottom = -height / 2;
+  camera.updateProjectionMatrix();
+}
+
+/**
+ * Fit an orthographic camera's frustum to the view a perspective camera has at a distance, so
+ * the orthographic frame shows what the perspective frame shows.
+ */
+export function fitOrthoFrustum(
+  camera: THREE.OrthographicCamera,
+  fovDegrees: number,
+  distance: number,
+  aspect: number
+): void {
+  setOrthoFrustum(camera, visibleHeightAtDistance(fovDegrees, distance), aspect);
+}
+
+/**
+ * The world width and height a camera sees. The distance is the caller's own: the orbit radius,
+ * the distance to the orbit target, the distance to a node — they differ, and the caller knows
+ * which one it means. The aspect is the camera's own unless the caller measures a different one.
+ */
+export function visibleWorldExtent(
+  camera: THREE.Camera,
+  distance: number,
+  aspect?: number
+): { width: number; height: number } {
+  const ortho = camera as THREE.OrthographicCamera;
+  if (ortho.isOrthographicCamera) {
+    return {
+      width: (ortho.right - ortho.left) / ortho.zoom,
+      height: (ortho.top - ortho.bottom) / ortho.zoom,
+    };
+  }
+  const perspective = camera as THREE.PerspectiveCamera;
+  const height = visibleHeightAtDistance(perspective.fov, distance);
+  return { width: height * (aspect ?? perspective.aspect), height };
+}
+
+/**
+ * Fly the camera to a node, framing it at the distance that keeps it readable. The camera
+ * controls clone the target, so the node's own position is not captured by the flight.
+ */
+export function focusNodeCamera(
+  cameraControls: { flyTo(target: THREE.Vector3, distance: number): void },
+  node: { position: THREE.Vector3; data?: { width?: unknown } },
+): void {
+  cameraControls.flyTo(node.position, focusRadiusOf(node));
+}
+
 export interface FitViewResult {
   center: THREE.Vector3;
   cameraZ: number;

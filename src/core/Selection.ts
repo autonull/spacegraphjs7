@@ -1,4 +1,23 @@
 import type { SpaceGraph } from '../SpaceGraph';
+import type { SelectionChangedPayload } from '../types';
+
+/**
+ * The payload of a `selection:changed` event. The ids are the selection; the node and edge sets
+ * split it, so a consumer can count either without walking the ids.
+ */
+export function selectionChanged(
+  nodeIds: Iterable<string>,
+  edgeIds: Iterable<string> = []
+): SelectionChangedPayload {
+  const nodes = [...nodeIds];
+  const edges = [...edgeIds];
+  return {
+    ids: [...nodes, ...edges],
+    nodes: new Set(nodes),
+    edges: new Set(edges),
+    timestamp: Date.now(),
+  };
+}
 
 // One selection source of truth for click, box-select, keyboard, and programmatic paths.
 // Focus and camera movement stay separate (see FocusManager and focusNode).
@@ -44,12 +63,14 @@ export class Selection {
     for (const id of nextSet) if (!this.ids.has(id)) this.applyNodeState(id, true);
     this.ids.clear();
     for (const id of nextSet) this.ids.add(id);
-    this.sg.events.emit('selection:changed', {
-      ids: this.list,
-      nodes: new Set(this.list),
-      edges: new Set<string>(),
-      timestamp: Date.now(),
-    });
+    const ids = this.list;
+    this.sg.events.emit(
+      'selection:changed',
+      selectionChanged(
+        ids.filter((id) => this.sg.graph.nodes.has(id)),
+        ids.filter((id) => this.sg.graph.edges.has(id))
+      )
+    );
   }
 
   private applyNodeState(id: string, selected: boolean): void {

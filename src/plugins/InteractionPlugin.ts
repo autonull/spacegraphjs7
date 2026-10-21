@@ -13,7 +13,7 @@ import {
 import type { PickResult } from '../input/interfaces/Tangible';
 import type { Node } from '../nodes/Node';
 import type { SpaceGraph } from '../SpaceGraph';
-import { focusRadiusOf } from '../utils/CameraUtils';
+import { focusNodeCamera, focusRadiusOf } from '../utils/CameraUtils';
 import { BaseSystemPlugin } from './BaseSystemPlugin';
 import { ConnectionHandler } from './interaction/ConnectionHandler';
 import { CursorManager, type CursorMode } from './interaction/CursorManager';
@@ -190,8 +190,7 @@ export class InteractionPlugin extends BaseSystemPlugin {
     if ('isZoomable' in node && (node as any).isZoomable?.()) {
       (node as any).onZoomStart?.();
     }
-    const radius = focusRadiusOf(node);
-    this.sg.cameraControls.flyTo(node.position, radius);
+    focusNodeCamera(this.sg.cameraControls, node);
   }
 
   private handlePointerMove(e: any): void {

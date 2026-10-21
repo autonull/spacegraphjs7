@@ -150,13 +150,7 @@ export class MermaidNode extends HtmlNode {
 
     const label = (this.data as MermaidNodeData)?.label ?? this.label ?? '';
 
-    this.updateSpec({
-      data: {
-        ...this.data,
-        color: bgColor,
-        html: cardMarkup(label, bgColor, this.shape),
-      },
-    });
+    this.applyCard({ label, color: bgColor, write: { color: bgColor } });
   }
 
   updateLabel(newLabel: string): void {
@@ -164,13 +158,7 @@ export class MermaidNode extends HtmlNode {
     const bgColor =
       (data?.color as string) ?? this.themeColors[this.nodeIndex % this.themeColors.length];
 
-    this.updateSpec({
-      data: {
-        ...this.data,
-        label: newLabel,
-        html: cardMarkup(newLabel, bgColor, this.shape),
-      },
-    });
+    this.applyCard({ label: newLabel, color: bgColor, write: { label: newLabel } });
   }
 
   setSelectedStyle(selected: boolean): void {
@@ -181,10 +169,24 @@ export class MermaidNode extends HtmlNode {
 
     const border = selected ? '3px solid #3b82f6' : '2px solid rgba(255,255,255,0.3)';
 
+    this.applyCard({ label, color: bgColor, border });
+  }
+
+  /**
+   * Rebuild the card. `label` and `color` are what the card shows; `write` is what the update
+   * changes in the node's own data.
+   */
+  private applyCard(card: {
+    label: string;
+    color: string;
+    border?: string;
+    write?: Partial<MermaidNodeData>;
+  }): void {
     this.updateSpec({
       data: {
         ...this.data,
-        html: cardMarkup(label, bgColor, this.shape, border),
+        ...card.write,
+        html: cardMarkup(card.label, card.color, this.shape, card.border),
       },
     });
   }

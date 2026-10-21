@@ -1,11 +1,15 @@
 // SpaceGraphJS - Camera Controls
 // Pure camera state machine - all input handled via Fingering
 
+import gsap from 'gsap';
 import * as THREE from 'three';
 import type { KeyboardScope } from '../types';
-import { visibleHeightAtDistance } from '../utils/CameraUtils';
-import { clamp, ease } from '../utils/math';
+import { fitOrthoFrustum } from '../utils/CameraUtils';
+import { clamp } from '../utils/math';
 import type { Surface } from './Surface';
+
+// The flight curve. gsap's `power2.out` is the cubic-out curve the camera has always used.
+const cubicOut = gsap.parseEase('power2.out');
 
 export interface CameraControlsConfig {
   enableRotate: boolean;
@@ -195,7 +199,7 @@ export class CameraControls {
     if (this.targetNext || this.phiNext !== null || this.zoomNext !== null) {
       const elapsed = performance.now() - this.animStartTime;
       const t = Math.min(elapsed / this.animDuration, 1);
-      const eased = ease.cubicOut(t);
+      const eased = cubicOut(t);
 
       if (this.sg?.events) {
         this.sg.events.emit('camera:fly:progress', t);
@@ -392,16 +396,8 @@ export class CameraControls {
         ? this.domElement.clientWidth / this.domElement.clientHeight
         : 1;
       const perspective = this.perspectiveCamera as THREE.PerspectiveCamera;
-      const height = visibleHeightAtDistance(perspective.fov ?? 75, this.spherical.radius);
-      const width = height * aspect;
-      this.orthoCamera = new THREE.OrthographicCamera(
-        -width / 2,
-        width / 2,
-        height / 2,
-        -height / 2,
-        0.1,
-        100000
-      );
+      this.orthoCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 100000);
+      fitOrthoFrustum(this.orthoCamera, perspective.fov ?? 75, this.spherical.radius, aspect);
     }
     this.orthoCamera.position.copy(this.camera.position);
     this.orthoCamera.quaternion.copy(this.camera.quaternion);

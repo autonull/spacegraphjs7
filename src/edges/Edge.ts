@@ -28,6 +28,14 @@ export const DEFAULT_EDGE_DATA: EdgeData = Object.freeze({
   gapSize: Defaults.GAP_SIZE,
 });
 
+/**
+ * An edge spec whose data is the preset with the spec's own data merged over it. The preset is
+ * the subclass's defaults; the spec's data always wins.
+ */
+export function withEdgeData(spec: EdgeSpec, preset: EdgeData): EdgeSpec {
+  return { ...spec, data: { ...preset, ...spec.data } };
+}
+
 export class Edge extends Surface {
   static typeName: string = 'Edge';
   static HIGHLIGHT_COLOR = EdgeColors.HIGHLIGHT;

@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { CSS3DObject } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
 
 import type { SpaceGraph } from '../SpaceGraph';
-import type { DOMNodeData, NodeSpec } from '../types';
+import type { DOMNodeData, NodeData, NodeSpec } from '../types';
 import { DOMUtils } from '../utils/DOMUtils';
 import { applyControlStateStyles } from '../plugins/interaction/ControlStateBorder';
 import { Node } from './Node';
@@ -206,10 +206,12 @@ export class DOMNode extends Node {
 
   /**
    * A dimension of the node after an update: the value the update carries, the value the node
-   * already holds, or the default.
+   * already holds, or the default. A value that is not a number falls back to the default.
    */
-  protected dimension(updates: Partial<NodeSpec>, key: string, fallback: number): number {
-    return (updates.data?.[key] as number) ?? (this.data?.[key] as number) ?? fallback;
+  protected dimension(data: NodeData | undefined, key: string, fallback: number): number {
+    const value = data?.[key] ?? this.data?.[key] ?? fallback;
+    const numeric = Number(value);
+    return Number.isNaN(numeric) ? fallback : numeric;
   }
 
   /** Resize the element and the backing geometry that frames it. */

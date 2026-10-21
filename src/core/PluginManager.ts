@@ -168,16 +168,7 @@ export class PluginManager {
   }
 
   registerNodeType(type: string, cls: import('./TypeRegistry').NodeConstructor): void {
-    TypeRegistry.getInstance().registerNode(type, cls);
-    // Also register using the class's own static typeName (to survive minification). Inherited
-    // static fields must be ignored: subclasses inherit their base `typeName`, so honouring them
-    // would make the last subclass replace the base constructor.
-    if (
-      Object.prototype.hasOwnProperty.call(cls, 'typeName') &&
-      typeof (cls as { typeName?: unknown }).typeName === 'string'
-    ) {
-      TypeRegistry.getInstance().registerNode((cls as unknown as { typeName: string }).typeName, cls);
-    }
+    this.registerType(type, cls, (name, ctor) => TypeRegistry.getInstance().registerNode(name, ctor));
   }
 
   getNodeType(type: string): import('./TypeRegistry').NodeConstructor | undefined {
@@ -185,14 +176,7 @@ export class PluginManager {
   }
 
   registerEdgeType(type: string, cls: import('./TypeRegistry').EdgeConstructor): void {
-    TypeRegistry.getInstance().registerEdge(type, cls);
-    // Own `typeName` only; see registerNodeType.
-    if (
-      Object.prototype.hasOwnProperty.call(cls, 'typeName') &&
-      typeof (cls as { typeName?: unknown }).typeName === 'string'
-    ) {
-      TypeRegistry.getInstance().registerEdge((cls as unknown as { typeName: string }).typeName, cls);
-    }
+    this.registerType(type, cls, (name, ctor) => TypeRegistry.getInstance().registerEdge(name, ctor));
   }
 
   getEdgeType(type: string): import('./TypeRegistry').EdgeConstructor | undefined {
@@ -212,5 +196,25 @@ export class PluginManager {
       if (predicate(plugin)) result.push(plugin);
     }
     return result;
+  }
+
+  /**
+   * Register a type under the name the caller gave it, and again under the class's own static
+   * `typeName` (to survive minification). Inherited static fields must be ignored: subclasses
+   * inherit their base `typeName`, so honouring them would make the last subclass replace the base
+   * constructor.
+   */
+  private registerType<T>(
+    type: string,
+    cls: T,
+    register: (type: string, ctor: T) => unknown
+  ): void {
+    register(type, cls);
+    if (
+      Object.prototype.hasOwnProperty.call(cls, 'typeName') &&
+      typeof (cls as { typeName?: unknown }).typeName === 'string'
+    ) {
+      register((cls as unknown as { typeName: string }).typeName, cls);
+    }
   }
 }

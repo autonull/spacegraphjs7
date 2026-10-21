@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import type { Node } from '../nodes/Node';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { EdgeData, EdgeSpec } from '../types';
+import { dataColor } from '../utils/color';
 import { Edge } from './Edge';
 
 export class AnimatedEdge extends Edge {
@@ -55,7 +56,8 @@ export class AnimatedEdge extends Edge {
       if (data.reverse !== undefined) this.isReversed = data.reverse;
 
       if (data.particleColor) {
-        (this.particle.material as THREE.MeshBasicMaterial).color.setHex(data.particleColor);
+        const color = dataColor(data.particleColor);
+        if (color) (this.particle.material as THREE.MeshBasicMaterial).color.set(color);
       }
       if (data.particleSize) {
         const s = data.particleSize / 3;

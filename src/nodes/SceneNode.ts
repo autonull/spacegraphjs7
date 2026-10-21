@@ -5,11 +5,11 @@ import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec } from '../types';
 import { ensureThreeMeshBvh } from '../core/bvh';
 import { createLogger } from '../utils/logger';
-import { Node } from './Node';
+import { Object3DNode } from './Object3DNode';
 
 const logger = createLogger('SceneNode');
 
-export class SceneNode extends Node {
+export class SceneNode extends Object3DNode {
   static readonly typeName: string = 'SceneNode';
   private modelRoot?: THREE.Group;
   private loader: GLTFLoader;
@@ -36,12 +36,6 @@ export class SceneNode extends Node {
     }
 
     this.updatePosition(this.position.x, this.position.y, this.position.z);
-  }
-
-  private _object = new THREE.Object3D();
-
-  get object(): THREE.Object3D {
-    return this._object;
   }
 
   update() {

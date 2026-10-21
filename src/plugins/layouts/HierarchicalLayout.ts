@@ -16,9 +16,7 @@ export class HierarchicalLayout extends BaseLayout<HierarchicalLayoutOptions> {
   readonly version = '1.0.0';
 
   /** The hierarchy reads the whole graph; it leaves the pinned nodes where they are. */
-  protected override ownedNodes(): Node[] {
-    return Array.from(this.graph.getNodes());
-  }
+  protected override readonly ownsEveryNode = true;
 
   protected place(nodes: Node[], config: HierarchicalLayoutOptions): void {
     const byId = new Map(nodes.map((node) => [node.id, node]));

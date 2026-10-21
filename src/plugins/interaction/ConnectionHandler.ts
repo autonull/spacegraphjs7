@@ -3,6 +3,7 @@ import type { Node } from '../../nodes/Node';
 import type { SpaceGraph } from '../../SpaceGraph';
 import type { EdgeSpec } from '../../types';
 import type { InteractionRaycaster } from './RaycasterHelper';
+import { TempConnectionLine } from './TempConnectionLine';
 
 /**
  * Connection handler for InteractionPlugin
@@ -11,9 +12,7 @@ import type { InteractionRaycaster } from './RaycasterHelper';
 export class ConnectionHandler {
   private isConnecting = false;
   private connectSourceNode: Node | null = null;
-  private connectTempLine: THREE.Line | null = null;
-  private connectTempLineGeom: THREE.BufferGeometry | null = null;
-  readonly tempMaterial = new THREE.LineBasicMaterial({ color: 0x8b5cf6, linewidth: 2 });
+  private connectTempLine: TempConnectionLine | null = null;
 
   readonly sg: SpaceGraph;
   readonly raycaster: InteractionRaycaster;
@@ -28,27 +27,13 @@ export class ConnectionHandler {
 
     this.isConnecting = true;
     this.connectSourceNode = node;
-
-    const positions = new Float32Array([
-      node.position.x,
-      node.position.y,
-      node.position.z,
-      node.position.x,
-      node.position.y,
-      node.position.z,
-    ]);
-
-    this.connectTempLineGeom = new THREE.BufferGeometry();
-    this.connectTempLineGeom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-
-    this.connectTempLine = new THREE.Line(this.connectTempLineGeom, this.tempMaterial);
-    this.sg.renderer.scene.add(this.connectTempLine);
+    this.connectTempLine = new TempConnectionLine(this.sg.renderer.scene, node.position);
 
     this.sg.events.emit('connection:start', { node });
   }
 
   updateConnection(): void {
-    if (!this.isConnecting || !this.connectSourceNode || !this.connectTempLineGeom) return;
+    if (!this.isConnecting || !this.connectSourceNode || !this.connectTempLine) return;
 
     const normal = this.sg.renderer.camera.getWorldDirection(new THREE.Vector3(0, 0, 1));
     const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(
@@ -59,9 +44,7 @@ export class ConnectionHandler {
 
     if (!intersectPoint) return;
 
-    const positions = this.connectTempLineGeom.getAttribute('position') as THREE.BufferAttribute;
-    positions.setXYZ(1, intersectPoint.x, intersectPoint.y, intersectPoint.z);
-    positions.needsUpdate = true;
+    this.connectTempLine.moveTo(intersectPoint);
 
     const hoverResult = this.raycaster.raycastNode();
     const targetNode = hoverResult?.node ?? null;
@@ -120,13 +103,8 @@ export class ConnectionHandler {
   }
 
   private cleanupConnection(): void {
-    if (this.connectTempLine) {
-      this.sg.renderer.scene.remove(this.connectTempLine);
-      this.connectTempLineGeom?.dispose();
-      this.tempMaterial.dispose();
-      this.connectTempLine = null;
-      this.connectTempLineGeom = null;
-    }
+    this.connectTempLine?.dispose();
+    this.connectTempLine = null;
 
     this.isConnecting = false;
     this.connectSourceNode = null;

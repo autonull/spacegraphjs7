@@ -73,9 +73,7 @@ export class NoteNode extends BaseContentNode {
 
   updateSpec(updates: Partial<NodeSpec>): this {
     super.updateSpec(updates);
-    if (updates.label !== undefined && this.titleElement) {
-      this.titleElement.textContent = updates.label ?? '';
-    }
+    this.syncTitleLabel(updates);
     if (updates.data?.text !== undefined && this.bodyElement) {
       this.bodyElement.textContent = updates.data.text as string;
     }

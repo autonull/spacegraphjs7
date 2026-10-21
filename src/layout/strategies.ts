@@ -7,6 +7,7 @@
 // placement.ts`) decides where a box goes. The three grid-shaped views share one engine, and the
 // tree and the force simulation are engines of their own. Nothing here measures a card.
 
+import { lookup } from '../utils/record';
 import { ForcePlacement, type ForceMeta } from './force';
 import { GridPlacement, type GridMeta } from './grid';
 import type { PlacementItem, Position } from './placement';
@@ -128,13 +129,6 @@ const ZERO_BOUNDS: LayoutBounds = { min: { x: 0, y: 0, z: 0 }, max: { x: 0, y: 0
 
 /** The column the session's own nodes share, before the first turn's column. */
 const SESSION_COLUMN = '__session__';
-
-function lookup<Key extends string, Value>(
-    record: Readonly<Record<Key, Value>>,
-    key: string,
-): Value | undefined {
-    return (record as Readonly<Record<string, Value | undefined>>)[key];
-}
 
 function depthOf(depthMap: Readonly<Record<string, number>>, kind: string): number {
     return lookup(depthMap, kind) ?? 0;

@@ -63,8 +63,8 @@ export class CodeEditorNode extends BaseContentNode {
 
     if (updates.data) {
       if (updates.data.width || updates.data.height) {
-        const w = this.dimension(updates, 'width', 600);
-        const h = this.dimension(updates, 'height', 400);
+        const w = this.dimension(updates.data, 'width', 600);
+        const h = this.dimension(updates.data, 'height', 400);
         this.applySize(w, h);
         if (this.editorInstance) {
           (this.editorInstance as { layout: () => void }).layout();
@@ -92,9 +92,7 @@ export class CodeEditorNode extends BaseContentNode {
       }
     }
 
-    if (updates.label !== undefined && this.titleElement) {
-      this.titleElement.textContent = updates.label;
-    }
+    this.syncTitleLabel(updates);
 
     return this;
   }

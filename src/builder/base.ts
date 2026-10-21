@@ -7,7 +7,7 @@ export abstract class BaseBuilder<T> {
   }
 
   data(data: Record<string, unknown>): this {
-    (this.spec as any).data = { ...(this.spec as any).data, ...data };
+    this.mergeData(data);
     return this;
   }
 
@@ -20,11 +20,11 @@ export abstract class BaseBuilder<T> {
   }
 
   val(): T {
-    return this.spec;
+    return this.toSpec();
   }
 
   get(): T {
-    return this.spec;
+    return this.toSpec();
   }
 
   transform(fn: (spec: T) => T): this {

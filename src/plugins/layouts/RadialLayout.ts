@@ -16,9 +16,7 @@ export class RadialLayout extends BaseLayout<RadialLayoutOptions> {
   readonly version = '1.0.0';
 
   /** The radial tree owns every node: it places the pinned ones too. */
-  protected override ownedNodes(): Node[] {
-    return Array.from(this.graph.getNodes());
-  }
+  protected override readonly ownsEveryNode = true;
 
   protected place(_nodes: Node[], config: RadialLayoutOptions): void {
     const { nodes } = this.graph;

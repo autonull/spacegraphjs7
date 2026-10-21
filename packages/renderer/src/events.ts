@@ -1,6 +1,6 @@
 import type { RendererEventMap, Unsubscribe } from './index';
 
-type Handler<K extends keyof RendererEventMap> = (payload: RendererEventMap[K]) => void;
+export type Handler<K extends keyof RendererEventMap> = (payload: RendererEventMap[K]) => void;
 
 /**
  * The event bus every renderer adapter shares: a set of handlers per event, and the unsubscribe a

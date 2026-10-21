@@ -1,4 +1,5 @@
 import {
+  edgeStyleFor,
   parseColor as contractParseColor,
   statusColor as contractStatusColor,
   type RenderEdge,
@@ -71,11 +72,11 @@ export function nodeSpec(node: RenderNode, theme: RenderTheme): NodeSpec {
 }
 
 export function edgeSpec(edge: RenderEdge, theme: RenderTheme): EdgeSpec {
-  const inferred = edge.confidence === 'inferred';
+  const style = edgeStyleFor(edge, theme);
   const data = {
-    color: parseColor(inferred ? theme.edgeMuted : theme.edge),
-    thickness: inferred ? 1 : 2,
-    dashed: inferred || edge.style === 'dashed' || edge.style === 'dotted',
+    color: parseColor(style.color),
+    thickness: style.width,
+    dashed: style.dashed,
     label: edge.label,
     labelColor: theme.textMuted,
     arrowhead: edge.directed ? ('target' as const) : (false as const),

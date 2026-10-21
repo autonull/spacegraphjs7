@@ -38,3 +38,23 @@ export function normalizeHexColor(value: string): string {
   const body = match[1]!;
   return body.length === 3 ? `#${[...body].map((character) => character + character).join('')}` : `#${body.slice(0, 6)}`;
 }
+
+/**
+ * The WCAG 2.1 relative luminance of a colour whose channels are already in 0..1.
+ * https://www.w3.org/WAI/GL/wiki/Relative_luminance
+ */
+export function relativeLuminance(r: number, g: number, b: number): number {
+  const linear = (channel: number): number =>
+    channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+  return 0.2126 * linear(r) + 0.7152 * linear(g) + 0.0722 * linear(b);
+}
+
+/**
+ * The WCAG contrast ratio between two relative luminances: `(L1 + 0.05) / (L2 + 0.05)`, where L1
+ * is the lighter of the two.
+ */
+export function contrastRatioOf(l1: number, l2: number): number {
+  const lighter = Math.max(l1, l2);
+  const darker = Math.min(l1, l2);
+  return (lighter + 0.05) / (darker + 0.05);
+}
