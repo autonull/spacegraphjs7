@@ -200,11 +200,52 @@ function boundsOf(positions: ReadonlyMap<string, Position>): LayoutBounds {
     };
 }
 
+/**
+ * The log layout: a vertical reading order, one block per row (turn), its members laid out
+ * top-to-bottom as a spine. Unlike the ribbon/matrix, the log has a single column — the sequence
+ * is the spine.
+ */
+function logLayout<Node extends RepresentationNode>(
+    model: RepresentationModel<Node>,
+    config: RepresentationConfig<Node>,
+    options: RepresentationOptions = {},
+): GraphLayout {
+    const gap = options.gap ?? 24;
+    const rowGap = options.rowGap ?? 20;
+    const rowHeight = config.cellSize[1] + rowGap;
+    const positions = new Map<string, Position>();
+
+    summaryRows(model, config).forEach((nodes, index) => {
+        let cursor = 0;
+
+        for (const node of nodes) {
+            const height = config.nodeSizeFn(node)[1];
+            // Single column layout: x is centered, y stacks vertically
+            positions.set(node.id, { x: 0, y: cursor + height / 2, z: 0 });
+            cursor += height + gap;
+        }
+        // Add row gap between rows (turns)
+        cursor += rowGap;
+    });
+
+    return { positions, clusters: new Map(), bounds: boundsOf(positions), strategy: 'lanes' };
+}
+
+/** The log layout rows: same as summary rows but exposed for axis labels. */
+function logRows<Node extends RepresentationNode>(
+    model: RepresentationModel<Node>,
+    config: RepresentationConfig<Node>,
+): Node[][] {
+    return summaryRows(model, config);
+}
+
 /** The summary representation API. A host calls it with its own node vocabulary. */
 export const Representations = {
     summaryRows,
     ribbonLayout,
     matrixLayout,
+    logLayout,
+    logRows,
     summaryColumns,
 };
 
