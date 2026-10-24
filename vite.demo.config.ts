@@ -11,6 +11,7 @@ export default defineConfig({
       { find: /^@src\/(.+)$/, replacement: resolve(__dirname, 'src/$1') },
       { find: /^spacegraphjs$/, replacement: resolve(__dirname, 'src/index.ts') },
       { find: /^spacegraphjs\/(.+)$/, replacement: resolve(__dirname, 'src/$1') },
+      { find: /^@spacegraphjs\/kernel$/, replacement: resolve(__dirname, 'packages/kernel/src/index.ts') },
       { find: /^@spacegraphjs\/renderer$/, replacement: resolve(__dirname, 'packages/renderer/src/index.ts') },
       { find: /^@spacegraphjs\/adapter$/, replacement: resolve(__dirname, 'packages/adapter/src/index.ts') },
       {

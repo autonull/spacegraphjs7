@@ -15,6 +15,7 @@
     "paths": {
       "spacegraphjs": ["./src/index.ts"],
       "spacegraphjs/*": ["./src/*"],
+      "@spacegraphjs/kernel": ["./packages/kernel/src/index.ts"],
       "@spacegraphjs/renderer": ["./packages/renderer/src/index.ts"],
       "@spacegraphjs/adapter": ["./packages/adapter/src/index.ts"],
       "@spacegraphjs/spacegraph-renderer": ["./packages/spacegraph-renderer/src/index.ts"],
