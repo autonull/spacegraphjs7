@@ -1,12 +1,18 @@
 import type { Edge, Kernel, Node, NodeID } from './kernel';
+import { SpatialIndex2D, type Point2D } from './spatial';
 
 export type QueryDirection = 'out' | 'in' | 'both';
+
+export type GraphQueryOptions = {
+  readonly positions?: ReadonlyMap<NodeID, Point2D>;
+};
 
 export type GraphQuery = {
   nodes(predicate?: (node: Node) => boolean): Node[];
   edges(predicate?: (edge: Edge) => boolean): Edge[];
   traverse(start: NodeID, options?: TraverseOptions): Node[];
   path(from: NodeID, to: NodeID, options?: TraverseOptions): Node[] | undefined;
+  near(x: number, y: number, radius: number, limit?: number): Node[];
   count(predicate?: (node: Node) => boolean): number;
   collect<T>(collector: (graph: GraphQuery) => T): T;
 };
@@ -63,7 +69,15 @@ const traverseFrom = (
   return order;
 };
 
-export const query = (kernel: Kernel): GraphQuery => {
+export const query = (kernel: Kernel, options: GraphQueryOptions = {}): GraphQuery => {
+  let index: SpatialIndex2D | undefined
+  const spatial = () => {
+    if (index) return index
+    index = new SpatialIndex2D()
+    for (const [id, point] of options.positions ?? []) index.insert(id, point.x, point.y)
+    return index
+  }
+
   const nodes = (predicate?: (node: Node) => boolean): Node[] =>
     predicate ? kernel.nodes.filter(predicate) : [...kernel.nodes];
 
@@ -123,8 +137,19 @@ export const query = (kernel: Kernel): GraphQuery => {
   const count = (predicate?: (node: Node) => boolean): number =>
     predicate ? kernel.nodes.filter(predicate).length : kernel.nodes.length;
 
-  const collect = <T>(collector: (graph: GraphQuery) => T): T =>
-    collector({ nodes, edges, traverse, path, count, collect });
+  const near = (x: number, y: number, radius: number, limit?: number): Node[] => {
+    if (options.positions === undefined) return [];
+    const byID = new Map(kernel.nodes.map((node) => [node.id, node]));
+    return spatial()
+      .near(x, y, radius, limit)
+      .flatMap((id) => {
+        const node = byID.get(id);
+        return node ? [node] : [];
+      });
+  };
 
-  return { nodes, edges, traverse, path, count, collect };
+  const collect = <T>(collector: (graph: GraphQuery) => T): T =>
+    collector({ nodes, edges, traverse, path, near, count, collect });
+
+  return { nodes, edges, traverse, path, near, count, collect };
 };

@@ -77,4 +77,23 @@ describe('GraphQuery', () => {
     expect(query(kernel).count((item) => item.id === 'a' || item.id === 'b')).toBe(2);
     expect(query(kernel).collect((graph) => graph.count() + graph.nodes().length)).toBe(8);
   });
+
+  test('finds nearby nodes from positions', () => {
+    const positions = new Map([
+      ['a', { x: 0, y: 0 }],
+      ['b', { x: 10, y: 0 }],
+      ['c', { x: 100, y: 0 }],
+      ['d', { x: 5, y: 0 }],
+    ]);
+    expect(query(kernel, { positions }).near(0, 0, 20).map((item) => item.id)).toEqual([
+      'a',
+      'd',
+      'b',
+    ]);
+    expect(query(kernel, { positions }).near(0, 0, 20, 2).map((item) => item.id)).toEqual([
+      'a',
+      'd',
+    ]);
+    expect(query(kernel).near(0, 0, 20)).toEqual([]);
+  });
 });

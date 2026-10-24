@@ -8,6 +8,7 @@ export * from './conformance';
 export * from './generator';
 export * from './diff';
 export * from './zoom';
+export * from './spatial';
 export * from './deriver';
 export * from './scope';
 export * from './example/fixture';
