@@ -9,6 +9,7 @@ export * from './generator';
 export * from './diff';
 export * from './zoom';
 export * from './spatial';
+export * from './a11y';
 export * from './deriver';
 export * from './scope';
 export * from './example/fixture';
