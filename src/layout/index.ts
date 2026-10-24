@@ -22,6 +22,14 @@ export {
 } from './force';
 export type { Placement, PlacementItem, Position } from './placement';
 export {
+    computeIncremental,
+    diffPositions,
+    interpolatePosition,
+    interpolatedPositions,
+    type IncrementalLayout,
+    type LayoutMove,
+} from './incremental';
+export {
     Strategies,
     type GraphLayout,
     type LayoutBounds,
