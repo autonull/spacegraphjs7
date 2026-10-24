@@ -6,6 +6,7 @@ export * from './query';
 export * from './registry';
 export * from './conformance';
 export * from './generator';
+export * from './diff';
 export * from './deriver';
 export * from './scope';
 export * from './example/fixture';
