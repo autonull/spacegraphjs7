@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <title>Delta Animation</title>
+        <style>
+            * {
+                margin: 0;
+                box-sizing: border-box;
+            }
+            body {
+                font-family: ui-sans-serif, system-ui, sans-serif;
+                background: #0f172a;
+                color: #e2e8f0;
+            }
+            header {
+                display: flex;
+                gap: 12px;
+                align-items: center;
+                padding: 12px 16px;
+                flex-wrap: wrap;
+            }
+            header h1 {
+                font-size: 16px;
+                font-weight: 600;
+                margin-right: auto;
+            }
+            button {
+                background: #1e293b;
+                color: #e2e8f0;
+                border: 1px solid #334155;
+                border-radius: 6px;
+                padding: 6px 12px;
+                cursor: pointer;
+            }
+            button:hover {
+                background: #334155;
+            }
+            label {
+                display: flex;
+                gap: 8px;
+                align-items: center;
+                font-size: 13px;
+            }
+            #graph {
+                width: 100vw;
+                height: calc(100vh - 56px);
+                overflow: auto;
+                background: #0b1220;
+            }
+            #live {
+                position: absolute;
+                width: 1px;
+                height: 1px;
+                margin: -1px;
+                overflow: hidden;
+                clip: rect(0 0 0 0);
+                clip-path: inset(50%);
+            }
+        </style>
+    </head>
+    <body>
+        <header>
+            <h1>Delta animation</h1>
+            <button id="merge">Merge turn 2</button>
+            <button id="layer">Switch layer</button>
+            <label>t <input id="scrub" type="range" min="0" max="1" step="0.01" value="1" /></label>
+        </header>
+        <div id="graph"></div>
+        <div id="live" aria-live="polite"></div>
+        <script type="module">
+            import { diffPositions, LaneLayout } from '@src/layout/index.ts';
+            import { createRenderClock } from '@spacegraphjs/renderer';
+            import { InlineGraph } from '@spacegraphjs/svg-renderer';
+
+            const lanes = ['intent', 'edit', 'verify'];
+
+            const placeGroups = (groups) => {
+                const layout = new LaneLayout({ lanes, lanePitch: 130, step: 240 });
+                for (const [group, items] of groups) {
+                    layout.open(group);
+                    for (const item of items) layout.place({ ...item, group });
+                    layout.close(group);
+                }
+                return new Map(
+                    Object.entries(layout.positions).map(([id, [x, y, z]]) => [id, { x, y, z }]),
+                );
+            };
+
+            const base = placeGroups([
+                [
+                    'turn-1',
+                    [
+                        { id: 'a', lane: 'intent' },
+                        { id: 'b', lane: 'edit' },
+                    ],
+                ],
+            ]);
+            const merged = placeGroups([
+                ['turn-1', [{ id: 'a', lane: 'intent' }]],
+                [
+                    'turn-2',
+                    [
+                        { id: 'b', lane: 'edit' },
+                        { id: 'c', lane: 'verify' },
+                    ],
+                ],
+            ]);
+            const layered = placeGroups([
+                ['turn-1', [{ id: 'a', lane: 'intent' }]],
+                ['turn-2', [{ id: 'b', lane: 'edit' }]],
+                [
+                    'turn-3',
+                    [
+                        { id: 'c', lane: 'verify' },
+                        { id: 'd', lane: 'intent' },
+                        { id: 'e', lane: 'edit' },
+                    ],
+                ],
+            ]);
+
+            const presets = {
+                base: {
+                    label: 'Turn 1',
+                    positions: base,
+                    nodes: [
+                        { id: 'a', kind: 'message', label: 'Intent', shape: 'card' },
+                        { id: 'b', kind: 'tool', label: 'Edit', shape: 'card' },
+                    ],
+                    edges: [{ id: 'a-b', source: 'a', target: 'b', kind: 'turn' }],
+                },
+                merged: {
+                    label: 'Turn 2 merged',
+                    positions: merged,
+                    nodes: [
+                        { id: 'a', kind: 'message', label: 'Intent', shape: 'card' },
+                        { id: 'b', kind: 'tool', label: 'Edit', shape: 'card' },
+                        { id: 'c', kind: 'result', label: 'Verified', shape: 'card' },
+                    ],
+                    edges: [
+                        { id: 'a-b', source: 'a', target: 'b', kind: 'turn' },
+                        { id: 'b-c', source: 'b', target: 'c', kind: 'turn' },
+                    ],
+                },
+                layered: {
+                    label: 'Layer switched',
+                    positions: layered,
+                    nodes: [
+                        { id: 'a', kind: 'message', label: 'Intent', shape: 'card' },
+                        { id: 'b', kind: 'tool', label: 'Edit', shape: 'card' },
+                        { id: 'c', kind: 'result', label: 'Verified', shape: 'card' },
+                        { id: 'd', kind: 'message', label: 'Follow-up', shape: 'card' },
+                        { id: 'e', kind: 'result', label: 'Check', shape: 'card' },
+                    ],
+                    edges: [
+                        { id: 'a-b', source: 'a', target: 'b', kind: 'turn' },
+                        { id: 'b-c', source: 'b', target: 'c', kind: 'turn' },
+                        { id: 'c-d', source: 'c', target: 'd', kind: 'turn' },
+                        { id: 'd-e', source: 'd', target: 'e', kind: 'turn' },
+                    ],
+                },
+            };
+
+            const toRender = (preset, positions) => ({
+                nodes: preset.nodes.map((node) => ({
+                    ...node,
+                    position: [
+                        positions.get(node.id).x,
+                        positions.get(node.id).y,
+                        positions.get(node.id).z,
+                    ],
+                })),
+                edges: preset.edges,
+            });
+
+            let current = 'base';
+            let previous = base;
+            let t = 1;
+            let clock = createRenderClock(toRender(presets.base, base), []);
+            const container = document.getElementById('graph');
+            const live = document.getElementById('live');
+            const graph = new InlineGraph(container);
+
+            const draw = (next) => {
+                t = Math.max(0, Math.min(1, next));
+                graph.setModel(clock.advance(t));
+                document.getElementById('scrub').value = String(t);
+            };
+
+            const show = (next) => {
+                const preset = presets[next];
+                const incremental = diffPositions(preset.positions, previous);
+                const moves = [...incremental.moved.values()].map((move) => ({
+                    id: move.id,
+                    from: [move.from.x, move.from.y, move.from.z ?? 0],
+                    to: [move.to.x, move.to.y, move.to.z ?? 0],
+                }));
+                previous = preset.positions;
+                current = next;
+                clock = createRenderClock(toRender(preset, preset.positions), moves);
+                draw(1);
+                live.textContent = preset.label;
+            };
+
+            document.getElementById('merge').addEventListener('click', () => show('merged'));
+            document.getElementById('layer').addEventListener('click', () => show('layered'));
+            document
+                .getElementById('scrub')
+                .addEventListener('input', (event) => draw(Number(event.target.value)));
+
+            draw(1);
+            window.deltaDemo = {
+                show,
+                draw,
+                get current() {
+                    return current;
+                },
+                get t() {
+                    return t;
+                },
+                positionOf(id) {
+                    return clock.advance(t).nodes.find((node) => node.id === id)?.position;
+                },
+            };
+            window.addEventListener('beforeunload', () => graph.dispose());
+        </script>
+    </body>
+</html>

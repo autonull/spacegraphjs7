@@ -6,6 +6,9 @@ import {
     interpolatedPositions,
 } from '../../src/layout/incremental';
 import type { Position } from '../../src/layout/placement';
+import { SpatialIndex2D } from '../../packages/kernel/src/spatial';
+import { applyNodeBudget } from '../../packages/kernel/src/budget';
+import { Kernel } from '../../packages/kernel/src/kernel';
 
 const position = (x: number, y: number, z = 0): Position => ({ x, y, z });
 
@@ -52,7 +55,9 @@ describe('incremental layout', () => {
         const incremental = computeIncremental(next, previous);
 
         expect(interpolatePosition(position(0, 0), position(100, 40), 0)).toEqual(position(0, 0));
-        expect(interpolatePosition(position(0, 0), position(100, 40), 1)).toEqual(position(100, 40));
+        expect(interpolatePosition(position(0, 0), position(100, 40), 1)).toEqual(
+            position(100, 40),
+        );
 
         const start = interpolatedPositions(incremental, 0);
         const middle = interpolatedPositions(incremental, 0.5);
@@ -74,6 +79,70 @@ describe('incremental layout', () => {
             interpolatedPositions(incremental, 0.25),
         );
         expect(interpolatedPositions(incremental, 0.25).get('a')).toEqual(position(10, 0));
+    });
+
+    test('the spatial index follows interpolated positions mid-flight', () => {
+        const incremental = diffPositions(
+            new Map([
+                ['a', position(100, 0)],
+                ['b', position(0, 0)],
+            ]),
+            new Map([
+                ['a', position(0, 0)],
+                ['b', position(0, 0)],
+            ]),
+        );
+
+        const indexAt = (t: number) => {
+            const positions = interpolatedPositions(incremental, t);
+            return new SpatialIndex2D(
+                [...positions].map(([id, point]) => ({ id, x: point.x, y: point.y })),
+            );
+        };
+
+        expect(indexAt(0).near(0, 0, 1)).toEqual(['a', 'b']);
+        expect(indexAt(0.5).near(50, 0, 1)).toEqual(['a']);
+        expect(indexAt(0.5).near(0, 0, 1)).toEqual(['b']);
+        expect(indexAt(1).near(100, 0, 1)).toEqual(['a']);
+    });
+
+    test('a budget keeps a protected node and the index finds it mid-flight', () => {
+        const incremental = diffPositions(
+            new Map([
+                ['a', position(100, 0)],
+                ['b', position(0, 0)],
+                ['c', position(0, 100)],
+            ]),
+            new Map([
+                ['a', position(0, 0)],
+                ['b', position(0, 0)],
+                ['c', position(0, 100)],
+            ]),
+        );
+        const kernel = new Kernel({
+            nodes: [
+                { id: 'a', kind: 'tool', label: 'A' },
+                { id: 'b', kind: 'message', label: 'B' },
+                { id: 'c', kind: 'session', label: 'C' },
+            ],
+            edges: [],
+            hyperedges: [],
+        });
+        const budgeted = applyNodeBudget(kernel, {
+            maxNodes: 2,
+            weights: { session: 1000, message: 100, tool: 10 },
+            protectedIds: ['a'],
+        });
+        const positions = interpolatedPositions(incremental, 0.5);
+        const index = new SpatialIndex2D(
+            budgeted.nodes.map((node) => {
+                const point = positions.get(node.id)!;
+                return { id: node.id, x: point.x, y: point.y };
+            }),
+        );
+
+        expect(budgeted.nodes.map((node) => node.id).sort()).toEqual(['a', 'c']);
+        expect(index.near(50, 0, 1)).toEqual(['a']);
     });
 
     test('seeded cases never move an id both layouts place identically', () => {
