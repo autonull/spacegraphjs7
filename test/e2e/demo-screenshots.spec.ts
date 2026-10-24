@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
@@ -27,6 +27,17 @@ const htmlDemos = fs
   .filter((f: string) => f.endsWith('.html') && !f.includes('index'))
   .map((f: string) => f.replace('.html', ''));
 
+// A screenshot should show what a demo is for. The delta demo starts at its smallest state so the
+// spec can compare positions; the captured frame shows the layer switch mid-flight instead.
+const setups: Record<string, (page: Page) => Promise<void>> = {
+  'delta-animation': async (page) => {
+    await page.getByRole('button', { name: 'Switch layer' }).click();
+    await page.evaluate(() =>
+      (window as { deltaDemo?: { draw(t: number): void } }).deltaDemo?.draw(0.5),
+    );
+  },
+};
+
 test.describe('Demo Screenshots & Rendering Verification', () => {
   htmlDemos.forEach((demo) => {
     test(`screenshot: ${demo} - renders and has content`, async ({ page }) => {
@@ -49,6 +60,8 @@ test.describe('Demo Screenshots & Rendering Verification', () => {
       });
 
       await page.waitForTimeout(3000);
+
+      await setups[demo]?.(page);
 
       // Output errors to console if any, for debugging purposes before the assertion
       if (errors.length > 0) {
