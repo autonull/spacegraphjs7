@@ -40,6 +40,12 @@ describe('package boundaries', () => {
     ).toEqual([]);
   });
 
+  it('keeps the kernel dependency-free', () => {
+    expect(
+      staticImportsIn('packages/kernel/src').filter((specifier) => !specifier.startsWith('.')),
+    ).toEqual([]);
+  });
+
   it('keeps the Cytoscape adapter off the core', () => {
     for (const specifier of ['spacegraphjs', 'spacegraphjs/core', 'spacegraphjs/activity']) {
       expect(staticImportsIn('packages/cytoscape-renderer/src')).not.toContain(specifier);

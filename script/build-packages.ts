@@ -7,7 +7,14 @@ import { resolve } from 'node:path';
 import { build } from 'vite';
 import dts from 'vite-plugin-dts';
 
-const PACKAGES = ['renderer', 'adapter', 'spacegraph-renderer', 'cytoscape-renderer', 'svg-renderer'];
+const PACKAGES = [
+  'renderer',
+  'adapter',
+  'spacegraph-renderer',
+  'cytoscape-renderer',
+  'svg-renderer',
+  'kernel',
+];
 
 const EXTERNAL = [
   'three',

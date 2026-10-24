@@ -7,7 +7,14 @@ import { LIBRARY_ENTRIES } from '../script/library-entries';
 const root = resolve(import.meta.dirname, '..');
 const read = (path: string) => JSON.parse(readFileSync(path, 'utf8'));
 
-const LEAF_PACKAGES = ['renderer', 'adapter', 'spacegraph-renderer', 'cytoscape-renderer', 'svg-renderer'];
+const LEAF_PACKAGES = [
+  'renderer',
+  'adapter',
+  'spacegraph-renderer',
+  'cytoscape-renderer',
+  'svg-renderer',
+  'kernel',
+];
 
 describe('published surface', () => {
   it('publishes every entry as source, declarations and bundle', () => {
