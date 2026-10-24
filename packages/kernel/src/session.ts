@@ -67,6 +67,11 @@ const fold = (entries: readonly SessionEntry[], version: number): Kernel => {
   });
 };
 
+export type SessionCheckpoint = {
+  readonly state: Kernel
+  readonly version: number
+}
+
 export class SessionKernel {
   readonly entries: readonly SessionEntry[];
   readonly version: number;
@@ -93,6 +98,10 @@ export class SessionKernel {
   state(): Kernel {
     this.cachedState ??= fold(this.entries, this.version);
     return this.cachedState;
+  }
+
+  checkpoint(): SessionCheckpoint {
+    return { state: this.state(), version: this.version };
   }
 
   tag(name: string): SessionKernel {

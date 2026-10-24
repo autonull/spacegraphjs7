@@ -76,4 +76,22 @@ describe('SessionKernel', () => {
     expect(() => session.checkout(2)).toThrow('outside 0..1');
     expect(() => session.checkout(-1)).toThrow('outside 0..1');
   });
+
+  test('checkpoint captures the folded state and version', () => {
+    const session = new SessionKernel().append(entry('e1', addNode('a')));
+    const checkpoint = session.checkpoint();
+
+    expect(checkpoint.version).toBe(1);
+    expect(checkpoint.state).toBe(session.state());
+    expect(checkpoint.state.nodes.map((node) => node.id)).toEqual(['a']);
+  });
+
+  test('a checkpoint is stable across later appends', () => {
+    const session = new SessionKernel().append(entry('e1', addNode('a')));
+    const checkpoint = session.checkpoint();
+    const next = session.append(entry('e2', addNode('b')));
+
+    expect(checkpoint.state.nodes.map((node) => node.id)).toEqual(['a']);
+    expect(next.state().nodes.map((node) => node.id)).toEqual(['a', 'b']);
+  });
 });
