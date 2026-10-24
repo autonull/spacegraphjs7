@@ -157,6 +157,20 @@ function nodeSVG(node: RenderNode, theme: RenderTheme, bounds: Bounds): string {
   const label = escapeXml(truncate(node.label, 40));
   const title = `<title>${escapeXml(node.label)}</title>`;
 
+  if (node.shape === 'group') {
+    const width = node.size?.[0] ?? 320;
+    const height = node.size?.[1] ?? 220;
+    const left = x - width / 2;
+    const top = y - height / 2;
+    return [
+      `<g>${title}`,
+      `<rect x="${left}" y="${top}" width="${width}" height="${height}" rx="14"`,
+      ` fill="${escapeXml(color)}" fill-opacity="0.12" stroke="${escapeXml(color)}"/>`,
+      `<text x="${left + 12}" y="${top + 20}" fill="${escapeXml(theme.text)}" font-size="11"`,
+      ` font-weight="600" text-anchor="start">${label}</text></g>`,
+    ].join('');
+  }
+
   if (node.shape === 'dot') {
     const radius = (node.size?.[0] ?? 16) / 2;
     return `<g><circle cx="${x}" cy="${y}" r="${radius}" fill="${escapeXml(color)}" stroke="${escapeXml(theme.border)}"/>${title}</g>`;

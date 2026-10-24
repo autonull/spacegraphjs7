@@ -9,6 +9,7 @@ import type {
   AdapterLaneLabel,
   AdapterModel,
   AdapterNode,
+  AdapterPadding,
   AdapterPosition,
   BandTemplate,
   BuildOptions,
@@ -16,6 +17,16 @@ import type {
 } from './types';
 
 const ZERO: AdapterPosition = { x: 0, y: 0, z: 0 };
+
+function paddingOf(padding: AdapterPadding): Required<Exclude<AdapterPadding, number>> {
+  if (typeof padding === 'number') return { top: padding, right: padding, bottom: padding, left: padding };
+  return {
+    top: padding.top ?? 0,
+    right: padding.right ?? 0,
+    bottom: padding.bottom ?? 0,
+    left: padding.left ?? 0,
+  };
+}
 
 const DEFAULT_GEOMETRY: AdapterGeometry = {
   chipSize: [132, 44, 0],
@@ -158,8 +169,28 @@ export abstract class ModelAdapter<
       ? this.bundleEdges(model, rawEdges)
       : rawEdges;
 
+    // A group names its members; each member points at the smallest group that holds it, so a phase
+    // inside a turn is draggable with the phase and with the turn.
+    const groupsByMember = new Map<string, RenderNode>();
+    const areaOf = (group: RenderNode) => (group.size?.[0] ?? 0) * (group.size?.[1] ?? 0);
+    for (const group of bands) {
+      if (group.shape !== 'group') continue;
+      const members = group.data?.members;
+      if (!Array.isArray(members)) continue;
+      for (const id of members) {
+        if (typeof id !== 'string' || id === group.id) continue;
+        const current = groupsByMember.get(id);
+        if (!current || areaOf(group) < areaOf(current)) groupsByMember.set(id, group);
+      }
+    }
+    const withParent = (node: RenderNode): RenderNode => {
+      const key = node.kind === 'band' ? (node.data?.cluster as string | undefined) ?? node.id : node.id;
+      const parent = groupsByMember.get(key);
+      return parent && parent.id !== node.id ? { ...node, parent: parent.id } : node;
+    };
+
     return {
-      nodes: [...bands, ...lanes, ...axes, ...content],
+      nodes: [...bands.map(withParent), ...lanes, ...axes, ...content.map(withParent)],
       edges: edges.map((edge) => this.toRenderEdge(edge, level)),
     };
   }
@@ -204,17 +235,17 @@ export abstract class ModelAdapter<
 
     if (boxes.length === 0) return undefined;
 
-    const padding = this.geometry.bandPadding;
+    const padding = paddingOf(this.geometry.bandPadding);
 
     return {
       min: {
-        x: Math.min(...boxes.map((box) => box.min.x)) - padding,
-        y: Math.min(...boxes.map((box) => box.min.y)) - padding,
+        x: Math.min(...boxes.map((box) => box.min.x)) - padding.left,
+        y: Math.min(...boxes.map((box) => box.min.y)) - padding.bottom,
         z: 0,
       },
       max: {
-        x: Math.max(...boxes.map((box) => box.max.x)) + padding,
-        y: Math.max(...boxes.map((box) => box.max.y)) + padding,
+        x: Math.max(...boxes.map((box) => box.max.x)) + padding.right,
+        y: Math.max(...boxes.map((box) => box.max.y)) + padding.top,
         z: 0,
       },
     };

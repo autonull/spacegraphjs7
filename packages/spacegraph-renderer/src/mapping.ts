@@ -36,17 +36,40 @@ function shapeFor(shape: RenderNode['shape']): string {
   return shape === 'dot' ? 'circle' : 'box';
 }
 
+function directionalHtml(html: string, theme: RenderTheme): string {
+  return theme.direction
+    ? `<div dir="${theme.direction}" style="width:100%;height:100%">${html}</div>`
+    : html;
+}
+
+function groupHtml(node: RenderNode, theme: RenderTheme): string {
+  return `<div style="width:100%;height:100%;box-sizing:border-box;border:1px solid ${theme.border};border-radius:16px;background:${theme.surfaceMuted};opacity:.55;font-family:${theme.fontFamily};color:${theme.text};padding:12px"><span style="font-size:11px;font-weight:600;line-height:16px">${node.label}</span></div>`;
+}
+
 export function nodeSpec(node: RenderNode, theme: RenderTheme): NodeSpec {
   const color = statusColor(node.status, theme);
   const position: [number, number, number] = [node.position[0], node.position[1], node.position[2]];
   // A backdrop (a swimlane band, a lane label) is drawn, not lived in: it does not answer the pointer.
   const interactive = node.interactive !== false;
+  if (node.shape === 'group') {
+    const data: NodeData = {
+      ...node.data,
+      html: directionalHtml(node.html ?? groupHtml(node, theme), theme),
+      pointerEvents: interactive ? 'auto' : 'none',
+      width: node.size?.[0] ?? 320,
+      height: node.size?.[1] ?? 220,
+      group: true,
+      interactive,
+      useRawHtml: true,
+      showControls: false,
+      className: 'spacegraph-group-node',
+      style: { overflow: 'visible' },
+      ...(node.parent ? { parent: node.parent } : {}),
+    };
+    return { id: node.id, type: 'HtmlNode', label: node.label, position, data };
+  }
   if (node.html) {
-    // P8.9: wrap host markup in a directional container so bidi text renders correctly; the host's
-    // markup is never parsed or evaluated, only placed inside the wrapper.
-    const html = theme.direction
-      ? `<div dir="${theme.direction}" style="width:100%;height:100%">${node.html}</div>`
-      : node.html;
+    const html = directionalHtml(node.html, theme);
     const data: NodeData = {
       ...node.data,
       html,
@@ -64,6 +87,7 @@ export function nodeSpec(node: RenderNode, theme: RenderTheme): NodeSpec {
         ...(node.data?.style as Record<string, string> | undefined),
       },
       interactive,
+      ...(node.parent ? { parent: node.parent } : {}),
     };
     return { id: node.id, type: 'HtmlNode', label: node.label, position, data };
   }
@@ -72,6 +96,7 @@ export function nodeSpec(node: RenderNode, theme: RenderTheme): NodeSpec {
     shape: shapeFor(node.shape),
     color,
     interactive,
+    ...(node.parent ? { parent: node.parent } : {}),
   };
   // Only override the core's default shape size when the host supplied one; forcing 1 renders a
   // sub-pixel node (and edges to it look like they dangle).

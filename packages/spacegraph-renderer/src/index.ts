@@ -243,6 +243,21 @@ export class SpaceGraphRenderer extends BaseGraphRenderer implements GraphRender
     on('node:dblclick', (payload) => this.emit('nodeDoubleClick', { id: idOf(payload) }));
     on('node:pointerenter', (payload) => this.emit('hoverChange', { id: nodeIdOf(payload), kind: 'node' }));
     on('node:pointerleave', () => this.emit('hoverChange', {}));
+    on('interaction:dragend', (payload) => {
+      const moved = payload as { nodes?: readonly { id: string; position: [number, number, number] }[] };
+      if (moved.nodes) this.emit('nodeMoved', { nodes: moved.nodes });
+    });
+    on('node:resizeend', (payload) => {
+      const resized = payload as {
+        node: { id: string; position: { x: number; y: number; z: number } };
+        finalSize: { width: number; height: number };
+      };
+      this.emit('nodeResized', {
+        id: resized.node.id,
+        size: [resized.finalSize.width, resized.finalSize.height],
+        position: [resized.node.position.x, resized.node.position.y, resized.node.position.z],
+      });
+    });
     on('selection:changed', (payload) => {
       if (this.applyingSelection) return;
       this.emit('selectionChange', { ids: idsOf(payload) });

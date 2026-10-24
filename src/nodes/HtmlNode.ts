@@ -342,6 +342,15 @@ export class HtmlNode extends BaseContentNode {
     contentWrapper.style.transform = `scale(${(data.contentScale as number) ?? 1.0})`;
     contentWrapper.style.transformOrigin = 'center center';
 
+    if (data.group === true) {
+      wrapper.style.height = '100%';
+      wrapper.style.minHeight = '100%';
+      wrapper.style.overflow = 'hidden';
+      contentWrapper.style.flex = '1 1 auto';
+      contentWrapper.style.height = '100%';
+      contentWrapper.style.overflow = 'hidden';
+    }
+
     if (data.html) {
       contentWrapper.innerHTML = data.html as string;
       if (
@@ -489,7 +498,46 @@ export class HtmlNode extends BaseContentNode {
       handle.style.opacity = '1';
     });
     this.domElement.addEventListener('mouseleave', () => {
-      handle.style.opacity = '0';
+      if (!handle.dataset.resizing) handle.style.opacity = '0';
+    });
+
+    handle.style.touchAction = 'none';
+    handle.addEventListener('pointerdown', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+
+      const rect = this.domElement.getBoundingClientRect();
+      const start = {
+        clientX: event.clientX,
+        clientY: event.clientY,
+        width: this.size.width,
+        height: this.size.height,
+        screenWidth: Math.max(1, rect.width),
+        screenHeight: Math.max(1, rect.height),
+      };
+
+      handle.dataset.resizing = 'true';
+      handle.setPointerCapture?.(event.pointerId);
+      this.startResize();
+
+      const move = (next: PointerEvent) => {
+        this.resize(
+          start.width + ((next.clientX - start.clientX) * start.width) / start.screenWidth,
+          start.height + ((next.clientY - start.clientY) * start.height) / start.screenHeight
+        );
+      };
+      const finish = () => {
+        delete handle.dataset.resizing;
+        if (handle.hasPointerCapture?.(event.pointerId)) handle.releasePointerCapture?.(event.pointerId);
+        window.removeEventListener('pointermove', move);
+        window.removeEventListener('pointerup', finish);
+        window.removeEventListener('pointercancel', finish);
+        this.endResize();
+      };
+
+      window.addEventListener('pointermove', move);
+      window.addEventListener('pointerup', finish);
+      window.addEventListener('pointercancel', finish);
     });
   }
 

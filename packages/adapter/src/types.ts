@@ -106,7 +106,7 @@ export interface AdapterGeometry {
    * The padding around a band so its members sit inside it. The header sits in the band's own strip,
    * so the padding is at least the header's height: the header never lands on a card.
    */
-  bandPadding: number;
+  bandPadding: AdapterPadding;
   /** The footprint of a lane gutter label. */
   laneLabelSize: [number, number, number];
   /** The gap between the lane gutter and the leftmost content. */
@@ -114,6 +114,11 @@ export interface AdapterGeometry {
   /** The footprint of a row or column caption. */
   axisLabelSize: [number, number, number];
 }
+
+/** A uniform inset, or one per side for groups with a header strip. */
+export type AdapterPadding =
+  | number
+  | { top?: number; right?: number; bottom?: number; left?: number };
 
 /** The policy a host binds into an adapter. */
 export interface AdapterConfig<

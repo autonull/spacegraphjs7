@@ -407,6 +407,34 @@ describe('DragHandler', () => {
     expect((handler as any).preserveDistance).toBe(true);
     expect((handler as any).initialPickDistance).toBeGreaterThan(0);
   });
+
+  it('carries a group’s descendants, including nested groups', () => {
+    const mockSg = createMockSpaceGraph();
+
+    class GroupTestNode extends Node {
+      readonly object = new THREE.Object3D();
+
+      constructor(id: string, data: Record<string, unknown>) {
+        super({ id, type: 'HtmlNode', data } as any);
+      }
+    }
+
+    const group = new GroupTestNode('group', { group: true });
+    const child = new GroupTestNode('child', { parent: 'group' });
+    const nested = new GroupTestNode('nested', { parent: 'group', group: true });
+    const grandchild = new GroupTestNode('grandchild', { parent: 'nested' });
+    child.position.set(10, 0, 0);
+    grandchild.position.set(20, 5, 0);
+    for (const node of [group, child, nested, grandchild]) mockSg.graph.nodes.set(node.id, node);
+
+    const handler = new DragHandler(mockSg, new InteractionRaycaster(mockSg));
+    expect(handler.startDrag(group)).toBe(true);
+
+    expect(handler.getDraggingNodes()).toContain(child);
+    expect(handler.getDraggingNodes()).toContain(nested);
+    expect(handler.getDraggingNodes()).toContain(grandchild);
+    expect(handler.nodeDragOffsets.get(child)?.x).toBe(10);
+  });
 });
 
 describe('FingerManager', () => {

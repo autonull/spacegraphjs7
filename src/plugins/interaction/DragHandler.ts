@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import type { Node } from '../../nodes/Node';
+import { parentIdOf } from '../../utils/nodeParent';
 import type { SpaceGraph } from '../../SpaceGraph';
 import { nodeDragPayload } from './nodeDragPayload';
 import type { InteractionRaycaster } from './RaycasterHelper';
@@ -64,6 +65,19 @@ export class DragHandler {
       }
     }
 
+    // A group carries its contents: dragging the backdrop moves the members with it, including
+    // nested groups and their members.
+    const groups = [...this.draggingNodes];
+    while (groups.length > 0) {
+      const group = groups.pop()!;
+      for (const descendant of this.groupDescendants(group)) {
+        if (this.draggingNodes.has(descendant)) continue;
+        this.draggingNodes.add(descendant);
+        this.nodeDragOffsets.set(descendant, descendant.position.clone().sub(node.position));
+        groups.push(descendant);
+      }
+    }
+
     this.dragPlane.setFromNormalAndCoplanarPoint(
       this.sg.renderer.camera.getWorldDirection(this.dragPlane.normal),
       node.position
@@ -78,7 +92,7 @@ export class DragHandler {
     const ndc = this.raycaster.getMouseNDC();
     this.previousDragPosition = { x: ndc.x, y: ndc.y };
 
-    this.sg.events.emit('interaction:dragstart', nodeDragPayload(node));
+    this.sg.events.emit('interaction:dragstart', nodeDragPayload(node, this.draggingNodes));
     return true;
   }
 
@@ -98,13 +112,43 @@ export class DragHandler {
     if (!this.isDragging) return;
 
     if (this.dragNode) {
-      this.sg.events.emit('interaction:dragend', nodeDragPayload(this.dragNode));
+      this.sg.events.emit('interaction:dragend', nodeDragPayload(this.dragNode, this.draggingNodes));
     }
 
     this.isDragging = false;
     this.dragNode = null;
     this.draggingNodes.clear();
     this.nodeDragOffsets.clear();
+  }
+
+  private groupDescendants(group: Node): Node[] {
+    if (!(group as Node & { isGroupNode?: boolean }).isGroupNode && group.data?.group !== true) {
+      return [];
+    }
+
+    const nodes = this.sg.graph.nodes;
+    const descendants: Node[] = [];
+
+    for (const candidate of nodes.values()) {
+      if (candidate === group) continue;
+
+      const visited = new Set<string>();
+      let parent = parentIdOf(candidate);
+
+      while (parent) {
+        if (visited.has(parent)) break;
+        visited.add(parent);
+        if (parent === group.id) {
+          descendants.push(candidate);
+          break;
+        }
+
+        const ancestor = nodes.get(parent);
+        parent = ancestor ? parentIdOf(ancestor) : undefined;
+      }
+    }
+
+    return descendants;
   }
 
   isDraggingNode(): boolean {

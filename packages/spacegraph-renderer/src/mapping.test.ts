@@ -86,6 +86,28 @@ describe('nodeSpec', () => {
     const spec = nodeSpec(node({ shape: 'panel' }), theme);
     expect(spec.data).not.toHaveProperty('size');
   });
+
+  test('renders a group as an interactive DOM node with its members in the scene', () => {
+    const spec = nodeSpec(
+      node({ shape: 'group', html: '<section>turn</section>', size: [320, 220], interactive: true }),
+      theme
+    );
+    expect(spec.type).toBe('HtmlNode');
+    expect(spec.data).toMatchObject({
+      html: '<section>turn</section>',
+      width: 320,
+      height: 220,
+      pointerEvents: 'auto',
+      group: true,
+      useRawHtml: true,
+      interactive: true,
+    });
+  });
+
+  test('passes a node parent through to the core for group dragging', () => {
+    const spec = nodeSpec(node({ html: '<b>child</b>', parent: 'group:turn' }), theme);
+    expect(spec.data.parent).toBe('group:turn');
+  });
 });
 
 describe('edgeSpec', () => {

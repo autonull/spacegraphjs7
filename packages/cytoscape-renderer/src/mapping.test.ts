@@ -62,6 +62,15 @@ describe('nodeElement', () => {
     expect(element.selectable).toBe(false);
     expect(element.data).toMatchObject({ color: '#ef4444', width: 16, height: 16 });
   });
+
+  test('maps a group to a compound parent with its members', () => {
+    const group = nodeElement(node({ id: 'group', shape: 'group', size: [320, 200], label: 'Turn 1' }), theme);
+    expect(group.classes).toBe('group');
+    expect(group.data).toMatchObject({ id: 'group', width: 320, height: 200 });
+
+    const child = nodeElement(node({ id: 'child', parent: 'group' }), theme);
+    expect(child.data.parent).toBe('group');
+  });
 });
 
 describe('edgeElement', () => {

@@ -64,7 +64,9 @@ export type RenderNode = {
   status?: NodeStatus
   visible?: boolean
   interactive?: boolean
-  shape?: 'card' | 'panel' | 'dot' | 'badge'
+  shape?: 'card' | 'panel' | 'dot' | 'badge' | 'group'
+  /** The group this node belongs to. A group node may itself name a parent group. */
+  parent?: string
   data?: Record<string, unknown>
 }
 
@@ -184,6 +186,10 @@ export type RendererEventMap = {
   edgeClick: { id: string }
   backgroundClick: void
   nodeDoubleClick: { id: string }
+  /** Settled node positions after a drag. A group carries every descendant it moved. */
+  nodeMoved: { nodes: readonly { id: string; position: [number, number, number] }[] }
+  /** A DOM node's settled size after a resize gesture. */
+  nodeResized: { id: string; size: [number, number]; position: [number, number, number] }
   hoverChange: { id?: string; kind?: 'node' | 'edge' }
   selectionChange: { ids: readonly string[] }
   viewportChange: RendererViewport

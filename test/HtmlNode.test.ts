@@ -127,4 +127,34 @@ describe('HtmlNode Unit Tests', () => {
     const content = node.domElement.querySelector('.node-content');
     expect(content?.textContent).toBe('Another label');
   });
+
+  it('resizes from its handle and reports the settled size', () => {
+    const node = new HtmlNode(sg as any, {
+      id: 'u',
+      type: 'HtmlNode',
+      data: { html: '<span>x</span>', width: 200, height: 100 },
+    } as any);
+    vi.spyOn(node.domElement, 'getBoundingClientRect').mockReturnValue({
+      width: 200,
+      height: 100,
+      top: 0,
+      left: 0,
+      right: 200,
+      bottom: 100,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    });
+
+    const handle = node.getResizeHandle()!;
+    handle.dispatchEvent(new MouseEvent('pointerdown', { clientX: 0, clientY: 0, bubbles: true }));
+    window.dispatchEvent(new MouseEvent('pointermove', { clientX: 100, clientY: 50 }));
+    window.dispatchEvent(new MouseEvent('pointerup', { clientX: 100, clientY: 50 }));
+
+    expect(node.size).toEqual({ width: 300, height: 150 });
+    expect(sg.events.emit).toHaveBeenCalledWith('node:resizeend', {
+      node,
+      finalSize: { width: 300, height: 150 },
+    });
+  });
 });
