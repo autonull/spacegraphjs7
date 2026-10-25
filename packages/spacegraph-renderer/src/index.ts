@@ -1,6 +1,5 @@
 import {
   BaseGraphRenderer,
-  CONTRACT_VERSION,
   type CardFacing,
   type DepthMode,
   type FitOptions,
@@ -18,7 +17,6 @@ import { worldToScreen } from 'spacegraphjs/utils';
 import { edgeSpec, nodeSpec, spaceGraphTheme } from './mapping';
 
 const CAPABILITIES: RendererCapabilities = {
-  contractVersion: CONTRACT_VERSION,
   projections: ['2d', '3d'],
   depths: ['flat', 'layered', 'depth-stack', 'orbit'],
   domNodes: true,

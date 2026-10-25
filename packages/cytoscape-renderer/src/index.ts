@@ -1,6 +1,5 @@
 import {
   BaseGraphRenderer,
-  CONTRACT_VERSION,
   type DepthMode,
   type FitOptions,
   type GraphRenderer,
@@ -16,7 +15,6 @@ import { frameInRegion } from './fit';
 import { cytoscapeStyle, edgeElement, nodeElement, normalizeTheme } from './mapping';
 
 const CAPABILITIES: RendererCapabilities = {
-  contractVersion: CONTRACT_VERSION,
   // Cytoscape is the 2D fallback: only the flat depth, no 3D, no minimap. Cards render through a
   // capped DOM overlay.
   projections: ['2d'],

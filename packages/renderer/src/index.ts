@@ -5,33 +5,6 @@
  * A host builds a `RenderModel`, a renderer adapter renders it, and the two never share library objects.
  */
 
-export const CONTRACT_VERSION = 4
-
-/**
- * Versions this contract package implements; adapters declare theirs via `capabilities.contractVersion`.
- *
- * A v2 adapter is still accepted: it ignores the fit options v3 added, and a host that wants them
- * checks `capabilities.fitInsets` before it asks. A v3 adapter against a v2 host is refused with a
- * clear message (see `negotiateContract`) — the host cannot know what the newer adapter expects.
- */
-export const SUPPORTED_CONTRACT_VERSIONS: readonly number[] = [2, 3, 4]
-
-export function supportsContractVersion(version: number): boolean {
-  return SUPPORTED_CONTRACT_VERSIONS.includes(version)
-}
-
-export type ContractNegotiation = { ok: true } | { ok: false; message: string }
-
-/** P8.7: a host checks this before rendering so a mismatched adapter fails with a clear message. */
-export function negotiateContract(version: number): ContractNegotiation {
-  return supportsContractVersion(version)
-    ? { ok: true }
-    : {
-        ok: false,
-        message: `Renderer contract version ${version} is not supported (this host implements ${SUPPORTED_CONTRACT_VERSIONS.join(", ")}).`,
-      }
-}
-
 export type Projection = '2d' | '3d'
 
 /**
@@ -131,7 +104,6 @@ export type RenderTheme = {
 }
 
 export type RendererCapabilities = {
-  contractVersion: number
   projections: readonly Projection[]
   /** Depth treatments this renderer can honour, in `DepthMode` terms. */
   depths: readonly DepthMode[]

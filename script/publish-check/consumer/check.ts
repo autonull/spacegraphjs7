@@ -1,9 +1,7 @@
 // The consumer's node check: it imports the published packages and never reaches into the workspace.
 //
 // It proves the contract, the model adapter and both interactive adapters load from the published
-// bytes, that the contract version is the one the adapters declare, and that the Cytoscape adapter
-// mounts into a DOM container and draws the model it was given.
-import { CONTRACT_VERSION } from '@spacegraphjs/renderer';
+// bytes, and that the Cytoscape adapter mounts into a DOM container and draws the model it was given.
 import type { RenderModel } from '@spacegraphjs/renderer';
 import { ModelAdapter } from '@spacegraphjs/adapter';
 import { SpaceGraphRenderer } from '@spacegraphjs/spacegraph-renderer';
@@ -49,12 +47,6 @@ export const report = () => {
   }
 };
 
-check('the contract exposes a version', typeof CONTRACT_VERSION === 'number', `v${CONTRACT_VERSION}`);
-check(
-  'both adapters declare the contract version',
-  new SpaceGraphRenderer().capabilities.contractVersion === CONTRACT_VERSION &&
-    new CytoscapeRenderer().capabilities.contractVersion === CONTRACT_VERSION,
-);
 check('the model adapter is a base class a host can extend', typeof ModelAdapter === 'function');
 
 const svg = renderToSVG(MODEL);
@@ -62,7 +54,7 @@ check('the static renderer draws the model', svg.includes('<svg') && svg.include
 
 // The interactive adapters need a real canvas, so they are mounted by the browser check. Here they
 // only have to expose the contract's surface from the published bytes.
-const contractSurface = ['mount', 'setModel', 'setTheme', 'setProjection', 'setDepth', 'setSelection', 'fit', 'focus', 'resize', 'on', 'dispose'];
+const contractSurface = ['mount', 'setModel', 'setTheme', 'setProjection', 'setDepth', 'setSelection', 'fit', 'focus', 'resize', 'on', 'dispose', 'applyPatch'];
 for (const [name, adapter] of [
   ['SpaceGraph', new SpaceGraphRenderer()],
   ['Cytoscape', new CytoscapeRenderer()],

@@ -6,8 +6,6 @@
 
 import {
     ContrastAuditor,
-    CONTRACT_VERSION,
-    negotiateContract,
     type RendererCapabilities,
     type RenderModel,
     type RenderTheme,
@@ -118,23 +116,6 @@ function extent(layout: GraphLayout): string {
 
 export const CAPABILITIES: readonly Capability[] = [
     {
-        id: 'contract',
-        title: 'The renderer contract',
-        modules: ['@spacegraphjs/renderer'],
-        summary: 'One model, one negotiated contract, three renderers.',
-        run: (context) => {
-            const negotiation = negotiateContract(2);
-
-            return [
-                `contract v${CONTRACT_VERSION} · a v2 adapter is still ${negotiation.ok ? 'accepted' : 'refused'}`,
-                `model: ${context.model.nodes.length} nodes, ${context.model.edges.length} edges`,
-                `renderer: ${context.rendererName ?? 'none mounted'} · ${
-                    context.capabilities?.projections.join(' + ') ?? 'no projection'
-                }`,
-            ];
-        },
-    },
-    {
         id: 'theme',
         title: 'Theme and contrast',
         modules: ['@spacegraphjs/renderer'],
@@ -167,7 +148,7 @@ export const CAPABILITIES: readonly Capability[] = [
             if (!capabilities) return ['no renderer is mounted'];
 
             return [
-                `${context.rendererName} · contract v${capabilities.contractVersion}`,
+                `${context.rendererName}`,
                 `DOM cards: ${capabilities.domNodes ? `yes, up to ${capabilities.maxDomNodes}` : 'no'}`,
                 `projections: ${capabilities.projections.join(', ')}`,
             ];

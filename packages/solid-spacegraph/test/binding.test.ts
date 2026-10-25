@@ -38,7 +38,6 @@ function fakeRenderer() {
   const calls = { mounted: 0, models: [] as RenderModel[], disposed: 0, selection: [] as (readonly string[])[] };
   const renderer = {
     capabilities: {
-      contractVersion: 1,
       projections: ['2d', '3d'],
       domNodes: true,
       maxDomNodes: 40,

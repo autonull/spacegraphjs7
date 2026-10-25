@@ -1,9 +1,5 @@
-// @vitest-environment node
 import { describe, expect, test } from 'vitest';
 import {
-  CONTRACT_VERSION,
-  negotiateContract,
-  SUPPORTED_CONTRACT_VERSIONS,
   supports,
   supportsDepth,
   type DepthMode,
@@ -31,6 +27,7 @@ const METHOD_NAMES = [
   'resize',
   'on',
   'dispose',
+  'applyPatch',
 ] as const;
 
 const adapters: ReadonlyArray<{ name: string; create: () => GraphRenderer }> = [
@@ -43,10 +40,6 @@ describe.each(adapters)('renderer contract: $name', ({ create }) => {
     const renderer = create();
     for (const name of METHOD_NAMES) expect(typeof renderer[name]).toBe('function');
     expect(renderer.capabilities).toBeTypeOf('object');
-  });
-
-  test('declares the current contract version', () => {
-    expect(create().capabilities.contractVersion).toBe(CONTRACT_VERSION);
   });
 
   test('capability flags drive supports() truthfully', () => {
@@ -182,25 +175,6 @@ describe('second-host fixture (P8.6)', () => {
     expect(svg).toContain('src/billing/invoice.ts');
     expect(svg).toContain('retry #1');
     expect(svg).toContain('expected 2 to equal 3');
-  });
-});
-
-describe('contract version negotiation (P8.7)', () => {
-  test('every adapter negotiates the current contract version', () => {
-    for (const { create } of adapters) {
-      expect(negotiateContract(create().capabilities.contractVersion)).toEqual({ ok: true });
-    }
-  });
-
-  test('a future version is rejected with a clear message, not a crash', () => {
-    const result = negotiateContract(CONTRACT_VERSION + 1);
-    expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.message).toContain(String(CONTRACT_VERSION + 1));
-  });
-
-  test('a v2 adapter is still accepted, so a host can roll the contract forward', () => {
-    expect(negotiateContract(2)).toEqual({ ok: true });
-    expect(SUPPORTED_CONTRACT_VERSIONS).toContain(2);
   });
 });
 

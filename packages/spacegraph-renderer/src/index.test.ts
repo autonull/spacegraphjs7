@@ -1,11 +1,10 @@
 import { describe, expect, test } from 'bun:test';
-import { CONTRACT_VERSION, supports } from '@spacegraphjs/renderer';
+import { supports } from '@spacegraphjs/renderer';
 import { SpaceGraphRenderer } from './index';
 
 describe('@spacegraphjs/spacegraph-renderer', () => {
   test('declares its capabilities without lying about minimap support', () => {
     const capabilities = new SpaceGraphRenderer().capabilities;
-    expect(capabilities.contractVersion).toBe(CONTRACT_VERSION);
     expect(supports(capabilities, '2d')).toBe(true);
     expect(supports(capabilities, '3d')).toBe(true);
     expect(supports(capabilities, 'domNodes')).toBe(true);

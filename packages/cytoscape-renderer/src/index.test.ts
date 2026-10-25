@@ -1,11 +1,10 @@
 import { describe, expect, test } from 'bun:test';
-import { CONTRACT_VERSION, supports } from '@spacegraphjs/renderer';
+import { supports } from '@spacegraphjs/renderer';
 import { CytoscapeRenderer } from './index';
 
 describe('@spacegraphjs/cytoscape-renderer', () => {
   test('declares a 2D-only capability set and never claims 3D or a minimap', () => {
     const capabilities = new CytoscapeRenderer().capabilities;
-    expect(capabilities.contractVersion).toBe(CONTRACT_VERSION);
     expect(supports(capabilities, '2d')).toBe(true);
     expect(supports(capabilities, '3d')).toBe(false);
     expect(supports(capabilities, 'domNodes')).toBe(true);

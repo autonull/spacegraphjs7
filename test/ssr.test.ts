@@ -30,7 +30,7 @@ describe('SSR-safe imports', () => {
       import('@spacegraphjs/svg-renderer'),
     ]);
 
-    expect(contract.CONTRACT_VERSION).toBeTypeOf('number');
+    expect(contract.supports).toBeTypeOf('function');
     expect(spacegraphRenderer.SpaceGraphRenderer).toBeTypeOf('function');
     expect(cytoscapeRenderer.CytoscapeRenderer).toBeTypeOf('function');
     expect(svgRenderer.renderToSVG).toBeTypeOf('function');

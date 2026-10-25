@@ -1,19 +1,19 @@
 // The consumer's browser page: it mounts both interactive adapters from the published packages.
 //
 // The page reports what each adapter drew, so the driver can assert on it.
-import { CONTRACT_VERSION, DEFAULT_THEME } from '@spacegraphjs/renderer';
+import { DEFAULT_THEME } from '@spacegraphjs/renderer';
 import { SpaceGraphRenderer } from '@spacegraphjs/spacegraph-renderer';
 import { CytoscapeRenderer } from '@spacegraphjs/cytoscape-renderer';
 import { MODEL } from './check';
 
 declare global {
   interface Window {
-    __result?: { contractVersion: number; spacegraph: boolean; cytoscape: boolean; error?: string }
+    __result?: { spacegraph: boolean; cytoscape: boolean; error?: string }
   }
 }
 
 const report = async () => {
-  const result = { contractVersion: CONTRACT_VERSION, spacegraph: false, cytoscape: false }
+  const result = { spacegraph: false, cytoscape: false }
   try {
     const spacegraph = new SpaceGraphRenderer()
     const spacegraphContainer = document.querySelector('#spacegraph') as HTMLElement
