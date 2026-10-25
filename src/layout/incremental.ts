@@ -22,9 +22,7 @@ export type IncrementalLayout = {
 export const interpolatePosition = (from: Position, to: Position, t: number): Position => ({
     x: from.x + (to.x - from.x) * t,
     y: from.y + (to.y - from.y) * t,
-    ...(to.z === undefined && from.z === undefined
-        ? {}
-        : { z: (from.z ?? 0) + ((to.z ?? 0) - (from.z ?? 0)) * t }),
+    z: (from.z ?? 0) + ((to.z ?? 0) - (from.z ?? 0)) * t,
 });
 
 export const computeIncremental = (

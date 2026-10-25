@@ -13,4 +13,6 @@ export * from './budget';
 export * from './a11y';
 export * from './deriver';
 export * from './scope';
+export * from './walks';
+export * from './time-filter';
 export * from './example/fixture';

@@ -239,7 +239,11 @@ export class CytoscapeRenderer extends BaseGraphRenderer implements GraphRendere
       const zoom = cy.zoom();
       const width = el?.clientWidth ?? 0;
       const height = el?.clientHeight ?? 0;
-      cy.pan({ x: width / 2 - viewport.center[0] * zoom, y: height / 2 - viewport.center[1] * zoom });
+      // Flip Y: model Y-up -> Cytoscape Y-down
+      cy.pan({
+        x: width / 2 - viewport.center[0] * zoom,
+        y: -(height / 2 - viewport.center[1] * zoom), // Flip Y
+      });
     }
     this.#renderOverlay();
   }
@@ -256,9 +260,14 @@ export class CytoscapeRenderer extends BaseGraphRenderer implements GraphRendere
     const width = el?.clientWidth ?? 0;
     const height = el?.clientHeight ?? 0;
 
+    // Cytoscape's Y axis points down (screen coordinates), but the model's Y points up.
+    // For the minimap and viewport reporting, we need to flip Y so it matches the model.
+    const centerX = (width / 2 - pan.x) / zoom;
+    const centerY = (height / 2 + pan.y) / zoom; // Note: + pan.y to flip
+
     return {
       zoom,
-      center: [(width / 2 - pan.x) / zoom, (height / 2 - pan.y) / zoom, 0],
+      center: [centerX, centerY, 0],
       extent: { width: width / zoom, height: height / zoom },
     };
   }
