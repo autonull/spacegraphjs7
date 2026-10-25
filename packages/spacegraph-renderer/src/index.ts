@@ -9,6 +9,7 @@ import {
   type RendererCapabilities,
   type RendererViewport,
   type RenderModel,
+  type RenderModelPatch,
   type RenderTheme,
   type Unsubscribe,
 } from '@spacegraphjs/renderer';
@@ -123,6 +124,76 @@ export class SpaceGraphRenderer extends BaseGraphRenderer implements GraphRender
       else sg.show(node.id);
     }
     sg.render();
+  }
+
+  applyPatch(patch: RenderModelPatch): void {
+    const sg = this.#sg;
+    const theme = this.#theme;
+    if (!sg || !theme || !this.#model) return;
+
+    // Apply node changes
+    for (const node of patch.nodes.removed) {
+      sg.removeNode(node);
+      this.#nodeTypes.delete(node);
+      this.#nodes.delete(node);
+    }
+
+    const addedNodes = patch.nodes.added.map((node) => nodeSpec(node, theme));
+    for (const node of addedNodes) {
+      const previous = this.#nodeTypes.get(node.id);
+      if (previous && previous !== node.type) sg.removeNode(node.id);
+      this.#nodeTypes.set(node.id, node.type);
+    }
+    this.#nodes = new Set([...this.#nodes, ...patch.nodes.added.map((n) => n.id)]);
+
+    const changedNodes = patch.nodes.changed.map((node) => nodeSpec(node, theme));
+    for (const node of changedNodes) {
+      const previous = this.#nodeTypes.get(node.id);
+      if (previous && previous !== node.type) sg.removeNode(node.id);
+      this.#nodeTypes.set(node.id, node.type);
+    }
+
+    // Apply edge changes
+    for (const edgeId of patch.edges.removed) {
+      sg.removeEdge(edgeId);
+      this.#edges.delete(edgeId);
+    }
+    this.#edges = new Set([...this.#edges, ...patch.edges.added.map((e) => e.id)]);
+
+    // Rebuild the full spec with current model + patch
+    const updatedModel = this.#mergePatch(this.#model, patch);
+    this.#model = updatedModel;
+
+    const spec: GraphSpec = {
+      nodes: updatedModel.nodes.map((node) => nodeSpec(node, theme)),
+      edges: updatedModel.edges.map((edge) => edgeSpec(edge, theme)),
+    };
+    sg.loadSpec(spec);
+    sg.setPositions(Object.fromEntries(updatedModel.nodes.map((node) => [node.id, node.position])));
+
+    for (const node of updatedModel.nodes) {
+      if (node.visible === false) sg.hide(node.id);
+      else sg.show(node.id);
+    }
+    sg.render();
+  }
+
+  #mergePatch(model: RenderModel, patch: RenderModelPatch): RenderModel {
+    const nodeMap = new Map(model.nodes.map((n) => [n.id, n]));
+    for (const id of patch.nodes.removed) nodeMap.delete(id);
+    for (const node of patch.nodes.added) nodeMap.set(node.id, node);
+    for (const node of patch.nodes.changed) nodeMap.set(node.id, node);
+
+    const edgeMap = new Map(model.edges.map((e) => [e.id, e]));
+    for (const id of patch.edges.removed) edgeMap.delete(id);
+    for (const edge of patch.edges.added) edgeMap.set(edge.id, edge);
+    for (const edge of patch.edges.changed) edgeMap.set(edge.id, edge);
+
+    return {
+      nodes: [...nodeMap.values()],
+      edges: [...edgeMap.values()],
+      extent: model.extent,
+    };
   }
 
   setTheme(theme: RenderTheme): void {

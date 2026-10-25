@@ -8,6 +8,7 @@ import {
   type RendererCapabilities,
   type RendererViewport,
   type RenderModel,
+  type RenderModelPatch,
   type RenderTheme,
 } from '@spacegraphjs/renderer';
 import type { Core } from 'cytoscape';
@@ -129,6 +130,81 @@ export class CytoscapeRenderer extends BaseGraphRenderer implements GraphRendere
     this.#edges = liveEdges;
     this.#syncCards();
     this.#renderOverlay();
+  }
+
+  applyPatch(patch: RenderModelPatch): void {
+    const cy = this.#cy;
+    const theme = this.#theme;
+    if (!cy || !theme || !this.#model) return;
+
+    // Apply node changes
+    cy.batch(() => {
+      for (const id of patch.nodes.removed) {
+        cy.remove(cy.getElementById(id));
+        this.#nodes.delete(id);
+      }
+
+      for (const node of patch.nodes.added) {
+        const spec = nodeElement(node, theme);
+        cy.add(spec);
+        this.#nodes.add(node.id);
+      }
+
+      for (const node of patch.nodes.changed) {
+        const element = cy.getElementById(node.id);
+        const spec = nodeElement(node, theme);
+        if (!element.empty()) {
+          element.data(spec.data);
+          element.classes(spec.classes ?? []);
+          element.position({ x: node.position[0], y: node.position[1] });
+          element.style('display', node.visible === false ? 'none' : 'element');
+        }
+      }
+
+      // Apply edge changes
+      for (const id of patch.edges.removed) {
+        cy.remove(cy.getElementById(id));
+        this.#edges.delete(id);
+      }
+
+      for (const edge of patch.edges.added) {
+        const spec = edgeElement(edge, theme);
+        cy.add(spec);
+        this.#edges.add(edge.id);
+      }
+
+      for (const edge of patch.edges.changed) {
+        const element = cy.getElementById(edge.id);
+        const spec = edgeElement(edge, theme);
+        if (!element.empty()) {
+          element.data(spec.data);
+          element.classes(spec.classes ?? []);
+        }
+      }
+    });
+
+    // Update the stored model
+    this.#model = this.#mergePatch(this.#model, patch);
+    this.#syncCards();
+    this.#renderOverlay();
+  }
+
+  #mergePatch(model: RenderModel, patch: RenderModelPatch): RenderModel {
+    const nodeMap = new Map(model.nodes.map((n) => [n.id, n]));
+    for (const id of patch.nodes.removed) nodeMap.delete(id);
+    for (const node of patch.nodes.added) nodeMap.set(node.id, node);
+    for (const node of patch.nodes.changed) nodeMap.set(node.id, node);
+
+    const edgeMap = new Map(model.edges.map((e) => [e.id, e]));
+    for (const id of patch.edges.removed) edgeMap.delete(id);
+    for (const edge of patch.edges.added) edgeMap.set(edge.id, edge);
+    for (const edge of patch.edges.changed) edgeMap.set(edge.id, edge);
+
+    return {
+      nodes: [...nodeMap.values()],
+      edges: [...edgeMap.values()],
+      extent: model.extent,
+    };
   }
 
   setTheme(theme: RenderTheme): void {

@@ -5,7 +5,7 @@
  * A host builds a `RenderModel`, a renderer adapter renders it, and the two never share library objects.
  */
 
-export const CONTRACT_VERSION = 3
+export const CONTRACT_VERSION = 4
 
 /**
  * Versions this contract package implements; adapters declare theirs via `capabilities.contractVersion`.
@@ -14,7 +14,7 @@ export const CONTRACT_VERSION = 3
  * checks `capabilities.fitInsets` before it asks. A v3 adapter against a v2 host is refused with a
  * clear message (see `negotiateContract`) — the host cannot know what the newer adapter expects.
  */
-export const SUPPORTED_CONTRACT_VERSIONS: readonly number[] = [2, 3]
+export const SUPPORTED_CONTRACT_VERSIONS: readonly number[] = [2, 3, 4]
 
 export function supportsContractVersion(version: number): boolean {
   return SUPPORTED_CONTRACT_VERSIONS.includes(version)
@@ -86,6 +86,28 @@ export type RenderModel = {
   nodes: readonly RenderNode[]
   edges: readonly RenderEdge[]
   extent?: { width: number; height: number; depth?: number }
+}
+
+/** Incremental patch for updating a render model. */
+export type RenderModelPatch = {
+  /** Nodes that changed. */
+  nodes: {
+    /** Nodes the next model adds. */
+    added: readonly RenderNode[]
+    /** Node ids the next model drops. */
+    removed: readonly string[]
+    /** Nodes that stay but carry different content. */
+    changed: readonly RenderNode[]
+  }
+  /** Edges that changed. */
+  edges: {
+    /** Edges the next model adds. */
+    added: readonly RenderEdge[]
+    /** Edge ids the next model drops. */
+    removed: readonly string[]
+    /** Edges that stay but carry different content. */
+    changed: readonly RenderEdge[]
+  }
 }
 
 export type RenderTheme = {
@@ -203,6 +225,9 @@ export type GraphRenderer = {
   readonly capabilities: RendererCapabilities
   mount(container: HTMLElement, options: { theme: RenderTheme; projection: Projection }): Promise<void>
   setModel(model: RenderModel): void
+  /** Apply an incremental patch to the current model. Optional: a renderer that does not support
+   * incremental updates must no-op, never throw. */
+  applyPatch?(patch: RenderModelPatch): void
   setTheme(theme: RenderTheme): void
   setProjection(projection: Projection): void
   /** Apply a depth treatment; a renderer that does not support the mode must no-op, never throw. */

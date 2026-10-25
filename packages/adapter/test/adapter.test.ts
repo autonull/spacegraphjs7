@@ -208,11 +208,8 @@ describe('diffRenderModels', () => {
 
   test('an unchanged model has nothing to say', () => {
     expect(diffRenderModels(before, before)).toEqual({
-      added: [],
-      removed: [],
-      changed: [],
-      edgesAdded: [],
-      edgesRemoved: [],
+      nodes: { added: [], removed: [], changed: [] },
+      edges: { added: [], removed: [], changed: [] },
     });
   });
 
@@ -227,10 +224,13 @@ describe('diffRenderModels', () => {
     };
     const diff = diffRenderModels(before, after);
 
-    expect(diff.added).toEqual(['c']);
-    expect(diff.removed).toEqual([]);
-    expect(diff.changed).toEqual(['b']);
-    expect(diff.edgesRemoved).toEqual(['e1']);
+    expect(diff.nodes.added).toHaveLength(1);
+    expect(diff.nodes.added[0]?.id).toBe('c');
+    expect(diff.nodes.removed).toEqual([]);
+    expect(diff.nodes.changed).toHaveLength(1);
+    expect(diff.nodes.changed[0]?.id).toBe('b');
+    expect(diff.edges.removed).toHaveLength(1);
+    expect(diff.edges.removed[0]).toBe('e1');
   });
 
   test('a moved node counts as changed', () => {
@@ -239,6 +239,7 @@ describe('diffRenderModels', () => {
       nodes: before.nodes.map((node) => (node.id === 'a' ? { ...node, position: [5, 0, 0] } : node)),
     };
 
-    expect(diffRenderModels(before, after).changed).toEqual(['a']);
+    expect(diffRenderModels(before, after).nodes.changed).toHaveLength(1);
+    expect(diffRenderModels(before, after).nodes.changed[0]?.id).toBe('a');
   });
 });
