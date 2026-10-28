@@ -329,6 +329,7 @@ export class SpaceGraph {
     if (this.#initialized || this.#disposed) return;
     this.#initialized = true;
     this.renderer.init();
+    this.renderer.syncSize();
     this.#registerDefaults();
     await this.pluginManager.initAll();
     this.events.emit('ready', { timestamp: Date.now() });

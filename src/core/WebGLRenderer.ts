@@ -94,6 +94,7 @@ export class WebGLRenderer {
       left: '0px',
       zIndex: '0',
       touchAction: 'none',
+      pointerEvents: 'auto',
     });
     container.appendChild(this.renderer.domElement);
     container.style.position = 'relative';
