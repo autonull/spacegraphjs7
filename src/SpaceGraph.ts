@@ -920,7 +920,7 @@ export class SpaceGraph {
     const depths = [...this.graph.nodes.values()].map((node) => node.position.z);
     const sceneDepth = depths.length > 0 ? Math.max(...depths) - Math.min(...depths) : 0;
     const cameraDistance = this.cameraControls?.spherical.radius ?? 0;
-    this.renderer.setDepthFade(sceneFadeDensity(treatment.fade, cameraDistance, sceneDepth));
+    this.renderer.setDepthFadeFromScene(treatment.fade, cameraDistance, sceneDepth);
     return this;
   }
 

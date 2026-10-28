@@ -45,6 +45,9 @@ export class WebGLRenderer {
   private _cardFacing: CardFacing = 'plane';
   private _bgColor: number;
   private _depthFade = 0;
+  private _depthFadeStrength = 0;
+  private _depthFadeCameraDistance = 0;
+  private _depthFadeSceneDepth = 0;
   private _resizeObserver: ResizeObserver | null = null;
   /**
    * The surface size, as last measured. Reading `clientWidth` forces the browser to lay the page
@@ -218,6 +221,20 @@ export class WebGLRenderer {
     this.scene.fog = density > 0 ? new THREE.FogExp2(this._bgColor, density) : null;
     this.sg.requestFrame?.();
     return this;
+  }
+
+  /** Internal: set depth fade from scene parameters to avoid redundant fog updates. */
+  setDepthFadeFromScene(strength: number, cameraDistance: number, sceneDepth: number): this {
+    const density = strength <= 0 ? 0 : strength / Math.max(cameraDistance + sceneDepth, 1);
+    if (
+      this._depthFadeStrength === strength &&
+      this._depthFadeCameraDistance === cameraDistance &&
+      this._depthFadeSceneDepth === sceneDepth
+    ) return this;
+    this._depthFadeStrength = strength;
+    this._depthFadeCameraDistance = cameraDistance;
+    this._depthFadeSceneDepth = sceneDepth;
+    return this.setDepthFade(density);
   }
 
   /**
