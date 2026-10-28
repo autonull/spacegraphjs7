@@ -311,6 +311,8 @@ importers:
         specifier: ^3.34.1
         version: 3.34.4
 
+  packages/kernel: {}
+
   packages/react-spacegraph:
     dependencies:
       spacegraphjs:

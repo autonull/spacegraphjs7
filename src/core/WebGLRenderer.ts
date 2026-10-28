@@ -44,6 +44,7 @@ export class WebGLRenderer {
   private _projection: Projection;
   private _cardFacing: CardFacing = 'plane';
   private _bgColor: number;
+  private _depthFade = 0;
   private _resizeObserver: ResizeObserver | null = null;
   /**
    * The surface size, as last measured. Reading `clientWidth` forces the browser to lay the page
@@ -212,6 +213,8 @@ export class WebGLRenderer {
 
   /** LE.14: exponential depth attenuation toward the theme background; `density <= 0` clears the fog. */
   setDepthFade(density: number): this {
+    if (this._depthFade === density) return this;
+    this._depthFade = density;
     this.scene.fog = density > 0 ? new THREE.FogExp2(this._bgColor, density) : null;
     this.sg.requestFrame?.();
     return this;
