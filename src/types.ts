@@ -428,6 +428,9 @@ export interface SpaceGraphOptions {
   theme?: SpaceGraphTheme;
   /** Extra plugin instances to register at init, after the defaults. */
   plugins?: Plugin[];
+  /** When true, all camera animations (fit, focus, depth transitions) complete instantly without
+   * easing. Respects `prefers-reduced-motion` when not explicitly set. */
+  reducedMotion?: boolean;
 
   [key: string]: unknown;
 }

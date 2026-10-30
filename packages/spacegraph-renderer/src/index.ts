@@ -53,7 +53,7 @@ export class SpaceGraphRenderer extends BaseGraphRenderer implements GraphRender
 
   async mount(
     container: HTMLElement,
-    options: { theme: RenderTheme; projection: Projection }
+    options: { theme: RenderTheme; projection: Projection; reducedMotion?: boolean }
   ): Promise<void> {
     if (this.#sg) return;
     try {
@@ -63,6 +63,7 @@ export class SpaceGraphRenderer extends BaseGraphRenderer implements GraphRender
       const sg = await SpaceGraph.create(container, { nodes: [], edges: [] }, {
         chrome: false,
         doubleClickFocus: false,
+        reducedMotion: options.reducedMotion,
         render: {
           projection: ortho ? 'orthographic' : 'perspective',
           transparent: true,

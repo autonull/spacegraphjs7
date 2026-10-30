@@ -82,6 +82,18 @@ export class SpaceGraph {
   #lastZoom = -1;
   #lastCenter: [number, number, number] = [Number.NaN, Number.NaN, Number.NaN];
 
+  /**
+   * Whether animations should be instant. Respects the explicit `reducedMotion` option,
+   * falling back to the system `prefers-reduced-motion` media query.
+   */
+  get reducedMotion(): boolean {
+    if (this.options.reducedMotion !== undefined) return this.options.reducedMotion;
+    if (typeof window !== 'undefined') {
+      return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    }
+    return false;
+  }
+
   constructor(container: HTMLElement, options: SpaceGraphOptions = {}) {
     this.options = options;
     this.container = container;
@@ -486,7 +498,8 @@ export class SpaceGraph {
       if (fit.zoom !== undefined) this.cameraControls?.setOrthoZoomRange(fit.zoom);
       // Orthographic fit carries a frustum zoom; keep the camera radius (distance does not scale ortho).
       const distance = fit.zoom !== undefined ? this.cameraControls.spherical.radius : fit.cameraZ;
-      this.cameraControls.flyTo(fit.center, distance, duration, fit.zoom);
+      const effectiveDuration = this.reducedMotion ? 0 : duration;
+      this.cameraControls.flyTo(fit.center, distance, effectiveDuration, fit.zoom);
       this.#reportViewport(true);
       this.requestFrame();
     }
@@ -873,7 +886,8 @@ export class SpaceGraph {
     // The depth is stored before the treatment is applied: the treatment reads it (the card facing and
     // the fade resolve against the depth that is coming, not the one that was).
     this.#depth = depth;
-    this.#applyDepth(depth, previous !== depth ? 0.5 : 0);
+    const effectiveDuration = this.reducedMotion ? 0 : (previous !== depth ? 0.5 : 0);
+    this.#applyDepth(depth, effectiveDuration);
     if (previous !== depth) this.events.emit('depth:change', { depth, previous });
     this.#reportViewport(true);
     this.requestFrame();
@@ -975,7 +989,8 @@ export class SpaceGraph {
     const node = this.graph.getNode(id);
     if (node) {
       const pos = node.position;
-      this.cameraControls.flyTo(pos, this.renderer.camera.position.length(), duration);
+      const effectiveDuration = this.reducedMotion ? 0 : duration;
+      this.cameraControls.flyTo(pos, this.renderer.camera.position.length(), effectiveDuration);
       this.#reportViewport(true);
       this.requestFrame();
     }

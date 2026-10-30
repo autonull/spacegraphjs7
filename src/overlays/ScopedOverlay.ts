@@ -11,6 +11,10 @@ export interface ScopedOverlayOptions {
     onClose?: () => void;
     /** The element focused when the overlay opens; defaults to the container. */
     initialFocus?: HTMLElement;
+    /** When true, the overlay uses capture phase for keydown to ensure it handles Tab/Escape
+     * before any parent focus traps. This is useful when the overlay is nested inside another
+     * dialog's focus trap. */
+    useCapture?: boolean;
 }
 
 /**
@@ -27,14 +31,15 @@ export class ScopedOverlay {
         this.#options = options;
         const active = document.activeElement;
         this.#restore = active instanceof HTMLElement ? active : undefined;
-        options.container.addEventListener('keydown', this.#onKeyDown);
+        // Use capture phase to handle Tab/Escape before parent focus traps when nested
+        options.container.addEventListener('keydown', this.#onKeyDown, options.useCapture);
         (options.initialFocus ?? options.container).focus();
     }
 
     dispose(): void {
         if (this.#disposed) return;
         this.#disposed = true;
-        this.#options.container.removeEventListener('keydown', this.#onKeyDown);
+        this.#options.container.removeEventListener('keydown', this.#onKeyDown, this.#options.useCapture);
         this.#restore?.focus();
     }
 
