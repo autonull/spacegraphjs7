@@ -10,7 +10,7 @@ const MAX_BUNDLE_SIZE_KB = 200;
 async function checkBundleSize() {
   console.log('[Bundle Audit] Checking SpaceGraphJS build size...');
 
-  const bundlePath = path.resolve(__dirname, '../dist/spacegraphjs.js');
+  const bundlePath = path.resolve(__dirname, '../dist/index.js');
 
   if (!fs.existsSync(bundlePath)) {
     console.error(`[Error] Bundle not found at ${bundlePath}. Did you run "npm run build"?`);
@@ -20,7 +20,7 @@ async function checkBundleSize() {
   const stats = fs.statSync(bundlePath);
   const sizeKb = stats.size / 1024;
 
-  console.log(`[Bundle Audit] dist/spacegraphjs.js: ${sizeKb.toFixed(2)} KB`);
+  console.log(`[Bundle Audit] dist/index.js: ${sizeKb.toFixed(2)} KB`);
 
   if (sizeKb > MAX_BUNDLE_SIZE_KB) {
     console.warn(

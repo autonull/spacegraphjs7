@@ -1,4 +1,16 @@
-import * as THREE from 'three';
+import {
+  AmbientLight,
+  Color,
+  DirectionalLight,
+  FogExp2,
+  Matrix4,
+  OrthographicCamera,
+  PerspectiveCamera,
+  Scene,
+  Vector2,
+  Vector3,
+  WebGLRenderer as ThreeWebGLRenderer,
+} from 'three';
 import { CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
 import { CSS3DRenderer } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
 import { Node } from '../nodes/Node';
@@ -32,10 +44,10 @@ const PERSPECTIVE_DISTANCE: ZoomRange = { min: 10, max: 10000, closerIsLarger: f
 const ORTHO_ZOOM: ZoomRange = { min: 0.01, max: 100, closerIsLarger: true };
 
 export class WebGLRenderer {
-  public scene: THREE.Scene;
-  public perspectiveCamera: THREE.PerspectiveCamera;
-  public orthographicCamera: THREE.OrthographicCamera;
-  public renderer: THREE.WebGLRenderer;
+  public scene: Scene;
+  public perspectiveCamera: PerspectiveCamera;
+  public orthographicCamera: OrthographicCamera;
+  public renderer: ThreeWebGLRenderer;
   public cssRenderer: CSS3DRenderer;
   public css2dRenderer: CSS2DRenderer;
   public instancedRenderer: InstancedNodeRenderer;
@@ -56,7 +68,7 @@ export class WebGLRenderer {
    */
   #size = { width: 1, height: 1 };
   private renderScheduled = false;
-  readonly projScreenMatrix: THREE.Matrix4;
+  readonly projScreenMatrix: Matrix4;
   private lastOptTime = 0;
   private optFrames = 0;
   private fps = 60;
@@ -73,18 +85,18 @@ export class WebGLRenderer {
     const bgColor = parseColor(options.backgroundColor ?? 0x1a1a2e);
     this._bgColor = bgColor;
 
-    this.scene = new THREE.Scene();
-    this.scene.background = transparent ? null : new THREE.Color(bgColor);
+    this.scene = new Scene();
+    this.scene.background = transparent ? null : new Color(bgColor);
 
     const aspect = container.clientWidth / (container.clientHeight || 1);
-    this.perspectiveCamera = new THREE.PerspectiveCamera(FOV, aspect, NEAR, FAR);
+    this.perspectiveCamera = new PerspectiveCamera(FOV, aspect, NEAR, FAR);
     this.perspectiveCamera.position.set(0, 0, DEFAULT_DISTANCE);
-    this.orthographicCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, NEAR, ORTHO_FAR);
+    this.orthographicCamera = new OrthographicCamera(-1, 1, 1, -1, NEAR, ORTHO_FAR);
     this.orthographicCamera.position.copy(this.perspectiveCamera.position);
     this._projection = options.projection ?? 'perspective';
     this.#fitOrthographicFrustum(DEFAULT_DISTANCE, aspect);
 
-    this.renderer = new THREE.WebGLRenderer({
+    this.renderer = new ThreeWebGLRenderer({
       antialias: options.antialias ?? true,
       alpha: alpha || transparent,
       preserveDrawingBuffer: options.preserveDrawingBuffer ?? true,
@@ -111,7 +123,7 @@ export class WebGLRenderer {
     this.#mountCssLayer(container, this.css2dRenderer, '2');
 
     this.instancedRenderer = new InstancedNodeRenderer(sg, this.scene);
-    this.projScreenMatrix = new THREE.Matrix4();
+    this.projScreenMatrix = new Matrix4();
 
     this.renderContext = new RenderContext(
       this.camera,
@@ -134,11 +146,11 @@ export class WebGLRenderer {
   }
 
   // The active camera. Both stay in sync; hosts switch with setProjection.
-  get camera(): THREE.PerspectiveCamera | THREE.OrthographicCamera {
+  get camera(): PerspectiveCamera | OrthographicCamera {
     return this._projection === 'orthographic' ? this.orthographicCamera : this.perspectiveCamera;
   }
 
-  setProjection(projection: Projection, target?: THREE.Vector3): this {
+  setProjection(projection: Projection, target?: Vector3): this {
     if (projection === this._projection) return this;
     this.sg.cameraControls?.cancelTweens();
     const from = this.camera;
@@ -218,7 +230,7 @@ export class WebGLRenderer {
   setDepthFade(density: number): this {
     if (this._depthFade === density) return this;
     this._depthFade = density;
-    this.scene.fog = density > 0 ? new THREE.FogExp2(this._bgColor, density) : null;
+    this.scene.fog = density > 0 ? new FogExp2(this._bgColor, density) : null;
     this.sg.requestFrame?.();
     return this;
   }
@@ -253,8 +265,8 @@ export class WebGLRenderer {
   }
 
   init(): void {
-    const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);    this.scene.add(ambientLight);
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
+    const ambientLight = new AmbientLight(0xffffff, 1.0);    this.scene.add(ambientLight);
+    const directionalLight = new DirectionalLight(0xffffff, 1.0);
     directionalLight.position.set(1, 1, 1).normalize();
     this.scene.add(directionalLight);
   }
@@ -415,7 +427,7 @@ export class WebGLRenderer {
     this.css2dRenderer.setSize(w, h);
     this.renderContext?.updateViewport({ width: w, height: h });
 
-    const resolution = new THREE.Vector2(w, h);
+    const resolution = new Vector2(w, h);
     for (const edge of this.sg.graph.edges.values()) {
       if (edge.line?.material && (edge.line.material as any).isLineMaterial) {
         (edge.line.material as any).resolution.copy(resolution);
