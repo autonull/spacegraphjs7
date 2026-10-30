@@ -58,133 +58,146 @@ export class CytoscapeRenderer extends BaseGraphRenderer implements GraphRendere
     options: { theme: RenderTheme; projection: Projection }
   ): Promise<void> {
     if (this.#cy) return;
-    const { default: cytoscape } = await import('cytoscape');
-    this.#theme = normalizeTheme(options.theme);
-    // The container's own document, not the global one: a host may mount into an iframe or a detached
-    // tree, and a node consumer may have no global document at all.
-    const doc = container.ownerDocument;
-    const view = doc.defaultView;
-    if (view?.getComputedStyle(container).position === 'static') container.style.position = 'relative';
+    try {
+      const { default: cytoscape } = await import('cytoscape');
+      this.#theme = normalizeTheme(options.theme);
+      // The container's own document, not the global one: a host may mount into an iframe or a detached
+      // tree, and a node consumer may have no global document at all.
+      const doc = container.ownerDocument;
+      const view = doc.defaultView;
+      if (view?.getComputedStyle(container).position === 'static') container.style.position = 'relative';
 
-    const canvas = doc.createElement('div');
-    canvas.style.cssText = 'position:absolute;inset:0;';
-    const overlay = doc.createElement('div');
-    overlay.dataset.slot = 'cytoscape-cards';
-    overlay.style.cssText = 'position:absolute;inset:0;overflow:hidden;pointer-events:none;';
-    container.append(canvas, overlay);
-    this.#canvas = canvas;
-    this.#overlay = overlay;
+      const canvas = doc.createElement('div');
+      canvas.style.cssText = 'position:absolute;inset:0;';
+      const overlay = doc.createElement('div');
+      overlay.dataset.slot = 'cytoscape-cards';
+      overlay.style.cssText = 'position:absolute;inset:0;overflow:hidden;pointer-events:none;';
+      container.append(canvas, overlay);
+      this.#canvas = canvas;
+      this.#overlay = overlay;
 
-    const cy = cytoscape({
-      container: canvas,
-      elements: [],
-      style: cytoscapeStyle(this.#theme),
-      layout: { name: 'preset', fit: false },
-      wheelSensitivity: 0.2,
-    });
-    this.#cy = cy;
-    this.#bind();
-    if (this.#model) this.setModel(this.#model);
-    this.emit('ready', undefined);
+      const cy = cytoscape({
+        container: canvas,
+        elements: [],
+        style: cytoscapeStyle(this.#theme),
+        layout: { name: 'preset', fit: false },
+        wheelSensitivity: 0.2,
+      });
+      this.#cy = cy;
+      this.#bind();
+      if (this.#model) this.setModel(this.#model);
+      this.emit('ready', undefined);
+    } catch (error) {
+      this.emit('error', { error });
+      throw error;
+    }
   }
 
   setModel(model: RenderModel): void {
-    this.#model = model;
-    const cy = this.#cy;
-    const theme = this.#theme;
-    if (!cy || !theme) return;
+    try {
+      this.#model = model;
+      const cy = this.#cy;
+      const theme = this.#theme;
+      if (!cy || !theme) return;
 
-    const liveNodes = new Set(model.nodes.map((node) => node.id));
-    const liveEdges = new Set(model.edges.map((edge) => edge.id));
+      const liveNodes = new Set(model.nodes.map((node) => node.id));
+      const liveEdges = new Set(model.edges.map((edge) => edge.id));
 
-    cy.batch(() => {
-      for (const id of this.#edges) if (!liveEdges.has(id)) cy.remove(cy.getElementById(id));
-      for (const id of this.#nodes) if (!liveNodes.has(id)) cy.remove(cy.getElementById(id));
+      cy.batch(() => {
+        for (const id of this.#edges) if (!liveEdges.has(id)) cy.remove(cy.getElementById(id));
+        for (const id of this.#nodes) if (!liveNodes.has(id)) cy.remove(cy.getElementById(id));
 
-      for (const node of model.nodes) {
-        const element = cy.getElementById(node.id);
-        const spec = nodeElement(node, theme);
-        if (element.empty()) cy.add(spec);
-        else {
-          element.data(spec.data);
-          element.classes(spec.classes ?? []);
-          element.position({ x: node.position[0], y: node.position[1] });
+        for (const node of model.nodes) {
+          const element = cy.getElementById(node.id);
+          const spec = nodeElement(node, theme);
+          if (element.empty()) cy.add(spec);
+          else {
+            element.data(spec.data);
+            element.classes(spec.classes ?? []);
+            element.position({ x: node.position[0], y: node.position[1] });
+          }
+          element.style('display', node.visible === false ? 'none' : 'element');
         }
-        element.style('display', node.visible === false ? 'none' : 'element');
-      }
 
-      for (const edge of model.edges) {
-        const element = cy.getElementById(edge.id);
-        const spec = edgeElement(edge, theme);
-        if (element.empty()) cy.add(spec);
-        else {
-          element.data(spec.data);
-          element.classes(spec.classes ?? []);
+        for (const edge of model.edges) {
+          const element = cy.getElementById(edge.id);
+          const spec = edgeElement(edge, theme);
+          if (element.empty()) cy.add(spec);
+          else {
+            element.data(spec.data);
+            element.classes(spec.classes ?? []);
+          }
         }
-      }
-    });
+      });
 
-    this.#nodes = liveNodes;
-    this.#edges = liveEdges;
-    this.#syncCards();
-    this.#renderOverlay();
+      this.#nodes = liveNodes;
+      this.#edges = liveEdges;
+      this.#syncCards();
+      this.#renderOverlay();
+    } catch (error) {
+      this.emit('error', { error });
+    }
   }
 
   applyPatch(patch: RenderModelPatch): void {
-    const cy = this.#cy;
-    const theme = this.#theme;
-    if (!cy || !theme || !this.#model) return;
+    try {
+      const cy = this.#cy;
+      const theme = this.#theme;
+      if (!cy || !theme || !this.#model) return;
 
-    // Apply node changes
-    cy.batch(() => {
-      for (const id of patch.nodes.removed) {
-        cy.remove(cy.getElementById(id));
-        this.#nodes.delete(id);
-      }
-
-      for (const node of patch.nodes.added) {
-        const spec = nodeElement(node, theme);
-        cy.add(spec);
-        this.#nodes.add(node.id);
-      }
-
-      for (const node of patch.nodes.changed) {
-        const element = cy.getElementById(node.id);
-        const spec = nodeElement(node, theme);
-        if (!element.empty()) {
-          element.data(spec.data);
-          element.classes(spec.classes ?? []);
-          element.position({ x: node.position[0], y: node.position[1] });
-          element.style('display', node.visible === false ? 'none' : 'element');
+      // Apply node changes
+      cy.batch(() => {
+        for (const id of patch.nodes.removed) {
+          cy.remove(cy.getElementById(id));
+          this.#nodes.delete(id);
         }
-      }
 
-      // Apply edge changes
-      for (const id of patch.edges.removed) {
-        cy.remove(cy.getElementById(id));
-        this.#edges.delete(id);
-      }
-
-      for (const edge of patch.edges.added) {
-        const spec = edgeElement(edge, theme);
-        cy.add(spec);
-        this.#edges.add(edge.id);
-      }
-
-      for (const edge of patch.edges.changed) {
-        const element = cy.getElementById(edge.id);
-        const spec = edgeElement(edge, theme);
-        if (!element.empty()) {
-          element.data(spec.data);
-          element.classes(spec.classes ?? []);
+        for (const node of patch.nodes.added) {
+          const spec = nodeElement(node, theme);
+          cy.add(spec);
+          this.#nodes.add(node.id);
         }
-      }
-    });
 
-    // Update the stored model
-    this.#model = this.#mergePatch(this.#model, patch);
-    this.#syncCards();
-    this.#renderOverlay();
+        for (const node of patch.nodes.changed) {
+          const element = cy.getElementById(node.id);
+          const spec = nodeElement(node, theme);
+          if (!element.empty()) {
+            element.data(spec.data);
+            element.classes(spec.classes ?? []);
+            element.position({ x: node.position[0], y: node.position[1] });
+            element.style('display', node.visible === false ? 'none' : 'element');
+          }
+        }
+
+        // Apply edge changes
+        for (const id of patch.edges.removed) {
+          cy.remove(cy.getElementById(id));
+          this.#edges.delete(id);
+        }
+
+        for (const edge of patch.edges.added) {
+          const spec = edgeElement(edge, theme);
+          cy.add(spec);
+          this.#edges.add(edge.id);
+        }
+
+        for (const edge of patch.edges.changed) {
+          const element = cy.getElementById(edge.id);
+          const spec = edgeElement(edge, theme);
+          if (!element.empty()) {
+            element.data(spec.data);
+            element.classes(spec.classes ?? []);
+          }
+        }
+      });
+
+      // Update the stored model
+      this.#model = this.#mergePatch(this.#model, patch);
+      this.#syncCards();
+      this.#renderOverlay();
+    } catch (error) {
+      this.emit('error', { error });
+    }
   }
 
   #mergePatch(model: RenderModel, patch: RenderModelPatch): RenderModel {

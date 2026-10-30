@@ -1,4 +1,5 @@
-import type { NodeStatus, RenderEdge, RenderModel, RenderNode } from '@spacegraphjs/renderer';
+import type { NodeStatus, RenderEdge, RenderModel, RenderModelPatch, RenderNode } from '@spacegraphjs/renderer';
+import { diffRenderModels } from './diff';
 import { escapeHtml, formatOpacity } from './html';
 import type {
   AdapterAxisLabel,
@@ -193,6 +194,15 @@ export abstract class ModelAdapter<
       nodes: [...bands.map(withParent), ...lanes, ...axes, ...content.map(withParent)],
       edges: edges.map((edge) => this.toRenderEdge(edge, level)),
     };
+  }
+
+  /**
+   * Builds an incremental patch between the previous render model and a new one.
+   * This enables streaming sessions where nodes/edges are appended without a full rebuild.
+   */
+  buildPatch(previous: RenderModel, model: Domain, options: BuildOptions<Node, Level>): RenderModelPatch {
+    const next = this.build(model, options);
+    return diffRenderModels(previous, next);
   }
 
   /** The DOM card budget of a level. Zero without a budget: the budget is a host policy. */
