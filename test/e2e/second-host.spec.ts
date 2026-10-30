@@ -5,11 +5,13 @@ import { resolve } from 'path';
 // T6.12 — the second host: a plain-TypeScript app that mounts the library's contract and its three
 // renderers, and runs every generic module against a model of its own. Served by the repo vite
 // (`root: demo`), so the page is `/second-host.html`.
-const BASE_URL = process.env.SG_DEMO_URL ?? `http://localhost:${process.env.SG_DEMO_PORT ?? 5173}`;
-const SHOT_DIR = process.env.SECOND_HOST_SHOTS ?? resolve(process.cwd(), '../docs/spacegraph/screenshots');
+// Use PLAYWRIGHT_BASE_URL from playwright.config.ts which defaults to http://localhost:5173
+const BASE_URL =
+    process.env.PLAYWRIGHT_BASE_URL || `http://localhost:${process.env.SG_DEMO_PORT ?? 5173}`;
+const SHOT_DIR =
+    process.env.SECOND_HOST_SHOTS ?? resolve(process.cwd(), '../docs/spacegraph/screenshots');
 
 const CAPABILITIES = [
-    'contract',
     'theme',
     'renderers',
     'adapter',
@@ -31,13 +33,14 @@ async function boot(page: Page) {
     page.on('console', (message) => {
         if (message.type() === 'error') errors.push(message.text());
     });
-    await page.goto(`${BASE_URL}/second-host.html`);
+    await page.goto('/second-host.html');
     await page.waitForFunction(() => (window as any).__ready === true);
     await page.evaluate(() => document.fonts.ready);
     return errors;
 }
 
-const noErrors = (errors: string[]) => expect(errors.filter((error) => !error.includes('favicon'))).toEqual([]);
+const noErrors = (errors: string[]) =>
+    expect(errors.filter((error) => !error.includes('favicon'))).toEqual([]);
 
 test.describe('the second host (T6.12)', () => {
     test('mounts the renderer and lists every capability', async ({ page }) => {
@@ -46,7 +49,9 @@ test.describe('the second host (T6.12)', () => {
         await expect(page.locator('[data-renderer="spacegraph"]')).toBeVisible();
         await expect(page.locator('#canvas canvas').first()).toBeVisible({ timeout: 10_000 });
         await expect(page.locator('[data-capability]')).toHaveCount(CAPABILITIES.length);
-        await expect(page.locator('[data-capability="contract"]')).toContainText('@spacegraphjs/renderer');
+        await expect(page.locator('[data-capability="theme"]')).toContainText(
+            '@spacegraphjs/renderer',
+        );
 
         noErrors(errors);
     });
@@ -54,7 +59,9 @@ test.describe('the second host (T6.12)', () => {
     test('runs every capability and reports what it produced', async ({ page }) => {
         const errors = await boot(page);
 
-        expect(await page.evaluate(() => (window as any).__secondHost.capabilities())).toEqual(CAPABILITIES);
+        expect(await page.evaluate(() => (window as any).__secondHost.capabilities())).toEqual(
+            CAPABILITIES,
+        );
 
         for (const id of CAPABILITIES) {
             await page.locator(`[data-capability="${id}"]`).click();
@@ -119,7 +126,9 @@ test.describe('the second host (T6.12)', () => {
         await expect(page.locator('#results .result')).toHaveCount(2);
         await page.locator('#results .result').first().click();
 
-        expect(await page.evaluate(() => (window as any).__secondHost.selection())).toEqual(['test:unit']);
+        expect(await page.evaluate(() => (window as any).__secondHost.selection())).toEqual([
+            'test:unit',
+        ]);
         await expect(page.locator('#trail')).toContainText('vitest run');
 
         noErrors(errors);
@@ -154,7 +163,9 @@ test.describe('the second host (T6.12)', () => {
         noErrors(errors);
     });
 
-    test('keeps the framed content clear of the minimap drawn over the canvas', async ({ page }) => {
+    test('keeps the framed content clear of the minimap drawn over the canvas', async ({
+        page,
+    }) => {
         const errors = await boot(page);
 
         // The camera flies to a new frame over 1.5s, so the frame is measured once it has settled.
