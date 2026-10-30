@@ -5,6 +5,20 @@
  * A host builds a `RenderModel`, a renderer adapter renders it, and the two never share library objects.
  */
 
+/**
+ * The context passed to a surface's `render` function. A host that implements `SessionSurface`
+ * provides the routed session, the owning screen, and the stable transcript element.
+ * Plugins type their `render(input)` as `SurfaceContext` to avoid `any`.
+ */
+export type SurfaceContext = {
+  /** The routed session. */
+  readonly session: unknown
+  /** The session screen that owns the routed session. */
+  readonly screen: unknown
+  /** The transcript element, constructed once per session and kept mounted across surface switches. */
+  readonly transcript: unknown
+}
+
 export type Projection = '2d' | '3d'
 
 /**
