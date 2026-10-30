@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import { Box3, Object3D, Vector3 } from 'three';
 import type { Node } from '../../nodes/Node';
 
 interface SpatialCell {
@@ -7,14 +7,14 @@ interface SpatialCell {
 
 interface NodeLike {
   id: string;
-  position: THREE.Vector3;
-  object?: THREE.Object3D;
+  position: Vector3;
+  object?: Object3D;
 }
 
 export class SpatialIndex {
   private cellSize: number;
   readonly cells = new Map<string, SpatialCell>();
-  readonly nodeBounds = new Map<NodeLike, THREE.Box3>();
+  readonly nodeBounds = new Map<NodeLike, Box3>();
   readonly nodeCells = new Map<NodeLike, Set<string>>();
 
   constructor(cellSize = 100) {
@@ -24,7 +24,7 @@ export class SpatialIndex {
 
   build(nodes: NodeLike[]): void {
     this.clear();
-    const box = new THREE.Box3();
+    const box = new Box3();
     for (const node of nodes) {
       this.insertNode(node, box);
     }
@@ -32,7 +32,7 @@ export class SpatialIndex {
 
   updateNode(node: NodeLike): void {
     this.removeNode(node);
-    const box = new THREE.Box3();
+    const box = new Box3();
     this.insertNode(node, box);
   }
 
@@ -47,7 +47,7 @@ export class SpatialIndex {
     this.nodeBounds.delete(node);
   }
 
-  queryBox(box: THREE.Box3): NodeLike[] {
+  queryBox(box: Box3): NodeLike[] {
     const result = new Set<NodeLike>();
     this.forEachCellInBox(box, (x, y, z) => {
       for (const n of this.cells.get(this.getCellKey(x, y, z))?.nodes ?? []) result.add(n);
@@ -55,8 +55,8 @@ export class SpatialIndex {
     return Array.from(result);
   }
 
-  queryRadius(position: THREE.Vector3, radius: number): NodeLike[] {
-    const box = new THREE.Box3(
+  queryRadius(position: Vector3, radius: number): NodeLike[] {
+    const box = new Box3(
       position.clone().addScalar(-radius),
       position.clone().addScalar(radius)
     );
@@ -134,7 +134,7 @@ export class SpatialIndex {
     }
   }
 
-  private getGridCoords(position: THREE.Vector3): { x: number; y: number; z: number } {
+  private getGridCoords(position: Vector3): { x: number; y: number; z: number } {
     return {
       x: this.cellIndex(position.x),
       y: this.cellIndex(position.y),
@@ -149,7 +149,7 @@ export class SpatialIndex {
 
   /** Every cell a box covers, in the same order the range is walked. */
   private forEachCellInBox(
-    box: THREE.Box3,
+    box: Box3,
     visit: (x: number, y: number, z: number) => void
   ): void {
     const minX = this.cellIndex(box.min.x);
@@ -181,7 +181,7 @@ export class SpatialIndex {
     return cell;
   }
 
-  private insertNode(node: NodeLike, box: THREE.Box3): void {
+  private insertNode(node: NodeLike, box: Box3): void {
     if (node.object) {
       node.object.updateMatrixWorld(true);
       const wasVisible = node.object.visible;
@@ -200,9 +200,9 @@ export class SpatialIndex {
       const key = this.getCellKey(x, y, z);
 
       // For nodes without objects, create a small representative box
-      const pointBox = new THREE.Box3().setFromCenterAndSize(
+      const pointBox = new Box3().setFromCenterAndSize(
         node.position,
-        new THREE.Vector3(1, 1, 1)
+        new Vector3(1, 1, 1)
       );
       this.nodeBounds.set(node, pointBox);
 
@@ -213,7 +213,7 @@ export class SpatialIndex {
 }
 
 interface BVHNode {
-  bounds: THREE.Box3;
+  bounds: Box3;
   nodes: Node[];
   left: BVHNode | null;
   right: BVHNode | null;
@@ -227,7 +227,7 @@ export class BVH {
       this.root = null;
       return;
     }
-    const bounds = new THREE.Box3();
+    const bounds = new Box3();
     for (const node of nodes) {
       if (node.object) {
         bounds.expandByObject(node.object);
@@ -238,26 +238,26 @@ export class BVH {
     this.root = this.buildTree(nodes, bounds, 0);
   }
 
-  query(box: THREE.Box3): Node[] {
+  query(box: Box3): Node[] {
     const result: Node[] = [];
     if (!this.root) return result;
     this.queryRecursive(this.root, box, result);
     return result;
   }
 
-  private buildTree(nodes: Node[], bounds: THREE.Box3, depth: number): BVHNode {
+  private buildTree(nodes: Node[], bounds: Box3, depth: number): BVHNode {
     const node: BVHNode = { bounds: bounds.clone(), nodes: [], left: null, right: null };
     if (nodes.length <= 4 || depth > 10) {
       node.nodes = nodes;
       return node;
     }
-    const extent = new THREE.Vector3().subVectors(bounds.max, bounds.min);
+    const extent = new Vector3().subVectors(bounds.max, bounds.min);
     const axis = extent.x > extent.y ? 'x' : 'y';
     const sorted = [...nodes].sort((a, b) => a.position[axis] - b.position[axis]);
     const mid = Math.floor(sorted.length / 2);
     const leftNodes = sorted.slice(0, mid);
     const rightNodes = sorted.slice(mid);
-    const leftBounds = new THREE.Box3();
+    const leftBounds = new Box3();
     for (const n of leftNodes) {
       if (n.object) {
         leftBounds.expandByObject(n.object);
@@ -265,7 +265,7 @@ export class BVH {
         leftBounds.expandByPoint(n.position);
       }
     }
-    const rightBounds = new THREE.Box3();
+    const rightBounds = new Box3();
     for (const n of rightNodes) {
       if (n.object) {
         rightBounds.expandByObject(n.object);
@@ -278,12 +278,12 @@ export class BVH {
     return node;
   }
 
-  private queryRecursive(node: BVHNode, box: THREE.Box3, result: Node[]): void {
+  private queryRecursive(node: BVHNode, box: Box3, result: Node[]): void {
     if (!node.bounds.intersectsBox(box)) return;
     for (const n of node.nodes) {
       if (
         n.object
-          ? new THREE.Box3().setFromObject(n.object).intersectsBox(box)
+          ? new Box3().setFromObject(n.object).intersectsBox(box)
           : box.containsPoint(n.position)
       ) {
         result.push(n);

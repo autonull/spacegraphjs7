@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import { OrthographicCamera, PerspectiveCamera } from 'three';
 import type { Graph } from '../../core/Graph';
 import type { SpaceGraph } from '../../SpaceGraph';
 import { parseColor } from '../../utils/color';
@@ -492,14 +492,14 @@ export class MermaidPlugin extends BaseSystemPlugin {
   }
 
   private toggle3D(): void {
-    const camera = this.sg.renderer.camera as THREE.PerspectiveCamera;
+    const camera = this.sg.renderer.camera as PerspectiveCamera;
     if (camera.isPerspectiveCamera) {
-      const ortho = new (THREE as any).OrthographicCamera(-100, 100, 100, -100, 0.1, 10000);
+      const ortho = new OrthographicCamera(-100, 100, 100, -100, 0.1, 10000);
       if (ortho) {
         (this.sg.cameraControls as any).switchCamera?.(ortho, { duration: 0.5 });
       }
     } else {
-      const perspective = new THREE.PerspectiveCamera(75, 1, 0.1, 10000);
+      const perspective = new PerspectiveCamera(75, 1, 0.1, 10000);
       if (perspective) {
         (this.sg.cameraControls as any).switchCamera?.(perspective, { duration: 0.5 });
       }

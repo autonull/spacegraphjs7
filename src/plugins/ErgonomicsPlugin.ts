@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import { Vector3 } from 'three';
 import type { EventSystem } from '../core/events/EventSystem';
 import type { Graph } from '../core/Graph';
 import type { SpaceGraph } from '../SpaceGraph';
@@ -17,12 +17,12 @@ const ERGONOMICS_CONFIG = {
  * to evaluate the physical efficiency vs. jitter (direction changes).
  */
 class InteractionSession {
-  public path: THREE.Vector3[] = [];
+  public path: Vector3[] = [];
   public startTime: number = Date.now();
   public endTime = 0;
 
   addPoint(x: number, y: number, z = 0) {
-    this.path.push(new THREE.Vector3(x, y, z));
+    this.path.push(new Vector3(x, y, z));
   }
 
   close() {
@@ -42,8 +42,8 @@ class InteractionSession {
       pathLength += dist;
 
       if (i > 1) {
-        const dir1 = new THREE.Vector3().subVectors(p2, p1).normalize();
-        const dir0 = new THREE.Vector3().subVectors(p1, this.path[i - 2]).normalize();
+        const dir1 = new Vector3().subVectors(p2, p1).normalize();
+        const dir0 = new Vector3().subVectors(p1, this.path[i - 2]).normalize();
         if (dir1.dot(dir0) < ERGONOMICS_CONFIG.JITTER_DOT_PRODUCT_THRESHOLD) {
           jitterCount++;
         }

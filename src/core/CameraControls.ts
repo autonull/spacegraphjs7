@@ -2,7 +2,14 @@
 // Pure camera state machine - all input handled via Fingering
 
 import gsap from 'gsap';
-import * as THREE from 'three';
+import {
+  Camera,
+  MathUtils,
+  OrthographicCamera,
+  PerspectiveCamera,
+  Spherical,
+  Vector3,
+} from 'three';
 import type { KeyboardScope } from '../types';
 import { fitOrthoFrustum, visibleWorldExtent } from '../utils/CameraUtils';
 import { clamp } from '../utils/math';
@@ -55,52 +62,52 @@ const MAX_ORTHO_ZOOM = 100;
 export const ORTHO_ZOOM_SPAN = { out: 1 / 3, in: 2.5 };
 
 export class CameraControls {
-  camera!: THREE.Camera;
+  camera!: Camera;
   readonly domElement: HTMLElement;
   public sg?: any; // To emit events
-  target: THREE.Vector3;
-  spherical: THREE.Spherical;
+  target: Vector3;
+  spherical: Spherical;
 
   private config: CameraControlsConfig;
-  readonly sphericalDelta = new THREE.Spherical();
+  readonly sphericalDelta = new Spherical();
   private scale = 1;
-  readonly panOffset = new THREE.Vector3();
+  readonly panOffset = new Vector3();
   private zoomStack: Array<{
-    target: THREE.Vector3;
+    target: Vector3;
     distance: number;
     phi: number;
     theta: number;
   }> = [];
   readonly MAX_ZOOM_DEPTH = 8;
   private keyState = new Map<string, boolean>();
-  private targetNext: THREE.Vector3 | null = null;
+  private targetNext: Vector3 | null = null;
   private radiusNext: number | null = null;
   private phiNext: number | null = null;
   private thetaNext: number | null = null;
   private zoomNext: number | null = null;
   private animStartTime = 0;
   private animDuration = 0;
-  private startTarget = new THREE.Vector3();
+  private startTarget = new Vector3();
   private startRadius = 0;
   private startPhi = 0;
   private startTheta = 0;
   private startZoom = 1;
   private isOrthographic = false;
-  private orthoCamera: THREE.OrthographicCamera | null = null;
-  private perspectiveCamera: THREE.Camera;
+  private orthoCamera: OrthographicCamera | null = null;
+  private perspectiveCamera: Camera;
   private keyboardTarget: EventTarget | null = null;
   private orthoZoomRange: { min: number; max: number } | null = null;
 
   // Cached vectors for update loop - avoids per-frame allocations
-  private _camRight = new THREE.Vector3();
-  private _camForward = new THREE.Vector3();
-  private _camUp = new THREE.Vector3();
-  private _tempVec = new THREE.Vector3();
-  private _tempOffset = new THREE.Vector3();
-  private _tempSide = new THREE.Vector3();
+  private _camRight = new Vector3();
+  private _camForward = new Vector3();
+  private _camUp = new Vector3();
+  private _tempVec = new Vector3();
+  private _tempOffset = new Vector3();
+  private _tempSide = new Vector3();
 
   constructor(
-    camera: THREE.Camera,
+    camera: Camera,
     domElement: HTMLElement,
     config: Partial<CameraControlsConfig> = {}
   ) {
@@ -119,10 +126,10 @@ export class CameraControls {
       keyboard: 'container',
       ...config,
     };
-    this.target = new THREE.Vector3();
-    this.spherical = new THREE.Spherical();
-    this.sphericalDelta = new THREE.Spherical();
-    this.panOffset = new THREE.Vector3();
+    this.target = new Vector3();
+    this.spherical = new Spherical();
+    this.sphericalDelta = new Spherical();
+    this.panOffset = new Vector3();
     this.updateSpherical();
     this.onKeyDown = this.onKeyDown.bind(this);
     this.onKeyUp = this.onKeyUp.bind(this);
@@ -212,7 +219,7 @@ export class CameraControls {
     this.spherical.phi += this.sphericalDelta.phi;
     this.spherical.phi = clamp(this.spherical.phi, 0.01, Math.PI - 0.01);
     if (this.isOrthographic) {
-      const cam = this.camera as THREE.OrthographicCamera;
+      const cam = this.camera as OrthographicCamera;
       cam.zoom = this.clampOrthoZoom(cam.zoom / this.scale);
       cam.updateProjectionMatrix();
     } else {
@@ -242,7 +249,7 @@ export class CameraControls {
       if (this.thetaNext !== null)
         this.spherical.theta = this.startTheta + (this.thetaNext - this.startTheta) * eased;
       if (this.zoomNext !== null) {
-        const ortho = this.camera as THREE.OrthographicCamera;
+        const ortho = this.camera as OrthographicCamera;
         ortho.zoom = this.startZoom + (this.zoomNext - this.startZoom) * eased;
         ortho.updateProjectionMatrix();
       }
@@ -295,11 +302,11 @@ export class CameraControls {
     this.spherical.setFromVector3(this._tempOffset);
   }
 
-  flyTo(target: THREE.Vector3, distance: number, duration = 1.5, zoom?: number): void {
+  flyTo(target: Vector3, distance: number, duration = 1.5, zoom?: number): void {
     this.setTargetSmooth(target, distance, duration, zoom);
   }
 
-  zoomTo(target: THREE.Vector3, distance: number, duration = 1.5): void {
+  zoomTo(target: Vector3, distance: number, duration = 1.5): void {
     this.zoomToPoint(target, distance, duration);
   }
 
@@ -311,7 +318,7 @@ export class CameraControls {
   }
 
   /** Move the camera to a point, remembering where it came from so a zoom-out returns there. */
-  private zoomToPoint(target: THREE.Vector3, distance: number, duration: number): void {
+  private zoomToPoint(target: Vector3, distance: number, duration: number): void {
     const top = this.zoomStack.at(-1);
     if (top && top.target.distanceTo(target) < distance * 0.1) {
       this.zoomOut();
@@ -353,20 +360,20 @@ export class CameraControls {
     const min = Math.max(MIN_ORTHO_ZOOM, range?.min ?? MIN_ORTHO_ZOOM);
     const max = Math.min(MAX_ORTHO_ZOOM, range?.max ?? MAX_ORTHO_ZOOM);
 
-    return THREE.MathUtils.clamp(zoom, min, max);
+    return MathUtils.clamp(zoom, min, max);
   }
 
   canZoomOut(): boolean {
     return this.zoomStack.length > 0;
   }
 
-  setTargetSmooth(target: THREE.Vector3, radius: number, duration = 1.0, zoom?: number): void {
+  setTargetSmooth(target: Vector3, radius: number, duration = 1.0, zoom?: number): void {
     this.startTarget.copy(this.target);
     this.startRadius = this.spherical.radius;
     this.targetNext = target.clone();
     this.radiusNext = radius;
     if (zoom !== undefined && this.isOrthographic) {
-      this.startZoom = (this.camera as THREE.OrthographicCamera).zoom;
+      this.startZoom = (this.camera as OrthographicCamera).zoom;
       this.zoomNext = this.clampOrthoZoom(zoom);
     } else {
       this.zoomNext = null;
@@ -439,8 +446,8 @@ export class CameraControls {
       const aspect = this.domElement.clientHeight
         ? this.domElement.clientWidth / this.domElement.clientHeight
         : 1;
-      const perspective = this.perspectiveCamera as THREE.PerspectiveCamera;
-      this.orthoCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 100000);
+      const perspective = this.perspectiveCamera as PerspectiveCamera;
+      this.orthoCamera = new OrthographicCamera(-1, 1, 1, -1, 0.1, 100000);
       fitOrthoFrustum(this.orthoCamera, perspective.fov ?? 75, this.spherical.radius, aspect);
     }
     this.orthoCamera.position.copy(this.camera.position);
@@ -449,17 +456,17 @@ export class CameraControls {
   }
 
   // Point the controls at the renderer's active camera; ortho behaviour follows the camera type.
-  setCamera(camera: THREE.Camera): void {
+  setCamera(camera: Camera): void {
     this.camera = camera;
-    if ((camera as THREE.OrthographicCamera).isOrthographicCamera) {
-      this.orthoCamera = camera as THREE.OrthographicCamera;
+    if ((camera as OrthographicCamera).isOrthographicCamera) {
+      this.orthoCamera = camera as OrthographicCamera;
       this.isOrthographic = true;
     } else {
       this.isOrthographic = false;
     }
   }
 
-  getOrthoCamera(): THREE.OrthographicCamera | null {
+  getOrthoCamera(): OrthographicCamera | null {
     return this.orthoCamera;
   }
 

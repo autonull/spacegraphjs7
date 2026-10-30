@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import { Camera, Frustum, Matrix4 } from 'three';
 import type { LODLevel, Node, VisibilityContext } from '../nodes/Node';
 
 export interface FrameStats {
@@ -27,12 +27,12 @@ export class RenderContext {
   private _lastTime = 0;
 
   constructor(
-    private camera: THREE.Camera,
+    private camera: Camera,
     viewport: { width: number; height: number },
     minPixelSize = 0.5
   ) {
     this._visibilityContext = {
-      cameraFrustum: new THREE.Frustum(),
+      cameraFrustum: new Frustum(),
       viewportBounds: viewport,
       minPixelSize,
       cameraPosition: camera.position.clone(),
@@ -42,7 +42,7 @@ export class RenderContext {
   readonly _visibilityContext: VisibilityContext;
 
   // Swapped when the host toggles projection so culling follows the active camera.
-  setCamera(camera: THREE.Camera): void {
+  setCamera(camera: Camera): void {
     this.camera = camera;
     this._visibilityContext.cameraPosition.copy(camera.position);
   }
@@ -51,7 +51,7 @@ export class RenderContext {
     return this._visibilityContext;
   }
 
-  updateFrustum(projScreenMatrix: THREE.Matrix4): void {
+  updateFrustum(projScreenMatrix: Matrix4): void {
     this._visibilityContext.cameraFrustum.setFromProjectionMatrix(projScreenMatrix);
   }
 

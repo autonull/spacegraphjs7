@@ -1,7 +1,7 @@
 // SpaceGraphJS - Base Layout Plugin
 // Abstract base class for layout plugins with common helpers
 
-import * as THREE from 'three';
+import { Vector3 } from 'three';
 import { BaseSystemPlugin } from '../BaseSystemPlugin';
 import type { Node } from '../../nodes/Node';
 
@@ -118,7 +118,7 @@ export abstract class BaseLayout<
    */
   protected positionAll(
     nodes: Node[],
-    calculate: (node: Node, index: number, total: number) => THREE.Vector3
+    calculate: (node: Node, index: number, total: number) => Vector3
   ): void {
     nodes.forEach((node, index) => {
       this.applyPosition(node, calculate(node, index, nodes.length));
@@ -129,7 +129,7 @@ export abstract class BaseLayout<
    * Move every node to the position the calculator returns.
    * Deterministic and synchronous: hosts that want animation drive it from their own frame loop.
    */
-  protected applyPosition(node: Node, target: THREE.Vector3): void {
+  protected applyPosition(node: Node, target: Vector3): void {
     node.position.copy(target);
     node.object.position.copy(target);
     this.sg?.requestFrame?.();
@@ -148,7 +148,7 @@ export abstract class BaseLayout<
    */
   protected centerNodes(nodes: Node[]): void {
     if (!nodes.length) return;
-    const centre = new THREE.Vector3();
+    const centre = new Vector3();
     for (const node of nodes) centre.add(node.position);
     centre.divideScalar(nodes.length);
     for (const node of nodes) this.applyPosition(node, node.position.clone().sub(centre));

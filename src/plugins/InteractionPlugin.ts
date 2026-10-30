@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import { Vector2, Vector3 } from 'three';
 import type { EventSystem } from '../core/events/EventSystem';
 import { FingeringPriority } from '../core/constants';
 import type { Graph } from '../core/Graph';
@@ -39,8 +39,8 @@ export class InteractionPlugin extends BaseSystemPlugin {
   private keyboardShortcuts!: KeyboardShortcuts;
   private focusManager!: FocusManager;
   private copiedNodes: Node[] = [];
-  private pointerDownPosition = new THREE.Vector2();
-  readonly #pointerPosition = new THREE.Vector2();
+  private pointerDownPosition = new Vector2();
+  readonly #pointerPosition = new Vector2();
   private lastZoomedId: string | null = null;
   private lastPressedNode: Node | null = null;
   private pointerDownNode: Node | null = null;
@@ -171,7 +171,7 @@ export class InteractionPlugin extends BaseSystemPlugin {
     const node = nodeResult.node;
     const pickResult: PickResult = {
       node,
-      point: nodeResult.hit?.point ?? new THREE.Vector3(),
+      point: nodeResult.hit?.point ?? new Vector3(),
       distance: nodeResult.hit?.distance ?? 0,
     };
 
@@ -256,7 +256,7 @@ export class InteractionPlugin extends BaseSystemPlugin {
     if (this.lastPressedNode) {
       const pickResult: PickResult = {
         node: this.lastPressedNode,
-        point: new THREE.Vector3(),
+        point: new Vector3(),
         distance: 0,
       };
       if ('onPressStop' in this.lastPressedNode) {

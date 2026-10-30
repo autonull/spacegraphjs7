@@ -1,11 +1,11 @@
-import * as THREE from 'three';
+import { Camera, Vector3 } from 'three';
 
 /**
  * The projection helpers every overlay needs to place a world position on the screen.
  */
 
 /** A world position in normalised device coordinates: -1 to 1 across the viewport. */
-export function projectToNdc(position: THREE.Vector3, camera: THREE.Camera): THREE.Vector3 {
+export function projectToNdc(position: Vector3, camera: Camera): Vector3 {
   return position.clone().project(camera);
 }
 
@@ -27,8 +27,8 @@ export function clientToNdc(
  * A world position in screen pixels, measured from the canvas' top left.
  */
 export function worldToScreen(
-  position: THREE.Vector3,
-  camera: THREE.Camera,
+  position: Vector3,
+  camera: Camera,
   canvas: { clientWidth: number; clientHeight: number }
 ): { x: number; y: number } {
   const projected = projectToNdc(position, camera);
@@ -43,8 +43,8 @@ export function worldToScreen(
  * on the page is added, so the point lands where the reader sees it.
  */
 export function worldToClient(
-  position: THREE.Vector3,
-  camera: THREE.Camera,
+  position: Vector3,
+  camera: Camera,
   canvas: { getBoundingClientRect(): { left: number; top: number; width: number; height: number } }
 ): { x: number; y: number } {
   const rect = canvas.getBoundingClientRect();

@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import { BoxGeometry, Mesh, MeshStandardMaterial, Raycaster, Vector3 } from 'three';
 import type { HitResult } from '../core/Surface';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec } from '../types';
@@ -22,10 +22,10 @@ export class SliderNode extends WidgetNode {
   private _max = 1;
   private _thumbSize = 20;
   private _showValue = true;
-  readonly track!: THREE.Mesh;
-  readonly thumb!: THREE.Mesh;
-  readonly trackMaterial!: THREE.MeshStandardMaterial;
-  readonly thumbMaterial!: THREE.MeshStandardMaterial;
+  readonly track!: Mesh;
+  readonly thumb!: Mesh;
+  readonly trackMaterial!: MeshStandardMaterial;
+  readonly thumbMaterial!: MeshStandardMaterial;
   private _onChange?: (value: number) => void;
 
   constructor(sg: SpaceGraph | undefined, spec: NodeSpec) {
@@ -42,15 +42,15 @@ export class SliderNode extends WidgetNode {
     const trackColor = data?.trackColor ?? 0x333333;
     const thumbColor = data?.color ?? 0x4488ff;
 
-    this.trackMaterial = new THREE.MeshStandardMaterial({ color: trackColor });
-    this.thumbMaterial = new THREE.MeshStandardMaterial({ color: thumbColor });
+    this.trackMaterial = new MeshStandardMaterial({ color: trackColor });
+    this.thumbMaterial = new MeshStandardMaterial({ color: thumbColor });
 
-    const trackGeom = new THREE.BoxGeometry(this._width, this._height, 4);
-    this.track = new THREE.Mesh(trackGeom, this.trackMaterial);
+    const trackGeom = new BoxGeometry(this._width, this._height, 4);
+    this.track = new Mesh(trackGeom, this.trackMaterial);
     this.track.position.z = 0;
 
-    const thumbGeom = new THREE.BoxGeometry(this._thumbSize, this._height, 6);
-    this.thumb = new THREE.Mesh(thumbGeom, this.thumbMaterial);
+    const thumbGeom = new BoxGeometry(this._thumbSize, this._height, 6);
+    this.thumb = new Mesh(thumbGeom, this.thumbMaterial);
     this.thumb.position.z = 1;
     this.updateThumbPosition();
 
@@ -72,11 +72,11 @@ export class SliderNode extends WidgetNode {
     this.updateLabel();
   }
 
-  isDraggable(_localPos: THREE.Vector3): boolean {
+  isDraggable(_localPos: Vector3): boolean {
     return false;
   }
 
-  hitTest(raycaster: THREE.Raycaster): HitResult | null {
+  hitTest(raycaster: Raycaster): HitResult | null {
     return this.hitTestObject(raycaster, this.group, { normal: false });
   }
 
@@ -114,9 +114,9 @@ export class SliderNode extends WidgetNode {
       if (data.width !== undefined || data.height !== undefined) {
         this._thumbSize = this._height * 1.5;
         this.track.geometry.dispose();
-        this.track.geometry = new THREE.BoxGeometry(this._width, this._height, 4);
+        this.track.geometry = new BoxGeometry(this._width, this._height, 4);
         this.thumb.geometry.dispose();
-        this.thumb.geometry = new THREE.BoxGeometry(this._thumbSize, this._height, 6);
+        this.thumb.geometry = new BoxGeometry(this._thumbSize, this._height, 6);
         this.updateThumbPosition();
       }
       if (data.showValue !== undefined) {

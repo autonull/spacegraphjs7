@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import { DoubleSide, Group, Mesh, MeshBasicMaterial, MeshBasicMaterialParameters, Object3D, PlaneGeometry, Vector3 } from 'three';
 import { CSS3DObject } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
 
 import type { SpaceGraph } from '../SpaceGraph';
@@ -16,9 +16,9 @@ export class DOMNode extends Node {
   override readonly scalesOnHover = false;
   public readonly domElement: HTMLElement;
   public readonly cssObject: CSS3DObject;
-  public readonly meshMaterial: THREE.MeshBasicMaterial;
-  public readonly backingMesh: THREE.Mesh;
-  readonly _object: THREE.Group;
+  public readonly meshMaterial: MeshBasicMaterial;
+  public readonly backingMesh: Mesh;
+  readonly _object: Group;
   /** The title text the node's title bar shows; the bar owns it, so the node can reach it. */
   protected titleElement: HTMLElement | null = null;
 
@@ -28,39 +28,39 @@ export class DOMNode extends Node {
     domElement?: HTMLElement,
     width = 200,
     height = 100,
-    materialParams?: THREE.MeshBasicMaterialParameters
+    materialParams?: MeshBasicMaterialParameters
   ) {
     super(sg, spec);
 
-    this._object = new THREE.Group();
+    this._object = new Group();
     this.domElement =
       domElement ?? (spec.data as DOMNodeData | undefined)?.element ?? DOMUtils.createElement('div');
     this.cssObject = new CSS3DObject(this.domElement);
     this.object.add(this.cssObject);
 
-    this._meshGeometry = new THREE.PlaneGeometry(width, height);
+    this._meshGeometry = new PlaneGeometry(width, height);
 
     const defaultTranslucency =
       materialParams?.visible === false ? {} : { color: 0x000000, opacity: 0.1, transparent: true };
-    this.meshMaterial = new THREE.MeshBasicMaterial({
-      side: THREE.DoubleSide,
+    this.meshMaterial = new MeshBasicMaterial({
+      side: DoubleSide,
       ...defaultTranslucency,
       ...materialParams,
     });
 
-    this.backingMesh = new THREE.Mesh(this.meshGeometry, this.meshMaterial);
+    this.backingMesh = new Mesh(this.meshGeometry, this.meshMaterial);
     this.object.add(this.backingMesh);
 
     this._setupPointerEventRelay(sg);
   }
 
-  private _meshGeometry: THREE.PlaneGeometry;
+  private _meshGeometry: PlaneGeometry;
 
-  get meshGeometry(): THREE.PlaneGeometry {
+  get meshGeometry(): PlaneGeometry {
     return this._meshGeometry;
   }
 
-  get object(): THREE.Object3D {
+  get object(): Object3D {
     return this._object;
   }
 
@@ -105,7 +105,7 @@ export class DOMNode extends Node {
 
   public updateLod(_distance: number): void {}
 
-  isDraggable(localPos: THREE.Vector3): boolean {
+  isDraggable(localPos: Vector3): boolean {
     if (this.data?.draggable === false) return false;
 
     const interactive = this.domElement.querySelectorAll('[data-sg-interactive="true"]');
@@ -205,7 +205,7 @@ export class DOMNode extends Node {
 
   protected updateBackingGeometry(width: number, height: number): void {
     this._meshGeometry.dispose();
-    this._meshGeometry = new THREE.PlaneGeometry(width, height);
+    this._meshGeometry = new PlaneGeometry(width, height);
     this.backingMesh.geometry = this._meshGeometry;
   }
 

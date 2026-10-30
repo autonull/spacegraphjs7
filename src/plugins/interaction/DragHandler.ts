@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import { Plane, Vector3 } from 'three';
 import type { Node } from '../../nodes/Node';
 import { parentIdOf } from '../../utils/nodeParent';
 import type { SpaceGraph } from '../../SpaceGraph';
@@ -13,16 +13,16 @@ export class DragHandler {
   private isDragging = false;
   private dragNode: Node | null = null;
   private draggingNodes: Set<Node> = new Set();
-  readonly dragPlane = new THREE.Plane();
-  readonly dragOffset = new THREE.Vector3();
-  readonly nodeDragOffsets = new Map<Node, THREE.Vector3>();
-  readonly intersection = new THREE.Vector3();
+  readonly dragPlane = new Plane();
+  readonly dragOffset = new Vector3();
+  readonly nodeDragOffsets = new Map<Node, Vector3>();
+  readonly intersection = new Vector3();
   private dragStartZ = 0;
   private previousDragPosition = { x: 0, y: 0 };
   private dragStiffness = 1.0;
   private preserveDistance = false;
   private initialPickDistance = 0;
-  readonly rayFrom = new THREE.Vector3();
+  readonly rayFrom = new Vector3();
 
   readonly sg: SpaceGraph;
   readonly raycaster: InteractionRaycaster;
@@ -34,7 +34,7 @@ export class DragHandler {
 
   startDrag(
     node: Node,
-    options?: { stiffness?: number; preserveDistance?: boolean; hitPoint?: THREE.Vector3 }
+    options?: { stiffness?: number; preserveDistance?: boolean; hitPoint?: Vector3 }
   ): boolean {
     if (!node.object) return false;
 
@@ -42,7 +42,7 @@ export class DragHandler {
     // with a control under the cursor) is left alone.
     const localPos = options?.hitPoint
       ? node.object.worldToLocal(options.hitPoint.clone())
-      : new THREE.Vector3();
+      : new Vector3();
     if (!node.isDraggable(localPos)) return false;
 
     this.dragStiffness = options?.stiffness ?? 1.0;
@@ -159,14 +159,14 @@ export class DragHandler {
     return this.draggingNodes;
   }
 
-  private calculateTargetPosition(enableZAxis: boolean): THREE.Vector3 | null {
+  private calculateTargetPosition(enableZAxis: boolean): Vector3 | null {
     if (!this.dragNode) return null;
-    let targetPosition: THREE.Vector3;
+    let targetPosition: Vector3;
 
     if (this.preserveDistance) {
       const ndc = this.raycaster.getMouseNDC();
       const camera = this.sg.renderer.camera;
-      const direction = new THREE.Vector3(ndc.x, ndc.y, 0.5)
+      const direction = new Vector3(ndc.x, ndc.y, 0.5)
         .unproject(camera)
         .sub(camera.position)
         .normalize();
@@ -191,7 +191,7 @@ export class DragHandler {
     return targetPosition;
   }
 
-  private applyZAxisAdjustment(targetPosition: THREE.Vector3, enableZAxis: boolean): void {
+  private applyZAxisAdjustment(targetPosition: Vector3, enableZAxis: boolean): void {
     if (enableZAxis) {
       const ndc = this.raycaster.getMouseNDC();
       const deltaX = ndc.x - this.previousDragPosition.x;
@@ -202,7 +202,7 @@ export class DragHandler {
     }
   }
 
-  private updateNodePosition(targetPosition: THREE.Vector3): void {
+  private updateNodePosition(targetPosition: Vector3): void {
     if (!this.dragNode) return;
     if (this.dragStiffness < 1.0) {
       this.dragNode.position.lerp(targetPosition, this.dragStiffness);
@@ -216,7 +216,7 @@ export class DragHandler {
     }
   }
 
-  private updateDraggingNodes(targetPosition: THREE.Vector3): void {
+  private updateDraggingNodes(targetPosition: Vector3): void {
     if (!this.dragNode) return;
     for (const otherNode of this.draggingNodes) {
       if (otherNode !== this.dragNode && otherNode.object) {

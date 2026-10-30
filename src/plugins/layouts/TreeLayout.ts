@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import { Vector3 } from 'three';
 import type { Node } from '../../nodes/Node';
 import { BaseLayout, type LayoutOptions } from './BaseLayout';
 
@@ -31,13 +31,13 @@ export class TreeLayout extends BaseLayout<TreeLayoutOptions> {
     const roots = nodes.filter((node) => inDegree.get(node.id) === 0);
     if (!roots.length) roots.push(nodes[0]);
 
-    const positions = new Map<string, THREE.Vector3>();
+    const positions = new Map<string, Vector3>();
     let cursor = 0;
 
     const assignPositions = (node: Node, depth: number): void => {
       const nodeChildren = children.get(node.id) ?? [];
       if (!nodeChildren.length) {
-        positions.set(node.id, new THREE.Vector3(cursor, -depth * config.levelHeight, 0));
+        positions.set(node.id, new Vector3(cursor, -depth * config.levelHeight, 0));
         cursor += config.nodeSpacing;
         return;
       }
@@ -49,7 +49,7 @@ export class TreeLayout extends BaseLayout<TreeLayoutOptions> {
       const maxX = Math.max(...childXs);
       positions.set(
         node.id,
-        new THREE.Vector3((minX + maxX) / 2, -depth * config.levelHeight, 0)
+        new Vector3((minX + maxX) / 2, -depth * config.levelHeight, 0)
       );
     };
 
@@ -59,7 +59,7 @@ export class TreeLayout extends BaseLayout<TreeLayoutOptions> {
     }
 
     const centre = average(positions);
-    const finalPos = new THREE.Vector3();
+    const finalPos = new Vector3();
     for (const [id, position] of positions) {
       finalPos.set(position.x - centre.x, position.y - centre.y, 0);
       if (config.orientation === 'horizontal') finalPos.set(-finalPos.y, -finalPos.x, 0);
@@ -78,7 +78,7 @@ export class TreeLayout extends BaseLayout<TreeLayoutOptions> {
   }
 }
 
-function average(positions: Map<string, THREE.Vector3>): { x: number; y: number } {
+function average(positions: Map<string, Vector3>): { x: number; y: number } {
   let sumX = 0;
   let sumY = 0;
   for (const position of positions.values()) {

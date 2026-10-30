@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import { Vector3 } from 'three';
 import type { Node } from '../../nodes/Node';
 import { BaseLayout, type LayoutOptions } from './BaseLayout';
 
@@ -22,7 +22,7 @@ export class TimelineLayout extends BaseLayout<TimelineLayoutOptions> {
       .sort((a, b) => a.time - b.time);
     const minTime = timeline[0]?.time ?? 0;
 
-    const target = new THREE.Vector3();
+    const target = new Vector3();
     let fallbackIndex = 0;
     for (const [index, { node, time }] of timeline.entries()) {
       const hasValidTime = time !== 0 || minTime !== 0;

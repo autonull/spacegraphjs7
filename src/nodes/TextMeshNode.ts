@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import { CanvasTexture, Sprite, SpriteMaterial } from 'three';
 
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec } from '../types';
@@ -7,8 +7,8 @@ import { Object3DNode } from './Object3DNode';
 
 export class TextMeshNode extends Object3DNode {
   static readonly typeName: string = 'TextMeshNode';
-  private sprite: THREE.Sprite;
-  private spriteMat: THREE.SpriteMaterial;
+  private sprite: Sprite;
+  private spriteMat: SpriteMaterial;
   private currentText: string;
 
   constructor(sg: SpaceGraph | undefined, spec: NodeSpec) {
@@ -16,7 +16,7 @@ export class TextMeshNode extends Object3DNode {
 
     this.currentText = (spec.data?.text as string) ?? spec.label ?? '';
     this.sprite = this._buildSprite(spec);
-    this.spriteMat = this.sprite.material as THREE.SpriteMaterial;
+    this.spriteMat = this.sprite.material as SpriteMaterial;
     this._object.add(this.sprite);
 
     this.updatePosition(this.position.x, this.position.y, this.position.z);
@@ -35,13 +35,13 @@ export class TextMeshNode extends Object3DNode {
         label: updates.label ?? this.label,
       };
       this.sprite = this._buildSprite(merged);
-      this.spriteMat = this.sprite.material as THREE.SpriteMaterial;
+      this.spriteMat = this.sprite.material as SpriteMaterial;
       this._object.add(this.sprite);
     }
     return this;
   }
 
-  private _buildSprite(spec: Partial<NodeSpec>): THREE.Sprite {
+  private _buildSprite(spec: Partial<NodeSpec>): Sprite {
     const text = (spec.data?.text as string) ?? spec.label ?? '';
     const fontSize = (spec.data?.fontSize as number) ?? 72;
     const color = (spec.data?.color as string) ?? '#ffffff';
@@ -73,9 +73,9 @@ export class TextMeshNode extends Object3DNode {
       canvas.height = fontSize * 1.4 + padding * 2;
     }
 
-    const tex = new THREE.CanvasTexture(canvas);
-    const mat = new THREE.SpriteMaterial({ map: tex, depthTest: false });
-    const spr = new THREE.Sprite(mat);
+    const tex = new CanvasTexture(canvas);
+    const mat = new SpriteMaterial({ map: tex, depthTest: false });
+    const spr = new Sprite(mat);
     const aspect = canvas.width / canvas.height || 1;
     spr.scale.set(aspect * fontSize * scale * 0.8, fontSize * scale * 0.8, 1);
     return spr;

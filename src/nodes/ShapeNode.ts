@@ -1,4 +1,21 @@
-import * as THREE from 'three';
+import {
+  BoxGeometry,
+  BufferGeometry,
+  CanvasTexture,
+  CircleGeometry,
+  ColorRepresentation,
+  ConeGeometry,
+  CylinderGeometry,
+  Group,
+  Mesh,
+  MeshStandardMaterial,
+  Object3D,
+  RingGeometry,
+  SphereGeometry,
+  Sprite,
+  SpriteMaterial,
+  TorusGeometry,
+} from 'three';
 
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec, ShapeNodeData } from '../types';
@@ -7,46 +24,46 @@ import { Node } from './Node';
 
 type ShapeType = 'sphere' | 'box' | 'circle' | 'plane' | 'cone' | 'cylinder' | 'torus' | 'ring';
 
-const GEOMETRY_FACTORIES: Record<ShapeType, (size: number) => THREE.BufferGeometry> = {
-  sphere: (size) => new THREE.SphereGeometry(size / 2, 32, 32),
-  box: (size) => new THREE.BoxGeometry(size, size, size),
-  circle: (size) => new THREE.CircleGeometry(size / 2, 32),
-  plane: (size) => new THREE.CircleGeometry(size / 2, 32),
-  cone: (size) => new THREE.ConeGeometry(size / 2, size, 32),
-  cylinder: (size) => new THREE.CylinderGeometry(size / 2, size / 2, size, 32),
-  torus: (size) => new THREE.TorusGeometry(size / 3, size / 8, 16, 48),
-  ring: (size) => new THREE.RingGeometry(size / 4, size / 2, 32),
+const GEOMETRY_FACTORIES: Record<ShapeType, (size: number) => BufferGeometry> = {
+  sphere: (size) => new SphereGeometry(size / 2, 32, 32),
+  box: (size) => new BoxGeometry(size, size, size),
+  circle: (size) => new CircleGeometry(size / 2, 32),
+  plane: (size) => new CircleGeometry(size / 2, 32),
+  cone: (size) => new ConeGeometry(size / 2, size, 32),
+  cylinder: (size) => new CylinderGeometry(size / 2, size / 2, size, 32),
+  torus: (size) => new TorusGeometry(size / 3, size / 8, 16, 48),
+  ring: (size) => new RingGeometry(size / 4, size / 2, 32),
 };
 
 export class ShapeNode extends Node {
   static readonly typeName: string = 'ShapeNode';
-  readonly mesh: THREE.Mesh;
-  private meshGeometry: THREE.BufferGeometry;
-  readonly meshMaterial: THREE.MeshStandardMaterial;
-  private labelSprite?: THREE.Sprite;
+  readonly mesh: Mesh;
+  private meshGeometry: BufferGeometry;
+  readonly meshMaterial: MeshStandardMaterial;
+  private labelSprite?: Sprite;
   private shapeType: ShapeType = 'sphere';
   private nodeSize = 40;
-  readonly _object: THREE.Group;
+  readonly _object: Group;
 
   constructor(sg: SpaceGraph | undefined, spec: NodeSpec) {
     super(sg, spec);
 
-    this._object = new THREE.Group();
+    this._object = new Group();
 
     const data = spec.data as ShapeNodeData;
     this.shapeType = (data?.shape as ShapeType) ?? 'sphere';
     this.nodeSize = data?.size ?? 40;
-    const color = (this.data?.color as THREE.ColorRepresentation) ?? 0x3366ff;
+    const color = (this.data?.color as ColorRepresentation) ?? 0x3366ff;
 
     this.meshGeometry = this.createGeometry(this.shapeType, this.nodeSize);
-    this.meshMaterial = new THREE.MeshStandardMaterial({
+    this.meshMaterial = new MeshStandardMaterial({
       color,
       emissive: 0x000000,
       emissiveIntensity: 0,
       metalness: 0.5,
       roughness: 0.5,
     });
-    this.mesh = new THREE.Mesh(this.meshGeometry, this.meshMaterial);
+    this.mesh = new Mesh(this.meshGeometry, this.meshMaterial);
 
     this._object.add(this.mesh);
 
@@ -60,7 +77,7 @@ export class ShapeNode extends Node {
     this.updatePosition(this.position.x, this.position.y, this.position.z);
   }
 
-  get object(): THREE.Object3D {
+  get object(): Object3D {
     return this._object;
   }
 
@@ -139,7 +156,7 @@ export class ShapeNode extends Node {
     }
   }
 
-  private createGeometry(shape: ShapeType, size: number): THREE.BufferGeometry {
+  private createGeometry(shape: ShapeType, size: number): BufferGeometry {
     return GEOMETRY_FACTORIES[shape]?.(size) ?? GEOMETRY_FACTORIES.sphere(size);
   }
 
@@ -147,7 +164,7 @@ export class ShapeNode extends Node {
     this.meshGeometry?.dispose();
   }
 
-  private createLabel(text: string): THREE.Sprite {
+  private createLabel(text: string): Sprite {
     const canvas = DOMUtils.createElement('canvas');
     const context = canvas.getContext('2d');
 
@@ -162,9 +179,9 @@ export class ShapeNode extends Node {
       context.fillText(text, canvas.width / 2, canvas.height / 2 + 8);
     }
 
-    const texture = new THREE.CanvasTexture(canvas);
-    const material = new THREE.SpriteMaterial({ map: texture, depthTest: false });
-    const sprite = new THREE.Sprite(material);
+    const texture = new CanvasTexture(canvas);
+    const material = new SpriteMaterial({ map: texture, depthTest: false });
+    const sprite = new Sprite(material);
     sprite.scale.set(this.nodeSize * 1.5, this.nodeSize * 0.4, 1);
 
     return sprite;

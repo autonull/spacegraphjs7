@@ -1,18 +1,29 @@
-import * as THREE from 'three';
+import {
+  Color,
+  DynamicDrawUsage,
+  InstancedBufferAttribute,
+  InstancedMesh,
+  Material,
+  Matrix4,
+  MeshBasicMaterial,
+  Quaternion,
+  SphereGeometry,
+  Vector3,
+} from 'three';
 
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec } from '../types';
 import { BaseInstancedNode } from './BaseInstancedNode';
 
-const instancedMeshRegistry = new WeakMap<SpaceGraph, THREE.InstancedMesh>();
+const instancedMeshRegistry = new WeakMap<SpaceGraph, InstancedMesh>();
 const capacityRegistry = new WeakMap<SpaceGraph, number>();
 const nodeCountRegistry = new WeakMap<SpaceGraph, number>();
 const nodeIndexRegistry = new WeakMap<InstancedShapeNode, number>();
-const colorHelper = new THREE.Color();
-const matrixHelper = new THREE.Matrix4();
-const positionHelper = new THREE.Vector3();
-const rotationHelper = new THREE.Quaternion();
-const scaleHelper = new THREE.Vector3(1, 1, 1);
+const colorHelper = new Color();
+const matrixHelper = new Matrix4();
+const positionHelper = new Vector3();
+const rotationHelper = new Quaternion();
+const scaleHelper = new Vector3(1, 1, 1);
 
 export class InstancedShapeNode extends BaseInstancedNode {
   static readonly typeName: string = 'InstancedShapeNode';
@@ -64,19 +75,19 @@ export class InstancedShapeNode extends BaseInstancedNode {
 
   private rebuildInstancedMesh(newCapacity: number) {
     const oldMesh = instancedMeshRegistry.get(this.sg!);
-    const geometry = new THREE.SphereGeometry(20, 16, 16);
-    const material = new THREE.MeshBasicMaterial();
-    const newMesh = new THREE.InstancedMesh(geometry, material, newCapacity);
-    newMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    const geometry = new SphereGeometry(20, 16, 16);
+    const material = new MeshBasicMaterial();
+    const newMesh = new InstancedMesh(geometry, material, newCapacity);
+    newMesh.instanceMatrix.setUsage(DynamicDrawUsage);
 
     if (newMesh.instanceColor) {
-      newMesh.instanceColor.setUsage(THREE.DynamicDrawUsage);
+      newMesh.instanceColor.setUsage(DynamicDrawUsage);
     } else {
-      newMesh.instanceColor = new THREE.InstancedBufferAttribute(
+      newMesh.instanceColor = new InstancedBufferAttribute(
         new Float32Array(newCapacity * 3),
         3
       );
-      newMesh.instanceColor.setUsage(THREE.DynamicDrawUsage);
+      newMesh.instanceColor.setUsage(DynamicDrawUsage);
     }
 
     if (oldMesh) {
@@ -89,7 +100,7 @@ export class InstancedShapeNode extends BaseInstancedNode {
       }
       this.sg!.renderer.scene.remove(oldMesh);
       oldMesh.geometry.dispose();
-      (oldMesh.material as THREE.Material).dispose();
+      (oldMesh.material as Material).dispose();
       oldMesh.dispose();
     } else {
       newMesh.count = 0;

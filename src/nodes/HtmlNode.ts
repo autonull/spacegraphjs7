@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import { Quaternion } from 'three';
 import { lodLevelAt, lodVisibility } from '../core/lod';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { LabelLodLevel, NodeSpec, SpaceGraphNodeData } from '../types';
@@ -8,7 +8,7 @@ import { clamp } from '../utils/math';
 import { BaseContentNode } from './BaseContentNode';
 import { createQuickControls, type QuickControlButton } from './QuickControls';
 
-const PARENT_ROTATION = new THREE.Quaternion();
+const PARENT_ROTATION = new Quaternion();
 
 export class HtmlNode extends BaseContentNode {
   static typeName: string = 'HtmlNode';

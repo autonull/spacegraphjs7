@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import { Vector3 } from 'three';
 import type { Node } from '../../nodes/Node';
 import { clamp } from '../../utils/math';
 import { latLngToVec3 } from '../../utils/vector';
@@ -17,7 +17,7 @@ export class GeoLayout extends BaseLayout<GeoLayoutOptions> {
   readonly version = '1.0.0';
 
   protected place(nodes: Node[], config: GeoLayoutOptions): void {
-    const target = new THREE.Vector3();
+    const target = new Vector3();
 
     for (const node of nodes) {
       const lat = (node.data?.lat as number) ?? Math.random() * 180 - 90;
@@ -42,14 +42,14 @@ export class GeoLayout extends BaseLayout<GeoLayoutOptions> {
 }
 
 function project(
-  target: THREE.Vector3,
+  target: Vector3,
   lat: number,
   lng: number,
   projection: string,
   radius: number,
   mapWidth: number,
   mapHeight: number
-): THREE.Vector3 {
+): Vector3 {
   if (projection === 'sphere') {
     return latLngToVec3(lat, lng, radius, target);
   }

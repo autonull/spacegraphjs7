@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import { BufferAttribute, BufferGeometry, Line, LineBasicMaterial, Object3D, Vector3 } from 'three';
 
 /** The colour and width of the temporary line that follows a connection drag. */
 const TEMP_COLOR = 0x8b5cf6;
@@ -10,29 +10,29 @@ const TEMP_WIDTH = 2;
  * pointer is; this owns the line.
  */
 export class TempConnectionLine {
-  readonly line: THREE.Line;
-  readonly material: THREE.LineBasicMaterial;
-  private readonly geometry: THREE.BufferGeometry;
-  private readonly scene: THREE.Object3D;
+  readonly line: Line;
+  readonly material: LineBasicMaterial;
+  private readonly geometry: BufferGeometry;
+  private readonly scene: Object3D;
 
-  constructor(scene: THREE.Object3D, start: THREE.Vector3) {
+  constructor(scene: Object3D, start: Vector3) {
     this.scene = scene;
-    this.material = new THREE.LineBasicMaterial({ color: TEMP_COLOR, linewidth: TEMP_WIDTH });
-    this.geometry = new THREE.BufferGeometry();
+    this.material = new LineBasicMaterial({ color: TEMP_COLOR, linewidth: TEMP_WIDTH });
+    this.geometry = new BufferGeometry();
     this.geometry.setAttribute(
       'position',
-      new THREE.BufferAttribute(
+      new BufferAttribute(
         new Float32Array([start.x, start.y, start.z, start.x, start.y, start.z]),
         3
       )
     );
-    this.line = new THREE.Line(this.geometry, this.material);
+    this.line = new Line(this.geometry, this.material);
     this.scene.add(this.line);
   }
 
   /** Move the free end of the line. */
-  moveTo(point: THREE.Vector3): void {
-    const positions = this.geometry.getAttribute('position') as THREE.BufferAttribute;
+  moveTo(point: Vector3): void {
+    const positions = this.geometry.getAttribute('position') as BufferAttribute;
     positions.setXYZ(1, point.x, point.y, point.z);
     positions.needsUpdate = true;
   }

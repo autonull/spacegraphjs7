@@ -1,7 +1,7 @@
 // SpaceGraphJS - PanelNode
 // Draggable window panel with move/resize fingerings, inspired by SGJ's Windo
 
-import * as THREE from 'three';
+import { Vector3 } from 'three';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec } from '../types';
 import { HtmlNode } from './HtmlNode';
@@ -32,7 +32,7 @@ export class PanelNode extends HtmlNode {
 
     if (this.billboard && this.sg) {
       const cameraPos = this.sg.renderer.camera.position;
-      const direction = new THREE.Vector3().subVectors(cameraPos, this.position);
+      const direction = new Vector3().subVectors(cameraPos, this.position);
       this.rotation.y = Math.atan2(direction.x, direction.z);
       this.object.rotation.set(this.rotation.x, this.rotation.y, this.rotation.z);
     }

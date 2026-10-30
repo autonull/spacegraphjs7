@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import { Vector3 } from 'three';
 import type { Edge } from '../../edges/Edge';
 import type { Node } from '../../nodes/Node';
 import { BaseLayout, type LayoutConfig } from './BaseLayout';
@@ -24,7 +24,7 @@ export class ForceLayout extends BaseLayout<ForceLayoutConfig> {
   readonly name = 'Force Directed';
   readonly version = '1.0.0';
 
-  private velocities = new Map<string, THREE.Vector3>();
+  private velocities = new Map<string, Vector3>();
   private currentIteration = 0;
 
   private get forceConfig(): ForceLayoutConfig {
@@ -42,7 +42,7 @@ export class ForceLayout extends BaseLayout<ForceLayoutConfig> {
   protected place(nodes: Node[], _config: ForceLayoutConfig): void {
     this.velocities.clear();
     this.currentIteration = 0;
-    for (const node of nodes) this.velocities.set(node.id, new THREE.Vector3());
+    for (const node of nodes) this.velocities.set(node.id, new Vector3());
 
     const { iterations } = this.forceConfig;
     for (let i = 0; i < iterations; i++) {
@@ -62,15 +62,15 @@ export class ForceLayout extends BaseLayout<ForceLayoutConfig> {
   step(nodes: Node[] = Array.from(this.graph.getNodes())): void {
     if (!nodes.length) return;
     const config = this.forceConfig;
-    const forces = new Map<string, THREE.Vector3>();
-    for (const node of nodes) forces.set(node.id, new THREE.Vector3());
+    const forces = new Map<string, Vector3>();
+    for (const node of nodes) forces.set(node.id, new Vector3());
 
     const maxForce = config.repulsion / (config.minDistance * config.minDistance);
     for (let i = 0; i < nodes.length; i++) {
       for (let j = i + 1; j < nodes.length; j++) {
         const a = nodes[i];
         const b = nodes[j];
-        const diff = new THREE.Vector3().subVectors(a.position, b.position);
+        const diff = new Vector3().subVectors(a.position, b.position);
         const distSq = diff.lengthSq();
         const dist = Math.sqrt(distSq);
         if (dist < 0.001) continue;
@@ -87,7 +87,7 @@ export class ForceLayout extends BaseLayout<ForceLayoutConfig> {
       const source = this.graph.getNode(e.source.id);
       const target = this.graph.getNode(e.target.id);
       if (!source || !target) continue;
-      const diff = new THREE.Vector3().subVectors(target.position, source.position);
+      const diff = new Vector3().subVectors(target.position, source.position);
       const dist = diff.length();
       const force = config.attraction * dist;
       const direction = diff.normalize();

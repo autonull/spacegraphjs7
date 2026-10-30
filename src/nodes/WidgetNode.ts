@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import { BoxGeometry, CanvasTexture, Group, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, PlaneGeometry, Raycaster, Vector3 } from 'three';
 import type { HitResult } from '../core/Surface';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { BaseNodeData, NodeSpec } from '../types';
@@ -18,12 +18,12 @@ export interface WidgetNodeData extends BaseNodeData {
 }
 
 export abstract class WidgetNode extends Node {
-  protected group: THREE.Group;
-  protected mesh: THREE.Mesh;
-  protected boxGeometry: THREE.BoxGeometry;
-  protected baseMaterial: THREE.MeshStandardMaterial;
-  protected labelMesh?: THREE.Mesh;
-  protected labelMaterial?: THREE.MeshBasicMaterial;
+  protected group: Group;
+  protected mesh: Mesh;
+  protected boxGeometry: BoxGeometry;
+  protected baseMaterial: MeshStandardMaterial;
+  protected labelMesh?: Mesh;
+  protected labelMaterial?: MeshBasicMaterial;
 
   protected _width = 100;
   protected _height = 40;
@@ -40,11 +40,11 @@ export abstract class WidgetNode extends Node {
     this._depth = data?.depth ?? this._depth;
     this._disabled = data?.disabled ?? false;
 
-    this.baseMaterial = new THREE.MeshStandardMaterial({ color: this.getBaseColor(data) });
-    this.boxGeometry = new THREE.BoxGeometry(this._width, this._height, this._depth);
-    this.mesh = new THREE.Mesh(this.boxGeometry, this.baseMaterial);
+    this.baseMaterial = new MeshStandardMaterial({ color: this.getBaseColor(data) });
+    this.boxGeometry = new BoxGeometry(this._width, this._height, this._depth);
+    this.mesh = new Mesh(this.boxGeometry, this.baseMaterial);
 
-    this.group = new THREE.Group();
+    this.group = new Group();
     this.group.add(this.mesh);
 
     this.isTouchable = true;
@@ -54,15 +54,15 @@ export abstract class WidgetNode extends Node {
     this.updatePosition(this.position.x, this.position.y, this.position.z);
   }
 
-  get object(): THREE.Object3D {
+  get object(): Object3D {
     return this.group;
   }
 
-  isDraggable(_localPos: THREE.Vector3): boolean {
+  isDraggable(_localPos: Vector3): boolean {
     return false;
   }
 
-  hitTest(raycaster: THREE.Raycaster): HitResult | null {
+  hitTest(raycaster: Raycaster): HitResult | null {
     return this.hitTestObject(raycaster, this.mesh, { recursive: false, normal: false });
   }
 
@@ -97,7 +97,7 @@ export abstract class WidgetNode extends Node {
         this._height = data.height ?? this._height;
         this._depth = data.depth ?? this._depth;
         this.boxGeometry.dispose();
-        this.boxGeometry = new THREE.BoxGeometry(this._width, this._height, this._depth);
+        this.boxGeometry = new BoxGeometry(this._width, this._height, this._depth);
         this.mesh.geometry = this.boxGeometry;
       }
       if (data.disabled !== undefined) {
@@ -123,16 +123,16 @@ export abstract class WidgetNode extends Node {
     const text = this.getLabelText();
     if (!text) return;
 
-    const texture = new THREE.CanvasTexture(this.drawLabel(text));
+    const texture = new CanvasTexture(this.drawLabel(text));
     const labelWidth = this._width * 0.8;
     const labelHeight = this._height * 0.5;
-    this.labelMaterial = new THREE.MeshBasicMaterial({
+    this.labelMaterial = new MeshBasicMaterial({
       map: texture,
       transparent: true,
       depthTest: false,
     });
-    this.labelMesh = new THREE.Mesh(
-      new THREE.PlaneGeometry(labelWidth, labelHeight),
+    this.labelMesh = new Mesh(
+      new PlaneGeometry(labelWidth, labelHeight),
       this.labelMaterial
     );
     this.labelMesh.position.z = this._depth / 2 + 0.1;
@@ -142,8 +142,8 @@ export abstract class WidgetNode extends Node {
   protected updateLabel(): void {
     if (!this.labelMaterial?.map) return;
 
-    (this.labelMaterial.map as THREE.CanvasTexture).dispose();
-    this.labelMaterial.map = new THREE.CanvasTexture(this.drawLabel(this.getLabelText()));
+    (this.labelMaterial.map as CanvasTexture).dispose();
+    this.labelMaterial.map = new CanvasTexture(this.drawLabel(this.getLabelText()));
   }
 
   /** The canvas the label text is drawn on, at twice the widget's size. */

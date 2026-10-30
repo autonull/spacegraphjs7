@@ -1,7 +1,7 @@
 // SpaceGraphJS - Unified Surface Abstraction
 // Common base for all nodes and edges, inspired by SGJ's Surface hierarchy
 
-import * as THREE from 'three';
+import { Box3, Euler, Face, Matrix4, Raycaster, Vector2, Vector3 } from 'three';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { Bounds3D, Rect } from '../types';
 import { EventEmitter } from './EventEmitter';
@@ -11,7 +11,7 @@ export type { Bounds3D, Rect };
 /**
  * The rectangle a box covers on screen.
  */
-export function rectOf(box: THREE.Box3): Rect {
+export function rectOf(box: Box3): Rect {
   return {
     x: box.min.x,
     y: box.min.y,
@@ -24,21 +24,21 @@ export function rectOf(box: THREE.Box3): Rect {
  * The volume between two corners, with the optional tests a concrete surface answers with.
  */
 export function createBounds3D(
-  min: THREE.Vector3,
-  max: THREE.Vector3,
+  min: Vector3,
+  max: Vector3,
   test?: {
-    containsPoint(point: THREE.Vector3): boolean;
-    intersectsRay(ray: THREE.Raycaster): boolean;
+    containsPoint(point: Vector3): boolean;
+    intersectsRay(ray: Raycaster): boolean;
   }
 ): Bounds3D {
   return {
     min,
     max,
     get center() {
-      return new THREE.Vector3().addVectors(this.min, this.max).multiplyScalar(0.5);
+      return new Vector3().addVectors(this.min, this.max).multiplyScalar(0.5);
     },
     get size() {
-      return new THREE.Vector3().subVectors(this.max, this.min);
+      return new Vector3().subVectors(this.max, this.min);
     },
     containsPoint: test?.containsPoint ?? (() => false),
     intersectsRay: test?.intersectsRay ?? (() => false),
@@ -47,12 +47,12 @@ export function createBounds3D(
 
 export interface HitResult {
   surface: Surface;
-  point: THREE.Vector3;
-  localPoint: THREE.Vector3;
+  point: Vector3;
+  localPoint: Vector3;
   distance: number;
-  normal?: THREE.Vector3;
-  uv?: THREE.Vector2;
-  face?: THREE.Face;
+  normal?: Vector3;
+  uv?: Vector2;
+  face?: Face;
 }
 
 export type SurfaceEventMap = {
@@ -79,20 +79,20 @@ export abstract class Surface extends EventEmitter<SurfaceEventMap> {
 
   abstract get bounds3D(): Bounds3D;
 
-  abstract get position(): THREE.Vector3;
+  abstract get position(): Vector3;
 
-  abstract get rotation(): THREE.Euler | THREE.Vector3;
+  abstract get rotation(): Euler | Vector3;
 
-  abstract get scale(): THREE.Vector3;
+  abstract get scale(): Vector3;
 
-  abstract get worldMatrix(): THREE.Matrix4;
+  abstract get worldMatrix(): Matrix4;
 
   // Ergonomic helpers
   get isDisposed(): boolean {
     return !this.visible;
   }
 
-  abstract hitTest(ray: THREE.Raycaster): HitResult | null;
+  abstract hitTest(ray: Raycaster): HitResult | null;
 
   abstract start(): void;
 
@@ -100,7 +100,7 @@ export abstract class Surface extends EventEmitter<SurfaceEventMap> {
 
   abstract delete(): void;
 
-  isDraggable(_localPos: THREE.Vector3): boolean {
+  isDraggable(_localPos: Vector3): boolean {
     return true;
   }
 
@@ -142,11 +142,11 @@ export abstract class Surface extends EventEmitter<SurfaceEventMap> {
     return result;
   }
 
-  localToWorld(localPos: THREE.Vector3): THREE.Vector3 {
+  localToWorld(localPos: Vector3): Vector3 {
     return localPos.clone().applyMatrix4(this.worldMatrix);
   }
 
-  worldToLocal(worldPos: THREE.Vector3): THREE.Vector3 {
+  worldToLocal(worldPos: Vector3): Vector3 {
     const inverse = this.worldMatrix.clone().invert();
     return worldPos.clone().applyMatrix4(inverse);
   }

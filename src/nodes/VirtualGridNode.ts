@@ -1,7 +1,7 @@
 // SpaceGraphJS - VirtualGridNode
 // Virtualized grid with cell culling based on camera view
 
-import * as THREE from 'three';
+import { Frustum, Matrix4 } from 'three';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec } from '../types';
 import { GroupNode } from './GroupNode';
@@ -71,8 +71,8 @@ export class VirtualGridNode<T = unknown> extends GroupNode {
     if (!this.sg?.renderer?.camera) return { xMin: -5, xMax: 5, yMin: -5, yMax: 5 };
 
     const camera = this.sg.renderer.camera;
-    const frustum = new THREE.Frustum();
-    const projMatrix = new THREE.Matrix4().multiplyMatrices(
+    const frustum = new Frustum();
+    const projMatrix = new Matrix4().multiplyMatrices(
       camera.projectionMatrix,
       camera.matrixWorldInverse
     );

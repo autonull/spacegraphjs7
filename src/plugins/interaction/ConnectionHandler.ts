@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import { Plane, Vector3 } from 'three';
 import type { Node } from '../../nodes/Node';
 import type { SpaceGraph } from '../../SpaceGraph';
 import type { EdgeSpec } from '../../types';
@@ -35,8 +35,8 @@ export class ConnectionHandler {
   updateConnection(): void {
     if (!this.isConnecting || !this.connectSourceNode || !this.connectTempLine) return;
 
-    const normal = this.sg.renderer.camera.getWorldDirection(new THREE.Vector3(0, 0, 1));
-    const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(
+    const normal = this.sg.renderer.camera.getWorldDirection(new Vector3(0, 0, 1));
+    const plane = new Plane().setFromNormalAndCoplanarPoint(
       normal,
       this.connectSourceNode.position
     );

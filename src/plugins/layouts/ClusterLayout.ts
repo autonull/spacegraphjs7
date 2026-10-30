@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import { Vector3 } from 'three';
 import type { Node } from '../../nodes/Node';
 import { BaseLayout, type LayoutOptions } from './BaseLayout';
 
@@ -23,7 +23,7 @@ export class ClusterLayout extends BaseLayout<ClusterLayoutOptions> {
       else clusters.set(key, [node]);
     }
 
-    const target = new THREE.Vector3();
+    const target = new Vector3();
     const clusterGroups = [...clusters.values()];
     for (const [clusterIndex, clusterNodes] of clusterGroups.entries()) {
       const macroAngle = (Math.PI * 2 * clusterIndex) / clusterGroups.length;
@@ -53,13 +53,13 @@ export class ClusterLayout extends BaseLayout<ClusterLayoutOptions> {
 
 /** A node's place inside its cluster: one node sits on the centre, a few ring it, many spread out. */
 function clusterOffset(
-  target: THREE.Vector3,
+  target: Vector3,
   centerX: number,
   centerY: number,
   nodeIndex: number,
   nodeCount: number,
   nodeRadius: number
-): THREE.Vector3 {
+): Vector3 {
   if (nodeCount === 1) return target.set(centerX, centerY, 0);
   if (nodeCount < 10) {
     const microAngle = (Math.PI * 2 * nodeIndex) / nodeCount;

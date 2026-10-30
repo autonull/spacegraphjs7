@@ -1,5 +1,5 @@
+import { Mesh, MeshBasicMaterial, SphereGeometry } from 'three';
 import { ThreeDisposer } from '../utils';
-import * as THREE from 'three';
 import type { Node } from '../nodes/Node';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { EdgeData, EdgeSpec } from '../types';
@@ -8,7 +8,7 @@ import { Edge } from './Edge';
 
 export class AnimatedEdge extends Edge {
   static readonly typeName: string = 'AnimatedEdge';
-  readonly particle: THREE.Mesh;
+  readonly particle: Mesh;
   private progress = 0;
   private speed = 0.01;
   private isReversed = false;
@@ -31,12 +31,12 @@ export class AnimatedEdge extends Edge {
     material.transparent = true;
     material.opacity = 0.4;
 
-    const particleGeom = new THREE.SphereGeometry(data?.particleSize ?? 3, 8, 8);
-    const particleMat = new THREE.MeshBasicMaterial({
+    const particleGeom = new SphereGeometry(data?.particleSize ?? 3, 8, 8);
+    const particleMat = new MeshBasicMaterial({
       color: data?.particleColor ?? 0x00ffcc,
     });
 
-    this.particle = new THREE.Mesh(particleGeom, particleMat);
+    this.particle = new Mesh(particleGeom, particleMat);
     this.object.add(this.particle);
 
     this.progress = this.isReversed ? 1 : 0;
@@ -57,7 +57,7 @@ export class AnimatedEdge extends Edge {
 
       if (data.particleColor) {
         const color = dataColor(data.particleColor);
-        if (color) (this.particle.material as THREE.MeshBasicMaterial).color.set(color);
+        if (color) (this.particle.material as MeshBasicMaterial).color.set(color);
       }
       if (data.particleSize) {
         const s = data.particleSize / 3;

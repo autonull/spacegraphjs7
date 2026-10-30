@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import { Group, Object3D } from 'three';
 import type { GeometryFamily } from '../rendering/InstancedNodeRenderer';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec } from '../types';
@@ -7,17 +7,17 @@ import { BaseInstancedNode } from './BaseInstancedNode';
 export class InstancedNode extends BaseInstancedNode {
   static readonly typeName: string = 'InstancedNode';
   protected geometryFamily: GeometryFamily;
-  readonly _group: THREE.Group;
+  readonly _group: Group;
 
   constructor(sg: SpaceGraph | undefined, spec: NodeSpec, family: GeometryFamily) {
     super(sg, spec);
-    this._group = new THREE.Group();
+    this._group = new Group();
     this.geometryFamily = family;
     this.registerInstance();
     this.updateInstanceTransform();
   }
 
-  override get object(): THREE.Object3D {
+  override get object(): Object3D {
     return this._group;
   }
 

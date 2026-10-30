@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import { Box3, OrthographicCamera, PerspectiveCamera, Vector3 } from 'three';
 import type { CameraControls } from '../core';
 import type { EventSystem } from '../core/events/EventSystem';
 import type { Graph } from '../core/Graph';
@@ -38,7 +38,7 @@ export class MinimapPlugin extends BaseSystemPlugin {
     enabled: true,
     intervalMs: 100,
   };
-  private orthoCamera!: THREE.OrthographicCamera;
+  private orthoCamera!: OrthographicCamera;
   private isDragging = false;
   private container?: HTMLElement;
   private indicator?: HTMLElement;
@@ -92,7 +92,7 @@ export class MinimapPlugin extends BaseSystemPlugin {
 
   private _buildCamera(): void {
     const z = this.settings.zoom;
-    this.orthoCamera = new THREE.OrthographicCamera(-z, z, z, -z, 1, 10000);
+    this.orthoCamera = new OrthographicCamera(-z, z, z, -z, 1, 10000);
     this.orthoCamera.position.set(0, 0, 1000);
     this.orthoCamera.lookAt(0, 0, 0);
   }
@@ -180,10 +180,10 @@ export class MinimapPlugin extends BaseSystemPlugin {
     const nodes = Array.from(this.sg.graph.nodes.values());
     let half = this.settings.zoom;
     if (nodes.length) {
-      const box = new THREE.Box3();
+      const box = new Box3();
       for (const node of nodes) if (node?.position) box.expandByPoint(node.position);
-      const center = new THREE.Vector3();
-      const dimensions = new THREE.Vector3();
+      const center = new Vector3();
+      const dimensions = new Vector3();
       box.getCenter(center);
       box.getSize(dimensions);
       half = Math.max(this.settings.zoom, Math.max(dimensions.x, dimensions.y) * 0.6 + 40);
@@ -266,10 +266,10 @@ export class MinimapPlugin extends BaseSystemPlugin {
   private _visibleWorldSize(): { width: number; height: number } {
     const camera = this.sg.renderer.camera;
     const target = this.sg.cameraControls.target;
-    if ((camera as THREE.OrthographicCamera).isOrthographicCamera) {
+    if ((camera as OrthographicCamera).isOrthographicCamera) {
       return visibleWorldExtent(camera, 0);
     }
-    const perspective = camera as THREE.PerspectiveCamera;
+    const perspective = camera as PerspectiveCamera;
     return visibleWorldExtent(perspective, perspective.position.distanceTo(target));
   }
 }

@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import { CanvasTexture } from 'three';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec } from '../types';
 import { createElement } from '../utils/DOMUtils';
@@ -19,7 +19,7 @@ export class CanvasNode extends TexturedMeshNode {
   static readonly typeName: string = 'CanvasNode';
   readonly canvas: HTMLCanvasElement;
   readonly ctx: CanvasRenderingContext2D;
-  readonly canvasTexture!: THREE.CanvasTexture;
+  readonly canvasTexture!: CanvasTexture;
   private drawFn?: DrawFn;
 
   constructor(sg: SpaceGraph | undefined, spec: NodeSpec) {
@@ -36,7 +36,7 @@ export class CanvasNode extends TexturedMeshNode {
 
     this._draw();
 
-    this.canvasTexture = new THREE.CanvasTexture(this.canvas);
+    this.canvasTexture = new CanvasTexture(this.canvas);
     this.setTexture(this.canvasTexture);
   }
 

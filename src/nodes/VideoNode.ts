@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import { LinearFilter, VideoTexture } from 'three';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec } from '../types';
 import { createElement } from '../utils/DOMUtils';
@@ -10,7 +10,7 @@ const logger = createLogger('VideoNode');
 export class VideoNode extends TexturedMeshNode {
   static readonly typeName: string = 'VideoNode';
   public videoEl: HTMLVideoElement;
-  readonly videoTexture: THREE.VideoTexture;
+  readonly videoTexture: VideoTexture;
 
   constructor(sg: SpaceGraph | undefined, spec: NodeSpec) {
     const w = (spec.data?.width as number) ?? 320;
@@ -30,9 +30,9 @@ export class VideoNode extends TexturedMeshNode {
     this.videoEl.playsInline = true;
     if (autoplay) this.videoEl.autoplay = true;
 
-    this.videoTexture = new THREE.VideoTexture(this.videoEl);
-    this.videoTexture.minFilter = THREE.LinearFilter;
-    this.videoTexture.magFilter = THREE.LinearFilter;
+    this.videoTexture = new VideoTexture(this.videoEl);
+    this.videoTexture.minFilter = LinearFilter;
+    this.videoTexture.magFilter = LinearFilter;
     this.setTexture(this.videoTexture);
 
     if (autoplay) {

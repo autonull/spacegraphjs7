@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import { Box3, BoxGeometry, Group, Material, Mesh, MeshBasicMaterial, Vector3 } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 import type { SpaceGraph } from '../SpaceGraph';
@@ -11,10 +11,10 @@ const logger = createLogger('SceneNode');
 
 export class SceneNode extends Object3DNode {
   static readonly typeName: string = 'SceneNode';
-  private modelRoot?: THREE.Group;
+  private modelRoot?: Group;
   private loader: GLTFLoader;
-  private proxyMesh?: THREE.Mesh;
-  readonly wrapper: THREE.Group;
+  private proxyMesh?: Mesh;
+  readonly wrapper: Group;
   private rotationSpeed = 0;
 
   constructor(sg: SpaceGraph | undefined, spec: NodeSpec) {
@@ -26,7 +26,7 @@ export class SceneNode extends Object3DNode {
     this.rotationSpeed = (spec.data?.rotationSpeed as number) ?? 0;
 
     this.loader = new GLTFLoader();
-    this.wrapper = new THREE.Group();
+    this.wrapper = new Group();
     this._object.add(this.wrapper);
 
     if (url) {
@@ -66,8 +66,8 @@ export class SceneNode extends Object3DNode {
   dispose(): void {
     if (this.modelRoot) {
       this.modelRoot.traverse((child) => {
-        if ((child as THREE.Mesh).isMesh) {
-          const mesh = child as THREE.Mesh;
+        if ((child as Mesh).isMesh) {
+          const mesh = child as Mesh;
           mesh.geometry.dispose();
           if (mesh.geometry.disposeBoundsTree) mesh.geometry.disposeBoundsTree();
           if (Array.isArray(mesh.material)) {
@@ -81,7 +81,7 @@ export class SceneNode extends Object3DNode {
     if (this.proxyMesh) {
       this.proxyMesh.geometry.dispose();
       if (this.proxyMesh.geometry.disposeBoundsTree) this.proxyMesh.geometry.disposeBoundsTree();
-      (this.proxyMesh.material as THREE.Material).dispose();
+      (this.proxyMesh.material as Material).dispose();
     }
     super.dispose();
   }
@@ -92,10 +92,10 @@ export class SceneNode extends Object3DNode {
       async (gltf) => {
         this.modelRoot = gltf.scene;
 
-        const box = new THREE.Box3().setFromObject(this.modelRoot);
-        const size = new THREE.Vector3();
+        const box = new Box3().setFromObject(this.modelRoot);
+        const size = new Vector3();
         box.getSize(size);
-        const center = new THREE.Vector3();
+        const center = new Vector3();
         box.getCenter(center);
 
         const maxDim = Math.max(size.x, size.y, size.z);
@@ -105,25 +105,25 @@ export class SceneNode extends Object3DNode {
         }
 
         if (autoCenter) {
-          const newBox = new THREE.Box3().setFromObject(this.modelRoot);
+          const newBox = new Box3().setFromObject(this.modelRoot);
           newBox.getCenter(center);
           this.modelRoot.position.sub(center);
         }
 
         this.wrapper.add(this.modelRoot);
 
-        const finalBox = new THREE.Box3().setFromObject(this.wrapper);
-        const finalSize = new THREE.Vector3();
+        const finalBox = new Box3().setFromObject(this.wrapper);
+        const finalSize = new Vector3();
         finalBox.getSize(finalSize);
 
         await ensureThreeMeshBvh();
-        const proxyGeo = new THREE.BoxGeometry(finalSize.x, finalSize.y, finalSize.z);
+        const proxyGeo = new BoxGeometry(finalSize.x, finalSize.y, finalSize.z);
         if (proxyGeo.computeBoundsTree) proxyGeo.computeBoundsTree();
 
-        const proxyMat = new THREE.MeshBasicMaterial({ visible: false });
-        this.proxyMesh = new THREE.Mesh(proxyGeo, proxyMat);
+        const proxyMat = new MeshBasicMaterial({ visible: false });
+        this.proxyMesh = new Mesh(proxyGeo, proxyMat);
 
-        const finalCenter = new THREE.Vector3();
+        const finalCenter = new Vector3();
         finalBox.getCenter(finalCenter);
         this.wrapper.worldToLocal(finalCenter);
         this.proxyMesh.position.copy(finalCenter);

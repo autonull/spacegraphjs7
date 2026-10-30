@@ -1,4 +1,24 @@
-import * as THREE from 'three';
+import {
+  BoxGeometry,
+  BufferGeometry,
+  CircleGeometry,
+  Color,
+  ConeGeometry,
+  CylinderGeometry,
+  DynamicDrawUsage,
+  InstancedBufferAttribute,
+  InstancedMesh,
+  Material,
+  Matrix4,
+  MeshBasicMaterial,
+  PlaneGeometry,
+  Quaternion,
+  RingGeometry,
+  Scene,
+  SphereGeometry,
+  TorusGeometry,
+  Vector3,
+} from 'three';
 import type { SpaceGraph } from '../SpaceGraph';
 
 export const GEOMETRY_FAMILIES = {
@@ -22,7 +42,7 @@ interface InstanceSlot {
 }
 
 interface GeometryFamilyState {
-  mesh: THREE.InstancedMesh;
+  mesh: InstancedMesh;
   slots: InstanceSlot[];
   freeSlots: number[];
   activeCount: number;
@@ -30,26 +50,26 @@ interface GeometryFamilyState {
   needsColorUpdate: boolean;
 }
 
-const tempMatrix = new THREE.Matrix4();
-const tempColor = new THREE.Color();
+const tempMatrix = new Matrix4();
+const tempColor = new Color();
 
-const GEOMETRY_FACTORIES: Record<GeometryFamily, () => THREE.BufferGeometry> = {
-  [GEOMETRY_FAMILIES.SPHERE]: () => new THREE.SphereGeometry(20, 16, 16),
-  [GEOMETRY_FAMILIES.BOX]: () => new THREE.BoxGeometry(40, 40, 40),
-  [GEOMETRY_FAMILIES.CYLINDER]: () => new THREE.CylinderGeometry(20, 20, 40, 16),
-  [GEOMETRY_FAMILIES.PLANE]: () => new THREE.PlaneGeometry(40, 40),
-  [GEOMETRY_FAMILIES.CONE]: () => new THREE.ConeGeometry(20, 40, 16),
-  [GEOMETRY_FAMILIES.TORUS]: () => new THREE.TorusGeometry(15, 5, 8, 16),
-  [GEOMETRY_FAMILIES.RING]: () => new THREE.RingGeometry(10, 20, 16),
-  [GEOMETRY_FAMILIES.CIRCLE]: () => new THREE.CircleGeometry(20, 32),
+const GEOMETRY_FACTORIES: Record<GeometryFamily, () => BufferGeometry> = {
+  [GEOMETRY_FAMILIES.SPHERE]: () => new SphereGeometry(20, 16, 16),
+  [GEOMETRY_FAMILIES.BOX]: () => new BoxGeometry(40, 40, 40),
+  [GEOMETRY_FAMILIES.CYLINDER]: () => new CylinderGeometry(20, 20, 40, 16),
+  [GEOMETRY_FAMILIES.PLANE]: () => new PlaneGeometry(40, 40),
+  [GEOMETRY_FAMILIES.CONE]: () => new ConeGeometry(20, 40, 16),
+  [GEOMETRY_FAMILIES.TORUS]: () => new TorusGeometry(15, 5, 8, 16),
+  [GEOMETRY_FAMILIES.RING]: () => new RingGeometry(10, 20, 16),
+  [GEOMETRY_FAMILIES.CIRCLE]: () => new CircleGeometry(20, 32),
 };
 
 export class InstancedNodeRenderer {
-  private scene: THREE.Scene;
+  private scene: Scene;
   private familyStates: Map<GeometryFamily, GeometryFamilyState> = new Map();
   private nodeToSlot: Map<string, { family: GeometryFamily; slot: number }> = new Map();
 
-  constructor(_sg: SpaceGraph, scene: THREE.Scene) {
+  constructor(_sg: SpaceGraph, scene: Scene) {
     this.scene = scene;
     this.initializeGeometries();
   }
@@ -68,7 +88,7 @@ export class InstancedNodeRenderer {
     }
   }
 
-  public getMesh(family: GeometryFamily): THREE.InstancedMesh | undefined {
+  public getMesh(family: GeometryFamily): InstancedMesh | undefined {
     return this.familyStates.get(family)?.mesh;
   }
 
@@ -103,9 +123,9 @@ export class InstancedNodeRenderer {
   public updateInstanceAt(
     family: GeometryFamily,
     slot: number,
-    position: THREE.Vector3,
-    quaternion: THREE.Quaternion,
-    scale: THREE.Vector3,
+    position: Vector3,
+    quaternion: Quaternion,
+    scale: Vector3,
     color: number
   ) {
     const state = this.familyStates.get(family);
@@ -140,7 +160,7 @@ export class InstancedNodeRenderer {
     for (const state of this.familyStates.values()) {
       this.scene.remove(state.mesh);
       state.mesh.geometry.dispose();
-      (state.mesh.material as THREE.Material).dispose();
+      (state.mesh.material as Material).dispose();
       state.mesh.dispose();
     }
     this.familyStates.clear();
@@ -173,18 +193,18 @@ export class InstancedNodeRenderer {
 
     for (const family of families) {
       const { geometry, material } = this.createGeometryAndMaterial(family);
-      const mesh = new THREE.InstancedMesh(geometry, material, DEFAULT_CAPACITY);
-      mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+      const mesh = new InstancedMesh(geometry, material, DEFAULT_CAPACITY);
+      mesh.instanceMatrix.setUsage(DynamicDrawUsage);
       mesh.count = 0;
       mesh.frustumCulled = false;
 
       if (!mesh.instanceColor) {
-        mesh.instanceColor = new THREE.InstancedBufferAttribute(
+        mesh.instanceColor = new InstancedBufferAttribute(
           new Float32Array(DEFAULT_CAPACITY * 3),
           3
         );
       }
-      mesh.instanceColor.setUsage(THREE.DynamicDrawUsage);
+      mesh.instanceColor.setUsage(DynamicDrawUsage);
 
       const state: GeometryFamilyState = {
         mesh,
@@ -206,13 +226,13 @@ export class InstancedNodeRenderer {
   }
 
   private createGeometryAndMaterial(family: GeometryFamily): {
-    geometry: THREE.BufferGeometry;
-    material: THREE.Material;
+    geometry: BufferGeometry;
+    material: Material;
   } {
     const geometry =
       GEOMETRY_FACTORIES[family]?.() ?? GEOMETRY_FACTORIES[GEOMETRY_FAMILIES.SPHERE]();
 
-    const material = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const material = new MeshBasicMaterial({ color: 0xffffff });
 
     return { geometry, material };
   }
@@ -225,21 +245,21 @@ export class InstancedNodeRenderer {
     const oldMesh = oldState.mesh;
 
     const { geometry, material } = this.createGeometryAndMaterial(family);
-    const newMesh = new THREE.InstancedMesh(geometry, material, newCapacity);
-    newMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    const newMesh = new InstancedMesh(geometry, material, newCapacity);
+    newMesh.instanceMatrix.setUsage(DynamicDrawUsage);
     newMesh.count = oldMesh.count;
     newMesh.frustumCulled = false;
 
     if (!newMesh.instanceColor) {
-      newMesh.instanceColor = new THREE.InstancedBufferAttribute(
+      newMesh.instanceColor = new InstancedBufferAttribute(
         new Float32Array(newCapacity * 3),
         3
       );
     }
-    newMesh.instanceColor.setUsage(THREE.DynamicDrawUsage);
+    newMesh.instanceColor.setUsage(DynamicDrawUsage);
 
-    const matrix = new THREE.Matrix4();
-    const color = new THREE.Color();
+    const matrix = new Matrix4();
+    const color = new Color();
 
     for (let i = 0; i < oldMesh.count; i++) {
       oldMesh.getMatrixAt(i, matrix);
@@ -279,7 +299,7 @@ export class InstancedNodeRenderer {
 
     this.scene.remove(oldMesh);
     oldMesh.geometry.dispose();
-    (oldMesh.material as THREE.Material).dispose();
+    (oldMesh.material as Material).dispose();
     oldMesh.dispose();
 
     this.familyStates.set(family, newState);

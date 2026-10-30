@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import { Vector3 } from 'three';
 import type { Node } from '../../nodes/Node';
 import { BaseLayout, type LayoutOptions } from './BaseLayout';
 
@@ -51,7 +51,7 @@ export class HierarchicalLayout extends BaseLayout<HierarchicalLayoutOptions> {
         const primary = lv * config.levelHeight;
         const secondary = -totalWidth / 2 + i * config.nodeSpacing;
         const [x, y] = orient(primary, secondary, config.direction);
-        this.applyPosition(byId.get(id)!, new THREE.Vector3(x, y, config.z));
+        this.applyPosition(byId.get(id)!, new Vector3(x, y, config.z));
       }
     }
 
@@ -61,7 +61,7 @@ export class HierarchicalLayout extends BaseLayout<HierarchicalLayoutOptions> {
       if (visited.has(node.id) || this.isPinned(node)) continue;
       this.applyPosition(
         node,
-        new THREE.Vector3(orphanX, -(maxLevel + 1) * config.levelHeight, config.z)
+        new Vector3(orphanX, -(maxLevel + 1) * config.levelHeight, config.z)
       );
       orphanX += config.nodeSpacing;
     }

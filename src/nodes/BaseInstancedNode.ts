@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import { Color, ColorRepresentation } from 'three';
 
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec } from '../types';
@@ -11,7 +11,7 @@ export abstract class BaseInstancedNode extends Object3DNode {
   protected constructor(sg: SpaceGraph | undefined, spec: NodeSpec, defaultColor = 0x3366ff) {
     super(sg, spec);
     this.colorHex = spec.data?.color
-      ? new THREE.Color(spec.data.color as THREE.ColorRepresentation).getHex()
+      ? new Color(spec.data.color as ColorRepresentation).getHex()
       : defaultColor;
   }
 
@@ -24,7 +24,7 @@ export abstract class BaseInstancedNode extends Object3DNode {
   updateSpec(updates: Partial<NodeSpec>): this {
     super.updateSpec(updates);
     if (updates.data?.color) {
-      this.colorHex = new THREE.Color(updates.data.color as THREE.ColorRepresentation).getHex();
+      this.colorHex = new Color(updates.data.color as ColorRepresentation).getHex();
       this.updateInstanceTransform();
     }
     return this;

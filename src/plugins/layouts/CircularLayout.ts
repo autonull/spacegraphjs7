@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import { Vector3 } from 'three';
 import type { Node } from '../../nodes/Node';
 import { BaseLayout, type LayoutOptions } from './BaseLayout';
 
@@ -17,7 +17,7 @@ export class CircularLayout extends BaseLayout<CircularLayoutOptions> {
   protected place(nodes: Node[], config: CircularLayoutOptions): void {
     this.positionAll(nodes, (_node, index, total) => {
       const angle = config.startAngle + (index / total) * (2 * Math.PI);
-      return new THREE.Vector3(
+      return new Vector3(
         config.radiusX * Math.cos(angle),
         config.radiusY * Math.sin(angle),
         config.z

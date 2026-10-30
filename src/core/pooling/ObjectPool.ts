@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import { Box3, Matrix4, Vector2, Vector3 } from 'three';
 
 export class ObjectPool<T> {
   readonly available: T[] = [];
@@ -59,32 +59,32 @@ export class ObjectPool<T> {
 
 export class MathPool {
   private static instance: MathPool;
-  readonly vector3Pool: ObjectPool<THREE.Vector3>;
-  readonly vector2Pool: ObjectPool<THREE.Vector2>;
-  readonly matrix4Pool: ObjectPool<THREE.Matrix4>;
-  readonly box3Pool: ObjectPool<THREE.Box3>;
+  readonly vector3Pool: ObjectPool<Vector3>;
+  readonly vector2Pool: ObjectPool<Vector2>;
+  readonly matrix4Pool: ObjectPool<Matrix4>;
+  readonly box3Pool: ObjectPool<Box3>;
 
   private constructor() {
     this.vector3Pool = new ObjectPool(
-      () => new THREE.Vector3(),
+      () => new Vector3(),
       (v) => v.set(0, 0, 0),
       1000,
       50000
     );
     this.vector2Pool = new ObjectPool(
-      () => new THREE.Vector2(),
+      () => new Vector2(),
       (v) => v.set(0, 0),
       500,
       10000
     );
     this.matrix4Pool = new ObjectPool(
-      () => new THREE.Matrix4(),
+      () => new Matrix4(),
       (m) => m.identity(),
       200,
       5000
     );
     this.box3Pool = new ObjectPool(
-      () => new THREE.Box3(),
+      () => new Box3(),
       (b) => b.makeEmpty(),
       200,
       5000
@@ -95,35 +95,35 @@ export class MathPool {
     return MathPool.instance ?? (MathPool.instance = new MathPool());
   }
 
-  acquireVector3(): THREE.Vector3 {
+  acquireVector3(): Vector3 {
     return this.vector3Pool.acquire();
   }
 
-  releaseVector3(v: THREE.Vector3): void {
+  releaseVector3(v: Vector3): void {
     this.vector3Pool.release(v);
   }
 
-  acquireVector2(): THREE.Vector2 {
+  acquireVector2(): Vector2 {
     return this.vector2Pool.acquire();
   }
 
-  releaseVector2(v: THREE.Vector2): void {
+  releaseVector2(v: Vector2): void {
     this.vector2Pool.release(v);
   }
 
-  acquireMatrix4(): THREE.Matrix4 {
+  acquireMatrix4(): Matrix4 {
     return this.matrix4Pool.acquire();
   }
 
-  releaseMatrix4(m: THREE.Matrix4): void {
+  releaseMatrix4(m: Matrix4): void {
     this.matrix4Pool.release(m);
   }
 
-  acquireBox3(): THREE.Box3 {
+  acquireBox3(): Box3 {
     return this.box3Pool.acquire();
   }
 
-  releaseBox3(b: THREE.Box3): void {
+  releaseBox3(b: Box3): void {
     this.box3Pool.release(b);
   }
 
@@ -153,28 +153,28 @@ function pooled<V, R>(acquire: () => V, release: (value: V) => void, fn: (value:
   }
 }
 
-export const withPooledVector3 = <T>(pool: MathPool, fn: (v: THREE.Vector3) => T): T =>
+export const withPooledVector3 = <T>(pool: MathPool, fn: (v: Vector3) => T): T =>
   pooled(
     () => pool.acquireVector3(),
     (v) => pool.releaseVector3(v),
     fn
   );
 
-export const withPooledVector2 = <T>(pool: MathPool, fn: (v: THREE.Vector2) => T): T =>
+export const withPooledVector2 = <T>(pool: MathPool, fn: (v: Vector2) => T): T =>
   pooled(
     () => pool.acquireVector2(),
     (v) => pool.releaseVector2(v),
     fn
   );
 
-export const withPooledMatrix4 = <T>(pool: MathPool, fn: (m: THREE.Matrix4) => T): T =>
+export const withPooledMatrix4 = <T>(pool: MathPool, fn: (m: Matrix4) => T): T =>
   pooled(
     () => pool.acquireMatrix4(),
     (m) => pool.releaseMatrix4(m),
     fn
   );
 
-export const withPooledBox3 = <T>(pool: MathPool, fn: (b: THREE.Box3) => T): T =>
+export const withPooledBox3 = <T>(pool: MathPool, fn: (b: Box3) => T): T =>
   pooled(
     () => pool.acquireBox3(),
     (b) => pool.releaseBox3(b),

@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import { Vector3 } from 'three';
 import type { Edge } from '../../edges/Edge';
 import type { Node } from '../../nodes/Node';
 import { BaseLayout, type LayoutOptions } from './BaseLayout';
@@ -42,9 +42,9 @@ function spectralPositions(
   edges: Edge[],
   dimensions: number,
   scale: number
-): THREE.Vector3[] {
+): Vector3[] {
   const count = nodes.length;
-  if (count === 1) return [new THREE.Vector3(0, 0, 0)];
+  if (count === 1) return [new Vector3(0, 0, 0)];
 
   const indexOf = new Map(nodes.map((node, index) => [node.id, index]));
   const adjacency = Array.from({ length: count }, () => new Float32Array(count));
@@ -72,7 +72,7 @@ function spectralPositions(
 
   return nodes.map(
     (_, i) =>
-      new THREE.Vector3(
+      new Vector3(
         normalized(eigenvectors[0][i], ranges[0]) * scale,
         eigenCount > 1 ? normalized(eigenvectors[1][i], ranges[1]) * scale : 0,
         eigenCount > 2 ? normalized(eigenvectors[2][i], ranges[2]) * scale : 0

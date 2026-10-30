@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import { Vector3 } from 'three';
 import type { Node } from '../../nodes/Node';
 import { BaseLayout, type LayoutOptions } from './BaseLayout';
 
@@ -24,7 +24,7 @@ export class RadialLayout extends BaseLayout<RadialLayoutOptions> {
 
     const { children, rootId: resolvedRootId } = this.buildTree(config.rootId);
     const root = nodes.get(resolvedRootId) as Node;
-    this.applyPosition(root, new THREE.Vector3(0, 0, config.z));
+    this.applyPosition(root, new Vector3(0, 0, config.z));
 
     const queue: Array<{ id: string; depth: number; minAngle: number; maxAngle: number }> = [
       {
@@ -51,7 +51,7 @@ export class RadialLayout extends BaseLayout<RadialLayoutOptions> {
         if (node) {
           this.applyPosition(
             node,
-            new THREE.Vector3(Math.cos(angle) * radius, Math.sin(angle) * radius, config.z)
+            new Vector3(Math.cos(angle) * radius, Math.sin(angle) * radius, config.z)
           );
         }
         queue.push({
@@ -70,7 +70,7 @@ export class RadialLayout extends BaseLayout<RadialLayoutOptions> {
         const angle = ((2 * Math.PI) / orphans.length) * i;
         this.applyPosition(
           nodes.get(id) as Node,
-          new THREE.Vector3(Math.cos(angle) * outerRadius, Math.sin(angle) * outerRadius, config.z)
+          new Vector3(Math.cos(angle) * outerRadius, Math.sin(angle) * outerRadius, config.z)
         );
       }
     }

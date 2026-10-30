@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import { GridHelper } from 'three';
 import { searchBy } from '../navigation/search';
 import { focusNodeCamera } from '../utils/CameraUtils';
 import { DOMUtils } from '../utils/DOMUtils';
@@ -421,7 +421,7 @@ export function addGrid(app: SpaceGraphApp) {
   if (app.options.enableGrid === false) return;
   const size = 10000;
   const divisions = 100;
-  const gridHelper = new THREE.GridHelper(size, divisions, 0x475569, 0x1e293b);
+  const gridHelper = new GridHelper(size, divisions, 0x475569, 0x1e293b);
   gridHelper.material.opacity = 0.5;
   gridHelper.material.transparent = true;
   app.sg.renderer.scene.add(gridHelper);

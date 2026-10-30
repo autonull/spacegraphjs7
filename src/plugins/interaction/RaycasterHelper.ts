@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import { Plane, Raycaster, Vector2, Vector3 } from 'three';
 import type { Edge } from '../../edges/Edge';
 import type { Node } from '../../nodes/Node';
 import type { SpaceGraph } from '../../SpaceGraph';
@@ -9,8 +9,8 @@ import { clientToNdc } from '../../utils/projection';
  * Consolidates all raycasting logic into a single reusable class
  */
 export class InteractionRaycaster {
-  readonly raycaster = new THREE.Raycaster();
-  readonly mouse = new THREE.Vector2();
+  readonly raycaster = new Raycaster();
+  readonly mouse = new Vector2();
   readonly sg: SpaceGraph;
 
   constructor(sg: SpaceGraph) {
@@ -28,7 +28,7 @@ export class InteractionRaycaster {
     this.raycaster.setFromCamera(this.mouse, this.sg.renderer.camera);
   }
 
-  getMouseNDC(): THREE.Vector2 {
+  getMouseNDC(): Vector2 {
     return this.mouse.clone();
   }
 
@@ -36,10 +36,10 @@ export class InteractionRaycaster {
    * The node under the pointer. Every surface answers a ray with its own `hitTest`, so the pick
    * follows the node's own shape instead of a second, looser rule kept beside it.
    */
-  raycastNode(): { node: Node; point: THREE.Vector3 } | null {
+  raycastNode(): { node: Node; point: Vector3 } | null {
     this.raycaster.setFromCamera(this.mouse, this.sg.renderer.camera);
 
-    let closest: { node: Node; point: THREE.Vector3; distance: number } | null = null;
+    let closest: { node: Node; point: Vector3; distance: number } | null = null;
 
     for (const node of this.sg.graph.nodes.values()) {
       const hit = node.hitTest(this.raycaster);
@@ -52,10 +52,10 @@ export class InteractionRaycaster {
   }
 
   /** The edge under the pointer, by the same rule the nodes answer with. */
-  raycastEdge(): { edge: Edge; point: THREE.Vector3 } | null {
+  raycastEdge(): { edge: Edge; point: Vector3 } | null {
     this.raycaster.setFromCamera(this.mouse, this.sg.renderer.camera);
 
-    let closest: { edge: Edge; point: THREE.Vector3; distance: number } | null = null;
+    let closest: { edge: Edge; point: Vector3; distance: number } | null = null;
 
     for (const edge of this.sg.graph.edges.values()) {
       const hit = edge.hitTest(this.raycaster);
@@ -67,12 +67,12 @@ export class InteractionRaycaster {
     return closest ? { edge: closest.edge, point: closest.point } : null;
   }
 
-  raycastPlane(plane: THREE.Plane): THREE.Vector3 | null {
-    const intersection = new THREE.Vector3();
+  raycastPlane(plane: Plane): Vector3 | null {
+    const intersection = new Vector3();
     return this.raycaster.ray.intersectPlane(plane, intersection) ? intersection : null;
   }
 
-  getRaycaster(): THREE.Raycaster {
+  getRaycaster(): Raycaster {
     return this.raycaster;
   }
 }

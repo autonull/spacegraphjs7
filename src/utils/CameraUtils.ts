@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import { Box3, Camera, OrthographicCamera, PerspectiveCamera, Vector3 } from 'three';
 import { DEG2RAD } from '../core/constants';
 import type { Point2D } from '../types';
 
@@ -32,7 +32,7 @@ export function focusRadiusOf(node: { data?: { width?: unknown } }, floor = 150)
  * Set an orthographic camera's frustum to a world height and an aspect, centred on the origin.
  */
 export function setOrthoFrustum(
-  camera: THREE.OrthographicCamera,
+  camera: OrthographicCamera,
   height: number,
   aspect: number
 ): void {
@@ -49,7 +49,7 @@ export function setOrthoFrustum(
  * the orthographic frame shows what the perspective frame shows.
  */
 export function fitOrthoFrustum(
-  camera: THREE.OrthographicCamera,
+  camera: OrthographicCamera,
   fovDegrees: number,
   distance: number,
   aspect: number
@@ -63,18 +63,18 @@ export function fitOrthoFrustum(
  * which one it means. The aspect is the camera's own unless the caller measures a different one.
  */
 export function visibleWorldExtent(
-  camera: THREE.Camera,
+  camera: Camera,
   distance: number,
   aspect?: number
 ): { width: number; height: number } {
-  const ortho = camera as THREE.OrthographicCamera;
+  const ortho = camera as OrthographicCamera;
   if (ortho.isOrthographicCamera) {
     return {
       width: (ortho.right - ortho.left) / ortho.zoom,
       height: (ortho.top - ortho.bottom) / ortho.zoom,
     };
   }
-  const perspective = camera as THREE.PerspectiveCamera;
+  const perspective = camera as PerspectiveCamera;
   const height = visibleHeightAtDistance(perspective.fov, distance);
   return { width: height * (aspect ?? perspective.aspect), height };
 }
@@ -91,13 +91,13 @@ export const AUTO_FOCUS_DURATION = 0.5;
  */
 export function focusNodeCamera(
   graph: {
-    renderer: { camera: THREE.Camera };
+    renderer: { camera: Camera };
     cameraControls: {
       spherical: { radius: number };
-      flyTo(target: THREE.Vector3, distance: number, duration?: number, zoom?: number): void;
+      flyTo(target: Vector3, distance: number, duration?: number, zoom?: number): void;
     };
   },
-  node: { id: string; position: THREE.Vector3; data?: { width?: unknown } },
+  node: { id: string; position: Vector3; data?: { width?: unknown } },
   options: { padding?: number; duration?: number } = {}
 ): void {
   const fit = calculateFitView([node], graph.renderer.camera, options.padding ?? 100, 200);
@@ -111,7 +111,7 @@ export function focusNodeCamera(
 }
 
 export interface FitViewResult {
-  center: THREE.Vector3;
+  center: Vector3;
   cameraZ: number;
   /** Orthographic frustum zoom that fits the bounds; omitted for perspective. */
   zoom?: number;
@@ -119,7 +119,7 @@ export interface FitViewResult {
 
 /** A node's placement plus the dimensions it occupies around that placement. */
 export interface FitNode {
-  position: THREE.Vector3;
+  position: Vector3;
   data?: Record<string, unknown>;
 }
 
@@ -170,7 +170,7 @@ function usableRegion(surface?: FitSurface, insets?: FitInsets): UsableRegion | 
  */
 export function calculateFitView(
   nodes: FitNode[],
-  camera: THREE.Camera,
+  camera: Camera,
   padding = 100,
   minDistance = 200,
   /** Camera polar angle from +Y (radians). When provided for perspective, adjusts distance for tilt. */
@@ -184,7 +184,7 @@ export function calculateFitView(
 ): FitViewResult | null {
   if (!nodes || nodes.length === 0) return null;
 
-  const box = new THREE.Box3();
+  const box = new Box3();
   for (const node of nodes) {
     if (!node?.position) continue;
     box.expandByPoint(node.position);
@@ -195,15 +195,15 @@ export function calculateFitView(
     }
   }
 
-  const center = new THREE.Vector3();
+  const center = new Vector3();
   box.getCenter(center);
 
-  const size = new THREE.Vector3();
+  const size = new Vector3();
   box.getSize(size);
 
   const usable = usableRegion(surface, insets);
 
-  const ortho = camera as THREE.OrthographicCamera;
+  const ortho = camera as OrthographicCamera;
   if (ortho.isOrthographicCamera) {
     // The frame is the base frustum scaled by zoom and looks down -Z, so fit the X/Y bounds.
     const baseHeight = ortho.top - ortho.bottom || 1;
@@ -228,13 +228,13 @@ export function calculateFitView(
     const offsetY = usable && pxPerWorld > 0 ? (insets!.top - insets!.bottom) / 2 / pxPerWorld : 0;
 
     if (zoom === fitZoom)
-      return { center: new THREE.Vector3(center.x - offsetX, center.y + offsetY, center.z), cameraZ: minDistance, zoom };
+      return { center: new Vector3(center.x - offsetX, center.y + offsetY, center.z), cameraZ: minDistance, zoom };
 
     // The floor applies: the content no longer fits, so the frame starts at its beginning and the
     // axis that still fits stays centred.
     const visibleWidth = usable && pxPerWorld > 0 ? usable.width / pxPerWorld : baseWidth / zoom;
     const visibleHeight = usable && pxPerWorld > 0 ? usable.height / pxPerWorld : baseHeight / zoom;
-    const anchored = new THREE.Vector3(
+    const anchored = new Vector3(
       size.x + 2 * padding > visibleWidth ? box.min.x - padding - offsetX + visibleWidth / 2 : center.x - offsetX,
       size.y + 2 * padding > visibleHeight ? box.min.y - padding + offsetY + visibleHeight / 2 : center.y + offsetY,
       center.z,
@@ -244,7 +244,7 @@ export function calculateFitView(
   }
 
   const maxDim = Math.max(size.x, size.y, size.z);
-  const { fov = 75, aspect = 1 } = camera as Partial<THREE.PerspectiveCamera>;
+  const { fov = 75, aspect = 1 } = camera as Partial<PerspectiveCamera>;
   const halfHeight = halfFovTangent(fov);
   let cameraZ = Math.abs(maxDim / (2 * halfHeight * Math.max(1, aspect)));
 
@@ -273,11 +273,11 @@ export function calculateFitView(
 }
 
 /** Half-extents reported by a node's spec; cards carry width/height, shapes a single size. */
-function nodeExtent(node: FitNode): THREE.Vector3 | undefined {
+function nodeExtent(node: FitNode): Vector3 | undefined {
   const data = node.data ?? {};
   const size = typeof data.size === 'number' ? data.size : undefined;
   const width = typeof data.width === 'number' ? data.width : size;
   const height = typeof data.height === 'number' ? data.height : size;
   if (width === undefined && height === undefined) return undefined;
-  return new THREE.Vector3((width ?? 0) / 2, (height ?? 0) / 2, (size ?? 0) / 2);
+  return new Vector3((width ?? 0) / 2, (height ?? 0) / 2, (size ?? 0) / 2);
 }

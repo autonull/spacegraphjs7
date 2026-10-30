@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import { Ray } from 'three';
 import type { EventSystem } from '../core/events/EventSystem';
 import type { SpaceGraph } from '../SpaceGraph';
 import { clientToNdc } from '../utils/projection';
@@ -272,9 +272,9 @@ export class InputManager {
     this.bindings = [];
   }
 
-  private computeWorldRay(ndc: { x: number; y: number }): THREE.Ray {
+  private computeWorldRay(ndc: { x: number; y: number }): Ray {
     const camera = this.sg.renderer.camera;
-    const ray = new THREE.Ray();
+    const ray = new Ray();
     ray.origin.setFromMatrixPosition(camera.matrixWorld);
     ray.direction.set(ndc.x, ndc.y, 0.5).unproject(camera).sub(ray.origin).normalize();
     return ray;

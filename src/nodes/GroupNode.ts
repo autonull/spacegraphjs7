@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import { BoxGeometry, DoubleSide, EdgesGeometry, LineBasicMaterial, LineSegments, Mesh, MeshBasicMaterial } from 'three';
 
 import type { SpaceGraph } from '../SpaceGraph';
 import type { GroupNodeData, NodeSpec } from '../types';
@@ -8,8 +8,8 @@ import { Object3DNode } from './Object3DNode';
 export class GroupNode extends Object3DNode {
   static typeName: string = 'GroupNode';
   public readonly isGroupNode = true;
-  private meshGeometry: THREE.BoxGeometry;
-  readonly meshMaterial: THREE.MeshBasicMaterial;
+  private meshGeometry: BoxGeometry;
+  readonly meshMaterial: MeshBasicMaterial;
 
   constructor(sg: SpaceGraph | undefined, spec: NodeSpec) {
     super(sg, spec);
@@ -17,23 +17,23 @@ export class GroupNode extends Object3DNode {
     const data = spec.data as GroupNodeData;
     const { width = 300, height = 200, depth = 100, color = 0x4488ff } = data;
 
-    this.meshGeometry = new THREE.BoxGeometry(width, height, depth);
-    this.meshMaterial = new THREE.MeshBasicMaterial({
+    this.meshGeometry = new BoxGeometry(width, height, depth);
+    this.meshMaterial = new MeshBasicMaterial({
       color,
       transparent: true,
       opacity: 0.2,
-      side: THREE.DoubleSide,
+      side: DoubleSide,
     });
 
-    const mesh = new THREE.Mesh(this.meshGeometry, this.meshMaterial);
+    const mesh = new Mesh(this.meshGeometry, this.meshMaterial);
 
-    const edgesGeometry = new THREE.EdgesGeometry(this.meshGeometry);
-    const edgesMaterial = new THREE.LineBasicMaterial({
+    const edgesGeometry = new EdgesGeometry(this.meshGeometry);
+    const edgesMaterial = new LineBasicMaterial({
       color: 0xffffff,
       transparent: true,
       opacity: 0.5,
     });
-    const edges = new THREE.LineSegments(edgesGeometry, edgesMaterial);
+    const edges = new LineSegments(edgesGeometry, edgesMaterial);
     mesh.add(edges);
 
     this._object.add(mesh);
@@ -49,21 +49,21 @@ export class GroupNode extends Object3DNode {
 
     if (updates.data && (updates.data.width || updates.data.height || updates.data.depth)) {
       const { width, height, depth } = this.meshGeometry.parameters;
-      const newGeometry = new THREE.BoxGeometry(
+      const newGeometry = new BoxGeometry(
         (updates.data.width as number) ?? width,
         (updates.data.height as number) ?? height,
         (updates.data.depth as number) ?? depth
       );
 
-      const mesh = this._object.children[0] as THREE.Mesh;
+      const mesh = this._object.children[0] as Mesh;
       if (mesh) {
         mesh.geometry.dispose();
         mesh.geometry = newGeometry;
 
-        const oldEdges = mesh.children[0] as THREE.LineSegments;
+        const oldEdges = mesh.children[0] as LineSegments;
         if (oldEdges) {
           oldEdges.geometry.dispose();
-          oldEdges.geometry = new THREE.EdgesGeometry(newGeometry);
+          oldEdges.geometry = new EdgesGeometry(newGeometry);
         }
       }
 

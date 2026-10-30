@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import { TextureLoader } from 'three';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { NodeSpec } from '../types';
 import { TexturedMeshNode } from './TexturedMeshNode';
@@ -25,6 +25,6 @@ export class ImageNode extends TexturedMeshNode {
   }
 
   private loadTexture(url: string): void {
-    new THREE.TextureLoader().load(url, (texture) => this.setTexture(texture));
+    new TextureLoader().load(url, (texture) => this.setTexture(texture));
   }
 }

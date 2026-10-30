@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import { Vector3 } from 'three';
 import type { Node } from '../../nodes/Node';
 import { BaseLayout, type LayoutOptions } from './BaseLayout';
 
@@ -21,7 +21,7 @@ export class GridLayout extends BaseLayout<GridLayoutOptions> {
     this.positionAll(
       nodes,
       (node, index) =>
-        new THREE.Vector3(
+        new Vector3(
           config.offsetX + (index % cols) * config.spacingX,
           config.offsetY - Math.floor(index / cols) * config.spacingY,
           node.position.z

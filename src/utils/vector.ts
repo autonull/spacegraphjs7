@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import { Vector3 } from 'three';
 
 /**
  * The world-space vector helpers the geometry code shares.
@@ -6,24 +6,24 @@ import * as THREE from 'three';
 
 /** The vector from one point to another. */
 export function directionBetween(
-  from: THREE.Vector3,
-  to: THREE.Vector3,
-  target = new THREE.Vector3()
-): THREE.Vector3 {
+  from: Vector3,
+  to: Vector3,
+  target = new Vector3()
+): Vector3 {
   return target.subVectors(to, from);
 }
 
 /** The point halfway between two points. */
 export function midpoint(
-  a: THREE.Vector3,
-  b: THREE.Vector3,
-  target = new THREE.Vector3()
-): THREE.Vector3 {
+  a: Vector3,
+  b: Vector3,
+  target = new Vector3()
+): Vector3 {
   return target.addVectors(a, b).multiplyScalar(0.5);
 }
 
 /** The vector perpendicular to a direction in the XY plane. */
-export function perpendicularTo(direction: THREE.Vector3, target = new THREE.Vector3()): THREE.Vector3 {
+export function perpendicularTo(direction: Vector3, target = new Vector3()): Vector3 {
   return target.set(-direction.y, direction.x, 0);
 }
 
@@ -35,8 +35,8 @@ export function latLngToVec3(
   latitude: number,
   longitude: number,
   radius: number,
-  target = new THREE.Vector3()
-): THREE.Vector3 {
+  target = new Vector3()
+): Vector3 {
   const phi = ((90 - latitude) * Math.PI) / 180;
   const theta = ((longitude + 180) * Math.PI) / 180;
   return target.set(

@@ -1,4 +1,4 @@
-import type * as THREE from 'three';
+import { Vector3 } from 'three';
 import type { Edge } from '../edges/Edge';
 import type { Node } from '../nodes/Node';
 import type { SpaceGraph } from '../SpaceGraph';
@@ -313,7 +313,7 @@ export class Graph extends EventEmitter<GraphEventMap> {
   }
 
   // Spatial queries
-  getNodesNear(position: THREE.Vector3, radius: number): Node[] {
+  getNodesNear(position: Vector3, radius: number): Node[] {
     return [...this.nodes.values()].filter(
       (node) => node.position.distanceTo(position) <= radius
     );
@@ -562,15 +562,15 @@ export class Graph extends EventEmitter<GraphEventMap> {
   }
 
   // ============= Snapshot/Restore =============
-  snapshot(): Map<string, { position: THREE.Vector3; data: NodeData }> {
-    const snap = new Map<string, { position: THREE.Vector3; data: NodeData }>();
+  snapshot(): Map<string, { position: Vector3; data: NodeData }> {
+    const snap = new Map<string, { position: Vector3; data: NodeData }>();
     for (const [id, node] of this.nodes) {
       snap.set(id, { position: node.position.clone(), data: { ...node.data } });
     }
     return snap;
   }
 
-  restore(snapshot: Map<string, { position: THREE.Vector3; data: NodeData }>): void {
+  restore(snapshot: Map<string, { position: Vector3; data: NodeData }>): void {
     for (const [id, state] of snapshot) {
       const node = this.nodes.get(id);
       if (node) {
