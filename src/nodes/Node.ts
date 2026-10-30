@@ -30,7 +30,7 @@ interface PositionTween {
 export abstract class Node extends Surface {
   /** Whether a move may be tweened; hosts that drive their own frame loop turn this off. */
   private static get canAnimate(): boolean {
-    return typeof process !== 'undefined';
+    return (globalThis as { process?: unknown }).process !== undefined;
   }
 
   readonly id: string;

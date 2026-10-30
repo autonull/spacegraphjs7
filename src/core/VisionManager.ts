@@ -24,7 +24,8 @@ export class VisionManager {
   constructor(sg: SpaceGraph) {
     this.sg = sg;
     const providers = sg.options?.onnxExecutionProviders ?? ['wasm'];
-    if (typeof process !== 'undefined' && process.arch === 'arm64' && !providers.includes('rknn')) {
+    const nodeProcess = (globalThis as { process?: { arch?: string } }).process;
+    if (nodeProcess?.arch === 'arm64' && !providers.includes('rknn')) {
       providers.unshift('rknn');
     }
     this.modelLoader = new VisionModelLoader(providers);
