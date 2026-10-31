@@ -1,10 +1,20 @@
 import type { Raycaster, Vector3 } from 'three';
 import type { Edge } from './edges/Edge';
-// types.ts - Ergonomic TypeScript types
 import type { Node } from './nodes/Node';
 import type { SpaceGraph } from './SpaceGraph';
+import type {
+  CardFacing,
+  DepthMode,
+  FitInsets,
+  FitOptions,
+  RenderEdge,
+  RenderModel,
+  RenderNode,
+  RenderTheme,
+} from '@spacegraphjs/renderer';
 
 export type { Edge, Node, SpaceGraph };
+export type { CardFacing, DepthMode, FitInsets, FitOptions, RenderEdge, RenderModel, RenderNode, RenderTheme };
 
 // ============= Utility Types =============
 export type Maybe<T> = T | null | undefined;
@@ -375,18 +385,6 @@ export interface SelectionChangedPayload {
 
 // Orthographic is the legibility baseline for 2D hosts; perspective stays the 3D experiment.
 export type Projection = 'perspective' | 'orthographic';
-
-// Depth is a spectrum, not a 2D/3D toggle: `flat` is the orthographic baseline, `layered`/`depth-stack`
-// add depth ordering with a shallow camera, and `orbit` is the free-perspective experiment.
-export type DepthMode = 'flat' | 'layered' | 'depth-stack' | 'orbit';
-
-// How a DOM card faces the camera: `plane` leaves it lying in the content plane, `camera` turns it to
-// face the reader. A tilted camera turns a flat card into a sheared quadrilateral, so the 3D depth
-// treatments face the camera and keep the text readable.
-export type CardFacing = 'plane' | 'camera';
-
-// The facing a host may ask for: the two resolved values, or `auto` to follow the depth treatment.
-export type CardFacingMode = CardFacing | 'auto';
 
 // Camera keyboard input scope: off, the graph container, or the whole window.
 export type KeyboardScope = false | 'container' | 'window';

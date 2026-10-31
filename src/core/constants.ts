@@ -8,10 +8,6 @@ export const PI = Math.PI;
 export const TAU = PI * 2;
 export const EPSILON = 1e-6;
 
-// Shorthand aliases for developer ergonomics
-export const RAD = DEG2RAD;
-export const DEG = RAD2DEG;
-
 // ============= Animation Duration =============
 const AnimationDurationDefaults = {
   FAST: 0.3,
@@ -155,34 +151,3 @@ export const InputConfig = Object.freeze({
   ORBIT_SPEED_FACTOR: 0.005,
   WHEEL_MULTIPLIER: 1,
 });
-
-// Shorthand aliases for developer ergonomics
-export const DUR = AnimationDuration;
-export const ZOOM = ZoomConfig;
-export const FINGER = FingeringPriority;
-export const THRESH = InteractionThresholds;
-export const PERF = Performance;
-export const DEF = Defaults;
-export const COLORS = EdgeColors;
-
-// Unified constants object
-export const CONSTANTS = Object.freeze({
-  ...AnimationDuration,
-  ...ZoomConfig,
-  ...FingeringPriority,
-  ...InteractionThresholds,
-  ...Performance,
-  ...Defaults,
-  ...EdgeColors,
-  ...InputConfig,
-  ...WCAG,
-  ...Spatial,
-  ...NodeDefaults,
-  ...LayoutDefaults,
-  ...Easing,
-  DEG2RAD,
-  RAD2DEG,
-  PI,
-  TAU,
-  EPSILON,
-}) as any;

@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 
 // L1.34: enforce the dependency direction from §4.1. The core stays pure, the contract has no
 // runtime dependencies, and the adapters stay leaves.
+// Type-only imports from @spacegraphjs/renderer are allowed in core (shared contract types).
 
 const root = resolve(__dirname, '..');
 const STATIC_IMPORT = /(?:^|\n)\s*import\s+(?:[\s\S]*?\sfrom\s+)?['"]([^'"]+)['"]/g;
@@ -19,18 +20,32 @@ function staticImportsIn(dir: string): string[] {
 }
 
 const CORE_FORBIDDEN = [
-  '@spacegraphjs/renderer',
   '@spacegraphjs/spacegraph-renderer',
   '@spacegraphjs/cytoscape-renderer',
   '@spacegraphjs/svg-renderer',
   'cytoscape',
 ];
 
+// @spacegraphjs/renderer type-only imports are allowed in core
+function hasRuntimeImport(specifier: string, content: string): boolean {
+  const importRegex = new RegExp(`import\\s+(?:[^\\n]*?\\s)?from\\s*['"]${specifier}['"]`, 'g');
+  const match = content.match(importRegex);
+  // If there's no 'import type' prefix, it's a runtime import
+  return match?.some((m) => !m.includes('import type')) ?? false;
+}
+
 describe('package boundaries', () => {
   it('keeps the core free of the contract, adapters, and Cytoscape', () => {
+    const coreImports = staticImportsIn('src');
     for (const specifier of CORE_FORBIDDEN) {
-      expect(staticImportsIn('src')).not.toContain(specifier);
+      expect(coreImports).not.toContain(specifier);
     }
+    // @spacegraphjs/renderer type-only imports are allowed; check no runtime imports
+    const rendererImportContent = readdirSync(resolve(root, 'src'), { recursive: true, encoding: 'utf8' })
+      .filter((entry) => /\.tsx?$/.test(entry) && !/\.(test|spec)\.tsx?$/.test(entry))
+      .flatMap((entry) => readFileSync(resolve(root, 'src', entry), 'utf8'))
+      .join('\n');
+    expect(hasRuntimeImport('@spacegraphjs/renderer', rendererImportContent)).toBe(false);
   });
 
   it('keeps the contract dependency-free', () => {

@@ -15,6 +15,7 @@ import {
   DEFAULT_NODE_TYPES,
   DEFAULT_SYSTEM_PLUGINS,
   nodeTypeName,
+  type PluginCtor,
 } from './core/defaults';
 
 import { ErgonomicsAPI } from './core/Ergonomics';
@@ -32,9 +33,10 @@ import type { WheelEventData } from './input/InputManager';
 import { Node } from './nodes/Node';
 import type {
   CameraViewport,
-  CardFacingMode,
   DepthMode,
   EdgeSpec,
+  FitInsets,
+  FitOptions,
   GraphImportData,
   GraphSpec,
   NodeSpec,
@@ -47,7 +49,7 @@ import type {
 import { depthTreatment, sceneFadeDensity } from './depth/DepthCues';
 import { calculateFitView, createLogger, DOMUtils, safeClone, wrapError } from './utils';
 import { clamp01 } from './utils/math';
-import type { FitInsets } from './utils';
+import type { CardFacing } from '@spacegraphjs/renderer';
 import type { OrthographicCamera } from 'three';
 
 const logger = createLogger('SpaceGraph');
@@ -79,7 +81,7 @@ export class SpaceGraph {
   #initialized = false;
   #disposed = false;
   #depth: DepthMode = 'flat';
-  #cardFacing: CardFacingMode = 'auto';
+  #cardFacing: CardFacing = 'auto';
   #scheduled = false;
   #continuousMode = false;
   #lastZoom = -1;
@@ -483,7 +485,9 @@ export class SpaceGraph {
       targetPhi,
       this.#minZoomFor(options?.minScale),
       { width: this.renderer.container?.clientWidth ?? 0, height: this.renderer.container?.clientHeight ?? 0 },
-      options?.insets,
+      options?.insets
+        ? { top: options.insets.top ?? 0, right: options.insets.right ?? 0, bottom: options.insets.bottom ?? 0, left: options.insets.left ?? 0 }
+        : undefined,
     );
     if (fit) {
       // T1.8: the fitted frame becomes the orthographic zoom reference, so later zoom is bounded
@@ -747,7 +751,7 @@ export class SpaceGraph {
   }
 
   // ============= Card facing (T1.19) =============
-  get cardFacing(): CardFacingMode {
+  get cardFacing(): CardFacing {
     return this.#cardFacing;
   }
 
@@ -756,7 +760,7 @@ export class SpaceGraph {
    * in the content plane, so a tilted camera shears them — the perspective working, not a defect —
    * and `camera` turns them to face the reader.
    */
-  setCardFacing(facing: CardFacingMode): this {
+  setCardFacing(facing: CardFacing): this {
     this.#cardFacing = facing;
     this.#applyCardFacing();
     this.requestFrame();
@@ -915,29 +919,16 @@ export class SpaceGraph {
   }
 
   #registerDefaults(): void {
-    for (const cls of DEFAULT_NODE_TYPES) {
-      this.pluginManager.registerNodeType(nodeTypeName(cls), cls as any);
-    }
-    for (const cls of DEFAULT_EDGE_TYPES) {
-      this.pluginManager.registerEdgeType(
-        (cls as any).typeName || cls.name,
-        cls as import('./core/TypeRegistry').EdgeConstructor
-      );
-    }
-    for (const [cls, name] of DEFAULT_LAYOUT_PLUGINS) {
-      this.pluginManager.register(name, new cls());
-    }
-    for (const [cls, name] of DEFAULT_SYSTEM_PLUGINS) {
-      this.pluginManager.register(name, new cls());
-    }
-    if (this.options.chrome) {
-      for (const [cls, name] of DEFAULT_CHROME_PLUGINS) {
-        this.pluginManager.register(name, new cls());
-      }
-    }
-    for (const plugin of this.options.plugins ?? []) {
-      this.pluginManager.register(plugin.id, plugin as Parameters<PluginManager['register']>[1]);
-    }
+    const registerPlugins = (plugins: [PluginCtor, string][]) => {
+      for (const [cls, name] of plugins) this.pluginManager.register(name, new cls());
+    };
+
+    for (const cls of DEFAULT_NODE_TYPES) this.pluginManager.registerNodeType(nodeTypeName(cls), cls as any);
+    for (const cls of DEFAULT_EDGE_TYPES) this.pluginManager.registerEdgeType((cls as any).typeName || cls.name, cls as import('./core/TypeRegistry').EdgeConstructor);
+    registerPlugins(DEFAULT_LAYOUT_PLUGINS);
+    registerPlugins(DEFAULT_SYSTEM_PLUGINS);
+    if (this.options.chrome) registerPlugins(DEFAULT_CHROME_PLUGINS);
+    for (const plugin of this.options.plugins ?? []) this.pluginManager.register(plugin.id, plugin as Parameters<PluginManager['register']>[1]);
     this.#registerFingerings();
   }
 

@@ -41,10 +41,7 @@ export {
   AnimationDuration,
   BVH,
   CameraControls,
-  COLORS,
-  CONSTANTS,
   createQuickGraphSpec,
-  DEF,
   DEFAULT_CHROME_PLUGINS,
   DEFAULT_EDGE_TYPES,
   DEFAULT_LAYOUT_PLUGINS,
@@ -52,7 +49,6 @@ export {
   DEFAULT_SYSTEM_PLUGINS,
   DEG2RAD,
   Defaults,
-  DUR,
   Easing,
   EdgeColors,
   EPSILON,
@@ -62,7 +58,6 @@ export {
   EventEmitter as Emitter,
   EventSystem,
   EventSystem as Event,
-  FINGER,
   FingeringPriority,
   Graph,
   InputConfig,
@@ -73,7 +68,6 @@ export {
   ObjectPool,
   ObjectPoolManager,
   ObjectPoolManager as Pools,
-  PERF,
   Performance,
   PI,
   PluginManager,
@@ -84,10 +78,8 @@ export {
   SpatialIndex,
   Surface,
   TAU,
-  THRESH,
   TypeRegistry,
   WCAG,
-  ZOOM,
   ZoomConfig,
 } from './core';
 export {
@@ -249,8 +241,6 @@ export type {
   VisionReport,
   VisionScore,
 } from './types';
-// Utils module exports
-export * from './utils';
 // Depth-cue primitives (LE.15)
 export { DEPTH_MODES, depthFade, depthTreatment } from './depth/DepthCues';
 export type { DepthTreatment } from './depth/DepthCues';

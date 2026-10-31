@@ -11,42 +11,30 @@ export {
   PI,
   RAD2DEG,
   TAU,
-  // Shorthand math aliases
-  RAD,
-  DEG,
   // Animation duration
   AnimationDuration,
-  DUR,
   // Animation easing
   Easing,
   // Color palettes
   EdgeColors,
-  COLORS,
   // Input configuration
   InputConfig,
-  // Input constants (aliases)
-  FINGER,
+  // Input constants
   FingeringPriority,
   InteractionThresholds,
-  THRESH,
   // Layout constants
   LayoutDefaults,
   NodeDefaults,
   // Performance constants
   Performance,
-  PERF,
   // Spatial constants
   Spatial,
-  // Unified constants
-  CONSTANTS,
   // Defaults
   Defaults,
-  DEF,
   // WCAG constants
   WCAG,
   // Zoom constants
   ZoomConfig,
-  ZOOM,
 } from './constants';
 // Defaults
 export {
