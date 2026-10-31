@@ -273,3 +273,4 @@ export * from './edge';
 export * from './events';
 export * from './theme';
 export * from './patch';
+export * from './model-renderer';

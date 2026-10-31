@@ -1,5 +1,5 @@
 import {
-  BaseGraphRenderer,
+  ModelRenderer,
   type CardFacing,
   type DepthMode,
   type FitOptions,
@@ -10,7 +10,8 @@ import {
   type RenderModel,
   type RenderModelPatch,
   type RenderTheme,
-  type Unsubscribe,
+  type RenderNode,
+  type RenderEdge,
   mergeRenderModelPatch,
 } from '@spacegraphjs/renderer';
 import type { GraphSpec, SpaceGraph } from 'spacegraphjs/activity';
@@ -24,32 +25,21 @@ const CAPABILITIES: RendererCapabilities = {
   maxDomNodes: 40,
   edgeLabels: true,
   clusterNodes: true,
-  // The minimap is a chrome plugin pending L1.27; declare it unavailable rather than lie.
   minimap: false,
   maxRecommendedNodes: 300,
-  // The core's zoom is normalized over the fitted band: 0 is the farthest the band allows and 1 the
-  // closest. A host that zooms past 1 is asking for a zoom the renderer cannot deliver.
   zoomRange: { min: 0, max: 1 },
-  // The core's DOM cards can face the camera or lie in the content plane, so a host can show the
-  // raw perspective of a tilted camera.
   cardFacing: true,
-  // The core's fit measures the surface it has and can keep the content clear of chrome the host
-  // draws over the canvas.
   fitInsets: true,
 };
 
 // Wraps the lean SpaceGraphJS core behind the dependency-free contract. It is the only package that
 // imports both the core and the contract; the core never imports the contract.
-export class SpaceGraphRenderer extends BaseGraphRenderer implements GraphRenderer {
+export class SpaceGraphRenderer extends ModelRenderer implements GraphRenderer {
   readonly capabilities = CAPABILITIES;
 
   #sg: SpaceGraph | null = null;
   #theme: RenderTheme | null = null;
-  #model: RenderModel | null = null;
-  #nodes = new Set<string>();
-  #edges = new Set<string>();
   #nodeTypes = new Map<string, string>();
-  #disposers: Unsubscribe[] = [];
   #band: string | undefined;
 
   async mount(
@@ -77,7 +67,7 @@ export class SpaceGraphRenderer extends BaseGraphRenderer implements GraphRender
       this.#sg = sg;
       this.#bind();
       this.#applyDepth(options.projection === '2d' ? 'flat' : 'orbit');
-      if (this.#model) this.setModel(this.#model);
+      if (this.model) this.setModel(this.model);
       this.emit('ready', undefined);
     } catch (error) {
       this.emit('error', { error });
@@ -85,9 +75,9 @@ export class SpaceGraphRenderer extends BaseGraphRenderer implements GraphRender
     }
   }
 
+  // SpaceGraph uses a full-spec rebuild pattern, so override setModel entirely
   setModel(model: RenderModel): void {
     try {
-      this.#model = model;
       const sg = this.#sg;
       const theme = this.#theme;
       if (!sg || !theme) return;
@@ -104,19 +94,22 @@ export class SpaceGraphRenderer extends BaseGraphRenderer implements GraphRender
         this.#nodeTypes.set(node.id, node.type);
       }
 
-      for (const id of this.#nodes) {
+      for (const id of this.nodes) {
         if (!liveNodes.has(id)) {
           sg.removeNode(id);
           this.#nodeTypes.delete(id);
         }
       }
-      this.#nodes = liveNodes;
+      // Update internal node tracking
+      this.nodes.clear();
+      for (const id of liveNodes) this.nodes.add(id);
 
       const liveEdges = new Set(model.edges.map((e) => e.id));
-      for (const id of this.#edges) {
+      for (const id of this.edges) {
         if (!liveEdges.has(id)) sg.removeEdge(id);
       }
-      this.#edges = liveEdges;
+      this.edges.clear();
+      for (const id of liveEdges) this.edges.add(id);
 
       const spec: GraphSpec = {
         nodes,
@@ -130,22 +123,26 @@ export class SpaceGraphRenderer extends BaseGraphRenderer implements GraphRender
         else sg.show(node.id);
       }
       sg.render();
+
+      // Update stored model
+      this.model = model;
     } catch (error) {
       this.emit('error', { error });
     }
   }
 
+  // SpaceGraph uses a full-spec rebuild pattern, so override applyPatch entirely
   applyPatch(patch: RenderModelPatch): void {
     try {
       const sg = this.#sg;
       const theme = this.#theme;
-      if (!sg || !theme || !this.#model) return;
+      if (!sg || !theme || !this.model) return;
 
       // Apply node changes
       for (const node of patch.nodes.removed) {
         sg.removeNode(node);
         this.#nodeTypes.delete(node);
-        this.#nodes.delete(node);
+        this.nodes.delete(node);
       }
 
       const addedNodes = patch.nodes.added.map((node) => nodeSpec(node, theme));
@@ -154,7 +151,7 @@ export class SpaceGraphRenderer extends BaseGraphRenderer implements GraphRender
         if (previous && previous !== node.type) sg.removeNode(node.id);
         this.#nodeTypes.set(node.id, node.type);
       }
-      this.#nodes = new Set([...this.#nodes, ...patch.nodes.added.map((n) => n.id)]);
+      for (const node of patch.nodes.added) this.nodes.add(node.id);
 
       const changedNodes = patch.nodes.changed.map((node) => nodeSpec(node, theme));
       for (const node of changedNodes) {
@@ -166,13 +163,13 @@ export class SpaceGraphRenderer extends BaseGraphRenderer implements GraphRender
       // Apply edge changes
       for (const edgeId of patch.edges.removed) {
         sg.removeEdge(edgeId);
-        this.#edges.delete(edgeId);
+        this.edges.delete(edgeId);
       }
-      this.#edges = new Set([...this.#edges, ...patch.edges.added.map((e) => e.id)]);
+      for (const edge of patch.edges.added) this.edges.add(edge.id);
 
       // Rebuild the full spec with current model + patch
-      const updatedModel = mergeRenderModelPatch(this.#model, patch);
-      this.#model = updatedModel;
+      const updatedModel = mergeRenderModelPatch(this.model, patch);
+      this.model = updatedModel;
 
       const spec: GraphSpec = {
         nodes: updatedModel.nodes.map((node) => nodeSpec(node, theme)),
@@ -191,42 +188,60 @@ export class SpaceGraphRenderer extends BaseGraphRenderer implements GraphRender
     }
   }
 
-  setTheme(theme: RenderTheme): void {
+  protected getTheme(): RenderTheme | null {
+    return this.#theme;
+  }
+
+  protected setThemeInternal(theme: RenderTheme): void {
     this.#theme = theme;
     if (this.#sg) this.#sg.options.theme = spaceGraphTheme(theme);
-    if (this.#model) this.setModel(this.#model);
   }
 
-  setProjection(projection: Projection): void {
-    // Projection is the coarse depth selection: 2D is the flat baseline, 3D is the orbit experiment.
-    this.#applyDepth(projection === '2d' ? 'flat' : 'orbit');
+  protected applyModel(_model: RenderModel, _theme: RenderTheme): void {
+    // Not used - setModel is overridden
   }
 
-  setDepth(depth: DepthMode): void {
-    this.#applyDepth(depth);
+  protected addNode(_node: RenderNode, _theme: RenderTheme): void {
+    // Not used - setModel/applyPatch handle this
   }
 
-  // The core owns the camera and the cards; the adapter only translates the request.
-  setCardFacing(facing: CardFacing): void {
-    this.#sg?.setCardFacing(facing);
+  protected updateNode(_node: RenderNode, _theme: RenderTheme): void {
+    // Not used - setModel/applyPatch handle this
   }
 
-  // The core owns camera framing and depth treatment (contract rule 1); the adapter only translates the
-  // requested depth into the core call.
-  #applyDepth(depth: DepthMode): void {
-    this.#sg?.setDepth(depth);
+  protected removeNode(id: string): void {
+    this.#sg?.removeNode(id);
   }
 
-  setSelection(ids: readonly string[]): void {
+  protected addEdge(_edge: RenderEdge, _theme: RenderTheme): void {
+    // Not used - setModel/applyPatch handle this
+  }
+
+  protected updateEdge(_edge: RenderEdge, _theme: RenderTheme): void {
+    // Not used - setModel/applyPatch handle this
+  }
+
+  protected removeEdge(id: string): void {
+    this.#sg?.removeEdge(id);
+  }
+
+  protected setNodeVisibility(id: string, visible: boolean): void {
+    if (visible) this.#sg?.show(id);
+    else this.#sg?.hide(id);
+  }
+
+  protected render(): void {
+    this.#sg?.render();
+  }
+
+  protected selectNodes(ids: readonly string[]): void {
     const sg = this.#sg;
     if (!sg) return;
-    this.applySelection(ids, () => {
-      if (ids.length === 0) sg.clearSelection();
-      else sg.select([...ids]);
-    });
+    if (ids.length === 0) sg.clearSelection();
+    else sg.select([...ids]);
   }
 
-  setViewport(viewport: RendererViewport): void {
+  protected applyViewport(viewport: RendererViewport): void {
     this.#sg?.setZoom(viewport.zoom);
     if (viewport.center) {
       const [x, y, z] = viewport.center;
@@ -234,11 +249,9 @@ export class SpaceGraphRenderer extends BaseGraphRenderer implements GraphRender
     }
   }
 
-  // The camera's frame, read back from the core. A host that must place the camera exactly (a
-  // permalink, a reduced-motion jump, a capture) reads it here instead of assuming a zoom.
-  getViewport(): RendererViewport {
+  protected readViewport(): RendererViewport | undefined {
     const sg = this.#sg;
-    if (!sg) return { zoom: 1, center: [0, 0, 0] };
+    if (!sg) return undefined;
 
     const viewport = sg.viewport;
     return {
@@ -249,9 +262,7 @@ export class SpaceGraphRenderer extends BaseGraphRenderer implements GraphRender
     };
   }
 
-  // Where a node sits on the screen, in pixels from the canvas' top left. The core owns the camera
-  // and the projection, so the anchor is exact for both the orthographic and the tilted view.
-  getNodeScreenPosition(id: string): { x: number; y: number } | undefined {
+  protected readNodeScreenPosition(id: string): { x: number; y: number } | undefined {
     const sg = this.#sg;
     if (!sg) return undefined;
 
@@ -261,10 +272,7 @@ export class SpaceGraphRenderer extends BaseGraphRenderer implements GraphRender
     return worldToScreen(node.position, sg.renderer.camera, sg.renderer.renderer.domElement);
   }
 
-  // Programmatic framing is immediate (duration 0): a deterministic jump rather than an animation the
-  // host cannot sequence. The renderer owns framing per contract rule 1, and a still frame after a fit
-  // is what the capture waits on (LE.1).
-  fit(ids?: readonly string[], options?: FitOptions): void {
+  protected applyFit(ids?: readonly string[], options?: FitOptions): void {
     this.#sg?.fitView(options?.padding ?? 100, 0, ids, {
       minScale: options?.minScale,
       insets: options?.insets
@@ -278,30 +286,60 @@ export class SpaceGraphRenderer extends BaseGraphRenderer implements GraphRender
     });
   }
 
-  focus(id: string): void {
+  protected applyFocus(id: string): void {
     this.#sg?.focusNode(id);
   }
 
-  resize(): void {
-    this.#sg?.render();
-  }
-
-  dispose(): void {
-    for (const off of this.#disposers) off();
-    this.#disposers = [];
-    this.events.clear();
+  protected cleanup(): void {
     this.#sg?.dispose();
     this.#sg = null;
-    this.#nodes.clear();
-    this.#edges.clear();
     this.#nodeTypes.clear();
+  }
+
+  // The core owns the camera and the cards; the adapter only translates the request.
+  setCardFacing(facing: CardFacing): void {
+    this.#sg?.setCardFacing(facing);
+  }
+
+  setProjection(projection: Projection): void {
+    this.#applyDepth(projection === '2d' ? 'flat' : 'orbit');
+  }
+
+  setDepth(depth: DepthMode): void {
+    this.#applyDepth(depth);
+  }
+
+  // The core owns camera framing and depth treatment (contract rule 1); the adapter only translates the
+  // requested depth into the core call.
+  #applyDepth(depth: DepthMode): void {
+    this.#sg?.setDepth(depth);
+  }
+
+  getViewport(): RendererViewport {
+    return this.readViewport() ?? { zoom: 1, center: [0, 0, 0] };
+  }
+
+  getNodeScreenPosition(id: string): { x: number; y: number } | undefined {
+    return this.readNodeScreenPosition(id);
+  }
+
+  fit(ids?: readonly string[], options?: FitOptions): void {
+    this.applyFit(ids, options);
+  }
+
+  focus(id: string): void {
+    this.applyFocus(id);
+  }
+
+  resize(): void {
+    this.render();
   }
 
   #bind(): void {
     const sg = this.#sg!;
     const on = (type: string, handler: (payload: unknown) => void) => {
       sg.events.on(type, handler);
-      this.#disposers.push(() => sg.events.off(type, handler));
+      this.registerListener(() => sg.events.off(type, handler));
     };
     on('node:click', (payload) => this.emit('nodeClick', { id: idOf(payload) }));
     on('edge:click', (payload) => this.emit('edgeClick', { id: idOf(payload) }));
@@ -349,7 +387,6 @@ function idOf(payload: unknown): string {
   return (payload as { id?: string } | undefined)?.id ?? '';
 }
 
-/** The core's hover payloads carry the node, not its id. */
 function nodeIdOf(payload: unknown): string {
   return (payload as { node?: { id?: string } } | undefined)?.node?.id ?? '';
 }

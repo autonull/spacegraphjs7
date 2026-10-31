@@ -1,5 +1,5 @@
 import {
-  BaseGraphRenderer,
+  ModelRenderer,
   type DepthMode,
   type FitOptions,
   type GraphRenderer,
@@ -9,6 +9,8 @@ import {
   type RenderModel,
   type RenderModelPatch,
   type RenderTheme,
+  type RenderNode,
+  type RenderEdge,
   mergeRenderModelPatch,
 } from '@spacegraphjs/renderer';
 import type { Core } from 'cytoscape';
@@ -16,8 +18,6 @@ import { frameInRegion } from './fit';
 import { cytoscapeStyle, edgeElement, nodeElement, normalizeTheme } from './mapping';
 
 const CAPABILITIES: RendererCapabilities = {
-  // Cytoscape is the 2D fallback: only the flat depth, no 3D, no minimap. Cards render through a
-  // capped DOM overlay.
   projections: ['2d'],
   depths: ['flat'],
   domNodes: true,
@@ -26,32 +26,22 @@ const CAPABILITIES: RendererCapabilities = {
   clusterNodes: true,
   minimap: false,
   maxRecommendedNodes: 1000,
-  // Cytoscape's zoom is a linear scale factor with no ceiling of its own; the host's policy bounds
-  // it. The range is declared so a host can tell "at the limit" from "the renderer refused".
   zoomRange: { min: 0, max: Number.POSITIVE_INFINITY },
-  // Cytoscape draws in screen space: its cards are always screen-aligned, so there is no camera
-  // facing to change. Declared, so a host hides the control instead of offering a no-op.
   cardFacing: false,
-  // Cytoscape's zoom is a linear scale in pixels per world unit, so the adapter can frame the
-  // content inside screen-space insets exactly.
   fitInsets: true,
 };
 
-/** Cytoscape's own fit margin, in CSS pixels, on each side of the framed content. */
 const FIT_MARGIN = 30;
 
 // Wraps Cytoscape.js behind the dependency-free contract. It imports `@spacegraphjs/renderer` and
 // `cytoscape` only; it never imports SpaceGraphJS core.
-export class CytoscapeRenderer extends BaseGraphRenderer implements GraphRenderer {
+export class CytoscapeRenderer extends ModelRenderer implements GraphRenderer {
   readonly capabilities = CAPABILITIES;
 
   #cy: Core | null = null;
   #canvas: HTMLDivElement | null = null;
   #overlay: HTMLDivElement | null = null;
   #theme: RenderTheme | null = null;
-  #model: RenderModel | null = null;
-  #nodes = new Set<string>();
-  #edges = new Set<string>();
   #cards = new Map<string, HTMLDivElement>();
 
   async mount(
@@ -62,8 +52,6 @@ export class CytoscapeRenderer extends BaseGraphRenderer implements GraphRendere
     try {
       const { default: cytoscape } = await import('cytoscape');
       this.#theme = normalizeTheme(options.theme);
-      // The container's own document, not the global one: a host may mount into an iframe or a detached
-      // tree, and a node consumer may have no global document at all.
       const doc = container.ownerDocument;
       const view = doc.defaultView;
       if (view?.getComputedStyle(container).position === 'static') container.style.position = 'relative';
@@ -86,7 +74,7 @@ export class CytoscapeRenderer extends BaseGraphRenderer implements GraphRendere
       });
       this.#cy = cy;
       this.#bind();
-      if (this.#model) this.setModel(this.#model);
+      if (this.model) this.setModel(this.model);
       this.emit('ready', undefined);
     } catch (error) {
       this.emit('error', { error });
@@ -94,9 +82,10 @@ export class CytoscapeRenderer extends BaseGraphRenderer implements GraphRendere
     }
   }
 
+  // Override setModel to use Cytoscape's batching pattern
   setModel(model: RenderModel): void {
     try {
-      this.#model = model;
+      this.model = model;
       const cy = this.#cy;
       const theme = this.#theme;
       if (!cy || !theme) return;
@@ -105,8 +94,8 @@ export class CytoscapeRenderer extends BaseGraphRenderer implements GraphRendere
       const liveEdges = new Set(model.edges.map((edge) => edge.id));
 
       cy.batch(() => {
-        for (const id of this.#edges) if (!liveEdges.has(id)) cy.remove(cy.getElementById(id));
-        for (const id of this.#nodes) if (!liveNodes.has(id)) cy.remove(cy.getElementById(id));
+        for (const id of this.nodes) if (!liveNodes.has(id)) cy.remove(cy.getElementById(id));
+        for (const id of this.edges) if (!liveEdges.has(id)) cy.remove(cy.getElementById(id));
 
         for (const node of model.nodes) {
           const element = cy.getElementById(node.id);
@@ -131,8 +120,11 @@ export class CytoscapeRenderer extends BaseGraphRenderer implements GraphRendere
         }
       });
 
-      this.#nodes = liveNodes;
-      this.#edges = liveEdges;
+      this.nodes.clear();
+      for (const id of liveNodes) this.nodes.add(id);
+      this.edges.clear();
+      for (const id of liveEdges) this.edges.add(id);
+
       this.#syncCards();
       this.#renderOverlay();
     } catch (error) {
@@ -140,23 +132,23 @@ export class CytoscapeRenderer extends BaseGraphRenderer implements GraphRendere
     }
   }
 
+  // Override applyPatch to use Cytoscape's batching pattern
   applyPatch(patch: RenderModelPatch): void {
     try {
       const cy = this.#cy;
       const theme = this.#theme;
-      if (!cy || !theme || !this.#model) return;
+      if (!cy || !theme || !this.model) return;
 
-      // Apply node changes
       cy.batch(() => {
         for (const id of patch.nodes.removed) {
           cy.remove(cy.getElementById(id));
-          this.#nodes.delete(id);
+          this.nodes.delete(id);
         }
 
         for (const node of patch.nodes.added) {
           const spec = nodeElement(node, theme);
           cy.add(spec);
-          this.#nodes.add(node.id);
+          this.nodes.add(node.id);
         }
 
         for (const node of patch.nodes.changed) {
@@ -170,16 +162,15 @@ export class CytoscapeRenderer extends BaseGraphRenderer implements GraphRendere
           }
         }
 
-        // Apply edge changes
         for (const id of patch.edges.removed) {
           cy.remove(cy.getElementById(id));
-          this.#edges.delete(id);
+          this.edges.delete(id);
         }
 
         for (const edge of patch.edges.added) {
           const spec = edgeElement(edge, theme);
           cy.add(spec);
-          this.#edges.add(edge.id);
+          this.edges.add(edge.id);
         }
 
         for (const edge of patch.edges.changed) {
@@ -192,8 +183,7 @@ export class CytoscapeRenderer extends BaseGraphRenderer implements GraphRendere
         }
       });
 
-      // Update the stored model
-      this.#model = mergeRenderModelPatch(this.#model, patch);
+      this.model = mergeRenderModelPatch(this.model, patch);
       this.#syncCards();
       this.#renderOverlay();
     } catch (error) {
@@ -201,32 +191,33 @@ export class CytoscapeRenderer extends BaseGraphRenderer implements GraphRendere
     }
   }
 
-  setTheme(theme: RenderTheme): void {
+  protected getTheme(): RenderTheme | null {
+    return this.#theme;
+  }
+
+  protected setThemeInternal(theme: RenderTheme): void {
     this.#theme = normalizeTheme(theme);
+  }
+
+  // Not used - setModel/applyPatch are overridden
+  protected applyModel(_model: RenderModel, _theme: RenderTheme): void {}
+  protected addNode(_node: RenderNode, _theme: RenderTheme): void {}
+  protected updateNode(_node: RenderNode, _theme: RenderTheme): void {}
+  protected removeNode(_id: string): void {}
+  protected addEdge(_edge: RenderEdge, _theme: RenderTheme): void {}
+  protected updateEdge(_edge: RenderEdge, _theme: RenderTheme): void {}
+  protected removeEdge(_id: string): void {}
+  protected setNodeVisibility(_id: string, _visible: boolean): void {}
+  protected render(): void {}
+
+  protected selectNodes(ids: readonly string[]): void {
     const cy = this.#cy;
     if (!cy) return;
-    cy.style(cytoscapeStyle(this.#theme));
-    if (this.#model) this.setModel(this.#model);
+    cy.elements().unselect();
+    for (const id of ids) cy.getElementById(id).select();
   }
 
-  setProjection(_projection: Projection): void {
-    // 2D only; the capability declares no 3D so the host disables that affordance.
-  }
-
-  setDepth(_depth: DepthMode): void {
-    // Only the flat treatment is supported; the capability declares the rest so the host disables them.
-  }
-
-  setSelection(ids: readonly string[]): void {
-    const cy = this.#cy;
-    if (!cy) return;
-    this.applySelection(ids, () => {
-      cy.elements().unselect();
-      for (const id of ids) cy.getElementById(id).select();
-    });
-  }
-
-  setViewport(viewport: RendererViewport): void {
+  protected applyViewport(viewport: RendererViewport): void {
     const cy = this.#cy;
     if (!cy) return;
     if (viewport.zoom) cy.zoom(viewport.zoom);
@@ -235,20 +226,17 @@ export class CytoscapeRenderer extends BaseGraphRenderer implements GraphRendere
       const zoom = cy.zoom();
       const width = el?.clientWidth ?? 0;
       const height = el?.clientHeight ?? 0;
-      // Flip Y: model Y-up -> Cytoscape Y-down
       cy.pan({
         x: width / 2 - viewport.center[0] * zoom,
-        y: -(height / 2 - viewport.center[1] * zoom), // Flip Y
+        y: -(height / 2 - viewport.center[1] * zoom),
       });
     }
     this.#renderOverlay();
   }
 
-  // The camera's frame, read back from Cytoscape. The world centre is the middle of the container
-  // minus the pan, divided by the zoom.
-  getViewport(): RendererViewport {
+  protected readViewport(): RendererViewport | undefined {
     const cy = this.#cy;
-    if (!cy) return { zoom: 1, center: [0, 0, 0] };
+    if (!cy) return undefined;
 
     const zoom = cy.zoom() || 1;
     const pan = cy.pan();
@@ -256,10 +244,8 @@ export class CytoscapeRenderer extends BaseGraphRenderer implements GraphRendere
     const width = el?.clientWidth ?? 0;
     const height = el?.clientHeight ?? 0;
 
-    // Cytoscape's Y axis points down (screen coordinates), but the model's Y points up.
-    // For the minimap and viewport reporting, we need to flip Y so it matches the model.
     const centerX = (width / 2 - pan.x) / zoom;
-    const centerY = (height / 2 + pan.y) / zoom; // Note: + pan.y to flip
+    const centerY = (height / 2 + pan.y) / zoom;
 
     return {
       zoom,
@@ -268,9 +254,7 @@ export class CytoscapeRenderer extends BaseGraphRenderer implements GraphRendere
     };
   }
 
-  // Where a node sits on the screen, in pixels from the container's top left. Cytoscape already
-  // projects every node into the rendered viewport, so the anchor needs no second projection.
-  getNodeScreenPosition(id: string): { x: number; y: number } | undefined {
+  protected readNodeScreenPosition(id: string): { x: number; y: number } | undefined {
     const cy = this.#cy;
     if (!cy) return undefined;
 
@@ -281,12 +265,9 @@ export class CytoscapeRenderer extends BaseGraphRenderer implements GraphRendere
     return { x: point.x, y: point.y };
   }
 
-  fit(ids?: readonly string[], options?: FitOptions): void {
+  protected applyFit(ids?: readonly string[], options?: FitOptions): void {
     const cy = this.#cy;
     if (!cy) return;
-    // The frame is measured against the surface as it is *now*: Cytoscape's viewport keeps the size
-    // it was last resized to, so a fit that measured first would frame the content for the previous
-    // surface (T6.20).
     cy.resize();
     const elements = cy.collection();
     for (const id of ids ?? []) elements.merge(cy.getElementById(id));
@@ -297,8 +278,6 @@ export class CytoscapeRenderer extends BaseGraphRenderer implements GraphRendere
     const box = framed.boundingBox();
     if (!box) return;
 
-    // The floor: zoom in rather than shrink the content past legibility, and start the frame at the
-    // content's first corner so the reader pans forward (T1.18).
     const minScale = options?.minScale;
     if (minScale !== undefined && cy.zoom() < minScale) {
       cy.zoom(minScale);
@@ -309,7 +288,6 @@ export class CytoscapeRenderer extends BaseGraphRenderer implements GraphRendere
     const padding = options?.padding;
     if (padding === undefined && !insets) return;
 
-    // The region the content may use: the surface minus the chrome the host draws over the canvas.
     const surface = cy.container();
     const frame = frameInRegion({
       content: { x: box.x1, y: box.y1, width: box.w, height: box.h },
@@ -325,22 +303,15 @@ export class CytoscapeRenderer extends BaseGraphRenderer implements GraphRendere
     cy.pan(frame.pan);
   }
 
-  focus(id: string): void {
+  protected applyFocus(id: string): void {
     const cy = this.#cy;
     if (!cy) return;
-    // The id is the host's model id; the adapter resolves it against the render model it was given.
-    // An unknown id centres nothing rather than computing a viewport from an empty collection.
     const element = cy.getElementById(id);
     if (element.empty()) return;
     cy.center(element);
   }
 
-  resize(): void {
-    this.#cy?.resize();
-    this.#renderOverlay();
-  }
-
-  dispose(): void {
+  protected cleanup(): void {
     this.#cy?.destroy();
     this.#cy = null;
     this.#canvas?.remove();
@@ -348,10 +319,22 @@ export class CytoscapeRenderer extends BaseGraphRenderer implements GraphRendere
     this.#canvas = null;
     this.#overlay = null;
     this.#cards.clear();
-    this.events.clear();
-    this.#model = null;
-    this.#nodes.clear();
-    this.#edges.clear();
+  }
+
+  setTheme(theme: RenderTheme): void {
+    this.#theme = normalizeTheme(theme);
+    const cy = this.#cy;
+    if (!cy) return;
+    cy.style(cytoscapeStyle(this.#theme));
+    if (this.model) this.setModel(this.model);
+  }
+
+  setProjection(_projection: Projection): void {}
+  setDepth(_depth: DepthMode): void {}
+
+  dispose(): void {
+    this.cleanup();
+    super.dispose();
   }
 
   #bind(): void {
@@ -372,18 +355,14 @@ export class CytoscapeRenderer extends BaseGraphRenderer implements GraphRendere
     cy.on('mouseout', 'node, edge', () => this.emit('hoverChange', { id: undefined }));
     cy.on('zoom pan resize', () => {
       this.#renderOverlay();
-      this.#emitViewport();
+      const viewport = this.readViewport();
+      if (viewport) this.emit('viewportChange', viewport);
     });
-  }
-
-  #emitViewport(): void {
-    if (!this.#cy) return;
-    this.emit('viewportChange', this.getViewport());
   }
 
   #syncCards(): void {
     const overlay = this.#overlay;
-    const model = this.#model;
+    const model = this.model;
     if (!overlay || !model) return;
     const cards = model.nodes
       .filter((node) => node.html && node.visible !== false)
@@ -424,12 +403,11 @@ export class CytoscapeRenderer extends BaseGraphRenderer implements GraphRendere
       const node = cy.getElementById(id);
       if (node.empty()) continue;
       const point = node.renderedPosition();
-      // The overlay is placed in world units, so it scales with the viewport like every other node.
       element.style.transform = `translate(${point.x}px, ${point.y}px) translate(-50%, -50%) scale(${cy.zoom()})`;
     }
   }
 }
 
-export { cytoscapeStyle, edgeElement, nodeElement, statusColor } from './mapping';
+export { cytoscapeStyle, edgeElement, nodeElement, normalizeTheme } from './mapping';
 export { CYTOSCAPE_THEME, CYTOSCAPE_TOKENS, CytoscapeThemeBridge } from './theme';
 export type { GraphRenderer } from '@spacegraphjs/renderer';
