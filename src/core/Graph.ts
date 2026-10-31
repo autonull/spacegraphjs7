@@ -41,16 +41,8 @@ export class Graph extends EventEmitter<GraphEventMap> {
     return this.nodes.size;
   }
 
-  getNodeCount(): number {
-    return this.nodeCount;
-  }
-
   get edgeCount(): number {
     return this.edges.size;
-  }
-
-  getEdgeCount(): number {
-    return this.edgeCount;
   }
 
   get isEmpty(): boolean {

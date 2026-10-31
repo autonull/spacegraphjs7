@@ -38,6 +38,7 @@ import type {
   GraphSpec,
   NodeSpec,
   Projection,
+  SpaceGraphEvents,
   SpaceGraphOptions,
   SpecUpdate,
 } from './types';
@@ -1034,7 +1035,7 @@ export class SpaceGraph {
   #init(): void {
     this.#continuousMode = (this.options.render?.renderMode ?? 'on-demand') === 'continuous';
     this.poolManager = new ObjectPoolManager();
-    this.events = new EventSystem();
+    this.events = new EventSystem<SpaceGraphEvents>();
     this.vision = new VisionManager(this);
     this.pluginManager = new PluginManager(this);
     this.renderer = new WebGLRenderer(this, this.container, {

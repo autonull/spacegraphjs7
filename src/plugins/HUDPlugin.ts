@@ -172,7 +172,7 @@ export class HUDPlugin extends BaseSystemPlugin {
   }
 
   private updateNodeCount(): void {
-    this.statusBar?.updateNodeCount(this.sg.graph.getNodeCount(), this.sg.graph.getEdgeCount());
+    this.statusBar?.updateNodeCount(this.sg.graph.nodeCount, this.sg.graph.edgeCount);
   }
 
   private updateSelection(e: SelectionChangedPayload): void {

@@ -60,7 +60,10 @@ export class CameraFingering implements Fingering {
     this.activeGesture = null;
   }
 
+  defer(): boolean {
+    return false;
   }
+}
 
 export function createCameraFingering(camera: CameraControls): CameraFingering {
   return new CameraFingering(camera);
