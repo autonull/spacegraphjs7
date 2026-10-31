@@ -31,6 +31,8 @@ export class Graph extends EventEmitter<GraphEventMap> {
   export = this.toJSON;
   fromJSON = this.from;
 
+  #linkIndexCache?: Map<string, Node[]>;
+
   constructor(readonly sg?: SpaceGraph) {
     super();
   }
@@ -172,6 +174,7 @@ export class Graph extends EventEmitter<GraphEventMap> {
 
     this.sg?.renderer.scene.remove(edge.line);
     this.edges.delete(id);
+    this.#linkIndexCache = undefined;
     this.emitWithTimestamp('edge:removed', { id });
     edge.dispose?.();
   }
@@ -181,6 +184,7 @@ export class Graph extends EventEmitter<GraphEventMap> {
     this.nodes.forEach((node) => node.dispose?.());
     this.edges.clear();
     this.nodes.clear();
+    this.#linkIndexCache = undefined;
     this.emitWithTimestamp('graph:cleared', {});
   }
 
@@ -197,15 +201,6 @@ export class Graph extends EventEmitter<GraphEventMap> {
   pinAll(pinned = true): void {
     for (const node of this.nodes.values()) node.setPinned(pinned);
     this.sg?.requestFrame?.();
-  }
-
-  // Node lookup shortcuts - ergonomic API
-  getNodeCount(): number {
-    return this.nodes.size;
-  }
-
-  getEdgeCount(): number {
-    return this.edges.size;
   }
 
   // Quick access to node/edge arrays (caches result)
@@ -700,6 +695,7 @@ export class Graph extends EventEmitter<GraphEventMap> {
    * costs one pass over the edges instead of one pass per node it visits.
    */
   #linkIndex(): Map<string, Node[]> {
+    if (this.#linkIndexCache) return this.#linkIndexCache;
     const links = new Map<string, Node[]>();
     const link = (from: string, to: Node) => {
       const list = links.get(from);
@@ -714,6 +710,7 @@ export class Graph extends EventEmitter<GraphEventMap> {
       link(edge.source.id, edge.target);
       link(edge.target.id, edge.source);
     }
+    this.#linkIndexCache = links;
     return links;
   }
 
@@ -747,6 +744,7 @@ export class Graph extends EventEmitter<GraphEventMap> {
     this.edges.set(id, edge);
     this.sg?.renderer.scene.add(edge.line);
     edge.start();
+    this.#linkIndexCache = undefined;
     this.emitWithTimestamp('edge:added', { edge });
     return edge;
   }

@@ -422,10 +422,7 @@ export class DOTParser {
     return attrs;
   }
 
-  private emptyResult(): DiagramParseResult {
-    return emptyResult('dot');
   }
-}
 
 export class GraphMLParser {
   parse(graphmlCode: string): DiagramParseResult {
@@ -438,7 +435,7 @@ export class GraphMLParser {
 
     const graphml = doc.documentElement;
     if (graphml.tagName !== 'graphml') {
-      return this.emptyResult();
+      return emptyResult('graphml');
     }
 
     const keyMap = new Map<string, string>();
@@ -528,10 +525,7 @@ export class GraphMLParser {
     };
   }
 
-  private emptyResult(): DiagramParseResult {
-    return emptyResult('graphml');
   }
-}
 
 export class JSONDiagramParser {
   parse(jsonCode: string): DiagramParseResult {

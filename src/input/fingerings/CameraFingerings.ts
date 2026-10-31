@@ -60,11 +60,7 @@ export class CameraFingering implements Fingering {
     this.activeGesture = null;
   }
 
-  /** The camera may hand the gesture over: a node interaction can claim the pointer. */
-  defer(_finger: Finger): boolean {
-    return true;
   }
-}
 
 export function createCameraFingering(camera: CameraControls): CameraFingering {
   return new CameraFingering(camera);

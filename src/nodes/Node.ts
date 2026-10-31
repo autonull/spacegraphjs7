@@ -624,50 +624,34 @@ export abstract class Node extends Surface {
     return this.data.draggable !== false;
   }
 
-  hasTag(tag: string): boolean {
+  /** Normalize tags from array or comma-separated string to a clean array. */
+  #normalizeTags(): string[] {
     const tags = this.data.tags;
-    if (Array.isArray(tags)) return tags.includes(tag);
+    if (Array.isArray(tags)) return tags;
     if (typeof tags === 'string')
-      return tags
-        .split(',')
-        .map((t) => t.trim())
-        .includes(tag);
-    return false;
+      return tags.split(',').map((t) => t.trim()).filter(Boolean);
+    return [];
+  }
+
+  hasTag(tag: string): boolean {
+    return this.#normalizeTags().includes(tag);
   }
 
   addTag(tag: string): this {
-    const tags = this.data.tags ?? [];
-    if (Array.isArray(tags)) {
-      if (!tags.includes(tag)) tags.push(tag);
-    } else if (typeof tags === 'string') {
-      const tagSet = new Set(tags.split(',').map((t) => t.trim()));
-      tagSet.add(tag);
-      this.data.tags = Array.from(tagSet).join(', ');
-    } else {
-      this.data.tags = [tag];
-    }
+    const tags = this.#normalizeTags();
+    if (!tags.includes(tag)) tags.push(tag);
+    this.data.tags = tags;
     return this;
   }
 
   removeTag(tag: string): this {
-    const tags = this.data.tags;
-    if (Array.isArray(tags)) {
-      this.data.tags = tags.filter((t) => t !== tag);
-    } else if (typeof tags === 'string') {
-      this.data.tags = tags
-        .split(',')
-        .map((t) => t.trim())
-        .filter((t) => t !== tag)
-        .join(', ');
-    }
+    const tags = this.#normalizeTags().filter((t) => t !== tag);
+    this.data.tags = tags;
     return this;
   }
 
   getTags(): string[] {
-    const tags = this.data.tags;
-    if (Array.isArray(tags)) return tags;
-    if (typeof tags === 'string') return tags.split(',').map((t) => t.trim());
-    return [];
+    return this.#normalizeTags();
   }
 
   clone(newId: string): Node | null {
