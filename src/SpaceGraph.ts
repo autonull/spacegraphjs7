@@ -16,6 +16,7 @@ import {
   DEFAULT_SYSTEM_PLUGINS,
   nodeTypeName,
 } from './core/defaults';
+
 import { ErgonomicsAPI } from './core/Ergonomics';
 import { EventSystem } from './core/events/EventSystem';
 // SpaceGraph.ts - Core graph visualization engine
@@ -437,16 +438,6 @@ export class SpaceGraph {
     return this.graph.getEdge(id);
   }
 
-  removeNode(id: string): boolean {
-    this.graph.removeNode(id);
-    return true;
-  }
-
-  removeEdge(id: string): boolean {
-    this.graph.removeEdge(id);
-    return true;
-  }
-
   clear(): void {
     this.graph.clear();
   }
@@ -611,18 +602,7 @@ export class SpaceGraph {
     this.dispose();
   }
 
-  // Direct passthrough - all ergonomics API methods available directly on SpaceGraph
-  $ = (id: string) => this.ergo.$(id);
-
-  $$ = (id: string) => this.ergo.$$(id);
-
-  $optional = (id: string) => this.ergo.$optional(id);
-
-  at = (id: string) => this.ergo.$(id);
-
-  must = (id: string) => this.ergo.require(id);
-
-  // Fluent API shortcuts
+  // Fluent API shortcuts for graph manipulation
   addNode(spec: NodeSpec | Node): this {
     this.graph.addNode(spec);
     return this;
@@ -633,100 +613,17 @@ export class SpaceGraph {
     return this;
   }
 
-  // Query - delegate to graph
-  findNodes = (predicate: (node: Node) => boolean) => this.ergo.findNodes(predicate);
+  removeNode(id: string): this {
+    this.graph.removeNode(id);
+    return this;
+  }
 
-  findNode = (predicate: (node: Node) => boolean) => this.ergo.findNode(predicate);
+  removeEdge(id: string): this {
+    this.graph.removeEdge(id);
+    return this;
+  }
 
-  getNodesByType = (type: string) => this.ergo.getNodesByType(type);
-
-  findEdges = (predicate: (edge: Edge) => boolean) => this.ergo.findEdges(predicate);
-
-  getEdgesForNode = (nodeId: string) => this.ergo.getEdgesForNode(nodeId);
-
-  where = (key: string, value: unknown) => this.ergo.where(key, value);
-
-  has = (key: string, value?: unknown) => this.ergo.has(key, value);
-
-  neighbors = (nodeId: string) => this.ergo.neighbors(nodeId);
-
-  adjacent = (nodeId: string) => this.ergo.adjacent(nodeId);
-
-  connections = (nodeId: string) => this.ergo.connections(nodeId);
-
-  inEdges = (nodeId: string) => this.ergo.inEdges(nodeId);
-
-  outEdges = (nodeId: string) => this.ergo.outEdges(nodeId);
-
-  // Iterators
-  forNodes = (callback: (node: Node) => void) => this.ergo.forNodes(callback);
-
-  forEdges = (callback: (edge: Edge) => void) => this.ergo.forEdges(callback);
-
-  forEach = (callback: (node: Node) => void) => this.ergo.forEach(callback);
-
-  each = (callback: (node: Node) => void) => this.ergo.each(callback);
-
-  map = <T>(callback: (node: Node) => T) => this.ergo.map<T>(callback);
-
-  filter = (callback: (node: Node) => boolean) => this.ergo.filter(callback);
-
-  some = (callback: (node: Node) => boolean) => this.ergo.some(callback);
-
-  every = (callback: (node: Node) => boolean) => this.ergo.every(callback);
-
-  // Node operations
-  add = (spec: NodeSpec | Node) => this.ergo.add(spec);
-
-  create = (spec: string | NodeSpec) => this.ergo.create(spec);
-
-  remove = (id: string) => this.ergo.remove(id);
-
-  addNodes = (specs: NodeSpec[]) => this.ergo.addNodes(specs);
-
-  removeWhere = (predicate: (node: Node) => boolean) => this.ergo.removeWhere(predicate);
-
-  updateWhere = (predicate: (node: Node) => boolean, updates: Partial<NodeSpec>) =>
-    this.ergo.updateWhere(predicate, updates);
-
-  // Edge operations
-  connect = (source: string, target: string, data?: Record<string, unknown>) =>
-    this.ergo.connect(source, target, data);
-
-  connectTo = (source: string, targets: string | string[], data?: Record<string, unknown>) =>
-    this.ergo.connectTo(source, targets, data);
-
-  connectFrom = (sources: string | string[], target: string, data?: Record<string, unknown>) =>
-    this.ergo.connectFrom(sources, target, data);
-
-  disconnect = (source: string, target: string) => this.ergo.disconnect(source, target);
-
-  addEdges = (specs: EdgeSpec[]) => this.ergo.addEdges(specs);
-
-  // Traversal
-  traverse = (callback: (node: Node, depth: number) => void, startId?: string) =>
-    this.ergo.traverse(callback, startId);
-
-  bfs = (callback: (node: Node, depth: number) => void, startId?: string) =>
-    this.ergo.bfs(callback, startId);
-
-  dfs = (callback: (node: Node, depth: number) => void, startId?: string) =>
-    this.ergo.dfs(callback, startId);
-
-  getSubgraph = (centerId: string, radius: number) => this.ergo.getSubgraph(centerId, radius);
-
-  path = (from: string, to: string) => this.ergo.path(from, to);
-
-  // Batch
-  batch = (fn: (sg: SpaceGraph) => void) => this.ergo.batch(fn);
-
-  freeze = () => this.ergo.freeze();
-
-  suspend = () => this.ergo.suspend();
-
-  transaction = (updates: (sg: SpaceGraph) => void) => this.ergo.transaction(updates);
-
-  // Selection
+  // Selection - core selection API on SpaceGraph
   select = (target: string | readonly string[] | null) => {
     this.selection.select(target);
     return this;
@@ -747,75 +644,18 @@ export class SpaceGraph {
     return this;
   };
 
-  selectAll = () => {
-    this.ergo.selectAll();
+  // Visibility - used by renderer adapters
+  show(id: string, visible = true): this {
+    const node = this.graph.getNode(id);
+    if (node) node.updateSpec({ data: { ...node.data, visible } });
     return this;
-  };
+  }
 
-  deselectAll = () => {
-    this.ergo.deselectAll();
-    return this;
-  };
+  hide(id: string): this {
+    return this.show(id, false);
+  }
 
-  // Visibility
-  toggleVisibility = (nodeId: string) => this.ergo.toggleVisibility(nodeId);
-
-  toggle = (nodeId: string) => this.ergo.toggle(nodeId);
-
-  show = (id: string, visible = true) => {
-    this.ergo.show(id, visible);
-    return this.graph.getNode(id);
-  };
-
-  hide = (id: string) => {
-    this.ergo.hide(id);
-    return this.graph.getNode(id);
-  };
-
-  // Quick node utilities
-  require = (id: string) => this.ergo.require(id);
-
-  clone = (id: string, newId?: string) => this.ergo.clone(id, newId);
-
-  move = (id: string, x: number, y: number, z = 0) => this.ergo.move(id, x, y, z);
-
-  translate = (id: string, dx: number, dy: number, dz = 0) => this.ergo.translate(id, dx, dy, dz);
-
-  shift = (id: string, dx: number, dy: number, dz = 0) => this.ergo.shift(id, dx, dy, dz);
-
-  label = (id: string, text: string) => this.ergo.label(id, text);
-
-  text = (id: string, text: string) => this.ergo.text(id, text);
-
-  color = (id: string, color: string | number) => this.ergo.color(id, color);
-
-  fill = (id: string, color: string | number) => this.ergo.fill(id, color);
-
-  data = (id: string, key: string, value?: unknown) => this.ergo.data(id, key, value);
-
-  attr = (id: string, key: string, value?: unknown) => this.ergo.attr(id, key, value);
-
-  rotate = (id: string, x: number, y: number, z: number) => this.ergo.rotate(id, x, y, z);
-
-  scale = (id: string, x: number, y?: number, z?: number) => this.ergo.scale(id, x, y, z);
-
-  setSize = (id: string, size: number) => this.ergo.size(id, size);
-
-  opacity = (id: string, opacity: number) => this.ergo.opacity(id, opacity);
-
-  visible = (id: string) =>
-    (this.graph.getNode(id)?.data as Record<string, unknown>)?.visible !== false;
-
-  isPinned = (id: string) =>
-    (this.graph.getNode(id)?.data as Record<string, unknown>)?.pinned === true;
-
-  pinned = (id: string) => this.#setDataFlag(id, 'pinned', true);
-
-  unpin = (id: string) => this.#setDataFlag(id, 'pinned', false);
-
-  draggable = (id: string, draggable = true) => this.#setDataFlag(id, 'draggable', draggable);
-
-  selectable = (id: string, selectable = true) => this.#setDataFlag(id, 'selectable', selectable);
+  // For ergonomic query/manipulation API, use sg.ergo or sg.graph directly
 
   // Watch for changes - returns unsubscribe
   watch(
@@ -1026,11 +866,7 @@ export class SpaceGraph {
     return this;
   }
 
-  /** Write a data flag onto a node and hand the node back. */
-  #setDataFlag(id: string, key: string, value: unknown): Node | undefined {
-    this.ergo.data(id, key, value);
-    return this.graph.getNode(id);
-  }
+  
 
   #init(): void {
     this.#continuousMode = (this.options.render?.renderMode ?? 'on-demand') === 'continuous';
