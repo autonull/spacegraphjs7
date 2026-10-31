@@ -9,16 +9,16 @@ export {
   COLORS,
   CONSTANTS,
   DEF,
-  DEG,
   Defaults,
   // Math constants
   DEG2RAD,
   EPSILON,
   PI,
-  RAD,
   RAD2DEG,
   TAU,
   // Shorthand aliases
+  RAD,
+  DEG,
   DUR,
   Easing,
   EdgeColors,

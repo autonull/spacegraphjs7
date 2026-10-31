@@ -337,7 +337,7 @@ export class DOTParser {
       /^\s*(digraph|graph|strict\s+digraph|strict\s+graph)\s*(\w+)?\s*\{([\s\S]*)\}\s*$/m
     );
     if (!graphMatch) {
-      return this.emptyResult();
+      return emptyResult('dot');
     }
 
     const isDirected = graphMatch[1].includes('digraph');
@@ -421,8 +421,7 @@ export class DOTParser {
     }
     return attrs;
   }
-
-  }
+}
 
 export class GraphMLParser {
   parse(graphmlCode: string): DiagramParseResult {
@@ -524,8 +523,7 @@ export class GraphMLParser {
       suggestedLayout: 'hierarchical',
     };
   }
-
-  }
+}
 
 export class JSONDiagramParser {
   parse(jsonCode: string): DiagramParseResult {
