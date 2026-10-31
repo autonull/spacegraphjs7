@@ -19,14 +19,6 @@ export abstract class BaseBuilder<T> {
     return this.spec;
   }
 
-  val(): T {
-    return this.toSpec();
-  }
-
-  get(): T {
-    return this.toSpec();
-  }
-
   transform(fn: (spec: T) => T): this {
     this.spec = fn(this.spec);
     return this;
