@@ -25,7 +25,7 @@ export abstract class BaseFingering implements Fingering {
   }
 
   defer(_finger: Finger): boolean {
-    return true;
+    return false;
   }
 
   isActive(): boolean {

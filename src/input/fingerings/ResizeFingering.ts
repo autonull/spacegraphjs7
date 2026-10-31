@@ -44,10 +44,6 @@ export class ResizeFingering extends BaseFingering {
     this.active = false;
   }
 
-  defer(_finger: Finger): boolean {
-    return false;
-  }
-
   private checkResizeHandle(node: Node, clientX: number, clientY: number): boolean {
     const handleSize = 20;
     const size = nodeScreenSize(this.sg, node);

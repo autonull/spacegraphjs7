@@ -5,11 +5,6 @@
 export { CameraControls } from './CameraControls';
 // Constants - comprehensive set for developer ergonomics
 export {
-  AnimationDuration,
-  COLORS,
-  CONSTANTS,
-  DEF,
-  Defaults,
   // Math constants
   DEG2RAD,
   EPSILON,
@@ -19,31 +14,39 @@ export {
   // Shorthand math aliases
   RAD,
   DEG,
-  // Duration constant
+  // Animation duration
+  AnimationDuration,
   DUR,
   // Animation easing
   Easing,
   // Color palettes
   EdgeColors,
-  // Input constants
+  COLORS,
+  // Input configuration
+  InputConfig,
+  // Input constants (aliases)
   FINGER,
   FingeringPriority,
-  InputConfig,
   InteractionThresholds,
+  THRESH,
+  // Layout constants
   LayoutDefaults,
   NodeDefaults,
   // Performance constants
-  PERF,
   Performance,
+  PERF,
   // Spatial constants
   Spatial,
-  // Threshold constants
-  THRESH,
+  // Unified constants
+  CONSTANTS,
+  // Defaults
+  Defaults,
+  DEF,
   // WCAG constants
   WCAG,
   // Zoom constants
-  ZOOM,
   ZoomConfig,
+  ZOOM,
 } from './constants';
 // Defaults
 export {

@@ -6,6 +6,10 @@ export class WidgetFingering extends BaseFingering {
   private widgetNode: Node | null = null;
   private isButtonDown = false;
 
+  defer(_finger: Finger): boolean {
+    return true;
+  }
+
   start(finger: Finger): boolean {
     if (finger.buttons !== 1) return false;
 

@@ -53,8 +53,8 @@ export const NodeFactory = Object.freeze({
       height: 40,
     });
   },
-  label(id: string, text = ''): NodeBuilder {
-    return new NodeBuilder(id, 'NoteNode').data({ text, width: 100, height: 30 });
+  label(id: string, text = '', style?: Record<string, string>): NodeBuilder {
+    return new NodeBuilder(id, 'NoteNode').data({ text, width: 100, height: 30 }).style(style ?? {});
   },
   progressBar(id: string, value = 50): NodeBuilder {
     return new NodeBuilder(id, 'ProgressBarNode').data({ value, width: 200, height: 20 });
@@ -73,8 +73,8 @@ export const NodeFactory = Object.freeze({
   panel(id: string, title?: string): NodeBuilder {
     return new NodeBuilder(id, 'PanelNode').data({ title, width: 250, height: 200 });
   },
-  card(id: string, title?: string): NodeBuilder {
-    return new NodeBuilder(id, 'PanelNode').data({ title, width: 200, height: 150 });
+  card(id: string, title?: string, style?: Record<string, string>): NodeBuilder {
+    return new NodeBuilder(id, 'PanelNode').data({ title, width: 200, height: 150 }).style(style ?? {});
   },
   group(id: string, title?: string): NodeBuilder {
     return new NodeBuilder(id, 'GroupNode').data({ title, width: 200, height: 200 });
@@ -201,7 +201,7 @@ export const Presets = Object.freeze({
     return new NodeBuilder(id, 'ShapeNode').size(50);
   },
   card(id: string, title?: string): NodeBuilder {
-    return NodeFactory.card(id, title).style({ padding: '10px' });
+    return NodeFactory.card(id, title, { padding: '10px' });
   },
   buttonPrimary(id: string, label = 'Click'): NodeBuilder {
     return new NodeBuilder(id, 'ButtonNode').data({ label, variant: 'primary' }).size(120, 40);
@@ -213,7 +213,7 @@ export const Presets = Object.freeze({
     return NodeFactory.input(id, placeholder);
   },
   label(id: string, text = ''): NodeBuilder {
-    return NodeFactory.label(id, text).style({ fontSize: '14px' });
+    return NodeFactory.label(id, text, { fontSize: '14px' });
   },
 });
 
