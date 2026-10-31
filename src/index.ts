@@ -263,12 +263,13 @@ export type {
 
 // Convenience factory functions
 import { SpaceGraph } from './SpaceGraph';
+import { graph } from './builder';
 
 export const createSpaceGraph = (
   container: HTMLElement,
   options?: import('./types').SpaceGraphOptions
 ) => new SpaceGraph(container, options);
-export const createGraph = import('./builder').then((m) => m.graph);
+export const createGraph = () => graph();
 
 // Shorthand factories for quick graph creation
 export const sg = createSpaceGraph;
