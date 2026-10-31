@@ -24,12 +24,12 @@ import { forwardGraphEvents } from './core/forwardEvents';
 import { Graph } from './core/Graph';
 import { WebGLRenderer } from './core/WebGLRenderer';
 import { Selection } from './core/Selection';
-import type { Edge } from './edges/Edge';
+import { Edge } from './edges/Edge';
 import { applyDefaultInputConfig } from './input/DefaultInputConfig';
 import { zoomCameraOnWheel } from './input/CameraWheel';
 import { createCameraFingering, PinchZoomFingering } from './input/fingerings';
 import type { WheelEventData } from './input/InputManager';
-import type { Node } from './nodes/Node';
+import { Node } from './nodes/Node';
 import type {
   CameraViewport,
   CardFacingMode,
@@ -42,6 +42,7 @@ import type {
   SpaceGraphEvents,
   SpaceGraphOptions,
   SpecUpdate,
+  ZuiManifest,
 } from './types';
 import { depthTreatment, sceneFadeDensity } from './depth/DepthCues';
 import { calculateFitView, createLogger, DOMUtils, safeClone, wrapError } from './utils';
@@ -65,7 +66,7 @@ export class SpaceGraph {
   public cameraControls!: CameraControls;
   public events!: EventSystem;
   public vision!: VisionManager;
-  public poolManager!: ObjectPoolManager<any>;
+  public poolManager!: ObjectPoolManager<unknown>;
   public input!: InputManager;
   public ergo!: ErgonomicsAPI;
   public selection!: Selection;
@@ -102,7 +103,7 @@ export class SpaceGraph {
     this.#init();
     if (options.global) {
       SpaceGraph.instances.add(this);
-      if (typeof window !== 'undefined') (window as any).SpaceGraph = SpaceGraph;
+      if (typeof window !== 'undefined') window.SpaceGraph = SpaceGraph;
     }
   }
 
@@ -309,12 +310,12 @@ export class SpaceGraph {
     const manifestUrl = `${origin}/.well-known/zui-manifest.json`;
     const response = await fetch(manifestUrl);
     if (!response.ok) throw new Error(`Failed to fetch manifest: ${response.statusText}`);
-    const manifest = (await response.json()) as Record<string, any>;
+    const manifest = (await response.json()) as ZuiManifest;
 
     let spec: GraphSpec;
-    if (manifest.spec) spec = manifest.spec as GraphSpec;
+    if (manifest.spec) spec = manifest.spec;
     else if (manifest.spec_url) {
-      const specResponse = await fetch(manifest.spec_url as string);
+      const specResponse = await fetch(manifest.spec_url);
       if (!specResponse.ok) throw new Error(`Failed to fetch spec: ${specResponse.statusText}`);
       spec = await specResponse.json();
     } else throw new Error('Manifest must include spec or spec_url');
@@ -374,7 +375,7 @@ export class SpaceGraph {
     camera?: { position: [number, number, number]; target: [number, number, number] };
     plugins?: Record<string, unknown>;
   } {
-    const spec: GraphSpec & { camera?: any; plugins?: any } = {
+    const spec: GraphSpec & { camera?: { position: [number, number, number]; target: [number, number, number] }; plugins?: Record<string, unknown> } = {
       nodes: [...this.graph.nodes.values()].map((node) => ({
         id: node.id,
         type: node.constructor.name,
@@ -425,7 +426,7 @@ export class SpaceGraph {
       this.cameraControls.update();
     }
 
-    if (data.plugins) this.pluginManager.import(data.plugins as Record<string, any>);
+    if (data.plugins) this.pluginManager.import(data.plugins as Record<string, unknown>);
     return this;
   }
 
@@ -545,7 +546,7 @@ export class SpaceGraph {
       if (node) node.onPreRender?.(delta);
     }
     for (const edge of this.graph.edges.values()) {
-      if (edge) (edge as any).onPreRender?.(delta);
+      if (edge) edge.onPreRender?.(delta);
     }
 
     this.#reportViewport();
@@ -663,17 +664,11 @@ export class SpaceGraph {
   // For ergonomic query/manipulation API, use sg.ergo or sg.graph directly
 
   // Watch for changes - returns unsubscribe
-  watch(
-    type:
-      | 'node:added'
-      | 'node:removed'
-      | 'node:updated'
-      | 'edge:added'
-      | 'edge:removed'
-      | 'edge:updated',
-    callback: (data: any) => void
+  watch<K extends keyof SpaceGraphEvents>(
+    type: K,
+    callback: (data: SpaceGraphEvents[K]) => void
   ): () => void {
-    const handler = (data: any) => callback(data);
+    const handler = (data: SpaceGraphEvents[K]) => callback(data);
     this.events.on(type, handler);
     return () => this.events.off(type, handler);
   }

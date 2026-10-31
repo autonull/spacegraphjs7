@@ -316,6 +316,12 @@ export interface GraphSpec {
   camera?: { position: [number, number, number]; target: [number, number, number] };
 }
 
+export interface ZuiManifest {
+  spec?: GraphSpec;
+  spec_url?: string;
+  initial_layout?: string;
+}
+
 export interface SpecUpdate {
   nodes?: Partial<NodeSpec>[];
   edges?: Partial<EdgeSpec>[];

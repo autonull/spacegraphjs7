@@ -289,6 +289,6 @@ export { SpaceGraph as default } from './SpaceGraph';
 // Type augmentation for global access
 declare global {
   interface Window {
-    SpaceGraph: typeof import('./SpaceGraph').SpaceGraph;
+    SpaceGraph?: typeof import('./SpaceGraph').SpaceGraph;
   }
 }

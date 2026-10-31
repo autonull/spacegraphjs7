@@ -11,6 +11,7 @@ import {
   type RenderModelPatch,
   type RenderTheme,
   type Unsubscribe,
+  mergeRenderModelPatch,
 } from '@spacegraphjs/renderer';
 import type { GraphSpec, SpaceGraph } from 'spacegraphjs/activity';
 import { worldToScreen } from 'spacegraphjs/utils';
@@ -170,7 +171,7 @@ export class SpaceGraphRenderer extends BaseGraphRenderer implements GraphRender
       this.#edges = new Set([...this.#edges, ...patch.edges.added.map((e) => e.id)]);
 
       // Rebuild the full spec with current model + patch
-      const updatedModel = this.#mergePatch(this.#model, patch);
+      const updatedModel = mergeRenderModelPatch(this.#model, patch);
       this.#model = updatedModel;
 
       const spec: GraphSpec = {
@@ -188,24 +189,6 @@ export class SpaceGraphRenderer extends BaseGraphRenderer implements GraphRender
     } catch (error) {
       this.emit('error', { error });
     }
-  }
-
-  #mergePatch(model: RenderModel, patch: RenderModelPatch): RenderModel {
-    const nodeMap = new Map(model.nodes.map((n) => [n.id, n]));
-    for (const id of patch.nodes.removed) nodeMap.delete(id);
-    for (const node of patch.nodes.added) nodeMap.set(node.id, node);
-    for (const node of patch.nodes.changed) nodeMap.set(node.id, node);
-
-    const edgeMap = new Map(model.edges.map((e) => [e.id, e]));
-    for (const id of patch.edges.removed) edgeMap.delete(id);
-    for (const edge of patch.edges.added) edgeMap.set(edge.id, edge);
-    for (const edge of patch.edges.changed) edgeMap.set(edge.id, edge);
-
-    return {
-      nodes: [...nodeMap.values()],
-      edges: [...edgeMap.values()],
-      extent: model.extent,
-    };
   }
 
   setTheme(theme: RenderTheme): void {

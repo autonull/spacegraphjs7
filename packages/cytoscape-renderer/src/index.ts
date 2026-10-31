@@ -9,6 +9,7 @@ import {
   type RenderModel,
   type RenderModelPatch,
   type RenderTheme,
+  mergeRenderModelPatch,
 } from '@spacegraphjs/renderer';
 import type { Core } from 'cytoscape';
 import { frameInRegion } from './fit';
@@ -192,30 +193,12 @@ export class CytoscapeRenderer extends BaseGraphRenderer implements GraphRendere
       });
 
       // Update the stored model
-      this.#model = this.#mergePatch(this.#model, patch);
+      this.#model = mergeRenderModelPatch(this.#model, patch);
       this.#syncCards();
       this.#renderOverlay();
     } catch (error) {
       this.emit('error', { error });
     }
-  }
-
-  #mergePatch(model: RenderModel, patch: RenderModelPatch): RenderModel {
-    const nodeMap = new Map(model.nodes.map((n) => [n.id, n]));
-    for (const id of patch.nodes.removed) nodeMap.delete(id);
-    for (const node of patch.nodes.added) nodeMap.set(node.id, node);
-    for (const node of patch.nodes.changed) nodeMap.set(node.id, node);
-
-    const edgeMap = new Map(model.edges.map((e) => [e.id, e]));
-    for (const id of patch.edges.removed) edgeMap.delete(id);
-    for (const edge of patch.edges.added) edgeMap.set(edge.id, edge);
-    for (const edge of patch.edges.changed) edgeMap.set(edge.id, edge);
-
-    return {
-      nodes: [...nodeMap.values()],
-      edges: [...edgeMap.values()],
-      extent: model.extent,
-    };
   }
 
   setTheme(theme: RenderTheme): void {

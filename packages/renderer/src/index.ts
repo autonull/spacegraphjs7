@@ -272,3 +272,4 @@ export * from './color';
 export * from './edge';
 export * from './events';
 export * from './theme';
+export * from './patch';
