@@ -1,26 +1,4 @@
-import type { RenderModel, RenderNode, RenderEdge } from '@spacegraphjs/renderer';
-
-/** What changed between two render models. */
-export interface RenderModelPatch {
-  /** Nodes that changed. */
-  nodes: {
-    /** Node ids the next model adds. */
-    added: RenderNode[];
-    /** Node ids the next model drops. */
-    removed: string[];
-    /** Nodes that stay but carry different content. */
-    changed: RenderNode[];
-  };
-  /** Edges that changed. */
-  edges: {
-    /** Edge ids the next model adds. */
-    added: RenderEdge[];
-    /** Edge ids the next model drops. */
-    removed: string[];
-    /** Edges that stay but carry different content. */
-    changed: RenderEdge[];
-  };
-}
+import type { RenderModel, RenderNode, RenderEdge, RenderModelPatch } from '@spacegraphjs/renderer';
 
 /** The fingerprint of a node: everything a renderer would have to redraw for it. */
 function fingerprint(node: RenderNode): string {

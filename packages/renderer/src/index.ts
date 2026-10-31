@@ -97,6 +97,9 @@ export type RenderModelPatch = {
   }
 }
 
+/** @deprecated Re-exported from adapter for backward compatibility. Use the contract definition instead. */
+export type { RenderModelPatch as AdapterRenderModelPatch }
+
 export type RenderTheme = {
   background: string
   surface: string
