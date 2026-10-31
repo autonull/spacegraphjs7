@@ -490,7 +490,7 @@ export class SpaceGraph {
       if (fit.zoom !== undefined) this.cameraControls?.setOrthoZoomRange(fit.zoom);
       // Orthographic fit carries a frustum zoom; keep the camera radius (distance does not scale ortho).
       const distance = fit.zoom !== undefined ? this.cameraControls.spherical.radius : fit.cameraZ;
-      const effectiveDuration = this.reducedMotion ? 0 : duration;
+      const effectiveDuration = this.#effectiveDuration(duration);
       this.cameraControls.flyTo(fit.center, distance, effectiveDuration, fit.zoom);
       this.#reportViewport(true);
       this.requestFrame();
@@ -512,6 +512,11 @@ export class SpaceGraph {
     const height = this.renderer.container?.clientHeight || 1;
 
     return (minScale * baseHeight) / height;
+  }
+
+  /** Returns 0 if reduced motion is enabled, otherwise the given duration. */
+  #effectiveDuration(duration: number): number {
+    return this.reducedMotion ? 0 : duration;
   }
 
   // ============= Animation Loop =============
@@ -727,7 +732,7 @@ export class SpaceGraph {
     // The depth is stored before the treatment is applied: the treatment reads it (the card facing and
     // the fade resolve against the depth that is coming, not the one that was).
     this.#depth = depth;
-    const effectiveDuration = this.reducedMotion ? 0 : (previous !== depth ? 0.5 : 0);
+    const effectiveDuration = this.#effectiveDuration(previous !== depth ? 0.5 : 0);
     this.#applyDepth(depth, effectiveDuration);
     if (previous !== depth) this.events.emit('depth:change', { depth, previous });
     this.#reportViewport(true);
@@ -830,7 +835,7 @@ export class SpaceGraph {
     const node = this.graph.getNode(id);
     if (node) {
       const pos = node.position;
-      const effectiveDuration = this.reducedMotion ? 0 : duration;
+      const effectiveDuration = this.#effectiveDuration(duration);
       this.cameraControls.flyTo(pos, this.renderer.camera.position.length(), effectiveDuration);
       this.#reportViewport(true);
       this.requestFrame();
