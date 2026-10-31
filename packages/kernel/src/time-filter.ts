@@ -1,4 +1,3 @@
-import type { Kernel, Node, Edge } from './kernel';
 import { Kernel } from './kernel';
 
 /**

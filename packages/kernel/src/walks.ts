@@ -1,4 +1,4 @@
-import type { Kernel, Node, Edge, NodeID } from './kernel';
+import type { Kernel, Node, NodeID, EdgeID } from './kernel';
 
 /**
  * Walk specification for traversing a kernel graph.
@@ -21,11 +21,6 @@ export type WalkResult = {
   /** Traversed edge IDs in order. */
   edges: EdgeID[];
 };
-
-/**
- * Edge ID type.
- */
-export type EdgeID = string;
 
 /**
  * Walks the graph from start nodes, following edges of specified kinds.
