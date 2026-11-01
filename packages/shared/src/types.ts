@@ -67,13 +67,13 @@ export type ZoomLevel = "overview" | "execution" | "detail"
 export type DepthMode = "flat" | "layered" | "depth-stack" | "orbit"
 
 /** Layout type. */
-export type Layout = "lanes" | "timeline" | "radial" | "force"
+export type Layout = "lanes" | "timeline" | "hierarchy" | "tree" | "force" | "ribbon" | "matrix" | "log" | "radial"
 
 /** Graph side for split views. */
 export type GraphSide = "start" | "end"
 
 /** Graph arrangement for hybrid views. */
-export type GraphArrangement = "floating" | "split" | "full"
+export type GraphArrangement = "floating" | "side" | "stacked"
 
 /** Detail mode for node detail display. */
 export type DetailMode = "panel" | "popover" | "inline"
@@ -94,6 +94,7 @@ export interface VocabularyKeys {
   level: Record<ZoomLevel, string>
   depth: Record<DepthMode, string>
   layout: Record<Layout, string>
+  layoutHint: Record<Layout, string>
   side: Record<GraphSide, string>
   arrangement: Record<GraphArrangement, string>
   kind: Record<string, string>
@@ -109,59 +110,157 @@ export interface VocabularyKeys {
 /** Default vocabulary keys for i18n. */
 export const VOCABULARY_KEYS: VocabularyKeys = {
   level: {
-    overview: "ui.toolbar.level.overview",
-    execution: "ui.toolbar.level.execution",
-    detail: "ui.toolbar.level.detail",
+    overview: "ui.sessionGraph.level.overview",
+    execution: "ui.sessionGraph.level.execution",
+    detail: "ui.sessionGraph.level.detail",
   },
   depth: {
-    flat: "ui.toolbar.depth.flat",
-    layered: "ui.toolbar.depth.layered",
-    "depth-stack": "ui.toolbar.depth.depthStack",
-    orbit: "ui.toolbar.depth.orbit",
+    flat: "ui.sessionGraph.depth.flat",
+    layered: "ui.sessionGraph.depth.layered",
+    "depth-stack": "ui.sessionGraph.depth.depthStack",
+    orbit: "ui.sessionGraph.depth.orbit",
   },
   layout: {
-    lanes: "ui.toolbar.layout.lanes",
-    timeline: "ui.toolbar.layout.timeline",
-    radial: "ui.toolbar.layout.radial",
-    force: "ui.toolbar.layout.force",
+    lanes: "ui.sessionGraph.layout.lanes",
+    timeline: "ui.sessionGraph.layout.timeline",
+    hierarchy: "ui.sessionGraph.layout.hierarchy",
+    tree: "ui.sessionGraph.layout.tree",
+    force: "ui.sessionGraph.layout.force",
+    ribbon: "ui.sessionGraph.layout.ribbon",
+    matrix: "ui.sessionGraph.layout.matrix",
+    log: "ui.sessionGraph.layout.log",
+    radial: "ui.sessionGraph.layout.radial",
+  },
+  layoutHint: {
+    lanes: "ui.sessionGraph.layoutHint.lanes",
+    timeline: "ui.sessionGraph.layoutHint.timeline",
+    hierarchy: "ui.sessionGraph.layoutHint.hierarchy",
+    tree: "ui.sessionGraph.layoutHint.tree",
+    force: "ui.sessionGraph.layoutHint.force",
+    ribbon: "ui.sessionGraph.layoutHint.ribbon",
+    matrix: "ui.sessionGraph.layoutHint.matrix",
+    log: "ui.sessionGraph.layoutHint.log",
+    radial: "ui.sessionGraph.layoutHint.radial",
   },
   side: {
-    start: "ui.toolbar.side.start",
-    end: "ui.toolbar.side.end",
+    start: "ui.sessionGraph.arrangement.side.start",
+    end: "ui.sessionGraph.arrangement.side.end",
   },
   arrangement: {
-    floating: "ui.toolbar.arrangement.floating",
-    split: "ui.toolbar.arrangement.split",
-    full: "ui.toolbar.arrangement.full",
+    floating: "ui.sessionGraph.arrangement.floating",
+    side: "ui.sessionGraph.arrangement.side",
+    stacked: "ui.sessionGraph.arrangement.stacked",
   },
-  kind: {},
-  status: {},
-  domain: {},
+  kind: {
+    session: "ui.sessionGraph.kind.session",
+    turn: "ui.sessionGraph.kind.turn",
+    phase: "ui.sessionGraph.kind.phase",
+    message: "ui.sessionGraph.kind.message",
+    reasoning: "ui.sessionGraph.kind.reasoning",
+    tool: "ui.sessionGraph.kind.tool",
+    file: "ui.sessionGraph.kind.file",
+    directory: "ui.sessionGraph.kind.directory",
+    subagent: "ui.sessionGraph.kind.subagent",
+    result: "ui.sessionGraph.kind.result",
+    error: "ui.sessionGraph.kind.error",
+    retry: "ui.sessionGraph.kind.retry",
+    compaction: "ui.sessionGraph.kind.compaction",
+    notice: "ui.sessionGraph.kind.notice",
+    diff: "ui.sessionGraph.kind.diff",
+    package: "ui.sessionGraph.kind.package",
+    commit: "ui.sessionGraph.kind.commit",
+    branch: "ui.sessionGraph.kind.branch",
+    symbol: "ui.sessionGraph.kind.symbol",
+    test: "ui.sessionGraph.kind.test",
+    "test-run": "ui.sessionGraph.kind.testRun",
+    process: "ui.sessionGraph.kind.process",
+    port: "ui.sessionGraph.kind.port",
+    issue: "ui.sessionGraph.kind.issue",
+    note: "ui.sessionGraph.kind.note",
+  },
+  status: {
+    pending: "ui.sessionGraph.status.pending",
+    running: "ui.sessionGraph.status.running",
+    success: "ui.sessionGraph.status.success",
+    failed: "ui.sessionGraph.status.failed",
+    interrupted: "ui.sessionGraph.status.interrupted",
+    neutral: "ui.sessionGraph.status.neutral",
+  },
+  domain: {
+    session: "ui.sessionGraph.domain.session",
+    directories: "ui.sessionGraph.domain.directories",
+    history: "ui.sessionGraph.domain.history",
+    code: "ui.sessionGraph.domain.code",
+    verification: "ui.sessionGraph.domain.verification",
+    runtime: "ui.sessionGraph.domain.runtime",
+    work: "ui.sessionGraph.domain.work",
+  },
   confidence: {
-    explicit: "ui.toolbar.confidence.explicit",
-    structural: "ui.toolbar.confidence.structural",
-    inferred: "ui.toolbar.confidence.inferred",
+    explicit: "ui.sessionGraph.confidence.explicit",
+    structural: "ui.sessionGraph.confidence.structural",
+    inferred: "ui.sessionGraph.confidence.inferred",
   },
-  edge: {},
-  lane: {},
+  edge: {
+    "part-of": "ui.sessionGraph.edge.partOf",
+    sequence: "ui.sessionGraph.edge.sequence",
+    delegates: "ui.sessionGraph.edge.delegates",
+    reads: "ui.sessionGraph.edge.reads",
+    writes: "ui.sessionGraph.edge.writes",
+    searches: "ui.sessionGraph.edge.searches",
+    produces: "ui.sessionGraph.edge.produces",
+    references: "ui.sessionGraph.edge.references",
+    compacts: "ui.sessionGraph.edge.compacts",
+    evidence: "ui.sessionGraph.edge.evidence",
+    "inferred-cause": "ui.sessionGraph.edge.inferredCause",
+    touches: "ui.sessionGraph.edge.touches",
+    "points-at": "ui.sessionGraph.edge.pointsAt",
+    addresses: "ui.sessionGraph.edge.addresses",
+    "listens-on": "ui.sessionGraph.edge.listensOn",
+    calls: "ui.sessionGraph.edge.calls",
+    covers: "ui.sessionGraph.edge.covers",
+    executes: "ui.sessionGraph.edge.executes",
+    annotates: "ui.sessionGraph.edge.annotates",
+  },
+  lane: {
+    phases: "ui.sessionGraph.lane.phases",
+    prompt: "ui.sessionGraph.lane.prompt",
+    narrative: "ui.sessionGraph.lane.narrative",
+    explore: "ui.sessionGraph.lane.explore",
+    edit: "ui.sessionGraph.lane.edit",
+    verify: "ui.sessionGraph.lane.verify",
+    delegate: "ui.sessionGraph.lane.delegate",
+    artifacts: "ui.sessionGraph.lane.artifacts",
+  },
   detailMode: {
-    panel: "ui.toolbar.detailMode.panel",
-    popover: "ui.toolbar.detailMode.popover",
-    inline: "ui.toolbar.detailMode.inline",
+    panel: "ui.sessionGraph.detailMode.panel",
+    popover: "ui.sessionGraph.detailMode.popover",
+    inline: "ui.sessionGraph.detailMode.inline",
   },
-  phase: {},
+  phase: {
+    explore: "ui.sessionGraph.phase.explore",
+    edit: "ui.sessionGraph.phase.edit",
+    verify: "ui.sessionGraph.phase.verify",
+    delegate: "ui.sessionGraph.phase.delegate",
+    result: "ui.sessionGraph.phase.result",
+  },
 }
 
 /** Constants for toolbar components. */
 export const ZOOM_LEVELS: readonly ZoomLevel[] = ["overview", "execution", "detail"] as const
 export const DEPTH_MODES: readonly DepthMode[] = ["flat", "layered", "depth-stack", "orbit"] as const
-export const LAYOUTS: readonly Layout[] = ["lanes", "timeline", "radial", "force"] as const
-export const GRAPH_ARRANGEMENTS: readonly GraphArrangement[] = ["floating", "split", "full"] as const
+export const LAYOUTS: readonly Layout[] = ["lanes", "timeline", "hierarchy", "tree", "force", "ribbon", "matrix", "log", "radial"] as const
+export const GRAPH_ARRANGEMENTS: readonly GraphArrangement[] = ["floating", "side", "stacked"] as const
 export const DETAIL_MODES: readonly DetailMode[] = ["panel", "popover", "inline"] as const
 
-export const DOMAINS: readonly string[] = ["session", "filesystem", "code", "terminal", "browser"] as const
-export const NODE_KINDS: readonly string[] = ["turn", "phase", "tool", "file", "error", "note", "group"] as const
-export const NODE_STATUSES: readonly string[] = ["pending", "running", "completed", "failed", "cancelled"] as const
+export const DOMAINS: readonly string[] = ["session", "directories", "history", "code", "verification", "runtime", "work"] as const
+export const LANES: readonly string[] = ["phases", "prompt", "narrative", "explore", "edit", "verify", "delegate", "artifacts"] as const
+export const PHASE_CATEGORIES: readonly string[] = ["explore", "edit", "verify", "delegate", "result"] as const
+export const NODE_KINDS: readonly string[] = [
+  "session", "turn", "phase", "message", "reasoning", "tool", "file", "directory", "subagent",
+  "result", "error", "retry", "compaction", "notice", "diff", "package", "commit", "branch",
+  "symbol", "test", "test-run", "process", "port", "issue", "note",
+] as const
+export const NODE_STATUSES: readonly string[] = ["pending", "running", "success", "failed", "interrupted", "neutral"] as const
 
 export const PROFILE_PRESETS: readonly {
   id: string
