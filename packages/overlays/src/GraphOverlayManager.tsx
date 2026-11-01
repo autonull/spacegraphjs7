@@ -19,6 +19,8 @@ import type {
 import { createIconRenderer, type IconComponent } from "@spacegraphjs/shared/icons"
 import type { I18n } from "@spacegraphjs/shared/i18n"
 import { Show, type JSX } from "solid-js"
+import { createEffect } from "solid-js"
+import { useSpring, springPresets } from "@spacegraphjs/shared"
 import { GraphPeek } from "./GraphPeek"
 import { GraphPopover } from "./GraphPopover"
 
@@ -207,6 +209,17 @@ export const GraphOverlayManager = (props: GraphOverlayManagerProps): JSX.Elemen
     <div data-slot="graph-empty-placeholder" />
   )
 
+  // Spring animations for smooth peek positioning
+  const [peekLeft, setPeekLeft] = useSpring(0, springPresets.smooth)
+  const [peekTop, setPeekTop] = useSpring(0, springPresets.smooth)
+  createEffect(() => {
+    const frame = props.peekFrame
+    if (frame) {
+      setPeekLeft(frame.left)
+      setPeekTop(frame.top)
+    }
+  })
+
   return (
     <>
       <Show when={props.renderA11y}>
@@ -239,7 +252,7 @@ export const GraphOverlayManager = (props: GraphOverlayManagerProps): JSX.Elemen
           <div
             data-slot="graph-peek-anchor"
             class="absolute z-20 -translate-x-1/2"
-            style={{ left: `${frame().left}px`, top: `${frame().top}px` }}
+            style={{ left: `${peekLeft()}px`, top: `${peekTop()}px` }}
           >
             <GraphPeek node={frame().node} i18n={i18n} Icon={Icon} />
           </div>
