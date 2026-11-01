@@ -1,0 +1,62 @@
+{
+  "name": "@spacegraphjs/controls",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./GraphShowControl": {
+      "types": "./dist/GraphShowControl.d.ts",
+      "import": "./dist/GraphShowControl.js",
+      "default": "./dist/GraphShowControl.js"
+    },
+    "./GraphDrawControl": {
+      "types": "./dist/GraphDrawControl.d.ts",
+      "import": "./dist/GraphDrawControl.js",
+      "default": "./dist/GraphDrawControl.js"
+    },
+    "./GraphZoomControl": {
+      "types": "./dist/GraphZoomControl.d.ts",
+      "import": "./dist/GraphZoomControl.js",
+      "default": "./dist/GraphZoomControl.js"
+    },
+    "./GraphStatusBar": {
+      "types": "./dist/GraphStatusBar.d.ts",
+      "import": "./dist/GraphStatusBar.js",
+      "default": "./dist/GraphStatusBar.js"
+    },
+    "./GraphQuestionsControl": {
+      "types": "./dist/GraphQuestionsControl.d.ts",
+      "import": "./dist/GraphQuestionsControl.js",
+      "default": "./dist/GraphQuestionsControl.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc && vite build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "solid-js": "^1.9.0"
+  },
+  "dependencies": {
+    "@spacegraphjs/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "solid-js": "^1.9.0",
+    "typescript": "^7.0.0",
+    "vite": "^8.0.0",
+    "vite-plugin-solid": "2.11.10",
+    "vitest": "^5.0.0"
+  },
+  "sideEffects": false
+}

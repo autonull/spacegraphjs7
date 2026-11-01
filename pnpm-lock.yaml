@@ -264,6 +264,28 @@ importers:
         specifier: ^5.0.5
         version: 5.0.5(@opentelemetry/api@1.9.1)(@types/node@26.4.1)(@vitest/coverage-v8@5.0.0)(jsdom@30.0.1(@noble/hashes@2.2.0)(canvas@3.2.3))(vite@8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(tsx@4.23.13)(yaml@2.9.0))
 
+  packages/a11y:
+    dependencies:
+      '@spacegraphjs/shared':
+        specifier: workspace:*
+        version: link:../shared
+    devDependencies:
+      solid-js:
+        specifier: ^1.9.0
+        version: 1.9.18
+      typescript:
+        specifier: ^7.0.0
+        version: 7.0.2
+      vite:
+        specifier: ^8.0.0
+        version: 8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(tsx@4.23.13)(yaml@2.9.0)
+      vite-plugin-solid:
+        specifier: ^2.11.15
+        version: 2.11.15(solid-js@1.9.18)(vite@8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(tsx@4.23.13)(yaml@2.9.0))
+      vitest:
+        specifier: ^5.0.0
+        version: 5.0.5(@opentelemetry/api@1.9.1)(@types/node@26.4.1)(@vitest/coverage-v8@5.0.0)(jsdom@30.0.1(@noble/hashes@2.2.0)(canvas@3.2.3))(vite@8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(tsx@4.23.13)(yaml@2.9.0))
+
   packages/adapter:
     dependencies:
       '@spacegraphjs/renderer':
@@ -292,6 +314,50 @@ importers:
         specifier: ^5.3.2
         version: 5.9.3
 
+  packages/compare:
+    dependencies:
+      '@spacegraphjs/shared':
+        specifier: workspace:*
+        version: link:../shared
+    devDependencies:
+      solid-js:
+        specifier: ^1.9.0
+        version: 1.9.18
+      typescript:
+        specifier: ^7.0.0
+        version: 7.0.2
+      vite:
+        specifier: ^8.0.0
+        version: 8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(tsx@4.23.13)(yaml@2.9.0)
+      vite-plugin-solid:
+        specifier: ^2.11.15
+        version: 2.11.15(solid-js@1.9.18)(vite@8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(tsx@4.23.13)(yaml@2.9.0))
+      vitest:
+        specifier: ^5.0.0
+        version: 5.0.5(@opentelemetry/api@1.9.1)(@types/node@26.4.1)(@vitest/coverage-v8@5.0.0)(jsdom@30.0.1(@noble/hashes@2.2.0)(canvas@3.2.3))(vite@8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(tsx@4.23.13)(yaml@2.9.0))
+
+  packages/controls:
+    dependencies:
+      '@spacegraphjs/shared':
+        specifier: workspace:*
+        version: link:../shared
+    devDependencies:
+      solid-js:
+        specifier: ^1.9.0
+        version: 1.9.18
+      typescript:
+        specifier: ^7.0.0
+        version: 7.0.2
+      vite:
+        specifier: ^8.0.0
+        version: 8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(tsx@4.23.13)(yaml@2.9.0)
+      vite-plugin-solid:
+        specifier: ^2.11.15
+        version: 2.11.15(solid-js@1.9.18)(vite@8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(tsx@4.23.13)(yaml@2.9.0))
+      vitest:
+        specifier: ^5.0.0
+        version: 5.0.5(@opentelemetry/api@1.9.1)(@types/node@26.4.1)(@vitest/coverage-v8@5.0.0)(jsdom@30.0.1(@noble/hashes@2.2.0)(canvas@3.2.3))(vite@8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(tsx@4.23.13)(yaml@2.9.0))
+
   packages/create-spacegraph:
     dependencies:
       kolorist:
@@ -310,6 +376,28 @@ importers:
       cytoscape:
         specifier: ^3.34.1
         version: 3.34.4
+
+  packages/diff:
+    dependencies:
+      '@spacegraphjs/shared':
+        specifier: workspace:*
+        version: link:../shared
+    devDependencies:
+      solid-js:
+        specifier: ^1.9.0
+        version: 1.9.18
+      typescript:
+        specifier: ^7.0.0
+        version: 7.0.2
+      vite:
+        specifier: ^8.0.0
+        version: 8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(tsx@4.23.13)(yaml@2.9.0)
+      vite-plugin-solid:
+        specifier: ^2.11.15
+        version: 2.11.15(solid-js@1.9.18)(vite@8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(tsx@4.23.13)(yaml@2.9.0))
+      vitest:
+        specifier: ^5.0.0
+        version: 5.0.5(@opentelemetry/api@1.9.1)(@types/node@26.4.1)(@vitest/coverage-v8@5.0.0)(jsdom@30.0.1(@noble/hashes@2.2.0)(canvas@3.2.3))(vite@8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(tsx@4.23.13)(yaml@2.9.0))
 
   packages/export:
     dependencies:
@@ -361,6 +449,50 @@ importers:
         version: 5.0.5(@opentelemetry/api@1.9.1)(@types/node@26.4.1)(@vitest/coverage-v8@5.0.0(vitest@5.0.5))(jsdom@30.0.1(@noble/hashes@2.2.0)(canvas@3.2.3))(vite@7.3.7(@types/node@26.4.1)(lightningcss@1.33.0)(tsx@4.23.13)(yaml@2.9.0))
 
   packages/kernel: {}
+
+  packages/navigation:
+    dependencies:
+      '@spacegraphjs/shared':
+        specifier: workspace:*
+        version: link:../shared
+    devDependencies:
+      solid-js:
+        specifier: ^1.9.0
+        version: 1.9.18
+      typescript:
+        specifier: ^7.0.0
+        version: 7.0.2
+      vite:
+        specifier: ^8.0.0
+        version: 8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(tsx@4.23.13)(yaml@2.9.0)
+      vite-plugin-solid:
+        specifier: ^2.11.15
+        version: 2.11.15(solid-js@1.9.18)(vite@8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(tsx@4.23.13)(yaml@2.9.0))
+      vitest:
+        specifier: ^5.0.0
+        version: 5.0.5(@opentelemetry/api@1.9.1)(@types/node@26.4.1)(@vitest/coverage-v8@5.0.0)(jsdom@30.0.1(@noble/hashes@2.2.0)(canvas@3.2.3))(vite@8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(tsx@4.23.13)(yaml@2.9.0))
+
+  packages/overlays:
+    dependencies:
+      '@spacegraphjs/shared':
+        specifier: workspace:*
+        version: link:../shared
+    devDependencies:
+      solid-js:
+        specifier: ^1.9.0
+        version: 1.9.18
+      typescript:
+        specifier: ^7.0.0
+        version: 7.0.2
+      vite:
+        specifier: ^8.0.0
+        version: 8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(tsx@4.23.13)(yaml@2.9.0)
+      vite-plugin-solid:
+        specifier: ^2.11.15
+        version: 2.11.15(solid-js@1.9.18)(vite@8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(tsx@4.23.13)(yaml@2.9.0))
+      vitest:
+        specifier: ^5.0.0
+        version: 5.0.5(@opentelemetry/api@1.9.1)(@types/node@26.4.1)(@vitest/coverage-v8@5.0.0)(jsdom@30.0.1(@noble/hashes@2.2.0)(canvas@3.2.3))(vite@8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(tsx@4.23.13)(yaml@2.9.0))
 
   packages/react-spacegraph:
     dependencies:
@@ -484,6 +616,37 @@ importers:
         specifier: workspace:*
         version: link:../shared
     devDependencies:
+      solid-js:
+        specifier: ^1.9.0
+        version: 1.9.18
+      typescript:
+        specifier: ^7.0.0
+        version: 7.0.2
+      vite:
+        specifier: ^8.0.0
+        version: 8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(tsx@4.23.13)(yaml@2.9.0)
+      vite-plugin-solid:
+        specifier: ^2.11.15
+        version: 2.11.15(solid-js@1.9.18)(vite@8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(tsx@4.23.13)(yaml@2.9.0))
+      vitest:
+        specifier: ^5.0.0
+        version: 5.0.5(@opentelemetry/api@1.9.1)(@types/node@26.4.1)(@vitest/coverage-v8@5.0.0)(jsdom@30.0.1(@noble/hashes@2.2.0)(canvas@3.2.3))(vite@8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(tsx@4.23.13)(yaml@2.9.0))
+
+  packages/turn-map:
+    dependencies:
+      '@spacegraphjs/overlays':
+        specifier: workspace:*
+        version: link:../overlays
+      '@spacegraphjs/renderer':
+        specifier: workspace:*
+        version: link:../renderer
+      '@spacegraphjs/shared':
+        specifier: workspace:*
+        version: link:../shared
+    devDependencies:
+      '@spacegraphjs/svg-renderer':
+        specifier: workspace:*
+        version: link:../svg-renderer
       solid-js:
         specifier: ^1.9.0
         version: 1.9.18

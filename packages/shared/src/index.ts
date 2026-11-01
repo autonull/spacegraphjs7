@@ -48,6 +48,22 @@ export type {
   AccessibleItem,
   AccessibleEdge,
   InlineGraphOptions,
+  CardTemplate,
+  BandTemplate,
+  ClusterBounds,
+  BuildRenderModelOptions,
+  GraphDiffSource,
+  UseGraphAnnotationsReturn,
+  UseGraphSelectionReturn,
+  UseGraphCameraReturn,
+  UseGroupCollapseReturn,
+  UseEdgeKindsReturn,
+  LayoutResult,
+  TurnSubgraphResult,
+  LayoutFunction,
+  TurnSubgraphFunction,
+  RendererID,
+  RendererFactory,
 } from "./types"
 export {
   VOCABULARY_KEYS,
@@ -62,6 +78,10 @@ export {
   NODE_KINDS,
   NODE_STATUSES,
   PROFILE_PRESETS,
+  supportsDepth,
+  buildRenderModel,
+  layoutGraph,
+  turnSubgraph,
 } from "./types"
 
 // Navigation
@@ -114,3 +134,6 @@ export {
   useElementSize,
   useSyncedState,
 } from "./hooks"
+
+// Utils
+export { nodeByID, edgeByID, getConnectedNodes, getIncomingEdges, getOutgoingEdges } from "./utils"
