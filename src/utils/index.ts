@@ -1,29 +1,8 @@
 // utils/index.ts - Consolidated utility exports
 // All utilities re-exported from single source for better tree-shaking
 
-// Re-export constants from core (includes math constants)
-export {
-  AnimationDuration,
-  DEG2RAD,
-  Defaults,
-  Easing,
-  EdgeColors,
-  EPSILON,
-  FingeringPriority,
-  InputConfig,
-  InteractionThresholds,
-  LayoutDefaults,
-  NodeDefaults,
-  Performance,
-  PI,
-  RAD2DEG,
-  Spatial,
-  TAU,
-  WCAG,
-  ZoomConfig,
-} from '../core/constants';
-export type { FitInsets, FitSurface, FitViewResult } from './CameraUtils';
 // Camera utilities
+export type { FitInsets, FitSurface, FitViewResult } from './CameraUtils';
 export {
   AUTO_FOCUS_DURATION,
   calculateFitView,

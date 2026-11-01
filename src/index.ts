@@ -140,8 +140,7 @@ export {
   VirtualGridNode,
   WidgetNode,
 } from './nodes';
-// Widget types
-export type { WidgetNodeData } from './nodes/WidgetNode';
+// Widget types (re-exported from types/index.ts)
 // Plugin exports
 export {
   AutoColorPlugin,
@@ -192,42 +191,108 @@ export { BaseLayout } from './plugins/layouts/BaseLayout';
 // Rendering exports
 export { GEOMETRY_FAMILIES, InstancedNodeRenderer } from './rendering/InstancedNodeRenderer';
 export { SpaceGraph, VERSION } from './SpaceGraph';
-// Type exports
+// Type exports - all types now come from the consolidated types/index.ts
 export type {
-  AsyncCallback,
-  Bounds,
-  Bounds3D,
-  DeepPartial,
-  Disposer,
-  EdgeCallback,
-  EdgeConstructor,
-  EdgeSpec,
-  EventHandler,
-  GeometryFamily as GeometryFamilyType,
-  GraphExport,
-  GraphImportData,
-  GraphSpec,
-  HitResult,
-  IdCallback,
-  LabelLodLevel,
+  // Utility types
   MaybePromise,
+  Constructor,
+  Predicate,
+  Disposer,
+  Optional,
+  Awaited,
+  ValueOf,
+  KeysOf,
   NodeCallback,
-  NodeConstructor,
-  NodeSpec,
-  Plugin,
+  EdgeCallback,
+  IdCallback,
+  AsyncCallback,
+  // Geometry
+  Rect,
   Point2D,
   Point3D,
-  Predicate,
-  Rect,
-  RenderOptions,
-  Size,
+  Bounds3D,
+  // Base data
+  BaseNodeData,
+  NodeDimensions,
+  NodeVisual,
+  NodeInteraction,
+  CoreNodeData,
+  BaseEdgeData,
+  LabelLodLevel,
+  // Node data
+  ShapeNodeData,
+  HtmlNodeData,
+  ImageNodeData,
+  GroupNodeData,
+  NoteNodeData,
+  CanvasNodeData,
+  TextMeshNodeData,
+  DataNodeData,
+  VideoNodeData,
+  IFrameNodeData,
+  ChartNodeData,
+  MarkdownNodeData,
+  GlobeNodeData,
+  SceneNodeData,
+  AudioNodeData,
+  MathNodeData,
+  ProcessNodeData,
+  CodeEditorNodeData,
+  InstancedShapeNodeData,
+  DOMNodeData,
+  WidgetNodeData,
+  NodeData,
+  SpaceGraphNodeData,
+  // Edge data
+  EdgeData,
+  // Specs
+  NodeSpec,
+  EdgeSpec,
+  GraphSpec,
+  ZuiManifest,
+  SpecUpdate,
+  GraphExport,
+  GraphImportData,
+  // Events
+  GraphEvent,
+  NodeEvent,
+  EdgeEvent,
+  SelectionChangedPayload,
+  SpaceGraphEvents,
+  // Core
+  Projection,
+  KeyboardScope,
+  RenderMode,
+  CameraViewport,
+  HitResult,
+  // Options
   SpaceGraphOptions,
   SpaceGraphTheme,
-  SpecUpdate,
+  DefaultInputConfig,
+  InteractionInputConfig,
+  RenderOptions,
+  AnimationProps,
+  // Plugin
+  PluginLifecycle,
+  Plugin,
+  NodeConstructor,
+  EdgeConstructor,
+  // Vision (core types only - detailed types from ./vision/types)
   VisionCategory,
-  VisionOptions,
-  VisionReport,
-  VisionScore,
+  // Factory
+  NodeFactoryFn,
+  EdgeFactoryFn,
+  NodeSpecWithPosition,
+  EdgeSpecWithData,
+  DeepPartial,
+  DeepRequired,
+  Size,
+  Bounds,
+  EventHandler,
+  EventUnsubscribe,
+  NodeType,
+  EdgeType,
+  GeometryFamily,
 } from './types';
 
 // Logger utility
@@ -235,11 +300,24 @@ export { createLogger, logger, setLogLevel, type LogLevel, type Logger } from '.
 // Depth-cue primitives (LE.15)
 export { DEPTH_MODES, depthFade, depthTreatment } from './depth/DepthCues';
 export type { DepthTreatment } from './depth/DepthCues';
+
 // Vision module exports (opt-in: import from the `spacegraphjs/vision` subpath; not re-exported here)
 export type {
-  VisionBenchmark,
+  VisionReport,
+  VisionScore,
   VisionIssue,
+  LegibilityResult,
+  ContrastFailure,
+  OverlapResult,
+  Overlap,
+  HierarchyResult,
+  ErgonomicsResult,
+  TargetIssue,
+  VisionContext,
   VisionStrategy,
+  VisionOptions,
+  VisionBenchmark,
+  VisionBenchmarkResult,
 } from './vision/types';
 
 // Convenience factory functions
