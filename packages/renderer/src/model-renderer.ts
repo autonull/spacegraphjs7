@@ -123,31 +123,49 @@ export abstract class ModelRenderer extends BaseGraphRenderer {
   protected abstract setThemeInternal(theme: RenderTheme): void;
 
   /** Apply a full model to the renderer. Override with renderer-specific logic. */
-  protected abstract applyModel(model: RenderModel, theme: RenderTheme): void;
+  protected applyModel(_model: RenderModel, _theme: RenderTheme): void {
+    // Default: no-op. Concrete renderers that override setModel/applyPatch don't need this.
+  }
 
   /** Add a node to the renderer. */
-  protected abstract addNode(node: RenderNode, theme: RenderTheme): void;
+  protected addNode(_node: RenderNode, _theme: RenderTheme): void {
+    // Default: no-op. Concrete renderers that override setModel/applyPatch don't need this.
+  }
 
   /** Update a node in the renderer. */
-  protected abstract updateNode(node: RenderNode, theme: RenderTheme): void;
+  protected updateNode(_node: RenderNode, _theme: RenderTheme): void {
+    // Default: no-op. Concrete renderers that override setModel/applyPatch don't need this.
+  }
 
   /** Remove a node from the renderer. */
-  protected abstract removeNode(id: string): void;
+  protected removeNode(_id: string): void {
+    // Default: no-op. Concrete renderers that override setModel/applyPatch don't need this.
+  }
 
   /** Add an edge to the renderer. */
-  protected abstract addEdge(edge: RenderEdge, theme: RenderTheme): void;
+  protected addEdge(_edge: RenderEdge, _theme: RenderTheme): void {
+    // Default: no-op. Concrete renderers that override setModel/applyPatch don't need this.
+  }
 
   /** Update an edge in the renderer. */
-  protected abstract updateEdge(edge: RenderEdge, theme: RenderTheme): void;
+  protected updateEdge(_edge: RenderEdge, _theme: RenderTheme): void {
+    // Default: no-op. Concrete renderers that override setModel/applyPatch don't need this.
+  }
 
   /** Remove an edge from the renderer. */
-  protected abstract removeEdge(id: string): void;
+  protected removeEdge(_id: string): void {
+    // Default: no-op. Concrete renderers that override setModel/applyPatch don't need this.
+  }
 
   /** Set node visibility. */
-  protected abstract setNodeVisibility(id: string, visible: boolean): void;
+  protected setNodeVisibility(_id: string, _visible: boolean): void {
+    // Default: no-op. Concrete renderers that override setModel/applyPatch don't need this.
+  }
 
   /** Trigger a render. */
-  protected abstract render(): void;
+  protected render(): void {
+    // Default: no-op. Concrete renderers that override setModel/applyPatch don't need this.
+  }
 
   // The following methods have default implementations that can be overridden
 
@@ -164,42 +182,56 @@ export abstract class ModelRenderer extends BaseGraphRenderer {
   }
 
   /** Select nodes in the renderer. Override with renderer-specific logic. */
-  protected abstract selectNodes(ids: readonly string[]): void;
+  protected selectNodes(_ids: readonly string[]): void {
+    // Default: no-op. Override with renderer-specific logic.
+  }
 
   setViewport(viewport: RendererViewport): void {
     this.applyViewport(viewport);
   }
 
   /** Apply viewport to the renderer. Override with renderer-specific logic. */
-  protected abstract applyViewport(viewport: RendererViewport): void;
+  protected applyViewport(_viewport: RendererViewport): void {
+    // Default: no-op. Override with renderer-specific logic.
+  }
 
   getViewport(): RendererViewport {
     return this.readViewport() ?? { zoom: 1, center: [0, 0, 0] };
   }
 
   /** Read viewport from the renderer. Override with renderer-specific logic. */
-  protected abstract readViewport(): RendererViewport | undefined;
+  protected readViewport(): RendererViewport | undefined {
+    // Default: undefined. Override with renderer-specific logic.
+    return undefined;
+  }
 
   getNodeScreenPosition(id: string): { x: number; y: number } | undefined {
     return this.readNodeScreenPosition(id);
   }
 
   /** Read node screen position from the renderer. Override with renderer-specific logic. */
-  protected abstract readNodeScreenPosition(id: string): { x: number; y: number } | undefined;
+  protected readNodeScreenPosition(_id: string): { x: number; y: number } | undefined {
+    // Default: undefined. Override with renderer-specific logic.
+    return undefined;
+  }
 
   fit(ids?: readonly string[], options?: FitOptions): void {
     this.applyFit(ids, options);
   }
 
   /** Apply fit to the renderer. Override with renderer-specific logic. */
-  protected abstract applyFit(ids: readonly string[] | undefined, options: FitOptions | undefined): void;
+  protected applyFit(_ids: readonly string[] | undefined, _options: FitOptions | undefined): void {
+    // Default: no-op. Override with renderer-specific logic.
+  }
 
   focus(id: string): void {
     this.applyFocus(id);
   }
 
   /** Apply focus to the renderer. Override with renderer-specific logic. */
-  protected abstract applyFocus(id: string): void;
+  protected applyFocus(_id: string): void {
+    // Default: no-op. Override with renderer-specific logic.
+  }
 
   resize(): void {
     this.render();
@@ -216,7 +248,9 @@ export abstract class ModelRenderer extends BaseGraphRenderer {
   }
 
   /** Cleanup renderer-specific resources. */
-  protected abstract cleanup(): void;
+  protected cleanup(): void {
+    // Default: no-op. Override with renderer-specific cleanup.
+  }
 
   /** Array of cleanup functions for event listeners. Override to register listeners. */
   protected disposers: (() => void)[] = [];

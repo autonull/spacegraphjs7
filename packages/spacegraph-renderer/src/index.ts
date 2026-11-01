@@ -10,9 +10,10 @@ import {
   type RenderModel,
   type RenderModelPatch,
   type RenderTheme,
-  type RenderNode,
-  type RenderEdge,
   mergeRenderModelPatch,
+  idOf,
+  nodeIdOf,
+  idsOf,
 } from '@spacegraphjs/renderer';
 import type { GraphSpec, SpaceGraph } from 'spacegraphjs/activity';
 import { worldToScreen } from 'spacegraphjs/utils';
@@ -197,28 +198,8 @@ export class SpaceGraphRenderer extends ModelRenderer implements GraphRenderer {
     if (this.#sg) this.#sg.options.theme = spaceGraphTheme(theme);
   }
 
-  protected applyModel(_model: RenderModel, _theme: RenderTheme): void {
-    // Not used - setModel is overridden
-  }
-
-  protected addNode(_node: RenderNode, _theme: RenderTheme): void {
-    // Not used - setModel/applyPatch handle this
-  }
-
-  protected updateNode(_node: RenderNode, _theme: RenderTheme): void {
-    // Not used - setModel/applyPatch handle this
-  }
-
   protected removeNode(id: string): void {
     this.#sg?.removeNode(id);
-  }
-
-  protected addEdge(_edge: RenderEdge, _theme: RenderTheme): void {
-    // Not used - setModel/applyPatch handle this
-  }
-
-  protected updateEdge(_edge: RenderEdge, _theme: RenderTheme): void {
-    // Not used - setModel/applyPatch handle this
   }
 
   protected removeEdge(id: string): void {
@@ -381,18 +362,6 @@ export class SpaceGraphRenderer extends ModelRenderer implements GraphRenderer {
       this.emit('bandChange', { band: viewport.band, zoom: viewport.zoom });
     }
   }
-}
-
-function idOf(payload: unknown): string {
-  return (payload as { id?: string } | undefined)?.id ?? '';
-}
-
-function nodeIdOf(payload: unknown): string {
-  return (payload as { node?: { id?: string } } | undefined)?.node?.id ?? '';
-}
-
-function idsOf(payload: unknown): readonly string[] {
-  return (payload as { ids?: readonly string[] } | undefined)?.ids ?? [];
 }
 
 export type { GraphRenderer } from '@spacegraphjs/renderer';

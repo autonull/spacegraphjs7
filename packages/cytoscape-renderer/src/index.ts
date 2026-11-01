@@ -9,8 +9,6 @@ import {
   type RenderModel,
   type RenderModelPatch,
   type RenderTheme,
-  type RenderNode,
-  type RenderEdge,
   mergeRenderModelPatch,
 } from '@spacegraphjs/renderer';
 import type { Core } from 'cytoscape';
@@ -198,17 +196,6 @@ export class CytoscapeRenderer extends ModelRenderer implements GraphRenderer {
   protected setThemeInternal(theme: RenderTheme): void {
     this.#theme = normalizeTheme(theme);
   }
-
-  // Not used - setModel/applyPatch are overridden
-  protected applyModel(_model: RenderModel, _theme: RenderTheme): void {}
-  protected addNode(_node: RenderNode, _theme: RenderTheme): void {}
-  protected updateNode(_node: RenderNode, _theme: RenderTheme): void {}
-  protected removeNode(_id: string): void {}
-  protected addEdge(_edge: RenderEdge, _theme: RenderTheme): void {}
-  protected updateEdge(_edge: RenderEdge, _theme: RenderTheme): void {}
-  protected removeEdge(_id: string): void {}
-  protected setNodeVisibility(_id: string, _visible: boolean): void {}
-  protected render(): void {}
 
   protected selectNodes(ids: readonly string[]): void {
     const cy = this.#cy;

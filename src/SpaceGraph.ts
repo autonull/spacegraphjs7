@@ -72,9 +72,6 @@ export class SpaceGraph {
   public input!: InputManager;
   public ergo!: ErgonomicsAPI;
   public selection!: Selection;
-  // Zoom to fit all nodes (alias for fitView)
-  zoomFit = this.fitView;
-  zoomToFit = this.fitView;
   #animationFrameId?: number;
   #lastTimestamp = 0;
   #animating = false;
@@ -109,25 +106,6 @@ export class SpaceGraph {
     }
   }
 
-  get cameraPosition(): [number, number, number] {
-    if (!this.renderer?.camera) return [0, 0, 0];
-    return [
-      this.renderer.camera.position.x,
-      this.renderer.camera.position.y,
-      this.renderer.camera.position.z,
-    ];
-  }
-
-  get cameraTarget(): [number, number, number] {
-    return this.cameraControls
-      ? [this.cameraControls.target.x, this.cameraControls.target.y, this.cameraControls.target.z]
-      : [0, 0, 0];
-  }
-
-  get isRendering(): boolean {
-    return this.#animating;
-  }
-
   get nodeCount(): number {
     return this.graph.nodes.size;
   }
@@ -147,20 +125,8 @@ export class SpaceGraph {
   }
 
   // ============= Quick Properties =============
-  get count(): number {
-    return this.nodeCount;
-  }
-
   get isEmpty(): boolean {
     return this.graph.nodes.size === 0;
-  }
-
-  get nodes(): Node[] {
-    return this.graph.nodeArray();
-  }
-
-  get edges(): Edge[] {
-    return this.graph.edgeArray();
   }
 
   // Get stats
@@ -169,22 +135,6 @@ export class SpaceGraph {
       nodes: this.graph.nodes.size,
       edges: this.graph.edges.size,
       plugins: this.pluginManager.pluginCount,
-    };
-  }
-
-  // Get camera position
-  get camera(): { position: [number, number, number]; target: [number, number, number] } {
-    return {
-      position: [
-        this.renderer.camera.position.x,
-        this.renderer.camera.position.y,
-        this.renderer.camera.position.z,
-      ],
-      target: [
-        this.cameraControls.target.x,
-        this.cameraControls.target.y,
-        this.cameraControls.target.z,
-      ],
     };
   }
 

@@ -97,9 +97,6 @@ export type RenderModelPatch = {
   }
 }
 
-/** @deprecated Re-exported from adapter for backward compatibility. Use the contract definition instead. */
-export type { RenderModelPatch as AdapterRenderModelPatch }
-
 export type RenderTheme = {
   background: string
   surface: string
@@ -267,10 +264,10 @@ export function supportsDepth(capabilities: RendererCapabilities, depth: DepthMo
 // The theme bridge and the contrast auditor live beside the contract: they are pure, dependency-free,
 // and every renderer and host needs them.
 export * from './adapter';
-export * from './clock';
 export * from './color';
 export * from './edge';
 export * from './events';
 export * from './theme';
 export * from './patch';
 export * from './model-renderer';
+export * from './payload';
