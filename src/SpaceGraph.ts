@@ -54,7 +54,7 @@ import type { OrthographicCamera } from 'three';
 
 const logger = createLogger('SpaceGraph');
 
-export const VERSION = '8.4.0';
+export const VERSION = '8.5.0';
 
 export class SpaceGraph {
   public static instances = new Set<SpaceGraph>();
@@ -198,7 +198,8 @@ export class SpaceGraph {
     const sg = new SpaceGraph(element, options);
     try {
       await sg.init();
-      sg.import(data).render();
+      sg.import(data);
+      sg.render();
     } catch (err) {
       throw wrapError(
         err,
@@ -317,10 +318,9 @@ export class SpaceGraph {
     return this;
   }
 
-  update(spec: SpecUpdate): this {
+  update(spec: SpecUpdate): void {
     spec.nodes?.forEach((u) => u.id && this.graph.updateNode(u.id, u));
     spec.edges?.forEach((u) => u.id && this.graph.updateEdge(u.id, u));
-    return this;
   }
 
   export(): GraphSpec & {
@@ -358,7 +358,7 @@ export class SpaceGraph {
     return spec;
   }
 
-  import(data: GraphImportData): this {
+  import(data: GraphImportData): void {
     this.graph.clear();
     this.loadSpec(data as GraphSpec);
 
@@ -379,7 +379,6 @@ export class SpaceGraph {
     }
 
     if (data.plugins) this.pluginManager.import(data.plugins as Record<string, unknown>);
-    return this;
   }
 
   // ============= Node/Edge Access =============
@@ -389,6 +388,14 @@ export class SpaceGraph {
 
   getEdge(id: string): Edge | undefined {
     return this.graph.getEdge(id);
+  }
+
+  hasNode(id: string): boolean {
+    return this.graph.hasNode(id);
+  }
+
+  hasEdge(id: string): boolean {
+    return this.graph.hasEdge(id);
   }
 
   clear(): void {
@@ -563,24 +570,20 @@ export class SpaceGraph {
   }
 
   // Fluent API shortcuts for graph manipulation
-  addNode(spec: NodeSpec | Node): this {
-    this.graph.addNode(spec);
-    return this;
+  addNode(spec: NodeSpec | Node): Node | null {
+    return this.graph.addNode(spec);
   }
 
-  addEdge(spec: EdgeSpec | Edge): this {
-    this.graph.addEdge(spec);
-    return this;
+  addEdge(spec: EdgeSpec | Edge): Edge | null {
+    return this.graph.addEdge(spec);
   }
 
-  removeNode(id: string): this {
+  removeNode(id: string): void {
     this.graph.removeNode(id);
-    return this;
   }
 
-  removeEdge(id: string): this {
+  removeEdge(id: string): void {
     this.graph.removeEdge(id);
-    return this;
   }
 
   // Selection - core selection API on SpaceGraph

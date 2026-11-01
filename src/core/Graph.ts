@@ -576,14 +576,6 @@ export class Graph extends EventEmitter<GraphEventMap> {
     return this.query((node) => predicate(node.data));
   }
 
-  getNodesByType(type: string): Node[] {
-    return this.queryByType(type);
-  }
-
-  getNodesByLabelPrefix(prefix: string): Node[] {
-    return this.queryByLabel(prefix, false);
-  }
-
   getLeafNodes(): Node[] {
     return this.#nodesWithoutEdgeOn('source');
   }
