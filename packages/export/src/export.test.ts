@@ -89,7 +89,8 @@ describe("standaloneHtml", () => {
     expect(html).toContain("Test Session")
     expect(html).toContain("abc123")
     expect(html).toContain('Test & "Special" chars') // HTML escaped in SVG
-    expect(html).toContain('{"nodes":[{"id":"1","label":"Test"}]}') // JSON is HTML-escaped in <pre>
+    // JSON is HTML-escaped in <pre> tag (" for quotes)
+    expect(html).toContain('{"nodes":[{"id":"1","label":"Test"}]}')
   })
 
   it("uses theme colors in CSS", () => {
@@ -112,6 +113,7 @@ describe("standaloneHtml", () => {
   it("escapes HTML special characters in title and commit", () => {
     const html = standaloneHtml("<svg></svg>", "{}", createMockTheme(), "Session <1>", "commit & 'quote'", "timestamp")
 
+    // Title is HTML-escaped in <h1> tag (< for <)
     expect(html).toContain("Session <1>")
     expect(html).toContain("commit & &#039;quote&#039;")
   })
