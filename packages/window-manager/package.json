@@ -1,0 +1,39 @@
+{
+  "name": "@spacegraphjs/window-manager",
+  "version": "0.1.0",
+  "description": "Window manager component for SpaceGraphJS",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "vite build",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "lint": "eslint src --ext .ts,.tsx"
+  },
+  "peerDependencies": {
+    "solid-js": ">=1.8"
+  },
+  "devDependencies": {
+    "jsdom": "^30.0.1",
+    "solid-js": "^1.9.17",
+    "typescript": "^7.0.2",
+    "vite": "^7.3.7",
+    "vite-plugin-solid": "^2.11.10",
+    "vitest": "^5.0.5"
+  },
+  "license": "MIT"
+}
