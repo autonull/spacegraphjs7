@@ -15,5 +15,6 @@
   },
   "scripts": {
     "build": "vue-tsc --noEmit || echo 'Build step setup'"
-  }
+  },
+  "sideEffects": false
 }
