@@ -79,7 +79,7 @@ import { HUDPlugin } from '../plugins/HUDPlugin';
 import { LODPlugin } from '../plugins/LODPlugin';
 import type { EdgeSpec, GraphSpec, NodeSpec } from '../types';
 
-type PluginCtor = new () => Plugin;
+export type PluginCtor = new () => Plugin;
 
 // Default node types - automatically registered
 export const DEFAULT_NODE_TYPES = [
