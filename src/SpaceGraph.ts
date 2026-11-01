@@ -835,14 +835,11 @@ export class SpaceGraph {
     this.graph = new Graph(this);
     this.selection = new Selection(this);
     this.ergo = new ErgonomicsAPI(this);
-    const keyboard = this.options.keyboard ?? 'container';
-    if (keyboard === 'container' && !this.container.hasAttribute('tabindex')) {
-      this.container.tabIndex = 0;
-    }
+    this.#setupKeyboard();
     this.cameraControls = new CameraControls(
       this.renderer.camera,
       this.container,
-      { keyboard, ...this.options.cameraControls } as Partial<
+      { keyboard: this.options.keyboard ?? 'container', ...this.options.cameraControls } as Partial<
         import('./core/CameraControls').CameraControlsConfig
       >
     );
@@ -852,7 +849,18 @@ export class SpaceGraph {
     this.input = new InputManager({ sg: this, events: this.events });
     applyDefaultInputConfig(this.input, this);
     forwardGraphEvents(this.graph, this.events);
-    // On-demand mode repaints when the graph or selection changes.
+    this.#subscribeToGraphEvents();
+    this.#registerDefaults();
+  }
+
+  #setupKeyboard(): void {
+    const keyboard = this.options.keyboard ?? 'container';
+    if (keyboard === 'container' && !this.container.hasAttribute('tabindex')) {
+      this.container.tabIndex = 0;
+    }
+  }
+
+  #subscribeToGraphEvents(): void {
     const schedule = () => this.requestFrame();
     for (const event of [
       'node:added',

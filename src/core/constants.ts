@@ -125,14 +125,14 @@ export const Easing = {
 } as const;
 
 // Type exports - intentionally named with Type suffix for clarity
-export type AnimationDuration = typeof AnimationDurationDefaults;
-export type ZoomConfig = typeof ZoomConfigDefaults;
-export type FingeringPriority = typeof FingeringPriorityDefaults;
-export type InteractionThresholds = typeof InteractionThresholdsDefaults;
-export type Performance = typeof PerformanceDefaults;
-export type Defaults = typeof DefaultsValues;
-export type EdgeColors = typeof EdgeColorsDefaults;
-export type WCAG = typeof WCAGDefaults;
+export type AnimationDurationType = typeof AnimationDurationDefaults;
+export type ZoomConfigType = typeof ZoomConfigDefaults;
+export type FingeringPriorityType = typeof FingeringPriorityDefaults;
+export type InteractionThresholdsType = typeof InteractionThresholdsDefaults;
+export type PerformanceType = typeof PerformanceDefaults;
+export type DefaultsType = typeof DefaultsValues;
+export type EdgeColorsType = typeof EdgeColorsDefaults;
+export type WCAGType = typeof WCAGDefaults;
 
 // Value exports - using Object.freeze for immutability
 export const AnimationDuration = Object.freeze({ ...AnimationDurationDefaults });

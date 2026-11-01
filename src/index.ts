@@ -35,12 +35,13 @@ export {
   toggle,
   widget,
 } from './builder';
-// Core module exports
-// Core aliases for convenience
+// Core module exports (all from core/index.ts)
 export {
+  // Camera
+  CameraControls,
+  // Constants
   AnimationDuration,
   BVH,
-  CameraControls,
   createQuickGraphSpec,
   DEFAULT_CHROME_PLUGINS,
   DEFAULT_EDGE_TYPES,
@@ -72,23 +73,23 @@ export {
   PI,
   PluginManager,
   RAD2DEG,
+  RenderContext,
   Renderer,
-  WebGLRenderer,
   Spatial,
   SpatialIndex,
   Surface,
   TAU,
   TypeRegistry,
+  VisionManager,
+  WebGLRenderer,
   WCAG,
-  ZoomConfig,
-} from './core';
-export {
   withPooledBox3,
   withPooledMatrix4,
   withPooledVector2,
   withPooledVector3,
-} from './core/pooling/ObjectPool';
-export { SpaceGraphApp } from './core/SpaceGraphApp';
+  ZoomConfig,
+  SpaceGraphApp,
+} from './core';
 // Edges exports - consolidated edge types
 export {
   AnimatedEdge,
