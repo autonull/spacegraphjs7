@@ -59,7 +59,7 @@ export const GraphMinimap = (props: GraphMinimapProps) => {
 
   // A neutral node has no outcome to show, so it keeps a muted mark: the dot is all the minimap
   // draws, and a border-coloured one would disappear into the surface.
-  const colorFor = (node: GraphNode) => {
+  const colorFor = createMemo(() => (node: GraphNode) => {
     // Use a simple status-based color mapping
     const statusColors: Record<string, string> = {
       pending: props.theme.textMuted,
@@ -70,7 +70,7 @@ export const GraphMinimap = (props: GraphMinimapProps) => {
       neutral: props.theme.textMuted,
     }
     return statusColors[node.status] ?? props.theme.textMuted
-  }
+  })
 
   const panTo = (clientX: number, clientY: number, target: SVGSVGElement) => {
     if (placed().length === 0) return
@@ -117,7 +117,7 @@ export const GraphMinimap = (props: GraphMinimapProps) => {
         {(entry) => {
           const point = () => projection().project(entry.position)
           return (
-            <circle cx={point().x} cy={point().y} r={DOT_R} fill={colorFor(entry.node)} opacity="0.85" />
+            <circle cx={point().x} cy={point().y} r={DOT_R} fill={colorFor()(entry.node)} opacity="0.85" />
           )
         }}
       </For>
