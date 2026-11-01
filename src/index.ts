@@ -218,8 +218,6 @@ export type {
   ID,
   IdCallback,
   LabelLodLevel,
-  Logger,
-  LogLevel,
   Maybe,
   MaybePromise,
   NodeCallback,
@@ -241,6 +239,9 @@ export type {
   VisionReport,
   VisionScore,
 } from './types';
+
+// Logger utility
+export { createLogger, logger, setLogLevel, type LogLevel, type Logger } from './utils/logger';
 // Depth-cue primitives (LE.15)
 export { DEPTH_MODES, depthFade, depthTreatment } from './depth/DepthCues';
 export type { DepthTreatment } from './depth/DepthCues';

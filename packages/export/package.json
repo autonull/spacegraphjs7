@@ -41,6 +41,7 @@
     "@spacegraphjs/svg-renderer": "workspace:*"
   },
   "devDependencies": {
+    "jsdom": "^26.0.0",
     "solid-js": "^1.9.0",
     "typescript": "^7.0.0",
     "vite": "^8.0.0",
