@@ -4,6 +4,7 @@ import { navigationHelp, navigationResults } from "./navigation"
 import { rankedSearch } from "./search"
 import type { IconComponent } from "@spacegraphjs/shared"
 import type { I18n } from "@spacegraphjs/shared"
+import { useDebounce } from "@spacegraphjs/shared"
 
 export type GraphSearchProps = {
   model: GraphViewData
@@ -16,7 +17,8 @@ export type GraphSearchProps = {
 }
 
 export const GraphSearch = (props: GraphSearchProps) => {
-  const [query, setQuery] = createSignal(props.initialQuery ?? "")
+  const [queryRaw, setQueryRaw] = createSignal(props.initialQuery ?? "")
+  const query = useDebounce(queryRaw, 150)
   const [active, setActive] = createSignal(0)
   const results = createMemo(
     () => navigationResults(props.model, query()) ?? rankedSearch(props.model, query()),
@@ -97,7 +99,7 @@ export const GraphSearch = (props: GraphSearchProps) => {
           aria-expanded={results().length > 0}
           aria-controls="graph-search-results"
           aria-activedescendant={results().length > 0 ? `graph-search-option-${active()}` : undefined}
-          onInput={(event) => setQuery(event.currentTarget.value)}
+          onInput={(event) => setQueryRaw(event.currentTarget.value)}
         />
         <button
           type="button"
@@ -116,7 +118,7 @@ export const GraphSearch = (props: GraphSearchProps) => {
               <button
                 type="button"
                 class="flex items-center gap-1 text-left text-12-regular text-text-weak hover:text-text-strong"
-                onClick={() => setQuery(`g ${entry.key}`)}
+                onClick={() => setQueryRaw(`g ${entry.key}`)}
               >
                 <kbd class="rounded border border-border-weaker-base px-1 text-11-regular">g {entry.key}</kbd>
                 <span class="truncate">{props.t(entry.labelKey)}</span>
@@ -126,7 +128,7 @@ export const GraphSearch = (props: GraphSearchProps) => {
         </div>
       </Show>
 
-      <Show when={query().trim().length > 0}>
+      <Show when={queryRaw().trim().length > 0}>
         <div ref={list} class="max-h-72 overflow-y-auto border-t border-border-weaker-base">
           <Show
             when={results().length > 0}
