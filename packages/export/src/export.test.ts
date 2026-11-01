@@ -55,12 +55,12 @@ function createMockTheme(overrides: Partial<RenderTheme> = {}): RenderTheme {
     edge: {
       default: "#000000",
       "part-of": "#0000ff",
-      "calls": "#00ff00",
-      "reads": "#ff0000",
-      "writes": "#ff00ff",
+      calls: "#00ff00",
+      reads: "#ff0000",
+      writes: "#ff00ff",
       "depends-on": "#ffff00",
-      "next": "#00ffff",
-      "error": "#ff8800",
+      next: "#00ffff",
+      error: "#ff8800",
       "test-failure": "#8800ff",
     },
     ...overrides,
@@ -90,7 +90,7 @@ describe("standaloneHtml", () => {
     expect(html).toContain("abc123")
     expect(html).toContain('Test & "Special" chars') // HTML escaped in SVG
     // JSON is HTML-escaped in <pre> tag (" for quotes)
-    expect(html).toContain('{"nodes":[{"id":"1","label":"Test"}]}')
+    expect(html).toContain('{\u0026quot;nodes\u0026quot;:[{\u0026quot;id\u0026quot;:\u0026quot;1\u0026quot;,\u0026quot;label\u0026quot;:\u0026quot;Test\u0026quot;}]}')
   })
 
   it("uses theme colors in CSS", () => {
@@ -113,9 +113,9 @@ describe("standaloneHtml", () => {
   it("escapes HTML special characters in title and commit", () => {
     const html = standaloneHtml("<svg></svg>", "{}", createMockTheme(), "Session <1>", "commit & 'quote'", "timestamp")
 
-    // Title is HTML-escaped in <h1> tag (< for <)
-    expect(html).toContain("Session <1>")
-    expect(html).toContain("commit & &#039;quote&#039;")
+    // Title is HTML-escaped in <h1> tag (< becomes <)
+    expect(html).toContain("Session &lt;1&gt;")
+    expect(html).toContain("commit &amp; &#039;quote&#039;")
   })
 })
 
