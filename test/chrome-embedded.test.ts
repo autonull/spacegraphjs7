@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { EventEmitter } from '../src/core/EventEmitter';
 import { MinimapPlugin } from '../src/plugins/MinimapPlugin';
 import { ZoomUIPlugin } from '../src/plugins/ZoomUIPlugin';
-import { Renderer, WebGLRenderer } from '../src/index';
+import { WebGLRenderer } from '../src/index';
 
 interface FakeRenderer {
   domElement: HTMLCanvasElement;
@@ -55,12 +55,6 @@ function fakeSg() {
   };
   return sg;
 }
-
-describe('L1.33 renderer rename', () => {
-  it('exposes WebGLRenderer with Renderer kept as the same deprecated alias', () => {
-    expect(Renderer).toBe(WebGLRenderer);
-  });
-});
 
 describe('L1.27 MinimapPlugin embedding', () => {
   it('scopes the overlay to the container, honours enable/disable, and cleans up on dispose', () => {

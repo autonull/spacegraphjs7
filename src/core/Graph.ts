@@ -25,11 +25,6 @@ export type EdgeDirection = 'incoming' | 'outgoing' | 'both';
 export class Graph extends EventEmitter<GraphEventMap> {
   readonly nodes: Map<string, Node> = new Map();
   readonly edges: Map<string, Edge> = new Map();
-  getConnectedEdges = this.getEdgesForNode;
-  // Iteration helpers - alias for query
-  filterNodes = this.query;
-  export = this.toJSON;
-  fromJSON = this.from;
 
   #linkIndexCache?: Map<string, Node[]>;
 

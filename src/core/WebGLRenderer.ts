@@ -436,6 +436,3 @@ export class WebGLRenderer {
     this.sg.requestFrame?.();
   }
 }
-
-/** @deprecated Renamed to {@link WebGLRenderer}; resolve the contract/adapters via `@spacegraphjs/renderer`. */
-export { WebGLRenderer as Renderer };

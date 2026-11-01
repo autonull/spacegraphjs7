@@ -46,7 +46,7 @@ export {
   DEFAULT_SYSTEM_PLUGINS,
 } from './defaults';
 export { ErgonomicsAPI } from './Ergonomics';
-export { EventEmitter, EventSystem } from './events/EventSystem';
+export { EventEmitter } from './events/EventSystem';
 export { forwardGraphEvents } from './forwardEvents';
 export { Graph } from './Graph';
 export { Selection } from './Selection';
@@ -61,7 +61,7 @@ export {
   withPooledVector3,
 } from './pooling/ObjectPool';
 export { RenderContext } from './RenderContext';
-export { WebGLRenderer, Renderer } from './WebGLRenderer';
+export { WebGLRenderer } from './WebGLRenderer';
 export { Surface } from './Surface';
 export { BVH, SpatialIndex } from './spatial/SpatialIndex';
 export type { EdgeConstructor, NodeConstructor } from './TypeRegistry';

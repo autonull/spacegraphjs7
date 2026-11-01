@@ -17,12 +17,10 @@ export type { Edge, Node, SpaceGraph };
 export type { CardFacing, DepthMode, FitInsets, FitOptions, RenderEdge, RenderModel, RenderNode, RenderTheme };
 
 // ============= Utility Types =============
-export type Maybe<T> = T | null | undefined;
 export type MaybePromise<T> = T | Promise<T>;
 export type Constructor<T, Args extends unknown[] = unknown[]> = new (...args: Args) => T;
 export type Predicate<T> = (value: T) => boolean;
 export type Disposer = () => void;
-export type Nullable<T> = T | null;
 export type Optional<T> = Partial<T>;
 export type Awaited<T> = T extends Promise<infer U> ? U : T;
 export type ValueOf<T> = T[keyof T];
@@ -665,12 +663,8 @@ export type NodeFactoryFn = (id: string, ...args: unknown[]) => NodeSpec;
 export type EdgeFactoryFn = (source: string, target: string, ...args: unknown[]) => EdgeSpec;
 
 // ============= Shortcut Type Aliases =============
-export type ID = string;
-export type Coordinate2D = [number, number];
-export type Coordinate3D = [number, number, number];
-export type Position = Coordinate3D;
 export type Size = { width: number; height: number };
-export type Bounds = { min: Coordinate3D; max: Coordinate3D };
+export type Bounds = { min: Point3D; max: Point3D };
 
 // ============= Event Handler Type =============
 export type EventHandler<T = unknown> = (event: T) => void;

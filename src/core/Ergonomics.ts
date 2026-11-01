@@ -9,11 +9,6 @@ type NodePredicate = Predicate<Node>;
 
 export class ErgonomicsAPI {
   // ============= Graph Topology =============
-  adjacent = this.neighbors;
-  connections = this.getEdgesForNode;
-  line = this.edge;
-  wire = this.edge;
-
   constructor(readonly sg: SpaceGraph) {}
 
   get first(): Node | undefined {
@@ -35,10 +30,6 @@ export class ErgonomicsAPI {
 
   get isEmpty(): boolean {
     return this.sg.graph.nodes.size === 0;
-  }
-
-  get notEmpty(): boolean {
-    return !this.isEmpty;
   }
 
   get bounds(): { min: Node; max: Node } | null {
@@ -112,10 +103,6 @@ export class ErgonomicsAPI {
   forEdges(callback: (edge: Edge) => void): void {
     this.sg.graph.forEachEdge(callback);
   }
-
-  forEach = this.forNodes;
-
-  each = this.forNodes;
 
   // ============= Array Methods =============
   map<T>(callback: (node: Node) => T): T[] {
@@ -321,10 +308,6 @@ export class ErgonomicsAPI {
     );
   }
 
-  shift(id: string, dx: number, dy: number, dz = 0): Node | null {
-    return this.translate(id, dx, dy, dz);
-  }
-
   rotate(id: string, x: number, y: number, z: number): Node | null {
     return this.withNode(id, (node) => node.updateSpec({ rotation: [x, y, z] }));
   }
@@ -337,16 +320,8 @@ export class ErgonomicsAPI {
     return this.withNode(id, (node) => node.updateSpec({ label: text }));
   }
 
-  text$(id: string, text: string): Node | null {
-    return this.label(id, text);
-  }
-
   color(id: string, color: string | number): Node | null {
     return this.withNode(id, (node) => node.updateSpec({ data: { color } }));
-  }
-
-  fill(id: string, color: string | number): Node | null {
-    return this.color(id, color);
   }
 
   // ============= Visibility =============
@@ -364,10 +339,6 @@ export class ErgonomicsAPI {
     const visible = !(node.data as Record<string, unknown>).visible;
     node.updateSpec({ data: { visible } });
     return visible;
-  }
-
-  toggle(nodeId: string): boolean {
-    return this.toggleVisibility(nodeId);
   }
 
   opacity(id: string, opacity: number): Node | null {
@@ -427,10 +398,6 @@ export class ErgonomicsAPI {
     return this.move(id, x, y, z);
   }
 
-  pos(id: string, x: number, y: number, z = 0): Node | null {
-    return this.move(id, x, y, z);
-  }
-
   cx(id: string, x: number): Node | null {
     return this.withNode(id, (node) => node.updatePosition(x, node.position.y, node.position.z));
   }
@@ -472,7 +439,7 @@ export class ErgonomicsAPI {
     return this;
   }
 
-  deselectAll(): this {
+  clearSelection(): this {
     this.sg.selection.clear();
     return this;
   }

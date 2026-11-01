@@ -151,7 +151,7 @@ describe('SpaceGraphJS v7.0 Integration', () => {
         edges: [{ id: 'edge1', type: 'TestEdge', source: 'node1', target: 'node2' }],
       };
 
-      graph.fromJSON(spec);
+      graph.from(spec);
 
       expect(graph.nodeCount).toBe(2);
       expect(graph.edgeCount).toBe(1);
@@ -176,7 +176,7 @@ describe('SpaceGraphJS v7.0 Integration', () => {
     });
 
     it('should remove connected edges when removing node', () => {
-      graph.fromJSON({
+      graph.from({
         nodes: [
           { id: 'n1', type: 'TestNode', position: [0, 0, 0] as [number, number, number] },
           {
@@ -262,7 +262,7 @@ describe('SpaceGraphJS v7.0 Integration', () => {
 
       // Create a simple graph
       const testGraph = new Graph();
-      testGraph.fromJSON({
+      testGraph.from({
         nodes: [
           { id: 'n1', type: 'TestNode', position: [0, 0, 0] as [number, number, number] },
           {
@@ -326,7 +326,7 @@ describe('SpaceGraphJS v7.0 Integration', () => {
 
   describe('Force Layout', () => {
     it('should apply force-directed layout', async () => {
-      graph.fromJSON({
+      graph.from({
         nodes: [
           { id: 'n1', type: 'TestNode', position: [0, 0, 0] as [number, number, number] },
           {
