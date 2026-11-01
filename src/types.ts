@@ -124,12 +124,54 @@ export interface ShapeNodeData extends CoreNodeData {
 }
 
 export interface HtmlNodeData extends CoreNodeData {
+  /** Raw HTML content to render inside the node. Takes precedence over `content`. */
   html?: string;
+  /** Plain text content; used as fallback when `html` is not set. */
+  content?: string;
+  /** CSS class name(s) for the node's container element. */
   className?: string;
+  /** Pointer events mode for the container. Default: 'auto'. */
   pointerEvents?: 'none' | 'auto';
+  /** LOD levels for label rendering at different distances. */
   labelLod?: LabelLodLevel[];
-  /** Inline container overrides; hosts use this to hand the renderer host text colours. */
+  /** Inline style overrides for the container element. */
   style?: Record<string, string>;
+  /** Background color of the node (CSS color string). Default: theme-based blue. */
+  backgroundColor?: string | number;
+  /** Border color of the node (CSS color string). Default: white. */
+  borderColor?: string | number;
+  /** Border width in pixels. Default: 2. */
+  borderWidth?: number;
+  /** Border radius in pixels. Default: 8. */
+  borderRadius?: number | string;
+  /** Padding inside the node. Default: '0'. */
+  padding?: string | number;
+  /** Font size for text content. Default: inherited. */
+  fontSize?: number | string;
+  /** Line height for text content. Default: inherited. */
+  lineHeight?: number | string;
+  /** Text color. Default: white. */
+  color?: string | number;
+  /** Whether to render raw HTML without default card styling. Default: false. */
+  useRawHtml?: boolean;
+  /** Whether the content is editable. Default: false. */
+  editable?: boolean;
+  /** Whether this node acts as a group container. Default: false. */
+  group?: boolean;
+  /** Whether to show built-in control buttons (zoom, resize, delete). Default: true. */
+  showControls?: boolean;
+  /** Title text for the node's title bar. */
+  title?: string;
+  /** Theme for the title bar: 'dark' or 'light'. Default: 'dark'. */
+  theme?: 'dark' | 'light';
+  /** Content scale factor for zooming the inner content. Default: 1. */
+  contentScale?: number;
+  /** Whether the node should billboard (face the camera). Default: false. */
+  billboard?: boolean;
+  /** Initial width in pixels. Default: 200. */
+  width?: number;
+  /** Initial height in pixels. Default: 100. */
+  height?: number;
 }
 
 export interface ImageNodeData extends CoreNodeData {

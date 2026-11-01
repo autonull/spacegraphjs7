@@ -46,11 +46,6 @@
       "import": "./dist/GraphZoomControl.js",
       "default": "./dist/GraphZoomControl.js"
     },
-    "./GraphExportControl": {
-      "types": "./dist/GraphExportControl.d.ts",
-      "import": "./dist/GraphExportControl.js",
-      "default": "./dist/GraphExportControl.js"
-    },
     "./GraphQuestionsControl": {
       "types": "./dist/GraphQuestionsControl.d.ts",
       "import": "./dist/GraphQuestionsControl.js",
@@ -77,13 +72,12 @@
   },
   "peerDependencies": {
     "@spacegraphjs/renderer": "^8.0.0",
-    "@spacegraphjs/svg-renderer": "^8.0.0",
     "solid-js": "^1.9.0"
   },
   "dependencies": {
     "@spacegraphjs/renderer": "workspace:*",
     "@spacegraphjs/shared": "workspace:*",
-    "@spacegraphjs/svg-renderer": "workspace:*"
+    "@spacegraphjs/export": "workspace:*"
   },
   "devDependencies": {
     "solid-js": "^1.9.0",

@@ -13,7 +13,7 @@ import { GraphTimeControl } from "./GraphTimeControl"
 import { GraphDrawControl } from "./GraphDrawControl"
 import { GraphShowControl } from "./GraphShowControl"
 import { GraphZoomControl } from "./GraphZoomControl"
-import { GraphExportControl } from "./GraphExportControl"
+import { GraphExportControl } from "@spacegraphjs/export"
 import { GraphQuestionsControl } from "./GraphQuestionsControl"
 import type { RendererCapabilities, RenderModel } from "@spacegraphjs/renderer"
 import type { GraphViewData, DepthMode, Layout, GraphSide, GraphArrangement, GraphFacets, FacetCounts, DetailMode, DetailFraming, ZoomLevel } from "@spacegraphjs/shared/types"
@@ -466,7 +466,8 @@ function GraphToolbarCommandControlsInner(props: GraphToolbarViewControlsProps):
           onExport={onExport}
           renderModel={renderModel}
           onCopyView={onCopyView}
-          i18n={i18n}
+          t={i18n.t}
+          plural={i18n.plural}
           Icon={renderIcon}
           Popover={Popover}
         />

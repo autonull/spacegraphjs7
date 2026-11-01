@@ -10,7 +10,6 @@ export { GraphTimeControl, type GraphTimeControlProps } from "./GraphTimeControl
 export { GraphDrawControl, type GraphDrawControlProps } from "./GraphDrawControl"
 export { GraphShowControl, type GraphShowControlProps } from "./GraphShowControl"
 export { GraphZoomControl, type GraphZoomControlProps } from "./GraphZoomControl"
-export { GraphExportControl, type GraphExportControlProps } from "./GraphExportControl"
 export { GraphQuestionsControl, type GraphQuestionsControlProps } from "./GraphQuestionsControl"
 export { ToolbarMenu, type ToolbarMenuProps } from "./ToolbarMenu"
 export { useToolbarState } from "./hooks"

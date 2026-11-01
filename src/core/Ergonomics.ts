@@ -508,7 +508,7 @@ export class ErgonomicsAPI {
   }
 
   zoom(): this {
-    this.sg.zoomFit();
+    this.sg.fitView();
     return this;
   }
 

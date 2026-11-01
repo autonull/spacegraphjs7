@@ -254,12 +254,65 @@ export type {
 // Convenience factory functions
 import { SpaceGraph } from './SpaceGraph';
 import { graph } from './builder';
+import type { SpaceGraphOptions, GraphSpec } from './types';
 
 export const createSpaceGraph = (
   container: HTMLElement,
-  options?: import('./types').SpaceGraphOptions
+  options?: SpaceGraphOptions
 ) => new SpaceGraph(container, options);
 export const createGraph = () => graph();
+
+// SimpleGraph: minimal entry point for static graph dashboards
+// No chrome, no ergonomics, no physics, no vision — just force layout + HTML nodes + edges + camera + events
+export interface SimpleGraphOptions extends Omit<SpaceGraphOptions, 'chrome' | 'plugins'> {
+  /** Force layout options */
+  layout?: {
+    spacing?: number;
+    iterations?: number;
+    seed?: number;
+  };
+}
+
+/**
+ * Create a minimal graph for dashboards: force layout, HTML nodes, edges, camera, events.
+ * @example
+ * ```ts
+ * const sg = await SimpleGraph.create('#container', { nodes, edges });
+ * sg.on('node:click', ({ node }) => console.log(node.id));
+ * ```
+ */
+export const SimpleGraph = {
+  async create(
+    container: HTMLElement | string,
+    spec: GraphSpec,
+    options: SimpleGraphOptions = {}
+  ): Promise<SpaceGraph> {
+    const element = typeof container === 'string' ? document.querySelector(container) : container;
+    if (!element) throw new Error(`Container not found: ${container}`);
+
+    const { layout = {}, ...sgOptions } = options;
+    const sg = new SpaceGraph(element as HTMLElement, {
+      ...sgOptions,
+      chrome: false,
+      plugins: [],
+      render: { ...(sgOptions.render ?? {}), depth: 'flat', renderMode: 'on-demand' },
+    });
+    await sg.init();
+    sg.loadSpec(spec).render();
+
+    // Apply force layout once
+    if (spec.nodes && spec.nodes.length > 0) {
+      await sg.layoutOnce('force-layout', {
+        spacing: layout.spacing ?? 120,
+        iterations: layout.iterations ?? 200,
+        seed: layout.seed ?? 42,
+        randomize: true,
+      });
+    }
+
+    return sg;
+  },
+};
 
 // Shorthand factories for quick graph creation
 export const sg = createSpaceGraph;
