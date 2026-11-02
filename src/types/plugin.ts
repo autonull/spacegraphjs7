@@ -4,10 +4,10 @@ import type { Edge } from '../edges/Edge';
 import type { Node } from '../nodes/Node';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { Graph } from '../core/Graph';
-import type { EventSystem } from '../core/events/EventSystem';
+import type { EventEmitter } from '../core/EventEmitter';
 
 export interface PluginLifecycle {
-  init?(sg: SpaceGraph, graph: Graph, events: EventSystem): void | Promise<void>;
+  init?(sg: SpaceGraph, graph: Graph, events: EventEmitter): void | Promise<void>;
 
   onPreRender?(delta: number): void;
 

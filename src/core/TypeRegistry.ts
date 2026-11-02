@@ -64,22 +64,24 @@ export class TypeRegistry {
 
   registerNode(type: string, ctor: NodeConstructor): this {
     this.nodeTypes.set(type, ctor);
+    this.#registerTypeAlias(ctor, this.nodeTypes);
     return this;
   }
 
   registerEdge(type: string, ctor: EdgeConstructor): this {
     this.edgeTypes.set(type, ctor);
+    this.#registerTypeAlias(ctor, this.edgeTypes);
     return this;
   }
 
   // Register multiple at once
   registerNodes(types: Record<string, NodeConstructor>): this {
-    this.nodeTypes.setAll(types);
+    for (const [type, ctor] of Object.entries(types)) this.registerNode(type, ctor);
     return this;
   }
 
   registerEdges(types: Record<string, EdgeConstructor>): this {
-    this.edgeTypes.setAll(types);
+    for (const [type, ctor] of Object.entries(types)) this.registerEdge(type, ctor);
     return this;
   }
 
@@ -190,6 +192,15 @@ export class TypeRegistry {
   }): void {
     this.nodeTypes.restore(snapshot.nodes);
     this.edgeTypes.restore(snapshot.edges);
+  }
+
+  #registerTypeAlias(ctor: { typeName?: string }, table: TypeTable<any>): void {
+    if (
+      Object.prototype.hasOwnProperty.call(ctor, 'typeName') &&
+      typeof ctor.typeName === 'string'
+    ) {
+      table.set(ctor.typeName, ctor);
+    }
   }
 }
 

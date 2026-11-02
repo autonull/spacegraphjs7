@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Layout } from '../src/builder/factories';
-import { EventSystem } from '../src/core/events/EventSystem';
+import { EventEmitter } from '../src/core/EventEmitter';
 import { Graph } from '../src/core/Graph';
 import { PluginManager } from '../src/core/PluginManager';
 import { ShapeNode } from '../src/nodes/ShapeNode';
@@ -9,7 +9,7 @@ import type { SpaceGraph } from '../src/SpaceGraph';
 
 const makeHost = (ids: string[]) => {
   const graph = new Graph();
-  const events = new EventSystem();
+  const events = new EventEmitter();
 
   for (const id of ids) graph.addNode(new ShapeNode(undefined, { id, type: 'ShapeNode' }));
 

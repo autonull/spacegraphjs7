@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
-import { EventSystem } from '../src/core/events/EventSystem';
+import { EventEmitter } from '../src/core/EventEmitter';
 
-describe('EventSystem', () => {
+describe('EventEmitter', () => {
   it('should register and emit events', () => {
-    const system = new EventSystem();
+    const system = new EventEmitter();
     const handlerSpy = vi.fn();
 
     system.on('node:added', handlerSpy);
@@ -16,7 +16,7 @@ describe('EventSystem', () => {
   });
 
   it('should unregister events', () => {
-    const system = new EventSystem();
+    const system = new EventEmitter();
     const handlerSpy = vi.fn();
     system.on('edge:removed', handlerSpy);
     system.off('edge:removed', handlerSpy);
@@ -27,7 +27,7 @@ describe('EventSystem', () => {
   });
 
   it('should clear all event listeners', () => {
-    const system = new EventSystem();
+    const system = new EventEmitter();
     const handler1 = vi.fn();
     const handler2 = vi.fn();
 
@@ -46,7 +46,7 @@ describe('EventSystem', () => {
   it('should batch emit events and fire all batched events sequentially per type', () => {
     vi.useFakeTimers();
 
-    const system = new EventSystem();
+    const system = new EventEmitter();
 
     vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb: FrameRequestCallback) => {
       return setTimeout(() => cb(Date.now()), 16) as any;

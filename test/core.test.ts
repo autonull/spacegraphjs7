@@ -4,7 +4,7 @@
 import { MathPool, SpatialIndex, TypeRegistry } from 'spacegraphjs/core';
 import * as THREE from 'three';
 import { describe, expect, it, vi } from 'vitest';
-import { EventSystem } from '../src/core/events/EventSystem';
+import { EventEmitter } from '../src/core/EventEmitter';
 import { Graph } from '../src/core/Graph';
 import { Edge } from '../src/edges/Edge';
 import { Node } from '../src/nodes/Node';
@@ -104,10 +104,10 @@ describe('Graph', () => {
     });
   });
 
-  describe('EventSystem', () => {
+  describe('EventEmitter', () => {
     it('should subscribe and emit events', async () => {
       return new Promise<void>((resolve) => {
-        const events = new EventSystem();
+        const events = new EventEmitter();
 
         events.on('node:added', (event) => {
           expect(event.node).toBe('test-node');
@@ -120,7 +120,7 @@ describe('Graph', () => {
     });
 
     it('should dispose subscriptions', () => {
-      const events = new EventSystem();
+      const events = new EventEmitter();
       const handler = vi.fn();
 
       const subscription = events.on('node:added', handler);
@@ -133,7 +133,7 @@ describe('Graph', () => {
 
     it('should batch events', async () => {
       return new Promise<void>((resolve) => {
-        const events = new EventSystem();
+        const events = new EventEmitter();
         const received: number[] = [];
 
         events.on('interaction:drag', (event) => {

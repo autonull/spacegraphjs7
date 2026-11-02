@@ -1,6 +1,6 @@
 import { Ray } from 'three';
-import type { EventSystem } from '../core/events/EventSystem';
 import type { SpaceGraph } from '../SpaceGraph';
+import type { EventEmitter, SpaceGraphEvents } from '../core';
 import { clientToNdc } from '../utils/projection';
 import { type Finger, type Fingering, FingerManager } from './Fingering';
 
@@ -87,7 +87,7 @@ export interface InputBinding {
 
 export interface InputContext {
   sg: SpaceGraph;
-  events: EventSystem;
+  events: EventEmitter<SpaceGraphEvents>;
   getState: () => InputState;
   setActiveInput: (source: string) => void;
   disableInput: (source: string) => void;
@@ -116,13 +116,13 @@ export interface InputSourceConfig {
 
 export interface InputManagerOptions {
   sg: SpaceGraph;
-  events: EventSystem;
+  events: EventEmitter<SpaceGraphEvents>;
   sources?: InputSourceConfig[];
 }
 
 export class InputManager {
   readonly sg: SpaceGraph;
-  readonly events: EventSystem;
+  readonly events: EventEmitter<SpaceGraphEvents>;
   readonly state: InputState;
   private sources: Map<string, InputSource> = new Map();
   private actions: Map<string, InputAction> = new Map();

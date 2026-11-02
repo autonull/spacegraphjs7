@@ -12,7 +12,7 @@ import { ForceLayout } from 'spacegraphjs/plugins';
 import { VisionSystem } from 'spacegraphjs/vision';
 import * as THREE from 'three';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { EventSystem } from '../src/core/events/EventSystem';
+import { EventEmitter } from '../src/core/EventEmitter';
 import { Graph } from '../src/core/Graph';
 import { Edge } from '../src/edges/Edge';
 import { Node } from '../src/nodes/Node';
@@ -107,7 +107,7 @@ class TestEdge extends Edge {
 describe('SpaceGraphJS v7.0 Integration', () => {
   let graph: Graph;
   let mockSg: SpaceGraph;
-  let events: EventSystem;
+  let events: EventEmitter;
   let registry: TypeRegistry;
 
   beforeEach(() => {
@@ -115,7 +115,7 @@ describe('SpaceGraphJS v7.0 Integration', () => {
     mockSg = {
       graph: null as any,
       renderer: { scene: new THREE.Scene() } as any,
-      events: new EventSystem(),
+      events: new EventEmitter(),
     } as any;
 
     graph = new Graph(mockSg);
@@ -129,7 +129,7 @@ describe('SpaceGraphJS v7.0 Integration', () => {
 
   afterEach(() => {
     graph.clear();
-    events.clear();
+    events.removeAllListeners();
     registry.clear();
   });
 
@@ -289,7 +289,7 @@ describe('SpaceGraphJS v7.0 Integration', () => {
   describe('Plugin System', () => {
     it('should register and initialize plugins', async () => {
       const testGraph = new Graph();
-      const testEvents = new EventSystem();
+      const testEvents = new EventEmitter();
       const mockSg = { graph: testGraph, events: testEvents } as any;
       const plugins = new PluginManager(mockSg);
 
@@ -301,7 +301,7 @@ describe('SpaceGraphJS v7.0 Integration', () => {
 
     it('should call plugin hooks', async () => {
       const testGraph = new Graph();
-      const testEvents = new EventSystem();
+      const testEvents = new EventEmitter();
       const mockSg = { graph: testGraph, events: testEvents } as any;
       const plugins = new PluginManager(mockSg);
 

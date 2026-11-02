@@ -3,7 +3,7 @@ import type { Node } from '../nodes/Node';
 import type { SpaceGraph } from '../SpaceGraph';
 import { wrapError } from '../utils/error';
 import { createLogger } from '../utils/logger';
-import type { EventSystem } from './events/EventSystem';
+import type { EventEmitter, SpaceGraphEvents } from './EventEmitter';
 import type { Graph } from './Graph';
 import { TypeRegistry } from './TypeRegistry';
 
@@ -12,7 +12,7 @@ export interface Plugin {
   readonly name: string;
   readonly version: string;
 
-  init(sg: SpaceGraph, graph: Graph, events: EventSystem): void | Promise<void>;
+  init(sg: SpaceGraph, graph: Graph, events: EventEmitter<SpaceGraphEvents>): void | Promise<void>;
 
   onPreRender?(delta: number): void;
 
@@ -168,7 +168,7 @@ export class PluginManager {
   }
 
   registerNodeType(type: string, cls: import('./TypeRegistry').NodeConstructor): void {
-    this.registerType(type, cls, (name, ctor) => TypeRegistry.getInstance().registerNode(name, ctor));
+    TypeRegistry.getInstance().registerNode(type, cls);
   }
 
   getNodeType(type: string): import('./TypeRegistry').NodeConstructor | undefined {
@@ -176,7 +176,7 @@ export class PluginManager {
   }
 
   registerEdgeType(type: string, cls: import('./TypeRegistry').EdgeConstructor): void {
-    this.registerType(type, cls, (name, ctor) => TypeRegistry.getInstance().registerEdge(name, ctor));
+    TypeRegistry.getInstance().registerEdge(type, cls);
   }
 
   getEdgeType(type: string): import('./TypeRegistry').EdgeConstructor | undefined {
@@ -196,25 +196,5 @@ export class PluginManager {
       if (predicate(plugin)) result.push(plugin);
     }
     return result;
-  }
-
-  /**
-   * Register a type under the name the caller gave it, and again under the class's own static
-   * `typeName` (to survive minification). Inherited static fields must be ignored: subclasses
-   * inherit their base `typeName`, so honouring them would make the last subclass replace the base
-   * constructor.
-   */
-  private registerType<T>(
-    type: string,
-    cls: T,
-    register: (type: string, ctor: T) => unknown
-  ): void {
-    register(type, cls);
-    if (
-      Object.prototype.hasOwnProperty.call(cls, 'typeName') &&
-      typeof (cls as { typeName?: unknown }).typeName === 'string'
-    ) {
-      register((cls as unknown as { typeName: string }).typeName, cls);
-    }
   }
 }

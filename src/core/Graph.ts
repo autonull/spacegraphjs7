@@ -237,20 +237,6 @@ export class Graph extends EventEmitter<GraphEventMap> {
     return [...this.nodes.values()].filter(predicate);
   }
 
-  queryByType(type: string): Node[] {
-    return this.query((node) => node.type === type);
-  }
-
-  queryByLabel(label: string, exact = true): Node[] {
-    return this.query(
-      exact ? (node) => node.label === label : (node) => !!node.label?.includes(label)
-    );
-  }
-
-  queryByData(predicate: (data: Record<string, unknown>) => boolean): Node[] {
-    return this.query((node) => predicate(node.data));
-  }
-
   // Find single result
   findNode(predicate: (node: Node) => boolean): Node | undefined {
     return [...this.nodes.values()].find(predicate);
@@ -572,10 +558,6 @@ export class Graph extends EventEmitter<GraphEventMap> {
   }
 
   // ============= Node Queries =============
-  getNodesByData(predicate: (data: NodeData) => boolean): Node[] {
-    return this.query((node) => predicate(node.data));
-  }
-
   getLeafNodes(): Node[] {
     return this.#nodesWithoutEdgeOn('source');
   }

@@ -19,7 +19,7 @@ import {
 } from './core/defaults';
 
 import { ErgonomicsAPI } from './core/Ergonomics';
-import { EventSystem } from './core/events/EventSystem';
+import { EventEmitter } from './core/EventEmitter';
 // SpaceGraph.ts - Core graph visualization engine
 import { forwardGraphEvents } from './core/forwardEvents';
 import { Graph } from './core/Graph';
@@ -66,7 +66,7 @@ export class SpaceGraph {
   public graph!: Graph;
   public pluginManager!: PluginManager;
   public cameraControls!: CameraControls;
-  public events!: EventSystem;
+  public events!: EventEmitter<SpaceGraphEvents>;
   public vision!: VisionManager;
   public poolManager!: ObjectPoolManager<unknown>;
   public input!: InputManager;
@@ -828,7 +828,7 @@ export class SpaceGraph {
   #init(): void {
     this.#continuousMode = (this.options.render?.renderMode ?? 'on-demand') === 'continuous';
     this.poolManager = new ObjectPoolManager();
-    this.events = new EventSystem<SpaceGraphEvents>();
+    this.events = new EventEmitter<SpaceGraphEvents>();
     this.vision = new VisionManager(this);
     this.pluginManager = new PluginManager(this);
     this.renderer = new WebGLRenderer(this, this.container, {

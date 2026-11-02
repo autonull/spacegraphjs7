@@ -46,7 +46,7 @@ export {
   DEFAULT_SYSTEM_PLUGINS,
 } from './defaults';
 export { ErgonomicsAPI } from './Ergonomics';
-export { EventEmitter } from './events/EventSystem';
+export { EventEmitter, type Disposable } from './EventEmitter';
 export { forwardGraphEvents } from './forwardEvents';
 export { Graph } from './Graph';
 export { Selection } from './Selection';
