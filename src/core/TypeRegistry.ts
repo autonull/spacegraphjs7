@@ -5,56 +5,10 @@ import type { EdgeConstructor, EdgeSpec, NodeConstructor, NodeSpec } from '../ty
 
 export type { EdgeConstructor, NodeConstructor };
 
-/** One table of registered types: the constructors, keyed by type name. */
-class TypeTable<T> {
-    private readonly types = new Map<string, T>();
-
-    set(type: string, ctor: T): void {
-        this.types.set(type, ctor);
-    }
-
-    setAll(types: Record<string, T>): void {
-        for (const [type, ctor] of Object.entries(types)) this.types.set(type, ctor);
-    }
-
-    delete(type: string): boolean {
-        return this.types.delete(type);
-    }
-
-    get(type: string): T | undefined {
-        return this.types.get(type);
-    }
-
-    has(type: string): boolean {
-        return this.types.has(type);
-    }
-
-    names(): string[] {
-        return [...this.types.keys()];
-    }
-
-    list(): Array<{ type: string; ctor: T }> {
-        return [...this.types.entries()].map(([type, ctor]) => ({ type, ctor }));
-    }
-
-    clear(): void {
-        this.types.clear();
-    }
-
-    copy(): Map<string, T> {
-        return new Map(this.types);
-    }
-
-    restore(types: Map<string, T>): void {
-        this.types.clear();
-        for (const [type, ctor] of types) this.types.set(type, ctor);
-    }
-}
-
 export class TypeRegistry {
     private static instance: TypeRegistry;
-    private nodeTypes = new TypeTable<NodeConstructor>();
-    private edgeTypes = new TypeTable<EdgeConstructor>();
+    private readonly nodeTypes = new Map<string, NodeConstructor>();
+    private readonly edgeTypes = new Map<string, EdgeConstructor>();
 
     private constructor() {}
 
@@ -111,20 +65,20 @@ export class TypeRegistry {
     }
 
     getNodeTypes(): string[] {
-        return this.nodeTypes.names();
+        return [...this.nodeTypes.keys()];
     }
 
     getEdgeTypes(): string[] {
-        return this.edgeTypes.names();
+        return [...this.edgeTypes.keys()];
     }
 
     // Get all types as arrays
     getNodeTypeList(): Array<{ type: string; ctor: NodeConstructor }> {
-        return this.nodeTypes.list();
+        return [...this.nodeTypes.entries()].map(([type, ctor]) => ({ type, ctor }));
     }
 
     getEdgeTypeList(): Array<{ type: string; ctor: EdgeConstructor }> {
-        return this.edgeTypes.list();
+        return [...this.edgeTypes.entries()].map(([type, ctor]) => ({ type, ctor }));
     }
 
     // Check if a spec type exists (handles aliases)
@@ -168,18 +122,20 @@ export class TypeRegistry {
 
     // Snapshot/restore for testing
     snapshot(): { nodes: Map<string, NodeConstructor>; edges: Map<string, EdgeConstructor> } {
-        return { nodes: this.nodeTypes.copy(), edges: this.edgeTypes.copy() };
+        return { nodes: new Map(this.nodeTypes), edges: new Map(this.edgeTypes) };
     }
 
     restore(snapshot: {
         nodes: Map<string, NodeConstructor>;
         edges: Map<string, EdgeConstructor>;
     }): void {
-        this.nodeTypes.restore(snapshot.nodes);
-        this.edgeTypes.restore(snapshot.edges);
+        this.nodeTypes.clear();
+        this.edgeTypes.clear();
+        for (const [type, ctor] of snapshot.nodes) this.nodeTypes.set(type, ctor);
+        for (const [type, ctor] of snapshot.edges) this.edgeTypes.set(type, ctor);
     }
 
-    #registerTypeAlias(ctor: NodeConstructor | EdgeConstructor, table: TypeTable<any>): void {
+    #registerTypeAlias(ctor: NodeConstructor | EdgeConstructor, table: Map<string, any>): void {
         const typeName = (ctor as { typeName?: string }).typeName;
         if (typeof typeName === 'string') {
             table.set(typeName, ctor);

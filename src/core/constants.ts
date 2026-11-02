@@ -1,24 +1,33 @@
 // Core constants - consolidated and optimized
-// Lazy-evaluated constants for better tree-shaking
+// Single namespace for all constants to improve tree-shaking and discoverability
 
-// ============= Math Constants =============
-export const DEG2RAD = Math.PI / 180;
-export const RAD2DEG = 180 / Math.PI;
-export const PI = Math.PI;
-export const TAU = PI * 2;
-export const EPSILON = 1e-6;
-
-// ============= Animation Duration =============
-export const AnimationDuration = Object.freeze({
-    FAST: 0.3,
-    DEFAULT: 0.5,
-    SLOW: 1.0,
-    LAYOUT: 1.5,
-    SNAP: 0.15,
-    SPRING: 0.8,
+export const MathConst = Object.freeze({
+    DEG2RAD: Math.PI / 180,
+    RAD2DEG: 180 / Math.PI,
+    PI: Math.PI,
+    TAU: Math.PI * 2,
+    EPSILON: 1e-6,
 } as const);
 
-export const ZoomConfig = Object.freeze({
+export const Animation = Object.freeze({
+    Duration: Object.freeze({
+        FAST: 0.3,
+        DEFAULT: 0.5,
+        SLOW: 1.0,
+        LAYOUT: 1.5,
+        SNAP: 0.15,
+        SPRING: 0.8,
+    }),
+    Easing: Object.freeze({
+        DEFAULT: 'quadOut',
+        SMOOTH: 'sineOut',
+        BOUNCE: 'bounceOut',
+        ELASTIC: 'elasticOut',
+        SNAP: 'backOut',
+    }),
+} as const);
+
+export const Zoom = Object.freeze({
     MULTIPLIER: 1.5,
     MIN_RADIUS: 150,
     MAX_RADIUS: 5000,
@@ -27,21 +36,22 @@ export const ZoomConfig = Object.freeze({
     SMOOTH: 0.08,
 } as const);
 
-export const FingeringPriority = Object.freeze({
-    CAMERA: 40,
-    PINCH_ZOOM: 50,
-    HOVER: 60,
-    WIDGET: 110,
-    RESIZE: 200,
-} as const);
-
-export const InteractionThresholds = Object.freeze({
-    CONTEXT_MENU: 5,
-    BOX_SELECT_MIN: 5,
-    DRAG_START: 5,
-    DOUBLE_CLICK_MS: 500,
-    LONG_PRESS_MS: 500,
-    TAP_TOLERANCE: 10,
+export const Interaction = Object.freeze({
+    Priority: Object.freeze({
+        CAMERA: 40,
+        PINCH_ZOOM: 50,
+        HOVER: 60,
+        WIDGET: 110,
+        RESIZE: 200,
+    }),
+    Thresholds: Object.freeze({
+        CONTEXT_MENU: 5,
+        BOX_SELECT_MIN: 5,
+        DRAG_START: 5,
+        DOUBLE_CLICK_MS: 500,
+        LONG_PRESS_MS: 500,
+        TAP_TOLERANCE: 10,
+    }),
 } as const);
 
 export const Performance = Object.freeze({
@@ -84,16 +94,14 @@ export const WCAG = Object.freeze({
     UI_COMPONENTS: 3.0,
 } as const);
 
-// Spatial constants
 export const Spatial = Object.freeze({
     NEAR_DISTANCE: 100,
     FAR_DISTANCE: 5000,
-    PICKING_threshold: 5,
+    PICKING_THRESHOLD: 5,
     AUTO_CULLING_DISTANCE: 2000,
     LOD_DISTANCE: [200, 500, 1000, 2000],
 } as const);
 
-// Node defaults
 export const NodeDefaults = Object.freeze({
     SIZE: 50,
     HEIGHT: 50,
@@ -105,7 +113,6 @@ export const NodeDefaults = Object.freeze({
     SELECTED_COLOR: 0x00ff88,
 } as const);
 
-// Layout defaults
 export const LayoutDefaults = Object.freeze({
     STRENGTH: -100,
     DISTANCE: 200,
@@ -115,19 +122,41 @@ export const LayoutDefaults = Object.freeze({
     MAX_SPEED: 50,
 } as const);
 
-// Animation easing presets
-export const Easing = Object.freeze({
-    DEFAULT: 'quadOut',
-    SMOOTH: 'sineOut',
-    BOUNCE: 'bounceOut',
-    ELASTIC: 'elasticOut',
-    SNAP: 'backOut',
-} as const);
-
-// Input configuration
-export const InputConfig = Object.freeze({
+export const Input = Object.freeze({
     ZOOM_SPEED_FACTOR: 0.005,
     PAN_SPEED_FACTOR: 0.002,
     ORBIT_SPEED_FACTOR: 0.005,
     WHEEL_MULTIPLIER: 1,
-});
+} as const);
+
+// Re-export commonly used constants at top level for backward compatibility
+export const {
+    DEG2RAD,
+    RAD2DEG,
+    PI,
+    TAU,
+    EPSILON,
+} = MathConst;
+
+export const {
+    Duration: AnimationDuration,
+    Easing,
+} = Animation;
+
+export const {
+    MULTIPLIER: ZOOM_MULTIPLIER,
+    MIN_RADIUS: ZOOM_MIN_RADIUS,
+    MAX_RADIUS: ZOOM_MAX_RADIUS,
+    DEFAULT_RADIUS: ZOOM_DEFAULT_RADIUS,
+    SPEED: ZOOM_SPEED,
+    SMOOTH: ZOOM_SMOOTH,
+} = Zoom;
+
+export const {
+    Priority: FingeringPriority,
+    Thresholds: InteractionThresholds,
+} = Interaction;
+
+// Backward compatibility exports
+export const InputConfig = Interaction;
+export const ZoomConfig = Zoom;
