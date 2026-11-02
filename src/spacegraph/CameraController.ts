@@ -9,6 +9,14 @@ export class CameraController {
     #lastZoom = -1;
     #lastCenter: [number, number, number] = [Number.NaN, Number.NaN, Number.NaN];
 
+    get lastZoom(): number {
+        return this.#lastZoom;
+    }
+
+    get lastCenter(): [number, number, number] {
+        return this.#lastCenter;
+    }
+
     constructor(readonly sg: SpaceGraph) {}
 
     #minZoomFor(minScale: number | undefined): number | undefined {

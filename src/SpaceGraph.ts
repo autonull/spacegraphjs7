@@ -48,8 +48,6 @@ import { CameraController } from './spacegraph/CameraController';
 import { AnimationController } from './spacegraph/AnimationController';
 import { GraphController } from './spacegraph/GraphController';
 import { DepthController } from './spacegraph/DepthController';
-import { InputController } from './spacegraph/InputController';
-import { SelectionController } from './spacegraph/SelectionController';
 import { LifecycleController } from './spacegraph/LifecycleController';
 import { StaticMethods } from './spacegraph/StaticMethods';
 
@@ -80,8 +78,6 @@ export class SpaceGraph {
     public readonly animationController: AnimationController;
     public readonly graphController: GraphController;
     public readonly depthController: DepthController;
-    public readonly inputController: InputController;
-    public readonly selectionController: SelectionController;
     public readonly lifecycleController: LifecycleController;
 
     // Internal state (delegated to controllers)
@@ -128,11 +124,11 @@ export class SpaceGraph {
     }
 
     get #lastZoom(): number {
-        return this.cameraController['#lastZoom'];
+        return this.cameraController.lastZoom;
     }
 
     get #lastCenter(): [number, number, number] {
-        return this.cameraController['#lastCenter'];
+        return this.cameraController.lastCenter;
     }
 
     /**
@@ -156,8 +152,6 @@ export class SpaceGraph {
         this.animationController = new AnimationController(this);
         this.graphController = new GraphController(this);
         this.depthController = new DepthController(this);
-        this.inputController = new InputController(this);
-        this.selectionController = new SelectionController(this);
         this.lifecycleController = new LifecycleController(this);
 
         this.#init();
@@ -257,7 +251,7 @@ export class SpaceGraph {
 
     // ============= Graph Manipulation (delegated) =============
     loadSpec(spec: GraphSpec): this {
-        return this.graphController.loadSpec(spec);
+        return this.graphController.loadSpec(spec) as this;
     }
 
     update(spec: SpecUpdate): void {
@@ -303,31 +297,31 @@ export class SpaceGraph {
         ids?: readonly string[],
         options?: { minScale?: number; insets?: FitInsets },
     ): this {
-        return this.cameraController.fitView(padding, duration, ids, options);
+        return this.cameraController.fitView(padding, duration, ids, options) as this;
     }
 
     focusNode(id: string, _padding = 100, duration = 1): this {
-        return this.cameraController.focusNode(id, _padding, duration);
+        return this.cameraController.focusNode(id, _padding, duration) as this;
     }
 
     center(x: number, y: number, z = 0): this {
-        return this.cameraController.center(x, y, z);
+        return this.cameraController.center(x, y, z) as this;
     }
 
     resetCamera(): this {
-        return this.cameraController.resetCamera();
+        return this.cameraController.resetCamera() as this;
     }
 
     setCamera(position: [number, number, number], target?: [number, number, number]): this {
-        return this.cameraController.setCamera(position, target);
+        return this.cameraController.setCamera(position, target) as this;
     }
 
     setOrbitEnabled(enabled: boolean): this {
-        return this.cameraController.setOrbitEnabled(enabled);
+        return this.cameraController.setOrbitEnabled(enabled) as this;
     }
 
     setPolar(phi: number, theta: number, duration = 0): this {
-        return this.cameraController.setPolar(phi, theta, duration);
+        return this.cameraController.setPolar(phi, theta, duration) as this;
     }
 
     // ============= Animation Loop (delegated) =============
@@ -340,7 +334,7 @@ export class SpaceGraph {
     }
 
     render(): this {
-        return this.animationController.render();
+        return this.animationController.render() as this;
     }
 
     pause(): void {
@@ -348,7 +342,7 @@ export class SpaceGraph {
     }
 
     resume(): this {
-        return this.animationController.resume();
+        return this.animationController.resume() as this;
     }
 
     // ============= Lifecycle (delegated) =============
@@ -377,21 +371,25 @@ export class SpaceGraph {
         this.graphController.removeEdge(id);
     }
 
-    // Selection (delegated)
+    // Selection (inlined from SelectionController)
     select = (target: string | readonly string[] | null) => {
-        return this.selectionController.select(target);
+        this.selection.select(target);
+        return this;
     };
 
     clearSelection = () => {
-        return this.selectionController.clearSelection();
+        this.selection.clear();
+        return this;
     };
 
     toggleSelection = (id: string) => {
-        return this.selectionController.toggleSelection(id);
+        this.selection.toggle(id);
+        return this;
     };
 
     deselect = (id: string) => {
-        return this.selectionController.deselect(id);
+        this.selection.deselect(id);
+        return this;
     };
 
     // Visibility
@@ -422,12 +420,12 @@ export class SpaceGraph {
 
     // Apply absolute positions without animation (delegated)
     setPositions(positions: Record<string, [number, number, number]>): this {
-        return this.graphController.setPositions(positions);
+        return this.graphController.setPositions(positions) as this;
     }
 
     // Pin every node so an implicit layout cannot move host-assigned positions (delegated)
     pinAll(pinned = true): this {
-        return this.graphController.pinAll(pinned);
+        return this.graphController.pinAll(pinned) as this;
     }
 
     // Apply a named layout exactly once (delegated)
@@ -442,7 +440,7 @@ export class SpaceGraph {
 
     // Switch the active camera between parallel (2D) and perspective (3D) projection (delegated)
     setProjection(projection: Projection): this {
-        return this.graphController.setProjection(projection);
+        return this.graphController.setProjection(projection) as this;
     }
 
     // ============= Depth spectrum (LE.14) (delegated) =============
@@ -452,7 +450,7 @@ export class SpaceGraph {
 
     // Apply a depth treatment (delegated)
     setDepth(depth: DepthMode): this {
-        return this.depthController.setDepth(depth);
+        return this.depthController.setDepth(depth) as this;
     }
 
     // ============= Card facing (T1.19) (delegated) =============
@@ -461,12 +459,12 @@ export class SpaceGraph {
     }
 
     setCardFacing(facing: CardFacing): this {
-        return this.depthController.setCardFacing(facing);
+        return this.depthController.setCardFacing(facing) as this;
     }
 
     // Apply scene fade (delegated)
     applySceneFade(): this {
-        return this.depthController.applySceneFade();
+        return this.depthController.applySceneFade() as this;
     }
 
     // Normalized 0..1 zoom where 1 is closest; the host maps it to semantic levels.
@@ -484,6 +482,27 @@ export class SpaceGraph {
 
     get viewport(): CameraViewport {
         return this.renderer.getViewport();
+    }
+
+    // Register input fingerings (inlined from InputController)
+    registerFingerings(): void {
+        this.input.registerFingering(
+            createCameraFingering(this.cameraControls),
+            FingeringPriority.CAMERA,
+        );
+        this.input.registerFingering(
+            new PinchZoomFingering(this),
+            FingeringPriority.PINCH_ZOOM,
+        );
+        this.events.on('input:camera:wheel', (e) => this.#onCameraWheel(e as WheelEventData));
+    }
+
+    #onCameraWheel(e: WheelEventData): void {
+        const canvas = this.renderer.renderer.domElement;
+        zoomCameraOnWheel(this.cameraControls, canvas, e);
+        (
+            e as { originalEvent?: { preventDefault?: () => void } }
+        ).originalEvent?.preventDefault?.();
     }
 
     // ============= Initialization =============

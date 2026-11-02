@@ -74,7 +74,7 @@ export class LifecycleController {
         if (this.sg.options.chrome) registerPlugins(DEFAULT_CHROME_PLUGINS);
         for (const plugin of this.sg.options.plugins ?? [])
             this.sg.pluginManager.register(plugin.id, plugin as any);
-        this.sg.inputController.registerFingerings();
+        this.sg.registerFingerings();
     }
 
     async init(): Promise<void> {
