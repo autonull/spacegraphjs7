@@ -45,7 +45,7 @@ export const circle = (id: string, x: number, y: number, z = 0, size = 50) =>
         data: { shape: 'circle', size },
     }) as NodeSpec;
 
-// Convenience: create edge specs
+// Convenience: create edge specs (also available via EdgeFactory.simple/directional/dashed/curved)
 export const connect = (source: string, target: string) =>
     ({ id: `e-${source}-${target}`, source, target }) as EdgeSpec;
 export const arrow = (source: string, target: string) =>
@@ -61,5 +61,5 @@ export const $ = (source: string) => ({
     from: (target: string) => connect(target, source),
 });
 
-// Quick layout options
+// Quick layout options (also available via Layout.apply)
 export const layout = (type: string) => ({ type });

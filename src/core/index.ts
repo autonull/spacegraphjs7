@@ -48,7 +48,7 @@ export {
 export { ErgonomicsAPI } from './Ergonomics';
 export { EventEmitter, type Disposable } from './EventEmitter';
 export { forwardGraphEvents } from './forwardEvents';
-export { Graph } from './Graph';
+export { Graph, type EdgeDirection } from './Graph';
 export { Selection } from './Selection';
 export { ObjectPoolManager } from './ObjectPoolManager';
 export type { Plugin } from './PluginManager';

@@ -181,12 +181,8 @@ export class SpaceGraph {
 
     // ============= Graph Manipulation =============
     loadSpec(spec: GraphSpec): this {
-        if (spec.nodes) {
-            for (const node of spec.nodes) this.graph.addNode(node);
-        }
-        if (spec.edges) {
-            for (const edge of spec.edges) this.graph.addEdge(edge);
-        }
+        spec.nodes?.forEach((node) => this.graph.addNode(node));
+        spec.edges?.forEach((edge) => this.graph.addEdge(edge));
         return this;
     }
 
@@ -248,9 +244,7 @@ export class SpaceGraph {
             target.set(...data.camera.target);
 
             const mathPool = MathPool.getInstance();
-            const diff = mathPool
-                .acquireVector3()
-                .subVectors(camera.position, target);
+            const diff = mathPool.acquireVector3().subVectors(camera.position, target);
             this.cameraControls.spherical.radius = diff.length();
             const radius = this.cameraControls.spherical.radius;
             const ratio = radius > 0 ? clamp01(diff.y / radius) : 0;
@@ -265,21 +259,17 @@ export class SpaceGraph {
 
     // ============= Node/Edge Access =============
     getNode(id: string): Node | undefined {
-        return this.graph.getNode(id);
+        return this.graph.nodes.get(id);
     }
-
     getEdge(id: string): Edge | undefined {
-        return this.graph.getEdge(id);
+        return this.graph.edges.get(id);
     }
-
     hasNode(id: string): boolean {
-        return this.graph.hasNode(id);
+        return this.graph.nodes.has(id);
     }
-
     hasEdge(id: string): boolean {
-        return this.graph.hasEdge(id);
+        return this.graph.edges.has(id);
     }
-
     clear(): void {
         this.graph.clear();
     }
@@ -293,27 +283,21 @@ export class SpaceGraph {
     ): this {
         return this.cameraController.fitView(padding, duration, ids, options) as this;
     }
-
     focusNode(id: string, _padding = 100, duration = 1): this {
         return this.cameraController.focusNode(id, _padding, duration) as this;
     }
-
     center(x: number, y: number, z = 0): this {
         return this.cameraController.center(x, y, z) as this;
     }
-
     resetCamera(): this {
         return this.cameraController.resetCamera() as this;
     }
-
     setCamera(position: [number, number, number], target?: [number, number, number]): this {
         return this.cameraController.setCamera(position, target) as this;
     }
-
     setOrbitEnabled(enabled: boolean): this {
         return this.cameraController.setOrbitEnabled(enabled) as this;
     }
-
     setPolar(phi: number, theta: number, duration = 0): this {
         return this.cameraController.setPolar(phi, theta, duration) as this;
     }
@@ -322,19 +306,15 @@ export class SpaceGraph {
     animate(timestamp = 0): void {
         this.animationController.animate(timestamp);
     }
-
     requestFrame(): void {
         this.animationController.requestFrame();
     }
-
     render(): this {
         return this.animationController.render() as this;
     }
-
     pause(): void {
         this.animationController.pause();
     }
-
     resume(): this {
         return this.animationController.resume() as this;
     }
@@ -343,7 +323,6 @@ export class SpaceGraph {
     dispose(): void {
         this.lifecycleController.dispose();
     }
-
     destroy(): void {
         this.lifecycleController.destroy();
     }
@@ -352,35 +331,29 @@ export class SpaceGraph {
     addNode(spec: NodeSpec | Node): Node | null {
         return this.graph.addNode(spec);
     }
-
     addEdge(spec: EdgeSpec | Edge): Edge | null {
         return this.graph.addEdge(spec);
     }
-
     removeNode(id: string): void {
         this.graph.removeNode(id);
     }
-
     removeEdge(id: string): void {
         this.graph.removeEdge(id);
     }
 
-    // Selection (inlined from SelectionController)
+    // Selection
     select = (target: string | readonly string[] | null) => {
         this.selection.select(target);
         return this;
     };
-
     clearSelection = () => {
         this.selection.clear();
         return this;
     };
-
     toggleSelection = (id: string) => {
         this.selection.toggle(id);
         return this;
     };
-
     deselect = (id: string) => {
         this.selection.deselect(id);
         return this;
@@ -388,11 +361,10 @@ export class SpaceGraph {
 
     // Visibility
     show(id: string, visible = true): this {
-        const node = this.graph.getNode(id);
+        const node = this.graph.nodes.get(id);
         if (node) node.updateSpec({ data: { ...node.data, visible } });
         return this;
     }
-
     hide(id: string): this {
         return this.show(id, false);
     }
@@ -410,22 +382,18 @@ export class SpaceGraph {
     // Layout
     async layout(name: string, options?: Record<string, unknown>): Promise<void> {
         const plugin = this.pluginManager.getPlugin(name);
-        if (plugin && 'applyLayout' in plugin) {
+        if (plugin && 'applyLayout' in plugin)
             await (
                 plugin as { applyLayout: (opts?: Record<string, unknown>) => Promise<void> }
             ).applyLayout(options);
-        }
     }
-
     layoutOnce(name: string, options?: Record<string, unknown>): Promise<void> {
         return this.layout(name, options);
     }
-
     setPositions(positions: Record<string, [number, number, number]>): this {
         this.graph.setPositions(positions);
         return this;
     }
-
     pinAll(pinned = true): this {
         this.graph.pinAll(pinned);
         return this;
@@ -491,10 +459,7 @@ export class SpaceGraph {
             createCameraFingering(this.cameraControls),
             FingeringPriority.CAMERA,
         );
-        this.input.registerFingering(
-            new PinchZoomFingering(this),
-            FingeringPriority.PINCH_ZOOM,
-        );
+        this.input.registerFingering(new PinchZoomFingering(this), FingeringPriority.PINCH_ZOOM);
         this.events.on('input:camera:wheel', (e) => this.#onCameraWheel(e as WheelEventData));
     }
 
