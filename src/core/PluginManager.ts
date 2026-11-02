@@ -102,29 +102,28 @@ export class PluginManager {
     }
 
     async initAll(): Promise<void> {
-        const errors: Error[] = [];
-        const initPromises: Promise<void>[] = [];
+        const results = await Promise.allSettled(
+            [...this.plugins.entries()].map(([name, plugin]) => {
+                const initResult = plugin.init?.(this.sg, this.sg.graph, this.sg.events);
+                const promise = initResult instanceof Promise ? initResult : Promise.resolve();
+                return promise.then(
+                    () => undefined,
+                    (err) => {
+                        const wrapped = wrapError(err, {
+                            namespace: 'SpaceGraph',
+                            operation: 'Plugin Initialization',
+                            reason: `Failed to initialize plugin "${name}" (v${plugin.version}). Check if dependencies are met or configuration is valid.`,
+                        });
+                        logger.error(`${wrapped.message}: ${err instanceof Error ? err.stack : String(err)}`);
+                        throw wrapped;
+                    },
+                );
+            }),
+        );
 
-        for (const [name, plugin] of this.plugins) {
-            const promise = (async () => {
-                try {
-                    await plugin.init(this.sg, this.sg.graph, this.sg.events);
-                } catch (err) {
-                    const wrapped = wrapError(err, {
-                        namespace: 'SpaceGraph',
-                        operation: 'Plugin Initialization',
-                        reason: `Failed to initialize plugin "${name}" (v${plugin.version}). Check if dependencies are met or configuration is valid.`,
-                    });
-                    logger.error(
-                        `${wrapped.message}: ${err instanceof Error ? err.stack : String(err)}`,
-                    );
-                    errors.push(wrapped);
-                }
-            })();
-            initPromises.push(promise);
-        }
-
-        await Promise.all(initPromises);
+        const errors = results
+            .filter((r): r is PromiseRejectedResult => r.status === 'rejected')
+            .map((r) => r.reason);
 
         if (errors.length > 0) {
             const errorMessage = `[SpaceGraph] PluginManager failed to initialize ${errors.length} plugin(s): ${errors.map((e) => e.message).join('; ')}`;
