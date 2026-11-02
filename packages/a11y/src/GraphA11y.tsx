@@ -1,7 +1,7 @@
 import type { RenderModel, I18n } from '@spacegraphjs/shared';
-import type { AccessibleItem, AccessibleEdge } from '@spacegraphjs/shared';
-import { AccessibilityLayer } from './AccessibilityLayer';
+import { AccessibilityLayer } from 'spacegraphjs/a11y';
 import { createEffect, onCleanup, onMount } from 'solid-js';
+import type { AccessibleItem, AccessibleEdge } from './AccessibilityLayer';
 
 export type GraphA11yProps = {
     model: RenderModel;
@@ -56,8 +56,7 @@ export const GraphA11y = (props: GraphA11yProps) => {
     };
 
     onMount(() => {
-        layer = new AccessibilityLayer({
-            container,
+        layer = new AccessibilityLayer(container, {
             label: i18n.t('ui.sessionGraph.a11y.label'),
             edgeLabel: i18n.t('ui.sessionGraph.a11y.edgeLabel'),
             onSelect: (id) => props.onSelect(id),
@@ -72,7 +71,6 @@ export const GraphA11y = (props: GraphA11yProps) => {
                           edges: connections.map((edge) => edge.label).join(', '),
                       })
                     : '',
-            i18n,
         });
         // The first view state is not a change, so it is not announced.
         announced = props.announcement;

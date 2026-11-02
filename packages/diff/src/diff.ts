@@ -1,4 +1,5 @@
 import type { CodeDiff, CodeDiffSource } from '@spacegraphjs/shared';
+import { diffTone, type DiffTone } from '@spacegraphjs/shared';
 
 /** One changed file of a finished turn, as reported by the host's turn-diff source. */
 export type GraphDiff = CodeDiff;
@@ -10,15 +11,7 @@ export type GraphDiff = CodeDiff;
 export type GraphDiffSource = CodeDiffSource;
 
 /** Tone of a unified diff line. */
-export type DiffTone = 'header' | 'added' | 'removed' | 'context';
-
-/** Returns the tone of a unified diff line. */
-export function diffTone(line: string): DiffTone {
-    if (line.startsWith('+++') || line.startsWith('---') || line.startsWith('@@')) return 'header';
-    if (line.startsWith('+')) return 'added';
-    if (line.startsWith('-')) return 'removed';
-    return 'context';
-}
+export { diffTone, type DiffTone } from '@spacegraphjs/shared';
 
 /** CSS class for each diff tone. */
 export const TONE_CLASS: Record<DiffTone, string> = {

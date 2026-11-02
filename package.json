@@ -213,7 +213,8 @@
         "gsap": "^3.15.0",
         "mitt": "^3.0.1",
         "onnxruntime-web": "^1.30.0",
-        "three-mesh-bvh": "^0.9.16"
+        "three-mesh-bvh": "^0.9.16",
+        "@spacegraphjs/shared": "workspace:*"
     },
     "description": "[![pnpm](https://img.shields.io/pnpm/v/spacegraphjs.svg)](https://www.npmjs.com/package/spacegraphjs) [![Matrix](https://img.shields.io/matrix/spacegraphjs:matrix.org)](https://matrix.to/#/#spacegraphjs:matrix.org) [![GitHub Sponsors](https://img.shields.io/github/sponsors/autonull)](https://github.com/sponsors/autonull)",
     "directories": {

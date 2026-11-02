@@ -146,4 +146,4 @@ export {
 } from './hooks';
 
 // Utils
-export { nodeByID, edgeByID, getConnectedNodes, getIncomingEdges, getOutgoingEdges } from './utils';
+export { nodeByID, edgeByID, getConnectedNodes, getIncomingEdges, getOutgoingEdges, diffTone, type DiffTone } from './utils';

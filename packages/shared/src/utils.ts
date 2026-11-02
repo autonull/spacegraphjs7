@@ -42,3 +42,14 @@ export function getIncomingEdges(model: GraphViewData, nodeId: string) {
 export function getOutgoingEdges(model: GraphViewData, nodeId: string) {
     return model.edges.filter((edge) => edge.source === nodeId);
 }
+
+/** Tone of a unified diff line. */
+export type DiffTone = 'header' | 'added' | 'removed' | 'context';
+
+/** Returns the tone of a unified diff line. */
+export function diffTone(line: string): DiffTone {
+    if (line.startsWith('+++') || line.startsWith('---') || line.startsWith('@@')) return 'header';
+    if (line.startsWith('+')) return 'added';
+    if (line.startsWith('-')) return 'removed';
+    return 'context';
+}

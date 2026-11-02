@@ -2,6 +2,8 @@
 // lines toned by their marker. The core owns the parsing and the rendering; the host owns the copy
 // and the styling.
 
+import { diffTone, type DiffTone } from '@spacegraphjs/shared';
+
 export type CodeDiffStatus = 'added' | 'deleted' | 'modified';
 
 /** One changed file of a finished turn, as reported by the host's diff source. */
@@ -24,7 +26,7 @@ export interface CodeDiffSource {
 }
 
 /** The tone of a patch line, from its marker. */
-export type DiffTone = 'added' | 'removed' | 'header' | 'context';
+export { diffTone, type DiffTone };
 
 export interface DiffLine {
     text: string;
@@ -32,12 +34,7 @@ export interface DiffLine {
 }
 
 /** The tone of one patch line: headers and hunk markers stay muted, additions and deletions stand out. */
-export function diffTone(line: string): DiffTone {
-    if (line.startsWith('+++') || line.startsWith('---') || line.startsWith('@@')) return 'header';
-    if (line.startsWith('+')) return 'added';
-    if (line.startsWith('-')) return 'removed';
-    return 'context';
-}
+// diffTone is now imported from @spacegraphjs/shared
 
 /** The patch as toned lines. The last empty line of a patch is dropped. */
 export function parsePatch(patch: string): DiffLine[] {

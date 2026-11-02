@@ -19,7 +19,10 @@
         "declarationMap": true,
         "outDir": "dist",
         "rootDir": "src",
-        "tsBuildInfoFile": "dist/tsconfig.tsbuildinfo"
+        "tsBuildInfoFile": "dist/tsconfig.tsbuildinfo",
+        "paths": {
+            "spacegraphjs/src/*": ["../node_modules/spacegraphjs/src/*"]
+        }
     },
     "include": ["src/**/*"],
     "exclude": ["dist", "node_modules", "**/*.test.ts", "**/*.stories.tsx"]
