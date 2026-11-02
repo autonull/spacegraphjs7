@@ -18,7 +18,8 @@ import {
     nodeTypeName,
     type PluginCtor,
 } from '../core/defaults';
-import type { SpaceGraph, SpaceGraphEvents, SpaceGraphOptions } from '../types';
+import { SpaceGraph } from '../SpaceGraph';
+import type { SpaceGraphEvents, SpaceGraphOptions } from '../types';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('LifecycleController');

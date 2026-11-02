@@ -45,7 +45,9 @@ export class HierarchicalLayout extends BaseLayout<HierarchicalLayoutOptions> {
         }
 
         for (const [lv, ids] of byLevel) {
-            const placed = ids.filter((id) => !this.isPinned(byId.get(id)!));
+            const placed = ids
+                .filter((id) => byId.has(id))
+                .filter((id) => !this.isPinned(byId.get(id)!));
             const totalWidth = (placed.length - 1) * config.nodeSpacing;
             for (const [i, id] of placed.entries()) {
                 const primary = lv * config.levelHeight;

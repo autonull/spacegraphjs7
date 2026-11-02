@@ -43,12 +43,28 @@ const logger = createLogger('PluginManager');
 export class PluginManager {
     readonly plugins: Map<string, Plugin> = new Map();
 
-    // Aliases for backward compatibility
-    readonly getPlugin = this.get.bind(this);
-    readonly hasPlugin = this.has.bind(this);
-    readonly getPluginNames = () => this.pluginNames;
-
     constructor(readonly sg: SpaceGraph) {}
+
+    get<T extends Plugin = Plugin>(name: string): T | undefined {
+        return this.plugins.get(name) as T | undefined;
+    }
+
+    has(name: string): boolean {
+        return this.plugins.has(name);
+    }
+
+    // Aliases for backward compatibility
+    getPlugin<T extends Plugin = Plugin>(name: string): T | undefined {
+        return this.get(name);
+    }
+
+    hasPlugin(name: string): boolean {
+        return this.has(name);
+    }
+
+    getPluginNames(): string[] {
+        return this.pluginNames;
+    }
 
     get pluginNames(): string[] {
         return Array.from(this.plugins.keys());
@@ -79,14 +95,6 @@ export class PluginManager {
         plugin.dispose?.();
         this.plugins.delete(name);
         return true;
-    }
-
-    get<T extends Plugin = Plugin>(name: string): T | undefined {
-        return this.plugins.get(name) as T | undefined;
-    }
-
-    has(name: string): boolean {
-        return this.plugins.has(name);
     }
 
     *[Symbol.iterator](): Generator<[string, Plugin]> {

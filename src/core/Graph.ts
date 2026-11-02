@@ -29,13 +29,13 @@ export class Graph extends EventEmitter<GraphEventMap> {
     readonly nodes: Map<string, Node> = new Map();
     readonly edges: Map<string, Edge> = new Map();
 
-    private readonly query: GraphQuery;
+    private readonly queryEngine: GraphQuery;
     private readonly algorithms: GraphAlgorithms;
     private readonly serialization: GraphSerialization;
 
     constructor(readonly sg?: SpaceGraph) {
         super();
-        this.query = new GraphQuery(this.nodes, this.edges);
+        this.queryEngine = new GraphQuery(this.nodes, this.edges);
         this.algorithms = new GraphAlgorithms(this.nodes, this.edges);
         this.serialization = new GraphSerialization(this.nodes, this.edges);
     }
@@ -222,115 +222,115 @@ export class Graph extends EventEmitter<GraphEventMap> {
 
     // Delegate query methods to GraphQuery
     getNode(id: string): Node | undefined {
-        return this.query.getNode(id);
+        return this.queryEngine.getNode(id);
     }
 
     getEdge(id: string): Edge | undefined {
-        return this.query.getEdge(id);
+        return this.queryEngine.getEdge(id);
     }
 
     hasNode(id: string): boolean {
-        return this.query.hasNode(id);
+        return this.queryEngine.hasNode(id);
     }
 
     hasEdge(id: string): boolean {
-        return this.query.hasEdge(id);
+        return this.queryEngine.hasEdge(id);
     }
 
     getNodes(): IterableIterator<Node> {
-        return this.query.getNodes();
+        return this.queryEngine.getNodes();
     }
 
     getEdges(): IterableIterator<Edge> {
-        return this.query.getEdges();
+        return this.queryEngine.getEdges();
     }
 
     query(predicate: (node: Node) => boolean): Node[] {
-        return this.query.query(predicate);
+        return this.queryEngine.query(predicate);
     }
 
     queryByType(type: string): Node[] {
-        return this.query.queryByType(type);
+        return this.queryEngine.queryByType(type);
     }
 
     getNodesByData(predicate: (data: NodeData) => boolean): Node[] {
-        return this.query.getNodesByData(predicate);
+        return this.queryEngine.getNodesByData(predicate);
     }
 
     findNode(predicate: (node: Node) => boolean): Node | undefined {
-        return this.query.findNode(predicate);
+        return this.queryEngine.findNode(predicate);
     }
 
     findEdge(predicate: (edge: Edge) => boolean): Edge | undefined {
-        return this.query.findEdge(predicate);
+        return this.queryEngine.findEdge(predicate);
     }
 
     getNeighbors(nodeId: string, direction: EdgeDirection = 'both'): Node[] {
-        return this.query.getNeighbors(nodeId, direction);
+        return this.queryEngine.getNeighbors(nodeId, direction);
     }
 
     getEdgesForNode(nodeId: string, direction: EdgeDirection = 'both'): Edge[] {
-        return this.query.getEdgesForNode(nodeId, direction);
+        return this.queryEngine.getEdgesForNode(nodeId, direction);
     }
 
     neighbors(nodeId: string): Node[] {
-        return this.query.neighbors(nodeId);
+        return this.queryEngine.neighbors(nodeId);
     }
 
     getIncomingEdges(nodeId: string): Edge[] {
-        return this.query.getIncomingEdges(nodeId);
+        return this.queryEngine.getIncomingEdges(nodeId);
     }
 
     getOutgoingEdges(nodeId: string): Edge[] {
-        return this.query.getOutgoingEdges(nodeId);
+        return this.queryEngine.getOutgoingEdges(nodeId);
     }
 
     hasNeighbor(nodeId: string, targetId: string, direction: EdgeDirection = 'both'): boolean {
-        return this.query.hasNeighbor(nodeId, targetId, direction);
+        return this.queryEngine.hasNeighbor(nodeId, targetId, direction);
     }
 
     getNodesNear(position: Vector3, radius: number): Node[] {
-        return this.query.getNodesNear(position, radius);
+        return this.queryEngine.getNodesNear(position, radius);
     }
 
     mapNodes<T>(predicate: (node: Node) => T): T[] {
-        return this.query.mapNodes(predicate);
+        return this.queryEngine.mapNodes(predicate);
     }
 
     forEachNode(callback: (node: Node) => void): void {
-        this.query.forEachNode(callback);
+        this.queryEngine.forEachNode(callback);
     }
 
     forEachEdge(callback: (edge: Edge) => void): void {
-        this.query.forEachEdge(callback);
+        this.queryEngine.forEachEdge(callback);
     }
 
     groupByData(key: string): Map<unknown, Node[]> {
-        return this.query.groupByData(key);
+        return this.queryEngine.groupByData(key);
     }
 
     getNodeDegrees(): Map<string, number> {
-        return this.query.getNodeDegrees();
+        return this.queryEngine.getNodeDegrees();
     }
 
     getNodeDegree(nodeId: string): number {
-        return this.query.getNodeDegree(nodeId);
+        return this.queryEngine.getNodeDegree(nodeId);
     }
 
     getHubs(minDegree: number): Node[] {
-        return this.query.getHubs(minDegree);
+        return this.queryEngine.getHubs(minDegree);
     }
 
     getIsolatedNodes(): Node[] {
-        return this.query.getIsolatedNodes();
+        return this.queryEngine.getIsolatedNodes();
     }
 
     getLeafNodes(): Node[] {
-        return this.query.getLeafNodes();
+        return this.queryEngine.getLeafNodes();
     }
 
     getRootNodes(): Node[] {
-        return this.query.getRootNodes();
+        return this.queryEngine.getRootNodes();
     }
 
     // Delegate algorithm methods to GraphAlgorithms

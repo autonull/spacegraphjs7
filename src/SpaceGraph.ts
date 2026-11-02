@@ -1,4 +1,4 @@
-import { CameraControls, MathPool, ObjectPoolManager, PluginManager, VisionManager } from './core';
+import { CameraControls, ObjectPoolManager, PluginManager, VisionManager } from './core';
 import { InputManager } from './input';
 import { FingeringPriority, Performance } from './core/constants';
 import {
@@ -46,10 +46,10 @@ import type { OrthographicCamera } from 'three';
 // Internal controllers
 import { CameraController } from './spacegraph/CameraController';
 import { AnimationController } from './spacegraph/AnimationController';
-import { GraphController } from './spacegraph/GraphController';
 import { DepthController } from './spacegraph/DepthController';
 import { LifecycleController } from './spacegraph/LifecycleController';
 import { StaticMethods } from './spacegraph/StaticMethods';
+import { MathPool } from './core/pooling/ObjectPool';
 
 const logger = createLogger('SpaceGraph');
 
@@ -76,7 +76,6 @@ export class SpaceGraph {
     // Controllers
     public readonly cameraController: CameraController;
     public readonly animationController: AnimationController;
-    public readonly graphController: GraphController;
     public readonly depthController: DepthController;
     public readonly lifecycleController: LifecycleController;
 
@@ -150,7 +149,6 @@ export class SpaceGraph {
         // Initialize controllers
         this.cameraController = new CameraController(this);
         this.animationController = new AnimationController(this);
-        this.graphController = new GraphController(this);
         this.depthController = new DepthController(this);
         this.lifecycleController = new LifecycleController(this);
 
@@ -249,45 +247,113 @@ export class SpaceGraph {
         return this.lifecycleController.init();
     }
 
-    // ============= Graph Manipulation (delegated) =============
+    // ============= Graph Manipulation =============
     loadSpec(spec: GraphSpec): this {
-        return this.graphController.loadSpec(spec) as this;
+        if (spec.nodes) {
+            for (const node of spec.nodes) {
+                this.graph.addNode(node);
+            }
+        }
+        if (spec.edges) {
+            for (const edge of spec.edges) {
+                this.graph.addEdge(edge);
+            }
+        }
+        return this;
     }
 
     update(spec: SpecUpdate): void {
-        this.graphController.update(spec);
+        spec.nodes?.forEach((u) => u.id && this.graph.updateNode(u.id, u));
+        spec.edges?.forEach((u) => u.id && this.graph.updateEdge(u.id, u));
     }
 
     export(): GraphSpec & {
         camera?: { position: [number, number, number]; target: [number, number, number] };
         plugins?: Record<string, unknown>;
     } {
-        return this.graphController.export();
+        const spec: GraphSpec & {
+            camera?: { position: [number, number, number]; target: [number, number, number] };
+            plugins?: Record<string, unknown>;
+        } = {
+            nodes: [...this.graph.nodes.values()].map((node) => ({
+                id: node.id,
+                type: node.constructor.name,
+                label: node.label,
+                position: [node.position.x, node.position.y, node.position.z] as [
+                    number,
+                    number,
+                    number,
+                ],
+                data: safeClone(node.data),
+            })),
+            edges: Array.from(this.graph.edges.values()).map((edge) => ({
+                id: edge.id,
+                type: edge.constructor.name,
+                source: edge.source.id,
+                target: edge.target.id,
+                data: safeClone(edge.data),
+            })),
+        };
+
+        if (this.cameraControls?.target) {
+            const { camera } = this.renderer;
+            const { target } = this.cameraControls;
+            spec.camera = {
+                position: [camera.position.x, camera.position.y, camera.position.z],
+                target: [target.x, target.y, target.z],
+            };
+        }
+
+        const pluginState = this.pluginManager.export();
+        if (pluginState && Object.keys(pluginState).length > 0) spec.plugins = pluginState;
+        return spec;
     }
 
     import(data: GraphImportData): void {
-        this.graphController.import(data);
+        this.graph.clear();
+        this.loadSpec(data as GraphSpec);
+
+        if (data.camera && this.cameraControls?.target) {
+            const { camera } = this.renderer;
+            const { target } = this.cameraControls;
+            camera.position.set(...data.camera.position);
+            target.set(...data.camera.target);
+
+            const mathPool = MathPool.getInstance();
+            const diff = mathPool
+                .acquireVector3()
+                .subVectors(camera.position, target);
+            this.cameraControls.spherical.radius = diff.length();
+            const radius = this.cameraControls.spherical.radius;
+            const ratio = radius > 0 ? clamp01(diff.y / radius) : 0;
+            this.cameraControls.spherical.phi = Math.acos(ratio);
+            this.cameraControls.spherical.theta = Math.atan2(diff.x, diff.z);
+            mathPool.releaseVector3(diff);
+            this.cameraControls.update();
+        }
+
+        if (data.plugins) this.pluginManager.import(data.plugins as Record<string, unknown>);
     }
 
-    // ============= Node/Edge Access (delegated) =============
+    // ============= Node/Edge Access =============
     getNode(id: string): Node | undefined {
-        return this.graphController.getNode(id);
+        return this.graph.getNode(id);
     }
 
     getEdge(id: string): Edge | undefined {
-        return this.graphController.getEdge(id);
+        return this.graph.getEdge(id);
     }
 
     hasNode(id: string): boolean {
-        return this.graphController.hasNode(id);
+        return this.graph.hasNode(id);
     }
 
     hasEdge(id: string): boolean {
-        return this.graphController.hasEdge(id);
+        return this.graph.hasEdge(id);
     }
 
     clear(): void {
-        this.graphController.clear();
+        this.graph.clear();
     }
 
     // ============= Camera Controls (delegated) =============
@@ -354,21 +420,21 @@ export class SpaceGraph {
         this.lifecycleController.destroy();
     }
 
-    // Fluent API shortcuts for graph manipulation (delegated)
+    // Fluent API shortcuts for graph manipulation
     addNode(spec: NodeSpec | Node): Node | null {
-        return this.graphController.addNode(spec);
+        return this.graph.addNode(spec);
     }
 
     addEdge(spec: EdgeSpec | Edge): Edge | null {
-        return this.graphController.addEdge(spec);
+        return this.graph.addEdge(spec);
     }
 
     removeNode(id: string): void {
-        this.graphController.removeNode(id);
+        this.graph.removeNode(id);
     }
 
     removeEdge(id: string): void {
-        this.graphController.removeEdge(id);
+        this.graph.removeEdge(id);
     }
 
     // Selection (inlined from SelectionController)
@@ -413,34 +479,43 @@ export class SpaceGraph {
         return () => this.events.off(type, handler);
     }
 
-    // Quick layout application (delegated)
+    // Layout
     async layout(name: string, options?: Record<string, unknown>): Promise<void> {
-        return this.graphController.layout(name, options);
+        const plugin = this.pluginManager.getPlugin(name);
+        if (plugin && 'applyLayout' in plugin) {
+            await (
+                plugin as { applyLayout: (opts?: Record<string, unknown>) => Promise<void> }
+            ).applyLayout(options);
+        }
     }
 
-    // Apply absolute positions without animation (delegated)
-    setPositions(positions: Record<string, [number, number, number]>): this {
-        return this.graphController.setPositions(positions) as this;
-    }
-
-    // Pin every node so an implicit layout cannot move host-assigned positions (delegated)
-    pinAll(pinned = true): this {
-        return this.graphController.pinAll(pinned) as this;
-    }
-
-    // Apply a named layout exactly once (delegated)
     layoutOnce(name: string, options?: Record<string, unknown>): Promise<void> {
-        return this.graphController.layoutOnce(name, options);
+        return this.layout(name, options);
+    }
+
+    setPositions(positions: Record<string, [number, number, number]>): this {
+        this.graph.setPositions(positions);
+        return this;
+    }
+
+    pinAll(pinned = true): this {
+        this.graph.pinAll(pinned);
+        return this;
     }
 
     // ============= Projection and zoom telemetry (L1.12/L1.13) =============
     get projection(): Projection {
-        return this.graphController.projection;
+        return this.renderer.projection;
     }
 
-    // Switch the active camera between parallel (2D) and perspective (3D) projection (delegated)
+    // Switch the active camera between parallel (2D) and perspective (3D) projection
     setProjection(projection: Projection): this {
-        return this.graphController.setProjection(projection) as this;
+        this.renderer.setProjection(projection, this.cameraControls?.target);
+        this.cameraControls?.setCamera(this.renderer.camera);
+        this.events.emit('projection:change', { projection });
+        this.cameraController.reportViewport(true);
+        this.requestFrame();
+        return this;
     }
 
     // ============= Depth spectrum (LE.14) (delegated) =============

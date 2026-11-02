@@ -16,6 +16,10 @@ export { createCameraFingering } from './input/fingerings';
 export { Node } from './nodes/Node';
 export { Edge } from './edges/Edge';
 
+// Vision plugins
+export { VisionOverlayPlugin } from './plugins/VisionOverlayPlugin';
+export { PhysicsPlugin } from './plugins/PhysicsPlugin';
+
 // Convenience factory functions
 export { createSpaceGraph, createGraph, SimpleGraph, sg, qg, node, edge } from './SpaceGraph';
 
