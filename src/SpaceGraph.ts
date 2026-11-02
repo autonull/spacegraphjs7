@@ -88,38 +88,12 @@ export class SpaceGraph {
         return this.lifecycleController.initialized;
     }
 
-    get #depth(): DepthMode {
-        return this.depthController.depth;
-    }
-
-    set #depth(value: DepthMode) {
-        // Depth is managed by DepthController
-    }
-
-    get #cardFacing(): CardFacing {
-        // Not directly accessible, managed by DepthController
-        return 'auto';
-    }
-
     get #continuousMode(): boolean {
         return this.animationController.continuousMode;
     }
 
     set #continuousMode(value: boolean) {
         this.animationController.setContinuousMode(value);
-    }
-
-    get #animating(): boolean {
-        // Not directly accessible, managed by AnimationController
-        return false;
-    }
-
-    get #lastTimestamp(): number {
-        return 0;
-    }
-
-    get #scheduled(): boolean {
-        return false;
     }
 
     get #lastZoom(): number {
