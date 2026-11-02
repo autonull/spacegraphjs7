@@ -14,7 +14,23 @@ export type SemanticTokenMap = Readonly<Record<string, string>>;
  */
 export declare const DEFAULT_THEME: RenderTheme;
 /** The roles a theme carries; every one of them resolves to a colour or a font. */
-export declare const THEME_ROLES: readonly ["background", "surface", "surfaceMuted", "text", "textMuted", "border", "accent", "success", "warning", "error", "edge", "edgeMuted", "selection", "focus", "fontFamily"];
+export declare const THEME_ROLES: readonly [
+    'background',
+    'surface',
+    'surfaceMuted',
+    'text',
+    'textMuted',
+    'border',
+    'accent',
+    'success',
+    'warning',
+    'error',
+    'edge',
+    'edgeMuted',
+    'selection',
+    'focus',
+    'fontFamily',
+];
 /** The roles that resolve to a colour. */
 export type ThemeColorRole = Exclude<(typeof THEME_ROLES)[number], 'fontFamily'>;
 /** The colour roles, in the order the theme lists them. */
@@ -30,7 +46,11 @@ export declare function themeVariable(role: keyof RenderTheme): string;
  * A token that is absent or blank keeps the default, so a missing stylesheet never yields an empty
  * theme.
  */
-export declare function resolveTheme(tokens: SemanticTokenMap, read: (variable: string) => string, defaults: RenderTheme): RenderTheme;
+export declare function resolveTheme(
+    tokens: SemanticTokenMap,
+    read: (variable: string) => string,
+    defaults: RenderTheme,
+): RenderTheme;
 /**
  * The theme role that carries a status' colour. Every renderer draws a status from the same role,
  * so a host maps one token and every renderer agrees.

@@ -26,8 +26,7 @@ export class BaseGraphRenderer {
         this.applyingSelection = true;
         try {
             apply(ids);
-        }
-        finally {
+        } finally {
             this.applyingSelection = false;
         }
     }

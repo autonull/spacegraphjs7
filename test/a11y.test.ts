@@ -4,156 +4,202 @@ import { AccessibilityLayer } from '../src/a11y/AccessibilityLayer';
 let container: HTMLElement;
 
 const key = (element: Element, name: string) =>
-  element.dispatchEvent(new KeyboardEvent('keydown', { key: name, bubbles: true, cancelable: true }));
+    element.dispatchEvent(
+        new KeyboardEvent('keydown', { key: name, bubbles: true, cancelable: true }),
+    );
 
 beforeEach(() => {
-  container = document.createElement('div');
-  document.body.append(container);
+    container = document.createElement('div');
+    document.body.append(container);
 });
 
 afterEach(() => {
-  container.remove();
+    container.remove();
 });
 
 describe('AccessibilityLayer', () => {
-  it('keeps the host container visually hidden and labelled', () => {
-    const layer = new AccessibilityLayer(container, { label: 'Session graph' });
-    expect(container.getAttribute('role')).toBe('group');
-    expect(container.getAttribute('aria-label')).toBe('Session graph');
-    expect(container.getAttribute('style')).toContain('position:absolute');
-    expect(container.querySelector('ul')).not.toBeNull();
-    expect(container.querySelector('[aria-live="polite"]')).not.toBeNull();
-    layer.dispose();
-  });
-
-  it('lists items with combined text and a single roving tabindex', () => {
-    const layer = new AccessibilityLayer(container);
-    layer.setItems([
-      { id: 'a', label: 'Alpha', kind: 'tool' },
-      { id: 'b', label: 'Beta', kind: 'file', status: 'failed' },
-    ]);
-    const items = container.querySelectorAll('li');
-    expect(items).toHaveLength(2);
-    expect(items[0].textContent).toBe('Alpha — tool');
-    expect(items[1].textContent).toBe('Beta — file — failed');
-    expect(items[0].tabIndex).toBe(0);
-    expect(items[1].tabIndex).toBe(-1);
-    layer.dispose();
-  });
-
-  it('skips non-interactive items during keyboard traversal', () => {
-    const layer = new AccessibilityLayer(container);
-    layer.setItems([{ id: 'a', label: 'A' }, { id: 'b', label: 'B', interactive: false }, { id: 'c', label: 'C' }]);
-    key(container.querySelector('ul')!, 'ArrowDown');
-    expect(layer.currentId).toBe('c');
-    key(container.querySelector('ul')!, 'ArrowUp');
-    expect(layer.currentId).toBe('a');
-    layer.dispose();
-  });
-
-  it('activates the current item on Enter or Space', () => {
-    const onSelect = vi.fn();
-    const layer = new AccessibilityLayer(container, { onSelect });
-    layer.setItems([{ id: 'a', label: 'A' }, { id: 'b', label: 'B' }]);
-    key(container.querySelector('ul')!, 'ArrowDown');
-    key(container.querySelector('ul')!, 'Enter');
-    key(container.querySelector('ul')!, ' ');
-    expect(onSelect).toHaveBeenNthCalledWith(1, 'b');
-    expect(onSelect).toHaveBeenNthCalledWith(2, 'b');
-    layer.dispose();
-  });
-
-  it('invokes Escape and announces selection through the live region', () => {
-    const onEscape = vi.fn();
-    const layer = new AccessibilityLayer(container, { onEscape });
-    layer.setItems([{ id: 'a', label: 'Alpha' }, { id: 'b', label: 'Beta' }]);
-    key(container.querySelector('ul')!, 'Escape');
-    expect(onEscape).toHaveBeenCalledTimes(1);
-    layer.setSelected(['b']);
-    expect(container.querySelector('li[data-id="b"]')!.getAttribute('aria-selected')).toBe('true');
-    expect(container.querySelector('[aria-live="polite"]')!.textContent).toBe('Selected Beta');
-    layer.setSelected(null);
-    expect(container.querySelector('[aria-live="polite"]')!.textContent).toBe('Selection cleared');
-    layer.dispose();
-  });
-
-  it('lets the host localize the selection announcement', () => {
-    const layer = new AccessibilityLayer(container, { formatSelection: (labels) => `Sélection ${labels.join(', ')}` });
-    layer.setItems([{ id: 'a', label: 'Alpha' }]);
-    layer.setSelected(['a']);
-    expect(container.querySelector('[aria-live="polite"]')!.textContent).toBe('Sélection Alpha');
-    layer.dispose();
-  });
-
-  it('focuses a named item and stops handling keys after dispose', () => {    const onSelect = vi.fn();
-    const layer = new AccessibilityLayer(container, { onSelect });
-    layer.setItems([{ id: 'a', label: 'A' }, { id: 'b', label: 'B' }]);
-    layer.focus('b');
-    expect(layer.currentId).toBe('b');
-    const list = container.querySelector('ul')!;
-    layer.dispose();
-    expect(list.children).toHaveLength(0);
-    key(list, 'Enter');
-    expect(onSelect).not.toHaveBeenCalled();
-  });
-  it('lists the connections next to the nodes', () => {
-    const layer = new AccessibilityLayer(container, { edgeLabel: 'Verbindungen' });
-    layer.setItems([{ id: 'a', label: 'Alpha' }, { id: 'b', label: 'Beta' }]);
-    layer.setEdges([
-      { id: 'e1', source: 'a', target: 'b', kind: 'writes', label: 'Alpha writes Beta' },
-      { id: 'e2', source: 'b', target: 'c', kind: 'produces' },
-    ]);
-
-    const list = container.querySelector('ul[aria-label="Verbindungen"]')!;
-    expect(list).not.toBeNull();
-    expect(list.querySelectorAll('li')).toHaveLength(2);
-    expect(list.querySelector('li[data-edge="e1"]')!.textContent).toBe('Alpha writes Beta — writes');
-    expect(list.querySelector('li[data-edge="e2"]')!.textContent).toBe('b to c — produces');
-    layer.dispose();
-  });
-
-  it('announces the connections of the selected nodes', () => {
-    const layer = new AccessibilityLayer(container, {
-      edgeAnnouncer: (edges) => (edges.length ? `Connections: ${edges.map((edge) => edge.id).join(', ')}` : ''),
+    it('keeps the host container visually hidden and labelled', () => {
+        const layer = new AccessibilityLayer(container, { label: 'Session graph' });
+        expect(container.getAttribute('role')).toBe('group');
+        expect(container.getAttribute('aria-label')).toBe('Session graph');
+        expect(container.getAttribute('style')).toContain('position:absolute');
+        expect(container.querySelector('ul')).not.toBeNull();
+        expect(container.querySelector('[aria-live="polite"]')).not.toBeNull();
+        layer.dispose();
     });
-    layer.setItems([{ id: 'a', label: 'Alpha' }, { id: 'b', label: 'Beta' }]);
-    layer.setEdges([
-      { id: 'e1', source: 'a', target: 'b' },
-      { id: 'e2', source: 'b', target: 'c' },
-    ]);
 
-    layer.setSelected(['a']);
-    expect(container.querySelector('[aria-live="polite"]')!.textContent).toBe('Selected Alpha Connections: e1');
+    it('lists items with combined text and a single roving tabindex', () => {
+        const layer = new AccessibilityLayer(container);
+        layer.setItems([
+            { id: 'a', label: 'Alpha', kind: 'tool' },
+            { id: 'b', label: 'Beta', kind: 'file', status: 'failed' },
+        ]);
+        const items = container.querySelectorAll('li');
+        expect(items).toHaveLength(2);
+        expect(items[0].textContent).toBe('Alpha — tool');
+        expect(items[1].textContent).toBe('Beta — file — failed');
+        expect(items[0].tabIndex).toBe(0);
+        expect(items[1].tabIndex).toBe(-1);
+        layer.dispose();
+    });
 
-    layer.setSelected(null);
-    expect(container.querySelector('[aria-live="polite"]')!.textContent).toBe('Selection cleared');
-    layer.dispose();
-  });
+    it('skips non-interactive items during keyboard traversal', () => {
+        const layer = new AccessibilityLayer(container);
+        layer.setItems([
+            { id: 'a', label: 'A' },
+            { id: 'b', label: 'B', interactive: false },
+            { id: 'c', label: 'C' },
+        ]);
+        key(container.querySelector('ul')!, 'ArrowDown');
+        expect(layer.currentId).toBe('c');
+        key(container.querySelector('ul')!, 'ArrowUp');
+        expect(layer.currentId).toBe('a');
+        layer.dispose();
+    });
 
-  it('keeps the reader on the same node when the model changes under them', () => {
-    const layer = new AccessibilityLayer(container);
-    layer.setItems([{ id: 'a', label: 'Alpha' }, { id: 'b', label: 'Beta' }]);
-    layer.focus('b');
-    expect(document.activeElement).toBe(container.querySelector('li[data-id="b"]'));
+    it('activates the current item on Enter or Space', () => {
+        const onSelect = vi.fn();
+        const layer = new AccessibilityLayer(container, { onSelect });
+        layer.setItems([
+            { id: 'a', label: 'A' },
+            { id: 'b', label: 'B' },
+        ]);
+        key(container.querySelector('ul')!, 'ArrowDown');
+        key(container.querySelector('ul')!, 'Enter');
+        key(container.querySelector('ul')!, ' ');
+        expect(onSelect).toHaveBeenNthCalledWith(1, 'b');
+        expect(onSelect).toHaveBeenNthCalledWith(2, 'b');
+        layer.dispose();
+    });
 
-    // The same nodes, restated: the reader keeps their place and their focus.
-    layer.setItems([{ id: 'a', label: 'Alpha' }, { id: 'b', label: 'Beta' }]);
-    expect(document.activeElement).toBe(container.querySelector('li[data-id="b"]'));
+    it('invokes Escape and announces selection through the live region', () => {
+        const onEscape = vi.fn();
+        const layer = new AccessibilityLayer(container, { onEscape });
+        layer.setItems([
+            { id: 'a', label: 'Alpha' },
+            { id: 'b', label: 'Beta' },
+        ]);
+        key(container.querySelector('ul')!, 'Escape');
+        expect(onEscape).toHaveBeenCalledTimes(1);
+        layer.setSelected(['b']);
+        expect(container.querySelector('li[data-id="b"]')!.getAttribute('aria-selected')).toBe(
+            'true',
+        );
+        expect(container.querySelector('[aria-live="polite"]')!.textContent).toBe('Selected Beta');
+        layer.setSelected(null);
+        expect(container.querySelector('[aria-live="polite"]')!.textContent).toBe(
+            'Selection cleared',
+        );
+        layer.dispose();
+    });
 
-    // A different list: the reader lands on the node they were on.
-    layer.setItems([{ id: 'c', label: 'Gamma' }, { id: 'b', label: 'Beta' }]);
-    expect(document.activeElement).toBe(container.querySelector('li[data-id="b"]'));
-    layer.dispose();
-  });
+    it('lets the host localize the selection announcement', () => {
+        const layer = new AccessibilityLayer(container, {
+            formatSelection: (labels) => `Sélection ${labels.join(', ')}`,
+        });
+        layer.setItems([{ id: 'a', label: 'Alpha' }]);
+        layer.setSelected(['a']);
+        expect(container.querySelector('[aria-live="polite"]')!.textContent).toBe(
+            'Sélection Alpha',
+        );
+        layer.dispose();
+    });
 
-  it('drops the connection list when the edges are cleared', () => {
-    const layer = new AccessibilityLayer(container);
-    layer.setEdges([{ id: 'e1', source: 'a', target: 'b' }]);
-    expect(container.querySelector('li[data-edge="e1"]')).not.toBeNull();
+    it('focuses a named item and stops handling keys after dispose', () => {
+        const onSelect = vi.fn();
+        const layer = new AccessibilityLayer(container, { onSelect });
+        layer.setItems([
+            { id: 'a', label: 'A' },
+            { id: 'b', label: 'B' },
+        ]);
+        layer.focus('b');
+        expect(layer.currentId).toBe('b');
+        const list = container.querySelector('ul')!;
+        layer.dispose();
+        expect(list.children).toHaveLength(0);
+        key(list, 'Enter');
+        expect(onSelect).not.toHaveBeenCalled();
+    });
+    it('lists the connections next to the nodes', () => {
+        const layer = new AccessibilityLayer(container, { edgeLabel: 'Verbindungen' });
+        layer.setItems([
+            { id: 'a', label: 'Alpha' },
+            { id: 'b', label: 'Beta' },
+        ]);
+        layer.setEdges([
+            { id: 'e1', source: 'a', target: 'b', kind: 'writes', label: 'Alpha writes Beta' },
+            { id: 'e2', source: 'b', target: 'c', kind: 'produces' },
+        ]);
 
-    layer.setEdges([]);
-    expect(container.querySelector('li[data-edge="e1"]')).toBeNull();
-    expect(layer.edges).toEqual([]);
-    layer.dispose();
-  });
+        const list = container.querySelector('ul[aria-label="Verbindungen"]')!;
+        expect(list).not.toBeNull();
+        expect(list.querySelectorAll('li')).toHaveLength(2);
+        expect(list.querySelector('li[data-edge="e1"]')!.textContent).toBe(
+            'Alpha writes Beta — writes',
+        );
+        expect(list.querySelector('li[data-edge="e2"]')!.textContent).toBe('b to c — produces');
+        layer.dispose();
+    });
+
+    it('announces the connections of the selected nodes', () => {
+        const layer = new AccessibilityLayer(container, {
+            edgeAnnouncer: (edges) =>
+                edges.length ? `Connections: ${edges.map((edge) => edge.id).join(', ')}` : '',
+        });
+        layer.setItems([
+            { id: 'a', label: 'Alpha' },
+            { id: 'b', label: 'Beta' },
+        ]);
+        layer.setEdges([
+            { id: 'e1', source: 'a', target: 'b' },
+            { id: 'e2', source: 'b', target: 'c' },
+        ]);
+
+        layer.setSelected(['a']);
+        expect(container.querySelector('[aria-live="polite"]')!.textContent).toBe(
+            'Selected Alpha Connections: e1',
+        );
+
+        layer.setSelected(null);
+        expect(container.querySelector('[aria-live="polite"]')!.textContent).toBe(
+            'Selection cleared',
+        );
+        layer.dispose();
+    });
+
+    it('keeps the reader on the same node when the model changes under them', () => {
+        const layer = new AccessibilityLayer(container);
+        layer.setItems([
+            { id: 'a', label: 'Alpha' },
+            { id: 'b', label: 'Beta' },
+        ]);
+        layer.focus('b');
+        expect(document.activeElement).toBe(container.querySelector('li[data-id="b"]'));
+
+        // The same nodes, restated: the reader keeps their place and their focus.
+        layer.setItems([
+            { id: 'a', label: 'Alpha' },
+            { id: 'b', label: 'Beta' },
+        ]);
+        expect(document.activeElement).toBe(container.querySelector('li[data-id="b"]'));
+
+        // A different list: the reader lands on the node they were on.
+        layer.setItems([
+            { id: 'c', label: 'Gamma' },
+            { id: 'b', label: 'Beta' },
+        ]);
+        expect(document.activeElement).toBe(container.querySelector('li[data-id="b"]'));
+        layer.dispose();
+    });
+
+    it('drops the connection list when the edges are cleared', () => {
+        const layer = new AccessibilityLayer(container);
+        layer.setEdges([{ id: 'e1', source: 'a', target: 'b' }]);
+        expect(container.querySelector('li[data-edge="e1"]')).not.toBeNull();
+
+        layer.setEdges([]);
+        expect(container.querySelector('li[data-edge="e1"]')).toBeNull();
+        expect(layer.edges).toEqual([]);
+        layer.dispose();
+    });
 });

@@ -9,21 +9,21 @@ export { OverlapAnalyzer } from './analyzers/OverlapAnalyzer';
 export type { HeuristicsConfig } from './strategies/HeuristicsStrategy';
 export { HeuristicsStrategy } from './strategies/HeuristicsStrategy';
 export type {
-  ContrastFailure,
-  ErgonomicsResult,
-  HierarchyResult,
-  LegibilityResult,
-  Overlap,
-  OverlapResult,
-  TargetIssue,
-  VisionBenchmark,
-  VisionBenchmarkResult,
-  VisionContext,
-  VisionIssue,
-  VisionOptions,
-  VisionReport,
-  VisionScore,
-  VisionStrategy,
+    ContrastFailure,
+    ErgonomicsResult,
+    HierarchyResult,
+    LegibilityResult,
+    Overlap,
+    OverlapResult,
+    TargetIssue,
+    VisionBenchmark,
+    VisionBenchmarkResult,
+    VisionContext,
+    VisionIssue,
+    VisionOptions,
+    VisionReport,
+    VisionScore,
+    VisionStrategy,
 } from './types';
 export { VisionAutoFixer, type VisionCategory } from './VisionAutoFixer';
 export { type ModelLoadResult, VisionModelLoader } from './VisionModelLoader';

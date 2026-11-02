@@ -11,87 +11,87 @@ import type { Overlap, OverlapResult, VisionContext } from '../types';
  * Detects node overlaps using spatial indexing for O(n·k) performance
  */
 export class OverlapAnalyzer {
-  /**
-   * Analyze node overlaps
-   */
-  async analyze(context: VisionContext, config: HeuristicsConfig): Promise<OverlapResult> {
-    const nodes = context.nodes as Array<{
-      id: string;
-      object?: THREE.Object3D;
-      position: THREE.Vector3;
-    }>;
+    /**
+     * Analyze node overlaps
+     */
+    async analyze(context: VisionContext, config: HeuristicsConfig): Promise<OverlapResult> {
+        const nodes = context.nodes as Array<{
+            id: string;
+            object?: THREE.Object3D;
+            position: THREE.Vector3;
+        }>;
 
-    if (nodes.length === 0) {
-      return {
-        hasOverlaps: false,
-        overlapCount: 0,
-        overlaps: [],
-      };
+        if (nodes.length === 0) {
+            return {
+                hasOverlaps: false,
+                overlapCount: 0,
+                overlaps: [],
+            };
+        }
+
+        // Build spatial index
+        const spatialIndex = new SpatialIndex(config.overlapPadding * 2);
+        spatialIndex.build(nodes);
+
+        // Find all overlaps
+        const overlapPairs = spatialIndex.findAllOverlaps();
+        console.log(
+            `[OverlapAnalyzer] Found ${overlapPairs.length} potential overlap pairs from spatial index.`,
+        );
+
+        // Refine overlaps with precise bounds checking
+        const checked = new Set<string>();
+
+        const overlaps = overlapPairs.reduce<Overlap[]>((acc, [nodeA, nodeB]) => {
+            // Avoid duplicates
+            const key = nodeA.id < nodeB.id ? `${nodeA.id}-${nodeB.id}` : `${nodeB.id}-${nodeA.id}`;
+            if (checked.has(key)) return acc;
+            checked.add(key);
+
+            const penetration = this.computePenetration(nodeA, nodeB);
+            console.log(
+                `[OverlapAnalyzer] Checking ${nodeA.id} vs ${nodeB.id}: penetration=${penetration}`,
+            );
+            if (penetration > 0) {
+                acc.push({ nodeA: nodeA.id, nodeB: nodeB.id, penetration });
+            }
+            return acc;
+        }, []);
+
+        return {
+            hasOverlaps: overlaps.length > 0,
+            overlapCount: overlaps.length,
+            overlaps,
+        };
     }
 
-    // Build spatial index
-    const spatialIndex = new SpatialIndex(config.overlapPadding * 2);
-    spatialIndex.build(nodes);
+    /**
+     * Compute penetration depth between two nodes
+     */
+    private computePenetration(
+        nodeA: { object?: THREE.Object3D; position: THREE.Vector3 },
+        nodeB: { object?: THREE.Object3D; position: THREE.Vector3 },
+    ): number {
+        // Get bounds for both nodes
+        const boxA = nodeA.object
+            ? new THREE.Box3().setFromObject(nodeA.object)
+            : new THREE.Box3().makeEmpty().expandByPoint(nodeA.position);
 
-    // Find all overlaps
-    const overlapPairs = spatialIndex.findAllOverlaps();
-    console.log(
-      `[OverlapAnalyzer] Found ${overlapPairs.length} potential overlap pairs from spatial index.`
-    );
+        const boxB = nodeB.object
+            ? new THREE.Box3().setFromObject(nodeB.object)
+            : new THREE.Box3().makeEmpty().expandByPoint(nodeB.position);
 
-    // Refine overlaps with precise bounds checking
-    const checked = new Set<string>();
+        // Check intersection
+        if (!boxA.intersectsBox(boxB)) {
+            return 0;
+        }
 
-    const overlaps = overlapPairs.reduce<Overlap[]>((acc, [nodeA, nodeB]) => {
-      // Avoid duplicates
-      const key = nodeA.id < nodeB.id ? `${nodeA.id}-${nodeB.id}` : `${nodeB.id}-${nodeA.id}`;
-      if (checked.has(key)) return acc;
-      checked.add(key);
+        // Compute penetration depth
+        const overlapX = Math.min(boxA.max.x, boxB.max.x) - Math.max(boxA.min.x, boxB.min.x);
+        const overlapY = Math.min(boxA.max.y, boxB.max.y) - Math.max(boxA.min.y, boxB.min.y);
+        const overlapZ = Math.min(boxA.max.z, boxB.max.z) - Math.max(boxA.min.z, boxB.min.z);
 
-      const penetration = this.computePenetration(nodeA, nodeB);
-      console.log(
-        `[OverlapAnalyzer] Checking ${nodeA.id} vs ${nodeB.id}: penetration=${penetration}`
-      );
-      if (penetration > 0) {
-        acc.push({ nodeA: nodeA.id, nodeB: nodeB.id, penetration });
-      }
-      return acc;
-    }, []);
-
-    return {
-      hasOverlaps: overlaps.length > 0,
-      overlapCount: overlaps.length,
-      overlaps,
-    };
-  }
-
-  /**
-   * Compute penetration depth between two nodes
-   */
-  private computePenetration(
-    nodeA: { object?: THREE.Object3D; position: THREE.Vector3 },
-    nodeB: { object?: THREE.Object3D; position: THREE.Vector3 }
-  ): number {
-    // Get bounds for both nodes
-    const boxA = nodeA.object
-      ? new THREE.Box3().setFromObject(nodeA.object)
-      : new THREE.Box3().makeEmpty().expandByPoint(nodeA.position);
-
-    const boxB = nodeB.object
-      ? new THREE.Box3().setFromObject(nodeB.object)
-      : new THREE.Box3().makeEmpty().expandByPoint(nodeB.position);
-
-    // Check intersection
-    if (!boxA.intersectsBox(boxB)) {
-      return 0;
+        // Return minimum penetration
+        return Math.min(overlapX, overlapY, overlapZ);
     }
-
-    // Compute penetration depth
-    const overlapX = Math.min(boxA.max.x, boxB.max.x) - Math.max(boxA.min.x, boxB.min.x);
-    const overlapY = Math.min(boxA.max.y, boxB.max.y) - Math.max(boxA.min.y, boxB.min.y);
-    const overlapZ = Math.min(boxA.max.z, boxB.max.z) - Math.max(boxA.min.z, boxB.min.z);
-
-    // Return minimum penetration
-    return Math.min(overlapX, overlapY, overlapZ);
-  }
 }

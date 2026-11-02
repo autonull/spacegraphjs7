@@ -3,25 +3,25 @@ import { defineConfig } from 'vite';
 import solidPlugin from 'vite-plugin-solid';
 
 export default defineConfig({
-  plugins: [solidPlugin()],
-  build: {
-    lib: {
-      entry: resolve(__dirname, 'src/index.tsx'),
-      name: 'SolidSpaceGraph',
-      formats: ['es', 'cjs'],
-      fileName: (format) => `index.${format === 'es' ? 'mjs' : 'cjs'}`,
-    },
-    rollupOptions: {
-      external: ['solid-js', 'solid-js/web', 'spacegraphjs', '@spacegraphjs/renderer'],
-      output: {
-        globals: {
-          'solid-js': 'Solid',
-          'solid-js/web': 'SolidWeb',
-          spacegraphjs: 'SpaceGraphJS',
+    plugins: [solidPlugin()],
+    build: {
+        lib: {
+            entry: resolve(__dirname, 'src/index.tsx'),
+            name: 'SolidSpaceGraph',
+            formats: ['es', 'cjs'],
+            fileName: (format) => `index.${format === 'es' ? 'mjs' : 'cjs'}`,
         },
-      },
+        rollupOptions: {
+            external: ['solid-js', 'solid-js/web', 'spacegraphjs', '@spacegraphjs/renderer'],
+            output: {
+                globals: {
+                    'solid-js': 'Solid',
+                    'solid-js/web': 'SolidWeb',
+                    spacegraphjs: 'SpaceGraphJS',
+                },
+            },
+        },
+        sourcemap: true,
+        minify: true,
     },
-    sourcemap: true,
-    minify: true,
-  },
 });

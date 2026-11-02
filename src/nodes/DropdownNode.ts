@@ -4,87 +4,87 @@ import { DOMUtils } from '../utils/DOMUtils';
 import { HtmlNode } from './HtmlNode';
 
 export interface DropdownOption {
-  id: string;
-  label: string;
-  value?: unknown;
+    id: string;
+    label: string;
+    value?: unknown;
 }
 
 export class DropdownNode extends HtmlNode {
-  static readonly typeName: string = 'DropdownNode';
-  private selectElement: HTMLSelectElement | null = null;
-  private options: DropdownOption[] = [];
-  private selectedValue = '';
+    static readonly typeName: string = 'DropdownNode';
+    private selectElement: HTMLSelectElement | null = null;
+    private options: DropdownOption[] = [];
+    private selectedValue = '';
 
-  constructor(sg: SpaceGraph | undefined, spec: NodeSpec) {
-    super(sg, spec);
-    this._setupDropdown();
-  }
-
-  getValue(): string {
-    return this.selectedValue;
-  }
-
-  setValue(value: string): void {
-    if (this.selectElement && this.options.some((o) => o.id === value)) {
-      this.selectElement.value = value;
-      this._onSelectionChange(value);
+    constructor(sg: SpaceGraph | undefined, spec: NodeSpec) {
+        super(sg, spec);
+        this._setupDropdown();
     }
-  }
 
-  setOptions(options: DropdownOption[]): void {
-    this.options = options;
-    if (!this.selectElement) return;
-    this.selectElement.innerHTML = '';
-    this._appendOptions();
-  }
-
-  private _appendOptions(): void {
-    for (const opt of this.options) {
-      const option = DOMUtils.createElement('option') as HTMLOptionElement;
-      option.value = opt.id;
-      option.textContent = opt.label;
-      if (opt.value !== undefined) option.value = String(opt.value);
-      this.selectElement?.appendChild(option);
+    getValue(): string {
+        return this.selectedValue;
     }
-  }
 
-  private _setupDropdown(): void {
-    const data = this.data as SpaceGraphNodeData;
-    this.options = (data?.options as DropdownOption[]) ?? [
-      { id: 'opt1', label: 'Option 1' },
-      { id: 'opt2', label: 'Option 2' },
-    ];
-    this.selectedValue = (data?.value as string) ?? this.options[0]?.id ?? '';
+    setValue(value: string): void {
+        if (this.selectElement && this.options.some((o) => o.id === value)) {
+            this.selectElement.value = value;
+            this._onSelectionChange(value);
+        }
+    }
 
-    const wrapper = this.domElement;
-    wrapper.style.padding = '8px';
+    setOptions(options: DropdownOption[]): void {
+        this.options = options;
+        if (!this.selectElement) return;
+        this.selectElement.innerHTML = '';
+        this._appendOptions();
+    }
 
-    this.selectElement = DOMUtils.createElement('select') as HTMLSelectElement;
-    Object.assign(this.selectElement.style, {
-      width: '100%',
-      backgroundColor: '#1a1a2e',
-      color: '#fff',
-      border: '1px solid #444',
-      borderRadius: '4px',
-      padding: '8px',
-      fontSize: '14px',
-      cursor: 'pointer',
-    });
+    private _appendOptions(): void {
+        for (const opt of this.options) {
+            const option = DOMUtils.createElement('option') as HTMLOptionElement;
+            option.value = opt.id;
+            option.textContent = opt.label;
+            if (opt.value !== undefined) option.value = String(opt.value);
+            this.selectElement?.appendChild(option);
+        }
+    }
 
-    this._appendOptions();
+    private _setupDropdown(): void {
+        const data = this.data as SpaceGraphNodeData;
+        this.options = (data?.options as DropdownOption[]) ?? [
+            { id: 'opt1', label: 'Option 1' },
+            { id: 'opt2', label: 'Option 2' },
+        ];
+        this.selectedValue = (data?.value as string) ?? this.options[0]?.id ?? '';
 
-    this.selectElement.value = this.selectedValue;
-    this.selectElement.addEventListener('change', () => {
-      this._onSelectionChange(this.selectElement!.value);
-    });
+        const wrapper = this.domElement;
+        wrapper.style.padding = '8px';
 
-    wrapper.appendChild(this.selectElement);
-  }
+        this.selectElement = DOMUtils.createElement('select') as HTMLSelectElement;
+        Object.assign(this.selectElement.style, {
+            width: '100%',
+            backgroundColor: '#1a1a2e',
+            color: '#fff',
+            border: '1px solid #444',
+            borderRadius: '4px',
+            padding: '8px',
+            fontSize: '14px',
+            cursor: 'pointer',
+        });
 
-  private _onSelectionChange(value: string): void {
-    this.selectedValue = value;
-    const option = this.options.find((o) => o.id === value);
-    this.data = { ...this.data, value };
-    this.emitDataChanged('value', value, { label: option?.label });
-  }
+        this._appendOptions();
+
+        this.selectElement.value = this.selectedValue;
+        this.selectElement.addEventListener('change', () => {
+            this._onSelectionChange(this.selectElement!.value);
+        });
+
+        wrapper.appendChild(this.selectElement);
+    }
+
+    private _onSelectionChange(value: string): void {
+        this.selectedValue = value;
+        const option = this.options.find((o) => o.id === value);
+        this.data = { ...this.data, value };
+        this.emitDataChanged('value', value, { label: option?.label });
+    }
 }

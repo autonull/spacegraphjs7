@@ -10,10 +10,10 @@ import type { NodeStatus, RenderEdge } from '@spacegraphjs/renderer';
 import { Levels, type LevelConfig } from 'spacegraphjs/levels';
 import type { LayoutConfig } from 'spacegraphjs/layout';
 
-export type BuildLevel = 'overview' | 'execution' | 'detail'
+export type BuildLevel = 'overview' | 'execution' | 'detail';
 
 /** The layouts the host can draw. The two summaries are the host's own; the rest are the library's. */
-export type HostView = 'ribbon' | 'matrix' | 'lanes' | 'timeline' | 'hierarchy' | 'tree' | 'force'
+export type HostView = 'ribbon' | 'matrix' | 'lanes' | 'timeline' | 'hierarchy' | 'tree' | 'force';
 
 /** The views in the order the picker shows them: the summaries first, then the geometries. */
 export const HOST_VIEWS: readonly HostView[] = [
@@ -24,11 +24,11 @@ export const HOST_VIEWS: readonly HostView[] = [
     'hierarchy',
     'tree',
     'force',
-]
+];
 
 /** The views with no lane gutter: a summary has rows and columns, and the two free geometries have
  * no lanes at all — a card's place in the tree or the simulation says nothing about its lane. */
-export const LANELESS_VIEWS: readonly HostView[] = ['ribbon', 'matrix', 'tree', 'force']
+export const LANELESS_VIEWS: readonly HostView[] = ['ribbon', 'matrix', 'tree', 'force'];
 
 /**
  * The leaves a tree block holds before it folds to the next row. Two, not the library's default of
@@ -73,7 +73,14 @@ export interface BuildModel {
     turns: readonly string[];
 }
 
-export const LANES: readonly BuildLane[] = ['plan', 'fetch', 'compile', 'test', 'package', 'publish'];
+export const LANES: readonly BuildLane[] = [
+    'plan',
+    'fetch',
+    'compile',
+    'test',
+    'package',
+    'publish',
+];
 
 /** The zoom bands the host declares; the controller and the zoom module both read this table. */
 export const BANDS = [
@@ -82,7 +89,12 @@ export const BANDS = [
     { id: 'detail', min: 0.8, max: 1, label: 'Detail' },
 ] as const;
 
-export const STAGES: readonly string[] = ['stage:plan', 'stage:build', 'stage:verify', 'stage:ship'];
+export const STAGES: readonly string[] = [
+    'stage:plan',
+    'stage:build',
+    'stage:verify',
+    'stage:ship',
+];
 
 /** The host's name for each stage; the summary representations caption their rows with it. */
 export const STAGE_LABELS: Readonly<Record<string, string>> = {
@@ -140,22 +152,138 @@ export function buildModel(): BuildModel {
     const nodes: BuildNode[] = [
         node('release', 'stage', 'Release 4.2', 'plan', undefined, 'planned', 'running'),
         node('stage:plan', 'stage', 'Plan', 'plan', 'stage:plan', 'planned', 'passed'),
-        node('plan:scope', 'step', 'Scope the release', 'plan', 'stage:plan', 'planned', 'passed', '2 hotfixes, 1 feature'),
-        node('plan:notes', 'note', 'Freeze the branch', 'plan', 'stage:plan', 'planned', 'passed', 'no schema change'),
+        node(
+            'plan:scope',
+            'step',
+            'Scope the release',
+            'plan',
+            'stage:plan',
+            'planned',
+            'passed',
+            '2 hotfixes, 1 feature',
+        ),
+        node(
+            'plan:notes',
+            'note',
+            'Freeze the branch',
+            'plan',
+            'stage:plan',
+            'planned',
+            'passed',
+            'no schema change',
+        ),
         node('stage:build', 'stage', 'Build', 'compile', 'stage:build', 'changed', 'passed'),
-        node('fetch:deps', 'tool', 'pnpm install', 'fetch', 'stage:build', 'changed', 'passed', 'frozen lockfile'),
-        node('build:compile', 'tool', 'tsc -b', 'compile', 'stage:build', 'changed', 'passed', '12 packages'),
-        node('build:bundle', 'tool', 'vite build', 'compile', 'stage:build', 'changed', 'passed', '184 kB gzip'),
-        node('build:tarball', 'artifact', 'dist/4.2.0.tgz', 'package', 'stage:build', 'changed', 'passed', '2.1 MB'),
+        node(
+            'fetch:deps',
+            'tool',
+            'pnpm install',
+            'fetch',
+            'stage:build',
+            'changed',
+            'passed',
+            'frozen lockfile',
+        ),
+        node(
+            'build:compile',
+            'tool',
+            'tsc -b',
+            'compile',
+            'stage:build',
+            'changed',
+            'passed',
+            '12 packages',
+        ),
+        node(
+            'build:bundle',
+            'tool',
+            'vite build',
+            'compile',
+            'stage:build',
+            'changed',
+            'passed',
+            '184 kB gzip',
+        ),
+        node(
+            'build:tarball',
+            'artifact',
+            'dist/4.2.0.tgz',
+            'package',
+            'stage:build',
+            'changed',
+            'passed',
+            '2.1 MB',
+        ),
         node('stage:verify', 'stage', 'Verify', 'test', 'stage:verify', 'changed', 'failed'),
-        node('test:unit', 'tool', 'vitest run', 'test', 'stage:verify', 'changed', 'passed', '511 passed'),
-        node('test:failure', 'failure', 'expected 12 to equal 13', 'test', 'stage:verify', 'failed', 'failed', 'billing/totals.test.ts'),
-        node('test:retry', 'retry', 'retry #1', 'test', 'stage:verify', 'retried', 'retried', 'round before summing'),
-        node('test:pass', 'tool', 'vitest run', 'test', 'stage:verify', 'changed', 'passed', '512 passed'),
+        node(
+            'test:unit',
+            'tool',
+            'vitest run',
+            'test',
+            'stage:verify',
+            'changed',
+            'passed',
+            '511 passed',
+        ),
+        node(
+            'test:failure',
+            'failure',
+            'expected 12 to equal 13',
+            'test',
+            'stage:verify',
+            'failed',
+            'failed',
+            'billing/totals.test.ts',
+        ),
+        node(
+            'test:retry',
+            'retry',
+            'retry #1',
+            'test',
+            'stage:verify',
+            'retried',
+            'retried',
+            'round before summing',
+        ),
+        node(
+            'test:pass',
+            'tool',
+            'vitest run',
+            'test',
+            'stage:verify',
+            'changed',
+            'passed',
+            '512 passed',
+        ),
         node('stage:ship', 'stage', 'Ship', 'publish', 'stage:ship', 'changed', 'queued'),
-        node('ship:sign', 'tool', 'cosign sign', 'publish', 'stage:ship', 'changed', 'queued', 'keyless'),
-        node('ship:publish', 'tool', 'npm publish', 'publish', 'stage:ship', 'changed', 'queued', 'dist-tag latest'),
-        node('ship:note', 'note', 'Awaiting the registry', 'publish', 'stage:ship', 'planned', 'queued'),
+        node(
+            'ship:sign',
+            'tool',
+            'cosign sign',
+            'publish',
+            'stage:ship',
+            'changed',
+            'queued',
+            'keyless',
+        ),
+        node(
+            'ship:publish',
+            'tool',
+            'npm publish',
+            'publish',
+            'stage:ship',
+            'changed',
+            'queued',
+            'dist-tag latest',
+        ),
+        node(
+            'ship:note',
+            'note',
+            'Awaiting the registry',
+            'publish',
+            'stage:ship',
+            'planned',
+            'queued',
+        ),
     ];
 
     const edges: BuildEdge[] = [

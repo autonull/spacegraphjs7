@@ -17,13 +17,13 @@ export { ImageNode } from './ImageNode';
 export { InstancedNode } from './InstancedNode';
 export { InstancedShapeNode } from './InstancedShapeNode';
 export {
-  borderStrategy,
-  gridStrategy,
-  LayoutNode,
-  type LayoutStrategy,
-  splitStrategy,
-  stackingStrategy,
-  switchStrategy,
+    borderStrategy,
+    gridStrategy,
+    LayoutNode,
+    type LayoutStrategy,
+    splitStrategy,
+    stackingStrategy,
+    switchStrategy,
 } from './LayoutNode';
 export { MarkdownNode } from './MarkdownNode';
 export { MathNode } from './MathNode';

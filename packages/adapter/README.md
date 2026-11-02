@@ -21,13 +21,13 @@ It owns
 
 The vocabulary, through five abstract methods and a configuration object:
 
-| Member | Answers |
-|---|---|
-| `nodeShape(node)` | how the renderer draws this kind |
-| `nodeStatus(node)` | the renderer's status vocabulary |
-| `isStructuralKind(kind)` | chrome or activity |
+| Member                          | Answers                              |
+| ------------------------------- | ------------------------------------ |
+| `nodeShape(node)`               | how the renderer draws this kind     |
+| `nodeStatus(node)`              | the renderer's status vocabulary     |
+| `isStructuralKind(kind)`        | chrome or activity                   |
 | `nodeData(node, level, dimmed)` | the affordance data a renderer reads |
-| `toRenderEdge(edge, level)` | the renderer's edge vocabulary |
+| `toRenderEdge(edge, level)`     | the renderer's edge vocabulary       |
 
 `buildBands` and `bundleEdges` are optional overrides; the base draws no bands and keeps every
 edge.
@@ -38,16 +38,26 @@ edge.
 import { ModelAdapter } from '@spacegraphjs/adapter';
 
 class MyAdapter extends ModelAdapter<MyNode, MyEdge, 'coarse' | 'fine', MyModel> {
-  nodeShape(node) { return node.kind === 'step' ? 'card' : 'panel'; }
-  nodeStatus(node) { return node.failed ? 'error' : 'neutral'; }
-  isStructuralKind(kind) { return kind === 'group'; }
-  nodeData(node, level, dimmed) { return { dimmed }; }
-  toRenderEdge(edge) { return { id: edge.id, source: edge.source, target: edge.target, kind: edge.kind }; }
+    nodeShape(node) {
+        return node.kind === 'step' ? 'card' : 'panel';
+    }
+    nodeStatus(node) {
+        return node.failed ? 'error' : 'neutral';
+    }
+    isStructuralKind(kind) {
+        return kind === 'group';
+    }
+    nodeData(node, level, dimmed) {
+        return { dimmed };
+    }
+    toRenderEdge(edge) {
+        return { id: edge.id, source: edge.source, target: edge.target, kind: edge.kind };
+    }
 }
 
 const adapter = new MyAdapter({
-  cardBudget: (level) => (level === 'coarse' ? 12 : 40),
-  nodeFilter: (model, level) => model.nodes.filter((node) => node.level === level),
+    cardBudget: (level) => (level === 'coarse' ? 12 : 40),
+    nodeFilter: (model, level) => model.nodes.filter((node) => node.level === level),
 });
 
 const renderModel = adapter.build(model, { level: 'fine', positions });
@@ -61,7 +71,7 @@ Jest:
 
 ```ts
 for (const conformanceCase of adapterConformance(adapter, fixture)) {
-  test(conformanceCase.name, conformanceCase.check);
+    test(conformanceCase.name, conformanceCase.check);
 }
 ```
 

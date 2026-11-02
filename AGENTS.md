@@ -17,7 +17,7 @@
     - Adhere to reasonable JavaScript code guidelines
     - Consider modern JavaScript language syntax
 
-- Few comments: rely on self-documenting code.  Do not remove JSDocs containing essential Type details
+- Few comments: rely on self-documenting code. Do not remove JSDocs containing essential Type details
 
 - Purpose: professional, not explanatory/educational
 

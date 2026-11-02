@@ -16,67 +16,67 @@ type DrawFn = (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) => void
  *            Custom draw function called on construction and on redraw().
  */
 export class CanvasNode extends TexturedMeshNode {
-  static readonly typeName: string = 'CanvasNode';
-  readonly canvas: HTMLCanvasElement;
-  readonly ctx: CanvasRenderingContext2D;
-  readonly canvasTexture!: CanvasTexture;
-  private drawFn?: DrawFn;
+    static readonly typeName: string = 'CanvasNode';
+    readonly canvas: HTMLCanvasElement;
+    readonly ctx: CanvasRenderingContext2D;
+    readonly canvasTexture!: CanvasTexture;
+    private drawFn?: DrawFn;
 
-  constructor(sg: SpaceGraph | undefined, spec: NodeSpec) {
-    const w = (spec.data?.width ?? 256) as number;
-    const h = (spec.data?.height ?? 256) as number;
-    super(sg, spec, w * 0.5, h * 0.5);
+    constructor(sg: SpaceGraph | undefined, spec: NodeSpec) {
+        const w = (spec.data?.width ?? 256) as number;
+        const h = (spec.data?.height ?? 256) as number;
+        super(sg, spec, w * 0.5, h * 0.5);
 
-    this.drawFn = spec.data?.draw as DrawFn | undefined;
+        this.drawFn = spec.data?.draw as DrawFn | undefined;
 
-    this.canvas = createElement('canvas');
-    this.canvas.width = w;
-    this.canvas.height = h;
-    this.ctx = this.canvas.getContext('2d') as CanvasRenderingContext2D;
+        this.canvas = createElement('canvas');
+        this.canvas.width = w;
+        this.canvas.height = h;
+        this.ctx = this.canvas.getContext('2d') as CanvasRenderingContext2D;
 
-    this._draw();
+        this._draw();
 
-    this.canvasTexture = new CanvasTexture(this.canvas);
-    this.setTexture(this.canvasTexture);
-  }
-
-  /** Expose the raw 2D context for external drawing. Call redraw() after modifying. */
-  get context(): CanvasRenderingContext2D {
-    return this.ctx;
-  }
-
-  /** Redraw the canvas using the draw function (or default renderer) and mark the texture as needing an update. */
-  redraw(drawFn?: DrawFn): void {
-    if (drawFn) this.drawFn = drawFn;
-    this._draw();
-    this.canvasTexture.needsUpdate = true;
-  }
-
-  updateSpec(updates: Partial<NodeSpec>): this {
-    super.updateSpec(updates);
-    if (updates.data?.draw) {
-      this.drawFn = updates.data.draw as DrawFn | undefined;
-      this.redraw();
+        this.canvasTexture = new CanvasTexture(this.canvas);
+        this.setTexture(this.canvasTexture);
     }
-    return this;
-  }
 
-  private _draw() {
-    const { ctx, canvas } = this;
-    if (!ctx) return;
-    if (this.drawFn) {
-      this.drawFn(ctx, canvas);
-      return;
+    /** Expose the raw 2D context for external drawing. Call redraw() after modifying. */
+    get context(): CanvasRenderingContext2D {
+        return this.ctx;
     }
-    const bg = (this.data?.bgColor as string) ?? '#1e293b';
-    ctx.fillStyle = bg;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    if (this.label) {
-      ctx.fillStyle = '#f8fafc';
-      ctx.font = `bold ${Math.floor(canvas.height / 10)}px sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(this.label, canvas.width / 2, canvas.height / 2);
+
+    /** Redraw the canvas using the draw function (or default renderer) and mark the texture as needing an update. */
+    redraw(drawFn?: DrawFn): void {
+        if (drawFn) this.drawFn = drawFn;
+        this._draw();
+        this.canvasTexture.needsUpdate = true;
     }
-  }
+
+    updateSpec(updates: Partial<NodeSpec>): this {
+        super.updateSpec(updates);
+        if (updates.data?.draw) {
+            this.drawFn = updates.data.draw as DrawFn | undefined;
+            this.redraw();
+        }
+        return this;
+    }
+
+    private _draw() {
+        const { ctx, canvas } = this;
+        if (!ctx) return;
+        if (this.drawFn) {
+            this.drawFn(ctx, canvas);
+            return;
+        }
+        const bg = (this.data?.bgColor as string) ?? '#1e293b';
+        ctx.fillStyle = bg;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        if (this.label) {
+            ctx.fillStyle = '#f8fafc';
+            ctx.font = `bold ${Math.floor(canvas.height / 10)}px sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(this.label, canvas.width / 2, canvas.height / 2);
+        }
+    }
 }

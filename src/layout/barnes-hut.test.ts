@@ -3,7 +3,9 @@ import { ForcePlacement } from './barnes-hut';
 import type { PlacementItem } from './placement';
 
 describe('ForcePlacement (Barnes-Hut)', () => {
-    const makeItems = (count: number): PlacementItem<{ links?: readonly string[]; radius?: number }>[] =>
+    const makeItems = (
+        count: number,
+    ): PlacementItem<{ links?: readonly string[]; radius?: number }>[] =>
         Array.from({ length: count }, (_, i) => ({
             id: `node-${i}`,
             width: 100,
@@ -60,8 +62,8 @@ describe('ForcePlacement (Barnes-Hut)', () => {
     });
 
     it('uses Barnes-Hut for large graphs', () => {
-        const layout = new ForcePlacement({ 
-            seed: 42, 
+        const layout = new ForcePlacement({
+            seed: 42,
             iterations: 50,
             barnesHut: true,
             barnesHutThreshold: 10,
@@ -78,8 +80,8 @@ describe('ForcePlacement (Barnes-Hut)', () => {
     });
 
     it('can disable Barnes-Hut', () => {
-        const layout = new ForcePlacement({ 
-            seed: 42, 
+        const layout = new ForcePlacement({
+            seed: 42,
             iterations: 50,
             barnesHut: false,
         });
@@ -95,8 +97,8 @@ describe('ForcePlacement (Barnes-Hut)', () => {
     });
 
     it('handles custom theta parameter', () => {
-        const layout = new ForcePlacement({ 
-            seed: 42, 
+        const layout = new ForcePlacement({
+            seed: 42,
             iterations: 50,
             barnesHut: true,
             barnesHutThreshold: 5,

@@ -15,7 +15,7 @@ manager continuously feeds screenshots of the DOM to ONNX machine-learning model
 overlap, etc.). When a visual regression is detected—such as poorly contrasted text or overlapping nodes—the AI
 generates semantic DOM patches automatically.
 
-**As a contributor**, your goal is to *extend* the graph rendering engine and *trust* the AI to verify visual
+**As a contributor**, your goal is to _extend_ the graph rendering engine and _trust_ the AI to verify visual
 invariants.
 
 ## 🛠 Local Setup
@@ -23,22 +23,24 @@ invariants.
 To start contributing, set up your standard NodeJS environment.
 
 1. **Fork & Clone**
-   ```bash
-   git clone https://github.com/autonull/spacegraphjs.git
-   cd spacegraphjs
-   ```
+
+    ```bash
+    git clone https://github.com/autonull/spacegraphjs.git
+    cd spacegraphjs
+    ```
 
 2. **Install Dependencies**
-   ```bash
-   pnpm install
-   ```
+
+    ```bash
+    pnpm install
+    ```
 
 3. **Run the Interactive Examples**
-   ```bash
-   pnpm run dev
-   ```
-   Navigate to `http://localhost:5173/examples/index.html` to see the live templates, including the
-   `VisionOverlayPlugin` in action.
+    ```bash
+    pnpm run dev
+    ```
+    Navigate to `http://localhost:5173/examples/index.html` to see the live templates, including the
+    `VisionOverlayPlugin` in action.
 
 ## 🏗 Project Architecture
 
@@ -65,16 +67,16 @@ We maintain high quality standards. Before opening a PR, ensure you have:
     - If adding visual layout logic, implement an invariant test inside `test/vision.spec.ts` using the `visionAssert`
       utility!
 3. **Run CI checks locally**.
-   ```bash
-   pnpm run lint
-   pnpm run format:check
-   pnpm run test
-   pnpm run vision
-   ```
+    ```bash
+    pnpm run lint
+    pnpm run format:check
+    pnpm run test
+    pnpm run vision
+    ```
 4. **Tested the build output**
-   ```bash
-   pnpm run build
-   ```
+    ```bash
+    pnpm run build
+    ```
 
 After submitting a PR, wait for the GitHub Actions to complete. If the `Playwright Vision Tests` fail, it means your
 pull request introduced a visual defect (e.g. contrast failure) globally!
@@ -102,17 +104,17 @@ in ML/AI contributions, you can help improve our heuristics:
 
 1. **Prerequisites:** You need Python 3 installed.
 2. **Install ML dependencies:**
-   ```bash
-   pip install numpy scikit-learn skl2onnx
-   ```
+    ```bash
+    pip install numpy scikit-learn skl2onnx
+    ```
 3. **Modify Training Data:** Open `train_vision_models.py`. You can adjust the synthetic data generation logic (e.g.,
    inside `train_tla()` for Text Legibility or `train_odn()` for Overlap Detection) to better represent complex edge
    cases.
 4. **Train and Export:**
-   ```bash
-   python3 train_vision_models.py
-   ```
-   This will output new `.onnx` files into the `public/` directory.
+    ```bash
+    python3 train_vision_models.py
+    ```
+    This will output new `.onnx` files into the `public/` directory.
 5. **Test locally:** Run `pnpm run test:vision` to see if your new weights improve the Playwright assertions.
 
 ## 🐞 Reporting Bugs

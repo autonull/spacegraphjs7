@@ -51,7 +51,7 @@
 
 | Result               | Metric                            | Verification    |
 | -------------------- | --------------------------------- | --------------- |
-| Active users         | 25,000+ pnpm downloads/month       | pnpm trends      |
+| Active users         | 25,000+ pnpm downloads/month      | pnpm trends     |
 | Engaged contributors | 150+ external contributors        | GitHub insights |
 | Healthy discourse    | <2h response time, 98% resolution | Matrix, GitHub  |
 | Sustainable revenue  | $100K/month                       | P&L statements  |

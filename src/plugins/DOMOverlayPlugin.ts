@@ -6,43 +6,47 @@ import { DOMUtils } from '../utils/DOMUtils';
 import { BaseSystemPlugin } from './BaseSystemPlugin';
 
 export interface DOMOverlayOptions {
-  className?: string;
-  style?: Partial<CSSStyleDeclaration>;
+    className?: string;
+    style?: Partial<CSSStyleDeclaration>;
 }
 
 export abstract class DOMOverlayPlugin extends BaseSystemPlugin {
-  protected container: HTMLElement | null = null;
+    protected container: HTMLElement | null = null;
 
-  init(sg: SpaceGraph, graph: Graph, events: EventEmitter<SpaceGraphEvents>): void | Promise<void> {
-    super.init(sg, graph, events);
-    if (typeof document === 'undefined') return;
-    this.createOverlay();
-    this.attachOverlay();
-  }
-
-  dispose(): void {
-    if (this.container?.parentElement) {
-      this.container.parentElement.removeChild(this.container);
+    init(
+        sg: SpaceGraph,
+        graph: Graph,
+        events: EventEmitter<SpaceGraphEvents>,
+    ): void | Promise<void> {
+        super.init(sg, graph, events);
+        if (typeof document === 'undefined') return;
+        this.createOverlay();
+        this.attachOverlay();
     }
-    this.container = null;
-    super.dispose?.();
-  }
 
-  protected abstract getOverlayOptions(): DOMOverlayOptions;
+    dispose(): void {
+        if (this.container?.parentElement) {
+            this.container.parentElement.removeChild(this.container);
+        }
+        this.container = null;
+        super.dispose?.();
+    }
 
-  protected createOverlay(): void {
-    const options = this.getOverlayOptions();
-    this.container = DOMUtils.createElement('div', {
-      className: options.className,
-      style: options.style,
-    });
-  }
+    protected abstract getOverlayOptions(): DOMOverlayOptions;
 
-  protected attachOverlay(): void {
-    const renderer = this.sg?.renderer;
-    if (!this.container || !renderer?.renderer?.domElement?.parentElement) return;
-    const parent = renderer.renderer.domElement.parentElement as HTMLElement;
-    parent.style.position = 'relative';
-    parent.appendChild(this.container);
-  }
+    protected createOverlay(): void {
+        const options = this.getOverlayOptions();
+        this.container = DOMUtils.createElement('div', {
+            className: options.className,
+            style: options.style,
+        });
+    }
+
+    protected attachOverlay(): void {
+        const renderer = this.sg?.renderer;
+        if (!this.container || !renderer?.renderer?.domElement?.parentElement) return;
+        const parent = renderer.renderer.domElement.parentElement as HTMLElement;
+        parent.style.position = 'relative';
+        parent.appendChild(this.container);
+    }
 }

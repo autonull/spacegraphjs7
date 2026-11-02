@@ -12,7 +12,8 @@ const MODEL: { nodes: TestNode[] } = {
     ],
 };
 
-const fields = (node: TestNode) => [node.label, node.summary, node.path].filter((value): value is string => !!value);
+const fields = (node: TestNode) =>
+    [node.label, node.summary, node.path].filter((value): value is string => !!value);
 
 describe('Navigation.search', () => {
     it('matches the fields case-insensitively', () => {
@@ -30,10 +31,16 @@ describe('Navigation.search', () => {
     });
 
     it('keeps the model order', () => {
-        expect(Navigation.search(MODEL, 'e', fields).map((node) => node.id)).toEqual(['a', 'b', 'c']);
+        expect(Navigation.search(MODEL, 'e', fields).map((node) => node.id)).toEqual([
+            'a',
+            'b',
+            'c',
+        ]);
     });
 
     it('joins the fields, so a query may span two of them', () => {
-        expect(Navigation.search(MODEL, 'Read file\nreads', fields).map((node) => node.id)).toEqual(['a']);
+        expect(Navigation.search(MODEL, 'Read file\nreads', fields).map((node) => node.id)).toEqual(
+            ['a'],
+        );
     });
 });

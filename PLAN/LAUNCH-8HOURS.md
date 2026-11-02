@@ -9,7 +9,7 @@
 
 | #   | Task            | Time    | Why                          |
 | --- | --------------- | ------- | ---------------------------- |
-| 1   | ppnpm package     | 2 hours | Blocks ALL adoption          |
+| 1   | ppnpm package   | 2 hours | Blocks ALL adoption          |
 | 2   | QUICKSTART.md   | 2 hours | First working graph in 5 min |
 | 3   | README.md       | 1 hour  | First impression             |
 | 4   | Matrix room     | 30 min  | Community hub                |

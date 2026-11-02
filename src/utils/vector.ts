@@ -5,26 +5,18 @@ import { Vector3 } from 'three';
  */
 
 /** The vector from one point to another. */
-export function directionBetween(
-  from: Vector3,
-  to: Vector3,
-  target = new Vector3()
-): Vector3 {
-  return target.subVectors(to, from);
+export function directionBetween(from: Vector3, to: Vector3, target = new Vector3()): Vector3 {
+    return target.subVectors(to, from);
 }
 
 /** The point halfway between two points. */
-export function midpoint(
-  a: Vector3,
-  b: Vector3,
-  target = new Vector3()
-): Vector3 {
-  return target.addVectors(a, b).multiplyScalar(0.5);
+export function midpoint(a: Vector3, b: Vector3, target = new Vector3()): Vector3 {
+    return target.addVectors(a, b).multiplyScalar(0.5);
 }
 
 /** The vector perpendicular to a direction in the XY plane. */
 export function perpendicularTo(direction: Vector3, target = new Vector3()): Vector3 {
-  return target.set(-direction.y, direction.x, 0);
+    return target.set(-direction.y, direction.x, 0);
 }
 
 /**
@@ -32,16 +24,16 @@ export function perpendicularTo(direction: Vector3, target = new Vector3()): Vec
  * prime meridian faces -X.
  */
 export function latLngToVec3(
-  latitude: number,
-  longitude: number,
-  radius: number,
-  target = new Vector3()
+    latitude: number,
+    longitude: number,
+    radius: number,
+    target = new Vector3(),
 ): Vector3 {
-  const phi = ((90 - latitude) * Math.PI) / 180;
-  const theta = ((longitude + 180) * Math.PI) / 180;
-  return target.set(
-    -(radius * Math.sin(phi) * Math.cos(theta)),
-    radius * Math.cos(phi),
-    radius * Math.sin(phi) * Math.sin(theta)
-  );
+    const phi = ((90 - latitude) * Math.PI) / 180;
+    const theta = ((longitude + 180) * Math.PI) / 180;
+    return target.set(
+        -(radius * Math.sin(phi) * Math.cos(theta)),
+        radius * Math.cos(phi),
+        radius * Math.sin(phi) * Math.sin(theta),
+    );
 }

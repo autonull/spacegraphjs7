@@ -15,20 +15,20 @@ import { Edge, withEdgeData } from './Edge';
  *   thickness : line width (default 2)
  */
 export class DottedEdge extends Edge {
-  static readonly typeName: string = 'DottedEdge';
+    static readonly typeName: string = 'DottedEdge';
 
-  constructor(sg: SpaceGraph | undefined, spec: EdgeSpec, source: Node, target: Node) {
-    super(
-      sg,
-      withEdgeData(spec, {
-        dashed: true,
-        dashSize: 8,
-        gapSize: 6,
-        color: 0x888888,
-        thickness: 2,
-      }),
-      source,
-      target
-    );
-  }
+    constructor(sg: SpaceGraph | undefined, spec: EdgeSpec, source: Node, target: Node) {
+        super(
+            sg,
+            withEdgeData(spec, {
+                dashed: true,
+                dashSize: 8,
+                gapSize: 6,
+                color: 0x888888,
+                thickness: 2,
+            }),
+            source,
+            target,
+        );
+    }
 }

@@ -4,259 +4,270 @@
  */
 
 import { BaseGraphRenderer } from './adapter';
-import type { RenderModel, RenderModelPatch, RenderTheme, RendererViewport, FitOptions, RenderNode, RenderEdge } from './index';
+import type {
+    RenderModel,
+    RenderModelPatch,
+    RenderTheme,
+    RendererViewport,
+    FitOptions,
+    RenderNode,
+    RenderEdge,
+} from './index';
 import { mergeRenderModelPatch } from './patch';
 
 export abstract class ModelRenderer extends BaseGraphRenderer {
-  #model: RenderModel | null = null;
-  #nodes = new Set<string>();
-  #edges = new Set<string>();
+    #model: RenderModel | null = null;
+    #nodes = new Set<string>();
+    #edges = new Set<string>();
 
-  protected get model(): RenderModel | null {
-    return this.#model;
-  }
-
-  protected set model(model: RenderModel | null) {
-    this.#model = model;
-  }
-
-  protected get nodes(): Set<string> {
-    return this.#nodes;
-  }
-
-  protected get edges(): Set<string> {
-    return this.#edges;
-  }
-
-  /** Apply a full model to the renderer. */
-  setModel(model: RenderModel): void {
-    try {
-      const theme = this.getTheme();
-      if (!theme) return;
-
-      const liveNodes = new Set(model.nodes.map((n) => n.id));
-      const liveEdges = new Set(model.edges.map((e) => e.id));
-
-      // Remove nodes/edges not in the new model
-      for (const id of this.#nodes) {
-        if (!liveNodes.has(id)) this.removeNode(id);
-      }
-      for (const id of this.#edges) {
-        if (!liveEdges.has(id)) this.removeEdge(id);
-      }
-
-      // Apply the model (renderer-specific)
-      this.applyModel(model, theme);
-
-      // Update visibility
-      for (const node of model.nodes) {
-        this.setNodeVisibility(node.id, node.visible !== false);
-      }
-
-      this.#model = model;
-      this.#nodes = liveNodes;
-      this.#edges = liveEdges;
-    } catch (error) {
-      this.emit('error', { error });
+    protected get model(): RenderModel | null {
+        return this.#model;
     }
-  }
 
-  /** Apply an incremental patch to the current model. */
-  applyPatch(patch: RenderModelPatch): void {
-    try {
-      const theme = this.getTheme();
-      const model = this.#model;
-      if (!theme || !model) return;
-
-      // Apply node changes
-      for (const id of patch.nodes.removed) {
-        this.removeNode(id);
-        this.#nodes.delete(id);
-      }
-
-      for (const node of patch.nodes.added) {
-        this.addNode(node, theme);
-        this.#nodes.add(node.id);
-      }
-
-      for (const node of patch.nodes.changed) {
-        this.updateNode(node, theme);
-      }
-
-      // Apply edge changes
-      for (const id of patch.edges.removed) {
-        this.removeEdge(id);
-        this.#edges.delete(id);
-      }
-
-      for (const edge of patch.edges.added) {
-        this.addEdge(edge, theme);
-        this.#edges.add(edge.id);
-      }
-
-      for (const edge of patch.edges.changed) {
-        this.updateEdge(edge, theme);
-      }
-
-      // Update the stored model
-      const updatedModel = mergeRenderModelPatch(model, patch);
-      this.#model = updatedModel;
-
-      // Update visibility for all nodes
-      for (const node of updatedModel.nodes) {
-        this.setNodeVisibility(node.id, node.visible !== false);
-      }
-    } catch (error) {
-      this.emit('error', { error });
+    protected set model(model: RenderModel | null) {
+        this.#model = model;
     }
-  }
 
-  setTheme(theme: RenderTheme): void {
-    this.setThemeInternal(theme);
-    if (this.#model) this.setModel(this.#model);
-  }
+    protected get nodes(): Set<string> {
+        return this.#nodes;
+    }
 
-  /** Get the current theme. Override to store theme internally. */
-  protected abstract getTheme(): RenderTheme | null;
+    protected get edges(): Set<string> {
+        return this.#edges;
+    }
 
-  /** Store the theme internally. Override to store theme. */
-  protected abstract setThemeInternal(theme: RenderTheme): void;
+    /** Apply a full model to the renderer. */
+    setModel(model: RenderModel): void {
+        try {
+            const theme = this.getTheme();
+            if (!theme) return;
 
-  /** Apply a full model to the renderer. Override with renderer-specific logic. */
-  protected applyModel(_model: RenderModel, _theme: RenderTheme): void {
-    // Default: no-op. Concrete renderers that override setModel/applyPatch don't need this.
-  }
+            const liveNodes = new Set(model.nodes.map((n) => n.id));
+            const liveEdges = new Set(model.edges.map((e) => e.id));
 
-  /** Add a node to the renderer. */
-  protected addNode(_node: RenderNode, _theme: RenderTheme): void {
-    // Default: no-op. Concrete renderers that override setModel/applyPatch don't need this.
-  }
+            // Remove nodes/edges not in the new model
+            for (const id of this.#nodes) {
+                if (!liveNodes.has(id)) this.removeNode(id);
+            }
+            for (const id of this.#edges) {
+                if (!liveEdges.has(id)) this.removeEdge(id);
+            }
 
-  /** Update a node in the renderer. */
-  protected updateNode(_node: RenderNode, _theme: RenderTheme): void {
-    // Default: no-op. Concrete renderers that override setModel/applyPatch don't need this.
-  }
+            // Apply the model (renderer-specific)
+            this.applyModel(model, theme);
 
-  /** Remove a node from the renderer. */
-  protected removeNode(_id: string): void {
-    // Default: no-op. Concrete renderers that override setModel/applyPatch don't need this.
-  }
+            // Update visibility
+            for (const node of model.nodes) {
+                this.setNodeVisibility(node.id, node.visible !== false);
+            }
 
-  /** Add an edge to the renderer. */
-  protected addEdge(_edge: RenderEdge, _theme: RenderTheme): void {
-    // Default: no-op. Concrete renderers that override setModel/applyPatch don't need this.
-  }
+            this.#model = model;
+            this.#nodes = liveNodes;
+            this.#edges = liveEdges;
+        } catch (error) {
+            this.emit('error', { error });
+        }
+    }
 
-  /** Update an edge in the renderer. */
-  protected updateEdge(_edge: RenderEdge, _theme: RenderTheme): void {
-    // Default: no-op. Concrete renderers that override setModel/applyPatch don't need this.
-  }
+    /** Apply an incremental patch to the current model. */
+    applyPatch(patch: RenderModelPatch): void {
+        try {
+            const theme = this.getTheme();
+            const model = this.#model;
+            if (!theme || !model) return;
 
-  /** Remove an edge from the renderer. */
-  protected removeEdge(_id: string): void {
-    // Default: no-op. Concrete renderers that override setModel/applyPatch don't need this.
-  }
+            // Apply node changes
+            for (const id of patch.nodes.removed) {
+                this.removeNode(id);
+                this.#nodes.delete(id);
+            }
 
-  /** Set node visibility. */
-  protected setNodeVisibility(_id: string, _visible: boolean): void {
-    // Default: no-op. Concrete renderers that override setModel/applyPatch don't need this.
-  }
+            for (const node of patch.nodes.added) {
+                this.addNode(node, theme);
+                this.#nodes.add(node.id);
+            }
 
-  /** Trigger a render. */
-  protected render(): void {
-    // Default: no-op. Concrete renderers that override setModel/applyPatch don't need this.
-  }
+            for (const node of patch.nodes.changed) {
+                this.updateNode(node, theme);
+            }
 
-  // The following methods have default implementations that can be overridden
+            // Apply edge changes
+            for (const id of patch.edges.removed) {
+                this.removeEdge(id);
+                this.#edges.delete(id);
+            }
 
-  setProjection(_projection: '2d' | '3d'): void {
-    // Default: no-op. Override if the renderer supports projection changes.
-  }
+            for (const edge of patch.edges.added) {
+                this.addEdge(edge, theme);
+                this.#edges.add(edge.id);
+            }
 
-  setDepth(_depth: 'flat' | 'layered' | 'depth-stack' | 'orbit'): void {
-    // Default: no-op. Override if the renderer supports depth changes.
-  }
+            for (const edge of patch.edges.changed) {
+                this.updateEdge(edge, theme);
+            }
 
-  setSelection(ids: readonly string[]): void {
-    this.applySelection(ids, () => this.selectNodes(ids));
-  }
+            // Update the stored model
+            const updatedModel = mergeRenderModelPatch(model, patch);
+            this.#model = updatedModel;
 
-  /** Select nodes in the renderer. Override with renderer-specific logic. */
-  protected selectNodes(_ids: readonly string[]): void {
-    // Default: no-op. Override with renderer-specific logic.
-  }
+            // Update visibility for all nodes
+            for (const node of updatedModel.nodes) {
+                this.setNodeVisibility(node.id, node.visible !== false);
+            }
+        } catch (error) {
+            this.emit('error', { error });
+        }
+    }
 
-  setViewport(viewport: RendererViewport): void {
-    this.applyViewport(viewport);
-  }
+    setTheme(theme: RenderTheme): void {
+        this.setThemeInternal(theme);
+        if (this.#model) this.setModel(this.#model);
+    }
 
-  /** Apply viewport to the renderer. Override with renderer-specific logic. */
-  protected applyViewport(_viewport: RendererViewport): void {
-    // Default: no-op. Override with renderer-specific logic.
-  }
+    /** Get the current theme. Override to store theme internally. */
+    protected abstract getTheme(): RenderTheme | null;
 
-  getViewport(): RendererViewport {
-    return this.readViewport() ?? { zoom: 1, center: [0, 0, 0] };
-  }
+    /** Store the theme internally. Override to store theme. */
+    protected abstract setThemeInternal(theme: RenderTheme): void;
 
-  /** Read viewport from the renderer. Override with renderer-specific logic. */
-  protected readViewport(): RendererViewport | undefined {
-    // Default: undefined. Override with renderer-specific logic.
-    return undefined;
-  }
+    /** Apply a full model to the renderer. Override with renderer-specific logic. */
+    protected applyModel(_model: RenderModel, _theme: RenderTheme): void {
+        // Default: no-op. Concrete renderers that override setModel/applyPatch don't need this.
+    }
 
-  getNodeScreenPosition(id: string): { x: number; y: number } | undefined {
-    return this.readNodeScreenPosition(id);
-  }
+    /** Add a node to the renderer. */
+    protected addNode(_node: RenderNode, _theme: RenderTheme): void {
+        // Default: no-op. Concrete renderers that override setModel/applyPatch don't need this.
+    }
 
-  /** Read node screen position from the renderer. Override with renderer-specific logic. */
-  protected readNodeScreenPosition(_id: string): { x: number; y: number } | undefined {
-    // Default: undefined. Override with renderer-specific logic.
-    return undefined;
-  }
+    /** Update a node in the renderer. */
+    protected updateNode(_node: RenderNode, _theme: RenderTheme): void {
+        // Default: no-op. Concrete renderers that override setModel/applyPatch don't need this.
+    }
 
-  fit(ids?: readonly string[], options?: FitOptions): void {
-    this.applyFit(ids, options);
-  }
+    /** Remove a node from the renderer. */
+    protected removeNode(_id: string): void {
+        // Default: no-op. Concrete renderers that override setModel/applyPatch don't need this.
+    }
 
-  /** Apply fit to the renderer. Override with renderer-specific logic. */
-  protected applyFit(_ids: readonly string[] | undefined, _options: FitOptions | undefined): void {
-    // Default: no-op. Override with renderer-specific logic.
-  }
+    /** Add an edge to the renderer. */
+    protected addEdge(_edge: RenderEdge, _theme: RenderTheme): void {
+        // Default: no-op. Concrete renderers that override setModel/applyPatch don't need this.
+    }
 
-  focus(id: string): void {
-    this.applyFocus(id);
-  }
+    /** Update an edge in the renderer. */
+    protected updateEdge(_edge: RenderEdge, _theme: RenderTheme): void {
+        // Default: no-op. Concrete renderers that override setModel/applyPatch don't need this.
+    }
 
-  /** Apply focus to the renderer. Override with renderer-specific logic. */
-  protected applyFocus(_id: string): void {
-    // Default: no-op. Override with renderer-specific logic.
-  }
+    /** Remove an edge from the renderer. */
+    protected removeEdge(_id: string): void {
+        // Default: no-op. Concrete renderers that override setModel/applyPatch don't need this.
+    }
 
-  resize(): void {
-    this.render();
-  }
+    /** Set node visibility. */
+    protected setNodeVisibility(_id: string, _visible: boolean): void {
+        // Default: no-op. Concrete renderers that override setModel/applyPatch don't need this.
+    }
 
-  dispose(): void {
-    for (const off of this.disposers) off();
-    this.disposers = [];
-    this.events.clear();
-    this.cleanup();
-    this.#model = null;
-    this.#nodes.clear();
-    this.#edges.clear();
-  }
+    /** Trigger a render. */
+    protected render(): void {
+        // Default: no-op. Concrete renderers that override setModel/applyPatch don't need this.
+    }
 
-  /** Cleanup renderer-specific resources. */
-  protected cleanup(): void {
-    // Default: no-op. Override with renderer-specific cleanup.
-  }
+    // The following methods have default implementations that can be overridden
 
-  /** Array of cleanup functions for event listeners. Override to register listeners. */
-  protected disposers: (() => void)[] = [];
+    setProjection(_projection: '2d' | '3d'): void {
+        // Default: no-op. Override if the renderer supports projection changes.
+    }
 
-  /** Register an event listener with automatic cleanup. */
-  protected registerListener(off: () => void): void {
-    this.disposers.push(off);
-  }
+    setDepth(_depth: 'flat' | 'layered' | 'depth-stack' | 'orbit'): void {
+        // Default: no-op. Override if the renderer supports depth changes.
+    }
+
+    setSelection(ids: readonly string[]): void {
+        this.applySelection(ids, () => this.selectNodes(ids));
+    }
+
+    /** Select nodes in the renderer. Override with renderer-specific logic. */
+    protected selectNodes(_ids: readonly string[]): void {
+        // Default: no-op. Override with renderer-specific logic.
+    }
+
+    setViewport(viewport: RendererViewport): void {
+        this.applyViewport(viewport);
+    }
+
+    /** Apply viewport to the renderer. Override with renderer-specific logic. */
+    protected applyViewport(_viewport: RendererViewport): void {
+        // Default: no-op. Override with renderer-specific logic.
+    }
+
+    getViewport(): RendererViewport {
+        return this.readViewport() ?? { zoom: 1, center: [0, 0, 0] };
+    }
+
+    /** Read viewport from the renderer. Override with renderer-specific logic. */
+    protected readViewport(): RendererViewport | undefined {
+        // Default: undefined. Override with renderer-specific logic.
+        return undefined;
+    }
+
+    getNodeScreenPosition(id: string): { x: number; y: number } | undefined {
+        return this.readNodeScreenPosition(id);
+    }
+
+    /** Read node screen position from the renderer. Override with renderer-specific logic. */
+    protected readNodeScreenPosition(_id: string): { x: number; y: number } | undefined {
+        // Default: undefined. Override with renderer-specific logic.
+        return undefined;
+    }
+
+    fit(ids?: readonly string[], options?: FitOptions): void {
+        this.applyFit(ids, options);
+    }
+
+    /** Apply fit to the renderer. Override with renderer-specific logic. */
+    protected applyFit(
+        _ids: readonly string[] | undefined,
+        _options: FitOptions | undefined,
+    ): void {
+        // Default: no-op. Override with renderer-specific logic.
+    }
+
+    focus(id: string): void {
+        this.applyFocus(id);
+    }
+
+    /** Apply focus to the renderer. Override with renderer-specific logic. */
+    protected applyFocus(_id: string): void {
+        // Default: no-op. Override with renderer-specific logic.
+    }
+
+    resize(): void {
+        this.render();
+    }
+
+    dispose(): void {
+        for (const off of this.disposers) off();
+        this.disposers = [];
+        this.events.clear();
+        this.cleanup();
+        this.#model = null;
+        this.#nodes.clear();
+        this.#edges.clear();
+    }
+
+    /** Cleanup renderer-specific resources. */
+    protected cleanup(): void {
+        // Default: no-op. Override with renderer-specific cleanup.
+    }
+
+    /** Array of cleanup functions for event listeners. Override to register listeners. */
+    protected disposers: (() => void)[] = [];
+
+    /** Register an event listener with automatic cleanup. */
+    protected registerListener(off: () => void): void {
+        this.disposers.push(off);
+    }
 }

@@ -19,183 +19,183 @@ import { paletteOf } from './palette';
  *   title     : optional chart title string
  */
 export class ChartNode extends BaseContentNode {
-  static readonly typeName: string = 'ChartNode';
-  public canvasEl: HTMLCanvasElement;
-  private chartInstance: unknown = null;
+    static readonly typeName: string = 'ChartNode';
+    public canvasEl: HTMLCanvasElement;
+    private chartInstance: unknown = null;
 
-  /** The title bar's label element; null when the node has no title bar. */
-  get titleEl(): HTMLElement | null {
-    return this.titleElement;
-  }
-
-  constructor(sg: SpaceGraph | undefined, spec: NodeSpec) {
-    const w = (spec.data?.width as number) ?? 300;
-    const h = (spec.data?.height as number) ?? 200;
-    const theme = (spec.data?.theme as string) ?? 'dark';
-    const title = spec.label ?? (spec.data?.title as string) ?? '';
-    const totalH = h + ((title as string) ? 32 : 0);
-
-    super(sg, spec, {
-      defaultWidth: w,
-      defaultHeight: totalH,
-      defaultTheme: theme as 'dark' | 'light',
-      materialParams: { opacity: 0.1 },
-      className: `spacegraph-chart-node theme-${theme}`,
-      createTitleBar: title || undefined,
-    });
-
-    const canvasContainer = DOMUtils.createElement('div');
-    Object.assign(canvasContainer.style, {
-      position: 'relative',
-      flexGrow: '1',
-      width: '100%',
-      height: '100%',
-    });
-
-    this.canvasEl = DOMUtils.createElement('canvas', {
-      style: { display: 'block', width: '100%', height: '100%' },
-    });
-    canvasContainer.appendChild(this.canvasEl);
-    this.domElement.appendChild(canvasContainer);
-
-    this._renderChart(spec);
-  }
-
-  updateSpec(updates: Partial<NodeSpec>): this {
-    super.updateSpec(updates);
-
-    this.syncTitleLabel(updates);
-
-    if (updates.data) {
-      if (updates.data.width || updates.data.height) {
-        const w = this.dimension(updates.data, 'width', 300);
-        const h = this.dimension(updates.data, 'height', 200);
-        const title = (updates.label ?? this.label ?? this.data?.title ?? '') as string;
-        const totalH = h + (title ? 32 : 0);
-
-        this.applySize(w, totalH);
-      }
-
-      if (
-        updates.data.datasets ||
-        updates.data.labels ||
-        updates.data.chartType ||
-        updates.data.theme ||
-        updates.data.chartOptions
-      ) {
-        this._renderChart({ data: { ...this.data, ...updates.data } });
-      }
+    /** The title bar's label element; null when the node has no title bar. */
+    get titleEl(): HTMLElement | null {
+        return this.titleElement;
     }
 
-    return this;
-  }
+    constructor(sg: SpaceGraph | undefined, spec: NodeSpec) {
+        const w = (spec.data?.width as number) ?? 300;
+        const h = (spec.data?.height as number) ?? 200;
+        const theme = (spec.data?.theme as string) ?? 'dark';
+        const title = spec.label ?? (spec.data?.title as string) ?? '';
+        const totalH = h + ((title as string) ? 32 : 0);
 
-  dispose(): void {
-    (this.chartInstance as { destroy?: () => void })?.destroy?.();
-    super.dispose();
-  }
+        super(sg, spec, {
+            defaultWidth: w,
+            defaultHeight: totalH,
+            defaultTheme: theme as 'dark' | 'light',
+            materialParams: { opacity: 0.1 },
+            className: `spacegraph-chart-node theme-${theme}`,
+            createTitleBar: title || undefined,
+        });
 
-  private async _renderChart(spec: Partial<NodeSpec>) {
-    const chartType = (spec.data?.chartType as string) ?? 'bar';
-    const labels = (spec.data?.labels as string[]) ?? [];
-    const datasets = (spec.data?.datasets as Record<string, unknown>[]) ?? [];
+        const canvasContainer = DOMUtils.createElement('div');
+        Object.assign(canvasContainer.style, {
+            position: 'relative',
+            flexGrow: '1',
+            width: '100%',
+            height: '100%',
+        });
 
-    let Chart: unknown;
-    try {
-      Chart = (await import('chart.js')).Chart;
-      const auto = await import('chart.js/auto');
-      Chart = auto.default ?? Chart;
-    } catch {
-      Chart = null;
+        this.canvasEl = DOMUtils.createElement('canvas', {
+            style: { display: 'block', width: '100%', height: '100%' },
+        });
+        canvasContainer.appendChild(this.canvasEl);
+        this.domElement.appendChild(canvasContainer);
+
+        this._renderChart(spec);
     }
 
-    const theme = (spec.data?.theme as string) ?? 'dark';
-    const palette = paletteOf(theme);
-    const textColor = palette.mutedText;
-    const gridColor = palette.gridLine;
+    updateSpec(updates: Partial<NodeSpec>): this {
+        super.updateSpec(updates);
 
-    if (Chart) {
-      (this.chartInstance as { destroy?: () => void })?.destroy?.();
+        this.syncTitleLabel(updates);
 
-      const customOptions = (spec.data?.chartOptions as Record<string, unknown>) ?? {};
+        if (updates.data) {
+            if (updates.data.width || updates.data.height) {
+                const w = this.dimension(updates.data, 'width', 300);
+                const h = this.dimension(updates.data, 'height', 200);
+                const title = (updates.label ?? this.label ?? this.data?.title ?? '') as string;
+                const totalH = h + (title ? 32 : 0);
 
-      const baseOptions = {
-        responsive: true,
-        maintainAspectRatio: false,
-        animation: false,
-        plugins: {
-          legend: { labels: { color: textColor, font: { size: 11 } } },
-        },
-        scales:
-          chartType === 'pie' || chartType === 'radar'
-            ? undefined
-            : {
-                x: { ticks: { color: textColor }, grid: { color: gridColor } },
-                y: { ticks: { color: textColor }, grid: { color: gridColor } },
-              },
-      };
+                this.applySize(w, totalH);
+            }
 
-      const formattedDatasets = datasets.map((ds: Record<string, unknown>, i: number) => ({
-        label: ds.label ?? `Series ${i + 1}`,
-        data: ds.data ?? [],
-        backgroundColor: ds.color ?? `hsl(${i * 60}, 70%, 55%)`,
-        borderColor: ds.borderColor ?? ds.color ?? `hsl(${i * 60}, 70%, 55%)`,
-        borderWidth: ds.borderWidth ?? 1,
-        ...ds,
-      }));
+            if (
+                updates.data.datasets ||
+                updates.data.labels ||
+                updates.data.chartType ||
+                updates.data.theme ||
+                updates.data.chartOptions
+            ) {
+                this._renderChart({ data: { ...this.data, ...updates.data } });
+            }
+        }
 
-      this.chartInstance = new (Chart as new (...args: unknown[]) => unknown)(this.canvasEl, {
-        type: chartType,
-        data: { labels, datasets: formattedDatasets },
-        options: { ...baseOptions, ...customOptions },
-      });
-    } else {
-      this._renderFallback(labels as string[], datasets as Record<string, unknown>[], theme);
-    }
-  }
-
-  private _renderFallback(labels: string[], datasets: Record<string, unknown>[], theme: string) {
-    const ctx = this.canvasEl.getContext('2d');
-    if (!ctx) return;
-
-    const rect = this.canvasEl.getBoundingClientRect();
-    const w = rect.width ?? (this.data?.width as number) ?? 300;
-    const h = rect.height ?? (this.data?.height as number) ?? 200;
-
-    this.canvasEl.width = w;
-    this.canvasEl.height = h;
-
-    ctx.clearRect(0, 0, w, h);
-
-    const palette = paletteOf(theme);
-    ctx.fillStyle = palette.canvasSurface;
-    ctx.fillRect(0, 0, w, h);
-
-    const data: number[] = (datasets[0]?.data as number[]) ?? [];
-    if (!data.length) {
-      ctx.fillStyle = '#475569';
-      ctx.font = '14px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('No data', w / 2, h / 2);
-      return;
+        return this;
     }
 
-    const max = Math.max(...data, 1);
-    const barW = (w - 20) / data.length;
-    const pad = 10;
-
-    for (let i = 0; i < data.length; i++) {
-      const val = data[i];
-      const barH = (val / max) * (h - 30);
-      ctx.fillStyle = (datasets[0]?.color as string) ?? `hsl(${i * 40}, 70%, 55%)`;
-      ctx.fillRect(pad + i * barW + 2, h - barH - 20, barW - 4, barH);
-
-      if (labels[i]) {
-        ctx.fillStyle = palette.faintText;
-        ctx.font = '10px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText(labels[i], pad + i * barW + barW / 2, h - 5);
-      }
+    dispose(): void {
+        (this.chartInstance as { destroy?: () => void })?.destroy?.();
+        super.dispose();
     }
-  }
+
+    private async _renderChart(spec: Partial<NodeSpec>) {
+        const chartType = (spec.data?.chartType as string) ?? 'bar';
+        const labels = (spec.data?.labels as string[]) ?? [];
+        const datasets = (spec.data?.datasets as Record<string, unknown>[]) ?? [];
+
+        let Chart: unknown;
+        try {
+            Chart = (await import('chart.js')).Chart;
+            const auto = await import('chart.js/auto');
+            Chart = auto.default ?? Chart;
+        } catch {
+            Chart = null;
+        }
+
+        const theme = (spec.data?.theme as string) ?? 'dark';
+        const palette = paletteOf(theme);
+        const textColor = palette.mutedText;
+        const gridColor = palette.gridLine;
+
+        if (Chart) {
+            (this.chartInstance as { destroy?: () => void })?.destroy?.();
+
+            const customOptions = (spec.data?.chartOptions as Record<string, unknown>) ?? {};
+
+            const baseOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: false,
+                plugins: {
+                    legend: { labels: { color: textColor, font: { size: 11 } } },
+                },
+                scales:
+                    chartType === 'pie' || chartType === 'radar'
+                        ? undefined
+                        : {
+                              x: { ticks: { color: textColor }, grid: { color: gridColor } },
+                              y: { ticks: { color: textColor }, grid: { color: gridColor } },
+                          },
+            };
+
+            const formattedDatasets = datasets.map((ds: Record<string, unknown>, i: number) => ({
+                label: ds.label ?? `Series ${i + 1}`,
+                data: ds.data ?? [],
+                backgroundColor: ds.color ?? `hsl(${i * 60}, 70%, 55%)`,
+                borderColor: ds.borderColor ?? ds.color ?? `hsl(${i * 60}, 70%, 55%)`,
+                borderWidth: ds.borderWidth ?? 1,
+                ...ds,
+            }));
+
+            this.chartInstance = new (Chart as new (...args: unknown[]) => unknown)(this.canvasEl, {
+                type: chartType,
+                data: { labels, datasets: formattedDatasets },
+                options: { ...baseOptions, ...customOptions },
+            });
+        } else {
+            this._renderFallback(labels as string[], datasets as Record<string, unknown>[], theme);
+        }
+    }
+
+    private _renderFallback(labels: string[], datasets: Record<string, unknown>[], theme: string) {
+        const ctx = this.canvasEl.getContext('2d');
+        if (!ctx) return;
+
+        const rect = this.canvasEl.getBoundingClientRect();
+        const w = rect.width ?? (this.data?.width as number) ?? 300;
+        const h = rect.height ?? (this.data?.height as number) ?? 200;
+
+        this.canvasEl.width = w;
+        this.canvasEl.height = h;
+
+        ctx.clearRect(0, 0, w, h);
+
+        const palette = paletteOf(theme);
+        ctx.fillStyle = palette.canvasSurface;
+        ctx.fillRect(0, 0, w, h);
+
+        const data: number[] = (datasets[0]?.data as number[]) ?? [];
+        if (!data.length) {
+            ctx.fillStyle = '#475569';
+            ctx.font = '14px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('No data', w / 2, h / 2);
+            return;
+        }
+
+        const max = Math.max(...data, 1);
+        const barW = (w - 20) / data.length;
+        const pad = 10;
+
+        for (let i = 0; i < data.length; i++) {
+            const val = data[i];
+            const barH = (val / max) * (h - 30);
+            ctx.fillStyle = (datasets[0]?.color as string) ?? `hsl(${i * 40}, 70%, 55%)`;
+            ctx.fillRect(pad + i * barW + 2, h - barH - 20, barW - 4, barH);
+
+            if (labels[i]) {
+                ctx.fillStyle = palette.faintText;
+                ctx.font = '10px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(labels[i], pad + i * barW + barW / 2, h - 5);
+            }
+        }
+    }
 }

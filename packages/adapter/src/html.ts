@@ -1,9 +1,9 @@
 const HTML_ESCAPES: Record<string, string> = {
-  '&': '&amp;',
-  '<': '&lt;',
-  '>': '&gt;',
-  '"': '&quot;',
-  "'": '&#39;',
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
 };
 
 /**
@@ -11,10 +11,10 @@ const HTML_ESCAPES: Record<string, string> = {
  * so this is the barrier between a model's text and the document.
  */
 export function escapeHtml(value: string): string {
-  return value.replace(/[&<>"']/g, (char) => HTML_ESCAPES[char]!);
+    return value.replace(/[&<>"']/g, (char) => HTML_ESCAPES[char]!);
 }
 
 /** Formats an opacity the way a style attribute reads it: `.3`, not `0.3`. */
 export function formatOpacity(value: number): string {
-  return String(value).replace(/^0\./, '.');
+    return String(value).replace(/^0\./, '.');
 }

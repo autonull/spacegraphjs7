@@ -6,60 +6,64 @@ import { DOMUtils } from '../utils/DOMUtils';
 import { DOMNode } from './DOMNode';
 
 export interface BaseContentNodeConfig {
-  tag?: keyof HTMLElementTagNameMap;
-  defaultWidth: number;
-  defaultHeight: number;
-  defaultTheme?: 'dark' | 'light';
-  materialParams?: THREE.MeshBasicMaterialParameters;
-  className?: string;
-  customStyles?: Partial<CSSStyleDeclaration>;
-  createTitleBar?: boolean | string;
-  updatePositionOnInit?: boolean;
+    tag?: keyof HTMLElementTagNameMap;
+    defaultWidth: number;
+    defaultHeight: number;
+    defaultTheme?: 'dark' | 'light';
+    materialParams?: THREE.MeshBasicMaterialParameters;
+    className?: string;
+    customStyles?: Partial<CSSStyleDeclaration>;
+    createTitleBar?: boolean | string;
+    updatePositionOnInit?: boolean;
 }
 
 export abstract class BaseContentNode extends DOMNode {
-  static typeName: string = 'BaseContentNode';
+    static typeName: string = 'BaseContentNode';
 
-  protected constructor(sg: SpaceGraph | undefined, spec: NodeSpec, config: BaseContentNodeConfig) {
-    const {
-      tag = 'div',
-      defaultWidth,
-      defaultHeight,
-      defaultTheme = 'dark',
-      materialParams,
-      className,
-      customStyles = {},
-      createTitleBar: titleBarConfig,
-      updatePositionOnInit,
-    } = config;
+    protected constructor(
+        sg: SpaceGraph | undefined,
+        spec: NodeSpec,
+        config: BaseContentNodeConfig,
+    ) {
+        const {
+            tag = 'div',
+            defaultWidth,
+            defaultHeight,
+            defaultTheme = 'dark',
+            materialParams,
+            className,
+            customStyles = {},
+            createTitleBar: titleBarConfig,
+            updatePositionOnInit,
+        } = config;
 
-    const w = (spec.data?.width as number) ?? defaultWidth;
-    const h = (spec.data?.height as number) ?? defaultHeight;
-    const theme = (spec.data?.theme as string) ?? defaultTheme;
+        const w = (spec.data?.width as number) ?? defaultWidth;
+        const h = (spec.data?.height as number) ?? defaultHeight;
+        const theme = (spec.data?.theme as string) ?? defaultTheme;
 
-    const el = DOMUtils.createElement(tag);
-    super(sg, spec, el, w, h, materialParams);
+        const el = DOMUtils.createElement(tag);
+        super(sg, spec, el, w, h, materialParams);
 
-    if (className) this.domElement.className = className;
+        if (className) this.domElement.className = className;
 
-    this.setupContainerStyles(w, h, theme as 'dark' | 'light', customStyles);
+        this.setupContainerStyles(w, h, theme as 'dark' | 'light', customStyles);
 
-    if (titleBarConfig) {
-      const title =
-        typeof titleBarConfig === 'string' ? titleBarConfig : (spec.label ?? 'Untitled');
-      const bar = this.createTitleBar(title, theme as 'dark' | 'light');
-      this.domElement.appendChild(bar);
+        if (titleBarConfig) {
+            const title =
+                typeof titleBarConfig === 'string' ? titleBarConfig : (spec.label ?? 'Untitled');
+            const bar = this.createTitleBar(title, theme as 'dark' | 'light');
+            this.domElement.appendChild(bar);
+        }
+
+        if (updatePositionOnInit) {
+            this.updatePosition(this.position.x, this.position.y, this.position.z);
+        }
     }
 
-    if (updatePositionOnInit) {
-      this.updatePosition(this.position.x, this.position.y, this.position.z);
+    /** Copy a new label onto the node's title bar. */
+    protected syncTitleLabel(updates: Partial<NodeSpec>): void {
+        if (updates.label !== undefined && this.titleElement) {
+            this.titleElement.textContent = updates.label;
+        }
     }
-  }
-
-  /** Copy a new label onto the node's title bar. */
-  protected syncTitleLabel(updates: Partial<NodeSpec>): void {
-    if (updates.label !== undefined && this.titleElement) {
-      this.titleElement.textContent = updates.label;
-    }
-  }
 }

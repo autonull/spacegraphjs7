@@ -4,13 +4,13 @@
  */
 
 export function idOf(payload: unknown): string {
-  return (payload as { id?: string } | undefined)?.id ?? '';
+    return (payload as { id?: string } | undefined)?.id ?? '';
 }
 
 export function nodeIdOf(payload: unknown): string {
-  return (payload as { node?: { id?: string } } | undefined)?.node?.id ?? '';
+    return (payload as { node?: { id?: string } } | undefined)?.node?.id ?? '';
 }
 
 export function idsOf(payload: unknown): readonly string[] {
-  return (payload as { ids?: readonly string[] } | undefined)?.ids ?? [];
+    return (payload as { ids?: readonly string[] } | undefined)?.ids ?? [];
 }

@@ -7,197 +7,182 @@ export type { EdgeConstructor, NodeConstructor };
 
 /** One table of registered types: the constructors, keyed by type name. */
 class TypeTable<T> {
-  private readonly types = new Map<string, T>();
+    private readonly types = new Map<string, T>();
 
-  set(type: string, ctor: T): void {
-    this.types.set(type, ctor);
-  }
+    set(type: string, ctor: T): void {
+        this.types.set(type, ctor);
+    }
 
-  setAll(types: Record<string, T>): void {
-    for (const [type, ctor] of Object.entries(types)) this.types.set(type, ctor);
-  }
+    setAll(types: Record<string, T>): void {
+        for (const [type, ctor] of Object.entries(types)) this.types.set(type, ctor);
+    }
 
-  delete(type: string): boolean {
-    return this.types.delete(type);
-  }
+    delete(type: string): boolean {
+        return this.types.delete(type);
+    }
 
-  get(type: string): T | undefined {
-    return this.types.get(type);
-  }
+    get(type: string): T | undefined {
+        return this.types.get(type);
+    }
 
-  has(type: string): boolean {
-    return this.types.has(type);
-  }
+    has(type: string): boolean {
+        return this.types.has(type);
+    }
 
-  names(): string[] {
-    return [...this.types.keys()];
-  }
+    names(): string[] {
+        return [...this.types.keys()];
+    }
 
-  list(): Array<{ type: string; ctor: T }> {
-    return [...this.types.entries()].map(([type, ctor]) => ({ type, ctor }));
-  }
+    list(): Array<{ type: string; ctor: T }> {
+        return [...this.types.entries()].map(([type, ctor]) => ({ type, ctor }));
+    }
 
-  clear(): void {
-    this.types.clear();
-  }
+    clear(): void {
+        this.types.clear();
+    }
 
-  copy(): Map<string, T> {
-    return new Map(this.types);
-  }
+    copy(): Map<string, T> {
+        return new Map(this.types);
+    }
 
-  restore(types: Map<string, T>): void {
-    this.types.clear();
-    for (const [type, ctor] of types) this.types.set(type, ctor);
-  }
+    restore(types: Map<string, T>): void {
+        this.types.clear();
+        for (const [type, ctor] of types) this.types.set(type, ctor);
+    }
 }
 
 export class TypeRegistry {
-  private static instance: TypeRegistry;
-  private nodeTypes = new TypeTable<NodeConstructor>();
-  private edgeTypes = new TypeTable<EdgeConstructor>();
+    private static instance: TypeRegistry;
+    private nodeTypes = new TypeTable<NodeConstructor>();
+    private edgeTypes = new TypeTable<EdgeConstructor>();
 
-  private constructor() {}
+    private constructor() {}
 
-  static getInstance(): TypeRegistry {
-    return (TypeRegistry.instance ??= new TypeRegistry());
-  }
-
-  registerNode(type: string, ctor: NodeConstructor): this {
-    this.nodeTypes.set(type, ctor);
-    this.#registerTypeAlias(ctor, this.nodeTypes);
-    return this;
-  }
-
-  registerEdge(type: string, ctor: EdgeConstructor): this {
-    this.edgeTypes.set(type, ctor);
-    this.#registerTypeAlias(ctor, this.edgeTypes);
-    return this;
-  }
-
-  // Register multiple at once
-  registerNodes(types: Record<string, NodeConstructor>): this {
-    for (const [type, ctor] of Object.entries(types)) this.registerNode(type, ctor);
-    return this;
-  }
-
-  registerEdges(types: Record<string, EdgeConstructor>): this {
-    for (const [type, ctor] of Object.entries(types)) this.registerEdge(type, ctor);
-    return this;
-  }
-
-  // Unregister
-  unregisterNode(type: string): boolean {
-    return this.nodeTypes.delete(type);
-  }
-
-  unregisterEdge(type: string): boolean {
-    return this.edgeTypes.delete(type);
-  }
-
-  getNodeConstructor(type: string): NodeConstructor | undefined {
-    return this.nodeTypes.get(type);
-  }
-
-  getEdgeConstructor(type: string): EdgeConstructor | undefined {
-    return this.edgeTypes.get(type);
-  }
-
-  hasNode(type: string): boolean {
-    return this.nodeTypes.has(type);
-  }
-
-  hasEdge(type: string): boolean {
-    return this.edgeTypes.has(type);
-  }
-
-  getNodeTypes(): string[] {
-    return this.nodeTypes.names();
-  }
-
-  getEdgeTypes(): string[] {
-    return this.edgeTypes.names();
-  }
-
-  // Get all types as arrays
-  getNodeTypeList(): Array<{ type: string; ctor: NodeConstructor }> {
-    return this.nodeTypes.list();
-  }
-
-  getEdgeTypeList(): Array<{ type: string; ctor: EdgeConstructor }> {
-    return this.edgeTypes.list();
-  }
-
-  // Check if a spec type exists (handles aliases)
-  resolveNodeType(type: string): string {
-    if (this.nodeTypes.has(type)) return type;
-    // Try common aliases
-    const aliases: Record<string, string> = {
-      node: 'ShapeNode',
-      shape: 'ShapeNode',
-      edge: 'Edge',
-      wire: 'Edge',
-    };
-    return aliases[type] ?? type;
-  }
-
-  createNode(sgOrSpec: SpaceGraph | NodeSpec, specOrSg?: NodeSpec | SpaceGraph): Node {
-    const isSpecFirst = 'type' in sgOrSpec;
-    const nodeSpec = isSpecFirst ? (sgOrSpec as NodeSpec) : (specOrSg as NodeSpec);
-    const sg = isSpecFirst ? (specOrSg as SpaceGraph) : (sgOrSpec as SpaceGraph);
-
-    if (!nodeSpec?.type) throw new Error('Node spec must include type');
-    const type = this.resolveNodeType(nodeSpec.type);
-    const ctor = this.getNodeConstructor(type);
-    if (!ctor)
-      throw new Error(
-        `TypeRegistry: Unknown node type "${nodeSpec.type}". Registered: [${this.getNodeTypes().join(', ')}]`
-      );
-    return new ctor(sg, nodeSpec);
-  }
-
-  createEdge(
-    sgOrSpec: SpaceGraph | EdgeSpec,
-    specOrSource: EdgeSpec | Node,
-    sourceOrTarget?: Node,
-    targetOrNothing?: Node
-  ): Edge {
-    const isSpecFirst = sgOrSpec && typeof sgOrSpec === 'object' && 'source' in sgOrSpec;
-    const edgeSpec = isSpecFirst ? (sgOrSpec as EdgeSpec) : (specOrSource as EdgeSpec);
-    const sg = isSpecFirst ? (sourceOrTarget as any as SpaceGraph) : (sgOrSpec as SpaceGraph);
-    const source = isSpecFirst ? (specOrSource as Node) : (sourceOrTarget as Node);
-    const target = isSpecFirst ? (sourceOrTarget as Node) : (targetOrNothing as Node);
-
-    if (!edgeSpec?.type) throw new Error('Edge spec must include type');
-    const ctor = this.getEdgeConstructor(edgeSpec.type ?? 'Edge');
-    if (!ctor)
-      throw new Error(
-        `TypeRegistry: Unknown edge type "${edgeSpec.type}". Registered: [${this.getEdgeTypes().join(', ')}]`
-      );
-    return new ctor(sg, edgeSpec, source, target);
-  }
-
-  clear(): void {
-    this.nodeTypes.clear();
-    this.edgeTypes.clear();
-  }
-
-  // Snapshot/restore for testing
-  snapshot(): { nodes: Map<string, NodeConstructor>; edges: Map<string, EdgeConstructor> } {
-    return { nodes: this.nodeTypes.copy(), edges: this.edgeTypes.copy() };
-  }
-
-  restore(snapshot: {
-    nodes: Map<string, NodeConstructor>;
-    edges: Map<string, EdgeConstructor>;
-  }): void {
-    this.nodeTypes.restore(snapshot.nodes);
-    this.edgeTypes.restore(snapshot.edges);
-  }
-
-  #registerTypeAlias(ctor: NodeConstructor | EdgeConstructor, table: TypeTable<any>): void {
-    const typeName = (ctor as { typeName?: string }).typeName;
-    if (typeof typeName === 'string') {
-      table.set(typeName, ctor);
+    static getInstance(): TypeRegistry {
+        return (TypeRegistry.instance ??= new TypeRegistry());
     }
-  }
+
+    registerNode(type: string, ctor: NodeConstructor): this {
+        this.nodeTypes.set(type, ctor);
+        this.#registerTypeAlias(ctor, this.nodeTypes);
+        return this;
+    }
+
+    registerEdge(type: string, ctor: EdgeConstructor): this {
+        this.edgeTypes.set(type, ctor);
+        this.#registerTypeAlias(ctor, this.edgeTypes);
+        return this;
+    }
+
+    // Register multiple at once
+    registerNodes(types: Record<string, NodeConstructor>): this {
+        for (const [type, ctor] of Object.entries(types)) this.registerNode(type, ctor);
+        return this;
+    }
+
+    registerEdges(types: Record<string, EdgeConstructor>): this {
+        for (const [type, ctor] of Object.entries(types)) this.registerEdge(type, ctor);
+        return this;
+    }
+
+    // Unregister
+    unregisterNode(type: string): boolean {
+        return this.nodeTypes.delete(type);
+    }
+
+    unregisterEdge(type: string): boolean {
+        return this.edgeTypes.delete(type);
+    }
+
+    getNodeConstructor(type: string): NodeConstructor | undefined {
+        return this.nodeTypes.get(type);
+    }
+
+    getEdgeConstructor(type: string): EdgeConstructor | undefined {
+        return this.edgeTypes.get(type);
+    }
+
+    hasNode(type: string): boolean {
+        return this.nodeTypes.has(type);
+    }
+
+    hasEdge(type: string): boolean {
+        return this.edgeTypes.has(type);
+    }
+
+    getNodeTypes(): string[] {
+        return this.nodeTypes.names();
+    }
+
+    getEdgeTypes(): string[] {
+        return this.edgeTypes.names();
+    }
+
+    // Get all types as arrays
+    getNodeTypeList(): Array<{ type: string; ctor: NodeConstructor }> {
+        return this.nodeTypes.list();
+    }
+
+    getEdgeTypeList(): Array<{ type: string; ctor: EdgeConstructor }> {
+        return this.edgeTypes.list();
+    }
+
+    // Check if a spec type exists (handles aliases)
+    resolveNodeType(type: string): string {
+        if (this.nodeTypes.has(type)) return type;
+        // Try common aliases
+        const aliases: Record<string, string> = {
+            node: 'ShapeNode',
+            shape: 'ShapeNode',
+            edge: 'Edge',
+            wire: 'Edge',
+        };
+        return aliases[type] ?? type;
+    }
+
+    createNode(sg: SpaceGraph, spec: NodeSpec): Node {
+        if (!spec?.type) throw new Error('Node spec must include type');
+        const type = this.resolveNodeType(spec.type);
+        const ctor = this.getNodeConstructor(type);
+        if (!ctor)
+            throw new Error(
+                `TypeRegistry: Unknown node type "${spec.type}". Registered: [${this.getNodeTypes().join(', ')}]`,
+            );
+        return new ctor(sg, spec);
+    }
+
+    createEdge(sg: SpaceGraph, spec: EdgeSpec, source: Node, target: Node): Edge {
+        if (!spec?.type) throw new Error('Edge spec must include type');
+        const ctor = this.getEdgeConstructor(spec.type ?? 'Edge');
+        if (!ctor)
+            throw new Error(
+                `TypeRegistry: Unknown edge type "${spec.type}". Registered: [${this.getEdgeTypes().join(', ')}]`,
+            );
+        return new ctor(sg, spec, source, target);
+    }
+
+    clear(): void {
+        this.nodeTypes.clear();
+        this.edgeTypes.clear();
+    }
+
+    // Snapshot/restore for testing
+    snapshot(): { nodes: Map<string, NodeConstructor>; edges: Map<string, EdgeConstructor> } {
+        return { nodes: this.nodeTypes.copy(), edges: this.edgeTypes.copy() };
+    }
+
+    restore(snapshot: {
+        nodes: Map<string, NodeConstructor>;
+        edges: Map<string, EdgeConstructor>;
+    }): void {
+        this.nodeTypes.restore(snapshot.nodes);
+        this.edgeTypes.restore(snapshot.edges);
+    }
+
+    #registerTypeAlias(ctor: NodeConstructor | EdgeConstructor, table: TypeTable<any>): void {
+        const typeName = (ctor as { typeName?: string }).typeName;
+        if (typeof typeName === 'string') {
+            table.set(typeName, ctor);
+        }
+    }
 }

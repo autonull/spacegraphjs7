@@ -1,87 +1,87 @@
 {
-  "name": "@spacegraphjs/shared",
-  "version": "0.1.0",
-  "type": "module",
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "default": "./dist/index.js"
+    "name": "@spacegraphjs/shared",
+    "version": "0.1.0",
+    "type": "module",
+    "main": "./dist/index.js",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js",
+            "default": "./dist/index.js"
+        },
+        "./i18n": {
+            "types": "./dist/i18n.d.ts",
+            "import": "./dist/i18n.js",
+            "default": "./dist/i18n.js"
+        },
+        "./icons": {
+            "types": "./dist/icons.d.ts",
+            "import": "./dist/icons.js",
+            "default": "./dist/icons.js"
+        },
+        "./popover": {
+            "types": "./dist/popover.d.ts",
+            "import": "./dist/popover.js",
+            "default": "./dist/popover.js"
+        },
+        "./types": {
+            "types": "./dist/types.d.ts",
+            "import": "./dist/types.js",
+            "default": "./dist/types.js"
+        },
+        "./animations": {
+            "types": "./dist/animations.d.ts",
+            "import": "./dist/animations.js",
+            "default": "./dist/animations.js"
+        },
+        "./keyboard": {
+            "types": "./dist/keyboard.d.ts",
+            "import": "./dist/keyboard.js",
+            "default": "./dist/keyboard.js"
+        },
+        "./tokens": {
+            "types": "./dist/tokens.d.ts",
+            "import": "./dist/tokens.js",
+            "default": "./dist/tokens.js"
+        },
+        "./css": {
+            "types": "./dist/css.d.ts",
+            "import": "./dist/css.js",
+            "default": "./dist/css.js"
+        },
+        "./portal": {
+            "types": "./dist/portal.d.ts",
+            "import": "./dist/portal.js",
+            "default": "./dist/portal.js"
+        },
+        "./hooks": {
+            "types": "./dist/hooks.d.ts",
+            "import": "./dist/hooks.js",
+            "default": "./dist/hooks.js"
+        }
     },
-    "./i18n": {
-      "types": "./dist/i18n.d.ts",
-      "import": "./dist/i18n.js",
-      "default": "./dist/i18n.js"
+    "files": [
+        "dist"
+    ],
+    "scripts": {
+        "build": "tsc && vite build",
+        "typecheck": "tsc --noEmit",
+        "test": "vitest run"
     },
-    "./icons": {
-      "types": "./dist/icons.d.ts",
-      "import": "./dist/icons.js",
-      "default": "./dist/icons.js"
+    "peerDependencies": {
+        "solid-js": "^1.9.0"
     },
-    "./popover": {
-      "types": "./dist/popover.d.ts",
-      "import": "./dist/popover.js",
-      "default": "./dist/popover.js"
+    "dependencies": {
+        "@spacegraphjs/renderer": "workspace:*"
     },
-    "./types": {
-      "types": "./dist/types.d.ts",
-      "import": "./dist/types.js",
-      "default": "./dist/types.js"
+    "devDependencies": {
+        "solid-js": "^1.9.0",
+        "typescript": "^7.0.0",
+        "vite": "^8.0.0",
+        "vite-plugin-solid": "2.11.10",
+        "vitest": "^5.0.0"
     },
-    "./animations": {
-      "types": "./dist/animations.d.ts",
-      "import": "./dist/animations.js",
-      "default": "./dist/animations.js"
-    },
-    "./keyboard": {
-      "types": "./dist/keyboard.d.ts",
-      "import": "./dist/keyboard.js",
-      "default": "./dist/keyboard.js"
-    },
-    "./tokens": {
-      "types": "./dist/tokens.d.ts",
-      "import": "./dist/tokens.js",
-      "default": "./dist/tokens.js"
-    },
-    "./css": {
-      "types": "./dist/css.d.ts",
-      "import": "./dist/css.js",
-      "default": "./dist/css.js"
-    },
-    "./portal": {
-      "types": "./dist/portal.d.ts",
-      "import": "./dist/portal.js",
-      "default": "./dist/portal.js"
-    },
-    "./hooks": {
-      "types": "./dist/hooks.d.ts",
-      "import": "./dist/hooks.js",
-      "default": "./dist/hooks.js"
-    }
-  },
-  "files": [
-    "dist"
-  ],
-  "scripts": {
-    "build": "tsc && vite build",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run"
-  },
-  "peerDependencies": {
-    "solid-js": "^1.9.0"
-  },
-  "dependencies": {
-    "@spacegraphjs/renderer": "workspace:*"
-  },
-  "devDependencies": {
-    "solid-js": "^1.9.0",
-    "typescript": "^7.0.0",
-    "vite": "^8.0.0",
-    "vite-plugin-solid": "2.11.10",
-    "vitest": "^5.0.0"
-  },
-  "sideEffects": false
+    "sideEffects": false
 }

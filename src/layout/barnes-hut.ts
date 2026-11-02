@@ -94,7 +94,11 @@ export class ForcePlacement implements Placement<ForceMeta> {
             const frozen = previous?.get(item.id);
 
             if (frozen) {
-                points.set(item.id, { x: frozen.x, y: frozen.y, mass: item.meta?.radius ?? this.#spacing / 2 });
+                points.set(item.id, {
+                    x: frozen.x,
+                    y: frozen.y,
+                    mass: item.meta?.radius ?? this.#spacing / 2,
+                });
                 pinned.add(item.id);
                 radii.set(item.id, item.meta?.radius ?? this.#spacing / 2);
                 continue;
@@ -102,7 +106,11 @@ export class ForcePlacement implements Placement<ForceMeta> {
 
             const angle = (i + this.#seed) * GOLDEN_ANGLE;
             const radius = (this.#spacing * Math.sqrt(i + 1)) / 2;
-            points.set(item.id, { x: Math.cos(angle) * radius, y: Math.sin(angle) * radius, mass: item.meta?.radius ?? this.#spacing / 2 });
+            points.set(item.id, {
+                x: Math.cos(angle) * radius,
+                y: Math.sin(angle) * radius,
+                mass: item.meta?.radius ?? this.#spacing / 2,
+            });
             radii.set(item.id, item.meta?.radius ?? this.#spacing / 2);
         }
 
@@ -110,7 +118,10 @@ export class ForcePlacement implements Placement<ForceMeta> {
         const useBarnesHut = this.#barnesHut && items.length > this.#barnesHutThreshold;
         const iterations = Math.max(
             60,
-            Math.min(this.#iterations, Math.round((9000 * this.#iterations) / (300 * items.length))),
+            Math.min(
+                this.#iterations,
+                Math.round((9000 * this.#iterations) / (300 * items.length)),
+            ),
         );
 
         for (let step = 0; step < iterations; step++) {
@@ -233,10 +244,19 @@ export class ForcePlacement implements Placement<ForceMeta> {
             let fy = 0;
 
             // Repulsion from quadtree
-            this.#calculateRepulsion(quadtree, point, point.mass, k, this.#theta, fx, fy, (dfx, dfy) => {
-                fx += dfx;
-                fy += dfy;
-            });
+            this.#calculateRepulsion(
+                quadtree,
+                point,
+                point.mass,
+                k,
+                this.#theta,
+                fx,
+                fy,
+                (dfx, dfy) => {
+                    fx += dfx;
+                    fy += dfy;
+                },
+            );
 
             // Attraction to linked nodes
             for (const link of item.meta?.links ?? []) {
@@ -301,7 +321,12 @@ export class ForcePlacement implements Placement<ForceMeta> {
 
         // If this is a leaf node (single body), calculate direct force
         if (node.isLeaf) {
-            if (node.leafId && point.mass === node.mass && Math.abs(dx) < 0.001 && Math.abs(dy) < 0.001) {
+            if (
+                node.leafId &&
+                point.mass === node.mass &&
+                Math.abs(dx) < 0.001 &&
+                Math.abs(dy) < 0.001
+            ) {
                 return; // Skip self
             }
             const push = (k * k * mass * node.mass) / (distance * distance);
@@ -403,8 +428,16 @@ export class ForcePlacement implements Placement<ForceMeta> {
     /**
      * Computes bounding box of all points.
      */
-    #computeBounds(points: Map<string, { x: number; y: number; mass: number }>): { x: number; y: number; width: number; height: number } {
-        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    #computeBounds(points: Map<string, { x: number; y: number; mass: number }>): {
+        x: number;
+        y: number;
+        width: number;
+        height: number;
+    } {
+        let minX = Infinity,
+            minY = Infinity,
+            maxX = -Infinity,
+            maxY = -Infinity;
 
         for (const { x, y } of points.values()) {
             minX = Math.min(minX, x);
@@ -452,13 +485,7 @@ export class ForcePlacement implements Placement<ForceMeta> {
     /**
      * Inserts a body into the quadtree.
      */
-    #insertIntoQuadtree(
-        node: QuadNode,
-        id: string,
-        x: number,
-        y: number,
-        mass: number,
-    ): void {
+    #insertIntoQuadtree(node: QuadNode, id: string, x: number, y: number, mass: number): void {
         // Update center of mass
         const totalMass = node.mass + mass;
         node.cx = (node.cx * node.mass + x * mass) / totalMass;

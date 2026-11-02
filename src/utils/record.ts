@@ -3,8 +3,8 @@
  * exact key type; the lookup itself is by string.
  */
 export function lookup<Key extends string, Value>(
-  record: Readonly<Record<Key, Value>>,
-  key: string
+    record: Readonly<Record<Key, Value>>,
+    key: string,
 ): Value | undefined {
-  return (record as Readonly<Record<string, Value | undefined>>)[key];
+    return (record as Readonly<Record<string, Value | undefined>>)[key];
 }

@@ -1,90 +1,90 @@
 {
-  "name": "@spacegraphjs/toolbar",
-  "version": "0.1.0",
-  "type": "module",
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "default": "./dist/index.js"
+    "name": "@spacegraphjs/toolbar",
+    "version": "0.1.0",
+    "type": "module",
+    "main": "./dist/index.js",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js",
+            "default": "./dist/index.js"
+        },
+        "./GraphToolbar": {
+            "types": "./dist/GraphToolbar.d.ts",
+            "import": "./dist/GraphToolbar.js",
+            "default": "./dist/GraphToolbar.js"
+        },
+        "./GraphLayersControl": {
+            "types": "./dist/GraphLayersControl.d.ts",
+            "import": "./dist/GraphLayersControl.js",
+            "default": "./dist/GraphLayersControl.js"
+        },
+        "./GraphLayoutControl": {
+            "types": "./dist/GraphLayoutControl.d.ts",
+            "import": "./dist/GraphLayoutControl.js",
+            "default": "./dist/GraphLayoutControl.js"
+        },
+        "./GraphTimeControl": {
+            "types": "./dist/GraphTimeControl.d.ts",
+            "import": "./dist/GraphTimeControl.js",
+            "default": "./dist/GraphTimeControl.js"
+        },
+        "./GraphDrawControl": {
+            "types": "./dist/GraphDrawControl.d.ts",
+            "import": "./dist/GraphDrawControl.js",
+            "default": "./dist/GraphDrawControl.js"
+        },
+        "./GraphShowControl": {
+            "types": "./dist/GraphShowControl.d.ts",
+            "import": "./dist/GraphShowControl.js",
+            "default": "./dist/GraphShowControl.js"
+        },
+        "./GraphZoomControl": {
+            "types": "./dist/GraphZoomControl.d.ts",
+            "import": "./dist/GraphZoomControl.js",
+            "default": "./dist/GraphZoomControl.js"
+        },
+        "./GraphQuestionsControl": {
+            "types": "./dist/GraphQuestionsControl.d.ts",
+            "import": "./dist/GraphQuestionsControl.js",
+            "default": "./dist/GraphQuestionsControl.js"
+        },
+        "./ToolbarMenu": {
+            "types": "./dist/ToolbarMenu.d.ts",
+            "import": "./dist/ToolbarMenu.js",
+            "default": "./dist/ToolbarMenu.js"
+        },
+        "./hooks": {
+            "types": "./dist/hooks.d.ts",
+            "import": "./dist/hooks.js",
+            "default": "./dist/hooks.js"
+        }
     },
-    "./GraphToolbar": {
-      "types": "./dist/GraphToolbar.d.ts",
-      "import": "./dist/GraphToolbar.js",
-      "default": "./dist/GraphToolbar.js"
+    "files": [
+        "dist"
+    ],
+    "scripts": {
+        "build": "tsc && vite build",
+        "typecheck": "tsc --noEmit",
+        "test": "vitest run"
     },
-    "./GraphLayersControl": {
-      "types": "./dist/GraphLayersControl.d.ts",
-      "import": "./dist/GraphLayersControl.js",
-      "default": "./dist/GraphLayersControl.js"
+    "peerDependencies": {
+        "@spacegraphjs/renderer": "^8.0.0",
+        "solid-js": "^1.9.0"
     },
-    "./GraphLayoutControl": {
-      "types": "./dist/GraphLayoutControl.d.ts",
-      "import": "./dist/GraphLayoutControl.js",
-      "default": "./dist/GraphLayoutControl.js"
+    "dependencies": {
+        "@spacegraphjs/renderer": "workspace:*",
+        "@spacegraphjs/shared": "workspace:*",
+        "@spacegraphjs/export": "workspace:*"
     },
-    "./GraphTimeControl": {
-      "types": "./dist/GraphTimeControl.d.ts",
-      "import": "./dist/GraphTimeControl.js",
-      "default": "./dist/GraphTimeControl.js"
+    "devDependencies": {
+        "solid-js": "^1.9.0",
+        "typescript": "^7.0.0",
+        "vite": "^8.0.0",
+        "vite-plugin-solid": "2.11.10",
+        "vitest": "^5.0.0"
     },
-    "./GraphDrawControl": {
-      "types": "./dist/GraphDrawControl.d.ts",
-      "import": "./dist/GraphDrawControl.js",
-      "default": "./dist/GraphDrawControl.js"
-    },
-    "./GraphShowControl": {
-      "types": "./dist/GraphShowControl.d.ts",
-      "import": "./dist/GraphShowControl.js",
-      "default": "./dist/GraphShowControl.js"
-    },
-    "./GraphZoomControl": {
-      "types": "./dist/GraphZoomControl.d.ts",
-      "import": "./dist/GraphZoomControl.js",
-      "default": "./dist/GraphZoomControl.js"
-    },
-    "./GraphQuestionsControl": {
-      "types": "./dist/GraphQuestionsControl.d.ts",
-      "import": "./dist/GraphQuestionsControl.js",
-      "default": "./dist/GraphQuestionsControl.js"
-    },
-    "./ToolbarMenu": {
-      "types": "./dist/ToolbarMenu.d.ts",
-      "import": "./dist/ToolbarMenu.js",
-      "default": "./dist/ToolbarMenu.js"
-    },
-    "./hooks": {
-      "types": "./dist/hooks.d.ts",
-      "import": "./dist/hooks.js",
-      "default": "./dist/hooks.js"
-    }
-  },
-  "files": [
-    "dist"
-  ],
-  "scripts": {
-    "build": "tsc && vite build",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run"
-  },
-  "peerDependencies": {
-    "@spacegraphjs/renderer": "^8.0.0",
-    "solid-js": "^1.9.0"
-  },
-  "dependencies": {
-    "@spacegraphjs/renderer": "workspace:*",
-    "@spacegraphjs/shared": "workspace:*",
-    "@spacegraphjs/export": "workspace:*"
-  },
-  "devDependencies": {
-    "solid-js": "^1.9.0",
-    "typescript": "^7.0.0",
-    "vite": "^8.0.0",
-    "vite-plugin-solid": "2.11.10",
-    "vitest": "^5.0.0"
-  },
-  "sideEffects": false
+    "sideEffects": false
 }

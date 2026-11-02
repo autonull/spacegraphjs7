@@ -33,12 +33,12 @@ export default defineConfig({
 
 ## Options
 
-| Option                | Type    | Default | Description              |
-| --------------------- | ------- | ------- | ------------------------ |
-| `enabled`             | boolean | `true`  | Enable or disable the build-time vision analysis. |
-| `autoFix`             | boolean | `false` | If true, the plugin will generate a `spacegraph-autofix-patch.json` file in your root directory containing semantic JSON patches to fix detected visual errors. |
-| `thresholds.layout`   | number  | 80      | Minimum acceptable layout score (0-100). Build will warn if below this. |
-| `thresholds.legibility`| number  | 85      | Minimum acceptable legibility score (0-100). Checks WCAG AA contrast. |
+| Option                  | Type    | Default | Description                                                                                                                                                     |
+| ----------------------- | ------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `enabled`               | boolean | `true`  | Enable or disable the build-time vision analysis.                                                                                                               |
+| `autoFix`               | boolean | `false` | If true, the plugin will generate a `spacegraph-autofix-patch.json` file in your root directory containing semantic JSON patches to fix detected visual errors. |
+| `thresholds.layout`     | number  | 80      | Minimum acceptable layout score (0-100). Build will warn if below this.                                                                                         |
+| `thresholds.legibility` | number  | 85      | Minimum acceptable legibility score (0-100). Checks WCAG AA contrast.                                                                                           |
 
 ## How It Works
 
@@ -51,6 +51,7 @@ export default defineConfig({
 ## Troubleshooting
 
 ### Playwright Required
+
 Because the analyzer requires a browser to realistically render the HTML context, ensure you have Playwright browsers installed:
 
 ```bash
@@ -58,7 +59,9 @@ pnpm dlx playwright install
 ```
 
 ### Path Errors
+
 If the plugin cannot locate your built HTML files, verify your build output is mapping correctly to the expected directory (`dist/` by default).
 
 ### CI Workflows
+
 We recommend generating the autofix patch sequentially via a CI hook and storing it as a build artifact for manual review, rather than mutating production databases automatically.

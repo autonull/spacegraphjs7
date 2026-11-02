@@ -4,63 +4,63 @@ import type { SpaceGraph } from '../../SpaceGraph';
 import type { ControlState } from './ControlStateBorder';
 
 export class HoverManager {
-  private hoveredNode: Node | null = null;
-  private hoveredEdge: Edge | null = null;
-  readonly HOVER_SCALE = 1.1;
+    private hoveredNode: Node | null = null;
+    private hoveredEdge: Edge | null = null;
+    readonly HOVER_SCALE = 1.1;
 
-  constructor(readonly sg: SpaceGraph) {}
+    constructor(readonly sg: SpaceGraph) {}
 
-  updateHover(node: Node | null, edge: Edge | null): void {
-    this.updateNodeHover(node);
-    this.updateEdgeHover(edge);
-  }
-
-  public updateNodeHover(node: Node | null): void {
-    if (node === this.hoveredNode) return;
-
-    if (this.hoveredNode?.object) {
-      this.sg.events.emit('node:pointerleave', { node: this.hoveredNode } as any);
-      if (this.hoveredNode.scalesOnHover) {
-        this.hoveredNode.object.scale.divideScalar(this.HOVER_SCALE);
-      }
-      this.updateNodeState(this.hoveredNode, 'normal');
-      this.hoveredNode.callbacks?.onPointerLeave?.(this.hoveredNode);
+    updateHover(node: Node | null, edge: Edge | null): void {
+        this.updateNodeHover(node);
+        this.updateEdgeHover(edge);
     }
 
-    this.hoveredNode = node;
+    public updateNodeHover(node: Node | null): void {
+        if (node === this.hoveredNode) return;
 
-    if (this.hoveredNode?.object) {
-      this.sg.events.emit('node:pointerenter', { node: this.hoveredNode } as any);
-      if (this.hoveredNode.scalesOnHover) {
-        this.hoveredNode.object.scale.multiplyScalar(this.HOVER_SCALE);
-      }
-      this.updateNodeState(this.hoveredNode, 'hovered');
-      this.hoveredNode.callbacks?.onPointerEnter?.(this.hoveredNode);
+        if (this.hoveredNode?.object) {
+            this.sg.events.emit('node:pointerleave', { node: this.hoveredNode } as any);
+            if (this.hoveredNode.scalesOnHover) {
+                this.hoveredNode.object.scale.divideScalar(this.HOVER_SCALE);
+            }
+            this.updateNodeState(this.hoveredNode, 'normal');
+            this.hoveredNode.callbacks?.onPointerLeave?.(this.hoveredNode);
+        }
+
+        this.hoveredNode = node;
+
+        if (this.hoveredNode?.object) {
+            this.sg.events.emit('node:pointerenter', { node: this.hoveredNode } as any);
+            if (this.hoveredNode.scalesOnHover) {
+                this.hoveredNode.object.scale.multiplyScalar(this.HOVER_SCALE);
+            }
+            this.updateNodeState(this.hoveredNode, 'hovered');
+            this.hoveredNode.callbacks?.onPointerEnter?.(this.hoveredNode);
+        }
     }
-  }
 
-  getHoveredNode(): Node | null {
-    return this.hoveredNode;
-  }
+    getHoveredNode(): Node | null {
+        return this.hoveredNode;
+    }
 
-  getHoveredEdge(): Edge | null {
-    return this.hoveredEdge;
-  }
+    getHoveredEdge(): Edge | null {
+        return this.hoveredEdge;
+    }
 
-  clear(): void {
-    this.updateHover(null, null);
-  }
+    clear(): void {
+        this.updateHover(null, null);
+    }
 
-  private updateNodeState(node: Node, state: ControlState): void {
-    node.setControlState(state);
-  }
+    private updateNodeState(node: Node, state: ControlState): void {
+        node.setControlState(state);
+    }
 
-  updateEdgeHover(edge: Edge | null): void {
-    if (edge === this.hoveredEdge) return;
-    if (this.hoveredEdge)
-      this.sg.events.emit('edge:pointerleave', { edge: this.hoveredEdge } as any);
-    this.hoveredEdge = edge;
-    if (this.hoveredEdge)
-      this.sg.events.emit('edge:pointerenter', { edge: this.hoveredEdge } as any);
-  }
+    updateEdgeHover(edge: Edge | null): void {
+        if (edge === this.hoveredEdge) return;
+        if (this.hoveredEdge)
+            this.sg.events.emit('edge:pointerleave', { edge: this.hoveredEdge } as any);
+        this.hoveredEdge = edge;
+        if (this.hoveredEdge)
+            this.sg.events.emit('edge:pointerenter', { edge: this.hoveredEdge } as any);
+    }
 }

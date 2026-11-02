@@ -444,7 +444,7 @@ IF ANY HESITATION: Fix before release.
 
 | Metric                | Conservative | Ambitious | **Industry-Defining** |
 | --------------------- | ------------ | --------- | --------------------- |
-| pnpm downloads/mo      | 1,000        | 5,000     | **25,000**            |
+| pnpm downloads/mo     | 1,000        | 5,000     | **25,000**            |
 | GitHub stars          | 200          | 500       | **2,000**             |
 | External contributors | 10           | 25        | **100**               |
 | Monthly revenue       | $10K         | $25K      | **$100K**             |

@@ -17,21 +17,21 @@ export type AsyncCallback<T = void> = () => Promise<T> | T;
 
 // ============= Geometry Types =============
 export interface Rect {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
 }
 
 export interface Point2D {
-  x: number;
-  y: number;
+    x: number;
+    y: number;
 }
 
 export interface Point3D {
-  x: number;
-  y: number;
-  z: number;
+    x: number;
+    y: number;
+    z: number;
 }
 
 // ============= Ergonomic Type Helpers =============

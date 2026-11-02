@@ -131,7 +131,7 @@ describe('the second host', () => {
     });
 
     it('escapes a hostile label before it reaches the markup', () => {
-        const hostile = '<img src=x onerror="alert(1)">'
+        const hostile = '<img src=x onerror="alert(1)">';
         const node: BuildNode = {
             id: 'hostile',
             kind: 'tool',
@@ -142,13 +142,13 @@ describe('the second host', () => {
             stage: 'stage:verify',
             outcome: 'failed',
             size: [200, 64],
-        }
+        };
         const model: BuildModel = {
             nodes: [node],
             edges: [],
             root: 'hostile',
             turns: [],
-        }
+        };
 
         const renderModel = new SecondHost().renderModelOf(model);
 
@@ -200,7 +200,7 @@ describe('the second host', () => {
                 deletions: 0,
                 status: 'modified',
             },
-        ])
+        ]);
 
         expect(container.querySelector('script')).toBeNull();
         expect(container.querySelector('img')).toBeNull();

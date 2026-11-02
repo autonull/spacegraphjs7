@@ -231,10 +231,13 @@ export type RendererEventMap = {
 export type Unsubscribe = () => void;
 export type GraphRenderer = {
     readonly capabilities: RendererCapabilities;
-    mount(container: HTMLElement, options: {
-        theme: RenderTheme;
-        projection: Projection;
-    }): Promise<void>;
+    mount(
+        container: HTMLElement,
+        options: {
+            theme: RenderTheme;
+            projection: Projection;
+        },
+    ): Promise<void>;
     setModel(model: RenderModel): void;
     /** Apply an incremental patch to the current model. Optional: a renderer that does not support
      * incremental updates must no-op, never throw. */
@@ -257,10 +260,12 @@ export type GraphRenderer = {
      * detail surface to a node reads it here instead of projecting the world itself. Optional: a
      * renderer that cannot place a node leaves it out, and a host reads that as "no anchor".
      */
-    getNodeScreenPosition?(id: string): {
-        x: number;
-        y: number;
-    } | undefined;
+    getNodeScreenPosition?(id: string):
+        | {
+              x: number;
+              y: number;
+          }
+        | undefined;
     /**
      * How the DOM cards face the camera. Optional: a renderer that draws no cards, or draws them in
      * screen space, leaves it out — and a host reads that as "not changeable", never as a broken
@@ -270,15 +275,25 @@ export type GraphRenderer = {
     fit(ids?: readonly string[], options?: FitOptions): void;
     focus(id: string): void;
     resize(): void;
-    on<K extends keyof RendererEventMap>(event: K, handler: (payload: RendererEventMap[K]) => void): Unsubscribe;
+    on<K extends keyof RendererEventMap>(
+        event: K,
+        handler: (payload: RendererEventMap[K]) => void,
+    ): Unsubscribe;
     dispose(): void;
 };
 /** Capabilities a host can query before it offers an affordance. */
-export type RendererCapability = Projection | 'domNodes' | 'edgeLabels' | 'clusterNodes' | 'minimap';
+export type RendererCapability =
+    Projection | 'domNodes' | 'edgeLabels' | 'clusterNodes' | 'minimap';
 /** Single predicate for capability-gated UI (L1.28). Unknown capabilities are never assumed. */
-export declare function supports(capabilities: RendererCapabilities, capability: RendererCapability): boolean;
+export declare function supports(
+    capabilities: RendererCapabilities,
+    capability: RendererCapability,
+): boolean;
 /** Whether a renderer can honour a depth treatment; hosts gate the depth chooser on this. */
-export declare function supportsDepth(capabilities: RendererCapabilities, depth: DepthMode): boolean;
+export declare function supportsDepth(
+    capabilities: RendererCapabilities,
+    depth: DepthMode,
+): boolean;
 export * from './adapter';
 export * from './color';
 export * from './edge';

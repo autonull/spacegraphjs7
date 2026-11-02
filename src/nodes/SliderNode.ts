@@ -6,178 +6,178 @@ import { clamp01 } from '../utils/math';
 import { WidgetNode, type WidgetNodeData } from './WidgetNode';
 
 export interface SliderNodeData extends WidgetNodeData {
-  min?: number;
-  max?: number;
-  value?: number;
-  color?: number;
-  trackColor?: number;
-  thumbColor?: number;
-  showValue?: boolean;
-  onChange?: (value: number) => void;
+    min?: number;
+    max?: number;
+    value?: number;
+    color?: number;
+    trackColor?: number;
+    thumbColor?: number;
+    showValue?: boolean;
+    onChange?: (value: number) => void;
 }
 
 export class SliderNode extends WidgetNode {
-  static readonly typeName: string = 'SliderNode';
-  private _min = 0;
-  private _max = 1;
-  private _thumbSize = 20;
-  private _showValue = true;
-  readonly track!: Mesh;
-  readonly thumb!: Mesh;
-  readonly trackMaterial!: MeshStandardMaterial;
-  readonly thumbMaterial!: MeshStandardMaterial;
-  private _onChange?: (value: number) => void;
+    static readonly typeName: string = 'SliderNode';
+    private _min = 0;
+    private _max = 1;
+    private _thumbSize = 20;
+    private _showValue = true;
+    readonly track!: Mesh;
+    readonly thumb!: Mesh;
+    readonly trackMaterial!: MeshStandardMaterial;
+    readonly thumbMaterial!: MeshStandardMaterial;
+    private _onChange?: (value: number) => void;
 
-  constructor(sg: SpaceGraph | undefined, spec: NodeSpec) {
-    const data = spec.data as SliderNodeData;
-    super(sg, spec, data);
+    constructor(sg: SpaceGraph | undefined, spec: NodeSpec) {
+        const data = spec.data as SliderNodeData;
+        super(sg, spec, data);
 
-    this._min = data?.min ?? this._min;
-    this._max = data?.max ?? this._max;
-    this._value = data?.value ?? this._value;
-    this._showValue = data?.showValue ?? this._showValue;
-    this._onChange = data?.onChange;
-    this._thumbSize = this._height * 1.5;
-
-    const trackColor = data?.trackColor ?? 0x333333;
-    const thumbColor = data?.color ?? 0x4488ff;
-
-    this.trackMaterial = new MeshStandardMaterial({ color: trackColor });
-    this.thumbMaterial = new MeshStandardMaterial({ color: thumbColor });
-
-    const trackGeom = new BoxGeometry(this._width, this._height, 4);
-    this.track = new Mesh(trackGeom, this.trackMaterial);
-    this.track.position.z = 0;
-
-    const thumbGeom = new BoxGeometry(this._thumbSize, this._height, 6);
-    this.thumb = new Mesh(thumbGeom, this.thumbMaterial);
-    this.thumb.position.z = 1;
-    this.updateThumbPosition();
-
-    this.group.add(this.track);
-    this.group.add(this.thumb);
-
-    this.baseMaterial.visible = false;
-  }
-
-  private _value = 0.5;
-
-  get value(): number {
-    return this._min + this._value * (this._max - this._min);
-  }
-
-  set value(v: number) {
-    this._value = (v - this._min) / (this._max - this._min);
-    this.updateThumbPosition();
-    this.updateLabel();
-  }
-
-  isDraggable(_localPos: Vector3): boolean {
-    return false;
-  }
-
-  hitTest(raycaster: Raycaster): HitResult | null {
-    return this.hitTestObject(raycaster, this.group, { normal: false });
-  }
-
-  onPointerDown(): void {
-    if (this._disabled) return;
-    this._isPressed = true;
-  }
-
-  onPointerUp(): void {
-    this._isPressed = false;
-  }
-
-  onPointerMove(localX: number): void {
-    if (this._isPressed) {
-      this._value = this.valueFromX(localX);
-      this.updateThumbPosition();
-      this.updateLabel();
-
-      if (this._onChange) {
-        this._onChange(this.value);
-      }
-      this.sg?.events.emit('slider:change', { node: this, value: this.value });
-    }
-  }
-
-  updateSpec(updates: Partial<NodeSpec>): this {
-    super.updateSpec(updates);
-    if (updates.data) {
-      const data = updates.data as SliderNodeData;
-      if (data.value !== undefined) {
-        this.value = data.value;
-      }
-      if (data.min !== undefined) this._min = data.min;
-      if (data.max !== undefined) this._max = data.max;
-      if (data.width !== undefined || data.height !== undefined) {
+        this._min = data?.min ?? this._min;
+        this._max = data?.max ?? this._max;
+        this._value = data?.value ?? this._value;
+        this._showValue = data?.showValue ?? this._showValue;
+        this._onChange = data?.onChange;
         this._thumbSize = this._height * 1.5;
-        this.track.geometry.dispose();
-        this.track.geometry = new BoxGeometry(this._width, this._height, 4);
-        this.thumb.geometry.dispose();
-        this.thumb.geometry = new BoxGeometry(this._thumbSize, this._height, 6);
+
+        const trackColor = data?.trackColor ?? 0x333333;
+        const thumbColor = data?.color ?? 0x4488ff;
+
+        this.trackMaterial = new MeshStandardMaterial({ color: trackColor });
+        this.thumbMaterial = new MeshStandardMaterial({ color: thumbColor });
+
+        const trackGeom = new BoxGeometry(this._width, this._height, 4);
+        this.track = new Mesh(trackGeom, this.trackMaterial);
+        this.track.position.z = 0;
+
+        const thumbGeom = new BoxGeometry(this._thumbSize, this._height, 6);
+        this.thumb = new Mesh(thumbGeom, this.thumbMaterial);
+        this.thumb.position.z = 1;
         this.updateThumbPosition();
-      }
-      if (data.showValue !== undefined) {
-        this._showValue = data.showValue;
-        if (this.labelMesh) this.labelMesh.visible = this._showValue;
-      }
-      if (data.trackColor !== undefined) this.trackMaterial.color.setHex(data.trackColor);
-      if (data.color !== undefined) this.thumbMaterial.color.setHex(data.color);
-      if (data.onChange !== undefined) this._onChange = data.onChange;
+
+        this.group.add(this.track);
+        this.group.add(this.thumb);
+
+        this.baseMaterial.visible = false;
     }
-    return this;
-  }
 
-  dispose(): void {
-    this.trackMaterial.dispose();
-    this.thumbMaterial.dispose();
-    this.track.geometry.dispose();
-    this.thumb.geometry.dispose();
-    super.dispose();
-  }
+    private _value = 0.5;
 
-  protected getBaseColor(_data: WidgetNodeData | undefined): number {
-    return 0x333333;
-  }
-
-  protected getHoverColor(): number {
-    return 0x333333;
-  }
-
-  protected getPressedColor(): number {
-    return 0x333333;
-  }
-
-  protected createLabelContent(ctx: CanvasRenderingContext2D, _text: string): void {
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 20px Arial';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(this.formatValue(this.value), this._width / 2, this._height / 2);
-  }
-
-  protected getLabelText(): string {
-    return this._showValue ? this.formatValue(this.value) : '';
-  }
-
-  protected formatValue(v: number): string {
-    if (Number.isInteger(this._min) && Number.isInteger(this._max)) {
-      return Math.round(v).toString();
+    get value(): number {
+        return this._min + this._value * (this._max - this._min);
     }
-    return v.toFixed(2);
-  }
 
-  protected updateThumbPosition(): void {
-    const range = this._width - this._thumbSize;
-    const x = -range / 2 + this._value * range;
-    this.thumb.position.x = x;
-  }
+    set value(v: number) {
+        this._value = (v - this._min) / (this._max - this._min);
+        this.updateThumbPosition();
+        this.updateLabel();
+    }
 
-  protected valueFromX(x: number): number {
-    const range = this._width - this._thumbSize;
-    const normalized = (x + this._width / 2 - this._thumbSize / 2) / range;
-    return clamp01(normalized);
-  }
+    isDraggable(_localPos: Vector3): boolean {
+        return false;
+    }
+
+    hitTest(raycaster: Raycaster): HitResult | null {
+        return this.hitTestObject(raycaster, this.group, { normal: false });
+    }
+
+    onPointerDown(): void {
+        if (this._disabled) return;
+        this._isPressed = true;
+    }
+
+    onPointerUp(): void {
+        this._isPressed = false;
+    }
+
+    onPointerMove(localX: number): void {
+        if (this._isPressed) {
+            this._value = this.valueFromX(localX);
+            this.updateThumbPosition();
+            this.updateLabel();
+
+            if (this._onChange) {
+                this._onChange(this.value);
+            }
+            this.sg?.events.emit('slider:change', { node: this, value: this.value });
+        }
+    }
+
+    updateSpec(updates: Partial<NodeSpec>): this {
+        super.updateSpec(updates);
+        if (updates.data) {
+            const data = updates.data as SliderNodeData;
+            if (data.value !== undefined) {
+                this.value = data.value;
+            }
+            if (data.min !== undefined) this._min = data.min;
+            if (data.max !== undefined) this._max = data.max;
+            if (data.width !== undefined || data.height !== undefined) {
+                this._thumbSize = this._height * 1.5;
+                this.track.geometry.dispose();
+                this.track.geometry = new BoxGeometry(this._width, this._height, 4);
+                this.thumb.geometry.dispose();
+                this.thumb.geometry = new BoxGeometry(this._thumbSize, this._height, 6);
+                this.updateThumbPosition();
+            }
+            if (data.showValue !== undefined) {
+                this._showValue = data.showValue;
+                if (this.labelMesh) this.labelMesh.visible = this._showValue;
+            }
+            if (data.trackColor !== undefined) this.trackMaterial.color.setHex(data.trackColor);
+            if (data.color !== undefined) this.thumbMaterial.color.setHex(data.color);
+            if (data.onChange !== undefined) this._onChange = data.onChange;
+        }
+        return this;
+    }
+
+    dispose(): void {
+        this.trackMaterial.dispose();
+        this.thumbMaterial.dispose();
+        this.track.geometry.dispose();
+        this.thumb.geometry.dispose();
+        super.dispose();
+    }
+
+    protected getBaseColor(_data: WidgetNodeData | undefined): number {
+        return 0x333333;
+    }
+
+    protected getHoverColor(): number {
+        return 0x333333;
+    }
+
+    protected getPressedColor(): number {
+        return 0x333333;
+    }
+
+    protected createLabelContent(ctx: CanvasRenderingContext2D, _text: string): void {
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 20px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(this.formatValue(this.value), this._width / 2, this._height / 2);
+    }
+
+    protected getLabelText(): string {
+        return this._showValue ? this.formatValue(this.value) : '';
+    }
+
+    protected formatValue(v: number): string {
+        if (Number.isInteger(this._min) && Number.isInteger(this._max)) {
+            return Math.round(v).toString();
+        }
+        return v.toFixed(2);
+    }
+
+    protected updateThumbPosition(): void {
+        const range = this._width - this._thumbSize;
+        const x = -range / 2 + this._value * range;
+        this.thumb.position.x = x;
+    }
+
+    protected valueFromX(x: number): number {
+        const range = this._width - this._thumbSize;
+        const normalized = (x + this._width / 2 - this._thumbSize / 2) / range;
+        return clamp01(normalized);
+    }
 }

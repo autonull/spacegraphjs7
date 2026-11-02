@@ -5,11 +5,7 @@ import type { PlacementItem } from '../../src/layout';
 
 type Meta = { parent?: string; links?: readonly string[]; radius?: number };
 
-const item = (
-    id: string,
-    meta?: Meta,
-    width = 200,
-): PlacementItem<Meta> => ({ id, width, meta });
+const item = (id: string, meta?: Meta, width = 200): PlacementItem<Meta> => ({ id, width, meta });
 
 describe('the placement seam', () => {
     it('lets an engine place boxes without the grid', () => {
@@ -30,7 +26,10 @@ describe('the placement seam', () => {
     it('keeps a placed box where it was when the layout hands the positions back', () => {
         const engine = new TreePlacement({ columnPitch: 100, rowPitch: 50 });
         const before = engine.place([item('root'), item('child', { parent: 'root' })]);
-        const after = engine.place([item('root'), item('child', { parent: 'root' }), item('new', { parent: 'child' })], before);
+        const after = engine.place(
+            [item('root'), item('child', { parent: 'root' }), item('new', { parent: 'child' })],
+            before,
+        );
 
         expect(after.get('root')).toEqual(before.get('root'));
         expect(after.get('child')).toEqual(before.get('child'));
@@ -72,7 +71,10 @@ describe('the tree placement', () => {
     it('leaves a placed box where it was when a child is appended', () => {
         const engine = new TreePlacement({ columnPitch: 100, rowPitch: 40 });
         const before = engine.place([item('root'), item('a', { parent: 'root' })]);
-        const after = engine.place([item('root'), item('a', { parent: 'root' }), item('b', { parent: 'root' })], before);
+        const after = engine.place(
+            [item('root'), item('a', { parent: 'root' }), item('b', { parent: 'root' })],
+            before,
+        );
 
         expect(after.get('root')).toEqual(before.get('root'));
         expect(after.get('a')).toEqual(before.get('a'));
@@ -81,7 +83,10 @@ describe('the tree placement', () => {
     it('places an appended box next to its parent when there is room', () => {
         const engine = new TreePlacement({ columnPitch: 100, rowPitch: 40 });
         const before = engine.place([item('root'), item('a', { parent: 'root' })]);
-        const after = engine.place([item('root'), item('a', { parent: 'root' }), item('b', { parent: 'root' })], before);
+        const after = engine.place(
+            [item('root'), item('a', { parent: 'root' }), item('b', { parent: 'root' })],
+            before,
+        );
 
         expect(Math.abs(after.get('b')!.x - after.get('root')!.x)).toBeLessThanOrEqual(100);
     });

@@ -86,7 +86,10 @@ export class EdgeBundler {
         edges: Array<{ id: string; source: string; target: string; kind: string }>,
         hierarchy: Map<string, string[]>,
     ): Map<string, Array<{ id: string; source: string; target: string; kind: string }>> {
-        const groups = new Map<string, Array<{ id: string; source: string; target: string; kind: string }>>();
+        const groups = new Map<
+            string,
+            Array<{ id: string; source: string; target: string; kind: string }>
+        >();
 
         for (const edge of edges) {
             const sourceAncestors = hierarchy.get(edge.source) ?? [];
@@ -123,11 +126,11 @@ export class EdgeBundler {
         const bundleId = `bundle-${edges[0].source}-${edges[0].target}`;
 
         // Find common control points for the bundle
-        const sourcePositions = edges.map(e => positions.get(e.source)!).filter(Boolean);
-        const targetPositions = edges.map(e => positions.get(e.target)!).filter(Boolean);
+        const sourcePositions = edges.map((e) => positions.get(e.source)!).filter(Boolean);
+        const targetPositions = edges.map((e) => positions.get(e.target)!).filter(Boolean);
 
         if (sourcePositions.length === 0 || targetPositions.length === 0) {
-            return edges.map(e => this.#createStraightEdge(e, positions));
+            return edges.map((e) => this.#createStraightEdge(e, positions));
         }
 
         // Calculate centroid of sources and targets
@@ -145,8 +148,8 @@ export class EdgeBundler {
         const distance = Math.hypot(dx, dy) || 1;
         const offset = Math.min(distance * 0.3, this.#maxDistance);
 
-        const perpX = -dy / distance * offset;
-        const perpY = dx / distance * offset;
+        const perpX = (-dy / distance) * offset;
+        const perpY = (dx / distance) * offset;
 
         const bundleControlPoints: Position[] = [
             { x: sourceCentroid.x, y: sourceCentroid.y, z: sourceCentroid.z },
@@ -154,7 +157,7 @@ export class EdgeBundler {
             { x: targetCentroid.x, y: targetCentroid.y, z: targetCentroid.z },
         ];
 
-        return edges.map(edge => {
+        return edges.map((edge) => {
             const sourcePos = positions.get(edge.source)!;
             const targetPos = positions.get(edge.target)!;
 
@@ -201,9 +204,12 @@ export class EdgeBundler {
             const straightZ = invT * sourcePos.z + t * targetPos.z;
 
             // Bundle curve interpolation (quadratic bezier)
-            const bundleX = invT * invT * bundleStart.x + 2 * invT * t * bundleMid.x + t * t * bundleEnd.x;
-            const bundleY = invT * invT * bundleStart.y + 2 * invT * t * bundleMid.y + t * t * bundleEnd.y;
-            const bundleZ = invT * invT * bundleStart.z + 2 * invT * t * bundleMid.z + t * t * bundleEnd.z;
+            const bundleX =
+                invT * invT * bundleStart.x + 2 * invT * t * bundleMid.x + t * t * bundleEnd.x;
+            const bundleY =
+                invT * invT * bundleStart.y + 2 * invT * t * bundleMid.y + t * t * bundleEnd.y;
+            const bundleZ =
+                invT * invT * bundleStart.z + 2 * invT * t * bundleMid.z + t * t * bundleEnd.z;
 
             // Blend between straight and bundled
             const x = straightX + (bundleX - straightX) * this.#bundlingStrength;

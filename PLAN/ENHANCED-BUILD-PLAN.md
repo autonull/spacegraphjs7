@@ -944,7 +944,7 @@ Follow [LAUNCH-SEQUENCED.md](./LAUNCH-SEQUENCED.md)
 | **Expected output**          | Know when you're on track                       |
 | **"If this fails" sections** | What to do when stuck                           |
 | **Git commits**              | Track progress, easy rollback                   |
-| **LICENSE/README**           | Required for pnpm publish                        |
+| **LICENSE/README**           | Required for pnpm publish                       |
 
 ---
 

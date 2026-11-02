@@ -5,6 +5,7 @@ This directory contains automated tests for all demos to ensure system integrity
 ## Test Types
 
 ### 1. Error Detection (`demo-errors.spec.ts`)
+
 - Automatically discovers all demos
 - Loads each demo
 - Monitors console for errors
@@ -12,6 +13,7 @@ This directory contains automated tests for all demos to ensure system integrity
 - Catches issues BEFORE manual testing
 
 ### 2. Screenshots & Verification (`demo-screenshots.spec.ts`)
+
 - Takes screenshot of each demo
 - Verifies page loaded correctly
 - Checks for console errors

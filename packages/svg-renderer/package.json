@@ -1,29 +1,29 @@
 {
-  "name": "@spacegraphjs/svg-renderer",
-  "version": "0.2.0",
-  "description": "Static SVG renderer for the dependency-free @spacegraphjs/renderer contract",
-  "type": "module",
-  "sideEffects": false,
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "default": "./dist/index.js"
-    }
-  },
-  "files": [
-    "dist",
-    "README.md"
-  ],
-  "scripts": {
-    "typecheck": "tsc --noEmit",
-    "test": "bun test"
-  },
-  "dependencies": {
-    "@spacegraphjs/renderer": "workspace:*"
-  },
-  "license": "MIT"
+    "name": "@spacegraphjs/svg-renderer",
+    "version": "0.2.0",
+    "description": "Static SVG renderer for the dependency-free @spacegraphjs/renderer contract",
+    "type": "module",
+    "sideEffects": false,
+    "main": "./dist/index.js",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js",
+            "default": "./dist/index.js"
+        }
+    },
+    "files": [
+        "dist",
+        "README.md"
+    ],
+    "scripts": {
+        "typecheck": "tsc --noEmit",
+        "test": "bun test"
+    },
+    "dependencies": {
+        "@spacegraphjs/renderer": "workspace:*"
+    },
+    "license": "MIT"
 }

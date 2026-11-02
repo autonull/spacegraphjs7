@@ -10,7 +10,7 @@
 | Phase  | Task               | Time | Gates                  |
 | ------ | ------------------ | ---- | ---------------------- |
 | **P0** | Working prototype  | 4-6h | Must render a graph    |
-| **P1** | ppnpm package prep   | 2h   | Must pass install test |
+| **P1** | ppnpm package prep | 2h   | Must pass install test |
 | **P2** | Documentation      | 3h   | QUICKSTART must work   |
 | **P3** | Publish + announce | 2h   | Only if P0-P2 pass     |
 | **P4** | Community setup    | 1h   | Matrix, Sponsors       |
@@ -549,8 +549,8 @@ GitHub: [link]
 | Gate       | Requirement         | Test                                |
 | ---------- | ------------------- | ----------------------------------- |
 | **Gate 0** | Prototype works     | Test file renders 3 nodes + 3 edges |
-| **Gate 1** | Build succeeds      | `pnpm run build` completes           |
-| **Gate 2** | Fresh install works | `pnpm install` in empty directory    |
+| **Gate 1** | Build succeeds      | `pnpm run build` completes          |
+| **Gate 2** | Fresh install works | `pnpm install` in empty directory   |
 | **Gate 3** | QUICKSTART works    | Stranger can follow in <10 min      |
 | **Gate 4** | All tests pass      | No console errors in test file      |
 
@@ -599,7 +599,7 @@ Day 3 (if needed):
 
 | Metric            | Target       | Why                          |
 | ----------------- | ------------ | ---------------------------- |
-| pnpm downloads     | 50           | Validates install works      |
+| pnpm downloads    | 50           | Validates install works      |
 | Matrix members    | 10           | Validates community interest |
 | GitHub stars      | 10           | Validates project appeal     |
 | 1 external issue  | Yes          | Validates engagement         |

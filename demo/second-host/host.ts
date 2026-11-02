@@ -197,7 +197,8 @@ export class SecondHost {
             if (!position) continue;
             const column = OUTCOME_INDEX[node.outcome];
             const current = columns.get(column);
-            if (!current) columns.set(column, { min: position.x, max: position.x, top: position.y });
+            if (!current)
+                columns.set(column, { min: position.x, max: position.x, top: position.y });
             else {
                 current.min = Math.min(current.min, position.x);
                 current.max = Math.max(current.max, position.x);
@@ -248,7 +249,11 @@ export class SecondHost {
         this.#scope = new Set(model.nodes.map((node) => node.id));
 
         try {
-            return this.adapter.build(model, { level: this.level, positions: new Map(), edges: true });
+            return this.adapter.build(model, {
+                level: this.level,
+                positions: new Map(),
+                edges: true,
+            });
         } finally {
             this.#scope = previous;
         }

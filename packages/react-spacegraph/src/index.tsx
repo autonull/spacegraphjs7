@@ -4,55 +4,55 @@
 
 import { createElement, useEffect, useRef, type CSSProperties, type ReactElement } from 'react';
 import type { GraphRenderer, RenderModel, RenderTheme } from '@spacegraphjs/renderer';
-import {
-  bindingOptionsFrom,
-  GraphBinding,
-  type GraphViewPropsBase,
-} from 'spacegraphjs/control';
+import { bindingOptionsFrom, GraphBinding, type GraphViewPropsBase } from 'spacegraphjs/control';
 
-export interface GraphViewProps extends GraphViewPropsBase<RenderTheme, GraphRenderer, RenderModel> {
-  className?: string;
-  style?: CSSProperties;
+export interface GraphViewProps extends GraphViewPropsBase<
+    RenderTheme,
+    GraphRenderer,
+    RenderModel
+> {
+    className?: string;
+    style?: CSSProperties;
 }
 
 export const GraphView = (props: GraphViewProps): ReactElement => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const bindingRef = useRef<GraphBinding<RenderTheme> | null>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
+    const bindingRef = useRef<GraphBinding<RenderTheme> | null>(null);
 
-  // Mount once per container. Prop changes flow through the effects below; a StrictMode double-invoke
-  // disposes the first binding, whose pending mount then disposes its own renderer.
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-    const binding = new GraphBinding<RenderTheme>(bindingOptionsFrom(props));
-    bindingRef.current = binding;
-    void binding.mount(container);
-    return () => {
-      binding.dispose();
-      if (bindingRef.current === binding) bindingRef.current = null;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    // Mount once per container. Prop changes flow through the effects below; a StrictMode double-invoke
+    // disposes the first binding, whose pending mount then disposes its own renderer.
+    useEffect(() => {
+        const container = containerRef.current;
+        if (!container) return;
+        const binding = new GraphBinding<RenderTheme>(bindingOptionsFrom(props));
+        bindingRef.current = binding;
+        void binding.mount(container);
+        return () => {
+            binding.dispose();
+            if (bindingRef.current === binding) bindingRef.current = null;
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
-  useEffect(() => {
-    bindingRef.current?.setModel(props.model);
-  }, [props.model]);
+    useEffect(() => {
+        bindingRef.current?.setModel(props.model);
+    }, [props.model]);
 
-  useEffect(() => {
-    bindingRef.current?.setTheme(props.theme);
-  }, [props.theme]);
+    useEffect(() => {
+        bindingRef.current?.setTheme(props.theme);
+    }, [props.theme]);
 
-  useEffect(() => {
-    if (props.projection) bindingRef.current?.setProjection(props.projection);
-  }, [props.projection]);
+    useEffect(() => {
+        if (props.projection) bindingRef.current?.setProjection(props.projection);
+    }, [props.projection]);
 
-  useEffect(() => {
-    bindingRef.current?.setSelection(props.selection ?? []);
-  }, [props.selection]);
+    useEffect(() => {
+        bindingRef.current?.setSelection(props.selection ?? []);
+    }, [props.selection]);
 
-  return createElement('div', {
-    ref: containerRef,
-    className: props.className,
-    style: { width: '100%', height: '100%', ...props.style },
-  });
+    return createElement('div', {
+        ref: containerRef,
+        className: props.className,
+        style: { width: '100%', height: '100%', ...props.style },
+    });
 };

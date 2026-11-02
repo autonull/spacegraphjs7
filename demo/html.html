@@ -13,7 +13,10 @@
             body {
                 overflow: hidden;
                 background-color: #050510;
-                font-family: system-ui, -apple-system, sans-serif;
+                font-family:
+                    system-ui,
+                    -apple-system,
+                    sans-serif;
             }
             #container {
                 width: 100vw;
@@ -75,7 +78,8 @@
                 margin-bottom: 4px;
             }
 
-            input[type="text"], input[type="range"] {
+            input[type='text'],
+            input[type='range'] {
                 width: 100%;
                 background: rgba(255, 255, 255, 0.05);
                 border: 1px solid rgba(255, 255, 255, 0.1);
@@ -95,9 +99,15 @@
 
             /* Pulse animation */
             @keyframes pulse-blue {
-                0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }
-                70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
-                100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+                0% {
+                    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4);
+                }
+                70% {
+                    box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
+                }
+                100% {
+                    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+                }
             }
             .pulse-card {
                 animation: pulse-blue 2s infinite;
@@ -172,8 +182,8 @@
                                             </div>
                                         </div>
                                     </div>
-                                `
-                            }
+                                `,
+                            },
                         },
                         {
                             id: 'settings-square',
@@ -200,8 +210,8 @@
                                         </div>
                                         <button class="glass-btn" style="width:100%; margin-top:10px;" data-sg-interactive="true">APPLY CHANGES</button>
                                     </div>
-                                `
-                            }
+                                `,
+                            },
                         },
                         {
                             id: 'circular-status-big',
@@ -212,7 +222,7 @@
                                 height: 220,
                                 className: 'glass circle-node pulse-card',
                                 style: {
-                                    border: '3px solid #60a5fa'
+                                    border: '3px solid #60a5fa',
                                 },
                                 html: `
                                     <div style="text-align:center;">
@@ -220,8 +230,8 @@
                                         <div style="font-weight:bold; font-size:24px;">92%</div>
                                         <div style="font-size:10px; opacity:0.6;">REMAINING</div>
                                     </div>
-                                `
-                            }
+                                `,
+                            },
                         },
                         {
                             id: 'mini-label-1',
@@ -231,8 +241,8 @@
                                 width: 80,
                                 height: 40,
                                 className: 'glass',
-                                html: '<div style="display:flex; align-items:center; justify-content:center; height:100%; font-size:10px; font-weight:bold;">S-01</div>'
-                            }
+                                html: '<div style="display:flex; align-items:center; justify-content:center; height:100%; font-size:10px; font-weight:bold;">S-01</div>',
+                            },
                         },
                         {
                             id: 'mini-label-2',
@@ -242,8 +252,8 @@
                                 width: 80,
                                 height: 40,
                                 className: 'glass',
-                                html: '<div style="display:flex; align-items:center; justify-content:center; height:100%; font-size:10px; font-weight:bold;">S-02</div>'
-                            }
+                                html: '<div style="display:flex; align-items:center; justify-content:center; height:100%; font-size:10px; font-weight:bold;">S-02</div>',
+                            },
                         },
                         {
                             id: 'mega-display',
@@ -270,16 +280,46 @@
                                             <div style="font-size:32px; font-weight:bold; color:#3b82f6;">2,481</div>
                                         </div>
                                     </div>
-                                `
-                            }
-                        }
+                                `,
+                            },
+                        },
                     ],
                     edges: [
-                        { id: 'e1', source: 'control-center', target: 'settings-square', type: 'CurvedEdge', data: { color: '#3b82f6', thickness: 3 } },
-                        { id: 'e2', source: 'control-center', target: 'circular-status-big', type: 'CurvedEdge', data: { color: '#10b981', thickness: 3 } },
-                        { id: 'e3', source: 'control-center', target: 'mega-display', type: 'Edge', data: { color: '#8b5cf6', thickness: 2, dashed: true } },
-                        { id: 'e4', source: 'settings-square', target: 'mini-label-1', type: 'Edge', data: { color: '#3b82f6', thickness: 1 } },
-                        { id: 'e5', source: 'settings-square', target: 'mini-label-2', type: 'Edge', data: { color: '#3b82f6', thickness: 1 } }
+                        {
+                            id: 'e1',
+                            source: 'control-center',
+                            target: 'settings-square',
+                            type: 'CurvedEdge',
+                            data: { color: '#3b82f6', thickness: 3 },
+                        },
+                        {
+                            id: 'e2',
+                            source: 'control-center',
+                            target: 'circular-status-big',
+                            type: 'CurvedEdge',
+                            data: { color: '#10b981', thickness: 3 },
+                        },
+                        {
+                            id: 'e3',
+                            source: 'control-center',
+                            target: 'mega-display',
+                            type: 'Edge',
+                            data: { color: '#8b5cf6', thickness: 2, dashed: true },
+                        },
+                        {
+                            id: 'e4',
+                            source: 'settings-square',
+                            target: 'mini-label-1',
+                            type: 'Edge',
+                            data: { color: '#3b82f6', thickness: 1 },
+                        },
+                        {
+                            id: 'e5',
+                            source: 'settings-square',
+                            target: 'mini-label-2',
+                            type: 'Edge',
+                            data: { color: '#3b82f6', thickness: 1 },
+                        },
                     ],
                 });
 

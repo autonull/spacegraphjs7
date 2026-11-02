@@ -1,47 +1,47 @@
 {
-  "name": "@spacegraphjs/compare",
-  "version": "0.1.0",
-  "type": "module",
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "default": "./dist/index.js"
+    "name": "@spacegraphjs/compare",
+    "version": "0.1.0",
+    "type": "module",
+    "main": "./dist/index.js",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js",
+            "default": "./dist/index.js"
+        },
+        "./GraphCompare": {
+            "types": "./dist/GraphCompare.d.ts",
+            "import": "./dist/GraphCompare.js",
+            "default": "./dist/GraphCompare.js"
+        },
+        "./GraphCompareBar": {
+            "types": "./dist/GraphCompareBar.d.ts",
+            "import": "./dist/GraphCompareBar.js",
+            "default": "./dist/GraphCompareBar.js"
+        }
     },
-    "./GraphCompare": {
-      "types": "./dist/GraphCompare.d.ts",
-      "import": "./dist/GraphCompare.js",
-      "default": "./dist/GraphCompare.js"
+    "files": [
+        "dist"
+    ],
+    "scripts": {
+        "build": "tsc && vite build",
+        "typecheck": "tsc --noEmit",
+        "test": "vitest run"
     },
-    "./GraphCompareBar": {
-      "types": "./dist/GraphCompareBar.d.ts",
-      "import": "./dist/GraphCompareBar.js",
-      "default": "./dist/GraphCompareBar.js"
-    }
-  },
-  "files": [
-    "dist"
-  ],
-  "scripts": {
-    "build": "tsc && vite build",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run"
-  },
-  "peerDependencies": {
-    "solid-js": "^1.9.0"
-  },
-  "dependencies": {
-    "@spacegraphjs/shared": "workspace:*"
-  },
-  "devDependencies": {
-    "solid-js": "^1.9.0",
-    "typescript": "^7.0.0",
-    "vite": "^8.0.0",
-    "vite-plugin-solid": "2.11.10",
-    "vitest": "^5.0.0"
-  },
-  "sideEffects": false
+    "peerDependencies": {
+        "solid-js": "^1.9.0"
+    },
+    "dependencies": {
+        "@spacegraphjs/shared": "workspace:*"
+    },
+    "devDependencies": {
+        "solid-js": "^1.9.0",
+        "typescript": "^7.0.0",
+        "vite": "^8.0.0",
+        "vite-plugin-solid": "2.11.10",
+        "vitest": "^5.0.0"
+    },
+    "sideEffects": false
 }

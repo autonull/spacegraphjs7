@@ -1,9 +1,9 @@
 import type { Node } from '../nodes/Node';
 
 type NodeParentSource = {
-  data?: Record<string, unknown>;
-  parameters?: Record<string, unknown>;
-  parent?: string;
+    data?: Record<string, unknown>;
+    parameters?: Record<string, unknown>;
+    parent?: string;
 };
 
 /**
@@ -11,9 +11,8 @@ type NodeParentSource = {
  * node itself.
  */
 export function parentIdOf(node: Node | undefined): string | undefined {
-  if (!node) return undefined;
-  const source = node as unknown as NodeParentSource;
-  return (source.data?.parent ?? source.parameters?.parent ?? source.parent) as
-    | string
-    | undefined;
+    if (!node) return undefined;
+    const source = node as unknown as NodeParentSource;
+    return (source.data?.parent ?? source.parameters?.parent ?? source.parent) as
+        string | undefined;
 }

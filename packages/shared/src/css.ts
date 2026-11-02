@@ -3,7 +3,7 @@
  * Provides class name helpers and CSS variable access.
  */
 
-import type { JSX } from "solid-js"
+import type { JSX } from 'solid-js';
 
 /**
  * Concatenates class names, filtering out falsy values.
@@ -11,30 +11,38 @@ import type { JSX } from "solid-js"
  * @param args - Class names, objects, or arrays
  * @returns Combined class string
  */
-export function cx(...args: Array<string | Record<string, boolean> | Array<string | Record<string, boolean>> | null | undefined>): string {
-  const classes: string[] = []
+export function cx(
+    ...args: Array<
+        | string
+        | Record<string, boolean>
+        | Array<string | Record<string, boolean>>
+        | null
+        | undefined
+    >
+): string {
+    const classes: string[] = [];
 
-  for (const arg of args) {
-    if (!arg) continue
+    for (const arg of args) {
+        if (!arg) continue;
 
-    if (typeof arg === "string") {
-      classes.push(arg)
-    } else if (Array.isArray(arg)) {
-      classes.push(cx(...arg))
-    } else if (typeof arg === "object") {
-      for (const [key, value] of Object.entries(arg)) {
-        if (value) classes.push(key)
-      }
+        if (typeof arg === 'string') {
+            classes.push(arg);
+        } else if (Array.isArray(arg)) {
+            classes.push(cx(...arg));
+        } else if (typeof arg === 'object') {
+            for (const [key, value] of Object.entries(arg)) {
+                if (value) classes.push(key);
+            }
+        }
     }
-  }
 
-  return classes.join(" ")
+    return classes.join(' ');
 }
 
 /**
  * Shorthand for cx - same functionality, shorter name.
  */
-export const cn = cx
+export const cn = cx;
 
 /**
  * Creates a CSS variable reference with optional fallback.
@@ -43,8 +51,8 @@ export const cn = cx
  * @returns var() expression
  */
 export function styleVar(name: string, fallback?: string): string {
-  const varName = `--${name}`
-  return fallback ? `var(${varName}, ${fallback})` : `var(${varName})`
+    const varName = `--${name}`;
+    return fallback ? `var(${varName}, ${fallback})` : `var(${varName})`;
 }
 
 /**
@@ -53,11 +61,11 @@ export function styleVar(name: string, fallback?: string): string {
  * @returns Style object for JSX
  */
 export function styleVars(vars: Record<string, string | number>): Record<string, string> {
-  const style: Record<string, string> = {}
-  for (const [prop, value] of Object.entries(vars)) {
-    style[prop] = String(value)
-  }
-  return style
+    const style: Record<string, string> = {};
+    for (const [prop, value] of Object.entries(vars)) {
+        style[prop] = String(value);
+    }
+    return style;
 }
 
 /**
@@ -65,9 +73,9 @@ export function styleVars(vars: Record<string, string | number>): Record<string,
  * @param prefix - Prefix for the ID
  * @returns Unique ID string
  */
-let idCounter = 0
-export function generateId(prefix = "sg"): string {
-  return `${prefix}-${++idCounter}-${Math.random().toString(36).slice(2, 8)}`
+let idCounter = 0;
+export function generateId(prefix = 'sg'): string {
+    return `${prefix}-${++idCounter}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
 /**
@@ -77,14 +85,14 @@ export function generateId(prefix = "sg"): string {
  * @returns Style object
  */
 export function fixedSize(width: number, height: number): Record<string, string> {
-  return {
-    width: `${width}px`,
-    height: `${height}px`,
-    "min-width": `${width}px`,
-    "min-height": `${height}px`,
-    "max-width": `${width}px`,
-    "max-height": `${height}px`,
-  }
+    return {
+        width: `${width}px`,
+        height: `${height}px`,
+        'min-width': `${width}px`,
+        'min-height': `${height}px`,
+        'max-width': `${width}px`,
+        'max-height': `${height}px`,
+    };
 }
 
 /**
@@ -96,38 +104,38 @@ export function fixedSize(width: number, height: number): Record<string, string>
  * @returns Style object
  */
 export function absolutePosition(
-  top?: number | string,
-  left?: number | string,
-  right?: number | string,
-  bottom?: number | string,
+    top?: number | string,
+    left?: number | string,
+    right?: number | string,
+    bottom?: number | string,
 ): Record<string, string> {
-  const style: Record<string, string> = { position: "absolute" }
-  if (top !== undefined) style.top = typeof top === "number" ? `${top}px` : top
-  if (left !== undefined) style.left = typeof left === "number" ? `${left}px` : left
-  if (right !== undefined) style.right = typeof right === "number" ? `${right}px` : right
-  if (bottom !== undefined) style.bottom = typeof bottom === "number" ? `${bottom}px` : bottom
-  return style
+    const style: Record<string, string> = { position: 'absolute' };
+    if (top !== undefined) style.top = typeof top === 'number' ? `${top}px` : top;
+    if (left !== undefined) style.left = typeof left === 'number' ? `${left}px` : left;
+    if (right !== undefined) style.right = typeof right === 'number' ? `${right}px` : right;
+    if (bottom !== undefined) style.bottom = typeof bottom === 'number' ? `${bottom}px` : bottom;
+    return style;
 }
 
 /**
  * Media query helpers for responsive design.
  */
 export const mediaQueries = {
-  /** @media (max-width: 640px) */
-  sm: "@media (max-width: 640px)",
-  /** @media (max-width: 768px) */
-  md: "@media (max-width: 768px)",
-  /** @media (max-width: 1024px) */
-  lg: "@media (max-width: 1024px)",
-  /** @media (max-width: 1280px) */
-  xl: "@media (max-width: 1280px)",
-  /** @media (prefers-reduced-motion: reduce) */
-  reducedMotion: "@media (prefers-reduced-motion: reduce)",
-  /** @media (prefers-color-scheme: dark) */
-  dark: "@media (prefers-color-scheme: dark)",
-  /** @media (prefers-color-scheme: light) */
-  light: "@media (prefers-color-scheme: light)",
-} as const
+    /** @media (max-width: 640px) */
+    sm: '@media (max-width: 640px)',
+    /** @media (max-width: 768px) */
+    md: '@media (max-width: 768px)',
+    /** @media (max-width: 1024px) */
+    lg: '@media (max-width: 1024px)',
+    /** @media (max-width: 1280px) */
+    xl: '@media (max-width: 1280px)',
+    /** @media (prefers-reduced-motion: reduce) */
+    reducedMotion: '@media (prefers-reduced-motion: reduce)',
+    /** @media (prefers-color-scheme: dark) */
+    dark: '@media (prefers-color-scheme: dark)',
+    /** @media (prefers-color-scheme: light) */
+    light: '@media (prefers-color-scheme: light)',
+} as const;
 
 /**
  * Creates a CSS-in-JS style object for a media query.
@@ -136,5 +144,5 @@ export const mediaQueries = {
  * @returns Style object with nested media query (for use with css-in-js libraries)
  */
 export function media(query: string, styles: JSX.CSSProperties): Record<string, JSX.CSSProperties> {
-  return { [query]: styles }
+    return { [query]: styles };
 }

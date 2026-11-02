@@ -328,8 +328,7 @@ function lanesLayout<Node extends LayoutNode, Edge extends LayoutEdge, Name exte
     for (const node of nodes) {
         const turn = config.turnIdFn(node);
         const owner = owners.get(node.id);
-        const column =
-            node.id === model.root ? SESSION_COLUMN : (owner ?? turn ?? SESSION_COLUMN);
+        const column = node.id === model.root ? SESSION_COLUMN : (owner ?? turn ?? SESSION_COLUMN);
 
         if (column === SESSION_COLUMN) {
             sessionColumn.push(node);
@@ -431,7 +430,11 @@ function timelineLayout<Node extends LayoutNode, Edge extends LayoutEdge, Name e
                     id: node.id,
                     width: config.nodeSizeFn(node)[0],
                     depth: depthOf(config.depthMap, node.kind),
-                    meta: { group: SESSION_COLUMN, row: Math.floor(i / columns), columnWidth: turnColumnWidth },
+                    meta: {
+                        group: SESSION_COLUMN,
+                        row: Math.floor(i / columns),
+                        columnWidth: turnColumnWidth,
+                    },
                 });
 
     // Each turn gets its own column band. The members come from one pass over the model, not one
@@ -453,7 +456,11 @@ function timelineLayout<Node extends LayoutNode, Edge extends LayoutEdge, Name e
                     id: node.id,
                     width: config.nodeSizeFn(node)[0],
                     depth: depthOf(config.depthMap, node.kind),
-                    meta: { group: turnID, row: Math.floor(i / columns), columnWidth: turnColumnWidth },
+                    meta: {
+                        group: turnID,
+                        row: Math.floor(i / columns),
+                        columnWidth: turnColumnWidth,
+                    },
                 });
     }
 
@@ -462,10 +469,7 @@ function timelineLayout<Node extends LayoutNode, Edge extends LayoutEdge, Name e
 
     // The root band spans the leading block
     if (leading && leading.length > 0) {
-        const members = memberPositions(
-            [model.root, ...leading.map((node) => node.id)],
-            positions,
-        );
+        const members = memberPositions([model.root, ...leading.map((node) => node.id)], positions);
 
         if (members) clusters.set('session', members);
     }
@@ -645,11 +649,7 @@ function layoutGraph<Node extends LayoutNode, Edge extends LayoutEdge, Name exte
 }
 
 /** The vertical centre of each lane, for a lane-label overlay aligned to the lanes layout. */
-function laneAnchors<
-    Node extends LayoutNode,
-    Edge extends LayoutEdge,
-    Name extends string,
->(
+function laneAnchors<Node extends LayoutNode, Edge extends LayoutEdge, Name extends string>(
     config: LayoutConfig<Node, Edge, Name>,
     options: LayoutOptions<Node> = {},
 ): { name: Name; y: number }[] {

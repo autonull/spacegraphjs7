@@ -4,34 +4,34 @@ import { SpaceGraph } from '../src';
 export { SpaceGraph };
 
 export async function createDemo(
-  spec: GraphSpec,
-  _options?: Record<string, unknown>
+    spec: GraphSpec,
+    _options?: Record<string, unknown>,
 ): Promise<SpaceGraph> {
-  let container = document.getElementById('app');
-  if (!container) {
-    container = document.getElementById('container');
-  }
-  if (!container) {
-    console.error("Could not find container 'app' or 'container'");
-  }
-  const sg = await SpaceGraph.create(container!, spec);
-  (window as any)._sg = sg;
-  return sg;
+    let container = document.getElementById('app');
+    if (!container) {
+        container = document.getElementById('container');
+    }
+    if (!container) {
+        console.error("Could not find container 'app' or 'container'");
+    }
+    const sg = await SpaceGraph.create(container!, spec);
+    (window as any)._sg = sg;
+    return sg;
 }
 
 export async function createDemoWithNodes(nodes: any[], edges: any[] = []): Promise<SpaceGraph> {
-  return createDemo({
-    nodes: nodes.map((n) => ({
-      id: n.id,
-      type: n.type ?? 'ShapeNode',
-      position: n.position ?? [0, 0, 0],
-      data: n.data ?? {},
-    })),
-    edges: edges.map((e: any) => ({
-      ...e,
-      type: e.type ?? 'CurvedEdge',
-    })),
-  });
+    return createDemo({
+        nodes: nodes.map((n) => ({
+            id: n.id,
+            type: n.type ?? 'ShapeNode',
+            position: n.position ?? [0, 0, 0],
+            data: n.data ?? {},
+        })),
+        edges: edges.map((e: any) => ({
+            ...e,
+            type: e.type ?? 'CurvedEdge',
+        })),
+    });
 }
 
 const HINT_STYLE = `
@@ -56,64 +56,63 @@ const HINT_STYLE = `
 }`;
 
 export function createDemoHint(sg: SpaceGraph, keyboardHtml: string): void {
-  const style = document.createElement('style');
-  style.textContent = HINT_STYLE;
-  document.head.appendChild(style);
-  const hint = document.createElement('div');
-  hint.className = 'demo-hint';
-  hint.innerHTML = keyboardHtml;
-  sg.container.appendChild(hint);
+    const style = document.createElement('style');
+    style.textContent = HINT_STYLE;
+    document.head.appendChild(style);
+    const hint = document.createElement('div');
+    hint.className = 'demo-hint';
+    hint.innerHTML = keyboardHtml;
+    sg.container.appendChild(hint);
 }
 
 export function addOverlayPanel(
-  sg: SpaceGraph,
-  position: 'top-right' | 'bottom-left' = 'bottom-left',
-  cssProps: Record<string, string> = {},
-  innerHTML = ''
+    sg: SpaceGraph,
+    position: 'top-right' | 'bottom-left' = 'bottom-left',
+    cssProps: Record<string, string> = {},
+    innerHTML = '',
 ): void {
-  const panel = document.createElement('div');
-  Object.assign(panel.style, {
-    position: 'absolute',
-    background: 'rgba(0,0,0,0.7)',
-    color: '#ffffff',
-    padding: '15px',
-    borderRadius: '8px',
-    fontSize: '13px',
-    fontFamily: 'sans-serif',
-    zIndex: '1000',
-    backdropFilter: 'blur(10px)',
-    border: '1px solid rgba(255,255,255,0.1)',
-    maxWidth: '300px',
-    ...(position === 'top-right'
-      ? { top: '20px', right: '20px' }
-      : { bottom: '20px', left: '20px' }),
-    ...cssProps,
-  });
-  if (innerHTML) panel.innerHTML = innerHTML;
-  sg.container.appendChild(panel);
+    const panel = document.createElement('div');
+    Object.assign(panel.style, {
+        position: 'absolute',
+        background: 'rgba(0,0,0,0.7)',
+        color: '#ffffff',
+        padding: '15px',
+        borderRadius: '8px',
+        fontSize: '13px',
+        fontFamily: 'sans-serif',
+        zIndex: '1000',
+        backdropFilter: 'blur(10px)',
+        border: '1px solid rgba(255,255,255,0.1)',
+        maxWidth: '300px',
+        ...(position === 'top-right'
+            ? { top: '20px', right: '20px' }
+            : { bottom: '20px', left: '20px' }),
+        ...cssProps,
+    });
+    if (innerHTML) panel.innerHTML = innerHTML;
+    sg.container.appendChild(panel);
 }
 
 export function shapeNode(
-  id: string,
-  position: [number, number, number] = [0, 0, 0],
-  data: Record<string, unknown> = {}
+    id: string,
+    position: [number, number, number] = [0, 0, 0],
+    data: Record<string, unknown> = {},
 ): { id: string; type: string; position: [number, number, number]; data: Record<string, unknown> } {
-  return { id, type: 'ShapeNode', position, data };
+    return { id, type: 'ShapeNode', position, data };
 }
 
 export function htmlNode(
-  id: string,
-  position: [number, number, number] = [0, 0, 0],
-  data: Record<string, unknown> = {}
+    id: string,
+    position: [number, number, number] = [0, 0, 0],
+    data: Record<string, unknown> = {},
 ): { id: string; type: string; position: [number, number, number]; data: Record<string, unknown> } {
-  return { id, type: 'HtmlNode', position, data: { width: 200, height: 100, ...data } };
+    return { id, type: 'HtmlNode', position, data: { width: 200, height: 100, ...data } };
 }
 
 export function edge(
-  source: string,
-  target: string,
-  type = 'CurvedEdge'
+    source: string,
+    target: string,
+    type = 'CurvedEdge',
 ): { id: string; source: string; target: string; type: string } {
-  return { id: `e_${source}_${target}`, source, target, type };
+    return { id: `e_${source}_${target}`, source, target, type };
 }
-

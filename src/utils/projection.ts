@@ -6,36 +6,36 @@ import { Camera, Vector3 } from 'three';
 
 /** A world position in normalised device coordinates: -1 to 1 across the viewport. */
 export function projectToNdc(position: Vector3, camera: Camera): Vector3 {
-  return position.clone().project(camera);
+    return position.clone().project(camera);
 }
 
 /**
  * A client position in normalised device coordinates: -1 to 1 across the element's own bounds.
  */
 export function clientToNdc(
-  clientX: number,
-  clientY: number,
-  rect: { left: number; top: number; width: number; height: number }
+    clientX: number,
+    clientY: number,
+    rect: { left: number; top: number; width: number; height: number },
 ): { x: number; y: number } {
-  return {
-    x: ((clientX - rect.left) / rect.width) * 2 - 1,
-    y: -((clientY - rect.top) / rect.height) * 2 + 1,
-  };
+    return {
+        x: ((clientX - rect.left) / rect.width) * 2 - 1,
+        y: -((clientY - rect.top) / rect.height) * 2 + 1,
+    };
 }
 
 /**
  * A world position in screen pixels, measured from the canvas' top left.
  */
 export function worldToScreen(
-  position: Vector3,
-  camera: Camera,
-  canvas: { clientWidth: number; clientHeight: number }
+    position: Vector3,
+    camera: Camera,
+    canvas: { clientWidth: number; clientHeight: number },
 ): { x: number; y: number } {
-  const projected = projectToNdc(position, camera);
-  return {
-    x: (projected.x * 0.5 + 0.5) * canvas.clientWidth,
-    y: (-projected.y * 0.5 + 0.5) * canvas.clientHeight,
-  };
+    const projected = projectToNdc(position, camera);
+    return {
+        x: (projected.x * 0.5 + 0.5) * canvas.clientWidth,
+        y: (-projected.y * 0.5 + 0.5) * canvas.clientHeight,
+    };
 }
 
 /**
@@ -43,14 +43,16 @@ export function worldToScreen(
  * on the page is added, so the point lands where the reader sees it.
  */
 export function worldToClient(
-  position: Vector3,
-  camera: Camera,
-  canvas: { getBoundingClientRect(): { left: number; top: number; width: number; height: number } }
+    position: Vector3,
+    camera: Camera,
+    canvas: {
+        getBoundingClientRect(): { left: number; top: number; width: number; height: number };
+    },
 ): { x: number; y: number } {
-  const rect = canvas.getBoundingClientRect();
-  const screen = worldToScreen(position, camera, {
-    clientWidth: rect.width,
-    clientHeight: rect.height,
-  });
-  return { x: screen.x + rect.left, y: screen.y + rect.top };
+    const rect = canvas.getBoundingClientRect();
+    const screen = worldToScreen(position, camera, {
+        clientWidth: rect.width,
+        clientHeight: rect.height,
+    });
+    return { x: screen.x + rect.left, y: screen.y + rect.top };
 }

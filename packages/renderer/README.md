@@ -10,11 +10,16 @@ dependencies**.
 - The `spacegraphjs` core never imports this package.
 
 ```ts
-import { CONTRACT_VERSION, supports, type GraphRenderer, type RenderModel } from '@spacegraphjs/renderer';
+import {
+    CONTRACT_VERSION,
+    supports,
+    type GraphRenderer,
+    type RenderModel,
+} from '@spacegraphjs/renderer';
 
 export function mountGraph(renderer: GraphRenderer, container: HTMLElement, model: RenderModel) {
-  renderer.mount(container, { theme, projection: '2d' });
-  renderer.setModel(model);
+    renderer.mount(container, { theme, projection: '2d' });
+    renderer.setModel(model);
 }
 ```
 

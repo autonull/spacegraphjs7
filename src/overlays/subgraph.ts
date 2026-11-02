@@ -14,12 +14,18 @@ export interface OverlayEdge {
     kind: string;
 }
 
-export interface OverlayModel<Node extends OverlayNode = OverlayNode, Edge extends OverlayEdge = OverlayEdge> {
+export interface OverlayModel<
+    Node extends OverlayNode = OverlayNode,
+    Edge extends OverlayEdge = OverlayEdge,
+> {
     nodes: readonly Node[];
     edges: readonly Edge[];
 }
 
-export interface ScopedSubgraph<Node extends OverlayNode = OverlayNode, Edge extends OverlayEdge = OverlayEdge> {
+export interface ScopedSubgraph<
+    Node extends OverlayNode = OverlayNode,
+    Edge extends OverlayEdge = OverlayEdge,
+> {
     /** The scoped nodes, in model order. */
     nodes: readonly Node[];
     /** The edges between the scoped nodes, in model order. */

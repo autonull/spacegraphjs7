@@ -8,519 +8,530 @@ import type { EdgeSpec, NodeSpec, Predicate } from '../types';
 type NodePredicate = Predicate<Node>;
 
 export class ErgonomicsAPI {
-  // ============= Graph Topology =============
-  constructor(readonly sg: SpaceGraph) {}
+    // ============= Graph Topology =============
+    constructor(readonly sg: SpaceGraph) {}
 
-  get first(): Node | undefined {
-    return this.sg.graph.nodes.values().next().value;
-  }
-
-  get last(): Node | undefined {
-    return [...this.sg.graph.nodes.values()].pop();
-  }
-
-  get selected(): Node[] {
-    return this.sg.selectedNodes;
-  }
-
-  // ============= Aggregates =============
-  get count(): number {
-    return this.sg.graph.nodes.size;
-  }
-
-  get isEmpty(): boolean {
-    return this.sg.graph.nodes.size === 0;
-  }
-
-  get bounds(): { min: Node; max: Node } | null {
-    const arr = [...this.sg.graph.nodes.values()];
-    if (!arr.length) return null;
-    return { min: arr[0], max: arr[arr.length - 1] };
-  }
-
-  // ============= Quick Access ($ = get node) =============
-  $(id: string): Node | undefined {
-    return this.sg.graph.getNode(id);
-  }
-
-  $$(id: string): Node {
-    return this.require(id);
-  }
-
-  $optional(id: string): Node | null {
-    return this.sg.graph.getNode(id) ?? null;
-  }
-
-  // ============= Query =============
-  findNodes(predicate: NodePredicate): Node[] {
-    return this.sg.graph.query(predicate);
-  }
-
-  findNode(predicate: NodePredicate): Node | undefined {
-    return this.sg.graph.findNode(predicate);
-  }
-
-  getNodesByType(type: string): Node[] {
-    return this.sg.graph.queryByType(type);
-  }
-
-  findEdges(predicate: (edge: Edge) => boolean): Edge[] {
-    const e = this.sg.graph.findEdge(predicate);
-    return e ? [e] : [];
-  }
-
-  getEdgesForNode(nodeId: string): Edge[] {
-    return this.sg.graph.getEdgesForNode(nodeId);
-  }
-
-  where(key: string, value: unknown): Node[] {
-    return this.sg.graph.query((n: Node) => (n.data as Record<string, unknown>)[key] === value);
-  }
-
-  has(key: string, value?: unknown): Node[] {
-    return value !== undefined
-      ? this.where(key, value)
-      : this.sg.graph.query((n: Node) => key in n.data);
-  }
-
-  neighbors(nodeId: string): Node[] {
-    return this.sg.graph.neighbors(nodeId);
-  }
-
-  inEdges(nodeId: string): Edge[] {
-    return this.sg.graph.getIncomingEdges(nodeId);
-  }
-
-  outEdges(nodeId: string): Edge[] {
-    return this.sg.graph.getOutgoingEdges(nodeId);
-  }
-
-  // ============= Iterator =============
-  forNodes(callback: (node: Node) => void): void {
-    this.sg.graph.forEachNode(callback);
-  }
-
-  forEdges(callback: (edge: Edge) => void): void {
-    this.sg.graph.forEachEdge(callback);
-  }
-
-  // ============= Array Methods =============
-  map<T>(callback: (node: Node) => T): T[] {
-    return this.sg.graph.mapNodes(callback);
-  }
-
-  filter(callback: (node: Node) => boolean): Node[] {
-    return this.sg.graph.query(callback);
-  }
-
-  some(callback: (node: Node) => boolean): boolean {
-    return this.sg.graph.findNode(callback) !== undefined;
-  }
-
-  every(callback: (node: Node) => boolean): boolean {
-    return [...this.sg.graph.getNodes()].every(callback);
-  }
-
-  reduce<T>(callback: (acc: T, node: Node) => T, initial: T): T {
-    return [...this.sg.graph.getNodes()].reduce(callback, initial);
-  }
-
-  // ============= Node Manipulation =============
-  add(spec: NodeSpec | Node): Node | null {
-    return this.sg.graph.addNode(spec);
-  }
-
-  addNodes(specs: NodeSpec[]): Node[] {
-    return this.sg.graph.addNodes(specs);
-  }
-
-  create(spec: string | NodeSpec): Node | null {
-    return typeof spec === 'string'
-      ? this.sg.graph.addNode({ id: spec, type: 'ShapeNode' })
-      : this.sg.graph.addNode(spec);
-  }
-
-  remove(id: string): boolean {
-    this.sg.graph.removeNode(id);
-    return true;
-  }
-
-  removeWhere(predicate: NodePredicate): number {
-    const nodes = this.sg.graph.query(predicate);
-    nodes.forEach((n: Node) => this.sg.graph.removeNode(n.id));
-    return nodes.length;
-  }
-
-  updateWhere(predicate: NodePredicate, updates: Partial<NodeSpec>): Node[] {
-    return this.sg.graph
-      .query(predicate)
-      .map((n: Node) => this.sg.graph.updateNode(n.id, updates))
-      .filter(Boolean) as Node[];
-  }
-
-  // ============= Edge Manipulation =============
-  connect(source: string, target: string, data?: Record<string, unknown>): Edge | null {
-    return this.sg.graph.addEdge({ id: `edge-${source}-${target}`, source, target, data });
-  }
-
-  connectTo(source: string, to: string | string[], data?: Record<string, unknown>): Edge[] {
-    const arr = Array.isArray(to) ? to : [to];
-    return arr.map((t) => this.connect(source, t, data)).filter(Boolean) as Edge[];
-  }
-
-  connectFrom(from: string | string[], target: string, data?: Record<string, unknown>): Edge[] {
-    const arr = Array.isArray(from) ? from : [from];
-    return arr.map((f) => this.connect(f, target, data)).filter(Boolean) as Edge[];
-  }
-
-  disconnect(source: string, target: string): boolean {
-    this.sg.graph.removeEdge(`edge-${source}-${target}`);
-    return true;
-  }
-
-  addEdges(specs: EdgeSpec[]): Edge[] {
-    return this.sg.graph.addEdges(specs);
-  }
-
-  // ============= Traversal =============
-  traverse(callback: (node: Node, depth: number) => void, startId?: string): void {
-    this.sg.graph.traverse(callback, startId);
-  }
-
-  bfs(callback: (node: Node, depth: number) => void, startId?: string): void {
-    this.sg.graph.bfs(callback, startId);
-  }
-
-  dfs(callback: (node: Node, depth: number) => void, startId?: string): void {
-    this.sg.graph.dfs(callback, startId);
-  }
-
-  // ============= Shortcuts for Common Operations =============
-
-  getSubgraph(centerId: string, radius: number): { nodes: Node[]; edges: Edge[] } {
-    return this.sg.graph.getConnectedComponentInRadius(centerId, radius);
-  }
-
-  path(from: string, to: string): Node[] | null {
-    return this.sg.graph.findPath(from, to);
-  }
-
-  // ============= Quick Access =============
-  require(id: string): Node {
-    const node = this.sg.graph.getNode(id);
-    if (!node) throw new Error(`Node not found: ${id}`);
-    return node;
-  }
-
-  // ============= Batch Operations =============
-  batch(fn: (sg: SpaceGraph) => void): void {
-    fn(this.sg);
-  }
-
-  freeze(): { release: () => void } {
-    this.sg.pause();
-    return { release: () => this.sg.render() };
-  }
-
-  suspend(): { resume: () => void } {
-    this.sg.pause();
-    return { resume: () => this.sg.render() };
-  }
-
-  transaction(updates: (sg: SpaceGraph) => void): void {
-    this.sg.pause();
-    try {
-      updates(this.sg);
-    } finally {
-      this.sg.render();
+    get first(): Node | undefined {
+        return this.sg.graph.nodes.values().next().value;
     }
-  }
 
-  // Node creation shortcuts
-  node(
-    id: string,
-    position?: [number, number, number],
-    data?: Record<string, unknown>
-  ): Node | null {
-    return this.addTyped(id, 'ShapeNode', data, position);
-  }
-
-  box(id: string, position?: [number, number, number], size = 50): Node | null {
-    return this.addTyped(id, 'ShapeNode', { size, shape: 'box' }, position);
-  }
-
-  sphere(id: string, position?: [number, number, number], size = 50): Node | null {
-    return this.addTyped(id, 'ShapeNode', { size, shape: 'sphere' }, position);
-  }
-
-  circle(id: string, position?: [number, number, number], size = 50): Node | null {
-    return this.addTyped(id, 'ShapeNode', { size, shape: 'circle' }, position);
-  }
-
-  text(id: string, text: string, position?: [number, number, number]): Node | null {
-    return this.addTyped(id, 'TextMeshNode', { text }, position);
-  }
-
-  image(id: string, url: string, position?: [number, number, number]): Node | null {
-    return this.addTyped(id, 'ImageNode', { url }, position);
-  }
-
-  html(id: string, html: string, position?: [number, number, number]): Node | null {
-    return this.addTyped(id, 'HtmlNode', { html }, position);
-  }
-
-  group(id: string, position?: [number, number, number]): Node | null {
-    return this.addTyped(id, 'GroupNode', undefined, position);
-  }
-
-  note(id: string, text: string, position?: [number, number, number]): Node | null {
-    return this.addTyped(id, 'NoteNode', { text }, position);
-  }
-
-  widget(
-    id: string,
-    type: 'button' | 'slider' | 'toggle',
-    position?: [number, number, number]
-  ): Node | null {
-    return this.addTyped(id, `${type.charAt(0).toUpperCase()}${type.slice(1)}Node`, undefined, position);
-  }
-
-  // ============= Node Utilities =============
-  clone(id: string, newId?: string): Node | null {
-    const orig = this.sg.graph.getNode(id);
-    if (!orig) return null;
-    return this.sg.graph.addNode({
-      id: newId ?? `${id}-copy`,
-      type: orig.type,
-      label: orig.label,
-      position: [orig.position.x + 50, orig.position.y, orig.position.z + 50],
-      data: { ...orig.data },
-    });
-  }
-
-  move(id: string, x: number, y: number, z = 0): Node | null {
-    return this.withNode(id, (node) => node.updatePosition(x, y, z));
-  }
-
-  translate(id: string, dx: number, dy: number, dz = 0): Node | null {
-    return this.withNode(id, (node) =>
-      node.updatePosition(node.position.x + dx, node.position.y + dy, node.position.z + dz)
-    );
-  }
-
-  rotate(id: string, x: number, y: number, z: number): Node | null {
-    return this.withNode(id, (node) => node.updateSpec({ rotation: [x, y, z] }));
-  }
-
-  scale(id: string, x: number, y?: number, z?: number): Node | null {
-    return this.withNode(id, (node) => node.updateSpec({ scale: [x, y ?? x, z ?? x] }));
-  }
-
-  label(id: string, text: string): Node | null {
-    return this.withNode(id, (node) => node.updateSpec({ label: text }));
-  }
-
-  color(id: string, color: string | number): Node | null {
-    return this.withNode(id, (node) => node.updateSpec({ data: { color } }));
-  }
-
-  // ============= Visibility =============
-  show(id: string, visible = true): Node | null {
-    return this.withNode(id, (node) => node.updateSpec({ data: { visible } }));
-  }
-
-  hide(id: string): Node | null {
-    return this.show(id, false);
-  }
-
-  toggleVisibility(nodeId: string): boolean {
-    const node = this.sg.graph.getNode(nodeId);
-    if (!node) return false;
-    const visible = !(node.data as Record<string, unknown>).visible;
-    node.updateSpec({ data: { visible } });
-    return visible;
-  }
-
-  opacity(id: string, opacity: number): Node | null {
-    return this.#writeFlag(id, 'opacity', opacity);
-  }
-
-  pinned(id: string): Node | null {
-    return this.#writeFlag(id, 'pinned', true);
-  }
-
-  unpin(id: string): Node | null {
-    return this.#writeFlag(id, 'pinned', false);
-  }
-
-  draggable(id: string, draggable = true): Node | null {
-    return this.#writeFlag(id, 'draggable', draggable);
-  }
-
-  selectable(id: string, selectable = true): Node | null {
-    return this.#writeFlag(id, 'selectable', selectable);
-  }
-
-  // ============= Data Access =============
-  data(id: string, key: string, value?: unknown): unknown {
-    const n = this.sg.graph.getNode(id);
-    if (!n) return undefined;
-    if (value !== undefined) {
-      n.updateSpec({ data: { ...n.data, [key]: value } });
-      return value;
+    get last(): Node | undefined {
+        return [...this.sg.graph.nodes.values()].pop();
     }
-    return n.data[key];
-  }
 
-  /** A data flag written onto a node; the ergonomics API reports the value it wrote. */
-  #writeFlag(id: string, key: string, value: unknown): Node | null {
-    return this.data(id, key, value) as unknown as Node | null;
-  }
+    get selected(): Node[] {
+        return this.sg.selectedNodes;
+    }
 
-  attr(id: string, key: string, value?: unknown): unknown {
-    return this.data(id, key, value);
-  }
+    // ============= Aggregates =============
+    get count(): number {
+        return this.sg.graph.nodes.size;
+    }
 
-  size(id: string, size: number): Node | null {
-    return this.#writeFlag(id, 'size', size);
-  }
+    get isEmpty(): boolean {
+        return this.sg.graph.nodes.size === 0;
+    }
 
-  width(id: string, width: number): Node | null {
-    return this.#writeFlag(id, 'width', width);
-  }
+    get bounds(): { min: Node; max: Node } | null {
+        const arr = [...this.sg.graph.nodes.values()];
+        if (!arr.length) return null;
+        return { min: arr[0], max: arr[arr.length - 1] };
+    }
 
-  height(id: string, height: number): Node | null {
-    return this.#writeFlag(id, 'height', height);
-  }
+    // ============= Quick Access ($ = get node) =============
+    $(id: string): Node | undefined {
+        return this.sg.graph.getNode(id);
+    }
 
-  // ============= Position Utilities =============
-  position(id: string, x: number, y: number, z = 0): Node | null {
-    return this.move(id, x, y, z);
-  }
+    $$(id: string): Node {
+        return this.require(id);
+    }
 
-  cx(id: string, x: number): Node | null {
-    return this.withNode(id, (node) => node.updatePosition(x, node.position.y, node.position.z));
-  }
+    $optional(id: string): Node | null {
+        return this.sg.graph.getNode(id) ?? null;
+    }
 
-  cy(id: string, y: number): Node | null {
-    return this.withNode(id, (node) => node.updatePosition(node.position.x, y, node.position.z));
-  }
+    // ============= Query =============
+    findNodes(predicate: NodePredicate): Node[] {
+        return this.sg.graph.query(predicate);
+    }
 
-  cz(id: string, z: number): Node | null {
-    return this.withNode(id, (node) => node.updatePosition(node.position.x, node.position.y, z));
-  }
+    findNode(predicate: NodePredicate): Node | undefined {
+        return this.sg.graph.findNode(predicate);
+    }
 
-  center(): { x: number; y: number; z: number } {
-    let x = 0,
-      y = 0,
-      z = 0;
-    this.sg.graph.forEachNode((n: Node) => {
-      x += n.position.x;
-      y += n.position.y;
-      z += n.position.z;
-    });
-    const n = this.sg.graph.nodes.size || 1;
-    return { x: x / n, y: y / n, z: z / n };
-  }
+    getNodesByType(type: string): Node[] {
+        return this.sg.graph.queryByType(type);
+    }
 
-  // ============= Selection =============
-  select(nodeId: string): this {
-    this.sg.selection.select(nodeId);
-    return this;
-  }
+    findEdges(predicate: (edge: Edge) => boolean): Edge[] {
+        const e = this.sg.graph.findEdge(predicate);
+        return e ? [e] : [];
+    }
 
-  deselect(nodeId: string): this {
-    this.sg.selection.deselect(nodeId);
-    return this;
-  }
+    getEdgesForNode(nodeId: string): Edge[] {
+        return this.sg.graph.getEdgesForNode(nodeId);
+    }
 
-  selectAll(): this {
-    this.sg.selection.select([...this.sg.graph.nodes.keys()]);
-    return this;
-  }
+    where(key: string, value: unknown): Node[] {
+        return this.sg.graph.query((n: Node) => (n.data as Record<string, unknown>)[key] === value);
+    }
 
-  clearSelection(): this {
-    this.sg.selection.clear();
-    return this;
-  }
+    has(key: string, value?: unknown): Node[] {
+        return value !== undefined
+            ? this.where(key, value)
+            : this.sg.graph.query((n: Node) => key in n.data);
+    }
 
-  // ============= Chain =============
-  then(callback: (ergo: this) => void): this {
-    callback(this);
-    return this;
-  }
+    neighbors(nodeId: string): Node[] {
+        return this.sg.graph.neighbors(nodeId);
+    }
 
-  // ============= Edge Shortcuts =============
-  edge(source: string, target: string, data?: Record<string, unknown>): Edge | null {
-    return this.connect(source, target, data);
-  }
+    inEdges(nodeId: string): Edge[] {
+        return this.sg.graph.getIncomingEdges(nodeId);
+    }
 
-  arrow(source: string, target: string): Edge | null {
-    return this.connect(source, target, { arrowhead: true });
-  }
+    outEdges(nodeId: string): Edge[] {
+        return this.sg.graph.getOutgoingEdges(nodeId);
+    }
 
-  // ============= Layout Shortcuts =============
-  layout(
-    type: 'force' | 'grid' | 'circular' | 'tree' | 'radial',
-    options?: Record<string, unknown>
-  ): Promise<void> {
-    const name = `${type.charAt(0).toUpperCase()}${type.slice(1)}Layout`;
-    return this.sg.layout(name, options);
-  }
+    // ============= Iterator =============
+    forNodes(callback: (node: Node) => void): void {
+        this.sg.graph.forEachNode(callback);
+    }
 
-  // ============= Camera Shortcuts =============
-  fit(padding = 100): this {
-    this.sg.fitView(padding);
-    return this;
-  }
+    forEdges(callback: (edge: Edge) => void): void {
+        this.sg.graph.forEachEdge(callback);
+    }
 
-  zoom(): this {
-    this.sg.fitView();
-    return this;
-  }
+    // ============= Array Methods =============
+    map<T>(callback: (node: Node) => T): T[] {
+        return this.sg.graph.mapNodes(callback);
+    }
 
-  resetCamera(): this {
-    this.sg.resetCamera();
-    return this;
-  }
+    filter(callback: (node: Node) => boolean): Node[] {
+        return this.sg.graph.query(callback);
+    }
 
-  focus(id: string, padding = 100): this {
-    this.sg.focusNode(id, padding);
-    return this;
-  }
+    some(callback: (node: Node) => boolean): boolean {
+        return this.sg.graph.findNode(callback) !== undefined;
+    }
 
-  // ============= Utility Shortcuts =============
-  clear(): void {
-    this.sg.clear();
-  }
+    every(callback: (node: Node) => boolean): boolean {
+        return [...this.sg.graph.getNodes()].every(callback);
+    }
 
-  pause(): void {
-    this.sg.pause();
-  }
+    reduce<T>(callback: (acc: T, node: Node) => T, initial: T): T {
+        return [...this.sg.graph.getNodes()].reduce(callback, initial);
+    }
 
-  resume(): void {
-    this.sg.render();
-  }
+    // ============= Node Manipulation =============
+    add(spec: NodeSpec | Node): Node | null {
+        return this.sg.graph.addNode(spec);
+    }
 
-  render(): void {
-    this.sg.render();
-  }
+    addNodes(specs: NodeSpec[]): Node[] {
+        return this.sg.graph.addNodes(specs);
+    }
 
-  /** Runs an action on a node and hands it back; null when the node does not exist. */
-  private withNode(id: string, action: (node: Node) => void): Node | null {
-    const node = this.sg.graph.getNode(id);
-    if (!node) return null;
-    action(node);
-    return node;
-  }
+    create(spec: string | NodeSpec): Node | null {
+        return typeof spec === 'string'
+            ? this.sg.graph.addNode({ id: spec, type: 'ShapeNode' })
+            : this.sg.graph.addNode(spec);
+    }
 
-  /** Adds a node of a type, with the data a host gave it. */
-  private addTyped(
-    id: string,
-    type: string,
-    data?: Record<string, unknown>,
-    position?: [number, number, number]
-  ): Node | null {
-    return this.sg.graph.addNode({ id, type, position, data });
-  }
+    remove(id: string): boolean {
+        this.sg.graph.removeNode(id);
+        return true;
+    }
+
+    removeWhere(predicate: NodePredicate): number {
+        const nodes = this.sg.graph.query(predicate);
+        nodes.forEach((n: Node) => this.sg.graph.removeNode(n.id));
+        return nodes.length;
+    }
+
+    updateWhere(predicate: NodePredicate, updates: Partial<NodeSpec>): Node[] {
+        return this.sg.graph
+            .query(predicate)
+            .map((n: Node) => this.sg.graph.updateNode(n.id, updates))
+            .filter(Boolean) as Node[];
+    }
+
+    // ============= Edge Manipulation =============
+    connect(source: string, target: string, data?: Record<string, unknown>): Edge | null {
+        return this.sg.graph.addEdge({ id: `edge-${source}-${target}`, source, target, data });
+    }
+
+    connectTo(source: string, to: string | string[], data?: Record<string, unknown>): Edge[] {
+        const arr = Array.isArray(to) ? to : [to];
+        return arr.map((t) => this.connect(source, t, data)).filter(Boolean) as Edge[];
+    }
+
+    connectFrom(from: string | string[], target: string, data?: Record<string, unknown>): Edge[] {
+        const arr = Array.isArray(from) ? from : [from];
+        return arr.map((f) => this.connect(f, target, data)).filter(Boolean) as Edge[];
+    }
+
+    disconnect(source: string, target: string): boolean {
+        this.sg.graph.removeEdge(`edge-${source}-${target}`);
+        return true;
+    }
+
+    addEdges(specs: EdgeSpec[]): Edge[] {
+        return this.sg.graph.addEdges(specs);
+    }
+
+    // ============= Traversal =============
+    traverse(callback: (node: Node, depth: number) => void, startId?: string): void {
+        this.sg.graph.traverse(callback, startId);
+    }
+
+    bfs(callback: (node: Node, depth: number) => void, startId?: string): void {
+        this.sg.graph.bfs(callback, startId);
+    }
+
+    dfs(callback: (node: Node, depth: number) => void, startId?: string): void {
+        this.sg.graph.dfs(callback, startId);
+    }
+
+    // ============= Shortcuts for Common Operations =============
+
+    getSubgraph(centerId: string, radius: number): { nodes: Node[]; edges: Edge[] } {
+        return this.sg.graph.getConnectedComponentInRadius(centerId, radius);
+    }
+
+    path(from: string, to: string): Node[] | null {
+        return this.sg.graph.findPath(from, to);
+    }
+
+    // ============= Quick Access =============
+    require(id: string): Node {
+        const node = this.sg.graph.getNode(id);
+        if (!node) throw new Error(`Node not found: ${id}`);
+        return node;
+    }
+
+    // ============= Batch Operations =============
+    batch(fn: (sg: SpaceGraph) => void): void {
+        fn(this.sg);
+    }
+
+    freeze(): { release: () => void } {
+        this.sg.pause();
+        return { release: () => this.sg.render() };
+    }
+
+    suspend(): { resume: () => void } {
+        this.sg.pause();
+        return { resume: () => this.sg.render() };
+    }
+
+    transaction(updates: (sg: SpaceGraph) => void): void {
+        this.sg.pause();
+        try {
+            updates(this.sg);
+        } finally {
+            this.sg.render();
+        }
+    }
+
+    // Node creation shortcuts
+    node(
+        id: string,
+        position?: [number, number, number],
+        data?: Record<string, unknown>,
+    ): Node | null {
+        return this.addTyped(id, 'ShapeNode', data, position);
+    }
+
+    box(id: string, position?: [number, number, number], size = 50): Node | null {
+        return this.addTyped(id, 'ShapeNode', { size, shape: 'box' }, position);
+    }
+
+    sphere(id: string, position?: [number, number, number], size = 50): Node | null {
+        return this.addTyped(id, 'ShapeNode', { size, shape: 'sphere' }, position);
+    }
+
+    circle(id: string, position?: [number, number, number], size = 50): Node | null {
+        return this.addTyped(id, 'ShapeNode', { size, shape: 'circle' }, position);
+    }
+
+    text(id: string, text: string, position?: [number, number, number]): Node | null {
+        return this.addTyped(id, 'TextMeshNode', { text }, position);
+    }
+
+    image(id: string, url: string, position?: [number, number, number]): Node | null {
+        return this.addTyped(id, 'ImageNode', { url }, position);
+    }
+
+    html(id: string, html: string, position?: [number, number, number]): Node | null {
+        return this.addTyped(id, 'HtmlNode', { html }, position);
+    }
+
+    group(id: string, position?: [number, number, number]): Node | null {
+        return this.addTyped(id, 'GroupNode', undefined, position);
+    }
+
+    note(id: string, text: string, position?: [number, number, number]): Node | null {
+        return this.addTyped(id, 'NoteNode', { text }, position);
+    }
+
+    widget(
+        id: string,
+        type: 'button' | 'slider' | 'toggle',
+        position?: [number, number, number],
+    ): Node | null {
+        return this.addTyped(
+            id,
+            `${type.charAt(0).toUpperCase()}${type.slice(1)}Node`,
+            undefined,
+            position,
+        );
+    }
+
+    // ============= Node Utilities =============
+    clone(id: string, newId?: string): Node | null {
+        const orig = this.sg.graph.getNode(id);
+        if (!orig) return null;
+        return this.sg.graph.addNode({
+            id: newId ?? `${id}-copy`,
+            type: orig.type,
+            label: orig.label,
+            position: [orig.position.x + 50, orig.position.y, orig.position.z + 50],
+            data: { ...orig.data },
+        });
+    }
+
+    move(id: string, x: number, y: number, z = 0): Node | null {
+        return this.withNode(id, (node) => node.updatePosition(x, y, z));
+    }
+
+    translate(id: string, dx: number, dy: number, dz = 0): Node | null {
+        return this.withNode(id, (node) =>
+            node.updatePosition(node.position.x + dx, node.position.y + dy, node.position.z + dz),
+        );
+    }
+
+    rotate(id: string, x: number, y: number, z: number): Node | null {
+        return this.withNode(id, (node) => node.updateSpec({ rotation: [x, y, z] }));
+    }
+
+    scale(id: string, x: number, y?: number, z?: number): Node | null {
+        return this.withNode(id, (node) => node.updateSpec({ scale: [x, y ?? x, z ?? x] }));
+    }
+
+    label(id: string, text: string): Node | null {
+        return this.withNode(id, (node) => node.updateSpec({ label: text }));
+    }
+
+    color(id: string, color: string | number): Node | null {
+        return this.withNode(id, (node) => node.updateSpec({ data: { color } }));
+    }
+
+    // ============= Visibility =============
+    show(id: string, visible = true): Node | null {
+        return this.withNode(id, (node) => node.updateSpec({ data: { visible } }));
+    }
+
+    hide(id: string): Node | null {
+        return this.show(id, false);
+    }
+
+    toggleVisibility(nodeId: string): boolean {
+        const node = this.sg.graph.getNode(nodeId);
+        if (!node) return false;
+        const visible = !(node.data as Record<string, unknown>).visible;
+        node.updateSpec({ data: { visible } });
+        return visible;
+    }
+
+    opacity(id: string, opacity: number): Node | null {
+        return this.#writeFlag(id, 'opacity', opacity);
+    }
+
+    pinned(id: string): Node | null {
+        return this.#writeFlag(id, 'pinned', true);
+    }
+
+    unpin(id: string): Node | null {
+        return this.#writeFlag(id, 'pinned', false);
+    }
+
+    draggable(id: string, draggable = true): Node | null {
+        return this.#writeFlag(id, 'draggable', draggable);
+    }
+
+    selectable(id: string, selectable = true): Node | null {
+        return this.#writeFlag(id, 'selectable', selectable);
+    }
+
+    // ============= Data Access =============
+    data(id: string, key: string, value?: unknown): unknown {
+        const n = this.sg.graph.getNode(id);
+        if (!n) return undefined;
+        if (value !== undefined) {
+            n.updateSpec({ data: { ...n.data, [key]: value } });
+            return value;
+        }
+        return n.data[key];
+    }
+
+    /** A data flag written onto a node; the ergonomics API reports the value it wrote. */
+    #writeFlag(id: string, key: string, value: unknown): Node | null {
+        return this.data(id, key, value) as unknown as Node | null;
+    }
+
+    attr(id: string, key: string, value?: unknown): unknown {
+        return this.data(id, key, value);
+    }
+
+    size(id: string, size: number): Node | null {
+        return this.#writeFlag(id, 'size', size);
+    }
+
+    width(id: string, width: number): Node | null {
+        return this.#writeFlag(id, 'width', width);
+    }
+
+    height(id: string, height: number): Node | null {
+        return this.#writeFlag(id, 'height', height);
+    }
+
+    // ============= Position Utilities =============
+    position(id: string, x: number, y: number, z = 0): Node | null {
+        return this.move(id, x, y, z);
+    }
+
+    cx(id: string, x: number): Node | null {
+        return this.withNode(id, (node) =>
+            node.updatePosition(x, node.position.y, node.position.z),
+        );
+    }
+
+    cy(id: string, y: number): Node | null {
+        return this.withNode(id, (node) =>
+            node.updatePosition(node.position.x, y, node.position.z),
+        );
+    }
+
+    cz(id: string, z: number): Node | null {
+        return this.withNode(id, (node) =>
+            node.updatePosition(node.position.x, node.position.y, z),
+        );
+    }
+
+    center(): { x: number; y: number; z: number } {
+        let x = 0,
+            y = 0,
+            z = 0;
+        this.sg.graph.forEachNode((n: Node) => {
+            x += n.position.x;
+            y += n.position.y;
+            z += n.position.z;
+        });
+        const n = this.sg.graph.nodes.size || 1;
+        return { x: x / n, y: y / n, z: z / n };
+    }
+
+    // ============= Selection =============
+    select(nodeId: string): this {
+        this.sg.selection.select(nodeId);
+        return this;
+    }
+
+    deselect(nodeId: string): this {
+        this.sg.selection.deselect(nodeId);
+        return this;
+    }
+
+    selectAll(): this {
+        this.sg.selection.select([...this.sg.graph.nodes.keys()]);
+        return this;
+    }
+
+    clearSelection(): this {
+        this.sg.selection.clear();
+        return this;
+    }
+
+    // ============= Chain =============
+    then(callback: (ergo: this) => void): this {
+        callback(this);
+        return this;
+    }
+
+    // ============= Edge Shortcuts =============
+    edge(source: string, target: string, data?: Record<string, unknown>): Edge | null {
+        return this.connect(source, target, data);
+    }
+
+    arrow(source: string, target: string): Edge | null {
+        return this.connect(source, target, { arrowhead: true });
+    }
+
+    // ============= Layout Shortcuts =============
+    layout(
+        type: 'force' | 'grid' | 'circular' | 'tree' | 'radial',
+        options?: Record<string, unknown>,
+    ): Promise<void> {
+        const name = `${type.charAt(0).toUpperCase()}${type.slice(1)}Layout`;
+        return this.sg.layout(name, options);
+    }
+
+    // ============= Camera Shortcuts =============
+    fit(padding = 100): this {
+        this.sg.fitView(padding);
+        return this;
+    }
+
+    zoom(): this {
+        this.sg.fitView();
+        return this;
+    }
+
+    resetCamera(): this {
+        this.sg.resetCamera();
+        return this;
+    }
+
+    focus(id: string, padding = 100): this {
+        this.sg.focusNode(id, padding);
+        return this;
+    }
+
+    // ============= Utility Shortcuts =============
+    clear(): void {
+        this.sg.clear();
+    }
+
+    pause(): void {
+        this.sg.pause();
+    }
+
+    resume(): void {
+        this.sg.render();
+    }
+
+    render(): void {
+        this.sg.render();
+    }
+
+    /** Runs an action on a node and hands it back; null when the node does not exist. */
+    private withNode(id: string, action: (node: Node) => void): Node | null {
+        const node = this.sg.graph.getNode(id);
+        if (!node) return null;
+        action(node);
+        return node;
+    }
+
+    /** Adds a node of a type, with the data a host gave it. */
+    private addTyped(
+        id: string,
+        type: string,
+        data?: Record<string, unknown>,
+        position?: [number, number, number],
+    ): Node | null {
+        return this.sg.graph.addNode({ id, type, position, data });
+    }
 }

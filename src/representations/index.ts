@@ -150,7 +150,8 @@ function matrixLayout<Node extends RepresentationNode>(
     const columnX = (column: number) => {
         let x = 0;
 
-        for (let index = 0; index < column; index++) x += (columnWidth.get(index) ?? config.cellSize[0]) + gap;
+        for (let index = 0; index < column; index++)
+            x += (columnWidth.get(index) ?? config.cellSize[0]) + gap;
 
         return x;
     };

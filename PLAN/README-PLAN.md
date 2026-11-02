@@ -90,7 +90,7 @@ The plan is restructured:
 | **M5**    | All tests pass, no console errors    | Day 7  |
 | **M6**    | Fresh install test passes            | Day 12 |
 | **M7**    | QUICKSTART.md verified               | Day 14 |
-| **M8**    | Published to pnpm                     | Day 16 |
+| **M8**    | Published to pnpm                    | Day 16 |
 
 **Do not skip milestones. Do not publish until M7 passes.**
 

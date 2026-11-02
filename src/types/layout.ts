@@ -4,10 +4,10 @@
 // Use import { LayoutOptions, LayoutConfig } from '../plugins/layouts/BaseLayout' for full options
 
 export interface LayoutOptions {
-  [key: string]: unknown;
+    [key: string]: unknown;
 }
 
 export interface LayoutConfig {
-  name: string;
-  options?: LayoutOptions;
+    name: string;
+    options?: LayoutOptions;
 }

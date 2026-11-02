@@ -1,229 +1,229 @@
 {
-  "name": "spacegraphjs",
-  "version": "8.5.0",
-  "type": "module",
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "default": "./dist/index.js"
+    "name": "spacegraphjs",
+    "version": "8.5.0",
+    "type": "module",
+    "main": "./dist/index.js",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js",
+            "default": "./dist/index.js"
+        },
+        "./activity": {
+            "types": "./dist/activity.d.ts",
+            "import": "./dist/activity.js",
+            "default": "./dist/activity.js"
+        },
+        "./core": {
+            "types": "./dist/core.d.ts",
+            "import": "./dist/core.js",
+            "default": "./dist/core.js"
+        },
+        "./edges": {
+            "types": "./dist/edges.d.ts",
+            "import": "./dist/edges.js",
+            "default": "./dist/edges.js"
+        },
+        "./nodes": {
+            "types": "./dist/nodes.d.ts",
+            "import": "./dist/nodes.js",
+            "default": "./dist/nodes.js"
+        },
+        "./plugins": {
+            "types": "./dist/plugins.d.ts",
+            "import": "./dist/plugins.js",
+            "default": "./dist/plugins.js"
+        },
+        "./plugins/mermaid": {
+            "types": "./dist/plugins-mermaid.d.ts",
+            "import": "./dist/plugins-mermaid.js",
+            "default": "./dist/plugins-mermaid.js"
+        },
+        "./input": {
+            "types": "./dist/input.d.ts",
+            "import": "./dist/input.js",
+            "default": "./dist/input.js"
+        },
+        "./utils": {
+            "types": "./dist/utils.d.ts",
+            "import": "./dist/utils.js",
+            "default": "./dist/utils.js"
+        },
+        "./types": {
+            "types": "./dist/types.d.ts",
+            "import": "./dist/types.js",
+            "default": "./dist/types.js"
+        },
+        "./builder": {
+            "types": "./dist/builder.d.ts",
+            "import": "./dist/builder.js",
+            "default": "./dist/builder.js"
+        },
+        "./zoom": {
+            "types": "./dist/zoom.d.ts",
+            "import": "./dist/zoom.js",
+            "default": "./dist/zoom.js"
+        },
+        "./layout": {
+            "types": "./dist/layout.d.ts",
+            "import": "./dist/layout.js",
+            "default": "./dist/layout.js"
+        },
+        "./levels": {
+            "types": "./dist/levels.d.ts",
+            "import": "./dist/levels.js",
+            "default": "./dist/levels.js"
+        },
+        "./representations": {
+            "types": "./dist/representations.d.ts",
+            "import": "./dist/representations.js",
+            "default": "./dist/representations.js"
+        },
+        "./a11y": {
+            "types": "./dist/a11y.d.ts",
+            "import": "./dist/a11y.js",
+            "default": "./dist/a11y.js"
+        },
+        "./navigation": {
+            "types": "./dist/navigation.d.ts",
+            "import": "./dist/navigation.js",
+            "default": "./dist/navigation.js"
+        },
+        "./overlays": {
+            "types": "./dist/overlays.d.ts",
+            "import": "./dist/overlays.js",
+            "default": "./dist/overlays.js"
+        },
+        "./depth": {
+            "types": "./dist/depth.d.ts",
+            "import": "./dist/depth.js",
+            "default": "./dist/depth.js"
+        },
+        "./control": {
+            "types": "./dist/control.d.ts",
+            "import": "./dist/control.js",
+            "default": "./dist/control.js"
+        },
+        "./vision": {
+            "types": "./dist/vision.d.ts",
+            "import": "./dist/vision.js",
+            "default": "./dist/vision.js"
+        }
     },
-    "./activity": {
-      "types": "./dist/activity.d.ts",
-      "import": "./dist/activity.js",
-      "default": "./dist/activity.js"
+    "files": [
+        "dist",
+        "README.md",
+        "LICENSE"
+    ],
+    "scripts": {
+        "build": "pnpm run build:lib && pnpm run build:packages && pnpm run build:demo",
+        "build:demo": "vite build --config vite.demo.config.ts",
+        "build:lib": "vite build --config vite.lib.config.ts",
+        "build:packages": "tsx script/build-packages.ts",
+        "clean": "rm -rf dist/ dist-demo/ packages/*/dist/",
+        "dev": "pnpm dlx vite --host",
+        "dev:demo": "pnpm dlx vite --config vite.demo.config.ts --port 5173",
+        "docs": "typedoc --options typedoc.json",
+        "format": "prettier --write .",
+        "format:check": "prettier --check .",
+        "lint": "eslint 'src/**/*.{ts,js}' --ignore-pattern 'dist'",
+        "prepublishOnly": "pnpm run clean && pnpm run build && pnpm run test",
+        "test": "vitest run",
+        "test:all-demos": "pnpm run test:demo-errors && pnpm run test:screenshots",
+        "test:behavioral": "playwright test test/e2e/behavioral.spec.ts --reporter=list",
+        "test:boundaries": "vitest run test/boundaries.test.ts",
+        "test:demo-errors": "playwright test test/e2e/demo-errors.spec.ts --reporter=list",
+        "test:exports": "vitest run test/package-exports.test.ts",
+        "test:kernel": "bun test packages/kernel/src",
+        "test:full": "pnpm test && pnpm run test:kernel",
+        "test:publish": "tsx script/publish-check.ts",
+        "test:second-host": "playwright test --config playwright.demo.config.ts test/e2e/second-host.spec.ts",
+        "test:screenshots": "mkdir -p test/screenshots && playwright test test/e2e/demo-screenshots.spec.ts --reporter=list",
+        "test:vision": "mkdir -p test/fixtures/dist && cp -r dist/* test/fixtures/dist/ && cp -r public/*.onnx test/fixtures/dist/ && playwright test test/vision.spec.ts",
+        "verify": "tsx verification/verify_demos.ts",
+        "vision": "pnpm run test:vision",
+        "write:exports": "tsx script/write-exports.ts",
+        "build:all": "tsx script/build-all.ts"
     },
-    "./core": {
-      "types": "./dist/core.d.ts",
-      "import": "./dist/core.js",
-      "default": "./dist/core.js"
+    "peerDependencies": {
+        "chart.js": "^4.5.1",
+        "katex": "^0.16.33",
+        "marked": "^17.0.3",
+        "three": ">=0.150.0"
     },
-    "./edges": {
-      "types": "./dist/edges.d.ts",
-      "import": "./dist/edges.js",
-      "default": "./dist/edges.js"
+    "peerDependenciesMeta": {
+        "chart.js": {
+            "optional": true
+        },
+        "katex": {
+            "optional": true
+        },
+        "marked": {
+            "optional": true
+        }
     },
-    "./nodes": {
-      "types": "./dist/nodes.d.ts",
-      "import": "./dist/nodes.js",
-      "default": "./dist/nodes.js"
+    "devDependencies": {
+        "@eslint/js": "^10.0.1",
+        "@playwright/test": "^1.64.1",
+        "@types/jsdom": "^30.0.0",
+        "@types/katex": "^0.16.8",
+        "@types/marked": "^6.0.0",
+        "@types/node": "^26.4.1",
+        "@types/three": "^0.185.4",
+        "@typescript-eslint/eslint-plugin": "^8.69.0",
+        "@typescript-eslint/parser": "^8.69.0",
+        "@typescript/typescript6": "6.0.2",
+        "@vitest/coverage-v8": "^5.0.0",
+        "canvas": "^3.2.3",
+        "chart.js": "^4.5.1",
+        "eslint": "^10.10.0",
+        "http-server": "^14.1.1",
+        "jsdom": "^30.0.1",
+        "katex": "^0.18.5",
+        "marked": "^18.0.11",
+        "playwright": "^1.64.1",
+        "prettier": "^3.9.6",
+        "three": "^0.186.1",
+        "tsx": "^4.23.13",
+        "typedoc": "^0.28.20",
+        "typescript": "^7.0.2",
+        "typescript-eslint": "^8.69.0",
+        "vite": "^8.3.5",
+        "vite-plugin-dts": "^5.1.0",
+        "vitest": "^5.0.5"
     },
-    "./plugins": {
-      "types": "./dist/plugins.d.ts",
-      "import": "./dist/plugins.js",
-      "default": "./dist/plugins.js"
+    "workspaces": [
+        "packages/*"
+    ],
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/autonull/spacegraphjs.git"
     },
-    "./plugins/mermaid": {
-      "types": "./dist/plugins-mermaid.d.ts",
-      "import": "./dist/plugins-mermaid.js",
-      "default": "./dist/plugins-mermaid.js"
+    "keywords": [
+        "zui",
+        "graph",
+        "visualization",
+        "three.js"
+    ],
+    "dependencies": {
+        "@monaco-editor/loader": "^1.7.0",
+        "gsap": "^3.15.0",
+        "mitt": "^3.0.1",
+        "onnxruntime-web": "^1.30.0",
+        "three-mesh-bvh": "^0.9.16"
     },
-    "./input": {
-      "types": "./dist/input.d.ts",
-      "import": "./dist/input.js",
-      "default": "./dist/input.js"
+    "description": "[![pnpm](https://img.shields.io/pnpm/v/spacegraphjs.svg)](https://www.npmjs.com/package/spacegraphjs) [![Matrix](https://img.shields.io/matrix/spacegraphjs:matrix.org)](https://matrix.to/#/#spacegraphjs:matrix.org) [![GitHub Sponsors](https://img.shields.io/github/sponsors/autonull)](https://github.com/sponsors/autonull)",
+    "directories": {
+        "doc": "docs",
+        "example": "examples",
+        "test": "test"
     },
-    "./utils": {
-      "types": "./dist/utils.d.ts",
-      "import": "./dist/utils.js",
-      "default": "./dist/utils.js"
+    "author": "",
+    "bugs": {
+        "url": "https://github.com/autonull/spacegraphjs/issues"
     },
-    "./types": {
-      "types": "./dist/types.d.ts",
-      "import": "./dist/types.js",
-      "default": "./dist/types.js"
-    },
-    "./builder": {
-      "types": "./dist/builder.d.ts",
-      "import": "./dist/builder.js",
-      "default": "./dist/builder.js"
-    },
-    "./zoom": {
-      "types": "./dist/zoom.d.ts",
-      "import": "./dist/zoom.js",
-      "default": "./dist/zoom.js"
-    },
-    "./layout": {
-      "types": "./dist/layout.d.ts",
-      "import": "./dist/layout.js",
-      "default": "./dist/layout.js"
-    },
-    "./levels": {
-      "types": "./dist/levels.d.ts",
-      "import": "./dist/levels.js",
-      "default": "./dist/levels.js"
-    },
-    "./representations": {
-      "types": "./dist/representations.d.ts",
-      "import": "./dist/representations.js",
-      "default": "./dist/representations.js"
-    },
-    "./a11y": {
-      "types": "./dist/a11y.d.ts",
-      "import": "./dist/a11y.js",
-      "default": "./dist/a11y.js"
-    },
-    "./navigation": {
-      "types": "./dist/navigation.d.ts",
-      "import": "./dist/navigation.js",
-      "default": "./dist/navigation.js"
-    },
-    "./overlays": {
-      "types": "./dist/overlays.d.ts",
-      "import": "./dist/overlays.js",
-      "default": "./dist/overlays.js"
-    },
-    "./depth": {
-      "types": "./dist/depth.d.ts",
-      "import": "./dist/depth.js",
-      "default": "./dist/depth.js"
-    },
-    "./control": {
-      "types": "./dist/control.d.ts",
-      "import": "./dist/control.js",
-      "default": "./dist/control.js"
-    },
-    "./vision": {
-      "types": "./dist/vision.d.ts",
-      "import": "./dist/vision.js",
-      "default": "./dist/vision.js"
-    }
-  },
-  "files": [
-    "dist",
-    "README.md",
-    "LICENSE"
-  ],
-  "scripts": {
-    "build": "pnpm run build:lib && pnpm run build:packages && pnpm run build:demo",
-    "build:demo": "vite build --config vite.demo.config.ts",
-    "build:lib": "vite build --config vite.lib.config.ts",
-    "build:packages": "tsx script/build-packages.ts",
-    "clean": "rm -rf dist/ dist-demo/ packages/*/dist/",
-    "dev": "pnpm dlx vite --host",
-    "dev:demo": "pnpm dlx vite --config vite.demo.config.ts --port 5173",
-    "docs": "typedoc --options typedoc.json",
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
-    "lint": "eslint 'src/**/*.{ts,js}' --ignore-pattern 'dist'",
-    "prepublishOnly": "pnpm run clean && pnpm run build && pnpm run test",
-    "test": "vitest run",
-    "test:all-demos": "pnpm run test:demo-errors && pnpm run test:screenshots",
-    "test:behavioral": "playwright test test/e2e/behavioral.spec.ts --reporter=list",
-    "test:boundaries": "vitest run test/boundaries.test.ts",
-    "test:demo-errors": "playwright test test/e2e/demo-errors.spec.ts --reporter=list",
-    "test:exports": "vitest run test/package-exports.test.ts",
-    "test:kernel": "bun test packages/kernel/src",
-    "test:full": "pnpm test && pnpm run test:kernel",
-    "test:publish": "tsx script/publish-check.ts",
-    "test:second-host": "playwright test --config playwright.demo.config.ts test/e2e/second-host.spec.ts",
-    "test:screenshots": "mkdir -p test/screenshots && playwright test test/e2e/demo-screenshots.spec.ts --reporter=list",
-    "test:vision": "mkdir -p test/fixtures/dist && cp -r dist/* test/fixtures/dist/ && cp -r public/*.onnx test/fixtures/dist/ && playwright test test/vision.spec.ts",
-    "verify": "tsx verification/verify_demos.ts",
-    "vision": "pnpm run test:vision",
-    "write:exports": "tsx script/write-exports.ts",
-    "build:all": "tsx script/build-all.ts"
-  },
-  "peerDependencies": {
-    "chart.js": "^4.5.1",
-    "katex": "^0.16.33",
-    "marked": "^17.0.3",
-    "three": ">=0.150.0"
-  },
-  "peerDependenciesMeta": {
-    "chart.js": {
-      "optional": true
-    },
-    "katex": {
-      "optional": true
-    },
-    "marked": {
-      "optional": true
-    }
-  },
-  "devDependencies": {
-    "@eslint/js": "^10.0.1",
-    "@playwright/test": "^1.64.1",
-    "@types/jsdom": "^30.0.0",
-    "@types/katex": "^0.16.8",
-    "@types/marked": "^6.0.0",
-    "@types/node": "^26.4.1",
-    "@types/three": "^0.185.4",
-    "@typescript-eslint/eslint-plugin": "^8.69.0",
-    "@typescript-eslint/parser": "^8.69.0",
-    "@typescript/typescript6": "6.0.2",
-    "@vitest/coverage-v8": "^5.0.0",
-    "canvas": "^3.2.3",
-    "chart.js": "^4.5.1",
-    "eslint": "^10.10.0",
-    "http-server": "^14.1.1",
-    "jsdom": "^30.0.1",
-    "katex": "^0.18.5",
-    "marked": "^18.0.11",
-    "playwright": "^1.64.1",
-    "prettier": "^3.9.6",
-    "three": "^0.186.1",
-    "tsx": "^4.23.13",
-    "typedoc": "^0.28.20",
-    "typescript": "^7.0.2",
-    "typescript-eslint": "^8.69.0",
-    "vite": "^8.3.5",
-    "vite-plugin-dts": "^5.1.0",
-    "vitest": "^5.0.5"
-  },
-  "workspaces": [
-    "packages/*"
-  ],
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/autonull/spacegraphjs.git"
-  },
-  "keywords": [
-    "zui",
-    "graph",
-    "visualization",
-    "three.js"
-  ],
-  "dependencies": {
-    "@monaco-editor/loader": "^1.7.0",
-    "gsap": "^3.15.0",
-    "mitt": "^3.0.1",
-    "onnxruntime-web": "^1.30.0",
-    "three-mesh-bvh": "^0.9.16"
-  },
-  "description": "[![pnpm](https://img.shields.io/pnpm/v/spacegraphjs.svg)](https://www.npmjs.com/package/spacegraphjs) [![Matrix](https://img.shields.io/matrix/spacegraphjs:matrix.org)](https://matrix.to/#/#spacegraphjs:matrix.org) [![GitHub Sponsors](https://img.shields.io/github/sponsors/autonull)](https://github.com/sponsors/autonull)",
-  "directories": {
-    "doc": "docs",
-    "example": "examples",
-    "test": "test"
-  },
-  "author": "",
-  "bugs": {
-    "url": "https://github.com/autonull/spacegraphjs/issues"
-  },
-  "homepage": "https://github.com/autonull/spacegraphjs#readme"
+    "homepage": "https://github.com/autonull/spacegraphjs#readme"
 }

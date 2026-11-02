@@ -3,355 +3,355 @@ import type { NodeSpec } from '../types';
 import { BaseBuilder } from './base';
 
 export class NodeBuilder extends BaseBuilder<NodeSpec> {
-  constructor(id: string, type = 'ShapeNode') {
-    super({ id, type });
-  }
-
-  label(label: string): this {
-    this.spec.label = label;
-    return this;
-  }
-
-  text(label: string): this {
-    return this.label(label);
-  }
-
-  title(label: string): this {
-    return this.label(label);
-  }
-
-  position(x: number | [number, number, number] | undefined, y?: number, z = 0): this {
-    if (Array.isArray(x)) {
-      this.spec.position = x;
-    } else if (typeof x === 'number' && typeof y === 'number') {
-      this.spec.position = [x, y, z];
+    constructor(id: string, type = 'ShapeNode') {
+        super({ id, type });
     }
-    return this;
-  }
 
-  rotation(x: number, y: number, z = 0): this {
-    this.spec.rotation = [x, y, z];
-    return this;
-  }
-
-  scale(x: number, y: number, z = 1): this {
-    this.spec.scale = [x, y, z];
-    return this;
-  }
-
-  size(size: number, height?: number): this {
-    if (typeof height === 'number') {
-      this.mergeData({ width: size, height });
-    } else {
-      this.mergeData({ size });
+    label(label: string): this {
+        this.spec.label = label;
+        return this;
     }
-    return this;
-  }
 
-  width(w: number): this {
-    this.mergeData({ width: w });
-    return this;
-  }
+    text(label: string): this {
+        return this.label(label);
+    }
 
-  height(h: number): this {
-    this.mergeData({ height: h });
-    return this;
-  }
+    title(label: string): this {
+        return this.label(label);
+    }
 
-  depth(d: number): this {
-    this.mergeData({ depth: d });
-    return this;
-  }
+    position(x: number | [number, number, number] | undefined, y?: number, z = 0): this {
+        if (Array.isArray(x)) {
+            this.spec.position = x;
+        } else if (typeof x === 'number' && typeof y === 'number') {
+            this.spec.position = [x, y, z];
+        }
+        return this;
+    }
 
-  dimensions(w: number, h: number, d?: number): this {
-    this.mergeData({ width: w, height: h, depth: d });
-    return this;
-  }
+    rotation(x: number, y: number, z = 0): this {
+        this.spec.rotation = [x, y, z];
+        return this;
+    }
 
-  w(w: number): this {
-    return this.width(w);
-  }
+    scale(x: number, y: number, z = 1): this {
+        this.spec.scale = [x, y, z];
+        return this;
+    }
 
-  h(h: number): this {
-    return this.height(h);
-  }
+    size(size: number, height?: number): this {
+        if (typeof height === 'number') {
+            this.mergeData({ width: size, height });
+        } else {
+            this.mergeData({ size });
+        }
+        return this;
+    }
 
-  d(d: number): this {
-    return this.depth(d);
-  }
+    width(w: number): this {
+        this.mergeData({ width: w });
+        return this;
+    }
 
-  color(color: number | string): this {
-    this.mergeData({ color });
-    return this;
-  }
+    height(h: number): this {
+        this.mergeData({ height: h });
+        return this;
+    }
 
-  fill(color: number | string): this {
-    return this.color(color);
-  }
+    depth(d: number): this {
+        this.mergeData({ depth: d });
+        return this;
+    }
 
-  bg(color: number | string): this {
-    return this.color(color);
-  }
+    dimensions(w: number, h: number, d?: number): this {
+        this.mergeData({ width: w, height: h, depth: d });
+        return this;
+    }
 
-  opacity(opacity: number): this {
-    this.mergeData({ opacity });
-    return this;
-  }
+    w(w: number): this {
+        return this.width(w);
+    }
 
-  alpha(opacity: number): this {
-    return this.opacity(opacity);
-  }
+    h(h: number): this {
+        return this.height(h);
+    }
 
-  transparent(transparent = true): this {
-    this.mergeData({ transparent });
-    return this;
-  }
+    d(d: number): this {
+        return this.depth(d);
+    }
 
-  shape(s: 'box' | 'sphere' | 'circle' | 'plane' | 'cone' | 'cylinder' | 'torus' | 'ring'): this {
-    this.mergeData({ shape: s });
-    return this;
-  }
+    color(color: number | string): this {
+        this.mergeData({ color });
+        return this;
+    }
 
-  box(): this {
-    return this.shape('box');
-  }
+    fill(color: number | string): this {
+        return this.color(color);
+    }
 
-  sphere(): this {
-    return this.shape('sphere');
-  }
+    bg(color: number | string): this {
+        return this.color(color);
+    }
 
-  circle(): this {
-    return this.shape('circle');
-  }
+    opacity(opacity: number): this {
+        this.mergeData({ opacity });
+        return this;
+    }
 
-  plane(): this {
-    return this.shape('plane');
-  }
+    alpha(opacity: number): this {
+        return this.opacity(opacity);
+    }
 
-  cone(): this {
-    return this.shape('cone');
-  }
+    transparent(transparent = true): this {
+        this.mergeData({ transparent });
+        return this;
+    }
 
-  cylinder(): this {
-    return this.shape('cylinder');
-  }
+    shape(s: 'box' | 'sphere' | 'circle' | 'plane' | 'cone' | 'cylinder' | 'torus' | 'ring'): this {
+        this.mergeData({ shape: s });
+        return this;
+    }
 
-  torus(): this {
-    return this.shape('torus');
-  }
+    box(): this {
+        return this.shape('box');
+    }
 
-  type(type: string): this {
-    this.spec.type = type;
-    return this;
-  }
+    sphere(): this {
+        return this.shape('sphere');
+    }
 
-  params(params: Record<string, unknown>): this {
-    this.spec.parameters = params;
-    return this;
-  }
+    circle(): this {
+        return this.shape('circle');
+    }
 
-  visible(v = true): this {
-    this.mergeData({ visible: v });
-    return this;
-  }
+    plane(): this {
+        return this.shape('plane');
+    }
 
-  hidden(): this {
-    this.mergeData({ visible: false });
-    return this;
-  }
+    cone(): this {
+        return this.shape('cone');
+    }
 
-  show(): this {
-    return this.visible(true);
-  }
+    cylinder(): this {
+        return this.shape('cylinder');
+    }
 
-  hide(): this {
-    return this.visible(false);
-  }
+    torus(): this {
+        return this.shape('torus');
+    }
 
-  pinned(pinned: boolean): this {
-    this.mergeData({ pinned });
-    return this;
-  }
+    type(type: string): this {
+        this.spec.type = type;
+        return this;
+    }
 
-  pin(): this {
-    return this.pinned(true);
-  }
+    params(params: Record<string, unknown>): this {
+        this.spec.parameters = params;
+        return this;
+    }
 
-  unpin(): this {
-    return this.pinned(false);
-  }
+    visible(v = true): this {
+        this.mergeData({ visible: v });
+        return this;
+    }
 
-  at(x: number, y: number, z?: number): this {
-    return this.position(x, y, z ?? 0);
-  }
+    hidden(): this {
+        this.mergeData({ visible: false });
+        return this;
+    }
 
-  pos(x: number, y: number, z?: number): this {
-    return this.position(x, y, z ?? 0);
-  }
+    show(): this {
+        return this.visible(true);
+    }
 
-  xy(x: number, y: number): this {
-    return this.position(x, y, 0);
-  }
+    hide(): this {
+        return this.visible(false);
+    }
 
-  xyz(x: number, y: number, z: number): this {
-    return this.position(x, y, z);
-  }
+    pinned(pinned: boolean): this {
+        this.mergeData({ pinned });
+        return this;
+    }
 
-  atOrigin(): this {
-    return this.position(0, 0, 0);
-  }
+    pin(): this {
+        return this.pinned(true);
+    }
 
-  rotate(x: number, y: number, z?: number): this {
-    return this.rotation(x, y, z ?? 0);
-  }
+    unpin(): this {
+        return this.pinned(false);
+    }
 
-  rot(x: number, y: number, z?: number): this {
-    return this.rotation(x, y, z ?? 0);
-  }
+    at(x: number, y: number, z?: number): this {
+        return this.position(x, y, z ?? 0);
+    }
 
-  rotateZ(degrees: number): this {
-    return this.rotation(0, 0, (degrees * Math.PI) / 180);
-  }
+    pos(x: number, y: number, z?: number): this {
+        return this.position(x, y, z ?? 0);
+    }
 
-  scaleTo(x: number, y?: number, z?: number): this {
-    return this.scale(x, y ?? x, z ?? x);
-  }
+    xy(x: number, y: number): this {
+        return this.position(x, y, 0);
+    }
 
-  scaleToUniform(s: number): this {
-    return this.scale(s, s, s);
-  }
+    xyz(x: number, y: number, z: number): this {
+        return this.position(x, y, z);
+    }
 
-  center(): this {
-    return this.position(0, 0, 0);
-  }
+    atOrigin(): this {
+        return this.position(0, 0, 0);
+    }
 
-  origin(): this {
-    return this.position(0, 0, 0);
-  }
+    rotate(x: number, y: number, z?: number): this {
+        return this.rotation(x, y, z ?? 0);
+    }
 
-  zero(): this {
-    return this.position(0, 0, 0);
-  }
+    rot(x: number, y: number, z?: number): this {
+        return this.rotation(x, y, z ?? 0);
+    }
 
-  className(cls: string): this {
-    this.mergeData({ className: cls });
-    return this;
-  }
+    rotateZ(degrees: number): this {
+        return this.rotation(0, 0, (degrees * Math.PI) / 180);
+    }
 
-  cls(cls: string): this {
-    return this.className(cls);
-  }
+    scaleTo(x: number, y?: number, z?: number): this {
+        return this.scale(x, y ?? x, z ?? x);
+    }
 
-  style(css: Record<string, string>): this {
-    this.mergeData({ style: css });
-    return this;
-  }
+    scaleToUniform(s: number): this {
+        return this.scale(s, s, s);
+    }
 
-  onClick(fn: () => void): this {
-    this.mergeData({ onClick: fn });
-    return this;
-  }
+    center(): this {
+        return this.position(0, 0, 0);
+    }
 
-  onHover(fn: (hovered: boolean) => void): this {
-    this.mergeData({ onHover: fn });
-    return this;
-  }
+    origin(): this {
+        return this.position(0, 0, 0);
+    }
 
-  onDrag(fn: (dx: number, dy: number) => void): this {
-    this.mergeData({ onDrag: fn });
-    return this;
-  }
+    zero(): this {
+        return this.position(0, 0, 0);
+    }
 
-  onChange(fn: (value: unknown) => void): this {
-    this.mergeData({ onChange: fn });
-    return this;
-  }
+    className(cls: string): this {
+        this.mergeData({ className: cls });
+        return this;
+    }
 
-  set(key: string, value: unknown): this {
-    this.mergeData({ [key]: value });
-    return this;
-  }
+    cls(cls: string): this {
+        return this.className(cls);
+    }
 
-  gets(key: string): unknown {
-    return (this.spec as any).data?.[key];
-  }
+    style(css: Record<string, string>): this {
+        this.mergeData({ style: css });
+        return this;
+    }
 
-  has(key: string): boolean {
-    return key in ((this.spec as any).data ?? {});
-  }
+    onClick(fn: () => void): this {
+        this.mergeData({ onClick: fn });
+        return this;
+    }
 
-  draggable(draggable = true): this {
-    this.mergeData({ draggable });
-    return this;
-  }
+    onHover(fn: (hovered: boolean) => void): this {
+        this.mergeData({ onHover: fn });
+        return this;
+    }
 
-  selectable(selectable = true): this {
-    this.mergeData({ selectable });
-    return this;
-  }
+    onDrag(fn: (dx: number, dy: number) => void): this {
+        this.mergeData({ onDrag: fn });
+        return this;
+    }
 
-  focusable(focusable = true): this {
-    this.mergeData({ focusable });
-    return this;
-  }
+    onChange(fn: (value: unknown) => void): this {
+        this.mergeData({ onChange: fn });
+        return this;
+    }
 
-  pipe<T>(fn: (builder: this) => T): T {
-    return fn(this);
-  }
+    set(key: string, value: unknown): this {
+        this.mergeData({ [key]: value });
+        return this;
+    }
+
+    gets(key: string): unknown {
+        return (this.spec as any).data?.[key];
+    }
+
+    has(key: string): boolean {
+        return key in ((this.spec as any).data ?? {});
+    }
+
+    draggable(draggable = true): this {
+        this.mergeData({ draggable });
+        return this;
+    }
+
+    selectable(selectable = true): this {
+        this.mergeData({ selectable });
+        return this;
+    }
+
+    focusable(focusable = true): this {
+        this.mergeData({ focusable });
+        return this;
+    }
+
+    pipe<T>(fn: (builder: this) => T): T {
+        return fn(this);
+    }
 }
 
 export class WidgetBuilder extends NodeBuilder {
-  constructor(id: string, type = 'ShapeNode') {
-    super(id, type);
-  }
+    constructor(id: string, type = 'ShapeNode') {
+        super(id, type);
+    }
 
-  onToggle(fn: (value: boolean) => void): this {
-    this.mergeData({ onToggle: fn });
-    return this;
-  }
+    onToggle(fn: (value: boolean) => void): this {
+        this.mergeData({ onToggle: fn });
+        return this;
+    }
 
-  onChange(fn: (value: number) => void): this {
-    this.mergeData({ onChange: fn });
-    return this;
-  }
+    onChange(fn: (value: number) => void): this {
+        this.mergeData({ onChange: fn });
+        return this;
+    }
 
-  min(min: number): this {
-    this.mergeData({ min });
-    return this;
-  }
+    min(min: number): this {
+        this.mergeData({ min });
+        return this;
+    }
 
-  max(max: number): this {
-    this.mergeData({ max });
-    return this;
-  }
+    max(max: number): this {
+        this.mergeData({ max });
+        return this;
+    }
 
-  showValue(show = true): this {
-    this.mergeData({ showValue: show });
-    return this;
-  }
+    showValue(show = true): this {
+        this.mergeData({ showValue: show });
+        return this;
+    }
 
-  disabled(disabled = true): this {
-    this.mergeData({ disabled });
-    return this;
-  }
+    disabled(disabled = true): this {
+        this.mergeData({ disabled });
+        return this;
+    }
 
-  value<V = unknown>(value: V): this {
-    this.mergeData({ value });
-    return this;
-  }
+    value<V = unknown>(value: V): this {
+        this.mergeData({ value });
+        return this;
+    }
 
-  labelAlign(align: 'left' | 'center' | 'right'): this {
-    this.mergeData({ labelAlign: align });
-    return this;
-  }
+    labelAlign(align: 'left' | 'center' | 'right'): this {
+        this.mergeData({ labelAlign: align });
+        return this;
+    }
 
-  placeholder(text: string): this {
-    this.mergeData({ placeholder: text });
-    return this;
-  }
+    placeholder(text: string): this {
+        this.mergeData({ placeholder: text });
+        return this;
+    }
 
-  step(step: number): this {
-    this.mergeData({ step });
-    return this;
-  }
+    step(step: number): this {
+        this.mergeData({ step });
+        return this;
+    }
 }

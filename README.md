@@ -104,7 +104,7 @@ Design rules that keep the layers honest:
 | `spacegraphjs/zoom`, `/layout`, `/a11y`, `/navigation`, `/depth`, `/control`                  | Generic capabilities with minimal structural types                 |
 | `spacegraphjs/vision`                                                                         | Vision analyzers, strategies, auto-fix, model loading              |
 | `@spacegraphjs/renderer`                                                                      | Dependency-free renderer contract                                  |
-| `@spacegraphjs/adapter`                                                                        | Host-agnostic model → `RenderModel` pipeline and conformance suite  |
+| `@spacegraphjs/adapter`                                                                       | Host-agnostic model → `RenderModel` pipeline and conformance suite |
 | `@spacegraphjs/spacegraph-renderer`                                                           | SpaceGraph adapter: orthographic 2D and perspective 3D             |
 | `@spacegraphjs/cytoscape-renderer`                                                            | Cytoscape adapter: 2D fallback and benchmark                       |
 | `@spacegraphjs/svg-renderer`                                                                  | Static SVG export and inline subgraphs; not interactive            |
@@ -197,21 +197,21 @@ generic module runs against that model and reports what it produced.
 pnpm run dev:demo      # then open /second-host.html
 ```
 
-| Capability              | Library surface                                                                 |
-| ----------------------- | --------------------------------------------------------------------------------- |
-| The renderer contract   | `@spacegraphjs/renderer`                                                          |
-| Theme and contrast      | `@spacegraphjs/renderer`                                                          |
-| The three renderers     | `@spacegraphjs/spacegraph-renderer`, `@spacegraphjs/cytoscape-renderer`, `@spacegraphjs/svg-renderer` |
-| The model adapter       | `@spacegraphjs/adapter`                                                           |
-| Semantic levels         | `spacegraphjs/levels`                                                             |
-| Layout strategies       | `spacegraphjs/layout`                                                             |
-| Summary representations | `spacegraphjs/representations`                                                    |
-| Search, minimap, trail  | `spacegraphjs/navigation`                                                         |
-| Zoom bands, controller  | `spacegraphjs/control`, `spacegraphjs/zoom`                                       |
-| The accessibility mirror | `spacegraphjs/a11y`                                                               |
-| The depth spectrum      | `spacegraphjs/depth`                                                              |
-| The scoped overlay      | `spacegraphjs/overlays`                                                           |
-| The code diff           | `spacegraphjs/overlays`                                                           |
+| Capability               | Library surface                                                                                       |
+| ------------------------ | ----------------------------------------------------------------------------------------------------- |
+| The renderer contract    | `@spacegraphjs/renderer`                                                                              |
+| Theme and contrast       | `@spacegraphjs/renderer`                                                                              |
+| The three renderers      | `@spacegraphjs/spacegraph-renderer`, `@spacegraphjs/cytoscape-renderer`, `@spacegraphjs/svg-renderer` |
+| The model adapter        | `@spacegraphjs/adapter`                                                                               |
+| Semantic levels          | `spacegraphjs/levels`                                                                                 |
+| Layout strategies        | `spacegraphjs/layout`                                                                                 |
+| Summary representations  | `spacegraphjs/representations`                                                                        |
+| Search, minimap, trail   | `spacegraphjs/navigation`                                                                             |
+| Zoom bands, controller   | `spacegraphjs/control`, `spacegraphjs/zoom`                                                           |
+| The accessibility mirror | `spacegraphjs/a11y`                                                                                   |
+| The depth spectrum       | `spacegraphjs/depth`                                                                                  |
+| The scoped overlay       | `spacegraphjs/overlays`                                                                               |
+| The code diff            | `spacegraphjs/overlays`                                                                               |
 
 Its checks are part of the library's own suite: `test/second-host/` runs every capability against
 the real model and fails if the host reaches for an OpenCode module, a framework, or a library
@@ -291,20 +291,20 @@ Edges resolve only nodes in the same graph. Graph instances are isolated at the 
 
 ## 🧠 Layout
 
-| Layout               | Best for                                    |
-| -------------------- | ------------------------------------------- |
-| `ForceLayout`        | Organic clusters and physics feel           |
-| `HierarchicalLayout` | Dependencies, org charts, directed flow     |
-| `TreeLayout`         | Strict trees                                |
-| `RadialLayout`       | Hub-and-spoke and mind maps                 |
-| `CircularLayout`     | Cycles and rings                            |
-| `GridLayout`         | Matrices and calendars                      |
-| `SpectralLayout`     | Spectral graph drawing                      |
-| `ClusterLayout`      | Community grouping                          |
-| `TimelineLayout`     | Temporal sequences                          |
-| `GeoLayout`          | Geographic projection                       |
-| `LaneLayout`         | Headless columns → X, rows → Y, depth → Z    |
-| `BaseLayout`         | Custom layout extension point               |
+| Layout               | Best for                                  |
+| -------------------- | ----------------------------------------- |
+| `ForceLayout`        | Organic clusters and physics feel         |
+| `HierarchicalLayout` | Dependencies, org charts, directed flow   |
+| `TreeLayout`         | Strict trees                              |
+| `RadialLayout`       | Hub-and-spoke and mind maps               |
+| `CircularLayout`     | Cycles and rings                          |
+| `GridLayout`         | Matrices and calendars                    |
+| `SpectralLayout`     | Spectral graph drawing                    |
+| `ClusterLayout`      | Community grouping                        |
+| `TimelineLayout`     | Temporal sequences                        |
+| `GeoLayout`          | Geographic projection                     |
+| `LaneLayout`         | Headless columns → X, rows → Y, depth → Z |
+| `BaseLayout`         | Custom layout extension point             |
 
 Two placement modes matter:
 
@@ -366,7 +366,7 @@ Vision is a verification tool, not a guarantee. Use it alongside unit, interacti
 | Concern           | Surface                                                               |
 | ----------------- | --------------------------------------------------------------------- |
 | **Selection**     | `select`, `toggle`, `clear`; `selection` and `selectedNode` getters   |
-| **Focus and fit** | `focus(id)`, `fit(ids, options)` — `minScale`, `padding`, `insets`  |
+| **Focus and fit** | `focus(id)`, `fit(ids, options)` — `minScale`, `padding`, `insets`    |
 | **Trail**         | `back()`, `forward()`, `trail`; reconciles by ID across model updates |
 | **Semantic zoom** | `bands`, `band`, `zoom`, `feedNormalized(zoom)`                       |
 | **Search**        | `search(query, limit)` ranked by label, summary, kind, then ID        |
@@ -380,16 +380,16 @@ Vision is a verification tool, not a guarantee. Use it alongside unit, interacti
 
 The mouse map belongs to the library, so every host gets the same gestures. A host that draws its own cards over the canvas inherits them.
 
-| Gesture                     | Does                                                                |
-| --------------------------- | ------------------------------------------------------------------- |
-| **Right button + drag**     | Pan the view; the view follows the cursor at every zoom             |
+| Gesture                            | Does                                                               |
+| ---------------------------------- | ------------------------------------------------------------------ |
+| **Right button + drag**            | Pan the view; the view follows the cursor at every zoom            |
 | **Left button + drag on the void** | Pan the view; over the void the left button has nothing else to do |
-| **Wheel**                   | Zoom about the point under the pointer                              |
-| **Middle click on a node**  | Frame that node (auto-zoom, half a second)                          |
-| **Middle button + drag**    | Orbit (a perspective view only; an orthographic view has no orbit)  |
-| **Left click on a node**    | Select it                                                            |
-| **Left drag on a node**     | Move it                                                              |
-| **Shift + drag on the void**| Box-select                                                           |
+| **Wheel**                          | Zoom about the point under the pointer                             |
+| **Middle click on a node**         | Frame that node (auto-zoom, half a second)                         |
+| **Middle button + drag**           | Orbit (a perspective view only; an orthographic view has no orbit) |
+| **Left click on a node**           | Select it                                                          |
+| **Left drag on a node**            | Move it                                                            |
+| **Shift + drag on the void**       | Box-select                                                         |
 
 A host that wants the left button to mean only "the nodes" turns the void's pan off with `input: { interaction: { enableBackgroundPan: false } }`.
 
@@ -567,7 +567,7 @@ When adding hot-path code, avoid per-frame allocation, prefer sets for membershi
 | `src/layout`                        | `LaneLayout`                                                                                    |
 | `src/depth`                         | Depth modes, treatments, and fade                                                               |
 | `src/builder.ts`, `src/activity.ts` | Declarative builder and lean entry                                                              |
-| `packages`                          | Contract, adapters, bindings, CLI, scaffolder                                       |
+| `packages`                          | Contract, adapters, bindings, CLI, scaffolder                                                   |
 | `demo`                              | Interactive examples and the contract reference host                                            |
 | `test`                              | Unit, boundary, interaction, vision, and Playwright suites                                      |
 | `verification`                      | Screenshot, benchmark, and demo verification scripts                                            |

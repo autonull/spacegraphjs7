@@ -1,11 +1,18 @@
-import type { RenderModel } from "@spacegraphjs/renderer"
-import { layoutGraph, turnSubgraph, type GraphViewData, type ZoomLevel, buildRenderModel, type CardTemplate } from "@spacegraphjs/shared"
+import type { RenderModel } from '@spacegraphjs/renderer';
+import {
+    layoutGraph,
+    turnSubgraph,
+    type GraphViewData,
+    type ZoomLevel,
+    buildRenderModel,
+    type CardTemplate,
+} from '@spacegraphjs/shared';
 
 /** A turn-scoped `GraphViewData` subset for the hybrid overlay and inline graph. */
 export function turnGraphModel(model: GraphViewData, turnID: string, limit: number): GraphViewData {
-  const { nodes, edges } = turnSubgraph(model, turnID, limit)
+    const { nodes, edges } = turnSubgraph(model, turnID, limit);
 
-  return { ...model, nodes, edges }
+    return { ...model, nodes, edges };
 }
 
 /**
@@ -13,16 +20,16 @@ export function turnGraphModel(model: GraphViewData, turnID: string, limit: numb
  * laid out with the same deterministic layout the full graph uses so positions look consistent.
  */
 export function buildTurnRenderModel(
-  model: GraphViewData,
-  turnID: string,
-  options: { limit: number; level?: ZoomLevel; renderCard?: CardTemplate },
+    model: GraphViewData,
+    turnID: string,
+    options: { limit: number; level?: ZoomLevel; renderCard?: CardTemplate },
 ): RenderModel {
-  const scoped = turnGraphModel(model, turnID, options.limit)
-  const level = options.level ?? "execution"
+    const scoped = turnGraphModel(model, turnID, options.limit);
+    const level = options.level ?? 'execution';
 
-  return buildRenderModel(scoped, {
-    level,
-    positions: layoutGraph(scoped, { level }).positions,
-    renderCard: options.renderCard,
-  })
+    return buildRenderModel(scoped, {
+        level,
+        positions: layoutGraph(scoped, { level }).positions,
+        renderCard: options.renderCard,
+    });
 }

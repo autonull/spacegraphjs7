@@ -15,7 +15,7 @@
 
 | Integration                | Tier     | Rationale                                           |
 | -------------------------- | -------- | --------------------------------------------------- |
-| **pnpm**                    | P0       | Industry standard. No pnpm = no adoption.            |
+| **pnpm**                   | P0       | Industry standard. No pnpm = no adoption.           |
 | **GitHub**                 | P0       | Already done. Primary repo hosting.                 |
 | **Vite Plugin**            | P0       | Vision system requires tight Vite integration.      |
 | **TypeDoc**                | P1       | API discoverability. Blocks contributor onboarding. |
@@ -23,7 +23,7 @@
 | **Matrix/Element**         | P1       | Community hub. Enables contributor coordination.    |
 | **Open VSX**               | P2       | Editor integration. Defer until after launch.       |
 | **IPFS**                   | Deferred | Nice ideological fit, low practical impact.         |
-| **Self-hosted CDN**        | Deferred | pnpm/unpkg suffice initially.                        |
+| **Self-hosted CDN**        | Deferred | pnpm/unpkg suffice initially.                       |
 | **Verdaccio**              | Deferred | Users can self-host if they need it.                |
 | **Self-hosted Playground** | Deferred | Simple demos in repo suffice initially.             |
 | **Nix Flake**              | Deferred | Too niche. Blocks nothing.                          |
@@ -285,8 +285,8 @@ https://matrix.to/#/#spacegraphjs:matrix.org
 
 | Integration            | Reason for Deferral                                              |
 | ---------------------- | ---------------------------------------------------------------- |
-| IPFS                   | pnpm suffices. Ideological, not practical.                        |
-| Self-hosted CDN        | pnpm/unpkg work. Add if CDN costs become an issue.                |
+| IPFS                   | pnpm suffices. Ideological, not practical.                       |
+| Self-hosted CDN        | pnpm/unpkg work. Add if CDN costs become an issue.               |
 | Verdaccio              | Users can self-host if they need private registry.               |
 | Self-hosted Playground | Examples in repo suffice. Add if users demand interactive demos. |
 | Nix Flake              | Too niche. Users can manage their own dev env.                   |

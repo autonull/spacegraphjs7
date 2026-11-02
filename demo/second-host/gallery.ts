@@ -252,7 +252,8 @@ export const CAPABILITIES: readonly Capability[] = [
         id: 'navigation',
         title: 'Search, minimap and trail',
         modules: ['spacegraphjs/navigation'],
-        summary: 'The host owns the fields and the dots; the library owns the matching and the geometry.',
+        summary:
+            'The host owns the fields and the dots; the library owns the matching and the geometry.',
         run: (context) => {
             const hits = Navigation.search(context.model, SEARCH_QUERY, searchableFields);
             const projection = Navigation.project({

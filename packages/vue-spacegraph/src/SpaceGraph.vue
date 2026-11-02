@@ -8,10 +8,10 @@ import { SpaceGraph } from 'spacegraphjs';
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
 const props = defineProps<{
-  spec?: GraphSpec;
-  url?: string;
-  options?: SpaceGraphOptions;
-  customStyle?: Record<string, any>;
+    spec?: GraphSpec;
+    url?: string;
+    options?: SpaceGraphOptions;
+    customStyle?: Record<string, any>;
 }>();
 
 const emit = defineEmits<(e: 'ready', sg: SpaceGraph) => void>();
@@ -20,55 +20,55 @@ const container = ref<HTMLElement | null>(null);
 let sgInstance: SpaceGraph | null = null;
 
 const initGraph = async () => {
-  if (!container.value) return;
+    if (!container.value) return;
 
-  if (sgInstance) {
-    sgInstance.dispose();
-    sgInstance = null;
-  }
-
-  try {
-    if (props.url) {
-      sgInstance = await SpaceGraph.fromURL(props.url, container.value, props.options);
-    } else {
-      sgInstance = new SpaceGraph(container.value, props.options);
-      if (props.spec) {
-        sgInstance.graph.fromJSON(props.spec);
-      }
+    if (sgInstance) {
+        sgInstance.dispose();
+        sgInstance = null;
     }
 
-    await sgInstance.init();
-    sgInstance.render();
-    emit('ready', sgInstance);
-  } catch (err) {
-    console.error('[VueSpaceGraph] Initialization failed', err);
-  }
+    try {
+        if (props.url) {
+            sgInstance = await SpaceGraph.fromURL(props.url, container.value, props.options);
+        } else {
+            sgInstance = new SpaceGraph(container.value, props.options);
+            if (props.spec) {
+                sgInstance.graph.fromJSON(props.spec);
+            }
+        }
+
+        await sgInstance.init();
+        sgInstance.render();
+        emit('ready', sgInstance);
+    } catch (err) {
+        console.error('[VueSpaceGraph] Initialization failed', err);
+    }
 };
 
 onMounted(() => {
-  initGraph();
+    initGraph();
 });
 
 watch(
-  () => props.spec,
-  (newSpec) => {
-    // simple re-init for now
-    initGraph();
-  },
-  { deep: true }
+    () => props.spec,
+    (newSpec) => {
+        // simple re-init for now
+        initGraph();
+    },
+    { deep: true },
 );
 
 watch(
-  () => props.url,
-  () => {
-    initGraph();
-  }
+    () => props.url,
+    () => {
+        initGraph();
+    },
 );
 
 onBeforeUnmount(() => {
-  if (sgInstance) {
-    sgInstance.dispose();
-  }
+    if (sgInstance) {
+        sgInstance.dispose();
+    }
 });
 </script>
 

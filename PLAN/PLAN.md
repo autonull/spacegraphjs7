@@ -136,7 +136,8 @@ graph.render();
 
 **SpaceGraphOS — The Visible Operating System**
 
-A revolution beyond the desktop metaphor. SpaceGraphJS enables the transition to **Fractal Zooming User Interfaces**. There are no applications or windows—only an infinite, navigable graph. 
+A revolution beyond the desktop metaphor. SpaceGraphJS enables the transition to **Fractal Zooming User Interfaces**. There are no applications or windows—only an infinite, navigable graph.
+
 - Zoom in to edit a document node.
 - Zoom out to see its semantic connections to your whole system.
 - Radically visible computing. Learn more in [SPACEGRAPH_OS.md](./SPACEGRAPH_OS.md).
@@ -223,7 +224,7 @@ A revolution beyond the desktop metaphor. SpaceGraphJS enables the transition to
 | ------- | --------------- | -------------------- | ------------------------ |
 | **1-2** | Core rendering  | Working demo         | 3 nodes + 3 edges render |
 | **5-6** | Performance     | 60 FPS at 1000 nodes | Benchmark suite passes   |
-| **7-8** | Polish + Launch | pnpm publish alpha    | Package on npmjs.com     |
+| **7-8** | Polish + Launch | pnpm publish alpha   | Package on npmjs.com     |
 
 ---
 
@@ -239,8 +240,8 @@ A revolution beyond the desktop metaphor. SpaceGraphJS enables the transition to
 
 ### Phase C: Growth (Months 6-12)
 
-| Period          | Focus              | Targets               |
-| --------------- | ------------------ | --------------------- |
+| Period          | Focus              | Targets                |
+| --------------- | ------------------ | ---------------------- |
 | **Month 6-8**   | User Acquisition   | 500 pnpm/mo, 50 stars  |
 | **Month 9-10**  | Community Building | 2K pnpm/mo, 100 Matrix |
 | **Month 11-12** | Revenue Scaling    | 5K pnpm/mo, $45K/mo    |
@@ -371,17 +372,17 @@ mkdir src
 
 ## Document Index
 
-| Document                           | Purpose                         | Read Time |
-| ---------------------------------- | ------------------------------- | --------- |
-| **[PLAN.md](./PLAN.md)**           | ★ This file — Complete plan     | 30 min    |
-| **[BUILD.md](./BUILD.md)**         | ★ Day-by-day build (Days 0-17)  | As needed |
-| **[EXECUTION.md](./EXECUTION.md)** | ★ Outcomes, buffers, motivation | 20 min    |
-| **[RESEARCH.md](./RESEARCH.md)**   | ★ Research program (4+ papers)  | 15 min    |
-| **[GROWTH.md](./GROWTH.md)**       | ★ Growth strategy (Months 2-6)  | 15 min    |
-| **[RISKS.md](./RISKS.md)**         | ★ Risk mitigation (15 risks)    | 10 min    |
-| **[TEMPLATES.md](./TEMPLATES.md)** | ★ Config templates              | 5 min     |
-| **[STRATEGY.md](./STRATEGY.md)**   | Phase 1-5 audits (reference)    | 20 min    |
-| **[SPACEGRAPH_OS.md](./SPACEGRAPH_OS.md)** | ★ Fractal ZUI Architecture vision | 5 min |
+| Document                                   | Purpose                           | Read Time |
+| ------------------------------------------ | --------------------------------- | --------- |
+| **[PLAN.md](./PLAN.md)**                   | ★ This file — Complete plan       | 30 min    |
+| **[BUILD.md](./BUILD.md)**                 | ★ Day-by-day build (Days 0-17)    | As needed |
+| **[EXECUTION.md](./EXECUTION.md)**         | ★ Outcomes, buffers, motivation   | 20 min    |
+| **[RESEARCH.md](./RESEARCH.md)**           | ★ Research program (4+ papers)    | 15 min    |
+| **[GROWTH.md](./GROWTH.md)**               | ★ Growth strategy (Months 2-6)    | 15 min    |
+| **[RISKS.md](./RISKS.md)**                 | ★ Risk mitigation (15 risks)      | 10 min    |
+| **[TEMPLATES.md](./TEMPLATES.md)**         | ★ Config templates                | 5 min     |
+| **[STRATEGY.md](./STRATEGY.md)**           | Phase 1-5 audits (reference)      | 20 min    |
+| **[SPACEGRAPH_OS.md](./SPACEGRAPH_OS.md)** | ★ Fractal ZUI Architecture vision | 5 min     |
 
 ---
 

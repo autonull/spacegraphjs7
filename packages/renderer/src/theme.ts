@@ -17,41 +17,41 @@ export type SemanticTokenMap = Readonly<Record<string, string>>;
  * adapter can fall through to the next one.
  */
 export const DEFAULT_THEME: RenderTheme = {
-  background: '#101014',
-  surface: '#1b1b22',
-  surfaceMuted: '#2a2a33',
-  text: '#f5f5f7',
-  textMuted: '#a0a0aa',
-  border: '#3a3a44',
-  accent: '#3b82f6',
-  success: '#22c55e',
-  warning: '#f59e0b',
-  error: '#ef4444',
-  edge: '#6b7280',
-  edgeMuted: '#a0a0aa',
-  selection: '#60a5fa',
-  focus: '#93c5fd',
-  fontFamily: 'system-ui, sans-serif',
-  fontSize: 13,
+    background: '#101014',
+    surface: '#1b1b22',
+    surfaceMuted: '#2a2a33',
+    text: '#f5f5f7',
+    textMuted: '#a0a0aa',
+    border: '#3a3a44',
+    accent: '#3b82f6',
+    success: '#22c55e',
+    warning: '#f59e0b',
+    error: '#ef4444',
+    edge: '#6b7280',
+    edgeMuted: '#a0a0aa',
+    selection: '#60a5fa',
+    focus: '#93c5fd',
+    fontFamily: 'system-ui, sans-serif',
+    fontSize: 13,
 };
 
 /** The roles a theme carries; every one of them resolves to a colour or a font. */
 export const THEME_ROLES = [
-  'background',
-  'surface',
-  'surfaceMuted',
-  'text',
-  'textMuted',
-  'border',
-  'accent',
-  'success',
-  'warning',
-  'error',
-  'edge',
-  'edgeMuted',
-  'selection',
-  'focus',
-  'fontFamily',
+    'background',
+    'surface',
+    'surfaceMuted',
+    'text',
+    'textMuted',
+    'border',
+    'accent',
+    'success',
+    'warning',
+    'error',
+    'edge',
+    'edgeMuted',
+    'selection',
+    'focus',
+    'fontFamily',
 ] as const satisfies readonly (keyof RenderTheme)[];
 
 /** The roles that resolve to a colour. */
@@ -59,7 +59,7 @@ export type ThemeColorRole = Exclude<(typeof THEME_ROLES)[number], 'fontFamily'>
 
 /** The colour roles, in the order the theme lists them. */
 export const THEME_COLOR_ROLES: readonly ThemeColorRole[] = THEME_ROLES.filter(
-  (role): role is ThemeColorRole => role !== 'fontFamily'
+    (role): role is ThemeColorRole => role !== 'fontFamily',
 );
 
 /**
@@ -68,7 +68,7 @@ export const THEME_COLOR_ROLES: readonly ThemeColorRole[] = THEME_ROLES.filter(
  * where a role comes from.
  */
 export function themeVariable(role: keyof RenderTheme): string {
-  return `--sg-${role.replace(/[A-Z]/g, (character) => `-${character.toLowerCase()}`)}`;
+    return `--sg-${role.replace(/[A-Z]/g, (character) => `-${character.toLowerCase()}`)}`;
 }
 
 /**
@@ -77,23 +77,23 @@ export function themeVariable(role: keyof RenderTheme): string {
  * theme.
  */
 export function resolveTheme(
-  tokens: SemanticTokenMap,
-  read: (variable: string) => string,
-  defaults: RenderTheme,
+    tokens: SemanticTokenMap,
+    read: (variable: string) => string,
+    defaults: RenderTheme,
 ): RenderTheme {
-  const resolved = { ...defaults };
+    const resolved = { ...defaults };
 
-  for (const role of THEME_ROLES) {
-    const variable = tokens[role];
+    for (const role of THEME_ROLES) {
+        const variable = tokens[role];
 
-    if (!variable) continue;
+        if (!variable) continue;
 
-    const value = read(variable).trim();
+        const value = read(variable).trim();
 
-    if (value) resolved[role] = value;
-  }
+        if (value) resolved[role] = value;
+    }
 
-  return resolved;
+    return resolved;
 }
 
 /**
@@ -101,24 +101,24 @@ export function resolveTheme(
  * so a host maps one token and every renderer agrees.
  */
 export function statusRole(status: NodeStatus | undefined): ThemeColorRole {
-  switch (status) {
-    case 'success':
-      return 'success';
-    case 'warning':
-      return 'warning';
-    case 'error':
-      return 'error';
-    case 'running':
-    case 'pending':
-      return 'accent';
-    default:
-      return 'surfaceMuted';
-  }
+    switch (status) {
+        case 'success':
+            return 'success';
+        case 'warning':
+            return 'warning';
+        case 'error':
+            return 'error';
+        case 'running':
+        case 'pending':
+            return 'accent';
+        default:
+            return 'surfaceMuted';
+    }
 }
 
 /** The theme colour that represents a status. */
 export function statusColor(status: NodeStatus | undefined, theme: RenderTheme): string {
-  return theme[statusRole(status)];
+    return theme[statusRole(status)];
 }
 
 /** The roles the canvas draws, and the contrast each must clear. */
@@ -126,84 +126,84 @@ export type ContrastRole = 'text' | 'textMuted' | 'edge' | 'edgeMuted' | 'select
 
 /** WCAG AA: 4.5:1 for text, 3:1 for the non-text cues the canvas draws. */
 export const CONTRAST_TARGETS: Readonly<Record<ContrastRole, number>> = {
-  text: 4.5,
-  textMuted: 4.5,
-  edge: 3,
-  edgeMuted: 3,
-  selection: 3,
+    text: 4.5,
+    textMuted: 4.5,
+    edge: 3,
+    edgeMuted: 3,
+    selection: 3,
 };
 
 export type ContrastFailure = { role: ContrastRole; ratio: number | undefined; target: number };
 
 export type ContrastReport = {
-  /** The measured ratio of every role against the canvas. */
-  ratios: Record<ContrastRole, number | undefined>;
-  /** The roles that miss their target. */
-  failures: ContrastFailure[];
-  /** Whether every role clears its target. */
-  passed: boolean;
+    /** The measured ratio of every role against the canvas. */
+    ratios: Record<ContrastRole, number | undefined>;
+    /** The roles that miss their target. */
+    failures: ContrastFailure[];
+    /** Whether every role clears its target. */
+    passed: boolean;
 };
 
 function channel(hex: string): [number, number, number] | undefined {
-  const match = hex.trim().match(/^#([0-9a-f]{6})$/i);
+    const match = hex.trim().match(/^#([0-9a-f]{6})$/i);
 
-  if (!match) return undefined;
-  const value = match[1]!;
+    if (!match) return undefined;
+    const value = match[1]!;
 
-  return [0, 2, 4].map((index) => Number.parseInt(value.slice(index, index + 2), 16)) as [
-    number,
-    number,
-    number,
-  ];
+    return [0, 2, 4].map((index) => Number.parseInt(value.slice(index, index + 2), 16)) as [
+        number,
+        number,
+        number,
+    ];
 }
 
 function luminance(hex: string): number | undefined {
-  const rgb = channel(hex);
+    const rgb = channel(hex);
 
-  if (!rgb) return undefined;
-  return relativeLuminance(rgb[0] / 255, rgb[1] / 255, rgb[2] / 255);
+    if (!rgb) return undefined;
+    return relativeLuminance(rgb[0] / 255, rgb[1] / 255, rgb[2] / 255);
 }
 
 /** The WCAG contrast ratio of two colours; undefined when a colour cannot be parsed. */
 export function contrastRatio(foreground: string, background: string): number | undefined {
-  const a = luminance(foreground);
-  const b = luminance(background);
+    const a = luminance(foreground);
+    const b = luminance(background);
 
-  if (a === undefined || b === undefined) return undefined;
+    if (a === undefined || b === undefined) return undefined;
 
-  return contrastRatioOf(a, b);
+    return contrastRatioOf(a, b);
 }
 
 /** Audits a resolved theme against the WCAG targets the canvas must clear. */
 export class ContrastAuditor {
-  readonly targets: Readonly<Record<ContrastRole, number>>;
+    readonly targets: Readonly<Record<ContrastRole, number>>;
 
-  constructor(targets: Partial<Record<ContrastRole, number>> = {}) {
-    this.targets = { ...CONTRAST_TARGETS, ...targets };
-  }
+    constructor(targets: Partial<Record<ContrastRole, number>> = {}) {
+        this.targets = { ...CONTRAST_TARGETS, ...targets };
+    }
 
-  /** The measured ratio of every role against the canvas. */
-  contrast(theme: RenderTheme): Record<ContrastRole, number | undefined> {
-    return Object.fromEntries(
-      (Object.keys(CONTRAST_TARGETS) as ContrastRole[]).map((role) => [
-        role,
-        contrastRatio(theme[role], theme.background),
-      ])
-    ) as Record<ContrastRole, number | undefined>;
-  }
+    /** The measured ratio of every role against the canvas. */
+    contrast(theme: RenderTheme): Record<ContrastRole, number | undefined> {
+        return Object.fromEntries(
+            (Object.keys(CONTRAST_TARGETS) as ContrastRole[]).map((role) => [
+                role,
+                contrastRatio(theme[role], theme.background),
+            ]),
+        ) as Record<ContrastRole, number | undefined>;
+    }
 
-  /** The roles that miss their target. */
-  failingRoles(theme: RenderTheme): ContrastRole[] {
-    return this.audit(theme).failures.map((failure) => failure.role);
-  }
+    /** The roles that miss their target. */
+    failingRoles(theme: RenderTheme): ContrastRole[] {
+        return this.audit(theme).failures.map((failure) => failure.role);
+    }
 
-  /** The full report: the ratios, the failures, and the verdict. */
-  audit(theme: RenderTheme): ContrastReport {
-    const ratios = this.contrast(theme);
-    const failures = (Object.keys(this.targets) as ContrastRole[])
-      .filter((role) => (ratios[role] ?? 0) < this.targets[role])
-      .map((role) => ({ role, ratio: ratios[role], target: this.targets[role] }));
+    /** The full report: the ratios, the failures, and the verdict. */
+    audit(theme: RenderTheme): ContrastReport {
+        const ratios = this.contrast(theme);
+        const failures = (Object.keys(this.targets) as ContrastRole[])
+            .filter((role) => (ratios[role] ?? 0) < this.targets[role])
+            .map((role) => ({ role, ratio: ratios[role], target: this.targets[role] }));
 
-    return { ratios, failures, passed: failures.length === 0 };
-  }
+        return { ratios, failures, passed: failures.length === 0 };
+    }
 }

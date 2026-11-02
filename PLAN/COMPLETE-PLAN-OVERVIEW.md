@@ -230,17 +230,17 @@ The plan is structured:
 
 ## Critical Milestones
 
-| Milestone | Description               | When   | Gate                    |
-| --------- | ------------------------- | ------ | ----------------------- |
-| **M0**    | Environment verified      | Day 0  | Node 18+, git           |
+| Milestone | Description               | When   | Gate                     |
+| --------- | ------------------------- | ------ | ------------------------ |
+| **M0**    | Environment verified      | Day 0  | Node 18+, git            |
 | **M1**    | package.json created      | Day 1  | pnpm install works       |
 | **M2**    | SpaceGraph class compiles | Day 2  | pnpm run build           |
-| **M3**    | Demo renders              | Day 4  | 3 nodes + 3 edges       |
-| **M4**    | Camera controls work      | Day 5  | Rotate, zoom            |
-| **M5**    | All tests pass            | Day 7  | No console errors       |
-| **M6**    | Fresh install works       | Day 12 | Empty directory         |
-| **M7**    | QUICKSTART verified       | Day 14 | <10 min, stranger       |
-| **M8**    | Published to pnpm          | Day 16 | pnpm publish --tag alpha |
+| **M3**    | Demo renders              | Day 4  | 3 nodes + 3 edges        |
+| **M4**    | Camera controls work      | Day 5  | Rotate, zoom             |
+| **M5**    | All tests pass            | Day 7  | No console errors        |
+| **M6**    | Fresh install works       | Day 12 | Empty directory          |
+| **M7**    | QUICKSTART verified       | Day 14 | <10 min, stranger        |
+| **M8**    | Published to pnpm         | Day 16 | pnpm publish --tag alpha |
 
 **Do not skip milestones. Do not publish until M7 passes.**
 
@@ -327,7 +327,7 @@ git init
 | ------------------------ | ----------------------------------------------- |
 | What is this?            | Complete plan to build + launch SpaceGraphJS    |
 | How long?                | 66 hours over 16-17 days (part-time)            |
-| What do I need?          | Node.js 18+, pnpm 9+, git 2+, text editor        |
+| What do I need?          | Node.js 18+, pnpm 9+, git 2+, text editor       |
 | Where do I start?        | README-PLAN.md → ENHANCED-BUILD-PLAN.md         |
 | What if things go wrong? | CONTINGENCY-PLAN.md has recovery procedures     |
 | Will this succeed?       | Yes — if you follow the plan and pass all gates |

@@ -6,504 +6,514 @@ import { clientToNdc } from '../utils/projection';
 import { type Finger, type Fingering, FingerManager } from './Fingering';
 
 export type InputEventType =
-  | 'keydown'
-  | 'keyup'
-  | 'mousedown'
-  | 'mouseup'
-  | 'mousemove'
-  | 'mouseleave'
-  | 'wheel'
-  | 'pointerdown'
-  | 'pointerup'
-  | 'pointermove'
-  | 'dblclick'
-  | 'contextmenu'
-  | 'touchstart'
-  | 'touchmove'
-  | 'touchend'
-  | 'touchcancel';
+    | 'keydown'
+    | 'keyup'
+    | 'mousedown'
+    | 'mouseup'
+    | 'mousemove'
+    | 'mouseleave'
+    | 'wheel'
+    | 'pointerdown'
+    | 'pointerup'
+    | 'pointermove'
+    | 'dblclick'
+    | 'contextmenu'
+    | 'touchstart'
+    | 'touchmove'
+    | 'touchend'
+    | 'touchcancel';
 
 export interface InputEvent<T = unknown> {
-  type: InputEventType;
-  source: string;
-  timestamp: number;
-  data: T;
-  originalEvent?: unknown;
-  consumed: boolean;
+    type: InputEventType;
+    source: string;
+    timestamp: number;
+    data: T;
+    originalEvent?: unknown;
+    consumed: boolean;
 }
 
 export interface KeyEventData {
-  key: string;
-  code: string;
-  ctrlKey: boolean;
-  shiftKey: boolean;
-  altKey: boolean;
-  metaKey: boolean;
-  repeat: boolean;
+    key: string;
+    code: string;
+    ctrlKey: boolean;
+    shiftKey: boolean;
+    altKey: boolean;
+    metaKey: boolean;
+    repeat: boolean;
 }
 
 export interface PointerEventData {
-  x: number;
-  y: number;
-  button?: number;
-  buttons?: number;
-  ctrlKey: boolean;
-  shiftKey: boolean;
-  altKey: boolean;
-  target: HTMLElement | null;
+    x: number;
+    y: number;
+    button?: number;
+    buttons?: number;
+    ctrlKey: boolean;
+    shiftKey: boolean;
+    altKey: boolean;
+    target: HTMLElement | null;
 }
 
 export interface WheelEventData {
-  x: number;
-  y: number;
-  deltaX: number;
-  deltaY: number;
-  deltaZ: number;
-  /** The wheel's unit: 0 is pixels, 1 is lines, 2 is pages. */
-  deltaMode: number;
+    x: number;
+    y: number;
+    deltaX: number;
+    deltaY: number;
+    deltaZ: number;
+    /** The wheel's unit: 0 is pixels, 1 is lines, 2 is pages. */
+    deltaMode: number;
 }
 
 export interface TouchEventData {
-  touches: Array<{ identifier: number; x: number; y: number }>;
-  changedTouches: Array<{ identifier: number; x: number; y: number }>;
+    touches: Array<{ identifier: number; x: number; y: number }>;
+    changedTouches: Array<{ identifier: number; x: number; y: number }>;
 }
 
 export type InputActionHandler = (event: InputEvent, context: InputContext) => void;
 
 export interface InputAction {
-  id: string;
-  label: string;
-  handler: InputActionHandler;
-  enabled?: () => boolean;
+    id: string;
+    label: string;
+    handler: InputActionHandler;
+    enabled?: () => boolean;
 }
 
 export interface InputBinding {
-  id: string;
-  action: string;
-  sources: string[];
-  eventType: InputEventType;
-  predicate?: (event: InputEvent) => boolean;
-  priority?: number;
+    id: string;
+    action: string;
+    sources: string[];
+    eventType: InputEventType;
+    predicate?: (event: InputEvent) => boolean;
+    priority?: number;
 }
 
 export interface InputContext {
-  sg: SpaceGraph;
-  events: EventEmitter<SpaceGraphEvents>;
-  getState: () => InputState;
-  setActiveInput: (source: string) => void;
-  disableInput: (source: string) => void;
-  enableInput: (source: string) => void;
-  isInputEnabled: (source: string) => boolean;
-  updateState: (partial: Partial<InputState>) => void;
-  emit: (eventType: string, data: unknown) => void;
-  emitBatched: (eventType: string, data: unknown) => void;
+    sg: SpaceGraph;
+    events: EventEmitter<SpaceGraphEvents>;
+    getState: () => InputState;
+    setActiveInput: (source: string) => void;
+    disableInput: (source: string) => void;
+    enableInput: (source: string) => void;
+    isInputEnabled: (source: string) => boolean;
+    updateState: (partial: Partial<InputState>) => void;
+    emit: (eventType: string, data: unknown) => void;
+    emitBatched: (eventType: string, data: unknown) => void;
 }
 
 export interface InputState {
-  activeInput: string | null;
-  disabledInputs: Set<string>;
-  pointerPosition: { x: number; y: number };
-  pointerDown: boolean;
-  keysPressed: Set<string>;
-  touchCount: number;
+    activeInput: string | null;
+    disabledInputs: Set<string>;
+    pointerPosition: { x: number; y: number };
+    pointerDown: boolean;
+    keysPressed: Set<string>;
+    touchCount: number;
 }
 
 export interface InputSourceConfig {
-  id: string;
-  element: HTMLElement;
-  enabled?: boolean;
-  capture?: boolean;
+    id: string;
+    element: HTMLElement;
+    enabled?: boolean;
+    capture?: boolean;
 }
 
 export interface InputManagerOptions {
-  sg: SpaceGraph;
-  events: EventEmitter<SpaceGraphEvents>;
-  sources?: InputSourceConfig[];
+    sg: SpaceGraph;
+    events: EventEmitter<SpaceGraphEvents>;
+    sources?: InputSourceConfig[];
 }
 
 export class InputManager {
-  readonly sg: SpaceGraph;
-  readonly events: EventEmitter<SpaceGraphEvents>;
-  readonly state: InputState;
-  private sources: Map<string, InputSource> = new Map();
-  private actions: Map<string, InputAction> = new Map();
-  private bindings: InputBinding[] = [];
-  private enabled = true;
-  readonly fingerManager: FingerManager;
-  private fingerings: Array<{ fingering: Fingering; priority: number }> = [];
-  private multiFingering: Fingering | null = null;
+    readonly sg: SpaceGraph;
+    readonly events: EventEmitter<SpaceGraphEvents>;
+    readonly state: InputState;
+    private sources: Map<string, InputSource> = new Map();
+    private actions: Map<string, InputAction> = new Map();
+    private bindings: InputBinding[] = [];
+    private enabled = true;
+    readonly fingerManager: FingerManager;
+    private fingerings: Array<{ fingering: Fingering; priority: number }> = [];
+    private multiFingering: Fingering | null = null;
 
-  constructor(options: InputManagerOptions) {
-    this.sg = options.sg;
-    this.events = options.events;
-    this.state = {
-      activeInput: null,
-      disabledInputs: new Set(),
-      pointerPosition: { x: 0, y: 0 },
-      pointerDown: false,
-      keysPressed: new Set(),
-      touchCount: 0,
-    };
-    this.fingerManager = new FingerManager();
-    if (options.sources) for (const config of options.sources) this.addSource(config);
-  }
-
-  private cachedContext?: InputContext;
-
-  get context(): InputContext {
-    this.cachedContext ??= {
-      sg: this.sg,
-      events: this.events,
-      getState: () => this.state,
-      setActiveInput: (source: string) => {
-        this.state.activeInput = source;
-      },
-      disableInput: (source: string) => {
-        this.state.disabledInputs.add(source);
-      },
-      enableInput: (source: string) => {
-        this.state.disabledInputs.delete(source);
-      },
-      isInputEnabled: (source: string) => !this.state.disabledInputs.has(source),
-      updateState: (partial: Partial<InputState>) => this.updateState(partial),
-      emit: (eventType: string, data: unknown) => this.emit(eventType, data),
-      emitBatched: (eventType: string, data: unknown) => this.emitBatched(eventType, data),
-    };
-    return this.cachedContext;
-  }
-
-  registerFingering(fingering: Fingering, priority: number): void {
-    this.fingerings.push({ fingering, priority });
-    this.fingerings.sort((a, b) => b.priority - a.priority);
-  }
-
-  getFingerManager(): FingerManager {
-    return this.fingerManager;
-  }
-
-  addSource(config: InputSourceConfig): InputSource {
-    const source = new InputSource(config, this);
-    this.sources.set(config.id, source);
-    return source;
-  }
-
-  removeSource(id: string): void {
-    const source = this.sources.get(id);
-    if (source) {
-      source.dispose();
-      this.sources.delete(id);
+    constructor(options: InputManagerOptions) {
+        this.sg = options.sg;
+        this.events = options.events;
+        this.state = {
+            activeInput: null,
+            disabledInputs: new Set(),
+            pointerPosition: { x: 0, y: 0 },
+            pointerDown: false,
+            keysPressed: new Set(),
+            touchCount: 0,
+        };
+        this.fingerManager = new FingerManager();
+        if (options.sources) for (const config of options.sources) this.addSource(config);
     }
-  }
 
-  getSource(id: string): InputSource | undefined {
-    return this.sources.get(id);
-  }
+    private cachedContext?: InputContext;
 
-  registerAction(action: InputAction): void {
-    this.actions.set(action.id, action);
-  }
-
-  unregisterAction(id: string): void {
-    this.actions.delete(id);
-  }
-
-  getAction(id: string): InputAction | undefined {
-    return this.actions.get(id);
-  }
-
-  addBinding(binding: InputBinding): void {
-    this.bindings.push(binding);
-    this.bindings.sort((a, b) => (b.priority || 0) - (a.priority || 0));
-  }
-
-  removeBinding(id: string): void {
-    this.bindings = this.bindings.filter((b) => b.id !== id);
-  }
-
-  clearBindings(): void {
-    this.bindings = [];
-  }
-
-  handleEvent(event: InputEvent): void {
-    if (!this.enabled) return;
-    if (this.state.disabledInputs.has(event.source)) return;
-    if (this.state.activeInput && this.state.activeInput !== event.source) return;
-
-    if (event.type === 'pointerdown' || event.type === 'pointermove' || event.type === 'pointerup')
-      this.routeFingeringEvent(event);
-
-    for (const binding of this.bindings) {
-      if (event.consumed) break;
-      if (binding.sources.includes(event.source) && binding.eventType === event.type) {
-        if (binding.predicate && !binding.predicate(event)) continue;
-        const action = this.actions.get(binding.action);
-        if (action && (!action.enabled || action.enabled())) action.handler(event, this.context);
-      }
+    get context(): InputContext {
+        this.cachedContext ??= {
+            sg: this.sg,
+            events: this.events,
+            getState: () => this.state,
+            setActiveInput: (source: string) => {
+                this.state.activeInput = source;
+            },
+            disableInput: (source: string) => {
+                this.state.disabledInputs.add(source);
+            },
+            enableInput: (source: string) => {
+                this.state.disabledInputs.delete(source);
+            },
+            isInputEnabled: (source: string) => !this.state.disabledInputs.has(source),
+            updateState: (partial: Partial<InputState>) => this.updateState(partial),
+            emit: (eventType: string, data: unknown) => this.emit(eventType, data),
+            emitBatched: (eventType: string, data: unknown) => this.emitBatched(eventType, data),
+        };
+        return this.cachedContext;
     }
-  }
 
-  emit(eventType: string, data: unknown): void {
-    this.events.emit(eventType, data);
-  }
+    registerFingering(fingering: Fingering, priority: number): void {
+        this.fingerings.push({ fingering, priority });
+        this.fingerings.sort((a, b) => b.priority - a.priority);
+    }
 
-  emitBatched(eventType: string, data: unknown): void {
-    this.events.emitBatched(eventType, data);
-  }
+    getFingerManager(): FingerManager {
+        return this.fingerManager;
+    }
 
-  setEnabled(enabled: boolean): void {
-    this.enabled = enabled;
-  }
+    addSource(config: InputSourceConfig): InputSource {
+        const source = new InputSource(config, this);
+        this.sources.set(config.id, source);
+        return source;
+    }
 
-  isEnabled(): boolean {
-    return this.enabled;
-  }
-
-  updateState(partial: Partial<InputState>): void {
-    Object.assign(this.state, partial);
-  }
-
-  getState(): Readonly<InputState> {
-    return this.state;
-  }
-
-  dispose(): void {
-    for (const source of this.sources.values()) source.dispose();
-    this.sources.clear();
-    this.actions.clear();
-    this.bindings = [];
-  }
-
-  private computeWorldRay(ndc: { x: number; y: number }): Ray {
-    const camera = this.sg.renderer.camera;
-    const ray = new Ray();
-    ray.origin.setFromMatrixPosition(camera.matrixWorld);
-    ray.direction.set(ndc.x, ndc.y, 0.5).unproject(camera).sub(ray.origin).normalize();
-    return ray;
-  }
-
-  private routeFingeringEvent(event: InputEvent): void {
-    const data = event.data as PointerEventData;
-    const target = data.target;
-    const ndc =
-      target instanceof Element
-        ? clientToNdc(data.x, data.y, target.getBoundingClientRect())
-        : { x: (data.x / window.innerWidth) * 2 - 1, y: -(data.y / window.innerHeight) * 2 + 1 };
-
-    const finger: Finger = {
-      pointerId: (event.originalEvent as PointerEvent)?.pointerId ?? 0,
-      position: { x: data.x, y: data.y },
-      ndc,
-      buttons: data.buttons ?? 0,
-      state: event.type === 'pointerdown' ? 'down' : event.type === 'pointerup' ? 'up' : 'move',
-      target: data.target,
-      worldRay: this.computeWorldRay(ndc),
-    };
-
-    switch (event.type) {
-      case 'pointerdown': {
-        this.fingerManager.setFinger(finger.pointerId, finger);
-        const pointer = event.originalEvent as PointerEvent | undefined;
-        if (pointer?.isTrusted !== false && data.target instanceof Element) {
-          data.target.setPointerCapture?.(finger.pointerId);
+    removeSource(id: string): void {
+        const source = this.sources.get(id);
+        if (source) {
+            source.dispose();
+            this.sources.delete(id);
         }
+    }
 
-        const fingers = [...this.fingerManager.fingers.values()];
-        if (!this.multiFingering && fingers.length >= 2) {
-          for (const { fingering } of this.fingerings) {
-            if (fingering.startMultiTouch?.(fingers[0], fingers[1])) {
-              this.multiFingering = fingering;
-              this.fingerManager.end(fingers[0]);
-              event.consumed = true;
-              return;
+    getSource(id: string): InputSource | undefined {
+        return this.sources.get(id);
+    }
+
+    registerAction(action: InputAction): void {
+        this.actions.set(action.id, action);
+    }
+
+    unregisterAction(id: string): void {
+        this.actions.delete(id);
+    }
+
+    getAction(id: string): InputAction | undefined {
+        return this.actions.get(id);
+    }
+
+    addBinding(binding: InputBinding): void {
+        this.bindings.push(binding);
+        this.bindings.sort((a, b) => (b.priority || 0) - (a.priority || 0));
+    }
+
+    removeBinding(id: string): void {
+        this.bindings = this.bindings.filter((b) => b.id !== id);
+    }
+
+    clearBindings(): void {
+        this.bindings = [];
+    }
+
+    handleEvent(event: InputEvent): void {
+        if (!this.enabled) return;
+        if (this.state.disabledInputs.has(event.source)) return;
+        if (this.state.activeInput && this.state.activeInput !== event.source) return;
+
+        if (
+            event.type === 'pointerdown' ||
+            event.type === 'pointermove' ||
+            event.type === 'pointerup'
+        )
+            this.routeFingeringEvent(event);
+
+        for (const binding of this.bindings) {
+            if (event.consumed) break;
+            if (binding.sources.includes(event.source) && binding.eventType === event.type) {
+                if (binding.predicate && !binding.predicate(event)) continue;
+                const action = this.actions.get(binding.action);
+                if (action && (!action.enabled || action.enabled()))
+                    action.handler(event, this.context);
             }
-          }
         }
-
-        for (const { fingering } of this.fingerings) {
-          if (this.fingerManager.test(fingering, finger)) {
-            if (fingering.claimsGesture ?? true) event.consumed = true;
-            return;
-          }
-        }
-        break;
-      }
-      case 'pointermove': {
-        const existing = this.fingerManager.getFinger(finger.pointerId);
-        if (!existing) break;
-        Object.assign(existing, {
-          position: finger.position,
-          ndc: finger.ndc,
-          buttons: finger.buttons,
-          worldRay: finger.worldRay,
-        });
-        if (this.multiFingering) {
-          const fingers = [...this.fingerManager.fingers.values()];
-          if (fingers.length >= 2) this.multiFingering.updateMultiTouch?.(fingers[0], fingers[1]);
-        } else {
-          this.fingerManager.update(existing);
-        }
-        break;
-      }
-      case 'pointerup': {
-        const existing = this.fingerManager.getFinger(finger.pointerId);
-        if (!existing) break;
-        const pointer = event.originalEvent as PointerEvent | undefined;
-        if (pointer?.isTrusted !== false && data.target instanceof Element) {
-          data.target.releasePointerCapture?.(finger.pointerId);
-        }
-        if (this.multiFingering) {
-          this.multiFingering.stopMultiTouch?.();
-          this.multiFingering = null;
-        }
-        this.fingerManager.end(existing);
-        this.fingerManager.deleteFinger(finger.pointerId);
-        break;
-      }
     }
-  }
+
+    emit(eventType: string, data: unknown): void {
+        this.events.emit(eventType, data);
+    }
+
+    emitBatched(eventType: string, data: unknown): void {
+        this.events.emitBatched(eventType, data);
+    }
+
+    setEnabled(enabled: boolean): void {
+        this.enabled = enabled;
+    }
+
+    isEnabled(): boolean {
+        return this.enabled;
+    }
+
+    updateState(partial: Partial<InputState>): void {
+        Object.assign(this.state, partial);
+    }
+
+    getState(): Readonly<InputState> {
+        return this.state;
+    }
+
+    dispose(): void {
+        for (const source of this.sources.values()) source.dispose();
+        this.sources.clear();
+        this.actions.clear();
+        this.bindings = [];
+    }
+
+    private computeWorldRay(ndc: { x: number; y: number }): Ray {
+        const camera = this.sg.renderer.camera;
+        const ray = new Ray();
+        ray.origin.setFromMatrixPosition(camera.matrixWorld);
+        ray.direction.set(ndc.x, ndc.y, 0.5).unproject(camera).sub(ray.origin).normalize();
+        return ray;
+    }
+
+    private routeFingeringEvent(event: InputEvent): void {
+        const data = event.data as PointerEventData;
+        const target = data.target;
+        const ndc =
+            target instanceof Element
+                ? clientToNdc(data.x, data.y, target.getBoundingClientRect())
+                : {
+                      x: (data.x / window.innerWidth) * 2 - 1,
+                      y: -(data.y / window.innerHeight) * 2 + 1,
+                  };
+
+        const finger: Finger = {
+            pointerId: (event.originalEvent as PointerEvent)?.pointerId ?? 0,
+            position: { x: data.x, y: data.y },
+            ndc,
+            buttons: data.buttons ?? 0,
+            state:
+                event.type === 'pointerdown' ? 'down' : event.type === 'pointerup' ? 'up' : 'move',
+            target: data.target,
+            worldRay: this.computeWorldRay(ndc),
+        };
+
+        switch (event.type) {
+            case 'pointerdown': {
+                this.fingerManager.setFinger(finger.pointerId, finger);
+                const pointer = event.originalEvent as PointerEvent | undefined;
+                if (pointer?.isTrusted !== false && data.target instanceof Element) {
+                    data.target.setPointerCapture?.(finger.pointerId);
+                }
+
+                const fingers = [...this.fingerManager.fingers.values()];
+                if (!this.multiFingering && fingers.length >= 2) {
+                    for (const { fingering } of this.fingerings) {
+                        if (fingering.startMultiTouch?.(fingers[0], fingers[1])) {
+                            this.multiFingering = fingering;
+                            this.fingerManager.end(fingers[0]);
+                            event.consumed = true;
+                            return;
+                        }
+                    }
+                }
+
+                for (const { fingering } of this.fingerings) {
+                    if (this.fingerManager.test(fingering, finger)) {
+                        if (fingering.claimsGesture ?? true) event.consumed = true;
+                        return;
+                    }
+                }
+                break;
+            }
+            case 'pointermove': {
+                const existing = this.fingerManager.getFinger(finger.pointerId);
+                if (!existing) break;
+                Object.assign(existing, {
+                    position: finger.position,
+                    ndc: finger.ndc,
+                    buttons: finger.buttons,
+                    worldRay: finger.worldRay,
+                });
+                if (this.multiFingering) {
+                    const fingers = [...this.fingerManager.fingers.values()];
+                    if (fingers.length >= 2)
+                        this.multiFingering.updateMultiTouch?.(fingers[0], fingers[1]);
+                } else {
+                    this.fingerManager.update(existing);
+                }
+                break;
+            }
+            case 'pointerup': {
+                const existing = this.fingerManager.getFinger(finger.pointerId);
+                if (!existing) break;
+                const pointer = event.originalEvent as PointerEvent | undefined;
+                if (pointer?.isTrusted !== false && data.target instanceof Element) {
+                    data.target.releasePointerCapture?.(finger.pointerId);
+                }
+                if (this.multiFingering) {
+                    this.multiFingering.stopMultiTouch?.();
+                    this.multiFingering = null;
+                }
+                this.fingerManager.end(existing);
+                this.fingerManager.deleteFinger(finger.pointerId);
+                break;
+            }
+        }
+    }
 }
 
 export class InputSource {
-  readonly id: string;
-  private element: HTMLElement;
-  private manager: InputManager;
-  private enabled = true;
-  private boundHandlers: Array<{
-    type: string;
-    original: (e: unknown) => void;
-    handler: (e: unknown) => void;
-  }> = [];
+    readonly id: string;
+    private element: HTMLElement;
+    private manager: InputManager;
+    private enabled = true;
+    private boundHandlers: Array<{
+        type: string;
+        original: (e: unknown) => void;
+        handler: (e: unknown) => void;
+    }> = [];
 
-  constructor(config: InputSourceConfig, manager: InputManager) {
-    this.id = config.id;
-    this.element = config.element;
-    this.manager = manager;
-    this.enabled = config.enabled !== false;
-  }
-
-  getId(): string {
-    return this.id;
-  }
-
-  setEnabled(enabled: boolean): void {
-    this.enabled = enabled;
-  }
-
-  isEnabled(): boolean {
-    return this.enabled;
-  }
-
-  on<T extends InputEventType>(type: T, handler?: (event: InputEvent) => void): void {
-    const originalHandler = handler;
-    const wrappedHandler = (e: unknown) => {
-      if (!this.enabled) return;
-      const event = this.normalizeEvent(type, e);
-      if (event) {
-        handler?.(event);
-        this.manager.handleEvent(event);
-        this.manager.sg.requestFrame();
-      }
-    };
-    this.boundHandlers.push({
-      type,
-      original: originalHandler as (e: unknown) => void,
-      handler: wrappedHandler as (e: unknown) => void,
-    });
-    this.element.addEventListener(type, wrappedHandler, { passive: false });
-  }
-
-  off(type: string, handler?: (e: unknown) => void): void {
-    if (handler) {
-      const bound = this.boundHandlers.find((h) => h.type === type && h.original === handler);
-      if (bound) {
-        this.element.removeEventListener(type, bound.handler);
-        this.boundHandlers = this.boundHandlers.filter((h) => h !== bound);
-      }
-    } else {
-      const toRemove = this.boundHandlers.filter((h) => h.type === type);
-      for (const h of toRemove) this.element.removeEventListener(type, h.handler);
-      this.boundHandlers = this.boundHandlers.filter((h) => h.type !== type);
+    constructor(config: InputSourceConfig, manager: InputManager) {
+        this.id = config.id;
+        this.element = config.element;
+        this.manager = manager;
+        this.enabled = config.enabled !== false;
     }
-  }
 
-  dispose(): void {
-    for (const { type, handler } of this.boundHandlers) {
-      this.element.removeEventListener(type, handler);
+    getId(): string {
+        return this.id;
     }
-    this.boundHandlers = [];
-  }
 
-  private normalizeEvent(type: InputEventType, originalEvent: unknown): InputEvent | null {
-    const data = this.normalizeData(type, originalEvent);
-    if (!data) return null;
-    return {
-      type,
-      source: this.id,
-      timestamp: Date.now(),
-      originalEvent,
-      consumed: false,
-      data,
-    };
-  }
-
-  private normalizeData(type: InputEventType, event: unknown): unknown | null {
-    switch (type) {
-      case 'keydown':
-      case 'keyup':
-        return this.normalizeKeyEvent(event as KeyboardEvent);
-      case 'wheel':
-        return this.normalizeWheelEvent(event as WheelEvent);
-      case 'touchstart':
-      case 'touchmove':
-      case 'touchend':
-      case 'touchcancel':
-        return this.normalizeTouchEvent(event as TouchEvent);
-      default:
-        return this.normalizePointerEvent(event as MouseEvent);
+    setEnabled(enabled: boolean): void {
+        this.enabled = enabled;
     }
-  }
 
-  private normalizeKeyEvent(e: KeyboardEvent): KeyEventData {
-    return {
-      key: e.key,
-      code: e.code,
-      ctrlKey: e.ctrlKey,
-      shiftKey: e.shiftKey,
-      altKey: e.altKey,
-      metaKey: e.metaKey,
-      repeat: e.repeat,
-    };
-  }
+    isEnabled(): boolean {
+        return this.enabled;
+    }
 
-  private normalizePointerEvent(e: MouseEvent): PointerEventData {
-    return {
-      x: e.clientX,
-      y: e.clientY,
-      button: e.button,
-      buttons: e.buttons,
-      ctrlKey: e.ctrlKey,
-      shiftKey: e.shiftKey,
-      altKey: e.altKey,
-      target: e.target as HTMLElement | null,
-    };
-  }
+    on<T extends InputEventType>(type: T, handler?: (event: InputEvent) => void): void {
+        const originalHandler = handler;
+        const wrappedHandler = (e: unknown) => {
+            if (!this.enabled) return;
+            const event = this.normalizeEvent(type, e);
+            if (event) {
+                handler?.(event);
+                this.manager.handleEvent(event);
+                this.manager.sg.requestFrame();
+            }
+        };
+        this.boundHandlers.push({
+            type,
+            original: originalHandler as (e: unknown) => void,
+            handler: wrappedHandler as (e: unknown) => void,
+        });
+        this.element.addEventListener(type, wrappedHandler, { passive: false });
+    }
 
-  private normalizeWheelEvent(e: WheelEvent): WheelEventData {
-    return {
-      x: e.clientX,
-      y: e.clientY,
-      deltaX: e.deltaX,
-      deltaY: e.deltaY,
-      deltaZ: e.deltaZ,
-      deltaMode: e.deltaMode,
-    };
-  }
+    off(type: string, handler?: (e: unknown) => void): void {
+        if (handler) {
+            const bound = this.boundHandlers.find((h) => h.type === type && h.original === handler);
+            if (bound) {
+                this.element.removeEventListener(type, bound.handler);
+                this.boundHandlers = this.boundHandlers.filter((h) => h !== bound);
+            }
+        } else {
+            const toRemove = this.boundHandlers.filter((h) => h.type === type);
+            for (const h of toRemove) this.element.removeEventListener(type, h.handler);
+            this.boundHandlers = this.boundHandlers.filter((h) => h.type !== type);
+        }
+    }
 
-  private normalizeTouchEvent(e: TouchEvent): TouchEventData {
-    const map = (t: Touch) => ({ identifier: t.identifier, x: t.clientX, y: t.clientY });
-    return {
-      touches: Array.from(e.touches).map(map),
-      changedTouches: Array.from(e.changedTouches).map(map),
-    };
-  }
+    dispose(): void {
+        for (const { type, handler } of this.boundHandlers) {
+            this.element.removeEventListener(type, handler);
+        }
+        this.boundHandlers = [];
+    }
+
+    private normalizeEvent(type: InputEventType, originalEvent: unknown): InputEvent | null {
+        const data = this.normalizeData(type, originalEvent);
+        if (!data) return null;
+        return {
+            type,
+            source: this.id,
+            timestamp: Date.now(),
+            originalEvent,
+            consumed: false,
+            data,
+        };
+    }
+
+    private normalizeData(type: InputEventType, event: unknown): unknown | null {
+        switch (type) {
+            case 'keydown':
+            case 'keyup':
+                return this.normalizeKeyEvent(event as KeyboardEvent);
+            case 'wheel':
+                return this.normalizeWheelEvent(event as WheelEvent);
+            case 'touchstart':
+            case 'touchmove':
+            case 'touchend':
+            case 'touchcancel':
+                return this.normalizeTouchEvent(event as TouchEvent);
+            default:
+                return this.normalizePointerEvent(event as MouseEvent);
+        }
+    }
+
+    private normalizeKeyEvent(e: KeyboardEvent): KeyEventData {
+        return {
+            key: e.key,
+            code: e.code,
+            ctrlKey: e.ctrlKey,
+            shiftKey: e.shiftKey,
+            altKey: e.altKey,
+            metaKey: e.metaKey,
+            repeat: e.repeat,
+        };
+    }
+
+    private normalizePointerEvent(e: MouseEvent): PointerEventData {
+        return {
+            x: e.clientX,
+            y: e.clientY,
+            button: e.button,
+            buttons: e.buttons,
+            ctrlKey: e.ctrlKey,
+            shiftKey: e.shiftKey,
+            altKey: e.altKey,
+            target: e.target as HTMLElement | null,
+        };
+    }
+
+    private normalizeWheelEvent(e: WheelEvent): WheelEventData {
+        return {
+            x: e.clientX,
+            y: e.clientY,
+            deltaX: e.deltaX,
+            deltaY: e.deltaY,
+            deltaZ: e.deltaZ,
+            deltaMode: e.deltaMode,
+        };
+    }
+
+    private normalizeTouchEvent(e: TouchEvent): TouchEventData {
+        const map = (t: Touch) => ({ identifier: t.identifier, x: t.clientX, y: t.clientY });
+        return {
+            touches: Array.from(e.touches).map(map),
+            changedTouches: Array.from(e.changedTouches).map(map),
+        };
+    }
 }

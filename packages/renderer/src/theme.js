@@ -65,11 +65,9 @@ export function resolveTheme(tokens, read, defaults) {
     const resolved = { ...defaults };
     for (const role of THEME_ROLES) {
         const variable = tokens[role];
-        if (!variable)
-            continue;
+        if (!variable) continue;
         const value = read(variable).trim();
-        if (value)
-            resolved[role] = value;
+        if (value) resolved[role] = value;
     }
     return resolved;
 }
@@ -106,23 +104,20 @@ export const CONTRAST_TARGETS = {
 };
 function channel(hex) {
     const match = hex.trim().match(/^#([0-9a-f]{6})$/i);
-    if (!match)
-        return undefined;
+    if (!match) return undefined;
     const value = match[1];
     return [0, 2, 4].map((index) => Number.parseInt(value.slice(index, index + 2), 16));
 }
 function luminance(hex) {
     const rgb = channel(hex);
-    if (!rgb)
-        return undefined;
+    if (!rgb) return undefined;
     return relativeLuminance(rgb[0] / 255, rgb[1] / 255, rgb[2] / 255);
 }
 /** The WCAG contrast ratio of two colours; undefined when a colour cannot be parsed. */
 export function contrastRatio(foreground, background) {
     const a = luminance(foreground);
     const b = luminance(background);
-    if (a === undefined || b === undefined)
-        return undefined;
+    if (a === undefined || b === undefined) return undefined;
     return contrastRatioOf(a, b);
 }
 /** Audits a resolved theme against the WCAG targets the canvas must clear. */
@@ -133,10 +128,12 @@ export class ContrastAuditor {
     }
     /** The measured ratio of every role against the canvas. */
     contrast(theme) {
-        return Object.fromEntries(Object.keys(CONTRAST_TARGETS).map((role) => [
-            role,
-            contrastRatio(theme[role], theme.background),
-        ]));
+        return Object.fromEntries(
+            Object.keys(CONTRAST_TARGETS).map((role) => [
+                role,
+                contrastRatio(theme[role], theme.background),
+            ]),
+        );
     }
     /** The roles that miss their target. */
     failingRoles(theme) {

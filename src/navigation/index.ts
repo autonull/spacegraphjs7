@@ -1,20 +1,15 @@
 import { project } from './minimap';
 import { search, searchBy } from './search';
 
-export {
-  Trail,
-  type TrailListener,
-  type TrailNode,
-  type TrailOptions,
-} from './Trail';
+export { Trail, type TrailListener, type TrailNode, type TrailOptions } from './Trail';
 
 export type {
-  MinimapBounds,
-  MinimapOptions,
-  MinimapPoint,
-  MinimapProjection,
-  MinimapViewRect,
-  MinimapViewport,
+    MinimapBounds,
+    MinimapOptions,
+    MinimapPoint,
+    MinimapProjection,
+    MinimapViewRect,
+    MinimapViewport,
 } from './minimap';
 
 export type { SearchModel, SearchableNode, SearchScore } from './search';

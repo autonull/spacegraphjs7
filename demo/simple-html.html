@@ -5,8 +5,15 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Simple HTML Node Test</title>
         <style>
-            body { margin: 0; overflow: hidden; background: #111; }
-            #container { width: 100vw; height: 100vh; }
+            body {
+                margin: 0;
+                overflow: hidden;
+                background: #111;
+            }
+            #container {
+                width: 100vw;
+                height: 100vh;
+            }
         </style>
     </head>
     <body>
@@ -24,10 +31,10 @@
                             data: {
                                 width: 300,
                                 height: 200,
-                                html: '<div style="padding: 20px; background: red; color: white; height: 100%;">HELLO WORLD</div>'
-                            }
-                        }
-                    ]
+                                html: '<div style="padding: 20px; background: red; color: white; height: 100%;">HELLO WORLD</div>',
+                            },
+                        },
+                    ],
                 });
                 graph.fitView(100);
             }

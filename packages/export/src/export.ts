@@ -1,51 +1,51 @@
-import type { RenderModel, RenderTheme } from "@spacegraphjs/renderer"
-import { renderToSVG, serializeRenderModel, type SvgOptions } from "@spacegraphjs/svg-renderer"
+import type { RenderModel, RenderTheme } from '@spacegraphjs/renderer';
+import { renderToSVG, serializeRenderModel, type SvgOptions } from '@spacegraphjs/svg-renderer';
 
-export type ExportFormat = "svg" | "json" | "html"
+export type ExportFormat = 'svg' | 'json' | 'html';
 
 export type ExportOptions = {
-  theme: RenderTheme
-  sessionTitle?: string
-  testedCommit?: string
-  timestamp?: string
-}
+    theme: RenderTheme;
+    sessionTitle?: string;
+    testedCommit?: string;
+    timestamp?: string;
+};
 
 function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, "\u0026amp;")
-    .replace(/</g, "\u0026lt;")
-    .replace(/>/g, "\u0026gt;")
-    .replace(/"/g, "\u0026quot;")
-    .replace(/'/g, "\u0026#039;")
+    return text
+        .replace(/&/g, '\u0026amp;')
+        .replace(/</g, '\u0026lt;')
+        .replace(/>/g, '\u0026gt;')
+        .replace(/"/g, '\u0026quot;')
+        .replace(/'/g, '\u0026#039;');
 }
 
 function download(blob: Blob, filename: string): void {
-  const url = URL.createObjectURL(blob)
-  const anchor = document.createElement("a")
-  anchor.href = url
-  anchor.download = filename
-  document.body.appendChild(anchor)
-  anchor.click()
-  document.body.removeChild(anchor)
-  URL.revokeObjectURL(url)
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = filename;
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+    URL.revokeObjectURL(url);
 }
 
 function svgOptions(theme: RenderTheme): SvgOptions {
-  return { theme, padding: 24 }
+    return { theme, padding: 24 };
 }
 
 /**
  * The exported page: the drawing, the session's name, and the data behind it.
  */
 export function standaloneHtml(
-  svg: string,
-  json: string,
-  theme: RenderTheme,
-  sessionTitle: string,
-  testedCommit: string,
-  timestamp: string,
+    svg: string,
+    json: string,
+    theme: RenderTheme,
+    sessionTitle: string,
+    testedCommit: string,
+    timestamp: string,
 ): string {
-  return `<!DOCTYPE html>
+    return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -76,7 +76,7 @@ export function standaloneHtml(
     </details>
   </div>
 </body>
-</html>`
+</html>`;
 }
 
 /**
@@ -84,28 +84,35 @@ export function standaloneHtml(
  * page that carries both (HTML). The export is the map's own model, so it says the same things the
  * canvas says.
  */
-export function exportGraph(format: ExportFormat, model: RenderModel, options: ExportOptions): void {
-  const timestamp = options.timestamp ?? new Date().toISOString()
-  const sessionTitle = options.sessionTitle ?? "Session"
-  const testedCommit = options.testedCommit ?? "unknown"
+export function exportGraph(
+    format: ExportFormat,
+    model: RenderModel,
+    options: ExportOptions,
+): void {
+    const timestamp = options.timestamp ?? new Date().toISOString();
+    const sessionTitle = options.sessionTitle ?? 'Session';
+    const testedCommit = options.testedCommit ?? 'unknown';
 
-  if (format === "svg") {
-    const svg = renderToSVG(model, svgOptions(options.theme))
-    download(new Blob([svg], { type: "image/svg+xml" }), `session-map-${timestamp}.svg`)
-    return
-  }
+    if (format === 'svg') {
+        const svg = renderToSVG(model, svgOptions(options.theme));
+        download(new Blob([svg], { type: 'image/svg+xml' }), `session-map-${timestamp}.svg`);
+        return;
+    }
 
-  if (format === "json") {
-    const json = serializeRenderModel(model)
-    download(new Blob([json], { type: "application/json" }), `session-map-${timestamp}.json`)
-    return
-  }
+    if (format === 'json') {
+        const json = serializeRenderModel(model);
+        download(new Blob([json], { type: 'application/json' }), `session-map-${timestamp}.json`);
+        return;
+    }
 
-  const svg = renderToSVG(model, svgOptions(options.theme))
-  const json = serializeRenderModel(model)
+    const svg = renderToSVG(model, svgOptions(options.theme));
+    const json = serializeRenderModel(model);
 
-  download(
-    new Blob([standaloneHtml(svg, json, options.theme, sessionTitle, testedCommit, timestamp)], { type: "text/html" }),
-    `session-map-${timestamp}.html`,
-  )
+    download(
+        new Blob(
+            [standaloneHtml(svg, json, options.theme, sessionTitle, testedCommit, timestamp)],
+            { type: 'text/html' },
+        ),
+        `session-map-${timestamp}.html`,
+    );
 }

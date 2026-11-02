@@ -10,8 +10,8 @@ const MAX_PIXELS_PER_EVENT = 400;
 
 /** The wheel's delta in pixels, whatever unit the browser reported. */
 function wheelPixels(deltaY: number, deltaMode: number): number {
-  const pixels = deltaMode === 1 ? deltaY * 16 : deltaMode === 2 ? deltaY * 400 : deltaY;
-  return Math.max(-MAX_PIXELS_PER_EVENT, Math.min(MAX_PIXELS_PER_EVENT, pixels));
+    const pixels = deltaMode === 1 ? deltaY * 16 : deltaMode === 2 ? deltaY * 400 : deltaY;
+    return Math.max(-MAX_PIXELS_PER_EVENT, Math.min(MAX_PIXELS_PER_EVENT, pixels));
 }
 
 /**
@@ -19,13 +19,15 @@ function wheelPixels(deltaY: number, deltaMode: number): number {
  * points at stays where it is. Scrolling up zooms in.
  */
 export function zoomCameraOnWheel(
-  camera: CameraControls,
-  canvas: { getBoundingClientRect(): { left: number; top: number; width: number; height: number } },
-  event: WheelEventData
+    camera: CameraControls,
+    canvas: {
+        getBoundingClientRect(): { left: number; top: number; width: number; height: number };
+    },
+    event: WheelEventData,
 ): void {
-  const pixels = wheelPixels(event.deltaY, event.deltaMode);
-  if (!pixels) return;
+    const pixels = wheelPixels(event.deltaY, event.deltaMode);
+    if (!pixels) return;
 
-  const ndc = clientToNdc(event.x, event.y, canvas.getBoundingClientRect());
-  camera.zoomAt(ndc, Math.exp(pixels * ZOOM_PER_PIXEL));
+    const ndc = clientToNdc(event.x, event.y, canvas.getBoundingClientRect());
+    camera.zoomAt(ndc, Math.exp(pixels * ZOOM_PER_PIXEL));
 }

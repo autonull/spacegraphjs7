@@ -44,13 +44,13 @@ I've identified the **5 make-or-break factors** that determine success or failur
 | Component                               | Time | Contributes To | Justification                                                         |
 | --------------------------------------- | ---- | -------------- | --------------------------------------------------------------------- |
 | **Day 0: Environment**                  | 1h   | F1             | Catches Node.js version issues before they cause cryptic errors later |
-| **Day 1: Project Setup**                | 4h   | F1, F2         | Correct package.json structure enables pnpm install to work            |
+| **Day 1: Project Setup**                | 4h   | F1, F2         | Correct package.json structure enables pnpm install to work           |
 | **Day 2: SpaceGraph Class**             | 4h   | F1             | Core functionality — without this, nothing renders                    |
 | **Day 3-4: Demo**                       | 6h   | F1, F4         | Proves the library works; status overlay provides visible feedback    |
 | **Day 5: Testing**                      | 3h   | F1             | Catches bugs before users do                                          |
 | **Days 6-7: Buffer**                    | 8h   | F1             | Reality buffer for unexpected bugs                                    |
 | **Days 8-10: Polish**                   | 12h  | F1, F3         | Improves code quality and documentation                               |
-| **Days 11-12: Fresh Install Test**      | 4h   | F2             | Verifies pnpm install works in clean environment                       |
+| **Days 11-12: Fresh Install Test**      | 4h   | F2             | Verifies pnpm install works in clean environment                      |
 | **Days 13-14: QUICKSTART Verification** | 4h   | F3             | Ensures documentation actually works                                  |
 
 **Total Phase A:** 46 hours
@@ -72,7 +72,7 @@ I've identified the **5 make-or-break factors** that determine success or failur
 | Component                               | Time | Contributes To | Justification                        |
 | --------------------------------------- | ---- | -------------- | ------------------------------------ |
 | **Phase 0: Prototype Verification**     | 2h   | F1             | Final check before publishing        |
-| **Phase 1: pnpm Package Prep**           | 2h   | F2             | Ensures package structure is correct |
+| **Phase 1: pnpm Package Prep**          | 2h   | F2             | Ensures package structure is correct |
 | **Phase 2: Documentation Finalization** | 3h   | F3             | README, QUICKSTART must be polished  |
 | **Phase 3: Publish + Announce**         | 2h   | F5             | Makes package discoverable           |
 | **Phase 4: Community Setup**            | 1h   | F5             | Matrix room for support              |
@@ -121,7 +121,7 @@ I've identified the **5 make-or-break factors** that determine success or failur
 | Error Handling           | 1h   | Clear errors instead of silent failures (F1) |
 | Troubleshooting Guide    | 2h   | Self-service debugging (F3)                  |
 | Git Commits              | 1h   | Track progress, easy rollback                |
-| LICENSE/README           | 1h   | Required for pnpm publish (F2)                |
+| LICENSE/README           | 1h   | Required for pnpm publish (F2)               |
 
 **Total Added:** 8 hours
 
@@ -160,7 +160,7 @@ I've identified the **5 make-or-break factors** that determine success or failur
 | Risk                     | Probability | Impact | Mitigation                              |
 | ------------------------ | ----------- | ------ | --------------------------------------- |
 | Code doesn't work        | 30%         | 100%   | Days 3-5 testing, fresh install test    |
-| pnpm install fails        | 20%         | 100%   | Days 11-12 fresh install verification   |
+| pnpm install fails       | 20%         | 100%   | Days 11-12 fresh install verification   |
 | QUICKSTART doesn't work  | 25%         | 80%    | Days 13-14 verification with stranger   |
 | Critical bug post-launch | 15%         | 60%    | Buffer days (6-7), quick hotfix process |
 
@@ -176,7 +176,7 @@ I've identified the **5 make-or-break factors** that determine success or failur
 
 | Risk               | Probability | Impact | Mitigation                     |
 | ------------------ | ----------- | ------ | ------------------------------ |
-| pnpm login issues   | 10%         | 10%    | Test login before publish day  |
+| pnpm login issues  | 10%         | 10%    | Test login before publish day  |
 | Matrix room setup  | 5%          | 5%     | Documented steps, 30 min task  |
 | Article publishing | 10%         | 10%    | Dev.to has no approval process |
 
@@ -202,11 +202,11 @@ Let me verify each success factor is adequately covered:
 
 ### F2: Easy Installation (20% weight)
 
-| Plan Component                 | Contribution               |
-| ------------------------------ | -------------------------- |
+| Plan Component                 | Contribution                |
+| ------------------------------ | --------------------------- |
 | Day 1: package.json            | Correct structure for pnpm  |
 | Days 11-12: Fresh install test | Verifies pnpm install works |
-| PACKAGE-TEMPLATE.md            | Copy-paste config          |
+| PACKAGE-TEMPLATE.md            | Copy-paste config           |
 
 **Coverage:** ✅ **COMPLETE.** Installation verified in clean environment.
 
@@ -314,7 +314,7 @@ Day 17: ✓ Launch article published, Matrix room created
 | -------------------------- | ----------- | ------------------------------ |
 | Three.js API changes       | Low         | Version pinning (^0.160.0)     |
 | Browser compatibility      | Medium      | Test in Chrome, Firefox        |
-| ppnpm package name taken     | Low         | Verify before Day 1            |
+| ppnpm package name taken   | Low         | Verify before Day 1            |
 | User expects more features | Medium      | Clear README about alpha scope |
 | No adoption despite launch | Medium      | Content marketing in Month 2   |
 

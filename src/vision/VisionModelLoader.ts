@@ -4,55 +4,55 @@ import { createLogger } from '../utils/logger';
 const logger = createLogger('VisionModelLoader');
 
 export interface ModelLoadResult {
-  success: boolean;
-  modelKey: string;
-  error?: string;
+    success: boolean;
+    modelKey: string;
+    error?: string;
 }
 
 export class VisionModelLoader {
-  readonly sessions: Map<string, InferenceSession> = new Map();
-  readonly executionProviders: string[];
+    readonly sessions: Map<string, InferenceSession> = new Map();
+    readonly executionProviders: string[];
 
-  constructor(executionProviders: string[] = ['wasm']) {
-    this.executionProviders = executionProviders;
-  }
-
-  public get isLoaded(): boolean {
-    return this.sessions.size > 0;
-  }
-
-  static async configureWasmPaths(wasmPaths: string): Promise<void> {
-    const { env } = await import('onnxruntime-web');
-    env.wasm.wasmPaths = wasmPaths;
-  }
-
-  public getSession(key: string): InferenceSession | undefined {
-    return this.sessions.get(key);
-  }
-
-  public getAvailableModels(): string[] {
-    return Array.from(this.sessions.keys());
-  }
-
-  async loadModels(modelPaths: Record<string, string>): Promise<ModelLoadResult[]> {
-    const { InferenceSession } = await import('onnxruntime-web');
-    const results: ModelLoadResult[] = [];
-
-    for (const [key, path] of Object.entries(modelPaths)) {
-      try {
-        const session = await InferenceSession.create(path, {
-          executionProviders: this.executionProviders,
-        });
-        this.sessions.set(key, session);
-        results.push({ success: true, modelKey: key });
-        logger.info('Loaded ONNX model %s from %s', key, path);
-      } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        results.push({ success: false, modelKey: key, error: message });
-        logger.error('Failed to load ONNX model %s: %s', key, message);
-      }
+    constructor(executionProviders: string[] = ['wasm']) {
+        this.executionProviders = executionProviders;
     }
 
-    return results;
-  }
+    public get isLoaded(): boolean {
+        return this.sessions.size > 0;
+    }
+
+    static async configureWasmPaths(wasmPaths: string): Promise<void> {
+        const { env } = await import('onnxruntime-web');
+        env.wasm.wasmPaths = wasmPaths;
+    }
+
+    public getSession(key: string): InferenceSession | undefined {
+        return this.sessions.get(key);
+    }
+
+    public getAvailableModels(): string[] {
+        return Array.from(this.sessions.keys());
+    }
+
+    async loadModels(modelPaths: Record<string, string>): Promise<ModelLoadResult[]> {
+        const { InferenceSession } = await import('onnxruntime-web');
+        const results: ModelLoadResult[] = [];
+
+        for (const [key, path] of Object.entries(modelPaths)) {
+            try {
+                const session = await InferenceSession.create(path, {
+                    executionProviders: this.executionProviders,
+                });
+                this.sessions.set(key, session);
+                results.push({ success: true, modelKey: key });
+                logger.info('Loaded ONNX model %s from %s', key, path);
+            } catch (err) {
+                const message = err instanceof Error ? err.message : String(err);
+                results.push({ success: false, modelKey: key, error: message });
+                logger.error('Failed to load ONNX model %s: %s', key, message);
+            }
+        }
+
+        return results;
+    }
 }

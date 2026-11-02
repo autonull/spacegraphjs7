@@ -4,59 +4,60 @@ import { DOMUtils } from '../utils/DOMUtils';
 import { HtmlNode } from './HtmlNode';
 
 export class ScrollPanelNode extends HtmlNode {
-  static readonly typeName: string = 'ScrollPanelNode';
-  private scrollContent: HTMLElement | null = null;
+    static readonly typeName: string = 'ScrollPanelNode';
+    private scrollContent: HTMLElement | null = null;
 
-  constructor(sg: SpaceGraph | undefined, spec: NodeSpec) {
-    super(sg, spec);
-    this._setupScrollPanel();
-  }
-
-  scrollTo(x: number, y: number, animate = true): void {
-    if (!this.scrollContent) return;
-    if (animate) {
-      this.scrollContent.scrollTo({ top: y, left: x, behavior: 'smooth' });
-    } else {
-      this.scrollContent.scrollTop = y;
-      this.scrollContent.scrollLeft = x;
+    constructor(sg: SpaceGraph | undefined, spec: NodeSpec) {
+        super(sg, spec);
+        this._setupScrollPanel();
     }
-  }
 
-  scrollToElement(element: HTMLElement, animate = true): void {
-    if (!this.scrollContent || !element) return;
-    element.scrollIntoView({
-      behavior: animate ? 'smooth' : 'auto',
-      block: 'start',
-      inline: 'start',
-    });
-  }
+    scrollTo(x: number, y: number, animate = true): void {
+        if (!this.scrollContent) return;
+        if (animate) {
+            this.scrollContent.scrollTo({ top: y, left: x, behavior: 'smooth' });
+        } else {
+            this.scrollContent.scrollTop = y;
+            this.scrollContent.scrollLeft = x;
+        }
+    }
 
-  getScrollPosition(): { x: number; y: number } {
-    return {
-      x: this.scrollContent?.scrollLeft ?? 0,
-      y: this.scrollContent?.scrollTop ?? 0,
-    };
-  }
+    scrollToElement(element: HTMLElement, animate = true): void {
+        if (!this.scrollContent || !element) return;
+        element.scrollIntoView({
+            behavior: animate ? 'smooth' : 'auto',
+            block: 'start',
+            inline: 'start',
+        });
+    }
 
-  private _setupScrollPanel(): void {
-    const data = this.data as SpaceGraphNodeData;
-    const direction = (data?.scrollDirection as 'vertical' | 'horizontal' | 'both') ?? 'vertical';
-    this.domElement.style.overflow = 'auto';
-    this._createScrollContent(direction);
-  }
+    getScrollPosition(): { x: number; y: number } {
+        return {
+            x: this.scrollContent?.scrollLeft ?? 0,
+            y: this.scrollContent?.scrollTop ?? 0,
+        };
+    }
 
-  private _createScrollContent(direction: 'vertical' | 'horizontal' | 'both'): void {
-    const overflow = direction === 'both' ? 'auto' : direction;
-    this.scrollContent = DOMUtils.createElement('div');
-    Object.assign(this.scrollContent.style, {
-      position: 'absolute',
-      top: '0',
-      left: '0',
-      right: '0',
-      bottom: '0',
-      overflow,
-      padding: '8px',
-    });
-    this.domElement.appendChild(this.scrollContent);
-  }
+    private _setupScrollPanel(): void {
+        const data = this.data as SpaceGraphNodeData;
+        const direction =
+            (data?.scrollDirection as 'vertical' | 'horizontal' | 'both') ?? 'vertical';
+        this.domElement.style.overflow = 'auto';
+        this._createScrollContent(direction);
+    }
+
+    private _createScrollContent(direction: 'vertical' | 'horizontal' | 'both'): void {
+        const overflow = direction === 'both' ? 'auto' : direction;
+        this.scrollContent = DOMUtils.createElement('div');
+        Object.assign(this.scrollContent.style, {
+            position: 'absolute',
+            top: '0',
+            left: '0',
+            right: '0',
+            bottom: '0',
+            overflow,
+            padding: '8px',
+        });
+        this.domElement.appendChild(this.scrollContent);
+    }
 }

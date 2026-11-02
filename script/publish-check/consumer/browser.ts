@@ -7,30 +7,30 @@ import { CytoscapeRenderer } from '@spacegraphjs/cytoscape-renderer';
 import { MODEL } from './check';
 
 declare global {
-  interface Window {
-    __result?: { spacegraph: boolean; cytoscape: boolean; error?: string }
-  }
+    interface Window {
+        __result?: { spacegraph: boolean; cytoscape: boolean; error?: string };
+    }
 }
 
 const report = async () => {
-  const result = { spacegraph: false, cytoscape: false }
-  try {
-    const spacegraph = new SpaceGraphRenderer()
-    const spacegraphContainer = document.querySelector('#spacegraph') as HTMLElement
-    await spacegraph.mount(spacegraphContainer, { theme: DEFAULT_THEME, projection: '2d' })
-    spacegraph.setModel(MODEL)
-    spacegraph.fit()
-    result.spacegraph = Boolean(spacegraphContainer.querySelector('canvas'))
+    const result = { spacegraph: false, cytoscape: false };
+    try {
+        const spacegraph = new SpaceGraphRenderer();
+        const spacegraphContainer = document.querySelector('#spacegraph') as HTMLElement;
+        await spacegraph.mount(spacegraphContainer, { theme: DEFAULT_THEME, projection: '2d' });
+        spacegraph.setModel(MODEL);
+        spacegraph.fit();
+        result.spacegraph = Boolean(spacegraphContainer.querySelector('canvas'));
 
-    const cytoscape = new CytoscapeRenderer()
-    const cytoscapeContainer = document.querySelector('#cytoscape') as HTMLElement
-    await cytoscape.mount(cytoscapeContainer, { theme: DEFAULT_THEME, projection: '2d' })
-    cytoscape.setModel(MODEL)
-    result.cytoscape = Boolean(cytoscapeContainer.querySelector('canvas'))
-  } catch (error) {
-    result.error = error instanceof Error ? error.message : String(error)
-  }
-  window.__result = result
-}
+        const cytoscape = new CytoscapeRenderer();
+        const cytoscapeContainer = document.querySelector('#cytoscape') as HTMLElement;
+        await cytoscape.mount(cytoscapeContainer, { theme: DEFAULT_THEME, projection: '2d' });
+        cytoscape.setModel(MODEL);
+        result.cytoscape = Boolean(cytoscapeContainer.querySelector('canvas'));
+    } catch (error) {
+        result.error = error instanceof Error ? error.message : String(error);
+    }
+    window.__result = result;
+};
 
-report()
+report();

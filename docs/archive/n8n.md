@@ -51,7 +51,7 @@
 ### Key Architectural Decisions
 
 | Decision                                             | Rationale                                                                               |
-|------------------------------------------------------|-----------------------------------------------------------------------------------------|
+| ---------------------------------------------------- | --------------------------------------------------------------------------------------- |
 | `pnpm install n8n` — no fork                         | Preserves upstream upgradability; overrides via env + prototype patches only            |
 | **n8n used as a library, never as a server**         | We call `Workflow`, `ExecutionService`, etc. directly; zero n8n UI, zero auth           |
 | Anti-tethering bootstrap runs before all n8n imports | Env vars + prototype no-ops kill telemetry, user-management, license SDK at import time |
@@ -229,14 +229,18 @@ const executionService = new ExecutionService();
 // WebSocket relay: execution events → browser
 const wss = new WebSocketServer({ port: 5679 });
 executionService.on('workflowExecuteAfter', (data) => {
-  broadcast(wss, { type: 'execution:complete', data });
+    broadcast(wss, { type: 'execution:complete', data });
 });
 
 // Run a workflow programmatically
 export async function runWorkflow(workflowData: IWorkflowBase) {
-  const workflow = new Workflow({ nodes: workflowData.nodes, connections: workflowData.connections,
-    active: false, nodeTypes });
-  return executionService.run(workflow);
+    const workflow = new Workflow({
+        nodes: workflowData.nodes,
+        connections: workflowData.connections,
+        active: false,
+        nodeTypes,
+    });
+    return executionService.run(workflow);
 }
 ```
 
@@ -276,7 +280,7 @@ Browser (SpaceGraph)          n8n Bridge Server          n8n Engine
 See [§10 Node & Edge Type Mapping](#10-node--edge-type-mapping) for the full table. The high-level rule:
 
 | n8n Node Category       | SpaceGraph Node Type                        | Rationale                           |
-|-------------------------|---------------------------------------------|-------------------------------------|
+| ----------------------- | ------------------------------------------- | ----------------------------------- |
 | Trigger (Webhook, Cron) | `N8nTriggerNode` (new, extends `ShapeNode`) | Distinct visual (portal/clock icon) |
 | AI / LLM                | `N8nAiNode` (new, extends `HtmlNode`)       | Needs embedded prompt textarea      |
 | Data Transform          | `DataNode` (existing)                       | Pure data pass-through node         |
@@ -289,7 +293,7 @@ See [§10 Node & Edge Type Mapping](#10-node--edge-type-mapping) for the full ta
 ### 4.2 Edge Rendering
 
 | n8n Connection Type                | SpaceGraph Edge Type         | Visual Treatment                 |
-|------------------------------------|------------------------------|----------------------------------|
+| ---------------------------------- | ---------------------------- | -------------------------------- |
 | Normal data flow                   | `FlowEdge`                   | Animated data pulse particles    |
 | Conditional branch (IF true/false) | `CurvedEdge` with color tint | Green/red color coding           |
 | Optional / fallback                | `DottedEdge`                 | Dashed line                      |
@@ -305,9 +309,9 @@ toolbar.
 ```typescript
 // In WorkflowMapper.toGraphSpec()
 const spec: GraphSpec = {
-  nodes: mappedNodes,
-  edges: mappedEdges,
-  layout: { type: 'HierarchicalLayout', direction: 'LR' },
+    nodes: mappedNodes,
+    edges: mappedEdges,
+    layout: { type: 'HierarchicalLayout', direction: 'LR' },
 };
 ```
 
@@ -317,24 +321,26 @@ Registers as a standard SpaceGraph plugin so it participates in the existing `Pl
 
 ```typescript
 export class N8nWorkflowPlugin implements SpaceGraphPlugin {
-  name = 'N8nWorkflowPlugin';
-  private bridge: N8nBridge;
+    name = 'N8nWorkflowPlugin';
+    private bridge: N8nBridge;
 
-  init(sg: SpaceGraph): void {
-    this.bridge = new N8nBridge(sg);
-    sg.pluginManager.registerNodeType('N8nTriggerNode', N8nTriggerNode);
-    sg.pluginManager.registerNodeType('N8nAiNode', N8nAiNode);
-    sg.pluginManager.registerNodeType('N8nHttpNode', N8nHttpNode);
-    sg.pluginManager.registerNodeType('N8nCodeNode', N8nCodeNode);
-    // ... register remaining n8n node types
-  }
+    init(sg: SpaceGraph): void {
+        this.bridge = new N8nBridge(sg);
+        sg.pluginManager.registerNodeType('N8nTriggerNode', N8nTriggerNode);
+        sg.pluginManager.registerNodeType('N8nAiNode', N8nAiNode);
+        sg.pluginManager.registerNodeType('N8nHttpNode', N8nHttpNode);
+        sg.pluginManager.registerNodeType('N8nCodeNode', N8nCodeNode);
+        // ... register remaining n8n node types
+    }
 
-  update(_delta: number): void {
-    // Animate execution-in-progress nodes (pulse, rotate)
-    this.bridge.executionState.subscribe(state => this.applyExecutionVisuals(state));
-  }
+    update(_delta: number): void {
+        // Animate execution-in-progress nodes (pulse, rotate)
+        this.bridge.executionState.subscribe((state) => this.applyExecutionVisuals(state));
+    }
 
-  dispose(): void { this.bridge.dispose(); }
+    dispose(): void {
+        this.bridge.dispose();
+    }
 }
 ```
 
@@ -350,7 +356,7 @@ Each n8n node transitions through execution states; SpaceGraph maps these to vis
 SpaceGraph node:
 
 | n8n Execution State | SpaceGraph Visual                                         |
-|---------------------|-----------------------------------------------------------|
+| ------------------- | --------------------------------------------------------- |
 | `waiting`           | Node slightly dimmed, opacity 0.6                         |
 | `running`           | GSAP pulse animation + blue glow via `AutoColorPlugin`    |
 | `success`           | Flash green → settle to teal accent                       |
@@ -503,19 +509,22 @@ Implement `N8nVisionHealer` class:
 
 ```typescript
 export class N8nVisionHealer {
-  constructor(private bridge: N8nBridge, private vision: VisionManager) {}
+    constructor(
+        private bridge: N8nBridge,
+        private vision: VisionManager,
+    ) {}
 
-  async healLayout(workflowId: string): Promise<VisionReport> {
-    const report = await this.vision.analyzeVision();
-    if (report.layoutScore < 70) {
-      await this.bridge.sg.pluginManager.get('ForceLayout').run();
-      return this.vision.analyzeVision();  // re-score
+    async healLayout(workflowId: string): Promise<VisionReport> {
+        const report = await this.vision.analyzeVision();
+        if (report.layoutScore < 70) {
+            await this.bridge.sg.pluginManager.get('ForceLayout').run();
+            return this.vision.analyzeVision(); // re-score
+        }
+        if (report.overlap.overlaps.length > 0) {
+            await this.bridge.sg.pluginManager.get('ErgonomicsPlugin').fixOverlaps();
+        }
+        return report;
     }
-    if (report.overlap.overlaps.length > 0) {
-      await this.bridge.sg.pluginManager.get('ErgonomicsPlugin').fixOverlaps();
-    }
-    return report;
-  }
 }
 ```
 
@@ -620,13 +629,13 @@ Extend the bridge server to expose n8n execution state as OS-level process entri
 ```typescript
 // Bridge server extension
 n8nApp.executionService.on('workflowExecuteAfter', (data) => {
-  osProcessGraph.update({
-    pid: data.executionId,
-    name: data.workflowName,
-    status: data.status,
-    cpu: data.metrics.cpuUsage,
-    memory: data.metrics.memUsage,
-  });
+    osProcessGraph.update({
+        pid: data.executionId,
+        name: data.workflowName,
+        status: data.status,
+        cpu: data.metrics.cpuUsage,
+        memory: data.metrics.memUsage,
+    });
 });
 ```
 
@@ -647,7 +656,7 @@ When running on RK3588:
 ### n8n Node → SpaceGraph Node Type
 
 | n8n Node Type               | SpaceGraph Type          | New?   | Notes                                     |
-|-----------------------------|--------------------------|--------|-------------------------------------------|
+| --------------------------- | ------------------------ | ------ | ----------------------------------------- |
 | Webhook                     | `N8nTriggerNode`         | ✅ New | Portal visual, live traffic counter       |
 | Schedule/Cron               | `N8nScheduleNode`        | ✅ New | Orbiting animation, countdown             |
 | HTTP Request                | `N8nHttpNode`            | ✅ New | URL bar + mini response preview           |
@@ -667,7 +676,7 @@ When running on RK3588:
 ### n8n Connection → SpaceGraph Edge Type
 
 | n8n Connection       | SpaceGraph Edge Type   | Visual Behavior                               |
-|----------------------|------------------------|-----------------------------------------------|
+| -------------------- | ---------------------- | --------------------------------------------- |
 | Normal data flow     | `FlowEdge`             | Animated particles proportional to throughput |
 | IF true branch       | `CurvedEdge`           | Green tint                                    |
 | IF false branch      | `CurvedEdge`           | Red tint                                      |
@@ -805,7 +814,7 @@ spacegraph7/
 ## 14. Performance Targets & Constraints
 
 | Metric                   | Target                      | Strategy                                                          |
-|--------------------------|-----------------------------|-------------------------------------------------------------------|
+| ------------------------ | --------------------------- | ----------------------------------------------------------------- |
 | FPS at 1,000 n8n nodes   | ≥ 60 FPS                    | `CullingManager` + LODPlugin; virtualize off-screen nodes         |
 | Browser bundle size      | < 200 KB                    | Externalize n8n server modules; lazy-import Monaco                |
 | Vision analysis latency  | < 200ms (CPU), < 50ms (NPU) | Existing ONNX pipeline; RK3588 NPU path for OS deployment         |
@@ -823,7 +832,7 @@ spacegraph7/
 Extend existing test suite (`test/`) with:
 
 | Test                                  | Coverage                                           |
-|---------------------------------------|----------------------------------------------------|
+| ------------------------------------- | -------------------------------------------------- |
 | `WorkflowMapper.toGraphSpec()`        | Round-trip fidelity for all n8n node types         |
 | `N8nBridge.pushNodePositionUpdate()`  | WS message format correctness                      |
 | `N8nVisionHealer.healLayout()`        | Mock vision scores → correct layout plugin invoked |
@@ -835,15 +844,15 @@ Extend `test/vision.spec.ts`:
 
 ```typescript
 test('n8n workflow renders without overlaps', async ({ page }) => {
-  await page.goto('/demo/n8n-workflow.html');
-  const vision = createVisionAssert(page);
-  await vision.noOverlap();
-  await vision.isLegible();
-  await vision.expectedLayoutScore(70);
+    await page.goto('/demo/n8n-workflow.html');
+    const vision = createVisionAssert(page);
+    await vision.noOverlap();
+    await vision.isLegible();
+    await vision.expectedLayoutScore(70);
 });
 
 test('execution state changes node colors correctly', async ({ page }) => {
-  // Trigger mock execution, assert node color change
+    // Trigger mock execution, assert node color change
 });
 ```
 
@@ -929,7 +938,7 @@ Phase 0 (Bridge)
 ### 17.1 Why "Library Mode" and Not the Full Server
 
 | Full `N8n.start()` (what we avoid)        | Library mode (what we do)                        |
-|-------------------------------------------|--------------------------------------------------|
+| ----------------------------------------- | ------------------------------------------------ |
 | Boots HTTP server on 5678                 | No HTTP server; execution is in-process          |
 | Demands owner account setup               | No user model at all                             |
 | Fires telemetry/diagnostics on startup    | Killed at env-set time before any import         |
@@ -955,37 +964,37 @@ import fs from 'node:fs';
 
 // ── 1. Environment vars ──────────────────────────────────────
 const killSwitches: Record<string, string> = {
-  // Headless / library mode
-  N8N_UI_DISABLED:                         'true',
-  EXECUTIONS_MODE:                         'regular',
+    // Headless / library mode
+    N8N_UI_DISABLED: 'true',
+    EXECUTIONS_MODE: 'regular',
 
-  // Auth / user management
-  N8N_USER_MANAGEMENT_DISABLED:            'true',
-  N8N_BASIC_AUTH_ACTIVE:                   'false',
-  N8N_JWT_AUTH_ACTIVE:                     'false',
-  N8N_SKIP_WEBHOOK_DEREGISTRATION_SHUTDOWN:'true',
+    // Auth / user management
+    N8N_USER_MANAGEMENT_DISABLED: 'true',
+    N8N_BASIC_AUTH_ACTIVE: 'false',
+    N8N_JWT_AUTH_ACTIVE: 'false',
+    N8N_SKIP_WEBHOOK_DEREGISTRATION_SHUTDOWN: 'true',
 
-  // Telemetry & diagnostics
-  N8N_DIAGNOSTICS_ENABLED:                 'false',
-  N8N_VERSION_NOTIFICATIONS_ENABLED:       'false',
-  N8N_TEMPLATES_ENABLED:                   'false',
-  EXTERNAL_FRONTEND_HOOKS_URLS:            '',
-  N8N_DIAGNOSTICS_CONFIG_FRONTEND:         '',
-  N8N_DIAGNOSTICS_CONFIG_BACKEND:          '',
+    // Telemetry & diagnostics
+    N8N_DIAGNOSTICS_ENABLED: 'false',
+    N8N_VERSION_NOTIFICATIONS_ENABLED: 'false',
+    N8N_TEMPLATES_ENABLED: 'false',
+    EXTERNAL_FRONTEND_HOOKS_URLS: '',
+    N8N_DIAGNOSTICS_CONFIG_FRONTEND: '',
+    N8N_DIAGNOSTICS_CONFIG_BACKEND: '',
 
-  // License SDK noise
-  N8N_LOG_LEVEL:                           'warn',
+    // License SDK noise
+    N8N_LOG_LEVEL: 'warn',
 
-  // Sandbox safety
-  N8N_BLOCK_ENV_ACCESS_IN_NODE:            'true',
+    // Sandbox safety
+    N8N_BLOCK_ENV_ACCESS_IN_NODE: 'true',
 
-  // Temp DB — no persisted user state
-  DB_TYPE:                                 'sqlite',
-  DB_SQLITE_DATABASE:                      '/tmp/spacegraph-n8n.sqlite',
+    // Temp DB — no persisted user state
+    DB_TYPE: 'sqlite',
+    DB_SQLITE_DATABASE: '/tmp/spacegraph-n8n.sqlite',
 };
 
 for (const [k, v] of Object.entries(killSwitches)) {
-  process.env[k] = v;
+    process.env[k] = v;
 }
 
 // ── 2. Wipe stale SQLite (no owner row leaks) ────────────────
@@ -996,27 +1005,37 @@ fs.rmSync('/tmp/spacegraph-n8n.sqlite', { force: true });
 // patches cover the cases where services ignore env at runtime.
 
 // Patch DiagnosticsService — no-op all event sends
-import('n8n-core').then(({ DiagnosticsService }) => {
-  if (DiagnosticsService?.prototype?.sendEvent) {
-    DiagnosticsService.prototype.sendEvent = () => {};
-    DiagnosticsService.prototype.init      = async () => {};
-  }
-}).catch(() => { /* module path varies by n8n version — safe to ignore */ });
+import('n8n-core')
+    .then(({ DiagnosticsService }) => {
+        if (DiagnosticsService?.prototype?.sendEvent) {
+            DiagnosticsService.prototype.sendEvent = () => {};
+            DiagnosticsService.prototype.init = async () => {};
+        }
+    })
+    .catch(() => {
+        /* module path varies by n8n version — safe to ignore */
+    });
 
 // Patch license SDK — no-op init & renewal
-import('@n8n_io/license-sdk').then(({ LicenseManager }) => {
-  if (LicenseManager?.prototype) {
-    LicenseManager.prototype.init  = async () => {};
-    LicenseManager.prototype.renew = async () => {};
-  }
-}).catch(() => { /* community build may not ship this package */ });
+import('@n8n_io/license-sdk')
+    .then(({ LicenseManager }) => {
+        if (LicenseManager?.prototype) {
+            LicenseManager.prototype.init = async () => {};
+            LicenseManager.prototype.renew = async () => {};
+        }
+    })
+    .catch(() => {
+        /* community build may not ship this package */
+    });
 
 // Patch UserManagementService if it loads anyway
-import('n8n-core').then(({ UserManagementService }) => {
-  if (UserManagementService?.prototype?.isOwnerSetupCompleted) {
-    UserManagementService.prototype.isOwnerSetupCompleted = async () => true;
-  }
-}).catch(() => {});
+import('n8n-core')
+    .then(({ UserManagementService }) => {
+        if (UserManagementService?.prototype?.isOwnerSetupCompleted) {
+            UserManagementService.prototype.isOwnerSetupCompleted = async () => true;
+        }
+    })
+    .catch(() => {});
 ```
 
 > **Node.js note**: Dynamic `import()` inside `bootstrap.ts` runs after static module initialisation; sync env-var
@@ -1027,7 +1046,7 @@ import('n8n-core').then(({ UserManagementService }) => {
 
 ```typescript
 // packages/n8n-bridge/server/index.ts
-import './bootstrap';                      // ← MUST be first
+import './bootstrap'; // ← MUST be first
 
 import { Workflow, ExecutionService, WorkflowDataProxy } from 'n8n-core';
 import { LoadNodeDetailsFromDisk } from 'n8n-core';
@@ -1035,26 +1054,26 @@ import type { IWorkflowBase } from 'n8n-workflow';
 
 // Register only the node types used by SpaceGraph workflows
 const nodeTypes = await LoadNodeDetailsFromDisk([
-  'n8n-nodes-base.httpRequest',
-  'n8n-nodes-base.code',
-  'n8n-nodes-base.set',
-  'n8n-nodes-base.if',
-  '@n8n/n8n-nodes-langchain.agent',
-  // ...add as needed
+    'n8n-nodes-base.httpRequest',
+    'n8n-nodes-base.code',
+    'n8n-nodes-base.set',
+    'n8n-nodes-base.if',
+    '@n8n/n8n-nodes-langchain.agent',
+    // ...add as needed
 ]);
 
 const executionService = new ExecutionService();
 
 export async function runWorkflow(workflowData: IWorkflowBase): Promise<string> {
-  const workflow = new Workflow({
-    id:          workflowData.id ?? 'sg-ephemeral',
-    nodes:       workflowData.nodes,
-    connections: workflowData.connections,
-    active:      false,
-    nodeTypes,
-  });
-  const result = await executionService.run(workflow, { mode: 'manual' });
-  return result.executionId;
+    const workflow = new Workflow({
+        id: workflowData.id ?? 'sg-ephemeral',
+        nodes: workflowData.nodes,
+        connections: workflowData.connections,
+        active: false,
+        nodeTypes,
+    });
+    const result = await executionService.run(workflow, { mode: 'manual' });
+    return result.executionId;
 }
 ```
 
@@ -1068,18 +1087,18 @@ import { In } from 'typeorm';
 
 // Store a credential directly (no REST API call, no user ID)
 async function saveCredential(name: string, type: string, data: Record<string, string>) {
-  const cred = new CredentialsEntity();
-  cred.name = name;
-  cred.type = type;
-  cred.data = JSON.stringify(data);  // encrypt via n8n's built-in cipher if available
-  await cred.save();
+    const cred = new CredentialsEntity();
+    cred.name = name;
+    cred.type = type;
+    cred.data = JSON.stringify(data); // encrypt via n8n's built-in cipher if available
+    await cred.save();
 }
 
 // Attach credential to a node parameter at workflow construction time
-workflowData.nodes.forEach(node => {
-  if (node.credentials?.httpBasicAuth) {
-    node.credentials.httpBasicAuth = { id: savedCredId, name };
-  }
+workflowData.nodes.forEach((node) => {
+    if (node.credentials?.httpBasicAuth) {
+        node.credentials.httpBasicAuth = { id: savedCredId, name };
+    }
 });
 ```
 
@@ -1093,8 +1112,9 @@ processes (dev server hot-reload), add a hook:
 
 ```typescript
 // bridge server — hot-reload safety
-process.on('SIGUSR2', () => {          // nodemon sends SIGUSR2 on restart
-  fs.rmSync('/tmp/spacegraph-n8n.sqlite', { force: true });
+process.on('SIGUSR2', () => {
+    // nodemon sends SIGUSR2 on restart
+    fs.rmSync('/tmp/spacegraph-n8n.sqlite', { force: true });
 });
 ```
 
@@ -1115,7 +1135,7 @@ echo "0.0.0.0 license.n8n.io"   >> /etc/hosts
 ### 17.7 Feasibility & Upgrade Notes
 
 | Concern                    | Assessment                                                                                                                   |
-|----------------------------|------------------------------------------------------------------------------------------------------------------------------|
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
 | **Effort**                 | Core bootstrap + direct import wiring: ~1–2 days. Prototype patches: a few hours, test against target n8n version.           |
 | **Stability**              | Works against n8n ≥1.30 (tested pattern). Pin `"n8n": "~1.X.0"` in package.json; review changelog on minor bumps.            |
 | **Fair-source compliance** | n8n is [fair-source licensed](https://fairsource.dev/). Personal/internal use with no redistribution: unambiguously fine.    |
@@ -1129,7 +1149,7 @@ echo "0.0.0.0 license.n8n.io"   >> /etc/hosts
 Key existing SpaceGraphJS APIs consumed by this integration:
 
 | API                                         | Location                             | Usage                                |
-|---------------------------------------------|--------------------------------------|--------------------------------------|
+| ------------------------------------------- | ------------------------------------ | ------------------------------------ |
 | `SpaceGraph.create(container, spec)`        | `src/SpaceGraph.ts:94`               | Entry point for rendering a workflow |
 | `graph.addNode(nodeSpec)`                   | `src/core/Graph.ts`                  | Add n8n node to canvas               |
 | `graph.updateNode(id, patch)`               | `src/core/Graph.ts`                  | Update execution state colors        |
@@ -1148,7 +1168,7 @@ Key existing SpaceGraphJS APIs consumed by this integration:
 ## Appendix B: Open Questions & Risks
 
 | Risk                                                     | Mitigation                                                                                         |
-|----------------------------------------------------------|----------------------------------------------------------------------------------------------------|
+| -------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
 | n8n's ESM/CJS compatibility in Vite                      | Vite aliases + `build.rollupOptions.external` for server-side modules                              |
 | Monaco editor bundle size (>4MB)                         | Dynamic import; only loaded when user zooms into a Code node                                       |
 | n8n API versioning breaking bridge                       | Pin n8n version in `package.json`; abstract behind typed bridge interface                          |

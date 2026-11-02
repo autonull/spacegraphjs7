@@ -5,7 +5,9 @@ let opener: HTMLButtonElement;
 let dialog: HTMLDivElement;
 
 const press = (element: Element, key: string, shiftKey = false) =>
-    element.dispatchEvent(new KeyboardEvent('keydown', { key, shiftKey, bubbles: true, cancelable: true }));
+    element.dispatchEvent(
+        new KeyboardEvent('keydown', { key, shiftKey, bubbles: true, cancelable: true }),
+    );
 
 beforeEach(() => {
     opener = document.createElement('button');

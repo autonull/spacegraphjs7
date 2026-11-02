@@ -1,31 +1,34 @@
-import type { RendererViewport, RenderTheme, Position } from "@spacegraphjs/shared"
-import type { GraphViewData, GraphNode } from "@spacegraphjs/shared"
-import { Navigation } from "@spacegraphjs/shared"
-import { createMemo, For, Show, createSignal } from "solid-js"
+import type { RendererViewport, RenderTheme, Position } from '@spacegraphjs/shared';
+import type { GraphViewData, GraphNode } from '@spacegraphjs/shared';
+import { Navigation } from '@spacegraphjs/shared';
+import { createMemo, For, Show, createSignal } from 'solid-js';
 
-const BOX_W = 176
-const BOX_H = 132
-const PAD = 8
-const DOT_R = 2.5
+const BOX_W = 176;
+const BOX_H = 132;
+const PAD = 8;
+const DOT_R = 2.5;
 
 /** The minimap's footprint on the canvas, in CSS pixels. The frame keeps the content clear of it. */
-export const MINIMAP_SIZE = { width: BOX_W, height: BOX_H } as const
+export const MINIMAP_SIZE = { width: BOX_W, height: BOX_H } as const;
 /** The gap between the minimap and the canvas edges (`bottom-2 end-2`). */
-export const MINIMAP_GAP = 8
+export const MINIMAP_GAP = 8;
 
 export type GraphMinimapProps = {
-  model: GraphViewData
-  positions: ReadonlyMap<string, Position>
-  theme: RenderTheme
-  /** Latest viewport report from the active renderer; drives the view rectangle. */
-  viewport?: RendererViewport
-  /** Pan the main camera so `center` (graph x/y) is the viewport centre. */
-  onPan: (center: [number, number]) => void
-  /** i18n functions for localized strings. */
-  i18n?: { t: (key: string) => string; plural: (key: string, count: number, params?: Record<string, string>) => string }
-  /** ARIA label for the minimap. */
-  ariaLabel?: string
-}
+    model: GraphViewData;
+    positions: ReadonlyMap<string, Position>;
+    theme: RenderTheme;
+    /** Latest viewport report from the active renderer; drives the view rectangle. */
+    viewport?: RendererViewport;
+    /** Pan the main camera so `center` (graph x/y) is the viewport centre. */
+    onPan: (center: [number, number]) => void;
+    /** i18n functions for localized strings. */
+    i18n?: {
+        t: (key: string) => string;
+        plural: (key: string, count: number, params?: Record<string, string>) => string;
+    };
+    /** ARIA label for the minimap. */
+    ariaLabel?: string;
+};
 
 /**
  * A renderer-agnostic SVG overview fed by the same layout positions as the canvas. It reads
@@ -36,104 +39,120 @@ export type GraphMinimapProps = {
  * colours, and the pointer handling.
  */
 export const GraphMinimap = (props: GraphMinimapProps) => {
-  const i18n = props.i18n ?? { t: (k: string) => k, plural: (k: string, _c: number, p?: Record<string, string>) => p ? k.replace(/\{(\w+)\}/g, (_m, key) => p[key] ?? "") : k }
-  const ariaLabel = props.ariaLabel ?? i18n.t("ui.sessionGraph.minimap.label")
-  const [dragging, setDragging] = createSignal(false)
+    const i18n = props.i18n ?? {
+        t: (k: string) => k,
+        plural: (k: string, _c: number, p?: Record<string, string>) =>
+            p ? k.replace(/\{(\w+)\}/g, (_m, key) => p[key] ?? '') : k,
+    };
+    const ariaLabel = props.ariaLabel ?? i18n.t('ui.sessionGraph.minimap.label');
+    const [dragging, setDragging] = createSignal(false);
 
-  const placed = createMemo(() =>
-    props.model.nodes
-      .map((node) => ({ node, position: props.positions.get(node.id) }))
-      .filter((entry): entry is { node: GraphNode; position: Position } => entry.position !== undefined),
-  )
+    const placed = createMemo(() =>
+        props.model.nodes
+            .map((node) => ({ node, position: props.positions.get(node.id) }))
+            .filter(
+                (entry): entry is { node: GraphNode; position: Position } =>
+                    entry.position !== undefined,
+            ),
+    );
 
-  const projection = createMemo(() =>
-    Navigation.project({
-      positions: new Map(placed().map((entry) => [entry.node.id, entry.position])),
-      box: { width: BOX_W, height: BOX_H },
-      padding: PAD,
-      viewport: props.viewport?.extent
-        ? { center: [props.viewport.center[0], props.viewport.center[1]], extent: props.viewport.extent }
-        : undefined,
-    }),
-  )
+    const projection = createMemo(() =>
+        Navigation.project({
+            positions: new Map(placed().map((entry) => [entry.node.id, entry.position])),
+            box: { width: BOX_W, height: BOX_H },
+            padding: PAD,
+            viewport: props.viewport?.extent
+                ? {
+                      center: [props.viewport.center[0], props.viewport.center[1]],
+                      extent: props.viewport.extent,
+                  }
+                : undefined,
+        }),
+    );
 
-  // A neutral node has no outcome to show, so it keeps a muted mark: the dot is all the minimap
-  // draws, and a border-coloured one would disappear into the surface.
-  const colorFor = createMemo(() => (node: GraphNode) => {
-    // Use a simple status-based color mapping
-    const statusColors: Record<string, string> = {
-      pending: props.theme.textMuted,
-      running: props.theme.accent,
-      success: props.theme.success,
-      failed: props.theme.error,
-      interrupted: props.theme.warning,
-      neutral: props.theme.textMuted,
-    }
-    return statusColors[node.status] ?? props.theme.textMuted
-  })
+    // A neutral node has no outcome to show, so it keeps a muted mark: the dot is all the minimap
+    // draws, and a border-coloured one would disappear into the surface.
+    const colorFor = createMemo(() => (node: GraphNode) => {
+        // Use a simple status-based color mapping
+        const statusColors: Record<string, string> = {
+            pending: props.theme.textMuted,
+            running: props.theme.accent,
+            success: props.theme.success,
+            failed: props.theme.error,
+            interrupted: props.theme.warning,
+            neutral: props.theme.textMuted,
+        };
+        return statusColors[node.status] ?? props.theme.textMuted;
+    });
 
-  const panTo = (clientX: number, clientY: number, target: SVGSVGElement) => {
-    if (placed().length === 0) return
-    const rect = target.getBoundingClientRect()
-    const point = projection().unproject({
-      x: ((clientX - rect.left) / rect.width) * BOX_W,
-      y: ((clientY - rect.top) / rect.height) * BOX_H,
-    })
-    props.onPan([point.x, point.y])
-  }
+    const panTo = (clientX: number, clientY: number, target: SVGSVGElement) => {
+        if (placed().length === 0) return;
+        const rect = target.getBoundingClientRect();
+        const point = projection().unproject({
+            x: ((clientX - rect.left) / rect.width) * BOX_W,
+            y: ((clientY - rect.top) / rect.height) * BOX_H,
+        });
+        props.onPan([point.x, point.y]);
+    };
 
-  return (
-    <svg
-      data-component="spacegraph-minimap"
-      data-slot="graph-minimap"
-      role="application"
-      aria-label={ariaLabel}
-      width={BOX_W}
-      height={BOX_H}
-      viewBox={`0 0 ${BOX_W} ${BOX_H}`}
-      style={{
-        width: `${BOX_W}px`,
-        height: `${BOX_H}px`,
-        background: props.theme.surfaceMuted,
-        border: `1px solid ${props.theme.border}`,
-        "border-radius": "6px",
-        cursor: "crosshair",
-      }}
-      onPointerDown={(event) => {
-        setDragging(true)
-        event.currentTarget.setPointerCapture?.(event.pointerId)
-        panTo(event.clientX, event.clientY, event.currentTarget)
-        event.stopPropagation()
-      }}
-      onPointerMove={(event) => {
-        if (!dragging()) return
-        panTo(event.clientX, event.clientY, event.currentTarget)
-        event.stopPropagation()
-      }}
-      onPointerUp={() => setDragging(false)}
-      onPointerLeave={() => setDragging(false)}
-    >
-      <For each={placed()}>
-        {(entry) => {
-          const point = () => projection().project(entry.position)
-          return (
-            <circle cx={point().x} cy={point().y} r={DOT_R} fill={colorFor()(entry.node)} opacity="0.85" />
-          )
-        }}
-      </For>
-      <Show when={projection().viewRect}>
-        {(rect) => (
-          <rect
-            x={rect().x}
-            y={rect().y}
-            width={rect().width}
-            height={rect().height}
-            fill="none"
-            stroke={props.theme.selection}
-            stroke-width="1.5"
-          />
-        )}
-      </Show>
-    </svg>
-  )
-}
+    return (
+        <svg
+            data-component="spacegraph-minimap"
+            data-slot="graph-minimap"
+            role="application"
+            aria-label={ariaLabel}
+            width={BOX_W}
+            height={BOX_H}
+            viewBox={`0 0 ${BOX_W} ${BOX_H}`}
+            style={{
+                width: `${BOX_W}px`,
+                height: `${BOX_H}px`,
+                background: props.theme.surfaceMuted,
+                border: `1px solid ${props.theme.border}`,
+                'border-radius': '6px',
+                cursor: 'crosshair',
+            }}
+            onPointerDown={(event) => {
+                setDragging(true);
+                event.currentTarget.setPointerCapture?.(event.pointerId);
+                panTo(event.clientX, event.clientY, event.currentTarget);
+                event.stopPropagation();
+            }}
+            onPointerMove={(event) => {
+                if (!dragging()) return;
+                panTo(event.clientX, event.clientY, event.currentTarget);
+                event.stopPropagation();
+            }}
+            onPointerUp={() => setDragging(false)}
+            onPointerLeave={() => setDragging(false)}
+        >
+            <For each={placed()}>
+                {(entry) => {
+                    const point = () => projection().project(entry.position);
+                    return (
+                        <circle
+                            cx={point().x}
+                            cy={point().y}
+                            r={DOT_R}
+                            fill={colorFor()(entry.node)}
+                            opacity="0.85"
+                        />
+                    );
+                }}
+            </For>
+            <Show when={projection().viewRect}>
+                {(rect) => (
+                    <rect
+                        x={rect().x}
+                        y={rect().y}
+                        width={rect().width}
+                        height={rect().height}
+                        fill="none"
+                        stroke={props.theme.selection}
+                        stroke-width="1.5"
+                    />
+                )}
+            </Show>
+        </svg>
+    );
+};

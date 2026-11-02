@@ -89,7 +89,10 @@ describe('Strategies.layoutGraph — lanes', () => {
         for (let i = 0; i < placed.length; i++)
             for (let j = i + 1; j < placed.length; j++)
                 expect(
-                    Math.abs(layout.positions.get(placed[i]!.id)!.x - layout.positions.get(placed[j]!.id)!.x),
+                    Math.abs(
+                        layout.positions.get(placed[i]!.id)!.x -
+                            layout.positions.get(placed[j]!.id)!.x,
+                    ),
                 ).toBeGreaterThanOrEqual(
                     (CONFIG.nodeSizeFn(placed[i]!)[0] + CONFIG.nodeSizeFn(placed[j]!)[0]) / 2,
                 );
@@ -135,7 +138,7 @@ describe('Strategies.layoutGraph — lanes', () => {
         expect(layout.clusters.has('t2')).toBe(true);
     });
 
-    it('draws a node that names both a turn and an owner in the owner\'s column', () => {
+    it("draws a node that names both a turn and an owner in the owner's column", () => {
         const model = makeModel();
 
         model.nodes.push({ id: 'f2', kind: 'file', turnID: 't2' });

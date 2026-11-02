@@ -624,7 +624,7 @@ https://spacegraphjs.dev
 
 | Metric                | Target (Year 3) |
 | --------------------- | --------------- |
-| pnpm downloads/month   | 25,000+         |
+| pnpm downloads/month  | 25,000+         |
 | GitHub stars          | 2,000+          |
 | External contributors | 100+            |
 | Industry adoptions    | 50+ companies   |

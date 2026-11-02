@@ -39,7 +39,11 @@ export class ScopedOverlay {
     dispose(): void {
         if (this.#disposed) return;
         this.#disposed = true;
-        this.#options.container.removeEventListener('keydown', this.#onKeyDown, this.#options.useCapture);
+        this.#options.container.removeEventListener(
+            'keydown',
+            this.#onKeyDown,
+            this.#options.useCapture,
+        );
         this.#restore?.focus();
     }
 

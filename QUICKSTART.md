@@ -142,14 +142,14 @@ Open http://localhost:5173 — you should see three connected nodes.
 
 ## Interactive Controls
 
-| Action             | Control              |
-|--------------------|----------------------|
-| **Pan**            | Right-click + drag   |
-| **Orbit**          | Middle-click + drag  |
-| **Zoom**           | Scroll wheel         |
-| **Frame a node**   | Middle-click on node |
-| **Select Node**    | Click on node        |
-| **Multi-select**   | Shift + click        |
+| Action           | Control              |
+| ---------------- | -------------------- |
+| **Pan**          | Right-click + drag   |
+| **Orbit**        | Middle-click + drag  |
+| **Zoom**         | Scroll wheel         |
+| **Frame a node** | Middle-click on node |
+| **Select Node**  | Click on node        |
+| **Multi-select** | Shift + click        |
 
 ---
 
@@ -211,8 +211,7 @@ const graph = await SpaceGraph.create(container, {
             label: 'HTML Content',
             position: [0, 0, 0],
             data: {
-                html:
-                    '<div style="padding: 20px; background: white; border-radius: 8px; color: black;"><h3>Hello</h3><p>Rich HTML content</p></div>',
+                html: '<div style="padding: 20px; background: white; border-radius: 8px; color: black;"><h3>Hello</h3><p>Rich HTML content</p></div>',
             },
         },
         {
@@ -272,7 +271,7 @@ test('meets WCAG AA', async () => {
 ## Examples
 
 | Example                                 | Description             |
-|-----------------------------------------|-------------------------|
+| --------------------------------------- | ----------------------- |
 | [Basic Graph](./examples/basic)         | Simple nodes and edges  |
 | [HTML Nodes](./examples/html-nodes)     | Rich HTML content       |
 | [Image Nodes](./examples/images)        | Image textures          |

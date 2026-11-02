@@ -10,19 +10,19 @@ const HEX_COLOR = /^#([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
  */
 export function parseColor(value) {
     const hex = value?.trim();
-    if (!hex)
-        return undefined;
+    if (!hex) return undefined;
     if (hex.startsWith('#')) {
         const body = hex.slice(1);
         if (body.length === 3)
-            return Number.parseInt(body.replace(/./g, (c) => c + c), 16);
-        if (body.length === 6 || body.length === 8)
-            return Number.parseInt(body.slice(0, 6), 16);
+            return Number.parseInt(
+                body.replace(/./g, (c) => c + c),
+                16,
+            );
+        if (body.length === 6 || body.length === 8) return Number.parseInt(body.slice(0, 6), 16);
         return undefined;
     }
     const rgb = hex.match(/^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
-    if (!rgb)
-        return undefined;
+    if (!rgb) return undefined;
     return (Number(rgb[1]) << 16) | (Number(rgb[2]) << 8) | Number(rgb[3]);
 }
 /**
@@ -31,17 +31,19 @@ export function parseColor(value) {
  */
 export function normalizeHexColor(value) {
     const match = HEX_COLOR.exec(value.trim());
-    if (!match)
-        return value;
+    if (!match) return value;
     const body = match[1];
-    return body.length === 3 ? `#${[...body].map((character) => character + character).join('')}` : `#${body.slice(0, 6)}`;
+    return body.length === 3
+        ? `#${[...body].map((character) => character + character).join('')}`
+        : `#${body.slice(0, 6)}`;
 }
 /**
  * The WCAG 2.1 relative luminance of a colour whose channels are already in 0..1.
  * https://www.w3.org/WAI/GL/wiki/Relative_luminance
  */
 export function relativeLuminance(r, g, b) {
-    const linear = (channel) => channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+    const linear = (channel) =>
+        channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
     return 0.2126 * linear(r) + 0.7152 * linear(g) + 0.0722 * linear(b);
 }
 /**

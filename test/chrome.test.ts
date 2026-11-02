@@ -6,21 +6,21 @@ const chromeNames = DEFAULT_CHROME_PLUGINS.map(([, name]) => name);
 const systemNames = DEFAULT_SYSTEM_PLUGINS.map(([, name]) => name);
 
 describe('default plugin registry', () => {
-  it('keeps chrome plugins opt-in', () => {
-    expect(chromeNames).toEqual([
-      'ZoomBandsPlugin',
-      'ZoomUIPlugin',
-      'MinimapPlugin',
-      'HUDPlugin',
-    ]);
-  });
+    it('keeps chrome plugins opt-in', () => {
+        expect(chromeNames).toEqual([
+            'ZoomBandsPlugin',
+            'ZoomUIPlugin',
+            'MinimapPlugin',
+            'HUDPlugin',
+        ]);
+    });
 
-  it('never registers a chrome plugin as a system plugin', () => {
-    for (const name of chromeNames) expect(systemNames).not.toContain(name);
-  });
+    it('never registers a chrome plugin as a system plugin', () => {
+        for (const name of chromeNames) expect(systemNames).not.toContain(name);
+    });
 
-  it('always registers core interaction and LOD plugins', () => {
-    expect(systemNames).toContain('InteractionPlugin');
-    expect(systemNames).toContain('LODPlugin');
-  });
+    it('always registers core interaction and LOD plugins', () => {
+        expect(systemNames).toContain('InteractionPlugin');
+        expect(systemNames).toContain('LODPlugin');
+    });
 });

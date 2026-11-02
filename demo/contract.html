@@ -5,7 +5,11 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Renderer contract demo — SpaceGraphJS</title>
         <style>
-            * { margin: 0; padding: 0; box-sizing: border-box; }
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
             :root {
                 --bg: #0b0f17;
                 --surface: #151b26;
@@ -32,7 +36,10 @@
                 --warning: #b45309;
                 --error: #b91c1c;
             }
-            html, body { height: 100%; }
+            html,
+            body {
+                height: 100%;
+            }
             body {
                 display: flex;
                 flex-direction: column;
@@ -51,11 +58,31 @@
                 border-bottom: 1px solid var(--border);
                 background: var(--surface);
             }
-            header h1 { font-size: 15px; font-weight: 650; }
-            header .sub { color: var(--muted); font-size: 12px; }
-            .controls { display: flex; flex-wrap: wrap; gap: 14px; margin-inline-start: auto; }
-            .group { display: flex; align-items: center; gap: 4px; }
-            .group > span { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+            header h1 {
+                font-size: 15px;
+                font-weight: 650;
+            }
+            header .sub {
+                color: var(--muted);
+                font-size: 12px;
+            }
+            .controls {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 14px;
+                margin-inline-start: auto;
+            }
+            .group {
+                display: flex;
+                align-items: center;
+                gap: 4px;
+            }
+            .group > span {
+                color: var(--muted);
+                font-size: 11px;
+                text-transform: uppercase;
+                letter-spacing: 0.04em;
+            }
             button {
                 font: inherit;
                 font-size: 12px;
@@ -66,15 +93,49 @@
                 padding: 5px 9px;
                 cursor: pointer;
             }
-            button:hover:not(:disabled) { border-color: var(--accent); }
-            button[aria-pressed='true'] { background: var(--accent); border-color: var(--accent); color: #fff; }
-            button:disabled { opacity: 0.45; cursor: not-allowed; }
-            button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
-            main { flex: 1; display: flex; min-height: 0; }
-            #stage { position: relative; flex: 1; min-width: 0; background: var(--bg); }
-            #canvas { width: 100%; height: 100%; }
-            #svg { width: 100%; height: 100%; overflow: auto; padding: 18px; }
-            #svg svg { max-width: 100%; height: auto; display: block; margin: 0 auto; }
+            button:hover:not(:disabled) {
+                border-color: var(--accent);
+            }
+            button[aria-pressed='true'] {
+                background: var(--accent);
+                border-color: var(--accent);
+                color: #fff;
+            }
+            button:disabled {
+                opacity: 0.45;
+                cursor: not-allowed;
+            }
+            button:focus-visible {
+                outline: 2px solid var(--focus);
+                outline-offset: 2px;
+            }
+            main {
+                flex: 1;
+                display: flex;
+                min-height: 0;
+            }
+            #stage {
+                position: relative;
+                flex: 1;
+                min-width: 0;
+                background: var(--bg);
+            }
+            #canvas {
+                width: 100%;
+                height: 100%;
+            }
+            #svg {
+                width: 100%;
+                height: 100%;
+                overflow: auto;
+                padding: 18px;
+            }
+            #svg svg {
+                max-width: 100%;
+                height: auto;
+                display: block;
+                margin: 0 auto;
+            }
             aside {
                 width: 320px;
                 flex: 0 0 320px;
@@ -84,9 +145,22 @@
                 flex-direction: column;
                 min-height: 0;
             }
-            #side-head { padding: 10px 12px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; }
-            #trail { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
-            .trail-back { padding: 3px 8px; }
+            #side-head {
+                padding: 10px 12px;
+                border-bottom: 1px solid var(--border);
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+            #trail {
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+                gap: 6px;
+            }
+            .trail-back {
+                padding: 3px 8px;
+            }
             .crumb {
                 background: none;
                 border: none;
@@ -94,13 +168,41 @@
                 padding: 2px 4px;
                 font-size: 12px;
             }
-            .crumb[aria-current='true'] { color: var(--text); text-decoration: underline; }
-            #band { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
-            #detail { padding: 12px; overflow: auto; min-height: 0; }
-            #detail h2 { font-size: 15px; margin-bottom: 4px; overflow-wrap: anywhere; }
-            #detail p { margin-bottom: 8px; line-height: 1.45; overflow-wrap: anywhere; }
-            .muted { color: var(--muted); font-size: 12px; }
-            .connections { list-style: none; display: flex; flex-direction: column; gap: 4px; margin-top: 10px; }
+            .crumb[aria-current='true'] {
+                color: var(--text);
+                text-decoration: underline;
+            }
+            #band {
+                color: var(--muted);
+                font-size: 12px;
+                font-variant-numeric: tabular-nums;
+            }
+            #detail {
+                padding: 12px;
+                overflow: auto;
+                min-height: 0;
+            }
+            #detail h2 {
+                font-size: 15px;
+                margin-bottom: 4px;
+                overflow-wrap: anywhere;
+            }
+            #detail p {
+                margin-bottom: 8px;
+                line-height: 1.45;
+                overflow-wrap: anywhere;
+            }
+            .muted {
+                color: var(--muted);
+                font-size: 12px;
+            }
+            .connections {
+                list-style: none;
+                display: flex;
+                flex-direction: column;
+                gap: 4px;
+                margin-top: 10px;
+            }
             .connection {
                 width: 100%;
                 text-align: start;
@@ -129,12 +231,28 @@
                 border-radius: 6px;
                 border-inline-start: 3px solid var(--border);
             }
-            .demo-card b { font-size: 12px; font-weight: 650; }
-            .demo-card span { font-size: 11px; color: var(--muted); overflow-wrap: anywhere; }
-            .demo-card[data-status='success'] { border-inline-start-color: var(--success); }
-            .demo-card[data-status='warning'] { border-inline-start-color: var(--warning); }
-            .demo-card[data-status='error'] { border-inline-start-color: var(--error); }
-            #canvas .node-inner-wrapper, #canvas .node-content { height: 100%; }
+            .demo-card b {
+                font-size: 12px;
+                font-weight: 650;
+            }
+            .demo-card span {
+                font-size: 11px;
+                color: var(--muted);
+                overflow-wrap: anywhere;
+            }
+            .demo-card[data-status='success'] {
+                border-inline-start-color: var(--success);
+            }
+            .demo-card[data-status='warning'] {
+                border-inline-start-color: var(--warning);
+            }
+            .demo-card[data-status='error'] {
+                border-inline-start-color: var(--error);
+            }
+            #canvas .node-inner-wrapper,
+            #canvas .node-content {
+                height: 100%;
+            }
             .sg-edge-label {
                 background: var(--surface) !important;
                 color: var(--muted) !important;
@@ -156,8 +274,12 @@
                 </div>
                 <div class="group" role="group" aria-label="Renderer">
                     <span>Renderer</span>
-                    <button id="renderer-spacegraph" type="button" aria-pressed="true">SpaceGraph</button>
-                    <button id="renderer-cytoscape" type="button" aria-pressed="false">Cytoscape</button>
+                    <button id="renderer-spacegraph" type="button" aria-pressed="true">
+                        SpaceGraph
+                    </button>
+                    <button id="renderer-cytoscape" type="button" aria-pressed="false">
+                        Cytoscape
+                    </button>
                     <button id="renderer-svg" type="button" aria-pressed="false">Static SVG</button>
                 </div>
                 <div class="group" role="group" aria-label="Projection">
@@ -197,9 +319,9 @@
         </main>
 
         <footer>
-            Click a card to inspect it · Focus the hidden node list and use Arrow keys, Enter to select, Escape
-            to clear · Edge rows follow a connection and label its confidence · The graph never runs an
-            automatic layout; positions come from <code>LaneLayout</code>.
+            Click a card to inspect it · Focus the hidden node list and use Arrow keys, Enter to
+            select, Escape to clear · Edge rows follow a connection and label its confidence · The
+            graph never runs an automatic layout; positions come from <code>LaneLayout</code>.
         </footer>
 
         <script type="module" src="./contract-demo.ts"></script>

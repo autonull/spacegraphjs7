@@ -1,21 +1,21 @@
 {
-  "compilerOptions": {
-    "strict": true,
-    "target": "ESNext",
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true,
-    "jsx": "preserve",
-    "jsxImportSource": "solid-js",
-    "types": ["vite/client"],
-    "noEmit": true,
-    "skipLibCheck": true,
-    "paths": {
-      "spacegraphjs": ["../../src/index.ts"],
-      "spacegraphjs/*": ["../../src/*"],
-      "@spacegraphjs/renderer": ["../../packages/renderer/src/index.ts"]
-    }
-  },
-  "include": ["src/**/*"]
+    "compilerOptions": {
+        "strict": true,
+        "target": "ESNext",
+        "module": "ESNext",
+        "moduleResolution": "bundler",
+        "allowSyntheticDefaultImports": true,
+        "esModuleInterop": true,
+        "jsx": "preserve",
+        "jsxImportSource": "solid-js",
+        "types": ["vite/client"],
+        "noEmit": true,
+        "skipLibCheck": true,
+        "paths": {
+            "spacegraphjs": ["../../src/index.ts"],
+            "spacegraphjs/*": ["../../src/*"],
+            "@spacegraphjs/renderer": ["../../packages/renderer/src/index.ts"]
+        }
+    },
+    "include": ["src/**/*"]
 }

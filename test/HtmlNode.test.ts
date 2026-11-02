@@ -2,159 +2,173 @@ import { HtmlNode } from 'spacegraphjs/nodes';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 describe('HtmlNode Unit Tests', () => {
-  let sg: any;
+    let sg: any;
 
-  beforeEach(() => {
-    // Mock SpaceGraph and its dependencies
-    sg = {
-      events: { emit: vi.fn() },
-      renderer: { camera: { quaternion: { copy: vi.fn() } } },
-      graph: { nodes: new Map() },
-    };
-  });
-
-  it('should correctly initialize with HTML content', () => {
-    const spec = {
-      id: 'test-node',
-      type: 'HtmlNode',
-      data: {
-        html: '<div id="test-content">Hello World</div>',
-        backgroundColor: '#ff0000',
-        width: 500,
-        height: 300,
-      },
-    };
-
-    const node = new HtmlNode(sg as any, spec as any);
-
-    const content = node.domElement.querySelector('.node-content');
-    expect(content).toBeTruthy();
-    expect(content?.innerHTML).toContain('id="test-content"');
-    expect(content?.innerHTML).toContain('Hello World');
-
-    // Check styles
-    expect(node.domElement.style.width).toBe('500px');
-    expect(node.domElement.style.height).toBe('300px');
-
-    // Check background color application (variable)
-    expect(node.domElement.style.getPropertyValue('--node-bg')).toBe('#ff0000');
-  });
-
-  it('should support useRawHtml flag to strip default styles', () => {
-    const spec = {
-      id: 'raw-node',
-      type: 'HtmlNode',
-      data: {
-        html: '<div>Raw</div>',
-        useRawHtml: true,
-      },
-    };
-
-    const node = new HtmlNode(sg as any, spec as any);
-
-    expect(node.domElement.style.backgroundColor).toBe('transparent');
-    // JSDOM might return "initial", "medium", or empty for "none" depending on the property
-    expect(node.domElement.style.border).toMatch(/none|medium|^$/);
-    expect(node.domElement.style.boxShadow).toMatch(/none|^$/);
-  });
-
-  it('should update content when updateSpec is called', () => {
-    const node = new HtmlNode(sg as any, { id: 'u', type: 'HtmlNode' } as any);
-    node.updateSpec({ data: { html: '<span>New Content</span>' } });
-
-    const content = node.domElement.querySelector('.node-content');
-    expect(content?.innerHTML).toBe('<span>New Content</span>');
-  });
-
-  it('re-flows the content when the host changes the card size, instead of scaling it', () => {
-    // The content is the host's markup: a card that changes what it says must show the new markup
-    // at its own size, not a magnified copy of the old one.
-    const node = new HtmlNode(sg as any, {
-      id: 'u',
-      type: 'HtmlNode',
-      data: { html: '<span>x</span>', width: 200, height: 100 },
-    } as any);
-
-    node.updateSpec({ data: { width: 400, height: 200 } });
-
-    const content = node.domElement.querySelector('.node-content') as HTMLElement;
-    expect(content.style.transform).toBe('scale(1)');
-    expect(node.domElement.style.width).toBe('400px');
-  });
-
-  it('should handle backgroundColor in data updates', () => {
-    const node = new HtmlNode(sg as any, { id: 'u', type: 'HtmlNode' } as any);
-    node.updateSpec({ data: { backgroundColor: '#00ff00' } });
-
-    expect(node.domElement.style.getPropertyValue('--node-bg')).toBe('#00ff00');
-  });
-
-  it('should keep the host markup when the model updates the label', () => {
-    const markup = '<div style="color: rgb(255, 0, 0)">Styled</div>';
-    const node = new HtmlNode(sg as any, {
-      id: 'u',
-      type: 'HtmlNode',
-      label: 'Label',
-      data: { html: markup },
-    } as any);
-
-    node.updateSpec({ label: 'Another label', data: { html: markup } });
-
-    const content = node.domElement.querySelector('.node-content');
-    expect(content?.innerHTML).toBe(markup);
-  });
-
-  it('should keep the host markup when the model updates the label alone', () => {
-    const markup = '<div style="color: rgb(255, 0, 0)">Styled</div>';
-    const node = new HtmlNode(sg as any, {
-      id: 'u',
-      type: 'HtmlNode',
-      label: 'Label',
-      data: { html: markup },
-    } as any);
-
-    node.updateSpec({ label: 'Another label' });
-
-    const content = node.domElement.querySelector('.node-content');
-    expect(content?.innerHTML).toBe(markup);
-  });
-
-  it('should fall back to the label when the node carries no markup', () => {
-    const node = new HtmlNode(sg as any, { id: 'u', type: 'HtmlNode', label: 'Label' } as any);
-
-    node.updateSpec({ label: 'Another label' });
-
-    const content = node.domElement.querySelector('.node-content');
-    expect(content?.textContent).toBe('Another label');
-  });
-
-  it('resizes from its handle and reports the settled size', () => {
-    const node = new HtmlNode(sg as any, {
-      id: 'u',
-      type: 'HtmlNode',
-      data: { html: '<span>x</span>', width: 200, height: 100 },
-    } as any);
-    vi.spyOn(node.domElement, 'getBoundingClientRect').mockReturnValue({
-      width: 200,
-      height: 100,
-      top: 0,
-      left: 0,
-      right: 200,
-      bottom: 100,
-      x: 0,
-      y: 0,
-      toJSON: () => ({}),
+    beforeEach(() => {
+        // Mock SpaceGraph and its dependencies
+        sg = {
+            events: { emit: vi.fn() },
+            renderer: { camera: { quaternion: { copy: vi.fn() } } },
+            graph: { nodes: new Map() },
+        };
     });
 
-    const handle = node.getResizeHandle()!;
-    handle.dispatchEvent(new MouseEvent('pointerdown', { clientX: 0, clientY: 0, bubbles: true }));
-    window.dispatchEvent(new MouseEvent('pointermove', { clientX: 100, clientY: 50 }));
-    window.dispatchEvent(new MouseEvent('pointerup', { clientX: 100, clientY: 50 }));
+    it('should correctly initialize with HTML content', () => {
+        const spec = {
+            id: 'test-node',
+            type: 'HtmlNode',
+            data: {
+                html: '<div id="test-content">Hello World</div>',
+                backgroundColor: '#ff0000',
+                width: 500,
+                height: 300,
+            },
+        };
 
-    expect(node.size).toEqual({ width: 300, height: 150 });
-    expect(sg.events.emit).toHaveBeenCalledWith('node:resizeend', {
-      node,
-      finalSize: { width: 300, height: 150 },
+        const node = new HtmlNode(sg as any, spec as any);
+
+        const content = node.domElement.querySelector('.node-content');
+        expect(content).toBeTruthy();
+        expect(content?.innerHTML).toContain('id="test-content"');
+        expect(content?.innerHTML).toContain('Hello World');
+
+        // Check styles
+        expect(node.domElement.style.width).toBe('500px');
+        expect(node.domElement.style.height).toBe('300px');
+
+        // Check background color application (variable)
+        expect(node.domElement.style.getPropertyValue('--node-bg')).toBe('#ff0000');
     });
-  });
+
+    it('should support useRawHtml flag to strip default styles', () => {
+        const spec = {
+            id: 'raw-node',
+            type: 'HtmlNode',
+            data: {
+                html: '<div>Raw</div>',
+                useRawHtml: true,
+            },
+        };
+
+        const node = new HtmlNode(sg as any, spec as any);
+
+        expect(node.domElement.style.backgroundColor).toBe('transparent');
+        // JSDOM might return "initial", "medium", or empty for "none" depending on the property
+        expect(node.domElement.style.border).toMatch(/none|medium|^$/);
+        expect(node.domElement.style.boxShadow).toMatch(/none|^$/);
+    });
+
+    it('should update content when updateSpec is called', () => {
+        const node = new HtmlNode(sg as any, { id: 'u', type: 'HtmlNode' } as any);
+        node.updateSpec({ data: { html: '<span>New Content</span>' } });
+
+        const content = node.domElement.querySelector('.node-content');
+        expect(content?.innerHTML).toBe('<span>New Content</span>');
+    });
+
+    it('re-flows the content when the host changes the card size, instead of scaling it', () => {
+        // The content is the host's markup: a card that changes what it says must show the new markup
+        // at its own size, not a magnified copy of the old one.
+        const node = new HtmlNode(
+            sg as any,
+            {
+                id: 'u',
+                type: 'HtmlNode',
+                data: { html: '<span>x</span>', width: 200, height: 100 },
+            } as any,
+        );
+
+        node.updateSpec({ data: { width: 400, height: 200 } });
+
+        const content = node.domElement.querySelector('.node-content') as HTMLElement;
+        expect(content.style.transform).toBe('scale(1)');
+        expect(node.domElement.style.width).toBe('400px');
+    });
+
+    it('should handle backgroundColor in data updates', () => {
+        const node = new HtmlNode(sg as any, { id: 'u', type: 'HtmlNode' } as any);
+        node.updateSpec({ data: { backgroundColor: '#00ff00' } });
+
+        expect(node.domElement.style.getPropertyValue('--node-bg')).toBe('#00ff00');
+    });
+
+    it('should keep the host markup when the model updates the label', () => {
+        const markup = '<div style="color: rgb(255, 0, 0)">Styled</div>';
+        const node = new HtmlNode(
+            sg as any,
+            {
+                id: 'u',
+                type: 'HtmlNode',
+                label: 'Label',
+                data: { html: markup },
+            } as any,
+        );
+
+        node.updateSpec({ label: 'Another label', data: { html: markup } });
+
+        const content = node.domElement.querySelector('.node-content');
+        expect(content?.innerHTML).toBe(markup);
+    });
+
+    it('should keep the host markup when the model updates the label alone', () => {
+        const markup = '<div style="color: rgb(255, 0, 0)">Styled</div>';
+        const node = new HtmlNode(
+            sg as any,
+            {
+                id: 'u',
+                type: 'HtmlNode',
+                label: 'Label',
+                data: { html: markup },
+            } as any,
+        );
+
+        node.updateSpec({ label: 'Another label' });
+
+        const content = node.domElement.querySelector('.node-content');
+        expect(content?.innerHTML).toBe(markup);
+    });
+
+    it('should fall back to the label when the node carries no markup', () => {
+        const node = new HtmlNode(sg as any, { id: 'u', type: 'HtmlNode', label: 'Label' } as any);
+
+        node.updateSpec({ label: 'Another label' });
+
+        const content = node.domElement.querySelector('.node-content');
+        expect(content?.textContent).toBe('Another label');
+    });
+
+    it('resizes from its handle and reports the settled size', () => {
+        const node = new HtmlNode(
+            sg as any,
+            {
+                id: 'u',
+                type: 'HtmlNode',
+                data: { html: '<span>x</span>', width: 200, height: 100 },
+            } as any,
+        );
+        vi.spyOn(node.domElement, 'getBoundingClientRect').mockReturnValue({
+            width: 200,
+            height: 100,
+            top: 0,
+            left: 0,
+            right: 200,
+            bottom: 100,
+            x: 0,
+            y: 0,
+            toJSON: () => ({}),
+        });
+
+        const handle = node.getResizeHandle()!;
+        handle.dispatchEvent(
+            new MouseEvent('pointerdown', { clientX: 0, clientY: 0, bubbles: true }),
+        );
+        window.dispatchEvent(new MouseEvent('pointermove', { clientX: 100, clientY: 50 }));
+        window.dispatchEvent(new MouseEvent('pointerup', { clientX: 100, clientY: 50 }));
+
+        expect(node.size).toEqual({ width: 300, height: 150 });
+        expect(sg.events.emit).toHaveBeenCalledWith('node:resizeend', {
+            node,
+            finalSize: { width: 300, height: 150 },
+        });
+    });
 });

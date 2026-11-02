@@ -6,9 +6,9 @@ import { Node } from './Node';
  * whatever the node puts into it.
  */
 export abstract class Object3DNode extends Node {
-  protected _object: Object3D = new Object3D();
+    protected _object: Object3D = new Object3D();
 
-  get object(): Object3D {
-    return this._object;
-  }
+    get object(): Object3D {
+        return this._object;
+    }
 }

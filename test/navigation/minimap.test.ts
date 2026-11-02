@@ -35,7 +35,10 @@ describe('Navigation.project', () => {
     });
 
     it('keeps a single point centred', () => {
-        const projection = Navigation.project({ positions: new Map([['a', { x: 10, y: 20 }]]), box: BOX });
+        const projection = Navigation.project({
+            positions: new Map([['a', { x: 10, y: 20 }]]),
+            box: BOX,
+        });
 
         expect(projection.project({ x: 10, y: 20 })).toEqual({ x: 50, y: 50 });
     });

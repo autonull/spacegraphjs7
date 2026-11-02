@@ -7,204 +7,204 @@ import { worldToClient } from '../../utils/projection';
 import { BaseSystemPlugin } from '../BaseSystemPlugin';
 
 export interface HoverAction {
-  icon: string;
-  label: string;
-  action: string;
+    icon: string;
+    label: string;
+    action: string;
 }
 
 export interface HoverMetaWidgetOptions {
-  enabled?: boolean;
-  hideDelay?: number;
-  fadeDelay?: number;
-  fadeDuration?: number;
-  showBorder?: boolean;
-  borderStyle?: string;
-  borderRadius?: string;
-  defaultActions?: HoverAction[];
+    enabled?: boolean;
+    hideDelay?: number;
+    fadeDelay?: number;
+    fadeDuration?: number;
+    showBorder?: boolean;
+    borderStyle?: string;
+    borderRadius?: string;
+    defaultActions?: HoverAction[];
 }
 
 const DEFAULT_ACTIONS: HoverAction[] = [
-  { icon: '⤢', label: 'Focus', action: 'focus' },
-  { icon: '✕', label: 'Delete', action: 'delete' },
+    { icon: '⤢', label: 'Focus', action: 'focus' },
+    { icon: '✕', label: 'Delete', action: 'delete' },
 ];
 
 export class HoverMetaWidget extends BaseSystemPlugin {
-  readonly id = 'hover-meta-widget';
-  readonly name = 'Hover Meta Widget';
-  readonly version = '1.0.0';
+    readonly id = 'hover-meta-widget';
+    readonly name = 'Hover Meta Widget';
+    readonly version = '1.0.0';
 
-  opts: Required<HoverMetaWidgetOptions>;
-  overlay: HTMLElement;
-  buttonContainer: HTMLElement;
-  private hideTimeout: ReturnType<typeof setTimeout> | null = null;
-  private fadeTimeout: ReturnType<typeof setTimeout> | null = null;
-  private isVisible = false;
+    opts: Required<HoverMetaWidgetOptions>;
+    overlay: HTMLElement;
+    buttonContainer: HTMLElement;
+    private hideTimeout: ReturnType<typeof setTimeout> | null = null;
+    private fadeTimeout: ReturnType<typeof setTimeout> | null = null;
+    private isVisible = false;
 
-  constructor(options: HoverMetaWidgetOptions = {}) {
-    super();
-    this.opts = {
-      enabled: options.enabled ?? true,
-      hideDelay: options.hideDelay ?? 400,
-      fadeDelay: options.fadeDelay ?? 3500,
-      fadeDuration: options.fadeDuration ?? 700,
-      showBorder: options.showBorder ?? true,
-      borderStyle: options.borderStyle ?? '2px dashed rgba(139, 92, 246, 0.75)',
-      borderRadius: options.borderRadius ?? '10px',
-      defaultActions: options.defaultActions ?? DEFAULT_ACTIONS,
-    };
+    constructor(options: HoverMetaWidgetOptions = {}) {
+        super();
+        this.opts = {
+            enabled: options.enabled ?? true,
+            hideDelay: options.hideDelay ?? 400,
+            fadeDelay: options.fadeDelay ?? 3500,
+            fadeDuration: options.fadeDuration ?? 700,
+            showBorder: options.showBorder ?? true,
+            borderStyle: options.borderStyle ?? '2px dashed rgba(139, 92, 246, 0.75)',
+            borderRadius: options.borderRadius ?? '10px',
+            defaultActions: options.defaultActions ?? DEFAULT_ACTIONS,
+        };
 
-    this.overlay = document.createElement('div');
-    Object.assign(this.overlay.style, {
-      position: 'fixed',
-      pointerEvents: 'auto',
-      zIndex: '10000',
-      display: 'none',
-      background: 'rgba(15, 23, 42, 0.95)',
-      backdropFilter: 'blur(10px)',
-      padding: '8px',
-      gap: '4px',
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      transition: `opacity ${this.opts.fadeDuration}ms ease`,
-      opacity: '1',
-      border: this.opts.showBorder ? this.opts.borderStyle : 'none',
-      borderRadius: this.opts.borderRadius,
-    });
+        this.overlay = document.createElement('div');
+        Object.assign(this.overlay.style, {
+            position: 'fixed',
+            pointerEvents: 'auto',
+            zIndex: '10000',
+            display: 'none',
+            background: 'rgba(15, 23, 42, 0.95)',
+            backdropFilter: 'blur(10px)',
+            padding: '8px',
+            gap: '4px',
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: `opacity ${this.opts.fadeDuration}ms ease`,
+            opacity: '1',
+            border: this.opts.showBorder ? this.opts.borderStyle : 'none',
+            borderRadius: this.opts.borderRadius,
+        });
 
-    this.buttonContainer = document.createElement('div');
-    Object.assign(this.buttonContainer.style, {
-      display: 'flex',
-      gap: '4px',
-    });
-    this.overlay.appendChild(this.buttonContainer);
-  }
-
-  init(sg: SpaceGraph, graph: Graph, events: EventEmitter<SpaceGraphEvents>): void {
-    super.init(sg, graph, events);
-    document.body.appendChild(this.overlay);
-
-    this.on('node:pointerenter', ({ node }: any) => {
-      if (!this.opts.enabled) return;
-      const nodeData = node.data as Record<string, unknown>;
-      if (nodeData?.metaWidget === false) return;
-      this.showForNode(node);
-    });
-
-    this.on('node:pointerleave', () => {
-      this.scheduleHide();
-    });
-
-    this.overlay.addEventListener('mouseenter', () => {
-      if (this.hideTimeout) {
-        clearTimeout(this.hideTimeout);
-        this.hideTimeout = null;
-      }
-    });
-
-    this.overlay.addEventListener('mouseleave', () => {
-      this.scheduleHide();
-    });
-
-    this.startFadeTimer();
-  }
-
-  dispose(): void {
-    super.dispose();
-    if (this.hideTimeout) clearTimeout(this.hideTimeout);
-    if (this.fadeTimeout) clearTimeout(this.fadeTimeout);
-    this.overlay.remove();
-  }
-
-  private showForNode(node: Node): void {
-    if (this.hideTimeout) {
-      clearTimeout(this.hideTimeout);
-      this.hideTimeout = null;
+        this.buttonContainer = document.createElement('div');
+        Object.assign(this.buttonContainer.style, {
+            display: 'flex',
+            gap: '4px',
+        });
+        this.overlay.appendChild(this.buttonContainer);
     }
 
-    this.buildButtons(node);
-    this.positionOverlay(node);
+    init(sg: SpaceGraph, graph: Graph, events: EventEmitter<SpaceGraphEvents>): void {
+        super.init(sg, graph, events);
+        document.body.appendChild(this.overlay);
 
-    if (!this.isVisible) {
-      this.overlay.style.display = 'flex';
-      this.overlay.style.opacity = '1';
-      this.isVisible = true;
+        this.on('node:pointerenter', ({ node }: any) => {
+            if (!this.opts.enabled) return;
+            const nodeData = node.data as Record<string, unknown>;
+            if (nodeData?.metaWidget === false) return;
+            this.showForNode(node);
+        });
+
+        this.on('node:pointerleave', () => {
+            this.scheduleHide();
+        });
+
+        this.overlay.addEventListener('mouseenter', () => {
+            if (this.hideTimeout) {
+                clearTimeout(this.hideTimeout);
+                this.hideTimeout = null;
+            }
+        });
+
+        this.overlay.addEventListener('mouseleave', () => {
+            this.scheduleHide();
+        });
+
+        this.startFadeTimer();
     }
 
-    this.startFadeTimer();
-  }
-
-  private buildButtons(node: Node): void {
-    this.buttonContainer.innerHTML = '';
-    const nodeData = node.data as Record<string, unknown>;
-    const actions: HoverAction[] =
-      (nodeData?.hoverActions as HoverAction[]) ?? this.opts.defaultActions;
-
-    for (const action of actions) {
-      const btn = document.createElement('button');
-      btn.title = action.label;
-      Object.assign(btn.style, {
-        background: 'rgba(255, 255, 255, 0.1)',
-        border: '1px solid rgba(255, 255, 255, 0.2)',
-        color: '#fff',
-        borderRadius: '6px',
-        padding: '6px 10px',
-        cursor: 'pointer',
-        fontSize: '14px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '4px',
-        transition: 'background 0.15s',
-      });
-      btn.innerHTML = `<span>${action.icon}</span><span style="font-size:11px">${action.label}</span>`;
-      btn.addEventListener('mouseenter', () => {
-        btn.style.background = 'rgba(139, 92, 246, 0.4)';
-      });
-      btn.addEventListener('mouseleave', () => {
-        btn.style.background = 'rgba(255, 255, 255, 0.1)';
-      });
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        this.sg.events.emit('node:metaaction', { node, action: action.action });
-        this.hide();
-      });
-      this.buttonContainer.appendChild(btn);
+    dispose(): void {
+        super.dispose();
+        if (this.hideTimeout) clearTimeout(this.hideTimeout);
+        if (this.fadeTimeout) clearTimeout(this.fadeTimeout);
+        this.overlay.remove();
     }
-  }
 
-  private positionOverlay(node: Node): void {
-    const screen = worldToClient(
-      node.position,
-      this.sg.renderer.camera,
-      this.sg.renderer.renderer.domElement
-    );
-
-    this.overlay.style.left = `${screen.x - this.overlay.offsetWidth / 2}px`;
-    this.overlay.style.top = `${screen.y + 50}px`;
-  }
-
-  private scheduleHide(): void {
-    if (this.hideTimeout) clearTimeout(this.hideTimeout);
-    this.hideTimeout = setTimeout(() => this.hide(), this.opts.hideDelay);
-  }
-
-  private hide(): void {
-    if (this.fadeTimeout) clearTimeout(this.fadeTimeout);
-    this.overlay.style.opacity = '0';
-    setTimeout(() => {
-      this.overlay.style.display = 'none';
-      this.isVisible = false;
-    }, this.opts.fadeDuration);
-  }
-
-  private startFadeTimer(): void {
-    if (this.fadeTimeout) clearTimeout(this.fadeTimeout);
-    if (this.opts.fadeDelay > 0) {
-      this.fadeTimeout = setTimeout(() => {
-        if (this.isVisible) {
-          this.overlay.style.opacity = '0.3';
+    private showForNode(node: Node): void {
+        if (this.hideTimeout) {
+            clearTimeout(this.hideTimeout);
+            this.hideTimeout = null;
         }
-      }, this.opts.fadeDelay);
+
+        this.buildButtons(node);
+        this.positionOverlay(node);
+
+        if (!this.isVisible) {
+            this.overlay.style.display = 'flex';
+            this.overlay.style.opacity = '1';
+            this.isVisible = true;
+        }
+
+        this.startFadeTimer();
     }
-  }
+
+    private buildButtons(node: Node): void {
+        this.buttonContainer.innerHTML = '';
+        const nodeData = node.data as Record<string, unknown>;
+        const actions: HoverAction[] =
+            (nodeData?.hoverActions as HoverAction[]) ?? this.opts.defaultActions;
+
+        for (const action of actions) {
+            const btn = document.createElement('button');
+            btn.title = action.label;
+            Object.assign(btn.style, {
+                background: 'rgba(255, 255, 255, 0.1)',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                color: '#fff',
+                borderRadius: '6px',
+                padding: '6px 10px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                transition: 'background 0.15s',
+            });
+            btn.innerHTML = `<span>${action.icon}</span><span style="font-size:11px">${action.label}</span>`;
+            btn.addEventListener('mouseenter', () => {
+                btn.style.background = 'rgba(139, 92, 246, 0.4)';
+            });
+            btn.addEventListener('mouseleave', () => {
+                btn.style.background = 'rgba(255, 255, 255, 0.1)';
+            });
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.sg.events.emit('node:metaaction', { node, action: action.action });
+                this.hide();
+            });
+            this.buttonContainer.appendChild(btn);
+        }
+    }
+
+    private positionOverlay(node: Node): void {
+        const screen = worldToClient(
+            node.position,
+            this.sg.renderer.camera,
+            this.sg.renderer.renderer.domElement,
+        );
+
+        this.overlay.style.left = `${screen.x - this.overlay.offsetWidth / 2}px`;
+        this.overlay.style.top = `${screen.y + 50}px`;
+    }
+
+    private scheduleHide(): void {
+        if (this.hideTimeout) clearTimeout(this.hideTimeout);
+        this.hideTimeout = setTimeout(() => this.hide(), this.opts.hideDelay);
+    }
+
+    private hide(): void {
+        if (this.fadeTimeout) clearTimeout(this.fadeTimeout);
+        this.overlay.style.opacity = '0';
+        setTimeout(() => {
+            this.overlay.style.display = 'none';
+            this.isVisible = false;
+        }, this.opts.fadeDuration);
+    }
+
+    private startFadeTimer(): void {
+        if (this.fadeTimeout) clearTimeout(this.fadeTimeout);
+        if (this.opts.fadeDelay > 0) {
+            this.fadeTimeout = setTimeout(() => {
+                if (this.isVisible) {
+                    this.overlay.style.opacity = '0.3';
+                }
+            }, this.opts.fadeDelay);
+        }
+    }
 }

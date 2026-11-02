@@ -321,7 +321,12 @@ function runCapability(capability: Capability) {
 
     renderEvidence(
         capability,
-        capability.run(host.context(readTheme(), { rendererName: rendererName(), capabilities: renderer?.capabilities })),
+        capability.run(
+            host.context(readTheme(), {
+                rendererName: rendererName(),
+                capabilities: renderer?.capabilities,
+            }),
+        ),
     );
 
     if (capability.overlay) openOverlay(capability.overlay);
@@ -398,8 +403,10 @@ async function main(): Promise<void> {
         label: 'Pipeline nodes (keyboard)',
         onSelect: (id) => select([id]),
         onEscape: () => select([]),
-        formatSelection: (labels) => (labels.length ? `Selected ${labels.join(', ')}` : 'Selection cleared'),
-        edgeAnnouncer: (edges) => `Connections: ${edges.map((edge) => edge.label ?? edge.kind).join('; ')}`,
+        formatSelection: (labels) =>
+            labels.length ? `Selected ${labels.join(', ')}` : 'Selection cleared',
+        edgeAnnouncer: (edges) =>
+            `Connections: ${edges.map((edge) => edge.label ?? edge.kind).join('; ')}`,
     });
 
     host.controller.onChange(() => {
@@ -465,7 +472,8 @@ async function main(): Promise<void> {
         selection: () => host.controller.selection,
         overlayOpen: () => !el('overlay').hidden,
         diffOpen: () => !el('diff').hidden,
-        search: (query: string) => Navigation.search(host.model, query, searchableFields).map((hit) => hit.id),
+        search: (query: string) =>
+            Navigation.search(host.model, query, searchableFields).map((hit) => hit.id),
     };
     (window as unknown as { __ready: boolean }).__ready = true;
 }

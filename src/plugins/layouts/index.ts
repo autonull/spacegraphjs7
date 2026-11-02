@@ -6,10 +6,7 @@ export type { ForceLayoutConfig } from './ForceLayout';
 export { ForceLayout } from './ForceLayout';
 export { GeoLayout, type GeoLayoutOptions } from './GeoLayout';
 export { GridLayout, type GridLayoutOptions } from './GridLayout';
-export {
-  HierarchicalLayout,
-  type HierarchicalLayoutOptions,
-} from './HierarchicalLayout';
+export { HierarchicalLayout, type HierarchicalLayoutOptions } from './HierarchicalLayout';
 export { RadialLayout, type RadialLayoutOptions } from './RadialLayout';
 export { SpectralLayout, type SpectralLayoutOptions } from './SpectralLayout';
 export { TimelineLayout, type TimelineLayoutOptions } from './TimelineLayout';

@@ -34,22 +34,31 @@ IDs so positions and selection survive updates.
 import type { RenderModel } from '@spacegraphjs/renderer';
 
 export function toRenderModel(activity: Activity[]): RenderModel {
-  return {
-    nodes: activity.map((item) => ({
-      id: `tool:${item.id}`,
-      kind: item.kind,                 // your vocabulary; the renderer never interprets it
-      label: item.title,
-      summary: item.detail,
-      shape: item.rich ? 'card' : 'badge',
-      html: item.rich ? sanitize(item.html) : undefined, // sanitize before it crosses the boundary
-      status: mapStatus(item.state),   // neutral | pending | running | success | warning | error
-      position: [item.x, item.y, item.z],
-    })),
-    edges: activity.flatMap((item) =>
-      item.after ? [{ id: `e:${item.id}`, source: `tool:${item.after}`, target: `tool:${item.id}`, kind: 'sequence', directed: true }]
-                 : [],
-    ),
-  };
+    return {
+        nodes: activity.map((item) => ({
+            id: `tool:${item.id}`,
+            kind: item.kind, // your vocabulary; the renderer never interprets it
+            label: item.title,
+            summary: item.detail,
+            shape: item.rich ? 'card' : 'badge',
+            html: item.rich ? sanitize(item.html) : undefined, // sanitize before it crosses the boundary
+            status: mapStatus(item.state), // neutral | pending | running | success | warning | error
+            position: [item.x, item.y, item.z],
+        })),
+        edges: activity.flatMap((item) =>
+            item.after
+                ? [
+                      {
+                          id: `e:${item.id}`,
+                          source: `tool:${item.after}`,
+                          target: `tool:${item.id}`,
+                          kind: 'sequence',
+                          directed: true,
+                      },
+                  ]
+                : [],
+        ),
+    };
 }
 ```
 
@@ -87,7 +96,12 @@ renderer.setModel(model);
 it once and re-resolve on a color-scheme change (theme the renderer, do not remount it).
 
 ```ts
-const theme: RenderTheme = { ...tokens, fontFamily: bodyFont, fontSize: 13, direction: document.documentElement.dir === 'rtl' ? 'rtl' : 'ltr' };
+const theme: RenderTheme = {
+    ...tokens,
+    fontFamily: bodyFont,
+    fontSize: 13,
+    direction: document.documentElement.dir === 'rtl' ? 'rtl' : 'ltr',
+};
 renderer.setTheme(theme);
 ```
 
@@ -106,17 +120,17 @@ renderer.setTheme(theme);
   overview (clusters with counts), execution (tool activity), detail (reasoning and full content).
 - Fit/focus only on explicit user action, first load, or a data-source change — not on every update.
 - The fit carries options a host can use to frame what it wants framed:
-  ```ts
-  renderer.fit(nodeIds, {
-    minScale: 0.5,                                    // never shrink a world unit below half a pixel
-    padding: 40,                                      // a margin in world units, the same on every renderer
-    insets: { right: 232, bottom: 152 },              // screen-space margins, in CSS pixels
-  });
-  ```
-  `insets` are for chrome the host draws **over** the canvas — a floating inspector, a header, a
-  bottom sheet, a minimap. The renderer frames the content in what is left, so the content is never
-  hidden under the chrome. A host that gives the canvas its own space (a side panel beside it) needs
-  no insets. `capabilities.fitInsets` says whether the renderer can honour them at all.
+    ```ts
+    renderer.fit(nodeIds, {
+        minScale: 0.5, // never shrink a world unit below half a pixel
+        padding: 40, // a margin in world units, the same on every renderer
+        insets: { right: 232, bottom: 152 }, // screen-space margins, in CSS pixels
+    });
+    ```
+    `insets` are for chrome the host draws **over** the canvas — a floating inspector, a header, a
+    bottom sheet, a minimap. The renderer frames the content in what is left, so the content is never
+    hidden under the chrome. A host that gives the canvas its own space (a side panel beside it) needs
+    no insets. `capabilities.fitInsets` says whether the renderer can honour them at all.
 
 ## 6. Interaction, accessibility, and navigation
 

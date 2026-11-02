@@ -1,52 +1,52 @@
 {
-  "name": "@spacegraphjs/turn-map",
-  "version": "0.1.0",
-  "type": "module",
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "default": "./dist/index.js"
+    "name": "@spacegraphjs/turn-map",
+    "version": "0.1.0",
+    "type": "module",
+    "main": "./dist/index.js",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js",
+            "default": "./dist/index.js"
+        },
+        "./TurnMapInlineGraph": {
+            "types": "./dist/TurnMapInlineGraph.d.ts",
+            "import": "./dist/TurnMapInlineGraph.js",
+            "default": "./dist/TurnMapInlineGraph.js"
+        },
+        "./TurnMapOverlay": {
+            "types": "./dist/TurnMapOverlay.d.ts",
+            "import": "./dist/TurnMapOverlay.js",
+            "default": "./dist/TurnMapOverlay.js"
+        }
     },
-    "./TurnMapInlineGraph": {
-      "types": "./dist/TurnMapInlineGraph.d.ts",
-      "import": "./dist/TurnMapInlineGraph.js",
-      "default": "./dist/TurnMapInlineGraph.js"
+    "files": [
+        "dist"
+    ],
+    "scripts": {
+        "build": "tsc && vite build",
+        "typecheck": "tsc --noEmit",
+        "test": "vitest run"
     },
-    "./TurnMapOverlay": {
-      "types": "./dist/TurnMapOverlay.d.ts",
-      "import": "./dist/TurnMapOverlay.js",
-      "default": "./dist/TurnMapOverlay.js"
-    }
-  },
-  "files": [
-    "dist"
-  ],
-  "scripts": {
-    "build": "tsc && vite build",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run"
-  },
-  "peerDependencies": {
-    "@spacegraphjs/renderer": "^8.0.0",
-    "@spacegraphjs/svg-renderer": "^8.0.0",
-    "solid-js": "^1.9.0"
-  },
-  "dependencies": {
-    "@spacegraphjs/renderer": "workspace:*",
-    "@spacegraphjs/shared": "workspace:*",
-    "@spacegraphjs/overlays": "workspace:*"
-  },
-  "devDependencies": {
-    "@spacegraphjs/svg-renderer": "workspace:*",
-    "solid-js": "^1.9.0",
-    "typescript": "^7.0.0",
-    "vite": "^8.0.0",
-    "vite-plugin-solid": "2.11.10",
-    "vitest": "^5.0.0"
-  },
-  "sideEffects": false
+    "peerDependencies": {
+        "@spacegraphjs/renderer": "^8.0.0",
+        "@spacegraphjs/svg-renderer": "^8.0.0",
+        "solid-js": "^1.9.0"
+    },
+    "dependencies": {
+        "@spacegraphjs/renderer": "workspace:*",
+        "@spacegraphjs/shared": "workspace:*",
+        "@spacegraphjs/overlays": "workspace:*"
+    },
+    "devDependencies": {
+        "@spacegraphjs/svg-renderer": "workspace:*",
+        "solid-js": "^1.9.0",
+        "typescript": "^7.0.0",
+        "vite": "^8.0.0",
+        "vite-plugin-solid": "2.11.10",
+        "vitest": "^5.0.0"
+    },
+    "sideEffects": false
 }

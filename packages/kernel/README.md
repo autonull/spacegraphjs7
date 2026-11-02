@@ -8,9 +8,9 @@ types and conformance checks. It knows no domain vocabulary.
 import { Kernel, query, KernelCodec } from '@spacegraphjs/kernel';
 
 const kernel = new Kernel({
-  nodes: [{ id: 'a', kind: 'node', label: 'A' }],
-  edges: [],
-  hyperedges: [],
+    nodes: [{ id: 'a', kind: 'node', label: 'A' }],
+    edges: [],
+    hyperedges: [],
 });
 
 const found = query(kernel).nodes((node) => node.id === 'a');

@@ -213,12 +213,13 @@ Boot into a computer that sees itself."
 ### 5.4.5 Consulting Revenue (Tertiary)
 
 **Offerings:**
-| Service | Rate | Description |
-|---------|------|-------------|
+
+| Service                       | Rate      | Description                              |
+| ----------------------------- | --------- | ---------------------------------------- |
 | **Custom Plugin Development** | $150/hour | Build node types, layouts, vision models |
-| **Performance Optimization** | $150/hour | Tune graphs for 60 FPS at scale |
-| **Integration Support** | $150/hour | Embed SpaceGraph in existing products |
-| **Vision Model Training** | $200/hour | Fine-tune models for specific use cases |
+| **Performance Optimization**  | $150/hour | Tune graphs for 60 FPS at scale          |
+| **Integration Support**       | $150/hour | Embed SpaceGraph in existing products    |
+| **Vision Model Training**     | $200/hour | Fine-tune models for specific use cases  |
 
 **Month 6:** 15 hours × $150 = **$2,250/month**
 **Month 12:** 50 hours × $150 = **$7,500/month**
@@ -234,13 +235,14 @@ Boot into a computer that sees itself."
 ### 5.4.6 Donations & Grants (Support)
 
 **Platforms:**
-| Platform | Purpose | Setup |
-|----------|---------|-------|
-| **GitHub Sponsors** | Individual supporters | 1 hour |
-| **Open Collective** | Transparent finances | 2 hours |
-| **Liberapay** | Recurring donations | 30 min |
-| **NLnet Grant** | Vision system development | 20 hours (application) |
-| **Mozilla MOSS** | Open source security | 20 hours (application) |
+
+| Platform            | Purpose                   | Setup                  |
+| ------------------- | ------------------------- | ---------------------- |
+| **GitHub Sponsors** | Individual supporters     | 1 hour                 |
+| **Open Collective** | Transparent finances      | 2 hours                |
+| **Liberapay**       | Recurring donations       | 30 min                 |
+| **NLnet Grant**     | Vision system development | 20 hours (application) |
+| **Mozilla MOSS**    | Open source security      | 20 hours (application) |
 
 **Month 6:** **$500-1,000/month** (individual donations)
 **Month 12:** **$5,000-10,000 one-time** (grants) + **$2,000/month** (donations)
@@ -256,13 +258,14 @@ Boot into a computer that sees itself."
 ### 5.4.7 Merchandise (Community Building)
 
 **Products:**
-| Item | Cost | Price | Margin |
-|------|------|-------|--------|
-| **Stickers** | $0.50 | $5 | $4.50 |
-| **T-Shirts** | $12 | $30 | $18 |
-| **Hoodies** | $25 | $60 | $35 |
-| **3D-Printed Cases** | $15 | $40 | $25 |
-| **Posters** | $3 | $15 | $12 |
+
+| Item                 | Cost  | Price | Margin |
+| -------------------- | ----- | ----- | ------ |
+| **Stickers**         | $0.50 | $5    | $4.50  |
+| **T-Shirts**         | $12   | $30   | $18    |
+| **Hoodies**          | $25   | $60   | $35    |
+| **3D-Printed Cases** | $15   | $40   | $25    |
+| **Posters**          | $3    | $15   | $12    |
 
 **Fulfillment:**
 
@@ -294,13 +297,14 @@ intro    #sg6-help   Good first   releases
 ### 5.5.2 Revenue Sustainability
 
 **Month 6 Target:**
-| Stream | Revenue | Notes |
-|--------|---------|-------|
-| Hardware | $17,000 | 180 units × $94 margin |
-| Training | $5,000 | 2 workshops |
-| Consulting | $2,250 | 15 hours |
-| Donations | $500 | GitHub Sponsors, Open Collective |
-| **Total** | **$24,750/month** | |
+
+| Stream     | Revenue           | Notes                            |
+| ---------- | ----------------- | -------------------------------- |
+| Hardware   | $17,000           | 180 units × $94 margin           |
+| Training   | $5,000            | 2 workshops                      |
+| Consulting | $2,250            | 15 hours                         |
+| Donations  | $500              | GitHub Sponsors, Open Collective |
+| **Total**  | **$24,750/month** |                                  |
 
 **What This Buys:**
 
@@ -313,15 +317,16 @@ intro    #sg6-help   Good first   releases
 ---
 
 **Month 12 Target:**
-| Stream | Revenue | Notes |
-|--------|---------|-------|
-| Hardware | $32,000 | 350 units × $94 margin |
-| Training | $12,000 | 4 workshops |
-| Consulting | $7,500 | 50 hours |
-| Donations | $2,000 | Sustaining members |
-| Grants | $5,000 | Amortized NLnet/Mozilla |
-| Merch | $1,000 | Stickers, shirts |
-| **Total** | **$59,500/month** | |
+
+| Stream     | Revenue           | Notes                   |
+| ---------- | ----------------- | ----------------------- |
+| Hardware   | $32,000           | 350 units × $94 margin  |
+| Training   | $12,000           | 4 workshops             |
+| Consulting | $7,500            | 50 hours                |
+| Donations  | $2,000            | Sustaining members      |
+| Grants     | $5,000            | Amortized NLnet/Mozilla |
+| Merch      | $1,000            | Stickers, shirts        |
+| **Total**  | **$59,500/month** |                         |
 
 **What This Buys:**
 
@@ -474,12 +479,13 @@ Stretch Goals:
 ```
 
 **Timeline:**
-| Milestone | Date |
-|-----------|------|
-| Campaign launch | Month 4 |
-| Campaign ends | Month 5 |
+
+| Milestone           | Date    |
+| ------------------- | ------- |
+| Campaign launch     | Month 4 |
+| Campaign ends       | Month 5 |
 | Production complete | Month 8 |
-| Shipping begins | Month 9 |
+| Shipping begins     | Month 9 |
 
 ---
 

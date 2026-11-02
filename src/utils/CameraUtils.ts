@@ -9,14 +9,14 @@ export type { Point2D };
  * screen to its distance from the camera.
  */
 export function halfFovTangent(fovDegrees: number): number {
-  return Math.tan((fovDegrees * DEG2RAD) / 2);
+    return Math.tan((fovDegrees * DEG2RAD) / 2);
 }
 
 /**
  * The world height a perspective camera sees at a distance: the vertical extent of its frustum.
  */
 export function visibleHeightAtDistance(fovDegrees: number, distance: number): number {
-  return 2 * distance * halfFovTangent(fovDegrees);
+    return 2 * distance * halfFovTangent(fovDegrees);
 }
 
 /**
@@ -24,24 +24,20 @@ export function visibleHeightAtDistance(fovDegrees: number, distance: number): n
  * tighter than the floor that keeps a card readable.
  */
 export function focusRadiusOf(node: { data?: { width?: unknown } }, floor = 150): number {
-  const width = node.data?.width;
-  return typeof width === 'number' ? Math.max(width * 1.5, floor) : floor;
+    const width = node.data?.width;
+    return typeof width === 'number' ? Math.max(width * 1.5, floor) : floor;
 }
 
 /**
  * Set an orthographic camera's frustum to a world height and an aspect, centred on the origin.
  */
-export function setOrthoFrustum(
-  camera: OrthographicCamera,
-  height: number,
-  aspect: number
-): void {
-  const width = height * (aspect || 1);
-  camera.left = -width / 2;
-  camera.right = width / 2;
-  camera.top = height / 2;
-  camera.bottom = -height / 2;
-  camera.updateProjectionMatrix();
+export function setOrthoFrustum(camera: OrthographicCamera, height: number, aspect: number): void {
+    const width = height * (aspect || 1);
+    camera.left = -width / 2;
+    camera.right = width / 2;
+    camera.top = height / 2;
+    camera.bottom = -height / 2;
+    camera.updateProjectionMatrix();
 }
 
 /**
@@ -49,12 +45,12 @@ export function setOrthoFrustum(
  * the orthographic frame shows what the perspective frame shows.
  */
 export function fitOrthoFrustum(
-  camera: OrthographicCamera,
-  fovDegrees: number,
-  distance: number,
-  aspect: number
+    camera: OrthographicCamera,
+    fovDegrees: number,
+    distance: number,
+    aspect: number,
 ): void {
-  setOrthoFrustum(camera, visibleHeightAtDistance(fovDegrees, distance), aspect);
+    setOrthoFrustum(camera, visibleHeightAtDistance(fovDegrees, distance), aspect);
 }
 
 /**
@@ -63,20 +59,20 @@ export function fitOrthoFrustum(
  * which one it means. The aspect is the camera's own unless the caller measures a different one.
  */
 export function visibleWorldExtent(
-  camera: Camera,
-  distance: number,
-  aspect?: number
+    camera: Camera,
+    distance: number,
+    aspect?: number,
 ): { width: number; height: number } {
-  const ortho = camera as OrthographicCamera;
-  if (ortho.isOrthographicCamera) {
-    return {
-      width: (ortho.right - ortho.left) / ortho.zoom,
-      height: (ortho.top - ortho.bottom) / ortho.zoom,
-    };
-  }
-  const perspective = camera as PerspectiveCamera;
-  const height = visibleHeightAtDistance(perspective.fov, distance);
-  return { width: height * (aspect ?? perspective.aspect), height };
+    const ortho = camera as OrthographicCamera;
+    if (ortho.isOrthographicCamera) {
+        return {
+            width: (ortho.right - ortho.left) / ortho.zoom,
+            height: (ortho.top - ortho.bottom) / ortho.zoom,
+        };
+    }
+    const perspective = camera as PerspectiveCamera;
+    const height = visibleHeightAtDistance(perspective.fov, distance);
+    return { width: height * (aspect ?? perspective.aspect), height };
 }
 
 /**
@@ -90,57 +86,61 @@ export const AUTO_FOCUS_DURATION = 0.5;
  * zooms as well as re-centres: a focus that only moves the view is not a focus.
  */
 export function focusNodeCamera(
-  graph: {
-    renderer: { camera: Camera };
-    cameraControls: {
-      spherical: { radius: number };
-      flyTo(target: Vector3, distance: number, duration?: number, zoom?: number): void;
-    };
-  },
-  node: { id: string; position: Vector3; data?: { width?: unknown } },
-  options: { padding?: number; duration?: number } = {}
+    graph: {
+        renderer: { camera: Camera };
+        cameraControls: {
+            spherical: { radius: number };
+            flyTo(target: Vector3, distance: number, duration?: number, zoom?: number): void;
+        };
+    },
+    node: { id: string; position: Vector3; data?: { width?: unknown } },
+    options: { padding?: number; duration?: number } = {},
 ): void {
-  const fit = calculateFitView([node], graph.renderer.camera, options.padding ?? 100, 200);
-  if (!fit) return;
+    const fit = calculateFitView([node], graph.renderer.camera, options.padding ?? 100, 200);
+    if (!fit) return;
 
-  // An orthographic frame carries a frustum zoom; the camera's distance does not scale it.
-  const distance =
-    fit.zoom !== undefined ? graph.cameraControls.spherical.radius : fit.cameraZ;
+    // An orthographic frame carries a frustum zoom; the camera's distance does not scale it.
+    const distance = fit.zoom !== undefined ? graph.cameraControls.spherical.radius : fit.cameraZ;
 
-  graph.cameraControls.flyTo(fit.center, distance, options.duration ?? AUTO_FOCUS_DURATION, fit.zoom);
+    graph.cameraControls.flyTo(
+        fit.center,
+        distance,
+        options.duration ?? AUTO_FOCUS_DURATION,
+        fit.zoom,
+    );
 }
 
 export interface FitViewResult {
-  center: Vector3;
-  cameraZ: number;
-  /** Orthographic frustum zoom that fits the bounds; omitted for perspective. */
-  zoom?: number;
+    center: Vector3;
+    cameraZ: number;
+    /** Orthographic frustum zoom that fits the bounds; omitted for perspective. */
+    zoom?: number;
 }
 
 /** A node's placement plus the dimensions it occupies around that placement. */
 export interface FitNode {
-  position: Vector3;
-  data?: Record<string, unknown>;
+    position: Vector3;
+    data?: Record<string, unknown>;
 }
 
 /** The surface the camera frames, in CSS pixels. */
 export interface FitSurface {
-  width: number;
-  height: number;
+    width: number;
+    height: number;
 }
 
 /** Screen-space margins the framed content must stay clear of, in CSS pixels. */
 export interface FitInsets {
-  top: number;
-  right: number;
-  bottom: number;
-  left: number;
+    top: number;
+    right: number;
+    bottom: number;
+    left: number;
 }
 
 /** The part of the surface the content may use once the insets are taken out, in CSS pixels. */
 interface UsableRegion {
-  width: number;
-  height: number;
+    width: number;
+    height: number;
 }
 
 /**
@@ -148,11 +148,11 @@ interface UsableRegion {
  * may use the whole surface and the region is undefined.
  */
 function usableRegion(surface?: FitSurface, insets?: FitInsets): UsableRegion | undefined {
-  if (!surface || !insets) return undefined;
-  const width = surface.width - insets.left - insets.right;
-  const height = surface.height - insets.top - insets.bottom;
-  if (width <= 0 || height <= 0) return undefined;
-  return { width, height };
+    if (!surface || !insets) return undefined;
+    const width = surface.width - insets.left - insets.right;
+    const height = surface.height - insets.top - insets.bottom;
+    if (width <= 0 || height <= 0) return undefined;
+    return { width, height };
 }
 
 /**
@@ -169,115 +169,128 @@ function usableRegion(surface?: FitSurface, insets?: FitInsets): UsableRegion | 
  * because a tilted camera has no single screen-to-world scale.
  */
 export function calculateFitView(
-  nodes: FitNode[],
-  camera: Camera,
-  padding = 100,
-  minDistance = 200,
-  /** Camera polar angle from +Y (radians). When provided for perspective, adjusts distance for tilt. */
-  phi?: number,
-  /** The smallest frustum zoom the fit may use; the frame then starts at the content's corner. */
-  minZoom?: number,
-  /** The surface the camera frames, in CSS pixels. */
-  surface?: FitSurface,
-  /** Screen-space margins the content must stay clear of, in CSS pixels. */
-  insets?: FitInsets,
+    nodes: FitNode[],
+    camera: Camera,
+    padding = 100,
+    minDistance = 200,
+    /** Camera polar angle from +Y (radians). When provided for perspective, adjusts distance for tilt. */
+    phi?: number,
+    /** The smallest frustum zoom the fit may use; the frame then starts at the content's corner. */
+    minZoom?: number,
+    /** The surface the camera frames, in CSS pixels. */
+    surface?: FitSurface,
+    /** Screen-space margins the content must stay clear of, in CSS pixels. */
+    insets?: FitInsets,
 ): FitViewResult | null {
-  if (!nodes || nodes.length === 0) return null;
+    if (!nodes || nodes.length === 0) return null;
 
-  const box = new Box3();
-  for (const node of nodes) {
-    if (!node?.position) continue;
-    box.expandByPoint(node.position);
-    const extent = nodeExtent(node);
-    if (extent) {
-      box.expandByPoint(node.position.clone().add(extent));
-      box.expandByPoint(node.position.clone().sub(extent));
+    const box = new Box3();
+    for (const node of nodes) {
+        if (!node?.position) continue;
+        box.expandByPoint(node.position);
+        const extent = nodeExtent(node);
+        if (extent) {
+            box.expandByPoint(node.position.clone().add(extent));
+            box.expandByPoint(node.position.clone().sub(extent));
+        }
     }
-  }
 
-  const center = new Vector3();
-  box.getCenter(center);
+    const center = new Vector3();
+    box.getCenter(center);
 
-  const size = new Vector3();
-  box.getSize(size);
+    const size = new Vector3();
+    box.getSize(size);
 
-  const usable = usableRegion(surface, insets);
+    const usable = usableRegion(surface, insets);
 
-  const ortho = camera as OrthographicCamera;
-  if (ortho.isOrthographicCamera) {
-    // The frame is the base frustum scaled by zoom and looks down -Z, so fit the X/Y bounds.
-    const baseHeight = ortho.top - ortho.bottom || 1;
-    const baseWidth = ortho.right - ortho.left || baseHeight;
-    const fitZoom = Math.min(
-      baseHeight / (size.y + 2 * padding),
-      baseWidth / (size.x + 2 * padding),
-      // The content and its margin must also fit the region the insets leave free.
-      ...(usable && surface
-        ? [
-            (baseHeight * usable.width) / ((size.x + 2 * padding) * surface.height),
-            (baseHeight * usable.height) / ((size.y + 2 * padding) * surface.height),
-          ]
-        : []),
-    );
-    const zoom = minZoom === undefined ? fitZoom : Math.max(minZoom, fitZoom);
+    const ortho = camera as OrthographicCamera;
+    if (ortho.isOrthographicCamera) {
+        // The frame is the base frustum scaled by zoom and looks down -Z, so fit the X/Y bounds.
+        const baseHeight = ortho.top - ortho.bottom || 1;
+        const baseWidth = ortho.right - ortho.left || baseHeight;
+        const fitZoom = Math.min(
+            baseHeight / (size.y + 2 * padding),
+            baseWidth / (size.x + 2 * padding),
+            // The content and its margin must also fit the region the insets leave free.
+            ...(usable && surface
+                ? [
+                      (baseHeight * usable.width) / ((size.x + 2 * padding) * surface.height),
+                      (baseHeight * usable.height) / ((size.y + 2 * padding) * surface.height),
+                  ]
+                : []),
+        );
+        const zoom = minZoom === undefined ? fitZoom : Math.max(minZoom, fitZoom);
 
-    // CSS pixels per world unit at the chosen zoom: the frustum covers the surface.
-    const pxPerWorld = surface && surface.height > 0 ? (surface.height * zoom) / baseHeight : 0;
-    // The usable region's centre, in world units, relative to the surface's centre.
-    const offsetX = usable && pxPerWorld > 0 ? (insets!.left - insets!.right) / 2 / pxPerWorld : 0;
-    const offsetY = usable && pxPerWorld > 0 ? (insets!.top - insets!.bottom) / 2 / pxPerWorld : 0;
+        // CSS pixels per world unit at the chosen zoom: the frustum covers the surface.
+        const pxPerWorld = surface && surface.height > 0 ? (surface.height * zoom) / baseHeight : 0;
+        // The usable region's centre, in world units, relative to the surface's centre.
+        const offsetX =
+            usable && pxPerWorld > 0 ? (insets!.left - insets!.right) / 2 / pxPerWorld : 0;
+        const offsetY =
+            usable && pxPerWorld > 0 ? (insets!.top - insets!.bottom) / 2 / pxPerWorld : 0;
 
-    if (zoom === fitZoom)
-      return { center: new Vector3(center.x - offsetX, center.y + offsetY, center.z), cameraZ: minDistance, zoom };
+        if (zoom === fitZoom)
+            return {
+                center: new Vector3(center.x - offsetX, center.y + offsetY, center.z),
+                cameraZ: minDistance,
+                zoom,
+            };
 
-    // The floor applies: the content no longer fits, so the frame starts at its beginning and the
-    // axis that still fits stays centred.
-    const visibleWidth = usable && pxPerWorld > 0 ? usable.width / pxPerWorld : baseWidth / zoom;
-    const visibleHeight = usable && pxPerWorld > 0 ? usable.height / pxPerWorld : baseHeight / zoom;
-    const anchored = new Vector3(
-      size.x + 2 * padding > visibleWidth ? box.min.x - padding - offsetX + visibleWidth / 2 : center.x - offsetX,
-      size.y + 2 * padding > visibleHeight ? box.min.y - padding + offsetY + visibleHeight / 2 : center.y + offsetY,
-      center.z,
-    );
+        // The floor applies: the content no longer fits, so the frame starts at its beginning and the
+        // axis that still fits stays centred.
+        const visibleWidth =
+            usable && pxPerWorld > 0 ? usable.width / pxPerWorld : baseWidth / zoom;
+        const visibleHeight =
+            usable && pxPerWorld > 0 ? usable.height / pxPerWorld : baseHeight / zoom;
+        const anchored = new Vector3(
+            size.x + 2 * padding > visibleWidth
+                ? box.min.x - padding - offsetX + visibleWidth / 2
+                : center.x - offsetX,
+            size.y + 2 * padding > visibleHeight
+                ? box.min.y - padding + offsetY + visibleHeight / 2
+                : center.y + offsetY,
+            center.z,
+        );
 
-    return { center: anchored, cameraZ: minDistance, zoom };
-  }
-
-  const maxDim = Math.max(size.x, size.y, size.z);
-  const { fov = 75, aspect = 1 } = camera as Partial<PerspectiveCamera>;
-  const halfHeight = halfFovTangent(fov);
-  let cameraZ = Math.abs(maxDim / (2 * halfHeight * Math.max(1, aspect)));
-
-  // For perspective cameras with tilt (phi < PI/2), the view of the XY plane is foreshortened.
-  // Move the camera closer by sin(phi) to compensate and frame the same content.
-  const tilt = phi !== undefined && phi < Math.PI / 2 ? Math.sin(phi) : 1;
-  cameraZ *= tilt;
-
-  // The content must fit the region the insets leave free, so the camera steps back.
-  if (usable && surface) cameraZ *= Math.max(surface.width / usable.width, surface.height / usable.height);
-
-  // The frame centres the content in that region. The world size the camera sees at the target
-  // plane gives the screen-to-world scale (approximate for a tilted camera).
-  if (usable && surface) {
-    const visibleHeight = visibleHeightAtDistance(fov, cameraZ);
-    const visibleWidth = visibleHeight * aspect;
-    const pxPerWorldX = visibleWidth > 0 ? surface.width / visibleWidth : 0;
-    const pxPerWorldY = visibleHeight > 0 ? surface.height / (visibleHeight * tilt) : 0;
-    if (pxPerWorldX > 0 && pxPerWorldY > 0) {
-      center.x -= (insets!.left - insets!.right) / 2 / pxPerWorldX;
-      center.y += (insets!.top - insets!.bottom) / 2 / pxPerWorldY;
+        return { center: anchored, cameraZ: minDistance, zoom };
     }
-  }
 
-  return { center, cameraZ: Math.max(cameraZ + padding, minDistance) };
+    const maxDim = Math.max(size.x, size.y, size.z);
+    const { fov = 75, aspect = 1 } = camera as Partial<PerspectiveCamera>;
+    const halfHeight = halfFovTangent(fov);
+    let cameraZ = Math.abs(maxDim / (2 * halfHeight * Math.max(1, aspect)));
+
+    // For perspective cameras with tilt (phi < PI/2), the view of the XY plane is foreshortened.
+    // Move the camera closer by sin(phi) to compensate and frame the same content.
+    const tilt = phi !== undefined && phi < Math.PI / 2 ? Math.sin(phi) : 1;
+    cameraZ *= tilt;
+
+    // The content must fit the region the insets leave free, so the camera steps back.
+    if (usable && surface)
+        cameraZ *= Math.max(surface.width / usable.width, surface.height / usable.height);
+
+    // The frame centres the content in that region. The world size the camera sees at the target
+    // plane gives the screen-to-world scale (approximate for a tilted camera).
+    if (usable && surface) {
+        const visibleHeight = visibleHeightAtDistance(fov, cameraZ);
+        const visibleWidth = visibleHeight * aspect;
+        const pxPerWorldX = visibleWidth > 0 ? surface.width / visibleWidth : 0;
+        const pxPerWorldY = visibleHeight > 0 ? surface.height / (visibleHeight * tilt) : 0;
+        if (pxPerWorldX > 0 && pxPerWorldY > 0) {
+            center.x -= (insets!.left - insets!.right) / 2 / pxPerWorldX;
+            center.y += (insets!.top - insets!.bottom) / 2 / pxPerWorldY;
+        }
+    }
+
+    return { center, cameraZ: Math.max(cameraZ + padding, minDistance) };
 }
 
 /** Half-extents reported by a node's spec; cards carry width/height, shapes a single size. */
 function nodeExtent(node: FitNode): Vector3 | undefined {
-  const data = node.data ?? {};
-  const size = typeof data.size === 'number' ? data.size : undefined;
-  const width = typeof data.width === 'number' ? data.width : size;
-  const height = typeof data.height === 'number' ? data.height : size;
-  if (width === undefined && height === undefined) return undefined;
-  return new Vector3((width ?? 0) / 2, (height ?? 0) / 2, (size ?? 0) / 2);
+    const data = node.data ?? {};
+    const size = typeof data.size === 'number' ? data.size : undefined;
+    const width = typeof data.width === 'number' ? data.width : size;
+    const height = typeof data.height === 'number' ? data.height : size;
+    if (width === undefined && height === undefined) return undefined;
+    return new Vector3((width ?? 0) / 2, (height ?? 0) / 2, (size ?? 0) / 2);
 }

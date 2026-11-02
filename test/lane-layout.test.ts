@@ -4,7 +4,8 @@ import { LaneLayout } from '../src/layout/LaneLayout';
 
 const LANES = ['prompt', 'narrative', 'explore', 'edit', 'verify', 'delegate', 'artifacts'];
 
-const make = () => new LaneLayout({ lanes: LANES, lanePitch: 56, step: 48, groupGap: 320, depthStep: 64 });
+const make = () =>
+    new LaneLayout({ lanes: LANES, lanePitch: 56, step: 48, groupGap: 320, depthStep: 64 });
 
 describe('LaneLayout', () => {
     it('maps lane index to Y', () => {

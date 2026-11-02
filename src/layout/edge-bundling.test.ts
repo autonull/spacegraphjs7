@@ -35,7 +35,7 @@ describe('EdgeBundler', () => {
         expect(bundled.length).toBe(4);
 
         // Check that bundled edges have bundleId
-        const bundledWithId = bundled.filter(e => e.bundleId);
+        const bundledWithId = bundled.filter((e) => e.bundleId);
         expect(bundledWithId.length).toBeGreaterThan(0);
     });
 
@@ -44,7 +44,7 @@ describe('EdgeBundler', () => {
         const bundled = bundler.bundleEdges(edges, positions, hierarchy);
 
         // All edges should be individual (no bundleId)
-        const bundledWithId = bundled.filter(e => e.bundleId);
+        const bundledWithId = bundled.filter((e) => e.bundleId);
         expect(bundledWithId.length).toBe(0);
     });
 
@@ -53,7 +53,7 @@ describe('EdgeBundler', () => {
         const bundled = bundler.bundleEdges(edges, positions, hierarchy);
 
         // Check that bundled edges have bundleId
-        const bundledWithId = bundled.filter(e => e.bundleId);
+        const bundledWithId = bundled.filter((e) => e.bundleId);
         expect(bundledWithId.length).toBeGreaterThan(0);
 
         // Bundled edges have subdivisions + 1 control points

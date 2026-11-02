@@ -48,7 +48,10 @@
     <body>
         <div class="header">
             <h1>Semantic Navigation</h1>
-            <p>Double-click any edge to fly across the graph and zoom perfectly to its target node. Try it on this clustered graph of 200 nodes!</p>
+            <p>
+                Double-click any edge to fly across the graph and zoom perfectly to its target node.
+                Try it on this clustered graph of 200 nodes!
+            </p>
         </div>
         <div id="container"></div>
 
@@ -84,7 +87,6 @@
                 const leafHex = (r2 << 16) | (g2 << 8) | b2;
                 document.body.removeChild(dummyEl);
 
-
                 // Center Node
                 nodes.push({
                     id: clusterId,
@@ -93,7 +95,7 @@
                     position: [
                         Math.random() * 2000 - 1000,
                         Math.random() * 2000 - 1000,
-                        Math.random() * 500 - 250
+                        Math.random() * 500 - 250,
                     ],
                     data: { color: centerHex, shape: 'sphere' },
                 });
@@ -106,9 +108,9 @@
                         type: 'ShapeNode',
                         label: `C${c} Node ${i}`,
                         position: [
-                            (Math.random() * 100 - 50),
-                            (Math.random() * 100 - 50),
-                            (Math.random() * 100 - 50)
+                            Math.random() * 100 - 50,
+                            Math.random() * 100 - 50,
+                            Math.random() * 100 - 50,
                         ],
                         data: { color: leafHex },
                     });
@@ -119,19 +121,19 @@
                         source: childId,
                         target: clusterId,
                         type: 'DottedEdge',
-                        data: { dashSize: 4, gapSize: 2 }
+                        data: { dashSize: 4, gapSize: 2 },
                     });
                 }
             }
 
             // Connect some clusters together
             for (let c = 0; c < NUM_CLUSTERS - 1; c++) {
-                 edges.push({
+                edges.push({
                     id: `e-inter-${c}`,
                     source: `cluster-${c}`,
-                    target: `cluster-${c+1}`,
+                    target: `cluster-${c + 1}`,
                     type: 'DynamicThicknessEdge',
-                    data: { weight: 0.8 }
+                    data: { weight: 0.8 },
                 });
             }
 
@@ -156,10 +158,9 @@
             setTimeout(() => {
                 const n = graph.graph.nodes.get('cluster-0');
                 if (n) {
-                   graph.cameraControls.flyTo(n.position, 600, 2);
+                    graph.cameraControls.flyTo(n.position, 600, 2);
                 }
             }, 500);
-
         </script>
     </body>
 </html>

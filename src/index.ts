@@ -45,7 +45,7 @@ export { createLogger, logger, setLogLevel, type LogLevel, type Logger } from '.
 
 // Type augmentation for global access
 declare global {
-  interface Window {
-    SpaceGraph?: typeof import('./SpaceGraph').SpaceGraph;
-  }
+    interface Window {
+        SpaceGraph?: typeof import('./SpaceGraph').SpaceGraph;
+    }
 }

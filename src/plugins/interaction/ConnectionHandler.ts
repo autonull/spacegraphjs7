@@ -10,103 +10,103 @@ import { TempConnectionLine } from './TempConnectionLine';
  * Handles edge creation through node-to-node dragging
  */
 export class ConnectionHandler {
-  private isConnecting = false;
-  private connectSourceNode: Node | null = null;
-  private connectTempLine: TempConnectionLine | null = null;
+    private isConnecting = false;
+    private connectSourceNode: Node | null = null;
+    private connectTempLine: TempConnectionLine | null = null;
 
-  readonly sg: SpaceGraph;
-  readonly raycaster: InteractionRaycaster;
+    readonly sg: SpaceGraph;
+    readonly raycaster: InteractionRaycaster;
 
-  constructor(sg: SpaceGraph, raycaster: InteractionRaycaster) {
-    this.sg = sg;
-    this.raycaster = raycaster;
-  }
-
-  startConnection(node: Node): void {
-    if (!node.object) return;
-
-    this.isConnecting = true;
-    this.connectSourceNode = node;
-    this.connectTempLine = new TempConnectionLine(this.sg.renderer.scene, node.position);
-
-    this.sg.events.emit('connection:start', { node });
-  }
-
-  updateConnection(): void {
-    if (!this.isConnecting || !this.connectSourceNode || !this.connectTempLine) return;
-
-    const normal = this.sg.renderer.camera.getWorldDirection(new Vector3(0, 0, 1));
-    const plane = new Plane().setFromNormalAndCoplanarPoint(
-      normal,
-      this.connectSourceNode.position
-    );
-    const intersectPoint = this.raycaster.raycastPlane(plane);
-
-    if (!intersectPoint) return;
-
-    this.connectTempLine.moveTo(intersectPoint);
-
-    const hoverResult = this.raycaster.raycastNode();
-    const targetNode = hoverResult?.node ?? null;
-
-    this.sg.events.emit('connection:drag', {
-      source: this.connectSourceNode,
-      target: targetNode,
-      position: intersectPoint,
-    });
-  }
-
-  completeConnection(targetNode: Node | null): boolean {
-    if (!this.isConnecting || !this.connectSourceNode || !targetNode) {
-      this.cancelConnection();
-      return false;
+    constructor(sg: SpaceGraph, raycaster: InteractionRaycaster) {
+        this.sg = sg;
+        this.raycaster = raycaster;
     }
 
-    if (this.connectSourceNode === targetNode) {
-      this.cancelConnection();
-      return false;
+    startConnection(node: Node): void {
+        if (!node.object) return;
+
+        this.isConnecting = true;
+        this.connectSourceNode = node;
+        this.connectTempLine = new TempConnectionLine(this.sg.renderer.scene, node.position);
+
+        this.sg.events.emit('connection:start', { node });
     }
 
-    const edgeSpec: EdgeSpec = {
-      id: `edge_${this.connectSourceNode.id}_${targetNode.id}_${Date.now()}`,
-      source: this.connectSourceNode.id,
-      target: targetNode.id,
-      type: 'CurvedEdge',
-      data: {},
-    };
+    updateConnection(): void {
+        if (!this.isConnecting || !this.connectSourceNode || !this.connectTempLine) return;
 
-    this.sg.graph.addEdge(edgeSpec);
-    this.sg.events.emit('connection:complete', {
-      source: this.connectSourceNode,
-      target: targetNode,
-    });
+        const normal = this.sg.renderer.camera.getWorldDirection(new Vector3(0, 0, 1));
+        const plane = new Plane().setFromNormalAndCoplanarPoint(
+            normal,
+            this.connectSourceNode.position,
+        );
+        const intersectPoint = this.raycaster.raycastPlane(plane);
 
-    this.cleanupConnection();
-    return true;
-  }
+        if (!intersectPoint) return;
 
-  cancelConnection(): void {
-    this.cleanupConnection();
-    this.sg.events.emit('connection:cancelled', {});
-  }
+        this.connectTempLine.moveTo(intersectPoint);
 
-  isConnectingMode(): boolean {
-    return this.isConnecting;
-  }
+        const hoverResult = this.raycaster.raycastNode();
+        const targetNode = hoverResult?.node ?? null;
 
-  getSourceNode(): Node | null {
-    return this.connectSourceNode;
-  }
+        this.sg.events.emit('connection:drag', {
+            source: this.connectSourceNode,
+            target: targetNode,
+            position: intersectPoint,
+        });
+    }
 
-  dispose(): void {
-    this.cleanupConnection();
-  }
+    completeConnection(targetNode: Node | null): boolean {
+        if (!this.isConnecting || !this.connectSourceNode || !targetNode) {
+            this.cancelConnection();
+            return false;
+        }
 
-  private cleanupConnection(): void {
-    this.connectTempLine?.dispose();
-    this.connectTempLine = null;
+        if (this.connectSourceNode === targetNode) {
+            this.cancelConnection();
+            return false;
+        }
 
-    this.isConnecting = false;
-    this.connectSourceNode = null;
-  }
+        const edgeSpec: EdgeSpec = {
+            id: `edge_${this.connectSourceNode.id}_${targetNode.id}_${Date.now()}`,
+            source: this.connectSourceNode.id,
+            target: targetNode.id,
+            type: 'CurvedEdge',
+            data: {},
+        };
+
+        this.sg.graph.addEdge(edgeSpec);
+        this.sg.events.emit('connection:complete', {
+            source: this.connectSourceNode,
+            target: targetNode,
+        });
+
+        this.cleanupConnection();
+        return true;
+    }
+
+    cancelConnection(): void {
+        this.cleanupConnection();
+        this.sg.events.emit('connection:cancelled', {});
+    }
+
+    isConnectingMode(): boolean {
+        return this.isConnecting;
+    }
+
+    getSourceNode(): Node | null {
+        return this.connectSourceNode;
+    }
+
+    dispose(): void {
+        this.cleanupConnection();
+    }
+
+    private cleanupConnection(): void {
+        this.connectTempLine?.dispose();
+        this.connectTempLine = null;
+
+        this.isConnecting = false;
+        this.connectSourceNode = null;
+    }
 }

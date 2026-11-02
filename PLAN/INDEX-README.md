@@ -122,18 +122,18 @@
 | Working demo  | 3 nodes + 3 edges render     | ENHANCED-BUILD-PLAN.md |
 | Fresh install | Works in empty directory     | ENHANCED-BUILD-PLAN.md |
 | QUICKSTART    | <10 minutes, stranger tested | ENHANCED-BUILD-PLAN.md |
-| pnpm publish   | Successful, alpha tag        | LAUNCH-SEQUENCED.md    |
+| pnpm publish  | Successful, alpha tag        | LAUNCH-SEQUENCED.md    |
 | Matrix room   | 10+ members                  | LAUNCH-SEQUENCED.md    |
 
 ### Phase C (Months 2-6): Growth Success
 
-| Metric                     | M2   | M3     | M4      | M5      | M6      |
-| -------------------------- | ---- | ------ | ------- | ------- | ------- |
+| Metric                      | M2   | M3     | M4      | M5      | M6      |
+| --------------------------- | ---- | ------ | ------- | ------- | ------- |
 | pnpm downloads (cumulative) | 200  | 500    | 1,500   | 3,000   | 5,000   |
-| Matrix members             | 25   | 50     | 100     | 150     | 200     |
-| GitHub stars               | 25   | 50     | 75      | 100     | 150     |
-| External contributors      | 2    | 5      | 8       | 10      | 15      |
-| Monthly revenue            | $200 | $2,300 | $15,500 | $30,800 | $42,200 |
+| Matrix members              | 25   | 50     | 100     | 150     | 200     |
+| GitHub stars                | 25   | 50     | 75      | 100     | 150     |
+| External contributors       | 2    | 5      | 8       | 10      | 15      |
+| Monthly revenue             | $200 | $2,300 | $15,500 | $30,800 | $42,200 |
 
 **See:** [ENHANCEMENT-PLAN.md](./ENHANCEMENT-PLAN.md) for full details.
 
@@ -143,9 +143,9 @@
 
 | Risk Category        | Risks                                                                               | Document                                     |
 | -------------------- | ----------------------------------------------------------------------------------- | -------------------------------------------- |
-| **Critical (R1-R5)** | Three.js incompatibility, pnpm name taken, TypeScript exports, WebGL, Memory leak    | [CONTINGENCY-PLAN.md](./CONTINGENCY-PLAN.md) |
+| **Critical (R1-R5)** | Three.js incompatibility, pnpm name taken, TypeScript exports, WebGL, Memory leak   | [CONTINGENCY-PLAN.md](./CONTINGENCY-PLAN.md) |
 | **High (R6-R10)**    | ESM resolution, Camera controls, Build size, Browser compatibility, Node.js version | [CONTINGENCY-PLAN.md](./CONTINGENCY-PLAN.md) |
-| **Medium (R11-R15)** | pnpm login, Git conflicts, Documentation typos, Matrix spam, Low adoption            | [CONTINGENCY-PLAN.md](./CONTINGENCY-PLAN.md) |
+| **Medium (R11-R15)** | pnpm login, Git conflicts, Documentation typos, Matrix spam, Low adoption           | [CONTINGENCY-PLAN.md](./CONTINGENCY-PLAN.md) |
 | **Post-Launch**      | Low adoption, Critical bugs, No contributors, Negative feedback                     | [ENHANCEMENT-PLAN.md](./ENHANCEMENT-PLAN.md) |
 | **Growth**           | Hardware delays, Workshop no-shows, Burnout, Revenue plateau                        | [ENHANCEMENT-PLAN.md](./ENHANCEMENT-PLAN.md) |
 
@@ -206,17 +206,17 @@
 
 ### Critical Milestones
 
-| Milestone | Description               | When   | Gate                    |
-| --------- | ------------------------- | ------ | ----------------------- |
-| **M0**    | Environment verified      | Day 0  | Node 18+, git           |
+| Milestone | Description               | When   | Gate                     |
+| --------- | ------------------------- | ------ | ------------------------ |
+| **M0**    | Environment verified      | Day 0  | Node 18+, git            |
 | **M1**    | package.json created      | Day 1  | pnpm install works       |
 | **M2**    | SpaceGraph class compiles | Day 2  | pnpm run build           |
-| **M3**    | Demo renders              | Day 4  | 3 nodes + 3 edges       |
-| **M4**    | Camera controls work      | Day 5  | Rotate, zoom            |
-| **M5**    | All tests pass            | Day 7  | No console errors       |
-| **M6**    | Fresh install works       | Day 12 | Empty directory         |
-| **M7**    | QUICKSTART verified       | Day 14 | <10 min, stranger       |
-| **M8**    | Published to pnpm          | Day 16 | pnpm publish --tag alpha |
+| **M3**    | Demo renders              | Day 4  | 3 nodes + 3 edges        |
+| **M4**    | Camera controls work      | Day 5  | Rotate, zoom             |
+| **M5**    | All tests pass            | Day 7  | No console errors        |
+| **M6**    | Fresh install works       | Day 12 | Empty directory          |
+| **M7**    | QUICKSTART verified       | Day 14 | <10 min, stranger        |
+| **M8**    | Published to pnpm         | Day 16 | pnpm publish --tag alpha |
 
 **Do not skip milestones. Do not publish until M7 passes.**
 

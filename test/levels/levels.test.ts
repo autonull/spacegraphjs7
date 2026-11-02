@@ -11,7 +11,13 @@ type TestNode = {
 
 type TestEdge = { id: string; source: string; target: string; kind: string };
 
-const CONFIG: LevelConfig<'coarse' | 'mid' | 'fine', 'root' | 'work' | 'detail', 'hierarchy' | 'flow', TestNode, TestEdge> = {
+const CONFIG: LevelConfig<
+    'coarse' | 'mid' | 'fine',
+    'root' | 'work' | 'detail',
+    'hierarchy' | 'flow',
+    TestNode,
+    TestEdge
+> = {
     levelRank: { coarse: 0, mid: 1, fine: 2 },
     kindMinLevel: { root: 'coarse', work: 'mid', detail: 'fine' },
     edgeMinLevel: { hierarchy: 'coarse', flow: 'mid' },
@@ -70,11 +76,9 @@ describe('Levels — edges', () => {
         const edges = Levels.edgesAtLevel(model, 'mid', undefined, CONFIG);
 
         expect(edges.map((edge) => edge.id)).toEqual(['e1']);
-        expect(Levels.edgesAtLevel(model, 'fine', undefined, CONFIG).map((edge) => edge.id)).toEqual([
-            'e1',
-            'e2',
-            'e3',
-        ]);
+        expect(
+            Levels.edgesAtLevel(model, 'fine', undefined, CONFIG).map((edge) => edge.id),
+        ).toEqual(['e1', 'e2', 'e3']);
     });
 
     it('never draws an edge kind without a level', () => {
@@ -104,9 +108,9 @@ describe('Levels — edges', () => {
                 candidates.filter((edge) => edge.kind !== 'hierarchy'),
         };
 
-        expect(Levels.edgesAtLevel(model, 'fine', undefined, narrowed).map((edge) => edge.id)).toEqual([
-            'e2',
-        ]);
+        expect(
+            Levels.edgesAtLevel(model, 'fine', undefined, narrowed).map((edge) => edge.id),
+        ).toEqual(['e2']);
     });
 
     it('hands the host the visible ids and the candidates', () => {

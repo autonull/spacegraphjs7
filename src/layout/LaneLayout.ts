@@ -105,7 +105,10 @@ export class LaneLayout {
 
         this.#positions[item.id] = position;
         this.#cellCursor[cell] = cursor + width + this.#step;
-        this.#columnExtent[group] = Math.max(this.#columnExtent[group] ?? 0, cursor + indent + width - base);
+        this.#columnExtent[group] = Math.max(
+            this.#columnExtent[group] ?? 0,
+            cursor + indent + width - base,
+        );
 
         return position;
     }

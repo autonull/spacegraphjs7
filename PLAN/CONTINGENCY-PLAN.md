@@ -18,13 +18,13 @@
 
 ### Critical Risks (Could Kill Project)
 
-| Risk                             | Probability | Impact | Prevention         | Detection         | Recovery         |
-| -------------------------------- | ----------- | ------ | ------------------ | ----------------- | ---------------- |
-| **R1: Three.js incompatibility** | 25%         | 100%   | Version pinning    | Build fails       | Fallback version |
-| **R2: ppnpm package name taken**   | 15%         | 100%   | Check before Day 1 | pnpm publish fails | Alternative name |
-| **R3: TypeScript export broken** | 30%         | 80%    | Daily type checks  | Import fails      | Fix exports      |
-| **R4: WebGL not supported**      | 5%          | 100%   | Feature detection  | Blank screen      | Fallback message |
-| **R5: Critical memory leak**     | 20%         | 60%    | Memory profiling   | DevTools check    | Fix leak         |
+| Risk                             | Probability | Impact | Prevention         | Detection          | Recovery         |
+| -------------------------------- | ----------- | ------ | ------------------ | ------------------ | ---------------- |
+| **R1: Three.js incompatibility** | 25%         | 100%   | Version pinning    | Build fails        | Fallback version |
+| **R2: ppnpm package name taken** | 15%         | 100%   | Check before Day 1 | pnpm publish fails | Alternative name |
+| **R3: TypeScript export broken** | 30%         | 80%    | Daily type checks  | Import fails       | Fix exports      |
+| **R4: WebGL not supported**      | 5%          | 100%   | Feature detection  | Blank screen       | Fallback message |
+| **R5: Critical memory leak**     | 20%         | 60%    | Memory profiling   | DevTools check     | Fix leak         |
 
 ### High Risks (Could Delay Launch)
 
@@ -32,7 +32,7 @@
 | ----------------------------------- | ----------- | ------ | -------------------- | ------------------ | ------------------- |
 | **R6: ESM module resolution fails** | 40%         | 50%    | Correct package.json | Import errors      | Fix type/module     |
 | **R7: Camera controls broken**      | 50%         | 30%    | Test early           | User reports       | Simplified controls |
-| **R8: Build size too large**        | 25%         | 40%    | Bundle analysis      | pnpm pack check     | Tree-shaking        |
+| **R8: Build size too large**        | 25%         | 40%    | Bundle analysis      | pnpm pack check    | Tree-shaking        |
 | **R9: Browser compatibility**       | 35%         | 50%    | Multi-browser test   | Cross-browser test | Polyfills           |
 | **R10: Node.js version mismatch**   | 30%         | 40%    | engines field        | Error message      | Clear requirements  |
 
@@ -40,7 +40,7 @@
 
 | Risk                          | Probability | Impact | Prevention          | Detection      | Recovery          |
 | ----------------------------- | ----------- | ------ | ------------------- | -------------- | ----------------- |
-| **R11: pnpm login expired**    | 20%         | 20%    | Test before publish | Auth error     | pnpm login         |
+| **R11: pnpm login expired**   | 20%         | 20%    | Test before publish | Auth error     | pnpm login        |
 | **R12: Git conflicts**        | 25%         | 10%    | Daily commits       | Merge conflict | Resolve carefully |
 | **R13: Documentation typos**  | 60%         | 10%    | Proofread           | User reports   | Fix post-launch   |
 | **R14: Matrix room spam**     | 10%         | 10%    | Moderation settings | User reports   | Enable moderation |
@@ -680,7 +680,7 @@ pnpm publish --tag alpha
 
 | Metric                  | Target | If Missed, Do This                      |
 | ----------------------- | ------ | --------------------------------------- |
-| pnpm downloads (Week 1)  | 50     | Post to more channels (Reddit, Dev.to)  |
+| pnpm downloads (Week 1) | 50     | Post to more channels (Reddit, Dev.to)  |
 | Matrix members (Week 1) | 10     | Personal outreach to interested users   |
 | GitHub stars (Week 1)   | 10     | Add star badge, mention in articles     |
 | Bug reports (Week 1)    | 0-2    | Good! If >5, pause and fix fundamentals |
@@ -711,7 +711,7 @@ pnpm publish --tag alpha
 | ------------------ | ------------------------------------ |
 | Technical (R1-R10) | ✅ Prevention + Detection + Recovery |
 | Documentation      | ✅ Verification + Troubleshooting    |
-| pnpm Publishing     | ✅ Name check + Dry run + Rollback   |
+| pnpm Publishing    | ✅ Name check + Dry run + Rollback   |
 | Community          | ✅ Matrix setup + Response plan      |
 | Emergency          | ✅ Hotfix procedure + Deprecation    |
 

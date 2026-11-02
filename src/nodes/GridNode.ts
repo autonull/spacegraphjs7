@@ -3,17 +3,17 @@ import type { NodeSpec } from '../types';
 import { gridStrategy, LayoutNode } from './LayoutNode';
 
 export class GridNode extends LayoutNode {
-  static readonly typeName: string = 'GridNode';
+    static readonly typeName: string = 'GridNode';
 
-  constructor(sg?: SpaceGraph, spec?: NodeSpec) {
-    super(sg!, spec as NodeSpec, gridStrategy, {
-      columns: 3,
-      cellWidth: 200,
-      cellHeight: 150,
-      cellDepth: 100,
-      gapX: 20,
-      gapY: 20,
-      gapZ: 50,
-    });
-  }
+    constructor(sg?: SpaceGraph, spec?: NodeSpec) {
+        super(sg!, spec as NodeSpec, gridStrategy, {
+            columns: 3,
+            cellWidth: 200,
+            cellHeight: 150,
+            cellDepth: 100,
+            gapX: 20,
+            gapY: 20,
+            gapZ: 50,
+        });
+    }
 }

@@ -134,11 +134,12 @@ Script:
 ```
 
 **Bot Integration:**
-| Bot | Purpose | Setup Effort |
-|-----|---------|--------------|
-| **GitHub Bot** | Push notifications, PR updates | 30 min |
-| **CI Bot** | Build/test results | 30 min |
-| **Welcome Bot** | Greet new members, link to resources | 1 hour |
+
+| Bot             | Purpose                              | Setup Effort |
+| --------------- | ------------------------------------ | ------------ |
+| **GitHub Bot**  | Push notifications, PR updates       | 30 min       |
+| **CI Bot**      | Build/test results                   | 30 min       |
+| **Welcome Bot** | Greet new members, link to resources | 1 hour       |
 
 **Welcome Bot Example:**
 

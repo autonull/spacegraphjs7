@@ -10,7 +10,13 @@ const root = resolve(import.meta.dirname, '..');
 const bin = (name: string) => resolve(root, 'node_modules/.bin', name);
 
 console.log('building the root library');
-execFileSync(bin('vite'), ['build', '--config', 'vite.lib.config.ts'], { cwd: root, stdio: 'inherit' });
+execFileSync(bin('vite'), ['build', '--config', 'vite.lib.config.ts'], {
+    cwd: root,
+    stdio: 'inherit',
+});
 
 console.log('building the leaf packages');
-execFileSync(bin('tsx'), [resolve(root, 'script/build-packages.ts')], { cwd: root, stdio: 'inherit' });
+execFileSync(bin('tsx'), [resolve(root, 'script/build-packages.ts')], {
+    cwd: root,
+    stdio: 'inherit',
+});

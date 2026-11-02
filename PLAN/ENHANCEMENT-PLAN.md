@@ -382,12 +382,12 @@ Based on feedback, implement:
 
 ### Adoption Metrics
 
-| Metric                     | M1  | M2  | M3  | M4    | M5    | M6    |
-| -------------------------- | --- | --- | --- | ----- | ----- | ----- |
+| Metric                      | M1  | M2  | M3  | M4    | M5    | M6    |
+| --------------------------- | --- | --- | --- | ----- | ----- | ----- |
 | pnpm downloads (cumulative) | 50  | 200 | 500 | 1,500 | 3,000 | 5,000 |
-| Weekly active projects     | 5   | 15  | 40  | 100   | 200   | 350   |
-| GitHub stars               | 10  | 25  | 50  | 75    | 100   | 150   |
-| GitHub forks               | 2   | 8   | 20  | 35    | 50    | 75    |
+| Weekly active projects      | 5   | 15  | 40  | 100   | 200   | 350   |
+| GitHub stars                | 10  | 25  | 50  | 75    | 100   | 150   |
+| GitHub forks                | 2   | 8   | 20  | 35    | 50    | 75    |
 
 ### Community Metrics
 

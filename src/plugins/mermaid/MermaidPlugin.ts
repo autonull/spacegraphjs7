@@ -7,79 +7,79 @@ import type { HUDPlugin } from '../HUDPlugin';
 import { HUDDOMFactory } from '../hud/HUDDOMFactory';
 import { HUD_COLORS, HUD_ZINDEX } from '../hud/HUDStyles';
 import {
-  type BaseLayout,
-  CircularLayout,
-  ClusterLayout,
-  ForceLayout,
-  GridLayout,
-  HierarchicalLayout,
-  RadialLayout,
-  SpectralLayout,
-  TreeLayout,
+    type BaseLayout,
+    CircularLayout,
+    ClusterLayout,
+    ForceLayout,
+    GridLayout,
+    HierarchicalLayout,
+    RadialLayout,
+    SpectralLayout,
+    TreeLayout,
 } from '../layouts';
 import type {
-  DiagramFormat,
-  DiagramParseResult,
-  LayoutName,
-  MermaidThemeName,
+    DiagramFormat,
+    DiagramParseResult,
+    LayoutName,
+    MermaidThemeName,
 } from './MermaidParser';
 import {
-  DiagramParserFactory,
-  edgeToSpec,
-  getLayoutLabel,
-  LAYOUT_NAMES,
-  MERMAID_THEMES,
-  nodeToSpec,
+    DiagramParserFactory,
+    edgeToSpec,
+    getLayoutLabel,
+    LAYOUT_NAMES,
+    MERMAID_THEMES,
+    nodeToSpec,
 } from './MermaidParser';
 
 export interface MermaidPluginOptions {
-  defaultLayout?: LayoutName;
-  defaultTheme?: MermaidThemeName;
-  showHud?: boolean;
-  autoAnimate?: boolean;
-  enableSubgraphs?: boolean;
+    defaultLayout?: LayoutName;
+    defaultTheme?: MermaidThemeName;
+    showHud?: boolean;
+    autoAnimate?: boolean;
+    enableSubgraphs?: boolean;
 }
 
 interface LayoutInstance {
-  name: LayoutName;
-  instance: BaseLayout;
-  direction?: string;
+    name: LayoutName;
+    instance: BaseLayout;
+    direction?: string;
 }
 
 const CLUSTER_COLORS = [
-  'rgba(59, 130, 246, 0.15)',
-  'rgba(139, 92, 246, 0.15)',
-  'rgba(16, 185, 129, 0.15)',
-  'rgba(245, 158, 11, 0.15)',
-  'rgba(236, 72, 153, 0.15)',
+    'rgba(59, 130, 246, 0.15)',
+    'rgba(139, 92, 246, 0.15)',
+    'rgba(16, 185, 129, 0.15)',
+    'rgba(245, 158, 11, 0.15)',
+    'rgba(236, 72, 153, 0.15)',
 ];
 
 export class MermaidPlugin extends BaseSystemPlugin {
-  readonly id = 'mermaid';
-  readonly name = 'Diagram Renderer';
-  readonly version = '2.0.0';
+    readonly id = 'mermaid';
+    readonly name = 'Diagram Renderer';
+    readonly version = '2.0.0';
 
-  private layouts: Map<LayoutName, LayoutInstance> = new Map();
-  private currentLayout: LayoutName = 'hierarchical';
-  private currentTheme: MermaidThemeName = 'default';
-  private currentFormat: DiagramFormat = 'mermaid';
-  private hudContainer: HTMLElement | null = null;
-  private parseResult: DiagramParseResult | null = null;
-  private autoAnimate = true;
-  private enableSubgraphs = true;
-  private options: MermaidPluginOptions;
+    private layouts: Map<LayoutName, LayoutInstance> = new Map();
+    private currentLayout: LayoutName = 'hierarchical';
+    private currentTheme: MermaidThemeName = 'default';
+    private currentFormat: DiagramFormat = 'mermaid';
+    private hudContainer: HTMLElement | null = null;
+    private parseResult: DiagramParseResult | null = null;
+    private autoAnimate = true;
+    private enableSubgraphs = true;
+    private options: MermaidPluginOptions;
 
-  constructor(options: MermaidPluginOptions = {}) {
-    super();
-    this.options = options;
-    this.currentLayout = options.defaultLayout ?? 'hierarchical';
-    this.currentTheme = options.defaultTheme ?? 'default';
-    this.autoAnimate = options.autoAnimate ?? true;
-    this.enableSubgraphs = options.enableSubgraphs ?? true;
-  }
+    constructor(options: MermaidPluginOptions = {}) {
+        super();
+        this.options = options;
+        this.currentLayout = options.defaultLayout ?? 'hierarchical';
+        this.currentTheme = options.defaultTheme ?? 'default';
+        this.autoAnimate = options.autoAnimate ?? true;
+        this.enableSubgraphs = options.enableSubgraphs ?? true;
+    }
 
-  static get HUD_STYLES(): string {
-    return `
+    static get HUD_STYLES(): string {
+        return `
       .mermaid-hud-container {
         position: absolute;
         top: 16px;
@@ -202,214 +202,217 @@ export class MermaidPlugin extends BaseSystemPlugin {
         border-radius: 4px;
       }
     `;
-  }
-
-  init(sg: SpaceGraph, graph: Graph, events: any): void {
-    super.init(sg, graph, events);
-    this.initializeLayouts();
-    if (this.options.showHud !== false) {
-      this.createHUD();
     }
-  }
 
-  parseAndRender(content: string, format?: DiagramFormat): void {
-    const detectedFormat = format || DiagramParserFactory.detectFormat(content);
-    this.currentFormat = detectedFormat;
-
-    this.parseResult = DiagramParserFactory.parse(content, detectedFormat);
-    this.renderDiagram();
-  }
-
-  async applyCurrentLayout(): Promise<void> {
-    const layoutInstance = this.layouts.get(this.currentLayout);
-    if (layoutInstance) {
-      const layoutOptions: Record<string, unknown> = {};
-
-      if (this.currentLayout === 'cluster' && this.enableSubgraphs) {
-        layoutOptions.clusterBy = 'cluster';
-      }
-
-      if (layoutInstance.direction) {
-        layoutOptions.direction = layoutInstance.direction;
-      }
-
-      await layoutInstance.instance.apply(layoutOptions);
-
-      if (this.enableSubgraphs && this.parseResult?.clusters.length) {
-        await this.applyClusterLayouts();
-      }
-
-      this.sg.fitView(150, 1.5);
-    }
-  }
-
-  async applyLayout(layoutName: LayoutName): Promise<void> {
-    this.currentLayout = layoutName;
-    await this.applyCurrentLayout();
-  }
-
-  applyTheme(themeName?: MermaidThemeName): void {
-    if (themeName) this.currentTheme = themeName;
-
-    const theme = MERMAID_THEMES[this.currentTheme];
-    const nodeColors = theme.nodeColors;
-
-    let nodeIndex = 0;
-    for (const node of this.graph.getNodes()) {
-      if (node.type === 'MermaidNode') {
-        const data = node.data as Record<string, unknown>;
-        const color = (data.color as string) || nodeColors[nodeIndex % nodeColors.length];
-
-        if (typeof (node as any).updateNodeColor === 'function') {
-          (node as any).updateNodeColor();
-        } else if (typeof node.updateSpec === 'function') {
-          node.updateSpec({
-            data: { ...node.data, color, themeColors: nodeColors, nodeIndex },
-          });
+    init(sg: SpaceGraph, graph: Graph, events: any): void {
+        super.init(sg, graph, events);
+        this.initializeLayouts();
+        if (this.options.showHud !== false) {
+            this.createHUD();
         }
-      }
-      nodeIndex++;
     }
 
-    this.showAlert({ type: 'success', message: `Theme: ${this.currentTheme}`, duration: 1000 });
-  }
+    parseAndRender(content: string, format?: DiagramFormat): void {
+        const detectedFormat = format || DiagramParserFactory.detectFormat(content);
+        this.currentFormat = detectedFormat;
 
-  getCurrentLayout(): LayoutName {
-    return this.currentLayout;
-  }
-
-  getCurrentTheme(): MermaidThemeName {
-    return this.currentTheme;
-  }
-
-  getCurrentFormat(): DiagramFormat {
-    return this.currentFormat;
-  }
-
-  getParseResult(): DiagramParseResult | null {
-    return this.parseResult;
-  }
-
-  showAlert(options: {
-    type: 'info' | 'success' | 'warning' | 'error';
-    message: string;
-    duration?: number;
-  }): void {
-    const hud = this.sg.pluginManager.getPlugin('hud') as HUDPlugin | undefined;
-    hud?.showAlert(options as any);
-  }
-
-  dispose(): void {
-    if (this.hudContainer?.parentElement) {
-      this.hudContainer.parentElement.removeChild(this.hudContainer);
+        this.parseResult = DiagramParserFactory.parse(content, detectedFormat);
+        this.renderDiagram();
     }
-    this.hudContainer = null;
-  }
 
-  private initializeLayouts(): void {
-    const configs: Record<LayoutName, { create: () => BaseLayout; direction?: string }> = {
-      force: { create: () => new ForceLayout({ iterations: 100, repulsion: 5000 }) },
-      circular: { create: () => new CircularLayout() },
-      grid: { create: () => new GridLayout({ columns: 4, spacingX: 200, spacingY: 150 }) },
-      hierarchical: { create: () => new HierarchicalLayout({ direction: 'TB' }), direction: 'TB' },
-      radial: { create: () => new RadialLayout() },
-      tree: { create: () => new TreeLayout({ direction: 'TB' }), direction: 'TB' },
-      spectral: { create: () => new SpectralLayout() },
-      cluster: { create: () => new ClusterLayout({ clusterBy: 'cluster' }) },
-    };
+    async applyCurrentLayout(): Promise<void> {
+        const layoutInstance = this.layouts.get(this.currentLayout);
+        if (layoutInstance) {
+            const layoutOptions: Record<string, unknown> = {};
 
-    for (const name of Object.keys(configs) as LayoutName[]) {
-      const config = configs[name];
-      const instance = config.create();
-      instance.init(this.sg, this.graph, this.events);
-      this.layouts.set(name, { name, instance, direction: config.direction });
+            if (this.currentLayout === 'cluster' && this.enableSubgraphs) {
+                layoutOptions.clusterBy = 'cluster';
+            }
+
+            if (layoutInstance.direction) {
+                layoutOptions.direction = layoutInstance.direction;
+            }
+
+            await layoutInstance.instance.apply(layoutOptions);
+
+            if (this.enableSubgraphs && this.parseResult?.clusters.length) {
+                await this.applyClusterLayouts();
+            }
+
+            this.sg.fitView(150, 1.5);
+        }
     }
-  }
 
-  private createHUD(): void {
-    if (typeof document === 'undefined') return;
+    async applyLayout(layoutName: LayoutName): Promise<void> {
+        this.currentLayout = layoutName;
+        await this.applyCurrentLayout();
+    }
 
-    this.hudContainer = HUDDOMFactory.createContainer('mermaid-hud', 'mermaid-hud-container');
-    this.hudContainer.style.zIndex = HUD_ZINDEX.HUD;
+    applyTheme(themeName?: MermaidThemeName): void {
+        if (themeName) this.currentTheme = themeName;
 
-    this.createFormatSelector();
-    this.createLayoutControls();
-    this.createThemeControls();
-    this.createVisualizationControls();
+        const theme = MERMAID_THEMES[this.currentTheme];
+        const nodeColors = theme.nodeColors;
 
-    HUDDOMFactory.appendToRenderer(this.sg, this.hudContainer);
-  }
+        let nodeIndex = 0;
+        for (const node of this.graph.getNodes()) {
+            if (node.type === 'MermaidNode') {
+                const data = node.data as Record<string, unknown>;
+                const color = (data.color as string) || nodeColors[nodeIndex % nodeColors.length];
 
-  /** A titled HUD section; the content is the markup that goes inside it. */
-  private createSection(title: string, content: string): HTMLElement {
-    const container = document.createElement('div');
-    container.className = 'mermaid-hud-section';
-    container.innerHTML = `
+                if (typeof (node as any).updateNodeColor === 'function') {
+                    (node as any).updateNodeColor();
+                } else if (typeof node.updateSpec === 'function') {
+                    node.updateSpec({
+                        data: { ...node.data, color, themeColors: nodeColors, nodeIndex },
+                    });
+                }
+            }
+            nodeIndex++;
+        }
+
+        this.showAlert({ type: 'success', message: `Theme: ${this.currentTheme}`, duration: 1000 });
+    }
+
+    getCurrentLayout(): LayoutName {
+        return this.currentLayout;
+    }
+
+    getCurrentTheme(): MermaidThemeName {
+        return this.currentTheme;
+    }
+
+    getCurrentFormat(): DiagramFormat {
+        return this.currentFormat;
+    }
+
+    getParseResult(): DiagramParseResult | null {
+        return this.parseResult;
+    }
+
+    showAlert(options: {
+        type: 'info' | 'success' | 'warning' | 'error';
+        message: string;
+        duration?: number;
+    }): void {
+        const hud = this.sg.pluginManager.getPlugin('hud') as HUDPlugin | undefined;
+        hud?.showAlert(options as any);
+    }
+
+    dispose(): void {
+        if (this.hudContainer?.parentElement) {
+            this.hudContainer.parentElement.removeChild(this.hudContainer);
+        }
+        this.hudContainer = null;
+    }
+
+    private initializeLayouts(): void {
+        const configs: Record<LayoutName, { create: () => BaseLayout; direction?: string }> = {
+            force: { create: () => new ForceLayout({ iterations: 100, repulsion: 5000 }) },
+            circular: { create: () => new CircularLayout() },
+            grid: { create: () => new GridLayout({ columns: 4, spacingX: 200, spacingY: 150 }) },
+            hierarchical: {
+                create: () => new HierarchicalLayout({ direction: 'TB' }),
+                direction: 'TB',
+            },
+            radial: { create: () => new RadialLayout() },
+            tree: { create: () => new TreeLayout({ direction: 'TB' }), direction: 'TB' },
+            spectral: { create: () => new SpectralLayout() },
+            cluster: { create: () => new ClusterLayout({ clusterBy: 'cluster' }) },
+        };
+
+        for (const name of Object.keys(configs) as LayoutName[]) {
+            const config = configs[name];
+            const instance = config.create();
+            instance.init(this.sg, this.graph, this.events);
+            this.layouts.set(name, { name, instance, direction: config.direction });
+        }
+    }
+
+    private createHUD(): void {
+        if (typeof document === 'undefined') return;
+
+        this.hudContainer = HUDDOMFactory.createContainer('mermaid-hud', 'mermaid-hud-container');
+        this.hudContainer.style.zIndex = HUD_ZINDEX.HUD;
+
+        this.createFormatSelector();
+        this.createLayoutControls();
+        this.createThemeControls();
+        this.createVisualizationControls();
+
+        HUDDOMFactory.appendToRenderer(this.sg, this.hudContainer);
+    }
+
+    /** A titled HUD section; the content is the markup that goes inside it. */
+    private createSection(title: string, content: string): HTMLElement {
+        const container = document.createElement('div');
+        container.className = 'mermaid-hud-section';
+        container.innerHTML = `
       <div class="mermaid-hud-title">${title}</div>
       <div class="mermaid-hud-section-content">${content}</div>
     `;
-    this.hudContainer?.appendChild(container);
-    return container;
-  }
+        this.hudContainer?.appendChild(container);
+        return container;
+    }
 
-  private createFormatSelector(): void {
-    if (!this.hudContainer) return;
+    private createFormatSelector(): void {
+        if (!this.hudContainer) return;
 
-    const formats: DiagramFormat[] = ['mermaid', 'dot', 'graphml', 'json'];
-    const container = this.createSection(
-      'Format',
-      `
+        const formats: DiagramFormat[] = ['mermaid', 'dot', 'graphml', 'json'];
+        const container = this.createSection(
+            'Format',
+            `
         <select id="mermaid-format-select" class="mermaid-hud-select">
           ${formats.map((f) => `<option value="${f}" ${f === this.currentFormat ? 'selected' : ''}>${f.toUpperCase()}</option>`).join('')}
         </select>
-      `
-    );
+      `,
+        );
 
-    const select = container.querySelector('#mermaid-format-select') as HTMLSelectElement;
-    select?.addEventListener('change', (e) => {
-      this.currentFormat = (e.target as HTMLSelectElement).value as DiagramFormat;
-    });
-  }
+        const select = container.querySelector('#mermaid-format-select') as HTMLSelectElement;
+        select?.addEventListener('change', (e) => {
+            this.currentFormat = (e.target as HTMLSelectElement).value as DiagramFormat;
+        });
+    }
 
-  private createLayoutControls(): void {
-    if (!this.hudContainer) return;
+    private createLayoutControls(): void {
+        if (!this.hudContainer) return;
 
-    const container = this.createSection(
-      'Layout',
-      `
+        const container = this.createSection(
+            'Layout',
+            `
         <select id="mermaid-layout-select" class="mermaid-hud-select">
           ${LAYOUT_NAMES.map(
-            (name) => `
+              (name) => `
             <option value="${name}" ${name === this.currentLayout ? 'selected' : ''}>
               ${getLayoutLabel(name)}
             </option>
-          `
+          `,
           ).join('')}
         </select>
         <button id="mermaid-apply-layout" class="mermaid-hud-button">Apply Layout</button>
         <div id="mermaid-suggested-layout" class="mermaid-hud-hint"></div>
-      `
-    );
+      `,
+        );
 
-    const select = container.querySelector('#mermaid-layout-select') as HTMLSelectElement;
-    const button = container.querySelector('#mermaid-apply-layout') as HTMLButtonElement;
+        const select = container.querySelector('#mermaid-layout-select') as HTMLSelectElement;
+        const button = container.querySelector('#mermaid-apply-layout') as HTMLButtonElement;
 
-    select?.addEventListener('change', (e) => {
-      this.currentLayout = (e.target as HTMLSelectElement).value as LayoutName;
-    });
+        select?.addEventListener('change', (e) => {
+            this.currentLayout = (e.target as HTMLSelectElement).value as LayoutName;
+        });
 
-    button?.addEventListener('click', () => {
-      this.applyCurrentLayout();
-    });
-  }
+        button?.addEventListener('click', () => {
+            this.applyCurrentLayout();
+        });
+    }
 
-  private createThemeControls(): void {
-    if (!this.hudContainer) return;
+    private createThemeControls(): void {
+        if (!this.hudContainer) return;
 
-    const themes = Object.keys(MERMAID_THEMES) as MermaidThemeName[];
-    const container = this.createSection(
-      'Theme',
-      `
+        const themes = Object.keys(MERMAID_THEMES) as MermaidThemeName[];
+        const container = this.createSection(
+            'Theme',
+            `
         <select id="mermaid-theme-select" class="mermaid-hud-select">
           ${themes.map((t) => `<option value="${t}" ${t === this.currentTheme ? 'selected' : ''}>${t.charAt(0).toUpperCase() + t.slice(1)}</option>`).join('')}
         </select>
@@ -417,39 +420,39 @@ export class MermaidPlugin extends BaseSystemPlugin {
           <button id="mermaid-prev-theme" class="mermaid-hud-button-small">◀</button>
           <button id="mermaid-next-theme" class="mermaid-hud-button-small">▶</button>
         </div>
-      `
-    );
+      `,
+        );
 
-    const select = container.querySelector('#mermaid-theme-select') as HTMLSelectElement;
-    const prevBtn = container.querySelector('#mermaid-prev-theme') as HTMLButtonElement;
-    const nextBtn = container.querySelector('#mermaid-next-theme') as HTMLButtonElement;
+        const select = container.querySelector('#mermaid-theme-select') as HTMLSelectElement;
+        const prevBtn = container.querySelector('#mermaid-prev-theme') as HTMLButtonElement;
+        const nextBtn = container.querySelector('#mermaid-next-theme') as HTMLButtonElement;
 
-    select?.addEventListener('change', (e) => {
-      this.currentTheme = (e.target as HTMLSelectElement).value as MermaidThemeName;
-      this.applyTheme();
-    });
+        select?.addEventListener('change', (e) => {
+            this.currentTheme = (e.target as HTMLSelectElement).value as MermaidThemeName;
+            this.applyTheme();
+        });
 
-    prevBtn?.addEventListener('click', () => {
-      const idx = themes.indexOf(this.currentTheme);
-      this.currentTheme = themes[(idx - 1 + themes.length) % themes.length];
-      if (select) select.value = this.currentTheme;
-      this.applyTheme();
-    });
+        prevBtn?.addEventListener('click', () => {
+            const idx = themes.indexOf(this.currentTheme);
+            this.currentTheme = themes[(idx - 1 + themes.length) % themes.length];
+            if (select) select.value = this.currentTheme;
+            this.applyTheme();
+        });
 
-    nextBtn?.addEventListener('click', () => {
-      const idx = themes.indexOf(this.currentTheme);
-      this.currentTheme = themes[(idx + 1) % themes.length];
-      if (select) select.value = this.currentTheme;
-      this.applyTheme();
-    });
-  }
+        nextBtn?.addEventListener('click', () => {
+            const idx = themes.indexOf(this.currentTheme);
+            this.currentTheme = themes[(idx + 1) % themes.length];
+            if (select) select.value = this.currentTheme;
+            this.applyTheme();
+        });
+    }
 
-  private createVisualizationControls(): void {
-    if (!this.hudContainer) return;
+    private createVisualizationControls(): void {
+        if (!this.hudContainer) return;
 
-    const container = this.createSection(
-      'View',
-      `
+        const container = this.createSection(
+            'View',
+            `
         <div class="mermaid-hud-row">
           <button id="mermaid-zoom-in" class="mermaid-hud-button-small" title="Zoom In">+</button>
           <button id="mermaid-zoom-out" class="mermaid-hud-button-small" title="Zoom Out">−</button>
@@ -468,159 +471,159 @@ export class MermaidPlugin extends BaseSystemPlugin {
             <span>Clusters</span>
           </label>
         </div>
-      `
-    );
+      `,
+        );
 
-    container
-      .querySelector('#mermaid-zoom-in')
-      ?.addEventListener('click', () => this.sg.cameraControls.zoom(1.25));
-    container
-      .querySelector('#mermaid-zoom-out')
-      ?.addEventListener('click', () => this.sg.cameraControls.zoom(0.8));
-    container
-      .querySelector('#mermaid-fit')
-      ?.addEventListener('click', () => this.sg.fitView(150, 1.5));
-    container.querySelector('#mermaid-3d')?.addEventListener('click', () => this.toggle3D());
+        container
+            .querySelector('#mermaid-zoom-in')
+            ?.addEventListener('click', () => this.sg.cameraControls.zoom(1.25));
+        container
+            .querySelector('#mermaid-zoom-out')
+            ?.addEventListener('click', () => this.sg.cameraControls.zoom(0.8));
+        container
+            .querySelector('#mermaid-fit')
+            ?.addEventListener('click', () => this.sg.fitView(150, 1.5));
+        container.querySelector('#mermaid-3d')?.addEventListener('click', () => this.toggle3D());
 
-    container.querySelector('#mermaid-auto-animate')?.addEventListener('change', (e) => {
-      this.autoAnimate = (e.target as HTMLInputElement).checked;
-    });
+        container.querySelector('#mermaid-auto-animate')?.addEventListener('change', (e) => {
+            this.autoAnimate = (e.target as HTMLInputElement).checked;
+        });
 
-    container.querySelector('#mermaid-subgraphs')?.addEventListener('change', (e) => {
-      this.enableSubgraphs = (e.target as HTMLInputElement).checked;
-    });
-  }
-
-  private toggle3D(): void {
-    const camera = this.sg.renderer.camera as PerspectiveCamera;
-    if (camera.isPerspectiveCamera) {
-      const ortho = new OrthographicCamera(-100, 100, 100, -100, 0.1, 10000);
-      if (ortho) {
-        (this.sg.cameraControls as any).switchCamera?.(ortho, { duration: 0.5 });
-      }
-    } else {
-      const perspective = new PerspectiveCamera(75, 1, 0.1, 10000);
-      if (perspective) {
-        (this.sg.cameraControls as any).switchCamera?.(perspective, { duration: 0.5 });
-      }
-    }
-    this.sg.renderer.scheduleRender();
-  }
-
-  private renderDiagram(): void {
-    if (!this.parseResult) return;
-
-    this.clearGraph();
-
-    const theme = MERMAID_THEMES[this.currentTheme];
-
-    if (this.enableSubgraphs && this.parseResult.clusters.length > 0) {
-      this.renderClusters();
+        container.querySelector('#mermaid-subgraphs')?.addEventListener('change', (e) => {
+            this.enableSubgraphs = (e.target as HTMLInputElement).checked;
+        });
     }
 
-    this.parseResult.nodes.forEach((node, index) => {
-      const spec = nodeToSpec(node, index, theme);
-      if (!this.enableSubgraphs) spec.data = { ...spec.data, cluster: undefined };
-      this.graph.addNode(spec);
-    });
-
-    this.parseResult.edges.forEach((edge, index) => {
-      this.graph.addEdge(edgeToSpec(edge, index, theme));
-    });
-
-    this.applyCurrentLayout();
-  }
-
-  private renderClusters(): void {
-    const clusterColors = CLUSTER_COLORS;
-
-    this.parseResult!.clusters.forEach((cluster, index) => {
-      const clusterNodeIds = this.parseResult!.nodes.filter((n) => n.cluster === cluster.id).map(
-        (n) => n.id
-      );
-
-      if (clusterNodeIds.length === 0) return;
-
-      const colorIndex = index % clusterColors.length;
-
-      this.graph.addNode({
-        id: `cluster-${cluster.id}`,
-        type: 'GroupNode',
-        label: cluster.label,
-        position: [0, 0, -10],
-        data: {
-          width: 400,
-          height: 300,
-          color: parseColor(clusterColors[colorIndex]),
-          depth: 50,
-          label: cluster.label,
-          clusterId: cluster.id,
-        },
-      });
-    });
-  }
-
-  private clearGraph(): void {
-    for (const node of this.graph.getNodes()) {
-      this.graph.removeNode(node.id);
+    private toggle3D(): void {
+        const camera = this.sg.renderer.camera as PerspectiveCamera;
+        if (camera.isPerspectiveCamera) {
+            const ortho = new OrthographicCamera(-100, 100, 100, -100, 0.1, 10000);
+            if (ortho) {
+                (this.sg.cameraControls as any).switchCamera?.(ortho, { duration: 0.5 });
+            }
+        } else {
+            const perspective = new PerspectiveCamera(75, 1, 0.1, 10000);
+            if (perspective) {
+                (this.sg.cameraControls as any).switchCamera?.(perspective, { duration: 0.5 });
+            }
+        }
+        this.sg.renderer.scheduleRender();
     }
-    for (const edge of this.graph.getEdges()) {
-      this.graph.removeEdge(edge.id);
+
+    private renderDiagram(): void {
+        if (!this.parseResult) return;
+
+        this.clearGraph();
+
+        const theme = MERMAID_THEMES[this.currentTheme];
+
+        if (this.enableSubgraphs && this.parseResult.clusters.length > 0) {
+            this.renderClusters();
+        }
+
+        this.parseResult.nodes.forEach((node, index) => {
+            const spec = nodeToSpec(node, index, theme);
+            if (!this.enableSubgraphs) spec.data = { ...spec.data, cluster: undefined };
+            this.graph.addNode(spec);
+        });
+
+        this.parseResult.edges.forEach((edge, index) => {
+            this.graph.addEdge(edgeToSpec(edge, index, theme));
+        });
+
+        this.applyCurrentLayout();
     }
-  }
 
-  private async applyClusterLayouts(): Promise<void> {
-    const clusterNodes = Array.from(this.graph.getNodes()).filter((n) =>
-      n.id.startsWith('cluster-')
-    );
+    private renderClusters(): void {
+        const clusterColors = CLUSTER_COLORS;
 
-    for (const clusterNode of clusterNodes) {
-      const clusterId = (clusterNode.data as { clusterId?: string }).clusterId;
-      if (!clusterId) continue;
+        this.parseResult!.clusters.forEach((cluster, index) => {
+            const clusterNodeIds = this.parseResult!.nodes.filter(
+                (n) => n.cluster === cluster.id,
+            ).map((n) => n.id);
 
-      const memberNodes = Array.from(this.graph.getNodes()).filter(
-        (n) => (n.data as { cluster?: string })?.cluster === clusterId
-      );
+            if (clusterNodeIds.length === 0) return;
 
-      if (memberNodes.length === 0) continue;
+            const colorIndex = index % clusterColors.length;
 
-      let minX = Number.POSITIVE_INFINITY,
-        minY = Number.POSITIVE_INFINITY,
-        maxX = Number.NEGATIVE_INFINITY,
-        maxY = Number.NEGATIVE_INFINITY;
-      for (const mn of memberNodes) {
-        minX = Math.min(minX, mn.position.x);
-        minY = Math.min(minY, mn.position.y);
-        maxX = Math.max(maxX, mn.position.x);
-        maxY = Math.max(maxY, mn.position.y);
-      }
-
-      const centerX = (minX + maxX) / 2;
-      const centerY = (minY + maxY) / 2;
-      const width = Math.max(maxX - minX + 100, 200);
-      const height = Math.max(maxY - minY + 100, 150);
-
-      clusterNode.position.set(centerX, centerY, -10);
-      clusterNode.object.position.copy(clusterNode.position);
-
-      clusterNode.updateSpec({
-        data: {
-          ...clusterNode.data,
-          width,
-          height,
-        },
-      });
+            this.graph.addNode({
+                id: `cluster-${cluster.id}`,
+                type: 'GroupNode',
+                label: cluster.label,
+                position: [0, 0, -10],
+                data: {
+                    width: 400,
+                    height: 300,
+                    color: parseColor(clusterColors[colorIndex]),
+                    depth: 50,
+                    label: cluster.label,
+                    clusterId: cluster.id,
+                },
+            });
+        });
     }
-  }
+
+    private clearGraph(): void {
+        for (const node of this.graph.getNodes()) {
+            this.graph.removeNode(node.id);
+        }
+        for (const edge of this.graph.getEdges()) {
+            this.graph.removeEdge(edge.id);
+        }
+    }
+
+    private async applyClusterLayouts(): Promise<void> {
+        const clusterNodes = Array.from(this.graph.getNodes()).filter((n) =>
+            n.id.startsWith('cluster-'),
+        );
+
+        for (const clusterNode of clusterNodes) {
+            const clusterId = (clusterNode.data as { clusterId?: string }).clusterId;
+            if (!clusterId) continue;
+
+            const memberNodes = Array.from(this.graph.getNodes()).filter(
+                (n) => (n.data as { cluster?: string })?.cluster === clusterId,
+            );
+
+            if (memberNodes.length === 0) continue;
+
+            let minX = Number.POSITIVE_INFINITY,
+                minY = Number.POSITIVE_INFINITY,
+                maxX = Number.NEGATIVE_INFINITY,
+                maxY = Number.NEGATIVE_INFINITY;
+            for (const mn of memberNodes) {
+                minX = Math.min(minX, mn.position.x);
+                minY = Math.min(minY, mn.position.y);
+                maxX = Math.max(maxX, mn.position.x);
+                maxY = Math.max(maxY, mn.position.y);
+            }
+
+            const centerX = (minX + maxX) / 2;
+            const centerY = (minY + maxY) / 2;
+            const width = Math.max(maxX - minX + 100, 200);
+            const height = Math.max(maxY - minY + 100, 150);
+
+            clusterNode.position.set(centerX, centerY, -10);
+            clusterNode.object.position.copy(clusterNode.position);
+
+            clusterNode.updateSpec({
+                data: {
+                    ...clusterNode.data,
+                    width,
+                    height,
+                },
+            });
+        }
+    }
 }
 
 let stylesInjected = false;
 
 export function injectMermaidStyles(): void {
-  if (stylesInjected || typeof document === 'undefined') return;
+    if (stylesInjected || typeof document === 'undefined') return;
 
-  const style = document.createElement('style');
-  style.textContent = MermaidPlugin.HUD_STYLES;
-  document.head.appendChild(style);
-  stylesInjected = true;
+    const style = document.createElement('style');
+    style.textContent = MermaidPlugin.HUD_STYLES;
+    document.head.appendChild(style);
+    stylesInjected = true;
 }

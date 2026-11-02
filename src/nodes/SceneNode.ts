@@ -10,132 +10,133 @@ import { Object3DNode } from './Object3DNode';
 const logger = createLogger('SceneNode');
 
 export class SceneNode extends Object3DNode {
-  static readonly typeName: string = 'SceneNode';
-  private modelRoot?: Group;
-  private loader: GLTFLoader;
-  private proxyMesh?: Mesh;
-  readonly wrapper: Group;
-  private rotationSpeed = 0;
+    static readonly typeName: string = 'SceneNode';
+    private modelRoot?: Group;
+    private loader: GLTFLoader;
+    private proxyMesh?: Mesh;
+    readonly wrapper: Group;
+    private rotationSpeed = 0;
 
-  constructor(sg: SpaceGraph | undefined, spec: NodeSpec) {
-    super(sg, spec);
+    constructor(sg: SpaceGraph | undefined, spec: NodeSpec) {
+        super(sg, spec);
 
-    const url = (spec.data?.url as string) ?? undefined;
-    const targetSize = (spec.data?.targetSize as number) ?? 100;
-    const autoCenter = (spec.data?.autoCenter as boolean) ?? true;
-    this.rotationSpeed = (spec.data?.rotationSpeed as number) ?? 0;
+        const url = (spec.data?.url as string) ?? undefined;
+        const targetSize = (spec.data?.targetSize as number) ?? 100;
+        const autoCenter = (spec.data?.autoCenter as boolean) ?? true;
+        this.rotationSpeed = (spec.data?.rotationSpeed as number) ?? 0;
 
-    this.loader = new GLTFLoader();
-    this.wrapper = new Group();
-    this._object.add(this.wrapper);
+        this.loader = new GLTFLoader();
+        this.wrapper = new Group();
+        this._object.add(this.wrapper);
 
-    if (url) {
-      this.loadModel(url, targetSize, autoCenter);
-    } else {
-      logger.warn('Node %s: No URL provided.', this.id);
-    }
-
-    this.updatePosition(this.position.x, this.position.y, this.position.z);
-  }
-
-  update() {
-    if (this.rotationSpeed !== 0 && this.wrapper) {
-      this.wrapper.rotation.y += this.rotationSpeed;
-    }
-  }
-
-  updateSpec(updates: Partial<NodeSpec>): this {
-    super.updateSpec(updates);
-    if (updates.data?.url && (updates.data.url as string) !== this.data.url) {
-      if (this.modelRoot && this.modelRoot.parent) {
-        this.modelRoot.parent.remove(this.modelRoot);
-      }
-      this.loadModel(
-        updates.data.url as string,
-        (updates.data.targetSize as number) ?? 100,
-        (updates.data.autoCenter as boolean) ?? true
-      );
-    }
-
-    if (updates.data?.rotationSpeed !== undefined) {
-      this.rotationSpeed = updates.data.rotationSpeed as number;
-    }
-    return this;
-  }
-
-  dispose(): void {
-    if (this.modelRoot) {
-      this.modelRoot.traverse((child) => {
-        if ((child as Mesh).isMesh) {
-          const mesh = child as Mesh;
-          mesh.geometry.dispose();
-          if (mesh.geometry.disposeBoundsTree) mesh.geometry.disposeBoundsTree();
-          if (Array.isArray(mesh.material)) {
-            for (const m of mesh.material) m.dispose();
-          } else if (mesh.material) {
-            mesh.material.dispose();
-          }
-        }
-      });
-    }
-    if (this.proxyMesh) {
-      this.proxyMesh.geometry.dispose();
-      if (this.proxyMesh.geometry.disposeBoundsTree) this.proxyMesh.geometry.disposeBoundsTree();
-      (this.proxyMesh.material as Material).dispose();
-    }
-    super.dispose();
-  }
-
-  private loadModel(url: string, targetSize: number, autoCenter: boolean) {
-    this.loader.load(
-      url,
-      async (gltf) => {
-        this.modelRoot = gltf.scene;
-
-        const box = new Box3().setFromObject(this.modelRoot);
-        const size = new Vector3();
-        box.getSize(size);
-        const center = new Vector3();
-        box.getCenter(center);
-
-        const maxDim = Math.max(size.x, size.y, size.z);
-        if (maxDim > 0) {
-          const scale = targetSize / maxDim;
-          this.modelRoot.scale.setScalar(scale);
+        if (url) {
+            this.loadModel(url, targetSize, autoCenter);
+        } else {
+            logger.warn('Node %s: No URL provided.', this.id);
         }
 
-        if (autoCenter) {
-          const newBox = new Box3().setFromObject(this.modelRoot);
-          newBox.getCenter(center);
-          this.modelRoot.position.sub(center);
+        this.updatePosition(this.position.x, this.position.y, this.position.z);
+    }
+
+    update() {
+        if (this.rotationSpeed !== 0 && this.wrapper) {
+            this.wrapper.rotation.y += this.rotationSpeed;
+        }
+    }
+
+    updateSpec(updates: Partial<NodeSpec>): this {
+        super.updateSpec(updates);
+        if (updates.data?.url && (updates.data.url as string) !== this.data.url) {
+            if (this.modelRoot && this.modelRoot.parent) {
+                this.modelRoot.parent.remove(this.modelRoot);
+            }
+            this.loadModel(
+                updates.data.url as string,
+                (updates.data.targetSize as number) ?? 100,
+                (updates.data.autoCenter as boolean) ?? true,
+            );
         }
 
-        this.wrapper.add(this.modelRoot);
+        if (updates.data?.rotationSpeed !== undefined) {
+            this.rotationSpeed = updates.data.rotationSpeed as number;
+        }
+        return this;
+    }
 
-        const finalBox = new Box3().setFromObject(this.wrapper);
-        const finalSize = new Vector3();
-        finalBox.getSize(finalSize);
+    dispose(): void {
+        if (this.modelRoot) {
+            this.modelRoot.traverse((child) => {
+                if ((child as Mesh).isMesh) {
+                    const mesh = child as Mesh;
+                    mesh.geometry.dispose();
+                    if (mesh.geometry.disposeBoundsTree) mesh.geometry.disposeBoundsTree();
+                    if (Array.isArray(mesh.material)) {
+                        for (const m of mesh.material) m.dispose();
+                    } else if (mesh.material) {
+                        mesh.material.dispose();
+                    }
+                }
+            });
+        }
+        if (this.proxyMesh) {
+            this.proxyMesh.geometry.dispose();
+            if (this.proxyMesh.geometry.disposeBoundsTree)
+                this.proxyMesh.geometry.disposeBoundsTree();
+            (this.proxyMesh.material as Material).dispose();
+        }
+        super.dispose();
+    }
 
-        await ensureThreeMeshBvh();
-        const proxyGeo = new BoxGeometry(finalSize.x, finalSize.y, finalSize.z);
-        if (proxyGeo.computeBoundsTree) proxyGeo.computeBoundsTree();
+    private loadModel(url: string, targetSize: number, autoCenter: boolean) {
+        this.loader.load(
+            url,
+            async (gltf) => {
+                this.modelRoot = gltf.scene;
 
-        const proxyMat = new MeshBasicMaterial({ visible: false });
-        this.proxyMesh = new Mesh(proxyGeo, proxyMat);
+                const box = new Box3().setFromObject(this.modelRoot);
+                const size = new Vector3();
+                box.getSize(size);
+                const center = new Vector3();
+                box.getCenter(center);
 
-        const finalCenter = new Vector3();
-        finalBox.getCenter(finalCenter);
-        this.wrapper.worldToLocal(finalCenter);
-        this.proxyMesh.position.copy(finalCenter);
+                const maxDim = Math.max(size.x, size.y, size.z);
+                if (maxDim > 0) {
+                    const scale = targetSize / maxDim;
+                    this.modelRoot.scale.setScalar(scale);
+                }
 
-        this.wrapper.add(this.proxyMesh);
+                if (autoCenter) {
+                    const newBox = new Box3().setFromObject(this.modelRoot);
+                    newBox.getCenter(center);
+                    this.modelRoot.position.sub(center);
+                }
 
-        this.sg!.events.emit('node:loaded', { id: this.id });
-      },
-      undefined,
-      (error) => {
-        logger.error('Node %s: Error loading model:', this.id, error);
-      }
-    );
-  }
+                this.wrapper.add(this.modelRoot);
+
+                const finalBox = new Box3().setFromObject(this.wrapper);
+                const finalSize = new Vector3();
+                finalBox.getSize(finalSize);
+
+                await ensureThreeMeshBvh();
+                const proxyGeo = new BoxGeometry(finalSize.x, finalSize.y, finalSize.z);
+                if (proxyGeo.computeBoundsTree) proxyGeo.computeBoundsTree();
+
+                const proxyMat = new MeshBasicMaterial({ visible: false });
+                this.proxyMesh = new Mesh(proxyGeo, proxyMat);
+
+                const finalCenter = new Vector3();
+                finalBox.getCenter(finalCenter);
+                this.wrapper.worldToLocal(finalCenter);
+                this.proxyMesh.position.copy(finalCenter);
+
+                this.wrapper.add(this.proxyMesh);
+
+                this.sg!.events.emit('node:loaded', { id: this.id });
+            },
+            undefined,
+            (error) => {
+                logger.error('Node %s: Error loading model:', this.id, error);
+            },
+        );
+    }
 }

@@ -69,13 +69,21 @@
         <div id="graph"></div>
         <div id="live" aria-live="polite"></div>
         <script type="module">
-            import { defineDeriver, deriveScope, deriveZoom, diffKernels, inputToken, Kernel, runPipeline } from '@spacegraphjs/kernel';
+            import {
+                defineDeriver,
+                deriveScope,
+                deriveZoom,
+                diffKernels,
+                inputToken,
+                Kernel,
+                runPipeline,
+            } from '@spacegraphjs/kernel';
             import { diffPositions, LaneLayout } from '@src/layout/index.ts';
             import { createRenderClock } from '@spacegraphjs/renderer';
             import { InlineGraph } from '@spacegraphjs/svg-renderer';
 
             const lanes = ['code', 'docs', 'run'];
-            const rank = { '0': 0, '1': 1, '2': 2 };
+            const rank = { 0: 0, 1: 1, 2: 2 };
 
             const node = (id, label, kind, lens, level, depth) => ({
                 id,
@@ -129,13 +137,19 @@
                 name: 'lens',
                 inputs: [inputToken('lens')],
                 derive: (kernel, inputs) =>
-                    deriveScope(kernel, (entry) => inputs.lens === 'all' || entry.data?.lens === inputs.lens),
+                    deriveScope(
+                        kernel,
+                        (entry) => inputs.lens === 'all' || entry.data?.lens === inputs.lens,
+                    ),
             });
             const depth = defineDeriver({
                 name: 'depth',
                 inputs: [inputToken('depth')],
                 derive: (kernel, inputs) =>
-                    deriveScope(kernel, (entry) => Number(entry.data?.depth ?? 0) <= Number(inputs.depth)),
+                    deriveScope(
+                        kernel,
+                        (entry) => Number(entry.data?.depth ?? 0) <= Number(inputs.depth),
+                    ),
             });
             const derivers = [level, lens, depth];
 
@@ -161,9 +175,15 @@
                         kind: entry.kind,
                         label: entry.label,
                         shape: 'card',
-                        position: [positions.get(entry.id).x, positions.get(entry.id).y, positions.get(entry.id).z],
+                        position: [
+                            positions.get(entry.id).x,
+                            positions.get(entry.id).y,
+                            positions.get(entry.id).z,
+                        ],
                     })),
-                    edges: kernel.edges.filter((edge) => ids.has(edge.source) && ids.has(edge.target)),
+                    edges: kernel.edges.filter(
+                        (edge) => ids.has(edge.source) && ids.has(edge.target),
+                    ),
                 };
             };
 
@@ -215,8 +235,12 @@
                 live.textContent = params.label;
             };
 
-            document.getElementById('layer').addEventListener('input', (event) => show(Number(event.target.value)));
-            document.getElementById('scrub').addEventListener('input', (event) => draw(Number(event.target.value)));
+            document
+                .getElementById('layer')
+                .addEventListener('input', (event) => show(Number(event.target.value)));
+            document
+                .getElementById('scrub')
+                .addEventListener('input', (event) => draw(Number(event.target.value)));
 
             show(0);
 

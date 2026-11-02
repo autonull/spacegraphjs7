@@ -6,10 +6,10 @@
 
 ## Overview
 
-| Phase      | Days  | Focus              | Outcome                 |
-| ---------- | ----- | ------------------ | ----------------------- |
-| **Build**  | 0-14  | Core development   | Working, tested library |
-| **Launch** | 15-17 | Publish + announce | ppnpm package, community  |
+| Phase      | Days  | Focus              | Outcome                  |
+| ---------- | ----- | ------------------ | ------------------------ |
+| **Build**  | 0-14  | Core development   | Working, tested library  |
+| **Launch** | 15-17 | Publish + announce | ppnpm package, community |
 
 **Total time:** 66 hours over 17 days (part-time, 4h/day)
 
@@ -1223,7 +1223,7 @@ GitHub: [link]
 | Day       | Focus            | Time    | Success Criteria          |
 | --------- | ---------------- | ------- | ------------------------- |
 | **0**     | Environment      | 1h      | Node 18+, git initialized |
-| **1**     | Project Setup    | 4h      | pnpm install works         |
+| **1**     | Project Setup    | 4h      | pnpm install works        |
 | **2**     | SpaceGraph Class | 4h      | Build succeeds            |
 | **3-4**   | Demo             | 6h      | 3 nodes + 3 edges render  |
 | **5**     | Testing          | 3h      | Edge cases pass           |
@@ -1232,7 +1232,7 @@ GitHub: [link]
 | **11-12** | Fresh Install    | 4h      | Works in empty directory  |
 | **13-14** | QUICKSTART       | 4h      | <10 min for stranger      |
 | **15**    | Final Check      | 2h      | All checks pass           |
-| **16**    | Publish          | 2h      | On pnpm                    |
+| **16**    | Publish          | 2h      | On pnpm                   |
 | **17**    | Announce         | 2h      | Community knows           |
 | **TOTAL** |                  | **66h** | **Launch complete**       |
 

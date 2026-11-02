@@ -91,7 +91,10 @@ export function project(options: MinimapOptions): MinimapProjection {
     const viewRect: MinimapViewRect | undefined = viewport
         ? (() => {
               const [cx, cy] = viewport.center;
-              const topLeft = projectPoint({ x: cx - viewport.extent.width / 2, y: cy + viewport.extent.height / 2 });
+              const topLeft = projectPoint({
+                  x: cx - viewport.extent.width / 2,
+                  y: cy + viewport.extent.height / 2,
+              });
 
               return {
                   x: topLeft.x,

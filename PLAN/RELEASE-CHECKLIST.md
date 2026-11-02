@@ -314,7 +314,7 @@ Track these for each release:
 
 | Metric                   | Target | Actual |
 | ------------------------ | ------ | ------ |
-| pnpm downloads (week 1)   | 500    | \_\_\_ |
+| pnpm downloads (week 1)  | 500    | \_\_\_ |
 | GitHub stars (week 1)    | 10     | \_\_\_ |
 | Issues opened (week 1)   | <5     | \_\_\_ |
 | Matrix growth (week 1)   | 20     | \_\_\_ |

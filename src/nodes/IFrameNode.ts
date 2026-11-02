@@ -4,52 +4,52 @@ import type { NodeSpec } from '../types';
 import { BaseContentNode } from './BaseContentNode';
 
 export class IFrameNode extends BaseContentNode {
-  static readonly typeName: string = 'IFrameNode';
-  public iframeEl: HTMLIFrameElement;
+    static readonly typeName: string = 'IFrameNode';
+    public iframeEl: HTMLIFrameElement;
 
-  constructor(sg: SpaceGraph | undefined, spec: NodeSpec) {
-    super(sg, spec, {
-      tag: 'iframe',
-      defaultWidth: 480,
-      defaultHeight: 320,
-      materialParams: { visible: false },
-      customStyles: {
-        border: '2px solid rgba(255,255,255,0.2)',
-        borderRadius: '6px',
-        background: '#0a0a0a',
-        display: 'block',
-      },
-      updatePositionOnInit: true,
-    });
+    constructor(sg: SpaceGraph | undefined, spec: NodeSpec) {
+        super(sg, spec, {
+            tag: 'iframe',
+            defaultWidth: 480,
+            defaultHeight: 320,
+            materialParams: { visible: false },
+            customStyles: {
+                border: '2px solid rgba(255,255,255,0.2)',
+                borderRadius: '6px',
+                background: '#0a0a0a',
+                display: 'block',
+            },
+            updatePositionOnInit: true,
+        });
 
-    const src = (spec.data?.src as string) ?? 'about:blank';
-    const allow = (spec.data?.allow as string) ?? '';
+        const src = (spec.data?.src as string) ?? 'about:blank';
+        const allow = (spec.data?.allow as string) ?? '';
 
-    this.iframeEl = this.domElement as HTMLIFrameElement;
-    this.iframeEl.src = src;
-    this.iframeEl.allow = allow;
-    this.iframeEl.sandbox?.add?.('allow-scripts', 'allow-same-origin', 'allow-forms');
-  }
-
-  navigate(url: string): void {
-    this.iframeEl.src = url;
-  }
-
-  updateSpec(updates: Partial<NodeSpec>): this {
-    super.updateSpec(updates);
-    if (updates.data?.src) this.navigate(updates.data.src as string);
-
-    if (updates.data?.width || updates.data?.height) {
-      this.applySize(
-        this.dimension(updates.data, 'width', 480),
-        this.dimension(updates.data, 'height', 320)
-      );
+        this.iframeEl = this.domElement as HTMLIFrameElement;
+        this.iframeEl.src = src;
+        this.iframeEl.allow = allow;
+        this.iframeEl.sandbox?.add?.('allow-scripts', 'allow-same-origin', 'allow-forms');
     }
-    return this;
-  }
 
-  dispose(): void {
-    this.iframeEl.src = 'about:blank';
-    super.dispose();
-  }
+    navigate(url: string): void {
+        this.iframeEl.src = url;
+    }
+
+    updateSpec(updates: Partial<NodeSpec>): this {
+        super.updateSpec(updates);
+        if (updates.data?.src) this.navigate(updates.data.src as string);
+
+        if (updates.data?.width || updates.data?.height) {
+            this.applySize(
+                this.dimension(updates.data, 'width', 480),
+                this.dimension(updates.data, 'height', 320),
+            );
+        }
+        return this;
+    }
+
+    dispose(): void {
+        this.iframeEl.src = 'about:blank';
+        super.dispose();
+    }
 }

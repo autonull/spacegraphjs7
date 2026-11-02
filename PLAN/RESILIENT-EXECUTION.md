@@ -277,7 +277,7 @@ GRACEFUL DEGRADATION:
 | **Day 1: First commit**         | Favorite meal       | $30    | High (started!)         |
 | **Day 7: First render**         | Day off             | $0     | High (momentum)         |
 | **Day 14: Working demo**        | Nice dinner + drink | $50    | High (tangible)         |
-| **Month 1: pnpm publish**        | Weekend trip        | $200   | Very high (launched!)   |
+| **Month 1: pnpm publish**       | Weekend trip        | $200   | Very high (launched!)   |
 | **Month 3: 100 downloads**      | Team dinner         | $100   | Medium (validation)     |
 | **Month 6: Hardware prototype** | Celebration event   | $500   | Very high (real!)       |
 | **Month 12: Paper accepted**    | Conference trip     | $1,000 | Very high (recognition) |

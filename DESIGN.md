@@ -39,7 +39,7 @@ exponential development velocity.
 ### 1.2 Key Innovations
 
 | Innovation                 | Description                                     | Impact                      |
-|----------------------------|-------------------------------------------------|-----------------------------|
+| -------------------------- | ----------------------------------------------- | --------------------------- |
 | **Vision-Closed Loop**     | AI sees output, verifies quality, self-corrects | 98% faster iteration        |
 | **Automated Verification** | Playwright screenshot testing for all demos     | Visual regression detection |
 | **17 Plugins**             | Unified from 5 codebases + 6 new vision plugins | Complete feature set        |
@@ -75,7 +75,7 @@ Human Spec → AI Build → Vision Verify → AI Self-Correct → Done (1-3x)
 ### 1.4 Success Metrics
 
 | Metric            | Target               | Measurement            |
-|-------------------|----------------------|------------------------|
+| ----------------- | -------------------- | ---------------------- |
 | Initial render    | <100 ms (100 nodes)  | Performance.now()      |
 | Frame rate        | 60 FPS (1000 nodes)  | RAF timing             |
 | Memory            | <50 MB (1000 nodes)  | DevTools heap          |
@@ -576,7 +576,7 @@ expect(report.layout.overall).toBeGreaterThan(80);
 ### 3.1 Complete Repository Matrix
 
 | Repository        | Branch                        | Language   | Files | LOC      | Status     | Key Features                                 |
-|-------------------|-------------------------------|------------|-------|----------|------------|----------------------------------------------|
+| ----------------- | ----------------------------- | ---------- | ----- | -------- | ---------- | -------------------------------------------- |
 | **spacegraphjs**  | main                          | JavaScript | 115   | ~65,000  | Production | 18 nodes, 8 edges, 12 layouts, 11 plugins    |
 | **spacegraphjs3** | feature/svg-node-scaling      | TypeScript | 81    | ~35,000  | Production | SolidJS, Managers, Performance systems       |
 | **spacegraphjs4** | fix-demo-rendering            | JavaScript | 50    | ~8,300   | Production | Surface graph, Verlet physics, UI components |

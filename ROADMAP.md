@@ -81,7 +81,7 @@ post-release.
 ### P0 — Must ship before `1.0`
 
 | Task                                    | Description                                                                                                                                             | Key Files                                 |
-|-----------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------|
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
 | **Real ONNX weights for vision models** | Replace dummy `.onnx` files with trained models covering layout, overlap, legibility. Currently `generate_dummy_vision.py` creates placeholder weights. | `train_vision_models.py`, `public/*.onnx` |
 | **Bundle size audit**                   | Ensure `spacegraphjs.js` ships without bundling optional heavyweights (KaTeX, Chart.js) by default. Use tree-shaking and dynamic imports.               | `vite.config.ts`, `src/index.ts`          |
 | **API stability pass**                  | Review all public APIs for naming consistency, deprecate any alpha-era names, document breaking changes in `CHANGELOG.md`.                              | `src/types.ts`, `src/index.ts`            |
@@ -91,7 +91,7 @@ post-release.
 ### P1 — Ships with `1.0`
 
 | Task                            | Description                                                                                                                                                                                        | Key Files                                   |
-|---------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------|
+| ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
 | **Fractal LOD zooming**         | Nodes that are themselves graphs (sub-graphs). When camera zooms sufficiently close, a `GroupNode` seamlessly reveals its children as a nested graph. This is the core primitive for SpaceGraphOS. | `src/nodes/GroupNode.ts`, `LODPlugin.ts`    |
 | **Semantic edge navigation**    | Double-clicking an edge smoothly navigates the camera across the connection to the target node, establishing spatial traversal as the primary navigation model.                                    | `InteractionPlugin.ts`, `CameraControls.ts` |
 | **Viewport serialization**      | `sg.export()` and `SpaceGraph.import()` — serialize graph state (positions, node data, plugin config) to JSON for save/restore and sharing.                                                        | `SpaceGraph.ts`, `src/core/`                |
@@ -102,7 +102,7 @@ post-release.
 ### P2 — Post-`1.0`
 
 | Task                               | Description                                                                                                              | Notes                         |
-|------------------------------------|--------------------------------------------------------------------------------------------------------------------------|-------------------------------|
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ----------------------------- |
 | **Vision model training pipeline** | Full `train_vision_models.py` → `.onnx` pipeline with CI. Requires labeled layout corpus.                                | Research track                |
 | **React / Vue adapters**           | `@spacegraphjs/react` and `@spacegraphjs/vue` for framework integration. Use framework-agnostic core.                    | Community driven              |
 | **Open VSX extension**             | Editor integration for syntax highlighting of `.sgraph` spec files.                                                      | After demand confirmed        |
@@ -143,7 +143,7 @@ See `PLAN/SPACEGRAPH_OS.md` for the full architectural vision.
 ## What NOT To Build (Deferred/Rejected)
 
 | Item                                        | Reason                            |
-|---------------------------------------------|-----------------------------------|
+| ------------------------------------------- | --------------------------------- |
 | Docker image                                | It's a library, not a service     |
 | Self-hosted CDN / Verdaccio                 | pnpm/unpkg suffice                |
 | Vercel / Netlify / CodeSandbox integrations | Proprietary silos                 |
@@ -170,7 +170,7 @@ pnpm pack --dry-run     # verify package contents
 ## Document Map
 
 | For...                        | Read...                                 |
-|-------------------------------|-----------------------------------------|
+| ----------------------------- | --------------------------------------- |
 | Vision & philosophy           | `README.md`                             |
 | Software roadmap (this)       | `ROADMAP.md`                            |
 | Fractal ZUI & OS architecture | `PLAN/SPACEGRAPH_OS.md`                 |

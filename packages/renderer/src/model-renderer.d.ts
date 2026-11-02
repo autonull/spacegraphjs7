@@ -3,7 +3,15 @@
  * Extends BaseGraphRenderer with shared model management logic.
  */
 import { BaseGraphRenderer } from './adapter';
-import type { RenderModel, RenderModelPatch, RenderTheme, RendererViewport, FitOptions, RenderNode, RenderEdge } from './index';
+import type {
+    RenderModel,
+    RenderModelPatch,
+    RenderTheme,
+    RendererViewport,
+    FitOptions,
+    RenderNode,
+    RenderEdge,
+} from './index';
 export declare abstract class ModelRenderer extends BaseGraphRenderer {
     #private;
     protected get model(): RenderModel | null;
@@ -48,15 +56,19 @@ export declare abstract class ModelRenderer extends BaseGraphRenderer {
     getViewport(): RendererViewport;
     /** Read viewport from the renderer. Override with renderer-specific logic. */
     protected readViewport(): RendererViewport | undefined;
-    getNodeScreenPosition(id: string): {
-        x: number;
-        y: number;
-    } | undefined;
+    getNodeScreenPosition(id: string):
+        | {
+              x: number;
+              y: number;
+          }
+        | undefined;
     /** Read node screen position from the renderer. Override with renderer-specific logic. */
-    protected readNodeScreenPosition(_id: string): {
-        x: number;
-        y: number;
-    } | undefined;
+    protected readNodeScreenPosition(_id: string):
+        | {
+              x: number;
+              y: number;
+          }
+        | undefined;
     fit(ids?: readonly string[], options?: FitOptions): void;
     /** Apply fit to the renderer. Override with renderer-specific logic. */
     protected applyFit(_ids: readonly string[] | undefined, _options: FitOptions | undefined): void;

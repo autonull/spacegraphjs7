@@ -8,8 +8,8 @@ const RIGHT_BUTTON = 2;
 const MIDDLE_BUTTON = 4;
 
 interface CameraGesture {
-  action: CameraAction;
-  button: number;
+    action: CameraAction;
+    button: number;
 }
 
 /**
@@ -18,53 +18,53 @@ interface CameraGesture {
  * handles itself because a wheel is not a pointer gesture.
  */
 const CAMERA_GESTURES: readonly CameraGesture[] = [
-  { action: 'pan', button: RIGHT_BUTTON },
-  { action: 'orbit', button: MIDDLE_BUTTON },
+    { action: 'pan', button: RIGHT_BUTTON },
+    { action: 'orbit', button: MIDDLE_BUTTON },
 ];
 
 export class CameraFingering implements Fingering {
-  /** The camera uses buttons the nodes do not, so the generic interaction still runs. */
-  readonly claimsGesture = false;
+    /** The camera uses buttons the nodes do not, so the generic interaction still runs. */
+    readonly claimsGesture = false;
 
-  private camera: CameraControls;
-  private activeGesture: CameraGesture | null = null;
-  private startPos = { x: 0, y: 0 };
+    private camera: CameraControls;
+    private activeGesture: CameraGesture | null = null;
+    private startPos = { x: 0, y: 0 };
 
-  constructor(camera: CameraControls) {
-    this.camera = camera;
-  }
+    constructor(camera: CameraControls) {
+        this.camera = camera;
+    }
 
-  start(finger: Finger): boolean {
-    const gesture = CAMERA_GESTURES.find((g) => g.button === finger.buttons);
-    if (!gesture) return false;
+    start(finger: Finger): boolean {
+        const gesture = CAMERA_GESTURES.find((g) => g.button === finger.buttons);
+        if (!gesture) return false;
 
-    this.activeGesture = gesture;
-    this.startPos = { x: finger.position.x, y: finger.position.y };
-    return true;
-  }
+        this.activeGesture = gesture;
+        this.startPos = { x: finger.position.x, y: finger.position.y };
+        return true;
+    }
 
-  update(finger: Finger): boolean {
-    if (!this.activeGesture) return false;
+    update(finger: Finger): boolean {
+        if (!this.activeGesture) return false;
 
-    const dx = finger.position.x - this.startPos.x;
-    const dy = finger.position.y - this.startPos.y;
+        const dx = finger.position.x - this.startPos.x;
+        const dy = finger.position.y - this.startPos.y;
 
-    if (this.activeGesture.action === 'orbit') this.camera.rotate(dx, dy);
-    else this.camera.pan(dx, dy);
+        if (this.activeGesture.action === 'orbit') this.camera.rotate(dx, dy);
+        else this.camera.pan(dx, dy);
 
-    this.startPos = { x: finger.position.x, y: finger.position.y };
-    return true;
-  }
+        this.startPos = { x: finger.position.x, y: finger.position.y };
+        return true;
+    }
 
-  stop(_finger: Finger): void {
-    this.activeGesture = null;
-  }
+    stop(_finger: Finger): void {
+        this.activeGesture = null;
+    }
 
-  defer(): boolean {
-    return false;
-  }
+    defer(): boolean {
+        return false;
+    }
 }
 
 export function createCameraFingering(camera: CameraControls): CameraFingering {
-  return new CameraFingering(camera);
+    return new CameraFingering(camera);
 }

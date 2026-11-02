@@ -78,7 +78,10 @@ export class ForcePlacement implements Placement<ForceMeta> {
         const cell = Math.max(...radii.values(), k / 2) * 2;
         const iterations = Math.max(
             60,
-            Math.min(this.#iterations, Math.round((9000 * this.#iterations) / (300 * items.length))),
+            Math.min(
+                this.#iterations,
+                Math.round((9000 * this.#iterations) / (300 * items.length)),
+            ),
         );
 
         for (let step = 0; step < iterations; step++) {

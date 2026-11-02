@@ -43,7 +43,10 @@ describe('extractSubgraph', () => {
     });
 
     it('ranks the children and keeps the model order inside the scope', () => {
-        const scope = extractSubgraph(MODEL, 'turn', { limit: 2, rankFn: (node) => (node.kind === 'tool' ? 0 : 1) });
+        const scope = extractSubgraph(MODEL, 'turn', {
+            limit: 2,
+            rankFn: (node) => (node.kind === 'tool' ? 0 : 1),
+        });
 
         expect(scope.nodes.map((node) => node.id)).toEqual(['turn', 'tool']);
     });
@@ -61,7 +64,10 @@ describe('extractSubgraph', () => {
 
         expect(scope.nodes.map((node) => node.id)).toEqual(['session']);
 
-        const containment = extractSubgraph(MODEL, 'session', { limit: 7, childEdgeKind: CHILD_EDGE_KIND });
+        const containment = extractSubgraph(MODEL, 'session', {
+            limit: 7,
+            childEdgeKind: CHILD_EDGE_KIND,
+        });
 
         expect(containment.nodes.map((node) => node.id)).toEqual(['session', 'turn', 'other']);
     });

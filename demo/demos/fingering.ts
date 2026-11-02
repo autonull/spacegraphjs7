@@ -2,26 +2,26 @@ import { logger } from '../../src';
 import { createDemoWithNodes, edge, type SpaceGraph, shapeNode } from '../framework';
 
 export default async function fingeringDemo(): Promise<SpaceGraph> {
-  const sg = await createDemoWithNodes(
-    [
-      shapeNode('node1', [-200, 0, 0], { color: 0x4488ff, size: 60 }),
-      shapeNode('node2', [200, 0, 0], { color: 0xff4488, size: 60 }),
-      shapeNode('node3', [0, 150, 0], { color: 0x44ff88, size: 60 }),
-    ],
-    [edge('node1', 'node2'), edge('node1', 'node3'), edge('node2', 'node3')]
-  );
+    const sg = await createDemoWithNodes(
+        [
+            shapeNode('node1', [-200, 0, 0], { color: 0x4488ff, size: 60 }),
+            shapeNode('node2', [200, 0, 0], { color: 0xff4488, size: 60 }),
+            shapeNode('node3', [0, 150, 0], { color: 0x44ff88, size: 60 }),
+        ],
+        [edge('node1', 'node2'), edge('node1', 'node3'), edge('node2', 'node3')],
+    );
 
-  sg.events.on('interaction:dragstart', ({ node }) => {
-    logger.debug('Drag started:', node.id);
-  });
+    sg.events.on('interaction:dragstart', ({ node }) => {
+        logger.debug('Drag started:', node.id);
+    });
 
-  sg.events.on('interaction:dragend', ({ node }) => {
-    logger.debug('Drag ended:', node.id);
-  });
+    sg.events.on('interaction:dragend', ({ node }) => {
+        logger.debug('Drag ended:', node.id);
+    });
 
-  sg.events.on('node:pointerenter', ({ node }) => {
-    logger.debug('Hover:', node.id);
-  });
+    sg.events.on('node:pointerenter', ({ node }) => {
+        logger.debug('Hover:', node.id);
+    });
 
-  return sg;
+    return sg;
 }

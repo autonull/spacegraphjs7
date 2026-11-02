@@ -24,18 +24,15 @@ export class ModelRenderer extends BaseGraphRenderer {
     setModel(model) {
         try {
             const theme = this.getTheme();
-            if (!theme)
-                return;
+            if (!theme) return;
             const liveNodes = new Set(model.nodes.map((n) => n.id));
             const liveEdges = new Set(model.edges.map((e) => e.id));
             // Remove nodes/edges not in the new model
             for (const id of this.#nodes) {
-                if (!liveNodes.has(id))
-                    this.removeNode(id);
+                if (!liveNodes.has(id)) this.removeNode(id);
             }
             for (const id of this.#edges) {
-                if (!liveEdges.has(id))
-                    this.removeEdge(id);
+                if (!liveEdges.has(id)) this.removeEdge(id);
             }
             // Apply the model (renderer-specific)
             this.applyModel(model, theme);
@@ -46,8 +43,7 @@ export class ModelRenderer extends BaseGraphRenderer {
             this.#model = model;
             this.#nodes = liveNodes;
             this.#edges = liveEdges;
-        }
-        catch (error) {
+        } catch (error) {
             this.emit('error', { error });
         }
     }
@@ -56,8 +52,7 @@ export class ModelRenderer extends BaseGraphRenderer {
         try {
             const theme = this.getTheme();
             const model = this.#model;
-            if (!theme || !model)
-                return;
+            if (!theme || !model) return;
             // Apply node changes
             for (const id of patch.nodes.removed) {
                 this.removeNode(id);
@@ -89,15 +84,13 @@ export class ModelRenderer extends BaseGraphRenderer {
             for (const node of updatedModel.nodes) {
                 this.setNodeVisibility(node.id, node.visible !== false);
             }
-        }
-        catch (error) {
+        } catch (error) {
             this.emit('error', { error });
         }
     }
     setTheme(theme) {
         this.setThemeInternal(theme);
-        if (this.#model)
-            this.setModel(this.#model);
+        if (this.#model) this.setModel(this.#model);
     }
     /** Apply a full model to the renderer. Override with renderer-specific logic. */
     applyModel(_model, _theme) {
@@ -190,8 +183,7 @@ export class ModelRenderer extends BaseGraphRenderer {
         this.render();
     }
     dispose() {
-        for (const off of this.disposers)
-            off();
+        for (const off of this.disposers) off();
         this.disposers = [];
         this.events.clear();
         this.cleanup();

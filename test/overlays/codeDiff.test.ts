@@ -1,9 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { diffTone, parsePatch, renderCodeDiff, type CodeDiff } from '../../src/overlays';
 
-const PATCH = ['--- a/file.ts', '+++ b/file.ts', '@@ -1,2 +1,2 @@', ' const a = 1', '-const b = 2', '+const b = 3'].join(
-    '\n',
-);
+const PATCH = [
+    '--- a/file.ts',
+    '+++ b/file.ts',
+    '@@ -1,2 +1,2 @@',
+    ' const a = 1',
+    '-const b = 2',
+    '+const b = 3',
+].join('\n');
 
 const DIFFS: CodeDiff[] = [
     { file: 'src/file.ts', patch: PATCH, additions: 1, deletions: 1, status: 'modified' },
@@ -48,9 +53,15 @@ describe('renderCodeDiff', () => {
 
         const files = container.querySelectorAll('[data-slot="code-diff-file"]');
         expect(files).toHaveLength(2);
-        expect(files[0]!.querySelector('[data-slot="code-diff-path"]')?.textContent).toBe('src/file.ts');
-        expect(files[0]!.querySelector('[data-slot="code-diff-additions"]')?.textContent).toBe('+1');
-        expect(files[0]!.querySelector('[data-slot="code-diff-deletions"]')?.textContent).toBe('-1');
+        expect(files[0]!.querySelector('[data-slot="code-diff-path"]')?.textContent).toBe(
+            'src/file.ts',
+        );
+        expect(files[0]!.querySelector('[data-slot="code-diff-additions"]')?.textContent).toBe(
+            '+1',
+        );
+        expect(files[0]!.querySelector('[data-slot="code-diff-deletions"]')?.textContent).toBe(
+            '-1',
+        );
         expect(files[0]!.querySelectorAll('[data-slot="code-diff-line"]')).toHaveLength(6);
     });
 
@@ -58,7 +69,13 @@ describe('renderCodeDiff', () => {
         const container = document.createElement('div');
 
         renderCodeDiff(container, [
-            { file: '<img src=x onerror=alert(1)>', patch: '+<script>alert(1)</script>', additions: 1, deletions: 0, status: 'added' },
+            {
+                file: '<img src=x onerror=alert(1)>',
+                patch: '+<script>alert(1)</script>',
+                additions: 1,
+                deletions: 0,
+                status: 'added',
+            },
         ]);
 
         expect(container.querySelector('script')).toBeNull();
@@ -71,11 +88,18 @@ describe('renderCodeDiff', () => {
 
         renderCodeDiff(container, [DIFFS[0]!], { toneClass: (tone) => `tone-${tone}` });
 
-        const tones = [...container.querySelectorAll('[data-slot="code-diff-line"]')].map(
-            (line) => line.getAttribute('class'),
+        const tones = [...container.querySelectorAll('[data-slot="code-diff-line"]')].map((line) =>
+            line.getAttribute('class'),
         );
 
-        expect(tones).toEqual(['tone-header', 'tone-header', 'tone-header', 'tone-context', 'tone-removed', 'tone-added']);
+        expect(tones).toEqual([
+            'tone-header',
+            'tone-header',
+            'tone-header',
+            'tone-context',
+            'tone-removed',
+            'tone-added',
+        ]);
     });
 
     it('reports the activated file', () => {
@@ -83,7 +107,9 @@ describe('renderCodeDiff', () => {
         const picked: string[] = [];
 
         renderCodeDiff(container, DIFFS, { onSelect: (diff) => picked.push(diff.file) });
-        container.querySelectorAll('[data-slot="code-diff-header"]')[1]!.dispatchEvent(new Event('click'));
+        container
+            .querySelectorAll('[data-slot="code-diff-header"]')[1]!
+            .dispatchEvent(new Event('click'));
 
         expect(picked).toEqual(['src/other.ts']);
     });
