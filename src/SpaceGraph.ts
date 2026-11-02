@@ -643,11 +643,3 @@ export const SimpleGraph = {
 // Shorthand factories for quick graph creation
 export const sg = createSpaceGraph;
 export const qg = createGraph;
-
-// Quick node creation shortcuts
-export const node = (id: string, type = 'ShapeNode', position?: [number, number, number]) => ({
-    id,
-    type,
-    position,
-});
-export const edge = (id: string, source: string, target: string) => ({ id, source, target });

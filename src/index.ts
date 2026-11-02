@@ -21,7 +21,7 @@ export { VisionOverlayPlugin } from './plugins/VisionOverlayPlugin';
 export { PhysicsPlugin } from './plugins/PhysicsPlugin';
 
 // Convenience factory functions
-export { createSpaceGraph, createGraph, SimpleGraph, sg, qg, node, edge } from './SpaceGraph';
+export { createSpaceGraph, createGraph, SimpleGraph, sg, qg } from './SpaceGraph';
 
 // Re-export submodules for direct access (tree-shakeable)
 export * as builder from './builder';
