@@ -273,7 +273,7 @@ export class Graph extends EventEmitter<GraphEventMap> {
     return result;
   }
 
-  // Neighborhood and edge queries
+  // Backward-compatible aliases
   neighbors(nodeId: string): Node[] {
     return this.getNeighbors(nodeId, 'both');
   }

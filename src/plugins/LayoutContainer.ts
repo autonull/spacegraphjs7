@@ -1,15 +1,16 @@
 // SpaceGraphJS - Layout Container with Dirty Flag
 // Auto-triggers layout on graph mutations via dirty flag pattern
 
-import type { EventSystem } from '../core/events/EventSystem';
+import type { SpaceGraphEvents } from '../types';
 import type { Graph } from '../core/Graph';
+import type { EventEmitter } from '../core/EventEmitter';
 
 export abstract class LayoutContainer {
   protected needsLayout = false;
   protected graph: Graph;
-  protected events: EventSystem;
+  protected events: EventEmitter<SpaceGraphEvents>;
 
-  constructor(graph: Graph, events: EventSystem) {
+  constructor(graph: Graph, events: EventEmitter<SpaceGraphEvents>) {
     this.graph = graph;
     this.events = events;
     graph.on('node:added', () => this.markDirty());

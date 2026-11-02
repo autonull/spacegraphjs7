@@ -36,7 +36,6 @@ import type {
   DepthMode,
   EdgeSpec,
   FitInsets,
-  FitOptions,
   GraphImportData,
   GraphSpec,
   NodeSpec,
@@ -46,7 +45,7 @@ import type {
   SpecUpdate,
   ZuiManifest,
 } from './types';
-import { depthTreatment, sceneFadeDensity } from './depth/DepthCues';
+import { depthTreatment } from './depth/DepthCues';
 import { calculateFitView, createLogger, DOMUtils, safeClone, wrapError } from './utils';
 import { clamp01 } from './utils/math';
 import type { CardFacing } from '@spacegraphjs/renderer';

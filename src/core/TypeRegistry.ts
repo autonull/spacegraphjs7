@@ -194,21 +194,10 @@ export class TypeRegistry {
     this.edgeTypes.restore(snapshot.edges);
   }
 
-  #registerTypeAlias(ctor: { typeName?: string }, table: TypeTable<any>): void {
-    if (
-      Object.prototype.hasOwnProperty.call(ctor, 'typeName') &&
-      typeof ctor.typeName === 'string'
-    ) {
-      table.set(ctor.typeName, ctor);
+  #registerTypeAlias(ctor: NodeConstructor | EdgeConstructor, table: TypeTable<any>): void {
+    const typeName = (ctor as { typeName?: string }).typeName;
+    if (typeof typeName === 'string') {
+      table.set(typeName, ctor);
     }
   }
 }
-
-export const registerNode = (type: string, ctor: NodeConstructor) =>
-  TypeRegistry.getInstance().registerNode(type, ctor);
-export const registerEdge = (type: string, ctor: EdgeConstructor) =>
-  TypeRegistry.getInstance().registerEdge(type, ctor);
-
-// Quick lookup
-export const getNodeTypes = () => TypeRegistry.getInstance().getNodeTypes();
-export const getEdgeTypes = () => TypeRegistry.getInstance().getEdgeTypes();

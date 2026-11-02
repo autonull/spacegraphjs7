@@ -1,6 +1,7 @@
-import type { EventSystem } from '../core/events/EventSystem';
+import type { SpaceGraphEvents } from '../types';
 import type { Graph } from '../core/Graph';
 import type { SpaceGraph } from '../SpaceGraph';
+import type { EventEmitter } from '../core/EventEmitter';
 import { DOMUtils } from '../utils/DOMUtils';
 import { BaseSystemPlugin } from './BaseSystemPlugin';
 
@@ -12,7 +13,7 @@ export interface DOMOverlayOptions {
 export abstract class DOMOverlayPlugin extends BaseSystemPlugin {
   protected container: HTMLElement | null = null;
 
-  init(sg: SpaceGraph, graph: Graph, events: EventSystem): void | Promise<void> {
+  init(sg: SpaceGraph, graph: Graph, events: EventEmitter<SpaceGraphEvents>): void | Promise<void> {
     super.init(sg, graph, events);
     if (typeof document === 'undefined') return;
     this.createOverlay();

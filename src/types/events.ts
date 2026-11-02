@@ -49,7 +49,14 @@ export interface SpaceGraphEvents {
   'depth:change': { depth: DepthMode; previous: DepthMode };
   // Additional events used by plugins and core
   'ready': { timestamp: number };
-  'input:camera:wheel': { originalEvent: WheelEvent; deltaY: number; timestamp: number };
+  'input:camera:wheel': { originalEvent: WheelEvent; timestamp: number } & {
+    x: number;
+    y: number;
+    deltaX: number;
+    deltaY: number;
+    deltaZ: number;
+    deltaMode: number;
+  };
   'camera:move': { position: [number, number, number]; target: [number, number, number]; timestamp: number };
   'interaction:selection': { nodes: string[]; edges: string[]; timestamp: number };
   'interaction:edgecreate': { source: string; target: string; timestamp: number };

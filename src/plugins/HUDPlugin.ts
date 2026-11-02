@@ -1,7 +1,8 @@
-import type { EventSystem } from '../core/events/EventSystem';
+import type { SpaceGraphEvents } from '../types';
 import type { Graph } from '../core/Graph';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { SelectionChangedPayload } from '../types';
+import type { EventEmitter } from '../core/EventEmitter';
 import { createLogger } from '../utils/logger';
 import { BaseSystemPlugin } from './BaseSystemPlugin';
 import { type AlertOptions, HUDAlerts } from './hud/HUDAlerts';
@@ -26,7 +27,7 @@ export class HUDPlugin extends BaseSystemPlugin {
   private alerts: HUDAlerts | null = null;
   private elements: Map<string, { el: HTMLElement; options: HUDElementOptions }> = new Map();
 
-  init(sg: SpaceGraph, graph: Graph, events: EventSystem): void {
+  init(sg: SpaceGraph, graph: Graph, events: EventEmitter<SpaceGraphEvents>): void {
     super.init(sg, graph, events);
     if (typeof document === 'undefined') return;
 

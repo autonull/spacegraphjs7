@@ -1,7 +1,8 @@
 import gsap from 'gsap';
-import type { EventSystem } from '../core/events/EventSystem';
+import type { SpaceGraphEvents } from '../types';
 import type { Graph } from '../core/Graph';
 import type { SpaceGraph } from '../SpaceGraph';
+import type { EventEmitter } from '../core/EventEmitter';
 import { BaseSystemPlugin } from './BaseSystemPlugin';
 
 export interface ZoomUIConfig {
@@ -61,7 +62,7 @@ export class ZoomUIPlugin extends BaseSystemPlugin {
     this.config = { ...DEFAULT_CONFIG, ...config };
   }
 
-  init(sg: SpaceGraph, graph: Graph, events: EventSystem): void {
+  init(sg: SpaceGraph, graph: Graph, events: EventEmitter<SpaceGraphEvents>): void {
     super.init(sg, graph, events);
 
     this.on('fractal:level-change', (e: any) => {

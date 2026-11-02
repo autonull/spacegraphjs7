@@ -1,9 +1,10 @@
 import type { Plugin } from '../core';
-import type { EventSystem } from '../core/events/EventSystem';
+import type { SpaceGraphEvents } from '../types';
 import type { Graph } from '../core/Graph';
 import type { Edge } from '../edges/Edge';
 import type { Node } from '../nodes/Node';
 import type { SpaceGraph } from '../SpaceGraph';
+import type { EventEmitter } from '../core/EventEmitter';
 
 export interface SubscriptionHandle {
   dispose(): void;
@@ -31,11 +32,11 @@ export abstract class BaseSystemPlugin implements Plugin {
 
   protected sg!: SpaceGraph;
   protected graph!: Graph;
-  protected events!: EventSystem;
+  protected events!: EventEmitter<SpaceGraphEvents>;
 
   private subscriptions: SubscriptionHandle[] = [];
 
-  init(sg: SpaceGraph, graph: Graph, events: EventSystem): void {
+  init(sg: SpaceGraph, graph: Graph, events: EventEmitter<SpaceGraphEvents>): void {
     this.sg = sg;
     this.graph = graph;
     this.events = events;

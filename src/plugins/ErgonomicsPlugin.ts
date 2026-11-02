@@ -1,7 +1,8 @@
 import { Vector3 } from 'three';
-import type { EventSystem } from '../core/events/EventSystem';
+import type { SpaceGraphEvents } from '../types';
 import type { Graph } from '../core/Graph';
 import type { SpaceGraph } from '../SpaceGraph';
+import type { EventEmitter } from '../core/EventEmitter';
 import { BaseSystemPlugin } from './BaseSystemPlugin';
 
 const ERGONOMICS_CONFIG = {
@@ -112,7 +113,7 @@ export class ErgonomicsPlugin extends BaseSystemPlugin {
   private activeSessions: Map<string, InteractionSession> = new Map();
   private cameraSession: CameraSession | null = null;
 
-  init(sg: SpaceGraph, graph: Graph, events: EventSystem): void {
+  init(sg: SpaceGraph, graph: Graph, events: EventEmitter<SpaceGraphEvents>): void {
     super.init(sg, graph, events);
     this._applyConfig();
     this._listenToInteractions();
@@ -176,7 +177,7 @@ export class ErgonomicsPlugin extends BaseSystemPlugin {
 
           this.updateConfig({ ...baselineConfig, ...winner });
           (this.sg.events as any).emit(
-            'ergonomics:calibrated' as keyof import('../core/events/EventSystem').SpaceGraphEvents,
+            'ergonomics:calibrated' as keyof SpaceGraphEvents,
             { winner, scores }
           );
         }

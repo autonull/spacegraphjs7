@@ -29,18 +29,24 @@ function setSelection(app: SpaceGraphApp, nodes: Node[], edges: Edge[]): void {
 
 export function setupInteractionHandlers(app: SpaceGraphApp) {
   app.sg.events.on('interaction:selection', ({ nodes, edges }) => {
-    setSelection(app, nodes || [], edges || []);
+    const nodeObjs = (nodes || []).map((id) => app.sg.getNode(id)).filter(Boolean) as Node[];
+    const edgeObjs = (edges || []).map((id) => app.sg.getEdge(id)).filter(Boolean) as Edge[];
+    setSelection(app, nodeObjs, edgeObjs);
   });
 
   app.sg.events.on('interaction:edgecreate', ({ source, target }) => {
     if (app.options.onEdgeCreate) {
-      app.options.onEdgeCreate(source, target);
+      const sourceNode = app.sg.getNode(source);
+      const targetNode = app.sg.getNode(target);
+      if (sourceNode && targetNode) {
+        app.options.onEdgeCreate(sourceNode, targetNode);
+      }
     } else {
       const edgeId = `edge-${Date.now()}`;
       app.addEdge({
         id: edgeId,
-        source: source.id,
-        target: target.id,
+        source,
+        target,
         type: 'FlowEdge',
       });
     }
@@ -50,12 +56,14 @@ export function setupInteractionHandlers(app: SpaceGraphApp) {
     setSelection(app, [], []);
   });
 
-  app.sg.events.on('node:click', ({ node }) => {
-    setSelection(app, [node], []);
+  app.sg.events.on('node:click', (data) => {
+    const targetNode = 'node' in data ? data.node : data.id ? app.sg.getNode(data.id) : undefined;
+    if (targetNode) setSelection(app, [targetNode], []);
   });
 
-  app.sg.events.on('edge:click', ({ edge }) => {
-    setSelection(app, [], [edge]);
+  app.sg.events.on('edge:click', (data) => {
+    const targetEdge = 'id' in data && data.id ? app.sg.getEdge(data.id) : undefined;
+    if (targetEdge) setSelection(app, [], [targetEdge]);
   });
 
   app.sg.events.on('node:dblclick', ({ node }) => {

@@ -1,5 +1,5 @@
 import { Vector2, Vector3 } from 'three';
-import type { EventSystem } from '../core/events/EventSystem';
+import type { SpaceGraphEvents } from '../types';
 import { FingeringPriority } from '../core/constants';
 import type { Graph } from '../core/Graph';
 import type { Edge } from '../edges/Edge';
@@ -12,6 +12,7 @@ import type { PickResult } from '../input/interfaces/Tangible';
 import type { Node } from '../nodes/Node';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { InteractionInputConfig } from '../types';
+import type { EventEmitter } from '../core/EventEmitter';
 import { focusNodeCamera, focusRadiusOf } from '../utils/CameraUtils';
 import { BaseSystemPlugin } from './BaseSystemPlugin';
 import { ConnectionHandler } from './interaction/ConnectionHandler';
@@ -66,7 +67,7 @@ export class InteractionPlugin extends BaseSystemPlugin {
     }
   }
 
-  init(sg: SpaceGraph, graph: Graph, events: EventSystem): void {
+  init(sg: SpaceGraph, graph: Graph, events: EventEmitter<SpaceGraphEvents>): void {
     super.init(sg, graph, events);
     this.raycaster = new InteractionRaycaster(sg);
     this.cursorManager = new CursorManager();

@@ -1,7 +1,8 @@
-import type { EventSystem } from '../../core/events/EventSystem';
+import type { SpaceGraphEvents } from '../../types';
 import type { Graph } from '../../core/Graph';
 import type { Node } from '../../nodes/Node';
 import type { SpaceGraph } from '../../SpaceGraph';
+import type { EventEmitter } from '../../core/EventEmitter';
 import { worldToClient } from '../../utils/projection';
 import { BaseSystemPlugin } from '../BaseSystemPlugin';
 
@@ -79,7 +80,7 @@ export class HoverMetaWidget extends BaseSystemPlugin {
     this.overlay.appendChild(this.buttonContainer);
   }
 
-  init(sg: SpaceGraph, graph: Graph, events: EventSystem): void {
+  init(sg: SpaceGraph, graph: Graph, events: EventEmitter<SpaceGraphEvents>): void {
     super.init(sg, graph, events);
     document.body.appendChild(this.overlay);
 

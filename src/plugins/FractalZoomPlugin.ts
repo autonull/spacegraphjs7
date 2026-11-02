@@ -1,6 +1,7 @@
-import type { EventSystem } from '../core/events/EventSystem';
+import type { SpaceGraphEvents } from '../types';
 import type { Graph } from '../core/Graph';
 import type { SpaceGraph } from '../SpaceGraph';
+import type { EventEmitter } from '../core/EventEmitter';
 import { createLogger } from '../utils/logger';
 import { BaseSystemPlugin } from './BaseSystemPlugin';
 
@@ -69,7 +70,7 @@ export class FractalZoomPlugin extends BaseSystemPlugin {
     return this.config.levels[this.currentLevel]?.label || 'Unknown';
   }
 
-  init(sg: SpaceGraph, graph: Graph, events: EventSystem): void {
+  init(sg: SpaceGraph, graph: Graph, events: EventEmitter<SpaceGraphEvents>): void {
     super.init(sg, graph, events);
     this.updateLevel(0);
 

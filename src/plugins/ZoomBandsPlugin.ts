@@ -1,6 +1,7 @@
-import type { EventSystem } from '../core/events/EventSystem';
+import type { SpaceGraphEvents } from '../types';
 import type { Graph } from '../core/Graph';
 import type { SpaceGraph } from '../SpaceGraph';
+import type { EventEmitter } from '../core/EventEmitter';
 import { ZoomBands, type ZoomBand, type ZoomBandsConfig } from '../zoom/ZoomBands';
 import { BaseSystemPlugin } from './BaseSystemPlugin';
 
@@ -30,7 +31,7 @@ export class ZoomBandsPlugin extends BaseSystemPlugin {
     return this.bands.band;
   }
 
-  init(sg: SpaceGraph, graph: Graph, events: EventSystem): void {
+  init(sg: SpaceGraph, graph: Graph, events: EventEmitter<SpaceGraphEvents>): void {
     super.init(sg, graph, events);
     this.on('zoom:change', (event: { zoom: number }) => this.feed(event.zoom));
     this.feed(sg.zoom, true);

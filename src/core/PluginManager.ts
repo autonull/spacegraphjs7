@@ -38,9 +38,11 @@ const logger = createLogger('PluginManager');
 
 export class PluginManager {
   readonly plugins: Map<string, Plugin> = new Map();
-  getPlugin = this.get;
-  hasPlugin = this.has;
-  getPluginNames = this.pluginNames;
+
+  // Aliases for backward compatibility
+  readonly getPlugin = this.get.bind(this);
+  readonly hasPlugin = this.has.bind(this);
+  readonly getPluginNames = () => this.pluginNames;
 
   constructor(readonly sg: SpaceGraph) {}
 

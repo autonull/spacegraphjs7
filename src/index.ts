@@ -5,7 +5,7 @@
 export { SpaceGraph, VERSION } from './SpaceGraph';
 
 // Essential core classes (maintained for backward compatibility)
-export { Graph, Node, Edge, PluginManager, EventEmitter, Selection, TypeRegistry } from './core';
+export { Graph, PluginManager, EventEmitter, Selection, TypeRegistry } from './core';
 export { CameraControls } from './core/CameraControls';
 export { WebGLRenderer } from './core/WebGLRenderer';
 export { ErgonomicsAPI } from './core/Ergonomics';
@@ -13,6 +13,8 @@ export { VisionManager } from './core/VisionManager';
 export { ObjectPoolManager } from './core/ObjectPoolManager';
 export { InputManager } from './input';
 export { createCameraFingering } from './input/fingerings';
+export { Node } from './nodes/Node';
+export { Edge } from './edges/Edge';
 
 // Convenience factory functions
 export { createSpaceGraph, createGraph, SimpleGraph, sg, qg, node, edge } from './SpaceGraph';

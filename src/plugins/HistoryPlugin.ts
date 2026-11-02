@@ -1,7 +1,8 @@
-import type { EventSystem } from '../core/events/EventSystem';
+import type { SpaceGraphEvents } from '../types';
 import type { Graph } from '../core/Graph';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { GraphSpec } from '../types';
+import type { EventEmitter } from '../core/EventEmitter';
 import { BaseSystemPlugin } from './BaseSystemPlugin';
 
 export interface HistoryPluginOptions {
@@ -29,7 +30,7 @@ export class HistoryPlugin extends BaseSystemPlugin {
     this.isEnabled = options.enabled !== false;
   }
 
-  init(sg: SpaceGraph, graph: Graph, events: EventSystem): void {
+  init(sg: SpaceGraph, graph: Graph, events: EventEmitter<SpaceGraphEvents>): void {
     super.init(sg, graph, events);
 
     if (this.isEnabled) {
