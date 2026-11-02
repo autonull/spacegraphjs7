@@ -137,6 +137,11 @@ export class CameraControls {
         this.setKeyboardScope(this.config.keyboard);
     }
 
+    /** Request a render frame from the SpaceGraph instance if available. */
+    requestFrame(): void {
+        this.sg?.requestFrame?.();
+    }
+
     get hasZoomHistory(): boolean {
         return this.canZoomOut();
     }
@@ -149,7 +154,7 @@ export class CameraControls {
         if (!this.config.enableRotate || this.isOrthographic) return;
         this.sphericalDelta.theta -= dx * this.config.rotateSpeed * 0.005;
         this.sphericalDelta.phi -= dy * this.config.rotateSpeed * 0.005;
-        this.sg?.requestFrame?.();
+        this.requestFrame();
     }
 
     /**
@@ -168,14 +173,14 @@ export class CameraControls {
         this.cancelTweens();
         const scale = this.config.panSpeed * this.worldUnitsPerPixel;
         this.applyPan(dx * scale, dy * scale);
-        this.sg?.requestFrame?.();
+        this.requestFrame();
     }
 
     zoom(factor: number): void {
         if (!this.config.enableZoom) return;
         this.cancelTweens();
         this.scale *= factor;
-        this.sg?.requestFrame?.();
+        this.requestFrame();
     }
 
     /**
@@ -284,7 +289,7 @@ export class CameraControls {
             this.zoomNext !== null ||
             [...this.keyState.values()].some(Boolean)
         )
-            this.sg?.requestFrame?.();
+            this.requestFrame();
     }
 
     panBy(dx: number, dy: number): void {
@@ -388,7 +393,7 @@ export class CameraControls {
         }
         this.animStartTime = performance.now();
         this.animDuration = duration * 1000;
-        this.sg?.requestFrame?.();
+        this.requestFrame();
     }
 
     // Abandon any in-flight camera animation so an explicit programmatic move is authoritative.
@@ -442,7 +447,7 @@ export class CameraControls {
             this.animStartTime = performance.now();
             this.animDuration = duration * 1000;
         }
-        this.sg?.requestFrame?.();
+        this.requestFrame();
     }
 
     toggleOrthographic(): void {
@@ -506,7 +511,7 @@ export class CameraControls {
     private onKeyDown(e: KeyboardEvent): void {
         if (this.#isEditable(e)) return;
         this.keyState.set(e.key.toLowerCase(), true);
-        this.sg?.requestFrame?.();
+        this.requestFrame();
     }
 
     private onKeyUp(e: KeyboardEvent): void {

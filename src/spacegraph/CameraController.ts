@@ -121,10 +121,7 @@ export class CameraController {
     }
 
     commitCamera(): SpaceGraph {
-        this.sg.cameraControls.update();
-        this.reportViewport(true);
-        this.sg.requestFrame();
-        return this.sg;
+        return this.sg.commitCamera();
     }
 
     setOrbitEnabled(enabled: boolean): SpaceGraph {

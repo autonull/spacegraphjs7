@@ -133,9 +133,7 @@ export class SpaceGraph {
             })),
         };
         if (this.cameraControls?.target) {
-            const { camera } = this.renderer;
-            const { target } = this.cameraControls;
-            spec.camera = { position: [camera.position.x, camera.position.y, camera.position.z], target: [target.x, target.y, target.z] };
+            spec.camera = this.cameraToSpec();
         }
         const pluginState = this.pluginManager.export();
         if (pluginState && Object.keys(pluginState).length > 0) spec.plugins = pluginState;
@@ -146,18 +144,7 @@ export class SpaceGraph {
         this.graph.clear();
         this.loadSpec(data as GraphSpec);
         if (data.camera && this.cameraControls?.target) {
-            const { camera } = this.renderer;
-            const { target } = this.cameraControls;
-            camera.position.set(...data.camera.position);
-            target.set(...data.camera.target);
-            const mathPool = MathPool.getInstance();
-            const diff = mathPool.acquireVector3().subVectors(camera.position, target);
-            this.cameraControls.spherical.radius = diff.length();
-            const radius = this.cameraControls.spherical.radius;
-            const ratio = radius > 0 ? clamp01(diff.y / radius) : 0;
-            this.cameraControls.spherical.phi = Math.acos(ratio);
-            this.cameraControls.spherical.theta = Math.atan2(diff.x, diff.z);
-            mathPool.releaseVector3(diff);
+            this.specToCamera(data.camera);
             this.cameraControls.update();
         }
         if (data.plugins) this.pluginManager.import(data.plugins as Record<string, unknown>);
@@ -230,9 +217,7 @@ export class SpaceGraph {
         this.renderer.setProjection(projection, this.cameraControls?.target);
         this.cameraControls?.setCamera(this.renderer.camera);
         this.events.emit('projection:change', { projection });
-        this.cameraController.reportViewport(true);
-        this.requestFrame();
-        return this;
+        return this.commitCamera();
     }
 
     // --- Depth Spectrum ---
@@ -244,7 +229,7 @@ export class SpaceGraph {
 
     // --- Zoom ---
     get zoom(): number { return this.renderer.getZoom(); }
-    setZoom(value: number): this { this.renderer.setZoom(value); this.cameraControls?.update(); this.cameraController.reportViewport(true); this.requestFrame(); return this; }
+    setZoom(value: number): this { this.renderer.setZoom(value); this.cameraControls?.update(); return this.commitCamera(); }
     get viewport(): CameraViewport { return this.renderer.getViewport(); }
 
     // --- Input ---
@@ -258,6 +243,38 @@ export class SpaceGraph {
         const canvas = this.renderer.renderer.domElement;
         zoomCameraOnWheel(this.cameraControls, canvas, e);
         (e as { originalEvent?: { preventDefault?: () => void } }).originalEvent?.preventDefault?.();
+    }
+
+    // --- Internal helpers ---
+    /** Common pattern: update cameraControls, report viewport, request frame. */
+    commitCamera(): this {
+        this.cameraControls?.update();
+        this.cameraController.reportViewport(true);
+        this.requestFrame();
+        return this;
+    }
+
+    /** Export current camera state to spec format. */
+    cameraToSpec(): { position: [number, number, number]; target: [number, number, number] } {
+        const { camera } = this.renderer;
+        const { target } = this.cameraControls;
+        return { position: [camera.position.x, camera.position.y, camera.position.z], target: [target.x, target.y, target.z] };
+    }
+
+    /** Import camera state from spec format. */
+    specToCamera(camera: { position: [number, number, number]; target: [number, number, number] }): void {
+        const { camera: cam } = this.renderer;
+        const { target } = this.cameraControls;
+        cam.position.set(...camera.position);
+        target.set(...camera.target);
+        const mathPool = MathPool.getInstance();
+        const diff = mathPool.acquireVector3().subVectors(cam.position, target);
+        this.cameraControls.spherical.radius = diff.length();
+        const radius = this.cameraControls.spherical.radius;
+        const ratio = radius > 0 ? clamp01(diff.y / radius) : 0;
+        this.cameraControls.spherical.phi = Math.acos(ratio);
+        this.cameraControls.spherical.theta = Math.atan2(diff.x, diff.z);
+        mathPool.releaseVector3(diff);
     }
 
     // --- Initialization ---

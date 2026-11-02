@@ -16,17 +16,11 @@ export class DepthController {
         const previous = this.#depth;
         this.#depth = depth;
         const effectiveDuration = this.sg.reducedMotion
-            ? previous !== depth
-                ? 0.5
-                : 0
-            : previous !== depth
-              ? 0.5
-              : 0;
+            ? previous !== depth ? 0.5 : 0
+            : previous !== depth ? 0.5 : 0;
         this.#applyDepth(depth, effectiveDuration);
         if (previous !== depth) this.sg.events.emit('depth:change', { depth, previous });
-        this.sg.cameraController.reportViewport(true);
-        this.sg.requestFrame();
-        return this.sg;
+        return this.sg.commitCamera();
     }
 
     #applyDepth(depth: DepthMode, duration: number): void {
@@ -47,8 +41,7 @@ export class DepthController {
     setCardFacing(facing: CardFacing): SpaceGraph {
         this.#cardFacing = facing;
         this.#applyCardFacing();
-        this.sg.requestFrame();
-        return this.sg;
+        return this.sg.commitCamera();
     }
 
     #applyCardFacing(): void {
@@ -70,9 +63,7 @@ export class DepthController {
         this.sg.renderer.setProjection(projection, this.sg.cameraControls?.target);
         this.sg.cameraControls?.setCamera(this.sg.renderer.camera);
         this.sg.events.emit('projection:change', { projection });
-        this.sg.cameraController.reportViewport(true);
-        this.sg.requestFrame();
-        return this.sg;
+        return this.sg.commitCamera();
     }
 
     initialize(depth: DepthMode): void {
