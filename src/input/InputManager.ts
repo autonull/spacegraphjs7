@@ -1,6 +1,7 @@
 import { Ray } from 'three';
 import type { SpaceGraph } from '../SpaceGraph';
-import type { EventEmitter, SpaceGraphEvents } from '../core';
+import type { EventEmitter } from '../core';
+import type { SpaceGraphEvents } from '../types';
 import { clientToNdc } from '../utils/projection';
 import { type Finger, type Fingering, FingerManager } from './Fingering';
 

@@ -907,3 +907,77 @@ export class SpaceGraph {
     (e as { originalEvent?: { preventDefault?: () => void } }).originalEvent?.preventDefault?.();
   }
 }
+
+// Convenience factory functions
+import { graph } from './builder';
+
+export const createSpaceGraph = (
+  container: HTMLElement,
+  options?: SpaceGraphOptions
+) => new SpaceGraph(container, options);
+
+export const createGraph = () => graph();
+
+// SimpleGraph: minimal entry point for static graph dashboards
+// No chrome, no ergonomics, no physics, no vision — just force layout + HTML nodes + edges + camera + events
+export interface SimpleGraphOptions extends Omit<SpaceGraphOptions, 'chrome' | 'plugins'> {
+  /** Force layout options */
+  layout?: {
+    spacing?: number;
+    iterations?: number;
+    seed?: number;
+  };
+}
+
+/**
+ * Create a minimal graph for dashboards: force layout, HTML nodes, edges, camera, events.
+ * @example
+ * ```ts
+ * const sg = await SimpleGraph.create('#container', { nodes, edges });
+ * sg.on('node:click', ({ node }) => console.log(node.id));
+ * ```
+ */
+export const SimpleGraph = {
+  async create(
+    container: HTMLElement | string,
+    spec: GraphSpec,
+    options: SimpleGraphOptions = {}
+  ): Promise<SpaceGraph> {
+    const element = typeof container === 'string' ? document.querySelector(container) : container;
+    if (!element) throw new Error(`Container not found: ${container}`);
+
+    const { layout = {}, ...sgOptions } = options;
+    const sg = new SpaceGraph(element as HTMLElement, {
+      ...sgOptions,
+      chrome: false,
+      plugins: [],
+      render: { ...(sgOptions.render ?? {}), depth: 'flat', renderMode: 'on-demand' },
+    });
+    await sg.init();
+    sg.loadSpec(spec).render();
+
+    // Apply force layout once
+    if (spec.nodes && spec.nodes.length > 0) {
+      await sg.layoutOnce('force-layout', {
+        spacing: layout.spacing ?? 120,
+        iterations: layout.iterations ?? 200,
+        seed: layout.seed ?? 42,
+        randomize: true,
+      });
+    }
+
+    return sg;
+  },
+};
+
+// Shorthand factories for quick graph creation
+export const sg = createSpaceGraph;
+export const qg = createGraph;
+
+// Quick node creation shortcuts
+export const node = (id: string, type = 'ShapeNode', position?: [number, number, number]) => ({
+  id,
+  type,
+  position,
+});
+export const edge = (id: string, source: string, target: string) => ({ id, source, target });

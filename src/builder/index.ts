@@ -6,17 +6,12 @@ export { BaseBuilder } from './base';
 export { EdgeBuilder } from './edge';
 export {
   Batch,
-  button,
   DataUtils,
   EdgeFactory,
   graph,
   Layout,
   NodeFactory,
-  NodeFactoryExtended,
   Presets,
-  slider,
-  toggle,
-  widget,
 } from './factories';
 export { GraphBuilder as GraphSpecBuilder, GraphBuilder } from './graph';
 export { NodeBuilder, WidgetBuilder } from './node';

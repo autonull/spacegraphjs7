@@ -3,7 +3,8 @@ import type { Node } from '../nodes/Node';
 import type { SpaceGraph } from '../SpaceGraph';
 import { wrapError } from '../utils/error';
 import { createLogger } from '../utils/logger';
-import type { EventEmitter, SpaceGraphEvents } from './EventEmitter';
+import type { EventEmitter } from './EventEmitter';
+import type { SpaceGraphEvents } from '../types';
 import type { Graph } from './Graph';
 import { TypeRegistry } from './TypeRegistry';
 

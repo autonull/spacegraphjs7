@@ -237,6 +237,16 @@ export class Graph extends EventEmitter<GraphEventMap> {
     return [...this.nodes.values()].filter(predicate);
   }
 
+  // Query nodes by type (constructor name)
+  queryByType(type: string): Node[] {
+    return this.query((node) => node.constructor.name === type);
+  }
+
+  // Query nodes by data predicate
+  getNodesByData(predicate: (data: import('../types').NodeData) => boolean): Node[] {
+    return this.query((node) => predicate(node.data));
+  }
+
   // Find single result
   findNode(predicate: (node: Node) => boolean): Node | undefined {
     return [...this.nodes.values()].find(predicate);

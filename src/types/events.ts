@@ -47,4 +47,21 @@ export interface SpaceGraphEvents {
   'zoomband:change': { band: string; normalized: number; zoom: number; label?: string; timestamp: number };
   'projection:change': { projection: Projection };
   'depth:change': { depth: DepthMode; previous: DepthMode };
+  // Additional events used by plugins and core
+  'ready': { timestamp: number };
+  'input:camera:wheel': { originalEvent: WheelEvent; deltaY: number; timestamp: number };
+  'camera:move': { position: [number, number, number]; target: [number, number, number]; timestamp: number };
+  'interaction:selection': { nodes: string[]; edges: string[]; timestamp: number };
+  'interaction:edgecreate': { source: string; target: string; timestamp: number };
+  'graph:click': { originalEvent?: MouseEvent; timestamp: number };
+  'edge:dblclick': { edge: Edge; originalEvent?: MouseEvent; timestamp: number };
+  'node:contextmenu': { node: Node; event: MouseEvent; timestamp: number };
+  'edge:contextmenu': { edge: Edge; event: MouseEvent; timestamp: number };
+  'graph:contextmenu': { event: MouseEvent; timestamp: number };
+  'node:pointerenter': { node: Node; event: MouseEvent; timestamp: number };
+  'node:pointerleave': { node: Node; event: MouseEvent; timestamp: number };
+  'edge:pointerenter': { edge: Edge; event: MouseEvent; timestamp: number };
+  'edge:pointerleave': { edge: Edge; event: MouseEvent; timestamp: number };
+  // Allow arbitrary string events for extensibility
+  [key: string]: any;
 }

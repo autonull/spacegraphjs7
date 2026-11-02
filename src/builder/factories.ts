@@ -7,28 +7,6 @@ import { NodeBuilder, WidgetBuilder } from './node';
 // Graph spec builder - fluent API for creating graphs
 export const graph = (): GraphBuilder => new GraphBuilder();
 
-// Widget factory - quick creation of UI elements
-// Uses NodeFactory internally for consistency
-// @deprecated Use NodeFactory.button(), NodeFactory.toggle(), or NodeFactory.slider() instead
-export const widget = (
-  id: string,
-  type: 'button' | 'toggle' | 'slider' = 'button'
-): WidgetBuilder => {
-  const typeMap = { button: 'ButtonNode', toggle: 'ToggleNode', slider: 'SliderNode' };
-  return new WidgetBuilder(id, typeMap[type]);
-};
-
-// Convenience widget creators - delegate to NodeFactory for consistency
-// @deprecated Use NodeFactory.button() instead
-export const button = (id: string, label?: string): NodeBuilder => NodeFactory.button(id, label);
-
-// @deprecated Use NodeFactory.toggle() instead
-export const toggle = (id: string, value = false): NodeBuilder => NodeFactory.toggle(id, value);
-
-// @deprecated Use NodeFactory.slider() instead
-export const slider = (id: string, min = 0, max = 1, value = 0.5): NodeBuilder =>
-  NodeFactory.slider(id, min, max, value);
-
 // Node factory - unified factory for all node types
 // Provides consistent interface for all node creation
 export const NodeFactory = Object.freeze({
@@ -304,6 +282,4 @@ export const Batch = Object.freeze({
   },
 });
 
-// Re-export NodeFactory as NodeFactoryExtended for backwards compatibility
-// @deprecated Use NodeFactory instead
-export { NodeFactory as NodeFactoryExtended };
+
