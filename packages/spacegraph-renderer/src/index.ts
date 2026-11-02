@@ -80,123 +80,6 @@ export class SpaceGraphRenderer extends ModelRenderer implements GraphRenderer {
         }
     }
 
-    // SpaceGraph uses a full-spec rebuild pattern, so override setModel entirely
-    setModel(model: RenderModel): void {
-        try {
-            const sg = this.#sg;
-            const theme = this.#theme;
-            if (!sg || !theme) return;
-
-            const liveNodes = new Set(model.nodes.map((n) => n.id));
-            const nodes = model.nodes.map((node) => nodeSpec(node, theme));
-
-            // Semantic zoom changes a node's representation (a phase is a panel at execution and a counted chip
-            // at overview). The core upserts by id and never remodels, so drop any node whose spec type changed
-            // first; loadSpec then recreates it with the new type.
-            for (const node of nodes) {
-                const previous = this.#nodeTypes.get(node.id);
-                if (previous && previous !== node.type) sg.removeNode(node.id);
-                this.#nodeTypes.set(node.id, node.type);
-            }
-
-            for (const id of this.nodes) {
-                if (!liveNodes.has(id)) {
-                    sg.removeNode(id);
-                    this.#nodeTypes.delete(id);
-                }
-            }
-            // Update internal node tracking
-            this.nodes.clear();
-            for (const id of liveNodes) this.nodes.add(id);
-
-            const liveEdges = new Set(model.edges.map((e) => e.id));
-            for (const id of this.edges) {
-                if (!liveEdges.has(id)) sg.removeEdge(id);
-            }
-            this.edges.clear();
-            for (const id of liveEdges) this.edges.add(id);
-
-            const spec: GraphSpec = {
-                nodes,
-                edges: model.edges.map((edge) => edgeSpec(edge, theme)),
-            };
-            sg.loadSpec(spec);
-            sg.setPositions(
-                Object.fromEntries(model.nodes.map((node) => [node.id, node.position])),
-            );
-
-            for (const node of model.nodes) {
-                if (node.visible === false) sg.hide(node.id);
-                else sg.show(node.id);
-            }
-            sg.render();
-
-            // Update stored model
-            this.model = model;
-        } catch (error) {
-            this.emit('error', { error });
-        }
-    }
-
-    // SpaceGraph uses a full-spec rebuild pattern, so override applyPatch entirely
-    applyPatch(patch: RenderModelPatch): void {
-        try {
-            const sg = this.#sg;
-            const theme = this.#theme;
-            if (!sg || !theme || !this.model) return;
-
-            // Apply node changes
-            for (const node of patch.nodes.removed) {
-                sg.removeNode(node);
-                this.#nodeTypes.delete(node);
-                this.nodes.delete(node);
-            }
-
-            const addedNodes = patch.nodes.added.map((node) => nodeSpec(node, theme));
-            for (const node of addedNodes) {
-                const previous = this.#nodeTypes.get(node.id);
-                if (previous && previous !== node.type) sg.removeNode(node.id);
-                this.#nodeTypes.set(node.id, node.type);
-            }
-            for (const node of patch.nodes.added) this.nodes.add(node.id);
-
-            const changedNodes = patch.nodes.changed.map((node) => nodeSpec(node, theme));
-            for (const node of changedNodes) {
-                const previous = this.#nodeTypes.get(node.id);
-                if (previous && previous !== node.type) sg.removeNode(node.id);
-                this.#nodeTypes.set(node.id, node.type);
-            }
-
-            // Apply edge changes
-            for (const edgeId of patch.edges.removed) {
-                sg.removeEdge(edgeId);
-                this.edges.delete(edgeId);
-            }
-            for (const edge of patch.edges.added) this.edges.add(edge.id);
-
-            // Rebuild the full spec with current model + patch
-            const updatedModel = mergeRenderModelPatch(this.model, patch);
-            this.model = updatedModel;
-
-            const spec: GraphSpec = {
-                nodes: updatedModel.nodes.map((node) => nodeSpec(node, theme)),
-                edges: updatedModel.edges.map((edge) => edgeSpec(edge, theme)),
-            };
-            sg.loadSpec(spec);
-            sg.setPositions(
-                Object.fromEntries(updatedModel.nodes.map((node) => [node.id, node.position])),
-            );
-
-            for (const node of updatedModel.nodes) {
-                if (node.visible === false) sg.hide(node.id);
-                else sg.show(node.id);
-            }
-            sg.render();
-        } catch (error) {
-            this.emit('error', { error });
-        }
-    }
-
     protected getTheme(): RenderTheme | null {
         return this.#theme;
     }
@@ -206,8 +89,70 @@ export class SpaceGraphRenderer extends ModelRenderer implements GraphRenderer {
         if (this.#sg) this.#sg.options.theme = spaceGraphTheme(theme);
     }
 
+    // Override the template methods to use SpaceGraph core
+    protected applyModel(model: RenderModel, theme: RenderTheme): void {
+        const sg = this.#sg;
+        if (!sg) return;
+
+        const nodes = model.nodes.map((node) => nodeSpec(node, theme));
+
+        // Semantic zoom changes a node's representation (a phase is a panel at execution and a counted chip
+        // at overview). The core upserts by id and never remodels, so drop any node whose spec type changed
+        // first; loadSpec then recreates it with the new type.
+        for (const node of nodes) {
+            const previous = this.#nodeTypes.get(node.id);
+            if (previous && previous !== node.type) sg.removeNode(node.id);
+            this.#nodeTypes.set(node.id, node.type);
+        }
+
+        const spec: GraphSpec = {
+            nodes,
+            edges: model.edges.map((edge) => edgeSpec(edge, theme)),
+        };
+        sg.loadSpec(spec);
+        sg.setPositions(
+            Object.fromEntries(model.nodes.map((node) => [node.id, node.position])),
+        );
+    }
+
+    protected addNode(node: RenderNode, theme: RenderTheme): void {
+        const sg = this.#sg;
+        if (!sg) return;
+        const spec = nodeSpec(node, theme);
+        const previous = this.#nodeTypes.get(node.id);
+        if (previous && previous !== spec.type) sg.removeNode(node.id);
+        this.#nodeTypes.set(node.id, spec.type);
+        sg.loadSpec({ nodes: [spec], edges: [] });
+    }
+
+    protected updateNode(node: RenderNode, theme: RenderTheme): void {
+        const sg = this.#sg;
+        if (!sg) return;
+        const spec = nodeSpec(node, theme);
+        const previous = this.#nodeTypes.get(node.id);
+        if (previous && previous !== spec.type) sg.removeNode(node.id);
+        this.#nodeTypes.set(node.id, spec.type);
+        sg.loadSpec({ nodes: [spec], edges: [] });
+        sg.setPositions({ [node.id]: node.position });
+    }
+
     protected removeNode(id: string): void {
         this.#sg?.removeNode(id);
+        this.#nodeTypes.delete(id);
+    }
+
+    protected addEdge(edge: RenderEdge, theme: RenderTheme): void {
+        const sg = this.#sg;
+        if (!sg) return;
+        const spec = edgeSpec(edge, theme);
+        sg.loadSpec({ nodes: [], edges: [spec] });
+    }
+
+    protected updateEdge(edge: RenderEdge, theme: RenderTheme): void {
+        const sg = this.#sg;
+        if (!sg) return;
+        const spec = edgeSpec(edge, theme);
+        sg.loadSpec({ nodes: [], edges: [spec] });
     }
 
     protected removeEdge(id: string): void {

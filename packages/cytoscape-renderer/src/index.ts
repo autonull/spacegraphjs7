@@ -82,123 +82,112 @@ export class CytoscapeRenderer extends ModelRenderer implements GraphRenderer {
         }
     }
 
-    // Override setModel to use Cytoscape's batching pattern
-    setModel(model: RenderModel): void {
-        try {
-            this.model = model;
-            const cy = this.#cy;
-            const theme = this.#theme;
-            if (!cy || !theme) return;
-
-            const liveNodes = new Set(model.nodes.map((node) => node.id));
-            const liveEdges = new Set(model.edges.map((edge) => edge.id));
-
-            cy.batch(() => {
-                for (const id of this.nodes)
-                    if (!liveNodes.has(id)) cy.remove(cy.getElementById(id));
-                for (const id of this.edges)
-                    if (!liveEdges.has(id)) cy.remove(cy.getElementById(id));
-
-                for (const node of model.nodes) {
-                    const element = cy.getElementById(node.id);
-                    const spec = nodeElement(node, theme);
-                    if (element.empty()) cy.add(spec);
-                    else {
-                        element.data(spec.data);
-                        element.classes(spec.classes ?? []);
-                        element.position({ x: node.position[0], y: node.position[1] });
-                    }
-                    element.style('display', node.visible === false ? 'none' : 'element');
-                }
-
-                for (const edge of model.edges) {
-                    const element = cy.getElementById(edge.id);
-                    const spec = edgeElement(edge, theme);
-                    if (element.empty()) cy.add(spec);
-                    else {
-                        element.data(spec.data);
-                        element.classes(spec.classes ?? []);
-                    }
-                }
-            });
-
-            this.nodes.clear();
-            for (const id of liveNodes) this.nodes.add(id);
-            this.edges.clear();
-            for (const id of liveEdges) this.edges.add(id);
-
-            this.#syncCards();
-            this.#renderOverlay();
-        } catch (error) {
-            this.emit('error', { error });
-        }
-    }
-
-    // Override applyPatch to use Cytoscape's batching pattern
-    applyPatch(patch: RenderModelPatch): void {
-        try {
-            const cy = this.#cy;
-            const theme = this.#theme;
-            if (!cy || !theme || !this.model) return;
-
-            cy.batch(() => {
-                for (const id of patch.nodes.removed) {
-                    cy.remove(cy.getElementById(id));
-                    this.nodes.delete(id);
-                }
-
-                for (const node of patch.nodes.added) {
-                    const spec = nodeElement(node, theme);
-                    cy.add(spec);
-                    this.nodes.add(node.id);
-                }
-
-                for (const node of patch.nodes.changed) {
-                    const element = cy.getElementById(node.id);
-                    const spec = nodeElement(node, theme);
-                    if (!element.empty()) {
-                        element.data(spec.data);
-                        element.classes(spec.classes ?? []);
-                        element.position({ x: node.position[0], y: node.position[1] });
-                        element.style('display', node.visible === false ? 'none' : 'element');
-                    }
-                }
-
-                for (const id of patch.edges.removed) {
-                    cy.remove(cy.getElementById(id));
-                    this.edges.delete(id);
-                }
-
-                for (const edge of patch.edges.added) {
-                    const spec = edgeElement(edge, theme);
-                    cy.add(spec);
-                    this.edges.add(edge.id);
-                }
-
-                for (const edge of patch.edges.changed) {
-                    const element = cy.getElementById(edge.id);
-                    const spec = edgeElement(edge, theme);
-                    if (!element.empty()) {
-                        element.data(spec.data);
-                        element.classes(spec.classes ?? []);
-                    }
-                }
-            });
-
-            this.model = mergeRenderModelPatch(this.model, patch);
-            this.#syncCards();
-            this.#renderOverlay();
-        } catch (error) {
-            this.emit('error', { error });
-        }
-    }
-
     protected getTheme(): RenderTheme | null {
         return this.#theme;
     }
 
     protected setThemeInternal(theme: RenderTheme): void {
         this.#theme = normalizeTheme(theme);
+    }
+
+    // Override template methods to use Cytoscape
+    protected applyModel(model: RenderModel, theme: RenderTheme): void {
+        const cy = this.#cy;
+        if (!cy) return;
+
+        cy.batch(() => {
+            for (const node of model.nodes) {
+                const element = cy.getElementById(node.id);
+                const spec = nodeElement(node, theme);
+                if (element.empty()) cy.add(spec);
+                else {
+                    element.data(spec.data);
+                    element.classes(spec.classes ?? []);
+                    element.position({ x: node.position[0], y: node.position[1] });
+                }
+                element.style('display', node.visible === false ? 'none' : 'element');
+            }
+
+            for (const edge of model.edges) {
+                const element = cy.getElementById(edge.id);
+                const spec = edgeElement(edge, theme);
+                if (element.empty()) cy.add(spec);
+                else {
+                    element.data(spec.data);
+                    element.classes(spec.classes ?? []);
+                }
+            }
+        });
+
+        this.#syncCards();
+        this.#renderOverlay();
+    }
+
+    protected addNode(node: RenderNode, theme: RenderTheme): void {
+        const cy = this.#cy;
+        if (!cy) return;
+        const spec = nodeElement(node, theme);
+        cy.add(spec);
+        this.#syncCards();
+        this.#renderOverlay();
+    }
+
+    protected updateNode(node: RenderNode, theme: RenderTheme): void {
+        const cy = this.#cy;
+        if (!cy) return;
+        const element = cy.getElementById(node.id);
+        if (!element.empty()) {
+            const spec = nodeElement(node, theme);
+            element.data(spec.data);
+            element.classes(spec.classes ?? []);
+            element.position({ x: node.position[0], y: node.position[1] });
+            element.style('display', node.visible === false ? 'none' : 'element');
+        }
+        this.#syncCards();
+        this.#renderOverlay();
+    }
+
+    protected removeNode(id: string): void {
+        const cy = this.#cy;
+        if (!cy) return;
+        cy.remove(cy.getElementById(id));
+        this.#cards.get(id)?.remove();
+        this.#cards.delete(id);
+    }
+
+    protected addEdge(edge: RenderEdge, theme: RenderTheme): void {
+        const cy = this.#cy;
+        if (!cy) return;
+        const spec = edgeElement(edge, theme);
+        cy.add(spec);
+    }
+
+    protected updateEdge(edge: RenderEdge, theme: RenderTheme): void {
+        const cy = this.#cy;
+        if (!cy) return;
+        const element = cy.getElementById(edge.id);
+        if (!element.empty()) {
+            const spec = edgeElement(edge, theme);
+            element.data(spec.data);
+            element.classes(spec.classes ?? []);
+        }
+    }
+
+    protected removeEdge(id: string): void {
+        const cy = this.#cy;
+        if (!cy) return;
+        cy.remove(cy.getElementById(id));
+    }
+
+    protected setNodeVisibility(id: string, visible: boolean): void {
+        const cy = this.#cy;
+        if (!cy) return;
+        const element = cy.getElementById(id);
+        if (!element.empty()) {
+            element.style('display', visible ? 'element' : 'none');
+        }
+        this.#syncCards();
+        this.#renderOverlay();
     }
 
     protected selectNodes(ids: readonly string[]): void {

@@ -1,6 +1,10 @@
 /**
  * A base class for renderer adapters that handle model diffing and incremental updates.
  * Extends BaseGraphRenderer with shared model management logic.
+ *
+ * Uses the Template Method pattern: concrete renderers implement the primitive operations
+ * (addNode, updateNode, removeNode, addEdge, updateEdge, removeEdge, setNodeVisibility, applyModel)
+ * while the base class handles the model diffing and update orchestration.
  */
 
 import { BaseGraphRenderer } from './adapter';
@@ -38,6 +42,69 @@ export abstract class ModelRenderer extends BaseGraphRenderer {
 
     /** Apply a full model to the renderer. */
     setModel(model: RenderModel): void {
+        this.#updateModel(model, () => this.applyModel(model, this.getTheme()!));
+    }
+
+    /** Apply an incremental patch to the current model. */
+    applyPatch(patch: RenderModelPatch): void {
+        const theme = this.getTheme();
+        const model = this.#model;
+        if (!theme || !model) return;
+
+        this.#applyPatch(patch, theme);
+    }
+
+    // ============= Template Methods (override in concrete renderers) =============
+
+    /** Apply a full model to the renderer. Called after removing stale nodes/edges. */
+    protected applyModel(_model: RenderModel, _theme: RenderTheme): void {
+        // Default: no-op. Concrete renderers that override setModel/applyPatch don't need this.
+    }
+
+    /** Add a node to the renderer. */
+    protected addNode(_node: RenderNode, _theme: RenderTheme): void {
+        // Default: no-op.
+    }
+
+    /** Update a node in the renderer. */
+    protected updateNode(_node: RenderNode, _theme: RenderTheme): void {
+        // Default: no-op.
+    }
+
+    /** Remove a node from the renderer. */
+    protected removeNode(_id: string): void {
+        // Default: no-op.
+    }
+
+    /** Add an edge to the renderer. */
+    protected addEdge(_edge: RenderEdge, _theme: RenderTheme): void {
+        // Default: no-op.
+    }
+
+    /** Update an edge in the renderer. */
+    protected updateEdge(_edge: RenderEdge, _theme: RenderTheme): void {
+        // Default: no-op.
+    }
+
+    /** Remove an edge from the renderer. */
+    protected removeEdge(_id: string): void {
+        // Default: no-op.
+    }
+
+    /** Set node visibility. */
+    protected setNodeVisibility(_id: string, _visible: boolean): void {
+        // Default: no-op.
+    }
+
+    /** Get the current theme. Override to store theme internally. */
+    protected abstract getTheme(): RenderTheme | null;
+
+    /** Store the theme internally. Override to store theme. */
+    protected abstract setThemeInternal(theme: RenderTheme): void;
+
+    // ============= Internal Model Update Logic =============
+
+    #updateModel(model: RenderModel, applyFn: () => void): void {
         try {
             const theme = this.getTheme();
             if (!theme) return;
@@ -54,7 +121,7 @@ export abstract class ModelRenderer extends BaseGraphRenderer {
             }
 
             // Apply the model (renderer-specific)
-            this.applyModel(model, theme);
+            applyFn();
 
             // Update visibility
             for (const node of model.nodes) {
@@ -69,12 +136,10 @@ export abstract class ModelRenderer extends BaseGraphRenderer {
         }
     }
 
-    /** Apply an incremental patch to the current model. */
-    applyPatch(patch: RenderModelPatch): void {
+    #applyPatch(patch: RenderModelPatch, theme: RenderTheme): void {
         try {
-            const theme = this.getTheme();
             const model = this.#model;
-            if (!theme || !model) return;
+            if (!model) return;
 
             // Apply node changes
             for (const id of patch.nodes.removed) {
@@ -122,57 +187,6 @@ export abstract class ModelRenderer extends BaseGraphRenderer {
     setTheme(theme: RenderTheme): void {
         this.setThemeInternal(theme);
         if (this.#model) this.setModel(this.#model);
-    }
-
-    /** Get the current theme. Override to store theme internally. */
-    protected abstract getTheme(): RenderTheme | null;
-
-    /** Store the theme internally. Override to store theme. */
-    protected abstract setThemeInternal(theme: RenderTheme): void;
-
-    /** Apply a full model to the renderer. Override with renderer-specific logic. */
-    protected applyModel(_model: RenderModel, _theme: RenderTheme): void {
-        // Default: no-op. Concrete renderers that override setModel/applyPatch don't need this.
-    }
-
-    /** Add a node to the renderer. */
-    protected addNode(_node: RenderNode, _theme: RenderTheme): void {
-        // Default: no-op. Concrete renderers that override setModel/applyPatch don't need this.
-    }
-
-    /** Update a node in the renderer. */
-    protected updateNode(_node: RenderNode, _theme: RenderTheme): void {
-        // Default: no-op. Concrete renderers that override setModel/applyPatch don't need this.
-    }
-
-    /** Remove a node from the renderer. */
-    protected removeNode(_id: string): void {
-        // Default: no-op. Concrete renderers that override setModel/applyPatch don't need this.
-    }
-
-    /** Add an edge to the renderer. */
-    protected addEdge(_edge: RenderEdge, _theme: RenderTheme): void {
-        // Default: no-op. Concrete renderers that override setModel/applyPatch don't need this.
-    }
-
-    /** Update an edge in the renderer. */
-    protected updateEdge(_edge: RenderEdge, _theme: RenderTheme): void {
-        // Default: no-op. Concrete renderers that override setModel/applyPatch don't need this.
-    }
-
-    /** Remove an edge from the renderer. */
-    protected removeEdge(_id: string): void {
-        // Default: no-op. Concrete renderers that override setModel/applyPatch don't need this.
-    }
-
-    /** Set node visibility. */
-    protected setNodeVisibility(_id: string, _visible: boolean): void {
-        // Default: no-op. Concrete renderers that override setModel/applyPatch don't need this.
-    }
-
-    /** Trigger a render. */
-    protected render(): void {
-        // Default: no-op. Concrete renderers that override setModel/applyPatch don't need this.
     }
 
     // The following methods have default implementations that can be overridden
@@ -241,6 +255,11 @@ export abstract class ModelRenderer extends BaseGraphRenderer {
 
     /** Apply focus to the renderer. Override with renderer-specific logic. */
     protected applyFocus(_id: string): void {
+        // Default: no-op. Override with renderer-specific logic.
+    }
+
+    /** Trigger a render. */
+    protected render(): void {
         // Default: no-op. Override with renderer-specific logic.
     }
 
