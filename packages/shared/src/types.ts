@@ -59,7 +59,6 @@ import type {
     FitOptions,
 } from '@spacegraphjs/renderer';
 
-/** Re-exported renderer contract types for convenience. */
 export type {
     Projection,
     DepthMode,

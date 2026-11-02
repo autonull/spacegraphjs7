@@ -66,7 +66,7 @@ The important idea is not autonomous replacement of the developer. It is **makin
 | Layer                | Responsibility                                        | Key pieces                                                                                                                    |
 | -------------------- | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | **Host application** | Owns domain data, persistence, detail panels, routing | Your React, Solid, Vue, or vanilla app                                                                                        |
-| **Bindings**         | Lifecycle, controller wiring, framework reactivity    | `GraphBinding`; `react-spacegraph` and `solid-spacegraph` over the contract; `vue-spacegraph` over the full engine            |
+| **Bindings**         | Lifecycle, controller wiring, framework reactivity    | `GraphBinding`; `react-spacegraph` and `solid-spacegraph` over the contract                                           |
 | **Contract**         | Dependency-free types and capability negotiation      | `@spacegraphjs/renderer` — `GraphRenderer`, `RenderModel`, `RenderTheme`, `CONTRACT_VERSION`                                  |
 | **Adapters**         | Geometry, hit-testing, camera, rendering              | `@spacegraphjs/spacegraph-renderer` (2D + 3D), `@spacegraphjs/cytoscape-renderer` (2D), `@spacegraphjs/svg-renderer` (static) |
 | **Core engine**      | Graph model, WebGL renderer, plugins, input, vision   | `spacegraphjs` — `SpaceGraph`, `Graph`, `WebGLRenderer`, `PluginManager`, `VisionManager`                                     |
@@ -110,7 +110,6 @@ Design rules that keep the layers honest:
 | `@spacegraphjs/svg-renderer`                                                                  | Static SVG export and inline subgraphs; not interactive            |
 | `react-spacegraph`                                                                            | `GraphView` binding over the contract and controller               |
 | `solid-spacegraph`                                                                            | Solid binding over the same policy                                 |
-| `vue-spacegraph`                                                                              | Vue 3 adapter                                                      |
 | `@spacegraphjs/cli`                                                                           | `sg fix`: apply vision-generated patches                           |
 | `create-spacegraph`                                                                           | Scaffolder, also exposed as `sg6`                                  |
 
@@ -171,7 +170,7 @@ The OpenCode host demo (`bun run graph:dev`, the real shell against a canonical 
 | Everything        | `spacegraphjs`                                                               |
 | Lean graph canvas | `spacegraphjs/activity`                                                      |
 | Contract only     | `@spacegraphjs/renderer`                                                     |
-| Framework binding | `react-spacegraph`, `solid-spacegraph`, or `vue-spacegraph`                  |
+| Framework binding | `react-spacegraph`, `solid-spacegraph`                  |
 | Headless helpers  | `spacegraphjs/layout`, `/zoom`, `/navigation`, `/a11y`, `/depth`, `/control` |
 
 ### The host path
