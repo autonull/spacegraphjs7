@@ -26,8 +26,12 @@ export class EventEmitter<T extends Record<string, any> = any> {
         this.handlers.get(event)?.delete(handler);
     }
 
-    emit<K extends keyof T>(event: K, data: T[K]): void {
-        this.invokeHandlers(this.handlers.get(event) ?? new Set(), data);
+    emit<K extends keyof T>(event: K, data: T[K], options?: { batch?: boolean }): void {
+        if (options?.batch) {
+            this.emitBatched(event, data);
+        } else {
+            this.invokeHandlers(this.handlers.get(event) ?? new Set(), data);
+        }
     }
 
     emitBatched<K extends keyof T>(event: K, data: T[K]): void {
