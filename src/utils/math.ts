@@ -2,7 +2,7 @@
 // Type-safe, performant, and deduplicated
 import { DEG2RAD, EPSILON, PI, RAD2DEG, TAU } from '../core/constants';
 
-export { DEG2RAD, EPSILON, PI, RAD2DEG, TAU };
+export { DEG2RAD, EPSILON, PI, RAD2DEG, TAU } from '../core/constants';
 
 // ============= Type Guards =============
 export const isObject = (item: unknown): item is Record<string, unknown> =>

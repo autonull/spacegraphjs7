@@ -1,29 +1,52 @@
 // Consolidated default registrations
-
 import {
   AnimatedEdge,
   BundledEdge,
   CurvedEdge,
   DottedEdge,
   DynamicThicknessEdge,
+  Edge,
+  FlowEdge,
   InterGraphEdge,
   LabeledEdge,
+  Wire,
 } from '../edges';
 import {
+  AudioNode,
   BorderNode,
   CanvasNode,
+  ChartNode,
   CodeEditorNode,
+  ColorPickerNode,
+  DataNode,
+  DOMNode,
+  DropdownNode,
+  GlobeNode,
+  GridNode,
+  GroupNode,
+  HtmlNode,
   IFrameNode,
+  ImageNode,
   InstancedShapeNode,
   MarkdownNode,
+  MathNode,
+  MeterNode,
+  NoteNode,
+  PanelNode,
+  PortNode,
   ProcessNode,
+  ProgressBarNode,
+  SceneNode,
+  ScrollPanelNode,
+  ShapeNode,
+  SplitNode,
   StackingNode,
   SwitchNode,
+  TabContainerNode,
   TextMeshNode,
+  VideoNode,
   VirtualGridNode,
 } from '../nodes';
-// System plugins
-// Layout plugins
 import {
   AutoColorPlugin,
   AutoLayoutPlugin,
@@ -35,7 +58,9 @@ import {
   GridLayout,
   HierarchicalLayout,
   HistoryPlugin,
+  HUDPlugin,
   InteractionPlugin,
+  LODPlugin,
   MinimapPlugin,
   PhysicsPlugin,
   RadialLayout,
@@ -47,77 +72,47 @@ import {
 } from '../plugins';
 import { MermaidNode } from '../plugins/mermaid';
 import type { Plugin } from '../core/PluginManager';
-// Edge types
-import { Edge } from '../edges/Edge';
-import { FlowEdge } from '../edges/FlowEdge';
-import { Wire } from '../edges/Wire';
-import { AudioNode } from '../nodes/AudioNode';
-import { ChartNode } from '../nodes/ChartNode';
-import { ColorPickerNode } from '../nodes/ColorPickerNode';
-import { DataNode } from '../nodes/DataNode';
-import { DOMNode } from '../nodes/DOMNode';
-import { DropdownNode } from '../nodes/DropdownNode';
-import { GlobeNode } from '../nodes/GlobeNode';
-import { GridNode } from '../nodes/GridNode';
-import { GroupNode } from '../nodes/GroupNode';
-import { HtmlNode } from '../nodes/HtmlNode';
-import { ImageNode } from '../nodes/ImageNode';
-import { MathNode } from '../nodes/MathNode';
-import { MeterNode } from '../nodes/MeterNode';
-import { NoteNode } from '../nodes/NoteNode';
-import { PanelNode } from '../nodes/PanelNode';
-import { PortNode } from '../nodes/PortNode';
-import { ProgressBarNode } from '../nodes/ProgressBarNode';
-import { SceneNode } from '../nodes/SceneNode';
-import { ScrollPanelNode } from '../nodes/ScrollPanelNode';
-// Node types
-import { ShapeNode } from '../nodes/ShapeNode';
-import { SplitNode } from '../nodes/SplitNode';
-import { TabContainerNode } from '../nodes/TabContainerNode';
-import { VideoNode } from '../nodes/VideoNode';
-import { HUDPlugin } from '../plugins/HUDPlugin';
-import { LODPlugin } from '../plugins/LODPlugin';
 import type { EdgeSpec, GraphSpec, NodeSpec } from '../types';
 
 export type PluginCtor = new () => Plugin;
 
-// Default node types - automatically registered
+// Default node types - automatically registered (alphabetically organized)
 export const DEFAULT_NODE_TYPES = [
-  ShapeNode,
-  InstancedShapeNode,
-  HtmlNode,
-  DOMNode,
-  ImageNode,
-  GroupNode,
-  NoteNode,
-  DataNode,
-  CanvasNode,
-  TextMeshNode,
-  VideoNode,
-  IFrameNode,
-  ChartNode,
-  MarkdownNode,
-  GlobeNode,
-  SceneNode,
   AudioNode,
-  MathNode,
-  ProcessNode,
-  CodeEditorNode,
-  StackingNode,
-  GridNode,
-  SplitNode,
   BorderNode,
-  SwitchNode,
-  VirtualGridNode,
+  CanvasNode,
+  ChartNode,
+  CodeEditorNode,
+  ColorPickerNode,
+  DataNode,
+  DOMNode,
+  DropdownNode,
+  GlobeNode,
+  GridNode,
+  GroupNode,
+  HtmlNode,
+  IFrameNode,
+  ImageNode,
+  InstancedShapeNode,
+  MarkdownNode,
+  MathNode,
+  MermaidNode,
+  MeterNode,
+  NoteNode,
   PanelNode,
   PortNode,
-  TabContainerNode,
-  MermaidNode,
-  ScrollPanelNode,
-  ColorPickerNode,
-  DropdownNode,
+  ProcessNode,
   ProgressBarNode,
-  MeterNode,
+  SceneNode,
+  ScrollPanelNode,
+  ShapeNode,
+  SplitNode,
+  StackingNode,
+  SwitchNode,
+  TabContainerNode,
+  TextMeshNode,
+  VideoNode,
+  VirtualGridNode,
 ] as const;
 
 // Node registration name: use the class's own `typeName` only. Static fields are inherited, so a
@@ -129,32 +124,32 @@ export function nodeTypeName(cls: { name: string; typeName?: string }): string {
     : cls.name;
 }
 
-// Default edge types - automatically registered
+// Default edge types - automatically registered (alphabetically organized)
 export const DEFAULT_EDGE_TYPES = [
-  Edge,
-  CurvedEdge,
-  FlowEdge,
-  LabeledEdge,
-  DottedEdge,
-  DynamicThicknessEdge,
   AnimatedEdge,
   BundledEdge,
+  CurvedEdge,
+  DynamicThicknessEdge,
+  Edge,
+  FlowEdge,
   InterGraphEdge,
+  LabeledEdge,
+  DottedEdge,
   Wire,
 ] as const;
 
-// Default layout plugins - automatically registered
+// Default layout plugins - automatically registered (alphabetically organized)
 export const DEFAULT_LAYOUT_PLUGINS: [PluginCtor, string][] = [
-  [ForceLayout, 'ForceLayout'],
   [CircularLayout, 'CircularLayout'],
+  [ClusterLayout, 'ClusterLayout'],
+  [ForceLayout, 'ForceLayout'],
+  [GeoLayout, 'GeoLayout'],
   [GridLayout, 'GridLayout'],
   [HierarchicalLayout, 'HierarchicalLayout'],
   [RadialLayout, 'RadialLayout'],
-  [TreeLayout, 'TreeLayout'],
   [SpectralLayout, 'SpectralLayout'],
-  [GeoLayout, 'GeoLayout'],
   [TimelineLayout, 'TimelineLayout'],
-  [ClusterLayout, 'ClusterLayout'],
+  [TreeLayout, 'TreeLayout'],
 ];
 
 // Chrome plugins render host-level affordances: HUD telemetry, minimap, zoom indicator and hint.
@@ -166,15 +161,15 @@ export const DEFAULT_CHROME_PLUGINS: [PluginCtor, string][] = [
   [HUDPlugin, 'HUDPlugin'],
 ];
 
-// Default system plugins - automatically registered
+// Default system plugins - automatically registered (alphabetically organized)
 export const DEFAULT_SYSTEM_PLUGINS: [PluginCtor, string][] = [
+  [AutoColorPlugin, 'AutoColorPlugin'],
+  [AutoLayoutPlugin, 'AutoLayoutPlugin'],
+  [ErgonomicsPlugin, 'ErgonomicsPlugin'],
+  [HistoryPlugin, 'HistoryPlugin'],
   [InteractionPlugin, 'InteractionPlugin'],
   [LODPlugin, 'LODPlugin'],
-  [AutoLayoutPlugin, 'AutoLayoutPlugin'],
-  [AutoColorPlugin, 'AutoColorPlugin'],
-  [ErgonomicsPlugin, 'ErgonomicsPlugin'],
   [PhysicsPlugin, 'PhysicsPlugin'],
-  [HistoryPlugin, 'HistoryPlugin'],
 ];
 
 // Quick graph specification builder

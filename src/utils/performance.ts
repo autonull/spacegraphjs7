@@ -1,6 +1,5 @@
 import { ObjectPool as CoreObjectPool } from '../core/pooling/ObjectPool';
 // Performance optimization utilities
-import { debounce, throttle } from './math';
 
 /**
  * @deprecated Use CoreObjectPool from core/pooling/ObjectPool
@@ -113,9 +112,6 @@ export function cancelIdleCallbackPolyfill(handle: number): void {
     (window as any).clearTimeout(handle);
   }
 }
-
-export const throttleByTime = throttle;
-export const debounceByTime = debounce;
 
 /**
  * Track memory usage (if available)

@@ -131,14 +131,12 @@ export {
   batch,
   batchAsync,
   cancelIdleCallbackPolyfill,
-  debounceByTime,
   getMemoryUsage,
   measure,
   measureAsync,
   ObjectPool,
   PerformanceMonitor,
   requestIdleCallbackPolyfill,
-  throttleByTime,
 } from './performance';
 // Projection helpers
 export { clientToNdc, projectToNdc, worldToClient, worldToScreen } from './projection';
