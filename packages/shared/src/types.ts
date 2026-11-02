@@ -43,6 +43,38 @@ export interface GraphViewData {
   workspaceRoot?: string
 }
 
+/** Renderer contract types (imported for use in this file). */
+import type {
+  Projection,
+  DepthMode,
+  NodeStatus,
+  RenderNode,
+  RenderEdge,
+  RenderModel,
+  RenderModelPatch,
+  RenderTheme,
+  RendererCapabilities,
+  RendererViewport,
+  FitInsets,
+  FitOptions,
+} from '@spacegraphjs/renderer'
+
+/** Re-exported renderer contract types for convenience. */
+export type {
+  Projection,
+  DepthMode,
+  NodeStatus,
+  RenderNode,
+  RenderEdge,
+  RenderModel,
+  RenderModelPatch,
+  RenderTheme,
+  RendererCapabilities,
+  RendererViewport,
+  FitInsets,
+  FitOptions,
+} from '@spacegraphjs/renderer'
+
 /** Graph facets for filtering. */
 export interface GraphFacets {
   query: string
@@ -60,9 +92,6 @@ export interface FacetCounts {
 
 /** Zoom/semantic level. */
 export type ZoomLevel = "overview" | "execution" | "detail"
-
-/** Depth/projection mode. */
-export type DepthMode = "flat" | "layered" | "depth-stack" | "orbit"
 
 /** Layout type. */
 export type Layout = "lanes" | "timeline" | "hierarchy" | "tree" | "force" | "ribbon" | "matrix" | "log" | "radial"
@@ -549,112 +578,5 @@ export function turnSubgraph(model: GraphViewData, turnID: string, limit: number
   return { nodes: [turnNode], edges: [] }
 }
 
-/** Renderer types (moved from @spacegraphjs/renderer for standalone use). */
-
-export type Projection = '2d' | '3d'
-
-export type NodeStatus = 'neutral' | 'pending' | 'running' | 'success' | 'warning' | 'error'
-
-export type RenderNode = {
-  id: string
-  kind: string
-  label: string
-  summary?: string
-  html?: string
-  position: [number, number, number]
-  size?: [number, number, number]
-  status?: NodeStatus
-  visible?: boolean
-  interactive?: boolean
-  shape?: 'card' | 'panel' | 'dot' | 'badge' | 'group'
-  parent?: string
-  data?: Record<string, unknown>
-}
-
-export type RenderEdge = {
-  id: string
-  source: string
-  target: string
-  kind: string
-  label?: string
-  confidence?: 'explicit' | 'structural' | 'inferred'
-  visible?: boolean
-  directed?: boolean
-  style?: 'solid' | 'dashed' | 'dotted'
-}
-
-export type RenderModel = {
-  nodes: readonly RenderNode[]
-  edges: readonly RenderEdge[]
-  extent?: { width: number; height: number; depth?: number }
-}
-
-export type RenderModelPatch = {
-  nodes: {
-    added: readonly RenderNode[]
-    removed: readonly string[]
-    changed: readonly RenderNode[]
-  }
-  edges: {
-    added: readonly RenderEdge[]
-    removed: readonly string[]
-    changed: readonly RenderEdge[]
-  }
-}
-
-export type RenderTheme = {
-  background: string
-  surface: string
-  surfaceMuted: string
-  text: string
-  textMuted: string
-  border: string
-  accent: string
-  success: string
-  warning: string
-  error: string
-  edge: string
-  edgeMuted: string
-  selection: string
-  focus: string
-  fontFamily: string
-  fontSize: number
-  direction?: 'ltr' | 'rtl'
-}
-
-export type RendererCapabilities = {
-  projections: readonly Projection[]
-  depths: readonly DepthMode[]
-  domNodes: boolean
-  maxDomNodes: number
-  edgeLabels: boolean
-  clusterNodes: boolean
-  minimap: boolean
-  maxRecommendedNodes: number
-  zoomRange?: { min: number; max: number }
-  cardFacing?: boolean
-  fitInsets?: boolean
-}
-
-export type RendererViewport = {
-  zoom: number
-  center: [number, number, number]
-  extent?: { width: number; height: number }
-  band?: string
-}
-
-export type FitInsets = { top?: number; right?: number; bottom?: number; left?: number }
-
-export type FitOptions = {
-  minScale?: number
-  padding?: number
-  insets?: FitInsets
-}
-
-/**
- * Checks if a renderer supports a given depth mode.
- */
-export function supportsDepth(capabilities: RendererCapabilities | undefined, depth: DepthMode): boolean {
-  if (!capabilities) return true
-  return capabilities.depths?.includes(depth) ?? true
-}
+/** Checks if a renderer supports a given depth mode. Re-exported from @spacegraphjs/renderer */
+export { supportsDepth } from '@spacegraphjs/renderer'

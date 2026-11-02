@@ -234,17 +234,6 @@ export const darkTokens: DesignTokens = {
 }
 
 /**
- * Gets a CSS custom property value for a token path.
- * @param path - Dot-separated token path (e.g., "colors.primary")
- * @param fallback - Fallback value if token not found
- * @returns CSS var() expression
- */
-export function styleVar(path: string, fallback?: string): string {
-  const varName = `--sg-${path.replace(/\./g, "-")}`
-  return fallback ? `var(${varName}, ${fallback})` : `var(${varName})`
-}
-
-/**
  * Generates CSS custom property declarations from tokens.
  * @param tokens - Design tokens object
  * @param prefix - Prefix for CSS variables (default: "sg")

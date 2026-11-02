@@ -111,7 +111,7 @@ export {
 
 // Tokens
 export type { DesignTokens } from "./tokens"
-export { defaultTokens, darkTokens, styleVar as tokenStyleVar, generateTokenCSS } from "./tokens"
+export { defaultTokens, darkTokens, generateTokenCSS } from "./tokens"
 
 // CSS utilities
 export { cx, cn, styleVar, styleVars, generateId, fixedSize, absolutePosition, mediaQueries, media } from "./css"
