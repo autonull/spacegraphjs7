@@ -24,7 +24,6 @@ import type {
     SpaceGraphOptions,
     SpecUpdate,
 } from './types';
-import { depthTreatment } from './depth/DepthCues';
 import { createLogger, safeClone, clamp01 } from './utils';
 import type { CardFacing } from '@spacegraphjs/renderer';
 
@@ -64,23 +63,16 @@ export class SpaceGraph {
     public readonly depthController: DepthController;
     public readonly lifecycleController: LifecycleController;
 
-    /**
-     * Whether animations should be instant. Respects the explicit `reducedMotion` option,
-     * falling back to the system `prefers-reduced-motion` media query.
-     */
+    /** Whether animations should be instant. Respects `reducedMotion` option, falls back to system preference. */
     get reducedMotion(): boolean {
         if (this.options.reducedMotion !== undefined) return this.options.reducedMotion;
-        if (typeof window !== 'undefined') {
-            return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        }
-        return false;
+        return typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     }
 
     constructor(container: HTMLElement, options: SpaceGraphOptions = {}) {
         this.options = options;
         this.container = container;
 
-        // Initialize controllers
         this.cameraController = new CameraController(this);
         this.animationController = new AnimationController(this);
         this.depthController = new DepthController(this);
@@ -93,124 +85,46 @@ export class SpaceGraph {
         }
     }
 
-    get nodeCount(): number {
-        return this.graph.nodes.size;
-    }
+    get nodeCount(): number { return this.graph.nodes.size; }
+    get edgeCount(): number { return this.graph.edges.size; }
+    get selected(): string[] { return this.selection.list; }
+    get selectedNodes(): Node[] { return this.selected.map(id => this.graph.getNode(id)).filter((n): n is Node => n !== undefined); }
+    get isEmpty(): boolean { return this.graph.nodes.size === 0; }
+    get stats() { return { nodes: this.nodeCount, edges: this.edgeCount, plugins: this.pluginManager.pluginCount }; }
 
-    get edgeCount(): number {
-        return this.graph.edges.size;
-    }
+    // ============= Static Factory Methods (delegated to StaticMethods) =============
+    static getContainerElement = StaticMethods.getContainerElement;
+    static create = StaticMethods.create;
+    static load = StaticMethods.load;
+    static fromURL = StaticMethods.fromURL;
+    static quickGraph = StaticMethods.quickGraph;
+    static fromManifest = StaticMethods.fromManifest;
 
-    get selected(): string[] {
-        return this.selection.list;
-    }
+    // ============= Instance Methods =============
+    async init(): Promise<void> { return this.lifecycleController.init(); }
 
-    get selectedNodes(): Node[] {
-        return this.selection.list
-            .map((id) => this.graph.getNode(id))
-            .filter((node): node is Node => node !== undefined);
-    }
-
-    get isEmpty(): boolean {
-        return this.graph.nodes.size === 0;
-    }
-
-    get stats() {
-        return {
-            nodes: this.graph.nodes.size,
-            edges: this.graph.edges.size,
-            plugins: this.pluginManager.pluginCount,
-        };
-    }
-
-    // ============= Static Factory Methods =============
-    static getContainerElement(container: string | HTMLElement): HTMLElement | null {
-        return StaticMethods.getContainerElement(container);
-    }
-
-    static async create(
-        container: string | HTMLElement,
-        spec: GraphSpec,
-        options: SpaceGraphOptions = {},
-    ): Promise<SpaceGraph> {
-        return StaticMethods.create(container, spec, options);
-    }
-
-    static async load(
-        container: string | HTMLElement,
-        data: GraphImportData,
-        options: SpaceGraphOptions = {},
-    ): Promise<SpaceGraph> {
-        return StaticMethods.load(container, data, options);
-    }
-
-    static async fromURL(
-        url: string,
-        container: string | HTMLElement,
-        options: SpaceGraphOptions = {},
-    ): Promise<SpaceGraph> {
-        return StaticMethods.fromURL(url, container, options);
-    }
-
-    static async quickGraph(
-        container: string | HTMLElement,
-        nodes: Array<{
-            id: string;
-            label?: string;
-            position?: [number, number, number];
-            data?: Record<string, unknown>;
-        }>,
-        edges?: Array<{ id: string; source: string; target: string }>,
-        options?: SpaceGraphOptions,
-    ): Promise<SpaceGraph> {
-        return StaticMethods.quickGraph(container, nodes, edges, options);
-    }
-
-    static async fromManifest(
-        origin: string,
-        container: string | HTMLElement,
-        options: SpaceGraphOptions = {},
-    ): Promise<SpaceGraph> {
-        return StaticMethods.fromManifest(origin, container, options);
-    }
-
-    // ============= Instance Methods (delegated to controllers) =============
-    async init(): Promise<void> {
-        return this.lifecycleController.init();
-    }
-
-    // ============= Graph Manipulation =============
+    // --- Graph Manipulation ---
     loadSpec(spec: GraphSpec): this {
-        spec.nodes?.forEach((node) => this.graph.addNode(node));
-        spec.edges?.forEach((edge) => this.graph.addEdge(edge));
+        spec.nodes?.forEach(node => this.graph.addNode(node));
+        spec.edges?.forEach(edge => this.graph.addEdge(edge));
         return this;
     }
 
     update(spec: SpecUpdate): void {
-        spec.nodes?.forEach((u) => u.id && this.graph.updateNode(u.id, u));
-        spec.edges?.forEach((u) => u.id && this.graph.updateEdge(u.id, u));
+        spec.nodes?.forEach(u => u.id && this.graph.updateNode(u.id, u));
+        spec.edges?.forEach(u => u.id && this.graph.updateEdge(u.id, u));
     }
 
-    export(): GraphSpec & {
-        camera?: { position: [number, number, number]; target: [number, number, number] };
-        plugins?: Record<string, unknown>;
-    } {
-        const spec: GraphSpec & {
-            camera?: { position: [number, number, number]; target: [number, number, number] };
-            plugins?: Record<string, unknown>;
-        } = {
-            nodes: [...this.graph.nodes.values()].map((node) => ({
+    export(): GraphSpec & { camera?: { position: [number, number, number]; target: [number, number, number] }; plugins?: Record<string, unknown> } {
+        const spec: GraphSpec & { camera?: { position: [number, number, number]; target: [number, number, number] }; plugins?: Record<string, unknown> } = {
+            nodes: [...this.graph.nodes.values()].map(node => ({
                 id: node.id,
                 type: node.constructor.name,
                 label: node.label,
-                position: [node.position.x, node.position.y, node.position.z] as [
-                    number,
-                    number,
-                    number,
-                ],
+                position: [node.position.x, node.position.y, node.position.z] as [number, number, number],
                 data: safeClone(node.data),
             })),
-            edges: Array.from(this.graph.edges.values()).map((edge) => ({
+            edges: [...this.graph.edges.values()].map(edge => ({
                 id: edge.id,
                 type: edge.constructor.name,
                 source: edge.source.id,
@@ -218,16 +132,11 @@ export class SpaceGraph {
                 data: safeClone(edge.data),
             })),
         };
-
         if (this.cameraControls?.target) {
             const { camera } = this.renderer;
             const { target } = this.cameraControls;
-            spec.camera = {
-                position: [camera.position.x, camera.position.y, camera.position.z],
-                target: [target.x, target.y, target.z],
-            };
+            spec.camera = { position: [camera.position.x, camera.position.y, camera.position.z], target: [target.x, target.y, target.z] };
         }
-
         const pluginState = this.pluginManager.export();
         if (pluginState && Object.keys(pluginState).length > 0) spec.plugins = pluginState;
         return spec;
@@ -236,13 +145,11 @@ export class SpaceGraph {
     import(data: GraphImportData): void {
         this.graph.clear();
         this.loadSpec(data as GraphSpec);
-
         if (data.camera && this.cameraControls?.target) {
             const { camera } = this.renderer;
             const { target } = this.cameraControls;
             camera.position.set(...data.camera.position);
             target.set(...data.camera.target);
-
             const mathPool = MathPool.getInstance();
             const diff = mathPool.acquireVector3().subVectors(camera.position, target);
             this.cameraControls.spherical.radius = diff.length();
@@ -253,158 +160,72 @@ export class SpaceGraph {
             mathPool.releaseVector3(diff);
             this.cameraControls.update();
         }
-
         if (data.plugins) this.pluginManager.import(data.plugins as Record<string, unknown>);
     }
 
-    // ============= Node/Edge Access =============
-    getNode(id: string): Node | undefined {
-        return this.graph.nodes.get(id);
-    }
-    getEdge(id: string): Edge | undefined {
-        return this.graph.edges.get(id);
-    }
-    hasNode(id: string): boolean {
-        return this.graph.nodes.has(id);
-    }
-    hasEdge(id: string): boolean {
-        return this.graph.edges.has(id);
-    }
-    clear(): void {
-        this.graph.clear();
-    }
+    // --- Node/Edge Access ---
+    getNode(id: string): Node | undefined { return this.graph.nodes.get(id); }
+    getEdge(id: string): Edge | undefined { return this.graph.edges.get(id); }
+    hasNode(id: string): boolean { return this.graph.nodes.has(id); }
+    hasEdge(id: string): boolean { return this.graph.edges.has(id); }
+    clear(): void { this.graph.clear(); }
 
-    // ============= Camera Controls =============
-    fitView(
-        padding = 100,
-        duration = 1.5,
-        ids?: readonly string[],
-        options?: { minScale?: number; insets?: FitInsets },
-    ): this {
+    // --- Camera Controls (delegated) ---
+    fitView(padding = 100, duration = 1.5, ids?: readonly string[], options?: { minScale?: number; insets?: FitInsets }): this {
         return this.cameraController.fitView(padding, duration, ids, options) as this;
     }
-    focusNode(id: string, _padding = 100, duration = 1): this {
-        return this.cameraController.focusNode(id, _padding, duration) as this;
-    }
-    center(x: number, y: number, z = 0): this {
-        return this.cameraController.center(x, y, z) as this;
-    }
-    resetCamera(): this {
-        return this.cameraController.resetCamera() as this;
-    }
-    setCamera(position: [number, number, number], target?: [number, number, number]): this {
-        return this.cameraController.setCamera(position, target) as this;
-    }
-    setOrbitEnabled(enabled: boolean): this {
-        return this.cameraController.setOrbitEnabled(enabled) as this;
-    }
-    setPolar(phi: number, theta: number, duration = 0): this {
-        return this.cameraController.setPolar(phi, theta, duration) as this;
-    }
+    focusNode(id: string, _padding = 100, duration = 1): this { return this.cameraController.focusNode(id, _padding, duration) as this; }
+    center(x: number, y: number, z = 0): this { return this.cameraController.center(x, y, z) as this; }
+    resetCamera(): this { return this.cameraController.resetCamera() as this; }
+    setCamera(position: [number, number, number], target?: [number, number, number]): this { return this.cameraController.setCamera(position, target) as this; }
+    setOrbitEnabled(enabled: boolean): this { return this.cameraController.setOrbitEnabled(enabled) as this; }
+    setPolar(phi: number, theta: number, duration = 0): this { return this.cameraController.setPolar(phi, theta, duration) as this; }
 
-    // ============= Animation Loop =============
-    animate(timestamp = 0): void {
-        this.animationController.animate(timestamp);
-    }
-    requestFrame(): void {
-        this.animationController.requestFrame();
-    }
-    render(): this {
-        return this.animationController.render() as this;
-    }
-    pause(): void {
-        this.animationController.pause();
-    }
-    resume(): this {
-        return this.animationController.resume() as this;
-    }
+    // --- Animation Loop (delegated) ---
+    animate(timestamp = 0): void { this.animationController.animate(timestamp); }
+    requestFrame(): void { this.animationController.requestFrame(); }
+    render(): this { return this.animationController.render() as this; }
+    pause(): void { this.animationController.pause(); }
+    resume(): this { return this.animationController.resume() as this; }
 
-    // ============= Lifecycle =============
-    dispose(): void {
-        this.lifecycleController.dispose();
-    }
-    destroy(): void {
-        this.lifecycleController.destroy();
-    }
+    // --- Lifecycle (delegated) ---
+    dispose(): void { this.lifecycleController.dispose(); }
+    destroy(): void { this.lifecycleController.destroy(); }
 
-    // Fluent API shortcuts for graph manipulation
-    addNode(spec: NodeSpec | Node): Node | null {
-        return this.graph.addNode(spec);
-    }
-    addEdge(spec: EdgeSpec | Edge): Edge | null {
-        return this.graph.addEdge(spec);
-    }
-    removeNode(id: string): void {
-        this.graph.removeNode(id);
-    }
-    removeEdge(id: string): void {
-        this.graph.removeEdge(id);
-    }
+    // --- Fluent Graph API ---
+    addNode(spec: NodeSpec | Node): Node | null { return this.graph.addNode(spec); }
+    addEdge(spec: EdgeSpec | Edge): Edge | null { return this.graph.addEdge(spec); }
+    removeNode(id: string): void { this.graph.removeNode(id); }
+    removeEdge(id: string): void { this.graph.removeEdge(id); }
 
-    // Selection
-    select = (target: string | readonly string[] | null) => {
-        this.selection.select(target);
-        return this;
-    };
-    clearSelection = () => {
-        this.selection.clear();
-        return this;
-    };
-    toggleSelection = (id: string) => {
-        this.selection.toggle(id);
-        return this;
-    };
-    deselect = (id: string) => {
-        this.selection.deselect(id);
-        return this;
-    };
+    // --- Selection (fluent) ---
+    select(target: string | readonly string[] | null): this { this.selection.select(target); return this; }
+    clearSelection(): this { this.selection.clear(); return this; }
+    toggleSelection(id: string): this { this.selection.toggle(id); return this; }
+    deselect(id: string): this { this.selection.deselect(id); return this; }
 
-    // Visibility
-    show(id: string, visible = true): this {
-        const node = this.graph.nodes.get(id);
-        if (node) node.updateSpec({ data: { ...node.data, visible } });
-        return this;
-    }
-    hide(id: string): this {
-        return this.show(id, false);
-    }
+    // --- Visibility ---
+    show(id: string, visible = true): this { const node = this.graph.nodes.get(id); if (node) node.updateSpec({ data: { ...node.data, visible } }); return this; }
+    hide(id: string): this { return this.show(id, false); }
 
-    // Watch for changes - returns unsubscribe
-    watch<K extends keyof SpaceGraphEvents>(
-        type: K,
-        callback: (data: SpaceGraphEvents[K]) => void,
-    ): () => void {
+    // --- Watch ---
+    watch<K extends keyof SpaceGraphEvents>(type: K, callback: (data: SpaceGraphEvents[K]) => void): () => void {
         const handler = (data: SpaceGraphEvents[K]) => callback(data);
         this.events.on(type, handler);
         return () => this.events.off(type, handler);
     }
 
-    // Layout
+    // --- Layout ---
     async layout(name: string, options?: Record<string, unknown>): Promise<void> {
         const plugin = this.pluginManager.getPlugin(name);
-        if (plugin && 'applyLayout' in plugin)
-            await (
-                plugin as { applyLayout: (opts?: Record<string, unknown>) => Promise<void> }
-            ).applyLayout(options);
+        if (plugin && 'applyLayout' in plugin) await (plugin as { applyLayout: (opts?: Record<string, unknown>) => Promise<void> }).applyLayout(options);
     }
-    layoutOnce(name: string, options?: Record<string, unknown>): Promise<void> {
-        return this.layout(name, options);
-    }
-    setPositions(positions: Record<string, [number, number, number]>): this {
-        this.graph.setPositions(positions);
-        return this;
-    }
-    pinAll(pinned = true): this {
-        this.graph.pinAll(pinned);
-        return this;
-    }
+    layoutOnce(name: string, options?: Record<string, unknown>): Promise<void> { return this.layout(name, options); }
+    setPositions(positions: Record<string, [number, number, number]>): this { this.graph.setPositions(positions); return this; }
+    pinAll(pinned = true): this { this.graph.pinAll(pinned); return this; }
 
-    // ============= Projection and zoom telemetry (L1.12/L1.13) =============
-    get projection(): Projection {
-        return this.renderer.projection;
-    }
-
-    // Switch the active camera between parallel (2D) and perspective (3D) projection
+    // --- Projection ---
+    get projection(): Projection { return this.renderer.projection; }
     setProjection(projection: Projection): this {
         this.renderer.setProjection(projection, this.cameraControls?.target);
         this.cameraControls?.setCamera(this.renderer.camera);
@@ -414,85 +235,43 @@ export class SpaceGraph {
         return this;
     }
 
-    // ============= Depth spectrum (LE.14) =============
-    get depth(): DepthMode {
-        return this.depthController.depth;
-    }
+    // --- Depth Spectrum ---
+    get depth(): DepthMode { return this.depthController.depth; }
+    setDepth(depth: DepthMode): this { return this.depthController.setDepth(depth) as this; }
+    get cardFacing(): CardFacing { return this.depthController.cardFacing; }
+    setCardFacing(facing: CardFacing): this { return this.depthController.setCardFacing(facing) as this; }
+    applySceneFade(): this { return this.depthController.applySceneFade() as this; }
 
-    setDepth(depth: DepthMode): this {
-        return this.depthController.setDepth(depth) as this;
-    }
+    // --- Zoom ---
+    get zoom(): number { return this.renderer.getZoom(); }
+    setZoom(value: number): this { this.renderer.setZoom(value); this.cameraControls?.update(); this.cameraController.reportViewport(true); this.requestFrame(); return this; }
+    get viewport(): CameraViewport { return this.renderer.getViewport(); }
 
-    // ============= Card facing (T1.19) =============
-    get cardFacing(): CardFacing {
-        return this.depthController.cardFacing;
-    }
-
-    setCardFacing(facing: CardFacing): this {
-        return this.depthController.setCardFacing(facing) as this;
-    }
-
-    applySceneFade(): this {
-        return this.depthController.applySceneFade() as this;
-    }
-
-    // Normalized 0..1 zoom where 1 is closest; the host maps it to semantic levels.
-    get zoom(): number {
-        return this.renderer.getZoom();
-    }
-
-    setZoom(value: number): this {
-        this.renderer.setZoom(value);
-        this.cameraControls?.update();
-        this.cameraController.reportViewport(true);
-        this.requestFrame();
-        return this;
-    }
-
-    get viewport(): CameraViewport {
-        return this.renderer.getViewport();
-    }
-
-    // Register input fingerings (inlined from InputController)
+    // --- Input ---
     registerFingerings(): void {
-        this.input.registerFingering(
-            createCameraFingering(this.cameraControls),
-            FingeringPriority.CAMERA,
-        );
+        this.input.registerFingering(createCameraFingering(this.cameraControls), FingeringPriority.CAMERA);
         this.input.registerFingering(new PinchZoomFingering(this), FingeringPriority.PINCH_ZOOM);
-        this.events.on('input:camera:wheel', (e) => this.#onCameraWheel(e as WheelEventData));
+        this.events.on('input:camera:wheel', e => this.#onCameraWheel(e as WheelEventData));
     }
 
     #onCameraWheel(e: WheelEventData): void {
         const canvas = this.renderer.renderer.domElement;
         zoomCameraOnWheel(this.cameraControls, canvas, e);
-        (
-            e as { originalEvent?: { preventDefault?: () => void } }
-        ).originalEvent?.preventDefault?.();
+        (e as { originalEvent?: { preventDefault?: () => void } }).originalEvent?.preventDefault?.();
     }
 
-    // ============= Initialization =============
+    // --- Initialization ---
     #init(): void {
-        this.animationController.setContinuousMode(
-            (this.options.render?.renderMode ?? 'on-demand') === 'continuous',
-        );
+        this.animationController.setContinuousMode((this.options.render?.renderMode ?? 'on-demand') === 'continuous');
         this.lifecycleController.createCoreObjects();
         this.depthController.initialize(this.options.render?.depth ?? 'flat');
     }
 
-    get disposed(): boolean {
-        return this.lifecycleController.disposed;
-    }
+    get disposed(): boolean { return this.lifecycleController.disposed; }
+    reportViewport(force = false): void { this.cameraController.reportViewport(force); }
 
-    reportViewport(force = false): void {
-        this.cameraController.reportViewport(force);
-    }
-
-    // Provide access to internal InputManager factory for tests
-    inputManagerFactory(params: {
-        sg: SpaceGraph;
-        events: EventEmitter<SpaceGraphEvents>;
-    }): InputManager {
+    // Test access
+    inputManagerFactory(params: { sg: SpaceGraph; events: EventEmitter<SpaceGraphEvents> }): InputManager {
         return new InputManager(params);
     }
 }
