@@ -223,6 +223,11 @@ export abstract class Node extends Surface {
         return 'Node';
     }
 
+    /** Request a render frame from the SpaceGraph instance if available. */
+    protected requestFrame(): void {
+        this.sg?.requestFrame?.();
+    }
+
     /** Announce that one of this node's data fields changed. */
     protected emitDataChanged(
         property: string,
@@ -271,7 +276,7 @@ export abstract class Node extends Surface {
             changes.scale
         ) {
             this.emit('node:updated', { node: this, changes, timestamp: Date.now() });
-            this.sg?.requestFrame?.();
+            this.requestFrame();
         }
 
         return this;
@@ -432,7 +437,7 @@ export abstract class Node extends Surface {
         );
         this.outlineObject.visible = true;
         this.outlineObject.update();
-        this.sg?.requestFrame?.();
+        this.requestFrame();
     }
 
     animate(props: AnimationProps): this {
