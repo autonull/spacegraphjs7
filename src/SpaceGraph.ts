@@ -1,25 +1,12 @@
 import { CameraControls, ObjectPoolManager, PluginManager, VisionManager } from './core';
 import { InputManager } from './input';
-import { FingeringPriority, Performance } from './core/constants';
-import {
-    createQuickGraphSpec,
-    DEFAULT_CHROME_PLUGINS,
-    DEFAULT_EDGE_TYPES,
-    DEFAULT_LAYOUT_PLUGINS,
-    DEFAULT_NODE_TYPES,
-    DEFAULT_SYSTEM_PLUGINS,
-    nodeTypeName,
-    type PluginCtor,
-} from './core/defaults';
-
+import { FingeringPriority } from './core/constants';
 import { ErgonomicsAPI } from './core/Ergonomics';
 import { EventEmitter } from './core/EventEmitter';
-import { forwardGraphEvents } from './core/forwardEvents';
 import { Graph } from './core/Graph';
 import { WebGLRenderer } from './core/WebGLRenderer';
 import { Selection } from './core/Selection';
 import { Edge } from './edges/Edge';
-import { applyDefaultInputConfig } from './input/DefaultInputConfig';
 import { zoomCameraOnWheel } from './input/CameraWheel';
 import { createCameraFingering, PinchZoomFingering } from './input/fingerings';
 import type { WheelEventData } from './input/InputManager';
@@ -36,12 +23,10 @@ import type {
     SpaceGraphEvents,
     SpaceGraphOptions,
     SpecUpdate,
-    ZuiManifest,
 } from './types';
 import { depthTreatment } from './depth/DepthCues';
-import { calculateFitView, createLogger, DOMUtils, safeClone, wrapError, clamp01 } from './utils';
+import { createLogger, safeClone, clamp01 } from './utils';
 import type { CardFacing } from '@spacegraphjs/renderer';
-import type { OrthographicCamera } from 'three';
 
 // Internal controllers
 import { CameraController } from './spacegraph/CameraController';

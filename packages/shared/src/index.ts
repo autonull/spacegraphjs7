@@ -66,7 +66,6 @@ export type {
     RendererFactory,
 } from './types';
 export {
-    VOCABULARY_KEYS,
     ZOOM_LEVELS,
     DEPTH_MODES,
     LAYOUTS,
