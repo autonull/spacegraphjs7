@@ -29,9 +29,12 @@ export class Graph extends EventEmitter<GraphEventMap> {
     readonly nodes: Map<string, Node> = new Map();
     readonly edges: Map<string, Edge> = new Map();
 
-    private readonly queryEngine: GraphQuery;
-    private readonly algorithms: GraphAlgorithms;
-    private readonly serialization: GraphSerialization;
+    /** Direct access to query engine for advanced queries */
+    readonly queryEngine: GraphQuery;
+    /** Direct access to algorithms for advanced graph algorithms */
+    readonly algorithms: GraphAlgorithms;
+    /** Direct access to serialization for advanced import/export */
+    readonly serialization: GraphSerialization;
 
     constructor(readonly sg?: SpaceGraph) {
         super();
@@ -211,7 +214,7 @@ export class Graph extends EventEmitter<GraphEventMap> {
         this.sg?.requestFrame?.();
     }
 
-    // Quick access to node/edge arrays (caches result)
+    // Quick access to node/edge arrays
     nodeArray(): Node[] {
         return [...this.nodes.values()];
     }
@@ -220,7 +223,7 @@ export class Graph extends EventEmitter<GraphEventMap> {
         return [...this.edges.values()];
     }
 
-    // Delegate query methods to GraphQuery
+    // Delegate query methods to GraphQuery (kept for backward compatibility)
     getNode(id: string): Node | undefined {
         return this.queryEngine.getNode(id);
     }
@@ -333,7 +336,7 @@ export class Graph extends EventEmitter<GraphEventMap> {
         return this.queryEngine.getRootNodes();
     }
 
-    // Delegate algorithm methods to GraphAlgorithms
+    // Delegate algorithm methods to GraphAlgorithms (kept for backward compatibility)
     getConnectedComponent(startNodeId: string): Node[] {
         return this.algorithms.getConnectedComponent(startNodeId);
     }
@@ -369,7 +372,7 @@ export class Graph extends EventEmitter<GraphEventMap> {
         return this.algorithms.topologicalSort();
     }
 
-    // Delegate serialization methods to GraphSerialization
+    // Delegate serialization methods to GraphSerialization (kept for backward compatibility)
     toJSON(): GraphSpec {
         return this.serialization.toJSON();
     }

@@ -79,31 +79,6 @@ export class SpaceGraph {
     public readonly depthController: DepthController;
     public readonly lifecycleController: LifecycleController;
 
-    // Internal state (delegated to controllers)
-    get #disposed(): boolean {
-        return this.lifecycleController.disposed;
-    }
-
-    get #initialized(): boolean {
-        return this.lifecycleController.initialized;
-    }
-
-    get #continuousMode(): boolean {
-        return this.animationController.continuousMode;
-    }
-
-    set #continuousMode(value: boolean) {
-        this.animationController.setContinuousMode(value);
-    }
-
-    get #lastZoom(): number {
-        return this.cameraController.lastZoom;
-    }
-
-    get #lastCenter(): [number, number, number] {
-        return this.cameraController.lastCenter;
-    }
-
     /**
      * Whether animations should be instant. Respects the explicit `reducedMotion` option,
      * falling back to the system `prefers-reduced-motion` media query.
@@ -151,12 +126,10 @@ export class SpaceGraph {
             .filter((node): node is Node => node !== undefined);
     }
 
-    // ============= Quick Properties =============
     get isEmpty(): boolean {
         return this.graph.nodes.size === 0;
     }
 
-    // Get stats
     get stats() {
         return {
             nodes: this.graph.nodes.size,
@@ -165,7 +138,7 @@ export class SpaceGraph {
         };
     }
 
-    // ============= Static Factory Methods (delegated) =============
+    // ============= Static Factory Methods =============
     static getContainerElement(container: string | HTMLElement): HTMLElement | null {
         return StaticMethods.getContainerElement(container);
     }
@@ -224,14 +197,10 @@ export class SpaceGraph {
     // ============= Graph Manipulation =============
     loadSpec(spec: GraphSpec): this {
         if (spec.nodes) {
-            for (const node of spec.nodes) {
-                this.graph.addNode(node);
-            }
+            for (const node of spec.nodes) this.graph.addNode(node);
         }
         if (spec.edges) {
-            for (const edge of spec.edges) {
-                this.graph.addEdge(edge);
-            }
+            for (const edge of spec.edges) this.graph.addEdge(edge);
         }
         return this;
     }
@@ -330,7 +299,7 @@ export class SpaceGraph {
         this.graph.clear();
     }
 
-    // ============= Camera Controls (delegated) =============
+    // ============= Camera Controls =============
     fitView(
         padding = 100,
         duration = 1.5,
@@ -364,7 +333,7 @@ export class SpaceGraph {
         return this.cameraController.setPolar(phi, theta, duration) as this;
     }
 
-    // ============= Animation Loop (delegated) =============
+    // ============= Animation Loop =============
     animate(timestamp = 0): void {
         this.animationController.animate(timestamp);
     }
@@ -385,7 +354,7 @@ export class SpaceGraph {
         return this.animationController.resume() as this;
     }
 
-    // ============= Lifecycle (delegated) =============
+    // ============= Lifecycle =============
     dispose(): void {
         this.lifecycleController.dispose();
     }
@@ -492,17 +461,16 @@ export class SpaceGraph {
         return this;
     }
 
-    // ============= Depth spectrum (LE.14) (delegated) =============
+    // ============= Depth spectrum (LE.14) =============
     get depth(): DepthMode {
         return this.depthController.depth;
     }
 
-    // Apply a depth treatment (delegated)
     setDepth(depth: DepthMode): this {
         return this.depthController.setDepth(depth) as this;
     }
 
-    // ============= Card facing (T1.19) (delegated) =============
+    // ============= Card facing (T1.19) =============
     get cardFacing(): CardFacing {
         return this.depthController.cardFacing;
     }
@@ -511,7 +479,6 @@ export class SpaceGraph {
         return this.depthController.setCardFacing(facing) as this;
     }
 
-    // Apply scene fade (delegated)
     applySceneFade(): this {
         return this.depthController.applySceneFade() as this;
     }
@@ -556,12 +523,13 @@ export class SpaceGraph {
 
     // ============= Initialization =============
     #init(): void {
-        this.#continuousMode = (this.options.render?.renderMode ?? 'on-demand') === 'continuous';
+        this.animationController.setContinuousMode(
+            (this.options.render?.renderMode ?? 'on-demand') === 'continuous',
+        );
         this.lifecycleController.createCoreObjects();
         this.depthController.initialize(this.options.render?.depth ?? 'flat');
     }
 
-    // Public accessors for controllers
     get disposed(): boolean {
         return this.lifecycleController.disposed;
     }
