@@ -168,11 +168,16 @@ export class Graph extends EventEmitter<GraphEventMap> {
             if (node) node.updatePosition(position[0], position[1], position[2]);
         }
         for (const edge of this.edges.values()) edge.update?.();
-        this.sg?.requestFrame?.();
+        this.requestFrame();
     }
 
     pinAll(pinned = true): void {
         for (const node of this.nodes.values()) node.setPinned(pinned);
+        this.requestFrame();
+    }
+
+    /** Request a render frame from the SpaceGraph instance if available. */
+    requestFrame(): void {
         this.sg?.requestFrame?.();
     }
 

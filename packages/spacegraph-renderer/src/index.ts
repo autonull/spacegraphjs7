@@ -110,9 +110,7 @@ export class SpaceGraphRenderer extends ModelRenderer implements GraphRenderer {
             edges: model.edges.map((edge) => edgeSpec(edge, theme)),
         };
         sg.loadSpec(spec);
-        sg.setPositions(
-            Object.fromEntries(model.nodes.map((node) => [node.id, node.position])),
-        );
+        sg.setPositions(Object.fromEntries(model.nodes.map((node) => [node.id, node.position])));
     }
 
     protected addNode(node: RenderNode, theme: RenderTheme): void {

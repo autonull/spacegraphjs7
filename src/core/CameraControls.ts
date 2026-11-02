@@ -62,6 +62,14 @@ const MAX_ORTHO_ZOOM = 100;
 /** T1.8: how far past the fitted frame the orthographic camera may travel before the scene empties. */
 export const ORTHO_ZOOM_SPAN = { out: 1 / 3, in: 2.5 };
 
+// Module-level cached vectors - shared across all instances (frame-local, not instance-local)
+const _camRight = new Vector3();
+const _camForward = new Vector3();
+const _camUp = new Vector3();
+const _tempVec = new Vector3();
+const _tempOffset = new Vector3();
+const _tempSide = new Vector3();
+
 export class CameraControls {
     camera!: Camera;
     readonly domElement: HTMLElement;
@@ -98,14 +106,6 @@ export class CameraControls {
     private perspectiveCamera: Camera;
     private keyboardTarget: EventTarget | null = null;
     private orthoZoomRange: { min: number; max: number } | null = null;
-
-    // Cached vectors for update loop - avoids per-frame allocations
-    private _camRight = new Vector3();
-    private _camForward = new Vector3();
-    private _camUp = new Vector3();
-    private _tempVec = new Vector3();
-    private _tempOffset = new Vector3();
-    private _tempSide = new Vector3();
 
     constructor(
         camera: Camera,
@@ -199,21 +199,15 @@ export class CameraControls {
     }
 
     update(): void {
-        this._camRight.setFromMatrixColumn(this.camera.matrix, 0);
-        this._camForward.setFromMatrixColumn(this.camera.matrix, 2).negate();
-        this._camUp.copy(this.camera.up);
+        _camRight.setFromMatrixColumn(this.camera.matrix, 0);
+        _camForward.setFromMatrixColumn(this.camera.matrix, 2).negate();
+        _camUp.copy(this.camera.up);
 
         for (const { key, axis, dir } of KEY_CONFIG.pan) {
             if (this.keyState.get(key)) {
                 const vec =
-                    axis === 'right'
-                        ? this._camRight
-                        : axis === 'forward'
-                          ? this._camForward
-                          : this._camUp;
-                this.panOffset.add(
-                    this._tempVec.copy(vec).multiplyScalar(dir * KEY_CONFIG.speed.pan),
-                );
+                    axis === 'right' ? _camRight : axis === 'forward' ? _camForward : _camUp;
+                this.panOffset.add(_tempVec.copy(vec).multiplyScalar(dir * KEY_CONFIG.speed.pan));
             }
         }
 
@@ -278,7 +272,7 @@ export class CameraControls {
             }
         }
 
-        this.camera.position.copy(this.target).add(this._tempVec.setFromSpherical(this.spherical));
+        this.camera.position.copy(this.target).add(_tempVec.setFromSpherical(this.spherical));
         this.camera.lookAt(this.target);
         this.sphericalDelta.set(0, 0, 0);
         this.scale = 1;
@@ -303,16 +297,16 @@ export class CameraControls {
 
     /** Move the target along the camera's own axes, in world units. */
     private shiftTarget(worldRight: number, worldUp: number): void {
-        this._tempOffset.copy(this.camera.position).sub(this.target);
-        this._tempSide.crossVectors(this.camera.up, this._tempOffset).normalize();
-        this._camUp.copy(this.camera.up).normalize();
-        this.panOffset.add(this._tempSide.multiplyScalar(worldRight));
-        this.panOffset.add(this._camUp.multiplyScalar(worldUp));
+        _tempOffset.copy(this.camera.position).sub(this.target);
+        _tempSide.crossVectors(this.camera.up, _tempOffset).normalize();
+        _camUp.copy(this.camera.up).normalize();
+        this.panOffset.add(_tempSide.multiplyScalar(worldRight));
+        this.panOffset.add(_camUp.multiplyScalar(worldUp));
     }
 
     updateSpherical(): void {
-        this._tempOffset.copy(this.camera.position).sub(this.target);
-        this.spherical.setFromVector3(this._tempOffset);
+        _tempOffset.copy(this.camera.position).sub(this.target);
+        this.spherical.setFromVector3(_tempOffset);
     }
 
     flyTo(target: Vector3, distance: number, duration = 1.5, zoom?: number): void {

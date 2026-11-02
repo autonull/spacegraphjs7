@@ -73,7 +73,9 @@ export abstract class BaseSystemPlugin implements Plugin {
     }
 
     protected isStatic(node: Node): boolean {
-        return (node.isPinned?.() ?? node.data?.pinned === true) || node.data?.physicsStatic === true;
+        return (
+            (node.isPinned?.() ?? node.data?.pinned === true) || node.data?.physicsStatic === true
+        );
     }
 
     protected hasPluginMethod<T>(plugin: unknown, method: keyof T): boolean {

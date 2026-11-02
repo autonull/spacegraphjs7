@@ -126,13 +126,20 @@ export abstract class BaseLayout<
     }
 
     /**
+     * Request a render frame from the SpaceGraph instance if available.
+     */
+    protected requestFrame(): void {
+        this.sg?.requestFrame?.();
+    }
+
+    /**
      * Move every node to the position the calculator returns.
      * Deterministic and synchronous: hosts that want animation drive it from their own frame loop.
      */
     protected applyPosition(node: Node, target: Vector3): void {
         node.position.copy(target);
         node.object.position.copy(target);
-        this.sg?.requestFrame?.();
+        this.requestFrame();
     }
 
     /**
@@ -140,7 +147,7 @@ export abstract class BaseLayout<
      */
     protected syncPosition(node: Node): void {
         node.object.position.copy(node.position);
-        this.sg?.requestFrame?.();
+        this.requestFrame();
     }
 
     /**
@@ -159,7 +166,7 @@ export abstract class BaseLayout<
      */
     protected commit(duration = this.config.duration ?? 1.0): void {
         for (const edge of this.graph.getEdges()) edge.update?.();
-        this.sg?.requestFrame?.();
+        this.requestFrame();
         this.events.emit('layout:applied', {
             layout: this.id,
             duration,

@@ -27,7 +27,9 @@ export class LODPlugin extends BaseSystemPlugin {
         this.onPreRender(0);
     }
 
-    getCurrentDetailThreshold(): number { return this.detailThreshold; }
+    getCurrentDetailThreshold(): number {
+        return this.detailThreshold;
+    }
 
     private _updateGroupsAndFindHidden(nodes: Node[], cameraPosition: THREE.Vector3): Set<string> {
         const hiddenParentIds = new Set<string>();
@@ -35,15 +37,24 @@ export class LODPlugin extends BaseSystemPlugin {
             if ((node as any).isGroupNode) {
                 const distance = cameraPosition.distanceTo(node.position);
                 (node as any).updateLod(distance);
-                if ((node.data as Record<string, unknown>)._lastLodVisible === false) hiddenParentIds.add(node.id);
+                if ((node.data as Record<string, unknown>)._lastLodVisible === false)
+                    hiddenParentIds.add(node.id);
             }
         }
         return hiddenParentIds;
     }
 
-    private _updateNodeVisibility(nodes: Node[], cameraPosition: THREE.Vector3, hiddenParentIds: Set<string>): void {
+    private _updateNodeVisibility(
+        nodes: Node[],
+        cameraPosition: THREE.Vector3,
+        hiddenParentIds: Set<string>,
+    ): void {
         const transitionRange = 500;
-        const opacityForDistance = (distance: number) => Math.max(0, 1 - Math.max(0, distance - (this.maxDistance - transitionRange)) / transitionRange);
+        const opacityForDistance = (distance: number) =>
+            Math.max(
+                0,
+                1 - Math.max(0, distance - (this.maxDistance - transitionRange)) / transitionRange,
+            );
 
         for (const node of nodes) {
             const isHiddenByParent = this._isNodeHiddenByParent(node, hiddenParentIds);
@@ -84,8 +95,12 @@ export class LODPlugin extends BaseSystemPlugin {
     private _updateEdgeVisibility(): void {
         for (const [, edge] of this.sg!.graph.edges) {
             if (!edge.object) continue;
-            const sourceHidden = edge.source?.object?.visible === false || ((edge.source as any).isDOMNode && !(edge.source as any).cssObject?.visible);
-            const targetHidden = edge.target?.object?.visible === false || ((edge.target as any).isDOMNode && !(edge.target as any).cssObject?.visible);
+            const sourceHidden =
+                edge.source?.object?.visible === false ||
+                ((edge.source as any).isDOMNode && !(edge.source as any).cssObject?.visible);
+            const targetHidden =
+                edge.target?.object?.visible === false ||
+                ((edge.target as any).isDOMNode && !(edge.target as any).cssObject?.visible);
             edge.object.visible = !(sourceHidden || targetHidden);
         }
     }

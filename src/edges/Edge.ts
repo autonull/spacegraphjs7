@@ -16,6 +16,7 @@ import type { Node } from '../nodes/Node';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { EdgeData, EdgeSpec } from '../types';
 import { midpoint } from '../utils/vector';
+import { safeClone } from '../utils/math';
 
 /** The axis an arrowhead points along. */
 const ARROWHEAD_AXIS = new THREE.Vector3(0, 1, 0);
@@ -409,7 +410,7 @@ export class Edge extends Surface {
             source: this.source.id,
             target: this.target.id,
             type: this.type,
-            data: { ...this.data },
+            data: safeClone(this.data),
         };
     }
 

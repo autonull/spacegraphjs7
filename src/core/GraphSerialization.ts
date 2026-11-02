@@ -16,14 +16,14 @@ export class GraphSerialization {
                 type,
                 label,
                 position: [position.x, position.y, position.z] as [number, number, number],
-                data: data ? safeClone(data) : {},
+                data: safeClone(data),
             })),
             edges: [...this.edges.values()].map(({ id, source, target, type, data }) => ({
                 id,
                 source: source.id,
                 target: target.id,
                 type: type ?? 'Edge',
-                data: data ? safeClone(data) : {},
+                data: safeClone(data),
             })),
         };
     }

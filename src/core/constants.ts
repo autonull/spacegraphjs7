@@ -130,18 +130,9 @@ export const Input = Object.freeze({
 } as const);
 
 // Re-export commonly used constants at top level for backward compatibility
-export const {
-    DEG2RAD,
-    RAD2DEG,
-    PI,
-    TAU,
-    EPSILON,
-} = MathConst;
+export const { DEG2RAD, RAD2DEG, PI, TAU, EPSILON } = MathConst;
 
-export const {
-    Duration: AnimationDuration,
-    Easing,
-} = Animation;
+export const { Duration: AnimationDuration, Easing } = Animation;
 
 export const {
     MULTIPLIER: ZOOM_MULTIPLIER,
@@ -152,10 +143,7 @@ export const {
     SMOOTH: ZOOM_SMOOTH,
 } = Zoom;
 
-export const {
-    Priority: FingeringPriority,
-    Thresholds: InteractionThresholds,
-} = Interaction;
+export const { Priority: FingeringPriority, Thresholds: InteractionThresholds } = Interaction;
 
 // Backward compatibility exports
 export const InputConfig = Interaction;

@@ -11,6 +11,7 @@ import {
 } from '../core/Surface';
 import { resolveTheme, applyNodeTheme, type ResolvedTheme } from '../core/theme';
 import { projectToNdc } from '../utils/projection';
+import { safeClone } from '../utils/math';
 import type { ControlState } from '../plugins/interaction/ControlStateBorder';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { AnimationProps, NodeData, NodeSpec } from '../types';
@@ -744,7 +745,7 @@ export abstract class Node extends Surface {
                 number,
             ],
             scale: [this.scale.x, this.scale.y, this.scale.z] as [number, number, number],
-            data: { ...this.data },
+            data: safeClone(this.data),
         };
     }
 
