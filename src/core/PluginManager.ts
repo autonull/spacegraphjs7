@@ -114,7 +114,9 @@ export class PluginManager {
                             operation: 'Plugin Initialization',
                             reason: `Failed to initialize plugin "${name}" (v${plugin.version}). Check if dependencies are met or configuration is valid.`,
                         });
-                        logger.error(`${wrapped.message}: ${err instanceof Error ? err.stack : String(err)}`);
+                        logger.error(
+                            `${wrapped.message}: ${err instanceof Error ? err.stack : String(err)}`,
+                        );
                         throw wrapped;
                     },
                 );
