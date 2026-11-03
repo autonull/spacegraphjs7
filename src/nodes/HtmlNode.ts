@@ -7,6 +7,7 @@ import { toCssColor } from '../utils/color';
 import { clamp } from '../utils/math';
 import { BaseContentNode } from './BaseContentNode';
 import { createQuickControls, type QuickControlButton } from './QuickControls';
+import type { ControlState } from '../plugins/interaction/ControlStateBorder';
 
 const PARENT_ROTATION = new Quaternion();
 
@@ -210,6 +211,8 @@ export class HtmlNode extends BaseContentNode {
 
     setSelectedStyle(selected: boolean): void {
         this.domElement?.classList.toggle('selected', selected);
+        if (selected) this.domElement?.setAttribute('data-selected', 'true');
+        else this.domElement?.removeAttribute('data-selected');
     }
 
     focus(): void {
@@ -226,6 +229,8 @@ export class HtmlNode extends BaseContentNode {
     override setControlState(state: ControlState): this {
         super.setControlState(state);
         this.domElement?.classList.toggle('selected', state === 'selected');
+        if (state === 'selected') this.domElement?.setAttribute('data-selected', 'true');
+        else this.domElement?.removeAttribute('data-selected');
         return this;
     }
 
