@@ -23,7 +23,7 @@ const CAPABILITIES: RendererCapabilities = {
     projections: ['2d', '3d'],
     depths: ['flat', 'layered', 'depth-stack', 'orbit'],
     domNodes: true,
-    maxDomNodes: 40,
+    maxDomNodes: 80,
     edgeLabels: true,
     clusterNodes: true,
     minimap: false,

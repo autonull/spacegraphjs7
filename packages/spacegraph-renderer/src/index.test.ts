@@ -10,7 +10,7 @@ describe('@spacegraphjs/spacegraph-renderer', () => {
         expect(supports(capabilities, 'domNodes')).toBe(true);
         expect(supports(capabilities, 'edgeLabels')).toBe(true);
         expect(supports(capabilities, 'minimap')).toBe(false);
-        expect(capabilities.maxDomNodes).toBe(40);
+        expect(capabilities.maxDomNodes).toBe(80);
     });
 
     test('declares the zoom range its normalized zoom cannot leave', () => {
