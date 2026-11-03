@@ -98,7 +98,7 @@
                 },
             ];
 
-            const app = new SpaceGraphApp('#container', {
+            const app = await SpaceGraphApp.create('#container', {
                 spec: { nodes, edges },
                 title: 'Infrastructure Overview',
                 description:
@@ -208,7 +208,7 @@
                 label: 'Reset Layout',
                 icon: '🔄',
                 onClick: () => {
-                    const layout = app.sg.pluginManager.getPlugin('ForceLayout');
+                    const layout = app.sg.pluginManager.getPlugin('force-layout');
                     if (layout) {
                         layout.settings.enabled = true;
                         app.showAlert('Force layout activated', 'info');

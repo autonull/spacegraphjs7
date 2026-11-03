@@ -7,9 +7,9 @@ import {
     type RendererCapabilities,
     type RendererViewport,
     type RenderModel,
-    type RenderModelPatch,
     type RenderTheme,
-    mergeRenderModelPatch,
+    type RenderNode,
+    type RenderEdge,
 } from '@spacegraphjs/renderer';
 import type { Core } from 'cytoscape';
 import { frameInRegion } from './fit';

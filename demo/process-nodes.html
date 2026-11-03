@@ -47,7 +47,7 @@
         <script type="module">
             import { SpaceGraph } from '../src/index.ts';
 
-            const sg = SpaceGraph.create('#spacegraph-container', {
+            const sg = await SpaceGraph.create('#spacegraph-container', {
                 nodes: [
                     {
                         id: 'p1',

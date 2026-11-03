@@ -271,6 +271,43 @@ export function supportsDepth(capabilities: RendererCapabilities, depth: DepthMo
     return capabilities.depths.includes(depth);
 }
 
+/**
+ * Creates a render clock for interpolating between render models.
+ * Used for smooth transitions between different graph states.
+ */
+export function createRenderClock(
+    baseModel: RenderModel,
+    moves: readonly { id: string; from: [number, number, number]; to: [number, number, number] }[],
+) {
+    const moveMap = new Map(moves.map((m) => [m.id, m]));
+
+    return {
+        advance(t: number): RenderModel {
+            const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+
+            return {
+                nodes: baseModel.nodes.map((node) => {
+                    const move = moveMap.get(node.id);
+                    if (!move) return node;
+
+                    const [fx, fy, fz] = move.from;
+                    const [tx, ty, tz] = move.to;
+                    return {
+                        ...node,
+                        position: [
+                            fx + (tx - fx) * eased,
+                            fy + (ty - fy) * eased,
+                            fz + (tz - fz) * eased,
+                        ],
+                    };
+                }),
+                edges: baseModel.edges,
+                extent: baseModel.extent,
+            };
+        },
+    };
+}
+
 // The theme bridge and the contrast auditor live beside the contract: they are pure, dependency-free,
 // and every renderer and host needs them.
 export * from './adapter';
