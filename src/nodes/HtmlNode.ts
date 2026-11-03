@@ -222,6 +222,13 @@ export class HtmlNode extends BaseContentNode {
         this.domElement?.classList.remove('focused');
     }
 
+    /** Single writer for `controlState` so DOM visuals stay in sync with interaction state. */
+    override setControlState(state: ControlState): this {
+        super.setControlState(state);
+        this.domElement?.classList.toggle('selected', state === 'selected');
+        return this;
+    }
+
     updatePosition(x: number, y: number, z: number): this {
         super.updatePosition(x, y, z);
         this.faceCamera();
