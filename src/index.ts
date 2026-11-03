@@ -50,6 +50,9 @@ export { MinimapPlugin } from './plugins/MinimapPlugin';
 // Convenience factory functions
 export { createSpaceGraph, createGraph, SimpleGraph, sg, qg } from './SpaceGraph';
 
+// Event types for type-safe event handling
+export type { SpaceGraphEvents, SelectionChangedPayload } from './types/events';
+
 // Re-export submodules for direct access (tree-shakeable)
 export * as builder from './builder';
 export * as core from './core';

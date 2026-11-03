@@ -18,6 +18,8 @@ import type {
     FitInsets,
     GraphImportData,
     GraphSpec,
+    LayoutOptionsMap,
+    LayoutOptionsFor,
     NodeSpec,
     Projection,
     SpaceGraphEvents,
@@ -101,6 +103,11 @@ export class SpaceGraph {
         return this.selected
             .map((id) => this.graph.getNode(id))
             .filter((n): n is Node => n !== undefined);
+    }
+    get selectedEdges(): Edge[] {
+        return this.selected
+            .map((id) => this.graph.getEdge(id))
+            .filter((e): e is Edge => e !== undefined);
     }
     get isEmpty(): boolean {
         return this.graph.nodes.size === 0;
@@ -306,14 +313,23 @@ export class SpaceGraph {
     }
 
     // --- Layout ---
-    async layout(name: string, options?: Record<string, unknown>): Promise<void> {
+    /** Apply a layout by name with typed options */
+    async layout<Name extends keyof LayoutOptionsMap>(
+        name: Name,
+        options?: Partial<LayoutOptionsFor<Name>>,
+    ): Promise<void> {
         const plugin = this.pluginManager.getPlugin(name);
         if (plugin && 'applyLayout' in plugin)
             await (
                 plugin as { applyLayout: (opts?: Record<string, unknown>) => Promise<void> }
             ).applyLayout(options);
     }
-    layoutOnce(name: string, options?: Record<string, unknown>): Promise<void> {
+
+    /** Apply a layout once with typed options (alias for layout) */
+    layoutOnce<Name extends keyof LayoutOptionsMap>(
+        name: Name,
+        options?: Partial<LayoutOptionsFor<Name>>,
+    ): Promise<void> {
         return this.layout(name, options);
     }
     setPositions(positions: Record<string, [number, number, number]>): this {

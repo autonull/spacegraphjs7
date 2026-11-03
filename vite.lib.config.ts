@@ -1,5 +1,6 @@
 import { resolve } from 'node:path';
 import { defineConfig } from 'vite';
+import solid from 'vite-plugin-solid';
 import dts from 'vite-plugin-dts';
 import { LIBRARY_ENTRIES } from './script/library-entries.ts';
 
@@ -44,6 +45,7 @@ export default defineConfig({
     },
     // @ts-expect-error
     plugins: [
+        solid(),
         dts({
             insertTypesEntry: true,
             exclude: ['test/**', 'demo/**', 'script/**'],
