@@ -66,6 +66,7 @@ export type {
     RendererFactory,
 } from './types';
 export {
+    VOCABULARY_KEYS,
     ZOOM_LEVELS,
     DEPTH_MODES,
     LAYOUTS,
@@ -145,12 +146,4 @@ export {
 } from './hooks';
 
 // Utils
-export {
-    nodeByID,
-    edgeByID,
-    getConnectedNodes,
-    getIncomingEdges,
-    getOutgoingEdges,
-    diffTone,
-    type DiffTone,
-} from './utils';
+export { nodeByID, edgeByID, getConnectedNodes, getIncomingEdges, getOutgoingEdges, diffTone, type DiffTone } from './utils';
