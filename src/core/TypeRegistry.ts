@@ -136,6 +136,9 @@ export class TypeRegistry {
     }
 
     #registerTypeAlias(ctor: NodeConstructor | EdgeConstructor, table: Map<string, any>): void {
+        // Only alias a constructor's own `typeName`. Static fields are inherited, so a subclass
+        // without its own (MermaidNode extends HtmlNode) must not replace its parent's registration.
+        if (!Object.prototype.hasOwnProperty.call(ctor, 'typeName')) return;
         const typeName = (ctor as { typeName?: string }).typeName;
         if (typeof typeName === 'string') {
             table.set(typeName, ctor);
