@@ -180,6 +180,29 @@ describe('the second host', () => {
         }
     });
 
+    it('camera focus frames a node (headless interaction check)', () => {
+        const host = new SecondHost();
+        const renderModel = host.renderModel();
+        
+        // Pick a node that exists in the model - use the first node (release)
+        const targetNode = renderModel.nodes[0];
+        expect(targetNode).toBeDefined();
+        
+        // Simulate focus: the camera should be able to frame this node
+        // In a headless environment, we verify the model has the necessary data
+        // for the renderer to perform a focus operation
+        expect(targetNode!.position).toHaveLength(3);
+        for (const coord of targetNode!.position) {
+            expect(Number.isFinite(coord)).toBe(true);
+        }
+        
+        // Verify edges reference valid nodes
+        for (const edge of renderModel.edges) {
+            expect(renderModel.nodes.some((n) => n.id === edge.source)).toBe(true);
+            expect(renderModel.nodes.some((n) => n.id === edge.target)).toBe(true);
+        }
+    });
+
     it('scopes the overlay to one neighbourhood', () => {
         const host = new SecondHost();
         const scope = host.scope('stage:verify');

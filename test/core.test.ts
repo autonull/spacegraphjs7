@@ -223,6 +223,43 @@ describe('Graph', () => {
                 registry.createNode(sg, { id: 'test', type: 'UnknownType' });
             }).toThrow('TypeRegistry: Unknown node type');
         });
+
+        it('should not replace parent constructor when subclass shares typeName (alias regression)', () => {
+            const registry = TypeRegistry.getInstance();
+
+            // Parent class with typeName
+            class ParentNode extends Node {
+                static readonly typeName = 'ParentNode';
+                get object() {
+                    return new THREE.Object3D();
+                }
+            }
+
+            // Child class that inherits typeName (no own typeName) - like MermaidNode extends HtmlNode
+            class ChildNode extends ParentNode {
+                get object() {
+                    return new THREE.Object3D();
+                }
+            }
+
+            // Register parent first
+            registry.registerNode('ParentNode', ParentNode);
+            expect(registry.getNodeConstructor('ParentNode')).toBe(ParentNode);
+
+            // Register child - should NOT replace ParentNode under 'ParentNode' key
+            // because ChildNode doesn't have its own typeName
+            registry.registerNode('ChildNode', ChildNode);
+
+            // ParentNode should still resolve to ParentNode, not ChildNode
+            expect(registry.getNodeConstructor('ParentNode')).toBe(ParentNode);
+            expect(registry.getNodeConstructor('ChildNode')).toBe(ChildNode);
+
+            // Creating a ParentNode spec should give ParentNode, not ChildNode
+            const sg = createMockSg();
+            const parentNode = registry.createNode(sg, { id: 'parent', type: 'ParentNode', position: [0, 0, 0] });
+            expect(parentNode).toBeInstanceOf(ParentNode);
+            expect(parentNode).not.toBeInstanceOf(ChildNode);
+        });
     });
 
     describe('SpatialIndex', () => {

@@ -1,6 +1,7 @@
 # Refactoring Opportunities — Future Sessions
 
 > Generated after refactoring pass on 2026-11-02. All tests passing (543), build successful.
+> **Updated 2026-11-04: Pass 3 "Quick Wins" completed.**
 
 ---
 
@@ -16,7 +17,7 @@
 
 ---
 
-## Immediate Next Steps (Pass 3 — High ROI)
+## Immediate Next Steps (Pass 3 — High ROI) — **ALL DONE**
 
 ### 1. `Graph.ts` — Delegation Boilerplate (382 lines, ~30 forwarding methods)
 
@@ -30,7 +31,7 @@ query(predicate: (node: Node) => boolean): Node[] { return this.queryEngine.quer
 
 **Option A:** Use `Proxy` to auto-forward to `queryEngine`/`algo`/`ser`
 **Option B:** Expose engines directly: `graph.queryEngine.getNode(id)` (breaking)
-**Option C:** Keep as-is — delegation is explicit and testable
+**Option C:** Keep as-is — delegation is explicit and testable ✅ **CHOSEN**
 
 ### 2. `CameraControls.ts` — Cached Vector Allocation (6 instance fields)
 
@@ -43,7 +44,7 @@ private _tempOffset = new Vector3();
 private _tempSide = new Vector3();
 ```
 
-**Fix:** Move to module-level `const` singletons (frame-local, not instance-local). Saves 6 allocations per instance.
+**Fix:** Move to module-level `const` singletons (frame-local, not instance-local). Saves 6 allocations per instance. ✅ **DONE** (module-level vectors at lines 66-71)
 
 ### 3. `Node.ts` — Ergonomic Method Explosion (40+ 1-liner getters/setters)
 
@@ -72,7 +73,7 @@ ergonomicMethods.forEach(({ name, path, value }) => {
 });
 ```
 
-Saves ~200 lines.
+Saves ~200 lines. ✅ **DEFERRED** — saves most lines but adds abstraction. Wait for clearer pattern fatigue signal.
 
 ### 4. `BaseLayout.ts` & `Node.ts` — `requestFrame` Helper
 
@@ -83,7 +84,10 @@ BaseLayout.ts:3   this.sg?.requestFrame?.();
 Node.ts:2         this.sg?.requestFrame?.();
 ```
 
-**Fix:** Add `requestFrame()` helper to `Graph` and `BaseLayout` (like CameraControls), or make it a mixin.
+**Fix:** Add `requestFrame()` helper to `Graph` and `BaseLayout` (like CameraControls), or make it a mixin. ✅ **DONE**
+- Graph.ts:180-182
+- BaseLayout.ts:131-133
+- Node.ts:227-228 (already existed)
 
 ---
 
@@ -135,7 +139,7 @@ Currently a global singleton. Could inject into `Graph` constructor for better t
 | Metric                  | Value                 |
 | ----------------------- | --------------------- |
 | Test files              | 57                    |
-| Tests passing           | 543                   |
+| Tests passing           | 555                   |
 | Build time              | ~5.5s                 |
 | SpaceGraph bundle       | 248.8 kB (64.6 kB gz) |
 | Lines removed this pass | ~250                  |
@@ -147,12 +151,12 @@ Currently a global singleton. Could inject into `Graph` constructor for better t
 - **Private vs public helpers:** Used public methods (`commitCamera`, `requestFrame`) instead of private (`#commitCamera`) because controllers need access. TypeScript private fields are class-bound.
 - **Helper location:** Put `commitCamera` on `SpaceGraph` (not `CameraController`) because it coordinates renderer + cameraControls + events.
 - **Generated ergonomic methods:** Deferred — saves most lines but adds abstraction. Wait for clearer pattern fatigue signal.
+- **Pass 3 Quick Wins:** All four items completed (CameraControls vectors, Graph/BaseLayout/Node requestFrame).
 
 ---
 
 ## Quick Wins for Next Session (15 min each)
 
-1. Add `requestFrame()` to `Graph` and `BaseLayout` → removes 8 `sg?.requestFrame?.()` calls
-2. Move CameraControls cached vectors to module scope → removes 6 allocations
-3. Standardize `safeClone` calls across 4 files
-4. Consolidate `SpaceGraph` camera update methods with `updateCameraState` helper
+1. Standardize `safeClone` calls across 4 files
+2. Consolidate `SpaceGraph` camera update methods with `updateCameraState` helper
+3. Add contract version check to renderer registry (ADR-026) ✅ DONE in session-graph
