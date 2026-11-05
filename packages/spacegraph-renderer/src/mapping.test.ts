@@ -129,14 +129,24 @@ describe('edgeSpec', () => {
         expect(edgeSpec(edge(), theme).type).toBe('CurvedEdge');
     });
 
-    test('mutes and dashes inferred edges and marks directed ones', () => {
+    test('mutes and dashes inferred edges with correct opacity', () => {
         const spec = edgeSpec(edge({ confidence: 'inferred', directed: true }), theme);
         expect(spec.data).toMatchObject({
             dashed: true,
             thickness: 1,
-            arrowhead: 'target',
+            arrowhead: false,
+            opacity: 0.7,
             color: 0x4b5563,
         });
+    });
+
+    test('adds arrowhead only on evidence/delegates edges', () => {
+        const evidenceSpec = edgeSpec(edge({ kind: 'evidence', confidence: 'explicit' }), theme);
+        expect(evidenceSpec.data.arrowhead).toBe('target');
+        const delegateSpec = edgeSpec(edge({ kind: 'delegates', confidence: 'explicit' }), theme);
+        expect(delegateSpec.data.arrowhead).toBe('target');
+        const explicitSpec = edgeSpec(edge({ kind: 'sequence', confidence: 'explicit' }), theme);
+        expect(explicitSpec.data.arrowhead).toBe(false);
     });
 });
 

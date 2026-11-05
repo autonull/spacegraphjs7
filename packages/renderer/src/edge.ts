@@ -18,6 +18,8 @@ export type EdgeStyle = {
     dashed: boolean;
     /** Whether the edge was inferred rather than stated. */
     inferred: boolean;
+    /** Whether the edge should have an arrowhead. */
+    arrowhead: boolean;
 };
 
 /** Confidence levels for edges. */
@@ -28,10 +30,13 @@ export type EdgeConfidence = 'explicit' | 'structural' | 'inferred';
  * Cytoscape through a class, SVG through `stroke-dasharray` — still reads the same colour, width
  * and dash decision from here.
  * Confidence encoding: explicit > structural > inferred (thicker, more opaque).
+ * Phase 4.7: explicit solid, structural 55% opacity, inferred dashed 70% opacity.
+ * Arrowheads only on evidence/delegates edges.
  */
 export function edgeStyleFor(edge: RenderEdge, theme: RenderTheme): EdgeStyle {
     const confidence = edge.confidence ?? 'structural';
     const inferred = confidence === 'inferred';
+    const isEvidenceOrDelegate = edge.kind === 'evidence' || edge.kind === 'delegates';
 
     // Confidence-based styling: explicit > structural > inferred
     let width: number;
@@ -46,19 +51,22 @@ export function edgeStyleFor(edge: RenderEdge, theme: RenderTheme): EdgeStyle {
             break;
         case 'structural':
             width = 2;
-            opacity = 0.7;
+            opacity = 0.55;
             color = theme.edge;
             break;
         case 'inferred':
             width = 1;
-            opacity = 0.4;
+            opacity = 0.7; // PHASE47
             color = theme.edgeMuted;
             break;
         default:
             width = 2;
-            opacity = 0.7;
+            opacity = 0.55;
             color = theme.edge;
     }
+
+    // Arrowheads only on evidence/delegates (edges a reader follows backward)
+    const arrowhead = isEvidenceOrDelegate;
 
     return {
         color,
@@ -66,6 +74,7 @@ export function edgeStyleFor(edge: RenderEdge, theme: RenderTheme): EdgeStyle {
         opacity,
         dashed: inferred || edge.style === 'dashed' || edge.style === 'dotted',
         inferred,
+        arrowhead,
     };
 }
 

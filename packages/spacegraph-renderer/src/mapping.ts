@@ -120,7 +120,8 @@ export function edgeSpec(edge: RenderEdge, theme: RenderTheme): EdgeSpec {
         dashed: style.dashed,
         label: edge.label,
         labelColor: theme.textMuted,
-        arrowhead: edge.directed ? ('target' as const) : (false as const),
+        opacity: style.opacity,
+        arrowhead: style.arrowhead ? ('target' as const) : (false as const),
     };
     return {
         id: edge.id,
