@@ -12,6 +12,10 @@ export interface AccessibleItem {
     status?: string;
     /** Non-interactive items are listed but skipped by keyboard traversal. Defaults to true. */
     interactive?: boolean;
+    /** Child items for hierarchical groups. When present, the item is a group container. */
+    children?: AccessibleItem[];
+    /** Whether the group is currently expanded (for aria-expanded). */
+    expanded?: boolean;
 }
 
 export interface AccessibleEdge {
@@ -115,10 +119,11 @@ export class AccessibilityLayer {
 
     setItems(items: readonly AccessibleItem[]): void {
         const currentId = this.currentId;
-        const focusIndex = currentId ? items.findIndex((item) => item.id === currentId) : -1;
-        this.#items = [...items];
+        const flatItems = this.#flattenItems(items);
+        const focusIndex = currentId ? flatItems.findIndex((item) => item.id === currentId) : -1;
+        this.#items = flatItems;
         this.#focusIndex =
-            focusIndex >= 0 && items[focusIndex].interactive !== false
+            focusIndex >= 0 && flatItems[focusIndex].interactive !== false
                 ? focusIndex
                 : this.#firstInteractive(0, 1);
         this.#render();
@@ -207,6 +212,17 @@ export class AccessibilityLayer {
         return start;
     }
 
+    #flattenItems(items: readonly AccessibleItem[]): AccessibleItem[] {
+        const result: AccessibleItem[] = [];
+        for (const item of items) {
+            result.push(item);
+            if (item.children && item.children.length > 0 && item.expanded) {
+                result.push(...this.#flattenItems(item.children));
+            }
+        }
+        return result;
+    }
+
     #render(): void {
         const focusedInteractive = this.#items[this.#focusIndex]?.interactive !== false;
         const children = Array.from(this.#list.children) as HTMLLIElement[];
@@ -246,12 +262,17 @@ export class AccessibilityLayer {
     ): void {
         const interactive = item.interactive !== false;
         const focused = interactive && index === this.#focusIndex && focusedInteractive;
+        const hasChildren = item.children && item.children.length > 0;
 
         li.dataset.id = item.id;
         li.textContent = [item.label, item.kind, item.status].filter(Boolean).join(' — ');
         li.setAttribute('aria-selected', String(this.#selected.has(item.id)));
         if (interactive) li.removeAttribute('aria-disabled');
         else li.setAttribute('aria-disabled', 'true');
+        if (hasChildren) {
+            li.setAttribute('aria-expanded', String(item.expanded));
+            li.setAttribute('role', 'treeitem');
+        }
         li.tabIndex = focused ? 0 : -1;
     }
 }

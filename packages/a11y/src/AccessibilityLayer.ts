@@ -25,6 +25,10 @@ export interface AccessibleItem {
     status?: string;
     /** Non-interactive items are listed but skipped by keyboard traversal. Defaults to true. */
     interactive?: boolean;
+    /** Child items for hierarchical groups. When present, the item is a group container. */
+    children?: AccessibleItem[];
+    /** Whether the group is currently expanded (for aria-expanded). */
+    expanded?: boolean;
 }
 
 /** An edge in the accessibility layer. */
