@@ -186,11 +186,12 @@ export class SpaceGraphRenderer extends ModelRenderer implements GraphRenderer {
         if (!sg) return undefined;
 
         const viewport = sg.viewport;
+        const zoomBandsPlugin = sg.pluginManager.getPlugin('zoom-bands') as { bands: { band: string } } | undefined;
         return {
             zoom: viewport.zoom,
             center: viewport.center,
             extent: viewport.extent,
-            band: viewport.band,
+            band: zoomBandsPlugin?.bands.band ?? viewport.band,
         };
     }
 
@@ -310,15 +311,18 @@ export class SpaceGraphRenderer extends ModelRenderer implements GraphRenderer {
     }
 
     #emitViewport(viewport: RendererViewport): void {
+        const sg = this.#sg;
+        const zoomBandsPlugin = sg?.pluginManager.getPlugin('zoom-bands') as { bands: { band: string } } | undefined;
+        const band = viewport.band ?? zoomBandsPlugin?.bands.band;
         this.emit('viewportChange', {
             zoom: viewport.zoom,
             center: viewport.center,
             extent: viewport.extent,
-            band: viewport.band,
+            band,
         });
-        if (viewport.band && viewport.band !== this.#band) {
-            this.#band = viewport.band;
-            this.emit('bandChange', { band: viewport.band, zoom: viewport.zoom });
+        if (band && band !== this.#band) {
+            this.#band = band;
+            this.emit('bandChange', { band, zoom: viewport.zoom });
         }
     }
 }
