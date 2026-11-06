@@ -171,6 +171,14 @@ export class Graph extends EventEmitter<GraphEventMap> {
         this.requestFrame();
     }
 
+    getPositions(): Record<string, [number, number, number]> {
+        const positions: Record<string, [number, number, number]> = {};
+        for (const [id, node] of this.nodes) {
+            positions[id] = [node.position.x, node.position.y, node.position.z];
+        }
+        return positions;
+    }
+
     pinAll(pinned = true): void {
         for (const node of this.nodes.values()) node.setPinned(pinned);
         this.requestFrame();

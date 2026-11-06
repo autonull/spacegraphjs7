@@ -336,6 +336,9 @@ export class SpaceGraph {
         this.graph.setPositions(positions);
         return this;
     }
+    getPositions(): Record<string, [number, number, number]> {
+        return this.graph.getPositions();
+    }
     pinAll(pinned = true): this {
         this.graph.pinAll(pinned);
         return this;

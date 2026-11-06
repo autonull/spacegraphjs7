@@ -112,6 +112,47 @@ export abstract class Node extends Surface {
         });
     }
 
+    /**
+     * Get the layout bounds for this node.
+     * Used by size-aware layouts to compute spacing and collision.
+     * Priority: data.width/height → class size (HtmlNode) → bounds3D fallback → documented defaults (200×100)
+     */
+    getLayoutBounds(): { width: number; height: number; depth: number } {
+        // Priority 1: explicit data.width/height (from NodeData / CoreNodeData)
+        const data = this.data as Record<string, unknown>;
+        if (typeof data.width === 'number' && typeof data.height === 'number') {
+            return {
+                width: data.width,
+                height: data.height,
+                depth: (typeof data.depth === 'number' ? data.depth : 1),
+            };
+        }
+
+        // Priority 2: class-level size (HtmlNode, PanelNode, etc.)
+        const classSize = (this as any).size;
+        if (classSize && typeof classSize.width === 'number' && typeof classSize.height === 'number') {
+            return {
+                width: classSize.width,
+                height: classSize.height,
+                depth: 1,
+            };
+        }
+
+        // Priority 3: bounds3D fallback (render-dependent, expensive)
+        try {
+            const box = this.bounds3D;
+            const size = box.max.clone().sub(box.min);
+            if (size.x > 0 && size.y > 0) {
+                return { width: size.x, height: size.y, depth: size.z || 1 };
+            }
+        } catch {
+            // bounds3D may fail if object not ready
+        }
+
+        // Priority 4: documented defaults
+        return { width: 200, height: 100, depth: 1 };
+    }
+
     private static _parseVector3(
         spec: number[] | undefined,
         defaults: [number, number, number],

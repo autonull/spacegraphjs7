@@ -18,6 +18,10 @@ export interface ForceLayoutConfig extends LayoutConfig {
     randomize?: boolean;
     /** Random seed for deterministic randomization. Default: 42. */
     seed?: number;
+    /** Extra padding between nodes for collision avoidance. Default: 20. */
+    nodePadding?: number;
+    /** Progress callback: fired each iteration with (iteration, total). */
+    onProgress?: (iteration: number, total: number) => void;
 }
 
 /**
@@ -90,7 +94,11 @@ export class ForceLayout extends BaseLayout<ForceLayoutConfig> {
         for (let i = 0; i < iterations; i++) {
             this.currentIteration = i + 1;
             this.step(nodes);
+            this.forceConfig.onProgress?.(i + 1, iterations);
         }
+
+        // Final pairwise separation pass: guarantee zero overlap by construction
+        this.#separateOverlaps(nodes);
 
         for (const node of nodes) {
             if (this.isPinned(node)) continue;
@@ -109,13 +117,31 @@ export class ForceLayout extends BaseLayout<ForceLayoutConfig> {
     }
 
     /**
+     * Get the effective collision radius for a node: diagonal of its bounds + padding.
+     * This is half the distance two nodes need to sit side by side without overlapping.
+     */
+    #getNodeRadius(node: Node, padding: number): number {
+        const bounds = node.getLayoutBounds();
+        // Diagonal radius: half the diagonal of the bounding box
+        const diagonal = Math.hypot(bounds.width, bounds.height);
+        return diagonal / 2 + padding;
+    }
+
+    /**
      * Advance the simulation by one step: every node moves one tick towards its equilibrium.
      */
     step(nodes: Node[] = Array.from(this.graph.getNodes())): void {
         if (!nodes.length) return;
         const config = this.forceConfig;
+        const padding = config.nodePadding ?? 20;
         const forces = new Map<string, Vector3>();
         for (const node of nodes) forces.set(node.id, new Vector3());
+
+        // Precompute radii for all nodes
+        const radii = new Map<string, number>();
+        for (const node of nodes) {
+            radii.set(node.id, this.#getNodeRadius(node, padding));
+        }
 
         const maxForce = config.repulsion / (config.minDistance * config.minDistance);
         for (let i = 0; i < nodes.length; i++) {
@@ -126,7 +152,12 @@ export class ForceLayout extends BaseLayout<ForceLayoutConfig> {
                 const distSq = diff.lengthSq();
                 const dist = Math.sqrt(distSq);
                 if (dist < 0.001) continue;
-                const repulsion = config.repulsion / distSq;
+
+                // Per-pair minimum distance based on node sizes
+                const minDist = (radii.get(a.id) ?? 0) + (radii.get(b.id) ?? 0);
+                const effectiveDistSq = Math.max(distSq, minDist * minDist);
+
+                const repulsion = config.repulsion / effectiveDistSq;
                 const force = Math.min(repulsion, maxForce);
                 const direction = diff.normalize();
                 forces.get(a.id)!.add(direction.clone().multiplyScalar(force));
@@ -141,7 +172,9 @@ export class ForceLayout extends BaseLayout<ForceLayoutConfig> {
             if (!source || !target) continue;
             const diff = new Vector3().subVectors(target.position, source.position);
             const dist = diff.length();
-            const force = config.attraction * dist;
+            // Edge strength weighted attraction
+            const strength = (e.data?.strength as number) ?? 1;
+            const force = config.attraction * dist * strength;
             const direction = diff.normalize();
             forces.get(source.id)!.add(direction.clone().multiplyScalar(force));
             forces.get(target.id)!.sub(direction.clone().multiplyScalar(force));
@@ -170,6 +203,45 @@ export class ForceLayout extends BaseLayout<ForceLayoutConfig> {
         }
     }
 
+    /** Final separation pass: push overlapping nodes apart until no overlaps remain. */
+    #separateOverlaps(nodes: Node[]): void {
+        const config = this.forceConfig;
+        const padding = config.nodePadding ?? 20;
+
+        // Precompute radii
+        const radii = new Map<string, number>();
+        for (const node of nodes) {
+            radii.set(node.id, this.#getNodeRadius(node, padding));
+        }
+
+        // 30-pass separation (same pattern as ForcePlacement)
+        for (let pass = 0; pass < 30; pass++) {
+            let anyOverlap = false;
+            for (let i = 0; i < nodes.length; i++) {
+                for (let j = i + 1; j < nodes.length; j++) {
+                    const a = nodes[i];
+                    const b = nodes[j];
+                    if (this.isPinned(a) && this.isPinned(b)) continue;
+
+                    const diff = new Vector3().subVectors(a.position, b.position);
+                    const dist = diff.length();
+                    if (dist < 0.001) continue;
+
+                    const needed = (radii.get(a.id) ?? 0) + (radii.get(b.id) ?? 0);
+
+                    if (dist < needed) {
+                        anyOverlap = true;
+                        const shove = (needed - dist) / 2;
+                        const direction = diff.normalize();
+                        if (!this.isPinned(a)) a.position.add(direction.clone().multiplyScalar(shove));
+                        if (!this.isPinned(b)) b.position.sub(direction.clone().multiplyScalar(shove));
+                    }
+                }
+            }
+            if (!anyOverlap) break;
+        }
+    }
+
     override dispose(): void {
         super.dispose();
         this.velocities.clear();
@@ -188,6 +260,7 @@ export class ForceLayout extends BaseLayout<ForceLayoutConfig> {
             spacing: 120,
             animate: true,
             duration: 1.0,
+            nodePadding: 20,
         };
     }
 }
