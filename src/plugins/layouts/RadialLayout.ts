@@ -5,9 +5,12 @@ import { BaseLayout, type LayoutOptions } from './BaseLayout';
 export interface RadialLayoutOptions extends LayoutOptions {
     rootId: string;
     baseRadius: number;
-    radiusStep: number;
+    /** Radial step between depths. Optional: when unset, auto-computed from max node height in level + padding. */
+    radiusStep?: number;
     z: number;
     startAngle: number;
+    /** Extra padding between nodes. Default: 20. */
+    nodePadding?: number;
 }
 
 export class RadialLayout extends BaseLayout<RadialLayoutOptions> {
@@ -26,6 +29,25 @@ export class RadialLayout extends BaseLayout<RadialLayoutOptions> {
         const root = nodes.get(resolvedRootId) as Node;
         this.applyPosition(root, new Vector3(0, 0, config.z));
 
+        const padding = config.nodePadding ?? 20;
+
+        // First pass: compute max height per depth for auto radiusStep
+        const maxHeightByDepth = new Map<number, number>();
+        const computeDepthHeights = (id: string, depth: number): void => {
+            const node = nodes.get(id);
+            if (node) {
+                const bounds = node.getLayoutBounds();
+                const currentMax = maxHeightByDepth.get(depth) ?? 0;
+                if (bounds.height > currentMax) maxHeightByDepth.set(depth, bounds.height);
+            }
+            for (const child of children.get(id) ?? []) {
+                computeDepthHeights(child, depth + 1);
+            }
+        };
+        computeDepthHeights(resolvedRootId, 0);
+
+        const radiusStep = config.radiusStep ?? (maxHeightByDepth.get(1) ?? 0) + padding;
+
         const queue: Array<{ id: string; depth: number; minAngle: number; maxAngle: number }> = [
             {
                 id: resolvedRootId,
@@ -41,12 +63,27 @@ export class RadialLayout extends BaseLayout<RadialLayoutOptions> {
             const nodeChildren = (children.get(id) ?? []).filter((child) => !visited.has(child));
             if (!nodeChildren.length) continue;
 
-            const angleStep = (maxAngle - minAngle) / nodeChildren.length;
-            const radius = config.baseRadius + depth * config.radiusStep;
+            // Compute angular shares proportional to (node width + padding)
+            const shares: number[] = [];
+            let totalShare = 0;
+            for (const childId of nodeChildren) {
+                const node = nodes.get(childId);
+                const bounds = node?.getLayoutBounds() ?? { width: 200, height: 100, depth: 1 };
+                const share = bounds.width + padding;
+                shares.push(share);
+                totalShare += share;
+            }
+
+            const radius = config.baseRadius + depth * radiusStep;
+            let currentAngle = minAngle;
 
             for (const [i, childId] of nodeChildren.entries()) {
                 visited.add(childId);
-                const angle = minAngle + (i + 0.5) * angleStep;
+                // Angular share proportional to (node width + padding) / totalShare
+                const share = shares[i] / totalShare;
+                const angle = currentAngle + share * (maxAngle - minAngle) / 2;
+                currentAngle += share * (maxAngle - minAngle);
+
                 const node = nodes.get(childId);
                 if (node) {
                     this.applyPosition(
@@ -57,17 +94,32 @@ export class RadialLayout extends BaseLayout<RadialLayoutOptions> {
                 queue.push({
                     id: childId,
                     depth: depth + 1,
-                    minAngle: minAngle + i * angleStep,
-                    maxAngle: minAngle + (i + 1) * angleStep,
+                    minAngle: currentAngle - share * (maxAngle - minAngle),
+                    maxAngle: currentAngle,
                 });
             }
         }
 
         const orphans = [...nodes.keys()].filter((id) => !visited.has(id));
         if (orphans.length) {
-            const outerRadius = config.baseRadius + nodes.size * config.radiusStep;
+            // Compute shares for orphans too
+            const shares: number[] = [];
+            let totalShare = 0;
+            for (const id of orphans) {
+                const node = nodes.get(id);
+                const bounds = node?.getLayoutBounds() ?? { width: 200, height: 100, depth: 1 };
+                const share = bounds.width + padding;
+                shares.push(share);
+                totalShare += share;
+            }
+
+            const outerRadius = config.baseRadius + nodes.size * radiusStep;
+            let currentAngle = config.startAngle;
             for (const [i, id] of orphans.entries()) {
-                const angle = ((2 * Math.PI) / orphans.length) * i;
+                const share = shares[i] / totalShare;
+                const angle = currentAngle + share * Math.PI;
+                currentAngle += share * 2 * Math.PI;
+
                 this.applyPosition(
                     nodes.get(id) as Node,
                     new Vector3(
@@ -84,11 +136,11 @@ export class RadialLayout extends BaseLayout<RadialLayoutOptions> {
         return {
             rootId: '',
             baseRadius: 200,
-            radiusStep: 180,
             z: 0,
             startAngle: 0,
             animate: true,
             duration: 1.0,
+            nodePadding: 20,
         };
     }
 }

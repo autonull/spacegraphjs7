@@ -151,7 +151,18 @@ export class ForceLayout extends BaseLayout<ForceLayoutConfig> {
                 const diff = new Vector3().subVectors(a.position, b.position);
                 const distSq = diff.lengthSq();
                 const dist = Math.sqrt(distSq);
-                if (dist < 0.001) continue;
+
+                // Handle zero/near-zero distance: apply small random jitter to break symmetry
+                if (dist < 0.001) {
+                    const jitter = new Vector3(
+                        (Math.random() - 0.5) * 0.01,
+                        (Math.random() - 0.5) * 0.01,
+                        (Math.random() - 0.5) * 0.01,
+                    );
+                    forces.get(a.id)!.add(jitter);
+                    forces.get(b.id)!.sub(jitter);
+                    continue;
+                }
 
                 // Per-pair minimum distance based on node sizes
                 const minDist = (radii.get(a.id) ?? 0) + (radii.get(b.id) ?? 0);

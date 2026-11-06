@@ -139,14 +139,18 @@ export abstract class Node extends Surface {
         }
 
         // Priority 3: bounds3D fallback (render-dependent, expensive)
-        try {
-            const box = this.bounds3D;
-            const size = box.max.clone().sub(box.min);
-            if (size.x > 0 && size.y > 0) {
-                return { width: size.x, height: size.y, depth: size.z || 1 };
+        // Only try if object is a proper Three.js Object3D
+        const obj = this.object as THREE.Object3D | undefined;
+        if (obj && typeof obj.traverse === 'function') {
+            try {
+                const box = this.bounds3D;
+                const size = box.max.clone().sub(box.min);
+                if (size.x > 0 && size.y > 0) {
+                    return { width: size.x, height: size.y, depth: size.z || 1 };
+                }
+            } catch {
+                // bounds3D may fail if object not ready
             }
-        } catch {
-            // bounds3D may fail if object not ready
         }
 
         // Priority 4: documented defaults

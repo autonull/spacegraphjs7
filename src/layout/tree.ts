@@ -7,7 +7,7 @@ export interface TreeMeta {
 }
 
 export interface TreeConfig {
-    /** The horizontal distance between two columns. */
+    /** The horizontal distance between two columns (floor for leaf/item width). */
     columnPitch?: number;
     /** The vertical distance between two rows. */
     rowPitch?: number;
@@ -15,12 +15,15 @@ export interface TreeConfig {
     depthStep?: number;
     /** The leaves a row holds before a block folds to the next row. */
     columns?: number;
+    /** Gap between adjacent cells. Default: 24. */
+    cellGap?: number;
 }
 
 const DEFAULT_COLUMN_PITCH = 260;
 const DEFAULT_ROW_PITCH = 96;
 const DEFAULT_DEPTH_STEP = 64;
 const DEFAULT_COLUMNS = 4;
+const DEFAULT_CELL_GAP = 24;
 
 /** The block a subtree occupies: its width, its height in rows, and where its children sit. */
 interface Block {
@@ -52,12 +55,14 @@ export class TreePlacement implements Placement<TreeMeta> {
     readonly #rowPitch: number;
     readonly #depthStep: number;
     readonly #columns: number;
+    readonly #cellGap: number;
 
     constructor(config: TreeConfig = {}) {
         this.#columnPitch = config.columnPitch ?? DEFAULT_COLUMN_PITCH;
         this.#rowPitch = config.rowPitch ?? DEFAULT_ROW_PITCH;
         this.#depthStep = config.depthStep ?? DEFAULT_DEPTH_STEP;
         this.#columns = Math.max(1, config.columns ?? DEFAULT_COLUMNS);
+        this.#cellGap = config.cellGap ?? DEFAULT_CELL_GAP;
     }
 
     place(
@@ -81,7 +86,8 @@ export class TreePlacement implements Placement<TreeMeta> {
         const cells = new Map<string, { row: number; column: number; width: number }>();
         const depths = new Map(items.map((item) => [item.id, item.depth ?? 0]));
 
-        for (const item of items) this.#measure(item.id, children, blocks, cells);
+        // Pass byID to measure for leaf width lookup
+        for (const item of items) this.#measure(item.id, children, blocks, cells, byID);
 
         const positions = new Map<string, Position>();
         const roots = items.filter((item) => {
@@ -112,18 +118,26 @@ export class TreePlacement implements Placement<TreeMeta> {
         children: ReadonlyMap<string, string[]>,
         blocks: Map<string, Block>,
         cells: Map<string, { row: number; column: number; width: number }>,
+        byID: Map<string, PlacementItem<TreeMeta>>,
     ): void {
         const kids = children.get(id) ?? [];
 
         if (kids.length === 0) {
-            blocks.set(id, { width: this.#columnPitch, rows: 1, firstRow: 0, rows2: [] });
+            // Leaf: width = max(columnPitch, item.width + cellGap)
+            const item = byID.get(id);
+            const itemWidth = item?.width ?? this.#columnPitch;
+            const leafWidth = Math.max(this.#columnPitch, itemWidth + this.#cellGap);
+            blocks.set(id, { width: leafWidth, rows: 1, firstRow: 0, rows2: [] });
             return;
         }
 
-        for (const kid of kids) this.#measure(kid, children, blocks, cells);
+        for (const kid of kids) this.#measure(kid, children, blocks, cells, byID);
 
+        // cellWidth = max(columnPitch, max kid width + cellGap)
         const widths = kids.map((kid) => blocks.get(kid)!.width);
-        const cellWidth = Math.max(...widths);
+        const maxKidWidth = Math.max(...widths);
+        const cellWidth = Math.max(this.#columnPitch, maxKidWidth + this.#cellGap);
+
         const perRow = Math.min(this.#columns, kids.length);
         const gridRows: { offset: number; height: number }[] = [];
         let height = 0;

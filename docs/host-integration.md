@@ -196,3 +196,63 @@ adapter expects. Nothing else changed: the model, the events, and the capabiliti
 than a silhouette, the depth fade is a scene fog that DOM cards do not follow, DOM cards are the
 supported path for readable text, and the layout engine places without knowing the screen. Read it
 before you promise a host something the engine does not do.
+
+## 11. Dual-loader hosts (dev middleware + prod server)
+
+Some hosts serve the same graph data through two paths: a Vite dev middleware (or equivalent hot-
+module server) and a separate production server. If the two paths load data differently, the graph
+drifts silently — positions, clustering, and selection are computed against different inputs, and
+the host never knows.
+
+**The pattern:** one shared, typed `loadGraph()` function consumed by both the dev middleware and
+the prod server.
+
+```ts
+// shared/loadGraph.ts — single source of truth
+export async function loadGraph(sessionId: string): Promise<RenderModel> {
+    const data = await fetch(`/api/sessions/${sessionId}/graph`).then((r) => r.json());
+    return toRenderModel(data); // your adapter, same code everywhere
+}
+```
+
+```ts
+// dev middleware (vite.config.ts, express, etc.)
+import { loadGraph } from './shared/loadGraph';
+
+export default defineConfig({
+    plugins: [
+        {
+            name: 'graph-dev-middleware',
+            configureServer(server) {
+                server.middlewares.use('/api/sessions/:id/graph', async (req, res) => {
+                    const model = await loadGraph(req.params.id);
+                    res.json(model);
+                });
+            },
+        },
+    ],
+});
+```
+
+```ts
+// prod server (express, fastify, etc.)
+import { loadGraph } from './shared/loadGraph';
+
+app.get('/api/sessions/:id/graph', async (req, res) => {
+    const model = await loadGraph(req.params.id);
+    res.json(model);
+});
+```
+
+**Failure mode (silent data drift):** the dev middleware reads from an in-memory store with hot
+updates; the prod server reads from a persisted DB with a replication lag. A session that grows
+during development shows a different graph structure in production — positions are wrong, clusters
+are missing, and the user's selection points to the wrong node. The only signal is a vague "it
+looks different in prod".
+
+**Acceptance test:** one fixture fed through both paths produces byte-identical `RenderModel` JSON.
+Run it in CI for both the dev and prod configurations.
+
+> This pattern was identified during the Grant Workspace review (SpaceGraphJS Improvements Spec
+> issue #2). The OpenCode host does not have a dual-loader pair, so no code change is needed here.
+> The Grant Workspace repo tracks its own fix.

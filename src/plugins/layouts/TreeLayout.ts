@@ -3,8 +3,12 @@ import type { Node } from '../../nodes/Node';
 import { BaseLayout, type LayoutOptions } from './BaseLayout';
 
 export interface TreeLayoutOptions extends LayoutOptions {
-    levelHeight: number;
-    nodeSpacing: number;
+    /** Vertical distance between levels. Optional: when unset, auto-computed from max node height in level + padding. */
+    levelHeight?: number;
+    /** Horizontal spacing between leaf nodes. Optional: when unset, auto-computed from node width + padding. */
+    nodeSpacing?: number;
+    /** Extra padding between nodes. Default: 20. */
+    nodePadding?: number;
     orientation: string;
 }
 
@@ -31,14 +35,32 @@ export class TreeLayout extends BaseLayout<TreeLayoutOptions> {
         const roots = nodes.filter((node) => inDegree.get(node.id) === 0);
         if (!roots.length) roots.push(nodes[0]);
 
+        const padding = config.nodePadding ?? 20;
+
+        // First pass: compute max height per level for auto levelHeight
+        const maxHeightByLevel = new Map<number, number>();
+        const computeLevelHeights = (node: Node, depth: number): void => {
+            const bounds = node.getLayoutBounds();
+            const currentMax = maxHeightByLevel.get(depth) ?? 0;
+            if (bounds.height > currentMax) maxHeightByLevel.set(depth, bounds.height);
+            for (const child of children.get(node.id) ?? []) {
+                computeLevelHeights(child, depth + 1);
+            }
+        };
+        for (const root of roots) {
+            computeLevelHeights(root, 0);
+        }
+
         const positions = new Map<string, Vector3>();
         let cursor = 0;
 
         const assignPositions = (node: Node, depth: number): void => {
             const nodeChildren = children.get(node.id) ?? [];
             if (!nodeChildren.length) {
-                positions.set(node.id, new Vector3(cursor, -depth * config.levelHeight, 0));
-                cursor += config.nodeSpacing;
+                const bounds = node.getLayoutBounds();
+                const spacing = config.nodeSpacing ?? Math.max(bounds.width + padding, 1);
+                positions.set(node.id, new Vector3(cursor, -depth * (config.levelHeight ?? (maxHeightByLevel.get(depth) ?? 0) + padding), 0));
+                cursor += spacing;
                 return;
             }
             const childXs = nodeChildren.map((child) => {
@@ -47,12 +69,15 @@ export class TreeLayout extends BaseLayout<TreeLayoutOptions> {
             });
             const minX = Math.min(...childXs);
             const maxX = Math.max(...childXs);
-            positions.set(node.id, new Vector3((minX + maxX) / 2, -depth * config.levelHeight, 0));
+            const levelHeight = config.levelHeight ?? (maxHeightByLevel.get(depth) ?? 0) + padding;
+            positions.set(node.id, new Vector3((minX + maxX) / 2, -depth * levelHeight, 0));
         };
 
         for (const root of roots) {
             assignPositions(root, 0);
-            cursor += config.nodeSpacing * 2;
+            const rootBounds = root.getLayoutBounds();
+            const rootSpacing = config.nodeSpacing ?? Math.max(rootBounds.width + padding, 1);
+            cursor += rootSpacing * 2;
         }
 
         const centre = average(positions);
@@ -66,11 +91,10 @@ export class TreeLayout extends BaseLayout<TreeLayoutOptions> {
 
     protected defaultConfig(): TreeLayoutOptions {
         return {
-            levelHeight: 150,
-            nodeSpacing: 100,
             orientation: 'vertical',
             animate: true,
             duration: 1.0,
+            nodePadding: 20,
         };
     }
 }

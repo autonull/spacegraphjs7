@@ -181,3 +181,23 @@ pnpm pack --dry-run     # verify package contents
 | Research program              | `PLAN/RESEARCH.md`                      |
 | Growth & community            | `PLAN/GROWTH.md`                        |
 | Risk register                 | `PLAN/RISKS.md`                         |
+
+## Grant Workspace Review — Spec-vs-Reality Audit (SGF-8)
+
+The Grant Workspace "SpaceGraphJS Improvements Specification" (2026-11-06) targeted an older view
+of the API. This note records the differences so the next external review is cheaper.
+
+| Spec claim | Reality (2026-11-06) |
+| --- | --- |
+| `ForceLayoutConfig` not exported top-level | **Exported** at `src/index.ts:25` — spec table was stale |
+| Layout lookup uses three names (class, id, type key) | **Fixed in SGF-2**: single source of truth via plugin `id` (kebab-case); `layoutOnce` with unknown name throws |
+| `getPositions`/`serializePositions` absent | **Implemented in SGF-6**: `SpaceGraph.getPositions()` and `Graph.getPositions()` return `Record<string, [number, number, number]>` |
+| Layout names vs ids mismatch | **Fixed in SGF-2**: `LayoutOptionsMap` keys = registered names = plugin `id`; `listLayouts()` and `getLayoutRegistry()` exported |
+| Node-size-aware `ForceLayout` missing | **Implemented in SGF-1**: `getLayoutBounds()` on base `Node`, `nodePadding` in config, per-pair minDistance, final 30-pass separation |
+| Edge strength ignored | **Implemented in SGF-5**: `ForceLayout.step()` reads `edge.data?.strength` |
+| Progress callback missing | **Implemented in SGF-7**: `onProgress` in `ForceLayoutConfig`, fired each iteration |
+| All plugin layouts non-size-aware | **Implemented in SGF-9**: Grid, Circular, Tree, Hierarchical, Radial, Cluster, Timeline now auto-compute from node sizes; explicit config stays exact override |
+| `TreePlacement` ignores item sizes | **Implemented in SGF-10**: leaf block `width = Math.max(columnPitch, item.width + cellGap)` |
+
+**Items NOT applicable to this repo:**
+- Spec #2 (dev/prod dual loader): OpenCode has no vite-middleware + server.cjs pair. Documented in `docs/host-integration.md` §11 for hosts that do.
