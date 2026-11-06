@@ -16,3 +16,4 @@ export * from './scope';
 export * from './walks';
 export * from './time-filter';
 export * from './example/fixture';
+export * from './sub-layout';

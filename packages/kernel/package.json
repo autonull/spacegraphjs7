@@ -1,7 +1,7 @@
 {
     "name": "@spacegraphjs/kernel",
     "version": "0.1.0",
-    "description": "Dependency-free graph kernel for SpaceGraphJS hosts",
+    "description": "Graph kernel for SpaceGraphJS hosts",
     "type": "module",
     "sideEffects": false,
     "main": "./dist/index.js",
@@ -21,6 +21,9 @@
     "scripts": {
         "typecheck": "tsc --noEmit",
         "test": "bun test"
+    },
+    "dependencies": {
+        "@spacegraphjs/renderer": "workspace:*"
     },
     "license": "MIT"
 }
