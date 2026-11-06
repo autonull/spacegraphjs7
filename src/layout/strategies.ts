@@ -15,9 +15,10 @@ import { TreePlacement, type TreeMeta } from './tree';
 
 type LayoutBounds = { min: Position; max: Position };
 
-type LayoutStrategy = 'lanes' | 'timeline' | 'hierarchy' | 'tree' | 'force';
+/** Internal layout strategies (host-owned, not plugin layouts). Renamed to avoid confusion with layout plugin IDs. */
+type LaneLayoutStrategy = 'lanes' | 'timeline' | 'hierarchy' | 'tree' | 'force';
 
-const LAYOUT_STRATEGIES: readonly LayoutStrategy[] = [
+const LANE_LAYOUT_STRATEGIES: readonly LaneLayoutStrategy[] = [
     'lanes',
     'timeline',
     'hierarchy',
@@ -89,7 +90,7 @@ interface LayoutConfig<
 }
 
 interface LayoutOptions<Node extends LayoutNode = LayoutNode> {
-    strategy?: LayoutStrategy;
+    strategy?: LaneLayoutStrategy;
     /** The horizontal distance between adjacent nodes in a lane. */
     gap?: number;
     /** The vertical distance between lanes. */
@@ -122,7 +123,7 @@ interface GraphLayout {
     positions: ReadonlyMap<string, Position>;
     clusters: Map<string, LayoutBounds>;
     bounds: LayoutBounds;
-    strategy: LayoutStrategy;
+    strategy: LaneLayoutStrategy;
 }
 
 const ZERO_BOUNDS: LayoutBounds = { min: { x: 0, y: 0, z: 0 }, max: { x: 0, y: 0, z: 0 } };
@@ -180,7 +181,7 @@ function placedPositions(positions: ReadonlyMap<string, Position>): Map<string, 
  */
 function finishLayout(
     positions: Map<string, Position>,
-    strategy: LayoutStrategy,
+    strategy: LaneLayoutStrategy,
     clusters: Map<string, LayoutBounds> = new Map(),
 ): GraphLayout {
     const all = [...positions.values()];
@@ -661,7 +662,7 @@ function laneAnchors<Node extends LayoutNode, Edge extends LayoutEdge, Name exte
 
 /** The layout strategy API. A host calls it with its own node vocabulary. */
 export const Strategies = {
-    LAYOUT_STRATEGIES,
+    LANE_LAYOUT_STRATEGIES,
     layoutGraph,
     laneAnchors,
 };
@@ -675,6 +676,6 @@ export type {
     LayoutModel,
     LayoutNode,
     LayoutOptions,
-    LayoutStrategy,
+    LaneLayoutStrategy,
     Position,
 };

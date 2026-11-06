@@ -319,7 +319,15 @@ export class SpaceGraph {
         options?: Partial<LayoutOptionsFor<Name>>,
     ): Promise<void> {
         const plugin = this.pluginManager.getPlugin(name);
-        if (plugin && 'applyLayout' in plugin)
+        if (!plugin) {
+            const available = this.pluginManager.getPluginNames().filter((n) =>
+                ['force-layout', 'grid-layout', 'circular-layout', 'hierarchical-layout', 'tree-layout', 'radial-layout', 'spectral-layout', 'cluster-layout', 'geo-layout', 'timeline-layout'].includes(n)
+            );
+            throw new Error(
+                `[SpaceGraph] Unknown layout "${name}". Available layouts: ${available.join(', ')}. Use listLayouts() for full registry.`
+            );
+        }
+        if ('applyLayout' in plugin)
             await (
                 plugin as { applyLayout: (opts?: Record<string, unknown>) => Promise<void> }
             ).applyLayout(options);

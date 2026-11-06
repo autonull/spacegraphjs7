@@ -27,5 +27,5 @@ export {
     type LayoutModel,
     type LayoutNode,
     type LayoutOptions,
-    type LayoutStrategy,
+    type LaneLayoutStrategy,
 } from './strategies';

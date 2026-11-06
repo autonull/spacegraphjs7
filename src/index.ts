@@ -2,7 +2,7 @@
 // Main entry point with unified exports and convenient shortcuts
 
 // Core class - primary entry point
-export { SpaceGraph, VERSION } from './SpaceGraph';
+export { SpaceGraph, VERSION, SimpleGraph, type SimpleGraphOptions } from './SpaceGraph';
 
 // Essential core classes (maintained for backward compatibility)
 export { Graph, PluginManager, EventEmitter, Selection, TypeRegistry, SpaceGraphApp } from './core';
@@ -16,6 +16,39 @@ export { createCameraFingering } from './input/fingerings';
 export { Node } from './nodes/Node';
 export { ShapeNode } from './nodes/ShapeNode';
 export { Edge } from './edges/Edge';
+
+// Layout base types (SGF-3: export surface audit)
+export { BaseLayout, type LayoutOptions, type LayoutConfig } from './plugins/layouts/BaseLayout';
+
+// Node data types (SGF-3: export surface audit)
+export type {
+    NodeData,
+    HtmlNodeData,
+    ShapeNodeData,
+    ImageNodeData,
+    GroupNodeData,
+    NoteNodeData,
+    CanvasNodeData,
+    TextMeshNodeData,
+    DataNodeData,
+    VideoNodeData,
+    IFrameNodeData,
+    ChartNodeData,
+    MarkdownNodeData,
+    GlobeNodeData,
+    SceneNodeData,
+    AudioNodeData,
+    MathNodeData,
+    ProcessNodeData,
+    CodeEditorNodeData,
+    InstancedShapeNodeData,
+    DOMNodeData,
+    WidgetNodeData,
+    SpaceGraphNodeData,
+} from './types/node-data';
+
+// Spec types (SGF-3: export surface audit)
+export type { NodeSpec, EdgeSpec, GraphSpec, GraphExport, GraphImportData, SpecUpdate, ZuiManifest } from './types/spec';
 
 // Vision plugins
 export { VisionOverlayPlugin } from './plugins/VisionOverlayPlugin';
@@ -48,10 +81,13 @@ export { HistoryPlugin, type HistoryPluginOptions } from './plugins/HistoryPlugi
 export { MinimapPlugin } from './plugins/MinimapPlugin';
 
 // Convenience factory functions
-export { createSpaceGraph, createGraph, SimpleGraph, sg, qg } from './SpaceGraph';
+export { createSpaceGraph, createGraph, sg, qg } from './SpaceGraph';
 
 // Event types for type-safe event handling
 export type { SpaceGraphEvents, SelectionChangedPayload } from './types/events';
+
+// Layout registry (SGF-2: layout registry and one name)
+export { listLayouts, getLayoutRegistry, type LayoutRegistryEntry, DEFAULT_LAYOUT_PLUGINS, LAYOUT_REGISTRY } from './core/defaults';
 
 // Re-export submodules for direct access (tree-shakeable)
 export * as builder from './builder';
