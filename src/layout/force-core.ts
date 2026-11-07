@@ -1,4 +1,5 @@
 import type { Placement, PlacementItem, Position } from './placement';
+import { buildOctree, computeBarnesHutForce, type OctreeNode, type BarnesHutConfig } from './octree';
 
 /** The force placement's vocabulary: what pulls a box towards another one. */
 export interface ForceMeta {
@@ -37,6 +38,10 @@ export interface ForceCoreConfig {
     randomize?: boolean;
     /** Progress callback: fired each iteration with (iteration, total). */
     onProgress?: (iteration: number, total: number) => void;
+    /** Use Barnes-Hut octree for O(n log n) repulsion (for large graphs). */
+    useBarnesHut?: boolean;
+    /** Barnes-Hut configuration. */
+    barnesHut?: Partial<BarnesHutConfig>;
 }
 
 const DEFAULT_SPACING = 240;
@@ -75,6 +80,10 @@ export class ForceCore {
     readonly #temperature: number;
     readonly #randomize: boolean;
     readonly #onProgress?: (iteration: number, total: number) => void;
+    readonly #useBarnesHut: boolean;
+    readonly #barnesHutTheta: number;
+    readonly #barnesHutMaxDepth: number;
+    readonly #barnesHutMinCellSize: number;
 
     constructor(config: ForceCoreConfig = {}) {
         this.#spacing = config.spacing ?? DEFAULT_SPACING;
@@ -91,6 +100,10 @@ export class ForceCore {
         this.#temperature = config.temperature ?? DEFAULT_TEMPERATURE;
         this.#randomize = config.randomize ?? false;
         this.#onProgress = config.onProgress;
+        this.#useBarnesHut = config.useBarnesHut ?? (config.iterations && config.iterations > 1000);
+        this.#barnesHutTheta = config.barnesHut?.theta ?? 0.5;
+        this.#barnesHutMaxDepth = config.barnesHut?.maxDepth ?? 20;
+        this.#barnesHutMinCellSize = config.barnesHut?.minCellSize ?? 1;
     }
 
     /**
@@ -131,41 +144,68 @@ export class ForceCore {
         const forces = new Map<string, { x: number; y: number; z: number }>();
         for (const node of nodes) forces.set(node.id ?? String(nodes.indexOf(node)), { x: 0, y: 0, z: 0 });
 
-        // Precompute radii for all nodes
+        // Precompute radii (used as mass for Barnes-Hut)
         const radii = new Map<string, number>();
         for (const node of nodes) {
             const id = node.id ?? String(nodes.indexOf(node));
             radii.set(id, getRadius(node));
         }
 
-        // Repulsion: all-pairs (can be optimized with spatial index later)
         const maxForce = this.#repulsion / (this.#minDistance * this.#minDistance);
-        for (let i = 0; i < nodes.length; i++) {
-            for (let j = i + 1; j < nodes.length; j++) {
-                const a = nodes[i];
-                const b = nodes[j];
-                const dx = a.position.x - b.position.x;
-                const dy = a.position.y - b.position.y;
-                const dz = a.position.z - b.position.z;
-                const distSq = dx * dx + dy * dy + dz * dz;
-                const dist = Math.sqrt(distSq) || 0.001;
 
-                // Per-pair minimum distance based on node sizes
-                const idA = a.id ?? String(i);
-                const idB = b.id ?? String(j);
-                const minDist = (radii.get(idA) ?? 0) + (radii.get(idB) ?? 0);
-                const effectiveDistSq = Math.max(distSq, minDist * minDist);
+        if (this.#useBarnesHut && nodes.length > 100) {
+            // Build octree for Barnes-Hut approximation
+            const octree = buildOctree(nodes, (node) => radii.get(node.id ?? '') ?? 1, {
+                theta: this.#barnesHutTheta,
+                maxDepth: this.#barnesHutMaxDepth,
+                minCellSize: this.#barnesHutMinCellSize,
+            });
 
-                const repulsion = this.#repulsion / effectiveDistSq;
-                const force = Math.min(repulsion, maxForce);
-                const fx = (dx / dist) * force;
-                const fy = (dy / dist) * force;
-                const fz = (dz / dist) * force;
+            // Compute repulsion using Barnes-Hut
+            for (const node of nodes) {
+                const id = node.id ?? String(nodes.indexOf(node));
+                const force = computeBarnesHutForce(
+                    { position: node.position, id },
+                    octree,
+                    this.#barnesHutTheta,
+                    this.#repulsion,
+                    this.#minDistance,
+                    maxForce,
+                );
+                const f = forces.get(id)!;
+                f.x += force.x;
+                f.y += force.y;
+                f.z += force.z;
+            }
+        } else {
+            // Repulsion: all-pairs (exact for small graphs)
+            for (let i = 0; i < nodes.length; i++) {
+                for (let j = i + 1; j < nodes.length; j++) {
+                    const a = nodes[i];
+                    const b = nodes[j];
+                    const dx = a.position.x - b.position.x;
+                    const dy = a.position.y - b.position.y;
+                    const dz = a.position.z - b.position.z;
+                    const distSq = dx * dx + dy * dy + dz * dz;
+                    const dist = Math.sqrt(distSq) || 0.001;
 
-                const forceA = forces.get(idA)!;
-                const forceB = forces.get(idB)!;
-                forceA.x += fx; forceA.y += fy; forceA.z += fz;
-                forceB.x -= fx; forceB.y -= fy; forceB.z -= fz;
+                    // Per-pair minimum distance based on node sizes
+                    const idA = a.id ?? String(i);
+                    const idB = b.id ?? String(j);
+                    const minDist = (radii.get(idA) ?? 0) + (radii.get(idB) ?? 0);
+                    const effectiveDistSq = Math.max(distSq, minDist * minDist);
+
+                    const repulsion = this.#repulsion / effectiveDistSq;
+                    const force = Math.min(repulsion, maxForce);
+                    const fx = (dx / dist) * force;
+                    const fy = (dy / dist) * force;
+                    const fz = (dz / dist) * force;
+
+                    const forceA = forces.get(idA)!;
+                    const forceB = forces.get(idB)!;
+                    forceA.x += fx; forceA.y += fy; forceA.z += fz;
+                    forceB.x -= fx; forceB.y -= fy; forceB.z -= fz;
+                }
             }
         }
 

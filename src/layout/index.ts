@@ -7,9 +7,11 @@ export {
 } from './LaneLayout';
 export { GridPlacement, type GridConfig, type GridMeta } from './grid';
 export { TreePlacement, type TreeConfig, type TreeMeta } from './tree';
-export { ForcePlacement, type ForceConfig, type ForceMeta } from './force';
-export { ForceCore, type ForceCoreConfig, type ForceMeta } from './force-core';
-export type { Placement, PlacementItem, Position } from './placement';
+export * from './force';
+export * from './force-core';
+export * from './octree';
+export * from './placement';
+export * from './strategies';
 export {
     computeIncremental,
     diffPositions,

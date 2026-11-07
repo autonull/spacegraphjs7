@@ -30,6 +30,14 @@ export interface ForceLayoutConfig extends LayoutConfig {
     nodePadding?: number;
     /** Progress callback: fired each iteration with (iteration, total). */
     onProgress?: (iteration: number, total: number) => void;
+    /** Use Barnes-Hut octree for O(n log n) repulsion on large graphs (auto-enabled for >100 nodes). */
+    useBarnesHut?: boolean;
+    /** Barnes-Hut theta threshold: cell size / distance < theta = approximate. Default: 0.5. */
+    barnesHutTheta?: number;
+    /** Barnes-Hut maximum tree depth. Default: 20. */
+    barnesHutMaxDepth?: number;
+    /** Barnes-Hut minimum cell size. Default: 1. */
+    barnesHutMinCellSize?: number;
 }
 
 /**
@@ -102,6 +110,12 @@ export class ForceLayout extends BaseLayout<ForceLayoutConfig> {
             temperature: config.temperature ?? 100,
             randomize: config.randomize ?? false,
             onProgress: config.onProgress,
+            useBarnesHut: config.useBarnesHut,
+            barnesHut: {
+                theta: config.barnesHutTheta,
+                maxDepth: config.barnesHutMaxDepth,
+                minCellSize: config.barnesHutMinCellSize,
+            },
         });
 
         // Always reset velocities for a fresh simulation
