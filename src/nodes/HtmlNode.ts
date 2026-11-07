@@ -170,6 +170,13 @@ export class HtmlNode extends BaseContentNode {
         this.data = { ...this.data, contentScale: clampedScale };
 
         if (this.contentWrapper) {
+            // Adjust layout size to match visual size for correct scrollbar behavior.
+            // With transform-origin: top left, visual size = layout size * scale.
+            // Setting layout size to (100/scale)% makes visual size = 100% of parent.
+            const layoutSizePercent = 100 / clampedScale;
+            this.contentWrapper.style.transformOrigin = 'top left';
+            this.contentWrapper.style.width = `${layoutSizePercent}%`;
+            this.contentWrapper.style.height = `${layoutSizePercent}%`;
             this.contentWrapper.style.transform = `scale(${clampedScale})`;
         }
 
@@ -305,15 +312,22 @@ export class HtmlNode extends BaseContentNode {
         // decide, and a card that only changed its CSS would leave its edges drawn.
         this.cssObject.visible = !hidden;
         if (this.contentWrapper) {
-            this.contentWrapper.style.transform = `scale(${baseScale * (level?.scale ?? 1.0)})`;
+            const combinedScale = baseScale * (level?.scale ?? 1.0);
+            const layoutPercent = 100 / combinedScale;
+            this.contentWrapper.style.width = `${layoutPercent}%`;
+            this.contentWrapper.style.height = `${layoutPercent}%`;
+            this.contentWrapper.style.transform = `scale(${combinedScale})`;
         }
     }
 
     private resetLodStyles(): void {
         const baseScale = (this.data?.contentScale as number) ?? 1.0;
+        const layoutPercent = 100 / baseScale;
         this.domElement.style.visibility = '';
         this.domElement.style.display = 'flex';
         if (this.contentWrapper) {
+            this.contentWrapper.style.width = `${layoutPercent}%`;
+            this.contentWrapper.style.height = `${layoutPercent}%`;
             this.contentWrapper.style.transform = `scale(${baseScale})`;
         }
     }
@@ -333,9 +347,10 @@ export class HtmlNode extends BaseContentNode {
             width: '100%',
             flex: '1 1 auto',
             minHeight: '0',
+            minWidth: '0',
             display: 'flex',
             flexDirection: 'column',
-            overflow: 'auto',
+            overflow: 'hidden',
             position: 'relative',
             boxSizing: 'border-box',
         });
@@ -345,16 +360,23 @@ export class HtmlNode extends BaseContentNode {
         Object.assign(contentWrapper.style, {
             width: '100%',
             flex: '1 0 auto',
+            minWidth: '0',
+            minHeight: '0',
             display: 'flex',
             flexDirection: 'column',
             position: 'relative',
             zIndex: '1',
             boxSizing: 'border-box',
             pointerEvents: 'auto',
+            overflow: 'auto',
         });
         const data = (spec.data as SpaceGraphNodeData) ?? {};
-        contentWrapper.style.transform = `scale(${(data.contentScale as number) ?? 1.0})`;
-        contentWrapper.style.transformOrigin = 'center center';
+        const initialScale = (data.contentScale as number) ?? 1.0;
+        const initialLayoutPercent = 100 / initialScale;
+        contentWrapper.style.transformOrigin = 'top left';
+        contentWrapper.style.width = `${initialLayoutPercent}%`;
+        contentWrapper.style.height = `${initialLayoutPercent}%`;
+        contentWrapper.style.transform = `scale(${initialScale})`;
 
         if (data.group === true) {
             wrapper.style.height = '100%';
