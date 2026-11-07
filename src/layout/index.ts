@@ -8,6 +8,7 @@ export {
 export { GridPlacement, type GridConfig, type GridMeta } from './grid';
 export { TreePlacement, type TreeConfig, type TreeMeta } from './tree';
 export { ForcePlacement, type ForceConfig, type ForceMeta } from './force';
+export { ForceCore, type ForceCoreConfig, type ForceMeta } from './force-core';
 export type { Placement, PlacementItem, Position } from './placement';
 export {
     computeIncremental,

@@ -1,16 +1,24 @@
 import { Vector3 } from 'three';
-import type { Edge } from '../../edges/Edge';
+import { ForceCore, type ForceCoreConfig } from '../../layout/force-core';
 import type { Node } from '../../nodes/Node';
 import { BaseLayout, type LayoutConfig } from './BaseLayout';
 
 export interface ForceLayoutConfig extends LayoutConfig {
+    /** Repulsion strength between nodes. Default: 10000. */
     repulsion: number;
+    /** Attraction strength along edges. Default: 0.01. */
     attraction: number;
+    /** Velocity damping factor. Default: 0.9. */
     damping: number;
+    /** Gravity towards center. Default: 0.1. */
     gravity: number;
+    /** Minimum distance for force calculation. Default: 50. */
     minDistance: number;
+    /** Maximum distance for force application. Default: 1000. */
     maxDistance: number;
+    /** Number of simulation iterations. Default: 50. */
     iterations: number;
+    /** Initial temperature for cooling schedule. Default: 100. */
     temperature: number;
     /** Target node spacing. Used to scale initial temperature. Default: 120. */
     spacing?: number;
@@ -28,31 +36,41 @@ export interface ForceLayoutConfig extends LayoutConfig {
  * Force-directed layout using spring-electrical model.
  * Simulates physical forces (repulsion between nodes, attraction along edges)
  * to produce aesthetically pleasing layouts with minimal edge crossings.
+ * 
+ * Now uses shared ForceCore for the simulation logic, ensuring consistency
+ * with ForcePlacement and eliminating drift between engines.
  */
 export class ForceLayout extends BaseLayout<ForceLayoutConfig> {
     readonly id = 'force-layout';
     readonly name = 'Force Directed';
     readonly version = '1.0.0';
 
-    private velocities = new Map<string, Vector3>();
-    private currentIteration = 0;
+    #core: ForceCore;
+    #velocities = new Map<string, Vector3>();
+    #currentIteration = 0;
+
+    constructor(config: Partial<ForceLayoutConfig> = {}) {
+        super(config);
+        this.#core = new ForceCore({
+            spacing: config.spacing ?? 120,
+            iterations: config.iterations ?? 50,
+            seed: config.seed ?? 42,
+            depthStep: 64,
+            nodePadding: config.nodePadding ?? 20,
+            attraction: config.attraction ?? 0.01,
+            repulsion: config.repulsion ?? 10000,
+            damping: config.damping ?? 0.9,
+            gravity: config.gravity ?? 0.1,
+            minDistance: config.minDistance ?? 50,
+            maxDistance: config.maxDistance ?? 1000,
+            temperature: config.temperature ?? 100,
+            randomize: config.randomize ?? false,
+            onProgress: config.onProgress,
+        });
+    }
 
     private get forceConfig(): ForceLayoutConfig {
         return this.config as ForceLayoutConfig;
-    }
-
-    private get effectiveTemperature(): number {
-        const config = this.forceConfig;
-        // If spacing is provided, scale temperature to achieve approximate target spacing
-        if (config.spacing !== undefined) {
-            return config.spacing;
-        }
-        return config.temperature;
-    }
-
-    private get simulationProgress(): number {
-        const total = this.forceConfig.iterations;
-        return total > 0 ? this.currentIteration / total : 0;
     }
 
     /** The simulation owns every node: it reads the pinned ones but never moves them. */
@@ -63,18 +81,36 @@ export class ForceLayout extends BaseLayout<ForceLayoutConfig> {
      * to ensure a fresh simulation from current positions.
      */
     reset(): void {
-        this.velocities.clear();
-        this.currentIteration = 0;
+        this.#velocities.clear();
+        this.#currentIteration = 0;
     }
 
-    protected place(nodes: Node[], _config: ForceLayoutConfig): void {
+    protected place(nodes: Node[], config: ForceLayoutConfig): void {
+        // Recreate core with merged config to pick up runtime overrides
+        this.#core = new ForceCore({
+            spacing: config.spacing ?? 120,
+            iterations: config.iterations ?? 50,
+            seed: config.seed ?? 42,
+            depthStep: 64,
+            nodePadding: config.nodePadding ?? 20,
+            attraction: config.attraction ?? 0.01,
+            repulsion: config.repulsion ?? 10000,
+            damping: config.damping ?? 0.9,
+            gravity: config.gravity ?? 0.1,
+            minDistance: config.minDistance ?? 50,
+            maxDistance: config.maxDistance ?? 1000,
+            temperature: config.temperature ?? 100,
+            randomize: config.randomize ?? false,
+            onProgress: config.onProgress,
+        });
+
         // Always reset velocities for a fresh simulation
-        this.velocities.clear();
-        this.currentIteration = 0;
+        this.#velocities.clear();
+        this.#currentIteration = 0;
 
         // Optionally randomize positions first
-        if (this.forceConfig.randomize) {
-            const seed = this.forceConfig.seed ?? 42;
+        if (config.randomize) {
+            const seed = config.seed ?? 42;
             let random = this.#mulberry32(seed);
             for (const node of nodes) {
                 if (!this.isPinned(node)) {
@@ -88,22 +124,43 @@ export class ForceLayout extends BaseLayout<ForceLayoutConfig> {
             }
         }
 
-        for (const node of nodes) this.velocities.set(node.id, new Vector3());
+        // Initialize velocities
+        for (const node of nodes) this.#velocities.set(node.id, new Vector3());
 
-        const { iterations } = this.forceConfig;
-        for (let i = 0; i < iterations; i++) {
-            this.currentIteration = i + 1;
-            this.step(nodes);
-            this.forceConfig.onProgress?.(i + 1, iterations);
-        }
+        // Run the simulation using ForceCore
+        this.#core.run(
+            nodes,
+            (node) => this.#getEdgeLinks(node),
+            (node) => this.#getNodeRadius(node, config.nodePadding ?? 20),
+            (node) => this.isPinned(node),
+            (node, z) => { node.position.z = z; },
+        );
 
-        // Final pairwise separation pass: guarantee zero overlap by construction
-        this.#separateOverlaps(nodes);
-
+        // Sync positions to Three.js objects
         for (const node of nodes) {
             if (this.isPinned(node)) continue;
             this.syncPosition(node);
         }
+    }
+
+    /**
+     * Get the effective collision radius for a node: diagonal of its bounds + padding.
+     * This is half the distance two nodes need to sit side by side without overlapping.
+     */
+    #getNodeRadius(node: Node, padding: number): number {
+        const bounds = node.getLayoutBounds();
+        const diagonal = Math.hypot(bounds.width, bounds.height);
+        return diagonal / 2 + padding;
+    }
+
+    /** Get edge links for a node (source or target). */
+    #getEdgeLinks(node: Node): readonly string[] {
+        const links: string[] = [];
+        for (const edge of this.graph.getEdges()) {
+            if (edge.source.id === node.id) links.push(edge.target.id);
+            else if (edge.target.id === node.id) links.push(edge.source.id);
+        }
+        return links;
     }
 
     #mulberry32(seed: number): () => number {
@@ -116,146 +173,9 @@ export class ForceLayout extends BaseLayout<ForceLayoutConfig> {
         };
     }
 
-    /**
-     * Get the effective collision radius for a node: diagonal of its bounds + padding.
-     * This is half the distance two nodes need to sit side by side without overlapping.
-     */
-    #getNodeRadius(node: Node, padding: number): number {
-        const bounds = node.getLayoutBounds();
-        // Diagonal radius: half the diagonal of the bounding box
-        const diagonal = Math.hypot(bounds.width, bounds.height);
-        return diagonal / 2 + padding;
-    }
-
-    /**
-     * Advance the simulation by one step: every node moves one tick towards its equilibrium.
-     */
-    step(nodes: Node[] = Array.from(this.graph.getNodes())): void {
-        if (!nodes.length) return;
-        const config = this.forceConfig;
-        const padding = config.nodePadding ?? 20;
-        const forces = new Map<string, Vector3>();
-        for (const node of nodes) forces.set(node.id, new Vector3());
-
-        // Precompute radii for all nodes
-        const radii = new Map<string, number>();
-        for (const node of nodes) {
-            radii.set(node.id, this.#getNodeRadius(node, padding));
-        }
-
-        const maxForce = config.repulsion / (config.minDistance * config.minDistance);
-        for (let i = 0; i < nodes.length; i++) {
-            for (let j = i + 1; j < nodes.length; j++) {
-                const a = nodes[i];
-                const b = nodes[j];
-                const diff = new Vector3().subVectors(a.position, b.position);
-                const distSq = diff.lengthSq();
-                const dist = Math.sqrt(distSq);
-
-                // Handle zero/near-zero distance: apply small random jitter to break symmetry
-                if (dist < 0.001) {
-                    const jitter = new Vector3(
-                        (Math.random() - 0.5) * 0.01,
-                        (Math.random() - 0.5) * 0.01,
-                        (Math.random() - 0.5) * 0.01,
-                    );
-                    forces.get(a.id)!.add(jitter);
-                    forces.get(b.id)!.sub(jitter);
-                    continue;
-                }
-
-                // Per-pair minimum distance based on node sizes
-                const minDist = (radii.get(a.id) ?? 0) + (radii.get(b.id) ?? 0);
-                const effectiveDistSq = Math.max(distSq, minDist * minDist);
-
-                const repulsion = config.repulsion / effectiveDistSq;
-                const force = Math.min(repulsion, maxForce);
-                const direction = diff.normalize();
-                forces.get(a.id)!.add(direction.clone().multiplyScalar(force));
-                forces.get(b.id)!.sub(direction.clone().multiplyScalar(force));
-            }
-        }
-
-        for (const edge of this.graph.getEdges()) {
-            const e = edge as Edge;
-            const source = this.graph.getNode(e.source.id);
-            const target = this.graph.getNode(e.target.id);
-            if (!source || !target) continue;
-            const diff = new Vector3().subVectors(target.position, source.position);
-            const dist = diff.length();
-            // Edge strength weighted attraction
-            const strength = (e.data?.strength as number) ?? 1;
-            const force = config.attraction * dist * strength;
-            const direction = diff.normalize();
-            forces.get(source.id)!.add(direction.clone().multiplyScalar(force));
-            forces.get(target.id)!.sub(direction.clone().multiplyScalar(force));
-        }
-
-        for (const node of nodes) {
-            const force = forces.get(node.id)!;
-            const dist = node.position.length();
-            if (dist > 0)
-                force.add(
-                    node.position
-                        .clone()
-                        .normalize()
-                        .negate()
-                        .multiplyScalar(config.gravity * dist),
-                );
-        }
-
-        for (const node of nodes) {
-            if (this.isPinned(node)) continue;
-            const velocity = this.velocities.get(node.id)!;
-            velocity.add(forces.get(node.id)!).multiplyScalar(config.damping);
-            const maxMove = this.effectiveTemperature * (1 - this.simulationProgress);
-            if (velocity.length() > maxMove) velocity.setLength(maxMove);
-            node.position.add(velocity);
-        }
-    }
-
-    /** Final separation pass: push overlapping nodes apart until no overlaps remain. */
-    #separateOverlaps(nodes: Node[]): void {
-        const config = this.forceConfig;
-        const padding = config.nodePadding ?? 20;
-
-        // Precompute radii
-        const radii = new Map<string, number>();
-        for (const node of nodes) {
-            radii.set(node.id, this.#getNodeRadius(node, padding));
-        }
-
-        // 30-pass separation (same pattern as ForcePlacement)
-        for (let pass = 0; pass < 30; pass++) {
-            let anyOverlap = false;
-            for (let i = 0; i < nodes.length; i++) {
-                for (let j = i + 1; j < nodes.length; j++) {
-                    const a = nodes[i];
-                    const b = nodes[j];
-                    if (this.isPinned(a) && this.isPinned(b)) continue;
-
-                    const diff = new Vector3().subVectors(a.position, b.position);
-                    const dist = diff.length();
-                    if (dist < 0.001) continue;
-
-                    const needed = (radii.get(a.id) ?? 0) + (radii.get(b.id) ?? 0);
-
-                    if (dist < needed) {
-                        anyOverlap = true;
-                        const shove = (needed - dist) / 2;
-                        const direction = diff.normalize();
-                        if (!this.isPinned(a)) a.position.add(direction.clone().multiplyScalar(shove));
-                        if (!this.isPinned(b)) b.position.sub(direction.clone().multiplyScalar(shove));
-                    }
-                }
-            }
-            if (!anyOverlap) break;
-        }
-    }
-
     override dispose(): void {
         super.dispose();
-        this.velocities.clear();
+        this.#velocities.clear();
     }
 
     protected defaultConfig(): ForceLayoutConfig {
