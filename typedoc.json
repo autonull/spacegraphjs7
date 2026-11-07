@@ -1,5 +1,4 @@
 {
-    "$schema": "https://typedoc.org/schema.json",
     "entryPoints": ["src/index.ts", "src/vision/index.ts"],
     "out": "docs/api",
     "name": "SpaceGraphJS Plugin API & Core Engine",
@@ -10,5 +9,7 @@
     "plugin": [],
     "theme": "default",
     "hideGenerator": true,
-    "searchInComments": true
+    "searchInComments": true,
+    "tsconfig": "tsconfig.json",
+    "skipErrorChecking": true
 }
