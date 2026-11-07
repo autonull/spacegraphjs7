@@ -6,12 +6,19 @@ import { BaseLayout, type LayoutOptions } from './BaseLayout';
 export interface SpectralLayoutOptions extends LayoutOptions {
     scale: number;
     dimensions: number;
+    /** Extra padding between nodes for collision avoidance. Default: 20. */
+    nodePadding?: number;
+    /** If true, run a post-pass to eliminate overlaps (30 passes). Default: true. */
+    separateOverlaps?: boolean;
 }
 
 /**
  * Spectral layout using eigenvector decomposition of the graph Laplacian.
  * Positions nodes based on the eigenvectors corresponding to the smallest eigenvalues,
  * providing a layout that respects the graph's connectivity structure.
+ * 
+ * Includes an optional size-aware collision settle post-pass (30 passes)
+ * to eliminate node overlaps while preserving spectral structure.
  */
 export class SpectralLayout extends BaseLayout<SpectralLayoutOptions> {
     readonly id = 'spectral-layout';
@@ -21,6 +28,7 @@ export class SpectralLayout extends BaseLayout<SpectralLayoutOptions> {
     /**
      * Apply spectral layout using power iteration to compute eigenvectors.
      * Uses the adjacency matrix and degree information to position nodes in 2D/3D space.
+     * Then runs an optional size-aware collision settle pass to eliminate overlaps.
      */
     protected place(nodes: Node[], config: SpectralLayoutOptions): void {
         const positions = spectralPositions(
@@ -30,10 +38,68 @@ export class SpectralLayout extends BaseLayout<SpectralLayoutOptions> {
             config.scale,
         );
         this.positionAll(nodes, (_node, index) => positions[index]);
+
+        // Size-aware collision settle post-pass (like ForceLayout's separation pass)
+        if (config.separateOverlaps !== false) {
+            this.separateOverlaps(nodes, config.nodePadding ?? 20);
+        }
+    }
+
+    /**
+     * Size-aware collision settle: push overlapping nodes apart until no overlaps remain.
+     * Uses 30 passes (same pattern as ForceLayout).
+     */
+    private separateOverlaps(nodes: Node[], nodePadding: number): void {
+        // Precompute collision radii (diagonal radius + padding)
+        const radii = new Map<string, number>();
+        for (const node of nodes) {
+            const bounds = node.getLayoutBounds();
+            const diagonal = Math.hypot(bounds.width, bounds.height);
+            radii.set(node.id, diagonal / 2 + nodePadding);
+        }
+
+        // 30-pass separation
+        for (let pass = 0; pass < 30; pass++) {
+            let anyOverlap = false;
+            for (let i = 0; i < nodes.length; i++) {
+                for (let j = i + 1; j < nodes.length; j++) {
+                    const a = nodes[i];
+                    const b = nodes[j];
+
+                    const dx = a.position.x - b.position.x;
+                    const dy = a.position.y - b.position.y;
+                    const dz = a.position.z - b.position.z;
+                    const dist = Math.sqrt(dx * dx + dy * dy + dz * dz) || 0.001;
+
+                    const needed = (radii.get(a.id) ?? 0) + (radii.get(b.id) ?? 0);
+
+                    if (dist < needed) {
+                        anyOverlap = true;
+                        const shove = (needed - dist) / 2;
+                        const fx = (dx / dist) * shove;
+                        const fy = (dy / dist) * shove;
+                        const fz = (dz / dist) * shove;
+
+                        a.position.x += fx;
+                        a.position.y += fy;
+                        a.position.z += fz;
+                        b.position.x -= fx;
+                        b.position.y -= fy;
+                        b.position.z -= fz;
+                    }
+                }
+            }
+            if (!anyOverlap) break;
+        }
+
+        // Sync positions to Three.js objects
+        for (const node of nodes) {
+            this.syncPosition(node);
+        }
     }
 
     protected defaultConfig(): SpectralLayoutOptions {
-        return { scale: 400, animate: true, duration: 1.5, dimensions: 3 };
+        return { scale: 400, animate: true, duration: 1.5, dimensions: 3, nodePadding: 20, separateOverlaps: true };
     }
 }
 
