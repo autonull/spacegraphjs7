@@ -373,13 +373,14 @@ export abstract class ModelAdapter<
 
     /** A non-interactive row or column caption for a summary representation. */
     protected buildAxisLabel(label: AdapterAxisLabel): RenderNode {
+        const safeLabel = label.label ?? label.id ?? "";
         return {
             id: `axis:${label.id}`,
             kind: 'lane',
-            label: label.label,
+            label: safeLabel,
             shape: 'panel',
             interactive: false,
-            html: `<div data-axis="${label.role}" style="display:flex;align-items:center;height:100%;box-sizing:border-box;padding:0 8px;font-family:inherit;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:inherit;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(label.label)}</div>`,
+            html: `<div data-axis="${label.role}" style="display:flex;align-items:center;height:100%;box-sizing:border-box;padding:0 8px;font-family:inherit;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:inherit;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(safeLabel)}</div>`,
             size: this.geometry.axisLabelSize,
             position: [label.x, label.y, ZERO.z - 1],
             data: { axis: label.role },
