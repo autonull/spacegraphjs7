@@ -15,13 +15,7 @@ export class DepthController {
     setDepth(depth: DepthMode): SpaceGraph {
         const previous = this.#depth;
         this.#depth = depth;
-        const effectiveDuration = this.sg.reducedMotion
-            ? previous !== depth
-                ? 0.5
-                : 0
-            : previous !== depth
-              ? 0.5
-              : 0;
+        const effectiveDuration = this.sg.reducedMotion ? 0 : previous !== depth ? 0.5 : 0;
         this.#applyDepth(depth, effectiveDuration);
         if (previous !== depth) this.sg.events.emit('depth:change', { depth, previous });
         return this.sg.commitCamera();
