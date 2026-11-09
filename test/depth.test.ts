@@ -47,9 +47,11 @@ describe('depth treatment', () => {
         // A card lying in the content plane is sheared into a quadrilateral as soon as the camera
         // tilts, so the 3D treatments turn the cards to face the reader (T1.19).
         expect(depthTreatment('flat').facing).toBe('plane');
-        for (const mode of ['layered', 'depth-stack', 'orbit'] as const) {
-            expect(depthTreatment(mode).facing).toBe('plane');
-        }
+        // layered and depth-stack use camera-facing to keep cards readable at tilt
+        expect(depthTreatment('layered').facing).toBe('camera');
+        expect(depthTreatment('depth-stack').facing).toBe('camera');
+        // orbit uses plane-facing as the labelled experiment
+        expect(depthTreatment('orbit').facing).toBe('plane');
     });
 });
 

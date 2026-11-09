@@ -25,6 +25,11 @@ const CONFIG: LayoutConfig<TestNode, TestEdge> = {
     depthMap: { root: 0, turn: 1, work: 2 },
     turnIdFn: (node) => node.turnID,
     ownerTurnFn: (model, node) => (node.kind === 'file' ? ownerTurn(model, node) : undefined),
+    parentOfFn: (model, node) => {
+        if (node.kind === 'turn') return 'root';
+        if (node.kind === 'work') return node.turnID;
+        return undefined;
+    },
     clusterOfFn: (node) => node.clusterOf,
     geometry: { standardSize: [200, 60], indentStep: 100, depthLevels: 3, padding: 40 },
 };
