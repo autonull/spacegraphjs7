@@ -507,6 +507,7 @@ function timelineLayout<Node extends LayoutNode, Edge extends LayoutEdge, Name e
  * Hierarchy: a left-to-right indented outline. Depth reads as X offset (ancestry is a staircase),
  * rows wrap within a capped column height so cards stay legible, and the user pans instead of
  * zooming below the legibility floor. Positions are deterministic and append-only.
+ * Builds a proper tree from parentOfFn and traverses it depth-first.
  */
 function hierarchyLayout<Node extends LayoutNode, Edge extends LayoutEdge, Name extends string>(
     model: LayoutModel<Node, Edge>,
@@ -533,35 +534,65 @@ function hierarchyLayout<Node extends LayoutNode, Edge extends LayoutEdge, Name 
     });
     const items: PlacementItem<GridMeta>[] = [];
     let column = 0;
+    let row = 0;
 
-    for (const nodes of turnBlocks(model, config)) {
-        let row = 0;
-        let group = `column:${column}`;
+    // Build adjacency list from parentOfFn
+    const children = new Map<string, Node[]>();
+    const roots: Node[] = [];
+    const nodeById = new Map(model.nodes.map((n) => [n.id, n]));
 
-        for (const node of nodes) {
-            if (row >= rowsPerColumn) {
-                row = 0;
-                column += 1;
-                group = `column:${column}`;
-            }
+    for (const node of model.nodes) {
+        const parentId = config.parentOfFn?.(model, node);
+        if (parentId && nodeById.has(parentId)) {
+            const bucket = children.get(parentId);
+            if (bucket) bucket.push(node);
+            else children.set(parentId, [node]);
+        } else {
+            roots.push(node);
+        }
+    }
 
-            const depth = depthOf(config.depthMap, node.kind);
+    // Sort children by model order for deterministic output
+    const order = new Map(model.nodes.map((node, index) => [node.id, index]));
+    for (const bucket of children.values()) {
+        bucket.sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
+    }
+    roots.sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
 
-            items.push({
-                id: node.id,
-                width: config.geometry.standardSize[0],
-                depth,
-                meta: {
-                    group,
-                    row,
-                    indent: depth * indentStep,
-                    columnWidth,
-                },
-            });
-            row += 1;
+    // Depth-first traversal to place nodes in indented outline
+    function placeNode(node: Node, depth: number) {
+        if (row >= rowsPerColumn) {
+            row = 0;
+            column += 1;
         }
 
-        column += 1;
+        const group = `column:${column}`;
+
+        items.push({
+            id: node.id,
+            width: config.nodeSizeFn(node)[0],
+            depth,
+            meta: {
+                group,
+                row,
+                indent: depth * indentStep,
+                columnWidth,
+            },
+        });
+        row += 1;
+
+        // Recursively place children
+        const childNodes = children.get(node.id);
+        if (childNodes) {
+            for (const child of childNodes) {
+                placeNode(child, depth + 1);
+            }
+        }
+    }
+
+    // Place roots
+    for (const root of roots) {
+        placeNode(root, 0);
     }
 
     return finishLayout(placedPositions(layout.place(items)), 'hierarchy');

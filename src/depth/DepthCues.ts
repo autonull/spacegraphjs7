@@ -42,14 +42,14 @@ const TREATMENTS: Record<DepthMode, DepthTreatment> = {
         phi: Math.PI / 2 - 0.15,
         orbit: false,
         fade: 0.5,
-        facing: 'plane',
+        facing: 'camera',
     },
     'depth-stack': {
         projection: 'perspective',
         phi: Math.PI / 2 - MAX_READABLE_TILT,
         orbit: false,
         fade: 0.9,
-        facing: 'plane',
+        facing: 'camera',
     },
     orbit: {
         projection: 'perspective',
