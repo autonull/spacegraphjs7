@@ -14,7 +14,6 @@ export {
 export {
     rankedSearch,
     sessionOutline,
-    facetCounts,
     search,
     searchBy,
     defaultRank,
@@ -23,6 +22,20 @@ export {
     type SearchTextFn,
     type OutlineTurn,
 } from './search';
+
+export {
+    applyFacets,
+    keepOnly,
+    composeScopes,
+    facetCounts,
+    facetsToQuery,
+    facetsFromQuery,
+    hasFacets,
+    type FacetAccessors,
+    type ApplyFacetsOptions,
+    type KeepOnlyOptions,
+    type ComposeScopesOptions,
+} from './facets';
 
 export {
     useSearch,

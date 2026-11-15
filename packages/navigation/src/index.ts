@@ -15,3 +15,11 @@ export {
     sourceLabel,
     CONFIDENCE_STYLE,
 } from './legendUtils';
+export {
+    encodeDeepLink,
+    decodeDeepLink,
+    isDeepLink,
+    createDeepLinkCodec,
+    type DeepLinkParts,
+    type DeepLinkOptions,
+} from './deep-link';
