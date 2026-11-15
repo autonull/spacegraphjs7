@@ -49,6 +49,12 @@ import {
     isAnswerEdge,
     stepLitNode,
 } from '@spacegraphjs/trace';
+import { SessionKernel, Kernel, GraphHistory, createGraphHistory, type GraphSnapshot, type KernelOp } from '@spacegraphjs/kernel';
+
+const addNode = (id: string, kind = 'node', label = id): KernelOp => ({
+    op: 'add-node',
+    node: { id, kind, label },
+});
 
 export interface MirrorState {
     /** The nodes the accessibility mirror lists. */
@@ -484,6 +490,45 @@ export const CAPABILITIES: readonly Capability[] = [
                 `isLit: ${isLit(why, 'tool:1')}`,
                 `isAnswer: ${isAnswer(why, 'tool:1')}`,
                 `step: ${stepLitNode(why, undefined, 1)}`,
+            ];
+        },
+    },
+    {
+        id: 'time-travel',
+        title: 'Time-travel history',
+        modules: ['@spacegraphjs/kernel'],
+        summary: 'Capture, checkout, fork, and bounded snapshots over a SessionKernel.',
+        run: (context) => {
+            // Build a session kernel with some history
+            let session = new SessionKernel();
+            for (let i = 0; i < 5; i++) {
+                session = session.append({ id: `e${i}`, op: addNode(`n${i}`, 'step', `Step ${i}`) });
+            }
+
+            const history = createGraphHistory(session, 3, (v) => `v${v}`);
+
+            // Capture at versions 1, 3, 5
+            session = session.checkpoint().state.version === 5 ? session : session; // already at 5
+            const snap1 = history.captureAt(1);
+            const snap3 = history.captureAt(3);
+            const snap5 = history.captureAt(5);
+
+            // Checkout version 2
+            const checkedOut = history.checkout(2);
+            // Fork from version 2
+            const forked = history.fork(2);
+            const diverged = forked.append({ id: 'e-fork', op: addNode('n-fork', 'fork', 'Forked Step') });
+
+            // Test getSnapshotAtOrBefore (fallback)
+            const fallback = history.getSnapshotAtOrBefore(4);
+
+            return [
+                `captured: ${history.size} snapshots (limit 3)`,
+                `snapshots: ${history.all.map((s) => `${s.version}(${s.label})`).join(', ')}`,
+                `checkout(2): ${checkedOut.version} nodes=${checkedOut.state().nodes.length}`,
+                `fork(2) + append: ${diverged.version} nodes=${diverged.state().nodes.length}`,
+                `fallback at 4: ${fallback?.version ?? 'none'}`,
+                `latest: ${history.latest?.version ?? 'none'}`,
             ];
         },
     },

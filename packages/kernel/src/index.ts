@@ -15,5 +15,6 @@ export * from './deriver';
 export * from './scope';
 export * from './walks';
 export * from './time-filter';
+export * from './graph-history';
 export * from './example/fixture';
 export * from './sub-layout';
