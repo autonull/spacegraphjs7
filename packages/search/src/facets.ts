@@ -1,5 +1,7 @@
 import type { GraphViewData, GraphNode, GraphFacets, FacetCounts } from '@spacegraphjs/shared';
 
+export type { GraphFacets, FacetCounts };
+
 /** Accessors the host provides to extract facet values from nodes. */
 export interface FacetAccessors {
     /** Extract the kind from a node. */

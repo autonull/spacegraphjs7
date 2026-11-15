@@ -51,6 +51,28 @@ import {
     isAnswerEdge,
     stepLitNode,
 } from '@spacegraphjs/trace';
+import {
+    applyFacets,
+    composeScopes,
+    facetsToQuery,
+    facetsFromQuery,
+    hasFacets,
+    facetCounts,
+    type FacetAccessors,
+    type GraphFacets,
+    SavedQuery,
+    MAX_SAVED_QUERIES,
+    saveQuery,
+    removeQuery,
+    isSavedQuery,
+    normalizeSavedQueries,
+    PaletteAction,
+    PaletteLens,
+    PaletteSurface,
+    PaletteSources,
+    paletteEntries,
+    paletteGroup,
+} from '@spacegraphjs/search';
 import { SessionKernel, Kernel, GraphHistory, createGraphHistory, type GraphSnapshot, type KernelOp } from '@spacegraphjs/kernel';
 
 const addNode = (id: string, kind = 'node', label = id): KernelOp => ({
@@ -533,6 +555,94 @@ export const CAPABILITIES: readonly Capability[] = [
                 `isLit: ${isLit(why, 'tool:1')}`,
                 `isAnswer: ${isAnswer(why, 'tool:1')}`,
                 `step: ${stepLitNode(why, undefined, 1)}`,
+            ];
+        },
+    },
+    {
+        id: 'facets',
+        title: 'Facets, saved queries, and palette',
+        modules: ['@spacegraphjs/search'],
+        summary: 'Filter by facets, save queries, and build a command palette.',
+        run: (context) => {
+            const model = context.model as unknown as { nodes: Array<{ id: string; label: string; kind: string; status: string; summary?: string; data?: Record<string, unknown> }>; edges: any[]; turns?: string[]; activeTurn?: string };
+
+            // Define facet accessors for the host model
+            const accessors: FacetAccessors = {
+                kind: (node) => node.kind,
+                status: (node) => node.status,
+                domain: (node) => node.data?.domain as string | undefined,
+                rootId: (m) => m.nodes[0]?.id ?? '',
+            };
+
+            const knownKinds = Array.from(new Set(model.nodes.map((n) => n.kind)));
+            const knownStatuses = Array.from(new Set(model.nodes.map((n) => n.status)));
+            const knownDomains = ['session', ...Array.from(new Set(model.nodes.map((n) => n.data?.domain).filter(Boolean)))];
+
+            // Test applyFacets
+            const facets: GraphFacets = {
+                query: '',
+                kinds: new Set(['tool']),
+                statuses: new Set(),
+                domains: new Set(['session']),
+            };
+            const filtered = applyFacets({ model, facets, accessors });
+
+            // Test composeScopes
+            const composed = composeScopes({
+                model,
+                facets,
+                keptIds: null,
+                collapsedGroups: new Set(),
+                accessors,
+                collapseGroups: (m) => m,
+            });
+
+            // Test facetsToQuery / facetsFromQuery round-trip
+            const queryString = facetsToQuery(facets, knownKinds, knownStatuses, knownDomains);
+            const parsed = facetsFromQuery(queryString, knownKinds, knownStatuses, knownDomains);
+
+            // Test facetCounts
+            const counts = facetCounts(model, facets, accessors, knownKinds, knownStatuses, knownDomains);
+
+            // Test hasFacets
+            const hasAny = hasFacets(facets);
+
+            // Test saved queries
+            const serializeOpts = { knownKinds, knownStatuses, knownDomains };
+            const savedQueries: SavedQuery[] = [];
+            const newSaved = saveQuery(savedQueries, facets, 'Failed tools', serializeOpts);
+            const normalized = normalizeSavedQueries([
+                { label: 'Test', query: 'kind:tool status:failed' },
+                { label: 'Test 2', query: 'kind:tool status:failed' }, // duplicate
+                { query: 'kind:file' }, // no label
+            ]);
+            const isSaved = isSavedQuery(newSaved, facets, serializeOpts);
+
+            // Test palette
+            const sources: PaletteSources = {
+                actions: [
+                    { id: 'export', label: 'Export graph', detail: 'Save as JSON' },
+                    { id: 'why', label: 'Why failed', detail: 'Show failure reason' },
+                ],
+                lenses: [{ id: 'focus', label: 'Focus mode', description: 'Dim unrelated nodes' }],
+                surfaces: [{ id: 'timeline', label: 'Timeline view' }],
+                savedQueries: newSaved,
+            };
+            const palette = paletteEntries(model, 'auth', sources);
+            const nodeEntries = paletteGroup(palette, 'node');
+            const actionEntries = paletteGroup(palette, 'action');
+            const savedEntries = paletteGroup(palette, 'saved-query');
+
+            return [
+                `applyFacets: ${model.nodes.length} → ${filtered.nodes.length} nodes (kinds: tool)`,
+                `composeScopes: ${composed.nodes.length} nodes`,
+                `facetsToQuery: "${queryString}"`,
+                `facetsFromQuery: query="${parsed.query}", kinds=[${Array.from(parsed.kinds).join(',')}]`,
+                `facetCounts: kinds=${counts.kinds.length}, statuses=${counts.statuses.length}, domains=${counts.domains.length}`,
+                `hasFacets: ${hasAny}`,
+                `saveQuery: ${newSaved.length} saved, isSaved=${isSaved}`,
+                `normalizeSavedQueries: ${normalized.length} entries (deduped)`,
+                `paletteEntries: ${palette.length} total (${nodeEntries.length} nodes, ${actionEntries.length} actions, ${savedEntries.length} saved)`,
             ];
         },
     },

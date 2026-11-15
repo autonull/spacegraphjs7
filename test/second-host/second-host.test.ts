@@ -34,6 +34,7 @@ const EXPECTED_MODULES = [
     '@spacegraphjs/cytoscape-renderer',
     '@spacegraphjs/kernel',
     '@spacegraphjs/renderer',
+    '@spacegraphjs/search',
     '@spacegraphjs/shared',
     '@spacegraphjs/spacegraph-renderer',
     '@spacegraphjs/svg-renderer',

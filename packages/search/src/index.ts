@@ -45,3 +45,27 @@ export {
     type UseFindOptions,
     type UseFindReturn,
 } from './hooks';
+
+export {
+    MAX_SAVED_QUERIES,
+    savedQueryFacets,
+    defaultSavedQueryLabel,
+    saveQuery,
+    removeQuery,
+    isSavedQuery,
+    normalizeSavedQueries,
+    type SavedQuery,
+} from './saved-queries';
+
+export {
+    PALETTE_GROUP_ORDER,
+    PALETTE_NODE_LIMIT,
+    paletteEntries,
+    paletteGroup,
+    type PaletteAction,
+    type PaletteLens,
+    type PaletteSurface,
+    type PaletteSources,
+    type PaletteEntryKind,
+    type PaletteEntry,
+} from './palette';
