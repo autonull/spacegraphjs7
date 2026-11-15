@@ -206,12 +206,30 @@ test.describe('the second host (T6.12)', () => {
         const errors = await boot(page);
 
         // The camera flies to a new frame over 1.5s, so a capture taken sooner catches it mid-flight.
-        const SETTLED = 2_200;
+        const SETTLED = 1_500;
 
         await page.setViewportSize({ width: 1440, height: 900 });
         await page.waitForTimeout(SETTLED);
         mkdirSync(SHOT_DIR, { recursive: true });
         await page.screenshot({ path: resolve(SHOT_DIR, '26-second-host.png') });
+
+        // v39 lifts: capture each new capability visualization
+        const CAPABILITY_SCREENSHOTS: Array<[string, string]> = [
+            ['trace', '27-second-host-trace.png'],
+            ['focus', '27-second-host-focus.png'],
+            ['collapse', '27-second-host-collapse.png'],
+            ['facets', '27-second-host-facets.png'],
+            ['time-travel', '27-second-host-time-travel.png'],
+            ['spatial-memory', '27-second-host-spatial-memory.png'],
+            ['overlay', '27-second-host-overlay.png'],
+            ['diff', '27-second-host-diff.png'],
+        ];
+
+        for (const [capability, filename] of CAPABILITY_SCREENSHOTS) {
+            await page.locator(`[data-capability="${capability}"]`).click();
+            await page.waitForTimeout(SETTLED);
+            await page.screenshot({ path: resolve(SHOT_DIR, filename) });
+        }
 
         await page.locator('[data-capability="layout"]').click();
         await page.waitForTimeout(SETTLED);
