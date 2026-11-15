@@ -55,6 +55,7 @@ export {
     isSavedQuery,
     normalizeSavedQueries,
     type SavedQuery,
+    type SavedQuerySerializeOptions,
 } from './saved-queries';
 
 export {
