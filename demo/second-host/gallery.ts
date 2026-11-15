@@ -31,6 +31,24 @@ import {
     type BuildNode,
     type HostView,
 } from './model';
+import {
+    type TraceConfig,
+    type TraceKind,
+    type TraceModel,
+    type TraceNode,
+    type TraceEdge,
+    classifyTrace,
+    traceWhy,
+    traceLedHere,
+    traceRelated,
+    traceDownstream,
+    litNodeIds,
+    isLit,
+    isAnswer,
+    isEdgeVisible,
+    isAnswerEdge,
+    stepLitNode,
+} from '@spacegraphjs/trace';
 
 export interface MirrorState {
     /** The nodes the accessibility mirror lists. */
@@ -351,6 +369,121 @@ export const CAPABILITIES: readonly Capability[] = [
             return [
                 `${diffs.length} files · ${added} added lines, ${removed} removed lines`,
                 ...diffs.map((diff) => `${diff.file} (+${diff.additions} −${diff.deletions})`),
+            ];
+        },
+    },
+    {
+        id: 'trace',
+        title: 'Trace classification',
+        modules: ['@spacegraphjs/trace'],
+        summary: 'Classify why/led-here/related/downstream overlays over a cause graph.',
+        run: (context) => {
+            const model = context.model as unknown as TraceModel;
+            const traversal = {
+                incoming: (m: TraceModel, id: string) => m.edges.filter((e) => e.target === id),
+                outgoing: (m: TraceModel, id: string) => m.edges.filter((e) => e.source === id),
+                ancestors: (m: TraceModel, id: string) => {
+                    const result: TraceNode[] = [];
+                    const parents = new Map<string, string>();
+                    for (const edge of m.edges) if (edge.kind === 'part-of') parents.set(edge.source, edge.target);
+                    const nodes = new Map(m.nodes.map((n) => [n.id, n]));
+                    let current = id;
+                    for (;;) {
+                        const parent = parents.get(current);
+                        if (!parent) break;
+                        const node = nodes.get(parent);
+                        if (!node) break;
+                        result.push(node);
+                        current = parent;
+                    }
+                    return result;
+                },
+                forwardChain: (m: TraceModel, id: string) => {
+                    const result: TraceNode[] = [];
+                    const next = new Map<string, string>();
+                    for (const edge of m.edges) if (edge.kind === 'sequence') next.set(edge.source, edge.target);
+                    const nodes = new Map(m.nodes.map((n) => [n.id, n]));
+                    let current = id;
+                    for (;;) {
+                        const n = next.get(current);
+                        if (!n) break;
+                        const node = nodes.get(n);
+                        if (!node) break;
+                        result.push(node);
+                        current = n;
+                    }
+                    return result;
+                },
+                downstreamChain: (m: TraceModel, id: string) => {
+                    const result: { node: TraceNode; edge: TraceEdge; confidence: string }[] = [];
+                    const seen = new Set([id]);
+                    const nodes = new Map(m.nodes.map((n) => [n.id, n]));
+                    const queue = [id];
+                    for (let index = 0; index < queue.length; index++) {
+                        const current = queue[index];
+                        for (const edge of m.edges) {
+                            if (edge.source !== current) continue;
+                            if (!['sequence', 'produces', 'writes'].includes(edge.kind)) continue;
+                            if (seen.has(edge.target)) continue;
+                            const node = nodes.get(edge.target);
+                            if (!node) continue;
+                            seen.add(edge.target);
+                            queue.push(edge.target);
+                            result.push({ node, edge, confidence: edge.confidence ?? 'explicit' });
+                        }
+                    }
+                    return result;
+                },
+                nodeIndex: (m: TraceModel) => new Map(m.nodes.map((n) => [n.id, n])),
+                parentIndex: (m: TraceModel) => {
+                    const map = new Map<string, string>();
+                    for (const edge of m.edges) if (edge.kind === 'part-of') map.set(edge.source, edge.target);
+                    return map;
+                },
+                childIndex: (m: TraceModel) => {
+                    const map = new Map<string, string[]>();
+                    for (const edge of m.edges) {
+                        if (edge.kind === 'part-of') {
+                            const arr = map.get(edge.target) ?? [];
+                            arr.push(edge.source);
+                            map.set(edge.target, arr);
+                        }
+                    }
+                    return map;
+                },
+                sequenceIndex: (m: TraceModel) => {
+                    const next = new Map<string, string>();
+                    const previous = new Map<string, string>();
+                    for (const edge of m.edges) {
+                        if (edge.kind === 'sequence') {
+                            next.set(edge.source, edge.target);
+                            previous.set(edge.target, edge.source);
+                        }
+                    }
+                    return { next, previous };
+                },
+            };
+            const vocabulary = {
+                provenanceEdgeKinds: new Set(['reads', 'writes', 'produces', 'evidence']),
+                readEdgeKinds: new Set(['reads', 'searches', 'references']),
+                downstreamEdgeKinds: new Set(['sequence', 'produces', 'writes']),
+            };
+            const config: TraceConfig = { model, traversal, vocabulary };
+
+            const why = traceWhy(config, 'file:a.ts');
+            const led = traceLedHere(config, 'tool:1');
+            const related = traceRelated(config, 'tool:2');
+            const downstream = traceDownstream(config, 'tool:1');
+
+            return [
+                `why(file:a.ts) → ${why.answerIds.size} answers, ${why.contextIds.size} context`,
+                `led-here(tool:1) → ${led.answerIds.size} answers`,
+                `related(tool:2) → ${related.answerIds.size} answers`,
+                `downstream(tool:1) → ${downstream.answerIds.size} answers`,
+                `lit nodes: ${litNodeIds(why).size}`,
+                `isLit: ${isLit(why, 'tool:1')}`,
+                `isAnswer: ${isAnswer(why, 'tool:1')}`,
+                `step: ${stepLitNode(why, undefined, 1)}`,
             ];
         },
     },

@@ -35,6 +35,10 @@ export default defineConfig({
                 find: /^@spacegraphjs\/svg-renderer$/,
                 replacement: resolve(__dirname, 'packages/svg-renderer/src/index.ts'),
             },
+            {
+                find: /^@spacegraphjs\/trace$/,
+                replacement: resolve(__dirname, 'packages/trace/src/index.ts'),
+            },
             { find: /^\.\.\/framework$/, replacement: resolve(__dirname, 'demo/framework.ts') },
         ],
     },

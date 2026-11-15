@@ -25,6 +25,7 @@ const CAPABILITIES = [
     'depth',
     'overlay',
     'diff',
+    'trace',
 ];
 
 async function boot(page: Page) {
@@ -137,11 +138,11 @@ test.describe('the second host (T6.12)', () => {
     test('draws the overview of the pipeline in the minimap', async ({ page }) => {
         const errors = await boot(page);
 
-        await expect(page.locator('#minimap .dot')).toHaveCount(13);
+        await expect(page.locator('#minimap .dot')).toHaveCount(29);
         await expect(page.locator('#minimap .dot[data-id="test:failure"]')).toBeAttached();
 
         await page.locator('[data-capability="layout"]').click();
-        await expect(page.locator('#minimap .dot')).toHaveCount(18);
+        await expect(page.locator('#minimap .dot')).toHaveCount(34);
 
         noErrors(errors);
     });

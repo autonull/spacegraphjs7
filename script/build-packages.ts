@@ -14,6 +14,7 @@ const PACKAGES = [
     'cytoscape-renderer',
     'svg-renderer',
     'kernel',
+    'trace',
 ];
 
 const EXTERNAL = [
