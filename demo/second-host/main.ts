@@ -256,12 +256,17 @@ function applyFocusOverlay(model: RenderModel, overlay: FocusOverlay | undefined
             const opacity = opacityForDistance(distance);
             if (opacity >= 1) return node;
 
-            // Wrap the node's HTML with opacity
-            if (!node.html) return node;
-
+            // Set opacity via node.data.style which the renderer merges
+            const existingStyle = (node.data?.style as Record<string, string> | undefined) ?? {};
             return {
                 ...node,
-                html: `<div style="opacity:${opacity};">${node.html}</div>`,
+                data: {
+                    ...node.data,
+                    style: {
+                        ...existingStyle,
+                        opacity: String(opacity),
+                    },
+                },
             };
         }),
     };
