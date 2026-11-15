@@ -38,3 +38,12 @@ export {
     type WithAnnotationsResult,
 } from './annotations';
 export { useAnnotations, type UseAnnotationsOptions, type UseAnnotationsReturn } from './useAnnotations';
+export {
+    createManualPositionsManager,
+    type ManualPositions,
+    type ManualPositionsSnapshot,
+    type ManualPositionsState,
+    type ManualPositionsConfig,
+    type ManualPositionsManager,
+} from './manual-positions';
+export { useManualPositions, type UseManualPositionsOptions, type UseManualPositionsReturn } from './useManualPositions';
