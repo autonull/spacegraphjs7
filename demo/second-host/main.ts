@@ -10,11 +10,14 @@ import {
     resolveTheme,
     type GraphRenderer,
     type RenderTheme,
+    type RenderModel,
+    type RenderNode,
 } from '@spacegraphjs/renderer';
 import { AccessibilityLayer } from 'spacegraphjs/a11y';
 import type { DepthMode } from 'spacegraphjs/depth';
 import { Navigation } from 'spacegraphjs/navigation';
 import { ScopedOverlay, extractSubgraph, renderCodeDiff } from 'spacegraphjs/overlays';
+import { computeFocusOverlay, type FocusOverlay } from '@spacegraphjs/overlays';
 import { CAPABILITIES, type Capability } from './gallery';
 import { SecondHost } from './host';
 import { HOST_VIEWS, searchableFields, type HostView } from './model';
@@ -72,6 +75,7 @@ let renderer: GraphRenderer | undefined;
 let inline: InlineGraph | undefined;
 let mirror: AccessibilityLayer | undefined;
 let scope: ScopedOverlay | undefined;
+let currentFocusOverlay: FocusOverlay | undefined;
 
 function readTheme(): RenderTheme {
     const styles = getComputedStyle(document.documentElement);
@@ -232,11 +236,43 @@ function closeDiff() {
     el('diff').hidden = true;
 }
 
+function applyFocusOverlay(model: RenderModel, overlay: FocusOverlay | undefined): RenderModel {
+    if (!overlay) return model;
+
+    const opacityForDistance = (distance: number): number => {
+        if (distance === 0) return 1; // selected - not dimmed
+        if (distance === 1) return 0.85;
+        if (distance === 2) return 0.6;
+        if (distance === 3) return 0.35;
+        return 0.15; // >3
+    };
+
+    return {
+        ...model,
+        nodes: model.nodes.map((node) => {
+            const distance = overlay.get(node.id);
+            if (distance === undefined) return node;
+
+            const opacity = opacityForDistance(distance);
+            if (opacity >= 1) return node;
+
+            // Wrap the node's HTML with opacity
+            if (!node.html) return node;
+
+            return {
+                ...node,
+                html: `<div style="opacity:${opacity};">${node.html}</div>`,
+            };
+        }),
+    };
+}
+
 function paint() {
     const renderModel = host.renderModel();
+    const modelWithFocus = applyFocusOverlay(renderModel, currentFocusOverlay);
 
-    if (inline) inline.setModel(renderModel);
-    else renderer?.setModel(renderModel);
+    if (inline) inline.setModel(modelWithFocus);
+    else renderer?.setModel(modelWithFocus);
 
     mirror?.setItems(
         host.model.nodes.map((node) => ({
@@ -313,6 +349,21 @@ function runCapability(capability: Capability) {
     if (capability.depth) {
         host.depth = capability.depth;
         renderer?.setDepth(capability.depth);
+    }
+
+    // Compute focus overlay for the focus capability
+    if (capability.id === 'focus') {
+        const context = host.context(readTheme(), {
+            rendererName: rendererName(),
+            capabilities: renderer?.capabilities,
+        });
+        currentFocusOverlay = computeFocusOverlay({
+            model: context.model,
+            selection: context.selection,
+            maxDistance: 3,
+        });
+    } else {
+        currentFocusOverlay = undefined;
     }
 
     syncViews();
