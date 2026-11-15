@@ -15,7 +15,7 @@ import { depthTreatment, type DepthMode } from 'spacegraphjs/depth';
 import { type GraphLayout } from 'spacegraphjs/layout';
 import { Levels } from 'spacegraphjs/levels';
 import { Navigation } from 'spacegraphjs/navigation';
-import { extractSubgraph, parsePatch, type CodeDiff, computeFocusOverlay, getFocusOpacity, isDimmed, FOCUS_OPACITY_STOPS, collapseGroups } from '@spacegraphjs/kernel';
+import { extractSubgraph, parsePatch, type CodeDiff, computeFocusOverlay, getFocusOpacity, isDimmed, FOCUS_OPACITY_STOPS, collapseGroups, graphContentHash, spatialMemoryKey, readSpatialMemory, writeSpatialMemory, decodeSpatialMemory, type SpatialMemoryStore, type SpatialMemoryRecord } from '@spacegraphjs/kernel';
 import { Representations } from 'spacegraphjs/representations';
 import { ZoomBands } from 'spacegraphjs/zoom';
 import {
@@ -594,6 +594,65 @@ export const CAPABILITIES: readonly Capability[] = [
                 `result nodes: ${result.nodes.length}, edges: ${result.edges.length}`,
                 `hidden members: ${hiddenMembers.length}`,
                 `hidden edges: ${hiddenEdges}`,
+            ];
+        },
+    },
+    {
+        id: 'spatial-memory',
+        title: 'Spatial memory',
+        modules: ['@spacegraphjs/kernel'],
+        summary: 'Content hash, key generation, and LRU storage for graph positions.',
+        run: (context) => {
+            const model = context.model;
+
+            // Build hashable model
+            const hashableModel = {
+                root: model.nodes[0]?.id ?? 'root',
+                turns: model.turns ?? [],
+                nodes: model.nodes.map((n) => ({
+                    id: n.id,
+                    kind: n.kind,
+                    turnID: n.data?.turnID as string | undefined,
+                    clusterOf: n.clusterOf,
+                })),
+            };
+
+            const hash = graphContentHash(hashableModel);
+            const parts = {
+                sessionKey: 'demo-session',
+                layout: 'lanes',
+                level: 'execution',
+                hash,
+            };
+            const key = spatialMemoryKey(parts);
+
+            // Test storage
+            const store: SpatialMemoryStore = {
+                storage: new Map(),
+                getItem(k: string) { return this.storage.get(k) ?? null; },
+                setItem(k: string, v: string) { this.storage.set(k, v); },
+                removeItem(k: string) { this.storage.delete(k); },
+                keys() { return Array.from(this.storage.keys()); },
+            };
+
+            const record: SpatialMemoryRecord = {
+                positions: { 'n1': [10, 20, 0], 'n2': [30, 40, 0] },
+                selection: 'n1',
+                camera: { zoom: 1.5, center: [100, 100, 0] },
+                collapsedGroups: ['group1'],
+            };
+
+            writeSpatialMemory(store, parts, record);
+            const read = readSpatialMemory(store, parts);
+            const decoded = decodeSpatialMemory(JSON.stringify({ ...record, timestamp: Date.now() }));
+
+            return [
+                `hash: ${hash}`,
+                `key: ${key}`,
+                `written: ${store.keys().length} entry`,
+                `read positions: ${read ? Object.keys(read.positions).length : 0}`,
+                `decoded selection: ${decoded?.selection ?? 'none'}`,
+                `decoded camera zoom: ${decoded?.camera?.zoom ?? 'none'}`,
             ];
         },
     },

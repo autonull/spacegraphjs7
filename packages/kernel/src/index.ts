@@ -17,5 +17,6 @@ export * from './walks';
 export * from './time-filter';
 export * from './graph-history';
 export * from './collapse';
+export * from './spatial-memory';
 export * from './example/fixture';
 export * from './sub-layout';
