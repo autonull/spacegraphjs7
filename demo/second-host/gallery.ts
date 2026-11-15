@@ -15,7 +15,7 @@ import { depthTreatment, type DepthMode } from 'spacegraphjs/depth';
 import { type GraphLayout } from 'spacegraphjs/layout';
 import { Levels } from 'spacegraphjs/levels';
 import { Navigation } from 'spacegraphjs/navigation';
-import { extractSubgraph, parsePatch, type CodeDiff } from 'spacegraphjs/overlays';
+import { extractSubgraph, parsePatch, type CodeDiff, computeFocusOverlay, getFocusOpacity, isDimmed, FOCUS_OPACITY_STOPS, collapseGroups } from '@spacegraphjs/kernel';
 import { Representations } from 'spacegraphjs/representations';
 import { ZoomBands } from 'spacegraphjs/zoom';
 import {
@@ -529,6 +529,71 @@ export const CAPABILITIES: readonly Capability[] = [
                 `fork(2) + append: ${diverged.version} nodes=${diverged.state().nodes.length}`,
                 `fallback at 4: ${fallback?.version ?? 'none'}`,
                 `latest: ${history.latest?.version ?? 'none'}`,
+            ];
+        },
+    },
+    {
+        id: 'focus',
+        title: 'Focus overlay',
+        modules: ['@spacegraphjs/overlays'],
+        summary: 'BFS distance overlay for neighborhood highlighting.',
+        run: (context) => {
+            // Build a simple model for focus testing
+            const model = context.model;
+            const selection = context.selection;
+
+            // Test with selection
+            const overlay = computeFocusOverlay({
+                model,
+                selection,
+                maxDistance: 3,
+            });
+
+            // Test opacity stops
+            const opacities = [0, 1, 2, 3, 4].map((d) => getFocusOpacity(d));
+            const dimmed = [0, 1, 2, 3, 4].map((d) => isDimmed(d, 3));
+
+            return [
+                `focus nodes: ${overlay.size}`,
+                `distances: ${Array.from(overlay.entries()).map(([k, v]) => `${k}=${v}`).join(', ')}`,
+                `opacities: ${opacities.join(', ')}`,
+                `dimmed: ${dimmed.join(', ')}`,
+                `stops: ${FOCUS_OPACITY_STOPS.join(', ')}`,
+            ];
+        },
+    },
+    {
+        id: 'collapse',
+        title: 'Group collapse',
+        modules: ['@spacegraphjs/kernel'],
+        summary: 'Collapse group members and their incident edges.',
+        run: (context) => {
+            // Build a model with groups
+            const model = context.model;
+
+            // Find group nodes
+            const groups = model.nodes.filter((n) => n.clusterOf && n.clusterOf.length > 0);
+
+            if (groups.length === 0) {
+                return ['no groups in model'];
+            }
+
+            const groupId = groups[0]!.id;
+            const collapsed = new Set([groupId]);
+            const result = collapseGroups(model, collapsed);
+
+            const hiddenMembers = groups[0]!.clusterOf?.filter((m) => !result.nodes.some((n) => n.id === m)) ?? [];
+            const hiddenEdges = model.edges.filter((e) =>
+                collapsed.has(e.source) || collapsed.has(e.target) ||
+                hiddenMembers.includes(e.source) || hiddenMembers.includes(e.target)
+            ).length;
+
+            return [
+                `original nodes: ${model.nodes.length}, edges: ${model.edges.length}`,
+                `collapsed group: ${groupId} (${groups[0]!.clusterOf?.length ?? 0} members)`,
+                `result nodes: ${result.nodes.length}, edges: ${result.edges.length}`,
+                `hidden members: ${hiddenMembers.length}`,
+                `hidden edges: ${hiddenEdges}`,
             ];
         },
     },

@@ -9,3 +9,18 @@ export {
 export { GraphOverlayManager, type GraphOverlayManagerProps } from './GraphOverlayManager';
 export { ScopedOverlay, type ScopedOverlayOptions } from './ScopedOverlay';
 export { type GraphDetailProps, type GraphDetailSurfaceProps } from './GraphDetail';
+export {
+    computeFocusOverlay,
+    type FocusOverlay,
+    type FocusOverlayOptions,
+    getFocusOpacity,
+    isDimmed,
+    FOCUS_OPACITY_STOPS,
+} from './focus';
+export { useFocusOverlay, type UseFocusOverlayOptions } from './useFocusOverlay';
+export {
+    useGroupCollapse,
+    type UseGroupCollapseOptions,
+    type UseGroupCollapseReturn,
+    type GraphBand,
+} from './useGroupCollapse';

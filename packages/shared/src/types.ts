@@ -22,6 +22,8 @@ export interface GraphNode {
     };
     data?: Record<string, unknown>;
     interactive?: boolean;
+    /** Optional cluster/group membership. If present, this node is a group containing these member IDs. */
+    clusterOf?: readonly string[];
 }
 
 /** Graph edge - generic version of session-ui GraphEdge. */
@@ -41,6 +43,8 @@ export interface GraphViewData {
     edges: readonly GraphEdge[];
     turns?: readonly string[];
     workspaceRoot?: string;
+    /** The active turn node ID, when the session still owns work. */
+    activeTurn?: string;
 }
 
 /** Renderer contract types (imported for use in this file). */
