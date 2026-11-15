@@ -50,13 +50,13 @@ export interface TraceTraversal {
     /** Downstream chain via sequence/produces/writes edges. */
     downstreamChain: (model: TraceModel, id: string) => readonly { node: TraceNode; edge: TraceEdge; confidence: string }[];
     /** Build a node index by ID. */
-    nodeIndex: (model: TraceModel) => Map<string, TraceNode>;
+    nodeIndex: (model: TraceModel) => ReadonlyMap<string, TraceNode>;
     /** Build a parent index by child ID. */
-    parentIndex: (model: TraceModel) => Map<string, string>;
+    parentIndex: (model: TraceModel) => ReadonlyMap<string, string>;
     /** Build a child index by parent ID. */
-    childIndex: (model: TraceModel) => Map<string, string[]>;
+    childIndex: (model: TraceModel) => ReadonlyMap<string, readonly string[]>;
     /** Build a sequence index (next/previous). */
-    sequenceIndex: (model: TraceModel) => { next: Map<string, string>; previous: Map<string, string> };
+    sequenceIndex: (model: TraceModel) => { next: ReadonlyMap<string, string>; previous: ReadonlyMap<string, string> };
 }
 
 // Host-provided vocabulary sets.
