@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'bun:test';
 import { collapseGroups, isGroup, getGroupIds } from './collapse';
-import type { GraphViewData, GraphNode, GraphEdge } from '@spacegraphjs/shared';
+import type { GraphViewData, GraphNode, GraphEdge } from './types';
 
 function createTestModel(): GraphViewData {
     const nodes: GraphNode[] = [

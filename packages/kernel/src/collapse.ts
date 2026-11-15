@@ -1,4 +1,4 @@
-import type { GraphNode, GraphViewData } from '@spacegraphjs/shared';
+import type { GraphNode, GraphViewData } from './types';
 
 /**
  * Collapse groups in the graph model.

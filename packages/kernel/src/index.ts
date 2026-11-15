@@ -18,5 +18,8 @@ export * from './time-filter';
 export * from './graph-history';
 export * from './collapse';
 export * from './spatial-memory';
+// types.ts exports conflict with zoom.ts (ZoomLevel) and sub-layout.ts (Position, GraphNode, GraphEdge, GraphViewData)
+// Only export non-conflicting types from types.ts
+export type { GraphFacets, FacetCounts } from './types';
 export * from './example/fixture';
 export * from './sub-layout';

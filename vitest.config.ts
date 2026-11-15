@@ -1,5 +1,6 @@
 import { resolve } from 'path';
 import { configDefaults, defineConfig } from 'vitest/config';
+import solid from 'vite-plugin-solid';
 
 export default defineConfig({
     resolve: {
@@ -33,6 +34,26 @@ export default defineConfig({
                 find: /^@spacegraphjs\/svg-renderer$/,
                 replacement: resolve(import.meta.dirname, 'packages/svg-renderer/src/index.ts'),
             },
+            {
+                find: /^@spacegraphjs\/kernel$/,
+                replacement: resolve(import.meta.dirname, 'packages/kernel/src/index.ts'),
+            },
+            {
+                find: /^@spacegraphjs\/trace$/,
+                replacement: resolve(import.meta.dirname, 'packages/trace/src/index.ts'),
+            },
+            {
+                find: /^@spacegraphjs\/overlays$/,
+                replacement: resolve(import.meta.dirname, 'packages/overlays/src/index.ts'),
+            },
+            {
+                find: /^@spacegraphjs\/navigation$/,
+                replacement: resolve(import.meta.dirname, 'packages/navigation/src/index.ts'),
+            },
+            {
+                find: /^@spacegraphjs\/search$/,
+                replacement: resolve(import.meta.dirname, 'packages/search/src/index.ts'),
+            },
             // Solid ships server and browser builds behind export conditions; Vitest resolves the server build,
             // which rejects client-only APIs. Point the framework binding tests at the browser builds.
             {
@@ -51,6 +72,7 @@ export default defineConfig({
             },
         ],
     },
+    plugins: [solid()],
     test: {
         environment: 'jsdom',
         // Only run unit tests here (keep Playwright E2E specs out of Vitest). The framework bindings carry

@@ -15,7 +15,9 @@ import { depthTreatment, type DepthMode } from 'spacegraphjs/depth';
 import { type GraphLayout } from 'spacegraphjs/layout';
 import { Levels } from 'spacegraphjs/levels';
 import { Navigation } from 'spacegraphjs/navigation';
-import { extractSubgraph, parsePatch, type CodeDiff, computeFocusOverlay, getFocusOpacity, isDimmed, FOCUS_OPACITY_STOPS, collapseGroups, graphContentHash, spatialMemoryKey, readSpatialMemory, writeSpatialMemory, decodeSpatialMemory, type SpatialMemoryStore, type SpatialMemoryRecord } from '@spacegraphjs/kernel';
+import { computeFocusOverlay, getFocusOpacity, isDimmed, FOCUS_OPACITY_STOPS } from '@spacegraphjs/overlays';
+import { collapseGroups, graphContentHash, spatialMemoryKey, readSpatialMemory, writeSpatialMemory, decodeSpatialMemory, type SpatialMemoryStore, type SpatialMemoryRecord } from '@spacegraphjs/kernel';
+import type { CodeDiff } from '@spacegraphjs/shared';
 import { Representations } from 'spacegraphjs/representations';
 import { ZoomBands } from 'spacegraphjs/zoom';
 import {
@@ -55,6 +57,47 @@ const addNode = (id: string, kind = 'node', label = id): KernelOp => ({
     op: 'add-node',
     node: { id, kind, label },
 });
+
+/** Extract a subgraph rooted at a node, following child edges of a specific kind. */
+function extractSubgraph(model: BuildModel, rootId: string, options: { childEdgeKind: string }): { root: BuildNode | undefined; nodes: BuildNode[]; edges: BuildModel['edges'] } {
+    const root = model.nodes.find((n) => n.id === rootId);
+    if (!root) return { root: undefined, nodes: [], edges: [] };
+
+    const visited = new Set<string>([rootId]);
+    const queue = [rootId];
+    const nodes: BuildNode[] = [root];
+
+    while (queue.length > 0) {
+        const current = queue.shift()!;
+        for (const edge of model.edges) {
+            if (edge.source !== current) continue;
+            if (edge.kind !== options.childEdgeKind) continue;
+            if (visited.has(edge.target)) continue;
+            const node = model.nodes.find((n) => n.id === edge.target);
+            if (!node) continue;
+            visited.add(edge.target);
+            nodes.push(node);
+            queue.push(edge.target);
+        }
+    }
+
+    const nodeIds = new Set(nodes.map((n) => n.id));
+    const edges = model.edges.filter((e) => nodeIds.has(e.source) && nodeIds.has(e.target));
+
+    return { root, nodes, edges };
+}
+
+/** Parse a unified diff patch into line objects with tone. */
+function parsePatch(patch: string): Array<{ tone: 'added' | 'removed' | 'context'; text: string }> {
+    const lines = patch.split('\n');
+    return lines
+        .filter((line) => line.length > 0)
+        .map((line) => {
+            if (line.startsWith('+')) return { tone: 'added' as const, text: line.slice(1) };
+            if (line.startsWith('-')) return { tone: 'removed' as const, text: line.slice(1) };
+            return { tone: 'context' as const, text: line };
+        });
+}
 
 export interface MirrorState {
     /** The nodes the accessibility mirror lists. */
@@ -363,7 +406,7 @@ export const CAPABILITIES: readonly Capability[] = [
     {
         id: 'diff',
         title: 'The code diff',
-        modules: ['spacegraphjs/overlays'],
+        modules: ['spacegraphjs/overlays', '@spacegraphjs/shared'],
         summary: 'A unified patch as selectable text, never as markup.',
         diff: true,
         run: (context) => {

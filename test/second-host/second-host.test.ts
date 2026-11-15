@@ -32,9 +32,13 @@ function importsOf(text: string): string[] {
 const EXPECTED_MODULES = [
     '@spacegraphjs/adapter',
     '@spacegraphjs/cytoscape-renderer',
+    '@spacegraphjs/kernel',
     '@spacegraphjs/renderer',
+    '@spacegraphjs/shared',
     '@spacegraphjs/spacegraph-renderer',
     '@spacegraphjs/svg-renderer',
+    '@spacegraphjs/trace',
+    '@spacegraphjs/overlays',
     'spacegraphjs/a11y',
     'spacegraphjs/control',
     'spacegraphjs/depth',
@@ -76,24 +80,7 @@ describe('the second host', () => {
                 .filter((specifier) => !specifier.startsWith('.')),
         );
 
-        expect([...specifiers].sort()).toEqual(
-            [
-                '@spacegraphjs/adapter',
-                '@spacegraphjs/cytoscape-renderer',
-                '@spacegraphjs/renderer',
-                '@spacegraphjs/spacegraph-renderer',
-                '@spacegraphjs/svg-renderer',
-                'spacegraphjs/a11y',
-                'spacegraphjs/control',
-                'spacegraphjs/depth',
-                'spacegraphjs/layout',
-                'spacegraphjs/levels',
-                'spacegraphjs/navigation',
-                'spacegraphjs/overlays',
-                'spacegraphjs/representations',
-                'spacegraphjs/zoom',
-            ].sort(),
-        );
+        expect([...specifiers].sort()).toEqual([...EXPECTED_MODULES].sort());
     });
 
     it('has a gallery entry for every library surface', () => {
