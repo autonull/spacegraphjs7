@@ -24,3 +24,17 @@ export {
     type UseGroupCollapseReturn,
     type GraphBand,
 } from './useGroupCollapse';
+export {
+    createAnnotationStore,
+    withAnnotations,
+    createDefaultNoteNodePolicy,
+    type Annotation,
+    type Annotations,
+    type AnnotationStore,
+    type NoteNodePolicy,
+    type GraphNodeLike,
+    type GraphEdgeLike,
+    type GraphViewDataLike,
+    type WithAnnotationsResult,
+} from './annotations';
+export { useAnnotations, type UseAnnotationsOptions, type UseAnnotationsReturn } from './useAnnotations';
