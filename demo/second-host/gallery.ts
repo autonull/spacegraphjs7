@@ -172,6 +172,8 @@ export interface Capability {
     overlay?: string;
     /** Whether the diff panel opens when this entry runs. */
     diff?: boolean;
+    /** Nodes the capability selects before it runs, so neighbourhood behaviors have a source. */
+    select?: readonly string[];
     /** The evidence this entry produced. */
     run: (context: CapabilityContext) => readonly string[];
 }
@@ -690,27 +692,27 @@ export const CAPABILITIES: readonly Capability[] = [
         title: 'Focus overlay',
         modules: ['@spacegraphjs/overlays'],
         summary: 'BFS distance overlay for neighborhood highlighting.',
+        select: ['build:compile'],
         run: (context) => {
-            // Build a simple model for focus testing
             const model = context.model;
             const selection = context.selection;
 
-            // Test with selection
             const overlay = computeFocusOverlay({
                 model,
                 selection,
                 maxDistance: 3,
             });
 
-            // Test opacity stops
-            const opacities = [0, 1, 2, 3, 4].map((d) => getFocusOpacity(d));
-            const dimmed = [0, 1, 2, 3, 4].map((d) => isDimmed(d, 3));
+            // Show that nodes beyond maxDistance are dimmed
+            const allNodeIds = new Set(model.nodes.map((n) => n.id));
+            const inOverlay = new Set(overlay.keys());
+            const outside = [...allNodeIds].filter((id) => !inOverlay.has(id));
+            const distances = [...overlay.entries()].map(([k, v]) => `${k}=${v}`);
 
             return [
                 `focus nodes: ${overlay.size}`,
-                `distances: ${Array.from(overlay.entries()).map(([k, v]) => `${k}=${v}`).join(', ')}`,
-                `opacities: ${opacities.join(', ')}`,
-                `dimmed: ${dimmed.join(', ')}`,
+                `outside BFS range: ${outside.length} nodes dimmed to 0.15`,
+                `distances: ${distances.join(', ')}`,
                 `stops: ${FOCUS_OPACITY_STOPS.join(', ')}`,
             ];
         },

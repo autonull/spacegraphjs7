@@ -239,11 +239,12 @@ function closeDiff() {
 function applyFocusOverlay(model: RenderModel, overlay: FocusOverlay | undefined): RenderModel {
     if (!overlay) return model;
 
-    const opacityForDistance = (distance: number): number => {
+    const opacityForDistance = (distance: number | undefined): number => {
         if (distance === 0) return 1; // selected - not dimmed
         if (distance === 1) return 0.85;
         if (distance === 2) return 0.6;
         if (distance === 3) return 0.35;
+        if (distance === undefined) return 0.15; // outside BFS range
         return 0.15; // >3
     };
 
@@ -251,8 +252,6 @@ function applyFocusOverlay(model: RenderModel, overlay: FocusOverlay | undefined
         ...model,
         nodes: model.nodes.map((node) => {
             const distance = overlay.get(node.id);
-            if (distance === undefined) return node;
-
             const opacity = opacityForDistance(distance);
             if (opacity >= 1) return node;
 
@@ -354,6 +353,11 @@ function runCapability(capability: Capability) {
     if (capability.depth) {
         host.depth = capability.depth;
         renderer?.setDepth(capability.depth);
+    }
+
+    // Apply selection from capability before running it
+    if (capability.select) {
+        host.select(capability.select);
     }
 
     // Compute focus overlay for the focus capability
