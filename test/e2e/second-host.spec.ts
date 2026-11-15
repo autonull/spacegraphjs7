@@ -26,6 +26,11 @@ const CAPABILITIES = [
     'overlay',
     'diff',
     'trace',
+    'facets',
+    'time-travel',
+    'focus',
+    'collapse',
+    'spatial-memory',
 ];
 
 async function boot(page: Page) {
