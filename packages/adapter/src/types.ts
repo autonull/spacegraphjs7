@@ -180,6 +180,8 @@ export interface BuildOptions<
     positions: ReadonlyMap<string, AdapterPosition>;
     /** The selected node; everything outside its neighbourhood is dimmed. */
     focus?: string;
+    /** Per-node neighborhood opacity from focus overlay (distance-based dimming). */
+    neighborhoodOpacity?: ReadonlyMap<string, number>;
     /** Draws the bands behind the content. */
     bands?: boolean;
     /** Emits the edges. */

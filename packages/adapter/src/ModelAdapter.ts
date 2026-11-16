@@ -157,9 +157,20 @@ export abstract class ModelAdapter<
 
             if (asCard && !structural) cards += 1;
 
-            const data: Record<string, unknown> = { ...this.nodeData(node, level, dimmed), dimmed };
+            // Neighborhood opacity from focus overlay (P1.2): applies to canvas/WebGL nodes.
+            // Precedence: diff.removed → trace.dim → neighborhood → diff.changed/added → selected/active → depth fade
+            const neighborhoodOpacity = options.neighborhoodOpacity?.get(node.id);
+            const effectiveOpacity = neighborhoodOpacity !== undefined
+                ? neighborhoodOpacity
+                : !asCard && dimmed
+                  ? this.geometry.dimOpacity
+                  : 1;
 
-            if (!asCard) data.opacity = dimmed ? this.geometry.dimOpacity : 1;
+            const data: Record<string, unknown> = {
+                ...this.nodeData(node, level, dimmed),
+                dimmed,
+                ...(effectiveOpacity !== 1 ? { opacity: effectiveOpacity } : {}),
+            };
 
             return {
                 id: node.id,

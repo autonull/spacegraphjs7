@@ -138,6 +138,10 @@ export interface GraphToolbarProps {
     followLog?: boolean;
     /** Follow log change callback. */
     onFollowLogChange?: (follow: boolean) => void;
+    /** P1.3: Neighborhood focus mode toggle. */
+    focus?: boolean;
+    /** Focus mode change callback. */
+    onToggleFocus?: () => void;
     /** Manual position history length. */
     manualHistoryLength?: number;
     /** Manual position future length. */
@@ -231,6 +235,9 @@ export function GraphToolbar(props: GraphToolbarProps): JSX.Element {
         onOpenWindow,
         followLog,
         onFollowLogChange,
+        /** P1.3: Neighborhood focus mode */
+        focus,
+        onToggleFocus,
         manualHistoryLength,
         manualFutureLength,
         onUndoManual,
@@ -307,6 +314,9 @@ export function GraphToolbar(props: GraphToolbarProps): JSX.Element {
                 onTogglePeek={onTogglePeek}
                 followLog={followLog}
                 onFollowLogChange={onFollowLogChange}
+                /** P1.3: Neighborhood focus mode */
+                focus={focus}
+                onToggleFocus={onToggleFocus}
                 onOpenWindow={onOpenWindow}
                 model={model}
                 legend={legend}
@@ -372,6 +382,9 @@ interface GraphToolbarViewControlsProps {
     onTogglePeek?: () => void;
     followLog?: boolean;
     onFollowLogChange?: (follow: boolean) => void;
+    /** P1.3: Neighborhood focus mode */
+    focus?: boolean;
+    onToggleFocus?: () => void;
     onOpenWindow?: (kind: string, nodeID?: string) => void;
     model?: GraphViewData;
     legend?: boolean;

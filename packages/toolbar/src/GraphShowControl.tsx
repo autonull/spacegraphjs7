@@ -23,6 +23,8 @@ export interface GraphShowControlProps {
     onTogglePeek?: () => void;
     followLog?: boolean;
     onFollowLogChange?: (follow: boolean) => void;
+    focus?: boolean;
+    onToggleFocus?: () => void;
     onOpenWindow?: (kind: string, nodeID?: string) => void;
     model?: GraphViewData;
     legend?: boolean;
@@ -130,6 +132,18 @@ export function GraphShowControl(props: GraphShowControlProps): JSX.Element {
                     slot: 'graph-follow-log-option',
                     keepOpen: true,
                     ariaLabel: i18n.t('ui.toolbar.followLog'),
+                })}
+            </Show>
+            <Show when={rest.onToggleFocus}>
+                {option({
+                    label: rest.focus
+                        ? i18n.t('ui.toolbar.focus')
+                        : i18n.t('ui.toolbar.focusOff'),
+                    onClick: () => rest.onToggleFocus?.(),
+                    pressed: rest.focus,
+                    slot: 'graph-focus-option',
+                    keepOpen: true,
+                    ariaLabel: i18n.t('ui.toolbar.focus'),
                 })}
             </Show>
             <Show when={rest.onOpenWindow}>
