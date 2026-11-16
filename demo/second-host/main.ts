@@ -239,46 +239,27 @@ function closeDiff() {
 function applyFocusOverlay(model: RenderModel, overlay: FocusOverlay | undefined): RenderModel {
     if (!overlay) return model;
 
-    const styleForDistance = (distance: number | undefined): Record<string, string> => {
-        if (distance === 0) {
-            return { opacity: '1' }; // selected - full brightness, theme default border/bg
-        }
-        if (distance === 1) {
-            return {
-                opacity: '0.85',
-                borderColor: 'var(--sh-accent)',
-                backgroundColor: 'color-mix(in srgb, var(--sh-surface) 90%, var(--sh-accent) 10%)',
-            };
-        }
-        if (distance === 2) {
-            return {
-                opacity: '0.6',
-                borderColor: 'var(--sh-warning)',
-                backgroundColor: 'color-mix(in srgb, var(--sh-surface) 85%, var(--sh-warning) 15%)',
-            };
-        }
-        if (distance === 3) {
-            return {
-                opacity: '0.35',
-                borderColor: 'var(--sh-error)',
-                backgroundColor: 'color-mix(in srgb, var(--sh-surface) 80%, var(--sh-error) 20%)',
-            };
-        }
-        // outside BFS range or >3
-        return {
-            opacity: '0.15',
-            borderColor: 'var(--sh-border)',
-            backgroundColor: 'color-mix(in srgb, var(--sh-surface-muted) 95%, var(--sh-text) 5%)',
-        };
+    // LERP from minBrightness (dimmed) to 1.0 (selected)
+    // minBrightness = 0.2, then distance 1 = 0.55, distance 2 = 0.7, distance 3 = 0.85
+    const minBrightness = 0.2;
+    const maxDistance = 3;
+
+    const brightnessForDistance = (distance: number | undefined): number => {
+        if (distance === 0) return 1.0; // selected - full brightness
+        if (distance === undefined) return minBrightness; // outside BFS range
+        if (distance > maxDistance) return minBrightness;
+        // LERP: minBrightness + (1 - minBrightness) * (1 - distance / maxDistance)
+        return minBrightness + (1 - minBrightness) * (1 - distance / maxDistance);
     };
 
     return {
         ...model,
         nodes: model.nodes.map((node) => {
             const distance = overlay.get(node.id);
-            const style = styleForDistance(distance);
-            if (style.opacity === '1') return node;
+            const brightness = brightnessForDistance(distance);
+            if (brightness >= 1) return node;
 
+            // Apply uniform brightness via filter - dims background, text, border equally
             const existingStyle = (node.data?.style as Record<string, string> | undefined) ?? {};
             return {
                 ...node,
@@ -286,7 +267,8 @@ function applyFocusOverlay(model: RenderModel, overlay: FocusOverlay | undefined
                     ...node.data,
                     style: {
                         ...existingStyle,
-                        ...style,
+                        filter: `brightness(${brightness})`,
+                        opacity: String(brightness), // also set opacity for consistent layering
                     },
                 },
             };
