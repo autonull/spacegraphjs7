@@ -240,8 +240,8 @@ function applyFocusOverlay(model: RenderModel, overlay: FocusOverlay | undefined
     if (!overlay) return model;
 
     // LERP from minBrightness (dimmed) to 1.0 (selected)
-    // minBrightness = 0.2, then distance 1 = 0.55, distance 2 = 0.7, distance 3 = 0.85
-    const minBrightness = 0.2;
+    // minBrightness = 0.5 - readable but clearly distinct from selected (1.0)
+    const minBrightness = 0.5;
     const maxDistance = 3;
 
     const brightnessForDistance = (distance: number | undefined): number => {
