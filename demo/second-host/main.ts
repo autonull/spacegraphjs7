@@ -239,23 +239,46 @@ function closeDiff() {
 function applyFocusOverlay(model: RenderModel, overlay: FocusOverlay | undefined): RenderModel {
     if (!overlay) return model;
 
-    const opacityForDistance = (distance: number | undefined): number => {
-        if (distance === 0) return 1; // selected - not dimmed
-        if (distance === 1) return 0.85;
-        if (distance === 2) return 0.6;
-        if (distance === 3) return 0.35;
-        if (distance === undefined) return 0.15; // outside BFS range
-        return 0.15; // >3
+    const styleForDistance = (distance: number | undefined): Record<string, string> => {
+        if (distance === 0) {
+            return { opacity: '1' }; // selected - full brightness, theme default border/bg
+        }
+        if (distance === 1) {
+            return {
+                opacity: '0.85',
+                borderColor: 'var(--sh-accent)',
+                backgroundColor: 'color-mix(in srgb, var(--sh-surface) 90%, var(--sh-accent) 10%)',
+            };
+        }
+        if (distance === 2) {
+            return {
+                opacity: '0.6',
+                borderColor: 'var(--sh-warning)',
+                backgroundColor: 'color-mix(in srgb, var(--sh-surface) 85%, var(--sh-warning) 15%)',
+            };
+        }
+        if (distance === 3) {
+            return {
+                opacity: '0.35',
+                borderColor: 'var(--sh-error)',
+                backgroundColor: 'color-mix(in srgb, var(--sh-surface) 80%, var(--sh-error) 20%)',
+            };
+        }
+        // outside BFS range or >3
+        return {
+            opacity: '0.15',
+            borderColor: 'var(--sh-border)',
+            backgroundColor: 'color-mix(in srgb, var(--sh-surface-muted) 95%, var(--sh-text) 5%)',
+        };
     };
 
     return {
         ...model,
         nodes: model.nodes.map((node) => {
             const distance = overlay.get(node.id);
-            const opacity = opacityForDistance(distance);
-            if (opacity >= 1) return node;
+            const style = styleForDistance(distance);
+            if (style.opacity === '1') return node;
 
-            // Set opacity via node.data.style which the renderer merges
             const existingStyle = (node.data?.style as Record<string, string> | undefined) ?? {};
             return {
                 ...node,
@@ -263,7 +286,7 @@ function applyFocusOverlay(model: RenderModel, overlay: FocusOverlay | undefined
                     ...node.data,
                     style: {
                         ...existingStyle,
-                        opacity: String(opacity),
+                        ...style,
                     },
                 },
             };
