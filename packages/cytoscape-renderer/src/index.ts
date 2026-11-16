@@ -119,7 +119,7 @@ export class CytoscapeRenderer extends ModelRenderer implements GraphRenderer {
             }
         });
 
-        this.#syncCards();
+        this.#syncCards(model);
         this.#renderOverlay();
     }
 
@@ -343,11 +343,11 @@ export class CytoscapeRenderer extends ModelRenderer implements GraphRenderer {
         });
     }
 
-    #syncCards(): void {
+    #syncCards(model?: RenderModel): void {
         const overlay = this.#overlay;
-        const model = this.model;
-        if (!overlay || !model) return;
-        const cards = model.nodes
+        const mdl = model ?? this.model;
+        if (!overlay || !mdl) return;
+        const cards = mdl.nodes
             .filter((node) => node.html && node.visible !== false)
             .slice(0, this.capabilities.maxDomNodes);
         const wanted = new Set(cards.map((node) => node.id));
