@@ -9,6 +9,7 @@ import { build } from 'vite';
 import dts from 'vite-plugin-dts';
 
 const PACKAGES = [
+    'shared',
     'renderer',
     'adapter',
     'spacegraph-renderer',
@@ -17,6 +18,7 @@ const PACKAGES = [
     'kernel',
     'trace',
     'search',
+    'overlays',
 ];
 
 const EXTERNAL = [

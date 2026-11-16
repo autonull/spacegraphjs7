@@ -1,7 +1,7 @@
 import { createIconRenderer, type IconComponent } from '@spacegraphjs/shared/icons';
 import type { I18n } from '@spacegraphjs/shared/i18n';
 import type { GraphNode } from '@spacegraphjs/shared/types';
-import { Show, type JSX } from 'solid-js';
+import { createComponent, effect, getNextElement, insert, setAttribute, template, Show } from 'solid-js/web';
 import type { GraphDetailProps, GraphDetailSurfaceProps } from './GraphDetail';
 
 export const POPOVER_WIDTH = 340;
@@ -37,70 +37,84 @@ export type GraphPopoverProps = Omit<GraphDetailProps, 'node'> & {
  * The detail of a node, floating over the canvas next to the node it belongs to. It takes no layout
  * width and never reframes the camera, so opening it does not move the map under the reader — which
  * is the whole difference between a popover and a side panel.
+ * 
+ * This component uses imperative DOM creation with lazily-created templates to avoid SolidJS
+ * template hoisting which causes "Client-only API called on the server side" errors during SSR builds.
  */
-export const GraphPopover = (props: GraphPopoverProps): JSX.Element => {
+export const GraphPopover = (props: GraphPopoverProps) => {
     const { i18n, Icon, node, onClose, ...detailProps } = props;
     const renderIcon = createIconRenderer(Icon);
 
-    return (
-        <Show when={node} keyed>
-            {(node) => (
-                <div
-                    data-component="spacegraph-popover"
-                    data-slot="graph-popover"
-                    role="dialog"
-                    aria-label={i18n.t('ui.sessionGraph.inspector.title')}
-                    class="relative flex flex-col overflow-hidden rounded-md border border-border-weaker-base bg-surface-base shadow-lg"
-                    style={{ width: `${POPOVER_WIDTH}px`, 'max-height': `${POPOVER_MAX_HEIGHT}px` }}
-                >
-                    <Show when={onClose}>
-                        <div class="absolute end-1 top-1 z-10">
-                            <GraphIconButton
-                                label={i18n.t('ui.sessionGraph.popover.close')}
-                                icon="outline-xmark"
-                                onClick={() => onClose?.()}
-                                Icon={Icon}
-                            />
-                        </div>
-                    </Show>
-                    <GraphDetailSurface node={node} {...detailProps} Icon={Icon} i18n={i18n} />
-                </div>
-            )}
-        </Show>
-    );
-};
+    // Create templates lazily on first render to avoid module-level template calls
+    // that fail during SSR builds
+    let popoverTemplate: ReturnType<typeof template> | null = null
+    let closeButtonTemplate: ReturnType<typeof template> | null = null
+    let detailSurfaceTemplate: ReturnType<typeof template> | null = null
 
-const GraphIconButton = (props: {
-    label: string;
-    icon: string;
-    onClick: () => void;
-    Icon?: IconComponent;
-}): JSX.Element => {
-    const renderIcon = createIconRenderer(props.Icon);
-    return (
-        <button
-            type="button"
-            class="flex h-6 w-6 items-center justify-center rounded-sm text-text-base hover:bg-surface-base-hover"
-            aria-label={props.label}
-            onClick={props.onClick}
-        >
-            {renderIcon({ name: props.icon, size: 'small' })}
-        </button>
-    );
-};
+    const ensureTemplates = () => {
+        if (popoverTemplate) return
+        popoverTemplate = template(
+            '<div data-component="spacegraph-popover" data-slot="graph-popover" role="dialog" class="relative flex flex-col overflow-hidden rounded-md border border-border-weaker-base bg-surface-base shadow-lg" style="width:340px;max-height:420px"><div class="absolute end-1 top-1 z-10"></div><div class="flex-1 overflow-auto p-2"><div class="text-12-medium text-text-strong mb-2"></div><div class="text-12-regular text-text-weak"></div><div class="mt-2 text-12-regular text-text-base"></div></div>',
+            false,
+        )
+        closeButtonTemplate = template(
+            '<button type="button" class="flex h-6 w-6 items-center justify-center rounded-sm text-text-base hover:bg-surface-base-hover" aria-label=""></button>',
+            false,
+        )
+        detailSurfaceTemplate = template(
+            '<div class="flex-1 overflow-auto p-2"><div class="text-12-medium text-text-strong mb-2"></div><div class="text-12-regular text-text-weak"></div><div class="mt-2 text-12-regular text-text-base"></div>',
+            false,
+        )
+    }
 
-// GraphDetailSurface - placeholder for now, the host will provide the actual implementation
-const GraphDetailSurface = (props: GraphDetailSurfaceProps): JSX.Element => {
-    const { node, i18n, Icon, ...rest } = props;
-    const renderIcon = createIconRenderer(Icon);
+    const renderPopover = (node: GraphNode) => {
+        ensureTemplates()
+        const el = getNextElement(popoverTemplate!) as HTMLElement
+        const closeButtonContainer = el.firstChild as HTMLElement
+        const detailSurface = closeButtonContainer.nextSibling as HTMLElement
 
-    return (
-        <div class="flex-1 overflow-auto p-2">
-            <div class="text-12-medium text-text-strong mb-2">{node.label}</div>
-            <div class="text-12-regular text-text-weak">{node.kind}</div>
-            <Show when={node.summary}>
-                <div class="mt-2 text-12-regular text-text-base">{node.summary}</div>
-            </Show>
-        </div>
-    );
+        // Close button
+        if (props.onClose) {
+            const closeBtn = getNextElement(template(
+                '<button type="button" class="flex h-6 w-6 items-center justify-center rounded-sm text-text-base hover:bg-surface-base-hover" aria-label=""></button>',
+                false,
+            )) as HTMLButtonElement
+            closeBtn.setAttribute('aria-label', i18n.t('ui.sessionGraph.popover.close'))
+            closeBtn.onclick = () => props.onClose?.()
+            const iconEl = document.createElement('span')
+            const renderIcon = createIconRenderer(props.Icon)
+            iconEl.appendChild(renderIcon({ name: 'outline-xmark', size: 'small' }))
+            closeBtn.appendChild(iconEl)
+            closeButtonContainer.appendChild(closeBtn)
+        }
+
+        // Detail surface
+        const detailEl = detailSurface as HTMLElement
+        const labelEl = detailEl.firstChild as HTMLElement
+        const kindEl = labelEl.nextSibling as HTMLElement
+        const summaryEl = kindEl.nextSibling as HTMLElement
+
+        insert(labelEl, () => node.label)
+        insert(kindEl, () => node.kind)
+
+        if (node.summary) {
+            insert(summaryEl, () => node.summary)
+            summaryEl.style.display = ''
+        } else {
+            summaryEl.style.display = 'none'
+        }
+
+        // Set popover styles
+        el.style.width = `${POPOVER_WIDTH}px`
+        el.style.maxHeight = `${POPOVER_MAX_HEIGHT}px`
+        el.setAttribute('data-component', 'spacegraph-popover')
+        el.setAttribute('data-slot', 'graph-popover')
+        el.setAttribute('role', 'dialog')
+        el.setAttribute('aria-label', i18n.t('ui.sessionGraph.inspector.title'))
+
+        return el
+    }
+
+    if (!node) return null
+    return renderPopover(node)
 };
