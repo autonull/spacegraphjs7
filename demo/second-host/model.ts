@@ -53,6 +53,8 @@ export interface BuildNode {
     stage?: string;
     outcome: BuildOutcome;
     size: readonly [number, number];
+    /** Members of this group node; when non-empty the node is a collapsed group. */
+    clusterOf?: readonly string[];
 }
 
 export interface BuildEdge {
@@ -131,10 +133,11 @@ function node(
     outcome: BuildOutcome,
     status: BuildStatus,
     summary?: string,
+    clusterOf?: readonly string[],
 ): BuildNode {
     const size = kind === 'failure' || kind === 'retry' ? BADGE : CARD;
 
-    return { id, kind, label, lane, stage, outcome, status, summary, size };
+    return { id, kind, label, lane, stage, outcome, status, summary, size, clusterOf };
 }
 
 function edge(
@@ -213,6 +216,18 @@ export function buildModel(): BuildModel {
             'passed',
             '2.1 MB',
         ),
+        // Group: all build tools
+        node(
+            'group:build-tools',
+            'group',
+            'Build Tools',
+            'compile',
+            'stage:build',
+            'changed',
+            'passed',
+            '4 tools',
+            ['fetch:deps', 'build:compile', 'build:bundle', 'build:tarball'],
+        ),
         node('stage:verify', 'stage', 'Verify', 'test', 'stage:verify', 'changed', 'failed'),
         node(
             'test:unit',
@@ -253,6 +268,18 @@ export function buildModel(): BuildModel {
             'changed',
             'passed',
             '512 passed',
+        ),
+        // Group: test tools
+        node(
+            'group:test-tools',
+            'group',
+            'Test Tools',
+            'test',
+            'stage:verify',
+            'failed',
+            'failed',
+            '4 tools',
+            ['test:unit', 'test:failure', 'test:retry', 'test:pass'],
         ),
         node('stage:ship', 'stage', 'Ship', 'publish', 'stage:ship', 'changed', 'queued'),
         node(
@@ -314,10 +341,20 @@ export function buildModel(): BuildModel {
         edge('build:compile', 'stage:build', 'part-of', 'explicit'),
         edge('build:bundle', 'stage:build', 'part-of', 'explicit'),
         edge('build:tarball', 'stage:build', 'part-of', 'explicit'),
+        edge('group:build-tools', 'stage:build', 'part-of', 'explicit'),
+        edge('fetch:deps', 'group:build-tools', 'part-of', 'explicit'),
+        edge('build:compile', 'group:build-tools', 'part-of', 'explicit'),
+        edge('build:bundle', 'group:build-tools', 'part-of', 'explicit'),
+        edge('build:tarball', 'group:build-tools', 'part-of', 'explicit'),
         edge('test:unit', 'stage:verify', 'part-of', 'explicit'),
         edge('test:failure', 'stage:verify', 'part-of', 'explicit'),
         edge('test:retry', 'stage:verify', 'part-of', 'explicit'),
         edge('test:pass', 'stage:verify', 'part-of', 'explicit'),
+        edge('group:test-tools', 'stage:verify', 'part-of', 'explicit'),
+        edge('test:unit', 'group:test-tools', 'part-of', 'explicit'),
+        edge('test:failure', 'group:test-tools', 'part-of', 'explicit'),
+        edge('test:retry', 'group:test-tools', 'part-of', 'explicit'),
+        edge('test:pass', 'group:test-tools', 'part-of', 'explicit'),
         edge('ship:sign', 'stage:ship', 'part-of', 'explicit'),
         edge('ship:publish', 'stage:ship', 'part-of', 'explicit'),
         edge('ship:note', 'stage:ship', 'part-of', 'explicit'),

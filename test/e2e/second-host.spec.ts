@@ -143,11 +143,11 @@ test.describe('the second host (T6.12)', () => {
     test('draws the overview of the pipeline in the minimap', async ({ page }) => {
         const errors = await boot(page);
 
-        await expect(page.locator('#minimap .dot')).toHaveCount(29);
+        await expect(page.locator('#minimap .dot')).toHaveCount(31);
         await expect(page.locator('#minimap .dot[data-id="test:failure"]')).toBeAttached();
 
         await page.locator('[data-capability="layout"]').click();
-        await expect(page.locator('#minimap .dot')).toHaveCount(34);
+        await expect(page.locator('#minimap .dot')).toHaveCount(36);
 
         noErrors(errors);
     });
