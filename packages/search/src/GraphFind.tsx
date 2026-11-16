@@ -1,8 +1,9 @@
-import { createSignal, createMemo, Show, For } from 'solid-js';
+import { createSignal, createMemo, createEffect, onCleanup } from 'solid-js';
 import type { GraphViewData, GraphNode, GraphFacets } from '@spacegraphjs/shared';
 import { rankedSearch, sessionOutline, facetCounts } from './search';
 import type { IconComponent } from '@spacegraphjs/shared';
 import type { I18n } from '@spacegraphjs/shared';
+import { createComponent, getNextElement, insert, setAttribute, template, memo } from 'solid-js/web';
 
 export type GraphFindProps = {
     model: GraphViewData;
@@ -101,413 +102,351 @@ export const GraphFind = (props: GraphFindProps) => {
         return count ? `${count.kept}/${count.total}` : '0/0';
     };
 
-    const handleKeyDown = (event: KeyboardEvent) => {
-        if (event.key === 'Escape') {
-            event.stopPropagation();
-            props.onClose();
-            return;
-        }
+    // Create templates lazily on first render to avoid module-level template calls
+    // that fail during SSR builds
+    let rootTemplate: ReturnType<typeof template> | null = null;
+    let tabTemplate: ReturnType<typeof template> | null = null;
+    let searchTabTemplate: ReturnType<typeof template> | null = null;
+    let filterTabTemplate: ReturnType<typeof template> | null = null;
+    let outlineTabTemplate: ReturnType<typeof template> | null = null;
+    let searchInputTemplate: ReturnType<typeof template> | null = null;
+    let searchResultTemplate: ReturnType<typeof template> | null = null;
+    let filterSectionTemplate: ReturnType<typeof template> | null = null;
+    let filterChipTemplate: ReturnType<typeof template> | null = null;
+    let outlineItemTemplate: ReturnType<typeof template> | null = null;
+    let noResultsTemplate: ReturnType<typeof template> | null = null;
+    let noOutlineTemplate: ReturnType<typeof template> | null = null;
+    let clearButtonTemplate: ReturnType<typeof template> | null = null;
 
-        if (event.key === 'ArrowDown') {
-            event.preventDefault();
-            if (activeTab() === 'search') {
-                setActiveIndex((prev) => Math.min(searchResults().length - 1, prev + 1));
-            }
-            return;
-        }
-
-        if (event.key === 'ArrowUp') {
-            event.preventDefault();
-            if (activeTab() === 'search') {
-                setActiveIndex((prev) => Math.max(0, prev - 1));
-            }
-            return;
-        }
-
-        if (event.key === 'Home') {
-            event.preventDefault();
-            if (activeTab() === 'search') setActiveIndex(0);
-            return;
-        }
-
-        if (event.key === 'End') {
-            event.preventDefault();
-            if (activeTab() === 'search') setActiveIndex(searchResults().length - 1);
-            return;
-        }
-
-        if (event.key === 'Enter') {
-            if (activeTab() === 'search') {
-                const node = searchResults()[activeIndex()];
-                if (node) handleSelectResult(node);
-            }
-            return;
-        }
-
-        // Tab switching: Shift+O for outline, Alt+F for filters
-        if (event.key === 'o' && event.shiftKey) {
-            event.preventDefault();
-            setActiveTab('outline');
-            return;
-        }
-        if (event.key === 'f' && event.altKey) {
-            event.preventDefault();
-            setActiveTab('filters');
-            return;
-        }
-        if (event.key === 's' && event.shiftKey) {
-            event.preventDefault();
-            setActiveTab('search');
-            return;
-        }
+    const ensureTemplates = () => {
+        if (rootTemplate) return;
+        rootTemplate = template(
+            '<div data-component="spacegraph-find" data-slot="graph-find" class="absolute left-2 top-2 z-10 flex w-80 max-w-[calc(100%-1rem)] flex-col overflow-hidden rounded-md border border-border-base bg-background-base shadow-md" role="dialog" aria-label="">',
+            false,
+        );
+        tabTemplate = template(
+            '<div class="flex border-b border-border-weaker-base"><button type="button" class="flex-1 px-3 py-2 text-12-medium text-text-weak hover:text-text-strong hover:bg-surface-base-hover" role="tab" aria-selected="false">Search</button><button type="button" class="flex-1 px-3 py-2 text-12-medium text-text-weak hover:text-text-strong hover:bg-surface-base-hover" role="tab" aria-selected="false">Filters</button><button type="button" class="flex-1 px-3 py-2 text-12-medium text-text-weak hover:text-text-strong hover:bg-surface-base-hover" role="tab" aria-selected="false">Outline</button></div>',
+            false,
+        );
+        searchTabTemplate = template(
+            '<div class="flex-1 flex-col overflow-hidden"></div>',
+            false,
+        );
+        filterTabTemplate = template(
+            '<div class="flex-1 flex-col overflow-hidden"></div>',
+            false,
+        );
+        outlineTabTemplate = template(
+            '<div class="flex-1 flex-col overflow-hidden"></div>',
+            false,
+        );
+        searchInputTemplate = template(
+            '<div class="flex items-center gap-2 px-2 py-1.5 border-b border-border-weaker-base"><span class="shrink-0 text-text-weak"></span><input class="min-w-0 flex-1 bg-transparent text-14-regular text-text-strong outline-none placeholder:text-text-weaker" aria-label="" role="combobox" aria-expanded="false" aria-controls="graph-find-search-results" aria-activedescendant=""><button type="button" class="flex h-6 w-6 items-center justify-center rounded-sm text-text-weak hover:text-text-strong hover:bg-surface-base-hover" aria-label=""><span class="shrink-0"></span></button></div>',
+            false,
+        );
+        searchResultTemplate = template(
+            '<div class="flex-1 overflow-y-auto"><ul id="graph-find-search-results" role="listbox" aria-label=""><li><button type="button" data-index="" data-node-id="" data-active="false" role="option" aria-selected="false" class="flex w-full flex-col gap-0.5 px-3 py-1.5 text-left hover:bg-surface-base-hover"><span class="truncate text-12-regular text-text-strong"></span><span class="truncate text-12-regular text-text-weak"></span></button></li></ul></div>',
+            false,
+        );
+        filterSectionTemplate = template(
+            '<div class="p-2 overflow-y-auto"><div class="mb-3"><label class="text-11-medium uppercase tracking-wide text-text-weak block mb-1"></label><div class="flex flex-wrap gap-1"></div></div><div class="mb-3"><label class="text-11-medium uppercase tracking-wide text-text-weak block mb-1"></label><div class="flex flex-wrap gap-1"></div></div><div class="mb-3"><label class="text-11-medium uppercase tracking-wide text-text-weak block mb-1"></label><div class="flex flex-wrap gap-1"></div></div></div>',
+            false,
+        );
+        filterChipTemplate = template(
+            '<button type="button" class="flex items-center gap-1 rounded-sm px-2 py-1 text-11-regular transition-colors" aria-pressed="false"></button>',
+            false,
+        );
+        outlineItemTemplate = template(
+            '<ul class="divide-y divide-border-weaker-base" role="tree"></ul>',
+            false,
+        );
+        noResultsTemplate = template(
+            '<div class="px-3 py-2 text-12-regular text-text-weaker text-center"></div>',
+            false,
+        );
+        noOutlineTemplate = template(
+            '<div class="text-12-regular text-text-weaker py-4 text-center"></div>',
+            false,
+        );
+        clearButtonTemplate = template(
+            '<button type="button" class="w-full rounded-sm px-3 py-1.5 text-12-regular text-text-base hover:bg-surface-base-hover transition-colors"></button>',
+            false,
+        );
     };
 
-    return (
-        <div
-            data-component="spacegraph-find"
-            data-slot="graph-find"
-            class="flex flex-col h-full overflow-hidden"
-            role="dialog"
-            aria-label={props.t('ui.find.title')}
-            onKeyDown={handleKeyDown}
-        >
-            {/* Tab bar */}
-            <div
-                class="flex shrink-0 border-b border-border-weaker-base"
-                role="tablist"
-                aria-label={props.t('ui.find.tabs')}
-            >
-                <button
-                    role="tab"
-                    aria-selected={activeTab() === 'search'}
-                    class={`flex-1 px-3 py-2 text-12-medium text-center border-b-2 transition-colors ${
-                        activeTab() === 'search'
-                            ? 'border-primary-base text-primary-base'
-                            : 'border-transparent text-text-weak hover:text-text-base'
-                    }`}
-                    onClick={() => setActiveTab('search')}
-                >
-                    {props.t('ui.find.tabSearch')}
-                    <kbd class="ml-1.5 rounded border border-border-weaker-base px-1 text-10-regular text-text-weaker">
-                        Shift+S
-                    </kbd>
-                </button>
-                <button
-                    role="tab"
-                    aria-selected={activeTab() === 'filters'}
-                    class={`flex-1 px-3 py-2 text-12-medium text-center border-b-2 transition-colors ${
-                        activeTab() === 'filters'
-                            ? 'border-primary-base text-primary-base'
-                            : 'border-transparent text-text-weak hover:text-text-base'
-                    }`}
-                    onClick={() => setActiveTab('filters')}
-                >
-                    {props.t('ui.find.tabFilters')}
-                    <kbd class="ml-1.5 rounded border border-border-weaker-base px-1 text-10-regular text-text-weaker">
-                        Alt+F
-                    </kbd>
-                </button>
-                <button
-                    role="tab"
-                    aria-selected={activeTab() === 'outline'}
-                    class={`flex-1 px-3 py-2 text-12-medium text-center border-b-2 transition-colors ${
-                        activeTab() === 'outline'
-                            ? 'border-primary-base text-primary-base'
-                            : 'border-transparent text-text-weak hover:text-text-base'
-                    }`}
-                    onClick={() => setActiveTab('outline')}
-                >
-                    {props.t('ui.find.tabOutline')}
-                    <kbd class="ml-1.5 rounded border border-border-weaker-base px-1 text-10-regular text-text-weaker">
-                        Shift+O
-                    </kbd>
-                </button>
-            </div>
+    const createRoot = () => {
+        ensureTemplates();
+        const el = getNextElement(rootTemplate!) as HTMLElement;
+        setAttribute(el, 'aria-label', props.t('ui.find.label'));
+        return el;
+    };
 
-            {/* Search input (always visible) */}
-            <div class="flex items-center gap-2 border-b border-border-weaker-base p-2">
-                <props.Icon name="magnifying-glass" size="small" class="shrink-0 text-text-weak" />
-                <input
-                    type="text"
-                    value={query()}
-                    class="flex-1 bg-transparent text-13-regular text-text-base outline-none placeholder:text-text-weaker"
-                    placeholder={props.t('ui.find.searchPlaceholder')}
-                    aria-label={props.t('ui.find.searchPlaceholder')}
-                    onInput={(event) => {
-                        setQuery(event.currentTarget.value);
-                        setActiveIndex(0);
-                    }}
-                />
-                <Show when={query()}>
-                    <button
-                        type="button"
-                        class="flex h-6 w-6 items-center justify-center rounded-sm text-text-weak hover:text-text-strong hover:bg-surface-base-hover"
-                        aria-label={props.t('ui.find.clear')}
-                        onClick={() => setQuery('')}
-                    >
-                        <props.Icon name="close-small" size="small" />
-                    </button>
-                </Show>
-            </div>
+    const createTabs = () => {
+        ensureTemplates();
+        const el = getNextElement(tabTemplate!) as HTMLElement;
+        const tabs = ['search', 'filters', 'outline'] as const;
+        const tabButtons = Array.from(el.children) as HTMLButtonElement[];
+        
+        tabs.forEach((tab, i) => {
+            const btn = tabButtons[i];
+            const label = props.t(`ui.find.tabs.${tab}`);
+            btn.textContent = label;
+            setAttribute(btn, 'aria-selected', String(activeTab() === tab));
+            btn.onclick = () => setActiveTab(tab);
+        });
+        
+        // Update aria-selected on tab change
+        createEffect(() => {
+            const currentTab = activeTab();
+            tabButtons.forEach((btn, i) => {
+                setAttribute(btn, 'aria-selected', String(tabs[i] === currentTab));
+            });
+        });
+        
+        return el;
+    };
 
-            {/* Content panels */}
-            <div class="flex-1 overflow-y-auto">
-                <Show when={activeTab() === 'search'}>
-                    <div class="p-3">
-                        <Show when={query().trim().length > 0}>
-                            <Show
-                                when={searchResults().length > 0}
-                                fallback={
-                                    <div class="text-12-regular text-text-weaker py-4">
-                                        {props.t('ui.find.noResults')}
-                                    </div>
-                                }
-                            >
-                                <div class="mb-2 text-12-regular text-text-weaker">
-                                    {searchResults().length} {props.t('ui.find.results')}
-                                </div>
-                                <ul
-                                    role="listbox"
-                                    aria-label={props.t('ui.find.searchResults')}
-                                    class="flex flex-col gap-1"
-                                >
-                                    <For each={searchResults()}>
-                                        {(node, index) => (
-                                            <li>
-                                                <button
-                                                    type="button"
-                                                    role="option"
-                                                    aria-selected={index() === activeIndex()}
-                                                    class={`flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left transition-colors ${
-                                                        index() === activeIndex()
-                                                            ? 'bg-surface-base-hover'
-                                                            : 'hover:bg-surface-base-hover'
-                                                    }`}
-                                                    onMouseEnter={() => setActiveIndex(index())}
-                                                    onClick={() => handleSelectResult(node)}
-                                                >
-                                                    <span class="shrink-0 text-12-regular text-text-weak">
-                                                        {props.t(
-                                                            props.vocabularyKeys.kind[node.kind] ??
-                                                                node.kind,
-                                                        )}
-                                                    </span>
-                                                    <span class="truncate text-13-regular text-text-base">
-                                                        {node.label}
-                                                    </span>
-                                                    <Show when={node.summary}>
-                                                        <span class="shrink-0 truncate text-12-regular text-text-weak max-w-[120px]">
-                                                            {node.summary}
-                                                        </span>
-                                                    </Show>
-                                                </button>
-                                            </li>
-                                        )}
-                                    </For>
-                                </ul>
-                            </Show>
-                        </Show>
-                        <Show when={!query().trim()}>
-                            <div class="text-12-regular text-text-weaker py-4 text-center">
-                                {props.t('ui.find.enterQuery')}
-                            </div>
-                        </Show>
-                    </div>
-                </Show>
+    const createSearchTab = () => {
+        ensureTemplates();
+        const container = getNextElement(searchTabTemplate!) as HTMLElement;
+        
+        // Search input
+        const inputContainer = getNextElement(searchInputTemplate!) as HTMLElement;
+        const iconSpan = inputContainer.firstChild as HTMLElement;
+        const input = iconSpan.nextSibling as HTMLInputElement;
+        const button = input.nextSibling as HTMLButtonElement;
+        const buttonSpan = button.firstChild as HTMLElement;
 
-                <Show when={activeTab() === 'filters'}>
-                    <div class="p-3 space-y-4">
-                        {/* Query filter */}
-                        <div>
-                            <label class="text-11-medium uppercase tracking-wide text-text-weak block mb-1">
-                                {props.t('ui.facets.query')}
-                            </label>
-                            <input
-                                type="text"
-                                value={props.facets.query ?? ''}
-                                class="w-full h-8 rounded-sm border border-border-weaker-base bg-surface-base px-2 text-12-regular text-text-base outline-none placeholder:text-text-weaker"
-                                placeholder={props.t('ui.facets.placeholder')}
-                                onInput={(event) =>
-                                    changeFacets({ query: event.currentTarget.value })
-                                }
-                            />
-                        </div>
+        createComponent(props.Icon, { name: 'magnifying-glass', size: 'small', class: 'shrink-0 text-text-weak' });
+        insert(iconSpan, () => ''); // Icon rendered via createComponent above
 
-                        {/* Kinds */}
-                        <div>
-                            <label class="text-11-medium uppercase tracking-wide text-text-weak block mb-1">
-                                {props.t('ui.facets.kinds')}
-                            </label>
-                            <div class="flex flex-wrap gap-1">
-                                <For each={NODE_KINDS}>
-                                    {(kind: string) => (
-                                        <button
-                                            type="button"
-                                            class={`flex items-center gap-1 rounded-sm px-2 py-1 text-11-regular transition-colors ${
-                                                props.facets.kinds.has(kind)
-                                                    ? 'bg-primary-weaker text-primary-base'
-                                                    : 'text-text-base hover:bg-surface-base-hover'
-                                            }`}
-                                            onClick={() => toggleKind(kind)}
-                                            aria-pressed={props.facets.kinds.has(kind)}
-                                        >
-                                            {props.t(props.vocabularyKeys.kind[kind] ?? kind)}
-                                            <span class="text-text-weaker">
-                                                ({countLabel(kind, counts().kinds)})
-                                            </span>
-                                        </button>
-                                    )}
-                                </For>
-                            </div>
-                        </div>
+        setAttribute(input, 'placeholder', props.t('ui.find.search.placeholder'));
+        setAttribute(input, 'aria-label', props.t('ui.find.search.placeholder'));
+        setAttribute(button, 'aria-label', props.t('ui.find.search.clear'));
+        createComponent(props.Icon, { name: 'close-small', size: 'small' });
+        insert(buttonSpan, () => '');
 
-                        {/* Statuses */}
-                        <div>
-                            <label class="text-11-medium uppercase tracking-wide text-text-weak block mb-1">
-                                {props.t('ui.facets.statuses')}
-                            </label>
-                            <div class="flex flex-wrap gap-1">
-                                <For each={NODE_STATUSES}>
-                                    {(status: string) => (
-                                        <button
-                                            type="button"
-                                            class={`flex items-center gap-1 rounded-sm px-2 py-1 text-11-regular transition-colors ${
-                                                props.facets.statuses.has(status)
-                                                    ? 'bg-primary-weaker text-primary-base'
-                                                    : 'text-text-base hover:bg-surface-base-hover'
-                                            }`}
-                                            onClick={() => toggleStatus(status)}
-                                            aria-pressed={props.facets.statuses.has(status)}
-                                        >
-                                            {props.t(props.vocabularyKeys.status[status] ?? status)}
-                                            <span class="text-text-weaker">
-                                                ({countLabel(status, counts().statuses)})
-                                            </span>
-                                        </button>
-                                    )}
-                                </For>
-                            </div>
-                        </div>
+        input.oninput = (e: Event) => {
+            const target = e.target as HTMLInputElement;
+            setQuery(target.value);
+            setActiveIndex(0);
+        };
+        button.onclick = () => {
+            setQuery('');
+            setActiveIndex(0);
+        };
 
-                        {/* Domains */}
-                        <div>
-                            <label class="text-11-medium uppercase tracking-wide text-text-weak block mb-1">
-                                {props.t('ui.facets.domains')}
-                            </label>
-                            <div class="flex flex-wrap gap-1">
-                                <For each={DOMAINS}>
-                                    {(domain: string) => (
-                                        <button
-                                            type="button"
-                                            class={`flex items-center gap-1 rounded-sm px-2 py-1 text-11-regular transition-colors ${
-                                                props.facets.domains.has(domain)
-                                                    ? 'bg-primary-weaker text-primary-base'
-                                                    : 'text-text-base hover:bg-surface-base-hover'
-                                            }`}
-                                            onClick={() => toggleDomain(domain)}
-                                            aria-pressed={props.facets.domains.has(domain)}
-                                            disabled={domain === 'session'}
-                                        >
-                                            {props.t(props.vocabularyKeys.domain[domain] ?? domain)}
-                                            <span class="text-text-weaker">
-                                                ({countLabel(domain, counts().domains)})
-                                            </span>
-                                        </button>
-                                    )}
-                                </For>
-                            </div>
-                        </div>
+        container.appendChild(inputContainer);
 
-                        <button
-                            type="button"
-                            class="w-full rounded-sm px-3 py-1.5 text-12-regular text-text-base hover:bg-surface-base-hover transition-colors"
-                            onClick={clearFacets}
-                        >
-                            {props.t('ui.facets.clear')}
-                        </button>
-                    </div>
-                </Show>
+        // Results list
+        const resultsContainer = getNextElement(searchResultTemplate!) as HTMLElement;
+        const ul = resultsContainer.querySelector('ul')!;
+        
+        createEffect(() => {
+            const res = searchResults();
+            
+            // Clear existing results
+            ul.innerHTML = '';
+            
+            if (res.length === 0 && query().trim().length > 0) {
+                const noResults = getNextElement(noResultsTemplate!) as HTMLElement;
+                insert(noResults, () => props.t('ui.find.search.noResults'));
+                ul.appendChild(noResults);
+            } else if (res.length > 0) {
+                res.forEach((node, index) => {
+                    const li = document.createElement('li');
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.setAttribute('data-index', String(index));
+                    btn.setAttribute('data-node-id', node.id);
+                    btn.setAttribute('data-active', String(index === activeIndex()));
+                    btn.setAttribute('role', 'option');
+                    btn.setAttribute('aria-selected', String(index === activeIndex()));
+                    btn.id = `graph-find-search-option-${index}`;
+                    btn.className = 'flex w-full flex-col gap-0.5 px-3 py-1.5 text-left hover:bg-surface-base-hover';
+                    
+                    const labelSpan = document.createElement('span');
+                    labelSpan.className = 'truncate text-12-regular text-text-strong';
+                    labelSpan.textContent = node.label;
+                    
+                    const summarySpan = document.createElement('span');
+                    summarySpan.className = 'truncate text-12-regular text-text-weak';
+                    summarySpan.textContent = node.summary ?? '';
+                    summarySpan.style.display = node.summary ? '' : 'none';
+                    
+                    btn.appendChild(labelSpan);
+                    btn.appendChild(summarySpan);
+                    li.appendChild(btn);
+                    ul.appendChild(li);
 
-                <Show when={activeTab() === 'outline'}>
-                    <div class="p-3">
-                        <ul
-                            class="flex flex-col gap-1"
-                            role="tree"
-                            aria-label={props.t('ui.find.outlineLabel')}
-                        >
-                            <For each={outline()}>
-                                {(turn) => (
-                                    <li class="flex flex-col" role="treeitem">
-                                        <button
-                                            type="button"
-                                            class="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left hover:bg-surface-base-hover transition-colors"
-                                            onClick={() => handleOutlineSelect(turn.turnID)}
-                                        >
-                                            <props.Icon
-                                                name="outline-turn"
-                                                size="small"
-                                                class="shrink-0 text-text-weak"
-                                            />
-                                            <span class="flex-1 truncate text-13-medium text-text-base">
-                                                {turn.turnLabel}
-                                            </span>
-                                            <span class="shrink-0 text-11-regular text-text-weaker">
-                                                {turn.phases.length} phases
-                                            </span>
-                                        </button>
-                                        <Show when={turn.phases.length > 0}>
-                                            <ul
-                                                class="ml-6 mt-1 flex flex-col gap-0.5 border-s border-border-weaker-base ps-2"
-                                                role="group"
-                                            >
-                                                <For each={turn.phases}>
-                                                    {(phase) => (
-                                                        <li role="treeitem">
-                                                            <button
-                                                                type="button"
-                                                                class="flex w-full items-center gap-2 rounded-sm px-2 py-1 text-left hover:bg-surface-base-hover transition-colors"
-                                                                onClick={() => {
-                                                                    const phaseNode =
-                                                                        props.model.nodes.find(
-                                                                            (n) =>
-                                                                                n.id === phase.id,
-                                                                        );
-                                                                    if (phaseNode) {
-                                                                        props.onSelect(phaseNode);
-                                                                        props.onClose();
-                                                                    }
-                                                                }}
-                                                            >
-                                                                <span
-                                                                    class="shrink-0 w-2 h-2 rounded-full"
-                                                                    style={{
-                                                                        'background-color': `hsl(${phase.category === 'analysis' ? 200 : phase.category === 'action' ? 120 : 0} 70% 55%)`,
-                                                                    }}
-                                                                />
-                                                                <span class="truncate text-12-regular text-text-base">
-                                                                    {phase.label}
-                                                                </span>
-                                                                <span class="shrink-0 text-10-regular text-text-weaker uppercase">
-                                                                    {phase.category}
-                                                                </span>
-                                                            </button>
-                                                        </li>
-                                                    )}
-                                                </For>
-                                            </ul>
-                                        </Show>
-                                    </li>
-                                )}
-                            </For>
-                        </ul>
-                        <Show when={outline().length === 0}>
-                            <div class="text-12-regular text-text-weaker py-4 text-center">
-                                {props.t('ui.find.noOutline')}
-                            </div>
-                        </Show>
-                    </div>
-                </Show>
-            </div>
-        </div>
-    );
+                    btn.onmouseenter = () => setActiveIndex(index);
+                    btn.onclick = () => handleSelectResult(node);
+                });
+            }
+        });
+
+        container.appendChild(resultsContainer);
+        return container;
+    };
+
+    const createFilterTab = () => {
+        ensureTemplates();
+        const container = getNextElement(filterTabTemplate!) as HTMLElement;
+        const section = getNextElement(filterSectionTemplate!) as HTMLElement;
+        
+        // Kinds section
+        const kindsLabel = section.querySelector('label')!;
+        kindsLabel.textContent = props.t('ui.facets.kinds');
+        const kindsContainer = section.querySelectorAll('.flex.flex-wrap.gap-1')[0] as HTMLElement;
+        
+        NODE_KINDS.forEach((kind) => {
+            const chip = getNextElement(filterChipTemplate!) as HTMLElement;
+            const isActive = props.facets.kinds.has(kind);
+            chip.className = `flex items-center gap-1 rounded-sm px-2 py-1 text-11-regular transition-colors ${
+                isActive ? 'bg-primary-weaker text-primary-base' : 'text-text-base hover:bg-surface-base-hover'
+            }`;
+            chip.textContent = props.t(props.vocabularyKeys.kind[kind] ?? kind);
+            chip.setAttribute('aria-pressed', String(isActive));
+            chip.onclick = () => toggleKind(kind);
+            kindsContainer.appendChild(chip);
+        });
+
+        // Statuses section
+        const statusesLabel = section.querySelectorAll('label')[1]!;
+        statusesLabel.textContent = props.t('ui.facets.statuses');
+        const statusesContainer = section.querySelectorAll('.flex.flex-wrap.gap-1')[1] as HTMLElement;
+        
+        NODE_STATUSES.forEach((status) => {
+            const chip = getNextElement(filterChipTemplate!) as HTMLElement;
+            const isActive = props.facets.statuses.has(status);
+            chip.className = `flex items-center gap-1 rounded-sm px-2 py-1 text-11-regular transition-colors ${
+                isActive ? 'bg-primary-weaker text-primary-base' : 'text-text-base hover:bg-surface-base-hover'
+            }`;
+            chip.textContent = props.t(props.vocabularyKeys.status[status] ?? status);
+            chip.setAttribute('aria-pressed', String(isActive));
+            chip.onclick = () => toggleStatus(status);
+            statusesContainer.appendChild(chip);
+        });
+
+        // Domains section
+        const domainsLabel = section.querySelectorAll('label')[2]!;
+        domainsLabel.textContent = props.t('ui.facets.domains');
+        const domainsContainer = section.querySelectorAll('.flex.flex-wrap.gap-1')[2] as HTMLElement;
+        
+        DOMAINS.forEach((domain) => {
+            const chip = getNextElement(filterChipTemplate!) as HTMLElement;
+            const isActive = props.facets.domains.has(domain);
+            chip.className = `flex items-center gap-1 rounded-sm px-2 py-1 text-11-regular transition-colors ${
+                isActive ? 'bg-primary-weaker text-primary-base' : 'text-text-base hover:bg-surface-base-hover'
+            }`;
+            chip.textContent = `${props.t(props.vocabularyKeys.domain[domain] ?? domain)} (${countLabel(domain, counts().domains)})`;
+            chip.setAttribute('aria-pressed', String(isActive));
+            if (domain === 'session') chip.setAttribute('disabled', 'true');
+            chip.onclick = () => toggleDomain(domain);
+            domainsContainer.appendChild(chip);
+        });
+
+        // Clear button
+        const clearBtn = getNextElement(clearButtonTemplate!) as HTMLElement;
+        insert(clearBtn, () => props.t('ui.facets.clear'));
+        clearBtn.onclick = clearFacets;
+        section.appendChild(clearBtn);
+
+        container.appendChild(section);
+        return container;
+    };
+
+    const createOutlineTab = () => {
+        ensureTemplates();
+        const container = getNextElement(outlineTabTemplate!) as HTMLElement;
+        const outlineData = outline();
+        
+        if (outlineData.length === 0) {
+            const noOutline = getNextElement(noOutlineTemplate!) as HTMLElement;
+            insert(noOutline, () => props.t('ui.find.noOutline'));
+            container.appendChild(noOutline);
+            return container;
+        }
+
+        const outlineList = getNextElement(outlineItemTemplate!) as HTMLElement;
+        const ul = outlineList.querySelector('ul')!;
+        ul.innerHTML = '';
+
+        outlineData.forEach((turn) => {
+            turn.phases.forEach((phase) => {
+                const li = document.createElement('li');
+                li.setAttribute('role', 'treeitem');
+                
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'flex w-full items-center gap-2 px-2 py-1.5 text-left text-12-regular hover:bg-surface-base-hover';
+                btn.setAttribute('aria-expanded', 'false');
+                
+                const iconSpan = document.createElement('span');
+                iconSpan.className = 'shrink-0 text-text-weak';
+                createComponent(props.Icon, { name: 'outline-dots', size: 'small' });
+                insert(iconSpan, () => '');
+                
+                const labelSpan = document.createElement('span');
+                labelSpan.className = 'truncate text-text-strong';
+                labelSpan.textContent = phase.label;
+                
+                const categorySpan = document.createElement('span');
+                categorySpan.className = 'shrink-0 text-10-regular text-text-weaker uppercase';
+                categorySpan.textContent = phase.category;
+                
+                btn.appendChild(iconSpan);
+                btn.appendChild(labelSpan);
+                btn.appendChild(categorySpan);
+                li.appendChild(btn);
+                ul.appendChild(li);
+
+                btn.onclick = () => handleOutlineSelect(phase.id);
+            });
+        });
+
+        container.appendChild(outlineList);
+        return container;
+    };
+
+    // Handle keyboard navigation for search results
+    createEffect(() => {
+        if (activeTab() === 'search') {
+            const results = searchResults();
+            if (results.length > 0) {
+                setActiveIndex(Math.min(activeIndex(), results.length - 1));
+            } else {
+                setActiveIndex(0);
+            }
+        }
+    });
+
+    // Focus search input on mount (client-only)
+    let mounted = false;
+    createEffect(() => {
+        if (!mounted) {
+            mounted = true;
+        }
+    });
+
+    onCleanup(() => {
+        mounted = false;
+    });
+
+    // Return memoized render functions (not JSX!) to avoid SSR template hoisting
+    return [
+        memo(() => {
+            const root = createRoot();
+            const tabs = createTabs();
+            root.appendChild(tabs);
+            return root;
+        }, false),
+        memo(() => {
+            const tab = activeTab();
+            if (tab === 'search') return createSearchTab();
+            if (tab === 'filters') return createFilterTab();
+            if (tab === 'outline') return createOutlineTab();
+            return null;
+        }, false),
+    ];
 };
