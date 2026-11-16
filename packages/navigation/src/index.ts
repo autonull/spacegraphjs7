@@ -23,3 +23,13 @@ export {
     type DeepLinkParts,
     type DeepLinkOptions,
 } from './deep-link';
+export {
+    computeFollowFrame,
+    type FollowMode,
+    type CameraMove,
+    type ComputeFollowFrameOptions,
+    DEFAULT_LIVE_FOLLOW_MODE,
+    TURN_FOLLOW_MODE,
+    NODE_FOLLOW_MODE,
+    OFF_FOLLOW_MODE,
+} from './follow';
