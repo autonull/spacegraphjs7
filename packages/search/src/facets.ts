@@ -12,6 +12,18 @@ export interface FacetAccessors {
     domain?: (node: GraphNode) => string | undefined;
     /** Get the root node ID. */
     rootId: (model: GraphViewData) => string;
+    /** P2.1: Check if a tool node has failed status. */
+    isFailedTool?: (node: GraphNode) => boolean;
+    /** P2.1: Check if a node represents a file write (diff node or file node with data.path). */
+    isFileWrite?: (node: GraphNode) => boolean;
+    /** P2.1: Check if a node is a subagent call. */
+    isSubagentCall?: (node: GraphNode) => boolean;
+    /** P2.1: Check if a node is an error. */
+    isError?: (node: GraphNode) => boolean;
+    /** P2.1: Check if a node is a retry. */
+    isRetry?: (node: GraphNode) => boolean;
+    /** P2.1: Check if a node is costly (top 10% by tokens). */
+    isCostlyNode?: (node: GraphNode) => boolean;
 }
 
 /** Options for applying facets. */
@@ -76,10 +88,11 @@ function defaultSearchText(node: GraphNode): string[] {
 /**
  * Apply facets to a model, returning a filtered model.
  * The domain facet scopes the model first; kind/status/query filter the scoped nodes.
+ * Semantic facets (failedTools, fileWrites, etc.) act as additional OR filters.
  * The session root always stays so the answer keeps an address.
  */
 export function applyFacets({ model, facets, accessors }: ApplyFacetsOptions): GraphViewData {
-    const { query, kinds, statuses, domains } = facets;
+    const { query, kinds, statuses, domains, failedTools, fileWrites, subagentCalls, errors, retries, costlyNodes } = facets;
 
     // Domain scoping first
     let scopedNodes = model.nodes;
@@ -90,6 +103,9 @@ export function applyFacets({ model, facets, accessors }: ApplyFacetsOptions): G
         });
     }
 
+    // Check if any semantic facet is active (these are OR filters that ADD nodes)
+    const hasSemanticFilters = failedTools || fileWrites || subagentCalls || errors || retries || costlyNodes;
+
     // Then filter by kind, status, and query
     const kept = new Set<string>();
     for (const node of scopedNodes) {
@@ -97,7 +113,22 @@ export function applyFacets({ model, facets, accessors }: ApplyFacetsOptions): G
         const statusMatch = statuses.size === 0 || statuses.has(accessors.status(node));
         const queryMatch = matchQuery(node, query);
 
-        if (node.id === accessors.rootId(model) || (kindMatch && statusMatch && queryMatch)) {
+        // Standard facet match
+        let matches = kindMatch && statusMatch && queryMatch;
+
+        // If any semantic filters are active, also check those (OR logic - node matches if ANY semantic filter applies)
+        if (hasSemanticFilters) {
+            let semanticMatch = false;
+            if (failedTools && accessors.isFailedTool?.(node)) semanticMatch = true;
+            if (fileWrites && accessors.isFileWrite?.(node)) semanticMatch = true;
+            if (subagentCalls && accessors.isSubagentCall?.(node)) semanticMatch = true;
+            if (errors && accessors.isError?.(node)) semanticMatch = true;
+            if (retries && accessors.isRetry?.(node)) semanticMatch = true;
+            if (costlyNodes && accessors.isCostlyNode?.(node)) semanticMatch = true;
+            matches = matches || semanticMatch;
+        }
+
+        if (node.id === accessors.rootId(model) || matches) {
             kept.add(node.id);
         }
     }
@@ -192,6 +223,20 @@ export function facetCounts(
     const withoutStatus = (current: GraphFacets): GraphFacets => ({ ...current, statuses: new Set<string>() });
     const withoutDomain = (current: GraphFacets): GraphFacets => ({ ...current, domains: new Set(knownDomains) });
 
+    // P2.1: Count semantic facets
+    const countSemantic = (
+        nodes: readonly GraphNode[],
+        predicate?: (node: GraphNode) => boolean,
+        active: boolean = false,
+    ) => {
+        if (!predicate || !active) return { total: 0, kept: 0 };
+        const members = nodes.filter(predicate);
+        return {
+            total: members.length,
+            kept: members.filter((node) => keptIds.has(node.id)).length,
+        };
+    };
+
     return {
         kinds: countGroup(model.nodes, knownKinds, (node) => accessors.kind(node) as any, facets, withoutKind),
         statuses: countGroup(model.nodes, knownStatuses, (node) => accessors.status(node) as any, facets, withoutStatus),
@@ -202,6 +247,12 @@ export function facetCounts(
             facets,
             withoutDomain,
         ),
+        failedTools: countSemantic(model.nodes, accessors.isFailedTool, facets.failedTools ?? false),
+        fileWrites: countSemantic(model.nodes, accessors.isFileWrite, facets.fileWrites ?? false),
+        subagentCalls: countSemantic(model.nodes, accessors.isSubagentCall, facets.subagentCalls ?? false),
+        errors: countSemantic(model.nodes, accessors.isError, facets.errors ?? false),
+        retries: countSemantic(model.nodes, accessors.isRetry, facets.retries ?? false),
+        costlyNodes: countSemantic(model.nodes, accessors.isCostlyNode, facets.costlyNodes ?? false),
     };
 }
 
@@ -216,6 +267,7 @@ function matchesFacets(node: GraphNode, facets: GraphFacets, accessors: FacetAcc
 /**
  * Serialize facets into the `q=` grammar: free text plus `kind:`/`status:`/`domain:` tokens.
  * Uses canonical ordering of known values.
+ * P2.1: Also encodes semantic facets as boolean flags (e.g., `failedTools:`).
  */
 export function facetsToQuery(
     facets: GraphFacets,
@@ -233,11 +285,20 @@ export function facetsToQuery(
         return list.length > 0 ? `${name}:${list.join(',')}` : undefined;
     };
 
+    // P2.1: Encode semantic facets as boolean flags
+    const encodeFlag = (name: string, value?: boolean) => value ? name : undefined;
+
     const values = [
         facets.query.trim(),
         encode('kind', ordered(facets.kinds, knownKinds)),
         encode('status', ordered(facets.statuses, knownStatuses)),
         encode('domain', ordered(facets.domains, knownDomains)),
+        encodeFlag('failedTools', facets.failedTools),
+        encodeFlag('fileWrites', facets.fileWrites),
+        encodeFlag('subagentCalls', facets.subagentCalls),
+        encodeFlag('errors', facets.errors),
+        encodeFlag('retries', facets.retries),
+        encodeFlag('costlyNodes', facets.costlyNodes),
     ].filter((value): value is string => !!value);
 
     return values.join(' ');
@@ -247,6 +308,7 @@ export function facetsToQuery(
  * Parse the `q=` grammar back into facets.
  * Unknown values are ignored; order is canonical.
  * Empty query returns default facets with domain:session.
+ * P2.1: Also parses semantic facets as boolean flags (e.g., `failedTools:`).
  */
 export function facetsFromQuery(
     query: string,
@@ -259,9 +321,20 @@ export function facetsFromQuery(
     const statuses = new Set<string>();
     const domains = new Set<string>(['session']); // Default domain
 
+    // P2.1: Semantic facets
+    let failedTools = false;
+    let fileWrites = false;
+    let subagentCalls = false;
+    let errors = false;
+    let retries = false;
+    let costlyNodes = false;
+
     const kindSet = new Set(knownKinds);
     const statusSet = new Set(knownStatuses);
     const domainSet = new Set(knownDomains);
+
+    // P2.1: Known semantic facet tokens
+    const semanticTokens = new Set(['failedTools', 'fileWrites', 'subagentCalls', 'errors', 'retries', 'costlyNodes']);
 
     const trimmed = query.trim();
     if (!trimmed) {
@@ -289,13 +362,46 @@ export function facetsFromQuery(
             for (const value of values) if (domainSet.has(value)) domains.add(value);
             continue;
         }
+        // P2.1: Semantic facet flags (boolean, no values)
+        if (semanticTokens.has(name)) {
+            switch (name) {
+                case 'failedTools': failedTools = true; break;
+                case 'fileWrites': fileWrites = true; break;
+                case 'subagentCalls': subagentCalls = true; break;
+                case 'errors': errors = true; break;
+                case 'retries': retries = true; break;
+                case 'costlyNodes': costlyNodes = true; break;
+            }
+            continue;
+        }
         text.push(token);
     }
 
-    return { query: text.join(' '), kinds, statuses, domains };
+    return {
+        query: text.join(' '),
+        kinds,
+        statuses,
+        domains,
+        failedTools,
+        fileWrites,
+        subagentCalls,
+        errors,
+        retries,
+        costlyNodes,
+    };
 }
 
-/** Check if facets have any active filter (non-empty query, kinds, or statuses). */
+/** Check if facets have any active filter (non-empty query, kinds, statuses, or semantic facets). */
 export function hasFacets(facets: GraphFacets): boolean {
-    return facets.query.trim().length > 0 || facets.kinds.size > 0 || facets.statuses.size > 0;
+    return (
+        facets.query.trim().length > 0 ||
+        facets.kinds.size > 0 ||
+        facets.statuses.size > 0 ||
+        facets.failedTools === true ||
+        facets.fileWrites === true ||
+        facets.subagentCalls === true ||
+        facets.errors === true ||
+        facets.retries === true ||
+        facets.costlyNodes === true
+    );
 }

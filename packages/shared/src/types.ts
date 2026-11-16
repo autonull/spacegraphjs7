@@ -85,6 +85,13 @@ export interface GraphFacets {
     kinds: ReadonlySet<string>;
     statuses: ReadonlySet<string>;
     domains: ReadonlySet<string>;
+    // P2.1: Semantic quick filter facets
+    failedTools?: boolean;
+    fileWrites?: boolean;
+    subagentCalls?: boolean;
+    errors?: boolean;
+    retries?: boolean;
+    costlyNodes?: boolean;
 }
 
 /** Facet counts for display. */
@@ -92,6 +99,13 @@ export interface FacetCounts {
     kinds: readonly { value: string; kept: number; total: number }[];
     statuses: readonly { value: string; kept: number; total: number }[];
     domains: readonly { value: string; kept: number; total: number }[];
+    // P2.1: Semantic quick filter counts
+    failedTools?: { total: number; kept: number };
+    fileWrites?: { total: number; kept: number };
+    subagentCalls?: { total: number; kept: number };
+    errors?: { total: number; kept: number };
+    retries?: { total: number; kept: number };
+    costlyNodes?: { total: number; kept: number };
 }
 
 /** Zoom/semantic level. */
