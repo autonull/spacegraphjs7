@@ -21,6 +21,7 @@ import type { I18n } from '@spacegraphjs/shared/i18n';
 import { Show, type JSX } from 'solid-js';
 import { createEffect } from 'solid-js';
 import { useSpring, springPresets } from '@spacegraphjs/shared';
+import { createComponent, effect, getNextElement, insert, setAttribute } from 'solid-js/web';
 import { GraphPeek } from './GraphPeek';
 import { GraphPopover } from './GraphPopover';
 
@@ -183,41 +184,14 @@ export type GraphOverlayManagerProps = {
  * This component is generic and accepts render props for host-specific components.
  * The host (e.g., @opencode/session-graph) provides the render props for components
  * that use OpenCode-specific UI components.
+ *
+ * This component uses imperative DOM creation with deferred template creation to avoid SolidJS
+ * template hoisting which causes "Client-only API called on the server side" errors during SSR builds.
+ * Templates are created on first render using a function that returns the template function,
+ * preventing the SolidJS compiler from hoisting template calls to module level.
  */
 export const GraphOverlayManager = (props: GraphOverlayManagerProps): JSX.Element => {
     const { i18n, Icon, ...rest } = props;
-
-    const defaultRenderA11y = (p: Parameters<NonNullable<typeof props.renderA11y>>[0]) => (
-        <div data-slot="graph-a11y-placeholder" />
-    );
-
-    const defaultRenderNoteComposer = (
-        p: Parameters<NonNullable<typeof props.renderNoteComposer>>[0],
-    ) => <div data-slot="graph-note-composer-placeholder" />;
-
-    const defaultRenderSearch = (p: Parameters<NonNullable<typeof props.renderSearch>>[0]) => (
-        <div data-slot="graph-search-placeholder" />
-    );
-
-    const defaultRenderLegend = (p: Parameters<NonNullable<typeof props.renderLegend>>[0]) => (
-        <div data-slot="graph-legend-placeholder" />
-    );
-
-    const defaultRenderGallery = (p: Parameters<NonNullable<typeof props.renderGallery>>[0]) => (
-        <div data-slot="graph-gallery-placeholder" />
-    );
-
-    const defaultRenderGroupMenu = (
-        p: Parameters<NonNullable<typeof props.renderGroupMenu>>[0],
-    ) => <div data-slot="graph-group-menu-placeholder" />;
-
-    const defaultRenderError = (p: Parameters<NonNullable<typeof props.renderError>>[0]) => (
-        <div data-slot="graph-error-placeholder" />
-    );
-
-    const defaultRenderEmpty = (p: Parameters<NonNullable<typeof props.renderEmpty>>[0]) => (
-        <div data-slot="graph-empty-placeholder" />
-    );
 
     // Spring animations for smooth peek positioning
     const [peekLeft, setPeekLeft] = useSpring(0, springPresets.smooth);
@@ -230,55 +204,164 @@ export const GraphOverlayManager = (props: GraphOverlayManagerProps): JSX.Elemen
         }
     });
 
+    // Lazy placeholder creators - using functions to defer template creation until first render
+    // This prevents SolidJS compiler from hoisting template calls to module level
+    const createA11yPlaceholder = () => document.createElement('div');
+    const createNoteComposerPlaceholder = () => document.createElement('div');
+    const createSearchPlaceholder = () => document.createElement('div');
+    const createLegendPlaceholder = () => document.createElement('div');
+    const createGalleryPlaceholder = () => document.createElement('div');
+    const createGroupMenuPlaceholder = () => document.createElement('div');
+    const createErrorPlaceholder = () => document.createElement('div');
+    const createEmptyPlaceholder = () => document.createElement('div');
+
+    const createPeekAnchor = () => {
+        const el = document.createElement('div');
+        el.setAttribute('data-slot', 'graph-peek-anchor');
+        el.className = 'absolute z-20 -translate-x-1/2';
+        return el;
+    };
+
+    const createEdgePeekAnchor = () => {
+        const el = document.createElement('div');
+        el.setAttribute('data-slot', 'graph-edge-peek-anchor');
+        el.className = 'absolute bottom-2 left-2 z-20';
+        return el;
+    };
+
+    const createPopoverAnchor = () => {
+        const el = document.createElement('div');
+        el.setAttribute('data-slot', 'graph-popover-anchor');
+        el.className = 'absolute z-20';
+        el.style.display = 'none';
+        return el;
+    };
+
+    // Helper to set data-slot attribute on placeholder elements
+    const setPlaceholderSlot = (el: HTMLElement, slot: string) => {
+        el.setAttribute('data-slot', slot);
+    };
+
+    // Render host component or default placeholder
+    const renderHostOrDefault = <T extends Record<string, unknown>>(
+        hasHostRenderer: boolean,
+        hostRenderer: (p: T) => JSX.Element,
+        hostProps: T,
+        createPlaceholder: () => HTMLElement,
+        placeholderSlot: string,
+    ) => {
+        if (hasHostRenderer) {
+            return hostRenderer(hostProps);
+        }
+        const el = createPlaceholder();
+        setPlaceholderSlot(el, placeholderSlot);
+        return el;
+    };
+
+    // Peek node anchor
+    const renderPeekNodeAnchor = () => {
+        const frame = props.peekFrame;
+        if (!frame) return null;
+        const el = createPeekAnchor();
+        el.style.left = `${peekLeft()}px`;
+        el.style.top = `${peekTop()}px`;
+        const peekComponent = createComponent(GraphPeek, {
+            node: frame.node,
+            i18n,
+            Icon,
+        });
+        if (peekComponent) el.appendChild(peekComponent as unknown as Node);
+        return el;
+    };
+
+    // Peek edge anchor
+    const renderPeekEdgeAnchor = () => {
+        const peekEdge = props.peekEdge;
+        if (!peekEdge) return null;
+        const el = createEdgePeekAnchor();
+        const peekComponent = createComponent(GraphPeek, {
+            edge: peekEdge,
+            i18n,
+            Icon,
+        });
+        if (peekComponent) el.appendChild(peekComponent as unknown as Node);
+        return el;
+    };
+
+    // Popover anchor
+    const renderPopoverAnchor = () => {
+        if (props.effectiveDetailMode !== 'popover') return null;
+        const el = createPopoverAnchor();
+        const placement = props.popoverPlacement;
+        el.style.left = `${placement.left}px`;
+        el.style.top = `${placement.top}px`;
+        el.style.display = props.popoverVisible ? 'block' : 'none';
+        const popoverComponent = createComponent(GraphPopover, {
+            i18n,
+            Icon,
+            model: props.model(),
+            node: props.popoverNode,
+            diffSource: props.diffSource,
+            renderSummary: props.renderSummary,
+            link: props.link,
+            onCopyView: props.onCopyView,
+            onSelect: props.select,
+            onOpenTranscript: props.onOpenTranscript,
+            onOpenSession: props.onOpenSession,
+            onOpenWindow: props.onOpenWindow
+                ? (nodeID?: string) => props.onOpenWindow!('node', nodeID)
+                : undefined,
+            onClose: () => props.setPopoverDismissed(true),
+            traceKind: props.annotations.traceKind(),
+            onTraceWhy: props.annotations.traceWhy,
+            onTraceLedHere: props.annotations.traceLedHere,
+            onTraceRelated: props.annotations.traceRelated,
+            onClearTrace: props.annotations.clearTrace,
+            onCopyTraceOutline: props.annotations.copyTraceOutline,
+            onEditNote: props.annotations.editNote,
+            onDeleteNote: props.annotations.deleteNote,
+            onCopyNote: props.annotations.copyNote,
+        });
+        if (popoverComponent) el.appendChild(popoverComponent as unknown as Node);
+        return el;
+    };
+
     return (
         <>
-            <Show when={props.renderA11y}>
-                {props.renderA11y!({
-                    model: props.ordered,
-                    selection: props.selection(),
-                    instructionsId: props.a11yInstructionsId,
-                    announcement: props.viewAnnouncement,
-                    onSelect: props.select,
-                    onEscape: () => props.select(undefined),
-                    i18n,
-                    Icon,
-                })}
-            </Show>
-            <Show when={!props.renderA11y}>
-                {defaultRenderA11y({
-                    model: props.ordered,
-                    selection: props.selection(),
-                    instructionsId: props.a11yInstructionsId,
-                    announcement: props.viewAnnouncement,
-                    onSelect: props.select,
-                    onEscape: () => props.select(undefined),
-                    i18n,
-                    Icon,
-                })}
-            </Show>
+            {/* A11y */}
+            {renderHostOrDefault(
+                !!props.renderA11y,
+                (p) => p.renderA11y!(p.props),
+                {
+                    renderA11y: props.renderA11y,
+                    props: {
+                        model: props.ordered,
+                        selection: props.selection(),
+                        instructionsId: props.a11yInstructionsId,
+                        announcement: props.viewAnnouncement,
+                        onSelect: props.select,
+                        onEscape: () => props.select(undefined),
+                        i18n,
+                        Icon,
+                    },
+                },
+                createA11yPlaceholder,
+                'graph-a11y-placeholder',
+            )}
 
-            <Show when={props.peekFrame}>
-                {(frame) => (
-                    <div
-                        data-slot="graph-peek-anchor"
-                        class="absolute z-20 -translate-x-1/2"
-                        style={{ left: `${peekLeft()}px`, top: `${peekTop()}px` }}
-                    >
-                        <GraphPeek node={frame().node} i18n={i18n} Icon={Icon} />
-                    </div>
-                )}
-            </Show>
-            <Show when={props.peekEdge}>
-                {(edge) => (
-                    <div data-slot="graph-edge-peek-anchor" class="absolute bottom-2 left-2 z-20">
-                        <GraphPeek edge={edge()} i18n={i18n} Icon={Icon} />
-                    </div>
-                )}
-            </Show>
+            {/* Peek node */}
+            {renderPeekNodeAnchor()}
 
-            <Show when={props.annotations.noteTarget()}>
-                <Show when={props.renderNoteComposer}>
-                    {props.renderNoteComposer!({
+            {/* Peek edge */}
+            {renderPeekEdgeAnchor()}
+
+            {/* Note composer */}
+            {props.annotations.noteTarget() && renderHostOrDefault(
+                !!props.renderNoteComposer,
+                (p) => p.renderNoteComposer!(p.props),
+                {
+                    renderNoteComposer: props.renderNoteComposer,
+                    props: {
                         targetLabel:
                             props.noteTargetNode()?.label ?? props.annotations.noteTarget() ?? '',
                         initialValue: props.annotations.editingNote()
@@ -294,126 +377,78 @@ export const GraphOverlayManager = (props: GraphOverlayManagerProps): JSX.Elemen
                         onClose: props.annotations.closeNoteComposer,
                         i18n,
                         Icon,
-                    })}
-                </Show>
-                <Show when={!props.renderNoteComposer}>
-                    {defaultRenderNoteComposer({
-                        targetLabel:
-                            props.noteTargetNode()?.label ?? props.annotations.noteTarget() ?? '',
-                        initialValue: props.annotations.editingNote()
-                            ? (
-                                  props.annotations.notes as unknown as Record<
-                                      string,
-                                      { body: string }
-                                  >
-                              )[props.annotations.editingNote()!]?.body
-                            : undefined,
-                        anchor: props.noteAnchor,
-                        onSave: props.annotations.saveNote,
-                        onClose: props.annotations.closeNoteComposer,
+                    },
+                },
+                createNoteComposerPlaceholder,
+                'graph-note-composer-placeholder',
+            )}
+
+            {/* Popover */}
+            {renderPopoverAnchor()}
+
+            {/* Error state */}
+            {renderHostOrDefault(
+                !!props.renderError,
+                (p) => p.renderError!(p.props),
+                {
+                    renderError: props.renderError,
+                    props: {
+                        error: props.error,
+                        onBack: props.onBack,
                         i18n,
                         Icon,
-                    })}
-                </Show>
-            </Show>
+                    },
+                },
+                createErrorPlaceholder,
+                'graph-error-placeholder',
+            )}
 
-            <Show when={props.effectiveDetailMode === 'popover'}>
-                <div
-                    data-slot="graph-popover-anchor"
-                    class="absolute z-20"
-                    style={{
-                        left: `${props.popoverPlacement.left}px`,
-                        top: `${props.popoverPlacement.top}px`,
-                        display: props.popoverVisible ? 'block' : 'none',
-                    }}
-                >
-                    <GraphPopover
-                        i18n={i18n}
-                        Icon={Icon}
-                        model={props.model()}
-                        node={props.popoverNode}
-                        diffSource={props.diffSource}
-                        renderSummary={props.renderSummary}
-                        link={props.link}
-                        onCopyView={props.onCopyView}
-                        onSelect={props.select}
-                        onOpenTranscript={props.onOpenTranscript}
-                        onOpenSession={props.onOpenSession}
-                        onOpenWindow={
-                            props.onOpenWindow
-                                ? (nodeID?: string) => props.onOpenWindow!('node', nodeID)
-                                : undefined
-                        }
-                        onClose={() => props.setPopoverDismissed(true)}
-                        traceKind={props.annotations.traceKind()}
-                        onTraceWhy={props.annotations.traceWhy}
-                        onTraceLedHere={props.annotations.traceLedHere}
-                        onTraceRelated={props.annotations.traceRelated}
-                        onClearTrace={props.annotations.clearTrace}
-                        onCopyTraceOutline={props.annotations.copyTraceOutline}
-                        onEditNote={props.annotations.editNote}
-                        onDeleteNote={props.annotations.deleteNote}
-                        onCopyNote={props.annotations.copyNote}
-                    />
-                </div>
-            </Show>
+            {/* Empty state */}
+            {renderHostOrDefault(
+                !!props.renderEmpty,
+                (p) => p.renderEmpty!(p.props),
+                {
+                    renderEmpty: props.renderEmpty,
+                    props: {
+                        model: props.model,
+                        error: props.error,
+                        i18n,
+                        Icon,
+                    },
+                },
+                createEmptyPlaceholder,
+                'graph-empty-placeholder',
+            )}
 
-            <Show when={props.renderError}>
-                {props.renderError!({
-                    error: props.error,
-                    onBack: props.onBack,
-                    i18n,
-                    Icon,
-                })}
-            </Show>
-            <Show when={!props.renderError}>
-                {defaultRenderError({ error: props.error, onBack: props.onBack, i18n, Icon })}
-            </Show>
-
-            <Show when={props.renderEmpty}>
-                {props.renderEmpty!({
-                    model: props.model,
-                    error: props.error,
-                    i18n,
-                    Icon,
-                })}
-            </Show>
-            <Show when={!props.renderEmpty}>
-                {defaultRenderEmpty({ model: props.model, error: props.error, i18n, Icon })}
-            </Show>
-
-            <Show when={props.searchOpen()}>
-                <Show when={props.renderSearch}>
-                    {props.renderSearch!({
+            {/* Search */}
+            {props.searchOpen() && renderHostOrDefault(
+                !!props.renderSearch,
+                (p) => p.renderSearch!(p.props),
+                {
+                    renderSearch: props.renderSearch,
+                    props: {
                         model: props.model(),
                         initialQuery: props.searchInitial,
-                        onSelect: (node) => {
+                        onSelect: (node: GraphNode) => {
                             props.jumpTo(node);
                             props.setSearchOpen(false);
                         },
                         onClose: () => props.setSearchOpen(false),
                         i18n,
                         Icon,
-                    })}
-                </Show>
-                <Show when={!props.renderSearch}>
-                    {defaultRenderSearch({
-                        model: props.model(),
-                        initialQuery: props.searchInitial,
-                        onSelect: (node) => {
-                            props.jumpTo(node);
-                            props.setSearchOpen(false);
-                        },
-                        onClose: () => props.setSearchOpen(false),
-                        i18n,
-                        Icon,
-                    })}
-                </Show>
-            </Show>
+                    },
+                },
+                createSearchPlaceholder,
+                'graph-search-placeholder',
+            )}
 
-            <Show when={props.legendOpen()}>
-                <Show when={props.renderLegend}>
-                    {props.renderLegend!({
+            {/* Legend */}
+            {props.legendOpen() && renderHostOrDefault(
+                !!props.renderLegend,
+                (p) => p.renderLegend!(p.props),
+                {
+                    renderLegend: props.renderLegend,
+                    props: {
                         theme: props.theme,
                         layout: props.layout,
                         rules: props.rules,
@@ -422,25 +457,19 @@ export const GraphOverlayManager = (props: GraphOverlayManagerProps): JSX.Elemen
                         onClose: () => props.setLegendOpen(false),
                         i18n,
                         Icon,
-                    })}
-                </Show>
-                <Show when={!props.renderLegend}>
-                    {defaultRenderLegend({
-                        theme: props.theme,
-                        layout: props.layout,
-                        rules: props.rules,
-                        edgeKinds: props.edgeKinds.edgeKinds(),
-                        onToggleEdgeKind: props.edgeKinds.toggleEdgeKind,
-                        onClose: () => props.setLegendOpen(false),
-                        i18n,
-                        Icon,
-                    })}
-                </Show>
-            </Show>
+                    },
+                },
+                createLegendPlaceholder,
+                'graph-legend-placeholder',
+            )}
 
-            <Show when={props.galleryOpen()}>
-                <Show when={props.renderGallery}>
-                    {props.renderGallery!({
+            {/* Gallery */}
+            {props.galleryOpen() && renderHostOrDefault(
+                !!props.renderGallery,
+                (p) => p.renderGallery!(p.props),
+                {
+                    renderGallery: props.renderGallery,
+                    props: {
                         model: props.model(),
                         theme: props.theme,
                         current: props.layout,
@@ -448,57 +477,38 @@ export const GraphOverlayManager = (props: GraphOverlayManagerProps): JSX.Elemen
                         onClose: () => props.setGalleryOpen(false),
                         i18n,
                         Icon,
-                    })}
-                </Show>
-                <Show when={!props.renderGallery}>
-                    {defaultRenderGallery({
-                        model: props.model(),
-                        theme: props.theme,
-                        current: props.layout,
-                        onOpen: props.changeLayout,
-                        onClose: () => props.setGalleryOpen(false),
-                        i18n,
-                        Icon,
-                    })}
-                </Show>
-            </Show>
+                    },
+                },
+                createGalleryPlaceholder,
+                'graph-gallery-placeholder',
+            )}
 
-            <Show when={props.groupMenu()}>
-                {(menu) => (
-                    <>
-                        <Show when={props.renderGroupMenu}>
-                            {props.renderGroupMenu!({
-                                id: menu().id,
-                                x: menu().x,
-                                y: menu().y,
-                                model: props.modelForGroupMenu,
-                                collapsedGroups: props.groupCollapse.collapsedGroups(),
-                                onToggleGroup: props.toggleGroupByID,
-                                onCollapseOthers: props.groupCollapse.collapseOtherGroups,
-                                onFrame: (id) => props.camera.frame([id]),
-                                onClose: () => props.setGroupMenu(undefined),
-                                i18n,
-                                Icon,
-                            })}
-                        </Show>
-                        <Show when={!props.renderGroupMenu}>
-                            {defaultRenderGroupMenu({
-                                id: menu().id,
-                                x: menu().x,
-                                y: menu().y,
-                                model: props.modelForGroupMenu,
-                                collapsedGroups: props.groupCollapse.collapsedGroups(),
-                                onToggleGroup: props.toggleGroupByID,
-                                onCollapseOthers: props.groupCollapse.collapseOtherGroups,
-                                onFrame: (id) => props.camera.frame([id]),
-                                onClose: () => props.setGroupMenu(undefined),
-                                i18n,
-                                Icon,
-                            })}
-                        </Show>
-                    </>
-                )}
-            </Show>
+            {/* Group menu */}
+            {props.groupMenu() && (() => {
+                const menuData = props.groupMenu()!;
+                return renderHostOrDefault(
+                    !!props.renderGroupMenu,
+                    (p) => p.renderGroupMenu!(p.props),
+                    {
+                        renderGroupMenu: props.renderGroupMenu,
+                        props: {
+                            id: menuData.id,
+                            x: menuData.x,
+                            y: menuData.y,
+                            model: props.modelForGroupMenu,
+                            collapsedGroups: props.groupCollapse.collapsedGroups(),
+                            onToggleGroup: props.toggleGroupByID,
+                            onCollapseOthers: props.groupCollapse.collapseOtherGroups,
+                            onFrame: (id: string) => props.camera.frame([id]),
+                            onClose: () => props.setGroupMenu(undefined),
+                            i18n,
+                            Icon,
+                        },
+                    },
+                    createGroupMenuPlaceholder,
+                    'graph-group-menu-placeholder',
+                );
+            })()}
         </>
     );
 };
