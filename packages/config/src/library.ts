@@ -4,11 +4,12 @@ import { EDGE_RUNG_IDS } from 'spacegraphjs/edges/ladder';
 import { LAYOUT_REGISTRY } from 'spacegraphjs/layout-registry';
 import { DEFAULT_RUNG_IDS } from 'spacegraphjs/representations';
 import { SALIENCE_SIGNAL_IDS } from 'spacegraphjs/salience';
+import { WIDGET_SLOTS } from 'spacegraphjs/widgets';
 import { buildManifest } from './manifest';
 import type { Manifest, ManifestEntry } from './types';
 
 /** Bump on additive contract changes; see P6.4. */
-export const LIBRARY_CONTRACT_VERSION = '1.1.0';
+export const LIBRARY_CONTRACT_VERSION = '1.2.0';
 
 /** Every value owned by a library registry. Hosts append their own entries. */
 export function libraryEntries(): ManifestEntry[] {
@@ -48,9 +49,10 @@ export function libraryEntries(): ManifestEntry[] {
         },
         {
             id: 'widgets',
-            values: ['none', 'attached', 'pinned', 'max'],
-            source: 'widgets/slots',
+            values: ['none', ...WIDGET_SLOTS, 'max'],
+            source: 'widgets/WIDGET_SLOTS',
             default: 'none',
+            reducedMotion: 'mount, unmount and fog follow the host transition; reduced motion zeroes it',
         },
         {
             id: 'salience',

@@ -45,6 +45,13 @@ import {
     type RepresentationPlayback,
     type RepresentationTween,
 } from 'spacegraphjs/representations';
+import {
+    WidgetLayer,
+    WidgetRegistry,
+    WIDGET_SLOTS,
+    type WidgetDescriptor,
+    type WidgetSlot,
+} from 'spacegraphjs/widgets';
 import { ScaleDomain, type ScaleSample } from 'spacegraphjs/zoom';
 import { activityHostFixture } from './activity-host';
 import { SecondHost } from './second-host/host';
@@ -86,6 +93,8 @@ interface ExplorerApi {
     explain: (id: string) => Readonly<Record<string, number | string>>[];
     select: (id: string) => void;
     emphasisSupport: () => readonly string[];
+    widgets: () => readonly string[];
+    widgetOpacity: () => number | undefined;
 }
 
 declare global {
@@ -157,7 +166,30 @@ const RENDERER_CAPABILITIES: RendererCapabilities = {
     minimap: false,
     maxRecommendedNodes: 300,
     emphasis: ['size', 'opacity', 'edgeThickness'],
+    widgetSlots: [...WIDGET_SLOTS],
 };
+
+const DEMO_WIDGETS: readonly WidgetDescriptor[] = [
+    { id: 'summary', label: 'Node summary', slots: ['body'], representations: ['card', 'widget'] },
+    { id: 'composer', label: 'Composer', slots: ['attached'], representations: ['widget', 'detail'] },
+    { id: 'terminal', label: 'Terminal', slots: ['pinned'], representations: ['detail'] },
+];
+const widgetRegistry = new WidgetRegistry();
+for (const registration of DEMO_WIDGETS) {
+    widgetRegistry.register({
+        ...registration,
+        capabilities: ['interactive', 'focus', 'depth-fade'],
+        initialSize: { width: 220, height: 72 },
+        mount: () => ({
+            measure: () => ({ width: 220, height: 72 }),
+            setOpacity: () => {},
+            setInteractive: () => {},
+            unmount: () => {},
+        }),
+    });
+}
+let mountedWidgets: readonly string[] = [];
+let widgetOpacity: number | undefined;
 
 const recency = (label: string, factor: number): SalienceSignal => ({
     id: 'recency',
@@ -281,6 +313,22 @@ function withRepresentation(model: RenderModel, lod: string): BuiltGraph {
         return { ...node, ...selection.value };
     });
     return { model: { ...model, nodes }, rungs, sample };
+}
+
+function syncWidgets(built: BuiltGraph, state: ConfigState): void {
+    const choice = state.get('widgets') ?? 'none';
+    const slots: readonly WidgetSlot[] =
+        choice === 'none' ? [] : choice === 'max' ? WIDGET_SLOTS : [choice as WidgetSlot];
+    const layer = new WidgetLayer({
+        registry: widgetRegistry,
+        slots,
+        sizing: { max: { width: 320, height: 200 }, overflow: 'summary', feedLayout: true },
+        representationOf: (id) => built.rungs.get(id) ?? 'dot',
+    });
+    layer.sync(built.model.nodes);
+    layer.setDepthFade(1, state.get('depth') === 'flat' ? 0 : 0.5);
+    mountedWidgets = layer.mounted().map((entry) => `${entry.nodeId}:${entry.descriptorId}`);
+    widgetOpacity = layer.mounted()[0]?.opacity;
 }
 
 function play(built: BuiltGraph, state: ConfigState): void {
@@ -411,6 +459,15 @@ function renderExplain(): void {
     ].join('\n');
 }
 
+function renderWidgets(): void {
+    const root = element('widgets');
+    root.textContent = [
+        ...DEMO_WIDGETS.map((registration) => `${registration.id} · ${registration.slots.join(', ')}`),
+        `attached: ${mountedWidgets.length ? mountedWidgets.join(', ') : 'none'}`,
+        widgetOpacity === undefined ? 'opacity: —' : `opacity: ${widgetOpacity.toFixed(3)}`,
+    ].join('\n');
+}
+
 function renderDiff(): void {
     const diff = element('diff');
     diff.hidden = !compare;
@@ -437,6 +494,7 @@ function render(): void {
     const leftSalience = lastSalience;
     leftNodeCount = built.model.nodes.length;
     leftGraph.setModel(built.model);
+    syncWidgets(built, result.state);
     play(built, result.state);
     if (compare) {
         const rightBuilt = graphModel(effective(right));
@@ -445,6 +503,7 @@ function render(): void {
     }
     lastSalience = leftSalience;
     renderExplain();
+    renderWidgets();
     renderDiff();
 }
 
@@ -515,6 +574,8 @@ window.__explorer = {
         render();
     },
     emphasisSupport: () => RENDERER_CAPABILITIES.emphasis ?? [],
+    widgets: () => mountedWidgets,
+    widgetOpacity: () => widgetOpacity,
 };
 window.__ready = true;
 render();

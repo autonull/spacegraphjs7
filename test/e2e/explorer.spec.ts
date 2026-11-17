@@ -227,3 +227,46 @@ test.describe('salience and emphasis (P2)', () => {
         expect(Number(await width())).toBeGreaterThan(before);
     });
 });
+
+test.describe('widget registry (P3)', () => {
+    test('lists host registrations and attaches on an enabled, preferred slot', async ({ page }) => {
+        const errors = await boot(page);
+        await expect(page.locator('#widgets')).toContainText('summary');
+        await expect(page.locator('#widgets')).toContainText('composer');
+
+        await api(page, 'set', 'lod', 'widget');
+        await api(page, 'set', 'widgets', 'none');
+        expect(await api<string[]>(page, 'widgets')).toEqual([]);
+
+        await api(page, 'set', 'widgets', 'body');
+        expect((await api<string[]>(page, 'widgets')).some((entry) => entry.endsWith(':summary'))).toBe(
+            true,
+        );
+
+        await api(page, 'set', 'widgets', 'attached');
+        const mounted = await api<string[]>(page, 'widgets');
+        expect(mounted.length).toBeGreaterThan(0);
+        expect(mounted.every((entry) => entry.endsWith(':composer'))).toBe(true);
+        noErrors(errors);
+    });
+
+    test('max widgets attaches a different registration per slot and representation', async ({ page }) => {
+        await boot(page);
+        await api(page, 'set', 'lod', 'detail');
+        await api(page, 'set', 'widgets', 'max');
+        const mounted = await api<string[]>(page, 'widgets');
+        expect(mounted.some((entry) => entry.endsWith(':composer'))).toBe(true);
+        expect(mounted.some((entry) => entry.endsWith(':terminal'))).toBe(true);
+    });
+
+    test('projects scene fog onto attached widget opacity', async ({ page }) => {
+        await boot(page);
+        await api(page, 'set', 'lod', 'widget');
+        await api(page, 'set', 'widgets', 'attached');
+        await api(page, 'set', 'depth', 'flat');
+        expect(await api<number>(page, 'widgetOpacity')).toBe(1);
+
+        await api(page, 'set', 'depth', 'layered');
+        expect(await api<number>(page, 'widgetOpacity')).toBeLessThan(1);
+    });
+});

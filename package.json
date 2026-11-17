@@ -96,6 +96,11 @@
             "import": "./dist/salience.js",
             "default": "./dist/salience.js"
         },
+        "./widgets": {
+            "types": "./dist/widgets.d.ts",
+            "import": "./dist/widgets.js",
+            "default": "./dist/widgets.js"
+        },
         "./a11y": {
             "types": "./dist/a11y.d.ts",
             "import": "./dist/a11y.js",

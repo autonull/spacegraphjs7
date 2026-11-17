@@ -7,6 +7,7 @@ import { EDGE_RUNG_IDS } from 'spacegraphjs/edges/ladder';
 import { LAYOUT_REGISTRY } from 'spacegraphjs/layout-registry';
 import { DEFAULT_RUNG_IDS } from 'spacegraphjs/representations';
 import { SALIENCE_SIGNAL_IDS } from 'spacegraphjs/salience';
+import { WIDGET_SLOTS } from 'spacegraphjs/widgets';
 
 const manifest = libraryManifest();
 const values = (axis: string): string[] =>
@@ -23,6 +24,7 @@ describe('library capability manifest', () => {
         expect(values('edgeLod')).toEqual([...EDGE_RUNG_IDS]);
         expect(values('salience')).toEqual(['none', ...SALIENCE_SIGNAL_IDS, 'combined']);
         expect(values('emphasis')).toEqual(['none', ...EMPHASIS_CHANNELS]);
+        expect(values('widgets')).toEqual(['none', ...WIDGET_SLOTS, 'max']);
     });
 
     it('declares every axis an example preset touches', () => {

@@ -88,6 +88,10 @@ export type RenderNode = {
     parent?: string;
     /** Additive salience score in [0, 1]. Backends that ignore it render exactly as before. */
     emphasis?: number;
+    /** Widget descriptor ids requested for this node; empty means every eligible registered widget. */
+    widgets?: readonly string[];
+    /** Slots a host allows for this node; a backend that cannot host widgets ignores them. */
+    widgetSlots?: readonly string[];
     data?: Record<string, unknown>;
 };
 
@@ -186,6 +190,8 @@ export type RendererCapabilities = {
     fitInsets?: boolean;
     /** Visual channels this backend can drive from an emphasis score. Omitted means none. */
     emphasis?: readonly EmphasisChannel[];
+    /** Widget slots this backend can host. Omitted means no widget overlay. */
+    widgetSlots?: readonly string[];
 };
 
 export type RendererViewport = {
@@ -293,7 +299,12 @@ export type GraphRenderer = {
 
 /** Capabilities a host can query before it offers an affordance. */
 export type RendererCapability =
-    Projection | 'domNodes' | 'edgeLabels' | 'clusterNodes' | 'minimap';
+    | Projection
+    | 'domNodes'
+    | 'edgeLabels'
+    | 'clusterNodes'
+    | 'minimap'
+    | 'widgets';
 
 /** Single predicate for capability-gated UI (L1.28). Unknown capabilities are never assumed. */
 export function supports(
