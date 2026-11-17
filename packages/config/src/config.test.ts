@@ -1,5 +1,17 @@
 import { describe, expect, it } from 'bun:test';
-import { buildManifest, ConfigSpace, ConfigState, manifestIds, manifestSpace, negotiate } from './index';
+import {
+    applyPreset,
+    axisDiff,
+    buildManifest,
+    ConfigSpace,
+    ConfigState,
+    EXAMPLE_PRESETS,
+    manifestIds,
+    manifestSpace,
+    negotiate,
+    randomize,
+    resetToBaseline,
+} from './index';
 import type { ManifestEntry } from './index';
 
 const entries: ManifestEntry[] = [
@@ -96,5 +108,39 @@ describe('manifest', () => {
         expect(manifestIds(manifest)).toEqual(new Set(['projection', 'depth', 'motion']));
         expect(manifestSpace(manifest).values('projection')).toContain('svg-preview');
         expect(manifest.entries[1]?.reducedMotion).toBe('static fog; no parallax');
+    });
+});
+
+describe('explorer helpers', () => {
+    it('randomizes deterministically from a seeded generator', () => {
+        const first = randomize(space, () => 0);
+        const second = randomize(space, () => 0.99);
+        expect(first.toRecord()).toEqual({ projection: 'spacegraph', depth: 'none', motion: 'full' });
+        expect(second.get('depth')).toBe('layers');
+    });
+
+    it('resets to the descriptor baseline and diffs two states', () => {
+        const changed = ConfigState.from(space, { depth: 'fog' });
+        expect(resetToBaseline(space).equals(ConfigState.from(space))).toBe(true);
+        expect(axisDiff(resetToBaseline(space), changed)).toEqual([
+            { axis: 'depth', left: 'none', right: 'fog' },
+        ]);
+    });
+});
+
+describe('presets', () => {
+    it('are opt-in overlays and ignore axes the space does not declare', () => {
+        const preset = EXAMPLE_PRESETS.find((entry) => entry.id === 'full-depth');
+        expect(preset).toBeDefined();
+        const applied = applyPreset(space, preset!, ConfigState.from(space, { projection: 'cytoscape' }));
+        expect(applied.get('projection')).toBe('cytoscape');
+        expect(applied.get('depth')).toBe('orbit');
+        expect(applied.get('cardFacing')).toBeUndefined();
+    });
+
+    it('leave the space intact when every preset is removed', () => {
+        const remaining = EXAMPLE_PRESETS.filter((preset) => preset.id !== 'zero-motion');
+        expect(remaining.length).toBe(EXAMPLE_PRESETS.length - 1);
+        expect(space.ids()).toEqual(['projection', 'depth', 'motion']);
     });
 });

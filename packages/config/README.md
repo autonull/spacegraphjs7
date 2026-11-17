@@ -31,3 +31,15 @@ ConfigState.fromSearch(space, location.hash).equals(result.state); // true
 `manifest.entries` is the discoverable list: each entry carries `id`, `values`,
 `source`, an optional `capability` / `flag` requirement, and an optional
 `reducedMotion` note. Flags gate availability; they never choose a value.
+
+Presets are opt-in overlays, never defaults:
+
+```ts
+import { applyPreset, EXAMPLE_PRESETS } from '@spacegraphjs/config';
+
+const preset = EXAMPLE_PRESETS.find((entry) => entry.id === 'zero-motion')!;
+const next = applyPreset(space, preset, result.state);
+```
+
+`applyPreset` ignores axes the space does not declare, so removing any preset
+leaves the explorer complete.
