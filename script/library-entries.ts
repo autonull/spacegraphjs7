@@ -73,6 +73,12 @@ export const LIBRARY_ENTRIES: LibraryEntry[] = [
         source: 'src/representations/index.ts',
         types: 'dist/representations.d.ts',
     },
+    {
+        subpath: './salience',
+        name: 'salience',
+        source: 'src/salience/index.ts',
+        types: 'dist/salience.d.ts',
+    },
     { subpath: './a11y', name: 'a11y', source: 'src/a11y/index.ts', types: 'dist/a11y.d.ts' },
     {
         subpath: './navigation',

@@ -43,6 +43,32 @@ export type CardFacing = 'auto' | 'plane' | 'camera';
 /** Canonical card-facing values. */
 export const CARD_FACINGS: readonly CardFacing[] = ['auto', 'plane', 'camera'];
 
+/**
+ * A visual channel a backend can drive from an emphasis score. Hosts decide which channels carry
+ * importance; none is mandatory and a backend declares the subset it honours.
+ */
+export type EmphasisChannel =
+    | 'size'
+    | 'opacity'
+    | 'lift'
+    | 'glow'
+    | 'edgeThickness'
+    | 'labelDensity'
+    | 'saturation'
+    | 'motion';
+
+/** Canonical emphasis channels, in mapping order. */
+export const EMPHASIS_CHANNELS: readonly EmphasisChannel[] = [
+    'size',
+    'opacity',
+    'lift',
+    'glow',
+    'edgeThickness',
+    'labelDensity',
+    'saturation',
+    'motion',
+];
+
 export type NodeStatus = 'neutral' | 'pending' | 'running' | 'success' | 'warning' | 'error';
 
 export type RenderNode = {
@@ -60,6 +86,8 @@ export type RenderNode = {
     shape?: 'card' | 'panel' | 'dot' | 'badge' | 'group';
     /** The group this node belongs to. A group node may itself name a parent group. */
     parent?: string;
+    /** Additive salience score in [0, 1]. Backends that ignore it render exactly as before. */
+    emphasis?: number;
     data?: Record<string, unknown>;
 };
 
@@ -73,6 +101,9 @@ export type RenderEdge = {
     visible?: boolean;
     directed?: boolean;
     style?: 'solid' | 'dashed' | 'dotted';
+    /** Additive salience score in [0, 1], mapped to thickness by hosts that honour it. */
+    emphasis?: number;
+    data?: Record<string, unknown>;
 };
 
 export type RenderModel = {
@@ -153,6 +184,8 @@ export type RendererCapabilities = {
      * fills the surface — rather than as a broken camera.
      */
     fitInsets?: boolean;
+    /** Visual channels this backend can drive from an emphasis score. Omitted means none. */
+    emphasis?: readonly EmphasisChannel[];
 };
 
 export type RendererViewport = {
@@ -275,6 +308,14 @@ export function supports(
 /** Whether a renderer can honour a depth treatment; hosts gate the depth chooser on this. */
 export function supportsDepth(capabilities: RendererCapabilities, depth: DepthMode): boolean {
     return capabilities.depths.includes(depth);
+}
+
+/** Whether a renderer can drive an emphasis channel; unknown channels are never assumed. */
+export function supportsEmphasis(
+    capabilities: RendererCapabilities,
+    channel: EmphasisChannel,
+): boolean {
+    return capabilities.emphasis?.includes(channel) ?? false;
 }
 
 /**

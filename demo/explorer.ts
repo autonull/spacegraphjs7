@@ -15,8 +15,25 @@ import {
     type ConfigValue,
 } from '@spacegraphjs/config';
 import { libraryManifest } from '@spacegraphjs/config/library';
-import type { RenderModel, RenderNode } from '@spacegraphjs/renderer';
+import {
+    supportsEmphasis,
+    type EmphasisChannel,
+    type RendererCapabilities,
+    type RenderModel,
+    type RenderNode,
+} from '@spacegraphjs/renderer';
 import { InlineGraph } from '@spacegraphjs/svg-renderer';
+import {
+    applyModelEmphasis,
+    centralitySignal,
+    createSalience,
+    kindSignal,
+    mappingFor,
+    selectionSignal,
+    statusSignal,
+    type SalienceResult,
+    type SalienceSignal,
+} from 'spacegraphjs/salience';
 import { DEFAULT_EDGE_STYLES, EDGE_RUNG_IDS, EdgeLadder } from 'spacegraphjs/edges/ladder';
 import {
     DEFAULT_RUNG_IDS,
@@ -65,6 +82,10 @@ interface ExplorerApi {
     nodes: () => readonly number[];
     diff: () => readonly { axis: string; left: ConfigValue | undefined; right: ConfigValue | undefined }[];
     transition: () => TransitionInfo;
+    salience: () => Readonly<Record<string, number>>;
+    explain: (id: string) => Readonly<Record<string, number | string>>[];
+    select: (id: string) => void;
+    emphasisSupport: () => readonly string[];
 }
 
 declare global {
@@ -125,6 +146,40 @@ const edgeLadder = new EdgeLadder(
     EDGE_STOPS.map((stop) => ({ ...stop, style: DEFAULT_EDGE_STYLES[stop.id] })),
 );
 
+const NOW = 1_000_000;
+const RENDERER_CAPABILITIES: RendererCapabilities = {
+    projections: ['2d', '3d'],
+    depths: ['flat', 'layered', 'depth-stack', 'orbit'],
+    domNodes: true,
+    maxDomNodes: 80,
+    edgeLabels: true,
+    clusterNodes: true,
+    minimap: false,
+    maxRecommendedNodes: 300,
+    emphasis: ['size', 'opacity', 'edgeThickness'],
+};
+
+const recency = (label: string, factor: number): SalienceSignal => ({
+    id: 'recency',
+    label,
+    weight: 1,
+    compute: ({ model }) =>
+        new Map(model.nodes.map((node, index) => [node.id, 2 ** (-index / factor)])),
+});
+const CONTRACT_SIGNALS: Readonly<Record<string, SalienceSignal>> = {
+    kind: kindSignal({ session: 1, tool: 0.5, phase: 0.2 }, 2),
+    status: statusSignal({ running: 0.8, error: 0.6 }),
+    recency: recency('fixture recency', 3),
+    centrality: centralitySignal(),
+    selection: selectionSignal(),
+};
+const SECOND_HOST_SIGNALS: Readonly<Record<string, SalienceSignal>> = {
+    ...CONTRACT_SIGNALS,
+    kind: kindSignal({ turn: 1, tool: 0.2, phase: 0.8 }, 2),
+    status: statusSignal({ success: 1, warning: 0.7 }, 1.5),
+    recency: recency('host recency', 6),
+};
+
 const host = new SecondHost();
 const leftGraph = new InlineGraph(element('left-graph'));
 const rightGraph = new InlineGraph(element('right-graph'));
@@ -137,6 +192,10 @@ let playback: RepresentationPlayback | undefined;
 let frameHandle = 0;
 let lastFrame = 0;
 let lastTransition: TransitionInfo = { ids: [], from: [], to: [], duration: 0, t: 0, done: true };
+let lastSalience: SalienceResult | undefined;
+let selectedNode: string | undefined;
+let leftNodeCount = 0;
+let rightNodeCount = 0;
 
 function element<T extends HTMLElement = HTMLElement>(id: string): T {
     const found = document.getElementById(id);
@@ -153,16 +212,36 @@ function effective(state: ConfigState): ConfigState {
     return negotiate(space, state, { capabilities, flags }).state;
 }
 
+function signalsFor(state: ConfigState): readonly SalienceSignal[] {
+    const chosen = state.get('salience') ?? 'none';
+    const set = state.get('source') === 'secondHost' ? SECOND_HOST_SIGNALS : CONTRACT_SIGNALS;
+    if (chosen === 'none') return [];
+    if (chosen === 'combined') return Object.values(set);
+    const signal = set[chosen];
+    return signal ? [signal] : [];
+}
+
+function emphasisMapping(state: ConfigState) {
+    const chosen = state.get('emphasis') ?? 'none';
+    if (chosen === 'none' || !supportsEmphasis(RENDERER_CAPABILITIES, chosen as EmphasisChannel)) {
+        return {};
+    }
+    return mappingFor([chosen as EmphasisChannel]);
+}
+
 function graphModel(state: ConfigState): BuiltGraph {
     const source = state.get('source');
     const model =
         source === 'secondHost'
             ? hostModel(state)
             : activityHostFixture();
-    return withRepresentation(
+    const selected = selectedNode ? new Set([selectedNode]) : undefined;
+    lastSalience = createSalience(signalsFor(state))({ model, now: NOW, selected });
+    const built = withRepresentation(
         withEdgeLadder(model, state.get('edgeLod') ?? 'arrow'),
         state.get('lod') ?? 'card',
     );
+    return { ...built, model: applyModelEmphasis(built.model, lastSalience.values, emphasisMapping(state)) };
 }
 
 function withEdgeLadder(model: RenderModel, lod: string): RenderModel {
@@ -316,6 +395,22 @@ function renderPresets(): void {
     }
 }
 
+function renderExplain(): void {
+    const root = element('explain');
+    root.replaceChildren();
+    if (!selectedNode || !lastSalience) {
+        root.textContent = 'Click a node to see why it is big.';
+        return;
+    }
+    const score = lastSalience.values.get(selectedNode) ?? 0;
+    root.textContent = [
+        `${selectedNode} · salience ${score.toFixed(2)}`,
+        ...lastSalience.explain(selectedNode).map(
+            (entry) => `${entry.label}: ${entry.value.toFixed(2)} × ${entry.weight} = ${entry.contribution.toFixed(2)}`,
+        ),
+    ].join('\n');
+}
+
 function renderDiff(): void {
     const diff = element('diff');
     diff.hidden = !compare;
@@ -339,9 +434,17 @@ function render(): void {
     renderAxes(result);
     renderPresets();
     const built = graphModel(result.state);
+    const leftSalience = lastSalience;
+    leftNodeCount = built.model.nodes.length;
     leftGraph.setModel(built.model);
     play(built, result.state);
-    if (compare) rightGraph.setModel(graphModel(effective(right)).model);
+    if (compare) {
+        const rightBuilt = graphModel(effective(right));
+        rightGraph.setModel(rightBuilt.model);
+        rightNodeCount = rightBuilt.model.nodes.length;
+    }
+    lastSalience = leftSalience;
+    renderExplain();
     renderDiff();
 }
 
@@ -355,6 +458,12 @@ element('reset').addEventListener('click', () => {
 });
 element('compare').addEventListener('click', () => {
     compare = !compare;
+    render();
+});
+element('left-graph').addEventListener('click', (event) => {
+    const group = (event.target as Element).closest<SVGGElement>('[data-node-id]');
+    if (!group) return;
+    selectedNode = group.dataset.nodeId;
     render();
 });
 window.addEventListener('hashchange', () => {
@@ -395,12 +504,17 @@ window.__explorer = {
     },
     hash: () => left.toHash(),
     source: () => left.get('source'),
-    nodes: () => [
-        graphModel(effective(left)).model.nodes.length,
-        graphModel(effective(right)).model.nodes.length,
-    ],
+    nodes: () => [leftNodeCount, rightNodeCount],
     diff: () => axisDiff(left, right),
     transition: () => ({ ...lastTransition }),
+    salience: () => Object.fromEntries(lastSalience?.values ?? []),
+    explain: (id) =>
+        (lastSalience?.explain(id) ?? []).map((entry) => ({ ...entry })),
+    select: (id) => {
+        selectedNode = id;
+        render();
+    },
+    emphasisSupport: () => RENDERER_CAPABILITIES.emphasis ?? [],
 };
 window.__ready = true;
 render();

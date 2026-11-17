@@ -159,6 +159,12 @@
             #diff[hidden] {
                 display: none;
             }
+            #explain {
+                color: var(--muted);
+                font-size: 12px;
+                margin: 0;
+                white-space: pre-wrap;
+            }
             footer {
                 padding: 10px 16px;
                 border-top: 1px solid var(--border);
@@ -210,6 +216,13 @@
                     <div id="right-graph"></div>
                 </div>
                 <div id="diff" hidden></div>
+            </section>
+            <section aria-label="Salience explanation">
+                <fieldset>
+                    <legend>Why is this big?</legend>
+                    <div class="meta">Click a node in the live graph to list its contributing signals.</div>
+                    <pre id="explain">Click a node to see why it is big.</pre>
+                </fieldset>
             </section>
         </main>
         <footer>

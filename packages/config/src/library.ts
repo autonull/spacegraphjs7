@@ -1,13 +1,14 @@
 import { RENDERER_STRATEGIES } from '@spacegraphjs/adapter';
-import { CARD_FACINGS, DEPTH_MODES, PROJECTIONS } from '@spacegraphjs/renderer';
+import { CARD_FACINGS, DEPTH_MODES, EMPHASIS_CHANNELS, PROJECTIONS } from '@spacegraphjs/renderer';
 import { EDGE_RUNG_IDS } from 'spacegraphjs/edges/ladder';
 import { LAYOUT_REGISTRY } from 'spacegraphjs/layout-registry';
 import { DEFAULT_RUNG_IDS } from 'spacegraphjs/representations';
+import { SALIENCE_SIGNAL_IDS } from 'spacegraphjs/salience';
 import { buildManifest } from './manifest';
 import type { Manifest, ManifestEntry } from './types';
 
 /** Bump on additive contract changes; see P6.4. */
-export const LIBRARY_CONTRACT_VERSION = '1.0.0';
+export const LIBRARY_CONTRACT_VERSION = '1.1.0';
 
 /** Every value owned by a library registry. Hosts append their own entries. */
 export function libraryEntries(): ManifestEntry[] {
@@ -50,6 +51,19 @@ export function libraryEntries(): ManifestEntry[] {
             values: ['none', 'attached', 'pinned', 'max'],
             source: 'widgets/slots',
             default: 'none',
+        },
+        {
+            id: 'salience',
+            values: ['none', ...SALIENCE_SIGNAL_IDS, 'combined'],
+            source: 'salience/SalienceSignal',
+            default: 'none',
+        },
+        {
+            id: 'emphasis',
+            values: ['none', ...EMPHASIS_CHANNELS],
+            source: 'renderer/EmphasisChannel',
+            default: 'none',
+            reducedMotion: 'channels are static except motion, which reduced disables',
         },
         {
             id: 'motion',

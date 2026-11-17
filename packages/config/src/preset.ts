@@ -19,6 +19,12 @@ export const EXAMPLE_PRESETS: readonly Preset[] = [
     { id: 'max-widgets', label: 'Max widgets', values: { widgets: 'max' } },
     { id: 'full-depth', label: 'Full depth', values: { depth: 'orbit', cardFacing: 'camera' } },
     { id: 'zero-motion', label: 'Zero motion', values: { motion: 'reduced' } },
+    {
+        id: 'loud-nodes',
+        label: 'Loud nodes',
+        values: { salience: 'combined', emphasis: 'size' },
+        note: 'Example, not default: size carries the composed salience score',
+    },
 ];
 
 /** Apply a preset on top of a state. Unknown axes are ignored, so deleting a preset cannot break the space. */

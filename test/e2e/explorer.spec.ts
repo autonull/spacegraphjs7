@@ -163,3 +163,67 @@ test.describe('configuration explorer (P0.3)', () => {
         expect((await api<Record<string, string>>(page, 'config')).lod).toBe('card');
     });
 });
+
+test.describe('salience and emphasis (P2)', () => {
+    test('composes weighted signals and explains a selected node', async ({ page }) => {
+        await boot(page);
+        await api(page, 'set', 'salience', 'combined');
+        const values = await api<Record<string, number>>(page, 'salience');
+        expect(Object.values(values).some((value) => value > 0)).toBe(true);
+        const id = (await page.$$eval('#left-graph [data-node-id]', (groups) =>
+            groups.map((group) => (group as HTMLElement).dataset.nodeId),
+        ))[0]!;
+
+        await api(page, 'select', id);
+        await expect(page.locator('#explain')).toContainText('salience');
+        const reasons = await api<{ label: string; contribution: number }[]>(page, 'explain', id);
+        expect(reasons.length).toBeGreaterThan(0);
+        expect(reasons.map((reason) => reason.contribution)).toEqual(
+            [...reasons.map((reason) => reason.contribution)].sort((a, b) => b - a),
+        );
+    });
+
+    test('two hosts produce different deterministic salience maps', async ({ page }) => {
+        await boot(page);
+        await api(page, 'set', 'salience', 'combined');
+        const contract = await api<Record<string, number>>(page, 'salience');
+        expect(await api<Record<string, number>>(page, 'salience')).toEqual(contract);
+
+        await api(page, 'set', 'source', 'secondHost');
+        const second = await api<Record<string, number>>(page, 'salience');
+        expect(Object.values(second)).not.toEqual(Object.values(contract));
+        expect(await api<Record<string, number>>(page, 'salience')).toEqual(second);
+    });
+
+    test('zero signals stay uniform and unsupported channels do not map', async ({ page }) => {
+        await boot(page);
+        await api(page, 'set', 'salience', 'none');
+        const uniform = await api<Record<string, number>>(page, 'salience');
+        expect(Object.values(uniform).every((value) => value === 0)).toBe(true);
+        const id = (await page.$$eval('#left-graph [data-node-id]', (groups) =>
+            groups.map((group) => (group as HTMLElement).dataset.nodeId),
+        ))[0]!;
+        await api(page, 'select', id);
+        expect(await api(page, 'explain', id)).toEqual([]);
+
+        expect(await api<string[]>(page, 'emphasisSupport')).not.toContain('glow');
+        await api(page, 'set', 'salience', 'combined');
+        await api(page, 'set', 'emphasis', 'none');
+        const width = () =>
+            page.locator('#left-graph [data-node-id] rect').first().getAttribute('width');
+        const plain = await width();
+        await api(page, 'set', 'emphasis', 'glow');
+        expect(await width()).toBe(plain);
+    });
+
+    test('the size channel changes a node width from the salience score', async ({ page }) => {
+        await boot(page);
+        await api(page, 'set', 'salience', 'none');
+        const width = () =>
+            page.locator('#left-graph [data-node-id] rect').first().getAttribute('width');
+        const before = Number(await width());
+        await api(page, 'set', 'salience', 'combined');
+        await api(page, 'set', 'emphasis', 'size');
+        expect(Number(await width())).toBeGreaterThan(before);
+    });
+});

@@ -91,6 +91,11 @@
             "import": "./dist/representations.js",
             "default": "./dist/representations.js"
         },
+        "./salience": {
+            "types": "./dist/salience.d.ts",
+            "import": "./dist/salience.js",
+            "default": "./dist/salience.js"
+        },
         "./a11y": {
             "types": "./dist/a11y.d.ts",
             "import": "./dist/a11y.js",
