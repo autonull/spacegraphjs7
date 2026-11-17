@@ -1,6 +1,14 @@
 import { project } from './minimap';
 import { search, searchBy } from './search';
 
+export {
+    DescentRegistry,
+    kindDescent,
+    type DescentContext,
+    type DescentNode,
+    type DescentPolicy,
+} from './descent';
+
 export { Trail, type TrailListener, type TrailNode, type TrailOptions } from './Trail';
 
 export type {
