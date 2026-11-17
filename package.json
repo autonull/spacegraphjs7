@@ -21,6 +21,11 @@
             "import": "./dist/core.js",
             "default": "./dist/core.js"
         },
+        "./layout-registry": {
+            "types": "./dist/layout-registry.d.ts",
+            "import": "./dist/layout-registry.js",
+            "default": "./dist/layout-registry.js"
+        },
         "./edges": {
             "types": "./dist/edges.d.ts",
             "import": "./dist/edges.js",

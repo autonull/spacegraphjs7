@@ -34,7 +34,8 @@
             "@spacegraphjs/compare": ["./packages/compare/src/index.ts"],
             "@spacegraphjs/turn-map": ["./packages/turn-map/src/index.ts"],
             "@spacegraphjs/window-manager": ["./packages/window-manager/src/index.ts"],
-            "@spacegraphjs/inspector": ["./packages/inspector/src/index.ts"]
+            "@spacegraphjs/inspector": ["./packages/inspector/src/index.ts"],
+            "@spacegraphjs/config": ["./packages/config/src/index.ts"]
         }
     },
     "include": ["src", "test", "demo/second-host"],

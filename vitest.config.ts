@@ -5,9 +5,21 @@ import solid from 'vite-plugin-solid';
 export default defineConfig({
     resolve: {
         alias: [
+            {
+                find: /^spacegraphjs\/layout-registry$/,
+                replacement: resolve(import.meta.dirname, 'src/core/layout-registry.ts'),
+            },
             { find: /^spacegraphjs$/, replacement: resolve(import.meta.dirname, 'src/index.ts') },
             { find: /^spacegraphjs\/(.+)$/, replacement: resolve(import.meta.dirname, 'src/$1') },
             // Workspace packages resolve from source under Vitest without a pnpm link (the documented alias fallback).
+            {
+                find: /^@spacegraphjs\/config$/,
+                replacement: resolve(import.meta.dirname, 'packages/config/src/index.ts'),
+            },
+            {
+                find: /^@spacegraphjs\/config\/library$/,
+                replacement: resolve(import.meta.dirname, 'packages/config/src/library.ts'),
+            },
             {
                 find: /^@spacegraphjs\/renderer$/,
                 replacement: resolve(import.meta.dirname, 'packages/renderer/src/index.ts'),

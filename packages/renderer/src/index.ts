@@ -21,6 +21,9 @@ export type SurfaceContext = {
 
 export type Projection = '2d' | '3d';
 
+/** Canonical projection values for capability manifests and host choosers. */
+export const PROJECTIONS: readonly Projection[] = ['2d', '3d'];
+
 /**
  * LE.14 — depth is a spectrum, not a 2D/3D toggle. `flat` is the orthographic baseline; `layered` and
  * `depth-stack` add depth ordering under a shallow camera; `orbit` is the free-perspective experiment.
@@ -36,6 +39,9 @@ export const DEPTH_MODES: readonly DepthMode[] = ['flat', 'layered', 'depth-stac
  * face the reader, which is what a legible tilted view needs. `auto` follows the depth treatment.
  */
 export type CardFacing = 'auto' | 'plane' | 'camera';
+
+/** Canonical card-facing values. */
+export const CARD_FACINGS: readonly CardFacing[] = ['auto', 'plane', 'camera'];
 
 export type NodeStatus = 'neutral' | 'pending' | 'running' | 'success' | 'warning' | 'error';
 

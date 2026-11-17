@@ -3,6 +3,13 @@
 
 export type RendererStrategy = "svg-preview" | "spacegraph" | "cytoscape";
 
+/** All strategy values, including the ones the canvas registry does not mount directly. */
+export const RENDERER_STRATEGIES: readonly RendererStrategy[] = [
+    "svg-preview",
+    "spacegraph",
+    "cytoscape",
+];
+
 export interface RendererStrategyThresholds {
     /** Below this, a static SVG preview is cheaper than mounting a WebGL scene. */
     preview: number;

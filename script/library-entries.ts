@@ -24,6 +24,12 @@ export const LIBRARY_ENTRIES: LibraryEntry[] = [
         types: 'dist/activity.d.ts',
     },
     { subpath: './core', name: 'core', source: 'src/core/index.ts', types: 'dist/core.d.ts' },
+    {
+        subpath: './layout-registry',
+        name: 'layout-registry',
+        source: 'src/core/layout-registry.ts',
+        types: 'dist/layout-registry.d.ts',
+    },
     { subpath: './edges', name: 'edges', source: 'src/edges/index.ts', types: 'dist/edges.d.ts' },
     { subpath: './nodes', name: 'nodes', source: 'src/nodes/index.ts', types: 'dist/nodes.d.ts' },
     {

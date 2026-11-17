@@ -12,6 +12,7 @@ const PACKAGES = [
     'shared',
     'renderer',
     'adapter',
+    'config',
     'spacegraph-renderer',
     'cytoscape-renderer',
     'svg-renderer',

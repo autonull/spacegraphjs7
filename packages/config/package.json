@@ -1,0 +1,37 @@
+{
+    "name": "@spacegraphjs/config",
+    "version": "0.1.0",
+    "description": "Configuration space, negotiation and capability manifest for SpaceGraphJS",
+    "type": "module",
+    "sideEffects": false,
+    "main": "./dist/index.js",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js",
+            "default": "./dist/index.js"
+        },
+        "./library": {
+            "types": "./dist/library.d.ts",
+            "import": "./dist/library.js",
+            "default": "./dist/library.js"
+        }
+    },
+    "files": ["dist", "README.md"],
+    "scripts": {
+        "typecheck": "tsc --noEmit",
+        "test": "bun test",
+        "build": "vite build"
+    },
+    "dependencies": {
+        "@spacegraphjs/adapter": "workspace:*",
+        "@spacegraphjs/renderer": "workspace:*",
+        "spacegraphjs": "workspace:*"
+    },
+    "devDependencies": {
+        "typescript": "^5.9.2"
+    },
+    "license": "MIT"
+}

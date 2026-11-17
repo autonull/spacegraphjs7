@@ -6,6 +6,7 @@ export {
     chooseRendererStrategy,
     canvasRendererFor,
     DEFAULT_RENDERER_STRATEGY_THRESHOLDS,
+    RENDERER_STRATEGIES,
     type RendererStrategy,
     type RendererStrategyThresholds,
     type RendererStrategyOptions,
