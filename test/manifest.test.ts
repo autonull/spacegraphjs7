@@ -3,6 +3,7 @@ import { RENDERER_STRATEGIES } from '@spacegraphjs/adapter';
 import { EXAMPLE_PRESETS } from '@spacegraphjs/config';
 import { libraryManifest } from '@spacegraphjs/config/library';
 import { CARD_FACINGS, DEPTH_MODES, PROJECTIONS } from '@spacegraphjs/renderer';
+import { EDGE_RUNG_IDS } from 'spacegraphjs/edges/ladder';
 import { LAYOUT_REGISTRY } from 'spacegraphjs/layout-registry';
 import { DEFAULT_RUNG_IDS } from 'spacegraphjs/representations';
 
@@ -18,6 +19,7 @@ describe('library capability manifest', () => {
         expect(values('layout')).toEqual(LAYOUT_REGISTRY.map((entry) => entry.id));
         expect(values('rendererStrategy')).toEqual([...RENDERER_STRATEGIES]);
         expect(values('lod')).toEqual([...DEFAULT_RUNG_IDS]);
+        expect(values('edgeLod')).toEqual([...EDGE_RUNG_IDS]);
     });
 
     it('declares every axis an example preset touches', () => {

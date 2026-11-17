@@ -11,7 +11,11 @@ export interface Preset {
 }
 
 export const EXAMPLE_PRESETS: readonly Preset[] = [
-    { id: 'max-detail', label: 'Max detail', values: { lod: 'detail', cardFacing: 'camera' } },
+    {
+        id: 'max-detail',
+        label: 'Max detail',
+        values: { lod: 'detail', edgeLod: 'ribbon', cardFacing: 'camera' },
+    },
     { id: 'max-widgets', label: 'Max widgets', values: { widgets: 'max' } },
     { id: 'full-depth', label: 'Full depth', values: { depth: 'orbit', cardFacing: 'camera' } },
     { id: 'zero-motion', label: 'Zero motion', values: { motion: 'reduced' } },

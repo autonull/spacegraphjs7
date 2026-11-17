@@ -243,10 +243,13 @@ function logRows<Node extends RepresentationNode>(
 export {
     DEFAULT_RUNG_IDS,
     RepresentationLadder,
+    collapseClusters,
     ladderFromStops,
     representationChanges,
 } from './ladder';
 export type {
+    ClusterCollapse,
+    ClusterNode,
     LadderConfig,
     LadderContext,
     LadderNode,

@@ -17,6 +17,7 @@ import {
 import { libraryManifest } from '@spacegraphjs/config/library';
 import type { RenderModel, RenderNode } from '@spacegraphjs/renderer';
 import { InlineGraph } from '@spacegraphjs/svg-renderer';
+import { DEFAULT_EDGE_STYLES, EDGE_RUNG_IDS, EdgeLadder } from 'spacegraphjs/edges/ladder';
 import {
     DEFAULT_RUNG_IDS,
     ladderFromStops,
@@ -90,6 +91,17 @@ const domain = new ScaleDomain({
     stops: STOPS,
     range: { min: 1, max: 100, closerIsLarger: false },
 });
+const EDGE_STOPS = EDGE_RUNG_IDS.map((id, index) => ({
+    id,
+    at: index / (EDGE_RUNG_IDS.length - 1),
+}));
+const edgeDomain = new ScaleDomain({
+    stops: EDGE_STOPS,
+    range: { min: 1, max: 100, closerIsLarger: false },
+});
+const edgeLadder = new EdgeLadder(
+    EDGE_STOPS.map((stop) => ({ ...stop, style: DEFAULT_EDGE_STYLES[stop.id] })),
+);
 
 const host = new SecondHost();
 const leftGraph = new InlineGraph(element('left-graph'));
@@ -120,7 +132,29 @@ function graphModel(state: ConfigState): RenderModel {
         source === 'secondHost'
             ? hostModel(state)
             : activityHostFixture();
-    return withRepresentation(model, state.get('lod') ?? 'card');
+    return withRepresentation(
+        withEdgeLadder(model, state.get('edgeLod') ?? 'arrow'),
+        state.get('lod') ?? 'card',
+    );
+}
+
+function withEdgeLadder(model: RenderModel, lod: string): RenderModel {
+    const index = Math.max(0, EDGE_RUNG_IDS.indexOf(lod as (typeof EDGE_RUNG_IDS)[number]));
+    const sample = edgeDomain.sample(index / (EDGE_RUNG_IDS.length - 1));
+    return {
+        ...model,
+        edges: model.edges.map((edge) => {
+            const selection = edgeLadder.select({ id: edge.id, kind: edge.kind }, sample);
+            if (!selection) return edge;
+            const { thickness, dashed, labelLod } = selection.style;
+            return {
+                ...edge,
+                confidence: thickness === 1 ? 'inferred' : thickness === 4 ? 'explicit' : 'structural',
+                style: dashed ? ('dashed' as const) : ('solid' as const),
+                label: labelLod ? (edge.label ?? edge.kind) : edge.label,
+            };
+        }),
+    };
 }
 
 function hostModel(state: ConfigState): RenderModel {

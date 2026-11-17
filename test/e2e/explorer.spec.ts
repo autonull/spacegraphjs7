@@ -51,6 +51,16 @@ test.describe('configuration explorer (P0.3)', () => {
         expect(await page.locator('#left-graph svg circle').count()).toBe(0);
     });
 
+    test('switches the edge rung through the edgeLod axis', async ({ page }) => {
+        await boot(page);
+        await page.locator('[data-axis="edgeLod"][data-value="arrow"]').click();
+        const arrows = await page.locator('#left-graph svg line[stroke-dasharray]').count();
+
+        await page.locator('[data-axis="edgeLod"][data-value="bundle"]').click();
+        const bundles = await page.locator('#left-graph svg line[stroke-dasharray]').count();
+        expect(bundles).toBeGreaterThan(arrows);
+    });
+
     test('drives the second host over the same model', async ({ page }) => {
         await boot(page);
         const contractNodes = (await api<number[]>(page, 'nodes'))[0];

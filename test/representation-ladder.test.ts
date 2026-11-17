@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest';
 import {
     DEFAULT_RUNG_IDS,
     RepresentationLadder,
+    collapseClusters,
     ladderFromStops,
     representationChanges,
+    type ClusterNode,
     type LadderNode,
 } from 'spacegraphjs/representations';
 import { ScaleDomain } from 'spacegraphjs/zoom';
@@ -98,5 +100,25 @@ describe('representation ladder', () => {
         registry.register({ at: 0.5, id: 'card', build: build('card') });
         expect(registry.ids).toEqual(['card']);
         expect(registry.select(node, sample(0.5))?.value).toBe('card:n1');
+    });
+
+    it('collapses clusters as representations until the host expand rung', () => {
+        const nodes: ClusterNode[] = [
+            { id: 'c1', kind: 'cluster', clusterOf: ['a', 'b'] },
+            { id: 'a', kind: 'tool' },
+            { id: 'b', kind: 'tool' },
+            { id: 'c', kind: 'tool' },
+        ];
+        const registry = new RepresentationLadder<ClusterNode, string>(
+            stops.map((stop) => ({ at: stop.at, id: stop.id, build: build(stop.id) })),
+        );
+
+        const collapsed = collapseClusters(nodes, sample(1), registry, 'card');
+        expect([...collapsed.visible]).toEqual(['c1', 'c']);
+        expect(collapsed.clusters.get('c1')).toBe('detail');
+
+        const expanded = collapseClusters(nodes, sample(0.5), registry, 'card');
+        expect([...expanded.visible]).toEqual(['c1', 'a', 'b', 'c']);
+        expect(expanded.clusters.size).toBe(0);
     });
 });

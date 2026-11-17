@@ -31,6 +31,11 @@
             "import": "./dist/edges.js",
             "default": "./dist/edges.js"
         },
+        "./edges/ladder": {
+            "types": "./dist/edges-ladder.d.ts",
+            "import": "./dist/edges-ladder.js",
+            "default": "./dist/edges-ladder.js"
+        },
         "./nodes": {
             "types": "./dist/nodes.d.ts",
             "import": "./dist/nodes.js",

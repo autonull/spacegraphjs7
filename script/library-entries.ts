@@ -31,6 +31,12 @@ export const LIBRARY_ENTRIES: LibraryEntry[] = [
         types: 'dist/layout-registry.d.ts',
     },
     { subpath: './edges', name: 'edges', source: 'src/edges/index.ts', types: 'dist/edges.d.ts' },
+    {
+        subpath: './edges/ladder',
+        name: 'edges-ladder',
+        source: 'src/edges/ladder.ts',
+        types: 'dist/edges-ladder.d.ts',
+    },
     { subpath: './nodes', name: 'nodes', source: 'src/nodes/index.ts', types: 'dist/nodes.d.ts' },
     {
         subpath: './plugins',

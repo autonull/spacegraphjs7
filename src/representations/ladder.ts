@@ -2,6 +2,7 @@
 // ScaleDomain sample; the host supplies the order, the bands and the appearance of every rung.
 // Selection keeps node ids stable across swaps so selection and permalinks stay valid (P1.2/P1.3).
 
+import { selectRung } from '../core/rung';
 import { clamp } from '../utils/math';
 import type { ScaleSample } from '../zoom/ScaleDomain';
 
@@ -45,25 +46,6 @@ export interface LadderSelection<Node extends LadderNode = LadderNode, Output = 
 /** The coarse-to-fine ladder a host may adopt; hosts own the real order and appearance. */
 export const DEFAULT_RUNG_IDS = ['dot', 'glyph', 'card', 'widget', 'detail'] as const;
 
-function chooseRung<Node extends LadderNode, Output>(
-    candidates: readonly LadderRung<Node, Output>[],
-    value: number,
-    previous: string | undefined,
-    hysteresis: number,
-): LadderRung<Node, Output> {
-    let index = 0;
-    candidates.forEach((rung, position) => {
-        if (rung.at <= value) index = position;
-    });
-    const candidate = candidates[index]!;
-    const current = candidates.find((rung) => rung.id === previous);
-
-    if (!current || current === candidate) return candidate;
-    if (candidate.at > current.at && value < candidate.at + hysteresis) return current;
-    if (candidate.at < current.at && value > current.at - hysteresis) return current;
-    return candidate;
-}
-
 export class RepresentationLadder<Node extends LadderNode = LadderNode, Output = unknown> {
     readonly #rungs: LadderRung<Node, Output>[];
     readonly #hysteresis: number;
@@ -95,9 +77,8 @@ export class RepresentationLadder<Node extends LadderNode = LadderNode, Output =
                 (!rung.kinds || rung.kinds.includes(node.kind)) &&
                 (rung.minImportance === undefined || importance >= rung.minImportance),
         );
-        if (candidates.length === 0) return undefined;
-
-        const rung = chooseRung(candidates, sample.normalized, previous, this.#hysteresis);
+        const rung = selectRung(candidates, sample.normalized, previous, this.#hysteresis);
+        if (!rung) return undefined;
         return {
             id: node.id,
             rung,
@@ -153,4 +134,39 @@ export function representationChanges(
         const from = previous.get(id);
         return from !== undefined && from !== to ? [{ id, from, to, duration: sample.transitionDuration }] : [];
     });
+}
+
+export interface ClusterNode extends LadderNode {
+    /** Members hidden while the cluster is collapsed; ids stay stable across swaps. */
+    readonly clusterOf?: readonly string[];
+}
+
+export interface ClusterCollapse {
+    /** Node ids a host may draw at this scale. */
+    readonly visible: ReadonlySet<string>;
+    /** Cluster id to its rung, so a host can draw the collapsed chip. */
+    readonly clusters: ReadonlyMap<string, string>;
+}
+
+/** Clusters collapse as representations, not as a separate level state. */
+export function collapseClusters<Node extends ClusterNode, Output>(
+    nodes: readonly Node[],
+    sample: ScaleSample,
+    ladder: RepresentationLadder<Node, Output>,
+    expandRung: string,
+): ClusterCollapse {
+    const clusters = new Map<string, string>();
+    const hidden = new Set<string>();
+
+    for (const node of nodes) {
+        const rung = ladder.select(node, sample)?.rung.id;
+        if (!rung || rung === expandRung || !node.clusterOf?.length) continue;
+        clusters.set(node.id, rung);
+        for (const member of node.clusterOf) hidden.add(member);
+    }
+
+    return {
+        visible: new Set(nodes.filter((node) => !hidden.has(node.id)).map((node) => node.id)),
+        clusters,
+    };
 }

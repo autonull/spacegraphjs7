@@ -1,5 +1,6 @@
 import { RENDERER_STRATEGIES } from '@spacegraphjs/adapter';
 import { CARD_FACINGS, DEPTH_MODES, PROJECTIONS } from '@spacegraphjs/renderer';
+import { EDGE_RUNG_IDS } from 'spacegraphjs/edges/ladder';
 import { LAYOUT_REGISTRY } from 'spacegraphjs/layout-registry';
 import { DEFAULT_RUNG_IDS } from 'spacegraphjs/representations';
 import { buildManifest } from './manifest';
@@ -36,6 +37,13 @@ export function libraryEntries(): ManifestEntry[] {
             source: 'representations/RepresentationLadder',
             default: 'card',
             reducedMotion: 'rung swaps use the scale-domain duration; reduced motion zeroes it',
+        },
+        {
+            id: 'edgeLod',
+            values: EDGE_RUNG_IDS,
+            source: 'edges/EdgeLadder',
+            default: 'arrow',
+            reducedMotion: 'edge rung changes are non-animated thickness and label swaps',
         },
         {
             id: 'widgets',
