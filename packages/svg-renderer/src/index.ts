@@ -168,7 +168,7 @@ function nodeSVG(node: RenderNode, theme: RenderTheme, bounds: Bounds): string {
         const left = x - width / 2;
         const top = y - height / 2;
         return [
-            `<g>${title}`,
+            `<g data-node-id="${escapeXml(node.id)}">${title}`,
             `<rect x="${left}" y="${top}" width="${width}" height="${height}" rx="14"`,
             ` fill="${escapeXml(color)}" fill-opacity="0.12" stroke="${escapeXml(color)}"/>`,
             `<text x="${left + 12}" y="${top + 20}" fill="${escapeXml(theme.text)}" font-size="11"`,
@@ -178,7 +178,7 @@ function nodeSVG(node: RenderNode, theme: RenderTheme, bounds: Bounds): string {
 
     if (node.shape === 'dot') {
         const radius = (node.size?.[0] ?? 16) / 2;
-        return `<g><circle cx="${x}" cy="${y}" r="${radius}" fill="${escapeXml(color)}" stroke="${escapeXml(theme.border)}"/>${title}</g>`;
+        return `<g data-node-id="${escapeXml(node.id)}"><circle cx="${x}" cy="${y}" r="${radius}" fill="${escapeXml(color)}" stroke="${escapeXml(theme.border)}"/>${title}</g>`;
     }
 
     const card = isCardShape(node.shape);
@@ -186,7 +186,7 @@ function nodeSVG(node: RenderNode, theme: RenderTheme, bounds: Bounds): string {
     const width = node.size?.[0] ?? (card ? 200 : badge ? 96 : 120);
     const height = node.size?.[1] ?? (card ? 64 : badge ? 24 : 32);
     return [
-        `<g>${title}`,
+        `<g data-node-id="${escapeXml(node.id)}">${title}`,
         `<rect x="${x - width / 2}" y="${y - height / 2}" width="${width}" height="${height}" rx="${card ? 8 : 4}"`,
         ` fill="${escapeXml(card ? theme.surface : color)}" stroke="${escapeXml(theme.border)}"/>`,
         `<text x="${x}" y="${y}" fill="${escapeXml(theme.text)}" font-size="${theme.fontSize}"`,

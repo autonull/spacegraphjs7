@@ -21,15 +21,34 @@ import { DEFAULT_EDGE_STYLES, EDGE_RUNG_IDS, EdgeLadder } from 'spacegraphjs/edg
 import {
     DEFAULT_RUNG_IDS,
     ladderFromStops,
+    playRepresentationChanges,
+    representationChanges,
     type LadderContext,
     type LadderNode,
+    type RepresentationPlayback,
+    type RepresentationTween,
 } from 'spacegraphjs/representations';
-import { ScaleDomain } from 'spacegraphjs/zoom';
+import { ScaleDomain, type ScaleSample } from 'spacegraphjs/zoom';
 import { activityHostFixture } from './activity-host';
 import { SecondHost } from './second-host/host';
 import { HOST_VIEWS, LEVELS, type BuildLevel, type HostView } from './second-host/model';
 
 type Appearance = Pick<RenderNode, 'shape' | 'size'>;
+
+interface BuiltGraph {
+    readonly model: RenderModel;
+    readonly rungs: ReadonlyMap<string, string>;
+    readonly sample: ScaleSample;
+}
+
+interface TransitionInfo {
+    readonly ids: readonly string[];
+    readonly from: readonly string[];
+    readonly to: readonly string[];
+    readonly duration: number;
+    t: number;
+    done: boolean;
+}
 
 interface ExplorerApi {
     axes: () => readonly string[];
@@ -45,6 +64,7 @@ interface ExplorerApi {
     source: () => ConfigValue | undefined;
     nodes: () => readonly number[];
     diff: () => readonly { axis: string; left: ConfigValue | undefined; right: ConfigValue | undefined }[];
+    transition: () => TransitionInfo;
 }
 
 declare global {
@@ -80,9 +100,11 @@ const APPEARANCE: Readonly<Record<string, Appearance>> = {
     widget: { shape: 'card', size: [220, 96, 0] },
     detail: { shape: 'panel', size: [260, 140, 0] },
 };
+const TRANSITION_SECONDS = 0.8;
 const STOPS = DEFAULT_RUNG_IDS.map((id, index) => ({
     id,
     at: index / (DEFAULT_RUNG_IDS.length - 1),
+    transitionDuration: TRANSITION_SECONDS,
 }));
 const BUILDERS = Object.fromEntries(
     DEFAULT_RUNG_IDS.map((id) => [id, () => APPEARANCE[id]!]),
@@ -110,6 +132,11 @@ const rightGraph = new InlineGraph(element('right-graph'));
 let left = ConfigState.fromSearch(space, location.hash);
 let right = randomize(space, seeded(41));
 let compare = false;
+let previousRungs: ReadonlyMap<string, string> = new Map();
+let playback: RepresentationPlayback | undefined;
+let frameHandle = 0;
+let lastFrame = 0;
+let lastTransition: TransitionInfo = { ids: [], from: [], to: [], duration: 0, t: 0, done: true };
 
 function element<T extends HTMLElement = HTMLElement>(id: string): T {
     const found = document.getElementById(id);
@@ -126,7 +153,7 @@ function effective(state: ConfigState): ConfigState {
     return negotiate(space, state, { capabilities, flags }).state;
 }
 
-function graphModel(state: ConfigState): RenderModel {
+function graphModel(state: ConfigState): BuiltGraph {
     const source = state.get('source');
     const model =
         source === 'secondHost'
@@ -163,17 +190,74 @@ function hostModel(state: ConfigState): RenderModel {
     return host.renderModel();
 }
 
-function withRepresentation(model: RenderModel, lod: string): RenderModel {
+function withRepresentation(model: RenderModel, lod: string): BuiltGraph {
     const index = Math.max(0, DEFAULT_RUNG_IDS.indexOf(lod as (typeof DEFAULT_RUNG_IDS)[number]));
     const sample = domain.sample(index / (DEFAULT_RUNG_IDS.length - 1));
     const ladder = ladderFromStops<LadderNode, Appearance>(STOPS, BUILDERS);
-    return {
-        ...model,
-        nodes: model.nodes.map((node) => {
-            const selection = ladder.select({ id: node.id, kind: node.kind }, sample);
-            return selection ? { ...node, ...selection.value } : node;
-        }),
+    const rungs = new Map<string, string>();
+    const nodes = model.nodes.map((node) => {
+        const selection = ladder.select({ id: node.id, kind: node.kind }, sample);
+        if (!selection) return node;
+        rungs.set(node.id, selection.rung.id);
+        return { ...node, ...selection.value };
+    });
+    return { model: { ...model, nodes }, rungs, sample };
+}
+
+function play(built: BuiltGraph, state: ConfigState): void {
+    if (frameHandle) cancelAnimationFrame(frameHandle);
+    const changes = representationChanges(previousRungs, built.rungs, built.sample);
+    previousRungs = built.rungs;
+    lastTransition = {
+        ids: changes.map((change) => change.id),
+        from: changes.map((change) => change.from),
+        to: changes.map((change) => change.to),
+        duration: built.sample.transitionDuration,
+        t: 0,
+        done: true,
     };
+    if (!changes.length) return;
+
+    playback = playRepresentationChanges(
+        changes,
+        (change, value) => {
+            lastTransition.t = value;
+            applyAppearance(change, value);
+        },
+        { reducedMotion: state.get('motion') === 'reduced' },
+    );
+    lastTransition.done = playback.done;
+    if (!playback.done) {
+        lastFrame = performance.now();
+        frameHandle = requestAnimationFrame(tick);
+    }
+}
+
+function tick(time: number): void {
+    if (!playback) return;
+    playback.advance((time - lastFrame) / 1000);
+    lastFrame = time;
+    lastTransition.done = playback.done;
+    frameHandle = playback.done ? 0 : requestAnimationFrame(tick);
+}
+
+function applyAppearance(change: RepresentationTween, value: number): void {
+    const group = element('left-graph').querySelector<SVGGElement>(
+        `[data-node-id="${change.id}"]`,
+    );
+    if (!group) return;
+    const from = APPEARANCE[change.from];
+    const to = APPEARANCE[change.to];
+    const lerp = (a: number, b: number) => a + (b - a) * value;
+    const width = lerp(from?.size?.[0] ?? 120, to?.size?.[0] ?? 120);
+    const height = lerp(from?.size?.[1] ?? 32, to?.size?.[1] ?? 32);
+    group.dataset.rungFrom = change.from;
+    group.dataset.rungTo = change.to;
+    group.dataset.transitionT = value.toFixed(3);
+    group.setAttribute('opacity', String(0.55 + 0.45 * value));
+    group.querySelector('rect')?.setAttribute('width', String(width));
+    group.querySelector('rect')?.setAttribute('height', String(height));
+    group.querySelector('circle')?.setAttribute('r', String(Math.min(width, height) / 2));
 }
 
 function renderAxes(result: ReturnType<typeof negotiate>): void {
@@ -254,8 +338,10 @@ function render(): void {
 
     renderAxes(result);
     renderPresets();
-    leftGraph.setModel(graphModel(result.state));
-    if (compare) rightGraph.setModel(graphModel(effective(right)));
+    const built = graphModel(result.state);
+    leftGraph.setModel(built.model);
+    play(built, result.state);
+    if (compare) rightGraph.setModel(graphModel(effective(right)).model);
     renderDiff();
 }
 
@@ -310,10 +396,11 @@ window.__explorer = {
     hash: () => left.toHash(),
     source: () => left.get('source'),
     nodes: () => [
-        graphModel(effective(left)).nodes.length,
-        graphModel(effective(right)).nodes.length,
+        graphModel(effective(left)).model.nodes.length,
+        graphModel(effective(right)).model.nodes.length,
     ],
     diff: () => axisDiff(left, right),
+    transition: () => ({ ...lastTransition }),
 };
 window.__ready = true;
 render();

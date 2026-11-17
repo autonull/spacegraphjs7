@@ -257,6 +257,16 @@ export type {
     LadderSelection,
     RungChange,
 } from './ladder';
+export {
+    REPRESENTATION_EASINGS,
+    playRepresentationChanges,
+} from './playback';
+export type {
+    RepresentationEase,
+    RepresentationPlayback,
+    RepresentationPlaybackOptions,
+    RepresentationTween,
+} from './playback';
 
 /** The summary representation API. A host calls it with its own node vocabulary. */
 export const Representations = {

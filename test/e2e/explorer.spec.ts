@@ -51,6 +51,61 @@ test.describe('configuration explorer (P0.3)', () => {
         expect(await page.locator('#left-graph svg circle').count()).toBe(0);
     });
 
+    test('plays a stable-id representation swap and captures a parity frame', async ({ page }) => {
+        await boot(page);
+        await api(page, 'set', 'lod', 'dot');
+        const before = await page.$$eval('#left-graph [data-node-id]', (groups) =>
+            groups.map((group) => (group as HTMLElement).dataset.nodeId),
+        );
+
+        await page.locator('[data-axis="lod"][data-value="detail"]').click();
+        await page.waitForFunction(
+            () => {
+                const transition = (window as any).__explorer.transition();
+                return transition.t > 0 && transition.t < 1 && !transition.done;
+            },
+            undefined,
+            { timeout: 3000 },
+        );
+        const mid = await api<{ ids: string[]; from: string[]; to: string[]; duration: number }>(
+            page,
+            'transition',
+        );
+        expect(mid.ids).toEqual(before);
+        expect(mid.from.every((rung) => rung === 'dot')).toBe(true);
+        expect(mid.to.every((rung) => rung === 'detail')).toBe(true);
+        expect(mid.duration).toBeGreaterThan(0);
+        await expect(page.locator('#left-graph [data-transition-t]').first()).toBeVisible();
+        const frame = await page.locator('#left-graph').screenshot();
+        expect(frame.length).toBeGreaterThan(0);
+
+        await page.waitForFunction(() => (window as any).__explorer.transition().done, undefined, {
+            timeout: 3000,
+        });
+        const after = await page.$$eval('#left-graph [data-node-id]', (groups) =>
+            groups.map((group) => (group as HTMLElement).dataset.nodeId),
+        );
+        expect(after).toEqual(before);
+        expect((await api<Record<string, string>>(page, 'config')).lod).toBe('detail');
+    });
+
+    test('reduced motion collapses the swap to its final frame', async ({ page }) => {
+        await boot(page);
+        await api(page, 'set', 'lod', 'dot');
+        await api(page, 'set', 'motion', 'reduced');
+        await api(page, 'set', 'lod', 'detail');
+        const transition = await api<{ t: number; done: boolean; duration: number }>(
+            page,
+            'transition',
+        );
+        expect(transition).toMatchObject({ t: 1, done: true });
+        expect(transition.duration).toBeGreaterThan(0);
+        const values = await page.$$eval('#left-graph [data-transition-t]', (groups) =>
+            groups.map((group) => (group as HTMLElement).dataset.transitionT),
+        );
+        expect(values.every((value) => value === '1.000')).toBe(true);
+    });
+
     test('switches the edge rung through the edgeLod axis', async ({ page }) => {
         await boot(page);
         await page.locator('[data-axis="edgeLod"][data-value="arrow"]').click();
