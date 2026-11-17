@@ -240,6 +240,21 @@ function logRows<Node extends RepresentationNode>(
     return summaryRows(model, config);
 }
 
+export {
+    DEFAULT_RUNG_IDS,
+    RepresentationLadder,
+    ladderFromStops,
+    representationChanges,
+} from './ladder';
+export type {
+    LadderConfig,
+    LadderContext,
+    LadderNode,
+    LadderRung,
+    LadderSelection,
+    RungChange,
+} from './ladder';
+
 /** The summary representation API. A host calls it with its own node vocabulary. */
 export const Representations = {
     summaryRows,
