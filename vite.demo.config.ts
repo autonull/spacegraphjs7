@@ -10,6 +10,10 @@ export default defineConfig({
         alias: [
             { find: /^@src\/(.+)$/, replacement: resolve(__dirname, 'src/$1') },
             { find: /^spacegraphjs$/, replacement: resolve(__dirname, 'src/index.ts') },
+            {
+                find: /^spacegraphjs\/layout-registry$/,
+                replacement: resolve(__dirname, 'src/core/layout-registry.ts'),
+            },
             { find: /^spacegraphjs\/(.+)$/, replacement: resolve(__dirname, 'src/$1') },
             {
                 find: /^@spacegraphjs\/config$/,
@@ -47,6 +51,14 @@ export default defineConfig({
                 find: /^@spacegraphjs\/trace$/,
                 replacement: resolve(__dirname, 'packages/trace/src/index.ts'),
             },
+            {
+                find: /^@spacegraphjs\/overlays$/,
+                replacement: resolve(__dirname, 'packages/overlays/dist/index.js'),
+            },
+            {
+                find: /^@spacegraphjs\/search$/,
+                replacement: resolve(__dirname, 'packages/search/dist/index.js'),
+            },
             { find: /^\.\.\/framework$/, replacement: resolve(__dirname, 'demo/framework.ts') },
         ],
     },
@@ -63,6 +75,7 @@ export default defineConfig({
                 main: resolve(__dirname, 'demo/index.html'),
                 contract: resolve(__dirname, 'demo/contract.html'),
                 secondHost: resolve(__dirname, 'demo/second-host.html'),
+                explorer: resolve(__dirname, 'demo/explorer.html'),
             },
             output: {
                 manualChunks(id) {

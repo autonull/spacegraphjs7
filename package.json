@@ -145,6 +145,7 @@
         "test:full": "pnpm test && pnpm run test:kernel",
         "test:publish": "tsx script/publish-check.ts",
         "test:second-host": "playwright test --config playwright.demo.config.ts test/e2e/second-host.spec.ts",
+        "test:explorer": "playwright test --config playwright.demo.config.ts test/e2e/explorer.spec.ts",
         "test:screenshots": "mkdir -p test/screenshots && playwright test test/e2e/demo-screenshots.spec.ts --reporter=list",
         "test:vision": "mkdir -p test/fixtures/dist && cp -r dist/* test/fixtures/dist/ && cp -r public/*.onnx test/fixtures/dist/ && playwright test test/vision.spec.ts",
         "verify": "tsx verification/verify_demos.ts",

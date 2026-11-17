@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Configuration explorer — SpaceGraphJS</title>
+        <style>
+            * {
+                box-sizing: border-box;
+            }
+            :root {
+                --bg: #0b0f17;
+                --surface: #151b26;
+                --muted-surface: #1f2733;
+                --text: #e6ecf5;
+                --muted: #9aa7b8;
+                --border: #2b3544;
+                --accent: #3b82f6;
+                --focus: #93c5fd;
+            }
+            :root[data-theme='light'] {
+                --bg: #f7f8fa;
+                --surface: #fff;
+                --muted-surface: #e9edf3;
+                --text: #101828;
+                --muted: #5b6675;
+                --border: #c6cfdb;
+                --accent: #2563eb;
+                --focus: #60a5fa;
+            }
+            html,
+            body {
+                margin: 0;
+                min-height: 100%;
+            }
+            body {
+                background: var(--bg);
+                color: var(--text);
+                font: 13px/1.5 ui-sans-serif, system-ui, sans-serif;
+            }
+            header {
+                padding: 12px 16px;
+                border-bottom: 1px solid var(--border);
+                background: var(--surface);
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+                gap: 8px 18px;
+            }
+            header h1 {
+                margin: 0;
+                font-size: 15px;
+            }
+            header .sub {
+                color: var(--muted);
+                font-size: 12px;
+            }
+            .controls {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+                margin-inline-start: auto;
+            }
+            button {
+                font: inherit;
+                font-size: 12px;
+                color: var(--text);
+                background: var(--muted-surface);
+                border: 1px solid var(--border);
+                border-radius: 6px;
+                padding: 5px 9px;
+                cursor: pointer;
+            }
+            button:hover {
+                border-color: var(--accent);
+            }
+            button[aria-pressed='true'] {
+                background: var(--accent);
+                border-color: var(--accent);
+                color: #fff;
+            }
+            button:focus-visible {
+                outline: 2px solid var(--focus);
+                outline-offset: 2px;
+            }
+            main {
+                display: grid;
+                grid-template-columns: 300px minmax(0, 1fr);
+                align-items: start;
+                gap: 16px;
+                padding: 16px;
+            }
+            #axes {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+            }
+            fieldset {
+                margin: 0;
+                padding: 8px 10px;
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                background: var(--surface);
+            }
+            legend {
+                padding: 0 4px;
+                font-weight: 600;
+            }
+            .values {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 4px;
+            }
+            .meta {
+                color: var(--muted);
+                font-size: 11px;
+                margin-top: 6px;
+            }
+            #presets {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 6px;
+                margin-top: 4px;
+            }
+            #stage {
+                display: grid;
+                gap: 12px;
+            }
+            #stage[data-compare='true'] {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+            .pane {
+                min-width: 0;
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                background: var(--surface);
+                overflow: auto;
+            }
+            .pane h2 {
+                margin: 0;
+                padding: 8px 10px;
+                font-size: 12px;
+                color: var(--muted);
+                border-bottom: 1px solid var(--border);
+            }
+            .pane > div {
+                padding: 8px;
+            }
+            #right-pane[hidden] {
+                display: none;
+            }
+            #diff {
+                border-top: 1px solid var(--border);
+                color: var(--muted);
+                font-size: 12px;
+                padding: 8px 10px;
+                white-space: pre-wrap;
+            }
+            #diff[hidden] {
+                display: none;
+            }
+            footer {
+                padding: 10px 16px;
+                border-top: 1px solid var(--border);
+                color: var(--muted);
+                font-size: 12px;
+            }
+            #hash {
+                font-family: ui-monospace, monospace;
+                overflow-wrap: anywhere;
+            }
+            @media (max-width: 900px) {
+                main {
+                    grid-template-columns: minmax(0, 1fr);
+                }
+                #stage[data-compare='true'] {
+                    grid-template-columns: minmax(0, 1fr);
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <header>
+            <div>
+                <h1>Configuration explorer</h1>
+                <div class="sub">Every axis · two hosts · no OpenCode import</div>
+            </div>
+            <div class="controls">
+                <button id="randomize" type="button">Randomize</button>
+                <button id="reset" type="button">Reset to baseline</button>
+                <button id="compare" type="button" aria-pressed="false">Compare</button>
+            </div>
+        </header>
+        <main>
+            <section aria-label="Configuration axes">
+                <div id="axes"></div>
+                <fieldset>
+                    <legend>Example presets</legend>
+                    <div class="meta">Examples, not defaults. Opt-in, editable, removable.</div>
+                    <div id="presets"></div>
+                </fieldset>
+            </section>
+            <section id="stage" data-compare="false" aria-label="Live graph">
+                <div class="pane">
+                    <h2 id="left-title">Configuration</h2>
+                    <div id="left-graph"></div>
+                </div>
+                <div class="pane" id="right-pane" hidden>
+                    <h2 id="right-title">Comparison</h2>
+                    <div id="right-graph"></div>
+                </div>
+                <div id="diff" hidden></div>
+            </section>
+        </main>
+        <footer>
+            State: <span id="hash"></span>
+        </footer>
+        <script type="module" src="./explorer.ts"></script>
+    </body>
+</html>
