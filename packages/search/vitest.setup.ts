@@ -1,0 +1,1 @@
+// Empty setup file to prevent auto-import of @testing-library/jest-dom

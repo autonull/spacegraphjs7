@@ -80,8 +80,8 @@ export default defineConfig({
         include: ['test/**/*.test.ts', 'packages/*/test/**/*.test.ts'],
         exclude: [...configDefaults.exclude],
         globals: false,
-        // Setup file to provide node-canvas and DOM shims for jsdom
-        setupFiles: ['test/setupTests.ts'],
+        // Setup files to provide node-canvas and DOM shims for jsdom, plus jest-dom matchers
+        setupFiles: ['test/setupTests.ts', 'test/vitest.setup.ts'],
         coverage: {
             provider: 'v8',
             include: ['src/**/*.ts'],
