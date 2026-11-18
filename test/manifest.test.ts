@@ -3,10 +3,13 @@ import { RENDERER_STRATEGIES } from '@spacegraphjs/adapter';
 import { EXAMPLE_PRESETS } from '@spacegraphjs/config';
 import { libraryManifest } from '@spacegraphjs/config/library';
 import { CARD_FACINGS, DEPTH_MODES, EMPHASIS_CHANNELS, PROJECTIONS } from '@spacegraphjs/renderer';
+import { DEPTH_AXES } from 'spacegraphjs/depth';
 import { EDGE_RUNG_IDS } from 'spacegraphjs/edges/ladder';
 import { LAYOUT_REGISTRY } from 'spacegraphjs/layout-registry';
+import { CAMERA_VERBS, MOTION_VERBS } from 'spacegraphjs/motion';
 import { DEFAULT_RUNG_IDS } from 'spacegraphjs/representations';
 import { SALIENCE_SIGNAL_IDS } from 'spacegraphjs/salience';
+import { SCENE_FEATURES, SENSORY_SEAMS } from 'spacegraphjs/world';
 import { WIDGET_SLOTS } from 'spacegraphjs/widgets';
 
 const manifest = libraryManifest();
@@ -25,6 +28,11 @@ describe('library capability manifest', () => {
         expect(values('salience')).toEqual(['none', ...SALIENCE_SIGNAL_IDS, 'combined']);
         expect(values('emphasis')).toEqual(['none', ...EMPHASIS_CHANNELS]);
         expect(values('widgets')).toEqual(['none', ...WIDGET_SLOTS, 'max']);
+        expect(values('motionVerb')).toEqual(['none', ...MOTION_VERBS]);
+        expect(values('cameraVerb')).toEqual([...CAMERA_VERBS]);
+        expect(values('depthAxis')).toEqual([...DEPTH_AXES]);
+        expect(values('sceneFeature')).toEqual(['none', ...SCENE_FEATURES, 'all']);
+        expect(values('sensory')).toEqual([...SENSORY_SEAMS]);
     });
 
     it('declares every axis an example preset touches', () => {

@@ -111,4 +111,11 @@ export const LIBRARY_ENTRIES: LibraryEntry[] = [
         source: 'src/vision/index.ts',
         types: 'dist/vision.d.ts',
     },
+    {
+        subpath: './motion',
+        name: 'motion',
+        source: 'src/motion/index.ts',
+        types: 'dist/motion.d.ts',
+    },
+    { subpath: './world', name: 'world', source: 'src/world/index.ts', types: 'dist/world.d.ts' },
 ];

@@ -48,7 +48,15 @@ export type {
 } from './types/node-data';
 
 // Spec types (SGF-3: export surface audit)
-export type { NodeSpec, EdgeSpec, GraphSpec, GraphExport, GraphImportData, SpecUpdate, ZuiManifest } from './types/spec';
+export type {
+    NodeSpec,
+    EdgeSpec,
+    GraphSpec,
+    GraphExport,
+    GraphImportData,
+    SpecUpdate,
+    ZuiManifest,
+} from './types/spec';
 
 // Vision plugins
 export { VisionOverlayPlugin } from './plugins/VisionOverlayPlugin';
@@ -58,18 +66,28 @@ export { PhysicsPlugin } from './plugins/PhysicsPlugin';
 export { ForceLayout, type ForceLayoutConfig } from './plugins/layouts/ForceLayout';
 export { CircularLayout, type CircularLayoutOptions } from './plugins/layouts/CircularLayout';
 export { GridLayout, type GridLayoutOptions } from './plugins/layouts/GridLayout';
-export { HierarchicalLayout, type HierarchicalLayoutOptions } from './plugins/layouts/HierarchicalLayout';
+export {
+    HierarchicalLayout,
+    type HierarchicalLayoutOptions,
+} from './plugins/layouts/HierarchicalLayout';
 export { RadialLayout, type RadialLayoutOptions } from './plugins/layouts/RadialLayout';
 export { SpectralLayout, type SpectralLayoutOptions } from './plugins/layouts/SpectralLayout';
 export { TreeLayout, type TreeLayoutOptions } from './plugins/layouts/TreeLayout';
 
 // Interaction plugins
-export { HoverMetaWidget, type HoverMetaWidgetOptions } from './plugins/interaction/HoverMetaWidget';
+export {
+    HoverMetaWidget,
+    type HoverMetaWidgetOptions,
+} from './plugins/interaction/HoverMetaWidget';
 export { InteractionPlugin } from './plugins/InteractionPlugin';
 
 // Mermaid plugin
 export { DiagramParserFactory } from './plugins/mermaid/MermaidParser';
-export { MermaidPlugin, type MermaidPluginOptions, injectMermaidStyles } from './plugins/mermaid/MermaidPlugin';
+export {
+    MermaidPlugin,
+    type MermaidPluginOptions,
+    injectMermaidStyles,
+} from './plugins/mermaid/MermaidPlugin';
 
 // HUD plugin
 export { HUDPlugin, type HUDElementOptions } from './plugins/HUDPlugin';
@@ -87,7 +105,13 @@ export { createSpaceGraph, createGraph, sg, qg } from './SpaceGraph';
 export type { SpaceGraphEvents, SelectionChangedPayload } from './types/events';
 
 // Layout registry (SGF-2: layout registry and one name)
-export { listLayouts, getLayoutRegistry, type LayoutRegistryEntry, DEFAULT_LAYOUT_PLUGINS, LAYOUT_REGISTRY } from './core/defaults';
+export {
+    listLayouts,
+    getLayoutRegistry,
+    type LayoutRegistryEntry,
+    DEFAULT_LAYOUT_PLUGINS,
+    LAYOUT_REGISTRY,
+} from './core/defaults';
 
 // Re-export submodules for direct access (tree-shakeable)
 export * as builder from './builder';
@@ -109,6 +133,8 @@ export * as overlays from './overlays';
 export * as control from './control';
 export * as a11y from './a11y';
 export * as levels from './levels';
+export * as motion from './motion';
+export * as world from './world';
 
 // Logger utility
 export { createLogger, logger, setLogLevel, type LogLevel, type Logger } from './utils/logger';

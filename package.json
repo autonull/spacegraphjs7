@@ -130,6 +130,16 @@
             "types": "./dist/vision.d.ts",
             "import": "./dist/vision.js",
             "default": "./dist/vision.js"
+        },
+        "./motion": {
+            "types": "./dist/motion.d.ts",
+            "import": "./dist/motion.js",
+            "default": "./dist/motion.js"
+        },
+        "./world": {
+            "types": "./dist/world.d.ts",
+            "import": "./dist/world.js",
+            "default": "./dist/world.js"
         }
     },
     "files": [

@@ -1,0 +1,21 @@
+// `spacegraphjs/world` — optional scene features and sensory descriptors. Pure: the host owns lights,
+// fog, instancing and any sensory adapter (P4.4-P4.5).
+
+export {
+    SCENE_FEATURES,
+    SENSORY_DESCRIPTORS,
+    SENSORY_SEAMS,
+    sceneFeatures,
+    supportsSceneFeature,
+    supportsSensory,
+    worldPolicyFor,
+    worldRepresentation,
+} from './world';
+export type {
+    SceneFeature,
+    SensoryDescriptor,
+    SensorySeam,
+    WorldCapabilities,
+    WorldPolicy,
+    WorldRepresentation,
+} from './world';

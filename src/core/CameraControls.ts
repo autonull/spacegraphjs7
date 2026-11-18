@@ -102,6 +102,7 @@ export class CameraControls {
     private startTheta = 0;
     private startZoom = 1;
     private isOrthographic = false;
+    private orbitInOrthographic = false;
     private orthoCamera: OrthographicCamera | null = null;
     private perspectiveCamera: Camera;
     private keyboardTarget: EventTarget | null = null;
@@ -150,8 +151,13 @@ export class CameraControls {
         return this.isOrthographic;
     }
 
+    /** Opt-in P4.2 fix for the historical middle-drag orbit no-op in orthographic projection. */
+    setOrbitInOrthographic(enabled: boolean): void {
+        this.orbitInOrthographic = enabled;
+    }
+
     rotate(dx: number, dy: number): void {
-        if (!this.config.enableRotate || this.isOrthographic) return;
+        if (!this.config.enableRotate || (this.isOrthographic && !this.orbitInOrthographic)) return;
         this.sphericalDelta.theta -= dx * this.config.rotateSpeed * 0.005;
         this.sphericalDelta.phi -= dy * this.config.rotateSpeed * 0.005;
         this.requestFrame();
@@ -212,7 +218,7 @@ export class CameraControls {
         }
 
         for (const { key, delta, dir } of KEY_CONFIG.rotate) {
-            if (!this.isOrthographic && this.keyState.get(key)) {
+            if ((!this.isOrthographic || this.orbitInOrthographic) && this.keyState.get(key)) {
                 this.sphericalDelta[delta] += dir * KEY_CONFIG.speed.rotate;
             }
         }

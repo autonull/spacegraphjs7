@@ -15,6 +15,21 @@ import {
     type ConfigValue,
 } from '@spacegraphjs/config';
 import { libraryManifest } from '@spacegraphjs/config/library';
+import { sampleDepth, type DepthAxis, type DepthMode } from 'spacegraphjs/depth';
+import {
+    CameraVerbRegistry,
+    playMotion,
+    type CameraAdapter,
+    type CameraCommand,
+    type MotionPlayback,
+    type MotionVerb,
+} from 'spacegraphjs/motion';
+import {
+    supportsSensory,
+    worldPolicyFor,
+    type WorldCapabilities,
+    type WorldPolicy,
+} from 'spacegraphjs/world';
 import {
     supportsEmphasis,
     type EmphasisChannel,
@@ -87,7 +102,11 @@ interface ExplorerApi {
     hash: () => string;
     source: () => ConfigValue | undefined;
     nodes: () => readonly number[];
-    diff: () => readonly { axis: string; left: ConfigValue | undefined; right: ConfigValue | undefined }[];
+    diff: () => readonly {
+        axis: string;
+        left: ConfigValue | undefined;
+        right: ConfigValue | undefined;
+    }[];
     transition: () => TransitionInfo;
     salience: () => Readonly<Record<string, number>>;
     explain: (id: string) => Readonly<Record<string, number | string>>[];
@@ -95,6 +114,12 @@ interface ExplorerApi {
     emphasisSupport: () => readonly string[];
     widgets: () => readonly string[];
     widgetOpacity: () => number | undefined;
+    world: () => WorldPolicy;
+    sensorySupport: () => boolean;
+    camera: () => { command: CameraCommand | undefined; calls: readonly string[] };
+    depth: () => Readonly<Record<string, number>>;
+    motion: () => { frames: number; active: readonly string[]; done: boolean };
+    playMotion: () => void;
 }
 
 declare global {
@@ -116,7 +141,12 @@ const space = manifestSpace({
             source: 'explorer/graph sources',
             default: 'contract',
         },
-        { id: 'view', values: [...HOST_VIEWS], source: 'second-host/HOST_VIEWS', default: 'ribbon' },
+        {
+            id: 'view',
+            values: [...HOST_VIEWS],
+            source: 'second-host/HOST_VIEWS',
+            default: 'ribbon',
+        },
         { id: 'level', values: levelNames, source: 'second-host/LEVELS', default: 'execution' },
     ],
 });
@@ -171,7 +201,12 @@ const RENDERER_CAPABILITIES: RendererCapabilities = {
 
 const DEMO_WIDGETS: readonly WidgetDescriptor[] = [
     { id: 'summary', label: 'Node summary', slots: ['body'], representations: ['card', 'widget'] },
-    { id: 'composer', label: 'Composer', slots: ['attached'], representations: ['widget', 'detail'] },
+    {
+        id: 'composer',
+        label: 'Composer',
+        slots: ['attached'],
+        representations: ['widget', 'detail'],
+    },
     { id: 'terminal', label: 'Terminal', slots: ['pinned'], representations: ['detail'] },
 ];
 const widgetRegistry = new WidgetRegistry();
@@ -228,6 +263,25 @@ let lastSalience: SalienceResult | undefined;
 let selectedNode: string | undefined;
 let leftNodeCount = 0;
 let rightNodeCount = 0;
+let lastWorld: WorldPolicy = worldPolicyFor(undefined, undefined, undefined);
+let lastCameraCommand: CameraCommand | undefined;
+const cameraCalls: string[] = [];
+let lastDepthOffsets: Readonly<Record<string, number>> = {};
+let motionPlayback: MotionPlayback | undefined;
+let motionFrameHandle = 0;
+let lastMotionVerb: ConfigValue | undefined = 'none';
+let lastMotionTime = 0;
+const cameraRegistry = new CameraVerbRegistry();
+const WORLD_CAPABILITIES: WorldCapabilities = { sceneFeatures: [], sensory: [] };
+const RECORDING_CAMERA_ADAPTER: CameraAdapter = {
+    fit: (ids, duration) => cameraCalls.push(`fit:${ids?.join(',') ?? ''}:${duration}`),
+    focus: (id, duration) => cameraCalls.push(`focus:${id}:${duration}`),
+    flyTo: (position, target) =>
+        cameraCalls.push(`flyTo:${position.join(',')}:${target.join(',')}`),
+    orbit: (amount) => cameraCalls.push(`orbit:${amount}`),
+    zoom: (amount) => cameraCalls.push(`zoom:${amount}`),
+    reset: () => cameraCalls.push('reset'),
+};
 
 function element<T extends HTMLElement = HTMLElement>(id: string): T {
     const found = document.getElementById(id);
@@ -237,7 +291,7 @@ function element<T extends HTMLElement = HTMLElement>(id: string): T {
 
 function seeded(seed: number): () => number {
     let value = seed >>> 0;
-    return () => ((value = (value * 1103515245 + 12345) >>> 0) / 0x1_0000_0000);
+    return () => (value = (value * 1103515245 + 12345) >>> 0) / 0x1_0000_0000;
 }
 
 function effective(state: ConfigState): ConfigState {
@@ -263,17 +317,45 @@ function emphasisMapping(state: ConfigState) {
 
 function graphModel(state: ConfigState): BuiltGraph {
     const source = state.get('source');
-    const model =
-        source === 'secondHost'
-            ? hostModel(state)
-            : activityHostFixture();
+    const model = source === 'secondHost' ? hostModel(state) : activityHostFixture();
     const selected = selectedNode ? new Set([selectedNode]) : undefined;
     lastSalience = createSalience(signalsFor(state))({ model, now: NOW, selected });
-    const built = withRepresentation(
-        withEdgeLadder(model, state.get('edgeLod') ?? 'arrow'),
-        state.get('lod') ?? 'card',
+    const built = withDepth(
+        withRepresentation(
+            withEdgeLadder(model, state.get('edgeLod') ?? 'arrow'),
+            state.get('lod') ?? 'card',
+        ),
+        state,
     );
-    return { ...built, model: applyModelEmphasis(built.model, lastSalience.values, emphasisMapping(state)) };
+    return {
+        ...built,
+        model: applyModelEmphasis(built.model, lastSalience.values, emphasisMapping(state)),
+    };
+}
+
+function withDepth(built: BuiltGraph, state: ConfigState): BuiltGraph {
+    const continuum = {
+        mode: (state.get('depth') ?? 'flat') as DepthMode,
+        axis: (state.get('depthAxis') ?? 'none') as DepthAxis,
+        strength: 1,
+        spread: 40,
+    };
+    const total = built.model.nodes.length;
+    const offsets: Record<string, number> = {};
+    const nodes = built.model.nodes.map((node, index) => {
+        const sample = sampleDepth(continuum, total > 1 ? index / (total - 1) : 0, 120);
+        offsets[node.id] = sample.offset;
+        return {
+            ...node,
+            position: [node.position[0], node.position[1], sample.offset] as [
+                number,
+                number,
+                number,
+            ],
+        };
+    });
+    lastDepthOffsets = offsets;
+    return { ...built, model: { ...built.model, nodes } };
 }
 
 function withEdgeLadder(model: RenderModel, lod: string): RenderModel {
@@ -287,7 +369,8 @@ function withEdgeLadder(model: RenderModel, lod: string): RenderModel {
             const { thickness, dashed, labelLod } = selection.style;
             return {
                 ...edge,
-                confidence: thickness === 1 ? 'inferred' : thickness === 4 ? 'explicit' : 'structural',
+                confidence:
+                    thickness === 1 ? 'inferred' : thickness === 4 ? 'explicit' : 'structural',
                 style: dashed ? ('dashed' as const) : ('solid' as const),
                 label: labelLod ? (edge.label ?? edge.kind) : edge.label,
             };
@@ -297,7 +380,8 @@ function withEdgeLadder(model: RenderModel, lod: string): RenderModel {
 
 function hostModel(state: ConfigState): RenderModel {
     host.view = HOST_VIEWS.find((view) => view === state.get('view')) ?? ('ribbon' as HostView);
-    host.level = levelNames.find((level) => level === state.get('level')) ?? ('execution' as BuildLevel);
+    host.level =
+        levelNames.find((level) => level === state.get('level')) ?? ('execution' as BuildLevel);
     return host.renderModel();
 }
 
@@ -326,7 +410,8 @@ function syncWidgets(built: BuiltGraph, state: ConfigState): void {
         representationOf: (id) => built.rungs.get(id) ?? 'dot',
     });
     layer.sync(built.model.nodes);
-    layer.setDepthFade(1, state.get('depth') === 'flat' ? 0 : 0.5);
+    const fogged = lastWorld.features.includes('fog') || state.get('depth') !== 'flat';
+    layer.setDepthFade(1, fogged ? 0.5 : 0);
     mountedWidgets = layer.mounted().map((entry) => `${entry.nodeId}:${entry.descriptorId}`);
     widgetOpacity = layer.mounted()[0]?.opacity;
 }
@@ -369,9 +454,7 @@ function tick(time: number): void {
 }
 
 function applyAppearance(change: RepresentationTween, value: number): void {
-    const group = element('left-graph').querySelector<SVGGElement>(
-        `[data-node-id="${change.id}"]`,
-    );
+    const group = element('left-graph').querySelector<SVGGElement>(`[data-node-id="${change.id}"]`);
     if (!group) return;
     const from = APPEARANCE[change.from];
     const to = APPEARANCE[change.to];
@@ -453,16 +536,21 @@ function renderExplain(): void {
     const score = lastSalience.values.get(selectedNode) ?? 0;
     root.textContent = [
         `${selectedNode} · salience ${score.toFixed(2)}`,
-        ...lastSalience.explain(selectedNode).map(
-            (entry) => `${entry.label}: ${entry.value.toFixed(2)} × ${entry.weight} = ${entry.contribution.toFixed(2)}`,
-        ),
+        ...lastSalience
+            .explain(selectedNode)
+            .map(
+                (entry) =>
+                    `${entry.label}: ${entry.value.toFixed(2)} × ${entry.weight} = ${entry.contribution.toFixed(2)}`,
+            ),
     ].join('\n');
 }
 
 function renderWidgets(): void {
     const root = element('widgets');
     root.textContent = [
-        ...DEMO_WIDGETS.map((registration) => `${registration.id} · ${registration.slots.join(', ')}`),
+        ...DEMO_WIDGETS.map(
+            (registration) => `${registration.id} · ${registration.slots.join(', ')}`,
+        ),
         `attached: ${mountedWidgets.length ? mountedWidgets.join(', ') : 'none'}`,
         widgetOpacity === undefined ? 'opacity: —' : `opacity: ${widgetOpacity.toFixed(3)}`,
     ].join('\n');
@@ -478,6 +566,59 @@ function renderDiff(): void {
         : '';
 }
 
+function applyCamera(state: ConfigState): void {
+    const verb = state.get('cameraVerb');
+    if (!verb) return;
+    const command: CameraCommand = {
+        verb: verb as CameraCommand['verb'],
+        ids: selectedNode ? [selectedNode] : undefined,
+        position: [0, 0, 12],
+        target: [0, 0, 0],
+        amount: 0.3,
+        duration: state.get('motion') === 'reduced' ? 0 : undefined,
+    };
+    lastCameraCommand = command;
+    cameraRegistry.run(command, RECORDING_CAMERA_ADAPTER);
+}
+
+function playMotionFor(state: ConfigState): void {
+    const verb = state.get('motionVerb');
+    if (!verb || verb === 'none') return;
+    if (motionFrameHandle) cancelAnimationFrame(motionFrameHandle);
+    const steps = Object.keys(lastDepthOffsets)
+        .slice(0, 6)
+        .map((id, index) => ({
+            id,
+            verb: verb as MotionVerb,
+            target: 'emphasis' as const,
+            from: 0.2,
+            to: 1,
+            delay: index * 0.08,
+            duration: 0.5,
+        }));
+    motionPlayback = playMotion(
+        steps,
+        (frame) => {
+            const group = element('left-graph').querySelector<SVGGElement>(
+                `[data-node-id="${frame.step.id}"]`,
+            );
+            if (!group) return;
+            group.setAttribute('opacity', String(0.4 + 0.6 * frame.value));
+            group.dataset.motionVerb = frame.step.verb;
+        },
+        { reducedMotion: state.get('motion') === 'reduced' },
+    );
+    lastMotionTime = performance.now();
+    motionFrameHandle = motionPlayback.done ? 0 : requestAnimationFrame(motionTick);
+}
+
+function motionTick(time: number): void {
+    if (!motionPlayback) return;
+    motionPlayback.advance((time - lastMotionTime) / 1000);
+    lastMotionTime = time;
+    motionFrameHandle = motionPlayback.done ? 0 : requestAnimationFrame(motionTick);
+}
+
 function render(): void {
     const result = negotiate(space, left, { capabilities, flags });
     history.replaceState(null, '', left.toHash());
@@ -490,12 +631,23 @@ function render(): void {
 
     renderAxes(result);
     renderPresets();
+    lastWorld = worldPolicyFor(
+        result.state.get('sceneFeature'),
+        result.state.get('sensory'),
+        result.state.get('lod'),
+    );
     const built = graphModel(result.state);
     const leftSalience = lastSalience;
     leftNodeCount = built.model.nodes.length;
     leftGraph.setModel(built.model);
     syncWidgets(built, result.state);
     play(built, result.state);
+    applyCamera(result.state);
+    const motionVerb = result.state.get('motionVerb');
+    if (motionVerb !== lastMotionVerb) {
+        lastMotionVerb = motionVerb;
+        if (motionVerb && motionVerb !== 'none') playMotionFor(result.state);
+    }
     if (compare) {
         const rightBuilt = graphModel(effective(right));
         rightGraph.setModel(rightBuilt.model);
@@ -567,8 +719,7 @@ window.__explorer = {
     diff: () => axisDiff(left, right),
     transition: () => ({ ...lastTransition }),
     salience: () => Object.fromEntries(lastSalience?.values ?? []),
-    explain: (id) =>
-        (lastSalience?.explain(id) ?? []).map((entry) => ({ ...entry })),
+    explain: (id) => (lastSalience?.explain(id) ?? []).map((entry) => ({ ...entry })),
     select: (id) => {
         selectedNode = id;
         render();
@@ -576,6 +727,16 @@ window.__explorer = {
     emphasisSupport: () => RENDERER_CAPABILITIES.emphasis ?? [],
     widgets: () => mountedWidgets,
     widgetOpacity: () => widgetOpacity,
+    world: () => lastWorld,
+    sensorySupport: () => supportsSensory(WORLD_CAPABILITIES, lastWorld.sensory),
+    camera: () => ({ command: lastCameraCommand, calls: [...cameraCalls] }),
+    depth: () => ({ ...lastDepthOffsets }),
+    motion: () => ({
+        frames: motionPlayback?.frames.length ?? 0,
+        active: motionPlayback?.active ?? [],
+        done: motionPlayback?.done ?? true,
+    }),
+    playMotion: () => playMotionFor(effective(left)),
 };
 window.__ready = true;
 render();

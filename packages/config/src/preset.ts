@@ -25,6 +25,18 @@ export const EXAMPLE_PRESETS: readonly Preset[] = [
         values: { salience: 'combined', emphasis: 'size' },
         note: 'Example, not default: size carries the composed salience score',
     },
+    {
+        id: 'orbit-world',
+        label: 'Orbit world',
+        values: {
+            depth: 'orbit',
+            depthAxis: 'hierarchy',
+            sceneFeature: 'all',
+            cameraVerb: 'orbit',
+            motionVerb: 'sweep',
+        },
+        note: 'Example, not default: depth and motion stay host policies',
+    },
 ];
 
 /** Apply a preset on top of a state. Unknown axes are ignored, so deleting a preset cannot break the space. */

@@ -16,10 +16,10 @@ async function boot(page: Page) {
 }
 
 const api = <T>(page: Page, call: string, ...args: unknown[]) =>
-    page.evaluate(
-        ({ call, args }) => (window as any).__explorer[call](...args) as T,
-        { call, args },
-    );
+    page.evaluate(({ call, args }) => (window as any).__explorer[call](...args) as T, {
+        call,
+        args,
+    });
 
 const noErrors = (errors: string[]) =>
     expect(errors.filter((error) => !error.includes('favicon'))).toEqual([]);
@@ -33,7 +33,8 @@ test.describe('configuration explorer (P0.3)', () => {
         expect(axes).toContain('depth');
         expect(axes).toContain('lod');
         expect(axes).toContain('source');
-        for (const axis of axes) await expect(page.locator(`[data-axis="${axis}"]`).first()).toBeVisible();
+        for (const axis of axes)
+            await expect(page.locator(`[data-axis="${axis}"]`).first()).toBeVisible();
         await expect(page.locator('#left-graph svg')).toBeVisible();
         expect((await api<number[]>(page, 'nodes'))[0]).toBe(8);
         noErrors(errors);
@@ -141,9 +142,9 @@ test.describe('configuration explorer (P0.3)', () => {
 
     test('compares two states and labels presets as examples', async ({ page }) => {
         await boot(page);
-        await expect(page.locator('fieldset').filter({ has: page.locator('#presets') })).toContainText(
-            'Examples, not defaults',
-        );
+        await expect(
+            page.locator('fieldset').filter({ has: page.locator('#presets') }),
+        ).toContainText('Examples, not defaults');
         await page.locator('#compare').click();
 
         await expect(page.locator('#right-pane')).toBeVisible();
@@ -170,9 +171,11 @@ test.describe('salience and emphasis (P2)', () => {
         await api(page, 'set', 'salience', 'combined');
         const values = await api<Record<string, number>>(page, 'salience');
         expect(Object.values(values).some((value) => value > 0)).toBe(true);
-        const id = (await page.$$eval('#left-graph [data-node-id]', (groups) =>
-            groups.map((group) => (group as HTMLElement).dataset.nodeId),
-        ))[0]!;
+        const id = (
+            await page.$$eval('#left-graph [data-node-id]', (groups) =>
+                groups.map((group) => (group as HTMLElement).dataset.nodeId),
+            )
+        )[0]!;
 
         await api(page, 'select', id);
         await expect(page.locator('#explain')).toContainText('salience');
@@ -200,9 +203,11 @@ test.describe('salience and emphasis (P2)', () => {
         await api(page, 'set', 'salience', 'none');
         const uniform = await api<Record<string, number>>(page, 'salience');
         expect(Object.values(uniform).every((value) => value === 0)).toBe(true);
-        const id = (await page.$$eval('#left-graph [data-node-id]', (groups) =>
-            groups.map((group) => (group as HTMLElement).dataset.nodeId),
-        ))[0]!;
+        const id = (
+            await page.$$eval('#left-graph [data-node-id]', (groups) =>
+                groups.map((group) => (group as HTMLElement).dataset.nodeId),
+            )
+        )[0]!;
         await api(page, 'select', id);
         expect(await api(page, 'explain', id)).toEqual([]);
 
@@ -229,7 +234,9 @@ test.describe('salience and emphasis (P2)', () => {
 });
 
 test.describe('widget registry (P3)', () => {
-    test('lists host registrations and attaches on an enabled, preferred slot', async ({ page }) => {
+    test('lists host registrations and attaches on an enabled, preferred slot', async ({
+        page,
+    }) => {
         const errors = await boot(page);
         await expect(page.locator('#widgets')).toContainText('summary');
         await expect(page.locator('#widgets')).toContainText('composer');
@@ -239,9 +246,9 @@ test.describe('widget registry (P3)', () => {
         expect(await api<string[]>(page, 'widgets')).toEqual([]);
 
         await api(page, 'set', 'widgets', 'body');
-        expect((await api<string[]>(page, 'widgets')).some((entry) => entry.endsWith(':summary'))).toBe(
-            true,
-        );
+        expect(
+            (await api<string[]>(page, 'widgets')).some((entry) => entry.endsWith(':summary')),
+        ).toBe(true);
 
         await api(page, 'set', 'widgets', 'attached');
         const mounted = await api<string[]>(page, 'widgets');
@@ -250,7 +257,9 @@ test.describe('widget registry (P3)', () => {
         noErrors(errors);
     });
 
-    test('max widgets attaches a different registration per slot and representation', async ({ page }) => {
+    test('max widgets attaches a different registration per slot and representation', async ({
+        page,
+    }) => {
         await boot(page);
         await api(page, 'set', 'lod', 'detail');
         await api(page, 'set', 'widgets', 'max');
@@ -268,5 +277,49 @@ test.describe('widget registry (P3)', () => {
 
         await api(page, 'set', 'depth', 'layered');
         expect(await api<number>(page, 'widgetOpacity')).toBeLessThan(1);
+    });
+});
+
+test.describe('motion, depth and world (P4)', () => {
+    test('declares every P4 axis and composes an optional scene policy', async ({ page }) => {
+        const errors = await boot(page);
+        const axes = await api<string[]>(page, 'axes');
+        for (const axis of ['motionVerb', 'cameraVerb', 'depthAxis', 'sceneFeature', 'sensory'])
+            expect(axes).toContain(axis);
+
+        await api(page, 'set', 'sceneFeature', 'all');
+        await api(page, 'set', 'sensory', 'sound');
+        await api(page, 'set', 'lod', 'dot');
+        const world = await api<{ features: string[]; representation: string; sensory: string }>(
+            page,
+            'world',
+        );
+        expect(world.features).toContain('instancing');
+        expect(world.representation).toBe('instanced');
+        expect(world.sensory).toBe('sound');
+        expect(await api<boolean>(page, 'sensorySupport')).toBe(false);
+        noErrors(errors);
+    });
+
+    test('sequences a host camera verb and samples a host depth axis', async ({ page }) => {
+        await boot(page);
+        await api(page, 'set', 'cameraVerb', 'orbit');
+        const camera = await api<{ command?: { verb: string }; calls: string[] }>(page, 'camera');
+        expect(camera.command?.verb).toBe('orbit');
+        expect(camera.calls.at(-1)).toContain('orbit');
+
+        await api(page, 'set', 'depthAxis', 'lane');
+        const offsets = await api<Record<string, number>>(page, 'depth');
+        expect(Object.values(offsets).some((offset) => offset !== 0)).toBe(true);
+    });
+
+    test('plays a named motion verb with stable-id frames', async ({ page }) => {
+        await boot(page);
+        await api(page, 'set', 'motionVerb', 'arrive');
+        const motion = await api<{ frames: number; active: string[]; done: boolean }>(
+            page,
+            'motion',
+        );
+        expect(motion.frames).toBeGreaterThan(0);
     });
 });

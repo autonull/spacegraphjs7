@@ -1,15 +1,18 @@
 import { RENDERER_STRATEGIES } from '@spacegraphjs/adapter';
 import { CARD_FACINGS, DEPTH_MODES, EMPHASIS_CHANNELS, PROJECTIONS } from '@spacegraphjs/renderer';
+import { DEPTH_AXES } from 'spacegraphjs/depth';
 import { EDGE_RUNG_IDS } from 'spacegraphjs/edges/ladder';
 import { LAYOUT_REGISTRY } from 'spacegraphjs/layout-registry';
+import { CAMERA_VERBS, MOTION_VERBS } from 'spacegraphjs/motion';
 import { DEFAULT_RUNG_IDS } from 'spacegraphjs/representations';
 import { SALIENCE_SIGNAL_IDS } from 'spacegraphjs/salience';
+import { SCENE_FEATURES, SENSORY_SEAMS } from 'spacegraphjs/world';
 import { WIDGET_SLOTS } from 'spacegraphjs/widgets';
 import { buildManifest } from './manifest';
 import type { Manifest, ManifestEntry } from './types';
 
 /** Bump on additive contract changes; see P6.4. */
-export const LIBRARY_CONTRACT_VERSION = '1.2.0';
+export const LIBRARY_CONTRACT_VERSION = '1.3.0';
 
 /** Every value owned by a library registry. Hosts append their own entries. */
 export function libraryEntries(): ManifestEntry[] {
@@ -52,7 +55,8 @@ export function libraryEntries(): ManifestEntry[] {
             values: ['none', ...WIDGET_SLOTS, 'max'],
             source: 'widgets/WIDGET_SLOTS',
             default: 'none',
-            reducedMotion: 'mount, unmount and fog follow the host transition; reduced motion zeroes it',
+            reducedMotion:
+                'mount, unmount and fog follow the host transition; reduced motion zeroes it',
         },
         {
             id: 'salience',
@@ -73,6 +77,41 @@ export function libraryEntries(): ManifestEntry[] {
             source: 'AnimationController/a11y',
             default: 'full',
             reducedMotion: 'reduced disables flights, tweens and springs',
+        },
+        {
+            id: 'motionVerb',
+            values: ['none', ...MOTION_VERBS],
+            source: 'motion/MOTION_VERBS',
+            default: 'none',
+            reducedMotion: 'reduced motion emits only the final frame of every verb',
+        },
+        {
+            id: 'cameraVerb',
+            values: CAMERA_VERBS,
+            source: 'motion/CAMERA_VERBS',
+            default: 'fit',
+            reducedMotion: 'reduced motion zeroes every flight duration',
+        },
+        {
+            id: 'depthAxis',
+            values: DEPTH_AXES,
+            source: 'depth/DEPTH_AXES',
+            default: 'none',
+            reducedMotion: 'depth and fog are static; parallax is a host policy',
+        },
+        {
+            id: 'sceneFeature',
+            values: ['none', ...SCENE_FEATURES, 'all'],
+            source: 'world/SCENE_FEATURES',
+            default: 'none',
+            reducedMotion: 'parallax and trails are disabled under reduced motion',
+        },
+        {
+            id: 'sensory',
+            values: SENSORY_SEAMS,
+            source: 'world/SENSORY_SEAMS',
+            default: 'none',
+            capability: 'sensory-adapter',
         },
     ];
 }
