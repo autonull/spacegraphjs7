@@ -118,4 +118,10 @@ export const LIBRARY_ENTRIES: LibraryEntry[] = [
         types: 'dist/motion.d.ts',
     },
     { subpath: './world', name: 'world', source: 'src/world/index.ts', types: 'dist/world.d.ts' },
+    {
+        subpath: './experiments',
+        name: 'experiments',
+        source: 'src/experiments/index.ts',
+        types: 'dist/experiments.d.ts',
+    },
 ];

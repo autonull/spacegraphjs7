@@ -13,6 +13,8 @@ export interface AxisDescriptor<V extends ConfigValue = ConfigValue> {
     readonly valueFlags?: Partial<Record<V, string>>;
     readonly reducedMotion?: string;
     readonly default?: V;
+    /** First contract version that carried this capability. Additive changes keep aliases for one minor. */
+    readonly minContractVersion?: string;
 }
 
 /** A registry contribution to a capability manifest. */

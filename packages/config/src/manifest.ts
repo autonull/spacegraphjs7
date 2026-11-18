@@ -18,3 +18,29 @@ export function manifestSpace(manifest: Manifest): ConfigSpace {
 export function manifestIds(manifest: Manifest): ReadonlySet<string> {
     return new Set(manifest.entries.map((entry) => entry.id));
 }
+
+/** The first contract version that carried a capability. */
+export function minContractVersion(manifest: Manifest, axis: string): string | undefined {
+    return manifest.entries.find((entry) => entry.id === axis)?.minContractVersion;
+}
+
+/** Lowest version a consumer must support to discover every capability in the manifest. */
+export function contractFloor(manifest: Manifest): string {
+    return manifest.entries.reduce(
+        (floor, entry) =>
+            compareVersions(entry.minContractVersion ?? floor, floor) > 0
+                ? (entry.minContractVersion ?? floor)
+                : floor,
+        '0.0.0',
+    );
+}
+
+function compareVersions(a: string, b: string): number {
+    const left = a.split('.').map(Number);
+    const right = b.split('.').map(Number);
+    for (let index = 0; index < 3; index++) {
+        const difference = (left[index] ?? 0) - (right[index] ?? 0);
+        if (difference !== 0) return difference;
+    }
+    return 0;
+}

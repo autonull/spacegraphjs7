@@ -16,6 +16,7 @@ import {
 } from '@spacegraphjs/config';
 import { libraryManifest } from '@spacegraphjs/config/library';
 import { sampleDepth, type DepthAxis, type DepthMode } from 'spacegraphjs/depth';
+import { cartesianMatrix, type CaptureMatrix } from 'spacegraphjs/experiments';
 import {
     CameraVerbRegistry,
     playMotion,
@@ -120,6 +121,8 @@ interface ExplorerApi {
     depth: () => Readonly<Record<string, number>>;
     motion: () => { frames: number; active: readonly string[]; done: boolean };
     playMotion: () => void;
+    matrix: () => CaptureMatrix;
+    exportConfig: () => string;
 }
 
 declare global {
@@ -150,6 +153,11 @@ const space = manifestSpace({
         { id: 'level', values: levelNames, source: 'second-host/LEVELS', default: 'execution' },
     ],
 });
+
+const captureMatrix = cartesianMatrix(
+    space.axes.map((axis) => ({ id: axis.id, values: axis.values.map(String) })),
+    { seed: 41, maxCells: 24 },
+);
 
 const capabilities = new Set<string>();
 const flags = new Set<string>();
@@ -559,10 +567,11 @@ function renderWidgets(): void {
 function renderDiff(): void {
     const diff = element('diff');
     diff.hidden = !compare;
+    const differences = axisDiff(left, right)
+        .map((entry) => `${entry.axis}: ${entry.left ?? '—'} → ${entry.right ?? '—'}`)
+        .join('\n');
     diff.textContent = compare
-        ? axisDiff(left, right)
-              .map((entry) => `${entry.axis}: ${entry.left ?? '—'} → ${entry.right ?? '—'}`)
-              .join('\n') || 'No axes differ.'
+        ? `Same model · same scale domain\n${differences || 'No axes differ.'}`
         : '';
 }
 
@@ -608,6 +617,7 @@ function playMotionFor(state: ConfigState): void {
         },
         { reducedMotion: state.get('motion') === 'reduced' },
     );
+    motionPlayback.advance(0);
     lastMotionTime = performance.now();
     motionFrameHandle = motionPlayback.done ? 0 : requestAnimationFrame(motionTick);
 }
@@ -737,6 +747,24 @@ window.__explorer = {
         done: motionPlayback?.done ?? true,
     }),
     playMotion: () => playMotionFor(effective(left)),
+    matrix: () => captureMatrix,
+    exportConfig: () =>
+        JSON.stringify(
+            {
+                contractVersion: library.contractVersion,
+                state: left.toRecord(),
+                hash: left.toHash(),
+                diff: compare ? axisDiff(left, right) : [],
+                matrix: {
+                    axes: captureMatrix.axes,
+                    sampled: captureMatrix.sampled,
+                    strategy: captureMatrix.strategy,
+                    seed: captureMatrix.seed,
+                },
+            },
+            null,
+            2,
+        ),
 };
 window.__ready = true;
 render();

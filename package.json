@@ -140,6 +140,11 @@
             "types": "./dist/world.d.ts",
             "import": "./dist/world.js",
             "default": "./dist/world.js"
+        },
+        "./experiments": {
+            "types": "./dist/experiments.d.ts",
+            "import": "./dist/experiments.js",
+            "default": "./dist/experiments.js"
         }
     },
     "files": [
@@ -155,6 +160,7 @@
         "clean": "rm -rf dist/ dist-demo/ packages/*/dist/",
         "dev": "pnpm dlx vite --host",
         "dev:demo": "pnpm dlx vite --config vite.demo.config.ts --port 5173",
+        "explorer": "vite --config vite.demo.config.ts --port 5173 --open /explorer.html",
         "docs": "typedoc --options typedoc.json",
         "format": "prettier --write .",
         "format:check": "prettier --check .",

@@ -323,3 +323,29 @@ test.describe('motion, depth and world (P4)', () => {
         expect(motion.frames).toBeGreaterThan(0);
     });
 });
+
+test.describe('experimentation (P5)', () => {
+    test('samples a deterministic matrix and exports the full configuration', async ({ page }) => {
+        const errors = await boot(page);
+        const matrix = await api<{
+            axes: string[];
+            sampled: number;
+            strategy: string;
+            seed: number;
+            cells: { values: Record<string, string> }[];
+        }>(page, 'matrix');
+        expect(matrix.axes).toContain('widgets');
+        expect(matrix.axes).toContain('depth');
+        expect(matrix.strategy).toBe('sampled');
+        expect(matrix.seed).toBe(41);
+        expect(matrix.sampled).toBeGreaterThan(0);
+        expect(matrix.cells.some((cell) => cell.values.widgets && cell.values.depth)).toBe(true);
+
+        await api(page, 'set', 'widgets', 'max');
+        const exported = JSON.parse(await api<string>(page, 'exportConfig'));
+        expect(exported.state.widgets).toBe('max');
+        expect(exported.hash).toContain('widgets=max');
+        expect(exported.matrix.sampled).toBe(matrix.sampled);
+        noErrors(errors);
+    });
+});

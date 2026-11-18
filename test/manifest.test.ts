@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { RENDERER_STRATEGIES } from '@spacegraphjs/adapter';
-import { EXAMPLE_PRESETS } from '@spacegraphjs/config';
+import { contractFloor, EXAMPLE_PRESETS, minContractVersion } from '@spacegraphjs/config';
 import { libraryManifest } from '@spacegraphjs/config/library';
 import { CARD_FACINGS, DEPTH_MODES, EMPHASIS_CHANNELS, PROJECTIONS } from '@spacegraphjs/renderer';
 import { DEPTH_AXES } from 'spacegraphjs/depth';
@@ -48,6 +48,14 @@ describe('library capability manifest', () => {
             expect(entry.values.length).toBeGreaterThan(0);
         }
         expect(manifest.entries.find((entry) => entry.id === 'depth')?.reducedMotion).toBeTruthy();
+    });
+
+    it('records the first contract version of every capability', () => {
+        for (const entry of manifest.entries) expect(entry.minContractVersion).toBeTruthy();
+        expect(minContractVersion(manifest, 'emphasis')).toBe('1.1.0');
+        expect(minContractVersion(manifest, 'widgets')).toBe('1.2.0');
+        expect(minContractVersion(manifest, 'motionVerb')).toBe('1.3.0');
+        expect(contractFloor(manifest)).toBe('1.3.0');
     });
 
     it('reflects a registry addition without library manifest edits', () => {

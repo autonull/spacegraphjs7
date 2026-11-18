@@ -12,7 +12,27 @@ import { buildManifest } from './manifest';
 import type { Manifest, ManifestEntry } from './types';
 
 /** Bump on additive contract changes; see P6.4. */
-export const LIBRARY_CONTRACT_VERSION = '1.3.0';
+export const LIBRARY_CONTRACT_VERSION = '1.4.0';
+
+/** First contract version carrying each axis. See `docs/contract-versioning.md`. */
+const MIN_CONTRACT_VERSIONS: Readonly<Record<string, string>> = {
+    projection: '1.0.0',
+    depth: '1.0.0',
+    cardFacing: '1.0.0',
+    layout: '1.0.0',
+    rendererStrategy: '1.0.0',
+    lod: '1.0.0',
+    edgeLod: '1.0.0',
+    motion: '1.0.0',
+    salience: '1.1.0',
+    emphasis: '1.1.0',
+    widgets: '1.2.0',
+    motionVerb: '1.3.0',
+    cameraVerb: '1.3.0',
+    depthAxis: '1.3.0',
+    sceneFeature: '1.3.0',
+    sensory: '1.3.0',
+};
 
 /** Every value owned by a library registry. Hosts append their own entries. */
 export function libraryEntries(): ManifestEntry[] {
@@ -113,7 +133,7 @@ export function libraryEntries(): ManifestEntry[] {
             default: 'none',
             capability: 'sensory-adapter',
         },
-    ];
+    ].map((entry) => ({ ...entry, minContractVersion: MIN_CONTRACT_VERSIONS[entry.id] }));
 }
 
 /** The library manifest: a complete, dependency-owned list of library capabilities. */

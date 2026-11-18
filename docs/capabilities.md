@@ -17,6 +17,7 @@ Generic capabilities provided by the SpaceGraphJS library, used by the OpenCode 
 | Depth spectrum                           | `spacegraphjs/depth` + contract `depths`        | Flat/layered/depth-stack/orbit, blended continuum and host depth axes |
 | Motion direction                         | `spacegraphjs/motion`                           | Named verbs, eased/spring playback, host camera verbs                 |
 | World + sensory seams                    | `spacegraphjs/world`                            | Optional scene features, instancing LOD, sensory descriptors          |
+| Experimentation                          | `spacegraphjs/experiments`                      | Cartesian matrix, neutral metrics, inert templates, honest reports    |
 | Scoped overlay & code diff               | `spacegraphjs/overlays`                         | Turn-map overlay, diff view                                           |
 | Static export (SVG/JSON/standalone HTML) | `@spacegraphjs/svg-renderer`                    | Export button, inline subgraph                                        |
 | Mouse interaction contract               | `spacegraphjs/interaction`                      | Pan, zoom, pick, frame, drag, box-select                              |
