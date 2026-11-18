@@ -368,7 +368,7 @@ export abstract class ModelAdapter<
                 label: lane.label,
                 shape: 'panel' as const,
                 interactive: false,
-                html: `<div data-lane="${escapeHtml(lane.id)}" style="display:flex;align-items:center;height:100%;box-sizing:border-box;padding:0 10px;font-family:inherit;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--lane-label-color);opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(lane.label)}</div>`,
+                html: `<div data-lane="${escapeHtml(lane.id)}" style="display:flex;align-items:center;height:100%;box-sizing:border-box;padding:0 10px;font-family:inherit;font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:currentColor;opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(lane.label)}</div>`,
                 size: this.geometry.laneLabelSize,
                 position: [
                     (anchor ? leftOf(anchor) : left) -
@@ -377,7 +377,19 @@ export abstract class ModelAdapter<
                     lane.y,
                     ZERO.z - 1,
                 ],
-                data: { lane: lane.id, colorToken: 'textMuted' },
+                // A lane label is a caption, not a card: it inherits the host's muted text token and
+                // draws no box of its own, so the gutter reads as an axis instead of a column of chips.
+                data: {
+                    lane: lane.id,
+                    colorToken: 'textMuted',
+                    style: {
+                        border: 'none',
+                        backgroundColor: 'transparent',
+                        boxShadow: 'none',
+                        backdropFilter: 'none',
+                        padding: '0',
+                    },
+                },
             };
         });
     }
