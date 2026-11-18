@@ -32,6 +32,10 @@ class TestNode extends ShapeNode {
     }
 }
 
+class TestDomNode extends TestNode {
+    readonly isDOMNode = true;
+}
+
 describe('LODPlugin', () => {
     describe('perspective camera', () => {
         it('should hide nodes beyond maxDistance', () => {
@@ -314,6 +318,42 @@ describe('LODPlugin', () => {
 
             // Both nodes visible, edge should be visible
             expect(edge.object.visible).toBe(true);
+        });
+    });
+
+    describe('DOM card fog', () => {
+        const cameraAt = (z: number) => {
+            const camera = new THREE.PerspectiveCamera(75, 800 / 600, 0.1, 10000);
+            camera.position.set(0, 0, z);
+            return camera;
+        };
+        const mount = (camera: THREE.Camera, depth: string, positions: [number, number, number][]) => {
+            const sg = createMockSg(camera) as ReturnType<typeof createMockSg> & { depth: string };
+            sg.depth = depth;
+            const plugin = new LODPlugin();
+            (plugin as any).sg = sg;
+            const nodes = positions.map((position, i) => {
+                const node = new TestDomNode(sg, { id: `node-${i}`, type: 'ShapeNode', position });
+                sg.graph.nodes.set(node.id, node);
+                return node;
+            });
+            plugin.onPreRender(0);
+            return nodes;
+        };
+
+        it('leaves DOM cards opaque in flat depth', () => {
+            const [near] = mount(cameraAt(1000), 'flat', [[0, 0, 0]]);
+            expect(near.data.opacity).toBe(1);
+        });
+
+        it('attenuates farther DOM cards under scene fog', () => {
+            const [near, far] = mount(cameraAt(1000), 'depth-stack', [
+                [0, 0, 200],
+                [0, 0, -200],
+            ]);
+            expect(near.data.opacity).toBeLessThan(1);
+            expect(far.data.opacity).toBeLessThan(near.data.opacity as number);
+            expect(near.data.opacity).toBeGreaterThan(0);
         });
     });
 });

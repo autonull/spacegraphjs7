@@ -1,4 +1,5 @@
 import type * as THREE from 'three';
+import { depthFade, depthTreatment, sceneFadeDensity } from '../depth/DepthCues';
 import type { Node } from '../nodes/Node';
 import { parentIdOf } from '../utils/nodeParent';
 import { BaseSystemPlugin } from './BaseSystemPlugin';
@@ -42,7 +43,8 @@ export class LODPlugin extends BaseSystemPlugin {
         const nodes = Array.from(this.sg.graph.nodes.values());
 
         const hiddenParentIds = this._updateGroupsAndFindHidden(nodes, camera, isOrtho);
-        this._updateNodeVisibility(nodes, camera, isOrtho, hiddenParentIds);
+        const fogDensity = this._fogDensity(nodes, camera);
+        this._updateNodeVisibility(nodes, camera, isOrtho, hiddenParentIds, fogDensity);
         this._updateEdgeVisibility();
     }
 
@@ -74,11 +76,21 @@ export class LODPlugin extends BaseSystemPlugin {
         return hiddenParentIds;
     }
 
+    private _fogDensity(nodes: Node[], camera: THREE.Camera): number {
+        const strength = depthTreatment(this.sg.depth ?? 'flat').fade;
+        if (strength <= 0) return 0;
+        const cameraDistance = this.sg.cameraControls?.spherical.radius ?? camera.position.length();
+        const zs = nodes.map((node) => node.position.z);
+        const sceneDepth = zs.length ? Math.max(...zs) - Math.min(...zs) : 0;
+        return sceneFadeDensity(strength, cameraDistance, sceneDepth);
+    }
+
     private _updateNodeVisibility(
         nodes: Node[],
         camera: THREE.Camera,
         isOrtho: boolean,
         hiddenParentIds: Set<string>,
+        fogDensity: number,
     ): void {
         for (const node of nodes) {
             const isHiddenByParent = this._isNodeHiddenByParent(node, hiddenParentIds);
@@ -103,7 +115,8 @@ export class LODPlugin extends BaseSystemPlugin {
             if ((node as any).isDOMNode) {
                 (node as any).setVisibility(visible);
                 if (visible) {
-                    if ((node as any).setOpacity) (node as any).setOpacity(opacity);
+                    const fogOpacity = depthFade(camera.position.distanceTo(node.position), fogDensity);
+                    if ((node as any).setOpacity) (node as any).setOpacity(opacity * fogOpacity);
                     (node as any).updateLod(distanceOrExtent);
                 }
             } else if (!(node as any).isGroupNode) {

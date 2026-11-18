@@ -45,7 +45,7 @@ export class SpaceGraphRenderer extends ModelRenderer implements GraphRenderer {
 
     async mount(
         container: HTMLElement,
-        options: { theme: RenderTheme; projection: Projection; reducedMotion?: boolean },
+        options: { theme: RenderTheme; projection: Projection; reducedMotion?: boolean; global?: boolean },
     ): Promise<void> {
         if (this.#sg) return;
         try {
@@ -59,6 +59,7 @@ export class SpaceGraphRenderer extends ModelRenderer implements GraphRenderer {
                     chrome: false,
                     doubleClickFocus: false,
                     reducedMotion: options.reducedMotion,
+                    global: options.global,
                     render: {
                         projection: ortho ? 'orthographic' : 'perspective',
                         transparent: true,
