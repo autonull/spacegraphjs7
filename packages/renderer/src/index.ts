@@ -311,9 +311,15 @@ export function supports(
     capabilities: RendererCapabilities,
     capability: RendererCapability,
 ): boolean {
-    return capability === '2d' || capability === '3d'
-        ? capabilities.projections.includes(capability)
-        : capabilities[capability];
+    switch (capability) {
+        case '2d':
+        case '3d':
+            return capabilities.projections.includes(capability);
+        case 'widgets':
+            return Boolean(capabilities.widgetSlots?.length);
+        default:
+            return capabilities[capability];
+    }
 }
 
 /** Whether a renderer can honour a depth treatment; hosts gate the depth chooser on this. */
