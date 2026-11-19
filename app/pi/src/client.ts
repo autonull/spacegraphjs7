@@ -27,6 +27,8 @@ const LAYOUT_CONFIG = {
     geometry: { standardSize: [200, 64] as const, indentStep: 120, depthLevels: 5, padding: 24 },
 };
 
+const clientID = crypto.randomUUID();
+
 const el = <T extends HTMLElement>(id: string): T => {
     const found = document.getElementById(id);
     if (!found) throw new Error(`pi app: missing #${id}`);
@@ -102,7 +104,7 @@ const boot = async (): Promise<void> => {
     controller.bind(renderer);
     paint();
 
-    const events = new EventSource('/events');
+    const events = new EventSource(`/events?client=${clientID}`);
     events.onmessage = (event) => consume(decodeOp(event.data as string));
 
     el<HTMLFormElement>('prompt-form').addEventListener('submit', async (submit) => {
@@ -116,7 +118,7 @@ const boot = async (): Promise<void> => {
             const response = await fetch('/prompt', {
                 method: 'POST',
                 headers: { 'content-type': 'application/json' },
-                body: JSON.stringify({ text, mode: mode || undefined }),
+                body: JSON.stringify({ client: clientID, text, mode: mode || undefined }),
             });
             if (!response.ok) {
                 const body = (await response.json()) as { error?: string };

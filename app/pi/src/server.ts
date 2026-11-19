@@ -1,4 +1,4 @@
-import { createServer, type ServerResponse } from 'node:http';
+import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { AgentEventMapper, type AgentEvent } from '@spacegraphjs/agent';
 import type { KernelOp } from '@spacegraphjs/kernel';
 import { localOps } from './local-feed';
@@ -8,7 +8,6 @@ import { PiEventTranslator, type PiEvent } from './pi-events';
 const PORT = Number(process.env.PI_SERVER_PORT ?? 8787);
 const RUN_ID = 'live';
 const mapper = new AgentEventMapper('pi');
-const clients = new Set<ServerResponse>();
 
 type LiveSession = {
     dispose(): void;
@@ -16,33 +15,38 @@ type LiveSession = {
     subscribe(listener: (event: unknown) => void): () => void;
 };
 
-let session: LiveSession | undefined;
-let translator: PiEventTranslator | undefined;
-let unavailable: string | undefined;
-
-const broadcast = (ops: readonly KernelOp[]): void => {
-    for (const client of clients) for (const op of ops) client.write(encodeOp(op));
+type Client = {
+    response: ServerResponse;
+    session?: LiveSession;
+    translator?: PiEventTranslator;
+    unavailable?: string;
 };
 
-const emit = (event: AgentEvent): void => broadcast(mapper.map(event));
+const clients = new Map<string, Client>();
 
-const startSession = async (): Promise<LiveSession> => {
-    if (session) return session;
+const send = (client: Client, ops: readonly KernelOp[]): void => {
+    for (const op of ops) client.response.write(encodeOp(op));
+};
+
+const emit = (client: Client, event: AgentEvent): void => send(client, mapper.map(event));
+
+const startSession = async (client: Client): Promise<LiveSession> => {
+    if (client.session) return client.session;
     const { createAgentSession, SessionManager } = await import('@earendil-works/pi-coding-agent');
     const created = await createAgentSession({ sessionManager: SessionManager.inMemory() });
-    session = created.session as unknown as LiveSession;
-    translator = new PiEventTranslator(RUN_ID);
-    emit({ type: 'run-start', runId: RUN_ID });
-    session.subscribe((raw) => {
-        const events = translator?.translate(raw as PiEvent) ?? [];
-        for (const event of events) emit(event);
+    client.session = created.session as unknown as LiveSession;
+    client.translator = new PiEventTranslator(RUN_ID);
+    emit(client, { type: 'run-start', runId: RUN_ID });
+    client.session.subscribe((raw) => {
+        const events = client.translator?.translate(raw as PiEvent) ?? [];
+        for (const event of events) emit(client, event);
     });
     if (created.modelFallbackMessage) {
-        unavailable = created.modelFallbackMessage;
-        emit({ type: 'run-settled', runId: RUN_ID, aborted: true });
-        emit({ type: 'state', runId: RUN_ID, unitId: '1', reason: 'no-provider' });
+        client.unavailable = created.modelFallbackMessage;
+        emit(client, { type: 'run-settled', runId: RUN_ID, aborted: true });
+        emit(client, { type: 'state', runId: RUN_ID, unitId: '1', reason: 'no-provider' });
     }
-    return session;
+    return client.session;
 };
 
 const json = (response: ServerResponse, status: number, body: unknown): void => {
@@ -50,7 +54,7 @@ const json = (response: ServerResponse, status: number, body: unknown): void => 
     response.end(JSON.stringify(body));
 };
 
-const readBody = async (request: import('node:http').IncomingMessage): Promise<string> => {
+const readBody = async (request: IncomingMessage): Promise<string> => {
     const chunks: Buffer[] = [];
     for await (const chunk of request) chunks.push(Buffer.from(chunk));
     return Buffer.concat(chunks).toString('utf8');
@@ -58,6 +62,7 @@ const readBody = async (request: import('node:http').IncomingMessage): Promise<s
 
 const server = createServer(async (request, response) => {
     const url = new URL(request.url ?? '/', `http://127.0.0.1:${PORT}`);
+    const clientID = url.searchParams.get('client') ?? '';
 
     if (url.pathname === '/events') {
         response.writeHead(200, {
@@ -66,37 +71,46 @@ const server = createServer(async (request, response) => {
             connection: 'keep-alive',
         });
         response.write(': connected\n\n');
-        clients.add(response);
-        if (process.env.PI_LOCAL_FEED === '1') broadcast(localOps());
-        request.on('close', () => clients.delete(response));
+        const client: Client = { response };
+        clients.set(clientID, client);
+        if (process.env.PI_LOCAL_FEED === '1') send(client, localOps());
+        request.on('close', () => {
+            client.session?.dispose();
+            if (clients.get(clientID) === client) clients.delete(clientID);
+        });
         return;
     }
 
     if (url.pathname === '/prompt' && request.method === 'POST') {
         const body = JSON.parse(await readBody(request)) as {
+            client?: string;
             text?: string;
             mode?: 'steer' | 'followUp';
         };
+        const client = clients.get(body.client ?? clientID);
+        if (!client) return json(response, 400, { error: 'no connected page' });
         const text = body.text?.trim();
         if (!text) return json(response, 400, { error: 'empty prompt' });
 
         if (process.env.PI_LOCAL_FEED === '1') {
-            broadcast(localOps());
+            send(client, localOps());
             return json(response, 202, { status: 'local' });
         }
 
         try {
-            const active = await startSession();
-            if (unavailable) return json(response, 503, { error: unavailable });
-            void active.prompt(text, body.mode ? { streamingBehavior: body.mode } : undefined).catch((error: unknown) => {
-                emit({
-                    type: 'state',
-                    runId: RUN_ID,
-                    unitId: '1',
-                    reason: 'error',
-                    level: error instanceof Error ? error.message : String(error),
+            const active = await startSession(client);
+            if (client.unavailable) return json(response, 503, { error: client.unavailable });
+            void active
+                .prompt(text, body.mode ? { streamingBehavior: body.mode } : undefined)
+                .catch((error: unknown) => {
+                    emit(client, {
+                        type: 'state',
+                        runId: RUN_ID,
+                        unitId: '1',
+                        reason: 'error',
+                        level: error instanceof Error ? error.message : String(error),
+                    });
                 });
-            });
             return json(response, 202, { status: 'accepted' });
         } catch (error) {
             return json(response, 500, {
@@ -113,7 +127,7 @@ server.listen(PORT, '127.0.0.1', () => {
 });
 
 process.on('SIGINT', () => {
-    session?.dispose();
+    for (const client of clients.values()) client.session?.dispose();
     server.close();
     process.exit(0);
 });
