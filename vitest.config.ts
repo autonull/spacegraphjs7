@@ -89,7 +89,7 @@ export default defineConfig({
         environment: 'jsdom',
         // Only run unit tests here (keep Playwright E2E specs out of Vitest). The framework bindings carry
         // their own lifecycle tests beside their source (P8.2).
-        include: ['test/**/*.test.ts', 'packages/*/test/**/*.test.ts'],
+        include: ['test/**/*.test.ts', 'packages/*/test/**/*.test.ts', 'app/*/tests/**/*.test.ts'],
         exclude: [...configDefaults.exclude],
         globals: false,
         // Setup files to provide node-canvas and DOM shims for jsdom, plus jest-dom matchers

@@ -70,8 +70,8 @@ import {
 } from 'spacegraphjs/widgets';
 import { ScaleDomain, type ScaleSample } from 'spacegraphjs/zoom';
 import { activityHostFixture } from './activity-host';
-import { SecondHost } from './second-host/host';
-import { HOST_VIEWS, LEVELS, type BuildLevel, type HostView } from './second-host/model';
+import { SecondHost } from '../app/demo/src/host';
+import { HOST_VIEWS, LEVELS, type BuildLevel, type HostView } from '../app/demo/src/model';
 
 type Appearance = Pick<RenderNode, 'shape' | 'size'>;
 

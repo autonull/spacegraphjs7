@@ -1,0 +1,26 @@
+{
+    "name": "demo",
+    "version": "0.0.0",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "dev": "vite --config vite.config.ts --port 5174",
+        "build": "vite build --config vite.config.ts",
+        "test": "vitest run --config vitest.config.ts",
+        "test:e2e": "playwright test --config playwright.config.ts",
+        "test:publish": "tsx scripts/publish-check.ts"
+    },
+    "dependencies": {
+        "@spacegraphjs/adapter": "workspace:*",
+        "@spacegraphjs/cytoscape-renderer": "workspace:*",
+        "@spacegraphjs/kernel": "workspace:*",
+        "@spacegraphjs/overlays": "workspace:*",
+        "@spacegraphjs/renderer": "workspace:*",
+        "@spacegraphjs/search": "workspace:*",
+        "@spacegraphjs/shared": "workspace:*",
+        "@spacegraphjs/spacegraph-renderer": "workspace:*",
+        "@spacegraphjs/svg-renderer": "workspace:*",
+        "@spacegraphjs/trace": "workspace:*",
+        "spacegraphjs": "workspace:*"
+    }
+}

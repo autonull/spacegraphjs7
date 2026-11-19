@@ -188,12 +188,12 @@ This path keeps your vocabulary, your layout policy, and your persistence out of
 
 ### The second host
 
-`demo/second-host/` is that path, worked out end to end by a host that is not OpenCode: plain
+`app/demo/src/` is that path, worked out end to end by a host that is not OpenCode: plain
 TypeScript, no framework, a release pipeline as its own vocabulary, and a gallery in which every
 generic module runs against that model and reports what it produced.
 
 ```
-pnpm run dev:demo      # then open /second-host.html
+pnpm --filter demo dev   # then open http://localhost:5174
 ```
 
 | Capability               | Library surface                                                                                       |
@@ -212,9 +212,9 @@ pnpm run dev:demo      # then open /second-host.html
 | The scoped overlay       | `spacegraphjs/overlays`                                                                               |
 | The code diff            | `spacegraphjs/overlays`                                                                               |
 
-Its checks are part of the library's own suite: `test/second-host/` runs every capability against
+Its checks live with the app: `app/demo/tests/second-host.test.ts` runs every capability against
 the real model and fails if the host reaches for an OpenCode module, a framework, or a library
-surface the gallery does not claim; `test/e2e/second-host.spec.ts` drives the page in a browser.
+surface the gallery does not claim; `app/demo/tests/second-host.spec.ts` drives the page in a browser.
 
 ### Renderer contract
 

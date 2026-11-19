@@ -65,6 +65,7 @@ export default defineConfig({
     server: {
         port: 5173,
         open: !process.env.CI,
+        fs: { allow: [resolve(__dirname), resolve(__dirname, '../app')] },
     },
     build: {
         outDir: '../dist-demo',
@@ -74,7 +75,6 @@ export default defineConfig({
             input: {
                 main: resolve(__dirname, 'demo/index.html'),
                 contract: resolve(__dirname, 'demo/contract.html'),
-                secondHost: resolve(__dirname, 'demo/second-host.html'),
                 explorer: resolve(__dirname, 'demo/explorer.html'),
             },
             output: {

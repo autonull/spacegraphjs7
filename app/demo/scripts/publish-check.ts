@@ -44,17 +44,17 @@ const consumer = join(workspace, 'consumer');
 try {
     createPackedConsumer(root, packages, runtimeDependencies, consumer, join(workspace, 'tarballs'));
 
-    const demo = join(consumer, 'second-host');
+    const demo = join(consumer, 'second-host', 'src');
     mkdirSync(demo, { recursive: true });
-    for (const file of readdirSync(join(root, 'demo/second-host'))) {
-        copyFileSync(join(root, 'demo/second-host', file), join(demo, file));
+    for (const file of readdirSync(join(root, 'app/demo/src'))) {
+        copyFileSync(join(root, 'app/demo/src', file), join(demo, file));
     }
-    copyFileSync(join(root, 'demo/second-host.html'), join(consumer, 'second-host.html'));
+    copyFileSync(join(root, 'app/demo/index.html'), join(consumer, 'second-host.html'));
 
     console.log('\nsecond-host check: the demo mounts and runs on published packages');
     execFileSync(
         'bun',
-        ['run', resolve(import.meta.dirname, 'publish-check/second-host-browser-check.ts')],
+        ['run', resolve(import.meta.dirname, '../../script/publish-check/second-host-browser-check.ts')],
         {
             cwd: consumer,
             stdio: 'inherit',

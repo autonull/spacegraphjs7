@@ -175,8 +175,6 @@
         "test:kernel": "bun test packages/kernel/src",
         "test:full": "pnpm test && pnpm run test:kernel",
         "test:publish": "tsx script/publish-check.ts",
-        "test:publish:second-host": "tsx script/second-host-publish-check.ts",
-        "test:second-host": "playwright test --config playwright.demo.config.ts test/e2e/second-host.spec.ts",
         "test:explorer": "playwright test --config playwright.demo.config.ts test/e2e/explorer.spec.ts",
         "test:capture-matrix": "playwright test --config playwright.demo.config.ts test/e2e/capture-matrix.spec.ts",
         "test:screenshots": "mkdir -p test/screenshots && playwright test test/e2e/demo-screenshots.spec.ts --reporter=list",
@@ -237,7 +235,9 @@
         "vitest": "^5.0.5"
     },
     "workspaces": [
-        "packages/*"
+        "packages/*",
+        "packages/domain/*",
+        "app/*"
     ],
     "license": "MIT",
     "repository": {

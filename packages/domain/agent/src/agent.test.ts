@@ -1,0 +1,145 @@
+import { describe, expect, test } from 'bun:test';
+import { Kernel } from '@spacegraphjs/kernel';
+import type { KernelOp } from '@spacegraphjs/kernel';
+import { AgentEventMapper } from './mapping';
+import { buildAgentView, agentDomain, AGENT_KINDS } from './vocabulary';
+import { changedArtifacts, failures, why } from './selectors';
+import { agentFacetAccessors, agentTraceVocabulary } from './facets';
+
+const fold = (ops: readonly KernelOp[]): Kernel =>
+    ops.reduce<Kernel>(
+        (kernel, op) =>
+            kernel.modify((builder) => {
+                switch (op.op) {
+                    case 'add-node':
+                        builder.nodes.set(op.node.id, op.node);
+                        break;
+                    case 'remove-node':
+                        builder.nodes.delete(op.id);
+                        break;
+                    case 'add-edge':
+                        builder.edges.set(op.edge.id, op.edge);
+                        break;
+                    case 'remove-edge':
+                        builder.edges.delete(op.id);
+                        break;
+                    default:
+                        break;
+                }
+            }),
+        new Kernel(),
+    );
+
+describe('event mapping', () => {
+    test('emits open-ended kinds and ordinary edges, never inferred causes', () => {
+        const mapper = new AgentEventMapper('agent');
+        const ops = [
+            ...mapper.map({ type: 'run-start', runId: 'r1' }),
+            ...mapper.map({ type: 'unit-start', runId: 'r1', unitId: 'u1' }),
+            ...mapper.map({
+                type: 'action',
+                runId: 'r1',
+                unitId: 'u1',
+                id: 't1',
+                toolName: 'read',
+                args: { path: 'a.ts' },
+                phase: 'start',
+            }),
+            ...mapper.map({
+                type: 'action',
+                runId: 'r1',
+                unitId: 'u1',
+                id: 't2',
+                toolName: 'bash',
+                phase: 'start',
+                parentId: 't1',
+            }),
+            ...mapper.map({
+                type: 'artifact',
+                runId: 'r1',
+                unitId: 'u1',
+                id: 'f1',
+                path: 'a.ts',
+                producerId: 't1',
+            }),
+            ...mapper.map({ type: 'unit-end', runId: 'r1', unitId: 'u1', stopReason: 'error' }),
+        ];
+        const kernel = fold(ops);
+        const kinds = new Set(kernel.nodes.map((node) => node.kind));
+        const edgeKinds = new Set(kernel.edges.map((edge) => edge.kind));
+
+        expect(kinds.has('run')).toBe(true);
+        expect(kinds.has('unit')).toBe(true);
+        expect(kinds.has('action')).toBe(true);
+        expect(kinds.has('artifact')).toBe(true);
+        expect(kinds.has('retry')).toBe(true);
+        expect(edgeKinds.has('contains')).toBe(true);
+        expect(edgeKinds.has('delegates')).toBe(true);
+        expect(edgeKinds.has('writes')).toBe(true);
+        expect(edgeKinds.has('inferred-cause')).toBe(false);
+        expect(kernel.diagnostics().danglingEdges).toEqual([]);
+    });
+});
+
+describe('agent domain', () => {
+    test('builds a view with status and active turn from kernel data', () => {
+        const kernel = fold([
+            ...new AgentEventMapper('agent').map({ type: 'run-start', runId: 'r1' }),
+            ...new AgentEventMapper('agent').map({ type: 'unit-start', runId: 'r1', unitId: 'u1' }),
+        ]);
+        const view = buildAgentView(kernel);
+
+        expect(view.root).toBe('agent:r1:run');
+        expect(view.turns).toEqual(['agent:r1:u1']);
+        expect(view.activeTurn).toBe('agent:r1:u1');
+        expect(view.nodes.every((node) => typeof node.status === 'string')).toBe(true);
+    });
+
+    test('stays open-ended: no fixed role enum and structural manifest', () => {
+        expect(AGENT_KINDS).toContain('action');
+        expect(agentDomain.id).toBe('agent');
+        expect(agentDomain.manifest().every((entry) => entry.values.length > 0)).toBe(true);
+        expect(agentDomain.vocabulary.lanes).toBeDefined();
+        expect(agentDomain.vocabulary.scopeIdOf?.({ kind: 'action', data: { unitId: 'u1' } })).toBe('u1');
+    });
+
+    test('facet and trace vocabulary expose only generic roles', () => {
+        expect(agentFacetAccessors.isRetry!({ id: 'r', kind: 'retry', label: 'r', status: 'pending' })).toBe(true);
+        expect(agentTraceVocabulary.downstreamEdgeKinds.has('writes')).toBe(true);
+    });
+});
+
+describe('selectors', () => {
+    const view = buildAgentView(
+        fold([
+            ...new AgentEventMapper('agent').map({ type: 'run-start', runId: 'r1' }),
+            ...new AgentEventMapper('agent').map({ type: 'unit-start', runId: 'r1', unitId: 'u1' }),
+            ...new AgentEventMapper('agent').map({
+                type: 'action',
+                runId: 'r1',
+                unitId: 'u1',
+                id: 't1',
+                toolName: 'write',
+                phase: 'end',
+                isError: true,
+            }),
+            ...new AgentEventMapper('agent').map({
+                type: 'artifact',
+                runId: 'r1',
+                unitId: 'u1',
+                id: 'f1',
+                path: 'a.ts',
+                producerId: 't1',
+            }),
+        ]),
+    );
+
+    test('answers why through provenance edges', () => {
+        expect(why(view, 'agent:r1:f1').answerIds.has('agent:r1:t1')).toBe(true);
+    });
+
+    test('finds failures and changed artifacts', () => {
+        expect(failures(view)).toEqual(['agent:r1:t1']);
+        expect(changedArtifacts(view)).toEqual(['agent:r1:f1']);
+    });
+});

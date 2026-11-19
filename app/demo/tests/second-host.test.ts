@@ -8,11 +8,11 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_THEME } from '@spacegraphjs/renderer';
 import { renderCodeDiff } from 'spacegraphjs/overlays';
-import { CAPABILITIES, GALLERY_MODULES } from '../../demo/second-host/gallery';
-import { SecondHost } from '../../demo/second-host/host';
-import type { BuildModel, BuildNode } from '../../demo/second-host/model';
+import { CAPABILITIES, GALLERY_MODULES } from '../src/gallery';
+import { SecondHost } from '../src/host';
+import type { BuildModel, BuildNode } from '../src/model';
 
-const demoDir = resolve(__dirname, '../../demo/second-host');
+const demoDir = resolve(__dirname, '../src');
 const STATIC_IMPORT = /(?:^|\n)\s*import\s+(?:[\s\S]*?\sfrom\s+)?['"]([^'"]+)['"]/g;
 
 function hostSources(): { file: string; text: string }[] {

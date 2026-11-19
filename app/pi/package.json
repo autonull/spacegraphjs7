@@ -1,0 +1,34 @@
+{
+    "name": "pi",
+    "version": "0.0.0",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "dev": "tsx scripts/dev.ts",
+        "server": "tsx src/server.ts",
+        "build": "vite build --config vite.config.ts",
+        "test": "vitest run --config vitest.config.ts",
+        "verify": "tsx scripts/verify.ts"
+    },
+    "dependencies": {
+        "@earendil-works/pi-agent-core": "1.5.2",
+        "@earendil-works/pi-ai": "1.5.2",
+        "@earendil-works/pi-coding-agent": "1.5.2",
+        "@spacegraphjs/agent": "workspace:*",
+        "@spacegraphjs/adapter": "workspace:*",
+        "@spacegraphjs/config": "workspace:*",
+        "@spacegraphjs/kernel": "workspace:*",
+        "@spacegraphjs/renderer": "workspace:*",
+        "@spacegraphjs/search": "workspace:*",
+        "@spacegraphjs/shared": "workspace:*",
+        "@spacegraphjs/spacegraph-renderer": "workspace:*",
+        "spacegraphjs": "workspace:*"
+    },
+    "devDependencies": {
+        "@types/node": "^26.4.1",
+        "tsx": "^4.23.13",
+        "typescript": "^5.9.2",
+        "vite": "^8.3.5",
+        "vitest": "^5.0.5"
+    }
+}

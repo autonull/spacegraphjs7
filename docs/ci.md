@@ -23,8 +23,8 @@ cd spacegraphjs && pnpm vitest run packages/overlays/test/
 # Navigation core
 cd spacegraphjs && pnpm vitest run packages/navigation/test/
 
-# Second host (framework-free)
-cd spacegraphjs && pnpm vitest run test/second-host/
+# Second host (framework-free, app/demo)
+cd spacegraphjs && pnpm --filter demo test
 
 # Contract package
 cd spacegraphjs && pnpm vitest run packages/renderer/

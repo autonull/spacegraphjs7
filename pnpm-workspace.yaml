@@ -1,6 +1,8 @@
 packages:
     - '.'
     - 'packages/*'
+    - 'packages/domain/*'
+    - 'app/*'
 overrides:
     '@anthropic-ai/sdk@>=0.79.0 <0.91.1': '>=0.91.1'
     '@azure/identity@<4.2.1': '>=4.2.1'

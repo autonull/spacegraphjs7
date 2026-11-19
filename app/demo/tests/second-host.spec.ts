@@ -3,8 +3,8 @@ import { mkdirSync } from 'fs';
 import { resolve } from 'path';
 
 // T6.12 — the second host: a plain-TypeScript app that mounts the library's contract and its three
-// renderers, and runs every generic module against a model of its own. Served by the repo vite
-// (`root: demo`), so the page is `/second-host.html`.
+// renderers, and runs every generic module against a model of its own. Served by app/demo's own
+// vite (`root: app/demo`), so the page is `/`.
 // Use PLAYWRIGHT_BASE_URL from playwright.config.ts which defaults to http://localhost:5173
 const BASE_URL =
     process.env.PLAYWRIGHT_BASE_URL || `http://localhost:${process.env.SG_DEMO_PORT ?? 5173}`;
@@ -39,7 +39,7 @@ async function boot(page: Page) {
     page.on('console', (message) => {
         if (message.type() === 'error') errors.push(message.text());
     });
-    await page.goto('/second-host.html');
+    await page.goto('/');
     await page.waitForFunction(() => (window as any).__ready === true);
     await page.evaluate(() => document.fonts.ready);
     return errors;

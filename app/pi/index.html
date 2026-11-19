@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>pi · SpaceGraphJS reference app</title>
+        <style>
+            :root {
+                --pi-background: #0b1020;
+                --pi-surface: #151c32;
+                --pi-surface-muted: #1d2742;
+                --pi-text: #e8edff;
+                --pi-text-muted: #9aa7c7;
+                --pi-border: #2b3962;
+                --pi-accent: #7aa2ff;
+                --pi-success: #5ed6a8;
+                --pi-warning: #f5c46b;
+                --pi-error: #ff7a90;
+                --pi-edge: #4a5d92;
+                --pi-edge-muted: #2f3d66;
+                --pi-selection: #7aa2ff;
+                --pi-focus: #a8c0ff;
+            }
+            :root[data-theme='light'] {
+                --pi-background: #f7f9ff;
+                --pi-surface: #ffffff;
+                --pi-surface-muted: #eef2fb;
+                --pi-text: #14203a;
+                --pi-text-muted: #56658a;
+                --pi-border: #ccd6ee;
+                --pi-accent: #315bd6;
+                --pi-success: #12805c;
+                --pi-warning: #93610b;
+                --pi-error: #bd2645;
+                --pi-edge: #7b8bb5;
+                --pi-edge-muted: #b9c4de;
+                --pi-selection: #315bd6;
+                --pi-focus: #1d3f9c;
+            }
+            * { box-sizing: border-box; }
+            body {
+                margin: 0;
+                height: 100vh;
+                display: grid;
+                grid-template-columns: 260px 1fr;
+                grid-template-rows: auto 1fr auto;
+                gap: 12px;
+                padding: 12px;
+                background: var(--pi-background);
+                color: var(--pi-text);
+                font: 13px/1.4 system-ui, sans-serif;
+            }
+            header { grid-column: 1 / -1; display: flex; align-items: center; gap: 16px; }
+            h1 { font-size: 15px; margin: 0; }
+            header span { color: var(--pi-text-muted); }
+            aside, main { border: 1px solid var(--pi-border); border-radius: 8px; background: var(--pi-surface); }
+            aside { padding: 12px; overflow: auto; }
+            main { min-height: 0; }
+            #canvas { width: 100%; height: 100%; }
+            footer { grid-column: 1 / -1; }
+            #gallery { display: grid; gap: 6px; }
+            #gallery button, form button, form select {
+                border: 1px solid var(--pi-border);
+                border-radius: 6px;
+                background: var(--pi-surface-muted);
+                color: var(--pi-text);
+                padding: 6px 8px;
+                text-align: left;
+                cursor: pointer;
+            }
+            #gallery button:hover { border-color: var(--pi-accent); }
+            form { display: flex; gap: 8px; }
+            form input { flex: 1; padding: 8px; border-radius: 6px; border: 1px solid var(--pi-border); background: var(--pi-surface); color: var(--pi-text); }
+            #evidence { color: var(--pi-text-muted); margin: 8px 0 0; padding-left: 18px; min-height: 18px; }
+            #status { color: var(--pi-accent); }
+        </style>
+    </head>
+    <body>
+        <header>
+            <h1>pi · SpaceGraphJS</h1>
+            <span id="status">connecting…</span>
+        </header>
+        <aside>
+            <strong>Capabilities</strong>
+            <div id="gallery"></div>
+        </aside>
+        <main id="canvas"></main>
+        <footer>
+            <form id="prompt-form">
+                <input id="prompt-input" autocomplete="off" placeholder="Prompt the live agent…" aria-label="Prompt" />
+                <select id="prompt-mode" aria-label="Prompt mode">
+                    <option value="">default</option>
+                    <option value="steer">steer</option>
+                    <option value="followUp">follow up</option>
+                </select>
+                <button type="submit">Send</button>
+            </form>
+            <ul id="evidence"></ul>
+        </footer>
+        <script type="module" src="./src/client.ts"></script>
+    </body>
+</html>
