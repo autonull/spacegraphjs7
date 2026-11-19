@@ -92,6 +92,8 @@ export interface GraphFacets {
     errors?: boolean;
     retries?: boolean;
     costlyNodes?: boolean;
+    /** How active semantic filters compose: "or" keeps a node matching any, "and" requires all. Defaults to "or". */
+    composeMode?: "or" | "and";
 }
 
 /** Facet counts for display. */

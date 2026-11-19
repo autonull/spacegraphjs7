@@ -87,12 +87,24 @@ function defaultSearchText(node: GraphNode): string[] {
 
 /**
  * Apply facets to a model, returning a filtered model.
- * The domain facet scopes the model first; kind/status/query filter the scoped nodes.
- * Semantic facets (failedTools, fileWrites, etc.) act as additional OR filters.
- * The session root always stays so the answer keeps an address.
+ * The domain facet scopes the model first; kind/status/query and the semantic quick filters then
+ * narrow the scoped nodes. Standard and semantic groups compose with AND; semantic filters compose
+ * with each other by `composeMode` (OR keeps a node matching any, AND requires all). With no active
+ * filter, every node is kept. The session root always stays so the answer keeps an address.
  */
 export function applyFacets({ model, facets, accessors }: ApplyFacetsOptions): GraphViewData {
-    const { query, kinds, statuses, domains, failedTools, fileWrites, subagentCalls, errors, retries, costlyNodes } = facets;
+    const { query, kinds, statuses, domains, composeMode } = facets;
+
+    const semanticChecks = [
+        [facets.failedTools, accessors.isFailedTool],
+        [facets.fileWrites, accessors.isFileWrite],
+        [facets.subagentCalls, accessors.isSubagentCall],
+        [facets.errors, accessors.isError],
+        [facets.retries, accessors.isRetry],
+        [facets.costlyNodes, accessors.isCostlyNode],
+    ] as const;
+    const activeChecks = semanticChecks.filter(([active]) => active).map(([, check]) => check);
+    const requireAll = composeMode === "and";
 
     // Domain scoping first
     let scopedNodes = model.nodes;
@@ -103,32 +115,20 @@ export function applyFacets({ model, facets, accessors }: ApplyFacetsOptions): G
         });
     }
 
-    // Check if any semantic facet is active (these are OR filters that ADD nodes)
-    const hasSemanticFilters = failedTools || fileWrites || subagentCalls || errors || retries || costlyNodes;
-
-    // Then filter by kind, status, and query
     const kept = new Set<string>();
     for (const node of scopedNodes) {
-        const kindMatch = kinds.size === 0 || kinds.has(accessors.kind(node));
-        const statusMatch = statuses.size === 0 || statuses.has(accessors.status(node));
-        const queryMatch = matchQuery(node, query);
+        const matchesStandard =
+            (kinds.size === 0 || kinds.has(accessors.kind(node))) &&
+            (statuses.size === 0 || statuses.has(accessors.status(node))) &&
+            matchQuery(node, query);
 
-        // Standard facet match
-        let matches = kindMatch && statusMatch && queryMatch;
+        const matchesSemantic =
+            activeChecks.length === 0 ||
+            (requireAll
+                ? activeChecks.every((check) => check?.(node))
+                : activeChecks.some((check) => check?.(node)));
 
-        // If any semantic filters are active, also check those (OR logic - node matches if ANY semantic filter applies)
-        if (hasSemanticFilters) {
-            let semanticMatch = false;
-            if (failedTools && accessors.isFailedTool?.(node)) semanticMatch = true;
-            if (fileWrites && accessors.isFileWrite?.(node)) semanticMatch = true;
-            if (subagentCalls && accessors.isSubagentCall?.(node)) semanticMatch = true;
-            if (errors && accessors.isError?.(node)) semanticMatch = true;
-            if (retries && accessors.isRetry?.(node)) semanticMatch = true;
-            if (costlyNodes && accessors.isCostlyNode?.(node)) semanticMatch = true;
-            matches = matches || semanticMatch;
-        }
-
-        if (node.id === accessors.rootId(model) || matches) {
+        if (node.id === accessors.rootId(model) || (matchesStandard && matchesSemantic)) {
             kept.add(node.id);
         }
     }
@@ -299,6 +299,7 @@ export function facetsToQuery(
         encodeFlag('errors', facets.errors),
         encodeFlag('retries', facets.retries),
         encodeFlag('costlyNodes', facets.costlyNodes),
+        facets.composeMode === 'and' ? 'compose:and' : undefined,
     ].filter((value): value is string => !!value);
 
     return values.join(' ');
@@ -328,6 +329,7 @@ export function facetsFromQuery(
     let errors = false;
     let retries = false;
     let costlyNodes = false;
+    let composeMode: "or" | "and" = "or";
 
     const kindSet = new Set(knownKinds);
     const statusSet = new Set(knownStatuses);
@@ -338,14 +340,25 @@ export function facetsFromQuery(
 
     const trimmed = query.trim();
     if (!trimmed) {
-        return { query: '', kinds, statuses, domains };
+        return { query: '', kinds, statuses, domains, composeMode };
     }
 
     for (const token of trimmed.split(/\s+/)) {
         if (!token) continue;
         const separator = token.indexOf(':');
         if (separator <= 0) {
-            text.push(token);
+            if (semanticTokens.has(token)) {
+                switch (token) {
+                    case 'failedTools': failedTools = true; break;
+                    case 'fileWrites': fileWrites = true; break;
+                    case 'subagentCalls': subagentCalls = true; break;
+                    case 'errors': errors = true; break;
+                    case 'retries': retries = true; break;
+                    case 'costlyNodes': costlyNodes = true; break;
+                }
+            } else {
+                text.push(token);
+            }
             continue;
         }
         const name = token.slice(0, separator);
@@ -360,6 +373,10 @@ export function facetsFromQuery(
         }
         if (name === 'domain') {
             for (const value of values) if (domainSet.has(value)) domains.add(value);
+            continue;
+        }
+        if (name === 'compose' && values.includes('and')) {
+            composeMode = 'and';
             continue;
         }
         // P2.1: Semantic facet flags (boolean, no values)
@@ -388,6 +405,7 @@ export function facetsFromQuery(
         errors,
         retries,
         costlyNodes,
+        composeMode,
     };
 }
 

@@ -381,5 +381,55 @@ describe('facets', () => {
             const facets: GraphFacets = { query: '', kinds: new Set(), statuses: new Set(['failed']), domains: new Set(['session']) };
             expect(hasFacets(facets)).toBe(true);
         });
+
+        it('returns true for semantic quick filters', () => {
+            const facets: GraphFacets = { query: '', kinds: new Set(), statuses: new Set(), domains: new Set(['session']), errors: true };
+            expect(hasFacets(facets)).toBe(true);
+        });
+    });
+
+    describe('semantic quick filters (RW-01)', () => {
+        const semanticAccessors: FacetAccessors = {
+            ...accessors,
+            isFailedTool: (node) => node.kind === 'tool' && node.status === 'failed',
+            isError: (node) => node.kind === 'error',
+            isSubagentCall: (node) => node.kind === 'subagent',
+        };
+        const root = createMockNode({ id: 'root', kind: 'session' });
+        const failedTool = createMockNode({ id: 'tool', kind: 'tool', status: 'failed' });
+        const error = createMockNode({ id: 'error', kind: 'error' });
+        const subagent = createMockNode({ id: 'sub', kind: 'subagent' });
+        const model = createMockModel({ nodes: [root, failedTool, error, subagent] });
+        const empty = { query: '', kinds: new Set<string>(), statuses: new Set<string>(), domains: new Set<string>() };
+        const ids = (facets: GraphFacets) =>
+            applyFacets({ model, facets, accessors: semanticAccessors }).nodes.map((n) => n.id).sort();
+
+        it('keeps all nodes when no filter is active', () => {
+            expect(ids(empty)).toEqual(['error', 'root', 'sub', 'tool']);
+        });
+
+        it('narrows to a single active semantic filter', () => {
+            expect(ids({ ...empty, errors: true })).toEqual(['error', 'root']);
+        });
+
+        it('OR mode keeps a node matching any active semantic filter', () => {
+            expect(ids({ ...empty, failedTools: true, errors: true, composeMode: 'or' })).toEqual(['error', 'root', 'tool']);
+        });
+
+        it('AND mode keeps only nodes matching every active semantic filter', () => {
+            expect(ids({ ...empty, failedTools: true, errors: true, composeMode: 'and' })).toEqual(['root']);
+        });
+
+        it('composes standard and semantic filters with AND', () => {
+            expect(ids({ ...empty, kinds: new Set(['tool']), errors: true })).toEqual(['root']);
+        });
+
+        it('round-trips semantic flags and compose mode through the query grammar', () => {
+            const original: GraphFacets = { ...empty, errors: true, composeMode: 'and' };
+            const query = facetsToQuery(original, knownKinds, knownStatuses, knownDomains);
+            const parsed = facetsFromQuery(query, knownKinds, knownStatuses, knownDomains);
+            expect(parsed.errors).toBe(true);
+            expect(parsed.composeMode).toBe('and');
+        });
     });
 });
