@@ -97,7 +97,8 @@
             figure {
                 margin: 0;
             }
-            figure img {
+            figure img,
+            video {
                 width: 100%;
                 border: 1px solid #30303a;
                 border-radius: 10px;
@@ -170,6 +171,7 @@
                 <div class="actions">
                     <a class="primary" href="#run">Run it locally</a>
                     <a href="#screens">See the screenshots</a>
+                    <a href="#video">Watch the clip</a>
                     <a
                         href="https://github.com/autonull/spacegraphjs/blob/main/docs/semantic-wrappers.md"
                         >Build a wrapper</a
@@ -209,6 +211,21 @@
                             </figcaption>
                         </figure>
                     </div>
+                </div>
+            </section>
+
+            <section id="video">
+                <div class="wrap">
+                    <h2>Six seconds in the flagship</h2>
+                    <p class="sub">
+                        The canonical fixture loads with no provider. The graph pans while the
+                        transcript stays mounted; a selector-backed question returns its answer at
+                        the bottom.
+                    </p>
+                    <video controls preload="metadata" poster="./flagship/flagship.png">
+                        <source src="./flagship/flagship.mp4" type="video/mp4" />
+                        Your browser cannot play the captured flagship clip.
+                    </video>
                 </div>
             </section>
 

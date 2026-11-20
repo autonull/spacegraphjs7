@@ -16,6 +16,12 @@ test.describe('flagship landing page', () => {
             ).toBeGreaterThan(0);
         }
 
+        const video = page.locator('#video video');
+        await expect(video).toHaveAttribute('poster', './flagship/flagship.png');
+        const source = await video.locator('source').getAttribute('src');
+        expect(source).toBe('./flagship/flagship.mp4');
+        expect((await page.request.get(new URL(source!, page.url()).toString())).ok()).toBe(true);
+
         await expect(page.locator('#run')).toContainText('PI_LOCAL_FEED=1 pnpm --filter pi dev');
         await expect(page.locator('#run')).toContainText('pnpm --filter pi verify:visual');
         await expect(page.getByRole('link', { name: 'Back to the demo gallery' })).toHaveAttribute(

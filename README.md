@@ -210,9 +210,9 @@ pnpm --filter pi verify:visual         # vision-gated capture matrix
 pnpm --filter pi verify                # one-way dependency guard
 ```
 
-A shareable landing page with screenshots and the one-command quickstart lives at
+A shareable landing page with a clip, screenshots and the one-command quickstart lives at
 [`app/demo/flagship.html`](app/demo/flagship.html) (served by `pnpm --filter demo dev` and included in the
-demo build). The compositional demo at
+demo build; `pnpm --filter demo video:flagship` recaptures the clip). The compositional demo at
 [`compositional-wrappers.html`](app/demo/html/layout/compositional-wrappers.html) mounts the agent and
 workflow domains in one workspace and joins them with an `InterGraphEdge` overlay; each model stays isolated.
 
