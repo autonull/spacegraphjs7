@@ -392,6 +392,7 @@ export const scopePositionsAt = (
 
 export interface HostedScopeLayout extends ScopeLayout {
     change: IncrementalLayout;
+    tree: ScopeTree;
 }
 
 const localState = (
@@ -432,6 +433,6 @@ export class ScopeHost {
         this.#previous = localState(tree, layout);
         const change = computeIncremental(layout.positions, this.#last?.positions);
         this.#last = layout;
-        return { ...layout, change };
+        return { ...layout, change, tree };
     }
 }

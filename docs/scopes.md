@@ -88,6 +88,35 @@ const frame = host.update(
 const positions = scopePositionsAt(frame.change, progress);
 ```
 
+## Physical animation
+
+`ScopeSimulation` turns those stable targets into motion. Bodies are critically damped springs that
+chase the solved layout; new bodies start at their owning scope's origin, so a subgraph grows out of
+its portal instead of appearing at its final position. Frames animate too, and edges follow the
+animated endpoints.
+
+The host drives `advance(seconds)`. Integration uses a fixed step with a cap on catch-up steps, and
+each body sleeps once it is close to its target and slow enough. `settled`, `energy` and `steps` are
+readable for diagnostics; `settle()` snaps everything to rest for reduced-motion or headless use.
+`pin(ids)` holds bodies at their solved target, which is how focus and attention stay still while the
+rest of the graph rearranges.
+
+```ts
+import { ScopeSimulation } from 'spacegraphjs/layout';
+
+const simulation = new ScopeSimulation({ pinned: new Set(['session/focused-tool']) });
+simulation.setSpecs(specs, { band: 1, focus: 'session/focused-tool' });
+
+function frame(deltaSeconds: number) {
+    simulation.advance(deltaSeconds);
+    const view = simulation.view();
+    // Draw view.positions, view.frames and view.edges.
+}
+```
+
+Positions returned by `positions` and `view()` are snapshots: advancing the simulation never mutates
+a previously returned position.
+
 `ScopeError` carries a `code` (`cycle`, `duplicate-scope`, `duplicate-node`, `unknown-parent`,
 `unknown-portal`, `unknown-endpoint`, `invalid-id`) so hosts can report configuration problems at
 the boundary.
