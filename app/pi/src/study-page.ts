@@ -23,6 +23,7 @@ interface PiHooks {
 
 interface Frame {
     readonly hooks: PiHooks;
+    readonly taskID: string;
     readonly surface: StudySurface;
 }
 
@@ -52,6 +53,7 @@ const current = (): Frame | undefined => {
     return assignment
         ? {
               hooks: (window as Window & { __studyHooks?: PiHooks }).__studyHooks!,
+              taskID: assignment.taskID,
               surface: assignment.surface,
           }
         : undefined;

@@ -4,6 +4,16 @@ import type { VisionReport } from './types';
 export class VisionAssert {
     constructor(private page: Page) {}
 
+    /** The strategy actually used by the captured scene, for an honest capture record. */
+    async strategy(): Promise<string> {
+        return this.page.evaluate(() => {
+            const instances = Array.from(
+                (window as any).SpaceGraph?.instances ?? ([] as unknown[]),
+            ) as { vision?: { strategy?: string } }[];
+            return instances[0]?.vision?.strategy ?? 'heuristics';
+        });
+    }
+
     async noOverlap() {
         const report = await this.getReport();
         expect(
@@ -64,6 +74,7 @@ export class VisionAssert {
                 vision: {
                     stopAutonomousCorrection: () => void;
                     modelsLoaded: boolean;
+                    strategy: string;
                     analyzeVision: () => Promise<import('./types').VisionReport>;
                 };
             };
@@ -73,7 +84,9 @@ export class VisionAssert {
 
             sg.vision.stopAutonomousCorrection();
 
-            if (!sg.vision.modelsLoaded) {
+            // Heuristics needs no ONNX assets. Waiting on `modelsLoaded` there would hang forever and
+            // fabricate readiness; only the onnx/hybrid strategies genuinely need a loader wait.
+            if (sg.vision.strategy !== 'heuristics' && !sg.vision.modelsLoaded) {
                 await new Promise<void>((resolve) => {
                     const check = setInterval(() => {
                         if (sg.vision.modelsLoaded) {

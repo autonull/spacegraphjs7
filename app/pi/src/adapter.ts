@@ -1,4 +1,11 @@
-import { escapeHtml, ModelAdapter, type AdapterEdge, type AdapterModel, type AdapterNode } from '@spacegraphjs/adapter';
+import {
+    escapeHtml,
+    ModelAdapter,
+    type AdapterEdge,
+    type AdapterModel,
+    type AdapterNode,
+    type CardContext,
+} from '@spacegraphjs/adapter';
 import type { NodeStatus, RenderEdge, RenderNode } from '@spacegraphjs/renderer';
 import type { AgentView } from '@spacegraphjs/agent';
 import { CARD_BUDGETS } from './policy';
@@ -46,6 +53,45 @@ const detailOf = (node: AgentAdapterNode): string => {
     return node.summary ?? '';
 };
 
+export type RepresentationInput = {
+    readonly level: AgentLevel;
+    /** Decaying activity score of the node, in [0, 1]. */
+    readonly activity: number;
+    /** Latest vision legibility score, in [0, 1]. */
+    readonly legibility: number;
+};
+
+/** Legibility gates spectacle: activity can promote a rung, poor legibility demotes it. */
+export const representationRung = ({ level, activity, legibility }: RepresentationInput): AgentLevel => {
+    if (level === 'overview' && activity > 0.6 && legibility >= 0.7) return 'execution';
+    if (level === 'detail' && legibility < 0.5) return 'execution';
+    return level;
+};
+
+/** Host-owned markup for one rung of the representation ladder. All node text is escaped. */
+export const cardMarkup = (node: AgentAdapterNode, rung: AgentLevel, context: CardContext): string => {
+    const label = escapeHtml(node.label);
+    const detail = escapeHtml(detailOf(node));
+    const status = escapeHtml(node.status);
+    const badge = context.count ? ` <span style="opacity:.6">${context.count}</span>` : '';
+    const attributes = `data-rung="${rung}" data-kind="${escapeHtml(node.kind)}" data-status="${status}"`;
+    const box = 'display:flex;flex-direction:column;gap:3px;padding:8px 10px;color:inherit;font-family:inherit';
+
+    if (rung === 'overview') {
+        return `<div ${attributes} style="${box}"><span style="font-weight:600">${label}${badge}</span></div>`;
+    }
+    if (rung === 'execution') {
+        const bars = [0.3, 0.55, 0.8, 0.5, 0.95]
+            .map((height) => `<i style="display:inline-block;width:3px;height:${Math.round(height * 14)}px;background:currentColor;opacity:.55"></i>`)
+            .join('');
+        return `<div ${attributes} style="${box}"><span style="font-weight:600">${label}${badge}</span><span style="display:flex;align-items:flex-end;gap:2px;height:16px">${bars}</span><span style="opacity:.72;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${detail.slice(0, 80)}</span></div>`;
+    }
+    const scope = node.scope
+        ? `<span style="opacity:.7;font-size:11px">scope: ${escapeHtml(node.scope)}</span>`
+        : '';
+    return `<div ${attributes} style="${box}"><span style="font-weight:600">${label}${badge}</span><span style="opacity:.78;font-size:12px;line-height:16px;max-height:64px;overflow:hidden">${detail.slice(0, 320)}</span><span style="opacity:.6;font-size:11px">${escapeHtml(node.kind)} · ${status} · reveal / follow / trace</span>${scope}</div>`;
+};
+
 export class AgentAdapter extends ModelAdapter<
     AgentAdapterNode,
     AgentAdapterEdge,
@@ -55,10 +101,7 @@ export class AgentAdapter extends ModelAdapter<
     constructor() {
         super({
             cardBudget: (level) => CARD_BUDGETS[level],
-            renderCardTemplate: (node, _level, context) => {
-                const detail = escapeHtml(detailOf(node).slice(0, 160));
-                return `<div data-kind="${node.kind}" data-role="${node.role ?? ''}" data-status="${node.status}" style="display:flex;flex-direction:column;gap:2px;padding:8px 10px;color:inherit;font-family:inherit"><span style="font-weight:600">${escapeHtml(node.label)}${context.count ? ` <span style="opacity:.6">${context.count}</span>` : ''}</span><span style="opacity:.72;font-size:11px">${detail}</span></div>`;
-            },
+            renderCardTemplate: cardMarkup,
         });
     }
 

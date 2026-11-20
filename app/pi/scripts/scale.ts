@@ -6,6 +6,7 @@ import { buildScopeTree, layoutScopes, ScopeSimulation } from 'spacegraphjs/layo
 import { windowedView } from '../src/policy';
 import { foldKernelOps } from '../src/ops';
 import { agentScopes } from '../src/scopes';
+import { encodePermalink, decodePermalink, type PermalinkState } from '../src/permalink';
 
 type Op = ReturnType<AgentEventMapper['map']>[number];
 const ms = (start: number): number => Number((performance.now() - start).toFixed(1));
@@ -65,6 +66,37 @@ const windowMs = (() => {
     return ms(start);
 })();
 
+const playFrameMs = (() => {
+    const simulation = new ScopeSimulation({
+        forces: { repulsion: 1800, attraction: 0.018, cooling: 0.94, maxBodies: 120 },
+    });
+    simulation.setSpecs([
+        { id: 'play', nodes: Array.from({ length: 120 }, (_, i) => ({ id: `body-${i}` })) },
+    ]);
+    simulation.setSignals(simulation.signals);
+    const start = performance.now();
+    for (let frame = 0; frame < 120; frame++) simulation.advance(1 / 60);
+    const perFrame = ms(start) / 120;
+    simulation.settle();
+    return { ms: Number(perFrame.toFixed(3)), settled: simulation.settled };
+})();
+
+const permalinkState: PermalinkState = {
+    surface: 'hybrid',
+    arrangement: 'side',
+    depth: 'orbit',
+    depthAxis: 'turn',
+    level: 'auto',
+    focus: 'turn-2:action-1',
+    viewport: { zoom: 1, center: [0, 0, 0] },
+    filter: '',
+};
+const permalinkMs = (() => {
+    const start = performance.now();
+    for (let i = 0; i < 1000; i++) decodePermalink(encodePermalink(permalinkState));
+    return Number((ms(start) / 1000).toFixed(3));
+})();
+
 const gzipChunk = (() => {
     try {
         const dir = resolve(import.meta.dirname, '../dist/assets');
@@ -81,6 +113,8 @@ console.log(
             modelBuild300: { nodes: small.nodes, ms: small.build },
             fullPipeline5001: { nodes: large.nodes, ms: large.full },
             forceLayout60Turns: { ms: windowMs },
+            playSession120Bodies: playFrameMs,
+            permalinkRoundTrip: { ms: permalinkMs },
             lazy3DGzipBytes: gzipChunk,
         },
         null,
@@ -92,6 +126,9 @@ const failures: string[] = [];
 if (small.build >= 50) failures.push(`model build ${small.build}ms >= 50ms`);
 if (large.full >= 400) failures.push(`full pipeline ${large.full}ms >= 400ms`);
 if (windowMs >= 1500) failures.push(`60-turn layout ${windowMs}ms >= 1500ms`);
+if (playFrameMs.ms >= 8) failures.push(`play frame ${playFrameMs.ms}ms >= 8ms`);
+if (!playFrameMs.settled) failures.push('play session did not settle');
+if (permalinkMs >= 2) failures.push(`permalink round-trip ${permalinkMs}ms >= 2ms`);
 if (gzipChunk > 400 * 1024) failures.push(`3D chunk ${gzipChunk} bytes >= 400KB`);
 if (failures.length) {
     console.error(`scale budgets exceeded:\n  - ${failures.join('\n  - ')}`);

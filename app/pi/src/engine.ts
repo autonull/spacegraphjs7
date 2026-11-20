@@ -2,6 +2,7 @@ import { SpaceGraph, PhysicsPlugin } from 'spacegraphjs';
 import { agentDomain } from '@spacegraphjs/agent';
 import { fixtureKernel } from './fixture';
 import { agentScopes } from './scopes';
+import { createPlaySession } from './play';
 
 const view = agentDomain.build(fixtureKernel());
 const scopes = agentScopes(view);
@@ -37,23 +38,12 @@ const boot = async (): Promise<void> => {
             createNodes: false,
         },
     });
-    graph.vision.modelsLoaded = true;
+    graph.vision.visionSystem.setStrategy('heuristics');
 
     const scopesPlugin = graph.scopes!;
-    const enablePlay = (): boolean => {
-        scopesPlugin.simulation.setInstant(true);
-        physics.settings.enabled = true;
-        physics.settings.gravity = 0;
-        physics.settings.collide = true;
-        physics.settings.repulsion = 120;
-        return physics.settings.enabled;
-    };
-    const reconcile = (): boolean => {
-        physics.settings.enabled = false;
-        scopesPlugin.simulation.setInstant(false);
-        scopesPlugin.simulation.settle();
-        return scopesPlugin.simulation.settled;
-    };
+    const session = createPlaySession({ physics, simulation: scopesPlugin.simulation });
+    const enablePlay = (): boolean => session.play('zero-g');
+    const reconcile = (): boolean => session.reconcile();
 
     document.getElementById('status')!.textContent = `${view.nodes.length} nodes · ${scopes.specs.length} scopes`;
     Object.assign(window, {
@@ -62,9 +52,11 @@ const boot = async (): Promise<void> => {
             play: enablePlay,
             reconcile,
             physics: () => ({ ...physics.settings }),
+            visionStrategy: () => graph.vision.strategy,
             scopes: () => scopes.specs.map((item) => item.id),
             settled: () => scopesPlugin.simulation.settled,
-            energy: () => scopesPlugin.simulation.energy,
+            energy: () => session.energy,
+            playSession: () => ({ active: session.active, preset: session.preset }),
             positionOf: (id: string) => graph.graph.getNode(id)?.position.toArray(),
         },
     });

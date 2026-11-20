@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import { supports } from '@spacegraphjs/renderer';
+import { supports, supportsEmphasis } from '@spacegraphjs/renderer';
+import { WIDGET_SLOTS } from 'spacegraphjs/widgets';
 import { SpaceGraphRenderer } from './index';
 
 describe('@spacegraphjs/spacegraph-renderer', () => {
@@ -11,6 +12,16 @@ describe('@spacegraphjs/spacegraph-renderer', () => {
         expect(supports(capabilities, 'edgeLabels')).toBe(true);
         expect(supports(capabilities, 'minimap')).toBe(false);
         expect(capabilities.maxDomNodes).toBe(80);
+    });
+
+    test('declares the emphasis channels and widget slots the core honours', () => {
+        const capabilities = new SpaceGraphRenderer().capabilities;
+        expect(supports(capabilities, 'widgets')).toBe(true);
+        expect(capabilities.widgetSlots).toEqual([...WIDGET_SLOTS]);
+        expect(supportsEmphasis(capabilities, 'size')).toBe(true);
+        expect(supportsEmphasis(capabilities, 'opacity')).toBe(true);
+        expect(supportsEmphasis(capabilities, 'edgeThickness')).toBe(true);
+        expect(supportsEmphasis(capabilities, 'glow')).toBe(false);
     });
 
     test('declares the zoom range its normalized zoom cannot leave', () => {

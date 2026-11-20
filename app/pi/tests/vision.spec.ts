@@ -15,6 +15,8 @@ const boot = async (page: Page): Promise<void> => {
 
 const assertScene = async (page: Page): Promise<void> => {
     const vision = createVisionAssert(page);
+    const strategy = await vision.strategy();
+    expect(['heuristics', 'onnx']).toContain(strategy);
     await vision.noOverlap();
     await vision.isLegible();
     await vision.expectedLayoutScore(35);
@@ -61,6 +63,78 @@ test.describe('Pi flagship vision atlas', () => {
         );
         await page.evaluate((id) => (window as any).__pi.setLaneScope(id), scope);
         await page.evaluate(() => (window as any).__pi.settle());
+        await assertScene(page);
+    });
+
+    test('play borrows a preset, then reconcile returns to the authority', async ({ page }) => {
+        await boot(page);
+        await page.evaluate(() => (window as any).__pi.play('zero-g'));
+        expect(await page.evaluate(() => (window as any).__pi.playSession().active)).toBe(true);
+        await page.evaluate(() => (window as any).__pi.reconcilePlay());
+        expect(await page.evaluate(() => (window as any).__pi.playSession().active)).toBe(false);
+        await expect
+            .poll(() => page.evaluate(() => (window as any).__pi.simulation().settled), { timeout: 10_000 })
+            .toBe(true);
+        await assertScene(page);
+    });
+
+    test('trace highlights an ordered path and sweeps the camera', async ({ page }) => {
+        await boot(page);
+        const id = await page.locator('[data-node]').first().getAttribute('data-node');
+        expect(id).toBeTruthy();
+        const before = await page.evaluate(() => (window as any).__pi.viewport().center);
+        const path = await page.evaluate((nodeId) => (window as any).__pi.trace(nodeId), id);
+        expect(path.length).toBeGreaterThan(0);
+        expect(path[0]).toBe(id);
+        for (let i = 0; i < 40; i++) {
+            await page.evaluate(() => (window as any).__pi.advance(0.05));
+        }
+        const after = await page.evaluate(() => (window as any).__pi.viewport().center);
+        expect(after).not.toEqual(before);
+        await assertScene(page);
+    });
+
+    test('every representation rung stays legible', async ({ page }) => {
+        await boot(page);
+        await page.evaluate(() => {
+            (window as any).__pi.pause(true);
+            (window as any).__pi.settle();
+        });
+        for (const level of ['overview', 'execution', 'detail']) {
+            await page.evaluate((value) => {
+                (window as any).__pi.setLevel(value);
+                (window as any).__pi.paint();
+            }, level);
+            const rungs = await page
+                .locator('[data-rung]')
+                .evaluateAll((nodes) => [...new Set(nodes.map((node) => (node as HTMLElement).dataset.rung))]);
+            expect(rungs).toContain(level);
+            await assertScene(page);
+        }
+    });
+
+    test('guided replay walks five questions across three surfaces', async ({ page }) => {
+        await boot(page);
+        expect((await page.evaluate(() => (window as any).__pi.walkthrough())).length).toBe(15);
+        const evidence = await page.evaluate(() => (window as any).__pi.replay());
+        expect(evidence.length).toBeGreaterThanOrEqual(5);
+        await assertScene(page);
+    });
+
+    test('a full-state permalink round-trips through the URL', async ({ page }) => {
+        await boot(page);
+        await page.evaluate(() => {
+            const api = (window as any).__pi;
+            api.setSurface('map');
+            api.setArrangement('stacked');
+            api.setLevelMode('detail');
+        });
+        const link = await page.evaluate(() => (window as any).__pi.permalink());
+        await page.goto(link);
+        await page.waitForFunction(() => (window as any).__pi?.ready === true);
+        expect(await page.evaluate(() => (window as any).__pi.surface())).toBe('map');
+        expect(await page.evaluate(() => (window as any).__pi.arrangement())).toBe('stacked');
+        expect(await page.evaluate(() => (window as any).__pi.levelMode())).toBe('detail');
         await assertScene(page);
     });
 });

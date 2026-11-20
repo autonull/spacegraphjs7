@@ -140,6 +140,13 @@ describe('edgeSpec', () => {
         });
     });
 
+    test('widens emphasized edges into causal ribbons', () => {
+        const plain = edgeSpec(edge({ confidence: 'explicit' }), theme);
+        const loud = edgeSpec(edge({ confidence: 'explicit', emphasis: 0.8 }), theme);
+        expect(loud.data.thickness).toBeCloseTo(plain.data.thickness * 1.8);
+        expect(loud.data.color).toBe(plain.data.color);
+    });
+
     test('adds arrowhead only on evidence/delegates edges', () => {
         const evidenceSpec = edgeSpec(edge({ kind: 'evidence', confidence: 'explicit' }), theme);
         expect(evidenceSpec.data.arrowhead).toBe('target');

@@ -17,6 +17,7 @@ import {
 } from '@spacegraphjs/renderer';
 import type { GraphSpec, SpaceGraph } from 'spacegraphjs/activity';
 import { worldToScreen } from 'spacegraphjs/utils';
+import { WIDGET_SLOTS } from 'spacegraphjs/widgets';
 import { edgeSpec, nodeSpec, spaceGraphTheme } from './mapping';
 
 const CAPABILITIES: RendererCapabilities = {
@@ -31,6 +32,8 @@ const CAPABILITIES: RendererCapabilities = {
     zoomRange: { min: 0, max: 1 },
     cardFacing: true,
     fitInsets: true,
+    emphasis: ['size', 'opacity', 'edgeThickness'],
+    widgetSlots: [...WIDGET_SLOTS],
 };
 
 // Wraps the lean SpaceGraphJS core behind the dependency-free contract. It is the only package that

@@ -20,7 +20,13 @@ import { GraphController } from 'spacegraphjs/control';
 import { sampleDepth, type DepthAxis } from 'spacegraphjs/depth';
 import { ScopeSimulation, type ScopeSpec } from 'spacegraphjs/layout';
 import { MotionDirector, type MotionPlayback } from 'spacegraphjs/motion';
-import { AgentAdapter, toAdapterModel, type AgentLevel } from './adapter';
+import {
+    AgentAdapter,
+    cardMarkup,
+    representationRung,
+    toAdapterModel,
+    type AgentLevel,
+} from './adapter';
 import {
     CAPABILITIES,
     capabilityContext,
@@ -44,6 +50,15 @@ import {
 } from './policy';
 import { agentScopes, DEPTH } from './scopes';
 import { readTheme } from './theme';
+import {
+    decodePermalink,
+    encodePermalink,
+    isRevealHash,
+    type PermalinkState,
+} from './permalink';
+import { createPlaySession, type GravityPreset, type PlaySession } from './play';
+import { STUDY_TASKS } from './study';
+import { traceOrder } from './trace';
 
 export type Arrangement = 'stacked' | 'side' | 'floating';
 export type Surface = 'log' | 'map' | 'hybrid';
@@ -63,6 +78,54 @@ export const el = <T extends HTMLElement>(id: string): T => {
 
 const lerp = (a: number, b: number, t: number): number => a + (b - a) * t;
 
+const VISION_MODELS: Record<string, string> = {
+    tla: '/tla_model.onnx',
+    che: '/che_model.onnx',
+    odn: '/odn_model.onnx',
+    vhs: '/vhs_model.onnx',
+    eqa: '/eqa_model.onnx',
+};
+
+type HostVision = {
+    readonly strategy: string;
+    readonly modelLoader: {
+        readonly isLoaded: boolean;
+        getAvailableModels(): readonly string[];
+    };
+    readonly visionSystem: { setStrategy(name: string): void };
+    readonly modelsLoaded: boolean;
+    loadModels(paths: Record<string, string>): Promise<void>;
+};
+
+const hostVision = (): HostVision | undefined => {
+    const instances = (window as unknown as { SpaceGraph?: { instances?: Set<unknown> } }).SpaceGraph?.instances;
+    const instance = instances ? (Array.from(instances)[0] as { vision?: HostVision }) : undefined;
+    return instance?.vision;
+};
+
+/**
+ * Never fabricate `modelsLoaded`. Heuristics is the honest default: the bundled ONNX files are
+ * placeholders in this runtime, so only an explicit `?vision=onnx` opt-in attempts a real load.
+ * The strategy is recorded per capture and a failed load falls back rather than inventing scores.
+ */
+const configureVision = async (): Promise<'onnx' | 'heuristics'> => {
+    const vision = hostVision();
+    const optedIn =
+        typeof location !== 'undefined' &&
+        new URLSearchParams(location.search).get('vision') === 'onnx';
+    if (!vision || !optedIn) {
+        vision?.visionSystem.setStrategy('heuristics');
+        return 'heuristics';
+    }
+    await vision.loadModels(VISION_MODELS);
+    if (vision.modelLoader.getAvailableModels().length === 0) {
+        vision.visionSystem.setStrategy('heuristics');
+        return 'heuristics';
+    }
+    vision.visionSystem.setStrategy('onnx');
+    return 'onnx';
+};
+
 /**
  * Host-owned policy. The library never learns about Pi, prompts, lanes, levels or depth choices;
  * this class translates a stream of kernel ops into a settled, recursive 3D graph and drives the
@@ -72,6 +135,7 @@ export class PiHost {
     readonly renderer = new SpaceGraphRenderer();
     readonly simulation: ScopeSimulation;
     readonly director = new MotionDirector();
+    readonly playSession: PlaySession;
 
     #kernel = new Kernel();
     #theme: RenderTheme = DEFAULT_THEME;
@@ -91,6 +155,9 @@ export class PiHost {
     #evidence: readonly string[] = [];
     #followMode: FollowMode = DEFAULT_LIVE_FOLLOW_MODE;
     #lastFollowFrame: CameraMove | null = null;
+    #traceIds: readonly string[] = [];
+    #tracePositions: readonly Position[] = [];
+    #traceProgress = 0;
     #level: AgentLevel = 'execution';
     #levelMode: LevelMode = 'auto';
     #arrangement: Arrangement = 'side';
@@ -108,10 +175,12 @@ export class PiHost {
     #fps = 0;
     #activity = new Map<string, number>();
     #vision: VisionScores = { overlap: 0, legibility: 1 };
+    #visionStrategy: 'onnx' | 'heuristics' = 'heuristics';
     #visionTime = 0;
     #windowSize = 60;
     #hidden = 0;
     #laneScope = '';
+    #paused = false;
 
     constructor(
         options: { projection?: Projection; reducedMotion?: boolean; global?: boolean } = {},
@@ -126,6 +195,22 @@ export class PiHost {
             layout: { seed: 7, gap: 190, depthStep: 220, nodePadding: 36 },
             forces: { repulsion: 1800, attraction: 0.018, cooling: 0.94, maxBodies: 120 },
         });
+        const simulation = this.simulation;
+        this.playSession = createPlaySession({
+            physics: {
+                settings: { enabled: false, gravity: 0, collide: true, repulsion: 120, damping: 0.98, groundY: null },
+            },
+            simulation: {
+                setInstant: (value) => simulation.setInstant(value),
+                settle: () => simulation.settle(),
+                get settled() {
+                    return simulation.settled;
+                },
+                get energy() {
+                    return simulation.energy;
+                },
+            },
+        });
     }
 
     async mount(container: HTMLElement): Promise<void> {
@@ -136,11 +221,7 @@ export class PiHost {
             reducedMotion: this.#reducedMotion,
             global: this.#global,
         });
-        if (this.#global) {
-            const instances = (window as unknown as { SpaceGraph?: { instances?: Set<unknown> } }).SpaceGraph?.instances;
-            const vision = instances ? (Array.from(instances)[0] as { vision?: { modelsLoaded?: boolean } }) : undefined;
-            if (vision?.vision) vision.vision.modelsLoaded = true;
-        }
+        if (this.#global) this.#visionStrategy = await configureVision();
         if (!supportsDepth(this.renderer.capabilities, this.#depth)) this.#depth = 'flat';
         this.renderer.setDepth(this.#depth);
         this.#controller.bind(this.renderer);
@@ -189,6 +270,7 @@ export class PiHost {
     }
 
     consume(op: KernelOp): void {
+        if (this.#paused) return;
         const before = new Set(this.#kernel.nodes.map((node) => node.id));
         this.#kernel = foldKernelOps([op], this.#kernel);
         const newNodes = this.#kernel.nodes
@@ -227,7 +309,28 @@ export class PiHost {
             positions: this.#positions,
             edges: true,
             focus: this.#controller.selection[0],
+            renderCard: (node, level, context) =>
+                cardMarkup(
+                    node,
+                    representationRung({
+                        level,
+                        activity: this.#activity.get(node.id) ?? 0,
+                        legibility: this.#vision.legibility,
+                    }),
+                    context,
+                ),
         });
+        if (this.#traceIds.length) {
+            const traced = new Set(this.#traceIds);
+            this.#model = {
+                ...this.#model,
+                edges: this.#model.edges.map((edge) =>
+                    traced.has(edge.source) && traced.has(edge.target)
+                        ? { ...edge, emphasis: 1 }
+                        : edge,
+                ),
+            };
+        }
         this.renderer.setModel(this.#model);
         this.renderHistory();
     }
@@ -240,10 +343,13 @@ export class PiHost {
             nodes: this.#model.nodes.map((node) => {
                 const position = this.#positions.get(node.id);
                 const activity = this.#activity.get(node.id) ?? 0;
+                const base = activity > 0 ? Math.min(1, (node.emphasis ?? 0.3) + activity) : node.emphasis;
+                const index = this.#traceIds.indexOf(node.id);
+                const traced = index >= 0 && index <= this.#traceProgress + 1;
                 return {
                     ...node,
                     position: position ? ([position.x, position.y, position.z] as [number, number, number]) : node.position,
-                    emphasis: activity > 0 ? Math.min(1, (node.emphasis ?? 0.3) + activity) : node.emphasis,
+                    emphasis: traced ? 1 : base,
                 };
             }),
         };
@@ -361,6 +467,23 @@ export class PiHost {
         return surface;
     }
 
+    play(preset: GravityPreset = 'zero-g'): boolean {
+        const active = this.playSession.play(preset);
+        this.simulation.setSignals(this.simulation.signals);
+        el('play-start').setAttribute('data-active', String(active));
+        this.syncClock();
+        return active;
+    }
+
+    reconcilePlay(): boolean {
+        const settled = this.playSession.reconcile();
+        el('play-start').setAttribute('data-active', 'false');
+        this.renderPositions();
+        this.renderHud();
+        this.syncClock();
+        return settled;
+    }
+
     pan(dx: number, dy: number): void {
         const viewport = this.renderer.getViewport();
         this.renderer.setViewport({
@@ -374,6 +497,40 @@ export class PiHost {
         const zoom = Math.max(0.1, Math.min(6, viewport.zoom * factor));
         this.renderer.setViewport({ ...viewport, zoom });
         return zoom;
+    }
+
+    permalink(): string {
+        const viewport = this.renderer.getViewport();
+        const state: PermalinkState = {
+            surface: this.#surface,
+            arrangement: this.#arrangement,
+            depth: this.#depth,
+            depthAxis: this.#depthAxis,
+            level: this.#levelMode,
+            focus: this.#revealed,
+            viewport: { zoom: viewport.zoom, center: [...viewport.center] as [number, number, number] },
+            filter: this.#laneScope,
+        };
+        return encodePermalink(state);
+    }
+
+    applyPermalink(hash: string): boolean {
+        const state = decodePermalink(hash);
+        if (!state) return false;
+        if (SURFACES.includes(state.surface as Surface)) this.setSurface(state.surface as Surface);
+        if (ARRANGEMENTS.includes(state.arrangement as Arrangement))
+            this.setArrangement(state.arrangement as Arrangement);
+        if (supportsDepth(this.renderer.capabilities, state.depth as DepthMode))
+            this.setDepth(state.depth as DepthMode);
+        this.setDepthAxis(state.depthAxis as DepthAxis);
+        this.setLevelMode(state.level as LevelMode);
+        this.setLaneScope(state.filter);
+        if (state.focus) this.reveal(state.focus);
+        this.renderer.setViewport({
+            zoom: state.viewport.zoom,
+            center: [...state.viewport.center] as [number, number, number],
+        });
+        return true;
     }
 
     exportModel(format: 'json' | 'svg' | 'html'): string {
@@ -436,17 +593,39 @@ export class PiHost {
             setSurface: (surface: Surface) => this.setSurface(surface),
             reveal: (id: string) => this.reveal(id),
             revealed: () => this.#revealed,
+            trace: (id: string) => this.trace(id),
+            tracePath: () => this.#traceIds,
+            traceProgress: () => this.#traceProgress,
+            clearTrace: () => this.clearTrace(),
+            walkthrough: () => this.walkthrough(),
+            replay: () => this.replay(),
             positionOf: (id: string) => this.#positions.get(id),
             advance: (seconds: number) => this.advance(seconds),
             settle: () => this.settle(),
+            paint: () => this.paint(),
+            pause: (value: boolean) => {
+                this.#paused = value;
+                return this.#paused;
+            },
             clock: () => this.#clock,
             ticks: () => this.#ticks,
             fps: () => this.#fps,
             vision: () => this.#vision,
+            visionStrategy: () => this.#visionStrategy,
+            play: (preset?: GravityPreset) => this.play(preset),
+            reconcilePlay: () => this.reconcilePlay(),
+            playSession: () => ({
+                active: this.playSession.active,
+                preset: this.playSession.preset,
+                energy: this.playSession.energy,
+            }),
             activity: () => [...this.#activity.keys()],
+            viewport: () => this.renderer.getViewport(),
             pan: (dx: number, dy: number) => this.pan(dx, dy),
             zoomBy: (factor: number) => this.zoomBy(factor),
             export: (format: 'json' | 'svg' | 'html') => this.exportModel(format),
+            permalink: () => this.permalink(),
+            applyPermalink: (hash: string) => this.applyPermalink(hash),
             unsupported: () => UNSUPPORTED,
             motion: () => ({ verbs: this.director.verbs(), active: this.#playback?.active ?? [] }),
             ready: true,
@@ -541,7 +720,73 @@ export class PiHost {
                 ],
             });
         });
-        this.director.register('trace', () => undefined);
+        this.director.register('trace', ({ value }) => {
+            this.#traceProgress = value;
+            const index = Math.floor(value);
+            const from = this.#tracePositions[index];
+            if (!from) return;
+            const to = this.#tracePositions[index + 1] ?? from;
+            const t = value - index;
+            this.renderer.setViewport({
+                ...this.renderer.getViewport(),
+                center: [
+                    lerp(from.x, to.x, t),
+                    lerp(from.y, to.y, t),
+                    lerp(from.z, to.z, t),
+                ],
+            });
+            this.renderPositions();
+        });
+    }
+
+    trace(id: string): readonly string[] {
+        this.#playback?.finish();
+        this.#playback = undefined;
+        this.#traceIds = traceOrder(this.#view, id);
+        this.#tracePositions = this.#traceIds
+            .map((nodeId) => this.#positions.get(nodeId))
+            .filter((position): position is Position => Boolean(position));
+        this.#traceProgress = 0;
+        this.paint();
+        const steps = this.#tracePositions.slice(1).map((_, index) => ({
+            id: `trace:${index}`,
+            verb: 'trace' as const,
+            target: 'camera' as const,
+            from: index,
+            to: index + 1,
+            duration: 0.35,
+        }));
+        if (steps.length) {
+            this.#playback = this.director.play(steps, { reducedMotion: this.#reducedMotion });
+        } else {
+            this.renderPositions();
+        }
+        this.syncClock();
+        return this.#traceIds;
+    }
+
+    clearTrace(): void {
+        this.#traceIds = [];
+        this.#tracePositions = [];
+        this.#traceProgress = 0;
+        this.paint();
+        this.renderPositions();
+    }
+
+    /** The first-visit walkthrough: five questions × three surfaces, all from existing evidence. */
+    walkthrough(): readonly string[] {
+        return STUDY_TASKS.flatMap((task) => SURFACES.map((surface) => `${task.id} · ${surface}`));
+    }
+
+    /** Replays every question's evidence, then flies the trace across the changed artifacts. */
+    replay(): readonly string[] {
+        const lines = STUDY_TASKS.flatMap((task) => runCapability(task.id, this.context()));
+        for (const node of this.#view.nodes.filter((candidate) => candidate.kind === 'artifact').slice(0, 3)) {
+            this.reveal(node.id);
+            this.trace(node.id);
+        }
+        this.showEvidence(lines);
+        return lines;
     }
 
     private follow(newNodes: readonly GraphNode[]): void {
@@ -593,8 +838,9 @@ export class PiHost {
         const moving = !this.simulation.settled;
         const flying = Boolean(this.#playback && !this.#playback.done);
         const active = this.#activity.size > 0;
-        if (this.#clock && !moving && !flying && !active) this.#clock = false;
-        if (!this.#clock && (moving || flying || active) && !document.hidden) {
+        const playing = this.playSession.active && !this.simulation.settled;
+        if (this.#clock && !moving && !flying && !active && !playing) this.#clock = false;
+        if (!this.#clock && (moving || flying || active || playing) && !document.hidden) {
             this.#clock = true;
             this.#lastFrame = performance.now();
             requestAnimationFrame(this.tick);
@@ -632,12 +878,25 @@ export class PiHost {
         for (const format of ['json', 'svg', 'html'] as const) {
             el(`export-${format}`).addEventListener('click', () => this.download(format));
         }
+        el<HTMLSelectElement>('play-preset').addEventListener('change', (event) => {
+            if (this.playSession.active) this.play((event.target as HTMLSelectElement).value as GravityPreset);
+        });
+        el('play-start').addEventListener('click', () =>
+            this.play(el<HTMLSelectElement>('play-preset').value as GravityPreset),
+        );
+        el('play-reconcile').addEventListener('click', () => this.reconcilePlay());
+        el('guided-replay').addEventListener('click', () => this.replay());
+        el('permalink-copy').addEventListener('click', () => {
+            location.hash = this.permalink().slice(1);
+            void navigator.clipboard?.writeText(location.href).catch(() => undefined);
+        });
         const canvas = el('canvas');
         canvas.tabIndex = 0;
         canvas.addEventListener('keydown', (event) => this.onKey(event));
         this.applySurface();
-        const hash = location.hash.match(/^#graph:(.+)$/);
-        if (hash) this.reveal(decodeURIComponent(hash[1]));
+        if (location.hash && !this.applyPermalink(location.hash) && isRevealHash(location.hash)) {
+            this.reveal(decodeURIComponent(location.hash.slice('#graph:'.length)));
+        }
     }
 
     private onKey(event: KeyboardEvent): void {
@@ -733,6 +992,8 @@ export class PiHost {
             `${this.simulation.settled ? 'settled' : 'moving'} · ` +
             `energy ${this.simulation.energy.toFixed(3)} · overlap ${this.#vision.overlap.toFixed(2)} · ` +
             `${Math.round(this.#fps)} fps`;
+        el('play-energy').textContent =
+            `energy ${this.playSession.energy.toFixed(3)} · ${this.playSession.preset ?? 'at rest'}`;
     }
 
     private syncDepthSelect(): void {

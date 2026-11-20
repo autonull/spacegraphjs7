@@ -186,6 +186,22 @@
                 <button type="button" id="export-svg">SVG</button>
                 <button type="button" id="export-html">HTML</button>
             </div>
+            <strong>Playground</strong>
+            <div id="playground">
+                <select id="play-preset" aria-label="Play preset">
+                    <option value="zero-g">zero-g</option>
+                    <option value="orbit">orbit</option>
+                    <option value="gravity-well">gravity-well</option>
+                </select>
+                <button type="button" id="play-start">Play</button>
+                <button type="button" id="play-reconcile">Reconcile</button>
+                <div id="play-energy">energy 0.000</div>
+                <div>ScopeSimulation owns coordinates; physics borrows a bounded set and reconciles at rest.</div>
+            </div>
+            <strong>Guided replay</strong>
+            <button type="button" id="guided-replay">Replay the five questions</button>
+            <strong>Share</strong>
+            <button type="button" id="permalink-copy">Copy full-state link</button>
             <strong>Mouse map</strong>
             <div id="mouse-map">right-drag pan · wheel zoom · middle-drag orbit · click select · node drag · shift-drag box-select</div>
             <strong>Keyboard</strong>

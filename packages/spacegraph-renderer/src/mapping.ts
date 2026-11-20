@@ -114,9 +114,12 @@ export function nodeSpec(node: RenderNode, theme: RenderTheme): NodeSpec {
 
 export function edgeSpec(edge: RenderEdge, theme: RenderTheme): EdgeSpec {
     const style = edgeStyleFor(edge, theme);
+    // Emphasis is additive: a causal ribbon (writes/delegates) widens with its score without changing
+    // the confidence-derived colour or dash decision.
+    const thickness = style.width * (1 + (edge.emphasis ?? 0));
     const data = {
         color: parseColor(style.color),
-        thickness: style.width,
+        thickness,
         dashed: style.dashed,
         label: edge.label,
         labelColor: theme.textMuted,

@@ -75,7 +75,9 @@ test.describe('the Pi reference app', () => {
         const errors = await boot(page);
 
         expect(await page.evaluate(() => (window as any).__pi.depth())).toBe('orbit');
-        expect(await page.evaluate(() => (window as any).__pi.scopes().length)).toBeGreaterThan(1);
+        await expect
+            .poll(() => page.evaluate(() => (window as any).__pi.scopes().length), { timeout: 10_000 })
+            .toBeGreaterThan(1);
         await expect
             .poll(() => page.evaluate(() => (window as any).__pi.simulation().settled), { timeout: 10_000 })
             .toBe(true);
