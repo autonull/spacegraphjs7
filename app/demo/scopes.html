@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Animated scopes — SpaceGraphJS</title>
+        <style>
+            * { box-sizing: border-box; }
+            html, body { height: 100%; margin: 0; }
+            body {
+                display: flex;
+                flex-direction: column;
+                font-family: ui-sans-serif, system-ui, sans-serif;
+                background: #0b0f17;
+                color: #e6ecf5;
+            }
+            header {
+                display: flex;
+                gap: 10px;
+                align-items: center;
+                padding: 12px 16px;
+                background: #151b26;
+                border-bottom: 1px solid #2b3544;
+            }
+            h1 { font-size: 16px; margin-right: 12px; }
+            button {
+                background: #1f2733;
+                color: #e6ecf5;
+                border: 1px solid #3b82f6;
+                border-radius: 6px;
+                padding: 6px 12px;
+                cursor: pointer;
+            }
+            #container { flex: 1; width: 100%; min-height: 480px; }
+            #live { padding: 8px 16px; color: #9aa7b8; }
+        </style>
+    </head>
+    <body>
+        <header>
+            <h1>Animated scopes</h1>
+            <button id="add">Add subgraph</button>
+            <button id="focus">Pin focus</button>
+            <button id="settle">Settle</button>
+        </header>
+        <div id="container"></div>
+        <div id="live" aria-live="polite">starting</div>
+        <script type="module">
+            import { SpaceGraph } from 'spacegraphjs';
+
+            const status = (message) => {
+                document.querySelector('#live').textContent = message;
+            };
+
+            const baseSpecs = [
+                {
+                    id: 'workspace',
+                    strategy: 'force',
+                    nodes: [
+                        { id: 'overview', size: [180, 80] },
+                        { id: 'tools', scope: 'tools' },
+                        { id: 'result', size: [180, 80] },
+                    ],
+                    edges: [
+                        { id: 'w1', source: 'overview', target: 'tools' },
+                        { id: 'w2', source: 'tools', target: 'result' },
+                    ],
+                },
+                {
+                    id: 'tools',
+                    parent: 'workspace',
+                    strategy: 'grid',
+                    offset: { x: 260, y: 0, z: 0 },
+                    nodes: [
+                        { id: 'read', size: [150, 60] },
+                        { id: 'edit', size: [150, 60] },
+                        { id: 'verify', size: [150, 60] },
+                    ],
+                    edges: [
+                        { id: 't1', source: 'read', target: 'edit' },
+                        { id: 't2', source: 'edit', target: 'verify' },
+                    ],
+                },
+            ];
+
+            const graphSpec = (specs) => {
+                const nodes = [];
+                const edges = [];
+                for (const scope of specs) {
+                    for (const node of scope.nodes) {
+                        const id = scope.parent
+                            ? `${scope.parent}/${scope.id}/${node.id}`
+                            : `${scope.id}/${node.id}`;
+                        nodes.push({
+                            id,
+                            type: 'ShapeNode',
+                            label: node.id,
+                            position: [0, 0, 0],
+                            data: { color: 0xffffff, backgroundColor: 0x0b0f17 },
+                        });
+                    }
+                    for (const edge of scope.edges ?? []) {
+                        const source = edge.source.includes('/')
+                            ? `workspace/${edge.source}`
+                            : scope.parent
+                              ? `${scope.parent}/${scope.id}/${edge.source}`
+                              : `${scope.id}/${edge.source}`;
+                        const target = edge.target.includes('/')
+                            ? `workspace/${edge.target}`
+                            : scope.parent
+                              ? `${scope.parent}/${scope.id}/${edge.target}`
+                              : `${scope.id}/${edge.target}`;
+                        edges.push({ id: `${scope.id}-${edge.id}`, type: 'Edge', source, target });
+                    }
+                }
+                return { nodes, edges };
+            };
+
+            try {
+                let frames = 0;
+                let specs = baseSpecs;
+                const sg = await SpaceGraph.create('#container', graphSpec(baseSpecs), {
+                    global: true,
+                    chrome: false,
+                    reducedMotion: false,
+                    render: { projection: 'orthographic', renderMode: 'on-demand' },
+                    scopes: {
+                        enabled: true,
+                        specs: baseSpecs,
+                        animate: true,
+                        policy: true,
+                        followFocus: true,
+                        forces: { repulsion: 2000 },
+                        onFrame: () => { frames++; },
+                    },
+                });
+                sg.vision.modelsLoaded = true;
+                sg.fitView();
+                const plugin = sg.scopes;
+
+                window.__scopesDemo = {
+                    frames: () => frames,
+                    settled: () => plugin.simulation.settled,
+                    heat: () => plugin.simulation.heat,
+                    pinned: () => [...plugin.simulation.pinned],
+                    positionOf: (id) => {
+                        const p = plugin.simulation.positions.get(id);
+                        return p ? [p.x, p.y, p.z] : undefined;
+                    },
+                    addSubgraph: () => {
+                        specs = [
+                            ...specs.filter((scope) => scope.id !== 'extra'),
+                            {
+                                id: 'extra',
+                                parent: 'workspace',
+                                strategy: 'grid',
+                                nodes: [
+                                    { id: 'plan', size: [150, 60] },
+                                    { id: 'build', size: [150, 60] },
+                                ],
+                                edges: [{ id: 'x1', source: 'plan', target: 'build' }],
+                            },
+                        ];
+                        for (const node of graphSpec(specs).nodes) {
+                            if (!sg.graph.nodes.has(node.id)) sg.graph.addNode(node);
+                        }
+                        plugin.setSpecs(specs);
+                        status('subgraph added');
+                    },
+                    focus: (id) => {
+                        sg.selection.select(id);
+                        plugin.applySignals();
+                        status(`focused ${id}`);
+                    },
+                    settle: () => {
+                        plugin.simulation.settle();
+                        status('settled');
+                    },
+                };
+
+                document.querySelector('#add').addEventListener('click', window.__scopesDemo.addSubgraph);
+                document.querySelector('#focus').addEventListener('click', () =>
+                    window.__scopesDemo.focus('workspace/result'),
+                );
+                document.querySelector('#settle').addEventListener('click', window.__scopesDemo.settle);
+                window.__ready = true;
+                status('ready');
+            } catch (error) {
+                window.__error = String(error && error.message ? error.message : error);
+                status(`error: ${window.__error}`);
+                console.error(error);
+            }
+        </script>
+    </body>
+</html>
