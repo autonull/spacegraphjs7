@@ -1,44 +1,7 @@
+import { walk, type Trace } from '@spacegraphjs/shared/domain';
 import { AGENT_RELATIONS, dataString, relationOf, roleOf, type AgentView } from './vocabulary';
 
-export type AgentTrace = {
-    readonly answerIds: ReadonlySet<string>;
-    readonly contextIds: ReadonlySet<string>;
-    readonly answerEdgeIds: ReadonlySet<string>;
-};
-
-const walk = (
-    view: AgentView,
-    start: string,
-    direction: 'in' | 'out',
-    kinds: readonly string[],
-): AgentTrace => {
-    const allowed = new Set(kinds);
-    const answerIds = new Set<string>();
-    const contextIds = new Set<string>();
-    const answerEdgeIds = new Set<string>();
-    const seen = new Set<string>([start]);
-    let frontier = [start];
-
-    while (frontier.length) {
-        const next: string[] = [];
-        for (const edge of view.edges) {
-            if (!allowed.has(edge.kind)) continue;
-            const from = direction === 'out' ? edge.source : edge.target;
-            const to = direction === 'out' ? edge.target : edge.source;
-            if (!frontier.includes(from) || seen.has(to)) continue;
-            answerIds.add(to);
-            answerEdgeIds.add(edge.id);
-            for (const parent of view.edges) {
-                if (parent.target === to && parent.kind === 'contains') contextIds.add(parent.source);
-            }
-            seen.add(to);
-            next.push(to);
-        }
-        frontier = next;
-    }
-
-    return { answerIds, contextIds, answerEdgeIds };
-};
+export type AgentTrace = Trace;
 
 const TRACE_KINDS: Readonly<Record<string, readonly string[]>> = {
     why: ['writes', 'delegates', 'contains'],

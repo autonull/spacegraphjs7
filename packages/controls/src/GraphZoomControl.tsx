@@ -1,7 +1,8 @@
 import { createIconRenderer, type IconComponent } from '@spacegraphjs/shared/icons';
 import type { I18n } from '@spacegraphjs/shared/i18n';
 import type { JSX } from 'solid-js';
-
+import { GraphZoomControl as ToolbarZoomControl } from '@spacegraphjs/toolbar';
+import { legacyI18n } from './legacy-i18n';
 export type GraphZoomControlProps = {
     /** The i18n instance for translations. */
     i18n: I18n;
@@ -20,63 +21,21 @@ export type GraphZoomControlProps = {
     /** Callback to fit to view. */
     onFit: () => void;
 };
-
 export const GraphZoomControl = (props: GraphZoomControlProps): JSX.Element => {
-    const { i18n, Icon, ...rest } = props;
+    const { i18n, Icon, onFit, ...rest } = props;
+    const t = legacyI18n(i18n);
     const renderIcon = createIconRenderer(Icon);
-
     return (
         <div class="flex items-center gap-1">
-            <GraphIconButton
-                label={i18n.t('ui.sessionGraph.toolbar.zoomOut')}
-                icon="expand"
-                disabled={rest.zoomOutDisabled}
-                onClick={() => rest.onZoomOut?.()}
-                Icon={Icon}
-            />
-            <span
-                data-slot="graph-zoom-level"
-                class="min-w-9 text-center text-12-regular tabular-nums text-text-weak"
-                aria-label={i18n.t('ui.sessionGraph.toolbar.zoomPercent', {
-                    percent: String(rest.zoomPercent ?? 100),
-                })}
+            <ToolbarZoomControl {...rest} Icon={Icon} i18n={t} onFit={onFit} />
+            <button
+                type="button"
+                class="flex h-6 w-6 items-center justify-center rounded-sm text-text-base hover:bg-surface-base-hover"
+                aria-label={t.t('ui.toolbar.fit')}
+                onClick={() => onFit()}
             >
-                {rest.zoomPercent ?? 100}%
-            </span>
-            <GraphIconButton
-                label={i18n.t('ui.sessionGraph.toolbar.zoomIn')}
-                icon="plus"
-                disabled={rest.zoomInDisabled}
-                onClick={() => rest.onZoomIn?.()}
-                Icon={Icon}
-            />
-            <GraphIconButton
-                label={i18n.t('ui.sessionGraph.toolbar.fit')}
-                icon="outline-rotate-clockwise"
-                onClick={() => rest.onFit?.()}
-                Icon={Icon}
-            />
+                {renderIcon({ name: 'outline-rotate-clockwise', size: 'small' })}
+            </button>
         </div>
-    );
-};
-
-const GraphIconButton = (props: {
-    label: string;
-    icon: string;
-    disabled?: boolean;
-    onClick: () => void;
-    Icon?: IconComponent;
-}): JSX.Element => {
-    const renderIcon = createIconRenderer(props.Icon);
-    return (
-        <button
-            type="button"
-            class="flex h-6 w-6 items-center justify-center rounded-sm text-text-base hover:bg-surface-base-hover"
-            aria-label={props.label}
-            disabled={props.disabled}
-            onClick={props.onClick}
-        >
-            {renderIcon({ name: props.icon, size: 'small' })}
-        </button>
     );
 };

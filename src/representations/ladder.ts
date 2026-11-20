@@ -2,8 +2,7 @@
 // ScaleDomain sample; the host supplies the order, the bands and the appearance of every rung.
 // Selection keeps node ids stable across swaps so selection and permalinks stay valid (P1.2/P1.3).
 
-import { selectRung } from '../core/rung';
-import { clamp } from '../utils/math';
+import { LadderBase, rungsFromStops } from '../core/ladder';
 import type { ScaleSample } from '../zoom/ScaleDomain';
 
 export interface LadderNode {
@@ -46,58 +45,20 @@ export interface LadderSelection<Node extends LadderNode = LadderNode, Output = 
 /** The coarse-to-fine ladder a host may adopt; hosts own the real order and appearance. */
 export const DEFAULT_RUNG_IDS = ['dot', 'glyph', 'card', 'widget', 'detail'] as const;
 
-export class RepresentationLadder<Node extends LadderNode = LadderNode, Output = unknown> {
-    readonly #rungs: LadderRung<Node, Output>[];
-    readonly #hysteresis: number;
-
-    constructor(rungs: readonly LadderRung<Node, Output>[] = [], config: LadderConfig = {}) {
-        this.#rungs = [...rungs].sort((a, b) => a.at - b.at);
-        this.#hysteresis = config.hysteresis ?? 0;
-    }
-
-    get ids(): readonly string[] {
-        return this.#rungs.map((rung) => rung.id);
-    }
-
-    register(rung: LadderRung<Node, Output>): this {
-        this.#rungs.push(rung);
-        this.#rungs.sort((a, b) => a.at - b.at);
-        return this;
-    }
-
-    /** One node's rung at one scale sample, with hysteresis against its previous rung. */
-    select(
+export class RepresentationLadder<
+    Node extends LadderNode = LadderNode,
+    Output = unknown,
+> extends LadderBase<Node, LadderRung<Node, Output>, LadderSelection<Node, Output>> {
+    protected createSelection(
         node: Node,
         sample: ScaleSample,
-        previous?: string,
-    ): LadderSelection<Node, Output> | undefined {
-        const importance = node.importance ?? sample.importance;
-        const candidates = this.#rungs.filter(
-            (rung) =>
-                (!rung.kinds || rung.kinds.includes(node.kind)) &&
-                (rung.minImportance === undefined || importance >= rung.minImportance),
-        );
-        const rung = selectRung(candidates, sample.normalized, previous, this.#hysteresis);
-        if (!rung) return undefined;
+        rung: LadderRung<Node, Output>,
+    ): LadderSelection<Node, Output> {
         return {
             id: node.id,
             rung,
             value: rung.build(node, { id: node.id, sample, rung: rung.id }),
         };
-    }
-
-    /** Every node's selection, keyed by the id the host uses for selection and permalinks. */
-    resolve(
-        nodes: readonly Node[],
-        sample: ScaleSample,
-        previous: ReadonlyMap<string, string> = new Map(),
-    ): Map<string, LadderSelection<Node, Output>> {
-        return new Map(
-            nodes.flatMap((node) => {
-                const selection = this.select(node, sample, previous.get(node.id));
-                return selection ? [[node.id, selection] as const] : [];
-            }),
-        );
     }
 }
 
@@ -108,10 +69,7 @@ export function ladderFromStops<Node extends LadderNode, Output>(
     config: LadderConfig = {},
 ): RepresentationLadder<Node, Output> {
     return new RepresentationLadder(
-        stops.flatMap((stop) => {
-            const build = builders[stop.id];
-            return build ? [{ at: clamp(stop.at, 0, 1), id: stop.id, build }] : [];
-        }),
+        rungsFromStops(stops, builders, (at, id, build) => ({ at, id, build })),
         config,
     );
 }

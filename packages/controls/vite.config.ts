@@ -19,7 +19,7 @@ export default defineConfig({
         },
         outDir: 'dist',
         rollupOptions: {
-            external: ['solid-js', '@spacegraphjs/shared'],
+            external: ['solid-js', '@spacegraphjs/shared', /^@spacegraphjs\/toolbar(?:\/|$)/],
         },
     },
 });

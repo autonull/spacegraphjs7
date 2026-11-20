@@ -11,6 +11,7 @@ export default defineConfig({
                 icons: 'src/icons.tsx',
                 popover: 'src/popover.tsx',
                 types: 'src/types.ts',
+                domain: 'src/domain.ts',
                 animations: 'src/animations.ts',
                 keyboard: 'src/keyboard.ts',
                 tokens: 'src/tokens.ts',

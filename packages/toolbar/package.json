@@ -51,6 +51,11 @@
             "import": "./dist/GraphQuestionsControl.js",
             "default": "./dist/GraphQuestionsControl.js"
         },
+        "./GraphStatusBar": {
+            "types": "./dist/GraphStatusBar.d.ts",
+            "import": "./dist/GraphStatusBar.js",
+            "default": "./dist/GraphStatusBar.js"
+        },
         "./ToolbarMenu": {
             "types": "./dist/ToolbarMenu.d.ts",
             "import": "./dist/ToolbarMenu.js",

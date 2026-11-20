@@ -472,6 +472,9 @@ importers:
       '@spacegraphjs/shared':
         specifier: workspace:*
         version: link:../shared
+      '@spacegraphjs/toolbar':
+        specifier: workspace:*
+        version: link:../toolbar
     devDependencies:
       solid-js:
         specifier: ^1.9.0

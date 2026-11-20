@@ -1,5 +1,12 @@
 import { defineDomain, type DomainVocabulary, type Kernel } from '@spacegraphjs/kernel';
 import type { GraphNode, GraphViewData } from '@spacegraphjs/shared';
+import {
+    createRoleReader,
+    dataString,
+    mapViewEdges,
+    mapViewNodes,
+    relationOf,
+} from '@spacegraphjs/shared/domain';
 
 export const WORKFLOW_KINDS = [
     'workflow',
@@ -48,25 +55,10 @@ export const WORKFLOW_RELATIONS = {
     retry: 'retries',
 } as const;
 
-const text = (value: unknown): string | undefined =>
-    typeof value === 'string' ? value : undefined;
-
-export const dataString = (
-    node: { readonly data?: Readonly<Record<string, unknown>> },
-    key: string,
-): string | undefined => text(node.data?.[key]);
+export { dataString, relationOf };
 
 /** A node's advisory role: host tag first, then the default kind mapping, then its open-ended kind. */
-export const roleOf = (node: {
-    readonly kind: string;
-    readonly data?: Readonly<Record<string, unknown>>;
-}): string => dataString(node, 'role') ?? ROLE_TAGS[node.kind] ?? node.kind;
-
-/** An edge's advisory relation: host tag first, then its open-ended kind. */
-export const relationOf = (edge: {
-    readonly kind: string;
-    readonly data?: Readonly<Record<string, unknown>>;
-}): string => dataString(edge, 'relation') ?? edge.kind;
+export const roleOf = createRoleReader(ROLE_TAGS);
 
 export interface WorkflowView extends GraphViewData {
     readonly root: string;
@@ -89,25 +81,8 @@ export const workflowVocabulary: DomainVocabulary = {
 };
 
 export function buildWorkflowView(kernel: Kernel): WorkflowView {
-    const nodes: GraphNode[] = kernel.nodes.map((node) => ({
-        id: node.id,
-        kind: node.kind,
-        label: node.label,
-        summary: dataString(node, 'summary'),
-        status: dataString(node, 'status') ?? (node.data?.isError === true ? 'failed' : 'complete'),
-        data: { ...node.data },
-    }));
-    const edges = kernel.edges.map((edge) => ({
-        id: edge.id,
-        source: edge.source,
-        target: edge.target,
-        kind: edge.kind,
-        confidence:
-            edge.data?.confidence === 'structural'
-                ? ('structural' as const)
-                : ('explicit' as const),
-        data: { ...edge.data },
-    }));
+    const nodes: GraphNode[] = mapViewNodes(kernel.nodes);
+    const edges = mapViewEdges(kernel.edges);
     const root =
         kernel.nodes.find((node) => roleOf(node) === 'workflow')?.id ?? kernel.nodes[0]?.id ?? '';
     const activeRun = [...kernel.nodes]

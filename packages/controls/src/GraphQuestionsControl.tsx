@@ -1,18 +1,19 @@
 import { createIconRenderer, type IconComponent } from '@spacegraphjs/shared/icons';
 import type { I18n } from '@spacegraphjs/shared/i18n';
+import type { PopoverComponent } from '@spacegraphjs/shared/popover';
 import type { JSX } from 'solid-js';
-
-const ToolbarMenu = (props: {
-    slot: string;
-    label: string;
-    icon: string;
-    value?: string;
-    valueSlot?: string;
-    align?: 'start' | 'end';
-    children: JSX.Element;
+import { GraphQuestionsControl as ToolbarQuestionsControl } from '@spacegraphjs/toolbar';
+import { legacyI18n } from './legacy-i18n';
+export type GraphQuestionsControlProps = {
+    /** The i18n instance for translations. */
+    i18n: I18n;
+    /** The icon component to use. */
     Icon?: IconComponent;
-}): JSX.Element => {
-    const renderIcon = createIconRenderer(props.Icon);
+    /** Callback to dispatch a command. */
+    dispatchCommand?: (command: string) => void;
+};
+const legacyPopover = (Icon?: IconComponent): PopoverComponent => (props) => {
+    const renderIcon = createIconRenderer(Icon);
     return (
         <details class="relative" data-slot={props.slot}>
             <summary
@@ -36,76 +37,14 @@ const ToolbarMenu = (props: {
     );
 };
 
-export type GraphQuestionsControlProps = {
-    /** The i18n instance for translations. */
-    i18n: I18n;
-    /** The icon component to use. */
-    Icon?: IconComponent;
-    /** Callback to dispatch a command. */
-    dispatchCommand?: (command: string) => void;
-};
-
 export const GraphQuestionsControl = (props: GraphQuestionsControlProps): JSX.Element => {
     const { i18n, Icon, ...rest } = props;
-    const renderIcon = createIconRenderer(Icon);
-
-    const ask = (
-        name:
-            | 'why'
-            | 'led-here'
-            | 'related'
-            | 'compare'
-            | 'note'
-            | 'facets'
-            | 'failureProgress'
-            | 'find',
-    ) => {
-        if (rest.dispatchCommand) {
-            rest.dispatchCommand(name);
-            return;
-        }
-        window.dispatchEvent(new CustomEvent('graph:command', { detail: { name } }));
-    };
-
-    const question = (
-        name:
-            | 'why'
-            | 'led-here'
-            | 'related'
-            | 'compare'
-            | 'note'
-            | 'facets'
-            | 'failureProgress'
-            | 'find',
-        label: string,
-    ) => (
-        <button
-            type="button"
-            data-slot="graph-question-option"
-            data-value={name}
-            class="flex w-full items-center gap-2 rounded-sm px-2 py-1 text-12-regular text-text-base hover:bg-surface-base-hover"
-            onClick={() => ask(name)}
-        >
-            {label}
-        </button>
-    );
-
     return (
-        <ToolbarMenu
-            slot="graph-toolbar-questions"
-            label={i18n.t('ui.sessionGraph.questions.title')}
-            icon="magnifying-glass"
-            align="end"
+        <ToolbarQuestionsControl
+            {...rest}
+            i18n={legacyI18n(i18n)}
             Icon={Icon}
-        >
-            {question('why', i18n.t('ui.sessionGraph.questions.why'))}
-            {question('led-here', i18n.t('ui.sessionGraph.questions.ledHere'))}
-            {question('related', i18n.t('ui.sessionGraph.questions.related'))}
-            {question('compare', i18n.t('ui.sessionGraph.questions.compare'))}
-            {question('note', i18n.t('ui.sessionGraph.questions.note'))}
-            {question('facets', i18n.t('ui.sessionGraph.questions.facets'))}
-            {question('failureProgress', i18n.t('ui.sessionGraph.questions.failureProgress'))}
-            {question('find', i18n.t('ui.sessionGraph.questions.find'))}
-        </ToolbarMenu>
+            Popover={legacyPopover(Icon)}
+        />
     );
 };

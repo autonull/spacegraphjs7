@@ -11,5 +11,6 @@ export { GraphDrawControl, type GraphDrawControlProps } from './GraphDrawControl
 export { GraphShowControl, type GraphShowControlProps } from './GraphShowControl';
 export { GraphZoomControl, type GraphZoomControlProps } from './GraphZoomControl';
 export { GraphQuestionsControl, type GraphQuestionsControlProps } from './GraphQuestionsControl';
+export { GraphStatusBar, type GraphStatusBarProps } from './GraphStatusBar';
 export { ToolbarMenu, type ToolbarMenuProps } from './ToolbarMenu';
 export { useToolbarState } from './hooks';

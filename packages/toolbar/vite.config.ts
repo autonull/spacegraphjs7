@@ -9,6 +9,7 @@ export default defineConfig({
             entry: {
                 index: 'src/index.ts',
                 hooks: 'src/hooks.ts',
+                GraphStatusBar: 'src/GraphStatusBar.tsx',
             },
             formats: ['es'],
             fileName: (format, entryName) => `${entryName}.js`,

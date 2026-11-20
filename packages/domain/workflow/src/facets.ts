@@ -1,9 +1,6 @@
 import type { FacetAccessors } from '@spacegraphjs/search';
 import type { TraceVocabulary } from '@spacegraphjs/trace';
-import { dataString } from './vocabulary';
-
-const roleOf = (node: { readonly data?: Readonly<Record<string, unknown>> }): string | undefined =>
-    dataString(node, 'role') ?? dataString(node, 'kind');
+import { facetRoleOf } from '@spacegraphjs/shared/domain';
 
 export const workflowFacetAccessors: FacetAccessors = {
     kind: (node) => node.kind,
@@ -12,7 +9,7 @@ export const workflowFacetAccessors: FacetAccessors = {
         model.nodes.find((node) => node.kind === 'workflow')?.id ?? model.nodes[0]?.id ?? '',
     isFailedTool: (node) => node.kind === 'step' && node.status === 'failed',
     isFileWrite: (node) => node.kind === 'artifact' && typeof node.data?.path === 'string',
-    isSubagentCall: (node) => node.kind === 'action' && roleOf(node) === 'subworkflow',
+    isSubagentCall: (node) => node.kind === 'action' && facetRoleOf(node) === 'subworkflow',
     isError: (node) => node.status === 'failed' || node.kind === 'failure',
     isRetry: (node) => node.kind === 'retry',
 };

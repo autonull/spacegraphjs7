@@ -1,9 +1,8 @@
 // One edge ladder: bundle → hair → arrow → labelled causal ribbon. The library selects a rung from
 // a ScaleDomain sample; the host owns the styles and may replace or reorder every rung.
 
-import { selectRung } from '../core/rung';
+import { LadderBase, rungsFromStops } from '../core/ladder';
 import type { EdgeData } from '../types/base-data';
-import { clamp } from '../utils/math';
 import type { ScaleSample } from '../zoom/ScaleDomain';
 
 export const EDGE_RUNG_IDS = ['bundle', 'hair', 'arrow', 'ribbon'] as const;
@@ -42,47 +41,13 @@ export interface EdgeSelection {
     readonly style: EdgeRungStyle;
 }
 
-export class EdgeLadder {
-    readonly #rungs: EdgeRung[];
-    readonly #hysteresis: number;
-
-    constructor(rungs: readonly EdgeRung[] = [], config: { readonly hysteresis?: number } = {}) {
-        this.#rungs = [...rungs].sort((a, b) => a.at - b.at);
-        this.#hysteresis = config.hysteresis ?? 0;
-    }
-
-    get ids(): readonly string[] {
-        return this.#rungs.map((rung) => rung.id);
-    }
-
-    register(rung: EdgeRung): this {
-        this.#rungs.push(rung);
-        this.#rungs.sort((a, b) => a.at - b.at);
-        return this;
-    }
-
-    select(edge: LadderEdge, sample: ScaleSample, previous?: string): EdgeSelection | undefined {
-        const importance = edge.importance ?? sample.importance;
-        const candidates = this.#rungs.filter(
-            (rung) =>
-                (!rung.kinds || rung.kinds.includes(edge.kind)) &&
-                (rung.minImportance === undefined || importance >= rung.minImportance),
-        );
-        const rung = selectRung(candidates, sample.normalized, previous, this.#hysteresis);
-        return rung ? { id: edge.id, rung, style: rung.style ?? {} } : undefined;
-    }
-
-    resolve(
-        edges: readonly LadderEdge[],
-        sample: ScaleSample,
-        previous: ReadonlyMap<string, string> = new Map(),
-    ): Map<string, EdgeSelection> {
-        return new Map(
-            edges.flatMap((edge) => {
-                const selection = this.select(edge, sample, previous.get(edge.id));
-                return selection ? [[edge.id, selection] as const] : [];
-            }),
-        );
+export class EdgeLadder extends LadderBase<LadderEdge, EdgeRung, EdgeSelection> {
+    protected createSelection(
+        edge: LadderEdge,
+        _sample: ScaleSample,
+        rung: EdgeRung,
+    ): EdgeSelection {
+        return { id: edge.id, rung, style: rung.style ?? {} };
     }
 }
 
@@ -93,10 +58,7 @@ export function edgeLadderFromStops(
     config: { readonly hysteresis?: number } = {},
 ): EdgeLadder {
     return new EdgeLadder(
-        stops.flatMap((stop) => {
-            const style = styles[stop.id];
-            return style ? [{ at: clamp(stop.at, 0, 1), id: stop.id, style }] : [];
-        }),
+        rungsFromStops(stops, styles, (at, id, style) => ({ at, id, style })),
         config,
     );
 }

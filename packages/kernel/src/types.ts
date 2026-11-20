@@ -3,11 +3,6 @@
  * These are the minimal types needed for kernel operations.
  */
 
-/** 2D position coordinate. */
-export interface Position {
-    x: number;
-    y: number;
-}
 
 /** Graph node - generic version. */
 export interface GraphNode {
@@ -61,6 +56,3 @@ export interface FacetCounts {
     statuses: readonly { value: string; kept: number; total: number }[];
     domains: readonly { value: string; kept: number; total: number }[];
 }
-
-/** Zoom/semantic level. */
-export type ZoomLevel = 'overview' | 'execution' | 'detail';
