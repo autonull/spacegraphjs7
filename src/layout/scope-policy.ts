@@ -2,6 +2,7 @@
 // vision scores into activation, a pin set, and solver parameters. It owns no state and imports no
 // vision types, so any host can feed it from its own analyzer.
 
+import { clamp01 } from '../utils/math';
 import { scopeAncestors, type ScopeTree } from './scope';
 import { activeScopePaths, type ScopeLayoutOptions, type ScopeSignals } from './scope-layout';
 
@@ -22,8 +23,6 @@ export interface ScopePolicy {
     pinned: ReadonlySet<string>;
     layout: ScopeLayoutOptions;
 }
-
-const clamp01 = (value: number): number => Math.max(0, Math.min(1, value));
 
 /** Derive activation, stability and solver settings from the current host signals. */
 export function scopePolicy(

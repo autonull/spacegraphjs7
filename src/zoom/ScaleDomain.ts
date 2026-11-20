@@ -3,6 +3,7 @@
 // The semantics replace the deprecated FractalZoomPlugin without touching camera or renderer.
 
 import { clamp, denormalizeZoom, normalizeZoom, type ZoomRange } from '../core/zoom';
+import { lerp } from '../utils/math';
 import { ZoomBands, type ZoomBand, type ZoomBandChange, type ZoomBandListener } from './ZoomBands';
 
 export interface ScaleStop {
@@ -48,8 +49,6 @@ export interface ScaleAnchor {
     /** Current camera target. */
     target: Vec3;
 }
-
-const lerp = (from: number, to: number, t: number) => from + (to - from) * t;
 
 export class ScaleDomain {
     readonly stops: readonly ScaleStop[];

@@ -11,7 +11,7 @@ export type AgentScopes = {
     readonly portalByNode: ReadonlyMap<string, string>;
 };
 
-const DEPTH: Readonly<Record<string, number>> = {
+export const DEPTH: Readonly<Record<string, number>> = {
     run: 0,
     unit: 1,
     state: 2,

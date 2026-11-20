@@ -15,6 +15,7 @@ import type { GraphFacets } from '@spacegraphjs/shared';
 import type { AgentView } from '@spacegraphjs/agent';
 import type { RenderTheme } from '@spacegraphjs/renderer';
 import { UNSUPPORTED } from './policy';
+import { STUDY_TASKS } from './study';
 
 export type PiHostState = {
     readonly projection: string;
@@ -68,7 +69,7 @@ const failingAction = (view: AgentView): string =>
 const byKind = (view: AgentView, id: string): string =>
     view.nodes.find((node) => node.id === id)?.kind ?? '';
 
-const QUESTION_IDS = ['question-1', 'question-2', 'question-3', 'question-4', 'question-5'] as const;
+const QUESTION_IDS = STUDY_TASKS.map((task) => task.id);
 
 export const CAPABILITIES: readonly Capability[] = [
     {
@@ -278,8 +279,8 @@ export const CAPABILITIES: readonly Capability[] = [
         run: (context) => QUESTION_IDS.flatMap((id) => runCapability(id, context)),
     },
     {
-        id: 'question-1',
-        title: 'Why did the agent change src/auth/session.ts?',
+        id: STUDY_TASKS[0].id,
+        title: STUDY_TASKS[0].question,
         summary: 'Provenance walks backwards from the artifact to its writers and their turn.',
         run: ({ view }) => {
             const id = nodeWith(view, (node) => node.kind === 'artifact' && String(node.data?.path ?? '').endsWith('session.ts'));
@@ -287,8 +288,8 @@ export const CAPABILITIES: readonly Capability[] = [
         },
     },
     {
-        id: 'question-2',
-        title: 'Which tool calls led to the failing test?',
+        id: STUDY_TASKS[1].id,
+        title: STUDY_TASKS[1].question,
         summary: 'The failure node is the entry point for a forward ledHere trace.',
         run: ({ view }) => {
             const id = failingAction(view);
@@ -296,8 +297,8 @@ export const CAPABILITIES: readonly Capability[] = [
         },
     },
     {
-        id: 'question-3',
-        title: 'What did the subagent contribute?',
+        id: STUDY_TASKS[2].id,
+        title: STUDY_TASKS[2].question,
         summary: 'Delegation edges project into contribution selectors across scopes.',
         run: ({ view }) => {
             const source = nodeWith(view, (node) => node.kind === 'action' && view.edges.some((edge) => edge.kind === 'delegates' && edge.source === node.id));
@@ -307,8 +308,8 @@ export const CAPABILITIES: readonly Capability[] = [
         },
     },
     {
-        id: 'question-4',
-        title: 'Which changes were made after the failing test?',
+        id: STUDY_TASKS[3].id,
+        title: STUDY_TASKS[3].question,
         summary: 'Downstream sequence and writes expose the artifacts created after the failure.',
         run: ({ view }) => {
             const failure = failingAction(view);
@@ -319,8 +320,8 @@ export const CAPABILITIES: readonly Capability[] = [
         },
     },
     {
-        id: 'question-5',
-        title: 'Where did the agent retry or change direction?',
+        id: STUDY_TASKS[4].id,
+        title: STUDY_TASKS[4].question,
         summary: 'Retry nodes and explicit state changes mark reversals without inferred causes.',
         run: ({ view }) => {
             const retries = failureDetails(view).filter((failure) => byKind(view, failure.id) === 'retry').map((failure) => failure.id);

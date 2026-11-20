@@ -1,6 +1,5 @@
 import {
     DEFAULT_THEME,
-    DEPTH_MODES,
     supportsDepth,
     type DepthMode,
     type Projection,
@@ -43,7 +42,7 @@ import {
     type Position,
     type VisionScores,
 } from './policy';
-import { agentScopes } from './scopes';
+import { agentScopes, DEPTH } from './scopes';
 import { readTheme } from './theme';
 
 export type Arrangement = 'stacked' | 'side' | 'floating';
@@ -513,16 +512,7 @@ export class PiHost {
             const index = turns.indexOf(unit);
             return turns.length > 1 ? (index < 0 ? 0 : index / (turns.length - 1)) : 0;
         }
-        const depth: Readonly<Record<string, number>> = {
-            run: 0,
-            unit: 1,
-            state: 2,
-            message: 2,
-            action: 3,
-            artifact: 4,
-            retry: 4,
-        };
-        return (depth[node.kind] ?? 2) / 4;
+        return (DEPTH[node.kind] ?? 2) / 4;
     }
 
     private sampleVision(): void {
@@ -795,4 +785,3 @@ export class PiHost {
     }
 }
 
-export const DEPTH_CHOICES = DEPTH_MODES;

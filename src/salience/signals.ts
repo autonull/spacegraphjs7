@@ -2,6 +2,7 @@
 // and a reason label; the library sums weighted values, normalizes to [0, 1] and can explain any id.
 
 import type { NodeStatus, RenderModel } from '@spacegraphjs/renderer';
+import { clamp01 } from '../utils/math';
 
 export interface SalienceInput {
     readonly model: RenderModel;
@@ -32,8 +33,6 @@ export interface SalienceResult {
     /** Weighted, descending reasons for one id; empty when no signal fired. */
     explain(id: string): readonly SalienceContribution[];
 }
-
-const clamp01 = (value: number) => Math.min(1, Math.max(0, value));
 
 /** Compose host signals into a deterministic score map with an explanation for every id. */
 export function createSalience(signals: readonly SalienceSignal[]): (input: SalienceInput) => SalienceResult {

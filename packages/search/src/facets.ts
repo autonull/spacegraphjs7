@@ -1,4 +1,5 @@
 import type { GraphViewData, GraphNode, GraphFacets, FacetCounts } from '@spacegraphjs/shared';
+import { defaultSearchText } from './search';
 
 export type { GraphFacets, FacetCounts };
 
@@ -71,18 +72,6 @@ function matchQuery(node: GraphNode, query: string, searchText?: (node: GraphNod
     if (!needle) return true;
     const texts = searchText ? searchText(node) : defaultSearchText(node);
     return texts.join('\n').toLowerCase().includes(needle);
-}
-
-/** Default search text extractor (can be overridden by host). */
-function defaultSearchText(node: GraphNode): string[] {
-    return [
-        node.label,
-        node.summary,
-        node.data?.name as string | undefined,
-        node.data?.path as string | undefined,
-        node.data?.command as string | undefined,
-        node.data?.input ? JSON.stringify(node.data.input) : undefined,
-    ].filter((value): value is string => !!value);
 }
 
 /**

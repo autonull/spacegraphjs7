@@ -117,29 +117,3 @@ export function deepEqual(a: unknown, b: unknown): boolean {
         deepEqual((a as Record<string, unknown>)[k], (b as Record<string, unknown>)[k]),
     );
 }
-
-// ============= Function Utilities =============
-export function debounce<T extends (...args: unknown[]) => void>(
-    fn: T,
-    delay: number,
-): (...args: Parameters<T>) => void {
-    let id: ReturnType<typeof setTimeout> | null = null;
-    return (...args: Parameters<T>) => {
-        if (id) clearTimeout(id);
-        id = setTimeout(() => fn(...args), delay);
-    };
-}
-
-export function throttle<T extends (...args: unknown[]) => void>(
-    fn: T,
-    limit: number,
-): (...args: Parameters<T>) => void {
-    let last = 0;
-    return (...args: Parameters<T>) => {
-        const now = Date.now();
-        if (now - last >= limit) {
-            last = now;
-            fn(...args);
-        }
-    };
-}
