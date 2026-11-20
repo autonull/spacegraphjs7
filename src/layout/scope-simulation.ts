@@ -226,6 +226,12 @@ export class ScopeSimulation {
         if (executed === maxSteps) this.#accumulator = 0;
     }
 
+    /** Switch between animated and instant mode. */
+    setInstant(value: boolean): void {
+        this.#options = { ...this.#options, instant: value };
+        if (value) this.settle();
+    }
+
     /** Snap every body to its target and stop all motion. */
     settle(): void {
         if (!this.#target) return;

@@ -35,6 +35,7 @@ const makeHost = (ids: string[], zoom = 0): Host => {
     };
     const sg = {
         zoom,
+        reducedMotion: false,
         selection: { list: [] as string[] },
         requestFrame: frame,
         events,
@@ -99,6 +100,23 @@ describe('ScopesPlugin', () => {
         expect(host.sg.graph.addNode).toHaveBeenCalledTimes(2);
         plugin.onPreRender(1 / 60);
         expect(plugin.simulation.positions.has('root/a')).toBe(true);
+    });
+
+    it('respects reduced motion unless instant is explicitly set', () => {
+        const host = makeHost(['root/a', 'root/b']);
+        host.sg.reducedMotion = true;
+        const plugin = new ScopesPlugin({ specs, policy: false });
+        plugin.init(host.sg, host.sg.graph, host.sg.events);
+
+        expect(plugin.simulation.settled).toBe(true);
+
+        const explicit = new ScopesPlugin({
+            specs,
+            policy: false,
+            simulation: { instant: false },
+        });
+        explicit.init(host.sg, host.sg.graph, host.sg.events);
+        expect(explicit.simulation.settled).toBe(false);
     });
 
     it('pins the focused node when followFocus is enabled', () => {

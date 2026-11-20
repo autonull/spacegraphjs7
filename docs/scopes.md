@@ -159,7 +159,7 @@ const graph = await SpaceGraph.create(container, spec, {
 | `createNodes` | `false` | Adds graph nodes for scope nodes that do not exist yet. |
 | `nodeId` | identity | Maps a qualified scope id to a graph node id. |
 | `signals` | none | A host callback whose values override the `follow*` switches. |
-| `layout`, `simulation` | defaults | Solver and integration tuning. |
+| `layout`, `simulation` | defaults | Solver and integration tuning. `simulation.instant` defaults to `graph.reducedMotion`. |
 | `onFrame` | none | Receives the animated layout after each frame. |
 
 `graph.scopes.setSpecs(specs)` swaps the graph at runtime; `graph.scopes.simulation` exposes

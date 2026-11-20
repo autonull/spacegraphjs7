@@ -94,6 +94,9 @@ export class ScopesPlugin extends BaseSystemPlugin {
     init(sg: SpaceGraph, graph: Graph, events: EventEmitter<SpaceGraphEvents>): void {
         super.init(sg, graph, events);
         this.setSpecs(this.#specs);
+        if (this.options.simulation?.instant === undefined) {
+            this.#simulation.setInstant(this.sg.reducedMotion);
+        }
         if (this.options.followVision) {
             this.on('vision:analysis-complete', (report: VisionReport) => {
                 this.#lastVision = visionScores(report);
