@@ -105,6 +105,10 @@ export class ScopeSimulation {
         return this.#current;
     }
 
+    get pinned(): ReadonlySet<string> {
+        return this.#pinned;
+    }
+
     /** Replace the target graph. Existing bodies keep their motion; new bodies spawn at their scope. */
     setSpecs(specs: readonly ScopeSpec[], signals: ScopeSignals = {}): void {
         this.#specs = specs;

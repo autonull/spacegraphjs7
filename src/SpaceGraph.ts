@@ -56,6 +56,8 @@ export class SpaceGraph {
     public input!: InputManager;
     public ergo!: ErgonomicsAPI;
     public selection!: Selection;
+    /** Present only when `options.scopes.enabled` is true. */
+    public scopes?: import('./plugins/ScopesPlugin').ScopesPlugin;
 
     // Controllers
     public readonly cameraController: CameraController;

@@ -2,6 +2,7 @@
 
 import type { Projection, RenderMode, DepthMode } from './core';
 import type { Plugin } from './plugin';
+import type { ScopesPluginOptions } from '../plugins/ScopesPlugin';
 
 // Input configuration
 export interface DefaultInputConfig {
@@ -82,6 +83,8 @@ export interface SpaceGraphOptions {
     theme?: SpaceGraphTheme;
     /** Extra plugin instances to register at init, after the defaults. */
     plugins?: Plugin[];
+    /** Opt-in animated recursive scopes. The engine is absent unless `scopes.enabled` is true. */
+    scopes?: ScopesPluginOptions;
     /** When true, all camera animations (fit, focus, depth transitions) complete instantly without
      * easing. Respects `prefers-reduced-motion` when not explicitly set. */
     reducedMotion?: boolean;

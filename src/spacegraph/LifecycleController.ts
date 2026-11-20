@@ -19,6 +19,7 @@ import {
     type PluginCtor,
 } from '../core/defaults';
 import { SpaceGraph } from '../SpaceGraph';
+import { ScopesPlugin } from '../plugins/ScopesPlugin';
 import type { SpaceGraphEvents } from '../types';
 
 export class LifecycleController {
@@ -72,6 +73,11 @@ export class LifecycleController {
         if (this.sg.options.chrome) registerPlugins(DEFAULT_CHROME_PLUGINS);
         for (const plugin of this.sg.options.plugins ?? [])
             this.sg.pluginManager.register(plugin.id, plugin as any);
+        if (this.sg.options.scopes?.enabled) {
+            const scopes = new ScopesPlugin(this.sg.options.scopes);
+            this.sg.pluginManager.register(scopes.id, scopes);
+            this.sg.scopes = scopes;
+        }
         this.sg.registerFingerings();
     }
 

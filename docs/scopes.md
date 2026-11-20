@@ -128,6 +128,44 @@ function frame(deltaSeconds: number) {
 Positions returned by `positions` and `view()` are snapshots: advancing the simulation never mutates
 a previously returned position.
 
+## Engine integration
+
+The whole engine is opt-in through `options.scopes`. With no `enabled: true`, no plugin is created,
+no frame is requested and the graph behaves exactly as before.
+
+```ts
+const graph = await SpaceGraph.create(container, spec, {
+  scopes: {
+    enabled: true,
+    specs,
+    animate: true,
+    policy: true,
+    followZoom: true,
+    followFocus: true,
+    followVision: true,
+    nodeId: (qualified) => qualified.split('/').pop()!,
+  },
+});
+```
+
+| Option | Default | Effect |
+| --- | --- | --- |
+| `enabled` | `false` | Creates the plugin and exposes it as `graph.scopes`. |
+| `animate` | `true` | Damped motion toward targets; `false` snaps every frame. |
+| `policy` | `true` | Applies activation, pinning and vision-driven spacing. |
+| `followZoom` | `false` | Uses the host zoom as the activation band (`round(zoom * 3)`, or `bandOf`). |
+| `followFocus` | `false` | Pins the selected graph node and every scope that owns it. |
+| `followVision` | `false` | Maps `vision:analysis-complete` reports through `visionScores`. |
+| `createNodes` | `false` | Adds graph nodes for scope nodes that do not exist yet. |
+| `nodeId` | identity | Maps a qualified scope id to a graph node id. |
+| `signals` | none | A host callback whose values override the `follow*` switches. |
+| `layout`, `simulation` | defaults | Solver and integration tuning. |
+| `onFrame` | none | Receives the animated layout after each frame. |
+
+`graph.scopes.setSpecs(specs)` swaps the graph at runtime; `graph.scopes.simulation` exposes
+`settled`, `energy`, `steps` and `pinned` for diagnostics. Nodes pinned by the host (`data.pinned`)
+are never overwritten by the engine.
+
 `ScopeError` carries a `code` (`cycle`, `duplicate-scope`, `duplicate-node`, `unknown-parent`,
 `unknown-portal`, `unknown-endpoint`, `invalid-id`) so hosts can report configuration problems at
 the boundary.

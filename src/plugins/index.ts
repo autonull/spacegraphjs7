@@ -1,6 +1,8 @@
 export { type Plugin, PluginManager } from '../core/PluginManager';
 export { AutoColorPlugin } from './AutoColorPlugin';
 export { AutoLayoutPlugin } from './AutoLayoutPlugin';
+export { ScopesPlugin, visionScores } from './ScopesPlugin';
+export type { ScopesPluginOptions } from './ScopesPlugin';
 export {
     BaseSystemPlugin,
     createLoggerPrefix,
