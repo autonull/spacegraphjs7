@@ -14,16 +14,16 @@ pnpm --filter demo build
 
 ## Pages
 
-| Page | What it shows |
-| --- | --- |
-| `/` | One model through all three renderers, with every library capability exercised and reported |
-| `/learn.html` | How the system fits together, with real snippets and a live capability map |
-| `/gallery.html` | A visual index of the standalone feature pages |
-| `/showcase.html` | The 44 programmatic demos, switchable without a rebuild |
-| `/html/interaction/scopes.html` | Scoped overlays and the vision overlap assertion |
-| `/explorer.html` | Every discoverable config axis against both contract and demo models |
-| `/html/core/contract.html` | The host-neutral renderer contract |
-| `/*.html` | The standalone feature pages: layouts, interaction, plugins, media, vision and more |
+| Page                            | What it shows                                                                               |
+| ------------------------------- | ------------------------------------------------------------------------------------------- |
+| `/`                             | One model through all three renderers, with every library capability exercised and reported |
+| `/learn.html`                   | How the system fits together, with real snippets and a live capability map                  |
+| `/learn.html#capabilities`      | The live gallery: every entry runs against the real model                                   |
+| `/showcase.html`                | The 44 programmatic demos, switchable without a rebuild                                     |
+| `/html/interaction/scopes.html` | Scoped overlays and the vision overlap assertion                                            |
+| `/explorer.html`                | Every discoverable config axis against both contract and demo models                        |
+| `/html/core/contract.html`      | The host-neutral renderer contract                                                          |
+| `/*.html`                       | The standalone feature pages: layouts, interaction, plugins, media, vision and more         |
 
 `src/` holds the demo host: a plain-TypeScript model of a release pipeline, its adapter and
 controller, and the capability gallery that runs each library surface against that model. The

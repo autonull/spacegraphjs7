@@ -1,7 +1,7 @@
 # TODO2 — From flagship to the full spatial-software vision (plan)
 
-**Status:** Phase A is implemented and verified; Phases B–G remain. TODO1's engineering is complete
-and verified (`TODO1.md:383-395`); its only remaining items are external (Phase G). **Date:**
+**Status:** Phases A and B are implemented and verified; Phases C–F remain; Phase G is external and
+cannot be fabricated. TODO1's engineering is complete and verified (`TODO1.md:383-395`). **Date:**
 2026-11-20. **Owner area:** `app/pi` first, then `app/demo` + domain wrappers, then the library kit
 and reference hosts. Current progress and the exact next move are in §8 (Ledger).
 
@@ -12,7 +12,7 @@ and product forms (E), library consolidation (F), and proof/delivery (G). Phase 
 fast path already agreed; B–G are the expansion needed to ultimately achieve the vision. Each phase is
 independently demonstrable and keeps all gates green before the next starts.
 
-**Efficiency rule.** Ship the flagship slice with *zero new library API*. Prove generality with two
+**Efficiency rule.** Ship the flagship slice with _zero new library API_. Prove generality with two
 new domains, not ten. Promote Pi/demo code into library helpers only when a second host consumes it,
 and add contract descriptors only for capabilities a second renderer must advertise. Everything else
 in `POSSIBILITIES.md` becomes host work through the scaffold — achievable by construction without
@@ -44,19 +44,19 @@ the study result is published (negative included) before any immersive mode beco
 
 ## 2. Where the code stands — gap and first move
 
-| Need | Present | Gap → first move |
-| ---- | ------- | ---------------- |
-| Recursion | `ScopeSpec → buildScopeTree → layoutScopes → ScopeSimulation`; path-qualified ids, portals, cross-scope edges (`src/layout/scope*.ts`) | None for the flagship. Keep the solver untouched. |
-| Physics play | Working Play/Reconcile in `app/pi/src/engine.ts:43-56` with `PhysicsPlugin({gravity:0})` | Only on a side page. Extract to `app/pi/src/play.ts` and mount in the flagship; reuse the code. |
-| Motion | Pure `MotionDirector` + `CameraVerbRegistry`, host-bound `flyTo` (`app/pi/src/host.ts:534-543`) | `trace` is a no-op (`:544`). Implement it in Pi; promote later. |
-| Aesthetic channels | Salience→emphasis, widgets, depth continuum; `RenderNode.html` accepts host markup (`packages/renderer/src/index.ts:74-93`) | Bridge under-reports `emphasis`/`widgetSlots` (`spacegraph-renderer/src/index.ts:22-34`). Two-line fix + test. No core node class is needed for a live instrument. |
-| Zoomable rectangles | Scope portals recurse; zoom swaps card budgets 12/40/24 | Card content is static at every rung (`app/pi/src/adapter.ts:53-59`). Make representation a function of `(node, zoom, activity, vision)`. |
-| Vision | Four analyzers, `createVisionAssert`, capture matrix | `modelsLoaded = true` forced (`host.ts:139-143`); gates are test-time only. Runtime loop + honest strategy missing. |
-| Shareability | `#graph:<id>` reveal anchor (`host.ts:287`) | No viewport/surface state, diffs or annotations. Full-state hash → graph diffs → annotated review. |
-| Domains | `@spacegraphjs/agent` + `@spacegraphjs/workflow`, scaffold, two-domain composition | Only two. Add `filesystem` + `data`; remaining domains come from the scaffold. |
-| Composition | `InterGraphEdge` overlay demo with isolated models (`app/demo/html/layout/compositional-wrappers.html`) | No cross-canvas trace, two-run diff or shared review scene. |
-| Senses / widgets | `SCENE_FEATURES`, `SENSORY_SEAMS`, `WidgetLayer` descriptors (`src/world/world.ts`, `src/widgets/`) | Descriptors are inert; no host adapter registration. Add a register seam, no implementation. |
-| Library kit | Mechanisms are host-assembled | Promote only reused helpers; no speculative contract fields. |
+| Need                | Present                                                                                                                                | Gap → first move                                                                                                                                                   |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Recursion           | `ScopeSpec → buildScopeTree → layoutScopes → ScopeSimulation`; path-qualified ids, portals, cross-scope edges (`src/layout/scope*.ts`) | None for the flagship. Keep the solver untouched.                                                                                                                  |
+| Physics play        | Working Play/Reconcile in `app/pi/src/engine.ts:43-56` with `PhysicsPlugin({gravity:0})`                                               | Only on a side page. Extract to `app/pi/src/play.ts` and mount in the flagship; reuse the code.                                                                    |
+| Motion              | Pure `MotionDirector` + `CameraVerbRegistry`, host-bound `flyTo` (`app/pi/src/host.ts:534-543`)                                        | `trace` is a no-op (`:544`). Implement it in Pi; promote later.                                                                                                    |
+| Aesthetic channels  | Salience→emphasis, widgets, depth continuum; `RenderNode.html` accepts host markup (`packages/renderer/src/index.ts:74-93`)            | Bridge under-reports `emphasis`/`widgetSlots` (`spacegraph-renderer/src/index.ts:22-34`). Two-line fix + test. No core node class is needed for a live instrument. |
+| Zoomable rectangles | Scope portals recurse; zoom swaps card budgets 12/40/24                                                                                | Card content is static at every rung (`app/pi/src/adapter.ts:53-59`). Make representation a function of `(node, zoom, activity, vision)`.                          |
+| Vision              | Four analyzers, `createVisionAssert`, capture matrix                                                                                   | `modelsLoaded = true` forced (`host.ts:139-143`); gates are test-time only. Runtime loop + honest strategy missing.                                                |
+| Shareability        | `#graph:<id>` reveal anchor (`host.ts:287`)                                                                                            | No viewport/surface state, diffs or annotations. Full-state hash → graph diffs → annotated review.                                                                 |
+| Domains             | Four wrappers: `agent`, `workflow`, `filesystem`, `data`; scaffold for the rest                                                        | None of the recipe. Remaining domains in `POSSIBILITIES.md` are host work through the scaffold.                                                                    |
+| Composition         | Four isolated canvases with three `InterGraphEdge` links (`app/demo/html/layout/compositional-wrappers.html`)                          | No cross-canvas trace, two-run diff or shared review scene (Phase C).                                                                                              |
+| Senses / widgets    | `SCENE_FEATURES`, `SENSORY_SEAMS`, `WidgetLayer` descriptors (`src/world/world.ts`, `src/widgets/`)                                    | Descriptors are inert; no host adapter registration. Add a register seam, no implementation.                                                                       |
+| Library kit         | Mechanisms are host-assembled                                                                                                          | Promote only reused helpers; no speculative contract fields.                                                                                                       |
 
 **Design reference — `docs/spacegraphj_screenshots/`.** `full_gui.png` shows a workspace built
 entirely from rectangles: task strip, button rail, oscilloscope, multi-track charts, statistics rows
@@ -91,7 +91,7 @@ One vertical slice, ordered so each step is visible in the browser as it lands. 
       exposed through `visionStrategy()` and read by `createVisionAssert.strategy()` for each capture.
       No fabricated scores.
 - [x] Full-state permalink (`app/pi/src/permalink.ts`): hash-encode `{surface, arrangement, depth,
-      depthAxis, level, focus, viewport, filter}`, restore on boot; `#graph:<id>` stays reveal-only.
+depthAxis, level, focus, viewport, filter}`, restore on boot; `#graph:<id>` stays reveal-only.
       Unit round-trip + E2E URL round-trip green.
 - [x] Zoomable rectangle ladder (`app/pi/src/adapter.ts`): one-line `overview`, mini-instrument
       `execution`, full panel `detail`, all escaped; `representationRung` lets activity promote and
@@ -109,28 +109,32 @@ One vertical slice, ordered so each step is visible in the browser as it lands. 
 `build`, package `tsc --noEmit`; root `pnpm test` (761) — all green. The flagship is complete after
 this phase, apart from the two explicitly deferred sub-items above.
 
-### Phase B — Domain generality (no library changes)
+### Phase B — Domain generality (no library changes) — DONE
 
 Two domains prove the recipe once; two visibly different additions make it general.
 
-- [ ] Add `@spacegraphjs/filesystem` (file / symbol / change / commit / artifact): selectors for
-      "what produced this change" and "which symbols depend on it"; six slots, fixture,
-      `adapterConformance`, README; no provider or host import.
-- [ ] Add `@spacegraphjs/data` (pipeline / dataset / step / run / model / metric): lineage and
-      regression selectors; six slots, fixture, conformance, README.
-- [ ] Compose **four** domains (agent + workflow + filesystem + data) in one workspace with
+- [x] Add `@spacegraphjs/filesystem` (commit / file / symbol / change / artifact): selectors for
+      "what produced this change" (`changeProducers`, `changeOrigins`) and "which symbols depend on
+      it" (`symbolDependents`/`symbolDependencies`); six slots, fixture, `adapterConformance`, README;
+      no provider or host import.
+- [x] Add `@spacegraphjs/data` (pipeline / dataset / step / run / model / metric): `lineage` and
+      derived `regressions` selectors; six slots, fixture, conformance, README.
+- [x] Compose **four** domains (agent + workflow + filesystem + data) in one workspace with three
       `InterGraphEdge` overlays and isolated models, extending
-      `app/demo/html/layout/compositional-wrappers.html` and its Playwright spec.
-- [ ] Add a short **domain aesthetic/ergonomics profile** to `docs/semantic-wrappers.md`: wrapper
+      `app/demo/html/layout/compositional-wrappers.html` and its Playwright spec. Probe now exposes
+      `domains`, `nodes`, `links` and `endpoints`.
+- [x] Add the **domain aesthetic/ergonomics profile** to `docs/semantic-wrappers.md` §5: wrapper
       contributes vocabulary + selectors; host owns levels, geometry, budgets, theme and play policy.
-      Emit the same profile from `packages/create-spacegraph/domain.js` with its vision gate. This is
-      the mechanism that makes the remaining domains in `POSSIBILITIES.md` host work, not scheduled work.
-- [ ] Add per-domain evidence entries to `app/demo/src/gallery.ts`; run `pnpm run generate:registry`.
-      Fix the dead `gallery.html` links in `showcase.html`/`learn.html` and the stale
-      `docs/performance.md` path found during analysis.
+      The scaffold emits the same profile and its `verify:visual` vision gate. This is the mechanism
+      that makes the remaining domains in `POSSIBILITIES.md` host work, not scheduled work.
+- [x] Add per-domain evidence entries to `app/demo/src/gallery.ts` (four entries; `EXPECTED_MODULES`
+      extended in `app/demo/tests/host.test.ts`); run `pnpm run generate:registry` (registry unchanged:
+      3 hosts / 38 pages / 45 modules). Fix the dead `gallery.html` links in `showcase.html`/`learn.html`
+      (now `#capabilities`), `app/demo/README.md`, and the stale `docs/performance.md` commands.
 
-**Gate:** new domains' `test`/`typecheck`/`build`; `pnpm --filter demo test` + `build` + compositional
-Playwright; `pnpm --filter pi verify` still green; evidence non-empty for every gallery entry.
+**Gate (green):** each new domain `bun test` (19), `typecheck`, `build`; `pnpm --filter demo test`
+(10) and `build`; compositional Playwright (1); root `pnpm test` (761); `pnpm --filter pi verify`;
+`pnpm run generate:registry`. No library API was added.
 
 ### Phase C — Compositional worlds and shareable scenes
 
@@ -228,29 +232,29 @@ game-engine API; additional domains beyond the four until a host needs them; the
 
 ## 4. Verification — one gate list
 
-| Check | Command / rule |
-| ----- | -------------- |
-| Flagship | `pnpm --filter pi test`, `test:e2e`, `verify:visual`, `verify`, `scale`, `build`, package `tsc --noEmit` |
+| Check                | Command / rule                                                                                                                                                                             |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Flagship             | `pnpm --filter pi test`, `test:e2e`, `verify:visual`, `verify`, `scale`, `build`, package `tsc --noEmit`                                                                                   |
 | Vision on new states | `verify:visual` asserts overlap, legibility, hierarchy, ergonomics and layout score on settled, playing, trace, zoom-ladder rungs and reduced-motion scenes; strategy recorded per capture |
-| Domains | `pnpm --filter @spacegraphjs/{agent,workflow,filesystem,data} test` + conformance + `typecheck` |
-| Composition + scenes | `cd app/demo && pnpm exec playwright test tests/compositional-wrappers.spec.ts tests/flagship-page.spec.ts`; cross-domain trace, diff and annotation specs; `pnpm --filter demo video:flagship` reproduces the clip |
-| Runtime loop | deterministic vision-loop fixture; runtime scores agree with captured gate or difference is recorded |
-| Adapter seams | registration/gating test; no implementation defaults; `docs/world.md` updated |
-| Boundaries | root `pnpm test` (`test/boundaries.test.ts`) + `pnpm --filter pi verify` after every phase |
-| Study protocol | `pnpm --filter pi test` — matrix, Latin square, recorder, negative reporting; participant run external |
-| Full repo | `pnpm test` from root; no `pnpm run check` script exists here (use package `tsc --noEmit`) |
+| Domains              | `bun test` + `typecheck` + `build` in each of the four `packages/domain/*`; conformance included — Phase B green                                                                           |
+| Composition + scenes | Compositional Playwright (four domains, three links) green; Phase C adds cross-domain trace, diff and annotation specs plus `pnpm --filter demo video:flagship`                            |
+| Runtime loop         | deterministic vision-loop fixture; runtime scores agree with captured gate or difference is recorded                                                                                       |
+| Adapter seams        | registration/gating test; no implementation defaults; `docs/world.md` updated                                                                                                              |
+| Boundaries           | root `pnpm test` (`test/boundaries.test.ts`) + `pnpm --filter pi verify` after every phase                                                                                                 |
+| Study protocol       | `pnpm --filter pi test` — matrix, Latin square, recorder, negative reporting; participant run external                                                                                     |
+| Full repo            | `pnpm test` from root; no `pnpm run check` script exists here (use package `tsc --noEmit`)                                                                                                 |
 
 Budgets (measure, then tighten; inherited from `TODO1.md:304-315`):
 
-| Metric | Budget | Prior measured |
-| ------ | ------ | -------------- |
-| Model build, 300 msg / ~1.2k nodes | < 50 ms | ~27 ms |
-| Full pipeline, 5,001 msg / ~20k nodes | < 400 ms | 160–230 ms |
-| Force layout, 60-turn window | < 1.5 s | ~1.0–1.2 s |
-| Lazy 3D chunk gzip | < 400 KB | 282 KB incl. `three` |
-| Play session, ≤ 120 borrowed bodies | < 8 ms/frame; settles ≤ 5 s | 0.83 ms/frame, settles — Phase A |
-| Permalink encode/decode | < 2 ms; round-trip stable | 0.005 ms — Phase A |
-| Vision loop, one analyze→policy cycle | < 16 ms on the 60-turn window | new — Phase D |
+| Metric                                | Budget                        | Prior measured                   |
+| ------------------------------------- | ----------------------------- | -------------------------------- |
+| Model build, 300 msg / ~1.2k nodes    | < 50 ms                       | ~27 ms                           |
+| Full pipeline, 5,001 msg / ~20k nodes | < 400 ms                      | 160–230 ms                       |
+| Force layout, 60-turn window          | < 1.5 s                       | ~1.0–1.2 s                       |
+| Lazy 3D chunk gzip                    | < 400 KB                      | 282 KB incl. `three`             |
+| Play session, ≤ 120 borrowed bodies   | < 8 ms/frame; settles ≤ 5 s   | 0.83 ms/frame, settles — Phase A |
+| Permalink encode/decode               | < 2 ms; round-trip stable     | 0.005 ms — Phase A               |
+| Vision loop, one analyze→policy cycle | < 16 ms on the 60-turn window | new — Phase D                    |
 
 Sleeping simulation, 60-turn draw window, body cap and overview instancing are the mechanisms.
 Never hide nodes to fix a slow stream without measuring.
@@ -277,35 +281,35 @@ contract + registry over branches; host owns policy; legibility gates spectacle.
 
 ## 6. Risks
 
-| Risk | Mitigation |
-| ---- | ---------- |
-| Flagship work becomes a one-off | Phase B forces reuse across four domains; Phase F promotes only reused pieces |
-| Two solvers fight during play | Borrowed set + one authority + reconcile at rest; e2e asserts both states |
-| Physics inert under on-demand rendering | Play session drives frames while active, sleeps at rest; HUD shows energy |
-| Vision loop mutates layout silently | Explicit host toggle, `reportUnsupported`, recorded strategy and score provenance |
-| Silent no-op verbs | `reportUnsupported` for unregistered verbs; evidence asserts verbs animate |
-| Domain wrapper leaks host/provider types | Six-slot recipe, `defineDomain`, conformance, `verify` guard |
-| Feature museum / unproven claim | Evidence-only gallery, guided replay, limitations list, published result including negative |
-| Long arc stalls after Phase A | Each phase has a demonstrable artifact and its own gate; no phase depends on external credentials |
-| Stale links and counts | Registry regeneration plus the cheap doc fixes in Phase B |
+| Risk                                     | Mitigation                                                                                        |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| Flagship work becomes a one-off          | Phase B forces reuse across four domains; Phase F promotes only reused pieces                     |
+| Two solvers fight during play            | Borrowed set + one authority + reconcile at rest; e2e asserts both states                         |
+| Physics inert under on-demand rendering  | Play session drives frames while active, sleeps at rest; HUD shows energy                         |
+| Vision loop mutates layout silently      | Explicit host toggle, `reportUnsupported`, recorded strategy and score provenance                 |
+| Silent no-op verbs                       | `reportUnsupported` for unregistered verbs; evidence asserts verbs animate                        |
+| Domain wrapper leaks host/provider types | Six-slot recipe, `defineDomain`, conformance, `verify` guard                                      |
+| Feature museum / unproven claim          | Evidence-only gallery, guided replay, limitations list, published result including negative       |
+| Long arc stalls after Phase A            | Each phase has a demonstrable artifact and its own gate; no phase depends on external credentials |
+| Stale links and counts                   | Registry regeneration plus the cheap doc fixes in Phase B                                         |
 
 ---
 
 ## 7. Vision coverage
 
-| `POSSIBILITIES.md` section | Landed by |
-| -------------------------- | --------- |
-| 1. Rectangle ladder | Phase A (zoomable card ladder), Phase F (pure rung helper) |
-| 2. Physics as meaning | Phase A (Playground), Phase F (`PhysicsPlaySession`) |
-| 3. Cinematics as cognition | Phase A (`trace`), Phase F (camera handlers) |
-| 4. Domains as workspaces | Phase B (filesystem, data + recipe note); remaining domains via scaffold |
-| 5. Compositional worlds | Phase B (four domains), Phase C (cross-domain trace, diff) |
-| 6. Shareable scenes | Phase A (permalink), Phase C (annotations, report) |
-| 7. Self-verifying interfaces | Phase D (runtime loop), Phase F (promotion if reused) |
-| 8. Host-registered senses | Phase E (adapter seam, widget mounting) |
-| 9. Product forms | Phase E (Graph IDE + observatory); others host work via scaffold |
-| 10. Horizons | This document's phases + Phase G research gate |
-| 11. Boundaries | Guardrails in the introduction and gates in §4 |
+| `POSSIBILITIES.md` section   | Landed by                                                                            |
+| ---------------------------- | ------------------------------------------------------------------------------------ |
+| 1. Rectangle ladder          | Phase A (zoomable card ladder), Phase F (pure rung helper)                           |
+| 2. Physics as meaning        | Phase A (Playground), Phase F (`PhysicsPlaySession`)                                 |
+| 3. Cinematics as cognition   | Phase A (`trace`), Phase F (camera handlers)                                         |
+| 4. Domains as workspaces     | **Landed — Phase B** (filesystem + data + profile); remaining domains via scaffold   |
+| 5. Compositional worlds      | **Landed — Phase B** (four isolated domains, three links); Phase C adds trace + diff |
+| 6. Shareable scenes          | Phase A (permalink), Phase C (annotations, report)                                   |
+| 7. Self-verifying interfaces | Phase D (runtime loop), Phase F (promotion if reused)                                |
+| 8. Host-registered senses    | Phase E (adapter seam, widget mounting)                                              |
+| 9. Product forms             | Phase E (Graph IDE + observatory); others host work via scaffold                     |
+| 10. Horizons                 | This document's phases + Phase G research gate                                       |
+| 11. Boundaries               | Guardrails in the introduction and gates in §4                                       |
 
 ---
 
@@ -321,11 +325,36 @@ contract + registry over branches; host owns policy; legibility gates spectacle.
 - Evidence: `pnpm --filter pi test` 32, `test:e2e` 23, `verify:visual` 12, `verify`, `scale`, `build`,
   `app/pi tsc --noEmit`, root `pnpm test` 761 — all green. Budgets measured in §4.
 
-### Next move (Phase B)
+### Landed (Phase B)
 
-Start with `@spacegraphjs/filesystem`: six slots, fixture, `adapterConformance`, README, no provider
-or host import — then `@spacegraphjs/data`, then compose all four domains in
-`app/demo/html/layout/compositional-wrappers.html`. See §3 Phase B for the full checklist.
+- `packages/domain/filesystem` and `packages/domain/data`: six slots each, fixture, adapter,
+  `adapterConformance`, README, no provider or host import. 19 tests each.
+- `app/demo/html/layout/compositional-wrappers.html`: four isolated renderers, three `InterGraphEdge`
+  links (agent→workflow→filesystem→data), page probe and Playwright spec updated.
+- `docs/semantic-wrappers.md` §5 domain profile; `packages/create-spacegraph/domain.js` emits the
+  same profile alongside its existing `verify:visual` gate.
+- `app/demo/src/gallery.ts` four evidence entries; `vitest.config.ts` domain source aliases;
+  `app/demo/vite.config.ts` aliases; demo package deps. Registry regenerated (unchanged).
+- Dead `gallery.html` links redirected to `learn.html#capabilities`; `docs/performance.md` benchmark
+  commands point at `pnpm --filter pi scale`.
+- Evidence: new domains 19/19 tests each + typecheck + build; demo 10 tests; compositional spec 1;
+  root `pnpm test` 761; `pnpm --filter demo build`; `pnpm --filter pi verify` passed.
+
+### Next move (Phase C)
+
+Phase C works from the four-domain composition now in place. In order:
+
+1. Cross-domain `trace` in `app/demo`: follow the three `InterGraphEdge` links so one action answers
+   "metric → step → tool call → commit → file"; assert camera follow and model isolation. Reuse the
+   page probe in `app/demo/html/layout/compositional-wrappers.html`.
+2. Graph diff from `GraphHistory` + `@spacegraphjs/diff` (see `packages/kernel/src/graph-history.ts`
+   and `packages/diff/src/diff.ts`); expose a two-run view, assert the diff is derived from history.
+3. Annotations on `RenderNode.data` through the widget layer; include them in exports and the Phase A
+   permalink (`app/pi/src/permalink.ts`).
+4. Shareable report from `exportJSON`/`exportSVG`/`exportHTML` + permalink.
+5. Zoom-ladder and multi-domain sections in `app/demo/flagship.html`; recapture media.
+
+See §3 Phase C for the checklist and §4 for the gate.
 
 ### Deferred inside Phase A (do before closing the flagship)
 
@@ -334,6 +363,21 @@ or host import — then `@spacegraphjs/data`, then compose all four domains in
 
 ### Remaining phases
 
-B–F are unstarted; each has its own gate in §4 and must stay green before the next starts. Phase G
-depends on participants and credentials; no result, release or deployment may be fabricated.
-Baseline TODO1 evidence is in `TODO1.md:383-395`.
+- **C — Compositional worlds and shareable scenes.** Unstarted. Needs the four domains and the
+  compositional spec (both landed in Phase B); adds cross-domain trace, `GraphHistory`-derived diff,
+  annotations, a shareable report and flagship page sections.
+- **D — Runtime self-verifying loop.** Unstarted. Needs `scopePolicy` scores, an opt-in
+  `createVisionLoop`, a Pi HUD toggle and a deterministic unit fixture; keep `createVisionAssert` as
+  the test gate.
+- **E — Host senses and product forms.** Unstarted. Needs the `registerSensory` seam (no default
+  implementation), a console-only demo adapter, feature gating through contract descriptors and the
+  Graph IDE reference host. The session observatory is Pi itself.
+- **F — Library consolidation.** Unstarted and pull-only. Promote a helper only after a second host
+  consumes it: camera handlers, `PhysicsPlaySession`, the rung helper, then contract descriptors and
+  parity tests. Pi behavior must not change.
+- **G — Proof and delivery.** External: participants for the five-task study and credentials for the
+  npm release. No result, release or deployment may be fabricated.
+
+Each of C–F has its own gate in §4 and must stay green before the next starts. The two deferred Phase
+A items below are still open and belong to the flagship, not to a new phase. Baseline TODO1 evidence
+is in `TODO1.md:383-395`.

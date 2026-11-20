@@ -86,7 +86,7 @@
     <body>
         <header>
             <h1>Compositional domain wrappers</h1>
-            <p>Two semantic domains, two isolated models, one cross-canvas link.</p>
+            <p>Four semantic domains, four isolated models, three cross-canvas links.</p>
             <span id="status">initialising…</span>
         </header>
         <main>
@@ -98,6 +98,14 @@
                 <h2>Workflow wrapper · release pipeline</h2>
                 <div class="canvas" id="workflow-canvas"></div>
             </section>
+            <section class="pane">
+                <h2>Filesystem wrapper · c1 refactor auth</h2>
+                <div class="canvas" id="filesystem-canvas"></div>
+            </section>
+            <section class="pane">
+                <h2>Data wrapper · fraud pipeline</h2>
+                <div class="canvas" id="data-canvas"></div>
+            </section>
         </main>
         <footer>
             <span
@@ -105,21 +113,35 @@
                 <code>events → KernelOp → Kernel → domain view → ModelAdapter</code>.</span
             >
             <span
-                >The dashed cyan line is an <code>InterGraphEdge</code> in the global SVG overlay —
-                the only cross-canvas link.</span
+                >Dashed cyan lines are <code>InterGraphEdge</code>s in the global SVG overlay; each
+                joins one pane to the next.</span
             >
-            <span>Models stay isolated: neither graph can resolve the other's nodes.</span>
+            <span>Models stay isolated: no graph can resolve another graph's nodes.</span>
         </footer>
 
         <script type="module">
             import { Kernel } from '@spacegraphjs/kernel';
             import { AgentEventMapper, agentDomain } from '@spacegraphjs/agent';
             import {
-                FIXTURE_POSITIONS,
+                FIXTURE_POSITIONS as WORKFLOW_POSITIONS,
                 fixtureOps as workflowOps,
                 workflowAdapter,
                 workflowDomain,
             } from '@spacegraphjs/workflow';
+            import {
+                FIXTURE_POSITIONS as FILESYSTEM_POSITIONS,
+                filesystemAdapter,
+                filesystemDomain,
+                fixtureOps as filesystemOps,
+                foldFilesystemOps,
+            } from '@spacegraphjs/filesystem';
+            import {
+                FIXTURE_POSITIONS as DATA_POSITIONS,
+                dataAdapter,
+                dataDomain,
+                fixtureOps as dataOps,
+                foldDataOps,
+            } from '@spacegraphjs/data';
             import { DEFAULT_THEME } from '@spacegraphjs/renderer';
             import { ModelAdapter } from '@spacegraphjs/adapter';
             import { SpaceGraphRenderer } from '@spacegraphjs/spacegraph-renderer';
@@ -180,8 +202,8 @@
             const agentOps = agentEvents.flatMap((event) => agentMapper.map(event));
             const agentView = agentDomain.build(fold(agentOps));
             const workflowView = workflowDomain.build(fold(workflowOps()));
-            const artifactId = 'agent:r:session';
-            const compileId = 'workflow:wf:compile';
+            const filesystemView = filesystemDomain.build(foldFilesystemOps(filesystemOps()));
+            const dataView = dataDomain.build(foldDataOps(dataOps()));
 
             const agentPositions = new Map(
                 agentView.nodes.map((node, index) => {
@@ -235,66 +257,103 @@
                 }
             }
 
-            const left = document.querySelector('#agent-canvas');
-            const right = document.querySelector('#workflow-canvas');
-            const agentRenderer = new SpaceGraphRenderer();
-            const workflowRenderer = new SpaceGraphRenderer();
-            await agentRenderer.mount(left, {
-                theme: DEFAULT_THEME,
-                projection: '2d',
-                global: true,
-            });
-            await workflowRenderer.mount(right, {
-                theme: DEFAULT_THEME,
-                projection: '2d',
-                global: true,
-            });
-            agentRenderer.setModel(
-                new DemoAgentAdapter().build(agentView, {
-                    level: 'execution',
+            const domains = [
+                {
+                    id: 'agent',
+                    view: agentView,
                     positions: agentPositions,
-                }),
-            );
-            workflowRenderer.setModel(
-                workflowAdapter.build(workflowView, {
-                    level: 'execution',
-                    positions: FIXTURE_POSITIONS,
-                }),
-            );
-            agentRenderer.fit();
-            workflowRenderer.fit();
+                    adapter: new DemoAgentAdapter(),
+                },
+                {
+                    id: 'workflow',
+                    view: workflowView,
+                    positions: WORKFLOW_POSITIONS,
+                    adapter: workflowAdapter,
+                },
+                {
+                    id: 'filesystem',
+                    view: filesystemView,
+                    positions: FILESYSTEM_POSITIONS,
+                    adapter: filesystemAdapter,
+                },
+                { id: 'data', view: dataView, positions: DATA_POSITIONS, adapter: dataAdapter },
+            ];
+
+            const containers = new Map();
+            for (const domain of domains) {
+                const container = document.querySelector(`#${domain.id}-canvas`);
+                const renderer = new SpaceGraphRenderer();
+                await renderer.mount(container, {
+                    theme: DEFAULT_THEME,
+                    projection: '2d',
+                    global: true,
+                });
+                renderer.setModel(
+                    domain.adapter.build(domain.view, {
+                        level: 'execution',
+                        positions: domain.positions,
+                    }),
+                );
+                renderer.fit();
+                containers.set(domain.id, container);
+            }
 
             const instances = [...(globalThis.SpaceGraph?.instances ?? [])];
-            const instanceFor = (container) => instances.find((sg) => sg.container === container);
-            const agentGraph = instanceFor(left);
-            const workflowGraph = instanceFor(right);
-            const source = agentGraph?.getNode(artifactId);
-            const target = workflowGraph?.getNode(compileId);
-            if (!source || !target) throw new Error('cross-canvas endpoints were not mounted');
-
-            const link = new edges.InterGraphEdge(
-                agentGraph,
+            const graphFor = (id) => instances.find((sg) => sg.container === containers.get(id));
+            const links = [
                 {
                     id: 'cross:session:compile',
-                    type: 'InterGraphEdge',
-                    source: source.id,
-                    target: target.id,
-                    data: { color: 0x22d3ee },
+                    from: ['agent', 'agent:r:session'],
+                    to: ['workflow', 'workflow:wf:compile'],
                 },
-                source,
-                target,
-            );
-            agentGraph.graph.addEdge(link);
+                {
+                    id: 'cross:artifact:file',
+                    from: ['workflow', 'workflow:wf:out'],
+                    to: ['filesystem', 'filesystem:c1:session'],
+                },
+                {
+                    id: 'cross:change:metric',
+                    from: ['filesystem', 'filesystem:c1:edit'],
+                    to: ['data', 'data:p1:auc'],
+                },
+            ];
+            for (const spec of links) {
+                const fromGraph = graphFor(spec.from[0]);
+                const source = fromGraph?.getNode(spec.from[1]);
+                const target = graphFor(spec.to[0])?.getNode(spec.to[1]);
+                if (!fromGraph || !source || !target)
+                    throw new Error(`cross-canvas endpoints were not mounted: ${spec.id}`);
+                const link = new edges.InterGraphEdge(
+                    fromGraph,
+                    {
+                        id: spec.id,
+                        type: 'InterGraphEdge',
+                        source: source.id,
+                        target: target.id,
+                        data: { color: 0x22d3ee },
+                    },
+                    source,
+                    target,
+                );
+                fromGraph.graph.addEdge(link);
+            }
 
             const status = document.querySelector('#status');
-            status.textContent = `${agentView.nodes.length} agent nodes · ${workflowView.nodes.length} workflow nodes · 1 inter-graph link`;
+            status.textContent = `${domains.map((domain) => `${domain.view.nodes.length} ${domain.id}`).join(' · ')} · ${links.length} inter-graph links`;
             globalThis.__compositional = {
-                agentNodes: agentView.nodes.map((node) => node.id),
-                workflowNodes: workflowView.nodes.map((node) => node.id),
-                link: { source: source.id, target: target.id },
+                domains: domains.map((domain) => domain.id),
+                nodes: Object.fromEntries(
+                    domains.map((domain) => [domain.id, domain.view.nodes.map((node) => node.id)]),
+                ),
+                links: links.map((spec) => spec.id),
+                endpoints: links.map((spec) => ({ source: spec.from[1], target: spec.to[1] })),
                 overlayPaths: document.querySelectorAll('#spacegraph-intergraph-overlay path')
                     .length,
-                isolated: !agentGraph.hasNode(compileId) && !workflowGraph.hasNode(artifactId),
+                isolated: links.every(
+                    (spec) =>
+                        !graphFor(spec.from[0])?.hasNode(spec.to[1]) &&
+                        !graphFor(spec.to[0])?.hasNode(spec.from[1]),
+                ),
             };
         </script>
     </body>

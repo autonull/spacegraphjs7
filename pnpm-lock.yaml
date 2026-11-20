@@ -287,6 +287,12 @@ importers:
       '@spacegraphjs/cytoscape-renderer':
         specifier: workspace:*
         version: link:../../packages/cytoscape-renderer
+      '@spacegraphjs/data':
+        specifier: workspace:*
+        version: link:../../packages/domain/data
+      '@spacegraphjs/filesystem':
+        specifier: workspace:*
+        version: link:../../packages/domain/filesystem
       '@spacegraphjs/kernel':
         specifier: workspace:*
         version: link:../../packages/kernel
@@ -556,6 +562,74 @@ importers:
       spacegraphjs:
         specifier: workspace:*
         version: link:../../..
+    devDependencies:
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.3
+      vite:
+        specifier: ^8.3.5
+        version: 8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0)
+      vite-plugin-dts:
+        specifier: ^5.1.0
+        version: 5.1.0(esbuild@0.28.2)(rolldown@1.2.14)(rollup@4.60.1)(typescript@5.9.3)(vite@8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
+
+  packages/domain/data:
+    dependencies:
+      '@spacegraphjs/adapter':
+        specifier: workspace:*
+        version: link:../../adapter
+      '@spacegraphjs/config':
+        specifier: workspace:*
+        version: link:../../config
+      '@spacegraphjs/kernel':
+        specifier: workspace:*
+        version: link:../../kernel
+      '@spacegraphjs/renderer':
+        specifier: workspace:*
+        version: link:../../renderer
+      '@spacegraphjs/search':
+        specifier: workspace:*
+        version: link:../../search
+      '@spacegraphjs/shared':
+        specifier: workspace:*
+        version: link:../../shared
+      '@spacegraphjs/trace':
+        specifier: workspace:*
+        version: link:../../trace
+    devDependencies:
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.3
+      vite:
+        specifier: ^8.3.5
+        version: 8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0)
+      vite-plugin-dts:
+        specifier: ^5.1.0
+        version: 5.1.0(esbuild@0.28.2)(rolldown@1.2.14)(rollup@4.60.1)(typescript@5.9.3)(vite@8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
+
+  packages/domain/filesystem:
+    dependencies:
+      '@spacegraphjs/adapter':
+        specifier: workspace:*
+        version: link:../../adapter
+      '@spacegraphjs/config':
+        specifier: workspace:*
+        version: link:../../config
+      '@spacegraphjs/kernel':
+        specifier: workspace:*
+        version: link:../../kernel
+      '@spacegraphjs/renderer':
+        specifier: workspace:*
+        version: link:../../renderer
+      '@spacegraphjs/search':
+        specifier: workspace:*
+        version: link:../../search
+      '@spacegraphjs/shared':
+        specifier: workspace:*
+        version: link:../../shared
+      '@spacegraphjs/trace':
+        specifier: workspace:*
+        version: link:../../trace
     devDependencies:
       typescript:
         specifier: ^5.9.2
@@ -1695,9 +1769,6 @@ packages:
   '@jridgewell/resolve-uri@3.1.2':
     resolution: {integrity: sha512-bRISgCIjP20/tbWSPWMEi54QVPRZExkuD9lJL+UIxUKtwVJA8wW1Trb1jMs1RFXo1CBTNZ/5hpC9QvmKWdopKw==}
     engines: {node: '>=6.0.0'}
-
-  '@jridgewell/sourcemap-codec@1.5.5':
-    resolution: {integrity: sha512-cYQ9310grqxueWbl+WuIUIaiUaDcj7WOq5fVhEljNVgRfOUhY9fy2zTvfoqWsnebh8Sl70VScFbICvJnLKB0Og==}
 
   '@jridgewell/sourcemap-codec@1.6.0':
     resolution: {integrity: sha512-T7jf+5zgsZHwNJ4lvQ7/aezbyk0nNX+zJVWpmHA7VYsEx7a7qr5Rg5IbtJFqkgze5Y2sruq1RUY8Q837Od7iFw==}
@@ -3325,11 +3396,6 @@ packages:
     resolution: {integrity: sha512-avsJQhyd+680gKXyG/sQc0nXaC6rBkPOfyHYcFb9+hdkqQkR9bdnkJ0AMZhke0oesPqIO+mFFJ+IdBc7mst4IA==}
     engines: {node: ^14.17.0 || ^16.13.0 || >=18.0.0}
 
-  nanoid@3.3.17:
-    resolution: {integrity: sha512-xQLf0A3HOMlgHq0n247/LRuAOYmB7dXJ/DvAxGvsSBij45XtBSmQycu+F8ODbHwns/XyFZagyL1+J0Offw1E0g==}
-    engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
-    hasBin: true
-
   nanoid@3.3.20:
     resolution: {integrity: sha512-uKdg2G3GNCKQn9byYOpxbGqrT2fGO5KRt5J/8b3pok8rT6qxGWF6hxMyJiEYtAf+FVyYuD9hRaDqX5uPFYJ4ZQ==}
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
@@ -3982,7 +4048,7 @@ packages:
     peerDependencies:
       '@microsoft/api-extractor': '>=7'
       rollup: '>=3'
-      vite: '>=7.3.2'
+      vite: '>=7.3.5'
     peerDependenciesMeta:
       '@microsoft/api-extractor':
         optional: true
@@ -5068,7 +5134,7 @@ snapshots:
 
   '@jridgewell/gen-mapping@0.3.13':
     dependencies:
-      '@jridgewell/sourcemap-codec': 1.5.5
+      '@jridgewell/sourcemap-codec': 1.6.0
       '@jridgewell/trace-mapping': 0.3.31
 
   '@jridgewell/remapping@2.3.5':
@@ -5078,14 +5144,12 @@ snapshots:
 
   '@jridgewell/resolve-uri@3.1.2': {}
 
-  '@jridgewell/sourcemap-codec@1.5.5': {}
-
   '@jridgewell/sourcemap-codec@1.6.0': {}
 
   '@jridgewell/trace-mapping@0.3.31':
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
-      '@jridgewell/sourcemap-codec': 1.5.5
+      '@jridgewell/sourcemap-codec': 1.6.0
 
   '@keyv/bigmap@1.3.1(keyv@5.6.0)':
     dependencies:
@@ -5873,7 +5937,7 @@ snapshots:
   css-tree@3.2.1:
     dependencies:
       mdn-data: 2.27.1
-      source-map-js: 1.2.1
+      source-map-js: 1.2.2
 
   css.escape@1.5.1: {}
 
@@ -6653,8 +6717,6 @@ snapshots:
 
   mute-stream@1.0.0: {}
 
-  nanoid@3.3.17: {}
-
   nanoid@3.3.20: {}
 
   napi-build-utils@2.0.0: {}
@@ -6802,9 +6864,9 @@ snapshots:
 
   postcss@8.5.25:
     dependencies:
-      nanoid: 3.3.17
+      nanoid: 3.3.20
       picocolors: 1.1.1
-      source-map-js: 1.2.1
+      source-map-js: 1.2.2
 
   postcss@8.5.31:
     dependencies:
@@ -7150,8 +7212,8 @@ snapshots:
 
   tinyglobby@0.2.15:
     dependencies:
-      fdir: 6.5.0(picomatch@4.0.4)
-      picomatch: 4.0.4
+      fdir: 6.5.0(picomatch@4.0.7)
+      picomatch: 4.0.7
 
   tinyglobby@0.2.17:
     dependencies:

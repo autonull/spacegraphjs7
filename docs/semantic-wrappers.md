@@ -203,24 +203,47 @@ study harness drives these hooks; see `docs/pi-study.md`.
 
 ---
 
-## 4. Generality: the workflow domain
+## 4. Generality: four domains, one recipe
 
-`packages/domain/workflow` is the second wrapper. It follows the same six slots with workflow
-vocabulary (`workflow`, `subworkflow`, `step`, `run`, `trigger`, `artifact`) and relations
-(`contains`, `orders`, `delegates`, `writes`, `retries`). It exists to prove the recipe, not to add a
-library API. Its conformance test composes `adapterConformance` with a domain fixture. Start there
-when adding a third domain.
+`packages/domain/workflow` is the second wrapper: workflow vocabulary (`workflow`, `subworkflow`,
+`step`, `run`, `trigger`, `artifact`) and relations (`contains`, `orders`, `delegates`, `writes`,
+`retries`). `packages/domain/filesystem` and `packages/domain/data` are the third and fourth:
+`commit / file / symbol / change / artifact` with `depends / produces`, and `pipeline / dataset /
+step / run / model / metric` with `feeds / evaluates`. All four follow the same six slots, ship a
+fixture and an `adapterConformance` test, and add no library API. Start from `workflow` when adding
+another domain.
 
-Two wrappers can compose without sharing a model. Mount each domain in its own canvas through the
-contract renderer, then connect one node per canvas with an `InterGraphEdge`: its endpoint projection
-reads each node's own camera, and the dashed path lives in a single page-level SVG overlay. Neither
-graph can resolve the other's IDs. The compositional demo in the demo app shows the agent wrapper and
-the workflow wrapper in one workspace with exactly one cross-canvas link; keep models isolated and
-the overlay as the only bridge.
+Domains compose without sharing a model. Mount each in its own canvas through the contract renderer,
+then connect nodes with `InterGraphEdge`: its endpoint projection reads each node's own camera, and
+the dashed paths live in one page-level SVG overlay. No graph can resolve another graph's IDs. The
+demo app composes agent, workflow, filesystem and data in one isolated workspace with three
+cross-canvas links; keep the models isolated and the overlay as the only bridge.
 
 ---
 
-## 5. Anti-patterns
+## 5. Domain aesthetic/ergonomics profile
+
+A wrapper is a vocabulary and a set of questions, not a look. The split below is the contract the
+scaffold emits with each generated domain; it is why the remaining domains in
+[`POSSIBILITIES.md`](POSSIBILITIES.md) are host work rather than scheduled library work.
+
+| Concern      | Wrapper owns                                       | Host owns                                                      |
+| ------------ | -------------------------------------------------- | -------------------------------------------------------------- |
+| Vocabulary   | kinds, edges, advisory roles and relations         | which kinds are visible at a level                             |
+| Questions    | selectors, facets and trace edge sets              | which questions the UI exposes                                 |
+| Mapping      | events → ordinary `KernelOp`s, no `inferred-cause` | the event source and clock                                     |
+| Geometry     | nothing                                            | layout, scopes, positions and one position authority           |
+| Presentation | nothing                                            | levels, card budgets, markup, theme and representation ladders |
+| Play         | nothing                                            | motion verbs, camera policy and physics borrowing              |
+| Verification | fold and selector tests, conformance fixture       | vision gate, scale budget and evidence gallery                 |
+
+**Vision gate.** A generated host ships `pnpm --filter <name>-host verify:visual`. The wrapper
+declares what a node means; the host must prove the scene stays legible. Legibility gates spectacle —
+a host never answers a wrapper question by hiding nodes or inventing causal edges.
+
+---
+
+## 6. Anti-patterns
 
 - **A provider SDK import inside a package.** Only the app's `server.ts` may import provider types.
 - **A library API added for a host affordance.** If a node class or edge animation is core-only, keep
@@ -233,7 +256,7 @@ the overlay as the only bridge.
 
 ---
 
-## 6. Links
+## 7. Links
 
 - [`docs/PLAN/INDEX.md`](PLAN/INDEX.md) — plan navigation.
 - [`docs/scopes.md`](scopes.md) — scope tree, policies and the vision → policy → motion loop.

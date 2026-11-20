@@ -37,7 +37,10 @@
                 margin: 0;
                 background: var(--bg);
                 color: var(--text);
-                font: 15px/1.65 ui-sans-serif, system-ui, sans-serif;
+                font:
+                    15px/1.65 ui-sans-serif,
+                    system-ui,
+                    sans-serif;
                 -webkit-font-smoothing: antialiased;
             }
             a {
@@ -182,7 +185,11 @@
                 margin: 0;
                 padding: 18px 72px 18px 20px;
                 overflow: auto;
-                font: 12.5px/1.7 ui-monospace, SFMono-Regular, Menlo, monospace;
+                font:
+                    12.5px/1.7 ui-monospace,
+                    SFMono-Regular,
+                    Menlo,
+                    monospace;
                 color: var(--code);
                 tab-size: 4;
             }
@@ -190,7 +197,9 @@
                 position: absolute;
                 top: 8px;
                 right: 8px;
-                font: 11px ui-monospace, monospace;
+                font:
+                    11px ui-monospace,
+                    monospace;
                 color: var(--muted);
                 background: var(--raised);
                 border: 1px solid var(--border);
@@ -218,7 +227,9 @@
                 text-transform: uppercase;
             }
             td code {
-                font: 12px ui-monospace, monospace;
+                font:
+                    12px ui-monospace,
+                    monospace;
                 color: var(--muted);
             }
             .commands {
@@ -251,7 +262,7 @@
                 <nav aria-label="Demo pages">
                     <a href="index.html">Live demo</a>
                     <a href="/showcase.html">Showcase</a>
-                    <a href="gallery.html">Gallery</a>
+                    <a href="#capabilities">Gallery</a>
                     <a href="learn.html" aria-current="page">How it works</a>
                     <button class="theme" id="theme" type="button">Light</button>
                 </nav>
@@ -275,22 +286,34 @@
                     <div class="step">
                         <b>01</b>
                         <h3>Describe</h3>
-                        <p>Keep nodes, edges and levels in your own vocabulary. No library types leak in.</p>
+                        <p>
+                            Keep nodes, edges and levels in your own vocabulary. No library types
+                            leak in.
+                        </p>
                     </div>
                     <div class="step">
                         <b>02</b>
                         <h3>Adapt</h3>
-                        <p>Map your model to the shared RenderModel once. Positions and labels come from here.</p>
+                        <p>
+                            Map your model to the shared RenderModel once. Positions and labels come
+                            from here.
+                        </p>
                     </div>
                     <div class="step">
                         <b>03</b>
                         <h3>Render</h3>
-                        <p>Mount WebGL, Cytoscape or static SVG over the same RenderModel. Swap at runtime.</p>
+                        <p>
+                            Mount WebGL, Cytoscape or static SVG over the same RenderModel. Swap at
+                            runtime.
+                        </p>
                     </div>
                     <div class="step">
                         <b>04</b>
                         <h3>Drive</h3>
-                        <p>Bind a controller for selection, search, bands and trail; layer navigation and a11y over it.</p>
+                        <p>
+                            Bind a controller for selection, search, bands and trail; layer
+                            navigation and a11y over it.
+                        </p>
                     </div>
                 </div>
 
@@ -298,8 +321,9 @@
                     <div>
                         <h3>1. Describe your domain</h3>
                         <p>
-                            <code>src/model.ts</code> defines a release pipeline. Its stages, lanes and statuses
-                            are application words. The library never sees them until they are mapped.
+                            <code>src/model.ts</code> defines a release pipeline. Its stages, lanes
+                            and statuses are application words. The library never sees them until
+                            they are mapped.
                         </p>
                     </div>
                     <div class="snippet">
@@ -316,8 +340,8 @@ const model: BuildModel = buildModel()
                     <div>
                         <h3>2. Map once to the contract</h3>
                         <p>
-                            <code>src/host.ts</code> owns the adapter. It turns the domain model, a layout and a
-                            level into one renderer-agnostic RenderModel.
+                            <code>src/host.ts</code> owns the adapter. It turns the domain model, a
+                            layout and a level into one renderer-agnostic RenderModel.
                         </p>
                     </div>
                     <div class="snippet">
@@ -335,8 +359,8 @@ const renderModel = adapter.build(model, {
                     <div>
                         <h3>3. Mount any renderer</h3>
                         <p>
-                            The live page switches between three renderers with one click. They all consume the
-                            same object; none of them knows what a release stage is.
+                            The live page switches between three renderers with one click. They all
+                            consume the same object; none of them knows what a release stage is.
                         </p>
                     </div>
                     <div class="snippet">
@@ -355,11 +379,12 @@ host.controller.bind(renderer)
                     <div>
                         <h3>4. Bind interaction and generic modules</h3>
                         <p>
-                            Selection, search, minimap, trail, zoom bands, accessibility and overlays are bound
-                            to the host model. The gallery on the live page runs each one and shows its output.
-                            Plugins can be looked up by id, instance or class; `requirePlugin` reports a missing
-                            one instead of returning nothing, and `pluginManager.use(plugin)` registers and
-                            initializes a plugin added after create.
+                            Selection, search, minimap, trail, zoom bands, accessibility and
+                            overlays are bound to the host model. The gallery on the live page runs
+                            each one and shows its output. Plugins can be looked up by id, instance
+                            or class; `requirePlugin` reports a missing one instead of returning
+                            nothing, and `pluginManager.use(plugin)` registers and initializes a
+                            plugin added after create.
                         </p>
                     </div>
                     <div class="snippet">
@@ -377,12 +402,16 @@ controller.select(['test:failure'])</code></pre>
             <section>
                 <h2>Every capability, mapped to a library surface</h2>
                 <p style="margin-bottom: 22px">
-                    Each row is a live entry in the gallery. “Open” jumps straight to that capability on the
-                    demo page.
+                    Each row is a live entry in the gallery. “Open” jumps straight to that
+                    capability on the demo page.
                 </p>
                 <table>
                     <thead>
-                        <tr><th>Capability</th><th>Library surface</th><th>Live</th></tr>
+                        <tr>
+                            <th>Capability</th>
+                            <th>Library surface</th>
+                            <th>Live</th>
+                        </tr>
                     </thead>
                     <tbody id="capabilities"></tbody>
                 </table>
@@ -391,8 +420,8 @@ controller.select(['test:failure'])</code></pre>
             <section>
                 <h2>Run it, check it, ship it</h2>
                 <p style="margin-bottom: 22px">
-                    One pnpm workspace consumer owns the pages, their config, their tests and the published
-                    package proof. No external assets or services are needed.
+                    One pnpm workspace consumer owns the pages, their config, their tests and the
+                    published package proof. No external assets or services are needed.
                 </p>
                 <div class="commands">
                     <div class="snippet">
@@ -404,16 +433,19 @@ pnpm run build:demo             # → dist-demo/</code></pre>
                     </div>
                 </div>
                 <p style="margin-top: 22px">
-                    The build emits relative asset paths, so the contents of <code>dist-demo/</code> can be
-                    uploaded to a domain root or a project subpath unchanged.
+                    The build emits relative asset paths, so the contents of
+                    <code>dist-demo/</code> can be uploaded to a domain root or a project subpath
+                    unchanged.
                 </p>
             </section>
         </div>
 
         <footer>
             <div class="wrap">
-                <a href="index.html">Live demo</a> · <a href="/showcase.html">Programmatic showcase</a> ·
-                <a href="gallery.html">Visual gallery</a> · <a href="/explorer.html">Runtime explorer</a> ·
+                <a href="index.html">Live demo</a> ·
+                <a href="/showcase.html">Programmatic showcase</a> ·
+                <a href="#capabilities">Visual gallery</a> ·
+                <a href="/explorer.html">Runtime explorer</a> ·
                 <a href="html/core/contract.html">Renderer contract</a>
             </div>
         </footer>

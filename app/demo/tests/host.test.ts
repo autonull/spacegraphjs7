@@ -31,7 +31,10 @@ function importsOf(text: string): string[] {
 /** The library surfaces a demo host is expected to be able to use. */
 const EXPECTED_MODULES = [
     '@spacegraphjs/adapter',
+    '@spacegraphjs/agent',
     '@spacegraphjs/cytoscape-renderer',
+    '@spacegraphjs/data',
+    '@spacegraphjs/filesystem',
     '@spacegraphjs/kernel',
     '@spacegraphjs/renderer',
     '@spacegraphjs/search',
@@ -39,6 +42,7 @@ const EXPECTED_MODULES = [
     '@spacegraphjs/spacegraph-renderer',
     '@spacegraphjs/svg-renderer',
     '@spacegraphjs/trace',
+    '@spacegraphjs/workflow',
     '@spacegraphjs/overlays',
     'spacegraphjs/a11y',
     'spacegraphjs/control',
@@ -171,11 +175,11 @@ describe('the demo host', () => {
     it('camera focus frames a node (headless interaction check)', () => {
         const host = new DemoHost();
         const renderModel = host.renderModel();
-        
+
         // Pick a node that exists in the model - use the first node (release)
         const targetNode = renderModel.nodes[0];
         expect(targetNode).toBeDefined();
-        
+
         // Simulate focus: the camera should be able to frame this node
         // In a headless environment, we verify the model has the necessary data
         // for the renderer to perform a focus operation
@@ -183,7 +187,7 @@ describe('the demo host', () => {
         for (const coord of targetNode!.position) {
             expect(Number.isFinite(coord)).toBe(true);
         }
-        
+
         // Verify edges reference valid nodes
         for (const edge of renderModel.edges) {
             expect(renderModel.nodes.some((n) => n.id === edge.source)).toBe(true);

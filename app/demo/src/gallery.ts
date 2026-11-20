@@ -15,8 +15,22 @@ import { depthTreatment, type DepthMode } from 'spacegraphjs/depth';
 import { type GraphLayout } from 'spacegraphjs/layout';
 import { Levels } from 'spacegraphjs/levels';
 import { Navigation } from 'spacegraphjs/navigation';
-import { computeFocusOverlay, getFocusOpacity, isDimmed, FOCUS_OPACITY_STOPS } from '@spacegraphjs/overlays';
-import { collapseGroups, graphContentHash, spatialMemoryKey, readSpatialMemory, writeSpatialMemory, decodeSpatialMemory, type SpatialMemoryStore, type SpatialMemoryRecord } from '@spacegraphjs/kernel';
+import {
+    computeFocusOverlay,
+    getFocusOpacity,
+    isDimmed,
+    FOCUS_OPACITY_STOPS,
+} from '@spacegraphjs/overlays';
+import {
+    collapseGroups,
+    graphContentHash,
+    spatialMemoryKey,
+    readSpatialMemory,
+    writeSpatialMemory,
+    decodeSpatialMemory,
+    type SpatialMemoryStore,
+    type SpatialMemoryRecord,
+} from '@spacegraphjs/kernel';
 import type { CodeDiff } from '@spacegraphjs/shared';
 import { Representations } from 'spacegraphjs/representations';
 import { ZoomBands } from 'spacegraphjs/zoom';
@@ -73,15 +87,63 @@ import {
     paletteEntries,
     paletteGroup,
 } from '@spacegraphjs/search';
-import { SessionKernel, Kernel, GraphHistory, createGraphHistory, type GraphSnapshot, type KernelOp } from '@spacegraphjs/kernel';
+import {
+    SessionKernel,
+    Kernel,
+    GraphHistory,
+    createGraphHistory,
+    type GraphSnapshot,
+    type KernelOp,
+    type Node,
+    type Edge,
+} from '@spacegraphjs/kernel';
+import {
+    AgentEventMapper,
+    agentDomain,
+    changedArtifacts,
+    type AgentEvent,
+} from '@spacegraphjs/agent';
+import {
+    workflowDomain,
+    fixtureOps as workflowOps,
+    artifactProducers,
+} from '@spacegraphjs/workflow';
+import {
+    filesystemDomain,
+    fixtureOps as filesystemOps,
+    changeOrigins,
+    symbolDependents,
+} from '@spacegraphjs/filesystem';
+import { dataDomain, fixtureOps as dataOps, lineage, regressions } from '@spacegraphjs/data';
 
 const addNode = (id: string, kind = 'node', label = id): KernelOp => ({
     op: 'add-node',
     node: { id, kind, label },
 });
 
+const kernelFrom = (ops: readonly KernelOp[]): Kernel => {
+    const nodes = new Map<string, Node>();
+    const edges = new Map<string, Edge>();
+    for (const op of ops) {
+        if (op.op === 'add-node') nodes.set(op.node.id, op.node);
+        else if (op.op === 'add-edge') edges.set(op.edge.id, op.edge);
+        else if (op.op === 'remove-node') nodes.delete(op.id);
+        else if (op.op === 'remove-edge') edges.delete(op.id);
+    }
+    return new Kernel({
+        nodes: [...nodes.values()],
+        edges: [...edges.values()],
+        hyperedges: [],
+        version: ops.length,
+    });
+};
+
 /** Extract a subgraph rooted at a node, following child edges of a specific kind. */
-function extractSubgraph(model: BuildModel, rootId: string, options: { childEdgeKind: string }): { root: BuildNode | undefined; nodes: BuildNode[]; edges: BuildModel['edges'] } {
+function extractSubgraph(
+    model: BuildModel,
+    rootId: string,
+    options: { childEdgeKind: string },
+): { root: BuildNode | undefined; nodes: BuildNode[]; edges: BuildModel['edges'] } {
     const root = model.nodes.find((n) => n.id === rootId);
     if (!root) return { root: undefined, nodes: [], edges: [] };
 
@@ -458,7 +520,8 @@ export const CAPABILITIES: readonly Capability[] = [
                 ancestors: (m: TraceModel, id: string) => {
                     const result: TraceNode[] = [];
                     const parents = new Map<string, string>();
-                    for (const edge of m.edges) if (edge.kind === 'part-of') parents.set(edge.source, edge.target);
+                    for (const edge of m.edges)
+                        if (edge.kind === 'part-of') parents.set(edge.source, edge.target);
                     const nodes = new Map(m.nodes.map((n) => [n.id, n]));
                     let current = id;
                     for (;;) {
@@ -474,7 +537,8 @@ export const CAPABILITIES: readonly Capability[] = [
                 forwardChain: (m: TraceModel, id: string) => {
                     const result: TraceNode[] = [];
                     const next = new Map<string, string>();
-                    for (const edge of m.edges) if (edge.kind === 'sequence') next.set(edge.source, edge.target);
+                    for (const edge of m.edges)
+                        if (edge.kind === 'sequence') next.set(edge.source, edge.target);
                     const nodes = new Map(m.nodes.map((n) => [n.id, n]));
                     let current = id;
                     for (;;) {
@@ -510,7 +574,8 @@ export const CAPABILITIES: readonly Capability[] = [
                 nodeIndex: (m: TraceModel) => new Map(m.nodes.map((n) => [n.id, n])),
                 parentIndex: (m: TraceModel) => {
                     const map = new Map<string, string>();
-                    for (const edge of m.edges) if (edge.kind === 'part-of') map.set(edge.source, edge.target);
+                    for (const edge of m.edges)
+                        if (edge.kind === 'part-of') map.set(edge.source, edge.target);
                     return map;
                 },
                 childIndex: (m: TraceModel) => {
@@ -566,7 +631,19 @@ export const CAPABILITIES: readonly Capability[] = [
         modules: ['@spacegraphjs/search'],
         summary: 'Filter by facets, save queries, and build a command palette.',
         run: (context) => {
-            const model = context.model as unknown as { nodes: Array<{ id: string; label: string; kind: string; status: string; summary?: string; data?: Record<string, unknown> }>; edges: any[]; turns?: string[]; activeTurn?: string };
+            const model = context.model as unknown as {
+                nodes: Array<{
+                    id: string;
+                    label: string;
+                    kind: string;
+                    status: string;
+                    summary?: string;
+                    data?: Record<string, unknown>;
+                }>;
+                edges: any[];
+                turns?: string[];
+                activeTurn?: string;
+            };
 
             // Define facet accessors for the host model
             const accessors: FacetAccessors = {
@@ -578,7 +655,10 @@ export const CAPABILITIES: readonly Capability[] = [
 
             const knownKinds = Array.from(new Set(model.nodes.map((n) => n.kind)));
             const knownStatuses = Array.from(new Set(model.nodes.map((n) => n.status)));
-            const knownDomains = ['session', ...Array.from(new Set(model.nodes.map((n) => n.data?.domain).filter(Boolean)))];
+            const knownDomains = [
+                'session',
+                ...Array.from(new Set(model.nodes.map((n) => n.data?.domain).filter(Boolean))),
+            ];
 
             // Test applyFacets
             const facets: GraphFacets = {
@@ -604,7 +684,14 @@ export const CAPABILITIES: readonly Capability[] = [
             const parsed = facetsFromQuery(queryString, knownKinds, knownStatuses, knownDomains);
 
             // Test facetCounts
-            const counts = facetCounts(model, facets, accessors, knownKinds, knownStatuses, knownDomains);
+            const counts = facetCounts(
+                model,
+                facets,
+                accessors,
+                knownKinds,
+                knownStatuses,
+                knownDomains,
+            );
 
             // Test hasFacets
             const hasAny = hasFacets(facets);
@@ -657,7 +744,10 @@ export const CAPABILITIES: readonly Capability[] = [
             // Build a session kernel with some history
             let session = new SessionKernel();
             for (let i = 0; i < 5; i++) {
-                session = session.append({ id: `e${i}`, op: addNode(`n${i}`, 'step', `Step ${i}`) });
+                session = session.append({
+                    id: `e${i}`,
+                    op: addNode(`n${i}`, 'step', `Step ${i}`),
+                });
             }
 
             const history = createGraphHistory(session, 3, (v) => `v${v}`);
@@ -672,7 +762,10 @@ export const CAPABILITIES: readonly Capability[] = [
             const checkedOut = history.checkout(2);
             // Fork from version 2
             const forked = history.fork(2);
-            const diverged = forked.append({ id: 'e-fork', op: addNode('n-fork', 'fork', 'Forked Step') });
+            const diverged = forked.append({
+                id: 'e-fork',
+                op: addNode('n-fork', 'fork', 'Forked Step'),
+            });
 
             // Test getSnapshotAtOrBefore (fallback)
             const fallback = history.getSnapshotAtOrBefore(4);
@@ -737,10 +830,14 @@ export const CAPABILITIES: readonly Capability[] = [
             const collapsed = new Set([groupId]);
             const result = collapseGroups(model, collapsed);
 
-            const hiddenMembers = groups[0]!.clusterOf?.filter((m) => !result.nodes.some((n) => n.id === m)) ?? [];
-            const hiddenEdges = model.edges.filter((e) =>
-                collapsed.has(e.source) || collapsed.has(e.target) ||
-                hiddenMembers.includes(e.source) || hiddenMembers.includes(e.target)
+            const hiddenMembers =
+                groups[0]!.clusterOf?.filter((m) => !result.nodes.some((n) => n.id === m)) ?? [];
+            const hiddenEdges = model.edges.filter(
+                (e) =>
+                    collapsed.has(e.source) ||
+                    collapsed.has(e.target) ||
+                    hiddenMembers.includes(e.source) ||
+                    hiddenMembers.includes(e.target),
             ).length;
 
             return [
@@ -784,14 +881,22 @@ export const CAPABILITIES: readonly Capability[] = [
             // Test storage
             const store: SpatialMemoryStore = {
                 storage: new Map(),
-                getItem(k: string) { return this.storage.get(k) ?? null; },
-                setItem(k: string, v: string) { this.storage.set(k, v); },
-                removeItem(k: string) { this.storage.delete(k); },
-                keys() { return Array.from(this.storage.keys()); },
+                getItem(k: string) {
+                    return this.storage.get(k) ?? null;
+                },
+                setItem(k: string, v: string) {
+                    this.storage.set(k, v);
+                },
+                removeItem(k: string) {
+                    this.storage.delete(k);
+                },
+                keys() {
+                    return Array.from(this.storage.keys());
+                },
             };
 
             const record: SpatialMemoryRecord = {
-                positions: { 'n1': [10, 20, 0], 'n2': [30, 40, 0] },
+                positions: { n1: [10, 20, 0], n2: [30, 40, 0] },
                 selection: 'n1',
                 camera: { zoom: 1.5, center: [100, 100, 0] },
                 collapsedGroups: ['group1'],
@@ -799,7 +904,9 @@ export const CAPABILITIES: readonly Capability[] = [
 
             writeSpatialMemory(store, parts, record);
             const read = readSpatialMemory(store, parts);
-            const decoded = decodeSpatialMemory(JSON.stringify({ ...record, timestamp: Date.now() }));
+            const decoded = decodeSpatialMemory(
+                JSON.stringify({ ...record, timestamp: Date.now() }),
+            );
 
             return [
                 `hash: ${hash}`,
@@ -808,6 +915,89 @@ export const CAPABILITIES: readonly Capability[] = [
                 `read positions: ${read ? Object.keys(read.positions).length : 0}`,
                 `decoded selection: ${decoded?.selection ?? 'none'}`,
                 `decoded camera zoom: ${decoded?.camera?.zoom ?? 'none'}`,
+            ];
+        },
+    },
+    {
+        id: 'agent-domain',
+        title: 'Agent domain',
+        modules: ['@spacegraphjs/agent'],
+        summary: 'Agent events become KernelOps; selectors answer which artifacts changed.',
+        run: () => {
+            const mapper = new AgentEventMapper('agent');
+            const events: readonly AgentEvent[] = [
+                { type: 'run-start', runId: 'r' },
+                { type: 'unit-start', runId: 'r', unitId: 'u1' },
+                {
+                    type: 'action',
+                    runId: 'r',
+                    unitId: 'u1',
+                    id: 'a1',
+                    toolName: 'read',
+                    phase: 'end',
+                },
+                {
+                    type: 'artifact',
+                    runId: 'r',
+                    unitId: 'u1',
+                    id: 'session',
+                    path: 'src/auth/session.ts',
+                    producerId: 'a1',
+                },
+            ];
+            const view = agentDomain.build(
+                kernelFrom(events.flatMap((event) => mapper.map(event))),
+            );
+            const artifacts = changedArtifacts(view);
+            return [
+                `agent nodes: ${view.nodes.length}`,
+                `roles: ${view.turns?.length ?? 0} units`,
+                `changed artifacts: ${artifacts.map((id) => view.nodes.find((node) => node.id === id)?.label ?? id).join(', ')}`,
+            ];
+        },
+    },
+    {
+        id: 'workflow-domain',
+        title: 'Workflow domain',
+        modules: ['@spacegraphjs/workflow'],
+        summary: 'Workflow fixture yields steps, retries and artifact producers.',
+        run: () => {
+            const view = workflowDomain.build(kernelFrom(workflowOps()));
+            const flows = artifactProducers(view);
+            return [
+                `workflow nodes: ${view.nodes.length}`,
+                `steps: ${view.turns?.length ?? 0}`,
+                `artifact producers: ${flows.map((flow) => `${flow.path} ← ${flow.writers.length}`).join(', ')}`,
+            ];
+        },
+    },
+    {
+        id: 'filesystem-domain',
+        title: 'Filesystem domain',
+        modules: ['@spacegraphjs/filesystem'],
+        summary: 'Filesystem selectors answer what produced a change and what depends on a symbol.',
+        run: () => {
+            const view = filesystemDomain.build(kernelFrom(filesystemOps()));
+            const origins = changeOrigins(view);
+            return [
+                `filesystem nodes: ${view.nodes.length}`,
+                `change origins: ${origins.map((origin) => `${origin.path} ← ${origin.producers.length}`).join(', ')}`,
+                `dependents of verify: ${symbolDependents(view, 'filesystem:c1:verify').length}`,
+            ];
+        },
+    },
+    {
+        id: 'data-domain',
+        title: 'Data domain',
+        modules: ['@spacegraphjs/data'],
+        summary: 'Data selectors derive metric lineage and regressions from recorded values.',
+        run: () => {
+            const view = dataDomain.build(kernelFrom(dataOps()));
+            const drops = regressions(view);
+            return [
+                `data nodes: ${view.nodes.length}`,
+                `auc lineage: ${lineage(view, 'data:p1:auc').answerIds.size} upstream nodes`,
+                `regressions: ${drops.map((metric) => `${metric.label} ${metric.delta.toFixed(3)}`).join(', ')}`,
             ];
         },
     },

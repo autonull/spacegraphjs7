@@ -66,6 +66,10 @@ export default defineConfig({
                 find: /^@spacegraphjs\/search$/,
                 replacement: resolve(import.meta.dirname, 'packages/search/src/index.ts'),
             },
+            ...['agent', 'workflow', 'filesystem', 'data'].map((name) => ({
+                find: new RegExp(`^@spacegraphjs/${name}$`),
+                replacement: resolve(import.meta.dirname, `packages/domain/${name}/src/index.ts`),
+            })),
             // Solid ships server and browser builds behind export conditions; Vitest resolves the server build,
             // which rejects client-only APIs. Point the framework binding tests at the browser builds.
             {
