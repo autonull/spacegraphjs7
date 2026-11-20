@@ -212,18 +212,19 @@ function logLayout<Node extends RepresentationNode>(
     options: RepresentationOptions = {},
 ): GraphLayout {
     const gap = options.gap ?? 24;
+    const rowGap = options.rowGap ?? 20;
     const positions = new Map<string, Position>();
+    let cursor = 0;
 
-    summaryRows(model, config).forEach((nodes) => {
-        let cursor = 0;
-
+    for (const nodes of summaryRows(model, config)) {
         for (const node of nodes) {
             const height = config.nodeSizeFn(node)[1];
-            // Single column layout: x is centered, y stacks vertically
+            // Single column: x is centered, y stacks across every row
             positions.set(node.id, { x: 0, y: cursor + height / 2, z: 0 });
             cursor += height + gap;
         }
-    });
+        cursor += rowGap;
+    }
 
     return { positions, clusters: new Map(), bounds: boundsOf(positions), strategy: 'lanes' };
 }
