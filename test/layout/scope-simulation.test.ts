@@ -147,6 +147,67 @@ describe('scope simulation', () => {
         expect(resting.to).toEqual(target.to);
     });
 
+    it('applies transient inter-body forces when enabled', () => {
+        const specs: ScopeSpec[] = [
+            { id: 'root', strategy: 'grid', nodes: [{ id: 'a', size: [100, 40] }, { id: 'b', size: [100, 40] }] },
+        ];
+        const springOnly = new ScopeSimulation({ layout: { gap: 60 }, spawn: 'target' });
+        const physical = new ScopeSimulation({
+            layout: { gap: 60 },
+            spawn: 'target',
+            forces: { repulsion: 400000 },
+        });
+        springOnly.setSpecs(specs);
+        physical.setSpecs(specs);
+
+        for (let i = 0; i < 4; i++) {
+            springOnly.advance(1 / 60);
+            physical.advance(1 / 60);
+        }
+
+        expect(physical.heat).toBeGreaterThan(0);
+        expect(physical.positions.get('root/a')).not.toEqual(springOnly.positions.get('root/a'));
+    });
+
+    it('cools forces to rest so the graph still sleeps', () => {
+        const sim = new ScopeSimulation({ spawn: 'target', forces: { cooling: 0.8 } });
+        sim.setSpecs(simple);
+
+        for (let i = 0; i < 120; i++) sim.advance(1 / 60);
+
+        expect(sim.heat).toBe(0);
+        expect(sim.settled).toBe(true);
+        expect(sim.energy).toBe(0);
+    });
+
+    it('skips pairwise forces above the body cap', () => {
+        const plain = new ScopeSimulation({ layout: { gap: 60 } });
+        const capped = new ScopeSimulation({
+            layout: { gap: 60 },
+            forces: { repulsion: 4000, maxBodies: 1 },
+        });
+        plain.setSpecs(simple);
+        capped.setSpecs(simple);
+
+        for (let i = 0; i < 4; i++) {
+            plain.advance(1 / 60);
+            capped.advance(1 / 60);
+        }
+
+        expect([...capped.positions]).toEqual([...plain.positions]);
+    });
+
+    it('keeps pinned bodies still under inter-body forces', () => {
+        const sim = new ScopeSimulation({ pinned: ['root/a'], forces: { repulsion: 8000 } });
+        sim.setSpecs(simple);
+        sim.advance(1 / 60);
+        const target = sim.positions.get('root/a')!;
+
+        for (let i = 0; i < 20; i++) sim.advance(1 / 60);
+
+        expect(sim.positions.get('root/a')).toEqual(target);
+    });
+
     it('derives locals from animated frames', () => {
         const sim = new ScopeSimulation({ instant: true });
         sim.setSpecs([

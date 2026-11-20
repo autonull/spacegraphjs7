@@ -12,6 +12,7 @@ import type { VisionReport } from '../vision/types';
 import {
     ScopeSimulation,
     buildScopeTree,
+    type ScopeForceOptions,
     type ScopeLayout,
     type ScopeLayoutOptions,
     type ScopePolicyInput,
@@ -46,6 +47,8 @@ export interface ScopesPluginOptions {
     nodeId?: (qualified: string) => string;
     /** A host signal source; its values win over the follow* switches. */
     signals?: () => ScopePolicyInput;
+    /** Transient inter-body forces, active only while the graph cools after a change. */
+    forces?: ScopeForceOptions;
     layout?: ScopeLayoutOptions;
     simulation?: ScopeSimulationOptions;
     /** Called after every frame with the animated layout. */
@@ -79,6 +82,7 @@ export class ScopesPlugin extends BaseSystemPlugin {
         this.#specs = options.specs ?? [];
         this.#simulation = new ScopeSimulation({
             ...options.simulation,
+            forces: options.forces ?? options.simulation?.forces,
             layout: options.layout,
         });
     }

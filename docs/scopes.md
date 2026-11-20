@@ -128,6 +128,15 @@ function frame(deltaSeconds: number) {
 Positions returned by `positions` and `view()` are snapshots: advancing the simulation never mutates
 a previously returned position.
 
+### Inter-body forces
+
+Set `forces: {}` (or tune `repulsion`, `attraction`, `cooling`, `maxAcceleration`, `maxBodies`) to add
+transient pairwise repulsion and edge attraction inside each scope. The forces fade with `cooling`
+after every target change and stop entirely at `heat = 0`, so the graph still reaches rest; this is
+what keeps streaming hosts jitter-free. Bodies below the sleep thresholds ignore weak forces, acting
+as static friction. Scopes above `maxBodies` skip pairwise work. Without `forces`, bodies only chase
+their solved targets.
+
 ## Engine integration
 
 The whole engine is opt-in through `options.scopes`. With no `enabled: true`, no plugin is created,
@@ -159,6 +168,7 @@ const graph = await SpaceGraph.create(container, spec, {
 | `createNodes` | `false` | Adds graph nodes for scope nodes that do not exist yet. |
 | `nodeId` | identity | Maps a qualified scope id to a graph node id. |
 | `signals` | none | A host callback whose values override the `follow*` switches. |
+| `forces` | off | Transient inter-body forces that cool to rest. |
 | `layout`, `simulation` | defaults | Solver and integration tuning. `simulation.instant` defaults to `graph.reducedMotion`. |
 | `onFrame` | none | Receives the animated layout after each frame. |
 
