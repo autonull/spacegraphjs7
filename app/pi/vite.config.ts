@@ -19,6 +19,10 @@ export default defineConfig({
                 find: /^@spacegraphjs\/config\/library$/,
                 replacement: resolve(workspace, 'packages/config/src/library.ts'),
             },
+            {
+                find: /^@spacegraphjs\/navigation\/follow$/,
+                replacement: resolve(workspace, 'packages/navigation/src/follow.ts'),
+            },
             ...[
                 ['adapter', 'adapter'],
                 ['agent', 'domain/agent'],

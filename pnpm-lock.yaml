@@ -335,6 +335,9 @@ importers:
       '@spacegraphjs/kernel':
         specifier: workspace:*
         version: link:../../packages/kernel
+      '@spacegraphjs/navigation':
+        specifier: workspace:*
+        version: link:../../packages/navigation
       '@spacegraphjs/renderer':
         specifier: workspace:*
         version: link:../../packages/renderer

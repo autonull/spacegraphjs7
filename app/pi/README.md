@@ -5,11 +5,17 @@ events into `KernelOp`s and renders them through an unmodified SpaceGraphJS. Spa
 knowledge of this app; see `pnpm --filter pi verify`.
 
 ```bash
-pnpm --filter pi dev      # Node op server + Vite client, one command
-pnpm --filter pi test     # translation, fold and capability tests (no provider needed)
-pnpm --filter pi verify   # one-way dependency guard
+pnpm --filter pi dev         # Node op server + Vite client, one command
+pnpm --filter pi test        # translation, fold and capability tests (no provider needed)
+pnpm --filter pi test:e2e    # Playwright against the app's own Vite with PI_LOCAL_FEED=1
+pnpm --filter pi test:publish # packed agent consumed outside the workspace, without Pi
+pnpm --filter pi verify      # one-way dependency guard
 pnpm --filter pi build
 ```
+
+The browser check starts both processes itself and replays the local op feed, so no test reaches a
+provider. The publish check packs the library and runs its selectors from a clean consumer; the packed
+agent must have no `@earendil-works/*` dependency.
 
 ## Layout
 
@@ -20,6 +26,13 @@ pnpm --filter pi build
 - `src/capabilities.ts` — the capability gallery and test hooks (`window.__pi`), driven by a local
   kernel-op feed so CI never needs a provider.
 - `src/theme.ts` — host CSS tokens → `RenderTheme`.
+- `src/client.ts` — also owns the follow state: the header toggle calls `computeFollowFrame` from
+  `@spacegraphjs/navigation` on each streamed op, and the attention readout comes from the agent's
+  rich failure and changed-file selectors. `window.__pi` exposes `follow`, `setFollow`,
+  `followFrame` and `attention`.
+- `playwright.config.ts`, `tests/browser.spec.ts` — browser checks for the gallery, prompt form and
+  follow/attention hooks.
+- `scripts/publish-check.ts` — packed-library consumer check.
 
 ## Provider
 

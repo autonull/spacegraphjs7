@@ -2,10 +2,10 @@ import { buildManifest } from '@spacegraphjs/config';
 import { libraryManifest, LIBRARY_CONTRACT_VERSION } from '@spacegraphjs/config/library';
 import { agentDomain, agentFacetAccessors, agentVocabulary } from '@spacegraphjs/agent';
 import {
-    changedArtifacts,
+    changedFiles,
     delegationContributions,
     downstream,
-    failures,
+    failureDetails,
     ledHere,
     why,
 } from '@spacegraphjs/agent';
@@ -19,6 +19,7 @@ export type CapabilityContext = {
     readonly kernel: Kernel;
     readonly view: AgentView;
     readonly theme: RenderTheme;
+    readonly follow?: { readonly mode: string; readonly frame: string };
 };
 
 export type Capability = {
@@ -90,14 +91,33 @@ export const CAPABILITIES: readonly Capability[] = [
     {
         id: 'failures',
         title: 'Which actions failed?',
-        summary: 'Failed statuses and retry nodes.',
-        run: ({ view }) => [`failures: ${failures(view).join(', ') || 'none'}`],
+        summary: 'Failed statuses and retry nodes, with their turn context.',
+        run: ({ view }) => {
+            const found = failureDetails(view);
+            return found.length
+                ? found.map((failure) => `${failure.id} · turn ${failure.turnNumber || '?'} · ${failure.label}`)
+                : ['failures: none'];
+        },
     },
     {
         id: 'artifacts',
         title: 'Which files changed?',
-        summary: 'Artifacts reached through writes edges.',
-        run: ({ view }) => [`changed: ${changedArtifacts(view).join(', ') || 'none'}`],
+        summary: 'Artifacts reached through writes edges, with their writers and readers.',
+        run: ({ view }) => {
+            const files = changedFiles(view);
+            return files.length
+                ? files.map((file) => `${file.path} · ${file.writers.length} writer(s) · ${file.readers.length} reader(s)`)
+                : ['changed: none'];
+        },
+    },
+    {
+        id: 'follow',
+        title: 'Live follow framing',
+        summary: 'computeFollowFrame moves the camera to the newest node in a stream.',
+        run: ({ follow }) => [
+            `mode ${follow?.mode ?? 'off'}`,
+            `last frame ${follow?.frame ?? 'none'}`,
+        ],
     },
     {
         id: 'delegation',
@@ -153,8 +173,9 @@ export const runCapability = (id: string, context: CapabilityContext): readonly 
     return capability.run(context);
 };
 
-export const capabilityContext = (kernel: Kernel, view: AgentView, theme: RenderTheme): CapabilityContext => ({
-    kernel,
-    view,
-    theme,
-});
+export const capabilityContext = (
+    kernel: Kernel,
+    view: AgentView,
+    theme: RenderTheme,
+    follow?: CapabilityContext['follow'],
+): CapabilityContext => ({ kernel, view, theme, follow });

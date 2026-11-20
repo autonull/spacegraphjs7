@@ -69,6 +69,9 @@
                 cursor: pointer;
             }
             #gallery button:hover { border-color: var(--pi-accent); }
+            #follow-mode { border: 1px solid var(--pi-border); border-radius: 6px; background: var(--pi-surface-muted); color: var(--pi-text); padding: 4px 6px; }
+            #attention { color: var(--pi-warning); margin-left: auto; text-align: end; }
+            #follow-state { color: var(--pi-text-muted); }
             form { display: flex; gap: 8px; }
             form input { flex: 1; padding: 8px; border-radius: 6px; border: 1px solid var(--pi-border); background: var(--pi-surface); color: var(--pi-text); }
             #evidence { color: var(--pi-text-muted); margin: 8px 0 0; padding-left: 18px; min-height: 18px; }
@@ -79,6 +82,15 @@
         <header>
             <h1>pi · SpaceGraphJS</h1>
             <span id="status">connecting…</span>
+            <label for="follow-mode">Follow</label>
+            <select id="follow-mode" aria-label="Follow mode">
+                <option value="off">off</option>
+                <option value="turn">turn</option>
+                <option value="node">node</option>
+                <option value="node+focus">node+focus</option>
+            </select>
+            <span id="follow-state" data-role="follow-state">node+focus</span>
+            <span id="attention" data-role="attention">no failures</span>
         </header>
         <aside>
             <strong>Capabilities</strong>
