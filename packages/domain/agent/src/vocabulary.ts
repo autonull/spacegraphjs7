@@ -7,7 +7,10 @@ export type AgentKind = (typeof AGENT_KINDS)[number];
 export const EDGE_KINDS = ['contains', 'orders', 'writes', 'delegates', 'retry'] as const;
 export type AgentEdgeKind = (typeof EDGE_KINDS)[number];
 
-export const ROLE_TAGS: Readonly<Record<string, string>> = {
+export const AGENT_ROLES = ['run', 'unit', 'message', 'action', 'failure', 'retry', 'delegation', 'artifact', 'state'] as const;
+export type AgentRole = (typeof AGENT_ROLES)[number];
+
+export const ROLE_TAGS: Readonly<Record<string, AgentRole>> = {
     run: 'run',
     unit: 'unit',
     message: 'message',
@@ -19,12 +22,34 @@ export const ROLE_TAGS: Readonly<Record<string, string>> = {
     state: 'state',
 };
 
+/** Agent relations are conventions over ordinary edges; hosts may tag their own with `data.relation`. */
+export const AGENT_RELATIONS = {
+    parent: 'contains',
+    order: 'orders',
+    write: ['writes', 'produces'],
+    read: ['reads', 'searches', 'references'],
+    delegate: 'delegates',
+    retry: 'retry',
+} as const;
+
 const text = (value: unknown): string | undefined => (typeof value === 'string' ? value : undefined);
 
 export const dataString = (
     node: { readonly data?: Readonly<Record<string, unknown>> },
     key: string,
 ): string | undefined => text(node.data?.[key]);
+
+/** A node's advisory role: host tag first, then the default kind mapping, then its open-ended kind. */
+export const roleOf = (node: {
+    readonly kind: string;
+    readonly data?: Readonly<Record<string, unknown>>;
+}): string => dataString(node, 'role') ?? ROLE_TAGS[node.kind] ?? node.kind;
+
+/** An edge's advisory relation: host tag first, then its open-ended kind. */
+export const relationOf = (edge: {
+    readonly kind: string;
+    readonly data?: Readonly<Record<string, unknown>>;
+}): string => dataString(edge, 'relation') ?? edge.kind;
 
 export interface AgentView extends GraphViewData {
     readonly root: string;
@@ -35,9 +60,9 @@ export interface AgentView extends GraphViewData {
 export const agentVocabulary: DomainVocabulary = {
     lanes: ['run', 'unit', 'message', 'action'],
     levels: ['overview', 'execution', 'detail'],
-    laneOf: (node) => dataString(node, 'lane') ?? (node.kind === 'run' ? 'run' : undefined),
+    laneOf: (node) => dataString(node, 'lane') ?? (roleOf(node) === 'run' ? 'run' : undefined),
     scopeIdOf: (node) => dataString(node, 'unitId') ?? dataString(node, 'runId'),
-    shapeOf: (node) => ROLE_TAGS[node.kind] ?? node.kind,
+    shapeOf: (node) => roleOf(node),
     statusOf: (node) => node.status ?? dataString(node, 'status'),
     edgesVisibleAt: (edge, level) => level !== 'overview' || edge.kind !== 'orders',
 };
@@ -61,14 +86,16 @@ export function buildAgentView(kernel: Kernel): AgentView {
         confidence: edge.data?.confidence === 'structural' ? ('structural' as const) : ('explicit' as const),
         data: { ...edge.data },
     }));
-    const root = kernel.nodes.find((node) => node.kind === 'run')?.id ?? kernel.nodes[0]?.id ?? '';
-    const activeTurn = [...kernel.nodes].reverse().find((node) => node.kind === 'unit' && dataString(node, 'status') === 'active')?.id;
+    const root = kernel.nodes.find((node) => roleOf(node) === 'run')?.id ?? kernel.nodes[0]?.id ?? '';
+    const activeTurn = [...kernel.nodes]
+        .reverse()
+        .find((node) => roleOf(node) === 'unit' && dataString(node, 'status') === 'active')?.id;
 
     return {
         root,
         nodes,
         edges,
-        turns: kernel.nodes.filter((node) => node.kind === 'unit').map((node) => node.id),
+        turns: kernel.nodes.filter((node) => roleOf(node) === 'unit').map((node) => node.id),
         turnByMessageID: new Map<string, string>(),
         activeTurn,
     };

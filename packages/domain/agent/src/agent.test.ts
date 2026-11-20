@@ -2,8 +2,8 @@ import { describe, expect, test } from 'bun:test';
 import { Kernel } from '@spacegraphjs/kernel';
 import type { KernelOp } from '@spacegraphjs/kernel';
 import { AgentEventMapper } from './mapping';
-import { buildAgentView, agentDomain, AGENT_KINDS } from './vocabulary';
-import { changedArtifacts, failures, why } from './selectors';
+import { AGENT_KINDS, AGENT_RELATIONS, AGENT_ROLES, agentDomain, buildAgentView, relationOf, roleOf } from './vocabulary';
+import { changedArtifacts, changedFiles, failureDetails, failures, why } from './selectors';
 import { agentFacetAccessors, agentTraceVocabulary } from './facets';
 
 const fold = (ops: readonly KernelOp[]): Kernel =>
@@ -141,5 +141,69 @@ describe('selectors', () => {
     test('finds failures and changed artifacts', () => {
         expect(failures(view)).toEqual(['agent:r1:t1']);
         expect(changedArtifacts(view)).toEqual(['agent:r1:f1']);
+    });
+});
+
+describe('agent roles and relations', () => {
+    test('read host tags before the default kind mapping', () => {
+        expect(AGENT_ROLES).toContain('artifact');
+        expect(AGENT_RELATIONS.write).toContain('produces');
+        expect(roleOf({ kind: 'error', data: { role: 'failure' } })).toBe('failure');
+        expect(roleOf({ kind: 'retry' })).toBe('retry');
+        expect(relationOf({ kind: 'part-of', data: { relation: AGENT_RELATIONS.parent } })).toBe('contains');
+        expect(relationOf({ kind: 'reads' })).toBe('reads');
+    });
+});
+
+describe('rich agent selectors', () => {
+    const view = buildAgentView(
+        fold([
+            { op: 'add-node', node: { id: 'run', kind: 'run', label: 'Run', data: {} } },
+            { op: 'add-node', node: { id: 'u1', kind: 'unit', label: 'Turn one', data: { unitId: 'u1' } } },
+            { op: 'add-edge', edge: { id: 'c1', kind: 'contains', source: 'run', target: 'u1' } },
+            {
+                op: 'add-node',
+                node: {
+                    id: 'err',
+                    kind: 'error',
+                    label: 'Error',
+                    data: { role: 'failure', unitId: 'u1', status: 'failed', summary: 'boom' },
+                },
+            },
+            { op: 'add-edge', edge: { id: 'c2', kind: 'contains', source: 'u1', target: 'err' } },
+            {
+                op: 'add-node',
+                node: { id: 'tool', kind: 'tool', label: 'Write', data: { role: 'action', status: 'failed' } },
+            },
+            { op: 'add-edge', edge: { id: 'c3', kind: 'contains', source: 'u1', target: 'tool' } },
+            {
+                op: 'add-node',
+                node: { id: 'f', kind: 'file', label: 'a.ts', data: { role: 'artifact', path: 'src/a.ts' } },
+            },
+            { op: 'add-edge', edge: { id: 'w', kind: 'produces', source: 'tool', target: 'f' } },
+            { op: 'add-node', node: { id: 'reader', kind: 'read-tool', label: 'Read', data: { role: 'action' } } },
+            { op: 'add-edge', edge: { id: 'rd', kind: 'reads', source: 'reader', target: 'f' } },
+        ]),
+    );
+
+    test('failure details carry turn context and honour the host role set', () => {
+        expect(failureDetails(view, { includeFailedStatus: false })).toEqual([
+            {
+                id: 'err',
+                label: 'Error',
+                summary: 'boom',
+                turnID: 'u1',
+                turnLabel: 'Turn one',
+                turnNumber: 1,
+            },
+        ]);
+        expect(failures(view)).toContain('tool');
+    });
+
+    test('changed files carry path, writers and readers in first-write order', () => {
+        expect(changedFiles(view)).toEqual([
+            { id: 'f', path: 'src/a.ts', writers: ['tool'], readers: ['reader'] },
+        ]);
+        expect(changedArtifacts(view, 'tool')).toEqual(['f']);
     });
 });
