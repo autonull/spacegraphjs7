@@ -1,16 +1,21 @@
 # TODO1 — Freeform recursive Pi flagship (plan)
 
-**Status:** Waves A and B complete; Wave C in progress. **Date:** 2026-11-20. **Owner area:** engine + `app/pi`.
+**Status:** Waves A and B complete. Wave C's recipe, second domain, study harness, two-wrapper
+compositional demo and shareable landing page are complete. Remaining work is external: the
+participant study, a video, an npm release and a hosted flagship URL. **Date:** 2026-11-20. **Owner
+area:** engine + `app/pi` + `app/demo`.
 
 **Progress (2026-11-20).** Waves A and B are implemented and verified: `app/pi` boots a recursive,
 freeform zero-gravity 3D graph with a settling scope simulation, capability-gated depth modes, a
 motion-directed follow flight, a log/map/hybrid transcript with permalinks, activity/vision-aware
 clock, zoom-driven levels, ergonomics, export, engine-mode physics play and a vision-gated capture
-matrix. Wave C now has its reproducible foundation: the semantic-wrapper recipe doc, a second
-(workflow) domain with conformance, a five-task study protocol and harness, a domain-wrapper
-scaffold, and a flagship pointer in the README. The participant study, the two-wrapper compositional
-demo and the final release artifacts remain. See §5 for checked items and §9 for the clarified next
-steps.
+matrix. Wave C has its reproducible foundation: the semantic-wrapper recipe doc, a second (workflow)
+domain with conformance, a five-task study protocol and harness, a domain-wrapper scaffold and a
+flagship pointer in the README. This iteration adds the compositional demo — the agent and workflow
+wrappers mount in one workspace and join through a single `InterGraphEdge` overlay while their models
+stay isolated — and the shareable delivery surface: a landing page, two committed screenshots and the
+one-command quickstart. The participant study and the remaining release artifacts still need external
+resources; see §5 for checked items and §9 for the clarified next steps.
 
 **Goal.** Make `app/pi` the flagship proof of immersive, animated, physically-interactive,
 recursive-subgraph, video-game-like graph experiences, then turn that proof into a repeatable recipe
@@ -245,17 +250,27 @@ produce evidence; `pnpm --filter pi test` (12 tests), `test:e2e` (8 tests), `ver
       with a canonical fixture and `defineDomain` view.
 - [x] Add a `create-spacegraph-domain` scaffold (`packages/create-spacegraph/domain.js`) that emits a
       domain package (six slots + fixture + conformance), a hybrid host shell, a one-way verify script
-      and a vision gate. **Remaining:** demonstrate compositional views by connecting two wrappers
-      with `InterGraphEdge` in one workspace; the current `inter-graph-edges.html` demo still isolates
-      two generic canvases.
-- [ ] **Finish the shareable delivery.** `README.md` "The demo" now points at the Pi flagship with its
-      provider-free commands and links to the recipe and study docs. Still needed: one clone, one
-      install, one URL, one video, one npm release, a landing page and a compelling screenshot.
+      and a vision gate.
+- [x] Demonstrate compositional views with `app/demo/html/layout/compositional-wrappers.html`: the
+      agent and workflow wrappers each run their full event→KernelOp→Kernel→domain-view→ModelAdapter
+      chain in an isolated canvas; one `InterGraphEdge` joins the agent artifact to the workflow
+      compile step through the page-level SVG overlay. Playwright asserts the link path, the two
+      node sets and model isolation. The older `inter-graph-edges.html` demo remains as the minimal
+      generic two-canvas example.
+- [ ] **Finish the shareable delivery (partly done; rest is external).** Done: `README.md` "The demo"
+      points at the flagship with provider-free commands; `app/demo/flagship.html` is a one-page
+      landing page with the one-command quickstart, honest study status and two committed screenshots
+      (`public/flagship/{flagship,compositional-wrappers}.png`); it is included in the demo build and
+      linked from the gallery. Still needed by a human with external access: record a video, publish
+      an npm release, host a dedicated flagship URL (GitHub Pages currently deploys the demo bundle),
+      and run the participant study. Do not fabricate these artifacts.
 
 **Done (verified 2026-11-20):** `pnpm --filter @spacegraphjs/workflow test` (19), `typecheck`, `build`;
-`pnpm --filter pi test` (20, including the study protocol), `verify`, `build`; root `pnpm test`
-(749). **Not done:** the participant study result, the compositional-view demo and the release
-artifacts.
+`pnpm --filter pi test` (20, including the study protocol), `verify`, `build`; root `pnpm test` (749);
+`pnpm --filter demo test` (10), `build`; `app/demo/tests/compositional-wrappers.spec.ts` (1),
+`app/demo/tests/flagship-page.spec.ts` (1), full demo `test:e2e` (16) and the root screenshot spec
+for the new page (1). **Not done:** the participant study result, the video, the
+npm release and the dedicated hosted URL.
 
 ### Explicitly not now
 
@@ -277,6 +292,8 @@ one-line deferred item, do not create a phase for it).
 | Scale                                       | `pnpm --filter pi scale` — assert budgets below                                                                                                    |
 | Dependency + layout policy                  | `pnpm --filter pi verify` — no Pi imports in library, no `@earendil-works/*` in packed agent, freeform default with lanes opt-in                   |
 | Second domain                               | `pnpm --filter @spacegraphjs/workflow test` + `typecheck` + `build` — domain + `adapterConformance`                                                |
+| Compositional wrappers                      | `cd app/demo && pnpm exec playwright test tests/compositional-wrappers.spec.ts` — isolated models, live overlay path, no page errors               |
+| Landing page                                | `cd app/demo && pnpm exec playwright test tests/flagship-page.spec.ts` — images load, quickstart renders; `pnpm --filter demo build` includes the page |
 | Study protocol                              | `pnpm --filter pi test` — matrix determinism, Latin square, recorder, negative reporting (the participant run itself is a separate, external step) |
 | Full repo                                   | `pnpm test` from root; no `pnpm run check` script exists in this repo (use package `tsc --noEmit`)                                                 |
 | App build                                   | `pnpm --filter pi build`                                                                                                                           |
@@ -328,19 +345,18 @@ schedules are opt-in per-scope policies, never the only geometry.
 
 ## 9. Immediate next actions
 
-1. **Waves A and B — done.** See §5 for the verified item lists, gates and deviations. Wave C's
-   recipe, second domain, study harness and scaffold are done; see §5 for the checked items.
-2. **`experiment(pi): recruit and run the five-task study`** — the only blocker is participants.
-   Start at `docs/pi-study.md`, run `PI_LOCAL_FEED=1 pnpm --filter pi dev`, open `/study.html`, enter
-   a participant number and export `window.__study`. Five counterbalanced participants, then apply
-   the stop rule and publish the result (including a negative one). Do not let recruitment block the
-   remaining delivery work.
-3. **`feat(demo): connect two wrappers with InterGraphEdge`** — extend the compositional-view demo so
-   the agent and workflow wrappers appear in one workspace; keep models isolated and the overlay as
-   the only cross-canvas link.
-4. **`chore(release): assemble the shareable delivery`** — one clone, one install, one URL, one video,
-   one npm release, a landing page and a compelling flagship screenshot. The README pointer and the
-   provider-free fixture are already in place.
+1. **Waves A and B — done.** See §5 for verified item lists, gates and deviations.
+2. **Wave C engineering — done.** The recipe, second domain, study harness, scaffold, two-wrapper
+   compositional demo, landing page and screenshots are checked in §5. Treat the remaining numbered
+   items as external work: no code change can complete them.
+3. **`experiment(pi): recruit and run the five-task study`** — blocked only on participants. Start at
+   `docs/pi-study.md`, run `PI_LOCAL_FEED=1 pnpm --filter pi dev`, open `/study.html`, enter a
+   participant number and export `window.__study`. Five counterbalanced participants, then apply the
+   stop rule and publish the result verbatim, including a negative one. No results file exists yet;
+   do not invent one or edit captured results by hand.
+4. **`chore(release): finish the external delivery`** — remaining: record a video, publish the npm
+   release, and host a dedicated flagship URL (GitHub Pages currently serves only `dist-demo`). The
+   clone/install command, landing page, screenshots and gallery link are already in place.
 
 **Deferred, no phase:** the missing `SPACEGRAPH.TODO.41.md` gated-scenarios note is recorded here as a
 one-line deferred item; do not create a phase for it.

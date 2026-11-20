@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>SpaceGraphJS — see the structure of work</title>
+        <meta
+            name="description"
+            content="An immersive, recursive graph of an agent run, and a repeatable recipe for semantic graph wrappers."
+        />
+        <style>
+            :root {
+                color-scheme: dark;
+                font-family:
+                    ui-sans-serif,
+                    system-ui,
+                    -apple-system,
+                    sans-serif;
+                background: #0c0c10;
+                color: #f5f5f7;
+                line-height: 1.55;
+            }
+            * {
+                box-sizing: border-box;
+            }
+            body {
+                margin: 0;
+            }
+            a {
+                color: #7dd3fc;
+                text-decoration: none;
+            }
+            a:hover {
+                text-decoration: underline;
+            }
+            .wrap {
+                max-width: 1120px;
+                margin: 0 auto;
+                padding: 0 24px;
+            }
+            .hero {
+                padding: 88px 0 56px;
+                border-bottom: 1px solid #262630;
+            }
+            .eyebrow {
+                font-size: 12px;
+                letter-spacing: 0.16em;
+                text-transform: uppercase;
+                color: #7dd3fc;
+                margin: 0 0 16px;
+            }
+            h1 {
+                font-size: clamp(36px, 6vw, 64px);
+                line-height: 1.05;
+                margin: 0 0 20px;
+                letter-spacing: -0.02em;
+            }
+            .lede {
+                font-size: 18px;
+                max-width: 680px;
+                color: #b8b8c4;
+                margin: 0 0 32px;
+            }
+            .actions {
+                display: flex;
+                gap: 12px;
+                flex-wrap: wrap;
+            }
+            .actions a {
+                padding: 11px 18px;
+                border: 1px solid #3a3a46;
+                border-radius: 8px;
+            }
+            .actions .primary {
+                background: #1d4ed8;
+                border-color: #1d4ed8;
+                color: #fff;
+            }
+            section {
+                padding: 56px 0;
+                border-bottom: 1px solid #262630;
+            }
+            h2 {
+                font-size: 24px;
+                margin: 0 0 8px;
+            }
+            .sub {
+                color: #a0a0aa;
+                margin: 0 0 28px;
+                max-width: 720px;
+            }
+            .shots {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+                gap: 24px;
+            }
+            figure {
+                margin: 0;
+            }
+            figure img {
+                width: 100%;
+                border: 1px solid #30303a;
+                border-radius: 10px;
+                display: block;
+                background: #101014;
+            }
+            figcaption {
+                color: #a0a0aa;
+                font-size: 13px;
+                margin-top: 10px;
+            }
+            .features {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+                gap: 16px;
+            }
+            .card {
+                border: 1px solid #30303a;
+                border-radius: 10px;
+                padding: 20px;
+                background: #121218;
+            }
+            .card h3 {
+                font-size: 15px;
+                margin: 0 0 8px;
+            }
+            .card p {
+                font-size: 13px;
+                color: #a0a0aa;
+                margin: 0;
+            }
+            pre {
+                background: #101014;
+                border: 1px solid #30303a;
+                border-radius: 10px;
+                padding: 18px;
+                overflow-x: auto;
+                font-size: 13px;
+            }
+            .links {
+                display: flex;
+                gap: 18px;
+                flex-wrap: wrap;
+                margin-top: 20px;
+                font-size: 14px;
+            }
+            .status {
+                border-left: 3px solid #f59e0b;
+                padding-left: 18px;
+                color: #b8b8c4;
+                max-width: 760px;
+            }
+            footer {
+                padding: 32px 0 56px;
+                color: #8a8a96;
+                font-size: 13px;
+            }
+        </style>
+    </head>
+    <body>
+        <header class="hero">
+            <div class="wrap">
+                <p class="eyebrow">SpaceGraphJS · flagship</p>
+                <h1>See the structure of work.</h1>
+                <p class="lede">
+                    An agent run is more than a transcript. Explore it as a recursive, zero-gravity
+                    graph that settles as it thinks, then ask five provenance questions the log
+                    cannot answer at a glance.
+                </p>
+                <div class="actions">
+                    <a class="primary" href="#run">Run it locally</a>
+                    <a href="#screens">See the screenshots</a>
+                    <a
+                        href="https://github.com/autonull/spacegraphjs/blob/main/docs/semantic-wrappers.md"
+                        >Build a wrapper</a
+                    >
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <section id="screens">
+                <div class="wrap">
+                    <h2>Two views of one model</h2>
+                    <p class="sub">
+                        The flagship keeps the transcript mounted while the map answers a question.
+                        A second domain composes into the same workspace through an inter-graph
+                        overlay; neither model imports the other.
+                    </p>
+                    <div class="shots">
+                        <figure>
+                            <img
+                                src="./flagship/flagship.png"
+                                alt="The flagship: a freeform 3D agent graph beside a hybrid transcript"
+                            />
+                            <figcaption>
+                                Recursive scopes, capability-gated depth, and a log/map hybrid in
+                                one view.
+                            </figcaption>
+                        </figure>
+                        <figure>
+                            <img
+                                src="./flagship/compositional-wrappers.png"
+                                alt="Agent and workflow domain graphs joined by a dashed cross-canvas edge"
+                            />
+                            <figcaption>
+                                Two semantic wrappers in one workspace, joined only by an
+                                <code>InterGraphEdge</code>.
+                            </figcaption>
+                        </figure>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <div class="wrap">
+                    <h2>What makes it more than a demo</h2>
+                    <p class="sub">
+                        Every affordance is a host policy over the same small library contract. No
+                        library change was needed to add a domain.
+                    </p>
+                    <div class="features">
+                        <div class="card">
+                            <h3>Freeform by default</h3>
+                            <p>
+                                Damped zero-gravity scopes settle, sleep, and warm-start. Lanes are
+                                an opt-in policy for one scope, never the global grid.
+                            </p>
+                        </div>
+                        <div class="card">
+                            <h3>One position authority</h3>
+                            <p>
+                                Scope simulation owns coordinates. Physics is isolated pointer play,
+                                reconciled at rest — the two never fight over a node.
+                            </p>
+                        </div>
+                        <div class="card">
+                            <h3>Contract, not branches</h3>
+                            <p>
+                                Depth and affordances are gated by renderer capabilities. Swap 2D
+                                for 3D without a backend check in host code.
+                            </p>
+                        </div>
+                        <div class="card">
+                            <h3>Vision-gated</h3>
+                            <p>
+                                Overlap, legibility and layout score are measured on captured
+                                scenes, including reduced-motion and failure states.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="run">
+                <div class="wrap">
+                    <h2>One clone, one install, one command</h2>
+                    <p class="sub">
+                        The canonical fixture needs no provider credentials. It is the same input
+                        used by the study harness and the tests.
+                    </p>
+                    <pre><code>git clone https://github.com/autonull/spacegraphjs.git
+cd spacegraphjs
+pnpm install
+PI_LOCAL_FEED=1 pnpm --filter pi dev   # open the printed URL
+
+pnpm --filter pi test                  # fold, selectors, scopes, study protocol
+pnpm --filter pi verify:visual         # vision-gated capture matrix
+pnpm --filter pi verify                # one-way dependency guard</code></pre>
+                    <div class="links">
+                        <a
+                            href="https://github.com/autonull/spacegraphjs/blob/main/docs/semantic-wrappers.md"
+                            >The semantic-wrapper recipe →</a
+                        >
+                        <a
+                            href="https://github.com/autonull/spacegraphjs/blob/main/docs/pi-study.md"
+                            >The five-task study protocol →</a
+                        >
+                        <a href="./">Back to the demo gallery →</a>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <div class="wrap">
+                    <h2>Honest status</h2>
+                    <p class="status">
+                        Immersion is exploratory, not a default. The five-task study protocol and
+                        harness are complete, but the participant run has not happened: no claim is
+                        measured yet. If the graph loses to the transcript on success and time, the
+                        result is published as-is, immersive work stops, and the library remains the
+                        deliverable. WebXR, sound and haptics are report-only seams.
+                    </p>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <div class="wrap">
+                SpaceGraphJS · MIT licensed ·
+                <a href="https://github.com/autonull/spacegraphjs">source</a>
+            </div>
+        </footer>
+    </body>
+</html>

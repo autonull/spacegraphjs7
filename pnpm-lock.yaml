@@ -281,6 +281,9 @@ importers:
       '@spacegraphjs/adapter':
         specifier: workspace:*
         version: link:../../packages/adapter
+      '@spacegraphjs/agent':
+        specifier: workspace:*
+        version: link:../../packages/domain/agent
       '@spacegraphjs/cytoscape-renderer':
         specifier: workspace:*
         version: link:../../packages/cytoscape-renderer
@@ -308,6 +311,9 @@ importers:
       '@spacegraphjs/trace':
         specifier: workspace:*
         version: link:../../packages/trace
+      '@spacegraphjs/workflow':
+        specifier: workspace:*
+        version: link:../../packages/domain/workflow
       spacegraphjs:
         specifier: workspace:*
         version: link:../..

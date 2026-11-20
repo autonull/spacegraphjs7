@@ -45,6 +45,11 @@ const pages: readonly Omit<DemoEntry, 'kind'>[] = [
         category: 'interaction',
         path: 'html/interaction/viewport-serialization.html',
     },
+    {
+        id: 'compositional-wrappers',
+        category: 'layout',
+        path: 'html/layout/compositional-wrappers.html',
+    },
     { id: 'delta-animation', category: 'layout', path: 'html/layout/delta-animation.html' },
     { id: 'fractal', category: 'layout', path: 'html/layout/fractal.html' },
     { id: 'inter-graph-edges', category: 'layout', path: 'html/layout/inter-graph-edges.html' },

@@ -210,6 +210,12 @@ pnpm --filter pi verify:visual         # vision-gated capture matrix
 pnpm --filter pi verify                # one-way dependency guard
 ```
 
+A shareable landing page with screenshots and the one-command quickstart lives at
+[`app/demo/flagship.html`](app/demo/flagship.html) (served by `pnpm --filter demo dev` and included in the
+demo build). The compositional demo at
+[`compositional-wrappers.html`](app/demo/html/layout/compositional-wrappers.html) mounts the agent and
+workflow domains in one workspace and joins them with an `InterGraphEdge` overlay; each model stays isolated.
+
 The semantic-wrapper recipe that produced the flagship is documented in
 [`docs/semantic-wrappers.md`](docs/semantic-wrappers.md); the five-task study protocol and harness are
 in [`docs/pi-study.md`](docs/pi-study.md). A second domain (`@spacegraphjs/workflow`) proves the recipe.

@@ -211,6 +211,13 @@ vocabulary (`workflow`, `subworkflow`, `step`, `run`, `trigger`, `artifact`) and
 library API. Its conformance test composes `adapterConformance` with a domain fixture. Start there
 when adding a third domain.
 
+Two wrappers can compose without sharing a model. Mount each domain in its own canvas through the
+contract renderer, then connect one node per canvas with an `InterGraphEdge`: its endpoint projection
+reads each node's own camera, and the dashed path lives in a single page-level SVG overlay. Neither
+graph can resolve the other's IDs. The compositional demo in the demo app shows the agent wrapper and
+the workflow wrapper in one workspace with exactly one cross-canvas link; keep models isolated and
+the overlay as the only bridge.
+
 ---
 
 ## 5. Anti-patterns

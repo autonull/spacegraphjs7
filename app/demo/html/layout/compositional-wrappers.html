@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>SpaceGraphJS - Compositional domain wrappers</title>
+        <style>
+            :root {
+                color-scheme: dark;
+                font-family: system-ui, sans-serif;
+                background: #101014;
+                color: #f5f5f7;
+            }
+            * {
+                box-sizing: border-box;
+            }
+            body {
+                margin: 0;
+                height: 100vh;
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
+            }
+            header {
+                padding: 12px 18px;
+                border-bottom: 1px solid #3a3a44;
+                display: flex;
+                align-items: baseline;
+                gap: 16px;
+                flex-wrap: wrap;
+            }
+            h1 {
+                font-size: 16px;
+                margin: 0;
+            }
+            header p {
+                margin: 0;
+                font-size: 12px;
+                color: #a0a0aa;
+            }
+            main {
+                flex: 1;
+                display: flex;
+                min-height: 0;
+            }
+            .pane {
+                flex: 1;
+                min-width: 0;
+                display: flex;
+                flex-direction: column;
+                border-right: 1px solid #3a3a44;
+            }
+            .pane:last-child {
+                border-right: 0;
+            }
+            .pane h2 {
+                font-size: 12px;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                margin: 0;
+                padding: 8px 12px;
+                color: #a0a0aa;
+            }
+            .canvas {
+                flex: 1;
+                min-height: 0;
+                position: relative;
+            }
+            footer {
+                padding: 8px 18px;
+                border-top: 1px solid #3a3a44;
+                font-size: 12px;
+                color: #a0a0aa;
+                display: flex;
+                gap: 18px;
+                flex-wrap: wrap;
+            }
+            #status {
+                color: #22d3ee;
+            }
+            code {
+                color: #93c5fd;
+            }
+        </style>
+    </head>
+    <body>
+        <header>
+            <h1>Compositional domain wrappers</h1>
+            <p>Two semantic domains, two isolated models, one cross-canvas link.</p>
+            <span id="status">initialising…</span>
+        </header>
+        <main>
+            <section class="pane">
+                <h2>Agent wrapper · src/auth/session.ts</h2>
+                <div class="canvas" id="agent-canvas"></div>
+            </section>
+            <section class="pane">
+                <h2>Workflow wrapper · release pipeline</h2>
+                <div class="canvas" id="workflow-canvas"></div>
+            </section>
+        </main>
+        <footer>
+            <span
+                >Each pane:
+                <code>events → KernelOp → Kernel → domain view → ModelAdapter</code>.</span
+            >
+            <span
+                >The dashed cyan line is an <code>InterGraphEdge</code> in the global SVG overlay —
+                the only cross-canvas link.</span
+            >
+            <span>Models stay isolated: neither graph can resolve the other's nodes.</span>
+        </footer>
+
+        <script type="module">
+            import { Kernel } from '@spacegraphjs/kernel';
+            import { AgentEventMapper, agentDomain } from '@spacegraphjs/agent';
+            import {
+                FIXTURE_POSITIONS,
+                fixtureOps as workflowOps,
+                workflowAdapter,
+                workflowDomain,
+            } from '@spacegraphjs/workflow';
+            import { DEFAULT_THEME } from '@spacegraphjs/renderer';
+            import { ModelAdapter } from '@spacegraphjs/adapter';
+            import { SpaceGraphRenderer } from '@spacegraphjs/spacegraph-renderer';
+            import { edges } from 'spacegraphjs';
+
+            const fold = (ops) => {
+                const nodes = new Map();
+                const edgesById = new Map();
+                for (const op of ops) {
+                    if (op.op === 'add-node') nodes.set(op.node.id, op.node);
+                    else if (op.op === 'add-edge') edgesById.set(op.edge.id, op.edge);
+                    else if (op.op === 'remove-node') nodes.delete(op.id);
+                    else if (op.op === 'remove-edge') edgesById.delete(op.id);
+                }
+                return new Kernel({
+                    nodes: [...nodes.values()],
+                    edges: [...edgesById.values()],
+                    hyperedges: [],
+                    version: ops.length,
+                });
+            };
+
+            const agentEvents = [
+                { type: 'run-start', runId: 'r', at: 1 },
+                { type: 'unit-start', runId: 'r', unitId: 'u1', at: 2 },
+                {
+                    type: 'message',
+                    runId: 'r',
+                    unitId: 'u1',
+                    id: 'm1',
+                    role: 'user',
+                    text: 'Fix auth session',
+                    at: 3,
+                },
+                {
+                    type: 'action',
+                    runId: 'r',
+                    unitId: 'u1',
+                    id: 'a1',
+                    toolName: 'read',
+                    args: { path: 'src/auth/session.ts' },
+                    phase: 'end',
+                    at: 4,
+                },
+                {
+                    type: 'artifact',
+                    runId: 'r',
+                    unitId: 'u1',
+                    id: 'session',
+                    path: 'src/auth/session.ts',
+                    producerId: 'a1',
+                    at: 5,
+                },
+                { type: 'unit-end', runId: 'r', unitId: 'u1', at: 6 },
+                { type: 'run-end', runId: 'r', at: 7 },
+            ];
+            const agentMapper = new AgentEventMapper('agent');
+            const agentOps = agentEvents.flatMap((event) => agentMapper.map(event));
+            const agentView = agentDomain.build(fold(agentOps));
+            const workflowView = workflowDomain.build(fold(workflowOps()));
+            const artifactId = 'agent:r:session';
+            const compileId = 'workflow:wf:compile';
+
+            const agentPositions = new Map(
+                agentView.nodes.map((node, index) => {
+                    const angle = (index / agentView.nodes.length) * Math.PI * 2;
+                    return [
+                        node.id,
+                        {
+                            x: Math.round(Math.cos(angle) * 170),
+                            y: Math.round(Math.sin(angle) * 130),
+                            z: 0,
+                        },
+                    ];
+                }),
+            );
+
+            const STATUS = {
+                failed: 'error',
+                aborted: 'error',
+                active: 'running',
+                streaming: 'running',
+            };
+            class DemoAgentAdapter extends ModelAdapter {
+                constructor() {
+                    super({ cardBudget: () => 16 });
+                }
+                nodeShape(node) {
+                    if (node.id.endsWith(':run')) return 'panel';
+                    if (node.kind === 'unit') return 'badge';
+                    if (node.kind === 'artifact') return 'dot';
+                    return 'card';
+                }
+                nodeStatus(node) {
+                    return STATUS[node.status] ?? 'success';
+                }
+                isStructuralKind(kind) {
+                    return kind === 'run' || kind === 'unit';
+                }
+                nodeData(node, _level, dimmed) {
+                    return { role: node.data?.role ?? node.kind, dimmed };
+                }
+                toRenderEdge(edge) {
+                    return {
+                        id: edge.id,
+                        source: edge.source,
+                        target: edge.target,
+                        kind: edge.kind,
+                        directed: true,
+                        style: 'dashed',
+                        emphasis: 0.7,
+                    };
+                }
+            }
+
+            const left = document.querySelector('#agent-canvas');
+            const right = document.querySelector('#workflow-canvas');
+            const agentRenderer = new SpaceGraphRenderer();
+            const workflowRenderer = new SpaceGraphRenderer();
+            await agentRenderer.mount(left, {
+                theme: DEFAULT_THEME,
+                projection: '2d',
+                global: true,
+            });
+            await workflowRenderer.mount(right, {
+                theme: DEFAULT_THEME,
+                projection: '2d',
+                global: true,
+            });
+            agentRenderer.setModel(
+                new DemoAgentAdapter().build(agentView, {
+                    level: 'execution',
+                    positions: agentPositions,
+                }),
+            );
+            workflowRenderer.setModel(
+                workflowAdapter.build(workflowView, {
+                    level: 'execution',
+                    positions: FIXTURE_POSITIONS,
+                }),
+            );
+            agentRenderer.fit();
+            workflowRenderer.fit();
+
+            const instances = [...(globalThis.SpaceGraph?.instances ?? [])];
+            const instanceFor = (container) => instances.find((sg) => sg.container === container);
+            const agentGraph = instanceFor(left);
+            const workflowGraph = instanceFor(right);
+            const source = agentGraph?.getNode(artifactId);
+            const target = workflowGraph?.getNode(compileId);
+            if (!source || !target) throw new Error('cross-canvas endpoints were not mounted');
+
+            const link = new edges.InterGraphEdge(
+                agentGraph,
+                {
+                    id: 'cross:session:compile',
+                    type: 'InterGraphEdge',
+                    source: source.id,
+                    target: target.id,
+                    data: { color: 0x22d3ee },
+                },
+                source,
+                target,
+            );
+            agentGraph.graph.addEdge(link);
+
+            const status = document.querySelector('#status');
+            status.textContent = `${agentView.nodes.length} agent nodes · ${workflowView.nodes.length} workflow nodes · 1 inter-graph link`;
+            globalThis.__compositional = {
+                agentNodes: agentView.nodes.map((node) => node.id),
+                workflowNodes: workflowView.nodes.map((node) => node.id),
+                link: { source: source.id, target: target.id },
+                overlayPaths: document.querySelectorAll('#spacegraph-intergraph-overlay path')
+                    .length,
+                isolated: !agentGraph.hasNode(compileId) && !workflowGraph.hasNode(artifactId),
+            };
+        </script>
+    </body>
+</html>

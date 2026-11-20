@@ -12,6 +12,7 @@
     },
     "dependencies": {
         "@spacegraphjs/adapter": "workspace:*",
+        "@spacegraphjs/agent": "workspace:*",
         "@spacegraphjs/cytoscape-renderer": "workspace:*",
         "@spacegraphjs/kernel": "workspace:*",
         "@spacegraphjs/overlays": "workspace:*",
@@ -21,6 +22,7 @@
         "@spacegraphjs/spacegraph-renderer": "workspace:*",
         "@spacegraphjs/svg-renderer": "workspace:*",
         "@spacegraphjs/trace": "workspace:*",
+        "@spacegraphjs/workflow": "workspace:*",
         "spacegraphjs": "workspace:*"
     }
 }

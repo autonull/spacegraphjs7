@@ -59,6 +59,14 @@ export default defineConfig({
                 find: new RegExp(`^@spacegraphjs/${name}$`),
                 replacement: source(name),
             })),
+            {
+                find: /^@spacegraphjs\/agent$/,
+                replacement: resolve(workspace, 'packages/domain/agent/src/index.ts'),
+            },
+            {
+                find: /^@spacegraphjs\/workflow$/,
+                replacement: resolve(workspace, 'packages/domain/workflow/src/index.ts'),
+            },
         ],
     },
     server: {
