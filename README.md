@@ -188,7 +188,7 @@ This path keeps your vocabulary, your layout policy, and your persistence out of
 
 ### The demo
 
-`app/demo/` is the one complete demo app. Its gallery runs every library surface against a
+`app/demo/` is the complete library demo app. Its gallery runs every library surface against a
 release-pipeline model; `/showcase.html` switches 44 programmatic demos without a rebuild.
 `/learn.html` explains the model → adapter → renderer path with real snippets and links each
 capability to the live gallery. The other pages cover scopes, the runtime explorer, the renderer
@@ -197,6 +197,22 @@ contract and the standalone features.
 ```
 pnpm --filter demo dev   # then open http://localhost:5173
 ```
+
+The **flagship** is `app/pi/`: a recursive, freeform zero-gravity agent run in 3D with a settling
+scope simulation, capability-gated depth, a cinematic follow flight, a log/map/hybrid transcript and
+five selector-backed investigative questions. It is a private workspace consumer — the library still
+has no knowledge of the host. Its canonical fixture needs no provider.
+
+```
+PI_LOCAL_FEED=1 pnpm --filter pi dev   # provider-free flagship
+pnpm --filter pi test                  # fold, selectors, scopes, capabilities, study protocol
+pnpm --filter pi verify:visual         # vision-gated capture matrix
+pnpm --filter pi verify                # one-way dependency guard
+```
+
+The semantic-wrapper recipe that produced the flagship is documented in
+[`docs/semantic-wrappers.md`](docs/semantic-wrappers.md); the five-task study protocol and harness are
+in [`docs/pi-study.md`](docs/pi-study.md). A second domain (`@spacegraphjs/workflow`) proves the recipe.
 
 | Capability               | Library surface                                                                                       |
 | ------------------------ | ----------------------------------------------------------------------------------------------------- |
@@ -578,20 +594,20 @@ When adding hot-path code, avoid per-frame allocation, prefer sets for membershi
 
 ## 📚 Documentation Map
 
-| Need                               | Read                               |
-| ---------------------------------- | ---------------------------------- |
-| Five-minute start                  | `QUICKSTART.md`                    |
-| Host integration, contract-first   | `docs/host-integration.md`         |
-| What the library does not do       | `docs/limitations.md`              |
-| Vision plugin details              | `docs/vision-plugin.md`            |
-| Component naming and surface rules | `AGENTS.md`                        |
-| Recursive scopes and nested layouts | `docs/scopes.md`                  |
-| Roadmap and status                 | `ROADMAP.md`                       |
-| Strategy and phases                | `PLAN/INDEX.md`                    |
-| Research direction                 | `PLAN/ACADEMIC-RESEARCH.md`        |
-| Product and design notes           | `PRODUCT.md`, `DESIGN.md`, `UI.md` |
-| Contributing                       | `CONTRIBUTING.md`                  |
-| Generated API reference            | `pnpm run docs`                    |
+| Need                                | Read                               |
+| ----------------------------------- | ---------------------------------- |
+| Five-minute start                   | `QUICKSTART.md`                    |
+| Host integration, contract-first    | `docs/host-integration.md`         |
+| What the library does not do        | `docs/limitations.md`              |
+| Vision plugin details               | `docs/vision-plugin.md`            |
+| Component naming and surface rules  | `AGENTS.md`                        |
+| Recursive scopes and nested layouts | `docs/scopes.md`                   |
+| Roadmap and status                  | `ROADMAP.md`                       |
+| Strategy and phases                 | `PLAN/INDEX.md`                    |
+| Research direction                  | `PLAN/ACADEMIC-RESEARCH.md`        |
+| Product and design notes            | `PRODUCT.md`, `DESIGN.md`, `UI.md` |
+| Contributing                        | `CONTRIBUTING.md`                  |
+| Generated API reference             | `pnpm run docs`                    |
 
 ---
 

@@ -8,18 +8,20 @@
 
 ## Quick Navigation
 
-| I Want To...              | Go Here                                | Time      |
-| ------------------------- | -------------------------------------- | --------- |
-| **Start building now**    | [ROADMAP.md](../ROADMAP.md)            | 10 min    |
-| **Understand the vision** | [README.md](../README.md)              | 5 min     |
-| **See the complete plan** | [PLAN.md](./PLAN.md)                   | 30 min    |
-| **Reality check**         | [REALITY-CHECK.md](./REALITY-CHECK.md) | 20 min    |
-| **Build day-by-day**      | [BUILD.md](./BUILD.md)                 | As needed |
-| **Track outcomes**        | [EXECUTION.md](./EXECUTION.md)         | 20 min    |
-| **Understand research**   | [RESEARCH.md](./RESEARCH.md)           | 15 min    |
-| **See growth strategy**   | [GROWTH.md](./GROWTH.md)               | 15 min    |
-| **Manage risks**          | [RISKS.md](./RISKS.md)                 | 10 min    |
-| **ZUI / OS architecture** | [SPACEGRAPH_OS.md](./SPACEGRAPH_OS.md) | 5 min     |
+| I Want To...               | Go Here                                         | Time      |
+| -------------------------- | ----------------------------------------------- | --------- |
+| **Start building now**     | [ROADMAP.md](../ROADMAP.md)                     | 10 min    |
+| **Understand the vision**  | [README.md](../README.md)                       | 5 min     |
+| **See the complete plan**  | [PLAN.md](./PLAN.md)                            | 30 min    |
+| **Reality check**          | [REALITY-CHECK.md](./REALITY-CHECK.md)          | 20 min    |
+| **Build day-by-day**       | [BUILD.md](./BUILD.md)                          | As needed |
+| **Track outcomes**         | [EXECUTION.md](./EXECUTION.md)                  | 20 min    |
+| **Understand research**    | [RESEARCH.md](./RESEARCH.md)                    | 15 min    |
+| **See growth strategy**    | [GROWTH.md](./GROWTH.md)                        | 15 min    |
+| **Manage risks**           | [RISKS.md](./RISKS.md)                          | 10 min    |
+| **ZUI / OS architecture**  | [SPACEGRAPH_OS.md](./SPACEGRAPH_OS.md)          | 5 min     |
+| **Build a domain wrapper** | [semantic-wrappers.md](../semantic-wrappers.md) | 15 min    |
+| **Run the flagship study** | [pi-study.md](../pi-study.md)                   | 10 min    |
 
 ---
 

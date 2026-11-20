@@ -47,7 +47,11 @@ export default defineConfig({
         outDir: resolve(root, 'dist'),
         emptyOutDir: true,
         rollupOptions: {
-            input: { main: resolve(root, 'index.html'), engine: resolve(root, 'engine.html') },
+            input: {
+                main: resolve(root, 'index.html'),
+                engine: resolve(root, 'engine.html'),
+                study: resolve(root, 'study.html'),
+            },
         },
     },
 });

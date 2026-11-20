@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Five-task study — flagship</title>
+        <style>
+            :root {
+                color-scheme: dark;
+                font-family: system-ui, sans-serif;
+            }
+            body {
+                margin: 0;
+                display: grid;
+                grid-template-columns: 320px 1fr;
+                height: 100vh;
+                background: #0d1117;
+                color: #e6edf3;
+            }
+            aside {
+                padding: 20px;
+                overflow: auto;
+                border-right: 1px solid #30363d;
+            }
+            h1 {
+                font-size: 17px;
+                margin: 0 0 12px;
+            }
+            label {
+                display: block;
+                margin: 12px 0 4px;
+                font-size: 12px;
+                color: #8b949e;
+            }
+            input,
+            select,
+            textarea,
+            button {
+                width: 100%;
+                box-sizing: border-box;
+                padding: 8px;
+                background: #161b22;
+                color: inherit;
+                border: 1px solid #30363d;
+                border-radius: 6px;
+            }
+            button {
+                cursor: pointer;
+                margin-top: 12px;
+                background: #238636;
+                border-color: #2ea043;
+            }
+            #question {
+                font-size: 15px;
+                line-height: 1.5;
+                margin: 16px 0;
+            }
+            #status {
+                font-size: 12px;
+                color: #8b949e;
+                white-space: pre-wrap;
+            }
+            pre {
+                font-size: 11px;
+                white-space: pre-wrap;
+                overflow: auto;
+                max-height: 30vh;
+            }
+            iframe {
+                border: 0;
+                width: 100%;
+                height: 100%;
+            }
+        </style>
+    </head>
+    <body>
+        <aside>
+            <h1>Five-task study</h1>
+            <label for="participant">Participant (1–N)</label>
+            <input id="participant" type="number" min="1" max="99" value="1" />
+            <button id="start">Start counterbalanced run</button>
+            <div id="question">Enter a participant number and start.</div>
+            <label for="answer">Answer found?</label>
+            <select id="answer">
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+            </select>
+            <label for="wrong">Wrong turns</label>
+            <input id="wrong" type="number" min="0" value="0" />
+            <label for="preference">Preference (1 low – 5 high)</label>
+            <input id="preference" type="number" min="1" max="5" value="3" />
+            <label for="quote">Quote</label>
+            <textarea id="quote" rows="3"></textarea>
+            <button id="submit">Record and next</button>
+            <div id="status"></div>
+            <pre id="report"></pre>
+        </aside>
+        <iframe id="app" src="/index.html" title="Flagship graph"></iframe>
+        <script type="module" src="/src/study-page.ts"></script>
+    </body>
+</html>

@@ -558,6 +558,40 @@ importers:
         specifier: ^5.1.0
         version: 5.1.0(esbuild@0.28.2)(rolldown@1.2.14)(rollup@4.60.1)(typescript@5.9.3)(vite@8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
 
+  packages/domain/workflow:
+    dependencies:
+      '@spacegraphjs/adapter':
+        specifier: workspace:*
+        version: link:../../adapter
+      '@spacegraphjs/config':
+        specifier: workspace:*
+        version: link:../../config
+      '@spacegraphjs/kernel':
+        specifier: workspace:*
+        version: link:../../kernel
+      '@spacegraphjs/renderer':
+        specifier: workspace:*
+        version: link:../../renderer
+      '@spacegraphjs/search':
+        specifier: workspace:*
+        version: link:../../search
+      '@spacegraphjs/shared':
+        specifier: workspace:*
+        version: link:../../shared
+      '@spacegraphjs/trace':
+        specifier: workspace:*
+        version: link:../../trace
+    devDependencies:
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.3
+      vite:
+        specifier: ^8.3.5
+        version: 8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0)
+      vite-plugin-dts:
+        specifier: ^5.1.0
+        version: 5.1.0(esbuild@0.28.2)(rolldown@1.2.14)(rollup@4.60.1)(typescript@5.9.3)(vite@8.3.5(@types/node@26.4.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
+
   packages/export:
     dependencies:
       '@spacegraphjs/renderer':

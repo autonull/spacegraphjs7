@@ -1,13 +1,16 @@
 # TODO1 — Freeform recursive Pi flagship (plan)
 
-**Status:** Waves A and B complete; Wave C next. **Date:** 2026-11-20. **Owner area:** engine + `app/pi`.
+**Status:** Waves A and B complete; Wave C in progress. **Date:** 2026-11-20. **Owner area:** engine + `app/pi`.
 
 **Progress (2026-11-20).** Waves A and B are implemented and verified: `app/pi` boots a recursive,
 freeform zero-gravity 3D graph with a settling scope simulation, capability-gated depth modes, a
 motion-directed follow flight, a log/map/hybrid transcript with permalinks, activity/vision-aware
 clock, zoom-driven levels, ergonomics, export, engine-mode physics play and a vision-gated capture
-matrix. Wave C (user study, semantic-wrapper doc, second domain, scaffold, delivery) is untouched.
-See §5 for checked items and §9 for the clarified next steps.
+matrix. Wave C now has its reproducible foundation: the semantic-wrapper recipe doc, a second
+(workflow) domain with conformance, a five-task study protocol and harness, a domain-wrapper
+scaffold, and a flagship pointer in the README. The participant study, the two-wrapper compositional
+demo and the final release artifacts remain. See §5 for checked items and §9 for the clarified next
+steps.
 
 **Goal.** Make `app/pi` the flagship proof of immersive, animated, physically-interactive,
 recursive-subgraph, video-game-like graph experiences, then turn that proof into a repeatable recipe
@@ -26,8 +29,8 @@ Do not stage work as horizontal layers that only produce a demo at the end. Reus
 
 ## 1. Why / what must be true
 
-The hypothesis (`../SPACEGRAPH.md:25`): *when agent activity becomes sufficiently complex, spatial
-navigation through relationships is more effective than linear navigation through messages.* Success
+The hypothesis (`../SPACEGRAPH.md:25`): _when agent activity becomes sufficiently complex, spatial
+navigation through relationships is more effective than linear navigation through messages._ Success
 is measured task performance on five investigative questions, not visual appeal:
 
 1. Why did the agent change `src/auth/session.ts`?
@@ -56,14 +59,14 @@ keeps sound/haptics/WebXR unsupported until a host registers an adapter. None be
 
 ## 2. Current state — what is already free
 
-| Need | Existing mechanism |
-| --- | --- |
-| 3D, depth, cinematics | `WebGLRenderer` (perspective + orthographic, CSS2D/3D, fog, instancing, BVH); `flat / layered / depth-stack / orbit`; `MotionDirector` verbs + `CameraVerbRegistry`; GSAP `flyTo` (`src/core/`, `src/depth/`, `src/motion/`) |
-| Freeform + physics | `ScopeSimulation` damped springs, sleep, pinning, cooling inter-body forces; `PhysicsPlugin` Verlet with `gravity: 0`, collisions, repulsion (`app/demo/demos/plugins/physics.ts`); seeded `ForceCore` + Barnes–Hut octree (`src/layout/`) |
-| Recursion | `ScopeSpec → buildScopeTree → layoutScopes → ScopeSimulation → ScopesPlugin`; path-qualified IDs, portals, composed frames, incremental continuity, vision-driven policy (`docs/scopes.md`) |
-| Expression | Group/HTML/Markdown/Chart/Code/Data/Globe nodes, Flow/Animated/Bundled/InterGraph edges, salience → visual channels, `WidgetLayer` (`src/nodes/`, `src/edges/`, `src/widgets/`, `src/salience/`) |
-| Ergonomics | `InputManager`, `Fingering`, raycast + BVH, drag/wiring/hover/selection, `AccessibilityLayer`, `ErgonomicsAPI` (`src/input/`, `src/plugins/interaction/`, `src/a11y/`) |
-| Verification / composition | four vision analyzers + `VisionAssert`/`createVisionAssert`; `ScopedOverlay`, `GraphPeek`, focus dimming; contract with `supports`/`supportsDepth` and `2d/3d` (`src/vision/`, `packages/overlays/`, `packages/renderer/`) |
+| Need                       | Existing mechanism                                                                                                                                                                                                                         |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 3D, depth, cinematics      | `WebGLRenderer` (perspective + orthographic, CSS2D/3D, fog, instancing, BVH); `flat / layered / depth-stack / orbit`; `MotionDirector` verbs + `CameraVerbRegistry`; GSAP `flyTo` (`src/core/`, `src/depth/`, `src/motion/`)               |
+| Freeform + physics         | `ScopeSimulation` damped springs, sleep, pinning, cooling inter-body forces; `PhysicsPlugin` Verlet with `gravity: 0`, collisions, repulsion (`app/demo/demos/plugins/physics.ts`); seeded `ForceCore` + Barnes–Hut octree (`src/layout/`) |
+| Recursion                  | `ScopeSpec → buildScopeTree → layoutScopes → ScopeSimulation → ScopesPlugin`; path-qualified IDs, portals, composed frames, incremental continuity, vision-driven policy (`docs/scopes.md`)                                                |
+| Expression                 | Group/HTML/Markdown/Chart/Code/Data/Globe nodes, Flow/Animated/Bundled/InterGraph edges, salience → visual channels, `WidgetLayer` (`src/nodes/`, `src/edges/`, `src/widgets/`, `src/salience/`)                                           |
+| Ergonomics                 | `InputManager`, `Fingering`, raycast + BVH, drag/wiring/hover/selection, `AccessibilityLayer`, `ErgonomicsAPI` (`src/input/`, `src/plugins/interaction/`, `src/a11y/`)                                                                     |
+| Verification / composition | four vision analyzers + `VisionAssert`/`createVisionAssert`; `ScopedOverlay`, `GraphPeek`, focus dimming; contract with `supports`/`supportsDepth` and `2d/3d` (`src/vision/`, `packages/overlays/`, `packages/renderer/`)                 |
 
 Constraints:
 
@@ -92,11 +95,11 @@ Constraints:
    published domain package (`app/pi/scripts/verify.ts` enforces this today). Vocabulary, levels,
    geometry, budgets, motion and stop rules are host or domain policy.
 2. **Freeform by default, lanes optional.** `ScopeSimulation`/`ForceCore` with `gravity: 0`, repulsion
-   + edge attraction, transient forces cooling to rest, per-scope solvers, warm starts. Stability comes
-   from sleep, focus pinning, stable path-qualified IDs and spatial memory
-   (`packages/kernel/src/spatial-memory.ts`), not frozen coordinates. Determinism = same seed and event
-   stream converge to the same rest state within tolerance. A scope may opt into lanes/grid/tree via
-   `ScopeSpec.strategy`; never the global default.
+    - edge attraction, transient forces cooling to rest, per-scope solvers, warm starts. Stability comes
+      from sleep, focus pinning, stable path-qualified IDs and spatial memory
+      (`packages/kernel/src/spatial-memory.ts`), not frozen coordinates. Determinism = same seed and event
+      stream converge to the same rest state within tolerance. A scope may opt into lanes/grid/tree via
+      `ScopeSpec.strategy`; never the global default.
 3. **Contract first, registry not branches.** Gate every affordance with `supports(...)` /
    `supportsDepth(...)`; no `renderer === '...'` paths. Move the old lane config into opt-in geometry.
 4. **One position authority per view.** Scope simulation is authoritative; `PhysicsPlugin` (gravity 0)
@@ -155,7 +158,7 @@ One vertical slice that proves the whole thesis with the provider-free local fee
       and collapses to a jump under reduced motion. Contract-mode activity edges use dashed style and
       emphasis; true core `FlowEdge` animation is deferred to the Wave B engine-mode page (see below).
 - [x] Add the hybrid surface — transcript stays mounted in `#transcript` across `stacked / side /
-      floating` arrangements and `log/map/hybrid` surfaces; map-node → message reveal,
+floating` arrangements and `log/map/hybrid` surfaces; map-node → message reveal,
       `#graph:<nodeID>` permalink, side scope overview and turn-map chips.
 - [x] Present the five questions as capabilities backed by the existing selectors; all 13 original
       gallery entries kept, plus `freeform-layout`, `scopes`, `levels`, `depth`, `motion`,
@@ -170,6 +173,7 @@ produce evidence; `pnpm --filter pi test` (12 tests), `test:e2e` (8 tests), `ver
 `tsc --noEmit` and root `pnpm test` (741 tests) are green.
 
 **Wave A deviations / follow-ups (not blockers):**
+
 - Core `FlowEdge` dash animation is a library-core class, unreachable through the contract renderer
   without a library API change. Pi uses contract `style: 'dashed'` + `emphasis`; keep real `FlowEdge` for
   the Wave B engine-mode page.
@@ -208,6 +212,7 @@ produce evidence; `pnpm --filter pi test` (12 tests), `test:e2e` (8 tests), `ver
 `verify`, `scale`, `build`, package `tsc --noEmit` and root `pnpm test` (744) are green.
 
 **Wave B deviations / follow-ups (not blockers):**
+
 - Core-only node classes (Chart, Markdown, CodeEditor, Data/Note) and true animated `FlowEdge` remain
   on the engine-mode side of the contract boundary; the flagship uses contract cards, dashed edges and
   emphasis. Adding contract affordances would be a library API change, deferred by plan guardrail 1.
@@ -220,27 +225,37 @@ produce evidence; `pnpm --filter pi test` (12 tests), `test:e2e` (8 tests), `ver
 
 ### Wave C — Proof and proliferation
 
-- [ ] Run the five-task experiment (n ≥ 5 counterbalanced) against transcript / graph / hybrid and the
-      geometry axes; record success, time, wrong turns, preference and quotes. Apply the stop rule and
-      publish the result, including a negative one. Decide whether any immersive mode graduates to a
-      default; do not block Waves A/B on this.
-- [ ] Write `docs/semantic-wrappers.md` from the `@spacegraphjs/agent` + Pi worked example: vocabulary,
+- [ ] **Run the five-task experiment (blocked on participants).** The protocol and harness are done —
+      `docs/pi-study.md`, `app/pi/src/study.ts`, `study.html` and `src/study-page.ts`. It records the
+      five pinned questions against transcript / graph / hybrid, samples the surface × depth ×
+      arrangement matrix, rotates surfaces by Latin square, captures success/time/wrong turns/
+      preference/quotes and reports negative results. Recruitment of n ≥ 5 counterbalanced participants
+      is external: no participants have been recruited, so no claim is measured yet. Apply the stop rule
+      and publish the result, including a negative one, then decide whether any immersive mode
+      graduates to a default.
+- [x] Write `docs/semantic-wrappers.md` from the `@spacegraphjs/agent` + Pi worked example: vocabulary,
       `defineDomain`, event→KernelOp mapper, selectors/facets/trace, `ModelAdapter`, manifest,
-      host-owned levels/geometry/budgets, one-way guard. Recommend freeform zero-g as host default and
-      lanes as an opt-in scope policy. Link from `docs/PLAN/INDEX.md`.
-- [ ] Prove generality with **one** second domain — workflow / agentic orchestration (workflow,
-      subworkflow, step, run, trigger, artifact; contains/orders/delegates/writes/retries). Use
-      `docs/archive/n8n.md` as design input only; no n8n types in the library. Compose a wrapper
-      conformance test from `adapterConformance` + `defineDomain` + the fixture pattern.
-- [ ] Add a `create-spacegraph` scaffold for a domain wrapper (domain package + host shell + hybrid
-      surface + gallery + freeform policy + verify script + vision gate). Demonstrate compositional
-      views by connecting two wrappers with `InterGraphEdge` in one workspace.
-- [ ] Produce the shareable delivery: one clone, one install, one URL, one doc, one video, one npm
-      release; provider-free demo, canonical fixture, landing page, compelling screenshot. Update
-      `README.md` "The demo" section to point at the Pi flagship.
+      host-owned levels/geometry/budgets, one-way guard. Recommends freeform zero-g as host default and
+      lanes as an opt-in scope policy. Linked from `docs/PLAN/INDEX.md`. The doc is written generically
+      so the one-way guard still passes.
+- [x] Prove generality with **one** second domain — `packages/domain/workflow` (`@spacegraphjs/workflow`):
+      workflow / subworkflow / step / run / trigger / artifact / retry vocabulary and
+      contains/orders/delegates/writes/retries edges. `docs/archive/n8n.md` was design input only; no
+      workflow-engine types in the library. `src/conformance.test.ts` composes `adapterConformance`
+      with a canonical fixture and `defineDomain` view.
+- [x] Add a `create-spacegraph-domain` scaffold (`packages/create-spacegraph/domain.js`) that emits a
+      domain package (six slots + fixture + conformance), a hybrid host shell, a one-way verify script
+      and a vision gate. **Remaining:** demonstrate compositional views by connecting two wrappers
+      with `InterGraphEdge` in one workspace; the current `inter-graph-edges.html` demo still isolates
+      two generic canvases.
+- [ ] **Finish the shareable delivery.** `README.md` "The demo" now points at the Pi flagship with its
+      provider-free commands and links to the recipe and study docs. Still needed: one clone, one
+      install, one URL, one video, one npm release, a landing page and a compelling screenshot.
 
-**Done:** the product claim is measured, a second domain proves the recipe, and a new domain can adopt
-the stack by filling in a scaffold.
+**Done (verified 2026-11-20):** `pnpm --filter @spacegraphjs/workflow test` (19), `typecheck`, `build`;
+`pnpm --filter pi test` (20, including the study protocol), `verify`, `build`; root `pnpm test`
+(749). **Not done:** the participant study result, the compositional-view demo and the release
+artifacts.
 
 ### Explicitly not now
 
@@ -253,26 +268,28 @@ one-line deferred item, do not create a phase for it).
 
 ## 6. Budgets and verification (single gate list)
 
-| Check | Command / rule |
-| --- | --- |
-| Fold, selectors, scope tree, host scenarios | `pnpm --filter pi test` — real kernel + fixture, no mocks |
-| Capability evidence | every gallery entry runs library code; test asserts non-empty evidence, unique IDs |
-| Browser + hybrid + mouse map | `pnpm --filter pi test:e2e` |
-| Vision + interaction atlas | `pnpm --filter pi verify:visual` — `createVisionAssert` on every captured scene |
-| Scale | `pnpm --filter pi scale` — assert budgets below |
-| Dependency + layout policy | `pnpm --filter pi verify` — no Pi imports in library, no `@earendil-works/*` in packed agent, freeform default with lanes opt-in |
-| Full repo | `pnpm test` from root; no `pnpm run check` script exists in this repo (use package `tsc --noEmit`) |
-| App build | `pnpm --filter pi build` |
+| Check                                       | Command / rule                                                                                                                                     |
+| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Fold, selectors, scope tree, host scenarios | `pnpm --filter pi test` — real kernel + fixture, no mocks                                                                                          |
+| Capability evidence                         | every gallery entry runs library code; test asserts non-empty evidence, unique IDs                                                                 |
+| Browser + hybrid + mouse map                | `pnpm --filter pi test:e2e`                                                                                                                        |
+| Vision + interaction atlas                  | `pnpm --filter pi verify:visual` — `createVisionAssert` on every captured scene                                                                    |
+| Scale                                       | `pnpm --filter pi scale` — assert budgets below                                                                                                    |
+| Dependency + layout policy                  | `pnpm --filter pi verify` — no Pi imports in library, no `@earendil-works/*` in packed agent, freeform default with lanes opt-in                   |
+| Second domain                               | `pnpm --filter @spacegraphjs/workflow test` + `typecheck` + `build` — domain + `adapterConformance`                                                |
+| Study protocol                              | `pnpm --filter pi test` — matrix determinism, Latin square, recorder, negative reporting (the participant run itself is a separate, external step) |
+| Full repo                                   | `pnpm test` from root; no `pnpm run check` script exists in this repo (use package `tsc --noEmit`)                                                 |
+| App build                                   | `pnpm --filter pi build`                                                                                                                           |
 
 Starting budgets from `../SPACEGRAPH.md:394-403` (measure first, then tighten):
 
-| Metric | Budget | Prior measured |
-| --- | --- | --- |
-| Model build, 300 msg / ~1.2k nodes | < 50 ms | ~27 ms |
-| Full pipeline, 5,001 msg / ~20k nodes | < 400 ms | 160 ms |
-| Force layout, 60-turn window | < 1.5 s (measured ~1.0–1.2 s; reference 0.2 s uncapped 9.3 s) | ~0.2 s |
-| Lazy 3D chunk gzip | < 400 KB | 282 KB incl. `three` |
-| App entry delta | no regression | +0.3 kB |
+| Metric                                | Budget                                                        | Prior measured       |
+| ------------------------------------- | ------------------------------------------------------------- | -------------------- |
+| Model build, 300 msg / ~1.2k nodes    | < 50 ms                                                       | ~27 ms               |
+| Full pipeline, 5,001 msg / ~20k nodes | < 400 ms                                                      | 160 ms               |
+| Force layout, 60-turn window          | < 1.5 s (measured ~1.0–1.2 s; reference 0.2 s uncapped 9.3 s) | ~0.2 s               |
+| Lazy 3D chunk gzip                    | < 400 KB                                                      | 282 KB incl. `three` |
+| App entry delta                       | no regression                                                 | +0.3 kB              |
 
 Mechanisms: linear pipeline, sleeping simulation, 60-turn draw window, instancing at overview rungs.
 Never hide nodes to fix a slow stream without measuring.
@@ -294,37 +311,36 @@ schedules are opt-in per-scope policies, never the only geometry.
 
 ## 8. Risks
 
-| Risk | Mitigation |
-| --- | --- |
-| Freeform layout drifts / never settles | Cooling, sleep, warm starts, pinning, `settle()` for export/reduced motion, convergence test |
-| Two solvers fight over coordinates | One authority per view; reconcile at rest |
-| Streaming jitter | Cooling forces, sleeping bodies, warm starts, pin focus |
-| Graph loses to transcript on five tasks | Stop rule; publish negative; library remains deliverable |
-| Hybrid loses transcript scroll | Stable container + CSS order; e2e assertion |
-| O(n²) regression | `pi:scale` budgets; window + whole-kernel layout |
-| Lane scope looks rigid in freeform whole | Isolate to one scope, local gutter, vision checks |
-| Motion sickness / annoyance | Reduced motion, interruptible flights, no default, experiment |
-| Scope ID churn | Path-qualified IDs, incremental `ScopeHost.update`, reparenting tests |
-| Feature museum | Evidence-only gallery, guided replay, limitations list |
+| Risk                                     | Mitigation                                                                                   |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Freeform layout drifts / never settles   | Cooling, sleep, warm starts, pinning, `settle()` for export/reduced motion, convergence test |
+| Two solvers fight over coordinates       | One authority per view; reconcile at rest                                                    |
+| Streaming jitter                         | Cooling forces, sleeping bodies, warm starts, pin focus                                      |
+| Graph loses to transcript on five tasks  | Stop rule; publish negative; library remains deliverable                                     |
+| Hybrid loses transcript scroll           | Stable container + CSS order; e2e assertion                                                  |
+| O(n²) regression                         | `pi:scale` budgets; window + whole-kernel layout                                             |
+| Lane scope looks rigid in freeform whole | Isolate to one scope, local gutter, vision checks                                            |
+| Motion sickness / annoyance              | Reduced motion, interruptible flights, no default, experiment                                |
+| Scope ID churn                           | Path-qualified IDs, incremental `ScopeHost.update`, reparenting tests                        |
+| Feature museum                           | Evidence-only gallery, guided replay, limitations list                                       |
 
 ---
 
 ## 9. Immediate next actions
 
-1. **Waves A and B — done.** See §5 for the verified item lists, gates and deviations. Wave C is the
-   remaining work.
-2. **`docs(semantic-wrappers): write the worked example`** — start Wave C here: derive the recipe from
-   `@spacegraphjs/agent` + Pi (`defineDomain`, event→KernelOp mapper, selectors, `ModelAdapter`,
-   manifest, host-owned levels/geometry/budgets, one-way guard), recommend freeform zero-g as the host
-   default and lanes as an opt-in scope policy, link from `docs/PLAN/INDEX.md`.
-3. **`feat(domain-workflow): prove the recipe with a second domain`** — workflow/subworkflow/step/run
-   vocabulary and conformance fixture; no library API changes.
-4. **`experiment(pi): run the five-task study`** — n ≥ 5 counterbalanced, transcript/graph/hybrid,
-   apply the stop rule and publish the result (including a negative one). Do not block the doc or the
-   second domain on recruitment.
+1. **Waves A and B — done.** See §5 for the verified item lists, gates and deviations. Wave C's
+   recipe, second domain, study harness and scaffold are done; see §5 for the checked items.
+2. **`experiment(pi): recruit and run the five-task study`** — the only blocker is participants.
+   Start at `docs/pi-study.md`, run `PI_LOCAL_FEED=1 pnpm --filter pi dev`, open `/study.html`, enter
+   a participant number and export `window.__study`. Five counterbalanced participants, then apply
+   the stop rule and publish the result (including a negative one). Do not let recruitment block the
+   remaining delivery work.
+3. **`feat(demo): connect two wrappers with InterGraphEdge`** — extend the compositional-view demo so
+   the agent and workflow wrappers appear in one workspace; keep models isolated and the overlay as
+   the only cross-canvas link.
+4. **`chore(release): assemble the shareable delivery`** — one clone, one install, one URL, one video,
+   one npm release, a landing page and a compelling flagship screenshot. The README pointer and the
+   provider-free fixture are already in place.
 
-The `create-spacegraph` scaffold, compositional-view demo and shareable delivery follow the doc and
-the second domain.
-
-**Deferred, no phase:** record the missing `SPACEGRAPH.TODO.41.md` gated-scenarios note as a one-line
-deferred item; do not create a phase for it.
+**Deferred, no phase:** the missing `SPACEGRAPH.TODO.41.md` gated-scenarios note is recorded here as a
+one-line deferred item; do not create a phase for it.

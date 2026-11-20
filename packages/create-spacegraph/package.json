@@ -4,7 +4,8 @@
     "description": "Scaffolding tool to create SpaceGraphJS apps",
     "bin": {
         "create-spacegraph": "./index.js",
-        "sg6": "./index.js"
+        "sg6": "./index.js",
+        "create-spacegraph-domain": "./domain.js"
     },
     "type": "module",
     "author": "SpaceGraphJS Team",
