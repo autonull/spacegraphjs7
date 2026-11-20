@@ -176,8 +176,8 @@ const graph = await SpaceGraph.create(container, spec, {
 `settled`, `energy`, `steps` and `pinned` for diagnostics. Nodes pinned by the host (`data.pinned`)
 are never overwritten by the engine.
 
-A runnable example lives at `app/demo/scopes.html` (`pnpm --filter demo dev`, then open
-`/scopes.html`). It uses a real `SpaceGraph` with the engine enabled, adds and reparents scopes at
+A runnable example lives at `app/demo/html/interaction/scopes.html` (`pnpm --filter demo dev`, then open
+`/html/interaction/scopes.html`). It uses a real `SpaceGraph` with the engine enabled, adds and reparents scopes at
 runtime, pins the focused node, and exposes hooks under `window.__scopesDemo`. Its Playwright spec
 `app/demo/tests/scopes.spec.ts` drives those hooks and runs the `createVisionAssert` overlap,
 legibility and layout-score gates.

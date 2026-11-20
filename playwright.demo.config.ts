@@ -12,9 +12,9 @@ export default defineConfig({
     },
     webServer: {
         // The local vite, not `pnpm dlx`: the demo must build in CI without reaching for the registry.
-        command: `pnpm exec vite --config vite.demo.config.ts --port ${PORT} --strictPort`,
+        command: `pnpm exec vite --config app/demo/vite.config.ts --port ${PORT} --strictPort`,
         port: PORT,
-        timeout: 30000,
+        timeout: 120000,
         reuseExistingServer: !process.env.CI,
     },
 });

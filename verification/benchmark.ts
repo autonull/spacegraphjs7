@@ -5,7 +5,7 @@ async function main() {
     const browser = await chromium.launch();
     const page = await browser.newPage();
 
-    await page.goto('http://localhost:5174/examples/benchmark.html');
+    await page.goto('http://localhost:5174/examples/html/smoke/benchmark.html');
 
     // Wait for the graph to render and start spinning
     await page.waitForTimeout(3000);

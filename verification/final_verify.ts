@@ -7,8 +7,8 @@ async function main() {
     // We use a specific port to avoid conflicts
     const port = 5190;
     const viteProcess = spawn(
-        'npx',
-        ['vite', '--port', port.toString(), '--config', 'vite.demo.config.ts'],
+        'pnpm',
+        ['exec', 'vite', '--port', port.toString(), '--config', 'app/demo/vite.config.ts'],
         {
             stdio: 'pipe',
         },

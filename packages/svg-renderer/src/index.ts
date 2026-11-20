@@ -1,17 +1,21 @@
 import {
     DEFAULT_THEME,
+    ModelRenderer,
     edgeStyleFor,
     isCardShape,
     statusColor,
+    type GraphRenderer,
+    type Projection,
+    type RendererCapabilities,
     type RenderEdge,
     type RenderModel,
     type RenderNode,
     type RenderTheme,
 } from '@spacegraphjs/renderer';
 
-// Static SVG export and inline subgraphs. Contract-only: no browser, no renderer backend, no core
-// import. `renderToSVG` is pure and runs in Node; `InlineGraph` sets the resulting markup into a host
-// element. It is not an interactive `GraphRenderer`.
+// Static SVG export and renderer adapter. Contract-only: no browser backend and no core import.
+// `renderToSVG` is pure and runs in Node; `InlineGraph` is the lightweight element helper;
+// `SvgRenderer` implements the same `GraphRenderer` contract as the interactive adapters.
 
 export type SvgOptions = {
     theme?: Partial<RenderTheme>;
@@ -27,6 +31,64 @@ export const DEFAULT_SVG_THEME: RenderTheme = {
 };
 
 export { statusColor };
+
+// SVG-only visual channel. It stays in `node.data` so the closed RenderNode['shape'] contract and
+// the WebGL/Cytoscape mappings remain untouched.
+export const VISUAL_SHAPE_IDS = ['diamond', 'hexagon', 'pill', 'triangle', 'star'] as const;
+export type VisualShapeId = (typeof VISUAL_SHAPE_IDS)[number];
+
+const VISUAL_SHAPES: ReadonlySet<string> = new Set(VISUAL_SHAPE_IDS);
+
+export function visualShapeOf(node: RenderNode): VisualShapeId | undefined {
+    const shape = node.data?.visualShape;
+    return typeof shape === 'string' && VISUAL_SHAPES.has(shape)
+        ? (shape as VisualShapeId)
+        : undefined;
+}
+
+export function visualShapePoints(shape: VisualShapeId, width: number, height: number): string {
+    const centerX = width / 2;
+    const centerY = height / 2;
+    const points = (coords: readonly (readonly [number, number])[]) =>
+        coords.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
+    switch (shape) {
+        case 'diamond':
+            return points([
+                [centerX, 0],
+                [width, centerY],
+                [centerX, height],
+                [0, centerY],
+            ]);
+        case 'hexagon':
+            return points([
+                [width * 0.25, 0],
+                [width * 0.75, 0],
+                [width, centerY],
+                [width * 0.75, height],
+                [width * 0.25, height],
+                [0, centerY],
+            ]);
+        case 'triangle':
+            return points([
+                [centerX, 0],
+                [width, height],
+                [0, height],
+            ]);
+        case 'star': {
+            const outer = Math.min(centerX, centerY);
+            const inner = outer * 0.45;
+            return points(
+                Array.from({ length: 10 }, (_, index) => {
+                    const angle = -Math.PI / 2 + (index * Math.PI) / 5;
+                    const radius = index % 2 ? inner : outer;
+                    return [centerX + Math.cos(angle) * radius, centerY + Math.sin(angle) * radius];
+                }),
+            );
+        }
+        case 'pill':
+            return '';
+    }
+}
 
 export function renderToSVG(model: RenderModel, options: SvgOptions = {}): string {
     const theme = { ...DEFAULT_SVG_THEME, ...options.theme };
@@ -135,6 +197,53 @@ export class InlineGraph {
     }
 }
 
+const SVG_CAPABILITIES: RendererCapabilities = {
+    projections: ['2d'],
+    depths: ['flat'],
+    domNodes: false,
+    maxDomNodes: 0,
+    edgeLabels: true,
+    clusterNodes: false,
+    minimap: false,
+    maxRecommendedNodes: 1000,
+    zoomRange: { min: 1, max: 1 },
+    cardFacing: false,
+    fitInsets: false,
+};
+
+/** The static SVG backend behind the shared renderer contract. Camera and selection calls no-op. */
+export class SvgRenderer extends ModelRenderer implements GraphRenderer {
+    readonly capabilities = SVG_CAPABILITIES;
+
+    #container: HTMLElement | null = null;
+    #theme: RenderTheme = DEFAULT_SVG_THEME;
+
+    async mount(
+        container: HTMLElement,
+        options: { theme: RenderTheme; projection: Projection },
+    ): Promise<void> {
+        this.#container = container;
+        this.#theme = options.theme;
+    }
+
+    protected getTheme(): RenderTheme {
+        return this.#theme;
+    }
+
+    protected setThemeInternal(theme: RenderTheme): void {
+        this.#theme = theme;
+    }
+
+    protected applyModel(model: RenderModel, theme: RenderTheme): void {
+        if (this.#container) this.#container.innerHTML = renderToSVG(model, { theme });
+    }
+
+    protected cleanup(): void {
+        if (this.#container) this.#container.innerHTML = '';
+        this.#container = null;
+    }
+}
+
 type Bounds = { width: number; height: number; offsetX: number; offsetY: number };
 
 function fitBounds(nodes: readonly RenderNode[], padding: number): Bounds {
@@ -161,6 +270,24 @@ function nodeSVG(node: RenderNode, theme: RenderTheme, bounds: Bounds): string {
     const color = statusColor(node.status, theme);
     const label = escapeXml(truncate(node.label, 40));
     const title = `<title>${escapeXml(node.label)}</title>`;
+    const visual = visualShapeOf(node);
+
+    if (visual) {
+        const width = node.size?.[0] ?? 200;
+        const height = node.size?.[1] ?? 64;
+        const fill = escapeXml(isCardShape(node.shape) ? theme.surface : color);
+        const stroke = escapeXml(theme.border);
+        const geometry =
+            visual === 'pill'
+                ? `<rect x="${x - width / 2}" y="${y - height / 2}" width="${width}" height="${height}" rx="${height / 2}" fill="${fill}" stroke="${stroke}"/>`
+                : `<polygon points="${visualShapePoints(visual, width, height)}" transform="translate(${x - width / 2} ${y - height / 2})" fill="${fill}" stroke="${stroke}"/>`;
+        return [
+            `<g data-node-id="${escapeXml(node.id)}" data-visual-shape="${visual}">${title}`,
+            geometry,
+            `<text x="${x}" y="${y}" fill="${escapeXml(theme.text)}" font-size="${theme.fontSize}"`,
+            ` text-anchor="middle" dominant-baseline="middle">${label}</text></g>`,
+        ].join('');
+    }
 
     if (node.shape === 'group') {
         const width = node.size?.[0] ?? 320;

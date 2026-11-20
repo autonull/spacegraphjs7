@@ -3,7 +3,7 @@ import { mkdirSync } from 'fs';
 import { resolve } from 'path';
 
 // L1.29 — the non-OpenCode reference demo. Served by the repo vite (`root: demo`), so the page is
-// `/contract.html`; run `pnpm run dev:demo` first (or set SG_DEMO_URL to a running server).
+// `/html/core/contract.html`; run `pnpm run dev:demo` first (or set SG_DEMO_URL to a running server).
 // Use PLAYWRIGHT_BASE_URL from playwright.config.ts which defaults to http://localhost:5173
 const BASE_URL =
     process.env.PLAYWRIGHT_BASE_URL || process.env.SG_DEMO_URL || 'http://localhost:5173';
@@ -16,7 +16,7 @@ async function boot(page: Page) {
     page.on('console', (message) => {
         if (message.type() === 'error') errors.push(message.text());
     });
-    await page.goto('/contract.html');
+    await page.goto('/html/core/contract.html');
     await page.waitForFunction(() => (window as any).__ready === true);
     await page.evaluate(() => document.fonts.ready);
     return errors;
@@ -116,7 +116,7 @@ test.describe('renderer contract demo (L1.29)', () => {
         noErrors(errors);
     });
 
-    test('renders the second-host fixture and honours RTL markup', async ({ page }) => {
+    test('renders the demo fixture and honours RTL markup', async ({ page }) => {
         const errors = await boot(page);
 
         await page.locator('#scene-host').click();

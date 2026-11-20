@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Second host — SpaceGraphJS</title>
+        <title>SpaceGraphJS Demo</title>
         <style>
             * {
                 margin: 0;
@@ -93,7 +93,8 @@
                 text-transform: uppercase;
                 letter-spacing: 0.04em;
             }
-            button {
+            button,
+            .group a {
                 font: inherit;
                 font-size: 12px;
                 color: var(--sh-text);
@@ -102,6 +103,7 @@
                 border-radius: 6px;
                 padding: 5px 9px;
                 cursor: pointer;
+                text-decoration: none;
             }
             button:hover:not(:disabled) {
                 border-color: var(--sh-accent);
@@ -413,9 +415,9 @@
     <body>
         <header>
             <div>
-                <h1>Second host</h1>
+                <h1>SpaceGraphJS Demo</h1>
                 <div class="sub">
-                    Plain TypeScript · no framework · no OpenCode · one model of its own
+                    One model · three renderers · every library capability
                 </div>
             </div>
             <div class="controls">
@@ -444,6 +446,14 @@
                     <span>Theme</span>
                     <button id="theme-dark" type="button" aria-pressed="true">Dark</button>
                     <button id="theme-light" type="button" aria-pressed="false">Light</button>
+                </div>
+                <div class="group" role="group" aria-label="More demos">
+                    <span>Demos</span>
+                    <a href="learn.html">How it works</a>
+                    <a href="showcase.html">Showcase</a>
+                    <a href="html/interaction/scopes.html">Scopes</a>
+                    <a href="explorer.html">Explorer</a>
+                    <a href="html/core/contract.html">Contract</a>
                 </div>
             </div>
         </header>
@@ -490,7 +500,7 @@
         <footer>
             <span id="state">lanes · execution · flat · spacegraph</span>
             <span
-                >Every capability runs a library module against this host's own model and reports
+                >Every capability runs a library module against the demo's model and reports
                 what it produced.</span
             >
         </footer>

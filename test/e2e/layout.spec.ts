@@ -8,7 +8,7 @@ test.describe('SpaceGraph Layout and Interaction', () => {
             if (msg.type() === 'error') errors.push(msg.text());
         });
 
-        await page.goto('http://localhost:5173/demo/html.html');
+        await page.goto('http://localhost:5173/html/rendering/html.html');
         await expect(page.locator('canvas')).toBeVisible({ timeout: 10000 });
         await page.waitForTimeout(2000);
 
@@ -16,7 +16,7 @@ test.describe('SpaceGraph Layout and Interaction', () => {
     });
 
     test('CSS3D HTML nodes render overlaying the canvas', async ({ page }) => {
-        await page.goto('http://localhost:5173/demo/html.html');
+        await page.goto('http://localhost:5173/html/rendering/html.html');
         await expect(page.locator('canvas')).toBeVisible({ timeout: 10000 });
         await page.waitForTimeout(2000);
 

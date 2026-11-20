@@ -14,7 +14,7 @@ async function main() {
         const context = await browser.newContext({ viewport: { width: 1280, height: 720 } });
         const page = await context.newPage();
 
-        await page.goto('http://localhost:5175/examples/fully-featured-app.html');
+        await page.goto('http://localhost:5175/examples/html/rendering/fully-featured-app.html');
         await page.waitForTimeout(4000); // let spacegraph load
 
         // Take initial screenshot to see what's rendering

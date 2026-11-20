@@ -16,7 +16,7 @@ const positionOf = (page: Page, id: string) =>
 test('merges and switches layers through the same clock without per-frame announcements', async ({
     page,
 }) => {
-    await page.goto('/delta-animation.html');
+    await page.goto('/html/layout/delta-animation.html');
 
     await expect(page.locator('svg')).toHaveCount(1);
     const baseB = await positionOf(page, 'b');

@@ -1,9 +1,5 @@
-// The second host's own domain: a release pipeline, with a vocabulary of its own.
-//
-// Nothing here is session vocabulary and nothing here is OpenCode's. The point of this host is to
-// prove that the library's generic modules carry a host they have never seen: the model, the level
-// table, the lane names, the layout, the card markup and the statuses are all this host's, and the
-// library only supplies the algorithms.
+// The demo's own domain: a release pipeline. The model, level table, lane names, layout, card
+// markup and statuses are defined here; the library supplies the algorithms that operate on them.
 
 import { escapeHtml, ModelAdapter } from '@spacegraphjs/adapter';
 import type { NodeStatus, RenderEdge } from '@spacegraphjs/renderer';

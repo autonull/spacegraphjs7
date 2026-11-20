@@ -646,7 +646,7 @@ git commit -m "Days 3-4: Working demo with 3 nodes and 3 edges"
 
 **Test 1: Empty graph**
 
-Create `demo/empty.html`:
+Create `demo/html/smoke/empty.html`:
 
 ```html
 <!DOCTYPE html>
@@ -683,7 +683,7 @@ Create `demo/empty.html`:
 
 **Test 2: Single node**
 
-Create `demo/single-node.html`:
+Create `demo/html/smoke/single-node.html`:
 
 ```html
 <!DOCTYPE html>
@@ -723,7 +723,7 @@ Create `demo/single-node.html`:
 
 **Test 3: Large graph (100 nodes)**
 
-Create `demo/large.html`:
+Create `demo/html/rendering/large.html`:
 
 ```html
 <!DOCTYPE html>

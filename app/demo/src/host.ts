@@ -1,4 +1,4 @@
-// The second host's state: its model, its adapter, its controller, and the view it is currently
+// The demo host's state: its model, its adapter, its controller, and the view it is currently
 // showing. The page owns the DOM and the renderer; this owns everything else, so a test can drive
 // the same host the page drives.
 
@@ -77,7 +77,7 @@ function stageDiffs(): readonly CodeDiff[] {
     ];
 }
 
-export class SecondHost {
+export class DemoHost {
     readonly model: BuildModel = buildModel();
     readonly adapter = new BuildAdapter(adapterConfig(() => this.placed()));
     readonly controller = new GraphController({

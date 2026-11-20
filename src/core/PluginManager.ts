@@ -1,7 +1,7 @@
 import type { Edge } from '../edges/Edge';
 import type { Node } from '../nodes/Node';
 import type { SpaceGraph } from '../SpaceGraph';
-import { wrapError } from '../utils/error';
+import { ConfigurationError, wrapError } from '../utils/error';
 import { createLogger } from '../utils/logger';
 import type { EventEmitter } from './EventEmitter';
 import type { SpaceGraphEvents } from '../types';
@@ -40,26 +40,59 @@ export interface Plugin {
 
 const logger = createLogger('PluginManager');
 
+/** A plugin id, plugin instance, or plugin class. Classes resolve to their registered instance. */
+export type PluginKey = string | Plugin | (abstract new (...args: never[]) => Plugin);
+
 export class PluginManager {
     readonly plugins: Map<string, Plugin> = new Map();
+    readonly #initialized = new Set<string>();
 
     constructor(readonly sg: SpaceGraph) {}
 
-    get<T extends Plugin = Plugin>(name: string): T | undefined {
-        return this.plugins.get(name) as T | undefined;
+    #idOf(key: PluginKey): string | undefined {
+        if (typeof key === 'string') return key;
+        for (const [name, plugin] of this.plugins) {
+            if (typeof key === 'function' ? plugin.constructor === key : plugin === key) return name;
+        }
+        return typeof key === 'function' ? undefined : key.id;
     }
 
-    has(name: string): boolean {
-        return this.plugins.has(name);
+    get<T extends Plugin = Plugin>(key: PluginKey): T | undefined {
+        const id = this.#idOf(key);
+        return id ? (this.plugins.get(id) as T | undefined) : undefined;
+    }
+
+    has(key: PluginKey): boolean {
+        const id = this.#idOf(key);
+        return id !== undefined && this.plugins.has(id);
+    }
+
+    require<T extends Plugin = Plugin>(key: PluginKey): T {
+        const plugin = this.get<T>(key);
+        if (!plugin) {
+            const label =
+                typeof key === 'function' ? key.name : typeof key === 'string' ? key : key.id;
+            const available = this.pluginNames.join(', ') || 'none';
+            throw new ConfigurationError(
+                `[PluginManager] Plugin "${label}" is not registered. Available: ${available}`,
+            );
+        }
+        return plugin;
+    }
+
+    async use(plugin: Plugin): Promise<void> {
+        this.register(plugin.id, plugin);
+        if (this.#initialized.has(plugin.id)) return;
+        await this.#initOne(plugin.id, plugin);
     }
 
     // Aliases for backward compatibility
-    getPlugin<T extends Plugin = Plugin>(name: string): T | undefined {
-        return this.get(name);
+    getPlugin<T extends Plugin = Plugin>(key: PluginKey): T | undefined {
+        return this.get(key);
     }
 
-    hasPlugin(name: string): boolean {
-        return this.has(name);
+    hasPlugin(key: PluginKey): boolean {
+        return this.has(key);
     }
 
     getPluginNames(): string[] {
@@ -94,6 +127,7 @@ export class PluginManager {
         if (!plugin) return false;
         plugin.dispose?.();
         this.plugins.delete(name);
+        this.#initialized.delete(name);
         return true;
     }
 
@@ -101,26 +135,31 @@ export class PluginManager {
         yield* this.plugins.entries();
     }
 
+    async #initOne(name: string, plugin: Plugin): Promise<void> {
+        const initResult = plugin.init?.(this.sg, this.sg.graph, this.sg.events);
+        const promise = initResult instanceof Promise ? initResult : Promise.resolve();
+        await promise.then(
+            () => undefined,
+            (err) => {
+                const wrapped = wrapError(err, {
+                    namespace: 'SpaceGraph',
+                    operation: 'Plugin Initialization',
+                    reason: `Failed to initialize plugin "${name}" (v${plugin.version}). Check if dependencies are met or configuration is valid.`,
+                });
+                logger.error(
+                    `${wrapped.message}: ${err instanceof Error ? err.stack : String(err)}`,
+                );
+                throw wrapped;
+            },
+        );
+        this.#initialized.add(name);
+    }
+
     async initAll(): Promise<void> {
         const results = await Promise.allSettled(
-            [...this.plugins.entries()].map(([name, plugin]) => {
-                const initResult = plugin.init?.(this.sg, this.sg.graph, this.sg.events);
-                const promise = initResult instanceof Promise ? initResult : Promise.resolve();
-                return promise.then(
-                    () => undefined,
-                    (err) => {
-                        const wrapped = wrapError(err, {
-                            namespace: 'SpaceGraph',
-                            operation: 'Plugin Initialization',
-                            reason: `Failed to initialize plugin "${name}" (v${plugin.version}). Check if dependencies are met or configuration is valid.`,
-                        });
-                        logger.error(
-                            `${wrapped.message}: ${err instanceof Error ? err.stack : String(err)}`,
-                        );
-                        throw wrapped;
-                    },
-                );
-            }),
+            [...this.plugins.entries()]
+                .filter(([name]) => !this.#initialized.has(name))
+                .map(([name, plugin]) => this.#initOne(name, plugin)),
         );
 
         const errors = results

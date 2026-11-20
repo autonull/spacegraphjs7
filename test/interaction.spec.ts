@@ -54,7 +54,7 @@ test.describe('SpaceGraph Interaction Tests', () => {
     });
 
     async function loadDemo(page: any) {
-        await page.goto(`${BASE_URL}/demo/interaction.html`, { waitUntil: 'networkidle' });
+        await page.goto(`${BASE_URL}/html/interaction/interaction.html`, { waitUntil: 'networkidle' });
         await page.waitForFunction(
             () => {
                 const w = window as any;

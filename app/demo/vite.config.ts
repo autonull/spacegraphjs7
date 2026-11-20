@@ -1,3 +1,4 @@
+import { readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { defineConfig } from 'vite';
 
@@ -5,11 +6,28 @@ const root = resolve(import.meta.dirname);
 const workspace = resolve(root, '../..');
 const source = (name: string) => resolve(workspace, 'packages', name, 'src/index.ts');
 
+// Walk category folders explicitly; Node's recursive readdir would descend into node_modules.
+const htmlFiles: string[] = [];
+const walk = (dir: string, prefix = '') => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+        if (entry.name === 'node_modules' || entry.name === 'dist') continue;
+        const relative = `${prefix}${entry.name}`;
+        if (entry.isDirectory()) walk(resolve(dir, entry.name), `${relative}/`);
+        else if (entry.name.endsWith('.html')) htmlFiles.push(relative);
+    }
+};
+walk(root);
+const inputs = Object.fromEntries(
+    htmlFiles.map((file) => [file.replace(/\.html$/, ''), resolve(root, file)]),
+);
+
 export default defineConfig({
     root,
+    base: './',
     publicDir: resolve(workspace, 'public'),
     resolve: {
         alias: [
+            { find: /^@src\/(.+)$/, replacement: resolve(workspace, 'src/$1') },
             { find: /^spacegraphjs$/, replacement: resolve(workspace, 'src/index.ts') },
             {
                 find: /^spacegraphjs\/layout-registry$/,
@@ -43,8 +61,22 @@ export default defineConfig({
             })),
         ],
     },
+    server: {
+        port: 5173,
+        open: false,
+        fs: { allow: [workspace] },
+    },
     build: {
-        outDir: resolve(workspace, 'dist-demo/demo'),
+        outDir: resolve(workspace, 'dist-demo'),
         emptyOutDir: true,
+        rollupOptions: {
+            input: inputs,
+            output: {
+                manualChunks(id) {
+                    if (id.includes('three')) return 'three';
+                    if (id.includes('@monaco-editor/loader')) return 'monaco';
+                },
+            },
+        },
     },
 });

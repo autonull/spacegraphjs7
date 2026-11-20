@@ -1688,15 +1688,15 @@ This appendix defines the fine-grained interaction and rendering behaviors that 
 
 ```
 Layer 0: Infrastructure
-├── empty.html          → Canvas creation, WebGL context, animation loop
-├── single-node.html    → Node instantiation, THREE.Object3D creation
-└── verification.html   → Full graph spec loading, multi-node rendering
+├── html/smoke/empty.html          → Canvas creation, WebGL context, animation loop
+├── html/smoke/single-node.html    → Node instantiation, THREE.Object3D creation
+└── html/smoke/verification.html   → Full graph spec loading, multi-node rendering
 
 Layer 1: Core Rendering
 ├── basic.html          → 5 nodes, 5 edges, basic shapes, line rendering
 ├── edges.html          → Edge types: CurvedEdge, FlowEdge, LabeledEdge, DottedEdge
-├── instanced.html      → InstancedShapeNode for performance (100+ nodes)
-└── large.html          → Stress test (1000+ nodes), BVH raycasting, frustum culling
+├── html/rendering/instanced.html      → InstancedShapeNode for performance (100+ nodes)
+└── html/rendering/large.html          → Stress test (1000+ nodes), BVH raycasting, frustum culling
 
 Layer 2: 3D Spatial
 ├── basic-3d.html       → Nodes at different Z depths, camera orbit
@@ -1727,14 +1727,14 @@ Layer 6: Layout System
 └── 3d-layout.html      → 3D layouts (SphereLayout, 3D Grid)
 
 Layer 7: Zoom Navigation
-├── fractal.html        → Fractal zoom levels, zoom stack
+├── html/layout/fractal.html        → Fractal zoom levels, zoom stack
 ├── fly-to.html         → Fly-to animation, double-click zoom
 └── orthographic.html   → Orthographic toggle, projection switching
 
 Layer 8: Application Integration
 ├── n8n-workflow.html   → Full workflow editor, all features combined
-├── plugins.html        → Plugin system, plugin interaction
-└── quickstart.html     → End-to-end user journey
+├── html/plugins/plugins.html        → Plugin system, plugin interaction
+└── html/plugins/quickstart.html     → End-to-end user journey
 ```
 
 ---
@@ -1743,7 +1743,7 @@ Layer 8: Application Integration
 
 #### Layer 0: Infrastructure
 
-**D.3.1 empty.html — Canvas Creation**
+**D.3.1 html/smoke/empty.html — Canvas Creation**
 
 | Behavior               | Verification                                    |
 | ---------------------- | ----------------------------------------------- |
@@ -1763,7 +1763,7 @@ Layer 8: Application Integration
 
 ---
 
-**D.3.2 single-node.html — Node Instantiation**
+**D.3.2 html/smoke/single-node.html — Node Instantiation**
 
 | Behavior               | Verification                             |
 | ---------------------- | ---------------------------------------- |
@@ -1783,7 +1783,7 @@ Layer 8: Application Integration
 
 ---
 
-**D.3.3 verification.html — Graph Spec Loading**
+**D.3.3 html/smoke/verification.html — Graph Spec Loading**
 
 | Behavior               | Verification                 |
 | ---------------------- | ---------------------------- |
@@ -1838,7 +1838,7 @@ Layer 8: Application Integration
 
 ---
 
-**D.3.6 instanced.html — GPU Instancing**
+**D.3.6 html/rendering/instanced.html — GPU Instancing**
 
 | Behavior           | Verification                             |
 | ------------------ | ---------------------------------------- |
@@ -1858,7 +1858,7 @@ Layer 8: Application Integration
 
 ---
 
-**D.3.7 large.html — Stress Testing**
+**D.3.7 html/rendering/large.html — Stress Testing**
 
 | Behavior        | Verification                  |
 | --------------- | ----------------------------- |
@@ -2191,7 +2191,7 @@ Layer 8: Application Integration
 
 #### Layer 7: Zoom Navigation
 
-**D.3.25 fractal.html — Fractal Zoom**
+**D.3.25 html/layout/fractal.html — Fractal Zoom**
 
 | Behavior        | Verification                |
 | --------------- | --------------------------- |
@@ -2251,7 +2251,7 @@ Layer 8: Application Integration
 
 ---
 
-**D.3.29 plugins.html — Plugin System**
+**D.3.29 html/plugins/plugins.html — Plugin System**
 
 | Behavior           | Verification              |
 | ------------------ | ------------------------- |
@@ -2263,7 +2263,7 @@ Layer 8: Application Integration
 
 ---
 
-**D.3.30 quickstart.html — End-to-End User Journey**
+**D.3.30 html/plugins/quickstart.html — End-to-End User Journey**
 
 | Behavior           | Verification            |
 | ------------------ | ----------------------- |
@@ -2373,11 +2373,11 @@ for (const demo of DEMO_TESTS) {
 
 **Phase 1 (Infrastructure):**
 
-1. empty.html
-2. single-node.html
-3. verification.html
+1. html/smoke/empty.html
+2. html/smoke/single-node.html
+3. html/smoke/verification.html
 
-**Phase 2 (Rendering):** 4. basic.html 5. edges.html 6. instanced.html 7. large.html
+**Phase 2 (Rendering):** 4. basic.html 5. edges.html 6. html/rendering/instanced.html 7. html/rendering/large.html
 
 **Phase 3 (3D Spatial):** 8. basic-3d.html 9. globe.html 10. scene.html
 
@@ -2389,9 +2389,9 @@ for (const demo of DEMO_TESTS) {
 
 **Phase 7 (Layout):** 22. layout.html 23. force.html 24. hierarchical.html 25. 3d-layout.html
 
-**Phase 8 (Zoom):** 26. fractal.html 27. fly-to.html 28. orthographic.html
+**Phase 8 (Zoom):** 26. html/layout/fractal.html 27. fly-to.html 28. orthographic.html
 
-**Phase 9 (Integration):** 29. n8n-workflow.html 30. plugins.html 31. quickstart.html
+**Phase 9 (Integration):** 29. n8n-workflow.html 30. html/plugins/plugins.html 31. html/plugins/quickstart.html
 
 ---
 

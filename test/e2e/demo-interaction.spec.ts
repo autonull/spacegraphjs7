@@ -2,25 +2,25 @@ import { expect, test } from '@playwright/test';
 
 test.describe('Demo Interaction Tests', () => {
     test('single-node - canvas renders WebGL', async ({ page }) => {
-        await page.goto('http://localhost:5173/demo/single-node.html');
+        await page.goto('http://localhost:5173/html/smoke/single-node.html');
         await page.waitForTimeout(2000);
         await expect(page.locator('canvas').first()).toBeVisible();
     });
 
     test('verification - renders graph', async ({ page }) => {
-        await page.goto('http://localhost:5173/demo/verification.html');
+        await page.goto('http://localhost:5173/html/smoke/verification.html');
         await page.waitForTimeout(2000);
         await expect(page.locator('canvas').first()).toBeVisible();
     });
 
     test('debug - graph renders successfully', async ({ page }) => {
-        await page.goto('http://localhost:5173/demo/debug.html');
+        await page.goto('http://localhost:5173/html/smoke/debug.html');
         await page.waitForTimeout(2000);
         await expect(page.locator('canvas').first()).toBeVisible();
     });
 
     test('interaction - hover triggers events', async ({ page }) => {
-        await page.goto('http://localhost:5173/demo/interaction.html');
+        await page.goto('http://localhost:5173/html/interaction/interaction.html');
         await page.waitForTimeout(2000);
         const canvas = page.locator('canvas').first();
         await expect(canvas).toBeVisible();
@@ -32,7 +32,7 @@ test.describe('Demo Interaction Tests', () => {
     });
 
     test('interaction - drag node triggers events', async ({ page }) => {
-        await page.goto('http://localhost:5173/demo/interaction.html');
+        await page.goto('http://localhost:5173/html/interaction/interaction.html');
         await page.waitForTimeout(2000);
         const canvas = page.locator('canvas').first();
         const box = await canvas.boundingBox();
@@ -48,55 +48,55 @@ test.describe('Demo Interaction Tests', () => {
     });
 
     test('interaction-meta - renders and logs', async ({ page }) => {
-        await page.goto('http://localhost:5173/demo/interaction-meta.html');
+        await page.goto('http://localhost:5173/html/interaction/interaction-meta.html');
         await page.waitForTimeout(3000);
         await expect(page.locator('canvas').first()).toBeVisible();
     });
 
     test('fractal - renders', async ({ page }) => {
-        await page.goto('http://localhost:5173/demo/fractal.html');
+        await page.goto('http://localhost:5173/html/layout/fractal.html');
         await page.waitForTimeout(2000);
         await expect(page.locator('canvas').first()).toBeVisible();
     });
 
     test('html - renders HTML nodes', async ({ page }) => {
-        await page.goto('http://localhost:5173/demo/html.html');
+        await page.goto('http://localhost:5173/html/rendering/html.html');
         await page.waitForTimeout(2000);
         await expect(page.locator('canvas').first()).toBeVisible();
     });
 
     test('empty - renders empty graph', async ({ page }) => {
-        await page.goto('http://localhost:5173/demo/empty.html');
+        await page.goto('http://localhost:5173/html/smoke/empty.html');
         await page.waitForTimeout(2000);
         await expect(page.locator('canvas').first()).toBeVisible();
     });
 
     test('instanced - renders many nodes', async ({ page }) => {
-        await page.goto('http://localhost:5173/demo/instanced.html');
+        await page.goto('http://localhost:5173/html/rendering/instanced.html');
         await page.waitForTimeout(3000);
         await expect(page.locator('canvas').first()).toBeVisible();
     });
 
     test('layouts - renders with layout', async ({ page }) => {
-        await page.goto('http://localhost:5173/demo/layouts.html');
+        await page.goto('http://localhost:5173/html/layout/layouts.html');
         await page.waitForTimeout(3000);
         await expect(page.locator('canvas').first()).toBeVisible();
     });
 
     test('plugins - renders with plugins', async ({ page }) => {
-        await page.goto('http://localhost:5173/demo/plugins.html');
+        await page.goto('http://localhost:5173/html/plugins/plugins.html');
         await page.waitForTimeout(3000);
         await expect(page.locator('canvas').first()).toBeVisible();
     });
 
     test('quickstart - renders', async ({ page }) => {
-        await page.goto('http://localhost:5173/demo/quickstart.html');
+        await page.goto('http://localhost:5173/html/plugins/quickstart.html');
         await page.waitForTimeout(3000);
         await expect(page.locator('canvas').first()).toBeVisible();
     });
 
     test('large - renders large graph', async ({ page }) => {
-        await page.goto('http://localhost:5173/demo/large.html');
+        await page.goto('http://localhost:5173/html/rendering/large.html');
         await page.waitForTimeout(3000);
         await expect(page.locator('canvas').first()).toBeVisible();
     });

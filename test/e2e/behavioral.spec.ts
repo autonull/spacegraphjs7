@@ -10,19 +10,19 @@ function fuzzyEqual(actual: number, expected: number, tolerance = 10): boolean {
 
 test.describe('Behavioral E2E: Node Lifecycle', () => {
     test('single-node demo loads correctly', async ({ page }) => {
-        await page.goto('http://localhost:5173/demo/single-node.html');
+        await page.goto('http://localhost:5173/html/smoke/single-node.html');
         await page.waitForTimeout(2000);
         await expect(page.locator('canvas').first()).toBeVisible();
     });
 
     test('layouts demo distributes nodes', async ({ page }) => {
-        await page.goto('http://localhost:5173/demo/layouts.html');
+        await page.goto('http://localhost:5173/html/layout/layouts.html');
         await page.waitForTimeout(3000);
         await expect(page.locator('canvas').first()).toBeVisible();
     });
 
     test('canvas renders WebGL content', async ({ page }) => {
-        await page.goto('http://localhost:5173/demo/single-node.html');
+        await page.goto('http://localhost:5173/html/smoke/single-node.html');
         await page.waitForTimeout(2000);
 
         const canvas = page.locator('canvas').first();
@@ -36,7 +36,7 @@ test.describe('Behavioral E2E: Node Lifecycle', () => {
 
 test.describe('Behavioral E2E: Serialization', () => {
     test('exports and re-imports graph state', async ({ page }) => {
-        await page.goto('http://localhost:5173/demo/single-node.html');
+        await page.goto('http://localhost:5173/html/smoke/single-node.html');
         await page.waitForTimeout(2000);
 
         const originalSize = await page.evaluate(() => {
@@ -66,7 +66,7 @@ test.describe('Behavioral E2E: Serialization', () => {
     });
 
     test('preserves spatial relationships after round-trip', async ({ page }) => {
-        await page.goto('http://localhost:5173/demo/single-node.html');
+        await page.goto('http://localhost:5173/html/smoke/single-node.html');
         await page.waitForTimeout(2000);
 
         const originalDist = await page.evaluate(() => {
@@ -101,7 +101,7 @@ test.describe('Behavioral E2E: Serialization', () => {
 
 test.describe('Behavioral E2E: Interaction Flow', () => {
     test('hover events fire on node interaction', async ({ page }) => {
-        await page.goto('http://localhost:5173/demo/interaction.html');
+        await page.goto('http://localhost:5173/html/interaction/interaction.html');
         await page.waitForTimeout(2000);
 
         const canvas = page.locator('canvas').first();
@@ -115,7 +115,7 @@ test.describe('Behavioral E2E: Interaction Flow', () => {
     });
 
     test('drag gesture completes without crash', async ({ page }) => {
-        await page.goto('http://localhost:5173/demo/interaction.html');
+        await page.goto('http://localhost:5173/html/interaction/interaction.html');
         await page.waitForTimeout(2000);
 
         const canvas = page.locator('canvas').first();
@@ -134,7 +134,7 @@ test.describe('Behavioral E2E: Interaction Flow', () => {
 
 test.describe('Behavioral E2E: Error Recovery', () => {
     test('handles malformed node spec without crashing', async ({ page }) => {
-        await page.goto('http://localhost:5173/demo/single-node.html');
+        await page.goto('http://localhost:5173/html/smoke/single-node.html');
         await page.waitForTimeout(2000);
 
         // Try to add invalid node type - should not crash
@@ -159,7 +159,7 @@ test.describe('Behavioral E2E: Error Recovery', () => {
 
 test.describe('Behavioral E2E: Plugin System', () => {
     test('plugins can be registered and retrieved', async ({ page }) => {
-        await page.goto('http://localhost:5173/demo/plugins.html');
+        await page.goto('http://localhost:5173/html/plugins/plugins.html');
         await page.waitForTimeout(3000);
 
         const hasPlugin = await page.evaluate(() => {

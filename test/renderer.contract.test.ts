@@ -8,7 +8,7 @@ import {
 import { SpaceGraphRenderer } from '@spacegraphjs/spacegraph-renderer';
 import { CytoscapeRenderer } from '@spacegraphjs/cytoscape-renderer';
 import { renderToSVG } from '@spacegraphjs/svg-renderer';
-import { activityHostFixture } from '../demo/activity-host';
+import { activityHostFixture } from '../app/demo/activity-host';
 
 // L1.22 — headless half of the shared conformance suite. It proves the structural and capability
 // contract for every interactive adapter without a browser. Mount/click/resize/dispose/HTML-card
@@ -158,7 +158,7 @@ const theme = {
     fontSize: 13,
 };
 
-describe('second-host fixture (P8.6)', () => {
+describe('demo fixture (P8.6)', () => {
     const model = activityHostFixture();
 
     test('every adapter accepts a host-neutral model without throwing', () => {

@@ -1,0 +1,459 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>How it works — SpaceGraphJS Demo</title>
+        <style>
+            :root {
+                color-scheme: dark;
+                --bg: #0b0f17;
+                --surface: #121826;
+                --raised: #172033;
+                --text: #e6ecf5;
+                --muted: #9aa7b8;
+                --border: #283449;
+                --accent: #60a5fa;
+                --code: #cbd5e1;
+            }
+            :root[data-theme='light'] {
+                color-scheme: light;
+                --bg: #f7f8fa;
+                --surface: #ffffff;
+                --raised: #f0f3f8;
+                --text: #101828;
+                --muted: #5b6675;
+                --border: #d5dce6;
+                --accent: #2563eb;
+                --code: #1e293b;
+            }
+            * {
+                box-sizing: border-box;
+            }
+            html {
+                scroll-behavior: smooth;
+            }
+            body {
+                margin: 0;
+                background: var(--bg);
+                color: var(--text);
+                font: 15px/1.65 ui-sans-serif, system-ui, sans-serif;
+                -webkit-font-smoothing: antialiased;
+            }
+            a {
+                color: var(--accent);
+                text-decoration: none;
+            }
+            a:hover {
+                text-decoration: underline;
+            }
+            .wrap {
+                max-width: 1040px;
+                margin: 0 auto;
+                padding: 0 28px;
+            }
+            header {
+                border-bottom: 1px solid var(--border);
+                background: var(--bg);
+            }
+            .topbar {
+                display: flex;
+                align-items: center;
+                gap: 22px;
+                min-height: 64px;
+                flex-wrap: wrap;
+            }
+            .brand {
+                font-weight: 650;
+                letter-spacing: -0.01em;
+            }
+            .brand span {
+                color: var(--muted);
+                font-weight: 400;
+            }
+            nav {
+                display: flex;
+                gap: 18px;
+                margin-inline-start: auto;
+                font-size: 13px;
+            }
+            button.theme {
+                font: inherit;
+                font-size: 12px;
+                color: var(--muted);
+                background: none;
+                border: 1px solid var(--border);
+                border-radius: 999px;
+                padding: 3px 12px;
+                cursor: pointer;
+            }
+            .hero {
+                padding: 88px 0 64px;
+                border-bottom: 1px solid var(--border);
+            }
+            .eyebrow {
+                font-size: 11px;
+                letter-spacing: 0.16em;
+                text-transform: uppercase;
+                color: var(--accent);
+                margin-bottom: 18px;
+            }
+            h1 {
+                font-size: clamp(30px, 5vw, 50px);
+                line-height: 1.14;
+                letter-spacing: -0.03em;
+                font-weight: 650;
+                max-width: 18ch;
+                margin: 0 0 22px;
+            }
+            .lead {
+                font-size: 18px;
+                line-height: 1.7;
+                color: var(--muted);
+                max-width: 66ch;
+            }
+            section {
+                padding: 64px 0;
+                border-bottom: 1px solid var(--border);
+            }
+            h2 {
+                font-size: 13px;
+                text-transform: uppercase;
+                letter-spacing: 0.14em;
+                color: var(--muted);
+                font-weight: 600;
+                margin: 0 0 28px;
+            }
+            h3 {
+                font-size: 19px;
+                letter-spacing: -0.01em;
+                margin: 0 0 8px;
+            }
+            p {
+                max-width: 68ch;
+                color: var(--muted);
+            }
+            .flow {
+                display: grid;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 12px;
+                margin-bottom: 56px;
+            }
+            .step {
+                background: var(--surface);
+                border: 1px solid var(--border);
+                border-radius: 10px;
+                padding: 18px;
+            }
+            .step b {
+                display: block;
+                color: var(--accent);
+                font-size: 12px;
+                font-variant-numeric: tabular-nums;
+                margin-bottom: 10px;
+            }
+            .step h3 {
+                font-size: 15px;
+            }
+            .step p {
+                font-size: 13px;
+                line-height: 1.55;
+                margin: 0;
+            }
+            .detail {
+                display: grid;
+                grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+                gap: 44px;
+                align-items: start;
+                padding: 30px 0;
+                border-top: 1px solid var(--border);
+            }
+            .detail > div:first-child p {
+                font-size: 14px;
+            }
+            .snippet {
+                position: relative;
+                background: var(--surface);
+                border: 1px solid var(--border);
+                border-radius: 10px;
+                overflow: hidden;
+            }
+            pre {
+                margin: 0;
+                padding: 18px 72px 18px 20px;
+                overflow: auto;
+                font: 12.5px/1.7 ui-monospace, SFMono-Regular, Menlo, monospace;
+                color: var(--code);
+                tab-size: 4;
+            }
+            .copy {
+                position: absolute;
+                top: 8px;
+                right: 8px;
+                font: 11px ui-monospace, monospace;
+                color: var(--muted);
+                background: var(--raised);
+                border: 1px solid var(--border);
+                border-radius: 6px;
+                padding: 3px 9px;
+                cursor: pointer;
+            }
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 13px;
+            }
+            th,
+            td {
+                text-align: start;
+                padding: 10px 12px;
+                border-bottom: 1px solid var(--border);
+                vertical-align: top;
+            }
+            th {
+                color: var(--muted);
+                font-weight: 500;
+                font-size: 11px;
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+            }
+            td code {
+                font: 12px ui-monospace, monospace;
+                color: var(--muted);
+            }
+            .commands {
+                display: grid;
+                gap: 10px;
+            }
+            .commands .snippet {
+                border-radius: 8px;
+            }
+            footer {
+                padding: 40px 0 64px;
+                color: var(--muted);
+                font-size: 13px;
+            }
+            @media (max-width: 820px) {
+                .flow,
+                .detail {
+                    grid-template-columns: 1fr;
+                }
+                .hero {
+                    padding-top: 56px;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <header>
+            <div class="wrap topbar">
+                <div class="brand">SpaceGraphJS <span>/ demo</span></div>
+                <nav aria-label="Demo pages">
+                    <a href="index.html">Live demo</a>
+                    <a href="/showcase.html">Showcase</a>
+                    <a href="gallery.html">Gallery</a>
+                    <a href="learn.html" aria-current="page">How it works</a>
+                    <button class="theme" id="theme" type="button">Light</button>
+                </nav>
+            </div>
+        </header>
+
+        <div class="wrap hero">
+            <div class="eyebrow">How it fits together</div>
+            <h1>A graph platform that stays out of your domain.</h1>
+            <p class="lead">
+                Your model, your words, your layout policy. The library supplies the graph core, the
+                adapter contract, three renderers and the generic modules a graph interface needs.
+                This page is the map; the live demo next door makes it move.
+            </p>
+        </div>
+
+        <div class="wrap">
+            <section>
+                <h2>Four moves</h2>
+                <div class="flow">
+                    <div class="step">
+                        <b>01</b>
+                        <h3>Describe</h3>
+                        <p>Keep nodes, edges and levels in your own vocabulary. No library types leak in.</p>
+                    </div>
+                    <div class="step">
+                        <b>02</b>
+                        <h3>Adapt</h3>
+                        <p>Map your model to the shared RenderModel once. Positions and labels come from here.</p>
+                    </div>
+                    <div class="step">
+                        <b>03</b>
+                        <h3>Render</h3>
+                        <p>Mount WebGL, Cytoscape or static SVG over the same RenderModel. Swap at runtime.</p>
+                    </div>
+                    <div class="step">
+                        <b>04</b>
+                        <h3>Drive</h3>
+                        <p>Bind a controller for selection, search, bands and trail; layer navigation and a11y over it.</p>
+                    </div>
+                </div>
+
+                <div class="detail">
+                    <div>
+                        <h3>1. Describe your domain</h3>
+                        <p>
+                            <code>src/model.ts</code> defines a release pipeline. Its stages, lanes and statuses
+                            are application words. The library never sees them until they are mapped.
+                        </p>
+                    </div>
+                    <div class="snippet">
+                        <button class="copy" data-copy type="button">copy</button>
+                        <pre><code>import { buildModel, type BuildModel } from './model'
+
+const model: BuildModel = buildModel()
+// nodes → { id, label, kind, stage, lane, outcome, size, status }
+// edges → { id, source, target, kind, confidence }</code></pre>
+                    </div>
+                </div>
+
+                <div class="detail">
+                    <div>
+                        <h3>2. Map once to the contract</h3>
+                        <p>
+                            <code>src/host.ts</code> owns the adapter. It turns the domain model, a layout and a
+                            level into one renderer-agnostic RenderModel.
+                        </p>
+                    </div>
+                    <div class="snippet">
+                        <button class="copy" data-copy type="button">copy</button>
+                        <pre><code>const adapter = new BuildAdapter(adapterConfig(() => placed()))
+
+const renderModel = adapter.build(model, {
+    level, positions, focus, bands, edges: true,
+    laneLabels, axisLabels,
+})</code></pre>
+                    </div>
+                </div>
+
+                <div class="detail">
+                    <div>
+                        <h3>3. Mount any renderer</h3>
+                        <p>
+                            The live page switches between three renderers with one click. They all consume the
+                            same object; none of them knows what a release stage is.
+                        </p>
+                    </div>
+                    <div class="snippet">
+                        <button class="copy" data-copy type="button">copy</button>
+                        <pre><code>import { SpaceGraphRenderer } from '@spacegraphjs/spacegraph-renderer'
+
+const renderer = new SpaceGraphRenderer()
+await renderer.mount(canvas, { theme, projection: '2d' })
+host.controller.bind(renderer)
+
+// CytoscapeRenderer and InlineGraph (static SVG) take the same model.</code></pre>
+                    </div>
+                </div>
+
+                <div class="detail">
+                    <div>
+                        <h3>4. Bind interaction and generic modules</h3>
+                        <p>
+                            Selection, search, minimap, trail, zoom bands, accessibility and overlays are bound
+                            to the host model. The gallery on the live page runs each one and shows its output.
+                            Plugins can be looked up by id, instance or class; `requirePlugin` reports a missing
+                            one instead of returning nothing, and `pluginManager.use(plugin)` registers and
+                            initializes a plugin added after create.
+                        </p>
+                    </div>
+                    <div class="snippet">
+                        <button class="copy" data-copy type="button">copy</button>
+                        <pre><code>import { GraphController } from 'spacegraphjs/control'
+
+const controller = new GraphController({
+    bands: { bands, hysteresis: 0.02 },
+})
+controller.select(['test:failure'])</code></pre>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <h2>Every capability, mapped to a library surface</h2>
+                <p style="margin-bottom: 22px">
+                    Each row is a live entry in the gallery. “Open” jumps straight to that capability on the
+                    demo page.
+                </p>
+                <table>
+                    <thead>
+                        <tr><th>Capability</th><th>Library surface</th><th>Live</th></tr>
+                    </thead>
+                    <tbody id="capabilities"></tbody>
+                </table>
+            </section>
+
+            <section>
+                <h2>Run it, check it, ship it</h2>
+                <p style="margin-bottom: 22px">
+                    One pnpm workspace consumer owns the pages, their config, their tests and the published
+                    package proof. No external assets or services are needed.
+                </p>
+                <div class="commands">
+                    <div class="snippet">
+                        <button class="copy" data-copy type="button">copy</button>
+                        <pre><code>pnpm --filter demo dev          # http://localhost:5173
+pnpm --filter demo test         # capability suite (Vitest)
+pnpm --filter demo test:e2e     # browser suite (Playwright)
+pnpm run build:demo             # → dist-demo/</code></pre>
+                    </div>
+                </div>
+                <p style="margin-top: 22px">
+                    The build emits relative asset paths, so the contents of <code>dist-demo/</code> can be
+                    uploaded to a domain root or a project subpath unchanged.
+                </p>
+            </section>
+        </div>
+
+        <footer>
+            <div class="wrap">
+                <a href="index.html">Live demo</a> · <a href="/showcase.html">Programmatic showcase</a> ·
+                <a href="gallery.html">Visual gallery</a> · <a href="/explorer.html">Runtime explorer</a> ·
+                <a href="html/core/contract.html">Renderer contract</a>
+            </div>
+        </footer>
+
+        <script type="module">
+            import { CAPABILITIES } from './src/gallery.ts';
+
+            const table = document.getElementById('capabilities');
+            for (const capability of CAPABILITIES) {
+                const row = document.createElement('tr');
+                const name = document.createElement('td');
+                name.textContent = capability.title;
+                const modules = document.createElement('td');
+                const code = document.createElement('code');
+                code.textContent = capability.modules.join(', ');
+                modules.appendChild(code);
+                const live = document.createElement('td');
+                const link = document.createElement('a');
+                link.href = `index.html?capability=${capability.id}`;
+                link.textContent = 'Open';
+                live.appendChild(link);
+                row.append(name, modules, live);
+                table.appendChild(row);
+            }
+
+            for (const button of document.querySelectorAll('[data-copy]')) {
+                button.addEventListener('click', async () => {
+                    const code = button.parentElement?.querySelector('code')?.textContent ?? '';
+                    await navigator.clipboard.writeText(code);
+                    button.textContent = 'copied';
+                    setTimeout(() => (button.textContent = 'copy'), 1400);
+                });
+            }
+
+            const themeButton = document.getElementById('theme');
+            themeButton.addEventListener('click', () => {
+                const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+                document.documentElement.dataset.theme = next;
+                themeButton.textContent = next === 'dark' ? 'Light' : 'Dark';
+            });
+        </script>
+    </body>
+</html>

@@ -22,7 +22,7 @@ test.describe('Core Canvas Interaction', () => {
         page.on('pageerror', (err) => errors.push(err.message));
 
         for (const demo of demos) {
-            await page.goto(`${BASE_URL}/demo/${demo}.html`);
+            await page.goto(`${BASE_URL}/${demo}.html`);
             await page.waitForTimeout(2000);
             await expect(page.locator('canvas').first()).toBeVisible();
         }
@@ -31,7 +31,7 @@ test.describe('Core Canvas Interaction', () => {
     });
 
     test('canvas is properly sized', async ({ page }) => {
-        await page.goto(`${BASE_URL}/demo/single-node.html`);
+        await page.goto(`${BASE_URL}/html/smoke/single-node.html`);
         await page.waitForTimeout(2000);
 
         const canvas = page.locator('canvas').first();
@@ -44,7 +44,7 @@ test.describe('Core Canvas Interaction', () => {
 
 test.describe('Mouse Interactions', () => {
     test('hover highlights nodes', async ({ page }) => {
-        await page.goto(`${BASE_URL}/demo/interaction.html`);
+        await page.goto(`${BASE_URL}/html/interaction/interaction.html`);
         await page.waitForTimeout(2000);
 
         const canvas = page.locator('canvas').first();
@@ -57,7 +57,7 @@ test.describe('Mouse Interactions', () => {
     });
 
     test('drag moves nodes', async ({ page }) => {
-        await page.goto(`${BASE_URL}/demo/interaction.html`);
+        await page.goto(`${BASE_URL}/html/interaction/interaction.html`);
         await page.waitForTimeout(2000);
 
         const canvas = page.locator('canvas').first();
@@ -75,7 +75,7 @@ test.describe('Mouse Interactions', () => {
 
 test.describe('Camera Controls', () => {
     test('scroll zooms', async ({ page }) => {
-        await page.goto(`${BASE_URL}/demo/interaction.html`);
+        await page.goto(`${BASE_URL}/html/interaction/interaction.html`);
         await page.waitForTimeout(2000);
 
         const canvas = page.locator('canvas').first();
@@ -87,7 +87,7 @@ test.describe('Camera Controls', () => {
     });
 
     test('right-drag pans', async ({ page }) => {
-        await page.goto(`${BASE_URL}/demo/interaction.html`);
+        await page.goto(`${BASE_URL}/html/interaction/interaction.html`);
         await page.waitForTimeout(2000);
 
         const canvas = page.locator('canvas').first();
@@ -104,7 +104,7 @@ test.describe('Camera Controls', () => {
 
 test.describe('Keyboard Interactions', () => {
     test('keyboard shortcuts work', async ({ page }) => {
-        await page.goto(`${BASE_URL}/demo/interaction.html`);
+        await page.goto(`${BASE_URL}/html/interaction/interaction.html`);
         await page.waitForTimeout(2000);
 
         await page.keyboard.press('Escape');
@@ -116,7 +116,7 @@ test.describe('Keyboard Interactions', () => {
 
 test.describe('Widget Interactions', () => {
     test('meta widget appears on valid hover', async ({ page }) => {
-        await page.goto(`${BASE_URL}/demo/interaction.html`);
+        await page.goto(`${BASE_URL}/html/interaction/interaction.html`);
         await page.waitForTimeout(2000);
 
         const canvas = page.locator('canvas').first();
@@ -133,7 +133,7 @@ test.describe('Widget Interactions', () => {
 
 test.describe('Rapid Interactions', () => {
     test('rapid clicks do not crash', async ({ page }) => {
-        await page.goto(`${BASE_URL}/demo/interaction.html`);
+        await page.goto(`${BASE_URL}/html/interaction/interaction.html`);
         await page.waitForTimeout(2000);
 
         const canvas = page.locator('canvas').first();
@@ -148,7 +148,7 @@ test.describe('Rapid Interactions', () => {
     });
 
     test('zoom spam does not crash', async ({ page }) => {
-        await page.goto(`${BASE_URL}/demo/interaction.html`);
+        await page.goto(`${BASE_URL}/html/interaction/interaction.html`);
         await page.waitForTimeout(2000);
 
         const canvas = page.locator('canvas').first();
@@ -164,7 +164,7 @@ test.describe('Rapid Interactions', () => {
 
 test.describe('Edge Cases', () => {
     test('window resize handled', async ({ page }) => {
-        await page.goto(`${BASE_URL}/demo/interaction.html`);
+        await page.goto(`${BASE_URL}/html/interaction/interaction.html`);
         await page.waitForTimeout(2000);
 
         await page.setViewportSize({ width: 800, height: 600 });
@@ -174,7 +174,7 @@ test.describe('Edge Cases', () => {
     });
 
     test('page reload works', async ({ page }) => {
-        await page.goto(`${BASE_URL}/demo/interaction.html`);
+        await page.goto(`${BASE_URL}/html/interaction/interaction.html`);
         await page.waitForTimeout(2000);
 
         await page.reload();

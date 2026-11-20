@@ -52,6 +52,19 @@ test.describe('configuration explorer (P0.3)', () => {
         expect(await page.locator('#left-graph svg circle').count()).toBe(0);
     });
 
+    test('drives heterogeneous node shapes from the shape axis', async ({ page }) => {
+        const errors = await boot(page);
+        await api(page, 'set', 'shape', 'by-kind');
+        const shapes = await page.$$eval('#left-graph [data-visual-shape]', (nodes) => [
+            ...new Set(nodes.map((node) => (node as HTMLElement).dataset.visualShape!)),
+        ]);
+        expect(shapes.length).toBeGreaterThan(2);
+
+        await api(page, 'set', 'shape', 'star');
+        await expect(page.locator('#left-graph svg polygon').first()).toBeVisible();
+        noErrors(errors);
+    });
+
     test('plays a stable-id representation swap and captures a parity frame', async ({ page }) => {
         await boot(page);
         await api(page, 'set', 'lod', 'dot');
@@ -117,12 +130,12 @@ test.describe('configuration explorer (P0.3)', () => {
         expect(bundles).toBeGreaterThan(arrows);
     });
 
-    test('drives the second host over the same model', async ({ page }) => {
+    test('drives the demo host over the same model', async ({ page }) => {
         await boot(page);
         const contractNodes = (await api<number[]>(page, 'nodes'))[0];
-        await api(page, 'set', 'source', 'secondHost');
+        await api(page, 'set', 'source', 'demo');
 
-        await expect(page.locator('#left-title')).toContainText('secondHost');
+        await expect(page.locator('#left-title')).toContainText('demo');
         const hostNodes = (await api<number[]>(page, 'nodes'))[0];
         expect(hostNodes).toBeGreaterThan(0);
         expect(hostNodes).not.toBe(contractNodes);
@@ -192,7 +205,7 @@ test.describe('salience and emphasis (P2)', () => {
         const contract = await api<Record<string, number>>(page, 'salience');
         expect(await api<Record<string, number>>(page, 'salience')).toEqual(contract);
 
-        await api(page, 'set', 'source', 'secondHost');
+        await api(page, 'set', 'source', 'demo');
         const second = await api<Record<string, number>>(page, 'salience');
         expect(Object.values(second)).not.toEqual(Object.values(contract));
         expect(await api<Record<string, number>>(page, 'salience')).toEqual(second);

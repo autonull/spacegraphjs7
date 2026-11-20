@@ -130,7 +130,7 @@ Install with `pnpm add spacegraphjs three`. Three.js is a required peer. Optiona
 
 ### See it run
 
-Run `pnpm run dev` for the engine demos. Run `pnpm run dev:demo` and open `/contract.html` for the non-OpenCode reference host, which drives the SpaceGraph adapter, the Cytoscape adapter, and the static SVG renderer from one synthetic model.
+Run `pnpm run dev:demo` and open `/` for the complete demo: a capability gallery, 44 programmatic demos at `/showcase.html`, and every standalone feature page. `pnpm run dev` serves the engine demos.
 
 The OpenCode host demo (`bun run graph:dev`, the real shell against a canonical fixture with no model provider) and the component-test harness are indexed next to it in `docs/spacegraph/demos.md` of the OpenCode fork.
 
@@ -186,14 +186,16 @@ If you are embedding a graph in an existing product, avoid the full engine:
 
 This path keeps your vocabulary, your layout policy, and your persistence out of the library.
 
-### The second host
+### The demo
 
-`app/demo/src/` is that path, worked out end to end by a host that is not OpenCode: plain
-TypeScript, no framework, a release pipeline as its own vocabulary, and a gallery in which every
-generic module runs against that model and reports what it produced.
+`app/demo/` is the one complete demo app. Its gallery runs every library surface against a
+release-pipeline model; `/showcase.html` switches 44 programmatic demos without a rebuild.
+`/learn.html` explains the model → adapter → renderer path with real snippets and links each
+capability to the live gallery. The other pages cover scopes, the runtime explorer, the renderer
+contract and the standalone features.
 
 ```
-pnpm --filter demo dev   # then open http://localhost:5174
+pnpm --filter demo dev   # then open http://localhost:5173
 ```
 
 | Capability               | Library surface                                                                                       |
@@ -212,9 +214,9 @@ pnpm --filter demo dev   # then open http://localhost:5174
 | The scoped overlay       | `spacegraphjs/overlays`                                                                               |
 | The code diff            | `spacegraphjs/overlays`                                                                               |
 
-Its checks live with the app: `app/demo/tests/second-host.test.ts` runs every capability against
-the real model and fails if the host reaches for an OpenCode module, a framework, or a library
-surface the gallery does not claim; `app/demo/tests/second-host.spec.ts` drives the page in a browser.
+Its checks live with the app: `app/demo/tests/host.test.ts` runs every capability against the real
+model, and `app/demo/tests/host.spec.ts` drives the page in a browser. `test/e2e/` covers the static
+pages.
 
 ### Renderer contract
 
@@ -600,7 +602,7 @@ The most useful contributions right now are API stabilization, performance work,
 A practical contribution loop:
 
 1. Clone the repository and install with `pnpm install`.
-2. Run `pnpm run dev` for the engine demos, or `pnpm run dev:demo` and open `/contract.html` for the contract reference host.
+2. Run `pnpm run dev:demo` and open `/` for the complete demo, or `pnpm run dev` for the engine demos.
 3. Pick an issue, or start from a failing test.
 4. Add or update tests. Use `createVisionAssert(page)` for visual invariants and Playwright specs for interaction.
 5. Run `pnpm run lint`, `pnpm run format:check`, `pnpm test`, and the relevant demo or vision suite.

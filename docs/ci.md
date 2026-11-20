@@ -23,7 +23,7 @@ cd spacegraphjs && pnpm vitest run packages/overlays/test/
 # Navigation core
 cd spacegraphjs && pnpm vitest run packages/navigation/test/
 
-# Second host (framework-free, app/demo)
+# Demo app (app/demo)
 cd spacegraphjs && pnpm --filter demo test
 
 # Contract package
@@ -55,7 +55,7 @@ The fork's `bun run graph:verify` includes all SpaceGraphJS tests plus OpenCode 
 4. View controller + framework bindings — React/Solid bindings
 5. Overlay core — scope, focus, diff
 6. Navigation core — search, minimap
-7. Second host — framework-free host outside OpenCode
+7. Demo app — the complete framework-free demo
 8. Contract package — `@spacegraphjs/renderer` unit tests
 9. Model adapter — `@spacegraphjs/adapter` tests
 10. Adapter performance budget — `@spacegraphjs/adapter` performance tests

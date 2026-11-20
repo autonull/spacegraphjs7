@@ -3,7 +3,7 @@ import { chromium } from 'playwright';
 
 async function main() {
     const viteProcess = spawn('npx', ['vite', '--port', '5180'], {
-        cwd: 'demo',
+        cwd: 'app/demo',
         stdio: 'pipe',
     });
     await new Promise((r) => setTimeout(r, 5000));
@@ -14,8 +14,8 @@ async function main() {
     page.on('console', (m) => console.log('[CONSOLE]', m.type(), m.text()));
     page.on('pageerror', (e) => console.error('[PAGE ERROR]', e.message));
 
-    console.log('Navigating to test-direct.html...');
-    const response = await page.goto('http://localhost:5180/test-direct.html', {
+    console.log('Navigating to html/smoke/test-direct.html...');
+    const response = await page.goto('http://localhost:5180/html/smoke/test-direct.html', {
         waitUntil: 'networkidle',
         timeout: 30000,
     });

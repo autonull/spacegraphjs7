@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { DEMOS, demoPath } from '../../app/demo/src/registry.js';
 import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
@@ -31,11 +32,7 @@ function isExpectedError(msg: string): boolean {
     return EXPECTED_ERROR_PATTERNS.some((pattern) => msg.includes(pattern));
 }
 
-const demoDir = path.join(__dirname, '../../demo');
-const htmlDemos = fs
-    .readdirSync(demoDir)
-    .filter((f: string) => f.endsWith('.html') && !f.includes('index'))
-    .map((f: string) => f.replace('.html', ''));
+const htmlDemos = DEMOS.filter((entry) => entry.kind === 'html').map((entry) => entry.id);
 
 // A screenshot should show what a demo is for. The delta demo starts at its smallest state so the
 // spec can compare positions; the captured frame shows the layer switch mid-flight instead.
@@ -64,7 +61,7 @@ test.describe('Demo Screenshots & Rendering Verification', () => {
                 }
             });
 
-            await page.goto(`/${demo}.html`, {
+            await page.goto(demoPath(demo), {
                 waitUntil: 'networkidle',
                 timeout: 15000,
             });

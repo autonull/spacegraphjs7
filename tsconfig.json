@@ -39,6 +39,6 @@
             "@spacegraphjs/config/library": ["./packages/config/src/library.ts"]
         }
     },
-    "include": ["src", "test", "app/demo/src", "app/demo/tests", "demo/explorer.ts"],
+    "include": ["src", "test", "app/demo/src", "app/demo/tests", "app/demo/explorer.ts"],
     "exclude": ["node_modules", "dist"]
 }

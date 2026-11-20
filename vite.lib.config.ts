@@ -48,7 +48,7 @@ export default defineConfig({
         solid(),
         dts({
             insertTypesEntry: true,
-            exclude: ['test/**', 'demo/**', 'script/**'],
+            exclude: ['test/**', 'app/demo/**', 'script/**'],
             skipDiagnostics: true,
         }),
     ],

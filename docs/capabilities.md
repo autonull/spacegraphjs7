@@ -1,6 +1,6 @@
 # SpaceGraphJS Capabilities
 
-Generic capabilities provided by the SpaceGraphJS library, used by the OpenCode integration and the second host.
+Generic capabilities provided by the SpaceGraphJS library, used by the demo and the OpenCode integration.
 
 | Capability                               | Module                                          | Description                                                           |
 | ---------------------------------------- | ----------------------------------------------- | --------------------------------------------------------------------- |

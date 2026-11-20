@@ -39,7 +39,8 @@ export abstract class BaseContentNode extends DOMNode {
 
         const w = (spec.data?.width as number) ?? defaultWidth;
         const h = (spec.data?.height as number) ?? defaultHeight;
-        const theme = (spec.data?.theme as string) ?? defaultTheme;
+        const requestedTheme = (spec.data?.theme as string) ?? defaultTheme;
+        const theme = requestedTheme === 'light' || requestedTheme === 'vs' ? 'light' : 'dark';
 
         const el = DOMUtils.createElement(tag);
         super(sg, spec, el, w, h, materialParams);

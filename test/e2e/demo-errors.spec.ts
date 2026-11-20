@@ -1,10 +1,5 @@
 import { expect, test } from '@playwright/test';
-import * as fs from 'fs';
-import * as path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import { DEMOS, demoPath } from '../../app/demo/src/registry.js';
 
 const EXPECTED_ERROR_PATTERNS = ['WebSocket connection', 'ERR_CONNECTION_REFUSED'];
 
@@ -12,11 +7,7 @@ function isExpectedError(msg: string): boolean {
     return EXPECTED_ERROR_PATTERNS.some((pattern) => msg.includes(pattern));
 }
 
-const demoDir = path.join(__dirname, '../../demo');
-const htmlDemos = fs
-    .readdirSync(demoDir)
-    .filter((f: string) => f.endsWith('.html') && !f.includes('index'))
-    .map((f: string) => f.replace('.html', ''));
+const htmlDemos = DEMOS.filter((entry) => entry.kind === 'html').map((entry) => entry.id);
 
 test.describe('Demo Console Error Detection', () => {
     htmlDemos.forEach((demo) => {
@@ -35,7 +26,7 @@ test.describe('Demo Console Error Detection', () => {
                 }
             });
 
-            await page.goto(`/demo/${demo}.html`);
+            await page.goto(demoPath(demo));
             await page.waitForTimeout(3000);
 
             if (errors.length > 0) {

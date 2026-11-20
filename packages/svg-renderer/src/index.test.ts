@@ -6,6 +6,7 @@ import {
     serializeRenderModel,
     statusColor,
     DEFAULT_SVG_THEME,
+    SvgRenderer,
 } from './index';
 
 const model: RenderModel = {
@@ -93,5 +94,33 @@ describe('serializeRenderModel / parseRenderModel (P8.3)', () => {
         expect(
             parseRenderModel('{"nodes":[{"id":"a","label":"a","position":[0,0,0]}],"edges":[]}'),
         ).toBeDefined();
+    });
+});
+
+describe('SvgRenderer', () => {
+    test('draws through the shared renderer contract', async () => {
+        const container = { innerHTML: '' } as unknown as HTMLElement;
+        const renderer = new SvgRenderer();
+
+        expect(renderer.capabilities.projections).toEqual(['2d']);
+        await renderer.mount(container, { theme: DEFAULT_SVG_THEME, projection: '2d' });
+        renderer.setModel(model);
+
+        expect(container.innerHTML).toContain('read session.ts');
+        expect(container.innerHTML).toContain('<svg');
+
+        renderer.setSelection(['a']);
+        renderer.setViewport({ zoom: 1, center: [0, 0, 0] });
+        renderer.setDepth('flat');
+        renderer.fit();
+        renderer.focus('a');
+        renderer.resize();
+        expect(container.innerHTML).toContain('read session.ts');
+
+        renderer.setTheme({ ...DEFAULT_SVG_THEME, background: '#010203' });
+        expect(container.innerHTML).toContain('<svg');
+
+        renderer.dispose();
+        expect(container.innerHTML).toBe('');
     });
 });

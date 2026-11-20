@@ -24,7 +24,7 @@ const call = <T>(page: Page, method: keyof ScopeDemo, ...args: unknown[]): Promi
     );
 
 test.beforeEach(async ({ page }) => {
-    await page.goto('/scopes.html');
+    await page.goto('/html/interaction/scopes.html');
     await expect(page.locator('#live')).toHaveText('ready');
     expect(await page.evaluate(() => (window as ScopeWindow).__ready)).toBe(true);
 });

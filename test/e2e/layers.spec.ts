@@ -25,7 +25,7 @@ const demo = (page: Page) =>
 test('one control writes level, lens and depth through derive, diff and the shared clock', async ({
     page,
 }) => {
-    await page.goto('/layers.html');
+    await page.goto('/html/layout/layers.html');
 
     await expect(page.locator('svg')).toHaveCount(1);
     expect(await demo(page)).toEqual({

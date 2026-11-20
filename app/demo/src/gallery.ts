@@ -1,4 +1,4 @@
-// The capability gallery: one entry per library surface the second host uses.
+// The capability gallery: one entry per library surface the demo host uses.
 //
 // Every entry *runs* its module against the host's model and reports what it produced. A gallery
 // entry that only claimed to work would be a caption; these are measurements, and the unit test

@@ -182,7 +182,7 @@ For a framework host, skip steps 5–6's manual wiring: mount `GraphView` from `
 `CONTRACT_VERSION` is an integer; breaking changes bump it. Adapters declare theirs in
 `capabilities.contractVersion`. Call `negotiateContract(version)` and surface the result — a mismatch is
 a clear message, not a runtime failure. For a non-OpenCode page, see the fixture in
-`demo/activity-host.ts`; the runnable two-adapter library demo is `demo/contract.html`.
+`demo/activity-host.ts`; the runnable two-adapter library demo is `demo/html/core/contract.html`.
 
 **Contract v3 (the fit options).** v3 adds `padding` and `insets` to the fit options and the
 `fitInsets` capability. The options are additive: a v2 adapter ignores them and still frames the

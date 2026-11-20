@@ -29,7 +29,7 @@ test.describe('Demo Interaction Videos', () => {
             // Increase timeout for complex recordings
             test.setTimeout(90000);
 
-            // Correct URL: Vite root is 'demo', so /demo/quickstart.html becomes /quickstart.html
+            // The demo app is the Vite root: pages resolve at /<name>.html
             await page.goto(`http://localhost:5173/${demo}.html`, { waitUntil: 'networkidle' });
 
             // Wait for canvas to appear

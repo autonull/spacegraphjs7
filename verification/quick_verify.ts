@@ -6,8 +6,8 @@ async function verifyDemo(demoName: string) {
     console.log(`Starting verification for ${demoName}...`);
     const port = 5200;
     const viteProcess = spawn(
-        'npx',
-        ['vite', '--port', port.toString(), '--config', 'vite.demo.config.ts'],
+        'pnpm',
+        ['exec', 'vite', '--port', port.toString(), '--config', 'app/demo/vite.config.ts'],
         {
             stdio: 'pipe',
         },

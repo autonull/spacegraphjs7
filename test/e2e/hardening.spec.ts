@@ -8,7 +8,7 @@ async function boot(page: Page) {
     page.on('console', (msg) => {
         if (msg.type() === 'error') errors.push(msg.text());
     });
-    await page.goto(`${BASE_URL}/hardening.html`);
+    await page.goto(`${BASE_URL}/html/smoke/hardening.html`);
     await page.waitForFunction(() => (window as any).__ready === true);
     return errors;
 }

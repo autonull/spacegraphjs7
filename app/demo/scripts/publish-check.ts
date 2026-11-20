@@ -1,4 +1,4 @@
-// P6.3 — the flagship proof. Runs the framework-free second host against published tarballs:
+// P6.3 — the flagship proof. Runs the framework-free demo host against published tarballs:
 // every package the demo imports is packed, extracted into an external consumer and served with a
 // Vite config that has no source aliases. The browser check drives the real demo page, so a stale
 // workspace link cannot satisfy an import by accident.
@@ -38,23 +38,23 @@ const runtimeDependencies = [
     'jsdom',
 ];
 
-const workspace = mkdtempSync(join(tmpdir(), 'spacegraph-second-host-'));
+const workspace = mkdtempSync(join(tmpdir(), 'spacegraph-demo-'));
 const consumer = join(workspace, 'consumer');
 
 try {
     createPackedConsumer(root, packages, runtimeDependencies, consumer, join(workspace, 'tarballs'));
 
-    const demo = join(consumer, 'second-host', 'src');
+    const demo = join(consumer, 'demo', 'src');
     mkdirSync(demo, { recursive: true });
     for (const file of readdirSync(join(root, 'app/demo/src'))) {
         copyFileSync(join(root, 'app/demo/src', file), join(demo, file));
     }
-    copyFileSync(join(root, 'app/demo/index.html'), join(consumer, 'second-host.html'));
+    copyFileSync(join(root, 'app/demo/index.html'), join(consumer, 'demo.html'));
 
-    console.log('\nsecond-host check: the demo mounts and runs on published packages');
+    console.log('\ndemo check: the demo mounts and runs on published packages');
     execFileSync(
         'bun',
-        ['run', resolve(import.meta.dirname, '../../script/publish-check/second-host-browser-check.ts')],
+        ['run', resolve(import.meta.dirname, '../../script/publish-check/demo-browser-check.ts')],
         {
             cwd: consumer,
             stdio: 'inherit',
@@ -62,7 +62,7 @@ try {
         },
     );
 
-    console.log('\nsecond-host publish check passed');
+    console.log('\ndemo publish check passed');
 } finally {
     rmSync(workspace, { recursive: true, force: true });
 }

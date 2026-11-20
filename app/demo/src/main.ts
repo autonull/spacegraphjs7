@@ -1,8 +1,7 @@
-// The second host: a plain-TypeScript app that mounts the library's contract and its three
-// renderers, and runs every generic module against a model of its own. No framework, no OpenCode,
-// no session vocabulary — the point is to prove that the library carries a host it has never seen.
+// The demo host: plain TypeScript. It maps a release-pipeline model to a RenderModel, mounts one of
+// three renderers, and runs each library capability against that model.
 
-import { InlineGraph } from '@spacegraphjs/svg-renderer';
+import { SvgRenderer } from '@spacegraphjs/svg-renderer';
 import { CytoscapeRenderer } from '@spacegraphjs/cytoscape-renderer';
 import { SpaceGraphRenderer } from '@spacegraphjs/spacegraph-renderer';
 import {
@@ -19,7 +18,7 @@ import { Navigation } from 'spacegraphjs/navigation';
 import { ScopedOverlay, extractSubgraph, renderCodeDiff } from 'spacegraphjs/overlays';
 import { computeFocusOverlay, type FocusOverlay } from '@spacegraphjs/overlays';
 import { CAPABILITIES, type Capability } from './gallery';
-import { SecondHost } from './host';
+import { DemoHost } from './host';
 import { HOST_VIEWS, searchableFields, type HostView } from './model';
 
 type RendererID = 'spacegraph' | 'cytoscape' | 'svg';
@@ -50,7 +49,7 @@ const TOKENS = {
 function el<T extends HTMLElement>(id: string): T {
     const found = document.getElementById(id);
 
-    if (!found) throw new Error(`second host: missing #${id}`);
+    if (!found) throw new Error(`demo host: missing #${id}`);
 
     return found as T;
 }
@@ -58,7 +57,7 @@ function el<T extends HTMLElement>(id: string): T {
 function svgEl(id: string): SVGSVGElement {
     const found = document.getElementById(id);
 
-    if (!(found instanceof SVGSVGElement)) throw new Error(`second host: missing <svg id="${id}">`);
+    if (!(found instanceof SVGSVGElement)) throw new Error(`demo host: missing <svg id="${id}">`);
 
     return found;
 }
@@ -67,12 +66,11 @@ function round(value: number): number {
     return Math.round(value * 100) / 100;
 }
 
-const host = new SecondHost();
+const host = new DemoHost();
 
 let rendererID: RendererID = 'spacegraph';
 let themeName: ThemeName = 'dark';
 let renderer: GraphRenderer | undefined;
-let inline: InlineGraph | undefined;
 let mirror: AccessibilityLayer | undefined;
 let scope: ScopedOverlay | undefined;
 let currentFocusOverlay: FocusOverlay | undefined;
@@ -280,8 +278,7 @@ function paint() {
     const renderModel = host.renderModel();
     const modelWithFocus = applyFocusOverlay(renderModel, currentFocusOverlay);
 
-    if (inline) inline.setModel(modelWithFocus);
-    else renderer?.setModel(modelWithFocus);
+    renderer?.setModel(modelWithFocus);
 
     mirror?.setItems(
         host.model.nodes.map((node) => ({
@@ -323,31 +320,26 @@ async function mountRenderer(id: RendererID): Promise<void> {
     host.controller.unbind();
     renderer?.dispose();
     renderer = undefined;
-    inline?.dispose();
-    inline = undefined;
     el('canvas').replaceChildren();
     el('svg').replaceChildren();
     rendererID = id;
 
-    if (id === 'svg') {
-        el('stage').dataset.renderer = 'svg';
-        el('canvas').hidden = true;
-        el('svg').hidden = false;
-        inline = new InlineGraph(el('svg'), { theme: readTheme() });
-        paint();
-        return;
-    }
-
-    el('canvas').hidden = false;
-    el('svg').hidden = true;
+    const svg = id === 'svg';
     el('stage').dataset.renderer = id;
+    el('canvas').hidden = svg;
+    el('svg').hidden = !svg;
 
-    const next = id === 'cytoscape' ? new CytoscapeRenderer() : new SpaceGraphRenderer();
+    const next: GraphRenderer =
+        svg
+            ? new SvgRenderer()
+            : id === 'cytoscape'
+              ? new CytoscapeRenderer()
+              : new SpaceGraphRenderer();
     renderer = next;
-    await next.mount(el('canvas'), { theme: readTheme(), projection: '2d' });
-    host.controller.bind(next);
+    await next.mount(svg ? el('svg') : el('canvas'), { theme: readTheme(), projection: '2d' });
+    if (!svg) host.controller.bind(next);
     paint();
-    fitCamera();
+    if (!svg) fitCamera();
 }
 
 function runCapability(capability: Capability) {
@@ -491,10 +483,6 @@ async function main(): Promise<void> {
             document.documentElement.dataset.theme = id;
             const theme = readTheme();
             renderer?.setTheme(theme);
-            if (inline) {
-                inline.dispose();
-                inline = new InlineGraph(el('svg'), { theme });
-            }
             paint();
         });
     }
@@ -513,14 +501,14 @@ async function main(): Promise<void> {
     el('diff-close').addEventListener('click', () => closeDiff());
     window.addEventListener('resize', () => {
         renderer?.resize();
-        inline?.resize();
         paint();
     });
 
     await mountRenderer('spacegraph');
-    runCapability(CAPABILITIES[0]!);
+    const requested = new URLSearchParams(location.search).get('capability');
+    runCapability(CAPABILITIES.find((entry) => entry.id === requested) ?? CAPABILITIES[0]!);
 
-    (window as unknown as { __secondHost: unknown; __ready: boolean }).__secondHost = {
+    (window as unknown as { __demo: unknown; __ready: boolean }).__demo = {
         capabilities: () => CAPABILITIES.map((capability) => capability.id),
         run: (id: string) => {
             const capability = CAPABILITIES.find((entry) => entry.id === id);

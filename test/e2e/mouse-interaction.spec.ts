@@ -43,7 +43,7 @@ async function waitForSettledCamera(page: import('@playwright/test').Page): Prom
 
 test.describe('The mouse contract', () => {
     test.beforeEach(async ({ page }) => {
-        await page.goto('/interaction.html');
+        await page.goto('/html/interaction/interaction.html');
         await page.waitForFunction(() => Boolean(window._sg));
     });
 
@@ -121,7 +121,7 @@ test.describe('The mouse contract', () => {
     });
 
     test('a card keeps its markup when the model updates it', async ({ page }) => {
-        await page.goto('/html.html');
+        await page.goto('/html/rendering/html.html');
         await page.waitForFunction(() => Boolean(window._sg));
 
         const before = await page.locator('#node-html-control-center .node-content').innerHTML();
@@ -139,7 +139,7 @@ test.describe('The mouse contract', () => {
 
 test.describe('The card and the pointer', () => {
     test.beforeEach(async ({ page }) => {
-        await page.goto('/html.html');
+        await page.goto('/html/rendering/html.html');
         await page.waitForFunction(() => Boolean(window._sg));
     });
 
@@ -233,7 +233,7 @@ test.describe('The card and the pointer', () => {
 
 test.describe('The outline of a dragged node', () => {
     test('follows the node it belongs to', async ({ page }) => {
-        await page.goto('/interaction.html');
+        await page.goto('/html/interaction/interaction.html');
         await page.waitForFunction(() => Boolean(window._sg));
 
         const at = await page.evaluate(() => {
