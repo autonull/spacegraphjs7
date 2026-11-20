@@ -26,7 +26,7 @@ import type {
     SpaceGraphOptions,
     SpecUpdate,
 } from './types';
-import { createLogger, safeClone, clamp01 } from './utils';
+import { safeClone, clamp01 } from './utils';
 import type { CardFacing } from '@spacegraphjs/renderer';
 
 // Internal controllers
@@ -36,8 +36,6 @@ import { DepthController } from './spacegraph/DepthController';
 import { LifecycleController } from './spacegraph/LifecycleController';
 import { StaticMethods } from './spacegraph/StaticMethods';
 import { MathPool } from './core/pooling/ObjectPool';
-
-const logger = createLogger('SpaceGraph');
 
 export const VERSION = '8.5.0';
 

@@ -1,6 +1,5 @@
 import type { Node } from '../nodes/Node';
 import type { Edge } from '../edges/Edge';
-import type { EdgeDirection } from './Graph';
 
 export class GraphAlgorithms {
     #linkIndexCache?: Map<string, Node[]>;

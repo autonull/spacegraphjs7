@@ -4,7 +4,6 @@ import type { Node } from '../nodes/Node';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { EdgeSpec, GraphSpec, NodeData, NodeSpec } from '../types';
 import { createLogger } from '../utils/logger';
-import { safeClone } from '../utils/math';
 import { EventEmitter } from './EventEmitter';
 import { TypeRegistry } from './TypeRegistry';
 import { GraphQuery } from './GraphQuery';
@@ -103,8 +102,8 @@ export class Graph extends EventEmitter<GraphEventMap> {
     updateNode(id: string, updates: Partial<NodeSpec>): Node | null {
         const node = this.nodes.get(id);
         if (!node) return null;
-        node.updateSpec?.(updates) ??
-            Object.assign(node, { data: { ...node.data, ...updates.data } });
+        if (node.updateSpec) node.updateSpec(updates);
+        else Object.assign(node, { data: { ...node.data, ...updates.data } });
         this.emitWithTimestamp('node:updated', { node, changes: updates });
         return node;
     }

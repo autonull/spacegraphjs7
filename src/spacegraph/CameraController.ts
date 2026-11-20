@@ -1,6 +1,5 @@
-import type { CameraViewport, DepthMode, FitInsets } from '../types';
-import { calculateFitView, clamp01 } from '../utils';
-import type { CardFacing } from '@spacegraphjs/renderer';
+import type { FitInsets } from '../types';
+import { calculateFitView } from '../utils';
 import type { OrthographicCamera } from 'three';
 import { depthTreatment } from '../depth/DepthCues';
 import type { SpaceGraph } from '../SpaceGraph';

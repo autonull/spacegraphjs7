@@ -100,7 +100,7 @@ export class HierarchicalLayout extends BaseLayout<HierarchicalLayoutOptions> {
             let cursor = 0;
             const levelHeight = config.levelHeight ?? (maxHeightByLevel.get(lv) ?? 0) + padding;
 
-            for (const [i, id] of placed.entries()) {
+            for (const id of placed) {
                 const node = byId.get(id)!;
                 const bounds = getNodeBounds(node);
                 const spacing = config.nodeSpacing ?? bounds.width + padding;

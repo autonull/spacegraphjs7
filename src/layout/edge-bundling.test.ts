@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { EdgeBundler, bundleEdges, type BundledEdge } from './edge-bundling';
+import { EdgeBundler, bundleEdges } from './edge-bundling';
 import type { Position } from './placement';
 
 describe('EdgeBundler', () => {

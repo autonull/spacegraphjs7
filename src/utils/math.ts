@@ -1,6 +1,6 @@
 // math.ts - Modern ES2022+ math and utility functions
 // Type-safe, performant, and deduplicated
-import { DEG2RAD, EPSILON, PI, RAD2DEG, TAU } from '../core/constants';
+import { EPSILON } from '../core/constants';
 
 export { DEG2RAD, EPSILON, PI, RAD2DEG, TAU } from '../core/constants';
 

@@ -212,11 +212,9 @@ function logLayout<Node extends RepresentationNode>(
     options: RepresentationOptions = {},
 ): GraphLayout {
     const gap = options.gap ?? 24;
-    const rowGap = options.rowGap ?? 20;
-    const rowHeight = config.cellSize[1] + rowGap;
     const positions = new Map<string, Position>();
 
-    summaryRows(model, config).forEach((nodes, index) => {
+    summaryRows(model, config).forEach((nodes) => {
         let cursor = 0;
 
         for (const node of nodes) {
@@ -225,8 +223,6 @@ function logLayout<Node extends RepresentationNode>(
             positions.set(node.id, { x: 0, y: cursor + height / 2, z: 0 });
             cursor += height + gap;
         }
-        // Add row gap between rows (turns)
-        cursor += rowGap;
     });
 
     return { positions, clusters: new Map(), bounds: boundsOf(positions), strategy: 'lanes' };

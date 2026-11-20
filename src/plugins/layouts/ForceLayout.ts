@@ -1,5 +1,5 @@
 import { Vector3 } from 'three';
-import { ForceCore, type ForceCoreConfig } from '../../layout/force-core';
+import { ForceCore } from '../../layout/force-core';
 import type { Node } from '../../nodes/Node';
 import { BaseLayout, type LayoutConfig } from './BaseLayout';
 
@@ -55,7 +55,6 @@ export class ForceLayout extends BaseLayout<ForceLayoutConfig> {
 
     #core: ForceCore;
     #velocities = new Map<string, Vector3>();
-    #currentIteration = 0;
 
     constructor(config: Partial<ForceLayoutConfig> = {}) {
         super(config);
@@ -90,7 +89,6 @@ export class ForceLayout extends BaseLayout<ForceLayoutConfig> {
      */
     reset(): void {
         this.#velocities.clear();
-        this.#currentIteration = 0;
     }
 
     protected place(nodes: Node[], config: ForceLayoutConfig): void {
@@ -120,12 +118,11 @@ export class ForceLayout extends BaseLayout<ForceLayoutConfig> {
 
         // Always reset velocities for a fresh simulation
         this.#velocities.clear();
-        this.#currentIteration = 0;
 
         // Optionally randomize positions first
         if (config.randomize) {
             const seed = config.seed ?? 42;
-            let random = this.#mulberry32(seed);
+            const random = this.#mulberry32(seed);
             for (const node of nodes) {
                 if (!this.isPinned(node)) {
                     node.position.set(

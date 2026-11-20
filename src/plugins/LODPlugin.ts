@@ -61,13 +61,9 @@ export class LODPlugin extends BaseSystemPlugin {
         const hiddenParentIds = new Set<string>();
         for (const node of nodes) {
             if ((node as any).isGroupNode) {
-                let distanceOrExtent = 0;
-                if (isOrtho) {
-                    const extent = visibleWorldExtent(camera, 0);
-                    distanceOrExtent = extent.height;
-                } else {
-                    distanceOrExtent = camera.position.distanceTo(node.position);
-                }
+                const distanceOrExtent = isOrtho
+                    ? visibleWorldExtent(camera, 0).height
+                    : camera.position.distanceTo(node.position);
                 (node as any).updateLod(distanceOrExtent);
                 if ((node.data as Record<string, unknown>)._lastLodVisible === false)
                     hiddenParentIds.add(node.id);
@@ -94,20 +90,11 @@ export class LODPlugin extends BaseSystemPlugin {
     ): void {
         for (const node of nodes) {
             const isHiddenByParent = this._isNodeHiddenByParent(node, hiddenParentIds);
-            let distanceOrExtent = 0;
-            let maxDistOrExtent = 0;
-            let transitionRange = 0;
-
-            if (isOrtho) {
-                const extent = visibleWorldExtent(camera, 0);
-                distanceOrExtent = extent.height;
-                maxDistOrExtent = this.maxVisibleExtent;
-                transitionRange = this.extentTransitionRange;
-            } else {
-                distanceOrExtent = camera.position.distanceTo(node.position);
-                maxDistOrExtent = this.maxDistance;
-                transitionRange = this.transitionRange;
-            }
+            const distanceOrExtent = isOrtho
+                ? visibleWorldExtent(camera, 0).height
+                : camera.position.distanceTo(node.position);
+            const maxDistOrExtent = isOrtho ? this.maxVisibleExtent : this.maxDistance;
+            const transitionRange = isOrtho ? this.extentTransitionRange : this.transitionRange;
 
             const visible = !isHiddenByParent && distanceOrExtent <= maxDistOrExtent;
             const opacity = this._opacityForDistance(distanceOrExtent, maxDistOrExtent, transitionRange);

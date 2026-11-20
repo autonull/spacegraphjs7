@@ -57,7 +57,7 @@ export function buildOctree<P extends { position: { x: number; y: number; z: num
     getMass: (node: P) => number,
     config: Partial<BarnesHutConfig> = {},
 ): OctreeNode {
-    const { theta, maxDepth, minCellSize } = { ...DEFAULT_BH_CONFIG, ...config };
+    const { maxDepth, minCellSize } = { ...DEFAULT_BH_CONFIG, ...config };
 
     // Find bounds
     let minX = Infinity, minY = Infinity, minZ = Infinity;
@@ -137,12 +137,11 @@ function insertIntoOctree<P extends { position: { x: number; y: number; z: numbe
     if (!cell.children && cell.leaf) {
         if (depth >= maxDepth || cell.halfSize <= minCellSize) {
             // Can't subdivide further - combine masses
-            const existing = cell.leaf;
             cell.leaf = null;
             // We'll treat as combined mass at center of mass
             return;
         }
-        subdivide(cell, depth);
+        subdivide(cell);
         // Re-insert existing leaf
         const existing = cell.leaf!;
         insertIntoOctree(cell, { position: { x: existing.x, y: existing.y, z: existing.z } } as P, existing.mass, existing.id, depth + 1, maxDepth, minCellSize);
@@ -156,7 +155,7 @@ function insertIntoOctree<P extends { position: { x: number; y: number; z: numbe
     }
 }
 
-function subdivide(cell: OctreeNode, depth: number): void {
+function subdivide(cell: OctreeNode): void {
     const h = cell.halfSize / 2;
     const cx = cell.centerX;
     const cy = cell.centerY;

@@ -1,6 +1,6 @@
 import type { Node } from '../nodes/Node';
 import type { Edge } from '../edges/Edge';
-import type { GraphSpec, NodeSpec, EdgeSpec, NodeData } from '../types';
+import type { GraphSpec, NodeData } from '../types';
 import { safeClone } from '../utils/math';
 
 export class GraphSerialization {
@@ -26,11 +26,6 @@ export class GraphSerialization {
                 data: safeClone(data),
             })),
         };
-    }
-
-    from(spec: GraphSpec): void {
-        // This is a placeholder - actual implementation would need addNode/addEdge methods
-        // The Graph class will call addNode/addEdge directly
     }
 
     // Snapshot/Restore

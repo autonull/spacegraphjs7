@@ -27,21 +27,19 @@ const INTERACTION_EVENTS: InputEventType[] = [
 ];
 const BATCHED_EVENTS = new Set<InputEventType>(['mousemove', 'touchmove', 'pointermove']);
 
-function createAction(
-    id: string,
-    prefix: 'camera' | 'interaction',
-    isKeyEvent = false,
-): InputAction {
+function createAction(id: string, prefix: 'camera' | 'interaction'): InputAction {
     const eventName = `input:${prefix}:${id.split('.')[1]}`;
     const isBatched = BATCHED_EVENTS.has(id.split('.')[1]);
     return {
         id,
         label: `${prefix} ${id.split('.')[1]}`,
         handler: (e: InputEvent, ctx: InputContext) => {
-            const data = isKeyEvent
-                ? { ...(e.data as any), originalEvent: e.originalEvent }
-                : { ...(e.data as any), originalEvent: e.originalEvent };
-            isBatched ? ctx.emitBatched(eventName, data) : ctx.emit(eventName, data);
+            const data = { ...(e.data as any), originalEvent: e.originalEvent };
+            if (isBatched) {
+                ctx.emitBatched(eventName, data);
+                return;
+            }
+            ctx.emit(eventName, data);
         },
     };
 }
@@ -50,8 +48,8 @@ function createActions(): InputAction[] {
     return [
         ...CAMERA_EVENTS.map((e) => createAction(`camera.${e}`, 'camera')),
         ...INTERACTION_EVENTS.map((e) => createAction(`interaction.${e}`, 'interaction')),
-        createAction('interaction.keydown', 'interaction', true),
-        createAction('interaction.keyup', 'interaction', true),
+        createAction('interaction.keydown', 'interaction'),
+        createAction('interaction.keyup', 'interaction'),
     ];
 }
 

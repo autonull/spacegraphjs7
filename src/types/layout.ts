@@ -1,6 +1,5 @@
 // Typed layout options per strategy for type-safe layoutOnce() calls
 
-import type { LayoutOptions } from '../plugins/layouts/BaseLayout';
 import type { ForceLayoutConfig } from '../plugins/layouts/ForceLayout';
 import type { CircularLayoutOptions } from '../plugins/layouts/CircularLayout';
 import type { GridLayoutOptions } from '../plugins/layouts/GridLayout';

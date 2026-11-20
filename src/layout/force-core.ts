@@ -1,5 +1,4 @@
-import type { Placement, PlacementItem, Position } from './placement';
-import { buildOctree, computeBarnesHutForce, type OctreeNode, type BarnesHutConfig } from './octree';
+import { buildOctree, computeBarnesHutForce, type BarnesHutConfig } from './octree';
 
 /** The force placement's vocabulary: what pulls a box towards another one. */
 export interface ForceMeta {
@@ -50,11 +49,8 @@ const DEFAULT_DEPTH_STEP = 64;
 const DEFAULT_NODE_PADDING = 20;
 const DEFAULT_ATTRACTION = 0.01;
 const DEFAULT_REPULSION = 10000;
-const DEFAULT_DAMPING = 0.9;
 const DEFAULT_GRAVITY = 0.1;
 const DEFAULT_MIN_DISTANCE = 50;
-const DEFAULT_MAX_DISTANCE = 1000;
-const DEFAULT_TEMPERATURE = 100;
 
 /** The golden angle: it spreads the initial placement without a random number generator. */
 const GOLDEN_ANGLE = 2.399963229728653;
@@ -73,11 +69,8 @@ export class ForceCore {
     readonly #nodePadding: number;
     readonly #attraction: number;
     readonly #repulsion: number;
-    readonly #damping: number;
     readonly #gravity: number;
     readonly #minDistance: number;
-    readonly #maxDistance: number;
-    readonly #temperature: number;
     readonly #randomize: boolean;
     readonly #onProgress?: (iteration: number, total: number) => void;
     readonly #useBarnesHut: boolean;
@@ -93,11 +86,8 @@ export class ForceCore {
         this.#nodePadding = config.nodePadding ?? DEFAULT_NODE_PADDING;
         this.#attraction = config.attraction ?? DEFAULT_ATTRACTION;
         this.#repulsion = config.repulsion ?? DEFAULT_REPULSION;
-        this.#damping = config.damping ?? DEFAULT_DAMPING;
         this.#gravity = config.gravity ?? DEFAULT_GRAVITY;
         this.#minDistance = config.minDistance ?? DEFAULT_MIN_DISTANCE;
-        this.#maxDistance = config.maxDistance ?? DEFAULT_MAX_DISTANCE;
-        this.#temperature = config.temperature ?? DEFAULT_TEMPERATURE;
         this.#randomize = config.randomize ?? false;
         this.#onProgress = config.onProgress;
         this.#useBarnesHut = config.useBarnesHut ?? (config.iterations && config.iterations > 1000);
@@ -137,7 +127,7 @@ export class ForceCore {
         nodes: P[],
         getLinks: (node: P) => readonly string[],
         getRadius: (node: P) => number,
-        isPinned: (node: P) => boolean,
+        _isPinned: (node: P) => boolean,
     ): Map<string, { x: number; y: number; z: number }> {
         if (!nodes.length) return new Map();
 

@@ -19,10 +19,7 @@ import {
     type PluginCtor,
 } from '../core/defaults';
 import { SpaceGraph } from '../SpaceGraph';
-import type { SpaceGraphEvents, SpaceGraphOptions } from '../types';
-import { createLogger } from '../utils/logger';
-
-const logger = createLogger('LifecycleController');
+import type { SpaceGraphEvents } from '../types';
 
 export class LifecycleController {
     #initialized = false;
@@ -124,6 +121,7 @@ export class LifecycleController {
             ...this.sg.options.cameraControls,
         } as any);
         this.sg.cameraControls.sg = this.sg;
+        this.#setupKeyboard();
         this.sg.input = this.sg.inputManagerFactory({ sg: this.sg, events: this.sg.events });
         applyDefaultInputConfig(this.sg.input, this.sg);
         forwardGraphEvents(this.sg.graph, this.sg.events);
