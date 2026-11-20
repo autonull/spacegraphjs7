@@ -509,7 +509,7 @@ export class CameraControls {
     }
 
     private onKeyDown(e: KeyboardEvent): void {
-        if (this.#isEditable(e)) return;
+        if (this.#isEditable(e) || e.ctrlKey || e.metaKey || e.altKey) return;
         this.keyState.set(e.key.toLowerCase(), true);
         this.requestFrame();
     }

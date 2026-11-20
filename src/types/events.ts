@@ -32,6 +32,7 @@ export interface SpaceGraphEvents {
     'edge:updated': { edge: Edge; changes: Partial<import('./spec').EdgeSpec>; timestamp: number };
     'graph:cleared': { timestamp: number };
     'selection:changed': SelectionChangedPayload;
+    'focus:changed': { node: Node; focused: boolean };
     'node:selection-changed': { id: string; selected: boolean };
     'node:click': { id: string; originalEvent?: MouseEvent } | { node: Node };
     'edge:click': { id: string; originalEvent?: MouseEvent };

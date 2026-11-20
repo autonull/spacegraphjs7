@@ -386,14 +386,15 @@ export class InteractionPlugin extends BaseSystemPlugin {
                 }
                 break;
 
-            case 'Tab':
-                e.preventDefault();
-                if (e.shiftKey) {
-                    this.focusManager.focusPrevious();
-                } else {
-                    this.focusManager.focusNext();
-                }
+            case 'Tab': {
+                const target = e.originalEvent?.target;
+                const canvas = this.sg.renderer?.renderer?.domElement;
+                if (!(target instanceof globalThis.Node) || !canvas?.contains(target)) return;
+                e.originalEvent?.preventDefault();
+                if (e.shiftKey) this.focusManager.focusPrevious();
+                else this.focusManager.focusNext();
                 break;
+            }
         }
     }
 
@@ -455,7 +456,7 @@ export class InteractionPlugin extends BaseSystemPlugin {
 
         const controls = this.sg.cameraControls;
         if (this.lastZoomedId === zoomId && controls.hasZoomHistory) {
-            (controls as any).flyBack();
+            controls.zoomOut();
             this.lastZoomedId = null;
         } else {
             controls.zoomTo(targetPos, targetRadius);

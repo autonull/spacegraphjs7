@@ -76,6 +76,27 @@ describe('L1.27 MinimapPlugin embedding', () => {
         expect(() => plugin.onPostRender(1)).not.toThrow();
     });
 
+    it('hit-tests the minimap in canvas-local coordinates', () => {
+        const sg = fakeSg();
+        const canvas = sg.renderer.renderer.domElement;
+        canvas.getBoundingClientRect = () =>
+            ({ left: 100, top: 50, width: 800, height: 600 }) as DOMRect;
+        const targets: number[][] = [];
+        sg.cameraControls.setTarget = (x: number, y: number, z: number) =>
+            targets.push([x, y, z]);
+        const plugin = new MinimapPlugin();
+        plugin.settings.size = 160;
+        plugin.settings.margin = 12;
+        plugin.init(sg as never, sg.graph as never, sg.events as never);
+
+        // Canvas-local minimap centre (708, 508) plus the canvas page offset (100, 50).
+        canvas.dispatchEvent(
+            new PointerEvent('pointerdown', { clientX: 808, clientY: 558, bubbles: true }),
+        );
+        expect(targets).toEqual([[0, 0, 0]]);
+        plugin.dispose();
+    });
+
     it('does no scene work while disabled', () => {
         const sg = fakeSg();
         let renders = 0;

@@ -1,5 +1,4 @@
 import { Box3, OrthographicCamera, PerspectiveCamera, Vector3 } from 'three';
-import type { CameraControls } from '../core';
 import type { SpaceGraphEvents } from '../types';
 import type { Graph } from '../core/Graph';
 import type { SpaceGraph } from '../SpaceGraph';
@@ -135,24 +134,23 @@ export class MinimapPlugin extends BaseSystemPlugin {
         };
     }
 
+    #localPoint(e: PointerEvent): { x: number; y: number } {
+        const rect = this.sg.renderer.renderer.domElement.getBoundingClientRect();
+        return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    }
+
     private _inBounds(e: PointerEvent): boolean {
+        const { x, y } = this.#localPoint(e);
         const { left, top, size } = this._getBounds();
-        return (
-            e.clientX >= left &&
-            e.clientX <= left + size &&
-            e.clientY >= top &&
-            e.clientY <= top + size
-        );
+        return x >= left && x <= left + size && y >= top && y <= top + size;
     }
 
     private _onPointerDown = (e: PointerEvent) => {
         if (!this.settings.enabled || !this._inBounds(e)) return;
         this.isDragging = true;
-        const controls = this.sg.cameraControls as
-            (CameraControls & { enabled?: boolean }) | undefined;
-        if (controls) controls.enabled = false;
-        const pt = this._pointerToWorld(e.clientX, e.clientY);
-        controls?.setTarget?.(pt.x, pt.y, 0);
+        const { x, y } = this.#localPoint(e);
+        const pt = this._pointerToWorld(x, y);
+        this.sg.cameraControls?.setTarget?.(pt.x, pt.y, 0);
         this._updateOverlay();
         e.stopPropagation();
         e.preventDefault();
@@ -161,16 +159,14 @@ export class MinimapPlugin extends BaseSystemPlugin {
     private _onPointerUp = () => {
         if (!this.isDragging) return;
         this.isDragging = false;
-        const controls = this.sg.cameraControls as
-            (CameraControls & { enabled?: boolean }) | undefined;
-        if (controls) controls.enabled = true;
         this.sg.renderer.renderer.domElement.style.cursor = 'auto';
     };
 
     private _onPointerMove = (e: PointerEvent) => {
         if (!this.isDragging) return;
-        const pt = this._pointerToWorld(e.clientX, e.clientY);
-        (this.sg.cameraControls as CameraControls | undefined)?.setTarget?.(pt.x, pt.y, 0);
+        const { x, y } = this.#localPoint(e);
+        const pt = this._pointerToWorld(x, y);
+        this.sg.cameraControls?.setTarget?.(pt.x, pt.y, 0);
         this._updateOverlay();
         e.stopPropagation();
     };

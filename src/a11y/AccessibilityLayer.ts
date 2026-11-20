@@ -3,6 +3,8 @@
 // minimal structural item so the core never imports the renderer contract; a host passes
 // `RenderModel.nodes` mapped to `{ id, label, kind, status, interactive }`.
 
+import type { EventEmitter } from '../core/EventEmitter';
+import type { SpaceGraphEvents } from '../types';
 import { clamp } from '../utils/math';
 
 export interface AccessibleItem {
@@ -275,4 +277,16 @@ export class AccessibilityLayer {
         }
         li.tabIndex = focused ? 0 : -1;
     }
+}
+
+/** Keeps the mirror's roving tabindex on the node the canvas focuses. Returns an unbind function. */
+export function bindA11yFocus(
+    events: EventEmitter<SpaceGraphEvents>,
+    layer: AccessibilityLayer,
+): () => void {
+    const onFocus = (event: SpaceGraphEvents['focus:changed']): void => {
+        if (event.focused) layer.focus(event.node.id);
+    };
+    events.on('focus:changed', onFocus);
+    return () => events.off('focus:changed', onFocus);
 }

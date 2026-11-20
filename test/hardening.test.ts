@@ -95,6 +95,18 @@ describe('L1.6 container-scoped keyboard', () => {
         expect(camera.position.distanceTo(start)).toBeGreaterThan(0);
     });
 
+    it('ignores camera keys with a modifier held', () => {
+        const { controls, camera, container } = makeControls('container');
+        controls.update();
+        const start = camera.position.clone();
+        container.dispatchEvent(
+            new KeyboardEvent('keydown', { key: 'w', ctrlKey: true, bubbles: true }),
+        );
+        controls.update();
+        controls.update();
+        expect(camera.position.distanceTo(start)).toBeCloseTo(0, 6);
+    });
+
     it('ignores keys dispatched to the window when scoped to the container', () => {
         const { controls, camera } = makeControls('container');
         controls.update();

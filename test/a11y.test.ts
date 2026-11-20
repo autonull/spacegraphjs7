@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { AccessibilityLayer } from '../src/a11y/AccessibilityLayer';
+import { AccessibilityLayer, bindA11yFocus } from '../src/a11y/AccessibilityLayer';
+import { EventEmitter } from '../src/core/EventEmitter';
+import type { SpaceGraphEvents } from '../src/types';
 
 let container: HTMLElement;
 
@@ -200,6 +202,30 @@ describe('AccessibilityLayer', () => {
         layer.setEdges([]);
         expect(container.querySelector('li[data-edge="e1"]')).toBeNull();
         expect(layer.edges).toEqual([]);
+        layer.dispose();
+    });
+});
+
+
+describe('a11y focus bridge', () => {
+    it('moves the mirror roving tabindex with the canvas focus', () => {
+        const layer = new AccessibilityLayer(container);
+        layer.setItems([
+            { id: 'a', label: 'Alpha' },
+            { id: 'b', label: 'Beta' },
+        ]);
+        const events = new EventEmitter<SpaceGraphEvents>();
+        const unbind = bindA11yFocus(events, layer);
+
+        events.emit('focus:changed', { node: { id: 'b' } as never, focused: true });
+        expect(layer.currentId).toBe('b');
+
+        events.emit('focus:changed', { node: { id: 'a' } as never, focused: false });
+        expect(layer.currentId).toBe('b');
+
+        unbind();
+        events.emit('focus:changed', { node: { id: 'a' } as never, focused: true });
+        expect(layer.currentId).toBe('b');
         layer.dispose();
     });
 });
