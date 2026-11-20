@@ -583,6 +583,7 @@ When adding hot-path code, avoid per-frame allocation, prefer sets for membershi
 | What the library does not do       | `docs/limitations.md`              |
 | Vision plugin details              | `docs/vision-plugin.md`            |
 | Component naming and surface rules | `AGENTS.md`                        |
+| Recursive scopes and nested layouts | `docs/scopes.md`                  |
 | Roadmap and status                 | `ROADMAP.md`                       |
 | Strategy and phases                | `PLAN/INDEX.md`                    |
 | Research direction                 | `PLAN/ACADEMIC-RESEARCH.md`        |

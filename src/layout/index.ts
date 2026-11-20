@@ -12,6 +12,8 @@ export * from './force';
 export * from './force-core';
 export * from './octree';
 export * from './placement';
+export * from './scope';
+export * from './scope-layout';
 export * from './strategies';
 export {
     computeIncremental,
