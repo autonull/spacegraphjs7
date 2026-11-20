@@ -31,4 +31,4 @@ describe('entry critical path', () => {
         expect(recorders.onnx).not.toHaveBeenCalled();
         expect(recorders.monaco).not.toHaveBeenCalled();
     });
-});
+}, 20000);

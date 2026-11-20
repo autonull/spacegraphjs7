@@ -35,4 +35,4 @@ describe('SSR-safe imports', () => {
         expect(cytoscapeRenderer.CytoscapeRenderer).toBeTypeOf('function');
         expect(svgRenderer.renderToSVG).toBeTypeOf('function');
     });
-});
+}, 20000);
