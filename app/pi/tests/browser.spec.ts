@@ -140,6 +140,60 @@ test.describe('the Pi reference app', () => {
         expect(errors).toEqual([]);
     });
 
+    test('drives zoom-driven levels, budgets and an opt-in lane scope', async ({ page }) => {
+        const errors = await boot(page);
+
+        expect(await page.evaluate(() => (window as any).__pi.levelMode())).toBe('auto');
+        expect(await page.evaluate(() => (window as any).__pi.budgets())).toEqual({
+            overview: 12,
+            execution: 40,
+            detail: 24,
+        });
+        await page.evaluate(() => (window as any).__pi.setLevelMode('detail'));
+        expect(await page.evaluate(() => (window as any).__pi.level())).toBe('detail');
+        await expect(page.locator('#level-mode')).toHaveValue('detail');
+        await page.evaluate(() => (window as any).__pi.setLevelMode('auto'));
+
+        const before = await page.evaluate(() => (window as any).__pi.scopeSpecs().map((s: any) => s.strategy));
+        expect(before).toContain('force');
+        const id = await page.evaluate(() => (window as any).__pi.scopes().find((s: string) => s.startsWith('unit-')));
+        await page.evaluate((value) => (window as any).__pi.setLaneScope(value), id);
+        const after = await page.evaluate(() => (window as any).__pi.scopeSpecs());
+        expect(after.find((spec: any) => spec.id === id).strategy).toBe('grid');
+        expect(errors).toEqual([]);
+    });
+
+    test('windows the render, exports artifacts and mirrors gestures on the keyboard', async ({ page }) => {
+        const errors = await boot(page);
+
+        await page.evaluate(() => (window as any).__pi.loadFixture());
+        await page.evaluate(() => (window as any).__pi.setWindowSize(1));
+        expect(await page.evaluate(() => (window as any).__pi.windowSize())).toBe(1);
+        expect(await page.evaluate(() => (window as any).__pi.hidden())).toBeGreaterThan(0);
+        await expect(page.locator('#history-banner')).toBeVisible();
+
+        for (const [format, marker] of [['json', 'nodes'], ['svg', '<svg'], ['html', '<li']] as const) {
+            const output = await page.evaluate((value) => (window as any).__pi.export(value), format);
+            expect(output, format).toContain(marker);
+        }
+
+        const viewport = () =>
+            page.evaluate(() => {
+                const [instance] = Array.from((window as any).SpaceGraph.instances);
+                return (instance as any).cameraControls.target.x;
+            });
+        await page.locator('#canvas').focus();
+        const beforePan = await viewport();
+        await page.keyboard.press('ArrowLeft');
+        expect(await viewport()).not.toBe(beforePan);
+        expect(await page.evaluate(() => (window as any).__pi.unsupported().map((s: any) => s.id))).toEqual([
+            'webxr',
+            'sound',
+            'haptics',
+        ]);
+        expect(errors).toEqual([]);
+    });
+
     test('submits the prompt form against the local op server', async ({ page }) => {
         const errors = await boot(page);
         const before = await page.evaluate(() => (window as any).__pi.ops());

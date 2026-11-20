@@ -7,6 +7,8 @@ export type AgentScopes = {
     readonly nodeById: ReadonlyMap<string, string>;
     /** Source node id -> qualified scope id. */
     readonly qualifiedById: ReadonlyMap<string, string>;
+    /** Portal node id -> child scope id. */
+    readonly portalByNode: ReadonlyMap<string, string>;
 };
 
 const DEPTH: Readonly<Record<string, number>> = {
@@ -28,7 +30,7 @@ const unitOf = (node: { readonly data?: Readonly<Record<string, unknown>> }): st
  * a delegated action opens a nested scope for its subtree. Edges that cross scopes are declared once,
  * in the source scope, with the target's qualified path.
  */
-export function agentScopes(view: AgentView): AgentScopes {
+export function agentScopes(view: AgentView, options: { laneScope?: string } = {}): AgentScopes {
     const nodes = new Map(view.nodes.map((node) => [node.id, node]));
     const root = view.root && nodes.has(view.root) ? view.root : (view.nodes.find((n) => n.kind === 'run')?.id ?? '');
 
@@ -161,13 +163,23 @@ export function agentScopes(view: AgentView): AgentScopes {
         });
     }
 
-    const specs: ScopeSpec[] = [...scopeIds].map((id) => ({
-        id,
-        parent: parentOfScope.get(id),
-        strategy: 'force',
-        nodes: content.get(id) ?? [],
-        edges: edges.get(id) ?? [],
-    }));
+    const specs: ScopeSpec[] = [...scopeIds].map((id) => {
+        const list = content.get(id) ?? [];
+        if (id === options.laneScope) {
+            const kindByNode = new Map(view.nodes.map((node) => [node.id, node.kind]));
+            list.forEach((node, index) => {
+                node.lane = kindByNode.get(node.id) ?? 'action';
+                node.row = index;
+            });
+        }
+        return {
+            id,
+            parent: parentOfScope.get(id),
+            strategy: id === options.laneScope ? 'grid' : 'force',
+            nodes: list,
+            edges: edges.get(id) ?? [],
+        };
+    });
 
-    return { specs, nodeById, qualifiedById };
+    return { specs, nodeById, qualifiedById, portalByNode: portalOf };
 }

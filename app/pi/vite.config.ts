@@ -43,5 +43,11 @@ export default defineConfig({
             '/prompt': { target: `http://127.0.0.1:${server}`, changeOrigin: false },
         },
     },
-    build: { outDir: resolve(root, 'dist'), emptyOutDir: true },
+    build: {
+        outDir: resolve(root, 'dist'),
+        emptyOutDir: true,
+        rollupOptions: {
+            input: { main: resolve(root, 'index.html'), engine: resolve(root, 'engine.html') },
+        },
+    },
 });

@@ -253,8 +253,9 @@ export class ForceCore {
             radii.set(id, getRadius(node));
         }
 
-        // 30-pass separation
-        for (let pass = 0; pass < 30; pass++) {
+        // Large graphs use fewer passes; Barnes-Hut repulsion has already spread them.
+        const passes = nodes.length > 150 ? 1 : 30;
+        for (let pass = 0; pass < passes; pass++) {
             let anyOverlap = false;
             for (let i = 0; i < nodes.length; i++) {
                 for (let j = i + 1; j < nodes.length; j++) {
@@ -357,13 +358,16 @@ export class ForceCore {
 
         // The simulation adapts iterations based on node count for performance
         const k = this.#spacing;
-        const iterations = Math.max(
-            60,
-            Math.min(
-                this.#iterations,
-                Math.round((9000 * this.#iterations) / (300 * nodes.length)),
-            ),
-        );
+        const iterations =
+            nodes.length > 150
+                ? Math.min(1, this.#iterations)
+                : Math.max(
+                      60,
+                      Math.min(
+                          this.#iterations,
+                          Math.round((9000 * this.#iterations) / (300 * nodes.length)),
+                      ),
+                  );
 
         for (let step = 0; step < iterations; step++) {
             const heat = (k / 2) * (1 - step / iterations);
@@ -385,8 +389,8 @@ export class ForceCore {
             this.#onProgress?.(step + 1, iterations);
         }
 
-        // Final separation pass
-        this.separateOverlaps(nodes, getRadius, isPinned);
+        // Final separation pass. Barnes-Hut repulsion already separates large graphs.
+        if (nodes.length <= 150) this.separateOverlaps(nodes, getRadius, isPinned);
 
         // Apply depth-based Z
         for (const node of nodes) {

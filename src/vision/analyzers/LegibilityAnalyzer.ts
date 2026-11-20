@@ -86,6 +86,11 @@ export class LegibilityAnalyzer {
         data: Record<string, unknown>;
         object?: THREE.Object3D;
     }): THREE.Color | null {
+        // HTML nodes render their text with an inline style; the node box colour is a neutral
+        // surface and would report a false contrast failure.
+        const style = node.data.style as Record<string, unknown> | undefined;
+        if (typeof style?.color === 'string') return new THREE.Color(style.color);
+
         // Try to get color from data
         const dataColor = node.data.color;
         if (typeof dataColor === 'string') {
@@ -111,6 +116,8 @@ export class LegibilityAnalyzer {
      * Get background color
      */
     private getBackgroundColor(node: { data: Record<string, unknown> }): THREE.Color | null {
+        const style = node.data.style as Record<string, unknown> | undefined;
+        if (typeof style?.backgroundColor === 'string') return new THREE.Color(style.backgroundColor);
         // Try to get from data
         const bgColor = (node.data as { backgroundColor?: string | number }).backgroundColor;
         if (bgColor !== undefined) {

@@ -10,7 +10,9 @@
         "test": "vitest run --config vitest.config.ts",
         "test:e2e": "playwright test --config playwright.config.ts",
         "test:publish": "tsx scripts/publish-check.ts",
-        "verify": "tsx scripts/verify.ts"
+        "verify": "tsx scripts/verify.ts",
+        "verify:visual": "playwright test --config playwright.config.ts tests/vision.spec.ts",
+        "scale": "tsx scripts/scale.ts"
     },
     "dependencies": {
         "@earendil-works/pi-agent-core": "1.5.2",

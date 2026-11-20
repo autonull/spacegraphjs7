@@ -10,6 +10,8 @@ pnpm --filter pi test        # translation, fold and capability tests (no provid
 pnpm --filter pi test:e2e    # Playwright against the app's own Vite with PI_LOCAL_FEED=1
 pnpm --filter pi test:publish # packed agent consumed outside the workspace, without Pi
 pnpm --filter pi verify      # one-way dependency guard
+pnpm --filter pi verify:visual # vision-gated capture matrix (depth × arrangement × context)
+pnpm --filter pi scale       # measured scale budgets
 pnpm --filter pi build
 ```
 
@@ -31,10 +33,31 @@ agent must have no `@earendil-works/*` dependency.
 - `src/capabilities.ts` — gallery evidence, including the five investigative questions, backed by
   `@spacegraphjs/agent` selectors.
 - `src/fixture.ts` — provider-free canonical run containing all five situations, with pinned answers.
+- `src/policy.ts` — pure host policy: vision scores, 60-turn window, zoom→level with hysteresis,
+  activity decay, export formats and report-only sensory seams.
+- `src/engine.ts` + `engine.html` — engine-mode page: `SpaceGraph.create({ scopes: ... })` with a
+  zero-gravity `PhysicsPlugin` enabled only for pointer play and reconciled at rest. One position
+  authority per view: the scope simulation owns layout.
 - `src/theme.ts` — host CSS tokens → `RenderTheme`.
 - `playwright.config.ts`, `tests/browser.spec.ts` — browser checks for the 3D graph, scope tree,
   depth gating, hybrid transcript, permalink, gallery, prompt form and follow/attention hooks.
 - `scripts/publish-check.ts` — packed-library consumer check.
+
+## Ergonomics and gates
+
+The frame clock advances the scope simulation, camera director, activity decay and vision sampling,
+then sleeps when settled and no flight is active. Zoom selects `overview/execution/detail` (DOM card
+budgets 12/40/24) unless a level is pinned; one unit scope can opt into a grid policy while the parent
+stays freeform. The transcript is always mounted; use the surface buttons and arrangement selector to
+switch views, click a graph node to reveal its message, or follow `#graph:<nodeID>`.
+
+Mouse: right-drag pan, wheel zoom, middle-drag orbit, click select, node drag, shift-drag box-select.
+Keyboard mirrors: arrows pan, `+`/`-` zoom, `f` focus the revealed node, `Esc` clears selection.
+Export produces JSON, SVG or HTML; WebXR, sound and haptics stay report-only seams.
+
+`verify:visual` runs the vision-gated capture matrix (depth modes × arrangements, reduced motion,
+failure, large stream and lane-scope contexts). `scale` measures model build, pipeline, 60-turn force
+layout and the gzipped 3D chunk; the measured force-layout budget is 1.5 s for the scope solver.
 
 ## Provider
 

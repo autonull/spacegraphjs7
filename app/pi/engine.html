@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>pi · engine mode</title>
+        <style>
+            body { margin: 0; height: 100vh; background: #0b1020; color: #e8edff; font: 13px/1.4 system-ui, sans-serif; }
+            header { position: absolute; top: 12px; left: 12px; right: 12px; z-index: 2; display: flex; gap: 12px; align-items: center; }
+            header button { background: #1d2742; color: inherit; border: 1px solid #2b3962; border-radius: 6px; padding: 6px 10px; cursor: pointer; }
+            #canvas { width: 100%; height: 100%; }
+            #note { position: absolute; bottom: 12px; left: 12px; z-index: 2; color: #9aa7c7; font-size: 11px; max-width: 620px; }
+        </style>
+    </head>
+    <body>
+        <header>
+            <strong>pi · engine mode</strong>
+            <span id="status">connecting…</span>
+            <button type="button" id="play">Pointer play</button>
+            <button type="button" id="reconcile">Reconcile</button>
+        </header>
+        <div id="canvas"></div>
+        <div id="note">
+            One position authority per view. The scope simulation owns layout; zero-gravity
+            PhysicsPlugin is enabled only for pointer play and reconciled at rest.
+        </div>
+        <script type="module" src="./src/engine.ts"></script>
+    </body>
+</html>

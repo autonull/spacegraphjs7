@@ -28,15 +28,31 @@ import {
     runCapability,
     type PiHostState,
 } from './capabilities';
+import { fixtureKernel } from './fixture';
 import { foldKernelOps } from './ops';
+import {
+    CARD_BUDGETS,
+    UNSUPPORTED,
+    decayActivity,
+    exportHTML,
+    exportJSON,
+    exportSVG,
+    levelForZoom,
+    scoreVision,
+    windowedView,
+    type Position,
+    type VisionScores,
+} from './policy';
 import { agentScopes } from './scopes';
 import { readTheme } from './theme';
 
 export type Arrangement = 'stacked' | 'side' | 'floating';
 export type Surface = 'log' | 'map' | 'hybrid';
+export type LevelMode = AgentLevel | 'auto';
 
 const FOLLOW_MODES: readonly FollowMode[] = ['off', 'turn', 'node', 'node+focus'];
 const LEVELS: readonly AgentLevel[] = ['overview', 'execution', 'detail'];
+const LEVEL_MODES: readonly LevelMode[] = ['auto', ...LEVELS];
 const ARRANGEMENTS: readonly Arrangement[] = ['stacked', 'side', 'floating'];
 const SURFACES: readonly Surface[] = ['log', 'map', 'hybrid'];
 
@@ -46,13 +62,12 @@ export const el = <T extends HTMLElement>(id: string): T => {
     return found as T;
 };
 
-type Position = { x: number; y: number; z: number };
 const lerp = (a: number, b: number, t: number): number => a + (b - a) * t;
 
 /**
  * Host-owned policy. The library never learns about Pi, prompts, lanes, levels or depth choices;
  * this class translates a stream of kernel ops into a settled, recursive 3D graph and drives the
- * simulation and camera from one frame clock.
+ * simulation, activity, vision sampling and camera from one frame clock.
  */
 export class PiHost {
     readonly renderer = new SpaceGraphRenderer();
@@ -69,6 +84,7 @@ export class PiHost {
     #specs: readonly ScopeSpec[] = [];
     #nodeByQualified: ReadonlyMap<string, string> = new Map();
     #qualifiedByNode: ReadonlyMap<string, string> = new Map();
+    #portalByNode: ReadonlyMap<string, string> = new Map();
     #view = agentDomain.build(new Kernel());
     #model?: RenderModel;
     #positions = new Map<string, Position>();
@@ -77,21 +93,32 @@ export class PiHost {
     #followMode: FollowMode = DEFAULT_LIVE_FOLLOW_MODE;
     #lastFollowFrame: CameraMove | null = null;
     #level: AgentLevel = 'execution';
+    #levelMode: LevelMode = 'auto';
     #arrangement: Arrangement = 'side';
     #surface: Surface = 'hybrid';
     #depthAxis: DepthAxis = 'turn';
     #depth: DepthMode = 'orbit';
     #projection: Projection;
     #reducedMotion: boolean;
+    #global: boolean;
     #revealed = '';
     #pinnedReveal?: string;
     #clock = false;
     #ticks = 0;
     #lastFrame = 0;
     #fps = 0;
+    #activity = new Map<string, number>();
+    #vision: VisionScores = { overlap: 0, legibility: 1 };
+    #visionTime = 0;
+    #windowSize = 60;
+    #hidden = 0;
+    #laneScope = '';
 
-    constructor(options: { projection?: Projection; reducedMotion?: boolean } = {}) {
+    constructor(
+        options: { projection?: Projection; reducedMotion?: boolean; global?: boolean } = {},
+    ) {
         this.#projection = options.projection ?? '3d';
+        this.#global = options.global ?? true;
         this.#reducedMotion =
             options.reducedMotion ??
             (typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches);
@@ -108,12 +135,19 @@ export class PiHost {
             theme: this.#theme,
             projection: this.#projection,
             reducedMotion: this.#reducedMotion,
+            global: this.#global,
         });
+        if (this.#global) {
+            const instances = (window as unknown as { SpaceGraph?: { instances?: Set<unknown> } }).SpaceGraph?.instances;
+            const vision = instances ? (Array.from(instances)[0] as { vision?: { modelsLoaded?: boolean } }) : undefined;
+            if (vision?.vision) vision.vision.modelsLoaded = true;
+        }
         if (!supportsDepth(this.renderer.capabilities, this.#depth)) this.#depth = 'flat';
         this.renderer.setDepth(this.#depth);
         this.#controller.bind(this.renderer);
         this.registerMotion();
         this.renderer.on('nodeClick', ({ id }) => this.reveal(id));
+        this.renderer.on('viewportChange', ({ zoom }) => this.applyAutoLevel(zoom));
 
         this.refresh();
         this.simulation.settle();
@@ -135,9 +169,10 @@ export class PiHost {
     refresh(): void {
         this.#view = agentDomain.build(this.#kernel);
         this.#controller.setModel(this.#view);
-        const scopes = agentScopes(this.#view);
+        const scopes = agentScopes(this.#view, { laneScope: this.#laneScope || undefined });
         this.#nodeByQualified = scopes.nodeById;
         this.#qualifiedByNode = scopes.qualifiedById;
+        this.#portalByNode = scopes.portalByNode;
         this.#specs = scopes.specs;
         this.simulation.setSpecs(scopes.specs, {
             band: this.band(),
@@ -166,6 +201,13 @@ export class PiHost {
                 status: String(node.data?.status ?? ''),
             }));
         this.refresh();
+        for (const node of newNodes) {
+            this.#activity.set(node.id, 1);
+            for (const edge of this.#view.edges) {
+                if (edge.source === node.id) this.#activity.set(edge.target, 1);
+                if (edge.target === node.id) this.#activity.set(edge.source, 1);
+            }
+        }
         this.follow(newNodes);
         this.renderTranscript();
         this.renderTurnMap();
@@ -174,13 +216,21 @@ export class PiHost {
 
     paint(): void {
         this.#positions = this.simulatedPositions();
-        this.#model = this.#adapter.build(toAdapterModel(this.#view), {
+        const windowed = windowedView(this.#view, this.#windowSize);
+        this.#hidden = windowed.hidden;
+        const model = toAdapterModel(windowed.view);
+        model.nodes = model.nodes.map((node) => {
+            const scope = this.#portalByNode.get(node.id);
+            return scope ? { ...node, scope } : node;
+        });
+        this.#model = this.#adapter.build(model, {
             level: this.#level,
             positions: this.#positions,
             edges: true,
             focus: this.#controller.selection[0],
         });
         this.renderer.setModel(this.#model);
+        this.renderHistory();
     }
 
     renderPositions(): void {
@@ -190,7 +240,12 @@ export class PiHost {
             ...this.#model,
             nodes: this.#model.nodes.map((node) => {
                 const position = this.#positions.get(node.id);
-                return position ? { ...node, position: [position.x, position.y, position.z] as const } : node;
+                const activity = this.#activity.get(node.id) ?? 0;
+                return {
+                    ...node,
+                    position: position ? ([position.x, position.y, position.z] as [number, number, number]) : node.position,
+                    emphasis: activity > 0 ? Math.min(1, (node.emphasis ?? 0.3) + activity) : node.emphasis,
+                };
             }),
         };
         this.renderer.setModel(this.#model);
@@ -202,6 +257,12 @@ export class PiHost {
         this.simulation.advance(seconds);
         this.#playback?.advance(seconds);
         if (this.#playback?.done) this.#playback = undefined;
+        decayActivity(this.#activity, seconds);
+        this.#visionTime += seconds;
+        if (this.#visionTime >= 0.4) {
+            this.#visionTime = 0;
+            this.sampleVision();
+        }
         this.renderPositions();
         this.#fps = lerp(this.#fps, seconds > 0 ? 1 / seconds : 0, 0.15);
         this.renderHud();
@@ -212,6 +273,7 @@ export class PiHost {
         this.simulation.settle();
         this.#playback?.finish();
         this.#playback = undefined;
+        this.#activity.clear();
         this.renderPositions();
     }
 
@@ -259,12 +321,31 @@ export class PiHost {
         return axis;
     }
 
-    setLevel(level: AgentLevel): AgentLevel {
-        if (!LEVELS.includes(level)) return this.#level;
-        this.#level = level;
-        this.paint();
-        this.renderHud();
+    setLevel(level: AgentLevel): LevelMode {
+        if (!LEVELS.includes(level)) return this.#levelMode;
+        this.#levelMode = level;
+        this.applyLevel(level);
         return level;
+    }
+
+    setLevelMode(mode: LevelMode): LevelMode {
+        if (!LEVEL_MODES.includes(mode)) return this.#levelMode;
+        this.#levelMode = mode;
+        el<HTMLSelectElement>('level-mode').value = mode;
+        if (mode !== 'auto') this.applyLevel(mode);
+        return mode;
+    }
+
+    setLaneScope(id: string): string {
+        this.#laneScope = id;
+        this.refresh();
+        return id;
+    }
+
+    setWindowSize(size: number): number {
+        this.#windowSize = Math.max(1, Math.floor(size));
+        this.paint();
+        return this.#windowSize;
     }
 
     setArrangement(arrangement: Arrangement): Arrangement {
@@ -281,6 +362,27 @@ export class PiHost {
         return surface;
     }
 
+    pan(dx: number, dy: number): void {
+        const viewport = this.renderer.getViewport();
+        this.renderer.setViewport({
+            ...viewport,
+            center: [viewport.center[0] - dx, viewport.center[1] - dy, viewport.center[2]],
+        });
+    }
+
+    zoomBy(factor: number): number {
+        const viewport = this.renderer.getViewport();
+        const zoom = Math.max(0.1, Math.min(6, viewport.zoom * factor));
+        this.renderer.setViewport({ ...viewport, zoom });
+        return zoom;
+    }
+
+    exportModel(format: 'json' | 'svg' | 'html'): string {
+        if (format === 'json') return exportJSON(this.#kernel);
+        if (format === 'svg') return exportSVG(this.#view, this.#positions);
+        return exportHTML(this.#view, this.#positions);
+    }
+
     run(id: string): readonly string[] {
         const lines = runCapability(id, this.context());
         this.showEvidence(lines);
@@ -293,6 +395,15 @@ export class PiHost {
             run: (id: string) => this.run(id),
             evidence: () => this.#evidence,
             ops: () => this.#kernel.nodes.length,
+            loadFixture: () => {
+                this.#kernel = fixtureKernel();
+                this.refresh();
+                this.renderTranscript();
+                this.renderTurnMap();
+                this.simulation.settle();
+                this.renderPositions();
+                return this.#kernel.nodes.length;
+            },
             follow: () => this.#followMode,
             setFollow: (mode: FollowMode) => this.setFollow(mode),
             followFrame: () => this.#lastFollowFrame,
@@ -311,7 +422,15 @@ export class PiHost {
             depthAxis: () => this.#depthAxis,
             setDepthAxis: (axis: DepthAxis) => this.setDepthAxis(axis),
             level: () => this.#level,
+            levelMode: () => this.#levelMode,
             setLevel: (level: AgentLevel) => this.setLevel(level),
+            setLevelMode: (mode: LevelMode) => this.setLevelMode(mode),
+            budgets: () => CARD_BUDGETS,
+            laneScope: () => this.#laneScope,
+            setLaneScope: (id: string) => this.setLaneScope(id),
+            windowSize: () => this.#windowSize,
+            setWindowSize: (size: number) => this.setWindowSize(size),
+            hidden: () => this.#hidden,
             arrangement: () => this.#arrangement,
             setArrangement: (arrangement: Arrangement) => this.setArrangement(arrangement),
             surface: () => this.#surface,
@@ -324,6 +443,12 @@ export class PiHost {
             clock: () => this.#clock,
             ticks: () => this.#ticks,
             fps: () => this.#fps,
+            vision: () => this.#vision,
+            activity: () => [...this.#activity.keys()],
+            pan: (dx: number, dy: number) => this.pan(dx, dy),
+            zoomBy: (factor: number) => this.zoomBy(factor),
+            export: (format: 'json' | 'svg' | 'html') => this.exportModel(format),
+            unsupported: () => UNSUPPORTED,
             motion: () => ({ verbs: this.director.verbs(), active: this.#playback?.active ?? [] }),
             ready: true,
         };
@@ -357,6 +482,9 @@ export class PiHost {
                 steps: this.simulation.steps,
             },
             motion: { verbs: this.director.verbs(), active: this.#playback?.active ?? [] },
+            vision: this.#vision,
+            activity: this.#activity.size,
+            window: { size: this.#windowSize, hidden: this.#hidden },
         };
     }
 
@@ -385,8 +513,31 @@ export class PiHost {
             const index = turns.indexOf(unit);
             return turns.length > 1 ? (index < 0 ? 0 : index / (turns.length - 1)) : 0;
         }
-        const depth: Readonly<Record<string, number>> = { run: 0, unit: 1, state: 2, message: 2, action: 3, artifact: 4, retry: 4 };
+        const depth: Readonly<Record<string, number>> = {
+            run: 0,
+            unit: 1,
+            state: 2,
+            message: 2,
+            action: 3,
+            artifact: 4,
+            retry: 4,
+        };
         return (depth[node.kind] ?? 2) / 4;
+    }
+
+    private sampleVision(): void {
+        const next = scoreVision(this.#positions);
+        const changed =
+            Math.abs(next.overlap - this.#vision.overlap) > 0.12 ||
+            Math.abs(next.legibility - this.#vision.legibility) > 0.1;
+        if (!changed) return;
+        this.#vision = next;
+        this.simulation.setPolicy({
+            band: this.band(),
+            focus: this.#qualifiedByNode.get(this.#controller.selection[0] ?? this.#revealed),
+            vision: next,
+        });
+        this.syncClock();
     }
 
     private registerMotion(): void {
@@ -420,18 +571,40 @@ export class PiHost {
         this.#playback = this.director.play(
             [
                 { id: `trace:${id}`, verb: 'trace', target: 'emphasis', from: 0, to: 1, duration: 0.2 },
-                { id: `flyTo:${id}`, verb: 'flyTo', target: 'camera', from: 0, to: 1, duration: 0.9, delay: 0.1 },
+                {
+                    id: `flyTo:${id}`,
+                    verb: 'flyTo',
+                    target: 'camera',
+                    from: 0,
+                    to: 1,
+                    duration: 0.9,
+                    delay: 0.1,
+                },
             ],
             { ease: 'power2.inOut' },
         );
         this.renderFollow();
     }
 
+    private applyAutoLevel(zoom: number): void {
+        if (this.#levelMode !== 'auto') return;
+        const next = levelForZoom(zoom, this.#level);
+        if (next !== this.#level) this.applyLevel(next);
+    }
+
+    private applyLevel(level: AgentLevel): void {
+        if (level === this.#level) return;
+        this.#level = level;
+        this.paint();
+        this.renderHud();
+    }
+
     private syncClock(): void {
         const moving = !this.simulation.settled;
         const flying = Boolean(this.#playback && !this.#playback.done);
-        if (this.#clock && !moving && !flying) this.#clock = false;
-        if (!this.#clock && (moving || flying) && !document.hidden) {
+        const active = this.#activity.size > 0;
+        if (this.#clock && !moving && !flying && !active) this.#clock = false;
+        if (!this.#clock && (moving || flying || active) && !document.hidden) {
             this.#clock = true;
             this.#lastFrame = performance.now();
             requestAnimationFrame(this.tick);
@@ -450,17 +623,15 @@ export class PiHost {
         const follow = el<HTMLSelectElement>('follow-mode');
         follow.value = this.#followMode;
         follow.addEventListener('change', () => this.setFollow(follow.value as FollowMode));
-        el<HTMLSelectElement>('depth-mode').value = this.#depth;
-        el<HTMLSelectElement>('depth-mode').addEventListener('change', (event) =>
-            this.setDepth((event.target as HTMLSelectElement).value as DepthMode),
-        );
+        const depth = el<HTMLSelectElement>('depth-mode');
+        depth.value = this.#depth;
+        depth.addEventListener('change', () => this.setDepth(depth.value as DepthMode));
         el<HTMLSelectElement>('depth-axis').addEventListener('change', (event) =>
             this.setDepthAxis((event.target as HTMLSelectElement).value as DepthAxis),
         );
-        el<HTMLSelectElement>('level-mode').value = this.#level;
-        el<HTMLSelectElement>('level-mode').addEventListener('change', (event) =>
-            this.setLevel((event.target as HTMLSelectElement).value as AgentLevel),
-        );
+        const level = el<HTMLSelectElement>('level-mode');
+        level.value = this.#levelMode;
+        level.addEventListener('change', () => this.setLevelMode(level.value as LevelMode));
         el<HTMLSelectElement>('arrangement-mode').value = this.#arrangement;
         el<HTMLSelectElement>('arrangement-mode').addEventListener('change', (event) =>
             this.setArrangement((event.target as HTMLSelectElement).value as Arrangement),
@@ -468,9 +639,47 @@ export class PiHost {
         for (const surface of SURFACES) {
             el(`surface-${surface}`).addEventListener('click', () => this.setSurface(surface));
         }
+        for (const format of ['json', 'svg', 'html'] as const) {
+            el(`export-${format}`).addEventListener('click', () => this.download(format));
+        }
+        const canvas = el('canvas');
+        canvas.tabIndex = 0;
+        canvas.addEventListener('keydown', (event) => this.onKey(event));
         this.applySurface();
         const hash = location.hash.match(/^#graph:(.+)$/);
         if (hash) this.reveal(decodeURIComponent(hash[1]));
+    }
+
+    private onKey(event: KeyboardEvent): void {
+        const steps: Record<string, () => void> = {
+            ArrowLeft: () => this.pan(80, 0),
+            ArrowRight: () => this.pan(-80, 0),
+            ArrowUp: () => this.pan(0, 80),
+            ArrowDown: () => this.pan(0, -80),
+            '+': () => this.zoomBy(1.2),
+            '=': () => this.zoomBy(1.2),
+            '-': () => this.zoomBy(1 / 1.2),
+            f: () => this.#revealed && this.renderer.focus(this.#revealed),
+            Escape: () => {
+                this.renderer.setSelection([]);
+                this.#revealed = '';
+            },
+        };
+        const action = steps[event.key];
+        if (!action) return;
+        event.preventDefault();
+        action();
+    }
+
+    private download(format: 'json' | 'svg' | 'html'): void {
+        const blob = new Blob([this.exportModel(format)], {
+            type: format === 'json' ? 'application/json' : format === 'svg' ? 'image/svg+xml' : 'text/html',
+        });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `pi-graph.${format}`;
+        link.click();
+        URL.revokeObjectURL(link.href);
     }
 
     private applySurface(): void {
@@ -522,12 +731,18 @@ export class PiHost {
         el('follow-state').textContent = this.#lastFollowFrame?.nodeId ?? this.#followMode;
     }
 
+    private renderHistory(): void {
+        const banner = el('history-banner');
+        banner.hidden = this.#hidden === 0;
+        banner.textContent = `${this.#hidden} earlier node(s) hidden — layout still measures the whole kernel`;
+    }
+
     private renderHud(): void {
-        const hud = el('hud');
-        hud.textContent =
-            `${this.#level} · ${this.#depth}/${this.#depthAxis} · ` +
+        el('hud').textContent =
+            `${this.#level}/${this.#levelMode} · ${this.#depth}/${this.#depthAxis} · ` +
             `${this.simulation.settled ? 'settled' : 'moving'} · ` +
-            `energy ${this.simulation.energy.toFixed(3)} · ${Math.round(this.#fps)} fps`;
+            `energy ${this.simulation.energy.toFixed(3)} · overlap ${this.#vision.overlap.toFixed(2)} · ` +
+            `${Math.round(this.#fps)} fps`;
     }
 
     private syncDepthSelect(): void {
@@ -535,19 +750,20 @@ export class PiHost {
     }
 
     private renderTranscript(): void {
-        const rows = this.#view.nodes
-            .filter((node) => node.kind === 'message')
-            .map((node) => {
-                const row = document.createElement('button');
-                row.type = 'button';
-                row.className = 'transcript-row';
-                row.dataset.node = node.id;
-                row.dataset.revealed = String(node.id === this.#revealed);
-                row.textContent = `${node.label}: ${String(node.data?.text ?? node.summary ?? '')}`;
-                row.addEventListener('click', () => this.reveal(node.id));
-                return row;
-            });
-        el('transcript-list').replaceChildren(...rows);
+        el('transcript-list').replaceChildren(
+            ...this.#view.nodes
+                .filter((node) => node.kind === 'message')
+                .map((node) => {
+                    const row = document.createElement('button');
+                    row.type = 'button';
+                    row.className = 'transcript-row';
+                    row.dataset.node = node.id;
+                    row.dataset.revealed = String(node.id === this.#revealed);
+                    row.textContent = `${node.label}: ${String(node.data?.text ?? node.summary ?? '')}`;
+                    row.addEventListener('click', () => this.reveal(node.id));
+                    return row;
+                }),
+        );
     }
 
     private renderOverview(): void {
@@ -566,9 +782,8 @@ export class PiHost {
     }
 
     private renderTurnMap(): void {
-        const turns = this.#view.turns ?? [];
         el('turn-map').replaceChildren(
-            ...turns.map((id, index) => {
+            ...(this.#view.turns ?? []).map((id, index) => {
                 const chip = document.createElement('button');
                 chip.type = 'button';
                 chip.textContent = `turn ${index + 1}`;

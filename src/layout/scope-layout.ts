@@ -171,7 +171,7 @@ const unionBounds = (a: ScopeBounds, b: ScopeBounds): ScopeBounds => {
     };
 };
 
-function makeSolver(strategy: ScopeStrategy, seed: number, options: ScopeLayoutOptions): Solver {
+function makeSolver(strategy: ScopeStrategy, seed: number, options: ScopeLayoutOptions, count: number): Solver {
     const gap = options.gap ?? 160;
     if (strategy === 'grid') {
         return new GridPlacement({
@@ -193,6 +193,7 @@ function makeSolver(strategy: ScopeStrategy, seed: number, options: ScopeLayoutO
         spacing: gap,
         depthStep: options.depthStep ?? 64,
         nodePadding: options.nodePadding ?? 20,
+        useBarnesHut: count > 200,
     });
 }
 
@@ -290,6 +291,7 @@ export function layoutScopes(tree: ScopeTree, options: ScopeLayoutOptions = {}):
             entry.spec.strategy ?? options.strategy ?? 'force',
             (hashPath(entry.path) ^ (options.seed ?? 0)) >>> 0,
             options,
+            items.length,
         );
         const previous = options.previous?.get(entry.path);
         const solved = solver.place(items, options.warmStart ? previous : undefined);

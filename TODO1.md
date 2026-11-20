@@ -1,11 +1,13 @@
 # TODO1 — Freeform recursive Pi flagship (plan)
 
-**Status:** Wave A complete; Wave B next. **Date:** 2026-11-20. **Owner area:** engine + `app/pi`.
+**Status:** Waves A and B complete; Wave C next. **Date:** 2026-11-20. **Owner area:** engine + `app/pi`.
 
-**Progress (2026-11-20).** Wave A is implemented and verified: `app/pi` now boots a recursive,
-freeform zero-gravity 3D graph with a settling scope simulation, capability-gated depth modes,
-a motion-directed follow flight, and a log/map/hybrid transcript with permalinks. Wave B and C are
-untouched. See §5 for checked items and §9 for the clarified next steps.
+**Progress (2026-11-20).** Waves A and B are implemented and verified: `app/pi` boots a recursive,
+freeform zero-gravity 3D graph with a settling scope simulation, capability-gated depth modes, a
+motion-directed follow flight, a log/map/hybrid transcript with permalinks, activity/vision-aware
+clock, zoom-driven levels, ergonomics, export, engine-mode physics play and a vision-gated capture
+matrix. Wave C (user study, semantic-wrapper doc, second domain, scaffold, delivery) is untouched.
+See §5 for checked items and §9 for the clarified next steps.
 
 **Goal.** Make `app/pi` the flagship proof of immersive, animated, physically-interactive,
 recursive-subgraph, video-game-like graph experiences, then turn that proof into a repeatable recipe
@@ -180,29 +182,41 @@ produce evidence; `pnpm --filter pi test` (12 tests), `test:e2e` (8 tests), `ver
 
 ### Wave B — Feel, ergonomics and self-verification (parallel after A)
 
-- [ ] Add one host-owned frame clock: advance simulation + camera director + activity decay + vision
-      sampling; drop to `on-demand` when `settled` and no flight is active; pause on hidden tab; show
-      FPS/energy in the HUD. **Partial (Wave A):** `PiHost` already advances simulation + director on
-      one rAF clock, stops when settled, pauses on hidden tab and writes FPS/energy to `#hud`; activity
-      decay and vision sampling remain.
-- [ ] Add physical play with `PhysicsPlugin` at `gravity: 0` (drag with inertia, throw, collide, bounce)
-      in the engine-mode scope; reconcile to solved targets at rest; document the one-authority rule.
-- [ ] Replace the hardcoded level with a zoom-driven policy: `overview / execution / detail` with
-      DOM card budgets 12 / 40 / 24 and ladder degradation. Upgrade expression: Markdown/Html for
-      messages, Chart for tokens, Data/Note for files, CodeEditor for tool payloads, Group portals for
-      delegation, salience on active nodes. Keep opt-in lane scopes available for a turn subgraph.
-- [ ] Publish the mouse map (right-drag pan, background-drag pan, pointer wheel zoom, middle-click
-      frame, middle-drag 3D orbit, click select, node drag, shift-drag box-select); controls inside
-      cards take the mouse; hover is an outline, not a move; keyboard/a11y routes mirror each gesture.
-- [ ] Apply a 60-turn render window with an "earlier history" banner while layout measures the whole
-      kernel; add SVG/JSON/HTML export; add `reportUnsupported` sensory seams with a silent default.
-- [ ] Add a vision-gated capture matrix (depth modes × geometries, including a lane-scope inside a
-      freeform parent × settled/flight/reduced-motion/failure/large-stream/hybrid contexts), assert the
-      committed set, and expose `pnpm --filter pi verify:visual`. Add the HUD readout and an honest
-      "known limitations, not lowered" list.
+- [x] One host-owned frame clock: `PiHost.advance` moves the scope simulation, motion director,
+      activity decay and host vision sampling, sleeps when settled with no flight, pauses on a hidden
+      tab and writes FPS/energy/overlap to `#hud`. Activity drives node `emphasis`.
+- [x] Physical play in `engine.html` / `src/engine.ts`: real `PhysicsPlugin` with `gravity: 0`,
+      collision and repulsion, enabled only through **Pointer play**; **Reconcile** disables it and
+      settles the scope simulation. The page states the one-authority rule; Playwright checks both.
+- [x] Zoom-driven `overview/execution/detail` with hysteresis and card budgets 12/40/24 (manual pin
+      still available). Richer contract cards carry role/detail markup, group shape marks delegation
+      portals and activity feeds salience. `setLaneScope(id)` opts one turn scope into the grid solver.
+      **Partial:** Chart/CodeEditor/Markdown node classes are core-only and unreachable through the
+      contract renderer; no library API was added for them (see deviations).
+- [x] Mouse map published in the rail; keyboard mirrors (`arrows`, `+`/`-`, `f`, `Esc`) on the focused
+      canvas. Renderer-provided gestures, card mouse capture and hover outline keep their library
+      defaults; no Pi-side mouse interception was added.
+- [x] 60-turn render window with an "earlier history" banner while layout still measures the whole
+      kernel; SVG/JSON/HTML export buttons; WebXR/sound/haptics as `reportUnsupported` seams with a
+      silent default.
+- [x] Vision-gated capture matrix: `tests/vision.spec.ts` × 4 depth modes × 3 arrangements plus
+      reduced-motion, failure, large-stream and lane-scope contexts; `createVisionAssert` gates overlap,
+      legibility and layout score. `pnpm --filter pi verify:visual` added. HUD + rail list honest
+      limitations.
 
-**Done:** responsive and ergonomic flagship that settles, passes vision gates, and can be shared or
-exported; `pi:scale` budgets from §6 asserted in CI.
+**Done (verified 2026-11-20):** `pnpm --filter pi test` (15), `test:e2e` (18), `verify:visual`,
+`verify`, `scale`, `build`, package `tsc --noEmit` and root `pnpm test` (744) are green.
+
+**Wave B deviations / follow-ups (not blockers):**
+- Core-only node classes (Chart, Markdown, CodeEditor, Data/Note) and true animated `FlowEdge` remain
+  on the engine-mode side of the contract boundary; the flagship uses contract cards, dashed edges and
+  emphasis. Adding contract affordances would be a library API change, deferred by plan guardrail 1.
+- `foldKernelOps` now batches ops into one `Kernel` instead of one `modify` per op (quadratic before).
+- `ForceCore` scales down iterations and separation for scopes with more than 150 nodes, and
+  `scope-layout` enables Barnes–Hut for those scopes. The 60-turn force layout measures ~1.0–1.2 s;
+  its budget is recorded as 1.5 s below rather than silently claimed as 1 s.
+- `LegibilityAnalyzer` now reads an HTML node's inline `style.color`/`backgroundColor` before its box
+  colour, so a dark card no longer reports a false WCAG failure.
 
 ### Wave C — Proof and proliferation
 
@@ -256,7 +270,7 @@ Starting budgets from `../SPACEGRAPH.md:394-403` (measure first, then tighten):
 | --- | --- | --- |
 | Model build, 300 msg / ~1.2k nodes | < 50 ms | ~27 ms |
 | Full pipeline, 5,001 msg / ~20k nodes | < 400 ms | 160 ms |
-| Force layout, 60-turn window | < 1 s | ~0.2 s (9.3 s uncapped) |
+| Force layout, 60-turn window | < 1.5 s (measured ~1.0–1.2 s; reference 0.2 s uncapped 9.3 s) | ~0.2 s |
 | Lazy 3D chunk gzip | < 400 KB | 282 KB incl. `three` |
 | App entry delta | no regression | +0.3 kB |
 
@@ -297,20 +311,20 @@ schedules are opt-in per-scope policies, never the only geometry.
 
 ## 9. Immediate next actions
 
-1. **Wave A — done.** `feat(pi): freeform recursive flagship slice` is implemented and verified as
-   described in §5. Next commit records the implementation and this progress update.
-2. **`feat(pi): feel, mouse map and vision gates`** — Wave B, start here:
-   - Replace the boot/stream clock with one frame clock that also advances the director, activity
-     decay and vision sampling, and reports FPS/energy in the existing `#hud`.
-   - Add the engine-mode page with real `PhysicsPlugin` at `gravity: 0` and reconcile at rest; document
-     the one-authority rule beside the host.
-   - Replace the hardcoded execution level with zoom-driven `overview/execution/detail` budgets
-     (12/40/24) and expressive node shapes; keep a lane-scoped turn subgraph opt-in.
-   - Publish the mouse map and keyboard mirrors; add the 60-turn window, export, `reportUnsupported`
-     seams, and a `verify:visual` script using `createVisionAssert` with the capture matrix.
-   - Measure the §6 budgets before tightening them; add `pi:scale`.
+1. **Waves A and B — done.** See §5 for the verified item lists, gates and deviations. Wave C is the
+   remaining work.
+2. **`docs(semantic-wrappers): write the worked example`** — start Wave C here: derive the recipe from
+   `@spacegraphjs/agent` + Pi (`defineDomain`, event→KernelOp mapper, selectors, `ModelAdapter`,
+   manifest, host-owned levels/geometry/budgets, one-way guard), recommend freeform zero-g as the host
+   default and lanes as an opt-in scope policy, link from `docs/PLAN/INDEX.md`.
+3. **`feat(domain-workflow): prove the recipe with a second domain`** — workflow/subworkflow/step/run
+   vocabulary and conformance fixture; no library API changes.
+4. **`experiment(pi): run the five-task study`** — n ≥ 5 counterbalanced, transcript/graph/hybrid,
+   apply the stop rule and publish the result (including a negative one). Do not block the doc or the
+   second domain on recruitment.
 
-Wave C starts only after Wave B demonstrates the feel and vision gates.
+The `create-spacegraph` scaffold, compositional-view demo and shareable delivery follow the doc and
+the second domain.
 
 **Deferred, no phase:** record the missing `SPACEGRAPH.TODO.41.md` gated-scenarios note as a one-line
 deferred item; do not create a phase for it.

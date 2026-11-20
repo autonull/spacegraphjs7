@@ -80,8 +80,17 @@
             #evidence { color: var(--pi-text-muted); margin: 8px 0 0; padding-left: 18px; min-height: 18px; }
             #status { color: var(--pi-accent); }
             #hud { color: var(--pi-success); font-variant-numeric: tabular-nums; font-size: 11px; }
+            #export-buttons { display: flex; gap: 4px; }
+            #export-buttons button, #mouse-map, #keyboard-map, #limitations, #history-banner {
+                font-size: 11px; color: var(--pi-text-muted);
+            }
+            #history-banner {
+                position: absolute; top: 8px; left: 8px; z-index: 3;
+                background: var(--pi-surface); border: 1px solid var(--pi-warning);
+                border-radius: 6px; padding: 4px 8px;
+            }
 
-            #surface { display: grid; min-height: 0; }
+            #surface { display: grid; min-height: 0; position: relative; }
             #surface[data-arrangement='side'] { grid-template-columns: minmax(0, 1fr) 320px; }
             #surface[data-arrangement='stacked'] { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) 200px; }
             #surface[data-arrangement='floating'] { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); position: relative; }
@@ -134,6 +143,7 @@
             </select>
             <label for="level-mode">Level</label>
             <select id="level-mode" aria-label="Semantic level">
+                <option value="auto">auto</option>
                 <option value="overview">overview</option>
                 <option value="execution">execution</option>
                 <option value="detail">detail</option>
@@ -157,6 +167,7 @@
         </aside>
         <main id="surface" data-surface="hybrid" data-arrangement="side">
             <div id="canvas"></div>
+            <div id="history-banner" role="status" hidden></div>
             <section id="transcript" aria-label="Transcript">
                 <strong>Transcript</strong>
                 <div id="transcript-list"></div>
@@ -169,6 +180,18 @@
             <div id="turn-map"></div>
             <strong>HUD</strong>
             <div id="hud">starting…</div>
+            <strong>Export</strong>
+            <div id="export-buttons">
+                <button type="button" id="export-json">JSON</button>
+                <button type="button" id="export-svg">SVG</button>
+                <button type="button" id="export-html">HTML</button>
+            </div>
+            <strong>Mouse map</strong>
+            <div id="mouse-map">right-drag pan · wheel zoom · middle-drag orbit · click select · node drag · shift-drag box-select</div>
+            <strong>Keyboard</strong>
+            <div id="keyboard-map">arrows pan · +/− zoom · f focus · Esc clear</div>
+            <strong>Known limitations</strong>
+            <div id="limitations">WebXR, sound and haptics are report-only seams; no immersive default. True FlowEdge dash animation belongs to the engine-mode page.</div>
         </section>
         <footer>
             <form id="prompt-form">

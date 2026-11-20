@@ -14,6 +14,7 @@ import { applyFacets } from '@spacegraphjs/search';
 import type { GraphFacets } from '@spacegraphjs/shared';
 import type { AgentView } from '@spacegraphjs/agent';
 import type { RenderTheme } from '@spacegraphjs/renderer';
+import { UNSUPPORTED } from './policy';
 
 export type PiHostState = {
     readonly projection: string;
@@ -24,6 +25,9 @@ export type PiHostState = {
     readonly scopes: number;
     readonly simulation: { readonly settled: boolean; readonly energy: number; readonly steps: number };
     readonly motion: { readonly verbs: readonly string[]; readonly active: readonly string[] };
+    readonly vision: { readonly overlap: number; readonly legibility: number };
+    readonly activity: number;
+    readonly window: { readonly size: number; readonly hidden: number };
 };
 
 export type CapabilityContext = {
@@ -241,6 +245,31 @@ export const CAPABILITIES: readonly Capability[] = [
             `active ${host?.motion.active.join(', ') || 'none'}`,
             `clock ${host?.simulation.settled ? 'on-demand' : 'running'}`,
         ],
+    },
+    {
+        id: 'vision',
+        title: 'Vision-driven policy',
+        summary: 'Host vision scores feed scope spacing through the policy seam.',
+        run: ({ host }) => [
+            `overlap ${host?.vision.overlap.toFixed(3) ?? 'n/a'}`,
+            `legibility ${host?.vision.legibility.toFixed(3) ?? 'n/a'}`,
+            `active nodes ${host?.activity ?? 0}`,
+        ],
+    },
+    {
+        id: 'render-window',
+        title: '60-turn render window',
+        summary: 'The whole kernel is laid out; only the newest turns are drawn.',
+        run: ({ host }) => [
+            `window ${host?.window.size ?? 60} turns`,
+            `hidden ${host?.window.hidden ?? 0} nodes`,
+        ],
+    },
+    {
+        id: 'sensory-seams',
+        title: 'Unsupported sensory seams',
+        summary: 'Immersive output stays a report-only seam until a host registers an adapter.',
+        run: () => UNSUPPORTED.map((item) => `${item.id}: ${item.reason}`),
     },
     {
         id: 'five-questions',
