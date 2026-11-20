@@ -14,6 +14,7 @@ export * from './octree';
 export * from './placement';
 export * from './scope';
 export * from './scope-layout';
+export * from './scope-policy';
 export * from './scope-simulation';
 export * from './strategies';
 export {

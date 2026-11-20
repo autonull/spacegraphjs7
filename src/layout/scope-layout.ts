@@ -423,10 +423,15 @@ export class ScopeHost {
         return this.#last;
     }
 
-    update(specs: readonly ScopeSpec[], signals: ScopeSignals = {}): HostedScopeLayout {
+    update(
+        specs: readonly ScopeSpec[],
+        signals: ScopeSignals = {},
+        overrides: ScopeLayoutOptions = {},
+    ): HostedScopeLayout {
         const tree = buildScopeTree(specs);
         const layout = layoutScopes(tree, {
             ...this.#options,
+            ...overrides,
             previous: this.#previous,
             active: activeScopePaths(tree, signals),
         });

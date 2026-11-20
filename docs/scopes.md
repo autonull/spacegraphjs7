@@ -88,6 +88,17 @@ const frame = host.update(
 const positions = scopePositionsAt(frame.change, progress);
 ```
 
+## Adaptive policy
+
+`scopePolicy(tree, input)` is the seam from host signals to geometry. It takes a zoom `band`, a
+`focus` id and optional `vision` scores (`overlap` severity and `legibility` from 0 to 1), and
+returns the active scopes, the pin set (the focus plus every scope that owns it), and layout options
+with more gap for overlap and more padding for poor legibility. Scores are clamped to the unit range.
+
+`ScopeSimulation.setPolicy(input)` applies that result: it recomputes the target, pins the focus, and
+animates the rest toward the adjusted layout. This is how a vision report can change the graph
+without touching the solver or the renderer.
+
 ## Physical animation
 
 `ScopeSimulation` turns those stable targets into motion. Bodies are critically damped springs that

@@ -15,6 +15,7 @@ import {
     type ScopeLayoutOptions,
     type ScopeSignals,
 } from './scope-layout';
+import { scopePolicy, type ScopePolicyInput } from './scope-policy';
 
 export interface ScopeSimulationOptions {
     /** Spring stiffness toward the solved target. Default 140. */
@@ -63,6 +64,8 @@ export class ScopeSimulation {
     #frameVelocity = new Map<string, Position>();
     #frameSleeping = new Set<string>();
     #pinned = new Set<string>();
+    #policyPinned = new Set<string>();
+    #layoutOverride: ScopeLayoutOptions = {};
     #accumulator = 0;
     #steps = 0;
 
@@ -106,7 +109,7 @@ export class ScopeSimulation {
     setSpecs(specs: readonly ScopeSpec[], signals: ScopeSignals = {}): void {
         this.#specs = specs;
         this.#signals = signals;
-        const hosted = this.#host.update(specs, signals);
+        const hosted = this.#host.update(specs, signals, this.#layoutOverride);
         const previous = this.#target;
         this.#target = hosted;
         this.#tree = hosted.tree;
@@ -159,6 +162,21 @@ export class ScopeSimulation {
         if (this.#specs) this.setSpecs(this.#specs, signals);
     }
 
+    /** Apply a vision/focus policy: retarget, hold the focus, and resize the solvers. */
+    setPolicy(input: ScopePolicyInput): void {
+        if (!this.#tree || !this.#specs) return;
+        const policy = scopePolicy(this.#tree, input, this.#options.layout);
+        this.#layoutOverride = policy.layout;
+        this.setSpecs(this.#specs, {
+            band: input.band,
+            focus: input.focus,
+            maxDepth: input.maxDepth,
+        });
+        for (const id of this.#policyPinned) this.unpin([id]);
+        this.#policyPinned = new Set(policy.pinned);
+        this.pin(policy.pinned);
+    }
+
     get signals(): ScopeSignals {
         return this.#signals;
     }
@@ -166,8 +184,18 @@ export class ScopeSimulation {
     pin(ids: Iterable<string>): void {
         for (const id of ids) {
             this.#pinned.add(id);
-            this.#sleeping.delete(id);
-            this.#frameSleeping.delete(id);
+            const goal = this.#target?.positions.get(id);
+            if (goal) {
+                this.#current.set(id, copy(goal));
+                this.#velocity.set(id, zero());
+            }
+            const frame = this.#target?.frames.get(id);
+            if (frame) {
+                this.#frameCurrent.set(id, copy(frame.origin));
+                this.#frameVelocity.set(id, zero());
+            }
+            this.#sleeping.add(id);
+            this.#frameSleeping.add(id);
         }
     }
 
@@ -222,6 +250,8 @@ export class ScopeSimulation {
         this.#frameVelocity.clear();
         this.#frameSleeping.clear();
         this.#pinned.clear();
+        this.#policyPinned.clear();
+        this.#layoutOverride = {};
         this.#accumulator = 0;
         this.#steps = 0;
     }
