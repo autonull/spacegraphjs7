@@ -42,24 +42,24 @@
                 margin: 0;
                 height: 100vh;
                 display: grid;
-                grid-template-columns: 260px 1fr;
-                grid-template-rows: auto 1fr auto;
+                grid-template-columns: 240px minmax(0, 1fr) 200px;
+                grid-template-rows: auto minmax(0, 1fr) auto;
                 gap: 12px;
                 padding: 12px;
                 background: var(--pi-background);
                 color: var(--pi-text);
                 font: 13px/1.4 system-ui, sans-serif;
             }
-            header { grid-column: 1 / -1; display: flex; align-items: center; gap: 16px; }
+            header { grid-column: 1 / -1; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
             h1 { font-size: 15px; margin: 0; }
             header span { color: var(--pi-text-muted); }
-            aside, main { border: 1px solid var(--pi-border); border-radius: 8px; background: var(--pi-surface); }
-            aside { padding: 12px; overflow: auto; }
-            main { min-height: 0; }
-            #canvas { width: 100%; height: 100%; }
+            aside, main, #rail { border: 1px solid var(--pi-border); border-radius: 8px; background: var(--pi-surface); }
+            aside, #rail { padding: 12px; overflow: auto; min-height: 0; }
+            #rail { display: flex; flex-direction: column; gap: 12px; }
+            main { min-height: 0; min-width: 0; overflow: hidden; }
             footer { grid-column: 1 / -1; }
-            #gallery { display: grid; gap: 6px; }
-            #gallery button, form button, form select {
+            #gallery, #overview, #turn-map { display: grid; gap: 6px; }
+            #gallery button, #overview button, #turn-map button, form button, form select, header select, #surface-buttons button {
                 border: 1px solid var(--pi-border);
                 border-radius: 6px;
                 background: var(--pi-surface-muted);
@@ -68,14 +68,43 @@
                 text-align: left;
                 cursor: pointer;
             }
-            #gallery button:hover { border-color: var(--pi-accent); }
-            #follow-mode { border: 1px solid var(--pi-border); border-radius: 6px; background: var(--pi-surface-muted); color: var(--pi-text); padding: 4px 6px; }
+            #gallery button:hover, #overview button:hover, #turn-map button:hover { border-color: var(--pi-accent); }
+            header select { padding: 4px 6px; }
+            header label { color: var(--pi-text-muted); }
             #attention { color: var(--pi-warning); margin-left: auto; text-align: end; }
             #follow-state { color: var(--pi-text-muted); }
+            #surface-buttons { display: flex; gap: 4px; }
+            #surface-buttons button[data-active='true'] { border-color: var(--pi-accent); color: var(--pi-accent); }
             form { display: flex; gap: 8px; }
             form input { flex: 1; padding: 8px; border-radius: 6px; border: 1px solid var(--pi-border); background: var(--pi-surface); color: var(--pi-text); }
             #evidence { color: var(--pi-text-muted); margin: 8px 0 0; padding-left: 18px; min-height: 18px; }
             #status { color: var(--pi-accent); }
+            #hud { color: var(--pi-success); font-variant-numeric: tabular-nums; font-size: 11px; }
+
+            #surface { display: grid; min-height: 0; }
+            #surface[data-arrangement='side'] { grid-template-columns: minmax(0, 1fr) 320px; }
+            #surface[data-arrangement='stacked'] { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) 200px; }
+            #surface[data-arrangement='floating'] { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); position: relative; }
+            #canvas { min-width: 0; min-height: 0; }
+            #transcript { min-height: 0; overflow: auto; border-left: 1px solid var(--pi-border); padding: 8px; }
+            #surface[data-arrangement='stacked'] #transcript { border-left: 0; border-top: 1px solid var(--pi-border); }
+            #surface[data-arrangement='floating'] #transcript {
+                position: absolute; right: 8px; bottom: 8px; width: 320px; max-height: 45%;
+                background: var(--pi-surface); border: 1px solid var(--pi-border); border-radius: 8px;
+                box-shadow: 0 8px 24px rgb(0 0 0 / 0.35);
+            }
+            #surface[data-surface='log'] #canvas, #surface[data-surface='log'] #turn-map { display: none; }
+            #surface[data-surface='map'] #transcript { display: none; }
+            #surface[data-surface='log'], #surface[data-surface='map'] { grid-template-columns: minmax(0, 1fr); }
+            #surface[data-surface='log'] { grid-template-columns: 420px minmax(0, 1fr); }
+            #surface[data-surface='log'] #transcript { border-left: 0; }
+            #transcript-list { display: grid; gap: 6px; }
+            .transcript-row {
+                display: block; width: 100%; text-align: left; white-space: normal;
+                border: 1px solid transparent; border-radius: 6px; padding: 6px 8px;
+                background: var(--pi-surface-muted); color: var(--pi-text); cursor: pointer;
+            }
+            .transcript-row[data-revealed='true'] { border-color: var(--pi-accent); color: var(--pi-focus); }
         </style>
     </head>
     <body>
@@ -90,13 +119,57 @@
                 <option value="node+focus">node+focus</option>
             </select>
             <span id="follow-state" data-role="follow-state">node+focus</span>
+            <label for="depth-mode">Depth</label>
+            <select id="depth-mode" aria-label="Depth mode">
+                <option value="flat">flat</option>
+                <option value="layered">layered</option>
+                <option value="depth-stack">depth-stack</option>
+                <option value="orbit">orbit</option>
+            </select>
+            <label for="depth-axis">Axis</label>
+            <select id="depth-axis" aria-label="Depth axis">
+                <option value="none">none</option>
+                <option value="turn">turn</option>
+                <option value="hierarchy">hierarchy</option>
+            </select>
+            <label for="level-mode">Level</label>
+            <select id="level-mode" aria-label="Semantic level">
+                <option value="overview">overview</option>
+                <option value="execution">execution</option>
+                <option value="detail">detail</option>
+            </select>
+            <label for="arrangement-mode">Layout</label>
+            <select id="arrangement-mode" aria-label="Transcript arrangement">
+                <option value="side">side</option>
+                <option value="stacked">stacked</option>
+                <option value="floating">floating</option>
+            </select>
+            <div id="surface-buttons">
+                <button type="button" id="surface-log">log</button>
+                <button type="button" id="surface-map">map</button>
+                <button type="button" id="surface-hybrid">hybrid</button>
+            </div>
             <span id="attention" data-role="attention">no failures</span>
         </header>
         <aside>
             <strong>Capabilities</strong>
             <div id="gallery"></div>
         </aside>
-        <main id="canvas"></main>
+        <main id="surface" data-surface="hybrid" data-arrangement="side">
+            <div id="canvas"></div>
+            <section id="transcript" aria-label="Transcript">
+                <strong>Transcript</strong>
+                <div id="transcript-list"></div>
+            </section>
+        </main>
+        <section id="rail" aria-label="Overview">
+            <strong>Scopes</strong>
+            <div id="overview"></div>
+            <strong>Turn map</strong>
+            <div id="turn-map"></div>
+            <strong>HUD</strong>
+            <div id="hud">starting…</div>
+        </section>
         <footer>
             <form id="prompt-form">
                 <input id="prompt-input" autocomplete="off" placeholder="Prompt the live agent…" aria-label="Prompt" />

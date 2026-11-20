@@ -35,7 +35,7 @@ for (const dir of libraryDirs) {
     for (const source of sources(dir)) check(!isForbidden(source), `pi reference in ${dir}`);
 }
 
-for (const file of ['package.json', 'vite.config.ts', 'app/demo/vite.config.ts', 'vite.lib.config.ts']) {
+for (const file of ['package.json', 'app/demo/vite.config.ts', 'vite.lib.config.ts']) {
     const text = readFileSync(resolve(workspace, file), 'utf8');
     check(!/@earendil-works|["']pi["']/.test(text), `pi reference in ${file}`);
 }

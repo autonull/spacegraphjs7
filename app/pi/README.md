@@ -22,16 +22,18 @@ agent must have no `@earendil-works/*` dependency.
 - `src/server.ts` — Node HTTP server: `/events` (SSE) and `POST /prompt`. This is the only file that
   imports Pi packages; it translates `AgentSessionEvent`s through `src/pi-events.ts` into the generic
   `AgentEvent` type from `@spacegraphjs/agent`.
-- `src/client.ts` — `EventSource` → `Kernel` → `agentDomain.build` → `GraphController` → `SpaceGraphRenderer`.
-- `src/capabilities.ts` — the capability gallery and test hooks (`window.__pi`), driven by a local
-  kernel-op feed so CI never needs a provider.
+- `src/client.ts` — thin DOM/SSE binding: `EventSource` → `decodeOp` → `PiHost.consume`.
+- `src/host.ts` — host-owned policy: kernel, view, controller, contract renderer, `ScopeSimulation`
+  (seeded zero-gravity forces, cooling, sleep, warm starts), camera flight, frame clock, levels,
+  depth gating and the log/map/hybrid transcript. Exposes the `window.__pi` hooks.
+- `src/scopes.ts` — `agentScopes(view)` maps run → turn → delegated subtree → leaves to validated
+  `ScopeSpec[]` with path-qualified ids, portals and cross-scope edges.
+- `src/capabilities.ts` — gallery evidence, including the five investigative questions, backed by
+  `@spacegraphjs/agent` selectors.
+- `src/fixture.ts` — provider-free canonical run containing all five situations, with pinned answers.
 - `src/theme.ts` — host CSS tokens → `RenderTheme`.
-- `src/client.ts` — also owns the follow state: the header toggle calls `computeFollowFrame` from
-  `@spacegraphjs/navigation` on each streamed op, and the attention readout comes from the agent's
-  rich failure and changed-file selectors. `window.__pi` exposes `follow`, `setFollow`,
-  `followFrame` and `attention`.
-- `playwright.config.ts`, `tests/browser.spec.ts` — browser checks for the gallery, prompt form and
-  follow/attention hooks.
+- `playwright.config.ts`, `tests/browser.spec.ts` — browser checks for the 3D graph, scope tree,
+  depth gating, hybrid transcript, permalink, gallery, prompt form and follow/attention hooks.
 - `scripts/publish-check.ts` — packed-library consumer check.
 
 ## Provider

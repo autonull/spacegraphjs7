@@ -71,6 +71,75 @@ test.describe('the Pi reference app', () => {
         noErrors(errors);
     });
 
+    test('boots a recursive freeform graph in 3D with a settled simulation', async ({ page }) => {
+        const errors = await boot(page);
+
+        expect(await page.evaluate(() => (window as any).__pi.depth())).toBe('orbit');
+        expect(await page.evaluate(() => (window as any).__pi.scopes().length)).toBeGreaterThan(1);
+        await expect
+            .poll(() => page.evaluate(() => (window as any).__pi.simulation().settled), { timeout: 10_000 })
+            .toBe(true);
+        const simulation = await page.evaluate(() => (window as any).__pi.simulation());
+        expect(simulation.energy).toBeLessThan(0.001);
+        expect(typeof simulation.steps).toBe('number');
+        expect(await page.evaluate(() => (window as any).__pi.motion().verbs)).toEqual(
+            expect.arrayContaining(['flyTo', 'trace']),
+        );
+        expect(errors).toEqual([]);
+    });
+
+    test('gates depth modes through renderer capabilities', async ({ page }) => {
+        const errors = await boot(page);
+
+        for (const mode of ['flat', 'layered', 'depth-stack', 'orbit']) {
+            expect(await page.evaluate((value) => (window as any).__pi.setDepth(value), mode)).toBe(mode);
+            await expect(page.locator('#depth-mode')).toHaveValue(mode);
+        }
+        expect(await page.evaluate(() => (window as any).__pi.setDepth('unsupported'))).toBe('orbit');
+        expect(errors).toEqual([]);
+    });
+
+    test('keeps the transcript mounted across hybrid arrangements and permalinks', async ({ page }) => {
+        const errors = await boot(page);
+
+        const rows = page.locator('#transcript-list .transcript-row');
+        expect(await rows.count()).toBeGreaterThan(0);
+        const transcript = page.locator('#transcript');
+        await expect(transcript).toBeVisible();
+
+        await page.evaluate(() => (window as any).__pi.setArrangement('stacked'));
+        await expect(page.locator('#surface')).toHaveAttribute('data-arrangement', 'stacked');
+        await expect(transcript).toBeVisible();
+        await page.evaluate(() => (window as any).__pi.setArrangement('floating'));
+        await expect(transcript).toBeVisible();
+
+        await page.evaluate(() => (window as any).__pi.setSurface('map'));
+        await expect(transcript).toBeHidden();
+        await expect(page.locator('#canvas canvas').first()).toBeVisible();
+        await page.evaluate(() => (window as any).__pi.setSurface('hybrid'));
+        await expect(transcript).toBeVisible();
+
+        const id = await rows.first().getAttribute('data-node');
+        await rows.first().click();
+        expect(await page.evaluate(() => (window as any).__pi.revealed())).toBe(id);
+        expect(page.url()).toContain(`#graph:${id}`);
+        await expect(rows.first()).toHaveAttribute('data-revealed', 'true');
+        expect(errors).toEqual([]);
+    });
+
+    test('exposes the five questions and new surfaces in the gallery', async ({ page }) => {
+        const errors = await boot(page);
+        const ids = await page.evaluate(() => (window as any).__pi.capabilities());
+        for (const id of ['freeform-layout', 'scopes', 'levels', 'depth', 'motion', 'five-questions']) {
+            expect(ids, id).toContain(id);
+        }
+        for (const id of ids.filter((entry: string) => entry.startsWith('question-'))) {
+            const evidence = await page.evaluate((value) => (window as any).__pi.run(value), id);
+            expect(evidence.length, id).toBeGreaterThan(0);
+        }
+        expect(errors).toEqual([]);
+    });
+
     test('submits the prompt form against the local op server', async ({ page }) => {
         const errors = await boot(page);
         const before = await page.evaluate(() => (window as any).__pi.ops());

@@ -77,6 +77,8 @@ export class AgentAdapter extends ModelAdapter<
                     ? edge.confidence
                     : 'explicit',
             directed: true,
+            style: edge.kind === 'contains' ? 'solid' : 'dashed',
+            emphasis: edge.kind === 'writes' || edge.kind === 'delegates' ? 0.8 : 0.3,
         };
     }
 }

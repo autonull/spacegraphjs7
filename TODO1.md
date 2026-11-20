@@ -1,6 +1,11 @@
 # TODO1 — Freeform recursive Pi flagship (plan)
 
-**Status:** proposal. **Date:** 2026-11-20. **Owner area:** engine + `app/pi`.
+**Status:** Wave A complete; Wave B next. **Date:** 2026-11-20. **Owner area:** engine + `app/pi`.
+
+**Progress (2026-11-20).** Wave A is implemented and verified: `app/pi` now boots a recursive,
+freeform zero-gravity 3D graph with a settling scope simulation, capability-gated depth modes,
+a motion-directed follow flight, and a log/map/hybrid transcript with permalinks. Wave B and C are
+untouched. See §5 for checked items and §9 for the clarified next steps.
 
 **Goal.** Make `app/pi` the flagship proof of immersive, animated, physically-interactive,
 recursive-subgraph, video-game-like graph experiences, then turn that proof into a repeatable recipe
@@ -132,38 +137,54 @@ wave items in parallel where they touch different files.
 One vertical slice that proves the whole thesis with the provider-free local feed. Copy patterns from
 `app/demo`; add no library API.
 
-- [ ] Extract the minimum `PiHost` from `app/pi/src/client.ts:45-54`: kernel, view, controller, theme,
-      selection, follow, positions, and later simulation/clock. Keep `client.ts` a thin DOM/SSE binding
-      with `window.__pi` hooks. Move the lane config into an opt-in geometry module.
-- [ ] Add `app/pi/src/scopes.ts`: `agentScopes(view)` maps run → turn → delegated subtree →
-      artifact/state leaves to `ScopeSpec[]` with path-qualified IDs and portal nodes; `contains` nests,
-      `orders` is intra-scope, `writes`/`delegates`/`retry` project across scopes. Never emit
-      `inferred-cause`. Reuse `deriveScope`, `collapseGroups`, `applySubLayouts` from `packages/kernel`
-      before writing new code.
-- [ ] Drive `ScopeHost`/`ScopeSimulation` from the host: seeded zero-gravity forces, cooling, sleep,
-      warm starts on append, focus pinning, `scopePositionsAt` interpolation, `settled`/`energy`/`steps`
-      in `window.__pi`. Start settled/2D to isolate correctness, then enable continuous motion.
-- [ ] Flip the flagship to `projection: '3d'`, add the depth-mode switch gated by `supportsDepth`, and
-      sample depth from `turn`/`hierarchy` axes. Replace the follow jump with a `MotionDirector`
-      `flyTo`/`trace` flight; collapse duration under reduced motion. Use activity-driven `FlowEdge`s.
-- [ ] Add the hybrid surface: transcript stays mounted in a stable container, arrangements
-      `stacked / side / floating` by CSS order, map-node → message reveal, `#graph:<nodeID>` permalink;
-      add a scoped turn-map overlay and side overview if cheap.
-- [ ] Present the five questions as capabilities backed by the existing selectors; keep the existing
-      13 capability entries. One gallery item per new surface (`freeform-layout`, `scopes`, `levels`,
-      depth, motion, five-questions).
-- [ ] Add the canonical provider-free fixture with all five situations and pinned answers; test the
-      fold, the scope tree, reparenting, convergence within tolerance, and byte-stable answers. No mocks.
+- [x] Extract the minimum `PiHost` — `app/pi/src/host.ts` owns kernel, view, controller, theme,
+      selection, follow, positions, simulation and frame clock; `client.ts` is now only DOM/SSE binding
+      and owns the `window.__pi` hooks. The old lane config is gone; scopes own geometry.
+- [x] Add `app/pi/src/scopes.ts` — `agentScopes(view)` builds run/turn/delegated-subtree scopes with
+      path-qualified ids, portal nodes and cross-scope edges for `writes`/`delegates`/`retry`; no
+      `inferred-cause`. The existing kernel helpers were inspected; the host owns the mapping because
+      `deriveScope`/`collapseGroups`/`applySubLayouts` operate at kernel-view granularity, not scope specs.
+- [x] Drive `ScopeSimulation` from the host — seeded zero-gravity forces, cooling, sleep, warm starts,
+      focus pinning, interpolation via the simulation's animated `view()`, and `settled`/`energy`/`steps`
+      (plus `heat`/`pinned`) in `window.__pi`. Starts settled; continuous motion only while unsettled or
+      in flight, and pauses on a hidden tab.
+- [x] Flip the flagship to `projection: '3d'`, depth switch gated by `supportsDepth`, depth sampled from
+      `turn`/`hierarchy` axes via `sampleDepth`; `MotionDirector` `flyTo`/`trace` replaces the follow jump
+      and collapses to a jump under reduced motion. Contract-mode activity edges use dashed style and
+      emphasis; true core `FlowEdge` animation is deferred to the Wave B engine-mode page (see below).
+- [x] Add the hybrid surface — transcript stays mounted in `#transcript` across `stacked / side /
+      floating` arrangements and `log/map/hybrid` surfaces; map-node → message reveal,
+      `#graph:<nodeID>` permalink, side scope overview and turn-map chips.
+- [x] Present the five questions as capabilities backed by the existing selectors; all 13 original
+      gallery entries kept, plus `freeform-layout`, `scopes`, `levels`, `depth`, `motion`,
+      `five-questions` and `question-1…5`.
+- [x] Add `app/pi/src/fixture.ts` with all five situations and pinned answers; tests cover the fold,
+      scope tree validation, reparenting, deterministic convergence, byte-stable answers and browser
+      behavior. No mocks.
 
-**Done:** `PI_LOCAL_FEED=1 pnpm --filter pi dev` shows a recursive, freeform, zero-gravity agent run in
-3D with one cinematic follow flight and a log/map hybrid; all capabilities produce evidence;
-`pnpm --filter pi test`, `test:e2e`, `verify` green.
+**Done (verified 2026-11-20):** `PI_LOCAL_FEED=1 pnpm --filter pi dev` shows a recursive, freeform,
+zero-gravity agent run in 3D with a cinematic follow flight and a log/map hybrid; all capabilities
+produce evidence; `pnpm --filter pi test` (12 tests), `test:e2e` (8 tests), `verify`, `build`, package
+`tsc --noEmit` and root `pnpm test` (741 tests) are green.
+
+**Wave A deviations / follow-ups (not blockers):**
+- Core `FlowEdge` dash animation is a library-core class, unreachable through the contract renderer
+  without a library API change. Pi uses contract `style: 'dashed'` + `emphasis`; keep real `FlowEdge` for
+  the Wave B engine-mode page.
+- `scopePositionsAt` is not called directly; `ScopeSimulation.view()` already interpolates animated
+  positions, frames and edges. Use `scopePositionsAt` only if an explicit t-parameter is needed.
+- `pnpm --filter pi verify` had a stale config path (`vite.config.ts` at repo root); fixed to check the
+  existing `app/demo/vite.config.ts` and `vite.lib.config.ts`.
+- No vision gate in the Pi package yet; `createVisionAssert` remains in the library/demo harness and is
+  a Wave B item.
 
 ### Wave B — Feel, ergonomics and self-verification (parallel after A)
 
 - [ ] Add one host-owned frame clock: advance simulation + camera director + activity decay + vision
       sampling; drop to `on-demand` when `settled` and no flight is active; pause on hidden tab; show
-      FPS/energy in the HUD.
+      FPS/energy in the HUD. **Partial (Wave A):** `PiHost` already advances simulation + director on
+      one rAF clock, stops when settled, pauses on hidden tab and writes FPS/energy to `#hud`; activity
+      decay and vision sampling remain.
 - [ ] Add physical play with `PhysicsPlugin` at `gravity: 0` (drag with inertia, throw, collide, bounce)
       in the engine-mode scope; reconcile to solved targets at rest; document the one-authority rule.
 - [ ] Replace the hardcoded level with a zoom-driven policy: `overview / execution / detail` with
@@ -226,7 +247,8 @@ one-line deferred item, do not create a phase for it).
 | Vision + interaction atlas | `pnpm --filter pi verify:visual` — `createVisionAssert` on every captured scene |
 | Scale | `pnpm --filter pi scale` — assert budgets below |
 | Dependency + layout policy | `pnpm --filter pi verify` — no Pi imports in library, no `@earendil-works/*` in packed agent, freeform default with lanes opt-in |
-| Full repo | `pnpm run check` |
+| Full repo | `pnpm test` from root; no `pnpm run check` script exists in this repo (use package `tsc --noEmit`) |
+| App build | `pnpm --filter pi build` |
 
 Starting budgets from `../SPACEGRAPH.md:394-403` (measure first, then tighten):
 
@@ -275,11 +297,20 @@ schedules are opt-in per-scope policies, never the only geometry.
 
 ## 9. Immediate next actions
 
-1. **`feat(pi): freeform recursive flagship slice`** — Wave A in one PR: minimal `PiHost`,
-      `agentScopes`, seeded zero-gravity `ScopeSimulation`, 3D + depth + one cinematic flight, hybrid
-      transcript/map, five-question capabilities, canonical fixture. Reuse existing demo patterns; no
-      library API changes.
-2. **`feat(pi): feel, mouse map and vision gates`** — Wave B: game clock, gravity-0 physics play,
-      levels + budgets, expressive nodes/edges, mouse map, capture matrix, `pi:scale`, HUD.
+1. **Wave A — done.** `feat(pi): freeform recursive flagship slice` is implemented and verified as
+   described in §5. Next commit records the implementation and this progress update.
+2. **`feat(pi): feel, mouse map and vision gates`** — Wave B, start here:
+   - Replace the boot/stream clock with one frame clock that also advances the director, activity
+     decay and vision sampling, and reports FPS/energy in the existing `#hud`.
+   - Add the engine-mode page with real `PhysicsPlugin` at `gravity: 0` and reconcile at rest; document
+     the one-authority rule beside the host.
+   - Replace the hardcoded execution level with zoom-driven `overview/execution/detail` budgets
+     (12/40/24) and expressive node shapes; keep a lane-scoped turn subgraph opt-in.
+   - Publish the mouse map and keyboard mirrors; add the 60-turn window, export, `reportUnsupported`
+     seams, and a `verify:visual` script using `createVisionAssert` with the capture matrix.
+   - Measure the §6 budgets before tightening them; add `pi:scale`.
 
-Wave C starts only after the slice is demonstrable.
+Wave C starts only after Wave B demonstrates the feel and vision gates.
+
+**Deferred, no phase:** record the missing `SPACEGRAPH.TODO.41.md` gated-scenarios note as a one-line
+deferred item; do not create a phase for it.
