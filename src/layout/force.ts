@@ -34,7 +34,7 @@ export class ForcePlacement implements Placement<ForceMeta> {
             width: item.width,
             height: item.height,
             meta: item.meta,
-            depth: item.meta?.radius ? undefined : undefined, // depth not in PlacementItem
+            depth: item.depth,
         }));
 
         const previousMap = previous ? new Map(previous.entries()) : undefined;

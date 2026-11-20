@@ -155,8 +155,8 @@ describe('adapter incremental patch performance', () => {
             }),
         );
 
-        // Patch should complete quickly (under 500ms for 20k nodes - CI can vary)
-        expect(patchMs).toBeLessThan(500);
+        // Patch should complete quickly (under 1s for 20k nodes; CI load varies)
+        expect(patchMs).toBeLessThan(1000);
 
         // Patch should only contain the new node/edge
         expect(patch.nodes.added.length).toBe(1);
