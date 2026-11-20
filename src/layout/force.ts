@@ -1,6 +1,8 @@
 import { ForceCore, type ForceCoreConfig, type ForceMeta } from './force-core';
 import type { Placement, PlacementItem, Position } from './placement';
 
+export type { ForceMeta } from './force-core';
+
 /**
  * The force placement: a simulation, not a grid.
  *
