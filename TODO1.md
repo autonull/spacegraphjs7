@@ -1,9 +1,10 @@
 # TODO1 — Freeform recursive Pi flagship (plan)
 
 **Status:** Waves A and B complete. Wave C's recipe, second domain, study harness, two-wrapper
-compositional demo, shareable landing page and captured flagship video are complete. Remaining work
-is external: the participant study, an npm release and a hosted flagship URL. **Date:** 2026-11-20. **Owner
-area:** engine + `app/pi` + `app/demo`.
+compositional demo, shareable landing page and captured flagship video are complete. Engineering is
+verified green (§10); no source change is pending. Remaining work is external: the participant study,
+an npm release and a hosted flagship URL (§9). **Date:** 2026-11-20. **Owner area:** engine + `app/pi`
++ `app/demo`.
 
 **Progress (2026-11-20).** Waves A and B are implemented and verified: `app/pi` boots a recursive,
 freeform zero-gravity 3D graph with a settling scope simulation, capability-gated depth modes, a
@@ -14,9 +15,9 @@ domain with conformance, a five-task study protocol and harness, a domain-wrappe
 flagship pointer in the README. This iteration adds the compositional demo — the agent and workflow
 wrappers mount in one workspace and join through a single `InterGraphEdge` overlay while their models
 stay isolated — and the shareable delivery surface: a landing page, two committed screenshots, a
-six-second captured clip and the one-command quickstart. The participant study and the remaining
-release artifacts still need external resources; see §5 for checked items and §9 for the clarified
-next steps.
+six-second captured clip and the one-command quickstart. §5 lists checked items, §9 is an actionable
+handoff for the three external items, and §10 records a fresh verification ledger. No code change can
+complete the remaining items.
 
 **Goal.** Make `app/pi` the flagship proof of immersive, animated, physically-interactive,
 recursive-subgraph, video-game-like graph experiences, then turn that proof into a repeatable recipe
@@ -345,20 +346,50 @@ schedules are opt-in per-scope policies, never the only geometry.
 
 ---
 
-## 9. Immediate next actions
+## 9. Remaining work — external handoff (no code pending)
 
-1. **Waves A and B — done.** See §5 for verified item lists, gates and deviations.
-2. **Wave C engineering — done.** The recipe, second domain, study harness, scaffold, two-wrapper
-   compositional demo, landing page and screenshots are checked in §5. Treat the remaining numbered
-   items as external work: no code change can complete them.
-3. **`experiment(pi): recruit and run the five-task study`** — blocked only on participants. Start at
-   `docs/pi-study.md`, run `PI_LOCAL_FEED=1 pnpm --filter pi dev`, open `/study.html`, enter a
-   participant number and export `window.__study`. Five counterbalanced participants, then apply the
-   stop rule and publish the result verbatim, including a negative one. No results file exists yet;
-   do not invent one or edit captured results by hand.
-4. **`chore(release): finish the external delivery`** — remaining: publish the npm release and host a
-   dedicated flagship URL (GitHub Pages currently serves only `dist-demo`). The clone/install command,
-   landing page, screenshots, clip and gallery link are already in place.
+Waves A/B/C engineering is implemented and verified (§10). No source change is pending. The three
+items below are external: each needs a human with participants or deployment/publishing credentials.
+Do not fabricate study results, a release, or a deployment.
 
-**Deferred, no phase:** the missing `SPACEGRAPH.TODO.41.md` gated-scenarios note is recorded here as a
-one-line deferred item; do not create a phase for it.
+### 9.1 Run the five-task participant study (governs the product claim)
+- **Owner / input:** researcher with n ≥ 5 participants; `docs/pi-study.md` and `app/pi/src/study.ts`.
+- **Steps:** `PI_LOCAL_FEED=1 pnpm --filter pi dev` → open `/study.html` → enter a participant number →
+  each participant answers the five pinned questions (§1) across the Latin-square surfaces → export
+  `window.__study` to a results file → repeat to n ≥ 5 counterbalanced participants → apply the stop
+  rule (§1).
+- **Done when:** raw exports are committed (researcher chooses the path), a written result — negative
+  included — is published verbatim, and decision 4 (§7) is recorded. No results file exists now; do
+  not invent one or hand-edit captured data.
+
+### 9.2 Publish the npm release
+- **Owner / input:** maintainer with npm publish rights; packages under `packages/`.
+- **Steps:** `pnpm run test:publish` green → `pnpm run build` → version per the existing release
+  workflow (no Changesets) → publish.
+- **Done when:** the release is on the registry and the README clone/install command resolves.
+
+### 9.3 Host a dedicated flagship URL
+- **Owner / input:** maintainer with deployment rights; `pnpm run build:demo` emits `dist-demo/`,
+  which GitHub Pages currently serves as the whole bundle.
+- **Steps:** deploy the built demo (it includes `flagship.html` and the `public/flagship/*` artifacts)
+  to a dedicated URL → update the README "The demo" link and `docs/PLAN/INDEX.md` if needed.
+- **Done when:** the dedicated URL loads `flagship.html` with both screenshots and the MP4, and the
+  README points to it.
+
+### 9.4 Deferred, no phase
+The missing `SPACEGRAPH.TODO.41.md` gated-scenarios note is a one-line deferred item; do not create a
+phase for it.
+
+## 10. Verification ledger (fresh run, 2026-11-20, this checkout)
+
+Consolidated evidence that no code change is pending. See §6 for the full gate list; items not rerun
+here remain verified per §5.
+
+| Gate | Command | Result |
+| ---- | ------- | ------ |
+| Fold, selectors, scopes, study harness | `pnpm --filter pi test` | 6 files, 20 tests pass |
+| Dependency + policy guard | `pnpm --filter pi verify` | one-way guard passed, 25 packages |
+| App build | `pnpm --filter pi build` | built in 1.28 s (chunk-size warnings only) |
+| Workflow domain | `pnpm --filter @spacegraphjs/workflow test` | 19 pass, 0 fail |
+| Demo unit | `pnpm --filter demo test` | 1 file, 10 tests pass |
+| Deliverable artifacts | `public/flagship/` | `flagship.png`, `compositional-wrappers.png`, `flagship.mp4` present and committed |
