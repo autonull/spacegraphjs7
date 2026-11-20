@@ -22,6 +22,22 @@ test.describe('flagship landing page', () => {
         expect(source).toBe('./flagship/flagship.mp4');
         expect((await page.request.get(new URL(source!, page.url()).toString())).ok()).toBe(true);
 
+        await expect(page.locator('#ladder .rung')).toHaveCount(4);
+        expect(
+            await page
+                .locator('#ladder .rung')
+                .evaluateAll((nodes) => nodes.map((node) => node.dataset.rung)),
+        ).toEqual(['overview', 'execution', 'detail', 'scope']);
+        await expect(page.locator('#worlds')).toContainText('Cross-domain trace');
+        await expect(page.locator('#worlds')).toContainText('History-derived diff');
+        await expect(
+            page.getByRole('link', { name: 'Open the four-domain workspace →' }),
+        ).toHaveAttribute('href', './html/layout/compositional-wrappers.html');
+        await expect(page.getByRole('link', { name: 'Open the two-run diff →' })).toHaveAttribute(
+            'href',
+            './html/layout/graph-diff.html',
+        );
+
         await expect(page.locator('#run')).toContainText('PI_LOCAL_FEED=1 pnpm --filter pi dev');
         await expect(page.locator('#run')).toContainText('pnpm --filter pi verify:visual');
         await expect(page.getByRole('link', { name: 'Back to the demo gallery' })).toHaveAttribute(

@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>SpaceGraphJS - history-derived graph diff</title>
+        <style>
+            :root {
+                color-scheme: dark;
+                font-family: system-ui, sans-serif;
+                background: #101014;
+                color: #f5f5f7;
+            }
+            * {
+                box-sizing: border-box;
+            }
+            body {
+                margin: 0;
+                min-height: 100vh;
+                padding: 20px;
+            }
+            h1 {
+                font-size: 18px;
+                margin: 0 0 8px;
+            }
+            p {
+                color: #a0a0aa;
+                font-size: 13px;
+                margin: 0 0 16px;
+            }
+            .runs {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 16px;
+            }
+            section {
+                border: 1px solid #3a3a44;
+                border-radius: 8px;
+                padding: 12px;
+            }
+            h2 {
+                font-size: 12px;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                color: #a0a0aa;
+                margin: 0 0 8px;
+            }
+            ul {
+                list-style: none;
+                padding: 0;
+                margin: 0;
+                display: grid;
+                gap: 4px;
+                font-size: 13px;
+            }
+            li {
+                font-family: ui-monospace, monospace;
+            }
+            li[data-tone='added'] {
+                color: #5ed6a8;
+            }
+            li[data-tone='removed'] {
+                color: #ff7a90;
+                text-decoration: line-through;
+            }
+            li[data-tone='changed'] {
+                color: #f5c46b;
+            }
+            #diff {
+                margin-top: 16px;
+            }
+            #provenance {
+                color: #22d3ee;
+                font-size: 12px;
+                margin-top: 12px;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Graph diff from kernel history</h1>
+        <p>
+            Two runs, one diff. Every item below is derived from captured snapshots, not authored.
+        </p>
+        <div class="runs">
+            <section id="run-before">
+                <h2>Run 1</h2>
+                <ul></ul>
+            </section>
+            <section id="run-after">
+                <h2>Run 2</h2>
+                <ul></ul>
+            </section>
+        </div>
+        <section id="diff">
+            <h2>Diff</h2>
+            <ul></ul>
+        </section>
+        <div id="provenance">initialising…</div>
+        <script type="module">
+            import { GraphHistory, SessionKernel } from '@spacegraphjs/kernel';
+            import { diffFromHistory, diffSnapshots } from '../../src/graph-diff-view';
+
+            const node = (id, label) => ({ id, kind: 'file', label });
+            const ops = [
+                { op: 'add-node', node: node('session', 'session.ts (draft)') },
+                { op: 'add-node', node: node('legacy', 'legacy.ts') },
+                {
+                    op: 'add-edge',
+                    edge: { id: 'e1', kind: 'contains', source: 'session', target: 'legacy' },
+                },
+                { op: 'remove-node', id: 'legacy' },
+                { op: 'add-node', node: node('test', 'session.test.ts') },
+                {
+                    op: 'add-edge',
+                    edge: { id: 'e2', kind: 'contains', source: 'session', target: 'test' },
+                },
+                { op: 'remove-edge', id: 'e1' },
+                { op: 'add-node', node: node('session', 'session.ts (fixed)') },
+            ];
+            const history = new GraphHistory(
+                new SessionKernel({ entries: ops.map((op, index) => ({ id: `op-${index}`, op })) }),
+                {
+                    limit: 8,
+                    labeler: (version, kernel) => `run ${version} · ${kernel.nodes.length} nodes`,
+                },
+            );
+            history.captureAt(3);
+            history.capture();
+
+            const before = history.getSnapshot(3);
+            const after = history.getSnapshot(8);
+            const summary = diffFromHistory(history, 3, 8);
+            const derived =
+                JSON.stringify(summary) === JSON.stringify(diffSnapshots(before, after));
+            if (!derived) throw new Error('graph diff does not match its history snapshots');
+
+            const rows = (items, tone) =>
+                items.map((id) => `<li data-tone="${tone}">${id}</li>`).join('');
+            const nodesOf = (snapshot) =>
+                snapshot.kernel.nodes.map((entry) => `<li>${entry.label}</li>`).join('');
+            document.querySelector('#run-before h2').textContent = summary.before.label;
+            document.querySelector('#run-after h2').textContent = summary.after.label;
+            document.querySelector('#run-before ul').innerHTML = nodesOf(before);
+            document.querySelector('#run-after ul').innerHTML = nodesOf(after);
+            document.querySelector('#diff ul').innerHTML = [
+                rows(summary.nodes.added, 'added'),
+                rows(summary.nodes.removed, 'removed'),
+                rows(
+                    summary.changedNodes.map((change) => `${change.before} → ${change.after}`),
+                    'changed',
+                ),
+                rows(
+                    summary.edges.added.map((id) => `edge ${id}`),
+                    'added',
+                ),
+                rows(
+                    summary.edges.removed.map((id) => `edge ${id}`),
+                    'removed',
+                ),
+            ].join('');
+            document.querySelector('#provenance').textContent =
+                `${history.size} captured runs · v${summary.before.version} → v${summary.after.version} · recomputed from history: ${derived}`;
+
+            globalThis.__graphDiff = {
+                runs: history.all.map((snapshot) => snapshot.version),
+                summary,
+                derived,
+            };
+        </script>
+    </body>
+</html>

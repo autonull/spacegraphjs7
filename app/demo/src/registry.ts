@@ -52,6 +52,7 @@ const pages: readonly Omit<DemoEntry, 'kind'>[] = [
     },
     { id: 'delta-animation', category: 'layout', path: 'html/layout/delta-animation.html' },
     { id: 'fractal', category: 'layout', path: 'html/layout/fractal.html' },
+    { id: 'graph-diff', category: 'layout', path: 'html/layout/graph-diff.html' },
     { id: 'inter-graph-edges', category: 'layout', path: 'html/layout/inter-graph-edges.html' },
     { id: 'layers', category: 'layout', path: 'html/layout/layers.html' },
     { id: 'layouts', category: 'layout', path: 'html/layout/layouts.html' },

@@ -3,6 +3,8 @@
  * host state. Encoding is URI-safe JSON so a link is readable, round-trips exactly and needs no
  * runtime dependency.
  */
+import type { PinnedNote } from './annotations';
+
 export type PermalinkViewport = {
     readonly zoom: number;
     readonly center: readonly [number, number, number];
@@ -17,6 +19,7 @@ export type PermalinkState = {
     readonly focus: string;
     readonly viewport: PermalinkViewport;
     readonly filter: string;
+    readonly annotations?: readonly PinnedNote[];
 };
 
 export const PERMALINK_PREFIX = 's=';
@@ -25,7 +28,8 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
     typeof value === 'object' && value !== null && !Array.isArray(value);
 
 const isViewport = (value: unknown): value is PermalinkViewport => {
-    if (!isRecord(value) || typeof value.zoom !== 'number' || !Array.isArray(value.center)) return false;
+    if (!isRecord(value) || typeof value.zoom !== 'number' || !Array.isArray(value.center))
+        return false;
     return value.center.length === 3 && value.center.every((part) => typeof part === 'number');
 };
 
@@ -39,7 +43,16 @@ const isPermalinkState = (value: unknown): value is PermalinkState => {
         typeof value.level === 'string' &&
         typeof value.focus === 'string' &&
         typeof value.filter === 'string' &&
-        isViewport(value.viewport)
+        isViewport(value.viewport) &&
+        (value.annotations === undefined ||
+            (Array.isArray(value.annotations) &&
+                value.annotations.every(
+                    (note) =>
+                        isRecord(note) &&
+                        typeof note.id === 'string' &&
+                        typeof note.target === 'string' &&
+                        typeof note.body === 'string',
+                )))
     );
 };
 

@@ -81,12 +81,26 @@
             code {
                 color: #93c5fd;
             }
+            header button {
+                border: 1px solid #22d3ee;
+                border-radius: 6px;
+                background: #132b33;
+                color: #a5f3fc;
+                padding: 5px 10px;
+                cursor: pointer;
+            }
+            #trace-status {
+                color: #a5f3fc;
+                font-variant-numeric: tabular-nums;
+            }
         </style>
     </head>
     <body>
         <header>
             <h1>Compositional domain wrappers</h1>
             <p>Four semantic domains, four isolated models, three cross-canvas links.</p>
+            <button type="button" id="trace-button">Trace artifact → metric</button>
+            <span id="trace-status">trace idle</span>
             <span id="status">initialising…</span>
         </header>
         <main>
@@ -146,6 +160,7 @@
             import { ModelAdapter } from '@spacegraphjs/adapter';
             import { SpaceGraphRenderer } from '@spacegraphjs/spacegraph-renderer';
             import { edges } from 'spacegraphjs';
+            import { crossTracePath } from '../../src/cross-trace';
 
             const fold = (ops) => {
                 const nodes = new Map();
@@ -280,9 +295,11 @@
             ];
 
             const containers = new Map();
+            const renderers = new Map();
             for (const domain of domains) {
                 const container = document.querySelector(`#${domain.id}-canvas`);
                 const renderer = new SpaceGraphRenderer();
+                renderers.set(domain.id, renderer);
                 await renderer.mount(container, {
                     theme: DEFAULT_THEME,
                     projection: '2d',
@@ -338,9 +355,58 @@
                 fromGraph.graph.addEdge(link);
             }
 
+            const nodesByDomain = Object.fromEntries(
+                domains.map((domain) => [domain.id, domain.view.nodes.map((node) => node.id)]),
+            );
+            const traceDefinition = crossTracePath(links, nodesByDomain, 'data:p1:auc', 'backward');
+            const traceStatus = document.querySelector('#trace-status');
+            let traceProgress = -1;
+            let traceTimer;
+            const focusStep = (index) => {
+                const step = traceDefinition[index];
+                if (!step) return;
+                const graph = graphFor(step.domain);
+                const node = graph?.getNode(step.node);
+                renderers.get(step.domain)?.focus(step.node);
+                if (node?.position)
+                    graph?.cameraControls?.setTarget(
+                        node.position.x,
+                        node.position.y,
+                        node.position.z,
+                    );
+                traceProgress = index;
+                traceStatus.textContent =
+                    `${index + 1}/${traceDefinition.length} ${step.node}` +
+                    (step.via ? ` via ${step.via}` : '');
+            };
+            const playTrace = () => {
+                if (traceTimer) clearInterval(traceTimer);
+                focusStep(0);
+                if (globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+                    focusStep(traceDefinition.length - 1);
+                    return;
+                }
+                let index = 0;
+                traceTimer = setInterval(() => {
+                    index += 1;
+                    if (index >= traceDefinition.length) {
+                        clearInterval(traceTimer);
+                        traceTimer = undefined;
+                        return;
+                    }
+                    focusStep(index);
+                }, 450);
+            };
+            document.querySelector('#trace-button').addEventListener('click', playTrace);
+
             const status = document.querySelector('#status');
             status.textContent = `${domains.map((domain) => `${domain.view.nodes.length} ${domain.id}`).join(' · ')} · ${links.length} inter-graph links`;
             globalThis.__compositional = {
+                tracePath: traceDefinition,
+                traceProgress: () => traceProgress,
+                traceFocus: () => traceDefinition[traceProgress]?.node,
+                focusStep,
+                viewportOf: (domain) => renderers.get(domain)?.getViewport().center ?? null,
                 domains: domains.map((domain) => domain.id),
                 nodes: Object.fromEntries(
                     domains.map((domain) => [domain.id, domain.view.nodes.map((node) => node.id)]),

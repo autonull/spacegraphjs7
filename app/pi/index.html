@@ -37,7 +37,9 @@
                 --pi-selection: #315bd6;
                 --pi-focus: #1d3f9c;
             }
-            * { box-sizing: border-box; }
+            * {
+                box-sizing: border-box;
+            }
             body {
                 margin: 0;
                 height: 100vh;
@@ -48,18 +50,63 @@
                 padding: 12px;
                 background: var(--pi-background);
                 color: var(--pi-text);
-                font: 13px/1.4 system-ui, sans-serif;
+                font:
+                    13px/1.4 system-ui,
+                    sans-serif;
             }
-            header { grid-column: 1 / -1; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-            h1 { font-size: 15px; margin: 0; }
-            header span { color: var(--pi-text-muted); }
-            aside, main, #rail { border: 1px solid var(--pi-border); border-radius: 8px; background: var(--pi-surface); }
-            aside, #rail { padding: 12px; overflow: auto; min-height: 0; }
-            #rail { display: flex; flex-direction: column; gap: 12px; }
-            main { min-height: 0; min-width: 0; overflow: hidden; }
-            footer { grid-column: 1 / -1; }
-            #gallery, #overview, #turn-map { display: grid; gap: 6px; }
-            #gallery button, #overview button, #turn-map button, form button, form select, header select, #surface-buttons button {
+            header {
+                grid-column: 1 / -1;
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                flex-wrap: wrap;
+            }
+            h1 {
+                font-size: 15px;
+                margin: 0;
+            }
+            header span {
+                color: var(--pi-text-muted);
+            }
+            aside,
+            main,
+            #rail {
+                border: 1px solid var(--pi-border);
+                border-radius: 8px;
+                background: var(--pi-surface);
+            }
+            aside,
+            #rail {
+                padding: 12px;
+                overflow: auto;
+                min-height: 0;
+            }
+            #rail {
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+            }
+            main {
+                min-height: 0;
+                min-width: 0;
+                overflow: hidden;
+            }
+            footer {
+                grid-column: 1 / -1;
+            }
+            #gallery,
+            #overview,
+            #turn-map {
+                display: grid;
+                gap: 6px;
+            }
+            #gallery button,
+            #overview button,
+            #turn-map button,
+            form button,
+            form select,
+            header select,
+            #surface-buttons button {
                 border: 1px solid var(--pi-border);
                 border-radius: 6px;
                 background: var(--pi-surface-muted);
@@ -68,52 +115,199 @@
                 text-align: left;
                 cursor: pointer;
             }
-            #gallery button:hover, #overview button:hover, #turn-map button:hover { border-color: var(--pi-accent); }
-            header select { padding: 4px 6px; }
-            header label { color: var(--pi-text-muted); }
-            #attention { color: var(--pi-warning); margin-left: auto; text-align: end; }
-            #follow-state { color: var(--pi-text-muted); }
-            #surface-buttons { display: flex; gap: 4px; }
-            #surface-buttons button[data-active='true'] { border-color: var(--pi-accent); color: var(--pi-accent); }
-            form { display: flex; gap: 8px; }
-            form input { flex: 1; padding: 8px; border-radius: 6px; border: 1px solid var(--pi-border); background: var(--pi-surface); color: var(--pi-text); }
-            #evidence { color: var(--pi-text-muted); margin: 8px 0 0; padding-left: 18px; min-height: 18px; }
-            #status { color: var(--pi-accent); }
-            #hud { color: var(--pi-success); font-variant-numeric: tabular-nums; font-size: 11px; }
-            #export-buttons { display: flex; gap: 4px; }
-            #export-buttons button, #mouse-map, #keyboard-map, #limitations, #history-banner {
-                font-size: 11px; color: var(--pi-text-muted);
+            #gallery button:hover,
+            #overview button:hover,
+            #turn-map button:hover {
+                border-color: var(--pi-accent);
+            }
+            header select {
+                padding: 4px 6px;
+            }
+            header label {
+                color: var(--pi-text-muted);
+            }
+            #attention {
+                color: var(--pi-warning);
+                margin-left: auto;
+                text-align: end;
+            }
+            #follow-state {
+                color: var(--pi-text-muted);
+            }
+            #surface-buttons {
+                display: flex;
+                gap: 4px;
+            }
+            #surface-buttons button[data-active='true'] {
+                border-color: var(--pi-accent);
+                color: var(--pi-accent);
+            }
+            form {
+                display: flex;
+                gap: 8px;
+            }
+            form input {
+                flex: 1;
+                padding: 8px;
+                border-radius: 6px;
+                border: 1px solid var(--pi-border);
+                background: var(--pi-surface);
+                color: var(--pi-text);
+            }
+            #evidence {
+                color: var(--pi-text-muted);
+                margin: 8px 0 0;
+                padding-left: 18px;
+                min-height: 18px;
+            }
+            #status {
+                color: var(--pi-accent);
+            }
+            #hud {
+                color: var(--pi-success);
+                font-variant-numeric: tabular-nums;
+                font-size: 11px;
+            }
+            #export-buttons {
+                display: flex;
+                gap: 4px;
+            }
+            #annotation-list,
+            .annotation-chip {
+                display: grid;
+                gap: 4px;
+            }
+            .annotation-row {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 6px;
+                border: 1px solid var(--pi-border);
+                border-radius: 4px;
+                background: var(--pi-surface-muted);
+                padding: 4px 6px;
+                font-size: 11px;
+            }
+            .annotation-row button {
+                border: 0;
+                background: none;
+                color: var(--pi-error);
+                cursor: pointer;
+            }
+            #annotation-target {
+                color: var(--pi-text-muted);
+                font-size: 11px;
+            }
+            #annotation-form {
+                gap: 4px;
+            }
+            #annotation-form input {
+                flex: 1;
+                min-width: 0;
+                padding: 6px;
+                border-radius: 6px;
+                border: 1px solid var(--pi-border);
+                background: var(--pi-surface);
+                color: var(--pi-text);
+            }
+            #export-buttons button,
+            #mouse-map,
+            #keyboard-map,
+            #limitations,
+            #history-banner {
+                font-size: 11px;
+                color: var(--pi-text-muted);
             }
             #history-banner {
-                position: absolute; top: 8px; left: 8px; z-index: 3;
-                background: var(--pi-surface); border: 1px solid var(--pi-warning);
-                border-radius: 6px; padding: 4px 8px;
+                position: absolute;
+                top: 8px;
+                left: 8px;
+                z-index: 3;
+                background: var(--pi-surface);
+                border: 1px solid var(--pi-warning);
+                border-radius: 6px;
+                padding: 4px 8px;
             }
 
-            #surface { display: grid; min-height: 0; position: relative; }
-            #surface[data-arrangement='side'] { grid-template-columns: minmax(0, 1fr) 320px; }
-            #surface[data-arrangement='stacked'] { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) 200px; }
-            #surface[data-arrangement='floating'] { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); position: relative; }
-            #canvas { min-width: 0; min-height: 0; }
-            #transcript { min-height: 0; overflow: auto; border-left: 1px solid var(--pi-border); padding: 8px; }
-            #surface[data-arrangement='stacked'] #transcript { border-left: 0; border-top: 1px solid var(--pi-border); }
+            #surface {
+                display: grid;
+                min-height: 0;
+                position: relative;
+            }
+            #surface[data-arrangement='side'] {
+                grid-template-columns: minmax(0, 1fr) 320px;
+            }
+            #surface[data-arrangement='stacked'] {
+                grid-template-columns: minmax(0, 1fr);
+                grid-template-rows: minmax(0, 1fr) 200px;
+            }
+            #surface[data-arrangement='floating'] {
+                grid-template-columns: minmax(0, 1fr);
+                grid-template-rows: minmax(0, 1fr);
+                position: relative;
+            }
+            #canvas {
+                min-width: 0;
+                min-height: 0;
+            }
+            #transcript {
+                min-height: 0;
+                overflow: auto;
+                border-left: 1px solid var(--pi-border);
+                padding: 8px;
+            }
+            #surface[data-arrangement='stacked'] #transcript {
+                border-left: 0;
+                border-top: 1px solid var(--pi-border);
+            }
             #surface[data-arrangement='floating'] #transcript {
-                position: absolute; right: 8px; bottom: 8px; width: 320px; max-height: 45%;
-                background: var(--pi-surface); border: 1px solid var(--pi-border); border-radius: 8px;
+                position: absolute;
+                right: 8px;
+                bottom: 8px;
+                width: 320px;
+                max-height: 45%;
+                background: var(--pi-surface);
+                border: 1px solid var(--pi-border);
+                border-radius: 8px;
                 box-shadow: 0 8px 24px rgb(0 0 0 / 0.35);
             }
-            #surface[data-surface='log'] #canvas, #surface[data-surface='log'] #turn-map { display: none; }
-            #surface[data-surface='map'] #transcript { display: none; }
-            #surface[data-surface='log'], #surface[data-surface='map'] { grid-template-columns: minmax(0, 1fr); }
-            #surface[data-surface='log'] { grid-template-columns: 420px minmax(0, 1fr); }
-            #surface[data-surface='log'] #transcript { border-left: 0; }
-            #transcript-list { display: grid; gap: 6px; }
-            .transcript-row {
-                display: block; width: 100%; text-align: left; white-space: normal;
-                border: 1px solid transparent; border-radius: 6px; padding: 6px 8px;
-                background: var(--pi-surface-muted); color: var(--pi-text); cursor: pointer;
+            #surface[data-surface='log'] #canvas,
+            #surface[data-surface='log'] #turn-map {
+                display: none;
             }
-            .transcript-row[data-revealed='true'] { border-color: var(--pi-accent); color: var(--pi-focus); }
+            #surface[data-surface='map'] #transcript {
+                display: none;
+            }
+            #surface[data-surface='log'],
+            #surface[data-surface='map'] {
+                grid-template-columns: minmax(0, 1fr);
+            }
+            #surface[data-surface='log'] {
+                grid-template-columns: 420px minmax(0, 1fr);
+            }
+            #surface[data-surface='log'] #transcript {
+                border-left: 0;
+            }
+            #transcript-list {
+                display: grid;
+                gap: 6px;
+            }
+            .transcript-row {
+                display: block;
+                width: 100%;
+                text-align: left;
+                white-space: normal;
+                border: 1px solid transparent;
+                border-radius: 6px;
+                padding: 6px 8px;
+                background: var(--pi-surface-muted);
+                color: var(--pi-text);
+                cursor: pointer;
+            }
+            .transcript-row[data-revealed='true'] {
+                border-color: var(--pi-accent);
+                color: var(--pi-focus);
+            }
         </style>
     </head>
     <body>
@@ -186,6 +380,19 @@
                 <button type="button" id="export-svg">SVG</button>
                 <button type="button" id="export-html">HTML</button>
             </div>
+            <strong>Reviewer notes</strong>
+            <div id="annotation-target">selected: none</div>
+            <div id="annotation-list"></div>
+            <form id="annotation-form">
+                <input
+                    id="annotation-input"
+                    placeholder="Note for selected node"
+                    aria-label="Reviewer note"
+                />
+                <button type="button" id="annotation-add">Pin</button>
+            </form>
+            <strong>Report</strong>
+            <button type="button" id="report-download">Download audit report</button>
             <strong>Playground</strong>
             <div id="playground">
                 <select id="play-preset" aria-label="Play preset">
@@ -196,22 +403,36 @@
                 <button type="button" id="play-start">Play</button>
                 <button type="button" id="play-reconcile">Reconcile</button>
                 <div id="play-energy">energy 0.000</div>
-                <div>ScopeSimulation owns coordinates; physics borrows a bounded set and reconciles at rest.</div>
+                <div>
+                    ScopeSimulation owns coordinates; physics borrows a bounded set and reconciles
+                    at rest.
+                </div>
             </div>
             <strong>Guided replay</strong>
             <button type="button" id="guided-replay">Replay the five questions</button>
             <strong>Share</strong>
             <button type="button" id="permalink-copy">Copy full-state link</button>
             <strong>Mouse map</strong>
-            <div id="mouse-map">right-drag pan · wheel zoom · middle-drag orbit · click select · node drag · shift-drag box-select</div>
+            <div id="mouse-map">
+                right-drag pan · wheel zoom · middle-drag orbit · click select · node drag ·
+                shift-drag box-select
+            </div>
             <strong>Keyboard</strong>
             <div id="keyboard-map">arrows pan · +/− zoom · f focus · Esc clear</div>
             <strong>Known limitations</strong>
-            <div id="limitations">WebXR, sound and haptics are report-only seams; no immersive default. True FlowEdge dash animation belongs to the engine-mode page.</div>
+            <div id="limitations">
+                WebXR, sound and haptics are report-only seams; no immersive default. True FlowEdge
+                dash animation belongs to the engine-mode page.
+            </div>
         </section>
         <footer>
             <form id="prompt-form">
-                <input id="prompt-input" autocomplete="off" placeholder="Prompt the live agent…" aria-label="Prompt" />
+                <input
+                    id="prompt-input"
+                    autocomplete="off"
+                    placeholder="Prompt the live agent…"
+                    aria-label="Prompt"
+                />
                 <select id="prompt-mode" aria-label="Prompt mode">
                     <option value="">default</option>
                     <option value="steer">steer</option>

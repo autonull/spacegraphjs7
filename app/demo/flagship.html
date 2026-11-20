@@ -130,6 +130,35 @@
                 color: #a0a0aa;
                 margin: 0;
             }
+            .ladder {
+                display: grid;
+                gap: 10px;
+            }
+            .rung {
+                display: grid;
+                grid-template-columns: 120px minmax(0, 1fr);
+                gap: 16px;
+                align-items: center;
+                border: 1px solid #30303a;
+                border-left: 3px solid #7dd3fc;
+                border-radius: 8px;
+                padding: 12px 16px;
+                background: #121218;
+            }
+            .rung[data-rung='scope'] {
+                border-left-color: #f5c46b;
+            }
+            .rung span {
+                font-size: 12px;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                color: #7dd3fc;
+            }
+            .rung code {
+                font-size: 13px;
+                color: #c7d2fe;
+                overflow-wrap: anywhere;
+            }
             pre {
                 background: #101014;
                 border: 1px solid #30303a;
@@ -265,6 +294,74 @@
                                 scenes, including reduced-motion and failure states.
                             </p>
                         </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="ladder">
+                <div class="wrap">
+                    <h2>Every rectangle is a portal</h2>
+                    <p class="sub">
+                        One node, four representations. Zoom chooses the rung, activity can promote
+                        it, and poor legibility demotes it. At the last rung the rectangle becomes a
+                        nested graph.
+                    </p>
+                    <div class="ladder">
+                        <div class="rung" data-rung="overview">
+                            <span>overview</span><code>session.ts · 4</code>
+                        </div>
+                        <div class="rung" data-rung="execution">
+                            <span>execution</span
+                            ><code>session.ts · ▂▄▆▃ · edit src/auth/session.ts</code>
+                        </div>
+                        <div class="rung" data-rung="detail">
+                            <span>detail</span
+                            ><code>session.ts · artifact · success · reveal / follow / trace</code>
+                        </div>
+                        <div class="rung" data-rung="scope">
+                            <span>scope</span
+                            ><code>run:local → unit:1 → action:read-auth → artifact:session</code>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="worlds">
+                <div class="wrap">
+                    <h2>One workspace, four domains</h2>
+                    <p class="sub">
+                        Agent, workflow, filesystem and data stay isolated. Three inter-graph links
+                        carry one trace from a metric back to the artifact that produced it, and a
+                        two-run diff is derived from captured kernel history.
+                    </p>
+                    <div class="features">
+                        <div class="card">
+                            <h3>Cross-domain trace</h3>
+                            <p>
+                                One action walks metric → commit → pipeline step → agent artifact,
+                                moving each canvas camera without merging a single model.
+                            </p>
+                        </div>
+                        <div class="card">
+                            <h3>History-derived diff</h3>
+                            <p>
+                                Two kernel snapshots produce added, removed and changed nodes. The
+                                view recomputes its diff from history, not from a written fixture.
+                            </p>
+                        </div>
+                        <div class="card">
+                            <h3>Shareable argument</h3>
+                            <p>
+                                Reviewer notes ride on rendered node data, travel in the full-state
+                                link, and are bundled with the exports into one audit report.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="links">
+                        <a href="./html/layout/compositional-wrappers.html"
+                            >Open the four-domain workspace →</a
+                        >
+                        <a href="./html/layout/graph-diff.html">Open the two-run diff →</a>
                     </div>
                 </div>
             </section>

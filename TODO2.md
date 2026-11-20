@@ -1,9 +1,11 @@
 # TODO2 — From flagship to the full spatial-software vision (plan)
 
-**Status:** Phases A and B are implemented and verified; Phases C–F remain; Phase G is external and
+**Status:** Phases A–C are implemented and verified; Phases D–F remain; Phase G is external and
 cannot be fabricated. TODO1's engineering is complete and verified (`TODO1.md:383-395`). **Date:**
-2026-11-20. **Owner area:** `app/pi` first, then `app/demo` + domain wrappers, then the library kit
-and reference hosts. Current progress and the exact next move are in §8 (Ledger).
+2026-11-20. **Owner area:** `app/pi` and `app/demo` done; next `src/layout` + `src/vision` + `app/pi`
+for Phase D, then the library kit and reference hosts. Current progress and the exact next move are
+in §8 (Ledger). Two small flagship follow-ups from Phase A are still open and listed there; they do
+not gate Phase D.
 
 **Destination.** The full design space is mapped in [`docs/POSSIBILITIES.md`](docs/POSSIBILITIES.md).
 This plan turns it into a sequence: first a runnable flagship (Phase A), then domain generality (B),
@@ -136,22 +138,31 @@ Two domains prove the recipe once; two visibly different additions make it gener
 (10) and `build`; compositional Playwright (1); root `pnpm test` (761); `pnpm --filter pi verify`;
 `pnpm run generate:registry`. No library API was added.
 
-### Phase C — Compositional worlds and shareable scenes
+### Phase C — Compositional worlds and shareable scenes — DONE
 
-- [ ] Add a **cross-domain `trace`** in `app/demo`: follow `InterGraphEdge` links across canvases so
-      one action answers "metric → step → tool call → commit → file". Assert the camera follows and
-      models stay isolated.
-- [ ] Add a **graph diff** between two kernel snapshots using `@spacegraphjs/diff` + kernel history:
-      annotate added/removed/changed nodes, expose a two-run view in `app/demo`, and assert the diff
-      is derived from history, not hand-authored.
-- [ ] Add **annotations** on `RenderNode.data` through the widget layer: reviewer notes pinned to a
-      node, included in exports and the full-state permalink from Phase A.
-- [ ] Produce a shareable report from `exportJSON`/`exportSVG`/`exportHTML` plus the permalink so a
-      spatial argument is auditable without running the app.
-- [ ] Add zoom-ladder and multi-domain sections to `app/demo/flagship.html`; recapture screenshots and
-      the clip with `pnpm --filter demo video:flagship`; assert with `tests/flagship-page.spec.ts`.
+- [x] Add a **cross-domain `trace`** in `app/demo`: `app/demo/src/cross-trace.ts` walks the three
+      `InterGraphEdge` links (with same-scope peers inside a domain) backward from the data metric.
+      The compositional page has a Trace button; each step focuses a node and moves that canvas's
+      camera. Playwright asserts path order, camera movement, overlay count and model isolation.
+- [x] Add a **graph diff** between two kernel snapshots: `app/demo/src/graph-diff-view.ts` derives
+      added/removed/changed nodes and edges from `GraphHistory` captures via `diffKernels`;
+      `app/demo/html/layout/graph-diff.html` shows both runs and recomputes the diff from the same
+      snapshots. **Correction to the original wording:** `@spacegraphjs/diff` only types code-patch
+      sources and diff tones; it does not diff graphs. The real graph differ is `diffKernels` in
+      `packages/kernel/src/diff.ts`, so that is the dependency the view uses.
+- [x] Add **annotations** on `RenderNode.data` through the widget layer: `app/pi/src/annotations.ts`
+      stores reviewer notes, pins them on rendered nodes and mounts them with `WidgetLayer`;
+      `PermalinkState.annotations` round-trips them. Notes appear in the shareable report.
+- [x] Produce a shareable report from `exportJSON`/`exportSVG`/`exportHTML` plus the permalink:
+      `app/pi/src/report.ts` builds one escaped, self-contained HTML audit file with geometry,
+      exports, notes and a replay link; the Pi rail downloads it.
+- [x] Add zoom-ladder and multi-domain sections to `app/demo/flagship.html`; recapture both flagship
+      screenshots and the clip with `pnpm --filter demo video:flagship`; assert with
+      `tests/flagship-page.spec.ts` and the new compositional/graph-diff specs.
 
-**Gate:** compositional and flagship Playwright specs; `pnpm --filter demo build`; no page errors.
+**Gate (green):** compositional (2), graph-diff (1) and flagship (1) Playwright specs plus all 18
+demo e2e tests; `pnpm --filter demo test` (16), `pnpm --filter demo build`, root 39-page demo-error
+check, root `pnpm test` (771); media recaptured. No page errors.
 
 ### Phase D — Runtime self-verifying loop
 
@@ -232,17 +243,17 @@ game-engine API; additional domains beyond the four until a host needs them; the
 
 ## 4. Verification — one gate list
 
-| Check                | Command / rule                                                                                                                                                                             |
-| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Flagship             | `pnpm --filter pi test`, `test:e2e`, `verify:visual`, `verify`, `scale`, `build`, package `tsc --noEmit`                                                                                   |
-| Vision on new states | `verify:visual` asserts overlap, legibility, hierarchy, ergonomics and layout score on settled, playing, trace, zoom-ladder rungs and reduced-motion scenes; strategy recorded per capture |
-| Domains              | `bun test` + `typecheck` + `build` in each of the four `packages/domain/*`; conformance included — Phase B green                                                                           |
-| Composition + scenes | Compositional Playwright (four domains, three links) green; Phase C adds cross-domain trace, diff and annotation specs plus `pnpm --filter demo video:flagship`                            |
-| Runtime loop         | deterministic vision-loop fixture; runtime scores agree with captured gate or difference is recorded                                                                                       |
-| Adapter seams        | registration/gating test; no implementation defaults; `docs/world.md` updated                                                                                                              |
-| Boundaries           | root `pnpm test` (`test/boundaries.test.ts`) + `pnpm --filter pi verify` after every phase                                                                                                 |
-| Study protocol       | `pnpm --filter pi test` — matrix, Latin square, recorder, negative reporting; participant run external                                                                                     |
-| Full repo            | `pnpm test` from root; no `pnpm run check` script exists here (use package `tsc --noEmit`)                                                                                                 |
+| Check                | Command / rule                                                                                                                                                                                 |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Flagship             | `pnpm --filter pi test`, `test:e2e`, `verify:visual`, `verify`, `scale`, `build`, package `tsc --noEmit`                                                                                       |
+| Vision on new states | `verify:visual` asserts overlap, legibility, hierarchy, ergonomics and layout score on settled, playing, trace, zoom-ladder rungs and reduced-motion scenes; strategy recorded per capture     |
+| Domains              | `bun test` + `typecheck` + `build` in each of the four `packages/domain/*`; conformance included — Phase B green                                                                               |
+| Composition + scenes | **Phase C green:** compositional trace (2), graph diff (1), flagship (1) specs; Pi annotation/report specs (2); `pnpm --filter demo build`, demo-error check (39), `video:flagship` recaptured |
+| Runtime loop         | deterministic vision-loop fixture; runtime scores agree with captured gate or difference is recorded                                                                                           |
+| Adapter seams        | registration/gating test; no implementation defaults; `docs/world.md` updated                                                                                                                  |
+| Boundaries           | root `pnpm test` (`test/boundaries.test.ts`) + `pnpm --filter pi verify` after every phase                                                                                                     |
+| Study protocol       | `pnpm --filter pi test` — matrix, Latin square, recorder, negative reporting; participant run external                                                                                         |
+| Full repo            | `pnpm test` from root; no `pnpm run check` script exists here (use package `tsc --noEmit`)                                                                                                     |
 
 Budgets (measure, then tighten; inherited from `TODO1.md:304-315`):
 
@@ -297,19 +308,19 @@ contract + registry over branches; host owns policy; legibility gates spectacle.
 
 ## 7. Vision coverage
 
-| `POSSIBILITIES.md` section   | Landed by                                                                            |
-| ---------------------------- | ------------------------------------------------------------------------------------ |
-| 1. Rectangle ladder          | Phase A (zoomable card ladder), Phase F (pure rung helper)                           |
-| 2. Physics as meaning        | Phase A (Playground), Phase F (`PhysicsPlaySession`)                                 |
-| 3. Cinematics as cognition   | Phase A (`trace`), Phase F (camera handlers)                                         |
-| 4. Domains as workspaces     | **Landed — Phase B** (filesystem + data + profile); remaining domains via scaffold   |
-| 5. Compositional worlds      | **Landed — Phase B** (four isolated domains, three links); Phase C adds trace + diff |
-| 6. Shareable scenes          | Phase A (permalink), Phase C (annotations, report)                                   |
-| 7. Self-verifying interfaces | Phase D (runtime loop), Phase F (promotion if reused)                                |
-| 8. Host-registered senses    | Phase E (adapter seam, widget mounting)                                              |
-| 9. Product forms             | Phase E (Graph IDE + observatory); others host work via scaffold                     |
-| 10. Horizons                 | This document's phases + Phase G research gate                                       |
-| 11. Boundaries               | Guardrails in the introduction and gates in §4                                       |
+| `POSSIBILITIES.md` section   | Landed by                                                                                      |
+| ---------------------------- | ---------------------------------------------------------------------------------------------- |
+| 1. Rectangle ladder          | Phase A (zoomable card ladder), Phase F (pure rung helper)                                     |
+| 2. Physics as meaning        | Phase A (Playground), Phase F (`PhysicsPlaySession`)                                           |
+| 3. Cinematics as cognition   | Phase A (`trace`), Phase F (camera handlers)                                                   |
+| 4. Domains as workspaces     | **Landed — Phase B** (filesystem + data + profile); remaining domains via scaffold             |
+| 5. Compositional worlds      | **Landed — Phases B+C** (four isolated domains, three links, cross-canvas trace, history diff) |
+| 6. Shareable scenes          | **Landed — Phases A+C** (full-state permalink, notes on node data, audit report)               |
+| 7. Self-verifying interfaces | Phase D (runtime loop), Phase F (promotion if reused)                                          |
+| 8. Host-registered senses    | Phase E (adapter seam, widget mounting)                                                        |
+| 9. Product forms             | Phase E (Graph IDE + observatory); others host work via scaffold                               |
+| 10. Horizons                 | This document's phases + Phase G research gate                                                 |
+| 11. Boundaries               | Guardrails in the introduction and gates in §4                                                 |
 
 ---
 
@@ -340,33 +351,53 @@ contract + registry over branches; host owns policy; legibility gates spectacle.
 - Evidence: new domains 19/19 tests each + typecheck + build; demo 10 tests; compositional spec 1;
   root `pnpm test` 761; `pnpm --filter demo build`; `pnpm --filter pi verify` passed.
 
-### Next move (Phase C)
+### Landed (Phase C)
 
-Phase C works from the four-domain composition now in place. In order:
+- `app/demo/src/cross-trace.ts`: pure link walk with same-scope peer bridging. The compositional page
+  traces backward from `data:p1:auc` through the three `InterGraphEdge` links, focuses each canvas and
+  moves its camera while the probe still reports `isolated: true`. Spec: 2 Playwright tests.
+- `app/demo/src/graph-diff-view.ts` + `app/demo/html/layout/graph-diff.html`: two-run view from
+  `GraphHistory` + `diffKernels`, recomputed from the same snapshots so the diff cannot drift from
+  history. `@spacegraphjs/diff` is a code-patch/tone package, not a graph differ (§3 Phase C).
+  Spec: 1 Playwright test; 3 unit tests.
+- `app/pi/src/annotations.ts`: `NoteStore`, notes on `RenderNode.data`, a `WidgetLayer`-mounted rail
+  widget, and optional `PermalinkState.annotations`. `app/pi/src/report.ts` bundles permalink,
+  exports and notes into one escaped standalone HTML report; the rail downloads it.
+- `app/demo/flagship.html`: zoom-ladder and multi-domain sections with links to the new pages;
+  `flagship-page.spec.ts` asserts both. Screenshots and the 72-frame clip recaptured with
+  `pnpm --filter demo video:flagship`.
+- Evidence: root `pnpm test` 771; `pnpm --filter demo test` 16; `pnpm --filter pi test` 36; demo e2e
+  18; Pi e2e 25; `verify:visual` 12; `verify`, `scale`, `tsc`, both builds, registry regeneration
+  (3 hosts / 39 pages / 45 modules), demo-error check 39 — all green.
 
-1. Cross-domain `trace` in `app/demo`: follow the three `InterGraphEdge` links so one action answers
-   "metric → step → tool call → commit → file"; assert camera follow and model isolation. Reuse the
-   page probe in `app/demo/html/layout/compositional-wrappers.html`.
-2. Graph diff from `GraphHistory` + `@spacegraphjs/diff` (see `packages/kernel/src/graph-history.ts`
-   and `packages/diff/src/diff.ts`); expose a two-run view, assert the diff is derived from history.
-3. Annotations on `RenderNode.data` through the widget layer; include them in exports and the Phase A
-   permalink (`app/pi/src/permalink.ts`).
-4. Shareable report from `exportJSON`/`exportSVG`/`exportHTML` + permalink.
-5. Zoom-ladder and multi-domain sections in `app/demo/flagship.html`; recapture media.
+### Next move (Phase D)
 
-See §3 Phase C for the checklist and §4 for the gate.
+Work from the settled vision analyzers already in `app/pi`. In order:
 
-### Deferred inside Phase A (do before closing the flagship)
+1. Extend `scopePolicy` inputs with `hierarchy` and `ergonomics` (`src/layout/scope-policy.ts:40-48`);
+   keep the module free of vision types.
+2. Add opt-in `createVisionLoop(analyzers, policy)` under `src/vision/`: analyze → scores → policy and
+   rungs → measure again; expose `strategy`, `lastReport`, `reportUnsupported`. No silent mutation.
+3. Wire it into `app/pi/src/host.ts` behind a host toggle; the HUD shows overlap, legibility,
+   hierarchy and ergonomics and records which scores retargeted layout.
+4. Keep `createVisionAssert` as the test gate; assert agreement with the runtime loop or record the
+   difference in the capture record. Add a deterministic fixture and rerun `verify:visual`.
 
-1. Scope-portal glyph identity and portal zoom/breadcrumb navigation (`adapter.ts`/`host.ts`).
-2. Bind `Trail`/minimap from `src/navigation` into the Pi rail (pure helpers, no API).
+See §3 Phase D for the checklist and §4 for the gate.
+
+### Deferred inside Phase A (still open; do before calling the flagship finished)
+
+1. Scope-portal glyph identity and portal zoom/breadcrumb navigation. Start at
+   `app/pi/src/adapter.ts:89-92` (detail rung shows a `scope:` label) and the `#portalByNode` lookup in
+   `app/pi/src/host.ts`; add a stable glyph plus a clickable breadcrumb back through parent scopes.
+2. Bind `Trail`/minimap from `src/navigation` into the Pi rail. `Trail` gives back/forward over
+   revealed nodes; `Navigation.project` maps `#positions` into a small overview box. Both are pure
+   helpers — no library API change. Neither item blocks Phase D.
 
 ### Remaining phases
 
-- **C — Compositional worlds and shareable scenes.** Unstarted. Needs the four domains and the
-  compositional spec (both landed in Phase B); adds cross-domain trace, `GraphHistory`-derived diff,
-  annotations, a shareable report and flagship page sections.
-- **D — Runtime self-verifying loop.** Unstarted. Needs `scopePolicy` scores, an opt-in
+- **C — Compositional worlds and shareable scenes.** Landed. See the ledger entry above.
+- **D — Runtime self-verifying loop.** Next. Needs `scopePolicy` scores, an opt-in
   `createVisionLoop`, a Pi HUD toggle and a deterministic unit fixture; keep `createVisionAssert` as
   the test gate.
 - **E — Host senses and product forms.** Unstarted. Needs the `registerSensory` seam (no default
@@ -378,6 +409,6 @@ See §3 Phase C for the checklist and §4 for the gate.
 - **G — Proof and delivery.** External: participants for the five-task study and credentials for the
   npm release. No result, release or deployment may be fabricated.
 
-Each of C–F has its own gate in §4 and must stay green before the next starts. The two deferred Phase
-A items below are still open and belong to the flagship, not to a new phase. Baseline TODO1 evidence
-is in `TODO1.md:383-395`.
+Each of D–F has its own gate in §4 and must stay green before the next starts. The two deferred Phase
+A items remain open and belong to the flagship, not to a new phase. Baseline TODO1 evidence is in
+`TODO1.md:383-395`.

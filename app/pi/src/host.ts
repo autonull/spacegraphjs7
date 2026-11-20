@@ -28,11 +28,13 @@ import {
     type AgentLevel,
 } from './adapter';
 import {
-    CAPABILITIES,
-    capabilityContext,
-    runCapability,
-    type PiHostState,
-} from './capabilities';
+    createAnnotationWidgets,
+    NoteStore,
+    withPinnedNotes,
+    type AnnotationWidgets,
+    type PinnedNote,
+} from './annotations';
+import { CAPABILITIES, capabilityContext, runCapability, type PiHostState } from './capabilities';
 import { fixtureKernel } from './fixture';
 import { foldKernelOps } from './ops';
 import {
@@ -50,13 +52,9 @@ import {
 } from './policy';
 import { agentScopes, DEPTH } from './scopes';
 import { readTheme } from './theme';
-import {
-    decodePermalink,
-    encodePermalink,
-    isRevealHash,
-    type PermalinkState,
-} from './permalink';
+import { decodePermalink, encodePermalink, isRevealHash, type PermalinkState } from './permalink';
 import { createPlaySession, type GravityPreset, type PlaySession } from './play';
+import { buildReportHTML } from './report';
 import { STUDY_TASKS } from './study';
 import { traceOrder } from './trace';
 
@@ -98,7 +96,8 @@ type HostVision = {
 };
 
 const hostVision = (): HostVision | undefined => {
-    const instances = (window as unknown as { SpaceGraph?: { instances?: Set<unknown> } }).SpaceGraph?.instances;
+    const instances = (window as unknown as { SpaceGraph?: { instances?: Set<unknown> } })
+        .SpaceGraph?.instances;
     const instance = instances ? (Array.from(instances)[0] as { vision?: HostVision }) : undefined;
     return instance?.vision;
 };
@@ -141,6 +140,8 @@ export class PiHost {
     #theme: RenderTheme = DEFAULT_THEME;
     #controller = new GraphController({ trailMaxDepth: 8 });
     #adapter = new AgentAdapter();
+    #notes = new NoteStore();
+    #annotationWidgets?: AnnotationWidgets;
     #playback?: MotionPlayback;
     #flightFrom = { zoom: 1, center: [0, 0, 0] as [number, number, number] };
     #flightTo: Position = { x: 0, y: 0, z: 0 };
@@ -189,7 +190,8 @@ export class PiHost {
         this.#global = options.global ?? true;
         this.#reducedMotion =
             options.reducedMotion ??
-            (typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches);
+            (typeof matchMedia === 'function' &&
+                matchMedia('(prefers-reduced-motion: reduce)').matches);
         this.simulation = new ScopeSimulation({
             instant: this.#reducedMotion,
             layout: { seed: 7, gap: 190, depthStep: 220, nodePadding: 36 },
@@ -198,7 +200,14 @@ export class PiHost {
         const simulation = this.simulation;
         this.playSession = createPlaySession({
             physics: {
-                settings: { enabled: false, gravity: 0, collide: true, repulsion: 120, damping: 0.98, groundY: null },
+                settings: {
+                    enabled: false,
+                    gravity: 0,
+                    collide: true,
+                    repulsion: 120,
+                    damping: 0.98,
+                    groundY: null,
+                },
             },
             simulation: {
                 setInstant: (value) => simulation.setInstant(value),
@@ -226,6 +235,9 @@ export class PiHost {
         this.renderer.setDepth(this.#depth);
         this.#controller.bind(this.renderer);
         this.registerMotion();
+        this.#annotationWidgets = createAnnotationWidgets(el('annotation-list'), (id) =>
+            this.removeNote(id),
+        );
         this.renderer.on('nodeClick', ({ id }) => this.reveal(id));
         this.renderer.on('viewportChange', ({ zoom }) => this.applyAutoLevel(zoom));
 
@@ -331,6 +343,8 @@ export class PiHost {
                 ),
             };
         }
+        this.#model = withPinnedNotes(this.#model, this.#notes.list);
+        this.#annotationWidgets?.refresh(this.#model.nodes);
         this.renderer.setModel(this.#model);
         this.renderHistory();
     }
@@ -343,12 +357,15 @@ export class PiHost {
             nodes: this.#model.nodes.map((node) => {
                 const position = this.#positions.get(node.id);
                 const activity = this.#activity.get(node.id) ?? 0;
-                const base = activity > 0 ? Math.min(1, (node.emphasis ?? 0.3) + activity) : node.emphasis;
+                const base =
+                    activity > 0 ? Math.min(1, (node.emphasis ?? 0.3) + activity) : node.emphasis;
                 const index = this.#traceIds.indexOf(node.id);
                 const traced = index >= 0 && index <= this.#traceProgress + 1;
                 return {
                     ...node,
-                    position: position ? ([position.x, position.y, position.z] as [number, number, number]) : node.position,
+                    position: position
+                        ? ([position.x, position.y, position.z] as [number, number, number])
+                        : node.position,
                     emphasis: traced ? 1 : base,
                 };
             }),
@@ -387,7 +404,8 @@ export class PiHost {
         this.#revealed = id;
         this.renderer.setSelection([id]);
         const qualified = this.#qualifiedByNode.get(id);
-        if (this.#pinnedReveal && this.#pinnedReveal !== qualified) this.simulation.unpin([this.#pinnedReveal]);
+        if (this.#pinnedReveal && this.#pinnedReveal !== qualified)
+            this.simulation.unpin([this.#pinnedReveal]);
         if (qualified) this.simulation.pin([qualified]);
         this.#pinnedReveal = qualified;
         if (typeof location !== 'undefined') location.hash = `graph:${id}`;
@@ -397,8 +415,12 @@ export class PiHost {
         }
         if (row) {
             row.setAttribute('data-revealed', 'true');
-            row.scrollIntoView({ block: 'nearest', behavior: this.#reducedMotion ? 'instant' : 'smooth' });
+            row.scrollIntoView({
+                block: 'nearest',
+                behavior: this.#reducedMotion ? 'instant' : 'smooth',
+            });
         }
+        this.renderAnnotationTarget();
     }
 
     setFollow(mode: FollowMode): FollowMode {
@@ -499,6 +521,38 @@ export class PiHost {
         return zoom;
     }
 
+    pinNote(target: string, body: string): PinnedNote | undefined {
+        const text = body.trim();
+        if (!text || !this.#view.nodes.some((node) => node.id === target)) return undefined;
+        const note = this.#notes.add(target, text);
+        this.paint();
+        return note;
+    }
+
+    removeNote(id: string): void {
+        if (this.#notes.remove(id)) this.paint();
+    }
+
+    report(): string {
+        return buildReportHTML({
+            title: 'Pi spatial argument',
+            permalink: this.permalink(),
+            json: this.exportModel('json'),
+            svg: this.exportModel('svg'),
+            html: this.exportModel('html'),
+            annotations: this.#notes.list,
+        });
+    }
+
+    downloadReport(): void {
+        const url = URL.createObjectURL(new Blob([this.report()], { type: 'text/html' }));
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `pi-report-${Date.now()}.html`;
+        link.click();
+        URL.revokeObjectURL(url);
+    }
+
     permalink(): string {
         const viewport = this.renderer.getViewport();
         const state: PermalinkState = {
@@ -508,8 +562,12 @@ export class PiHost {
             depthAxis: this.#depthAxis,
             level: this.#levelMode,
             focus: this.#revealed,
-            viewport: { zoom: viewport.zoom, center: [...viewport.center] as [number, number, number] },
+            viewport: {
+                zoom: viewport.zoom,
+                center: [...viewport.center] as [number, number, number],
+            },
             filter: this.#laneScope,
+            annotations: this.#notes.list,
         };
         return encodePermalink(state);
     }
@@ -530,6 +588,8 @@ export class PiHost {
             zoom: state.viewport.zoom,
             center: [...state.viewport.center] as [number, number, number],
         });
+        this.#notes.replaceAll(state.annotations ?? []);
+        this.paint();
         return true;
     }
 
@@ -624,6 +684,10 @@ export class PiHost {
             pan: (dx: number, dy: number) => this.pan(dx, dy),
             zoomBy: (factor: number) => this.zoomBy(factor),
             export: (format: 'json' | 'svg' | 'html') => this.exportModel(format),
+            pinNote: (target: string, body: string) => this.pinNote(target, body),
+            notes: () => this.#notes.list,
+            removeNote: (id: string) => this.removeNote(id),
+            report: () => this.report(),
             permalink: () => this.permalink(),
             applyPermalink: (hash: string) => this.applyPermalink(hash),
             unsupported: () => UNSUPPORTED,
@@ -676,7 +740,9 @@ export class PiHost {
         for (const [qualified, position] of layout.positions) {
             const id = this.#nodeByQualified.get(qualified);
             if (!id) continue;
-            const offset = supports ? sampleDepth(continuum, this.axisValue(id), distance).offset : 0;
+            const offset = supports
+                ? sampleDepth(continuum, this.axisValue(id), distance).offset
+                : 0;
             positions.set(id, { x: position.x, y: position.y, z: position.z + offset });
         }
         return positions;
@@ -729,11 +795,7 @@ export class PiHost {
             const t = value - index;
             this.renderer.setViewport({
                 ...this.renderer.getViewport(),
-                center: [
-                    lerp(from.x, to.x, t),
-                    lerp(from.y, to.y, t),
-                    lerp(from.z, to.z, t),
-                ],
+                center: [lerp(from.x, to.x, t), lerp(from.y, to.y, t), lerp(from.z, to.z, t)],
             });
             this.renderPositions();
         });
@@ -781,7 +843,9 @@ export class PiHost {
     /** Replays every question's evidence, then flies the trace across the changed artifacts. */
     replay(): readonly string[] {
         const lines = STUDY_TASKS.flatMap((task) => runCapability(task.id, this.context()));
-        for (const node of this.#view.nodes.filter((candidate) => candidate.kind === 'artifact').slice(0, 3)) {
+        for (const node of this.#view.nodes
+            .filter((candidate) => candidate.kind === 'artifact')
+            .slice(0, 3)) {
             this.reveal(node.id);
             this.trace(node.id);
         }
@@ -805,7 +869,14 @@ export class PiHost {
         this.#flightTo = target;
         this.#playback = this.director.play(
             [
-                { id: `trace:${id}`, verb: 'trace', target: 'emphasis', from: 0, to: 1, duration: 0.2 },
+                {
+                    id: `trace:${id}`,
+                    verb: 'trace',
+                    target: 'emphasis',
+                    from: 0,
+                    to: 1,
+                    duration: 0.2,
+                },
                 {
                     id: `flyTo:${id}`,
                     verb: 'flyTo',
@@ -878,8 +949,20 @@ export class PiHost {
         for (const format of ['json', 'svg', 'html'] as const) {
             el(`export-${format}`).addEventListener('click', () => this.download(format));
         }
+        const pin = (): void => {
+            const input = el<HTMLInputElement>('annotation-input');
+            if (this.pinNote(this.#revealed, input.value)) input.value = '';
+        };
+        el('annotation-add').addEventListener('click', pin);
+        el<HTMLFormElement>('annotation-form').addEventListener('submit', (event) => {
+            event.preventDefault();
+            pin();
+        });
+        el('report-download').addEventListener('click', () => this.downloadReport());
+        this.renderAnnotationTarget();
         el<HTMLSelectElement>('play-preset').addEventListener('change', (event) => {
-            if (this.playSession.active) this.play((event.target as HTMLSelectElement).value as GravityPreset);
+            if (this.playSession.active)
+                this.play((event.target as HTMLSelectElement).value as GravityPreset);
         });
         el('play-start').addEventListener('click', () =>
             this.play(el<HTMLSelectElement>('play-preset').value as GravityPreset),
@@ -922,7 +1005,12 @@ export class PiHost {
 
     private download(format: 'json' | 'svg' | 'html'): void {
         const blob = new Blob([this.exportModel(format)], {
-            type: format === 'json' ? 'application/json' : format === 'svg' ? 'image/svg+xml' : 'text/html',
+            type:
+                format === 'json'
+                    ? 'application/json'
+                    : format === 'svg'
+                      ? 'image/svg+xml'
+                      : 'text/html',
         });
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
@@ -966,7 +1054,8 @@ export class PiHost {
     }
 
     private renderStatus(): void {
-        el('status').textContent = `${this.#view.nodes.length} nodes · ${this.#view.edges.length} edges · ${this.#specs.length} scopes`;
+        el('status').textContent =
+            `${this.#view.nodes.length} nodes · ${this.#view.edges.length} edges · ${this.#specs.length} scopes`;
     }
 
     private renderAttention(): void {
@@ -978,6 +1067,12 @@ export class PiHost {
 
     private renderFollow(): void {
         el('follow-state').textContent = this.#lastFollowFrame?.nodeId ?? this.#followMode;
+    }
+
+    private renderAnnotationTarget(): void {
+        el('annotation-target').textContent = this.#revealed
+            ? `selected: ${this.#revealed}`
+            : 'selected: none — reveal a node first';
     }
 
     private renderHistory(): void {
@@ -1024,7 +1119,9 @@ export class PiHost {
                 row.type = 'button';
                 row.textContent = `${spec.id} · ${spec.nodes.length}`;
                 row.addEventListener('click', () => {
-                    const first = spec.nodes[0] && this.#view.nodes.find((node) => node.id === spec.nodes[0].id);
+                    const first =
+                        spec.nodes[0] &&
+                        this.#view.nodes.find((node) => node.id === spec.nodes[0].id);
                     if (first) this.reveal(first.id);
                 });
                 return row;
@@ -1045,4 +1142,3 @@ export class PiHost {
         );
     }
 }
-
