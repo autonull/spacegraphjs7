@@ -114,17 +114,7 @@ export type { DesignTokens } from './tokens';
 export { defaultTokens, darkTokens, generateTokenCSS } from './tokens';
 
 // CSS utilities
-export {
-    cx,
-    cn,
-    styleVar,
-    styleVars,
-    generateId,
-    fixedSize,
-    absolutePosition,
-    mediaQueries,
-    media,
-} from './css';
+export { cx, cn, styleVar, generateId, fixedSize, absolutePosition } from './css';
 
 // Portal
 export type { PortalProps } from './portal';
@@ -146,4 +136,4 @@ export {
 } from './hooks';
 
 // Utils
-export { nodeByID, edgeByID, getConnectedNodes, getIncomingEdges, getOutgoingEdges, diffTone, type DiffTone } from './utils';
+export { nodeByID, diffTone, type DiffTone } from './utils';

@@ -3,8 +3,6 @@
  * Provides class name helpers and CSS variable access.
  */
 
-import type { JSX } from 'solid-js';
-
 /**
  * Concatenates class names, filtering out falsy values.
  * Similar to clsx/cn but lighter weight.
@@ -56,19 +54,6 @@ export function styleVar(name: string, fallback?: string): string {
 }
 
 /**
- * Creates multiple CSS variable references at once.
- * @param vars - Object mapping property names to variable names
- * @returns Style object for JSX
- */
-export function styleVars(vars: Record<string, string | number>): Record<string, string> {
-    const style: Record<string, string> = {};
-    for (const [prop, value] of Object.entries(vars)) {
-        style[prop] = String(value);
-    }
-    return style;
-}
-
-/**
  * Generates a unique ID for ARIA attributes.
  * @param prefix - Prefix for the ID
  * @returns Unique ID string
@@ -115,34 +100,4 @@ export function absolutePosition(
     if (right !== undefined) style.right = typeof right === 'number' ? `${right}px` : right;
     if (bottom !== undefined) style.bottom = typeof bottom === 'number' ? `${bottom}px` : bottom;
     return style;
-}
-
-/**
- * Media query helpers for responsive design.
- */
-export const mediaQueries = {
-    /** @media (max-width: 640px) */
-    sm: '@media (max-width: 640px)',
-    /** @media (max-width: 768px) */
-    md: '@media (max-width: 768px)',
-    /** @media (max-width: 1024px) */
-    lg: '@media (max-width: 1024px)',
-    /** @media (max-width: 1280px) */
-    xl: '@media (max-width: 1280px)',
-    /** @media (prefers-reduced-motion: reduce) */
-    reducedMotion: '@media (prefers-reduced-motion: reduce)',
-    /** @media (prefers-color-scheme: dark) */
-    dark: '@media (prefers-color-scheme: dark)',
-    /** @media (prefers-color-scheme: light) */
-    light: '@media (prefers-color-scheme: light)',
-} as const;
-
-/**
- * Creates a CSS-in-JS style object for a media query.
- * @param query - Media query string
- * @param styles - Styles to apply within the query
- * @returns Style object with nested media query (for use with css-in-js libraries)
- */
-export function media(query: string, styles: JSX.CSSProperties): Record<string, JSX.CSSProperties> {
-    return { [query]: styles };
 }

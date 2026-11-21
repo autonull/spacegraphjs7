@@ -357,8 +357,9 @@ const RECORDING_CAMERA_ADAPTER: CameraAdapter = {
     reset: () => cameraCalls.push('reset'),
 };
 
-const element = <T extends HTMLElement = HTMLElement>(id: string): T =>
-    requireElement<T>(id, 'explorer');
+function element<T extends HTMLElement = HTMLElement>(id: string): T {
+    return requireElement<T>(id, 'explorer');
+}
 
 function effective(state: ConfigState): ConfigState {
     return negotiate(space, state, { capabilities, flags }).state;

@@ -15,33 +15,13 @@ export {
     visibleWorldExtent,
 } from './CameraUtils';
 // Color
-export type { ColorStop } from './color';
 export {
-    adjustHue,
-    adjustLightness,
-    adjustSaturation,
-    blendColors,
-    darken,
     dataColor,
-    desaturate,
-    generateGradient,
-    generateGradientPalette,
-    generatePalette,
     getCompliantColor,
     getContrastRatio,
     getRelativeLuminance,
-    hexToHsl,
-    hexToRgb,
-    hslToHex,
-    lerpColor,
-    lerpColorHex,
-    lighten,
     parseColor,
-    rgbToHex,
-    saturate,
     toCssColor,
-    toCssGradient,
-    toHexColor,
 } from './color';
 export type { DOMElementOptions } from './DOMUtils';
 // DOM utilities
@@ -83,62 +63,9 @@ export { MAX_NODE_SIZE, MIN_NODE_SIZE, nodeScreenSize, NodeResizer } from './nod
 // Node parent
 export { parentIdOf } from './nodeParent';
 // Math utilities (from math.ts) - excluding constants which come from core
-export {
-    abs,
-    angleDiff,
-    approx,
-    // Math functions
-    clamp,
-    clamp01,
-    clamp180,
-    deepEqual,
-    inverseLerp,
-    isArray,
-    isBoolean,
-    isDefined,
-    isFunction,
-    isNumber,
-    // Type guards
-    isObject,
-    isPlainObject,
-    isString,
-    lerp,
-    // Vector math
-    lerp3,
-    lerpClamped,
-    mapRange,
-    max,
-    max3,
-    mean,
-    min,
-    min3,
-    randomBool,
-    randomInt,
-    randomPick,
-    // Random
-    randomRange,
-    randomThreeVector,
-    round,
-    seededRandom,
-    // Object utilities
-    safeClone,
-    sign,
-    smootherstep,
-    smoothstep,
-    sum,
-} from './math';
+export { clamp, clamp01, lerp, safeClone, seededRandom } from './math';
 // Performance utilities
-export {
-    batch,
-    batchAsync,
-    cancelIdleCallbackPolyfill,
-    getMemoryUsage,
-    measure,
-    measureAsync,
-    ObjectPool,
-    PerformanceMonitor,
-    requestIdleCallbackPolyfill,
-} from './performance';
+export { batch, measure } from './performance';
 // Projection helpers
 export { clientToNdc, projectToNdc, worldToClient, worldToScreen } from './projection';
 // Vector helpers
