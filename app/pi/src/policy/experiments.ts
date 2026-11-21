@@ -89,6 +89,23 @@ export const POLICY_EXPERIMENTS: readonly PolicyExperiment[] = [
         decisionRule:
             'A variant graduates only with a recorded comparison and a human decision; negative results publish verbatim.',
     },
+    {
+        id: 'geometry-x-depth',
+        title: 'Does spacing and depth change spatial legibility?',
+        families: ['geometry', 'depth'],
+        variants: {
+            'geometry.gap': [190, 500],
+            'geometry.padding': [36, 160],
+            'geometry.repulsion': [1800, 6000],
+            'depth.step': [220, 400],
+            'depth.mode': ['orbit', 'flat'],
+        },
+        seed: 13,
+        maxCells: 8,
+        metrics: ['legibility', 'success', 'travel'],
+        decisionRule:
+            'Offline replay re-simulates the fixture under each cell. A variant graduates only after a recorded comparison and a human decision; negative results publish verbatim.',
+    },
 ];
 
 export const experimentById = (id: string): PolicyExperiment | undefined =>

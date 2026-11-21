@@ -16,7 +16,8 @@ follow the workflow in `docs/ROADMAP.md` (`test:publish` → build → npm).
 - **One world (D):** one canvas, one `ScopeSimulation`, one cross-domain camera flight; scaffold emits
   the spine so new domains are born experimentable.
 - **Experimentation (E):** seeded pairwise sampling, experiment resolver layer, offline / online /
-  human tiers, decision artifacts, and verbatim negative results.
+  human tiers, decision artifacts, and verbatim negative results. Offline replay now re-simulates
+  the fixture's geometry and vision feedback under each variant, not just re-scores events.
 - **Truth pass (F):** durable ADRs, a vocabulary glossary, this changelog, deprecation policy, an
   isolated `scale` CI job, and a clean root `tsc` gate.
 

@@ -26,7 +26,7 @@ never recommendations. The `n >= 5` study has no winner.
 
 ```
 pnpm install                          # workspace
-pnpm test                             # 844 unit tests
+pnpm test                             # 850 unit tests
 pnpm --filter pi test                 # 66 unit tests
 pnpm --filter pi test:e2e             # 40 Playwright tests
 pnpm --filter demo test               # 34 tests
@@ -68,9 +68,9 @@ renderer contract (@spacegraphjs/renderer)     ── swappable adapters: WebGL 
 
 | Gate            | Command                                   | Current          |
 | --------------- | ----------------------------------------- | ---------------- |
-| Unit tests      | `pnpm test`                               | 844 passing      |
-| Pi unit tests   | `pnpm --filter pi test`                   | 66 passing       |
-| Pi e2e          | `pnpm --filter pi test:e2e`               | 40 passing       |
+| Unit tests      | `pnpm test`                               | 850 passing      |
+| Pi unit tests   | `pnpm --filter pi test`                   | 72 passing       |
+| Pi e2e          | `pnpm --filter pi test:e2e`               | 41 passing       |
 | Demo unit tests | `pnpm --filter demo test`                 | 34 passing       |
 | Demo e2e        | `pnpm --filter demo test:e2e`             | 21 passing       |
 | Visual atlas    | `pnpm run verify:visual`                  | green            |
@@ -87,7 +87,7 @@ load.
 
 | Workstream              | Goal                                                              | State                                                |
 | ----------------------- | ----------------------------------------------------------------- | ---------------------------------------------------- |
-| E refinement (optional) | Re-run solver + vision loop under a variant during offline replay | current tier re-scores recorded events instead       |
+| E refinement (optional) | Re-run solver + vision loop under a variant during offline replay | done — `simulateFixture` + `simulateAndScore`        |
 | G                       | Study published, release live, hosted flagship                    | external; code seams ready; naming pass / beta → 1.0 |
 
 See `TODO3.md` §12 for the definition of done and §11 for explicit anti-goals.

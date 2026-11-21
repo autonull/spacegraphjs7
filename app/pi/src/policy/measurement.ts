@@ -6,6 +6,7 @@ import {
     replaySession,
     type ErgonomicScore,
     type EventScorer,
+    type ReplayStrategy,
     type SessionRecording,
 } from '../recorder';
 import type { ExperimentCell, PolicyExperiment, SampledExperiment } from './experiments';
@@ -69,10 +70,11 @@ export const measureExperiment = (
     recording: SessionRecording,
     scorer: EventScorer,
     incumbentVector: PolicyVector,
+    replay: ReplayStrategy = replaySession,
 ): ExperimentMeasurement => {
-    const incumbent = replaySession(recording, incumbentVector, scorer);
+    const incumbent = replay(recording, incumbentVector, scorer);
     const cells = sampled.cells.map((cell) =>
-        evaluate(cell, replaySession(recording, cell.vector, scorer), incumbent),
+        evaluate(cell, replay(recording, cell.vector, scorer), incumbent),
     );
     return {
         version: 1,

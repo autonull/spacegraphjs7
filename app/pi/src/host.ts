@@ -86,6 +86,7 @@ import {
     sampleExperiment,
     presetVector,
     resolvePolicy,
+    simulateAndScore,
     withLayer,
     type PolicyChangeEvent,
     type PolicyLayer,
@@ -1282,6 +1283,7 @@ export class PiHost {
                           this.recording(),
                           this.#eventScorer,
                           incumbent ?? this.#resolved.vector,
+                          simulateAndScore,
                       )
                     : undefined;
             },
@@ -1293,6 +1295,8 @@ export class PiHost {
             recordEvent: (kind: string, meta?: Record<string, string | number | boolean>) =>
                 this.recordEvent(kind, meta),
             replayRecording: (policy?: PolicyVector) => this.replayRecording(policy),
+            replaySimulated: (policy?: PolicyVector) =>
+                simulateAndScore(this.recording(), policy ?? this.#resolved.vector, this.#eventScorer),
             counterfactual: (variant: PolicyVector, incumbent?: PolicyVector) =>
                 this.counterfactual(variant, incumbent),
             ergonomics: () => this.ergonomics(),

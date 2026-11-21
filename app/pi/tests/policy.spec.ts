@@ -91,4 +91,16 @@ test.describe('the live policy spine', () => {
         );
         expect(comparison.successDelta).toBe(0);
     });
+
+    test('re-simulates geometry under a variant during offline measurement', async ({ page }) => {
+        await boot(page);
+        await page.evaluate(() => (window as any).__pi.recordEvent('reveal'));
+        const measured = await page.evaluate(() =>
+            (window as any).__pi.measureExperiment('geometry-x-depth'),
+        );
+        expect(measured.cells.length).toBeGreaterThan(0);
+        expect(measured.incumbent.legibility).toBeGreaterThan(0);
+        const simulated = await page.evaluate(() => (window as any).__pi.replaySimulated());
+        expect(simulated.legibility).toBe(measured.incumbent.legibility);
+    });
 });

@@ -24,6 +24,13 @@ export interface ErgonomicScore {
 
 export type EventScorer = (event: RecordedEvent, policy: PolicyVector) => Partial<ErgonomicScore>;
 
+/** Offline replay strategy. The default re-scores events; a variant may re-simulate first. */
+export type ReplayStrategy = (
+    recording: SessionRecording,
+    policy: PolicyVector,
+    scorer: EventScorer,
+) => ErgonomicScore;
+
 /** Neutral ergonomic signals. None of them is a success criterion until a protocol declares one. */
 export const ERGO_SIGNALS = [
     'reveal',
