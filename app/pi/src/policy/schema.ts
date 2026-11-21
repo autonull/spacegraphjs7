@@ -93,6 +93,7 @@ export const POLICY_SCHEMA: PolicySchema = {
         number('ladder.legibilityGate', 'ladder', 0.7, 0, 1, 0.01, 'Legibility required to promote.', '2'),
         number('ladder.demoteBelow', 'ladder', 0.5, 0, 1, 0.01, 'Legibility below which detail demotes.', '2'),
         number('ladder.blendMs', 'ladder', 120, 0, 1000, 20, 'Rung crossfade duration.', '2'),
+        number('ladder.minLabelPx', 'ladder', 14, 8, 32, 1, 'Minimum on-screen label size at any rung.', '2'),
         number('salience.decayRate', 'salience', 1.6, 0.1, 6, 0.1, 'Exponential activity decay rate.', '3'),
         number('emphasis.cap', 'emphasis', 1, 0.2, 1, 0.05, 'Upper bound on node emphasis.', '4'),
         number('emphasis.trace', 'emphasis', 1, 0.2, 1, 0.05, 'Emphasis given to traced nodes.', '4'),

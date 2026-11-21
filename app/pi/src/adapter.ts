@@ -22,16 +22,16 @@ export type AgentAdapterModel = AdapterModel<AgentAdapterNode, AgentAdapterEdge>
 export type AgentLevel = RepresentationRung;
 
 const CARD_SIZES: Readonly<Record<string, readonly [number, number]>> = {
-    run: [260, 88],
-    unit: [214, 78],
-    message: [198, 70],
-    artifact: [152, 54],
-    file: [152, 54],
-    tool: [148, 52],
-    'read-tool': [148, 52],
-    action: [148, 52],
-    error: [164, 58],
-    approval: [180, 60],
+    run: [320, 110],
+    unit: [260, 100],
+    message: [240, 90],
+    artifact: [190, 72],
+    file: [190, 72],
+    tool: [178, 68],
+    'read-tool': [178, 68],
+    action: [178, 68],
+    error: [200, 76],
+    approval: [210, 80],
 };
 
 const DOT_SIZES: Readonly<Record<string, readonly [number, number]>> = {
@@ -93,6 +93,7 @@ export const cardMarkup = (
     context: CardContext,
     blend = 0,
     descending = false,
+    labelPx = 0,
 ): string => {
     const label = escapeHtml(node.label);
     const detail = escapeHtml(detailOf(node));
@@ -105,21 +106,23 @@ export const cardMarkup = (
         ? `<span aria-hidden="true" style="opacity:.7">${portalGlyph(node.scope)} </span>`
         : '';
     const attributes = `data-rung="${rung}" data-blend="${blend.toFixed(2)}" data-kind="${escapeHtml(node.kind)}" data-status="${status}"${portal}${descending ? ' data-descending="true"' : ''}`;
-    const box = 'display:flex;flex-direction:column;gap:3px;padding:8px 10px;color:inherit;font-family:inherit;transition:opacity var(--pi-blend,120ms)';
+    const box = 'display:flex;flex-direction:column;justify-content:center;gap:4px;padding:6% 8%;box-sizing:border-box;height:100%;color:inherit;font-family:inherit;overflow:hidden;transition:opacity var(--pi-blend,120ms)';
 
     if (rung === 'overview') {
-        return `<div ${attributes} style="${box}"><span style="font-weight:600">${glyph}${label}${badge}</span></div>`;
+        const labelSize = labelPx || 44;
+        return `<div ${attributes} style="${box}"><span style="font-size:${labelSize}px;font-weight:700;line-height:1;letter-spacing:-0.03em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%"><span aria-hidden="true" style="font-size:${Math.round(labelSize * 0.6)}px">${glyph}</span>${label}</span></div>`;
     }
     if (rung === 'execution') {
         const bars = [0.3, 0.55, 0.8, 0.5, 0.95]
-            .map((height) => `<i style="display:inline-block;width:3px;height:${Math.round(height * 14)}px;background:currentColor;opacity:.55"></i>`)
+            .map((height) => `<i style="display:inline-block;width:5px;height:${Math.round(height * 22)}px;background:currentColor;opacity:.55"></i>`)
             .join('');
-        return `<div ${attributes} style="${box}"><span style="font-weight:600">${glyph}${label}${badge}</span><span style="display:flex;align-items:flex-end;gap:2px;height:16px">${bars}</span><span style="opacity:.72;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${detail.slice(0, 80)}</span></div>`;
+        const labelSize = labelPx || 26;
+        return `<div ${attributes} style="${box}"><span style="font-size:${labelSize}px;font-weight:700;line-height:1.1;letter-spacing:-0.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${glyph}${label}${badge}</span><span style="display:flex;align-items:flex-end;gap:3px;height:22px">${bars}</span><span style="opacity:.72;font-size:${Math.max(12, labelSize * 0.6)}px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${detail.slice(0, 80)}</span></div>`;
     }
     const scope = node.scope
-        ? `<span style="opacity:.7;font-size:11px">${portalGlyph(node.scope)} scope: ${escapeHtml(node.scope)}</span>`
+        ? `<span style="opacity:.7;font-size:13px">${portalGlyph(node.scope)} scope: ${escapeHtml(node.scope)}</span>`
         : '';
-    return `<div ${attributes} style="${box}"><span style="font-weight:600">${glyph}${label}${badge}</span><span style="opacity:.78;font-size:12px;line-height:16px;max-height:64px;overflow:hidden">${detail.slice(0, 320)}</span><span style="opacity:.6;font-size:11px">${escapeHtml(node.kind)} · ${status} · reveal / follow / trace</span>${scope}</div>`;
+    return `<div ${attributes} style="${box}"><span style="font-size:${labelPx || 20}px;font-weight:700;line-height:1.15">${glyph}${label}${badge}</span><span style="opacity:.78;font-size:15px;line-height:1.35;overflow:hidden">${detail.slice(0, 320)}</span><span style="opacity:.6;font-size:13px">${escapeHtml(node.kind)} · ${status} · reveal / follow / trace</span>${scope}</div>`;
 };
 
 /**
@@ -131,12 +134,13 @@ export const composedCardMarkup = (
     layers: readonly RepresentationLayer[],
     context: CardContext,
     descending = false,
+    labelPx = 0,
 ): string => {
     const primary = layers.at(-1);
     const secondary = layers.at(-2);
-    if (!secondary) return cardMarkup(node, primary?.rung ?? 'overview', context, 0, descending);
+    if (!secondary) return cardMarkup(node, primary?.rung ?? 'overview', context, 0, descending, labelPx);
     const layer = ({ rung, opacity }: RepresentationLayer, lower: boolean): string =>
-        `<div data-layer="${rung}" style="position:absolute;inset:0;opacity:${opacity.toFixed(3)};transition:opacity var(--pi-blend,120ms)${lower ? ';pointer-events:none' : ''}">${cardMarkup(node, rung, context, 0, descending)}</div>`;
+        `<div data-layer="${rung}" style="position:absolute;inset:0;opacity:${opacity.toFixed(3)};transition:opacity var(--pi-blend,120ms)${lower ? ';pointer-events:none' : ''}">${cardMarkup(node, rung, context, 0, descending, labelPx)}</div>`;
     return `<div data-rungs="${secondary.rung}+${primary!.rung}" style="position:relative;min-height:56px">${layer(secondary, true)}${layer(primary!, false)}</div>`;
 };
 

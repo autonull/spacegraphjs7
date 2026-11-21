@@ -27,7 +27,7 @@ const capture = async (page: Page, name: string): Promise<void> => {
 
 test.describe('Pi flagship screenshots', () => {
     test('captures the agent cockpit and the proof catalog', async ({ page }) => {
-        const errors = await boot(page);
+        const errors = await boot(page, '?scenario=rich&preset=showcase');
 
         await page.evaluate(() => (window as any).__pi.run('vocabulary'));
         await expect(page.locator('#evidence li').first()).toBeVisible();

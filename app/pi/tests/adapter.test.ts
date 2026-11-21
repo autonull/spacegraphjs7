@@ -2,6 +2,7 @@ import { describe, expect, test } from 'vitest';
 import { representationRung } from 'spacegraphjs/salience';
 import { cardMarkup, composedCardMarkup, portalGlyph, toAdapterModel } from '../src/adapter';
 import { fixtureKernel } from '../src/fixture';
+import { labelFontPx } from '../src/policy/host';
 import { agentScopes } from '../src/scopes';
 import { agentDomain } from '@spacegraphjs/agent';
 
@@ -27,6 +28,14 @@ describe('representation ladder', () => {
         expect(execution).toContain('<i ');
         expect(detail).toContain('data-rung="detail"');
         expect(detail.length).toBeGreaterThan(overview.length);
+    });
+
+    test('label typography compensates for zoom scale and fits the node', () => {
+        const zoomedOut = labelFontPx(14, 0.3, 320, 8);
+        expect(zoomedOut).toBeGreaterThanOrEqual(14 / 0.3);
+        expect(labelFontPx(14, 3, 320, 8)).toBeLessThan(zoomedOut);
+        expect(labelFontPx(14, 3, 320, 8)).toBeGreaterThanOrEqual(14 / 3);
+        expect(cardMarkup(node, 'overview', context, 0, false, 48)).toContain('font-size:48px');
     });
 
     test('composites two neighbouring rungs without changing node identity', () => {

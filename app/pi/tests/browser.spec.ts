@@ -105,6 +105,28 @@ test.describe('the Pi reference app', () => {
         noErrors(errors);
     });
 
+    test('keeps card labels at the configured on-screen minimum', async ({ page }) => {
+        const errors = await boot(page);
+        const measure = () =>
+            page.evaluate(() => {
+                const span = document.querySelector<HTMLElement>('#canvas [data-rung] > span')!;
+                const font = Number.parseFloat(getComputedStyle(span).fontSize);
+                const extent = (window as any).__pi.viewport().extent.width;
+                const canvas = document.querySelector<HTMLElement>('#canvas')!.clientWidth;
+                return {
+                    screenPx: (font * canvas) / Math.max(extent, 1),
+                    minPx: Number((window as any).__pi.policy().values['ladder.minLabelPx']),
+                };
+            });
+        const initial = await measure();
+        expect(initial.screenPx).toBeGreaterThanOrEqual(initial.minPx - 0.5);
+        await page.evaluate(() => (window as any).__pi.setKnob('ladder.minLabelPx', 28));
+        const raised = await measure();
+        expect(raised.minPx).toBe(28);
+        expect(raised.screenPx).toBeGreaterThanOrEqual(28 - 0.5);
+        noErrors(errors);
+    });
+
     test('follows the newest node and reports attention from the local stream', async ({ page }) => {
         const errors = await boot(page);
 

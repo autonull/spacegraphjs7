@@ -50,6 +50,18 @@ export const POLICY_PRESETS: readonly PolicyPreset[] = [
     preset('light', 'Light theme', 'Which theme variant is legible for the canonical fixture? (10)', {
         'theme.variant': 'light',
     }),
+    preset(
+        'showcase',
+        'Showcase',
+        'How compact can a multi-turn run stay while every node remains legible? (2, 9)',
+        {
+            'geometry.gap': 40,
+            'geometry.padding': 0,
+            'geometry.repulsion': 200,
+            'depth.step': 40,
+            'guardrails.window': 40,
+        },
+    ),
 ];
 
 export const presetById = (id: string): PolicyPreset | undefined =>

@@ -14,8 +14,10 @@ const boot = async (): Promise<void> => {
     await host.mount(el('canvas'));
     host.setClientID(clientID);
 
-    const events = new EventSource(`/events?client=${clientID}`);
-    events.onmessage = (event) => host.consume(decodeOp(event.data as string));
+    if (new URLSearchParams(location.search).get('scenario') !== 'rich') {
+        const events = new EventSource(`/events?client=${clientID}`);
+        events.onmessage = (event) => host.consume(decodeOp(event.data as string));
+    }
 
     el<HTMLFormElement>('prompt-form').addEventListener('submit', async (submit) => {
         submit.preventDefault();

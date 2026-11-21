@@ -1,5 +1,6 @@
 import { AgentEventMapper, type AgentEvent } from '@spacegraphjs/agent';
 import type { Kernel, KernelOp } from '@spacegraphjs/kernel';
+import { localOps } from './local-feed';
 import { foldKernelOps } from './ops';
 
 export const FIXTURE_ID = 'pi:local';
@@ -52,3 +53,53 @@ export const fixtureOps = (): KernelOp[] => {
 };
 
 export const fixtureKernel = (): Kernel => foldKernelOps(fixtureOps());
+
+const richNode = (
+    id: string,
+    kind: string,
+    label: string,
+    unitId: string,
+    role: string,
+    status = 'complete',
+): KernelOp => ({
+    op: 'add-node',
+    node: { id: fixtureID('local', id), kind, label, data: { unitId, role, status } },
+});
+
+const richEdge = (id: string, kind: string, source: string, target: string): KernelOp => ({
+    op: 'add-edge',
+    edge: {
+        id: fixtureID('local', `e-${id}`),
+        kind,
+        source: fixtureID('local', source),
+        target: fixtureID('local', target),
+    },
+});
+
+/** A denser, deterministic scenario for showcases; the canonical fixture stays unchanged. */
+export const richFixtureOps = (): KernelOp[] => [
+    ...(['x3', 'x4'] as const).flatMap((unit, index) => {
+        const tool = index === 0 ? 'grep' : 'edit';
+        const artifact = index === 0 ? 'auth.ts' : 'patch.diff';
+        return [
+            richNode(unit, 'unit', `Turn ${index + 3}`, unit, 'unit'),
+            richNode(`q${index + 3}`, 'message', 'user message', unit, 'message'),
+            richNode(tool, 'action', tool, unit, 'action'),
+            richNode(artifact, 'artifact', artifact, unit, 'artifact'),
+            richEdge(`contains-${unit}`, 'contains', 'run', unit),
+            richEdge(`asks-${unit}`, 'orders', unit, `q${index + 3}`),
+            richEdge(`reads-${unit}`, 'reads', `q${index + 3}`, tool),
+            richEdge(`produces-${unit}`, 'produces', tool, artifact),
+        ];
+    }),
+    richNode('x6', 'unit', 'Turn 5', 'x6', 'unit'),
+    richNode('approve', 'approval', 'Approve patch', 'x6', 'approval', 'pending'),
+    richNode('failed', 'error', 'test failed', 'x6', 'error', 'failed'),
+    richNode('report', 'artifact', 'incident.md', 'x6', 'artifact'),
+    richEdge('contains-x6', 'contains', 'run', 'x6'),
+    richEdge('gates', 'gates', 'approve', 'x6'),
+    richEdge('fails', 'orders', 'x6', 'failed'),
+    richEdge('reports', 'produces', 'failed', 'report'),
+];
+
+export const richFixtureKernel = (): Kernel => foldKernelOps([...localOps(), ...richFixtureOps()]);

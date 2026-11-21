@@ -36,6 +36,7 @@ describe('policy schema', () => {
         expect(knobByID(POLICY_SCHEMA, 'bands.overviewMax')?.family).toBe('bands');
         expect(defaultVector(POLICY_SCHEMA)['depth.mode']).toBe('flat');
         expect(defaultVector(POLICY_SCHEMA)['depth.step']).toBe(40);
+        expect(knobByID(POLICY_SCHEMA, 'ladder.minLabelPx')?.default).toBe(14);
     });
 
     it('coerces once at the boundary and drops invalid values', () => {

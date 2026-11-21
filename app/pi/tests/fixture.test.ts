@@ -11,7 +11,7 @@ import {
 } from '@spacegraphjs/agent';
 import { DEFAULT_THEME } from '@spacegraphjs/renderer';
 import { CAPABILITIES, capabilityContext, runCapability } from '../src/capabilities';
-import { fixtureID, fixtureKernel, fixtureOps } from '../src/fixture';
+import { fixtureID, fixtureKernel, fixtureOps, richFixtureKernel, richFixtureOps } from '../src/fixture';
 
 const kernel = fixtureKernel();
 const view = agentDomain.build(kernel);
@@ -55,6 +55,15 @@ describe('canonical fixture', () => {
             fixtureID('local', '1:retry'),
             failure,
         ]);
+    });
+
+    it('builds a deterministic showcase kernel denser than the canonical fixture', () => {
+        const rich = richFixtureKernel();
+        expect(rich.nodes.length).toBeGreaterThan(kernel.nodes.length);
+        expect(rich.nodes.length).toBe(richFixtureKernel().nodes.length);
+        expect(richFixtureOps().some((op) => op.op === 'add-edge' && op.edge.kind === 'inferred-cause')).toBe(false);
+        expect(rich.nodes.some((node) => node.kind === 'approval')).toBe(true);
+        expect(rich.nodes.some((node) => node.kind === 'error')).toBe(true);
     });
 
     it('publishes each question as a deterministic capability', () => {

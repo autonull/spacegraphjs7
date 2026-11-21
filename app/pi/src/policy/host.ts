@@ -8,6 +8,19 @@ export type Position = { x: number; y: number; z: number };
 export type VisionScores = { readonly overlap: number; readonly legibility: number };
 export type UnsupportedSeam = { readonly id: string; readonly reason: string };
 
+/** LOD typography: keep a label at least `minPx` on screen, capped by the room its node offers. */
+export const labelFontPx = (
+    minPx: number,
+    pixelsPerWorld: number,
+    nodeWidth: number,
+    textLength: number,
+): number => {
+    const base = 20;
+    const readable = minPx / Math.max(pixelsPerWorld, 0.01);
+    const fill = Math.max(nodeWidth / Math.max(textLength * 0.55, 1), base);
+    return Math.min(Math.max(readable, base), fill);
+};
+
 export const CARD_BUDGETS: Readonly<Record<AgentLevel, number>> = {
     overview: 12,
     execution: 40,

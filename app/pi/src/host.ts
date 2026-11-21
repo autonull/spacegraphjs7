@@ -56,7 +56,7 @@ import {
 } from './annotations';
 import { CAPABILITIES, capabilityContext, runCapability, type PiHostState } from './capabilities';
 import { buildCatalog, mountCatalog, type Catalog } from './catalog';
-import { FIXTURE_ID, fixtureKernel } from './fixture';
+import { FIXTURE_ID, fixtureKernel, richFixtureKernel } from './fixture';
 import { foldKernelOps } from './ops';
 import {
     UNSUPPORTED,
@@ -64,6 +64,7 @@ import {
     exportHTML,
     exportJSON,
     exportSVG,
+    labelFontPx,
     levelForZoom,
     scoreVision,
     unsupportedSeams,
@@ -297,6 +298,8 @@ export class PiHost {
     #transcriptWidth = 320;
     #transcriptHeight = 200;
     #expandedMessages = new Set<string>();
+    #initialFitDone = false;
+    #initialFitTimer?: ReturnType<typeof setTimeout>;
     #policyPanel?: ReturnType<typeof mountPolicyPanel>;
     #policyListeners = new Set<(event: PolicyChangeEvent) => void>();
     #recorder: SessionRecorder;
@@ -321,6 +324,8 @@ export class PiHost {
                 matchMedia('(prefers-reduced-motion: reduce)').matches);
         const params =
             typeof location === 'undefined' ? new URLSearchParams() : new URLSearchParams(location.search);
+        const scenario = params.get('scenario');
+        if (scenario === 'rich') this.#kernel = richFixtureKernel();
         const presetID = params.get('preset');
         const embedded = params.get('policy');
         if (presetID && presetById(presetID)) {
@@ -606,7 +611,11 @@ export class PiHost {
             this.setVisionLoop(true);
         }
         this.applyPolicy();
-        this.fitView();
+        if (this.#kernel.nodes.length > 0) {
+            this.#initialFitDone = true;
+            this.fitView();
+            requestAnimationFrame(() => this.paint());
+        }
         this.syncClock();
 
         document.addEventListener('visibilitychange', () => {
@@ -670,6 +679,17 @@ export class PiHost {
         this.renderTranscript();
         this.renderTurnMap();
         this.syncClock();
+        if (!this.#initialFitDone && this.#kernel.nodes.length > 0) {
+            if (this.#initialFitTimer) clearTimeout(this.#initialFitTimer);
+            this.#initialFitTimer = setTimeout(() => {
+                if (this.#initialFitDone) return;
+                this.#initialFitDone = true;
+                this.simulation.settle();
+                this.renderPositions();
+                this.fitView();
+                requestAnimationFrame(() => this.paint());
+            }, 120);
+        }
     }
 
     paint(): void {
@@ -682,6 +702,10 @@ export class PiHost {
             return scope ? { ...node, scope } : node;
         });
         const values = this.#resolved.values;
+        const viewport = this.renderer.getViewport();
+        const pixelsPerWorld =
+            (el('canvas').clientWidth || 1000) / Math.max(viewport.extent?.width ?? 1000, 1);
+        const minLabelPx = Number(values['ladder.minLabelPx']);
         const thresholds = {
             promoteAt: Number(values['ladder.promoteAt']),
             legibilityGate: Number(values['ladder.legibilityGate']),
@@ -705,9 +729,15 @@ export class PiHost {
                 const rung = representationRung(input, thresholds);
                 if (rung === 'detail') detailNodes.add(node.id);
                 const layers = representationLayers(input, thresholds);
+                const labelPx = labelFontPx(
+                    minLabelPx,
+                    pixelsPerWorld,
+                    nodeSize(node.kind, true)[0],
+                    node.label.length,
+                );
                 return layers.length > 1
-                    ? composedCardMarkup(node, layers, context, descending)
-                    : cardMarkup(node, rung, context, blend, descending);
+                    ? composedCardMarkup(node, layers, context, descending, labelPx)
+                    : cardMarkup(node, rung, context, blend, descending, labelPx);
             },
         });
         if (this.#traceIds.length) {

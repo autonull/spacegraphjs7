@@ -30,6 +30,8 @@ follow the workflow in `docs/ROADMAP.md` (`test:publish` → build → npm).
 - **View coherence:** the flagship fits content once at startup, gives nodes per-kind size, shape and
   accent color plus distinct edge styles, and renders the transcript as a spine with expandable detail
   and a draggable vertical scroll overview. Its startup policy uses `flat` depth and a 40-unit step.
+  Labels follow an LOD rule driven by the configurable `ladder.minLabelPx` floor, and a launchable
+  `?scenario=rich&preset=showcase` provides a denser capture fixture.
 
 ### Changed
 
