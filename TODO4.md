@@ -6,7 +6,7 @@ the progress block below records what has actually landed.
 
 ---
 
-## Progress (updated 2026-11-21 — slices 1–3 and the standing track complete; visual-correctness pass now makes the recorded slice-3 treatments visible)
+## Progress (updated 2026-11-21 — slices 1–3 and the standing track complete, visual-correctness pass landed; next: slice 5 node anatomy)
 
 **Slice 1 — One surface language: implemented in Pi, not yet promoted to a second host.**
 
@@ -139,36 +139,51 @@ the progress block below records what has actually landed.
 4. Root AGENTS names `bun run check`, but `package.json` has no `check` script. Add one wrapping package
    typechecks so the fast loop has one unambiguous command.
 
-**Remaining work, in order:**
+**Remaining work, in order — fundamentals first, parity last:**
 
-1. **Slice 4 — Proliferation** (O5–O7): still gated on a second host consuming the shell, tokens and
+1. **Slice 5 — Node anatomy (next).** The design core. Give each representation rung a distinct internal
+   skeleton assembled from one small parts vocabulary (header, signal, body row, port). Kind-specific
+   arrangements for unit, message, tool, artifact, approval and error; visible source/target ports that
+   align ribbon endpoints to card edges; one anatomy shared by the card and the inspector lens so
+   recursion reads as scale, not a second UI. No new node class, contract field or renderer branch; stay
+   Pi-local behind the existing card-template registry. Gate: `node-detail`, `fractal` and `cockpit`
+   shots, keyboard reach, unchanged scale budget.
+2. **Content legibility — `labelFor` and node states (§11.4, §11.5).** Short domain titles so labels stop
+   clipping in the compact rungs, with full text kept in detail/telemetry; plus defined empty,
+   pending-stream and failed-source frames as part of the shell kit. Universal and cheap: it changes every
+   shot and needs no second host. Gate: no ellipsis on the canonical fixture at the settled shot; all
+   three states have a legible frame.
+3. **Composition and default palette (§11.8).** The graph now has a legible subject, but negative space
+   in `cockpit`/`dynamic-range` still reads as sparse, right-hand chrome outspeaks the canvas, and causal
+   ribbons inherit gray `RenderTheme.edge` in the default palette. Tighten shot framing, keep chrome
+   collapsed, and treat a causal color as data with provenance — promote it only when a second consumer
+   can share the token. This is the largest remaining aesthetics and one-eye-movement ergonomics win.
+4. **Interaction ergonomics (§2, §11.2).** Decide the bounded chip-control exception (larger hit area vs.
+   the K4 cap), then tighten focus, inspector reach and the command surface around the new node anatomy.
+   Reduced-motion final-frame parity and intermediate-frame vision stay standing gates in every slice.
+5. **Motion and life (L1–L3, §6).** Parked until anatomy and composition settle. Effects were already
+   flagged as overdone; anything built stays opt-in data with reduced-motion parity, never a new default.
+6. **Slice 4 — Proliferation (O5–O7).** Still gated on a second host consuming the shell, tokens and
    inspector unchanged. Verified 2026-11-21: `app/demo` imports only mechanism-layer helpers; the only
-   importers of `app/pi/src/shell` and `@spacegraphjs/shared/tokens` live in Pi. Do not promote
-   speculatively. When that consumer exists: split core/domain policy vocabulary, emit the world-host
-   template and a real `createVisionAssert` gate from the scaffold, replace the generated `vocabulary.ts`
-   duplicate with `@spacegraphjs/shared/domain`, and add one cross-domain shot. No contract or
-   position-authority change. Until then the slice-1/2/3 modules stay in Pi with clean boundaries.
-2. **Standing track — remaining:** keep reduced-motion final-frame parity and intermediate-frame vision
-   in every slice. The 44px pass now covers command bar, rail and card actions; chip-internal controls in
-   the bounded lens remain below target and need a design decision (larger hit area vs. the K4 chip cap).
-   The RTL gate uses English chrome under forced `dir=rtl`; a real RTL locale, mixed-script labels and
-   keyboard/pointer resize in both directions are still untested. §11.4's domain `labelFor` accessor is
-   still owed: clipped labels (`user mes…`, `Approve p…`, `assistant mes…`) are now the most visible
-   legibility gap in the gallery. L1–L3, M2, M4, N3/N4 remain deferred per §6.
-3. **Visual composition — remaining:** the graph now has a legible subject at each shot, but large black
-   areas in `cockpit`/`dynamic-range` still read as sparse rather than composed, the right-hand chrome
-   outspeaks the canvas, and causal ribbons inherit the gray `RenderTheme.edge` in the default palette.
-   These are data/palette decisions, not new mechanisms: tighten the shot framing, keep chrome collapsed,
-   and promote a causal color only when a second consumer can share the token.
-4. **Post-review decisions:** ADR 0014's tapered ribbon is a recorded experiment, not a promoted default
-   beyond the flagship; confirm it in review before any second host inherits it. Fill
-   `docs/screenshots/review.json` with kept/rejected verdicts and notes during the contact-sheet review.
-   Re-run e2e with `--workers=1` on a loaded machine: the frame-time gate is sensitive to host contention.
+   importers of `app/pi/src/shell` and `@spacegraphjs/shared/tokens` live in Pi. Not work we can start;
+   when the consumer exists, split core/domain policy vocabulary, emit the world-host template and a real
+   `createVisionAssert` gate from the scaffold, replace generated `vocabulary.ts` with
+   `@spacegraphjs/shared/domain`, and add one cross-domain shot. No contract or position-authority change.
+
+**Peripheral — parked, not dropped:**
+
+- RTL parity: the forced-`dir=rtl` gate stays green, but a real RTL locale, mixed-script labels and
+  keyboard/pointer resize in both directions wait until the fundamentals above are reviewed.
+- M4 ergonomic counters and M2 perceptual smoke (cut): both add gates without adding certainty.
+- N3/N4 published gallery, study and release stay with TODO3's G3–G5.
+- Housekeeping: confirm ADR 0014, fill `docs/screenshots/review.json` verdicts, re-run e2e with
+  `--workers=1` on a loaded machine.
 
 Slices 1–3 and the standing accessibility track are recorded as done; the visual-correctness pass repairs
 the slice-3 treatments that were recorded before they actually rendered. Last prior commits: `bddd7a6`
-(slice 2), `01c4759` (slice 3), `0c0b184` (standing track); this increment lands the visual pass. The study,
-release and hosted URL stay deferred with TODO3's G3–G5.
+(slice 2), `01c4759` (slice 3), `0c0b184` (standing track), `80dd02e` (visual pass). The remaining program
+is ordered around design fundamentals — node anatomy, content legibility, composition — with parity and
+proliferation parked or gated. The study, release and hosted URL stay deferred with TODO3's G3–G5.
 
 ---
 
@@ -484,18 +499,20 @@ Proliferation stays scaffold-led and demand-driven.
 
 ---
 
-## 6. Efficient sequence — four slices, one standing track
+## 6. Efficient sequence — five slices, one standing track
 
 Section 4 is a **catalog of ideas, not an execution order**. Running eight horizontal workstreams in
-parallel would build the shell three times and restyle the graph twice. Execute four vertical slices;
-each ends with recaptured shots, a human look at the contact sheet, and all gates green. No slice starts
-before the previous one has been reviewed. This is the consolidation that makes the plan cheaper.
+parallel would build the shell three times and restyle the graph twice. Execute vertical slices in
+readiness order; each ends with recaptured shots, a human look at the contact sheet, and all gates green.
+No slice starts before the previous one has been reviewed. Slice 4 is blocked on a second consumer, so
+slice 5 runs in its place. This is the consolidation that makes the plan cheaper.
 
 | Slice                                             | Deliverable                                                                                                                                       | Folds together                         | Review gate                                                                                                      |
 | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
 | **1. One surface language**                       | A token module Pi consumes, a compact command bar, drawers, a dockable inspector frame and contextual instruments                                 | O1, O2, H1, J1, J2, J3, K4(bound only) | `cockpit` and `policy` shots; keyboard-only run; no new CSS constant outside the token module                    |
 | **2. Graph grammar and attention**                | One type/spacing/color/shape language for nodes; ranked ribbons; a focus ring with connector; scope contours where space is empty                 | H2, H3, H4, I1, I2, I3, I4             | `cockpit`, `neon-cockpit`, `node-detail`, `dynamic-range`; vision gates in both themes                           |
 | **3. Recursion, edges and proof**                 | The inner topology with connectors, portal previews, depth-ruler breadcrumb, visible proof line, catalog cards, first-run hint, shot review notes, shorter tapered polygon edges and shaded cards | O3, O4, K1, K2, K3, J4, J5, N1, N2, M1 | `fractal`, `deep-focus`, `catalog`; descend intermediate frames; loose tests; one cross-domain shot if a second host is ready |
+| **5. Node anatomy** (next; 4 is gated)           | Distinct skeleton per rung from one parts vocabulary, kind-specific arrangements, source/target ports aligned to card edges, one anatomy across card and lens | K (depth), H1/H2 refinement, §10 "inspect an edge or a scope" | `node-detail`, `fractal`, `cockpit`; keyboard reach; scale budget unchanged                                      |
 | **4. Proliferation** (gated on a second consumer) | Policy core/domain split, world-host template, scaffold emits real vision gate, shared helpers and shots                                          | O5, O6, O7 (O8 is already written)     | Second host consumes shell/tokens/inspector unchanged; scaffold output green; no contract change                 |
 
 **Standing track — gates and parity.** M3 (vision at intermediate frames) and L4 (reduced-motion
@@ -504,11 +521,15 @@ follows the existing bindings. No separate workstream.
 
 **Cut or deferred to keep the plan honest:**
 
-- L1–L3 (activity pulse, flow animation, new choreography) — deferred until slice 2 is reviewed.
-  Animating an unsettled grammar amplifies noise, and the user already flagged effects as overdone.
+- L1–L3 (activity pulse, flow animation, new choreography) — parked until slice 5's anatomy and the
+  composition pass settle. Animating an unsettled grammar amplifies noise, and effects were flagged as
+  overdone; any revival stays opt-in data.
+- Real RTL parity and the bounded chip-control 44px decision — parked with the peripheral track. The
+  forced-`dir=rtl` gate and the current target pass stay green; a real locale, mixed-script labels and
+  pointer resize are not on the critical path to a better flagship.
 - M2 (perceptual smoke) — cut. The contact sheet plus a human decision is the review mechanism;
   an automated "taste diff" adds a gate without adding certainty.
-- M4 (ergonomic counterfactual) — defer until slice 3 changes the interaction enough to be worth measuring.
+- M4 (ergonomic counterfactual) — parked with the peripheral track; adds a gate without adding certainty.
 - N3/N4 (published gallery, study/release) — remain deferred with TODO3's G3/G4/G5.
 - J4 (policy search) and N2 (catalog cards) are small; fold them into slice 3 rather than tracking them alone.
 
