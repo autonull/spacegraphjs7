@@ -722,15 +722,21 @@ export class PiHost {
             };
         }
         this.#model = withPinnedNotes(this.#model, this.#notes.list);
+        const visible = new Set(
+            this.#model.nodes.filter((node) => node.visible !== false).map((node) => node.id),
+        );
         this.#model = {
             ...this.#model,
             nodes: this.#model.nodes.map((node) => {
-                const size = nodeSize(node.kind);
+                const size = nodeSize(node.kind, Boolean(node.html));
                 const withWidgets = detailNodes.has(node.id)
                     ? { ...node, widgets: [...(node.widgets ?? []), ...INSTRUMENT_IDS] }
                     : node;
-                return size ? { ...withWidgets, size: [size[0], size[1], 0] as [number, number, number] } : withWidgets;
+                return { ...withWidgets, size: [size[0], size[1], 0] as [number, number, number] };
             }),
+            edges: this.#model.edges.filter(
+                (edge) => visible.has(edge.source) && visible.has(edge.target),
+            ),
         };
         this.#annotationWidgets?.refresh(this.#model.nodes);
         this.#instruments?.refresh(this.#model.nodes);
@@ -2008,12 +2014,17 @@ export class PiHost {
     }
 
     private renderTranscript(): void {
-        const messages = this.#view.nodes.filter((node) => node.kind === 'message');
+        const messages = this.#view.nodes.filter((node) =>
+            ['message', 'tool', 'read-tool', 'artifact', 'file', 'approval', 'error'].includes(
+                node.kind,
+            ),
+        );
         const rows = messages.map((node) => {
             const expanded = this.#expandedMessages.has(node.id);
             const row = document.createElement('div');
             row.className = 'spine-row';
             row.dataset.expanded = String(expanded);
+            row.dataset.kind = node.kind;
             const head = document.createElement('div');
             head.className = 'spine-head';
             head.append(

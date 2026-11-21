@@ -29,7 +29,7 @@ test.describe('Pi flagship screenshots', () => {
     test('captures the agent cockpit and the proof catalog', async ({ page }) => {
         const errors = await boot(page);
 
-        await page.evaluate(() => (window as any).__pi.run('stream'));
+        await page.evaluate(() => (window as any).__pi.run('vocabulary'));
         await expect(page.locator('#evidence li').first()).toBeVisible();
         await page.locator('.spine-expand').first().click();
         await capture(page, 'pi-agent-in-action.png');

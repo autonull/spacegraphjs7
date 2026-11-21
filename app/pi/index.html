@@ -597,6 +597,20 @@
                 border-radius: 50%;
                 background: var(--pi-background);
             }
+            .spine-row[data-kind='tool']::before,
+            .spine-row[data-kind='read-tool']::before {
+                border-color: #c9a6ff;
+            }
+            .spine-row[data-kind='artifact']::before,
+            .spine-row[data-kind='file']::before {
+                border-color: #7fd6a8;
+            }
+            .spine-row[data-kind='approval']::before {
+                border-color: #9ad9ff;
+            }
+            .spine-row[data-kind='error']::before {
+                border-color: #ff8aa0;
+            }
             .spine-head {
                 display: flex;
                 align-items: stretch;

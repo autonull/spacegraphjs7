@@ -21,7 +21,7 @@ export type AgentAdapterEdge = AdapterEdge;
 export type AgentAdapterModel = AdapterModel<AgentAdapterNode, AgentAdapterEdge>;
 export type AgentLevel = RepresentationRung;
 
-const NODE_SIZES: Readonly<Record<string, readonly [number, number]>> = {
+const CARD_SIZES: Readonly<Record<string, readonly [number, number]>> = {
     run: [260, 88],
     unit: [214, 78],
     message: [198, 70],
@@ -34,8 +34,18 @@ const NODE_SIZES: Readonly<Record<string, readonly [number, number]>> = {
     approval: [180, 60],
 };
 
-/** Per-kind footprint: the shape stays contract-native, the scale carries variety. */
-export const nodeSize = (kind: string): readonly [number, number] | undefined => NODE_SIZES[kind];
+const DOT_SIZES: Readonly<Record<string, readonly [number, number]>> = {
+    artifact: [48, 48],
+    file: [32, 32],
+    tool: [24, 24],
+    'read-tool': [24, 24],
+    action: [24, 24],
+    error: [28, 28],
+};
+
+/** Cards and dots share a kind vocabulary but not a footprint scale. */
+export const nodeSize = (kind: string, card: boolean): readonly [number, number] =>
+    (card ? CARD_SIZES[kind] : DOT_SIZES[kind]) ?? [12, 12];
 
 const STATUS: Readonly<Record<string, NodeStatus>> = {
     active: 'running',
