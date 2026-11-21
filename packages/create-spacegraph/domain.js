@@ -3,6 +3,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+const template = (name) =>
+    fs.readFileSync(new URL(`./templates/${name}`, import.meta.url), 'utf8');
+
 const argument = process.argv[2] ?? 'my-domain';
 const name = argument.replace(/^@[^/]+\//, '');
 const pascal = name
@@ -356,7 +359,11 @@ files['host/package.json'] = `{
     "dev": "vite",
     "build": "vite build",
     "verify": "tsx scripts/verify.ts",
-    "verify:visual": "playwright test tests/vision.spec.ts"
+    "verify:visual": "playwright test tests/vision.spec.ts",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "vitest": "workspace:*"
   },
   "dependencies": {
     "@spacegraphjs/{{name}}": "workspace:*",
@@ -375,12 +382,13 @@ files['host/index.html'] = `<!doctype html>
 aside{padding:16px;overflow:auto}#transcript{white-space:pre-wrap;font-size:13px}</style></head>
 <body><div id="canvas"></div><aside><h1>{{Name}}</h1><div data-surface="hybrid" id="surface">
 <button data-set-surface="log">Log</button><button data-set-surface="map">Map</button><button data-set-surface="hybrid">Hybrid</button>
-</div><div id="transcript"></div><pre id="evidence"></pre></aside>
+</div><div id="experiment-panel"></div><div id="transcript"></div><pre id="evidence"></pre></aside>
 <script type="module" src="/src/main.ts"></script></body></html>
 `;
 files['host/src/main.ts'] = `import { SpaceGraphRenderer } from '@spacegraphjs/spacegraph-renderer';
 import { DEFAULT_THEME } from '@spacegraphjs/renderer';
 import { build{{Name}}View, fixtureOps, foldOps, {{kind}}Domain } from '@spacegraphjs/{{name}}';
+import { Recorder, decode, encode, mountPanel, preset, resolve, type Vector } from './spine';
 
 const kernel = foldOps(fixtureOps());
 const view = {{kind}}Domain.build(kernel);
@@ -396,22 +404,51 @@ renderer.setModel({
     edges: view.edges.map((edge) => ({ id: edge.id, source: edge.source, target: edge.target, kind: edge.kind })),
 });
 
-let surface: 'log' | 'map' | 'hybrid' = 'hybrid';
+const params = new URLSearchParams(location.search);
+const presetID = params.get('preset');
+const presetLayer = (presetID && preset(presetID)) || {};
+const encoded = params.get('policy');
+const urlLayer = (encoded && decode(encoded)) || {};
+let panelLayer: Vector = {};
+let current = resolve(presetLayer, urlLayer, panelLayer);
+const recorder = new Recorder();
 const transcript = document.getElementById('transcript')!;
+
 const paint = () => {
+    const surface = String(current.values.surface);
+    document.getElementById('surface')!.dataset.surface = surface;
     transcript.style.display = surface === 'map' ? 'none' : 'block';
     transcript.textContent = view.nodes.map((node) => node.label).join('\\n');
 };
+const apply = () => {
+    current = resolve(presetLayer, urlLayer, panelLayer);
+    mountPanel(document.getElementById('experiment-panel')!, current, (id, value) => {
+        panelLayer = { ...panelLayer, [id]: value };
+        recorder.record('policy:change', current.values);
+        apply();
+    });
+    paint();
+};
 for (const button of document.querySelectorAll<HTMLButtonElement>('[data-set-surface]')) {
     button.addEventListener('click', () => {
-        surface = button.dataset.setSurface as typeof surface;
-        document.getElementById('surface')!.dataset.surface = surface;
-        paint();
+        panelLayer = { ...panelLayer, surface: button.dataset.setSurface ?? 'hybrid' };
+        recorder.record('surfaceOpen', current.values);
+        apply();
     });
 }
-paint();
-Object.assign(window, { __{{name}}: { surface: () => surface, nodes: () => view.nodes.length, ready: true } });
+apply();
+Object.assign(window, { __{{name}}: {
+    surface: () => String(current.values.surface),
+    nodes: () => view.nodes.length,
+    policy: () => current,
+    permalink: () => encode(current.values),
+    recording: () => recorder.events,
+    ergonomics: () => recorder.replay(),
+    ready: true,
+} });
 `;
+files['host/src/spine.ts'] = template('spine.ts');
+files['host/tests/spine.test.ts'] = template('spine.test.ts');
 files['host/scripts/verify.ts'] = `import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 

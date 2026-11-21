@@ -34,14 +34,25 @@ Every schema knob has a live host consumer: bands → `levelForZoom`, ladder →
 | C1 instrument kit | done | `app/pi/src/instruments.ts`: sparkline, meter, status, log-tail, diff, tabs and action controls as `WidgetLayer` `attached` descriptors gated to detail rungs; all data escaped at the boundary; mounted in the rail `#instrument-kit`. |
 | C2 orchestration verbs | done | `host.ts`: `sendPrompt` (prompt/steer/followUp through the existing `POST /prompt` + SDK `streamingBehavior` seam), `approve`/`reject` as first-class nodes with `gates` edges using only the six kernel ops, `retry`, `compareRuns` via `diffKernels`, plus graph action buttons that set the prompt mode or drive approval. Every action records a neutral event and writes an evidence line for transcript parity. |
 
-**Verification:** `app/pi pnpm test` 50 passed; root `pnpm test` 814 passed; `app/pi pnpm test:e2e` 38 passed (includes `tests/policy.spec.ts`, `tests/navigation.spec.ts`, `tests/orchestration.spec.ts`, and intermediate-frame vision assertions); `tsc -p app/pi/tsconfig.json --noEmit` clean after `pnpm run build:lib`.
+**Workstream D — One World & Proliferation: foundations implemented.**
+
+| Item | Status | Evidence |
+|---|---|---|
+| World scope composition | foundation done | `app/demo/src/world-scopes.ts` builds one root with isolated domain child scopes and one path-qualified id space; `worldTrace` collapses a cross-domain trace into one ordered path for a single camera. Unit test in `app/demo/tests/world-scopes.test.ts`. |
+| Born-experimentable scaffold | done | `create-spacegraph-domain` now emits `host/src/spine.ts` (knobs, resolver with provenance, presets, recorder, permalink codec, auto-generated panel) plus `host/tests/spine.test.ts`, and wires them into the generated host. Templates live in `packages/create-spacegraph/templates/`. |
+
+The remaining D step is a one-canvas host binding that feeds `worldScopes` to one `ScopeSimulation`/`SpaceGraphRenderer`; the four-canvas `InterGraphEdge` demo stays as the separate-surface path. `InterGraphEdge` is screen-space across two cameras and must not be reused for the world root.
+
+**Workstream F — Truth pass: in progress.** `docs/ROADMAP.md` regenerated from reality; `docs/not-decided.md` now maps every open question to a knob family and preset; `Ergonomics.layout` uses plugin ids. Root `tsc` still has pre-existing `app/demo` errors.
+
+**Verification:** `app/pi pnpm test` 50 passed; root `pnpm test` 816 passed; `app/pi pnpm test:e2e` 38 passed; `pnpm run verify:visual` green; `tsc -p app/pi/tsconfig.json --noEmit` clean after `pnpm run build:lib`.
 
 **Remaining work, in order:**
 
-1. **B/C polish (small):** true two-rung compositing in `ModelAdapter` (both rung markups cross-faded by weight, not only an opacity transition); touch/`Fingering` bindings; `time-to-first-relevant` and choice-count counters; `survey` verb; Graph IDE as a second instrument-kit consumer before any promotion.
-2. **D — One world / proliferation:** mount all four domains in one canvas; ship the fifth exemplar through `create-spacegraph` so new domains inherit schema + panel + recorder + preset gallery.
+1. **D host binding:** one canvas with four domain child scopes, one `ScopeSimulation`, one camera; update `compositional-wrappers.spec.ts`/`cross-trace.test.ts` for the new path while keeping the four-canvas demo as the embedding case.
+2. **B/C polish:** true two-rung compositing in `ModelAdapter`; touch/`Fingering` bindings; `time-to-first-relevant` and choice-count counters; `survey` verb; Graph IDE as a second instrument-kit consumer before promotion.
 3. **E — Experimentation program:** generalize seeded pairwise sampling to any policy families; wire the resolver `experiment` layer and tiered scoring; decision rules and negative-result publication as data. Offline counterfactual re-simulation of layout/vision under a variant is E work; the recorder scorer adapter is in place.
-4. **F / G — Truth and proof:** docs reconciliation, ADRs, root gates (root `tsc` still has pre-existing `app/demo` errors after the Ergonomics layout-id fix); participant study, npm release, hosted flagship and the public preset/experiment catalog.
+4. **F / G — Truth and proof:** ADRs, root gates; participant study (n ≥ 5), npm release, hosted flagship and the public preset/experiment catalog. G is external and cannot be fabricated.
 
 **Deliberate non-goals for this increment:** no contract change, no renderer branches, no new domain scheduled, no immersive or visual default promoted (presets remain examples, never recommendations). Additive pure seams used: `representationRung(input, thresholds)`, `representationWeights`, `ScopeSimulation.setBaseLayout/setForces`.
 
