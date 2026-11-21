@@ -32,6 +32,7 @@ test.describe('the Pi reference app', () => {
 
     test('runs every capability through the gallery and the test hook', async ({ page }) => {
         const errors = await boot(page);
+        await page.evaluate(() => (window as any).__pi.toggleCatalog(true));
 
         for (const id of await page.evaluate(() => (window as any).__pi.capabilities())) {
             await page.locator(`[data-capability="${id}"]`).click();

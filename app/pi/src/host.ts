@@ -5,6 +5,7 @@ import {
     type Projection,
     type RenderModel,
     type RenderTheme,
+    type RendererViewport,
 } from '@spacegraphjs/renderer';
 import { SpaceGraphRenderer } from '@spacegraphjs/spacegraph-renderer';
 import { agentDomain, changedFiles, failureDetails } from '@spacegraphjs/agent';
@@ -45,7 +46,16 @@ import {
     type InstrumentData,
     type InstrumentKit,
 } from 'spacegraphjs/widgets';
-import { AgentAdapter, cardMarkup, composedCardMarkup, nodeSize, toAdapterModel, type AgentLevel } from './adapter';
+import {
+    AgentAdapter,
+    cardMarkup,
+    composedCardMarkup,
+    focusCardMarkup,
+    nodeSize,
+    toAdapterModel,
+    type AgentLevel,
+} from './adapter';
+import { innerTree, type InnerLayout } from './inner';
 import { bindTouchVerbs, touchBindingsFor, type TouchVerb } from './touch';
 import {
     createAnnotationWidgets,
@@ -107,7 +117,9 @@ import {
     type SessionRecording,
 } from './recorder';
 import { agentScopes, DEPTH, portalChain } from './scopes';
-import { readTheme } from './theme';
+import { focusRoles, scaleForRole, type FocusScales } from './focus';
+import { paletteTheme, paletteVars, readTheme } from './theme';
+import { SHOTS, shotById, type Shot } from './shots';
 import { decodePermalink, encodePermalink, isRevealHash, type PermalinkState } from './permalink';
 import {
     createPhysicsPlaySession,
@@ -301,6 +313,7 @@ export class PiHost {
     #initialFitDone = false;
     #initialFitTimer?: ReturnType<typeof setTimeout>;
     #policyPanel?: ReturnType<typeof mountPolicyPanel>;
+    #focusLens?: HTMLElement;
     #policyListeners = new Set<(event: PolicyChangeEvent) => void>();
     #recorder: SessionRecorder;
     #startedAt = typeof performance === 'undefined' ? 0 : performance.now();
@@ -312,6 +325,7 @@ export class PiHost {
     #instruments?: InstrumentKit;
     #clientID = '';
     #baselineKernel = fixtureKernel();
+    #shotReady = true;
 
     constructor(
         options: { projection?: Projection; reducedMotion?: boolean; global?: boolean } = {},
@@ -324,9 +338,10 @@ export class PiHost {
                 matchMedia('(prefers-reduced-motion: reduce)').matches);
         const params =
             typeof location === 'undefined' ? new URLSearchParams() : new URLSearchParams(location.search);
-        const scenario = params.get('scenario');
+        const shot = shotById(params.get('shot'));
+        const scenario = params.get('scenario') ?? shot?.scenario;
         if (scenario === 'rich') this.#kernel = richFixtureKernel();
-        const presetID = params.get('preset');
+        const presetID = params.get('preset') ?? shot?.preset;
         const embedded = params.get('policy');
         if (presetID && presetById(presetID)) {
             this.#policyLayers.preset = presetVector(POLICY_SCHEMA, presetID);
@@ -335,6 +350,12 @@ export class PiHost {
             const vector = decodePolicyVector(POLICY_SCHEMA, embedded);
             if (vector) this.#policyLayers.url = vector;
         }
+        const shotVector: PolicyVector = {
+            ...(shot?.surface ? { 'surface.mode': shot.surface } : {}),
+            ...(shot?.arrangement ? { 'surface.arrangement': shot.arrangement } : {}),
+            ...shot?.vector,
+        };
+        if (Object.keys(shotVector).length) this.#policyLayers.url = { ...this.#policyLayers.url, ...shotVector };
         this.#resolved = resolvePolicy(POLICY_SCHEMA, this.#policyLayers);
         this.#catalog = buildCatalog(POLICY_SCHEMA);
         const geometry = this.geometry();
@@ -475,6 +496,17 @@ export class PiHost {
         };
     }
 
+    /** View colors are host CSS data; the renderer theme follows them without renderer branches. */
+    private applyViewTheme(): void {
+        if (typeof document === 'undefined') return;
+        const values = this.#resolved.values;
+        for (const [name, value] of Object.entries(paletteVars(String(values['theme.palette']))))
+            document.documentElement.style.setProperty(name, value);
+        document.documentElement.style.setProperty('--view-glow', String(values['theme.glow']));
+        document.documentElement.dataset.backdrop = String(values['theme.backdrop']);
+        this.#theme = paletteTheme(readTheme(), String(values['theme.palette']));
+    }
+
     private applyPolicy(): void {
         const values = this.#resolved.values;
         const depth = values['depth.mode'] as DepthMode;
@@ -493,11 +525,9 @@ export class PiHost {
         this.simulation.setForces({ repulsion: Number(values['geometry.repulsion']) });
         if (typeof document !== 'undefined') {
             document.documentElement.style.setProperty('--pi-blend', `${values['ladder.blendMs']}ms`);
-            if (document.documentElement.dataset.theme !== String(values['theme.variant'])) {
-                document.documentElement.dataset.theme = String(values['theme.variant']);
-                this.#theme = readTheme();
-                this.renderer.setTheme(this.#theme);
-            }
+            document.documentElement.dataset.theme = String(values['theme.variant']);
+            this.applyViewTheme();
+            this.renderer.setTheme(this.#theme);
             el('minimap').hidden = values['navigation.minimap'] !== true;
             el('portal-crumb').hidden = values['navigation.breadcrumbs'] !== true;
             el('trail-nav').hidden = values['navigation.trail'] !== true;
@@ -512,7 +542,7 @@ export class PiHost {
     }
 
     async mount(container: HTMLElement): Promise<void> {
-        this.#theme = readTheme();
+        this.applyViewTheme();
         await this.renderer.mount(container, {
             theme: this.#theme,
             projection: this.#projection,
@@ -572,8 +602,24 @@ export class PiHost {
             (verb) => this.dispatchTouchVerb(verb),
         );
         this.bindTranscript();
+        this.bindNodeActions();
+        this.#focusLens = document.createElement('div');
+        this.#focusLens.id = 'focus-lens';
+        this.#focusLens.hidden = true;
+        this.#focusLens.addEventListener('pointerdown', (event) => event.stopPropagation());
+        this.#focusLens.addEventListener('click', (event) => {
+            const button = (event.target as HTMLElement).closest<HTMLElement>('[data-node-action]');
+            if (!button?.dataset.nodeAction || !button.dataset.target) return;
+            event.stopPropagation();
+            this.handleNodeAction(button.dataset.nodeAction, button.dataset.target);
+        });
+        el('canvas').append(this.#focusLens);
+        window.addEventListener('resize', () => this.renderFocusLens());
         this.renderer.on('nodeClick', ({ id }) => this.reveal(id));
-        this.renderer.on('viewportChange', ({ zoom }) => this.applyAutoLevel(zoom));
+        this.renderer.on('viewportChange', ({ zoom }) => {
+            this.applyAutoLevel(zoom);
+            this.renderFocusLens();
+        });
         this.renderer.on('edgeClick', ({ id }) => {
             const now = typeof performance === 'undefined' ? 0 : performance.now();
             if (this.#lastEdgeClick?.id === id && now - this.#lastEdgeClick.at < 400) {
@@ -697,11 +743,21 @@ export class PiHost {
         const windowed = windowedView(this.#view, this.#windowSize);
         this.#hidden = windowed.hidden;
         const model = toAdapterModel(windowed.view);
+        const values = this.#resolved.values;
+        const focus = this.#revealed || this.#controller.selection[0] || '';
+        const roles = focusRoles(focus, this.#view.edges);
+        const scales: FocusScales = {
+            focus: Number(values['emphasis.focusScale']),
+            neighbor: Number(values['emphasis.neighborScale']),
+            context: Number(values['emphasis.contextScale']),
+        };
+        const scalingOn = scales.focus !== 1 || scales.neighbor !== 1 || scales.context !== 1;
+        if (typeof document !== 'undefined') document.documentElement.dataset.focusScale = String(scalingOn);
+        const scaleById = new Map([...roles].map(([id, role]) => [id, scaleForRole(role, scales)]));
         model.nodes = model.nodes.map((node) => {
             const scope = this.#portalByNode.get(node.id);
-            return scope ? { ...node, scope } : node;
+            return { ...node, ...(scope ? { scope } : {}), focusRole: roles.get(node.id) ?? 'none' };
         });
-        const values = this.#resolved.values;
         const viewport = this.renderer.getViewport();
         const pixelsPerWorld =
             (el('canvas').clientWidth || 1000) / Math.max(viewport.extent?.width ?? 1000, 1);
@@ -732,7 +788,7 @@ export class PiHost {
                 const labelPx = labelFontPx(
                     minLabelPx,
                     pixelsPerWorld,
-                    nodeSize(node.kind, true)[0],
+                    nodeSize(node.kind, true)[0] * (scaleById.get(node.id) ?? 1),
                     node.label.length,
                 );
                 return layers.length > 1
@@ -759,20 +815,37 @@ export class PiHost {
             ...this.#model,
             nodes: this.#model.nodes.map((node) => {
                 const size = nodeSize(node.kind, Boolean(node.html));
+                const scale = scaleById.get(node.id) ?? 1;
                 const withWidgets = detailNodes.has(node.id)
                     ? { ...node, widgets: [...(node.widgets ?? []), ...INSTRUMENT_IDS] }
                     : node;
-                return { ...withWidgets, size: [size[0], size[1], 0] as [number, number, number] };
+                return { ...withWidgets, size: [size[0] * scale, size[1] * scale, 0] as [number, number, number] };
             }),
-            edges: this.#model.edges.filter(
-                (edge) => visible.has(edge.source) && visible.has(edge.target),
-            ),
+            edges: this.#model.edges
+                .filter((edge) => visible.has(edge.source) && visible.has(edge.target))
+                .map((edge) => {
+                    const width = Number(values['emphasis.ribbonWidth']);
+                    const causal =
+                        edge.kind === 'writes' ||
+                        edge.kind === 'delegates' ||
+                        edge.kind === 'orders' ||
+                        (edge.emphasis ?? 0) >= 0.8;
+                    if (width <= 0 || !causal) return edge;
+                    return {
+                        ...edge,
+                        data: {
+                            ...edge.data,
+                            ribbon: { weight: 0.7, minRadius: width * 0.35, maxRadius: width, segments: 3 },
+                        },
+                    };
+                }),
         };
         this.#annotationWidgets?.refresh(this.#model.nodes);
         this.#instruments?.refresh(this.#model.nodes);
         this.renderer.setModel(this.#model);
         this.renderHistory();
         this.renderMinimap();
+        this.renderFocusLens();
     }
 
     renderPositions(): void {
@@ -800,6 +873,7 @@ export class PiHost {
             }),
         };
         this.renderer.setModel(this.#model);
+        this.renderFocusLens();
     }
 
     advance(seconds: number): void {
@@ -960,6 +1034,61 @@ export class PiHost {
         this.renderPortalCrumb();
         this.renderHud();
         this.paint();
+    }
+
+    /** Center on nodes using the one position authority; zoom is applied in the same viewport write. */
+    frame(ids: readonly string[], options: { zoom?: number; minScale?: number; padding?: number } = {}): void {
+        if (!ids.length) return;
+        if (options.minScale !== undefined) {
+            this.renderer.fit(ids, { minScale: options.minScale, padding: options.padding ?? 0 });
+            return;
+        }
+        const points = ids.map((id) => this.#positions.get(id)).filter((point): point is Position => Boolean(point));
+        if (!points.length) return;
+        const center = points.reduce(
+            (sum, point) => [sum[0] + point.x, sum[1] + point.y, sum[2] + point.z] as [number, number, number],
+            [0, 0, 0] as [number, number, number],
+        );
+        const count = points.length;
+        this.renderer.setViewport({
+            zoom: options.zoom ?? this.renderer.getViewport().zoom,
+            center: [center[0] / count, center[1] / count, center[2] / count],
+        });
+        this.renderMinimap();
+        this.paint();
+    }
+
+    /** Apply a named, deterministic view. A shot is URL data, never a renderer branch. */
+    applyShot(idOrShot: string | Shot): boolean {
+        const shot = typeof idOrShot === 'string' ? shotById(idOrShot) : idOrShot;
+        if (!shot) return false;
+        this.#shotReady = false;
+        if (shot.surface) this.setSurface(shot.surface);
+        if (shot.arrangement) this.setArrangement(shot.arrangement);
+        if (shot.collapsed !== undefined && this.#transcriptCollapsed !== shot.collapsed) this.toggleTranscript();
+        if (shot.level) this.setLevel(shot.level);
+        if (shot.reveal) this.reveal(shot.reveal);
+        if (shot.evidence) this.run(shot.evidence);
+        if (shot.expandFirst) document.querySelector<HTMLElement>('.spine-expand')?.click();
+        if (shot.catalog) {
+            this.toggleCatalog(true);
+            const catalogPanel = document.getElementById('catalog-panel');
+            if (catalogPanel instanceof HTMLDetailsElement) catalogPanel.open = true;
+            const aside = document.querySelector('aside');
+            const catalog = document.getElementById('catalog');
+            if (aside && catalog) aside.scrollTop = catalog.offsetTop - 20;
+            document.querySelector<HTMLElement>('#catalog details details summary')?.click();
+        }
+        if (shot.panel && document.getElementById('policy-section') instanceof HTMLDetailsElement)
+            (document.getElementById('policy-section') as HTMLDetailsElement).open = true;
+        const ids = shot.frame?.length
+            ? shot.frame
+            : this.#model?.nodes.filter((node) => node.visible !== false).map((node) => node.id) ?? [];
+        if (shot.minScale !== undefined) this.frame(ids, { minScale: shot.minScale, padding: shot.padding });
+        else if (shot.frame?.length || shot.zoom !== undefined) this.frame(ids, { zoom: shot.zoom });
+        this.paint();
+        this.#shotReady = true;
+        return true;
     }
 
     ergonomics(): Readonly<Record<string, number>> {
@@ -1350,6 +1479,8 @@ export class PiHost {
             ergonomics: () => this.ergonomics(),
             transcriptCollapsed: () => this.#transcriptCollapsed,
             toggleTranscript: () => this.toggleTranscript(),
+            toggleCatalog: (open?: boolean) => this.toggleCatalog(open),
+            toggleRail: (open?: boolean) => this.toggleRail(open),
             transcriptSize: () =>
                 this.#arrangement === 'stacked' ? this.#transcriptHeight : this.#transcriptWidth,
             edges: () => this.#view.edges.map((edge) => ({ id: edge.id, target: edge.target })),
@@ -1469,6 +1600,12 @@ export class PiHost {
             }),
             activity: () => [...this.#activity.keys()],
             viewport: () => this.renderer.getViewport(),
+            setViewport: (viewport: RendererViewport) => this.renderer.setViewport(viewport),
+            frame: (ids: readonly string[], options?: { zoom?: number; minScale?: number; padding?: number }) =>
+                this.frame(ids, options),
+            shots: () => SHOTS,
+            applyShot: (id: string) => this.applyShot(id),
+            shotReady: () => this.#shotReady,
             pan: (dx: number, dy: number) => this.pan(dx, dy),
             zoomBy: (factor: number) => this.zoomBy(factor),
             export: (format: 'json' | 'svg' | 'html') => this.exportModel(format),
@@ -1777,6 +1914,10 @@ export class PiHost {
     };
 
     private bindControls(): void {
+        document.body.dataset.catalog ??= 'closed';
+        document.body.dataset.rail ??= 'open';
+        el('catalog-toggle').addEventListener('click', () => this.toggleCatalog());
+        el('rail-toggle').addEventListener('click', () => this.toggleRail());
         const follow = el<HTMLSelectElement>('follow-mode');
         follow.value = this.#followMode;
         follow.addEventListener('change', () => this.setFollow(follow.value as FollowMode));
@@ -1898,6 +2039,83 @@ export class PiHost {
         if (ids.length) this.renderer.fit(ids, { padding: 60 });
     }
 
+    /** Detail-card controls are host DOM; actions return through the same verbs as the HUD. */
+    private bindNodeActions(): void {
+        el('canvas').addEventListener('pointerdown', (event) => {
+            if ((event.target as HTMLElement).closest('[data-node-action]')) event.stopPropagation();
+        });
+        el('canvas').addEventListener('click', (event) => {
+            const button = (event.target as HTMLElement).closest<HTMLElement>('[data-node-action]');
+            if (!button) return;
+            event.stopPropagation();
+            const target = button.dataset.target || this.#revealed;
+            const action = button.dataset.nodeAction;
+            if (target && action) this.handleNodeAction(action, target);
+        });
+    }
+
+    private handleNodeAction(action: string, target: string): void {
+        switch (action) {
+            case 'focus':
+                this.reveal(target);
+                this.frame([target]);
+                break;
+            case 'trace':
+                this.trace(target);
+                break;
+            case 'follow':
+                this.setFollow(this.#followMode === 'off' ? ('node+focus' as FollowMode) : 'off');
+                break;
+            case 'approve':
+            case 'reject':
+                this.approve(target, action);
+                break;
+            case 'retry':
+                this.retry(target);
+                break;
+        }
+    }
+
+    /** A fixed-size HUD lens anchored to the focused node; node world size is never changed. */
+    private renderFocusLens(): void {
+        const overlay = this.#focusLens;
+        if (!overlay) return;
+        const depth = Number(this.#resolved.values['emphasis.innerDepth']);
+        const focus = this.#revealed || this.#controller.selection[0] || '';
+        if (!focus || depth <= 0) {
+            overlay.hidden = true;
+            return;
+        }
+        const point = this.renderer.getNodeScreenPosition?.(focus);
+        const adapterNode = toAdapterModel(this.#view).nodes.find((node) => node.id === focus);
+        if (!point || !adapterNode) {
+            overlay.hidden = true;
+            return;
+        }
+        const scope = this.#portalByNode.get(focus);
+        overlay.dataset.kind = adapterNode.kind;
+        const chips = innerTree(focus, this.#view.nodes, this.#view.edges, depth);
+        overlay.innerHTML = focusCardMarkup(
+            { ...adapterNode, ...(scope ? { scope } : {}) },
+            chips,
+            String(this.#resolved.values['emphasis.innerLayout']) as InnerLayout,
+        );
+        const canvas = el('canvas');
+        const width = 340;
+        const height = 230;
+        const viewport = this.renderer.getViewport();
+        const pixelsPerWorld = (canvas.clientWidth || 1000) / Math.max(viewport.extent?.width ?? 1000, 1);
+        const scale = focus === this.#revealed ? Number(this.#resolved.values['emphasis.focusScale']) : 1;
+        const cardHeight = nodeSize(adapterNode.kind, true)[1] * scale * pixelsPerWorld;
+        const x = Math.min(Math.max(12, point.x - width / 2), Math.max(12, canvas.clientWidth - width - 12));
+        const y = Math.min(
+            Math.max(12, point.y + cardHeight / 2 + 12),
+            Math.max(12, canvas.clientHeight - height - 12),
+        );
+        overlay.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
+        overlay.hidden = false;
+    }
+
     private bindTranscript(): void {
         const toggle = el<HTMLButtonElement>('transcript-toggle');
         const handle = el('transcript-resize');
@@ -1961,6 +2179,24 @@ export class PiHost {
             overview.addEventListener('pointermove', move);
             overview.addEventListener('pointerup', up);
         });
+    }
+
+    toggleCatalog(open?: boolean): boolean {
+        const next = open ?? document.body.dataset.catalog !== 'open';
+        document.body.dataset.catalog = next ? 'open' : 'closed';
+        const panel = document.getElementById('catalog-panel');
+        if (panel instanceof HTMLDetailsElement) panel.open = next;
+        this.renderer.resize();
+        this.recordEvent('catalog:toggle', { open: next });
+        return next;
+    }
+
+    toggleRail(open?: boolean): boolean {
+        const next = open ?? document.body.dataset.rail !== 'closed';
+        document.body.dataset.rail = next ? 'open' : 'closed';
+        this.renderer.resize();
+        this.recordEvent('rail:toggle', { open: next });
+        return next;
     }
 
     toggleTranscript(): void {

@@ -40,12 +40,13 @@
             }
             * {
                 box-sizing: border-box;
+                border-radius: 0 !important;
             }
             body {
                 margin: 0;
                 height: 100vh;
                 display: grid;
-                grid-template-columns: 240px minmax(0, 1fr) 200px;
+                grid-template-columns: minmax(0, 1fr) 200px;
                 grid-template-rows: auto minmax(0, 1fr) auto;
                 gap: 12px;
                 padding: 12px;
@@ -54,6 +55,24 @@
                 font:
                     13px/1.4 system-ui,
                     sans-serif;
+            }
+            body[data-catalog='open'] {
+                grid-template-columns: 240px minmax(0, 1fr) 200px;
+            }
+            body[data-rail='closed'] {
+                grid-template-columns: minmax(0, 1fr);
+            }
+            body[data-catalog='open'][data-rail='closed'] {
+                grid-template-columns: 240px minmax(0, 1fr);
+            }
+            aside {
+                display: none;
+            }
+            body[data-catalog='open'] aside {
+                display: block;
+            }
+            body[data-rail='closed'] #rail {
+                display: none;
             }
             header {
                 grid-column: 1 / -1;
@@ -121,6 +140,20 @@
             .catalog-heading {
                 color: var(--pi-text-muted);
                 cursor: pointer;
+                list-style: none;
+            }
+            .catalog-heading::-webkit-details-marker {
+                display: none;
+            }
+            .catalog-heading::before {
+                content: '▸ ';
+                color: var(--pi-accent);
+            }
+            #catalog-panel[open] .catalog-heading::before {
+                content: '▾ ';
+            }
+            #portal-crumb:not(:has(button)) {
+                display: none;
             }
             .catalog-note {
                 color: var(--pi-text-muted);
@@ -323,41 +356,184 @@
                 opacity: 0.15;
             }
             [data-rung] {
-                transition: opacity var(--pi-blend, 120ms);
+                transition: opacity var(--pi-blend, 120ms), box-shadow 160ms;
                 border-radius: var(--kind-radius, 6px);
-                box-shadow: inset 2px 0 0 var(--kind-accent, transparent);
+                box-shadow: inset 2px 0 0 var(--kind-accent, transparent),
+                    0 0 calc(var(--view-glow, 0) * 22px)
+                        color-mix(in srgb, var(--kind-accent, transparent) 45%, transparent);
             }
             [data-rung][data-kind='run'] {
-                --kind-accent: #d2d2d2;
+                --kind-accent: var(--kind-run, #d2d2d2);
                 --kind-radius: 3px;
             }
             [data-rung][data-kind='unit'] {
-                --kind-accent: #8ab4ff;
+                --kind-accent: var(--kind-unit, #8ab4ff);
                 --kind-radius: 10px;
             }
             [data-rung][data-kind='message'] {
-                --kind-accent: #f0c674;
+                --kind-accent: var(--kind-message, #f0c674);
                 --kind-radius: 8px;
             }
             [data-rung][data-kind='artifact'],
             [data-rung][data-kind='file'] {
-                --kind-accent: #7fd6a8;
+                --kind-accent: var(--kind-artifact, #7fd6a8);
                 --kind-radius: 999px;
             }
             [data-rung][data-kind='tool'],
             [data-rung][data-kind='read-tool'] {
-                --kind-accent: #c9a6ff;
+                --kind-accent: var(--kind-tool, #c9a6ff);
                 --kind-radius: 4px;
             }
             [data-rung][data-kind='error'] {
-                --kind-accent: #ff8aa0;
+                --kind-accent: var(--kind-error, #ff8aa0);
             }
             [data-rung][data-kind='approval'] {
-                --kind-accent: #9ad9ff;
+                --kind-accent: var(--kind-approval, #9ad9ff);
                 --kind-radius: 12px;
             }
             [data-rungs] > [data-layer] {
                 transition: opacity var(--pi-blend, 120ms);
+            }
+            .focus-head {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 8px;
+            }
+            .focus-status {
+                font-size: 10px;
+                text-transform: uppercase;
+                letter-spacing: 0.06em;
+                opacity: 0.7;
+                border: 1px solid var(--kind-accent, transparent);
+                border-radius: 999px;
+                padding: 1px 5px;
+                white-space: nowrap;
+            }
+            .focus-detail {
+                font-size: 12px;
+                line-height: 1.35;
+                opacity: 0.8;
+                overflow: hidden;
+            }
+            .focus-inner {
+                position: relative;
+                min-height: 0;
+                border-top: 1px solid var(--pi-border);
+                border-bottom: 1px solid var(--pi-border);
+            }
+            .focus-chip {
+                position: absolute;
+                box-sizing: border-box;
+                border: 1px solid var(--kind-accent, var(--pi-border));
+                border-radius: 6px;
+                background: color-mix(in srgb, var(--kind-accent, transparent) 8%, transparent);
+                padding: 4px;
+                overflow: hidden;
+            }
+            .focus-chip[data-kind='run'] { --kind-accent: var(--kind-run); }
+            .focus-chip[data-kind='unit'] { --kind-accent: var(--kind-unit); }
+            .focus-chip[data-kind='message'] { --kind-accent: var(--kind-message); }
+            .focus-chip[data-kind='artifact'],
+            .focus-chip[data-kind='file'] { --kind-accent: var(--kind-artifact); }
+            .focus-chip[data-kind='tool'],
+            .focus-chip[data-kind='read-tool'],
+            .focus-chip[data-kind='action'] { --kind-accent: var(--kind-tool); }
+            .focus-chip[data-kind='error'] { --kind-accent: var(--kind-error); }
+            .focus-chip[data-kind='approval'] { --kind-accent: var(--kind-approval); }
+            .focus-chip-head {
+                display: block;
+                font-size: 11px;
+                font-weight: 600;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            .focus-chip-meta {
+                display: block;
+                margin-top: 3px;
+                font-size: 10px;
+                text-transform: uppercase;
+                letter-spacing: 0.06em;
+                opacity: 0.6;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+            .focus-chip-status {
+                position: absolute;
+                left: 4px;
+                bottom: 4px;
+                font-size: 9px;
+                text-transform: uppercase;
+                letter-spacing: 0.06em;
+                opacity: 0.55;
+            }
+            .focus-chip-signal {
+                position: absolute;
+                right: 4px;
+                bottom: 4px;
+                display: flex;
+                align-items: flex-end;
+                gap: 2px;
+                height: 12px;
+                opacity: 0.5;
+            }
+            .focus-chip-signal i {
+                width: 3px;
+                background: currentColor;
+            }
+            .focus-chip:has(.focus-subchips) .focus-chip-status,
+            .focus-chip:has(.focus-subchips) .focus-chip-signal {
+                display: none;
+            }
+            .focus-chip > [data-node-action] {
+                position: absolute;
+                right: 2px;
+                top: 2px;
+                padding: 0 3px;
+            }
+            .focus-subchips {
+                position: absolute;
+                left: 3px;
+                right: 3px;
+                bottom: 3px;
+                display: flex;
+                gap: 2px;
+                overflow: hidden;
+            }
+            .focus-subchips button {
+                max-width: 60px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+            .focus-actions {
+                display: flex;
+                gap: 4px;
+                flex-wrap: wrap;
+            }
+            .focus-button {
+                border: 1px solid var(--pi-border);
+                background: var(--pi-surface-muted);
+                color: var(--pi-text);
+                font: inherit;
+                font-size: 10px;
+                padding: 2px 6px;
+                border-radius: 4px;
+                cursor: pointer;
+                pointer-events: auto;
+            }
+            .focus-button:hover {
+                border-color: var(--kind-accent, var(--pi-accent));
+                color: var(--pi-focus);
+            }
+            :root[data-focus-scale='true'] [data-rung][data-focus='focus'] {
+                outline: 1px solid var(--kind-accent, var(--pi-accent));
+                outline-offset: 3px;
+            }
+            :root[data-focus-scale='true'] [data-rung][data-focus='context'] {
+                opacity: 0.72;
             }
             #instrument-kit {
                 display: flex;
@@ -480,8 +656,89 @@
                 position: relative;
             }
             #canvas {
+                position: relative;
                 min-width: 0;
                 min-height: 0;
+                isolation: isolate;
+            }
+            #canvas::after {
+                content: '';
+                position: absolute;
+                inset: 0;
+                z-index: 4;
+                pointer-events: none;
+                opacity: 0;
+                transition: opacity 200ms;
+            }
+            :root[data-backdrop='grid'] #canvas::after {
+                opacity: 1;
+                background-image: linear-gradient(var(--view-grid, transparent) 1px, transparent 1px),
+                    linear-gradient(90deg, var(--view-grid, transparent) 1px, transparent 1px);
+                background-size: 44px 44px;
+            }
+            :root[data-backdrop='starfield'] #canvas::after {
+                opacity: 1;
+                background-image: radial-gradient(1px 1px at 20% 30%, var(--view-star, transparent) 99%, transparent),
+                    radial-gradient(1px 1px at 70% 60%, var(--view-star, transparent) 99%, transparent),
+                    radial-gradient(1px 1px at 45% 85%, var(--view-star, transparent) 99%, transparent);
+                background-size: 260px 220px, 310px 270px, 190px 240px;
+            }
+            #canvas .spacegraph-html-node,
+            #canvas .spacegraph-html-node[data-selected='true'],
+            #canvas .spacegraph-html-node.focused {
+                outline: none !important;
+                box-shadow: none !important;
+            }
+            #focus-lens {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 340px;
+                height: 230px;
+                z-index: 5;
+                pointer-events: none;
+                box-sizing: border-box;
+                background: color-mix(in srgb, var(--pi-background) 88%, transparent);
+                border: 1px solid var(--pi-border);
+                box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
+                backdrop-filter: blur(4px);
+            }
+            #focus-lens[hidden] {
+                display: none;
+            }
+            #focus-lens::before,
+            #focus-lens::after {
+                content: '';
+                position: absolute;
+                width: 12px;
+                height: 12px;
+                border-color: var(--kind-accent, var(--pi-accent));
+                pointer-events: none;
+            }
+            #focus-lens::before {
+                left: -1px;
+                top: -1px;
+                border-left: 2px solid;
+                border-top: 2px solid;
+            }
+            #focus-lens::after {
+                right: -1px;
+                bottom: -1px;
+                border-right: 2px solid;
+                border-bottom: 2px solid;
+            }
+            #focus-lens[data-kind='run'] { --kind-accent: var(--kind-run); }
+            #focus-lens[data-kind='unit'] { --kind-accent: var(--kind-unit); }
+            #focus-lens[data-kind='message'] { --kind-accent: var(--kind-message); }
+            #focus-lens[data-kind='artifact'],
+            #focus-lens[data-kind='file'] { --kind-accent: var(--kind-artifact); }
+            #focus-lens[data-kind='tool'],
+            #focus-lens[data-kind='read-tool'],
+            #focus-lens[data-kind='action'] { --kind-accent: var(--kind-tool); }
+            #focus-lens[data-kind='error'] { --kind-accent: var(--kind-error); }
+            #focus-lens[data-kind='approval'] { --kind-accent: var(--kind-approval); }
+            #focus-lens .focus-button {
+                pointer-events: auto;
             }
             #transcript {
                 position: relative;
@@ -599,17 +856,17 @@
             }
             .spine-row[data-kind='tool']::before,
             .spine-row[data-kind='read-tool']::before {
-                border-color: #c9a6ff;
+                border-color: var(--kind-tool, #c9a6ff);
             }
             .spine-row[data-kind='artifact']::before,
             .spine-row[data-kind='file']::before {
-                border-color: #7fd6a8;
+                border-color: var(--kind-artifact, #7fd6a8);
             }
             .spine-row[data-kind='approval']::before {
-                border-color: #9ad9ff;
+                border-color: var(--kind-approval, #9ad9ff);
             }
             .spine-row[data-kind='error']::before {
-                border-color: #ff8aa0;
+                border-color: var(--kind-error, #ff8aa0);
             }
             .spine-head {
                 display: flex;
@@ -678,6 +935,8 @@
     <body>
         <header>
             <h1>pi · SpaceGraphJS</h1>
+            <button type="button" id="catalog-toggle" aria-label="Toggle catalog drawer">catalog</button>
+            <button type="button" id="rail-toggle" aria-label="Toggle instruments rail">rail</button>
             <span id="status">connecting…</span>
             <label for="follow-mode">Follow</label>
             <select id="follow-mode" aria-label="Follow mode">
@@ -721,10 +980,11 @@
             <span id="attention" data-role="attention">no failures</span>
         </header>
         <aside>
-            <strong>Catalog · proof surface</strong>
-            <span class="catalog-heading">Capabilities</span>
-            <div id="gallery"></div>
-            <div id="catalog"></div>
+            <details id="catalog-panel">
+                <summary class="catalog-heading">Catalog · proof surface</summary>
+                <div id="gallery"></div>
+                <div id="catalog"></div>
+            </details>
         </aside>
         <main id="surface" data-surface="hybrid" data-arrangement="side">
             <div id="canvas"></div>

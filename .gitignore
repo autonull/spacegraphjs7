@@ -17,5 +17,6 @@ docs/screenshots/demo-atlas/
 docs/screenshots/inner-layout/
 docs/screenshots/retro-style/
 docs/screenshots/capture/
+docs/screenshots/index.html
 tsconfig.tsbuildinfo
 packages/*/tsconfig.tsbuildinfo

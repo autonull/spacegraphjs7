@@ -117,6 +117,9 @@ export function edgeSpec(edge: RenderEdge, theme: RenderTheme): EdgeSpec {
     // Emphasis is additive: a causal ribbon (writes/delegates) widens with its score without changing
     // the confidence-derived colour or dash decision.
     const thickness = style.width * (1 + (edge.emphasis ?? 0));
+    const ribbon = edge.data?.ribbon as
+        | { weight?: number; minRadius?: number; maxRadius?: number; segments?: number }
+        | undefined;
     const data = {
         color: parseColor(style.color),
         thickness,
@@ -125,12 +128,20 @@ export function edgeSpec(edge: RenderEdge, theme: RenderTheme): EdgeSpec {
         labelColor: theme.textMuted,
         opacity: style.opacity,
         arrowhead: style.arrowhead ? ('target' as const) : (false as const),
+        ...(ribbon
+            ? {
+                  weight: ribbon.weight ?? 0.5,
+                  minRadius: ribbon.minRadius ?? 1,
+                  maxRadius: ribbon.maxRadius ?? 8,
+                  segments: ribbon.segments ?? 3,
+              }
+            : {}),
     };
     return {
         id: edge.id,
         source: edge.source,
         target: edge.target,
-        type: edge.label ? 'LabeledEdge' : 'CurvedEdge',
+        type: ribbon ? 'DynamicThicknessEdge' : edge.label ? 'LabeledEdge' : 'CurvedEdge',
         data,
     };
 }

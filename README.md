@@ -210,6 +210,20 @@ pnpm --filter pi verify:visual         # vision-gated capture matrix
 pnpm --filter pi verify                # one-way dependency guard
 ```
 
+The flagship has a **screenshot studio**. A shot is data (`app/pi/src/shots.ts`): scenario, preset,
+policy, surface and camera framing; `?shot=node-detail` launches exactly that view. Twelve shots cover
+the LOD close-up, a deep focus lens and recursive inner layouts, zoom dynamic range, three surface
+arrangements, view palettes and backdrops, the light theme, and the proof/policy surfaces. Node size
+is never changed by default: `emphasis.focusScale` and its neighbors are opt-in knobs, and the detail
+lens is a fixed-size host overlay anchored to the focused node with clickable inner chips and actions.
+Causal edges are thick faceted ribbons through the existing `RenderEdge.data` path. The catalog and
+rail are on-demand drawers and all surfaces use square corners, so the canvas keeps the reclaimed width.
+`pnpm --filter pi shots:all` regenerates the curated
+gallery in [`docs/screenshots/`](docs/screenshots/README.md); `pnpm --filter pi shot --watch`
+recaptures on source change and refreshes a local contact sheet, so visual iteration needs no manual
+camera driving or server restart. Palette, backdrop and glow are `theme.*` policy knobs with presets,
+not renderer branches; the HUD stays grayscale while color lives in the view.
+
 A shareable landing page with a clip, screenshots and the one-command quickstart lives at
 [`app/demo/flagship.html`](app/demo/flagship.html) (served by `pnpm --filter demo dev` and included in the
 demo build; `pnpm --filter demo video:flagship` recaptures the clip). The compositional demo at

@@ -11,10 +11,13 @@ const showError = (message: string): void => {
 };
 
 const boot = async (): Promise<void> => {
+    const params = new URLSearchParams(location.search);
+    const shotID = params.get('shot');
     await host.mount(el('canvas'));
     host.setClientID(clientID);
+    if (shotID) host.applyShot(shotID);
 
-    if (new URLSearchParams(location.search).get('scenario') !== 'rich') {
+    if (!shotID && params.get('scenario') !== 'rich') {
         const events = new EventSource(`/events?client=${clientID}`);
         events.onmessage = (event) => host.consume(decodeOp(event.data as string));
     }

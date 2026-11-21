@@ -27,6 +27,25 @@ follow the workflow in `docs/ROADMAP.md` (`test:publish` → build → npm).
   the transcript is collapsible and resizable from its own edge. Color is reserved for the graph view.
 - **Screenshots:** one root, `docs/screenshots/`, holding a tracked curated gallery plus gitignored
   generated visual-gate output; Pi captures come from a Playwright spec, and stale images were removed.
+- **Screenshot studio:** ten named shots in `app/pi/src/shots.ts` launch deterministic views through
+  `?shot=<id>` (`cockpit`, `node-detail`, `dynamic-range`, three layouts, palettes, light theme,
+  catalog and policy). A capture CLI with a contact sheet and watch mode makes the feedback loop a
+  source edit → refresh cycle. New additive hooks: `shots`, `applyShot`, `frame`, `setViewport`,
+  `shotReady`.
+- **Deep focus:** a fixed-size host lens anchored to the focused node shows a bounded inner layout,
+  per-chip metadata/signal bars, nested chips at depth 2, and controls wired to the existing verbs;
+  focusing a chip rebuilds the tree, so recursion is navigation, not unbounded DOM. `emphasis.focusScale`,
+  `neighborScale` and `contextScale` are opt-in and default to 1 — focused nodes do not grow by default.
+  New `focus-lens` and `fractal` presets and shots explore the alternative.
+- **Faceted edges:** causal edges carry a ribbon descriptor in the existing `RenderEdge.data`; the
+  SpaceGraph adapter forwards it to core's `DynamicThicknessEdge` with three segments. `emphasis.ribbonWidth`
+  controls the width, 0 disables it. No contract field or renderer-specific branch was added.
+- **Density and progressive disclosure:** the catalog and rail are header-toggled drawers, empty portal
+  sections stay hidden, and all surfaces default to square corners. The canvas keeps the reclaimed width.
+- **View palettes:** `theme.palette`, `theme.backdrop` and `theme.glow` are live knobs with five
+  palettes, three backdrops and emissive glow. Four new presets (`neon`, `ember`, `aurora`,
+  `circuit`) launch them. Color is applied through host CSS variables and the renderer theme; the
+  HUD stays grayscale. The detail LOD card adds a compact telemetry line and wraps its text.
 - **View coherence:** the flagship fits content once at startup, gives nodes per-kind size, shape and
   accent color plus distinct edge styles, and renders the transcript as a spine with expandable detail
   and a draggable vertical scroll overview. Its startup policy uses `flat` depth and a 40-unit step.

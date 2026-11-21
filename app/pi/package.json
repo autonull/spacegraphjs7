@@ -12,7 +12,10 @@
         "test:publish": "tsx scripts/publish-check.ts",
         "verify": "tsx scripts/verify.ts",
         "verify:visual": "playwright test --config playwright.config.ts tests/vision.spec.ts",
-        "scale": "tsx scripts/scale.ts"
+        "scale": "tsx scripts/scale.ts",
+        "shot": "tsx scripts/shot.ts",
+        "shots:all": "tsx scripts/shot.ts all",
+        "shots:watch": "tsx scripts/shot.ts --watch"
     },
     "dependencies": {
         "@earendil-works/pi-agent-core": "1.5.2",
