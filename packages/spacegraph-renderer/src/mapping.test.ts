@@ -142,7 +142,15 @@ describe('edgeSpec', () => {
 
     test('widens emphasized edges into causal ribbons', () => {
         const plain = edgeSpec(edge({ confidence: 'explicit' }), theme);
-        const loud = edgeSpec(edge({ confidence: 'explicit', emphasis: 0.8 }), theme);
+        const loud = edgeSpec(
+            edge({
+                confidence: 'explicit',
+                emphasis: 0.8,
+                data: { ribbon: { weight: 0.8, minRadius: 1, maxRadius: 8, segments: 3 } },
+            }),
+            theme,
+        );
+        expect(loud.type).toBe('TaperedEdge');
         expect(loud.data.thickness).toBeCloseTo(plain.data.thickness * 1.8);
         expect(loud.data.color).toBe(plain.data.color);
     });

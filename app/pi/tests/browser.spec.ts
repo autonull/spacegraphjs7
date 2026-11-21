@@ -65,6 +65,18 @@ test.describe('the Pi reference app', () => {
         noErrors(errors);
     });
 
+    test('offers a one-line proof affordance and a dismissible first-run hint', async ({ page }) => {
+        const errors = await boot(page);
+        await expect(page.locator('#proof-line')).toContainText('proof');
+        expect(await page.locator('#catalog .catalog-card').count()).toBeGreaterThan(0);
+        await expect(page.locator('#first-run-hint')).toBeVisible();
+        await page.locator('#first-run-hint button').click();
+        await expect(page.locator('#first-run-hint')).toHaveCount(0);
+        await page.locator('#proof-line').click();
+        expect(await page.evaluate(() => document.body.dataset.catalog)).toBe('open');
+        noErrors(errors);
+    });
+
     test('collapses and resizes the transcript from its HUD controls', async ({ page }) => {
         const errors = await boot(page);
         await expect(page.locator('#transcript-list')).toBeVisible();

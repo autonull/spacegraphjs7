@@ -9,6 +9,7 @@ import {
     FlowEdge,
     InterGraphEdge,
     LabeledEdge,
+    TaperedEdge,
     Wire,
 } from '../edges';
 import {
@@ -135,6 +136,7 @@ export const DEFAULT_EDGE_TYPES = [
     InterGraphEdge,
     LabeledEdge,
     DottedEdge,
+    TaperedEdge,
     Wire,
 ] as const;
 

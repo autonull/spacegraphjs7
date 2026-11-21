@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { focusRoles, scaleForRole } from '../src/focus';
-import { innerPlacements, innerTree } from '../src/inner';
+import { innerConnectors, innerPlacements, innerTree } from '../src/inner';
 
 const nodes = [
     { id: 'a', label: 'Run', kind: 'run' },
@@ -60,5 +60,22 @@ describe('inner layout', () => {
         const column = innerPlacements(chips, 'column');
         expect(column[0]!.width).toBeGreaterThan(grid[0]!.width);
         expect(column[1]!.top).toBeGreaterThan(column[0]!.top);
+    });
+
+    it('lays chips out on a ring or a lane', () => {
+        const chips = innerTree('a', nodes, edges, 1, 2);
+        const radial = innerPlacements(chips, 'radial');
+        const lane = innerPlacements(chips, 'lane');
+        expect(radial[0]!.top).toBeLessThan(50);
+        expect(radial[1]!.top).toBeGreaterThan(50);
+        expect(lane[1]!.top).toBeGreaterThan(lane[0]!.top);
+    });
+
+    it('connects the focus to each chip', () => {
+        const placements = innerPlacements(innerTree('a', nodes, edges, 1, 2), 'radial');
+        const connectors = innerConnectors(placements);
+        expect(connectors).toHaveLength(2);
+        expect(connectors.every((line) => line.x1 === 50 && line.y1 === 50)).toBe(true);
+        expect(connectors[0]!.chipId).toBe(placements[0]!.chip.id);
     });
 });

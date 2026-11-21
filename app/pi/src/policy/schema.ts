@@ -124,7 +124,7 @@ export const POLICY_SCHEMA: PolicySchema = {
             'emphasis.innerLayout',
             'emphasis',
             'grid',
-            ['grid', 'row', 'column'] as const,
+            ['grid', 'row', 'column', 'radial', 'lane'] as const,
             'Placement of chips in the detail-node inner layout.',
             '4',
         ),

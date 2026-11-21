@@ -141,7 +141,7 @@ export function edgeSpec(edge: RenderEdge, theme: RenderTheme): EdgeSpec {
         id: edge.id,
         source: edge.source,
         target: edge.target,
-        type: ribbon ? 'DynamicThicknessEdge' : edge.label ? 'LabeledEdge' : 'CurvedEdge',
+        type: ribbon ? 'TaperedEdge' : edge.label ? 'LabeledEdge' : 'CurvedEdge',
         data,
     };
 }

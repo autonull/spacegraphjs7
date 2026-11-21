@@ -8,7 +8,7 @@ const boot = async (page: Page): Promise<void> => {
 test.describe('the live policy spine', () => {
     test('exposes every knob and applies changes hot without a remount', async ({ page }) => {
         await boot(page);
-        await page.locator('#policy-section summary').click();
+        await page.locator('#policy-section > summary').click();
         await expect(page.locator('[data-policy-knob]')).toHaveCount(
             await page.evaluate(() => Object.keys((window as any).__pi.policy().values).length),
         );

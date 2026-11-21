@@ -110,20 +110,20 @@ test.describe('Pi flagship vision atlas', () => {
         await assertScene(page);
     });
 
-    test('the four gate shots stay legible in both themes', async ({ page }) => {
+    // Fast slice gate: one representative shot in both themes. The full four-shot matrix runs only
+    // at slice boundaries via `shots:all` plus the unit ContrastAuditor palette audit.
+    test('the representative gate shot stays legible in both themes', async ({ page }) => {
         const light = encodePolicyVector(POLICY_SCHEMA, { 'theme.variant': 'light' });
         for (const variant of ['dark', 'light']) {
-            for (const shot of ['cockpit', 'neon-cockpit', 'node-detail', 'dynamic-range']) {
-                const policy = variant === 'light' ? `&policy=${encodeURIComponent(light)}` : '';
-                await page.goto(`/?shot=${shot}${policy}`);
-                await page.waitForFunction(() => (window as any).__pi?.ready === true);
-                await expect
-                    .poll(() => page.evaluate(() => (window as any).__pi.simulation().settled), {
-                        timeout: 10_000,
-                    })
-                    .toBe(true);
-                await assertScene(page);
-            }
+            const policy = variant === 'light' ? `&policy=${encodeURIComponent(light)}` : '';
+            await page.goto(`/?shot=cockpit${policy}`);
+            await page.waitForFunction(() => (window as any).__pi?.ready === true);
+            await expect
+                .poll(() => page.evaluate(() => (window as any).__pi.simulation().settled), {
+                    timeout: 10_000,
+                })
+                .toBe(true);
+            await assertScene(page);
         }
     });
 

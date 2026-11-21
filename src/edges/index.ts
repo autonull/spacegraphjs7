@@ -15,4 +15,5 @@ export { Edge } from './Edge';
 export { FlowEdge } from './FlowEdge';
 export { InterGraphEdge } from './InterGraphEdge';
 export { LabeledEdge } from './LabeledEdge';
+export { TaperedEdge } from './TaperedEdge';
 export { Wire } from './Wire';

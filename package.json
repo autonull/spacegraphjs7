@@ -153,6 +153,7 @@
         "LICENSE"
     ],
     "scripts": {
+        "check": "pnpm -r --if-present typecheck",
         "build": "pnpm run build:lib && pnpm run build:packages && pnpm run build:demo",
         "build:demo": "vite build --config app/demo/vite.config.ts",
         "build:lib": "vite build --config vite.lib.config.ts",

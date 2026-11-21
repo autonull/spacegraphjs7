@@ -20,6 +20,7 @@ decision is promoted here and removed from `not-decided.md`.
 | [0011](./0011-freeform-default.md)              | Freeform zero-g default; structured geometry opt-in           |
 | [0012](./0012-never-infer-cause.md)             | Never infer cause; commands map to `KernelOp`s                |
 | [0013](./0013-additive-contract-versioning.md)  | Additive contract versioning; runtime manifest assembly       |
+| [0014](./0014-tapered-ribbon-edges.md)          | Tapered polygon ribbons; renderer-type exception              |
 
 Conventions: status (`Accepted`, `Superseded`), date, source, Context / Decision / Consequences.
 Numbering is sequential; a superseding ADR links back to the one it replaces. Keep records short and

@@ -1,6 +1,15 @@
 import { describe, expect, test } from 'vitest';
 import { representationRung } from 'spacegraphjs/salience';
-import { cardMarkup, composedCardMarkup, portalGlyph, toAdapterModel } from '../src/adapter';
+import {
+    cardMarkup,
+    composedCardMarkup,
+    focusCardMarkup,
+    portalGlyph,
+    portalPreview,
+    registerCardTemplate,
+    toAdapterModel,
+} from '../src/adapter';
+import { innerTree } from '../src/inner';
 import { fixtureKernel } from '../src/fixture';
 import { labelFontPx } from '../src/policy/host';
 import { agentScopes } from '../src/scopes';
@@ -81,5 +90,31 @@ describe('representation ladder', () => {
         }
         expect(portalGlyph(scope)).toBe(portalGlyph(scope));
         expect(cardMarkup(node, 'detail', context)).not.toContain('data-portal=');
+    });
+
+    test('a portal preview is derived from child scopes and bounded to four glyphs', () => {
+        const specs = [
+            { id: 'child', nodes: [{ kind: 'action' }, { scope: 'deep' }, { kind: 'file' }, { kind: 'tool' }, { kind: 'unit' }] },
+        ];
+        const preview = portalPreview('child', specs);
+        expect(preview).toHaveLength(4);
+        expect(preview).toContain(portalGlyph('deep'));
+        expect(portalPreview('missing', specs)).toBe('');
+    });
+
+    test('a host can register a card template by kind', () => {
+        const kind = 'template-test-kind';
+        registerCardTemplate(kind, (card) => `<div data-custom="${card.kind}"></div>`);
+        expect(cardMarkup({ ...node, kind }, 'overview', context)).toContain('data-custom="template-test-kind"');
+        expect(cardMarkup(node, 'overview', context)).toContain('data-rung="overview"');
+    });
+
+    test('graph layouts add connector spokes to the inner topology', () => {
+        const chips = innerTree('a', [{ id: 'a', label: 'A', kind: 'run' }, { id: 'b', label: 'B', kind: 'unit' }], [{ source: 'a', target: 'b' }], 1);
+        const radial = focusCardMarkup(node, chips, 'radial');
+        const grid = focusCardMarkup(node, chips, 'grid');
+        expect(radial).toContain('class="focus-connectors"');
+        expect(radial).toContain('<line');
+        expect(grid).not.toContain('focus-connectors');
     });
 });

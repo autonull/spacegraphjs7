@@ -12,6 +12,7 @@ export { TextMeshNode } from './nodes/TextMeshNode';
 export { GroupNode } from './nodes/GroupNode';
 export { CurvedEdge } from './edges/CurvedEdge';
 export { LabeledEdge } from './edges/LabeledEdge';
+export { TaperedEdge } from './edges/TaperedEdge';
 export { GridLayout } from './plugins/layouts/GridLayout';
 export { HierarchicalLayout } from './plugins/layouts/HierarchicalLayout';
 export { TimelineLayout } from './plugins/layouts/TimelineLayout';

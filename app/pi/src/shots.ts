@@ -79,6 +79,7 @@ export const SHOTS: readonly Shot[] = [
         question: 'Does a two-level inner layout make recursive scope structure legible?',
         scenario: 'rich',
         preset: 'fractal',
+        vector: { 'emphasis.innerLayout': 'radial' },
         surface: 'hybrid',
         arrangement: 'side',
         level: 'detail',

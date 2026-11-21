@@ -49,32 +49,34 @@ const link = (entry: CatalogEntry, dataKey: 'preset' | 'cell'): HTMLAnchorElemen
     return anchor;
 };
 
-const group = (title: string, children: readonly HTMLElement[]): HTMLElement => {
+const card = (title: string, question: string, children: readonly HTMLElement[], kind: string): HTMLElement => {
     const details = document.createElement('details');
-    details.open = true;
+    details.className = 'catalog-card';
+    details.dataset.card = kind;
     const summary = document.createElement('summary');
-    summary.textContent = `${title} (${children.length})`;
+    const heading = document.createElement('span');
+    heading.className = 'catalog-card-title';
+    heading.textContent = title;
+    const note = document.createElement('span');
+    note.className = 'catalog-note';
+    note.textContent = question;
+    summary.append(heading, note);
     details.append(summary, ...children);
     return details;
 };
 
 /** Capabilities stay in `#gallery`; presets and experiments launch from `#catalog`. */
 export const mountCatalog = (container: HTMLElement, catalog: Catalog): void => {
-    const experiments = catalog.experiments.map((experiment) => {
-        const details = document.createElement('details');
-        const summary = document.createElement('summary');
-        summary.textContent = experiment.title;
-        const rule = document.createElement('p');
-        rule.className = 'catalog-note';
-        rule.textContent = experiment.rule;
-        details.append(summary, rule, ...experiment.cells.map((cell) => link(cell, 'cell')));
-        return details;
-    });
-    container.replaceChildren(
-        group(
-            'Presets · what each explores',
-            catalog.presets.map((preset) => link(preset, 'preset')),
-        ),
-        group('Experiments · launchable cells', experiments),
+    const presets = catalog.presets.map((preset) =>
+        card(preset.label, preset.title, [link(preset, 'preset')], 'preset'),
     );
+    const experiments = catalog.experiments.map((experiment) =>
+        card(
+            experiment.title,
+            experiment.rule,
+            experiment.cells.map((cell) => link(cell, 'cell')),
+            'experiment',
+        ),
+    );
+    container.replaceChildren(...presets, ...experiments);
 };

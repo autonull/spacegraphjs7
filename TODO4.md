@@ -6,7 +6,7 @@ the progress block below records what has actually landed.
 
 ---
 
-## Progress (updated 2026-11-21 — slices 1 and 2 complete, awaiting review)
+## Progress (updated 2026-11-21 — fast-loop prep and slices 1–3 complete, awaiting review)
 
 **Slice 1 — One surface language: implemented in Pi, not yet promoted to a second host.**
 
@@ -52,6 +52,32 @@ the progress block below records what has actually landed.
 4. The focus ring is independent of `focusScale`; scaling stays purely opt-in. The connector is host DOM, not a contract seam.
 5. The 44px check currently covers the inspector tab bar and pin. A full pass over command bar, rail and in-card actions is still owed, so §2's ergonomic-target claim is not yet universal.
 
+**Slice 3 — Recursion, edges and proof: implemented in Pi, gates green, not promoted past the flagship.**
+
+| Item                                              | Status | Evidence                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| ------------------------------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Fast-loop prep (dev-loop items 1, 3, 4)           | done   | `app/pi/scripts/shot.ts` now fingerprints `src/**` recursively plus `packages/shared/src/**`; the both-themes vision test runs one representative shot (the full palette matrix is the unit `ContrastAuditor` audit at boundaries); root `package.json` gains `check` → `pnpm -r --if-present typecheck`, and `app/pi` gains a matching `typecheck` script. Item 2 stays a workflow note.                                                              |
+| Inner topology and card registry (O3, O4, K1)     | done   | `app/pi/src/inner.ts` gains `radial`/`lane` placements and `innerConnectors`; `focusCardMarkup` draws a bounded SVG spoke layer. `app/pi/src/adapter.ts` adds a kind-keyed `registerCardTemplate` registry with the ladder as fallback. Both stay pure/Pi-local until a second host consumes them.                                                                                                                                                   |
+| Portal previews and depth ruler (K2, K3)          | done   | `portalPreview` derives up to four stable glyphs from `ScopeSpec` and `paint()` attaches them to portal cards. `renderPortalCrumb` emits a vertical rung ruler with ticks; `fractal` now requests `emphasis.innerLayout: radial` and shows the connected two-chip topology.                                                                                                                                                                       |
+| Policy disclosure, proof and onboarding (J4, J5, N1, N2) | done | `src/policy/panel.ts` collapses families by default and adds search, provenance and changed-only filters. A header proof line opens the catalogue; catalogue entries are question-first cards that expand to launch links. A dismissible first-run hint is stored client-side and suppressed in gallery shots.                                                                                                                                       |
+| Shot review (M1)                                  | done   | The contact sheet keeps a previous/current pair per shot, a kept/rejected marker and a note field. Notes persist in `docs/screenshots/review.json` (data, not code); the in-browser "Copy review JSON" button exports accumulated edits.                                                                                                                                                                                                            |
+| Recorded direction — edges and surfaces (§11.8)   | done   | `src/edges/TaperedEdge.ts` is a registered two-triangle trapezoid ribbon (broad at source, narrow at target, no length change); `spacegraph-renderer` maps ribbons to it. ADR 0014 records the two-consumer exception with before/after shots. Card surfaces gain a one-accent gradient wash and inset highlight. Shorter reach stays data: the `showcase` preset already uses `geometry.gap: 40` / `repulsion: 200`.                               |
+| Review gate                                       | done   | All 12 shots recaptured and reviewed in `docs/screenshots/index.html`. `app/pi`: 118 unit tests, 77 e2e tests (single worker), vision and scale budgets green; root `pnpm run check` green across 31 workspaces; core edge tests (5) and `spacegraph-renderer` (22) green.                                                                                                                                                                        |
+
+**Clarifications that came out of this increment:**
+
+1. The renderer exception is a new registered edge type, not a host SVG overlay or a per-host branch. It is
+   the only new renderer branch in the plan and is governed by ADR 0014; context edges remain thin and
+   ribbon-free.
+2. O3/O4 keep a clean Pi-local boundary (pure `inner.ts`, kind-keyed template registry) rather than a
+   shared package. Promotion waits for a second host, as in slices 1–2.
+3. The both-themes vision matrix is now a fast representative shot plus the unit `ContrastAuditor`
+   palette audit. The full four-shot matrix is a slice-boundary gate, not a per-change gate.
+4. The frame-time assertion passes in isolation but is sensitive to host load; run e2e with
+   `--workers=1` on a busy machine. A subchip z-order fix removed the one chip-click interception flake.
+5. The first-run hint is suppressed for `?shot=` URLs so gallery review stays comparable; the e2e gate
+   exercises it on the normal entry route.
+
 **Direction recorded for slice 3 (user feedback, 2026-11-21):**
 
 - Edges are too long and too line-like. Shorten their reach (`geometry.repulsion`, `geometry.gap` or a new
@@ -66,7 +92,7 @@ the progress block below records what has actually landed.
   constants; avoid exhaustive matrices where a representative shot passes. A gate should catch breakage,
   not dictate implementation detail.
 
-**Development-loop notes for the next session (recorded, not yet implemented):**
+**Development-loop notes (items 1, 3 and 4 landed with slice 3; item 2 remains a workflow note):**
 
 1. `app/pi/scripts/shot.ts:52` fingerprints only top-level `src/*.ts` and `src/policy/*.ts`; `src/shell/**` and
    `packages/shared/src/tokens.ts` are invisible to `--watch`. Make it recursive and include shared tokens.
@@ -81,22 +107,24 @@ the progress block below records what has actually landed.
 
 **Remaining work, in order:**
 
-1. **Fast-loop prep (small, recommended first):** development-loop items 1, 3 and 4 above. Item 2 is a
-   workflow change, not code. Do not start slice 3 until the watcher covers `src/shell/**`, or visual edits
-   there will not retrigger captures.
-2. **Slice 3 — Recursion, edges and proof** (O3, O4, K1–K3, J4, J5, N1, N2, M1 + recorded direction): inner
-   topology with connectors, portal previews, depth-ruler breadcrumb, visible evidence line, catalog cards,
-   first-run hint, review notes, shorter tapered polygon edges and shaded card surfaces. Gate: `fractal`,
-   `deep-focus`, `catalog` and intermediate descend frames; loose tests, budgets green.
-3. **Slice 4 — Proliferation** (O5–O7): blocked on a second host consuming shell, tokens and inspector
-   unchanged. Then split core/domain policy, emit the world-host and real vision gate from the scaffold,
-   and add one cross-domain shot. No contract or position-authority change.
-4. **Standing track** (L4, M3): keep reduced-motion final-frame parity and intermediate-frame vision in
-   every slice. The remaining §11.2 work is a full 44px pass over the command bar, rail and in-card
-   actions. L1–L3, M2, M4, N3/N4 stay deferred per §6.
+1. **Slice 4 — Proliferation** (O5–O7): gated on a second host consuming the shell, tokens and inspector
+   unchanged. When that consumer exists: split core/domain policy vocabulary, emit the world-host template
+   and a real `createVisionAssert` gate from the scaffold, replace the generated `vocabulary.ts` duplicate
+   with `@spacegraphjs/shared/domain`, and add one cross-domain shot. No contract or position-authority
+   change. Until then, the slice-1/2/3 modules stay in Pi with clean boundaries — do not promote them
+   speculatively.
+2. **Standing track** (L4, M3): keep reduced-motion final-frame parity and intermediate-frame vision in
+   every slice. The remaining §11.2 work is a full 44px pass over the command bar, rail and in-card actions
+   (only the inspector tab bar and pin are audited today); the contrast audit and RTL pass are still owed.
+   §11.4's domain `labelFor` accessor stays unscheduled. L1–L3, M2, M4, N3/N4 remain deferred per §6.
+3. **Post-review decisions:** ADR 0014's tapered ribbon is a recorded experiment, not a promoted default
+   beyond the flagship; confirm it in review before any second host inherits it. Fill
+   `docs/screenshots/review.json` with kept/rejected verdicts and notes during the contact-sheet review.
+   Re-run e2e with `--workers=1` on a loaded machine: the frame-time gate is sensitive to host contention.
 
-No slice 3+ item is claimed done. Last commits: `bddd7a6` (slice 2), `e48677f` (plan direction). The study,
-release and hosted URL stay deferred with TODO3's G3–G5.
+Slices 1–3 are recorded as done. Last prior commits: `bddd7a6` (slice 2), `e48677f` (plan direction); this
+increment lands fast-loop prep and slice 3 in one change. The study, release and hosted URL stay deferred
+with TODO3's G3–G5.
 
 ---
 

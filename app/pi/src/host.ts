@@ -56,6 +56,7 @@ import {
     composedCardMarkup,
     focusCardMarkup,
     nodeSize,
+    portalPreview,
     toAdapterModel,
     type AgentLevel,
 } from './adapter';
@@ -710,6 +711,8 @@ export class PiHost {
         this.renderPositions();
         this.renderGallery();
         mountCatalog(el('catalog'), this.#catalog);
+        this.renderProofLine();
+        this.mountFirstRunHint();
         this.renderTranscript();
         this.renderOverview();
         this.renderTurnMap();
@@ -841,9 +844,11 @@ export class PiHost {
         };
         model.nodes = model.nodes.map((node) => {
             const scope = this.#portalByNode.get(node.id);
+            const preview = scope ? portalPreview(scope, this.#specs) : '';
             return {
                 ...node,
                 ...(scope ? { scope } : {}),
+                ...(preview ? { data: { ...node.data, preview } } : {}),
                 focusRole: roles.get(node.id) ?? 'none',
             };
         });
@@ -1181,7 +1186,7 @@ export class PiHost {
             const aside = document.querySelector('aside');
             const catalog = document.getElementById('catalog');
             if (aside && catalog) aside.scrollTop = catalog.offsetTop - 20;
-            document.querySelector<HTMLElement>('#catalog details details summary')?.click();
+            document.querySelector<HTMLElement>("#catalog .catalog-card[data-card='experiment'] > summary")?.click();
         }
         if (shot.panel && document.getElementById('policy-section') instanceof HTMLDetailsElement)
             (document.getElementById('policy-section') as HTMLDetailsElement).open = true;
@@ -2241,6 +2246,7 @@ export class PiHost {
         document.body.dataset.catalog ??= 'closed';
         document.body.dataset.rail ??= 'open';
         el('catalog-toggle').addEventListener('click', () => this.toggleCatalog());
+        el('proof-line').addEventListener('click', () => this.toggleCatalog(true));
         el('rail-toggle').addEventListener('click', () => this.toggleRail());
         el('command-open').addEventListener('click', () => this.#commandSurface?.open('palette'));
         el('focus-primary').addEventListener('click', () => this.focusPrimary());
@@ -2809,7 +2815,9 @@ export class PiHost {
             el('portal-crumb').replaceChildren(hint);
             return;
         }
-        el('portal-crumb').replaceChildren(
+        const ruler = el('portal-crumb');
+        ruler.dataset.ruler = 'true';
+        ruler.replaceChildren(
             ...chain.map((scope, index) =>
                 button(
                     scope,
@@ -2821,11 +2829,41 @@ export class PiHost {
                     },
                     {
                         title: index === chain.length - 1 ? 'current portal' : `back to ${scope}`,
-                        dataset: { scope },
+                        dataset: { scope, rung: String(index + 1) },
                     },
                 ),
             ),
         );
+    }
+
+    /** One visible proof line; the full catalogue stays one click away. */
+    private renderProofLine(): void {
+        const line = document.getElementById('proof-line');
+        if (!(line instanceof HTMLButtonElement)) return;
+        const { presets, experiments } = this.#catalog;
+        line.textContent = `proof · ${presets.length} presets · ${experiments.length} experiments`;
+        line.title = 'Open the catalogue of presets, experiments and recorded comparisons';
+    }
+
+    private mountFirstRunHint(): void {
+        const hint = document.getElementById('first-run-hint');
+        if (!(hint instanceof HTMLElement)) return;
+        if (typeof location !== 'undefined' && new URLSearchParams(location.search).has('shot')) {
+            hint.remove();
+            return;
+        }
+        const key = 'spacegraph:first-run-hint';
+        if (localStorage.getItem(key) === 'seen') {
+            hint.remove();
+            return;
+        }
+        hint.hidden = false;
+        const dismiss = (): void => {
+            localStorage.setItem(key, 'seen');
+            hint.remove();
+            this.recordEvent('hint:dismiss', {});
+        };
+        hint.querySelector('button')?.addEventListener('click', dismiss);
     }
 
     private renderMinimap(): void {
