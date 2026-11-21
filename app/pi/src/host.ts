@@ -45,7 +45,7 @@ import {
     type InstrumentData,
     type InstrumentKit,
 } from 'spacegraphjs/widgets';
-import { AgentAdapter, cardMarkup, composedCardMarkup, toAdapterModel, type AgentLevel } from './adapter';
+import { AgentAdapter, cardMarkup, composedCardMarkup, nodeSize, toAdapterModel, type AgentLevel } from './adapter';
 import { bindTouchVerbs, touchBindingsFor, type TouchVerb } from './touch';
 import {
     createAnnotationWidgets,
@@ -296,6 +296,7 @@ export class PiHost {
     #transcriptCollapsed = false;
     #transcriptWidth = 320;
     #transcriptHeight = 200;
+    #expandedMessages = new Set<string>();
     #policyPanel?: ReturnType<typeof mountPolicyPanel>;
     #policyListeners = new Set<(event: PolicyChangeEvent) => void>();
     #recorder: SessionRecorder;
@@ -605,6 +606,7 @@ export class PiHost {
             this.setVisionLoop(true);
         }
         this.applyPolicy();
+        this.fitView();
         this.syncClock();
 
         document.addEventListener('visibilitychange', () => {
@@ -722,11 +724,13 @@ export class PiHost {
         this.#model = withPinnedNotes(this.#model, this.#notes.list);
         this.#model = {
             ...this.#model,
-            nodes: this.#model.nodes.map((node) =>
-                detailNodes.has(node.id)
+            nodes: this.#model.nodes.map((node) => {
+                const size = nodeSize(node.kind);
+                const withWidgets = detailNodes.has(node.id)
                     ? { ...node, widgets: [...(node.widgets ?? []), ...INSTRUMENT_IDS] }
-                    : node,
-            ),
+                    : node;
+                return size ? { ...withWidgets, size: [size[0], size[1], 0] as [number, number, number] } : withWidgets;
+            }),
         };
         this.#annotationWidgets?.refresh(this.#model.nodes);
         this.#instruments?.refresh(this.#model.nodes);
@@ -816,7 +820,7 @@ export class PiHost {
         if (qualified) this.simulation.pin([qualified]);
         this.#pinnedReveal = qualified;
         if (typeof location !== 'undefined') location.hash = `graph:${id}`;
-        const row = document.querySelector<HTMLElement>(`[data-node="${CSS.escape(id)}"]`);
+        const row = document.querySelector<HTMLElement>(`#transcript-list .transcript-row[data-node="${CSS.escape(id)}"]`);
         for (const selected of document.querySelectorAll('[data-revealed="true"]')) {
             selected.setAttribute('data-revealed', 'false');
         }
@@ -1852,6 +1856,12 @@ export class PiHost {
         }
     }
 
+    /** One-shot framing at startup; later navigations keep the user's chosen view. */
+    private fitView(): void {
+        const ids = this.#model?.nodes.filter((node) => node.visible !== false).map((node) => node.id) ?? [];
+        if (ids.length) this.renderer.fit(ids, { padding: 60 });
+    }
+
     private bindTranscript(): void {
         const toggle = el<HTMLButtonElement>('transcript-toggle');
         const handle = el('transcript-resize');
@@ -1892,6 +1902,28 @@ export class PiHost {
             };
             handle.addEventListener('pointermove', move);
             handle.addEventListener('pointerup', up);
+        });
+
+        const pane = el('transcript');
+        const overview = el('transcript-overview');
+        pane.addEventListener('scroll', () => this.updateTranscriptOverview());
+        overview.addEventListener('pointerdown', (event) => {
+            event.preventDefault();
+            overview.setPointerCapture(event.pointerId);
+            const box = overview.getBoundingClientRect();
+            const apply = (clientY: number) => {
+                const ratio = Math.min(Math.max((clientY - box.top) / Math.max(box.height, 1), 0), 1);
+                pane.scrollTop = ratio * Math.max(pane.scrollHeight - pane.clientHeight, 0);
+            };
+            const move = (next: PointerEvent) => apply(next.clientY);
+            const up = () => {
+                overview.removeEventListener('pointermove', move);
+                overview.removeEventListener('pointerup', up);
+                this.recordEvent('transcript:scroll', { ratio: pane.scrollTop });
+            };
+            apply(event.clientY);
+            overview.addEventListener('pointermove', move);
+            overview.addEventListener('pointerup', up);
         });
     }
 
@@ -1976,20 +2008,76 @@ export class PiHost {
     }
 
     private renderTranscript(): void {
-        el('transcript-list').replaceChildren(
-            ...this.#view.nodes
-                .filter((node) => node.kind === 'message')
-                .map((node) =>
-                    button(
-                        `${node.label}: ${String(node.data?.text ?? node.summary ?? '')}`,
-                        () => this.reveal(node.id),
-                        {
-                            className: 'transcript-row',
-                            dataset: { node: node.id, revealed: String(node.id === this.#revealed) },
-                        },
-                    ),
+        const messages = this.#view.nodes.filter((node) => node.kind === 'message');
+        const rows = messages.map((node) => {
+            const expanded = this.#expandedMessages.has(node.id);
+            const row = document.createElement('div');
+            row.className = 'spine-row';
+            row.dataset.expanded = String(expanded);
+            const head = document.createElement('div');
+            head.className = 'spine-head';
+            head.append(
+                button(
+                    `${node.label}: ${String(node.data?.text ?? node.summary ?? '')}`,
+                    () => this.reveal(node.id),
+                    {
+                        className: 'transcript-row',
+                        dataset: { node: node.id, revealed: String(node.id === this.#revealed) },
+                    },
                 ),
-        );
+                button(expanded ? '▾' : '▸', () => this.toggleMessage(node.id), {
+                    className: 'spine-expand',
+                    title: expanded ? 'Collapse detail' : 'Expand detail',
+                }),
+            );
+            const detail = document.createElement('div');
+            detail.className = 'transcript-detail';
+            detail.textContent = `${node.kind} · ${node.status} · ${String(node.data?.text ?? node.summary ?? '')}`;
+            row.append(head, detail);
+            return row;
+        });
+        el('transcript-list').replaceChildren(...rows);
+        this.renderTranscriptOverview(messages.map((node) => node.id));
+    }
+
+    private toggleMessage(id: string): void {
+        if (this.#expandedMessages.has(id)) this.#expandedMessages.delete(id);
+        else this.#expandedMessages.add(id);
+        this.recordEvent('transcript:expand', { node: id, expanded: this.#expandedMessages.has(id) });
+        this.renderTranscript();
+    }
+
+    private renderTranscriptOverview(ids: readonly string[]): void {
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('viewBox', '0 0 16 200');
+        svg.setAttribute('preserveAspectRatio', 'none');
+        svg.setAttribute('aria-hidden', 'true');
+        const view = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        view.setAttribute('x', '2');
+        view.setAttribute('width', '12');
+        view.setAttribute('data-transcript-view', '');
+        svg.append(view);
+        for (const [index, id] of ids.entries()) {
+            const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            dot.setAttribute('cx', '8');
+            dot.setAttribute('cy', String(((index + 0.5) / Math.max(ids.length, 1)) * 200));
+            dot.setAttribute('r', '2.4');
+            dot.setAttribute('data-transcript-node', id);
+            svg.append(dot);
+        }
+        el('transcript-overview').replaceChildren(svg);
+        this.updateTranscriptOverview();
+    }
+
+    private updateTranscriptOverview(): void {
+        const pane = el('transcript');
+        const view = el('transcript-overview').querySelector<SVGRectElement>('[data-transcript-view]');
+        if (!view) return;
+        const fraction = pane.clientHeight / Math.max(pane.scrollHeight, 1);
+        const height = Math.max(12, 200 * fraction);
+        const max = Math.max(pane.scrollHeight - pane.clientHeight, 1);
+        view.setAttribute('height', String(height));
+        view.setAttribute('y', String((pane.scrollTop / max) * (200 - height)));
     }
 
     private renderOverview(): void {

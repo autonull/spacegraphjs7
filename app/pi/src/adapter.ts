@@ -21,6 +21,22 @@ export type AgentAdapterEdge = AdapterEdge;
 export type AgentAdapterModel = AdapterModel<AgentAdapterNode, AgentAdapterEdge>;
 export type AgentLevel = RepresentationRung;
 
+const NODE_SIZES: Readonly<Record<string, readonly [number, number]>> = {
+    run: [260, 88],
+    unit: [214, 78],
+    message: [198, 70],
+    artifact: [152, 54],
+    file: [152, 54],
+    tool: [148, 52],
+    'read-tool': [148, 52],
+    action: [148, 52],
+    error: [164, 58],
+    approval: [180, 60],
+};
+
+/** Per-kind footprint: the shape stays contract-native, the scale carries variety. */
+export const nodeSize = (kind: string): readonly [number, number] | undefined => NODE_SIZES[kind];
+
 const STATUS: Readonly<Record<string, NodeStatus>> = {
     active: 'running',
     streaming: 'running',
@@ -159,7 +175,12 @@ export class AgentAdapter extends ModelAdapter<
                     ? edge.confidence
                     : 'explicit',
             directed: true,
-            style: edge.kind === 'contains' ? 'solid' : 'dashed',
+            style:
+                edge.kind === 'contains' || edge.kind === 'writes' || edge.kind === 'delegates'
+                    ? 'solid'
+                    : edge.kind === 'reads' || edge.kind === 'evidence'
+                      ? 'dotted'
+                      : 'dashed',
             emphasis: edge.kind === 'writes' || edge.kind === 'delegates' ? 0.8 : 0.3,
         };
     }

@@ -80,6 +80,31 @@ test.describe('the Pi reference app', () => {
         noErrors(errors);
     });
 
+    test('renders the transcript as a spine with expandable detail and a scroll overview', async ({ page }) => {
+        const errors = await boot(page);
+        const rows = page.locator('#transcript-list .spine-row');
+        expect(await rows.count()).toBeGreaterThan(0);
+        await expect(rows.first().locator('.transcript-detail')).toBeHidden();
+        await rows.first().locator('.spine-expand').click();
+        await expect(rows.first().locator('.transcript-detail')).toBeVisible();
+
+        const dots = page.locator('#transcript-overview circle[data-transcript-node]');
+        expect(await dots.count()).toBe(await rows.count());
+        await expect(page.locator('#transcript-overview [data-transcript-view]')).toBeVisible();
+
+        const pane = page.locator('#transcript');
+        await pane.evaluate((element) => {
+            (element as HTMLElement).style.height = '100px';
+        });
+        const box = await page.locator('#transcript-overview').boundingBox();
+        await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height - 4);
+        await page.mouse.down();
+        await page.mouse.move(box!.x + box!.width / 2, box!.y + 4, { steps: 4 });
+        await page.mouse.up();
+        expect(await pane.evaluate((element) => (element as HTMLElement).scrollTop)).toBeGreaterThan(0);
+        noErrors(errors);
+    });
+
     test('follows the newest node and reports attention from the local stream', async ({ page }) => {
         const errors = await boot(page);
 
@@ -110,7 +135,7 @@ test.describe('the Pi reference app', () => {
     test('boots a recursive freeform graph in 3D with a settled simulation', async ({ page }) => {
         const errors = await boot(page);
 
-        expect(await page.evaluate(() => (window as any).__pi.depth())).toBe('orbit');
+        expect(await page.evaluate(() => (window as any).__pi.depth())).toBe('flat');
         await expect
             .poll(() => page.evaluate(() => (window as any).__pi.scopes().length), { timeout: 10_000 })
             .toBeGreaterThan(1);

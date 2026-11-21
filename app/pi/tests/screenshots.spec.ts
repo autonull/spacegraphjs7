@@ -28,19 +28,10 @@ const capture = async (page: Page, name: string): Promise<void> => {
 test.describe('Pi flagship screenshots', () => {
     test('captures the agent cockpit and the proof catalog', async ({ page }) => {
         const errors = await boot(page);
-        const target = await page.evaluate(
-            () => (window as any).__pi.edges()[0]?.target as string | undefined,
-        );
-        expect(target).toBeTruthy();
-        await page.evaluate((id: string) => {
-            const pi = (window as any).__pi;
-            for (const capability of ['stream', 'failures', 'delegation']) pi.run(capability);
-            pi.approve(id, 'approve');
-            pi.retry(id);
-            pi.pinNote(id, 'Approval gate and retry path stay legible at the detail rung.');
-            pi.setDepth('flat');
-            pi.zoomBy(0.55);
-        }, target!);
+
+        await page.evaluate(() => (window as any).__pi.run('stream'));
+        await expect(page.locator('#evidence li').first()).toBeVisible();
+        await page.locator('.spine-expand').first().click();
         await capture(page, 'pi-agent-in-action.png');
 
         await page.evaluate(() => {
@@ -55,10 +46,6 @@ test.describe('Pi flagship screenshots', () => {
     test('captures a launched preset with provenance', async ({ page }) => {
         const errors = await boot(page, '?preset=quiet');
         await page.locator('#policy-section summary').click();
-        await page.evaluate(() => {
-            (window as any).__pi.setDepth('flat');
-            (window as any).__pi.zoomBy(0.6);
-        });
         await capture(page, 'pi-agent-preset.png');
         const source = await page.evaluate(
             () => (window as any).__pi.policy().provenance['camera.verbMs'],

@@ -34,7 +34,8 @@ describe('policy schema', () => {
             if (knob.type === 'enum') expect(knob.options).toContain(knob.default);
         }
         expect(knobByID(POLICY_SCHEMA, 'bands.overviewMax')?.family).toBe('bands');
-        expect(defaultVector(POLICY_SCHEMA)['depth.mode']).toBe('orbit');
+        expect(defaultVector(POLICY_SCHEMA)['depth.mode']).toBe('flat');
+        expect(defaultVector(POLICY_SCHEMA)['depth.step']).toBe(40);
     });
 
     it('coerces once at the boundary and drops invalid values', () => {

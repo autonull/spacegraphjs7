@@ -27,6 +27,9 @@ follow the workflow in `docs/ROADMAP.md` (`test:publish` → build → npm).
   the transcript is collapsible and resizable from its own edge. Color is reserved for the graph view.
 - **Screenshots:** one root, `docs/screenshots/`, holding a tracked curated gallery plus gitignored
   generated visual-gate output; Pi captures come from a Playwright spec, and stale images were removed.
+- **View coherence:** the flagship fits content once at startup, gives nodes per-kind size, shape and
+  accent color plus distinct edge styles, and renders the transcript as a spine with expandable detail
+  and a draggable vertical scroll overview. Its startup policy uses `flat` depth and a 40-unit step.
 
 ### Changed
 

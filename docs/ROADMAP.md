@@ -28,7 +28,7 @@ never recommendations. The `n >= 5` study has no winner.
 pnpm install                          # workspace
 pnpm test                             # 852 unit tests
 pnpm --filter pi test                 # 74 unit tests
-pnpm --filter pi test:e2e             # 45 Playwright tests
+pnpm --filter pi test:e2e             # 46 Playwright tests
 pnpm --filter demo test               # 34 tests
 pnpm run build                        # library, packages, demo
 ```
@@ -62,8 +62,9 @@ renderer contract (@spacegraphjs/renderer)     ── swappable adapters: WebGL 
 - **Domains:** four conforming domain packages built through `create-spacegraph`'s six-slot recipe.
 - **Host systems (Pi):** 30-knob policy schema with provenance, live panel, permalink v2, session
   recorder with counterfactual re-scoring, navigation verb set, instrument kit, graph-driven
-  prompt/steer/approve/reject/retry/compare, and a public catalog that launches every preset and
-  sampled experiment cell from its URL.
+  prompt/steer/approve/reject/retry/compare, a public catalog that launches every preset and sampled
+  experiment cell from its URL, one-shot startup fit-to-content, per-kind node/edge variety, and a
+  transcript spine with expandable detail and a vertical scroll overview.
 
 ### Verification gates
 
@@ -71,7 +72,7 @@ renderer contract (@spacegraphjs/renderer)     ── swappable adapters: WebGL 
 | --------------- | ----------------------------------------- | ---------------- |
 | Unit tests      | `pnpm test`                               | 852 passing      |
 | Pi unit tests   | `pnpm --filter pi test`                   | 74 passing       |
-| Pi e2e          | `pnpm --filter pi test:e2e`               | 45 passing       |
+| Pi e2e          | `pnpm --filter pi test:e2e`               | 46 passing       |
 | Demo unit tests | `pnpm --filter demo test`                 | 34 passing       |
 | Demo e2e        | `pnpm --filter demo test:e2e`             | 21 passing       |
 | Visual atlas    | `pnpm run verify:visual`                  | green            |
