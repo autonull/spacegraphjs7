@@ -11,14 +11,16 @@ contract descriptors need a second renderer to advertise them, and `RenderModelP
 needs a budget-crossing measurement. `createVisionLoop` was already a library helper (Phase D).
 Phase G's `docs/not-decided.md` note is landed; its study and release need participants and
 credentials and cannot be fabricated. TODO1's engineering is complete (`TODO1.md:383-395`).
-**Date:** 2026-11-20. Current progress is in the dashboard below; the exact next move and unblock
-contract are in §8 (Ledger).
+**Date:** 2026-11-20; re-verified 2026-11-21 (all gates green, no code changes). Current progress is in
+the dashboard below; the exact next move and unblock contract are in §8 (Ledger).
 
 ## Progress dashboard
 
-Every gate was re-run on 2026-11-20; results are in §8 "Verification log". A phase is either landed
+Every gate was re-run on 2026-11-21; results are in §8 "Verification log". A phase is either landed
 or blocked on a condition this repository cannot create without participants, credentials, a second
-renderer or a budget-crossing measurement.
+renderer or a budget-crossing measurement. On 2026-11-21 the budget measurement was retaken (model
+build 1.8 ms against the 50 ms `RenderModelPatch` threshold) and did not cross; no renderer advertises
+the gated descriptors, so both Phase F items stay gated with no code change.
 
 | Phase              | State       | Evidence                                                          | Outstanding                              |
 | ------------------ | ----------- | ----------------------------------------------------------------- | ---------------------------------------- |
@@ -276,7 +278,7 @@ measurement. `sweep` was never implemented by Pi, so only `flyTo`/`trace` were p
 - Evidence: root `pnpm test` (793), `pnpm --filter demo test` (24), `pnpm --filter pi test` (38),
   `test:e2e` (28), both builds, package `tsc --noEmit` — green. Pi behavior is unchanged.
 
-**Pending (genuinely gated — see §8 "Unblock contract"):**
+**Pending (genuinely gated — see §8 "Unblock contract"; re-checked 2026-11-21, still blocked):**
 
 - [ ] Add contract descriptors **only for gated capabilities a second renderer must advertise**
       (`motionVerbs`, `sceneFeatures`, `sensorySeams` beside `supports/supportsDepth/supportsEmphasis`);
@@ -557,6 +559,15 @@ No other Phase F work is scheduled. The `ForceCore` fix, layout docs, three prom
 coverage and the Phase G `docs/not-decided.md` note are landed. Phase G's study and release stay
 external: no result, release or deployment may be fabricated.
 
+Re-checked 2026-11-21: both remaining Phase F items are still gated and no speculative API was added.
+To unblock, in order: (1) a second renderer must advertise `motionVerbs`/`sceneFeatures`/`sensorySeams`
+in its `RendererCapabilities` and a test must assert a host gate reads it — none of the three renderer
+packages (`spacegraph`, `cytoscape`, `svg`) declares these today; (2) a `scale` run must show a model
+rebuild exceeding 50 ms — the 2026-11-21 measurement was 1.8 ms, so this is not close. The five-task
+study needs n >= 5 participants and the npm release needs credentials; neither can be fabricated here.
+This plan is complete for everything this repository can create on its own; the four items above are
+the only ones left and each is blocked by an explicit condition, not by missing implementation.
+
 #### Unblock contract (what counts as a real consumer)
 
 The pull-only rule is a quality gate, not a checklist. The three promotions that landed were held to
@@ -576,9 +587,29 @@ A change that fails any of these is speculative API and stays out of the library
 The same rule applies in reverse to `RenderModelPatch`: promote consumption only after a measurement
 crosses the stated budget, never to pre-empt one.
 
-#### Verification log (2026-11-20)
+#### Verification log
 
-Re-run against this worktree before closing this plan; all gates green:
+Re-run against this worktree before closing this plan; all gates green.
+
+**2026-11-21 (re-check, no code changes):**
+
+| Command                                          | Result                                                      |
+| ------------------------------------------------ | ----------------------------------------------------------- |
+| `pnpm test` (root)                               | 100 files, 793 tests passed                                 |
+| `pnpm --filter demo test`                        | 6 files, 24 tests passed                                    |
+| `pnpm --filter pi test`                          | 12 files, 38 tests passed                                   |
+| `pnpm --filter pi test:e2e`                      | 28 passed (browser + vision atlas)                          |
+| `pnpm --filter pi verify`                        | one-way dependency guard passed (27 packages)               |
+| `pnpm exec tsc --noEmit -p app/pi/tsconfig.json` | clean (exit 0)                                              |
+| `pnpm --filter pi scale`                         | budgets met; see below                                      |
+
+`scale` ran alone (not under concurrent load): modelBuild300 1.8 ms / 1207 nodes, fullPipeline5001
+8.2 ms / 20105 nodes, forceLayout60Turns 1115.5 ms, playSession120Bodies 0.762 ms per frame (settled),
+visionLoopCycle 1.515 ms, permalink round-trip 0.005 ms. The 1.8 ms model build is far below the
+50 ms `RenderModelPatch` threshold, so incremental patch consumption stays gated; no file was changed
+to pre-empt that measurement.
+
+**2026-11-20 (original run):**
 
 | Command                                          | Result                                                      |
 | ------------------------------------------------ | ----------------------------------------------------------- |
@@ -602,9 +633,9 @@ it to ~3.1 s).
 - **E — Host senses and product forms.** Landed. See the ledger entry above.
 - **F — Library consolidation.** Unblocked items, three pull-gated promotions, `createVisionLoop`
   adoption and parity tests are landed (ledger entries above). Remaining: renderer contract
-  descriptors need a second renderer to advertise them; `RenderModelPatch` consumption needs a
-  budget-crossing measurement. See §8 "Unblock contract" for the four conditions a consumer had to
-  satisfy. Pi behavior did not change.
+  descriptors need a second renderer to advertise them (none does); `RenderModelPatch` consumption
+  needs a budget-crossing measurement (1.8 ms vs 50 ms on 2026-11-21 — not crossed). See §8
+  "Unblock contract" for the four conditions a consumer had to satisfy. Pi behavior did not change.
 - **G — Proof and delivery.** Two external items remain: participants for the five-task study and
   credentials for the npm release. The `docs/not-decided.md` graduation note is landed (§8). No result,
   release or deployment may be fabricated.
