@@ -107,34 +107,24 @@ export class VisionAssert {
 
     private async getReport(): Promise<VisionReport> {
         const report = await this.page.evaluate(async () => {
+            const emptyReport = (): VisionReport => ({
+                legibility: { wcagAA: false, averageContrast: 0, failures: [] },
+                overlap: { hasOverlaps: false, overlapCount: 0, overlaps: [] },
+                hierarchy: { hasRoot: false, rootIds: [], depth: 0, levels: [], score: 0 },
+                ergonomics: {
+                    fittsLawCompliant: false,
+                    averageTargetSize: 0,
+                    smallTargets: [],
+                    score: 0,
+                },
+                overall: { score: 0, grade: 'F', issues: [] },
+            });
             if (!(window as any).SpaceGraph || !(window as any).SpaceGraph.instances) {
-                return {
-                    legibility: { wcagAA: false, averageContrast: 0, failures: [] },
-                    overlap: { hasOverlaps: false, overlapCount: 0, overlaps: [] },
-                    hierarchy: { hasRoot: false, rootIds: [], depth: 0, levels: [], score: 0 },
-                    ergonomics: {
-                        fittsLawCompliant: false,
-                        averageTargetSize: 0,
-                        smallTargets: [],
-                        score: 0,
-                    },
-                    overall: { score: 0, grade: 'F' as const, issues: [] },
-                };
+                return emptyReport();
             }
             const instances = Array.from((window as any).SpaceGraph.instances);
             if (instances.length === 0) {
-                return {
-                    legibility: { wcagAA: false, averageContrast: 0, failures: [] },
-                    overlap: { hasOverlaps: false, overlapCount: 0, overlaps: [] },
-                    hierarchy: { hasRoot: false, rootIds: [], depth: 0, levels: [], score: 0 },
-                    ergonomics: {
-                        fittsLawCompliant: false,
-                        averageTargetSize: 0,
-                        smallTargets: [],
-                        score: 0,
-                    },
-                    overall: { score: 0, grade: 'F' as const, issues: [] },
-                };
+                return emptyReport();
             }
 
             const sg = instances[0] as {

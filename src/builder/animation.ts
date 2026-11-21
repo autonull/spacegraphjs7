@@ -149,8 +149,8 @@ export const Camera = {
         await tween(
             {},
             {
-                onUpdate: (self: any) => {
-                    sg.cameraControls.spherical.theta = startTheta + self.progress() * angle;
+                onUpdate(this: gsap.core.Tween) {
+                    sg.cameraControls.spherical.theta = startTheta + this.progress() * angle;
                     sg.cameraControls.update();
                 },
             },

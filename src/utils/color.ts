@@ -11,8 +11,20 @@ function packRgb(r: number, g: number, b: number): number {
     return (r << 16) | (g << 8) | b;
 }
 
+/** WCAG 2.1 linearisation of a channel already in 0..1. */
+const linearChannel = (channel: number): number =>
+    channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+
 /**
  * WCAG 2.1 relative luminance per https://www.w3.org/WAI/GL/wiki/Relative_luminance
+ * The contract package owns the same primitive; the core keeps its own because the boundary test
+ * holds the core free of the contract.
+ */
+const relativeLuminance = (r: number, g: number, b: number): number =>
+    0.2126 * linearChannel(r) + 0.7152 * linearChannel(g) + 0.0722 * linearChannel(b);
+
+/**
+ * WCAG contrast ratio between two luminance values: `(L1 + 0.05) / (L2 + 0.05)`, L1 lighter.
  * Accepts either THREE.Color or raw RGB channels in 0..1.
  */
 export function getRelativeLuminance(
@@ -21,31 +33,9 @@ export function getRelativeLuminance(
     return relativeLuminance(color.r, color.g, color.b);
 }
 
-/**
- * WCAG contrast ratio between two luminance values.
- * Formula: (L1 + 0.05) / (L2 + 0.05) where L1 is lighter.
- */
-export function getContrastRatio(l1: number, l2: number): number {
-    return contrastRatioOf(l1, l2);
-}
-
-/**
- * The relative luminance of a colour whose channels are already in 0..1. The contract package
- * owns the same primitive; the core keeps its own because the boundary test holds the core free
- * of the contract.
- */
-function relativeLuminance(r: number, g: number, b: number): number {
-    const linear = (channel: number): number =>
-        channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
-    return 0.2126 * linear(r) + 0.7152 * linear(g) + 0.0722 * linear(b);
-}
-
-/** The contrast ratio between two relative luminances: `(L1 + 0.05) / (L2 + 0.05)`, L1 lighter. */
-function contrastRatioOf(l1: number, l2: number): number {
-    const lighter = Math.max(l1, l2);
-    const darker = Math.min(l1, l2);
-    return (lighter + 0.05) / (darker + 0.05);
-}
+/** WCAG contrast ratio between two relative luminance values. */
+export const getContrastRatio = (l1: number, l2: number): number =>
+    (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
 
 /**
  * Darken a hex/number color until it meets WCAG AA contrast (4.5:1) against white text.
@@ -59,16 +49,13 @@ export function getCompliantColor(
 ): number {
     let [r, g, b] = unpackRgb(hexColor);
 
-    let currentLuminance = getRelativeLuminance({ r, g, b });
-    let ratio = getContrastRatio(currentLuminance, textLuminance);
-
+    let ratio = getContrastRatio(relativeLuminance(r, g, b), textLuminance);
     let iterations = 0;
     while (ratio < minRatio && iterations < maxIterations) {
         r = Math.max(0, Math.floor(r * 0.9));
         g = Math.max(0, Math.floor(g * 0.9));
         b = Math.max(0, Math.floor(b * 0.9));
-        currentLuminance = getRelativeLuminance({ r, g, b });
-        ratio = getContrastRatio(currentLuminance, textLuminance);
+        ratio = getContrastRatio(relativeLuminance(r, g, b), textLuminance);
         iterations++;
     }
 
@@ -79,11 +66,8 @@ export function hexToRgb(
     hex: string | number,
 ): { r: number; g: number; b: number; a?: number } | null {
     if (typeof hex === 'number') {
-        return {
-            r: (hex >> 16) & 255,
-            g: (hex >> 8) & 255,
-            b: hex & 255,
-        };
+        const [r, g, b] = unpackRgb(hex);
+        return { r, g, b };
     }
     if (hex.startsWith('rgb')) {
         const match = hex.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
