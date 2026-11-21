@@ -27,6 +27,11 @@ export type PiHostState = {
     readonly simulation: { readonly settled: boolean; readonly energy: number; readonly steps: number };
     readonly motion: { readonly verbs: readonly string[]; readonly active: readonly string[] };
     readonly vision: { readonly overlap: number; readonly legibility: number };
+    readonly visionLoop?: {
+        readonly enabled: boolean;
+        readonly strategy: string;
+        readonly retargeted: readonly string[];
+    };
     readonly activity: number;
     readonly window: { readonly size: number; readonly hidden: number };
 };
@@ -254,6 +259,7 @@ export const CAPABILITIES: readonly Capability[] = [
         run: ({ host }) => [
             `overlap ${host?.vision.overlap.toFixed(3) ?? 'n/a'}`,
             `legibility ${host?.vision.legibility.toFixed(3) ?? 'n/a'}`,
+            `loop ${host?.visionLoop?.enabled ? host.visionLoop.strategy : 'off'} · retargeted ${host?.visionLoop?.retargeted.join(', ') || 'none'}`,
             `active nodes ${host?.activity ?? 0}`,
         ],
     },

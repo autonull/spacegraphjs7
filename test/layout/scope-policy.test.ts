@@ -39,6 +39,17 @@ describe('scope policy', () => {
         expect(policy.layout.nodePadding).toBe(60);
     });
 
+    it('uses hierarchy and ergonomics scores to widen depth and padding', () => {
+        const tree = buildScopeTree(specs);
+        const base = { gap: 100, nodePadding: 10, depthStep: 200 };
+        const calm = scopePolicy(tree, { vision: { hierarchy: 1, ergonomics: 1 } }, base);
+        const stressed = scopePolicy(tree, { vision: { hierarchy: 0, ergonomics: 0 } }, base);
+
+        expect(calm.layout).toEqual(base);
+        expect(stressed.layout.depthStep).toBe(300);
+        expect(stressed.layout.nodePadding).toBe(30);
+    });
+
     it('holds the focused body when a policy change retargets the graph', () => {
         const sim = new ScopeSimulation();
         sim.setSpecs(specs);

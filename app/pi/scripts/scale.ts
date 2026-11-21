@@ -3,6 +3,8 @@ import { resolve } from 'node:path';
 import { gzipSync } from 'node:zlib';
 import { AgentEventMapper, agentDomain, type AgentEvent } from '@spacegraphjs/agent';
 import { buildScopeTree, layoutScopes, ScopeSimulation } from 'spacegraphjs/layout';
+import { createVisionLoop, HeuristicsStrategy } from 'spacegraphjs/vision';
+import { Vector3 } from 'three';
 import { windowedView } from '../src/policy';
 import { foldKernelOps } from '../src/ops';
 import { agentScopes } from '../src/scopes';
@@ -81,6 +83,23 @@ const playFrameMs = (() => {
     return { ms: Number(perFrame.toFixed(3)), settled: simulation.settled };
 })();
 
+const visionLoopMs = await (async () => {
+    const nodes = Array.from({ length: 300 }, (_, index) => ({
+        id: `vision-${index}`,
+        data: { color: '#ffffff', backgroundColor: '#1a1a2e', size: 60 },
+        position: new Vector3((index % 20) * 220, Math.floor(index / 20) * 90, 0),
+    }));
+    const graph = { getNodes: () => nodes, getEdges: () => [] };
+    const strategy = new HeuristicsStrategy();
+    const loop = createVisionLoop(
+        { strategy: strategy.id, analyze: () => strategy.analyze(graph, {}) },
+        () => undefined,
+    );
+    const start = performance.now();
+    for (let cycle = 0; cycle < 20; cycle++) await loop.cycle();
+    return Number((ms(start) / 20).toFixed(3));
+})();
+
 const permalinkState: PermalinkState = {
     surface: 'hybrid',
     arrangement: 'side',
@@ -114,6 +133,7 @@ console.log(
             fullPipeline5001: { nodes: large.nodes, ms: large.full },
             forceLayout60Turns: { ms: windowMs },
             playSession120Bodies: playFrameMs,
+            visionLoopCycle: { ms: visionLoopMs },
             permalinkRoundTrip: { ms: permalinkMs },
             lazy3DGzipBytes: gzipChunk,
         },
@@ -128,6 +148,7 @@ if (large.full >= 400) failures.push(`full pipeline ${large.full}ms >= 400ms`);
 if (windowMs >= 1500) failures.push(`60-turn layout ${windowMs}ms >= 1500ms`);
 if (playFrameMs.ms >= 8) failures.push(`play frame ${playFrameMs.ms}ms >= 8ms`);
 if (!playFrameMs.settled) failures.push('play session did not settle');
+if (visionLoopMs >= 16) failures.push(`vision loop cycle ${visionLoopMs}ms >= 16ms`);
 if (permalinkMs >= 2) failures.push(`permalink round-trip ${permalinkMs}ms >= 2ms`);
 if (gzipChunk > 400 * 1024) failures.push(`3D chunk ${gzipChunk} bytes >= 400KB`);
 if (failures.length) {

@@ -18,8 +18,16 @@ import {
 } from '@spacegraphjs/navigation/follow';
 import { GraphController } from 'spacegraphjs/control';
 import { sampleDepth, type DepthAxis } from 'spacegraphjs/depth';
-import { ScopeSimulation, type ScopeSpec } from 'spacegraphjs/layout';
+import { ScopeSimulation, type ScopePolicyInput, type ScopeSpec } from 'spacegraphjs/layout';
 import { MotionDirector, type MotionPlayback } from 'spacegraphjs/motion';
+import {
+    createVisionLoop,
+    type VisionLoop,
+    type VisionLoopAnalyzers,
+    type VisionLoopReport,
+    type VisionLoopScores,
+    type VisionReport,
+} from 'spacegraphjs/vision';
 import {
     AgentAdapter,
     cardMarkup,
@@ -90,16 +98,37 @@ type HostVision = {
         readonly isLoaded: boolean;
         getAvailableModels(): readonly string[];
     };
-    readonly visionSystem: { setStrategy(name: string): void };
+    readonly visionSystem: {
+        setStrategy(name: string): void;
+        analyze(graph: unknown, camera: unknown): Promise<VisionReport>;
+    };
     readonly modelsLoaded: boolean;
     loadModels(paths: Record<string, string>): Promise<void>;
 };
 
-const hostVision = (): HostVision | undefined => {
+type VisionInstance = {
+    graph: unknown;
+    renderer: { camera: unknown };
+    vision: HostVision;
+};
+
+const visionInstance = (): VisionInstance | undefined => {
     const instances = (window as unknown as { SpaceGraph?: { instances?: Set<unknown> } })
         .SpaceGraph?.instances;
-    const instance = instances ? (Array.from(instances)[0] as { vision?: HostVision }) : undefined;
-    return instance?.vision;
+    return instances ? (Array.from(instances)[0] as VisionInstance | undefined) : undefined;
+};
+
+const hostVision = (): HostVision | undefined => visionInstance()?.vision;
+
+/** Pure analyzers: the gate's strategy, without the autonomous fixer's layout mutation. */
+const visionAnalyzers = (): VisionLoopAnalyzers | undefined => {
+    const instance = visionInstance();
+    if (!instance?.vision) return undefined;
+    return {
+        strategy: instance.vision.strategy,
+        analyze: () =>
+            instance.vision.visionSystem.analyze(instance.graph, instance.renderer.camera),
+    };
 };
 
 /**
@@ -178,6 +207,10 @@ export class PiHost {
     #vision: VisionScores = { overlap: 0, legibility: 1 };
     #visionStrategy: 'onnx' | 'heuristics' = 'heuristics';
     #visionTime = 0;
+    #visionLoop?: VisionLoop;
+    #visionLoopEnabled = false;
+    #visionLoopBusy = false;
+    #visionReport?: VisionLoopReport;
     #windowSize = 60;
     #hidden = 0;
     #laneScope = '';
@@ -250,6 +283,14 @@ export class PiHost {
         this.renderTurnMap();
         this.renderHud();
         this.bindControls();
+        this.renderVisionLoop();
+        if (
+            this.#global &&
+            typeof location !== 'undefined' &&
+            new URLSearchParams(location.search).get('visionLoop') === 'on'
+        ) {
+            this.setVisionLoop(true);
+        }
         this.syncClock();
 
         document.addEventListener('visibilitychange', () => {
@@ -383,7 +424,8 @@ export class PiHost {
         this.#visionTime += seconds;
         if (this.#visionTime >= 0.4) {
             this.#visionTime = 0;
-            this.sampleVision();
+            if (this.#visionLoopEnabled) this.runVisionLoop();
+            else this.sampleVision();
         }
         this.renderPositions();
         this.#fps = lerp(this.#fps, seconds > 0 ? 1 / seconds : 0, 0.15);
@@ -473,6 +515,15 @@ export class PiHost {
         this.#windowSize = Math.max(1, Math.floor(size));
         this.paint();
         return this.#windowSize;
+    }
+
+    /** Explicit host toggle: no analysis or retargeting happens until this is enabled. */
+    setVisionLoop(enabled: boolean): boolean {
+        this.#visionLoopEnabled = enabled;
+        el('vision-loop-toggle').setAttribute('data-active', String(enabled));
+        if (enabled) this.runVisionLoop();
+        this.renderVisionLoop();
+        return enabled;
     }
 
     setArrangement(arrangement: Arrangement): Arrangement {
@@ -672,6 +723,14 @@ export class PiHost {
             fps: () => this.#fps,
             vision: () => this.#vision,
             visionStrategy: () => this.#visionStrategy,
+            setVisionLoop: (enabled: boolean) => this.setVisionLoop(enabled),
+            visionLoop: () => ({
+                enabled: this.#visionLoopEnabled,
+                strategy: this.visionLoop().strategy,
+                report: this.#visionReport,
+                unsupported: this.visionLoop().reportUnsupported(),
+            }),
+            runVisionLoop: () => this.runVisionLoop(),
             play: (preset?: GravityPreset) => this.play(preset),
             reconcilePlay: () => this.reconcilePlay(),
             playSession: () => ({
@@ -725,6 +784,11 @@ export class PiHost {
             },
             motion: { verbs: this.director.verbs(), active: this.#playback?.active ?? [] },
             vision: this.#vision,
+            visionLoop: {
+                enabled: this.#visionLoopEnabled,
+                strategy: this.visionLoop().strategy,
+                retargeted: this.#visionReport?.retargeted ?? [],
+            },
             activity: this.#activity.size,
             window: { size: this.#windowSize, hidden: this.#hidden },
         };
@@ -773,6 +837,63 @@ export class PiHost {
             vision: next,
         });
         this.syncClock();
+    }
+
+    private visionLoop(): VisionLoop {
+        if (!this.#visionLoop || this.#visionLoop.reportUnsupported().length) {
+            this.#visionLoop = createVisionLoop(
+                this.#global ? visionAnalyzers() : undefined,
+                (input, scores) => this.applyVisionPolicy(input, scores),
+            );
+        }
+        return this.#visionLoop;
+    }
+
+    private applyVisionPolicy(input: ScopePolicyInput, scores: VisionLoopScores): void {
+        const previous = this.#vision.legibility;
+        this.#vision = { overlap: scores.overlap, legibility: scores.legibility };
+        this.simulation.setPolicy({
+            ...input,
+            band: this.band(),
+            focus: this.#qualifiedByNode.get(this.#controller.selection[0] ?? this.#revealed),
+        });
+        // representationRung switches at 0.5 and 0.7; repaint only when legibility crosses one.
+        if (
+            previous < 0.5 !== scores.legibility < 0.5 ||
+            previous < 0.7 !== scores.legibility < 0.7
+        ) {
+            this.paint();
+        }
+        this.syncClock();
+    }
+
+    private runVisionLoop(): void {
+        if (!this.#visionLoopEnabled || this.#visionLoopBusy) return;
+        this.#visionLoopBusy = true;
+        void this.visionLoop()
+            .cycle()
+            .then((report) => {
+                if (!report) return;
+                this.#visionReport = report;
+                this.renderVisionLoop();
+            })
+            .finally(() => {
+                this.#visionLoopBusy = false;
+            });
+    }
+
+    private renderVisionLoop(): void {
+        const loop = this.visionLoop();
+        const report = this.#visionReport;
+        el('vision-loop-state').textContent = report
+            ? `strategy ${loop.strategy} · overlap ${report.scores.overlap.toFixed(2)} · ` +
+              `legibility ${report.scores.legibility.toFixed(2)} · hierarchy ${report.scores.hierarchy.toFixed(2)} · ` +
+              `ergonomics ${report.scores.ergonomics.toFixed(2)} · retargeted ${report.retargeted.join(', ') || 'none'}`
+            : `${this.#visionLoopEnabled ? 'analyzing…' : 'off'} · strategy ${loop.strategy}` +
+              (loop
+                  .reportUnsupported()
+                  .map((item) => ` · ${item.reason}`)
+                  .join('') || '');
     }
 
     private registerMotion(): void {
@@ -968,6 +1089,9 @@ export class PiHost {
             this.play(el<HTMLSelectElement>('play-preset').value as GravityPreset),
         );
         el('play-reconcile').addEventListener('click', () => this.reconcilePlay());
+        el('vision-loop-toggle').addEventListener('click', () =>
+            this.setVisionLoop(!this.#visionLoopEnabled),
+        );
         el('guided-replay').addEventListener('click', () => this.replay());
         el('permalink-copy').addEventListener('click', () => {
             location.hash = this.permalink().slice(1);

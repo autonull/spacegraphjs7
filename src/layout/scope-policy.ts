@@ -11,6 +11,10 @@ export interface ScopeVisionSignal {
     overlap?: number;
     /** 0..1 legibility score; lower gives labels more padding. */
     legibility?: number;
+    /** 0..1 hierarchy quality; lower gives scopes more depth separation. */
+    hierarchy?: number;
+    /** 0..1 target-size quality; lower gives nodes more padding. */
+    ergonomics?: number;
 }
 
 export interface ScopePolicyInput extends ScopeSignals {
@@ -39,12 +43,15 @@ export function scopePolicy(
 
     const overlap = clamp01(input.vision?.overlap ?? 0);
     const legibility = clamp01(input.vision?.legibility ?? 1);
+    const ergonomics = clamp01(input.vision?.ergonomics ?? 1);
     const gap = (base.gap ?? 160) * (1 + overlap * 1.5);
-    const nodePadding = (base.nodePadding ?? 20) * (1 + (1 - legibility) * 2);
+    const nodePadding =
+        (base.nodePadding ?? 20) * (1 + (1 - legibility) * 2 + (1 - ergonomics) * 2);
+    const layout: ScopeLayoutOptions = { ...base, gap, nodePadding };
+    if (input.vision?.hierarchy !== undefined) {
+        layout.depthStep =
+            (base.depthStep ?? 220) * (1 + (1 - clamp01(input.vision.hierarchy)) * 0.5);
+    }
 
-    return {
-        active,
-        pinned,
-        layout: { ...base, gap, nodePadding },
-    };
+    return { active, pinned, layout };
 }

@@ -28,3 +28,16 @@ export type {
 export { VisionAutoFixer, type VisionCategory } from './VisionAutoFixer';
 export { type ModelLoadResult, VisionModelLoader } from './VisionModelLoader';
 export { VisionSystem } from './VisionSystem';
+export {
+    createVisionLoop,
+    retargetedScores,
+    visionScores,
+    VISION_SCORE_KEYS,
+    type VisionLoop,
+    type VisionLoopAnalyzers,
+    type VisionLoopPolicy,
+    type VisionLoopReport,
+    type VisionLoopScores,
+    type VisionScoreKey,
+    type VisionUnsupported,
+} from './vision-loop';

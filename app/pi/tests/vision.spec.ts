@@ -15,8 +15,9 @@ const boot = async (page: Page): Promise<void> => {
 
 const assertScene = async (page: Page): Promise<void> => {
     const vision = createVisionAssert(page);
-    const strategy = await vision.strategy();
-    expect(['heuristics', 'onnx']).toContain(strategy);
+    const record = await vision.record();
+    expect(['heuristics', 'onnx']).toContain(record.strategy);
+    expect(record.agreement.agrees, record.agreement.note).toBe(true);
     await vision.noOverlap();
     await vision.isLegible();
     await vision.expectedLayoutScore(35);
@@ -135,6 +136,44 @@ test.describe('Pi flagship vision atlas', () => {
         expect(await page.evaluate(() => (window as any).__pi.surface())).toBe('map');
         expect(await page.evaluate(() => (window as any).__pi.arrangement())).toBe('stacked');
         expect(await page.evaluate(() => (window as any).__pi.levelMode())).toBe('detail');
+        await assertScene(page);
+    });
+
+    test('the runtime vision loop stays inert until the host opts in', async ({ page }) => {
+        await boot(page);
+        const before = await page.evaluate(() => (window as any).__pi.visionLoop());
+        expect(before.enabled).toBe(false);
+        expect(before.report).toBeUndefined();
+
+        await page.locator('#vision-loop-toggle').click();
+        await expect
+            .poll(() => page.evaluate(() => (window as any).__pi.visionLoop().report !== undefined), {
+                timeout: 10_000,
+            })
+            .toBe(true);
+        const loop = await page.evaluate(() => (window as any).__pi.visionLoop());
+        expect(loop.enabled).toBe(true);
+        expect(loop.unsupported).toEqual([]);
+        expect(loop.report.retargeted).toBeDefined();
+
+        const hud = await page.locator('#vision-loop-state').textContent();
+        for (const key of ['overlap', 'legibility', 'hierarchy', 'ergonomics', 'retargeted']) {
+            expect(hud).toContain(key);
+        }
+        await assertScene(page);
+    });
+
+    test('the opt-in URL boots a loop whose report agrees with the gate', async ({ page }) => {
+        await page.goto('/?visionLoop=on');
+        await page.waitForFunction(() => (window as any).__pi?.ready === true);
+        await expect
+            .poll(() => page.evaluate(() => (window as any).__pi.visionLoop().report !== undefined), {
+                timeout: 10_000,
+            })
+            .toBe(true);
+        const record = await createVisionAssert(page).record();
+        expect(record.loop).toBeDefined();
+        expect(record.agreement.agrees, record.agreement.note).toBe(true);
         await assertScene(page);
     });
 });

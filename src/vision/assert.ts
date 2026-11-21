@@ -1,6 +1,26 @@
 import { expect, type Page } from '@playwright/test';
 import type { VisionReport } from './types';
 
+export interface VisionCaptureRecord {
+    readonly strategy: string;
+    readonly gate: VisionSummary;
+    readonly loop: VisionSummary | undefined;
+    readonly agreement: { readonly agrees: boolean; readonly note: string };
+}
+
+type VisionSummary = {
+    readonly overlaps: number;
+    readonly failures: number;
+    readonly score: number;
+};
+
+type VisionLoopProbe = {
+    readonly strategy: string;
+    readonly enabled: boolean;
+    readonly report?: { readonly after: VisionReport };
+    readonly unsupported: readonly { readonly id: string; readonly reason: string }[];
+};
+
 export class VisionAssert {
     constructor(private page: Page) {}
 
@@ -36,6 +56,53 @@ export class VisionAssert {
             report.overall.score,
             `Expected overall score >= ${minScore}, got ${report.overall.score}`,
         ).toBeGreaterThanOrEqual(minScore);
+    }
+
+    /** Capture record for one scene: gate report, latest runtime-loop report and their agreement. */
+    async record(): Promise<VisionCaptureRecord> {
+        const gate = await this.getReport();
+        const strategy = await this.strategy();
+        const loop = await this.page.evaluate((): VisionLoopProbe | undefined => {
+            const api = (window as any).__pi as { visionLoop?: () => VisionLoopProbe } | undefined;
+            return api?.visionLoop?.();
+        });
+        const after = loop?.report?.after;
+        const summary = (report: VisionReport): VisionSummary => ({
+            overlaps: report.overlap.overlapCount,
+            failures: report.legibility.failures.length,
+            score: report.overall.score,
+        });
+        if (!after) {
+            const reason = loop?.unsupported.map((item) => item.reason).join('; ');
+            return {
+                strategy,
+                gate: summary(gate),
+                loop: undefined,
+                agreement: {
+                    agrees: true,
+                    note: reason
+                        ? `Runtime loop unavailable: ${reason}`
+                        : 'Runtime vision loop is off in this scene; captured gate only.',
+                },
+            };
+        }
+        const gateSummary = summary(gate);
+        const loopSummary = summary(after);
+        const agrees =
+            gateSummary.overlaps === loopSummary.overlaps &&
+            gateSummary.failures === loopSummary.failures &&
+            Math.abs(gateSummary.score - loopSummary.score) <= 1;
+        return {
+            strategy,
+            gate: gateSummary,
+            loop: loopSummary,
+            agreement: {
+                agrees,
+                note: agrees
+                    ? ''
+                    : `Gate ${JSON.stringify(gateSummary)} vs loop ${JSON.stringify(loopSummary)}: the gate's analyzeVision path runs the library fixer before returning; the loop analyzes without mutating.`,
+            },
+        };
     }
 
     private async getReport(): Promise<VisionReport> {

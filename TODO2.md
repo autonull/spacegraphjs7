@@ -1,11 +1,11 @@
 # TODO2 — From flagship to the full spatial-software vision (plan)
 
-**Status:** Phases A–C are implemented and verified; Phases D–F remain; Phase G is external and
+**Status:** Phases A–D are implemented and verified; Phases E–F remain; Phase G is external and
 cannot be fabricated. TODO1's engineering is complete and verified (`TODO1.md:383-395`). **Date:**
-2026-11-20. **Owner area:** `app/pi` and `app/demo` done; next `src/layout` + `src/vision` + `app/pi`
-for Phase D, then the library kit and reference hosts. Current progress and the exact next move are
-in §8 (Ledger). Two small flagship follow-ups from Phase A are still open and listed there; they do
-not gate Phase D.
+2026-11-20. **Owner area:** `app/pi`, `app/demo`, `src/layout` and `src/vision` done through Phase D;
+next `src/world` + `app/demo` + a Graph IDE reference host for Phase E, then the library kit for
+Phase F. Current progress and the exact next move are in §8 (Ledger). Two small flagship follow-ups
+from Phase A are still open and listed there; they do not gate Phase E.
 
 **Destination.** The full design space is mapped in [`docs/POSSIBILITIES.md`](docs/POSSIBILITIES.md).
 This plan turns it into a sequence: first a runnable flagship (Phase A), then domain generality (B),
@@ -53,7 +53,7 @@ the study result is published (negative included) before any immersive mode beco
 | Motion              | Pure `MotionDirector` + `CameraVerbRegistry`, host-bound `flyTo` (`app/pi/src/host.ts:534-543`)                                        | `trace` is a no-op (`:544`). Implement it in Pi; promote later.                                                                                                    |
 | Aesthetic channels  | Salience→emphasis, widgets, depth continuum; `RenderNode.html` accepts host markup (`packages/renderer/src/index.ts:74-93`)            | Bridge under-reports `emphasis`/`widgetSlots` (`spacegraph-renderer/src/index.ts:22-34`). Two-line fix + test. No core node class is needed for a live instrument. |
 | Zoomable rectangles | Scope portals recurse; zoom swaps card budgets 12/40/24                                                                                | Card content is static at every rung (`app/pi/src/adapter.ts:53-59`). Make representation a function of `(node, zoom, activity, vision)`.                          |
-| Vision              | Four analyzers, `createVisionAssert`, capture matrix                                                                                   | `modelsLoaded = true` forced (`host.ts:139-143`); gates are test-time only. Runtime loop + honest strategy missing.                                                |
+| Vision              | Four analyzers, `createVisionAssert`, capture matrix, honest strategy, opt-in `createVisionLoop` (`src/vision/vision-loop.ts`)         | None for Phase D. A second host may consume the loop; Phase F promotes it only on reuse.                                                                           |
 | Shareability        | `#graph:<id>` reveal anchor (`host.ts:287`)                                                                                            | No viewport/surface state, diffs or annotations. Full-state hash → graph diffs → annotated review.                                                                 |
 | Domains             | Four wrappers: `agent`, `workflow`, `filesystem`, `data`; scaffold for the rest                                                        | None of the recipe. Remaining domains in `POSSIBILITIES.md` are host work through the scaffold.                                                                    |
 | Composition         | Four isolated canvases with three `InterGraphEdge` links (`app/demo/html/layout/compositional-wrappers.html`)                          | No cross-canvas trace, two-run diff or shared review scene (Phase C).                                                                                              |
@@ -164,20 +164,26 @@ Two domains prove the recipe once; two visibly different additions make it gener
 demo e2e tests; `pnpm --filter demo test` (16), `pnpm --filter demo build`, root 39-page demo-error
 check, root `pnpm test` (771); media recaptured. No page errors.
 
-### Phase D — Runtime self-verifying loop
+### Phase D — Runtime self-verifying loop — DONE
 
-- [ ] Extend `scopePolicy` inputs with `hierarchy` and `ergonomics` scores
-      (`src/layout/scope-policy.ts:40-48`); keep the module vision-type-free.
-- [ ] Add an opt-in host helper `createVisionLoop(analyzers, policy)` under `src/vision/`: analyze →
-      map scores to `scopePolicy` and representation rungs → measure again; expose `strategy`,
-      `lastReport` and `reportUnsupported` when models are absent. No silent mutation.
-- [ ] Wire the loop into `app/pi/src/host.ts` behind a host toggle; HUD shows overlap, legibility,
-      hierarchy and ergonomics, and records which scores actually retargeted layout.
-- [ ] Keep `createVisionAssert` as the test gate; assert that the runtime loop and the captured gate
-      agree on the same scene, or explain the difference in the capture record.
+- [x] Extend `scopePolicy` inputs with `hierarchy` and `ergonomics` scores
+      (`src/layout/scope-policy.ts`); keep the module vision-type-free. Hierarchy widens `depthStep`,
+      ergonomics joins legibility in `nodePadding`, and absence keeps the old layout unchanged.
+- [x] Add an opt-in host helper `createVisionLoop(analyzers, policy)` under `src/vision/`
+      (`vision-loop.ts`): analyze → map to `scopePolicy` scores → host applies policy → measure again.
+      Exposes `strategy`, `lastReport`, `reportUnsupported` and `retargeted`. The loop owns no state
+      and never mutates layout; all mutation is in the host callback.
+- [x] Wire the loop into `app/pi/src/host.ts` behind `setVisionLoop` / the rail toggle / `?visionLoop=on`.
+      The rail shows overlap, legibility, hierarchy, ergonomics and the retargeted score list; the
+      capability gallery reports the active strategy. Analyzers use the gate's strategy through the
+      pure `visionSystem.analyze` path, so no autonomous fixer runs during a cycle.
+- [x] Keep `createVisionAssert` as the test gate; `record()` compares the gate report with the loop's
+      latest report and records an explicit note when they differ (the gate's `analyzeVision` runs the
+      library fixer; the loop analyzes without mutating). Deterministic unit fixture added.
 
-**Gate:** vision-loop unit test with a deterministic fixture; `verify:visual` green including the
-loop's settled state; `pnpm test` and `pnpm --filter pi verify` green.
+**Gate (green):** `test/vision-loop.test.ts` (4) + extended `test/layout/scope-policy.test.ts`;
+`verify:visual` (14, including toggle and opt-in URL scenes); `pnpm --filter pi test:e2e` (27);
+`pnpm test` (776); `pnpm --filter pi verify`, `test`, `build`, `scale`, package `tsc --noEmit`.
 
 ### Phase E — Host senses and product forms
 
@@ -243,17 +249,17 @@ game-engine API; additional domains beyond the four until a host needs them; the
 
 ## 4. Verification — one gate list
 
-| Check                | Command / rule                                                                                                                                                                                 |
-| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Flagship             | `pnpm --filter pi test`, `test:e2e`, `verify:visual`, `verify`, `scale`, `build`, package `tsc --noEmit`                                                                                       |
-| Vision on new states | `verify:visual` asserts overlap, legibility, hierarchy, ergonomics and layout score on settled, playing, trace, zoom-ladder rungs and reduced-motion scenes; strategy recorded per capture     |
-| Domains              | `bun test` + `typecheck` + `build` in each of the four `packages/domain/*`; conformance included — Phase B green                                                                               |
-| Composition + scenes | **Phase C green:** compositional trace (2), graph diff (1), flagship (1) specs; Pi annotation/report specs (2); `pnpm --filter demo build`, demo-error check (39), `video:flagship` recaptured |
-| Runtime loop         | deterministic vision-loop fixture; runtime scores agree with captured gate or difference is recorded                                                                                           |
-| Adapter seams        | registration/gating test; no implementation defaults; `docs/world.md` updated                                                                                                                  |
-| Boundaries           | root `pnpm test` (`test/boundaries.test.ts`) + `pnpm --filter pi verify` after every phase                                                                                                     |
-| Study protocol       | `pnpm --filter pi test` — matrix, Latin square, recorder, negative reporting; participant run external                                                                                         |
-| Full repo            | `pnpm test` from root; no `pnpm run check` script exists here (use package `tsc --noEmit`)                                                                                                     |
+| Check                | Command / rule                                                                                                                                                                                                          |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Flagship             | `pnpm --filter pi test`, `test:e2e`, `verify:visual`, `verify`, `scale`, `build`, package `tsc --noEmit`                                                                                                                |
+| Vision on new states | `verify:visual` asserts overlap, legibility, hierarchy, ergonomics and layout score on settled, playing, trace, zoom-ladder rungs and reduced-motion scenes; strategy recorded per capture                              |
+| Domains              | `bun test` + `typecheck` + `build` in each of the four `packages/domain/*`; conformance included — Phase B green                                                                                                        |
+| Composition + scenes | **Phase C green:** compositional trace (2), graph diff (1), flagship (1) specs; Pi annotation/report specs (2); `pnpm --filter demo build`, demo-error check (39), `video:flagship` recaptured                          |
+| Runtime loop         | **Phase D green:** `test/vision-loop.test.ts` deterministic fixture; `createVisionAssert.record()` records gate/loop agreement or the explicit fixer-path note; `verify:visual` (14) covers toggle and `?visionLoop=on` |
+| Adapter seams        | registration/gating test; no implementation defaults; `docs/world.md` updated                                                                                                                                           |
+| Boundaries           | root `pnpm test` (`test/boundaries.test.ts`) + `pnpm --filter pi verify` after every phase                                                                                                                              |
+| Study protocol       | `pnpm --filter pi test` — matrix, Latin square, recorder, negative reporting; participant run external                                                                                                                  |
+| Full repo            | `pnpm test` from root; no `pnpm run check` script exists here (use package `tsc --noEmit`)                                                                                                                              |
 
 Budgets (measure, then tighten; inherited from `TODO1.md:304-315`):
 
@@ -265,7 +271,7 @@ Budgets (measure, then tighten; inherited from `TODO1.md:304-315`):
 | Lazy 3D chunk gzip                    | < 400 KB                      | 282 KB incl. `three`             |
 | Play session, ≤ 120 borrowed bodies   | < 8 ms/frame; settles ≤ 5 s   | 0.83 ms/frame, settles — Phase A |
 | Permalink encode/decode               | < 2 ms; round-trip stable     | 0.005 ms — Phase A               |
-| Vision loop, one analyze→policy cycle | < 16 ms on the 60-turn window | new — Phase D                    |
+| Vision loop, one analyze→policy cycle | < 16 ms on the 60-turn window | 1.36 ms — Phase D (`scale`)      |
 
 Sleeping simulation, 60-turn draw window, body cap and overview instancing are the mechanisms.
 Never hide nodes to fix a slow stream without measuring.
@@ -308,19 +314,19 @@ contract + registry over branches; host owns policy; legibility gates spectacle.
 
 ## 7. Vision coverage
 
-| `POSSIBILITIES.md` section   | Landed by                                                                                      |
-| ---------------------------- | ---------------------------------------------------------------------------------------------- |
-| 1. Rectangle ladder          | Phase A (zoomable card ladder), Phase F (pure rung helper)                                     |
-| 2. Physics as meaning        | Phase A (Playground), Phase F (`PhysicsPlaySession`)                                           |
-| 3. Cinematics as cognition   | Phase A (`trace`), Phase F (camera handlers)                                                   |
-| 4. Domains as workspaces     | **Landed — Phase B** (filesystem + data + profile); remaining domains via scaffold             |
-| 5. Compositional worlds      | **Landed — Phases B+C** (four isolated domains, three links, cross-canvas trace, history diff) |
-| 6. Shareable scenes          | **Landed — Phases A+C** (full-state permalink, notes on node data, audit report)               |
-| 7. Self-verifying interfaces | Phase D (runtime loop), Phase F (promotion if reused)                                          |
-| 8. Host-registered senses    | Phase E (adapter seam, widget mounting)                                                        |
-| 9. Product forms             | Phase E (Graph IDE + observatory); others host work via scaffold                               |
-| 10. Horizons                 | This document's phases + Phase G research gate                                                 |
-| 11. Boundaries               | Guardrails in the introduction and gates in §4                                                 |
+| `POSSIBILITIES.md` section   | Landed by                                                                                         |
+| ---------------------------- | ------------------------------------------------------------------------------------------------- |
+| 1. Rectangle ladder          | Phase A (zoomable card ladder), Phase F (pure rung helper)                                        |
+| 2. Physics as meaning        | Phase A (Playground), Phase F (`PhysicsPlaySession`)                                              |
+| 3. Cinematics as cognition   | Phase A (`trace`), Phase F (camera handlers)                                                      |
+| 4. Domains as workspaces     | **Landed — Phase B** (filesystem + data + profile); remaining domains via scaffold                |
+| 5. Compositional worlds      | **Landed — Phases B+C** (four isolated domains, three links, cross-canvas trace, history diff)    |
+| 6. Shareable scenes          | **Landed — Phases A+C** (full-state permalink, notes on node data, audit report)                  |
+| 7. Self-verifying interfaces | **Landed — Phase D** (opt-in runtime loop, gate agreement record); Phase F promotes only on reuse |
+| 8. Host-registered senses    | Phase E (adapter seam, widget mounting)                                                           |
+| 9. Product forms             | Phase E (Graph IDE + observatory); others host work via scaffold                                  |
+| 10. Horizons                 | This document's phases + Phase G research gate                                                    |
+| 11. Boundaries               | Guardrails in the introduction and gates in §4                                                    |
 
 ---
 
@@ -370,20 +376,41 @@ contract + registry over branches; host owns policy; legibility gates spectacle.
   18; Pi e2e 25; `verify:visual` 12; `verify`, `scale`, `tsc`, both builds, registry regeneration
   (3 hosts / 39 pages / 45 modules), demo-error check 39 — all green.
 
-### Next move (Phase D)
+### Landed (Phase D)
 
-Work from the settled vision analyzers already in `app/pi`. In order:
+- `src/layout/scope-policy.ts`: `ScopeVisionSignal` gains `hierarchy` and `ergonomics`; hierarchy →
+  `depthStep`, ergonomics + legibility → `nodePadding`, overlap → `gap`. Absent scores preserve the
+  previous layout exactly; the module still imports no vision types.
+- `src/vision/vision-loop.ts` (+ `src/vision/index.ts`): `createVisionLoop(analyzers, policy)` maps a
+  `VisionReport` to four normalized scores, calls the host policy, measures again and records
+  `{ before, after, scores, retargeted }`. It owns no state, exposes `strategy` / `lastReport` /
+  `reportUnsupported`, and returns `undefined` without calling policy when no analyzers exist.
+- `app/pi/src/host.ts` / `index.html` / `capabilities.ts`: rail toggle, `setVisionLoop`, `?visionLoop=on`,
+  HUD lines for all four scores plus retargeted list, gallery strategy. Analyzers call the gate's
+  strategy via pure `visionSystem.analyze`; no autonomous fixer runs during a cycle.
+- `src/vision/assert.ts`: `record()` returns a capture record with gate summary, latest loop summary
+  and either agreement or an explicit note that `analyzeVision` runs the fixer while the loop does not.
+- Evidence: `test/vision-loop.test.ts` (4) + `test/layout/scope-policy.test.ts` (6); root `pnpm test`
+  776; `pnpm --filter pi test` 36, `test:e2e` 27, `verify:visual` 14, `verify`, `build`, `scale`
+  (vision loop 1.36 ms/cycle against the 16 ms budget), package `tsc --noEmit` — all green.
 
-1. Extend `scopePolicy` inputs with `hierarchy` and `ergonomics` (`src/layout/scope-policy.ts:40-48`);
-   keep the module free of vision types.
-2. Add opt-in `createVisionLoop(analyzers, policy)` under `src/vision/`: analyze → scores → policy and
-   rungs → measure again; expose `strategy`, `lastReport`, `reportUnsupported`. No silent mutation.
-3. Wire it into `app/pi/src/host.ts` behind a host toggle; the HUD shows overlap, legibility,
-   hierarchy and ergonomics and records which scores retargeted layout.
-4. Keep `createVisionAssert` as the test gate; assert agreement with the runtime loop or record the
-   difference in the capture record. Add a deterministic fixture and rerun `verify:visual`.
+### Next move (Phase E)
 
-See §3 Phase D for the checklist and §4 for the gate.
+Work from the inert descriptors in `src/world/world.ts`. In order:
+
+1. Add `registerSensory(adapter)` in `src/world/world.ts`; make `supportsSensory` consult registered
+   adapters (keep `none` always true). Define the adapter interface; ship no implementation.
+2. Add a console-only demo adapter under `app/demo`, register it on one page and assert gating in
+   Playwright; update `docs/world.md` to say hosts own hardware and no headset is assumed.
+3. Gate `SCENE_FEATURES` through the contract descriptors once Phase F lands them; apply only where
+   `supportsSceneFeature` is true in Pi and demo.
+4. Build the Graph IDE reference host with the scaffold (filesystem domain + live file/diff panels).
+   Pi is the session observatory. Record war room / learning atlas / research notebook / GraphOS as
+   achievable host work, not scheduled items; bind gamepad/gesture input only through
+   `InputManager`/`Fingering`.
+
+See §3 Phase E for the checklist and §4 for the gate. Do not start Phase F until E is green: F is
+pull-only and must be triggered by a second consumer, not by anticipation.
 
 ### Deferred inside Phase A (still open; do before calling the flagship finished)
 
@@ -392,15 +419,13 @@ See §3 Phase D for the checklist and §4 for the gate.
    `app/pi/src/host.ts`; add a stable glyph plus a clickable breadcrumb back through parent scopes.
 2. Bind `Trail`/minimap from `src/navigation` into the Pi rail. `Trail` gives back/forward over
    revealed nodes; `Navigation.project` maps `#positions` into a small overview box. Both are pure
-   helpers — no library API change. Neither item blocks Phase D.
+   helpers — no library API change. Neither item blocks Phase E.
 
 ### Remaining phases
 
 - **C — Compositional worlds and shareable scenes.** Landed. See the ledger entry above.
-- **D — Runtime self-verifying loop.** Next. Needs `scopePolicy` scores, an opt-in
-  `createVisionLoop`, a Pi HUD toggle and a deterministic unit fixture; keep `createVisionAssert` as
-  the test gate.
-- **E — Host senses and product forms.** Unstarted. Needs the `registerSensory` seam (no default
+- **D — Runtime self-verifying loop.** Landed. See the ledger entry above.
+- **E — Host senses and product forms.** Next. Needs the `registerSensory` seam (no default
   implementation), a console-only demo adapter, feature gating through contract descriptors and the
   Graph IDE reference host. The session observatory is Pi itself.
 - **F — Library consolidation.** Unstarted and pull-only. Promote a helper only after a second host
@@ -409,6 +434,6 @@ See §3 Phase D for the checklist and §4 for the gate.
 - **G — Proof and delivery.** External: participants for the five-task study and credentials for the
   npm release. No result, release or deployment may be fabricated.
 
-Each of D–F has its own gate in §4 and must stay green before the next starts. The two deferred Phase
+Each of E–F has its own gate in §4 and must stay green before the next starts. The two deferred Phase
 A items remain open and belong to the flagship, not to a new phase. Baseline TODO1 evidence is in
 `TODO1.md:383-395`.
