@@ -64,13 +64,16 @@ import {
     type VisionScores,
 } from './policy/host';
 import {
+    POLICY_EXPERIMENTS,
     POLICY_PRESETS,
     POLICY_SCHEMA,
     decodePolicyVector,
     encodePolicyVector,
     mountPolicyPanel,
+    experimentById,
     policyChange,
     presetById,
+    sampleExperiment,
     presetVector,
     resolvePolicy,
     withLayer,
@@ -80,6 +83,7 @@ import {
     type PolicySource,
     type PolicyVector,
     type ResolvedPolicy,
+    type ExperimentCell,
 } from './policy';
 import {
     SessionRecorder,
@@ -389,6 +393,11 @@ export class PiHost {
         this.#resolved = resolvePolicy(POLICY_SCHEMA, this.#policyLayers);
         this.applyPolicy();
         this.paint();
+    }
+
+    assignExperiment(cell: ExperimentCell): void {
+        this.setPolicyLayer('experiment', cell.vector);
+        this.recordEvent('experiment:exposure', { cell: cell.id });
     }
 
     resetKnobs(ids: readonly string[]): void {
@@ -1238,6 +1247,12 @@ export class PiHost {
             setKnob: (id: string, value: string | number | boolean, layer?: PolicyLayer) =>
                 this.setKnob(id, value, layer),
             setPolicyLayer: (layer: PolicyLayer, values: PolicyVector) => this.setPolicyLayer(layer, values),
+            experiments: () => POLICY_EXPERIMENTS,
+            sampleExperiment: (id: string) => {
+                const experiment = experimentById(id);
+                return experiment ? sampleExperiment(POLICY_SCHEMA, experiment) : undefined;
+            },
+            assignExperiment: (cell: ExperimentCell) => this.assignExperiment(cell),
             onPolicyChange: (listener: (event: PolicyChangeEvent) => void) => this.onPolicyChange(listener),
             recording: () => this.recording(),
             recordEvent: (kind: string, meta?: Record<string, string | number | boolean>) =>

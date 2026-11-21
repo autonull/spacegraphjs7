@@ -43,15 +43,25 @@ Every schema knob has a live host consumer: bands → `levelForZoom`, ladder →
 
 The remaining D step is a one-canvas host binding that feeds `worldScopes` to one `ScopeSimulation`/`SpaceGraphRenderer`; the four-canvas `InterGraphEdge` demo stays as the separate-surface path. `InterGraphEdge` is screen-space across two cameras and must not be reused for the world root.
 
+**Workstream E — Experimentation Program: core implemented.**
+
+| Item | Status | Evidence |
+|---|---|---|
+| E1 axes and sampling | done | `app/pi/src/policy/experiments.ts`: `sampleExperiment` reuses the seeded pairwise `cartesianMatrix` over any knob families; every sampled cell carries a `p1.` vector that launches exactly that alternative. |
+| E2 layers and exposure | done | Host `assignExperiment(cell)` writes the `experiment` layer between preset and URL; exposure is a neutral recorded event. Two declared experiments include metrics and decision rules. |
+| E3 decision rules | done as data | Each experiment declares a stop rule: graduate only with a recorded comparison and a human decision; negative results publish verbatim. Nothing auto-promotes. |
+
+Still pending in E: the three-tier measurement loop (offline re-simulation under a variant, online assignment export, human validation) and the report/decision artifact. The pure sampling, URL cells, resolver layer and exposure log are in place.
+
 **Workstream F — Truth pass: in progress.** `docs/ROADMAP.md` regenerated from reality; `docs/not-decided.md` now maps every open question to a knob family and preset; `Ergonomics.layout` uses plugin ids. Root `tsc` still has pre-existing `app/demo` errors.
 
-**Verification:** `app/pi pnpm test` 50 passed; root `pnpm test` 816 passed; `app/pi pnpm test:e2e` 38 passed; `pnpm run verify:visual` green; `tsc -p app/pi/tsconfig.json --noEmit` clean after `pnpm run build:lib`.
+**Verification:** `app/pi pnpm test` 52 passed; root `pnpm test` 818 passed; `app/pi pnpm test:e2e` 39 passed; `pnpm run verify:visual` green; `tsc -p app/pi/tsconfig.json --noEmit` clean after `pnpm run build:lib`.
 
 **Remaining work, in order:**
 
 1. **D host binding:** one canvas with four domain child scopes, one `ScopeSimulation`, one camera; update `compositional-wrappers.spec.ts`/`cross-trace.test.ts` for the new path while keeping the four-canvas demo as the embedding case.
 2. **B/C polish:** true two-rung compositing in `ModelAdapter`; touch/`Fingering` bindings; `time-to-first-relevant` and choice-count counters; `survey` verb; Graph IDE as a second instrument-kit consumer before promotion.
-3. **E — Experimentation program:** generalize seeded pairwise sampling to any policy families; wire the resolver `experiment` layer and tiered scoring; decision rules and negative-result publication as data. Offline counterfactual re-simulation of layout/vision under a variant is E work; the recorder scorer adapter is in place.
+3. **E measurement tiers:** offline counterfactual re-simulation of layout/vision under a variant, online exposure/outcome export, and human validation of the shortlist; report and decision artifacts. Sampling, URL cells, resolver layer and stop rules are in place.
 4. **F / G — Truth and proof:** ADRs, root gates; participant study (n ≥ 5), npm release, hosted flagship and the public preset/experiment catalog. G is external and cannot be fabricated.
 
 **Deliberate non-goals for this increment:** no contract change, no renderer branches, no new domain scheduled, no immersive or visual default promoted (presets remain examples, never recommendations). Additive pure seams used: `representationRung(input, thresholds)`, `representationWeights`, `ScopeSimulation.setBaseLayout/setForces`.

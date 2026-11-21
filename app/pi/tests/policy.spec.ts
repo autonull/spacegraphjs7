@@ -50,6 +50,25 @@ test.describe('the live policy spine', () => {
         await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
     });
 
+    test('samples an experiment and assigns a cell through the experiment layer', async ({ page }) => {
+        await boot(page);
+        const sampled = await page.evaluate(() => {
+            const pi = (window as any).__pi;
+            const result = pi.sampleExperiment('bands-x-surface');
+            pi.assignExperiment(result.cells[0]);
+            return {
+                total: result.matrix.total,
+                cells: result.cells.length,
+                provenance: pi.policy().provenance['bands.overviewMax'],
+                events: pi.recording().events.map((event: any) => event.kind),
+            };
+        });
+        expect(sampled.total).toBe(12);
+        expect(sampled.cells).toBe(8);
+        expect(sampled.provenance).toBe('experiment');
+        expect(sampled.events).toContain('experiment:exposure');
+    });
+
     test('records neutral events with the policy snapshot that produced them', async ({ page }) => {
         await boot(page);
         await page.evaluate(() => {
