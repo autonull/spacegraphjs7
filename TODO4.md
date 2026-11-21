@@ -6,7 +6,7 @@ the progress block below records what has actually landed.
 
 ---
 
-## Progress (updated 2026-11-21 — fast-loop prep and slices 1–3 complete, awaiting review)
+## Progress (updated 2026-11-21 — slices 1–3 and the standing accessibility track complete, awaiting review)
 
 **Slice 1 — One surface language: implemented in Pi, not yet promoted to a second host.**
 
@@ -78,6 +78,25 @@ the progress block below records what has actually landed.
 5. The first-run hint is suppressed for `?shot=` URLs so gallery review stays comparable; the e2e gate
    exercises it on the normal entry route.
 
+**Standing track — accessibility and parity (2026-11-21): implemented in Pi, gates green, not promoted past the flagship.**
+
+| Item                       | Status | Evidence                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| -------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ergonomic target (§2, §11.2) | done   | `app/pi/src/shell/tokens.ts` publishes `spacing.target = 44px` as `--sg-spacing-target`. One token-driven rule in `app/pi/index.html` gives command-bar, rail and `.focus-button` controls a 44px hit area; the inspector tabs/pin reuse the same token instead of a literal. `app/pi/tests/shell.spec.ts` asserts the smallest representative control across all three areas is ≥44px. Bounded chip-internal controls (chip `↗` and subchips) stay below target inside the ≤3-depth lens; see remaining work.                                                            |
+| Contrast audit (§11.2)      | done   | `app/pi/tests/shell.test.ts` audits every HUD text/status pair against background, card, popover and muted surfaces in both themes using the renderer's real `contrastRatio`. Chrome text opacities that diluted muted text on the light surface were removed. The renderer-palette audit stays in `grammar.test.ts`.                                                                                                                                                                                                                                                                                                         |
+| RTL pass (§11.2)            | done   | Semantic chrome uses logical `inset-*`, `border-inline-*`, `padding-inline-*` and `text-align: start`; canvas decoration and the JS-anchored lens origin stay physical. Inner-chip placements use `inset-inline-start`, inspector tab arrow keys follow computed direction, and palette scroll uses `inline: 'nearest'`. `app/pi/tests/shell.spec.ts` boots English chrome with `dir=rtl` and asserts direction, settings anchoring and tab order.                                                                                                                        |
+| Parity and review (L4, M3)  | done   | Full e2e single-worker: 79 passed, including reduced-motion final-frame and intermediate-frame vision. All 12 shots recaptured and reviewed in `docs/screenshots/index.html`; `pnpm run check` green across 31 workspaces.                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+
+**Clarifications that came out of this increment:**
+
+1. The ergonomic target is a token, not a new CSS literal: `--sg-spacing-target` is the single source for
+   every 44px hit area. Physical coordinates left in `index.html` are canvas decoration (scope brackets,
+   file-tab corner) or the canvas-anchored lens origin; they are not semantic chrome.
+2. The RTL gate exercises English chrome under forced `dir=rtl`. It does not substitute for a real RTL
+   locale, mixed-script labels or pointer-resize verification; those stay in the remaining work.
+3. Chip-internal controls are deliberately excluded from the 44px rule: enlarging them would overflow the
+   bounded inner tree (K4). A design decision is owed before changing that exception.
+
 **Direction recorded for slice 3 (user feedback, 2026-11-21):**
 
 - Edges are too long and too line-like. Shorten their reach (`geometry.repulsion`, `geometry.gap` or a new
@@ -107,24 +126,27 @@ the progress block below records what has actually landed.
 
 **Remaining work, in order:**
 
-1. **Slice 4 — Proliferation** (O5–O7): gated on a second host consuming the shell, tokens and inspector
-   unchanged. When that consumer exists: split core/domain policy vocabulary, emit the world-host template
-   and a real `createVisionAssert` gate from the scaffold, replace the generated `vocabulary.ts` duplicate
-   with `@spacegraphjs/shared/domain`, and add one cross-domain shot. No contract or position-authority
-   change. Until then, the slice-1/2/3 modules stay in Pi with clean boundaries — do not promote them
-   speculatively.
-2. **Standing track** (L4, M3): keep reduced-motion final-frame parity and intermediate-frame vision in
-   every slice. The remaining §11.2 work is a full 44px pass over the command bar, rail and in-card actions
-   (only the inspector tab bar and pin are audited today); the contrast audit and RTL pass are still owed.
-   §11.4's domain `labelFor` accessor stays unscheduled. L1–L3, M2, M4, N3/N4 remain deferred per §6.
+1. **Slice 4 — Proliferation** (O5–O7): still gated on a second host consuming the shell, tokens and
+   inspector unchanged. Verified 2026-11-21: `app/demo` imports only mechanism-layer helpers; the only
+   importers of `app/pi/src/shell` and `@spacegraphjs/shared/tokens` live in Pi. Do not promote
+   speculatively. When that consumer exists: split core/domain policy vocabulary, emit the world-host
+   template and a real `createVisionAssert` gate from the scaffold, replace the generated `vocabulary.ts`
+   duplicate with `@spacegraphjs/shared/domain`, and add one cross-domain shot. No contract or
+   position-authority change. Until then the slice-1/2/3 modules stay in Pi with clean boundaries.
+2. **Standing track — remaining:** keep reduced-motion final-frame parity and intermediate-frame vision
+   in every slice. The 44px pass now covers command bar, rail and card actions; chip-internal controls in
+   the bounded lens remain below target and need a design decision (larger hit area vs. the K4 chip cap).
+   The RTL gate uses English chrome under forced `dir=rtl`; a real RTL locale, mixed-script labels and
+   keyboard/pointer resize in both directions are still untested. §11.4's domain `labelFor` accessor stays
+   unscheduled. L1–L3, M2, M4, N3/N4 remain deferred per §6.
 3. **Post-review decisions:** ADR 0014's tapered ribbon is a recorded experiment, not a promoted default
    beyond the flagship; confirm it in review before any second host inherits it. Fill
    `docs/screenshots/review.json` with kept/rejected verdicts and notes during the contact-sheet review.
    Re-run e2e with `--workers=1` on a loaded machine: the frame-time gate is sensitive to host contention.
 
-Slices 1–3 are recorded as done. Last prior commits: `bddd7a6` (slice 2), `e48677f` (plan direction); this
-increment lands fast-loop prep and slice 3 in one change. The study, release and hosted URL stay deferred
-with TODO3's G3–G5.
+Slices 1–3 and the standing accessibility track are recorded as done. Last prior commits: `bddd7a6`
+(slice 2), `01c4759` (slice 3); this increment lands the standing track. The study, release and hosted URL
+stay deferred with TODO3's G3–G5.
 
 ---
 
@@ -596,4 +618,6 @@ These are real gaps in the plan as written. They are listed, not scheduled.
     should be named as the supported collaboration mode so it is not mistaken for an absence.
 
 None of these changes the four-slice sequence. Items 1, 2 and 4 should be folded into slices 1–2 because
-they affect the shell and grammar being built now; the rest are recorded for a later increment.
+they affect the shell and grammar being built now; the rest are recorded for a later increment. Item 2's
+target-size, contrast and forced-RTL pass landed with the standing track; a real-RTL / mixed-script matrix
+and the bounded chip-control exception remain open.

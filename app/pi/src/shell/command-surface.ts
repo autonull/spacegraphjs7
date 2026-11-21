@@ -69,7 +69,7 @@ export const createCommandSurface = (
         for (const [rowIndex, row] of [...list.children].entries()) {
             row.setAttribute('aria-selected', String(rowIndex === active));
         }
-        list.children[active]?.scrollIntoView({ block: 'nearest' });
+        list.children[active]?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
     };
 
     const render = (): void => {

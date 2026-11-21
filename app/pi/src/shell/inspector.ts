@@ -62,7 +62,10 @@ export const createInspector = (
         button.setAttribute('aria-controls', body.id);
         button.addEventListener('click', () => inspector.setTab(id));
         button.addEventListener('keydown', (event) => {
-            const step = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0;
+            const rtl = getComputedStyle(tabs).direction === 'rtl';
+            const forward = rtl ? 'ArrowLeft' : 'ArrowRight';
+            const backward = rtl ? 'ArrowRight' : 'ArrowLeft';
+            const step = event.key === forward ? 1 : event.key === backward ? -1 : 0;
             if (!step) return;
             event.preventDefault();
             const next =

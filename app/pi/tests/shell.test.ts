@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import type { RenderNode } from '@spacegraphjs/renderer';
+import { contrastRatio, type RenderNode } from '@spacegraphjs/renderer';
 import { filterCommands, contextualInstruments, HUD_TOKENS, shellTokenCSS } from '../src/shell';
 
 const node = (kind: string, status?: RenderNode['status']): RenderNode => ({
@@ -59,5 +59,28 @@ describe('contextual instrument selection', () => {
         expect(contextualInstruments(node('message', 'error'))).toEqual(['status', 'logtail']);
         expect(contextualInstruments(node('approval'))).toEqual(['status', 'controls']);
         expect(contextualInstruments(node('artifact'))).toEqual(['diff', 'status']);
+    });
+});
+
+describe('the HUD contrast and ergonomic gate', () => {
+    it('keeps text and status roles legible on every HUD surface in both themes', () => {
+        for (const tokens of Object.values(HUD_TOKENS)) {
+            const colors = tokens.colors;
+            const surfaces = [colors.background, colors.card, colors.popover, colors.muted];
+            for (const surface of surfaces) {
+                expect(contrastRatio(colors.foreground, surface)!).toBeGreaterThanOrEqual(4.5);
+                expect(contrastRatio(colors.mutedForeground, surface)!).toBeGreaterThanOrEqual(4.5);
+                expect(contrastRatio(colors.primaryForeground, colors.primary)!).toBeGreaterThanOrEqual(4.5);
+                expect(contrastRatio(colors.accentForeground, colors.accent)!).toBeGreaterThanOrEqual(4.5);
+            }
+            for (const status of [colors.destructive, colors.success, colors.warning]) {
+                expect(contrastRatio(status, colors.card)!).toBeGreaterThanOrEqual(3);
+            }
+        }
+    });
+
+    it('publishes the ergonomic target as a token', () => {
+        expect(HUD_TOKENS.dark!.spacing.target).toBe('44px');
+        expect(shellTokenCSS()).toContain('--sg-spacing-target: 44px');
     });
 });

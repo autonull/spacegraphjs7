@@ -96,4 +96,45 @@ test.describe('the one-surface shell', () => {
             await page.evaluate(() => (window as any).__pi.railInstruments()),
         ).toBeLessThanOrEqual(2);
     });
+
+    test('primary controls keep a 44px hit area', async ({ page }) => {
+        await boot(page);
+        await page.evaluate(() => {
+            const pi = (window as any).__pi;
+            pi.reveal(pi.edges()[0].target);
+        });
+        await expect(page.locator('.focus-button').first()).toBeVisible();
+        const smallest = await page.evaluate(() =>
+            ['#command-open', '#depth-mode', '#rail #vision-loop-toggle', '.focus-button']
+                .map((selector) => {
+                    const rect = document.querySelector(selector)!.getBoundingClientRect();
+                    return Math.min(rect.width, rect.height);
+                })
+                .reduce((a, b) => Math.min(a, b)),
+        );
+        expect(smallest).toBeGreaterThanOrEqual(44);
+    });
+
+    test('chrome follows direction without losing tab order', async ({ page }) => {
+        const errors = await boot(page);
+        await page.evaluate(() => {
+            document.documentElement.dir = 'rtl';
+            const pi = (window as any).__pi;
+            pi.reveal(pi.edges()[0].target);
+        });
+        await expect(page.locator('#focus-lens')).toBeVisible();
+        expect(
+            await page.evaluate(() => getComputedStyle(document.documentElement).direction),
+        ).toBe('rtl');
+        expect(
+            await page.evaluate(() => {
+                (document.querySelector('#settings-menu') as HTMLElement).setAttribute('open', '');
+                return getComputedStyle(document.querySelector('#settings-menu > div')!).insetInlineEnd;
+            }),
+        ).toBe('0px');
+        await page.locator('#focus-lens [data-tab-target="detail"]').focus();
+        await page.keyboard.press('ArrowLeft');
+        expect(await page.evaluate(() => (window as any).__pi.inspectorTab())).toBe('inner');
+        expect(errors).toEqual([]);
+    });
 });

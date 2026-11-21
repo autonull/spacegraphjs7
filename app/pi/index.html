@@ -140,7 +140,7 @@
                 background: transparent;
                 color: var(--sg-colors-foreground);
                 padding: var(--sg-spacing-xs) var(--sg-spacing-sm);
-                text-align: left;
+                text-align: start;
                 cursor: pointer;
             }
             #gallery button:hover,
@@ -161,7 +161,7 @@
             }
             #attention {
                 color: var(--sg-colors-warning);
-                margin-left: auto;
+                margin-inline-start: auto;
                 text-align: end;
             }
             #follow-state {
@@ -190,7 +190,7 @@
             #evidence {
                 color: var(--sg-colors-muted-foreground);
                 margin: var(--sg-spacing-sm) 0 0;
-                padding-left: 18px;
+                padding-inline-start: 18px;
                 min-height: 18px;
             }
             #status {
@@ -198,7 +198,7 @@
             }
             #hud {
                 position: absolute;
-                left: 12px;
+                inset-inline-start: 12px;
                 bottom: 12px;
                 z-index: 5;
                 pointer-events: none;
@@ -221,15 +221,15 @@
             }
             #hud::before {
                 top: -1px;
-                left: -1px;
+                inset-inline-start: -1px;
                 border-top: 2px solid;
-                border-left: 2px solid;
+                border-inline-start: 2px solid;
             }
             #hud::after {
                 bottom: -1px;
-                right: -1px;
+                inset-inline-end: -1px;
                 border-bottom: 2px solid;
-                border-right: 2px solid;
+                border-inline-end: 2px solid;
             }
             #export-buttons {
                 display: flex;
@@ -378,7 +378,7 @@
             [data-status='failed'] > .rung-shape,
             [data-status='aborted'] > .rung-shape,
             [data-kind='error'] > .rung-shape {
-                border-left: 3px solid var(--view-severity, var(--kind-error, var(--sg-colors-destructive)));
+                border-inline-start: 3px solid var(--view-severity, var(--kind-error, var(--sg-colors-destructive)));
             }
             [data-rung][data-kind='run'] {
                 --kind-accent: var(--kind-run, #d2d2d2);
@@ -416,7 +416,6 @@
                 font-size: var(--sg-font-sizes-micro);
                 text-transform: uppercase;
                 letter-spacing: 0.06em;
-                opacity: 0.7;
                 border: 1px solid var(--kind-accent, transparent);
                 border-radius: 999px;
                 padding: 1px 5px;
@@ -425,7 +424,6 @@
             .focus-detail {
                 font-size: var(--sg-font-sizes-sm);
                 line-height: 1.35;
-                opacity: 0.8;
                 overflow: hidden;
             }
             .focus-inner {
@@ -488,22 +486,20 @@
             }
             .focus-chip-status {
                 position: absolute;
-                left: 4px;
+                inset-inline-start: 4px;
                 bottom: 4px;
                 font-size: var(--sg-font-sizes-nano);
                 text-transform: uppercase;
                 letter-spacing: 0.06em;
-                opacity: 0.55;
             }
             .focus-chip-signal {
                 position: absolute;
-                right: 4px;
+                inset-inline-end: 4px;
                 bottom: 4px;
                 display: flex;
                 align-items: flex-end;
                 gap: var(--sg-spacing-hair);
                 height: 12px;
-                opacity: 0.5;
             }
             .focus-chip-signal i {
                 width: 3px;
@@ -515,14 +511,13 @@
             }
             .focus-chip > [data-node-action] {
                 position: absolute;
-                right: 2px;
+                inset-inline-end: 2px;
                 top: 2px;
                 padding: 0 3px;
             }
             .focus-subchips {
                 position: absolute;
-                left: 3px;
-                right: 3px;
+                inset-inline: 3px;
                 bottom: 3px;
                 display: flex;
                 gap: var(--sg-spacing-hair);
@@ -656,7 +651,7 @@
             #history-banner {
                 position: absolute;
                 top: 8px;
-                left: 8px;
+                inset-inline-start: 8px;
                 z-index: 3;
                 background: var(--sg-colors-card);
                 border: 1px solid var(--sg-colors-warning);
@@ -843,7 +838,8 @@
                 display: none;
             }
             #focus-lens[data-pinned='true'] {
-                inset: var(--sg-spacing-sm) var(--sg-spacing-sm) auto auto;
+                inset-block-start: var(--sg-spacing-sm);
+                inset-inline-end: var(--sg-spacing-sm);
                 transform: none !important;
             }
             .inspector-bar {
@@ -867,8 +863,8 @@
             }
             .inspector-tabs button,
             .inspector-pin {
-                min-width: 44px;
-                min-height: 44px;
+                min-width: var(--sg-spacing-target);
+                min-height: var(--sg-spacing-target);
                 padding: var(--sg-spacing-hair) var(--sg-spacing-xs);
                 border: 1px solid transparent;
                 background: transparent;
@@ -911,7 +907,7 @@
             #settings-menu[open] > div {
                 position: absolute;
                 top: 100%;
-                right: 0;
+                inset-inline-end: 0;
                 z-index: 30;
                 display: grid;
                 gap: var(--sg-spacing-xs);
@@ -971,7 +967,7 @@
                 background: transparent;
                 color: inherit;
                 font: inherit;
-                text-align: left;
+                text-align: start;
                 cursor: pointer;
             }
             .command-row[aria-selected='true'] {
@@ -983,7 +979,7 @@
                 font-size: var(--sg-font-sizes-micro);
             }
             .command-hint {
-                margin-left: auto;
+                margin-inline-start: auto;
             }
             .command-foot {
                 padding: var(--sg-spacing-xs) var(--sg-spacing-sm);
@@ -995,8 +991,9 @@
                 position: relative;
                 min-height: 0;
                 overflow: auto;
-                border-left: 1px solid var(--sg-colors-border);
-                padding: var(--sg-spacing-sm) 26px var(--sg-spacing-sm) var(--sg-spacing-md);
+                border-inline-start: 1px solid var(--sg-colors-border);
+                padding-block: var(--sg-spacing-sm);
+                padding-inline: var(--sg-spacing-md) 26px;
             }
             #transcript-bar {
                 display: flex;
@@ -1013,7 +1010,7 @@
             }
             #transcript-resize {
                 position: absolute;
-                left: 0;
+                inset-inline-start: 0;
                 top: 34px;
                 bottom: 0;
                 width: 6px;
@@ -1025,8 +1022,7 @@
             }
             #surface[data-arrangement='stacked'] #transcript-resize {
                 top: 34px;
-                left: 0;
-                right: 0;
+                inset-inline: 0;
                 bottom: auto;
                 width: auto;
                 height: 6px;
@@ -1044,12 +1040,12 @@
                 grid-template-rows: minmax(0, 1fr) 36px;
             }
             #surface[data-arrangement='stacked'] #transcript {
-                border-left: 0;
+                border-inline-start: 0;
                 border-top: 1px solid var(--sg-colors-border);
             }
             #surface[data-arrangement='floating'] #transcript {
                 position: absolute;
-                right: 8px;
+                inset-inline-end: 8px;
                 bottom: 8px;
                 width: 320px;
                 max-height: 45%;
@@ -1072,18 +1068,18 @@
                 grid-template-columns: 420px minmax(0, 1fr);
             }
             #surface[data-surface='log'] #transcript {
-                border-left: 0;
+                border-inline-start: 0;
             }
             #transcript-list {
                 position: relative;
                 display: grid;
                 gap: var(--sg-spacing-sm);
-                padding-left: 14px;
+                padding-inline-start: 14px;
             }
             #transcript-list::before {
                 content: '';
                 position: absolute;
-                left: 4px;
+                inset-inline-start: 4px;
                 top: 0;
                 bottom: 0;
                 width: 2px;
@@ -1097,7 +1093,7 @@
             .spine-row::before {
                 content: '';
                 position: absolute;
-                left: -14px;
+                inset-inline-start: -14px;
                 top: 12px;
                 width: 8px;
                 height: 8px;
@@ -1127,7 +1123,7 @@
             .transcript-row {
                 flex: 1;
                 min-width: 0;
-                text-align: left;
+                text-align: start;
                 white-space: normal;
                 border: 1px solid transparent;
                 border-radius: 6px;
@@ -1149,9 +1145,9 @@
             }
             .transcript-detail {
                 display: none;
-                margin-left: var(--sg-spacing-sm);
+                margin-inline-start: var(--sg-spacing-sm);
                 padding: var(--sg-spacing-xs) var(--sg-spacing-sm);
-                border-left: 1px solid var(--sg-colors-border);
+                border-inline-start: 1px solid var(--sg-colors-border);
                 color: var(--sg-colors-muted-foreground);
                 font-size: var(--sg-font-sizes-xs);
                 line-height: 1.5;
@@ -1163,10 +1159,10 @@
             #transcript-overview {
                 position: absolute;
                 top: 34px;
-                right: 0;
+                inset-inline-end: 0;
                 bottom: 8px;
                 width: 16px;
-                border-left: 1px solid var(--sg-colors-border);
+                border-inline-start: 1px solid var(--sg-colors-border);
                 cursor: ns-resize;
             }
             #transcript-overview svg {
@@ -1206,7 +1202,6 @@
                 font-size: var(--sg-font-sizes-xs);
                 letter-spacing: 0.18em;
                 color: var(--view-scope, var(--sg-colors-accent));
-                opacity: 0.7;
             }
             .inspector-body {
                 display: flex;
@@ -1244,12 +1239,12 @@
                 flex-direction: column;
                 align-items: flex-start;
                 position: relative;
-                padding-left: 14px;
+                padding-inline-start: 14px;
             }
             #portal-crumb[data-ruler='true']::before {
                 content: '';
                 position: absolute;
-                left: 5px;
+                inset-inline-start: 5px;
                 top: 4px;
                 bottom: 4px;
                 width: 1px;
@@ -1258,7 +1253,7 @@
             #portal-crumb[data-ruler='true'] button::before {
                 content: '';
                 position: absolute;
-                left: -13px;
+                inset-inline-start: -13px;
                 top: 50%;
                 width: 7px;
                 height: 7px;
@@ -1283,8 +1278,9 @@
             .first-run-hint {
                 position: absolute;
                 top: 12px;
-                left: 50%;
-                transform: translateX(-50%);
+                inset-inline: 0;
+                width: fit-content;
+                margin-inline: auto;
                 z-index: 6;
                 display: flex;
                 align-items: center;
@@ -1349,6 +1345,19 @@
             }
             .catalog-card-title {
                 color: var(--sg-colors-foreground);
+            }
+            /* Ergonomic target: primary controls in the command bar, rail and card actions. */
+            #command-bar button,
+            #command-bar select,
+            #command-bar summary,
+            #rail button,
+            #rail select,
+            #rail input,
+            .command-row,
+            #command-input,
+            .focus-button {
+                min-width: var(--sg-spacing-target);
+                min-height: var(--sg-spacing-target);
             }
         </style>
     </head>

@@ -13,7 +13,10 @@ type ShellColors = DesignTokens['colors'] & {
     readonly selection: string;
 };
 type ShellFontSizes = DesignTokens['fontSizes'] & { readonly micro: string; readonly nano: string };
-type ShellSpacing = DesignTokens['spacing'] & { readonly hair: string };
+type ShellSpacing = DesignTokens['spacing'] & {
+    readonly hair: string;
+    readonly target: string;
+};
 
 export type ShellTokens = DesignTokens & {
     readonly colors: ShellColors;
@@ -26,7 +29,7 @@ const tokenSet = (base: DesignTokens, colors: Partial<ShellColors>): ShellTokens
     ...base,
     colors: { ...base.colors, ...colors } as ShellColors,
     fontSizes: { ...base.fontSizes, micro: '10px', nano: '9px' },
-    spacing: { ...base.spacing, hair: '2px' },
+    spacing: { ...base.spacing, hair: '2px', target: '44px' },
     radii: Object.fromEntries(
         Object.keys(base.radii).map((key) => [key, '0px']),
     ) as DesignTokens['radii'],

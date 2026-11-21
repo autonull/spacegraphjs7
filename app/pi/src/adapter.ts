@@ -213,7 +213,7 @@ export const focusCardMarkup = (
         placements
             .map(
                 ({ chip, left, top, width, height }) =>
-                    `<div class="focus-chip" data-kind="${escapeHtml(chip.kind)}" data-chip="${escapeHtml(chip.id)}" style="left:${left.toFixed(1)}%;top:${top.toFixed(1)}%;width:${width.toFixed(1)}%;height:${height.toFixed(1)}%"><span class="focus-chip-head"><span aria-hidden="true">${chip.scope ? portalGlyph(chip.scope) : '·'}</span> ${escapeHtml(chip.label)}</span><span class="focus-chip-meta">${escapeHtml(chip.role)} · ${escapeHtml(chip.kind)}</span><span class="focus-chip-status">${escapeHtml(chip.status ?? chip.kind)}</span><span class="focus-chip-signal">${[0.35, 0.6, 0.9, 0.5].map((height) => `<i style="height:${height * 100}%"></i>`).join('')}</span>${nodeButton('focus', chip.id, '↗', `Focus ${chip.label}`)}${subchips(chip)}</div>`,
+                    `<div class="focus-chip" data-kind="${escapeHtml(chip.kind)}" data-chip="${escapeHtml(chip.id)}" style="inset-inline-start:${left.toFixed(1)}%;top:${top.toFixed(1)}%;width:${width.toFixed(1)}%;height:${height.toFixed(1)}%"><span class="focus-chip-head"><span aria-hidden="true">${chip.scope ? portalGlyph(chip.scope) : '·'}</span> ${escapeHtml(chip.label)}</span><span class="focus-chip-meta">${escapeHtml(chip.role)} · ${escapeHtml(chip.kind)}</span><span class="focus-chip-status">${escapeHtml(chip.status ?? chip.kind)}</span><span class="focus-chip-signal">${[0.35, 0.6, 0.9, 0.5].map((height) => `<i style="height:${height * 100}%"></i>`).join('')}</span>${nodeButton('focus', chip.id, '↗', `Focus ${chip.label}`)}${subchips(chip)}</div>`,
             )
             .join('');
     const titleSize = Math.min(28, Math.max(16, labelPx || 20));
