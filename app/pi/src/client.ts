@@ -12,6 +12,7 @@ const showError = (message: string): void => {
 
 const boot = async (): Promise<void> => {
     await host.mount(el('canvas'));
+    host.setClientID(clientID);
 
     const events = new EventSource(`/events?client=${clientID}`);
     events.onmessage = (event) => host.consume(decodeOp(event.data as string));
@@ -23,19 +24,8 @@ const boot = async (): Promise<void> => {
         if (!text) return;
         input.value = '';
         const mode = el<HTMLSelectElement>('prompt-mode').value;
-        try {
-            const response = await fetch('/prompt', {
-                method: 'POST',
-                headers: { 'content-type': 'application/json' },
-                body: JSON.stringify({ client: clientID, text, mode: mode || undefined }),
-            });
-            if (!response.ok) {
-                const body = (await response.json()) as { error?: string };
-                showError(body.error ?? `prompt failed (${response.status})`);
-            }
-        } catch (error) {
-            showError(error instanceof Error ? error.message : String(error));
-        }
+        const result = await host.sendPrompt(text, mode ? (mode as 'steer' | 'followUp') : undefined);
+        if (!result.ok) showError(result.error ?? 'prompt failed');
     });
 
     Object.assign(window, { __pi: host.hooks() });

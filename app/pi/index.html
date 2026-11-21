@@ -262,6 +262,40 @@
             [data-rung] {
                 transition: opacity var(--pi-blend, 120ms);
             }
+            #instrument-kit {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 4px;
+            }
+            .instrument {
+                border: 1px solid var(--pi-border);
+                border-radius: 4px;
+                padding: 2px 4px;
+                font-size: 10px;
+                display: flex;
+                align-items: center;
+                gap: 4px;
+            }
+            .instrument-sparkline svg {
+                width: 64px;
+                height: 16px;
+            }
+            .instrument-meter i {
+                display: inline-block;
+                height: 6px;
+                background: var(--pi-accent);
+            }
+            .instrument-logtail,
+            .instrument-diff {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .instrument-diff [data-sign='add'] {
+                color: var(--pi-success);
+            }
+            .instrument-diff [data-sign='remove'] {
+                color: var(--pi-error);
+            }
             #policy-section {
                 border: 1px solid var(--pi-border);
                 border-radius: 6px;
@@ -488,6 +522,8 @@
             <div id="portal-crumb"></div>
             <strong>Minimap</strong>
             <div id="minimap"></div>
+            <strong>Instruments</strong>
+            <div id="instrument-kit"></div>
             <strong>HUD</strong>
             <div id="hud">starting…</div>
             <strong>Vision loop</strong>

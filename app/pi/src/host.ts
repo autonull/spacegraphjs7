@@ -8,7 +8,7 @@ import {
 } from '@spacegraphjs/renderer';
 import { SpaceGraphRenderer } from '@spacegraphjs/spacegraph-renderer';
 import { agentDomain, changedFiles, failureDetails } from '@spacegraphjs/agent';
-import { Kernel, type KernelOp } from '@spacegraphjs/kernel';
+import { Kernel, diffKernels, type KernelOp } from '@spacegraphjs/kernel';
 import type { GraphNode } from '@spacegraphjs/shared';
 import {
     computeFollowFrame,
@@ -39,6 +39,7 @@ import {
 import type { RenderNode } from '@spacegraphjs/renderer';
 import { WidgetLayer, WidgetRegistry } from 'spacegraphjs/widgets';
 import { AgentAdapter, cardMarkup, toAdapterModel, type AgentLevel } from './adapter';
+import { INSTRUMENT_IDS, createInstrumentKit, type InstrumentData, type InstrumentKit } from './instruments';
 import {
     createAnnotationWidgets,
     NoteStore,
@@ -284,6 +285,9 @@ export class PiHost {
     #lastEdgeClick?: { id: string; at: number };
     #hover?: { id: string; at: number };
     #dissolving?: string;
+    #instruments?: InstrumentKit;
+    #clientID = '';
+    #baselineKernel = fixtureKernel();
 
     constructor(
         options: { projection?: Projection; reducedMotion?: boolean; global?: boolean } = {},
@@ -522,6 +526,11 @@ export class PiHost {
         };
         policyLayer.sync([policyNode]);
         this.#policyPanel = mountedPanel;
+        this.#instruments = createInstrumentKit(
+            el('instrument-kit'),
+            (node) => this.instrumentData(node),
+            (action, node) => this.onInstrumentAction(action, node),
+        );
         this.#annotationWidgets = createAnnotationWidgets(el('annotation-list'), (id) =>
             this.removeNote(id),
         );
@@ -643,6 +652,7 @@ export class PiHost {
             legibilityGate: Number(values['ladder.legibilityGate']),
             demoteBelow: Number(values['ladder.demoteBelow']),
         };
+        const detailNodes = new Set<string>();
         this.#model = this.#adapter.build(model, {
             level: this.#level,
             positions: this.#positions,
@@ -657,7 +667,9 @@ export class PiHost {
                 const weights = representationWeights(input, thresholds);
                 const blend = 1 - Math.max(weights.overview, weights.execution, weights.detail);
                 const descending = this.#dissolving !== undefined && this.#portalByNode.get(node.id) === this.#dissolving;
-                return cardMarkup(node, representationRung(input, thresholds), context, blend, descending);
+                const rung = representationRung(input, thresholds);
+                if (rung === 'detail') detailNodes.add(node.id);
+                return cardMarkup(node, rung, context, blend, descending);
             },
         });
         if (this.#traceIds.length) {
@@ -672,7 +684,16 @@ export class PiHost {
             };
         }
         this.#model = withPinnedNotes(this.#model, this.#notes.list);
+        this.#model = {
+            ...this.#model,
+            nodes: this.#model.nodes.map((node) =>
+                detailNodes.has(node.id)
+                    ? { ...node, widgets: [...(node.widgets ?? []), ...INSTRUMENT_IDS] }
+                    : node,
+            ),
+        };
         this.#annotationWidgets?.refresh(this.#model.nodes);
+        this.#instruments?.refresh(this.#model.nodes);
         this.renderer.setModel(this.#model);
         this.renderHistory();
         this.renderMinimap();
@@ -1105,6 +1126,110 @@ export class PiHost {
         return lines;
     }
 
+    setClientID(id: string): void {
+        this.#clientID = id;
+    }
+
+    /** C2 prompt/steer: one seam for the form and every graph affordance; transcript parity is mandatory. */
+    async sendPrompt(
+        text: string,
+        mode?: 'steer' | 'followUp',
+    ): Promise<{ ok: boolean; error?: string }> {
+        const prompt = text.trim();
+        if (!prompt) return { ok: false, error: 'empty prompt' };
+        this.recordEvent(mode ?? 'prompt', { text: prompt.slice(0, 120) });
+        try {
+            const response = await fetch('/prompt', {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ client: this.#clientID, text: prompt, mode: mode || undefined }),
+            });
+            if (!response.ok) {
+                const body = (await response.json()) as { error?: string };
+                const error = body.error ?? `prompt failed (${response.status})`;
+                this.showEvidence([`prompt: ${error}`]);
+                return { ok: false, error };
+            }
+            this.showEvidence([`prompt${mode ? ` · ${mode}` : ''}: ${prompt}`]);
+            return { ok: true };
+        } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            this.showEvidence([`prompt: ${message}`]);
+            return { ok: false, error: message };
+        }
+    }
+
+    /** C2 approval: a first-class node plus a `gates` edge, using only the six kernel ops. */
+    approve(target: string, decision: 'approve' | 'reject'): string | undefined {
+        if (!this.#view.nodes.some((node) => node.id === target)) return undefined;
+        const id = `approval:${target}:${this.#kernel.nodes.length + 1}`;
+        const status = decision === 'approve' ? 'approved' : 'rejected';
+        this.consume({
+            op: 'add-node',
+            node: { id, kind: 'approval', label: `${decision} · ${target}`, data: { status } },
+        });
+        this.consume({ op: 'add-edge', edge: { id: `gates:${id}`, kind: 'gates', source: id, target } });
+        this.recordEvent(decision, { target, node: id });
+        this.showEvidence([`${decision}: ${target}`]);
+        return id;
+    }
+
+    /** C2 retry: synthesise a retry action and its edge over the existing kernel seam. */
+    retry(target: string): string | undefined {
+        if (!this.#view.nodes.some((node) => node.id === target)) return undefined;
+        const id = `retry:${target}`;
+        this.consume({
+            op: 'add-node',
+            node: { id, kind: 'action', label: `retry ${target}`, data: { status: 'pending' } },
+        });
+        this.consume({ op: 'add-edge', edge: { id: `retry-edge:${id}`, kind: 'retry', source: target, target: id } });
+        this.recordEvent('retry', { target, node: id });
+        this.showEvidence([`retry: ${target}`]);
+        return id;
+    }
+
+    /** C2 compare runs: diff the captured baseline against the live kernel; no library change. */
+    compareRuns(): readonly string[] {
+        const diff = diffKernels(this.#baselineKernel, this.#kernel);
+        const lines = [
+            `runs: baseline ${this.#baselineKernel.nodes.length} nodes → live ${this.#kernel.nodes.length} nodes`,
+            `added ${diff.nodes.added.length} · removed ${diff.nodes.removed.length} · changed ${diff.nodes.changed.length} nodes`,
+            `added ${diff.edges.added.length} · removed ${diff.edges.removed.length} · changed ${diff.edges.changed.length} edges`,
+            ...diff.nodes.added.slice(0, 3).map((node) => `+ ${node.id}`),
+            ...diff.nodes.removed.slice(0, 3).map((node) => `- ${node.id}`),
+        ];
+        this.recordEvent('compare-runs', { added: diff.nodes.added.length, removed: diff.nodes.removed.length });
+        this.showEvidence(lines);
+        return lines;
+    }
+
+    captureBaseline(): void {
+        this.#baselineKernel = this.#kernel;
+    }
+
+    private instrumentData(node: RenderNode): InstrumentData {
+        const data = node.data ?? {};
+        return {
+            series: [this.#activity.get(node.id) ?? 0, this.#vision.legibility, 1 - this.#vision.overlap],
+            value: node.emphasis ?? 0,
+            status: String(data.status ?? node.status ?? 'idle'),
+            lines: typeof data.detail === 'string' ? data.detail.split('\n').slice(0, 3) : [],
+            tabs: ['overview', 'actions', 'artifacts'],
+            actions: ['steer', 'followUp', 'approve', 'reject', 'retry'],
+        };
+    }
+
+    private onInstrumentAction(action: string, node: RenderNode): void {
+        if (action === 'steer' || action === 'followUp') {
+            el<HTMLSelectElement>('prompt-mode').value = action;
+            el<HTMLInputElement>('prompt-input').focus();
+            this.recordEvent('steer-affordance', { action, target: node.id });
+            return;
+        }
+        if (action === 'approve' || action === 'reject') this.approve(node.id, action);
+        if (action === 'retry') this.retry(node.id);
+    }
+
     hooks(): Record<string, unknown> {
         return {
             capabilities: () => CAPABILITIES.map((capability) => capability.id),
@@ -1126,6 +1251,14 @@ export class PiHost {
             descend: () => this.descend(),
             ascend: () => this.ascend(),
             returnHome: () => this.returnHome(),
+            setClientID: (id: string) => this.setClientID(id),
+            sendPrompt: (text: string, mode?: 'steer' | 'followUp') => this.sendPrompt(text, mode),
+            approve: (target: string, decision: 'approve' | 'reject' = 'approve') => this.approve(target, decision),
+            reject: (target: string) => this.approve(target, 'reject'),
+            retry: (target: string) => this.retry(target),
+            compareRuns: () => this.compareRuns(),
+            captureBaseline: () => this.captureBaseline(),
+            instruments: () => document.querySelectorAll('[data-instrument-for]').length,
             evidence: () => this.#evidence,
             ops: () => this.#kernel.nodes.length,
             loadFixture: () => {

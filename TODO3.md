@@ -27,15 +27,21 @@ Self-contained. No time estimates. Ordered by dependency, not duration.
 
 Every schema knob has a live host consumer: bands → `levelForZoom`, ladder → `representationRung`/`representationWeights` + blur duration, salience → activity decay, emphasis → emphasis caps, camera → flight durations, depth → simulation + renderer, widgets → dock attribute, geometry → `setBaseLayout`/`setForces`, guardrails → budgets/window, surface → surface state, navigation → orientation aids, orchestration → gallery, theme → renderer theme.
 
-**Verification:** `app/pi pnpm test` 50 passed; root `pnpm test` 814 passed; `app/pi pnpm test:e2e` 35 passed (`tests/policy.spec.ts`, `tests/navigation.spec.ts`, and a vision assertion over intermediate traverse frames); `tsc -p app/pi/tsconfig.json --noEmit` clean after `pnpm run build:lib`.
+**Workstream C — Living Rectangles & Pi Orchestration: core implemented.**
+
+| Item | Status | Evidence |
+|---|---|---|
+| C1 instrument kit | done | `app/pi/src/instruments.ts`: sparkline, meter, status, log-tail, diff, tabs and action controls as `WidgetLayer` `attached` descriptors gated to detail rungs; all data escaped at the boundary; mounted in the rail `#instrument-kit`. |
+| C2 orchestration verbs | done | `host.ts`: `sendPrompt` (prompt/steer/followUp through the existing `POST /prompt` + SDK `streamingBehavior` seam), `approve`/`reject` as first-class nodes with `gates` edges using only the six kernel ops, `retry`, `compareRuns` via `diffKernels`, plus graph action buttons that set the prompt mode or drive approval. Every action records a neutral event and writes an evidence line for transcript parity. |
+
+**Verification:** `app/pi pnpm test` 50 passed; root `pnpm test` 814 passed; `app/pi pnpm test:e2e` 38 passed (includes `tests/policy.spec.ts`, `tests/navigation.spec.ts`, `tests/orchestration.spec.ts`, and intermediate-frame vision assertions); `tsc -p app/pi/tsconfig.json --noEmit` clean after `pnpm run build:lib`.
 
 **Remaining work, in order:**
 
-1. **B polish (small):** true two-rung compositing in `ModelAdapter` (both rung markups cross-faded by weight, not only an opacity transition); touch/`Fingering` bindings for the verb set; `time-to-first-relevant` and choice-count counters; `survey` verb.
-2. **C — Living rectangles / Pi orchestration:** instrument kit and the remaining verbs (steer, approve as first-class node, compare runs); prompt→steer→approve→retry e2e with transcript parity.
-3. **D — One world / proliferation:** mount all four domains in one canvas; ship the fifth exemplar through `create-spacegraph` so new domains inherit schema + panel + recorder + preset gallery.
-4. **E — Experimentation program:** generalize seeded pairwise sampling to any policy families; wire the resolver `experiment` layer and tiered scoring; decision rules and negative-result publication as data. Offline counterfactual re-simulation of layout/vision under a variant is E work; the recorder scorer adapter is in place.
-5. **F / G — Truth and proof:** docs reconciliation, ADRs, root gates (root `tsc` currently has pre-existing errors in `app/demo` and `src/core/Ergonomics.ts`); participant study, npm release, hosted flagship and the public preset/experiment catalog.
+1. **B/C polish (small):** true two-rung compositing in `ModelAdapter` (both rung markups cross-faded by weight, not only an opacity transition); touch/`Fingering` bindings; `time-to-first-relevant` and choice-count counters; `survey` verb; Graph IDE as a second instrument-kit consumer before any promotion.
+2. **D — One world / proliferation:** mount all four domains in one canvas; ship the fifth exemplar through `create-spacegraph` so new domains inherit schema + panel + recorder + preset gallery.
+3. **E — Experimentation program:** generalize seeded pairwise sampling to any policy families; wire the resolver `experiment` layer and tiered scoring; decision rules and negative-result publication as data. Offline counterfactual re-simulation of layout/vision under a variant is E work; the recorder scorer adapter is in place.
+4. **F / G — Truth and proof:** docs reconciliation, ADRs, root gates (root `tsc` still has pre-existing `app/demo` errors after the Ergonomics layout-id fix); participant study, npm release, hosted flagship and the public preset/experiment catalog.
 
 **Deliberate non-goals for this increment:** no contract change, no renderer branches, no new domain scheduled, no immersive or visual default promoted (presets remain examples, never recommendations). Additive pure seams used: `representationRung(input, thresholds)`, `representationWeights`, `ScopeSimulation.setBaseLayout/setForces`.
 

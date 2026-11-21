@@ -4,6 +4,7 @@ import type { Edge } from '../edges/Edge';
 import type { Node } from '../nodes/Node';
 import type { SpaceGraph } from '../SpaceGraph';
 import type { EdgeSpec, NodeSpec, Predicate } from '../types';
+import type { LayoutOptionsFor, LayoutOptionsMap } from '../types/layout';
 
 type NodePredicate = Predicate<Node>;
 
@@ -475,8 +476,8 @@ export class ErgonomicsAPI {
         type: 'force' | 'grid' | 'circular' | 'tree' | 'radial',
         options?: Record<string, unknown>,
     ): Promise<void> {
-        const name = `${type.charAt(0).toUpperCase()}${type.slice(1)}Layout`;
-        return this.sg.layout(name, options);
+        const name = `${type}-layout` as keyof LayoutOptionsMap;
+        return this.sg.layout(name, options as Partial<LayoutOptionsFor<typeof name>>);
     }
 
     // ============= Camera Shortcuts =============
