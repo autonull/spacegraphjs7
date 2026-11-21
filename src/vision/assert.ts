@@ -21,6 +21,12 @@ type VisionLoopProbe = {
     readonly unsupported: readonly { readonly id: string; readonly reason: string }[];
 };
 
+/** The browser globals the vision assertions read, without widening to `any`. */
+type VisionWindow = Window & {
+    SpaceGraph?: { instances?: Set<object> };
+    __pi?: { visionLoop?: () => VisionLoopProbe };
+};
+
 export class VisionAssert {
     constructor(private page: Page) {}
 
@@ -28,7 +34,7 @@ export class VisionAssert {
     async strategy(): Promise<string> {
         return this.page.evaluate(() => {
             const instances = Array.from(
-                (window as any).SpaceGraph?.instances ?? ([] as unknown[]),
+                (window as VisionWindow).SpaceGraph?.instances ?? [],
             ) as { vision?: { strategy?: string } }[];
             return instances[0]?.vision?.strategy ?? 'heuristics';
         });
@@ -62,10 +68,9 @@ export class VisionAssert {
     async record(): Promise<VisionCaptureRecord> {
         const gate = await this.getReport();
         const strategy = await this.strategy();
-        const loop = await this.page.evaluate((): VisionLoopProbe | undefined => {
-            const api = (window as any).__pi as { visionLoop?: () => VisionLoopProbe } | undefined;
-            return api?.visionLoop?.();
-        });
+        const loop = await this.page.evaluate(
+            (): VisionLoopProbe | undefined => (window as VisionWindow).__pi?.visionLoop?.(),
+        );
         const after = loop?.report?.after;
         const summary = (report: VisionReport): VisionSummary => ({
             overlaps: report.overlap.overlapCount,
@@ -119,10 +124,11 @@ export class VisionAssert {
                 },
                 overall: { score: 0, grade: 'F', issues: [] },
             });
-            if (!(window as any).SpaceGraph || !(window as any).SpaceGraph.instances) {
+            const spaceGraph = (window as VisionWindow).SpaceGraph;
+            if (!spaceGraph?.instances) {
                 return emptyReport();
             }
-            const instances = Array.from((window as any).SpaceGraph.instances);
+            const instances = Array.from(spaceGraph.instances);
             if (instances.length === 0) {
                 return emptyReport();
             }

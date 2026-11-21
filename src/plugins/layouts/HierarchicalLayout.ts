@@ -1,33 +1,19 @@
 import { Vector3 } from 'three';
+import { DEFAULT_NODE_BOUNDS, declaredNodeBounds, type NodeBounds } from '../../layout/node-bounds';
 import type { Node } from '../../nodes/Node';
 import { BaseLayout, type LayoutOptions } from './BaseLayout';
 
-/** Get layout bounds from a node-like object (Node instance or plain object with data.width/height). */
-function getNodeBounds(node: any): { width: number; height: number; depth: number } {
-    // Priority 1: explicit data.width/height
-    const data = node.data as Record<string, unknown> | undefined;
-    if (data && typeof data.width === 'number' && typeof data.height === 'number') {
-        return {
-            width: data.width,
-            height: data.height,
-            depth: (typeof data.depth === 'number' ? data.depth : 1),
-        };
-    }
+type BoundsCarrier = {
+    data?: unknown;
+    size?: unknown;
+    getLayoutBounds?: () => NodeBounds;
+};
 
-    // Priority 2: class-level size (HtmlNode, etc.)
-    const classSize = node.size;
-    if (classSize && typeof classSize.width === 'number' && typeof classSize.height === 'number') {
-        return { width: classSize.width, height: classSize.height, depth: 1 };
-    }
-
-    // Priority 3: Node instance with getLayoutBounds
-    if (typeof node.getLayoutBounds === 'function') {
-        return node.getLayoutBounds();
-    }
-
-    // Priority 4: documented defaults
-    return { width: 200, height: 100, depth: 1 };
-}
+/** Declared bounds, then a Node's own resolution, then the documented default. */
+const getNodeBounds = (node: BoundsCarrier): NodeBounds =>
+    declaredNodeBounds(node) ??
+    (typeof node.getLayoutBounds === 'function' ? node.getLayoutBounds() : undefined) ??
+    { ...DEFAULT_NODE_BOUNDS };
 
 export interface HierarchicalLayoutOptions extends LayoutOptions {
     rootId: string;

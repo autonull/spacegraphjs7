@@ -425,6 +425,18 @@ export class DOTParser {
     }
 }
 
+/** The resolved key, its mapped name, and its text, for each `<data>` element of a GraphML node. */
+function graphmlData(element: Element, keyMap: Map<string, string>) {
+    return Array.from(element.querySelectorAll('data'), (data) => {
+        const key = data.getAttribute('key');
+        return {
+            key: key || '',
+            keyName: keyMap.get(key || '') || key || '',
+            value: data.textContent || '',
+        };
+    });
+}
+
 export class GraphMLParser {
     parse(graphmlCode: string): DiagramParseResult {
         const nodes = new Map<string, DiagramNode>();
@@ -457,14 +469,10 @@ export class GraphMLParser {
             let label = id;
             let cluster: string | undefined;
 
-            const dataEls = nodeEl.querySelectorAll('data');
-            dataEls.forEach((data) => {
-                const key = data.getAttribute('key');
-                const keyName = keyMap.get(key || '') || key;
-                const value = data.textContent || '';
+            for (const { key, keyName, value } of graphmlData(nodeEl, keyMap)) {
                 if (keyName === 'label' || key === 'd0') label = value;
                 if (keyName === 'cluster' || keyName === 'parent') cluster = value;
-            });
+            }
 
             const shapeEl = nodeEl.querySelector('shape, polygon');
             const shape = mapShape(shapeEl?.getAttribute('type') || undefined);
@@ -479,14 +487,10 @@ export class GraphMLParser {
             let label: string | undefined;
             let color: string | undefined;
 
-            const dataEls = edgeEl.querySelectorAll('data');
-            dataEls.forEach((data) => {
-                const key = data.getAttribute('key');
-                const keyName = keyMap.get(key || '') || key;
-                const value = data.textContent || '';
+            for (const { key, keyName, value } of graphmlData(edgeEl, keyMap)) {
                 if (keyName === 'label' || key === 'd0') label = value;
                 if (keyName === 'color' || keyName === 'stroke') color = value;
-            });
+            }
 
             edges.push({
                 id: `edge-${index}`,
@@ -500,17 +504,13 @@ export class GraphMLParser {
 
         const subgraphEls = doc.querySelectorAll('graph[data]');
         subgraphEls.forEach((subgraphEl) => {
-            const dataEls = subgraphEl.querySelectorAll('data');
             let clusterId = '';
             let clusterLabel = '';
 
-            dataEls.forEach((data) => {
-                const key = data.getAttribute('key');
-                const keyName = keyMap.get(key || '') || key;
-                const value = data.textContent || '';
+            for (const { key, keyName, value } of graphmlData(subgraphEl, keyMap)) {
                 if (keyName === 'id' || key === 'd0') clusterId = value;
                 if (keyName === 'label' || key === 'd1') clusterLabel = value;
-            });
+            }
 
             if (clusterId && !clusters.has(clusterId)) {
                 clusters.set(clusterId, { id: clusterId, label: clusterLabel || clusterId });
