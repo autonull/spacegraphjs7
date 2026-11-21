@@ -209,6 +209,8 @@ const SVG_CAPABILITIES: RendererCapabilities = {
     zoomRange: { min: 1, max: 1 },
     cardFacing: false,
     fitInsets: false,
+    motionVerbs: [],
+    sceneFeatures: [],
 };
 
 /** The static SVG backend behind the shared renderer contract. Camera and selection calls no-op. */

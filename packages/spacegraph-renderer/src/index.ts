@@ -18,6 +18,8 @@ import {
 import type { GraphSpec, SpaceGraph } from 'spacegraphjs/activity';
 import { worldToScreen } from 'spacegraphjs/utils';
 import { WIDGET_SLOTS } from 'spacegraphjs/widgets';
+import { CAMERA_MOTION_VERBS } from 'spacegraphjs/motion';
+import { SCENE_FEATURES } from 'spacegraphjs/world';
 import { edgeSpec, nodeSpec, spaceGraphTheme } from './mapping';
 
 const CAPABILITIES: RendererCapabilities = {
@@ -34,6 +36,8 @@ const CAPABILITIES: RendererCapabilities = {
     fitInsets: true,
     emphasis: ['size', 'opacity', 'edgeThickness'],
     widgetSlots: [...WIDGET_SLOTS],
+    motionVerbs: [...CAMERA_MOTION_VERBS],
+    sceneFeatures: [...SCENE_FEATURES],
 };
 
 // Wraps the lean SpaceGraphJS core behind the dependency-free contract. It is the only package that
@@ -48,7 +52,12 @@ export class SpaceGraphRenderer extends ModelRenderer implements GraphRenderer {
 
     async mount(
         container: HTMLElement,
-        options: { theme: RenderTheme; projection: Projection; reducedMotion?: boolean; global?: boolean },
+        options: {
+            theme: RenderTheme;
+            projection: Projection;
+            reducedMotion?: boolean;
+            global?: boolean;
+        },
     ): Promise<void> {
         if (this.#sg) return;
         try {
@@ -190,7 +199,8 @@ export class SpaceGraphRenderer extends ModelRenderer implements GraphRenderer {
         if (!sg) return undefined;
 
         const viewport = sg.viewport;
-        const zoomBandsPlugin = sg.pluginManager.getPlugin('zoom-bands') as { bands: { band: string } } | undefined;
+        const zoomBandsPlugin = sg.pluginManager.getPlugin('zoom-bands') as
+            { bands: { band: string } } | undefined;
         return {
             zoom: viewport.zoom,
             center: viewport.center,
@@ -316,7 +326,8 @@ export class SpaceGraphRenderer extends ModelRenderer implements GraphRenderer {
 
     #emitViewport(viewport: RendererViewport): void {
         const sg = this.#sg;
-        const zoomBandsPlugin = sg?.pluginManager.getPlugin('zoom-bands') as { bands: { band: string } } | undefined;
+        const zoomBandsPlugin = sg?.pluginManager.getPlugin('zoom-bands') as
+            { bands: { band: string } } | undefined;
         const band = viewport.band ?? zoomBandsPlugin?.bands.band;
         this.emit('viewportChange', {
             zoom: viewport.zoom,

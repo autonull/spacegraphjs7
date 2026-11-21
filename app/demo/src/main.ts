@@ -1,6 +1,7 @@
 // The demo host: plain TypeScript. It maps a release-pipeline model to a RenderModel, mounts one of
 // three renderers, and runs each library capability against that model.
 
+import { createPatchPainter } from '@spacegraphjs/adapter';
 import { SvgRenderer } from '@spacegraphjs/svg-renderer';
 import { CytoscapeRenderer } from '@spacegraphjs/cytoscape-renderer';
 import { SpaceGraphRenderer } from '@spacegraphjs/spacegraph-renderer';
@@ -71,6 +72,7 @@ const host = new DemoHost();
 let rendererID: RendererID = 'spacegraph';
 let themeName: ThemeName = 'dark';
 let renderer: GraphRenderer | undefined;
+let painter: ReturnType<typeof createPatchPainter> | undefined;
 let mirror: AccessibilityLayer | undefined;
 let scope: ScopedOverlay | undefined;
 let currentFocusOverlay: FocusOverlay | undefined;
@@ -278,7 +280,7 @@ function paint() {
     const renderModel = host.renderModel();
     const modelWithFocus = applyFocusOverlay(renderModel, currentFocusOverlay);
 
-    renderer?.setModel(modelWithFocus);
+    painter?.paint(modelWithFocus);
 
     mirror?.setItems(
         host.model.nodes.map((node) => ({
@@ -320,6 +322,7 @@ async function mountRenderer(id: RendererID): Promise<void> {
     host.controller.unbind();
     renderer?.dispose();
     renderer = undefined;
+    painter = undefined;
     el('canvas').replaceChildren();
     el('svg').replaceChildren();
     rendererID = id;
@@ -329,13 +332,13 @@ async function mountRenderer(id: RendererID): Promise<void> {
     el('canvas').hidden = svg;
     el('svg').hidden = !svg;
 
-    const next: GraphRenderer =
-        svg
-            ? new SvgRenderer()
-            : id === 'cytoscape'
-              ? new CytoscapeRenderer()
-              : new SpaceGraphRenderer();
+    const next: GraphRenderer = svg
+        ? new SvgRenderer()
+        : id === 'cytoscape'
+          ? new CytoscapeRenderer()
+          : new SpaceGraphRenderer();
     renderer = next;
+    painter = createPatchPainter(next);
     await next.mount(svg ? el('svg') : el('canvas'), { theme: readTheme(), projection: '2d' });
     if (!svg) host.controller.bind(next);
     paint();

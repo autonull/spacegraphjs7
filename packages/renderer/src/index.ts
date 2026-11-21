@@ -192,6 +192,12 @@ export type RendererCapabilities = {
     emphasis?: readonly EmphasisChannel[];
     /** Widget slots this backend can host. Omitted means no widget overlay. */
     widgetSlots?: readonly string[];
+    /** Camera motion verbs this backend can drive through a host adapter. Omitted means none. */
+    motionVerbs?: readonly string[];
+    /** Scene features this backend can honour. Omitted means none. */
+    sceneFeatures?: readonly string[];
+    /** Sensory seams this backend can drive. Omitted means none; sensory is host-owned. */
+    sensorySeams?: readonly string[];
 };
 
 export type RendererViewport = {
@@ -299,12 +305,7 @@ export type GraphRenderer = {
 
 /** Capabilities a host can query before it offers an affordance. */
 export type RendererCapability =
-    | Projection
-    | 'domNodes'
-    | 'edgeLabels'
-    | 'clusterNodes'
-    | 'minimap'
-    | 'widgets';
+    Projection | 'domNodes' | 'edgeLabels' | 'clusterNodes' | 'minimap' | 'widgets';
 
 /** Single predicate for capability-gated UI (L1.28). Unknown capabilities are never assumed. */
 export function supports(
@@ -333,6 +334,21 @@ export function supportsEmphasis(
     channel: EmphasisChannel,
 ): boolean {
     return capabilities.emphasis?.includes(channel) ?? false;
+}
+
+/** Whether a renderer can drive a camera motion verb; unknown verbs are never assumed. */
+export function supportsMotionVerb(capabilities: RendererCapabilities, verb: string): boolean {
+    return capabilities.motionVerbs?.includes(verb) ?? false;
+}
+
+/** Whether a renderer can honour a scene feature; unknown features are never assumed. */
+export function supportsSceneFeature(capabilities: RendererCapabilities, feature: string): boolean {
+    return capabilities.sceneFeatures?.includes(feature) ?? false;
+}
+
+/** Whether a renderer can drive a sensory seam; unknown seams are never assumed. */
+export function supportsSensorySeam(capabilities: RendererCapabilities, seam: string): boolean {
+    return capabilities.sensorySeams?.includes(seam) ?? false;
 }
 
 /**

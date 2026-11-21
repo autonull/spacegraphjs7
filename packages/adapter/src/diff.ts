@@ -1,31 +1,40 @@
 import type { RenderModel, RenderNode, RenderEdge, RenderModelPatch } from '@spacegraphjs/renderer';
 
-/** The fingerprint of a node: everything a renderer would have to redraw for it. */
+/** The fingerprint of a node: every field a renderer redraws, including host data and emphasis. */
 function fingerprint(node: RenderNode): string {
-    return [
+    return JSON.stringify([
         node.kind,
         node.label,
-        node.summary ?? '',
+        node.summary,
+        node.html,
+        node.position,
+        node.size,
         node.status,
+        node.visible,
+        node.interactive,
         node.shape,
-        node.position.join(','),
-        node.size?.join(',') ?? '',
-        node.html ?? '',
-    ].join('^@');
+        node.parent,
+        node.emphasis,
+        node.widgets,
+        node.widgetSlots,
+        node.data,
+    ]);
 }
 
-/** The fingerprint of an edge: everything a renderer would have to redraw for it. */
+/** The fingerprint of an edge: every field a renderer redraws. */
 function edgeFingerprint(edge: RenderEdge): string {
-    return [
+    return JSON.stringify([
         edge.source,
         edge.target,
         edge.kind,
-        edge.label ?? '',
-        edge.confidence ?? '',
-        edge.visible?.toString() ?? '',
-        edge.directed?.toString() ?? '',
-        edge.style ?? '',
-    ].join('^@');
+        edge.label,
+        edge.confidence,
+        edge.visible,
+        edge.directed,
+        edge.style,
+        edge.emphasis,
+        edge.data,
+    ]);
 }
 
 /**

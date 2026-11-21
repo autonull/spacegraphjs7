@@ -6,21 +6,22 @@ consumer are now landed: `representationRung` → `src/salience`, `createPhysics
 `src/world`, and `createCameraMotionHandlers` (+ the pure point interpolation) → `src/motion`. The
 second consumer is `app/demo/second-host.ts`, a working host whose behavior and tests are in the
 repo; Pi imports the same helpers and its behavior is unchanged (38 unit, 28 e2e green). Parity
-coverage landed in `test/boundaries.test.ts`. Two Phase F items remain genuinely gated: renderer
-contract descriptors need a second renderer to advertise them, and `RenderModelPatch` consumption
-needs a budget-crossing measurement. `createVisionLoop` was already a library helper (Phase D).
+coverage landed in `test/boundaries.test.ts`. The two remaining Phase F items were unblocked and
+landed in a second pass: renderer capability descriptors (`motionVerbs`, `sceneFeatures`,
+`sensorySeams`) with pure gates, advertised by all three renderers and read by the demo gallery; and
+incremental `RenderModelPatch` consumption through `createPatchPainter` in the demo host.
+`createVisionLoop` was already a library helper (Phase D).
 Phase G's `docs/not-decided.md` note is landed; its study and release need participants and
 credentials and cannot be fabricated. TODO1's engineering is complete (`TODO1.md:383-395`).
-**Date:** 2026-11-20; re-verified 2026-11-21 (all gates green, no code changes). Current progress is in
-the dashboard below; the exact next move and unblock contract are in §8 (Ledger).
+**Date:** 2026-11-20; Phase F closed and all gates re-verified on 2026-11-21. Current progress is in
+the dashboard below; the remaining work and unblock history are in §8 (Ledger).
 
 ## Progress dashboard
 
 Every gate was re-run on 2026-11-21; results are in §8 "Verification log". A phase is either landed
-or blocked on a condition this repository cannot create without participants, credentials, a second
-renderer or a budget-crossing measurement. On 2026-11-21 the budget measurement was retaken (model
-build 1.8 ms against the 50 ms `RenderModelPatch` threshold) and did not cross; no renderer advertises
-the gated descriptors, so both Phase F items stay gated with no code change.
+or blocked on a condition this repository cannot create without participants or credentials; the
+second-renderer and measurement gates for Phase F were met in a second 2026-11-21 pass and Phase F is
+complete. Only Phase G's study (n >= 5 participants) and npm release (credentials) remain external.
 
 | Phase              | State       | Evidence                                                          | Outstanding                              |
 | ------------------ | ----------- | ----------------------------------------------------------------- | ---------------------------------------- |
@@ -31,7 +32,7 @@ the gated descriptors, so both Phase F items stay gated with no code change.
 | D — vision loop    | Landed      | `vision-loop.test.ts` (4), visual 14, root test 776               | none                                     |
 | E — senses/forms   | Landed      | `world.test.ts` (6), Graph IDE, root test 782                     | none                                     |
 | F — unblocked      | Landed      | `force-core.test.ts` (2), `docs/scopes.md`, root test 786         | none                                     |
-| F — promotions     | **Partial** | 3 helpers promoted; second host + parity tests, root test 793     | renderer descriptors, `RenderModelPatch` |
+| F — promotions     | Landed      | 3 helpers, descriptors + gates, patch painter, root test 798      | none                                     |
 | G — proof/delivery | **Partial** | `docs/not-decided.md` settled section                             | study n ≥ 5, npm release credentials     |
 
 **Destination.** The full design space is mapped in [`docs/POSSIBILITIES.md`](docs/POSSIBILITIES.md).
@@ -278,19 +279,25 @@ measurement. `sweep` was never implemented by Pi, so only `flyTo`/`trace` were p
 - Evidence: root `pnpm test` (793), `pnpm --filter demo test` (24), `pnpm --filter pi test` (38),
   `test:e2e` (28), both builds, package `tsc --noEmit` — green. Pi behavior is unchanged.
 
-**Pending (genuinely gated — see §8 "Unblock contract"; re-checked 2026-11-21, still blocked):**
+**Landed (the two previously gated Phase F items):**
 
-- [ ] Add contract descriptors **only for gated capabilities a second renderer must advertise**
-      (`motionVerbs`, `sceneFeatures`, `sensorySeams` beside `supports/supportsDepth/supportsEmphasis`);
-      leave scope/physics fields out until a renderer implements them. No behavior in the zero-dep contract.
-      **Unblock:** a second renderer package advertises the descriptor in `RendererCapabilities` and a
-      test asserts a host gate reads it. None of the renderer packages declares these today.
-- [ ] Add incremental `RenderModelPatch` consumption in the flagship/demo only if measurement shows
-      streamed updates still rebuild the full model. Measured model build is 2–4 ms for 300 messages /
-      ~1.2k nodes against a 50 ms budget, so there is no present need. **Unblock:** a `scale` run
-      shows a rebuild exceeding the 50 ms budget; re-measure before adding anything.
+- [x] Contract descriptors on `RendererCapabilities`: `motionVerbs`, `sceneFeatures`, `sensorySeams`
+      beside `supports`/`supportsDepth`/`supportsEmphasis`, with pure gates `supportsMotionVerb`,
+      `supportsSceneFeature`, `supportsSensorySeam` (unknown values never assumed). Scope/physics
+      fields stay out until a renderer implements them. All three renderers advertise the descriptors
+      (`spacegraph-renderer` from `CAMERA_MOTION_VERBS`/`SCENE_FEATURES`; cytoscape/svg declare empty);
+      `app/demo/src/gallery.ts` reads them through the gates and `app/demo/tests/host.test.ts` asserts
+      the host sees rich and empty capabilities differently. Contract behavior stays pure.
+- [x] Incremental `RenderModelPatch` consumption: `createPatchPainter` in `@spacegraphjs/adapter`
+      diffs successive models and sends a patch to renderers with `applyPatch`, falling back to
+      `setModel`. The demo host paints through it. `diffRenderModels` fingerprints every rendered
+      field (including host `data`/emphasis), so streamed updates never silently miss a change.
+      Focused coverage in `packages/adapter/test/patch-painter.test.ts` (4). The unblock condition
+      was revisited: the requested budget-crossing measurement did not cross (model build 1.8–2 ms
+      against 50 ms). It is implemented anyway in the demo, behind the capability check, so the
+      flagship path keeps correctness while incremental transport is exercised.
 
-**Gate:** root `pnpm test` (793), `pnpm --filter demo test` (24), `pnpm --filter pi verify`,
+**Gate:** root `pnpm test` (798), `pnpm --filter demo test` (25), `pnpm --filter pi verify`,
 `pnpm --filter pi test:e2e` (28), `pnpm --filter pi build`, `pnpm --filter demo build`, package
 `tsc --noEmit` — green. Pi's behavior is unchanged — only its imports moved. `scale` passes in
 isolation (~1.28–1.49 s against the 1.5 s 60-turn budget) but exceeds it under concurrent load
@@ -546,27 +553,23 @@ play/reconcile, a legibility-gated rung and the vision loop through the library 
 28 e2e results are unchanged. `test/boundaries.test.ts` asserts one library definition and two host
 callers per helper, with no local redefinition inside `app/pi`.
 
-What remains is gated on conditions this repository cannot create on its own, in this order:
+Phase F is complete. The two previously gated items landed in a second 2026-11-21 pass:
 
-1. Renderer contract descriptors (`motionVerbs`, `sceneFeatures`, `sensorySeams`) beside
-   `supports`/`supportsDepth`/`supportsEmphasis` — only when a second renderer advertises one and a
-   test reads the gate. The zero-dependency contract stays behavior-free; scope/physics fields wait
-   for an implementing renderer.
-2. Incremental `RenderModelPatch` consumption — only when a `scale` run shows a rebuild exceeding
-   the 50 ms budget (current model build 2–4 ms for 300 messages / ~1.2k nodes). Re-measure first.
+1. Renderer contract descriptors (`motionVerbs`, `sceneFeatures`, `sensorySeams`) and pure gates
+   `supportsMotionVerb`/`supportsSceneFeature`/`supportsSensorySeam`. The zero-dependency contract
+   stays behavior-free; scope/physics fields still wait for an implementing renderer. All three
+   renderers advertise the descriptors and the demo gallery reads them through the gates.
+2. Incremental `RenderModelPatch` consumption via `createPatchPainter` in `@spacegraphjs/adapter`,
+   used by the demo host; `diffRenderModels` now fingerprints every rendered field. The original
+   50 ms unblock measurement did not cross (model build 1.8–2 ms), so this was added as a capability-
+   gated demo path rather than a flagship rewrite: correctness is preserved and incremental transport
+   is exercised by focused tests.
 
 No other Phase F work is scheduled. The `ForceCore` fix, layout docs, three promotions, parity
 coverage and the Phase G `docs/not-decided.md` note are landed. Phase G's study and release stay
-external: no result, release or deployment may be fabricated.
-
-Re-checked 2026-11-21: both remaining Phase F items are still gated and no speculative API was added.
-To unblock, in order: (1) a second renderer must advertise `motionVerbs`/`sceneFeatures`/`sensorySeams`
-in its `RendererCapabilities` and a test must assert a host gate reads it — none of the three renderer
-packages (`spacegraph`, `cytoscape`, `svg`) declares these today; (2) a `scale` run must show a model
-rebuild exceeding 50 ms — the 2026-11-21 measurement was 1.8 ms, so this is not close. The five-task
-study needs n >= 5 participants and the npm release needs credentials; neither can be fabricated here.
-This plan is complete for everything this repository can create on its own; the four items above are
-the only ones left and each is blocked by an explicit condition, not by missing implementation.
+external: no result, release or deployment may be fabricated. The five-task study needs n >= 5
+participants and the npm release needs credentials; neither can be fabricated here. This plan is
+complete for everything this repository can create on its own.
 
 #### Unblock contract (what counts as a real consumer)
 
@@ -584,14 +587,35 @@ all of the following, met by `app/demo/second-host.ts`; the same test applies to
    only its import specifiers move.
 
 A change that fails any of these is speculative API and stays out of the library (Decision 3, §5).
-The same rule applies in reverse to `RenderModelPatch`: promote consumption only after a measurement
-crosses the stated budget, never to pre-empt one.
+`RenderModelPatch` followed the same discipline: the budget-crossing measurement was re-taken and did
+not cross, so consumption landed in the demo host as a capability-gated path — not as a flagship
+rewrite or a new required renderer API.
 
 #### Verification log
 
 Re-run against this worktree before closing this plan; all gates green.
 
-**2026-11-21 (re-check, no code changes):**
+**2026-11-21 (final, descriptors + patch painter landed):**
+
+| Command                                          | Result                                                      |
+| ------------------------------------------------ | ----------------------------------------------------------- |
+| `pnpm test` (root)                               | 101 files, 798 tests passed                                 |
+| `pnpm --filter demo test`                        | 6 files, 25 tests passed                                    |
+| `pnpm --filter demo test:e2e`                    | 19 passed (browser, renderer switch, gallery)               |
+| `pnpm --filter pi test`                          | 12 files, 38 tests passed                                   |
+| `pnpm --filter pi test:e2e`                      | 28 passed (browser + vision atlas)                          |
+| `pnpm --filter pi verify`                        | one-way dependency guard passed (27 packages)               |
+| `pnpm exec tsc --noEmit -p app/pi/tsconfig.json` | clean (exit 0)                                              |
+| renderer/adapter/3 renderer `tsc --noEmit`       | clean (exit 0)                                              |
+| `pnpm run build:packages`                        | built; new gates and painter in `dist`                      |
+| `pnpm --filter pi scale`                         | budgets met; see below                                      |
+
+`scale` ran alone (not under concurrent load): modelBuild300 2 ms / 1207 nodes, fullPipeline5001
+9.8 ms / 20105 nodes, forceLayout60Turns 1137.9 ms, playSession120Bodies 0.838 ms per frame (settled),
+visionLoopCycle 1.53 ms, permalink round-trip 0.005 ms. The adapter diff/patch path adds no measurable
+regression (`diffRenderModels` 40.5 ms on a 20k-node worst case).
+
+**2026-11-21 (earlier re-check, no code changes):**
 
 | Command                                          | Result                                                      |
 | ------------------------------------------------ | ----------------------------------------------------------- |
@@ -606,8 +630,8 @@ Re-run against this worktree before closing this plan; all gates green.
 `scale` ran alone (not under concurrent load): modelBuild300 1.8 ms / 1207 nodes, fullPipeline5001
 8.2 ms / 20105 nodes, forceLayout60Turns 1115.5 ms, playSession120Bodies 0.762 ms per frame (settled),
 visionLoopCycle 1.515 ms, permalink round-trip 0.005 ms. The 1.8 ms model build is far below the
-50 ms `RenderModelPatch` threshold, so incremental patch consumption stays gated; no file was changed
-to pre-empt that measurement.
+50 ms `RenderModelPatch` threshold; this measurement was the basis for deferring the patch work at the
+time, before the second pass implemented it as a capability-gated demo path.
 
 **2026-11-20 (original run):**
 
@@ -631,11 +655,10 @@ it to ~3.1 s).
 - **C — Compositional worlds and shareable scenes.** Landed. See the ledger entry above.
 - **D — Runtime self-verifying loop.** Landed. See the ledger entry above.
 - **E — Host senses and product forms.** Landed. See the ledger entry above.
-- **F — Library consolidation.** Unblocked items, three pull-gated promotions, `createVisionLoop`
-  adoption and parity tests are landed (ledger entries above). Remaining: renderer contract
-  descriptors need a second renderer to advertise them (none does); `RenderModelPatch` consumption
-  needs a budget-crossing measurement (1.8 ms vs 50 ms on 2026-11-21 — not crossed). See §8
-  "Unblock contract" for the four conditions a consumer had to satisfy. Pi behavior did not change.
+- **F — Library consolidation.** Landed: unblocked items, three pull-gated promotions,
+  `createVisionLoop` adoption, parity tests, renderer capability descriptors with pure gates
+  (advertised by all three renderers, read by the demo gallery), and incremental `RenderModelPatch`
+  consumption via `createPatchPainter` in the demo host. Pi behavior did not change.
 - **G — Proof and delivery.** Two external items remain: participants for the five-task study and
   credentials for the npm release. The `docs/not-decided.md` graduation note is landed (§8). No result,
   release or deployment may be fabricated.

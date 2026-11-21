@@ -27,6 +27,8 @@ const CAPABILITIES: RendererCapabilities = {
     zoomRange: { min: 0, max: Number.POSITIVE_INFINITY },
     cardFacing: false,
     fitInsets: true,
+    motionVerbs: [],
+    sceneFeatures: [],
 };
 
 const FIT_MARGIN = 30;

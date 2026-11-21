@@ -6,10 +6,14 @@
 
 import {
     ContrastAuditor,
+    supportsMotionVerb,
+    supportsSceneFeature,
+    supportsSensorySeam,
     type RendererCapabilities,
     type RenderModel,
     type RenderTheme,
 } from '@spacegraphjs/renderer';
+import { CAMERA_MOTION_VERBS } from 'spacegraphjs/motion';
 import type { GraphController } from 'spacegraphjs/control';
 import { depthTreatment, type DepthMode } from 'spacegraphjs/depth';
 import { type GraphLayout } from 'spacegraphjs/layout';
@@ -35,6 +39,8 @@ import type { CodeDiff } from '@spacegraphjs/shared';
 import { Representations } from 'spacegraphjs/representations';
 import {
     enabledSceneFeatures,
+    SCENE_FEATURES,
+    SENSORY_SEAMS,
     supportsSensory,
     worldPolicyFor,
     type WorldCapabilities,
@@ -299,6 +305,7 @@ export const CAPABILITIES: readonly Capability[] = [
             '@spacegraphjs/spacegraph-renderer',
             '@spacegraphjs/cytoscape-renderer',
             '@spacegraphjs/svg-renderer',
+            'spacegraphjs/motion',
         ],
         summary: 'The same RenderModel, drawn by WebGL, by Canvas, and as static SVG.',
         run: (context) => {
@@ -306,10 +313,16 @@ export const CAPABILITIES: readonly Capability[] = [
 
             if (!capabilities) return ['no renderer is mounted'];
 
+            const advertised = (values: readonly string[], supported: (value: string) => boolean) =>
+                values.filter(supported).join(', ') || 'none';
+
             return [
                 `${context.rendererName}`,
                 `DOM cards: ${capabilities.domNodes ? `yes, up to ${capabilities.maxDomNodes}` : 'no'}`,
                 `projections: ${capabilities.projections.join(', ')}`,
+                `motion verbs: ${advertised(CAMERA_MOTION_VERBS, (verb) => supportsMotionVerb(capabilities, verb))}`,
+                `scene features: ${advertised(SCENE_FEATURES, (feature) => supportsSceneFeature(capabilities, feature))}`,
+                `sensory seams: ${advertised(SENSORY_SEAMS, (seam) => supportsSensorySeam(capabilities, seam))}`,
             ];
         },
     },

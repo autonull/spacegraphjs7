@@ -7,6 +7,8 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_THEME } from '@spacegraphjs/renderer';
+import { SpaceGraphRenderer } from '@spacegraphjs/spacegraph-renderer';
+import { SvgRenderer } from '@spacegraphjs/svg-renderer';
 import { renderCodeDiff } from 'spacegraphjs/overlays';
 import { CAPABILITIES, GALLERY_MODULES } from '../src/gallery';
 import { DemoHost } from '../src/host';
@@ -49,6 +51,7 @@ const EXPECTED_MODULES = [
     'spacegraphjs/depth',
     'spacegraphjs/layout',
     'spacegraphjs/levels',
+    'spacegraphjs/motion',
     'spacegraphjs/navigation',
     'spacegraphjs/overlays',
     'spacegraphjs/representations',
@@ -203,6 +206,33 @@ describe('the demo host', () => {
         expect(scope.root?.id).toBe('stage:verify');
         expect(scope.nodes.map((node) => node.id)).toContain('test:failure');
         expect(scope.nodes.map((node) => node.id)).not.toContain('ship:publish');
+    });
+
+    it('gates renderer descriptors through the host gallery', () => {
+        const host = new DemoHost();
+        const entry = CAPABILITIES.find((capability) => capability.id === 'renderers')!;
+
+        const rich = entry
+            .run(
+                host.context(DEFAULT_THEME, {
+                    rendererName: 'SpaceGraph',
+                    capabilities: new SpaceGraphRenderer().capabilities,
+                }),
+            )
+            .join('\n');
+        const plain = entry
+            .run(
+                host.context(DEFAULT_THEME, {
+                    rendererName: 'Static SVG',
+                    capabilities: new SvgRenderer().capabilities,
+                }),
+            )
+            .join('\n');
+
+        expect(rich).toContain('motion verbs: flyTo, trace');
+        expect(rich).toContain('scene features: fog, lights, parallax, trails, instancing');
+        expect(plain).toContain('motion verbs: none');
+        expect(plain).toContain('scene features: none');
     });
 
     it('renders the code diff as text, never as markup', () => {

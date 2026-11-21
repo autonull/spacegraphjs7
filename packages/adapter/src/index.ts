@@ -1,5 +1,6 @@
 export { ModelAdapter } from './ModelAdapter';
 export { diffRenderModels } from './diff';
+export { createPatchPainter } from './patch-painter';
 export { escapeHtml, formatOpacity } from './html';
 export { adapterConformance, type ConformanceCase, type ConformanceFixture } from './conformance';
 export {
