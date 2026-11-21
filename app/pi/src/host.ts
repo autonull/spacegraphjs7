@@ -18,6 +18,7 @@ import {
 } from '@spacegraphjs/navigation/follow';
 import { GraphController } from 'spacegraphjs/control';
 import { sampleDepth, type DepthAxis } from 'spacegraphjs/depth';
+import { Navigation, Trail } from 'spacegraphjs/navigation';
 import { ScopeSimulation, type ScopePolicyInput, type ScopeSpec } from 'spacegraphjs/layout';
 import { MotionDirector, type MotionPlayback } from 'spacegraphjs/motion';
 import {
@@ -59,7 +60,7 @@ import {
     type Position,
     type VisionScores,
 } from './policy';
-import { agentScopes, DEPTH } from './scopes';
+import { agentScopes, DEPTH, portalChain } from './scopes';
 import { readTheme } from './theme';
 import { decodePermalink, encodePermalink, isRevealHash, type PermalinkState } from './permalink';
 import { createPlaySession, type GravityPreset, type PlaySession } from './play';
@@ -169,6 +170,7 @@ export class PiHost {
     #kernel = new Kernel();
     #theme: RenderTheme = DEFAULT_THEME;
     #controller = new GraphController({ trailMaxDepth: 8 });
+    #trail = new Trail({ maxDepth: 12 });
     #adapter = new AgentAdapter();
     #notes = new NoteStore();
     #annotationWidgets?: AnnotationWidgets;
@@ -208,6 +210,7 @@ export class PiHost {
     #vision: VisionScores = { overlap: 0, legibility: 1 };
     #visionStrategy: 'onnx' | 'heuristics' = 'heuristics';
     #visionTime = 0;
+    #minimapTime = 0;
     #visionLoop?: VisionLoop;
     #visionLoopEnabled = false;
     #visionLoopBusy = false;
@@ -254,6 +257,7 @@ export class PiHost {
                 },
             },
         });
+        this.#trail.onChange(() => this.renderTrail());
     }
 
     async mount(container: HTMLElement): Promise<void> {
@@ -283,6 +287,9 @@ export class PiHost {
         this.renderOverview();
         this.renderTurnMap();
         this.renderHud();
+        this.renderTrail();
+        this.renderPortalCrumb();
+        this.renderMinimap();
         this.bindControls();
         this.renderVisionLoop();
         if (
@@ -308,6 +315,14 @@ export class PiHost {
         this.#qualifiedByNode = scopes.qualifiedById;
         this.#portalByNode = scopes.portalByNode;
         this.#specs = scopes.specs;
+        this.#trail.reconcile(
+            new Map(
+                this.#view.nodes.map((node) => [
+                    node.id,
+                    { id: node.id, label: node.label, kind: node.kind },
+                ]),
+            ),
+        );
         this.simulation.setSpecs(scopes.specs, {
             band: this.band(),
             focus: this.#qualifiedByNode.get(this.#controller.selection[0]),
@@ -389,6 +404,7 @@ export class PiHost {
         this.#annotationWidgets?.refresh(this.#model.nodes);
         this.renderer.setModel(this.#model);
         this.renderHistory();
+        this.renderMinimap();
     }
 
     renderPositions(): void {
@@ -428,6 +444,11 @@ export class PiHost {
             if (this.#visionLoopEnabled) this.runVisionLoop();
             else this.sampleVision();
         }
+        this.#minimapTime += seconds;
+        if (this.#minimapTime >= 0.2) {
+            this.#minimapTime = 0;
+            this.renderMinimap();
+        }
         this.renderPositions();
         this.#fps = lerp(this.#fps, seconds > 0 ? 1 / seconds : 0, 0.15);
         this.renderHud();
@@ -443,8 +464,11 @@ export class PiHost {
     }
 
     reveal(id: string): void {
-        if (!this.#view.nodes.some((node) => node.id === id)) return;
+        const node = this.#view.nodes.find((candidate) => candidate.id === id);
+        if (!node) return;
         this.#revealed = id;
+        this.#trail.push({ id, label: node.label, kind: node.kind });
+        this.renderPortalCrumb();
         this.renderer.setSelection([id]);
         const qualified = this.#qualifiedByNode.get(id);
         if (this.#pinnedReveal && this.#pinnedReveal !== qualified)
@@ -464,6 +488,27 @@ export class PiHost {
             });
         }
         this.renderAnnotationTarget();
+        if (this.#model) this.renderMinimap();
+    }
+
+    trailBack(): string | undefined {
+        const current = this.#trail.back();
+        if (current) this.reveal(current.id);
+        return current?.id;
+    }
+
+    trailForward(): string | undefined {
+        const current = this.#trail.forward();
+        if (current) this.reveal(current.id);
+        return current?.id;
+    }
+
+    trailTo(id: string): void {
+        const target = this.#trail.entries.findIndex((entry) => entry.id === id);
+        if (target < 0) return;
+        while (this.#trail.depth - 1 > target) this.#trail.back();
+        while (this.#trail.depth - 1 < target) this.#trail.forward();
+        this.reveal(id);
     }
 
     setFollow(mode: FollowMode): FollowMode {
@@ -564,12 +609,14 @@ export class PiHost {
             ...viewport,
             center: [viewport.center[0] - dx, viewport.center[1] - dy, viewport.center[2]],
         });
+        this.renderMinimap();
     }
 
     zoomBy(factor: number): number {
         const viewport = this.renderer.getViewport();
         const zoom = Math.max(0.1, Math.min(6, viewport.zoom * factor));
         this.renderer.setViewport({ ...viewport, zoom });
+        this.renderMinimap();
         return zoom;
     }
 
@@ -705,6 +752,21 @@ export class PiHost {
             setSurface: (surface: Surface) => this.setSurface(surface),
             reveal: (id: string) => this.reveal(id),
             revealed: () => this.#revealed,
+            trail: () => ({
+                entries: this.#trail.entries.map((entry) => entry.id),
+                current: this.#trail.current?.id,
+                canGoBack: this.#trail.canGoBack,
+                canGoForward: this.#trail.canGoForward,
+            }),
+            trailBack: () => this.trailBack(),
+            trailForward: () => this.trailForward(),
+            portalNodes: () => [...this.#portalByNode.keys()],
+            portalScope: () => (this.#revealed ? this.#portalByNode.get(this.#revealed) : undefined),
+            portalChain: () => this.portalCrumb(),
+            minimap: () => ({
+                dots: el('minimap').querySelectorAll('[data-minimap-node]').length,
+                viewRect: Boolean(el('minimap').querySelector('[data-minimap-view]')),
+            }),
             trace: (id: string) => this.trace(id),
             tracePath: () => this.#traceIds,
             traceProgress: () => this.#traceProgress,
@@ -1094,6 +1156,14 @@ export class PiHost {
             this.setVisionLoop(!this.#visionLoopEnabled),
         );
         el('guided-replay').addEventListener('click', () => this.replay());
+        el('trail-back').addEventListener('click', () => this.trailBack());
+        el('trail-forward').addEventListener('click', () => this.trailForward());
+        el('minimap').addEventListener('click', (event) => {
+            const id = (event.target as Element | null)
+                ?.closest('[data-minimap-node]')
+                ?.getAttribute('data-minimap-node');
+            if (id) this.reveal(id);
+        });
         el('permalink-copy').addEventListener('click', () => {
             location.hash = this.permalink().slice(1);
             void navigator.clipboard?.writeText(location.href).catch(() => undefined);
@@ -1265,5 +1335,102 @@ export class PiHost {
                 return chip;
             }),
         );
+    }
+
+    private renderTrail(): void {
+        const current = this.#trail.current?.id;
+        el<HTMLButtonElement>('trail-back').disabled = !this.#trail.canGoBack;
+        el<HTMLButtonElement>('trail-forward').disabled = !this.#trail.canGoForward;
+        el('trail-list').replaceChildren(
+            ...this.#trail.entries.map((entry, index) => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.dataset.trailNode = entry.id;
+                button.dataset.active = String(entry.id === current);
+                button.textContent = `${index + 1}. ${entry.label ?? entry.id}`;
+                button.addEventListener('click', () => this.trailTo(entry.id));
+                return button;
+            }),
+        );
+    }
+
+    private portalCrumb(): readonly string[] {
+        const scope = this.#revealed ? this.#portalByNode.get(this.#revealed) : undefined;
+        return scope ? portalChain(scope, this.#specs) : [];
+    }
+
+    private renderPortalCrumb(): void {
+        const chain = this.portalCrumb();
+        const portalByScope = new Map(
+            [...this.#portalByNode].map(([node, scope]) => [scope, node]),
+        );
+        if (!chain.length) {
+            const hint = document.createElement('span');
+            hint.textContent = 'reveal a portal node to see its scope path';
+            el('portal-crumb').replaceChildren(hint);
+            return;
+        }
+        el('portal-crumb').replaceChildren(
+            ...chain.map((scope, index) => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.dataset.scope = scope;
+                button.textContent = scope;
+                button.title = index === chain.length - 1 ? 'current portal' : `back to ${scope}`;
+                button.addEventListener('click', () => {
+                    const target = portalByScope.get(scope) ?? this.#specs.find((spec) => spec.id === scope)?.nodes[0]?.id;
+                    if (target) this.reveal(target);
+                });
+                return button;
+            }),
+        );
+    }
+
+    private renderMinimap(): void {
+        const width = 176;
+        const height = 112;
+        const positions = new Map(
+            (this.#model?.nodes ?? []).map((node) => [node.id, { x: node.position[0], y: node.position[1] }] as const),
+        );
+        const viewport = this.renderer.getViewport();
+        const projection = Navigation.project({
+            positions,
+            box: { width, height },
+            padding: 8,
+            ...(viewport.extent
+                ? {
+                      viewport: {
+                          center: [viewport.center[0], viewport.center[1]] as [number, number],
+                          extent: viewport.extent,
+                      },
+                  }
+                : {}),
+        });
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+        svg.setAttribute('role', 'img');
+        svg.setAttribute('aria-label', 'Graph overview minimap');
+        if (projection.viewRect) {
+            const view = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            view.dataset.minimapView = 'true';
+            view.setAttribute('x', projection.viewRect.x.toFixed(1));
+            view.setAttribute('y', projection.viewRect.y.toFixed(1));
+            view.setAttribute('width', Math.max(1, projection.viewRect.width).toFixed(1));
+            view.setAttribute('height', Math.max(1, projection.viewRect.height).toFixed(1));
+            view.setAttribute('fill', 'none');
+            view.setAttribute('stroke', 'var(--pi-accent)');
+            svg.append(view);
+        }
+        for (const [id, point] of positions) {
+            const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            const projected = projection.project(point);
+            dot.dataset.minimapNode = id;
+            dot.setAttribute('cx', projected.x.toFixed(1));
+            dot.setAttribute('cy', projected.y.toFixed(1));
+            dot.setAttribute('r', id === this.#revealed ? '3' : '1.6');
+            dot.setAttribute('fill', id === this.#revealed ? 'var(--pi-focus)' : 'var(--pi-edge)');
+            svg.append(dot);
+        }
+        el('minimap').replaceChildren(svg);
     }
 }

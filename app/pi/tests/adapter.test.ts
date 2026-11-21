@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest';
-import { cardMarkup, representationRung, toAdapterModel } from '../src/adapter';
+import { cardMarkup, portalGlyph, representationRung, toAdapterModel } from '../src/adapter';
 import { fixtureKernel } from '../src/fixture';
+import { agentScopes } from '../src/scopes';
 import { agentDomain } from '@spacegraphjs/agent';
 
 const view = agentDomain.build(fixtureKernel());
@@ -35,5 +36,17 @@ describe('representation ladder', () => {
             expect(html).not.toContain('<b>');
             expect(html).toContain('&lt;img');
         }
+    });
+
+    test('a portal keeps a stable glyph and identity at every rung', () => {
+        const [portalId, scope] = [...agentScopes(view).portalByNode][0]!;
+        const portal = model.nodes.find((candidate) => candidate.id === portalId)!;
+        for (const rung of ['overview', 'execution', 'detail'] as const) {
+            const html = cardMarkup({ ...portal, scope }, rung, context);
+            expect(html).toContain(`data-portal="${scope}"`);
+            expect(html).toContain(portalGlyph(scope));
+        }
+        expect(portalGlyph(scope)).toBe(portalGlyph(scope));
+        expect(cardMarkup(node, 'detail', context)).not.toContain('data-portal=');
     });
 });

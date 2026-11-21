@@ -218,6 +218,44 @@
                 font-size: 11px;
                 color: var(--pi-text-muted);
             }
+            #trail-nav,
+            #trail-list,
+            #portal-crumb {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 4px;
+                font-size: 11px;
+            }
+            #trail-nav button,
+            #trail-list button,
+            #portal-crumb button {
+                border: 1px solid var(--pi-border);
+                border-radius: 6px;
+                background: var(--pi-surface-muted);
+                color: var(--pi-text);
+                padding: 4px 6px;
+                cursor: pointer;
+                font-size: 11px;
+            }
+            #trail-nav button:disabled {
+                opacity: 0.4;
+                cursor: default;
+            }
+            #trail-list button[data-active='true'],
+            #portal-crumb button:last-child {
+                border-color: var(--pi-accent);
+                color: var(--pi-accent);
+            }
+            #minimap svg {
+                width: 100%;
+                height: auto;
+                border: 1px solid var(--pi-border);
+                border-radius: 6px;
+                background: var(--pi-background);
+            }
+            #minimap circle {
+                cursor: pointer;
+            }
             #history-banner {
                 position: absolute;
                 top: 8px;
@@ -372,6 +410,16 @@
             <div id="overview"></div>
             <strong>Turn map</strong>
             <div id="turn-map"></div>
+            <strong>Trail</strong>
+            <div id="trail-nav">
+                <button type="button" id="trail-back" aria-label="Back">← Back</button>
+                <button type="button" id="trail-forward" aria-label="Forward">Forward →</button>
+            </div>
+            <div id="trail-list"></div>
+            <strong>Portal path</strong>
+            <div id="portal-crumb"></div>
+            <strong>Minimap</strong>
+            <div id="minimap"></div>
             <strong>HUD</strong>
             <div id="hud">starting…</div>
             <strong>Vision loop</strong>

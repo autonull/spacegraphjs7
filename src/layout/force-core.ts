@@ -328,11 +328,9 @@ export class ForceCore {
                 t = (t + 0x6d2b79f5) >>> 0;
                 const r3 = Math.imul(t ^ (t >>> 15), 1 | t);
                 const rand3 = ((r3 ^ (r3 >>> 14)) >>> 0) / 4294967296;
-                node.position.set(
-                    (rand - 0.5) * 400,
-                    (rand2 - 0.5) * 400,
-                    (rand3 - 0.5) * 400,
-                );
+                node.position.x = (rand - 0.5) * 400;
+                node.position.y = (rand2 - 0.5) * 400;
+                node.position.z = (rand3 - 0.5) * 400;
             } else {
                 const angle = (i + this.#seed) * GOLDEN_ANGLE;
                 const radius = (this.#spacing * Math.sqrt(i + 1)) / 2;

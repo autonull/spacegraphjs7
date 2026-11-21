@@ -11,6 +11,20 @@ export type AgentScopes = {
     readonly portalByNode: ReadonlyMap<string, string>;
 };
 
+/** Root-first scope chain for a node that opens `scope`; parent links are followed until the root. */
+export const portalChain = (scope: string, specs: readonly ScopeSpec[]): readonly string[] => {
+    const parentByScope = new Map(specs.map((spec) => [spec.id, spec.parent]));
+    const chain: string[] = [];
+    const seen = new Set<string>();
+    let current: string | undefined = scope;
+    while (current && !seen.has(current)) {
+        seen.add(current);
+        chain.unshift(current);
+        current = parentByScope.get(current);
+    }
+    return chain;
+};
+
 export const DEPTH: Readonly<Record<string, number>> = {
     run: 0,
     unit: 1,

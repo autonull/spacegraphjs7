@@ -53,6 +53,12 @@ const detailOf = (node: AgentAdapterNode): string => {
     return node.summary ?? '';
 };
 
+const PORTAL_GLYPHS = ['▣', '▤', '▥', '▦'] as const;
+
+/** A stable glyph per child scope, so a portal keeps the same identity across rungs and rebuilds. */
+export const portalGlyph = (scope: string): string =>
+    PORTAL_GLYPHS[[...scope].reduce((sum, char) => sum + char.charCodeAt(0), 0) % PORTAL_GLYPHS.length]!;
+
 export type RepresentationInput = {
     readonly level: AgentLevel;
     /** Decaying activity score of the node, in [0, 1]. */
@@ -74,22 +80,28 @@ export const cardMarkup = (node: AgentAdapterNode, rung: AgentLevel, context: Ca
     const detail = escapeHtml(detailOf(node));
     const status = escapeHtml(node.status);
     const badge = context.count ? ` <span style="opacity:.6">${context.count}</span>` : '';
-    const attributes = `data-rung="${rung}" data-kind="${escapeHtml(node.kind)}" data-status="${status}"`;
+    const portal = node.scope
+        ? ` data-portal="${escapeHtml(node.scope)}"`
+        : '';
+    const glyph = node.scope
+        ? `<span aria-hidden="true" style="opacity:.7">${portalGlyph(node.scope)} </span>`
+        : '';
+    const attributes = `data-rung="${rung}" data-kind="${escapeHtml(node.kind)}" data-status="${status}"${portal}`;
     const box = 'display:flex;flex-direction:column;gap:3px;padding:8px 10px;color:inherit;font-family:inherit';
 
     if (rung === 'overview') {
-        return `<div ${attributes} style="${box}"><span style="font-weight:600">${label}${badge}</span></div>`;
+        return `<div ${attributes} style="${box}"><span style="font-weight:600">${glyph}${label}${badge}</span></div>`;
     }
     if (rung === 'execution') {
         const bars = [0.3, 0.55, 0.8, 0.5, 0.95]
             .map((height) => `<i style="display:inline-block;width:3px;height:${Math.round(height * 14)}px;background:currentColor;opacity:.55"></i>`)
             .join('');
-        return `<div ${attributes} style="${box}"><span style="font-weight:600">${label}${badge}</span><span style="display:flex;align-items:flex-end;gap:2px;height:16px">${bars}</span><span style="opacity:.72;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${detail.slice(0, 80)}</span></div>`;
+        return `<div ${attributes} style="${box}"><span style="font-weight:600">${glyph}${label}${badge}</span><span style="display:flex;align-items:flex-end;gap:2px;height:16px">${bars}</span><span style="opacity:.72;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${detail.slice(0, 80)}</span></div>`;
     }
     const scope = node.scope
-        ? `<span style="opacity:.7;font-size:11px">scope: ${escapeHtml(node.scope)}</span>`
+        ? `<span style="opacity:.7;font-size:11px">${portalGlyph(node.scope)} scope: ${escapeHtml(node.scope)}</span>`
         : '';
-    return `<div ${attributes} style="${box}"><span style="font-weight:600">${label}${badge}</span><span style="opacity:.78;font-size:12px;line-height:16px;max-height:64px;overflow:hidden">${detail.slice(0, 320)}</span><span style="opacity:.6;font-size:11px">${escapeHtml(node.kind)} · ${status} · reveal / follow / trace</span>${scope}</div>`;
+    return `<div ${attributes} style="${box}"><span style="font-weight:600">${glyph}${label}${badge}</span><span style="opacity:.78;font-size:12px;line-height:16px;max-height:64px;overflow:hidden">${detail.slice(0, 320)}</span><span style="opacity:.6;font-size:11px">${escapeHtml(node.kind)} · ${status} · reveal / follow / trace</span>${scope}</div>`;
 };
 
 export class AgentAdapter extends ModelAdapter<

@@ -196,6 +196,48 @@ test.describe('the Pi reference app', () => {
         expect(errors).toEqual([]);
     });
 
+    test('navigates revealed nodes through the trail, portal path and minimap', async ({ page }) => {
+        const errors = await boot(page);
+
+        const rows = page.locator('#transcript-list .transcript-row');
+        const first = (await rows.nth(0).getAttribute('data-node'))!;
+        const second = (await rows.nth(1).getAttribute('data-node'))!;
+        await rows.nth(0).click();
+        await rows.nth(1).click();
+        const trail = await page.evaluate(() => (window as any).__pi.trail());
+        expect(trail.entries.at(-2)).toBe(first);
+        expect(trail.current).toBe(second);
+        await expect(page.locator('#trail-list button[data-trail-node]')).toHaveCount(trail.entries.length);
+        await expect(page.locator('#trail-back')).toBeEnabled();
+        await expect(page.locator('#trail-forward')).toBeDisabled();
+
+        await page.locator('#trail-back').click();
+        expect(await page.evaluate(() => (window as any).__pi.revealed())).toBe(first);
+        await page.locator('#trail-forward').click();
+        expect(await page.evaluate(() => (window as any).__pi.revealed())).toBe(second);
+
+        const minimap = await page.evaluate(() => (window as any).__pi.minimap());
+        expect(minimap.dots).toBeGreaterThan(0);
+        expect(typeof minimap.viewRect).toBe('boolean');
+        await expect(page.locator('#minimap svg circle').first()).toBeVisible();
+
+        const portalId = await page.evaluate(() => {
+            const pi = (window as any).__pi;
+            return pi.portalNodes().find((id: string) => {
+                pi.reveal(id);
+                return pi.portalChain().length > 1;
+            });
+        });
+        expect(portalId).toBeTruthy();
+        const chain = await page.evaluate(() => (window as any).__pi.portalChain());
+        expect(chain[0]).toBe('run');
+        await expect(page.locator('#portal-crumb button')).toHaveCount(chain.length);
+        await page.locator('#portal-crumb button').first().click();
+        expect(await page.evaluate(() => (window as any).__pi.revealed())).not.toBe(portalId);
+
+        noErrors(errors);
+    });
+
     test('submits the prompt form against the local op server', async ({ page }) => {
         const errors = await boot(page);
         const before = await page.evaluate(() => (window as any).__pi.ops());

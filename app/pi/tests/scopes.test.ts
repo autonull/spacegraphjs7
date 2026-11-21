@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { agentDomain, type AgentView } from '@spacegraphjs/agent';
 import { buildScopeTree, ScopeSimulation } from 'spacegraphjs/layout';
 import { fixtureID, fixtureKernel } from '../src/fixture';
-import { agentScopes } from '../src/scopes';
+import { agentScopes, portalChain } from '../src/scopes';
 
 const view = () => agentDomain.build(fixtureKernel());
 const options = { seed: 7, gap: 190, depthStep: 220, nodePadding: 36 } as const;
@@ -21,6 +21,19 @@ describe('agentScopes', () => {
         for (const [qualified, id] of scopes.nodeById) {
             expect(scopes.qualifiedById.get(id)).toBe(qualified);
         }
+    });
+
+    it('walks a portal chain root-first and terminates on a cycle', () => {
+        const specs = agentScopes(view()).specs;
+        const child = specs.find((spec) => spec.parent === 'run')!;
+        expect(portalChain(child.id, specs)).toEqual(['run', child.id]);
+        expect(portalChain('unknown', specs)).toEqual(['unknown']);
+
+        const cyclic = [
+            { id: 'a', parent: 'b', nodes: [] },
+            { id: 'b', parent: 'a', nodes: [] },
+        ];
+        expect(portalChain('a', cyclic)).toHaveLength(2);
     });
 
     it('keeps a node id stable while its qualified path follows reparenting', () => {

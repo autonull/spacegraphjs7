@@ -22,6 +22,22 @@ Edge endpoints may be a local node id, a direct child scope id, or a qualified p
 `/session/turn-1/x`). `buildScopeTree` validates every reference before layout, so a scope layout
 never fails on a dangling endpoint.
 
+## Two layout vocabularies
+
+Recursive scopes and flat lane layouts have separate strategy types; they are not interchangeable.
+
+- `ScopeStrategy` (`force`, `grid`, `tree`) is `ScopeSpec.strategy`. It selects the solver for one
+  scope's interior.
+- `LaneLayoutStrategy` (`lanes`, `timeline`, `hierarchy`, `tree`, `force`) selects the flat lane
+  layout plugin's strategy.
+
+Both are subpath-only exports. The package root exposes `layout` as a namespace of plugins, so import
+the types from `spacegraphjs/layout`:
+
+```ts
+import type { ScopeStrategy, LaneLayoutStrategy } from 'spacegraphjs/layout';
+```
+
 ## Geometry
 
 `layoutScopes` runs in two passes:
