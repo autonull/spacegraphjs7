@@ -1,203 +1,140 @@
 # SpaceGraphJS — Software Roadmap
 
-> **The First Self-Building UI Framework**: AI that sees what it builds, verifies quality autonomously, and
-> self-corrects in 30 seconds.
+> **An interface that can finish itself.** Mechanism first, then continuity, then an experiment system that
+> compares alternatives honestly. This document tracks reality; `TODO3.md` tracks the active plan.
 
 ---
 
-## Current Status
+## Current Status (2026-11-21)
 
-The library is **Alpha quality**. The core rendering engine, all node/edge types, and the Vision AI loop are
-implemented. We are in the **Developer Experience** hardening phase before a stable `1.0` release.
+Version `8.5.0`, alpha — not yet released to npm. The **mechanism layer is complete and verified**: recursive
+scopes, representation rungs, camera verbs, one position authority, an opt-in vision loop, capability-gated
+sensory/scene/motion seams, incremental patch transport, four conforming domains, full-state permalinks,
+annotations, audit reports, graph diffs, and the Pi flagship with a five-task study harness.
+
+Workstreams A (configuration spine), B (navigation/continuity) and C (living rectangles/orchestration) of
+`TODO3.md` are implemented and gated. D (one world), E (experimentation program), F (truth pass) and G
+(study/release/proof) remain. The participant study has no winner; no immersive mode or visual default has
+been promoted.
 
 ```
-pnpm install spacegraphjs three
+pnpm install            # workspace
+pnpm test               # 814 unit tests
+pnpm --filter pi test:e2e   # 38 Playwright tests
+pnpm run build          # library, packages, demo
 ```
 
 ---
 
 ## Architecture Overview
 
-SpaceGraphJS is a layered graph rendering framework built on Three.js. Each layer is independently extensible via
-plugins.
+Hosts own policy; the library owns mechanisms. Core never imports the renderer contract.
 
 ```
-┌─────────────────────────────────────────────────────┐
-│            SpaceGraph Application Layer              │
-│     (HTML/TS entry point, spec-driven API)          │
-├─────────────────────────────────────────────────────┤
-│              Plugin Manager                          │
-│  Layout ─ Physics ─ Color ─ Vision ─ Interaction    │
-├─────────────────────────────────────────────────────┤
-│             Core Engine                              │
-│  Graph ─ Renderer ─ Camera ─ Events ─ Culling       │
-├─────────────────────────────────────────────────────┤
-│         THREE.js / WebGL / ONNX Runtime Web          │
-└─────────────────────────────────────────────────────┘
+host (Pi / Graph IDE / demo)  ── policy schema, presets, panel, recorder, orchestration
+        ↓
+domain (agent / workflow / filesystem / data)  ── six-slot vocabulary + mapping + selectors
+        ↓
+kernel + layout + salience + motion + vision   ── pure mechanisms, one position authority
+        ↓
+renderer contract (@spacegraphjs/renderer)     ── swappable adapters: WebGL 2D/3D, Cytoscape, SVG
 ```
 
-### What's Implemented ✅
+### Implemented mechanisms
 
-**Node Types (19):** ShapeNode, HtmlNode, InstancedShapeNode, ImageNode, GroupNode, NoteNode, CanvasNode, TextMeshNode,
-DataNode, VideoNode, IFrameNode, ChartNode, MarkdownNode, GlobeNode, SceneNode, AudioNode, MathNode, + 2 more
+- **Scope engine:** `ScopeSpec → buildScopeTree → layoutScopes → ScopeHost → ScopeSimulation`, with portals,
+  path-qualified IDs, pinning, warm starts, sleep, and animated frame origins.
+- **Representation:** `representationRung` plus continuous `representationWeights`; legibility gates spectacle.
+- **Motion:** `MotionDirector` with registered `flyTo`/`trace` camera handlers; reduced-motion parity.
+- **Vision:** `createVisionLoop` (analyze → scores → host policy → measure again), `createVisionAssert` test
+  gate, heuristics with report-only ONNX/hybrid strategies.
+- **Transport:** `RenderModelPatch`/`createPatchPainter`, `diffKernels`, `GraphHistory`.
+- **Domains:** four conforming domain packages built through `create-spacegraph`'s six-slot recipe.
+- **Host systems (Pi):** 29-knob policy schema with provenance, live panel, permalink v2, session recorder
+  with counterfactual re-scoring, navigation verb set, instrument kit, and graph-driven prompt/steer/approve/
+  reject/retry/compare.
 
-**Edge Types (8):** Edge, CurvedEdge, FlowEdge, LabeledEdge, DottedEdge, DynamicThicknessEdge, AnimatedEdge, BundledEdge
+### Verification gates
 
-**Layout Plugins (10):** ForceLayout, GridLayout, CircularLayout, HierarchicalLayout, RadialLayout, TreeLayout,
-SpectralLayout, GeoLayout, TimelineLayout, ClusterLayout
+| Gate | Command | Current |
+|---|---|---|
+| Unit tests | `pnpm test` | 814 passing |
+| Pi unit tests | `pnpm --filter pi test` | 50 passing |
+| Pi e2e | `pnpm --filter pi test:e2e` | 38 passing |
+| Visual atlas | `pnpm run verify:visual` | green |
+| Build | `pnpm run build` | green |
+| Root `tsc` | `pnpm exec tsc -p tsconfig.json --noEmit` | pre-existing `app/demo` errors remain (F work) |
 
-**Core Plugins (4):** InteractionPlugin, LODPlugin, AutoLayoutPlugin, AutoColorPlugin
-
-**Extended Plugins (4):** PhysicsPlugin, MinimapPlugin, ErgonomicsPlugin, VisionOverlayPlugin
-
-**Vision System (5 modules):**
-
-- `VisionManager` — ONNX model inference for layout quality (LQ-Net), overlap detection (ODN), text legibility (TLA),
-  color harmony (CHE), visual hierarchy (VHS), ergonomics (EQA)
-- `VisionOverlayPlugin` — Live UI overlay with quality scores + "Auto-Fix" button
-- `analyzer.ts` — Playwright-based build analysis for Vite integration
-- `assert.ts` — Playwright test assertions (`visionAssert.noOverlap()`, `.isLegible()`, `.expectedLayoutScore()`)
-- `plugin.ts` — Vite plugin stub (`spacegraphVision()`)
-
-**CLI & Tooling:**
-
-- `packages/create-spacegraph/` — `pnpm dlx sg6 create my-app` scaffolder
-- `packages/cli/` — `sg6 fix` interactive auto-fix tool
-
-**DX & Docs:**
-
-- `QUICKSTART.md`, `CONTRIBUTING.md`, `docs/vision-plugin.md`
-- `typedoc.json` — `pnpm run docs` generates API reference (output gitignored)
-- 9 live examples in `examples/`
-- 75 passing unit tests + 1 Playwright vision E2E test
+Budgets in `src/scale.ts` are regression smoke gates only, not optimization targets.
 
 ---
 
-## Near-Term: Hardening for `1.0` Release
+## Near-Term (ordered by dependency, not date)
 
-These are sequenced software tasks ordered by priority. **P0** blocks release; **P1** ships with release; **P2** is
-post-release.
+| Workstream | Goal | State |
+|---|---|---|
+| A | Any configuration is data; any experiment is a URL | done |
+| B | One legible, interruptible descent; measurable ergonomics | core done; touch bindings and true rung compositing remain |
+| C | The graph is a cockpit; detail rungs are instruments | core done; second host before promotion remains |
+| D | One world canvas, isolated domains, new domains born experimentable | next |
+| E | Any alternative can be tried, scored and decided as data | pending |
+| F | Docs are true, gates are real, contract frozen | in progress |
+| G | Study published, release live, hosted flagship | external, runs in parallel |
 
-### P0 — Must ship before `1.0`
-
-| Task                                    | Description                                                                                                                                             | Key Files                                 |
-| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
-| **Real ONNX weights for vision models** | Replace dummy `.onnx` files with trained models covering layout, overlap, legibility. Currently `generate_dummy_vision.py` creates placeholder weights. | `train_vision_models.py`, `public/*.onnx` |
-| **Bundle size audit**                   | Ensure `spacegraphjs.js` ships without bundling optional heavyweights (KaTeX, Chart.js) by default. Use tree-shaking and dynamic imports.               | `vite.config.ts`, `src/index.ts`          |
-| **API stability pass**                  | Review all public APIs for naming consistency, deprecate any alpha-era names, document breaking changes in `CHANGELOG.md`.                              | `src/types.ts`, `src/index.ts`            |
-| **Error handling**                      | All `SpaceGraph.create()` and plugin `.init()` paths must surface actionable errors, not silent failures or stack traces.                               | `SpaceGraph.ts`, `PluginManager.ts`       |
-| **CI vision gate**                      | GitHub Actions pipeline must run `pnpm run test:vision` and fail the build if visual regression is detected.                                            | `.github/workflows/`                      |
-
-### P1 — Ships with `1.0`
-
-| Task                            | Description                                                                                                                                                                                        | Key Files                                   |
-| ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
-| **Fractal LOD zooming**         | Nodes that are themselves graphs (sub-graphs). When camera zooms sufficiently close, a `GroupNode` seamlessly reveals its children as a nested graph. This is the core primitive for SpaceGraphOS. | `src/nodes/GroupNode.ts`, `LODPlugin.ts`    |
-| **Semantic edge navigation**    | Double-clicking an edge smoothly navigates the camera across the connection to the target node, establishing spatial traversal as the primary navigation model.                                    | `InteractionPlugin.ts`, `CameraControls.ts` |
-| **Viewport serialization**      | `sg.export()` and `SpaceGraph.import()` — serialize graph state (positions, node data, plugin config) to JSON for save/restore and sharing.                                                        | `SpaceGraph.ts`, `src/core/`                |
-| **Performance benchmark suite** | Formal benchmark: 60 FPS at 1,000 nodes, Prefer smaller bundle size, <30s time-to-first-render. Run in CI on every release.                                                                        | `verification/`, `.github/workflows/`       |
-| **Inter-graph edges**           | Edges that connect nodes in different `SpaceGraph` instances (multi-canvas layout), required for compositional ZUI views.                                                                          | `src/edges/Edge.ts`, `Graph.ts`             |
-| **CONTRIBUTING.md polish**      | Add `good-first-issue` guide with links to specific `src/nodes/` files. Add setup guide for ONNX model training.                                                                                   | `CONTRIBUTING.md`                           |
-
-### P2 — Post-`1.0`
-
-| Task                               | Description                                                                                                              | Notes                         |
-| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ----------------------------- |
-| **Vision model training pipeline** | Full `train_vision_models.py` → `.onnx` pipeline with CI. Requires labeled layout corpus.                                | Research track                |
-| **React / Vue adapters**           | `@spacegraphjs/react` and `@spacegraphjs/vue` for framework integration. Use framework-agnostic core.                    | Community driven              |
-| **Open VSX extension**             | Editor integration for syntax highlighting of `.sgraph` spec files.                                                      | After demand confirmed        |
-| **SpaceGraphOS compositor**        | Wayland-based compositor rendering the entire Linux OS as a SpaceGraph, using `VisionManager` for system health overlay. | Long-term (hardware required) |
+See `TODO3.md` §12 for the definition of done and §11 for explicit anti-goals.
 
 ---
 
-## Medium-Term: SpaceGraphOS Vision
+## SpaceGraphOS Vision (long-term)
 
-SpaceGraphJS is the **graphics primitive** for a larger GUI revolution.
-
-### Fractal Zooming User Interface (FZUI)
-
-Standard ZUIs translate the camera. A **Fractal ZUI** traverses semantic edges.
-
-- Zoom → document node becomes an editable canvas at that zoom level
-- Zoom out → it becomes a node in the project graph again
-- Navigate by zooming, not clicking application icons
-
-### SpaceGraphOS Stack
-
-```
-SpaceGraphJS Applications (files, apps, processes — all nodes)
-          ↓
-SpaceGraph Compositor (Wayland-based, entire OS is a graph)
-          ↓
-Vision Acceleration Layer (NPU-accelerated ONNX inference, <50ms)
-          ↓
-Linux Base (Buildroot/Alpine, <500MB rootfs)
-          ↓
-RK3588 Hardware (8-core ARM, 6 TOPS NPU, Mali-G610 GPU)
-```
-
-See `PLAN/SPACEGRAPH_OS.md` for the full architectural vision.
+SpaceGraphJS is the graphics primitive for a larger GUI program: files, apps and processes as nodes in one
+navigable world, with vision as a health instrument. The compositor, NPU acceleration and hardware stack are
+research tracks, not scheduled product work. No XR/sound/haptics/gamepad default ships; seams stay
+host-registered and report-only.
 
 ---
 
-## What NOT To Build (Deferred/Rejected)
+## What NOT To Build (deferred or rejected)
 
-| Item                                        | Reason                            |
-| ------------------------------------------- | --------------------------------- |
-| Docker image                                | It's a library, not a service     |
-| Self-hosted CDN / Verdaccio                 | pnpm/unpkg suffice                |
-| Vercel / Netlify / CodeSandbox integrations | Proprietary silos                 |
-| IPFS distribution                           | Ideological, low practical impact |
-| Nix flake                                   | Too niche, blocks nothing         |
+| Item | Reason |
+|---|---|
+| Workerization, text-renderer swaps, realtime transport | No measured demand; budgets are smoke gates |
+| Ten scheduled domains | The scaffold makes each domain host work |
+| Library XR/sound/haptics/gamepad defaults | Seams stay host-registered |
+| Docker image, proprietary deployment silos, IPFS, Nix flake | A library, not a service |
+| A second position authority or `inferred-cause` edges | Settled invariants |
 
 ---
 
 ## Release Checklist
 
 ```bash
-# Before tagging a release:
 pnpm run lint
 pnpm run format:check
-pnpm run build          # zero errors
-pnpm run test           # 75+ tests passing
-pnpm run test:vision    # Playwright vision gate passes
-pnpm run docs           # TypeDoc generates cleanly (output gitignored)
-pnpm pack --dry-run     # verify package contents
+pnpm run build
+pnpm test
+pnpm --filter pi test
+pnpm --filter pi test:e2e
+pnpm run verify:visual
+pnpm run test:publish
+pnpm run docs       # TypeDoc, output gitignored
+pnpm pack --dry-run
 ```
+
+Release workflow: `test:publish` → build → npm via the existing workflow. No Changesets. The published study,
+replayable sessions and launchable presets are the proof surface; distribution follows evidence.
 
 ---
 
 ## Document Map
 
-| For...                        | Read...                                 |
-| ----------------------------- | --------------------------------------- |
-| Vision & philosophy           | `README.md`                             |
-| Software roadmap (this)       | `ROADMAP.md`                            |
-| Fractal ZUI & OS architecture | `PLAN/SPACEGRAPH_OS.md`                 |
-| API reference                 | `pnpm run docs` → `docs/api/index.html` |
-| Getting started               | `QUICKSTART.md`                         |
-| Contributing                  | `CONTRIBUTING.md`                       |
-| Hardware & sustainability     | `PLAN/PHASE-5-SUSTAINABILITY.md`        |
-| Research program              | `PLAN/RESEARCH.md`                      |
-| Growth & community            | `PLAN/GROWTH.md`                        |
-| Risk register                 | `PLAN/RISKS.md`                         |
-
-## Grant Workspace Review — Spec-vs-Reality Audit (SGF-8)
-
-The Grant Workspace "SpaceGraphJS Improvements Specification" (2026-11-06) targeted an older view
-of the API. This note records the differences so the next external review is cheaper.
-
-| Spec claim | Reality (2026-11-06) |
-| --- | --- |
-| `ForceLayoutConfig` not exported top-level | **Exported** at `src/index.ts:25` — spec table was stale |
-| Layout lookup uses three names (class, id, type key) | **Fixed in SGF-2**: single source of truth via plugin `id` (kebab-case); `layoutOnce` with unknown name throws |
-| `getPositions`/`serializePositions` absent | **Implemented in SGF-6**: `SpaceGraph.getPositions()` and `Graph.getPositions()` return `Record<string, [number, number, number]>` |
-| Layout names vs ids mismatch | **Fixed in SGF-2**: `LayoutOptionsMap` keys = registered names = plugin `id`; `listLayouts()` and `getLayoutRegistry()` exported |
-| Node-size-aware `ForceLayout` missing | **Implemented in SGF-1**: `getLayoutBounds()` on base `Node`, `nodePadding` in config, per-pair minDistance, final 30-pass separation |
-| Edge strength ignored | **Implemented in SGF-5**: `ForceLayout.step()` reads `edge.data?.strength` |
-| Progress callback missing | **Implemented in SGF-7**: `onProgress` in `ForceLayoutConfig`, fired each iteration |
-| All plugin layouts non-size-aware | **Implemented in SGF-9**: Grid, Circular, Tree, Hierarchical, Radial, Cluster, Timeline now auto-compute from node sizes; explicit config stays exact override |
-| `TreePlacement` ignores item sizes | **Implemented in SGF-10**: leaf block `width = Math.max(columnPitch, item.width + cellGap)` |
-
-**Items NOT applicable to this repo:**
-- Spec #2 (dev/prod dual loader): OpenCode has no vite-middleware + server.cjs pair. Documented in `docs/host-integration.md` §11 for hosts that do.
+| For... | Read... |
+|---|---|
+| Active plan and progress | `TODO3.md` |
+| Open questions and knob mapping | `docs/not-decided.md` |
+| Vision and philosophy | `README.md` |
+| API reference | `pnpm run docs` → `docs/api/index.html` |
+| Host integration | `docs/host-integration.md` |
+| Experiments | `docs/experiments.md` |
+| Scopes and depth | `docs/scopes.md`, `docs/world.md` |
+| Contributing | `docs/CONTRIBUTING.md` |
