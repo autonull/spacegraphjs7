@@ -5,13 +5,13 @@ Self-contained. No time estimates. Ordered by dependency, not duration.
 
 ---
 
-## Progress (updated 2026-11-21 — second increment)
+## Progress (updated 2026-11-21 — third increment)
 
 **Workstream A — Configuration Spine: implemented.**
 
 | Item | Status | Evidence |
 |---|---|---|
-| A1 policy schema | done | `app/pi/src/policy/schema.ts`: 29 typed knobs across all 13 families; each has id, range/options, default, description, rationale link. |
+| A1 policy schema | done | `app/pi/src/policy/schema.ts`: 30 typed knobs across all 13 families; each has id, range/options, default, description, rationale link. |
 | A2 resolution + provenance | done | `app/pi/src/policy/resolve.ts`: fixed precedence `defaults → preset → experiment → url → panel`, per-knob source, `policy:change` event, merged layers. |
 | A3 live panel | done | `app/pi/src/policy/panel.ts` + WidgetLayer `pinned` mount in `host.ts`; auto-generated per-family controls, provenance badges, reset + copy-URL, hot apply with no remount. |
 | A4 permalink v2 | done | `PermalinkState.policy` (compact `p1.<base64url>` vector) + `.fixture`; preset gallery data in `policy/presets.ts`; applying a link clears live overrides so the URL wins. |
@@ -21,8 +21,8 @@ Self-contained. No time estimates. Ordered by dependency, not duration.
 
 | Item | Status | Evidence |
 |---|---|---|
-| B1 navigation grammar | done | `host.ts`: `traverseEdge` (double-click `edgeClick` → `flyTo` over the existing camera handler), `descend`/`ascend`, `trace`, `survey`, `follow`, `returnHome`; keyboard bindings `Enter`, `PgDn`/`PgUp`, `t`, `s`, `Home`/`Esc` on top of arrows/zoom/focus. All verbs interruptible, reduced-motion aware and recorded as neutral events. |
-| B2 continuity | core done | Portal dissolve animates the child frame origin with the policy `flyTo` duration and holds `[data-descending]` on the portal card through repaints; rung crossfade uses pure `representationWeights` + `ladder.blendMs` driving `[data-rung]` opacity. True two-rung DOM compositing still needs adapter support (see below). |
+| B1 navigation grammar | done | `host.ts`: `traverseEdge` (double-click `edgeClick` → `flyTo` over the existing camera handler), `descend`/`ascend`, `trace`, `survey`, `follow`, `returnHome`; keyboard bindings `Enter`, `PgDn`/`PgUp`, `t`, `s`, `Home`/`Esc`. Touch gestures bind through `app/pi/src/touch.ts` (pure `TouchRecognizer` + DOM adapter) to the same verb methods, with `navigation.touch` (`default`/`minimal`/`off`) as preset data. All verbs interruptible, reduced-motion aware and recorded as neutral events. |
+| B2 continuity | done | Portal dissolve animates the child frame origin with the policy `flyTo` duration and holds `[data-descending]` on the portal card through repaints. True two-rung compositing: pure `representationLayers` (`src/salience/representation.ts`) yields the two neighbouring rungs with normalized opacity; `composedCardMarkup` (`app/pi/src/adapter.ts`) keeps both in the DOM and crossfades them in place under `ladder.blendMs`. Node ids, glyphs and positions never change. |
 | B3 instrumentation | done | `recorder.ts` `ERGO_SIGNALS`/`ergonomicCounters`/`ergonomicProfile`; host records zoom reversals, trail backtracks, escape-hatch use, hover dwell, traverse, descend/ascend, trace, survey, and `choices` per reveal; `__pi.ergonomics()` exposes event counts plus derived `time-to-first-relevant`, `choice-count`, `travel-distance`. |
 
 Every schema knob has a live host consumer: bands → `levelForZoom`, ladder → `representationRung`/`representationWeights` + blur duration, salience → activity decay, emphasis → emphasis caps, camera → flight durations, depth → simulation + renderer, widgets → dock attribute, geometry → `setBaseLayout`/`setForces`, guardrails → budgets/window, surface → surface state, navigation → orientation aids, orchestration → gallery, theme → renderer theme.
@@ -31,7 +31,7 @@ Every schema knob has a live host consumer: bands → `levelForZoom`, ladder →
 
 | Item | Status | Evidence |
 |---|---|---|
-| C1 instrument kit | done | `app/pi/src/instruments.ts`: sparkline, meter, status, log-tail, diff, tabs and action controls as `WidgetLayer` `attached` descriptors gated to detail rungs; all data escaped at the boundary; mounted in the rail `#instrument-kit`. |
+| C1 instrument kit | done | Promoted to `src/widgets/instrument-kit.ts` after Graph IDE became the second consumer. Sparkline, meter, status, log-tail, diff, tabs and action controls as `WidgetLayer` `attached` descriptors; DOM APIs only, no raw `innerHTML`, so the widget security gate stays green. Pi mounts it in `#instrument-kit`; Graph IDE mounts it in `#instrument-kit` on the detail rung. `test/boundaries.test.ts` enforces one library definition and two host consumers. |
 | C2 orchestration verbs | done | `host.ts`: `sendPrompt` (prompt/steer/followUp through the existing `POST /prompt` + SDK `streamingBehavior` seam), `approve`/`reject` as first-class nodes with `gates` edges using only the six kernel ops, `retry`, `compareRuns` via `diffKernels`, plus graph action buttons that set the prompt mode or drive approval. Every action records a neutral event and writes an evidence line for transcript parity. |
 
 **Workstream D — One World & Proliferation: implemented.**
@@ -57,18 +57,17 @@ The offline tier replays recorded events under a variant and re-scores them with
 
 **Workstream F — Truth pass: in progress.** `docs/ROADMAP.md` regenerated from reality; `docs/not-decided.md` now maps every open question to a knob family and preset; `Ergonomics.layout` uses plugin ids. Root `tsc` still has pre-existing `app/demo` errors.
 
-**Verification:** `app/pi pnpm test` 59 passed; root `pnpm test` 831 passed; `app/pi pnpm test:e2e` 39 passed; `app/demo pnpm test` 34 passed; `app/demo pnpm test:e2e` 21 passed (incl. `one-world.spec.ts`); `pnpm run verify:visual` green; `tsc -p app/pi/tsconfig.json --noEmit` clean; root `tsc` unchanged at 95 pre-existing `app/demo` errors (no new errors from this increment).
+**Verification:** root `pnpm test` 844 passed; `app/pi pnpm test` 66 passed; `app/pi pnpm test:e2e` 40 passed; `app/demo pnpm test` 34 passed; `app/demo pnpm test:e2e` 21 passed; `pnpm run verify:visual` green; `tsc -p app/pi/tsconfig.json --noEmit` clean after `pnpm run build:lib`; root `tsc` unchanged at 95 pre-existing `app/demo` errors (no new errors from this increment).
 
-**Completed this increment:** D one-canvas host binding (item 1); B3 derived counters and the `survey` verb (part of item 2); E offline/online measurement tiers, decision artifact and export (item 3). See the Evidence cells above and the commit history.
+**Completed this increment:** all three B/C polish items — two-rung DOM compositing with a pure layer helper and a corrected detail-weight inversion, touch gesture bindings as preset data over the verb set, and the instrument kit promoted to the widget layer with Graph IDE as its second consumer. The earlier increment delivered the D one-canvas binding, B3 counters/survey, and the E measurement tiers.
 
 **Remaining work, in order:**
 
-1. **B/C polish (partially done):** true two-rung compositing in `ModelAdapter`; touch/`Fingering` bindings; Graph IDE as a second instrument-kit consumer before library promotion. The `time-to-first-relevant`/choice-count counters and `survey` verb from this list are done.
-2. **E refinement (optional):** re-run the geometry solver and vision loop under a variant during offline replay (this increment re-scores recorded events under the variant instead). Sampling, URL cells, resolver layer, stop rules, shortlist, decision artifact and online export are in place.
-3. **F — Truth pass:** promote settled TODO1/TODO2/not-decided decisions into durable ADRs; make root `tsc` clean (95 pre-existing `app/demo` errors) so it is a real gate; isolate `scale` in CI.
-4. **G — Proof & delivery (external; cannot be fabricated):** participant study (n ≥ 5) with published verbatim exports, npm release, hosted flagship, and the public preset/experiment catalog. The code-side seams (`recordDecision`, report artifact, online export) are ready; the human/release steps are not.
+1. **E refinement (optional):** re-run the geometry solver and vision loop under a variant during offline replay (this increment re-scores recorded events under the variant instead). Sampling, URL cells, resolver layer, stop rules, shortlist, decision artifact and online export are in place.
+2. **F — Truth pass:** promote settled TODO1/TODO2/not-decided decisions into durable ADRs; make root `tsc` clean (95 pre-existing `app/demo` errors) so it is a real gate; isolate `scale` in CI.
+3. **G — Proof & delivery (external; cannot be fabricated):** participant study (n ≥ 5) with published verbatim exports, npm release, hosted flagship, and the public preset/experiment catalog. The code-side seams (`recordDecision`, report artifact, online export) are ready; the human/release steps are not.
 
-**Deliberate non-goals for this increment:** no contract change, no renderer branches, no new domain scheduled, no immersive or visual default promoted (presets remain examples, never recommendations). Additive pure seams used: `worldScopes`/`worldTrace`, `createWorldHost`, `ergonomicProfile`, `measureExperiment`/`exportOnlineOutcomes`. Earlier increments added `representationRung(input, thresholds)`, `representationWeights`, `ScopeSimulation.setBaseLayout/setForces`.
+**Deliberate non-goals for this increment:** no contract change, no renderer branches, no new domain scheduled, no immersive or visual default promoted (presets remain examples, never recommendations). Additive pure seams used this increment: `representationLayers`, `composedCardMarkup`, `TouchRecognizer`/`bindTouchVerbs`, promoted `createInstrumentKit`. Earlier increments added `worldScopes`/`worldTrace`, `createWorldHost`, `ergonomicProfile`, `measureExperiment`/`exportOnlineOutcomes`, `representationRung`/`representationWeights`, `ScopeSimulation.setBaseLayout/setForces`.
 
 ---
 

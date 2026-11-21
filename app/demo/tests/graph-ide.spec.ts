@@ -9,6 +9,7 @@ type GraphIdeProbe = {
     dependencies: () => Record<string, string[]>;
     features: () => string[];
     nodes: () => string[];
+    instruments: () => number;
     selected: () => string;
     selectFile: (id: string) => void;
     sensorySupport: () => boolean;
@@ -45,6 +46,13 @@ test.describe('Graph IDE reference host', () => {
             'data-active',
             'true',
         );
+        expect(await page.evaluate(() => window.__graphIde.instruments())).toBeGreaterThan(0);
+        await expect(page.locator('[data-instrument-for]').first()).toBeVisible();
+        expect(await page.evaluate(() => window.__graphIde.setSurface('execution'))).toBe(
+            'execution',
+        );
+        expect(await page.evaluate(() => window.__graphIde.instruments())).toBe(0);
+        await page.evaluate(() => window.__graphIde.setSurface('detail'));
 
         expect(await page.evaluate(() => window.__graphIde.sensorySupport())).toBe(false);
         await expect(page.locator('#sensory')).toContainText('unsupported');

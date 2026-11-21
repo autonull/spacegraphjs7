@@ -1,13 +1,19 @@
-import { escapeHtml } from '@spacegraphjs/adapter';
-import type { RenderNode } from '@spacegraphjs/renderer';
-import {
-    WidgetLayer,
-    WidgetRegistry,
-    type WidgetDescriptor,
-    type WidgetHandle,
-} from 'spacegraphjs/widgets';
+// A reusable host kit of sanitized attached instruments. Promoted from the Pi host after Graph IDE
+// became the second consumer. The renderer still never interprets the data: hosts own every value.
 
-export const INSTRUMENT_IDS = ['sparkline', 'meter', 'status', 'logtail', 'diff', 'tabs', 'controls'] as const;
+import type { RenderNode } from '@spacegraphjs/renderer';
+import { WidgetLayer } from './layer';
+import { WidgetRegistry, type WidgetDescriptor, type WidgetHandle } from './registry';
+
+export const INSTRUMENT_IDS = [
+    'sparkline',
+    'meter',
+    'status',
+    'logtail',
+    'diff',
+    'tabs',
+    'controls',
+] as const;
 export type InstrumentID = (typeof INSTRUMENT_IDS)[number];
 
 export interface InstrumentData {
@@ -36,14 +42,35 @@ const render = (
     if (id === 'sparkline') {
         const points = (data.series ?? [])
             .slice(-32)
-            .map((value, index, all) => `${(index / Math.max(1, all.length - 1)) * 100},${20 - Math.min(20, Math.max(0, value * 20))}`)
+            .map(
+                (value, index, all) =>
+                    `${(index / Math.max(1, all.length - 1)) * 100},${20 - Math.min(20, Math.max(0, value * 20))}`,
+            )
             .join(' ');
-        element.innerHTML = `<svg viewBox="0 0 100 20" aria-label="activity sparkline"><polyline points="${escapeHtml(points)}" fill="none" stroke="currentColor" stroke-width="1"/></svg>`;
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('viewBox', '0 0 100 20');
+        svg.setAttribute('aria-label', 'activity sparkline');
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+        line.setAttribute('points', points);
+        line.setAttribute('fill', 'none');
+        line.setAttribute('stroke', 'currentColor');
+        line.setAttribute('stroke-width', '1');
+        svg.append(line);
+        element.replaceChildren(svg);
         return;
     }
     if (id === 'meter') {
         const percent = Math.round(Math.min(1, Math.max(0, data.value ?? 0)) * 100);
-        element.innerHTML = `<span class="instrument-meter" role="meter" aria-valuenow="${percent}"><i style="width:${percent}%"></i></span><span>${percent}%</span>`;
+        const meter = document.createElement('span');
+        meter.className = 'instrument-meter';
+        meter.setAttribute('role', 'meter');
+        meter.setAttribute('aria-valuenow', String(percent));
+        const fill = document.createElement('i');
+        fill.style.width = `${percent}%`;
+        meter.append(fill);
+        const label = document.createElement('span');
+        label.textContent = `${percent}%`;
+        element.replaceChildren(meter, label);
         return;
     }
     if (id === 'status') {
@@ -67,7 +94,11 @@ const render = (
             ...dataLines(data).map((line) => {
                 const row = document.createElement('span');
                 row.textContent = line;
-                row.dataset.sign = line.startsWith('+') ? 'add' : line.startsWith('-') ? 'remove' : 'same';
+                row.dataset.sign = line.startsWith('+')
+                    ? 'add'
+                    : line.startsWith('-')
+                      ? 'remove'
+                      : 'same';
                 return row;
             }),
         );

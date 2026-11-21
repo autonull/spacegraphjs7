@@ -40,6 +40,11 @@ export interface RepresentationWeights {
     readonly detail: number;
 }
 
+export interface RepresentationLayer {
+    readonly rung: RepresentationRung;
+    readonly opacity: number;
+}
+
 /** Continuous neighbour weight around a rung boundary; used only for visual crossfade. */
 export const representationWeights = (
     input: RepresentationInput,
@@ -56,7 +61,26 @@ export const representationWeights = (
     }
     if (rung === 'detail') {
         const t = ramp(thresholds.demoteBelow - input.legibility);
-        return { overview: 0, execution: 1 - t, detail: t };
+        return { overview: 0, execution: t, detail: 1 - t };
     }
     return { overview: 0, execution: 1, detail: 0 };
+};
+
+/**
+ * The rungs a card must actually draw during a crossfade, with normalized opacities. At rest one
+ * layer remains; near a boundary the two adjacent rungs are both present so a host can composite
+ * them instead of swapping markup. At most two layers are ever returned, and they always neighbour.
+ */
+export const representationLayers = (
+    input: RepresentationInput,
+    thresholds: RepresentationThresholds = DEFAULT_THRESHOLDS,
+    blend = 0.1,
+    minOpacity = 0.02,
+): readonly RepresentationLayer[] => {
+    const weights = representationWeights(input, thresholds, blend);
+    const active = (['overview', 'execution', 'detail'] as const)
+        .filter((rung) => weights[rung] > minOpacity)
+        .map((rung) => ({ rung, opacity: weights[rung] }));
+    const total = active.reduce((sum, layer) => sum + layer.opacity, 0);
+    return active.map((layer) => ({ ...layer, opacity: layer.opacity / total }));
 };

@@ -62,6 +62,20 @@ describe('promoted helper reuse', () => {
     }
 });
 
+describe('instrument kit promotion', () => {
+    it('has one library definition and two host consumers', () => {
+        expect(readFileSync(resolve(root, 'src/widgets/instrument-kit.ts'), 'utf8')).toContain(
+            'export const createInstrumentKit',
+        );
+        expect(readFileSync(resolve(root, 'app/pi/src/host.ts'), 'utf8')).toContain(
+            'createInstrumentKit(',
+        );
+        expect(
+            readFileSync(resolve(root, 'app/demo/html/layout/graph-ide.html'), 'utf8'),
+        ).toContain('createInstrumentKit(');
+    });
+});
+
 describe('package boundaries', () => {
     it('keeps the core free of the contract, adapters, and Cytoscape', () => {
         const coreImports = staticImportsIn('src');

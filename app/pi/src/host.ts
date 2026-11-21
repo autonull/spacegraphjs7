@@ -26,7 +26,7 @@ import {
     type CameraMotionHandlers,
     type MotionPlayback,
 } from 'spacegraphjs/motion';
-import { representationRung, representationWeights } from 'spacegraphjs/salience';
+import { representationLayers, representationRung, representationWeights } from 'spacegraphjs/salience';
 import { lerp, requireElement } from 'spacegraphjs/utils';
 import {
     createVisionLoop,
@@ -37,9 +37,16 @@ import {
     type VisionReport,
 } from 'spacegraphjs/vision';
 import type { RenderNode } from '@spacegraphjs/renderer';
-import { WidgetLayer, WidgetRegistry } from 'spacegraphjs/widgets';
-import { AgentAdapter, cardMarkup, toAdapterModel, type AgentLevel } from './adapter';
-import { INSTRUMENT_IDS, createInstrumentKit, type InstrumentData, type InstrumentKit } from './instruments';
+import {
+    createInstrumentKit,
+    INSTRUMENT_IDS,
+    WidgetLayer,
+    WidgetRegistry,
+    type InstrumentData,
+    type InstrumentKit,
+} from 'spacegraphjs/widgets';
+import { AgentAdapter, cardMarkup, composedCardMarkup, toAdapterModel, type AgentLevel } from './adapter';
+import { bindTouchVerbs, touchBindingsFor, type TouchVerb } from './touch';
 import {
     createAnnotationWidgets,
     NoteStore,
@@ -546,6 +553,11 @@ export class PiHost {
         this.#annotationWidgets = createAnnotationWidgets(el('annotation-list'), (id) =>
             this.removeNote(id),
         );
+        bindTouchVerbs(
+            el('canvas'),
+            () => touchBindingsFor(String(this.#resolved.values['navigation.touch'])),
+            (verb) => this.dispatchTouchVerb(verb),
+        );
         this.renderer.on('nodeClick', ({ id }) => this.reveal(id));
         this.renderer.on('viewportChange', ({ zoom }) => this.applyAutoLevel(zoom));
         this.renderer.on('edgeClick', ({ id }) => {
@@ -681,7 +693,10 @@ export class PiHost {
                 const descending = this.#dissolving !== undefined && this.#portalByNode.get(node.id) === this.#dissolving;
                 const rung = representationRung(input, thresholds);
                 if (rung === 'detail') detailNodes.add(node.id);
-                return cardMarkup(node, rung, context, blend, descending);
+                const layers = representationLayers(input, thresholds);
+                return layers.length > 1
+                    ? composedCardMarkup(node, layers, context, descending)
+                    : cardMarkup(node, rung, context, blend, descending);
             },
         });
         if (this.#traceIds.length) {
@@ -1611,6 +1626,16 @@ export class PiHost {
         }
         this.syncClock();
         return this.#traceIds;
+    }
+
+    /** Touch gestures dispatch to the same verbs as the keyboard; each verb records its own event. */
+    private dispatchTouchVerb(verb: TouchVerb): void {
+        if (verb === 'descend') this.descend();
+        else if (verb === 'ascend') this.ascend();
+        else if (verb === 'survey') this.survey();
+        else if (verb === 'return') this.returnHome();
+        else if (verb === 'trace' && this.#revealed) this.trace(this.#revealed);
+        else if (verb === 'follow') this.setFollow(this.#followMode === 'off' ? 'node' : 'off');
     }
 
     clearTrace(): void {

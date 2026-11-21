@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { representationRung } from 'spacegraphjs/salience';
-import { cardMarkup, portalGlyph, toAdapterModel } from '../src/adapter';
+import { cardMarkup, composedCardMarkup, portalGlyph, toAdapterModel } from '../src/adapter';
 import { fixtureKernel } from '../src/fixture';
 import { agentScopes } from '../src/scopes';
 import { agentDomain } from '@spacegraphjs/agent';
@@ -27,6 +27,29 @@ describe('representation ladder', () => {
         expect(execution).toContain('<i ');
         expect(detail).toContain('data-rung="detail"');
         expect(detail.length).toBeGreaterThan(overview.length);
+    });
+
+    test('composites two neighbouring rungs without changing node identity', () => {
+        const html = composedCardMarkup(
+            node,
+            [
+                { rung: 'overview', opacity: 0.35 },
+                { rung: 'execution', opacity: 0.65 },
+            ],
+            context,
+        );
+        expect(html).toContain('data-rungs="overview+execution"');
+        expect(html).toContain('data-layer="overview"');
+        expect(html).toContain('data-layer="execution"');
+        expect(html).toContain('opacity:0.350');
+        expect(html).toContain('opacity:0.650');
+        expect(html.match(/data-rung=/g)).toHaveLength(2);
+    });
+
+    test('falls back to one rung outside a blend', () => {
+        const html = composedCardMarkup(node, [{ rung: 'detail', opacity: 1 }], context);
+        expect(html).toContain('data-rung="detail"');
+        expect(html).not.toContain('data-layer=');
     });
 
     test('escapes host text at every rung', () => {

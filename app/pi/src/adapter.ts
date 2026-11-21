@@ -8,7 +8,7 @@ import {
 } from '@spacegraphjs/adapter';
 import type { NodeStatus, RenderEdge, RenderNode } from '@spacegraphjs/renderer';
 import type { AgentView } from '@spacegraphjs/agent';
-import type { RepresentationRung } from 'spacegraphjs/salience';
+import type { RepresentationLayer, RepresentationRung } from 'spacegraphjs/salience';
 import { CARD_BUDGETS } from './policy';
 
 export type AgentAdapterNode = AdapterNode & {
@@ -94,6 +94,24 @@ export const cardMarkup = (
         ? `<span style="opacity:.7;font-size:11px">${portalGlyph(node.scope)} scope: ${escapeHtml(node.scope)}</span>`
         : '';
     return `<div ${attributes} style="${box}"><span style="font-weight:600">${glyph}${label}${badge}</span><span style="opacity:.78;font-size:12px;line-height:16px;max-height:64px;overflow:hidden">${detail.slice(0, 320)}</span><span style="opacity:.6;font-size:11px">${escapeHtml(node.kind)} · ${status} · reveal / follow / trace</span>${scope}</div>`;
+};
+
+/**
+ * True two-rung compositing: both neighbouring rungs stay in the DOM with normalized opacities and
+ * crossfade in place. Node ids, glyphs and positions are unchanged — only the card's interior swaps.
+ */
+export const composedCardMarkup = (
+    node: AgentAdapterNode,
+    layers: readonly RepresentationLayer[],
+    context: CardContext,
+    descending = false,
+): string => {
+    const primary = layers.at(-1);
+    const secondary = layers.at(-2);
+    if (!secondary) return cardMarkup(node, primary?.rung ?? 'overview', context, 0, descending);
+    const layer = ({ rung, opacity }: RepresentationLayer, lower: boolean): string =>
+        `<div data-layer="${rung}" style="position:absolute;inset:0;opacity:${opacity.toFixed(3)};transition:opacity var(--pi-blend,120ms)${lower ? ';pointer-events:none' : ''}">${cardMarkup(node, rung, context, 0, descending)}</div>`;
+    return `<div data-rungs="${secondary.rung}+${primary!.rung}" style="position:relative;min-height:56px">${layer(secondary, true)}${layer(primary!, false)}</div>`;
 };
 
 export class AgentAdapter extends ModelAdapter<

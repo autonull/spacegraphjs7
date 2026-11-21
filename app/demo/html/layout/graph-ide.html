@@ -109,6 +109,10 @@
                     <h2>Sensory seam</h2>
                     <div id="sensory">sound: unsupported</div>
                 </section>
+                <section>
+                    <h2>Instruments</h2>
+                    <div id="instrument-kit"></div>
+                </section>
             </aside>
         </main>
         <footer>
@@ -126,6 +130,7 @@
             } from '@spacegraphjs/filesystem';
             import { DEFAULT_THEME } from '@spacegraphjs/renderer';
             import { SpaceGraphRenderer } from '@spacegraphjs/spacegraph-renderer';
+            import { createInstrumentKit, INSTRUMENT_IDS } from 'spacegraphjs/widgets';
             import { createConsoleSensoryAdapter } from '../../src/console-sensory';
             import { graphIdePanels } from '../../src/graph-ide';
             import {
@@ -152,12 +157,35 @@
                 projection: '2d',
                 global: true,
             });
-            renderer.setModel(
-                filesystemAdapter.build(view, {
-                    level: surface,
+            const buildModel = (level) => {
+                const model = filesystemAdapter.build(view, {
+                    level,
                     positions: FIXTURE_POSITIONS,
-                }),
+                });
+                return level === 'detail'
+                    ? {
+                          ...model,
+                          nodes: model.nodes.map((node) => ({
+                              ...node,
+                              widgets: [...INSTRUMENT_IDS],
+                          })),
+                      }
+                    : model;
+            };
+            const instrumentData = (node) => ({
+                status: node.status ?? 'idle',
+                value: 0.5 + (node.data?.degree ?? 0) / 10,
+                series: [0.2, 0.5, node.data?.degree ?? 0.3, 0.8],
+                lines: [`${node.kind} · ${node.id}`, node.summary ?? ''],
+                tabs: ['graph', 'inspect'],
+            });
+            const instruments = createInstrumentKit(
+                document.querySelector('#instrument-kit'),
+                instrumentData,
             );
+            let model = buildModel(surface);
+            renderer.setModel(model);
+            instruments.refresh([]);
             renderer.fit();
 
             const renderFiles = () => {
@@ -208,9 +236,9 @@
             const setSurface = (value) => {
                 if (!['execution', 'detail'].includes(value)) return surface;
                 surface = value;
-                renderer.setModel(
-                    filesystemAdapter.build(view, { level: surface, positions: FIXTURE_POSITIONS }),
-                );
+                model = buildModel(surface);
+                renderer.setModel(model);
+                instruments.refresh(surface === 'detail' ? model.nodes : []);
                 for (const button of document.querySelectorAll('[data-set-surface]')) {
                     button.dataset.active = String(button.dataset.setSurface === surface);
                 }
@@ -243,6 +271,7 @@
                 dependencies: () => panels.dependencies,
                 features: () => [...features],
                 nodes: () => view.nodes.map((node) => node.id),
+                instruments: () => document.querySelectorAll('[data-instrument-for]').length,
                 selected: () => selected,
                 selectFile,
                 sensorySupport: () => supportsSensory(capabilities, 'sound'),

@@ -23,3 +23,5 @@ export type {
 export { WidgetLayer } from './layer';
 export type { MountedWidget, WidgetLayerOptions } from './layer';
 export { isSafeWidgetMarkup, WIDGET_SECURITY_CONTRACT } from './security';
+export { createInstrumentKit, INSTRUMENT_IDS } from './instrument-kit';
+export type { InstrumentData, InstrumentID, InstrumentKit } from './instrument-kit';

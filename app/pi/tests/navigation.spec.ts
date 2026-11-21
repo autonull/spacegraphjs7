@@ -57,6 +57,25 @@ test.describe('the navigation grammar', () => {
         expect(counters.traverse).toBeGreaterThan(0);
     });
 
+    test('touch gestures reach the same verb set as the keyboard', async ({ page }) => {
+        const errors: string[] = [];
+        page.on('pageerror', (error) => errors.push(error.message));
+        await boot(page);
+        await page.evaluate(() => {
+            const canvas = document.querySelector('#canvas')!;
+            const fire = (type: string, x: number, y: number) =>
+                canvas.dispatchEvent(
+                    new PointerEvent(type, { pointerType: 'touch', clientX: x, clientY: y, bubbles: true }),
+                );
+            fire('pointerdown', 120, 120);
+            fire('pointerup', 120, 120);
+            fire('pointerdown', 124, 122);
+            fire('pointerup', 124, 122);
+        });
+        await expect.poll(async () => (await kinds(page)).includes('descend')).toBe(true);
+        expect(errors).toEqual([]);
+    });
+
     test('reduced motion keeps the verb set usable and non-animated', async ({ page }) => {
         await page.emulateMedia({ reducedMotion: 'reduce' });
         await boot(page);
