@@ -95,12 +95,32 @@
                 grid-column: 1 / -1;
             }
             #gallery,
+            #catalog,
             #overview,
             #turn-map {
                 display: grid;
                 gap: 6px;
             }
+            #catalog {
+                border-top: 1px solid var(--pi-border);
+                padding-top: 6px;
+            }
+            #catalog details {
+                display: grid;
+                gap: 4px;
+            }
+            #catalog summary,
+            .catalog-heading {
+                color: var(--pi-text-muted);
+                cursor: pointer;
+            }
+            .catalog-note {
+                color: var(--pi-text-muted);
+                font-size: 11px;
+                margin: 0;
+            }
             #gallery button,
+            #catalog a,
             #overview button,
             #turn-map button,
             form button,
@@ -116,9 +136,14 @@
                 cursor: pointer;
             }
             #gallery button:hover,
+            #catalog a:hover,
             #overview button:hover,
             #turn-map button:hover {
                 border-color: var(--pi-accent);
+            }
+            #catalog a {
+                text-decoration: none;
+                overflow-wrap: anywhere;
             }
             header select {
                 padding: 4px 6px;
@@ -495,8 +520,10 @@
             <span id="attention" data-role="attention">no failures</span>
         </header>
         <aside>
-            <strong>Capabilities</strong>
+            <strong>Catalog · proof surface</strong>
+            <span class="catalog-heading">Capabilities</span>
             <div id="gallery"></div>
+            <div id="catalog"></div>
         </aside>
         <main id="surface" data-surface="hybrid" data-arrangement="side">
             <div id="canvas"></div>

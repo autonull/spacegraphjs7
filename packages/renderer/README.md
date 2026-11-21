@@ -1,8 +1,7 @@
 # @spacegraphjs/renderer
 
 The renderer contract: the only surface a host uses to render a graph, and the only surface an
-adapter implements. Types plus two tiny helpers (`CONTRACT_VERSION`, `supports`); **zero runtime
-dependencies**.
+adapter implements. Types plus the `supports` capability predicate; **zero runtime dependencies**.
 
 - Host builds a `RenderModel` (typed nodes, edges, absolute positions) and calls a `GraphRenderer`.
 - Adapters (`@spacegraphjs/spacegraph-renderer`, `@spacegraphjs/cytoscape-renderer`) implement
@@ -10,12 +9,7 @@ dependencies**.
 - The `spacegraphjs` core never imports this package.
 
 ```ts
-import {
-    CONTRACT_VERSION,
-    supports,
-    type GraphRenderer,
-    type RenderModel,
-} from '@spacegraphjs/renderer';
+import { supports, type GraphRenderer, type RenderModel } from '@spacegraphjs/renderer';
 
 export function mountGraph(renderer: GraphRenderer, container: HTMLElement, model: RenderModel) {
     renderer.mount(container, { theme, projection: '2d' });

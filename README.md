@@ -67,7 +67,7 @@ The important idea is not autonomous replacement of the developer. It is **makin
 | -------------------- | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | **Host application** | Owns domain data, persistence, detail panels, routing | Your React, Solid, Vue, or vanilla app                                                                                        |
 | **Bindings**         | Lifecycle, controller wiring, framework reactivity    | `GraphBinding`; `react-spacegraph` and `solid-spacegraph` over the contract                                                   |
-| **Contract**         | Dependency-free types and capability negotiation      | `@spacegraphjs/renderer` — `GraphRenderer`, `RenderModel`, `RenderTheme`, `CONTRACT_VERSION`                                  |
+| **Contract**         | Dependency-free types and capability negotiation      | `@spacegraphjs/renderer` — `GraphRenderer`, `RenderModel`, `RenderTheme`, `supports`                                          |
 | **Adapters**         | Geometry, hit-testing, camera, rendering              | `@spacegraphjs/spacegraph-renderer` (2D + 3D), `@spacegraphjs/cytoscape-renderer` (2D), `@spacegraphjs/svg-renderer` (static) |
 | **Core engine**      | Graph model, WebGL renderer, plugins, input, vision   | `spacegraphjs` — `SpaceGraph`, `Graph`, `WebGLRenderer`, `PluginManager`, `VisionManager`                                     |
 | **Platform**         | GPU, browser APIs, optional inference                 | Three.js, WebGL, ONNX Runtime Web                                                                                             |
@@ -254,9 +254,9 @@ The contract is types plus tiny helpers, small enough to read in one sitting.
 | `RendererCapabilities` | Projections, depths, DOM node support, edge labels, clusters, minimap, recommended limits                                              |
 | `RendererEventMap`     | `ready`, clicks, double-click, background, hover, selection, viewport, band, error                                                     |
 
-Call `negotiateContract(version)` before rendering, and gate affordances with `supports(capabilities, ...)` and `supportsDepth(capabilities, ...)`. Renderers must no-op on an unsupported depth mode, never throw. Absolute positions are authoritative; `data` is serializable; HTML is sanitized by the host; no library objects cross the boundary.
+Gate affordances with `supports(capabilities, ...)` and `supportsDepth(capabilities, ...)`. The additive capability surface is versioned by `LIBRARY_CONTRACT_VERSION`; negotiate capability, never renderer identity. Renderers must no-op on an unsupported depth mode, never throw. Absolute positions are authoritative; `data` is serializable; HTML is sanitized by the host; no library objects cross the boundary.
 
-A host typically maps data, dynamic-imports one adapter, negotiates the version, mounts with a theme and projection, pushes model and view state, subscribes to events, and disposes on unmount. A failed mount can fall back to another adapter on the same container with the model intact.
+A host typically maps data, dynamic-imports one adapter, probes capability, mounts with a theme and projection, pushes model and view state, subscribes to events, and disposes on unmount. A failed mount can fall back to another adapter on the same container with the model intact.
 
 ---
 

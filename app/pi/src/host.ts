@@ -55,6 +55,7 @@ import {
     type PinnedNote,
 } from './annotations';
 import { CAPABILITIES, capabilityContext, runCapability, type PiHostState } from './capabilities';
+import { buildCatalog, mountCatalog, type Catalog } from './catalog';
 import { FIXTURE_ID, fixtureKernel } from './fixture';
 import { foldKernelOps } from './ops';
 import {
@@ -291,6 +292,7 @@ export class PiHost {
     #paused = false;
     #policyLayers: PolicyLayers = {};
     #resolved: ResolvedPolicy;
+    #catalog: Catalog;
     #policyPanel?: ReturnType<typeof mountPolicyPanel>;
     #policyListeners = new Set<(event: PolicyChangeEvent) => void>();
     #recorder: SessionRecorder;
@@ -325,6 +327,7 @@ export class PiHost {
             if (vector) this.#policyLayers.url = vector;
         }
         this.#resolved = resolvePolicy(POLICY_SCHEMA, this.#policyLayers);
+        this.#catalog = buildCatalog(POLICY_SCHEMA);
         const geometry = this.geometry();
         this.simulation = new ScopeSimulation({
             instant: this.#reducedMotion,
@@ -580,6 +583,7 @@ export class PiHost {
         this.simulation.settle();
         this.renderPositions();
         this.renderGallery();
+        mountCatalog(el('catalog'), this.#catalog);
         this.renderTranscript();
         this.renderOverview();
         this.renderTurnMap();

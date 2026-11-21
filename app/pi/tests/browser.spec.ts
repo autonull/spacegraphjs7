@@ -44,6 +44,19 @@ test.describe('the Pi reference app', () => {
         noErrors(errors);
     });
 
+    test('publishes presets and experiments as launchable catalog links', async ({ page }) => {
+        const errors = await boot(page);
+        const presets = await page.evaluate(() => (window as any).__pi.policy().presets.length);
+        await expect(page.locator('#catalog a[data-preset]')).toHaveCount(presets);
+        expect(await page.locator('#catalog a[data-cell]').count()).toBeGreaterThan(0);
+        await expect(page.locator('#catalog a[data-preset="quiet"]')).toHaveAttribute('href', '?preset=quiet');
+        await expect(page.locator('#catalog a[data-preset="quiet"]')).toHaveAttribute(
+            'title',
+            expect.stringContaining('five tasks'),
+        );
+        noErrors(errors);
+    });
+
     test('follows the newest node and reports attention from the local stream', async ({ page }) => {
         const errors = await boot(page);
 

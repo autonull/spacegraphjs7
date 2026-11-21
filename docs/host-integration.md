@@ -76,8 +76,8 @@ Rules the renderer relies on:
 ```ts
 const Renderer = (await import('@spacegraphjs/spacegraph-renderer')).SpaceGraphRenderer;
 const renderer = new Renderer();
-const negotiation = negotiateContract(renderer.capabilities.contractVersion);
-if (!negotiation.ok) throw new Error(negotiation.message); // fail clearly, do not crash later
+if (!supports(renderer.capabilities, 'domNodes'))
+    throw new Error('renderer cannot host HTML cards');
 await renderer.mount(container, { theme, projection: '2d' });
 renderer.setModel(model);
 ```
@@ -179,16 +179,17 @@ For a framework host, skip steps 5–6's manual wiring: mount `GraphView` from `
 
 ## 9. Versioning
 
-`CONTRACT_VERSION` is an integer; breaking changes bump it. Adapters declare theirs in
-`capabilities.contractVersion`. Call `negotiateContract(version)` and surface the result — a mismatch is
-a clear message, not a runtime failure. For a non-OpenCode page, see the fixture in
-`demo/activity-host.ts`; the runnable two-adapter library demo is `demo/html/core/contract.html`.
+The additive capability surface is versioned by `LIBRARY_CONTRACT_VERSION` in
+`packages/config/src/library.ts`. It changes only when a capability axis or additive field lands;
+manifest entries carry `minContractVersion`. Renderer behavior is negotiated with `supports(...)`
+predicates on `capabilities` — never by a version constant or renderer identity. See
+`docs/contract-versioning.md` for the freeze rule and the two deprecation policies. For a non-OpenCode
+page, see the fixture in `demo/activity-host.ts`; the runnable two-adapter library demo is
+`demo/html/core/contract.html`.
 
-**Contract v3 (the fit options).** v3 adds `padding` and `insets` to the fit options and the
-`fitInsets` capability. The options are additive: a v2 adapter ignores them and still frames the
-whole surface, so a v3 host accepts a v2 adapter (`SUPPORTED_CONTRACT_VERSIONS` is `[2, 3]`). A v3
-adapter against a v2 host is refused with a clear message — the v2 host cannot know what the newer
-adapter expects. Nothing else changed: the model, the events, and the capabilities are the same.
+Fit options are additive: a renderer without `fitInsets` still frames the whole surface. A host
+probes `supports(...)` and degrades to the full path with an explanation; absence is never a runtime
+failure. The model, events and capability flags are otherwise unchanged.
 
 ## 10. What the library does not do
 

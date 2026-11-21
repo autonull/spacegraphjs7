@@ -9,26 +9,26 @@
 ## Current Status (2026-11-21)
 
 Version `8.5.0`, alpha — not yet released to npm. The **mechanism layer is complete and verified**.
-Workstreams A–E of `TODO3.md` are implemented:
+Workstreams A–F of `TODO3.md` are implemented, plus the code-side proof surface of G:
 
-| Workstream                               | State     | What landed                                                                                                            |
-| ---------------------------------------- | --------- | ---------------------------------------------------------------------------------------------------------------------- |
-| A — Configuration spine                  | done      | 30-knob typed schema, provenance resolver, live panel, permalink v2, recorder/counterfactual replay                    |
-| B — Navigation & continuity              | core done | navigation verbs + touch bindings, two-rung compositing, portal dissolve, ergonomic counters                           |
-| C — Living rectangles & Pi orchestration | core done | instrument kit (two hosts), prompt/steer/approve/reject/retry/compare from graph affordances                           |
-| D — One world & proliferation            | done      | one canvas / one `ScopeSimulation` / one cross-domain camera flight; domains born experimentable from the scaffold     |
-| E — Experimentation program              | done      | seeded sampling, experiment layer, offline/online/human tiers, decision artifacts, negative results published verbatim |
-| F — Truth pass                           | done      | 13 ADRs, glossary, changelog, reconciled docs, isolated `scale` job, clean root `tsc` gate                             |
-| G — Proof & delivery                     | external  | participant study, npm release, hosted flagship; code seams ready, human/release steps not                             |
+| Workstream                               | State     | What landed                                                                                                             |
+| ---------------------------------------- | --------- | ----------------------------------------------------------------------------------------------------------------------- |
+| A — Configuration spine                  | done      | 30-knob typed schema, provenance resolver, live panel, permalink v2, recorder/counterfactual replay                     |
+| B — Navigation & continuity              | core done | navigation verbs + touch bindings, two-rung compositing, portal dissolve, ergonomic counters                            |
+| C — Living rectangles & Pi orchestration | core done | instrument kit (two hosts), prompt/steer/approve/reject/retry/compare from graph affordances                            |
+| D — One world & proliferation            | done      | one canvas / one `ScopeSimulation` / one cross-domain camera flight; domains born experimentable from the scaffold      |
+| E — Experimentation program              | done      | seeded sampling, experiment layer, offline/online/human tiers, decision artifacts, negative results published verbatim  |
+| F — Truth pass                           | done      | 13 ADRs, glossary, changelog, reconciled docs, isolated `scale` job, clean root `tsc` gate                              |
+| G — Proof & delivery                     | partial   | code-side proof surface (catalog) and decision seams landed; participant study, npm release and hosting remain external |
 
 No immersive mode, ladder, gesture map or visual default has been promoted. Presets are examples,
 never recommendations. The `n >= 5` study has no winner.
 
 ```
 pnpm install                          # workspace
-pnpm test                             # 850 unit tests
-pnpm --filter pi test                 # 66 unit tests
-pnpm --filter pi test:e2e             # 40 Playwright tests
+pnpm test                             # 852 unit tests
+pnpm --filter pi test                 # 74 unit tests
+pnpm --filter pi test:e2e             # 42 Playwright tests
 pnpm --filter demo test               # 34 tests
 pnpm run build                        # library, packages, demo
 ```
@@ -61,16 +61,17 @@ renderer contract (@spacegraphjs/renderer)     ── swappable adapters: WebGL 
 - **Transport:** `RenderModelPatch`/`createPatchPainter`, `diffKernels`, `GraphHistory`.
 - **Domains:** four conforming domain packages built through `create-spacegraph`'s six-slot recipe.
 - **Host systems (Pi):** 30-knob policy schema with provenance, live panel, permalink v2, session
-  recorder with counterfactual re-scoring, navigation verb set, instrument kit, and graph-driven
-  prompt/steer/approve/reject/retry/compare.
+  recorder with counterfactual re-scoring, navigation verb set, instrument kit, graph-driven
+  prompt/steer/approve/reject/retry/compare, and a public catalog that launches every preset and
+  sampled experiment cell from its URL.
 
 ### Verification gates
 
 | Gate            | Command                                   | Current          |
 | --------------- | ----------------------------------------- | ---------------- |
-| Unit tests      | `pnpm test`                               | 850 passing      |
-| Pi unit tests   | `pnpm --filter pi test`                   | 72 passing       |
-| Pi e2e          | `pnpm --filter pi test:e2e`               | 41 passing       |
+| Unit tests      | `pnpm test`                               | 852 passing      |
+| Pi unit tests   | `pnpm --filter pi test`                   | 74 passing       |
+| Pi e2e          | `pnpm --filter pi test:e2e`               | 42 passing       |
 | Demo unit tests | `pnpm --filter demo test`                 | 34 passing       |
 | Demo e2e        | `pnpm --filter demo test:e2e`             | 21 passing       |
 | Visual atlas    | `pnpm run verify:visual`                  | green            |
@@ -85,10 +86,10 @@ load.
 
 ## Remaining work (ordered by dependency)
 
-| Workstream              | Goal                                                              | State                                                |
-| ----------------------- | ----------------------------------------------------------------- | ---------------------------------------------------- |
-| E refinement (optional) | Re-run solver + vision loop under a variant during offline replay | done — `simulateFixture` + `simulateAndScore`        |
-| G                       | Study published, release live, hosted flagship                    | external; code seams ready; naming pass / beta → 1.0 |
+| Workstream      | Goal                                                 | State                                               |
+| --------------- | ---------------------------------------------------- | --------------------------------------------------- |
+| G proof surface | Launchable preset/experiment catalog on the flagship | done — `app/pi/src/catalog.ts`                      |
+| G               | Study published, release live, hosted flagship       | external; naming pass / beta → 1.0 follow the study |
 
 See `TODO3.md` §12 for the definition of done and §11 for explicit anti-goals.
 

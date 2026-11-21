@@ -20,6 +20,8 @@ follow the workflow in `docs/ROADMAP.md` (`test:publish` → build → npm).
   the fixture's geometry and vision feedback under each variant, not just re-scores events.
 - **Truth pass (F):** durable ADRs, a vocabulary glossary, this changelog, deprecation policy, an
   isolated `scale` CI job, and a clean root `tsc` gate.
+- **Proof surface (G, code side):** the Pi flagship's catalog launches every preset and sampled
+  experiment cell from its URL, showing the question or decision rule without claiming a winner.
 
 ### Changed
 
