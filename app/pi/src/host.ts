@@ -20,7 +20,13 @@ import { GraphController } from 'spacegraphjs/control';
 import { sampleDepth, type DepthAxis } from 'spacegraphjs/depth';
 import { Navigation, Trail } from 'spacegraphjs/navigation';
 import { ScopeSimulation, type ScopePolicyInput, type ScopeSpec } from 'spacegraphjs/layout';
-import { MotionDirector, type MotionPlayback } from 'spacegraphjs/motion';
+import {
+    MotionDirector,
+    createCameraMotionHandlers,
+    type CameraMotionHandlers,
+    type MotionPlayback,
+} from 'spacegraphjs/motion';
+import { representationRung } from 'spacegraphjs/salience';
 import {
     createVisionLoop,
     type VisionLoop,
@@ -29,13 +35,7 @@ import {
     type VisionLoopScores,
     type VisionReport,
 } from 'spacegraphjs/vision';
-import {
-    AgentAdapter,
-    cardMarkup,
-    representationRung,
-    toAdapterModel,
-    type AgentLevel,
-} from './adapter';
+import { AgentAdapter, cardMarkup, toAdapterModel, type AgentLevel } from './adapter';
 import {
     createAnnotationWidgets,
     NoteStore,
@@ -63,7 +63,11 @@ import {
 import { agentScopes, DEPTH, portalChain } from './scopes';
 import { readTheme } from './theme';
 import { decodePermalink, encodePermalink, isRevealHash, type PermalinkState } from './permalink';
-import { createPlaySession, type GravityPreset, type PlaySession } from './play';
+import {
+    createPhysicsPlaySession,
+    type GravityPreset,
+    type PhysicsPlaySession,
+} from 'spacegraphjs/world';
 import { buildReportHTML } from './report';
 import { STUDY_TASKS } from './study';
 import { traceOrder } from './trace';
@@ -165,7 +169,13 @@ export class PiHost {
     readonly renderer = new SpaceGraphRenderer();
     readonly simulation: ScopeSimulation;
     readonly director = new MotionDirector();
-    readonly playSession: PlaySession;
+    readonly playSession: PhysicsPlaySession;
+
+    #cameraMotion!: CameraMotionHandlers;
+
+    get cameraMotion(): CameraMotionHandlers {
+        return this.#cameraMotion;
+    }
 
     #kernel = new Kernel();
     #theme: RenderTheme = DEFAULT_THEME;
@@ -235,7 +245,7 @@ export class PiHost {
             forces: { repulsion: 1800, attraction: 0.018, cooling: 0.94, maxBodies: 120 },
         });
         const simulation = this.simulation;
-        this.playSession = createPlaySession({
+        this.playSession = createPhysicsPlaySession({
             physics: {
                 settings: {
                     enabled: false,
@@ -272,7 +282,7 @@ export class PiHost {
         if (!supportsDepth(this.renderer.capabilities, this.#depth)) this.#depth = 'flat';
         this.renderer.setDepth(this.#depth);
         this.#controller.bind(this.renderer);
-        this.registerMotion();
+        this.#cameraMotion = this.registerMotion();
         this.#annotationWidgets = createAnnotationWidgets(el('annotation-list'), (id) =>
             this.removeNote(id),
         );
@@ -794,6 +804,10 @@ export class PiHost {
                 unsupported: this.visionLoop().reportUnsupported(),
             }),
             runVisionLoop: () => this.runVisionLoop(),
+            cameraMotion: () => ({
+                verbs: this.cameraMotion.verbs,
+                unsupported: this.cameraMotion.reportUnsupported(),
+            }),
             play: (preset?: GravityPreset) => this.play(preset),
             reconcilePlay: () => this.reconcilePlay(),
             playSession: () => ({
@@ -959,29 +973,24 @@ export class PiHost {
                   .join('') || '');
     }
 
-    private registerMotion(): void {
-        this.director.register('flyTo', ({ progress }) => {
-            this.renderer.setViewport({
-                zoom: this.#flightFrom.zoom,
-                center: [
-                    lerp(this.#flightFrom.center[0], this.#flightTo.x, progress),
-                    lerp(this.#flightFrom.center[1], this.#flightTo.y, progress),
-                    lerp(this.#flightFrom.center[2], this.#flightTo.z, progress),
-                ],
-            });
-        });
-        this.director.register('trace', ({ value }) => {
-            this.#traceProgress = value;
-            const index = Math.floor(value);
-            const from = this.#tracePositions[index];
-            if (!from) return;
-            const to = this.#tracePositions[index + 1] ?? from;
-            const t = value - index;
-            this.renderer.setViewport({
-                ...this.renderer.getViewport(),
-                center: [lerp(from.x, to.x, t), lerp(from.y, to.y, t), lerp(from.z, to.z, t)],
-            });
-            this.renderPositions();
+    private registerMotion(): CameraMotionHandlers {
+        return createCameraMotionHandlers(this.director, {
+            origin: () => [
+                this.#flightFrom.center[0],
+                this.#flightFrom.center[1],
+                this.#flightFrom.center[2],
+            ],
+            destination: () => [this.#flightTo.x, this.#flightTo.y, this.#flightTo.z],
+            zoom: () => this.#flightFrom.zoom,
+            tracePath: () => this.#tracePositions.map((position) => [position.x, position.y, position.z]),
+            move: (verb, center, progress) => {
+                if (verb === 'trace') this.#traceProgress = progress;
+                this.renderer.setViewport({
+                    center: [...center],
+                    zoom: verb === 'flyTo' ? this.#flightFrom.zoom : this.renderer.getViewport().zoom,
+                });
+                if (verb === 'trace') this.renderPositions();
+            },
         });
     }
 

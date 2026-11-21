@@ -1,0 +1,125 @@
+// The second reference host (app/pi is the flagship). It composes the promoted library helpers into
+// one workspace — camera verbs, one-authority play/reconcile, a legibility-gated rung and an opt-in
+// vision loop. The page owns rendering; this host owns state and behavior.
+
+import { createVisionLoop, type VisionLoop, type VisionLoopAnalyzers } from 'spacegraphjs/vision';
+import {
+    MotionDirector,
+    createCameraMotionHandlers,
+    type CameraMotionHandlers,
+    type CameraPoint,
+} from 'spacegraphjs/motion';
+import { representationRung, type RepresentationRung } from 'spacegraphjs/salience';
+import {
+    createPhysicsPlaySession,
+    type GravityPreset,
+    type PhysicsPlaySession,
+    type PlaySettings,
+    type PlaySimulation,
+} from 'spacegraphjs/world';
+
+export class SecondHost {
+    readonly director = new MotionDirector();
+    readonly cameraMotion: CameraMotionHandlers;
+    readonly playSession: PhysicsPlaySession;
+    readonly visionLoop: VisionLoop;
+    readonly settings: PlaySettings = {
+        enabled: false,
+        gravity: 0,
+        collide: true,
+        repulsion: 120,
+        damping: 0.98,
+        groundY: null,
+    };
+    readonly moves: string[] = [];
+
+    level: RepresentationRung = 'overview';
+
+    #center: CameraPoint = [0, 0, 0];
+    #zoom = 1;
+    #flightTo: CameraPoint | undefined;
+    #tracePath: readonly CameraPoint[] = [];
+    #settled = true;
+    #instant = false;
+    #energy = 0;
+
+    constructor(analyzers?: VisionLoopAnalyzers) {
+        const host = this;
+        const simulation: PlaySimulation = {
+            setInstant: (value) => {
+                host.#instant = value;
+                if (value) host.#settled = true;
+            },
+            settle: () => {
+                host.#settled = true;
+                host.#energy = 0;
+            },
+            get settled() {
+                return host.#settled;
+            },
+            get energy() {
+                return host.#energy;
+            },
+        };
+        this.playSession = createPhysicsPlaySession({
+            physics: { settings: this.settings },
+            simulation,
+        });
+        this.cameraMotion = createCameraMotionHandlers(this.director, {
+            origin: () => this.#center,
+            destination: () => this.#flightTo,
+            zoom: () => this.#zoom,
+            tracePath: () => this.#tracePath,
+            move: (verb, point, progress) => {
+                this.#center = point;
+                this.moves.push(`${verb}:${point.join(',')}:${progress.toFixed(2)}`);
+            },
+        });
+        this.visionLoop = createVisionLoop(analyzers, () => {});
+    }
+
+    get viewport(): { center: [number, number, number]; zoom: number } {
+        return { center: [...this.#center], zoom: this.#zoom };
+    }
+
+    setFlight(to: CameraPoint): void {
+        this.#flightTo = to;
+    }
+
+    setTracePath(path: readonly CameraPoint[]): void {
+        this.#tracePath = path;
+    }
+
+    fly(progress: number): void {
+        this.director
+            .play([{ id: 'flight', verb: 'flyTo', target: 'camera', from: 0, to: 1 }], {
+                duration: 1,
+            })
+            .advance(progress);
+    }
+
+    follow(value: number): void {
+        this.director
+            .play([{ id: 'trace', verb: 'trace', target: 'camera', from: 0, to: 1 }], {
+                duration: 1,
+            })
+            .advance(value);
+    }
+
+    chooseLevel(activity: number, legibility: number): RepresentationRung {
+        this.level = representationRung({ level: this.level, activity, legibility });
+        return this.level;
+    }
+
+    play(preset: GravityPreset = 'zero-g'): boolean {
+        return this.playSession.play(preset);
+    }
+
+    reconcile(): boolean {
+        return this.playSession.reconcile();
+    }
+
+    addEnergy(value: number): void {
+        this.#energy += value;
+    }
+}

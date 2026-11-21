@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest';
-import { cardMarkup, portalGlyph, representationRung, toAdapterModel } from '../src/adapter';
+import { representationRung } from 'spacegraphjs/salience';
+import { cardMarkup, portalGlyph, toAdapterModel } from '../src/adapter';
 import { fixtureKernel } from '../src/fixture';
 import { agentScopes } from '../src/scopes';
 import { agentDomain } from '@spacegraphjs/agent';

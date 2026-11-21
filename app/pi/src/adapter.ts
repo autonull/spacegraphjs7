@@ -8,6 +8,7 @@ import {
 } from '@spacegraphjs/adapter';
 import type { NodeStatus, RenderEdge, RenderNode } from '@spacegraphjs/renderer';
 import type { AgentView } from '@spacegraphjs/agent';
+import type { RepresentationRung } from 'spacegraphjs/salience';
 import { CARD_BUDGETS } from './policy';
 
 export type AgentAdapterNode = AdapterNode & {
@@ -18,7 +19,7 @@ export type AgentAdapterNode = AdapterNode & {
 };
 export type AgentAdapterEdge = AdapterEdge;
 export type AgentAdapterModel = AdapterModel<AgentAdapterNode, AgentAdapterEdge>;
-export type AgentLevel = 'overview' | 'execution' | 'detail';
+export type AgentLevel = RepresentationRung;
 
 const STATUS: Readonly<Record<string, NodeStatus>> = {
     active: 'running',
@@ -58,21 +59,6 @@ const PORTAL_GLYPHS = ['▣', '▤', '▥', '▦'] as const;
 /** A stable glyph per child scope, so a portal keeps the same identity across rungs and rebuilds. */
 export const portalGlyph = (scope: string): string =>
     PORTAL_GLYPHS[[...scope].reduce((sum, char) => sum + char.charCodeAt(0), 0) % PORTAL_GLYPHS.length]!;
-
-export type RepresentationInput = {
-    readonly level: AgentLevel;
-    /** Decaying activity score of the node, in [0, 1]. */
-    readonly activity: number;
-    /** Latest vision legibility score, in [0, 1]. */
-    readonly legibility: number;
-};
-
-/** Legibility gates spectacle: activity can promote a rung, poor legibility demotes it. */
-export const representationRung = ({ level, activity, legibility }: RepresentationInput): AgentLevel => {
-    if (level === 'overview' && activity > 0.6 && legibility >= 0.7) return 'execution';
-    if (level === 'detail' && legibility < 0.5) return 'execution';
-    return level;
-};
 
 /** Host-owned markup for one rung of the representation ladder. All node text is escaped. */
 export const cardMarkup = (node: AgentAdapterNode, rung: AgentLevel, context: CardContext): string => {

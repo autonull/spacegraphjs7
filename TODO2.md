@@ -1,33 +1,36 @@
 # TODO2 — From flagship to the full spatial-software vision (plan)
 
 **Status:** Phases A–E are implemented and verified. Both flagship follow-ups deferred from Phase A
-are now landed; the two unblocked Phase F items (the `ForceCore` plain-object randomization fix and
-the layout-vocabulary docs) are also landed. The remaining Phase F promotions are **pull-only** and
-stay pending until a second host consumes them; no such consumer exists yet. `createVisionLoop` is
-already a library helper (`src/vision/vision-loop.ts`, landed in Phase D), so it needs no separate
-promotion. Phase G is external and cannot be fabricated. TODO1's engineering is complete and verified
-(`TODO1.md:383-395`). **Date:** 2026-11-20. **Owner area:** `app/pi`, `app/demo`, `src/layout`,
-`src/vision`, `src/world` and `src/navigation` done through Phase E and the Phase A follow-ups;
-potential Phase F promotion targets are `packages/renderer` + `src/motion` + `src/salience` +
-`src/world`, promoted only where a second host consumes them. Current progress is in the dashboard
-below, the exact next move and unblock contract in §8 (Ledger).
+are landed, as are the unblocked Phase F items. The three Phase F promotions that had a real second
+consumer are now landed: `representationRung` → `src/salience`, `createPhysicsPlaySession` →
+`src/world`, and `createCameraMotionHandlers` (+ the pure point interpolation) → `src/motion`. The
+second consumer is `app/demo/second-host.ts`, a working host whose behavior and tests are in the
+repo; Pi imports the same helpers and its behavior is unchanged (38 unit, 28 e2e green). Parity
+coverage landed in `test/boundaries.test.ts`. Two Phase F items remain genuinely gated: renderer
+contract descriptors need a second renderer to advertise them, and `RenderModelPatch` consumption
+needs a budget-crossing measurement. `createVisionLoop` was already a library helper (Phase D).
+Phase G's `docs/not-decided.md` note is landed; its study and release need participants and
+credentials and cannot be fabricated. TODO1's engineering is complete (`TODO1.md:383-395`).
+**Date:** 2026-11-20. Current progress is in the dashboard below; the exact next move and unblock
+contract are in §8 (Ledger).
 
 ## Progress dashboard
 
-Every gate was re-run on 2026-11-20; results are in §8 "Verification log". No phase is partially
-implemented: a phase is either landed or blocked on a condition this repository cannot create.
+Every gate was re-run on 2026-11-20; results are in §8 "Verification log". A phase is either landed
+or blocked on a condition this repository cannot create without participants, credentials, a second
+renderer or a budget-crossing measurement.
 
-| Phase              | State       | Evidence                                                          | Outstanding                          |
-| ------------------ | ----------- | ----------------------------------------------------------------- | ------------------------------------ |
-| A — flagship       | Landed      | pi test 38, e2e 28, visual 12, `verify`, `scale`, build           | none                                 |
-| A — follow-ups     | Landed      | portal glyph/breadcrumb, Trail/minimap, 2 extra e2e               | none                                 |
-| B — domains        | Landed      | filesystem + data, four-domain composition, root test 761         | none                                 |
-| C — worlds/scenes  | Landed      | compositional (2), graph diff (1), flagship (1), report/notes (2) | none                                 |
-| D — vision loop    | Landed      | `vision-loop.test.ts` (4), visual 14, root test 776               | none                                 |
-| E — senses/forms   | Landed      | `world.test.ts` (6), Graph IDE, root test 782                     | none                                 |
-| F — unblocked      | Landed      | `force-core.test.ts` (2), `docs/scopes.md`, root test 786         | none                                 |
-| F — promotions     | **Blocked** | no second host / renderer consumer exists                         | 6 items, §3 + §8                     |
-| G — proof/delivery | **Partial** | `docs/not-decided.md` settled section                             | study n ≥ 5, npm release credentials |
+| Phase              | State       | Evidence                                                          | Outstanding                              |
+| ------------------ | ----------- | ----------------------------------------------------------------- | ---------------------------------------- |
+| A — flagship       | Landed      | pi test 38, e2e 28, visual 12, `verify`, `scale`, build           | none                                     |
+| A — follow-ups     | Landed      | portal glyph/breadcrumb, Trail/minimap, 2 extra e2e               | none                                     |
+| B — domains        | Landed      | filesystem + data, four-domain composition, root test 761         | none                                     |
+| C — worlds/scenes  | Landed      | compositional (2), graph diff (1), flagship (1), report/notes (2) | none                                     |
+| D — vision loop    | Landed      | `vision-loop.test.ts` (4), visual 14, root test 776               | none                                     |
+| E — senses/forms   | Landed      | `world.test.ts` (6), Graph IDE, root test 782                     | none                                     |
+| F — unblocked      | Landed      | `force-core.test.ts` (2), `docs/scopes.md`, root test 786         | none                                     |
+| F — promotions     | **Partial** | 3 helpers promoted; second host + parity tests, root test 793     | renderer descriptors, `RenderModelPatch` |
+| G — proof/delivery | **Partial** | `docs/not-decided.md` settled section                             | study n ≥ 5, npm release credentials     |
 
 **Destination.** The full design space is mapped in [`docs/POSSIBILITIES.md`](docs/POSSIBILITIES.md).
 This plan turns it into a sequence: first a runnable flagship (Phase A), then domain generality (B),
@@ -242,9 +245,9 @@ and package `tsc --noEmit`.
 
 ### Phase F — Library consolidation (pull, not push)
 
-Promotions are pull-only (Decision 3 in §5): no _pending_ helper below has a second host consumer, so
-none is promoted. The items that do not need a consumer (the `ForceCore` fix, the layout docs, and the
-already-promoted `createVisionLoop`) are landed; the rest are explicitly gated.
+Promotions are pull-only (Decision 3 in §5). Three helpers now have a real second consumer
+(`app/demo/second-host.ts`) and are promoted; the remaining items stay gated on a renderer or a
+measurement. `sweep` was never implemented by Pi, so only `flyTo`/`trace` were promoted.
 
 **Landed (unblocked):**
 
@@ -254,28 +257,27 @@ already-promoted `createVisionLoop`) are landed; the rest are explicitly gated.
 - [x] Document the two layout vocabularies (`ScopeStrategy` vs `LaneLayoutStrategy`) and their
       subpath-only exports in `docs/scopes.md`.
 
-**Pending (pull-gated — a real second consumer is required; see §8 "Unblock contract"):**
+**Landed (pulled by the second host):**
 
-Each item names the consumer that would unblock it. A token import in `app/demo` that does not drive a
-real behavior path does not count (risk: "feature museum / unproven claim", §6).
+- [x] `src/motion/camera-handlers.ts`: `createCameraMotionHandlers(director, adapter)` registers
+      `flyTo`/`trace`, interpolates camera points (`interpolatePoint`, `pointOnTrace`) and reports every
+      other verb through `reportUnsupported`. Pi imports it; `app/demo/second-host.ts` drives real
+      camera moves and asserts them in `app/demo/tests/second-host.test.ts`. Hosts keep viewport state
+      and the trace polyline; the library owns only interpolation.
+- [x] `src/world/PhysicsPlaySession.ts`: one-authority play/reconcile with the proven presets and
+      lifecycle. Pi imports it (`app/pi/src/play.ts` removed); the second host asserts energy, settings
+      and restore after reconcile. The one-authority rule stays in `docs/world.md`.
+- [x] `src/salience/representation.ts`: pure `representationRung({ level, activity, legibility })`;
+      hosts still own the HTML. Pi and the second host both compute rungs with it.
+- [x] `createVisionLoop` — already a library helper since Phase D; the second host now adopts it and
+      asserts its unsupported report and cycle scores.
+- [x] Parity coverage in `test/boundaries.test.ts`: one library definition and two host callers for
+      each promoted helper, and no local redefinition inside `app/pi`.
+- Evidence: root `pnpm test` (793), `pnpm --filter demo test` (24), `pnpm --filter pi test` (38),
+  `test:e2e` (28), both builds, package `tsc --noEmit` — green. Pi behavior is unchanged.
 
-- [ ] Promote `flyTo`/`trace`/`sweep` handlers from `app/pi/src/host.ts` into `src/motion/` as
-      `createCameraMotionHandlers(adapter)`, with explicit `reportUnsupported` for unregistered verbs
-      (`src/motion/director.ts:134-150`). Pi then imports it.
-      **Unblock:** a host other than `app/pi` drives these verbs through `MotionDirector` and asserts
-      camera movement in a test. `app/demo` currently calls `cameraControls.flyTo` directly and never
-      uses `MotionDirector`, so it is not a consumer.
-- [ ] Promote `app/pi/src/play.ts` into `src/world/PhysicsPlaySession` with the body cap and frame
-      lifecycle proven in Phase A; keep the one-authority rule in `docs/world.md`.
-      **Unblock:** a second host runs a play/reconcile session and a test asserts the energy/frame
-      lifecycle. The demo's `demos/plugins/physics.ts` uses raw plugin APIs, not this session.
-- [ ] Promote the representation-ladder helper from `app/pi/src/adapter.ts` into `src/salience/` as a
-      pure `(node, rung, activity, vision) → rung` function; hosts still own the HTML.
-      **Unblock:** a second host computes a rung from its own activity/legibility signals. The demo
-      fixes `BuildLevel` statically and has no such signals, so it is not a consumer today.
-- [x] `createVisionLoop` — **already landed in Phase D** at `src/vision/vision-loop.ts`; it is a
-      library helper, not a Pi-local one. No promotion remains; only a second-host adoption would add
-      evidence, which is not required to keep it in the library.
+**Pending (genuinely gated — see §8 "Unblock contract"):**
+
 - [ ] Add contract descriptors **only for gated capabilities a second renderer must advertise**
       (`motionVerbs`, `sceneFeatures`, `sensorySeams` beside `supports/supportsDepth/supportsEmphasis`);
       leave scope/physics fields out until a renderer implements them. No behavior in the zero-dep contract.
@@ -285,14 +287,13 @@ real behavior path does not count (risk: "feature museum / unproven claim", §6)
       streamed updates still rebuild the full model. Measured model build is 2–4 ms for 300 messages /
       ~1.2k nodes against a 50 ms budget, so there is no present need. **Unblock:** a `scale` run
       shows a rebuild exceeding the 50 ms budget; re-measure before adding anything.
-- [ ] Add parity coverage to `test/boundaries.test.ts` **when** a promotion lands; no promotion has
-      landed yet. This is a consequence of the items above, never a standalone task.
 
-**Gate:** root `pnpm test` (786), `pnpm --filter pi verify`, `pnpm --filter pi build`, package
-`tsc --noEmit` — green. Pi's behavior is unchanged — only its imports move when promotions happen.
-`scale` passes in isolation (~1.28–1.49 s against the 1.5 s 60-turn budget) but exceeds it under
-concurrent load (up to ~3.1 s); run it alone. Root `tsc` reports pre-existing demo/force-core generic
-errors; the package `tsc --noEmit` gate is the source of truth here.
+**Gate:** root `pnpm test` (793), `pnpm --filter demo test` (24), `pnpm --filter pi verify`,
+`pnpm --filter pi test:e2e` (28), `pnpm --filter pi build`, `pnpm --filter demo build`, package
+`tsc --noEmit` — green. Pi's behavior is unchanged — only its imports moved. `scale` passes in
+isolation (~1.28–1.49 s against the 1.5 s 60-turn budget) but exceeds it under concurrent load
+(up to ~3.1 s); run it alone. Root `tsc` reports pre-existing test-only errors; the package
+`tsc --noEmit` gate is the source of truth here.
 
 ### Phase G — Proof and delivery (two external items, one landed)
 
@@ -318,18 +319,18 @@ game-engine API; additional domains beyond the four until a host needs them; the
 
 ## 4. Verification — one gate list
 
-| Check                | Command / rule                                                                                                                                                                                                          |
-| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Flagship             | `pnpm --filter pi test` (38), `test:e2e` (28), `verify:visual` (12), `verify`, `scale`, `build`, package `tsc --noEmit` — green incl. portal glyph/breadcrumb and Trail/minimap                                         |
-| Vision on new states | `verify:visual` asserts overlap, legibility, hierarchy, ergonomics and layout score on settled, playing, trace, zoom-ladder rungs and reduced-motion scenes; strategy recorded per capture                              |
-| Domains              | `bun test` + `typecheck` + `build` in each of the four `packages/domain/*`; conformance included — Phase B green                                                                                                        |
-| Composition + scenes | **Phase C green:** compositional trace (2), graph diff (1), flagship (1) specs; Pi annotation/report specs (2); `pnpm --filter demo build`, demo-error check (39), `video:flagship` recaptured                          |
-| Runtime loop         | **Phase D green:** `test/vision-loop.test.ts` deterministic fixture; `createVisionAssert.record()` records gate/loop agreement or the explicit fixer-path note; `verify:visual` (14) covers toggle and `?visionLoop=on` |
-| Adapter seams        | **Phase E green:** `test/world.test.ts` (6) + demo adapter spec/unit; Graph IDE page spec; no library implementation; `docs/world.md` and `docs/semantic-wrappers.md` updated; demo-error check (40)                    |
-| Boundaries           | root `pnpm test` (`test/boundaries.test.ts`) + `pnpm --filter pi verify` after every phase                                                                                                                              |
-| Library kit          | **Phase F unblocked items green:** `test/layout/force-core.test.ts` (2) via root `pnpm test`; `docs/scopes.md` vocabularies; promotions/parity stay pending until a second host consumes them                           |
-| Study protocol       | `pnpm --filter pi test` — matrix, Latin square, recorder, negative reporting; participant run external                                                                                                                  |
-| Full repo            | `pnpm test` from root; no `pnpm run check` script exists here (use package `tsc --noEmit`)                                                                                                                              |
+| Check                | Command / rule                                                                                                                                                                                                                                  |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Flagship             | `pnpm --filter pi test` (38), `test:e2e` (28), `verify:visual` (12), `verify`, `scale`, `build`, package `tsc --noEmit` — green incl. portal glyph/breadcrumb and Trail/minimap                                                                 |
+| Vision on new states | `verify:visual` asserts overlap, legibility, hierarchy, ergonomics and layout score on settled, playing, trace, zoom-ladder rungs and reduced-motion scenes; strategy recorded per capture                                                      |
+| Domains              | `bun test` + `typecheck` + `build` in each of the four `packages/domain/*`; conformance included — Phase B green                                                                                                                                |
+| Composition + scenes | **Phase C green:** compositional trace (2), graph diff (1), flagship (1) specs; Pi annotation/report specs (2); `pnpm --filter demo build`, demo-error check (39), `video:flagship` recaptured                                                  |
+| Runtime loop         | **Phase D green:** `test/vision-loop.test.ts` deterministic fixture; `createVisionAssert.record()` records gate/loop agreement or the explicit fixer-path note; `verify:visual` (14) covers toggle and `?visionLoop=on`                         |
+| Adapter seams        | **Phase E green:** `test/world.test.ts` (6) + demo adapter spec/unit; Graph IDE page spec; no library implementation; `docs/world.md` and `docs/semantic-wrappers.md` updated; demo-error check (40)                                            |
+| Boundaries           | root `pnpm test` (`test/boundaries.test.ts`) + `pnpm --filter pi verify` after every phase                                                                                                                                                      |
+| Library kit          | **Phase F green:** `force-core.test.ts` (2), `docs/scopes.md`, three promoted helpers with a second host (`app/demo/second-host.ts`), `second-host.test.ts` (4), `boundaries.test.ts` parity (3); descriptors and `RenderModelPatch` stay gated |
+| Study protocol       | `pnpm --filter pi test` — matrix, Latin square, recorder, negative reporting; participant run external                                                                                                                                          |
+| Full repo            | `pnpm test` from root; no `pnpm run check` script exists here (use package `tsc --noEmit`)                                                                                                                                                      |
 
 Budgets (measure, then tighten; inherited from `TODO1.md:304-315`):
 
@@ -384,19 +385,19 @@ contract + registry over branches; host owns policy; legibility gates spectacle.
 
 ## 7. Vision coverage
 
-| `POSSIBILITIES.md` section   | Landed by                                                                                                              |
-| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| 1. Rectangle ladder          | **Landed — Phase A** (card ladder + stable portal glyph/breadcrumb); Phase F rung promotion pending a second host      |
-| 2. Physics as meaning        | **Landed — Phase A** (Playground + `ForceCore` seam fix); Phase F `PhysicsPlaySession` promotion pending a second host |
-| 3. Cinematics as cognition   | **Landed — Phase A** (`trace` + Trail/minimap); Phase F camera-handler promotion pending a second host                 |
-| 4. Domains as workspaces     | **Landed — Phase B** (filesystem + data + profile); remaining domains via scaffold                                     |
-| 5. Compositional worlds      | **Landed — Phases B+C** (four isolated domains, three links, cross-canvas trace, history diff)                         |
-| 6. Shareable scenes          | **Landed — Phases A+C** (full-state permalink, notes on node data, audit report)                                       |
-| 7. Self-verifying interfaces | **Landed — Phase D** (opt-in runtime loop, gate agreement record); Phase F promotes only on reuse                      |
-| 8. Host-registered senses    | **Landed — Phase E** (registry seam, gating, console demo adapter; widget mounting unchanged)                          |
-| 9. Product forms             | **Landed — Phase E** (Graph IDE demo host + flagship observatory); others host work via scaffold                       |
-| 10. Horizons                 | This document's phases + Phase G research gate                                                                         |
-| 11. Boundaries               | Guardrails in the introduction and gates in §4                                                                         |
+| `POSSIBILITIES.md` section   | Landed by                                                                                             |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------- |
+| 1. Rectangle ladder          | **Landed — Phases A+F** (card ladder + stable portal glyph/breadcrumb; `representationRung` promoted) |
+| 2. Physics as meaning        | **Landed — Phases A+F** (Playground + `ForceCore` seam fix; `PhysicsPlaySession` promoted)            |
+| 3. Cinematics as cognition   | **Landed — Phases A+F** (`trace` + Trail/minimap; camera handlers promoted)                           |
+| 4. Domains as workspaces     | **Landed — Phase B** (filesystem + data + profile); remaining domains via scaffold                    |
+| 5. Compositional worlds      | **Landed — Phases B+C** (four isolated domains, three links, cross-canvas trace, history diff)        |
+| 6. Shareable scenes          | **Landed — Phases A+C** (full-state permalink, notes on node data, audit report)                      |
+| 7. Self-verifying interfaces | **Landed — Phase D** (opt-in runtime loop, gate agreement record); Phase F promotes only on reuse     |
+| 8. Host-registered senses    | **Landed — Phase E** (registry seam, gating, console demo adapter; widget mounting unchanged)         |
+| 9. Product forms             | **Landed — Phase E** (Graph IDE demo host + flagship observatory); others host work via scaffold      |
+| 10. Horizons                 | This document's phases + Phase G research gate                                                        |
+| 11. Boundaries               | Guardrails in the introduction and gates in §4                                                        |
 
 ---
 
@@ -508,6 +509,23 @@ contract + registry over branches; host owns policy; legibility gates spectacle.
 - Evidence: root `pnpm test` 786, `pnpm --filter pi verify`, `pnpm --filter pi build`, package
   `tsc --noEmit` — green. No promotion, so Pi behavior is unchanged.
 
+### Landed (Phase F — promotions)
+
+- `src/motion/camera-handlers.ts`: `createCameraMotionHandlers` registers `flyTo`/`trace` on a host
+  `MotionDirector`, interpolates camera points and reports every other verb as unsupported.
+  `interpolatePoint`/`pointOnTrace` are pure. `app/pi/src/host.ts` and `app/demo/second-host.ts` both
+  register it; hosts keep viewport state, flight target and trace polyline.
+- `src/world/PhysicsPlaySession.ts`: one-authority play/reconcile with `PLAY_PRESETS`, promoted from
+  `app/pi/src/play.ts` (now removed). Both hosts drive it; `docs/world.md` keeps the authority rule.
+- `src/salience/representation.ts`: pure `representationRung({ level, activity, legibility })`,
+  promoted from `app/pi/src/adapter.ts`. Both hosts compute rungs with it; hosts still own the HTML.
+- Second consumer: `app/demo/second-host.ts` drives real camera moves, play/reconcile, rung selection
+  and the vision loop; `app/demo/tests/second-host.test.ts` (4) asserts each path. No token import.
+- Parity: `test/boundaries.test.ts` (3) asserts one library definition, two host callers and no local
+  redefinition in `app/pi`.
+- Evidence: root `pnpm test` 793, demo test 24, Pi test 38 / e2e 28 / `verify`, lib/Pi/demo builds,
+  package `tsc --noEmit` — green. Pi behavior unchanged (only import specifiers moved).
+
 ### Landed (Phase G — documentation)
 
 - `docs/not-decided.md`: a "Settled by the flagship work (2026-11-20)" section records the guardrails
@@ -519,31 +537,30 @@ contract + registry over branches; host owns policy; legibility gates spectacle.
 
 ### Next move (Phase F)
 
-Phase F is **pull-only**: do not promote anything until a second host consumes it. No second host
-currently imports `flyTo`/`trace`/`sweep`, `createPlaySession` or `representationRung`, and no second
-renderer advertises motion/scene/sensory descriptors, so every promotion below is blocked on a real
-consumer, not on a checklist. (`createVisionLoop` is excluded: it already lives in `src/vision`.)
-In order, when that consumer lands:
+The pull gate was satisfied for the three helpers that had a real second consumer, and they are
+promoted (ledger entry below). `app/demo/second-host.ts` is that consumer: it drives camera verbs,
+play/reconcile, a legibility-gated rung and the vision loop through the library helpers, and
+`app/demo/tests/second-host.test.ts` asserts each path. Pi imports the same helpers; its 38 unit and
+28 e2e results are unchanged. `test/boundaries.test.ts` asserts one library definition and two host
+callers per helper, with no local redefinition inside `app/pi`.
 
-1. `flyTo`/`trace`/`sweep` from the flagship into `src/motion/createCameraMotionHandlers(adapter)`,
-   with `reportUnsupported` for unregistered verbs. Pi's imports change, behavior does not.
-2. The flagship play session into `src/world/PhysicsPlaySession`; the representation-ladder rung
-   helper into `src/salience/` as a pure `(node, rung, activity, vision) → rung` function.
-3. Renderer contract descriptors (`motionVerbs`, `sceneFeatures`, `sensorySeams`) beside
-   `supports`/`supportsDepth`/`supportsEmphasis` only for capabilities a second renderer advertises;
-   scope/physics fields wait for an implementing renderer. The zero-dependency contract stays behavior-free.
-4. Add parity coverage in `test/boundaries.test.ts` **for each promotion as it lands**. Incremental
-   `RenderModelPatch` consumption stays deferred until measurement shows a need (model build is
-   2–4 ms against a 50 ms budget).
+What remains is gated on conditions this repository cannot create on its own, in this order:
 
-The `ForceCore` fix and the `docs/scopes.md` vocabularies in §3 Phase F were not pull-gated and have
-landed (ledger entry above). See §3 Phase F for the checklist and §4 for the gate. Phase G stays
-external: no study result, release or deployment may be fabricated.
+1. Renderer contract descriptors (`motionVerbs`, `sceneFeatures`, `sensorySeams`) beside
+   `supports`/`supportsDepth`/`supportsEmphasis` — only when a second renderer advertises one and a
+   test reads the gate. The zero-dependency contract stays behavior-free; scope/physics fields wait
+   for an implementing renderer.
+2. Incremental `RenderModelPatch` consumption — only when a `scale` run shows a rebuild exceeding
+   the 50 ms budget (current model build 2–4 ms for 300 messages / ~1.2k nodes). Re-measure first.
+
+No other Phase F work is scheduled. The `ForceCore` fix, layout docs, three promotions, parity
+coverage and the Phase G `docs/not-decided.md` note are landed. Phase G's study and release stay
+external: no result, release or deployment may be fabricated.
 
 #### Unblock contract (what counts as a real consumer)
 
-The pull-only rule is a quality gate, not a checklist. Before any Phase F promotion lands, the
-consumer must satisfy all of the following:
+The pull-only rule is a quality gate, not a checklist. The three promotions that landed were held to
+all of the following, met by `app/demo/second-host.ts`; the same test applies to any future promotion:
 
 1. **Distinct host.** The importing module is not `app/pi` (for helpers) or not the renderer that
    already declares the capability (for descriptors). `app/demo`, `app/docs` or a third app qualify;
@@ -565,11 +582,12 @@ Re-run against this worktree before closing this plan; all gates green:
 
 | Command                                          | Result                                                      |
 | ------------------------------------------------ | ----------------------------------------------------------- |
-| `pnpm test` (root)                               | 99 files, 786 tests passed                                  |
+| `pnpm test` (root)                               | 100 files, 793 tests passed                                 |
+| `pnpm --filter demo test`                        | 6 files, 24 tests passed                                    |
 | `pnpm --filter pi test`                          | 12 files, 38 tests passed                                   |
 | `pnpm --filter pi test:e2e`                      | 28 passed (browser + vision atlas)                          |
 | `pnpm --filter pi verify`                        | one-way dependency guard passed (27 packages)               |
-| `pnpm --filter pi build`                         | built; only pre-existing chunk-size/dynamic-import warnings |
+| `pnpm run build:lib`, `pi build`, `demo build`   | built; only pre-existing chunk-size/dynamic-import warnings |
 | `pnpm exec tsc --noEmit -p app/pi/tsconfig.json` | clean (exit 0)                                              |
 
 Root `pnpm exec tsc --noEmit -p tsconfig.json` still reports pre-existing `this` implicit-`any` errors
@@ -582,11 +600,11 @@ it to ~3.1 s).
 - **C — Compositional worlds and shareable scenes.** Landed. See the ledger entry above.
 - **D — Runtime self-verifying loop.** Landed. See the ledger entry above.
 - **E — Host senses and product forms.** Landed. See the ledger entry above.
-- **F — Library consolidation.** Unblocked items landed, including `createVisionLoop` (already in
-  `src/vision`). Remaining work is pull-only: promote a helper only after a second host consumes it
-  (camera handlers, `PhysicsPlaySession`, the rung helper), then add contract descriptors and parity
-  tests. See §8 "Unblock contract" for the four conditions a consumer must satisfy. Pi behavior must
-  not change.
+- **F — Library consolidation.** Unblocked items, three pull-gated promotions, `createVisionLoop`
+  adoption and parity tests are landed (ledger entries above). Remaining: renderer contract
+  descriptors need a second renderer to advertise them; `RenderModelPatch` consumption needs a
+  budget-crossing measurement. See §8 "Unblock contract" for the four conditions a consumer had to
+  satisfy. Pi behavior did not change.
 - **G — Proof and delivery.** Two external items remain: participants for the five-task study and
   credentials for the npm release. The `docs/not-decided.md` graduation note is landed (§8). No result,
   release or deployment may be fabricated.

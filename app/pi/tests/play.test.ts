@@ -1,5 +1,10 @@
 import { describe, expect, test } from 'vitest';
-import { createPlaySession, PRESETS, type PlaySettings, type PlaySimulation } from '../src/play';
+import {
+    createPhysicsPlaySession,
+    PLAY_PRESETS,
+    type PlaySettings,
+    type PlaySimulation,
+} from 'spacegraphjs/world';
 
 const harness = () => {
     const settings: PlaySettings = {
@@ -35,7 +40,7 @@ const harness = () => {
 describe('play session', () => {
     test('borrows a preset and suspends the authority while playing', () => {
         const { settings, simulation } = harness();
-        const session = createPlaySession({ physics: { settings }, simulation });
+        const session = createPhysicsPlaySession({ physics: { settings }, simulation });
         expect(session.play('zero-g')).toBe(true);
         expect(settings).toMatchObject({ enabled: true, gravity: 0, collide: true });
         expect(session.preset).toBe('zero-g');
@@ -44,7 +49,7 @@ describe('play session', () => {
 
     test('reconciles every coordinate back to the authority at rest', () => {
         const { settings, simulation, setEnergy } = harness();
-        const session = createPlaySession({ physics: { settings }, simulation });
+        const session = createPhysicsPlaySession({ physics: { settings }, simulation });
         session.play('gravity-well');
         setEnergy(2.5);
         expect(session.energy).toBe(2.5);
@@ -56,8 +61,8 @@ describe('play session', () => {
     });
 
     test('declares distinct cues for each preset', () => {
-        expect(PRESETS['zero-g'].gravity).toBe(0);
-        expect(PRESETS.orbit.collide).toBe(false);
-        expect(PRESETS['gravity-well'].gravity).toBeLessThan(0);
+        expect(PLAY_PRESETS['zero-g'].gravity).toBe(0);
+        expect(PLAY_PRESETS.orbit.collide).toBe(false);
+        expect(PLAY_PRESETS['gravity-well'].gravity).toBeLessThan(0);
     });
 });

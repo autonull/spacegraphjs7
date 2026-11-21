@@ -24,3 +24,10 @@ export type {
     WorldPolicy,
     WorldRepresentation,
 } from './world';
+export { PLAY_PRESETS, createPhysicsPlaySession } from './PhysicsPlaySession';
+export type {
+    GravityPreset,
+    PhysicsPlaySession,
+    PlaySettings,
+    PlaySimulation,
+} from './PhysicsPlaySession';

@@ -1,9 +1,7 @@
-/**
- * Play/Reconcile session. While playing, physics borrows the simulation's bounded node set
- * (`maxBodies`) and the authoritative ScopeSimulation holds still; at rest, reconcile returns every
- * coordinate to ScopeSimulation. There is one position authority — physics never writes canonical
- * positions, it only supplies temporary motion.
- */
+// One-authority play/reconcile lifecycle. While playing, physics borrows the host's bounded node set
+// and the authoritative simulation holds still; at rest, reconcile returns every coordinate to it.
+// The library owns the lifecycle, hosts own physics settings and the simulation.
+
 export type GravityPreset = 'zero-g' | 'orbit' | 'gravity-well';
 
 export type PlaySettings = {
@@ -22,7 +20,7 @@ export type PlaySimulation = {
     readonly energy: number;
 };
 
-export type PlaySession = {
+export type PhysicsPlaySession = {
     readonly active: boolean;
     readonly preset: GravityPreset | null;
     readonly energy: number;
@@ -30,19 +28,19 @@ export type PlaySession = {
     reconcile(): boolean;
 };
 
-export const PRESETS: Readonly<Record<GravityPreset, Readonly<Partial<PlaySettings>>>> = {
+export const PLAY_PRESETS: Readonly<Record<GravityPreset, Readonly<Partial<PlaySettings>>>> = {
     'zero-g': { gravity: 0, collide: true, repulsion: 120, damping: 0.98 },
     orbit: { gravity: 0, collide: false, repulsion: 60, damping: 0.995 },
     'gravity-well': { gravity: -9.8, collide: true, repulsion: 100, damping: 0.98 },
 };
 
-export const createPlaySession = ({
+export const createPhysicsPlaySession = ({
     physics,
     simulation,
 }: {
     physics: { settings: PlaySettings };
     simulation: PlaySimulation;
-}): PlaySession => {
+}): PhysicsPlaySession => {
     let active = false;
     let preset: GravityPreset | null = null;
 
@@ -57,7 +55,7 @@ export const createPlaySession = ({
             return simulation.energy;
         },
         play(next: GravityPreset = 'zero-g') {
-            Object.assign(physics.settings, PRESETS[next], { enabled: true });
+            Object.assign(physics.settings, PLAY_PRESETS[next], { enabled: true });
             simulation.setInstant(true);
             active = true;
             preset = next;

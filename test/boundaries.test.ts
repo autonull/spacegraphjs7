@@ -36,6 +36,32 @@ function hasRuntimeImport(specifier: string, content: string): boolean {
     return match?.some((m) => !m.includes('import type')) ?? false;
 }
 
+const PROMOTIONS: readonly { helper: string; source: string }[] = [
+    { helper: 'representationRung', source: 'src/salience/representation.ts' },
+    { helper: 'createPhysicsPlaySession', source: 'src/world/PhysicsPlaySession.ts' },
+    { helper: 'createCameraMotionHandlers', source: 'src/motion/camera-handlers.ts' },
+];
+
+describe('promoted helper reuse', () => {
+    const piSources = readdirSync(resolve(root, 'app/pi/src'), { encoding: 'utf8' })
+        .filter((entry) => /\.ts$/.test(entry))
+        .map((entry) => readFileSync(resolve(root, 'app/pi/src', entry), 'utf8'))
+        .join('\n');
+
+    for (const { helper, source } of PROMOTIONS) {
+        it(`${helper} has one library definition and two host callers`, () => {
+            const library = readFileSync(resolve(root, source), 'utf8');
+            expect(library).toContain(helper);
+            expect(readFileSync(resolve(root, 'app/pi/src/host.ts'), 'utf8')).toContain(helper);
+            expect(readFileSync(resolve(root, 'app/demo/second-host.ts'), 'utf8')).toContain(
+                helper,
+            );
+            expect(piSources).not.toContain(`export const ${helper}`);
+            expect(piSources).not.toContain(`export function ${helper}`);
+        });
+    }
+});
+
 describe('package boundaries', () => {
     it('keeps the core free of the contract, adapters, and Cytoscape', () => {
         const coreImports = staticImportsIn('src');

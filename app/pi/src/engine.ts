@@ -2,7 +2,7 @@ import { SpaceGraph, PhysicsPlugin } from 'spacegraphjs';
 import { agentDomain } from '@spacegraphjs/agent';
 import { fixtureKernel } from './fixture';
 import { agentScopes } from './scopes';
-import { createPlaySession } from './play';
+import { createPhysicsPlaySession } from 'spacegraphjs/world';
 
 const view = agentDomain.build(fixtureKernel());
 const scopes = agentScopes(view);
@@ -41,7 +41,7 @@ const boot = async (): Promise<void> => {
     graph.vision.visionSystem.setStrategy('heuristics');
 
     const scopesPlugin = graph.scopes!;
-    const session = createPlaySession({ physics, simulation: scopesPlugin.simulation });
+    const session = createPhysicsPlaySession({ physics, simulation: scopesPlugin.simulation });
     const enablePlay = (): boolean => session.play('zero-g');
     const reconcile = (): boolean => session.reconcile();
 

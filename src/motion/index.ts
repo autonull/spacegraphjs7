@@ -26,3 +26,15 @@ export type {
 } from './camera';
 export { MOTION_EASINGS, SPRING_PRESETS, springEasing } from './easing';
 export type { MotionEase, SpringConfig } from './easing';
+export {
+    CAMERA_MOTION_VERBS,
+    createCameraMotionHandlers,
+    interpolatePoint,
+    pointOnTrace,
+} from './camera-handlers';
+export type {
+    CameraMotionAdapter,
+    CameraMotionHandlers,
+    CameraMotionVerb,
+    CameraPoint,
+} from './camera-handlers';
