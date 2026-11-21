@@ -5,6 +5,7 @@ import {
     SessionRecorder,
     counterfactual,
     ergonomicCounters,
+    ergonomicProfile,
     eventKnob,
     replaySession,
     type EventScorer,
@@ -65,5 +66,26 @@ describe('session recorder', () => {
         expect(result.successDelta).toBe(0);
         expect(result.travelDelta).toBeLessThan(0);
         expect(result.variant.travel).toBeLessThan(result.incumbent.travel);
+    });
+
+    it('derives time-to-first-relevant, choice count and travel distance', () => {
+        let time = 100;
+        const recorder = new SessionRecorder('pi:local', () => (time += 200));
+        recorder.record('policy:change', baseline);
+        recorder.record('reveal', baseline, { target: 'a', choices: 4, travel: 10 });
+        recorder.record('reveal', baseline, { target: 'b', choices: 6, travel: 15 });
+        recorder.record('answer', baseline);
+        const profile = ergonomicProfile(recorder.export());
+        expect(profile['time-to-first-relevant']).toBe(200);
+        expect(profile['choice-count']).toBe(10);
+        expect(profile['travel-distance']).toBe(25);
+        expect(profile.reveal).toBe(2);
+        expect(profile.answer).toBe(1);
+    });
+
+    it('reports zero time-to-first-relevant when no relevant node is revealed', () => {
+        const recorder = new SessionRecorder('pi:local', () => 42);
+        recorder.record('descend', baseline);
+        expect(ergonomicProfile(recorder.export())['time-to-first-relevant']).toBe(0);
     });
 });

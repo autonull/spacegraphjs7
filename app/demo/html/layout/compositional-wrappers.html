@@ -134,105 +134,22 @@
         </footer>
 
         <script type="module">
-            import { Kernel } from '@spacegraphjs/kernel';
-            import { AgentEventMapper, agentDomain } from '@spacegraphjs/agent';
-            import {
-                FIXTURE_POSITIONS as WORKFLOW_POSITIONS,
-                fixtureOps as workflowOps,
-                workflowAdapter,
-                workflowDomain,
-            } from '@spacegraphjs/workflow';
-            import {
-                FIXTURE_POSITIONS as FILESYSTEM_POSITIONS,
-                filesystemAdapter,
-                filesystemDomain,
-                fixtureOps as filesystemOps,
-                foldFilesystemOps,
-            } from '@spacegraphjs/filesystem';
-            import {
-                FIXTURE_POSITIONS as DATA_POSITIONS,
-                dataAdapter,
-                dataDomain,
-                fixtureOps as dataOps,
-                foldDataOps,
-            } from '@spacegraphjs/data';
             import { DEFAULT_THEME } from '@spacegraphjs/renderer';
             import { ModelAdapter } from '@spacegraphjs/adapter';
             import { SpaceGraphRenderer } from '@spacegraphjs/spacegraph-renderer';
+            import { workflowAdapter } from '@spacegraphjs/workflow';
+            import { filesystemAdapter } from '@spacegraphjs/filesystem';
+            import { dataAdapter } from '@spacegraphjs/data';
             import { edges } from 'spacegraphjs';
             import { crossTracePath } from '../../src/cross-trace';
+            import { buildWorldFixture } from '../../src/world-fixture';
 
-            const fold = (ops) => {
-                const nodes = new Map();
-                const edgesById = new Map();
-                for (const op of ops) {
-                    if (op.op === 'add-node') nodes.set(op.node.id, op.node);
-                    else if (op.op === 'add-edge') edgesById.set(op.edge.id, op.edge);
-                    else if (op.op === 'remove-node') nodes.delete(op.id);
-                    else if (op.op === 'remove-edge') edgesById.delete(op.id);
-                }
-                return new Kernel({
-                    nodes: [...nodes.values()],
-                    edges: [...edgesById.values()],
-                    hyperedges: [],
-                    version: ops.length,
-                });
+            const { domains: fixtures, links } = buildWorldFixture();
+            const adapters = {
+                workflow: workflowAdapter,
+                filesystem: filesystemAdapter,
+                data: dataAdapter,
             };
-
-            const agentEvents = [
-                { type: 'run-start', runId: 'r', at: 1 },
-                { type: 'unit-start', runId: 'r', unitId: 'u1', at: 2 },
-                {
-                    type: 'message',
-                    runId: 'r',
-                    unitId: 'u1',
-                    id: 'm1',
-                    role: 'user',
-                    text: 'Fix auth session',
-                    at: 3,
-                },
-                {
-                    type: 'action',
-                    runId: 'r',
-                    unitId: 'u1',
-                    id: 'a1',
-                    toolName: 'read',
-                    args: { path: 'src/auth/session.ts' },
-                    phase: 'end',
-                    at: 4,
-                },
-                {
-                    type: 'artifact',
-                    runId: 'r',
-                    unitId: 'u1',
-                    id: 'session',
-                    path: 'src/auth/session.ts',
-                    producerId: 'a1',
-                    at: 5,
-                },
-                { type: 'unit-end', runId: 'r', unitId: 'u1', at: 6 },
-                { type: 'run-end', runId: 'r', at: 7 },
-            ];
-            const agentMapper = new AgentEventMapper('agent');
-            const agentOps = agentEvents.flatMap((event) => agentMapper.map(event));
-            const agentView = agentDomain.build(fold(agentOps));
-            const workflowView = workflowDomain.build(fold(workflowOps()));
-            const filesystemView = filesystemDomain.build(foldFilesystemOps(filesystemOps()));
-            const dataView = dataDomain.build(foldDataOps(dataOps()));
-
-            const agentPositions = new Map(
-                agentView.nodes.map((node, index) => {
-                    const angle = (index / agentView.nodes.length) * Math.PI * 2;
-                    return [
-                        node.id,
-                        {
-                            x: Math.round(Math.cos(angle) * 170),
-                            y: Math.round(Math.sin(angle) * 130),
-                            z: 0,
-                        },
-                    ];
-                }),
-            );
 
             const STATUS = {
                 failed: 'error',
@@ -272,27 +189,10 @@
                 }
             }
 
-            const domains = [
-                {
-                    id: 'agent',
-                    view: agentView,
-                    positions: agentPositions,
-                    adapter: new DemoAgentAdapter(),
-                },
-                {
-                    id: 'workflow',
-                    view: workflowView,
-                    positions: WORKFLOW_POSITIONS,
-                    adapter: workflowAdapter,
-                },
-                {
-                    id: 'filesystem',
-                    view: filesystemView,
-                    positions: FILESYSTEM_POSITIONS,
-                    adapter: filesystemAdapter,
-                },
-                { id: 'data', view: dataView, positions: DATA_POSITIONS, adapter: dataAdapter },
-            ];
+            const domains = fixtures.map((fixture) => ({
+                ...fixture,
+                adapter: fixture.id === 'agent' ? new DemoAgentAdapter() : adapters[fixture.id],
+            }));
 
             const containers = new Map();
             const renderers = new Map();
@@ -317,23 +217,6 @@
 
             const instances = [...(globalThis.SpaceGraph?.instances ?? [])];
             const graphFor = (id) => instances.find((sg) => sg.container === containers.get(id));
-            const links = [
-                {
-                    id: 'cross:session:compile',
-                    from: ['agent', 'agent:r:session'],
-                    to: ['workflow', 'workflow:wf:compile'],
-                },
-                {
-                    id: 'cross:artifact:file',
-                    from: ['workflow', 'workflow:wf:out'],
-                    to: ['filesystem', 'filesystem:c1:session'],
-                },
-                {
-                    id: 'cross:change:metric',
-                    from: ['filesystem', 'filesystem:c1:edit'],
-                    to: ['data', 'data:p1:auc'],
-                },
-            ];
             for (const spec of links) {
                 const fromGraph = graphFor(spec.from[0]);
                 const source = fromGraph?.getNode(spec.from[1]);

@@ -22,6 +22,7 @@ test.describe('the navigation grammar', () => {
         await page.keyboard.press('PageDown');
         await expect(page.locator('[data-portal][data-descending="true"]')).toHaveCount(1, { timeout: 3000 });
         await page.keyboard.press('t');
+        await page.keyboard.press('s');
         await page.keyboard.press('PageUp');
         await page.keyboard.press('Escape');
         await expect(page.locator('#surface')).toHaveAttribute('data-surface', 'hybrid');
@@ -30,6 +31,7 @@ test.describe('the navigation grammar', () => {
         expect(recorded).toContain('descend');
         expect(recorded).toContain('ascend');
         expect(recorded).toContain('trace');
+        expect(recorded).toContain('survey');
         expect(recorded).toContain('escape-hatch');
         const counters = await page.evaluate(() => (window as any).__pi.ergonomics());
         expect(counters.descend).toBeGreaterThan(0);

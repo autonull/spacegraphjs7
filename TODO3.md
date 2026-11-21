@@ -5,7 +5,7 @@ Self-contained. No time estimates. Ordered by dependency, not duration.
 
 ---
 
-## Progress (updated 2026-11-21)
+## Progress (updated 2026-11-21 — second increment)
 
 **Workstream A — Configuration Spine: implemented.**
 
@@ -21,9 +21,9 @@ Self-contained. No time estimates. Ordered by dependency, not duration.
 
 | Item | Status | Evidence |
 |---|---|---|
-| B1 navigation grammar | done | `host.ts`: `traverseEdge` (double-click `edgeClick` → `flyTo` over the existing camera handler), `descend`/`ascend`, `trace`, `follow`, `returnHome`; keyboard bindings `Enter`, `PgDn`/`PgUp`, `t`, `Home`/`Esc` on top of arrows/zoom/focus. All verbs interruptible, reduced-motion aware and recorded as neutral events. |
+| B1 navigation grammar | done | `host.ts`: `traverseEdge` (double-click `edgeClick` → `flyTo` over the existing camera handler), `descend`/`ascend`, `trace`, `survey`, `follow`, `returnHome`; keyboard bindings `Enter`, `PgDn`/`PgUp`, `t`, `s`, `Home`/`Esc` on top of arrows/zoom/focus. All verbs interruptible, reduced-motion aware and recorded as neutral events. |
 | B2 continuity | core done | Portal dissolve animates the child frame origin with the policy `flyTo` duration and holds `[data-descending]` on the portal card through repaints; rung crossfade uses pure `representationWeights` + `ladder.blendMs` driving `[data-rung]` opacity. True two-rung DOM compositing still needs adapter support (see below). |
-| B3 instrumentation | done | `recorder.ts` `ERGO_SIGNALS`/`ergonomicCounters`; host records zoom reversals, trail backtracks, escape-hatch use, hover dwell, traverse, descend/ascend, trace; `__pi.ergonomics()` exposes counts. |
+| B3 instrumentation | done | `recorder.ts` `ERGO_SIGNALS`/`ergonomicCounters`/`ergonomicProfile`; host records zoom reversals, trail backtracks, escape-hatch use, hover dwell, traverse, descend/ascend, trace, survey, and `choices` per reveal; `__pi.ergonomics()` exposes event counts plus derived `time-to-first-relevant`, `choice-count`, `travel-distance`. |
 
 Every schema knob has a live host consumer: bands → `levelForZoom`, ladder → `representationRung`/`representationWeights` + blur duration, salience → activity decay, emphasis → emphasis caps, camera → flight durations, depth → simulation + renderer, widgets → dock attribute, geometry → `setBaseLayout`/`setForces`, guardrails → budgets/window, surface → surface state, navigation → orientation aids, orchestration → gallery, theme → renderer theme.
 
@@ -34,37 +34,41 @@ Every schema knob has a live host consumer: bands → `levelForZoom`, ladder →
 | C1 instrument kit | done | `app/pi/src/instruments.ts`: sparkline, meter, status, log-tail, diff, tabs and action controls as `WidgetLayer` `attached` descriptors gated to detail rungs; all data escaped at the boundary; mounted in the rail `#instrument-kit`. |
 | C2 orchestration verbs | done | `host.ts`: `sendPrompt` (prompt/steer/followUp through the existing `POST /prompt` + SDK `streamingBehavior` seam), `approve`/`reject` as first-class nodes with `gates` edges using only the six kernel ops, `retry`, `compareRuns` via `diffKernels`, plus graph action buttons that set the prompt mode or drive approval. Every action records a neutral event and writes an evidence line for transcript parity. |
 
-**Workstream D — One World & Proliferation: foundations implemented.**
+**Workstream D — One World & Proliferation: implemented.**
 
 | Item | Status | Evidence |
 |---|---|---|
-| World scope composition | foundation done | `app/demo/src/world-scopes.ts` builds one root with isolated domain child scopes and one path-qualified id space; `worldTrace` collapses a cross-domain trace into one ordered path for a single camera. Unit test in `app/demo/tests/world-scopes.test.ts`. |
+| World scope composition | done | `app/demo/src/world-scopes.ts` builds one root with isolated domain child scopes and one path-qualified id space; `worldTrace` collapses a cross-domain trace into one ordered path for a single camera. Unit test in `app/demo/tests/world-scopes.test.ts`. |
+| D host binding | done | `app/demo/src/world-host.ts` composes the four domains into one `ScopeSimulation` and one path-qualified `RenderModel`; cross-domain links are ordinary intra-model edges, never `InterGraphEdge`. `app/demo/src/world-fixture.ts` is the shared four-domain fixture. Demo `app/demo/html/layout/one-world.html` + `app/demo/tests/one-world.spec.ts`; unit tests `world-host.test.ts` (6) and `cross-trace.test.ts` (lift into one camera path). |
 | Born-experimentable scaffold | done | `create-spacegraph-domain` now emits `host/src/spine.ts` (knobs, resolver with provenance, presets, recorder, permalink codec, auto-generated panel) plus `host/tests/spine.test.ts`, and wires them into the generated host. Templates live in `packages/create-spacegraph/templates/`. |
 
-The remaining D step is a one-canvas host binding that feeds `worldScopes` to one `ScopeSimulation`/`SpaceGraphRenderer`; the four-canvas `InterGraphEdge` demo stays as the separate-surface path. `InterGraphEdge` is screen-space across two cameras and must not be reused for the world root.
+D is complete: one canvas holds four isolated domain scopes under one root, one `ScopeSimulation` owns every position, and one camera flies the qualified cross-domain trace. The four-canvas `compositional-wrappers.html` stays as the separate-surface embedding case and now shares the same fixture module; `InterGraphEdge` remains screen-space across two cameras and is never used for the world root.
 
-**Workstream E — Experimentation Program: core implemented.**
+**Workstream E — Experimentation Program: implemented (three tiers; geometry re-simulation is an optional refinement).**
 
 | Item | Status | Evidence |
 |---|---|---|
 | E1 axes and sampling | done | `app/pi/src/policy/experiments.ts`: `sampleExperiment` reuses the seeded pairwise `cartesianMatrix` over any knob families; every sampled cell carries a `p1.` vector that launches exactly that alternative. |
 | E2 layers and exposure | done | Host `assignExperiment(cell)` writes the `experiment` layer between preset and URL; exposure is a neutral recorded event. Two declared experiments include metrics and decision rules. |
 | E3 decision rules | done as data | Each experiment declares a stop rule: graduate only with a recorded comparison and a human decision; negative results publish verbatim. Nothing auto-promotes. |
+| E4 measurement tiers + artifacts | done | `app/pi/src/policy/measurement.ts`: offline `measureExperiment` replays one recording under every sampled cell, scores with the neutral scorer, and shortlists strict Pareto improvements; `recordDecision` attaches the human decision; `experimentReportMarkdown` publishes the full comparison and negative results verbatim. `exportOnlineOutcomes` exports exposure + outcome counts with no raw prompt text/targets. Wired into host hooks (`measureExperiment`, `experimentReportMarkdown`, `exportOnlineOutcomes`). Unit tests in `app/pi/tests/measurement.test.ts` (5). |
 
-Still pending in E: the three-tier measurement loop (offline re-simulation under a variant, online assignment export, human validation) and the report/decision artifact. The pure sampling, URL cells, resolver layer and exposure log are in place.
+The offline tier replays recorded events under a variant and re-scores them with the vision/ergonomic scorer; it does not yet re-run the geometry solver under the variant (a refinement, not a gate). Human validation is represented by `recordDecision`; the actual participant study is Workstream G.
 
 **Workstream F — Truth pass: in progress.** `docs/ROADMAP.md` regenerated from reality; `docs/not-decided.md` now maps every open question to a knob family and preset; `Ergonomics.layout` uses plugin ids. Root `tsc` still has pre-existing `app/demo` errors.
 
-**Verification:** `app/pi pnpm test` 52 passed; root `pnpm test` 818 passed; `app/pi pnpm test:e2e` 39 passed; `pnpm run verify:visual` green; `tsc -p app/pi/tsconfig.json --noEmit` clean after `pnpm run build:lib`.
+**Verification:** `app/pi pnpm test` 59 passed; root `pnpm test` 831 passed; `app/pi pnpm test:e2e` 39 passed; `app/demo pnpm test` 34 passed; `app/demo pnpm test:e2e` 21 passed (incl. `one-world.spec.ts`); `pnpm run verify:visual` green; `tsc -p app/pi/tsconfig.json --noEmit` clean; root `tsc` unchanged at 95 pre-existing `app/demo` errors (no new errors from this increment).
+
+**Completed this increment:** D one-canvas host binding (item 1); B3 derived counters and the `survey` verb (part of item 2); E offline/online measurement tiers, decision artifact and export (item 3). See the Evidence cells above and the commit history.
 
 **Remaining work, in order:**
 
-1. **D host binding:** one canvas with four domain child scopes, one `ScopeSimulation`, one camera; update `compositional-wrappers.spec.ts`/`cross-trace.test.ts` for the new path while keeping the four-canvas demo as the embedding case.
-2. **B/C polish:** true two-rung compositing in `ModelAdapter`; touch/`Fingering` bindings; `time-to-first-relevant` and choice-count counters; `survey` verb; Graph IDE as a second instrument-kit consumer before promotion.
-3. **E measurement tiers:** offline counterfactual re-simulation of layout/vision under a variant, online exposure/outcome export, and human validation of the shortlist; report and decision artifacts. Sampling, URL cells, resolver layer and stop rules are in place.
-4. **F / G — Truth and proof:** ADRs, root gates; participant study (n ≥ 5), npm release, hosted flagship and the public preset/experiment catalog. G is external and cannot be fabricated.
+1. **B/C polish (partially done):** true two-rung compositing in `ModelAdapter`; touch/`Fingering` bindings; Graph IDE as a second instrument-kit consumer before library promotion. The `time-to-first-relevant`/choice-count counters and `survey` verb from this list are done.
+2. **E refinement (optional):** re-run the geometry solver and vision loop under a variant during offline replay (this increment re-scores recorded events under the variant instead). Sampling, URL cells, resolver layer, stop rules, shortlist, decision artifact and online export are in place.
+3. **F — Truth pass:** promote settled TODO1/TODO2/not-decided decisions into durable ADRs; make root `tsc` clean (95 pre-existing `app/demo` errors) so it is a real gate; isolate `scale` in CI.
+4. **G — Proof & delivery (external; cannot be fabricated):** participant study (n ≥ 5) with published verbatim exports, npm release, hosted flagship, and the public preset/experiment catalog. The code-side seams (`recordDecision`, report artifact, online export) are ready; the human/release steps are not.
 
-**Deliberate non-goals for this increment:** no contract change, no renderer branches, no new domain scheduled, no immersive or visual default promoted (presets remain examples, never recommendations). Additive pure seams used: `representationRung(input, thresholds)`, `representationWeights`, `ScopeSimulation.setBaseLayout/setForces`.
+**Deliberate non-goals for this increment:** no contract change, no renderer branches, no new domain scheduled, no immersive or visual default promoted (presets remain examples, never recommendations). Additive pure seams used: `worldScopes`/`worldTrace`, `createWorldHost`, `ergonomicProfile`, `measureExperiment`/`exportOnlineOutcomes`. Earlier increments added `representationRung(input, thresholds)`, `representationWeights`, `ScopeSimulation.setBaseLayout/setForces`.
 
 ---
 

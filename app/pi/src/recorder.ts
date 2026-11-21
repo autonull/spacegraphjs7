@@ -30,6 +30,7 @@ export const ERGO_SIGNALS = [
     'traverse',
     'descend',
     'ascend',
+    'survey',
     'zoom-oscillation',
     'trail-backtrack',
     'escape-hatch',
@@ -46,6 +47,31 @@ export const ergonomicCounters = (
         counts[kind] = recording.events.filter((event) => event.kind === kind).length;
         return counts;
     }, {});
+
+const sumMeta = (recording: SessionRecording, key: string): number =>
+    recording.events.reduce(
+        (total, event) => total + (typeof event.meta[key] === 'number' ? Number(event.meta[key]) : 0),
+        0,
+    );
+
+/**
+ * Derived ergonomic measures over one recording. They are neutral measurements for the experiment
+ * program, never success criteria or silent auto-fixes: a protocol decides what they mean.
+ */
+export const ergonomicProfile = (
+    recording: SessionRecording,
+): Readonly<Record<string, number>> => {
+    const first = recording.events[0]?.atMs ?? 0;
+    const relevant = recording.events.find(
+        (event) => event.kind === 'reveal' || event.kind === 'answer',
+    );
+    return {
+        ...ergonomicCounters(recording),
+        'time-to-first-relevant': relevant ? relevant.atMs - first : 0,
+        'choice-count': sumMeta(recording, 'choices'),
+        'travel-distance': sumMeta(recording, 'travel'),
+    };
+};
 
 const EMPTY_SCORE: ErgonomicScore = { success: 0, legibility: 0, wrongTurns: 0, travel: 0 };
 

@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>SpaceGraphJS - One world, one camera</title>
+        <style>
+            :root {
+                color-scheme: dark;
+                font-family: system-ui, sans-serif;
+                background: #101014;
+                color: #f5f5f7;
+            }
+            * {
+                box-sizing: border-box;
+            }
+            body {
+                margin: 0;
+                height: 100vh;
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
+            }
+            header {
+                padding: 12px 18px;
+                border-bottom: 1px solid #3a3a44;
+                display: flex;
+                align-items: baseline;
+                gap: 16px;
+                flex-wrap: wrap;
+            }
+            h1 {
+                font-size: 16px;
+                margin: 0;
+            }
+            header p {
+                margin: 0;
+                font-size: 12px;
+                color: #a0a0aa;
+            }
+            main {
+                flex: 1;
+                min-height: 0;
+                position: relative;
+            }
+            .canvas {
+                position: absolute;
+                inset: 0;
+            }
+            footer {
+                padding: 8px 18px;
+                border-top: 1px solid #3a3a44;
+                font-size: 12px;
+                color: #a0a0aa;
+                display: flex;
+                gap: 18px;
+                flex-wrap: wrap;
+            }
+            button {
+                border: 1px solid #22d3ee;
+                border-radius: 6px;
+                background: #132b33;
+                color: #a5f3fc;
+                padding: 5px 10px;
+                cursor: pointer;
+            }
+            #status,
+            #trace-status {
+                color: #22d3ee;
+                font-variant-numeric: tabular-nums;
+            }
+            code {
+                color: #93c5fd;
+            }
+        </style>
+    </head>
+    <body>
+        <header>
+            <h1>One world, one camera</h1>
+            <p>Four isolated domain scopes under one root, one simulation, one renderer.</p>
+            <button type="button" id="trace-button">Trace metric → session</button>
+            <span id="trace-status">trace idle</span>
+            <span id="status">initialising…</span>
+        </header>
+        <main>
+            <div class="canvas" id="world-canvas"></div>
+        </main>
+        <footer>
+            <span
+                >One <code>ScopeSimulation</code> owns every position; one camera flies the whole
+                cross-domain trace.</span
+            >
+            <span
+                >Cross-domain links are ordinary edges in the one graph — no
+                <code>InterGraphEdge</code>, which stays for the separate-surface embedding
+                case.</span
+            >
+        </footer>
+
+        <script type="module">
+            import { DEFAULT_THEME } from '@spacegraphjs/renderer';
+            import { SpaceGraphRenderer } from '@spacegraphjs/spacegraph-renderer';
+            import { buildWorldFixture } from '../../src/world-fixture';
+            import { createWorldHost } from '../../src/world-host';
+
+            const fixture = buildWorldFixture();
+            const world = createWorldHost(fixture.domains, { links: fixture.links, instant: true });
+            const renderer = new SpaceGraphRenderer();
+            await renderer.mount(document.querySelector('#world-canvas'), {
+                theme: DEFAULT_THEME,
+                projection: '2d',
+                global: true,
+            });
+            renderer.setModel(world.renderModel());
+            renderer.fit();
+
+            const steps = world.traceSteps('data:p1:auc', 'backward');
+            const traceStatus = document.querySelector('#trace-status');
+            let traceProgress = -1;
+            let traceTimer;
+            const focusStep = (index) => {
+                const step = steps[index];
+                if (!step) return;
+                renderer.focus(step.id);
+                traceProgress = index;
+                traceStatus.textContent =
+                    `${index + 1}/${steps.length} ${step.node}` +
+                    (step.via ? ` via ${step.via}` : '');
+            };
+            const playTrace = () => {
+                if (traceTimer) clearInterval(traceTimer);
+                focusStep(0);
+                if (globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+                    focusStep(steps.length - 1);
+                    return;
+                }
+                let index = 0;
+                traceTimer = setInterval(() => {
+                    index += 1;
+                    if (index >= steps.length) {
+                        clearInterval(traceTimer);
+                        traceTimer = undefined;
+                        return;
+                    }
+                    focusStep(index);
+                }, 450);
+            };
+            document.querySelector('#trace-button').addEventListener('click', playTrace);
+
+            const model = world.renderModel();
+            const status = document.querySelector('#status');
+            status.textContent =
+                `${fixture.domains.map((domain) => `${domain.nodes.length} ${domain.id}`).join(' · ')}` +
+                ` · 1 simulation · 1 camera`;
+            const instances = [...(globalThis.SpaceGraph?.instances ?? [])];
+            globalThis.__world = {
+                domains: fixture.domains.map((domain) => domain.id),
+                nodes: fixture.nodesByDomain,
+                portals: model.nodes
+                    .filter((node) => node.kind === 'portal')
+                    .map((node) => node.id),
+                modelNodes: model.nodes.length,
+                renderers: instances.length,
+                canvases: document.querySelectorAll('.canvas').length,
+                crossEdges: model.edges.filter((edge) => edge.kind === 'cross-domain').length,
+                tracePath: steps.map((step) => step.id),
+                traceProgress: () => traceProgress,
+                traceFocus: () => steps[traceProgress]?.id,
+                focusStep,
+                cameraCenter: () => renderer.getViewport().center,
+            };
+        </script>
+    </body>
+</html>

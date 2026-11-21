@@ -71,6 +71,9 @@ import {
     encodePolicyVector,
     mountPolicyPanel,
     experimentById,
+    experimentReportMarkdown,
+    exportOnlineOutcomes,
+    measureExperiment,
     policyChange,
     presetById,
     sampleExperiment,
@@ -88,7 +91,7 @@ import {
 import {
     SessionRecorder,
     counterfactual,
-    ergonomicCounters,
+    ergonomicProfile,
     replaySession,
     type EventScorer,
     type SessionRecording,
@@ -775,7 +778,11 @@ export class PiHost {
         const node = this.#view.nodes.find((candidate) => candidate.id === id);
         if (!node) return;
         this.#revealed = id;
-        this.recordEvent('reveal', { target: id, kind: node.kind });
+        this.recordEvent('reveal', {
+            target: id,
+            kind: node.kind,
+            choices: this.#controller.connections(id).length,
+        });
         this.#trail.push({ id, label: node.label, kind: node.kind });
         this.renderPortalCrumb();
         this.renderer.setSelection([id]);
@@ -892,7 +899,7 @@ export class PiHost {
     }
 
     ergonomics(): Readonly<Record<string, number>> {
-        return ergonomicCounters(this.recording());
+        return ergonomicProfile(this.recording());
     }
 
     private markDissolve(scope: string): void {
@@ -1252,6 +1259,19 @@ export class PiHost {
                 const experiment = experimentById(id);
                 return experiment ? sampleExperiment(POLICY_SCHEMA, experiment) : undefined;
             },
+            measureExperiment: (id: string, incumbent?: PolicyVector) => {
+                const experiment = experimentById(id);
+                return experiment
+                    ? measureExperiment(
+                          sampleExperiment(POLICY_SCHEMA, experiment),
+                          this.recording(),
+                          this.#eventScorer,
+                          incumbent ?? this.#resolved.vector,
+                      )
+                    : undefined;
+            },
+            experimentReportMarkdown,
+            exportOnlineOutcomes: () => exportOnlineOutcomes(this.recording()),
             assignExperiment: (cell: ExperimentCell) => this.assignExperiment(cell),
             onPolicyChange: (listener: (event: PolicyChangeEvent) => void) => this.onPolicyChange(listener),
             recording: () => this.recording(),
@@ -1265,6 +1285,7 @@ export class PiHost {
             traverseEdge: (id: string) => this.traverseEdge(id),
             descend: () => this.descend(),
             ascend: () => this.ascend(),
+            survey: () => this.survey(),
             returnHome: () => this.returnHome(),
             setClientID: (id: string) => this.setClientID(id),
             sendPrompt: (text: string, mode?: 'steer' | 'followUp') => this.sendPrompt(text, mode),
@@ -1556,10 +1577,21 @@ export class PiHost {
 
     trace(id: string): readonly string[] {
         this.recordEvent('trace', { target: id });
+        return this.sweep(traceOrder(this.#view, id));
+    }
+
+    /** B1 `survey`: sweep the whole current scope with the same interruptible camera verb as trace. */
+    survey(): readonly string[] {
+        const ids = this.#view.nodes.map((node) => node.id);
+        this.recordEvent('survey', { nodes: ids.length });
+        return this.sweep(ids);
+    }
+
+    private sweep(ids: readonly string[]): readonly string[] {
         this.#playback?.finish();
         this.#playback = undefined;
-        this.#traceIds = traceOrder(this.#view, id);
-        this.#tracePositions = this.#traceIds
+        this.#traceIds = ids;
+        this.#tracePositions = ids
             .map((nodeId) => this.#positions.get(nodeId))
             .filter((position): position is Position => Boolean(position));
         this.#traceProgress = 0;
@@ -1745,6 +1777,7 @@ export class PiHost {
             PageUp: () => this.ascend(),
             Home: () => this.returnHome(),
             t: () => this.#revealed && this.trace(this.#revealed),
+            s: () => this.survey(),
             Escape: () => this.returnHome(),
         };
         const action = steps[event.key];

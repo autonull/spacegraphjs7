@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { crossTracePath, type CrossTraceLink } from '../src/cross-trace';
+import { worldScopes, worldTrace } from '../src/world-scopes';
 
 const links: readonly CrossTraceLink[] = [
     {
@@ -54,5 +55,28 @@ describe('cross-domain trace', () => {
             { domain: 'data', node: 'data:p1:auc' },
         ]);
         expect(crossTracePath([], nodesByDomain, 'agent:r:session')).toHaveLength(1);
+    });
+
+    it('lifts a canvas trace into one path-qualified camera flight', () => {
+        const world = worldScopes(
+            Object.entries(nodesByDomain).map(([id, nodes]) => ({
+                id,
+                nodes: nodes.map((node) => ({ id: node })),
+            })),
+        );
+        const steps = crossTracePath(links, nodesByDomain, 'data:p1:auc', 'backward');
+        expect(
+            worldTrace(
+                world,
+                steps.map((step) => ({ domain: step.domain, node: step.node })),
+            ),
+        ).toEqual([
+            'world/domain:data/data:p1:auc',
+            'world/domain:filesystem/filesystem:c1:edit',
+            'world/domain:filesystem/filesystem:c1:session',
+            'world/domain:workflow/workflow:wf:out',
+            'world/domain:workflow/workflow:wf:compile',
+            'world/domain:agent/agent:r:session',
+        ]);
     });
 });
