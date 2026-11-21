@@ -10,7 +10,7 @@ import { DEMOS, demoPath } from '../app/demo/src/registry.js';
 
 const args = process.argv.slice(2);
 const port = Number(process.env.SG_CAPTURE_PORT ?? 5188);
-const out = resolve(process.env.SG_CAPTURE_DIR ?? 'verification');
+const out = resolve(process.env.SG_CAPTURE_DIR ?? 'docs/screenshots/capture');
 const ids = args.length
     ? args.flatMap((id) => (id === 'all' ? DEMOS.map((entry) => entry.id) : [id]))
     : ['verification', 'single-node', 'html', 'instanced', 'large'];

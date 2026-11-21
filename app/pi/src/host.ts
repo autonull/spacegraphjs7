@@ -293,6 +293,9 @@ export class PiHost {
     #policyLayers: PolicyLayers = {};
     #resolved: ResolvedPolicy;
     #catalog: Catalog;
+    #transcriptCollapsed = false;
+    #transcriptWidth = 320;
+    #transcriptHeight = 200;
     #policyPanel?: ReturnType<typeof mountPolicyPanel>;
     #policyListeners = new Set<(event: PolicyChangeEvent) => void>();
     #recorder: SessionRecorder;
@@ -562,6 +565,7 @@ export class PiHost {
             () => touchBindingsFor(String(this.#resolved.values['navigation.touch'])),
             (verb) => this.dispatchTouchVerb(verb),
         );
+        this.bindTranscript();
         this.renderer.on('nodeClick', ({ id }) => this.reveal(id));
         this.renderer.on('viewportChange', ({ zoom }) => this.applyAutoLevel(zoom));
         this.renderer.on('edgeClick', ({ id }) => {
@@ -1304,6 +1308,10 @@ export class PiHost {
             counterfactual: (variant: PolicyVector, incumbent?: PolicyVector) =>
                 this.counterfactual(variant, incumbent),
             ergonomics: () => this.ergonomics(),
+            transcriptCollapsed: () => this.#transcriptCollapsed,
+            toggleTranscript: () => this.toggleTranscript(),
+            transcriptSize: () =>
+                this.#arrangement === 'stacked' ? this.#transcriptHeight : this.#transcriptWidth,
             edges: () => this.#view.edges.map((edge) => ({ id: edge.id, target: edge.target })),
             traverseEdge: (id: string) => this.traverseEdge(id),
             descend: () => this.descend(),
@@ -1835,9 +1843,70 @@ export class PiHost {
         const main = el('surface');
         main.dataset.surface = this.#surface;
         main.dataset.arrangement = this.#arrangement;
+        main.style.setProperty(
+            '--transcript-size',
+            `${this.#arrangement === 'stacked' ? this.#transcriptHeight : this.#transcriptWidth}px`,
+        );
         for (const surface of SURFACES) {
             el(`surface-${surface}`).setAttribute('data-active', String(surface === this.#surface));
         }
+    }
+
+    private bindTranscript(): void {
+        const toggle = el<HTMLButtonElement>('transcript-toggle');
+        const handle = el('transcript-resize');
+        toggle.addEventListener('click', () => this.toggleTranscript());
+        handle.addEventListener('pointerdown', (event) => {
+            event.preventDefault();
+            handle.setPointerCapture(event.pointerId);
+            const transcript = el('transcript');
+            const surface = el('surface');
+            const startX = event.clientX;
+            const startY = event.clientY;
+            const startWidth = transcript.getBoundingClientRect().width;
+            const startHeight = transcript.getBoundingClientRect().height;
+            const move = (next: PointerEvent) => {
+                const stacked = this.#arrangement === 'stacked';
+                const size = stacked
+                    ? Math.min(
+                          Math.max(startHeight - (next.clientY - startY), 120),
+                          Math.max(surface.clientHeight - 120, 120),
+                      )
+                    : Math.min(
+                          Math.max(startWidth - (next.clientX - startX), 200),
+                          Math.max(surface.clientWidth - 240, 200),
+                      );
+                if (stacked) this.#transcriptHeight = size;
+                else this.#transcriptWidth = size;
+                surface.style.setProperty('--transcript-size', `${size}px`);
+                if (this.#arrangement === 'floating') transcript.style.width = `${size}px`;
+            };
+            const up = () => {
+                handle.removeEventListener('pointermove', move);
+                handle.removeEventListener('pointerup', up);
+                this.recordEvent('transcript:resize', {
+                    arrangement: this.#arrangement,
+                    size:
+                        this.#arrangement === 'stacked' ? this.#transcriptHeight : this.#transcriptWidth,
+                });
+            };
+            handle.addEventListener('pointermove', move);
+            handle.addEventListener('pointerup', up);
+        });
+    }
+
+    toggleTranscript(): void {
+        this.#transcriptCollapsed = !this.#transcriptCollapsed;
+        const surface = el('surface');
+        surface.dataset.transcriptCollapsed = String(this.#transcriptCollapsed);
+        const toggle = el<HTMLButtonElement>('transcript-toggle');
+        toggle.textContent = this.#transcriptCollapsed ? '+' : '−';
+        toggle.setAttribute('aria-expanded', String(!this.#transcriptCollapsed));
+        toggle.setAttribute(
+            'aria-label',
+            this.#transcriptCollapsed ? 'Expand transcript' : 'Collapse transcript',
+        );
+        this.recordEvent('transcript:toggle', { collapsed: this.#transcriptCollapsed });
     }
 
     private renderGallery(): void {

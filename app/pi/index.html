@@ -6,36 +6,37 @@
         <title>pi · SpaceGraphJS reference app</title>
         <style>
             :root {
-                --pi-background: #0b1020;
-                --pi-surface: #151c32;
-                --pi-surface-muted: #1d2742;
-                --pi-text: #e8edff;
-                --pi-text-muted: #9aa7c7;
-                --pi-border: #2b3962;
-                --pi-accent: #7aa2ff;
+                font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, monospace;
+                --pi-background: #000000;
+                --pi-surface: #141414;
+                --pi-surface-muted: #222222;
+                --pi-text: #f2f2f2;
+                --pi-text-muted: #a3a3a3;
+                --pi-border: #3a3a3a;
+                --pi-accent: #d4d4d4;
                 --pi-success: #5ed6a8;
                 --pi-warning: #f5c46b;
                 --pi-error: #ff7a90;
-                --pi-edge: #4a5d92;
-                --pi-edge-muted: #2f3d66;
-                --pi-selection: #7aa2ff;
-                --pi-focus: #a8c0ff;
+                --pi-edge: #6b6b6b;
+                --pi-edge-muted: #3a3a3a;
+                --pi-selection: #e5e5e5;
+                --pi-focus: #ffffff;
             }
             :root[data-theme='light'] {
-                --pi-background: #f7f9ff;
+                --pi-background: #f7f7f7;
                 --pi-surface: #ffffff;
-                --pi-surface-muted: #eef2fb;
-                --pi-text: #14203a;
-                --pi-text-muted: #56658a;
-                --pi-border: #ccd6ee;
-                --pi-accent: #315bd6;
+                --pi-surface-muted: #eeeeee;
+                --pi-text: #161616;
+                --pi-text-muted: #5c5c5c;
+                --pi-border: #cccccc;
+                --pi-accent: #3f3f3f;
                 --pi-success: #12805c;
                 --pi-warning: #93610b;
                 --pi-error: #bd2645;
-                --pi-edge: #7b8bb5;
-                --pi-edge-muted: #b9c4de;
-                --pi-selection: #315bd6;
-                --pi-focus: #1d3f9c;
+                --pi-edge: #6b6b6b;
+                --pi-edge-muted: #b3b3b3;
+                --pi-selection: #2b2b2b;
+                --pi-focus: #000000;
             }
             * {
                 box-sizing: border-box;
@@ -68,12 +69,18 @@
             header span {
                 color: var(--pi-text-muted);
             }
+            header,
+            footer,
             aside,
             main,
             #rail {
-                border: 1px solid var(--pi-border);
-                border-radius: 8px;
-                background: var(--pi-surface);
+                background: transparent;
+            }
+            aside strong,
+            #rail strong {
+                text-transform: uppercase;
+                letter-spacing: 0.1em;
+                color: var(--pi-text-muted);
             }
             aside,
             #rail {
@@ -90,6 +97,7 @@
                 min-height: 0;
                 min-width: 0;
                 overflow: hidden;
+                position: relative;
             }
             footer {
                 grid-column: 1 / -1;
@@ -127,9 +135,9 @@
             form select,
             header select,
             #surface-buttons button {
-                border: 1px solid var(--pi-border);
-                border-radius: 6px;
-                background: var(--pi-surface-muted);
+                border: 1px solid transparent;
+                border-radius: 3px;
+                background: transparent;
                 color: var(--pi-text);
                 padding: 6px 8px;
                 text-align: left;
@@ -139,7 +147,7 @@
             #catalog a:hover,
             #overview button:hover,
             #turn-map button:hover {
-                border-color: var(--pi-accent);
+                background: var(--pi-surface-muted);
             }
             #catalog a {
                 text-decoration: none;
@@ -174,9 +182,9 @@
             form input {
                 flex: 1;
                 padding: 8px;
-                border-radius: 6px;
+                border-radius: 3px;
                 border: 1px solid var(--pi-border);
-                background: var(--pi-surface);
+                background: transparent;
                 color: var(--pi-text);
             }
             #evidence {
@@ -189,9 +197,39 @@
                 color: var(--pi-accent);
             }
             #hud {
-                color: var(--pi-success);
-                font-variant-numeric: tabular-nums;
+                position: absolute;
+                left: 12px;
+                bottom: 12px;
+                z-index: 5;
+                pointer-events: none;
+                padding: 6px 10px;
+                background: transparent;
+                color: var(--pi-text);
+                font-family: ui-monospace, SFMono-Regular, monospace;
                 font-size: 11px;
+                letter-spacing: 0.06em;
+                text-transform: uppercase;
+                text-shadow: 0 0 4px var(--pi-background);
+                font-variant-numeric: tabular-nums;
+            }
+            #hud::before,
+            #hud::after {
+                content: '';
+                position: absolute;
+                width: 8px;
+                height: 8px;
+            }
+            #hud::before {
+                top: -1px;
+                left: -1px;
+                border-top: 2px solid;
+                border-left: 2px solid;
+            }
+            #hud::after {
+                bottom: -1px;
+                right: -1px;
+                border-bottom: 2px solid;
+                border-right: 2px solid;
             }
             #export-buttons {
                 display: flex;
@@ -399,11 +437,11 @@
                 position: relative;
             }
             #surface[data-arrangement='side'] {
-                grid-template-columns: minmax(0, 1fr) 320px;
+                grid-template-columns: minmax(0, 1fr) var(--transcript-size, 320px);
             }
             #surface[data-arrangement='stacked'] {
                 grid-template-columns: minmax(0, 1fr);
-                grid-template-rows: minmax(0, 1fr) 200px;
+                grid-template-rows: minmax(0, 1fr) var(--transcript-size, 200px);
             }
             #surface[data-arrangement='floating'] {
                 grid-template-columns: minmax(0, 1fr);
@@ -415,10 +453,55 @@
                 min-height: 0;
             }
             #transcript {
+                position: relative;
                 min-height: 0;
                 overflow: auto;
                 border-left: 1px solid var(--pi-border);
-                padding: 8px;
+                padding: 8px 8px 8px 14px;
+            }
+            #transcript-bar {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+            }
+            #transcript-toggle {
+                border: 0;
+                background: none;
+                color: var(--pi-text);
+                font: inherit;
+                cursor: pointer;
+                padding: 2px 6px;
+            }
+            #transcript-resize {
+                position: absolute;
+                left: 0;
+                top: 34px;
+                bottom: 0;
+                width: 6px;
+                cursor: col-resize;
+            }
+            #transcript-resize:hover {
+                background: var(--pi-accent);
+                opacity: 0.5;
+            }
+            #surface[data-arrangement='stacked'] #transcript-resize {
+                top: 34px;
+                left: 0;
+                right: 0;
+                bottom: auto;
+                width: auto;
+                height: 6px;
+                cursor: row-resize;
+            }
+            #surface[data-transcript-collapsed='true'] #transcript-list,
+            #surface[data-transcript-collapsed='true'] #transcript-resize {
+                display: none;
+            }
+            #surface[data-transcript-collapsed='true'][data-arrangement='side'] {
+                grid-template-columns: minmax(0, 1fr) 36px;
+            }
+            #surface[data-transcript-collapsed='true'][data-arrangement='stacked'] {
+                grid-template-rows: minmax(0, 1fr) 36px;
             }
             #surface[data-arrangement='stacked'] #transcript {
                 border-left: 0;
@@ -430,10 +513,9 @@
                 bottom: 8px;
                 width: 320px;
                 max-height: 45%;
-                background: var(--pi-surface);
+                background: transparent;
                 border: 1px solid var(--pi-border);
-                border-radius: 8px;
-                box-shadow: 0 8px 24px rgb(0 0 0 / 0.35);
+                border-radius: 4px;
             }
             #surface[data-surface='log'] #canvas,
             #surface[data-surface='log'] #turn-map {
@@ -527,9 +609,14 @@
         </aside>
         <main id="surface" data-surface="hybrid" data-arrangement="side">
             <div id="canvas"></div>
+            <div id="hud" aria-label="Heads-up display">starting…</div>
             <div id="history-banner" role="status" hidden></div>
             <section id="transcript" aria-label="Transcript">
-                <strong>Transcript</strong>
+                <div id="transcript-bar">
+                    <strong>Transcript</strong>
+                    <button type="button" id="transcript-toggle" aria-label="Collapse transcript" aria-expanded="true">−</button>
+                </div>
+                <div id="transcript-resize" role="separator" aria-label="Resize transcript"></div>
                 <div id="transcript-list"></div>
             </section>
         </main>
@@ -554,8 +641,6 @@
             <div id="minimap"></div>
             <strong>Instruments</strong>
             <div id="instrument-kit"></div>
-            <strong>HUD</strong>
-            <div id="hud">starting…</div>
             <strong>Vision loop</strong>
             <button type="button" id="vision-loop-toggle">Toggle runtime vision loop</button>
             <div id="vision-loop-state">off · strategy heuristics</div>

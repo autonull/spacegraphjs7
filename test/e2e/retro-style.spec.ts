@@ -6,9 +6,9 @@ import { settle } from './atlas-kit.js';
 import { renderAtlasReport, type ReportEntry } from './atlas-report.js';
 
 // SpaceGraphJ reference-style captures: crimson graph ribbons and a compound widget dashboard that
-// is laid out as a subgraph and zoomed as one unit. Frames land in verification/retro-style/.
+// is laid out as a subgraph and zoomed as one unit. Frames land in docs/screenshots/retro-style/.
 
-const OUT = process.env.SG_RETRO_DIR ?? resolve('verification/retro-style');
+const OUT = process.env.SG_RETRO_DIR ?? resolve('docs/screenshots/retro-style');
 const VIEWPORT = { width: 1440, height: 900 };
 
 type Position = { id: string; x: number; y: number };

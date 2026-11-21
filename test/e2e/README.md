@@ -24,7 +24,7 @@ This directory contains automated tests for all demos to ensure system integrity
 
 One fast, headless run drives every explorer control axis through `window.__explorer` and writes
 labelled key-point frames plus `atlas.json` (state, node counts, hashes, duplicates, notes) to
-`verification/atlas/`. The capture layer lives in `atlas-kit.ts`; a shot is pure data (`set` values,
+`docs/screenshots/atlas/`. The capture layer lives in `atlas-kit.ts`; a shot is pure data (`set` values,
 presets, comparison, theme, selection, timed captures). Shape shots are derived from the declared
 `shape` axis at boot — `by-kind` renders several shapes in one graph, and diamond/hexagon/pill/
 triangle/star use the SVG renderer's `data.visualShape` channel. No browser rebuild, no fixed
@@ -46,7 +46,7 @@ to the baseline; `showcase/` captures the WebGL `node-shape`, `node-group` and
 `pnpm run test:inner-layout` drives the `inner-layout` showcase demo, whose `GroupNode` container
 holds nine children declaring `data.parent`. It switches grid/column/row modes through
 `window.__innerLayoutDemo`, asserts the child-position signatures (columns × rows) are distinct,
-and captures one frame per mode plus a report in `verification/inner-layout/index.html`.
+and captures one frame per mode plus a report in `docs/screenshots/inner-layout/index.html`.
 
 ```bash
 pnpm run test:inner-layout
@@ -58,7 +58,7 @@ SG_INNER_LAYOUT_DIR=/tmp/inner pnpm run test:inner-layout
 `pnpm run test:demo-atlas` discovers every demo from `app/demo/src/registry.ts` — 37 standalone HTML
 pages under `app/demo/html/<category>/`, 43 showcase modules under `app/demo/demos/<category>/` and
 all 19 `window.__demo` capabilities — captures 99 frames and writes a self-contained browsable
-report to `verification/demo-atlas/index.html`. Each card shows the frame, its registry category,
+report to `docs/screenshots/demo-atlas/index.html`. Each card shows the frame, its registry category,
 pass/fail, evidence lines and console errors. Failures are recorded per card, not fatal.
 
 ```bash
@@ -75,7 +75,7 @@ category folder automatically adds it to every test and to the report. Regenerat
 
 ## Further development
 
-Run the whole visual gate with `pnpm run verify:visual`. Each suite writes to `verification/`,
+Run the whole visual gate with `pnpm run verify:visual`. Each suite writes under `docs/screenshots/`,
 outside Playwright's `test-results/` output directory, so reports survive later runs.
 
 To add a demo:
@@ -83,7 +83,7 @@ To add a demo:
 1. Put the module in `app/demo/demos/<category>/` or the page in `app/demo/html/<category>/`.
 2. Run `pnpm run generate:registry` — every test and the report discover demos from the registry.
 3. Add a named export to `app/demo/demos/index.ts` for module demos.
-4. Run `pnpm run verify:visual`, then open `verification/demo-atlas/index.html`.
+4. Run `pnpm run verify:visual`, then open `docs/screenshots/demo-atlas/index.html`.
 
 `SG_DEMO_ATLAS_FILTER=<name>` limits the atlas to one demo while iterating.
 
@@ -102,7 +102,8 @@ pnpm run test:all-demos
 
 ## Output
 
-- **Screenshots**: `screenshots/verified-{name}.png`
+- **Screenshots**: `screenshots/verified-{name}.png` (generated, gitignored — not committed)
+- **Curated gallery**: `docs/screenshots/` (tracked; includes the Pi flagship captures)
 - **Error Reports**: Console output with detailed error messages
 - **CI/CD**: Tests run automatically on PR checks
 

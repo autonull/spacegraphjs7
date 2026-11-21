@@ -9,7 +9,7 @@ import { renderAtlasReport, type ReportEntry, type ReportGroup } from './atlas-r
 // folder tree) plus window.__demo.capabilities() at runtime. SG_DEMO_ATLAS_DIR moves output;
 // SG_DEMO_ATLAS_FILTER limits ids for fast iteration.
 
-const OUT = process.env.SG_DEMO_ATLAS_DIR ?? resolve('verification/demo-atlas');
+const OUT = process.env.SG_DEMO_ATLAS_DIR ?? resolve('docs/screenshots/demo-atlas');
 const FILTER = process.env.SG_DEMO_ATLAS_FILTER ?? '';
 const VIEWPORT = { width: 1440, height: 900 };
 const TIMEOUT = 600_000;

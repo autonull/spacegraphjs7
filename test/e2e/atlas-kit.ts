@@ -6,7 +6,7 @@ import { resolve } from 'node:path';
 // Shared capture layer for the unified demo/test atlases. A "shot" is data; every surface exposes
 // a window API and the same boot/configure/verify/capture pipeline drives it.
 
-export const OUT = process.env.SG_ATLAS_DIR ?? resolve('verification/atlas');
+export const OUT = process.env.SG_ATLAS_DIR ?? resolve('docs/screenshots/atlas');
 export const VIEWPORT = { width: 1440, height: 900 };
 
 export interface Explorer {

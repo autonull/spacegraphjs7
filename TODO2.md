@@ -88,7 +88,7 @@ the study result is published (negative included) before any immersive mode beco
 | Senses / widgets    | `SCENE_FEATURES`, `SENSORY_SEAMS`, `WidgetLayer`, host registry + console demo adapter (`src/world/world.ts`, `app/demo`)              | None for Phase E. Renderer-level scene descriptors are Phase F work; no input defaults.                                                                            |
 | Library kit         | Mechanisms are host-assembled                                                                                                          | Promote only reused helpers; no speculative contract fields.                                                                                                       |
 
-**Design reference — `docs/spacegraphj_screenshots/`.** `full_gui.png` shows a workspace built
+**Design reference — `docs/screenshots/`.** `full_gui.png` shows a workspace built
 entirely from rectangles: task strip, button rail, oscilloscope, multi-track charts, statistics rows
 and a `rangeDurs` slider. `graph_view.png` shows the same structure at distance: one-line rectangles,
 large `&&&` glyph nodes and thick tapered magenta flows. The lesson is the representation ladder:

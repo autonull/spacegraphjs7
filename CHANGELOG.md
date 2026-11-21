@@ -22,6 +22,11 @@ follow the workflow in `docs/ROADMAP.md` (`test:publish` → build → npm).
   isolated `scale` CI job, and a clean root `tsc` gate.
 - **Proof surface (G, code side):** the Pi flagship's catalog launches every preset and sampled
   experiment cell from its URL, showing the question or decision rule without claiming a winner.
+- **Visual pass:** Pi chrome is a grayscale HUD — black background, neutral surfaces, monospace
+  uppercase labels, transparent panels, only structural dividers and a corner-bracketed readout;
+  the transcript is collapsible and resizable from its own edge. Color is reserved for the graph view.
+- **Screenshots:** one root, `docs/screenshots/`, holding a tracked curated gallery plus gitignored
+  generated visual-gate output; Pi captures come from a Playwright spec, and stale images were removed.
 
 ### Changed
 
@@ -36,7 +41,7 @@ follow the workflow in `docs/ROADMAP.md` (`test:publish` → build → npm).
 ### Not changed
 
 - No immersive mode, ladder, gesture map or visual default has been promoted. Presets are examples,
-  never recommendations. The `n >= 5` study has no published winner.
+  never recommendations. Participant study and release are fully deferred; no winner is published.
 
 ## Stability and deprecation policy
 

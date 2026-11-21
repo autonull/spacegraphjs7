@@ -19,7 +19,7 @@ Workstreams A–F of `TODO3.md` are implemented, plus the code-side proof surfac
 | D — One world & proliferation            | done      | one canvas / one `ScopeSimulation` / one cross-domain camera flight; domains born experimentable from the scaffold      |
 | E — Experimentation program              | done      | seeded sampling, experiment layer, offline/online/human tiers, decision artifacts, negative results published verbatim  |
 | F — Truth pass                           | done      | 13 ADRs, glossary, changelog, reconciled docs, isolated `scale` job, clean root `tsc` gate                              |
-| G — Proof & delivery                     | partial   | code-side proof surface (catalog) and decision seams landed; participant study, npm release and hosting remain external |
+| G — Proof & delivery                     | partial   | code-side proof surface and decision seams landed; participant study, npm release and hosting are deferred               |
 
 No immersive mode, ladder, gesture map or visual default has been promoted. Presets are examples,
 never recommendations. The `n >= 5` study has no winner.
@@ -28,7 +28,7 @@ never recommendations. The `n >= 5` study has no winner.
 pnpm install                          # workspace
 pnpm test                             # 852 unit tests
 pnpm --filter pi test                 # 74 unit tests
-pnpm --filter pi test:e2e             # 42 Playwright tests
+pnpm --filter pi test:e2e             # 45 Playwright tests
 pnpm --filter demo test               # 34 tests
 pnpm run build                        # library, packages, demo
 ```
@@ -71,7 +71,7 @@ renderer contract (@spacegraphjs/renderer)     ── swappable adapters: WebGL 
 | --------------- | ----------------------------------------- | ---------------- |
 | Unit tests      | `pnpm test`                               | 852 passing      |
 | Pi unit tests   | `pnpm --filter pi test`                   | 74 passing       |
-| Pi e2e          | `pnpm --filter pi test:e2e`               | 42 passing       |
+| Pi e2e          | `pnpm --filter pi test:e2e`               | 45 passing       |
 | Demo unit tests | `pnpm --filter demo test`                 | 34 passing       |
 | Demo e2e        | `pnpm --filter demo test:e2e`             | 21 passing       |
 | Visual atlas    | `pnpm run verify:visual`                  | green            |
@@ -86,10 +86,12 @@ load.
 
 ## Remaining work (ordered by dependency)
 
+Nothing is scheduled. Code-side work is complete; the proof/delivery items are fully deferred.
+
 | Workstream      | Goal                                                 | State                                               |
 | --------------- | ---------------------------------------------------- | --------------------------------------------------- |
 | G proof surface | Launchable preset/experiment catalog on the flagship | done — `app/pi/src/catalog.ts`                      |
-| G               | Study published, release live, hosted flagship       | external; naming pass / beta → 1.0 follow the study |
+| G               | Study published, release live, hosted flagship       | deferred; naming pass / beta → 1.0 follows them     |
 
 See `TODO3.md` §12 for the definition of done and §11 for explicit anti-goals.
 

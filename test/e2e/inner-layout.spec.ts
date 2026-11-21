@@ -8,7 +8,7 @@ import { renderAtlasReport, type ReportEntry } from './atlas-report.js';
 // Inner-node layouts through a subgraph container. The demo owns the geometry; this spec drives
 // its mode control, verifies the child positions change shape, and captures one frame per mode.
 
-const OUT = process.env.SG_INNER_LAYOUT_DIR ?? resolve('verification/inner-layout');
+const OUT = process.env.SG_INNER_LAYOUT_DIR ?? resolve('docs/screenshots/inner-layout');
 const VIEWPORT = { width: 1440, height: 900 };
 
 type Position = { id: string; x: number; y: number };

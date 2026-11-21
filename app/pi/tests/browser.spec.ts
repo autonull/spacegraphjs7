@@ -57,6 +57,29 @@ test.describe('the Pi reference app', () => {
         noErrors(errors);
     });
 
+    test('collapses and resizes the transcript from its HUD controls', async ({ page }) => {
+        const errors = await boot(page);
+        await expect(page.locator('#transcript-list')).toBeVisible();
+        await page.locator('#transcript-toggle').click();
+        await expect(page.locator('#transcript-list')).toBeHidden();
+        expect(await page.evaluate(() => (window as any).__pi.transcriptCollapsed())).toBe(true);
+        await page.locator('#transcript-toggle').click();
+        await expect(page.locator('#transcript-list')).toBeVisible();
+
+        const before = await page.locator('#transcript').boundingBox();
+        const handle = await page.locator('#transcript-resize').boundingBox();
+        expect(before).not.toBeNull();
+        expect(handle).not.toBeNull();
+        await page.mouse.move(handle!.x + 3, handle!.y + 120);
+        await page.mouse.down();
+        await page.mouse.move(handle!.x - 100, handle!.y + 120, { steps: 6 });
+        await page.mouse.up();
+        const after = await page.locator('#transcript').boundingBox();
+        expect(after!.width).toBeGreaterThan(before!.width + 60);
+        expect(await page.evaluate(() => (window as any).__pi.transcriptSize())).toBeGreaterThan(320);
+        noErrors(errors);
+    });
+
     test('follows the newest node and reports attention from the local stream', async ({ page }) => {
         const errors = await boot(page);
 
