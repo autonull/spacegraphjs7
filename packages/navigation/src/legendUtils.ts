@@ -13,87 +13,88 @@ export interface AccentColors {
     subtle: string;
 }
 
+type AccentRule = { color?: string; colorMuted?: string; colorSubtle?: string };
+
+const FALLBACK_ACCENT: AccentColors = { solid: '#6b7280', muted: '#9ca3af', subtle: '#e5e7eb' };
+
+/** Apply an equalizer rule's overrides to the default accent for a key. */
+function resolveAccent(
+    defaults: Record<string, AccentColors>,
+    key: string,
+    rules?: Record<string, AccentRule>,
+): AccentColors {
+    const rule = rules?.[key];
+    const base = defaults[key] ?? FALLBACK_ACCENT;
+    if (!rule) return { ...base };
+    return {
+        solid: rule.color ?? base.solid,
+        muted: rule.colorMuted ?? base.muted,
+        subtle: rule.colorSubtle ?? base.subtle,
+    };
+}
+
+const KIND_ACCENTS: Record<string, AccentColors> = {
+    session: { solid: '#6b7280', muted: '#9ca3af', subtle: '#e5e7eb' },
+    turn: { solid: '#3b82f6', muted: '#60a5fa', subtle: '#dbeafe' },
+    phase: { solid: '#8b5cf6', muted: '#a78bfa', subtle: '#ede9fe' },
+    message: { solid: '#10b981', muted: '#34d399', subtle: '#d1fae5' },
+    reasoning: { solid: '#f59e0b', muted: '#fbbf24', subtle: '#fef3c7' },
+    tool: { solid: '#ec4899', muted: '#f472b6', subtle: '#fce7f3' },
+    file: { solid: '#06b6d4', muted: '#22d3ee', subtle: '#cffafe' },
+    directory: { solid: '#84cc16', muted: '#a3e635', subtle: '#f7fee7' },
+    subagent: { solid: '#f97316', muted: '#fb923c', subtle: '#ffedd5' },
+    result: { solid: '#14b8a6', muted: '#2dd4bf', subtle: '#ccfbf1' },
+    error: { solid: '#ef4444', muted: '#f87171', subtle: '#fee2e2' },
+    retry: { solid: '#f97316', muted: '#fb923c', subtle: '#ffedd5' },
+    compaction: { solid: '#6366f1', muted: '#818cf8', subtle: '#e0e7ff' },
+    notice: { solid: '#6b7280', muted: '#9ca3af', subtle: '#e5e7eb' },
+    diff: { solid: '#8b5cf6', muted: '#a78bfa', subtle: '#ede9fe' },
+    package: { solid: '#06b6d4', muted: '#22d3ee', subtle: '#cffafe' },
+    commit: { solid: '#8b5cf6', muted: '#a78bfa', subtle: '#ede9fe' },
+    branch: { solid: '#ec4899', muted: '#f472b6', subtle: '#fce7f3' },
+    symbol: { solid: '#f59e0b', muted: '#fbbf24', subtle: '#fef3c7' },
+    test: { solid: '#10b981', muted: '#34d399', subtle: '#d1fae5' },
+    'test-run': { solid: '#14b8a6', muted: '#2dd4bf', subtle: '#ccfbf1' },
+    process: { solid: '#f97316', muted: '#fb923c', subtle: '#ffedd5' },
+    port: { solid: '#06b6d4', muted: '#22d3ee', subtle: '#cffafe' },
+    issue: { solid: '#ef4444', muted: '#f87171', subtle: '#fee2e2' },
+    note: { solid: '#6b7280', muted: '#9ca3af', subtle: '#e5e7eb' },
+};
+
 /** Returns the accent colors for a node kind, respecting equalizer rules. */
 export function kindAccent(kind: string, rules?: EqualizerRuleSet): AccentColors {
-    // Default kind colors
-    const defaults: Record<string, AccentColors> = {
-        session: { solid: '#6b7280', muted: '#9ca3af', subtle: '#e5e7eb' },
-        turn: { solid: '#3b82f6', muted: '#60a5fa', subtle: '#dbeafe' },
-        phase: { solid: '#8b5cf6', muted: '#a78bfa', subtle: '#ede9fe' },
-        message: { solid: '#10b981', muted: '#34d399', subtle: '#d1fae5' },
-        reasoning: { solid: '#f59e0b', muted: '#fbbf24', subtle: '#fef3c7' },
-        tool: { solid: '#ec4899', muted: '#f472b6', subtle: '#fce7f3' },
-        file: { solid: '#06b6d4', muted: '#22d3ee', subtle: '#cffafe' },
-        directory: { solid: '#84cc16', muted: '#a3e635', subtle: '#f7fee7' },
-        subagent: { solid: '#f97316', muted: '#fb923c', subtle: '#ffedd5' },
-        result: { solid: '#14b8a6', muted: '#2dd4bf', subtle: '#ccfbf1' },
-        error: { solid: '#ef4444', muted: '#f87171', subtle: '#fee2e2' },
-        retry: { solid: '#f97316', muted: '#fb923c', subtle: '#ffedd5' },
-        compaction: { solid: '#6366f1', muted: '#818cf8', subtle: '#e0e7ff' },
-        notice: { solid: '#6b7280', muted: '#9ca3af', subtle: '#e5e7eb' },
-        diff: { solid: '#8b5cf6', muted: '#a78bfa', subtle: '#ede9fe' },
-        package: { solid: '#06b6d4', muted: '#22d3ee', subtle: '#cffafe' },
-        commit: { solid: '#8b5cf6', muted: '#a78bfa', subtle: '#ede9fe' },
-        branch: { solid: '#ec4899', muted: '#f472b6', subtle: '#fce7f3' },
-        symbol: { solid: '#f59e0b', muted: '#fbbf24', subtle: '#fef3c7' },
-        test: { solid: '#10b981', muted: '#34d399', subtle: '#d1fae5' },
-        'test-run': { solid: '#14b8a6', muted: '#2dd4bf', subtle: '#ccfbf1' },
-        process: { solid: '#f97316', muted: '#fb923c', subtle: '#ffedd5' },
-        port: { solid: '#06b6d4', muted: '#22d3ee', subtle: '#cffafe' },
-        issue: { solid: '#ef4444', muted: '#f87171', subtle: '#fee2e2' },
-        note: { solid: '#6b7280', muted: '#9ca3af', subtle: '#e5e7eb' },
-    };
-
-    // Check for equalizer rule override
-    const kinds = rules?.kinds as
-        Record<string, { color?: string; colorMuted?: string; colorSubtle?: string }> | undefined;
-    if (kinds?.[kind]) {
-        const rule = kinds[kind];
-        return {
-            solid: rule.color ?? defaults[kind]?.solid ?? '#6b7280',
-            muted: rule.colorMuted ?? defaults[kind]?.muted ?? '#9ca3af',
-            subtle: rule.colorSubtle ?? defaults[kind]?.subtle ?? '#e5e7eb',
-        };
-    }
-
-    return defaults[kind] ?? { solid: '#6b7280', muted: '#9ca3af', subtle: '#e5e7eb' };
+    return resolveAccent(KIND_ACCENTS, kind, rules?.kinds as Record<string, AccentRule> | undefined);
 }
+
+const CATEGORY_ACCENTS: Record<string, AccentColors> = {
+    explore: { solid: '#3b82f6', muted: '#60a5fa', subtle: '#dbeafe' },
+    edit: { solid: '#f97316', muted: '#fb923c', subtle: '#ffedd5' },
+    verify: { solid: '#10b981', muted: '#34d399', subtle: '#d1fae5' },
+    delegate: { solid: '#8b5cf6', muted: '#a78bfa', subtle: '#ede9fe' },
+    result: { solid: '#14b8a6', muted: '#2dd4bf', subtle: '#ccfbf1' },
+};
 
 /** Returns the accent colors for a phase category, respecting equalizer rules. */
 export function categoryAccent(category: string, rules?: EqualizerRuleSet): AccentColors {
-    const defaults: Record<string, AccentColors> = {
-        explore: { solid: '#3b82f6', muted: '#60a5fa', subtle: '#dbeafe' },
-        edit: { solid: '#f97316', muted: '#fb923c', subtle: '#ffedd5' },
-        verify: { solid: '#10b981', muted: '#34d399', subtle: '#d1fae5' },
-        delegate: { solid: '#8b5cf6', muted: '#a78bfa', subtle: '#ede9fe' },
-        result: { solid: '#14b8a6', muted: '#2dd4bf', subtle: '#ccfbf1' },
-    };
-
-    const phases = rules?.phases as
-        Record<string, { color?: string; colorMuted?: string; colorSubtle?: string }> | undefined;
-    if (phases?.[category]) {
-        const rule = phases[category];
-        return {
-            solid: rule.color ?? defaults[category]?.solid ?? '#6b7280',
-            muted: rule.colorMuted ?? defaults[category]?.muted ?? '#9ca3af',
-            subtle: rule.colorSubtle ?? defaults[category]?.subtle ?? '#e5e7eb',
-        };
-    }
-
-    return defaults[category] ?? { solid: '#6b7280', muted: '#9ca3af', subtle: '#e5e7eb' };
+    return resolveAccent(
+        CATEGORY_ACCENTS,
+        category,
+        rules?.phases as Record<string, AccentRule> | undefined,
+    );
 }
+
+const STATUS_COLORS: Record<string, keyof RenderTheme> = {
+    pending: 'textMuted',
+    running: 'accent',
+    success: 'success',
+    failed: 'error',
+    interrupted: 'warning',
+    neutral: 'textMuted',
+};
 
 /** Returns the color for a node status. */
 export function statusAccent(theme: RenderTheme, status: string): string {
-    const statusColors: Record<string, keyof RenderTheme> = {
-        pending: 'textMuted',
-        running: 'accent',
-        success: 'success',
-        failed: 'error',
-        interrupted: 'warning',
-        neutral: 'textMuted',
-    };
-    const themeKey = statusColors[status] ?? 'textMuted';
+    const themeKey = STATUS_COLORS[status] ?? 'textMuted';
     const value = theme[themeKey];
     return typeof value === 'string' ? value : theme.textMuted;
 }
@@ -110,15 +111,14 @@ export function formatAge(ms: number): string {
     return `${days}d`;
 }
 
+const SOURCE_LABELS: Record<string, string> = {
+    session: 'ui.sessionGraph.source.session',
+    filesystem: 'ui.sessionGraph.source.filesystem',
+    git: 'ui.sessionGraph.source.git',
+    lsp: 'ui.sessionGraph.source.lsp',
+    terminal: 'ui.sessionGraph.source.terminal',
+    browser: 'ui.sessionGraph.source.browser',
+};
+
 /** Returns a human-readable label for a provenance source. */
-export function sourceLabel(source: string): string {
-    const labels: Record<string, string> = {
-        session: 'ui.sessionGraph.source.session',
-        filesystem: 'ui.sessionGraph.source.filesystem',
-        git: 'ui.sessionGraph.source.git',
-        lsp: 'ui.sessionGraph.source.lsp',
-        terminal: 'ui.sessionGraph.source.terminal',
-        browser: 'ui.sessionGraph.source.browser',
-    };
-    return labels[source] ?? source;
-}
+export const sourceLabel = (source: string): string => SOURCE_LABELS[source] ?? source;
