@@ -8,12 +8,11 @@
 // tree and the force simulation are engines of their own. Nothing here measures a card.
 
 import { lookup } from '../utils/record';
+import { boundsOf, type LayoutBounds } from './bounds';
 import { ForcePlacement, type ForceMeta } from './force';
 import { GridPlacement, type GridMeta } from './grid';
 import type { PlacementItem, Position } from './placement';
 import { TreePlacement, type TreeMeta } from './tree';
-
-type LayoutBounds = { min: Position; max: Position };
 
 /** Internal layout strategies (host-owned, not plugin layouts). Renamed to avoid confusion with layout plugin IDs. */
 type LaneLayoutStrategy = 'lanes' | 'timeline' | 'hierarchy' | 'tree' | 'force';
@@ -126,34 +125,11 @@ interface GraphLayout {
     strategy: LaneLayoutStrategy;
 }
 
-const ZERO_BOUNDS: LayoutBounds = { min: { x: 0, y: 0, z: 0 }, max: { x: 0, y: 0, z: 0 } };
-
 /** The column the session's own nodes share, before the first turn's column. */
 const SESSION_COLUMN = '__session__';
 
 function depthOf(depthMap: Readonly<Record<string, number>>, kind: string): number {
     return lookup(depthMap, kind) ?? 0;
-}
-
-function boundsOf(points: readonly Position[]): LayoutBounds {
-    const [first, ...rest] = points;
-    const seed = { x: first!.x, y: first!.y, z: first!.z };
-
-    return rest.reduce(
-        (acc, point) => ({
-            min: {
-                x: Math.min(acc.min.x, point.x),
-                y: Math.min(acc.min.y, point.y),
-                z: Math.min(acc.min.z, point.z),
-            },
-            max: {
-                x: Math.max(acc.max.x, point.x),
-                y: Math.max(acc.max.y, point.y),
-                z: Math.max(acc.max.z, point.z),
-            },
-        }),
-        { min: { ...seed }, max: { ...seed } },
-    );
 }
 
 /** The bounds over the placed positions of a set of node ids; undefined when none are placed. */
@@ -189,7 +165,7 @@ function finishLayout(
     return {
         positions,
         clusters,
-        bounds: all.length > 0 ? boundsOf(all) : ZERO_BOUNDS,
+        bounds: boundsOf(all),
         strategy,
     };
 }

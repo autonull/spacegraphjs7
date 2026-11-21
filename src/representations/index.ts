@@ -3,7 +3,8 @@
 // owns the packing; the host owns the vocabulary (which row and column a node belongs to) through
 // the config.
 
-import type { GraphLayout, LayoutBounds, Position } from '../layout/strategies';
+import { boundsOfMap } from '../layout/bounds';
+import type { GraphLayout, Position } from '../layout/strategies';
 
 interface RepresentationNode {
     id: string;
@@ -41,8 +42,6 @@ interface RepresentationOptions {
     /** The vertical distance between rows. */
     rowGap?: number;
 }
-
-const ZERO_BOUNDS: LayoutBounds = { min: { x: 0, y: 0, z: 0 }, max: { x: 0, y: 0, z: 0 } };
 
 /**
  * The rows of a summary: the root row first (the nodes without a row of their own), then one row
@@ -110,7 +109,7 @@ function ribbonLayout<Node extends RepresentationNode>(
         }
     });
 
-    return { positions, clusters: new Map(), bounds: boundsOf(positions), strategy: 'lanes' };
+    return { positions, clusters: new Map(), bounds: boundsOfMap(positions), strategy: 'lanes' };
 }
 
 /**
@@ -169,7 +168,7 @@ function matrixLayout<Node extends RepresentationNode>(
         }
     }
 
-    return { positions, clusters: new Map(), bounds: boundsOf(positions), strategy: 'lanes' };
+    return { positions, clusters: new Map(), bounds: boundsOfMap(positions), strategy: 'lanes' };
 }
 
 /** The labelled columns of a matrix, for axis generation. */
@@ -180,25 +179,6 @@ function summaryColumns<Node extends RepresentationNode>(
         column: Number(column),
         label,
     }));
-}
-
-function boundsOf(positions: ReadonlyMap<string, Position>): LayoutBounds {
-    const points = [...positions.values()];
-
-    if (points.length === 0) return ZERO_BOUNDS;
-
-    return {
-        min: {
-            x: Math.min(...points.map((point) => point.x)),
-            y: Math.min(...points.map((point) => point.y)),
-            z: 0,
-        },
-        max: {
-            x: Math.max(...points.map((point) => point.x)),
-            y: Math.max(...points.map((point) => point.y)),
-            z: 0,
-        },
-    };
 }
 
 /**
@@ -226,7 +206,7 @@ function logLayout<Node extends RepresentationNode>(
         cursor += rowGap;
     }
 
-    return { positions, clusters: new Map(), bounds: boundsOf(positions), strategy: 'lanes' };
+    return { positions, clusters: new Map(), bounds: boundsOfMap(positions), strategy: 'lanes' };
 }
 
 /** The log layout rows: same as summary rows but exposed for axis labels. */
@@ -254,10 +234,7 @@ export type {
     LadderSelection,
     RungChange,
 } from './ladder';
-export {
-    REPRESENTATION_EASINGS,
-    playRepresentationChanges,
-} from './playback';
+export { REPRESENTATION_EASINGS, playRepresentationChanges } from './playback';
 export type {
     RepresentationEase,
     RepresentationPlayback,
