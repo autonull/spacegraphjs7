@@ -1,3 +1,4 @@
+import { escapeHtml } from '@spacegraphjs/adapter';
 import { KernelCodec, type Kernel } from '@spacegraphjs/kernel';
 import type { AgentView } from '@spacegraphjs/agent';
 import { sensoryAdapter, type RegisteredSensorySeam } from 'spacegraphjs/world';
@@ -24,12 +25,6 @@ export const unsupportedSeams = (): readonly UnsupportedSeam[] =>
     UNSUPPORTED.filter((seam) => !sensoryAdapter(seam.id as RegisteredSensorySeam));
 
 const clamp = (value: number, min: number, max: number): number => Math.min(max, Math.max(min, value));
-const escapeHTML = (value: unknown): string =>
-    String(value ?? '')
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
 
 /** Host-side overlap estimate. The Playwright gate uses the library's full vision analyzer. */
 export const scoreVision = (
@@ -108,7 +103,7 @@ export const exportHTML = (view: AgentView, positions: ReadonlyMap<string, Posit
     const rows = exportable(view, positions)
         .map(
             ({ node, position }) =>
-                `<li data-kind="${escapeHTML(node.kind)}" data-x="${position.x.toFixed(1)}" data-y="${position.y.toFixed(1)}">${escapeHTML(node.label)}</li>`,
+                `<li data-kind="${escapeHtml(String(node.kind ?? ''))}" data-x="${position.x.toFixed(1)}" data-y="${position.y.toFixed(1)}">${escapeHtml(String(node.label ?? ''))}</li>`,
         )
         .join('\n');
     return `<!doctype html>\n<meta charset="utf-8">\n<title>Pi graph export</title>\n<ul>\n${rows}\n</ul>\n`;
@@ -127,7 +122,7 @@ export const exportSVG = (view: AgentView, positions: ReadonlyMap<string, Positi
     const nodes = exportable(view, positions)
         .map(
             ({ node, position }) =>
-                `<rect x="${(position.x - 100).toFixed(1)}" y="${(position.y - 32).toFixed(1)}" width="200" height="64" rx="8" fill="#1d2742"/><text x="${position.x.toFixed(1)}" y="${position.y.toFixed(1)}" fill="#e8edff" font-size="12">${escapeHTML(node.label)}</text>`,
+                `<rect x="${(position.x - 100).toFixed(1)}" y="${(position.y - 32).toFixed(1)}" width="200" height="64" rx="8" fill="#1d2742"/><text x="${position.x.toFixed(1)}" y="${position.y.toFixed(1)}" fill="#e8edff" font-size="12">${escapeHtml(String(node.label ?? ''))}</text>`,
         )
         .join('\n');
     return `<svg xmlns="http://www.w3.org/2000/svg" width="2400" height="1600" viewBox="-1200 -800 2400 1600">\n${edges}\n${nodes}\n</svg>\n`;

@@ -27,6 +27,7 @@ import {
     type MotionPlayback,
 } from 'spacegraphjs/motion';
 import { representationRung } from 'spacegraphjs/salience';
+import { lerp, requireElement } from 'spacegraphjs/utils';
 import {
     createVisionLoop,
     type VisionLoop,
@@ -82,13 +83,7 @@ const LEVEL_MODES: readonly LevelMode[] = ['auto', ...LEVELS];
 const ARRANGEMENTS: readonly Arrangement[] = ['stacked', 'side', 'floating'];
 const SURFACES: readonly Surface[] = ['log', 'map', 'hybrid'];
 
-export const el = <T extends HTMLElement>(id: string): T => {
-    const found = document.getElementById(id);
-    if (!found) throw new Error(`pi app: missing #${id}`);
-    return found as T;
-};
-
-const lerp = (a: number, b: number, t: number): number => a + (b - a) * t;
+export const el = <T extends HTMLElement>(id: string): T => requireElement<T>(id, 'pi app');
 
 const VISION_MODELS: Record<string, string> = {
     tla: '/tla_model.onnx',

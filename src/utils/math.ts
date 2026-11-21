@@ -84,6 +84,11 @@ export const randomInt = (min: number, max: number): number =>
     Math.floor(randomRange(min, max + 1));
 export const randomBool = (): boolean => Math.random() > 0.5;
 export const randomPick = <T>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
+/** Deterministic 32-bit LCG used by reproducible samplers and generators. */
+export const seededRandom = (seed: number): (() => number) => {
+    let value = seed >>> 0;
+    return () => (value = (value * 1103515245 + 12345) >>> 0) / 0x1_0000_0000;
+};
 
 // ============= Object Utilities =============
 export function safeClone<T>(obj: T): T {

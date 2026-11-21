@@ -45,7 +45,7 @@ export {
 } from './color';
 export type { DOMElementOptions } from './DOMUtils';
 // DOM utilities
-export { createElement, createElementNS, DOMUtils } from './DOMUtils';
+export { createElement, createElementNS, DOMUtils, requireElement } from './DOMUtils';
 export type { SpaceGraphErrorOptions } from './error';
 // Error utilities - unified error handling
 export {
@@ -119,6 +119,7 @@ export {
     randomRange,
     randomThreeVector,
     round,
+    seededRandom,
     // Object utilities
     safeClone,
     sign,

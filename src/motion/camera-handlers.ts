@@ -2,6 +2,7 @@
 // own viewport state, the flight target, the trace polyline and the final camera move. The remaining
 // motion verbs are reported unsupported rather than silently ignored.
 
+import { lerp } from '../utils/math';
 import { MOTION_VERBS, type MotionDirector, type MotionVerb } from './director';
 
 export type CameraPoint = readonly [number, number, number];
@@ -21,8 +22,6 @@ export interface CameraMotionAdapter {
 
 export const CAMERA_MOTION_VERBS = ['flyTo', 'trace'] as const;
 export type CameraMotionVerb = (typeof CAMERA_MOTION_VERBS)[number];
-
-const lerp = (from: number, to: number, t: number): number => from + (to - from) * t;
 
 export const interpolatePoint = (from: CameraPoint, to: CameraPoint, t: number): CameraPoint => [
     lerp(from[0], to[0], t),

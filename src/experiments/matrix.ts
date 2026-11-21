@@ -1,6 +1,8 @@
 // P5.1. A deterministic cartesian matrix over discoverable axis values. Full products are enumerated;
 // large ones are sampled with a documented policy. The sampler has no config or host dependency.
 
+import { seededRandom } from '../utils/math';
+
 export interface MatrixAxis {
     readonly id: string;
     readonly values: readonly string[];
@@ -33,11 +35,6 @@ const cellId = (values: Readonly<Record<string, string>>): string =>
     Object.entries(values)
         .map(([axis, value]) => `${axis}=${value}`)
         .join('&');
-
-function seeded(seed: number): () => number {
-    let value = seed >>> 0;
-    return () => (value = (value * 1103515245 + 12345) >>> 0) / 0x1_0000_0000;
-}
 
 /** Enumerate the full product or a seeded sample with baseline and pairwise coverage. */
 export function cartesianMatrix(
@@ -91,7 +88,7 @@ export function cartesianMatrix(
         }
     }
 
-    const random = seeded(seed);
+    const random = seededRandom(seed);
     while (cells.size < maxCells) {
         add(
             Object.fromEntries(

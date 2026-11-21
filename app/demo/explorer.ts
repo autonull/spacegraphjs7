@@ -25,6 +25,7 @@ import {
     type MotionPlayback,
     type MotionVerb,
 } from 'spacegraphjs/motion';
+import { lerp, requireElement, seededRandom } from 'spacegraphjs/utils';
 import {
     supportsSensory,
     worldPolicyFor,
@@ -325,7 +326,7 @@ const leftGraph = new InlineGraph(element('left-graph'));
 const rightGraph = new InlineGraph(element('right-graph'));
 
 let left = ConfigState.fromSearch(space, location.hash);
-let right = randomize(space, seeded(41));
+let right = randomize(space, seededRandom(41));
 let compare = false;
 let previousRungs: ReadonlyMap<string, string> = new Map();
 let playback: RepresentationPlayback | undefined;
@@ -356,16 +357,8 @@ const RECORDING_CAMERA_ADAPTER: CameraAdapter = {
     reset: () => cameraCalls.push('reset'),
 };
 
-function element<T extends HTMLElement = HTMLElement>(id: string): T {
-    const found = document.getElementById(id);
-    if (!found) throw new Error(`explorer: missing #${id}`);
-    return found as T;
-}
-
-function seeded(seed: number): () => number {
-    let value = seed >>> 0;
-    return () => (value = (value * 1103515245 + 12345) >>> 0) / 0x1_0000_0000;
-}
+const element = <T extends HTMLElement = HTMLElement>(id: string): T =>
+    requireElement<T>(id, 'explorer');
 
 function effective(state: ConfigState): ConfigState {
     return negotiate(space, state, { capabilities, flags }).state;
@@ -537,9 +530,8 @@ function applyAppearance(change: RepresentationTween, value: number): void {
     if (!group) return;
     const from = APPEARANCE[change.from];
     const to = APPEARANCE[change.to];
-    const lerp = (a: number, b: number) => a + (b - a) * value;
-    const width = lerp(from?.size?.[0] ?? 120, to?.size?.[0] ?? 120);
-    const height = lerp(from?.size?.[1] ?? 32, to?.size?.[1] ?? 32);
+    const width = lerp(from?.size?.[0] ?? 120, to?.size?.[0] ?? 120, value);
+    const height = lerp(from?.size?.[1] ?? 32, to?.size?.[1] ?? 32, value);
     group.dataset.rungFrom = change.from;
     group.dataset.rungTo = change.to;
     group.dataset.transitionT = value.toFixed(3);
@@ -754,7 +746,7 @@ function render(): void {
 }
 
 element('randomize').addEventListener('click', () => {
-    left = randomize(space, seeded(Date.now()));
+    left = randomize(space, seededRandom(Date.now()));
     render();
 });
 element('reset').addEventListener('click', () => {
@@ -788,7 +780,7 @@ window.__explorer = {
         return left.get(axis);
     },
     randomize: () => {
-        left = randomize(space, seeded(Date.now()));
+        left = randomize(space, seededRandom(Date.now()));
         render();
     },
     reset: () => {

@@ -1,3 +1,10 @@
+/** Looks up a required element by id, throwing with the given label when absent. */
+export function requireElement<T extends HTMLElement = HTMLElement>(id: string, label = 'app'): T {
+    const found = document.getElementById(id);
+    if (!found) throw new Error(`${label}: missing #${id}`);
+    return found as T;
+}
+
 export interface DOMElementOptions {
     id?: string;
     className?: string;
