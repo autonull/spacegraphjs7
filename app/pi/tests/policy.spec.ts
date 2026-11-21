@@ -60,5 +60,16 @@ test.describe('the live policy spine', () => {
         expect(session.fixture).toBe('pi:local');
         expect(session.events.at(-1).kind).toBe('reveal');
         expect(session.events.at(-1).policy['camera.verbMs']).toBe(400);
+        expect(session.events.at(-1).meta.legibility).toBeGreaterThan(0);
+
+        const replay = await page.evaluate(() => (window as any).__pi.replayRecording());
+        expect(replay.success).toBeGreaterThanOrEqual(0);
+        const comparison = await page.evaluate(() =>
+            (window as any).__pi.counterfactual({
+                ...(window as any).__pi.policy().values,
+                'camera.verbMs': 100,
+            }),
+        );
+        expect(comparison.successDelta).toBe(0);
     });
 });

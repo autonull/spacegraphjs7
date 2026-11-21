@@ -80,7 +80,13 @@ import {
     type PolicyVector,
     type ResolvedPolicy,
 } from './policy';
-import { SessionRecorder, type SessionRecording } from './recorder';
+import {
+    SessionRecorder,
+    counterfactual,
+    replaySession,
+    type EventScorer,
+    type SessionRecording,
+} from './recorder';
 import { agentScopes, DEPTH, portalChain } from './scopes';
 import { readTheme } from './theme';
 import { decodePermalink, encodePermalink, isRevealHash, type PermalinkState } from './permalink';
@@ -385,12 +391,37 @@ export class PiHost {
     }
 
     recordEvent(kind: string, meta: Readonly<Record<string, string | number | boolean>> = {}): void {
-        this.#recorder.record(kind, this.#resolved.vector, meta);
+        const vision = this.#visionReport?.scores ?? this.#visionLoop?.lastReport?.scores;
+        this.#recorder.record(kind, this.#resolved.vector, {
+            legibility: vision?.legibility ?? this.#vision.legibility,
+            overlap: vision?.overlap ?? this.#vision.overlap,
+            ...meta,
+        });
     }
 
     recording(): SessionRecording {
         return this.#recorder.export();
     }
+
+    replayRecording(policy: PolicyVector = this.#resolved.vector) {
+        return replaySession(this.recording(), policy, this.#eventScorer);
+    }
+
+    counterfactual(variant: PolicyVector, incumbent: PolicyVector = this.#resolved.vector) {
+        return counterfactual(this.recording(), incumbent, variant, this.#eventScorer);
+    }
+
+    readonly #eventScorer: EventScorer = (event, policy) => ({
+        success: event.kind === 'answer' ? 1 : 0,
+        wrongTurns:
+            typeof event.meta.wrongTurns === 'number'
+                ? event.meta.wrongTurns
+                : event.kind === 'wrong-turn'
+                  ? 1
+                  : 0,
+        travel: typeof event.meta.travel === 'number' ? event.meta.travel : 0,
+        legibility: typeof event.meta.legibility === 'number' ? event.meta.legibility : Number(policy['emphasis.cap']),
+    });
 
     private geometry(): { gap: number; padding: number; depthStep: number; repulsion: number } {
         const values = this.#resolved.values;
@@ -937,6 +968,9 @@ export class PiHost {
             recording: () => this.recording(),
             recordEvent: (kind: string, meta?: Record<string, string | number | boolean>) =>
                 this.recordEvent(kind, meta),
+            replayRecording: (policy?: PolicyVector) => this.replayRecording(policy),
+            counterfactual: (variant: PolicyVector, incumbent?: PolicyVector) =>
+                this.counterfactual(variant, incumbent),
             evidence: () => this.#evidence,
             ops: () => this.#kernel.nodes.length,
             loadFixture: () => {

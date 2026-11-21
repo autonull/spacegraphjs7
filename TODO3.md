@@ -7,7 +7,7 @@ Self-contained. No time estimates. Ordered by dependency, not duration.
 
 ## Progress (updated 2026-11-21)
 
-**Workstream A — Configuration Spine: implemented (A5 host scoring remains; see below).**
+**Workstream A — Configuration Spine: implemented.**
 
 | Item | Status | Evidence |
 |---|---|---|
@@ -15,7 +15,7 @@ Self-contained. No time estimates. Ordered by dependency, not duration.
 | A2 resolution + provenance | done | `app/pi/src/policy/resolve.ts`: fixed precedence `defaults → preset → experiment → url → panel`, per-knob source, `policy:change` event, merged layers. |
 | A3 live panel | done | `app/pi/src/policy/panel.ts` + WidgetLayer `pinned` mount in `host.ts`; auto-generated per-family controls, provenance badges, reset + copy-URL, hot apply with no remount. |
 | A4 permalink v2 | done | `PermalinkState.policy` (compact `p1.<base64url>` vector) + `.fixture`; preset gallery data in `policy/presets.ts`; applying a link clears live overrides so the URL wins. |
-| A5 recorder / replay | core done | `app/pi/src/recorder.ts`: neutral events stamped with the resolved vector, deterministic replay, `counterfactual()` re-score. Host records `reveal`, `answer`/`wrong-turn`, `policy:change` and exposes `recording()`/`recordEvent()` hooks. |
+| A5 recorder / replay | done | `app/pi/src/recorder.ts`: neutral events stamped with the resolved vector, deterministic replay, `counterfactual()` re-score. `host.ts` records `reveal`, `answer`/`wrong-turn`, `policy:change` with vision scores, exposes `recording()`, `recordEvent()`, `replayRecording()` and `counterfactual()` hooks with an ergonomic scorer. |
 
 Every schema knob has a live host consumer: bands → `levelForZoom`, ladder → `representationRung`, salience → activity decay, emphasis → emphasis caps, camera → flight durations, depth → simulation + renderer, widgets → dock attribute, geometry → `setBaseLayout`/`setForces`, guardrails → budgets/window, surface → surface state, navigation → orientation aids, orchestration → gallery, theme → renderer theme.
 
@@ -23,12 +23,11 @@ Every schema knob has a live host consumer: bands → `levelForZoom`, ladder →
 
 **Remaining work, in order:**
 
-1. **A5 finish (small):** supply a host scorer that combines the vision loop report with the ergonomic counters on replayed events; expose `counterfactual(incumbent, variant)` via hooks. The pure replay/counterfactual mechanism and its determinism test already exist; only the host scoring adapter is missing. Part of Workstream E's measurement tiers.
-2. **B — Ergonomic navigation:** B1 edge-traverse verb (`double-click edge → fly to target`) through the camera-verb registry; B2 portal dissolve / rung crossfade choreography; B3 ergonomic counters (wrong turns, zoom oscillation, backtracks, escape-hatch use) recorded as neutral events. Gate: vision assertions on intermediate descent frames, keyboard-only + reduced-motion e2e for the full verb set.
-3. **C — Living rectangles / Pi orchestration:** instrument kit and the remaining verbs (steer, approve as first-class node, compare runs); prompt→steer→approve→retry e2e with transcript parity.
-4. **D — One world / proliferation:** mount all four domains in one canvas; ship the fifth exemplar through `create-spacegraph` so new domains inherit schema + panel + recorder + preset gallery.
-5. **E — Experimentation program:** generalize seeded pairwise sampling to any policy families; wire the resolver `experiment` layer and tiered scoring; decision rules and negative-result publication as data.
-6. **F / G — Truth and proof:** docs reconciliation, ADRs, root gates; participant study, npm release, hosted flagship and the public preset/experiment catalog.
+1. **B — Ergonomic navigation:** B1 edge-traverse verb (`double-click edge → fly to target`) through the camera-verb registry; B2 portal dissolve / rung crossfade choreography; B3 ergonomic counters (wrong turns, zoom oscillation, backtracks, escape-hatch use) recorded as neutral events. Gate: vision assertions on intermediate descent frames, keyboard-only + reduced-motion e2e for the full verb set.
+2. **C — Living rectangles / Pi orchestration:** instrument kit and the remaining verbs (steer, approve as first-class node, compare runs); prompt→steer→approve→retry e2e with transcript parity.
+3. **D — One world / proliferation:** mount all four domains in one canvas; ship the fifth exemplar through `create-spacegraph` so new domains inherit schema + panel + recorder + preset gallery.
+4. **E — Experimentation program:** generalize seeded pairwise sampling to any policy families; wire the resolver `experiment` layer and tiered scoring; decision rules and negative-result publication as data. Offline counterfactual re-simulation of layout/vision under a variant is E work; the recorder scorer adapter is in place.
+5. **F / G — Truth and proof:** docs reconciliation, ADRs, root gates; participant study, npm release, hosted flagship and the public preset/experiment catalog.
 
 **Deliberate non-goals for this increment:** no new library mechanism beyond the two additive pure seams `representationRung(input, thresholds)` and `ScopeSimulation.setBaseLayout/setForces`; no contract change; no immersive or visual default promoted (presets remain examples, never recommendations).
 
