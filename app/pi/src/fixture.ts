@@ -2,6 +2,7 @@ import { AgentEventMapper, type AgentEvent } from '@spacegraphjs/agent';
 import type { Kernel, KernelOp } from '@spacegraphjs/kernel';
 import { foldKernelOps } from './ops';
 
+export const FIXTURE_ID = 'pi:local';
 export const fixtureID = (...parts: readonly string[]): string => ['pi', ...parts].join(':');
 
 /** A provider-free run that contains all five investigative situations. */

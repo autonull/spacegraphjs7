@@ -1,5 +1,10 @@
 import { describe, expect, test } from 'vitest';
 import {
+    POLICY_SCHEMA,
+    decodePolicyVector,
+    encodePolicyVector,
+} from '../src/policy';
+import {
     decodePermalink,
     encodePermalink,
     isRevealHash,
@@ -22,6 +27,23 @@ describe('full-state permalinks', () => {
         const hash = encodePermalink(state);
         expect(hash.startsWith('#s=')).toBe(true);
         expect(decodePermalink(hash)).toEqual(state);
+    });
+
+    test('round-trips a v2 policy vector and fixture', () => {
+        const vector = {
+            ...Object.fromEntries(POLICY_SCHEMA.knobs.map((knob) => [knob.id, knob.default])),
+            'camera.verbMs': 250,
+            'theme.variant': 'light',
+        };
+        const v2: PermalinkState = {
+            ...state,
+            policy: encodePolicyVector(POLICY_SCHEMA, vector),
+            fixture: 'pi:local',
+        };
+        const decoded = decodePermalink(encodePermalink(v2));
+        expect(decoded).toEqual(v2);
+        expect(decodePolicyVector(POLICY_SCHEMA, decoded!.policy!)).toEqual(vector);
+        expect(decodePolicyVector(POLICY_SCHEMA, 'p2.bad')).toBeNull();
     });
 
     test('keeps #graph:<id> as the reveal-only subset', () => {

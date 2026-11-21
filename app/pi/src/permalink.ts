@@ -20,6 +20,9 @@ export type PermalinkState = {
     readonly viewport: PermalinkViewport;
     readonly filter: string;
     readonly annotations?: readonly PinnedNote[];
+    /** Permalink v2: the compressed policy vector and the fixture it was captured on. */
+    readonly policy?: string;
+    readonly fixture?: string;
 };
 
 export const PERMALINK_PREFIX = 's=';
@@ -52,7 +55,9 @@ const isPermalinkState = (value: unknown): value is PermalinkState => {
                         typeof note.id === 'string' &&
                         typeof note.target === 'string' &&
                         typeof note.body === 'string',
-                )))
+                ))) &&
+        (value.policy === undefined || typeof value.policy === 'string') &&
+        (value.fixture === undefined || typeof value.fixture === 'string')
     );
 };
 

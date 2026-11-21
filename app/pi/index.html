@@ -256,6 +256,64 @@
             #minimap circle {
                 cursor: pointer;
             }
+            #policy-section {
+                border: 1px solid var(--pi-border);
+                border-radius: 6px;
+                padding: 4px 6px;
+                font-size: 11px;
+            }
+            #policy-section summary {
+                cursor: pointer;
+                color: var(--pi-accent);
+            }
+            .policy-family {
+                border-top: 1px solid var(--pi-border);
+                padding: 4px 0;
+            }
+            .policy-family h3 {
+                margin: 2px 0;
+                font-size: 11px;
+                text-transform: uppercase;
+                letter-spacing: 0.08em;
+            }
+            .policy-family-tools {
+                display: flex;
+                gap: 4px;
+            }
+            .policy-family-tools button {
+                border: 1px solid var(--pi-border);
+                border-radius: 4px;
+                background: var(--pi-surface-muted);
+                color: var(--pi-text);
+                font-size: 10px;
+                cursor: pointer;
+            }
+            .policy-control {
+                display: grid;
+                grid-template-columns: 1fr auto auto;
+                align-items: center;
+                gap: 4px;
+                padding: 2px 0;
+            }
+            .policy-control-title {
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+            .policy-source {
+                color: var(--pi-text-muted);
+                font-size: 9px;
+            }
+            .policy-control input[type='number'],
+            .policy-control select {
+                width: 72px;
+                padding: 2px;
+                border: 1px solid var(--pi-border);
+                border-radius: 4px;
+                background: var(--pi-surface);
+                color: var(--pi-text);
+                font-size: 10px;
+            }
             #history-banner {
                 position: absolute;
                 top: 8px;
@@ -406,6 +464,10 @@
             </section>
         </main>
         <section id="rail" aria-label="Overview">
+            <details id="policy-section">
+                <summary>Policy · live knobs</summary>
+                <div id="policy-panel"></div>
+            </details>
             <strong>Scopes</strong>
             <div id="overview"></div>
             <strong>Turn map</strong>

@@ -187,6 +187,22 @@ export class ScopeSimulation {
         if (this.#options.instant) this.settle();
     }
 
+    /** Replace the base layout options and retarget without rebuilding the simulation. */
+    setBaseLayout(options: ScopeLayoutOptions): void {
+        this.#options.layout = { ...this.#options.layout, ...options };
+        this.#layoutOverride = { ...this.#options.layout };
+        if (this.#specs) this.setSpecs(this.#specs, this.#signals);
+    }
+
+    /** Replace transient force parameters and wake settled bodies so the change is visible. */
+    setForces(forces: ScopeForceOptions): void {
+        this.#options.forces = { ...this.#options.forces, ...forces };
+        this.#heat = 1;
+        this.#sleeping.clear();
+        this.#frameSleeping.clear();
+        if (this.#specs) this.setSpecs(this.#specs, this.#signals);
+    }
+
     /** Re-evaluate activation and layout with the last specs. */
     setSignals(signals: ScopeSignals): void {
         if (this.#specs) this.setSpecs(this.#specs, signals);

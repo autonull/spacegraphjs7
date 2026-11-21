@@ -2,7 +2,7 @@ import { escapeHtml } from '@spacegraphjs/adapter';
 import { KernelCodec, type Kernel } from '@spacegraphjs/kernel';
 import type { AgentView } from '@spacegraphjs/agent';
 import { sensoryAdapter, type RegisteredSensorySeam } from 'spacegraphjs/world';
-import type { AgentLevel } from './adapter';
+import type { AgentLevel } from '../adapter';
 
 export type Position = { x: number; y: number; z: number };
 export type VisionScores = { readonly overlap: number; readonly legibility: number };
@@ -52,11 +52,25 @@ export const scoreVision = (
     };
 };
 
-export const levelForZoom = (zoom: number, current: AgentLevel): AgentLevel => {
-    if (current === 'overview') return zoom > 0.7 ? 'execution' : current;
-    if (current === 'detail') return zoom < 1.5 ? 'execution' : current;
-    if (zoom < 0.45) return 'overview';
-    if (zoom > 1.8) return 'detail';
+export interface BandConfig {
+    readonly overviewMax: number;
+    readonly overviewEnter: number;
+    readonly detailMin: number;
+    readonly detailExit: number;
+}
+
+export const DEFAULT_BANDS: BandConfig = {
+    overviewMax: 0.45,
+    overviewEnter: 0.7,
+    detailMin: 1.8,
+    detailExit: 1.5,
+};
+
+export const levelForZoom = (zoom: number, current: AgentLevel, bands: BandConfig = DEFAULT_BANDS): AgentLevel => {
+    if (current === 'overview') return zoom > bands.overviewEnter ? 'execution' : current;
+    if (current === 'detail') return zoom < bands.detailExit ? 'execution' : current;
+    if (zoom < bands.overviewMax) return 'overview';
+    if (zoom > bands.detailMin) return 'detail';
     return 'execution';
 };
 
@@ -85,8 +99,8 @@ export const windowedView = (view: AgentView, turns: number): { view: AgentView;
     };
 };
 
-export const decayActivity = (activity: Map<string, number>, seconds: number): void => {
-    const factor = Math.exp(-seconds * 1.6);
+export const decayActivity = (activity: Map<string, number>, seconds: number, rate = 1.6): void => {
+    const factor = Math.exp(-seconds * rate);
     for (const [id, value] of activity) {
         const next = value * factor;
         if (next < 0.02) activity.delete(id);

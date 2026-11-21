@@ -36,6 +36,8 @@ import {
     type VisionLoopScores,
     type VisionReport,
 } from 'spacegraphjs/vision';
+import type { RenderNode } from '@spacegraphjs/renderer';
+import { WidgetLayer, WidgetRegistry } from 'spacegraphjs/widgets';
 import { AgentAdapter, cardMarkup, toAdapterModel, type AgentLevel } from './adapter';
 import {
     createAnnotationWidgets,
@@ -45,10 +47,9 @@ import {
     type PinnedNote,
 } from './annotations';
 import { CAPABILITIES, capabilityContext, runCapability, type PiHostState } from './capabilities';
-import { fixtureKernel } from './fixture';
+import { FIXTURE_ID, fixtureKernel } from './fixture';
 import { foldKernelOps } from './ops';
 import {
-    CARD_BUDGETS,
     UNSUPPORTED,
     decayActivity,
     exportHTML,
@@ -60,7 +61,26 @@ import {
     windowedView,
     type Position,
     type VisionScores,
+} from './policy/host';
+import {
+    POLICY_PRESETS,
+    POLICY_SCHEMA,
+    decodePolicyVector,
+    encodePolicyVector,
+    mountPolicyPanel,
+    policyChange,
+    presetById,
+    presetVector,
+    resolvePolicy,
+    withLayer,
+    type PolicyChangeEvent,
+    type PolicyLayer,
+    type PolicyLayers,
+    type PolicySource,
+    type PolicyVector,
+    type ResolvedPolicy,
 } from './policy';
+import { SessionRecorder, type SessionRecording } from './recorder';
 import { agentScopes, DEPTH, portalChain } from './scopes';
 import { readTheme } from './theme';
 import { decodePermalink, encodePermalink, isRevealHash, type PermalinkState } from './permalink';
@@ -246,6 +266,12 @@ export class PiHost {
     #hidden = 0;
     #laneScope = '';
     #paused = false;
+    #policyLayers: PolicyLayers = {};
+    #resolved: ResolvedPolicy;
+    #policyPanel?: ReturnType<typeof mountPolicyPanel>;
+    #policyListeners = new Set<(event: PolicyChangeEvent) => void>();
+    #recorder: SessionRecorder;
+    #startedAt = typeof performance === 'undefined' ? 0 : performance.now();
 
     constructor(
         options: { projection?: Projection; reducedMotion?: boolean; global?: boolean } = {},
@@ -256,10 +282,28 @@ export class PiHost {
             options.reducedMotion ??
             (typeof matchMedia === 'function' &&
                 matchMedia('(prefers-reduced-motion: reduce)').matches);
+        const params =
+            typeof location === 'undefined' ? new URLSearchParams() : new URLSearchParams(location.search);
+        const presetID = params.get('preset');
+        const embedded = params.get('policy');
+        if (presetID && presetById(presetID)) {
+            this.#policyLayers.preset = presetVector(POLICY_SCHEMA, presetID);
+        }
+        if (embedded) {
+            const vector = decodePolicyVector(POLICY_SCHEMA, embedded);
+            if (vector) this.#policyLayers.url = vector;
+        }
+        this.#resolved = resolvePolicy(POLICY_SCHEMA, this.#policyLayers);
+        const geometry = this.geometry();
         this.simulation = new ScopeSimulation({
             instant: this.#reducedMotion,
-            layout: { seed: 7, gap: 190, depthStep: 220, nodePadding: 36 },
-            forces: { repulsion: 1800, attraction: 0.018, cooling: 0.94, maxBodies: 120 },
+            layout: {
+                seed: 7,
+                gap: geometry.gap,
+                depthStep: geometry.depthStep,
+                nodePadding: geometry.padding,
+            },
+            forces: { repulsion: geometry.repulsion, attraction: 0.018, cooling: 0.94, maxBodies: 120 },
         });
         const simulation = this.simulation;
         this.playSession = createPhysicsPlaySession({
@@ -285,6 +329,112 @@ export class PiHost {
             },
         });
         this.#trail.onChange(() => this.renderTrail());
+        const values = this.#resolved.values;
+        this.#depth = values['depth.mode'] as DepthMode;
+        this.#surface = values['surface.mode'] as Surface;
+        this.#arrangement = values['surface.arrangement'] as Arrangement;
+        this.#windowSize = Number(values['guardrails.window']);
+        this.#recorder = new SessionRecorder(FIXTURE_ID, () =>
+            (typeof performance === 'undefined' ? 0 : performance.now()) - this.#startedAt,
+        );
+    }
+
+    get policy(): {
+        readonly values: PolicyVector;
+        readonly provenance: Readonly<Record<string, PolicySource>>;
+        readonly presets: typeof POLICY_PRESETS;
+    } {
+        return {
+            values: this.#resolved.values,
+            provenance: this.#resolved.provenance,
+            presets: POLICY_PRESETS,
+        };
+    }
+
+    onPolicyChange(listener: (event: PolicyChangeEvent) => void): () => void {
+        this.#policyListeners.add(listener);
+        return () => this.#policyListeners.delete(listener);
+    }
+
+    setKnob(id: string, value: string | number | boolean, layer: PolicyLayer = 'panel'): boolean {
+        if (!POLICY_SCHEMA.knobs.some((knob) => knob.id === id)) return false;
+        this.#policyLayers = withLayer(POLICY_SCHEMA, this.#policyLayers, layer, { [id]: value });
+        this.#resolved = resolvePolicy(POLICY_SCHEMA, this.#policyLayers);
+        this.applyPolicy();
+        this.paint();
+        const event = policyChange(id, layer, this.#resolved);
+        for (const listener of this.#policyListeners) listener(event);
+        this.recordEvent('policy:change', { id, source: layer, value: String(value) });
+        return true;
+    }
+
+    setPolicyLayer(layer: PolicyLayer, values: PolicyVector): void {
+        this.#policyLayers = { ...this.#policyLayers, [layer]: { ...values } };
+        this.#resolved = resolvePolicy(POLICY_SCHEMA, this.#policyLayers);
+        this.applyPolicy();
+        this.paint();
+    }
+
+    resetKnobs(ids: readonly string[]): void {
+        const panel = { ...this.#policyLayers.panel };
+        for (const id of ids) delete panel[id];
+        this.#policyLayers = { ...this.#policyLayers, panel };
+        this.#resolved = resolvePolicy(POLICY_SCHEMA, this.#policyLayers);
+        this.applyPolicy();
+        this.paint();
+    }
+
+    recordEvent(kind: string, meta: Readonly<Record<string, string | number | boolean>> = {}): void {
+        this.#recorder.record(kind, this.#resolved.vector, meta);
+    }
+
+    recording(): SessionRecording {
+        return this.#recorder.export();
+    }
+
+    private geometry(): { gap: number; padding: number; depthStep: number; repulsion: number } {
+        const values = this.#resolved.values;
+        return {
+            gap: Number(values['geometry.gap']),
+            padding: Number(values['geometry.padding']),
+            depthStep: Number(values['depth.step']),
+            repulsion: Number(values['geometry.repulsion']),
+        };
+    }
+
+    private applyPolicy(): void {
+        const values = this.#resolved.values;
+        const depth = values['depth.mode'] as DepthMode;
+        if (supportsDepth(this.renderer.capabilities, depth)) {
+            this.#depth = depth;
+            this.renderer.setDepth(depth);
+        }
+        this.#surface = values['surface.mode'] as Surface;
+        this.#arrangement = values['surface.arrangement'] as Arrangement;
+        this.#windowSize = Number(values['guardrails.window']);
+        this.simulation.setBaseLayout({
+            gap: Number(values['geometry.gap']),
+            depthStep: Number(values['depth.step']),
+            nodePadding: Number(values['geometry.padding']),
+        });
+        this.simulation.setForces({ repulsion: Number(values['geometry.repulsion']) });
+        if (typeof document !== 'undefined') {
+            if (document.documentElement.dataset.theme !== String(values['theme.variant'])) {
+                document.documentElement.dataset.theme = String(values['theme.variant']);
+                this.#theme = readTheme();
+                this.renderer.setTheme(this.#theme);
+            }
+            el('minimap').hidden = values['navigation.minimap'] !== true;
+            el('portal-crumb').hidden = values['navigation.breadcrumbs'] !== true;
+            el('trail-nav').hidden = values['navigation.trail'] !== true;
+            el('rail').dataset.widgetsDock = String(values['widgets.dock']);
+            el('gallery').dataset.verbs = String(values['orchestration.verbs']);
+        }
+        this.applySurface();
+        this.syncDepthSelect();
+        this.renderGallery();
+        this.renderHud();
+        this.#policyPanel?.update(this.#resolved);
     }
 
     async mount(container: HTMLElement): Promise<void> {
@@ -300,6 +450,40 @@ export class PiHost {
         this.renderer.setDepth(this.#depth);
         this.#controller.bind(this.renderer);
         this.#cameraMotion = this.registerMotion();
+        let mountedPanel: ReturnType<typeof mountPolicyPanel> | undefined;
+        const policyRegistry = new WidgetRegistry().register({
+            id: 'policy',
+            label: 'Policy panel',
+            slots: ['pinned'],
+            mount: () => {
+                mountedPanel = mountPolicyPanel(el('policy-panel'), POLICY_SCHEMA, this.#resolved, {
+                    onChange: (id, value) => this.setKnob(id, value),
+                    onReset: (ids) => this.resetKnobs(ids),
+                    onCopy: () => {
+                        void navigator.clipboard?.writeText(this.permalink()).catch(() => undefined);
+                    },
+                });
+                return {
+                    element: mountedPanel.element,
+                    measure: () => ({ width: 360, height: 320 }),
+                    unmount: () => mountedPanel?.element.remove(),
+                };
+            },
+        });
+        const policyLayer = new WidgetLayer({
+            registry: policyRegistry,
+            slots: ['pinned'],
+            representationOf: () => 'detail',
+        });
+        const policyNode: RenderNode = {
+            id: 'policy:panel',
+            kind: 'control',
+            label: 'Policy panel',
+            position: [0, 0, 0],
+            widgets: ['policy'],
+        };
+        policyLayer.sync([policyNode]);
+        this.#policyPanel = mountedPanel;
         this.#annotationWidgets = createAnnotationWidgets(el('annotation-list'), (id) =>
             this.removeNote(id),
         );
@@ -326,6 +510,7 @@ export class PiHost {
         ) {
             this.setVisionLoop(true);
         }
+        this.applyPolicy();
         this.syncClock();
 
         document.addEventListener('visibilitychange', () => {
@@ -408,11 +593,18 @@ export class PiHost {
             renderCard: (node, level, context) =>
                 cardMarkup(
                     node,
-                    representationRung({
-                        level,
-                        activity: this.#activity.get(node.id) ?? 0,
-                        legibility: this.#vision.legibility,
-                    }),
+                    representationRung(
+                        {
+                            level,
+                            activity: this.#activity.get(node.id) ?? 0,
+                            legibility: this.#vision.legibility,
+                        },
+                        {
+                            promoteAt: Number(this.#resolved.values['ladder.promoteAt']),
+                            legibilityGate: Number(this.#resolved.values['ladder.legibilityGate']),
+                            demoteBelow: Number(this.#resolved.values['ladder.demoteBelow']),
+                        },
+                    ),
                     context,
                 ),
         });
@@ -437,13 +629,16 @@ export class PiHost {
     renderPositions(): void {
         this.#positions = this.simulatedPositions();
         if (!this.#model) return this.paint();
+        const values = this.#resolved.values;
+        const cap = Number(values['emphasis.cap']);
+        const trace = Number(values['emphasis.trace']);
         this.#model = {
             ...this.#model,
             nodes: this.#model.nodes.map((node) => {
                 const position = this.#positions.get(node.id);
                 const activity = this.#activity.get(node.id) ?? 0;
                 const base =
-                    activity > 0 ? Math.min(1, (node.emphasis ?? 0.3) + activity) : node.emphasis;
+                    activity > 0 ? Math.min(cap, (node.emphasis ?? 0.3) + activity) : node.emphasis;
                 const index = this.#traceIds.indexOf(node.id);
                 const traced = index >= 0 && index <= this.#traceProgress + 1;
                 return {
@@ -451,7 +646,7 @@ export class PiHost {
                     position: position
                         ? ([position.x, position.y, position.z] as [number, number, number])
                         : node.position,
-                    emphasis: traced ? 1 : base,
+                    emphasis: traced ? trace : base,
                 };
             }),
         };
@@ -464,7 +659,7 @@ export class PiHost {
         this.simulation.advance(seconds);
         this.#playback?.advance(seconds);
         if (this.#playback?.done) this.#playback = undefined;
-        decayActivity(this.#activity, seconds);
+        decayActivity(this.#activity, seconds, Number(this.#resolved.values['salience.decayRate']));
         this.#visionTime += seconds;
         if (this.#visionTime >= 0.4) {
             this.#visionTime = 0;
@@ -494,6 +689,7 @@ export class PiHost {
         const node = this.#view.nodes.find((candidate) => candidate.id === id);
         if (!node) return;
         this.#revealed = id;
+        this.recordEvent('reveal', { target: id, kind: node.kind });
         this.#trail.push({ id, label: node.label, kind: node.kind });
         this.renderPortalCrumb();
         this.renderer.setSelection([id]);
@@ -549,12 +745,8 @@ export class PiHost {
 
     setDepth(mode: DepthMode): DepthMode {
         if (!supportsDepth(this.renderer.capabilities, mode)) return this.#depth;
-        this.#depth = mode;
-        this.renderer.setDepth(mode);
-        this.paint();
-        this.renderHud();
-        this.syncDepthSelect();
-        return mode;
+        this.setKnob('depth.mode', mode);
+        return this.#depth;
     }
 
     setDepthAxis(axis: DepthAxis): DepthAxis {
@@ -585,8 +777,7 @@ export class PiHost {
     }
 
     setWindowSize(size: number): number {
-        this.#windowSize = Math.max(1, Math.floor(size));
-        this.paint();
+        this.setKnob('guardrails.window', Math.max(1, Math.floor(size)));
         return this.#windowSize;
     }
 
@@ -601,16 +792,14 @@ export class PiHost {
 
     setArrangement(arrangement: Arrangement): Arrangement {
         if (!ARRANGEMENTS.includes(arrangement)) return this.#arrangement;
-        this.#arrangement = arrangement;
-        this.applySurface();
-        return arrangement;
+        this.setKnob('surface.arrangement', arrangement);
+        return this.#arrangement;
     }
 
     setSurface(surface: Surface): Surface {
         if (!SURFACES.includes(surface)) return this.#surface;
-        this.#surface = surface;
-        this.applySurface();
-        return surface;
+        this.setKnob('surface.mode', surface);
+        return this.#surface;
     }
 
     play(preset: GravityPreset = 'zero-g'): boolean {
@@ -689,6 +878,8 @@ export class PiHost {
             },
             filter: this.#laneScope,
             annotations: this.#notes.list,
+            policy: encodePolicyVector(POLICY_SCHEMA, this.#resolved.values),
+            fixture: FIXTURE_ID,
         };
         return encodePermalink(state);
     }
@@ -696,11 +887,16 @@ export class PiHost {
     applyPermalink(hash: string): boolean {
         const state = decodePermalink(hash);
         if (!state) return false;
-        if (SURFACES.includes(state.surface as Surface)) this.setSurface(state.surface as Surface);
+        const url: Record<string, string | number | boolean> = {
+            ...(state.policy ? decodePolicyVector(POLICY_SCHEMA, state.policy) ?? {} : {}),
+        };
+        if (SURFACES.includes(state.surface as Surface)) url['surface.mode'] = state.surface;
         if (ARRANGEMENTS.includes(state.arrangement as Arrangement))
-            this.setArrangement(state.arrangement as Arrangement);
+            url['surface.arrangement'] = state.arrangement;
         if (supportsDepth(this.renderer.capabilities, state.depth as DepthMode))
-            this.setDepth(state.depth as DepthMode);
+            url['depth.mode'] = state.depth;
+        this.#policyLayers.panel = {};
+        this.setPolicyLayer('url', url);
         this.setDepthAxis(state.depthAxis as DepthAxis);
         this.setLevelMode(state.level as LevelMode);
         this.setLaneScope(state.filter);
@@ -722,6 +918,9 @@ export class PiHost {
 
     run(id: string): readonly string[] {
         const lines = runCapability(id, this.context());
+        this.recordEvent(lines.some((line) => /fail|error|unsupported/i.test(line)) ? 'wrong-turn' : 'answer', {
+            capability: id,
+        });
         this.showEvidence(lines);
         return lines;
     }
@@ -730,6 +929,14 @@ export class PiHost {
         return {
             capabilities: () => CAPABILITIES.map((capability) => capability.id),
             run: (id: string) => this.run(id),
+            policy: () => this.policy,
+            setKnob: (id: string, value: string | number | boolean, layer?: PolicyLayer) =>
+                this.setKnob(id, value, layer),
+            setPolicyLayer: (layer: PolicyLayer, values: PolicyVector) => this.setPolicyLayer(layer, values),
+            onPolicyChange: (listener: (event: PolicyChangeEvent) => void) => this.onPolicyChange(listener),
+            recording: () => this.recording(),
+            recordEvent: (kind: string, meta?: Record<string, string | number | boolean>) =>
+                this.recordEvent(kind, meta),
             evidence: () => this.#evidence,
             ops: () => this.#kernel.nodes.length,
             loadFixture: () => {
@@ -762,7 +969,11 @@ export class PiHost {
             levelMode: () => this.#levelMode,
             setLevel: (level: AgentLevel) => this.setLevel(level),
             setLevelMode: (mode: LevelMode) => this.setLevelMode(mode),
-            budgets: () => CARD_BUDGETS,
+            budgets: () => ({
+                overview: Number(this.#resolved.values['guardrails.overviewCards']),
+                execution: Number(this.#resolved.values['guardrails.executionCards']),
+                detail: Number(this.#resolved.values['guardrails.detailCards']),
+            }),
             laneScope: () => this.#laneScope,
             setLaneScope: (id: string) => this.setLaneScope(id),
             windowSize: () => this.#windowSize,
@@ -1072,6 +1283,8 @@ export class PiHost {
         if (!target || this.#reducedMotion) return this.renderFollow();
         this.#flightFrom = this.renderer.getViewport();
         this.#flightTo = target;
+        const values = this.#resolved.values;
+        const traceSeconds = Number(values['camera.traceMs']) / 1000;
         this.#playback = this.director.play(
             [
                 {
@@ -1080,7 +1293,7 @@ export class PiHost {
                     target: 'emphasis',
                     from: 0,
                     to: 1,
-                    duration: 0.2,
+                    duration: traceSeconds,
                 },
                 {
                     id: `flyTo:${id}`,
@@ -1088,8 +1301,8 @@ export class PiHost {
                     target: 'camera',
                     from: 0,
                     to: 1,
-                    duration: 0.9,
-                    delay: 0.1,
+                    duration: Number(values['camera.verbMs']) / 1000,
+                    delay: traceSeconds / 2,
                 },
             ],
             { ease: 'power2.inOut' },
@@ -1099,7 +1312,13 @@ export class PiHost {
 
     private applyAutoLevel(zoom: number): void {
         if (this.#levelMode !== 'auto') return;
-        const next = levelForZoom(zoom, this.#level);
+        const values = this.#resolved.values;
+        const next = levelForZoom(zoom, this.#level, {
+            overviewMax: Number(values['bands.overviewMax']),
+            overviewEnter: Number(values['bands.overviewEnter']),
+            detailMin: Number(values['bands.detailMin']),
+            detailExit: Number(values['bands.detailExit']),
+        });
         if (next !== this.#level) this.applyLevel(next);
     }
 
@@ -1241,8 +1460,10 @@ export class PiHost {
     }
 
     private renderGallery(): void {
+        const minimal = this.#resolved.values['orchestration.verbs'] === 'minimal';
+        const visible = minimal ? CAPABILITIES.slice(0, 3) : CAPABILITIES;
         el('gallery').replaceChildren(
-            ...CAPABILITIES.map((capability) =>
+            ...visible.map((capability) =>
                 button(capability.title, () => this.run(capability.id), {
                     title: capability.summary,
                     dataset: { capability: capability.id },

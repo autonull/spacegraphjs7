@@ -25,5 +25,5 @@ export {
     mappingFor,
 } from './channels';
 export type { EmphasisMapping, EmphasisRange } from './channels';
-export { representationRung } from './representation';
-export type { RepresentationInput, RepresentationRung } from './representation';
+export { DEFAULT_THRESHOLDS, representationRung } from './representation';
+export type { RepresentationInput, RepresentationRung, RepresentationThresholds } from './representation';
