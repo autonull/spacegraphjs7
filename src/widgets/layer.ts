@@ -69,16 +69,10 @@ export class WidgetLayer {
         }
     }
 
-    #mount(
-        key: string,
-        node: RenderNode,
-        slot: WidgetSlot,
-        descriptor: WidgetDescriptor,
-    ): void {
+    #mount(key: string, node: RenderNode, slot: WidgetSlot, descriptor: WidgetDescriptor): void {
         const context: WidgetMountContext = { node, slot };
         const handle = descriptor.mount(context);
-        const measured =
-            this.options.measure?.(handle) ??
+        const measured = this.options.measure?.(handle) ??
             handle.measure?.() ??
             descriptor.initialSize ?? { width: 220, height: 72 };
         const size = resolveWidgetSize(measured, this.options.sizing);
@@ -110,7 +104,7 @@ export class WidgetLayer {
         for (const mounted of this.#mounted.values()) {
             if (!mounted.size.feedLayout) continue;
             const current = result.get(mounted.nodeId);
-            if (!current || sizeArea(mounted.size.size) > sizeArea(current.size.size)) {
+            if (!current || sizeArea(mounted.size.size) > sizeArea(current.size)) {
                 result.set(mounted.nodeId, mounted.size);
             }
         }

@@ -8,3 +8,24 @@
 - The manifest is a runtime assembly: `buildManifest(version, entries)` collects library and host contributions. There is no generated file to keep in sync.
 
 A version bump does not choose a default or declare a winning configuration.
+
+## Stability status and freeze rule
+
+The library is alpha (`8.5.0`, unreleased). `LIBRARY_CONTRACT_VERSION` is the **only** version knob
+for the additive capability surface. Freeze rule: the surface changes only by adding an axis or an
+additive field, with a `minContractVersion` on each new manifest entry. Capability negotiation —
+`supports(...)` predicates — is the sole extension path for renderer behavior; a version constant
+never selects a backend and never grants a capability. Breaking moves are recorded in `CHANGELOG.md`
+and in [ADR 0013](./adr/0013-additive-contract-versioning.md).
+
+## Two scopes, two deprecation policies
+
+- **Published library surface:** a renamed public symbol keeps a deprecated alias for one minor,
+  then becomes a removal candidate. `FractalZoomPlugin` is the current example; `ZoomBandsPlugin`
+  and `ScaleDomain` replace it.
+- **Fork integration:** `docs/capabilities.md` states the internal policy — no `CONTRACT_VERSION`,
+  no `negotiateContract`, no aliases, no `@deprecated` shims; delete superseded code in the same
+  gitlink bump. This governs the fork's own wiring, not consumers of the published packages.
+
+Both rules shrink the same surface in the long run; neither promotes a default. Open questions and
+their knob families live in `docs/not-decided.md`; settled decisions live in `docs/adr/`.

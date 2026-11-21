@@ -519,7 +519,7 @@ The event system covers:
 | -------------------------------- | ---------------------------------------------------- |
 | `AutoColorPlugin`                | Harmony-aware color assignment and vision correction |
 | `AutoLayoutPlugin`               | Re-layout and overlap repair                         |
-| `FractalZoomPlugin`              | Recursive detail expansion                           |
+| `FractalZoomPlugin`              | Recursive detail expansion (deprecated)              |
 | `HistoryPlugin`                  | Undo and redo                                        |
 | `InteractionPlugin`              | Drag, click, hover, and interaction policy           |
 | `HoverMetaWidget`                | Rich hover cards                                     |
@@ -535,6 +535,8 @@ The event system covers:
 | `ErgonomicsPlugin`               | Runtime ergonomics hints                             |
 
 Plugins receive initialization, pre/post render, node and edge mutation, export/import, and disposal hooks. Core plugins are registered by default; add extra instances through `options.plugins`.
+
+`FractalZoomPlugin` is deprecated: `ZoomBandsPlugin` and the `ScaleDomain` represent the current band/scale mechanism and re-emit the legacy `fractal:level-change` channel for compatibility. It remains exported for one minor and is a removal candidate after that; no new host should adopt it.
 
 ---
 
@@ -591,29 +593,34 @@ When adding hot-path code, avoid per-frame allocation, prefer sets for membershi
 | `src/depth`                         | Depth modes, treatments, and fade                                                               |
 | `src/builder.ts`, `src/activity.ts` | Declarative builder and lean entry                                                              |
 | `packages`                          | Contract, adapters, bindings, CLI, scaffolder                                                   |
-| `demo`                              | Interactive examples and the contract reference host                                            |
+| `app/demo`                          | Interactive examples and the contract reference host                                            |
 | `test`                              | Unit, boundary, interaction, vision, and Playwright suites                                      |
 | `verification`                      | Screenshot, benchmark, and demo verification scripts                                            |
-| `PLAN`                              | Strategy, research, release, and long-term architecture notes                                   |
+| `docs/PLAN`                         | Strategy, research, release, and long-term architecture notes                                   |
 
 ---
 
 ## 📚 Documentation Map
 
-| Need                                | Read                               |
-| ----------------------------------- | ---------------------------------- |
-| Five-minute start                   | `QUICKSTART.md`                    |
-| Host integration, contract-first    | `docs/host-integration.md`         |
-| What the library does not do        | `docs/limitations.md`              |
-| Vision plugin details               | `docs/vision-plugin.md`            |
-| Component naming and surface rules  | `AGENTS.md`                        |
-| Recursive scopes and nested layouts | `docs/scopes.md`                   |
-| Roadmap and status                  | `ROADMAP.md`                       |
-| Strategy and phases                 | `PLAN/INDEX.md`                    |
-| Research direction                  | `PLAN/ACADEMIC-RESEARCH.md`        |
-| Product and design notes            | `PRODUCT.md`, `DESIGN.md`, `UI.md` |
-| Contributing                        | `CONTRIBUTING.md`                  |
-| Generated API reference             | `pnpm run docs`                    |
+| Need                                | Read                                              |
+| ----------------------------------- | ------------------------------------------------- |
+| Five-minute start                   | `docs/QUICKSTART.md`                              |
+| Host integration, contract-first    | `docs/host-integration.md`                        |
+| What the library does not do        | `docs/limitations.md`                             |
+| Vision plugin details               | `docs/vision-plugin.md`                           |
+| Component naming and surface rules  | `AGENTS.md`                                       |
+| Recursive scopes and nested layouts | `docs/scopes.md`                                  |
+| Vocabulary (bands/rungs/scopes)     | `docs/glossary.md`                                |
+| Roadmap and status                  | `docs/ROADMAP.md`                                 |
+| Active plan and progress            | `TODO3.md`                                        |
+| Settled decisions (ADRs)            | `docs/adr/README.md`                              |
+| Open questions and knob mapping     | `docs/not-decided.md`                             |
+| Changelog and stability policy      | `CHANGELOG.md`, `docs/contract-versioning.md`     |
+| Strategy and phases                 | `docs/PLAN/INDEX.md`                              |
+| Research direction                  | `docs/PLAN/ACADEMIC-RESEARCH.md`                  |
+| Product and design notes            | `docs/PRODUCT.md`, `docs/DESIGN.md`, `docs/UI.md` |
+| Contributing                        | `docs/CONTRIBUTING.md`                            |
+| Generated API reference             | `pnpm run docs`                                   |
 
 ---
 

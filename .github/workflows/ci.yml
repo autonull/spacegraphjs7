@@ -67,3 +67,36 @@ jobs:
             # monorepo (T4.2). A deliberately broken adapter fails here.
             - name: Publish check
               run: pnpm run test:publish
+
+    # Timing budgets measure the code, not whatever else shares the runner. Keep this job alone:
+    # no other steps run on its host while `pi scale` measures layout, vision and permalink paths.
+    scale:
+        runs-on: ubuntu-latest
+
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Setup pnpm
+              uses: pnpm/action-setup@v4
+              with:
+                  version: 10
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: '22'
+                  cache: 'pnpm'
+
+            - name: Setup Bun
+              uses: oven-sh/setup-bun@v2
+              with:
+                  bun-version: '1.4.3'
+
+            - name: Install dependencies
+              run: pnpm install --no-frozen-lockfile
+
+            - name: Build library
+              run: pnpm run build:lib
+
+            - name: Scale budgets
+              run: pnpm --filter pi scale

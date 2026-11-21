@@ -70,6 +70,23 @@ The fork's `bun run graph:verify` includes all SpaceGraphJS tests plus OpenCode 
 19. Bundle size measurement
 20. Documentation truth check
 
+## Isolated scale job
+
+`pnpm --filter pi scale` asserts timing budgets in `app/pi/scripts/scale.ts` (layout, vision loop,
+permalink round-trip). Timings are noise-sensitive: the 60-turn layout runs near its 1.5 s budget and
+shared CI load can triple it. The measurement warms up and keeps the fastest of three runs, and CI
+executes the harness in its own `scale` job with no other step on the runner. Budgets are regression
+smoke gates only — a failure is a measurement or regression signal, not a request to optimize.
+
+## Typecheck gate
+
+The canonical library typecheck is `pnpm exec tsc --noEmit -p tsconfig.json` (also the first CI step).
+`app/pi/tsconfig.json` is the package source of truth; `app/demo` is built and exercised by its own
+app gates. The root gate is clean (0 errors). Settled decisions are in `docs/adr/`; vocabulary is
+in `docs/glossary.md`.
+
 ## CI Pin
 
-The GitHub Actions workflow (`.github/workflows/graph.yml`) reads the SpaceGraphJS gitlink (`git ls-tree HEAD spacegraphjs`) at runtime. This ensures reproducible builds without hardcoded SHAs.
+The fork's integration workflow reads the SpaceGraphJS gitlink at runtime. This ensures reproducible
+builds without hardcoded SHAs. The workflows in this repository are `ci.yml`, `benchmark.yml` and
+`deploy-demo.yml`.

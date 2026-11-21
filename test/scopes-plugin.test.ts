@@ -45,7 +45,14 @@ const makeHost = (ids: string[], zoom = 0): Host => {
 };
 
 const specs: ScopeSpec[] = [
-    { id: 'root', strategy: 'grid', nodes: [{ id: 'a', size: [100, 40] }, { id: 'b', size: [100, 40] }] },
+    {
+        id: 'root',
+        strategy: 'grid',
+        nodes: [
+            { id: 'a', size: [100, 40] },
+            { id: 'b', size: [100, 40] },
+        ],
+    },
 ];
 
 describe('ScopesPlugin', () => {
@@ -104,7 +111,7 @@ describe('ScopesPlugin', () => {
 
     it('respects reduced motion unless instant is explicitly set', () => {
         const host = makeHost(['root/a', 'root/b']);
-        host.sg.reducedMotion = true;
+        (host.sg as { reducedMotion: boolean }).reducedMotion = true;
         const plugin = new ScopesPlugin({ specs, policy: false });
         plugin.init(host.sg, host.sg.graph, host.sg.events);
 
@@ -121,7 +128,7 @@ describe('ScopesPlugin', () => {
 
     it('pins the focused node when followFocus is enabled', () => {
         const host = makeHost(['root/a', 'root/b']);
-        host.sg.selection.list = ['root/a'];
+        (host.sg as { selection: { list: string[] } }).selection.list = ['root/a'];
         const plugin = new ScopesPlugin({ specs, followFocus: true });
         plugin.init(host.sg, host.sg.graph, host.sg.events);
 
@@ -145,7 +152,7 @@ describe('ScopesPlugin', () => {
 
     it('lets host signals override the follow switches', () => {
         const host = makeHost(['root/a'], 1);
-        host.sg.selection.list = ['root/a'];
+        (host.sg as { selection: { list: string[] } }).selection.list = ['root/a'];
         const plugin = new ScopesPlugin({
             specs,
             followFocus: true,

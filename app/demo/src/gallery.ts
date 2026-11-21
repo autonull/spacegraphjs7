@@ -35,7 +35,7 @@ import {
     type SpatialMemoryStore,
     type SpatialMemoryRecord,
 } from '@spacegraphjs/kernel';
-import type { CodeDiff } from '@spacegraphjs/shared';
+import type { CodeDiff, GraphFacets } from '@spacegraphjs/shared';
 import { round } from './dom';
 import { Representations } from 'spacegraphjs/representations';
 import {
@@ -86,7 +86,6 @@ import {
     hasFacets,
     facetCounts,
     type FacetAccessors,
-    type GraphFacets,
     SavedQuery,
     MAX_SAVED_QUERIES,
     saveQuery,
@@ -670,7 +669,13 @@ export const CAPABILITIES: readonly Capability[] = [
             const knownStatuses = Array.from(new Set(model.nodes.map((n) => n.status)));
             const knownDomains = [
                 'session',
-                ...Array.from(new Set(model.nodes.map((n) => n.data?.domain).filter(Boolean))),
+                ...Array.from(
+                    new Set(
+                        model.nodes
+                            .map((n) => n.data?.domain)
+                            .filter((domain): domain is string => typeof domain === 'string'),
+                    ),
+                ),
             ];
 
             // Test applyFacets
@@ -878,7 +883,7 @@ export const CAPABILITIES: readonly Capability[] = [
                     id: n.id,
                     kind: n.kind,
                     turnID: n.data?.turnID as string | undefined,
-                    clusterOf: n.clusterOf,
+                    clusterOf: n.clusterOf ? [...n.clusterOf] : undefined,
                 })),
             };
 
@@ -892,20 +897,16 @@ export const CAPABILITIES: readonly Capability[] = [
             const key = spatialMemoryKey(parts);
 
             // Test storage
+            const storage = new Map<string, string>();
             const store: SpatialMemoryStore = {
-                storage: new Map(),
-                getItem(k: string) {
-                    return this.storage.get(k) ?? null;
+                getItem: (k: string) => storage.get(k) ?? null,
+                setItem: (k: string, v: string) => {
+                    storage.set(k, v);
                 },
-                setItem(k: string, v: string) {
-                    this.storage.set(k, v);
+                removeItem: (k: string) => {
+                    storage.delete(k);
                 },
-                removeItem(k: string) {
-                    this.storage.delete(k);
-                },
-                keys() {
-                    return Array.from(this.storage.keys());
-                },
+                keys: () => Array.from(storage.keys()),
             };
 
             const record: SpatialMemoryRecord = {

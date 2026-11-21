@@ -27,12 +27,12 @@ const INTERACTION_EVENTS: InputEventType[] = [
 ];
 const BATCHED_EVENTS = new Set<InputEventType>(['mousemove', 'touchmove', 'pointermove']);
 
-function createAction(id: string, prefix: 'camera' | 'interaction'): InputAction {
-    const eventName = `input:${prefix}:${id.split('.')[1]}`;
-    const isBatched = BATCHED_EVENTS.has(id.split('.')[1]);
+function createAction(event: InputEventType, prefix: 'camera' | 'interaction'): InputAction {
+    const eventName = `input:${prefix}:${event}`;
+    const isBatched = BATCHED_EVENTS.has(event);
     return {
-        id,
-        label: `${prefix} ${id.split('.')[1]}`,
+        id: `${prefix}.${event}`,
+        label: `${prefix} ${event}`,
         handler: (e: InputEvent, ctx: InputContext) => {
             const data = { ...(e.data as any), originalEvent: e.originalEvent };
             if (isBatched) {
@@ -46,10 +46,10 @@ function createAction(id: string, prefix: 'camera' | 'interaction'): InputAction
 
 function createActions(): InputAction[] {
     return [
-        ...CAMERA_EVENTS.map((e) => createAction(`camera.${e}`, 'camera')),
-        ...INTERACTION_EVENTS.map((e) => createAction(`interaction.${e}`, 'interaction')),
-        createAction('interaction.keydown', 'interaction'),
-        createAction('interaction.keyup', 'interaction'),
+        ...CAMERA_EVENTS.map((e) => createAction(e, 'camera')),
+        ...INTERACTION_EVENTS.map((e) => createAction(e, 'interaction')),
+        createAction('keydown', 'interaction'),
+        createAction('keyup', 'interaction'),
     ];
 }
 
@@ -94,7 +94,7 @@ export function applyDefaultInputConfig(inputManager: InputManager, sg: SpaceGra
     const windowSource = inputManager.addSource({ id: 'window', element: body });
 
     [...CAMERA_EVENTS, ...INTERACTION_EVENTS].forEach((e) => canvasSource.on(e));
-    ['keydown', 'keyup'].forEach((e) => windowSource.on(e));
+    (['keydown', 'keyup'] as const).forEach((e) => windowSource.on(e));
 
     canvas.addEventListener('mousedown', (e) => {
         if (e.button === 1) e.preventDefault();

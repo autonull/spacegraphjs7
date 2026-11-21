@@ -1,27 +1,36 @@
 # SpaceGraphJS — Software Roadmap
 
-> **An interface that can finish itself.** Mechanism first, then continuity, then an experiment system that
-> compares alternatives honestly. This document tracks reality; `TODO3.md` tracks the active plan.
+> **An interface that can finish itself.** Mechanism first, then continuity, then an experiment system
+> that compares alternatives honestly. This document tracks reality; `TODO3.md` holds the active plan
+> and its progress ledger.
 
 ---
 
 ## Current Status (2026-11-21)
 
-Version `8.5.0`, alpha — not yet released to npm. The **mechanism layer is complete and verified**: recursive
-scopes, representation rungs, camera verbs, one position authority, an opt-in vision loop, capability-gated
-sensory/scene/motion seams, incremental patch transport, four conforming domains, full-state permalinks,
-annotations, audit reports, graph diffs, and the Pi flagship with a five-task study harness.
+Version `8.5.0`, alpha — not yet released to npm. The **mechanism layer is complete and verified**.
+Workstreams A–E of `TODO3.md` are implemented:
 
-Workstreams A (configuration spine), B (navigation/continuity) and C (living rectangles/orchestration) of
-`TODO3.md` are implemented and gated. D (one world), E (experimentation program), F (truth pass) and G
-(study/release/proof) remain. The participant study has no winner; no immersive mode or visual default has
-been promoted.
+| Workstream                               | State     | What landed                                                                                                            |
+| ---------------------------------------- | --------- | ---------------------------------------------------------------------------------------------------------------------- |
+| A — Configuration spine                  | done      | 30-knob typed schema, provenance resolver, live panel, permalink v2, recorder/counterfactual replay                    |
+| B — Navigation & continuity              | core done | navigation verbs + touch bindings, two-rung compositing, portal dissolve, ergonomic counters                           |
+| C — Living rectangles & Pi orchestration | core done | instrument kit (two hosts), prompt/steer/approve/reject/retry/compare from graph affordances                           |
+| D — One world & proliferation            | done      | one canvas / one `ScopeSimulation` / one cross-domain camera flight; domains born experimentable from the scaffold     |
+| E — Experimentation program              | done      | seeded sampling, experiment layer, offline/online/human tiers, decision artifacts, negative results published verbatim |
+| F — Truth pass                           | done      | 13 ADRs, glossary, changelog, reconciled docs, isolated `scale` job, clean root `tsc` gate                             |
+| G — Proof & delivery                     | external  | participant study, npm release, hosted flagship; code seams ready, human/release steps not                             |
+
+No immersive mode, ladder, gesture map or visual default has been promoted. Presets are examples,
+never recommendations. The `n >= 5` study has no winner.
 
 ```
-pnpm install            # workspace
-pnpm test               # 814 unit tests
-pnpm --filter pi test:e2e   # 38 Playwright tests
-pnpm run build          # library, packages, demo
+pnpm install                          # workspace
+pnpm test                             # 844 unit tests
+pnpm --filter pi test                 # 66 unit tests
+pnpm --filter pi test:e2e             # 40 Playwright tests
+pnpm --filter demo test               # 34 tests
+pnpm run build                        # library, packages, demo
 ```
 
 ---
@@ -42,44 +51,44 @@ renderer contract (@spacegraphjs/renderer)     ── swappable adapters: WebGL 
 
 ### Implemented mechanisms
 
-- **Scope engine:** `ScopeSpec → buildScopeTree → layoutScopes → ScopeHost → ScopeSimulation`, with portals,
-  path-qualified IDs, pinning, warm starts, sleep, and animated frame origins.
-- **Representation:** `representationRung` plus continuous `representationWeights`; legibility gates spectacle.
+- **Scope engine:** `ScopeSpec → buildScopeTree → layoutScopes → ScopeHost → ScopeSimulation`, with
+  portals, path-qualified IDs, pinning, warm starts, sleep, and animated frame origins.
+- **Representation:** `representationRung` plus continuous `representationWeights` and
+  `representationLayers`; legibility gates spectacle.
 - **Motion:** `MotionDirector` with registered `flyTo`/`trace` camera handlers; reduced-motion parity.
-- **Vision:** `createVisionLoop` (analyze → scores → host policy → measure again), `createVisionAssert` test
-  gate, heuristics with report-only ONNX/hybrid strategies.
+- **Vision:** `createVisionLoop` (analyze → scores → host policy → measure again), `createVisionAssert`
+  test gate, heuristics with report-only ONNX/hybrid strategies.
 - **Transport:** `RenderModelPatch`/`createPatchPainter`, `diffKernels`, `GraphHistory`.
 - **Domains:** four conforming domain packages built through `create-spacegraph`'s six-slot recipe.
-- **Host systems (Pi):** 29-knob policy schema with provenance, live panel, permalink v2, session recorder
-  with counterfactual re-scoring, navigation verb set, instrument kit, and graph-driven prompt/steer/approve/
-  reject/retry/compare.
+- **Host systems (Pi):** 30-knob policy schema with provenance, live panel, permalink v2, session
+  recorder with counterfactual re-scoring, navigation verb set, instrument kit, and graph-driven
+  prompt/steer/approve/reject/retry/compare.
 
 ### Verification gates
 
-| Gate | Command | Current |
-|---|---|---|
-| Unit tests | `pnpm test` | 814 passing |
-| Pi unit tests | `pnpm --filter pi test` | 50 passing |
-| Pi e2e | `pnpm --filter pi test:e2e` | 38 passing |
-| Visual atlas | `pnpm run verify:visual` | green |
-| Build | `pnpm run build` | green |
-| Root `tsc` | `pnpm exec tsc -p tsconfig.json --noEmit` | pre-existing `app/demo` errors remain (F work) |
+| Gate            | Command                                   | Current          |
+| --------------- | ----------------------------------------- | ---------------- |
+| Unit tests      | `pnpm test`                               | 844 passing      |
+| Pi unit tests   | `pnpm --filter pi test`                   | 66 passing       |
+| Pi e2e          | `pnpm --filter pi test:e2e`               | 40 passing       |
+| Demo unit tests | `pnpm --filter demo test`                 | 34 passing       |
+| Demo e2e        | `pnpm --filter demo test:e2e`             | 21 passing       |
+| Visual atlas    | `pnpm run verify:visual`                  | green            |
+| Build           | `pnpm run build`                          | green            |
+| Root `tsc`      | `pnpm exec tsc --noEmit -p tsconfig.json` | clean (0 errors) |
 
-Budgets in `src/scale.ts` are regression smoke gates only, not optimization targets.
+Budgets in `src/scale.ts` and `app/pi/scripts/scale.ts` are regression smoke gates only, not
+optimization targets. `scale` runs in an isolated CI job so timing reflects the code, not concurrent
+load.
 
 ---
 
-## Near-Term (ordered by dependency, not date)
+## Remaining work (ordered by dependency)
 
-| Workstream | Goal | State |
-|---|---|---|
-| A | Any configuration is data; any experiment is a URL | done |
-| B | One legible, interruptible descent; measurable ergonomics | core done; touch bindings and true rung compositing remain |
-| C | The graph is a cockpit; detail rungs are instruments | core done; second host before promotion remains |
-| D | One world canvas, isolated domains, new domains born experimentable | next |
-| E | Any alternative can be tried, scored and decided as data | pending |
-| F | Docs are true, gates are real, contract frozen | in progress |
-| G | Study published, release live, hosted flagship | external, runs in parallel |
+| Workstream              | Goal                                                              | State                                                |
+| ----------------------- | ----------------------------------------------------------------- | ---------------------------------------------------- |
+| E refinement (optional) | Re-run solver + vision loop under a variant during offline replay | current tier re-scores recorded events instead       |
+| G                       | Study published, release live, hosted flagship                    | external; code seams ready; naming pass / beta → 1.0 |
 
 See `TODO3.md` §12 for the definition of done and §11 for explicit anti-goals.
 
@@ -96,13 +105,13 @@ host-registered and report-only.
 
 ## What NOT To Build (deferred or rejected)
 
-| Item | Reason |
-|---|---|
-| Workerization, text-renderer swaps, realtime transport | No measured demand; budgets are smoke gates |
-| Ten scheduled domains | The scaffold makes each domain host work |
-| Library XR/sound/haptics/gamepad defaults | Seams stay host-registered |
-| Docker image, proprietary deployment silos, IPFS, Nix flake | A library, not a service |
-| A second position authority or `inferred-cause` edges | Settled invariants |
+| Item                                                        | Reason                                      |
+| ----------------------------------------------------------- | ------------------------------------------- |
+| Workerization, text-renderer swaps, realtime transport      | No measured demand; budgets are smoke gates |
+| Ten scheduled domains                                       | The scaffold makes each domain host work    |
+| Library XR/sound/haptics/gamepad defaults                   | Seams stay host-registered                  |
+| Docker image, proprietary deployment silos, IPFS, Nix flake | A library, not a service                    |
+| A second position authority or `inferred-cause` edges       | Settled invariants (see `docs/adr/`)        |
 
 ---
 
@@ -128,13 +137,17 @@ replayable sessions and launchable presets are the proof surface; distribution f
 
 ## Document Map
 
-| For... | Read... |
-|---|---|
-| Active plan and progress | `TODO3.md` |
-| Open questions and knob mapping | `docs/not-decided.md` |
-| Vision and philosophy | `README.md` |
-| API reference | `pnpm run docs` → `docs/api/index.html` |
-| Host integration | `docs/host-integration.md` |
-| Experiments | `docs/experiments.md` |
-| Scopes and depth | `docs/scopes.md`, `docs/world.md` |
-| Contributing | `docs/CONTRIBUTING.md` |
+| For...                                       | Read...                                       |
+| -------------------------------------------- | --------------------------------------------- |
+| Active plan and progress                     | `TODO3.md`                                    |
+| Open questions and knob mapping              | `docs/not-decided.md`                         |
+| Vocabulary (bands / levels / rungs / scopes) | `docs/glossary.md`                            |
+| Settled decisions                            | `docs/adr/README.md`                          |
+| Changelog and stability policy               | `CHANGELOG.md`, `docs/contract-versioning.md` |
+| Vision and philosophy                        | `README.md`                                   |
+| API reference                                | `pnpm run docs` → `docs/api/index.html`       |
+| Host integration                             | `docs/host-integration.md`                    |
+| Experiments                                  | `docs/experiments.md`                         |
+| Scopes and depth                             | `docs/scopes.md`, `docs/world.md`             |
+| CI and gates                                 | `docs/ci.md`                                  |
+| Contributing                                 | `docs/CONTRIBUTING.md`                        |

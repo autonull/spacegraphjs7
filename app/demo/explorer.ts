@@ -273,7 +273,7 @@ const RENDERER_CAPABILITIES: RendererCapabilities = {
     widgetSlots: [...WIDGET_SLOTS],
 };
 
-const DEMO_WIDGETS: readonly WidgetDescriptor[] = [
+const DEMO_WIDGETS: readonly Omit<WidgetDescriptor, 'mount'>[] = [
     { id: 'summary', label: 'Node summary', slots: ['body'], representations: ['card', 'widget'] },
     {
         id: 'composer',

@@ -4,17 +4,20 @@ import * as THREE from 'three';
 import { LODPlugin } from '../src/plugins/LODPlugin';
 import { ShapeNode } from '../src/nodes/ShapeNode';
 import { Node } from '../src/nodes/Node';
+import type { Edge } from '../src/edges/Edge';
+import type { DepthMode } from '../src/depth';
+import type { SpaceGraph } from '../src/SpaceGraph';
 
 // Minimal mock SpaceGraph for testing LODPlugin
-function createMockSg(camera: THREE.Camera) {
+function createMockSg(camera: THREE.Camera): SpaceGraph {
     const nodes = new Map<string, Node>();
-    const edges = new Map<string, any>();
+    const edges = new Map<string, Edge>();
 
     return {
         renderer: { camera },
         graph: { nodes, edges },
         requestFrame: vi.fn(),
-    };
+    } as unknown as SpaceGraph;
 }
 
 // Test node that tracks visibility and opacity
@@ -222,11 +225,19 @@ describe('LODPlugin', () => {
                 }
             }
 
-            const parent = new GroupTestNode(sg, { id: 'parent', type: 'ShapeNode', position: [0, 0, 0] });
+            const parent = new GroupTestNode(sg, {
+                id: 'parent',
+                type: 'ShapeNode',
+                position: [0, 0, 0],
+            });
             sg.graph.nodes.set('parent', parent);
 
             // Create child node
-            const child = new TestNode(sg, { id: 'child', type: 'ShapeNode', position: [100, 100, 0] });
+            const child = new TestNode(sg, {
+                id: 'child',
+                type: 'ShapeNode',
+                position: [100, 100, 0],
+            });
             sg.graph.nodes.set('child', child);
 
             plugin.onPreRender(0);
@@ -251,10 +262,18 @@ describe('LODPlugin', () => {
                 }
             }
 
-            const parent = new GroupTestNode(sg, { id: 'parent', type: 'ShapeNode', position: [0, 0, 0] });
+            const parent = new GroupTestNode(sg, {
+                id: 'parent',
+                type: 'ShapeNode',
+                position: [0, 0, 0],
+            });
             sg.graph.nodes.set('parent', parent);
 
-            const child = new TestNode(sg, { id: 'child', type: 'ShapeNode', position: [100, 100, 0] });
+            const child = new TestNode(sg, {
+                id: 'child',
+                type: 'ShapeNode',
+                position: [100, 100, 0],
+            });
             sg.graph.nodes.set('child', child);
 
             plugin.onPreRender(0);
@@ -274,8 +293,16 @@ describe('LODPlugin', () => {
 
             (plugin as any).sg = sg;
 
-            const node1 = new TestNode(sg, { id: 'node-1', type: 'ShapeNode', position: [0, 0, 0] });
-            const node2 = new TestNode(sg, { id: 'node-2', type: 'ShapeNode', position: [1000, 0, 0] });
+            const node1 = new TestNode(sg, {
+                id: 'node-1',
+                type: 'ShapeNode',
+                position: [0, 0, 0],
+            });
+            const node2 = new TestNode(sg, {
+                id: 'node-2',
+                type: 'ShapeNode',
+                position: [1000, 0, 0],
+            });
             sg.graph.nodes.set('node-1', node1);
             sg.graph.nodes.set('node-2', node2);
 
@@ -285,7 +312,7 @@ describe('LODPlugin', () => {
                 target: node2,
                 object: new THREE.Line(),
             };
-            sg.graph.edges.set('edge-1', edge);
+            sg.graph.edges.set('edge-1', edge as unknown as Edge);
 
             plugin.onPreRender(0);
 
@@ -302,8 +329,16 @@ describe('LODPlugin', () => {
 
             (plugin as any).sg = sg;
 
-            const node1 = new TestNode(sg, { id: 'node-1', type: 'ShapeNode', position: [0, 0, 0] });
-            const node2 = new TestNode(sg, { id: 'node-2', type: 'ShapeNode', position: [1000, 0, 0] });
+            const node1 = new TestNode(sg, {
+                id: 'node-1',
+                type: 'ShapeNode',
+                position: [0, 0, 0],
+            });
+            const node2 = new TestNode(sg, {
+                id: 'node-2',
+                type: 'ShapeNode',
+                position: [1000, 0, 0],
+            });
             sg.graph.nodes.set('node-1', node1);
             sg.graph.nodes.set('node-2', node2);
 
@@ -312,7 +347,7 @@ describe('LODPlugin', () => {
                 target: node2,
                 object: new THREE.Line(),
             };
-            sg.graph.edges.set('edge-1', edge);
+            sg.graph.edges.set('edge-1', edge as unknown as Edge);
 
             plugin.onPreRender(0);
 
@@ -327,8 +362,14 @@ describe('LODPlugin', () => {
             camera.position.set(0, 0, z);
             return camera;
         };
-        const mount = (camera: THREE.Camera, depth: string, positions: [number, number, number][]) => {
-            const sg = createMockSg(camera) as ReturnType<typeof createMockSg> & { depth: string };
+        const mount = (
+            camera: THREE.Camera,
+            depth: DepthMode,
+            positions: [number, number, number][],
+        ) => {
+            const sg = createMockSg(camera) as ReturnType<typeof createMockSg> & {
+                depth: DepthMode;
+            };
             sg.depth = depth;
             const plugin = new LODPlugin();
             (plugin as any).sg = sg;

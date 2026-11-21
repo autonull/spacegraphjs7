@@ -279,7 +279,7 @@ function makeSpaceGraph() {
     };
 
     // Define methods directly on sg that delegate to controllers
-    const loadSpec = function (spec: any) {
+    const loadSpec = function (this: any, spec: any) {
         if (spec.nodes) {
             for (const node of spec.nodes) {
                 this.graph.addNode(node);
@@ -293,12 +293,12 @@ function makeSpaceGraph() {
         return this;
     };
 
-    const update = function (spec: any) {
+    const update = function (this: any, spec: any) {
         spec.nodes?.forEach((u: any) => u.id && this.graph.updateNode(u.id, u));
         spec.edges?.forEach((u: any) => u.id && this.graph.updateEdge(u.id, u));
     };
 
-    const exportFn = function () {
+    const exportFn = function (this: any) {
         const spec: any = {
             nodes: [...this.graph.nodes.values()].map((node: any) => ({
                 id: node.id,
@@ -334,7 +334,7 @@ function makeSpaceGraph() {
         return spec;
     };
 
-    const importFn = function (data: any) {
+    const importFn = function (this: any, data: any) {
         this.graph.clear();
         loadSpec.call(this, data);
 
@@ -361,51 +361,51 @@ function makeSpaceGraph() {
         if (data.plugins) this.pluginManager.import(data.plugins as Record<string, unknown>);
     };
 
-    const getNode = function (id: string) {
+    const getNode = function (this: any, id: string) {
         return this.graph.getNode(id);
     };
-    const getEdge = function (id: string) {
+    const getEdge = function (this: any, id: string) {
         return this.graph.getEdge(id);
     };
-    const hasNode = function (id: string) {
+    const hasNode = function (this: any, id: string) {
         return this.graph.hasNode(id);
     };
-    const hasEdge = function (id: string) {
+    const hasEdge = function (this: any, id: string) {
         return this.graph.hasEdge(id);
     };
-    const clear = function () {
+    const clear = function (this: any) {
         this.graph.clear();
     };
-    const addNode = function (spec: any) {
+    const addNode = function (this: any, spec: any) {
         return this.graph.addNode(spec);
     };
-    const addEdge = function (spec: any) {
+    const addEdge = function (this: any, spec: any) {
         return this.graph.addEdge(spec);
     };
-    const removeNode = function (id: string) {
+    const removeNode = function (this: any, id: string) {
         this.graph.removeNode(id);
     };
-    const removeEdge = function (id: string) {
+    const removeEdge = function (this: any, id: string) {
         this.graph.removeEdge(id);
     };
-    const setPositions = function (positions: Record<string, [number, number, number]>) {
+    const setPositions = function (this: any, positions: Record<string, [number, number, number]>) {
         this.graph.setPositions(positions);
         return this;
     };
-    const pinAll = function (pinned = true) {
+    const pinAll = function (this: any, pinned = true) {
         this.graph.pinAll(pinned);
         return this;
     };
-    const layout = async function (name: string, options?: Record<string, unknown>) {
+    const layout = async function (this: any, name: string, options?: Record<string, unknown>) {
         const plugin = this.pluginManager.getPlugin(name);
         if (plugin && 'applyLayout' in plugin) {
             await (plugin as any).applyLayout(options);
         }
     };
-    const layoutOnce = function (name: string, options?: Record<string, unknown>) {
+    const layoutOnce = function (this: any, name: string, options?: Record<string, unknown>) {
         return layout.call(this, name, options);
     };
-    const setProjection = function (projection: any) {
+    const setProjection = function (this: any, projection: any) {
         this.renderer.setProjection(projection, this.cameraControls?.target);
         this.cameraControls?.setCamera(this.renderer.camera);
         this.events.emit('projection:change', { projection });

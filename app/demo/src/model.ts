@@ -33,16 +33,18 @@ export const LANELESS_VIEWS: readonly HostView[] = ['ribbon', 'matrix', 'tree', 
  */
 export const TREE_COLUMNS = 2;
 export type BuildStatus = 'queued' | 'running' | 'passed' | 'changed' | 'failed' | 'retried';
-export type BuildKind = 'stage' | 'step' | 'note' | 'tool' | 'artifact' | 'failure' | 'retry';
+export type BuildKind =
+    'stage' | 'step' | 'note' | 'tool' | 'artifact' | 'failure' | 'retry' | 'group';
 export type BuildLane = 'plan' | 'fetch' | 'compile' | 'test' | 'package' | 'publish';
 export type BuildOutcome = 'planned' | 'changed' | 'failed' | 'retried';
-export type BuildEdgeKind = 'sequence' | 'evidence' | 'part-of';
+export type BuildEdgeKind = 'sequence' | 'evidence' | 'part-of' | 'reads' | 'writes' | 'produces';
 
 export interface BuildNode {
     id: string;
     kind: BuildKind;
     label: string;
     summary?: string;
+    data?: Record<string, unknown>;
     status: BuildStatus;
     lane: BuildLane;
     /** The stage the node belongs to; the root belongs to none. */
@@ -410,8 +412,16 @@ export const LEVELS: LevelConfig<BuildLevel, BuildKind, BuildEdgeKind, BuildNode
         artifact: 'execution',
         failure: 'detail',
         retry: 'detail',
+        group: 'detail',
     },
-    edgeMinLevel: { sequence: 'execution', evidence: 'detail', 'part-of': 'overview' },
+    edgeMinLevel: {
+        sequence: 'execution',
+        evidence: 'detail',
+        'part-of': 'overview',
+        reads: 'detail',
+        writes: 'detail',
+        produces: 'detail',
+    },
     domBudget: { overview: 6, execution: 14, detail: 20 },
     isClusterExpanded: (level) => level !== 'overview',
 };

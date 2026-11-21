@@ -28,7 +28,13 @@ const buildEvents = (messages: number, turns: number): Op[] => {
             emit(unitId, { type: 'unit-start' });
         }
         const id = `msg-${message}`;
-        emit(unitId, { type: 'message', id, role: 'user', text: `message ${message}`, final: true });
+        emit(unitId, {
+            type: 'message',
+            id,
+            role: 'user',
+            text: `message ${message}`,
+            final: true,
+        });
         for (let action = 0; action < 3; action++) {
             emit(unitId, {
                 type: 'action',
@@ -57,15 +63,21 @@ const pipeline = (messages: number, turns: number) => {
 const small = pipeline(300, 6);
 const large = pipeline(5001, 100);
 
+// Timing budgets measure the code, not transient runner load: warm up, then keep the fastest of
+// three runs. CI also runs `scale` in an isolated job so no other step competes for the CPU.
 const windowMs = (() => {
-    const start = performance.now();
-    const view = windowedView(large.view, 60).view;
-    const scopes = agentScopes(view);
-    layoutScopes(buildScopeTree(scopes.specs), { seed: 7, gap: 190 });
-    const simulation = new ScopeSimulation({ layout: { seed: 7 } });
-    simulation.setSpecs(scopes.specs);
-    simulation.settle();
-    return ms(start);
+    const run = () => {
+        const start = performance.now();
+        const view = windowedView(large.view, 60).view;
+        const scopes = agentScopes(view);
+        layoutScopes(buildScopeTree(scopes.specs), { seed: 7, gap: 190 });
+        const simulation = new ScopeSimulation({ layout: { seed: 7 } });
+        simulation.setSpecs(scopes.specs);
+        simulation.settle();
+        return ms(start);
+    };
+    run();
+    return Number(Math.min(run(), run(), run()).toFixed(1));
 })();
 
 const playFrameMs = (() => {
@@ -119,7 +131,9 @@ const permalinkMs = (() => {
 const gzipChunk = (() => {
     try {
         const dir = resolve(import.meta.dirname, '../dist/assets');
-        const file = readdirSync(dir).find((name) => name.startsWith('activity-') && name.endsWith('.js'));
+        const file = readdirSync(dir).find(
+            (name) => name.startsWith('activity-') && name.endsWith('.js'),
+        );
         return file ? gzipSync(readFileSync(resolve(dir, file))).length : 0;
     } catch {
         return 0;

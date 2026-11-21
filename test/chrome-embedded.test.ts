@@ -47,7 +47,7 @@ function fakeSg() {
         cameraControls: {
             target: new THREE.Vector3(),
             enabled: true,
-            setTarget: () => {},
+            setTarget: (_x: number, _y: number, _z: number) => {},
         },
         events: new EventEmitter(),
         graph: { nodes: new Map<string, unknown>(), edges: new Map<string, unknown>() },
@@ -82,8 +82,7 @@ describe('L1.27 MinimapPlugin embedding', () => {
         canvas.getBoundingClientRect = () =>
             ({ left: 100, top: 50, width: 800, height: 600 }) as DOMRect;
         const targets: number[][] = [];
-        sg.cameraControls.setTarget = (x: number, y: number, z: number) =>
-            targets.push([x, y, z]);
+        sg.cameraControls.setTarget = (x: number, y: number, z: number) => targets.push([x, y, z]);
         const plugin = new MinimapPlugin();
         plugin.settings.size = 160;
         plugin.settings.margin = 12;

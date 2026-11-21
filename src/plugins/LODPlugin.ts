@@ -39,7 +39,7 @@ export class LODPlugin extends BaseSystemPlugin {
         if (!this.sg?.renderer?.camera) return;
 
         const camera = this.sg.renderer.camera;
-        const isOrtho = camera.isOrthographicCamera;
+        const isOrtho = 'isOrthographicCamera' in camera;
         const nodes = Array.from(this.sg.graph.nodes.values());
 
         const hiddenParentIds = this._updateGroupsAndFindHidden(nodes, camera, isOrtho);
@@ -57,7 +57,11 @@ export class LODPlugin extends BaseSystemPlugin {
         return this.detailThreshold;
     }
 
-    private _updateGroupsAndFindHidden(nodes: Node[], camera: THREE.Camera, isOrtho: boolean): Set<string> {
+    private _updateGroupsAndFindHidden(
+        nodes: Node[],
+        camera: THREE.Camera,
+        isOrtho: boolean,
+    ): Set<string> {
         const hiddenParentIds = new Set<string>();
         for (const node of nodes) {
             if ((node as any).isGroupNode) {
@@ -97,12 +101,19 @@ export class LODPlugin extends BaseSystemPlugin {
             const transitionRange = isOrtho ? this.extentTransitionRange : this.transitionRange;
 
             const visible = !isHiddenByParent && distanceOrExtent <= maxDistOrExtent;
-            const opacity = this._opacityForDistance(distanceOrExtent, maxDistOrExtent, transitionRange);
+            const opacity = this._opacityForDistance(
+                distanceOrExtent,
+                maxDistOrExtent,
+                transitionRange,
+            );
 
             if ((node as any).isDOMNode) {
                 (node as any).setVisibility(visible);
                 if (visible) {
-                    const fogOpacity = depthFade(camera.position.distanceTo(node.position), fogDensity);
+                    const fogOpacity = depthFade(
+                        camera.position.distanceTo(node.position),
+                        fogDensity,
+                    );
                     if ((node as any).setOpacity) (node as any).setOpacity(opacity * fogOpacity);
                     (node as any).updateLod(distanceOrExtent);
                 }
@@ -130,7 +141,9 @@ export class LODPlugin extends BaseSystemPlugin {
     ): number {
         return Math.max(
             0,
-            1 - Math.max(0, distanceOrExtent - (maxDistOrExtent - transitionRange)) / transitionRange,
+            1 -
+                Math.max(0, distanceOrExtent - (maxDistOrExtent - transitionRange)) /
+                    transitionRange,
         );
     }
 
