@@ -3,12 +3,31 @@
 **Status:** Phases A–E are implemented and verified. Both flagship follow-ups deferred from Phase A
 are now landed; the two unblocked Phase F items (the `ForceCore` plain-object randomization fix and
 the layout-vocabulary docs) are also landed. The remaining Phase F promotions are **pull-only** and
-stay pending until a second host consumes them; no such consumer exists yet. Phase G is external and
-cannot be fabricated. TODO1's engineering is complete and verified (`TODO1.md:383-395`). **Date:**
-2026-11-20. **Owner area:** `app/pi`, `app/demo`, `src/layout`, `src/vision`, `src/world` and
-`src/navigation` done through Phase E and the Phase A follow-ups; potential Phase F promotion targets
-are `packages/renderer` + `src/motion` + `src/salience` + `src/world`, promoted only where a second
-host consumes them. Current progress and the exact next move are in §8 (Ledger).
+stay pending until a second host consumes them; no such consumer exists yet. `createVisionLoop` is
+already a library helper (`src/vision/vision-loop.ts`, landed in Phase D), so it needs no separate
+promotion. Phase G is external and cannot be fabricated. TODO1's engineering is complete and verified
+(`TODO1.md:383-395`). **Date:** 2026-11-20. **Owner area:** `app/pi`, `app/demo`, `src/layout`,
+`src/vision`, `src/world` and `src/navigation` done through Phase E and the Phase A follow-ups;
+potential Phase F promotion targets are `packages/renderer` + `src/motion` + `src/salience` +
+`src/world`, promoted only where a second host consumes them. Current progress is in the dashboard
+below, the exact next move and unblock contract in §8 (Ledger).
+
+## Progress dashboard
+
+Every gate was re-run on 2026-11-20; results are in §8 "Verification log". No phase is partially
+implemented: a phase is either landed or blocked on a condition this repository cannot create.
+
+| Phase              | State       | Evidence                                                          | Outstanding                          |
+| ------------------ | ----------- | ----------------------------------------------------------------- | ------------------------------------ |
+| A — flagship       | Landed      | pi test 38, e2e 28, visual 12, `verify`, `scale`, build           | none                                 |
+| A — follow-ups     | Landed      | portal glyph/breadcrumb, Trail/minimap, 2 extra e2e               | none                                 |
+| B — domains        | Landed      | filesystem + data, four-domain composition, root test 761         | none                                 |
+| C — worlds/scenes  | Landed      | compositional (2), graph diff (1), flagship (1), report/notes (2) | none                                 |
+| D — vision loop    | Landed      | `vision-loop.test.ts` (4), visual 14, root test 776               | none                                 |
+| E — senses/forms   | Landed      | `world.test.ts` (6), Graph IDE, root test 782                     | none                                 |
+| F — unblocked      | Landed      | `force-core.test.ts` (2), `docs/scopes.md`, root test 786         | none                                 |
+| F — promotions     | **Blocked** | no second host / renderer consumer exists                         | 6 items, §3 + §8                     |
+| G — proof/delivery | **Partial** | `docs/not-decided.md` settled section                             | study n ≥ 5, npm release credentials |
 
 **Destination.** The full design space is mapped in [`docs/POSSIBILITIES.md`](docs/POSSIBILITIES.md).
 This plan turns it into a sequence: first a runnable flagship (Phase A), then domain generality (B),
@@ -223,8 +242,9 @@ and package `tsc --noEmit`.
 
 ### Phase F — Library consolidation (pull, not push)
 
-Promotions are pull-only (Decision 3 in §5): no helper below has a second host consumer yet, so none
-is promoted. The two items that do not need a consumer are landed; the rest are explicitly gated.
+Promotions are pull-only (Decision 3 in §5): no _pending_ helper below has a second host consumer, so
+none is promoted. The items that do not need a consumer (the `ForceCore` fix, the layout docs, and the
+already-promoted `createVisionLoop`) are landed; the rest are explicitly gated.
 
 **Landed (unblocked):**
 
@@ -234,24 +254,39 @@ is promoted. The two items that do not need a consumer are landed; the rest are 
 - [x] Document the two layout vocabularies (`ScopeStrategy` vs `LaneLayoutStrategy`) and their
       subpath-only exports in `docs/scopes.md`.
 
-**Pending (pull-gated — second consumer required; see §8 for the trigger):**
+**Pending (pull-gated — a real second consumer is required; see §8 "Unblock contract"):**
+
+Each item names the consumer that would unblock it. A token import in `app/demo` that does not drive a
+real behavior path does not count (risk: "feature museum / unproven claim", §6).
 
 - [ ] Promote `flyTo`/`trace`/`sweep` handlers from `app/pi/src/host.ts` into `src/motion/` as
       `createCameraMotionHandlers(adapter)`, with explicit `reportUnsupported` for unregistered verbs
       (`src/motion/director.ts:134-150`). Pi then imports it.
+      **Unblock:** a host other than `app/pi` drives these verbs through `MotionDirector` and asserts
+      camera movement in a test. `app/demo` currently calls `cameraControls.flyTo` directly and never
+      uses `MotionDirector`, so it is not a consumer.
 - [ ] Promote `app/pi/src/play.ts` into `src/world/PhysicsPlaySession` with the body cap and frame
       lifecycle proven in Phase A; keep the one-authority rule in `docs/world.md`.
+      **Unblock:** a second host runs a play/reconcile session and a test asserts the energy/frame
+      lifecycle. The demo's `demos/plugins/physics.ts` uses raw plugin APIs, not this session.
 - [ ] Promote the representation-ladder helper from `app/pi/src/adapter.ts` into `src/salience/` as a
       pure `(node, rung, activity, vision) → rung` function; hosts still own the HTML.
-- [ ] Promote `createVisionLoop` if a second host uses it; otherwise leave it in Pi.
+      **Unblock:** a second host computes a rung from its own activity/legibility signals. The demo
+      fixes `BuildLevel` statically and has no such signals, so it is not a consumer today.
+- [x] `createVisionLoop` — **already landed in Phase D** at `src/vision/vision-loop.ts`; it is a
+      library helper, not a Pi-local one. No promotion remains; only a second-host adoption would add
+      evidence, which is not required to keep it in the library.
 - [ ] Add contract descriptors **only for gated capabilities a second renderer must advertise**
       (`motionVerbs`, `sceneFeatures`, `sensorySeams` beside `supports/supportsDepth/supportsEmphasis`);
       leave scope/physics fields out until a renderer implements them. No behavior in the zero-dep contract.
+      **Unblock:** a second renderer package advertises the descriptor in `RendererCapabilities` and a
+      test asserts a host gate reads it. None of the renderer packages declares these today.
 - [ ] Add incremental `RenderModelPatch` consumption in the flagship/demo only if measurement shows
       streamed updates still rebuild the full model. Measured model build is 2–4 ms for 300 messages /
-      ~1.2k nodes against a 50 ms budget, so there is no present need.
+      ~1.2k nodes against a 50 ms budget, so there is no present need. **Unblock:** a `scale` run
+      shows a rebuild exceeding the 50 ms budget; re-measure before adding anything.
 - [ ] Add parity coverage to `test/boundaries.test.ts` **when** a promotion lands; no promotion has
-      landed yet.
+      landed yet. This is a consequence of the items above, never a standalone task.
 
 **Gate:** root `pnpm test` (786), `pnpm --filter pi verify`, `pnpm --filter pi build`, package
 `tsc --noEmit` — green. Pi's behavior is unchanged — only its imports move when promotions happen.
@@ -259,7 +294,7 @@ is promoted. The two items that do not need a consumer are landed; the rest are 
 concurrent load (up to ~3.1 s); run it alone. Root `tsc` reports pre-existing demo/force-core generic
 errors; the package `tsc --noEmit` gate is the source of truth here.
 
-### Phase G — Proof and delivery (external; no source work)
+### Phase G — Proof and delivery (two external items, one landed)
 
 - [ ] Run the five-task study (`docs/pi-study.md`, `app/pi/src/study.ts`): n ≥ 5 counterbalanced,
       commit raw exports, publish the verbatim result (negative included), apply the stop rule and
@@ -267,8 +302,10 @@ errors; the package `tsc --noEmit` gate is the source of truth here.
 - [ ] Publish the npm release (`pnpm run test:publish` → `pnpm run build` → existing workflow, no
       Changesets) and host the dedicated flagship URL; update the README "The demo" link.
       **Credentials required.**
-- [ ] Update `docs/not-decided.md` with what graduated; keep honest study status and report-only
-      sensory seams.
+- [x] Update `docs/not-decided.md` with what graduated; keep honest study status and report-only
+      sensory seams. Done: a "Settled by the flagship work (2026-11-20)" section records the guardrails
+      that graduated to host policy; all numbered questions and the `n >= 5` study stay open, with no
+      claimed result and no immersive default.
 
 ### Explicitly not now
 
@@ -471,12 +508,22 @@ contract + registry over branches; host owns policy; legibility gates spectacle.
 - Evidence: root `pnpm test` 786, `pnpm --filter pi verify`, `pnpm --filter pi build`, package
   `tsc --noEmit` — green. No promotion, so Pi behavior is unchanged.
 
+### Landed (Phase G — documentation)
+
+- `docs/not-decided.md`: a "Settled by the flagship work (2026-11-20)" section records the guardrails
+  that graduated to host policy (freeform zero-g default, one position authority, `supports(...)`
+  gating, host-owned policy, legibility gates spectacle, report-only sensory seams). The numbered
+  questions, the `n >= 5` study and immersive defaults stay open; no result is claimed.
+- The two genuinely external Phase G items (study participants, npm release credentials) are not
+  fabricated and remain in §3.
+
 ### Next move (Phase F)
 
 Phase F is **pull-only**: do not promote anything until a second host consumes it. No second host
-currently imports `flyTo`/`trace`/`sweep`, `createPlaySession`, `representationRung` or
-`createVisionLoop`, and no second renderer advertises motion/scene/sensory descriptors, so every
-promotion below is blocked on a real consumer, not on a checklist. In order, when that consumer lands:
+currently imports `flyTo`/`trace`/`sweep`, `createPlaySession` or `representationRung`, and no second
+renderer advertises motion/scene/sensory descriptors, so every promotion below is blocked on a real
+consumer, not on a checklist. (`createVisionLoop` is excluded: it already lives in `src/vision`.)
+In order, when that consumer lands:
 
 1. `flyTo`/`trace`/`sweep` from the flagship into `src/motion/createCameraMotionHandlers(adapter)`,
    with `reportUnsupported` for unregistered verbs. Pi's imports change, behavior does not.
@@ -493,16 +540,56 @@ The `ForceCore` fix and the `docs/scopes.md` vocabularies in §3 Phase F were no
 landed (ledger entry above). See §3 Phase F for the checklist and §4 for the gate. Phase G stays
 external: no study result, release or deployment may be fabricated.
 
+#### Unblock contract (what counts as a real consumer)
+
+The pull-only rule is a quality gate, not a checklist. Before any Phase F promotion lands, the
+consumer must satisfy all of the following:
+
+1. **Distinct host.** The importing module is not `app/pi` (for helpers) or not the renderer that
+   already declares the capability (for descriptors). `app/demo`, `app/docs` or a third app qualify;
+   a new module inside `app/pi` does not.
+2. **Behavior path.** The helper drives an observable behavior — a rendered rung, a camera move, a
+   play/reconcile cycle, a gated affordance — not a type-only or dead import.
+3. **Test evidence.** A unit or Playwright assertion covers the consumer's use of the helper, so the
+   promotion is proven by two callers with one implementation.
+4. **No behavior change in Pi.** After a promotion, Pi's test/e2e results are byte-for-byte the same;
+   only its import specifiers move.
+
+A change that fails any of these is speculative API and stays out of the library (Decision 3, §5).
+The same rule applies in reverse to `RenderModelPatch`: promote consumption only after a measurement
+crosses the stated budget, never to pre-empt one.
+
+#### Verification log (2026-11-20)
+
+Re-run against this worktree before closing this plan; all gates green:
+
+| Command                                          | Result                                                      |
+| ------------------------------------------------ | ----------------------------------------------------------- |
+| `pnpm test` (root)                               | 99 files, 786 tests passed                                  |
+| `pnpm --filter pi test`                          | 12 files, 38 tests passed                                   |
+| `pnpm --filter pi test:e2e`                      | 28 passed (browser + vision atlas)                          |
+| `pnpm --filter pi verify`                        | one-way dependency guard passed (27 packages)               |
+| `pnpm --filter pi build`                         | built; only pre-existing chunk-size/dynamic-import warnings |
+| `pnpm exec tsc --noEmit -p app/pi/tsconfig.json` | clean (exit 0)                                              |
+
+Root `pnpm exec tsc --noEmit -p tsconfig.json` still reports pre-existing `this` implicit-`any` errors
+in `test/spacegraph.test.ts`; the package gate above is the source of truth for Phase F, as recorded
+in §3 and §4. `scale` must be run alone (~1.28–1.49 s against the 1.5 s budget; concurrent load pushes
+it to ~3.1 s).
+
 ### Remaining phases
 
 - **C — Compositional worlds and shareable scenes.** Landed. See the ledger entry above.
 - **D — Runtime self-verifying loop.** Landed. See the ledger entry above.
 - **E — Host senses and product forms.** Landed. See the ledger entry above.
-- **F — Library consolidation.** Unblocked items landed. Remaining work is pull-only: promote a
-  helper only after a second host consumes it (camera handlers, `PhysicsPlaySession`, the rung helper),
-  then add contract descriptors and parity tests. Pi behavior must not change.
-- **G — Proof and delivery.** External: participants for the five-task study and credentials for the
-  npm release. No result, release or deployment may be fabricated.
+- **F — Library consolidation.** Unblocked items landed, including `createVisionLoop` (already in
+  `src/vision`). Remaining work is pull-only: promote a helper only after a second host consumes it
+  (camera handlers, `PhysicsPlaySession`, the rung helper), then add contract descriptors and parity
+  tests. See §8 "Unblock contract" for the four conditions a consumer must satisfy. Pi behavior must
+  not change.
+- **G — Proof and delivery.** Two external items remain: participants for the five-task study and
+  credentials for the npm release. The `docs/not-decided.md` graduation note is landed (§8). No result,
+  release or deployment may be fabricated.
 
 Phase F has its own gate in §4 and must stay green before Phase G starts. The two Phase A follow-ups
 are closed and recorded above; they belonged to the flagship, not to a new phase. Baseline TODO1
