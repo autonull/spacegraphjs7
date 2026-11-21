@@ -1,4 +1,4 @@
-import type { CodeDiff, CodeDiffSource, I18n } from '@spacegraphjs/shared';
+import { passthroughI18n, type I18n, type CodeDiff, type CodeDiffSource } from '@spacegraphjs/shared';
 import { For, Show, createEffect, createMemo } from 'solid-js';
 import { diffTone, type DiffTone, TONE_CLASS } from './diff';
 
@@ -15,11 +15,7 @@ export type GraphDiffViewProps = {
  * without pulling the transcript's diff renderer into the graph chunk.
  */
 export const GraphDiffView = (props: GraphDiffViewProps) => {
-    const i18n = props.i18n ?? {
-        t: (k: string) => k,
-        plural: (k: string, _c: number, p?: Record<string, string | number>) =>
-            p ? k.replace(/\{(\w+)\}/g, (_m, key) => String(p[key] ?? '')) : k,
-    };
+    const i18n = props.i18n ?? passthroughI18n;
     createEffect(() => {
         if (props.from) props.source?.load(props.from);
     });

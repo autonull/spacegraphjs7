@@ -85,6 +85,28 @@ const SURFACES: readonly Surface[] = ['log', 'map', 'hybrid'];
 
 export const el = <T extends HTMLElement>(id: string): T => requireElement<T>(id, 'pi app');
 
+type ButtonOptions = { className?: string; title?: string; dataset?: Record<string, string> };
+
+function button(label: string, onClick: () => void, options: ButtonOptions = {}): HTMLButtonElement {
+    const element = document.createElement('button');
+    element.type = 'button';
+    element.textContent = label;
+    if (options.className) element.className = options.className;
+    if (options.title) element.title = options.title;
+    for (const [key, value] of Object.entries(options.dataset ?? {})) element.dataset[key] = value;
+    element.addEventListener('click', onClick);
+    return element;
+}
+
+function downloadBlob(blob: Blob, filename: string): void {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(url);
+}
+
 const VISION_MODELS: Record<string, string> = {
     tla: '/tla_model.onnx',
     che: '/che_model.onnx',
@@ -649,12 +671,7 @@ export class PiHost {
     }
 
     downloadReport(): void {
-        const url = URL.createObjectURL(new Blob([this.report()], { type: 'text/html' }));
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `pi-report-${Date.now()}.html`;
-        link.click();
-        URL.revokeObjectURL(url);
+        downloadBlob(new Blob([this.report()], { type: 'text/html' }), `pi-report-${Date.now()}.html`);
     }
 
     permalink(): string {
@@ -1211,11 +1228,7 @@ export class PiHost {
                       ? 'image/svg+xml'
                       : 'text/html',
         });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = `pi-graph.${format}`;
-        link.click();
-        URL.revokeObjectURL(link.href);
+        downloadBlob(blob, `pi-graph.${format}`);
     }
 
     private applySurface(): void {
@@ -1229,15 +1242,12 @@ export class PiHost {
 
     private renderGallery(): void {
         el('gallery').replaceChildren(
-            ...CAPABILITIES.map((capability) => {
-                const button = document.createElement('button');
-                button.type = 'button';
-                button.dataset.capability = capability.id;
-                button.textContent = capability.title;
-                button.title = capability.summary;
-                button.addEventListener('click', () => this.run(capability.id));
-                return button;
-            }),
+            ...CAPABILITIES.map((capability) =>
+                button(capability.title, () => this.run(capability.id), {
+                    title: capability.summary,
+                    dataset: { capability: capability.id },
+                }),
+            ),
         );
     }
 
@@ -1298,46 +1308,36 @@ export class PiHost {
         el('transcript-list').replaceChildren(
             ...this.#view.nodes
                 .filter((node) => node.kind === 'message')
-                .map((node) => {
-                    const row = document.createElement('button');
-                    row.type = 'button';
-                    row.className = 'transcript-row';
-                    row.dataset.node = node.id;
-                    row.dataset.revealed = String(node.id === this.#revealed);
-                    row.textContent = `${node.label}: ${String(node.data?.text ?? node.summary ?? '')}`;
-                    row.addEventListener('click', () => this.reveal(node.id));
-                    return row;
-                }),
+                .map((node) =>
+                    button(
+                        `${node.label}: ${String(node.data?.text ?? node.summary ?? '')}`,
+                        () => this.reveal(node.id),
+                        {
+                            className: 'transcript-row',
+                            dataset: { node: node.id, revealed: String(node.id === this.#revealed) },
+                        },
+                    ),
+                ),
         );
     }
 
     private renderOverview(): void {
         el('overview').replaceChildren(
-            ...this.#specs.map((spec) => {
-                const row = document.createElement('button');
-                row.type = 'button';
-                row.textContent = `${spec.id} · ${spec.nodes.length}`;
-                row.addEventListener('click', () => {
+            ...this.#specs.map((spec) =>
+                button(`${spec.id} · ${spec.nodes.length}`, () => {
                     const first =
-                        spec.nodes[0] &&
-                        this.#view.nodes.find((node) => node.id === spec.nodes[0].id);
+                        spec.nodes[0] && this.#view.nodes.find((node) => node.id === spec.nodes[0].id);
                     if (first) this.reveal(first.id);
-                });
-                return row;
-            }),
+                }),
+            ),
         );
     }
 
     private renderTurnMap(): void {
         el('turn-map').replaceChildren(
-            ...(this.#view.turns ?? []).map((id, index) => {
-                const chip = document.createElement('button');
-                chip.type = 'button';
-                chip.textContent = `turn ${index + 1}`;
-                chip.title = id;
-                chip.addEventListener('click', () => this.reveal(id));
-                return chip;
-            }),
+            ...(this.#view.turns ?? []).map((id, index) =>
+                button(`turn ${index + 1}`, () => this.reveal(id), { title: id }),
+            ),
         );
     }
 
@@ -1346,15 +1346,11 @@ export class PiHost {
         el<HTMLButtonElement>('trail-back').disabled = !this.#trail.canGoBack;
         el<HTMLButtonElement>('trail-forward').disabled = !this.#trail.canGoForward;
         el('trail-list').replaceChildren(
-            ...this.#trail.entries.map((entry, index) => {
-                const button = document.createElement('button');
-                button.type = 'button';
-                button.dataset.trailNode = entry.id;
-                button.dataset.active = String(entry.id === current);
-                button.textContent = `${index + 1}. ${entry.label ?? entry.id}`;
-                button.addEventListener('click', () => this.trailTo(entry.id));
-                return button;
-            }),
+            ...this.#trail.entries.map((entry, index) =>
+                button(`${index + 1}. ${entry.label ?? entry.id}`, () => this.trailTo(entry.id), {
+                    dataset: { trailNode: entry.id, active: String(entry.id === current) },
+                }),
+            ),
         );
     }
 
@@ -1375,18 +1371,21 @@ export class PiHost {
             return;
         }
         el('portal-crumb').replaceChildren(
-            ...chain.map((scope, index) => {
-                const button = document.createElement('button');
-                button.type = 'button';
-                button.dataset.scope = scope;
-                button.textContent = scope;
-                button.title = index === chain.length - 1 ? 'current portal' : `back to ${scope}`;
-                button.addEventListener('click', () => {
-                    const target = portalByScope.get(scope) ?? this.#specs.find((spec) => spec.id === scope)?.nodes[0]?.id;
-                    if (target) this.reveal(target);
-                });
-                return button;
-            }),
+            ...chain.map((scope, index) =>
+                button(
+                    scope,
+                    () => {
+                        const target =
+                            portalByScope.get(scope) ??
+                            this.#specs.find((spec) => spec.id === scope)?.nodes[0]?.id;
+                        if (target) this.reveal(target);
+                    },
+                    {
+                        title: index === chain.length - 1 ? 'current portal' : `back to ${scope}`,
+                        dataset: { scope },
+                    },
+                ),
+            ),
         );
     }
 

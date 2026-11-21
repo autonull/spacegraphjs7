@@ -5,7 +5,7 @@
 
 // i18n
 export type { I18n } from './i18n';
-export { noopI18n } from './i18n';
+export { noopI18n, passthroughI18n } from './i18n';
 
 // Icons
 export type { IconProps, IconComponent } from './icons';

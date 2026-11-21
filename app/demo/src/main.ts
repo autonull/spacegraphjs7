@@ -18,6 +18,7 @@ import type { DepthMode } from 'spacegraphjs/depth';
 import { Navigation } from 'spacegraphjs/navigation';
 import { ScopedOverlay, extractSubgraph, renderCodeDiff } from 'spacegraphjs/overlays';
 import { computeFocusOverlay, type FocusOverlay } from '@spacegraphjs/overlays';
+import { elementGetter, round } from './dom';
 import { CAPABILITIES, type Capability } from './gallery';
 import { DemoHost } from './host';
 import { HOST_VIEWS, searchableFields, type HostView } from './model';
@@ -47,13 +48,7 @@ const TOKENS = {
     focus: '--sh-focus',
 } as const;
 
-function el<T extends HTMLElement>(id: string): T {
-    const found = document.getElementById(id);
-
-    if (!found) throw new Error(`demo host: missing #${id}`);
-
-    return found as T;
-}
+const el = elementGetter('demo host');
 
 function svgEl(id: string): SVGSVGElement {
     const found = document.getElementById(id);
@@ -61,10 +56,6 @@ function svgEl(id: string): SVGSVGElement {
     if (!(found instanceof SVGSVGElement)) throw new Error(`demo host: missing <svg id="${id}">`);
 
     return found;
-}
-
-function round(value: number): number {
-    return Math.round(value * 100) / 100;
 }
 
 const host = new DemoHost();

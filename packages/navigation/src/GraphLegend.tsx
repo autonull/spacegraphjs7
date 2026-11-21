@@ -7,7 +7,7 @@ import type {
     IconProps,
     IconComponent,
 } from '@spacegraphjs/shared';
-import { createIconRenderer } from '@spacegraphjs/shared';
+import { createIconRenderer, passthroughI18n } from '@spacegraphjs/shared';
 import { Show, type JSX, onMount } from 'solid-js';
 import { GraphLegendBody, type GraphLegendBodyProps } from './GraphLegendBody';
 import { GraphIconButton } from './GraphIconButton';
@@ -37,11 +37,7 @@ export type GraphLegendProps = {
  * i18n keys the inspector uses, so a kind is called the same thing everywhere.
  */
 export const GraphLegend = (props: GraphLegendProps) => {
-    const i18n: I18n = props.i18n ?? {
-        t: (k: string, _v?: Record<string, string | number>) => k,
-        plural: (k: string, _c: number, p?: Record<string, string | number>) =>
-            p ? k.replace(/\{(\w+)\}/g, (_m, key) => String(p[key] ?? '')) : k,
-    };
+    const i18n: I18n = props.i18n ?? passthroughI18n;
     const Icon = props.Icon ?? createIconRenderer();
     let panel!: HTMLDivElement;
 

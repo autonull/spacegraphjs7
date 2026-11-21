@@ -21,6 +21,7 @@ import { AccessibilityLayer } from 'spacegraphjs/a11y';
 import { GraphController } from 'spacegraphjs/control';
 import { LaneLayout } from 'spacegraphjs/layout';
 import { activityHostFixture } from './activity-host';
+import { elementGetter } from './src/dom';
 
 type RendererID = 'spacegraph' | 'cytoscape' | 'svg';
 type ThemeName = 'dark' | 'light';
@@ -90,11 +91,7 @@ const THEMES: Record<ThemeName, RenderTheme> = {
     },
 };
 
-function el<T extends HTMLElement>(id: string): T {
-    const found = document.getElementById(id);
-    if (!found) throw new Error(`contract demo: missing #${id}`);
-    return found as T;
-}
+const el = elementGetter('contract demo');
 
 function card(title: string, body: string, status?: string): string {
     const tone = status ? ` data-status="${status}"` : '';

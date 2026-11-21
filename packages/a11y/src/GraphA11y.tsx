@@ -1,4 +1,4 @@
-import type { RenderModel, I18n } from '@spacegraphjs/shared';
+import { passthroughI18n, type I18n, type RenderModel } from '@spacegraphjs/shared';
 import { AccessibilityLayer } from 'spacegraphjs/a11y';
 import { createEffect, onCleanup, onMount } from 'solid-js';
 import type { AccessibleItem, AccessibleEdge } from './AccessibilityLayer';
@@ -23,11 +23,7 @@ export type GraphA11yProps = {
  * canvas draws. The layer never imports a renderer, so it is identical in both.
  */
 export const GraphA11y = (props: GraphA11yProps) => {
-    const i18n = props.i18n ?? {
-        t: (k: string) => k,
-        plural: (k: string, _c: number, p?: Record<string, string | number>) =>
-            p ? k.replace(/\{(\w+)\}/g, (_m, key) => String(p[key] ?? '')) : k,
-    };
+    const i18n = props.i18n ?? passthroughI18n;
     let container!: HTMLDivElement;
     let layer: AccessibilityLayer | undefined;
     let announced: string | undefined;

@@ -1,5 +1,5 @@
-import type { RendererViewport, RenderTheme, Position } from '@spacegraphjs/shared';
-import type { GraphViewData, GraphNode } from '@spacegraphjs/shared';
+import type { RendererViewport, RenderTheme, Position, GraphViewData, GraphNode } from '@spacegraphjs/shared';
+import { passthroughI18n, type I18n } from '@spacegraphjs/shared';
 import { Navigation } from '@spacegraphjs/shared';
 import { createMemo, For, Show, createSignal } from 'solid-js';
 
@@ -22,10 +22,7 @@ export type GraphMinimapProps = {
     /** Pan the main camera so `center` (graph x/y) is the viewport centre. */
     onPan: (center: [number, number]) => void;
     /** i18n functions for localized strings. */
-    i18n?: {
-        t: (key: string) => string;
-        plural: (key: string, count: number, params?: Record<string, string>) => string;
-    };
+    i18n?: I18n;
     /** ARIA label for the minimap. */
     ariaLabel?: string;
 };
@@ -39,11 +36,7 @@ export type GraphMinimapProps = {
  * colours, and the pointer handling.
  */
 export const GraphMinimap = (props: GraphMinimapProps) => {
-    const i18n = props.i18n ?? {
-        t: (k: string) => k,
-        plural: (k: string, _c: number, p?: Record<string, string>) =>
-            p ? k.replace(/\{(\w+)\}/g, (_m, key) => p[key] ?? '') : k,
-    };
+    const i18n = props.i18n ?? passthroughI18n;
     const ariaLabel = props.ariaLabel ?? i18n.t('ui.sessionGraph.minimap.label');
     const [dragging, setDragging] = createSignal(false);
 

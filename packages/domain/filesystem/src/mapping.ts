@@ -1,4 +1,4 @@
-import type { JsonValue, KernelOp } from '@spacegraphjs/kernel';
+import { addEdge, addNode, type JsonValue, type KernelOp } from '@spacegraphjs/kernel';
 
 export type FilesystemEvent =
     | {
@@ -56,18 +56,6 @@ export type FilesystemEvent =
           readonly targetId: string;
       };
 
-const addNode = (
-    id: string,
-    kind: string,
-    label: string,
-    data: Record<string, JsonValue>,
-): KernelOp => ({ op: 'add-node', node: { id, kind, label, data } });
-
-const edge = (kind: string, source: string, target: string): KernelOp => ({
-    op: 'add-edge',
-    edge: { id: `${kind}:${source}:${target}`, kind, source, target },
-});
-
 /** Converts host events into KernelOps. Hosts may use it or write their own. No host vocabulary inside. */
 export class FilesystemEventMapper {
     #ordinal = 0;
@@ -103,7 +91,7 @@ export class FilesystemEventMapper {
                         status: 'complete',
                         lane: 'file',
                     }),
-                    edge('contains', root, target),
+                    addEdge('contains', root, target),
                 ];
             }
             case 'symbol': {
@@ -119,7 +107,7 @@ export class FilesystemEventMapper {
                         status: 'complete',
                         lane: 'symbol',
                     }),
-                    edge('contains', owner(event.fileId), target),
+                    addEdge('contains', owner(event.fileId), target),
                 ];
             }
             case 'change': {
@@ -137,10 +125,10 @@ export class FilesystemEventMapper {
                         lane: 'change',
                         at: event.at ?? null,
                     }),
-                    edge('contains', owner(event.fileId), target),
+                    addEdge('contains', owner(event.fileId), target),
                 ];
                 if (event.producerId)
-                    ops.push(edge('writes', id(event.commitId, event.producerId), target));
+                    ops.push(addEdge('writes', id(event.commitId, event.producerId), target));
                 return ops;
             }
             case 'artifact': {
@@ -153,15 +141,15 @@ export class FilesystemEventMapper {
                         role: 'artifact',
                         status: 'complete',
                     }),
-                    edge('contains', root, target),
+                    addEdge('contains', root, target),
                 ];
                 if (event.producerId)
-                    ops.push(edge('produces', id(event.commitId, event.producerId), target));
+                    ops.push(addEdge('produces', id(event.commitId, event.producerId), target));
                 return ops;
             }
             case 'depends':
                 return [
-                    edge(
+                    addEdge(
                         'depends',
                         id(event.commitId, event.sourceId),
                         id(event.commitId, event.targetId),
@@ -169,7 +157,7 @@ export class FilesystemEventMapper {
                 ];
             case 'orders':
                 return [
-                    edge(
+                    addEdge(
                         'orders',
                         id(event.commitId, event.sourceId),
                         id(event.commitId, event.targetId),

@@ -36,6 +36,7 @@ import {
     type SpatialMemoryRecord,
 } from '@spacegraphjs/kernel';
 import type { CodeDiff } from '@spacegraphjs/shared';
+import { round } from './dom';
 import { Representations } from 'spacegraphjs/representations';
 import {
     enabledSceneFeatures,
@@ -101,13 +102,11 @@ import {
 } from '@spacegraphjs/search';
 import {
     SessionKernel,
-    Kernel,
+    foldKernelOps,
     GraphHistory,
     createGraphHistory,
     type GraphSnapshot,
     type KernelOp,
-    type Node,
-    type Edge,
 } from '@spacegraphjs/kernel';
 import {
     AgentEventMapper,
@@ -132,23 +131,6 @@ const addNode = (id: string, kind = 'node', label = id): KernelOp => ({
     op: 'add-node',
     node: { id, kind, label },
 });
-
-const kernelFrom = (ops: readonly KernelOp[]): Kernel => {
-    const nodes = new Map<string, Node>();
-    const edges = new Map<string, Edge>();
-    for (const op of ops) {
-        if (op.op === 'add-node') nodes.set(op.node.id, op.node);
-        else if (op.op === 'add-edge') edges.set(op.edge.id, op.edge);
-        else if (op.op === 'remove-node') nodes.delete(op.id);
-        else if (op.op === 'remove-edge') edges.delete(op.id);
-    }
-    return new Kernel({
-        nodes: [...nodes.values()],
-        edges: [...edges.values()],
-        hyperedges: [],
-        version: ops.length,
-    });
-};
 
 /** Extract a subgraph rooted at a node, following child edges of a specific kind. */
 function extractSubgraph(
@@ -254,10 +236,6 @@ export interface Capability {
 
 const SEARCH_QUERY = 'vitest';
 const SCOPE_ROOT = 'stage:verify';
-
-function round(value: number): number {
-    return Math.round(value * 100) / 100;
-}
 
 function summaryConfig() {
     return {
@@ -981,7 +959,7 @@ export const CAPABILITIES: readonly Capability[] = [
                 },
             ];
             const view = agentDomain.build(
-                kernelFrom(events.flatMap((event) => mapper.map(event))),
+                foldKernelOps(events.flatMap((event) => mapper.map(event))),
             );
             const artifacts = changedArtifacts(view);
             return [
@@ -997,7 +975,7 @@ export const CAPABILITIES: readonly Capability[] = [
         modules: ['@spacegraphjs/workflow'],
         summary: 'Workflow fixture yields steps, retries and artifact producers.',
         run: () => {
-            const view = workflowDomain.build(kernelFrom(workflowOps()));
+            const view = workflowDomain.build(foldKernelOps(workflowOps()));
             const flows = artifactProducers(view);
             return [
                 `workflow nodes: ${view.nodes.length}`,
@@ -1012,7 +990,7 @@ export const CAPABILITIES: readonly Capability[] = [
         modules: ['@spacegraphjs/filesystem'],
         summary: 'Filesystem selectors answer what produced a change and what depends on a symbol.',
         run: () => {
-            const view = filesystemDomain.build(kernelFrom(filesystemOps()));
+            const view = filesystemDomain.build(foldKernelOps(filesystemOps()));
             const origins = changeOrigins(view);
             return [
                 `filesystem nodes: ${view.nodes.length}`,
@@ -1027,7 +1005,7 @@ export const CAPABILITIES: readonly Capability[] = [
         modules: ['@spacegraphjs/data'],
         summary: 'Data selectors derive metric lineage and regressions from recorded values.',
         run: () => {
-            const view = dataDomain.build(kernelFrom(dataOps()));
+            const view = dataDomain.build(foldKernelOps(dataOps()));
             const drops = regressions(view);
             return [
                 `data nodes: ${view.nodes.length}`,

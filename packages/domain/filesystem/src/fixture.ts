@@ -1,4 +1,4 @@
-import { Kernel, type Edge, type KernelOp, type Node } from '@spacegraphjs/kernel';
+import { foldKernelOps, type KernelOp } from '@spacegraphjs/kernel';
 import { ModelAdapter } from '@spacegraphjs/adapter';
 import type { RenderEdge, RenderNode, NodeStatus } from '@spacegraphjs/renderer';
 import type { GraphEdge, GraphNode } from '@spacegraphjs/shared';
@@ -54,34 +54,7 @@ export const fixtureEvents = (): readonly FilesystemEvent[] => [
     },
 ];
 
-export function foldFilesystemOps(ops: readonly KernelOp[]): Kernel {
-    const nodes = new Map<string, Node>();
-    const edges = new Map<string, Edge>();
-    for (const op of ops) {
-        switch (op.op) {
-            case 'add-node':
-                nodes.set(op.node.id, op.node);
-                break;
-            case 'add-edge':
-                edges.set(op.edge.id, op.edge);
-                break;
-            case 'remove-node':
-                nodes.delete(op.id);
-                break;
-            case 'remove-edge':
-                edges.delete(op.id);
-                break;
-            default:
-                break;
-        }
-    }
-    return new Kernel({
-        nodes: [...nodes.values()],
-        edges: [...edges.values()],
-        hyperedges: [],
-        version: ops.length,
-    });
-}
+export const foldFilesystemOps = foldKernelOps;
 
 /** Host-level facts the event stream does not carry: an explicit dependency and change order. */
 export function fixtureOps(): readonly KernelOp[] {

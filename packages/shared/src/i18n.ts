@@ -34,5 +34,14 @@ export const noopI18n: I18n = {
     },
 };
 
+/** Passthrough i18n for components that show keys verbatim and only interpolate `{placeholders}`. */
+export const passthroughI18n: I18n = {
+    t: (key) => key,
+    plural: (key, _count, values) =>
+        values
+            ? key.replace(/\{(\w+)\}/g, (_match, name: string) => String(values[name] ?? ''))
+            : key,
+};
+
 /** Default export for convenience. */
 export default noopI18n;

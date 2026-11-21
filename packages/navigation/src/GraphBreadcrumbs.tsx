@@ -1,4 +1,4 @@
-import type { I18n } from '@spacegraphjs/shared';
+import { passthroughI18n, type I18n } from '@spacegraphjs/shared';
 import { For, Show } from 'solid-js';
 
 export type GraphBreadcrumb = { id: string; label: string };
@@ -17,11 +17,7 @@ export type GraphBreadcrumbsProps = {
  * The host supplies the trail (e.g., from the library `Trail`); this component only renders it.
  */
 export const GraphBreadcrumbs = (props: GraphBreadcrumbsProps) => {
-    const i18n = props.i18n ?? {
-        t: (k: string) => k,
-        plural: (k: string, _c: number, p?: Record<string, string>) =>
-            p ? k.replace(/\{(\w+)\}/g, (_m, key) => p[key] ?? '') : k,
-    };
+    const i18n = props.i18n ?? passthroughI18n;
     const ariaLabel = props.ariaLabel ?? i18n.t('ui.sessionGraph.breadcrumbs.label');
 
     return (

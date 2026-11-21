@@ -1,4 +1,4 @@
-import type { JsonValue, KernelOp } from '@spacegraphjs/kernel';
+import { addEdge, addNode, type JsonValue, type KernelOp } from '@spacegraphjs/kernel';
 
 export type UsageReading = {
     readonly input?: number;
@@ -66,18 +66,6 @@ export type AgentEvent =
           readonly at?: number;
       };
 
-const addNode = (
-    id: string,
-    kind: string,
-    label: string,
-    data: Record<string, JsonValue>,
-): KernelOp => ({ op: 'add-node', node: { id, kind, label, data } });
-
-const edge = (kind: string, source: string, target: string): KernelOp => ({
-    op: 'add-edge',
-    edge: { id: `${kind}:${source}:${target}`, kind, source, target },
-});
-
 /** Converts host events into KernelOps. Hosts may use it or write their own. No host vocabulary inside. */
 export class AgentEventMapper {
     #ordinal = 0;
@@ -127,7 +115,7 @@ export class AgentEventMapper {
                         'Unit',
                         { runId: event.runId, unitId: this.#unit, status: 'active', lane: 'unit' },
                     ),
-                    edge('contains', id(event.runId, 'run'), id(event.runId, this.#unit)),
+                    addEdge('contains', id(event.runId, 'run'), id(event.runId, this.#unit)),
                 ];
             }
             case 'unit-end': {
@@ -172,7 +160,7 @@ export class AgentEventMapper {
                 if (event.usage) data.usage = JSON.stringify(event.usage);
                 return [
                     addNode(id(event.runId, messageID), 'message', `${event.role} message`, data),
-                    edge('contains', id(event.runId, unitID), id(event.runId, messageID)),
+                    addEdge('contains', id(event.runId, unitID), id(event.runId, messageID)),
                 ];
             }
             case 'action': {
@@ -199,10 +187,10 @@ export class AgentEventMapper {
                 if (event.isError !== undefined) data.isError = event.isError;
                 const ops: KernelOp[] = [
                     addNode(id(event.runId, actionID), 'action', event.toolName, data),
-                    edge('contains', id(event.runId, unitID), id(event.runId, actionID)),
+                    addEdge('contains', id(event.runId, unitID), id(event.runId, actionID)),
                 ];
                 if (event.parentId)
-                    ops.push(edge('delegates', id(event.runId, event.parentId), id(event.runId, actionID)));
+                    ops.push(addEdge('delegates', id(event.runId, event.parentId), id(event.runId, actionID)));
                 return ops;
             }
             case 'artifact': {
@@ -215,10 +203,10 @@ export class AgentEventMapper {
                         role: 'artifact',
                         status: 'complete',
                     }),
-                    edge('contains', id(event.runId, unitID), id(event.runId, artifactID)),
+                    addEdge('contains', id(event.runId, unitID), id(event.runId, artifactID)),
                 ];
                 if (event.producerId)
-                    ops.push(edge('writes', id(event.runId, event.producerId), id(event.runId, artifactID)));
+                    ops.push(addEdge('writes', id(event.runId, event.producerId), id(event.runId, artifactID)));
                 return ops;
             }
             case 'state': {
@@ -232,7 +220,7 @@ export class AgentEventMapper {
                         role: 'state',
                         status: 'complete',
                     }),
-                    edge('contains', id(event.runId, unitID), id(event.runId, stateID)),
+                    addEdge('contains', id(event.runId, unitID), id(event.runId, stateID)),
                 ];
             }
         }

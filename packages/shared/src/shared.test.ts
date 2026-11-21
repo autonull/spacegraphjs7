@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { noopI18n, passthroughI18n } from './i18n';
 import { createIconRenderer } from '@spacegraphjs/shared/icons';
 import { createPopoverRenderer } from '@spacegraphjs/shared/popover';
 import {
@@ -10,6 +11,19 @@ import {
     absolutePosition,
 } from '@spacegraphjs/shared/css';
 import { useToggle, useDebounce, useLocalStorage } from '@spacegraphjs/shared/hooks';
+
+describe('i18n fallbacks', () => {
+    it('passes keys through without a plural suffix', () => {
+        expect(passthroughI18n.t('ui.label')).toBe('ui.label');
+        expect(passthroughI18n.plural('ui.item', 3)).toBe('ui.item');
+        expect(noopI18n.plural('ui.item', 3)).toBe('ui.itemPlural');
+    });
+
+    it('interpolates placeholders but leaves keys intact', () => {
+        expect(passthroughI18n.t('ui.label', { name: 'Ada' })).toBe('ui.label');
+        expect(passthroughI18n.plural('{count} items', 3, { count: 3 })).toBe('3 items');
+    });
+});
 
 describe('shared icons', () => {
     it('creates an icon renderer', () => {

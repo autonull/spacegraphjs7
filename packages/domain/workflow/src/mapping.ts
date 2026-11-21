@@ -1,4 +1,4 @@
-import type { JsonValue, KernelOp } from '@spacegraphjs/kernel';
+import { addEdge, addNode, type JsonValue, type KernelOp } from '@spacegraphjs/kernel';
 
 export type WorkflowEvent =
     | {
@@ -82,18 +82,6 @@ export type WorkflowEvent =
           readonly at?: number;
       };
 
-const addNode = (
-    id: string,
-    kind: string,
-    label: string,
-    data: Record<string, JsonValue>,
-): KernelOp => ({ op: 'add-node', node: { id, kind, label, data } });
-
-const edge = (kind: string, source: string, target: string): KernelOp => ({
-    op: 'add-edge',
-    edge: { id: `${kind}:${source}:${target}`, kind, source, target },
-});
-
 /** Converts host events into KernelOps. Hosts may use it or write their own. No host vocabulary inside. */
 export class WorkflowEventMapper {
     #ordinal = 0;
@@ -144,7 +132,7 @@ export class WorkflowEventMapper {
                             lane: 'step',
                         },
                     ),
-                    edge('contains', parent, id(event.workflowId, event.subworkflowId)),
+                    addEdge('contains', parent, id(event.workflowId, event.subworkflowId)),
                 ];
             }
             case 'subworkflow-end':
@@ -171,7 +159,7 @@ export class WorkflowEventMapper {
                         status: 'active',
                         lane: 'step',
                     }),
-                    edge('contains', parent, id(event.workflowId, event.stepId)),
+                    addEdge('contains', parent, id(event.workflowId, event.stepId)),
                 ];
             }
             case 'step-end':
@@ -194,7 +182,7 @@ export class WorkflowEventMapper {
                         lane: 'run',
                         at: event.at ?? null,
                     }),
-                    edge(
+                    addEdge(
                         'contains',
                         id(event.workflowId, event.stepId),
                         id(event.workflowId, runID),
@@ -222,7 +210,7 @@ export class WorkflowEventMapper {
                         role: 'trigger',
                         status: 'complete',
                     }),
-                    edge('contains', root, triggerID),
+                    addEdge('contains', root, triggerID),
                 ];
             }
             case 'artifact': {
@@ -237,10 +225,10 @@ export class WorkflowEventMapper {
                         role: 'artifact',
                         status: 'complete',
                     }),
-                    edge('contains', owner(event.stepId, undefined), target),
+                    addEdge('contains', owner(event.stepId, undefined), target),
                 ];
                 if (event.producerId)
-                    ops.push(edge('writes', id(event.workflowId, event.producerId), target));
+                    ops.push(addEdge('writes', id(event.workflowId, event.producerId), target));
                 return ops;
             }
             case 'retry': {
@@ -254,8 +242,8 @@ export class WorkflowEventMapper {
                         status: 'pending',
                         lane: 'step',
                     }),
-                    edge('contains', id(event.workflowId, event.stepId), retryID),
-                    edge('retries', retryID, id(event.workflowId, event.runId)),
+                    addEdge('contains', id(event.workflowId, event.stepId), retryID),
+                    addEdge('retries', retryID, id(event.workflowId, event.runId)),
                 ];
             }
         }

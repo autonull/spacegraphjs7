@@ -1,4 +1,4 @@
-import type { JsonValue, KernelOp } from '@spacegraphjs/kernel';
+import { addEdge, addNode, type JsonValue, type KernelOp } from '@spacegraphjs/kernel';
 
 export type DataEvent =
     | {
@@ -89,18 +89,6 @@ export type DataEvent =
           readonly reason?: string;
       };
 
-const addNode = (
-    id: string,
-    kind: string,
-    label: string,
-    data: Record<string, JsonValue>,
-): KernelOp => ({ op: 'add-node', node: { id, kind, label, data } });
-
-const edge = (kind: string, source: string, target: string): KernelOp => ({
-    op: 'add-edge',
-    edge: { id: `${kind}:${source}:${target}`, kind, source, target },
-});
-
 /** Converts host events into KernelOps. Hosts may use it or write their own. No host vocabulary inside. */
 export class DataEventMapper {
     #ordinal = 0;
@@ -143,7 +131,7 @@ export class DataEventMapper {
                         status: 'complete',
                         lane: 'step',
                     }),
-                    edge('contains', root, target),
+                    addEdge('contains', root, target),
                 ];
             }
             case 'step-start': {
@@ -155,7 +143,7 @@ export class DataEventMapper {
                         status: 'active',
                         lane: 'step',
                     }),
-                    edge('contains', root, target),
+                    addEdge('contains', root, target),
                 ];
             }
             case 'step-end':
@@ -179,7 +167,7 @@ export class DataEventMapper {
                         lane: 'run',
                         at: event.at ?? null,
                     }),
-                    edge('contains', id(event.pipelineId, event.stepId), target),
+                    addEdge('contains', id(event.pipelineId, event.stepId), target),
                 ];
             }
             case 'run-end': {
@@ -204,7 +192,7 @@ export class DataEventMapper {
                         role: 'model',
                         status: 'complete',
                     }),
-                    edge(
+                    addEdge(
                         'contains',
                         event.stepId ? id(event.pipelineId, event.stepId) : root,
                         target,
@@ -224,14 +212,14 @@ export class DataEventMapper {
                         status: 'complete',
                         lane: 'metric',
                     }),
-                    edge('contains', owner(event.stepId, event.runId), target),
+                    addEdge('contains', owner(event.stepId, event.runId), target),
                 ];
                 return ops;
             }
             case 'feeds':
             case 'evaluates':
                 return [
-                    edge(
+                    addEdge(
                         event.type,
                         id(event.pipelineId, event.sourceId),
                         id(event.pipelineId, event.targetId),
@@ -248,8 +236,8 @@ export class DataEventMapper {
                         status: 'pending',
                         lane: 'step',
                     }),
-                    edge('contains', id(event.pipelineId, event.stepId), retryID),
-                    edge('retries', retryID, id(event.pipelineId, event.runId)),
+                    addEdge('contains', id(event.pipelineId, event.stepId), retryID),
+                    addEdge('retries', retryID, id(event.pipelineId, event.runId)),
                 ];
             }
         }
