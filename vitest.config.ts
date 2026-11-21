@@ -91,6 +91,8 @@ export default defineConfig({
     plugins: [solid()],
     test: {
         environment: 'jsdom',
+        // Reuse one jsdom per worker instead of recreating it for every test file.
+        pool: 'vmThreads',
         // Only run unit tests here (keep Playwright E2E specs out of Vitest). The framework bindings carry
         // their own lifecycle tests beside their source (P8.2).
         include: ['test/**/*.test.ts', 'packages/*/test/**/*.test.ts', 'app/*/tests/**/*.test.ts'],
