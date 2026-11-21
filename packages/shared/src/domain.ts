@@ -83,6 +83,40 @@ export const mapViewEdges = (edges: readonly ViewEdgeSource[]): ViewEdge[] =>
         data: { ...edge.data },
     }));
 
+/** The shared turn/run view for domains that index runs by step. */
+export const buildRunView = (
+    nodes: readonly ViewNodeSource[],
+    edges: readonly ViewEdgeSource[],
+    roleOf: (node: ViewNodeSource) => string,
+    rootRole: string,
+    turnRole: string,
+) => {
+    const root = nodes.find((node) => roleOf(node) === rootRole)?.id ?? nodes[0]?.id ?? '';
+    const activeRun = [...nodes]
+        .reverse()
+        .find((node) => roleOf(node) === 'run' && dataString(node, 'status') === 'active')?.id;
+    const runByStepID = new Map<string, string>();
+
+    for (const node of nodes) {
+        const stepID = dataString(node, 'stepId');
+        if (!stepID || roleOf(node) !== 'run') continue;
+        const stepNode = nodes.find(
+            (candidate) =>
+                roleOf(candidate) === 'step' && dataString(candidate, 'stepId') === stepID,
+        );
+        runByStepID.set(stepNode?.id ?? stepID, node.id);
+    }
+
+    return {
+        root,
+        nodes: mapViewNodes(nodes),
+        edges: mapViewEdges(edges),
+        turns: nodes.filter((node) => roleOf(node) === turnRole).map((node) => node.id),
+        activeRun,
+        runByStepID,
+    };
+};
+
 export type Trace = {
     readonly answerIds: ReadonlySet<string>;
     readonly contextIds: ReadonlySet<string>;

@@ -1,10 +1,9 @@
 import { defineDomain, type DomainVocabulary, type Kernel } from '@spacegraphjs/kernel';
-import type { GraphNode, GraphViewData } from '@spacegraphjs/shared';
+import type { GraphViewData } from '@spacegraphjs/shared';
 import {
+    buildRunView,
     createRoleReader,
     dataString,
-    mapViewEdges,
-    mapViewNodes,
     relationOf,
 } from '@spacegraphjs/shared/domain';
 
@@ -76,32 +75,7 @@ export const dataVocabulary: DomainVocabulary = {
 };
 
 export function buildDataView(kernel: Kernel): DataView {
-    const nodes: GraphNode[] = mapViewNodes(kernel.nodes);
-    const edges = mapViewEdges(kernel.edges);
-    const root =
-        kernel.nodes.find((node) => roleOf(node) === 'pipeline')?.id ?? kernel.nodes[0]?.id ?? '';
-    const activeRun = [...kernel.nodes]
-        .reverse()
-        .find((node) => roleOf(node) === 'run' && dataString(node, 'status') === 'active')?.id;
-    const runByStepID = new Map<string, string>();
-    for (const node of kernel.nodes) {
-        const stepID = dataString(node, 'stepId');
-        if (!stepID || roleOf(node) !== 'run') continue;
-        const stepNode = kernel.nodes.find(
-            (candidate) =>
-                roleOf(candidate) === 'step' && dataString(candidate, 'stepId') === stepID,
-        );
-        runByStepID.set(stepNode?.id ?? stepID, node.id);
-    }
-
-    return {
-        root,
-        nodes,
-        edges,
-        turns: kernel.nodes.filter((node) => roleOf(node) === 'step').map((node) => node.id),
-        activeRun,
-        runByStepID,
-    };
+    return buildRunView(kernel.nodes, kernel.edges, roleOf, 'pipeline', 'step');
 }
 
 export const dataDomain = defineDomain<DataView>({

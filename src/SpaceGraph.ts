@@ -357,11 +357,7 @@ export class SpaceGraph {
         return this.renderer.projection;
     }
     setProjection(projection: Projection): this {
-        return this.updateCameraState(() => {
-            this.renderer.setProjection(projection, this.cameraControls?.target);
-            this.cameraControls?.setCamera(this.renderer.camera);
-            this.events.emit('projection:change', { projection });
-        });
+        return this.depthController.setProjection(projection) as this;
     }
 
     // --- Depth Spectrum ---
