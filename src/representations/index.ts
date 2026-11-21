@@ -43,6 +43,13 @@ interface RepresentationOptions {
     rowGap?: number;
 }
 
+/** Shared spacing of the summary layouts, with one place for every default. */
+function layoutSpacing(cellHeight: number, options: RepresentationOptions = {}) {
+    const gap = options.gap ?? 24;
+    const rowGap = options.rowGap ?? 20;
+    return { gap, rowGap, rowHeight: cellHeight + rowGap };
+}
+
 /**
  * The rows of a summary: the root row first (the nodes without a row of their own), then one row
  * per row key in the model's order. Within a row the host orders the nodes.
@@ -93,9 +100,7 @@ function ribbonLayout<Node extends RepresentationNode>(
     config: RepresentationConfig<Node>,
     options: RepresentationOptions = {},
 ): GraphLayout {
-    const gap = options.gap ?? 24;
-    const rowGap = options.rowGap ?? 20;
-    const rowHeight = config.cellSize[1] + rowGap;
+    const { gap, rowHeight } = layoutSpacing(config.cellSize[1], options);
     const positions = new Map<string, Position>();
 
     summaryRows(model, config).forEach((nodes, index) => {
@@ -122,9 +127,7 @@ function matrixLayout<Node extends RepresentationNode>(
     config: RepresentationConfig<Node>,
     options: RepresentationOptions = {},
 ): GraphLayout {
-    const gap = options.gap ?? 24;
-    const rowGap = options.rowGap ?? 20;
-    const rowHeight = config.cellSize[1] + rowGap;
+    const { gap, rowHeight } = layoutSpacing(config.cellSize[1], options);
     const positions = new Map<string, Position>();
     const rows = summaryRows(model, config);
 
@@ -191,8 +194,7 @@ function logLayout<Node extends RepresentationNode>(
     config: RepresentationConfig<Node>,
     options: RepresentationOptions = {},
 ): GraphLayout {
-    const gap = options.gap ?? 24;
-    const rowGap = options.rowGap ?? 20;
+    const { gap, rowGap } = layoutSpacing(config.cellSize[1], options);
     const positions = new Map<string, Position>();
     let cursor = 0;
 
