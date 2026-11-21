@@ -52,7 +52,7 @@ const DEFAULT_BH_CONFIG: BarnesHutConfig = {
 /**
  * Build an octree from a set of nodes for Barnes-Hut force approximation.
  */
-export function buildOctree<P extends { position: { x: number; y: number; z: number } }>(
+export function buildOctree<P extends { id: string; position: { x: number; y: number; z: number } }>(
     nodes: P[],
     getMass: (node: P) => number,
     config: Partial<BarnesHutConfig> = {},
@@ -103,7 +103,7 @@ export function buildOctree<P extends { position: { x: number; y: number; z: num
 
     // Insert all nodes
     for (const node of nodes) {
-        insertIntoOctree(root, node, getMass(node), node.id ?? '', 0, maxDepth, minCellSize);
+        insertIntoOctree(root, node, getMass(node), node.id, 0, maxDepth, minCellSize);
     }
 
     return root;

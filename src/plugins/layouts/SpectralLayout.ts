@@ -1,5 +1,6 @@
 import { Vector3 } from 'three';
 import type { Edge } from '../../edges/Edge';
+import { separateOverlappingNodes } from '../../layout/force-core';
 import type { Node } from '../../nodes/Node';
 import { BaseLayout, type LayoutOptions } from './BaseLayout';
 
@@ -41,60 +42,17 @@ export class SpectralLayout extends BaseLayout<SpectralLayoutOptions> {
 
         // Size-aware collision settle post-pass (like ForceLayout's separation pass)
         if (config.separateOverlaps !== false) {
-            this.separateOverlaps(nodes, config.nodePadding ?? 20);
-        }
-    }
-
-    /**
-     * Size-aware collision settle: push overlapping nodes apart until no overlaps remain.
-     * Uses 30 passes (same pattern as ForceLayout).
-     */
-    private separateOverlaps(nodes: Node[], nodePadding: number): void {
-        // Precompute collision radii (diagonal radius + padding)
-        const radii = new Map<string, number>();
-        for (const node of nodes) {
-            const bounds = node.getLayoutBounds();
-            const diagonal = Math.hypot(bounds.width, bounds.height);
-            radii.set(node.id, diagonal / 2 + nodePadding);
-        }
-
-        // 30-pass separation
-        for (let pass = 0; pass < 30; pass++) {
-            let anyOverlap = false;
-            for (let i = 0; i < nodes.length; i++) {
-                for (let j = i + 1; j < nodes.length; j++) {
-                    const a = nodes[i];
-                    const b = nodes[j];
-
-                    const dx = a.position.x - b.position.x;
-                    const dy = a.position.y - b.position.y;
-                    const dz = a.position.z - b.position.z;
-                    const dist = Math.sqrt(dx * dx + dy * dy + dz * dz) || 0.001;
-
-                    const needed = (radii.get(a.id) ?? 0) + (radii.get(b.id) ?? 0);
-
-                    if (dist < needed) {
-                        anyOverlap = true;
-                        const shove = (needed - dist) / 2;
-                        const fx = (dx / dist) * shove;
-                        const fy = (dy / dist) * shove;
-                        const fz = (dz / dist) * shove;
-
-                        a.position.x += fx;
-                        a.position.y += fy;
-                        a.position.z += fz;
-                        b.position.x -= fx;
-                        b.position.y -= fy;
-                        b.position.z -= fz;
-                    }
-                }
-            }
-            if (!anyOverlap) break;
-        }
-
-        // Sync positions to Three.js objects
-        for (const node of nodes) {
-            this.syncPosition(node);
+            const padding = config.nodePadding ?? 20;
+            separateOverlappingNodes(
+                nodes,
+                (node) => {
+                    const bounds = node.getLayoutBounds();
+                    return Math.hypot(bounds.width, bounds.height) / 2 + padding;
+                },
+                () => false,
+                30,
+            );
+            for (const node of nodes) this.syncPosition(node);
         }
     }
 

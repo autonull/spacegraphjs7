@@ -5,7 +5,6 @@ import {
     renderToolbar,
     renderToolbarActions,
     setupSearchHUD,
-    updateStatsHUD,
 } from './SpaceGraphAppHUD';
 import { selectionChanged } from './Selection';
 
@@ -48,5 +47,3 @@ export function setTheme(
     }
     renderToolbarActions(app);
 }
-
-export { renderButtons, renderToolbarActions, setupSearchHUD, updateStatsHUD };

@@ -83,7 +83,7 @@ export class DataNode extends BaseContentNode {
 
     private _renderData(data: unknown, expandTopLevel: boolean, theme: string) {
         this.contentContainer.innerHTML = '';
-        if (data === undefined || data === null) {
+        if (data == null) {
             const empty = DOMUtils.createElement('div');
             empty.style.color = paletteOf(theme).faintText;
             empty.style.fontStyle = 'italic';

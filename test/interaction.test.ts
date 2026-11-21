@@ -295,25 +295,6 @@ describe('Zoom Stack', () => {
     });
 });
 
-// Keyboard controls removed - now handled by input system
-// describe('Keyboard Camera Controls', () => {
-//   it('should track key state on keydown/keyup', () => {
-//     // Removed - keyboard now handled via InputManager
-//   });
-//
-//   it('should respect enableKeyboard=false', () => {
-//     // Removed - keyboard now handled via InputManager
-//   });
-//
-//   it('should panBy correctly', () => {
-//     // Removed - keyboard now handled via InputManager
-//   });
-//
-//   it('should wire "o" key to toggleOrthographic', () => {
-//     // Removed - keyboard now handled via InputManager
-//   });
-// });
-
 describe('Orthographic Toggle', () => {
     it('should toggle orthographic mode', () => {
         const container = document.createElement('div');

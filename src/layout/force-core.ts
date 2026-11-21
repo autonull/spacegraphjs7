@@ -8,6 +8,13 @@ export interface ForceMeta {
     radius?: number;
 }
 
+/** The minimal node shape the force simulation operates on. */
+export interface ForceNode {
+    id: string;
+    position: { x: number; y: number; z: number };
+    depth?: number;
+}
+
 export interface ForceCoreConfig {
     /** The distance two boxes rest at (repulsion equilibrium). */
     spacing?: number;
@@ -90,7 +97,7 @@ export class ForceCore {
         this.#minDistance = config.minDistance ?? DEFAULT_MIN_DISTANCE;
         this.#randomize = config.randomize ?? false;
         this.#onProgress = config.onProgress;
-        this.#useBarnesHut = config.useBarnesHut ?? (config.iterations && config.iterations > 1000);
+        this.#useBarnesHut = config.useBarnesHut ?? ((config.iterations ?? 0) > 1000);
         this.#barnesHutTheta = config.barnesHut?.theta ?? 0.5;
         this.#barnesHutMaxDepth = config.barnesHut?.maxDepth ?? 20;
         this.#barnesHutMinCellSize = config.barnesHut?.minCellSize ?? 1;
@@ -123,7 +130,7 @@ export class ForceCore {
      * Advance the simulation by one step for a set of nodes with positions as Vector3.
      * Returns the forces applied to each node.
      */
-    step<P extends { position: { x: number; y: number; z: number } }>(
+    step<P extends ForceNode>(
         nodes: P[],
         getLinks: (node: P) => readonly string[],
         getRadius: (node: P) => number,
@@ -132,20 +139,17 @@ export class ForceCore {
         if (!nodes.length) return new Map();
 
         const forces = new Map<string, { x: number; y: number; z: number }>();
-        for (const node of nodes) forces.set(node.id ?? String(nodes.indexOf(node)), { x: 0, y: 0, z: 0 });
+        for (const node of nodes) forces.set(node.id, { x: 0, y: 0, z: 0 });
 
         // Precompute radii (used as mass for Barnes-Hut)
         const radii = new Map<string, number>();
-        for (const node of nodes) {
-            const id = node.id ?? String(nodes.indexOf(node));
-            radii.set(id, getRadius(node));
-        }
+        for (const node of nodes) radii.set(node.id, getRadius(node));
 
         const maxForce = this.#repulsion / (this.#minDistance * this.#minDistance);
 
         if (this.#useBarnesHut && nodes.length > 100) {
             // Build octree for Barnes-Hut approximation
-            const octree = buildOctree(nodes, (node) => radii.get(node.id ?? '') ?? 1, {
+            const octree = buildOctree(nodes, (node) => radii.get(node.id) ?? 1, {
                 theta: this.#barnesHutTheta,
                 maxDepth: this.#barnesHutMaxDepth,
                 minCellSize: this.#barnesHutMinCellSize,
@@ -153,16 +157,15 @@ export class ForceCore {
 
             // Compute repulsion using Barnes-Hut
             for (const node of nodes) {
-                const id = node.id ?? String(nodes.indexOf(node));
                 const force = computeBarnesHutForce(
-                    { position: node.position, id },
+                    { position: node.position, id: node.id },
                     octree,
                     this.#barnesHutTheta,
                     this.#repulsion,
                     this.#minDistance,
                     maxForce,
                 );
-                const f = forces.get(id)!;
+                const f = forces.get(node.id)!;
                 f.x += force.x;
                 f.y += force.y;
                 f.z += force.z;
@@ -180,9 +183,7 @@ export class ForceCore {
                     const dist = Math.sqrt(distSq) || 0.001;
 
                     // Per-pair minimum distance based on node sizes
-                    const idA = a.id ?? String(i);
-                    const idB = b.id ?? String(j);
-                    const minDist = (radii.get(idA) ?? 0) + (radii.get(idB) ?? 0);
+                    const minDist = (radii.get(a.id) ?? 0) + (radii.get(b.id) ?? 0);
                     const effectiveDistSq = Math.max(distSq, minDist * minDist);
 
                     const repulsion = this.#repulsion / effectiveDistSq;
@@ -191,8 +192,8 @@ export class ForceCore {
                     const fy = (dy / dist) * force;
                     const fz = (dz / dist) * force;
 
-                    const forceA = forces.get(idA)!;
-                    const forceB = forces.get(idB)!;
+                    const forceA = forces.get(a.id)!;
+                    const forceB = forces.get(b.id)!;
                     forceA.x += fx; forceA.y += fy; forceA.z += fz;
                     forceB.x -= fx; forceB.y -= fy; forceB.z -= fz;
                 }
@@ -201,10 +202,9 @@ export class ForceCore {
 
         // Attraction along links/edges
         for (const node of nodes) {
-            const id = node.id ?? String(nodes.indexOf(node));
-            const force = forces.get(id)!;
+            const force = forces.get(node.id)!;
             for (const link of getLinks(node)) {
-                const target = nodes.find(n => (n.id ?? String(nodes.indexOf(n))) === link);
+                const target = nodes.find(n => n.id === link);
                 if (!target) continue;
 
                 const dx = target.position.x - node.position.x;
@@ -223,8 +223,7 @@ export class ForceCore {
 
         // Gravity towards center
         for (const node of nodes) {
-            const id = node.id ?? String(nodes.indexOf(node));
-            const force = forces.get(id)!;
+            const force = forces.get(node.id)!;
             const dist = Math.sqrt(node.position.x ** 2 + node.position.y ** 2 + node.position.z ** 2);
             if (dist > 0) {
                 const gx = -node.position.x / dist * this.#gravity * dist;
@@ -239,73 +238,26 @@ export class ForceCore {
 
     /**
      * Final separation pass: push overlapping nodes apart until no overlaps remain.
-     * Uses 30 passes (same pattern as original ForcePlacement).
+     * Large graphs use fewer passes; Barnes-Hut repulsion has already spread them.
      */
-    separateOverlaps<P extends { position: { x: number; y: number; z: number } }>(
+    separateOverlaps<P extends ForceNode>(
         nodes: P[],
         getRadius: (node: P) => number,
         isPinned: (node: P) => boolean,
     ): void {
-        // Precompute radii
-        const radii = new Map<string, number>();
-        for (const node of nodes) {
-            const id = node.id ?? String(nodes.indexOf(node));
-            radii.set(id, getRadius(node));
-        }
-
-        // Large graphs use fewer passes; Barnes-Hut repulsion has already spread them.
-        const passes = nodes.length > 150 ? 1 : 30;
-        for (let pass = 0; pass < passes; pass++) {
-            let anyOverlap = false;
-            for (let i = 0; i < nodes.length; i++) {
-                for (let j = i + 1; j < nodes.length; j++) {
-                    const a = nodes[i];
-                    const b = nodes[j];
-                    if (isPinned(a) && isPinned(b)) continue;
-
-                    const dx = a.position.x - b.position.x;
-                    const dy = a.position.y - b.position.y;
-                    const dz = a.position.z - b.position.z;
-                    const dist = Math.sqrt(dx * dx + dy * dy + dz * dz) || 0.001;
-
-                    const idA = a.id ?? String(i);
-                    const idB = b.id ?? String(j);
-                    const needed = (radii.get(idA) ?? 0) + (radii.get(idB) ?? 0);
-
-                    if (dist < needed) {
-                        anyOverlap = true;
-                        const shove = (needed - dist) / 2;
-                        const fx = (dx / dist) * shove;
-                        const fy = (dy / dist) * shove;
-                        const fz = (dz / dist) * shove;
-
-                        if (!isPinned(a)) {
-                            a.position.x += fx;
-                            a.position.y += fy;
-                            a.position.z += fz;
-                        }
-                        if (!isPinned(b)) {
-                            b.position.x -= fx;
-                            b.position.y -= fy;
-                            b.position.z -= fz;
-                        }
-                    }
-                }
-            }
-            if (!anyOverlap) break;
-        }
+        separateOverlappingNodes(nodes, getRadius, isPinned, nodes.length > 150 ? 1 : 30);
     }
 
     /**
      * Initialize positions deterministically using golden angle spiral.
      */
-    initializePositions<P extends { position: { x: number; y: number; z: number } }>(
+    initializePositions<P extends ForceNode>(
         nodes: P[],
-        isPinned: (node: P) => boolean,
+        _isPinned: (node: P) => boolean,
         previous?: Map<string, { x: number; y: number; z: number }>,
     ): void {
         for (const [i, node] of nodes.entries()) {
-            const id = node.id ?? String(i);
+            const id = node.id;
 
             if (previous?.has(id)) {
                 const prev = previous.get(id)!;
@@ -344,7 +296,7 @@ export class ForceCore {
     /**
      * Run the full simulation.
      */
-    run<P extends { position: { x: number; y: number; z: number } }>(
+    run<P extends ForceNode>(
         nodes: P[],
         getLinks: (node: P) => readonly string[],
         getRadius: (node: P) => number,
@@ -373,8 +325,7 @@ export class ForceCore {
 
             for (const node of nodes) {
                 if (isPinned(node)) continue;
-                const id = node.id ?? String(nodes.indexOf(node));
-                const force = forces.get(id)!;
+                const force = forces.get(node.id)!;
                 const magnitude = Math.sqrt(force.x ** 2 + force.y ** 2 + force.z ** 2);
 
                 if (magnitude === 0) continue;
@@ -395,5 +346,53 @@ export class ForceCore {
             if (isPinned(node)) continue;
             setDepth(node, (node.depth ?? 0) * this.#depthStep);
         }
+    }
+}
+
+/** Push overlapping nodes apart in place, stopping early once no overlap remains. */
+export function separateOverlappingNodes<P extends ForceNode>(
+    nodes: P[],
+    getRadius: (node: P) => number,
+    isPinned: (node: P) => boolean,
+    passes: number,
+): void {
+    const radii = new Map<string, number>();
+    for (const node of nodes) radii.set(node.id, getRadius(node));
+
+    for (let pass = 0; pass < passes; pass++) {
+        let anyOverlap = false;
+        for (let i = 0; i < nodes.length; i++) {
+            for (let j = i + 1; j < nodes.length; j++) {
+                const a = nodes[i];
+                const b = nodes[j];
+                if (isPinned(a) && isPinned(b)) continue;
+
+                const dx = a.position.x - b.position.x;
+                const dy = a.position.y - b.position.y;
+                const dz = a.position.z - b.position.z;
+                const dist = Math.sqrt(dx * dx + dy * dy + dz * dz) || 0.001;
+
+                const needed = (radii.get(a.id) ?? 0) + (radii.get(b.id) ?? 0);
+                if (dist >= needed) continue;
+
+                anyOverlap = true;
+                const shove = (needed - dist) / 2;
+                const fx = (dx / dist) * shove;
+                const fy = (dy / dist) * shove;
+                const fz = (dz / dist) * shove;
+
+                if (!isPinned(a)) {
+                    a.position.x += fx;
+                    a.position.y += fy;
+                    a.position.z += fz;
+                }
+                if (!isPinned(b)) {
+                    b.position.x -= fx;
+                    b.position.y -= fy;
+                    b.position.z -= fz;
+                }
+            }
+        }
+        if (!anyOverlap) break;
     }
 }

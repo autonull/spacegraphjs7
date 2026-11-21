@@ -155,7 +155,6 @@ export class OnnxStrategy implements VisionStrategy {
                 try {
                     const output = await session.run({ boxes: tensor });
                     const prob = (output.overlap_prob.data as Float32Array)[0];
-                    console.log(`[OnnxStrategy] Overlap check ${n1.id} vs ${n2.id}: prob=${prob}`);
                     if (prob > 0.5) {
                         overlaps.push({ nodeA: n1.id, nodeB: n2.id, penetration: prob });
                     }

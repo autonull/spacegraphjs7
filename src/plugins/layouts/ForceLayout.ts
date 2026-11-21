@@ -1,5 +1,5 @@
 import { Vector3 } from 'three';
-import { ForceCore } from '../../layout/force-core';
+import { ForceCore, type ForceCoreConfig } from '../../layout/force-core';
 import type { Node } from '../../nodes/Node';
 import { BaseLayout, type LayoutConfig } from './BaseLayout';
 
@@ -58,42 +58,11 @@ export class ForceLayout extends BaseLayout<ForceLayoutConfig> {
 
     constructor(config: Partial<ForceLayoutConfig> = {}) {
         super(config);
-        this.#core = new ForceCore({
-            spacing: config.spacing ?? 120,
-            iterations: config.iterations ?? 50,
-            seed: config.seed ?? 42,
-            depthStep: 64,
-            nodePadding: config.nodePadding ?? 20,
-            attraction: config.attraction ?? 0.01,
-            repulsion: config.repulsion ?? 10000,
-            damping: config.damping ?? 0.9,
-            gravity: config.gravity ?? 0.1,
-            minDistance: config.minDistance ?? 50,
-            maxDistance: config.maxDistance ?? 1000,
-            temperature: config.temperature ?? 100,
-            randomize: config.randomize ?? false,
-            onProgress: config.onProgress,
-        });
+        this.#core = new ForceCore(this.#coreConfig(config));
     }
 
-    private get forceConfig(): ForceLayoutConfig {
-        return this.config as ForceLayoutConfig;
-    }
-
-    /** The simulation owns every node: it reads the pinned ones but never moves them. */
-    protected override readonly ownsEveryNode = true;
-
-    /**
-     * Reset the layout's internal state. Call this before re-running layout on the same nodes
-     * to ensure a fresh simulation from current positions.
-     */
-    reset(): void {
-        this.#velocities.clear();
-    }
-
-    protected place(nodes: Node[], config: ForceLayoutConfig): void {
-        // Recreate core with merged config to pick up runtime overrides
-        this.#core = new ForceCore({
+    #coreConfig(config: Partial<ForceLayoutConfig>): ForceCoreConfig {
+        return {
             spacing: config.spacing ?? 120,
             iterations: config.iterations ?? 50,
             seed: config.seed ?? 42,
@@ -114,7 +83,27 @@ export class ForceLayout extends BaseLayout<ForceLayoutConfig> {
                 maxDepth: config.barnesHutMaxDepth,
                 minCellSize: config.barnesHutMinCellSize,
             },
-        });
+        };
+    }
+
+    private get forceConfig(): ForceLayoutConfig {
+        return this.config as ForceLayoutConfig;
+    }
+
+    /** The simulation owns every node: it reads the pinned ones but never moves them. */
+    protected override readonly ownsEveryNode = true;
+
+    /**
+     * Reset the layout's internal state. Call this before re-running layout on the same nodes
+     * to ensure a fresh simulation from current positions.
+     */
+    reset(): void {
+        this.#velocities.clear();
+    }
+
+    protected place(nodes: Node[], config: ForceLayoutConfig): void {
+        // Recreate core with merged config to pick up runtime overrides
+        this.#core = new ForceCore(this.#coreConfig(config));
 
         // Always reset velocities for a fresh simulation
         this.#velocities.clear();
