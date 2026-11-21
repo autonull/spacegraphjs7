@@ -66,20 +66,37 @@ the progress block below records what has actually landed.
   constants; avoid exhaustive matrices where a representative shot passes. A gate should catch breakage,
   not dictate implementation detail.
 
+**Development-loop notes for the next session (recorded, not yet implemented):**
+
+1. `app/pi/scripts/shot.ts:52` fingerprints only top-level `src/*.ts` and `src/policy/*.ts`; `src/shell/**` and
+   `packages/shared/src/tokens.ts` are invisible to `--watch`. Make it recursive and include shared tokens.
+2. Tier the loop: tsc + unit (~2s) → one targeted Playwright spec → the four slice shots → full `shots:all`
+   plus vision and e2e only at slice boundaries. Keep `pnpm --filter pi dev` and `server` running so Playwright
+   reuses them (`app/pi/playwright.config.ts:14`).
+3. The both-themes vision test (`app/pi/tests/vision.spec.ts:113`) boots eight pages (~26s). Keep one
+   representative shot in both themes plus the unit `ContrastAuditor` audit; leave the full matrix at the
+   boundary gate.
+4. Root AGENTS names `bun run check`, but `package.json` has no `check` script. Add one wrapping package
+   typechecks so the fast loop has one unambiguous command.
+
 **Remaining work, in order:**
 
-1. **Slice 3 — Recursion, edges and proof** (O3, O4, K1–K3, J4, J5, N1, N2, M1 + recorded direction): inner
+1. **Fast-loop prep (small, recommended first):** development-loop items 1, 3 and 4 above. Item 2 is a
+   workflow change, not code. Do not start slice 3 until the watcher covers `src/shell/**`, or visual edits
+   there will not retrigger captures.
+2. **Slice 3 — Recursion, edges and proof** (O3, O4, K1–K3, J4, J5, N1, N2, M1 + recorded direction): inner
    topology with connectors, portal previews, depth-ruler breadcrumb, visible evidence line, catalog cards,
    first-run hint, review notes, shorter tapered polygon edges and shaded card surfaces. Gate: `fractal`,
    `deep-focus`, `catalog` and intermediate descend frames; loose tests, budgets green.
-2. **Slice 4 — Proliferation** (O5–O7): blocked on a second host consuming shell, tokens and inspector
+3. **Slice 4 — Proliferation** (O5–O7): blocked on a second host consuming shell, tokens and inspector
    unchanged. Then split core/domain policy, emit the world-host and real vision gate from the scaffold,
    and add one cross-domain shot. No contract or position-authority change.
-3. **Standing track** (L4, M3): keep reduced-motion final-frame parity and intermediate-frame vision in
+4. **Standing track** (L4, M3): keep reduced-motion final-frame parity and intermediate-frame vision in
    every slice. The remaining §11.2 work is a full 44px pass over the command bar, rail and in-card
    actions. L1–L3, M2, M4, N3/N4 stay deferred per §6.
 
-No slice 3+ item is claimed done. The study, release and hosted URL stay deferred with TODO3's G3–G5.
+No slice 3+ item is claimed done. Last commits: `bddd7a6` (slice 2), `e48677f` (plan direction). The study,
+release and hosted URL stay deferred with TODO3's G3–G5.
 
 ---
 
