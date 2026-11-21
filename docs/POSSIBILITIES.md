@@ -102,9 +102,10 @@ recorded per capture, never silently assumed.
 
 ## 8. Host-registered senses
 
-Sound, haptics, WebXR, gamepad and world-space panels are **report-only seams** today
-(`docs/world.md:30`). A host can register an adapter later without any library default or headset
-assumption. Widget slots (`header / body / footer / attached / pinned`) already let a host mount live
+Sound, haptics and WebXR are **host-registered seams** (`docs/world.md`): the library gates registered
+adapters and ships no implementation, while the demo registers a console-only sound adapter. Gamepad,
+gesture input and world-space panels remain host work through `InputManager`/`Fingering`. No library
+default or headset assumption. Widget slots (`header / body / footer / attached / pinned`) already let a host mount live
 controls inside a rectangle, so most "GUI possibilities" need no engine change at all.
 
 ## 9. Product forms

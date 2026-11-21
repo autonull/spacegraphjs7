@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>SpaceGraphJS · Graph IDE</title>
+        <style>
+            :root {
+                color-scheme: dark;
+                font-family: system-ui, sans-serif;
+                background: #0e1220;
+                color: #e8edff;
+            }
+            body {
+                margin: 0;
+                padding: 16px;
+                display: grid;
+                gap: 12px;
+            }
+            header {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                flex-wrap: wrap;
+            }
+            h1 {
+                font-size: 20px;
+                margin: 0;
+            }
+            main {
+                display: grid;
+                grid-template-columns: minmax(0, 2fr) minmax(260px, 1fr);
+                gap: 12px;
+            }
+            section {
+                border: 1px solid #2b3556;
+                border-radius: 8px;
+                padding: 10px;
+                background: #151b30;
+                min-height: 120px;
+            }
+            h2 {
+                font-size: 13px;
+                text-transform: uppercase;
+                letter-spacing: 0.08em;
+                margin: 0 0 8px;
+                opacity: 0.75;
+            }
+            #canvas {
+                width: 100%;
+                height: 420px;
+            }
+            aside {
+                display: grid;
+                gap: 12px;
+                align-content: start;
+            }
+            button {
+                border: 1px solid #3b4a78;
+                border-radius: 6px;
+                padding: 5px 8px;
+                background: #1d2742;
+                color: inherit;
+                cursor: pointer;
+            }
+            button[data-active='true'] {
+                border-color: #7ad7ff;
+                color: #7ad7ff;
+            }
+            li {
+                margin: 4px 0;
+                font-size: 13px;
+            }
+            .producers {
+                opacity: 0.65;
+                font-size: 12px;
+            }
+            footer {
+                opacity: 0.7;
+                font-size: 12px;
+            }
+        </style>
+    </head>
+    <body>
+        <header>
+            <h1>Graph IDE · filesystem domain</h1>
+            <button type="button" data-set-surface="execution" data-active="true">execution</button>
+            <button type="button" data-set-surface="detail">detail</button>
+            <button type="button" id="sensory-register">Register console sound</button>
+            <button type="button" id="sensory-unregister">Unregister</button>
+            <span id="status">initialising…</span>
+        </header>
+        <main>
+            <section>
+                <h2>Graph canvas</h2>
+                <div id="canvas"></div>
+            </section>
+            <aside>
+                <section>
+                    <h2>Files</h2>
+                    <ul id="files"></ul>
+                </section>
+                <section>
+                    <h2>Change / diff</h2>
+                    <ul id="changes"></ul>
+                    <div id="diff" class="producers"></div>
+                </section>
+                <section>
+                    <h2>Sensory seam</h2>
+                    <div id="sensory">sound: unsupported</div>
+                </section>
+            </aside>
+        </main>
+        <footer>
+            Rectangles are the host UI; the graph is a filesystem-domain model adapted once. Scene
+            features and sensory adapters are capability-gated — no device is assumed.
+        </footer>
+
+        <script type="module">
+            import {
+                FIXTURE_POSITIONS,
+                filesystemAdapter,
+                filesystemDomain,
+                fixtureOps,
+                foldFilesystemOps,
+            } from '@spacegraphjs/filesystem';
+            import { DEFAULT_THEME } from '@spacegraphjs/renderer';
+            import { SpaceGraphRenderer } from '@spacegraphjs/spacegraph-renderer';
+            import { createConsoleSensoryAdapter } from '../../src/console-sensory';
+            import { graphIdePanels } from '../../src/graph-ide';
+            import {
+                enabledSceneFeatures,
+                registerSensory,
+                sceneFeatures,
+                sensoryAdapter,
+                supportsSensory,
+            } from 'spacegraphjs/world';
+
+            const capabilities = { sceneFeatures: ['trails'], sensory: ['sound'] };
+            const features = enabledSceneFeatures(capabilities, sceneFeatures('all'));
+            const kernel = foldFilesystemOps(fixtureOps());
+            const view = filesystemDomain.build(kernel);
+            const panels = graphIdePanels(view);
+            const adapter = createConsoleSensoryAdapter();
+            let disposeSensory;
+            let surface = 'execution';
+            let selected = '';
+
+            const renderer = new SpaceGraphRenderer();
+            await renderer.mount(document.querySelector('#canvas'), {
+                theme: DEFAULT_THEME,
+                projection: '2d',
+                global: true,
+            });
+            renderer.setModel(
+                filesystemAdapter.build(view, {
+                    level: surface,
+                    positions: FIXTURE_POSITIONS,
+                }),
+            );
+            renderer.fit();
+
+            const renderFiles = () => {
+                document.querySelector('#files').replaceChildren(
+                    ...panels.files.map((file) => {
+                        const row = document.createElement('button');
+                        row.type = 'button';
+                        row.textContent = `${file.label} · ${file.path}`;
+                        row.dataset.active = String(file.id === selected);
+                        row.addEventListener('click', () => selectFile(file.id));
+                        return row;
+                    }),
+                );
+            };
+            document.querySelector('#changes').replaceChildren(
+                ...panels.changes.map((change) => {
+                    const row = document.createElement('li');
+                    row.textContent = change.path;
+                    row.dataset.change = change.id;
+                    const writers = document.createElement('div');
+                    writers.className = 'producers';
+                    writers.textContent = `written by ${change.producers.join(', ') || 'unknown'}`;
+                    row.append(writers);
+                    return row;
+                }),
+            );
+            document.querySelector('#diff').textContent = features.includes('trails')
+                ? 'dependency trail overlay: on'
+                : 'dependency trail overlay: off';
+
+            const renderSensory = () => {
+                const supported = supportsSensory(capabilities, 'sound');
+                document.querySelector('#sensory').textContent =
+                    `sound: ${supported ? 'supported' : 'unsupported'} · ${adapter.events.length} event(s)`;
+                document.querySelector('#status').textContent =
+                    `${surface} · ${panels.files.length} files · ${panels.changes.length} changes`;
+            };
+
+            const selectFile = (id) => {
+                selected = id;
+                renderFiles();
+                if (supportsSensory(capabilities, 'sound')) {
+                    sensoryAdapter('sound')?.emit('reveal', id);
+                }
+                renderSensory();
+            };
+
+            const setSurface = (value) => {
+                if (!['execution', 'detail'].includes(value)) return surface;
+                surface = value;
+                renderer.setModel(
+                    filesystemAdapter.build(view, { level: surface, positions: FIXTURE_POSITIONS }),
+                );
+                for (const button of document.querySelectorAll('[data-set-surface]')) {
+                    button.dataset.active = String(button.dataset.setSurface === surface);
+                }
+                renderSensory();
+                return surface;
+            };
+
+            for (const button of document.querySelectorAll('[data-set-surface]')) {
+                button.addEventListener('click', () => setSurface(button.dataset.setSurface));
+            }
+            document.querySelector('#sensory-register').addEventListener('click', () => {
+                if (!disposeSensory) disposeSensory = registerSensory(adapter);
+                renderSensory();
+            });
+            document.querySelector('#sensory-unregister').addEventListener('click', () => {
+                disposeSensory?.();
+                disposeSensory = undefined;
+                renderSensory();
+            });
+
+            renderFiles();
+            renderSensory();
+
+            globalThis.__graphIde = {
+                ready: true,
+                surface: () => surface,
+                setSurface,
+                files: () => panels.files,
+                changes: () => panels.changes,
+                dependencies: () => panels.dependencies,
+                features: () => [...features],
+                nodes: () => view.nodes.map((node) => node.id),
+                selected: () => selected,
+                selectFile,
+                sensorySupport: () => supportsSensory(capabilities, 'sound'),
+                register: () => document.querySelector('#sensory-register').click(),
+                unregister: () => document.querySelector('#sensory-unregister').click(),
+                events: () => [...adapter.events],
+            };
+        </script>
+    </body>
+</html>

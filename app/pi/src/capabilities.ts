@@ -14,7 +14,7 @@ import { applyFacets } from '@spacegraphjs/search';
 import type { GraphFacets } from '@spacegraphjs/shared';
 import type { AgentView } from '@spacegraphjs/agent';
 import type { RenderTheme } from '@spacegraphjs/renderer';
-import { UNSUPPORTED } from './policy';
+import { unsupportedSeams } from './policy';
 import { STUDY_TASKS } from './study';
 
 export type PiHostState = {
@@ -276,7 +276,7 @@ export const CAPABILITIES: readonly Capability[] = [
         id: 'sensory-seams',
         title: 'Unsupported sensory seams',
         summary: 'Immersive output stays a report-only seam until a host registers an adapter.',
-        run: () => UNSUPPORTED.map((item) => `${item.id}: ${item.reason}`),
+        run: () => unsupportedSeams().map((item) => `${item.id}: ${item.reason}`),
     },
     {
         id: 'five-questions',

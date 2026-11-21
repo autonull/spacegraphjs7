@@ -54,6 +54,7 @@ import {
     exportSVG,
     levelForZoom,
     scoreVision,
+    unsupportedSeams,
     windowedView,
     type Position,
     type VisionScores,
@@ -749,7 +750,7 @@ export class PiHost {
             report: () => this.report(),
             permalink: () => this.permalink(),
             applyPermalink: (hash: string) => this.applyPermalink(hash),
-            unsupported: () => UNSUPPORTED,
+            unsupported: () => unsupportedSeams(),
             motion: () => ({ verbs: this.director.verbs(), active: this.#playback?.active ?? [] }),
             ready: true,
         };

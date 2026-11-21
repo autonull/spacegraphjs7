@@ -52,6 +52,7 @@ const EXPECTED_MODULES = [
     'spacegraphjs/navigation',
     'spacegraphjs/overlays',
     'spacegraphjs/representations',
+    'spacegraphjs/world',
     'spacegraphjs/zoom',
 ];
 

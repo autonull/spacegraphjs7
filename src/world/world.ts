@@ -9,6 +9,29 @@ export type SceneFeature = (typeof SCENE_FEATURES)[number];
 export const SENSORY_SEAMS = ['none', 'sound', 'haptics', 'webxr'] as const;
 export type SensorySeam = (typeof SENSORY_SEAMS)[number];
 
+export type RegisteredSensorySeam = Exclude<SensorySeam, 'none'>;
+
+/** A host-owned sensory implementation. The library only records, gates and forwards to it. */
+export interface SensoryAdapter {
+    readonly id: RegisteredSensorySeam;
+    readonly label: string;
+    emit(type: string, detail?: unknown): void;
+}
+
+const sensoryAdapters = new Map<RegisteredSensorySeam, SensoryAdapter>();
+
+/** Register a host adapter; returns a disposer so hosts and tests restore the default state. */
+export function registerSensory(adapter: SensoryAdapter): () => void {
+    sensoryAdapters.set(adapter.id, adapter);
+    return () => {
+        if (sensoryAdapters.get(adapter.id) === adapter) sensoryAdapters.delete(adapter.id);
+    };
+}
+
+export function sensoryAdapter(seam: RegisteredSensorySeam): SensoryAdapter | undefined {
+    return sensoryAdapters.get(seam);
+}
+
 export interface SensoryDescriptor {
     readonly id: SensorySeam;
     readonly label: string;
@@ -74,5 +97,14 @@ export function supportsSceneFeature(
 /** A sensory seam is reported unsupported until a host registers an adapter for it. */
 export function supportsSensory(capabilities: WorldCapabilities, seam: SensorySeam): boolean {
     if (seam === 'none') return true;
-    return capabilities.sensory?.includes(seam) ?? false;
+    if (!sensoryAdapters.has(seam)) return false;
+    return capabilities.sensory === undefined || capabilities.sensory.includes(seam);
+}
+
+/** Only declared scene features with a supporting renderer capability are enabled. */
+export function enabledSceneFeatures(
+    capabilities: WorldCapabilities,
+    features: readonly SceneFeature[],
+): readonly SceneFeature[] {
+    return features.filter((feature) => supportsSceneFeature(capabilities, feature));
 }

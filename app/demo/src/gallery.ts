@@ -33,6 +33,12 @@ import {
 } from '@spacegraphjs/kernel';
 import type { CodeDiff } from '@spacegraphjs/shared';
 import { Representations } from 'spacegraphjs/representations';
+import {
+    enabledSceneFeatures,
+    supportsSensory,
+    worldPolicyFor,
+    type WorldCapabilities,
+} from 'spacegraphjs/world';
 import { ZoomBands } from 'spacegraphjs/zoom';
 import {
     BANDS,
@@ -469,6 +475,22 @@ export const CAPABILITIES: readonly Capability[] = [
             return [
                 `${context.depth} · ${treatment.projection} · phi ${round(treatment.phi)}`,
                 `fade ${treatment.fade} · orbit ${treatment.orbit ? 'on' : 'off'}`,
+            ];
+        },
+    },
+    {
+        id: 'world',
+        title: 'World and sensory seams',
+        modules: ['spacegraphjs/world'],
+        summary: 'Scene features and sensory channels are gated descriptors, not defaults.',
+        run: () => {
+            const policy = worldPolicyFor('all', 'sound', 'card');
+            const capabilities: WorldCapabilities = { sceneFeatures: ['fog'], sensory: [] };
+            const features = enabledSceneFeatures(capabilities, policy.features);
+            return [
+                `features ${features.join(', ') || 'none'} of ${policy.features.join(', ')}`,
+                `representation ${policy.representation}`,
+                `sensory ${policy.sensory}: ${supportsSensory(capabilities, policy.sensory) ? 'supported' : 'unsupported'}`,
             ];
         },
     },

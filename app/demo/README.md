@@ -23,6 +23,7 @@ pnpm --filter demo build
 | `/html/interaction/scopes.html` | Scoped overlays and the vision overlap assertion                                            |
 | `/explorer.html`                | Every discoverable config axis against both contract and demo models                        |
 | `/html/core/contract.html`      | The host-neutral renderer contract                                                          |
+| `/html/layout/graph-ide.html`   | Graph IDE reference host: filesystem graph plus live file/diff rectangles and gated senses  |
 | `/*.html`                       | The standalone feature pages: layouts, interaction, plugins, media, vision and more         |
 
 `src/` holds the demo host: a plain-TypeScript model of a release pipeline, its adapter and

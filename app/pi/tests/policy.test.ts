@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { agentDomain } from '@spacegraphjs/agent';
+import { registerSensory } from 'spacegraphjs/world';
 import { fixtureKernel } from '../src/fixture';
 import {
     CARD_BUDGETS,
@@ -11,6 +12,7 @@ import {
     exportSVG,
     levelForZoom,
     scoreVision,
+    unsupportedSeams,
     windowedView,
 } from '../src/policy';
 
@@ -56,5 +58,15 @@ describe('host policy', () => {
         expect(activity.has('b')).toBe(false);
         expect(activity.get('a')).toBeLessThan(1);
         expect(UNSUPPORTED.map((item) => item.id)).toEqual(['webxr', 'sound', 'haptics']);
+        expect(unsupportedSeams().map((item) => item.id)).toEqual(['webxr', 'sound', 'haptics']);
+
+        const dispose = registerSensory({
+            id: 'sound',
+            label: 'Test audio',
+            emit: () => undefined,
+        });
+        expect(unsupportedSeams().map((item) => item.id)).toEqual(['webxr', 'haptics']);
+        dispose();
+        expect(unsupportedSeams().map((item) => item.id)).toEqual(['webxr', 'sound', 'haptics']);
     });
 });

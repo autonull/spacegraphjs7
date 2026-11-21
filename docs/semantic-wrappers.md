@@ -150,8 +150,9 @@ The host owns everything that is a _choice_:
   budget per level (Pi uses 12/40/24). Manual pinning stays available.
 - **Scopes** — `agentScopes(view)` maps run → turn → delegated subtree → leaves to validated
   `ScopeSpec[]` with path-qualified ids, portals and cross-scope edges.
-- **Contract gating** — `supports(...)` / `supportsDepth(...)` gate every affordance. No
-  `renderer === '...'` branches. Unsupported depth modes no-op.
+- **Contract gating** — `supports(...)` / `supportsDepth(...)` gate every affordance;
+  `supportsSceneFeature(...)` and `supportsSensory(...)` gate world features and host-registered
+  adapters. No `renderer === '...'` branches. Unsupported depth modes no-op.
 
 Reference: the flagship host's `src/host.ts`, `src/policy.ts`, `src/scopes.ts`.
 
@@ -260,7 +261,7 @@ a host never answers a wrapper question by hiding nodes or inventing causal edge
 
 - [`docs/PLAN/INDEX.md`](PLAN/INDEX.md) — plan navigation.
 - [`docs/scopes.md`](scopes.md) — scope tree, policies and the vision → policy → motion loop.
-- [`docs/world.md`](world.md) — sound/haptics/WebXR stay host-registered adapters.
+- [`docs/world.md`](world.md) — sound/haptics/WebXR stay unregistered until a host registers an adapter; the demo ships a console-only example.
 - [`docs/not-decided.md`](not-decided.md) — immersion and flagship renderer are host decisions.
 - [`docs/pi-study.md`](pi-study.md) — the five-task experiment protocol and harness.
 - The flagship host's `README.md` — its commands and gates.

@@ -1,5 +1,6 @@
 import { KernelCodec, type Kernel } from '@spacegraphjs/kernel';
 import type { AgentView } from '@spacegraphjs/agent';
+import { sensoryAdapter, type RegisteredSensorySeam } from 'spacegraphjs/world';
 import type { AgentLevel } from './adapter';
 
 export type Position = { x: number; y: number; z: number };
@@ -17,6 +18,10 @@ export const UNSUPPORTED: readonly UnsupportedSeam[] = [
     { id: 'sound', reason: 'No host adapter registers an audio sink.' },
     { id: 'haptics', reason: 'No host adapter registers a haptic device.' },
 ];
+
+/** A registered host adapter removes its seam from the unsupported list. */
+export const unsupportedSeams = (): readonly UnsupportedSeam[] =>
+    UNSUPPORTED.filter((seam) => !sensoryAdapter(seam.id as RegisteredSensorySeam));
 
 const clamp = (value: number, min: number, max: number): number => Math.min(max, Math.max(min, value));
 const escapeHTML = (value: unknown): string =>

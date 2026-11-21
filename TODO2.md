@@ -1,11 +1,11 @@
 # TODO2 — From flagship to the full spatial-software vision (plan)
 
-**Status:** Phases A–D are implemented and verified; Phases E–F remain; Phase G is external and
-cannot be fabricated. TODO1's engineering is complete and verified (`TODO1.md:383-395`). **Date:**
-2026-11-20. **Owner area:** `app/pi`, `app/demo`, `src/layout` and `src/vision` done through Phase D;
-next `src/world` + `app/demo` + a Graph IDE reference host for Phase E, then the library kit for
-Phase F. Current progress and the exact next move are in §8 (Ledger). Two small flagship follow-ups
-from Phase A are still open and listed there; they do not gate Phase E.
+**Status:** Phases A–E are implemented and verified; Phase F remains; Phase G is external and cannot
+be fabricated. TODO1's engineering is complete and verified (`TODO1.md:383-395`). **Date:**
+2026-11-20. **Owner area:** `app/pi`, `app/demo`, `src/layout`, `src/vision` and `src/world` done
+through Phase E; next `packages/renderer` + `src/motion` + `src/salience` for Phase F, promoted only
+where a second host consumes them. Current progress and the exact next move are in §8 (Ledger). Two
+small flagship follow-ups from Phase A are still open and listed there; they do not gate Phase F.
 
 **Destination.** The full design space is mapped in [`docs/POSSIBILITIES.md`](docs/POSSIBILITIES.md).
 This plan turns it into a sequence: first a runnable flagship (Phase A), then domain generality (B),
@@ -57,7 +57,7 @@ the study result is published (negative included) before any immersive mode beco
 | Shareability        | `#graph:<id>` reveal anchor (`host.ts:287`)                                                                                            | No viewport/surface state, diffs or annotations. Full-state hash → graph diffs → annotated review.                                                                 |
 | Domains             | Four wrappers: `agent`, `workflow`, `filesystem`, `data`; scaffold for the rest                                                        | None of the recipe. Remaining domains in `POSSIBILITIES.md` are host work through the scaffold.                                                                    |
 | Composition         | Four isolated canvases with three `InterGraphEdge` links (`app/demo/html/layout/compositional-wrappers.html`)                          | No cross-canvas trace, two-run diff or shared review scene (Phase C).                                                                                              |
-| Senses / widgets    | `SCENE_FEATURES`, `SENSORY_SEAMS`, `WidgetLayer` descriptors (`src/world/world.ts`, `src/widgets/`)                                    | Descriptors are inert; no host adapter registration. Add a register seam, no implementation.                                                                       |
+| Senses / widgets    | `SCENE_FEATURES`, `SENSORY_SEAMS`, `WidgetLayer`, host registry + console demo adapter (`src/world/world.ts`, `app/demo`)              | None for Phase E. Renderer-level scene descriptors are Phase F work; no input defaults.                                                                            |
 | Library kit         | Mechanisms are host-assembled                                                                                                          | Promote only reused helpers; no speculative contract fields.                                                                                                       |
 
 **Design reference — `docs/spacegraphj_screenshots/`.** `full_gui.png` shows a workspace built
@@ -185,24 +185,32 @@ check, root `pnpm test` (771); media recaptured. No page errors.
 `verify:visual` (14, including toggle and opt-in URL scenes); `pnpm --filter pi test:e2e` (27);
 `pnpm test` (776); `pnpm --filter pi verify`, `test`, `build`, `scale`, package `tsc --noEmit`.
 
-### Phase E — Host senses and product forms
+### Phase E — Host senses and product forms — DONE
 
-- [ ] Add a host **adapter registration seam** in `src/world/world.ts`: `registerSensory(adapter)`
-      and `supportsSensory` consult registered adapters instead of always reporting unsupported;
-      define the adapter interface, ship no implementation. WebXR/sound/haptics stay off by default.
-- [ ] Add a console-only demo adapter under `app/demo` to prove registration and gating; document in
-      `docs/world.md` that a host owns the implementation and no headset is assumed.
-- [ ] Gate scene features (`fog/lights/parallax/trails/instancing`) through the contract descriptors
-      from Phase F; apply them in the flagship and demo only where `supportsSceneFeature` is true.
-- [ ] Build two thin reference hosts with the scaffold: a **Graph IDE** (filesystem domain + live
-      file/diff panels in rectangles) and a **session observatory** (Pi itself, already built). Other
-      forms in `POSSIBILITIES.md` — war room, learning atlas, research notebook, GraphOS — are then
-      host work using the same recipe; record them as achievable, not scheduled.
-- [ ] Bind gamepad/gesture input, if a host needs it, through `InputManager`/`Fingering` only; keep
-      the library free of input defaults.
+- [x] Add a host **adapter registration seam** in `src/world/world.ts`: `registerSensory(adapter)`
+      records a host-owned `SensoryAdapter` and returns a disposer; `sensoryAdapter(seam)` looks it up
+      and `supportsSensory` consults the registry. No implementation ships in the library; WebXR/sound/
+      haptics stay off by default. `enabledSceneFeatures` filters declared features through
+      `supportsSceneFeature`.
+- [x] Add a console-only demo adapter (`app/demo/src/console-sensory.ts`) registered on the Graph IDE
+      page to prove registration, emission and gating. `docs/world.md` states that the host owns the
+      device and no headset is assumed; `docs/semantic-wrappers.md` lists the two gates. The flagship
+      now reports a seam as unsupported only while no adapter is registered.
+- [x] Gate scene features through the `WorldCapabilities` descriptors: the Graph IDE enables only
+      `supportsSceneFeature`-approved treatments and the gallery reports the gated set. Renderer-level
+      `sceneFeatures` descriptors remain Phase F work — the flagship has no fog/lights implementation,
+      so nothing is fabricated there.
+- [x] Build the **Graph IDE** reference host in the demo (filesystem domain + live file/diff panels in
+      rectangles, probe and Playwright spec). The **session observatory** is the flagship, already
+      built. War room, learning atlas, research notebook and GraphOS are achievable host work through
+      the same recipe, recorded here as not scheduled.
+- [x] No host needs gamepad/gesture input yet; `InputManager`/`Fingering` stay the only route and the
+      library has no input defaults.
 
-**Gate:** adapter registration test; demo page Playwright; `docs/world.md` and `docs/semantic-wrappers.md`
-updated; all builds green.
+**Gate (green):** `test/world.test.ts` (6), `app/demo/tests/console-sensory.test.ts` and
+`graph-ide.test.ts` (4), `pnpm --filter pi test` (36 incl. dynamic unsupported seams), demo e2e (19
+incl. Graph IDE), demo-error check (40 pages), `pnpm test` (782), both builds, Pi `verify`/`verify:visual`
+and package `tsc --noEmit`.
 
 ### Phase F — Library consolidation (pull, not push)
 
@@ -256,7 +264,7 @@ game-engine API; additional domains beyond the four until a host needs them; the
 | Domains              | `bun test` + `typecheck` + `build` in each of the four `packages/domain/*`; conformance included — Phase B green                                                                                                        |
 | Composition + scenes | **Phase C green:** compositional trace (2), graph diff (1), flagship (1) specs; Pi annotation/report specs (2); `pnpm --filter demo build`, demo-error check (39), `video:flagship` recaptured                          |
 | Runtime loop         | **Phase D green:** `test/vision-loop.test.ts` deterministic fixture; `createVisionAssert.record()` records gate/loop agreement or the explicit fixer-path note; `verify:visual` (14) covers toggle and `?visionLoop=on` |
-| Adapter seams        | registration/gating test; no implementation defaults; `docs/world.md` updated                                                                                                                                           |
+| Adapter seams        | **Phase E green:** `test/world.test.ts` (6) + demo adapter spec/unit; Graph IDE page spec; no library implementation; `docs/world.md` and `docs/semantic-wrappers.md` updated; demo-error check (40)                    |
 | Boundaries           | root `pnpm test` (`test/boundaries.test.ts`) + `pnpm --filter pi verify` after every phase                                                                                                                              |
 | Study protocol       | `pnpm --filter pi test` — matrix, Latin square, recorder, negative reporting; participant run external                                                                                                                  |
 | Full repo            | `pnpm test` from root; no `pnpm run check` script exists here (use package `tsc --noEmit`)                                                                                                                              |
@@ -323,8 +331,8 @@ contract + registry over branches; host owns policy; legibility gates spectacle.
 | 5. Compositional worlds      | **Landed — Phases B+C** (four isolated domains, three links, cross-canvas trace, history diff)    |
 | 6. Shareable scenes          | **Landed — Phases A+C** (full-state permalink, notes on node data, audit report)                  |
 | 7. Self-verifying interfaces | **Landed — Phase D** (opt-in runtime loop, gate agreement record); Phase F promotes only on reuse |
-| 8. Host-registered senses    | Phase E (adapter seam, widget mounting)                                                           |
-| 9. Product forms             | Phase E (Graph IDE + observatory); others host work via scaffold                                  |
+| 8. Host-registered senses    | **Landed — Phase E** (registry seam, gating, console demo adapter; widget mounting unchanged)     |
+| 9. Product forms             | **Landed — Phase E** (Graph IDE demo host + flagship observatory); others host work via scaffold  |
 | 10. Horizons                 | This document's phases + Phase G research gate                                                    |
 | 11. Boundaries               | Guardrails in the introduction and gates in §4                                                    |
 
@@ -394,23 +402,42 @@ contract + registry over branches; host owns policy; legibility gates spectacle.
   776; `pnpm --filter pi test` 36, `test:e2e` 27, `verify:visual` 14, `verify`, `build`, `scale`
   (vision loop 1.36 ms/cycle against the 16 ms budget), package `tsc --noEmit` — all green.
 
-### Next move (Phase E)
+### Landed (Phase E)
 
-Work from the inert descriptors in `src/world/world.ts`. In order:
+- `src/world/world.ts` / `src/world/index.ts`: `SensoryAdapter` (id/label/emit), module registry with
+  `registerSensory` disposer and `sensoryAdapter` lookup, `supportsSensory` gating (`none` stays true),
+  and `enabledSceneFeatures` filtered through `supportsSceneFeature`. No library ships a device.
+- `app/demo/src/console-sensory.ts`: host-owned console sink; `app/demo/html/layout/graph-ide.html`
+  registers it on demand, gates scene-feature treatments and exposes `__graphIde` (files, changes,
+  dependencies, features, sensory support, events). The Graph IDE uses the filesystem domain's
+  fixture, adapter and selectors; file/diff panels are plain rectangles. Registered in the demo
+  registry (3 hosts / 40 pages / 45 modules) and linked from the demo index and learn pages.
+- `app/pi/src/policy.ts` / `host.ts` / `capabilities.ts`: `unsupportedSeams()` filters out registered
+  seams instead of reporting every seam unsupported forever; the gallery and probe use it.
+- `docs/world.md` and `docs/semantic-wrappers.md` updated: registration, disposer, gating and the
+  console-only demo; no headset assumed, no input defaults.
+- Evidence: `test/world.test.ts` (6), demo unit 20 (console + graph IDE), demo e2e 19 (Graph IDE),
+  demo-error check 40, root `pnpm test` 782, Pi `test` 36 / `test:e2e` 27 / `verify:visual` 14 /
+  `verify`, both builds, package `tsc --noEmit` — all green.
 
-1. Add `registerSensory(adapter)` in `src/world/world.ts`; make `supportsSensory` consult registered
-   adapters (keep `none` always true). Define the adapter interface; ship no implementation.
-2. Add a console-only demo adapter under `app/demo`, register it on one page and assert gating in
-   Playwright; update `docs/world.md` to say hosts own hardware and no headset is assumed.
-3. Gate `SCENE_FEATURES` through the contract descriptors once Phase F lands them; apply only where
-   `supportsSceneFeature` is true in Pi and demo.
-4. Build the Graph IDE reference host with the scaffold (filesystem domain + live file/diff panels).
-   Pi is the session observatory. Record war room / learning atlas / research notebook / GraphOS as
-   achievable host work, not scheduled items; bind gamepad/gesture input only through
-   `InputManager`/`Fingering`.
+### Next move (Phase F)
 
-See §3 Phase E for the checklist and §4 for the gate. Do not start Phase F until E is green: F is
-pull-only and must be triggered by a second consumer, not by anticipation.
+Phase F is **pull-only**: do not promote anything until a second host consumes it. In order, when
+that consumer exists:
+
+1. `flyTo`/`trace`/`sweep` from the flagship into `src/motion/createCameraMotionHandlers(adapter)`,
+   with `reportUnsupported` for unregistered verbs. Pi's imports change, behavior does not.
+2. The flagship play session into `src/world/PhysicsPlaySession`; the representation-ladder rung
+   helper into `src/salience/` as a pure `(node, rung, activity, vision) → rung` function.
+3. Renderer contract descriptors (`motionVerbs`, `sceneFeatures`, `sensorySeams`) beside
+   `supports`/`supportsDepth`/`supportsEmphasis` only for capabilities a second renderer advertises;
+   scope/physics fields wait for an implementing renderer. The zero-dependency contract stays behavior-free.
+4. Measure before adding incremental `RenderModelPatch` consumption; fix `ForceCore.initializePositions`
+   randomization through a plain-object seam; add parity coverage in `test/boundaries.test.ts` and
+   document the two layout vocabularies in `docs/scopes.md`.
+
+See §3 Phase F for the checklist and §4 for the gate. Phase G stays external: no study result,
+release or deployment may be fabricated.
 
 ### Deferred inside Phase A (still open; do before calling the flagship finished)
 
@@ -419,21 +446,19 @@ pull-only and must be triggered by a second consumer, not by anticipation.
    `app/pi/src/host.ts`; add a stable glyph plus a clickable breadcrumb back through parent scopes.
 2. Bind `Trail`/minimap from `src/navigation` into the Pi rail. `Trail` gives back/forward over
    revealed nodes; `Navigation.project` maps `#positions` into a small overview box. Both are pure
-   helpers — no library API change. Neither item blocks Phase E.
+   helpers — no library API change. Neither item blocks Phase F.
 
 ### Remaining phases
 
 - **C — Compositional worlds and shareable scenes.** Landed. See the ledger entry above.
 - **D — Runtime self-verifying loop.** Landed. See the ledger entry above.
-- **E — Host senses and product forms.** Next. Needs the `registerSensory` seam (no default
-  implementation), a console-only demo adapter, feature gating through contract descriptors and the
-  Graph IDE reference host. The session observatory is Pi itself.
+- **E — Host senses and product forms.** Landed. See the ledger entry above.
 - **F — Library consolidation.** Unstarted and pull-only. Promote a helper only after a second host
   consumes it: camera handlers, `PhysicsPlaySession`, the rung helper, then contract descriptors and
   parity tests. Pi behavior must not change.
 - **G — Proof and delivery.** External: participants for the five-task study and credentials for the
   npm release. No result, release or deployment may be fabricated.
 
-Each of E–F has its own gate in §4 and must stay green before the next starts. The two deferred Phase
-A items remain open and belong to the flagship, not to a new phase. Baseline TODO1 evidence is in
+Phase F has its own gate in §4 and must stay green before Phase G starts. The two deferred Phase A
+items remain open and belong to the flagship, not to a new phase. Baseline TODO1 evidence is in
 `TODO1.md:383-395`.
