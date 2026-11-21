@@ -52,11 +52,26 @@ the progress block below records what has actually landed.
 4. The focus ring is independent of `focusScale`; scaling stays purely opt-in. The connector is host DOM, not a contract seam.
 5. The 44px check currently covers the inspector tab bar and pin. A full pass over command bar, rail and in-card actions is still owed, so §2's ergonomic-target claim is not yet universal.
 
+**Direction recorded for slice 3 (user feedback, 2026-11-21):**
+
+- Edges are too long and too line-like. Shorten their reach (`geometry.repulsion`, `geometry.gap` or a new
+  link-length policy) and replace thin tubes with tapered polygon geometry — triangles/trapezoids — that
+  reads as tangible and weighted. The user chose a **renderer edge type** over a host SVG overlay. This is
+  an explicit exception to §3.7 / §7's two-consumer rule and needs a one-line decision record with
+  before/after shots per §11.8.
+- Card surfaces need subtle color shading and depth cues — layered gradients, inset highlights — instead of
+  flat dark rectangles with borders. Stay modern and minimal: one accent channel, no bloom, particles or new
+  chrome. Keep 3:1 contrast in both themes and keep the frame-time and scale budgets green.
+- Tests stay loose and fast. Prefer one behavioral assertion per change over exact pixel, geometry or CSS
+  constants; avoid exhaustive matrices where a representative shot passes. A gate should catch breakage,
+  not dictate implementation detail.
+
 **Remaining work, in order:**
 
-1. **Slice 3 — Recursion, inspector and proof** (O3, O4, K1–K3, J4, J5, N1, N2, M1): inner topology with
-   connectors, portal previews, depth-ruler breadcrumb, visible evidence line, catalog cards, first-run
-   hint, review notes. Gate: `fractal`, `deep-focus`, `catalog` and intermediate descend frames.
+1. **Slice 3 — Recursion, edges and proof** (O3, O4, K1–K3, J4, J5, N1, N2, M1 + recorded direction): inner
+   topology with connectors, portal previews, depth-ruler breadcrumb, visible evidence line, catalog cards,
+   first-run hint, review notes, shorter tapered polygon edges and shaded card surfaces. Gate: `fractal`,
+   `deep-focus`, `catalog` and intermediate descend frames; loose tests, budgets green.
 2. **Slice 4 — Proliferation** (O5–O7): blocked on a second host consuming shell, tokens and inspector
    unchanged. Then split core/domain policy, emit the world-host and real vision gate from the scaffold,
    and add one cross-domain shot. No contract or position-authority change.
@@ -391,7 +406,7 @@ before the previous one has been reviewed. This is the consolidation that makes 
 | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
 | **1. One surface language**                       | A token module Pi consumes, a compact command bar, drawers, a dockable inspector frame and contextual instruments                                 | O1, O2, H1, J1, J2, J3, K4(bound only) | `cockpit` and `policy` shots; keyboard-only run; no new CSS constant outside the token module                    |
 | **2. Graph grammar and attention**                | One type/spacing/color/shape language for nodes; ranked ribbons; a focus ring with connector; scope contours where space is empty                 | H2, H3, H4, I1, I2, I3, I4             | `cockpit`, `neon-cockpit`, `node-detail`, `dynamic-range`; vision gates in both themes                           |
-| **3. Recursion, inspector and proof**             | The inner topology with connectors, portal previews, depth-ruler breadcrumb, visible proof line, catalog cards, first-run hint, shot review notes | O3, O4, K1, K2, K3, J4, J5, N1, N2, M1 | `fractal`, `deep-focus`, `catalog`; descend intermediate frames; one cross-domain shot if a second host is ready |
+| **3. Recursion, edges and proof**                 | The inner topology with connectors, portal previews, depth-ruler breadcrumb, visible proof line, catalog cards, first-run hint, shot review notes, shorter tapered polygon edges and shaded cards | O3, O4, K1, K2, K3, J4, J5, N1, N2, M1 | `fractal`, `deep-focus`, `catalog`; descend intermediate frames; loose tests; one cross-domain shot if a second host is ready |
 | **4. Proliferation** (gated on a second consumer) | Policy core/domain split, world-host template, scaffold emits real vision gate, shared helpers and shots                                          | O5, O6, O7 (O8 is already written)     | Second host consumes shell/tokens/inspector unchanged; scaffold output green; no contract change                 |
 
 **Standing track — gates and parity.** M3 (vision at intermediate frames) and L4 (reduced-motion
