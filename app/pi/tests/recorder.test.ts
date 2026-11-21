@@ -4,6 +4,7 @@ import { POLICY_SCHEMA, resolvePolicy } from '../src/policy';
 import {
     SessionRecorder,
     counterfactual,
+    ergonomicCounters,
     eventKnob,
     replaySession,
     type EventScorer,
@@ -44,6 +45,19 @@ describe('session recorder', () => {
         const session = recording();
         expect(replaySession(session, baseline, scorer)).toEqual(replaySession(session, baseline, scorer));
         expect(replaySession(session, baseline, scorer).success).toBeCloseTo(1 / 3);
+    });
+
+    it('counts neutral ergonomic signals without declaring a success criterion', () => {
+        const recorder = new SessionRecorder('pi:local', () => 0);
+        recorder.record('descend', baseline);
+        recorder.record('zoom-oscillation', baseline, { reversals: 2 });
+        recorder.record('zoom-oscillation', baseline, { reversals: 3 });
+        recorder.record('escape-hatch', baseline);
+        const counters = ergonomicCounters(recorder.export());
+        expect(counters.descend).toBe(1);
+        expect(counters['zoom-oscillation']).toBe(2);
+        expect(counters['escape-hatch']).toBe(1);
+        expect(counters.answer).toBe(0);
     });
 
     it('re-scores the same human events under a different policy', () => {

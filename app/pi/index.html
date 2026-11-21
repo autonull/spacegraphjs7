@@ -256,6 +256,12 @@
             #minimap circle {
                 cursor: pointer;
             }
+            [data-portal][data-descending='true'] {
+                opacity: 0.15;
+            }
+            [data-rung] {
+                transition: opacity var(--pi-blend, 120ms);
+            }
             #policy-section {
                 border: 1px solid var(--pi-border);
                 border-radius: 6px;
@@ -532,7 +538,7 @@
                 shift-drag box-select
             </div>
             <strong>Keyboard</strong>
-            <div id="keyboard-map">arrows pan · +/− zoom · f focus · Esc clear</div>
+            <div id="keyboard-map">arrows pan · +/− zoom · Enter reveal · PgDn/PgUp descend/ascend · t trace · Home/Esc return · f focus</div>
             <strong>Known limitations</strong>
             <div id="limitations">
                 WebXR, sound and haptics are report-only seams; no immersive default. True FlowEdge

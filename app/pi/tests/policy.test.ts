@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { agentDomain } from '@spacegraphjs/agent';
+import { DEFAULT_THRESHOLDS, representationWeights } from 'spacegraphjs/salience';
 import { registerSensory } from 'spacegraphjs/world';
 import { fixtureKernel } from '../src/fixture';
 import {
@@ -32,6 +33,20 @@ describe('host policy', () => {
         expect(levelForZoom(2, 'execution')).toBe('detail');
         expect(levelForZoom(1.4, 'detail')).toBe('execution');
         expect(CARD_BUDGETS).toEqual({ overview: 12, execution: 40, detail: 24 });
+    });
+
+    it('weights rungs continuously near a boundary without overtaking the discrete rung', () => {
+        const low = representationWeights({ level: 'overview', activity: 0, legibility: 1 });
+        expect(low.overview).toBe(1);
+        const near = representationWeights(
+            { level: 'overview', activity: 0.58, legibility: 1 },
+            DEFAULT_THRESHOLDS,
+            0.2,
+        );
+        expect(near.execution).toBeGreaterThan(0);
+        expect(near.execution).toBeLessThan(0.5);
+        const detail = representationWeights({ level: 'detail', activity: 0, legibility: 0.45 });
+        expect(detail.execution).toBeGreaterThan(detail.detail);
     });
 
     it('windows turns without changing layout input and exports portable artifacts', () => {

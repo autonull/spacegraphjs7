@@ -33,3 +33,30 @@ export const representationRung = (
     if (level === 'detail' && legibility < thresholds.demoteBelow) return 'execution';
     return level;
 };
+
+export interface RepresentationWeights {
+    readonly overview: number;
+    readonly execution: number;
+    readonly detail: number;
+}
+
+/** Continuous neighbour weight around a rung boundary; used only for visual crossfade. */
+export const representationWeights = (
+    input: RepresentationInput,
+    thresholds: RepresentationThresholds = DEFAULT_THRESHOLDS,
+    blend = 0.1,
+): RepresentationWeights => {
+    const width = Math.max(0.001, blend);
+    const ramp = (distance: number): number =>
+        Math.min(1, Math.max(0, (distance + width) / (2 * width)));
+    const rung = representationRung(input, thresholds);
+    if (rung === 'overview') {
+        const t = ramp(input.activity - thresholds.promoteAt);
+        return { overview: 1 - t, execution: t, detail: 0 };
+    }
+    if (rung === 'detail') {
+        const t = ramp(thresholds.demoteBelow - input.legibility);
+        return { overview: 0, execution: 1 - t, detail: t };
+    }
+    return { overview: 0, execution: 1, detail: 0 };
+};

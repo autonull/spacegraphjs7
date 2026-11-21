@@ -61,7 +61,13 @@ export const portalGlyph = (scope: string): string =>
     PORTAL_GLYPHS[[...scope].reduce((sum, char) => sum + char.charCodeAt(0), 0) % PORTAL_GLYPHS.length]!;
 
 /** Host-owned markup for one rung of the representation ladder. All node text is escaped. */
-export const cardMarkup = (node: AgentAdapterNode, rung: AgentLevel, context: CardContext): string => {
+export const cardMarkup = (
+    node: AgentAdapterNode,
+    rung: AgentLevel,
+    context: CardContext,
+    blend = 0,
+    descending = false,
+): string => {
     const label = escapeHtml(node.label);
     const detail = escapeHtml(detailOf(node));
     const status = escapeHtml(node.status);
@@ -72,8 +78,8 @@ export const cardMarkup = (node: AgentAdapterNode, rung: AgentLevel, context: Ca
     const glyph = node.scope
         ? `<span aria-hidden="true" style="opacity:.7">${portalGlyph(node.scope)} </span>`
         : '';
-    const attributes = `data-rung="${rung}" data-kind="${escapeHtml(node.kind)}" data-status="${status}"${portal}`;
-    const box = 'display:flex;flex-direction:column;gap:3px;padding:8px 10px;color:inherit;font-family:inherit';
+    const attributes = `data-rung="${rung}" data-blend="${blend.toFixed(2)}" data-kind="${escapeHtml(node.kind)}" data-status="${status}"${portal}${descending ? ' data-descending="true"' : ''}`;
+    const box = 'display:flex;flex-direction:column;gap:3px;padding:8px 10px;color:inherit;font-family:inherit;transition:opacity var(--pi-blend,120ms)';
 
     if (rung === 'overview') {
         return `<div ${attributes} style="${box}"><span style="font-weight:600">${glyph}${label}${badge}</span></div>`;

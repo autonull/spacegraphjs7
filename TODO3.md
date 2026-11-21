@@ -17,19 +17,27 @@ Self-contained. No time estimates. Ordered by dependency, not duration.
 | A4 permalink v2 | done | `PermalinkState.policy` (compact `p1.<base64url>` vector) + `.fixture`; preset gallery data in `policy/presets.ts`; applying a link clears live overrides so the URL wins. |
 | A5 recorder / replay | done | `app/pi/src/recorder.ts`: neutral events stamped with the resolved vector, deterministic replay, `counterfactual()` re-score. `host.ts` records `reveal`, `answer`/`wrong-turn`, `policy:change` with vision scores, exposes `recording()`, `recordEvent()`, `replayRecording()` and `counterfactual()` hooks with an ergonomic scorer. |
 
-Every schema knob has a live host consumer: bands → `levelForZoom`, ladder → `representationRung`, salience → activity decay, emphasis → emphasis caps, camera → flight durations, depth → simulation + renderer, widgets → dock attribute, geometry → `setBaseLayout`/`setForces`, guardrails → budgets/window, surface → surface state, navigation → orientation aids, orchestration → gallery, theme → renderer theme.
+**Workstream B — Ergonomic Navigation & Continuity: core implemented.**
 
-**Verification:** `app/pi pnpm test` 48 passed; root `pnpm test` 812 passed; `app/pi pnpm test:e2e` 31 passed (includes 3 new `tests/policy.spec.ts` cases); `tsc -p app/pi/tsconfig.json --noEmit` clean after `pnpm run build:lib`.
+| Item | Status | Evidence |
+|---|---|---|
+| B1 navigation grammar | done | `host.ts`: `traverseEdge` (double-click `edgeClick` → `flyTo` over the existing camera handler), `descend`/`ascend`, `trace`, `follow`, `returnHome`; keyboard bindings `Enter`, `PgDn`/`PgUp`, `t`, `Home`/`Esc` on top of arrows/zoom/focus. All verbs interruptible, reduced-motion aware and recorded as neutral events. |
+| B2 continuity | core done | Portal dissolve animates the child frame origin with the policy `flyTo` duration and holds `[data-descending]` on the portal card through repaints; rung crossfade uses pure `representationWeights` + `ladder.blendMs` driving `[data-rung]` opacity. True two-rung DOM compositing still needs adapter support (see below). |
+| B3 instrumentation | done | `recorder.ts` `ERGO_SIGNALS`/`ergonomicCounters`; host records zoom reversals, trail backtracks, escape-hatch use, hover dwell, traverse, descend/ascend, trace; `__pi.ergonomics()` exposes counts. |
+
+Every schema knob has a live host consumer: bands → `levelForZoom`, ladder → `representationRung`/`representationWeights` + blur duration, salience → activity decay, emphasis → emphasis caps, camera → flight durations, depth → simulation + renderer, widgets → dock attribute, geometry → `setBaseLayout`/`setForces`, guardrails → budgets/window, surface → surface state, navigation → orientation aids, orchestration → gallery, theme → renderer theme.
+
+**Verification:** `app/pi pnpm test` 50 passed; root `pnpm test` 814 passed; `app/pi pnpm test:e2e` 35 passed (`tests/policy.spec.ts`, `tests/navigation.spec.ts`, and a vision assertion over intermediate traverse frames); `tsc -p app/pi/tsconfig.json --noEmit` clean after `pnpm run build:lib`.
 
 **Remaining work, in order:**
 
-1. **B — Ergonomic navigation:** B1 edge-traverse verb (`double-click edge → fly to target`) through the camera-verb registry; B2 portal dissolve / rung crossfade choreography; B3 ergonomic counters (wrong turns, zoom oscillation, backtracks, escape-hatch use) recorded as neutral events. Gate: vision assertions on intermediate descent frames, keyboard-only + reduced-motion e2e for the full verb set.
+1. **B polish (small):** true two-rung compositing in `ModelAdapter` (both rung markups cross-faded by weight, not only an opacity transition); touch/`Fingering` bindings for the verb set; `time-to-first-relevant` and choice-count counters; `survey` verb.
 2. **C — Living rectangles / Pi orchestration:** instrument kit and the remaining verbs (steer, approve as first-class node, compare runs); prompt→steer→approve→retry e2e with transcript parity.
 3. **D — One world / proliferation:** mount all four domains in one canvas; ship the fifth exemplar through `create-spacegraph` so new domains inherit schema + panel + recorder + preset gallery.
 4. **E — Experimentation program:** generalize seeded pairwise sampling to any policy families; wire the resolver `experiment` layer and tiered scoring; decision rules and negative-result publication as data. Offline counterfactual re-simulation of layout/vision under a variant is E work; the recorder scorer adapter is in place.
-5. **F / G — Truth and proof:** docs reconciliation, ADRs, root gates; participant study, npm release, hosted flagship and the public preset/experiment catalog.
+5. **F / G — Truth and proof:** docs reconciliation, ADRs, root gates (root `tsc` currently has pre-existing errors in `app/demo` and `src/core/Ergonomics.ts`); participant study, npm release, hosted flagship and the public preset/experiment catalog.
 
-**Deliberate non-goals for this increment:** no new library mechanism beyond the two additive pure seams `representationRung(input, thresholds)` and `ScopeSimulation.setBaseLayout/setForces`; no contract change; no immersive or visual default promoted (presets remain examples, never recommendations).
+**Deliberate non-goals for this increment:** no contract change, no renderer branches, no new domain scheduled, no immersive or visual default promoted (presets remain examples, never recommendations). Additive pure seams used: `representationRung(input, thresholds)`, `representationWeights`, `ScopeSimulation.setBaseLayout/setForces`.
 
 ---
 

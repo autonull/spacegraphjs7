@@ -26,7 +26,7 @@ import {
     type CameraMotionHandlers,
     type MotionPlayback,
 } from 'spacegraphjs/motion';
-import { representationRung } from 'spacegraphjs/salience';
+import { representationRung, representationWeights } from 'spacegraphjs/salience';
 import { lerp, requireElement } from 'spacegraphjs/utils';
 import {
     createVisionLoop,
@@ -83,6 +83,7 @@ import {
 import {
     SessionRecorder,
     counterfactual,
+    ergonomicCounters,
     replaySession,
     type EventScorer,
     type SessionRecording,
@@ -278,6 +279,11 @@ export class PiHost {
     #policyListeners = new Set<(event: PolicyChangeEvent) => void>();
     #recorder: SessionRecorder;
     #startedAt = typeof performance === 'undefined' ? 0 : performance.now();
+    #lastZoomDirection = 0;
+    #zoomOscillations = 0;
+    #lastEdgeClick?: { id: string; at: number };
+    #hover?: { id: string; at: number };
+    #dissolving?: string;
 
     constructor(
         options: { projection?: Projection; reducedMotion?: boolean; global?: boolean } = {},
@@ -450,6 +456,7 @@ export class PiHost {
         });
         this.simulation.setForces({ repulsion: Number(values['geometry.repulsion']) });
         if (typeof document !== 'undefined') {
+            document.documentElement.style.setProperty('--pi-blend', `${values['ladder.blendMs']}ms`);
             if (document.documentElement.dataset.theme !== String(values['theme.variant'])) {
                 document.documentElement.dataset.theme = String(values['theme.variant']);
                 this.#theme = readTheme();
@@ -520,6 +527,20 @@ export class PiHost {
         );
         this.renderer.on('nodeClick', ({ id }) => this.reveal(id));
         this.renderer.on('viewportChange', ({ zoom }) => this.applyAutoLevel(zoom));
+        this.renderer.on('edgeClick', ({ id }) => {
+            const now = typeof performance === 'undefined' ? 0 : performance.now();
+            if (this.#lastEdgeClick?.id === id && now - this.#lastEdgeClick.at < 400) {
+                this.#lastEdgeClick = undefined;
+                this.traverseEdge(id);
+            } else this.#lastEdgeClick = { id, at: now };
+        });
+        this.renderer.on('hoverChange', ({ id }) => {
+            const now = typeof performance === 'undefined' ? 0 : performance.now();
+            if (this.#hover && now - this.#hover.at > 600) {
+                this.recordEvent('hover-dwell', { target: this.#hover.id, ms: Math.round(now - this.#hover.at) });
+            }
+            this.#hover = id ? { id, at: now } : undefined;
+        });
 
         this.refresh();
         this.simulation.settle();
@@ -616,28 +637,28 @@ export class PiHost {
             const scope = this.#portalByNode.get(node.id);
             return scope ? { ...node, scope } : node;
         });
+        const values = this.#resolved.values;
+        const thresholds = {
+            promoteAt: Number(values['ladder.promoteAt']),
+            legibilityGate: Number(values['ladder.legibilityGate']),
+            demoteBelow: Number(values['ladder.demoteBelow']),
+        };
         this.#model = this.#adapter.build(model, {
             level: this.#level,
             positions: this.#positions,
             edges: true,
             focus: this.#controller.selection[0],
-            renderCard: (node, level, context) =>
-                cardMarkup(
-                    node,
-                    representationRung(
-                        {
-                            level,
-                            activity: this.#activity.get(node.id) ?? 0,
-                            legibility: this.#vision.legibility,
-                        },
-                        {
-                            promoteAt: Number(this.#resolved.values['ladder.promoteAt']),
-                            legibilityGate: Number(this.#resolved.values['ladder.legibilityGate']),
-                            demoteBelow: Number(this.#resolved.values['ladder.demoteBelow']),
-                        },
-                    ),
-                    context,
-                ),
+            renderCard: (node, level, context) => {
+                const input = {
+                    level,
+                    activity: this.#activity.get(node.id) ?? 0,
+                    legibility: this.#vision.legibility,
+                };
+                const weights = representationWeights(input, thresholds);
+                const blend = 1 - Math.max(weights.overview, weights.execution, weights.detail);
+                const descending = this.#dissolving !== undefined && this.#portalByNode.get(node.id) === this.#dissolving;
+                return cardMarkup(node, representationRung(input, thresholds), context, blend, descending);
+            },
         });
         if (this.#traceIds.length) {
             const traced = new Set(this.#traceIds);
@@ -689,7 +710,10 @@ export class PiHost {
         this.#ticks++;
         this.simulation.advance(seconds);
         this.#playback?.advance(seconds);
-        if (this.#playback?.done) this.#playback = undefined;
+        if (this.#playback?.done) {
+            this.#playback = undefined;
+            this.clearDissolve();
+        }
         decayActivity(this.#activity, seconds, Number(this.#resolved.values['salience.decayRate']));
         this.#visionTime += seconds;
         if (this.#visionTime >= 0.4) {
@@ -712,6 +736,7 @@ export class PiHost {
         this.simulation.settle();
         this.#playback?.finish();
         this.#playback = undefined;
+        this.clearDissolve();
         this.#activity.clear();
         this.renderPositions();
     }
@@ -747,7 +772,10 @@ export class PiHost {
 
     trailBack(): string | undefined {
         const current = this.#trail.back();
-        if (current) this.reveal(current.id);
+        if (current) {
+            this.recordEvent('trail-backtrack', { target: current.id });
+            this.reveal(current.id);
+        }
         return current?.id;
     }
 
@@ -763,6 +791,121 @@ export class PiHost {
         while (this.#trail.depth - 1 > target) this.#trail.back();
         while (this.#trail.depth - 1 < target) this.#trail.forward();
         this.reveal(id);
+    }
+
+    /** B1 `traverse`: cross a relationship spatially, reusing the existing `flyTo` camera verb. */
+    traverseEdge(edgeID: string): string | undefined {
+        const edge = this.#view.edges.find((candidate) => candidate.id === edgeID);
+        if (!edge) return undefined;
+        const target = this.#positions.get(edge.target);
+        this.recordEvent('traverse', { edge: edgeID, target: edge.target });
+        this.reveal(edge.target);
+        if (target) this.flyToPosition(target, edge.target);
+        return edge.target;
+    }
+
+    /** B1/B2 `descend`: reveal the next portal and animate its frame origin through the parent. */
+    descend(): string | undefined {
+        const current = this.#revealed ? this.#portalByNode.get(this.#revealed) : undefined;
+        const portals = [...this.#portalByNode].map(([id, scope]) => ({ id, scope }));
+        const next =
+            portals.find(
+                (portal) =>
+                    current === undefined ||
+                    (portal.scope !== current && portal.scope.startsWith(`${current}/`)),
+            ) ?? portals[0];
+        if (!next) return undefined;
+        this.recordEvent('descend', { scope: next.scope, target: next.id });
+        this.reveal(next.id);
+        const frame = this.simulation.view().frames.get(next.scope);
+        if (frame) this.flyToPosition(frame.origin);
+        this.markDissolve(next.scope);
+        return next.id;
+    }
+
+    /** B1 `ascend`: step to the parent scope's portal, or home at the root. */
+    ascend(): string | undefined {
+        const scope = this.#revealed ? this.#portalByNode.get(this.#revealed) : undefined;
+        if (!scope) {
+            this.returnHome();
+            return undefined;
+        }
+        const chain = portalChain(scope, this.#specs);
+        const parent = chain.at(-2);
+        const portal = parent
+            ? [...this.#portalByNode].find(([, child]) => child === parent)?.[0]
+            : undefined;
+        this.recordEvent('ascend', { scope, parent: parent ?? '' });
+        if (!portal) {
+            this.returnHome();
+            return undefined;
+        }
+        this.reveal(portal);
+        const frame = this.simulation.view().frames.get(parent!);
+        if (frame) this.flyToPosition(frame.origin);
+        return portal;
+    }
+
+    /** B1 `return`: one keystroke back to the familiar hybrid view. */
+    returnHome(): void {
+        this.recordEvent('escape-hatch', { from: this.#revealed });
+        this.#playback?.finish();
+        this.#playback = undefined;
+        this.clearDissolve();
+        this.setKnob('surface.mode', 'hybrid');
+        this.renderer.setSelection([]);
+        this.renderer.setViewport({ zoom: 1, center: [0, 0, 0] });
+        this.#revealed = '';
+        this.renderPortalCrumb();
+        this.renderHud();
+        this.paint();
+    }
+
+    ergonomics(): Readonly<Record<string, number>> {
+        return ergonomicCounters(this.recording());
+    }
+
+    private markDissolve(scope: string): void {
+        this.#dissolving = scope;
+        this.paint();
+    }
+
+    private clearDissolve(): void {
+        if (!this.#dissolving) return;
+        this.#dissolving = undefined;
+        this.paint();
+    }
+
+    private flyToPosition(target: Position, traceID?: string): void {
+        this.#flightFrom = this.renderer.getViewport();
+        this.#flightTo = target;
+        const values = this.#resolved.values;
+        const traceSeconds = Number(values['camera.traceMs']) / 1000;
+        const steps = [
+            ...(traceID
+                ? [
+                      {
+                          id: `trace:${traceID}`,
+                          verb: 'trace' as const,
+                          target: 'emphasis' as const,
+                          from: 0,
+                          to: 1,
+                          duration: traceSeconds,
+                      },
+                  ]
+                : []),
+            {
+                id: `flyTo:${traceID ?? 'scope'}`,
+                verb: 'flyTo' as const,
+                target: 'camera' as const,
+                from: 0,
+                to: 1,
+                duration: Number(values['camera.verbMs']) / 1000,
+                delay: traceID ? traceSeconds / 2 : 0,
+            },
+        ];
+        this.#playback = this.director.play(steps, { ease: 'power2.inOut' });
+        this.syncClock();
     }
 
     setFollow(mode: FollowMode): FollowMode {
@@ -864,6 +1007,12 @@ export class PiHost {
         const zoom = Math.max(0.1, Math.min(6, viewport.zoom * factor));
         this.renderer.setViewport({ ...viewport, zoom });
         this.renderMinimap();
+        const direction = Math.sign(factor - 1);
+        if (direction && this.#lastZoomDirection && direction !== this.#lastZoomDirection) {
+            this.#zoomOscillations++;
+            this.recordEvent('zoom-oscillation', { reversals: this.#zoomOscillations });
+        }
+        if (direction) this.#lastZoomDirection = direction;
         return zoom;
     }
 
@@ -971,6 +1120,12 @@ export class PiHost {
             replayRecording: (policy?: PolicyVector) => this.replayRecording(policy),
             counterfactual: (variant: PolicyVector, incumbent?: PolicyVector) =>
                 this.counterfactual(variant, incumbent),
+            ergonomics: () => this.ergonomics(),
+            edges: () => this.#view.edges.map((edge) => ({ id: edge.id, target: edge.target })),
+            traverseEdge: (id: string) => this.traverseEdge(id),
+            descend: () => this.descend(),
+            ascend: () => this.ascend(),
+            returnHome: () => this.returnHome(),
             evidence: () => this.#evidence,
             ops: () => this.#kernel.nodes.length,
             loadFixture: () => {
@@ -1252,6 +1407,7 @@ export class PiHost {
     }
 
     trace(id: string): readonly string[] {
+        this.recordEvent('trace', { target: id });
         this.#playback?.finish();
         this.#playback = undefined;
         this.#traceIds = traceOrder(this.#view, id);
@@ -1315,32 +1471,7 @@ export class PiHost {
         this.renderer.focus(id);
         const target = this.#positions.get(id);
         if (!target || this.#reducedMotion) return this.renderFollow();
-        this.#flightFrom = this.renderer.getViewport();
-        this.#flightTo = target;
-        const values = this.#resolved.values;
-        const traceSeconds = Number(values['camera.traceMs']) / 1000;
-        this.#playback = this.director.play(
-            [
-                {
-                    id: `trace:${id}`,
-                    verb: 'trace',
-                    target: 'emphasis',
-                    from: 0,
-                    to: 1,
-                    duration: traceSeconds,
-                },
-                {
-                    id: `flyTo:${id}`,
-                    verb: 'flyTo',
-                    target: 'camera',
-                    from: 0,
-                    to: 1,
-                    duration: Number(values['camera.verbMs']) / 1000,
-                    delay: traceSeconds / 2,
-                },
-            ],
-            { ease: 'power2.inOut' },
-        );
+        this.flyToPosition(target, id);
         this.renderFollow();
     }
 
@@ -1461,10 +1592,12 @@ export class PiHost {
             '=': () => this.zoomBy(1.2),
             '-': () => this.zoomBy(1 / 1.2),
             f: () => this.#revealed && this.renderer.focus(this.#revealed),
-            Escape: () => {
-                this.renderer.setSelection([]);
-                this.#revealed = '';
-            },
+            Enter: () => this.#controller.selection[0] && this.reveal(this.#controller.selection[0]),
+            PageDown: () => this.descend(),
+            PageUp: () => this.ascend(),
+            Home: () => this.returnHome(),
+            t: () => this.#revealed && this.trace(this.#revealed),
+            Escape: () => this.returnHome(),
         };
         const action = steps[event.key];
         if (!action) return;

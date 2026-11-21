@@ -95,6 +95,20 @@ test.describe('Pi flagship vision atlas', () => {
         await assertScene(page);
     });
 
+    test('intermediate frames of an edge traverse stay legible', async ({ page }) => {
+        await boot(page);
+        await page.evaluate(() => (window as any).__pi.pause(true));
+        const edge = await page.evaluate(() => (window as any).__pi.edges()[0]);
+        expect(edge).toBeTruthy();
+        await page.evaluate((id) => (window as any).__pi.traverseEdge(id), edge.id);
+        for (let i = 0; i < 6; i++) {
+            await page.evaluate(() => (window as any).__pi.advance(0.05));
+            await assertScene(page);
+        }
+        await page.evaluate(() => (window as any).__pi.settle());
+        await assertScene(page);
+    });
+
     test('every representation rung stays legible', async ({ page }) => {
         await boot(page);
         await page.evaluate(() => {

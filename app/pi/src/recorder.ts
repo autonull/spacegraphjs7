@@ -24,6 +24,29 @@ export interface ErgonomicScore {
 
 export type EventScorer = (event: RecordedEvent, policy: PolicyVector) => Partial<ErgonomicScore>;
 
+/** Neutral ergonomic signals. None of them is a success criterion until a protocol declares one. */
+export const ERGO_SIGNALS = [
+    'reveal',
+    'traverse',
+    'descend',
+    'ascend',
+    'zoom-oscillation',
+    'trail-backtrack',
+    'escape-hatch',
+    'hover-dwell',
+    'wrong-turn',
+    'answer',
+] as const;
+export type ErgoSignal = (typeof ERGO_SIGNALS)[number];
+
+export const ergonomicCounters = (
+    recording: SessionRecording,
+): Readonly<Record<string, number>> =>
+    ERGO_SIGNALS.reduce<Record<string, number>>((counts, kind) => {
+        counts[kind] = recording.events.filter((event) => event.kind === kind).length;
+        return counts;
+    }, {});
+
 const EMPTY_SCORE: ErgonomicScore = { success: 0, legibility: 0, wrongTurns: 0, travel: 0 };
 
 /** Host-agnostic interaction log. Each event is stamped with the policy that produced it. */
