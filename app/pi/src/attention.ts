@@ -69,8 +69,8 @@ export const applyEdgeAttention = (
         (policy.ribbonKinds === 'all' || CAUSAL_KINDS.has(edge.kind))
             ? {
                   weight,
-                  minRadius: policy.ribbonWidth * weight * 0.35,
-                  maxRadius: policy.ribbonWidth * weight,
+                  minRadius: policy.ribbonWidth * 0.15,
+                  maxRadius: policy.ribbonWidth,
                   segments: 3,
               }
             : undefined;

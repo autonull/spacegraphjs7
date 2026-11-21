@@ -25,7 +25,7 @@ export class TaperedEdge extends Edge {
     static readonly typeName: string = 'TaperedEdge';
 
     /** Narrow-end width as a fraction of the broad source end. */
-    private static readonly TAPER_RATIO = 0.2;
+    private static readonly TAPER_RATIO = 0.14;
 
     readonly mesh!: THREE.Mesh;
     readonly _initialized: boolean = false;
@@ -33,6 +33,7 @@ export class TaperedEdge extends Edge {
     constructor(sg: SpaceGraph | undefined, spec: EdgeSpec, source: Node, target: Node) {
         super(sg, spec, source, target);
 
+        this.suppressLine = true;
         this.object.visible = false;
 
         const halfWidth = 0.5;
@@ -56,10 +57,18 @@ export class TaperedEdge extends Edge {
         const geometry = new THREE.BufferGeometry();
         geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
         geometry.setIndex([0, 1, 2, 0, 2, 3]);
+        geometry.setAttribute(
+            'color',
+            new THREE.Float32BufferAttribute(
+                [1, 1, 1, 1, 1, 1, 0.16, 0.16, 0.16, 0.16, 0.16, 0.16],
+                3,
+            ),
+        );
 
         const material = new THREE.MeshBasicMaterial({
             color: (spec.data?.color as number) ?? 0x3b82f6,
             side: THREE.DoubleSide,
+            vertexColors: true,
         });
 
         this.mesh = new THREE.Mesh(geometry, material);

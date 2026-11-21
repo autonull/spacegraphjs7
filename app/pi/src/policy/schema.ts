@@ -101,7 +101,7 @@ export const POLICY_SCHEMA: PolicySchema = {
         number('emphasis.neighborScale', 'emphasis', 1, 0.8, 1.6, 0.05, 'Size multiplier on its neighborhood; 1 disables.', '4'),
         number('emphasis.contextScale', 'emphasis', 1, 0.5, 1, 0.05, 'Size multiplier on context while focused; 1 disables.', '4'),
         number('emphasis.innerDepth', 'emphasis', 1, 0, 3, 1, 'Recursion depth of the detail-node inner layout.', '4'),
-        number('emphasis.ribbonWidth', 'emphasis', 1.5, 0, 12, 0.5, 'Maximum faceted ribbon width; 0 disables ribbons.', '4'),
+        number('emphasis.ribbonWidth', 'emphasis', 60, 0, 100, 2, 'Maximum faceted ribbon width in world units; 0 disables ribbons.', '4'),
         enumeration(
             'emphasis.ribbonKinds',
             'emphasis',

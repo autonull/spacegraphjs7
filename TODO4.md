@@ -6,7 +6,7 @@ the progress block below records what has actually landed.
 
 ---
 
-## Progress (updated 2026-11-21 — slices 1–3 and the standing accessibility track complete, awaiting review)
+## Progress (updated 2026-11-21 — slices 1–3 and the standing track complete; visual-correctness pass now makes the recorded slice-3 treatments visible)
 
 **Slice 1 — One surface language: implemented in Pi, not yet promoted to a second host.**
 
@@ -97,6 +97,21 @@ the progress block below records what has actually landed.
 3. Chip-internal controls are deliberately excluded from the 44px rule: enlarging them would overflow the
    bounded inner tree (K4). A design decision is owed before changing that exception.
 
+**Visual-correctness pass (2026-11-21): the recorded slice-3 treatments were code-complete but visually absent from the gallery.**
+
+| Item                            | Status | Evidence                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| ------------------------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Root-cause audit                | done   | Three independent defects hid the treatments. `LODPlugin._updateEdgeVisibility` unconditionally re-showed every edge's base `Line2` on each pre-render, overriding `TaperedEdge`'s constructor-time hide. `attention.ts` multiplied ribbon radii by `weight` and `TaperedEdge.update` multiplied by `weight` again, so the 1.5-unit ceiling produced sub-pixel polygons. The card wash used a 9% accent with a `transparent` fallback, effectively invisible on the HUD surface.                                                                                                              |
+| Tapered ribbons actually render | done   | `Edge.suppressLine` is now an internal flag honoured by `LODPlugin`, so geometry-drawing edges keep their base line hidden. `attention.ts` treats `minRadius`/`maxRadius` as literal endpoints; the ceiling moves 1.5 → 60 world units (cards are 178–320 units wide) and the polygon carries a bright-source → dim-target vertex gradient. `TaperedEdge` remains the single ADR 0014 renderer exception. Wedges are legible in `cockpit`, `neon-cockpit` and both themes.                                                      |
+| Card surfaces actually shaded   | done   | `index.html` wash raised to a 20% kind-tinted diagonal plus a 34% bottom shade with a real accent fallback; inset highlight/shadow raised to 34%/42%. The approval override keeps its severity channel and the same highlights. Tints are visible per kind in every shot without losing 3:1 text contrast in either theme.                                                                                                                                                                                                                                                                                                                             |
+| Gates and review                | done   | All 12 shots recaptured and reviewed in `docs/screenshots/index.html`; `cockpit`, `neon-cockpit` and `light-theme` checked at zoom. `app/pi`: 120 unit tests and 79 e2e/vision tests green; root `pnpm run check` green across all workspaces. The one changed unit assertion now checks taper behavior (`minRadius < maxRadius`) instead of the old double-weight constant.                                                                                                                                                                                                                                                                             |
+
+**Clarifications that came out of this increment:**
+
+1. The prior progress rows called these treatments done because the code existed. The rendered gallery is the authority: the treatments were invisible until this pass. Slice 3's visual claims are now true, not merely recorded.
+2. No contract field and no new renderer branch were added. `suppressLine` is an internal `Edge` flag, and the width change is a policy default plus a corrected interpolation, not a new mechanism.
+3. Context edges still render as thin `Line2` connectors by design; the long gray diagonals in the default cockpit remain. Shortening their reach is still a data change (`geometry.gap`/`repulsion`), not a renderer change.
+
 **Direction recorded for slice 3 (user feedback, 2026-11-21):**
 
 - Edges are too long and too line-like. Shorten their reach (`geometry.repulsion`, `geometry.gap` or a new
@@ -137,16 +152,23 @@ the progress block below records what has actually landed.
    in every slice. The 44px pass now covers command bar, rail and card actions; chip-internal controls in
    the bounded lens remain below target and need a design decision (larger hit area vs. the K4 chip cap).
    The RTL gate uses English chrome under forced `dir=rtl`; a real RTL locale, mixed-script labels and
-   keyboard/pointer resize in both directions are still untested. §11.4's domain `labelFor` accessor stays
-   unscheduled. L1–L3, M2, M4, N3/N4 remain deferred per §6.
-3. **Post-review decisions:** ADR 0014's tapered ribbon is a recorded experiment, not a promoted default
+   keyboard/pointer resize in both directions are still untested. §11.4's domain `labelFor` accessor is
+   still owed: clipped labels (`user mes…`, `Approve p…`, `assistant mes…`) are now the most visible
+   legibility gap in the gallery. L1–L3, M2, M4, N3/N4 remain deferred per §6.
+3. **Visual composition — remaining:** the graph now has a legible subject at each shot, but large black
+   areas in `cockpit`/`dynamic-range` still read as sparse rather than composed, the right-hand chrome
+   outspeaks the canvas, and causal ribbons inherit the gray `RenderTheme.edge` in the default palette.
+   These are data/palette decisions, not new mechanisms: tighten the shot framing, keep chrome collapsed,
+   and promote a causal color only when a second consumer can share the token.
+4. **Post-review decisions:** ADR 0014's tapered ribbon is a recorded experiment, not a promoted default
    beyond the flagship; confirm it in review before any second host inherits it. Fill
    `docs/screenshots/review.json` with kept/rejected verdicts and notes during the contact-sheet review.
    Re-run e2e with `--workers=1` on a loaded machine: the frame-time gate is sensitive to host contention.
 
-Slices 1–3 and the standing accessibility track are recorded as done. Last prior commits: `bddd7a6`
-(slice 2), `01c4759` (slice 3); this increment lands the standing track. The study, release and hosted URL
-stay deferred with TODO3's G3–G5.
+Slices 1–3 and the standing accessibility track are recorded as done; the visual-correctness pass repairs
+the slice-3 treatments that were recorded before they actually rendered. Last prior commits: `bddd7a6`
+(slice 2), `01c4759` (slice 3), `0c0b184` (standing track); this increment lands the visual pass. The study,
+release and hosted URL stay deferred with TODO3's G3–G5.
 
 ---
 

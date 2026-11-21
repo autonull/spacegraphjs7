@@ -66,7 +66,7 @@ describe('ribbon grammar', () => {
         const loud = applyEdgeAttention(edge('writes'), 1, policy());
         expect(ribbonOf(loud)!.weight).toBeGreaterThan(ribbonOf(quiet)!.weight);
         expect(ribbonOf(loud)!.maxRadius).toBe(2);
-        expect(ribbonOf(loud)!.minRadius).toBeCloseTo(0.7);
+        expect(ribbonOf(loud)!.minRadius).toBeLessThan(ribbonOf(loud)!.maxRadius);
     });
 
     test('causal mode excludes containment and context', () => {

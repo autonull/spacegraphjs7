@@ -166,7 +166,7 @@ export class LODPlugin extends BaseSystemPlugin {
             const targetHidden =
                 edge.target?.object?.visible === false ||
                 ((edge.target as any).isDOMNode && !(edge.target as any).cssObject?.visible);
-            edge.object.visible = !(sourceHidden || targetHidden);
+            edge.object.visible = !edge.suppressLine && !(sourceHidden || targetHidden);
         }
     }
 }

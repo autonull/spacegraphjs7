@@ -149,6 +149,9 @@ export class Edge extends Surface {
         return this.line;
     }
 
+    /** Subclasses drawing their own geometry set this so LOD keeps the base line hidden. */
+    suppressLine = false;
+
     /** CSS label element for labelled edges; undefined for plain edges (used for label decluttering). */
     get labelElement(): HTMLElement | undefined {
         return undefined;

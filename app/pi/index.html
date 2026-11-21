@@ -1182,21 +1182,22 @@
             [data-rung] {
                 background:
                     linear-gradient(
-                        155deg,
-                        color-mix(in srgb, var(--kind-accent, transparent) 9%, transparent),
-                        transparent 46%
+                        150deg,
+                        color-mix(in srgb, var(--kind-accent, var(--sg-colors-accent)) 20%, transparent),
+                        transparent 62%
                     ),
-                    linear-gradient(0deg, color-mix(in srgb, #000 16%, transparent), transparent 55%);
+                    linear-gradient(0deg, color-mix(in srgb, #000 34%, transparent), transparent 60%);
             }
             .rung-shape {
                 box-shadow:
-                    inset 0 1px 0 color-mix(in srgb, #fff 18%, transparent),
-                    inset 0 -1px 0 color-mix(in srgb, #000 28%, transparent);
+                    inset 0 1px 0 color-mix(in srgb, #fff 34%, transparent),
+                    inset 0 -1px 0 color-mix(in srgb, #000 42%, transparent);
             }
             [data-kind='approval'] > .rung-shape {
                 box-shadow:
                     inset 0 3px 0 -1px var(--view-causal, var(--kind-approval)),
-                    inset 0 1px 0 color-mix(in srgb, #fff 18%, transparent);
+                    inset 0 1px 0 color-mix(in srgb, #fff 34%, transparent),
+                    inset 0 -1px 0 color-mix(in srgb, #000 42%, transparent);
             }
             .card-preview {
                 font-size: var(--sg-font-sizes-xs);
