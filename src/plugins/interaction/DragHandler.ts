@@ -1,15 +1,14 @@
 import { Plane, Vector3 } from 'three';
 import type { Node } from '../../nodes/Node';
 import { parentIdOf } from '../../utils/nodeParent';
-import type { SpaceGraph } from '../../SpaceGraph';
+import { InteractionHandler } from './InteractionHandler';
 import { nodeDragPayload } from './nodeDragPayload';
-import type { InteractionRaycaster } from './RaycasterHelper';
 
 /**
  * Drag handler for InteractionPlugin
  * Handles node dragging with multi-select and Z-axis support
  */
-export class DragHandler {
+export class DragHandler extends InteractionHandler {
     private isDragging = false;
     private dragNode: Node | null = null;
     private draggingNodes: Set<Node> = new Set();
@@ -23,14 +22,6 @@ export class DragHandler {
     private preserveDistance = false;
     private initialPickDistance = 0;
     readonly rayFrom = new Vector3();
-
-    readonly sg: SpaceGraph;
-    readonly raycaster: InteractionRaycaster;
-
-    constructor(sg: SpaceGraph, raycaster: InteractionRaycaster) {
-        this.sg = sg;
-        this.raycaster = raycaster;
-    }
 
     startDrag(
         node: Node,

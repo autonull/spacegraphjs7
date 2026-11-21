@@ -1,26 +1,17 @@
 import { Plane, Vector3 } from 'three';
 import type { Node } from '../../nodes/Node';
-import type { SpaceGraph } from '../../SpaceGraph';
 import type { EdgeSpec } from '../../types';
-import type { InteractionRaycaster } from './RaycasterHelper';
+import { InteractionHandler } from './InteractionHandler';
 import { TempConnectionLine } from './TempConnectionLine';
 
 /**
  * Connection handler for InteractionPlugin
  * Handles edge creation through node-to-node dragging
  */
-export class ConnectionHandler {
+export class ConnectionHandler extends InteractionHandler {
     private isConnecting = false;
     private connectSourceNode: Node | null = null;
     private connectTempLine: TempConnectionLine | null = null;
-
-    readonly sg: SpaceGraph;
-    readonly raycaster: InteractionRaycaster;
-
-    constructor(sg: SpaceGraph, raycaster: InteractionRaycaster) {
-        this.sg = sg;
-        this.raycaster = raycaster;
-    }
 
     startConnection(node: Node): void {
         if (!node.object) return;

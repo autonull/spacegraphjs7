@@ -180,15 +180,19 @@ export const DEFAULT_SYSTEM_PLUGINS: [PluginCtor, string][] = [
     [PhysicsPlugin, 'PhysicsPlugin'],
 ];
 
+export type QuickGraphNode = {
+    id: string;
+    label?: string;
+    position?: [number, number, number];
+    data?: Record<string, unknown>;
+};
+
+export type QuickGraphEdge = { id: string; source: string; target: string };
+
 // Quick graph specification builder
 export function createQuickGraphSpec(
-    nodes: Array<{
-        id: string;
-        label?: string;
-        position?: [number, number, number];
-        data?: Record<string, unknown>;
-    }>,
-    edges?: Array<{ id: string; source: string; target: string }>,
+    nodes: readonly QuickGraphNode[],
+    edges?: readonly QuickGraphEdge[],
 ): GraphSpec {
     return {
         nodes: nodes.map((n) => ({

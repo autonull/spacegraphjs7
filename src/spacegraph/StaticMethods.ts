@@ -1,5 +1,5 @@
 import type { GraphSpec, GraphImportData, SpaceGraphOptions, ZuiManifest } from '../types';
-import { createQuickGraphSpec } from '../core/defaults';
+import { createQuickGraphSpec, type QuickGraphEdge, type QuickGraphNode } from '../core/defaults';
 import { wrapError, createLogger, DOMUtils } from '../utils';
 import { SpaceGraph } from '../SpaceGraph';
 
@@ -122,13 +122,8 @@ export class StaticMethods {
 
     static async quickGraph(
         container: string | HTMLElement,
-        nodes: Array<{
-            id: string;
-            label?: string;
-            position?: [number, number, number];
-            data?: Record<string, unknown>;
-        }>,
-        edges?: Array<{ id: string; source: string; target: string }>,
+        nodes: readonly QuickGraphNode[],
+        edges?: readonly QuickGraphEdge[],
         options?: SpaceGraphOptions,
     ): Promise<SpaceGraph> {
         return SpaceGraph.create(container, createQuickGraphSpec(nodes, edges), options);
