@@ -1,4 +1,4 @@
-import { DEFAULT_THEME, resolveTheme, type RenderTheme } from '@spacegraphjs/renderer';
+import { contrastRatio, DEFAULT_THEME, resolveTheme, type RenderTheme } from '@spacegraphjs/renderer';
 
 const TOKENS = {
     background: '--sg-colors-background',
@@ -31,6 +31,10 @@ interface ViewPalette {
     readonly edgeMuted: string;
     readonly selection: string;
     readonly focus: string;
+    readonly context: string;
+    readonly causal: string;
+    readonly scope: string;
+    readonly severity: string;
     readonly kinds: Readonly<Record<string, string>>;
     readonly grid: string;
     readonly star: string;
@@ -47,6 +51,10 @@ export const VIEW_PALETTES: Readonly<Record<string, ViewPalette>> = {
         edgeMuted: '#3a3a3a',
         selection: '#e5e5e5',
         focus: '#ffffff',
+        context: '#7a7a7a',
+        causal: '#d2d2d2',
+        scope: '#8ab4ff',
+        severity: '#ff7a90',
         kinds: {
             run: '#d2d2d2',
             unit: '#8ab4ff',
@@ -70,6 +78,10 @@ export const VIEW_PALETTES: Readonly<Record<string, ViewPalette>> = {
         edgeMuted: '#1d3f47',
         selection: '#4df3ff',
         focus: '#b8fbff',
+        context: '#3f8fa8',
+        causal: '#4df3ff',
+        scope: '#7aa2ff',
+        severity: '#ff5c8a',
         kinds: {
             run: '#4df3ff',
             unit: '#7aa2ff',
@@ -93,6 +105,10 @@ export const VIEW_PALETTES: Readonly<Record<string, ViewPalette>> = {
         edgeMuted: '#40271f',
         selection: '#ffb35c',
         focus: '#ffe0b8',
+        context: '#8a533d',
+        causal: '#ffb35c',
+        scope: '#ff8f6b',
+        severity: '#ff4d4d',
         kinds: {
             run: '#ffb35c',
             unit: '#ff8f6b',
@@ -116,6 +132,10 @@ export const VIEW_PALETTES: Readonly<Record<string, ViewPalette>> = {
         edgeMuted: '#1e453d',
         selection: '#8ff0d0',
         focus: '#d9fff2',
+        context: '#3d8f7a',
+        causal: '#8ff0d0',
+        scope: '#6bb8ff',
+        severity: '#ff7aa2',
         kinds: {
             run: '#8ff0d0',
             unit: '#6bb8ff',
@@ -139,6 +159,10 @@ export const VIEW_PALETTES: Readonly<Record<string, ViewPalette>> = {
         edgeMuted: '#17394d',
         selection: '#5ad1ff',
         focus: '#cff4ff',
+        context: '#2f6b8f',
+        causal: '#5ad1ff',
+        scope: '#3b82f6',
+        severity: '#f87171',
         kinds: {
             run: '#5ad1ff',
             unit: '#3b82f6',
@@ -164,23 +188,35 @@ export const paletteVars = (id: string): Readonly<Record<string, string>> => {
         ...Object.fromEntries(
             Object.entries(palette.kinds).map(([kind, color]) => [`--kind-${kind}`, color]),
         ),
+        '--view-focus': palette.focus,
+        '--view-context': palette.context,
+        '--view-causal': palette.causal,
+        '--view-scope': palette.scope,
+        '--view-severity': palette.severity,
         '--view-grid': palette.grid,
         '--view-star': palette.star,
     };
 };
 
-/** The renderer theme varies the view palette, not the HUD tokens. */
+const legible = (color: string, base: RenderTheme, fallback: string): string => {
+    if ((contrastRatio(color, base.background) ?? 0) >= 3) return color;
+    for (const candidate of [fallback, base.textMuted, base.text])
+        if ((contrastRatio(candidate, base.background) ?? 0) >= 3) return candidate;
+    return color;
+};
+
+/** The renderer theme varies the view palette, not the HUD tokens; low-contrast roles fall back. */
 export const paletteTheme = (base: RenderTheme, id: string): RenderTheme => {
     const palette = paletteOf(id);
     return {
         ...base,
-        accent: palette.accent,
-        success: palette.success,
-        warning: palette.warning,
-        error: palette.error,
-        edge: palette.edge,
-        edgeMuted: palette.edgeMuted,
-        selection: palette.selection,
-        focus: palette.focus,
+        accent: legible(palette.accent, base, base.accent),
+        success: legible(palette.success, base, base.success),
+        warning: legible(palette.warning, base, base.warning),
+        error: legible(palette.error, base, base.error),
+        edge: legible(palette.edge, base, base.edge),
+        edgeMuted: legible(palette.edgeMuted, base, base.edgeMuted),
+        selection: legible(palette.selection, base, base.selection),
+        focus: legible(palette.focus, base, base.focus),
     };
 };

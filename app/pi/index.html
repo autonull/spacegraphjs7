@@ -323,43 +323,85 @@
                 opacity: 0.15;
             }
             [data-rung] {
-                transition:
-                    opacity var(--pi-blend, 120ms),
-                    box-shadow 160ms;
-                border-radius: var(--kind-radius, 6px);
+                position: relative;
+                border-radius: 0;
+                transition: opacity var(--pi-blend, 120ms);
                 box-shadow:
-                    inset 2px 0 0 var(--kind-accent, transparent),
                     0 0 calc(var(--view-glow, 0) * 22px)
                         color-mix(in srgb, var(--kind-accent, transparent) 45%, transparent);
             }
+            .rung-shape {
+                position: absolute;
+                inset: 0;
+                box-sizing: border-box;
+                pointer-events: none;
+                border: 1px solid color-mix(in srgb, var(--kind-accent, var(--sg-colors-border)) 28%, transparent);
+            }
+            /* Structure, not radius: bracketed scopes, a gate notch, a file tab, one severity bar. */
+            [data-portal] > .rung-shape {
+                border-color: color-mix(in srgb, var(--view-scope, var(--kind-accent)) 55%, transparent);
+            }
+            [data-portal] > .rung-shape::before,
+            [data-portal] > .rung-shape::after {
+                content: '';
+                position: absolute;
+                width: 10px;
+                height: 10px;
+                border-color: var(--view-scope, var(--kind-accent));
+            }
+            [data-portal] > .rung-shape::before {
+                left: -1px;
+                top: -1px;
+                border-left: 2px solid;
+                border-top: 2px solid;
+            }
+            [data-portal] > .rung-shape::after {
+                right: -1px;
+                bottom: -1px;
+                border-right: 2px solid;
+                border-bottom: 2px solid;
+            }
+            [data-kind='approval'] > .rung-shape {
+                box-shadow: inset 0 3px 0 -1px var(--view-causal, var(--kind-approval));
+            }
+            [data-kind='artifact'] > .rung-shape,
+            [data-kind='file'] > .rung-shape {
+                background: linear-gradient(
+                    135deg,
+                    color-mix(in srgb, var(--kind-artifact, var(--sg-colors-accent)) 45%, transparent) 0 12px,
+                    transparent 12px
+                );
+                background-position: right top;
+                background-repeat: no-repeat;
+                clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%);
+            }
+            [data-status='failed'] > .rung-shape,
+            [data-status='aborted'] > .rung-shape,
+            [data-kind='error'] > .rung-shape {
+                border-left: 3px solid var(--view-severity, var(--kind-error, var(--sg-colors-destructive)));
+            }
             [data-rung][data-kind='run'] {
                 --kind-accent: var(--kind-run, #d2d2d2);
-                --kind-radius: 3px;
             }
             [data-rung][data-kind='unit'] {
                 --kind-accent: var(--kind-unit, #8ab4ff);
-                --kind-radius: 10px;
             }
             [data-rung][data-kind='message'] {
                 --kind-accent: var(--kind-message, #f0c674);
-                --kind-radius: 8px;
             }
             [data-rung][data-kind='artifact'],
             [data-rung][data-kind='file'] {
                 --kind-accent: var(--kind-artifact, #7fd6a8);
-                --kind-radius: 999px;
             }
             [data-rung][data-kind='tool'],
             [data-rung][data-kind='read-tool'] {
                 --kind-accent: var(--kind-tool, #c9a6ff);
-                --kind-radius: 4px;
             }
             [data-rung][data-kind='error'] {
                 --kind-accent: var(--kind-error, #ff8aa0);
             }
             [data-rung][data-kind='approval'] {
                 --kind-accent: var(--kind-approval, #9ad9ff);
-                --kind-radius: 12px;
             }
             [data-rungs] > [data-layer] {
                 transition: opacity var(--pi-blend, 120ms);
@@ -512,12 +554,12 @@
                 border-color: var(--kind-accent, var(--sg-colors-accent));
                 color: var(--sg-colors-ring);
             }
-            :root[data-focus-scale='true'] [data-rung][data-focus='focus'] {
-                outline: 1px solid var(--kind-accent, var(--sg-colors-accent));
+            [data-rung][data-focus='focus'] {
+                outline: 1px solid var(--view-focus, var(--sg-colors-ring));
                 outline-offset: 3px;
             }
-            :root[data-focus-scale='true'] [data-rung][data-focus='context'] {
-                opacity: 0.72;
+            [data-rung][data-focus='neighbor'] > .rung-shape {
+                border-color: color-mix(in srgb, var(--view-causal, var(--kind-accent)) 45%, transparent);
             }
             #instrument-kit {
                 display: flex;
@@ -684,6 +726,41 @@
                     310px 270px,
                     190px 240px;
             }
+            /* A focused scope makes the space between frames legible: one contour, faint lane bands. */
+            :root[data-scope-focus]:not([data-scope-focus='']) #canvas::before {
+                content: '';
+                position: absolute;
+                inset: 0;
+                z-index: 3;
+                pointer-events: none;
+                opacity: 0.45;
+                background: repeating-linear-gradient(
+                    90deg,
+                    transparent 0 160px,
+                    color-mix(in srgb, var(--view-scope, transparent) 14%, transparent) 160px 161px
+                );
+            }
+            :root[data-scope-focus]:not([data-scope-focus='']) [data-portal] > .rung-shape {
+                outline: 1px solid color-mix(in srgb, var(--view-scope, var(--sg-colors-border)) 45%, transparent);
+                outline-offset: 3px;
+            }
+            #focus-connector {
+                position: absolute;
+                inset: 0;
+                width: 100%;
+                height: 100%;
+                z-index: 4;
+                overflow: visible;
+                pointer-events: none;
+            }
+            #focus-connector[hidden] {
+                display: none;
+            }
+            #focus-connector line {
+                stroke: var(--view-focus, var(--sg-colors-ring));
+                stroke-width: 1;
+                opacity: 0.6;
+            }
             #canvas .spacegraph-html-node,
             #canvas .spacegraph-html-node[data-selected='true'],
             #canvas .spacegraph-html-node.focused {
@@ -772,8 +849,9 @@
             .inspector-bar {
                 display: flex;
                 align-items: center;
-                gap: var(--sg-spacing-xs);
-                padding: var(--sg-spacing-xs);
+                gap: var(--sg-spacing-hair);
+                padding: var(--sg-spacing-hair) var(--sg-spacing-xs);
+                min-height: 48px;
                 border-bottom: 1px solid var(--sg-colors-border);
                 font-size: var(--sg-font-sizes-micro);
                 text-transform: uppercase;
@@ -789,6 +867,8 @@
             }
             .inspector-tabs button,
             .inspector-pin {
+                min-width: 44px;
+                min-height: 44px;
                 padding: var(--sg-spacing-hair) var(--sg-spacing-xs);
                 border: 1px solid transparent;
                 background: transparent;
@@ -803,7 +883,7 @@
                 color: var(--sg-colors-foreground);
             }
             .inspector-body {
-                height: calc(100% - 28px);
+                height: calc(100% - 49px);
                 padding: var(--sg-spacing-xs);
             }
             .inspector-signals {

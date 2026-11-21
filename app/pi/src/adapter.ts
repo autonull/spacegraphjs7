@@ -83,6 +83,7 @@ const detailOf = (node: AgentAdapterNode): string => {
 };
 
 const PORTAL_GLYPHS = ['▣', '▤', '▥', '▦'] as const;
+const SHAPE_SPAN = '<i class="rung-shape" aria-hidden="true"></i>';
 
 /** A stable glyph per child scope, so a portal keeps the same identity across rungs and rebuilds. */
 export const portalGlyph = (scope: string): string =>
@@ -107,19 +108,19 @@ export const cardMarkup = (
     const glyph = node.scope
         ? `<span aria-hidden="true" style="opacity:.7">${portalGlyph(node.scope)} </span>`
         : '';
-    const attributes = `data-rung="${rung}" data-blend="${blend.toFixed(2)}" data-kind="${escapeHtml(node.kind)}" data-status="${status}"${portal}${descending ? ' data-descending="true"' : ''}`;
+    const attributes = `data-rung="${rung}" data-blend="${blend.toFixed(2)}" data-kind="${escapeHtml(node.kind)}" data-status="${status}" data-focus="${escapeHtml(node.focusRole ?? 'none')}"${portal}${descending ? ' data-descending="true"' : ''}`;
     const box = 'display:flex;flex-direction:column;justify-content:center;gap:4px;padding:6% 8%;box-sizing:border-box;height:100%;color:inherit;font-family:inherit;overflow:hidden;transition:opacity var(--pi-blend,120ms)';
 
     if (rung === 'overview') {
         const labelSize = labelPx || 44;
-        return `<div ${attributes} style="${box}"><span style="font-size:${labelSize}px;font-weight:700;line-height:1;letter-spacing:-0.03em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%"><span aria-hidden="true" style="font-size:${Math.round(labelSize * 0.6)}px">${glyph}</span>${label}</span></div>`;
+        return `<div ${attributes} style="${box}">${SHAPE_SPAN}<span style="font-size:${labelSize}px;font-weight:700;line-height:1;letter-spacing:-0.03em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%"><span aria-hidden="true" style="font-size:${Math.round(labelSize * 0.6)}px">${glyph}</span>${label}</span></div>`;
     }
     if (rung === 'execution') {
         const bars = [0.3, 0.55, 0.8, 0.5, 0.95]
             .map((height) => `<i style="display:inline-block;width:5px;height:${Math.round(height * 22)}px;background:currentColor;opacity:.55"></i>`)
             .join('');
         const labelSize = labelPx || 26;
-        return `<div ${attributes} style="${box}"><span style="font-size:${labelSize}px;font-weight:700;line-height:1.1;letter-spacing:-0.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${glyph}${label}${badge}</span><span style="display:flex;align-items:flex-end;gap:3px;height:22px">${bars}</span><span style="opacity:.72;font-size:${Math.max(12, labelSize * 0.6)}px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${detail.slice(0, 80)}</span></div>`;
+        return `<div ${attributes} style="${box}">${SHAPE_SPAN}<span style="font-size:${labelSize}px;font-weight:700;line-height:1.1;letter-spacing:-0.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${glyph}${label}${badge}</span><span style="display:flex;align-items:flex-end;gap:3px;height:22px">${bars}</span><span style="opacity:.72;font-size:${Math.max(12, labelSize * 0.6)}px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${detail.slice(0, 80)}</span></div>`;
     }
     const scope = node.scope
         ? `<span style="opacity:.7;font-size:13px">${portalGlyph(node.scope)} scope: ${escapeHtml(node.scope)}</span>`
@@ -132,7 +133,7 @@ export const cardMarkup = (
         .map(([key, value]) => `<span style="opacity:.7">${escapeHtml(key)}: ${escapeHtml(String(value))}</span>`)
         .join(' · ');
     const metaline = telemetry || `${escapeHtml(node.kind)} · ${status}`;
-    return `<div ${attributes} style="${box};justify-content:flex-start;gap:4px"><span style="font-size:${labelSize}px;font-weight:700;line-height:1.1;white-space:normal;overflow-wrap:anywhere">${glyph}${label}${badge}</span><span style="opacity:.82;font-size:${bodySize}px;line-height:1.4;white-space:normal;overflow-wrap:anywhere">${detail.slice(0, 320)}</span><span style="opacity:.6;font-size:${Math.max(11, bodySize * 0.75)}px;line-height:1.4;white-space:normal;overflow-wrap:anywhere">${metaline}</span>${scope}</div>`;
+    return `<div ${attributes} style="${box};justify-content:flex-start;gap:4px">${SHAPE_SPAN}<span style="font-size:${labelSize}px;font-weight:700;line-height:1.1;white-space:normal;overflow-wrap:anywhere">${glyph}${label}${badge}</span><span style="opacity:.82;font-size:${bodySize}px;line-height:1.4;white-space:normal;overflow-wrap:anywhere">${detail.slice(0, 320)}</span><span style="opacity:.6;font-size:${Math.max(11, bodySize * 0.75)}px;line-height:1.4;white-space:normal;overflow-wrap:anywhere">${metaline}</span>${scope}</div>`;
 };
 
 const nodeButton = (action: string, target: string, label: string, title: string): string =>
@@ -173,7 +174,7 @@ export const focusCardMarkup = (
         )
         .join('');
     const titleSize = Math.min(28, Math.max(16, labelPx || 20));
-    return `<div data-rung="detail" data-focus="focus" data-kind="${escapeHtml(node.kind)}" data-status="${status}"${node.scope ? ` data-portal="${escapeHtml(node.scope)}"` : ''} class="focus-panel" style="width:100%;height:100%;box-sizing:border-box;display:grid;grid-template-rows:auto auto minmax(0,1fr) auto;gap:6px;padding:8px;overflow:hidden;font-family:inherit"><div class="focus-head"><span style="font-size:${titleSize}px;font-weight:700;line-height:1.1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${glyph}${label}</span><span class="focus-status">${status}</span></div><div class="focus-detail">${detail.slice(0, 240)}</div><div class="focus-inner" data-layout="${layout}">${inner}</div><div class="focus-actions">${actions}</div></div>`;
+    return `<div data-rung="detail" data-focus="focus" data-kind="${escapeHtml(node.kind)}" data-status="${status}"${node.scope ? ` data-portal="${escapeHtml(node.scope)}"` : ''} class="focus-panel" style="position:relative;width:100%;height:100%;box-sizing:border-box;display:grid;grid-template-rows:auto auto minmax(0,1fr) auto;gap:6px;padding:8px;overflow:hidden;font-family:inherit">${SHAPE_SPAN}<div class="focus-head"><span style="font-size:${titleSize}px;font-weight:700;line-height:1.1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${glyph}${label}</span><span class="focus-status">${status}</span></div><div class="focus-detail">${detail.slice(0, 240)}</div><div class="focus-inner" data-layout="${layout}">${inner}</div><div class="focus-actions">${actions}</div></div>`;
 };
 
 /**
@@ -246,7 +247,7 @@ export class AgentAdapter extends ModelAdapter<
                     : edge.kind === 'reads' || edge.kind === 'evidence'
                       ? 'dotted'
                       : 'dashed',
-            emphasis: edge.kind === 'writes' || edge.kind === 'delegates' ? 0.8 : 0.3,
+            emphasis: edge.kind === 'writes' || edge.kind === 'delegates' ? 0.45 : 0.3,
         };
     }
 }

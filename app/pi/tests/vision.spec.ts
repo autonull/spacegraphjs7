@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { createVisionAssert } from '../../../src/vision/assert';
+import { encodePolicyVector, POLICY_SCHEMA } from '../src/policy';
 
 const DEPTHS = ['flat', 'layered', 'depth-stack', 'orbit'] as const;
 const ARRANGEMENTS = ['stacked', 'side', 'floating'] as const;
@@ -106,6 +107,50 @@ test.describe('Pi flagship vision atlas', () => {
             await assertScene(page);
         }
         await page.evaluate(() => (window as any).__pi.settle());
+        await assertScene(page);
+    });
+
+    test('the four gate shots stay legible in both themes', async ({ page }) => {
+        const light = encodePolicyVector(POLICY_SCHEMA, { 'theme.variant': 'light' });
+        for (const variant of ['dark', 'light']) {
+            for (const shot of ['cockpit', 'neon-cockpit', 'node-detail', 'dynamic-range']) {
+                const policy = variant === 'light' ? `&policy=${encodeURIComponent(light)}` : '';
+                await page.goto(`/?shot=${shot}${policy}`);
+                await page.waitForFunction(() => (window as any).__pi?.ready === true);
+                await expect
+                    .poll(() => page.evaluate(() => (window as any).__pi.simulation().settled), {
+                        timeout: 10_000,
+                    })
+                    .toBe(true);
+                await assertScene(page);
+            }
+        }
+    });
+
+    test('intermediate frames of a scope descent stay legible', async ({ page }) => {
+        await boot(page);
+        await page.evaluate(() => (window as any).__pi.pause(true));
+        const target = await page.evaluate(() => (window as any).__pi.descend());
+        expect(target).toBeTruthy();
+        for (let i = 0; i < 6; i++) {
+            await page.evaluate(() => (window as any).__pi.advance(0.05));
+            await assertScene(page);
+        }
+        await page.evaluate(() => (window as any).__pi.settle());
+        await assertScene(page);
+    });
+
+    test('inspector pin and unpin keep the settled scene legible', async ({ page }) => {
+        await boot(page);
+        await page.evaluate(() => {
+            const pi = (window as any).__pi;
+            pi.reveal(pi.edges()[0].target);
+            pi.settle();
+        });
+        await assertScene(page);
+        await page.evaluate(() => (window as any).__pi.setInspectorPinned(true));
+        await assertScene(page);
+        await page.evaluate(() => (window as any).__pi.setInspectorPinned(false));
         await assertScene(page);
     });
 

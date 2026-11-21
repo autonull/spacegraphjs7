@@ -6,7 +6,7 @@ the progress block below records what has actually landed.
 
 ---
 
-## Progress (updated 2026-11-21 — slice 1 complete, awaiting review)
+## Progress (updated 2026-11-21 — slices 1 and 2 complete, awaiting review)
 
 **Slice 1 — One surface language: implemented in Pi, not yet promoted to a second host.**
 
@@ -32,22 +32,39 @@ the progress block below records what has actually landed.
    assertion is still owed. `§11.2` gained ARIA tabs/dialog and focus restore, but the 44px target audit,
    contrast audit and RTL pass are still owed. `§11.4` (domain `labelFor`) remains unscheduled.
 
+**Slice 2 — Graph grammar and attention: implemented in Pi, gates green, not promoted past the flagship.**
+
+| Item                                          | Status | Evidence                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| --------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Shape language (H2)                           | done   | `app/pi/src/adapter.ts` emits one decorative `<i class="rung-shape">` per card; `app/pi/index.html` maps `data-kind` / `data-status` / `data-portal` to bracketed scope frames, a gate notch, a file-tab corner and one 3px severity bar. Radii stay 0 and the generic inset accent stripe is gone.                                                                                                                                              |
+| Color semantics (H3)                          | done   | `app/pi/src/theme.ts` adds `context`, `causal`, `scope` and `severity` roles to all five `VIEW_PALETTES` and publishes `--view-*`; the HUD stays grayscale. `theme.backdrop` now defaults to `grid` at low alpha. Renderer theme colors fall back to HUD tokens when a palette role cannot clear 3:1 on the active background.                                                                                                                |
+| Composed space (H4)                           | done   | `paint()` / `renderFocusLens()` publish `data-scope-focus` on `:root`. A focused scope adds one faint frame outline and repeating lane bands behind the canvas; both disappear when focus leaves the scope.                                                                                                                                                                                                                                 |
+| Ranked ribbons and salience channels (I1, I2) | done   | `app/pi/src/attention.ts` reuses `mappingFor` / `applyEmphasis`. `emphasis.ribbonWidth` is a maximum; per-edge width = relation rank (causal > containment > context) × salience. New `emphasis.ribbonKinds` (`causal` default / `all` / `none`) and `emphasis.salienceSize` (default 1.15, opt-in 3) knobs; context edges become thin, dim inferred lines without ribbons. Default width 1.5 and causal base emphasis 0.45 keep ribbons subordinate to nodes. |
+| Focus ring and connector (I3, I4)             | done   | The focused card always gets a 1px `--view-focus` ring, no longer gated on `focusScale`. A 1px SVG connector runs from the node to the inspector in both floating and pinned modes; the dashed canvas outline stays suppressed. Failure nodes carry one severity channel.                                                                                                                                                                   |
+| Folded gates (§11.1, §11.2, M3, L4)           | done   | rAF p95 < 80ms during an edge flight; inspector tabs and pin meet 44px; `ContrastAuditor` passes every palette in dark and light; vision assertions cover intermediate descend frames, lens pin/unpin and all four gate shots in both themes; reduced-motion flights reach the final frame immediately.                                                                                                                                            |
+| Review                                        | done   | All 12 shots recaptured and reviewed in `docs/screenshots/index.html`. `app/pi`: 108 unit tests, 76 e2e tests, vision gate, scale budgets and `tsc --noEmit` green. The pre-existing `verify` dependency-guard failure on five docs references is unchanged by this slice.                                                                                                                                                                  |
+
+**Clarifications that came out of this increment:**
+
+1. The shape layer is decorative markup plus CSS driven by existing contract attributes. No renderer branch, node field or new DOM subtree is introduced, so the gallery remains byte-comparable apart from the intended visual change.
+2. Palette roles are host CSS data. Renderer status/selection colors that fail 3:1 fall back to HUD tokens, so the light theme uses the HUD's darker success/warning/error values rather than a vivid palette. The render model also carries the card background explicitly; without it the vision analyzer assumes a dark surface and reports false light-theme failures.
+3. `emphasis.ribbonWidth` no longer means "one width for every causal edge"; it is a ceiling. `ribbonKinds=causal` is the default because `all` reintroduces the ribbon clutter the audit flagged. The 3× size remains an opt-in preset, never a default.
+4. The focus ring is independent of `focusScale`; scaling stays purely opt-in. The connector is host DOM, not a contract seam.
+5. The 44px check currently covers the inspector tab bar and pin. A full pass over command bar, rail and in-card actions is still owed, so §2's ergonomic-target claim is not yet universal.
+
 **Remaining work, in order:**
 
-1. **Slice 2 — Graph grammar and attention** (H2, H3, H4, I1–I4): shape language by kind, semantic
-   color roles, scope contours, salience-ranked ribbons, focus ring with connector. Gate: `cockpit`,
-   `neon-cockpit`, `node-detail`, `dynamic-range`; vision in both themes. Fold in the §11.1 frame-time
-   assertion and the §11.2 target/contrast checks before treating the grammar as settled.
-2. **Slice 3 — Recursion, inspector and proof** (O3, O4, K1–K3, J4, J5, N1, N2, M1): inner topology with
+1. **Slice 3 — Recursion, inspector and proof** (O3, O4, K1–K3, J4, J5, N1, N2, M1): inner topology with
    connectors, portal previews, depth-ruler breadcrumb, visible evidence line, catalog cards, first-run
    hint, review notes. Gate: `fractal`, `deep-focus`, `catalog` and intermediate descend frames.
-3. **Slice 4 — Proliferation** (O5–O7): blocked on a second host consuming shell, tokens and inspector
+2. **Slice 4 — Proliferation** (O5–O7): blocked on a second host consuming shell, tokens and inspector
    unchanged. Then split core/domain policy, emit the world-host and real vision gate from the scaffold,
    and add one cross-domain shot. No contract or position-authority change.
-4. **Standing track** (M3, L4): extend vision assertions to intermediate frames and keep reduced-motion
-   final-frame parity in every slice. L1–L3, M2, M4, N3/N4 stay deferred per §6.
+3. **Standing track** (L4, M3): keep reduced-motion final-frame parity and intermediate-frame vision in
+   every slice. The remaining §11.2 work is a full 44px pass over the command bar, rail and in-card
+   actions. L1–L3, M2, M4, N3/N4 stay deferred per §6.
 
-No slice 2+ item is claimed done. The study, release and hosted URL stay deferred with TODO3's G3–G5.
+No slice 3+ item is claimed done. The study, release and hosted URL stay deferred with TODO3's G3–G5.
 
 ---
 

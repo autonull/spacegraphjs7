@@ -60,6 +60,13 @@ import {
     type AgentLevel,
 } from './adapter';
 import { innerTree, type InnerLayout } from './inner';
+import {
+    applyEdgeAttention,
+    applyNodeAttention,
+    salienceScore,
+    type AttentionPolicy,
+    type RibbonKinds,
+} from './attention';
 import { bindTouchVerbs, touchBindingsFor, type TouchVerb } from './touch';
 import {
     createAnnotationWidgets,
@@ -137,6 +144,7 @@ import {
     contextualInstruments,
     createCommandSurface,
     createInspector,
+    HUD_TOKENS,
     INSPECTOR_TABS,
     type Command,
     type CommandMode,
@@ -333,6 +341,7 @@ export class PiHost {
     #initialFitTimer?: ReturnType<typeof setTimeout>;
     #policyPanel?: ReturnType<typeof mountPolicyPanel>;
     #inspector?: Inspector;
+    #focusConnector?: SVGLineElement;
     #commandSurface?: CommandSurface;
     #instrumentFocus = '';
     #lensSignature = '';
@@ -663,6 +672,13 @@ export class PiHost {
             this.handleNodeAction(button.dataset.nodeAction, button.dataset.target);
         });
         el('canvas').append(overlay);
+        const connector = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        connector.id = 'focus-connector';
+        connector.toggleAttribute('hidden', true);
+        const connectorLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        connector.append(connectorLine);
+        el('canvas').append(connector);
+        this.#focusConnector = connectorLine;
         this.#commandSurface = createCommandSurface(() => this.commands(), { help: this.help() });
         document.body.append(this.#commandSurface.element);
         window.addEventListener('resize', () => this.renderFocusLens());
@@ -806,9 +822,23 @@ export class PiHost {
             context: Number(values['emphasis.contextScale']),
         };
         const scalingOn = scales.focus !== 1 || scales.neighbor !== 1 || scales.context !== 1;
-        if (typeof document !== 'undefined')
+        if (typeof document !== 'undefined') {
             document.documentElement.dataset.focusScale = String(scalingOn);
-        const scaleById = new Map([...roles].map(([id, role]) => [id, scaleForRole(role, scales)]));
+            document.documentElement.dataset.scopeFocus = this.#portalByNode.get(focus) ?? '';
+        }
+        const attention: AttentionPolicy = {
+            salienceSize: Number(values['emphasis.salienceSize']),
+            ribbonWidth: Number(values['emphasis.ribbonWidth']),
+            ribbonKinds: String(values['emphasis.ribbonKinds']) as RibbonKinds,
+        };
+        const cardBg = HUD_TOKENS[values['theme.variant'] === 'light' ? 'light' : 'dark']!.colors.card;
+        const scaleOf = (node: { id: string; emphasis?: number }): number => {
+            const salience = salienceScore(this.#activity.get(node.id) ?? 0, node.emphasis);
+            return (
+                (1 + (attention.salienceSize - 1) * salience) *
+                scaleForRole(roles.get(node.id) ?? 'none', scales)
+            );
+        };
         model.nodes = model.nodes.map((node) => {
             const scope = this.#portalByNode.get(node.id);
             return {
@@ -849,7 +879,7 @@ export class PiHost {
                 const labelPx = labelFontPx(
                     minLabelPx,
                     pixelsPerWorld,
-                    nodeSize(node.kind, true)[0] * (scaleById.get(node.id) ?? 1),
+                    nodeSize(node.kind, true)[0] * scaleOf(node),
                     node.label.length,
                 );
                 return layers.length > 1
@@ -876,37 +906,29 @@ export class PiHost {
             ...this.#model,
             nodes: this.#model.nodes.map((node) => {
                 const size = nodeSize(node.kind, Boolean(node.html));
-                const scale = scaleById.get(node.id) ?? 1;
+                const focusScale = scaleForRole(roles.get(node.id) ?? 'none', scales);
+                const salience = salienceScore(this.#activity.get(node.id) ?? 0, node.emphasis);
                 const withWidgets = detailNodes.has(node.id)
                     ? { ...node, widgets: [...(node.widgets ?? []), ...INSTRUMENT_IDS] }
                     : node;
+                const styled = applyNodeAttention(withWidgets, size, salience, attention, focusScale);
+                const style = { ...((styled.data?.style as Record<string, string> | undefined) ?? {}) };
                 return {
-                    ...withWidgets,
-                    size: [size[0] * scale, size[1] * scale, 0] as [number, number, number],
+                    ...styled,
+                    data: { ...styled.data, style: { ...style, backgroundColor: cardBg } },
                 };
             }),
             edges: this.#model.edges
                 .filter((edge) => visible.has(edge.source) && visible.has(edge.target))
                 .map((edge) => {
-                    const width = Number(values['emphasis.ribbonWidth']);
-                    const causal =
-                        edge.kind === 'writes' ||
-                        edge.kind === 'delegates' ||
-                        edge.kind === 'orders' ||
-                        (edge.emphasis ?? 0) >= 0.8;
-                    if (width <= 0 || !causal) return edge;
-                    return {
-                        ...edge,
-                        data: {
-                            ...edge.data,
-                            ribbon: {
-                                weight: 0.7,
-                                minRadius: width * 0.35,
-                                maxRadius: width,
-                                segments: 3,
-                            },
-                        },
-                    };
+                    const salience = salienceScore(
+                        Math.max(
+                            this.#activity.get(edge.source) ?? 0,
+                            this.#activity.get(edge.target) ?? 0,
+                            edge.emphasis ?? 0,
+                        ),
+                    );
+                    return applyEdgeAttention(edge, salience, attention);
                 }),
         };
         this.#annotationWidgets?.refresh(this.#model.nodes);
@@ -1219,7 +1241,10 @@ export class PiHost {
                 delay: traceID ? traceSeconds / 2 : 0,
             },
         ];
-        this.#playback = this.director.play(steps, { ease: 'power2.inOut' });
+        this.#playback = this.director.play(steps, {
+            ease: 'power2.inOut',
+            reducedMotion: this.#reducedMotion,
+        });
         this.syncClock();
     }
 
@@ -2406,6 +2431,7 @@ export class PiHost {
         const focus = this.#revealed || this.#controller.selection[0] || '';
         if (!focus || depth <= 0) {
             overlay.hidden = true;
+            this.#focusConnector?.parentElement?.toggleAttribute('hidden', true);
             return;
         }
         const point = this.renderer.getNodeScreenPosition?.(focus);
@@ -2413,10 +2439,12 @@ export class PiHost {
         const modelNode = this.#model?.nodes.find((node) => node.id === focus);
         if (!point || !adapterNode || !modelNode) {
             overlay.hidden = true;
+            this.#focusConnector?.parentElement?.toggleAttribute('hidden', true);
             return;
         }
         const layout = String(this.#resolved.values['emphasis.innerLayout']) as InnerLayout;
         const scope = this.#portalByNode.get(focus);
+        document.documentElement.dataset.scopeFocus = scope ?? '';
         const chips = innerTree(focus, this.#view.nodes, this.#view.edges, depth);
         const signature = [
             focus,
@@ -2457,6 +2485,17 @@ export class PiHost {
             overlay.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
         }
         overlay.hidden = false;
+        const line = this.#focusConnector;
+        const parent = line?.parentElement;
+        if (line && parent) {
+            const canvasRect = el('canvas').getBoundingClientRect();
+            const lensRect = overlay.getBoundingClientRect();
+            line.setAttribute('x1', String(Math.round(point.x)));
+            line.setAttribute('y1', String(Math.round(point.y)));
+            line.setAttribute('x2', String(Math.round(lensRect.left - canvasRect.left + 12)));
+            line.setAttribute('y2', String(Math.round(lensRect.top - canvasRect.top + 12)));
+            parent.toggleAttribute('hidden', false);
+        }
     }
 
     /** The rail shows at most two contextual instruments; the inspector holds the full kit. */
