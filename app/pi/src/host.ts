@@ -27,7 +27,11 @@ import {
     type CameraMotionHandlers,
     type MotionPlayback,
 } from 'spacegraphjs/motion';
-import { representationLayers, representationRung, representationWeights } from 'spacegraphjs/salience';
+import {
+    representationLayers,
+    representationRung,
+    representationWeights,
+} from 'spacegraphjs/salience';
 import { lerp, requireElement } from 'spacegraphjs/utils';
 import {
     createVisionLoop,
@@ -129,6 +133,17 @@ import {
 import { buildReportHTML } from './report';
 import { STUDY_TASKS } from './study';
 import { traceOrder } from './trace';
+import {
+    contextualInstruments,
+    createCommandSurface,
+    createInspector,
+    INSPECTOR_TABS,
+    type Command,
+    type CommandMode,
+    type CommandSurface,
+    type Inspector,
+    type InspectorTab,
+} from './shell';
 
 export type Arrangement = 'stacked' | 'side' | 'floating';
 export type Surface = 'log' | 'map' | 'hybrid';
@@ -144,7 +159,11 @@ export const el = <T extends HTMLElement>(id: string): T => requireElement<T>(id
 
 type ButtonOptions = { className?: string; title?: string; dataset?: Record<string, string> };
 
-function button(label: string, onClick: () => void, options: ButtonOptions = {}): HTMLButtonElement {
+function button(
+    label: string,
+    onClick: () => void,
+    options: ButtonOptions = {},
+): HTMLButtonElement {
     const element = document.createElement('button');
     element.type = 'button';
     element.textContent = label;
@@ -313,7 +332,10 @@ export class PiHost {
     #initialFitDone = false;
     #initialFitTimer?: ReturnType<typeof setTimeout>;
     #policyPanel?: ReturnType<typeof mountPolicyPanel>;
-    #focusLens?: HTMLElement;
+    #inspector?: Inspector;
+    #commandSurface?: CommandSurface;
+    #instrumentFocus = '';
+    #lensSignature = '';
     #policyListeners = new Set<(event: PolicyChangeEvent) => void>();
     #recorder: SessionRecorder;
     #startedAt = typeof performance === 'undefined' ? 0 : performance.now();
@@ -323,6 +345,7 @@ export class PiHost {
     #hover?: { id: string; at: number };
     #dissolving?: string;
     #instruments?: InstrumentKit;
+    #inspectorInstruments?: InstrumentKit;
     #clientID = '';
     #baselineKernel = fixtureKernel();
     #shotReady = true;
@@ -337,7 +360,9 @@ export class PiHost {
             (typeof matchMedia === 'function' &&
                 matchMedia('(prefers-reduced-motion: reduce)').matches);
         const params =
-            typeof location === 'undefined' ? new URLSearchParams() : new URLSearchParams(location.search);
+            typeof location === 'undefined'
+                ? new URLSearchParams()
+                : new URLSearchParams(location.search);
         const shot = shotById(params.get('shot'));
         const scenario = params.get('scenario') ?? shot?.scenario;
         if (scenario === 'rich') this.#kernel = richFixtureKernel();
@@ -355,7 +380,8 @@ export class PiHost {
             ...(shot?.arrangement ? { 'surface.arrangement': shot.arrangement } : {}),
             ...shot?.vector,
         };
-        if (Object.keys(shotVector).length) this.#policyLayers.url = { ...this.#policyLayers.url, ...shotVector };
+        if (Object.keys(shotVector).length)
+            this.#policyLayers.url = { ...this.#policyLayers.url, ...shotVector };
         this.#resolved = resolvePolicy(POLICY_SCHEMA, this.#policyLayers);
         this.#catalog = buildCatalog(POLICY_SCHEMA);
         const geometry = this.geometry();
@@ -367,7 +393,12 @@ export class PiHost {
                 depthStep: geometry.depthStep,
                 nodePadding: geometry.padding,
             },
-            forces: { repulsion: geometry.repulsion, attraction: 0.018, cooling: 0.94, maxBodies: 120 },
+            forces: {
+                repulsion: geometry.repulsion,
+                attraction: 0.018,
+                cooling: 0.94,
+                maxBodies: 120,
+            },
         });
         const simulation = this.simulation;
         this.playSession = createPhysicsPlaySession({
@@ -398,8 +429,9 @@ export class PiHost {
         this.#surface = values['surface.mode'] as Surface;
         this.#arrangement = values['surface.arrangement'] as Arrangement;
         this.#windowSize = Number(values['guardrails.window']);
-        this.#recorder = new SessionRecorder(FIXTURE_ID, () =>
-            (typeof performance === 'undefined' ? 0 : performance.now()) - this.#startedAt,
+        this.#recorder = new SessionRecorder(
+            FIXTURE_ID,
+            () => (typeof performance === 'undefined' ? 0 : performance.now()) - this.#startedAt,
         );
     }
 
@@ -453,7 +485,10 @@ export class PiHost {
         this.paint();
     }
 
-    recordEvent(kind: string, meta: Readonly<Record<string, string | number | boolean>> = {}): void {
+    recordEvent(
+        kind: string,
+        meta: Readonly<Record<string, string | number | boolean>> = {},
+    ): void {
         const vision = this.#visionReport?.scores ?? this.#visionLoop?.lastReport?.scores;
         this.#recorder.record(kind, this.#resolved.vector, {
             legibility: vision?.legibility ?? this.#vision.legibility,
@@ -483,7 +518,10 @@ export class PiHost {
                   ? 1
                   : 0,
         travel: typeof event.meta.travel === 'number' ? event.meta.travel : 0,
-        legibility: typeof event.meta.legibility === 'number' ? event.meta.legibility : Number(policy['emphasis.cap']),
+        legibility:
+            typeof event.meta.legibility === 'number'
+                ? event.meta.legibility
+                : Number(policy['emphasis.cap']),
     });
 
     private geometry(): { gap: number; padding: number; depthStep: number; repulsion: number } {
@@ -524,7 +562,10 @@ export class PiHost {
         });
         this.simulation.setForces({ repulsion: Number(values['geometry.repulsion']) });
         if (typeof document !== 'undefined') {
-            document.documentElement.style.setProperty('--pi-blend', `${values['ladder.blendMs']}ms`);
+            document.documentElement.style.setProperty(
+                '--pi-blend',
+                `${values['ladder.blendMs']}ms`,
+            );
             document.documentElement.dataset.theme = String(values['theme.variant']);
             this.applyViewTheme();
             this.renderer.setTheme(this.#theme);
@@ -564,7 +605,9 @@ export class PiHost {
                     onChange: (id, value) => this.setKnob(id, value),
                     onReset: (ids) => this.resetKnobs(ids),
                     onCopy: () => {
-                        void navigator.clipboard?.writeText(this.permalink()).catch(() => undefined);
+                        void navigator.clipboard
+                            ?.writeText(this.permalink())
+                            .catch(() => undefined);
                     },
                 });
                 return {
@@ -588,11 +631,10 @@ export class PiHost {
         };
         policyLayer.sync([policyNode]);
         this.#policyPanel = mountedPanel;
-        this.#instruments = createInstrumentKit(
-            el('instrument-kit'),
-            (node) => this.instrumentData(node),
-            (action, node) => this.onInstrumentAction(action, node),
-        );
+        const kitData = (node: RenderNode): InstrumentData => this.instrumentData(node);
+        const kitAction = (action: string, node: RenderNode): void =>
+            this.onInstrumentAction(action, node);
+        this.#instruments = createInstrumentKit(el('instrument-kit'), kitData, kitAction);
         this.#annotationWidgets = createAnnotationWidgets(el('annotation-list'), (id) =>
             this.removeNote(id),
         );
@@ -603,17 +645,26 @@ export class PiHost {
         );
         this.bindTranscript();
         this.bindNodeActions();
-        this.#focusLens = document.createElement('div');
-        this.#focusLens.id = 'focus-lens';
-        this.#focusLens.hidden = true;
-        this.#focusLens.addEventListener('pointerdown', (event) => event.stopPropagation());
-        this.#focusLens.addEventListener('click', (event) => {
+        this.#inspector = createInspector((tab, pinned) =>
+            this.recordEvent('inspector:change', { tab, pinned }),
+        );
+        this.#inspectorInstruments = createInstrumentKit(
+            this.#inspector.signals,
+            kitData,
+            kitAction,
+        );
+        const overlay = this.#inspector.element;
+        overlay.hidden = true;
+        overlay.addEventListener('pointerdown', (event) => event.stopPropagation());
+        overlay.addEventListener('click', (event) => {
             const button = (event.target as HTMLElement).closest<HTMLElement>('[data-node-action]');
             if (!button?.dataset.nodeAction || !button.dataset.target) return;
             event.stopPropagation();
             this.handleNodeAction(button.dataset.nodeAction, button.dataset.target);
         });
-        el('canvas').append(this.#focusLens);
+        el('canvas').append(overlay);
+        this.#commandSurface = createCommandSurface(() => this.commands(), { help: this.help() });
+        document.body.append(this.#commandSurface.element);
         window.addEventListener('resize', () => this.renderFocusLens());
         this.renderer.on('nodeClick', ({ id }) => this.reveal(id));
         this.renderer.on('viewportChange', ({ zoom }) => {
@@ -630,7 +681,10 @@ export class PiHost {
         this.renderer.on('hoverChange', ({ id }) => {
             const now = typeof performance === 'undefined' ? 0 : performance.now();
             if (this.#hover && now - this.#hover.at > 600) {
-                this.recordEvent('hover-dwell', { target: this.#hover.id, ms: Math.round(now - this.#hover.at) });
+                this.recordEvent('hover-dwell', {
+                    target: this.#hover.id,
+                    ms: Math.round(now - this.#hover.at),
+                });
             }
             this.#hover = id ? { id, at: now } : undefined;
         });
@@ -752,11 +806,16 @@ export class PiHost {
             context: Number(values['emphasis.contextScale']),
         };
         const scalingOn = scales.focus !== 1 || scales.neighbor !== 1 || scales.context !== 1;
-        if (typeof document !== 'undefined') document.documentElement.dataset.focusScale = String(scalingOn);
+        if (typeof document !== 'undefined')
+            document.documentElement.dataset.focusScale = String(scalingOn);
         const scaleById = new Map([...roles].map(([id, role]) => [id, scaleForRole(role, scales)]));
         model.nodes = model.nodes.map((node) => {
             const scope = this.#portalByNode.get(node.id);
-            return { ...node, ...(scope ? { scope } : {}), focusRole: roles.get(node.id) ?? 'none' };
+            return {
+                ...node,
+                ...(scope ? { scope } : {}),
+                focusRole: roles.get(node.id) ?? 'none',
+            };
         });
         const viewport = this.renderer.getViewport();
         const pixelsPerWorld =
@@ -781,7 +840,9 @@ export class PiHost {
                 };
                 const weights = representationWeights(input, thresholds);
                 const blend = 1 - Math.max(weights.overview, weights.execution, weights.detail);
-                const descending = this.#dissolving !== undefined && this.#portalByNode.get(node.id) === this.#dissolving;
+                const descending =
+                    this.#dissolving !== undefined &&
+                    this.#portalByNode.get(node.id) === this.#dissolving;
                 const rung = representationRung(input, thresholds);
                 if (rung === 'detail') detailNodes.add(node.id);
                 const layers = representationLayers(input, thresholds);
@@ -819,7 +880,10 @@ export class PiHost {
                 const withWidgets = detailNodes.has(node.id)
                     ? { ...node, widgets: [...(node.widgets ?? []), ...INSTRUMENT_IDS] }
                     : node;
-                return { ...withWidgets, size: [size[0] * scale, size[1] * scale, 0] as [number, number, number] };
+                return {
+                    ...withWidgets,
+                    size: [size[0] * scale, size[1] * scale, 0] as [number, number, number],
+                };
             }),
             edges: this.#model.edges
                 .filter((edge) => visible.has(edge.source) && visible.has(edge.target))
@@ -835,13 +899,22 @@ export class PiHost {
                         ...edge,
                         data: {
                             ...edge.data,
-                            ribbon: { weight: 0.7, minRadius: width * 0.35, maxRadius: width, segments: 3 },
+                            ribbon: {
+                                weight: 0.7,
+                                minRadius: width * 0.35,
+                                maxRadius: width,
+                                segments: 3,
+                            },
                         },
                     };
                 }),
         };
         this.#annotationWidgets?.refresh(this.#model.nodes);
-        this.#instruments?.refresh(this.#model.nodes);
+        this.refreshInstruments(
+            this.#model.nodes.find(
+                (node) => node.id === (this.#revealed || this.#controller.selection[0]),
+            ),
+        );
         this.renderer.setModel(this.#model);
         this.renderHistory();
         this.renderMinimap();
@@ -930,7 +1003,9 @@ export class PiHost {
         if (qualified) this.simulation.pin([qualified]);
         this.#pinnedReveal = qualified;
         if (typeof location !== 'undefined') location.hash = `graph:${id}`;
-        const row = document.querySelector<HTMLElement>(`#transcript-list .transcript-row[data-node="${CSS.escape(id)}"]`);
+        const row = document.querySelector<HTMLElement>(
+            `#transcript-list .transcript-row[data-node="${CSS.escape(id)}"]`,
+        );
         for (const selected of document.querySelectorAll('[data-revealed="true"]')) {
             selected.setAttribute('data-revealed', 'false');
         }
@@ -1037,16 +1112,22 @@ export class PiHost {
     }
 
     /** Center on nodes using the one position authority; zoom is applied in the same viewport write. */
-    frame(ids: readonly string[], options: { zoom?: number; minScale?: number; padding?: number } = {}): void {
+    frame(
+        ids: readonly string[],
+        options: { zoom?: number; minScale?: number; padding?: number } = {},
+    ): void {
         if (!ids.length) return;
         if (options.minScale !== undefined) {
             this.renderer.fit(ids, { minScale: options.minScale, padding: options.padding ?? 0 });
             return;
         }
-        const points = ids.map((id) => this.#positions.get(id)).filter((point): point is Position => Boolean(point));
+        const points = ids
+            .map((id) => this.#positions.get(id))
+            .filter((point): point is Position => Boolean(point));
         if (!points.length) return;
         const center = points.reduce(
-            (sum, point) => [sum[0] + point.x, sum[1] + point.y, sum[2] + point.z] as [number, number, number],
+            (sum, point) =>
+                [sum[0] + point.x, sum[1] + point.y, sum[2] + point.z] as [number, number, number],
             [0, 0, 0] as [number, number, number],
         );
         const count = points.length;
@@ -1065,7 +1146,8 @@ export class PiHost {
         this.#shotReady = false;
         if (shot.surface) this.setSurface(shot.surface);
         if (shot.arrangement) this.setArrangement(shot.arrangement);
-        if (shot.collapsed !== undefined && this.#transcriptCollapsed !== shot.collapsed) this.toggleTranscript();
+        if (shot.collapsed !== undefined && this.#transcriptCollapsed !== shot.collapsed)
+            this.toggleTranscript();
         if (shot.level) this.setLevel(shot.level);
         if (shot.reveal) this.reveal(shot.reveal);
         if (shot.evidence) this.run(shot.evidence);
@@ -1083,9 +1165,12 @@ export class PiHost {
             (document.getElementById('policy-section') as HTMLDetailsElement).open = true;
         const ids = shot.frame?.length
             ? shot.frame
-            : this.#model?.nodes.filter((node) => node.visible !== false).map((node) => node.id) ?? [];
-        if (shot.minScale !== undefined) this.frame(ids, { minScale: shot.minScale, padding: shot.padding });
-        else if (shot.frame?.length || shot.zoom !== undefined) this.frame(ids, { zoom: shot.zoom });
+            : (this.#model?.nodes.filter((node) => node.visible !== false).map((node) => node.id) ??
+              []);
+        if (shot.minScale !== undefined)
+            this.frame(ids, { minScale: shot.minScale, padding: shot.padding });
+        else if (shot.frame?.length || shot.zoom !== undefined)
+            this.frame(ids, { zoom: shot.zoom });
         this.paint();
         this.#shotReady = true;
         return true;
@@ -1270,7 +1355,10 @@ export class PiHost {
     }
 
     downloadReport(): void {
-        downloadBlob(new Blob([this.report()], { type: 'text/html' }), `pi-report-${Date.now()}.html`);
+        downloadBlob(
+            new Blob([this.report()], { type: 'text/html' }),
+            `pi-report-${Date.now()}.html`,
+        );
     }
 
     permalink(): string {
@@ -1298,7 +1386,7 @@ export class PiHost {
         const state = decodePermalink(hash);
         if (!state) return false;
         const url: Record<string, string | number | boolean> = {
-            ...(state.policy ? decodePolicyVector(POLICY_SCHEMA, state.policy) ?? {} : {}),
+            ...(state.policy ? (decodePolicyVector(POLICY_SCHEMA, state.policy) ?? {}) : {}),
         };
         if (SURFACES.includes(state.surface as Surface)) url['surface.mode'] = state.surface;
         if (ARRANGEMENTS.includes(state.arrangement as Arrangement))
@@ -1328,9 +1416,12 @@ export class PiHost {
 
     run(id: string): readonly string[] {
         const lines = runCapability(id, this.context());
-        this.recordEvent(lines.some((line) => /fail|error|unsupported/i.test(line)) ? 'wrong-turn' : 'answer', {
-            capability: id,
-        });
+        this.recordEvent(
+            lines.some((line) => /fail|error|unsupported/i.test(line)) ? 'wrong-turn' : 'answer',
+            {
+                capability: id,
+            },
+        );
         this.showEvidence(lines);
         return lines;
     }
@@ -1351,7 +1442,11 @@ export class PiHost {
             const response = await fetch('/prompt', {
                 method: 'POST',
                 headers: { 'content-type': 'application/json' },
-                body: JSON.stringify({ client: this.#clientID, text: prompt, mode: mode || undefined }),
+                body: JSON.stringify({
+                    client: this.#clientID,
+                    text: prompt,
+                    mode: mode || undefined,
+                }),
             });
             if (!response.ok) {
                 const body = (await response.json()) as { error?: string };
@@ -1377,7 +1472,10 @@ export class PiHost {
             op: 'add-node',
             node: { id, kind: 'approval', label: `${decision} · ${target}`, data: { status } },
         });
-        this.consume({ op: 'add-edge', edge: { id: `gates:${id}`, kind: 'gates', source: id, target } });
+        this.consume({
+            op: 'add-edge',
+            edge: { id: `gates:${id}`, kind: 'gates', source: id, target },
+        });
         this.recordEvent(decision, { target, node: id });
         this.showEvidence([`${decision}: ${target}`]);
         return id;
@@ -1391,7 +1489,10 @@ export class PiHost {
             op: 'add-node',
             node: { id, kind: 'action', label: `retry ${target}`, data: { status: 'pending' } },
         });
-        this.consume({ op: 'add-edge', edge: { id: `retry-edge:${id}`, kind: 'retry', source: target, target: id } });
+        this.consume({
+            op: 'add-edge',
+            edge: { id: `retry-edge:${id}`, kind: 'retry', source: target, target: id },
+        });
         this.recordEvent('retry', { target, node: id });
         this.showEvidence([`retry: ${target}`]);
         return id;
@@ -1407,7 +1508,10 @@ export class PiHost {
             ...diff.nodes.added.slice(0, 3).map((node) => `+ ${node.id}`),
             ...diff.nodes.removed.slice(0, 3).map((node) => `- ${node.id}`),
         ];
-        this.recordEvent('compare-runs', { added: diff.nodes.added.length, removed: diff.nodes.removed.length });
+        this.recordEvent('compare-runs', {
+            added: diff.nodes.added.length,
+            removed: diff.nodes.removed.length,
+        });
         this.showEvidence(lines);
         return lines;
     }
@@ -1419,7 +1523,11 @@ export class PiHost {
     private instrumentData(node: RenderNode): InstrumentData {
         const data = node.data ?? {};
         return {
-            series: [this.#activity.get(node.id) ?? 0, this.#vision.legibility, 1 - this.#vision.overlap],
+            series: [
+                this.#activity.get(node.id) ?? 0,
+                this.#vision.legibility,
+                1 - this.#vision.overlap,
+            ],
             value: node.emphasis ?? 0,
             status: String(data.status ?? node.status ?? 'idle'),
             lines: typeof data.detail === 'string' ? data.detail.split('\n').slice(0, 3) : [],
@@ -1439,6 +1547,174 @@ export class PiHost {
         if (action === 'retry') this.retry(node.id);
     }
 
+    private focusPrimary(): void {
+        const target =
+            this.#controller.selection[0] ??
+            this.#revealed ??
+            this.#model?.nodes.find((node) => node.visible !== false)?.id;
+        if (!target) return;
+        this.reveal(target);
+        this.#inspector?.setTab('detail');
+    }
+
+    private commands(): readonly Command[] {
+        const nav: readonly Command[] = [
+            {
+                id: 'nav.reveal',
+                label: 'Reveal selection',
+                group: 'navigate',
+                hint: 'Enter',
+                run: () => this.focusPrimary(),
+            },
+            {
+                id: 'nav.descend',
+                label: 'Descend into scope',
+                group: 'navigate',
+                hint: 'PgDn',
+                run: () => this.descend(),
+            },
+            {
+                id: 'nav.ascend',
+                label: 'Ascend from scope',
+                group: 'navigate',
+                hint: 'PgUp',
+                run: () => this.ascend(),
+            },
+            {
+                id: 'nav.trace',
+                label: 'Trace a path',
+                group: 'navigate',
+                hint: 't',
+                run: () => this.#revealed && this.trace(this.#revealed),
+            },
+            {
+                id: 'nav.survey',
+                label: 'Survey the graph',
+                group: 'navigate',
+                hint: 's',
+                run: () => this.survey(),
+            },
+            {
+                id: 'nav.home',
+                label: 'Return home',
+                group: 'navigate',
+                hint: 'Home',
+                run: () => this.returnHome(),
+            },
+        ];
+        const chrome: readonly Command[] = [
+            {
+                id: 'ui.catalog',
+                label: 'Toggle catalog',
+                group: 'interface',
+                run: () => this.toggleCatalog(),
+            },
+            {
+                id: 'ui.rail',
+                label: 'Toggle rail',
+                group: 'interface',
+                run: () => this.toggleRail(),
+            },
+            {
+                id: 'ui.transcript',
+                label: 'Toggle transcript',
+                group: 'interface',
+                run: () => this.toggleTranscript(),
+            },
+            {
+                id: 'ui.pin',
+                label: 'Toggle inspector pin',
+                group: 'interface',
+                run: () => this.#inspector?.setPinned(!this.#inspector.pinned),
+            },
+            ...INSPECTOR_TABS.map((tab) => ({
+                id: `ui.tab.${tab}`,
+                label: `Inspector · ${tab}`,
+                group: 'interface',
+                run: () => this.#inspector?.setTab(tab),
+            })),
+            {
+                id: 'ui.share',
+                label: 'Share exact view',
+                group: 'interface',
+                run: () => {
+                    location.hash = this.permalink().slice(1);
+                    void navigator.clipboard?.writeText(location.href).catch(() => undefined);
+                },
+            },
+        ];
+        const verbs = CAPABILITIES.map((capability) => ({
+            id: `verb.${capability.id}`,
+            label: capability.summary,
+            group: 'verb',
+            hint: capability.id,
+            run: () => this.run(capability.id),
+        }));
+        const knobs = POLICY_SCHEMA.knobs.flatMap<Command>((knob) => {
+            const set = (value: string | number | boolean): Command => ({
+                id: `knob.${knob.id}=${String(value)}`,
+                label: `${knob.id} = ${String(value)}`,
+                group: knob.family,
+                hint: 'knob',
+                run: () => this.setKnob(knob.id, value),
+            });
+            return knob.type === 'enum'
+                ? knob.options.map(set)
+                : knob.type === 'boolean'
+                  ? [set(!Boolean(this.#resolved.values[knob.id]))]
+                  : [set(knob.default), set(knob.min), set(knob.max)];
+        });
+        return [...nav, ...chrome, ...verbs, ...knobs];
+    }
+
+    private help(): readonly Command[] {
+        return [
+            {
+                id: 'help.palette',
+                label: 'Open the command palette',
+                group: 'shortcut',
+                hint: '/',
+                run: () => this.#commandSurface?.open('palette'),
+            },
+            {
+                id: 'help.commands',
+                label: 'Open commands and knobs',
+                group: 'shortcut',
+                hint: ':',
+                run: () => this.#commandSurface?.open('commands'),
+            },
+            {
+                id: 'help.help',
+                label: 'Show this help',
+                group: 'shortcut',
+                hint: '?',
+                run: () => this.#commandSurface?.open('help'),
+            },
+            {
+                id: 'help.reveal',
+                label: 'Reveal the selected node',
+                group: 'shortcut',
+                hint: 'Enter',
+            },
+            {
+                id: 'help.descend',
+                label: 'Descend / ascend a scope',
+                group: 'shortcut',
+                hint: 'PgDn / PgUp',
+            },
+            { id: 'help.trace', label: 'Trace a path', group: 'shortcut', hint: 't' },
+            { id: 'help.survey', label: 'Survey the graph', group: 'shortcut', hint: 's' },
+            {
+                id: 'help.home',
+                label: 'Return home, close the surface',
+                group: 'shortcut',
+                hint: 'Home / Esc',
+            },
+            { id: 'help.pan', label: 'Pan and zoom', group: 'shortcut', hint: 'arrows / +−' },
+            { id: 'help.focus', label: 'Center the focused node', group: 'shortcut', hint: 'f' },
+        ];
+    }
+
     hooks(): Record<string, unknown> {
         return {
             capabilities: () => CAPABILITIES.map((capability) => capability.id),
@@ -1446,7 +1722,8 @@ export class PiHost {
             policy: () => this.policy,
             setKnob: (id: string, value: string | number | boolean, layer?: PolicyLayer) =>
                 this.setKnob(id, value, layer),
-            setPolicyLayer: (layer: PolicyLayer, values: PolicyVector) => this.setPolicyLayer(layer, values),
+            setPolicyLayer: (layer: PolicyLayer, values: PolicyVector) =>
+                this.setPolicyLayer(layer, values),
             experiments: () => POLICY_EXPERIMENTS,
             sampleExperiment: (id: string) => {
                 const experiment = experimentById(id);
@@ -1467,13 +1744,18 @@ export class PiHost {
             experimentReportMarkdown,
             exportOnlineOutcomes: () => exportOnlineOutcomes(this.recording()),
             assignExperiment: (cell: ExperimentCell) => this.assignExperiment(cell),
-            onPolicyChange: (listener: (event: PolicyChangeEvent) => void) => this.onPolicyChange(listener),
+            onPolicyChange: (listener: (event: PolicyChangeEvent) => void) =>
+                this.onPolicyChange(listener),
             recording: () => this.recording(),
             recordEvent: (kind: string, meta?: Record<string, string | number | boolean>) =>
                 this.recordEvent(kind, meta),
             replayRecording: (policy?: PolicyVector) => this.replayRecording(policy),
             replaySimulated: (policy?: PolicyVector) =>
-                simulateAndScore(this.recording(), policy ?? this.#resolved.vector, this.#eventScorer),
+                simulateAndScore(
+                    this.recording(),
+                    policy ?? this.#resolved.vector,
+                    this.#eventScorer,
+                ),
             counterfactual: (variant: PolicyVector, incumbent?: PolicyVector) =>
                 this.counterfactual(variant, incumbent),
             ergonomics: () => this.ergonomics(),
@@ -1481,6 +1763,17 @@ export class PiHost {
             toggleTranscript: () => this.toggleTranscript(),
             toggleCatalog: (open?: boolean) => this.toggleCatalog(open),
             toggleRail: (open?: boolean) => this.toggleRail(open),
+            openCommands: (mode?: CommandMode) => this.#commandSurface?.open(mode),
+            closeCommands: () => this.#commandSurface?.close(),
+            commandMode: () => this.#commandSurface?.mode,
+            commandCount: () => this.commands().length,
+            focusPrimary: () => this.focusPrimary(),
+            setInspectorTab: (tab: InspectorTab) => this.#inspector?.setTab(tab),
+            inspectorTab: () => this.#inspector?.tab,
+            setInspectorPinned: (pinned: boolean) => this.#inspector?.setPinned(pinned),
+            inspectorPinned: () => this.#inspector?.pinned,
+            railInstruments: () =>
+                el('instrument-kit').querySelectorAll('[data-instrument-for]').length,
             transcriptSize: () =>
                 this.#arrangement === 'stacked' ? this.#transcriptHeight : this.#transcriptWidth,
             edges: () => this.#view.edges.map((edge) => ({ id: edge.id, target: edge.target })),
@@ -1491,7 +1784,8 @@ export class PiHost {
             returnHome: () => this.returnHome(),
             setClientID: (id: string) => this.setClientID(id),
             sendPrompt: (text: string, mode?: 'steer' | 'followUp') => this.sendPrompt(text, mode),
-            approve: (target: string, decision: 'approve' | 'reject' = 'approve') => this.approve(target, decision),
+            approve: (target: string, decision: 'approve' | 'reject' = 'approve') =>
+                this.approve(target, decision),
             reject: (target: string) => this.approve(target, 'reject'),
             retry: (target: string) => this.retry(target),
             compareRuns: () => this.compareRuns(),
@@ -1554,7 +1848,8 @@ export class PiHost {
             trailBack: () => this.trailBack(),
             trailForward: () => this.trailForward(),
             portalNodes: () => [...this.#portalByNode.keys()],
-            portalScope: () => (this.#revealed ? this.#portalByNode.get(this.#revealed) : undefined),
+            portalScope: () =>
+                this.#revealed ? this.#portalByNode.get(this.#revealed) : undefined,
             portalChain: () => this.portalCrumb(),
             minimap: () => ({
                 dots: el('minimap').querySelectorAll('[data-minimap-node]').length,
@@ -1601,8 +1896,10 @@ export class PiHost {
             activity: () => [...this.#activity.keys()],
             viewport: () => this.renderer.getViewport(),
             setViewport: (viewport: RendererViewport) => this.renderer.setViewport(viewport),
-            frame: (ids: readonly string[], options?: { zoom?: number; minScale?: number; padding?: number }) =>
-                this.frame(ids, options),
+            frame: (
+                ids: readonly string[],
+                options?: { zoom?: number; minScale?: number; padding?: number },
+            ) => this.frame(ids, options),
             shots: () => SHOTS,
             applyShot: (id: string) => this.applyShot(id),
             shotReady: () => this.#shotReady,
@@ -1771,12 +2068,14 @@ export class PiHost {
             ],
             destination: () => [this.#flightTo.x, this.#flightTo.y, this.#flightTo.z],
             zoom: () => this.#flightFrom.zoom,
-            tracePath: () => this.#tracePositions.map((position) => [position.x, position.y, position.z]),
+            tracePath: () =>
+                this.#tracePositions.map((position) => [position.x, position.y, position.z]),
             move: (verb, center, progress) => {
                 if (verb === 'trace') this.#traceProgress = progress;
                 this.renderer.setViewport({
                     center: [...center],
-                    zoom: verb === 'flyTo' ? this.#flightFrom.zoom : this.renderer.getViewport().zoom,
+                    zoom:
+                        verb === 'flyTo' ? this.#flightFrom.zoom : this.renderer.getViewport().zoom,
                 });
                 if (verb === 'trace') this.renderPositions();
             },
@@ -1918,6 +2217,24 @@ export class PiHost {
         document.body.dataset.rail ??= 'open';
         el('catalog-toggle').addEventListener('click', () => this.toggleCatalog());
         el('rail-toggle').addEventListener('click', () => this.toggleRail());
+        el('command-open').addEventListener('click', () => this.#commandSurface?.open('palette'));
+        el('focus-primary').addEventListener('click', () => this.focusPrimary());
+        document.addEventListener('keydown', (event) => {
+            const target = event.target as HTMLElement | null;
+            const editing = target?.closest('input, textarea, select, [contenteditable="true"]');
+            if (editing && editing.id !== 'command-input') return;
+            const mode =
+                event.key === '/'
+                    ? 'palette'
+                    : event.key === ':'
+                      ? 'commands'
+                      : event.key === '?'
+                        ? 'help'
+                        : undefined;
+            if (!mode) return;
+            event.preventDefault();
+            this.#commandSurface?.open(mode);
+        });
         const follow = el<HTMLSelectElement>('follow-mode');
         follow.value = this.#followMode;
         follow.addEventListener('change', () => this.setFollow(follow.value as FollowMode));
@@ -1994,7 +2311,8 @@ export class PiHost {
             '=': () => this.zoomBy(1.2),
             '-': () => this.zoomBy(1 / 1.2),
             f: () => this.#revealed && this.renderer.focus(this.#revealed),
-            Enter: () => this.#controller.selection[0] && this.reveal(this.#controller.selection[0]),
+            Enter: () =>
+                this.#controller.selection[0] && this.reveal(this.#controller.selection[0]),
             PageDown: () => this.descend(),
             PageUp: () => this.ascend(),
             Home: () => this.returnHome(),
@@ -2035,14 +2353,17 @@ export class PiHost {
 
     /** One-shot framing at startup; later navigations keep the user's chosen view. */
     private fitView(): void {
-        const ids = this.#model?.nodes.filter((node) => node.visible !== false).map((node) => node.id) ?? [];
+        const ids =
+            this.#model?.nodes.filter((node) => node.visible !== false).map((node) => node.id) ??
+            [];
         if (ids.length) this.renderer.fit(ids, { padding: 60 });
     }
 
     /** Detail-card controls are host DOM; actions return through the same verbs as the HUD. */
     private bindNodeActions(): void {
         el('canvas').addEventListener('pointerdown', (event) => {
-            if ((event.target as HTMLElement).closest('[data-node-action]')) event.stopPropagation();
+            if ((event.target as HTMLElement).closest('[data-node-action]'))
+                event.stopPropagation();
         });
         el('canvas').addEventListener('click', (event) => {
             const button = (event.target as HTMLElement).closest<HTMLElement>('[data-node-action]');
@@ -2076,10 +2397,11 @@ export class PiHost {
         }
     }
 
-    /** A fixed-size HUD lens anchored to the focused node; node world size is never changed. */
+    /** Dockable inspector anchored to the focused node; markup changes only with focus or data. */
     private renderFocusLens(): void {
-        const overlay = this.#focusLens;
-        if (!overlay) return;
+        const inspector = this.#inspector;
+        if (!inspector) return;
+        const overlay = inspector.element;
         const depth = Number(this.#resolved.values['emphasis.innerDepth']);
         const focus = this.#revealed || this.#controller.selection[0] || '';
         if (!focus || depth <= 0) {
@@ -2088,32 +2410,64 @@ export class PiHost {
         }
         const point = this.renderer.getNodeScreenPosition?.(focus);
         const adapterNode = toAdapterModel(this.#view).nodes.find((node) => node.id === focus);
-        if (!point || !adapterNode) {
+        const modelNode = this.#model?.nodes.find((node) => node.id === focus);
+        if (!point || !adapterNode || !modelNode) {
             overlay.hidden = true;
             return;
         }
+        const layout = String(this.#resolved.values['emphasis.innerLayout']) as InnerLayout;
         const scope = this.#portalByNode.get(focus);
-        overlay.dataset.kind = adapterNode.kind;
         const chips = innerTree(focus, this.#view.nodes, this.#view.edges, depth);
-        overlay.innerHTML = focusCardMarkup(
-            { ...adapterNode, ...(scope ? { scope } : {}) },
-            chips,
-            String(this.#resolved.values['emphasis.innerLayout']) as InnerLayout,
-        );
-        const canvas = el('canvas');
-        const width = 340;
-        const height = 230;
-        const viewport = this.renderer.getViewport();
-        const pixelsPerWorld = (canvas.clientWidth || 1000) / Math.max(viewport.extent?.width ?? 1000, 1);
-        const scale = focus === this.#revealed ? Number(this.#resolved.values['emphasis.focusScale']) : 1;
-        const cardHeight = nodeSize(adapterNode.kind, true)[1] * scale * pixelsPerWorld;
-        const x = Math.min(Math.max(12, point.x - width / 2), Math.max(12, canvas.clientWidth - width - 12));
-        const y = Math.min(
-            Math.max(12, point.y + cardHeight / 2 + 12),
-            Math.max(12, canvas.clientHeight - height - 12),
-        );
-        overlay.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
+        const signature = [
+            focus,
+            depth,
+            layout,
+            adapterNode.kind,
+            adapterNode.status,
+            chips.map((chip) => chip.id).join(','),
+        ].join('|');
+        if (signature !== this.#lensSignature) {
+            overlay.dataset.kind = adapterNode.kind;
+            inspector.slot.innerHTML = focusCardMarkup(
+                { ...adapterNode, ...(scope ? { scope } : {}) },
+                chips,
+                layout,
+            );
+            this.#lensSignature = signature;
+        }
+        this.refreshInstruments(modelNode);
+        if (!inspector.pinned) {
+            const canvas = el('canvas');
+            const width = 340;
+            const height = 230;
+            const viewport = this.renderer.getViewport();
+            const pixelsPerWorld =
+                (canvas.clientWidth || 1000) / Math.max(viewport.extent?.width ?? 1000, 1);
+            const scale =
+                focus === this.#revealed ? Number(this.#resolved.values['emphasis.focusScale']) : 1;
+            const cardHeight = nodeSize(adapterNode.kind, true)[1] * scale * pixelsPerWorld;
+            const x = Math.min(
+                Math.max(12, point.x - width / 2),
+                Math.max(12, canvas.clientWidth - width - 12),
+            );
+            const y = Math.min(
+                Math.max(12, point.y + cardHeight / 2 + 12),
+                Math.max(12, canvas.clientHeight - height - 12),
+            );
+            overlay.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
+        }
         overlay.hidden = false;
+    }
+
+    /** The rail shows at most two contextual instruments; the inspector holds the full kit. */
+    private refreshInstruments(node?: RenderNode): void {
+        if (!this.#instruments) return;
+        const scoped = node ? [{ ...node, widgets: contextualInstruments(node) }] : [];
+        this.#instruments.refresh(scoped);
+        const key = node ? `${node.id}:${node.status ?? ''}` : '';
+        if (key === this.#instrumentFocus) return;
+        this.#instrumentFocus = key;
+        this.#inspectorInstruments?.refresh(node ? [node] : []);
     }
 
     private bindTranscript(): void {
@@ -2151,7 +2505,9 @@ export class PiHost {
                 this.recordEvent('transcript:resize', {
                     arrangement: this.#arrangement,
                     size:
-                        this.#arrangement === 'stacked' ? this.#transcriptHeight : this.#transcriptWidth,
+                        this.#arrangement === 'stacked'
+                            ? this.#transcriptHeight
+                            : this.#transcriptWidth,
                 });
             };
             handle.addEventListener('pointermove', move);
@@ -2166,7 +2522,10 @@ export class PiHost {
             overview.setPointerCapture(event.pointerId);
             const box = overview.getBoundingClientRect();
             const apply = (clientY: number) => {
-                const ratio = Math.min(Math.max((clientY - box.top) / Math.max(box.height, 1), 0), 1);
+                const ratio = Math.min(
+                    Math.max((clientY - box.top) / Math.max(box.height, 1), 0),
+                    1,
+                );
                 pane.scrollTop = ratio * Math.max(pane.scrollHeight - pane.clientHeight, 0);
             };
             const move = (next: PointerEvent) => apply(next.clientY);
@@ -2320,7 +2679,10 @@ export class PiHost {
     private toggleMessage(id: string): void {
         if (this.#expandedMessages.has(id)) this.#expandedMessages.delete(id);
         else this.#expandedMessages.add(id);
-        this.recordEvent('transcript:expand', { node: id, expanded: this.#expandedMessages.has(id) });
+        this.recordEvent('transcript:expand', {
+            node: id,
+            expanded: this.#expandedMessages.has(id),
+        });
         this.renderTranscript();
     }
 
@@ -2348,7 +2710,8 @@ export class PiHost {
 
     private updateTranscriptOverview(): void {
         const pane = el('transcript');
-        const view = el('transcript-overview').querySelector<SVGRectElement>('[data-transcript-view]');
+        const view =
+            el('transcript-overview').querySelector<SVGRectElement>('[data-transcript-view]');
         if (!view) return;
         const fraction = pane.clientHeight / Math.max(pane.scrollHeight, 1);
         const height = Math.max(12, 200 * fraction);
@@ -2362,7 +2725,8 @@ export class PiHost {
             ...this.#specs.map((spec) =>
                 button(`${spec.id} · ${spec.nodes.length}`, () => {
                     const first =
-                        spec.nodes[0] && this.#view.nodes.find((node) => node.id === spec.nodes[0].id);
+                        spec.nodes[0] &&
+                        this.#view.nodes.find((node) => node.id === spec.nodes[0].id);
                     if (first) this.reveal(first.id);
                 }),
             ),
@@ -2429,7 +2793,9 @@ export class PiHost {
         const width = 176;
         const height = 112;
         const positions = new Map(
-            (this.#model?.nodes ?? []).map((node) => [node.id, { x: node.position[0], y: node.position[1] }] as const),
+            (this.#model?.nodes ?? []).map(
+                (node) => [node.id, { x: node.position[0], y: node.position[1] }] as const,
+            ),
         );
         const viewport = this.renderer.getViewport();
         const projection = Navigation.project({
@@ -2457,7 +2823,7 @@ export class PiHost {
             view.setAttribute('width', Math.max(1, projection.viewRect.width).toFixed(1));
             view.setAttribute('height', Math.max(1, projection.viewRect.height).toFixed(1));
             view.setAttribute('fill', 'none');
-            view.setAttribute('stroke', 'var(--pi-accent)');
+            view.setAttribute('stroke', 'var(--sg-colors-accent)');
             svg.append(view);
         }
         for (const [id, point] of positions) {
@@ -2467,7 +2833,10 @@ export class PiHost {
             dot.setAttribute('cx', projected.x.toFixed(1));
             dot.setAttribute('cy', projected.y.toFixed(1));
             dot.setAttribute('r', id === this.#revealed ? '3' : '1.6');
-            dot.setAttribute('fill', id === this.#revealed ? 'var(--pi-focus)' : 'var(--pi-edge)');
+            dot.setAttribute(
+                'fill',
+                id === this.#revealed ? 'var(--sg-colors-ring)' : 'var(--sg-colors-edge)',
+            );
             svg.append(dot);
         }
         el('minimap').replaceChildren(svg);

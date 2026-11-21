@@ -6,7 +6,8 @@ const boot = async (page: Page): Promise<string[]> => {
     const errors: string[] = [];
     page.on('pageerror', (error) => errors.push(error.message));
     page.on('console', (message) => {
-        if (message.type() === 'error' && !message.text().includes('favicon')) errors.push(message.text());
+        if (message.type() === 'error' && !message.text().includes('favicon'))
+            errors.push(message.text());
     });
     await page.goto('/');
     await page.waitForFunction(() => (window as any).__pi?.ready === true);
@@ -38,7 +39,10 @@ test.describe('the Pi reference app', () => {
             await page.locator(`[data-capability="${id}"]`).click();
             const evidence = await page.evaluate(() => (window as any).__pi.evidence());
             expect(evidence.length, id).toBeGreaterThan(0);
-            expect(evidence.every((line: string) => line.trim().length > 0), id).toBe(true);
+            expect(
+                evidence.every((line: string) => line.trim().length > 0),
+                id,
+            ).toBe(true);
             await expect(page.locator('#evidence li').first()).toBeVisible();
         }
 
@@ -50,7 +54,10 @@ test.describe('the Pi reference app', () => {
         const presets = await page.evaluate(() => (window as any).__pi.policy().presets.length);
         await expect(page.locator('#catalog a[data-preset]')).toHaveCount(presets);
         expect(await page.locator('#catalog a[data-cell]').count()).toBeGreaterThan(0);
-        await expect(page.locator('#catalog a[data-preset="quiet"]')).toHaveAttribute('href', '?preset=quiet');
+        await expect(page.locator('#catalog a[data-preset="quiet"]')).toHaveAttribute(
+            'href',
+            '?preset=quiet',
+        );
         await expect(page.locator('#catalog a[data-preset="quiet"]')).toHaveAttribute(
             'title',
             expect.stringContaining('five tasks'),
@@ -77,11 +84,15 @@ test.describe('the Pi reference app', () => {
         await page.mouse.up();
         const after = await page.locator('#transcript').boundingBox();
         expect(after!.width).toBeGreaterThan(before!.width + 60);
-        expect(await page.evaluate(() => (window as any).__pi.transcriptSize())).toBeGreaterThan(320);
+        expect(await page.evaluate(() => (window as any).__pi.transcriptSize())).toBeGreaterThan(
+            320,
+        );
         noErrors(errors);
     });
 
-    test('renders the transcript as a spine with expandable detail and a scroll overview', async ({ page }) => {
+    test('renders the transcript as a spine with expandable detail and a scroll overview', async ({
+        page,
+    }) => {
         const errors = await boot(page);
         const rows = page.locator('#transcript-list .spine-row');
         expect(await rows.count()).toBeGreaterThan(0);
@@ -102,7 +113,9 @@ test.describe('the Pi reference app', () => {
         await page.mouse.down();
         await page.mouse.move(box!.x + box!.width / 2, box!.y + 4, { steps: 4 });
         await page.mouse.up();
-        expect(await pane.evaluate((element) => (element as HTMLElement).scrollTop)).toBeGreaterThan(0);
+        expect(
+            await pane.evaluate((element) => (element as HTMLElement).scrollTop),
+        ).toBeGreaterThan(0);
         noErrors(errors);
     });
 
@@ -128,9 +141,12 @@ test.describe('the Pi reference app', () => {
         noErrors(errors);
     });
 
-    test('follows the newest node and reports attention from the local stream', async ({ page }) => {
+    test('follows the newest node and reports attention from the local stream', async ({
+        page,
+    }) => {
         const errors = await boot(page);
 
+        await page.locator('#settings-menu summary').click();
         await page.locator('#follow-mode').selectOption('node');
         expect(await page.evaluate(() => (window as any).__pi.follow())).toBe('node');
         expect(await page.evaluate(() => (window as any).__pi.setFollow('off'))).toBe('off');
@@ -142,7 +158,8 @@ test.describe('the Pi reference app', () => {
         // The local feed replays the same ops, so no new node arrives and the camera stays put.
         await page.locator('#prompt-input').fill('Follow the local feed');
         const accepted = page.waitForResponse(
-            (response) => response.url().includes('/prompt') && response.request().method() === 'POST',
+            (response) =>
+                response.url().includes('/prompt') && response.request().method() === 'POST',
         );
         await page.locator('#prompt-form button[type="submit"]').click();
         expect((await accepted).status()).toBe(202);
@@ -160,10 +177,14 @@ test.describe('the Pi reference app', () => {
 
         expect(await page.evaluate(() => (window as any).__pi.depth())).toBe('flat');
         await expect
-            .poll(() => page.evaluate(() => (window as any).__pi.scopes().length), { timeout: 10_000 })
+            .poll(() => page.evaluate(() => (window as any).__pi.scopes().length), {
+                timeout: 10_000,
+            })
             .toBeGreaterThan(1);
         await expect
-            .poll(() => page.evaluate(() => (window as any).__pi.simulation().settled), { timeout: 10_000 })
+            .poll(() => page.evaluate(() => (window as any).__pi.simulation().settled), {
+                timeout: 10_000,
+            })
             .toBe(true);
         const simulation = await page.evaluate(() => (window as any).__pi.simulation());
         expect(simulation.energy).toBeLessThan(0.001);
@@ -178,14 +199,20 @@ test.describe('the Pi reference app', () => {
         const errors = await boot(page);
 
         for (const mode of ['flat', 'layered', 'depth-stack', 'orbit']) {
-            expect(await page.evaluate((value) => (window as any).__pi.setDepth(value), mode)).toBe(mode);
+            expect(await page.evaluate((value) => (window as any).__pi.setDepth(value), mode)).toBe(
+                mode,
+            );
             await expect(page.locator('#depth-mode')).toHaveValue(mode);
         }
-        expect(await page.evaluate(() => (window as any).__pi.setDepth('unsupported'))).toBe('orbit');
+        expect(await page.evaluate(() => (window as any).__pi.setDepth('unsupported'))).toBe(
+            'orbit',
+        );
         expect(errors).toEqual([]);
     });
 
-    test('keeps the transcript mounted across hybrid arrangements and permalinks', async ({ page }) => {
+    test('keeps the transcript mounted across hybrid arrangements and permalinks', async ({
+        page,
+    }) => {
         const errors = await boot(page);
 
         const rows = page.locator('#transcript-list .transcript-row');
@@ -216,7 +243,14 @@ test.describe('the Pi reference app', () => {
     test('exposes the five questions and new surfaces in the gallery', async ({ page }) => {
         const errors = await boot(page);
         const ids = await page.evaluate(() => (window as any).__pi.capabilities());
-        for (const id of ['freeform-layout', 'scopes', 'levels', 'depth', 'motion', 'five-questions']) {
+        for (const id of [
+            'freeform-layout',
+            'scopes',
+            'levels',
+            'depth',
+            'motion',
+            'five-questions',
+        ]) {
             expect(ids, id).toContain(id);
         }
         for (const id of ids.filter((entry: string) => entry.startsWith('question-'))) {
@@ -240,16 +274,22 @@ test.describe('the Pi reference app', () => {
         await expect(page.locator('#level-mode')).toHaveValue('detail');
         await page.evaluate(() => (window as any).__pi.setLevelMode('auto'));
 
-        const before = await page.evaluate(() => (window as any).__pi.scopeSpecs().map((s: any) => s.strategy));
+        const before = await page.evaluate(() =>
+            (window as any).__pi.scopeSpecs().map((s: any) => s.strategy),
+        );
         expect(before).toContain('force');
-        const id = await page.evaluate(() => (window as any).__pi.scopes().find((s: string) => s.startsWith('unit-')));
+        const id = await page.evaluate(() =>
+            (window as any).__pi.scopes().find((s: string) => s.startsWith('unit-')),
+        );
         await page.evaluate((value) => (window as any).__pi.setLaneScope(value), id);
         const after = await page.evaluate(() => (window as any).__pi.scopeSpecs());
         expect(after.find((spec: any) => spec.id === id).strategy).toBe('grid');
         expect(errors).toEqual([]);
     });
 
-    test('windows the render, exports artifacts and mirrors gestures on the keyboard', async ({ page }) => {
+    test('windows the render, exports artifacts and mirrors gestures on the keyboard', async ({
+        page,
+    }) => {
         const errors = await boot(page);
 
         await page.evaluate(() => (window as any).__pi.loadFixture());
@@ -258,8 +298,15 @@ test.describe('the Pi reference app', () => {
         expect(await page.evaluate(() => (window as any).__pi.hidden())).toBeGreaterThan(0);
         await expect(page.locator('#history-banner')).toBeVisible();
 
-        for (const [format, marker] of [['json', 'nodes'], ['svg', '<svg'], ['html', '<li']] as const) {
-            const output = await page.evaluate((value) => (window as any).__pi.export(value), format);
+        for (const [format, marker] of [
+            ['json', 'nodes'],
+            ['svg', '<svg'],
+            ['html', '<li'],
+        ] as const) {
+            const output = await page.evaluate(
+                (value) => (window as any).__pi.export(value),
+                format,
+            );
             expect(output, format).toContain(marker);
         }
 
@@ -272,15 +319,15 @@ test.describe('the Pi reference app', () => {
         const beforePan = await viewport();
         await page.keyboard.press('ArrowLeft');
         expect(await viewport()).not.toBe(beforePan);
-        expect(await page.evaluate(() => (window as any).__pi.unsupported().map((s: any) => s.id))).toEqual([
-            'webxr',
-            'sound',
-            'haptics',
-        ]);
+        expect(
+            await page.evaluate(() => (window as any).__pi.unsupported().map((s: any) => s.id)),
+        ).toEqual(['webxr', 'sound', 'haptics']);
         expect(errors).toEqual([]);
     });
 
-    test('navigates revealed nodes through the trail, portal path and minimap', async ({ page }) => {
+    test('navigates revealed nodes through the trail, portal path and minimap', async ({
+        page,
+    }) => {
         const errors = await boot(page);
 
         const rows = page.locator('#transcript-list .transcript-row');
@@ -291,7 +338,9 @@ test.describe('the Pi reference app', () => {
         const trail = await page.evaluate(() => (window as any).__pi.trail());
         expect(trail.entries.at(-2)).toBe(first);
         expect(trail.current).toBe(second);
-        await expect(page.locator('#trail-list button[data-trail-node]')).toHaveCount(trail.entries.length);
+        await expect(page.locator('#trail-list button[data-trail-node]')).toHaveCount(
+            trail.entries.length,
+        );
         await expect(page.locator('#trail-back')).toBeEnabled();
         await expect(page.locator('#trail-forward')).toBeDisabled();
 
@@ -329,13 +378,16 @@ test.describe('the Pi reference app', () => {
         await page.locator('#prompt-input').fill('Summarise the repo');
         await page.locator('#prompt-mode').selectOption('steer');
         const accepted = page.waitForResponse(
-            (response) => response.url().includes('/prompt') && response.request().method() === 'POST',
+            (response) =>
+                response.url().includes('/prompt') && response.request().method() === 'POST',
         );
         await page.locator('#prompt-form button[type="submit"]').click();
         expect((await accepted).status()).toBe(202);
 
         await expect(page.locator('#prompt-input')).toHaveValue('');
-        expect(await page.evaluate(() => (window as any).__pi.ops())).toBeGreaterThanOrEqual(before);
+        expect(await page.evaluate(() => (window as any).__pi.ops())).toBeGreaterThanOrEqual(
+            before,
+        );
 
         noErrors(errors);
     });

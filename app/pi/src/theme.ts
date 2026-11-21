@@ -1,25 +1,26 @@
 import { DEFAULT_THEME, resolveTheme, type RenderTheme } from '@spacegraphjs/renderer';
 
 const TOKENS = {
-    background: '--pi-background',
-    surface: '--pi-surface',
-    surfaceMuted: '--pi-surface-muted',
-    text: '--pi-text',
-    textMuted: '--pi-text-muted',
-    border: '--pi-border',
-    accent: '--pi-accent',
-    success: '--pi-success',
-    warning: '--pi-warning',
-    error: '--pi-error',
-    edge: '--pi-edge',
-    edgeMuted: '--pi-edge-muted',
-    selection: '--pi-selection',
-    focus: '--pi-focus',
+    background: '--sg-colors-background',
+    surface: '--sg-colors-card',
+    surfaceMuted: '--sg-colors-muted',
+    text: '--sg-colors-foreground',
+    textMuted: '--sg-colors-muted-foreground',
+    border: '--sg-colors-border',
+    accent: '--sg-colors-accent',
+    success: '--sg-colors-success',
+    warning: '--sg-colors-warning',
+    error: '--sg-colors-destructive',
+    edge: '--sg-colors-edge',
+    edgeMuted: '--sg-colors-edge-muted',
+    selection: '--sg-colors-selection',
+    focus: '--sg-colors-ring',
 } as const;
 
-export const readTheme = (read: (variable: string) => string = (variable) =>
-    getComputedStyle(document.documentElement).getPropertyValue(variable)): RenderTheme =>
-    resolveTheme(TOKENS, read, DEFAULT_THEME);
+export const readTheme = (
+    read: (variable: string) => string = (variable) =>
+        getComputedStyle(document.documentElement).getPropertyValue(variable),
+): RenderTheme => resolveTheme(TOKENS, read, DEFAULT_THEME);
 
 interface ViewPalette {
     readonly accent: string;
@@ -160,7 +161,9 @@ const paletteOf = (id: string): ViewPalette => VIEW_PALETTES[id] ?? VIEW_PALETTE
 export const paletteVars = (id: string): Readonly<Record<string, string>> => {
     const palette = paletteOf(id);
     return {
-        ...Object.fromEntries(Object.entries(palette.kinds).map(([kind, color]) => [`--kind-${kind}`, color])),
+        ...Object.fromEntries(
+            Object.entries(palette.kinds).map(([kind, color]) => [`--kind-${kind}`, color]),
+        ),
         '--view-grid': palette.grid,
         '--view-star': palette.star,
     };

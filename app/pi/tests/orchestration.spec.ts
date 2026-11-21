@@ -4,23 +4,39 @@ const boot = async (page: Page): Promise<void> => {
     await page.goto('/');
     await page.waitForFunction(() => (window as any).__pi?.ready === true);
     await expect
-        .poll(() => page.evaluate(() => (window as any).__pi.portalNodes().length), { timeout: 10_000 })
+        .poll(() => page.evaluate(() => (window as any).__pi.portalNodes().length), {
+            timeout: 10_000,
+        })
         .toBeGreaterThan(0);
 };
 
 test.describe('the living rectangle and orchestration seam', () => {
-    test('mounts sanitized instruments on detail rungs', async ({ page }) => {
+    test('mounts at most two contextual instruments and keeps the full kit in the inspector', async ({
+        page,
+    }) => {
         await boot(page);
-        await page.evaluate(() => (window as any).__pi.setLevel('detail'));
-        await expect(page.locator('[data-instrument-for]').first()).toBeVisible({ timeout: 5000 });
-        const kinds = await page.locator('[data-instrument-for]').evaluateAll((nodes) =>
-            nodes.map((node) => node.className),
-        );
+        await page.evaluate(() => {
+            const pi = (window as any).__pi;
+            pi.setLevel('detail');
+            pi.reveal(pi.edges()[0].target);
+        });
+        await expect(page.locator('#instrument-kit [data-instrument-for]').first()).toBeVisible({
+            timeout: 5000,
+        });
+        expect(
+            await page.evaluate(() => (window as any).__pi.railInstruments()),
+        ).toBeLessThanOrEqual(2);
+        await page.evaluate(() => (window as any).__pi.setInspectorTab('signals'));
+        const kinds = await page
+            .locator('#inspector-instruments [data-instrument-for]')
+            .evaluateAll((nodes) => nodes.map((node) => node.className));
         expect(kinds.some((kind) => kind.includes('instrument-sparkline'))).toBe(true);
         expect(kinds.some((kind) => kind.includes('instrument-controls'))).toBe(true);
-        const actions = await page.locator('[data-instrument-action]').evaluateAll((nodes) =>
-            nodes.map((node) => node.getAttribute('data-instrument-action')),
-        );
+        const actions = await page
+            .locator('#inspector-instruments [data-instrument-action]')
+            .evaluateAll((nodes) =>
+                nodes.map((node) => node.getAttribute('data-instrument-action')),
+            );
         expect(actions).toContain('steer');
         expect(actions).toContain('approve');
     });
@@ -33,8 +49,16 @@ test.describe('the living rectangle and orchestration seam', () => {
             }
         });
         await boot(page);
-        await page.evaluate(() => (window as any).__pi.setLevel('detail'));
-        await page.locator('[data-instrument-action="steer"]').first().click();
+        await page.evaluate(() => {
+            const pi = (window as any).__pi;
+            pi.setLevel('detail');
+            pi.reveal(pi.edges()[0].target);
+            pi.setInspectorTab('signals');
+        });
+        await page
+            .locator('#inspector-instruments [data-instrument-action="steer"]')
+            .first()
+            .click();
         await expect(page.locator('#prompt-mode')).toHaveValue('steer');
         await page.locator('#prompt-input').fill('inspect the failing test');
         await page.locator('#prompt-form button[type="submit"]').click();

@@ -1,7 +1,53 @@
 # TODO4 — The Sculpting Plan
 
 **SpaceGraphJS: from a capable cockpit to an intuitive, elegant, beautiful spatial interface.**
-Self-contained. No time estimates. Ordered by dependency, not duration. This is a plan, not a claim of work done.
+Self-contained. No time estimates. Ordered by dependency, not duration. Sections 1–11 remain the plan;
+the progress block below records what has actually landed.
+
+---
+
+## Progress (updated 2026-11-21 — slice 1 complete, awaiting review)
+
+**Slice 1 — One surface language: implemented in Pi, not yet promoted to a second host.**
+
+| Item                                         | Status | Evidence                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| -------------------------------------------- | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Boundary decision (§9.1)                     | done   | The owning module is `app/pi/src/shell/` (tokens, command surface, inspector, instrument selection). It stays inside Pi until a second host consumes it; no shared package was created speculatively.                                                                                                                                                                                                                                                             |
+| Token module + Pi consumption (O2, H1, §9.2) | done   | `app/pi/src/shell/tokens.ts` resolves `DesignTokens` from `@spacegraphjs/shared/tokens` into a grayscale dark/light HUD and injects one `#shell-tokens` style element. `app/pi/index.html` now reads only `--sg-*` for color, type and spacing; the duplicated `--pi-*` color blocks were deleted, and `app/pi/src/theme.ts` reads the token names. `--pi-blend` remains a live policy-driven value, not a design token.                                          |
+| Command bar + palette (J1, §10)              | done   | The header keeps identity, status, `/ commands`, surface, depth and focus; follow, axis, level, arrangement, catalog and rail moved into a native `<details id="settings-menu">`. `app/pi/src/shell/command-surface.ts` filters verbs, capabilities, chrome actions and every policy knob; `/`, `:`, `?` open palette, commands and help, with arrow/Enter/Escape and focus restore. `app/pi/tests/shell.spec.ts` covers keyboard, settings and token resolution. |
+| Dockable inspector (J2, K4 bound only)       | done   | `app/pi/src/shell/inspector.ts` wraps the existing `#focus-lens` in an ARIA tablist (`detail`, `inner`, `signals`, `actions`), a pin control and a `tabpanel`. The `detail` tab remains the composite legacy view so shots and existing lens assertions are unchanged. The lens rebuilds markup only when focus/data changes and updates its transform on viewport changes; the inner tree keeps the existing ≤3 schema depth and chip cap.                       |
+| Contextual instruments (J3, §9.4)            | done   | `app/pi/src/shell/instruments.ts` selects at most two instruments by node kind/status. The rail mounts only that pair for the focused node; the full kit mounts in the inspector's `signals` tab. `orchestration.spec.ts` and `shell.spec.ts` assert both halves.                                                                                                                                                                                                 |
+| Review gate (§9.5)                           | done   | All 12 shots recaptured and reviewed in `docs/screenshots/index.html`; `cockpit` and `policy` show a compact bar with an unchanged canvas. `app/pi`: 95 unit tests, 66 e2e tests, vision/atlas gates and `tsc --noEmit` green.                                                                                                                                                                                                                                    |
+
+**Clarifications that came out of this increment:**
+
+1. Tokens are injected at runtime by the shell module, not declared in Pi's stylesheet. A host maps its own
+   theme onto the same `--sg-*` names; Pi's grayscale HUD is one dataset, not a new global CSS contract.
+2. The `detail` inspector tab is deliberately a superset (the former lens view). The other three tabs narrow
+   it. This keeps the gallery byte-comparable and avoids a fourth representation rung.
+3. Chrome font sizes and spacing gaps now come from tokens. Remaining pixel literals are panel geometry
+   (rail width, lens size), canvas layout and LOD-derived card markup — not token roles. New CSS added in
+   slice 1 uses token variables only.
+4. `§11.1` (camera-move jank) is partially addressed by signature-gated lens rebuilds; the frame-time
+   assertion is still owed. `§11.2` gained ARIA tabs/dialog and focus restore, but the 44px target audit,
+   contrast audit and RTL pass are still owed. `§11.4` (domain `labelFor`) remains unscheduled.
+
+**Remaining work, in order:**
+
+1. **Slice 2 — Graph grammar and attention** (H2, H3, H4, I1–I4): shape language by kind, semantic
+   color roles, scope contours, salience-ranked ribbons, focus ring with connector. Gate: `cockpit`,
+   `neon-cockpit`, `node-detail`, `dynamic-range`; vision in both themes. Fold in the §11.1 frame-time
+   assertion and the §11.2 target/contrast checks before treating the grammar as settled.
+2. **Slice 3 — Recursion, inspector and proof** (O3, O4, K1–K3, J4, J5, N1, N2, M1): inner topology with
+   connectors, portal previews, depth-ruler breadcrumb, visible evidence line, catalog cards, first-run
+   hint, review notes. Gate: `fractal`, `deep-focus`, `catalog` and intermediate descend frames.
+3. **Slice 4 — Proliferation** (O5–O7): blocked on a second host consuming shell, tokens and inspector
+   unchanged. Then split core/domain policy, emit the world-host and real vision gate from the scaffold,
+   and add one cross-domain shot. No contract or position-authority change.
+4. **Standing track** (M3, L4): extend vision assertions to intermediate frames and keep reduced-motion
+   final-frame parity in every slice. L1–L3, M2, M4, N3/N4 stay deferred per §6.
+
+No slice 2+ item is claimed done. The study, release and hosted URL stay deferred with TODO3's G3–G5.
 
 ---
 
@@ -13,8 +59,8 @@ bounded inner-node lens, faceted causal ribbons, a 12-shot deterministic gallery
 capture loop. Root tests, Pi unit/e2e, renderer package tests, the vision gates and the scale budgets
 are green.
 
-What is still missing is **form**. The current flagship communicates *that* the system is capable but
-not yet *why it feels good to use*. Nodes are near-uniform gray rectangles with clipped labels; depth
+What is still missing is **form**. The current flagship communicates _that_ the system is capable but
+not yet _why it feels good to use_. Nodes are near-uniform gray rectangles with clipped labels; depth
 and attention are optional effects rather than a visual grammar; the catalog (the proof surface) is
 hidden behind a drawer; motion is limited to camera flights and rung crossfades; chrome outspeaks the
 graph. TODO3 built the instrument. TODO4 shapes it.
@@ -29,27 +75,27 @@ no fabricated study, release or deployment.
 
 ### 1.1 Deficient
 
-| Area | Evidence in the current gallery | Consequence |
-| ---- | ------------------------------- | ----------- |
-| **Visual grammar** | Nodes are gray rectangles; `data-kind` changes only a 2px accent stripe and a radius (now zero). | Kind, scope, status and importance are not legible at a glance. |
-| **Type hierarchy** | One 11–13px monospace register for chrome, cards, chips and labels; `user mess…`, `assistant mes…`. | No reading order; detail rungs cannot feel like a reveal. |
-| **Hierarchy of attention** | `emphasis.focusScale` and neighbors default to `1`; only color and the lens direct attention. | The graph does not tell the eye where to go before the user interacts. |
-| **Recursive depth** | The lens is a CSS grid of chips at depth 2; no connector to the node, no sense of "inside". | "Fractal" is navigation between flat views, not an experience of scale. |
-| **Composed negative space** | `dynamic-range` and `fractal` leave large black areas; grid/starfield are decorative only. | Emptiness reads as missing content, not as depth or quiet. |
-| **Motion and life** | Static frames; activity is a five-bar glyph, edges are static tubes. | A spatial system looks like a diagram. |
-| **Proof discoverability** | The catalog is a closed drawer; screenshots of the flagship show no evidence surface. | The strongest differentiator is invisible to a visitor. |
-| **Affordance discovery** | Verbs live in keyboard bindings, double-clicks and a tiny header; no visible hint. | Users cannot find what the system can do. |
+| Area                        | Evidence in the current gallery                                                                     | Consequence                                                             |
+| --------------------------- | --------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| **Visual grammar**          | Nodes are gray rectangles; `data-kind` changes only a 2px accent stripe and a radius (now zero).    | Kind, scope, status and importance are not legible at a glance.         |
+| **Type hierarchy**          | One 11–13px monospace register for chrome, cards, chips and labels; `user mess…`, `assistant mes…`. | No reading order; detail rungs cannot feel like a reveal.               |
+| **Hierarchy of attention**  | `emphasis.focusScale` and neighbors default to `1`; only color and the lens direct attention.       | The graph does not tell the eye where to go before the user interacts.  |
+| **Recursive depth**         | The lens is a CSS grid of chips at depth 2; no connector to the node, no sense of "inside".         | "Fractal" is navigation between flat views, not an experience of scale. |
+| **Composed negative space** | `dynamic-range` and `fractal` leave large black areas; grid/starfield are decorative only.          | Emptiness reads as missing content, not as depth or quiet.              |
+| **Motion and life**         | Static frames; activity is a five-bar glyph, edges are static tubes.                                | A spatial system looks like a diagram.                                  |
+| **Proof discoverability**   | The catalog is a closed drawer; screenshots of the flagship show no evidence surface.               | The strongest differentiator is invisible to a visitor.                 |
+| **Affordance discovery**    | Verbs live in keyboard bindings, double-clicks and a tiny header; no visible hint.                  | Users cannot find what the system can do.                               |
 
 ### 1.2 Overdone
 
-| Area | Evidence | Correction |
-| ---- | -------- | ---------- |
-| **Ribbons** | Every causal edge is a bright, 3-segment tube of equal weight; in `neon-cockpit` they outshine nodes. | Fewer, narrower, semantically ranked ribbons; keep thin lines for context. |
-| **Header** | 10+ controls (follow, depth, axis, level, arrangement, surface, toggles) in one row. | Collapse into a command/settings surface; keep three primary controls visible. |
-| **Rail instruments** | Seven `INSTRUMENT_IDS` mount into a 200px rail regardless of relevance. | Show one or two contextual instruments; the rest on demand. |
-| **Policy panel** | 41 auto-generated knobs appear as one flat list. | Group by family, collapse by default, add search and provenance filters. |
-| **Catalog text** | When open, the drawer is a wall of capability and experiment prose. | Progressive cards: question first, details on expand. |
-| **Effects in presets** | Glow, grid and starfield exist but only as opt-in data. | Keep them data; make one restrained treatment the default visual baseline. |
+| Area                   | Evidence                                                                                              | Correction                                                                     |
+| ---------------------- | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| **Ribbons**            | Every causal edge is a bright, 3-segment tube of equal weight; in `neon-cockpit` they outshine nodes. | Fewer, narrower, semantically ranked ribbons; keep thin lines for context.     |
+| **Header**             | 10+ controls (follow, depth, axis, level, arrangement, surface, toggles) in one row.                  | Collapse into a command/settings surface; keep three primary controls visible. |
+| **Rail instruments**   | Seven `INSTRUMENT_IDS` mount into a 200px rail regardless of relevance.                               | Show one or two contextual instruments; the rest on demand.                    |
+| **Policy panel**       | 41 auto-generated knobs appear as one flat list.                                                      | Group by family, collapse by default, add search and provenance filters.       |
+| **Catalog text**       | When open, the drawer is a wall of capability and experiment prose.                                   | Progressive cards: question first, details on expand.                          |
+| **Effects in presets** | Glow, grid and starfield exist but only as opt-in data.                                               | Keep them data; make one restrained treatment the default visual baseline.     |
 
 ### 1.3 Keep
 
@@ -59,22 +105,22 @@ These are settled and should not be reworked.
 
 ### 1.4 Domain neutrality audit
 
-TODO3 proved a second consumer for the mechanism layer and one world with four domains. The *visual
-and ergonomic* layer has not had that pass. Everything good in this document currently lives in
+TODO3 proved a second consumer for the mechanism layer and one world with four domains. The _visual
+and ergonomic_ layer has not had that pass. Everything good in this document currently lives in
 `app/pi/`: the lens, inner layout, ribbons, palettes, drawers, type and spacing, shot catalog. A new
 domain inherits the spine and the vision gate from the scaffold but inherits none of the craft.
 
-| Gap | Evidence | Universal need |
-| --- | --- | --- |
-| Chrome and grammar are Pi-local | Header, lens, drawers and CSS live in `app/pi/index.html` and `app/pi/src/host.ts` | A host-neutral shell with slots for domain vocabulary |
-| Inspector is host-specific | `focusCardMarkup` assumes agent kinds and verbs | A domain-supplied neighborhood/action adapter behind one inspector |
-| Visual tokens are per-page CSS | Palette variables and type sizes are declared in Pi's stylesheet | A shared token layer every host resolves into its theme |
-| Policy is partly semantic | `surface` and `orchestration` families describe Pi's transcript and agent loop | A neutral core family set plus a domain family |
-| Shots are Pi-only | `SHOTS` and the capture CLI are wired to `app/pi` | A fixture + shot convention the scaffold emits for every domain |
-| One world is a demo | `app/demo/src/world-host.ts` composes four domains in one canvas | A documented default architecture, not a special case |
-| Scaffold vision gate is a smoke check | `packages/create-spacegraph/domain.js:353-366,467-474` emits only `toBeVisible`, while Pi uses `createVisionAssert` | Generated domains need a real legibility gate, not a placeholder |
-| Scaffold duplicates shared helpers | generated `vocabulary.ts` re-implements `dataString`/`roleOf`/`relationOf` (`domain.js:122-128`) instead of importing `@spacegraphjs/shared/domain` | Generated code must drift less, not more |
-| Agent semantics leak into neutral interfaces | `FacetAccessors` carries `isFailedTool`/`isSubagentCall` even in the workflow wrapper | Rename to generic roles before generalizing further |
+| Gap                                          | Evidence                                                                                                                                            | Universal need                                                     |
+| -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| Chrome and grammar are Pi-local              | Header, lens, drawers and CSS live in `app/pi/index.html` and `app/pi/src/host.ts`                                                                  | A host-neutral shell with slots for domain vocabulary              |
+| Inspector is host-specific                   | `focusCardMarkup` assumes agent kinds and verbs                                                                                                     | A domain-supplied neighborhood/action adapter behind one inspector |
+| Visual tokens are per-page CSS               | Palette variables and type sizes are declared in Pi's stylesheet                                                                                    | A shared token layer every host resolves into its theme            |
+| Policy is partly semantic                    | `surface` and `orchestration` families describe Pi's transcript and agent loop                                                                      | A neutral core family set plus a domain family                     |
+| Shots are Pi-only                            | `SHOTS` and the capture CLI are wired to `app/pi`                                                                                                   | A fixture + shot convention the scaffold emits for every domain    |
+| One world is a demo                          | `app/demo/src/world-host.ts` composes four domains in one canvas                                                                                    | A documented default architecture, not a special case              |
+| Scaffold vision gate is a smoke check        | `packages/create-spacegraph/domain.js:353-366,467-474` emits only `toBeVisible`, while Pi uses `createVisionAssert`                                 | Generated domains need a real legibility gate, not a placeholder   |
+| Scaffold duplicates shared helpers           | generated `vocabulary.ts` re-implements `dataString`/`roleOf`/`relationOf` (`domain.js:122-128`) instead of importing `@spacegraphjs/shared/domain` | Generated code must drift less, not more                           |
+| Agent semantics leak into neutral interfaces | `FacetAccessors` carries `isFailedTool`/`isSubagentCall` even in the workflow wrapper                                                               | Rename to generic roles before generalizing further                |
 
 ---
 
@@ -109,7 +155,7 @@ Inherited from TODO3 and extended:
 3. **One focus, many rungs.** The focused object changes representation, not identity or position.
 4. **Progressive disclosure by default.** Advanced controls, instruments and proof live behind one
    obvious affordance; they never consume canvas by default.
-5. **Legibility gates beauty.** Every new visual state passes vision assertions at settled *and*
+5. **Legibility gates beauty.** Every new visual state passes vision assertions at settled _and_
    intermediate frames, in dark and light themes, with reduced motion.
 6. **Motion is optional and semantic.** Animation communicates change of state; it never decorates a
    static frame and never runs under reduced motion.
@@ -138,14 +184,14 @@ beside H: H must define tokens in a form another host can resolve, not as Pi-onl
   Promotion waits for that second consumer, per the existing rule.
 - O2 **Shared visual tokens.** Move type, spacing, palette and shape tokens out of Pi's stylesheet into
   a resolvable token layer that any host maps onto its own CSS variables. Palette/backdrop/glow stay
-  policy data; only their *resolution* becomes shared. Pi's grayscale HUD becomes one theme among many.
+  policy data; only their _resolution_ becomes shared. Pi's grayscale HUD becomes one theme among many.
 - O3 **Domain-neutral inspector.** `innerTree`, `innerPlacements` and the lens markup become a pure
   inspect module with a domain adapter: child relation kinds (`contains`, `delegates`, `depends-on`,
   `part-of`), chip fields, and verbs. The agent adapter stays in `app/pi`; the traversal, bound and
   placement logic does not. The contract seam is already intended for this: `getNodeScreenPosition` is
   documented as how a host anchors a detail surface to a node (`packages/renderer/src/index.ts:284-289`).
 - O4 **Card template registry.** The three-rung ladder plus the detail cockpit becomes a reusable
-  template registry keyed by kind, registered by the *host* through its existing adapter slot (slot 4)
+  template registry keyed by kind, registered by the _host_ through its existing adapter slot (slot 4)
   so policy stays host-side. The scaffold emits a starter set; no new `RenderNode` field, no renderer
   branch. This is where "every rectangle is a portal" gets a default implementation.
 - O5 **Core policy vs domain policy.** Separate a neutral core (bands, ladder, salience, emphasis,
@@ -164,18 +210,18 @@ beside H: H must define tokens in a form another host can resolve, not as Pi-onl
   one shot per domain and one cross-domain shot belong to the shared gallery.
 - O8 **Domain capability matrix.** Define explicitly what the universal grammar means where it matters:
 
-  | Domain | Nested scope | Attention signal | Inner content | Time/severity axis |
-  | ------ | ------------ | ---------------- | ------------- | ------------------ |
-  | workflow | subworkflow / step | blocked or retrying | gate, retry chain | run order |
-  | filesystem | directory / symbol | recently changed | diff, blame, dependents | history |
-  | data | pipeline / stage | failed / drifting | schema, sample rows | stream position |
-  | knowledge | note / cluster | linked / stale | backlinks, provenance | edit history |
-  | media | session / track | playing | waveform, clip list | transport time |
-  | infrastructure | service / deploy | incident severity | live metrics | alert timeline |
+    | Domain         | Nested scope       | Attention signal    | Inner content           | Time/severity axis |
+    | -------------- | ------------------ | ------------------- | ----------------------- | ------------------ |
+    | workflow       | subworkflow / step | blocked or retrying | gate, retry chain       | run order          |
+    | filesystem     | directory / symbol | recently changed    | diff, blame, dependents | history            |
+    | data           | pipeline / stage   | failed / drifting   | schema, sample rows     | stream position    |
+    | knowledge      | note / cluster     | linked / stale      | backlinks, provenance   | edit history       |
+    | media          | session / track    | playing             | waveform, clip list     | transport time     |
+    | infrastructure | service / deploy   | incident severity   | live metrics            | alert timeline     |
 
-  Of these product forms, only Graph IDE and the explorer exist as runnable surfaces. The knowledge
-  atlas, incident war room, research notebook and music workspace remain `docs/POSSIBILITIES.md` ideas;
-  O8 defines their *requirements* on the substrate, not a schedule to build them.
+    Of these product forms, only Graph IDE and the explorer exist as runnable surfaces. The knowledge
+    atlas, incident war room, research notebook and music workspace remain `docs/POSSIBILITIES.md` ideas;
+    O8 defines their _requirements_ on the substrate, not a schedule to build them.
 
 - **Gate:** a second host consumes the shell, tokens and inspector with unchanged flagship behavior;
   the scaffold emits the new pieces; one cross-domain shot is green; no contract or position-authority
@@ -188,7 +234,7 @@ beside H: H must define tokens in a form another host can resolve, not as Pi-onl
 - H1 **Type and spacing scale.** One token set in `app/pi/index.html` for display/title/body/meta sizes,
   one spacing ladder (2/4/8/16/32). Apply to cards, lens, rail, transcript, catalog. Kill the 11px-everywhere
   register. Labels use `text-overflow` with a real title attribute so nothing is silently clipped.
-- H2 **Shape language.** Square corners are the baseline. Distinguish kinds with *structure*, not radius:
+- H2 **Shape language.** Square corners are the baseline. Distinguish kinds with _structure_, not radius:
   scope portals get a bracketed glyph frame; errors get a left severity bar; approvals get a gate notch;
   artifacts get a file-tab corner. Implemented in `cardMarkup`/`focusCardMarkup` with escaped markup and CSS.
 - H3 **Color semantics.** VIEW_PALETTES gain semantic roles for `focus`, `context`, `causal`, `scope`,
@@ -203,7 +249,7 @@ beside H: H must define tokens in a form another host can resolve, not as Pi-onl
 
 **Goal:** the graph directs the eye without enlarging nodes by default.
 
-- I1 **Rank the ribbons.** `emphasis.ribbonWidth` becomes a *maximum*; actual width comes from
+- I1 **Rank the ribbons.** `emphasis.ribbonWidth` becomes a _maximum_; actual width comes from
   salience × kind (causal flow > containment > reads). Context edges stay thin and dim. Cyan bands
   stop dominating. Add `emphasis.ribbonKinds` as an enum knob (`causal` / `all` / `none`).
 - I2 **Salience-to-channel mapping.** Reuse `mappingFor`/`applyEmphasis` vocabulary: salience drives a
@@ -324,18 +370,19 @@ parallel would build the shell three times and restyle the graph twice. Execute 
 each ends with recaptured shots, a human look at the contact sheet, and all gates green. No slice starts
 before the previous one has been reviewed. This is the consolidation that makes the plan cheaper.
 
-| Slice | Deliverable | Folds together | Review gate |
-| ----- | ----------- | -------------- | ----------- |
-| **1. One surface language** | A token module Pi consumes, a compact command bar, drawers, a dockable inspector frame and contextual instruments | O1, O2, H1, J1, J2, J3, K4(bound only) | `cockpit` and `policy` shots; keyboard-only run; no new CSS constant outside the token module |
-| **2. Graph grammar and attention** | One type/spacing/color/shape language for nodes; ranked ribbons; a focus ring with connector; scope contours where space is empty | H2, H3, H4, I1, I2, I3, I4 | `cockpit`, `neon-cockpit`, `node-detail`, `dynamic-range`; vision gates in both themes |
-| **3. Recursion, inspector and proof** | The inner topology with connectors, portal previews, depth-ruler breadcrumb, visible proof line, catalog cards, first-run hint, shot review notes | O3, O4, K1, K2, K3, J4, J5, N1, N2, M1 | `fractal`, `deep-focus`, `catalog`; descend intermediate frames; one cross-domain shot if a second host is ready |
-| **4. Proliferation** (gated on a second consumer) | Policy core/domain split, world-host template, scaffold emits real vision gate, shared helpers and shots | O5, O6, O7 (O8 is already written) | Second host consumes shell/tokens/inspector unchanged; scaffold output green; no contract change |
+| Slice                                             | Deliverable                                                                                                                                       | Folds together                         | Review gate                                                                                                      |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| **1. One surface language**                       | A token module Pi consumes, a compact command bar, drawers, a dockable inspector frame and contextual instruments                                 | O1, O2, H1, J1, J2, J3, K4(bound only) | `cockpit` and `policy` shots; keyboard-only run; no new CSS constant outside the token module                    |
+| **2. Graph grammar and attention**                | One type/spacing/color/shape language for nodes; ranked ribbons; a focus ring with connector; scope contours where space is empty                 | H2, H3, H4, I1, I2, I3, I4             | `cockpit`, `neon-cockpit`, `node-detail`, `dynamic-range`; vision gates in both themes                           |
+| **3. Recursion, inspector and proof**             | The inner topology with connectors, portal previews, depth-ruler breadcrumb, visible proof line, catalog cards, first-run hint, shot review notes | O3, O4, K1, K2, K3, J4, J5, N1, N2, M1 | `fractal`, `deep-focus`, `catalog`; descend intermediate frames; one cross-domain shot if a second host is ready |
+| **4. Proliferation** (gated on a second consumer) | Policy core/domain split, world-host template, scaffold emits real vision gate, shared helpers and shots                                          | O5, O6, O7 (O8 is already written)     | Second host consumes shell/tokens/inspector unchanged; scaffold output green; no contract change                 |
 
 **Standing track — gates and parity.** M3 (vision at intermediate frames) and L4 (reduced-motion
 final-frame parity) ride along with every slice. Keyboard parity is tested in slice 1; touch parity
 follows the existing bindings. No separate workstream.
 
 **Cut or deferred to keep the plan honest:**
+
 - L1–L3 (activity pulse, flow animation, new choreography) — deferred until slice 2 is reviewed.
   Animating an unsettled grammar amplifies noise, and the user already flagged effects as overdone.
 - M2 (perceptual smoke) — cut. The contact sheet plus a human decision is the review mechanism;
@@ -358,7 +405,7 @@ not speculatively.
 - No "game" effects layer — particles, bloom, scanlines — that does not carry state or hierarchy.
 - No more knobs without a live consumer and a preset; prefer tightening an existing knob to adding one.
 - No auto-promotion of a preset to a default, and no fabricated comparison, study, release or URL.
-- No richer catalog text; progressive disclosure means *less* visible prose, not more.
+- No richer catalog text; progressive disclosure means _less_ visible prose, not more.
 - No rewrite of the scope engine, solver, renderer contract or position authority.
 
 ---
@@ -392,7 +439,7 @@ not speculatively.
 5. **Review.** Recapture `cockpit` and `policy`, run keyboard-only and reduced-motion e2e, then decide
    whether slice 2 starts or the shell needs one more pass.
 
-Everything after slice 1 waits for that review. Sections 1–9 are plan only; no item is marked done.
+Everything after slice 1 waits for that review. Slice 1 is recorded as done in the progress block; sections 2–9 remain the plan for slices 2–4.
 
 ---
 
@@ -403,20 +450,20 @@ needs already exist as host hooks or contract seams; they are simply unreachable
 chrome. Each item below is a thin view over an existing seam, not a new subsystem. Ship at most three
 per slice, each with a shot or e2e assertion so the capability is both discoverable and verified.
 
-| Capability | Seam that already exists | New work | Slice | Cost |
-| ---------- | ------------------------ | -------- | ----- | ---- |
-| Command palette for every verb and knob | `hooks()` already enumerates the closed verb set and the policy schema | Filterable list + `/` binding; no new verb registry | 1 | low |
-| Share the exact view | `permalink()`, shot URL, policy vector, `export()` | One header button copying a URL that restores viewport, policy and focus | 1 | low |
-| Search / filter across a domain | selectors + facets, `setLaneScope`, `GraphController` selection | One input that highlights matches and scopes the view | 1 | low |
-| Widget slots inside cards | `WIDGET_SLOTS` includes `header`/`body`/`footer`; instrument kit is already promoted | Mount one or two neutral widgets in the detail card through the existing registry | 1/3 | low |
-| Inspect an edge or a scope, not just a node | `getNodeScreenPosition` for endpoints; scope frames from `ScopeSimulation` | Parameterize the lens by target type; same markup and actions | 3 | low–medium |
-| Annotate in place | `pinNote`, `withPinnedNotes`, editable `HtmlNode` content | A note button in the lens that reuses the existing note store | 3 | low |
-| Replay scrubber | `recording()`, `replayRecording()`, `renderHistory()` | A slider over recorded events; replay stays deterministic | 3 | low–medium |
-| "Why am I seeing this?" | `AnswerTrace` selectors + `trace()` + evidence lines | One lens button that runs the trace vocabulary and shows the answer | 3 | low |
-| Runtime self-healing switch | `setVisionLoop`, `runVisionLoop`, `scopePolicy` | Expose the existing opt-in loop as a data-driven inspector control | 3 | low |
-| Compare two policies or runs | `diffKernels`, `compareRuns()`, permalink v2 | A "compare with baseline" action that launches the alternative shot | 3/4 | medium |
-| Cross-domain trace from the palette | `worldTrace`, `crossTracePath`, `traceSteps` in the one-world host | Expose the already-implemented trace as a command | 4 | low |
-| Depth / scene features as view modes | depth modes + capability-gated `sceneFeatures` | Data-only presets; no renderer work | 2 | low |
+| Capability                                  | Seam that already exists                                                             | New work                                                                          | Slice | Cost       |
+| ------------------------------------------- | ------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------- | ----- | ---------- |
+| Command palette for every verb and knob     | `hooks()` already enumerates the closed verb set and the policy schema               | Filterable list + `/` binding; no new verb registry                               | 1     | low        |
+| Share the exact view                        | `permalink()`, shot URL, policy vector, `export()`                                   | One header button copying a URL that restores viewport, policy and focus          | 1     | low        |
+| Search / filter across a domain             | selectors + facets, `setLaneScope`, `GraphController` selection                      | One input that highlights matches and scopes the view                             | 1     | low        |
+| Widget slots inside cards                   | `WIDGET_SLOTS` includes `header`/`body`/`footer`; instrument kit is already promoted | Mount one or two neutral widgets in the detail card through the existing registry | 1/3   | low        |
+| Inspect an edge or a scope, not just a node | `getNodeScreenPosition` for endpoints; scope frames from `ScopeSimulation`           | Parameterize the lens by target type; same markup and actions                     | 3     | low–medium |
+| Annotate in place                           | `pinNote`, `withPinnedNotes`, editable `HtmlNode` content                            | A note button in the lens that reuses the existing note store                     | 3     | low        |
+| Replay scrubber                             | `recording()`, `replayRecording()`, `renderHistory()`                                | A slider over recorded events; replay stays deterministic                         | 3     | low–medium |
+| "Why am I seeing this?"                     | `AnswerTrace` selectors + `trace()` + evidence lines                                 | One lens button that runs the trace vocabulary and shows the answer               | 3     | low        |
+| Runtime self-healing switch                 | `setVisionLoop`, `runVisionLoop`, `scopePolicy`                                      | Expose the existing opt-in loop as a data-driven inspector control                | 3     | low        |
+| Compare two policies or runs                | `diffKernels`, `compareRuns()`, permalink v2                                         | A "compare with baseline" action that launches the alternative shot               | 3/4   | medium     |
+| Cross-domain trace from the palette         | `worldTrace`, `crossTracePath`, `traceSteps` in the one-world host                   | Expose the already-implemented trace as a command                                 | 4     | low        |
+| Depth / scene features as view modes        | depth modes + capability-gated `sceneFeatures`                                       | Data-only presets; no renderer work                                               | 2     | low        |
 
 **Do not manufacture capability by adding:** new node classes, a fourth representation rung, library
 defaults for XR/sound/gamepad, generic transport controls in the contract, or a framework that dictates
@@ -426,7 +473,7 @@ does not belong in this section.
 **Recommended first three:** command palette, share-exact-view, and inspect-edge/scope. Together they
 make the existing system feel substantially more capable without adding a single new mechanism.
 
-Plan only. No item in this document is marked done.
+Slice 1 of this section is implemented; the remaining capabilities stay candidates until their slice is reviewed.
 
 ---
 
@@ -454,7 +501,7 @@ These are real gaps in the plan as written. They are listed, not scheduled.
    frames for zero nodes, a failed event source, a pending stream and an empty scope. These are cheap,
    domain-neutral states and should be part of the shell kit rather than host afterthoughts.
 6. **Gallery curation budget.** Twelve shots are tracked; the review loop makes adding more trivial. Set
-   a cap, retire obsolete shots in the same change that supersedes them, and keep one shot per *question*,
+   a cap, retire obsolete shots in the same change that supersedes them, and keep one shot per _question_,
    not per feature. Otherwise the proof surface becomes the clutter it was meant to replace.
 7. **Honest validation without a fabricated study.** "Intuitive" and "beautiful" remain claims. A
    lightweight path is possible without TODO3's G3: a few recorded task walkthroughs with timings,

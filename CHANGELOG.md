@@ -7,6 +7,10 @@ follow the workflow in `docs/ROADMAP.md` (`test:publish` → build → npm).
 
 ### Added
 
+- **One surface language (TODO4 slice 1):** the Pi flagship consumes a shared token layer through
+  `app/pi/src/shell/tokens.ts`; a compact command bar exposes a `/` palette for every verb and knob
+  (`:` commands, `?` help); the focus lens becomes a tabbed, pinnable inspector; the rail shows at most
+  two contextual instruments with the full kit in the inspector. Shots recaptured; no contract change.
 - **Configuration spine (A):** 30-knob typed policy schema with provenance, live panel, permalink v2,
   and a session recorder with deterministic and counterfactual replay.
 - **Navigation and continuity (B):** closed navigation verb set with keyboard and touch bindings,

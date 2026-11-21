@@ -1,6 +1,8 @@
 import { PiHost, el } from './host';
 import { decodeOp } from './ops';
+import { installShellTokens } from './shell';
 
+installShellTokens(document);
 const clientID = crypto.randomUUID();
 const host = new PiHost();
 
@@ -29,7 +31,10 @@ const boot = async (): Promise<void> => {
         if (!text) return;
         input.value = '';
         const mode = el<HTMLSelectElement>('prompt-mode').value;
-        const result = await host.sendPrompt(text, mode ? (mode as 'steer' | 'followUp') : undefined);
+        const result = await host.sendPrompt(
+            text,
+            mode ? (mode as 'steer' | 'followUp') : undefined,
+        );
         if (!result.ok) showError(result.error ?? 'prompt failed');
     });
 
