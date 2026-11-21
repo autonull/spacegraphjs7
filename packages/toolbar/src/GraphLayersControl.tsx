@@ -15,6 +15,7 @@ import type {
     ZoomLevel,
     DepthMode,
 } from '@spacegraphjs/shared/types';
+import { MenuOption, type MenuOptionProps } from './MenuOption';
 import { ToolbarMenu } from './ToolbarMenu';
 import {
     DEPTH_MODES,
@@ -125,36 +126,12 @@ export function GraphLayersControl(props: GraphLayersControlProps): JSX.Element 
                   renderer: rest.renderer ?? '',
               });
 
-    const option = (input: {
-        label: string;
-        onClick: () => void;
-        pressed?: boolean;
-        disabled?: boolean;
-        title?: string;
-        slot?: string;
-        value?: string;
-        ariaLabel?: string;
-        keepOpen?: boolean;
-    }) => (
-        <button
-            type="button"
-            data-slot={input.slot}
-            data-value={input.value}
+    const option = (input: MenuOptionProps) => (
+        <MenuOption
+            {...input}
+            ariaLabel={input.ariaLabel ?? input.label}
             class="flex w-full items-center gap-2 rounded-sm px-2 py-1 text-12-regular text-text-base hover:bg-surface-base-hover disabled:opacity-50"
-            aria-pressed={input.pressed}
-            aria-label={input.ariaLabel ?? input.label}
-            disabled={input.disabled}
-            title={input.title}
-            onClick={(event) => {
-                if (!input.keepOpen) {
-                    const menu = event.currentTarget.closest('details');
-                    if (menu) menu.open = false;
-                }
-                input.onClick();
-            }}
-        >
-            {input.label}
-        </button>
+        />
     );
 
     const levelControl = () => (

@@ -8,6 +8,7 @@ import { createIconRenderer, type IconComponent } from '@spacegraphjs/shared/ico
 import { createPopoverRenderer, type PopoverComponent } from '@spacegraphjs/shared/popover';
 import type { I18n } from '@spacegraphjs/shared/i18n';
 import type { RendererCapabilities, GraphArrangement, GraphSide } from '@spacegraphjs/shared/types';
+import { MenuOption, type MenuOptionProps } from './MenuOption';
 import { ToolbarMenu } from './ToolbarMenu';
 import { GRAPH_ARRANGEMENTS, VOCABULARY_KEYS } from '@spacegraphjs/shared/types';
 
@@ -34,32 +35,8 @@ export function GraphDrawControl(props: GraphDrawControlProps): JSX.Element {
     const renderIcon = Icon ?? createIconRenderer();
     const PopoverComponent = Popover ?? createPopoverRenderer();
 
-    const option = (input: {
-        label: string;
-        onClick: () => void;
-        pressed?: boolean;
-        slot?: string;
-        value?: string;
-        keepOpen?: boolean;
-        ariaLabel?: string;
-    }) => (
-        <button
-            type="button"
-            data-slot={input.slot}
-            data-value={input.value}
-            class="flex w-full items-center gap-2 rounded-sm px-2 py-1 text-12-regular text-text-base hover:bg-surface-base-hover"
-            aria-pressed={input.pressed}
-            aria-label={input.ariaLabel ?? input.label}
-            onClick={(event) => {
-                if (!input.keepOpen) {
-                    const menu = event.currentTarget.closest('details');
-                    if (menu) menu.open = false;
-                }
-                input.onClick();
-            }}
-        >
-            {input.label}
-        </button>
+    const option = (input: MenuOptionProps) => (
+        <MenuOption {...input} ariaLabel={input.ariaLabel ?? input.label} />
     );
 
     return (
