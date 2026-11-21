@@ -87,6 +87,14 @@ export {
 // Navigation
 export { Navigation } from './navigation';
 export type {
+    MinimapBounds,
+    MinimapOptions,
+    MinimapPoint,
+    MinimapProjection,
+    MinimapViewRect,
+    MinimapViewport,
+} from './navigation';
+export type {
     RenderTheme,
     RendererCapabilities,
     Projection,

@@ -1,4 +1,4 @@
-import { walk, type Trace } from '@spacegraphjs/shared/domain';
+import { createTraceSelectors, walk, type Trace } from '@spacegraphjs/shared/domain';
 import {
     FILESYSTEM_RELATIONS,
     dataString,
@@ -17,16 +17,8 @@ const TRACE_KINDS: Readonly<Record<string, readonly string[]>> = {
     related: ['contains', 'writes', 'produces', 'depends'],
 };
 
-export const why = (view: FileSystemView, id: string): FilesystemTrace =>
-    walk(view, id, 'in', TRACE_KINDS.why!);
-export const ledHere = (view: FileSystemView, id: string): FilesystemTrace =>
-    walk(view, id, 'out', TRACE_KINDS['led-here']!);
-export const downstream = (view: FileSystemView, id: string): FilesystemTrace =>
-    walk(view, id, 'out', TRACE_KINDS.downstream!);
-export const upstream = (view: FileSystemView, id: string): FilesystemTrace =>
-    walk(view, id, 'in', TRACE_KINDS.upstream!);
-export const related = (view: FileSystemView, id: string): FilesystemTrace =>
-    walk(view, id, 'in', TRACE_KINDS.related!);
+export const { why, ledHere, downstream, upstream, related } =
+    createTraceSelectors<FileSystemView>(TRACE_KINDS);
 
 /** The symbols or earlier changes that wrote a change, in first-write order. */
 export const changeProducers = (view: FileSystemView, changeID: string): readonly string[] => [

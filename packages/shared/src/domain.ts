@@ -124,3 +124,16 @@ export const walk = (
 
     return { answerIds, contextIds, answerEdgeIds };
 };
+
+export type TraceSelectorName = 'why' | 'ledHere' | 'downstream' | 'upstream' | 'related';
+
+/** Binds a domain's edge-kind table to the five trace selectors. */
+export const createTraceSelectors = <View extends { readonly edges: readonly ViewEdgeSource[] }>(
+    kinds: Readonly<Record<string, readonly string[]>>,
+): Record<TraceSelectorName, (view: View, id: string) => Trace> => ({
+    why: (view, id) => walk(view, id, 'in', kinds.why ?? []),
+    ledHere: (view, id) => walk(view, id, 'out', kinds['led-here'] ?? []),
+    downstream: (view, id) => walk(view, id, 'out', kinds.downstream ?? []),
+    upstream: (view, id) => walk(view, id, 'in', kinds.upstream ?? []),
+    related: (view, id) => walk(view, id, 'in', kinds.related ?? []),
+});

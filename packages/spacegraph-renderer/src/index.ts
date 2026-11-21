@@ -262,26 +262,6 @@ export class SpaceGraphRenderer extends ModelRenderer implements GraphRenderer {
         this.#sg?.setDepth(depth);
     }
 
-    getViewport(): RendererViewport {
-        return this.readViewport() ?? { zoom: 1, center: [0, 0, 0] };
-    }
-
-    getNodeScreenPosition(id: string): { x: number; y: number } | undefined {
-        return this.readNodeScreenPosition(id);
-    }
-
-    fit(ids?: readonly string[], options?: FitOptions): void {
-        this.applyFit(ids, options);
-    }
-
-    focus(id: string): void {
-        this.applyFocus(id);
-    }
-
-    resize(): void {
-        this.render();
-    }
-
     #bind(): void {
         const sg = this.#sg!;
         const on = (type: string, handler: (payload: unknown) => void) => {

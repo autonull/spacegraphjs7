@@ -1,4 +1,4 @@
-import { walk, type Trace } from '@spacegraphjs/shared/domain';
+import { createTraceSelectors, walk, type Trace } from '@spacegraphjs/shared/domain';
 import { AGENT_RELATIONS, dataString, relationOf, roleOf, type AgentView } from './vocabulary';
 
 export type AgentTrace = Trace;
@@ -11,12 +11,8 @@ const TRACE_KINDS: Readonly<Record<string, readonly string[]>> = {
     related: ['contains', 'writes', 'delegates', 'orders'],
 };
 
-export const why = (view: AgentView, id: string): AgentTrace => walk(view, id, 'in', TRACE_KINDS.why!);
-export const ledHere = (view: AgentView, id: string): AgentTrace => walk(view, id, 'out', TRACE_KINDS['led-here']!);
-export const downstream = (view: AgentView, id: string): AgentTrace =>
-    walk(view, id, 'out', TRACE_KINDS.downstream!);
-export const upstream = (view: AgentView, id: string): AgentTrace => walk(view, id, 'in', TRACE_KINDS.upstream!);
-export const related = (view: AgentView, id: string): AgentTrace => walk(view, id, 'in', TRACE_KINDS.related!);
+export const { why, ledHere, downstream, upstream, related } =
+    createTraceSelectors<AgentView>(TRACE_KINDS);
 
 export type AgentFailure = {
     readonly id: string;

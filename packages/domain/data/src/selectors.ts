@@ -1,4 +1,4 @@
-import { walk, type Trace } from '@spacegraphjs/shared/domain';
+import { createTraceSelectors, walk, type Trace } from '@spacegraphjs/shared/domain';
 import type { GraphNode } from '@spacegraphjs/shared';
 import { DATA_RELATIONS, roleOf, type DataView } from './vocabulary';
 
@@ -12,16 +12,8 @@ const TRACE_KINDS: Readonly<Record<string, readonly string[]>> = {
     related: ['contains', 'writes', 'feeds', 'evaluates'],
 };
 
-export const why = (view: DataView, id: string): DataTrace =>
-    walk(view, id, 'in', TRACE_KINDS.why!);
-export const ledHere = (view: DataView, id: string): DataTrace =>
-    walk(view, id, 'out', TRACE_KINDS['led-here']!);
-export const downstream = (view: DataView, id: string): DataTrace =>
-    walk(view, id, 'out', TRACE_KINDS.downstream!);
-export const upstream = (view: DataView, id: string): DataTrace =>
-    walk(view, id, 'in', TRACE_KINDS.upstream!);
-export const related = (view: DataView, id: string): DataTrace =>
-    walk(view, id, 'in', TRACE_KINDS.related!);
+export const { why, ledHere, downstream, upstream, related } =
+    createTraceSelectors<DataView>(TRACE_KINDS);
 
 /** Everything upstream of a metric: its model, run, step and the datasets feeding that step. */
 export const lineage = (view: DataView, metricID: string): DataTrace =>

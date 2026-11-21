@@ -1,4 +1,4 @@
-import { walk, type Trace } from '@spacegraphjs/shared/domain';
+import { createTraceSelectors, walk, type Trace } from '@spacegraphjs/shared/domain';
 import {
     WORKFLOW_RELATIONS,
     dataString,
@@ -17,16 +17,8 @@ const TRACE_KINDS: Readonly<Record<string, readonly string[]>> = {
     related: ['contains', 'writes', 'delegates', 'orders', 'retries'],
 };
 
-export const why = (view: WorkflowView, id: string): WorkflowTrace =>
-    walk(view, id, 'in', TRACE_KINDS.why!);
-export const ledHere = (view: WorkflowView, id: string): WorkflowTrace =>
-    walk(view, id, 'out', TRACE_KINDS['led-here']!);
-export const downstream = (view: WorkflowView, id: string): WorkflowTrace =>
-    walk(view, id, 'out', TRACE_KINDS.downstream!);
-export const upstream = (view: WorkflowView, id: string): WorkflowTrace =>
-    walk(view, id, 'in', TRACE_KINDS.upstream!);
-export const related = (view: WorkflowView, id: string): WorkflowTrace =>
-    walk(view, id, 'in', TRACE_KINDS.related!);
+export const { why, ledHere, downstream, upstream, related } =
+    createTraceSelectors<WorkflowView>(TRACE_KINDS);
 
 /** A retry node, the run it retried and the step that owns it. */
 export type WorkflowRetry = {
