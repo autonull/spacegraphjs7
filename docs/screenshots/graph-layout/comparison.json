@@ -9,10 +9,10 @@
       "variant": "timeline (?graphLayout=timeline, reachable by hook and permalink)",
       "data": "docs/screenshots/graph-baseline.json",
       "metrics": {
-        "incumbent": { "width": 2521.8, "height": 1171.95, "ratio": 0.465, "meanEdgeLength": 469.8, "overlaps": 1 },
+        "incumbent": { "width": 2521.8, "height": 1171.95, "ratio": 0.465, "meanEdgeLength": 469.13, "overlaps": 0 },
         "variant": { "width": 992, "height": 416, "ratio": 0.419, "meanEdgeLength": 259.11, "overlaps": 0 }
       },
-      "effect": "Variant cuts mean edge length by 45% and removes the one parent/child overlap; occupied width falls by 61% and the aspect moves toward a column. No claim about frame time.",
+      "effect": "A reserved child lane clears the recorded freeform parent/child overlap. The variant still cuts mean edge length by 45%; occupied width falls by 61% and the aspect moves toward a column. No claim about frame time.",
       "images": "pending — recapture incumbent and variant shots before a human decision",
       "decision": "pending human review; Phase 1 flexibility gate items 5-6 also outstanding"
     },

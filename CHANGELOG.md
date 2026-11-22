@@ -7,6 +7,12 @@ follow the workflow in `docs/ROADMAP.md` (`test:publish` → build → npm).
 
 ### Added
 
+- **Graph arrangements (TODO7):** five opt-in graph views (`freeform`, `timeline`, `lanes`, `tree`,
+  `force`) selectable by URL, `__pi` hook and full-state permalink. Solved positions feed
+  `ScopeSimulation` as targets, so one position authority remains. Scope hulls, turn tabs, an aligned
+  transcript and bundled cross-scope ribbons are host-side overlays; the default stays `freeform`
+  pending the study and ADR 0008 decision. The flexibility gate is automated across all views, three
+  zoom octaves, two aspects, dark/light and reduced motion.
 - **Mockup-informed field refinement (ADR 0016):** deep navy gradient canvas, node-core dots, directional
   arrowheads on causal flux edges and square status chips. Expensive compositing (backdrop blur,
   blend modes) was removed; cards stay square and default glow drops to 0.2.
@@ -93,6 +99,7 @@ follow the workflow in `docs/ROADMAP.md` (`test:publish` → build → npm).
 
 ### Fixed
 
+- Pi reserved child lane (TODO7): the packed unit/delegate frame offset no longer places the first child row on its parent card. All five graph views now report zero parent/child overlaps in `graph-baseline.json`; the other four views keep their solved positions.
 - Pi flight path (TODO6): `advance()` positions-only frames now use a new `ModelRenderer.setPositions()` / `SpaceGraphRenderer.applyPositions()` path instead of rebuilding every node and edge spec through `setModel()`; other renderers keep the full-set fallback. Per-frame JS cost drops from a 2.295 ms full rebuild to 0.368 ms for `advance()`. The 80 ms browser flight target still needs a physical-GPU measurement; evidence is in `docs/performance.md`.
 - Pi deferred-audit follow-up (TODO6): cross-scope causal ribbons carry a stable source-scope tint through the existing `data.ribbon.color`, so long cross-unit relations stay traceable without a contract field, renderer branch or new knob; with/without evidence and a logged decision are under `docs/screenshots/edges/`. The command bar stays on one row at widths <=1000px, returning 50px of canvas height, and depth-3 inner chips reveal their full names on hover or keyboard focus.
 - Pi fresh-audit follow-up (TODO6): the light-theme canvas readout now uses a light grayscale HUD token

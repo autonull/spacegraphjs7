@@ -196,7 +196,7 @@ export function agentScopes(
             id,
             parent: parentOfScope.get(id),
             strategy: packed ? 'grid' : 'force',
-            offset: packed ? { x: 0, y: -260, z: 0 } : undefined,
+            offset: packed ? { x: 0, y: -240, z: 0 } : undefined,
             nodes: list,
             edges: edges.get(id) ?? [],
         };

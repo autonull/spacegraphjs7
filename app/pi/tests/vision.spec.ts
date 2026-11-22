@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { createVisionAssert } from '../../../src/vision/assert';
 import { encodePolicyVector, POLICY_SCHEMA } from '../src/policy';
 import { FIT_OCTAVES } from '../src/policy/adaptive-fit';
+import { GRAPH_LAYOUTS } from '../src/graph-layout';
 import { SHOTS } from '../src/shots';
 
 const DEPTHS = ['flat', 'layered', 'depth-stack', 'orbit'] as const;
@@ -45,6 +46,46 @@ test.describe('Pi flagship vision atlas', () => {
             }
         }
         expect(errors).toEqual([]);
+    });
+
+    test('graph arrangements pass the vision gates across octaves, aspects and themes', async ({ page }) => {
+        test.setTimeout(240_000);
+        const errors: string[] = [];
+        page.on('pageerror', (error) => errors.push(error.message));
+        const light = encodePolicyVector(POLICY_SCHEMA, { 'theme.variant': 'light' });
+        for (const mode of GRAPH_LAYOUTS) {
+            for (const octave of FIT_OCTAVES) {
+                for (const aspect of ['wide', 'narrow'] as const) {
+                    const shot = SHOTS.find(
+                        (entry) => entry.id === `fit-${aspect}-${octave < 0 ? 'far' : octave > 0 ? 'near' : 'mid'}`,
+                    )!;
+                    await page.setViewportSize(shot.viewport!);
+                    for (const variant of ['dark', 'light'] as const) {
+                        const policy = variant === 'light' ? `&policy=${encodeURIComponent(light)}` : '';
+                        await page.goto(`/?shot=${shot.id}&graphLayout=${mode}${policy}`);
+                        await page.waitForFunction(() => (window as any).__pi?.ready === true);
+                        await page.waitForFunction(() => (window as any).__pi?.shotReady?.() === true);
+                        await page.evaluate(() => (window as any).__pi.pause(true));
+                        await page.evaluate(() => (window as any).__pi.settle());
+                        await assertScene(page);
+                    }
+                }
+            }
+        }
+        expect(errors).toEqual([]);
+    });
+
+    test('graph arrangements pass the vision gates under reduced motion', async ({ page }) => {
+        await page.emulateMedia({ reducedMotion: 'reduce' });
+        for (const mode of GRAPH_LAYOUTS) {
+            await page.setViewportSize({ width: 1600, height: 1000 });
+            await page.goto(`/?shot=fit-wide-mid&graphLayout=${mode}`);
+            await page.waitForFunction(() => (window as any).__pi?.ready === true);
+            await page.waitForFunction(() => (window as any).__pi?.shotReady?.() === true);
+            await page.evaluate(() => (window as any).__pi.pause(true));
+            await page.evaluate(() => (window as any).__pi.settle());
+            await assertScene(page);
+        }
     });
 
     test('bounded recursion keeps intermediate frames legible on re-entry', async ({ page }) => {

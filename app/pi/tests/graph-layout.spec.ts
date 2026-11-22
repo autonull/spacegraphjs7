@@ -45,6 +45,22 @@ test.describe('graph arrangements', () => {
         expect(after.viewport).toEqual(before.viewport);
     });
 
+    test('timeline stays independent of transcript placement and supports tracing', async ({ page }) => {
+        await boot(page, '?scenario=rich&graphLayout=timeline');
+        for (const arrangement of ['stacked', 'side', 'floating']) {
+            await page.evaluate((value) => (window as any).__pi.setArrangement(value), arrangement);
+            expect(await page.evaluate(() => (window as any).__pi.arrangement())).toBe(arrangement);
+            expect(await page.evaluate(() => (window as any).__pi.graphShape().nodes)).toBeGreaterThan(0);
+        }
+        for (const depth of ['flat', 'layered', 'depth-stack', 'orbit']) {
+            await page.evaluate((value) => (window as any).__pi.setDepth(value), depth);
+            expect(await page.evaluate(() => (window as any).__pi.depth())).toBe(depth);
+            expect(await page.evaluate(() => (window as any).__pi.graphLayout())).toBe('timeline');
+        }
+        await page.evaluate(() => (window as any).__pi.trace('pi:local:x3'));
+        expect(await page.evaluate(() => (window as any).__pi.tracePath().length)).toBeGreaterThan(0);
+    });
+
     test('scope hulls, aligned rows and the corridor bundle are host-side overlays', async ({ page }) => {
         await boot(page, '?scenario=rich&graphLayout=timeline&graphAligned=1&ribbonCorridor=1');
         await expect(page.locator('#structure .field-hull').first()).toBeVisible();

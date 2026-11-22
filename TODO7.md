@@ -267,67 +267,77 @@ the gallery, verdicts and docs are current; all full gates are green.
 
 ---
 
-## 7. Progress (2026-11-22)
+## 7. Progress (2026-11-22 — increment 2)
 
-Plan status: **in progress — code slices landed; human-gated decisions remain open**. The user
-explicitly asked to continue the plan and to commit this increment, which overrides invariant 13 for
-this commit only. No default has been flipped.
+Plan status: **in progress — code and gates landed; human decisions remain open**. The user asked to
+continue the plan and commit this increment, which overrides invariant 13 for this commit only. No
+default has been flipped; every new view stays opt-in.
 
 | Phase | Status | Evidence |
 | ----- | ------ | -------- |
 | 0 — baseline and vocabulary | complete | `docs/screenshots/graph-baseline.json`; `app/pi/scripts/baseline.ts`; `app/pi/tests/graph-layout.test.ts` |
-| 1 — graph arrangements | partial — experiment landed | `app/pi/src/graph-layout.ts`, host URL/hook/permalink wiring, `app/pi/tests/graph-layout.spec.ts`; default flip blocked by the flexibility gate below |
-| 2 — visible structure | partial | `.field-hull` square frames + `Turn N · status` tabs in `host.ts:renderStructure()`; reserved child lane not tuned |
-| 3 — cross-scope ribbons | partial — opt-in landed | `src/edges/FluxEdge.ts` corridor path via opaque `data`, `app/pi/src/attention.ts:bundleCorridor`, `?ribbonCorridor=1`; gallery comparison pending |
-| 4 — default polish | blocked on human decision | `docs/screenshots/graph-layout/comparison.json` records incumbent/variant data; no default changed, so no ADR 0008 decision is claimed |
-| 5 — verification and handoff | partial | root `check` green, focused unit + e2e green; full gates and gallery verdicts not re-run |
+| 1 — graph arrangements | complete except the study gate | five views by URL/hook/permalink; automated flexibility gate green below; default flip still needs the study result and an ADR 0008 decision |
+| 2 — visible structure | complete for this increment | square hulls and `Turn N · status` tabs; reserved child lane clears the last parent/child overlap; baseline regenerated |
+| 3 — cross-scope ribbons | complete for this increment | `FluxEdge` corridor via opaque `data`; `bundleCorridor()`; unit tests in `test/FluxEdge.test.ts`; gallery comparison still pending |
+| 4 — default polish | blocked on human decision | `docs/screenshots/graph-layout/comparison.json`; no default changed, so no ADR 0008 decision is claimed |
+| 5 — verification and handoff | partial | root `check`, `app/pi` `check:fast`, graph-layout e2e and the full vision matrix green; `test:e2e`, `verify:visual`, `shots:all`, `scale` and gallery verdicts pending |
+
+### Gates run in this increment
+
+- root `bun run check` — green.
+- `app/pi` `pnpm run check:fast` — 29 files, 150 tests green.
+- root `pnpm exec vitest run test/FluxEdge.test.ts` — 6 tests green.
+- `app/pi` `pnpm exec playwright test --config playwright.config.ts tests/graph-layout.spec.ts --workers=2` — 4/4 green.
+- `app/pi` `pnpm exec playwright test --config playwright.config.ts tests/vision.spec.ts --grep "graph arrangements pass" --workers=2 --retries=0` — green. This is the Phase 1 flexibility gate: 5 modes × 3 octaves × 2 aspects × dark/light (60 scenes) plus 5 reduced-motion scenes, each running `noOverlap()`, `isLegible()` and `expectedLayoutScore(35)`. The matrix test sets a 240 s timeout; the default 30 s timeout is insufficient.
 
 ### What landed in this increment
 
-1. **One position authority kept.** `ScopeSimulation.setLayoutTargets()` lets solved `GraphLayout`
-   positions feed the springs as targets; the simulation still owns current positions. No host-side
-   layout loop and no second source of truth.
-2. **Five views, all reachable.** `?graphLayout=freeform|timeline|lanes|tree|force`, `__pi` hooks
-   (`graphLayout`, `setGraphLayout`, `graphLayouts`), and full-state permalink fields. Switching
-   preserves selection, focus, camera and transcript scroll; default stays `freeform`.
-3. **Baseline measured, not guessed.** `graphShape()` measures occupied box, edge length,
-   cross-scope diagonals and parent/child overlap. Recorded numbers: freeform mean edge 469.8 px and
-   one overlap; timeline 259.1 px, zero overlaps, 61% narrower box. No frame-time claim is made.
-4. **Aligned transcript (opt-in).** `?graphAligned=1` / `setGraphLayoutAligned()` marks each row with
-   its projected graph coordinate and draws a small position marker; it works with every graph view.
-5. **Scope structure visible.** Square, flat-bordered hulls with `unit`/`delegate` and `Turn N · status`
-   tabs render behind cards in a separate `#structure` DOM layer, independent of `theme.glow`.
-6. **Bundled ribbons (opt-in).** `FluxEdge` samples a corridor curve when `data.path` / `data.ribbon.path`
-   is present; `bundleCorridor()` adds opaque waypoints to cross-scope causal edges, preserving tint
-   and arrowhead. No contract field, no renderer branch.
+1. **Reserved child lane (Phase 2 item 3).** `app/pi/src/scopes.ts:199` now offsets packed frames by
+   `y: -240` instead of `-260`. The recorded overlap (`unit-1` portal vs `pi:local:read`, 60 px
+   separation against a 72 px card) clears; row 0 and row 1 both have 80 px clearance. The other four
+   views are unchanged because their positions come from `setLayoutTargets`. `graph-baseline.json`
+   was regenerated and `graph-layout.test.ts` now asserts zero overlaps in every view.
+2. **Flexibility gate automated (Phase 1 item 5).** `app/pi/tests/vision.spec.ts` covers every view at
+   all octaves × aspects × dark/light and under reduced motion. `app/pi/tests/graph-layout.spec.ts`
+   adds arrangement/depth independence and trace-on-timeline coverage.
+3. **Bundle path unit tests (Phase 3).** `test/FluxEdge.test.ts` covers the object waypoints emitted
+   by `bundleCorridor()`, fixed topology and tint, arrowhead placement, the no-arrow-color pitfall,
+   rerouting when the path is replaced, and graceful fallback for malformed waypoints.
+4. **Docs consistency.** `app/pi/README.md` documents the opt-in controls; `comparison.json` records
+   the zero-overlap baseline; `CHANGELOG.md` records the experiment and the lane fix.
+
+Earlier increment still in force: one position authority via `ScopeSimulation.setLayoutTargets()`;
+five views reachable by URL, `__pi` and permalink; `graphShape()` baseline measured from solved
+positions; aligned transcript; square scope hulls and turn tabs; opt-in corridor ribbons.
 
 ### Remaining work — clarified, in order
 
-1. **Flexibility gate, Phase 1 items 5–7.** Run `noOverlap()`, `isLegible()` and the layout score for
-   each view at all octaves × aspects, dark/light, reduced motion. Confirm the five study questions
-   remain answerable on timeline and that a pilot preference shows no penalty. Until then the default
-   stays `freeform` (invariants 12, 15; pitfalls 12).
-2. **Reserved child lane, Phase 2 item 3.** Tune `lanePitch` / frame offset only where `noOverlap()`
-   still fails, then re-run the fit matrix. Measure the one recorded freeform overlap first.
-3. **Gallery and ADR evidence.** Recapture `cockpit` / `node-detail` and the fit shots for each
-   slice, assign verdicts in `docs/screenshots/review.json`, and log human decisions in
-   `docs/screenshots/graph-layout/comparison.json` before any default flip.
-4. **Phase 4 defaults.** Lower ambient glow with selective halos, rank-driven ribbon width, flat dark
-   backdrop and `ladder.minLabelPx` → 16, each behind its own ADR 0008 decision. None were changed
-   here, so no human decision is implied.
-5. **Full gates.** Root `check` is green; still run from `app/pi`: `check:fast`, `test:e2e`,
-   `verify:visual`, `shots:all`, `scale`. On memory-constrained hosts use `--workers=2`.
-6. **Docs.** Update `CHANGELOG.md` and `docs/pi-study-ui-audit.md` only when a finding is actually
-   closed; the audit file was not touched by this increment.
+1. **Study gate (Phase 1 item 6 — human).** Confirm the five study questions remain answerable on
+   timeline and run a pilot to check for a preference penalty; log the outcome. All automated gates
+   now pass, but the default stays `freeform` until this decision and ADR 0008 close (invariants 12,
+   15; pitfall 12).
+2. **Gallery and ADR evidence (Phases 2–4 — human + capture tooling).** Recapture `cockpit`,
+   `node-detail` and the fit shots for each slice, assign verdicts in `docs/screenshots/review.json`,
+   and log human decisions in `docs/screenshots/graph-layout/comparison.json`. The `images` and
+   `decision` fields there are still `pending`.
+3. **Phase 4 defaults (human).** Lower ambient glow with selective halos, rank-driven ribbon width,
+   flat dark backdrop and `ladder.minLabelPx` → 16. Each needs its own incumbent/variant pair and an
+   ADR 0008 decision. None were changed here, so no decision is implied.
+4. **Full gates (tooling).** From `app/pi` run `pnpm run test:e2e`, `pnpm run verify:visual`,
+   `pnpm run shots:all` and `pnpm run scale`; use `--workers=2` on memory-constrained hosts. Focused
+   equivalents of the unit, e2e and vision gates are green above.
+5. **Final docs pass (after items 1–4).** Update `docs/pi-study-ui-audit.md` only if a finding is
+   actually closed; do not edit closed findings in `docs/screenshots/audit.json`.
 
 ### User decisions recorded
 
 - The user liked the direction of the graph-focused proposal and asked for it as `TODO7.md`.
 - Timeline may become the default **only if** it is flexible enough to keep the other views usable;
-  it must not become the only view. The flexibility gate in Phase 1 defines "flexible enough".
+  it must not become the only view. The flexibility gate in Phase 1 defines "flexible enough" and is
+  now automated and green; the study decision is still outstanding.
 - Scope: graph visualization first; participant-flow findings in `docs/pi-study-ui-audit.md` stay a
   separate change set.
-- The user asked to continue implementation and to commit this increment.
+- The user asked to continue implementation, commit this increment and minimise redundant test runs.
 
 ### Handoff notes
 
@@ -338,3 +348,5 @@ this commit only. No default has been flipped.
 4. `dist/` is gitignored and stale declaration files break `app/pi` typecheck after a core API change;
    run `pnpm run build:lib` before `bun run check` in that case.
 5. On memory-constrained hosts run the full Playwright suite with `--workers=2`.
+6. The flexibility matrix needs `test.setTimeout(240_000)`; 60 scene navigations exceed the 30 s
+   Playwright default.

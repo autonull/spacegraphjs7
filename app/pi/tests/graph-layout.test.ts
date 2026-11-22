@@ -34,11 +34,10 @@ describe('graph layouts', () => {
         expect(measure()).toEqual(recorded);
     });
 
-    it('shortens edges and removes parent/child overlap versus freeform', () => {
+    it('shortens edges and keeps every view free of parent/child overlap', () => {
         const baseline = measure();
         expect(baseline.timeline!.meanEdgeLength).toBeLessThan(baseline.freeform!.meanEdgeLength);
-        expect(baseline.timeline!.overlaps).toBe(0);
-        expect(baseline.freeform!.overlaps).toBeGreaterThan(0);
+        for (const shape of Object.values(baseline)) expect(shape.overlaps).toBe(0);
     });
 
     it('appends a turn without moving cards already placed', () => {
