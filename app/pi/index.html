@@ -58,6 +58,23 @@
             body[data-ui-chrome='minimal'] #rail {
                 display: none;
             }
+            /* Continuity experiment: one causal accent for border, port, dot and focus ring. */
+            body[data-ui-grammar='continuity'] {
+                --grammar-accent: var(--view-causal, var(--sg-colors-accent));
+            }
+            body[data-ui-grammar='continuity'] .rung-shape,
+            body[data-ui-grammar='continuity'] .anatomy-port {
+                border-color: var(--grammar-accent);
+            }
+            body[data-ui-grammar='continuity'] [data-rung][data-focus='focus'] {
+                outline-color: var(--grammar-accent);
+            }
+            body[data-ui-grammar='continuity'] .spine-row::before {
+                border-color: var(--grammar-accent);
+            }
+            body[data-ui-grammar='continuity'] .field-node::after {
+                background: var(--grammar-accent);
+            }
             header {
                 grid-column: 1 / -1;
                 display: flex;

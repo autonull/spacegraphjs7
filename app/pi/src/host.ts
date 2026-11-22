@@ -357,6 +357,7 @@ export class PiHost {
     #graphLayoutAligned = false;
     #ribbonCorridor = false;
     #graphMorph = false;
+    #continuity = false;
     #octave = 0;
     #occupancyTarget = 0;
     #cardScale = 1;
@@ -556,6 +557,7 @@ export class PiHost {
     applyUIPreset(id: string | null | undefined): UIPreset | undefined {
         const applied = applyUIPreset(id, this);
         if (applied) this.#uiPresetID = applied.id;
+        this.setContinuity(Boolean(applied?.flags?.continuity));
         return applied;
     }
 
@@ -1076,7 +1078,7 @@ export class PiHost {
                             edge.emphasis ?? 0,
                         ),
                     );
-                    const styled = applyEdgeAttention(edge, salience, attention, this.#causal);
+                    const styled = applyEdgeAttention(edge, salience, attention, this.#causal, this.#continuity);
                     const tinted = crossScopeTint(
                         styled,
                         this.#qualifiedByNode.get(edge.source),
@@ -1608,6 +1610,14 @@ export class PiHost {
         return this.#ribbonCorridor;
     }
 
+    setContinuity(enabled: boolean): boolean {
+        this.#continuity = enabled;
+        document.body.dataset.uiGrammar = enabled ? 'continuity' : 'none';
+        this.paint();
+        this.renderHud();
+        return this.#continuity;
+    }
+
     setGraphMorph(enabled: boolean): boolean {
         this.#graphMorph = enabled;
         this.renderHud();
@@ -2123,6 +2133,12 @@ export class PiHost {
                 hint: 'm',
                 run: () => this.setGraphMorph(!this.#graphMorph),
             },
+            {
+                id: 'view.continuity',
+                label: 'Toggle continuous connection grammar',
+                group: 'graph view',
+                run: () => this.setContinuity(!this.#continuity),
+            },
             ...(this.#view.turns ?? []).map((turnID, index) => ({
                 id: `view.turn.${turnID}`,
                 label: `Focus turn ${index + 1}`,
@@ -2208,6 +2224,12 @@ export class PiHost {
             { id: 'help.graphAligned', label: 'Toggle aligned transcript', group: 'shortcut', hint: 'a' },
             { id: 'help.corridor', label: 'Toggle ribbon corridor', group: 'shortcut', hint: 'r' },
             { id: 'help.graphMorph', label: 'Toggle graph morph', group: 'shortcut', hint: 'm' },
+            {
+                id: 'help.continuity',
+                label: 'Toggle continuous connection grammar',
+                group: 'shortcut',
+                hint: 'view.continuity',
+            },
         ];
     }
 
@@ -2351,6 +2373,8 @@ export class PiHost {
             setRibbonCorridor: (enabled: boolean) => this.setRibbonCorridor(enabled),
             graphMorph: () => this.#graphMorph,
             setGraphMorph: (enabled: boolean) => this.setGraphMorph(enabled),
+            continuity: () => this.#continuity,
+            setContinuity: (enabled: boolean) => this.setContinuity(enabled),
             cycleGraphLayout: (delta = 1) => this.cycleGraphLayout(delta),
             surface: () => this.#surface,
             setSurface: (surface: Surface) => this.setSurface(surface),
@@ -3287,7 +3311,8 @@ export class PiHost {
     private renderHud(): void {
         const view =
             `${this.#graphLayout}${this.#graphLayoutAligned ? '+aligned' : ''}` +
-            `${this.#ribbonCorridor ? '+corridor' : ''}${this.#graphMorph ? '+morph' : ''}`;
+            `${this.#ribbonCorridor ? '+corridor' : ''}${this.#graphMorph ? '+morph' : ''}` +
+            `${this.#continuity ? '+continuity' : ''}`;
         const context =
             `${this.#level}/${this.#levelMode} · ${this.#depth}/${this.#depthAxis} · ` +
             `${this.simulation.settled ? 'settled' : 'moving'} · ${view}`;

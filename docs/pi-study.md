@@ -60,10 +60,11 @@ PI_LOCAL_FEED=1 pnpm --filter pi dev        # local feed, no provider
 # open http://localhost:5175/study.html
 ```
 
-Enter a participant number, start the counterbalanced run, work through the five questions in the
-embedded flagship, and record each answer. At the end the page renders the Markdown report and exposes
-`window.__study` with `trials`, `assignments`, `matrix`, `graphLayout` and `report`. Copy the report
-into the study record; do not edit captured results by hand.
+Enter a participant number, complete the untimed practice, start the counterbalanced run, work through
+the five questions in the embedded flagship, and record each answer. The aside shows trial progress;
+at the end the page enables a Copy report button, renders the Markdown report and exposes
+`window.__study` with `trials`, `assignments`, `matrix`, `graphLayout`, `ui`, `practiceCompleted` and
+`report`. Copy the report into the study record; do not edit captured results by hand.
 
 For a pilot on an opt-in graph view, add `?studyGraphLayout=timeline` (or `timeline-rows`) to the
 `study.html` URL. This applies one view for the whole run and records it in the question header, the

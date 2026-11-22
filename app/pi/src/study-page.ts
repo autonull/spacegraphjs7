@@ -37,6 +37,8 @@ const frame = element<HTMLIFrameElement>('app');
 const status = element<HTMLDivElement>('status');
 const question = element<HTMLDivElement>('question');
 const reportElement = element<HTMLPreElement>('report');
+const progress = element<HTMLDivElement>('progress');
+const copyReport = element<HTMLButtonElement>('copy-report');
 
 let assignments: readonly { taskID: string; surface: StudySurface }[] = [];
 let index = 0;
@@ -77,9 +79,11 @@ const current = (): Frame | undefined => {
 const show = (): void => {
     const next = current();
     if (!next) {
-        question.textContent = 'Run complete. Report below; export it for the study record.';
+        progress.textContent = `Complete · ${assignments.length} of ${assignments.length}`;
+        question.textContent = 'Run complete. Report below; copy it into the study record.';
         return;
     }
+    progress.textContent = `Trial ${index + 1} of ${assignments.length}`;
     const task = STUDY_TASKS.find((entry) => entry.id === next.taskID)!;
     question.textContent =
         `${index + 1}/${assignments.length} · ${next.surface.toUpperCase()} · ` +
@@ -132,6 +136,7 @@ const submit = (): void => {
     if (index >= assignments.length) {
         const report = studyReport(recorder.trials, matrix);
         reportElement.textContent = report;
+        copyReport.disabled = false;
         Object.assign(window, {
             __study: {
                 trials: recorder.trials,
@@ -155,4 +160,12 @@ element<HTMLButtonElement>('start').addEventListener('click', () => {
     if (practiceDone) void begin();
 });
 element<HTMLButtonElement>('submit').addEventListener('click', submit);
+copyReport.addEventListener('click', () => {
+    void navigator.clipboard
+        .writeText(reportElement.textContent ?? '')
+        .then(
+            () => { status.textContent = 'Report copied to clipboard.'; },
+            () => { status.textContent = 'Copy failed — select the report text manually.'; },
+        );
+});
 void preparePractice();

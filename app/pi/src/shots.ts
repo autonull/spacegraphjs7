@@ -83,7 +83,8 @@ export const SHOTS: readonly Shot[] = [
     uiShot('reading', 'UI · Reading type', 'Is a larger label floor worth the density cost?'),
     uiShot('presentation', 'UI · Presentation', 'Does a quiet frame and collapsed transcript improve demo clarity?'),
     uiShot('scale-aware', 'UI · Scale-aware packing', 'Does packing toward measured coverage fill the mid canvas without losing legibility?'),
-    uiShot('light-shell', 'UI · Light shell', 'Does the light view need the shell themed too?'),
+    uiShot('continuity', 'UI · Continuous grammar', 'Do collar, core, sheath and one accent make a run read as one strand?'),
+    uiShot('light-shell', 'UI · Light view', 'Does the light view need the shell themed too?'),
     {
         id: 'cockpit',
         file: 'pi-agent-in-action.png',

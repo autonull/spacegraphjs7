@@ -85,10 +85,26 @@
       "decision": "pending human review; ADR 0008 default gate not closed"
     },
     {
+      "id": "ui-preset-continuity",
+      "status": "experiment; default not flipped",
+      "incumbent": "full — shipped knobs and full chrome (?ui=full)",
+      "variant": "Continuous grammar (?ui=continuity, chrome full)",
+      "data": "docs/screenshots/ui-presets/comparison.json",
+      "gates": [
+        "grammar",
+        "vision",
+        "screenshots"
+      ],
+      "incumbentImage": "docs/screenshots/ui-presets/continuity/incumbent.png",
+      "variantImage": "docs/screenshots/ui-presets/continuity/variant.png",
+      "images": "pending human verdict; pairs captured by pnpm run shots:compare",
+      "decision": "pending human review; ADR 0008 default gate not closed"
+    },
+    {
       "id": "ui-preset-light-shell",
       "status": "experiment; default not flipped",
       "incumbent": "full — shipped knobs and full chrome (?ui=full)",
-      "variant": "Light shell (?ui=light-shell, chrome full)",
+      "variant": "Light view (?ui=light-shell, chrome full)",
       "data": "docs/screenshots/ui-presets/comparison.json",
       "gates": [
         "shell",

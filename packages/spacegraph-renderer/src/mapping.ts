@@ -128,6 +128,8 @@ export function edgeSpec(edge: RenderEdge, theme: RenderTheme): EdgeSpec {
               curve?: number;
               inset?: number;
               halo?: number;
+              collar?: number;
+              sheath?: number;
               path?: unknown;
           }
         | undefined;
@@ -151,6 +153,8 @@ export function edgeSpec(edge: RenderEdge, theme: RenderTheme): EdgeSpec {
                   curve: ribbon.curve ?? 0.1,
                   inset: ribbon.inset ?? 0.08,
                   halo: ribbon.halo ?? 0.45,
+                  ...(ribbon.collar === undefined ? {} : { collar: ribbon.collar }),
+                  ...(ribbon.sheath === undefined ? {} : { sheath: ribbon.sheath }),
                   ...(ribbon.path === undefined ? {} : { path: ribbon.path }),
               }
             : {}),

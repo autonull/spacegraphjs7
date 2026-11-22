@@ -105,10 +105,12 @@ export const applyEdgeAttention = (
     salience: number,
     policy: AttentionPolicy,
     causalColor?: string,
+    continuity = false,
 ): RenderEdge => {
     const rank = edgeRank(edge.kind);
     const weight = rank * (0.45 + 0.55 * salience);
     const causal = CAUSAL_KINDS.has(edge.kind);
+    const baseCurve = causal ? 0.14 : 0.06;
     const ribbon =
         policy.ribbonWidth > 0 && policy.ribbonKinds !== 'none'
             ? {
@@ -119,9 +121,12 @@ export const applyEdgeAttention = (
                       (policy.ribbonKinds === 'all' || causal ? 1 : 0.5),
                   segments: 3,
                   fluid: true,
-                  curve: causal ? 0.14 : 0.06,
-                  inset: 0.14,
+                  curve: continuity ? baseCurve * (0.7 + 0.6 * salience) : baseCurve,
+                  inset: continuity ? 0.1 : 0.14,
                   halo: policy.glow,
+                  ...(continuity
+                      ? { collar: causal ? 0.9 : 0.5, sheath: causal ? 0.6 : 0.25 }
+                      : {}),
                   ...(causal && causalColor ? { color: causalColor } : {}),
               }
             : undefined;

@@ -83,6 +83,23 @@
                 color: #8b949e;
                 white-space: pre-wrap;
             }
+            #progress {
+                font-size: 12px;
+                color: #8b949e;
+                letter-spacing: 0.04em;
+            }
+            @media (max-width: 900px) {
+                body {
+                    grid-template-columns: minmax(0, 1fr);
+                    grid-template-rows: auto minmax(320px, 1fr);
+                    height: auto;
+                    min-height: 100vh;
+                }
+                aside {
+                    border-right: 0;
+                    border-bottom: 1px solid #30363d;
+                }
+            }
             pre {
                 font-size: 11px;
                 white-space: pre-wrap;
@@ -120,6 +137,7 @@
                 <button id="practice-done" type="button">I have tried the controls</button>
             </section>
             <button id="start" disabled>Start counterbalanced run</button>
+            <div id="progress">Practice · not timed</div>
             <div id="question">Complete the untimed practice, then start the run.</div>
             <label for="answer">Answer found?</label>
             <select id="answer">
@@ -134,6 +152,7 @@
             <textarea id="quote" rows="3"></textarea>
             <button id="submit">Record and next</button>
             <div id="status"></div>
+            <button id="copy-report" type="button" disabled>Copy report</button>
             <pre id="report"></pre>
         </aside>
         <iframe id="app" src="/index.html" title="Flagship graph"></iframe>

@@ -52,6 +52,25 @@ test.describe('UI presets', () => {
         expect(ids).toContain('lab.scale-aware');
     });
 
+    test('the continuity preset is a one-URL opt-in with a reachable toggle', async ({ page }) => {
+        await page.goto('/?ui=continuity');
+        await ready(page);
+        expect(await ui(page)).toBe('continuity');
+        expect(await page.evaluate(() => document.body.dataset.uiGrammar)).toBe('continuity');
+        expect(await page.evaluate(() => (window as any).__pi.continuity())).toBe(true);
+        expect(
+            await page.evaluate(() => (window as any).__pi.policy().values['theme.backdrop']),
+        ).toBe('flat');
+        await page.evaluate(() => (window as any).__pi.openCommands('palette', 'graph view'));
+        const ids = await page.locator('[data-command-id]').evaluateAll((rows) =>
+            rows.map((row) => row.getAttribute('data-command-id')),
+        );
+        expect(ids).toContain('view.continuity');
+        await page.evaluate(() => (window as any).__pi.applyUIPreset('full'));
+        expect(await page.evaluate(() => document.body.dataset.uiGrammar)).toBe('none');
+        expect(await page.evaluate(() => (window as any).__pi.continuity())).toBe(false);
+    });
+
     test('the u shortcut opens a compact lab list that restores chrome', async ({ page }) => {
         await page.goto('/?ui=compact');
         await ready(page);

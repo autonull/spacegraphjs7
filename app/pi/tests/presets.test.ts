@@ -19,6 +19,7 @@ const calls = () => {
         setGraphLayoutAligned: (aligned) => log.push(`aligned:${aligned}`),
         setRibbonCorridor: (enabled) => log.push(`ribbon:${enabled}`),
         setGraphMorph: (enabled) => log.push(`morph:${enabled}`),
+        setContinuity: (enabled) => log.push(`continuity:${enabled}`),
         setTranscriptCollapsed: (collapsed) => log.push(`transcript:${collapsed}`),
     };
     return { log, target };
@@ -57,6 +58,14 @@ describe('applyUIPreset', () => {
         const { log, target } = calls();
         applyUIPreset('morph', target);
         expect(log).toEqual(['layer:experiment:', 'morph:true']);
+    });
+
+    it('applies the continuity grammar flag without a new knob', () => {
+        const { log, target } = calls();
+        const applied = applyUIPreset('continuity', target);
+        expect(applied?.flags?.continuity).toBe(true);
+        expect(applied?.knobs['theme.backdrop']).toBe('flat');
+        expect(log).toContain('continuity:true');
     });
 
     it('leaves the target untouched for an unknown id', () => {

@@ -31,9 +31,9 @@ const policy = (overrides: Partial<AttentionPolicy> = {}): AttentionPolicy => ({
 
 const ribbonOf = (
     result: RenderEdge,
-): { weight: number; minRadius: number; maxRadius: number; fluid: boolean; curve: number; halo: number; color?: string } | undefined =>
+): { weight: number; minRadius: number; maxRadius: number; fluid: boolean; curve: number; halo: number; collar?: number; sheath?: number; color?: string } | undefined =>
     result.data?.ribbon as
-        | { weight: number; minRadius: number; maxRadius: number; fluid: boolean; curve: number; halo: number; color?: string }
+        | { weight: number; minRadius: number; maxRadius: number; fluid: boolean; curve: number; halo: number; collar?: number; sheath?: number; color?: string }
         | undefined;
 
 describe('salience ranking', () => {
@@ -94,6 +94,17 @@ describe('ribbon grammar', () => {
         expect(ribbonOf(applyEdgeAttention(edge('reads'), 1, policy({ ribbonKinds: 'all' })))).toBeDefined();
         expect(ribbonOf(applyEdgeAttention(edge('writes'), 1, policy({ ribbonKinds: 'none' })))).toBeUndefined();
         expect(ribbonOf(applyEdgeAttention(edge('writes'), 1, policy({ ribbonWidth: 0 })))).toBeUndefined();
+    });
+
+    test('continuity makes the bend elastic and adds collar and sheath from salience', () => {
+        const plain = ribbonOf(applyEdgeAttention(edge('writes'), 1, policy()))!;
+        const quiet = ribbonOf(applyEdgeAttention(edge('writes'), 0, policy(), undefined, true))!;
+        const loud = ribbonOf(applyEdgeAttention(edge('writes'), 1, policy(), undefined, true))!;
+        expect(loud.collar).toBeCloseTo(0.9);
+        expect(loud.sheath).toBeCloseTo(0.6);
+        expect(loud.curve).toBeGreaterThan(quiet.curve);
+        expect(quiet.curve).toBeLessThan(plain.curve);
+        expect(ribbonOf(applyEdgeAttention(edge('reads'), 1, policy(), undefined, true))!.collar).toBeCloseTo(0.5);
     });
 
     test('context edges stay thin and dim', () => {

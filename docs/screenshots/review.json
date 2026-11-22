@@ -82,6 +82,9 @@
   "ui-scale-aware": {
     "note": "Opt-in scale-aware packing experiment; no shipped default changed. Incumbent/variant pair: docs/screenshots/ui-presets/scale-aware/{incumbent,variant}.png. Offline coverage comparison: docs/screenshots/presence-scale-aware.json. Human verdict pending in docs/screenshots/ui-presets/comparison.json (ui-preset-scale-aware)."
   },
+  "ui-continuity": {
+    "note": "Phase 3 traceability shot for the opt-in continuous grammar: square collars, tapered core, one-sided sheath, salience-driven bend and one causal accent on border, port, transcript dot and focus ring; grid recedes through theme.backdrop=flat. No shipped default changed. Incumbent/variant pair: docs/screenshots/ui-presets/continuity/{incumbent,variant}.png. Human verdict pending in docs/screenshots/ui-presets/comparison.json (ui-preset-continuity)."
+  },
   "policy": {
     "verdict": "kept",
     "note": "Live policy panel shows provenance badges by family; quiet preset values remain distinguishable in the narrower canvas. Primary labels keep their reserved lane after AUDIT-03."

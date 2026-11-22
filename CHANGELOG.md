@@ -7,6 +7,14 @@ follow the workflow in `docs/ROADMAP.md` (`test:publish` → build → npm).
 
 ### Added
 
+- **Continuous connection grammar (TODO9 Phase 3):** the opt-in `?ui=continuity` preset adds a square
+  attachment collar, a tapered core, a one-sided sheath and a salience-driven bend to `FluxEdge` through
+  opaque `data`; the causal accent also drives card borders, ports, transcript dots and the focus ring,
+  and `theme.backdrop=flat` lets the grid recede. No contract field or host renderer branch, and no
+  default flipped. A labelled incumbent/variant pair and a pending ADR 0008 decision record the experiment.
+- **Study export and honest label (TODO9 Phase 4):** the study page shows trial progress, enables a
+  Copy report button at the end of a run and stacks below 900px without changing the report text or
+  `window.__study`. The light experiment is labelled `Light view` rather than promising a full shell theme.
 - **Graph arrangements (TODO7):** six opt-in graph views (`freeform`, `timeline`, `timeline-rows`,
   `lanes`, `tree`, `force`) selectable by URL, `__pi` hook and full-state permalink. `timeline-rows`
   transposes the timeline into horizontal turn stripes stacked vertically through a general

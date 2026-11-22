@@ -163,6 +163,15 @@ describe('edgeSpec', () => {
         expect(spec.data).toMatchObject({ curve: 0.2, inset: 0.12, halo: 0.6 });
     });
 
+    test('a flux ribbon carries collar and sheath as opaque geometry data', () => {
+        const spec = edgeSpec(
+            edge({ data: { ribbon: { fluid: true, collar: 0.9, sheath: 0.6 } } }),
+            theme,
+        );
+        expect(spec.type).toBe('FluxEdge');
+        expect(spec.data).toMatchObject({ collar: 0.9, sheath: 0.6 });
+    });
+
     test('a ribbon color overrides the edge style color', () => {
         const spec = edgeSpec(edge({ data: { ribbon: { color: '#8ff0d0' } } }), theme);
         expect(spec.data.color).toBe(parseColor('#8ff0d0'));

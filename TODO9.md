@@ -211,18 +211,18 @@ and one command away; all gates are green at `retries: 0`.
 
 ## 8. Progress
 
-Plan status: **Phases 0–2 complete. Phase 1 changed one boot default (the Navigate drawer is closed
-and one primary index is declared per surface); Phase 2 adds an opt-in scale knob and a v2 vector
-plan but flips no default, captures no new gallery incumbent, and fabricates no ADR 0008 verdict or
-pilot result.**
+Plan status: **Phases 0–2 complete; Phase 3 has one opt-in grammar experiment captured, Phase 4 has
+the study-export and honest-label fixes landed. Two Phase 4 change sets remain (PIUX-03/05/07 and
+PIUX-06), plus the human gates: every ADR 0008 verdict and the five-question pilot. No default has
+been flipped, no shipped gallery incumbent overwritten, and no verdict or pilot result fabricated.**
 
-| Phase                            | Status      | Evidence                                             |
-| -------------------------------- | ----------- | ---------------------------------------------------- |
-| 0 — baseline and metrics         | complete    | `presence-baseline.json`; 4 shape-only tests green   |
-| 1 — navigation coherence         | complete    | practice gate + one-index e2e; 41 targeted e2e green |
-| 2 — occupancy and octave scaling | complete    | `presence-scale-aware.json`; scale-aware pair; 34 e2e |
-| 3 — continuous visual language   | not started | no new accent/field experiment captured              |
-| 4 — flagship integration         | not started | no pilot, ADR decision or doc update                 |
+| Phase                            | Status                              | Evidence                                                          |
+| -------------------------------- | ----------------------------------- | ----------------------------------------------------------------- |
+| 0 — baseline and metrics         | complete                            | `presence-baseline.json`; 4 shape-only tests green                 |
+| 1 — navigation coherence         | complete                            | practice gate + one-index e2e; 41 targeted e2e green               |
+| 2 — occupancy and octave scaling | complete                            | `presence-scale-aware.json`; scale-aware pair; 34 e2e              |
+| 3 — continuous visual language   | experiment captured; verdict pending | `ui-continuity` shot + pair; focused library, renderer and host tests green |
+| 4 — flagship integration         | partial; human gates open            | PIUX-09/10 landed; 10 targeted e2e green; pilot and ADR undecided   |
 
 ### Delivered in Phase 0
 
@@ -269,19 +269,51 @@ pilot result.**
    coverage 0.5556 → 0.8889; wide-near 0.0881 → 0.1184; both far samples unchanged. No default
    changed, so no shipped gallery incumbent was overwritten.
 
+### Delivered in Phase 3
+
+1. **General geometry, not a host branch.** `src/edges/FluxEdge.ts` gains two pure helpers,
+   `fluxRadius()` and `fluxBrightness()`, driven only by opaque `data`: a positive `collar` flattens
+   the two trimmed ends into a square flange, and `sheath` lights one side of the core. Both default
+   to 0, so every existing flux ribbon is pixel-stable unless a host opts in.
+   `packages/spacegraph-renderer/src/mapping.ts` passes the two fields through the existing
+   `data.ribbon` seam; no contract field and no registered-type change.
+2. **One attention model.** `applyEdgeAttention(..., continuity)` bends the flux curve with salience
+   (0.7–1.3x of the base bend) and derives collar and sheath weight from the same rank × salience
+   score. The bend follows solved endpoint targets on each update; there is no idle animation.
+3. **Pi opt-in and evidence.** `?ui=continuity` / `lab.continuity` / `__pi.setContinuity()` /
+   `view.continuity` apply knobs that already exist (`theme.backdrop=flat`, `ladder.minLabelPx=16`,
+   `emphasis.ribbonWidth=82`, `theme.glow=0.28`) and set `data-ui-grammar=continuity`, which aligns
+   the causal accent across card borders, ports, transcript dots and the focus ring. The new
+   `ui-continuity` shot and labelled `continuity/{incumbent,variant}.png` pair are captured; the ADR
+   0008 stub `ui-preset-continuity` has a pending human decision.
+
+### Delivered in Phase 4 (partial)
+
+1. **PIUX-09 — study progress and export.** `study.html` adds a `#progress` line and a Copy report
+   button; `study-page.ts` updates the progress text at each boundary and copies the unchanged
+   report through the clipboard API. The report string and `window.__study` shape are untouched. A
+   responsive rule stacks the aside and iframe below 900px.
+2. **PIUX-10 — honest label.** The light experiment is titled `Light view` in `ui/presets.ts` and
+   `shots.ts`; the shipped shell theme is not silently changed.
+
 ### Verification run
 
 - Root: `pnpm exec vitest run test/layout/occupancy-packing.test.ts test/layout/scope-policy.test.ts`
   — 10 library tests green. `pnpm run build:lib` rebuilt the workspace library after the source edit.
-- `app/pi`: `pnpm run check:fast` — 31 files, 168 unit tests green (+2).
+- `app/pi`: `pnpm run check:fast` — 31 files, 170 unit tests green (+2 over Phase 2).
 - `app/pi`: Phase 1 targeted Playwright (`study`, `navigation`, `shell`, `browser`) — 41 passed at
   `retries: 0`, `--workers=1`.
 - `app/pi`: Phase 2 targeted Playwright (`ui-presets`, `policy`, `vision`) — 34 passed, including the
   full vision atlas and the new scale-aware legibility gate; `pnpm run shots:compare` — 9 pairs,
   `pnpm run compare:ui` — 9 pending decision stubs. Pre-existing pairs were reverted after capture so
   TODO8's pending incumbents were not overwritten; only the new `scale-aware/` pair is added.
+- Root: `pnpm exec vitest run test/flux-edge.test.ts` — 4 library tests green; `pnpm --filter
+  @spacegraphjs/spacegraph-renderer test` — 25 tests green (one new collar/sheath mapping assertion).
+- `app/pi`: targeted Playwright (`ui-presets`, `study`) — 10 passed at `retries: 0`, `--workers=1`;
+  `tests/ui-compare.spec.ts --grep 'compare: continuity'` — 1 pair captured; `pnpm run shot
+  ui-continuity` — gallery shot captured. No pre-existing PNG was overwritten.
 - No `shots:all`, `verify:visual` or `scale` run: no shipped default changed and TODO8 verdicts are
-  still pending. The full gate set stays a Phase 4 item.
+  still pending. The full gate set stays with the Phase 4 human gates.
 
 ### ADR 0008 evidence for the navigation and scale defaults
 
@@ -295,23 +327,48 @@ pilot result.**
   `docs/screenshots/ui-presets/scale-aware/{incumbent,variant}.png`, its offline comparison is
   `presence-scale-aware.json`, and its stub with a pending verdict is `ui-preset-scale-aware` in
   `comparison.json`. Promoting it to a default still needs a human ADR 0008 decision.
+- Continuous grammar stays opt-in (`data-ui-grammar` is set only by the preset). Its labelled pair is
+  `docs/screenshots/ui-presets/continuity/{incumbent,variant}.png`, its gallery traceability item is
+  `ui-continuity` in `review.json` (note only, no verdict), and its stub is `ui-preset-continuity` in
+  `comparison.json`. A human must compare the pair before any grammar element becomes a default.
 
 ### Deferred measures (reported, not silently dropped)
 
-1. Gallery recapture for shipped shots — still deferred to Phase 3 because TODO8 human verdicts are
-   pending (pitfall 4). Phase 2 captures only the new labelled opt-in pair.
+1. Gallery recapture for shipped shots — still deferred because TODO8 human verdicts are pending
+   (pitfall 4). Phase 3 captures only the new labelled opt-in `continuity` shot and pair; no shipped
+   incumbent was rewritten.
 2. Root `check`, `verify:visual`, `shots:all`, `scale` — deferred to the Phase 4 single full gate run
    to avoid redundant executions.
 3. Occupancy target value — `0.12` is the experiment input, not a proven target. The measured variant
    improves mid/near coverage but does not reach it; narrow-mid label coverage is unchanged and is
    reported as such, not rounded up.
 
+### Remaining work — clarified, in order
+
+1. **Human gates (blocking graduation).** Add verdicts to `docs/screenshots/review.json` for the
+   `ui-*` shots, including `ui-continuity`, and close the matching `decision` stubs in
+   `ui-presets/comparison.json`. Run the five-question pilot with `?studyUI=<preset>` (`docs/pi-study.md`,
+   `window.__study.ui`); never fabricate a result. A default flip needs that logged human decision.
+2. **Phase 4 change set 2 — reading and scanning (PIUX-03/05/07).** Raise chrome to a 13px body /
+   12px secondary with a 12px floor behind an opt-in `readable` chrome mode; relabel engine jargon in
+   plain words while keeping knob ids and tooltips stable; widen the rail to 280–320px as one
+   on-demand drawer. Gate with computed-style and no-overlap assertions at 900px and 1440px.
+3. **Phase 4 change set 3 — catalog (PIUX-06).** Group `mountCatalog()` rows into Presets, View
+   experiments and Study questions, add a 40px search input, and make the gallery and Reference entry
+   points link to one canonical question list. Assert each question id appears once.
+4. **Final verification (once, after 2–3).** Root `check`; from `app/pi`: `check:fast`, `test:e2e`,
+   `verify:visual`, `shots:all`, `scale`, all at `retries: 0`. Recapture only promoted states with an
+   incumbent pair; update `CHANGELOG.md`, `app/pi/README.md`, `docs/pi-study.md` and stale references.
+
 ### Handoff notes
 
 1. Read `TODO8.md:§9`, `TODO7.md:§2`, `TODO6.md:§0` and `docs/pi-study-ui-audit.md` first.
-2. Phases 1 and 2 are done. Phase 3 owns the continuous visual grammar; start from the ADR 0014/0016
-   registered types and keep new geometry as opaque `data`, never a host renderer branch.
+2. Phases 0–2 are complete; Phase 3's opt-in grammar is captured and Phase 4 has landed PIUX-09/10.
+   New geometry still travels as opaque `data` through registered types, never a host renderer branch.
 3. Reuse TODO8's harness: named preset, `?ui=`, `shots:compare`, `?studyUI=`, `review.json`.
 4. Use `pnpm`, `--workers=1` or `--workers=2` on constrained hosts, and state-based waits only.
 5. Make no further default change until an ADR 0008 decision is logged by a human; promote the existing
-   `one-index` experiment only with a verdict.
+   `one-index`, `scale-aware` and `continuity` experiments only with a verdict.
+6. TODO9 §4 Phase 3 item 2 ("scope fields from solved targets") remains unimplemented: the field layer
+   follows projected screen positions, not solver targets. It needs a general host/library seam and its
+   own labelled pair; do not fold it into `continuity` without a new verdict.

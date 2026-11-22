@@ -77,6 +77,9 @@ intermediate frames of bounded inner-graph re-entry. `scale` measures model buil
 force layout and the gzipped 3D chunk; the measured force-layout budget is 1.5 s for the scope solver.
 
 The view uses registered flux edges (`FluxEdge`) and a host field layer of merged node halos (ADR 0016).
+The opt-in `?ui=continuity` preset adds an opaque-data collar, one-sided sheath and salience-driven bend
+to the same registered type, aligns the causal accent across borders and focus, and recedes the grid;
+`__pi.setContinuity()` and the `view.continuity` command toggle it without a new knob or default change.
 Unit and delegate scopes are grid-packed; the root scope stays freeform. The camera refits only when the
 canvas aspect changes materially (ADR 0015); `window.__pi.adaptiveFit()`
 exposes the last insets and refit count. The `dense-type` preset raises `ladder.minLabelPx` to 18 and

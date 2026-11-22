@@ -30,9 +30,22 @@ const waypoint = (value: unknown): THREE.Vector3 | undefined => {
  * One general registered edge type; the shape comes only from `data`, never from host identity.
  *
  * data options: weight, minRadius, maxRadius, color, curve (bend fraction), inset (endpoint trim),
- * halo (0-1 glow strength), opacity, path (optional corridor waypoints, routed through the source
- * and target, for cross-scope edges that must leave the node field).
+ * halo (0-1 glow strength), collar (0-1 square flange at each trimmed end), sheath (0-1 highlight
+ * along one side), opacity, path (optional corridor waypoints, routed through the source and target,
+ * for cross-scope edges that must leave the node field).
  */
+
+/** Endpoint flange keeps a blunt square where a ribbon meets its card; 0 keeps the tapered tip. */
+export const fluxRadius = (width: number, taper: number, collar: number, index: number, last: number): number => {
+    const tapered = width * (0.32 + 0.68 * Math.pow(taper, 0.6)) * 0.5;
+    return collar > 0 && (index === 0 || index === last)
+        ? Math.max(tapered, width * 0.5 * clamp(collar, 0, 1))
+        : tapered;
+};
+
+/** One-sided translucent highlight: the lit side carries salience, the shaded side recedes. */
+export const fluxBrightness = (base: number, sheath: number, lit: boolean): number =>
+    clamp(base + (lit ? sheath * 0.5 : -sheath * 0.12), 0, 1);
 
 export class FluxEdge extends Edge {
     static readonly typeName: string = 'FluxEdge';
@@ -162,6 +175,8 @@ export class FluxEdge extends Edge {
         const inset = clamp((this.data.inset as number | undefined) ?? 0.08, 0, 0.45);
         const curveStrength = clamp((this.data.curve as number | undefined) ?? 0.1, 0, 0.6);
         const halo = clamp((this.data.halo as number | undefined) ?? 0.45, 0, 1);
+        const collar = clamp((this.data.collar as number | undefined) ?? 0, 0, 1);
+        const sheath = clamp((this.data.sheath as number | undefined) ?? 0, 0, 1);
 
         const path = this.syncPath(sourcePos, targetPos, curveStrength);
 
@@ -173,7 +188,7 @@ export class FluxEdge extends Edge {
             path.getTangent(t, this.#tangent).normalize();
             this.#side.set(-this.#tangent.y, this.#tangent.x, 0).normalize();
             const taper = Math.sin(Math.PI * (index / SEGMENTS));
-            const radius = width * (0.32 + 0.68 * Math.pow(taper, 0.6)) * 0.5;
+            const radius = fluxRadius(width, taper, collar, index, SEGMENTS);
             const haloRadius = radius * (2 + halo * 1.6);
             const brightness = 0.48 + 0.52 * taper;
             const alpha = 0.6 + 0.4 * taper;
@@ -183,6 +198,7 @@ export class FluxEdge extends Edge {
                 const offset = (index * 2 + edge) * 3;
                 const radial = sign > 0 ? radius : -radius;
                 const glowRadial = sign > 0 ? haloRadius : -haloRadius;
+                const lit = fluxBrightness(brightness, sheath, sign > 0);
                 this.#positions[offset] = this.#point.x + this.#side.x * radial;
                 this.#positions[offset + 1] = this.#point.y + this.#side.y * radial;
                 this.#positions[offset + 2] = this.#point.z;
@@ -190,9 +206,9 @@ export class FluxEdge extends Edge {
                 this.#haloPositions[offset + 1] = this.#point.y + this.#side.y * glowRadial;
                 this.#haloPositions[offset + 2] = this.#point.z;
                 const colorOffset = (index * 2 + edge) * 4;
-                this.#colors[colorOffset] = brightness;
-                this.#colors[colorOffset + 1] = brightness;
-                this.#colors[colorOffset + 2] = brightness;
+                this.#colors[colorOffset] = lit;
+                this.#colors[colorOffset + 1] = lit;
+                this.#colors[colorOffset + 2] = lit;
                 this.#colors[colorOffset + 3] = alpha;
                 this.#haloColors[colorOffset] = brightness;
                 this.#haloColors[colorOffset + 1] = brightness;

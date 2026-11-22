@@ -9,6 +9,7 @@ export interface UIPresetFlags {
     readonly graphAligned?: boolean;
     readonly ribbonCorridor?: boolean;
     readonly graphMorph?: boolean;
+    readonly continuity?: boolean;
     readonly collapseTranscript?: boolean;
 }
 
@@ -97,8 +98,20 @@ export const UI_PRESETS: readonly UIPreset[] = [
         { gates: ['grammar', 'vision', 'screenshots'] },
     ),
     preset(
+        'continuity',
+        'Continuous grammar',
+        'Do collar, tapered core, side sheath and one accent make a run read as one strand?',
+        {
+            'theme.backdrop': 'flat',
+            'ladder.minLabelPx': 16,
+            'emphasis.ribbonWidth': 82,
+            'theme.glow': 0.28,
+        },
+        { flags: { continuity: true }, gates: ['grammar', 'vision', 'screenshots'] },
+    ),
+    preset(
         'light-shell',
-        'Light shell',
+        'Light view',
         'Does the light view need the shell themed too?',
         { 'theme.variant': 'light' },
         { gates: ['shell', 'vision', 'screenshots'] },
@@ -141,6 +154,7 @@ export interface UIPresetTarget {
     setGraphLayoutAligned(aligned: boolean): void;
     setRibbonCorridor(enabled: boolean): void;
     setGraphMorph(enabled: boolean): void;
+    setContinuity(enabled: boolean): void;
     setTranscriptCollapsed(collapsed: boolean): void;
 }
 
@@ -158,6 +172,7 @@ export function applyUIPreset(
         if (flags.graphAligned !== undefined) target.setGraphLayoutAligned(flags.graphAligned);
         if (flags.ribbonCorridor !== undefined) target.setRibbonCorridor(flags.ribbonCorridor);
         if (flags.graphMorph !== undefined) target.setGraphMorph(flags.graphMorph);
+        if (flags.continuity !== undefined) target.setContinuity(flags.continuity);
         if (flags.collapseTranscript !== undefined)
             target.setTranscriptCollapsed(flags.collapseTranscript);
     }
