@@ -64,6 +64,30 @@ const copy = (position: Position): Position => ({ x: position.x, y: position.y, 
 const moved = (from: Position, to: Position): boolean =>
     AXES.some((axis) => Math.abs(from[axis] - to[axis]) > 1e-9);
 
+/** Override solved world positions with external targets and refit the reported bounds. */
+function withTargets(layout: ScopeLayout, targets: ReadonlyMap<string, Position>): ScopeLayout {
+    const positions = new Map(
+        [...layout.positions].map(([id, position]) => [id, targets.get(id) ?? position] as const),
+    );
+    let minX = Infinity, minY = Infinity;
+    let maxX = -Infinity, maxY = -Infinity;
+    for (const position of positions.values()) {
+        minX = Math.min(minX, position.x);
+        minY = Math.min(minY, position.y);
+        maxX = Math.max(maxX, position.x);
+        maxY = Math.max(maxY, position.y);
+    }
+    const bounds: ScopeBounds = Number.isFinite(minX)
+        ? {
+              min: { x: minX, y: minY, z: 0 },
+              max: { x: maxX, y: maxY, z: 0 },
+              center: { x: (minX + maxX) / 2, y: (minY + maxY) / 2, z: 0 },
+              size: [maxX - minX, maxY - minY, 0],
+          }
+        : layout.bounds;
+    return { ...layout, positions, bounds };
+}
+
 export class ScopeSimulation {
     #options: ScopeSimulationOptions;
     #host: ScopeHost;
@@ -81,6 +105,8 @@ export class ScopeSimulation {
     #pinned = new Set<string>();
     #policyPinned = new Set<string>();
     #layoutOverride: ScopeLayoutOptions = {};
+    /** Externally solved world-space targets by qualified id; the springs chase these when set. */
+    #targets?: ReadonlyMap<string, Position>;
     #heat = 0;
     #accumulator = 0;
     #steps = 0;
@@ -136,7 +162,10 @@ export class ScopeSimulation {
         this.#signals = signals;
         const hosted = this.#host.update(specs, signals, this.#layoutOverride);
         const previous = this.#target;
-        this.#target = hosted;
+        const target = this.#targets?.size
+            ? withTargets(hosted, this.#targets)
+            : hosted;
+        this.#target = target;
         this.#tree = hosted.tree;
 
         const spawnAtOrigin = this.#options.spawn !== 'target';
@@ -185,6 +214,15 @@ export class ScopeSimulation {
             this.#frameSleeping.clear();
         }
         if (this.#options.instant) this.settle();
+    }
+
+    /**
+     * Feed solved world-space positions as the target of the springs. The simulation stays the only
+     * authority over current positions; `undefined` returns to the scope solver's own targets.
+     */
+    setLayoutTargets(targets: ReadonlyMap<string, Position> | undefined): void {
+        this.#targets = targets;
+        if (this.#specs) this.setSpecs(this.#specs, this.#signals);
     }
 
     /** Replace the base layout options and retarget without rebuilding the simulation. */
@@ -305,6 +343,7 @@ export class ScopeSimulation {
         this.#pinned.clear();
         this.#policyPinned.clear();
         this.#layoutOverride = {};
+        this.#targets = undefined;
         this.#heat = 0;
         this.#accumulator = 0;
         this.#steps = 0;

@@ -983,6 +983,34 @@
             :root[data-theme='light'] #field {
                 opacity: 0.14;
             }
+            #structure {
+                position: absolute;
+                inset: 0;
+                z-index: 0;
+                overflow: hidden;
+                pointer-events: none;
+            }
+            .field-hull {
+                position: absolute;
+                left: 0;
+                top: 0;
+                border: 1px solid color-mix(in srgb, var(--view-scope, #85f) 42%, transparent);
+                background: color-mix(in srgb, var(--view-scope, #85f) 5%, transparent);
+                will-change: transform;
+            }
+            .field-hull::before {
+                content: var(--hull-label, '');
+                position: absolute;
+                left: 0;
+                top: -16px;
+                padding: 1px 4px;
+                font-size: 10px;
+                letter-spacing: 0.04em;
+                text-transform: uppercase;
+                white-space: nowrap;
+                color: var(--view-scope, #85f);
+                background: var(--sg-colors-card, #0a1018);
+            }
             #canvas {
                 background:
                     radial-gradient(80% 60% at 18% 12%, color-mix(in srgb, var(--view-causal, #4dd) 9%, transparent), transparent 70%),
@@ -1498,6 +1526,19 @@
             .transcript-row[data-revealed='true'] {
                 border-color: var(--sg-colors-accent);
                 color: var(--sg-colors-ring);
+            }
+            #transcript-list[data-aligned='true'] .transcript-row {
+                position: relative;
+            }
+            #transcript-list[data-aligned='true'] .transcript-row::after {
+                content: '';
+                position: absolute;
+                inset-inline-start: calc(var(--pi-align-x, 0.5) * 100%);
+                inset-block-start: 2px;
+                width: 3px;
+                height: 3px;
+                background: currentColor;
+                opacity: 0.7;
             }
             .spine-expand {
                 border: 1px solid transparent;

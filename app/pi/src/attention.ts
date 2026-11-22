@@ -76,6 +76,29 @@ export const crossScopeTint = (
     };
 };
 
+/**
+ * Route a cross-scope causal ribbon through a dedicated corridor, keeping its arrowhead and source
+ * tint. The corridor is opaque ribbon data; FluxEdge needs no renderer branch or contract field.
+ */
+export const bundleCorridor = (
+    edge: RenderEdge,
+    corridorY: number,
+    positionOf: (id: string) => { x: number; y: number; z: number } | undefined,
+): RenderEdge => {
+    if (!edge.data?.crossScope) return edge;
+    const ribbon = edge.data.ribbon;
+    if (!ribbon || typeof ribbon !== 'object') return edge;
+    const from = positionOf(edge.source);
+    const to = positionOf(edge.target);
+    if (!from || !to) return edge;
+    const path = [
+        { x: from.x, y: corridorY, z: from.z },
+        { x: (from.x + to.x) / 2, y: corridorY, z: 0 },
+        { x: to.x, y: corridorY, z: to.z },
+    ];
+    return { ...edge, data: { ...edge.data, ribbon: { ...ribbon, path } } };
+};
+
 /** Rank × salience sets flux width. Context edges stay thin filaments, never bare sticks. */
 export const applyEdgeAttention = (
     edge: RenderEdge,

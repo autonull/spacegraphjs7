@@ -8,14 +8,32 @@ import { Edge } from './Edge';
 
 const SEGMENTS = 12;
 
+const waypoint = (value: unknown): THREE.Vector3 | undefined => {
+    if (Array.isArray(value)) {
+        const parts: unknown[] = value.slice(0, 3);
+        if (parts.length >= 2 && parts.every((part) => typeof part === 'number' && Number.isFinite(part))) {
+            return new THREE.Vector3(parts[0] as number, parts[1] as number, (parts[2] as number | undefined) ?? 0);
+        }
+    }
+    if (value && typeof value === 'object' && 'x' in value && 'y' in value) {
+        const point = value as { x: number; y: number; z?: number };
+        if (Number.isFinite(point.x) && Number.isFinite(point.y)) {
+            return new THREE.Vector3(point.x, point.y, point.z ?? 0);
+        }
+    }
+    return undefined;
+};
+
 /**
  * FluxEdge — a curved, tapered ribbon with a soft additive halo. The surface narrows toward both
  * endpoints, so an edge reads as a suspended flux filament rather than a stroke between two balls.
  * One general registered edge type; the shape comes only from `data`, never from host identity.
  *
  * data options: weight, minRadius, maxRadius, color, curve (bend fraction), inset (endpoint trim),
- * halo (0-1 glow strength), opacity.
+ * halo (0-1 glow strength), opacity, path (optional corridor waypoints, routed through the source
+ * and target, for cross-scope edges that must leave the node field).
  */
+
 export class FluxEdge extends Edge {
     static readonly typeName: string = 'FluxEdge';
 
@@ -35,6 +53,8 @@ export class FluxEdge extends Edge {
     readonly #point = new THREE.Vector3();
     readonly #tangent = new THREE.Vector3();
     readonly #side = new THREE.Vector3();
+    #bundle?: THREE.CatmullRomCurve3;
+    #bundleSource?: unknown;
     _initialized = false;
 
     constructor(sg: SpaceGraph | undefined, spec: EdgeSpec, source: Node, target: Node) {
@@ -94,6 +114,43 @@ export class FluxEdge extends Edge {
         });
     }
 
+    /** The active sampling curve: a corridor when `data.path` is set, otherwise the direct bow. */
+    private syncPath(
+        source: THREE.Vector3,
+        target: THREE.Vector3,
+        curveStrength: number,
+    ): THREE.Curve<THREE.Vector3> {
+        const ribbon = this.data.ribbon as { path?: unknown } | undefined;
+        const declared = this.data.path ?? ribbon?.path;
+        const mids = Array.isArray(declared) ? declared.map(waypoint).filter((p): p is THREE.Vector3 => !!p) : [];
+
+        if (mids.length === 0) {
+            this.#bundle = undefined;
+            this.#bundleSource = undefined;
+            const dx = target.x - source.x;
+            const dy = target.y - source.y;
+            const length = Math.hypot(dx, dy) || 1;
+            const bow = curveStrength * Math.min(length, 320);
+            this.#curve.v0.copy(source);
+            this.#curve.v2.copy(target);
+            this.#curve.v1.set(
+                (source.x + target.x) / 2 - (dy / length) * bow,
+                (source.y + target.y) / 2 + (dx / length) * bow,
+                (source.z + target.z) / 2,
+            );
+            return this.#curve;
+        }
+
+        if (this.#bundleSource !== declared || !this.#bundle) {
+            this.#bundle = new THREE.CatmullRomCurve3([source, ...mids, target], false, 'centripetal');
+            this.#bundleSource = declared;
+        } else {
+            this.#bundle.points[0].copy(source);
+            this.#bundle.points[this.#bundle.points.length - 1]!.copy(target);
+        }
+        return this.#bundle;
+    }
+
     update(): void {
         if (!this._initialized) return;
         const { sourcePos, targetPos } = this.endpointPositions();
@@ -106,24 +163,14 @@ export class FluxEdge extends Edge {
         const curveStrength = clamp((this.data.curve as number | undefined) ?? 0.1, 0, 0.6);
         const halo = clamp((this.data.halo as number | undefined) ?? 0.45, 0, 1);
 
-        const dx = targetPos.x - sourcePos.x;
-        const dy = targetPos.y - sourcePos.y;
-        const length = Math.hypot(dx, dy) || 1;
-        const bow = curveStrength * Math.min(length, 320);
-        this.#curve.v0.copy(sourcePos);
-        this.#curve.v2.copy(targetPos);
-        this.#curve.v1.set(
-            (sourcePos.x + targetPos.x) / 2 - (dy / length) * bow,
-            (sourcePos.y + targetPos.y) / 2 + (dx / length) * bow,
-            (sourcePos.z + targetPos.z) / 2,
-        );
+        const path = this.syncPath(sourcePos, targetPos, curveStrength);
 
         const core = this.mesh.material as THREE.MeshBasicMaterial;
         const glow = this.halo.material as THREE.MeshBasicMaterial;
         for (let index = 0; index <= SEGMENTS; index++) {
             const t = inset + (1 - 2 * inset) * (index / SEGMENTS);
-            this.#curve.getPoint(t, this.#point);
-            this.#curve.getTangent(t, this.#tangent).normalize();
+            path.getPoint(t, this.#point);
+            path.getTangent(t, this.#tangent).normalize();
             this.#side.set(-this.#tangent.y, this.#tangent.x, 0).normalize();
             const taper = Math.sin(Math.PI * (index / SEGMENTS));
             const radius = width * (0.32 + 0.68 * Math.pow(taper, 0.6)) * 0.5;
@@ -164,8 +211,8 @@ export class FluxEdge extends Edge {
         this.arrow.visible = Boolean(this.data.arrowhead);
         if (this.arrow.visible) {
             const tip = inset + (1 - 2 * inset) * 0.96;
-            this.#curve.getPoint(tip, this.#point);
-            this.#curve.getTangent(tip, this.#tangent).normalize();
+            path.getPoint(tip, this.#point);
+            path.getTangent(tip, this.#tangent).normalize();
             this.arrow.position.copy(this.#point);
             this.arrow.rotation.z = -Math.atan2(this.#tangent.x, this.#tangent.y);
             const arrowSize = Math.max(4, width * 0.85);

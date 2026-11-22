@@ -221,4 +221,26 @@ describe('scope simulation', () => {
         expect(world.x).toBeCloseTo(origin.x + 2 * local.x);
         expect(world.y).toBeCloseTo(origin.y + 2 * local.y);
     });
+
+    it('chases externally supplied layout targets and refits its bounds', () => {
+        const sim = new ScopeSimulation({ instant: true });
+        sim.setSpecs(simple);
+
+        sim.setLayoutTargets(
+            new Map([
+                ['root/a', { x: 10, y: 20, z: 0 }],
+                ['root/b', { x: 300, y: 400, z: 0 }],
+            ]),
+        );
+
+        expect(sim.positions.get('root/a')).toEqual({ x: 10, y: 20, z: 0 });
+        expect(sim.positions.get('root/b')).toEqual({ x: 300, y: 400, z: 0 });
+        expect(sim.view().bounds).toMatchObject({
+            min: { x: 10, y: 20 },
+            max: { x: 300, y: 400 },
+        });
+
+        sim.setLayoutTargets(undefined);
+        expect(sim.positions.get('root/a')).toEqual(targetOf(simple).positions.get('root/a'));
+    });
 });

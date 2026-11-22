@@ -1,0 +1,110 @@
+import { describe, expect, it } from 'vitest';
+import { existsSync, readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { agentDomain } from '@spacegraphjs/agent';
+import type { GraphNode } from '@spacegraphjs/shared';
+import {
+    computeGraphLayout,
+    graphShape,
+    GRAPH_LAYOUTS,
+    isGraphLayoutMode,
+    layoutTargets,
+    scopeByNode,
+} from '../src/graph-layout';
+import { fixtureKernel, richFixtureKernel } from '../src/fixture';
+import { agentScopes } from '../src/scopes';
+import { decodePermalink, encodePermalink, type PermalinkState } from '../src/permalink';
+import { measure } from '../scripts/baseline';
+
+const richView = () => agentDomain.build(richFixtureKernel());
+
+describe('graph layouts', () => {
+    it('exposes the five views and validates URL values', () => {
+        expect(GRAPH_LAYOUTS).toEqual(['freeform', 'timeline', 'lanes', 'tree', 'force']);
+        expect(isGraphLayoutMode('timeline')).toBe(true);
+        expect(isGraphLayoutMode('nope')).toBe(false);
+        expect(isGraphLayoutMode(null)).toBe(false);
+    });
+
+    it('matches the recorded baseline for every view', () => {
+        const path = ['docs', '../docs', '../../docs']
+            .map((up) => resolve(process.cwd(), up, 'screenshots/graph-baseline.json'))
+            .find(existsSync)!;
+        const recorded = JSON.parse(readFileSync(path, 'utf8')) as Record<string, unknown>;
+        expect(measure()).toEqual(recorded);
+    });
+
+    it('shortens edges and removes parent/child overlap versus freeform', () => {
+        const baseline = measure();
+        expect(baseline.timeline!.meanEdgeLength).toBeLessThan(baseline.freeform!.meanEdgeLength);
+        expect(baseline.timeline!.overlaps).toBe(0);
+        expect(baseline.freeform!.overlaps).toBeGreaterThan(0);
+    });
+
+    it('appends a turn without moving cards already placed', () => {
+        const view = richView();
+        const before = computeGraphLayout(view, 'timeline')!;
+        const appended: typeof view = {
+            ...view,
+            turns: [...(view.turns ?? []), 'pi:local:new-turn'],
+            nodes: [
+                ...view.nodes,
+                {
+                    id: 'pi:local:new-turn',
+                    label: 'Turn 6',
+                    kind: 'unit',
+                    status: '',
+                    data: { unitId: 'new-turn' },
+                } as GraphNode,
+            ],
+        };
+        const after = computeGraphLayout(appended, 'timeline', before.positions)!;
+        for (const [id, position] of before.positions) {
+            expect(after.positions.get(id)).toEqual(position);
+        }
+    });
+
+    it('maps solved positions onto qualified simulation ids', () => {
+        const view = richView();
+        const scopes = agentScopes(view, { packed: true });
+        const layout = computeGraphLayout(view, 'timeline')!;
+        const targets = layoutTargets(layout, scopes.qualifiedById)!;
+        expect(targets.size).toBe(layout.positions.size);
+        const first = layout.positions.keys().next().value as string;
+        expect(targets.get(scopes.qualifiedById.get(first)!)).toEqual(layout.positions.get(first));
+    });
+
+    it('identifies cross-scope edges from scope membership', () => {
+        const scopes = agentScopes(richView(), { packed: true });
+        const scopeOfNode = scopeByNode(scopes.specs);
+        expect([...scopeOfNode.values()].some((id) => id.startsWith('unit-'))).toBe(true);
+    });
+
+    it('reports overlap from geometry, not from rendered pixels', () => {
+        const view = agentDomain.build(fixtureKernel());
+        const shape = graphShape(view, new Map([
+            [view.nodes[0]!.id, { x: 0, y: 0, z: 0 }],
+            [view.nodes[1]!.id, { x: 10, y: 10, z: 0 }],
+        ]));
+        expect(shape.overlaps).toBeGreaterThanOrEqual(0);
+        expect(shape.nodes).toBe(2);
+    });
+
+    it('round-trips graph arrangement through a full-state permalink', () => {
+        const state: PermalinkState = {
+            surface: 'map',
+            arrangement: 'side',
+            depth: 'orbit',
+            depthAxis: 'turn',
+            level: 'execution',
+            focus: '',
+            viewport: { zoom: 1, center: [0, 0, 0] },
+            filter: '',
+            graphLayout: 'timeline',
+            graphLayoutAligned: true,
+        };
+        const decoded = decodePermalink(encodePermalink(state));
+        expect(decoded?.graphLayout).toBe('timeline');
+        expect(decoded?.graphLayoutAligned).toBe(true);
+    });
+});

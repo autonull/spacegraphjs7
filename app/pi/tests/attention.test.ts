@@ -5,6 +5,7 @@ import {
     applyNodeAttention,
     attentionMapping,
     crossScopeTint,
+    bundleCorridor,
     edgeRank,
     salienceScore,
     type AttentionPolicy,
@@ -111,5 +112,18 @@ describe('ribbon grammar', () => {
         expect(crossScopeTint(causal, undefined, 'run/unit-2', colors)).toBe(causal);
         const context = edge('contains');
         expect(crossScopeTint(context, 'run/unit-1', 'run/unit-2', colors)).toBe(context);
+    });
+
+    test('a corridor bundle is opaque ribbon data on cross-scope edges only', () => {
+        const colors = ['#111111', '#222222'];
+        const causal = applyEdgeAttention(edge('orders'), 1, policy(), '#8ff0d0');
+        const tinted = crossScopeTint(causal, 'run/unit-1', 'run/unit-2', colors);
+        const positionOf = (id: string) => (id === 'a' ? { x: 0, y: 0, z: 0 } : { x: 100, y: 0, z: 0 });
+        const bundled = bundleCorridor(tinted, 240, positionOf);
+        const path = (bundled.data?.ribbon as { path?: unknown }).path as { x: number; y: number }[];
+        expect(path).toHaveLength(3);
+        expect(path.every((point) => point.y === 240)).toBe(true);
+        expect(ribbonOf(bundled)?.color).toBe(ribbonOf(tinted)?.color);
+        expect(bundleCorridor(causal, 240, positionOf)).toBe(causal);
     });
 });

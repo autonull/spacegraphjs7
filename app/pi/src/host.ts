@@ -65,6 +65,7 @@ import { innerTree, type InnerLayout } from './inner';
 import {
     applyEdgeAttention,
     applyNodeAttention,
+    bundleCorridor,
     crossScopeTint,
     salienceScore,
     type AttentionPolicy,
@@ -139,6 +140,15 @@ import {
     type SessionRecording,
 } from './recorder';
 import { agentScopes, DEPTH, portalChain } from './scopes';
+import {
+    computeGraphLayout,
+    graphShape,
+    GRAPH_LAYOUTS,
+    isGraphLayoutMode,
+    layoutTargets,
+    scopeByNode,
+    type GraphLayoutMode,
+} from './graph-layout';
 import { focusRoles, scaleForRole, type FocusScales } from './focus';
 import { paletteCausal, paletteScopeColors, paletteTheme, paletteVars, readTheme } from './theme';
 import { SHOTS, shotById, type Shot } from './shots';
@@ -321,6 +331,10 @@ export class PiHost {
     #level: AgentLevel = 'execution';
     #levelMode: LevelMode = 'auto';
     #arrangement: Arrangement = 'side';
+    #graphLayout: GraphLayoutMode = 'freeform';
+    #graphLayoutAligned = false;
+    #ribbonCorridor = false;
+    #graphLayoutPositions?: ReadonlyMap<string, Position>;
     #surface: Surface = 'hybrid';
     #depthAxis: DepthAxis = 'turn';
     #depth: DepthMode = 'orbit';
@@ -380,6 +394,8 @@ export class PiHost {
     #fit?: FitMetrics;
     #field?: HTMLElement;
     #fieldNodes = new Map<string, HTMLElement>();
+    #structure?: HTMLElement;
+    #hulls = new Map<string, HTMLElement>();
     #fitTimer?: ReturnType<typeof setTimeout>;
     #refits = 0;
 
@@ -399,6 +415,10 @@ export class PiHost {
         const shot = shotById(params.get('shot'));
         const scenario = params.get('scenario') ?? shot?.scenario;
         if (scenario === 'rich') this.#kernel = richFixtureKernel();
+        const requestedLayout = params.get('graphLayout');
+        if (isGraphLayoutMode(requestedLayout)) this.#graphLayout = requestedLayout;
+        this.#graphLayoutAligned = params.get('graphAligned') === '1';
+        this.#ribbonCorridor = params.get('ribbonCorridor') === '1';
         const presetID = params.get('preset') ?? shot?.preset;
         const embedded = params.get('policy');
         if (presetID && presetById(presetID)) {
@@ -684,6 +704,9 @@ export class PiHost {
         this.#field = document.createElement('div');
         this.#field.id = 'field';
         el('canvas').prepend(this.#field);
+        this.#structure = document.createElement('div');
+        this.#structure.id = 'structure';
+        el('canvas').append(this.#structure);
         bindTouchVerbs(
             el('canvas'),
             () => touchBindingsFor(String(this.#resolved.values['navigation.touch'])),
@@ -800,6 +823,9 @@ export class PiHost {
                 ]),
             ),
         );
+        const layout = computeGraphLayout(this.#view, this.#graphLayout, this.#graphLayoutPositions);
+        this.#graphLayoutPositions = layout?.positions;
+        this.simulation.setLayoutTargets(layoutTargets(layout, this.#qualifiedByNode));
         this.simulation.setSpecs(scopes.specs, {
             band: this.band(),
             focus: this.#qualifiedByNode.get(this.#controller.selection[0]),
@@ -910,6 +936,8 @@ export class PiHost {
             demoteBelow: Number(values['ladder.demoteBelow']),
         };
         const detailNodes = new Set<string>();
+        const corridorY =
+            [...this.#positions.values()].reduce((highest, position) => Math.max(highest, position.y), 0) + 240;
         this.#model = this.#adapter.build(model, {
             level: this.#level,
             positions: this.#positions,
@@ -986,12 +1014,15 @@ export class PiHost {
                         ),
                     );
                     const styled = applyEdgeAttention(edge, salience, attention, this.#causal);
-                    return crossScopeTint(
+                    const tinted = crossScopeTint(
                         styled,
                         this.#qualifiedByNode.get(edge.source),
                         this.#qualifiedByNode.get(edge.target),
                         this.#scopeColors,
                     );
+                    return this.#ribbonCorridor
+                        ? bundleCorridor(tinted, corridorY, (id) => this.#positions.get(id))
+                        : tinted;
                 }),
         };
         this.#annotationWidgets?.refresh(this.#model.nodes);
@@ -1005,6 +1036,7 @@ export class PiHost {
         this.renderMinimap();
         this.renderFocusLens();
         this.renderField();
+        this.renderStructure();
     }
 
     /** One soft halo per visible node; overlapping gradients merge into a single field. */
@@ -1037,6 +1069,61 @@ export class PiHost {
             halo.remove();
             this.#fieldNodes.delete(id);
         }
+    }
+
+    /** Square-cornered scope frames and turn tabs, behind the cards and ribbons. */
+    private renderStructure(): void {
+        const layer = this.#structure;
+        if (!layer) return;
+        const live = new Set<string>();
+
+        for (const spec of this.#specs) {
+            if (spec.id === 'run') continue;
+            const points = spec.nodes.flatMap((node) => {
+                const sourceID = this.#nodeByQualified.get(`${this.scopePath(spec)}/${node.id}`);
+                const point = sourceID ? this.renderer.getNodeScreenPosition?.(sourceID) : undefined;
+                return point ? [point] : [];
+            });
+            if (points.length === 0) continue;
+            live.add(spec.id);
+            const minX = Math.min(...points.map((point) => point.x)) - 30;
+            const minY = Math.min(...points.map((point) => point.y)) - 34;
+            const maxX = Math.max(...points.map((point) => point.x)) + 30;
+            const maxY = Math.max(...points.map((point) => point.y)) + 30;
+            let hull = this.#hulls.get(spec.id);
+            if (!hull) {
+                hull = document.createElement('div');
+                hull.className = 'field-hull';
+                layer.append(hull);
+                this.#hulls.set(spec.id, hull);
+            }
+            const portalID = [...this.#portalByNode].find(([, scope]) => scope === spec.id)?.[0];
+            const portal = portalID ? this.#view.nodes.find((node) => node.id === portalID) : undefined;
+            const status = String(portal?.data?.status ?? portal?.status ?? '');
+            const turn = portalID ? (this.#view.turns ?? []).indexOf(portalID) + 1 : 0;
+            const label = spec.id.startsWith('delegate-')
+                ? `delegate ${spec.id.slice('delegate-'.length)}${status ? ` · ${status}` : ''}`
+                : `Turn ${turn || spec.id.replace('unit-', '')}${status ? ` · ${status}` : ''}`;
+            hull.dataset.scope = spec.id;
+            hull.dataset.status = status;
+            hull.style.transform = `translate(${Math.round(minX)}px, ${Math.round(minY)}px)`;
+            hull.style.width = `${Math.round(maxX - minX)}px`;
+            hull.style.height = `${Math.round(maxY - minY)}px`;
+            hull.style.setProperty('--hull-label', `"${label}"`);
+        }
+
+        for (const [id, hull] of this.#hulls) {
+            if (live.has(id)) continue;
+            hull.remove();
+            this.#hulls.delete(id);
+        }
+    }
+
+    /** Resolve a spec id to its scope path; nested delegate scopes are path-qualified. */
+    private scopePath(spec: ScopeSpec): string {
+        if (!spec.parent) return spec.id;
+        const parent = this.#specs.find((candidate) => candidate.id === spec.parent);
+        return parent ? `${this.scopePath(parent)}/${spec.id}` : spec.id;
     }
 
     renderPositions(): void {
@@ -1414,6 +1501,53 @@ export class PiHost {
         return this.#arrangement;
     }
 
+    /** Switch the solved graph view. Selection, focus, camera and transcript scroll stay put. */
+    setGraphLayout(mode: GraphLayoutMode): GraphLayoutMode {
+        if (!GRAPH_LAYOUTS.includes(mode)) return this.#graphLayout;
+        if (mode === this.#graphLayout) return mode;
+        const scroll = el('transcript-list').scrollTop;
+        this.#graphLayout = mode;
+        this.#graphLayoutPositions = undefined;
+        this.refresh();
+        this.simulation.settle();
+        this.renderPositions();
+        el('transcript-list').scrollTop = scroll;
+        this.alignTranscript();
+        this.renderHud();
+        return mode;
+    }
+
+    setGraphLayoutAligned(aligned: boolean): boolean {
+        this.#graphLayoutAligned = aligned;
+        this.alignTranscript();
+        return this.#graphLayoutAligned;
+    }
+
+    private alignTranscript(): void {
+        const list = el('transcript-list');
+        const aligned = this.#graphLayoutAligned && this.#graphLayout !== 'freeform';
+        list.dataset.aligned = String(aligned);
+        if (!aligned) return;
+        const bounds = this.simulation.view().bounds;
+        const spanX = bounds.size[0] || 1;
+        const spanY = bounds.size[1] || 1;
+        for (const row of list.querySelectorAll<HTMLElement>('.transcript-row')) {
+            const position = this.#positions.get(row.dataset.node ?? '');
+            if (!position) continue;
+            row.style.setProperty('--pi-align-x', String((position.x - bounds.min.x) / spanX));
+            row.style.setProperty('--pi-align-y', String((position.y - bounds.min.y) / spanY));
+        }
+    }
+
+    graphShape(): ReturnType<typeof graphShape> {
+        const scopeOfNode = scopeByNode(this.#specs);
+        return graphShape(this.#view, this.#positions, (edge) => {
+            const from = scopeOfNode.get(edge.source);
+            const to = scopeOfNode.get(edge.target);
+            return Boolean(from && to && from !== to);
+        });
+    }
+
     setSurface(surface: Surface): Surface {
         if (!SURFACES.includes(surface)) return this.#surface;
         this.setKnob('surface.mode', surface);
@@ -1507,6 +1641,8 @@ export class PiHost {
             annotations: this.#notes.list,
             policy: encodePolicyVector(POLICY_SCHEMA, this.#resolved.values),
             fixture: FIXTURE_ID,
+            graphLayout: this.#graphLayout,
+            graphLayoutAligned: this.#graphLayoutAligned,
         };
         return encodePermalink(state);
     }
@@ -1527,6 +1663,8 @@ export class PiHost {
         this.setDepthAxis(state.depthAxis as DepthAxis);
         this.setLevelMode(state.level as LevelMode);
         this.setLaneScope(state.filter);
+        if (isGraphLayoutMode(state.graphLayout)) this.setGraphLayout(state.graphLayout);
+        this.setGraphLayoutAligned(state.graphLayoutAligned === true);
         if (state.focus) this.reveal(state.focus);
         this.renderer.setViewport({
             zoom: state.viewport.zoom,
@@ -1998,6 +2136,18 @@ export class PiHost {
             hidden: () => this.#hidden,
             arrangement: () => this.#arrangement,
             setArrangement: (arrangement: Arrangement) => this.setArrangement(arrangement),
+            graphLayout: () => this.#graphLayout,
+            setGraphLayout: (mode: GraphLayoutMode) => this.setGraphLayout(mode),
+            graphLayouts: () => [...GRAPH_LAYOUTS],
+            graphLayoutAligned: () => this.#graphLayoutAligned,
+            setGraphLayoutAligned: (aligned: boolean) => this.setGraphLayoutAligned(aligned),
+            graphShape: () => this.graphShape(),
+            ribbonCorridor: () => this.#ribbonCorridor,
+            setRibbonCorridor: (enabled: boolean) => {
+                this.#ribbonCorridor = enabled;
+                this.paint();
+                return this.#ribbonCorridor;
+            },
             surface: () => this.#surface,
             setSurface: (surface: Surface) => this.setSurface(surface),
             reveal: (id: string) => this.reveal(id),
@@ -2957,6 +3107,7 @@ export class PiHost {
         });
         el('transcript-list').replaceChildren(...rows);
         this.renderTranscriptOverview(messages.map((node) => node.id));
+        this.alignTranscript();
     }
 
     private toggleMessage(id: string): void {

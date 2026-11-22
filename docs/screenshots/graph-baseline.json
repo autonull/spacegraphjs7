@@ -1,0 +1,52 @@
+{
+  "freeform": {
+    "nodes": 18,
+    "edges": 18,
+    "width": 2521.7970962504032,
+    "height": 1171.9544045561252,
+    "ratio": 0.4647298572508767,
+    "meanEdgeLength": 469.8040205161312,
+    "crossScopeDiagonals": 0,
+    "overlaps": 1
+  },
+  "timeline": {
+    "nodes": 18,
+    "edges": 18,
+    "width": 992,
+    "height": 416,
+    "ratio": 0.41935483870967744,
+    "meanEdgeLength": 259.1111111111111,
+    "crossScopeDiagonals": 0,
+    "overlaps": 0
+  },
+  "lanes": {
+    "nodes": 18,
+    "edges": 18,
+    "width": 2304,
+    "height": 312,
+    "ratio": 0.13541666666666666,
+    "meanEdgeLength": 390.31208470056134,
+    "crossScopeDiagonals": 0,
+    "overlaps": 0
+  },
+  "tree": {
+    "nodes": 18,
+    "edges": 18,
+    "width": 2808,
+    "height": 416,
+    "ratio": 0.14814814814814814,
+    "meanEdgeLength": 527.3642527904744,
+    "crossScopeDiagonals": 3,
+    "overlaps": 0
+  },
+  "force": {
+    "nodes": 18,
+    "edges": 18,
+    "width": 1478.8432066761052,
+    "height": 1313.0455694993368,
+    "ratio": 0.8878869399891146,
+    "meanEdgeLength": 770.0178127822751,
+    "crossScopeDiagonals": 2,
+    "overlaps": 0
+  }
+}

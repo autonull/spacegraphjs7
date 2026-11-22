@@ -20,4 +20,34 @@ describe('FluxEdge', () => {
         expect(colors[3]).toBeGreaterThan(0);
         edge.dispose();
     });
+
+    it('routes a tapered ribbon through a declared corridor', () => {
+        const edge = new FluxEdge(
+            undefined,
+            {
+                id: 'e', source: 'a', target: 'b', type: 'FluxEdge',
+                data: { curve: 0, path: [[50, 200, 0]] },
+            },
+            node(0, 0), node(100, 0),
+        );
+        edge.update();
+        const positions = edge.mesh.geometry.attributes.position as THREE.BufferAttribute;
+        const mid = 6;
+        const midY = (positions.getY(mid * 2) + positions.getY(mid * 2 + 1)) / 2;
+        expect(midY).toBeGreaterThan(100);
+        expect(Array.from(positions.array).every(Number.isFinite)).toBe(true);
+        edge.dispose();
+    });
+
+    it('falls back to the direct bow for an empty path', () => {
+        const edge = new FluxEdge(
+            undefined,
+            { id: 'e', source: 'a', target: 'b', type: 'FluxEdge', data: { curve: 0, path: [] } },
+            node(0, 0), node(100, 0),
+        );
+        edge.update();
+        const positions = edge.mesh.geometry.attributes.position as THREE.BufferAttribute;
+        expect((positions.getY(12) + positions.getY(13)) / 2).toBeCloseTo(0, 1);
+        edge.dispose();
+    });
 });
