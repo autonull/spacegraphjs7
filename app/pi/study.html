@@ -50,6 +50,29 @@
                 background: #238636;
                 border-color: #2ea043;
             }
+            button:disabled {
+                opacity: 0.45;
+                cursor: not-allowed;
+            }
+            #control-card,
+            #practice {
+                margin-top: 12px;
+                padding: 10px;
+                border: 1px solid #30363d;
+                border-radius: 6px;
+            }
+            #control-card ul {
+                margin: 6px 0 0;
+                padding-inline-start: 18px;
+                font-size: 12px;
+                line-height: 1.7;
+                color: #c9d1d9;
+            }
+            #practice p {
+                font-size: 12px;
+                line-height: 1.5;
+                margin: 6px 0 0;
+            }
             #question {
                 font-size: 15px;
                 line-height: 1.5;
@@ -78,8 +101,26 @@
             <h1>Five-task study</h1>
             <label for="participant">Participant (1–N)</label>
             <input id="participant" type="number" min="1" max="99" value="1" />
-            <button id="start">Start counterbalanced run</button>
-            <div id="question">Enter a participant number and start.</div>
+            <section id="control-card" aria-label="Controls reference">
+                <strong>Controls</strong>
+                <ul>
+                    <li><b>Pan</b> — arrow keys or right-drag</li>
+                    <li><b>Zoom</b> — + / − or wheel</li>
+                    <li><b>Reveal</b> — click a transcript row or Enter</li>
+                    <li><b>Trace</b> — press t or double-click an edge</li>
+                    <li><b>Home</b> — Home or Escape</li>
+                </ul>
+            </section>
+            <section id="practice">
+                <strong>Practice (untimed)</strong>
+                <p>
+                    Find the failing test: reveal a transcript row, trace its edge, then press Home to
+                    return. Timing starts only after you begin the run.
+                </p>
+                <button id="practice-done" type="button">I have tried the controls</button>
+            </section>
+            <button id="start" disabled>Start counterbalanced run</button>
+            <div id="question">Complete the untimed practice, then start the run.</div>
             <label for="answer">Answer found?</label>
             <select id="answer">
                 <option value="yes">Yes</option>

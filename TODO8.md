@@ -314,3 +314,6 @@ pilot result has been fabricated.
 5. Keep increments reviewable; commit only when explicitly asked (prior slices were committed on request).
 6. Keep the vision fixture's `{ global: true }` create option and `__overlapsForced` flag; the
    assertion reads `SpaceGraph.instances`, not `window.sg`.
+7. `TODO9.md` owns the next design cycle (perceptual organization, occupancy and continuous visual
+   language). It reuses this plan's presets, shots, study field and ADR 0008 gate; do not expand this
+   plan with new knobs or renderer branches.

@@ -40,11 +40,19 @@ const reportElement = element<HTMLPreElement>('report');
 
 let assignments: readonly { taskID: string; surface: StudySurface }[] = [];
 let index = 0;
+let practiceDone = false;
 let recorder: StudyRecorder | undefined;
 let startedAt = 0;
 let matrix = studyMatrix();
 let graphLayout: GraphLayoutMode | undefined;
 let uiPreset: string | undefined;
+
+const preparePractice = async (): Promise<void> => {
+    const graph = await hooks();
+    (window as Window & { __studyHooks?: PiHooks }).__studyHooks = graph;
+    graph.loadFixture();
+    status.textContent = 'Practice is untimed. Press Start after you have tried the controls.';
+};
 
 const hooks = async (): Promise<PiHooks> => {
     for (let attempt = 0; attempt < 100; attempt += 1) {
@@ -125,10 +133,26 @@ const submit = (): void => {
         const report = studyReport(recorder.trials, matrix);
         reportElement.textContent = report;
         Object.assign(window, {
-            __study: { trials: recorder.trials, assignments, matrix, graphLayout, ui: uiPreset, report },
+            __study: {
+                trials: recorder.trials,
+                assignments,
+                matrix,
+                graphLayout,
+                ui: uiPreset,
+                practiceCompleted: practiceDone,
+                report,
+            },
         });
     }
 };
 
-element<HTMLButtonElement>('start').addEventListener('click', () => void begin());
+element<HTMLButtonElement>('practice-done').addEventListener('click', () => {
+    practiceDone = true;
+    element<HTMLButtonElement>('start').disabled = false;
+    status.textContent = 'Practice complete. Trial 1 timing starts when you press Start.';
+});
+element<HTMLButtonElement>('start').addEventListener('click', () => {
+    if (practiceDone) void begin();
+});
 element<HTMLButtonElement>('submit').addEventListener('click', submit);
+void preparePractice();

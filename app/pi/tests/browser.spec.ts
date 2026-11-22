@@ -359,6 +359,8 @@ test.describe('the Pi reference app', () => {
         page,
     }) => {
         const errors = await bootApp(page);
+        await page.locator('#rail-navigate > summary').click();
+        await expect(page.locator('#rail-navigate')).toHaveAttribute('open', '');
 
         const rows = page.locator('#transcript-list .transcript-row');
         const first = (await rows.nth(0).getAttribute('data-node'))!;

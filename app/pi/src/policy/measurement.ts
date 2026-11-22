@@ -9,8 +9,107 @@ import {
     type ReplayStrategy,
     type SessionRecording,
 } from '../recorder';
+import { adaptiveInsets } from './adaptive-fit';
+import { denseType } from './density';
 import type { ExperimentCell, PolicyExperiment, SampledExperiment } from './experiments';
+import { labelFontPx } from './host';
 import type { PolicyVector } from './schema';
+
+/** Visual presence is an offline projection of solved positions, not a pixel snapshot. */
+export interface PresenceNode {
+    readonly id: string;
+    readonly kind: string;
+    readonly label: string;
+}
+
+export interface PresenceInput {
+    readonly id: string;
+    readonly nodes: readonly PresenceNode[];
+    readonly positions: ReadonlyMap<string, { readonly x: number; readonly y: number }>;
+    readonly viewport: { readonly width: number; readonly height: number };
+    readonly values: PolicyVector;
+    readonly sizeOf: (kind: string, dense: boolean) => readonly [number, number];
+    readonly octave?: number;
+    readonly padding?: number;
+}
+
+export interface PresenceSample {
+    readonly id: string;
+    readonly octave: number;
+    /** Sum of clipped projected card areas divided by viewport area. */
+    readonly occupancy: number;
+    /** Fraction of nodes whose projected label reaches the policy label floor. */
+    readonly labelCoverage: number;
+    readonly nodes: number;
+}
+
+export interface PresenceReport {
+    readonly version: 1;
+    readonly method: string;
+    readonly samples: readonly PresenceSample[];
+}
+
+const round = (value: number): number => Number(value.toFixed(4));
+
+export const measurePresence = (input: PresenceInput): PresenceSample => {
+    const octave = input.octave ?? 0;
+    const padding = input.padding ?? 40;
+    const minPx = Number(input.values['ladder.minLabelPx']);
+    const insets = adaptiveInsets(input.viewport.width, input.viewport.height, padding);
+    const usableWidth = input.viewport.width - insets.left - insets.right;
+    const usableHeight = input.viewport.height - insets.top - insets.bottom;
+    const empty = { id: input.id, octave, occupancy: 0, labelCoverage: 0, nodes: 0 };
+    if (usableWidth <= 0 || usableHeight <= 0) return empty;
+
+    const dense = denseType(input.values);
+    const placed = input.nodes.flatMap((node) => {
+        const position = input.positions.get(node.id);
+        if (!position) return [];
+        const [width, height] = input.sizeOf(node.kind, dense);
+        return [{ node, position, width, height }];
+    });
+    if (placed.length === 0) return empty;
+
+    const left = Math.min(...placed.map((entry) => entry.position.x - entry.width / 2));
+    const right = Math.max(...placed.map((entry) => entry.position.x + entry.width / 2));
+    const top = Math.max(...placed.map((entry) => entry.position.y + entry.height / 2));
+    const bottom = Math.min(...placed.map((entry) => entry.position.y - entry.height / 2));
+    const fit = Math.min(
+        usableWidth / (right - left + 2 * padding),
+        usableHeight / (top - bottom + 2 * padding),
+    );
+    const pixelsPerWorld = fit * 2 ** octave;
+    const centerX = (left + right) / 2;
+    const centerY = (top + bottom) / 2;
+    const screenX = insets.left + usableWidth / 2;
+    const screenY = insets.top + usableHeight / 2;
+
+    let area = 0;
+    let legible = 0;
+    for (const entry of placed) {
+        const x = screenX + (entry.position.x - centerX) * pixelsPerWorld;
+        const y = screenY - (entry.position.y - centerY) * pixelsPerWorld;
+        const halfWidth = (entry.width * pixelsPerWorld) / 2;
+        const halfHeight = (entry.height * pixelsPerWorld) / 2;
+        const clippedWidth =
+            Math.min(input.viewport.width, x + halfWidth) - Math.max(0, x - halfWidth);
+        const clippedHeight =
+            Math.min(input.viewport.height, y + halfHeight) - Math.max(0, y - halfHeight);
+        if (clippedWidth > 0 && clippedHeight > 0) area += clippedWidth * clippedHeight;
+        const labelPx =
+            labelFontPx(minPx, pixelsPerWorld, entry.width, entry.node.label.length) *
+            pixelsPerWorld;
+        if (labelPx >= minPx - 0.001) legible += 1;
+    }
+
+    return {
+        id: input.id,
+        octave,
+        occupancy: round(area / (input.viewport.width * input.viewport.height)),
+        labelCoverage: round(legible / placed.length),
+        nodes: placed.length,
+    };
+};
 
 const SCORE_KEYS = ['success', 'legibility', 'wrongTurns', 'travel'] as const;
 

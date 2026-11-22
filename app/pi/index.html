@@ -1406,6 +1406,35 @@
                 font-size: var(--sg-font-sizes-base);
                 font-weight: 600;
             }
+            #transcript-legend {
+                display: flex;
+                align-items: center;
+                gap: var(--sg-spacing-sm);
+                font-size: var(--sg-font-sizes-xs);
+                color: var(--sg-colors-muted-foreground);
+            }
+            #transcript-legend span {
+                display: inline-flex;
+                align-items: center;
+                gap: 4px;
+                white-space: nowrap;
+            }
+            #transcript-legend span::before {
+                content: '';
+                width: 8px;
+                height: 8px;
+                border: 2px solid var(--sg-colors-accent);
+                border-radius: 50%;
+            }
+            #transcript-legend span[data-kind='tool']::before {
+                border-color: var(--kind-tool, #c9a6ff);
+            }
+            #transcript-legend span[data-kind='artifact']::before {
+                border-color: var(--kind-artifact, #7fd6a8);
+            }
+            #transcript-legend span[data-kind='error']::before {
+                border-color: var(--kind-error, #ff8aa0);
+            }
             #transcript-toggle {
                 border: 0;
                 background: none;
@@ -1436,7 +1465,9 @@
             }
             #surface[data-transcript-collapsed='true'] #transcript-list,
             #surface[data-transcript-collapsed='true'] #transcript-resize,
-            #surface[data-transcript-collapsed='true'] #transcript-overview {
+            #surface[data-transcript-collapsed='true'] #transcript-overview,
+            #surface[data-transcript-collapsed='true'] #transcript-bar strong,
+            #surface[data-transcript-collapsed='true'] #transcript-legend {
                 display: none;
             }
             #surface[data-transcript-collapsed='true'][data-arrangement='side'] {
@@ -1944,7 +1975,12 @@
                 <div id="catalog"></div>
             </details>
         </aside>
-        <main id="surface" data-surface="hybrid" data-arrangement="side">
+        <main
+            id="surface"
+            data-surface="hybrid"
+            data-arrangement="side"
+            data-primary-index="transcript"
+        >
             <div id="canvas">
                 <div id="hud" aria-label="Heads-up display">starting…</div>
             </div>
@@ -1956,6 +1992,12 @@
             <section id="transcript" aria-label="Transcript">
                 <div id="transcript-bar">
                     <strong>Transcript</strong>
+                    <div id="transcript-legend" aria-label="Event kinds">
+                        <span data-kind="user">user</span>
+                        <span data-kind="tool">tool</span>
+                        <span data-kind="artifact">artifact</span>
+                        <span data-kind="error">error</span>
+                    </div>
                     <button
                         type="button"
                         id="transcript-toggle"
@@ -1980,7 +2022,7 @@
                 <summary>Policy · live knobs</summary>
                 <div id="policy-panel"></div>
             </details>
-            <details id="rail-navigate" class="rail-group" open>
+            <details id="rail-navigate" class="rail-group">
                 <summary>Navigate</summary>
                 <div>
                     <strong>Scopes</strong>

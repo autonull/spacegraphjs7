@@ -76,6 +76,53 @@ test.describe('the navigation grammar', () => {
         expect(errors).toEqual([]);
     });
 
+    test('exactly one index is primary per surface', async ({ page }) => {
+        await boot(page);
+        await expect(page.locator('#surface')).toHaveAttribute('data-primary-index', 'transcript');
+        await expect(page.locator('#transcript')).toBeVisible();
+        await expect(page.locator('#rail-navigate')).not.toHaveAttribute('open', '');
+
+        await page.evaluate(() => (window as any).__pi.setSurface('map'));
+        await expect(page.locator('#surface')).toHaveAttribute('data-surface', 'map');
+        await expect(page.locator('#surface')).toHaveAttribute('data-primary-index', 'graph');
+        await expect(page.locator('#transcript')).toBeHidden();
+
+        await page.evaluate(() => (window as any).__pi.setSurface('hybrid'));
+        await expect(page.locator('#surface')).toHaveAttribute('data-primary-index', 'transcript');
+    });
+
+    test('keyboard and palette reach every secondary index', async ({ page }) => {
+        const errors: string[] = [];
+        page.on('pageerror', (error) => errors.push(error.message));
+        await boot(page);
+        await page.locator('#canvas').focus();
+        await page.keyboard.press('n');
+        await expect(page.locator('#rail-navigate')).toHaveAttribute('open', '');
+
+        for (const label of ['Scopes', 'Turn map', 'Trail', 'Portal path', 'Minimap']) {
+            await page.locator('#command-open').click();
+            await page.locator('#command-input').fill(`Navigate · ${label}`);
+            await page.locator('.command-row').first().click();
+            await expect(page.locator('#rail-navigate')).toHaveAttribute('open', '');
+        }
+        const opened = await page.evaluate(() =>
+            (window as any).__pi
+                .recording()
+                .events.filter((event: any) => event.kind === 'navigate:open')
+                .map((event: any) => event.meta.index),
+        );
+        expect(opened).toEqual(
+            expect.arrayContaining([
+                'overview',
+                'turn-map',
+                'trail-list',
+                'portal-crumb',
+                'minimap',
+            ]),
+        );
+        expect(errors).toEqual([]);
+    });
+
     test('reduced motion keeps the verb set usable and non-animated', async ({ page }) => {
         await page.emulateMedia({ reducedMotion: 'reduce' });
         await boot(page);

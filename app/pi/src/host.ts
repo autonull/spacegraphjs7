@@ -1935,6 +1935,20 @@ export class PiHost {
                 hint: 'Home',
                 run: () => this.returnHome(),
             },
+            ...(
+                [
+                    ['scopes', 'Scopes', 'overview'],
+                    ['turnMap', 'Turn map', 'turn-map'],
+                    ['trail', 'Trail', 'trail-list'],
+                    ['portalPath', 'Portal path', 'portal-crumb'],
+                    ['minimap', 'Minimap', 'minimap'],
+                ] as const
+            ).map<Command>(([id, label, target]) => ({
+                id: `nav.index.${id}`,
+                label: `Navigate · ${label}`,
+                group: 'navigate',
+                run: () => this.openIndex(target),
+            })),
         ];
         const chrome: readonly Command[] = [
             {
@@ -2110,6 +2124,13 @@ export class PiHost {
         return [
             ...uiHelp,
             {
+                id: 'help.navigate',
+                label: 'Navigate drawer is closed at boot — press n to open any secondary index',
+                group: 'shortcut',
+                hint: 'n',
+                run: () => this.openNavigate(),
+            },
+            {
                 id: 'help.palette',
                 label: 'Open the command palette',
                 group: 'shortcut',
@@ -2210,6 +2231,9 @@ export class PiHost {
             toggleTranscript: () => this.toggleTranscript(),
             toggleCatalog: (open?: boolean) => this.toggleCatalog(open),
             toggleRail: (open?: boolean) => this.toggleRail(open),
+            primaryIndex: () => this.primaryIndex(),
+            openNavigate: () => this.openNavigate(),
+            openIndex: (id: string) => this.openIndex(id),
             openCommands: (mode?: CommandMode, query?: string) =>
                 this.#commandSurface?.open(mode, query),
             closeCommands: () => this.#commandSurface?.close(),
@@ -2801,6 +2825,7 @@ export class PiHost {
             t: () => this.#revealed && this.trace(this.#revealed),
             s: () => this.survey(),
             u: () => this.#commandSurface?.open('palette', 'ui preset'),
+            n: () => this.openNavigate(),
             Escape: () => this.returnHome(),
         };
         const action = steps[event.key];
@@ -2825,6 +2850,7 @@ export class PiHost {
         const main = el('surface');
         main.dataset.surface = this.#surface;
         main.dataset.arrangement = this.#arrangement;
+        main.dataset.primaryIndex = this.primaryIndex();
         main.style.setProperty(
             '--transcript-size',
             `${this.#arrangement === 'stacked' ? this.#transcriptHeight : this.#transcriptWidth}px`,
@@ -3120,6 +3146,29 @@ export class PiHost {
         return next;
     }
 
+    /** The one navigation drawer stays closed at boot; every secondary index reopens through it. */
+    primaryIndex(): 'transcript' | 'graph' {
+        return this.#surface === 'map' ? 'graph' : 'transcript';
+    }
+
+    openNavigate(): boolean {
+        this.toggleRail(true);
+        const drawer = el<HTMLDetailsElement>('rail-navigate');
+        drawer.open = true;
+        drawer.querySelector<HTMLElement>('summary')?.focus();
+        this.recordEvent('navigate:open', { index: 'drawer' });
+        return true;
+    }
+
+    openIndex(id: string): boolean {
+        this.openNavigate();
+        const target = el(id);
+        target.scrollIntoView({ block: 'nearest' });
+        target.querySelector<HTMLElement>('button, [tabindex]')?.focus();
+        this.recordEvent('navigate:open', { index: id });
+        return true;
+    }
+
     toggleTranscript(): void {
         this.#transcriptCollapsed = !this.#transcriptCollapsed;
         const surface = el('surface');
@@ -3182,7 +3231,7 @@ export class PiHost {
         const attention = el('attention');
         attention.dataset.severity = failures ? 'failure' : 'clear';
         attention.textContent = failures
-            ? `${count(failures, 'failure')} · ${count(changed, 'file')} · ${latest}`
+            ? `${count(failures, 'failure')} · ${count(changed, 'file')} changed · latest: ${latest}`
             : `${count(changed, 'file')} changed`;
     }
 

@@ -114,11 +114,12 @@ test.describe('the one-surface shell', () => {
         await expect(page.locator('#hud')).toContainText('fps');
     });
 
-    test('the rail discloses secondary sections behind reachable group headers', async ({
+    test('one primary index is expanded at boot; secondary indexes stay in a closed drawer', async ({
         page,
     }) => {
         const errors = await boot(page);
-        await expect(page.locator('#rail-navigate')).toHaveAttribute('open', '');
+        await expect(page.locator('#surface')).toHaveAttribute('data-primary-index', 'transcript');
+        await expect(page.locator('#rail-navigate')).not.toHaveAttribute('open', '');
         await expect(page.locator('#rail-inspect')).toHaveAttribute('open', '');
         await expect(page.locator('#rail-share')).not.toHaveAttribute('open', '');
         await expect(page.locator('#rail-learn')).not.toHaveAttribute('open', '');
@@ -136,6 +137,24 @@ test.describe('the one-surface shell', () => {
 
         await page.locator('#rail-share > summary').click();
         await expect(page.locator('#annotation-input')).toBeVisible();
+        await page.locator('#canvas').focus();
+        await page.keyboard.press('n');
+        await expect(page.locator('#rail-navigate')).toHaveAttribute('open', '');
+        expect(errors).toEqual([]);
+    });
+
+    test('the transcript states event kinds and the attention chip says what changed', async ({
+        page,
+    }) => {
+        const errors = await boot(page);
+        const legend = page.locator('#transcript-legend span');
+        await expect(legend).toHaveCount(4);
+        await expect(legend).toHaveText(['user', 'tool', 'artifact', 'error']);
+        await expect(page.locator('#attention')).toContainText(/files? changed/);
+        const failures = await page.evaluate(
+            () => (window as any).__pi.attention().failures as number,
+        );
+        if (failures > 0) await expect(page.locator('#attention')).toContainText('latest:');
         expect(errors).toEqual([]);
     });
 
