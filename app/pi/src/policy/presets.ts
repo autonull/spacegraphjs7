@@ -18,6 +18,17 @@ const preset = (
 export const POLICY_PRESETS: readonly PolicyPreset[] = [
     preset('baseline', 'Baseline', 'What do the current host choices do?', {}),
     preset(
+        'living-graph',
+        'Living graph',
+        'Does longer salience decay and slower rung/camera blending make state changes easier to follow? (motion L1/L3)',
+        {
+            'salience.decayRate': 0.8,
+            'ladder.blendMs': 320,
+            'camera.verbMs': 1400,
+            'camera.traceMs': 320,
+        },
+    ),
+    preset(
         'quiet',
         'Quiet cockpit',
         'Does less motion and fewer orientation aids still support the five tasks? (5, 8)',
@@ -28,6 +39,12 @@ export const POLICY_PRESETS: readonly PolicyPreset[] = [
         'Wide bands',
         'Where should the zoom bands actually sit? (1)',
         { 'bands.overviewMax': 0.3, 'bands.overviewEnter': 0.5, 'bands.detailMin': 2.4, 'bands.detailExit': 2 },
+    ),
+    preset(
+        'dense-type',
+        'Dense typography',
+        'Does a higher on-screen label floor with tighter card interiors fit more of the run without overlap? (11, 12)',
+        { 'ladder.minLabelPx': 18 },
     ),
     preset(
         'dense',

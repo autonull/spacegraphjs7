@@ -1,12 +1,15 @@
 export type InnerLayout = 'grid' | 'row' | 'column' | 'radial' | 'lane';
 
-/** A short line from the focused node (card center) to an inner chip, in card-local percent. */
+/** A directed edge from the focused node (card center) to an inner chip, in card-local percent. */
 export interface InnerConnector {
     readonly chipId: string;
     readonly x1: number;
     readonly y1: number;
     readonly x2: number;
     readonly y2: number;
+    readonly kind: string;
+    readonly status: string;
+    readonly role: string;
 }
 
 interface InnerSourceNode {
@@ -99,8 +102,9 @@ const graphPlacement = (
     layout: 'radial' | 'lane',
 ): readonly InnerPlacement[] => {
     const count = chips.length;
-    const width = layout === 'radial' ? 30 : 42;
-    const height = layout === 'radial' ? 20 : 100 / count - 8;
+    const compact = count > 3;
+    const width = layout === 'radial' ? (compact ? 26 : 36) : 42;
+    const height = layout === 'radial' ? (compact ? 18 : 30) : 100 / count - 8;
     return chips.map((chip, index) => {
         if (layout === 'lane')
             return {
@@ -113,8 +117,8 @@ const graphPlacement = (
         const angle = -Math.PI / 2 + (index * 2 * Math.PI) / count;
         return {
             chip,
-            left: 50 + Math.cos(angle) * 32 - width / 2,
-            top: 50 + Math.sin(angle) * 38 - height / 2,
+            left: 50 + Math.cos(angle) * (compact ? 34 : 28) - width / 2,
+            top: 50 + Math.sin(angle) * (compact ? 42 : 32) - height / 2,
             width,
             height,
         };
@@ -144,12 +148,30 @@ export const innerPlacements = (
     }));
 };
 
-/** Short spokes from the focused node to each chip; at most six, bounded by the same cap as the tree. */
+/** Stop a spoke at the chip's boundary so the direction marker stays visible outside the chip. */
+const chipPort = (left: number, top: number, width: number, height: number): readonly [number, number] => {
+    const dx = left + width / 2 - 50;
+    const dy = top + height / 2 - 50;
+    const scale = Math.min(
+        Math.abs(dx) > 0.01 ? width / 2 / Math.abs(dx) : Infinity,
+        Math.abs(dy) > 0.01 ? height / 2 / Math.abs(dy) : Infinity,
+        1,
+    );
+    return [left + width / 2 - dx * scale, top + height / 2 - dy * scale];
+};
+
+/** Directed, bounded spokes from the focused node to each chip. */
 export const innerConnectors = (placements: readonly InnerPlacement[]): readonly InnerConnector[] =>
-    placements.map(({ chip, left, top, width, height }) => ({
-        chipId: chip.id,
-        x1: 50,
-        y1: 50,
-        x2: left + width / 2,
-        y2: top + height / 2,
-    }));
+    placements.map(({ chip, left, top, width, height }) => {
+        const [x2, y2] = chipPort(left, top, width, height);
+        return {
+            chipId: chip.id,
+            x1: 50,
+            y1: 50,
+            x2,
+            y2,
+            kind: chip.kind,
+            status: chip.status ?? chip.kind,
+            role: chip.role,
+        };
+    });

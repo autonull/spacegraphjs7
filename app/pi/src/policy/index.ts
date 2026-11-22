@@ -1,3 +1,5 @@
+export * from './adaptive-fit';
+export * from './density';
 export * from './host';
 export * from './schema';
 export * from './resolve';

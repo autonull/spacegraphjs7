@@ -33,3 +33,24 @@ new CameraVerbRegistry().run({ verb: 'flyTo', position: [0, 0, 12], target: [0, 
 - Camera verbs use neutral defaults unless a host registers an override; unknown verbs are no-ops.
 - Orthographic orbit is opt-in through `controls.setOrbitInOrthographic(true)`; content-relative zoom bounds come from the host `CameraPolicy`.
 - Declared axes: `motion` (preference), `motionVerb`, `cameraVerb`. See `test/motion.test.ts` and `test/e2e/explorer.spec.ts`.
+
+## Pi flagship decision record (2026-11-22, TODO5 Phase 1)
+
+**L1 — active-card pulse:** landed. A one-shot CSS brightness pulse uses alternating keyframe names to
+restart and takes its duration from the existing `ladder.blendMs` clock. Reduced motion sets `animation:
+none` and reaches the same settled state. No new subsystem, renderer branch, contract field or knob.
+
+**L2 — ribbon flow: deferred with reason.** `FlowEdge` dash animation belongs to the engine-mode page;
+making it drive Pi ribbons requires a renderer branch, which ADR 0005 forbids. Promotion needs a measured
+demand and a second host consumer, as with the other renderer-type exceptions. Today the causal ribbon is
+static host CSS/SVG data in `RenderEdge.data`; no dash animation ships in Pi.
+
+**L3 — choreography:** landed for existing clocks. Pulse, rung crossfade and camera verbs already share
+`ladder.blendMs` / `camera.verbMs` / `camera.traceMs`. The opt-in `living-graph` preset lengthens those
+clocks plus `salience.decayRate` and records provenance through the `policy()` hook. It is an experiment
+input, not a recommendation or default (ADR 0008).
+
+**Evidence:** `app/pi/tests/motion.spec.ts` writes `docs/screenshots/motion/{with.png,without.png,comparison.json}`.
+The harness asserts pulse presence/absence and that both variants settle. Framing differs because
+`emulateMedia({ reducedMotion: 'reduce' })` changes the one-time `renderer.fit`; pixel identity and
+viewport parity are explicitly not gates during active development.

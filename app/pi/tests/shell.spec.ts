@@ -59,6 +59,36 @@ test.describe('the one-surface shell', () => {
         expect(bounds.hud.bottom).toBeLessThanOrEqual(bounds.transcript.top);
     });
 
+    test('adaptive fit refits on a material aspect change only', async ({ page }) => {
+        await page.setViewportSize({ width: 1600, height: 1000 });
+        const errors = await boot(page);
+        await page.waitForFunction(() => (window as any).__pi.adaptiveFit()?.refits >= 1);
+        const canvasAspect = (): Promise<number> =>
+            page.evaluate(() => {
+                const canvas = document.getElementById('canvas')!;
+                return canvas.clientWidth / canvas.clientHeight;
+            });
+        const wide = await page.evaluate(() => (window as any).__pi.adaptiveFit());
+        expect(wide.aspect).toBeCloseTo(await canvasAspect(), 2);
+        expect(wide.insets.top).toBeGreaterThan(0);
+        expect(wide.octaves).toEqual([-1, 0, 1]);
+
+        await page.setViewportSize({ width: 1560, height: 1000 });
+        await page.waitForTimeout(300);
+        const afterSmall = await page.evaluate(() => (window as any).__pi.adaptiveFit().refits);
+        expect(afterSmall).toBe(wide.refits);
+
+        await page.setViewportSize({ width: 900, height: 1000 });
+        await page.waitForFunction(
+            (count) => (window as any).__pi.adaptiveFit().refits > count,
+            wide.refits,
+        );
+        const narrow = await page.evaluate(() => (window as any).__pi.adaptiveFit());
+        expect(narrow.aspect).toBeCloseTo(await canvasAspect(), 2);
+        expect(narrow.insets.left).toBeLessThan(narrow.insets.top);
+        expect(errors).toEqual([]);
+    });
+
     test('readout diagnostics are disclosed on demand, not in the default frame', async ({
         page,
     }) => {

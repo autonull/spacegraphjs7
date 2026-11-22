@@ -7,6 +7,25 @@ follow the workflow in `docs/ROADMAP.md` (`test:publish` → build → npm).
 
 ### Added
 
+- **Graph within a graph (TODO5 Phase 4):** inner chips are now graph nodes with boundary-anchored
+  directed spokes, start/end ports and failed/error status color in every lens layout. The lens
+  autoscales from the focused node's on-screen footprint, radial chips scale for small and large
+  fan-outs, and a `recursion` shot exercises bounded depth-3 re-entry with settled and intermediate
+  vision gates. Still host DOM/SVG: no `RenderNode.children`, renderer branch or contract field.
+- **Dense typography (TODO5 Phase 3):** an opt-in `dense-type` preset raises the existing
+  `ladder.minLabelPx` floor to 18 and tightens card padding, row typography and card height through
+  CSS variables. Widths stay unchanged so larger labels do not truncate. Six vision gates cover the
+  preset across the fit matrix; defaults are untouched (ADR 0008), and gap/repulsion remain inert under
+  camera fit (`TODO4.md:114`).
+- **Adaptive ergonomic fit (TODO5 Phase 2):** the flagship derives CSS-px camera insets from the canvas
+  aspect and refits only on a material aspect change (ADR 0015). The target — three zoom octaves, aspect
+  ratios, and the existing `ladder.minLabelPx` floor — is data in `app/pi/src/policy/adaptive-fit.ts`;
+  no new policy knob, contract field or renderer branch. Six `fit-*` shots and a vision gate cover
+  3 octaves × 2 aspects; the `adaptiveFit()` hook exposes the last metrics.
+- **Motion gate (TODO5 Phase 1):** an opt-in `living-graph` preset and shot extend salience decay and the
+  existing rung/camera blend clocks; `tests/motion.spec.ts` records a with/without comparison and asserts
+  that active cards pulse while reduced motion snaps to the final frame. L2 ribbon flow is recorded as
+  deferred (renderer branch, no second consumer). No default changed; pixel identity is not a gate.
 - **One surface language (TODO4 slice 1):** the Pi flagship consumes a shared token layer through
   `app/pi/src/shell/tokens.ts`; a compact command bar exposes a `/` palette for every verb and knob
   (`:` commands, `?` help); the focus lens becomes a tabbed, pinnable inspector; the rail shows at most

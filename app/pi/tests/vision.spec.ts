@@ -1,6 +1,8 @@
 import { expect, test, type Page } from '@playwright/test';
 import { createVisionAssert } from '../../../src/vision/assert';
 import { encodePolicyVector, POLICY_SCHEMA } from '../src/policy';
+import { FIT_OCTAVES } from '../src/policy/adaptive-fit';
+import { SHOTS } from '../src/shots';
 
 const DEPTHS = ['flat', 'layered', 'depth-stack', 'orbit'] as const;
 const ARRANGEMENTS = ['stacked', 'side', 'floating'] as const;
@@ -25,6 +27,77 @@ const assertScene = async (page: Page): Promise<void> => {
 };
 
 test.describe('Pi flagship vision atlas', () => {
+    test('adaptive fit stays legible across three octaves and two aspects', async ({ page }) => {
+        const errors: string[] = [];
+        page.on('pageerror', (error) => errors.push(error.message));
+        for (const octave of FIT_OCTAVES) {
+            for (const aspect of ['wide', 'narrow'] as const) {
+                const shot = SHOTS.find(
+                    (entry) => entry.id === `fit-${aspect}-${octave < 0 ? 'far' : octave > 0 ? 'near' : 'mid'}`,
+                )!;
+                await page.setViewportSize(shot.viewport!);
+                await page.goto(`/?shot=${shot.id}`);
+                await page.waitForFunction(() => (window as any).__pi?.ready === true);
+                await page.waitForFunction(() => (window as any).__pi?.shotReady?.() === true);
+                await page.evaluate(() => (window as any).__pi.pause(true));
+                await page.evaluate(() => (window as any).__pi.settle());
+                await assertScene(page);
+            }
+        }
+        expect(errors).toEqual([]);
+    });
+
+    test('bounded recursion keeps intermediate frames legible on re-entry', async ({ page }) => {
+        const errors: string[] = [];
+        page.on('pageerror', (error) => errors.push(error.message));
+        await page.setViewportSize({ width: 1600, height: 1000 });
+        await page.goto('/?shot=recursion');
+        await page.waitForFunction(() => (window as any).__pi?.ready === true);
+        await page.waitForFunction(() => (window as any).__pi?.shotReady?.() === true);
+        const chips = page.locator('#focus-lens .focus-chip');
+        const count = await chips.count();
+        expect(count).toBeGreaterThan(0);
+        expect(count).toBeLessThanOrEqual(6);
+        expect(await page.locator('#focus-lens .focus-connectors g').count()).toBe(count);
+        expect(await page.locator('#focus-lens .focus-port').count()).toBe(count * 2);
+
+        await page.evaluate(() => (window as any).__pi.pause(true));
+        const before = await page.evaluate(() => (window as any).__pi.revealed());
+        await page.locator('#focus-lens .focus-chip [data-node-action="focus"]').first().click();
+        await expect
+            .poll(() => page.evaluate(() => (window as any).__pi.revealed()))
+            .not.toBe(before);
+        for (let i = 0; i < 6; i++) {
+            await page.evaluate(() => (window as any).__pi.advance(0.05));
+            await assertScene(page);
+        }
+        await page.evaluate(() => (window as any).__pi.settle());
+        await assertScene(page);
+        expect(errors).toEqual([]);
+    });
+
+    test('opt-in dense typography stays legible across the fit matrix', async ({ page }) => {
+        const errors: string[] = [];
+        page.on('pageerror', (error) => errors.push(error.message));
+        for (const octave of FIT_OCTAVES) {
+            for (const aspect of ['wide', 'narrow'] as const) {
+                const label = octave < 0 ? 'far' : octave > 0 ? 'near' : 'mid';
+                const shot = SHOTS.find((entry) => entry.id === `fit-${aspect}-${label}`)!;
+                await page.setViewportSize(shot.viewport!);
+                await page.goto(`/?shot=${shot.id}&preset=dense-type`);
+                await page.waitForFunction(() => (window as any).__pi?.ready === true);
+                await page.waitForFunction(() => (window as any).__pi?.shotReady?.() === true);
+                expect(
+                    await page.evaluate(() => document.documentElement.dataset.density),
+                ).toBe('dense');
+                await page.evaluate(() => (window as any).__pi.pause(true));
+                await page.evaluate(() => (window as any).__pi.settle());
+                await assertScene(page);
+            }
+        }
+        expect(errors).toEqual([]);
+    });
+
     for (const depth of DEPTHS) {
         test(`depth ${depth} passes the vision gates in every arrangement`, async ({ page }) => {
             const errors: string[] = [];

@@ -13,7 +13,16 @@ same state in a browser; no screenshot script encodes a special camera path.
 | `pi-agent-in-action.png`        | `cockpit`       | The dense multi-turn run, transcript spine with expanded detail, and the grayscale HUD.     |
 | `pi-agent-node-detail.png`      | `node-detail`   | A camera fit onto one failing node: LOD detail rung, telemetry, per-kind accents and glow.   |
 | `pi-agent-deep-focus.png`       | `deep-focus`    | The opt-in focus lens: the node enlarges, context dims, and a fixed-size cockpit shows neighbors and actions. |
-| `pi-agent-fractal.png`          | `fractal`       | A two-level inner layout inside the focus lens — recursive scope structure without enlarging the node. |
+| `pi-agent-fractal.png`          | `fractal`       | A two-level inner layout inside the focus lens — directed spokes with ports and status, without enlarging the node. |
+| `pi-agent-recursion.png`        | `recursion`     | Bounded depth-3 recursion: chips stay graph nodes with direction and status, and the lens autoscales with the host node. |
+| `pi-agent-fit-wide-far.png`     | `fit-wide-far`  | Adaptive fit at 2^-1× on a wide canvas — topology at the scale floor. |
+| `pi-agent-fit-wide-mid.png`     | `fit-wide-mid`  | Adaptive fit at 2^0× on a wide canvas — cards and labels at the ergonomic target. |
+| `pi-agent-fit-wide-near.png`    | `fit-wide-near` | Adaptive fit at 2^1× on a wide canvas — detail rung at the near octave. |
+| `pi-agent-fit-narrow-far.png`   | `fit-narrow-far`| The far octave on a narrow (900×1000) canvas. |
+| `pi-agent-fit-narrow-mid.png`   | `fit-narrow-mid`| The target octave on the narrow canvas — aspect-derived insets keep the graph framed. |
+| `pi-agent-fit-narrow-near.png`  | `fit-narrow-near`| The near octave on the narrow canvas. |
+| `pi-agent-dense-type.png`       | `dense-type`    | Opt-in denser cards: tighter interior padding, shorter card height and a raised label floor. |
+| `pi-agent-living-graph.png`     | `living-graph`  | The opt-in motion preset: longer activity tail and slower rung/camera blends; pulse evidence in `motion/`. |
 | `pi-agent-dynamic-range.png`    | `dynamic-range` | The same graph near the zoom-out floor, on a starfield backdrop — the scale dynamic range.   |
 | `pi-agent-layout-stacked.png`   | `layout-stacked`| Hybrid surface with the transcript below the graph (ember palette).                         |
 | `pi-agent-layout-floating.png`  | `layout-floating`| Floating transcript, collapsed to give the graph the full canvas (circuit palette).         |

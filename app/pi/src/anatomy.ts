@@ -82,7 +82,7 @@ const actionButton = (action: string, target: string, label: string, title: stri
 
 /** Header: the label plus any trailing status and signal, in one horizontal part. */
 export const anatomyHeader = (title: string, size: number, trailing = ''): string =>
-    `<span class="anatomy-head" style="font-size:${size}px"><span class="anatomy-title">${title}</span>${trailing}</span>`;
+    `<span class="anatomy-head" style="font-size:calc(${size}px * var(--pi-label-scale, 1))"><span class="anatomy-title">${title}</span>${trailing}</span>`;
 
 export const anatomyStatus = (status: string): string =>
     `<span class="anatomy-status focus-status">${status}</span>`;
@@ -165,7 +165,7 @@ export const anatomyCard = (
         : '';
     const badge = context.count ? `<span class="anatomy-count">${context.count}</span>` : '';
     const attributes = `data-rung="${rung}" data-blend="${blend.toFixed(2)}" data-kind="${escapeHtml(node.kind)}" data-status="${status}" data-focus="${escapeHtml(node.focusRole ?? 'none')}" data-anatomy="${arrangement}"${node.scope ? ` data-portal="${escapeHtml(node.scope)}"` : ''}${descending ? ' data-descending="true"' : ''}`;
-    const box = 'position:relative;display:flex;flex-direction:column;justify-content:center;gap:var(--sg-spacing-hair);padding:6% 8%;box-sizing:border-box;height:100%;color:inherit;font-family:inherit;overflow:hidden;transition:opacity var(--pi-blend,120ms)';
+    const box = 'position:relative;display:flex;flex-direction:column;justify-content:center;gap:var(--pi-card-gap, var(--sg-spacing-hair));padding:var(--pi-card-pad-y, 6%) var(--pi-card-pad-x, 8%);box-sizing:border-box;height:100%;color:inherit;font-family:inherit;overflow:hidden;transition:opacity var(--pi-blend,120ms)';
     const ports = portParts(node);
 
     if (rung === 'overview') {
@@ -189,7 +189,7 @@ export const anatomyCard = (
     const metaline = escapeHtml(`${human(node.kind)} · ${human(status)}`);
     const scope = node.scope ? anatomyRow(`${portalGlyph(node.scope)} scope: ${escapeHtml(node.scope)}`, 'meta') : '';
     const statusDot = anatomyStatusDot(status);
-    return `<div ${attributes} class="anatomy" style="${box};justify-content:flex-start;gap:var(--sg-spacing-xs)">${SHAPE_SPAN}${anatomyHeader(`${glyph}${label}`, labelSize, `${statusDot}${badge}`)}${anatomyRow(detail.slice(0, 320), 'body', 'anatomy-row-wrap')}${anatomyRow(metaline, 'meta', 'anatomy-row-wrap', telemetry.join(' · '))}${scope}${ports}</div>`;
+    return `<div ${attributes} class="anatomy" style="${box};justify-content:flex-start;gap:var(--pi-card-gap-detail, var(--sg-spacing-xs))">${SHAPE_SPAN}${anatomyHeader(`${glyph}${label}`, labelSize, `${statusDot}${badge}`)}${anatomyRow(detail.slice(0, 320), 'body', 'anatomy-row-wrap')}${anatomyRow(metaline, 'meta', 'anatomy-row-wrap', telemetry.join(' · '))}${scope}${ports}</div>`;
 };
 
 /** The inspector lens is the detail rung enlarged: same parts, plus the bounded inner topology. */
@@ -218,15 +218,12 @@ export const anatomyLens = (
                   .join('')}</span>`
             : '';
     const placements = innerPlacements(chips, layout);
-    const connectors =
-        layout === 'radial' || layout === 'lane'
-            ? `<svg class="focus-connectors" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${innerConnectors(placements)
-                  .map(
-                      ({ chipId, x1, y1, x2, y2 }) =>
-                          `<line data-chip="${escapeHtml(chipId)}" x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}"/>`,
-                  )
-                  .join('')}</svg>`
-            : '';
+    const connectors = `<svg class="focus-connectors" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><defs><marker id="sg-chip-arrow" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0 L6,3 L0,6 z"/></marker><marker id="sg-chip-arrow-fail" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0 L6,3 L0,6 z"/></marker></defs>${innerConnectors(placements)
+        .map(
+            ({ chipId, x1, y1, x2, y2, kind, status, role }) =>
+                `<g data-chip="${escapeHtml(chipId)}" data-kind="${escapeHtml(kind)}" data-status="${escapeHtml(status)}" data-role="${escapeHtml(role)}"><line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}"/><circle class="focus-port" cx="${x1.toFixed(1)}" cy="${y1.toFixed(1)}" r="1.1"/><circle class="focus-port" cx="${x2.toFixed(1)}" cy="${y2.toFixed(1)}" r="1.1"/></g>`,
+        )
+        .join('')}</svg>`;
     const inner =
         connectors +
         placements
@@ -244,5 +241,5 @@ export const anatomyLens = (
         titleSize,
         `${anatomyStatus(status)}${anatomySignal([0.35, 0.6, 0.9, 0.5])}`,
     );
-    return `<div data-rung="detail" data-focus="focus" data-kind="${escapeHtml(node.kind)}" data-status="${status}" data-anatomy="${arrangementOf(node)}"${node.scope ? ` data-portal="${escapeHtml(node.scope)}"` : ''} class="focus-panel anatomy" style="position:relative;width:100%;height:100%;box-sizing:border-box;display:grid;grid-template-rows:auto auto minmax(0,1fr) auto;gap:6px;padding:8px;overflow:hidden;font-family:inherit">${SHAPE_SPAN}${header}${anatomyRow(detail.slice(0, 240), 'body', 'focus-detail anatomy-row-wrap')}<div class="focus-inner" data-layout="${layout}">${inner}</div><div class="focus-actions">${actions}</div><div class="focus-targets">${targets}</div>${portParts(node)}</div>`;
+    return `<div data-rung="detail" data-focus="focus" data-kind="${escapeHtml(node.kind)}" data-status="${status}" data-anatomy="${arrangementOf(node)}"${node.scope ? ` data-portal="${escapeHtml(node.scope)}"` : ''} class="focus-panel anatomy" style="position:relative;width:100%;height:100%;box-sizing:border-box;display:grid;grid-template-rows:auto auto minmax(0,1fr) auto auto auto;gap:6px;padding:8px;overflow:hidden;font-family:inherit">${SHAPE_SPAN}${header}<div class="focus-inner" data-layout="${layout}">${inner}</div>${anatomyRow(detail.slice(0, 240), 'body', 'focus-detail anatomy-row-wrap')}<div class="focus-actions">${actions}</div><div class="focus-targets">${targets}</div>${portParts(node)}</div>`;
 };

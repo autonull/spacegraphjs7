@@ -2,7 +2,46 @@
     "cockpit": {},
     "node-detail": {},
     "deep-focus": {},
-    "fractal": {},
+    "fractal": {
+        "verdict": "kept",
+        "note": "Inner chips now read as graph nodes: boundary-anchored directed spokes, start/end ports and failed/error status color. Same bounded depth ≤ 2 tree; no renderer branch."
+    },
+    "recursion": {
+        "verdict": "kept",
+        "note": "Depth-3 bounded recursion with the INNER tab and radial graph layout. Lens dimensions derive from the focused node's on-screen footprint (clamped 300–420 × 210–300 px). Settled + six intermediate frames pass vision gates; chip re-entry rebuilds the lens instead of growing DOM. Lane layout at six chips was too short to read, so the shot pins radial."
+    },
+    "fit-wide-far": {
+        "verdict": "kept",
+        "note": "Far octave (fit × 0.5), wide canvas. Core LOD hides card interiors at the scale floor; the frame reads as topology. Vision gate passes."
+    },
+    "fit-wide-mid": {
+        "verdict": "kept",
+        "note": "Ergonomic target octave on the wide canvas: cards and labels fit inside aspect-derived insets."
+    },
+    "fit-wide-near": {
+        "verdict": "kept",
+        "note": "Near octave (fit × 2) on the wide canvas; detail rung stays legible."
+    },
+    "fit-narrow-far": {
+        "verdict": "kept",
+        "note": "Far octave on the 900×1000 canvas; topology-only by core LOD, gate passes."
+    },
+    "fit-narrow-mid": {
+        "verdict": "kept",
+        "note": "Narrow-canvas target octave; lateral insets are halved so the graph still fits and stays legible."
+    },
+    "fit-narrow-near": {
+        "verdict": "kept",
+        "note": "Near octave on the narrow canvas; no overlap regression."
+    },
+    "dense-type": {
+        "verdict": "kept",
+        "note": "Opt-in preset (ladder.minLabelPx 18): tighter card padding, one-step larger body/meta rows and shorter card height. Width is unchanged so raised labels do not truncate. Vision gates pass across all six fit cells; not a default (ADR 0008)."
+    },
+    "living-graph": {
+        "verdict": "kept",
+        "note": "Motion L1/L3 opt-in preset: one-shot active-card pulse and longer rung/camera clocks. Comparison evidence in motion/; reduced motion reaches the same settled state. Not a default (ADR 0008)."
+    },
     "dynamic-range": {},
     "layout-stacked": {},
     "layout-floating": {},

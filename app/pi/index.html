@@ -627,6 +627,18 @@
                 line-height: 1.35;
                 overflow: hidden;
             }
+            .focus-panel .focus-inner {
+                grid-row: 3;
+            }
+            .focus-panel .focus-detail {
+                grid-row: 4;
+            }
+            .focus-panel .focus-actions {
+                grid-row: 5;
+            }
+            .focus-panel .focus-targets {
+                grid-row: 6;
+            }
             .focus-inner {
                 position: relative;
                 min-height: 0;
@@ -1518,7 +1530,22 @@
                 stroke: var(--view-causal, var(--sg-colors-accent));
                 stroke-width: 1;
                 vector-effect: non-scaling-stroke;
-                opacity: 0.55;
+                opacity: 0.75;
+                marker-end: url(#sg-chip-arrow);
+            }
+            #sg-chip-arrow path {
+                fill: var(--view-causal, var(--sg-colors-accent));
+            }
+            .focus-connectors g[data-status='failed'] line,
+            .focus-connectors g[data-status='error'] line {
+                stroke: var(--sg-colors-destructive);
+                marker-end: url(#sg-chip-arrow-fail);
+            }
+            #sg-chip-arrow-fail path {
+                fill: var(--sg-colors-destructive);
+            }
+            .focus-port {
+                fill: var(--view-causal, var(--sg-colors-accent));
             }
             #portal-crumb[data-ruler='true'] {
                 flex-direction: column;
@@ -1662,6 +1689,16 @@
             .focus-button {
                 min-width: var(--sg-spacing-target);
                 min-height: var(--sg-spacing-target);
+            }
+            /* Opt-in density: larger type in the same box, driven by ladder.minLabelPx >= 18. */
+            [data-density='dense'] .anatomy-row[data-tone='body'],
+            [data-density='dense'] .focus-chip-head,
+            [data-density='dense'] .focus-detail {
+                font-size: var(--sg-font-sizes-sm);
+            }
+            [data-density='dense'] .anatomy-row[data-tone='meta'],
+            [data-density='dense'] .focus-chip-meta {
+                font-size: var(--sg-font-sizes-xs);
             }
         </style>
     </head>

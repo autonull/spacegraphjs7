@@ -68,8 +68,15 @@ Keyboard mirrors: arrows pan, `+`/`-` zoom, `f` focus the revealed node, `Esc` c
 Export produces JSON, SVG or HTML; WebXR, sound and haptics stay report-only seams.
 
 `verify:visual` runs the vision-gated capture matrix (depth modes × arrangements, reduced motion,
-failure, large stream and lane-scope contexts). `scale` measures model build, pipeline, 60-turn force
-layout and the gzipped 3D chunk; the measured force-layout budget is 1.5 s for the scope solver.
+failure, large stream and lane-scope contexts). It also gates the adaptive fit across three zoom
+octaves × two canvas aspects, the opt-in dense typography preset over the same matrix, and settled plus
+intermediate frames of bounded inner-graph re-entry. `scale` measures model build, pipeline, 60-turn
+force layout and the gzipped 3D chunk; the measured force-layout budget is 1.5 s for the scope solver.
+
+The camera refits only when the canvas aspect changes materially (ADR 0015); `window.__pi.adaptiveFit()`
+exposes the last insets and refit count. The `dense-type` preset raises `ladder.minLabelPx` to 18 and
+tightens card interiors without changing a default. The `recursion` shot opens the inner graph tab at
+depth 3; `fractal` keeps the detail tab.
 
 ## Provider
 

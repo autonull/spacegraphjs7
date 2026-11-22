@@ -71,11 +71,25 @@ describe('inner layout', () => {
         expect(lane[1]!.top).toBeGreaterThan(lane[0]!.top);
     });
 
-    it('connects the focus to each chip', () => {
+    it('connects the focus to each chip with a directed, bounded port', () => {
         const placements = innerPlacements(innerTree('a', nodes, edges, 1, 2), 'radial');
         const connectors = innerConnectors(placements);
         expect(connectors).toHaveLength(2);
         expect(connectors.every((line) => line.x1 === 50 && line.y1 === 50)).toBe(true);
         expect(connectors[0]!.chipId).toBe(placements[0]!.chip.id);
+        expect(connectors[0]!.kind).toBe(placements[0]!.chip.kind);
+        expect(connectors[0]!.role).toBe(placements[0]!.chip.role);
+        for (const connector of connectors) {
+            const placement = placements.find((entry) => entry.chip.id === connector.chipId)!;
+            const inside =
+                connector.x2 >= placement.left &&
+                connector.x2 <= placement.left + placement.width &&
+                connector.y2 >= placement.top &&
+                connector.y2 <= placement.top + placement.height;
+            expect(inside).toBe(true);
+            expect(Math.hypot(connector.x2 - 50, connector.y2 - 50)).toBeLessThan(
+                Math.hypot(placement.left + placement.width / 2 - 50, placement.top + placement.height / 2 - 50),
+            );
+        }
     });
 });

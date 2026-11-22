@@ -47,9 +47,15 @@ const DOT_SIZES: Readonly<Record<string, readonly [number, number]>> = {
     error: [28, 28],
 };
 
-/** Cards and dots share a kind vocabulary but not a footprint scale. */
-export const nodeSize = (kind: string, card: boolean): readonly [number, number] =>
-    (card ? CARD_SIZES[kind] : DOT_SIZES[kind]) ?? [12, 12];
+/** Cards and dots share a kind vocabulary but not a footprint scale; dense cards pack tighter. */
+export const nodeSize = (
+    kind: string,
+    card: boolean,
+    dense = false,
+): readonly [number, number] => {
+    const size = (card ? CARD_SIZES[kind] : DOT_SIZES[kind]) ?? [12, 12];
+    return card && dense ? [size[0], Math.round(size[1] * 0.92)] : size;
+};
 
 /** Host-registered card templates keyed by kind; the default ladder stays the fallback. */
 export type CardTemplate = (

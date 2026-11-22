@@ -36,7 +36,7 @@ const settleCamera = async (page: Page): Promise<void> => {
 const boot = async (page: Page, shot: Shot): Promise<string[]> => {
     const errors: string[] = [];
     page.on('pageerror', (error) => errors.push(error.message));
-    await page.setViewportSize({ width: 1600, height: 1000 });
+    await page.setViewportSize(shot.viewport ?? { width: 1600, height: 1000 });
     await page.goto(`/?shot=${shot.id}`);
     await page.waitForFunction(() => (window as any).__pi?.ready === true);
     await expect(page.locator('#canvas canvas').first()).toBeVisible({ timeout: 10_000 });
@@ -60,5 +60,26 @@ test('shot: policy provenance comes from the preset', async ({ page }) => {
         () => (window as any).__pi.policy().provenance['camera.verbMs'],
     );
     expect(source).toBe('preset');
+    expect(errors).toEqual([]);
+});
+
+test('shot: motion preset provenance comes from the preset', async ({ page }) => {
+    const shot = SHOTS.find((entry) => entry.id === 'living-graph')!;
+    const errors = await boot(page, shot);
+    const provenance = await page.evaluate(() => {
+        const resolved = (window as any).__pi.policy();
+        return Object.fromEntries(
+            ['salience.decayRate', 'ladder.blendMs', 'camera.verbMs', 'camera.traceMs'].map((id) => [
+                id,
+                resolved.provenance[id],
+            ]),
+        );
+    });
+    expect(provenance).toEqual({
+        'salience.decayRate': 'preset',
+        'ladder.blendMs': 'preset',
+        'camera.verbMs': 'preset',
+        'camera.traceMs': 'preset',
+    });
     expect(errors).toEqual([]);
 });

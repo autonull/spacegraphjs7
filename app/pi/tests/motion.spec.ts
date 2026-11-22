@@ -62,8 +62,8 @@ test.describe('Pi activity pulse', () => {
 
         for (const state of states) expect(state.settled).toBe(true);
 
-        writeFileSync(resolve(out, 'without.png'), frames[0]!);
-        writeFileSync(resolve(out, 'with.png'), frames[1]!);
+        writeFileSync(resolve(out, 'with.png'), frames[0]!);
+        writeFileSync(resolve(out, 'without.png'), frames[1]!);
         writeFileSync(
             resolve(out, 'comparison.json'),
             `${JSON.stringify(
@@ -71,7 +71,7 @@ test.describe('Pi activity pulse', () => {
                     demand: 'TODO4.md demand record 2026-11-22',
                     variants: { motion: pulses[0], reducedMotion: pulses[1] },
                     states,
-                    note: 'The pulse is a one-shot state change. Framing differs because the camera fits once at startup; pixel identity and viewport parity are not gates during active development.',
+                    note: 'The pulse is a one-shot state change. Framing differs because the camera fits at startup and on material aspect changes; pixel identity and viewport parity are not gates during active development.',
                 },
                 null,
                 2,

@@ -44,7 +44,9 @@ describe('representation ladder', () => {
         expect(zoomedOut).toBeGreaterThanOrEqual(14 / 0.3);
         expect(labelFontPx(14, 3, 320, 8)).toBeLessThan(zoomedOut);
         expect(labelFontPx(14, 3, 320, 8)).toBeGreaterThanOrEqual(14 / 3);
-        expect(cardMarkup(node, 'overview', context, 0, false, 48)).toContain('font-size:48px');
+        expect(cardMarkup(node, 'overview', context, 0, false, 48)).toContain(
+            'font-size:calc(48px * var(--pi-label-scale, 1))',
+        );
     });
 
     test('composites two neighbouring rungs without changing node identity', () => {
@@ -109,12 +111,14 @@ describe('representation ladder', () => {
         expect(cardMarkup(node, 'overview', context)).toContain('data-rung="overview"');
     });
 
-    test('graph layouts add connector spokes to the inner topology', () => {
+    test('every layout renders the inner topology as directed edges with ports', () => {
         const chips = innerTree('a', [{ id: 'a', label: 'A', kind: 'run' }, { id: 'b', label: 'B', kind: 'unit' }], [{ source: 'a', target: 'b' }], 1);
-        const radial = focusCardMarkup(node, chips, 'radial');
-        const grid = focusCardMarkup(node, chips, 'grid');
-        expect(radial).toContain('class="focus-connectors"');
-        expect(radial).toContain('<line');
-        expect(grid).not.toContain('focus-connectors');
+        for (const layout of ['radial', 'lane', 'grid', 'row', 'column'] as const) {
+            const lens = focusCardMarkup(node, chips, layout);
+            expect(lens).toContain('class="focus-connectors"');
+            expect(lens).toContain('<line');
+            expect(lens).toContain('id="sg-chip-arrow"');
+            expect(lens.match(/class="focus-port"/g)).toHaveLength(chips.length * 2);
+        }
     });
 });

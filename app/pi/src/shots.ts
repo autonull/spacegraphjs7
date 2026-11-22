@@ -1,4 +1,5 @@
 import type { PolicyVector } from './policy';
+import { FIT_OCTAVES } from './policy/adaptive-fit';
 
 export type ShotSurface = 'log' | 'map' | 'hybrid';
 export type ShotArrangement = 'stacked' | 'side' | 'floating';
@@ -18,10 +19,16 @@ export interface Shot {
     readonly collapsed?: boolean;
     /** A quiet frame gives the canvas the full width; graph shots use it, chrome shots keep the rail. */
     readonly rail?: boolean;
+    readonly inspectorTab?: 'detail' | 'inner' | 'signals' | 'actions';
     readonly level?: ShotLevel;
     readonly reveal?: string;
     readonly evidence?: string;
     readonly frame?: readonly string[];
+    readonly viewport?: { readonly width: number; readonly height: number };
+    /** Reframe with aspect-aware insets before applying an octave or zoom. */
+    readonly fit?: boolean;
+    /** Zoom relative to the fit, in octaves (2^octave). */
+    readonly octave?: number;
     readonly zoom?: number;
     readonly minScale?: number;
     readonly padding?: number;
@@ -32,7 +39,28 @@ export interface Shot {
 
 const node = (id: string): string => `pi:local:${id}`;
 
+const octaveShot = (aspect: 'wide' | 'narrow', octave: number): Shot => {
+    const label = octave < 0 ? 'far' : octave > 0 ? 'near' : 'mid';
+    const narrow = aspect === 'narrow';
+    return {
+        id: `fit-${aspect}-${label}`,
+        file: `pi-agent-fit-${aspect}-${label}.png`,
+        title: `Fit ${aspect} · ${label} (2^${octave})`,
+        question: `Does the graph fit and stay legible at ${2 ** octave}× zoom on a ${aspect} canvas?`,
+        scenario: 'rich',
+        preset: 'aurora',
+        surface: 'map',
+        rail: false,
+        level: 'execution',
+        viewport: narrow ? { width: 900, height: 1000 } : { width: 1600, height: 1000 },
+        fit: true,
+        octave,
+        padding: 40,
+    };
+};
+
 export const SHOTS: readonly Shot[] = [
+    ...FIT_OCTAVES.flatMap((octave) => [octaveShot('wide', octave), octaveShot('narrow', octave)]),
     {
         id: 'cockpit',
         file: 'pi-agent-in-action.png',
@@ -87,6 +115,48 @@ export const SHOTS: readonly Shot[] = [
         preset: 'fractal',
         vector: { 'emphasis.innerLayout': 'radial' },
         rail: false,
+        surface: 'hybrid',
+        arrangement: 'side',
+        level: 'detail',
+        reveal: node('x3'),
+        evidence: 'delegation',
+        frame: [node('x3')],
+        zoom: 0.8,
+    },
+    {
+        id: 'dense-type',
+        file: 'pi-agent-dense-type.png',
+        title: 'Dense typography',
+        question: 'Do tighter cards and a higher label floor pack more of the run without overlap?',
+        scenario: 'rich',
+        preset: 'dense-type',
+        rail: false,
+        surface: 'hybrid',
+        arrangement: 'side',
+        evidence: 'vocabulary',
+        padding: 40,
+    },
+    {
+        id: 'living-graph',
+        file: 'pi-agent-living-graph.png',
+        title: 'Living graph',
+        question: 'Does a longer activity tail and slower rung/camera blending make state changes easier to follow?',
+        scenario: 'rich',
+        preset: 'living-graph',
+        rail: false,
+        surface: 'hybrid',
+        arrangement: 'side',
+    },
+    {
+        id: 'recursion',
+        file: 'pi-agent-recursion.png',
+        title: 'Bounded recursion',
+        question: 'Does a three-level inner graph stay legible and bounded inside one focused node?',
+        scenario: 'rich',
+        preset: 'fractal',
+        vector: { 'emphasis.innerDepth': 3, 'emphasis.innerLayout': 'radial' },
+        rail: false,
+        inspectorTab: 'inner',
         surface: 'hybrid',
         arrangement: 'side',
         level: 'detail',

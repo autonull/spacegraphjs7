@@ -112,7 +112,21 @@ Inherited from `TODO4.md:3` and the repo rules; apply to every phase.
 
 ## 3. Plan
 
+### Progress (2026-11-22)
+
+| Phase | Status | Evidence | Remaining |
+| ----- | ------ | -------- | --------- |
+| 1 — Motion gate | complete | `living-graph` preset/shot with provenance; `tests/motion.spec.ts` evidence harness; L2 deferred in `docs/motion.md`; `TODO4.md` gate row opened; ADR 0008 still blocks a default | A human comparison decision before any default change |
+| 2 — Adaptive fit | complete | `app/pi/src/policy/adaptive-fit.ts`; aspect insets + bounded refit in `host.ts`; ADR 0015; six `fit-*` shots; shell refit test; vision gate over 3 octaves × 2 aspects | Optional: revisit the quarter-octave threshold with real resize telemetry |
+| 3 — Density | complete | Opt-in `dense-type` preset/shot; CSS-variable card padding and label scale; height-only footprint reduction; unit test; vision gate over the fit matrix | Promote to default only after a recorded comparison (ADR 0008) |
+| 4 — Recursion | complete | Directed spokes/ports/status in every lens layout; autoscaling lens; `recursion` shot; settled + intermediate-frame vision gate; `focus-lens.spec.ts` passes | Second consumer stays gated at `TODO4.md:265` (out of scope) |
+| 5 — Verification | complete (2026-11-22) | `pnpm run check` green; e2e 103 passed + 1 pre-existing navigation flake; `verify:visual` 21/21; `scale` budgets met; `shots:all` 23/23; gallery reviewed | Commit, then leave the two external decisions (§7) untouched |
+
+Decisions resolved in §7; gate results and review verdicts belong in `docs/screenshots/review.json`.
+
 ### Phase 1 — Stabilize and close the motion gate
+
+**Status: complete (2026-11-22).**
 
 **Goal:** turn the in-flight motion work into an honest, green, gated increment.
 
@@ -134,6 +148,10 @@ Inherited from `TODO4.md:3` and the repo rules; apply to every phase.
 preset is opt-in with a question; TODO4 gate row updated; no new knob, renderer branch or contract field.
 
 ### Phase 2 — Adaptive ergonomic fitting (foundation for 3 and 4)
+
+**Status: complete (2026-11-22).** ADR 0015 records the refit decision; the acceptance matrix is 3 octaves
+(fit × 2^-1/2^0/2^1) on 1600×1000 and 900×1000 canvases. At the far octave core LOD hides card interiors by
+design, so that frame reads as topology; legibility and no-overlap gates still pass.
 
 **Goal:** make the graph fit an ergonomic target across a multi-octave zoom range and varying aspect
 ratios, within reason.
@@ -160,6 +178,11 @@ vision and shell bounds gates green; no renderer branch or new policy knob.
 
 ### Phase 3 — Density and typography
 
+**Status: complete (2026-11-22), opt-in only.** The dense treatment is selected by the existing
+`ladder.minLabelPx >= 18` knob, so it stays a preset with provenance. Card widths are intentionally
+unchanged: an earlier 0.88× width shrink truncated raised labels in `dense-type`, so only height and
+interior padding tighten. Gap/repulsion remain inert under camera fit (`TODO4.md:114`).
+
 **Goal:** demand 11 and 12 — reduce wasted space, pack objects closer, use bigger fonts.
 
 1. Audit card interior: `anatomyCard` box padding is `6% 8%` (`anatomy.ts:168`); label sizes come from
@@ -179,6 +202,11 @@ vision and shell bounds gates green; no renderer branch or new policy knob.
 font floor raised; no legibility/overlap regression; gallery recaptured.
 
 ### Phase 4 — Graph-within-a-graph (fractal recursion)
+
+**Status: complete (2026-11-22).** Directed boundary-anchored spokes, ports and status live in host SVG;
+the lens sizing derives from the focused node's on-screen footprint with clamps. Radial chips scale for
+small vs large fan-outs because a six-chip lane layout was too short to read. Navigation re-entry rebuilds
+the lens; DOM stays bounded.
 
 **Goal:** demand 13 and the "fractal nature" part of demand 10.
 
@@ -201,6 +229,10 @@ font floor raised; no legibility/overlap regression; gallery recaptured.
 settled + intermediate-frame gates.
 
 ### Phase 5 — Verification, dev loop and handoff
+
+**Status: complete (2026-11-22).** Root `pnpm run check`, `check:fast`, e2e (103 passed, 1 known navigation
+flake), `verify:visual` (21/21), `scale` (all budgets met) and `shots:all` (23/23) are green. Review
+verdicts are in `docs/screenshots/review.json`; the commit is the final step.
 
 1. Keep the tiered loop: `verify:fast` (types + 136 unit + 15 chrome e2e), `shots:focus` (4 shots),
    `shots:all` (full gallery only at a slice boundary), `shot --watch` for visual iteration.
@@ -265,21 +297,31 @@ Recommended resume order:
 3. Then execute Phases 2 → 3 → 4 in order; each phase ends with a gallery recapture and visual review.
 4. Use `pnpm --filter pi shot <ids>` for single shots, `shots:focus` for four, `shots:all` only at a
    phase boundary. Keep `pnpm --filter pi dev` running so Playwright reuses the servers.
-5. Do not commit or push unless explicitly asked. The working tree contains the whole audit increment
-   plus this plan; review it before further work.
+5. The user explicitly requested a commit on 2026-11-22. Commit the completed increment; do not push
+   unless separately asked. Future resumes still default to no commit without an explicit request.
 
 **Definition of done for the overall plan:** the motion gate is honestly green (evidence harness, opt-in
 preset with provenance, L2 decision recorded); the graph fits and stays legible across
 ≥3 octaves and ≥2 aspect ratios; cards are denser with larger text and no overlap regression; the inner
 subgraph reads as a bounded, scaling graph; all gates are green; gallery and docs are updated.
 
+**Status: met (2026-11-22).** The only deferred items are the explicit external decisions above, not
+unfinished work in this plan.
+
 ---
 
-## 7. Decisions the fresh session should confirm with the user
+## 7. Decisions — resolved 2026-11-22
 
-1. **One-fit-at-startup vs bounded refit on aspect change** (constraint 10 vs demand 10).
-2. **L2 ribbon flow**: accept the renderer-branch constraint and keep it deferred, or authorize a
-   renderer change with a measured demand and two consumers.
-3. **Which aspect ratios and octaves** define the acceptance matrix for Phase 2.
-4. **Whether the dense/typography treatment becomes a default or an opt-in preset** — new defaults are
-   presets until a recorded comparison (`TODO4.md` destination §7).
+The user confirmed all four recommended options before implementation:
+
+1. **Bounded refit on aspect change** (not one-fit-at-startup). Implemented with a quarter-octave
+   threshold and 120 ms debounce; recorded in ADR 0015.
+2. **L2 ribbon flow stays deferred with reason.** No renderer branch; promotion needs a measured demand
+   and a second consumer. Recorded in `docs/motion.md`.
+3. **Acceptance matrix: 3 octaves × 2 aspects** — fit × 2^-1/2^0/2^1 on 1600×1000 and 900×1000.
+   Shots `fit-{wide,narrow}-{far,mid,near}` and a vision gate cover every cell.
+4. **Dense/typography stays an opt-in preset** until a recorded comparison (ADR 0008). Select it with
+   `ladder.minLabelPx >= 18`; no default changed.
+
+Remaining open decisions are external: a human comparison before promoting any preset to default, and a
+second real host before lifting the proliferation gate (`TODO4.md:265`). Neither is work for this plan.

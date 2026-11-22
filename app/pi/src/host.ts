@@ -99,6 +99,14 @@ import {
     POLICY_EXPERIMENTS,
     POLICY_PRESETS,
     POLICY_SCHEMA,
+    CLEAR_DENSITY_STYLE,
+    DENSITY_STYLE,
+    FIT_OCTAVES,
+    adaptiveInsets,
+    aspectChanged,
+    denseType,
+    fitMetrics,
+    type FitMetrics,
     decodePolicyVector,
     encodePolicyVector,
     mountPolicyPanel,
@@ -367,6 +375,9 @@ export class PiHost {
     #clientID = '';
     #baselineKernel = fixtureKernel();
     #shotReady = true;
+    #fit?: FitMetrics;
+    #fitTimer?: ReturnType<typeof setTimeout>;
+    #refits = 0;
 
     constructor(
         options: { projection?: Projection; reducedMotion?: boolean; global?: boolean } = {},
@@ -588,6 +599,12 @@ export class PiHost {
                 `${values['ladder.blendMs']}ms`,
             );
             document.documentElement.dataset.theme = String(values['theme.variant']);
+            const dense = denseType(values);
+            document.documentElement.dataset.density = dense ? 'dense' : 'default';
+            const style = document.documentElement.style;
+            for (const key of CLEAR_DENSITY_STYLE) style.removeProperty(key);
+            if (dense)
+                for (const [key, value] of Object.entries(DENSITY_STYLE)) style.setProperty(key, value);
             this.applyViewTheme();
             this.renderer.setTheme(this.#theme);
             el('minimap').hidden = values['navigation.minimap'] !== true;
@@ -695,7 +712,7 @@ export class PiHost {
         document.body.append(this.#commandSurface.element);
         this.#stateFrame = createStateFrame();
         el('canvas').append(this.#stateFrame.element);
-        window.addEventListener('resize', () => this.renderFocusLens());
+        window.addEventListener('resize', () => this.onResize());
         this.renderer.on('nodeClick', ({ id }) => this.reveal(id));
         this.renderer.on('viewportChange', ({ zoom }) => {
             this.applyAutoLevel(zoom);
@@ -874,6 +891,7 @@ export class PiHost {
         const pixelsPerWorld =
             (el('canvas').clientWidth || 1000) / Math.max(viewport.extent?.width ?? 1000, 1);
         const minLabelPx = Number(values['ladder.minLabelPx']);
+        const dense = denseType(values);
         const thresholds = {
             promoteAt: Number(values['ladder.promoteAt']),
             legibilityGate: Number(values['ladder.legibilityGate']),
@@ -902,7 +920,7 @@ export class PiHost {
                 const labelPx = labelFontPx(
                     minLabelPx,
                     pixelsPerWorld,
-                    nodeSize(node.kind, true)[0] * scaleOf(node),
+                    nodeSize(node.kind, true, dense)[0] * scaleOf(node),
                     node.label.length,
                 );
                 return layers.length > 1
@@ -928,7 +946,7 @@ export class PiHost {
         this.#model = {
             ...this.#model,
             nodes: this.#model.nodes.map((node) => {
-                const size = nodeSize(node.kind, Boolean(node.html));
+                const size = nodeSize(node.kind, Boolean(node.html), dense);
                 const focusScale = scaleForRole(roles.get(node.id) ?? 'none', scales);
                 const activity = this.#activity.get(node.id) ?? 0;
                 const salience = salienceScore(activity, node.emphasis);
@@ -1206,6 +1224,7 @@ export class PiHost {
             this.toggleRail(true);
             this.fitView(shot.padding);
         }
+        if (shot.inspectorTab) this.#inspector?.setTab(shot.inspectorTab);
         if (shot.level) this.setLevel(shot.level);
         if (shot.reveal) this.reveal(shot.reveal);
         if (shot.evidence) this.run(shot.evidence);
@@ -1222,11 +1241,13 @@ export class PiHost {
         }
         if (shot.panel && document.getElementById('policy-section') instanceof HTMLDetailsElement)
             (document.getElementById('policy-section') as HTMLDetailsElement).open = true;
+        if (shot.fit) this.fitView(shot.padding);
         const ids = shot.frame?.length
             ? shot.frame
             : (this.#model?.nodes.filter((node) => node.visible !== false).map((node) => node.id) ??
               []);
-        if (shot.minScale !== undefined)
+        if (shot.octave !== undefined) this.zoomBy(2 ** shot.octave);
+        else if (shot.minScale !== undefined)
             this.frame(ids, { minScale: shot.minScale, padding: shot.padding });
         else if (shot.frame?.length || shot.zoom !== undefined)
             this.frame(ids, { zoom: shot.zoom });
@@ -1991,6 +2012,7 @@ export class PiHost {
             }),
             activity: () => [...this.#activity.keys()],
             viewport: () => this.renderer.getViewport(),
+            adaptiveFit: () => ({ ...this.#fit, octaves: FIT_OCTAVES, refits: this.#refits }),
             setViewport: (viewport: RendererViewport) => this.renderer.setViewport(viewport),
             frame: (
                 ids: readonly string[],
@@ -2455,12 +2477,35 @@ export class PiHost {
         }
     }
 
-    /** One-shot framing at startup; later navigations keep the user's chosen view. */
+    /** Frame the visible graph inside aspect-derived CSS insets; the renderer owns world-unit padding. */
     private fitView(padding = 60): void {
         const ids =
             this.#model?.nodes.filter((node) => node.visible !== false).map((node) => node.id) ??
             [];
-        if (ids.length) this.renderer.fit(ids, { padding });
+        if (!ids.length) return;
+        const canvas = document.getElementById('canvas');
+        const width = canvas?.clientWidth || window.innerWidth || 1000;
+        const height = canvas?.clientHeight || window.innerHeight || 1000;
+        this.#fit = fitMetrics(width, height, padding, this.#resolved.values);
+        this.#refits++;
+        this.renderer.fit(ids, { padding, insets: adaptiveInsets(width, height, padding) });
+    }
+
+    /** Refit only on a material aspect change; small resizes keep the user's chosen camera. */
+    private onResize(): void {
+        this.renderFocusLens();
+        const fit = this.#fit;
+        if (!this.#initialFitDone || !fit) return;
+        if (this.#fitTimer) clearTimeout(this.#fitTimer);
+        this.#fitTimer = setTimeout(() => {
+            const canvas = document.getElementById('canvas');
+            const aspect =
+                (canvas?.clientWidth || window.innerWidth || 1000) /
+                Math.max(canvas?.clientHeight || window.innerHeight || 1000, 1);
+            if (!aspectChanged(fit.aspect, aspect)) return;
+            this.fitView();
+            this.paint();
+        }, 120);
     }
 
     /** Detail-card controls are host DOM; actions return through the same verbs as the HUD. */
@@ -2550,20 +2595,28 @@ export class PiHost {
         this.refreshInstruments(modelNode);
         if (!inspector.pinned) {
             const canvas = el('canvas');
-            const width = 340;
-            const height = 230;
             const viewport = this.renderer.getViewport();
             const pixelsPerWorld =
                 (canvas.clientWidth || 1000) / Math.max(viewport.extent?.width ?? 1000, 1);
             const scale =
                 focus === this.#revealed ? Number(this.#resolved.values['emphasis.focusScale']) : 1;
-            const cardHeight = nodeSize(adapterNode.kind, true)[1] * scale * pixelsPerWorld;
+            const [cardWidth, cardHeight] = nodeSize(
+                adapterNode.kind,
+                true,
+                denseType(this.#resolved.values),
+            );
+            const onScreenWidth = cardWidth * scale * pixelsPerWorld;
+            const onScreenHeight = cardHeight * scale * pixelsPerWorld;
+            const width = Math.round(Math.max(300, Math.min(420, onScreenWidth)));
+            const height = Math.round(Math.max(210, Math.min(300, onScreenHeight)));
+            overlay.style.width = `${width}px`;
+            overlay.style.height = `${height}px`;
             const x = Math.min(
                 Math.max(12, point.x - width / 2),
                 Math.max(12, canvas.clientWidth - width - 12),
             );
             const y = Math.min(
-                Math.max(12, point.y + cardHeight / 2 + 12),
+                Math.max(12, point.y + onScreenHeight / 2 + 12),
                 Math.max(12, canvas.clientHeight - height - 12),
             );
             overlay.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
