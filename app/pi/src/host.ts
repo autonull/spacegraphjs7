@@ -1045,25 +1045,20 @@ export class PiHost {
         const values = this.#resolved.values;
         const cap = Number(values['emphasis.cap']);
         const trace = Number(values['emphasis.trace']);
-        this.#model = {
-            ...this.#model,
-            nodes: this.#model.nodes.map((node) => {
-                const position = this.#positions.get(node.id);
-                const activity = this.#activity.get(node.id) ?? 0;
-                const base =
-                    activity > 0 ? Math.min(cap, (node.emphasis ?? 0.3) + activity) : node.emphasis;
-                const index = this.#traceIds.indexOf(node.id);
-                const traced = index >= 0 && index <= this.#traceProgress + 1;
-                return {
-                    ...node,
-                    position: position
-                        ? ([position.x, position.y, position.z] as [number, number, number])
-                        : node.position,
-                    emphasis: traced ? trace : base,
-                };
-            }),
-        };
-        this.renderer.setModel(this.#model);
+        const positions: Record<string, [number, number, number]> = {};
+        for (const node of this.#model.nodes) {
+            const position = this.#positions.get(node.id);
+            if (position) {
+                node.position = [position.x, position.y, position.z];
+                positions[node.id] = node.position;
+            }
+            const activity = this.#activity.get(node.id) ?? 0;
+            const base =
+                activity > 0 ? Math.min(cap, (node.emphasis ?? 0.3) + activity) : node.emphasis;
+            const index = this.#traceIds.indexOf(node.id);
+            node.emphasis = index >= 0 && index <= this.#traceProgress + 1 ? trace : base;
+        }
+        this.renderer.setPositions(positions);
         this.renderFocusLens();
     }
 

@@ -231,7 +231,7 @@ gallery, review verdicts and docs are current; all full gates are green.
 
 ## 7. Progress (2026-11-22)
 
-Plan status: **phases 1–5 complete, plus two follow-up change sets**. The user explicitly asked for
+Plan status: **phases 1–5 complete, plus three follow-up change sets**. The user explicitly asked for
 the commits in this session, so invariant 12 was overridden for these change sets only.
 
 | Phase | Status | Evidence |
@@ -267,14 +267,39 @@ AUDIT-05 changed a default visual, so it carries a comparison and a logged human
 
 AUDIT-06 and AUDIT-07 are legibility fixes, not variant promotions; no default experiment applies.
 
+### Third follow-up — positions-only flight frames
+
+The flight hot path rebuilt every node and edge spec each frame: `tick()` → `advance()` →
+`renderPositions()` → `renderer.setModel()` → `sg.loadSpec()`. A flight changes positions only, so:
+
+- `ModelRenderer.setPositions()` moves stored node positions and calls an `applyPositions()` template
+  method; `SpaceGraphRenderer` overrides it with `sg.setPositions()`. Other renderers keep the
+  full-set fallback (`packages/renderer/src/model-renderer.ts`,
+  `packages/spacegraph-renderer/src/index.ts`).
+- `renderPositions()` now mutates position and emphasis in place and calls `renderer.setPositions()`;
+  `paint()` still owns structural refreshes (`app/pi/src/host.ts:1042`).
+- Gate: `packages/renderer/src/index.test.ts` covers the new path and the pre-model no-op;
+  `check:fast` 141/141 and `e2e:chrome` 17/17 stay green.
+
+Evidence is in `docs/performance.md`: `advance()` averages 0.368 ms against a 2.295 ms full
+`paint()` rebuild. A headed Xvfb run (presentation source, still software GPU) measured flight p95
+216.6 ms before and 200 ms after; the 8–9 frame sample is too small to claim a presentation win.
+
 ### Remaining open items
 
-1. **Flight frame time:** the first follow-up measured browser rAF p95 at 99.9 ms (80 ms target, 120 ms
-   gate); the second follow-up did not re-measure because it changes no per-frame path.
-   Measure on a display-backed GPU before touching `renderField()`; see `docs/performance.md`.
-2. **Scale headroom:** isolated 60-turn layout was 1476 ms against a 1500 ms budget in the first
-   follow-up; the second follow-up run met all budgets. Keep `scale` in an isolated CI job; do not run
-   it beside Vite/op dev servers.
+1. **Flight frame time — hardware measurement only.** The 80 ms target remains unverified. The JS
+   rebuild cost is removed (see above); the residual Xvfb cost is SwiftShader presentation and camera
+   motion. Next step: run `strobe` on a physical display-backed GPU, repeat the rAF sample with a warm
+   flight and at least three trials, and record the result in `docs/performance.md`. Do not change the
+   renderer again until that measurement exists.
+2. **Scale headroom — keep isolated.** Isolated 60-turn layout was 1476 ms against a 1500 ms budget in
+   the first follow-up; later runs met all budgets. `scale` already runs in its own CI job
+   (`.github/workflows/ci.yml:73`). Do not run it beside Vite/op dev servers; the harness comment in
+   `app/pi/scripts/scale.ts` records why.
+3. **Gates not re-run in the third follow-up.** Full e2e (107), `verify:visual` (21) and `shots:all`
+   (23) were green at the second follow-up. The third change touches positions only and has no visual
+   default change, so no shots were recaptured. Re-run the visual gates if a future slice changes
+   geometry, styling or capture.
 
 ### Resume notes
 
@@ -282,4 +307,5 @@ AUDIT-06 and AUDIT-07 are legibility fixes, not variant promotions; no default e
 2. Use `verify:fast` and `verify:visual` for focused checks; `shots:all` only at a slice boundary.
 3. On memory-constrained hosts run the full Playwright suite with `--workers=2`; fully parallel workers
    crash with `Target crashed` when free RAM is low.
-4. No new policy knob, renderer branch or contract field was added; all seven fixes stay host-side.
+4. No new policy knob, host-specific renderer branch or contract field was added. The seven audit fixes
+   stay host-side; the follow-up adds a general renderer template method with a full-set fallback.

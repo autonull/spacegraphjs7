@@ -93,6 +93,7 @@ follow the workflow in `docs/ROADMAP.md` (`test:publish` → build → npm).
 
 ### Fixed
 
+- Pi flight path (TODO6): `advance()` positions-only frames now use a new `ModelRenderer.setPositions()` / `SpaceGraphRenderer.applyPositions()` path instead of rebuilding every node and edge spec through `setModel()`; other renderers keep the full-set fallback. Per-frame JS cost drops from a 2.295 ms full rebuild to 0.368 ms for `advance()`. The 80 ms browser flight target still needs a physical-GPU measurement; evidence is in `docs/performance.md`.
 - Pi deferred-audit follow-up (TODO6): cross-scope causal ribbons carry a stable source-scope tint through the existing `data.ribbon.color`, so long cross-unit relations stay traceable without a contract field, renderer branch or new knob; with/without evidence and a logged decision are under `docs/screenshots/edges/`. The command bar stays on one row at widths <=1000px, returning 50px of canvas height, and depth-3 inner chips reveal their full names on hover or keyboard focus.
 - Pi fresh-audit follow-up (TODO6): the light-theme canvas readout now uses a light grayscale HUD token
   instead of the dark theme foreground (1.1:1 → 17.7:1); catalog summaries are 44px square bordered

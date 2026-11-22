@@ -54,11 +54,27 @@ export abstract class ModelRenderer extends BaseGraphRenderer {
         this.#applyPatch(patch, theme);
     }
 
+    /** Move nodes without rebuilding specs. Backends that cannot do this fall back to a full set. */
+    setPositions(positions: Record<string, [number, number, number]>): void {
+        const model = this.#model;
+        if (!model) return;
+        for (const node of model.nodes) {
+            const position = positions[node.id];
+            if (position) node.position = position;
+        }
+        this.applyPositions(positions);
+    }
+
     // ============= Template Methods (override in concrete renderers) =============
 
     /** Apply a full model to the renderer. Called after removing stale nodes/edges. */
     protected applyModel(_model: RenderModel, _theme: RenderTheme): void {
         // Default: no-op. Concrete renderers that override setModel/applyPatch don't need this.
+    }
+
+    /** Apply a positions-only update. Default falls back to a full model set. */
+    protected applyPositions(_positions: Record<string, [number, number, number]>): void {
+        if (this.#model) this.setModel(this.#model);
     }
 
     /** Add a node to the renderer. */

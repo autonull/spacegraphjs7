@@ -126,6 +126,10 @@ export class SpaceGraphRenderer extends ModelRenderer implements GraphRenderer {
         sg.setPositions(Object.fromEntries(model.nodes.map((node) => [node.id, node.position])));
     }
 
+    protected applyPositions(positions: Record<string, [number, number, number]>): void {
+        this.#sg?.setPositions(positions);
+    }
+
     protected addNode(node: RenderNode, theme: RenderTheme): void {
         const sg = this.#sg;
         if (!sg) return;

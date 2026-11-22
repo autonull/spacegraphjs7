@@ -113,3 +113,28 @@ Verification note: the full Playwright suite was run with `--workers=2` because 
 free RAM during the first attempt and fully parallel Chromium workers crashed with `Target crashed`
 (16 failures, all crash-related). With two workers all 105 tests passed (2 flaky, green on retry);
 `verify:visual` passed 21/21 separately. No crash was reproducible as an application error.
+
+### Third follow-up — positions-only flight updates (2026-11-22)
+
+The per-frame path was `tick()` → `advance()` → `renderPositions()` → `renderer.setModel()`. The last
+call rebuilt every node and edge spec through `sg.loadSpec()` on each flight frame, although a flight
+changes positions only. `ModelRenderer.setPositions()` now moves stored node positions and delegates
+to an `applyPositions()` template method; `SpaceGraphRenderer` overrides it with `sg.setPositions()`.
+Backends without an override keep the full `setModel()` fallback. The host uses the new path in
+`renderPositions()`, and `paint()` still performs full structural refreshes. No contract field or
+host-specific renderer branch was added.
+
+- Presentation-backed attempt: `xvfb-run -a --server-args='-screen 0 1600x1000x24' node
+  /tmp/opencode/frame-measure-headed.mjs` (temporary script, headed Chromium on an Xvfb X server;
+  software GPU, so still not a physical-GPU run). At rest p95 16.8 ms. Flight p95 216.6 ms before
+  the change and 200 ms after (9 and 8 frames in the 1.2 s window). The sample is too small and the
+  GPU is software, so this is evidence that the target hardware is still missing, not a speed claim.
+- JS-cost isolation: 60 sequential `__pi.advance(1/60)` calls averaged **0.368 ms** each; 20
+  `__pi.paint()` calls (full model rebuild) averaged **2.295 ms**. The flight path no longer pays the
+  full rebuild cost per frame.
+- Focused gates after the change: `packages/renderer` `bun test src/index.test.ts` (7 passed),
+  `cd app/pi && pnpm run check:fast` (141 passed) and `pnpm run e2e:chrome` (17 passed).
+
+**Open:** the 80 ms flight target is still unverified on real hardware. The residual cost in the Xvfb
+run is GPU presentation/camera motion under SwiftShader, not JS model rebuild. Run `strobe` with a
+physical display-backed GPU before changing the renderer further.

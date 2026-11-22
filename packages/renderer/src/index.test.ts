@@ -1,10 +1,14 @@
 import { describe, expect, test } from 'bun:test';
 import {
+    DEFAULT_THEME,
+    ModelRenderer,
     supports,
     supportsMotionVerb,
     supportsSceneFeature,
     supportsSensorySeam,
+    type RenderModel,
     type RendererCapabilities,
+    type RenderTheme,
 } from './index';
 
 const capabilities = (overrides: Partial<RendererCapabilities> = {}): RendererCapabilities => ({
@@ -55,5 +59,47 @@ describe('@spacegraphjs/renderer contract', () => {
         expect(supportsSceneFeature(advertised, 'lights')).toBe(false);
         expect(supportsSensorySeam(advertised, 'webxr')).toBe(true);
         expect(supportsSensorySeam(advertised, 'sound')).toBe(false);
+    });
+});
+
+describe('ModelRenderer.setPositions', () => {
+    class Probe extends ModelRenderer {
+        calls: string[] = [];
+
+        get snapshot(): RenderModel | null {
+            return this.model;
+        }
+
+        protected getTheme(): RenderTheme {
+            return DEFAULT_THEME;
+        }
+
+        protected setThemeInternal(): void {}
+
+        protected applyModel(): void {
+            this.calls.push('model');
+        }
+
+        protected override applyPositions(): void {
+            this.calls.push('positions');
+        }
+    }
+
+    test('moves stored nodes through the positions-only path', () => {
+        const renderer = new Probe();
+        renderer.setModel({
+            nodes: [{ id: 'a', kind: 'card', label: 'A', position: [0, 0, 0] }],
+            edges: [],
+        });
+        renderer.calls.length = 0;
+        renderer.setPositions({ a: [1, 2, 3] });
+        expect(renderer.calls).toEqual(['positions']);
+        expect(renderer.snapshot?.nodes[0]?.position).toEqual([1, 2, 3]);
+    });
+
+    test('is a no-op before a model exists', () => {
+        const renderer = new Probe();
+        expect(() => renderer.setPositions({ a: [1, 2, 3] })).not.toThrow();
+        expect(renderer.calls).toEqual([]);
     });
 });
