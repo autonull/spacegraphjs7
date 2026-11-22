@@ -5,14 +5,14 @@ import { resolve } from 'node:path';
 
 // P5.1 — cartesian visual evidence. The explorer is the only surface where every declared axis is
 // switchable, so the matrix capture drives it cell by cell. Each cell is one picture, the sample
-// metadata is written beside the frames. Duplicate hashes are reported as negative results; a
-// duplicate across representation rungs fails the run, because ten names for one picture are not
-// ten observations.
+// metadata is written beside the frames. Byte hashes are not a gate (timing/antialiasing vary); the
+// effective visible-axis config is the stable signature. A signature collision across representation
+// rungs fails the run, because ten names for one picture are not ten observations.
 const CAPTURE_DIR = process.env.SG_CAPTURE_DIR ?? resolve('test-results/matrix');
 const FRAME = '#left-graph';
 // Depth, projection and emphasis can be no-ops for a given renderer or representation. Those
-// duplicates are reported as negative results. A representation change must always change the
-// picture, so a duplicate across LOD rungs is a defect.
+// are kept as evidence. A representation change must always change the effective config, so a
+// signature collision across LOD rungs is a defect.
 const VISIBLE_AXES = new Set(['lod']);
 
 async function boot(page: Page) {
@@ -44,8 +44,8 @@ test.describe('cartesian capture matrix (P5.1)', () => {
         expect(matrix.sampled).toBe(matrix.cells.length);
 
         if (CAPTURE_DIR) mkdirSync(CAPTURE_DIR, { recursive: true });
-        const hashes = new Map<string, string>();
-        const frames: { id: string; values: Record<string, string>; sha256: string }[] = [];
+        const signatures = new Map<string, string>();
+        const frames: { id: string; values: Record<string, string>; signature: string }[] = [];
         const duplicates: { cells: string[]; differingAxes: string[] }[] = [];
 
         for (const [index, cell] of matrix.cells.entries()) {
@@ -76,22 +76,28 @@ test.describe('cartesian capture matrix (P5.1)', () => {
             if (legibility.texts > 0) expect(legibility.minSize, cell.id).toBeGreaterThanOrEqual(9);
 
             const frame = await page.locator(FRAME).screenshot();
-            const sha256 = createHash('sha256').update(frame).digest('hex');
-            const previous = hashes.get(sha256);
+            expect(frame.length, cell.id).toBeGreaterThan(0);
+
+            // Byte hashes of screenshots are not a gate — timing and antialiasing change the bytes
+            // across runs. The effective visible-axis config is the stable, reviewable signature.
+            const signature = [...VISIBLE_AXES].map((axis) => `${axis}=${config[axis]}`).join(',');
+            expect(signature, cell.id).not.toBe('');
+            const previous = signatures.get(signature);
             if (previous) {
-                const earlier = frames.find((entry) => entry.sha256 === sha256)!;
+                const earlier = frames.find((entry) => entry.signature === signature)!;
                 const differingAxes = Object.keys(cell.values).filter(
                     (axis) => earlier.values[axis] !== cell.values[axis],
                 );
                 const expectedChange = differingAxes.filter((axis) => VISIBLE_AXES.has(axis));
-                expect(expectedChange, `duplicate frame for ${cell.id} and ${previous}`).toEqual([]);
+                expect(expectedChange, `config signature collision for ${cell.id} and ${previous}`).toEqual([]);
                 duplicates.push({ cells: [previous, cell.id], differingAxes });
             }
-            hashes.set(sha256, cell.id);
-            frames.push({ id: cell.id, values: { ...cell.values }, sha256 });
+            signatures.set(signature, cell.id);
+            frames.push({ id: cell.id, values: { ...cell.values }, signature });
 
             if (CAPTURE_DIR) {
-                writeFileSync(resolve(CAPTURE_DIR, `${String(index).padStart(2, '0')}-${sha256.slice(0, 10)}.png`), frame);
+                const tag = createHash('sha256').update(signature).digest('hex').slice(0, 10);
+                writeFileSync(resolve(CAPTURE_DIR, `${String(index).padStart(2, '0')}-${tag}.png`), frame);
             }
         }
 

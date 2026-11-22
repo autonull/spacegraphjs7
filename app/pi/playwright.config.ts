@@ -7,7 +7,7 @@ export default defineConfig({
     testDir: './tests',
     testMatch: /.*\.spec\.ts/,
     reporter: 'list',
-    retries: 1,
+    retries: 0,
     use: {
         headless: true,
         baseURL: process.env.PLAYWRIGHT_BASE_URL ?? `http://localhost:${PORT}`,
@@ -18,13 +18,13 @@ export default defineConfig({
             port: SERVER,
             env: { PI_LOCAL_FEED: '1' },
             timeout: 30_000,
-            reuseExistingServer: !process.env.CI,
+            reuseExistingServer: false,
         },
         {
             command: `pnpm exec vite --config vite.config.ts --port ${PORT} --strictPort`,
             port: PORT,
             timeout: 30_000,
-            reuseExistingServer: !process.env.CI,
+            reuseExistingServer: false,
         },
     ],
 });

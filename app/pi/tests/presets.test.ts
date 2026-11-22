@@ -76,6 +76,8 @@ describe('UI comparison scaffolding', () => {
             expect(decision.status).toContain('default not flipped');
             expect(decision.data).toBe('docs/screenshots/ui-presets/comparison.json');
             expect(decision.gates.length).toBeGreaterThan(0);
+            expect(decision.incumbentImage).toContain('/incumbent.png');
+            expect(decision.variantImage).toContain('/variant.png');
             expect(decision.images).toContain('pending');
             expect(decision.decision).toContain('pending human review');
         }

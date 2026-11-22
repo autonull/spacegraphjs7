@@ -1,9 +1,5 @@
-import { expect, test, type Page } from '@playwright/test';
-
-const boot = async (page: Page): Promise<void> => {
-    await page.goto('/');
-    await page.waitForFunction(() => (window as any).__pi?.ready === true);
-};
+import { expect, test } from '@playwright/test';
+import { boot } from './boot';
 
 test.describe('the live policy spine', () => {
     test('exposes every knob and applies changes hot without a remount', async ({ page }) => {

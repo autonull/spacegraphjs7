@@ -8,6 +8,8 @@ export interface UIComparisonDecision {
     readonly variant: string;
     readonly data: string;
     readonly gates: readonly string[];
+    readonly incumbentImage: string;
+    readonly variantImage: string;
     readonly images: string;
     readonly decision: string;
 }
@@ -33,7 +35,9 @@ export const uiComparison = (
             variant: `${entry.title} (?ui=${entry.id}, chrome ${entry.chrome ?? 'full'})`,
             data: 'docs/screenshots/ui-presets/comparison.json',
             gates: entry.gates,
-            images: `pending — capture ?shot=ui-${entry.id}&ui=full and ?shot=ui-${entry.id}&ui=${entry.id}`,
+            incumbentImage: `docs/screenshots/ui-presets/${entry.id}/incumbent.png`,
+            variantImage: `docs/screenshots/ui-presets/${entry.id}/variant.png`,
+            images: 'pending human verdict; pairs captured by pnpm run shots:compare',
             decision: 'pending human review; ADR 0008 default gate not closed',
         })),
 });

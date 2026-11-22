@@ -1,12 +1,11 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
+import { boot } from './boot';
 
-const boot = async (page: Page, reduced: boolean): Promise<void> => {
+const motionBoot = async (page: Page, reduced: boolean): Promise<void> => {
     if (reduced) await page.emulateMedia({ reducedMotion: 'reduce' });
-    await page.goto('/');
-    await page.waitForFunction(() => (window as any).__pi?.ready === true);
-    await expect(page.locator('#status')).not.toHaveText('connecting…');
+    await boot(page);
     await page.evaluate(() => (window as any).__pi.pause(true));
 };
 
@@ -25,13 +24,13 @@ const advanceFrames = async (page: Page): Promise<void> => {
 
 test.describe('Pi activity pulse', () => {
     test('active cards pulse; reduced motion snaps to the final frame', async ({ page }) => {
-        await boot(page, false);
+        await motionBoot(page, false);
         expect(await page.evaluate(() => (window as any).__pi.activity().length)).toBeGreaterThan(0);
         const pulse = await pulseFor(page);
         expect(pulse).toContain('pi-pulse-');
         expect(pulse).toContain('120ms');
 
-        await boot(page, true);
+        await motionBoot(page, true);
         expect(await pulseFor(page)).toMatch(/^none/);
     });
 
@@ -43,7 +42,7 @@ test.describe('Pi activity pulse', () => {
         const states: { settled: boolean; center: unknown; zoom: number }[] = [];
 
         for (const reduced of [false, true]) {
-            await boot(page, reduced);
+            await motionBoot(page, reduced);
             pulses.push(await pulseFor(page));
             await advanceFrames(page);
             frames.push(await page.screenshot({ animations: 'disabled' }));

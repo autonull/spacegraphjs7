@@ -1,3 +1,8 @@
+// DISABLED (§6 test-agility ledger): byte snapshot whose reference is self-written on the first run,
+// so it can bless any output instead of detecting regressions. Renamed to `.disabled` so the
+// `/.*\.spec\.ts/` testMatch stops collecting it. Surviving gate: the `verify:visual` semantic gates
+// in app/pi (atlas/config/geometry assertions). Re-enable only with immutable, reviewable baselines.
+
 import { expect, test } from '@playwright/test';
 import * as fs from 'fs';
 import * as path from 'path';

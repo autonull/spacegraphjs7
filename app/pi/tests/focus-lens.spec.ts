@@ -1,9 +1,9 @@
 import { expect, test } from '@playwright/test';
+import { boot } from './boot';
 
 test.beforeEach(async ({ page }) => {
     await page.setViewportSize({ width: 1600, height: 1000 });
-    await page.goto('/?shot=fractal');
-    await page.waitForFunction(() => (window as any).__pi?.ready === true);
+    await boot(page, '?shot=fractal');
     await expect(page.locator('#canvas canvas').first()).toBeVisible();
 });
 

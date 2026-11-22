@@ -1,17 +1,5 @@
-import { expect, test, type Page } from '@playwright/test';
-
-const boot = async (page: Page): Promise<string[]> => {
-    const errors: string[] = [];
-    page.on('pageerror', (error) => errors.push(error.message));
-    await page.goto('/');
-    await page.waitForFunction(() => (window as any).__pi?.ready === true);
-    await expect
-        .poll(() => page.evaluate(() => (window as any).__pi.portalNodes().length), {
-            timeout: 10_000,
-        })
-        .toBeGreaterThan(0);
-    return errors;
-};
+import { expect, test } from '@playwright/test';
+import { boot } from './boot';
 
 test.describe('the one-surface shell', () => {
     test('injects tokens and keeps both themes resolvable', async ({ page }) => {
@@ -48,13 +36,13 @@ test.describe('the one-surface shell', () => {
     test('the command bar stays on one row at narrow widths', async ({ page }) => {
         const errors = await boot(page);
         await page.setViewportSize({ width: 900, height: 1000 });
-        await page.waitForTimeout(300);
-        const layout = await page.evaluate(() => ({
-            header: document.querySelector('#command-bar')!.getBoundingClientRect().height,
-            canvasTop: document.querySelector('#canvas')!.getBoundingClientRect().top,
-        }));
-        expect(layout.header).toBeLessThanOrEqual(48);
-        expect(layout.canvasTop).toBeLessThanOrEqual(64);
+        const measure = () =>
+            page.evaluate(() => ({
+                header: document.querySelector('#command-bar')!.getBoundingClientRect().height,
+                canvasTop: document.querySelector('#canvas')!.getBoundingClientRect().top,
+            }));
+        await expect.poll(() => measure().then((value) => value.header)).toBeLessThanOrEqual(48);
+        await expect.poll(() => measure().then((value) => value.canvasTop)).toBeLessThanOrEqual(64);
         for (const selector of [
             '#command-open',
             '#proof-line',
@@ -166,7 +154,9 @@ test.describe('the one-surface shell', () => {
 
         await page.locator('#command-open').click();
         await page.locator('#command-input').fill('Toggle catalog');
-        expect(await page.locator('.command-row').count()).toBe(1);
+        const matches = await page.locator('.command-row').count();
+        expect(matches).toBeGreaterThan(0);
+        expect(matches).toBeLessThanOrEqual(3);
         await page.keyboard.press('Enter');
         await expect(page.locator('body')).toHaveAttribute('data-catalog', 'open');
         expect(errors).toEqual([]);

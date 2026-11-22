@@ -1,25 +1,22 @@
 import { expect, test, type Page } from '@playwright/test';
+import { boot } from './boot';
 
 // The local kernel-op feed replaces the provider: no test reaches a model. The page loads from
 // app/pi's own Vite, which proxies /events and /prompt to the Node op server.
-const boot = async (page: Page): Promise<string[]> => {
-    const errors: string[] = [];
-    page.on('pageerror', (error) => errors.push(error.message));
+const bootApp = async (page: Page): Promise<string[]> => {
+    const consoleErrors: string[] = [];
     page.on('console', (message) => {
         if (message.type() === 'error' && !message.text().includes('favicon'))
-            errors.push(message.text());
+            consoleErrors.push(message.text());
     });
-    await page.goto('/');
-    await page.waitForFunction(() => (window as any).__pi?.ready === true);
-    await expect(page.locator('#status')).not.toHaveText('connecting…');
-    return errors;
+    return [...(await boot(page)), ...consoleErrors];
 };
 
 const noErrors = (errors: string[]) => expect(errors).toEqual([]);
 
 test.describe('the Pi reference app', () => {
     test('mounts the renderer and lists every capability', async ({ page }) => {
-        const errors = await boot(page);
+        const errors = await bootApp(page);
 
         await expect(page.locator('#canvas canvas').first()).toBeVisible({ timeout: 10_000 });
         const ids = await page.evaluate(() => (window as any).__pi.capabilities());
@@ -32,7 +29,7 @@ test.describe('the Pi reference app', () => {
     });
 
     test('runs every capability through the gallery and the test hook', async ({ page }) => {
-        const errors = await boot(page);
+        const errors = await bootApp(page);
         await page.evaluate(() => (window as any).__pi.toggleCatalog(true));
 
         for (const id of await page.evaluate(() => (window as any).__pi.capabilities())) {
@@ -50,7 +47,7 @@ test.describe('the Pi reference app', () => {
     });
 
     test('publishes presets and experiments as launchable catalog links', async ({ page }) => {
-        const errors = await boot(page);
+        const errors = await bootApp(page);
         const presets = await page.evaluate(() => (window as any).__pi.policy().presets.length);
         await expect(page.locator('#catalog a[data-preset]')).toHaveCount(presets);
         expect(await page.locator('#catalog a[data-cell]').count()).toBeGreaterThan(0);
@@ -78,7 +75,7 @@ test.describe('the Pi reference app', () => {
     });
 
     test('offers a one-line proof affordance and a dismissible first-run hint', async ({ page }) => {
-        const errors = await boot(page);
+        const errors = await bootApp(page);
         await expect(page.locator('#proof-line')).toContainText('proof');
         expect(await page.locator('#catalog .catalog-card').count()).toBeGreaterThan(0);
         await expect(page.locator('#first-run-hint')).toBeVisible();
@@ -90,7 +87,7 @@ test.describe('the Pi reference app', () => {
     });
 
     test('collapses and resizes the transcript from its HUD controls', async ({ page }) => {
-        const errors = await boot(page);
+        const errors = await bootApp(page);
         await expect(page.locator('#transcript-list')).toBeVisible();
         await page.locator('#transcript-toggle').click();
         await expect(page.locator('#transcript-list')).toBeHidden();
@@ -117,9 +114,9 @@ test.describe('the Pi reference app', () => {
     test('renders the transcript as a spine with expandable detail and a scroll overview', async ({
         page,
     }) => {
-        const errors = await boot(page);
+        const errors = await bootApp(page);
         const rows = page.locator('#transcript-list .spine-row');
-        expect(await rows.count()).toBeGreaterThan(0);
+        await expect.poll(() => rows.count(), { timeout: 10_000 }).toBeGreaterThan(0);
         await expect(rows.first().locator('.transcript-detail')).toBeHidden();
         await rows.first().locator('.spine-expand').click();
         await expect(rows.first().locator('.transcript-detail')).toBeVisible();
@@ -128,7 +125,9 @@ test.describe('the Pi reference app', () => {
         expect(detail).not.toContain('Summarise the repo');
 
         const dots = page.locator('#transcript-overview circle[data-transcript-node]');
-        expect(await dots.count()).toBe(await rows.count());
+        await expect
+            .poll(() => dots.count(), { timeout: 10_000 })
+            .toBe(await rows.count());
         await expect(page.locator('#transcript-overview [data-transcript-view]')).toBeVisible();
 
         const pane = page.locator('#transcript');
@@ -147,7 +146,7 @@ test.describe('the Pi reference app', () => {
     });
 
     test('keeps card labels at the configured on-screen minimum', async ({ page }) => {
-        const errors = await boot(page);
+        const errors = await bootApp(page);
         const tolerance = 1.5;
         const measure = () =>
             page.evaluate(() => {
@@ -175,7 +174,7 @@ test.describe('the Pi reference app', () => {
     test('follows the newest node and reports attention from the local stream', async ({
         page,
     }) => {
-        const errors = await boot(page);
+        const errors = await bootApp(page);
 
         await page.locator('#settings-menu summary').click();
         await page.locator('#follow-mode').selectOption('node');
@@ -204,7 +203,7 @@ test.describe('the Pi reference app', () => {
     });
 
     test('boots a recursive freeform graph in 3D with a settled simulation', async ({ page }) => {
-        const errors = await boot(page);
+        const errors = await bootApp(page);
 
         expect(await page.evaluate(() => (window as any).__pi.depth())).toBe('flat');
         await expect
@@ -227,7 +226,7 @@ test.describe('the Pi reference app', () => {
     });
 
     test('gates depth modes through renderer capabilities', async ({ page }) => {
-        const errors = await boot(page);
+        const errors = await bootApp(page);
 
         for (const mode of ['flat', 'layered', 'depth-stack', 'orbit']) {
             expect(await page.evaluate((value) => (window as any).__pi.setDepth(value), mode)).toBe(
@@ -244,7 +243,7 @@ test.describe('the Pi reference app', () => {
     test('keeps the transcript mounted across hybrid arrangements and permalinks', async ({
         page,
     }) => {
-        const errors = await boot(page);
+        const errors = await bootApp(page);
 
         const rows = page.locator('#transcript-list .transcript-row');
         expect(await rows.count()).toBeGreaterThan(0);
@@ -272,7 +271,7 @@ test.describe('the Pi reference app', () => {
     });
 
     test('exposes the five questions and new surfaces in the gallery', async ({ page }) => {
-        const errors = await boot(page);
+        const errors = await bootApp(page);
         const ids = await page.evaluate(() => (window as any).__pi.capabilities());
         for (const id of [
             'freeform-layout',
@@ -292,7 +291,7 @@ test.describe('the Pi reference app', () => {
     });
 
     test('drives zoom-driven levels, budgets and an opt-in lane scope', async ({ page }) => {
-        const errors = await boot(page);
+        const errors = await bootApp(page);
 
         expect(await page.evaluate(() => (window as any).__pi.levelMode())).toBe('auto');
         expect(await page.evaluate(() => (window as any).__pi.budgets())).toEqual({
@@ -321,7 +320,7 @@ test.describe('the Pi reference app', () => {
     test('windows the render, exports artifacts and mirrors gestures on the keyboard', async ({
         page,
     }) => {
-        const errors = await boot(page);
+        const errors = await bootApp(page);
 
         await page.evaluate(() => (window as any).__pi.loadFixture());
         await page.evaluate(() => (window as any).__pi.setWindowSize(1));
@@ -359,7 +358,7 @@ test.describe('the Pi reference app', () => {
     test('navigates revealed nodes through the trail, portal path and minimap', async ({
         page,
     }) => {
-        const errors = await boot(page);
+        const errors = await bootApp(page);
 
         const rows = page.locator('#transcript-list .transcript-row');
         const first = (await rows.nth(0).getAttribute('data-node'))!;
@@ -403,7 +402,7 @@ test.describe('the Pi reference app', () => {
     });
 
     test('submits the prompt form against the local op server', async ({ page }) => {
-        const errors = await boot(page);
+        const errors = await bootApp(page);
         const before = await page.evaluate(() => (window as any).__pi.ops());
 
         await page.locator('#prompt-input').fill('Summarise the repo');

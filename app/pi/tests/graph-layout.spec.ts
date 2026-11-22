@@ -1,10 +1,5 @@
-import { expect, test, type Page } from '@playwright/test';
-
-const boot = async (page: Page, query = ''): Promise<void> => {
-    await page.goto(`/${query}`);
-    await page.waitForFunction(() => (window as any).__pi?.ready === true);
-    await expect(page.locator('#status')).not.toHaveText('connecting…');
-};
+import { expect, test } from '@playwright/test';
+import { boot } from './boot';
 
 test.describe('graph arrangements', () => {
     test('every view is reachable by URL and by hook without dropping the default', async ({ page }) => {

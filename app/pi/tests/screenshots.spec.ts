@@ -13,7 +13,11 @@ const requested = process.env.SG_PI_SHOT?.split(',').map((id) => id.trim()).filt
 const shots: readonly Shot[] = requested?.length ? SHOTS.filter((shot) => requested.includes(shot.id)) : SHOTS;
 
 const settleCamera = async (page: Page): Promise<void> => {
-    await page.waitForTimeout(1800);
+    await expect
+        .poll(() => page.evaluate(() => (window as any).__pi.simulation().settled), {
+            timeout: 10_000,
+        })
+        .toBe(true);
     await page.waitForFunction(
         () => {
             const pi = (window as any).__pi;

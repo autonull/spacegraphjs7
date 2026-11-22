@@ -1,3 +1,8 @@
+// DISABLED (§6 test-agility ledger): one of four overlapping smoke suites that run on fixed sleeps
+// and are not wired into CI. Renamed to `.disabled` so the `/.*\.spec\.ts/` testMatch stops collecting
+// it. Surviving gate: test/interaction.spec.ts (real drag/hover/metawidget behavior) plus the app e2e
+// suites. Re-enable only with a distinct, deterministic assertion not covered by those gates.
+
 import { expect, test } from '@playwright/test';
 
 test.describe('SpaceGraph Layout and Interaction', () => {

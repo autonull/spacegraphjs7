@@ -21,6 +21,7 @@
         "shots:all": "tsx scripts/shot.ts all",
         "compare:ui": "tsx scripts/ui-compare.ts",
         "shots:focus": "tsx scripts/shot.ts cockpit,node-detail,light-theme,policy",
+        "shots:compare": "playwright test --config playwright.config.ts tests/ui-compare.spec.ts",
         "shots:watch": "tsx scripts/shot.ts --watch"
     },
     "dependencies": {

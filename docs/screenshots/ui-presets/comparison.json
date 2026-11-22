@@ -14,7 +14,9 @@
         "vision",
         "screenshots"
       ],
-      "images": "pending — capture ?shot=ui-compact&ui=full and ?shot=ui-compact&ui=compact",
+      "incumbentImage": "docs/screenshots/ui-presets/compact/incumbent.png",
+      "variantImage": "docs/screenshots/ui-presets/compact/variant.png",
+      "images": "pending human verdict; pairs captured by pnpm run shots:compare",
       "decision": "pending human review; ADR 0008 default gate not closed"
     },
     {
@@ -28,7 +30,9 @@
         "vision",
         "screenshots"
       ],
-      "images": "pending — capture ?shot=ui-reading&ui=full and ?shot=ui-reading&ui=reading",
+      "incumbentImage": "docs/screenshots/ui-presets/reading/incumbent.png",
+      "variantImage": "docs/screenshots/ui-presets/reading/variant.png",
+      "images": "pending human verdict; pairs captured by pnpm run shots:compare",
       "decision": "pending human review; ADR 0008 default gate not closed"
     },
     {
@@ -42,7 +46,9 @@
         "vision",
         "screenshots"
       ],
-      "images": "pending — capture ?shot=ui-presentation&ui=full and ?shot=ui-presentation&ui=presentation",
+      "incumbentImage": "docs/screenshots/ui-presets/presentation/incumbent.png",
+      "variantImage": "docs/screenshots/ui-presets/presentation/variant.png",
+      "images": "pending human verdict; pairs captured by pnpm run shots:compare",
       "decision": "pending human review; ADR 0008 default gate not closed"
     },
     {
@@ -57,7 +63,9 @@
         "vision",
         "screenshots"
       ],
-      "images": "pending — capture ?shot=ui-one-index&ui=full and ?shot=ui-one-index&ui=one-index",
+      "incumbentImage": "docs/screenshots/ui-presets/one-index/incumbent.png",
+      "variantImage": "docs/screenshots/ui-presets/one-index/variant.png",
+      "images": "pending human verdict; pairs captured by pnpm run shots:compare",
       "decision": "pending human review; ADR 0008 default gate not closed"
     },
     {
@@ -71,7 +79,9 @@
         "vision",
         "screenshots"
       ],
-      "images": "pending — capture ?shot=ui-light-shell&ui=full and ?shot=ui-light-shell&ui=light-shell",
+      "incumbentImage": "docs/screenshots/ui-presets/light-shell/incumbent.png",
+      "variantImage": "docs/screenshots/ui-presets/light-shell/variant.png",
+      "images": "pending human verdict; pairs captured by pnpm run shots:compare",
       "decision": "pending human review; ADR 0008 default gate not closed"
     },
     {
@@ -86,7 +96,9 @@
         "vision",
         "screenshots"
       ],
-      "images": "pending — capture ?shot=ui-mono&ui=full and ?shot=ui-mono&ui=mono",
+      "incumbentImage": "docs/screenshots/ui-presets/mono/incumbent.png",
+      "variantImage": "docs/screenshots/ui-presets/mono/variant.png",
+      "images": "pending human verdict; pairs captured by pnpm run shots:compare",
       "decision": "pending human review; ADR 0008 default gate not closed"
     },
     {
@@ -100,7 +112,9 @@
         "motion",
         "screenshots"
       ],
-      "images": "pending — capture ?shot=ui-morph&ui=full and ?shot=ui-morph&ui=morph",
+      "incumbentImage": "docs/screenshots/ui-presets/morph/incumbent.png",
+      "variantImage": "docs/screenshots/ui-presets/morph/variant.png",
+      "images": "pending human verdict; pairs captured by pnpm run shots:compare",
       "decision": "pending human review; ADR 0008 default gate not closed"
     },
     {
@@ -115,7 +129,9 @@
         "vision",
         "screenshots"
       ],
-      "images": "pending — capture ?shot=ui-failure-first&ui=full and ?shot=ui-failure-first&ui=failure-first",
+      "incumbentImage": "docs/screenshots/ui-presets/failure-first/incumbent.png",
+      "variantImage": "docs/screenshots/ui-presets/failure-first/variant.png",
+      "images": "pending human verdict; pairs captured by pnpm run shots:compare",
       "decision": "pending human review; ADR 0008 default gate not closed"
     }
   ]

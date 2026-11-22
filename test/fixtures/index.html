@@ -22,12 +22,13 @@
         <!-- Load from cloned dist so analyzer's http-server can serve it -->
         <script type="module">
             import * as THREE from 'three';
-            import { SpaceGraph } from './dist/spacegraphjs.js';
+            import { SpaceGraph } from './dist/index.js';
 
             window.THREE = THREE;
             window.SpaceGraph = SpaceGraph;
 
             const spec = {
+                global: true,
                 nodes: [
                     // Red background (#ff0000) with default white text has poor contrast (WCAG violation)
                     { id: 'n1', type: 'ShapeNode', label: 'Node 1', data: { color: 0xff0000 } },

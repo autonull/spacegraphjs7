@@ -170,7 +170,7 @@
         "prepublishOnly": "pnpm run clean && pnpm run build && pnpm run test",
         "test": "vitest run",
         "test:all-demos": "pnpm run test:demo-errors && pnpm run test:screenshots",
-        "test:behavioral": "playwright test test/e2e/behavioral.spec.ts --reporter=list",
+        "test:behavioral": "playwright test test/interaction.spec.ts --reporter=list",
         "test:boundaries": "vitest run test/boundaries.test.ts",
         "test:demo-errors": "playwright test test/e2e/demo-errors.spec.ts --reporter=list",
         "test:exports": "vitest run test/package-exports.test.ts",

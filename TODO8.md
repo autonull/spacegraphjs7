@@ -223,62 +223,67 @@ with a vector version plan.
 
 ## 9. Progress
 
-Plan status: **Phase 0 code and the deterministic code for Phases 1–2 are implemented; human-gated
-work remains**. The §3 bundle design is now the implementation: `ui` names a bundle of existing knobs
-and view flags applied through existing setters. No default has changed; no verdict or pilot result
-has been fabricated.
+Plan status: **Phases 0–2 are implemented and the gallery evidence is captured; human gates remain**.
+`ui` names a bundle of existing knobs and view flags applied through existing setters. No default has
+changed; no verdict or pilot result has been fabricated.
 
 | Phase | Status | Evidence |
 | ----- | ------ | -------- |
-| 0 — experiment loop and test agility | code complete; §6 ledger deferred | §3 bundle and all access paths implemented below; `check:fast` and `ui-presets.spec.ts` green |
-| 1 — presets as evidence | scaffolding complete; captures/verdicts pending | five `ui-*` shots in `shots.ts`; `compare:ui` writes `docs/screenshots/ui-presets/comparison.json` |
-| 2 — task comparison | harness support complete; pilot external | `?studyUI=`, `__study.ui`, per-preset report rows in `study.ts` / `study-page.ts` |
-| 3 — graduation and verification | not started | `docs/adr/0008-evidence-gate-for-defaults.md`; no ADR decision closed |
+| 0 — experiment loop and test agility | complete | §6 ledger applied; `retries: 0`; full app e2e 130 passed |
+| 1 — presets as evidence | captures complete; verdicts pending | five `ui-*` shots, eight incumbent/variant pairs, ADR scaffold |
+| 2 — task comparison | harness support complete; pilot external | `?studyUI=`, `__study.ui`, per-preset report rows |
+| 3 — graduation and verification | not started | no ADR 0008 decision closed |
 
-### Delivered in this slice
+### Delivered
 
-1. `app/pi/src/ui/presets.ts`: nine presets (`full`, `compact`, `reading`, `presentation`,
-   `one-index`, `light-shell`, `mono`, `morph`, `failure-first`) with declared gates and one
-   `applyUIPreset(id, target)` function that uses `setPolicyLayer('experiment', knobs)` and the
-   existing graph/transcript setters.
-2. Access paths: `?ui=<id>`, `PermalinkState.ui` (v4, validated, restored after policy), `Shot.ui`,
-   `lab.<id>` palette commands plus `u` for a filtered lab list, hooks `uiPresets()` / `ui()` /
-   `applyUIPreset(id)`, and `?studyUI=<id>` on the study page.
-3. One new visual axis: `body.dataset.uiChrome` (`full` / `compact` / `minimal`) with CSS in
-   `app/pi/index.html`. Hiding a widget never removes its command; `help` names the hidden widgets
-   and the `lab.full` restore path.
-4. `study.ts` records `ui` on each trial and adds per-preset result rows to the report; the study
-   header shows the active preset.
-5. Gallery data: five `ui-*` shots and `pnpm run compare:ui`, which writes pending ADR 0008 decision
-   stubs with declared incumbent/variant shot pairs. Humans fill the decision.
+1. Presets and access paths: `app/pi/src/ui/presets.ts` holds nine presets and one
+   `applyUIPreset(id, target)` that reuses `setPolicyLayer('experiment', knobs)` and the existing
+   graph/transcript setters. Reachable from `?ui=`, permalink v4, `Shot.ui`, `lab.<id>` commands plus
+   `u`, hooks `uiPresets()` / `ui()` / `applyUIPreset()`, and `?studyUI=`.
+2. One new visual axis: `body.dataset.uiChrome` with CSS in `app/pi/index.html`. Hidden widgets keep
+   their commands; dynamic `help` names them and the `lab.full` restore path.
+3. Deterministic test boot: `app/pi/tests/boot.ts` centralises ready + populated-kernel + mounted-shell
+   polling; `frames(page, n)` replaces fixed sleeps where a frame count is the real condition.
+4. §6 ledger applied: weak boots refactored in browser/graph-layout/vision/motion/policy/grammar/
+   shell/focus-lens; fixed sleeps replaced with `expect.poll` or frame waits; exact DOM counts relaxed
+   to bounded or derived assertions; four overlapping smoke suites and the self-writing byte snapshot
+   disabled with reasons; hash identity relaxed to config/geometry signatures; the library negative
+   control uses `pnpm`, an ephemeral port and readiness polls. `retries: 0` and clean-server boot are
+   set in `app/pi/playwright.config.ts`.
+5. Gallery evidence: five `ui-*` shots, `pnpm run shots:compare` (incumbent/variant PNG pairs for all
+   eight non-incumbent presets), and `pnpm run compare:ui` writing pending ADR 0008 decision stubs
+   with concrete image paths. Human verdicts still go in `review.json`.
 
 ### Verification run
 
-- `app/pi`: `pnpm run check:fast` — 30 files, 162 tests green (one run).
-- `app/pi`: `pnpm exec playwright test --config playwright.config.ts tests/ui-presets.spec.ts
-  --workers=2` — 3 passed (URL → host → permalink → reload, hooks, palette restore).
-- `app/pi`: `pnpm run compare:ui` — wrote `docs/screenshots/ui-presets/comparison.json`.
-- Intentionally not run to avoid redundant cost: root `pnpm run check`, `test:e2e`, `verify:visual`,
-  `shots:all`, `scale`. Run these once at a slice or release boundary.
+- `app/pi`: `pnpm run check:fast` — 30 files, 162 tests green.
+- `app/pi`: `pnpm run test:e2e -- --workers=2` with `retries: 0` — **130 passed**.
+- `app/pi`: `pnpm run shots:compare` — 8 passed; pair PNGs under `docs/screenshots/ui-presets/<id>/`.
+- `app/demo`: `host.spec.ts` — 10 passed.
+- Root collection check: disabled suites are no longer collected; kept suites parse.
+- Not run to avoid redundant cost: root `pnpm run check`, `verify:visual`, `shots:all`, `scale`.
+  Run them once at a release boundary.
 
 ### Remaining work — clarified
 
-1. **Test-agility ledger (§6) is untouched.** Changing boot waits, count assertions and
-   `retries: 1 → 0` needs repeated e2e runs to prove flakes are gone; that conflicts with the
-   request to minimise test executions. Work the table top-down; each row already names its
-   surviving gate. Do this before treating `retries: 0` as achieved.
-2. **Gallery evidence (Phase 1).** Capture the five `ui-*` shots and the incumbent/variant pairs
-   named in `comparison.json` (`shots:focus` while iterating, `shots:all` at the boundary), then a
-   human fills `review.json`. Image paths in the scaffold are deliberately `pending`.
-3. **Pilot (Phase 2).** `?studyUI=<preset>` now records `__study.ui` and the report can rank
-   presets per task. Recruitment, the five-question run and the decision stay external
-   (`docs/pi-study.md:38-42`); no results are generated here.
-4. **Graduation (Phase 3).** Promote at most one preset per ADR 0008 decision after a human log,
-   then update `CHANGELOG.md`, `app/pi/README.md`, `docs/pi-study.md` and stale cross-references.
-5. **Keep defaults untouched.** No preset is a default until ADR 0008 closes; `uiChrome` is only set
+1. **Human gates.** Gallery verdicts in `review.json`, the five-question pilot and any default change
+   stay human (`docs/pi-study.md:38-42`, ADR 0008). No results are generated here.
+2. **Two root-level gates are still red for pre-existing, non-timing reasons.** The ledger's timing
+   work is applied, but:
+   - `test/interaction.spec.ts` now boots the correct demo Vite and 2/5 tests pass; the other three
+     assert `.sg-hover-meta-widget`, a class absent from current source. Re-target those assertions
+     to the current widget API rather than restoring sleeps.
+   - `test/vision.spec.ts` reaches the negative-control assertion, but `noOverlap()` resolves on the
+     forced-overlap fixture. The fixture now loads the built bundle and registers globally; the
+     remaining defect is overlap-detection drift, not spawn timing.
+3. **Graph baseline snapshot (§6 row 3) stays a gate.** `tests/graph-layout.test.ts` deep-equals
+   `docs/screenshots/graph-baseline.json`. Regenerate only by capturing `measure()` from that test
+   into the JSON and reviewing the diff; the invariant assertions at lines 38–83 remain the
+   behavioral gate. No layout change was made in these slices.
+4. **Keep defaults untouched.** No preset is a default until ADR 0008 closes; `uiChrome` is set only
    when a preset is applied, so an unlabelled session keeps the shipped DOM.
-6. **`task-1` … `task-5` presets are deliberately absent.** They need pinned per-question bundles
-   and a pilot result; inventing their knobs would fabricate evidence.
+5. **`task-1` … `task-5` presets are deliberately absent.** They need pinned per-question bundles and
+   a pilot result; inventing their knobs would fabricate evidence.
 
 ### Handoff notes
 
@@ -286,5 +291,5 @@ has been fabricated.
 2. Use `pnpm` for all commands; never `bun`.
 3. Tier the loop: `check:fast` / `shots:focus` while iterating, `test:e2e` / `shots:all` at a slice
    boundary (`TODO7.md:243`). Use `--workers=2` on memory-constrained hosts.
-4. `playwright.config.ts` still has `retries: 1`; change it only after item 1 above.
-5. Keep increments reviewable; commit only when explicitly asked (this slice was committed on request).
+4. `retries: 0` and clean-server boot are now active; keep new waits state-based, never time-based.
+5. Keep increments reviewable; commit only when explicitly asked (prior slices were committed on request).

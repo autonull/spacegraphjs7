@@ -563,7 +563,7 @@ Plugins receive initialization, pre/post render, node and edge mutation, export/
 | Vision assertions       | `pnpm run test:vision`      |
 | Demo screenshots        | `pnpm run test:screenshots` |
 | Demo error scan         | `pnpm run test:demo-errors` |
-| Behavioral demos        | `pnpm run test:behavioral`  |
+| Real interaction E2E    | `pnpm run test:behavioral`  |
 | All demo checks         | `pnpm run test:all-demos`   |
 | Lint                    | `pnpm run lint`             |
 | Format check            | `pnpm run format:check`     |

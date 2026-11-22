@@ -41,12 +41,33 @@ test.describe('SpaceGraph Interaction Tests', () => {
     let serverProcess: any;
 
     test.beforeAll(async () => {
-        serverProcess = spawn('pnpm', ['exec', 'vite', '--port', String(PORT), '--no-open'], {
-            cwd: path.resolve(__dirname, '..'),
-            stdio: 'ignore',
-        });
-        // Wait for vite to be ready
-        await new Promise((resolve) => setTimeout(resolve, 3000));
+        serverProcess = spawn(
+            'pnpm',
+            [
+                'exec',
+                'vite',
+                '--config',
+                'vite.config.ts',
+                '--port',
+                String(PORT),
+                '--strictPort',
+                '--no-open',
+            ],
+            { cwd: path.resolve(__dirname, '../app/demo'), stdio: 'ignore' },
+        );
+        // Poll the real demo URL instead of sleeping a fixed 3s after spawn.
+        await expect
+            .poll(
+                async () => {
+                    try {
+                        return (await fetch(`${BASE_URL}/html/interaction/interaction.html`)).ok;
+                    } catch {
+                        return false;
+                    }
+                },
+                { timeout: 30_000, intervals: [100, 250, 500, 1000] },
+            )
+            .toBe(true);
     });
 
     test.afterAll(() => {
@@ -55,15 +76,20 @@ test.describe('SpaceGraph Interaction Tests', () => {
 
     async function loadDemo(page: any) {
         await page.goto(`${BASE_URL}/html/interaction/interaction.html`, { waitUntil: 'networkidle' });
+        await page.waitForFunction(() => Boolean((window as any)._sg), undefined, {
+            timeout: 20_000,
+        });
+        // Layout/camera settle signal: the CSS3D renderer has actually placed n1's DOM node.
         await page.waitForFunction(
             () => {
-                const w = window as any;
-                return w._sg && w.SpaceGraph?.instances?.size > 0;
+                const element = document.querySelector('[data-node-id="n1"]');
+                if (!element) return false;
+                const rect = element.getBoundingClientRect();
+                return rect.width > 0 && rect.height > 0;
             },
+            undefined,
             { timeout: 20_000 },
         );
-        // Allow layout / first render to settle
-        await page.waitForTimeout(500);
     }
 
     // ── Test 1: node drag changes position ─────────────────────────────────
@@ -84,18 +110,19 @@ test.describe('SpaceGraph Interaction Tests', () => {
         await page.mouse.move(pos.x + 150, pos.y + 80, { steps: 10 });
         await page.mouse.up();
 
-        // Allow one frame
-        await page.waitForTimeout(100);
-
-        const after = await page.evaluate(() => {
-            const node = (window as any)._sg.graph.nodes.get('n1');
-            return { x: node.position.x, y: node.position.y };
-        });
-
-        // Position should have changed by a meaningful amount
-        const dx = Math.abs(after.x - before.x);
-        const dy = Math.abs(after.y - before.y);
-        expect(dx + dy).toBeGreaterThan(10);
+        // Wait for the drag to actually move the node instead of sleeping one frame.
+        await expect
+            .poll(
+                async () => {
+                    const after = await page.evaluate(() => {
+                        const node = (window as any)._sg.graph.nodes.get('n1');
+                        return { x: node.position.x, y: node.position.y };
+                    });
+                    return Math.abs(after.x - before.x) + Math.abs(after.y - before.y);
+                },
+                { timeout: 5_000 },
+            )
+            .toBeGreaterThan(10);
     });
 
     // ── Test 2: hovering fires node:pointerenter ────────────────────────────
@@ -110,11 +137,9 @@ test.describe('SpaceGraph Interaction Tests', () => {
 
         const pos = await getNodeScreenPos(page, 'n1');
 
-        // Move to a safe empty area first, then onto the node
         await page.mouse.move(pos.x + 400, pos.y + 400);
-        await page.waitForTimeout(100);
         await page.mouse.move(pos.x, pos.y);
-        await page.waitForTimeout(200);
+        await expect.poll(() => page.evaluate(() => (window as any)._lastHoverNodeId)).toBe('n1');
 
         const hovered = await page.evaluate(() => (window as any)._lastHoverNodeId);
         expect(hovered).toBe('n1');
@@ -126,14 +151,11 @@ test.describe('SpaceGraph Interaction Tests', () => {
         await loadDemo(page);
 
         const pos = await getNodeScreenPos(page, 'n1');
-
-        // Move away first, then hover node
-        await page.mouse.move(pos.x + 400, pos.y + 400);
-        await page.waitForTimeout(100);
-        await page.mouse.move(pos.x, pos.y);
-        await page.waitForTimeout(200);
-
         const widget = page.locator('.sg-hover-meta-widget');
+
+        await page.mouse.move(pos.x + 400, pos.y + 400);
+        await page.mouse.move(pos.x, pos.y);
+
         await expect(widget).toBeVisible();
     });
 
@@ -143,16 +165,12 @@ test.describe('SpaceGraph Interaction Tests', () => {
         await loadDemo(page);
 
         const pos = await getNodeScreenPos(page, 'n1');
-
-        // Hover node
-        await page.mouse.move(pos.x, pos.y);
-        await page.waitForTimeout(200);
-
-        // Move to empty space
-        await page.mouse.move(pos.x + 400, pos.y + 400);
-        await page.waitForTimeout(200);
-
         const widget = page.locator('.sg-hover-meta-widget');
+
+        await page.mouse.move(pos.x, pos.y);
+        await expect(widget).toBeVisible();
+
+        await page.mouse.move(pos.x + 400, pos.y + 400);
         await expect(widget).not.toBeVisible();
     });
 
@@ -166,19 +184,16 @@ test.describe('SpaceGraph Interaction Tests', () => {
         });
 
         const pos = await getNodeScreenPos(page, 'n1');
+        const widget = page.locator('.sg-hover-meta-widget');
 
-        // Hover to show metawidget
         await page.mouse.move(pos.x + 400, pos.y + 400);
-        await page.waitForTimeout(100);
         await page.mouse.move(pos.x, pos.y);
-        await page.waitForTimeout(300);
 
-        // Click the Focus button (first action on n1)
-        const focusBtn = page.locator('.sg-hover-meta-widget button[data-action="focus"]');
+        const focusBtn = widget.locator('button[data-action="focus"]');
         await expect(focusBtn).toBeVisible();
         await focusBtn.click();
 
-        await page.waitForTimeout(100);
+        await expect.poll(() => page.evaluate(() => (window as any)._lastMetaAction)).not.toBeNull();
 
         const meta = await page.evaluate(() => (window as any)._lastMetaAction);
         expect(meta).not.toBeNull();
