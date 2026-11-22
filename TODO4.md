@@ -6,7 +6,7 @@ the progress block below records what has actually landed.
 
 ---
 
-## Progress (updated 2026-11-21 — slices 1–3, 5, the standing track, composition and interaction ergonomics complete; next: motion, gated on demand)
+## Progress (updated 2026-11-21 — all scheduled increments complete; the two remaining program items are gated, see "Remaining work" below)
 
 **Slice 1 — One surface language: implemented in Pi, not yet promoted to a second host.**
 
@@ -205,20 +205,27 @@ the progress block below records what has actually landed.
 4. Root AGENTS names `bun run check`, but `package.json` has no `check` script. Add one wrapping package
    typechecks so the fast loop has one unambiguous command.
 
-**Remaining work, in order — fundamentals first, parity last:**
+**Remaining work — both items gated, no work started (verified 2026-11-21):**
 
-1. **Motion and life (L1–L3, §6) (next, gated on a recorded demand).** Interaction ergonomics is done: the
-   chip exception is compensated, the lens has a keyboard focus ring, and the palette shares the lens action
-   path. The slices that parked motion — anatomy and composition — have landed, but effects were flagged as
-   overdone. Do not build new animation: promote an existing opt-in preset (§10) only when a concrete
-   comparison exists, keep it data with provenance, and keep reduced-motion parity and the frame-time gate
-   green. If no demand appears, leave this parked and move to the next item when its consumer exists.
-2. **Slice 4 — Proliferation (O5–O7).** Still gated on a second host consuming the shell, tokens and
-   inspector unchanged. Verified 2026-11-21: `app/demo` imports only mechanism-layer helpers; the only
-   importers of `app/pi/src/shell` and `@spacegraphjs/shared/tokens` live in Pi. Not work we can start;
-   when the consumer exists, split core/domain policy vocabulary, emit the world-host template and a real
-   `createVisionAssert` gate from the scaffold, replace generated `vocabulary.ts` with
-   `@spacegraphjs/shared/domain`, and add one cross-domain shot. No contract or position-authority change.
+| Item                             | Status | Gate that must open before work starts | Evidence the gate is closed today                                                                                                                                                                                                                                  |
+| -------------------------------- | ------ | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Motion and life (L1–L3, §6)      | parked | A recorded demand **and** a concrete with/without comparison | Neither exists in `TODO4.md`, `docs/`, `CHANGELOG.md` or `docs/screenshots/review.json`; `docs/not-decided.md:9` still asks whether animated camera flights help or annoy. Anatomy and composition settled, but §6 keeps L1–L3 parked because effects were flagged as overdone. |
+| Slice 4 — Proliferation (O5–O7)  | parked | A real non-Pi host importing `app/pi/src/shell` and `@spacegraphjs/shared/tokens` unchanged, with flagship behavior byte-comparable | No such host: `app/demo` imports mechanism-layer helpers only. `@spacegraphjs/shared/tokens` has one importer, `app/pi/src/shell/tokens.ts`; `app/pi/src/shell` is consumed only by Pi and its tests.                                                    |
+
+**When a gate opens — exact next steps; no speculative work before then:**
+
+1. **Motion:** record the demand and the comparison first. Then promote one existing opt-in preset (§10) as
+   data with provenance. Reuse the live activity map, `MotionDirector`, `setFollow` and
+   `camera.verbMs` / `ladder.blendMs`; no new animation subsystem, renderer branch or contract field.
+   L4 reduced-motion final-frame parity and the frame-time gate stay green; still frames stay byte-identical.
+2. **Proliferation:** split core/domain policy vocabulary, emit the world-host template, make the scaffold
+   emit a real `createVisionAssert` gate and import `@spacegraphjs/shared/domain` instead of duplicating
+   helpers, and add one cross-domain shot. Verify the second host consumes shell, tokens and inspector
+   unchanged; no contract or position-authority change.
+
+**Resume check:** unit `pnpm --filter pi test`; full browser gate `pnpm --filter pi test:e2e -- --workers=1`;
+root types `pnpm run check`; gallery `pnpm --filter pi shots:all`. A gate opens only when the evidence in the
+table above changes — a request to "continue" is not itself a recorded demand or a second consumer.
 
 **Peripheral — parked, not dropped:**
 
@@ -226,8 +233,8 @@ the progress block below records what has actually landed.
   keyboard/pointer resize in both directions wait until the fundamentals above are reviewed.
 - M4 ergonomic counters and M2 perceptual smoke (cut): both add gates without adding certainty.
 - N3/N4 published gallery, study and release stay with TODO3's G3–G5.
-- Housekeeping: confirm ADR 0014, fill `docs/screenshots/review.json` verdicts, re-run e2e with
-  `--workers=1` on a loaded machine.
+- Housekeeping: ADR 0014 is accepted (`docs/adr/0014-tapered-ribbon-edges.md`); `docs/screenshots/review.json`
+  verdicts are still empty and owe a human pass; re-run e2e with `--workers=1` on a loaded machine.
 
 Slices 1–3, 5, the standing accessibility track, composition and interaction ergonomics are recorded as
 done; the visual-correctness and content-legibility passes repaired treatments that were recorded before
@@ -235,9 +242,9 @@ they actually rendered or read well, composition gave graph shots a quiet frame 
 ribbons, and ergonomics compensated the bounded chip exception with 44px targets in the actions tab and
 palette. Last prior commits: `bddd7a6` (slice 2), `01c4759` (slice 3), `0c0b184` (standing track),
 `80dd02e` (visual pass), `86dba56` (plan ordering), `1021683` (node anatomy), `c5c02d8` (labels/frames),
-`3f2a76b` (composition). The remaining program is motion (gated on a recorded demand) and proliferation
-(gated on a second host); parity stays peripheral. The study, release and hosted URL stay deferred with
-TODO3's G3–G5.
+`3f2a76b` (composition), `faa8b5f` (interaction ergonomics). This plan is at its honest stopping point:
+motion and proliferation stay parked until their gates open, parity stays peripheral, and the study,
+release and hosted URL stay deferred with TODO3's G3–G5.
 
 ---
 
