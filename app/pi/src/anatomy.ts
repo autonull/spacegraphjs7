@@ -224,11 +224,14 @@ export const anatomyLens = (
                     `<div class="focus-chip" data-kind="${escapeHtml(chip.kind)}" data-chip="${escapeHtml(chip.id)}" style="inset-inline-start:${left.toFixed(1)}%;top:${top.toFixed(1)}%;width:${width.toFixed(1)}%;height:${height.toFixed(1)}%"><span class="focus-chip-head"><span aria-hidden="true">${chip.scope ? portalGlyph(chip.scope) : '·'}</span> ${escapeHtml(chip.label)}</span><span class="focus-chip-meta">${escapeHtml(chip.role)} · ${escapeHtml(chip.kind)}</span><span class="focus-chip-status">${escapeHtml(chip.status ?? chip.kind)}</span><span class="focus-chip-signal">${[0.35, 0.6, 0.9, 0.5].map((height) => `<i style="height:${height * 100}%"></i>`).join('')}</span>${actionButton('focus', chip.id, '↗', `Focus ${chip.label}`)}${subchips(chip)}</div>`,
             )
             .join('');
+    const targets = chips
+        .map((chip) => actionButton('focus', chip.id, chip.label, `Focus ${chip.label}`))
+        .join('');
     const titleSize = Math.min(28, Math.max(16, labelPx || 20));
     const header = anatomyHeader(
         `${glyph}${label}`,
         titleSize,
         `${anatomyStatus(status)}${anatomySignal([0.35, 0.6, 0.9, 0.5])}`,
     );
-    return `<div data-rung="detail" data-focus="focus" data-kind="${escapeHtml(node.kind)}" data-status="${status}" data-anatomy="${arrangementOf(node)}"${node.scope ? ` data-portal="${escapeHtml(node.scope)}"` : ''} class="focus-panel anatomy" style="position:relative;width:100%;height:100%;box-sizing:border-box;display:grid;grid-template-rows:auto auto minmax(0,1fr) auto;gap:6px;padding:8px;overflow:hidden;font-family:inherit">${SHAPE_SPAN}${header}${anatomyRow(detail.slice(0, 240), 'body', 'focus-detail anatomy-row-wrap')}<div class="focus-inner" data-layout="${layout}">${inner}</div><div class="focus-actions">${actions}</div>${portParts(node)}</div>`;
+    return `<div data-rung="detail" data-focus="focus" data-kind="${escapeHtml(node.kind)}" data-status="${status}" data-anatomy="${arrangementOf(node)}"${node.scope ? ` data-portal="${escapeHtml(node.scope)}"` : ''} class="focus-panel anatomy" style="position:relative;width:100%;height:100%;box-sizing:border-box;display:grid;grid-template-rows:auto auto minmax(0,1fr) auto;gap:6px;padding:8px;overflow:hidden;font-family:inherit">${SHAPE_SPAN}${header}${anatomyRow(detail.slice(0, 240), 'body', 'focus-detail anatomy-row-wrap')}<div class="focus-inner" data-layout="${layout}">${inner}</div><div class="focus-actions">${actions}</div><div class="focus-targets">${targets}</div>${portParts(node)}</div>`;
 };

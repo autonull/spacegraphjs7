@@ -1013,6 +1013,27 @@
             #focus-lens[data-tab='actions'] .focus-detail {
                 display: none;
             }
+            #focus-lens .focus-targets {
+                display: none;
+                flex-direction: column;
+                gap: var(--sg-spacing-hair);
+                min-height: 0;
+                overflow: auto;
+            }
+            #focus-lens[data-tab='actions'] .focus-targets {
+                display: flex;
+            }
+            .focus-targets .focus-button {
+                flex: 1 1 auto;
+                text-align: start;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+            #focus-lens button:focus-visible {
+                outline: 2px solid var(--sg-colors-ring);
+                outline-offset: 1px;
+            }
             #focus-lens[data-pinned='true'] {
                 inset-block-start: var(--sg-spacing-sm);
                 inset-inline-end: var(--sg-spacing-sm);

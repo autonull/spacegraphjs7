@@ -12,7 +12,7 @@ export interface CommandSurface {
     readonly element: HTMLElement;
     readonly mode: CommandMode | undefined;
     open(mode?: CommandMode): void;
-    close(): void;
+    close(keepFocus?: boolean): void;
 }
 
 const matches = (command: Command, query: string): boolean =>
@@ -64,6 +64,15 @@ export const createCommandSurface = (
     let shown: readonly Command[] = [];
     let previousFocus: HTMLElement | null = null;
 
+    /** A command may switch surface or move focus; neither should be undone by closing. */
+    const runCommand = (command: Command): void => {
+        const beforeMode = mode;
+        const beforeFocus = document.activeElement;
+        command.run?.();
+        if (mode !== beforeMode) return;
+        surface.close(document.activeElement !== beforeFocus);
+    };
+
     const select = (index: number): void => {
         active = Math.min(Math.max(index, 0), Math.max(shown.length - 1, 0));
         for (const [rowIndex, row] of [...list.children].entries()) {
@@ -95,10 +104,7 @@ export const createCommandSurface = (
                     hint.textContent = command.hint;
                     row.append(hint);
                 }
-                row.addEventListener('click', () => {
-                    command.run?.();
-                    surface.close();
-                });
+                row.addEventListener('click', () => runCommand(command));
                 return row;
             }),
         );
@@ -118,8 +124,8 @@ export const createCommandSurface = (
             select(active - 1);
         } else if (event.key === 'Enter') {
             event.preventDefault();
-            shown[active]?.run?.();
-            surface.close();
+            const command = shown[active];
+            if (command) runCommand(command);
         }
     });
     element.addEventListener('pointerdown', (event) => {
@@ -141,10 +147,10 @@ export const createCommandSurface = (
             render();
             input.focus();
         },
-        close() {
+        close(keepFocus = false) {
             element.hidden = true;
             mode = undefined;
-            previousFocus?.focus();
+            if (!keepFocus) previousFocus?.focus();
             previousFocus = null;
         },
     };

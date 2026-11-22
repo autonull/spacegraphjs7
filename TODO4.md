@@ -6,7 +6,7 @@ the progress block below records what has actually landed.
 
 ---
 
-## Progress (updated 2026-11-21 — slices 1–3, 5, the standing track and the composition pass complete; next: interaction ergonomics)
+## Progress (updated 2026-11-21 — slices 1–3, 5, the standing track, composition and interaction ergonomics complete; next: motion, gated on demand)
 
 **Slice 1 — One surface language: implemented in Pi, not yet promoted to a second host.**
 
@@ -162,6 +162,22 @@ the progress block below records what has actually landed.
 4. The brighter causal color makes ribbons more legible, not louder: width is still capped at 60 world units against 178–320-unit cards, and the brightness ramp still runs source → target. The `neon-cockpit` shot was re-checked specifically for the earlier "ribbons outshine nodes" regression.
 5. Interaction ergonomics is now the next fundamental. The bounded chip-control 44px exception and the inspector reach around the new node anatomy are the concrete work; reduced-motion final-frame and intermediate-frame vision stay standing gates.
 
+**Interaction ergonomics (2026-11-21): the bounded chip exception is decided and compensated, and one action path serves the lens and the palette.**
+
+| Item                                | Status | Evidence                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| ----------------------------------- | ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Chip-control exception decision     | done   | Kept the K4 cap. The chip stays a 20px bounded preview; its 44px `↗` box is clipped by `overflow: hidden`. Every chip target now has a 44px equivalent in the inspector's `actions` tab and the palette, so the exception is compensated rather than hidden. `app/pi/tests/focus-lens.spec.ts` asserts one 44px target per chip and that activating one focuses the node.                                                                                                                                                                                                                                                             |
+| Focus and inspector reach           | done   | `#focus-lens button:focus-visible` draws a 2px `--sg-colors-ring` outline. A `Focus the inspector` palette command moves focus to the active tab. `CommandSurface.close(keepFocus)` no longer restores the opener when a command moved focus or switched surface mode — the old restore silently undid the reach. `app/pi/tests/focus-lens.spec.ts` and `shell.spec.ts` assert the ring and the focus hand-off.                                                                                                                                                                                                                                                                       |
+| Command surface around the anatomy  | done   | `PiHost.commands()` adds a `focus` group: center/trace/follow for the focused node, approve/reject for approvals, and one `Focus inner · <label>` command per bounded chip (same ≤6 cap as `innerTree`). Every row calls `handleNodeAction`, the same path as the lens buttons; no second action mechanism. `app/pi/tests/shell.spec.ts` asserts the group is filterable and the inspector command lands focus in the lens.                                                                                                                                                                                                                                               |
+| Gates                               | done   | `app/pi`: 134 unit tests and 85 e2e/vision tests green (single worker); `tsc --noEmit` clean. No gallery recapture: the target list appears only in the `actions` tab and the ring only on keyboard focus, so no shot uses either — the e2e assertions are this slice's gate. Standing reduced-motion final-frame and intermediate-frame vision gates remain green in the full suite.                                                                                                                                                                                                                                                                                                       |
+
+**Clarifications that came out of this increment:**
+
+1. Enlarging the chip controls was rejected: the chip is 20px tall by design, a 44px hit area would overlap neighbouring chips and reintroduce the click interception fixed in slice 3. The bounded tree stays authoritative; the 44px controls live in the actions tab and the palette.
+2. The `actions` tab target list is not a fourth representation rung. It is the existing tab showing the same focus verbs at a compliant size — the compact chip is a preview affordance, and the tab is its action surface.
+3. Focus restore in the command surface is now conditional, which also fixes mode-switching palette commands being immediately closed. This belongs to §11.2's focus-management requirement, not to a new keyboard binding.
+4. No new policy knob or contract field. The chip cap comes from `emphasis.innerDepth`, already live; the palette group is derived from the same focused node and `innerTree` that build the lens.
+
 **Direction recorded for slice 3 (user feedback, 2026-11-21):**
 
 - Edges are too long and too line-like. Shorten their reach (`geometry.repulsion`, `geometry.gap` or a new
@@ -191,16 +207,13 @@ the progress block below records what has actually landed.
 
 **Remaining work, in order — fundamentals first, parity last:**
 
-1. **Interaction ergonomics (§2, §11.2) (next).** Composition is done: graph shots have a quiet frame and
-   causal ribbons carry palette color. The remaining ergonomic decisions are concrete. Decide the bounded
-   chip-control exception (larger hit area vs. the K4 depth cap) and record it; then tighten focus,
-   inspector reach and the command surface around the node anatomy so the focused object, its exits and
-   its next action sit inside one eye movement. Start from `app/pi/tests/shell.spec.ts` (44px representative
-   controls) and `app/pi/src/shell/inspector.ts`; do not enlarge chip-internal controls without the decision.
-   Reduced-motion final-frame parity and intermediate-frame vision stay standing gates in every slice.
-2. **Motion and life (L1–L3, §6).** Parked until ergonomics settles. Effects were already flagged as
-   overdone; anything built stays opt-in data with reduced-motion parity, never a new default.
-3. **Slice 4 — Proliferation (O5–O7).** Still gated on a second host consuming the shell, tokens and
+1. **Motion and life (L1–L3, §6) (next, gated on a recorded demand).** Interaction ergonomics is done: the
+   chip exception is compensated, the lens has a keyboard focus ring, and the palette shares the lens action
+   path. The slices that parked motion — anatomy and composition — have landed, but effects were flagged as
+   overdone. Do not build new animation: promote an existing opt-in preset (§10) only when a concrete
+   comparison exists, keep it data with provenance, and keep reduced-motion parity and the frame-time gate
+   green. If no demand appears, leave this parked and move to the next item when its consumer exists.
+2. **Slice 4 — Proliferation (O5–O7).** Still gated on a second host consuming the shell, tokens and
    inspector unchanged. Verified 2026-11-21: `app/demo` imports only mechanism-layer helpers; the only
    importers of `app/pi/src/shell` and `@spacegraphjs/shared/tokens` live in Pi. Not work we can start;
    when the consumer exists, split core/domain policy vocabulary, emit the world-host template and a real
@@ -216,13 +229,15 @@ the progress block below records what has actually landed.
 - Housekeeping: confirm ADR 0014, fill `docs/screenshots/review.json` verdicts, re-run e2e with
   `--workers=1` on a loaded machine.
 
-Slices 1–3, 5, the standing accessibility track and the composition pass are recorded as done; the
-visual-correctness and content-legibility passes repaired treatments that were recorded before they
-actually rendered or read well, and the composition pass gave graph shots a quiet frame and palette-owned
-causal ribbons. Last prior commits: `bddd7a6` (slice 2), `01c4759` (slice 3), `0c0b184` (standing track),
-`80dd02e` (visual pass), `86dba56` (plan ordering), `1021683` (node anatomy), `c5c02d8` (labels/frames).
-The remaining program starts with interaction ergonomics; motion, parity and proliferation stay parked
-or gated. The study, release and hosted URL stay deferred with TODO3's G3–G5.
+Slices 1–3, 5, the standing accessibility track, composition and interaction ergonomics are recorded as
+done; the visual-correctness and content-legibility passes repaired treatments that were recorded before
+they actually rendered or read well, composition gave graph shots a quiet frame and palette-owned causal
+ribbons, and ergonomics compensated the bounded chip exception with 44px targets in the actions tab and
+palette. Last prior commits: `bddd7a6` (slice 2), `01c4759` (slice 3), `0c0b184` (standing track),
+`80dd02e` (visual pass), `86dba56` (plan ordering), `1021683` (node anatomy), `c5c02d8` (labels/frames),
+`3f2a76b` (composition). The remaining program is motion (gated on a recorded demand) and proliferation
+(gated on a second host); parity stays peripheral. The study, release and hosted URL stay deferred with
+TODO3's G3–G5.
 
 ---
 
@@ -706,5 +721,6 @@ These are real gaps in the plan as written. They are listed, not scheduled.
 
 None of these changes the four-slice sequence. Items 1, 2 and 4 should be folded into slices 1–2 because
 they affect the shell and grammar being built now; the rest are recorded for a later increment. Item 2's
-target-size, contrast and forced-RTL pass landed with the standing track; a real-RTL / mixed-script matrix
-and the bounded chip-control exception remain open.
+target-size, contrast and forced-RTL pass landed with the standing track, and the bounded chip-control
+exception was decided with the interaction-ergonomics pass (K4 cap kept, 44px equivalents in the actions
+tab and palette). A real-RTL / mixed-script matrix remains open and parked.

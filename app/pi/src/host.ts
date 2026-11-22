@@ -1689,6 +1689,15 @@ export class PiHost {
                 run: () => this.#inspector?.setTab(tab),
             })),
             {
+                id: 'ui.inspector',
+                label: 'Focus the inspector',
+                group: 'interface',
+                run: () =>
+                    document
+                        .querySelector<HTMLElement>('#focus-lens [role="tab"][aria-selected="true"]')
+                        ?.focus(),
+            },
+            {
                 id: 'ui.share',
                 label: 'Share exact view',
                 group: 'interface',
@@ -1719,7 +1728,31 @@ export class PiHost {
                   ? [set(!Boolean(this.#resolved.values[knob.id]))]
                   : [set(knob.default), set(knob.min), set(knob.max)];
         });
-        return [...nav, ...chrome, ...verbs, ...knobs];
+        const focus = this.#revealed || this.#controller.selection[0] || '';
+        const depth = Number(this.#resolved.values['emphasis.innerDepth']);
+        const focused: readonly Command[] = !focus || depth <= 0 ? [] : [
+            ...(['center', 'trace', 'follow'] as const).map((action) => ({
+                id: `focus.${action}`,
+                label: `${action} focused node`,
+                group: 'focus',
+                run: () => this.handleNodeAction(action === 'center' ? 'focus' : action, focus),
+            })),
+            ...(this.#view.nodes.find((node) => node.id === focus)?.kind === 'approval'
+                ? (['approve', 'reject'] as const).map((action) => ({
+                      id: `focus.${action}`,
+                      label: `${action} patch`,
+                      group: 'focus',
+                      run: () => this.handleNodeAction(action, focus),
+                  }))
+                : []),
+            ...innerTree(focus, this.#view.nodes, this.#view.edges, depth).map((chip) => ({
+                id: `focus.chip.${chip.id}`,
+                label: `Focus inner · ${chip.label}`,
+                group: 'focus',
+                run: () => this.handleNodeAction('focus', chip.id),
+            })),
+        ];
+        return [...nav, ...chrome, ...focused, ...verbs, ...knobs];
     }
 
     private help(): readonly Command[] {

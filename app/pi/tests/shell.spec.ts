@@ -127,6 +127,26 @@ test.describe('the one-surface shell', () => {
         expect(quietWidth!.width).toBeGreaterThan(chromeWidth!.width);
     });
 
+    test('the palette exposes focused-node actions and reaches the inspector', async ({ page }) => {
+        const errors = await boot(page);
+        await page.waitForFunction(() => (window as any).__pi.edges().length > 0);
+        await page.evaluate(() => {
+            const pi = (window as any).__pi;
+            pi.reveal(pi.edges()[0].target);
+        });
+        await expect(page.locator('#focus-lens')).toBeVisible();
+        await page.locator('#command-open').click();
+        await page.locator('#command-input').fill('focused node');
+        expect(await page.locator('.command-row').count()).toBeGreaterThanOrEqual(3);
+        await page.keyboard.press('Escape');
+
+        await page.locator('#command-open').click();
+        await page.locator('#command-input').fill('Focus the inspector');
+        await page.keyboard.press('Enter');
+        await expect(page.locator('#focus-lens [role="tab"][aria-selected="true"]')).toBeFocused();
+        expect(errors).toEqual([]);
+    });
+
     test('chrome follows direction without losing tab order', async ({ page }) => {
         const errors = await boot(page);
         await page.evaluate(() => {
