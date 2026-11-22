@@ -372,5 +372,11 @@ positions; aligned transcript; square scope hulls and turn tabs; opt-in corridor
 4. `dist/` is gitignored and stale declaration files break `app/pi` typecheck after a core API change;
    run `pnpm run build:lib` before `pnpm run check` in that case.
 5. On memory-constrained hosts run the full Playwright suite with `--workers=2`.
-6. The flexibility matrix needs `test.setTimeout(240_000)`; 60 scene navigations exceed the 30 s
+6. The flexibility matrix needs `test.setTimeout(240_000)`; 72 scene navigations exceed the 30 s
    Playwright default.
+
+---
+
+Shell-wide UI/UX experimentation (composable chrome, typography, disclosure, theme, task modes,
+comparison evidence and test agility) lives in `TODO8.md`. This file stays focused on graph
+arrangement and the human gates that still block a default flip.
