@@ -44,7 +44,10 @@ const unitOf = (node: { readonly data?: Readonly<Record<string, unknown>> }): st
  * a delegated action opens a nested scope for its subtree. Edges that cross scopes are declared once,
  * in the source scope, with the target's qualified path.
  */
-export function agentScopes(view: AgentView, options: { laneScope?: string } = {}): AgentScopes {
+export function agentScopes(
+    view: AgentView,
+    options: { laneScope?: string; packed?: boolean } = {},
+): AgentScopes {
     const nodes = new Map(view.nodes.map((node) => [node.id, node]));
     const root = view.root && nodes.has(view.root) ? view.root : (view.nodes.find((n) => n.kind === 'run')?.id ?? '');
 
@@ -179,17 +182,21 @@ export function agentScopes(view: AgentView, options: { laneScope?: string } = {
 
     const specs: ScopeSpec[] = [...scopeIds].map((id) => {
         const list = content.get(id) ?? [];
-        if (id === options.laneScope) {
+        const packed =
+            id === options.laneScope ||
+            (options.packed === true && (id.startsWith('unit-') || id.startsWith('delegate-')));
+        if (packed) {
             const kindByNode = new Map(view.nodes.map((node) => [node.id, node.kind]));
             list.forEach((node, index) => {
-                node.lane = kindByNode.get(node.id) ?? 'action';
+                node.lane = id === options.laneScope ? (kindByNode.get(node.id) ?? 'action') : 'packed';
                 node.row = index;
             });
         }
         return {
             id,
             parent: parentOfScope.get(id),
-            strategy: id === options.laneScope ? 'grid' : 'force',
+            strategy: packed ? 'grid' : 'force',
+            offset: packed ? { x: 0, y: -260, z: 0 } : undefined,
             nodes: list,
             edges: edges.get(id) ?? [],
         };

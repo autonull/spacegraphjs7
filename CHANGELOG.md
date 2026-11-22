@@ -7,6 +7,11 @@ follow the workflow in `docs/ROADMAP.md` (`test:publish` → build → npm).
 
 ### Added
 
+- **Fluid flagship style (ADR 0016):** a general registered `FluxEdge` renders curved, tapered, glowing
+  filaments instead of sticks; every edge becomes flux, context edges stay thin but present, and
+  artifact dots become rings. A host `#field` layer merges soft per-node halos into one backdrop, and
+  unit/delegate scopes use compact grid packing with row metadata and a frame offset. The default
+  palette is aurora with glow 0.45; the HUD stays grayscale. No renderer branch or contract field.
 - **Graph within a graph (TODO5 Phase 4):** inner chips are now graph nodes with boundary-anchored
   directed spokes, start/end ports and failed/error status color in every lens layout. The lens
   autoscales from the focused node's on-screen footprint, radial chips scale for small and large

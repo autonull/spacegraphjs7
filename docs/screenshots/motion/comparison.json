@@ -1,27 +1,27 @@
 {
   "demand": "TODO4.md demand record 2026-11-22",
   "variants": {
-    "motion": "pi-pulse-a 120ms",
+    "motion": "pi-pulse-b 120ms",
     "reducedMotion": "none auto"
   },
   "states": [
     {
       "settled": true,
       "center": [
-        281.5318561480024,
-        -148.3592844813359,
+        357.76689634283485,
+        -448.53298336735213,
         -140
       ],
-      "zoom": 0.4999999999999999
+      "zoom": 0.5
     },
     {
       "settled": true,
       "center": [
-        30.935292823116583,
-        -142.67501674393367,
+        27,
+        100.46701663264787,
         -66.2
       ],
-      "zoom": 0.545243258592388
+      "zoom": 0.5452432585923881
     }
   ],
   "note": "The pulse is a one-shot state change. Framing differs because the camera fits at startup and on material aspect changes; pixel identity and viewport parity are not gates during active development."

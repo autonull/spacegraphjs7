@@ -171,12 +171,19 @@ const unionBounds = (a: ScopeBounds, b: ScopeBounds): ScopeBounds => {
     };
 };
 
-function makeSolver(strategy: ScopeStrategy, seed: number, options: ScopeLayoutOptions, count: number): Solver {
+function makeSolver(
+    strategy: ScopeStrategy,
+    seed: number,
+    options: ScopeLayoutOptions,
+    items: readonly PlacementItem[],
+): Solver {
     const gap = options.gap ?? 160;
     if (strategy === 'grid') {
+        const tallest = Math.max(80, ...items.map((item) => item.height));
+        const widest = Math.max(80, ...items.map((item) => item.width));
         return new GridPlacement({
-            step: gap,
-            lanePitch: gap,
+            step: Math.max(gap, widest * 0.2),
+            lanePitch: Math.max(tallest * 1.5, 140) + (options.nodePadding ?? 20) + gap,
             groupGap: gap * 2,
             depthStep: options.depthStep ?? 64,
         });
@@ -193,7 +200,7 @@ function makeSolver(strategy: ScopeStrategy, seed: number, options: ScopeLayoutO
         spacing: gap,
         depthStep: options.depthStep ?? 64,
         nodePadding: options.nodePadding ?? 20,
-        useBarnesHut: count > 200,
+        useBarnesHut: items.length > 200,
     });
 }
 
@@ -291,7 +298,7 @@ export function layoutScopes(tree: ScopeTree, options: ScopeLayoutOptions = {}):
             entry.spec.strategy ?? options.strategy ?? 'force',
             (hashPath(entry.path) ^ (options.seed ?? 0)) >>> 0,
             options,
-            items.length,
+            items,
         );
         const previous = options.previous?.get(entry.path);
         const solved = solver.place(items, options.warmStart ? previous : undefined);

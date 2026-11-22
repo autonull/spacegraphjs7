@@ -10,7 +10,7 @@ same state in a browser; no screenshot script encodes a special camera path.
 
 | File                            | Shot            | What it shows                                                                              |
 | ------------------------------- | --------------- | ------------------------------------------------------------------------------------------ |
-| `pi-agent-in-action.png`        | `cockpit`       | The dense multi-turn run, transcript spine with expanded detail, and the grayscale HUD.     |
+| `pi-agent-in-action.png`        | `cockpit`       | The dense multi-turn run as fluid flux filaments and merged field halos, with grid-packed scopes and the grayscale HUD. |
 | `pi-agent-node-detail.png`      | `node-detail`   | A camera fit onto one failing node: LOD detail rung, telemetry, per-kind accents and glow.   |
 | `pi-agent-deep-focus.png`       | `deep-focus`    | The opt-in focus lens: the node enlarges, context dims, and a fixed-size cockpit shows neighbors and actions. |
 | `pi-agent-fractal.png`          | `fractal`       | A two-level inner layout inside the focus lens — directed spokes with ports and status, without enlarging the node. |

@@ -376,6 +376,8 @@ export class PiHost {
     #baselineKernel = fixtureKernel();
     #shotReady = true;
     #fit?: FitMetrics;
+    #field?: HTMLElement;
+    #fieldNodes = new Map<string, HTMLElement>();
     #fitTimer?: ReturnType<typeof setTimeout>;
     #refits = 0;
 
@@ -676,6 +678,9 @@ export class PiHost {
         this.#annotationWidgets = createAnnotationWidgets(el('annotation-list'), (id) =>
             this.removeNote(id),
         );
+        this.#field = document.createElement('div');
+        this.#field.id = 'field';
+        el('canvas').prepend(this.#field);
         bindTouchVerbs(
             el('canvas'),
             () => touchBindingsFor(String(this.#resolved.values['navigation.touch'])),
@@ -776,7 +781,10 @@ export class PiHost {
     refresh(): void {
         this.#view = agentDomain.build(this.#kernel);
         this.#controller.setModel(this.#view);
-        const scopes = agentScopes(this.#view, { laneScope: this.#laneScope || undefined });
+        const scopes = agentScopes(this.#view, {
+            laneScope: this.#laneScope || undefined,
+            packed: true,
+        });
         this.#nodeByQualified = scopes.nodeById;
         this.#qualifiedByNode = scopes.qualifiedById;
         this.#portalByNode = scopes.portalByNode;
@@ -865,6 +873,7 @@ export class PiHost {
             salienceSize: Number(values['emphasis.salienceSize']),
             ribbonWidth: Number(values['emphasis.ribbonWidth']),
             ribbonKinds: String(values['emphasis.ribbonKinds']) as RibbonKinds,
+            glow: Number(values['theme.glow']),
         };
         const cardBg = HUD_TOKENS[values['theme.variant'] === 'light' ? 'light' : 'dark']!.colors.card;
         const scaleOf = (node: { id: string; emphasis?: number }): number => {
@@ -986,6 +995,39 @@ export class PiHost {
         this.renderHistory();
         this.renderMinimap();
         this.renderFocusLens();
+        this.renderField();
+    }
+
+    /** One soft halo per visible node; overlapping gradients merge into a single field. */
+    private renderField(): void {
+        const field = this.#field;
+        if (!field || !this.#model) return;
+        const live = new Set<string>();
+        for (const node of this.#model.nodes) {
+            if (node.visible === false) continue;
+            const point = this.renderer.getNodeScreenPosition?.(node.id);
+            if (!point) continue;
+            live.add(node.id);
+            let halo = this.#fieldNodes.get(node.id);
+            if (!halo) {
+                halo = document.createElement('i');
+                halo.className = 'field-node';
+                field.append(halo);
+                this.#fieldNodes.set(node.id, halo);
+            }
+            halo.dataset.kind = node.kind;
+            halo.style.setProperty('--field-kind', `var(--kind-${node.kind}, var(--view-causal))`);
+            const size = Math.round(
+                Math.max(120, Math.min(320, (node.size?.[0] ?? 200) * (this.renderer.getViewport().zoom ?? 1) * 1.8)),
+            );
+            halo.style.setProperty('--field-size', `${size}px`);
+            halo.style.transform = `translate(${Math.round(point.x)}px, ${Math.round(point.y)}px)`;
+        }
+        for (const [id, halo] of this.#fieldNodes) {
+            if (live.has(id)) continue;
+            halo.remove();
+            this.#fieldNodes.delete(id);
+        }
     }
 
     renderPositions(): void {

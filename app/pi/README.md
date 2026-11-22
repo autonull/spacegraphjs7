@@ -73,7 +73,9 @@ octaves × two canvas aspects, the opt-in dense typography preset over the same 
 intermediate frames of bounded inner-graph re-entry. `scale` measures model build, pipeline, 60-turn
 force layout and the gzipped 3D chunk; the measured force-layout budget is 1.5 s for the scope solver.
 
-The camera refits only when the canvas aspect changes materially (ADR 0015); `window.__pi.adaptiveFit()`
+The view uses registered flux edges (`FluxEdge`) and a host field layer of merged node halos (ADR 0016).
+Unit and delegate scopes are grid-packed; the root scope stays freeform. The camera refits only when the
+canvas aspect changes materially (ADR 0015); `window.__pi.adaptiveFit()`
 exposes the last insets and refit count. The `dense-type` preset raises `ladder.minLabelPx` to 18 and
 tightens card interiors without changing a default. The `recursion` shot opens the inner graph tab at
 depth 3; `fractal` keeps the detail tab.

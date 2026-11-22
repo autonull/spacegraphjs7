@@ -23,14 +23,15 @@ const policy = (overrides: Partial<AttentionPolicy> = {}): AttentionPolicy => ({
     salienceSize: 1.15,
     ribbonWidth: 2,
     ribbonKinds: 'causal',
+    glow: 0.4,
     ...overrides,
 });
 
 const ribbonOf = (
     result: RenderEdge,
-): { weight: number; minRadius: number; maxRadius: number; color?: string } | undefined =>
+): { weight: number; minRadius: number; maxRadius: number; fluid: boolean; curve: number; halo: number; color?: string } | undefined =>
     result.data?.ribbon as
-        | { weight: number; minRadius: number; maxRadius: number; color?: string }
+        | { weight: number; minRadius: number; maxRadius: number; fluid: boolean; curve: number; halo: number; color?: string }
         | undefined;
 
 describe('salience ranking', () => {
@@ -75,12 +76,16 @@ describe('ribbon grammar', () => {
         expect(ribbonOf(loud)!.weight).toBeGreaterThan(ribbonOf(quiet)!.weight);
         expect(ribbonOf(loud)!.maxRadius).toBe(2);
         expect(ribbonOf(loud)!.minRadius).toBeLessThan(ribbonOf(loud)!.maxRadius);
+        expect(ribbonOf(loud)!.fluid).toBe(true);
+        expect(ribbonOf(loud)!.halo).toBe(0.4);
     });
 
-    test('causal mode excludes containment and context', () => {
+    test('causal mode keeps context as thin flux filaments', () => {
         expect(ribbonOf(applyEdgeAttention(edge('writes'), 1, policy()))).toBeDefined();
-        expect(ribbonOf(applyEdgeAttention(edge('contains'), 1, policy()))).toBeUndefined();
-        expect(ribbonOf(applyEdgeAttention(edge('reads'), 1, policy()))).toBeUndefined();
+        const context = ribbonOf(applyEdgeAttention(edge('contains'), 1, policy()));
+        expect(context).toBeDefined();
+        expect(context!.maxRadius).toBeLessThan(ribbonOf(applyEdgeAttention(edge('writes'), 1, policy()))!.maxRadius);
+        expect(ribbonOf(applyEdgeAttention(edge('reads'), 1, policy()))).toBeDefined();
     });
 
     test('all mode includes context ribbons; none and zero width disable them', () => {

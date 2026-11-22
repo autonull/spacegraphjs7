@@ -154,6 +154,15 @@ describe('edgeSpec', () => {
         expect(loud.data.thickness).toBeCloseTo(plain.data.thickness * 1.8);
         expect(loud.data.color).toBe(plain.data.color);
     });
+    test('a fluid ribbon selects the flux edge with curve and halo data', () => {
+        const spec = edgeSpec(
+            edge({ data: { ribbon: { fluid: true, curve: 0.2, inset: 0.12, halo: 0.6 } } }),
+            theme,
+        );
+        expect(spec.type).toBe('FluxEdge');
+        expect(spec.data).toMatchObject({ curve: 0.2, inset: 0.12, halo: 0.6 });
+    });
+
     test('a ribbon color overrides the edge style color', () => {
         const spec = edgeSpec(edge({ data: { ribbon: { color: '#8ff0d0' } } }), theme);
         expect(spec.data.color).toBe(parseColor('#8ff0d0'));

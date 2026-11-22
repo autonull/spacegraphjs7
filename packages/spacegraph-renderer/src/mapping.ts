@@ -101,7 +101,7 @@ export function nodeSpec(node: RenderNode, theme: RenderTheme): NodeSpec {
     }
     const data: NodeData = {
         ...node.data,
-        shape: shapeFor(node.shape),
+        shape: (node.data?.shape as string | undefined) ?? shapeFor(node.shape),
         color,
         interactive,
         ...(node.parent ? { parent: node.parent } : {}),
@@ -118,7 +118,17 @@ export function edgeSpec(edge: RenderEdge, theme: RenderTheme): EdgeSpec {
     // the confidence-derived colour or dash decision.
     const thickness = style.width * (1 + (edge.emphasis ?? 0));
     const ribbon = edge.data?.ribbon as
-        | { weight?: number; minRadius?: number; maxRadius?: number; segments?: number; color?: string }
+        | {
+              weight?: number;
+              minRadius?: number;
+              maxRadius?: number;
+              segments?: number;
+              color?: string;
+              fluid?: boolean;
+              curve?: number;
+              inset?: number;
+              halo?: number;
+          }
         | undefined;
     const data = {
         color: parseColor(ribbon?.color ?? style.color),
@@ -134,6 +144,9 @@ export function edgeSpec(edge: RenderEdge, theme: RenderTheme): EdgeSpec {
                   minRadius: ribbon.minRadius ?? 1,
                   maxRadius: ribbon.maxRadius ?? 8,
                   segments: ribbon.segments ?? 3,
+                  curve: ribbon.curve ?? 0.1,
+                  inset: ribbon.inset ?? 0.08,
+                  halo: ribbon.halo ?? 0.45,
               }
             : {}),
     };
@@ -141,7 +154,13 @@ export function edgeSpec(edge: RenderEdge, theme: RenderTheme): EdgeSpec {
         id: edge.id,
         source: edge.source,
         target: edge.target,
-        type: ribbon ? 'TaperedEdge' : edge.label ? 'LabeledEdge' : 'CurvedEdge',
+        type: ribbon?.fluid
+            ? 'FluxEdge'
+            : ribbon
+              ? 'TaperedEdge'
+              : edge.label
+                ? 'LabeledEdge'
+                : 'CurvedEdge',
         data,
     };
 }

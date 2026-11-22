@@ -40,6 +40,7 @@ const boot = async (page: Page, shot: Shot): Promise<string[]> => {
     await page.goto(`/?shot=${shot.id}`);
     await page.waitForFunction(() => (window as any).__pi?.ready === true);
     await expect(page.locator('#canvas canvas').first()).toBeVisible({ timeout: 10_000 });
+    await page.evaluate(() => (window as any).__pi.settle());
     await settleCamera(page);
     await page.mouse.move(800, 500);
     return errors;

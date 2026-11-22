@@ -22,6 +22,7 @@ decision is promoted here and removed from `not-decided.md`.
 | [0013](./0013-additive-contract-versioning.md)  | Additive contract versioning; runtime manifest assembly       |
 | [0014](./0014-tapered-ribbon-edges.md)          | Tapered polygon ribbons; renderer-type exception              |
 | [0015](./0015-bounded-aspect-refit.md)          | Bounded refit on material aspect change; aspect-derived insets |
+| [0016](./0016-flux-edges-and-field.md)          | Flux edges, field halos and compact grid-packed scopes         |
 
 Conventions: status (`Accepted`, `Superseded`), date, source, Context / Decision / Consequences.
 Numbering is sequential; a superseding ADR links back to the one it replaces. Keep records short and

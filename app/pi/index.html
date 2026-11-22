@@ -937,6 +937,37 @@
                 min-height: 0;
                 isolation: isolate;
             }
+            #field {
+                position: absolute;
+                inset: 0;
+                z-index: 0;
+                overflow: hidden;
+                pointer-events: none;
+                mix-blend-mode: screen;
+                opacity: calc(0.3 + var(--view-glow, 0) * 0.7);
+            }
+            :root[data-theme='light'] #field {
+                mix-blend-mode: multiply;
+                opacity: 0.16;
+            }
+            .field-node {
+                --field-kind: var(--kind-accent, var(--view-causal, #7fe));
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: var(--field-size, 180px);
+                height: var(--field-size, 180px);
+                margin-left: calc(var(--field-size, 180px) / -2);
+                margin-top: calc(var(--field-size, 180px) / -2);
+                border-radius: 50%;
+                background: radial-gradient(
+                    circle,
+                    color-mix(in srgb, var(--field-kind) 42%, transparent) 0%,
+                    color-mix(in srgb, var(--field-kind) 14%, transparent) 38%,
+                    transparent 70%
+                );
+                will-change: transform;
+            }
             #canvas::after {
                 content: '';
                 position: absolute;

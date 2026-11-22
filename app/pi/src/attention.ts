@@ -12,6 +12,7 @@ export interface AttentionPolicy {
     readonly salienceSize: number;
     readonly ribbonWidth: number;
     readonly ribbonKinds: RibbonKinds;
+    readonly glow: number;
 }
 
 const EDGE_RANK: Readonly<Record<string, number>> = {
@@ -55,7 +56,7 @@ export const applyNodeAttention = (
     return { ...mapped, size: scaled };
 };
 
-/** Rank × salience sets ribbon width; context edges stay thin and dim without a ribbon. */
+/** Rank × salience sets flux width. Context edges stay thin filaments, never bare sticks. */
 export const applyEdgeAttention = (
     edge: RenderEdge,
     salience: number,
@@ -64,16 +65,21 @@ export const applyEdgeAttention = (
 ): RenderEdge => {
     const rank = edgeRank(edge.kind);
     const weight = rank * (0.45 + 0.55 * salience);
+    const causal = CAUSAL_KINDS.has(edge.kind);
     const ribbon =
-        policy.ribbonWidth > 0 &&
-        policy.ribbonKinds !== 'none' &&
-        (policy.ribbonKinds === 'all' || CAUSAL_KINDS.has(edge.kind))
+        policy.ribbonWidth > 0 && policy.ribbonKinds !== 'none'
             ? {
                   weight,
-                  minRadius: policy.ribbonWidth * 0.15,
-                  maxRadius: policy.ribbonWidth,
+                  minRadius: policy.ribbonWidth * (causal ? 0.15 : 0.1),
+                  maxRadius:
+                      policy.ribbonWidth *
+                      (policy.ribbonKinds === 'all' || causal ? 1 : 0.5),
                   segments: 3,
-                  ...(causalColor ? { color: causalColor } : {}),
+                  fluid: true,
+                  curve: causal ? 0.14 : 0.06,
+                  inset: 0.14,
+                  halo: policy.glow,
+                  ...(causal && causalColor ? { color: causalColor } : {}),
               }
             : undefined;
     const mapped = applyEdgeEmphasis(edge, salience, attentionMapping(policy.salienceSize));

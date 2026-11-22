@@ -158,7 +158,7 @@ export const POLICY_SCHEMA: PolicySchema = {
         enumeration(
             'theme.palette',
             'theme',
-            'mono',
+            'aurora',
             ['mono', 'neon', 'ember', 'aurora', 'circuit'] as const,
             'View color palette for nodes, edges and accents; the HUD stays grayscale.',
             '10',
@@ -171,7 +171,7 @@ export const POLICY_SCHEMA: PolicySchema = {
             'Subtle backdrop treatment behind the canvas.',
             '10',
         ),
-        number('theme.glow', 'theme', 0, 0, 1, 0.1, 'Emissive glow strength on node cards.', '10'),
+        number('theme.glow', 'theme', 0.45, 0, 1, 0.1, 'Emissive glow strength on cards and flux edges.', '10'),
     ],
 };
 

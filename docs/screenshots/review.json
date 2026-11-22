@@ -1,6 +1,12 @@
 {
-    "cockpit": {},
-    "node-detail": {},
+    "cockpit": {
+        "verdict": "kept",
+        "note": "Flux style: teal tapered filaments trimmed before card centres, merged field halos, ring artifacts and grid-packed unit scopes. Cross-unit orders diagonals are topology, not sticks."
+    },
+    "node-detail": {
+        "verdict": "kept",
+        "note": "Detail rung over wide cyan flux ribbons and a soft field; inner chips stay legible. Long causal edges are real cross-scope relations."
+    },
     "deep-focus": {},
     "fractal": {
         "verdict": "kept",
@@ -45,9 +51,18 @@
     "dynamic-range": {},
     "layout-stacked": {},
     "layout-floating": {},
-    "neon-cockpit": {},
-    "aurora-map": {},
-    "light-theme": {},
+    "neon-cockpit": {
+        "verdict": "kept",
+        "note": "Quantum-field read: additive edge halos and per-node field gradients merge; compact scope rows replace the old force spread."
+    },
+    "aurora-map": {
+        "verdict": "kept",
+        "note": "Map surface keeps the flux filaments legible at full scope; rings replace solid artifact balls."
+    },
+    "light-theme": {
+        "verdict": "kept",
+        "note": "Field switches to multiply in light theme so halos stay visible without washing out cards; flux edges keep contrast."
+    },
     "catalog": {},
     "policy": {}
 }

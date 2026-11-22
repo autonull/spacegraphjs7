@@ -178,7 +178,13 @@ export class AgentAdapter extends ModelAdapter<
     }
 
     nodeData(node: AgentAdapterNode, _level: AgentLevel, dimmed: boolean): Record<string, unknown> {
-        return { role: node.role, lane: node.lane, scope: node.scope, dimmed };
+        return {
+            role: node.role,
+            lane: node.lane,
+            scope: node.scope,
+            dimmed,
+            ...(node.kind === 'artifact' ? { shape: 'ring' } : {}),
+        };
     }
 
     toRenderEdge(edge: AgentAdapterEdge): RenderEdge {
