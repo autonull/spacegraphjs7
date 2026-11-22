@@ -231,11 +231,12 @@ gallery, review verdicts and docs are current; all full gates are green.
 
 ## 7. Progress (2026-11-22)
 
-Plan status: **phases 1–5 complete, plus three follow-up change sets**. The user explicitly asked for
-the commits in this session, so invariant 12 was overridden for these change sets only. All four change
-sets are committed on `main` (`28a2c8a`, `aaf9543`, `e197a7c`, `9c83535`). The tree is clean. The only
-work not closed is one **environment-gated measurement** (§7 "Remaining open items", item 1); no source
-change is pending, and the plan forbids further renderer changes until that measurement exists.
+Plan status: **complete**. Phases 1–5 and all three follow-up change sets are done and committed on
+`main` (`28a2c8a`, `aaf9543`, `e197a7c`, `9c83535`, `8df5221`). The user explicitly asked for the commits,
+so invariant 12 was overridden for these change sets only. The only item not executed is the physical-GPU
+frame-time measurement, now **explicitly deferred** (§7 item 1) by user decision after a read-only
+feasibility probe. No source change is pending; the rule against further renderer changes stands unless
+that measurement is later performed.
 
 | Phase | Status | Evidence |
 | ----- | ------ | -------- |
@@ -290,29 +291,25 @@ Evidence is in `docs/performance.md`: `advance()` averages 0.368 ms against a 2.
 
 ### Remaining open items
 
-Status at the 2026-11-22 continuation review: items 2 and 3 are **no-ops under current conditions**;
-item 1 is the single open item and is **blocked by this environment, not by code**.
+Status at the 2026-11-22 wrap-up: item 1 is **explicitly deferred** by user decision; items 2 and 3 are
+**no-ops under current conditions**. No further action is planned for this plan.
 
-1. **Flight frame time — hardware measurement only — BLOCKED (environment).** The 80 ms target remains
-   unverified. The JS rebuild cost is removed (see above); the residual cost in the recorded run is
-   SwiftShader presentation and camera motion, not JS. The existing numbers in `docs/performance.md`
-   (play frame 0.822 ms, rAF flight p95 99.9 ms, and the headed Xvfb 216.6 → 200 ms pair) come from a
-   custom rAF script under Xvfb on a software GPU — they are not a physical-GPU `strobe` result.
-   Environment findings at this review:
-   - No `DISPLAY` or `WAYLAND_DISPLAY`; `/tmp/.X11-unix` is empty, so `strobe` refuses headed runs
-     (`NoPresentSource`) and classifies any Xvfb run as a software GPU (`SoftwareGpu`, frame metrics
-     refused).
-   - An NVIDIA RTX 3080 is present (`/dev/dri/card1`, HDMI-A-1 reports `connected`) and a NVIDIA
-     `xorg.conf` exists (`/etc/X11/xorg.conf`, HDMI-0 1920x1080), so a display-backed run is possible
-     in principle on a host with an active physical display.
-   - `strobe status` reports `SCHED_IDLE` priority in this agent context, which refuses frame and
-     input-latency metrics even with a display ("run strobe at normal priority").
-   To close this item on a suitable host, in order: (a) start Xorg on the NVIDIA GPU for a real display
-   and export `DISPLAY`; (b) run `strobe` at normal priority (elevate the shell, e.g. via `chrt`/root);
-   (c) measure `frames.*`/rAF during a **warm** flight with at least three trials; (d) record the raw
-   numbers, command and date in `docs/performance.md`, then compare against the 80 ms target. Do not
-   change the renderer until that measurement exists. Blindly repeating the Xvfb/custom-rAF run adds no
-   evidence.
+1. **Flight frame time — physical-GPU measurement — DEFERRED (user decision, 2026-11-22).** The 80 ms
+   target remains unverified; it is consciously left that way. The JS rebuild cost is removed (see
+   above), so the residual cost in the recorded numbers is SwiftShader presentation and camera motion,
+   not JS. The existing figures in `docs/performance.md` (play frame 0.822 ms, rAF flight p95 99.9 ms,
+   and the headed Xvfb 216.6 → 200 ms pair) come from a custom rAF script under Xvfb on a software GPU
+   — they are not a physical-GPU `strobe` result. A read-only probe established why a proper measurement
+   was not attempted here: no `DISPLAY`/`WAYLAND_DISPLAY` (strobe refuses headed runs with
+   `NoPresentSource` and classifies Xvfb as a software GPU, `SoftwareGpu`); an RTX 3080, a connected
+   HDMI-A-1 port and an NVIDIA `xorg.conf` exist, so it is possible in principle; and `strobe status`
+   reports `SCHED_IDLE` priority, which refuses frame metrics even with a display. Starting Xorg would
+   have taken over the attached physical display, so the user chose to defer. **If reopened:** (a) start
+   Xorg on the NVIDIA GPU and export `DISPLAY`; (b) run strobe at normal priority (elevate the shell,
+   e.g. `chrt`/root); (c) measure `frames.*`/rAF during a **warm** flight with at least three trials;
+   (d) record raw numbers, command and date in `docs/performance.md`, then compare to the 80 ms target.
+   Do not change the renderer until such a measurement exists; blindly repeating the Xvfb/custom-rAF
+   run adds no evidence.
 2. **Scale headroom — keep isolated — NO ACTION.** Isolated 60-turn layout was 1476 ms against a 1500 ms
    budget in the first follow-up; later runs met all budgets. `scale` already runs in its own CI job
    (`.github/workflows/ci.yml:73`). Do not run it beside Vite/op dev servers; the harness comment in
@@ -323,14 +320,13 @@ item 1 is the single open item and is **blocked by this environment, not by code
    after commit `9c83535` — re-running those gates now would be redundant. Re-run the visual gates only
    when a future slice changes geometry, styling or capture.
 
-### Continuation review (2026-11-22)
+### Wrap-up (2026-11-22)
 
-Reopened the plan after the third follow-up. Confirmed the four change sets are committed, the working
-tree is clean, and no source change is pending. Per the user's constraint to minimize redundant test
-runs, no gates were re-run: nothing changed since the last green run. Hardware capability was probed
-read-only (see item 1) and the hardware measurement was found blocked by the missing display and
-`SCHED_IDLE` priority; no Xorg server was started and no system configuration was altered. This section
-is the handoff point — resume at item 1 with a display-backed, normal-priority strobe run.
+Reopened the plan after the third follow-up, confirmed all change sets were committed and the tree clean,
+and probed hardware feasibility read-only. The physical-GPU measurement was not attempted: it requires
+taking over the attached display, and the user chose to defer it. No gates were re-run (nothing changed
+since the last green run) and no system configuration was altered. The plan is complete with one
+explicitly deferred item; the recipe in item 1 is the handoff if it is ever reopened.
 
 ### Resume notes
 
