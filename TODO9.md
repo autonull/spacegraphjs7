@@ -211,15 +211,16 @@ and one command away; all gates are green at `retries: 0`.
 
 ## 8. Progress
 
-Plan status: **Phase 0 and Phase 1 complete. Phase 1 changed one boot default — the Navigate drawer
-is closed and one primary index is declared per surface — but no screenshot, policy vector or study
-protocol changed, and no ADR 0008 verdict or pilot result was fabricated.**
+Plan status: **Phases 0–2 complete. Phase 1 changed one boot default (the Navigate drawer is closed
+and one primary index is declared per surface); Phase 2 adds an opt-in scale knob and a v2 vector
+plan but flips no default, captures no new gallery incumbent, and fabricates no ADR 0008 verdict or
+pilot result.**
 
 | Phase                            | Status      | Evidence                                             |
 | -------------------------------- | ----------- | ---------------------------------------------------- |
 | 0 — baseline and metrics         | complete    | `presence-baseline.json`; 4 shape-only tests green   |
 | 1 — navigation coherence         | complete    | practice gate + one-index e2e; 41 targeted e2e green |
-| 2 — occupancy and octave scaling | not started | no vector version plan for scale                     |
+| 2 — occupancy and octave scaling | complete    | `presence-scale-aware.json`; scale-aware pair; 34 e2e |
 | 3 — continuous visual language   | not started | no new accent/field experiment captured              |
 | 4 — flagship integration         | not started | no pilot, ADR decision or doc update                 |
 
@@ -250,15 +251,39 @@ protocol changed, and no ADR 0008 verdict or pilot result was fabricated.**
    are asserted in `tests/shell.spec.ts`; collapsing the transcript hides the legend so the drawer
    toggle stays reachable without horizontal scroll.
 
+### Delivered in Phase 2
+
+1. **Library capability.** `src/layout/scope-layout.ts` adds `occupancy` / `targetOccupancy` to
+   `ScopeLayoutOptions` and the pure `occupancySpacingFactor()`. Measured sparse coverage tightens
+   solver collision slack toward the target, floored at half the base padding; the far octave supplies
+   no measurement and stays topology-sparse. `test/layout/occupancy-packing.test.ts` covers the
+   factor and the resulting smaller extent.
+2. **Policy knob and vector version plan.** `geometry.occupancyTarget` (default `0`, inert) lands in
+   `schema.ts`; `POLICY_SCHEMA.version` moves to 2 and `decodePolicyVector` accepts legacy `p1.`
+   arrays by padding appended knobs with defaults. Plan in `docs/policy-vector-versions.md`; migration
+   and `p2.` assertions in `policy-schema.test.ts`, `experiments.test.ts`, `policy.spec.ts`.
+3. **Pi opt-in and evidence.** `ui/presets.ts` adds `scale-aware` (`?ui=`/`lab.scale-aware`), host
+   re-solves scope spacing and scales cards through the existing size seam, and the named shot
+   captures a labelled incumbent/variant pair. `presenceVariant()` writes
+   `docs/screenshots/presence-scale-aware.json`: wide-mid occupancy 0.0652 → 0.1024 with label
+   coverage 0.5556 → 0.8889; wide-near 0.0881 → 0.1184; both far samples unchanged. No default
+   changed, so no shipped gallery incumbent was overwritten.
+
 ### Verification run
 
-- `app/pi`: `pnpm run check:fast` — 31 files, 166 unit tests green (count unchanged).
-- `app/pi`: targeted Playwright run (`study`, `navigation`, `shell`, `browser`) — 41 passed at
+- Root: `pnpm exec vitest run test/layout/occupancy-packing.test.ts test/layout/scope-policy.test.ts`
+  — 10 library tests green. `pnpm run build:lib` rebuilt the workspace library after the source edit.
+- `app/pi`: `pnpm run check:fast` — 31 files, 168 unit tests green (+2).
+- `app/pi`: Phase 1 targeted Playwright (`study`, `navigation`, `shell`, `browser`) — 41 passed at
   `retries: 0`, `--workers=1`.
-- No `shots:all`, `verify:visual` or `scale` run: the appearance change is structural (rail disclosure
-  and a text legend) and TODO8 verdicts are still pending. The full gate set stays a Phase 4 item.
+- `app/pi`: Phase 2 targeted Playwright (`ui-presets`, `policy`, `vision`) — 34 passed, including the
+  full vision atlas and the new scale-aware legibility gate; `pnpm run shots:compare` — 9 pairs,
+  `pnpm run compare:ui` — 9 pending decision stubs. Pre-existing pairs were reverted after capture so
+  TODO8's pending incumbents were not overwritten; only the new `scale-aware/` pair is added.
+- No `shots:all`, `verify:visual` or `scale` run: no shipped default changed and TODO8 verdicts are
+  still pending. The full gate set stays a Phase 4 item.
 
-### ADR 0008 evidence for the navigation default
+### ADR 0008 evidence for the navigation and scale defaults
 
 - The boot index did not change (transcript remains primary on `hybrid`), but the drawer default did.
   The existing labelled pair `docs/screenshots/ui-presets/one-index/{incumbent,variant}.png` and its
@@ -266,20 +291,26 @@ protocol changed, and no ADR 0008 verdict or pilot result was fabricated.**
   incumbent/variant comparison. That pair shows the `?ui=one-index` experiment (three widgets hidden);
   Phase 1 additionally closes the rail drawer. No new pixels were captured while TODO8 verdicts are
   pending (pitfall 4). A human verdict is still required before treating this as a settled default.
+- Scale-aware packing stays opt-in (`geometry.occupancyTarget = 0`). Its labelled pair is
+  `docs/screenshots/ui-presets/scale-aware/{incumbent,variant}.png`, its offline comparison is
+  `presence-scale-aware.json`, and its stub with a pending verdict is `ui-preset-scale-aware` in
+  `comparison.json`. Promoting it to a default still needs a human ADR 0008 decision.
 
 ### Deferred measures (reported, not silently dropped)
 
-1. Gallery recapture and the `review.json` traceability item — deferred to Phase 3 with a labelled
-   incumbent, because TODO8 human verdicts are still pending (pitfall 4).
+1. Gallery recapture for shipped shots — still deferred to Phase 3 because TODO8 human verdicts are
+   pending (pitfall 4). Phase 2 captures only the new labelled opt-in pair.
 2. Root `check`, `verify:visual`, `shots:all`, `scale` — deferred to the Phase 4 single full gate run
    to avoid redundant executions.
-3. Occupancy targets — still unset; the Phase 0 offline projection is not a pixel readback.
+3. Occupancy target value — `0.12` is the experiment input, not a proven target. The measured variant
+   improves mid/near coverage but does not reach it; narrow-mid label coverage is unchanged and is
+   reported as such, not rounded up.
 
 ### Handoff notes
 
 1. Read `TODO8.md:§9`, `TODO7.md:§2`, `TODO6.md:§0` and `docs/pi-study-ui-audit.md` first.
-2. Phase 1 is done. Phase 2 needs a vector version plan before any scale knob: use
-   `presence-baseline.json` for the baseline, then set targets from that comparison (invariant 4).
+2. Phases 1 and 2 are done. Phase 3 owns the continuous visual grammar; start from the ADR 0014/0016
+   registered types and keep new geometry as opaque `data`, never a host renderer branch.
 3. Reuse TODO8's harness: named preset, `?ui=`, `shots:compare`, `?studyUI=`, `review.json`.
 4. Use `pnpm`, `--workers=1` or `--workers=2` on constrained hosts, and state-based waits only.
 5. Make no further default change until an ADR 0008 decision is logged by a human; promote the existing

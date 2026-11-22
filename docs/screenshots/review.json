@@ -79,6 +79,9 @@
     "verdict": "kept",
     "note": "Proof catalog lists every preset and question without claiming a winner; drawer overlay does not hide the flux graph. Each summary is a 44px square bordered row after AUDIT-02."
   },
+  "ui-scale-aware": {
+    "note": "Opt-in scale-aware packing experiment; no shipped default changed. Incumbent/variant pair: docs/screenshots/ui-presets/scale-aware/{incumbent,variant}.png. Offline coverage comparison: docs/screenshots/presence-scale-aware.json. Human verdict pending in docs/screenshots/ui-presets/comparison.json (ui-preset-scale-aware)."
+  },
   "policy": {
     "verdict": "kept",
     "note": "Live policy panel shows provenance badges by family; quiet preset values remain distinguishable in the narrower canvas. Primary labels keep their reserved lane after AUDIT-03."

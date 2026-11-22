@@ -38,7 +38,7 @@ test.describe('the live policy spine', () => {
         const hash = await page.evaluate(() => (window as any).__pi.permalink());
         const parsed = JSON.parse(decodeURIComponent(hash.slice(3)));
         expect(parsed.fixture).toBe('pi:local');
-        expect(parsed.policy.startsWith('p1.')).toBe(true);
+        expect(parsed.policy.startsWith('p2.')).toBe(true);
 
         await page.evaluate((value) => (window as any).__pi.applyPermalink(value), hash);
         expect(await page.evaluate(() => (window as any).__pi.policy().values['camera.verbMs'])).toBe(250);

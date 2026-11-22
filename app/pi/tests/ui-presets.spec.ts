@@ -35,6 +35,23 @@ test.describe('UI presets', () => {
         expect(await chrome(page)).toBe('full');
     });
 
+    test('the scale-aware packing preset is a one-URL opt-in', async ({ page }) => {
+        await page.goto('/?ui=scale-aware');
+        await ready(page);
+        expect(await ui(page)).toBe('scale-aware');
+        expect(
+            await page.evaluate(
+                () => (window as any).__pi.policy().values['geometry.occupancyTarget'],
+            ),
+        ).toBe(0.12);
+        expect(await page.evaluate(() => (window as any).__pi.occupancyTarget())).toBe(0.12);
+        await page.evaluate(() => (window as any).__pi.openCommands('palette', 'ui preset'));
+        const ids = await page.locator('[data-command-id]').evaluateAll((rows) =>
+            rows.map((row) => row.getAttribute('data-command-id')),
+        );
+        expect(ids).toContain('lab.scale-aware');
+    });
+
     test('the u shortcut opens a compact lab list that restores chrome', async ({ page }) => {
         await page.goto('/?ui=compact');
         await ready(page);

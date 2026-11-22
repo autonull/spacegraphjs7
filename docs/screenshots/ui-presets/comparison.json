@@ -69,6 +69,22 @@
       "decision": "pending human review; ADR 0008 default gate not closed"
     },
     {
+      "id": "ui-preset-scale-aware",
+      "status": "experiment; default not flipped",
+      "incumbent": "full — shipped knobs and full chrome (?ui=full)",
+      "variant": "Scale-aware packing (?ui=scale-aware, chrome full)",
+      "data": "docs/screenshots/ui-presets/comparison.json",
+      "gates": [
+        "grammar",
+        "vision",
+        "screenshots"
+      ],
+      "incumbentImage": "docs/screenshots/ui-presets/scale-aware/incumbent.png",
+      "variantImage": "docs/screenshots/ui-presets/scale-aware/variant.png",
+      "images": "pending human verdict; pairs captured by pnpm run shots:compare",
+      "decision": "pending human review; ADR 0008 default gate not closed"
+    },
+    {
       "id": "ui-preset-light-shell",
       "status": "experiment; default not flipped",
       "incumbent": "full — shipped knobs and full chrome (?ui=full)",

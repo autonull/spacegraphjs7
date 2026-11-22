@@ -47,6 +47,22 @@ test.describe('Pi flagship vision atlas', () => {
         expect(errors).toEqual([]);
     });
 
+    test('opt-in scale-aware packing stays legible at mid and near', async ({ page }) => {
+        const errors: string[] = [];
+        page.on('pageerror', (error) => errors.push(error.message));
+        for (const id of ['fit-wide-mid', 'fit-wide-near', 'fit-narrow-mid']) {
+            const shot = SHOTS.find((entry) => entry.id === id)!;
+            await page.setViewportSize(shot.viewport!);
+            await page.goto(`/?shot=${id}&ui=scale-aware`);
+            await page.waitForFunction(() => (window as any).__pi?.ready === true);
+            await page.waitForFunction(() => (window as any).__pi.shotReady?.() === true);
+            await page.evaluate(() => (window as any).__pi.pause(true));
+            await page.evaluate(() => (window as any).__pi.settle());
+            await assertScene(page);
+        }
+        expect(errors).toEqual([]);
+    });
+
     test('graph arrangements pass the vision gates across octaves, aspects and themes', async ({ page }) => {
         test.setTimeout(240_000);
         const errors: string[] = [];

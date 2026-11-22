@@ -82,6 +82,7 @@ export const SHOTS: readonly Shot[] = [
     uiShot('compact', 'UI · Compact chrome', 'How little chrome is usable before the five tasks break?'),
     uiShot('reading', 'UI · Reading type', 'Is a larger label floor worth the density cost?'),
     uiShot('presentation', 'UI · Presentation', 'Does a quiet frame and collapsed transcript improve demo clarity?'),
+    uiShot('scale-aware', 'UI · Scale-aware packing', 'Does packing toward measured coverage fill the mid canvas without losing legibility?'),
     uiShot('light-shell', 'UI · Light shell', 'Does the light view need the shell themed too?'),
     {
         id: 'cockpit',

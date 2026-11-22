@@ -24,7 +24,7 @@ export interface PolicyExperiment {
 export interface ExperimentCell {
     readonly id: string;
     readonly vector: PolicyVector;
-    /** Compact `p1.<base64url>` vector: append as `#s=...` or `?policy=...` to launch this cell. */
+    /** Compact `p<version>.<base64url>` vector: append as `#s=...` or `?policy=...` to launch this cell. */
     readonly policy: string;
 }
 

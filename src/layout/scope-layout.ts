@@ -84,6 +84,10 @@ export interface ScopeLayoutOptions {
     seed?: number;
     /** Base spacing passed to the solvers. */
     gap?: number;
+    /** Measured 0..1 canvas coverage feeding scale-aware spacing; absent means keep the base gap. */
+    occupancy?: number;
+    /** 0..1 coverage target; with `occupancy`, tightens collision slack below it down to half. */
+    targetOccupancy?: number;
     depthStep?: number;
     nodePadding?: number;
     /** Local positions keyed by scope path. Used by `pinned` and, optionally, as a solver warm start. */
@@ -171,6 +175,12 @@ const unionBounds = (a: ScopeBounds, b: ScopeBounds): ScopeBounds => {
     };
 };
 
+/** Scale-aware packing: sparse coverage tightens collision slack toward the target, floored at half. */
+export const occupancySpacingFactor = (occupancy?: number, target?: number): number => {
+    if (!occupancy || !target || target <= 0) return 1;
+    return Math.min(1, Math.max(0.5, occupancy / target));
+};
+
 function makeSolver(
     strategy: ScopeStrategy,
     seed: number,
@@ -178,12 +188,14 @@ function makeSolver(
     items: readonly PlacementItem[],
 ): Solver {
     const gap = options.gap ?? 160;
+    const nodePadding =
+        (options.nodePadding ?? 20) * occupancySpacingFactor(options.occupancy, options.targetOccupancy);
     if (strategy === 'grid') {
         const tallest = Math.max(80, ...items.map((item) => item.height));
         const widest = Math.max(80, ...items.map((item) => item.width));
         return new GridPlacement({
             step: Math.max(gap, widest * 0.2),
-            lanePitch: Math.max(tallest * 1.5, 140) + (options.nodePadding ?? 20) + gap,
+            lanePitch: Math.max(tallest * 1.5, 140) + nodePadding + gap,
             groupGap: gap * 2,
             depthStep: options.depthStep ?? 64,
         });
@@ -199,7 +211,7 @@ function makeSolver(
         seed,
         spacing: gap,
         depthStep: options.depthStep ?? 64,
-        nodePadding: options.nodePadding ?? 20,
+        nodePadding,
         useBarnesHut: items.length > 200,
     });
 }

@@ -83,7 +83,7 @@ const flag = (
 ): BooleanKnob => ({ id, family, type: 'boolean', default: def, description, rationale });
 
 export const POLICY_SCHEMA: PolicySchema = {
-    version: 1,
+    version: 2,
     knobs: [
         number('bands.overviewMax', 'bands', 0.45, 0.1, 1, 0.01, 'Zoom below this enters overview.', '1'),
         number('bands.overviewEnter', 'bands', 0.7, 0.2, 1.5, 0.01, 'Zoom above this leaves overview.', '1'),
@@ -172,6 +172,16 @@ export const POLICY_SCHEMA: PolicySchema = {
             '10',
         ),
         number('theme.glow', 'theme', 0.2, 0, 1, 0.1, 'Emissive glow strength on cards and flux edges.', '10'),
+        number(
+            'geometry.occupancyTarget',
+            'geometry',
+            0,
+            0,
+            0.5,
+            0.01,
+            'Measured canvas coverage to pack toward at mid and near octaves; 0 keeps the base gap.',
+            '11',
+        ),
     ],
 };
 

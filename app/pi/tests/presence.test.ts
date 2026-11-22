@@ -4,7 +4,7 @@ import { nodeSize } from '../src/adapter';
 import { measurePresence, type PresenceInput } from '../src/policy/measurement';
 import { POLICY_SCHEMA } from '../src/policy/schema';
 import { resolvePolicy } from '../src/policy/resolve';
-import { presenceBaseline } from '../scripts/baseline';
+import { presenceBaseline, presenceVariant } from '../scripts/baseline';
 
 const values = resolvePolicy(POLICY_SCHEMA).vector;
 const nodes = [
@@ -65,6 +65,25 @@ describe('visual presence measurement', () => {
         for (const sample of report.samples) {
             expect(Number.isFinite(sample.occupancy)).toBe(true);
             expect(Number.isFinite(sample.labelCoverage)).toBe(true);
+        }
+    });
+});
+
+describe('scale-aware packing comparison', () => {
+    it('raises mid and near coverage without packing the topology view', () => {
+        const comparison = presenceVariant();
+        expect(comparison.incumbent.samples).toHaveLength(comparison.samples.length);
+        const incumbent = new Map(comparison.incumbent.samples.map((sample) => [sample.id, sample]));
+        for (const sample of comparison.samples) {
+            const before = incumbent.get(sample.id)!;
+            const midOrNear = sample.octave >= 0;
+            if (midOrNear) {
+                expect(sample.occupancy).toBeGreaterThan(before.occupancy);
+                expect(sample.labelCoverage).toBeGreaterThanOrEqual(before.labelCoverage);
+            } else {
+                expect(sample.occupancy).toBe(before.occupancy);
+                expect(sample.labelCoverage).toBe(before.labelCoverage);
+            }
         }
     });
 });

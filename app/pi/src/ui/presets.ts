@@ -90,6 +90,13 @@ export const UI_PRESETS: readonly UIPreset[] = [
         { flags: { collapseTranscript: false } },
     ),
     preset(
+        'scale-aware',
+        'Scale-aware packing',
+        'Does measured coverage tightening the mid/near graph beat the shipped sparse fit?',
+        { 'geometry.occupancyTarget': 0.12 },
+        { gates: ['grammar', 'vision', 'screenshots'] },
+    ),
+    preset(
         'light-shell',
         'Light shell',
         'Does the light view need the shell themed too?',

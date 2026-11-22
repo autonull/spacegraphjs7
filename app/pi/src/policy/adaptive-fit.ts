@@ -4,6 +4,13 @@ import type { PolicyVector } from './schema';
 export const FIT_OCTAVES = [-1, 0, 1] as const;
 export const FIT_LABEL_BASE_PX = 20;
 
+/** Phase 0 measured coverage for the fit-wide shots (`presence-baseline.json`). The far octave is
+ * absent on purpose: topology stays sparse and is never packed toward a mid/near target. */
+export const PRESENCE_OCCUPANCY: Readonly<Record<number, number>> = {
+    0: 0.0652,
+    1: 0.0881,
+};
+
 export interface FitInsets {
     readonly top: number;
     readonly right: number;

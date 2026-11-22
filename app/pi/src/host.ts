@@ -20,7 +20,12 @@ import {
 import { GraphController } from 'spacegraphjs/control';
 import { sampleDepth, type DepthAxis } from 'spacegraphjs/depth';
 import { Navigation, Trail } from 'spacegraphjs/navigation';
-import { ScopeSimulation, type ScopePolicyInput, type ScopeSpec } from 'spacegraphjs/layout';
+import {
+    occupancySpacingFactor,
+    ScopeSimulation,
+    type ScopePolicyInput,
+    type ScopeSpec,
+} from 'spacegraphjs/layout';
 import {
     MotionDirector,
     createCameraMotionHandlers,
@@ -130,6 +135,7 @@ import {
     type PolicyVector,
     type ResolvedPolicy,
     type ExperimentCell,
+    PRESENCE_OCCUPANCY,
 } from './policy';
 import {
     SessionRecorder,
@@ -351,6 +357,9 @@ export class PiHost {
     #graphLayoutAligned = false;
     #ribbonCorridor = false;
     #graphMorph = false;
+    #octave = 0;
+    #occupancyTarget = 0;
+    #cardScale = 1;
     #uiPresetID?: string;
     #graphLayoutPositions?: ReadonlyMap<string, Position>;
     #surface: Surface = 'hybrid';
@@ -633,6 +642,25 @@ export class PiHost {
         this.#scopeColors = paletteScopeColors(base, palette);
     }
 
+    /** The scale-aware card factor is host policy data fed to the same size seam as salience. */
+    private cardSize(kind: string, html: boolean, dense: boolean): readonly [number, number] {
+        const [width, height] = nodeSize(kind, html, dense);
+        return [width * this.#cardScale, height * this.#cardScale];
+    }
+
+    /** Re-solve scope spacing for the shot octave; the far octave has no packed target. */
+    private setOctave(octave: number): void {
+        this.#octave = octave;
+        const measured = PRESENCE_OCCUPANCY[octave];
+        const active = this.#occupancyTarget > 0 && measured !== undefined;
+        const factor = active ? occupancySpacingFactor(measured!, this.#occupancyTarget) : 1;
+        this.#cardScale = 1 + (1 - factor) * 0.5;
+        this.simulation.setBaseLayout({
+            occupancy: active ? measured : undefined,
+            targetOccupancy: active ? this.#occupancyTarget : undefined,
+        });
+    }
+
     private applyPolicy(): void {
         const values = this.#resolved.values;
         const depth = values['depth.mode'] as DepthMode;
@@ -643,11 +671,13 @@ export class PiHost {
         this.#surface = values['surface.mode'] as Surface;
         this.#arrangement = values['surface.arrangement'] as Arrangement;
         this.#windowSize = Number(values['guardrails.window']);
+        this.#occupancyTarget = Number(values['geometry.occupancyTarget']);
         this.simulation.setBaseLayout({
             gap: Number(values['geometry.gap']),
             depthStep: Number(values['depth.step']),
             nodePadding: Number(values['geometry.padding']),
         });
+        this.setOctave(this.#octave);
         this.simulation.setForces({ repulsion: Number(values['geometry.repulsion']) });
         if (typeof document !== 'undefined') {
             document.documentElement.style.setProperty(
@@ -993,7 +1023,7 @@ export class PiHost {
                 const labelPx = labelFontPx(
                     minLabelPx,
                     pixelsPerWorld,
-                    nodeSize(node.kind, true, dense)[0] * scaleOf(node),
+                    this.cardSize(node.kind, true, dense)[0] * scaleOf(node),
                     node.label.length + (node.scope ? 2 : 0),
                 );
                 return layers.length > 1
@@ -1019,7 +1049,7 @@ export class PiHost {
         this.#model = {
             ...this.#model,
             nodes: this.#model.nodes.map((node) => {
-                const size = nodeSize(node.kind, Boolean(node.html), dense);
+                const size = this.cardSize(node.kind, Boolean(node.html), dense);
                 const focusScale = scaleForRole(roles.get(node.id) ?? 'none', scales);
                 const activity = this.#activity.get(node.id) ?? 0;
                 const salience = salienceScore(activity, node.emphasis);
@@ -1377,6 +1407,7 @@ export class PiHost {
         const shot = typeof idOrShot === 'string' ? shotById(idOrShot) : idOrShot;
         if (!shot) return false;
         this.#shotReady = false;
+        this.setOctave(shot.octave ?? 0);
         if (shot.surface) this.setSurface(shot.surface);
         if (shot.arrangement) this.setArrangement(shot.arrangement);
         if (shot.graphLayout && isGraphLayoutMode(shot.graphLayout)) this.setGraphLayout(shot.graphLayout);
@@ -2185,6 +2216,8 @@ export class PiHost {
             capabilities: () => CAPABILITIES.map((capability) => capability.id),
             run: (id: string) => this.run(id),
             policy: () => this.policy,
+            octave: () => this.#octave,
+            occupancyTarget: () => this.#occupancyTarget,
             setKnob: (id: string, value: string | number | boolean, layer?: PolicyLayer) =>
                 this.setKnob(id, value, layer),
             setPolicyLayer: (layer: PolicyLayer, values: PolicyVector) =>
@@ -2984,7 +3017,7 @@ export class PiHost {
                 (canvas.clientWidth || 1000) / Math.max(viewport.extent?.width ?? 1000, 1);
             const scale =
                 focus === this.#revealed ? Number(this.#resolved.values['emphasis.focusScale']) : 1;
-            const [cardWidth, cardHeight] = nodeSize(
+            const [cardWidth, cardHeight] = this.cardSize(
                 adapterNode.kind,
                 true,
                 denseType(this.#resolved.values),

@@ -16,7 +16,7 @@ describe('policy experiments', () => {
         expect(sampled.matrix.strategy).toBe('sampled');
         expect(sampled.cells.length).toBe(experiment.maxCells);
         for (const cell of sampled.cells) {
-            expect(cell.policy.startsWith('p1.')).toBe(true);
+            expect(cell.policy.startsWith('p2.')).toBe(true);
             expect(cellFromPolicy(POLICY_SCHEMA, cell.policy)).toEqual(cell.vector);
         }
         const again = sampleExperiment(POLICY_SCHEMA, experiment);

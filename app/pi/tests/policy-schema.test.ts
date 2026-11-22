@@ -82,13 +82,24 @@ describe('policy resolution', () => {
     it('round-trips a compact vector and exposes it to the panel', () => {
         const original = vector({ 'camera.verbMs': 250, 'navigation.minimap': false });
         const encoded = encodePolicyVector(POLICY_SCHEMA, original);
-        expect(encoded.startsWith('p1.')).toBe(true);
+        expect(encoded.startsWith('p2.')).toBe(true);
         expect(decodePolicyVector(POLICY_SCHEMA, encoded)).toEqual(original);
         const resolved = resolvePolicy(POLICY_SCHEMA, { panel: original });
         const groups = panelControls(POLICY_SCHEMA, resolved);
         expect(groups.length).toBeGreaterThan(10);
         const camera = groups.find((group) => group.family === 'camera')!;
         expect(camera.controls.find((item) => item.knob.id === 'camera.verbMs')?.source).toBe('panel');
+    });
+
+    it('migrates a v1 vector by defaulting knobs appended in v2', () => {
+        const previous = vector({ 'camera.verbMs': 250 });
+        const packed = POLICY_SCHEMA.knobs.slice(0, -1).map((knob) => previous[knob.id]);
+        const legacy = `p1.${Buffer.from(JSON.stringify(packed)).toString('base64url')}`;
+        const migrated = decodePolicyVector(POLICY_SCHEMA, legacy);
+
+        expect(migrated?.['camera.verbMs']).toBe(250);
+        expect(migrated?.['geometry.occupancyTarget']).toBe(0);
+        expect(decodePolicyVector(POLICY_SCHEMA, 'p3.payload')).toBeNull();
     });
 });
 

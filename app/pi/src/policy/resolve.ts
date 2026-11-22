@@ -48,7 +48,11 @@ export const withLayer = (
     [layer]: { ...layers[layer], ...sanitizeVector(schema, values) },
 });
 
-/** Compact, order-stable, URL-safe encoding: `p1.<base64url(json array)>`. */
+/**
+ * Compact, order-stable, URL-safe encoding: `p<version>.<base64url(json array)>`.
+ * Version 2 appends `geometry.occupancyTarget` after every v1 knob, so a shorter legacy array is
+ * decoded by padding trailing knobs with their schema defaults. Unknown versions are rejected.
+ */
 export const encodePolicyVector = (schema: PolicySchema, values: PolicyVector): string => {
     const packed = schema.knobs.map((knob) => values[knob.id] ?? knob.default);
     const json = JSON.stringify(packed);
@@ -60,15 +64,20 @@ export const encodePolicyVector = (schema: PolicySchema, values: PolicyVector): 
 
 export const decodePolicyVector = (schema: PolicySchema, encoded: string): PolicyVector | null => {
     const match = /^p(\d+)\.([A-Za-z0-9_-]+)$/.exec(encoded);
-    if (!match || Number(match[1]) !== schema.version) return null;
+    if (!match) return null;
+    const version = Number(match[1]);
+    const legacy = version === 1 && schema.version === 2;
+    if (version !== schema.version && !legacy) return null;
     try {
         const binary = atob(match[2].replace(/-/g, '+').replace(/_/g, '/'));
         const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
         const packed: unknown = JSON.parse(new TextDecoder().decode(bytes));
-        if (!Array.isArray(packed) || packed.length !== schema.knobs.length) return null;
+        if (!Array.isArray(packed) || packed.length > schema.knobs.length || packed.length === 0)
+            return null;
+        const defaults = defaultVector(schema);
         const values: Record<string, unknown> = {};
         schema.knobs.forEach((knob, index) => {
-            values[knob.id] = packed[index];
+            values[knob.id] = packed[index] ?? defaults[knob.id];
         });
         return sanitizeVector(schema, values);
     } catch {

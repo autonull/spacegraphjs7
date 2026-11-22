@@ -1,0 +1,111 @@
+{
+  "version": 1,
+  "method": "Offline orthographic projection of solved freeform card bounds with adaptive insets; sums clipped card areas and checks projected label sizes against the policy floor. Host chrome is not subtracted; this is a comparable baseline, not a pixel readback.",
+  "target": 0.12,
+  "incumbent": {
+    "version": 1,
+    "method": "Offline orthographic projection of solved freeform card bounds with adaptive insets; sums clipped card areas and checks projected label sizes against the policy floor. Host chrome is not subtracted; this is a comparable baseline, not a pixel readback.",
+    "samples": [
+      {
+        "id": "fit-wide-far",
+        "octave": -1,
+        "occupancy": 0.0163,
+        "labelCoverage": 0.4444,
+        "nodes": 18
+      },
+      {
+        "id": "fit-narrow-far",
+        "octave": -1,
+        "occupancy": 0.0093,
+        "labelCoverage": 0.0556,
+        "nodes": 18
+      },
+      {
+        "id": "fit-wide-mid",
+        "octave": 0,
+        "occupancy": 0.0652,
+        "labelCoverage": 0.5556,
+        "nodes": 18
+      },
+      {
+        "id": "fit-narrow-mid",
+        "octave": 0,
+        "occupancy": 0.0371,
+        "labelCoverage": 0.4444,
+        "nodes": 18
+      },
+      {
+        "id": "fit-wide-near",
+        "octave": 1,
+        "occupancy": 0.0881,
+        "labelCoverage": 1,
+        "nodes": 18
+      },
+      {
+        "id": "fit-narrow-near",
+        "octave": 1,
+        "occupancy": 0.0649,
+        "labelCoverage": 0.8333,
+        "nodes": 18
+      },
+      {
+        "id": "cockpit",
+        "octave": 0,
+        "occupancy": 0.0652,
+        "labelCoverage": 0.5556,
+        "nodes": 18
+      }
+    ]
+  },
+  "samples": [
+    {
+      "id": "fit-wide-far",
+      "octave": -1,
+      "occupancy": 0.0163,
+      "labelCoverage": 0.4444,
+      "nodes": 18
+    },
+    {
+      "id": "fit-narrow-far",
+      "octave": -1,
+      "occupancy": 0.0093,
+      "labelCoverage": 0.0556,
+      "nodes": 18
+    },
+    {
+      "id": "fit-wide-mid",
+      "octave": 0,
+      "occupancy": 0.1024,
+      "labelCoverage": 0.8889,
+      "nodes": 18
+    },
+    {
+      "id": "fit-narrow-mid",
+      "octave": 0,
+      "occupancy": 0.0582,
+      "labelCoverage": 0.4444,
+      "nodes": 18
+    },
+    {
+      "id": "fit-wide-near",
+      "octave": 1,
+      "occupancy": 0.1184,
+      "labelCoverage": 1,
+      "nodes": 18
+    },
+    {
+      "id": "fit-narrow-near",
+      "octave": 1,
+      "occupancy": 0.0868,
+      "labelCoverage": 0.9444,
+      "nodes": 18
+    },
+    {
+      "id": "cockpit",
+      "octave": 0,
+      "occupancy": 0.1024,
+      "labelCoverage": 0.8889,
+      "nodes": 18
+    }
+  ]
+}
