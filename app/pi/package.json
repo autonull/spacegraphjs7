@@ -11,7 +11,7 @@
         "typecheck": "tsc --noEmit",
         "check:fast": "tsc --noEmit && vitest run --config vitest.config.ts",
         "test:e2e": "playwright test --config playwright.config.ts",
-        "e2e:chrome": "playwright test --config playwright.config.ts tests/shell.spec.ts tests/orchestration.spec.ts",
+        "e2e:chrome": "playwright test --config playwright.config.ts tests/shell.spec.ts tests/orchestration.spec.ts --fully-parallel",
         "verify:fast": "pnpm run check:fast && pnpm run e2e:chrome",
         "test:publish": "tsx scripts/publish-check.ts",
         "verify": "tsx scripts/verify.ts",

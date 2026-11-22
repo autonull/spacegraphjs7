@@ -1,9 +1,28 @@
 {
   "demand": "TODO4.md demand record 2026-11-22",
   "variants": {
-    "motion": "pi-pulse-a 120ms",
+    "motion": "pi-pulse-b 120ms",
     "reducedMotion": "none auto"
   },
-  "settledBytesIdentical": false,
-  "note": "The pulse is a one-shot state change; both variants reach the same final frame."
+  "states": [
+    {
+      "settled": true,
+      "center": [
+        281.5318561480024,
+        -148.3592844813359,
+        -140
+      ],
+      "zoom": 0.4999999999999999
+    },
+    {
+      "settled": true,
+      "center": [
+        30.935292823116583,
+        -142.67501674393367,
+        -66.2
+      ],
+      "zoom": 0.545243258592388
+    }
+  ],
+  "note": "The pulse is a one-shot state change. Framing differs because the camera fits once at startup; pixel identity and viewport parity are not gates during active development."
 }

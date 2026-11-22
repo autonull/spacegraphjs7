@@ -271,7 +271,8 @@ the progress block below records what has actually landed.
 1. **Motion:** record the demand and the comparison first. Then promote one existing opt-in preset (§10) as
    data with provenance. Reuse the live activity map, `MotionDirector`, `setFollow` and
    `camera.verbMs` / `ladder.blendMs`; no new animation subsystem, renderer branch or contract field.
-   L4 reduced-motion final-frame parity and the frame-time gate stay green; still frames stay byte-identical.
+   L4 reduced-motion final-state parity and the frame-time gate stay green; pixel identity is not a gate
+   during active development.
 2. **Proliferation:** split core/domain policy vocabulary, emit the world-host template, make the scaffold
    emit a real `createVisionAssert` gate and import `@spacegraphjs/shared/domain` instead of duplicating
    helpers, and add one cross-domain shot. Verify the second host consumes shell, tokens and inspector
@@ -558,8 +559,8 @@ beside H: H must define tokens in a form another host can resolve, not as Pi-onl
 - L3 **Choreography.** Assign durations from `camera.verbMs`/`ladder.blendMs`; no new timing constants.
   Rung crossfade, portal dissolve and lens pin share one clock.
 - L4 **Reduced motion.** All of L1–L3 render their final frame immediately; parity is a gate, not a note.
-- **Gate:** still-frame screenshots are byte-identical across repeated runs of the same shot; reduced-motion
-  e2e passes; scale budget unchanged.
+- **Gate:** reduced-motion e2e passes and the final state matches the animated path; still-frame pixel
+  identity is explicitly not a gate while the UI is under active development; scale budget unchanged.
 
 ### M — Measurement and the feedback loop
 

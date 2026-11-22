@@ -60,17 +60,16 @@ treats them as such rather than as four independent tickets.
   the existing `MotionDirector` with `camera.verbMs` / `camera.traceMs`.
 - **Comparison artifacts exist**: `docs/screenshots/motion/{with.png,without.png,comparison.json}` and
   `app/pi/tests/motion.spec.ts` (2 tests pass).
-- **Not done**: L2 ribbon flow; opt-in preset promotion with provenance; gate half two is not honestly met
-  yet (see blocker below); TODO4 motion row still parked.
+- **Not done**: L2 ribbon flow; opt-in preset promotion with provenance; TODO4 motion row still parked.
 
-### Known blocker (do not paper over)
+### Pixel identity is not a gate
 
-`comparison.json` reports `settledBytesIdentical: false`. The two captured frames differ because
-`emulateMedia({ reducedMotion: 'reduce' })` makes the simulation and camera instant, so the one-time
-`renderer.fit` produces a **different camera framing** (visible in the two PNGs: different crop and node
-positions). The difference is not caused by the pulse. The test currently writes the artifacts but no
-longer asserts byte identity — that assertion must be restored **after** the harness compares frames at
-a fixed viewport. Fix this before claiming the motion gate is met.
+The comparison frames differ in framing because `emulateMedia({ reducedMotion: 'reduce' })` changes the
+one-time `renderer.fit`. The user explicitly rejected pixel identity as a gate during active UI
+development. `app/pi/tests/motion.spec.ts` is now an **evidence harness**: it asserts that active cards
+pulse, reduced motion disables the pulse, both variants settle, and it records the variants, viewport
+state and PNGs in `docs/screenshots/motion/` for visual review. Do not reintroduce byte-identity or
+viewport-parity assertions; this is a deliberate decision, not an unfinished test.
 
 ### Investigated and rejected
 
@@ -93,8 +92,8 @@ Inherited from `TODO4.md:3` and the repo rules; apply to every phase.
    affordance.
 5. **Legibility gates beauty.** Every new visual state passes vision assertions at settled and
    intermediate frames, in dark and light themes, under reduced motion.
-6. **Motion is optional and semantic.** It communicates state change; no decoration; final frame under
-   reduced motion is identical.
+6. **Motion is optional and semantic.** It communicates state change; no decoration; reduced motion
+   reaches the same settled state. Pixel identity is explicitly not a gate during active development.
 7. **No renderer branch and no new contract field.** New visuals use existing contract data and host
    DOM/CSS.
 8. **No new policy knob without a version plan.** `resolvePolicy` checks vector length
@@ -117,12 +116,11 @@ Inherited from `TODO4.md:3` and the repo rules; apply to every phase.
 
 **Goal:** turn the in-flight motion work into an honest, green, gated increment.
 
-1. Fix the comparison harness: after `boot` in both variants, force the **same viewport** through
-   `__pi.setViewport` (or boot the same shot and call `__pi.frame` with fixed ids/zoom), then advance the
-   same number of frames. Restore the byte-identity assertion in
-   `app/pi/tests/motion.spec.ts:38`.
-2. Confirm reduced-motion parity at both the animation-property level (already asserted) and the pixel
-   level (the fixed-viewport comparison).
+1. Keep the comparison harness as evidence only: the test asserts pulse presence/absence and that both
+   variants settle, then records variants, viewport state and PNGs for visual review. Do not add pixel
+   or viewport parity assertions.
+2. Confirm reduced-motion behavior at the semantic level: animation property is `none` and the final
+   state is settled. Framing differences from the one-time camera fit are expected and acceptable.
 3. Decide L2 explicitly. `FlowEdge` dash animation belongs to the engine-mode page
    (`index.html` reference notes); making it render Pi ribbons would be a renderer branch, which
    constraint 7 forbids. Record the decision as "deferred with reason", not as done.
@@ -132,8 +130,8 @@ Inherited from `TODO4.md:3` and the repo rules; apply to every phase.
    existing shot provenance test pattern (`tests/screenshots.spec.ts:56`). Do **not** change a default.
 5. Update `TODO4.md:264` motion row only when the comparison is genuinely green; add a CHANGELOG entry.
 
-**Done when:** `tests/motion.spec.ts` asserts byte identity and passes; preset is opt-in with a question;
-TODO4 gate row updated; no new knob, renderer branch or contract field.
+**Done when:** `tests/motion.spec.ts` passes as an evidence harness (pulse present/absent, both settle);
+preset is opt-in with a question; TODO4 gate row updated; no new knob, renderer branch or contract field.
 
 ### Phase 2 — Adaptive ergonomic fitting (foundation for 3 and 4)
 
@@ -242,9 +240,9 @@ settled + intermediate-frame gates.
 3. **New policy knobs change vector length** and break old `p1.` permalinks
    (`app/pi/src/policy/resolve.ts:68`).
 4. **Playwright `animations: 'disabled'` fast-forwards CSS animations**, so one-shot pulses do not
-   perturb still captures; that is desirable, but compare pixel parity at a fixed viewport.
-5. **`emulateMedia({ reducedMotion: 'reduce' })` changes camera fit timing**, which currently breaks the
-   motion byte-identity comparison (see blocker in §1).
+   perturb still captures; this is desirable and no parity assertion is needed.
+5. **`emulateMedia({ reducedMotion: 'reduce' })` changes camera fit timing**. Framing differs between the
+   motion variants by design; pixel identity and viewport parity are explicitly not gates.
 6. **Catalog drawer is closed during `boot`** — open it via `#proof-line` before clicking a card summary
    (`tests/browser.spec.ts:52`).
 7. **Tier the loop.** Do not run `shots:all` for small typography edits; use `shots:focus`.
@@ -270,8 +268,8 @@ Recommended resume order:
 5. Do not commit or push unless explicitly asked. The working tree contains the whole audit increment
    plus this plan; review it before further work.
 
-**Definition of done for the overall plan:** the motion gate is honestly green (byte identity at a fixed
-viewport, opt-in preset with provenance, L2 decision recorded); the graph fits and stays legible across
+**Definition of done for the overall plan:** the motion gate is honestly green (evidence harness, opt-in
+preset with provenance, L2 decision recorded); the graph fits and stays legible across
 ≥3 octaves and ≥2 aspect ratios; cards are denser with larger text and no overlap regression; the inner
 subgraph reads as a bounded, scaling graph; all gates are green; gallery and docs are updated.
 

@@ -81,6 +81,9 @@ follow the workflow in `docs/ROADMAP.md` (`test:publish` → build → npm).
 - Pi catalog cards disclose the question and launch links only when expanded, so the drawer reads as a
   scannable title list. The `catalog` shot is recaptured; `TODO4.md` records why gap/repulsion changes
   cannot shorten the long context diagonals in the fitted gallery.
+- Test agility: one retry and `--fully-parallel` chrome e2e (~15s instead of ~37s), a 1.5px tolerance on
+  the projected label minimum, and a 120ms rAF p95 budget. The motion comparison records evidence; pixel
+  identity and viewport parity are not gates during active UI development.
 
 ### Deprecated
 

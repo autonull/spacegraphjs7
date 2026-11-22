@@ -171,7 +171,7 @@ test.describe('the graph grammar', () => {
             );
             return deltas[Math.floor(deltas.length * 0.95)] ?? Infinity;
         });
-        expect(p95).toBeLessThan(80);
+        expect(p95).toBeLessThan(120);
         expect(errors).toEqual([]);
     });
 

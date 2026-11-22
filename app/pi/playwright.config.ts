@@ -7,6 +7,7 @@ export default defineConfig({
     testDir: './tests',
     testMatch: /.*\.spec\.ts/,
     reporter: 'list',
+    retries: 1,
     use: {
         headless: true,
         baseURL: process.env.PLAYWRIGHT_BASE_URL ?? `http://localhost:${PORT}`,

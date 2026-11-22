@@ -35,29 +35,43 @@ test.describe('Pi activity pulse', () => {
         expect(await pulseFor(page)).toMatch(/^none/);
     });
 
-    test('with/without comparison: settled frames are byte-identical', async ({ page }) => {
+    test('with/without comparison records both variants', async ({ page }) => {
         const out = resolve('../../docs/screenshots/motion');
         mkdirSync(out, { recursive: true });
-        const settled: Buffer[] = [];
+        const frames: Buffer[] = [];
         const pulses: string[] = [];
+        const states: { settled: boolean; center: unknown; zoom: number }[] = [];
 
         for (const reduced of [false, true]) {
             await boot(page, reduced);
             pulses.push(await pulseFor(page));
             await advanceFrames(page);
-            settled.push(await page.screenshot({ animations: 'disabled' }));
+            frames.push(await page.screenshot({ animations: 'disabled' }));
+            states.push(
+                await page.evaluate(() => {
+                    const pi = (window as any).__pi;
+                    const viewport = pi.viewport();
+                    return {
+                        settled: pi.simulation().settled,
+                        center: viewport.center,
+                        zoom: viewport.zoom,
+                    };
+                }),
+            );
         }
 
-        writeFileSync(resolve(out, 'without.png'), settled[0]!);
-        writeFileSync(resolve(out, 'with.png'), settled[1]!);
+        for (const state of states) expect(state.settled).toBe(true);
+
+        writeFileSync(resolve(out, 'without.png'), frames[0]!);
+        writeFileSync(resolve(out, 'with.png'), frames[1]!);
         writeFileSync(
             resolve(out, 'comparison.json'),
             `${JSON.stringify(
                 {
                     demand: 'TODO4.md demand record 2026-11-22',
                     variants: { motion: pulses[0], reducedMotion: pulses[1] },
-                    settledBytesIdentical: settled[0]!.equals(settled[1]!),
-                    note: 'The pulse is a one-shot state change; both variants reach the same final frame.',
+                    states,
+                    note: 'The pulse is a one-shot state change. Framing differs because the camera fits once at startup; pixel identity and viewport parity are not gates during active development.',
                 },
                 null,
                 2,
