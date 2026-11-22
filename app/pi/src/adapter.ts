@@ -1,5 +1,4 @@
 import {
-    escapeHtml,
     ModelAdapter,
     type AdapterEdge,
     type AdapterModel,
@@ -9,8 +8,11 @@ import {
 import type { NodeStatus, RenderEdge, RenderNode } from '@spacegraphjs/renderer';
 import type { AgentView } from '@spacegraphjs/agent';
 import type { RepresentationLayer, RepresentationRung } from 'spacegraphjs/salience';
-import { innerConnectors, innerPlacements, type InnerChip, type InnerLayout } from './inner';
+import { anatomyCard, anatomyLens, portalGlyph } from './anatomy';
+import type { InnerChip, InnerLayout } from './inner';
 import { CARD_BUDGETS } from './policy';
+
+export { portalGlyph } from './anatomy';
 
 export type AgentAdapterNode = AdapterNode & {
     readonly role?: string;
@@ -89,21 +91,6 @@ export const toAdapterModel = (view: AgentView): AgentAdapterModel => ({
     })),
 });
 
-const detailOf = (node: AgentAdapterNode): string => {
-    const data = node.data ?? {};
-    for (const key of ['text', 'summary', 'path', 'args', 'result', 'reason', 'level']) {
-        if (typeof data[key] === 'string' && data[key]) return String(data[key]);
-    }
-    return node.summary ?? '';
-};
-
-const PORTAL_GLYPHS = ['▣', '▤', '▥', '▦'] as const;
-const SHAPE_SPAN = '<i class="rung-shape" aria-hidden="true"></i>';
-
-/** A stable glyph per child scope, so a portal keeps the same identity across rungs and rebuilds. */
-export const portalGlyph = (scope: string): string =>
-    PORTAL_GLYPHS[[...scope].reduce((sum, char) => sum + char.charCodeAt(0), 0) % PORTAL_GLYPHS.length]!;
-
 /** A bounded miniature of a child scope, derived from ScopeSpec rather than the portal's label. */
 export const portalPreview = (
     scope: string,
@@ -125,50 +112,8 @@ export const cardMarkup = (
 ): string => {
     const custom = cardTemplates.get(node.kind);
     if (custom) return custom(node, rung, context, blend, descending, labelPx);
-    const label = escapeHtml(node.label);
-    const detail = escapeHtml(detailOf(node));
-    const status = escapeHtml(node.status);
-    const badge = context.count ? ` <span style="opacity:.6">${context.count}</span>` : '';
-    const portal = node.scope
-        ? ` data-portal="${escapeHtml(node.scope)}"`
-        : '';
-    const glyph = node.scope
-        ? `<span aria-hidden="true" style="opacity:.7">${portalGlyph(node.scope)} </span>`
-        : '';
-    const attributes = `data-rung="${rung}" data-blend="${blend.toFixed(2)}" data-kind="${escapeHtml(node.kind)}" data-status="${status}" data-focus="${escapeHtml(node.focusRole ?? 'none')}"${portal}${descending ? ' data-descending="true"' : ''}`;
-    const box = 'display:flex;flex-direction:column;justify-content:center;gap:4px;padding:6% 8%;box-sizing:border-box;height:100%;color:inherit;font-family:inherit;overflow:hidden;transition:opacity var(--pi-blend,120ms)';
-
-    if (rung === 'overview') {
-        const labelSize = labelPx || 44;
-        return `<div ${attributes} style="${box}">${SHAPE_SPAN}<span style="font-size:${labelSize}px;font-weight:700;line-height:1;letter-spacing:-0.03em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%"><span aria-hidden="true" style="font-size:${Math.round(labelSize * 0.6)}px">${glyph}</span>${label}</span></div>`;
-    }
-    if (rung === 'execution') {
-        const bars = [0.3, 0.55, 0.8, 0.5, 0.95]
-            .map((height) => `<i style="display:inline-block;width:5px;height:${Math.round(height * 22)}px;background:currentColor;opacity:.55"></i>`)
-            .join('');
-        const labelSize = labelPx || 26;
-        const preview = typeof node.data?.preview === 'string' ? node.data.preview : '';
-        const previewRow = preview
-            ? `<span class="card-preview" aria-hidden="true">${escapeHtml(preview)}</span>`
-            : '';
-        return `<div ${attributes} style="${box}">${SHAPE_SPAN}<span style="font-size:${labelSize}px;font-weight:700;line-height:1.1;letter-spacing:-0.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${glyph}${label}${badge}</span><span style="display:flex;align-items:flex-end;gap:3px;height:22px">${bars}</span>${previewRow}<span style="opacity:.72;font-size:${Math.max(12, labelSize * 0.6)}px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${detail.slice(0, 80)}</span></div>`;
-    }
-    const scope = node.scope
-        ? `<span style="opacity:.7;font-size:13px">${portalGlyph(node.scope)} scope: ${escapeHtml(node.scope)}</span>`
-        : '';
-    const labelSize = Math.min(24, Math.max(14, labelPx || 20));
-    const bodySize = Math.max(12, Math.min(14, labelSize * 0.7));
-    const telemetry = Object.entries(node.data ?? {})
-        .filter(([, value]) => typeof value === 'string' || typeof value === 'number')
-        .slice(0, 3)
-        .map(([key, value]) => `<span style="opacity:.7">${escapeHtml(key)}: ${escapeHtml(String(value))}</span>`)
-        .join(' · ');
-    const metaline = telemetry || `${escapeHtml(node.kind)} · ${status}`;
-    return `<div ${attributes} style="${box};justify-content:flex-start;gap:4px">${SHAPE_SPAN}<span style="font-size:${labelSize}px;font-weight:700;line-height:1.1;white-space:normal;overflow-wrap:anywhere">${glyph}${label}${badge}</span><span style="opacity:.82;font-size:${bodySize}px;line-height:1.4;white-space:normal;overflow-wrap:anywhere">${detail.slice(0, 320)}</span><span style="opacity:.6;font-size:${Math.max(11, bodySize * 0.75)}px;line-height:1.4;white-space:normal;overflow-wrap:anywhere">${metaline}</span>${scope}</div>`;
+    return anatomyCard(node, rung, context, blend, descending, labelPx);
 };
-
-const nodeButton = (action: string, target: string, label: string, title: string): string =>
-    `<button type="button" class="focus-button" data-node-action="${action}" data-target="${escapeHtml(target)}" data-sg-interactive="true" title="${escapeHtml(title)}">${escapeHtml(label)}</button>`;
 
 /** The focused detail rung becomes a cockpit: structured data, a bounded inner layout, and actions. */
 export const focusCardMarkup = (
@@ -176,49 +121,7 @@ export const focusCardMarkup = (
     chips: readonly InnerChip[],
     layout: InnerLayout,
     labelPx = 0,
-): string => {
-    const label = escapeHtml(node.label);
-    const detail = escapeHtml(detailOf(node));
-    const status = escapeHtml(node.status);
-    const glyph = node.scope ? `<span aria-hidden="true">${portalGlyph(node.scope)} </span>` : '';
-    const actions = [
-        nodeButton('focus', node.id, 'center', 'Center this node'),
-        nodeButton('trace', node.id, 'trace', 'Trace the path here'),
-        nodeButton('follow', node.id, 'follow', 'Follow the live stream'),
-        ...(node.kind === 'approval'
-            ? [
-                  nodeButton('approve', node.id, 'approve', 'Approve'),
-                  nodeButton('reject', node.id, 'reject', 'Reject'),
-              ]
-            : []),
-    ].join('');
-    const subchips = (chip: InnerChip): string =>
-        chip.children.length
-            ? `<span class="focus-subchips">${chip.children
-                  .map((child) => nodeButton('focus', child.id, child.label, `Focus ${child.label}`))
-                  .join('')}</span>`
-            : '';
-    const placements = innerPlacements(chips, layout);
-    const connectors =
-        layout === 'radial' || layout === 'lane'
-            ? `<svg class="focus-connectors" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${innerConnectors(placements)
-                  .map(
-                      ({ chipId, x1, y1, x2, y2 }) =>
-                          `<line data-chip="${escapeHtml(chipId)}" x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}"/>`,
-                  )
-                  .join('')}</svg>`
-            : '';
-    const inner =
-        connectors +
-        placements
-            .map(
-                ({ chip, left, top, width, height }) =>
-                    `<div class="focus-chip" data-kind="${escapeHtml(chip.kind)}" data-chip="${escapeHtml(chip.id)}" style="inset-inline-start:${left.toFixed(1)}%;top:${top.toFixed(1)}%;width:${width.toFixed(1)}%;height:${height.toFixed(1)}%"><span class="focus-chip-head"><span aria-hidden="true">${chip.scope ? portalGlyph(chip.scope) : '·'}</span> ${escapeHtml(chip.label)}</span><span class="focus-chip-meta">${escapeHtml(chip.role)} · ${escapeHtml(chip.kind)}</span><span class="focus-chip-status">${escapeHtml(chip.status ?? chip.kind)}</span><span class="focus-chip-signal">${[0.35, 0.6, 0.9, 0.5].map((height) => `<i style="height:${height * 100}%"></i>`).join('')}</span>${nodeButton('focus', chip.id, '↗', `Focus ${chip.label}`)}${subchips(chip)}</div>`,
-            )
-            .join('');
-    const titleSize = Math.min(28, Math.max(16, labelPx || 20));
-    return `<div data-rung="detail" data-focus="focus" data-kind="${escapeHtml(node.kind)}" data-status="${status}"${node.scope ? ` data-portal="${escapeHtml(node.scope)}"` : ''} class="focus-panel" style="position:relative;width:100%;height:100%;box-sizing:border-box;display:grid;grid-template-rows:auto auto minmax(0,1fr) auto;gap:6px;padding:8px;overflow:hidden;font-family:inherit">${SHAPE_SPAN}<div class="focus-head"><span style="font-size:${titleSize}px;font-weight:700;line-height:1.1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${glyph}${label}</span><span class="focus-status">${status}</span></div><div class="focus-detail">${detail.slice(0, 240)}</div><div class="focus-inner" data-layout="${layout}">${inner}</div><div class="focus-actions">${actions}</div></div>`;
-};
+): string => anatomyLens(node, chips, layout, labelPx);
 
 /**
  * True two-rung compositing: both neighbouring rungs stay in the DOM with normalized opacities and

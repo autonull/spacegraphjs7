@@ -6,7 +6,7 @@ the progress block below records what has actually landed.
 
 ---
 
-## Progress (updated 2026-11-21 — slices 1–3 and the standing track complete, visual-correctness pass landed; next: slice 5 node anatomy)
+## Progress (updated 2026-11-21 — slices 1–3, 5 and the standing track complete, visual-correctness pass landed; next: content legibility)
 
 **Slice 1 — One surface language: implemented in Pi, not yet promoted to a second host.**
 
@@ -112,6 +112,23 @@ the progress block below records what has actually landed.
 2. No contract field and no new renderer branch were added. `suppressLine` is an internal `Edge` flag, and the width change is a policy default plus a corrected interpolation, not a new mechanism.
 3. Context edges still render as thin `Line2` connectors by design; the long gray diagonals in the default cockpit remain. Shortening their reach is still a data change (`geometry.gap`/`repulsion`), not a renderer change.
 
+**Slice 5 — Node anatomy (2026-11-21): implemented in Pi, gates green, not promoted past the flagship.**
+
+| Item                                   | Status | Evidence                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| -------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Parts vocabulary and rung skeletons    | done   | `app/pi/src/anatomy.ts` defines `anatomyHeader`, `anatomySignal`, `anatomyRow` and `anatomyPort`, then assembles a distinct skeleton per rung: overview = header only; execution = header + signal + body row; detail = header + status + wrapped body/telemetry rows. New CSS in `app/pi/index.html` reads only `--sg-*` tokens and logical `inset-*` properties.                                                                                                          |
+| Kind-specific arrangements             | done   | `arrangementOf` maps run/unit/message/tool/artifact/approval/error (plus file, action, read-tool, state, retry aliases) to eight arrangements; messages and artifacts drop the activity signal, tools keep it, gates and failures keep the existing notch/severity shape. `ANATOMY_KINDS` registers every kind through the existing `registerCardTemplate` registry in `client.ts`; the default ladder stays the fallback.                                  |
+| Source and target ports                | done   | `derivePorts` derives outgoing/source and incoming/target sides from view edges and simulated positions; sides are card-local logical `start`/`end` or physical `top`/`bottom`. `anatomyPort` draws them inside card edges. The host writes them into `node.data.ports` for cards and the lens. The renderer still draws ribbons center-to-center, so the ports are the visible endpoint marks rather than a new renderer seam.                      |
+| One anatomy across card and lens       | done   | `focusCardMarkup` delegates to `anatomyLens`, which reuses the same header, signal, body-row and port parts at the detail rung and adds the bounded inner topology. The lens keeps `.focus-detail`, `.focus-chip`, `.focus-connectors`, `.focus-actions` and 44px `.focus-button` hooks, so shell and keyboard tests are unchanged.                                                                                                                     |
+| Gates and review                       | done   | `node-detail`, `fractal` and `cockpit` recaptured and reviewed in `docs/screenshots/index.html`; all 12 shots recaptured. `app/pi`: 128 unit tests, 79 e2e/vision tests green (single worker), `pnpm scale` budgets met, root `pnpm run check` green across workspaces. `pnpm verify` still reports the same five pre-existing docs references.                                                                                                        |
+
+**Clarifications that came out of this increment:**
+
+1. The anatomy is one Pi-local module registered behind the existing card-template registry. No contract field, node class, renderer branch or fourth representation rung was added; promotion still waits for a second host.
+2. Ports are host DOM marks on card edges, derived from edge direction and neighbour positions. A ribbon still reaches the node center; aligning its geometric endpoint to a card boundary would need a renderer change and a second consumer, so the port stub is the honest seam.
+3. Compact cards carry a status dot only at the detail rung; the full status chip stays in the enlarged lens. Adding the dot to the execution rung clipped `Approve patch`, and the gate shots caught it before review.
+4. Detail and lens body rows wrap up to three lines; execution rows stay single-line ellipses. `labelFor` and clipped source labels remain the next work item — this slice changes the skeleton, not the source text.
+
 **Direction recorded for slice 3 (user feedback, 2026-11-21):**
 
 - Edges are too long and too line-like. Shorten their reach (`geometry.repulsion`, `geometry.gap` or a new
@@ -141,29 +158,23 @@ the progress block below records what has actually landed.
 
 **Remaining work, in order — fundamentals first, parity last:**
 
-1. **Slice 5 — Node anatomy (next).** The design core. Give each representation rung a distinct internal
-   skeleton assembled from one small parts vocabulary (header, signal, body row, port). Kind-specific
-   arrangements for unit, message, tool, artifact, approval and error; visible source/target ports that
-   align ribbon endpoints to card edges; one anatomy shared by the card and the inspector lens so
-   recursion reads as scale, not a second UI. No new node class, contract field or renderer branch; stay
-   Pi-local behind the existing card-template registry. Gate: `node-detail`, `fractal` and `cockpit`
-   shots, keyboard reach, unchanged scale budget.
-2. **Content legibility — `labelFor` and node states (§11.4, §11.5).** Short domain titles so labels stop
-   clipping in the compact rungs, with full text kept in detail/telemetry; plus defined empty,
-   pending-stream and failed-source frames as part of the shell kit. Universal and cheap: it changes every
-   shot and needs no second host. Gate: no ellipsis on the canonical fixture at the settled shot; all
-   three states have a legible frame.
-3. **Composition and default palette (§11.8).** The graph now has a legible subject, but negative space
+1. **Content legibility — `labelFor` and node states (§11.4, §11.5) (next).** Short domain titles so labels
+   stop clipping in the compact rungs, with full text kept in detail/telemetry; plus defined empty,
+   pending-stream and failed-source frames as part of the shell kit. Slice 5 gave every rung a distinct
+   skeleton but did not change source text — `assistant mess…` in `cockpit` is the canonical example.
+   Universal and cheap: it changes every shot and needs no second host. Gate: no ellipsis on the canonical
+   fixture at the settled shot; all three states have a legible frame.
+2. **Composition and default palette (§11.8).** The graph now has a legible subject, but negative space
    in `cockpit`/`dynamic-range` still reads as sparse, right-hand chrome outspeaks the canvas, and causal
    ribbons inherit gray `RenderTheme.edge` in the default palette. Tighten shot framing, keep chrome
    collapsed, and treat a causal color as data with provenance — promote it only when a second consumer
    can share the token. This is the largest remaining aesthetics and one-eye-movement ergonomics win.
-4. **Interaction ergonomics (§2, §11.2).** Decide the bounded chip-control exception (larger hit area vs.
+3. **Interaction ergonomics (§2, §11.2).** Decide the bounded chip-control exception (larger hit area vs.
    the K4 cap), then tighten focus, inspector reach and the command surface around the new node anatomy.
    Reduced-motion final-frame parity and intermediate-frame vision stay standing gates in every slice.
-5. **Motion and life (L1–L3, §6).** Parked until anatomy and composition settle. Effects were already
-   flagged as overdone; anything built stays opt-in data with reduced-motion parity, never a new default.
-6. **Slice 4 — Proliferation (O5–O7).** Still gated on a second host consuming the shell, tokens and
+4. **Motion and life (L1–L3, §6).** Parked until composition settles. Effects were already flagged as
+   overdone; anything built stays opt-in data with reduced-motion parity, never a new default.
+5. **Slice 4 — Proliferation (O5–O7).** Still gated on a second host consuming the shell, tokens and
    inspector unchanged. Verified 2026-11-21: `app/demo` imports only mechanism-layer helpers; the only
    importers of `app/pi/src/shell` and `@spacegraphjs/shared/tokens` live in Pi. Not work we can start;
    when the consumer exists, split core/domain policy vocabulary, emit the world-host template and a real
@@ -179,11 +190,12 @@ the progress block below records what has actually landed.
 - Housekeeping: confirm ADR 0014, fill `docs/screenshots/review.json` verdicts, re-run e2e with
   `--workers=1` on a loaded machine.
 
-Slices 1–3 and the standing accessibility track are recorded as done; the visual-correctness pass repairs
-the slice-3 treatments that were recorded before they actually rendered. Last prior commits: `bddd7a6`
-(slice 2), `01c4759` (slice 3), `0c0b184` (standing track), `80dd02e` (visual pass). The remaining program
-is ordered around design fundamentals — node anatomy, content legibility, composition — with parity and
-proliferation parked or gated. The study, release and hosted URL stay deferred with TODO3's G3–G5.
+Slices 1–3, 5 and the standing accessibility track are recorded as done; the visual-correctness pass
+repairs the slice-3 treatments that were recorded before they actually rendered. Last prior commits:
+`bddd7a6` (slice 2), `01c4759` (slice 3), `0c0b184` (standing track), `80dd02e` (visual pass), `86dba56`
+(plan ordering). The remaining program starts with content legibility — `labelFor` and defined empty,
+pending and failed frames — then composition and interaction ergonomics; parity and proliferation stay
+parked or gated. The study, release and hosted URL stay deferred with TODO3's G3–G5.
 
 ---
 
@@ -512,7 +524,7 @@ slice 5 runs in its place. This is the consolidation that makes the plan cheaper
 | **1. One surface language**                       | A token module Pi consumes, a compact command bar, drawers, a dockable inspector frame and contextual instruments                                 | O1, O2, H1, J1, J2, J3, K4(bound only) | `cockpit` and `policy` shots; keyboard-only run; no new CSS constant outside the token module                    |
 | **2. Graph grammar and attention**                | One type/spacing/color/shape language for nodes; ranked ribbons; a focus ring with connector; scope contours where space is empty                 | H2, H3, H4, I1, I2, I3, I4             | `cockpit`, `neon-cockpit`, `node-detail`, `dynamic-range`; vision gates in both themes                           |
 | **3. Recursion, edges and proof**                 | The inner topology with connectors, portal previews, depth-ruler breadcrumb, visible proof line, catalog cards, first-run hint, shot review notes, shorter tapered polygon edges and shaded cards | O3, O4, K1, K2, K3, J4, J5, N1, N2, M1 | `fractal`, `deep-focus`, `catalog`; descend intermediate frames; loose tests; one cross-domain shot if a second host is ready |
-| **5. Node anatomy** (next; 4 is gated)           | Distinct skeleton per rung from one parts vocabulary, kind-specific arrangements, source/target ports aligned to card edges, one anatomy across card and lens | K (depth), H1/H2 refinement, §10 "inspect an edge or a scope" | `node-detail`, `fractal`, `cockpit`; keyboard reach; scale budget unchanged                                      |
+| **5. Node anatomy** (implemented; 4 is gated)    | Distinct skeleton per rung from one parts vocabulary, kind-specific arrangements, source/target port marks on card edges, one anatomy across card and lens | K (depth), H1/H2 refinement, §10 "inspect an edge or a scope" | `node-detail`, `fractal`, `cockpit`; keyboard reach; scale budget unchanged                                      |
 | **4. Proliferation** (gated on a second consumer) | Policy core/domain split, world-host template, scaffold emits real vision gate, shared helpers and shots                                          | O5, O6, O7 (O8 is already written)     | Second host consumes shell/tokens/inspector unchanged; scaffold output green; no contract change                 |
 
 **Standing track — gates and parity.** M3 (vision at intermediate frames) and L4 (reduced-motion

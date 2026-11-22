@@ -1,7 +1,10 @@
+import { ANATOMY_KINDS, anatomyCard } from './anatomy';
+import { registerCardTemplate } from './adapter';
 import { PiHost, el } from './host';
 import { decodeOp } from './ops';
 import { installShellTokens } from './shell';
 
+ANATOMY_KINDS.forEach((kind) => registerCardTemplate(kind, anatomyCard));
 installShellTokens(document);
 const clientID = crypto.randomUUID();
 const host = new PiHost();

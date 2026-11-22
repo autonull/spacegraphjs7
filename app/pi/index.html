@@ -406,6 +406,140 @@
             [data-rungs] > [data-layer] {
                 transition: opacity var(--pi-blend, 120ms);
             }
+            /* Slice 5 — one parts vocabulary, shared by cards and the inspector lens. */
+            .anatomy-head {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: var(--sg-spacing-xs);
+                min-width: 0;
+                line-height: 1.1;
+                letter-spacing: -0.02em;
+            }
+            .anatomy-title {
+                flex: 1 1 auto;
+                min-width: 0;
+                font-weight: 700;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+            .anatomy-status {
+                flex: 0 0 auto;
+            }
+            .anatomy-status-dot {
+                flex: 0 0 auto;
+                width: 6px;
+                height: 6px;
+                background: var(--kind-accent, var(--sg-colors-accent));
+            }
+            .anatomy[data-anatomy='failure'] .anatomy-status-dot {
+                background: var(--view-severity, var(--kind-error, var(--sg-colors-destructive)));
+            }
+            .anatomy-signal {
+                display: inline-flex;
+                flex: 0 0 auto;
+                align-items: flex-end;
+                gap: var(--sg-spacing-hair);
+                height: 14px;
+                color: var(--kind-accent, var(--sg-colors-accent));
+                opacity: 0.6;
+            }
+            .anatomy-signal i {
+                width: 3px;
+                background: currentColor;
+            }
+            .anatomy-row {
+                display: block;
+                min-width: 0;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+            .anatomy-row[data-tone='body'] {
+                font-size: var(--sg-font-sizes-xs);
+                line-height: 1.3;
+                opacity: 0.82;
+            }
+            .anatomy-row[data-tone='meta'] {
+                font-size: var(--sg-font-sizes-micro);
+                line-height: 1.4;
+                opacity: 0.62;
+            }
+            .anatomy-row-wrap {
+                display: -webkit-box;
+                -webkit-box-orient: vertical;
+                -webkit-line-clamp: 3;
+                white-space: normal;
+                overflow-wrap: anywhere;
+            }
+            .anatomy-count {
+                opacity: 0.6;
+            }
+            .anatomy-port {
+                position: absolute;
+                z-index: 1;
+                width: 6px;
+                height: 6px;
+                color: var(--kind-accent, var(--sg-colors-accent));
+                background: currentColor;
+                pointer-events: none;
+            }
+            .anatomy-port::after {
+                content: '';
+                position: absolute;
+                background: currentColor;
+                opacity: 0.45;
+            }
+            .anatomy-port[data-port='target'] {
+                width: 8px;
+                height: 8px;
+                opacity: 0.6;
+            }
+            .anatomy-port[data-side='start'] {
+                inset-inline-start: 1px;
+                top: 50%;
+                transform: translateY(-50%);
+            }
+            .anatomy-port[data-side='start']::after {
+                inset-inline-start: 7px;
+                top: 50%;
+                width: 6px;
+                height: 1px;
+            }
+            .anatomy-port[data-side='end'] {
+                inset-inline-end: 1px;
+                top: 50%;
+                transform: translateY(-50%);
+            }
+            .anatomy-port[data-side='end']::after {
+                inset-inline-end: 7px;
+                top: 50%;
+                width: 6px;
+                height: 1px;
+            }
+            .anatomy-port[data-side='top'] {
+                inset-block-start: 1px;
+                inset-inline-start: 50%;
+                transform: translateX(-50%);
+            }
+            .anatomy-port[data-side='top']::after {
+                inset-block-start: 7px;
+                inset-inline-start: 50%;
+                width: 1px;
+                height: 6px;
+            }
+            .anatomy-port[data-side='bottom'] {
+                inset-block-end: 1px;
+                inset-inline-start: 50%;
+                transform: translateX(-50%);
+            }
+            .anatomy-port[data-side='bottom']::after {
+                inset-block-end: 7px;
+                inset-inline-start: 50%;
+                width: 1px;
+                height: 6px;
+            }
             .focus-head {
                 display: flex;
                 align-items: center;

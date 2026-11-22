@@ -60,6 +60,7 @@ import {
     toAdapterModel,
     type AgentLevel,
 } from './adapter';
+import { derivePorts } from './anatomy';
 import { innerTree, type InnerLayout } from './inner';
 import {
     applyEdgeAttention,
@@ -845,10 +846,13 @@ export class PiHost {
         model.nodes = model.nodes.map((node) => {
             const scope = this.#portalByNode.get(node.id);
             const preview = scope ? portalPreview(scope, this.#specs) : '';
+            const ports = derivePorts(node.id, this.#view.edges, (id) => this.#positions.get(id));
             return {
                 ...node,
                 ...(scope ? { scope } : {}),
-                ...(preview ? { data: { ...node.data, preview } } : {}),
+                ...(ports || preview
+                    ? { data: { ...node.data, ...(preview ? { preview } : {}), ...(ports ? { ports } : {}) } }
+                    : {}),
                 focusRole: roles.get(node.id) ?? 'none',
             };
         });
@@ -2462,8 +2466,13 @@ export class PiHost {
         ].join('|');
         if (signature !== this.#lensSignature) {
             overlay.dataset.kind = adapterNode.kind;
+            const ports = derivePorts(focus, this.#view.edges, (id) => this.#positions.get(id));
             inspector.slot.innerHTML = focusCardMarkup(
-                { ...adapterNode, ...(scope ? { scope } : {}) },
+                {
+                    ...adapterNode,
+                    ...(scope ? { scope } : {}),
+                    ...(ports ? { data: { ...adapterNode.data, ports } } : {}),
+                },
                 chips,
                 layout,
             );
