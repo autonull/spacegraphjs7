@@ -1361,6 +1361,7 @@ export class PiHost {
         this.#shotReady = false;
         if (shot.surface) this.setSurface(shot.surface);
         if (shot.arrangement) this.setArrangement(shot.arrangement);
+        if (shot.graphLayout && isGraphLayoutMode(shot.graphLayout)) this.setGraphLayout(shot.graphLayout);
         if (shot.collapsed !== undefined && this.#transcriptCollapsed !== shot.collapsed)
             this.toggleTranscript();
         const railOpen = document.body.dataset.rail !== 'closed';

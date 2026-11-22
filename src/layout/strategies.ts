@@ -100,6 +100,8 @@ interface LayoutOptions<Node extends LayoutNode = LayoutNode> {
     depthStep?: number;
     /** The cards per wrapped row before a turn's block folds to the next row. */
     columns?: number;
+    /** Timeline axis: turn columns left-to-right, or turn rows stacked top-to-bottom. */
+    orientation?: 'columns' | 'rows';
     /** The leaves a tree block holds before it folds to the next row. */
     treeColumns?: number;
     /** The vertical distance between rows. */
@@ -376,9 +378,9 @@ function lanesLayout<Node extends LayoutNode, Edge extends LayoutEdge, Name exte
 }
 
 /**
- * Timeline: chronological left-to-right flow. Each turn is a column band with its members laid out
- * vertically within it. Reading order is clear: time flows left-to-right, activity stacks
- * top-to-bottom within each turn.
+ * Timeline: chronological flow with one band per turn. Column orientation runs time left-to-right
+ * and stacks activity inside each turn; row orientation swaps the axes so turns are horizontal
+ * stripes stacked top-to-bottom and activity runs left-to-right inside each stripe.
  */
 function timelineLayout<Node extends LayoutNode, Edge extends LayoutEdge, Name extends string>(
     model: LayoutModel<Node, Edge>,
@@ -389,12 +391,17 @@ function timelineLayout<Node extends LayoutNode, Edge extends LayoutEdge, Name e
     const rowGap = options.rowGap ?? 20;
     const depthStep = options.depthStep ?? 64;
     const columns = Math.max(1, options.columns ?? 6);
-    const rowHeight = config.geometry.standardSize[1] + rowGap;
-    // Horizontal space per turn column: max cards per column * (card width + gap) + band padding
-    const turnColumnWidth =
-        columns * (config.geometry.standardSize[0] + gap) + config.geometry.padding;
+    const rows = options.orientation === 'rows';
+    const [standardWidth, standardHeight] = config.geometry.standardSize;
+    // Placement always advances bands on X and members on Y; row orientation feeds swapped card
+    // dimensions and transposes the result, so both orientations share one append-only engine.
+    const bandPitch = rows ? standardWidth + gap : standardHeight + rowGap;
+    const bandWidth =
+        columns * ((rows ? standardHeight : standardWidth) + gap) + config.geometry.padding;
+    const cardWidth = (node: Node): number =>
+        rows ? config.nodeSizeFn(node)[1] : config.nodeSizeFn(node)[0];
 
-    const layout = new GridPlacement({ lanePitch: rowHeight, step: gap, groupGap: 0, depthStep });
+    const layout = new GridPlacement({ lanePitch: bandPitch, step: gap, groupGap: 0, depthStep });
     const items: PlacementItem<GridMeta>[] = [];
 
     // The leading block (the root group, or the first turn when the model has none) opens the timeline.
@@ -405,12 +412,12 @@ function timelineLayout<Node extends LayoutNode, Edge extends LayoutEdge, Name e
             for (const node of leading.slice(i, i + columns))
                 items.push({
                     id: node.id,
-                    width: config.nodeSizeFn(node)[0],
+                    width: cardWidth(node),
                     depth: depthOf(config.depthMap, node.kind),
                     meta: {
                         group: SESSION_COLUMN,
                         row: Math.floor(i / columns),
-                        columnWidth: turnColumnWidth,
+                        columnWidth: bandWidth,
                     },
                 });
 
@@ -431,12 +438,12 @@ function timelineLayout<Node extends LayoutNode, Edge extends LayoutEdge, Name e
             for (const node of turnNodes.slice(i, i + columns))
                 items.push({
                     id: node.id,
-                    width: config.nodeSizeFn(node)[0],
+                    width: cardWidth(node),
                     depth: depthOf(config.depthMap, node.kind),
                     meta: {
                         group: turnID,
                         row: Math.floor(i / columns),
-                        columnWidth: turnColumnWidth,
+                        columnWidth: bandWidth,
                     },
                 });
     }
@@ -476,7 +483,20 @@ function timelineLayout<Node extends LayoutNode, Edge extends LayoutEdge, Name e
         if (bounds) clusters.set(node.id, bounds);
     }
 
-    return finishLayout(positions, 'timeline', clusters);
+    if (!rows) return finishLayout(positions, 'timeline', clusters);
+    const oriented = new Map(
+        [...positions].map(([id, position]) => [id, { x: position.y, y: position.x, z: position.z }]),
+    );
+    const orientedClusters = new Map(
+        [...clusters].map(([id, bounds]) => [
+            id,
+            {
+                min: { x: bounds.min.y, y: bounds.min.x, z: bounds.min.z },
+                max: { x: bounds.max.y, y: bounds.max.x, z: bounds.max.z },
+            },
+        ]),
+    );
+    return finishLayout(oriented, 'timeline', orientedClusters);
 }
 
 /**

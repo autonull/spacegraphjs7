@@ -81,9 +81,10 @@ tightens card interiors without changing a default. The `recursion` shot opens t
 depth 3; `fractal` keeps the detail tab.
 
 Graph arrangements are opt-in experiments (`TODO7.md`) and do not change the default view. Select one
-with `?graphLayout=freeform|timeline|lanes|tree|force` or `window.__pi.setGraphLayout(mode)`; the
-current mode, the list of modes and the measured shape are exposed as `__pi.graphLayout()`,
-`__pi.graphLayouts()` and `__pi.graphShape()`. `?graphAligned=1` aligns transcript rows with their
+with `?graphLayout=freeform|timeline|timeline-rows|lanes|tree|force` or `window.__pi.setGraphLayout(mode)`; the
+`timeline` runs turns left-to-right with activity stacked inside each turn; `timeline-rows` transposes
+that into horizontal stripes stacked top-to-bottom. The current mode, the list of modes and the
+measured shape are exposed as `__pi.graphLayout()`, `__pi.graphLayouts()` and `__pi.graphShape()`. `?graphAligned=1` aligns transcript rows with their
 projected graph nodes, and `?ribbonCorridor=1` routes cross-scope causal ribbons through a corridor;
 both have matching `__pi` setters. All controls round-trip through full-state permalinks. Switching
 views preserves selection, focus, camera and transcript scroll. The default stays `freeform` until the

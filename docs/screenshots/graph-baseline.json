@@ -19,6 +19,16 @@
     "crossScopeDiagonals": 0,
     "overlaps": 0
   },
+  "timeline-rows": {
+    "nodes": 18,
+    "edges": 18,
+    "width": 896,
+    "height": 480,
+    "ratio": 0.5357142857142857,
+    "meanEdgeLength": 328,
+    "crossScopeDiagonals": 0,
+    "overlaps": 0
+  },
   "lanes": {
     "nodes": 18,
     "edges": 18,

@@ -276,7 +276,7 @@ default has been flipped; every new view stays opt-in.
 | Phase | Status | Evidence |
 | ----- | ------ | -------- |
 | 0 — baseline and vocabulary | complete | `docs/screenshots/graph-baseline.json`; `app/pi/scripts/baseline.ts`; `app/pi/tests/graph-layout.test.ts` |
-| 1 — graph arrangements | complete except the study gate | five views by URL/hook/permalink; automated flexibility gate green below; default flip still needs the study result and an ADR 0008 decision |
+| 1 — graph arrangements | complete except the study gate | six views by URL/hook/permalink, including the transposed `timeline-rows`; automated flexibility gate green below; default flip still needs the study result and an ADR 0008 decision |
 | 2 — visible structure | complete for this increment | square hulls and number + state-glyph tabs; reserved child lane clears the last parent/child overlap; baseline regenerated |
 | 3 — cross-scope ribbons | complete for this increment | `FluxEdge` corridor via opaque `data`; `bundleCorridor()`; unit tests in `test/FluxEdge.test.ts`; gallery recaptured, human decision pending |
 | 4 — default polish | blocked on human decision | `docs/screenshots/graph-layout/comparison.json`; no default changed, so no ADR 0008 decision is claimed |
@@ -288,7 +288,7 @@ default has been flipped; every new view stays opt-in.
 - `app/pi` `pnpm run check:fast` — 29 files, 150 tests green.
 - root `pnpm exec vitest run test/FluxEdge.test.ts` — 6 tests green.
 - `app/pi` `pnpm exec playwright test --config playwright.config.ts tests/graph-layout.spec.ts --workers=2` — 4/4 green.
-- `app/pi` `pnpm exec playwright test --config playwright.config.ts tests/vision.spec.ts --grep "graph arrangements pass" --workers=2 --retries=0` — green. This is the Phase 1 flexibility gate: 5 modes × 3 octaves × 2 aspects × dark/light (60 scenes) plus 5 reduced-motion scenes, each running `noOverlap()`, `isLegible()` and `expectedLayoutScore(35)`. The matrix test sets a 240 s timeout; the default 30 s timeout is insufficient.
+- `app/pi` `pnpm exec playwright test --config playwright.config.ts tests/vision.spec.ts --grep "graph arrangements pass" --workers=2 --retries=0` — green. This is the Phase 1 flexibility gate: 6 modes × 3 octaves × 2 aspects × dark/light (72 scenes) plus 6 reduced-motion scenes, each running `noOverlap()`, `isLegible()` and `expectedLayoutScore(35)`. The matrix test sets a 240 s timeout; the default 30 s timeout is insufficient.
 - Full suite from `app/pi`: `pnpm run test:e2e` — 113/113; `pnpm run verify:visual` — 23/23;
   `pnpm run scale` — budgets met (60-turn force 954 ms); `pnpm run shots:all` — 23/23, gallery
   recaptured. Verdicts in `docs/screenshots/review.json` are intentionally left for a human.
@@ -310,6 +310,11 @@ default has been flipped; every new view stays opt-in.
    the zero-overlap baseline; `CHANGELOG.md` records the experiment and the lane fix.
 5. **Full gates and gallery recapture.** Every gate in the suite is green. The 20 px lane shift is
    visible in the motion comparison centres and all recaptured shots; verdicts stay unassigned.
+6. **Transposed timeline.** `LayoutOptions.orientation: 'rows'` swaps the timeline axes inside the
+   general strategy (`src/layout/strategies.ts:394`); `?graphLayout=timeline-rows` exposes it as a
+   sixth opt-in view. The new `timeline-rows` shot shows horizontal turn stripes stacked vertically.
+   `pnpm run build:lib` is required before app/pi sees a new `src/layout` option, because app/pi
+   imports `spacegraphjs/layout` from `dist/`.
 
 Earlier increment still in force: one position authority via `ScopeSimulation.setLayoutTargets()`;
 five views reachable by URL, `__pi` and permalink; `graphShape()` baseline measured from solved
@@ -322,8 +327,8 @@ positions; aligned transcript; square scope hulls and turn tabs; opt-in corridor
    now pass, but the default stays `freeform` until this decision and ADR 0008 close (invariants 12,
    15; pitfall 12).
 2. **Gallery verdicts and ADR evidence (Phases 2–4 — human).** Shots are recaptured and current.
-   Inspect the contact sheet at `docs/screenshots/index.html`, assign verdicts in
-   `docs/screenshots/review.json`, and log human decisions in
+   Inspect the contact sheet at `docs/screenshots/index.html` (including the new `timeline-rows`
+   shot), assign verdicts in `docs/screenshots/review.json`, and log human decisions in
    `docs/screenshots/graph-layout/comparison.json`. The `images` and `decision` fields there are still
    `pending`; do not auto-assign verdicts from green gates.
 3. **Phase 4 defaults (human).** Lower ambient glow with selective halos, rank-driven ribbon width,

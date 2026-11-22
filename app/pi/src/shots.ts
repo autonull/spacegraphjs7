@@ -16,6 +16,8 @@ export interface Shot {
     readonly vector?: PolicyVector;
     readonly surface?: ShotSurface;
     readonly arrangement?: ShotArrangement;
+    /** Opt-in graph arrangement applied before capture. */
+    readonly graphLayout?: string;
     readonly collapsed?: boolean;
     /** A quiet frame gives the canvas the full width; graph shots use it, chrome shots keep the rail. */
     readonly rail?: boolean;
@@ -222,6 +224,19 @@ export const SHOTS: readonly Shot[] = [
         preset: 'aurora',
         rail: false,
         surface: 'map',
+    },
+    {
+        id: 'timeline-rows',
+        file: 'pi-agent-timeline-rows.png',
+        title: 'Timeline · horizontal stripes',
+        question: 'Are stacked turn rows legible when time runs top-to-bottom?',
+        scenario: 'rich',
+        preset: 'aurora',
+        rail: false,
+        surface: 'map',
+        graphLayout: 'timeline-rows',
+        fit: true,
+        padding: 40,
     },
     {
         id: 'light-theme',

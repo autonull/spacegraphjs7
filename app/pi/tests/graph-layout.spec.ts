@@ -13,12 +13,13 @@ test.describe('graph arrangements', () => {
         expect(await page.evaluate(() => (window as any).__pi.graphLayouts())).toEqual([
             'freeform',
             'timeline',
+            'timeline-rows',
             'lanes',
             'tree',
             'force',
         ]);
 
-        for (const mode of ['timeline', 'lanes', 'tree', 'force', 'freeform']) {
+        for (const mode of ['timeline', 'timeline-rows', 'lanes', 'tree', 'force', 'freeform']) {
             await page.evaluate((value) => (window as any).__pi.setGraphLayout(value), mode);
             expect(await page.evaluate(() => (window as any).__pi.graphLayout())).toBe(mode);
             expect(await page.evaluate(() => (window as any).__pi.graphShape().nodes)).toBeGreaterThan(0);

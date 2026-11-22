@@ -20,8 +20,9 @@ const richView = () => agentDomain.build(richFixtureKernel());
 
 describe('graph layouts', () => {
     it('exposes the five views and validates URL values', () => {
-        expect(GRAPH_LAYOUTS).toEqual(['freeform', 'timeline', 'lanes', 'tree', 'force']);
+        expect(GRAPH_LAYOUTS).toEqual(['freeform', 'timeline', 'timeline-rows', 'lanes', 'tree', 'force']);
         expect(isGraphLayoutMode('timeline')).toBe(true);
+        expect(isGraphLayoutMode('timeline-rows')).toBe(true);
         expect(isGraphLayoutMode('nope')).toBe(false);
         expect(isGraphLayoutMode(null)).toBe(false);
     });
@@ -61,6 +62,29 @@ describe('graph layouts', () => {
         for (const [id, position] of before.positions) {
             expect(after.positions.get(id)).toEqual(position);
         }
+    });
+
+    it('lays turns out as horizontal stripes in the transposed timeline', () => {
+        const view = richView();
+        const columns = computeGraphLayout(view, 'timeline')!;
+        const rows = computeGraphLayout(view, 'timeline-rows')!;
+        expect(rows.positions.size).toBe(columns.positions.size);
+        const turns = view.turns ?? [];
+        const bandY = turns.map((id) => rows.positions.get(id)!.y);
+        expect(bandY.length).toBeGreaterThan(1);
+        for (let index = 1; index < bandY.length; index++)
+            expect(bandY[index]!).toBeGreaterThan(bandY[index - 1]!);
+        const columnX = turns.map((id) => columns.positions.get(id)!.x);
+        for (let index = 1; index < columnX.length; index++)
+            expect(columnX[index]!).toBeGreaterThan(columnX[index - 1]!);
+
+        const childrenOf = (id: string): string[] =>
+            view.edges.filter((edge) => edge.kind === 'contains' && edge.source === id).map((edge) => edge.target);
+        const turn = turns.find((id) => childrenOf(id).length >= 2)!;
+        const members = childrenOf(turn).map((id) => rows.positions.get(id)!);
+        const band = rows.positions.get(turn)!.y;
+        expect(Math.max(...members.map((point) => point.x)) - Math.min(...members.map((point) => point.x))).toBeGreaterThan(0);
+        for (const member of members) expect(member.y).toBeCloseTo(band, 5);
     });
 
     it('maps solved positions onto qualified simulation ids', () => {
@@ -105,5 +129,8 @@ describe('graph layouts', () => {
         const decoded = decodePermalink(encodePermalink(state));
         expect(decoded?.graphLayout).toBe('timeline');
         expect(decoded?.graphLayoutAligned).toBe(true);
+        expect(decodePermalink(encodePermalink({ ...state, graphLayout: 'timeline-rows' }))?.graphLayout).toBe(
+            'timeline-rows',
+        );
     });
 });

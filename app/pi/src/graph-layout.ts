@@ -9,7 +9,7 @@ import {
     type ScopeSpec,
 } from 'spacegraphjs/layout';
 
-export const GRAPH_LAYOUTS = ['freeform', 'timeline', 'lanes', 'tree', 'force'] as const;
+export const GRAPH_LAYOUTS = ['freeform', 'timeline', 'timeline-rows', 'lanes', 'tree', 'force'] as const;
 export type GraphLayoutMode = (typeof GRAPH_LAYOUTS)[number];
 
 export const isGraphLayoutMode = (value: string | null | undefined): value is GraphLayoutMode =>
@@ -79,8 +79,10 @@ export function computeGraphLayout(
     previous?: ReadonlyMap<string, Position>,
 ): GraphLayout | undefined {
     if (mode === 'freeform') return undefined;
+    const rows = mode === 'timeline-rows';
     return Strategies.layoutGraph(layoutModel(view), layoutConfig(view), {
-        strategy: mode as LaneLayoutStrategy,
+        strategy: (rows ? 'timeline' : mode) as LaneLayoutStrategy,
+        orientation: rows ? 'rows' : 'columns',
         previous,
         gap: 24,
         laneGap: 32,

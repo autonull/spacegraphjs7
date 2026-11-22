@@ -7,8 +7,10 @@ follow the workflow in `docs/ROADMAP.md` (`test:publish` → build → npm).
 
 ### Added
 
-- **Graph arrangements (TODO7):** five opt-in graph views (`freeform`, `timeline`, `lanes`, `tree`,
-  `force`) selectable by URL, `__pi` hook and full-state permalink. Solved positions feed
+- **Graph arrangements (TODO7):** six opt-in graph views (`freeform`, `timeline`, `timeline-rows`,
+  `lanes`, `tree`, `force`) selectable by URL, `__pi` hook and full-state permalink. `timeline-rows`
+  transposes the timeline into horizontal turn stripes stacked vertically through a general
+  `orientation` layout option, not a renderer branch. Solved positions feed
   `ScopeSimulation` as targets, so one position authority remains. Scope hulls, turn tabs, an aligned
   transcript and bundled cross-scope ribbons are host-side overlays; the default stays `freeform`
   pending the study and ADR 0008 decision. The flexibility gate is automated across all views, three
