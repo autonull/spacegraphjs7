@@ -65,7 +65,8 @@ switch views, click a graph node to reveal its message, or follow `#graph:<nodeI
 
 Mouse: right-drag pan, wheel zoom, middle-drag orbit, click select, node drag, shift-drag box-select.
 Keyboard mirrors: arrows pan, `+`/`-` zoom, `f` focus the revealed node, `Esc` clears selection,
-`g` cycles graph views, `a` toggles transcript alignment, `r` toggles the ribbon corridor. `/` lists
+`g` cycles graph views, `a` toggles transcript alignment, `r` toggles the ribbon corridor (all global
+outside text inputs). `/` lists
 every graph-view command in the palette; the HUD shows the active view and its flags.
 Export produces JSON, SVG or HTML; WebXR, sound and haptics stay report-only seams.
 

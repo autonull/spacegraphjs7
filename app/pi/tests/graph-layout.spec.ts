@@ -43,6 +43,14 @@ test.describe('graph arrangements', () => {
         expect(await page.evaluate(() => (window as any).__pi.ribbonCorridor())).toBe(true);
         expect(await page.locator('#hud').getAttribute('data-graph-flags')).toBe('11');
         await expect(page.locator('#hud')).toContainText('timeline-rows+aligned+corridor');
+
+        await page.locator('#command-open').focus();
+        await page.keyboard.press('g');
+        expect(await page.evaluate(() => (window as any).__pi.graphLayout())).toBe('lanes');
+
+        await page.locator('#command-open').click();
+        await page.locator('#command-input').fill('g');
+        expect(await page.evaluate(() => (window as any).__pi.graphLayout())).toBe('lanes');
     });
 
     test('a URL selects the view on load and switching keeps focus and camera', async ({ page }) => {

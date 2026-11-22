@@ -2608,9 +2608,21 @@ export class PiHost {
                       : event.key === '?'
                         ? 'help'
                         : undefined;
-            if (!mode) return;
+            if (mode) {
+                event.preventDefault();
+                this.#commandSurface?.open(mode);
+                return;
+            }
+            if (editing) return;
+            const graphKey: Record<string, () => void> = {
+                g: () => this.cycleGraphLayout(),
+                a: () => this.setGraphLayoutAligned(!this.#graphLayoutAligned),
+                r: () => this.setRibbonCorridor(!this.#ribbonCorridor),
+            };
+            const graphAction = graphKey[event.key];
+            if (!graphAction) return;
             event.preventDefault();
-            this.#commandSurface?.open(mode);
+            graphAction();
         });
         const follow = el<HTMLSelectElement>('follow-mode');
         follow.value = this.#followMode;
@@ -2695,9 +2707,6 @@ export class PiHost {
             Home: () => this.returnHome(),
             t: () => this.#revealed && this.trace(this.#revealed),
             s: () => this.survey(),
-            g: () => this.cycleGraphLayout(),
-            a: () => this.setGraphLayoutAligned(!this.#graphLayoutAligned),
-            r: () => this.setRibbonCorridor(!this.#ribbonCorridor),
             Escape: () => this.returnHome(),
         };
         const action = steps[event.key];
