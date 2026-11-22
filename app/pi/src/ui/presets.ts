@@ -2,7 +2,7 @@
 import type { GraphLayoutMode } from '../graph-layout';
 import type { PolicyLayer, PolicyVector } from '../policy';
 
-export type UIChrome = 'full' | 'compact' | 'minimal';
+export type UIChrome = 'full' | 'compact' | 'minimal' | 'readable';
 
 export interface UIPresetFlags {
     readonly graphLayout?: GraphLayoutMode;
@@ -45,6 +45,13 @@ const preset = (
 
 export const UI_PRESETS: readonly UIPreset[] = [
     preset('full', 'Full chrome', 'Does the shipped arrangement still win?', {}),
+    preset(
+        'readable',
+        'Readable chrome',
+        'Does comfortable type, plain labels and an on-demand rail beat the dense instrument?',
+        {},
+        { chrome: 'readable', gates: ['shell', 'vision', 'screenshots'] },
+    ),
     preset(
         'compact',
         'Compact chrome',

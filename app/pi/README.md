@@ -80,7 +80,11 @@ The view uses registered flux edges (`FluxEdge`) and a host field layer of merge
 The opt-in `?ui=continuity` preset adds an opaque-data collar, one-sided sheath and salience-driven bend
 to the same registered type, aligns the causal accent across borders and focus, and recedes the grid;
 `__pi.setContinuity()` and the `view.continuity` command toggle it without a new knob or default change.
-Unit and delegate scopes are grid-packed; the root scope stays freeform. The camera refits only when the
+The opt-in `?ui=readable` preset raises chrome type to a 13px body / 12px secondary floor, shows plain
+labels, and opens the 300px rail on demand from a four-panel strip (`__pi.openRailPanel()`); renderer
+labels and defaults stay unchanged. The catalog groups Presets, View experiments and Study questions
+behind a 40px filter, and `__pi.openQuestions()` opens the canonical question list from the gallery or
+Reference. Unit and delegate scopes are grid-packed; the root scope stays freeform. The camera refits only when the
 canvas aspect changes materially (ADR 0015); `window.__pi.adaptiveFit()`
 exposes the last insets and refit count. The `dense-type` preset raises `ladder.minLabelPx` to 18 and
 tightens card interiors without changing a default. The `recursion` shot opens the inner graph tab at

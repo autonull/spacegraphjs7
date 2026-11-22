@@ -3,6 +3,22 @@
   "rule": "ADR 0008 — a default visual change needs incumbent/variant evidence and a logged human decision",
   "decisions": [
     {
+      "id": "ui-preset-readable",
+      "status": "experiment; default not flipped",
+      "incumbent": "full — shipped knobs and full chrome (?ui=full)",
+      "variant": "Readable chrome (?ui=readable, chrome readable)",
+      "data": "docs/screenshots/ui-presets/comparison.json",
+      "gates": [
+        "shell",
+        "vision",
+        "screenshots"
+      ],
+      "incumbentImage": "docs/screenshots/ui-presets/readable/incumbent.png",
+      "variantImage": "docs/screenshots/ui-presets/readable/variant.png",
+      "images": "pending human verdict; pairs captured by pnpm run shots:compare",
+      "decision": "pending human review; ADR 0008 default gate not closed"
+    },
+    {
       "id": "ui-preset-compact",
       "status": "experiment; default not flipped",
       "incumbent": "full — shipped knobs and full chrome (?ui=full)",

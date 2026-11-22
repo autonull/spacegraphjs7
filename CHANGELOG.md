@@ -15,6 +15,11 @@ follow the workflow in `docs/ROADMAP.md` (`test:publish` → build → npm).
 - **Study export and honest label (TODO9 Phase 4):** the study page shows trial progress, enables a
   Copy report button at the end of a run and stacks below 900px without changing the report text or
   `window.__study`. The light experiment is labelled `Light view` rather than promising a full shell theme.
+- **Readable chrome and catalog (TODO9 Phase 4):** the opt-in `?ui=readable` preset raises chrome to a
+  13px body / 12px secondary floor, switches to plain-language labels while keeping ids and jargon
+  in tooltips, and moves the rail into a 300px on-demand drawer behind a four-panel strip. The proof
+  catalog groups Presets, View experiments and Study questions, adds a 40px filter, and makes the
+  gallery and Reference entry points open one canonical five-question list. No default changed.
 - **Graph arrangements (TODO7):** six opt-in graph views (`freeform`, `timeline`, `timeline-rows`,
   `lanes`, `tree`, `force`) selectable by URL, `__pi` hook and full-state permalink. `timeline-rows`
   transposes the timeline into horizontal turn stripes stacked vertically through a general

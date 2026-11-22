@@ -75,6 +75,69 @@
             body[data-ui-grammar='continuity'] .field-node::after {
                 background: var(--grammar-accent);
             }
+            /* Readable chrome experiment: comfortable type, plain words, on-demand rail. */
+            .plain-label {
+                display: none;
+            }
+            body[data-ui-chrome='readable'] {
+                --sg-font-sizes-xs: 12px;
+                --sg-font-sizes-sm: 12px;
+                --sg-font-sizes-base: 13px;
+                --sg-font-sizes-lg: 15px;
+                --sg-font-sizes-micro: 12px;
+                --sg-font-sizes-nano: 11px;
+                position: relative;
+                grid-template-columns: minmax(0, 1fr);
+            }
+            body[data-ui-chrome='readable'][data-catalog='open'] {
+                grid-template-columns: 300px minmax(0, 1fr);
+            }
+            body[data-ui-chrome='readable'] .jargon-label {
+                display: none;
+            }
+            body[data-ui-chrome='readable'] .plain-label {
+                display: inline;
+            }
+            body[data-ui-chrome='readable'] #rail {
+                position: absolute;
+                inset-block: var(--sg-spacing-sm);
+                inset-inline-end: var(--sg-spacing-sm);
+                z-index: 6;
+                display: none;
+                width: 300px;
+                max-width: calc(100vw - 2 * var(--sg-spacing-sm));
+                background: var(--sg-colors-background);
+                border: 1px solid var(--sg-colors-border);
+            }
+            body[data-ui-chrome='readable'][data-rail='open'] #rail {
+                display: flex;
+            }
+            #rail-strip {
+                display: none;
+            }
+            body[data-ui-chrome='readable'] #rail-strip {
+                display: flex;
+                position: absolute;
+                inset-inline-end: 0;
+                top: 50%;
+                transform: translateY(-50%);
+                z-index: 7;
+                flex-direction: column;
+                gap: 2px;
+            }
+            #rail-strip button {
+                width: 44px;
+                height: 44px;
+                border: 1px solid var(--sg-colors-border);
+                background: var(--sg-colors-background);
+                color: var(--sg-colors-foreground);
+                font: inherit;
+                cursor: pointer;
+            }
+            #rail-strip button[aria-pressed='true'] {
+                border-inline-start-color: var(--sg-colors-accent);
+                color: var(--sg-colors-accent);
+            }
             header {
                 grid-column: 1 / -1;
                 display: flex;
@@ -170,6 +233,9 @@
                 display: grid;
                 gap: var(--sg-spacing-xs);
             }
+            #catalog .catalog-card[hidden] {
+                display: none;
+            }
             #catalog summary,
             .catalog-heading {
                 color: var(--sg-colors-foreground);
@@ -196,6 +262,26 @@
                 font-size: var(--sg-font-sizes-xs);
                 line-height: var(--sg-line-heights-normal);
                 margin: 0 0 var(--sg-spacing-xs);
+            }
+            .catalog-group {
+                display: grid;
+                gap: var(--sg-spacing-xs);
+            }
+            .catalog-group > h3 {
+                color: var(--sg-colors-muted-foreground);
+                font-size: var(--sg-font-sizes-sm);
+                font-weight: 600;
+                letter-spacing: 0.04em;
+                margin: 0;
+            }
+            .catalog-search {
+                width: 100%;
+                height: 40px;
+                padding: var(--sg-spacing-xs);
+                border: 1px solid var(--sg-colors-border);
+                background: var(--sg-colors-background);
+                color: var(--sg-colors-foreground);
+                font: inherit;
             }
             #gallery button,
             #catalog a,
@@ -1917,9 +2003,16 @@
                 / commands
             </button>
             <div id="surface-buttons">
-                <button type="button" id="surface-log">log</button>
-                <button type="button" id="surface-map">map</button>
-                <button type="button" id="surface-hybrid">hybrid</button>
+                <button type="button" id="surface-log" title="log — transcript surface">
+                    <span class="jargon-label">log</span><span class="plain-label">Transcript</span>
+                </button>
+                <button type="button" id="surface-map" title="map — graph surface">
+                    <span class="jargon-label">map</span><span class="plain-label">Graph</span>
+                </button>
+                <button type="button" id="surface-hybrid" title="hybrid — transcript and graph">
+                    <span class="jargon-label">hybrid</span
+                    ><span class="plain-label">Transcript + graph</span>
+                </button>
             </div>
             <label for="depth-mode">Depth</label>
             <select id="depth-mode" aria-label="Depth mode">
@@ -1928,7 +2021,9 @@
                 <option value="depth-stack">depth-stack</option>
                 <option value="orbit">orbit</option>
             </select>
-            <button type="button" id="focus-primary" title="Focus the selected node">focus</button>
+            <button type="button" id="focus-primary" title="focus — center the selected node">
+                <span class="jargon-label">focus</span><span class="plain-label">Focus mode</span>
+            </button>
             <span id="attention" data-role="attention">no failures</span>
             <button
                 type="button"
@@ -1939,7 +2034,9 @@
                 proof
             </button>
             <details id="settings-menu">
-                <summary aria-label="Settings and navigation controls">settings</summary>
+                <summary aria-label="Settings and navigation controls">
+                    <span class="jargon-label">settings</span><span class="plain-label">Settings</span>
+                </summary>
                 <div>
                     <label for="follow-mode">Follow</label>
                     <select id="follow-mode" aria-label="Follow mode">
@@ -1949,20 +2046,27 @@
                         <option value="node+focus">node+focus</option>
                     </select>
                     <span id="follow-state" data-role="follow-state">node+focus</span>
-                    <label for="depth-axis">Axis</label>
+                    <label for="depth-axis">
+                        <span class="jargon-label">Axis</span><span class="plain-label">Depth axis</span>
+                    </label>
                     <select id="depth-axis" aria-label="Depth axis">
                         <option value="none">none</option>
                         <option value="turn">turn</option>
                         <option value="hierarchy">hierarchy</option>
                     </select>
-                    <label for="level-mode">Level</label>
+                    <label for="level-mode">
+                        <span class="jargon-label">Level</span><span class="plain-label">Detail level</span>
+                    </label>
                     <select id="level-mode" aria-label="Semantic level">
                         <option value="auto">auto</option>
                         <option value="overview">overview</option>
                         <option value="execution">execution</option>
                         <option value="detail">detail</option>
                     </select>
-                    <label for="arrangement-mode">Layout</label>
+                    <label for="arrangement-mode">
+                        <span class="jargon-label">Layout</span
+                        ><span class="plain-label">Transcript layout</span>
+                    </label>
                     <select id="arrangement-mode" aria-label="Transcript arrangement">
                         <option value="side">side</option>
                         <option value="stacked">stacked</option>
@@ -1987,7 +2091,10 @@
         </header>
         <aside>
             <details id="catalog-panel">
-                <summary class="catalog-heading">Catalog · proof surface</summary>
+                <summary class="catalog-heading">
+                    <span class="jargon-label">Catalog · proof surface</span
+                    ><span class="plain-label">Evidence catalog</span>
+                </summary>
                 <div id="gallery"></div>
                 <div id="catalog"></div>
             </details>
@@ -2034,9 +2141,18 @@
                 <div id="transcript-list"></div>
             </section>
         </main>
+        <nav id="rail-strip" aria-label="Panels">
+            <button type="button" data-rail-panel="rail-navigate" title="Navigate" aria-label="Navigate">N</button>
+            <button type="button" data-rail-panel="rail-inspect" title="Inspect" aria-label="Inspect">I</button>
+            <button type="button" data-rail-panel="rail-share" title="Review" aria-label="Review">R</button>
+            <button type="button" data-rail-panel="rail-learn" title="Reference" aria-label="Reference">?</button>
+        </nav>
         <section id="rail" aria-label="Overview">
             <details id="policy-section">
-                <summary>Policy · live knobs</summary>
+                <summary>
+                    <span class="jargon-label">Policy · live knobs</span
+                    ><span class="plain-label">Policy controls</span>
+                </summary>
                 <div id="policy-panel"></div>
             </details>
             <details id="rail-navigate" class="rail-group">
@@ -2063,7 +2179,10 @@
                 <div>
                     <strong>Instruments</strong>
                     <div id="instrument-kit"></div>
-                    <strong>Vision loop</strong>
+                    <strong>
+                        <span class="jargon-label">Vision loop</span
+                        ><span class="plain-label">Layout check</span>
+                    </strong>
                     <button type="button" id="vision-loop-toggle">Toggle runtime vision loop</button>
                     <div id="vision-loop-state">off · strategy heuristics</div>
                     <div>Opt-in: analyze → retarget layout → measure again. No mutation until enabled.</div>
@@ -2113,8 +2232,8 @@
                             reconciles at rest.
                         </div>
                     </div>
-                    <strong>Guided replay</strong>
-                    <button type="button" id="guided-replay">Replay the five questions</button>
+                    <strong>Study questions</strong>
+                    <button type="button" id="guided-replay">Open the five questions</button>
                     <strong>Mouse map</strong>
                     <div id="mouse-map">
                         right-drag pan · wheel zoom · middle-drag orbit · click select · node drag ·

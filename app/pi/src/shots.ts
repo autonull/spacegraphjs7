@@ -79,6 +79,7 @@ const uiShot = (id: string, title: string, question: string): Shot => ({
 export const SHOTS: readonly Shot[] = [
     ...FIT_OCTAVES.flatMap((octave) => [octaveShot('wide', octave), octaveShot('narrow', octave)]),
     uiShot('full', 'UI · Full chrome', 'Does the shipped arrangement still win the five tasks?'),
+    uiShot('readable', 'UI · Readable chrome', 'Do comfortable type, plain words and an on-demand rail make the five tasks easier?'),
     uiShot('compact', 'UI · Compact chrome', 'How little chrome is usable before the five tasks break?'),
     uiShot('reading', 'UI · Reading type', 'Is a larger label floor worth the density cost?'),
     uiShot('presentation', 'UI · Presentation', 'Does a quiet frame and collapsed transcript improve demo clarity?'),

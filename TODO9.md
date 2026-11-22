@@ -211,10 +211,12 @@ and one command away; all gates are green at `retries: 0`.
 
 ## 8. Progress
 
-Plan status: **Phases 0–2 complete; Phase 3 has one opt-in grammar experiment captured, Phase 4 has
-the study-export and honest-label fixes landed. Two Phase 4 change sets remain (PIUX-03/05/07 and
-PIUX-06), plus the human gates: every ADR 0008 verdict and the five-question pilot. No default has
-been flipped, no shipped gallery incumbent overwritten, and no verdict or pilot result fabricated.**
+Plan status: **All implementation slices are landed: Phases 0–3 plus every Phase 4 finding except the
+human gates. Phase 4 now covers PIUX-03/05/06/07/09/10 as opt-in states or non-default fixes. What
+remains is external by design: ADR 0008 human verdicts, the five-question pilot, and one final full
+gate run after any promotion. No default has been flipped, no shipped gallery incumbent overwritten,
+and no verdict or pilot result fabricated. TODO9 §3 invariant 5's solved-target scope field stays a
+separate, unimplemented capability (handoff note 6).**
 
 | Phase                            | Status                              | Evidence                                                          |
 | -------------------------------- | ----------------------------------- | ----------------------------------------------------------------- |
@@ -222,7 +224,7 @@ been flipped, no shipped gallery incumbent overwritten, and no verdict or pilot 
 | 1 — navigation coherence         | complete                            | practice gate + one-index e2e; 41 targeted e2e green               |
 | 2 — occupancy and octave scaling | complete                            | `presence-scale-aware.json`; scale-aware pair; 34 e2e              |
 | 3 — continuous visual language   | experiment captured; verdict pending | `ui-continuity` shot + pair; focused library, renderer and host tests green |
-| 4 — flagship integration         | partial; human gates open            | PIUX-09/10 landed; 10 targeted e2e green; pilot and ADR undecided   |
+| 4 — flagship integration         | implementation complete; human gates open | PIUX-03/05/06/07/09/10 landed; 47 targeted e2e green; pilot and ADR undecided |
 
 ### Delivered in Phase 0
 
@@ -296,11 +298,26 @@ been flipped, no shipped gallery incumbent overwritten, and no verdict or pilot 
 2. **PIUX-10 — honest label.** The light experiment is titled `Light view` in `ui/presets.ts` and
    `shots.ts`; the shipped shell theme is not silently changed.
 
+### Delivered in Phase 4 (continued)
+
+1. **Change set 2 — reading and scanning (PIUX-03/05/07).** The opt-in `?ui=readable` preset raises
+   chrome to a 13px body / 12px secondary floor with a 12px meta floor (`--sg-font-sizes-*`), shows
+   plain-language labels through `.plain-label` / `.jargon-label` pairs while keeping every knob id
+   and moving engine vocabulary into `title` tooltips, and puts the rail in a 300px on-demand drawer
+   behind a four-button panel strip. `__pi.openRailPanel()` and `nav.panel.*` commands reach Navigate,
+   Inspect, Review and Reference; `help.railPanels` names the restore path. The renderer label policy
+   and the shipped dense chrome are untouched.
+2. **Change set 3 — catalog (PIUX-06).** `buildCatalog()` adds a `questions` group derived from
+   `STUDY_TASKS`; `mountCatalog()` renders Presets, View experiments and Study questions as three
+   groups with a 40px filter. The gallery `five-questions` button and the Reference `guided-replay`
+   button both call `__pi.openQuestions()`, so each question id appears exactly once in the catalog,
+   and a question link runs its capability evidence. Capability entries themselves are unchanged.
+
 ### Verification run
 
 - Root: `pnpm exec vitest run test/layout/occupancy-packing.test.ts test/layout/scope-policy.test.ts`
   — 10 library tests green. `pnpm run build:lib` rebuilt the workspace library after the source edit.
-- `app/pi`: `pnpm run check:fast` — 31 files, 170 unit tests green (+2 over Phase 2).
+- `app/pi`: `pnpm run check:fast` — 31 files, 172 unit tests green (+4 over Phase 2).
 - `app/pi`: Phase 1 targeted Playwright (`study`, `navigation`, `shell`, `browser`) — 41 passed at
   `retries: 0`, `--workers=1`.
 - `app/pi`: Phase 2 targeted Playwright (`ui-presets`, `policy`, `vision`) — 34 passed, including the
@@ -312,6 +329,12 @@ been flipped, no shipped gallery incumbent overwritten, and no verdict or pilot 
 - `app/pi`: targeted Playwright (`ui-presets`, `study`) — 10 passed at `retries: 0`, `--workers=1`;
   `tests/ui-compare.spec.ts --grep 'compare: continuity'` — 1 pair captured; `pnpm run shot
   ui-continuity` — gallery shot captured. No pre-existing PNG was overwritten.
+- `app/pi`: targeted Playwright for the last change sets (`readable`, `catalog`, `browser`, `shell`,
+  `navigation`, `ui-presets`) — 47 passed at `retries: 0`, `--workers=1`, including computed-style and
+  no-overlap checks at 1440×900 and 900×1000. `tests/catalog.spec.ts` and `tests/readable.spec.ts` are
+  new; no shipped default changed.
+- `app/pi`: `pnpm run compare:ui` regenerated 11 pending decision stubs; targeted captures added the
+  `readable` incumbent/variant pair and the `ui-readable` gallery shot. No pre-existing PNG changed.
 - No `shots:all`, `verify:visual` or `scale` run: no shipped default changed and TODO8 verdicts are
   still pending. The full gate set stays with the Phase 4 human gates.
 
@@ -331,6 +354,10 @@ been flipped, no shipped gallery incumbent overwritten, and no verdict or pilot 
   `docs/screenshots/ui-presets/continuity/{incumbent,variant}.png`, its gallery traceability item is
   `ui-continuity` in `review.json` (note only, no verdict), and its stub is `ui-preset-continuity` in
   `comparison.json`. A human must compare the pair before any grammar element becomes a default.
+- Readable chrome stays opt-in (`data-ui-chrome='readable'` is set only by the preset). Its labelled
+  pair is `docs/screenshots/ui-presets/readable/{incumbent,variant}.png`, its traceability item is
+  `ui-readable` in `review.json` (note only, no verdict), and its stub is `ui-preset-readable` in
+  `comparison.json`. Promoting the comfortable type scale or plain labels needs a human decision.
 
 ### Deferred measures (reported, not silently dropped)
 
@@ -346,29 +373,26 @@ been flipped, no shipped gallery incumbent overwritten, and no verdict or pilot 
 ### Remaining work — clarified, in order
 
 1. **Human gates (blocking graduation).** Add verdicts to `docs/screenshots/review.json` for the
-   `ui-*` shots, including `ui-continuity`, and close the matching `decision` stubs in
-   `ui-presets/comparison.json`. Run the five-question pilot with `?studyUI=<preset>` (`docs/pi-study.md`,
-   `window.__study.ui`); never fabricate a result. A default flip needs that logged human decision.
-2. **Phase 4 change set 2 — reading and scanning (PIUX-03/05/07).** Raise chrome to a 13px body /
-   12px secondary with a 12px floor behind an opt-in `readable` chrome mode; relabel engine jargon in
-   plain words while keeping knob ids and tooltips stable; widen the rail to 280–320px as one
-   on-demand drawer. Gate with computed-style and no-overlap assertions at 900px and 1440px.
-3. **Phase 4 change set 3 — catalog (PIUX-06).** Group `mountCatalog()` rows into Presets, View
-   experiments and Study questions, add a 40px search input, and make the gallery and Reference entry
-   points link to one canonical question list. Assert each question id appears once.
-4. **Final verification (once, after 2–3).** Root `check`; from `app/pi`: `check:fast`, `test:e2e`,
-   `verify:visual`, `shots:all`, `scale`, all at `retries: 0`. Recapture only promoted states with an
-   incumbent pair; update `CHANGELOG.md`, `app/pi/README.md`, `docs/pi-study.md` and stale references.
+   `ui-*` shots, including `ui-continuity` and `ui-readable`, and close the matching `decision` stubs
+   in `ui-presets/comparison.json`. Run the five-question pilot with `?studyUI=<preset>`
+   (`docs/pi-study.md`, `window.__study.ui`); never fabricate a result. A default flip needs that
+   logged human decision. The unpromoted states stay one URL and one command away.
+2. **Final verification (once, after human promotion).** Root `check`; from `app/pi`: `check:fast`,
+   `test:e2e`, `verify:visual`, `shots:all`, `scale`, all at `retries: 0`. Recapture only promoted
+   states with an incumbent pair; the docs (`CHANGELOG.md`, `app/pi/README.md`, `docs/pi-study.md`)
+   already describe the opt-in states and need only the promotion record.
+3. **Separate library capability, not a TODO9 change set.** Scope fields from solved targets
+   (§4 Phase 3 item 2) still need a general seam and their own labelled pair; see handoff note 6.
 
 ### Handoff notes
 
 1. Read `TODO8.md:§9`, `TODO7.md:§2`, `TODO6.md:§0` and `docs/pi-study-ui-audit.md` first.
-2. Phases 0–2 are complete; Phase 3's opt-in grammar is captured and Phase 4 has landed PIUX-09/10.
-   New geometry still travels as opaque `data` through registered types, never a host renderer branch.
+2. Every implementation slice is complete: Phases 0–3 plus Phase 4's PIUX-03/05/06/07/09/10. New
+   geometry still travels as opaque `data` through registered types, never a host renderer branch.
 3. Reuse TODO8's harness: named preset, `?ui=`, `shots:compare`, `?studyUI=`, `review.json`.
 4. Use `pnpm`, `--workers=1` or `--workers=2` on constrained hosts, and state-based waits only.
 5. Make no further default change until an ADR 0008 decision is logged by a human; promote the existing
-   `one-index`, `scale-aware` and `continuity` experiments only with a verdict.
+   `one-index`, `scale-aware`, `continuity` and `readable` experiments only with a verdict.
 6. TODO9 §4 Phase 3 item 2 ("scope fields from solved targets") remains unimplemented: the field layer
    follows projected screen positions, not solver targets. It needs a general host/library seam and its
    own labelled pair; do not fold it into `continuity` without a new verdict.

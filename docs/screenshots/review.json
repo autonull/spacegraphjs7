@@ -85,6 +85,9 @@
   "ui-continuity": {
     "note": "Phase 3 traceability shot for the opt-in continuous grammar: square collars, tapered core, one-sided sheath, salience-driven bend and one causal accent on border, port, transcript dot and focus ring; grid recedes through theme.backdrop=flat. No shipped default changed. Incumbent/variant pair: docs/screenshots/ui-presets/continuity/{incumbent,variant}.png. Human verdict pending in docs/screenshots/ui-presets/comparison.json (ui-preset-continuity)."
   },
+  "ui-readable": {
+    "note": "Phase 4 traceability shot for the opt-in readable chrome: 13px body and 12px secondary, plain-language labels with jargon in tooltips, and a 300px on-demand rail behind a four-panel strip. The graph, renderer labels and shipped defaults are unchanged. Incumbent/variant pair: docs/screenshots/ui-presets/readable/{incumbent,variant}.png. Human verdict pending in docs/screenshots/ui-presets/comparison.json (ui-preset-readable)."
+  },
   "policy": {
     "verdict": "kept",
     "note": "Live policy panel shows provenance badges by family; quiet preset values remain distinguishable in the narrower canvas. Primary labels keep their reserved lane after AUDIT-03."

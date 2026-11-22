@@ -558,6 +558,7 @@ export class PiHost {
         const applied = applyUIPreset(id, this);
         if (applied) this.#uiPresetID = applied.id;
         this.setContinuity(Boolean(applied?.flags?.continuity));
+        if (applied?.chrome === 'readable') this.toggleRail(false);
         return applied;
     }
 
@@ -1990,6 +1991,19 @@ export class PiHost {
                 group: 'navigate',
                 run: () => this.openIndex(target),
             })),
+            ...(
+                [
+                    ['navigate', 'Navigate', 'rail-navigate'],
+                    ['inspect', 'Inspect', 'rail-inspect'],
+                    ['review', 'Review', 'rail-share'],
+                    ['reference', 'Reference', 'rail-learn'],
+                ] as const
+            ).map<Command>(([id, label, target]) => ({
+                id: `nav.panel.${id}`,
+                label: `Open ${label} panel`,
+                group: 'navigate',
+                run: () => this.openRailPanel(target),
+            })),
         ];
         const chrome: readonly Command[] = [
             {
@@ -2178,6 +2192,13 @@ export class PiHost {
                 run: () => this.openNavigate(),
             },
             {
+                id: 'help.railPanels',
+                label: 'Rail panels (Navigate, Inspect, Review, Reference) stay one click away',
+                group: 'shortcut',
+                hint: 'nav.panel.*',
+                run: () => this.openRailPanel('rail-navigate'),
+            },
+            {
                 id: 'help.palette',
                 label: 'Open the command palette',
                 group: 'shortcut',
@@ -2285,7 +2306,9 @@ export class PiHost {
             transcriptCollapsed: () => this.#transcriptCollapsed,
             toggleTranscript: () => this.toggleTranscript(),
             toggleCatalog: (open?: boolean) => this.toggleCatalog(open),
+            openQuestions: () => this.openQuestions(),
             toggleRail: (open?: boolean) => this.toggleRail(open),
+            openRailPanel: (id: string) => this.openRailPanel(id),
             primaryIndex: () => this.primaryIndex(),
             openNavigate: () => this.openNavigate(),
             openIndex: (id: string) => this.openIndex(id),
@@ -2758,8 +2781,17 @@ export class PiHost {
         document.body.dataset.catalog ??= 'closed';
         document.body.dataset.rail ??= 'open';
         el('catalog-toggle').addEventListener('click', () => this.toggleCatalog());
+        el('catalog').addEventListener('click', (event) => {
+            const link = (event.target as HTMLElement).closest<HTMLAnchorElement>('[data-question]');
+            if (!link?.dataset.question) return;
+            this.run(link.dataset.question);
+        });
         el('proof-line').addEventListener('click', () => this.toggleCatalog(true));
         el('rail-toggle').addEventListener('click', () => this.toggleRail());
+        el('rail-strip').addEventListener('click', (event) => {
+            const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-rail-panel]');
+            if (button?.dataset.railPanel) this.openRailPanel(button.dataset.railPanel);
+        });
         el('command-open').addEventListener('click', () => this.#commandSurface?.open('palette'));
         el('focus-primary').addEventListener('click', () => this.focusPrimary());
         const diagnostics = el<HTMLButtonElement>('diagnostics-toggle');
@@ -2842,7 +2874,7 @@ export class PiHost {
         el('vision-loop-toggle').addEventListener('click', () =>
             this.setVisionLoop(!this.#visionLoopEnabled),
         );
-        el('guided-replay').addEventListener('click', () => this.replay());
+        el('guided-replay').addEventListener('click', () => this.openQuestions());
         el('trail-back').addEventListener('click', () => this.trailBack());
         el('trail-forward').addEventListener('click', () => this.trailForward());
         el('minimap').addEventListener('click', (event) => {
@@ -3226,6 +3258,35 @@ export class PiHost {
         return true;
     }
 
+    /** One panel at a time in the readable rail; the strip keeps all four one click away. */
+    openRailPanel(id: string): boolean {
+        this.toggleRail(true);
+        for (const group of document.querySelectorAll<HTMLDetailsElement>('#rail > details')) group.open = false;
+        const target = document.getElementById(id);
+        if (!(target instanceof HTMLDetailsElement)) return false;
+        target.open = true;
+        target.scrollIntoView({ block: 'nearest' });
+        target.querySelector<HTMLElement>('summary')?.focus();
+        for (const button of document.querySelectorAll<HTMLButtonElement>('#rail-strip button'))
+            button.setAttribute('aria-pressed', String(button.dataset.railPanel === id));
+        this.recordEvent('rail:open', { panel: id });
+        return true;
+    }
+
+    /** The gallery and Reference entry points share one canonical question list in the catalog. */
+    openQuestions(): boolean {
+        this.toggleCatalog(true);
+        const panel = el<HTMLDetailsElement>('catalog-panel');
+        panel.open = true;
+        const group = document.querySelector<HTMLElement>('#catalog [data-group="questions"]');
+        if (!group) return false;
+        for (const card of group.querySelectorAll<HTMLDetailsElement>('.catalog-card')) card.open = true;
+        group.querySelector<HTMLAnchorElement>('[data-question]')?.focus();
+        group.scrollIntoView({ block: 'nearest' });
+        this.recordEvent('catalog:questions', {});
+        return true;
+    }
+
     toggleTranscript(): void {
         this.#transcriptCollapsed = !this.#transcriptCollapsed;
         const surface = el('surface');
@@ -3245,10 +3306,11 @@ export class PiHost {
         const visible = minimal ? CAPABILITIES.slice(0, 3) : CAPABILITIES;
         el('gallery').replaceChildren(
             ...visible.map((capability) =>
-                button(capability.title, () => this.run(capability.id), {
-                    title: capability.summary,
-                    dataset: { capability: capability.id },
-                }),
+                button(
+                    capability.title,
+                    () => capability.id === 'five-questions' ? this.openQuestions() : this.run(capability.id),
+                    { title: capability.summary, dataset: { capability: capability.id } },
+                ),
             ),
         );
     }
@@ -3506,8 +3568,14 @@ export class PiHost {
         const detail = document.createElement('span');
         detail.className = 'proof-detail';
         detail.textContent = ` · ${presets.length} presets · ${experiments.length} experiments`;
-        line.replaceChildren(document.createTextNode('proof'), detail);
-        line.title = 'Open the catalogue of presets, experiments and recorded comparisons';
+        const jargon = document.createElement('span');
+        jargon.className = 'jargon-label';
+        jargon.textContent = 'proof';
+        const plain = document.createElement('span');
+        plain.className = 'plain-label';
+        plain.textContent = 'Evidence';
+        line.replaceChildren(jargon, plain, detail);
+        line.title = 'proof — open the evidence catalog of presets, experiments and comparisons';
     }
 
     private mountFirstRunHint(): void {

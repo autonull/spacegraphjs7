@@ -54,6 +54,14 @@ describe('applyUIPreset', () => {
         expect(log).toEqual(['layer:experiment:navigation.minimap,navigation.trail,navigation.breadcrumbs']);
     });
 
+    it('declares readable chrome without a renderer knob', () => {
+        const { target } = calls();
+        const applied = applyUIPreset('readable', target);
+        expect(applied?.chrome).toBe('readable');
+        expect(applied?.knobs).toEqual({});
+        expect(uiPresetById('readable')?.gates).toContain('shell');
+    });
+
     it('applies graph flags through existing view setters', () => {
         const { log, target } = calls();
         applyUIPreset('morph', target);

@@ -8,6 +8,7 @@ import {
     presetVector,
     sampleExperiment,
 } from '../src/policy';
+import { STUDY_TASKS } from '../src/study';
 
 describe('public catalog', () => {
     const catalog = buildCatalog(POLICY_SCHEMA);
@@ -20,6 +21,15 @@ describe('public catalog', () => {
             expect(entry.label).toBe(preset.title);
             expect(entry.title).toBe(preset.question);
             expect(presetVector(POLICY_SCHEMA, preset.id)).toEqual(preset.vector);
+        }
+    });
+
+    test('lists the five canonical study questions exactly once each', () => {
+        expect(catalog.questions.map((entry) => entry.id)).toEqual(STUDY_TASKS.map((task) => task.id));
+        expect(new Set(catalog.questions.map((entry) => entry.id)).size).toBe(STUDY_TASKS.length);
+        for (const [index, entry] of catalog.questions.entries()) {
+            expect(entry.label).toBe(STUDY_TASKS[index].question);
+            expect(entry.href).toBe(`#question-${STUDY_TASKS[index].id}`);
         }
     });
 
