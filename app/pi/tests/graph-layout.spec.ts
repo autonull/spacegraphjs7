@@ -65,6 +65,13 @@ test.describe('graph arrangements', () => {
         await boot(page, '?scenario=rich&graphLayout=timeline&graphAligned=1&ribbonCorridor=1');
         await expect(page.locator('#structure .field-hull').first()).toBeVisible();
         expect(await page.locator('#structure .field-hull').count()).toBeGreaterThan(0);
+        const labels = await page
+            .locator('#structure .field-hull[data-scope^="unit-"]')
+            .evaluateAll((hulls) =>
+                hulls.map((hull) => (hull as HTMLElement).style.getPropertyValue('--hull-label').replace(/^"|"$/g, '')),
+            );
+        expect(labels.length).toBeGreaterThan(0);
+        for (const label of labels) expect(label).toMatch(/^[✓▸!✕·] \d+$/);
         expect(await page.locator('#transcript-list[data-aligned="true"]').count()).toBe(1);
         expect(await page.evaluate(() => (window as any).__pi.ribbonCorridor())).toBe(true);
 

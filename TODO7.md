@@ -277,7 +277,7 @@ default has been flipped; every new view stays opt-in.
 | ----- | ------ | -------- |
 | 0 — baseline and vocabulary | complete | `docs/screenshots/graph-baseline.json`; `app/pi/scripts/baseline.ts`; `app/pi/tests/graph-layout.test.ts` |
 | 1 — graph arrangements | complete except the study gate | five views by URL/hook/permalink; automated flexibility gate green below; default flip still needs the study result and an ADR 0008 decision |
-| 2 — visible structure | complete for this increment | square hulls and `Turn N · status` tabs; reserved child lane clears the last parent/child overlap; baseline regenerated |
+| 2 — visible structure | complete for this increment | square hulls and number + state-glyph tabs; reserved child lane clears the last parent/child overlap; baseline regenerated |
 | 3 — cross-scope ribbons | complete for this increment | `FluxEdge` corridor via opaque `data`; `bundleCorridor()`; unit tests in `test/FluxEdge.test.ts`; gallery recaptured, human decision pending |
 | 4 — default polish | blocked on human decision | `docs/screenshots/graph-layout/comparison.json`; no default changed, so no ADR 0008 decision is claimed |
 | 5 — verification and handoff | gates green, verdicts pending | root `check`, `app/pi` `check:fast`, `test:e2e`, `verify:visual`, `shots:all` and `scale` all green; gallery recaptured but verdicts in `review.json` need a human |

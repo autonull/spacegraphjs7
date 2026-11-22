@@ -99,6 +99,7 @@ follow the workflow in `docs/ROADMAP.md` (`test:publish` → build → npm).
 
 ### Fixed
 
+- Pi timeline hull tabs (TODO7): the tab now shows the turn number with a state glyph (`✓`, `▸`, `!`, `✕`) instead of the words `TURN` and `COMPLETE`; status name stays on the node and detail views. Gallery recaptured.
 - Pi reserved child lane (TODO7): the packed unit/delegate frame offset no longer places the first child row on its parent card. All five graph views now report zero parent/child overlaps in `graph-baseline.json`; the other four views keep their solved positions.
 - Pi flight path (TODO6): `advance()` positions-only frames now use a new `ModelRenderer.setPositions()` / `SpaceGraphRenderer.applyPositions()` path instead of rebuilding every node and edge spec through `setModel()`; other renderers keep the full-set fallback. Per-frame JS cost drops from a 2.295 ms full rebuild to 0.368 ms for `advance()`. The 80 ms browser flight target still needs a physical-GPU measurement; evidence is in `docs/performance.md`.
 - Pi deferred-audit follow-up (TODO6): cross-scope causal ribbons carry a stable source-scope tint through the existing `data.ribbon.color`, so long cross-unit relations stay traceable without a contract field, renderer branch or new knob; with/without evidence and a logged decision are under `docs/screenshots/edges/`. The command bar stays on one row at widths <=1000px, returning 50px of canvas height, and depth-3 inner chips reveal their full names on hover or keyboard focus.

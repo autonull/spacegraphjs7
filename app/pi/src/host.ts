@@ -187,6 +187,21 @@ const LEVEL_MODES: readonly LevelMode[] = ['auto', ...LEVELS];
 const ARRANGEMENTS: readonly Arrangement[] = ['stacked', 'side', 'floating'];
 const SURFACES: readonly Surface[] = ['log', 'map', 'hybrid'];
 
+const STATUS_GLYPH: Readonly<Record<string, string>> = {
+    complete: '✓',
+    settled: '✓',
+    ended: '✓',
+    active: '▸',
+    streaming: '▸',
+    running: '▸',
+    pending: '!',
+    warning: '!',
+    failed: '✕',
+    aborted: '✕',
+    error: '✕',
+};
+const stateGlyph = (status: string): string => STATUS_GLYPH[status] ?? '·';
+
 export const el = <T extends HTMLElement>(id: string): T => requireElement<T>(id, 'pi app');
 
 type ButtonOptions = { className?: string; title?: string; dataset?: Record<string, string> };
@@ -1102,8 +1117,8 @@ export class PiHost {
             const status = String(portal?.data?.status ?? portal?.status ?? '');
             const turn = portalID ? (this.#view.turns ?? []).indexOf(portalID) + 1 : 0;
             const label = spec.id.startsWith('delegate-')
-                ? `delegate ${spec.id.slice('delegate-'.length)}${status ? ` · ${status}` : ''}`
-                : `Turn ${turn || spec.id.replace('unit-', '')}${status ? ` · ${status}` : ''}`;
+                ? `${stateGlyph(status)} ${spec.id.slice('delegate-'.length)}`
+                : `${stateGlyph(status)} ${turn || spec.id.replace('unit-', '')}`;
             hull.dataset.scope = spec.id;
             hull.dataset.status = status;
             hull.style.transform = `translate(${Math.round(minX)}px, ${Math.round(minY)}px)`;
