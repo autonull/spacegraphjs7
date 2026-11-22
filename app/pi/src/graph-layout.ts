@@ -1,6 +1,8 @@
 import type { AgentView } from '@spacegraphjs/agent';
 import {
+    solveErgonomicLayout,
     Strategies,
+    type ErgonomicsViewport,
     type GraphLayout,
     type LaneLayoutStrategy,
     type LayoutConfig,
@@ -14,6 +16,7 @@ export const GRAPH_LAYOUTS = [
     'timeline',
     'timeline-rows',
     'chapters',
+    'ergonomic',
     'lanes',
     'tree',
     'force',
@@ -25,6 +28,7 @@ export const isGraphLayoutMode = (value: string | null | undefined): value is Gr
 
 const CARD: readonly [number, number] = [200, 72];
 export const CHAPTER_CARD: readonly [number, number] = [360, 200];
+export const ERGONOMIC_CARD: readonly [number, number] = [240, 88];
 const LANES = ['run', 'unit', 'message', 'action'] as const;
 
 type Node = LayoutModel['nodes'][number];
@@ -115,6 +119,28 @@ const chapterLayout = (view: AgentView): GraphLayout => {
     };
 };
 
+/** General library heuristic with only generic nodes and edges; no turn, scope or kind vocabulary. */
+const ergonomicGraphLayout = (view: AgentView, viewport: ErgonomicsViewport): GraphLayout | undefined => {
+    const solved = solveErgonomicLayout(
+        view.nodes.map((node) => ({ id: node.id, width: ERGONOMIC_CARD[0], height: ERGONOMIC_CARD[1] })),
+        view.edges.map((edge) => ({ source: edge.source, target: edge.target })),
+        viewport,
+        { minCard: ERGONOMIC_CARD, maxColumns: 4, targetOccupancy: 0.62 },
+    );
+    if (!solved) return undefined;
+    const xs = [...solved.positions.values()].map((point) => point.x);
+    const ys = [...solved.positions.values()].map((point) => point.y);
+    return {
+        positions: solved.positions,
+        clusters: new Map(),
+        bounds: {
+            min: { x: Math.min(...xs) - solved.card[0] / 2, y: Math.min(...ys) - solved.card[1] / 2, z: 0 },
+            max: { x: Math.max(...xs) + solved.card[0] / 2, y: Math.max(...ys) + solved.card[1] / 2, z: 0 },
+        },
+        strategy: 'ergonomic',
+    };
+};
+
 /**
  * Solve the requested graph view over the whole agent view. `previous` warms the append-only views
  * so a streamed turn does not reorder the cards the reader is looking at.
@@ -123,9 +149,11 @@ export function computeGraphLayout(
     view: AgentView,
     mode: GraphLayoutMode,
     previous?: ReadonlyMap<string, Position>,
+    viewport: ErgonomicsViewport = { width: 1600, height: 900 },
 ): GraphLayout | undefined {
     if (mode === 'freeform') return undefined;
     if (mode === 'chapters') return chapterLayout(view);
+    if (mode === 'ergonomic') return ergonomicGraphLayout(view, viewport);
     const rows = mode === 'timeline-rows';
     return Strategies.layoutGraph(layoutModel(view), layoutConfig(view), {
         strategy: rows ? 'timeline' : (mode as LaneLayoutStrategy),

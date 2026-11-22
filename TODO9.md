@@ -328,6 +328,15 @@ and a compact two-column grid replaces scattered cards and long diagonals. `?gra
 `g` reaches it; the freeform default is unchanged pending the logged ADR 0008 decision. Evidence:
 `pi-agent-chapters.png`, `review.json:chapters` and `graph-layout/comparison.json:chapters-subgraphs`.
 
+### General ergonomic heuristics (library, not Pi defaults)
+
+The reviewer redirected the work from Pi-specific defaults to general-purpose ergonomic/aesthetic
+optimization. `src/layout/ergonomics.ts` now provides `chooseColumns`, `orderByProximity`,
+`refineBySwaps` and `solveErgonomicLayout`: a deterministic, host-agnostic solver that fits any graph
+to any viewport, measures occupancy/edge length/aspect fit/overlap and exposes a score for comparing
+candidates. `?graphLayout=ergonomic` and `pi-agent-ergonomic.png` are one opt-in consumer, not a
+default. The chapters view remains a separate subgraph-presentation experiment.
+
 ### Verification run
 
 - Root: `pnpm exec vitest run test/layout/occupancy-packing.test.ts test/layout/scope-policy.test.ts`

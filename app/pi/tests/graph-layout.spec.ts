@@ -10,12 +10,13 @@ test.describe('graph arrangements', () => {
             'timeline',
             'timeline-rows',
             'chapters',
+            'ergonomic',
             'lanes',
             'tree',
             'force',
         ]);
 
-        for (const mode of ['timeline', 'timeline-rows', 'chapters', 'lanes', 'tree', 'force', 'freeform']) {
+        for (const mode of ['timeline', 'timeline-rows', 'chapters', 'ergonomic', 'lanes', 'tree', 'force', 'freeform']) {
             await page.evaluate((value) => (window as any).__pi.setGraphLayout(value), mode);
             expect(await page.evaluate(() => (window as any).__pi.graphLayout())).toBe(mode);
             expect(await page.evaluate(() => (window as any).__pi.graphShape().nodes)).toBeGreaterThan(0);
@@ -50,11 +51,11 @@ test.describe('graph arrangements', () => {
 
         await page.locator('#command-open').focus();
         await page.keyboard.press('g');
-        expect(await page.evaluate(() => (window as any).__pi.graphLayout())).toBe('lanes');
+        expect(await page.evaluate(() => (window as any).__pi.graphLayout())).toBe('chapters');
 
         await page.locator('#command-open').click();
         await page.locator('#command-input').fill('g');
-        expect(await page.evaluate(() => (window as any).__pi.graphLayout())).toBe('lanes');
+        expect(await page.evaluate(() => (window as any).__pi.graphLayout())).toBe('chapters');
     });
 
     test('the palette focuses a turn without clicking a card', async ({ page }) => {

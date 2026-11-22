@@ -88,6 +88,9 @@
   "ui-readable": {
     "note": "Phase 4 traceability shot for the opt-in readable chrome: 13px body and 12px secondary, plain-language labels with jargon in tooltips, and a 300px on-demand rail behind a four-panel strip. The graph, renderer labels and shipped defaults are unchanged. Incumbent/variant pair: docs/screenshots/ui-presets/readable/{incumbent,variant}.png. Human verdict pending in docs/screenshots/ui-presets/comparison.json (ui-preset-readable)."
   },
+  "ergonomic": {
+    "note": "Opt-in consumer of the general ergonomic heuristic: column count follows the surface aspect, nodes are ordered and swap-refined for short edges, and the grid is packed to a measured occupancy target. The solver is host-agnostic and lives in src/layout/ergonomics.ts; no Pi-specific rule and no default changed. Incumbent: docs/screenshots/pi-agent-in-action.png; variant: docs/screenshots/pi-agent-ergonomic.png."
+  },
   "chapters": {
     "note": "Opt-in chapters experiment: one card per turn (plus Run), with each turn's work rendered as internal chips and the failure chip tinted by severity. No separate turn lane/card duplication, short inter-chapter edges and a compact two-column grid. Freeform, timeline and every other view stay reachable; no default flipped. Incumbent: pi-agent-in-action.png / pi-agent-timeline-rows.png; variant: docs/screenshots/pi-agent-chapters.png. Human verdict pending in docs/screenshots/graph-layout/comparison.json (chapters-subgraphs)."
   },

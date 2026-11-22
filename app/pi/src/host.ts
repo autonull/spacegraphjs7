@@ -150,6 +150,7 @@ import { agentScopes, DEPTH, portalChain } from './scopes';
 import {
     CHAPTER_CARD,
     computeGraphLayout,
+    ERGONOMIC_CARD,
     graphShape,
     GRAPH_LAYOUTS,
     isGraphLayoutMode,
@@ -653,6 +654,8 @@ export class PiHost {
     private cardSize(kind: string, html: boolean, dense: boolean): readonly [number, number] {
         if (this.#graphLayout === 'chapters')
             return [CHAPTER_CARD[0] * this.#cardScale, CHAPTER_CARD[1] * this.#cardScale];
+        if (this.#graphLayout === 'ergonomic')
+            return [ERGONOMIC_CARD[0] * this.#cardScale, ERGONOMIC_CARD[1] * this.#cardScale];
         const [width, height] = nodeSize(kind, html, dense);
         return [width * this.#cardScale, height * this.#cardScale];
     }
@@ -895,7 +898,11 @@ export class PiHost {
                 ]),
             ),
         );
-        const layout = computeGraphLayout(this.#view, this.#graphLayout, this.#graphLayoutPositions);
+        const canvas = el('canvas');
+        const layout = computeGraphLayout(this.#view, this.#graphLayout, this.#graphLayoutPositions, {
+            width: canvas.clientWidth || 1600,
+            height: canvas.clientHeight || 900,
+        });
         this.#graphLayoutPositions = layout?.positions;
         this.simulation.setLayoutTargets(layoutTargets(layout, this.#qualifiedByNode));
         this.simulation.setSpecs(scopes.specs, {

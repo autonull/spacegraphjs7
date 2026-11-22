@@ -7,6 +7,11 @@ follow the workflow in `docs/ROADMAP.md` (`test:publish` → build → npm).
 
 ### Added
 
+- **Ergonomic layout heuristics (general library):** `solveErgonomicLayout()` packs any graph into a
+  measured, surface-fitted grid using aspect-matched column selection, proximity ordering and bounded
+  swap refinement. It returns positions plus occupancy, edge-length, aspect-fit and overlap scores,
+  with no DOM, renderer or host vocabulary. `?graphLayout=ergonomic` is one opt-in consumer; no default
+  changed. New pure tests cover chain, star, wide and narrow surfaces.
 - **Chapters subgraph layout (TODO9 default-study):** the opt-in `?graphLayout=chapters` view removes the
   turn-card/turn-lane duplication: one large card per turn (plus Run) holds its work as internal chips,
   with the failure tinted by severity, arranged in a compact two-column grid with short inter-chapter

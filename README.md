@@ -348,6 +348,8 @@ Two placement modes matter:
 - **Plugin layouts** run when you invoke them with `layout(name)` or `layoutOnce(name)`; they do not re-run on every mutation. `AutoLayoutPlugin` is a default hook for vision-driven overlap repair, not a general auto-layout loop.
 - **`LaneLayout`** is deterministic and append-only: placing a known ID returns its stored position, so streaming data never moves earlier items. It is a grid: columns advance on X, rows on Y, and every (column, row) cell keeps its own cursor, so a row advances by the widths of the items it holds while its neighbours stay put. A column's width is measured from the rows it holds, or declared when the host knows it up front. `spacegraphjs/layout` also exports `Strategies` — the lanes, timeline and hierarchy views — as policies over this one primitive.
 
+`solveErgonomicLayout(nodes, edges, viewport, options?)` is the general, host-agnostic packing heuristic. It picks the column count whose grid aspect matches the surface, orders nodes by a bounded Cuthill–McKee-style tie heuristic, refines slots by swap passes that lower squared edge length, and returns solved positions plus measured `occupancy`, `meanEdgeLength`, `aspectFit`, `overlaps` and a `labelFloorMet` flag. No DOM, renderer, host vocabulary or hidden policy: supply node sizes, edges and a viewport, then compare candidates by score. `chooseColumns`, `orderByProximity` and `refineBySwaps` are exported separately for hosts that own their own solver.
+
 Hosts can always own placement directly with `setPositions(...)`, `pinAll(...)`, and `layoutOnce(...)`. Request a named layout explicitly when data arrives.
 
 ---

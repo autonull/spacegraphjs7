@@ -9,6 +9,7 @@ export { GridPlacement, type GridConfig, type GridMeta } from './grid';
 export { contentBounds, declaredEmpty } from './fit';
 export { TreePlacement, type TreeConfig, type TreeMeta } from './tree';
 export * from './field-projection';
+export * from './ergonomics';
 export * from './force';
 export * from './force-core';
 export * from './octree';

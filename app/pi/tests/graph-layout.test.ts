@@ -25,6 +25,7 @@ describe('graph layouts', () => {
             'timeline',
             'timeline-rows',
             'chapters',
+            'ergonomic',
             'lanes',
             'tree',
             'force',

@@ -39,6 +39,16 @@
     "crossScopeDiagonals": 2,
     "overlaps": 0
   },
+  "ergonomic": {
+    "nodes": 18,
+    "edges": 18,
+    "width": 808,
+    "height": 832,
+    "ratio": 1.0297029702970297,
+    "meanEdgeLength": 316.7856783883783,
+    "crossScopeDiagonals": 0,
+    "overlaps": 0
+  },
   "lanes": {
     "nodes": 18,
     "edges": 18,

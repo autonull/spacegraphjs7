@@ -124,7 +124,7 @@ interface GraphLayout {
     positions: ReadonlyMap<string, Position>;
     clusters: Map<string, LayoutBounds>;
     bounds: LayoutBounds;
-    strategy: LaneLayoutStrategy | 'chapters';
+    strategy: LaneLayoutStrategy | 'chapters' | 'ergonomic';
 }
 
 /** The column the session's own nodes share, before the first turn's column. */
