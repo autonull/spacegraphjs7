@@ -223,16 +223,17 @@ with a vector version plan.
 
 ## 9. Progress
 
-Plan status: **Phases 0–2 are implemented and the gallery evidence is captured; human gates remain**.
-`ui` names a bundle of existing knobs and view flags applied through existing setters. No default has
-changed; no verdict or pilot result has been fabricated.
+Plan status: **Phases 0–2 are implemented, gallery evidence is captured, and every in-scope automated
+gate is green; only human gates and the release-boundary full gate run remain**. `ui` names a bundle of
+existing knobs and view flags applied through existing setters. No default has changed; no verdict or
+pilot result has been fabricated.
 
 | Phase | Status | Evidence |
 | ----- | ------ | -------- |
 | 0 — experiment loop and test agility | complete | §6 ledger applied; `retries: 0`; full app e2e 130 passed |
 | 1 — presets as evidence | captures complete; verdicts pending | five `ui-*` shots, eight incumbent/variant pairs, ADR scaffold |
 | 2 — task comparison | harness support complete; pilot external | `?studyUI=`, `__study.ui`, per-preset report rows |
-| 3 — graduation and verification | not started | no ADR 0008 decision closed |
+| 3 — graduation and verification | blocked on human decision | no ADR 0008 decision closed; root interaction 5/5 and vision 1/1 green; full gates deferred to release boundary |
 
 ### Delivered
 
@@ -253,6 +254,11 @@ changed; no verdict or pilot result has been fabricated.
 5. Gallery evidence: five `ui-*` shots, `pnpm run shots:compare` (incumbent/variant PNG pairs for all
    eight non-incumbent presets), and `pnpm run compare:ui` writing pending ADR 0008 decision stubs
    with concrete image paths. Human verdicts still go in `review.json`.
+6. Root gates: `test/interaction.spec.ts` reads the widget through
+   `pluginManager.getPlugin('HoverMetaWidget').overlay` and its `title="Focus"` action instead of the
+   absent `.sg-hover-meta-widget` class and `data-action`; the vision fixture passes `{ global: true }`
+   as the third `SpaceGraph.create` argument so `SpaceGraph.instances` is populated, and raises
+   `__overlapsForced` when pins are set. Both waits are state-based.
 
 ### Verification run
 
@@ -261,29 +267,37 @@ changed; no verdict or pilot result has been fabricated.
 - `app/pi`: `pnpm run shots:compare` — 8 passed; pair PNGs under `docs/screenshots/ui-presets/<id>/`.
 - `app/demo`: `host.spec.ts` — 10 passed.
 - Root collection check: disabled suites are no longer collected; kept suites parse.
-- Not run to avoid redundant cost: root `pnpm run check`, `verify:visual`, `shots:all`, `scale`.
-  Run them once at a release boundary.
+- Root: `pnpm run test:behavioral -- --workers=2` — **5 passed** (was 2 passed / 3 failed).
+- Root: `pnpm run test:vision -- --workers=2` — **1 passed** (was 0 passed / 1 failed).
+- Not run to avoid redundant cost: root `pnpm run check`, `verify:visual`, `shots:all`, `scale`,
+  `tests/graph-layout.test.ts`. Run them once at a release boundary or after a layout change.
 
 ### Remaining work — clarified
 
-1. **Human gates.** Gallery verdicts in `review.json`, the five-question pilot and any default change
-   stay human (`docs/pi-study.md:38-42`, ADR 0008). No results are generated here.
-2. **Two root-level gates are still red for pre-existing, non-timing reasons.** The ledger's timing
-   work is applied, but:
-   - `test/interaction.spec.ts` now boots the correct demo Vite and 2/5 tests pass; the other three
-     assert `.sg-hover-meta-widget`, a class absent from current source. Re-target those assertions
-     to the current widget API rather than restoring sleeps.
-   - `test/vision.spec.ts` reaches the negative-control assertion, but `noOverlap()` resolves on the
-     forced-overlap fixture. The fixture now loads the built bundle and registers globally; the
-     remaining defect is overlap-detection drift, not spawn timing.
+1. **Human gates — the only blocking work.** Add `ui-*` verdicts to `docs/screenshots/review.json`,
+   run the five-question pilot with `?studyUI=<preset>` (`docs/pi-study.md:38-42`, `__study.ui`), then
+   close the matching `decision` in `docs/screenshots/ui-presets/comparison.json` and ADR 0008. A
+   default flip needs that logged human decision; no verdict or pilot result is generated here.
+2. **Root-level gates — resolved.** `test/interaction.spec.ts` asserted a `.sg-hover-meta-widget`
+   class and `button[data-action]` that the widget does not expose; it now reads the overlay through
+   `pluginManager.getPlugin('HoverMetaWidget')` and locates `button[title="Focus"]`.
+   `test/vision.spec.ts` failed because the fixture put `global: true` in the graph spec, while
+   `SpaceGraph.create` reads it from the third options argument; `SpaceGraph.instances` was empty, so
+   `VisionAssert.getReport()` returned an empty report. The fixture now passes `{ global: true }`
+   correctly and raises `__overlapsForced` after pinning; both gates pass at `retries: 0` style waits
+   with no fixed sleeps.
 3. **Graph baseline snapshot (§6 row 3) stays a gate.** `tests/graph-layout.test.ts` deep-equals
-   `docs/screenshots/graph-baseline.json`. Regenerate only by capturing `measure()` from that test
-   into the JSON and reviewing the diff; the invariant assertions at lines 38–83 remain the
-   behavioral gate. No layout change was made in these slices.
+   `docs/screenshots/graph-baseline.json`. No layout changed in these slices, so the snapshot was not
+   regenerated or re-run. If a layout change lands, capture `measure()` from that test into the JSON,
+   review the diff, and keep the invariant assertions at lines 38–83 as the behavioral gate.
 4. **Keep defaults untouched.** No preset is a default until ADR 0008 closes; `uiChrome` is set only
    when a preset is applied, so an unlabelled session keeps the shipped DOM.
 5. **`task-1` … `task-5` presets are deliberately absent.** They need pinned per-question bundles and
    a pilot result; inventing their knobs would fabricate evidence.
+6. **Release-boundary full gates (Phase 3 §2).** After a finding closes, run root `pnpm run check`,
+   then from `app/pi` run `check:fast`, `test:e2e`, `verify:visual`, `shots:all`, `scale`. Update
+   `CHANGELOG.md`, `app/pi/README.md`, `docs/pi-study.md` and stale cross-references only when that
+   finding is actually closed. Not run now to avoid redundant cost.
 
 ### Handoff notes
 
@@ -293,3 +307,5 @@ changed; no verdict or pilot result has been fabricated.
    boundary (`TODO7.md:243`). Use `--workers=2` on memory-constrained hosts.
 4. `retries: 0` and clean-server boot are now active; keep new waits state-based, never time-based.
 5. Keep increments reviewable; commit only when explicitly asked (prior slices were committed on request).
+6. Keep the vision fixture's `{ global: true }` create option and `__overlapsForced` flag; the
+   assertion reads `SpaceGraph.instances`, not `window.sg`.

@@ -35,6 +35,14 @@ async function getNodeScreenPos(page: any, nodeId: string) {
     }, nodeId);
 }
 
+/** The widget exposes its overlay through the registered plugin, not a CSS class. */
+async function widgetDisplay(page: any) {
+    return page.evaluate(() => {
+        const widget = (window as any)._sg?.pluginManager?.getPlugin('HoverMetaWidget');
+        return widget?.overlay?.style.display ?? 'missing';
+    });
+}
+
 test.describe('SpaceGraph Interaction Tests', () => {
     test.setTimeout(60_000);
 
@@ -151,12 +159,11 @@ test.describe('SpaceGraph Interaction Tests', () => {
         await loadDemo(page);
 
         const pos = await getNodeScreenPos(page, 'n1');
-        const widget = page.locator('.sg-hover-meta-widget');
 
         await page.mouse.move(pos.x + 400, pos.y + 400);
         await page.mouse.move(pos.x, pos.y);
 
-        await expect(widget).toBeVisible();
+        await expect.poll(() => widgetDisplay(page)).toBe('flex');
     });
 
     // ── Test 4: metawidget hides after leaving node ─────────────────────────
@@ -165,13 +172,12 @@ test.describe('SpaceGraph Interaction Tests', () => {
         await loadDemo(page);
 
         const pos = await getNodeScreenPos(page, 'n1');
-        const widget = page.locator('.sg-hover-meta-widget');
 
         await page.mouse.move(pos.x, pos.y);
-        await expect(widget).toBeVisible();
+        await expect.poll(() => widgetDisplay(page)).toBe('flex');
 
         await page.mouse.move(pos.x + 400, pos.y + 400);
-        await expect(widget).not.toBeVisible();
+        await expect.poll(() => widgetDisplay(page)).toBe('none');
     });
 
     // ── Test 5: metawidget action button fires node:metaaction event ─────────
@@ -184,12 +190,11 @@ test.describe('SpaceGraph Interaction Tests', () => {
         });
 
         const pos = await getNodeScreenPos(page, 'n1');
-        const widget = page.locator('.sg-hover-meta-widget');
 
         await page.mouse.move(pos.x + 400, pos.y + 400);
         await page.mouse.move(pos.x, pos.y);
 
-        const focusBtn = widget.locator('button[data-action="focus"]');
+        const focusBtn = page.locator('button[title="Focus"]');
         await expect(focusBtn).toBeVisible();
         await focusBtn.click();
 

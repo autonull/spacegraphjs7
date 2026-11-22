@@ -28,7 +28,6 @@
             window.SpaceGraph = SpaceGraph;
 
             const spec = {
-                global: true,
                 nodes: [
                     // Red background (#ff0000) with default white text has poor contrast (WCAG violation)
                     { id: 'n1', type: 'ShapeNode', label: 'Node 1', data: { color: 0xff0000 } },
@@ -41,7 +40,7 @@
                 ],
             };
 
-            const sg = await SpaceGraph.create('#app', spec);
+            const sg = await SpaceGraph.create('#app', spec, { global: true });
 
             // Load the ODN, TLA, and CHE inference models for Vision validation
             setTimeout(async () => {
@@ -55,6 +54,7 @@
             }, 50);
 
             // Wait for graph to be ready and layout to apply, then override positions to force overlaps.
+            window.__overlapsForced = false;
             setTimeout(() => {
                 console.log('[Fixture] Forcing overlaps...');
                 const n1 = sg.graph.nodes.get('n1');
@@ -71,6 +71,7 @@
                     n2.updatePosition(1, 1, 0);
                     console.log('[Fixture] Nodes n1 and n2 set to overlap at (0,0,0) and (1,1,0)');
                     sg.events.emit('graph:updated');
+                    window.__overlapsForced = true;
                 }
             }, 1000);
 

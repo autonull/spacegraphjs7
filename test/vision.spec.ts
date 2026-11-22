@@ -73,8 +73,12 @@ test.describe('SpaceGraph Vision System E2E', () => {
             timeout: 15000,
         });
 
-        // Allow layout to settle
-        await page.waitForTimeout(2000);
+        // The fixture pins two nodes into the same bounds, then raises this flag.
+        await expect
+            .poll(() => page.evaluate(() => (window as any).__overlapsForced), {
+                timeout: 15_000,
+            })
+            .toBe(true);
 
         await page.evaluate(() => {
             const sg = (window as any).sg;
