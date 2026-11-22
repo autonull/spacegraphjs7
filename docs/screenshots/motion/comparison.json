@@ -1,0 +1,9 @@
+{
+  "demand": "TODO4.md demand record 2026-11-22",
+  "variants": {
+    "motion": "pi-pulse-a 120ms",
+    "reducedMotion": "none auto"
+  },
+  "settledBytesIdentical": false,
+  "note": "The pulse is a one-shot state change; both variants reach the same final frame."
+}

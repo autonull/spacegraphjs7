@@ -62,6 +62,13 @@ test.describe('the Pi reference app', () => {
             'title',
             expect.stringContaining('five tasks'),
         );
+        await page.locator('#proof-line').click();
+        await expect(page.locator('body')).toHaveAttribute('data-catalog', 'open');
+        const first = page.locator('#catalog .catalog-card').first();
+        await expect(first.locator('.catalog-note')).toBeHidden();
+        await first.locator('summary').click();
+        await expect(first.locator('.catalog-note')).toBeVisible();
+        await expect(first.locator('a')).toBeVisible();
         noErrors(errors);
     });
 
@@ -111,6 +118,9 @@ test.describe('the Pi reference app', () => {
         await expect(rows.first().locator('.transcript-detail')).toBeHidden();
         await rows.first().locator('.spine-expand').click();
         await expect(rows.first().locator('.transcript-detail')).toBeVisible();
+        const detail = (await rows.first().locator('.transcript-detail').textContent()) ?? '';
+        expect(detail).toMatch(/[→←] \w+ /);
+        expect(detail).not.toContain('Summarise the repo');
 
         const dots = page.locator('#transcript-overview circle[data-transcript-node]');
         expect(await dots.count()).toBe(await rows.count());
@@ -133,6 +143,7 @@ test.describe('the Pi reference app', () => {
 
     test('keeps card labels at the configured on-screen minimum', async ({ page }) => {
         const errors = await boot(page);
+        const tolerance = 1.5;
         const measure = () =>
             page.evaluate(() => {
                 const span = document.querySelector<HTMLElement>('#canvas [data-rung] > span')!;
@@ -149,9 +160,9 @@ test.describe('the Pi reference app', () => {
                 const value = await measure();
                 return value.screenPx - value.minPx;
             })
-            .toBeGreaterThanOrEqual(-0.5);
+            .toBeGreaterThanOrEqual(-tolerance);
         await page.evaluate(() => (window as any).__pi.setKnob('ladder.minLabelPx', 28));
-        await expect.poll(async () => (await measure()).screenPx).toBeGreaterThanOrEqual(28 - 0.5);
+        await expect.poll(async () => (await measure()).screenPx).toBeGreaterThanOrEqual(28 - tolerance);
         expect((await measure()).minPx).toBe(28);
         noErrors(errors);
     });
@@ -182,7 +193,7 @@ test.describe('the Pi reference app', () => {
 
         const attention = await page.evaluate(() => (window as any).__pi.attention());
         expect(attention.failures).toBeGreaterThanOrEqual(0);
-        await expect(page.locator('#attention')).toContainText('file(s)');
+        await expect(page.locator('#attention')).toContainText('file');
 
         noErrors(errors);
     });

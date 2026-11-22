@@ -28,7 +28,7 @@ export type ShellTokens = DesignTokens & {
 const tokenSet = (base: DesignTokens, colors: Partial<ShellColors>): ShellTokens => ({
     ...base,
     colors: { ...base.colors, ...colors } as ShellColors,
-    fontSizes: { ...base.fontSizes, micro: '10px', nano: '9px' },
+    fontSizes: { ...base.fontSizes, micro: '11px', nano: '10px' },
     spacing: { ...base.spacing, hair: '2px', target: '44px' },
     radii: Object.fromEntries(
         Object.keys(base.radii).map((key) => [key, '0px']),
@@ -70,7 +70,7 @@ export const HUD_TOKENS: Readonly<Record<'dark' | 'light', ShellTokens>> = {
         secondary: '#eeeeee',
         muted: '#eeeeee',
         mutedForeground: '#5c5c5c',
-        accent: '#3f3f3f',
+        accent: '#5a5a5a',
         accentForeground: '#ffffff',
         destructive: '#bd2645',
         destructiveForeground: '#ffffff',

@@ -45,6 +45,61 @@ test.describe('the one-surface shell', () => {
         await expect(page.locator('#settings-menu #catalog-toggle')).toBeVisible();
     });
 
+    test('the readout stays on the canvas when the transcript moves below it', async ({
+        page,
+    }) => {
+        await boot(page);
+        await page.evaluate(() => (window as any).__pi.setArrangement('stacked'));
+        const bounds = await page.evaluate(() => {
+            const rect = (id: string) => document.getElementById(id)!.getBoundingClientRect();
+            return { hud: rect('hud'), canvas: rect('canvas'), transcript: rect('transcript') };
+        });
+        expect(bounds.hud.top).toBeGreaterThanOrEqual(bounds.canvas.top);
+        expect(bounds.hud.bottom).toBeLessThanOrEqual(bounds.canvas.bottom);
+        expect(bounds.hud.bottom).toBeLessThanOrEqual(bounds.transcript.top);
+    });
+
+    test('readout diagnostics are disclosed on demand, not in the default frame', async ({
+        page,
+    }) => {
+        await boot(page);
+        const hud = page.locator('#hud');
+        await expect(hud).not.toContainText('fps');
+        await expect(hud).toHaveAttribute('title', /energy .* overlap .* fps/);
+        await page.locator('#settings-menu summary').click();
+        await page.locator('#diagnostics-toggle').click();
+        await expect(hud).toContainText('fps');
+        await expect(page.locator('#diagnostics-toggle')).toHaveAttribute('aria-pressed', 'true');
+        await page.goto('/?debug=1');
+        await page.waitForFunction(() => (window as any).__pi?.ready === true);
+        await expect(page.locator('#hud')).toContainText('fps');
+    });
+
+    test('the rail discloses secondary sections behind reachable group headers', async ({
+        page,
+    }) => {
+        const errors = await boot(page);
+        await expect(page.locator('#rail-navigate')).toHaveAttribute('open', '');
+        await expect(page.locator('#rail-inspect')).toHaveAttribute('open', '');
+        await expect(page.locator('#rail-share')).not.toHaveAttribute('open', '');
+        await expect(page.locator('#rail-learn')).not.toHaveAttribute('open', '');
+        await expect(page.locator('#annotation-input')).toBeHidden();
+
+        const target = await page.evaluate(() =>
+            Math.min(
+                ...['#rail-navigate', '#rail-inspect', '#rail-share', '#rail-learn'].map((id) => {
+                    const rect = document.querySelector(`${id} > summary`)!.getBoundingClientRect();
+                    return Math.min(rect.width, rect.height);
+                }),
+            ),
+        );
+        expect(target).toBeGreaterThanOrEqual(44);
+
+        await page.locator('#rail-share > summary').click();
+        await expect(page.locator('#annotation-input')).toBeVisible();
+        expect(errors).toEqual([]);
+    });
+
     test('keyboard opens verbs, knobs and help, and Enter runs a command', async ({ page }) => {
         const errors = await boot(page);
         await page.locator('#canvas').focus();

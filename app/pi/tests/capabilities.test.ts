@@ -19,6 +19,16 @@ describe('capability gallery', () => {
         }
     });
 
+    it('names nodes by label in trace and failure evidence', () => {
+        const ctx = context();
+        for (const id of ['why', 'led-here', 'downstream', 'failures']) {
+            const evidence = runCapability(id, ctx).join(' ');
+            expect(evidence, id).not.toContain('pi:local:');
+            expect(evidence, id).toMatch(/\S/);
+            expect(evidence, id).not.toContain('?');
+        }
+    });
+
     it('exposes unique ids and rejects unknown capabilities', () => {
         const ids = CAPABILITIES.map((capability) => capability.id);
         expect(new Set(ids).size).toBe(ids.length);

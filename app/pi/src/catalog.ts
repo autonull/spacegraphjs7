@@ -57,11 +57,11 @@ const card = (title: string, question: string, children: readonly HTMLElement[],
     const heading = document.createElement('span');
     heading.className = 'catalog-card-title';
     heading.textContent = title;
-    const note = document.createElement('span');
+    const note = document.createElement('p');
     note.className = 'catalog-note';
     note.textContent = question;
-    summary.append(heading, note);
-    details.append(summary, ...children);
+    summary.append(heading);
+    details.append(summary, note, ...children);
     return details;
 };
 

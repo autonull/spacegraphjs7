@@ -323,6 +323,7 @@ export class PiHost {
     #ticks = 0;
     #lastFrame = 0;
     #fps = 0;
+    #diagnostics = new URLSearchParams(globalThis.location?.search ?? '').has('debug');
     #activity = new Map<string, number>();
     #vision: VisionScores = { overlap: 0, legibility: 1 };
     #visionStrategy: 'onnx' | 'heuristics' = 'heuristics';
@@ -830,6 +831,7 @@ export class PiHost {
         this.#hidden = windowed.hidden;
         const model = toAdapterModel(windowed.view);
         const values = this.#resolved.values;
+        const blendMs = Number(values['ladder.blendMs']);
         const focus = this.#revealed || this.#controller.selection[0] || '';
         const roles = focusRoles(focus, this.#view.edges);
         const scales: FocusScales = {
@@ -928,15 +930,19 @@ export class PiHost {
             nodes: this.#model.nodes.map((node) => {
                 const size = nodeSize(node.kind, Boolean(node.html));
                 const focusScale = scaleForRole(roles.get(node.id) ?? 'none', scales);
-                const salience = salienceScore(this.#activity.get(node.id) ?? 0, node.emphasis);
+                const activity = this.#activity.get(node.id) ?? 0;
+                const salience = salienceScore(activity, node.emphasis);
                 const withWidgets = detailNodes.has(node.id)
                     ? { ...node, widgets: [...(node.widgets ?? []), ...INSTRUMENT_IDS] }
                     : node;
                 const styled = applyNodeAttention(withWidgets, size, salience, attention, focusScale);
                 const style = { ...((styled.data?.style as Record<string, string> | undefined) ?? {}) };
+                const pulse = !this.#reducedMotion && activity > 0
+                    ? `${this.#ticks % 2 ? 'pi-pulse-a' : 'pi-pulse-b'} ${blendMs}ms ease-out 1`
+                    : 'none';
                 return {
                     ...styled,
-                    data: { ...styled.data, style: { ...style, backgroundColor: cardBg } },
+                    data: { ...styled.data, style: { ...style, backgroundColor: cardBg, animation: pulse } },
                 };
             }),
             edges: this.#model.edges
@@ -1210,8 +1216,9 @@ export class PiHost {
             if (catalogPanel instanceof HTMLDetailsElement) catalogPanel.open = true;
             const aside = document.querySelector('aside');
             const catalog = document.getElementById('catalog');
-            if (aside && catalog) aside.scrollTop = catalog.offsetTop - 20;
+            if (aside && catalog) aside.scrollTop = catalog.offsetTop;
             document.querySelector<HTMLElement>("#catalog .catalog-card[data-card='experiment'] > summary")?.click();
+            this.fitView(shot.padding);
         }
         if (shot.panel && document.getElementById('policy-section') instanceof HTMLDetailsElement)
             (document.getElementById('policy-section') as HTMLDetailsElement).open = true;
@@ -2309,6 +2316,13 @@ export class PiHost {
         el('rail-toggle').addEventListener('click', () => this.toggleRail());
         el('command-open').addEventListener('click', () => this.#commandSurface?.open('palette'));
         el('focus-primary').addEventListener('click', () => this.focusPrimary());
+        const diagnostics = el<HTMLButtonElement>('diagnostics-toggle');
+        diagnostics.setAttribute('aria-pressed', String(this.#diagnostics));
+        diagnostics.addEventListener('click', () => {
+            this.#diagnostics = !this.#diagnostics;
+            diagnostics.setAttribute('aria-pressed', String(this.#diagnostics));
+            this.renderHud();
+        });
         document.addEventListener('keydown', (event) => {
             const target = event.target as HTMLElement | null;
             const editing = target?.closest('input, textarea, select, [contenteditable="true"]');
@@ -2724,9 +2738,13 @@ export class PiHost {
 
     private renderAttention(): void {
         const { failures, changed, latest } = this.#attention;
-        el('attention').textContent = failures
-            ? `${failures} failure(s) · ${changed} file(s) · ${latest}`
-            : `${changed} file(s) changed`;
+        const count = (value: number, noun: string): string =>
+            `${value} ${noun}${value === 1 ? '' : 's'}`;
+        const attention = el('attention');
+        attention.dataset.severity = failures ? 'failure' : 'clear';
+        attention.textContent = failures
+            ? `${count(failures, 'failure')} · ${count(changed, 'file')} · ${latest}`
+            : `${count(changed, 'file')} changed`;
     }
 
     private renderFollow(): void {
@@ -2746,11 +2764,15 @@ export class PiHost {
     }
 
     private renderHud(): void {
-        el('hud').textContent =
+        const context =
             `${this.#level}/${this.#levelMode} · ${this.#depth}/${this.#depthAxis} · ` +
-            `${this.simulation.settled ? 'settled' : 'moving'} · ` +
+            `${this.simulation.settled ? 'settled' : 'moving'}`;
+        const detail =
             `energy ${this.simulation.energy.toFixed(3)} · overlap ${this.#vision.overlap.toFixed(2)} · ` +
             `${Math.round(this.#fps)} fps`;
+        const hud = el('hud');
+        hud.textContent = this.#diagnostics ? `${context} · ${detail}` : context;
+        hud.title = detail;
         el('play-energy').textContent =
             `energy ${this.playSession.energy.toFixed(3)} · ${this.playSession.preset ?? 'at rest'}`;
     }
@@ -2765,6 +2787,7 @@ export class PiHost {
                 node.kind,
             ),
         );
+        const byID = new Map(this.#view.nodes.map((node) => [node.id, node]));
         const rows = messages.map((node) => {
             const expanded = this.#expandedMessages.has(node.id);
             const row = document.createElement('div');
@@ -2789,9 +2812,18 @@ export class PiHost {
                     title: expanded ? 'Collapse detail' : 'Expand detail',
                 }),
             );
+            const links = this.#view.edges
+                .filter((edge) => edge.source === node.id || edge.target === node.id)
+                .slice(0, 3)
+                .map((edge) => {
+                    const outgoing = edge.source === node.id;
+                    const neighbor = outgoing ? edge.target : edge.source;
+                    const relation = String(edge.data?.relation ?? edge.kind);
+                    return `${outgoing ? '→' : '←'} ${relation} ${byID.get(neighbor)?.label ?? neighbor}`;
+                });
             const detail = document.createElement('div');
             detail.className = 'transcript-detail';
-            detail.textContent = `${node.kind} · ${node.status} · ${text || fullLabel}`;
+            detail.textContent = [`${node.kind} · ${node.status}`, ...links].join(' · ');
             row.append(head, detail);
             return row;
         });

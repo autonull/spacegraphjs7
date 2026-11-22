@@ -19,6 +19,18 @@ The browser check starts both processes itself and replays the local op feed, so
 provider. The publish check packs the library and runs its selectors from a clean consumer; the packed
 agent must have no `@earendil-works/*` dependency.
 
+Tier the loop instead of running the full matrix per change:
+
+```bash
+pnpm --filter pi check:fast      # types + unit tests (~2s)
+pnpm --filter pi e2e:chrome      # shell and instrument browser checks
+pnpm --filter pi verify:fast     # both of the above, one command; no screenshots written
+pnpm --filter pi shots:focus     # four representative shots with before/after pairs
+pnpm --filter pi shots:all       # full gallery only at a slice boundary
+```
+
+Keep `pnpm --filter pi dev` running so Playwright reuses the Vite and op servers.
+
 ## Layout
 
 - `src/server.ts` — Node HTTP server: `/events` (SSE) and `POST /prompt`. This is the only file that

@@ -60,6 +60,27 @@ follow the workflow in `docs/ROADMAP.md` (`test:publish` → build → npm).
 
 - `ZoomBands` / `ScaleDomain` replace `FractalZoomPlugin` as the band and scale mechanism.
 - Root docs now reference real paths under `docs/` and `app/demo/`.
+- Pi type hierarchy: the smallest shell tokens lift to 11px/10px, the attention badge and panel headings
+  gain their own roles, and the inspector bar drops its redundant title. All 12 shots recaptured; 18
+  vision gates and 15 chrome e2e pass.
+
+### Fixed
+
+- Pi frame hygiene: the readout is anchored to the canvas so it no longer overlaps the transcript in
+  the stacked arrangement; the proof catalog reframes after opening so its graph nodes are not clipped;
+  the attention badge uses natural plurals and the catalog scroll starts at its first question.
+- Pi reading comfort: expanded transcript rows show causal neighbors instead of repeating the message,
+  and the light-theme card wash uses a softer token-derived shade.
+- Pi proof lines name nodes instead of printing raw IDs, and the policy filter toggle follows the HUD
+  control styling.
+- Pi detail cards read as `Kind · Status` at every zoom; raw fields stay on hover. The deep-focus lens
+  no longer magnifies internal identifiers. `verify:fast` runs types, unit tests and chrome e2e in one
+  command without rewriting the gallery.
+- Pi HUD diagnostics: the canvas readout shows only representation context by default; energy, overlap
+  and fps stay on hover and are restored by the settings `diagnostics` toggle or `?debug`.
+- Pi catalog cards disclose the question and launch links only when expanded, so the drawer reads as a
+  scannable title list. The `catalog` shot is recaptured; `TODO4.md` records why gap/repulsion changes
+  cannot shorten the long context diagonals in the fitted gallery.
 
 ### Deprecated
 

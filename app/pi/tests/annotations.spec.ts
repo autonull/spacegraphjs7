@@ -19,6 +19,7 @@ const boot = async (page: Page): Promise<string[]> => {
         () => (window as unknown as { __pi?: { ready?: boolean } }).__pi?.ready,
     );
     await page.evaluate(() => (window as unknown as { __pi: PiHooks }).__pi.loadFixture());
+    await page.locator('#rail-share > summary').click();
     return errors;
 };
 

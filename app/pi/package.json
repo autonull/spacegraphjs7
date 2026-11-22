@@ -9,13 +9,17 @@
         "build": "vite build --config vite.config.ts",
         "test": "vitest run --config vitest.config.ts",
         "typecheck": "tsc --noEmit",
+        "check:fast": "tsc --noEmit && vitest run --config vitest.config.ts",
         "test:e2e": "playwright test --config playwright.config.ts",
+        "e2e:chrome": "playwright test --config playwright.config.ts tests/shell.spec.ts tests/orchestration.spec.ts",
+        "verify:fast": "pnpm run check:fast && pnpm run e2e:chrome",
         "test:publish": "tsx scripts/publish-check.ts",
         "verify": "tsx scripts/verify.ts",
         "verify:visual": "playwright test --config playwright.config.ts tests/vision.spec.ts",
         "scale": "tsx scripts/scale.ts",
         "shot": "tsx scripts/shot.ts",
         "shots:all": "tsx scripts/shot.ts all",
+        "shots:focus": "tsx scripts/shot.ts cockpit,node-detail,light-theme,policy",
         "shots:watch": "tsx scripts/shot.ts --watch"
     },
     "dependencies": {

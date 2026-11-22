@@ -104,7 +104,7 @@ export const CAPABILITIES: readonly Capability[] = [
         run: ({ view }) => {
             const id = target(view, 'artifact');
             const trace = why(view, id);
-            return [`from ${id}`, `answers: ${[...trace.answerIds].join(', ') || 'none'}`];
+            return [`from ${labelOf(view, id)}`, `answers: ${labels(view, trace.answerIds)}`];
         },
     },
     {
@@ -113,7 +113,7 @@ export const CAPABILITIES: readonly Capability[] = [
         summary: 'Forward sequence from the first unit.',
         run: ({ view }) => {
             const trace = ledHere(view, target(view, 'unit'));
-            return [`answers: ${[...trace.answerIds].join(', ') || 'none'}`];
+            return [`answers: ${labels(view, trace.answerIds)}`];
         },
     },
     {
@@ -122,7 +122,7 @@ export const CAPABILITIES: readonly Capability[] = [
         summary: 'Sequence, writes and delegation edges.',
         run: ({ view }) => {
             const trace = downstream(view, target(view, 'action'));
-            return [`answers: ${[...trace.answerIds].join(', ') || 'none'}`];
+            return [`answers: ${labels(view, trace.answerIds)}`];
         },
     },
     {
@@ -132,7 +132,9 @@ export const CAPABILITIES: readonly Capability[] = [
         run: ({ view }) => {
             const found = failureDetails(view);
             return found.length
-                ? found.map((failure) => `${failure.id} · turn ${failure.turnNumber || '?'} · ${failure.label}`)
+                ? found.map((failure) =>
+                      `${failure.label}${failure.turnNumber > 0 ? ` · Turn ${failure.turnNumber}` : ''}`,
+                  )
                 : ['failures: none'];
         },
     },

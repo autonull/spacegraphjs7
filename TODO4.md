@@ -111,6 +111,7 @@ the progress block below records what has actually landed.
 1. The prior progress rows called these treatments done because the code existed. The rendered gallery is the authority: the treatments were invisible until this pass. Slice 3's visual claims are now true, not merely recorded.
 2. No contract field and no new renderer branch were added. `suppressLine` is an internal `Edge` flag, and the width change is a policy default plus a corrected interpolation, not a new mechanism.
 3. Context edges still render as thin `Line2` connectors by design; the long gray diagonals in the default cockpit remain. Shortening their reach is still a data change (`geometry.gap`/`repulsion`), not a renderer change.
+4. **Audit correction (2026-11-22):** the claim in item 3 does not hold for the tracked gallery. `geometry.gap` 190 → 140 and `showcase` repulsion 200 → 0 each produced byte-identical `cockpit` and `node-detail` PNGs: the cockpit shot pins `geometry.gap: 40` in its preset, repulsion fades before rest, and `renderer.fit` normalizes any uniform scale change. The long diagonals are structural to the fixture topology under a fitted camera. Removing them needs a fixture topology change or an explicit edge-style policy, not a knob tweak; both exceed a non-gated refinement.
 
 **Slice 5 — Node anatomy (2026-11-21): implemented in Pi, gates green, not promoted past the flagship.**
 
@@ -205,12 +206,65 @@ the progress block below records what has actually landed.
 4. Root AGENTS names `bun run check`, but `package.json` has no `check` script. Add one wrapping package
    typechecks so the fast loop has one unambiguous command.
 
+**Frame hygiene (2026-11-21): a screenshot audit found two overlapping frames and two awkward readouts.**
+
+| Item              | Status | Evidence                                                                                                                                                                                                                                                                                                                                                 |
+| ----------------- | ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Readout anchor    | done   | `#hud` moved inside `#canvas`, so it is positioned against the graph surface in every arrangement. `layout-stacked` no longer draws `EXECUTION/AUTO · …` over transcript rows. `app/pi/tests/shell.spec.ts` asserts the readout stays inside the canvas and above the stacked transcript.                                                                |
+| Catalog framing   | done   | `applyShot` re-fits after `toggleCatalog(true)`, matching the existing rail path. The `catalog` shot shows all nodes inside the canvas instead of clipping them at the 240px aside. The aside scrolls to the catalog's exact top, removing the partial line above the first question.                                                                       |
+| Readout language  | done   | `renderAttention` pluralizes counts (`1 failure · 4 files · test failed`); `app/pi/tests/browser.spec.ts` checks the semantic `file` text rather than the old `file(s)` literal.                                                                                                                                                                       |
+| Gates and review  | done   | `app/pi`: `check:fast` (134 unit tests, `tsc`) and the 14 shell/orchestration e2e tests green. All 12 shots recaptured and reviewed in `docs/screenshots/index.html`; the two affected shots were checked at zoom. No new token, policy knob or contract field.                                                                                          |
+
+**Clarifications that came out of this increment:**
+
+1. Anchoring the readout to the canvas also hides it on the log-only surface, where graph telemetry has
+   no meaning. That is the intended frame, not a regression.
+2. The long gray context diagonals and the light-theme card shade are deliberate data/geometry and
+   depth treatments, not chrome defects. Changing either would alter vision scores across every shot,
+   so neither was touched in this pass.
+3. The tiered loop in `app/pi/README.md` (`check:fast`, `e2e:chrome`, `shots:focus`, `shots:all`) was
+   used for this pass: two targeted shots first, the full gallery only after the gates were green.
+
+**Reading comfort (2026-11-21): the second screenshot pass found duplicated transcript detail and a heavy light-theme card shade.**
+
+| Item               | Status | Evidence                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| ------------------ | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Transcript focus   | done   | Expanded spine rows no longer repeat the row title and body. `renderTranscript` shows `kind · status` plus up to three bounded causal neighbors (`→ reads README.md`, `← contains Turn 3`), so expansion answers "what led here" instead of restating the message. `app/pi/tests/browser.spec.ts` asserts the detail carries a relation arrow and drops the duplicated text.                                                                                                                          |
+| Light-theme wash   | done   | `[data-rung]` keeps the 34% black shade in the dark HUD but uses `--sg-colors-foreground` at 12% under `[data-theme='light']`. The card retains one accent channel and a visible depth cue without reading as a bevel on white. The accent diagonal is unchanged.                                                                                                                                                                                                                  |
+| Gates and review   | done   | `cockpit`, `neon-cockpit` and `light-theme` recaptured and reviewed. `app/pi`: `check:fast` (134 unit tests), full e2e (87 tests) and `verify:visual` (18 vision tests) green; root `pnpm run check` green across 31 workspaces. No contract field, policy knob or token added.                                                                                                                                                                                                  |
+
+**Clarifications that came out of this increment:**
+
+1. Neighbor labels come from the already-built view; the cap of three keeps the detail bounded and the
+   relation text is the edge kind, so no second vocabulary is introduced.
+2. The light-theme shade is a token-derived variant of the same wash, not a new token role. Dark-theme
+   cards are byte-comparable; only the light shot changed.
+3. This pass stayed in the tiered loop: targeted e2e and three shots first, full e2e and vision at the
+   boundary.
+
+**Evidence legibility and control consistency (2026-11-22): the third pass found raw IDs in proof lines and one unstyled control.**
+
+| Item             | Status | Evidence                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| ---------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Readable proof   | done   | `why`, `led-here`, `downstream` and `failures` now use the same `labelOf` / `labels` helpers as the five question capabilities, so evidence lines name nodes instead of `pi:local:*`. Failure lines omit an unresolvable turn instead of printing `?`. `app/pi/tests/capabilities.test.ts` asserts no raw IDs or question marks in those four evidence lines.                                                                       |
+| Policy tools     | done   | The `changed only` toggle inherited the browser's default white button styling while its neighbours were token-styled. Added a base rule beside the search and provenance controls; the pressed state still uses the accent border and color. Recaptured `policy`; no behavior change.                                                                                                                                                                                                                                     |
+| Gates and review | done   | `node-detail`, `deep-focus`, `neon-cockpit` and `policy` recaptured and reviewed. `check:fast` green (135 unit tests). No new token, knob or contract field.                                                                                                                                                                                                                                                                                                                                                           |
+
+**Clarifications that came out of this increment:**
+
+1. The raw IDs remain available through the existing `__pi` hooks and exports; only the displayed
+   proof line changed. The study still records verbatim answers, not these derived evidence strings.
+2. The policy toggle's 44px target already came from the `#rail button` rule, so the style change did
+   not alter ergonomics.
+
 **Remaining work — both items gated, no work started (verified 2026-11-21):**
 
 | Item                             | Status | Gate that must open before work starts | Evidence the gate is closed today                                                                                                                                                                                                                                  |
 | -------------------------------- | ------ | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Motion and life (L1–L3, §6)      | parked | A recorded demand **and** a concrete with/without comparison | Neither exists in `TODO4.md`, `docs/`, `CHANGELOG.md` or `docs/screenshots/review.json`; `docs/not-decided.md:9` still asks whether animated camera flights help or annoy. Anatomy and composition settled, but §6 keeps L1–L3 parked because effects were flagged as overdone. |
 | Slice 4 — Proliferation (O5–O7)  | parked | A real non-Pi host importing `app/pi/src/shell` and `@spacegraphjs/shared/tokens` unchanged, with flagship behavior byte-comparable | No such host: `app/demo` imports mechanism-layer helpers only. `@spacegraphjs/shared/tokens` has one importer, `app/pi/src/shell/tokens.ts`; `app/pi/src/shell` is consumed only by Pi and its tests.                                                    |
+
+**Demand record (2026-11-22):** the user explicitly instructed "Continue with the Motion Track" after two earlier "Proceed" instructions and an explicit scope choice in which the motion track was offered. This satisfies the demand half of the motion gate. The comparison half is not met yet; the next deliverable is a concrete with/without capture before any preset or default changes. The row above stays parked until that comparison exists.
 
 **When a gate opens — exact next steps; no speculative work before then:**
 

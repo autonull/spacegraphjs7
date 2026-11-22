@@ -87,6 +87,19 @@ describe('card anatomy', () => {
         expect(message).not.toContain('anatomy-signal');
         expect(tool).toContain('anatomy-signal');
     });
+
+    test('detail rung reads as kind and status, with raw fields on hover', () => {
+        const node = {
+            ...nodeOf('failed'),
+            kind: 'approval',
+            status: 'pending',
+            data: { unitId: 'x6', role: 'approval' },
+        };
+        const card = anatomyCard(node, 'detail', context);
+        expect(card).toContain('Approval · Pending');
+        expect(card).not.toContain('unitId:');
+        expect(card).toContain('title="Unit Id: x6 · Role: approval"');
+    });
 });
 
 describe('lens anatomy', () => {

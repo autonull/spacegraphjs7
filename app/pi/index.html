@@ -63,10 +63,43 @@
                 background: transparent;
             }
             aside strong,
-            #rail strong {
+            #rail strong,
+            .rail-group > summary {
                 text-transform: uppercase;
                 letter-spacing: 0.1em;
                 color: var(--sg-colors-muted-foreground);
+            }
+            .rail-group > summary {
+                display: flex;
+                align-items: center;
+                gap: var(--sg-spacing-xs);
+                min-height: var(--sg-spacing-target);
+                padding: 0 var(--sg-spacing-xs);
+                border-inline-start: 2px solid var(--sg-colors-border);
+                cursor: pointer;
+                list-style: none;
+                font: inherit;
+                white-space: nowrap;
+            }
+            .rail-group > summary::-webkit-details-marker {
+                display: none;
+            }
+            .rail-group > summary::before {
+                content: '▾';
+                font-size: var(--sg-font-sizes-sm);
+                transform: rotate(-90deg);
+            }
+            .rail-group[open] > summary::before {
+                transform: none;
+            }
+            .rail-group[open] > summary {
+                border-inline-start-color: var(--sg-colors-accent);
+                color: var(--sg-colors-foreground);
+            }
+            .rail-group > div {
+                display: grid;
+                gap: var(--sg-spacing-sm);
+                padding: var(--sg-spacing-xs) 0 var(--sg-spacing-sm) var(--sg-spacing-sm);
             }
             aside,
             #rail {
@@ -105,7 +138,9 @@
             }
             #catalog summary,
             .catalog-heading {
-                color: var(--sg-colors-muted-foreground);
+                color: var(--sg-colors-foreground);
+                font-size: var(--sg-font-sizes-base);
+                font-weight: 600;
                 cursor: pointer;
                 list-style: none;
             }
@@ -125,7 +160,8 @@
             .catalog-note {
                 color: var(--sg-colors-muted-foreground);
                 font-size: var(--sg-font-sizes-xs);
-                margin: 0;
+                line-height: var(--sg-line-heights-normal);
+                margin: 0 0 var(--sg-spacing-xs);
             }
             #gallery button,
             #catalog a,
@@ -160,9 +196,31 @@
                 color: var(--sg-colors-muted-foreground);
             }
             #attention {
-                color: var(--sg-colors-warning);
+                display: inline-flex;
+                align-items: center;
+                gap: var(--sg-spacing-xs);
                 margin-inline-start: auto;
-                text-align: end;
+                padding: var(--sg-spacing-hair) var(--sg-spacing-sm);
+                border: 1px solid var(--sg-colors-border);
+                color: var(--sg-colors-muted-foreground);
+                font-size: var(--sg-font-sizes-lg);
+                font-weight: 600;
+                font-variant-numeric: tabular-nums;
+                white-space: nowrap;
+            }
+            #attention::before {
+                content: '';
+                width: 6px;
+                height: 6px;
+                flex: 0 0 auto;
+                background: var(--sg-colors-success);
+            }
+            #attention[data-severity='failure'] {
+                border-color: var(--sg-colors-destructive);
+                color: var(--sg-colors-foreground);
+            }
+            #attention[data-severity='failure']::before {
+                background: var(--sg-colors-destructive);
             }
             #follow-state {
                 color: var(--sg-colors-muted-foreground);
@@ -448,6 +506,15 @@
             .anatomy-signal i {
                 width: 3px;
                 background: currentColor;
+            }
+            /* Two identical names let a new activity event restart the capped pulse. */
+            @keyframes pi-pulse-a {
+                0%, 100% { filter: brightness(1); }
+                45% { filter: brightness(1.16); }
+            }
+            @keyframes pi-pulse-b {
+                0%, 100% { filter: brightness(1); }
+                45% { filter: brightness(1.16); }
             }
             .anatomy-row {
                 display: block;
@@ -1051,7 +1118,7 @@
                 letter-spacing: 0.06em;
             }
             .inspector-title {
-                color: var(--sg-colors-muted-foreground);
+                display: none;
             }
             .inspector-tabs {
                 display: flex;
@@ -1197,6 +1264,11 @@
                 align-items: center;
                 justify-content: space-between;
             }
+            #transcript-bar strong {
+                color: var(--sg-colors-foreground);
+                font-size: var(--sg-font-sizes-base);
+                font-weight: 600;
+            }
             #transcript-toggle {
                 border: 0;
                 background: none;
@@ -1324,9 +1396,11 @@
                 white-space: normal;
                 border: 1px solid transparent;
                 border-radius: 6px;
-                padding: var(--sg-spacing-xs) var(--sg-spacing-sm);
+                padding: var(--sg-spacing-sm);
                 background: var(--sg-colors-muted);
                 color: var(--sg-colors-foreground);
+                font-size: var(--sg-font-sizes-lg);
+                line-height: var(--sg-line-heights-normal);
                 cursor: pointer;
             }
             .transcript-row[data-revealed='true'] {
@@ -1345,9 +1419,9 @@
                 margin-inline-start: var(--sg-spacing-sm);
                 padding: var(--sg-spacing-xs) var(--sg-spacing-sm);
                 border-inline-start: 1px solid var(--sg-colors-border);
-                color: var(--sg-colors-muted-foreground);
-                font-size: var(--sg-font-sizes-xs);
-                line-height: 1.5;
+                color: var(--sg-colors-foreground);
+                font-size: var(--sg-font-sizes-sm);
+                line-height: var(--sg-line-heights-normal);
                 overflow-wrap: anywhere;
             }
             .spine-row[data-expanded='true'] .transcript-detail {
@@ -1384,6 +1458,19 @@
                         transparent 62%
                     ),
                     linear-gradient(0deg, color-mix(in srgb, #000 34%, transparent), transparent 60%);
+            }
+            :root[data-theme='light'] [data-rung] {
+                background:
+                    linear-gradient(
+                        150deg,
+                        color-mix(in srgb, var(--kind-accent, var(--sg-colors-accent)) 20%, transparent),
+                        transparent 62%
+                    ),
+                    linear-gradient(
+                        0deg,
+                        color-mix(in srgb, var(--sg-colors-foreground) 12%, transparent),
+                        transparent 60%
+                    );
             }
             .rung-shape {
                 box-shadow:
@@ -1517,6 +1604,16 @@
                 font: inherit;
                 font-size: var(--sg-font-sizes-xs);
             }
+            .policy-tools [data-changed-only] {
+                padding: var(--sg-spacing-xs);
+                border: 1px solid var(--sg-colors-border);
+                border-radius: 3px;
+                background: transparent;
+                color: var(--sg-colors-foreground);
+                font: inherit;
+                font-size: var(--sg-font-sizes-xs);
+                cursor: pointer;
+            }
             .policy-tools [data-changed-only][aria-pressed='true'] {
                 border-color: var(--sg-colors-accent);
                 color: var(--sg-colors-accent);
@@ -1538,8 +1635,17 @@
                 font-size: var(--sg-font-sizes-xs);
             }
             .catalog-card > summary {
-                display: grid;
-                gap: 2px;
+                display: flex;
+                align-items: baseline;
+                gap: var(--sg-spacing-xs);
+            }
+            .catalog-card > summary::before {
+                content: '▸';
+                color: var(--sg-colors-accent);
+                font-size: var(--sg-font-sizes-xs);
+            }
+            .catalog-card[open] > summary::before {
+                content: '▾';
             }
             .catalog-card-title {
                 color: var(--sg-colors-foreground);
@@ -1629,6 +1735,14 @@
                     <button type="button" id="rail-toggle" aria-label="Toggle instruments rail">
                         rail
                     </button>
+                    <button
+                        type="button"
+                        id="diagnostics-toggle"
+                        aria-pressed="false"
+                        aria-label="Toggle HUD diagnostics"
+                    >
+                        diagnostics
+                    </button>
                 </div>
             </details>
         </header>
@@ -1640,8 +1754,9 @@
             </details>
         </aside>
         <main id="surface" data-surface="hybrid" data-arrangement="side">
-            <div id="canvas"></div>
-            <div id="hud" aria-label="Heads-up display">starting…</div>
+            <div id="canvas">
+                <div id="hud" aria-label="Heads-up display">starting…</div>
+            </div>
             <div id="first-run-hint" class="first-run-hint" role="status" hidden>
                 <span>Double-click an edge to travel · <kbd>/</kbd> lists every verb</span>
                 <button type="button" aria-label="Dismiss hint">×</button>
@@ -1674,79 +1789,99 @@
                 <summary>Policy · live knobs</summary>
                 <div id="policy-panel"></div>
             </details>
-            <strong>Scopes</strong>
-            <div id="overview"></div>
-            <strong>Turn map</strong>
-            <div id="turn-map"></div>
-            <strong>Trail</strong>
-            <div id="trail-nav">
-                <button type="button" id="trail-back" aria-label="Back">← Back</button>
-                <button type="button" id="trail-forward" aria-label="Forward">Forward →</button>
-            </div>
-            <div id="trail-list"></div>
-            <strong>Portal path</strong>
-            <div id="portal-crumb"></div>
-            <strong>Minimap</strong>
-            <div id="minimap"></div>
-            <strong>Instruments</strong>
-            <div id="instrument-kit"></div>
-            <strong>Vision loop</strong>
-            <button type="button" id="vision-loop-toggle">Toggle runtime vision loop</button>
-            <div id="vision-loop-state">off · strategy heuristics</div>
-            <div>Opt-in: analyze → retarget layout → measure again. No mutation until enabled.</div>
-            <strong>Export</strong>
-            <div id="export-buttons">
-                <button type="button" id="export-json">JSON</button>
-                <button type="button" id="export-svg">SVG</button>
-                <button type="button" id="export-html">HTML</button>
-            </div>
-            <strong>Reviewer notes</strong>
-            <div id="annotation-target">selected: none</div>
-            <div id="annotation-list"></div>
-            <form id="annotation-form">
-                <input
-                    id="annotation-input"
-                    placeholder="Note for selected node"
-                    aria-label="Reviewer note"
-                />
-                <button type="button" id="annotation-add">Pin</button>
-            </form>
-            <strong>Report</strong>
-            <button type="button" id="report-download">Download audit report</button>
-            <strong>Playground</strong>
-            <div id="playground">
-                <select id="play-preset" aria-label="Play preset">
-                    <option value="zero-g">zero-g</option>
-                    <option value="orbit">orbit</option>
-                    <option value="gravity-well">gravity-well</option>
-                </select>
-                <button type="button" id="play-start">Play</button>
-                <button type="button" id="play-reconcile">Reconcile</button>
-                <div id="play-energy">energy 0.000</div>
+            <details id="rail-navigate" class="rail-group" open>
+                <summary>Navigate</summary>
                 <div>
-                    ScopeSimulation owns coordinates; physics borrows a bounded set and reconciles
-                    at rest.
+                    <strong>Scopes</strong>
+                    <div id="overview"></div>
+                    <strong>Turn map</strong>
+                    <div id="turn-map"></div>
+                    <strong>Trail</strong>
+                    <div id="trail-nav">
+                        <button type="button" id="trail-back" aria-label="Back">← Back</button>
+                        <button type="button" id="trail-forward" aria-label="Forward">Forward →</button>
+                    </div>
+                    <div id="trail-list"></div>
+                    <strong>Portal path</strong>
+                    <div id="portal-crumb"></div>
+                    <strong>Minimap</strong>
+                    <div id="minimap"></div>
                 </div>
-            </div>
-            <strong>Guided replay</strong>
-            <button type="button" id="guided-replay">Replay the five questions</button>
-            <strong>Share</strong>
-            <button type="button" id="permalink-copy">Copy full-state link</button>
-            <strong>Mouse map</strong>
-            <div id="mouse-map">
-                right-drag pan · wheel zoom · middle-drag orbit · click select · node drag ·
-                shift-drag box-select
-            </div>
-            <strong>Keyboard</strong>
-            <div id="keyboard-map">
-                arrows pan · +/− zoom · Enter reveal · PgDn/PgUp descend/ascend · t trace · Home/Esc
-                return · f focus
-            </div>
-            <strong>Known limitations</strong>
-            <div id="limitations">
-                WebXR, sound and haptics are report-only seams; no immersive default. True FlowEdge
-                dash animation belongs to the engine-mode page.
-            </div>
+            </details>
+            <details id="rail-inspect" class="rail-group" open>
+                <summary>Inspect</summary>
+                <div>
+                    <strong>Instruments</strong>
+                    <div id="instrument-kit"></div>
+                    <strong>Vision loop</strong>
+                    <button type="button" id="vision-loop-toggle">Toggle runtime vision loop</button>
+                    <div id="vision-loop-state">off · strategy heuristics</div>
+                    <div>Opt-in: analyze → retarget layout → measure again. No mutation until enabled.</div>
+                </div>
+            </details>
+            <details id="rail-share" class="rail-group">
+                <summary>Review</summary>
+                <div>
+                    <strong>Export</strong>
+                    <div id="export-buttons">
+                        <button type="button" id="export-json">JSON</button>
+                        <button type="button" id="export-svg">SVG</button>
+                        <button type="button" id="export-html">HTML</button>
+                    </div>
+                    <strong>Reviewer notes</strong>
+                    <div id="annotation-target">selected: none</div>
+                    <div id="annotation-list"></div>
+                    <form id="annotation-form">
+                        <input
+                            id="annotation-input"
+                            placeholder="Note for selected node"
+                            aria-label="Reviewer note"
+                        />
+                        <button type="button" id="annotation-add">Pin</button>
+                    </form>
+                    <strong>Report</strong>
+                    <button type="button" id="report-download">Download audit report</button>
+                    <strong>Share</strong>
+                    <button type="button" id="permalink-copy">Copy full-state link</button>
+                </div>
+            </details>
+            <details id="rail-learn" class="rail-group">
+                <summary>Reference</summary>
+                <div>
+                    <strong>Playground</strong>
+                    <div id="playground">
+                        <select id="play-preset" aria-label="Play preset">
+                            <option value="zero-g">zero-g</option>
+                            <option value="orbit">orbit</option>
+                            <option value="gravity-well">gravity-well</option>
+                        </select>
+                        <button type="button" id="play-start">Play</button>
+                        <button type="button" id="play-reconcile">Reconcile</button>
+                        <div id="play-energy">energy 0.000</div>
+                        <div>
+                            ScopeSimulation owns coordinates; physics borrows a bounded set and
+                            reconciles at rest.
+                        </div>
+                    </div>
+                    <strong>Guided replay</strong>
+                    <button type="button" id="guided-replay">Replay the five questions</button>
+                    <strong>Mouse map</strong>
+                    <div id="mouse-map">
+                        right-drag pan · wheel zoom · middle-drag orbit · click select · node drag ·
+                        shift-drag box-select
+                    </div>
+                    <strong>Keyboard</strong>
+                    <div id="keyboard-map">
+                        arrows pan · +/− zoom · Enter reveal · PgDn/PgUp descend/ascend · t trace ·
+                        Home/Esc return · f focus
+                    </div>
+                    <strong>Known limitations</strong>
+                    <div id="limitations">
+                        WebXR, sound and haptics are report-only seams; no immersive default. True
+                        FlowEdge dash animation belongs to the engine-mode page.
+                    </div>
+                </div>
+            </details>
         </section>
         <footer>
             <form id="prompt-form">

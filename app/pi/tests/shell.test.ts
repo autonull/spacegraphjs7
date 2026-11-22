@@ -16,7 +16,8 @@ describe('the shell token layer', () => {
         expect(HUD_TOKENS.dark!.colors.background).toBe('#000000');
         expect(HUD_TOKENS.light!.colors.background).toBe('#f7f7f7');
         expect(HUD_TOKENS.dark!.radii.none).toBe('0px');
-        expect(HUD_TOKENS.dark!.fontSizes.micro).toBe('10px');
+        expect(HUD_TOKENS.dark!.fontSizes.micro).toBe('11px');
+        expect(HUD_TOKENS.dark!.fontSizes.nano).toBe('10px');
         expect(HUD_TOKENS.dark!.spacing.hair).toBe('2px');
     });
 
@@ -25,7 +26,7 @@ describe('the shell token layer', () => {
         expect(css).toContain(':root {');
         expect(css).toContain(":root[data-theme='light'] {");
         expect(css).toContain('--sg-colors-background: #000000;');
-        expect(css).toContain('--sg-font-sizes-micro: 10px;');
+        expect(css).toContain('--sg-font-sizes-micro: 11px;');
         expect(css).not.toContain('--pi-');
     });
 });

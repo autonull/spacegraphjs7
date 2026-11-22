@@ -94,8 +94,20 @@ export const anatomyStatusDot = (status: string): string =>
 export const anatomySignal = (heights: readonly number[]): string =>
     `<span class="anatomy-signal" aria-hidden="true">${heights.map((height) => `<i style="height:${Math.round(height * 100)}%"></i>`).join('')}</span>`;
 
-export const anatomyRow = (content: string, tone: 'body' | 'meta' = 'body', extraClass = ''): string =>
-    `<span class="anatomy-row${extraClass ? ` ${extraClass}` : ''}" data-tone="${tone}">${content}</span>`;
+/** Display label for an internal value: `read-tool` -> `Read Tool`. */
+const human = (value: string): string =>
+    value
+        .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+        .replace(/[_-]+/g, ' ')
+        .replace(/\b\w/g, (char) => char.toUpperCase());
+
+export const anatomyRow = (
+    content: string,
+    tone: 'body' | 'meta' = 'body',
+    extraClass = '',
+    title = '',
+): string =>
+    `<span class="anatomy-row${extraClass ? ` ${extraClass}` : ''}" data-tone="${tone}"${title ? ` title="${escapeHtml(title)}"` : ''}>${content}</span>`;
 
 export const anatomyPort = (role: 'source' | 'target', side: PortSide): string =>
     `<i class="anatomy-port" data-port="${role}" data-side="${side}" aria-hidden="true"></i>`;
@@ -173,12 +185,11 @@ export const anatomyCard = (
     const telemetry = Object.entries(node.data ?? {})
         .filter(([key, value]) => key !== 'ports' && (typeof value === 'string' || typeof value === 'number'))
         .slice(0, 3)
-        .map(([key, value]) => `<span style="opacity:.7">${escapeHtml(key)}: ${escapeHtml(String(value))}</span>`)
-        .join(' · ');
-    const metaline = telemetry || `${escapeHtml(node.kind)} · ${status}`;
+        .map(([key, value]) => `${human(key)}: ${value}`);
+    const metaline = escapeHtml(`${human(node.kind)} · ${human(status)}`);
     const scope = node.scope ? anatomyRow(`${portalGlyph(node.scope)} scope: ${escapeHtml(node.scope)}`, 'meta') : '';
     const statusDot = anatomyStatusDot(status);
-    return `<div ${attributes} class="anatomy" style="${box};justify-content:flex-start;gap:var(--sg-spacing-xs)">${SHAPE_SPAN}${anatomyHeader(`${glyph}${label}`, labelSize, `${statusDot}${badge}`)}${anatomyRow(detail.slice(0, 320), 'body', 'anatomy-row-wrap')}${anatomyRow(metaline, 'meta', 'anatomy-row-wrap')}${scope}${ports}</div>`;
+    return `<div ${attributes} class="anatomy" style="${box};justify-content:flex-start;gap:var(--sg-spacing-xs)">${SHAPE_SPAN}${anatomyHeader(`${glyph}${label}`, labelSize, `${statusDot}${badge}`)}${anatomyRow(detail.slice(0, 320), 'body', 'anatomy-row-wrap')}${anatomyRow(metaline, 'meta', 'anatomy-row-wrap', telemetry.join(' · '))}${scope}${ports}</div>`;
 };
 
 /** The inspector lens is the detail rung enlarged: same parts, plus the bounded inner topology. */
