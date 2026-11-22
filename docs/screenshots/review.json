@@ -7,18 +7,21 @@
         "verdict": "kept",
         "note": "Detail rung over wide cyan flux ribbons and a soft field; inner chips stay legible. Long causal edges are real cross-scope relations."
     },
-    "deep-focus": {},
+    "deep-focus": {
+        "verdict": "kept",
+        "note": "Opt-in focus scale and dimmed context still read cleanly over the flux field. Lens stays anchored and bounded; the large focused card keeps its square language."
+    },
     "fractal": {
         "verdict": "kept",
-        "note": "Inner chips now read as graph nodes: boundary-anchored directed spokes, start/end ports and failed/error status color. Same bounded depth ≤ 2 tree; no renderer branch."
+        "note": "Inner chips now read as graph nodes: boundary-anchored directed spokes, start/end ports and failed/error status color. Same bounded depth <= 2 tree; no renderer branch."
     },
     "recursion": {
         "verdict": "kept",
-        "note": "Depth-3 bounded recursion with the INNER tab and radial graph layout. Lens dimensions derive from the focused node's on-screen footprint (clamped 300–420 × 210–300 px). Settled + six intermediate frames pass vision gates; chip re-entry rebuilds the lens instead of growing DOM. Lane layout at six chips was too short to read, so the shot pins radial."
+        "note": "Depth-3 bounded recursion with the INNER tab and radial graph layout. Lens dimensions derive from the focused node's on-screen footprint (clamped 300-420 x 210-300 px). Settled plus six intermediate frames pass vision gates; chip re-entry rebuilds the lens instead of growing DOM. Lane layout at six chips was too short to read, so the shot pins radial."
     },
     "fit-wide-far": {
         "verdict": "kept",
-        "note": "Far octave (fit × 0.5), wide canvas. Core LOD hides card interiors at the scale floor; the frame reads as topology. Vision gate passes."
+        "note": "Far octave (fit x 0.5), wide canvas. Core LOD hides card interiors at the scale floor; the frame reads as topology. Vision gate passes."
     },
     "fit-wide-mid": {
         "verdict": "kept",
@@ -26,11 +29,11 @@
     },
     "fit-wide-near": {
         "verdict": "kept",
-        "note": "Near octave (fit × 2) on the wide canvas; detail rung stays legible."
+        "note": "Near octave (fit x 2) on the wide canvas; detail rung stays legible."
     },
     "fit-narrow-far": {
         "verdict": "kept",
-        "note": "Far octave on the 900×1000 canvas; topology-only by core LOD, gate passes."
+        "note": "Far octave on the 900x1000 canvas; topology-only by core LOD, gate passes."
     },
     "fit-narrow-mid": {
         "verdict": "kept",
@@ -48,12 +51,21 @@
         "verdict": "kept",
         "note": "Motion L1/L3 opt-in preset: one-shot active-card pulse and longer rung/camera clocks. Comparison evidence in motion/; reduced motion reaches the same settled state. Not a default (ADR 0008)."
     },
-    "dynamic-range": {},
-    "layout-stacked": {},
-    "layout-floating": {},
+    "dynamic-range": {
+        "verdict": "kept",
+        "note": "Scale floor on starfield: card interiors yield to topology by core LOD, and ring artifacts merge with the field. Flux filaments remain distinguishable at low zoom."
+    },
+    "layout-stacked": {
+        "verdict": "kept",
+        "note": "Transcript below the graph leaves the flux field intact; readout stays inside the canvas and the panel does not clip node cards."
+    },
+    "layout-floating": {
+        "verdict": "kept",
+        "note": "Collapsed floating transcript gives the graph the full canvas; compact scope rows stay readable with the wider field."
+    },
     "neon-cockpit": {
         "verdict": "kept",
-        "note": "Quantum-field read: additive edge halos and per-node field gradients merge; compact scope rows replace the old force spread."
+        "note": "Emissive palette over the dark gradient field; additive edge halos are subtle and cards remain square and legible."
     },
     "aurora-map": {
         "verdict": "kept",
@@ -61,8 +73,14 @@
     },
     "light-theme": {
         "verdict": "kept",
-        "note": "Field switches to multiply in light theme so halos stay visible without washing out cards; flux edges keep contrast."
+        "note": "Field uses reduced opacity instead of a blend mode in light theme; halos stay visible without washing out cards, and flux edges keep contrast."
     },
-    "catalog": {},
-    "policy": {}
+    "catalog": {
+        "verdict": "kept",
+        "note": "Proof catalog lists every preset and question without claiming a winner; drawer overlay does not hide the flux graph or break fit."
+    },
+    "policy": {
+        "verdict": "kept",
+        "note": "Live policy panel shows provenance badges by family; quiet preset values remain distinguishable in the narrower canvas."
+    }
 }

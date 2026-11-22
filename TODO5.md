@@ -60,7 +60,8 @@ treats them as such rather than as four independent tickets.
   the existing `MotionDirector` with `camera.verbMs` / `camera.traceMs`.
 - **Comparison artifacts exist**: `docs/screenshots/motion/{with.png,without.png,comparison.json}` and
   `app/pi/tests/motion.spec.ts` (2 tests pass).
-- **Not done**: L2 ribbon flow; opt-in preset promotion with provenance; TODO4 motion row still parked.
+- **Closed 2026-11-22**: L2 recorded as deferred with reason; opt-in `living-graph` preset has provenance;
+  `TODO4.md` motion row gate opened. A default change still needs the ADR 0008 human comparison.
 
 ### Pixel identity is not a gate
 
@@ -120,8 +121,8 @@ Inherited from `TODO4.md:3` and the repo rules; apply to every phase.
 | 2 — Adaptive fit | complete | `app/pi/src/policy/adaptive-fit.ts`; aspect insets + bounded refit in `host.ts`; ADR 0015; six `fit-*` shots; shell refit test; vision gate over 3 octaves × 2 aspects | Optional: revisit the quarter-octave threshold with real resize telemetry |
 | 3 — Density | complete | Opt-in `dense-type` preset/shot; CSS-variable card padding and label scale; height-only footprint reduction; unit test; vision gate over the fit matrix | Promote to default only after a recorded comparison (ADR 0008) |
 | 4 — Recursion | complete | Directed spokes/ports/status in every lens layout; autoscaling lens; `recursion` shot; settled + intermediate-frame vision gate; `focus-lens.spec.ts` passes | Second consumer stays gated at `TODO4.md:265` (out of scope) |
-| 5 — Verification | complete (2026-11-22) | `pnpm run check` green; e2e 103 passed + 1 pre-existing navigation flake; `verify:visual` 21/21; `scale` budgets met; `shots:all` 23/23; gallery reviewed | Commit, then leave the two external decisions (§7) untouched |
-| Style revision | complete (2026-11-22) | ADR 0016: registered `FluxEdge`, field halos, ring artifacts, grid-packed unit scopes, aurora defaults. Mockup refinement (dark navy gradient, arrowheads, square cards/status, no blur/blend, glow 0.2). `check` green; e2e 104/104; visual 21/21; scale met; `shots:all` 23/23 | Commit; long cross-unit `orders` diagonals remain by topology, not as sticks |
+| 5 — Verification | complete (2026-11-22) | `pnpm run check` green; e2e 104/104; `verify:visual` 21/21; `scale` budgets met; `shots:all` 23/23; gallery reviewed | Leave the two external decisions (§7) untouched |
+| Style revision | complete (2026-11-22) | ADR 0016: registered `FluxEdge`, field halos, ring artifacts, grid-packed unit scopes, aurora defaults. Mockup refinement (dark navy gradient, arrowheads, square cards/status, no blur/blend, glow 0.2). `check` green; e2e 104/104; visual 21/21; scale met; `shots:all` 23/23 | Long cross-unit `orders` diagonals remain by topology, not as sticks |
 
 Decisions resolved in §7; gate results and review verdicts belong in `docs/screenshots/review.json`.
 
@@ -231,9 +232,9 @@ settled + intermediate-frame gates.
 
 ### Phase 5 — Verification, dev loop and handoff
 
-**Status: complete (2026-11-22).** Root `pnpm run check`, `check:fast`, e2e (103 passed, 1 known navigation
-flake), `verify:visual` (21/21), `scale` (all budgets met) and `shots:all` (23/23) are green. Review
-verdicts are in `docs/screenshots/review.json`; the commit is the final step.
+**Status: complete (2026-11-22).** Root `pnpm run check`, `check:fast`, e2e (104/104), `verify:visual`
+(21/21), `scale` (all budgets met) and `shots:all` (23/23) are green. Every gallery shot has a review
+verdict in `docs/screenshots/review.json`; the commits are `dd39f30`, `643185c` and `16a378e`.
 
 1. Keep the tiered loop: `verify:fast` (types + 136 unit + 15 chrome e2e), `shots:focus` (4 shots),
    `shots:all` (full gallery only at a slice boundary), `shot --watch` for visual iteration.
