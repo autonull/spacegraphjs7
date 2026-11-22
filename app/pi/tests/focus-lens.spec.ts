@@ -61,3 +61,32 @@ test('a chip control focuses that node without resizing it', async ({ page }) =>
         .not.toBe(before.revealed);
     expect(await page.evaluate(() => (window as any).__pi.viewport().zoom)).toBe(before.size);
 });
+
+test('the lens leaves its source card readable in the node-detail shot', async ({ page }) => {
+    await page.setViewportSize({ width: 1600, height: 1000 });
+    await page.goto('/?shot=node-detail');
+    await page.waitForFunction(() => (window as any).__pi?.ready === true);
+    await expect(page.locator('#canvas canvas').first()).toBeVisible();
+    await page.evaluate(() => (window as any).__pi.settle());
+    await expect
+        .poll(
+            () =>
+                page.evaluate(() => {
+                    const lens = document.querySelector('#focus-lens')!.getBoundingClientRect();
+                    const focus = (window as any).__pi.revealed();
+                    const card = document.getElementById(`node-html-${focus}`)?.getBoundingClientRect();
+                    if (!card) return 1;
+                    const width = Math.max(
+                        0,
+                        Math.min(lens.right, card.right) - Math.max(lens.left, card.left),
+                    );
+                    const height = Math.max(
+                        0,
+                        Math.min(lens.bottom, card.bottom) - Math.max(lens.top, card.top),
+                    );
+                    return (width * height) / Math.min(lens.width * lens.height, card.width * card.height);
+                }),
+            { timeout: 8000 },
+        )
+        .toBeLessThan(0.1);
+});

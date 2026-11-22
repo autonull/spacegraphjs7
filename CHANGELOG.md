@@ -93,6 +93,11 @@ follow the workflow in `docs/ROADMAP.md` (`test:publish` → build → npm).
 
 ### Fixed
 
+- Pi fresh-audit follow-up (TODO6): the light-theme canvas readout now uses a light grayscale HUD token
+  instead of the dark theme foreground (1.1:1 → 17.7:1); catalog summaries are 44px square bordered
+  rows; label typography reserves glyph and padding width so packed portal and role labels no longer
+  truncate; and the focus lens measures its source card and moves into free canvas space. The four
+  fixes are gated by unit and browser assertions, and all gallery shots were recaptured with verdicts.
 - Pi frame hygiene: the readout is anchored to the canvas so it no longer overlaps the transcript in
   the stacked arrangement; the proof catalog reframes after opening so its graph nodes are not clipped;
   the attention badge uses natural plurals and the catalog scroll starts at its first question.

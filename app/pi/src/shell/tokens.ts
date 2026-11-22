@@ -11,6 +11,7 @@ type ShellColors = DesignTokens['colors'] & {
     readonly edge: string;
     readonly edgeMuted: string;
     readonly selection: string;
+    readonly canvasText: string;
 };
 type ShellFontSizes = DesignTokens['fontSizes'] & { readonly micro: string; readonly nano: string };
 type ShellSpacing = DesignTokens['spacing'] & {
@@ -63,6 +64,7 @@ export const HUD_TOKENS: Readonly<Record<'dark' | 'light', ShellTokens>> = {
         edge: '#6b6b6b',
         edgeMuted: '#3a3a3a',
         selection: '#e5e5e5',
+        canvasText: '#f2f2f2',
     }),
     light: tokenSet(defaultTokens, {
         primary: '#3f3f3f',
@@ -88,6 +90,7 @@ export const HUD_TOKENS: Readonly<Record<'dark' | 'light', ShellTokens>> = {
         edge: '#6b6b6b',
         edgeMuted: '#b3b3b3',
         selection: '#2b2b2b',
+        canvasText: '#f2f2f2',
     }),
 };
 

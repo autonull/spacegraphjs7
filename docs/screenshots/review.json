@@ -1,86 +1,86 @@
 {
-    "cockpit": {
-        "verdict": "kept",
-        "note": "Mockup-informed dark field: deep navy gradient, node-core dots, arrowed teal flux, square status chips and square cards. No blur or blend-mode compositing; cross-unit orders diagonals are topology, not sticks."
-    },
-    "node-detail": {
-        "verdict": "kept",
-        "note": "Detail rung over wide cyan flux ribbons and a soft field; inner chips stay legible. Long causal edges are real cross-scope relations."
-    },
-    "deep-focus": {
-        "verdict": "kept",
-        "note": "Opt-in focus scale and dimmed context still read cleanly over the flux field. Lens stays anchored and bounded; the large focused card keeps its square language."
-    },
-    "fractal": {
-        "verdict": "kept",
-        "note": "Inner chips now read as graph nodes: boundary-anchored directed spokes, start/end ports and failed/error status color. Same bounded depth <= 2 tree; no renderer branch."
-    },
-    "recursion": {
-        "verdict": "kept",
-        "note": "Depth-3 bounded recursion with the INNER tab and radial graph layout. Lens dimensions derive from the focused node's on-screen footprint (clamped 300-420 x 210-300 px). Settled plus six intermediate frames pass vision gates; chip re-entry rebuilds the lens instead of growing DOM. Lane layout at six chips was too short to read, so the shot pins radial."
-    },
-    "fit-wide-far": {
-        "verdict": "kept",
-        "note": "Far octave (fit x 0.5), wide canvas. Core LOD hides card interiors at the scale floor; the frame reads as topology. Vision gate passes."
-    },
-    "fit-wide-mid": {
-        "verdict": "kept",
-        "note": "Ergonomic target octave on the wide canvas: cards and labels fit inside aspect-derived insets."
-    },
-    "fit-wide-near": {
-        "verdict": "kept",
-        "note": "Near octave (fit x 2) on the wide canvas; detail rung stays legible."
-    },
-    "fit-narrow-far": {
-        "verdict": "kept",
-        "note": "Far octave on the 900x1000 canvas; topology-only by core LOD, gate passes."
-    },
-    "fit-narrow-mid": {
-        "verdict": "kept",
-        "note": "Narrow-canvas target octave; lateral insets are halved so the graph still fits and stays legible."
-    },
-    "fit-narrow-near": {
-        "verdict": "kept",
-        "note": "Near octave on the narrow canvas; no overlap regression."
-    },
-    "dense-type": {
-        "verdict": "kept",
-        "note": "Opt-in preset (ladder.minLabelPx 18): tighter card padding, one-step larger body/meta rows and shorter card height. Width is unchanged so raised labels do not truncate. Vision gates pass across all six fit cells; not a default (ADR 0008)."
-    },
-    "living-graph": {
-        "verdict": "kept",
-        "note": "Motion L1/L3 opt-in preset: one-shot active-card pulse and longer rung/camera clocks. Comparison evidence in motion/; reduced motion reaches the same settled state. Not a default (ADR 0008)."
-    },
-    "dynamic-range": {
-        "verdict": "kept",
-        "note": "Scale floor on starfield: card interiors yield to topology by core LOD, and ring artifacts merge with the field. Flux filaments remain distinguishable at low zoom."
-    },
-    "layout-stacked": {
-        "verdict": "kept",
-        "note": "Transcript below the graph leaves the flux field intact; readout stays inside the canvas and the panel does not clip node cards."
-    },
-    "layout-floating": {
-        "verdict": "kept",
-        "note": "Collapsed floating transcript gives the graph the full canvas; compact scope rows stay readable with the wider field."
-    },
-    "neon-cockpit": {
-        "verdict": "kept",
-        "note": "Emissive palette over the dark gradient field; additive edge halos are subtle and cards remain square and legible."
-    },
-    "aurora-map": {
-        "verdict": "kept",
-        "note": "Map surface keeps the flux filaments legible at full scope; rings replace solid artifact balls."
-    },
-    "light-theme": {
-        "verdict": "kept",
-        "note": "Field uses reduced opacity instead of a blend mode in light theme; halos stay visible without washing out cards, and flux edges keep contrast."
-    },
-    "catalog": {
-        "verdict": "kept",
-        "note": "Proof catalog lists every preset and question without claiming a winner; drawer overlay does not hide the flux graph or break fit."
-    },
-    "policy": {
-        "verdict": "kept",
-        "note": "Live policy panel shows provenance badges by family; quiet preset values remain distinguishable in the narrower canvas."
-    }
+  "cockpit": {
+    "verdict": "kept",
+    "note": "Mockup-informed dark field: deep navy gradient, node-core dots, arrowed teal flux, square status chips and square cards. No blur or blend-mode compositing; cross-unit orders diagonals are topology, not sticks."
+  },
+  "node-detail": {
+    "verdict": "kept",
+    "note": "Detail rung over wide cyan flux ribbons and a soft field; inner chips stay legible. The focus lens now sits in free canvas space below its source card, leaving the failed status chip readable (AUDIT-04). Long causal edges are real cross-scope relations."
+  },
+  "deep-focus": {
+    "verdict": "kept",
+    "note": "Opt-in focus scale and dimmed context still read cleanly over the flux field. Lens stays anchored and bounded; the large focused card keeps its square language."
+  },
+  "fractal": {
+    "verdict": "kept",
+    "note": "Inner chips now read as graph nodes: boundary-anchored directed spokes, start/end ports and failed/error status color. Same bounded depth <= 2 tree; no renderer branch."
+  },
+  "recursion": {
+    "verdict": "kept",
+    "note": "Depth-3 bounded recursion with the INNER tab and radial graph layout. Lens dimensions derive from the focused node's on-screen footprint (clamped 300-420 x 210-300 px). Settled plus six intermediate frames pass vision gates; chip re-entry rebuilds the lens instead of growing DOM. Lane layout at six chips was too short to read, so the shot pins radial."
+  },
+  "fit-wide-far": {
+    "verdict": "kept",
+    "note": "Far octave (fit x 0.5), wide canvas. Core LOD hides card interiors at the scale floor; the frame reads as topology. Vision gate passes."
+  },
+  "fit-wide-mid": {
+    "verdict": "kept",
+    "note": "Ergonomic target octave on the wide canvas: cards and labels fit inside aspect-derived insets."
+  },
+  "fit-wide-near": {
+    "verdict": "kept",
+    "note": "Near octave (fit x 2) on the wide canvas; detail rung stays legible."
+  },
+  "fit-narrow-far": {
+    "verdict": "kept",
+    "note": "Far octave on the 900x1000 canvas; topology-only by core LOD, gate passes."
+  },
+  "fit-narrow-mid": {
+    "verdict": "kept",
+    "note": "Narrow-canvas target octave; lateral insets are halved so the graph still fits. Primary labels keep a reserved lane after AUDIT-03, so portal and role labels are no longer truncated."
+  },
+  "fit-narrow-near": {
+    "verdict": "kept",
+    "note": "Near octave on the narrow canvas; no overlap regression and no truncated primary labels after AUDIT-03."
+  },
+  "dense-type": {
+    "verdict": "kept",
+    "note": "Opt-in preset (ladder.minLabelPx 18): tighter card padding, one-step larger body/meta rows and shorter card height. The label lane reserves glyph width and padding, so raised labels do not truncate. Vision gates pass across all six fit cells; not a default (ADR 0008)."
+  },
+  "living-graph": {
+    "verdict": "kept",
+    "note": "Motion L1/L3 opt-in preset: one-shot active-card pulse and longer rung/camera clocks. Comparison evidence in motion/; reduced motion reaches the same settled state. Not a default (ADR 0008)."
+  },
+  "dynamic-range": {
+    "verdict": "kept",
+    "note": "Scale floor on starfield: card interiors yield to topology by core LOD, and ring artifacts merge with the field. Flux filaments remain distinguishable at low zoom."
+  },
+  "layout-stacked": {
+    "verdict": "kept",
+    "note": "Transcript below the graph leaves the flux field intact; readout stays inside the canvas and the panel does not clip node cards."
+  },
+  "layout-floating": {
+    "verdict": "kept",
+    "note": "Collapsed floating transcript gives the graph the full canvas; compact scope rows stay readable with the wider field."
+  },
+  "neon-cockpit": {
+    "verdict": "kept",
+    "note": "Emissive palette over the dark gradient field; additive edge halos are subtle and cards remain square and legible."
+  },
+  "aurora-map": {
+    "verdict": "kept",
+    "note": "Map surface keeps the flux filaments legible at full scope; rings replace solid artifact balls."
+  },
+  "light-theme": {
+    "verdict": "kept",
+    "note": "Field uses reduced opacity instead of a blend mode in light theme; the canvas HUD now uses a light grayscale token, giving 17.7:1 contrast over the dark canvas. Cards, halos and flux edges keep contrast."
+  },
+  "catalog": {
+    "verdict": "kept",
+    "note": "Proof catalog lists every preset and question without claiming a winner; drawer overlay does not hide the flux graph. Each summary is a 44px square bordered row after AUDIT-02."
+  },
+  "policy": {
+    "verdict": "kept",
+    "note": "Live policy panel shows provenance badges by family; quiet preset values remain distinguishable in the narrower canvas. Primary labels keep their reserved lane after AUDIT-03."
+  }
 }

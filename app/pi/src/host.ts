@@ -930,7 +930,7 @@ export class PiHost {
                     minLabelPx,
                     pixelsPerWorld,
                     nodeSize(node.kind, true, dense)[0] * scaleOf(node),
-                    node.label.length,
+                    node.label.length + (node.scope ? 2 : 0),
                 );
                 return layers.length > 1
                     ? composedCardMarkup(node, layers, context, descending, labelPx)
@@ -2635,8 +2635,9 @@ export class PiHost {
             this.#lensSignature = signature;
         }
         this.refreshInstruments(modelNode);
+        const canvas = el('canvas');
+        const canvasRect = canvas.getBoundingClientRect();
         if (!inspector.pinned) {
-            const canvas = el('canvas');
             const viewport = this.renderer.getViewport();
             const pixelsPerWorld =
                 (canvas.clientWidth || 1000) / Math.max(viewport.extent?.width ?? 1000, 1);
@@ -2653,13 +2654,42 @@ export class PiHost {
             const height = Math.round(Math.max(210, Math.min(300, onScreenHeight)));
             overlay.style.width = `${width}px`;
             overlay.style.height = `${height}px`;
+            const cardRect = document.getElementById(`node-html-${focus}`)?.getBoundingClientRect();
+            const card = cardRect
+                ? {
+                      left: cardRect.left - canvasRect.left,
+                      right: cardRect.right - canvasRect.left,
+                      top: cardRect.top - canvasRect.top,
+                      bottom: cardRect.bottom - canvasRect.top,
+                  }
+                : {
+                      left: point.x - onScreenWidth / 2,
+                      right: point.x + onScreenWidth / 2,
+                      top: point.y - onScreenHeight / 2,
+                      bottom: point.y + onScreenHeight / 2,
+                  };
+            const centerX = (card.left + card.right) / 2;
+            const centerY = (card.top + card.bottom) / 2;
+            const margin = 12;
+            const candidates = [
+                { x: centerX - width / 2, y: card.bottom + margin },
+                { x: centerX - width / 2, y: card.top - height - margin },
+                { x: card.right + margin, y: centerY - height / 2 },
+                { x: card.left - width - margin, y: centerY - height / 2 },
+            ];
+            const fits = (spot: { x: number; y: number }): boolean =>
+                spot.x >= margin &&
+                spot.y >= margin &&
+                spot.x + width <= canvas.clientWidth - margin &&
+                spot.y + height <= canvas.clientHeight - margin;
+            const spot = candidates.find(fits) ?? candidates[0]!;
             const x = Math.min(
-                Math.max(12, point.x - width / 2),
-                Math.max(12, canvas.clientWidth - width - 12),
+                Math.max(margin, spot.x),
+                Math.max(margin, canvas.clientWidth - width - margin),
             );
             const y = Math.min(
-                Math.max(12, point.y + onScreenHeight / 2 + 12),
-                Math.max(12, canvas.clientHeight - height - 12),
+                Math.max(margin, spot.y),
+                Math.max(margin, canvas.clientHeight - height - margin),
             );
             overlay.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
         }
@@ -2667,7 +2697,6 @@ export class PiHost {
         const line = this.#focusConnector;
         const parent = line?.parentElement;
         if (line && parent) {
-            const canvasRect = el('canvas').getBoundingClientRect();
             const lensRect = overlay.getBoundingClientRect();
             line.setAttribute('x1', String(Math.round(point.x)));
             line.setAttribute('y1', String(Math.round(point.y)));

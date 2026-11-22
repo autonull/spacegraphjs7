@@ -226,3 +226,47 @@ Recommended resume order:
 **Definition of done:** the new visual language has recorded frame-time evidence; a fresh audit produced
 reproducible, evidence-backed findings; a user-confirmed subset was fixed behind focused gates; the
 gallery, review verdicts and docs are current; all full gates are green.
+
+---
+
+## 7. Progress (2026-11-22)
+
+Plan status: **phases 1–5 complete**. The user explicitly asked for the commit in this session, so
+invariant 12 was overridden for this change set only.
+
+| Phase | Status | Evidence |
+| ----- | ------ | -------- |
+| 1 — baseline and frame time | complete | `docs/performance.md` baseline table; play frame 0.822 ms, rAF flight p95 99.9 ms recorded |
+| 2 — fresh audit | complete | `docs/screenshots/audit.json`: 13 entries, 21 shot verdicts |
+| 3 — triage and decision | complete | `audit.json:triage`: user chose all four medium/high findings |
+| 4 — accepted fixes | complete | four slices below, each with a failing-then-passing gate and recaptured shots |
+| 5 — verification and handoff | complete | root `check`; `check:fast` 140/140; e2e 105 passed (2 flaky on retry); `verify:visual` 21/21; `shots:all` recaptured; `scale` budgets met |
+
+### Closed findings
+
+| Finding | Change | Gate | Result |
+| ------- | ------ | ---- | ------ |
+| AUDIT-01 (high) | `canvasText` HUD token in both themes; `#hud` no longer uses dark-theme foreground | `tests/shell.test.ts`, `light-theme` shot | 1.1:1 → 17.72:1 |
+| AUDIT-02 (medium) | 44px square bordered catalog summary rows | `tests/browser.spec.ts`, `catalog` shot | min row 18px → 44px |
+| AUDIT-03 (medium) | `labelFontPx` reserves glyph and padding width; portal glyph counted in label length | `tests/adapter.test.ts`, `tests/vision.spec.ts`, fit shots | zero truncated labels in the four audited shots |
+| AUDIT-04 (medium) | Lens measures the source card DOM rect and picks free space before clamping | `tests/focus-lens.spec.ts`, `node-detail` shot | source card no longer covered |
+
+### Deferred work — explicit, not dropped
+
+1. **AUDIT-05 (low):** long cross-unit flux diagonals. Accepted limitation (`§1`), needs an ADR 0008
+   comparison of bundling or scope tinting; preserve the relation.
+2. **AUDIT-06 (low):** narrow command bar wraps onto two rows. Space cost only; status text is not clipped.
+3. **AUDIT-07 (low):** depth-3 inner chip names are sub-8px in the opt-in `recursion` shot. Needs a hover
+   reveal or a larger lens within the 420×300 clamp, plus a new visual comparison.
+4. **Flight frame time:** browser rAF p95 stayed 99.9 ms after the fixes (80 ms target, 120 ms gate).
+   Measure on a display-backed GPU before touching `renderField()`; see `docs/performance.md`.
+5. **Scale headroom:** isolated 60-turn layout is 1476 ms against a 1500 ms budget. Keep `scale` in an
+   isolated CI job; do not run it beside Vite/op dev servers.
+
+### Resume notes
+
+1. Reopen deferred work with a new audit entry; do not edit closed findings in place.
+2. Use `verify:fast` and `verify:visual` for focused checks; `shots:all` only at a slice boundary.
+3. On memory-constrained hosts run the full Playwright suite with `--workers=2`; fully parallel workers
+   crash with `Target crashed` when free RAM is low.
+4. No new policy knob, renderer branch or contract field was added; the four fixes stay host-side.

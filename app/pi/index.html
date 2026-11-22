@@ -262,7 +262,7 @@
                 pointer-events: none;
                 padding: var(--sg-spacing-xs) var(--sg-spacing-sm);
                 background: transparent;
-                color: var(--sg-colors-foreground);
+                color: var(--sg-colors-canvas-text);
                 font-family: ui-monospace, SFMono-Regular, monospace;
                 font-size: var(--sg-font-sizes-xs);
                 letter-spacing: 0.06em;
@@ -1722,8 +1722,12 @@
             }
             .catalog-card > summary {
                 display: flex;
-                align-items: baseline;
+                align-items: center;
                 gap: var(--sg-spacing-xs);
+                min-height: var(--sg-spacing-target);
+                padding: var(--sg-spacing-xs) var(--sg-spacing-sm);
+                border: 1px solid var(--sg-colors-border);
+                background: var(--sg-colors-background);
             }
             .catalog-card > summary::before {
                 content: '▸';

@@ -26,6 +26,7 @@ describe('the shell token layer', () => {
         expect(css).toContain(':root {');
         expect(css).toContain(":root[data-theme='light'] {");
         expect(css).toContain('--sg-colors-background: #000000;');
+        expect(css).toContain('--sg-colors-canvas-text: #f2f2f2;');
         expect(css).toContain('--sg-font-sizes-micro: 11px;');
         expect(css).not.toContain('--pi-');
     });
@@ -77,6 +78,7 @@ describe('the HUD contrast and ergonomic gate', () => {
             for (const status of [colors.destructive, colors.success, colors.warning]) {
                 expect(contrastRatio(status, colors.card)!).toBeGreaterThanOrEqual(3);
             }
+            expect(contrastRatio(colors.canvasText, '#050a12')!).toBeGreaterThanOrEqual(4.5);
         }
     });
 

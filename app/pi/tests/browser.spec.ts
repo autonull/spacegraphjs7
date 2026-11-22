@@ -64,6 +64,11 @@ test.describe('the Pi reference app', () => {
         );
         await page.locator('#proof-line').click();
         await expect(page.locator('body')).toHaveAttribute('data-catalog', 'open');
+        const heights = await page
+            .locator('#catalog .catalog-card > summary')
+            .evaluateAll((rows) => rows.map((row) => row.getBoundingClientRect().height));
+        expect(heights.length).toBeGreaterThan(0);
+        expect(Math.min(...heights)).toBeGreaterThanOrEqual(44);
         const first = page.locator('#catalog .catalog-card').first();
         await expect(first.locator('.catalog-note')).toBeHidden();
         await first.locator('summary').click();

@@ -83,3 +83,28 @@ paint, while the flux geometry buffers update on the same frames; the headless S
 `SCHED_IDLE` environment amplifies that cost. Per TODO6 Phase 1.3 this is recorded as evidence only —
 no code was changed. A display-backed GPU run is needed before attributing the 99.9 ms to the field
 layer alone.
+
+### Post-audit comparison (2026-11-22, after the four accepted TODO6 fixes)
+
+Same host and commands as the baseline; the fixes changed CSS tokens, label typography and lens
+placement, none of which are on the Node-side simulation path.
+
+| Metric | Baseline | After fixes | Budget | Result |
+| ------ | -------- | ----------- | ------ | ------ |
+| Play frame (`scale`, Node simulation) | 0.822 ms | 1.177 ms | < 8 ms | met |
+| 60-turn force layout (`scale`, isolated run) | ~200 ms | 1476 ms | < 1500 ms | met, tight |
+| Browser rAF p95 at rest | 16.7 ms | 16.7 ms | — | unchanged |
+| Browser rAF p95 during a flight | 99.9 ms | 99.9 ms | < 80 ms (gate 120) | still missed |
+
+The rAF result is identical, so the audit fixes neither regressed nor improved flight cost. The
+99.9 ms remains a headless SwiftShader / `SCHED_IDLE` measurement; a display-backed GPU run is still
+needed before attributing it to `renderField()`.
+
+`scale` is CPU-sensitive: runs while the Vite/op dev servers were alive reported 1519 ms and 1880 ms
+and failed the 1500 ms budget; the run with those servers stopped passed at 1476 ms. CI runs `scale`
+in an isolated job, as the harness comment requires.
+
+Verification note: the full Playwright suite was run with `--workers=2` because the host had ~2 GB
+free RAM during the first attempt and fully parallel Chromium workers crashed with `Target crashed`
+(16 failures, all crash-related). With two workers all 105 tests passed (2 flaky, green on retry);
+`verify:visual` passed 21/21 separately. No crash was reproducible as an application error.

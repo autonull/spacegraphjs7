@@ -44,6 +44,11 @@ describe('representation ladder', () => {
         expect(zoomedOut).toBeGreaterThanOrEqual(14 / 0.3);
         expect(labelFontPx(14, 3, 320, 8)).toBeLessThan(zoomedOut);
         expect(labelFontPx(14, 3, 320, 8)).toBeGreaterThanOrEqual(14 / 3);
+        for (const length of [6, 8, 9, 16]) {
+            expect(length * 0.55 * labelFontPx(14, 0.3, 320, length)).toBeLessThanOrEqual(
+                320 * 0.84 + 1,
+            );
+        }
         expect(cardMarkup(node, 'overview', context, 0, false, 48)).toContain(
             'font-size:calc(48px * var(--pi-label-scale, 1))',
         );
