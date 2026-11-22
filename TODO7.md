@@ -290,8 +290,10 @@ default has been flipped; every new view stays opt-in.
 - `app/pi` `pnpm exec playwright test --config playwright.config.ts tests/graph-layout.spec.ts --workers=2` — 4/4 green.
 - `app/pi` `pnpm exec playwright test --config playwright.config.ts tests/vision.spec.ts --grep "graph arrangements pass" --workers=2 --retries=0` — green. This is the Phase 1 flexibility gate: 6 modes × 3 octaves × 2 aspects × dark/light (72 scenes) plus 6 reduced-motion scenes, each running `noOverlap()`, `isLegible()` and `expectedLayoutScore(35)`. The matrix test sets a 240 s timeout; the default 30 s timeout is insufficient.
 - Full suite from `app/pi`: `pnpm run test:e2e` — 113/113; `pnpm run verify:visual` — 23/23;
-  `pnpm run scale` — budgets met (60-turn force 954 ms); `pnpm run shots:all` — 23/23, gallery
+  `pnpm run scale` — budgets met (60-turn force 954 ms); `pnpm run shots:all` — 24/24, gallery
   recaptured. Verdicts in `docs/screenshots/review.json` are intentionally left for a human.
+- After the UI controls slice: `check:fast` 151/151, graph-layout e2e 5/5, shell readout tests 2/2,
+  `verify:visual` 23/23 and `shots:all` 24/24 all green.
 
 ### What landed in this increment
 
@@ -310,7 +312,10 @@ default has been flipped; every new view stays opt-in.
    the zero-overlap baseline; `CHANGELOG.md` records the experiment and the lane fix.
 5. **Full gates and gallery recapture.** Every gate in the suite is green. The 20 px lane shift is
    visible in the motion comparison centres and all recaptured shots; verdicts stay unassigned.
-6. **Transposed timeline.** `LayoutOptions.orientation: 'rows'` swaps the timeline axes inside the
+6. **UI access to every view.** Palette commands for all six graph views, transcript alignment and
+   the ribbon corridor; `g` cycles views, `a` and `r` toggle the two flags; the HUD shows the active
+   view and flags. `ribbonCorridor` now round-trips through permalinks, so the documented claim holds.
+7. **Transposed timeline.** `LayoutOptions.orientation: 'rows'` swaps the timeline axes inside the
    general strategy (`src/layout/strategies.ts:394`); `?graphLayout=timeline-rows` exposes it as a
    sixth opt-in view. The new `timeline-rows` shot shows horizontal turn stripes stacked vertically.
    `pnpm run build:lib` is required before app/pi sees a new `src/layout` option, because app/pi

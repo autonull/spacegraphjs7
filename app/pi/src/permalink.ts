@@ -26,6 +26,7 @@ export type PermalinkState = {
     /** Permalink v3: the opt-in graph arrangement and its transcript alignment. */
     readonly graphLayout?: string;
     readonly graphLayoutAligned?: boolean;
+    readonly ribbonCorridor?: boolean;
 };
 
 export const PERMALINK_PREFIX = 's=';
@@ -62,7 +63,8 @@ const isPermalinkState = (value: unknown): value is PermalinkState => {
         (value.policy === undefined || typeof value.policy === 'string') &&
         (value.fixture === undefined || typeof value.fixture === 'string') &&
         (value.graphLayout === undefined || typeof value.graphLayout === 'string') &&
-        (value.graphLayoutAligned === undefined || typeof value.graphLayoutAligned === 'boolean')
+        (value.graphLayoutAligned === undefined || typeof value.graphLayoutAligned === 'boolean') &&
+        (value.ribbonCorridor === undefined || typeof value.ribbonCorridor === 'boolean')
     );
 };
 

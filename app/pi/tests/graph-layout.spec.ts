@@ -26,6 +26,25 @@ test.describe('graph arrangements', () => {
         }
     });
 
+    test('palette commands and keys select graph views without a URL', async ({ page }) => {
+        await boot(page);
+        await page.locator('#command-open').click();
+        await page.locator('#command-input').fill('Graph view · timeline');
+        await page.locator('.command-row[data-command-id="view.graphLayout.timeline"]').click();
+        expect(await page.evaluate(() => (window as any).__pi.graphLayout())).toBe('timeline');
+        expect(await page.locator('#hud').getAttribute('data-graph-layout')).toBe('timeline');
+
+        await page.locator('#canvas').focus();
+        await page.keyboard.press('g');
+        expect(await page.evaluate(() => (window as any).__pi.graphLayout())).toBe('timeline-rows');
+        await page.keyboard.press('a');
+        expect(await page.evaluate(() => (window as any).__pi.graphLayoutAligned())).toBe(true);
+        await page.keyboard.press('r');
+        expect(await page.evaluate(() => (window as any).__pi.ribbonCorridor())).toBe(true);
+        expect(await page.locator('#hud').getAttribute('data-graph-flags')).toBe('11');
+        await expect(page.locator('#hud')).toContainText('timeline-rows+aligned+corridor');
+    });
+
     test('a URL selects the view on load and switching keeps focus and camera', async ({ page }) => {
         await boot(page, '?scenario=rich&graphLayout=timeline');
         expect(await page.evaluate(() => (window as any).__pi.graphLayout())).toBe('timeline');

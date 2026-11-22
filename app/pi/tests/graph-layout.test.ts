@@ -125,10 +125,12 @@ describe('graph layouts', () => {
             filter: '',
             graphLayout: 'timeline',
             graphLayoutAligned: true,
+            ribbonCorridor: true,
         };
         const decoded = decodePermalink(encodePermalink(state));
         expect(decoded?.graphLayout).toBe('timeline');
         expect(decoded?.graphLayoutAligned).toBe(true);
+        expect(decoded?.ribbonCorridor).toBe(true);
         expect(decodePermalink(encodePermalink({ ...state, graphLayout: 'timeline-rows' }))?.graphLayout).toBe(
             'timeline-rows',
         );

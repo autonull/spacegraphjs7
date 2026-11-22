@@ -1533,10 +1533,24 @@ export class PiHost {
         return mode;
     }
 
+    /** Cycle the six graph views from a single key, keeping the current one in the list. */
+    cycleGraphLayout(delta = 1): GraphLayoutMode {
+        const index = GRAPH_LAYOUTS.indexOf(this.#graphLayout);
+        return this.setGraphLayout(GRAPH_LAYOUTS[(index + delta + GRAPH_LAYOUTS.length) % GRAPH_LAYOUTS.length]!);
+    }
+
     setGraphLayoutAligned(aligned: boolean): boolean {
         this.#graphLayoutAligned = aligned;
         this.alignTranscript();
+        this.renderHud();
         return this.#graphLayoutAligned;
+    }
+
+    setRibbonCorridor(enabled: boolean): boolean {
+        this.#ribbonCorridor = enabled;
+        this.paint();
+        this.renderHud();
+        return this.#ribbonCorridor;
     }
 
     private alignTranscript(): void {
@@ -1659,6 +1673,7 @@ export class PiHost {
             fixture: FIXTURE_ID,
             graphLayout: this.#graphLayout,
             graphLayoutAligned: this.#graphLayoutAligned,
+            ribbonCorridor: this.#ribbonCorridor,
         };
         return encodePermalink(state);
     }
@@ -1681,6 +1696,7 @@ export class PiHost {
         this.setLaneScope(state.filter);
         if (isGraphLayoutMode(state.graphLayout)) this.setGraphLayout(state.graphLayout);
         this.setGraphLayoutAligned(state.graphLayoutAligned === true);
+        if (state.ribbonCorridor !== undefined) this.setRibbonCorridor(state.ribbonCorridor);
         if (state.focus) this.reveal(state.focus);
         this.renderer.setViewport({
             zoom: state.viewport.zoom,
@@ -1980,7 +1996,30 @@ export class PiHost {
                 run: () => this.handleNodeAction('focus', chip.id),
             })),
         ];
-        return [...nav, ...chrome, ...focused, ...verbs, ...knobs];
+        const graph: readonly Command[] = [
+            ...GRAPH_LAYOUTS.map((mode) => ({
+                id: `view.graphLayout.${mode}`,
+                label: `Graph view · ${mode}`,
+                group: 'graph view',
+                hint: mode === this.#graphLayout ? 'current' : undefined,
+                run: () => this.setGraphLayout(mode),
+            })),
+            {
+                id: 'view.graphAligned',
+                label: 'Toggle aligned transcript',
+                group: 'graph view',
+                hint: 'a',
+                run: () => this.setGraphLayoutAligned(!this.#graphLayoutAligned),
+            },
+            {
+                id: 'view.ribbonCorridor',
+                label: 'Toggle ribbon corridor',
+                group: 'graph view',
+                hint: 'r',
+                run: () => this.setRibbonCorridor(!this.#ribbonCorridor),
+            },
+        ];
+        return [...nav, ...chrome, ...focused, ...graph, ...verbs, ...knobs];
     }
 
     private help(): readonly Command[] {
@@ -2028,6 +2067,9 @@ export class PiHost {
             },
             { id: 'help.pan', label: 'Pan and zoom', group: 'shortcut', hint: 'arrows / +−' },
             { id: 'help.focus', label: 'Center the focused node', group: 'shortcut', hint: 'f' },
+            { id: 'help.graphView', label: 'Cycle graph views', group: 'shortcut', hint: 'g' },
+            { id: 'help.graphAligned', label: 'Toggle aligned transcript', group: 'shortcut', hint: 'a' },
+            { id: 'help.corridor', label: 'Toggle ribbon corridor', group: 'shortcut', hint: 'r' },
         ];
     }
 
@@ -2159,11 +2201,8 @@ export class PiHost {
             setGraphLayoutAligned: (aligned: boolean) => this.setGraphLayoutAligned(aligned),
             graphShape: () => this.graphShape(),
             ribbonCorridor: () => this.#ribbonCorridor,
-            setRibbonCorridor: (enabled: boolean) => {
-                this.#ribbonCorridor = enabled;
-                this.paint();
-                return this.#ribbonCorridor;
-            },
+            setRibbonCorridor: (enabled: boolean) => this.setRibbonCorridor(enabled),
+            cycleGraphLayout: (delta = 1) => this.cycleGraphLayout(delta),
             surface: () => this.#surface,
             setSurface: (surface: Surface) => this.setSurface(surface),
             reveal: (id: string) => this.reveal(id),
@@ -2656,6 +2695,9 @@ export class PiHost {
             Home: () => this.returnHome(),
             t: () => this.#revealed && this.trace(this.#revealed),
             s: () => this.survey(),
+            g: () => this.cycleGraphLayout(),
+            a: () => this.setGraphLayoutAligned(!this.#graphLayoutAligned),
+            r: () => this.setRibbonCorridor(!this.#ribbonCorridor),
             Escape: () => this.returnHome(),
         };
         const action = steps[event.key];
@@ -3058,15 +3100,20 @@ export class PiHost {
     }
 
     private renderHud(): void {
+        const view =
+            `${this.#graphLayout}${this.#graphLayoutAligned ? '+aligned' : ''}` +
+            `${this.#ribbonCorridor ? '+corridor' : ''}`;
         const context =
             `${this.#level}/${this.#levelMode} · ${this.#depth}/${this.#depthAxis} · ` +
-            `${this.simulation.settled ? 'settled' : 'moving'}`;
+            `${this.simulation.settled ? 'settled' : 'moving'} · ${view}`;
         const detail =
             `energy ${this.simulation.energy.toFixed(3)} · overlap ${this.#vision.overlap.toFixed(2)} · ` +
             `${Math.round(this.#fps)} fps`;
         const hud = el('hud');
         hud.textContent = this.#diagnostics ? `${context} · ${detail}` : context;
         hud.title = detail;
+        hud.dataset.graphLayout = this.#graphLayout;
+        hud.dataset.graphFlags = `${Number(this.#graphLayoutAligned)}${Number(this.#ribbonCorridor)}`;
         el('play-energy').textContent =
             `energy ${this.playSession.energy.toFixed(3)} · ${this.playSession.preset ?? 'at rest'}`;
     }
