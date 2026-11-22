@@ -6,7 +6,7 @@ the progress block below records what has actually landed.
 
 ---
 
-## Progress (updated 2026-11-21 — slices 1–3, 5 and the standing track complete, visual-correctness pass landed; next: content legibility)
+## Progress (updated 2026-11-21 — slices 1–3, 5 and the standing track complete, visual-correctness and content-legibility passes landed; next: composition)
 
 **Slice 1 — One surface language: implemented in Pi, not yet promoted to a second host.**
 
@@ -129,6 +129,22 @@ the progress block below records what has actually landed.
 3. Compact cards carry a status dot only at the detail rung; the full status chip stays in the enlarged lens. Adding the dot to the execution rung clipped `Approve patch`, and the gate shots caught it before review.
 4. Detail and lens body rows wrap up to three lines; execution rows stay single-line ellipses. `labelFor` and clipped source labels remain the next work item — this slice changes the skeleton, not the source text.
 
+**Content legibility (2026-11-21): short titles and defined non-happy-path frames.**
+
+| Item                                | Status | Evidence                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| ----------------------------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `labelFor` domain accessor          | done   | `packages/domain/agent/src/vocabulary.ts` exports `labelFor`: messages use their role (`assistant`, `user`), artifacts use the path basename, approvals become `approve`, and other kinds keep their label. `buildAgentView` applies it once and stores the original in `data.fullLabel`. No `DomainVocabulary` field, kernel contract change or edit to the other three domains.                                                                                                      |
+| Full text kept in detail and proof  | done   | `detailOf` in `app/pi/src/anatomy.ts` falls back to `fullLabel`; transcript rows in `host.ts` use `fullLabel` as their prefix with the message text after the colon. Cards and the lens show short titles while detail rows, telemetry and the transcript keep the full source text.                                                                                                                                                                                                           |
+| Empty, pending and failed frames    | done   | `app/pi/src/shell/frames.ts` owns one hidden `#state-frame` with three token-styled states. `host.setFrame` plus the derived zero-node empty state toggle it; `client.ts` sets pending when the EventSource opens, clears it on `onopen` and sets failed on `onerror`. Pending is a quiet corner chip; empty and failed are centered cards. The same `setFrame` is exposed on `__pi` for scripted use.                                                                                    |
+| Gates and review                    | done   | `cockpit`, `node-detail`, `fractal` and `light-theme` recaptured and reviewed in `docs/screenshots/index.html`; all 12 shots recaptured. Pi: 132 unit tests, 81 e2e/vision tests green (single worker); agent domain: 10 tests; `pnpm scale` budgets met; root `pnpm run check` green. `pnpm verify` still reports the same five pre-existing docs references.                                                                                                                       |
+
+**Clarifications that came out of this increment:**
+
+1. `labelFor` is a plain domain export applied by the view builder, not a new `DomainVocabulary` field. That keeps it a vocabulary rule rather than a contract change; another domain can add its own accessor when it has a consumer.
+2. Shorter labels changed the `labelFontPx` inputs and exposed a timing flake in `browser.spec.ts`: the minimum-font assertion read the DOM on the same tick as the knob change. It now polls the applied value. The invariant and threshold are unchanged.
+3. The three frames are shell-owned and driven by one public method; no product seam was added for tests. The e2e gate drives the same `setFrame` a script would call.
+4. `cockpit` and `light-theme` no longer ellipsize card labels; the transcript regains full `user message` / `Approve patch` prefixes while cards stay short. The remaining clipped text is pre-existing chip geometry, not a source label.
+
 **Direction recorded for slice 3 (user feedback, 2026-11-21):**
 
 - Edges are too long and too line-like. Shorten their reach (`geometry.repulsion`, `geometry.gap` or a new
@@ -158,23 +174,18 @@ the progress block below records what has actually landed.
 
 **Remaining work, in order — fundamentals first, parity last:**
 
-1. **Content legibility — `labelFor` and node states (§11.4, §11.5) (next).** Short domain titles so labels
-   stop clipping in the compact rungs, with full text kept in detail/telemetry; plus defined empty,
-   pending-stream and failed-source frames as part of the shell kit. Slice 5 gave every rung a distinct
-   skeleton but did not change source text — `assistant mess…` in `cockpit` is the canonical example.
-   Universal and cheap: it changes every shot and needs no second host. Gate: no ellipsis on the canonical
-   fixture at the settled shot; all three states have a legible frame.
-2. **Composition and default palette (§11.8).** The graph now has a legible subject, but negative space
-   in `cockpit`/`dynamic-range` still reads as sparse, right-hand chrome outspeaks the canvas, and causal
-   ribbons inherit gray `RenderTheme.edge` in the default palette. Tighten shot framing, keep chrome
-   collapsed, and treat a causal color as data with provenance — promote it only when a second consumer
-   can share the token. This is the largest remaining aesthetics and one-eye-movement ergonomics win.
-3. **Interaction ergonomics (§2, §11.2).** Decide the bounded chip-control exception (larger hit area vs.
+1. **Composition and default palette (§11.8) (next).** The graph now has a legible subject and short
+   titles, but negative space in `cockpit`/`dynamic-range` still reads as sparse, right-hand chrome
+   outspeaks the canvas, and causal ribbons inherit gray `RenderTheme.edge` in the default palette.
+   Tighten shot framing, keep chrome collapsed, and treat a causal color as data with provenance —
+   promote it only when a second consumer can share the token. This is the largest remaining aesthetics
+   and one-eye-movement ergonomics win.
+2. **Interaction ergonomics (§2, §11.2).** Decide the bounded chip-control exception (larger hit area vs.
    the K4 cap), then tighten focus, inspector reach and the command surface around the new node anatomy.
    Reduced-motion final-frame parity and intermediate-frame vision stay standing gates in every slice.
-4. **Motion and life (L1–L3, §6).** Parked until composition settles. Effects were already flagged as
+3. **Motion and life (L1–L3, §6).** Parked until composition settles. Effects were already flagged as
    overdone; anything built stays opt-in data with reduced-motion parity, never a new default.
-5. **Slice 4 — Proliferation (O5–O7).** Still gated on a second host consuming the shell, tokens and
+4. **Slice 4 — Proliferation (O5–O7).** Still gated on a second host consuming the shell, tokens and
    inspector unchanged. Verified 2026-11-21: `app/demo` imports only mechanism-layer helpers; the only
    importers of `app/pi/src/shell` and `@spacegraphjs/shared/tokens` live in Pi. Not work we can start;
    when the consumer exists, split core/domain policy vocabulary, emit the world-host template and a real
@@ -190,12 +201,12 @@ the progress block below records what has actually landed.
 - Housekeeping: confirm ADR 0014, fill `docs/screenshots/review.json` verdicts, re-run e2e with
   `--workers=1` on a loaded machine.
 
-Slices 1–3, 5 and the standing accessibility track are recorded as done; the visual-correctness pass
-repairs the slice-3 treatments that were recorded before they actually rendered. Last prior commits:
-`bddd7a6` (slice 2), `01c4759` (slice 3), `0c0b184` (standing track), `80dd02e` (visual pass), `86dba56`
-(plan ordering). The remaining program starts with content legibility — `labelFor` and defined empty,
-pending and failed frames — then composition and interaction ergonomics; parity and proliferation stay
-parked or gated. The study, release and hosted URL stay deferred with TODO3's G3–G5.
+Slices 1–3, 5 and the standing accessibility track are recorded as done; the visual-correctness and
+content-legibility passes repair treatments that were recorded before they actually rendered or read
+well. Last prior commits: `bddd7a6` (slice 2), `01c4759` (slice 3), `0c0b184` (standing track),
+`80dd02e` (visual pass), `86dba56` (plan ordering), `1021683` (node anatomy). The remaining program
+starts with composition and the default palette, then interaction ergonomics; motion, parity and
+proliferation stay parked or gated. The study, release and hosted URL stay deferred with TODO3's G3–G5.
 
 ---
 
@@ -651,9 +662,12 @@ These are real gaps in the plan as written. They are listed, not scheduled.
 4. **Content quality beats typography.** Many clipped labels are data problems (`user mess…` comes from
    the source text, not the CSS). Add a domain-level `labelFor` accessor that produces a short meaningful
    title, with the full text kept in detail/telemetry. This is universal and cheaper than more font tuning.
+   Landed with the content-legibility pass: `labelFor` lives in the agent domain and `fullLabel` preserves
+   the source text.
 5. **Empty, loading and error states.** The plan designs the happy path only. A new domain needs defined
    frames for zero nodes, a failed event source, a pending stream and an empty scope. These are cheap,
-   domain-neutral states and should be part of the shell kit rather than host afterthoughts.
+   domain-neutral states and should be part of the shell kit rather than host afterthoughts. Zero-node,
+   pending and failed-source frames landed in `shell/frames.ts`; the empty-scope frame stays open.
 6. **Gallery curation budget.** Twelve shots are tracked; the review loop makes adding more trivial. Set
    a cap, retire obsolete shots in the same change that supersedes them, and keep one shot per _question_,
    not per feature. Otherwise the proof surface becomes the clutter it was meant to replace.

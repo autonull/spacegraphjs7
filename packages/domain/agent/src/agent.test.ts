@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import { Kernel } from '@spacegraphjs/kernel';
 import type { KernelOp } from '@spacegraphjs/kernel';
 import { AgentEventMapper } from './mapping';
-import { AGENT_KINDS, AGENT_RELATIONS, AGENT_ROLES, agentDomain, buildAgentView, relationOf, roleOf } from './vocabulary';
+import { AGENT_KINDS, AGENT_RELATIONS, AGENT_ROLES, agentDomain, buildAgentView, labelFor, relationOf, roleOf } from './vocabulary';
 import { changedArtifacts, changedFiles, failureDetails, failures, why } from './selectors';
 import { agentFacetAccessors, agentTraceVocabulary } from './facets';
 
@@ -93,6 +93,21 @@ describe('agent domain', () => {
         expect(view.turns).toEqual(['agent:r1:u1']);
         expect(view.activeTurn).toBe('agent:r1:u1');
         expect(view.nodes.every((node) => typeof node.status === 'string')).toBe(true);
+    });
+
+    test('labelFor shortens titles and buildAgentView keeps the original', () => {
+        const message = { id: 'm', kind: 'message', label: 'assistant message', status: 'complete', data: { role: 'assistant', text: 'The full reply.' } };
+        expect(labelFor(message)).toBe('assistant');
+        expect(labelFor({ ...message, label: 'user message', data: { role: 'message' } })).toBe('user');
+        expect(labelFor({ id: 'a', kind: 'artifact', label: 'src/auth/session.ts', status: 'complete', data: { path: 'src/auth/session.ts' } })).toBe('session.ts');
+        expect(labelFor({ id: 'p', kind: 'approval', label: 'Approve patch', status: 'pending' })).toBe('approve');
+
+        const view = buildAgentView(
+            fold(new AgentEventMapper('agent').map({ type: 'message', runId: 'r', role: 'assistant', text: 'The full reply.' })),
+        );
+        expect(view.nodes[0]!.label).toBe('assistant');
+        expect(view.nodes[0]!.data?.fullLabel).toBe('assistant message');
+        expect(view.nodes[0]!.data?.text).toBe('The full reply.');
     });
 
     test('stays open-ended: no fixed role enum and structural manifest', () => {

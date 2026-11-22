@@ -23,7 +23,10 @@ const boot = async (): Promise<void> => {
     if (shotID) host.applyShot(shotID);
 
     if (!shotID && params.get('scenario') !== 'rich') {
+        host.setFrame('pending');
         const events = new EventSource(`/events?client=${clientID}`);
+        events.onopen = () => host.setFrame(null);
+        events.onerror = () => host.setFrame('failed', 'The event stream stopped. Reload to reconnect.');
         events.onmessage = (event) => host.consume(decodeOp(event.data as string));
     }
 

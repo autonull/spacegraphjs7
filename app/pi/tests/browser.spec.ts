@@ -144,12 +144,15 @@ test.describe('the Pi reference app', () => {
                     minPx: Number((window as any).__pi.policy().values['ladder.minLabelPx']),
                 };
             });
-        const initial = await measure();
-        expect(initial.screenPx).toBeGreaterThanOrEqual(initial.minPx - 0.5);
+        await expect
+            .poll(async () => {
+                const value = await measure();
+                return value.screenPx - value.minPx;
+            })
+            .toBeGreaterThanOrEqual(-0.5);
         await page.evaluate(() => (window as any).__pi.setKnob('ladder.minLabelPx', 28));
-        const raised = await measure();
-        expect(raised.minPx).toBe(28);
-        expect(raised.screenPx).toBeGreaterThanOrEqual(28 - 0.5);
+        await expect.poll(async () => (await measure()).screenPx).toBeGreaterThanOrEqual(28 - 0.5);
+        expect((await measure()).minPx).toBe(28);
         noErrors(errors);
     });
 

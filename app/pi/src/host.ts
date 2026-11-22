@@ -146,13 +146,16 @@ import {
     contextualInstruments,
     createCommandSurface,
     createInspector,
+    createStateFrame,
     HUD_TOKENS,
     INSPECTOR_TABS,
     type Command,
     type CommandMode,
     type CommandSurface,
+    type FrameState,
     type Inspector,
     type InspectorTab,
+    type StateFrame,
 } from './shell';
 
 export type Arrangement = 'stacked' | 'side' | 'floating';
@@ -345,6 +348,8 @@ export class PiHost {
     #inspector?: Inspector;
     #focusConnector?: SVGLineElement;
     #commandSurface?: CommandSurface;
+    #stateFrame?: StateFrame;
+    #manualFrame?: { readonly state: FrameState; readonly detail: string };
     #instrumentFocus = '';
     #lensSignature = '';
     #policyListeners = new Set<(event: PolicyChangeEvent) => void>();
@@ -683,6 +688,8 @@ export class PiHost {
         this.#focusConnector = connectorLine;
         this.#commandSurface = createCommandSurface(() => this.commands(), { help: this.help() });
         document.body.append(this.#commandSurface.element);
+        this.#stateFrame = createStateFrame();
+        el('canvas').append(this.#stateFrame.element);
         window.addEventListener('resize', () => this.renderFocusLens());
         this.renderer.on('nodeClick', ({ id }) => this.reveal(id));
         this.renderer.on('viewportChange', ({ zoom }) => {
@@ -771,6 +778,7 @@ export class PiHost {
         };
         this.paint();
         this.renderStatus();
+        this.applyFrame();
         this.renderAttention();
         this.renderOverview();
     }
@@ -1817,6 +1825,7 @@ export class PiHost {
             survey: () => this.survey(),
             returnHome: () => this.returnHome(),
             setClientID: (id: string) => this.setClientID(id),
+            setFrame: (state: FrameState | null, detail?: string) => this.setFrame(state, detail),
             sendPrompt: (text: string, mode?: 'steer' | 'followUp') => this.sendPrompt(text, mode),
             approve: (target: string, decision: 'approve' | 'reject' = 'approve') =>
                 this.approve(target, decision),
@@ -2655,6 +2664,18 @@ export class PiHost {
             `${this.#view.nodes.length} nodes · ${this.#view.edges.length} edges · ${this.#specs.length} scopes`;
     }
 
+    /** Show a domain-neutral source frame; null returns to the view-derived state. */
+    setFrame(state: FrameState | null, detail = ''): void {
+        this.#manualFrame = state ? { state, detail } : undefined;
+        this.applyFrame();
+    }
+
+    private applyFrame(): void {
+        const manual = this.#manualFrame;
+        const state = manual?.state ?? (this.#view.nodes.length ? null : 'empty');
+        this.#stateFrame?.set(state, manual?.detail);
+    }
+
     private renderAttention(): void {
         const { failures, changed, latest } = this.#attention;
         el('attention').textContent = failures
@@ -2704,11 +2725,13 @@ export class PiHost {
             row.className = 'spine-row';
             row.dataset.expanded = String(expanded);
             row.dataset.kind = node.kind;
+            const fullLabel = String(node.data?.fullLabel ?? node.label);
+            const text = String(node.data?.text ?? node.summary ?? '');
             const head = document.createElement('div');
             head.className = 'spine-head';
             head.append(
                 button(
-                    `${node.label}: ${String(node.data?.text ?? node.summary ?? '')}`,
+                    `${fullLabel}: ${text}`,
                     () => this.reveal(node.id),
                     {
                         className: 'transcript-row',
@@ -2722,7 +2745,7 @@ export class PiHost {
             );
             const detail = document.createElement('div');
             detail.className = 'transcript-detail';
-            detail.textContent = `${node.kind} · ${node.status} · ${String(node.data?.text ?? node.summary ?? '')}`;
+            detail.textContent = `${node.kind} · ${node.status} · ${text || fullLabel}`;
             row.append(head, detail);
             return row;
         });

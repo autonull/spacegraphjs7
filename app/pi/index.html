@@ -792,6 +792,48 @@
                 border-radius: 6px;
                 padding: var(--sg-spacing-xs) var(--sg-spacing-sm);
             }
+            #state-frame {
+                position: absolute;
+                inset: 0;
+                z-index: 5;
+                display: grid;
+                place-items: center;
+                pointer-events: none;
+            }
+            #state-frame[hidden] {
+                display: none;
+            }
+            .state-frame-card {
+                display: flex;
+                flex-direction: column;
+                gap: var(--sg-spacing-xs);
+                max-width: 320px;
+                padding: var(--sg-spacing-sm) var(--sg-spacing-md);
+                border: 1px solid var(--sg-colors-border);
+                background: var(--sg-colors-card);
+                color: var(--sg-colors-foreground);
+                text-align: center;
+            }
+            .state-frame-card strong {
+                font-size: var(--sg-font-sizes-sm);
+            }
+            .state-frame-card span {
+                font-size: var(--sg-font-sizes-xs);
+                color: var(--sg-colors-muted-foreground);
+                line-height: 1.4;
+            }
+            #state-frame[data-state='pending'] {
+                place-items: start end;
+                padding: var(--sg-spacing-sm);
+            }
+            #state-frame[data-state='pending'] .state-frame-card {
+                max-width: none;
+                padding: var(--sg-spacing-hair) var(--sg-spacing-xs);
+                opacity: 0.8;
+            }
+            #state-frame[data-state='failed'] .state-frame-card {
+                border-color: var(--sg-colors-destructive);
+            }
 
             #surface {
                 display: grid;

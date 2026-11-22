@@ -1,5 +1,7 @@
 export { createCommandSurface, filterCommands } from './command-surface';
 export type { Command, CommandMode, CommandSurface } from './command-surface';
+export { createStateFrame, stateFrameMarkup } from './frames';
+export type { FrameState, StateFrame } from './frames';
 export { createInspector, INSPECTOR_TABS } from './inspector';
 export type { Inspector, InspectorTab } from './inspector';
 export { contextualInstruments } from './instruments';

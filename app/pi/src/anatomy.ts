@@ -71,7 +71,7 @@ export const portalGlyph = (scope: string): string =>
 
 const detailOf = (node: AnatomyNode): string => {
     const data = node.data ?? {};
-    for (const key of ['text', 'summary', 'path', 'args', 'result', 'reason', 'level']) {
+    for (const key of ['text', 'summary', 'path', 'args', 'result', 'reason', 'level', 'fullLabel']) {
         if (typeof data[key] === 'string' && data[key]) return String(data[key]);
     }
     return node.summary ?? '';

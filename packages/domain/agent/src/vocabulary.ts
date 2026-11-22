@@ -44,6 +44,21 @@ export { dataString, relationOf };
 /** A node's advisory role: host tag first, then the default kind mapping, then its open-ended kind. */
 export const roleOf = createRoleReader(ROLE_TAGS);
 
+/** A short title for any rung; the original label stays in `data.fullLabel` when it changes. */
+export const labelFor = (node: GraphNode): string => {
+    if (node.kind === 'message') {
+        const role = dataString(node, 'role');
+        if (role && role !== 'message') return role;
+        return node.label.split(' ')[0] || 'message';
+    }
+    if (node.kind === 'artifact' || node.kind === 'file') {
+        const path = dataString(node, 'path') ?? node.label;
+        return path.split('/').at(-1) || path;
+    }
+    if (node.kind === 'approval') return 'approve';
+    return node.label;
+};
+
 export interface AgentView extends GraphViewData {
     readonly root: string;
     readonly turnByMessageID?: ReadonlyMap<string, string>;
@@ -61,7 +76,12 @@ export const agentVocabulary: DomainVocabulary = {
 };
 
 export function buildAgentView(kernel: Kernel): AgentView {
-    const nodes: GraphNode[] = mapViewNodes(kernel.nodes);
+    const nodes: GraphNode[] = mapViewNodes(kernel.nodes).map((node) => {
+        const label = labelFor(node);
+        return label === node.label
+            ? node
+            : { ...node, label, data: { ...node.data, fullLabel: node.label } };
+    });
     const edges = mapViewEdges(kernel.edges);
     const root = kernel.nodes.find((node) => roleOf(node) === 'run')?.id ?? kernel.nodes[0]?.id ?? '';
     const activeTurn = [...kernel.nodes]
