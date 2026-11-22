@@ -171,7 +171,7 @@ export const POLICY_SCHEMA: PolicySchema = {
             'Subtle backdrop treatment behind the canvas.',
             '10',
         ),
-        number('theme.glow', 'theme', 0.45, 0, 1, 0.1, 'Emissive glow strength on cards and flux edges.', '10'),
+        number('theme.glow', 'theme', 0.2, 0, 1, 0.1, 'Emissive glow strength on cards and flux edges.', '10'),
     ],
 };
 

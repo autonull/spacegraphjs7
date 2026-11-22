@@ -21,6 +21,7 @@ export class FluxEdge extends Edge {
 
     readonly mesh!: THREE.Mesh;
     readonly halo!: THREE.Mesh;
+    readonly arrow!: THREE.Mesh;
 
     readonly #positions = new Float32Array((SEGMENTS + 1) * 6);
     readonly #haloPositions = new Float32Array((SEGMENTS + 1) * 6);
@@ -61,11 +62,23 @@ export class FluxEdge extends Edge {
             geometry(this.#haloPositions, this.#haloColors),
             this.material(color, 0.18, true),
         );
+        const arrowGeometry = new THREE.BufferGeometry();
+        arrowGeometry.setAttribute(
+            'position',
+            new THREE.Float32BufferAttribute([-0.5, -0.5, 0, 0.5, -0.5, 0, 0, 0.5, 0], 3),
+        );
+        this.arrow = new THREE.Mesh(
+            arrowGeometry,
+            new THREE.MeshBasicMaterial({ color, side: THREE.DoubleSide, depthWrite: false }),
+        );
+        this.arrow.userData = { edgeId: this.id, type: 'edge-flux-arrow' };
+        this.arrow.visible = false;
         this.mesh.userData = { edgeId: this.id, type: 'edge-flux' };
         this.halo.userData = { edgeId: this.id, type: 'edge-flux-halo' };
         this.mesh.renderOrder = -1;
         this.halo.renderOrder = -2;
-        this.sg?.renderer.scene.add(this.halo, this.mesh);
+        this.arrow.renderOrder = 0;
+        this.sg?.renderer.scene.add(this.halo, this.mesh, this.arrow);
         this._initialized = true;
     }
 
@@ -140,11 +153,24 @@ export class FluxEdge extends Edge {
                 this.#haloColors[colorOffset + 3] = halo * 0.22 * taper;
             }
         }
-        for (const mesh of [this.mesh, this.halo]) {
+        for (const mesh of [this.mesh, this.halo, this.arrow]) {
             mesh.geometry.attributes.position!.needsUpdate = true;
+        }
+        for (const mesh of [this.mesh, this.halo]) {
             mesh.geometry.attributes.color!.needsUpdate = true;
         }
         core.opacity = (this.data.opacity as number | undefined) ?? 1;
+
+        this.arrow.visible = Boolean(this.data.arrowhead);
+        if (this.arrow.visible) {
+            const tip = inset + (1 - 2 * inset) * 0.96;
+            this.#curve.getPoint(tip, this.#point);
+            this.#curve.getTangent(tip, this.#tangent).normalize();
+            this.arrow.position.copy(this.#point);
+            this.arrow.rotation.z = -Math.atan2(this.#tangent.x, this.#tangent.y);
+            const arrowSize = Math.max(4, width * 0.85);
+            this.arrow.scale.set(arrowSize, arrowSize, 1);
+        }
     }
 
     updateSpec(updates: Partial<EdgeSpec>): this {
@@ -153,12 +179,13 @@ export class FluxEdge extends Edge {
         if (color) {
             (this.mesh.material as THREE.MeshBasicMaterial).color.set(color);
             (this.halo.material as THREE.MeshBasicMaterial).color.set(color);
+            (this.arrow.material as THREE.MeshBasicMaterial).color.set(color);
         }
         return this;
     }
 
     dispose(): void {
-        for (const mesh of [this.mesh, this.halo]) {
+        for (const mesh of [this.mesh, this.halo, this.arrow]) {
             mesh.parent?.remove(mesh);
             mesh.geometry.dispose();
             (mesh.material as THREE.Material).dispose();

@@ -1,7 +1,7 @@
 {
     "cockpit": {
         "verdict": "kept",
-        "note": "Flux style: teal tapered filaments trimmed before card centres, merged field halos, ring artifacts and grid-packed unit scopes. Cross-unit orders diagonals are topology, not sticks."
+        "note": "Mockup-informed dark field: deep navy gradient, node-core dots, arrowed teal flux, square status chips and square cards. No blur or blend-mode compositing; cross-unit orders diagonals are topology, not sticks."
     },
     "node-detail": {
         "verdict": "kept",

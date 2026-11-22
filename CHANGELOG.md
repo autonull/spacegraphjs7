@@ -7,6 +7,9 @@ follow the workflow in `docs/ROADMAP.md` (`test:publish` → build → npm).
 
 ### Added
 
+- **Mockup-informed field refinement (ADR 0016):** deep navy gradient canvas, node-core dots, directional
+  arrowheads on causal flux edges and square status chips. Expensive compositing (backdrop blur,
+  blend modes) was removed; cards stay square and default glow drops to 0.2.
 - **Fluid flagship style (ADR 0016):** a general registered `FluxEdge` renders curved, tapered, glowing
   filaments instead of sticks; every edge becomes flux, context edges stay thin but present, and
   artifact dots become rings. A host `#field` layer merges soft per-node halos into one backdrop, and

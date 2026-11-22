@@ -121,7 +121,7 @@ Inherited from `TODO4.md:3` and the repo rules; apply to every phase.
 | 3 — Density | complete | Opt-in `dense-type` preset/shot; CSS-variable card padding and label scale; height-only footprint reduction; unit test; vision gate over the fit matrix | Promote to default only after a recorded comparison (ADR 0008) |
 | 4 — Recursion | complete | Directed spokes/ports/status in every lens layout; autoscaling lens; `recursion` shot; settled + intermediate-frame vision gate; `focus-lens.spec.ts` passes | Second consumer stays gated at `TODO4.md:265` (out of scope) |
 | 5 — Verification | complete (2026-11-22) | `pnpm run check` green; e2e 103 passed + 1 pre-existing navigation flake; `verify:visual` 21/21; `scale` budgets met; `shots:all` 23/23; gallery reviewed | Commit, then leave the two external decisions (§7) untouched |
-| Style revision | complete (2026-11-22) | ADR 0016: registered `FluxEdge`, field halos, ring artifacts, grid-packed unit scopes, aurora/glow defaults. `check` green; e2e 104/104; visual 21/21; scale met; `shots:all` 23/23 | Commit; long cross-unit `orders` diagonals remain by topology, not as sticks |
+| Style revision | complete (2026-11-22) | ADR 0016: registered `FluxEdge`, field halos, ring artifacts, grid-packed unit scopes, aurora defaults. Mockup refinement (dark navy gradient, arrowheads, square cards/status, no blur/blend, glow 0.2). `check` green; e2e 104/104; visual 21/21; scale met; `shots:all` 23/23 | Commit; long cross-unit `orders` diagonals remain by topology, not as sticks |
 
 Decisions resolved in §7; gate results and review verdicts belong in `docs/screenshots/review.json`.
 

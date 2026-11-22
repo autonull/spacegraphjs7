@@ -137,7 +137,10 @@ export function edgeSpec(edge: RenderEdge, theme: RenderTheme): EdgeSpec {
         label: edge.label,
         labelColor: theme.textMuted,
         opacity: style.opacity,
-        arrowhead: style.arrowhead ? ('target' as const) : (false as const),
+        arrowhead:
+            style.arrowhead || edge.data?.arrowhead === 'target'
+                ? ('target' as const)
+                : (false as const),
         ...(ribbon
             ? {
                   weight: ribbon.weight ?? 0.5,

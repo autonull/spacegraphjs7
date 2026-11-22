@@ -39,3 +39,15 @@ spread because the camera fit normalizes uniform scale (`TODO4.md:114`, ADR 0015
   visible ends and thickening the filaments changes their read without deleting the relation.
 - The field layer is host DOM/CSS, one element per visible node, updated by transform only; it does not
   enter the scope simulation or the renderer's position authority.
+
+## Mockup-informed refinement (2026-11-22)
+
+The user supplied `docs/screenshots/mockup/` and chose the dark quantum-field direction, borrowed
+loosely, with "form follows function" as the rule. Consequences applied to the flagship:
+
+- Deep navy gradient field and a small bright core at each node; no fog, no blur, no `mix-blend-mode`.
+  `backdrop-filter` on the inspector was removed. Only gradients, flat shadows and one 6px core remain.
+- Cards stay square — the user explicitly rejected rounded rectangles. Status reads through a square
+  tinted chip with a check/exclamation glyph.
+- Causal flux edges carry a small arrowhead at the target end, so direction is visible without a legend.
+- Default glow was reduced from 0.45 to 0.2; stronger glow stays available as a preset knob.

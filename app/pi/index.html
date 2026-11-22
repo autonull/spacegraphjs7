@@ -385,8 +385,8 @@
                 border-radius: 0;
                 transition: opacity var(--pi-blend, 120ms);
                 box-shadow:
-                    0 0 calc(var(--view-glow, 0) * 22px)
-                        color-mix(in srgb, var(--kind-accent, transparent) 45%, transparent);
+                    0 2px 10px rgba(0, 0, 0, 0.28),
+                    inset 0 1px 0 color-mix(in srgb, #fff 12%, transparent);
             }
             .rung-shape {
                 position: absolute;
@@ -484,6 +484,20 @@
             }
             .anatomy-status {
                 flex: 0 0 auto;
+                padding: 1px 6px;
+                font-size: var(--sg-font-sizes-nano);
+                background: color-mix(in srgb, var(--kind-accent, var(--sg-colors-accent)) 18%, transparent);
+                border: 1px solid color-mix(in srgb, var(--kind-accent, var(--sg-colors-accent)) 45%, transparent);
+            }
+            .anatomy-status::before {
+                content: '✓ ';
+            }
+            .anatomy[data-anatomy='failure'] .anatomy-status {
+                background: color-mix(in srgb, var(--view-severity, var(--sg-colors-destructive)) 22%, transparent);
+                border-color: var(--view-severity, var(--sg-colors-destructive));
+            }
+            .anatomy[data-anatomy='failure'] .anatomy-status::before {
+                content: '! ';
             }
             .anatomy-status-dot {
                 flex: 0 0 auto;
@@ -943,12 +957,16 @@
                 z-index: 0;
                 overflow: hidden;
                 pointer-events: none;
-                mix-blend-mode: screen;
-                opacity: calc(0.3 + var(--view-glow, 0) * 0.7);
+                opacity: calc(0.45 + var(--view-glow, 0) * 0.55);
             }
             :root[data-theme='light'] #field {
-                mix-blend-mode: multiply;
-                opacity: 0.16;
+                opacity: 0.14;
+            }
+            #canvas {
+                background:
+                    radial-gradient(80% 60% at 18% 12%, color-mix(in srgb, var(--view-causal, #4dd) 9%, transparent), transparent 70%),
+                    radial-gradient(70% 60% at 82% 88%, color-mix(in srgb, var(--view-scope, #85f) 8%, transparent), transparent 70%),
+                    #050a12;
             }
             .field-node {
                 --field-kind: var(--kind-accent, var(--view-causal, #7fe));
@@ -967,6 +985,17 @@
                     transparent 70%
                 );
                 will-change: transform;
+            }
+            .field-node::after {
+                content: '';
+                position: absolute;
+                left: 50%;
+                top: 50%;
+                width: 6px;
+                height: 6px;
+                margin: -3px 0 0 -3px;
+                border-radius: 50%;
+                background: var(--field-kind);
             }
             #canvas::after {
                 content: '';
@@ -1059,8 +1088,7 @@
                 box-sizing: border-box;
                 background: color-mix(in srgb, var(--sg-colors-background) 88%, transparent);
                 border: 1px solid var(--sg-colors-border);
-                box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
-                backdrop-filter: blur(4px);
+                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
             }
             #focus-lens[hidden] {
                 display: none;

@@ -86,6 +86,10 @@ export const applyEdgeAttention = (
     return {
         ...mapped,
         confidence: rank < 0.5 ? 'inferred' : edge.confidence,
-        data: { ...mapped.data, ...(ribbon ? { ribbon } : {}) },
+        data: {
+            ...mapped.data,
+            ...(causal ? { arrowhead: 'target' } : {}),
+            ...(ribbon ? { ribbon } : {}),
+        },
     };
 };
