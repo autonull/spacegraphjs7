@@ -80,6 +80,9 @@ The view uses registered flux edges (`FluxEdge`) and a host field layer of merge
 The opt-in `?ui=continuity` preset adds an opaque-data collar, one-sided sheath and salience-driven bend
 to the same registered type, aligns the causal accent across borders and focus, and recedes the grid;
 `__pi.setContinuity()` and the `view.continuity` command toggle it without a new knob or default change.
+The opt-in `?ui=field-targets` preset anchors scope frames to the solver's world bounds through
+`scopeFieldRects()` and the renderer's `projectWorld()` seam, so fields stay square while cards settle;
+`__pi.setFieldTargets()` toggles it without a second position authority.
 The opt-in `?ui=readable` preset raises chrome type to a 13px body / 12px secondary floor, shows plain
 labels, and opens the 300px rail on demand from a four-panel strip (`__pi.openRailPanel()`); renderer
 labels and defaults stay unchanged. The catalog groups Presets, View experiments and Study questions

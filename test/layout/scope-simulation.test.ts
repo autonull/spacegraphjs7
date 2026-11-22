@@ -29,6 +29,14 @@ describe('scope simulation', () => {
         }
     });
 
+    it('exposes the solved layout for read-only overlays', () => {
+        const sim = new ScopeSimulation();
+        expect(sim.targets).toBeUndefined();
+        sim.setSpecs(simple);
+        expect(sim.targets?.frames.size).toBe(targetOf(simple).frames.size);
+        expect(sim.targets?.positions.get('root/a')).toEqual(targetOf(simple).positions.get('root/a'));
+    });
+
     it('is deterministic for the same specs and steps', () => {
         const a = new ScopeSimulation();
         const b = new ScopeSimulation();

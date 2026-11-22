@@ -20,6 +20,7 @@ const calls = () => {
         setRibbonCorridor: (enabled) => log.push(`ribbon:${enabled}`),
         setGraphMorph: (enabled) => log.push(`morph:${enabled}`),
         setContinuity: (enabled) => log.push(`continuity:${enabled}`),
+        setFieldTargets: (enabled) => log.push(`fieldTargets:${enabled}`),
         setTranscriptCollapsed: (collapsed) => log.push(`transcript:${collapsed}`),
     };
     return { log, target };
@@ -74,6 +75,15 @@ describe('applyUIPreset', () => {
         expect(applied?.flags?.continuity).toBe(true);
         expect(applied?.knobs['theme.backdrop']).toBe('flat');
         expect(log).toContain('continuity:true');
+    });
+
+    it('keeps solved-target fields separate from the continuity grammar', () => {
+        const { log, target } = calls();
+        const field = applyUIPreset('field-targets', target);
+        expect(field?.flags?.fieldTargets).toBe(true);
+        expect(field?.flags?.continuity).toBeUndefined();
+        expect(log).toContain('fieldTargets:true');
+        expect(log).not.toContain('continuity:true');
     });
 
     it('leaves the target untouched for an unknown id', () => {

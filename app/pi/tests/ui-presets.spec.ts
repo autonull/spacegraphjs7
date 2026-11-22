@@ -71,6 +71,26 @@ test.describe('UI presets', () => {
         expect(await page.evaluate(() => (window as any).__pi.continuity())).toBe(false);
     });
 
+    test('solved-target scope fields are a one-URL opt-in separate from continuity', async ({ page }) => {
+        await page.goto('/?ui=field-targets');
+        await ready(page);
+        expect(await ui(page)).toBe('field-targets');
+        expect(await page.evaluate(() => document.body.dataset.uiField)).toBe('targets');
+        expect(await page.evaluate(() => (window as any).__pi.fieldTargets())).toBe(true);
+        expect(await page.evaluate(() => (window as any).__pi.continuity())).toBe(false);
+        await expect
+            .poll(() => page.locator('#structure .field-hull').count(), { timeout: 10_000 })
+            .toBeGreaterThan(0);
+        await page.evaluate(() => (window as any).__pi.openCommands('palette', 'graph view'));
+        const ids = await page.locator('[data-command-id]').evaluateAll((rows) =>
+            rows.map((row) => row.getAttribute('data-command-id')),
+        );
+        expect(ids).toContain('view.fieldTargets');
+        await page.evaluate(() => (window as any).__pi.applyUIPreset('full'));
+        expect(await page.evaluate(() => document.body.dataset.uiField)).toBe('projected');
+        expect(await page.evaluate(() => (window as any).__pi.fieldTargets())).toBe(false);
+    });
+
     test('the u shortcut opens a compact lab list that restores chrome', async ({ page }) => {
         await page.goto('/?ui=compact');
         await ready(page);

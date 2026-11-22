@@ -16,6 +16,7 @@ import {
     idsOf,
 } from '@spacegraphjs/renderer';
 import type { GraphSpec, SpaceGraph } from 'spacegraphjs/activity';
+import { Vector3 } from 'three';
 import { worldToScreen } from 'spacegraphjs/utils';
 import { WIDGET_SLOTS } from 'spacegraphjs/widgets';
 import { CAMERA_MOTION_VERBS } from 'spacegraphjs/motion';
@@ -221,6 +222,16 @@ export class SpaceGraphRenderer extends ModelRenderer implements GraphRenderer {
         if (!node) return undefined;
 
         return worldToScreen(node.position, sg.renderer.camera, sg.renderer.renderer.domElement);
+    }
+
+    projectWorld(point: readonly [number, number, number]): { x: number; y: number } | undefined {
+        const sg = this.#sg;
+        if (!sg) return undefined;
+        return worldToScreen(
+            new Vector3(point[0], point[1], point[2]),
+            sg.renderer.camera,
+            sg.renderer.renderer.domElement,
+        );
     }
 
     protected applyFit(ids?: readonly string[], options?: FitOptions): void {

@@ -117,6 +117,22 @@
       "decision": "pending human review; ADR 0008 default gate not closed"
     },
     {
+      "id": "ui-preset-field-targets",
+      "status": "experiment; default not flipped",
+      "incumbent": "full — shipped knobs and full chrome (?ui=full)",
+      "variant": "Solved scope fields (?ui=field-targets, chrome full)",
+      "data": "docs/screenshots/ui-presets/comparison.json",
+      "gates": [
+        "grammar",
+        "vision",
+        "screenshots"
+      ],
+      "incumbentImage": "docs/screenshots/ui-presets/field-targets/incumbent.png",
+      "variantImage": "docs/screenshots/ui-presets/field-targets/variant.png",
+      "images": "pending human verdict; pairs captured by pnpm run shots:compare",
+      "decision": "pending human review; ADR 0008 default gate not closed"
+    },
+    {
       "id": "ui-preset-light-shell",
       "status": "experiment; default not flipped",
       "incumbent": "full — shipped knobs and full chrome (?ui=full)",

@@ -147,6 +147,11 @@ export class ScopeSimulation {
         return this.#current;
     }
 
+    /** The solved layout the springs chase, including scope frames, for read-only overlay use. */
+    get targets(): ScopeLayout | undefined {
+        return this.#target;
+    }
+
     get pinned(): ReadonlySet<string> {
         return this.#pinned;
     }

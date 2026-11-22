@@ -288,6 +288,12 @@ export type GraphRenderer = {
      */
     getNodeScreenPosition?(id: string): { x: number; y: number } | undefined;
     /**
+     * Project an arbitrary world point into screen pixels from the canvas' top left. Hosts use this
+     * to place overlays from solved layout data without owning a second camera. Optional: a renderer
+     * that cannot project yields undefined, and the host falls back to its own overlay path.
+     */
+    projectWorld?(point: readonly [number, number, number]): { x: number; y: number } | undefined;
+    /**
      * How the DOM cards face the camera. Optional: a renderer that draws no cards, or draws them in
      * screen space, leaves it out — and a host reads that as "not changeable", never as a broken
      * camera.

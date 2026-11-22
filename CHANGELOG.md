@@ -15,6 +15,11 @@ follow the workflow in `docs/ROADMAP.md` (`test:publish` → build → npm).
 - **Study export and honest label (TODO9 Phase 4):** the study page shows trial progress, enables a
   Copy report button at the end of a run and stacks below 900px without changing the report text or
   `window.__study`. The light experiment is labelled `Light view` rather than promising a full shell theme.
+- **Solved-target scope fields (TODO9 Phase 3):** `ScopeSimulation.targets` exposes the solved layout
+  read-only, and a pure `scopeFieldRects()` mapping plus an optional renderer `projectWorld()` seam
+  let the opt-in `?ui=field-targets` preset anchor scope frames to solver bounds instead of animated
+  node screen positions. No new position authority, contract field, renderer branch or default change;
+  the experiment has its own labelled pair and pending ADR 0008 stub.
 - **Readable chrome and catalog (TODO9 Phase 4):** the opt-in `?ui=readable` preset raises chrome to a
   13px body / 12px secondary floor, switches to plain-language labels while keeping ids and jargon
   in tooltips, and moves the rail into a 300px on-demand drawer behind a four-panel strip. The proof

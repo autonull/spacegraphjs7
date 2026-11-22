@@ -10,6 +10,7 @@ export interface UIPresetFlags {
     readonly ribbonCorridor?: boolean;
     readonly graphMorph?: boolean;
     readonly continuity?: boolean;
+    readonly fieldTargets?: boolean;
     readonly collapseTranscript?: boolean;
 }
 
@@ -117,6 +118,13 @@ export const UI_PRESETS: readonly UIPreset[] = [
         { flags: { continuity: true }, gates: ['grammar', 'vision', 'screenshots'] },
     ),
     preset(
+        'field-targets',
+        'Solved scope fields',
+        'Do scope fields anchored to solved targets read as one run while cards settle?',
+        {},
+        { flags: { fieldTargets: true }, gates: ['grammar', 'vision', 'screenshots'] },
+    ),
+    preset(
         'light-shell',
         'Light view',
         'Does the light view need the shell themed too?',
@@ -162,6 +170,7 @@ export interface UIPresetTarget {
     setRibbonCorridor(enabled: boolean): void;
     setGraphMorph(enabled: boolean): void;
     setContinuity(enabled: boolean): void;
+    setFieldTargets(enabled: boolean): void;
     setTranscriptCollapsed(collapsed: boolean): void;
 }
 
@@ -180,6 +189,7 @@ export function applyUIPreset(
         if (flags.ribbonCorridor !== undefined) target.setRibbonCorridor(flags.ribbonCorridor);
         if (flags.graphMorph !== undefined) target.setGraphMorph(flags.graphMorph);
         if (flags.continuity !== undefined) target.setContinuity(flags.continuity);
+        if (flags.fieldTargets !== undefined) target.setFieldTargets(flags.fieldTargets);
         if (flags.collapseTranscript !== undefined)
             target.setTranscriptCollapsed(flags.collapseTranscript);
     }

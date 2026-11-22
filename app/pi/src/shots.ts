@@ -85,6 +85,7 @@ export const SHOTS: readonly Shot[] = [
     uiShot('presentation', 'UI · Presentation', 'Does a quiet frame and collapsed transcript improve demo clarity?'),
     uiShot('scale-aware', 'UI · Scale-aware packing', 'Does packing toward measured coverage fill the mid canvas without losing legibility?'),
     uiShot('continuity', 'UI · Continuous grammar', 'Do collar, core, sheath and one accent make a run read as one strand?'),
+    uiShot('field-targets', 'UI · Solved scope fields', 'Do scope frames anchored to solved targets read as one run while cards settle?'),
     uiShot('light-shell', 'UI · Light view', 'Does the light view need the shell themed too?'),
     {
         id: 'cockpit',

@@ -215,15 +215,15 @@ Plan status: **All implementation slices are landed: Phases 0–3 plus every Pha
 human gates. Phase 4 now covers PIUX-03/05/06/07/09/10 as opt-in states or non-default fixes. What
 remains is external by design: ADR 0008 human verdicts, the five-question pilot, and one final full
 gate run after any promotion. No default has been flipped, no shipped gallery incumbent overwritten,
-and no verdict or pilot result fabricated. TODO9 §3 invariant 5's solved-target scope field stays a
-separate, unimplemented capability (handoff note 6).**
+and no verdict or pilot result fabricated. The solved-target scope field now ships as its own opt-in
+experiment with a labelled pair (handoff note 6).**
 
 | Phase                            | Status                              | Evidence                                                          |
 | -------------------------------- | ----------------------------------- | ----------------------------------------------------------------- |
 | 0 — baseline and metrics         | complete                            | `presence-baseline.json`; 4 shape-only tests green                 |
 | 1 — navigation coherence         | complete                            | practice gate + one-index e2e; 41 targeted e2e green               |
 | 2 — occupancy and octave scaling | complete                            | `presence-scale-aware.json`; scale-aware pair; 34 e2e              |
-| 3 — continuous visual language   | experiment captured; verdict pending | `ui-continuity` shot + pair; focused library, renderer and host tests green |
+| 3 — continuous visual language   | implementation complete; verdicts pending | `ui-continuity` and `ui-field-targets` shots + pairs; 20 library, 173 host tests green |
 | 4 — flagship integration         | implementation complete; human gates open | PIUX-03/05/06/07/09/10 landed; 47 targeted e2e green; pilot and ADR undecided |
 
 ### Delivered in Phase 0
@@ -288,6 +288,12 @@ separate, unimplemented capability (handoff note 6).**
    the causal accent across card borders, ports, transcript dots and the focus ring. The new
    `ui-continuity` shot and labelled `continuity/{incumbent,variant}.png` pair are captured; the ADR
    0008 stub `ui-preset-continuity` has a pending human decision.
+4. **Solved-target scope fields.** `ScopeSimulation.targets` exposes the solved layout read-only; the
+   pure `scopeFieldRects()` mapping turns solved frames into screen rectangles through an injected
+   projector. `GraphRenderer.projectWorld?()` is an optional, general capability implemented by the
+   spacegraph adapter, so no host owns a second camera. `?ui=field-targets` / `view.fieldTargets` opt
+   in; the incumbent screen-position path is unchanged. Its own gallery shot, labelled pair and
+   pending ADR stub keep it separate from `continuity` (handoff note 6).
 
 ### Delivered in Phase 4 (partial)
 
@@ -317,7 +323,7 @@ separate, unimplemented capability (handoff note 6).**
 
 - Root: `pnpm exec vitest run test/layout/occupancy-packing.test.ts test/layout/scope-policy.test.ts`
   — 10 library tests green. `pnpm run build:lib` rebuilt the workspace library after the source edit.
-- `app/pi`: `pnpm run check:fast` — 31 files, 172 unit tests green (+4 over Phase 2).
+- `app/pi`: `pnpm run check:fast` — 31 files, 173 unit tests green (+5 over Phase 2).
 - `app/pi`: Phase 1 targeted Playwright (`study`, `navigation`, `shell`, `browser`) — 41 passed at
   `retries: 0`, `--workers=1`.
 - `app/pi`: Phase 2 targeted Playwright (`ui-presets`, `policy`, `vision`) — 34 passed, including the
@@ -335,6 +341,11 @@ separate, unimplemented capability (handoff note 6).**
   new; no shipped default changed.
 - `app/pi`: `pnpm run compare:ui` regenerated 11 pending decision stubs; targeted captures added the
   `readable` incumbent/variant pair and the `ui-readable` gallery shot. No pre-existing PNG changed.
+- Solved-target fields: `pnpm exec vitest run test/layout/field-projection.test.ts
+  test/layout/scope-simulation.test.ts` — 20 library tests green; `pnpm run build:lib` and
+  `pnpm run build:packages` rebuilt the workspace declarations after the source edits. `app/pi`
+  targeted Playwright (`ui-presets`, `shell`) — 21 passed at `retries: 0`; targeted pair and gallery
+  captures added `field-targets/`. `pnpm run compare:ui` regenerated 12 pending stubs.
 - No `shots:all`, `verify:visual` or `scale` run: no shipped default changed and TODO8 verdicts are
   still pending. The full gate set stays with the Phase 4 human gates.
 
@@ -358,6 +369,10 @@ separate, unimplemented capability (handoff note 6).**
   pair is `docs/screenshots/ui-presets/readable/{incumbent,variant}.png`, its traceability item is
   `ui-readable` in `review.json` (note only, no verdict), and its stub is `ui-preset-readable` in
   `comparison.json`. Promoting the comfortable type scale or plain labels needs a human decision.
+- Solved-target fields stay opt-in (`data-ui-field='targets'` is set only by the preset). Its labelled
+  pair is `docs/screenshots/ui-presets/field-targets/{incumbent,variant}.png`, its traceability item is
+  `ui-field-targets` in `review.json` (note only), and its stub is `ui-preset-field-targets` in
+  `comparison.json`. It does not change a default or absorb the `continuity` verdict.
 
 ### Deferred measures (reported, not silently dropped)
 
@@ -373,7 +388,7 @@ separate, unimplemented capability (handoff note 6).**
 ### Remaining work — clarified, in order
 
 1. **Human gates (blocking graduation).** Add verdicts to `docs/screenshots/review.json` for the
-   `ui-*` shots, including `ui-continuity` and `ui-readable`, and close the matching `decision` stubs
+   `ui-*` shots, including `ui-continuity`, `ui-readable` and `ui-field-targets`, and close the matching `decision` stubs
    in `ui-presets/comparison.json`. Run the five-question pilot with `?studyUI=<preset>`
    (`docs/pi-study.md`, `window.__study.ui`); never fabricate a result. A default flip needs that
    logged human decision. The unpromoted states stay one URL and one command away.
@@ -381,8 +396,8 @@ separate, unimplemented capability (handoff note 6).**
    `test:e2e`, `verify:visual`, `shots:all`, `scale`, all at `retries: 0`. Recapture only promoted
    states with an incumbent pair; the docs (`CHANGELOG.md`, `app/pi/README.md`, `docs/pi-study.md`)
    already describe the opt-in states and need only the promotion record.
-3. **Separate library capability, not a TODO9 change set.** Scope fields from solved targets
-   (§4 Phase 3 item 2) still need a general seam and their own labelled pair; see handoff note 6.
+3. **No implementation backlog remains.** Scope fields from solved targets landed as their own opt-in
+   experiment (§4 Phase 3 item 2); handoff note 6 records the seam.
 
 ### Handoff notes
 
@@ -392,7 +407,8 @@ separate, unimplemented capability (handoff note 6).**
 3. Reuse TODO8's harness: named preset, `?ui=`, `shots:compare`, `?studyUI=`, `review.json`.
 4. Use `pnpm`, `--workers=1` or `--workers=2` on constrained hosts, and state-based waits only.
 5. Make no further default change until an ADR 0008 decision is logged by a human; promote the existing
-   `one-index`, `scale-aware`, `continuity` and `readable` experiments only with a verdict.
-6. TODO9 §4 Phase 3 item 2 ("scope fields from solved targets") remains unimplemented: the field layer
-   follows projected screen positions, not solver targets. It needs a general host/library seam and its
-   own labelled pair; do not fold it into `continuity` without a new verdict.
+   `one-index`, `scale-aware`, `continuity`, `readable` and `field-targets` experiments only with a verdict.
+6. Scope fields from solved targets (§4 Phase 3 item 2) landed separately from `continuity`:
+   `ScopeSimulation.targets` plus the pure `scopeFieldRects()` mapping and the optional renderer
+   `projectWorld()` seam. The incumbent screen-position path is unchanged; keep the two labelled pairs
+   and their ADR 0008 verdicts separate.

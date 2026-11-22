@@ -22,6 +22,7 @@ import { sampleDepth, type DepthAxis } from 'spacegraphjs/depth';
 import { Navigation, Trail } from 'spacegraphjs/navigation';
 import {
     occupancySpacingFactor,
+    scopeFieldRects,
     ScopeSimulation,
     type ScopePolicyInput,
     type ScopeSpec,
@@ -358,6 +359,7 @@ export class PiHost {
     #ribbonCorridor = false;
     #graphMorph = false;
     #continuity = false;
+    #fieldTargets = false;
     #octave = 0;
     #occupancyTarget = 0;
     #cardScale = 1;
@@ -558,6 +560,7 @@ export class PiHost {
         const applied = applyUIPreset(id, this);
         if (applied) this.#uiPresetID = applied.id;
         this.setContinuity(Boolean(applied?.flags?.continuity));
+        this.setFieldTargets(Boolean(applied?.flags?.fieldTargets));
         if (applied?.chrome === 'readable') this.toggleRail(false);
         return applied;
     }
@@ -1142,20 +1145,30 @@ export class PiHost {
         const layer = this.#structure;
         if (!layer) return;
         const live = new Set<string>();
+        const solved = this.#fieldTargets
+            ? scopeFieldRects(
+                  this.simulation.targets,
+                  (point) => this.renderer.projectWorld?.([point.x, point.y, point.z]),
+                  12,
+              )
+            : undefined;
 
         for (const spec of this.#specs) {
             if (spec.id === 'run') continue;
-            const points = spec.nodes.flatMap((node) => {
-                const sourceID = this.#nodeByQualified.get(`${this.scopePath(spec)}/${node.id}`);
-                const point = sourceID ? this.renderer.getNodeScreenPosition?.(sourceID) : undefined;
-                return point ? [point] : [];
-            });
-            if (points.length === 0) continue;
+            const rect = solved?.get(this.scopePath(spec));
+            const points = rect
+                ? []
+                : spec.nodes.flatMap((node) => {
+                      const sourceID = this.#nodeByQualified.get(`${this.scopePath(spec)}/${node.id}`);
+                      const point = sourceID ? this.renderer.getNodeScreenPosition?.(sourceID) : undefined;
+                      return point ? [point] : [];
+                  });
+            if (!rect && (solved || points.length === 0)) continue;
             live.add(spec.id);
-            const minX = Math.min(...points.map((point) => point.x)) - 30;
-            const minY = Math.min(...points.map((point) => point.y)) - 34;
-            const maxX = Math.max(...points.map((point) => point.x)) + 30;
-            const maxY = Math.max(...points.map((point) => point.y)) + 30;
+            const minX = rect ? rect.x : Math.min(...points.map((point) => point.x)) - 30;
+            const minY = rect ? rect.y : Math.min(...points.map((point) => point.y)) - 34;
+            const maxX = rect ? rect.x + rect.width : Math.max(...points.map((point) => point.x)) + 30;
+            const maxY = rect ? rect.y + rect.height : Math.max(...points.map((point) => point.y)) + 30;
             let hull = this.#hulls.get(spec.id);
             if (!hull) {
                 hull = document.createElement('div');
@@ -1617,6 +1630,14 @@ export class PiHost {
         this.paint();
         this.renderHud();
         return this.#continuity;
+    }
+
+    setFieldTargets(enabled: boolean): boolean {
+        this.#fieldTargets = enabled;
+        document.body.dataset.uiField = enabled ? 'targets' : 'projected';
+        this.paint();
+        this.renderHud();
+        return this.#fieldTargets;
     }
 
     setGraphMorph(enabled: boolean): boolean {
@@ -2153,6 +2174,12 @@ export class PiHost {
                 group: 'graph view',
                 run: () => this.setContinuity(!this.#continuity),
             },
+            {
+                id: 'view.fieldTargets',
+                label: 'Toggle solved-target scope fields',
+                group: 'graph view',
+                run: () => this.setFieldTargets(!this.#fieldTargets),
+            },
             ...(this.#view.turns ?? []).map((turnID, index) => ({
                 id: `view.turn.${turnID}`,
                 label: `Focus turn ${index + 1}`,
@@ -2250,6 +2277,12 @@ export class PiHost {
                 label: 'Toggle continuous connection grammar',
                 group: 'shortcut',
                 hint: 'view.continuity',
+            },
+            {
+                id: 'help.fieldTargets',
+                label: 'Toggle scope fields anchored to solved targets',
+                group: 'shortcut',
+                hint: 'view.fieldTargets',
             },
         ];
     }
@@ -2398,6 +2431,8 @@ export class PiHost {
             setGraphMorph: (enabled: boolean) => this.setGraphMorph(enabled),
             continuity: () => this.#continuity,
             setContinuity: (enabled: boolean) => this.setContinuity(enabled),
+            fieldTargets: () => this.#fieldTargets,
+            setFieldTargets: (enabled: boolean) => this.setFieldTargets(enabled),
             cycleGraphLayout: (delta = 1) => this.cycleGraphLayout(delta),
             surface: () => this.#surface,
             setSurface: (surface: Surface) => this.setSurface(surface),
@@ -3374,7 +3409,7 @@ export class PiHost {
         const view =
             `${this.#graphLayout}${this.#graphLayoutAligned ? '+aligned' : ''}` +
             `${this.#ribbonCorridor ? '+corridor' : ''}${this.#graphMorph ? '+morph' : ''}` +
-            `${this.#continuity ? '+continuity' : ''}`;
+            `${this.#continuity ? '+continuity' : ''}${this.#fieldTargets ? '+targets' : ''}`;
         const context =
             `${this.#level}/${this.#levelMode} · ${this.#depth}/${this.#depthAxis} · ` +
             `${this.simulation.settled ? 'settled' : 'moving'} · ${view}`;
