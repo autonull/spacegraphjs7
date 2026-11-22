@@ -66,7 +66,7 @@ import {
     toAdapterModel,
     type AgentLevel,
 } from './adapter';
-import { derivePorts } from './anatomy';
+import { anatomyChapter, derivePorts } from './anatomy';
 import { innerTree, type InnerLayout } from './inner';
 import {
     applyEdgeAttention,
@@ -148,6 +148,7 @@ import {
 } from './recorder';
 import { agentScopes, DEPTH, portalChain } from './scopes';
 import {
+    CHAPTER_CARD,
     computeGraphLayout,
     graphShape,
     GRAPH_LAYOUTS,
@@ -650,6 +651,8 @@ export class PiHost {
 
     /** The scale-aware card factor is host policy data fed to the same size seam as salience. */
     private cardSize(kind: string, html: boolean, dense: boolean): readonly [number, number] {
+        if (this.#graphLayout === 'chapters')
+            return [CHAPTER_CARD[0] * this.#cardScale, CHAPTER_CARD[1] * this.#cardScale];
         const [width, height] = nodeSize(kind, html, dense);
         return [width * this.#cardScale, height * this.#cardScale];
     }
@@ -953,6 +956,22 @@ export class PiHost {
         const windowed = windowedView(this.#view, this.#windowSize);
         this.#hidden = windowed.hidden;
         const model = toAdapterModel(windowed.view);
+        const chapters = this.#graphLayout === 'chapters';
+        const chapterChips = new Map<string, ReturnType<typeof innerTree>>();
+        if (chapters) {
+            const kept = new Set(
+                model.nodes.filter((node) => node.kind === 'run' || node.kind === 'unit').map((node) => node.id),
+            );
+            model.nodes = model.nodes.filter((node) => kept.has(node.id));
+            model.edges = model.edges.filter((edge) => kept.has(edge.source) && kept.has(edge.target));
+            for (const node of model.nodes) {
+                const chips = innerTree(node.id, windowed.view.nodes, windowed.view.edges, 1, 8);
+                chapterChips.set(
+                    node.id,
+                    chips.filter((chip) => chip.kind !== 'run'),
+                );
+            }
+        }
         const values = this.#resolved.values;
         const blendMs = Number(values['ladder.blendMs']);
         const focus = this.#revealed || this.#controller.selection[0] || '';
@@ -1013,6 +1032,18 @@ export class PiHost {
             edges: true,
             focus: this.#controller.selection[0],
             renderCard: (node, level, context) => {
+                if (chapters && (node.kind === 'unit' || node.kind === 'run'))
+                    return anatomyChapter(
+                        {
+                            id: node.id,
+                            label: node.label,
+                            status: String(node.status ?? ''),
+                            kind: node.kind,
+                            scope: typeof node.data?.scope === 'string' ? node.data.scope : undefined,
+                            data: node.data,
+                        },
+                        chapterChips.get(node.id) ?? [],
+                    );
                 const input = {
                     level,
                     activity: this.#activity.get(node.id) ?? 0,
@@ -1145,6 +1176,11 @@ export class PiHost {
         const layer = this.#structure;
         if (!layer) return;
         const live = new Set<string>();
+        if (this.#graphLayout === 'chapters') {
+            for (const [, hull] of this.#hulls) hull.remove();
+            this.#hulls.clear();
+            return;
+        }
         const solved = this.#fieldTargets
             ? scopeFieldRects(
                   this.simulation.targets,

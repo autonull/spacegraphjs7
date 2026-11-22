@@ -9,13 +9,22 @@ import {
     type ScopeSpec,
 } from 'spacegraphjs/layout';
 
-export const GRAPH_LAYOUTS = ['freeform', 'timeline', 'timeline-rows', 'lanes', 'tree', 'force'] as const;
+export const GRAPH_LAYOUTS = [
+    'freeform',
+    'timeline',
+    'timeline-rows',
+    'chapters',
+    'lanes',
+    'tree',
+    'force',
+] as const;
 export type GraphLayoutMode = (typeof GRAPH_LAYOUTS)[number];
 
 export const isGraphLayoutMode = (value: string | null | undefined): value is GraphLayoutMode =>
     value !== null && value !== undefined && (GRAPH_LAYOUTS as readonly string[]).includes(value);
 
 const CARD: readonly [number, number] = [200, 72];
+export const CHAPTER_CARD: readonly [number, number] = [360, 200];
 const LANES = ['run', 'unit', 'message', 'action'] as const;
 
 type Node = LayoutModel['nodes'][number];
@@ -25,7 +34,10 @@ const laneOf = (node: { kind: string }): (typeof LANES)[number] =>
     LANES.includes(node.kind as (typeof LANES)[number]) ? (node.kind as (typeof LANES)[number]) : 'action';
 
 /** Translate the agent vocabulary into the generic layout contract once, outside the hot path. */
-export function layoutConfig(view: AgentView): LayoutConfig<Node, Edge, (typeof LANES)[number]> {
+export function layoutConfig(
+    view: AgentView,
+    cardSize: readonly [number, number] = CARD,
+): LayoutConfig<Node, Edge, (typeof LANES)[number]> {
     const unitID = (node: { data?: Record<string, unknown> }): string | undefined =>
         typeof node.data?.unitId === 'string' ? node.data.unitId : undefined;
     const unitNode = new Map(
@@ -48,14 +60,14 @@ export function layoutConfig(view: AgentView): LayoutConfig<Node, Edge, (typeof 
         }
     }
     return {
-        nodeSizeFn: () => CARD,
+        nodeSizeFn: () => cardSize,
         laneList: LANES,
         laneOfFn: laneOf,
         depthMap: { run: 0, unit: 1, message: 2, action: 3, artifact: 4, retry: 4 },
         turnIdFn: (node) => (node.kind === 'unit' ? node.id : unitNode.get(unitOfNode.get(node.id) ?? '')),
         parentOfFn: (_model, node) => parent.get(node.id),
         forceLinksFn: (_model, node) => links.get(node.id) ?? [],
-        geometry: { standardSize: CARD, indentStep: 160, depthLevels: 5, padding: 24 },
+        geometry: { standardSize: cardSize, indentStep: cardSize[0] * 0.8, depthLevels: 5, padding: 24 },
     };
 }
 
@@ -69,6 +81,40 @@ export function layoutModel(view: AgentView): LayoutModel<Node, Edge> {
     };
 }
 
+/** One card per turn, packed as a compact grid so short edges and large labels share the canvas. */
+const chapterLayout = (view: AgentView): GraphLayout => {
+    const turns = new Set(view.turns ?? []);
+    const chapters = [
+        ...view.nodes.filter((node) => node.kind === 'run'),
+        ...(view.turns ?? []).flatMap((id) => view.nodes.filter((node) => node.id === id)),
+        ...view.nodes.filter((node) => node.kind === 'unit' && !turns.has(node.id)),
+    ];
+    const columns = 2;
+    const gapX = 56;
+    const gapY = 48;
+    const positions = new Map<string, Position>(
+        chapters.map((node, index) => [
+            node.id,
+            {
+                x: (index % columns) * (CHAPTER_CARD[0] + gapX),
+                y: Math.floor(index / columns) * (CHAPTER_CARD[1] + gapY),
+                z: 0,
+            },
+        ]),
+    );
+    const xs = [...positions.values()].map((point) => point.x);
+    const ys = [...positions.values()].map((point) => point.y);
+    return {
+        positions,
+        clusters: new Map(),
+        bounds: {
+            min: { x: Math.min(...xs) - CHAPTER_CARD[0] / 2, y: Math.min(...ys) - CHAPTER_CARD[1] / 2, z: 0 },
+            max: { x: Math.max(...xs) + CHAPTER_CARD[0] / 2, y: Math.max(...ys) + CHAPTER_CARD[1] / 2, z: 0 },
+        },
+        strategy: 'chapters',
+    };
+};
+
 /**
  * Solve the requested graph view over the whole agent view. `previous` warms the append-only views
  * so a streamed turn does not reorder the cards the reader is looking at.
@@ -79,9 +125,10 @@ export function computeGraphLayout(
     previous?: ReadonlyMap<string, Position>,
 ): GraphLayout | undefined {
     if (mode === 'freeform') return undefined;
+    if (mode === 'chapters') return chapterLayout(view);
     const rows = mode === 'timeline-rows';
     return Strategies.layoutGraph(layoutModel(view), layoutConfig(view), {
-        strategy: (rows ? 'timeline' : mode) as LaneLayoutStrategy,
+        strategy: rows ? 'timeline' : (mode as LaneLayoutStrategy),
         orientation: rows ? 'rows' : 'columns',
         previous,
         gap: 24,

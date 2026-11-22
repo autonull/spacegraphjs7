@@ -192,6 +192,36 @@ export const anatomyCard = (
     return `<div ${attributes} class="anatomy" style="${box};justify-content:flex-start;gap:var(--pi-card-gap-detail, var(--sg-spacing-xs))">${SHAPE_SPAN}${anatomyHeader(`${glyph}${label}`, labelSize, `${statusDot}${badge}`)}${anatomyRow(detail.slice(0, 320), 'body', 'anatomy-row-wrap')}${anatomyRow(metaline, 'meta', 'anatomy-row-wrap', telemetry.join(' · '))}${scope}${ports}</div>`;
 };
 
+/** A turn as one subgraph card: the frame, the label and its contained nodes are a single surface. */
+export const anatomyChapter = (
+    node: AnatomyNode,
+    chips: readonly InnerChip[],
+    labelPx = 0,
+): string => {
+    const placements = innerPlacements(chips, 'grid');
+    const lines = innerConnectors(placements)
+        .map(
+            ({ chipId, x1, y1, x2, y2, kind, status }) =>
+                `<g data-chip="${escapeHtml(chipId)}" data-kind="${escapeHtml(kind)}" data-status="${escapeHtml(status)}"><line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}"/></g>`,
+        )
+        .join('');
+    const inner = placements
+        .map(
+            ({ chip, left, top, width, height }) =>
+                `<span class="chapter-chip" data-kind="${escapeHtml(chip.kind)}" data-status="${escapeHtml(chip.status ?? chip.kind)}" style="inset-inline-start:${left.toFixed(1)}%;top:${top.toFixed(1)}%;width:${width.toFixed(1)}%;height:${height.toFixed(1)}%"><span class="chapter-chip-label">${escapeHtml(chip.label)}</span><span class="chapter-chip-role">${escapeHtml(chip.role)}</span></span>`,
+        )
+        .join('');
+    const glyph = node.scope
+        ? `<span aria-hidden="true" style="opacity:.7">${portalGlyph(node.scope)} </span>`
+        : '';
+    const header = anatomyHeader(
+        `${glyph}${escapeHtml(node.label)}`,
+        labelPx || 24,
+        anatomyStatus(escapeHtml(node.status)),
+    );
+    return `<div data-rung="chapter" data-kind="${escapeHtml(node.kind)}" data-status="${escapeHtml(node.status)}" data-anatomy="chapter" class="anatomy chapter" style="position:relative;box-sizing:border-box;width:100%;height:200px;min-height:200px;overflow:hidden;color:inherit;font-family:inherit">${SHAPE_SPAN}<div style="position:absolute;inset:6% 6% auto 6%">${header}</div><div class="chapter-inner" style="position:absolute;inset:32% 6% 6% 6%"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${lines}</svg>${inner}</div></div>`;
+};
+
 /** The inspector lens is the detail rung enlarged: same parts, plus the bounded inner topology. */
 export const anatomyLens = (
     node: AnatomyNode,

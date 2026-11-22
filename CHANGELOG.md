@@ -7,6 +7,11 @@ follow the workflow in `docs/ROADMAP.md` (`test:publish` → build → npm).
 
 ### Added
 
+- **Chapters subgraph layout (TODO9 default-study):** the opt-in `?graphLayout=chapters` view removes the
+  turn-card/turn-lane duplication: one large card per turn (plus Run) holds its work as internal chips,
+  with the failure tinted by severity, arranged in a compact two-column grid with short inter-chapter
+  edges. Freeform and every prior view stay reachable; a labelled gallery shot and ADR 0008 stub record
+  the experiment. No default changed.
 - **Continuous connection grammar (TODO9 Phase 3):** the opt-in `?ui=continuity` preset adds a square
   attachment collar, a tapered core, a one-sided sheath and a salience-driven bend to `FluxEdge` through
   opaque `data`; the causal accent also drives card borders, ports, transcript dots and the focus ring,

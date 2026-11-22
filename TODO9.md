@@ -319,6 +319,15 @@ experiment with a labelled pair (handoff note 6).**
    button both call `__pi.openQuestions()`, so each question id appears exactly once in the catalog,
    and a question link runs its capability evidence. Capability entries themselves are unchanged.
 
+### Default-layout study (opened after user review)
+
+The reviewer rejected the shipped `freeform` frame as noisy and confirmed `timeline-rows` as a step in
+the right direction. The new opt-in `chapters` view answers the fuller brief: each turn is one subgraph
+card with its work as internal chips, the Run card indexes the turns, the failure chip carries severity,
+and a compact two-column grid replaces scattered cards and long diagonals. `?graphLayout=chapters` or
+`g` reaches it; the freeform default is unchanged pending the logged ADR 0008 decision. Evidence:
+`pi-agent-chapters.png`, `review.json:chapters` and `graph-layout/comparison.json:chapters-subgraphs`.
+
 ### Verification run
 
 - Root: `pnpm exec vitest run test/layout/occupancy-packing.test.ts test/layout/scope-policy.test.ts`

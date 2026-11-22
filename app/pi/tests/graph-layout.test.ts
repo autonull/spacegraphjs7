@@ -19,8 +19,16 @@ import { measure } from '../scripts/baseline';
 const richView = () => agentDomain.build(richFixtureKernel());
 
 describe('graph layouts', () => {
-    it('exposes the five views and validates URL values', () => {
-        expect(GRAPH_LAYOUTS).toEqual(['freeform', 'timeline', 'timeline-rows', 'lanes', 'tree', 'force']);
+    it('exposes the six views and validates URL values', () => {
+        expect(GRAPH_LAYOUTS).toEqual([
+            'freeform',
+            'timeline',
+            'timeline-rows',
+            'chapters',
+            'lanes',
+            'tree',
+            'force',
+        ]);
         expect(isGraphLayoutMode('timeline')).toBe(true);
         expect(isGraphLayoutMode('timeline-rows')).toBe(true);
         expect(isGraphLayoutMode('nope')).toBe(false);

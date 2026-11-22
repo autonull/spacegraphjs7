@@ -17,6 +17,16 @@
       "decision": "pending human review; Phase 1 flexibility gate items 5-6 also outstanding"
     },
     {
+      "id": "chapters-subgraphs",
+      "status": "experiment; default not flipped",
+      "incumbent": "freeform (18 scattered cards, turn card plus turn lane, long cross-turn diagonals)",
+      "variant": "chapters (?graphLayout=chapters or g): one card per turn, children as internal chips, compact 2-column grid",
+      "data": "docs/screenshots/graph-baseline.json",
+      "images": "incumbent: docs/screenshots/pi-agent-in-action.png, docs/screenshots/pi-agent-timeline-rows.png; variant: docs/screenshots/pi-agent-chapters.png",
+      "effect": "Turn-lane and turn-card duplication removed; five subgraph cards carry the same 18 source nodes, inter-chapter edges are short, and the failure reads inside its turn. No claim about task success or time.",
+      "decision": "pending human review; ADR 0008 default gate not closed"
+    },
+    {
       "id": "cross-scope-corridor",
       "status": "experiment; opt-in via ?ribbonCorridor=1",
       "incumbent": "direct cross-scope causal ribbon through the card field",

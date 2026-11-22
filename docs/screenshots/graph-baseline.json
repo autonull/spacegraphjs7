@@ -29,6 +29,16 @@
     "crossScopeDiagonals": 0,
     "overlaps": 0
   },
+  "chapters": {
+    "nodes": 18,
+    "edges": 18,
+    "width": 2421.7970962504032,
+    "height": 1171.9544045561252,
+    "ratio": 0.4839193202315039,
+    "meanEdgeLength": 577.9550824988215,
+    "crossScopeDiagonals": 2,
+    "overlaps": 0
+  },
   "lanes": {
     "nodes": 18,
     "edges": 18,

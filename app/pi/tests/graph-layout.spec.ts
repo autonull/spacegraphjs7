@@ -9,16 +9,25 @@ test.describe('graph arrangements', () => {
             'freeform',
             'timeline',
             'timeline-rows',
+            'chapters',
             'lanes',
             'tree',
             'force',
         ]);
 
-        for (const mode of ['timeline', 'timeline-rows', 'lanes', 'tree', 'force', 'freeform']) {
+        for (const mode of ['timeline', 'timeline-rows', 'chapters', 'lanes', 'tree', 'force', 'freeform']) {
             await page.evaluate((value) => (window as any).__pi.setGraphLayout(value), mode);
             expect(await page.evaluate(() => (window as any).__pi.graphLayout())).toBe(mode);
             expect(await page.evaluate(() => (window as any).__pi.graphShape().nodes)).toBeGreaterThan(0);
         }
+    });
+
+    test('chapters render turns as subgraphs with internal work and no duplicated lane', async ({ page }) => {
+        await boot(page, '?graphLayout=chapters');
+        await expect.poll(() => page.locator('[data-rung="chapter"]').count()).toBeGreaterThan(1);
+        await expect(page.locator('.chapter-chip').first()).toBeVisible();
+        await expect(page.locator('.field-hull')).toHaveCount(0);
+        expect(await page.evaluate(() => (window as any).__pi.graphShape().nodes)).toBeGreaterThan(0);
     });
 
     test('palette commands and keys select graph views without a URL', async ({ page }) => {

@@ -95,7 +95,7 @@ depth 3; `fractal` keeps the detail tab.
 
 Graph arrangements are opt-in experiments (`TODO7.md`) and do not change the default view. Select one
 from the palette (`/`), with `g`, by URL
-(`?graphLayout=freeform|timeline|timeline-rows|lanes|tree|force`), or with
+(`?graphLayout=freeform|timeline|timeline-rows|chapters|lanes|tree|force`), or with
 `window.__pi.setGraphLayout(mode)`. `timeline` runs turns left-to-right with activity stacked inside
 each turn; `timeline-rows` transposes that into horizontal stripes stacked top-to-bottom. The current
 mode, the list of modes and the measured shape are exposed as `__pi.graphLayout()`,
@@ -105,7 +105,9 @@ view. `?graphAligned=1` aligns transcript rows with their projected graph nodes,
 keys (`a`, `r`) and `__pi` setters. `?graphMorph=1` (key `m`) lets the springs animate between views
 instead of snapping; intermediate frames pass the vision gates, and reduced motion still snaps.
 All five fields round-trip through full-state permalinks. Switching views preserves selection,
-focus, camera and transcript scroll. The default stays
+focus, camera and transcript scroll. `chapters` is the compact subgraph view: one card per turn plus
+Run, each holding its own work as internal chips, so turn cards, turn lanes and long cross-turn
+diagonals do not duplicate each other. The default stays
 `freeform` until the study decision and the ADR 0008 record in
 `docs/screenshots/graph-layout/comparison.json` close.
 
