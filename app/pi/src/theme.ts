@@ -209,6 +209,15 @@ const legible = (color: string, base: RenderTheme, fallback: string): string => 
 export const paletteCausal = (base: RenderTheme, id: string): string =>
     legible(paletteOf(id).causal, base, base.accent);
 
+/** Stable per-scope colors come from the same palette; no new knob or contract field. */
+export const paletteScopeColors = (base: RenderTheme, id: string): readonly string[] => {
+    const palette = paletteOf(id);
+    const distinct = Object.values(palette.kinds).filter(
+        (color) => color !== palette.causal && color !== palette.scope,
+    );
+    return [palette.scope, ...distinct.slice(0, 4)].map((color) => legible(color, base, base.accent));
+};
+
 /** The renderer theme varies the view palette, not the HUD tokens; low-contrast roles fall back. */
 export const paletteTheme = (base: RenderTheme, id: string): RenderTheme => {
     const palette = paletteOf(id);

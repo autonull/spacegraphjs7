@@ -711,6 +711,27 @@
                 text-overflow: ellipsis;
                 white-space: nowrap;
             }
+            .focus-chip-name {
+                display: none;
+                position: absolute;
+                bottom: 100%;
+                inset-inline-start: 0;
+                z-index: 3;
+                padding: var(--sg-spacing-hair) var(--sg-spacing-xs);
+                border: 1px solid var(--sg-colors-border);
+                background: var(--sg-colors-popover);
+                color: var(--sg-colors-foreground);
+                font-size: var(--sg-font-sizes-micro);
+                white-space: nowrap;
+                pointer-events: none;
+            }
+            #focus-lens[data-tab='inner'] .focus-chip {
+                pointer-events: auto;
+            }
+            .focus-chip:hover .focus-chip-name,
+            .focus-chip:focus-within .focus-chip-name {
+                display: block;
+            }
             .focus-chip-status {
                 position: absolute;
                 inset-inline-start: 4px;
@@ -1762,6 +1783,18 @@
             [data-density='dense'] .anatomy-row[data-tone='meta'],
             [data-density='dense'] .focus-chip-meta {
                 font-size: var(--sg-font-sizes-xs);
+            }
+            @media (max-width: 1000px) {
+                #command-bar {
+                    flex-wrap: nowrap;
+                    gap: var(--sg-spacing-xs);
+                }
+                #command-bar h1,
+                #command-bar #status,
+                #command-bar > label,
+                .proof-line .proof-detail {
+                    display: none;
+                }
             }
         </style>
     </head>

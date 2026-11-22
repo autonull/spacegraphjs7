@@ -104,6 +104,11 @@ needed before attributing it to `renderField()`.
 and failed the 1500 ms budget; the run with those servers stopped passed at 1476 ms. CI runs `scale`
 in an isolated job, as the harness comment requires.
 
+Second follow-up (2026-11-22, scope tint + narrow HUD + chip names): `pnpm run scale` reported
+`playSession120Bodies: 0.742 ms` with all budgets met. The rAF measurement was not repeated: these
+changes affect edge color data, CSS and lens markup, not `renderField()` or the camera loop, so the
+99.9 ms flight figure above remains the latest recorded browser measurement.
+
 Verification note: the full Playwright suite was run with `--workers=2` because the host had ~2 GB
 free RAM during the first attempt and fully parallel Chromium workers crashed with `Target crashed`
 (16 failures, all crash-related). With two workers all 105 tests passed (2 flaky, green on retry);

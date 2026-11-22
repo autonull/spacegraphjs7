@@ -4,6 +4,7 @@ import {
     applyEdgeAttention,
     applyNodeAttention,
     attentionMapping,
+    crossScopeTint,
     edgeRank,
     salienceScore,
     type AttentionPolicy,
@@ -97,5 +98,18 @@ describe('ribbon grammar', () => {
     test('context edges stay thin and dim', () => {
         expect(applyEdgeAttention(edge('reads'), 1, policy()).confidence).toBe('inferred');
         expect(applyEdgeAttention(edge('writes'), 1, policy()).confidence).toBe('explicit');
+    });
+
+    test('a cross-scope causal ribbon keeps the relation and takes a stable source tint', () => {
+        const colors = ['#111111', '#222222'];
+        const causal = applyEdgeAttention(edge('orders'), 1, policy(), '#8ff0d0');
+        const tinted = crossScopeTint(causal, 'run/unit-1', 'run/unit-2', colors);
+        expect(ribbonOf(tinted)?.color).toBe(colors[0]);
+        expect(tinted.data?.crossScope).toBe('run/unit-1');
+        expect(ribbonOf(tinted)?.fluid).toBe(true);
+        expect(crossScopeTint(causal, 'run/unit-1', 'run/unit-1', colors)).toBe(causal);
+        expect(crossScopeTint(causal, undefined, 'run/unit-2', colors)).toBe(causal);
+        const context = edge('contains');
+        expect(crossScopeTint(context, 'run/unit-1', 'run/unit-2', colors)).toBe(context);
     });
 });

@@ -45,6 +45,27 @@ test.describe('the one-surface shell', () => {
         await expect(page.locator('#settings-menu #catalog-toggle')).toBeVisible();
     });
 
+    test('the command bar stays on one row at narrow widths', async ({ page }) => {
+        const errors = await boot(page);
+        await page.setViewportSize({ width: 900, height: 1000 });
+        await page.waitForTimeout(300);
+        const layout = await page.evaluate(() => ({
+            header: document.querySelector('#command-bar')!.getBoundingClientRect().height,
+            canvasTop: document.querySelector('#canvas')!.getBoundingClientRect().top,
+        }));
+        expect(layout.header).toBeLessThanOrEqual(48);
+        expect(layout.canvasTop).toBeLessThanOrEqual(64);
+        for (const selector of [
+            '#command-open',
+            '#proof-line',
+            '#settings-menu summary',
+            '#attention',
+        ]) {
+            await expect(page.locator(selector)).toBeVisible();
+        }
+        expect(errors).toEqual([]);
+    });
+
     test('the readout stays on the canvas when the transcript moves below it', async ({
         page,
     }) => {

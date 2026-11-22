@@ -62,6 +62,20 @@ test('a chip control focuses that node without resizing it', async ({ page }) =>
     expect(await page.evaluate(() => (window as any).__pi.viewport().zoom)).toBe(before.size);
 });
 
+test('inner chips reveal their full name on focus', async ({ page }) => {
+    await page.setViewportSize({ width: 1600, height: 1000 });
+    await page.goto('/?shot=recursion');
+    await page.waitForFunction(() => (window as any).__pi?.ready === true);
+    const chip = page.locator('#focus-lens .focus-chip').first();
+    const name = chip.locator('.focus-chip-name');
+    const label = (await name.textContent())?.trim() ?? '';
+    expect(label.length).toBeGreaterThan(1);
+    await expect(name).toBeHidden();
+    await chip.locator('[data-node-action="focus"]').first().focus();
+    await expect(name).toBeVisible();
+    expect((await name.textContent())?.trim()).toBe(label);
+});
+
 test('the lens leaves its source card readable in the node-detail shot', async ({ page }) => {
     await page.setViewportSize({ width: 1600, height: 1000 });
     await page.goto('/?shot=node-detail');

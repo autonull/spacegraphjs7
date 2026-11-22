@@ -287,7 +287,7 @@
   "triage": {
     "date": "2026-11-22",
     "method": "Grouped by root cause, ranked severity x confidence, filtered against TODO6 section 2 invariants; default budget of at most three fixes per change set.",
-    "user_decision": "2026-11-22: implement all four medium/high findings (AUDIT-01, 02, 03, 04) in one change set.",
+    "user_decision": "2026-11-22: implement all four medium/high findings (AUDIT-01, 02, 03, 04) in one change set. Second instruction on 2026-11-22: \"All three deferred findings\" \u2014 promoted AUDIT-05, 06 and 07.",
     "accepted": {
       "AUDIT-01": {
         "decision": "accepted",
@@ -348,17 +348,20 @@
       "AUDIT-05": {
         "decision": "rejected",
         "reason": "Low and explicitly accepted in TODO6 section 1. Bundling or scope tinting is a new visual contract requiring ADR 0008; preserve the relation, defer.",
-        "status": "deferred"
+        "status": "closed",
+        "closed_by": "TODO6 second follow-up"
       },
       "AUDIT-06": {
         "decision": "rejected",
         "reason": "Low space cost only; status text is not clipped. Command-bar reflow is outside the three-finding budget.",
-        "status": "deferred"
+        "status": "closed",
+        "closed_by": "TODO6 second follow-up"
       },
       "AUDIT-07": {
         "decision": "rejected",
         "reason": "Low, opt-in depth-3 preset. Enlarging the inner lens or adding hover reveal needs a new visual comparison; defer.",
-        "status": "deferred"
+        "status": "closed",
+        "closed_by": "TODO6 second follow-up"
       },
       "AUDIT-08": {
         "decision": "accepted",
@@ -391,7 +394,7 @@
         "status": "deferred"
       }
     },
-    "status": "closed: four accepted findings fixed and gated; rejected findings deferred with reasons",
+    "status": "closed: all seven substantive findings fixed and gated; six clean focus areas remain closed with no change",
     "fixes": [
       {
         "id": "AUDIT-01",
@@ -431,6 +434,55 @@
           "node-detail shot"
         ]
       }
-    ]
+    ],
+    "followup": {
+      "date": "2026-11-22",
+      "scope": "AUDIT-05, AUDIT-06, AUDIT-07",
+      "fixes": [
+        {
+          "id": "AUDIT-05",
+          "result": "closed",
+          "implementation": "Cross-scope causal ribbons take a stable source-scope color from the existing palette through data.ribbon.color; within-unit ribbons keep the single causal color. No contract field, renderer branch or policy knob.",
+          "evidence": [
+            "docs/screenshots/edges/without.png",
+            "docs/screenshots/edges/with.png",
+            "docs/screenshots/edges/comparison.json",
+            "docs/screenshots/edges/decision.json"
+          ],
+          "gates": [
+            "app/pi/tests/attention.test.ts",
+            "app/pi/tests/vision.spec.ts",
+            "cockpit and node-detail shot verdicts"
+          ],
+          "note": "Long diagonal length is unchanged; this closes traceability, not topology."
+        },
+        {
+          "id": "AUDIT-06",
+          "result": "closed",
+          "implementation": "At widths <=1000px the command bar drops branding, raw status and the Depth label and shortens the proof line, keeping one row; canvas top returns from 112px to 62px.",
+          "gates": [
+            "app/pi/tests/shell.spec.ts",
+            "fit-narrow-* shots"
+          ]
+        },
+        {
+          "id": "AUDIT-07",
+          "result": "closed",
+          "implementation": "Inner chips carry a full-name overlay revealed on hover or keyboard focus, with pointer events enabled in the INNER tab. Static shots keep topology; names are reachable on focus.",
+          "gates": [
+            "app/pi/tests/focus-lens.spec.ts",
+            "recursion shot"
+          ]
+        }
+      ],
+      "gates": [
+        "root pnpm run check",
+        "app/pi check:fast 141/141",
+        "app/pi e2e 107 passed",
+        "app/pi verify:visual 21/21",
+        "app/pi shots:all 23/23",
+        "app/pi scale budgets met"
+      ]
+    }
   }
 }

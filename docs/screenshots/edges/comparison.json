@@ -1,0 +1,23 @@
+{
+  "date": "2026-11-22",
+  "finding": "AUDIT-05",
+  "question": "Do source-scope tinted cross-unit flux ribbons make long causal diagonals traceable without deleting the relation?",
+  "incumbent": {
+    "variant": "single causal color",
+    "evidence": "docs/screenshots/edges/without.png",
+    "source": "committed gallery shot at aaf9543"
+  },
+  "variant": {
+    "variant": "stable source-scope tint on cross-scope causal ribbons",
+    "evidence": "docs/screenshots/edges/with.png",
+    "source": "cockpit shot recaptured after the change"
+  },
+  "implementation": "Host stamps data.ribbon.color from the palette for causal edges whose endpoint scopes differ; FluxEdge reads data only. No contract field, renderer branch or policy knob.",
+  "observation": "Cross-unit orders filaments now carry distinct source-scope colors while within-unit causal ribbons keep the single causal color. The relation is preserved; camera framing and node positions are unstable between captures, so pixel identity is not a gate (TODO6 invariant 10).",
+  "gates": [
+    "app/pi/tests/attention.test.ts crossScopeTint",
+    "app/pi/tests/vision.spec.ts",
+    "cockpit and node-detail shot verdicts"
+  ],
+  "decision": "graduate"
+}

@@ -1,11 +1,11 @@
 {
   "cockpit": {
     "verdict": "kept",
-    "note": "Mockup-informed dark field: deep navy gradient, node-core dots, arrowed teal flux, square status chips and square cards. No blur or blend-mode compositing; cross-unit orders diagonals are topology, not sticks."
+    "note": "Mockup-informed dark field: deep navy gradient, node-core dots, arrowed teal flux, square status chips and square cards. Cross-unit orders diagonals now carry stable source-scope tints so they stay traceable through intervening scopes; within-unit causal ribbons keep the single causal color. No blur or blend-mode compositing."
   },
   "node-detail": {
     "verdict": "kept",
-    "note": "Detail rung over wide cyan flux ribbons and a soft field; inner chips stay legible. The focus lens now sits in free canvas space below its source card, leaving the failed status chip readable (AUDIT-04). Long causal edges are real cross-scope relations."
+    "note": "Detail rung over wide cyan flux ribbons and a soft field; inner chips stay legible. The focus lens sits in free canvas space below its source card. Cross-unit causal filaments are tinted by source scope while the relation is preserved."
   },
   "deep-focus": {
     "verdict": "kept",
@@ -17,7 +17,7 @@
   },
   "recursion": {
     "verdict": "kept",
-    "note": "Depth-3 bounded recursion with the INNER tab and radial graph layout. Lens dimensions derive from the focused node's on-screen footprint (clamped 300-420 x 210-300 px). Settled plus six intermediate frames pass vision gates; chip re-entry rebuilds the lens instead of growing DOM. Lane layout at six chips was too short to read, so the shot pins radial."
+    "note": "Depth-3 bounded recursion with the INNER tab and radial graph layout. Inner chips reveal their full names on hover or keyboard focus; the settled and intermediate frames still pass vision gates."
   },
   "fit-wide-far": {
     "verdict": "kept",
@@ -37,11 +37,11 @@
   },
   "fit-narrow-mid": {
     "verdict": "kept",
-    "note": "Narrow-canvas target octave; lateral insets are halved so the graph still fits. Primary labels keep a reserved lane after AUDIT-03, so portal and role labels are no longer truncated."
+    "note": "Narrow-canvas target octave at 900px: the command bar stays on one row, so the canvas starts at y=62 instead of y=112. Lateral insets are halved and primary labels keep a reserved lane."
   },
   "fit-narrow-near": {
     "verdict": "kept",
-    "note": "Near octave on the narrow canvas; no overlap regression and no truncated primary labels after AUDIT-03."
+    "note": "Near octave on the narrow canvas: one-row command bar, no overlap regression and no truncated primary labels."
   },
   "dense-type": {
     "verdict": "kept",

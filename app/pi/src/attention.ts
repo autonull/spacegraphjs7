@@ -56,6 +56,26 @@ export const applyNodeAttention = (
     return { ...mapped, size: scaled };
 };
 
+/**
+ * Cross-scope causal edges keep their relation but carry a stable source-scope tint instead of the
+ * single causal color, so a filament crossing unrelated cards stays traceable to its origin.
+ */
+export const crossScopeTint = (
+    edge: RenderEdge,
+    sourceScope: string | undefined,
+    targetScope: string | undefined,
+    colors: readonly string[],
+): RenderEdge => {
+    const ribbon = edge.data?.ribbon;
+    if (!sourceScope || !targetScope || sourceScope === targetScope || !colors.length) return edge;
+    if (!ribbon || typeof ribbon !== 'object' || !('color' in ribbon)) return edge;
+    const index = [...sourceScope].reduce((sum, char) => sum + char.charCodeAt(0), 0) % colors.length;
+    return {
+        ...edge,
+        data: { ...edge.data, crossScope: sourceScope, ribbon: { ...ribbon, color: colors[index] } },
+    };
+};
+
 /** Rank × salience sets flux width. Context edges stay thin filaments, never bare sticks. */
 export const applyEdgeAttention = (
     edge: RenderEdge,

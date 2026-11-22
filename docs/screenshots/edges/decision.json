@@ -1,0 +1,5 @@
+{
+  "cellID": "audit-05/source-scope-tint",
+  "decision": "graduate",
+  "note": "User explicitly selected \"All three deferred findings\" on 2026-11-22 after the with/without evidence was recorded. Promote the tint as a default legibility fix; it changes no policy vector, contract field or renderer branch. Negative result: the long diagonal length is unchanged, so this closes traceability, not topology."
+}

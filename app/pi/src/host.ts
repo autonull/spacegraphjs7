@@ -65,6 +65,7 @@ import { innerTree, type InnerLayout } from './inner';
 import {
     applyEdgeAttention,
     applyNodeAttention,
+    crossScopeTint,
     salienceScore,
     type AttentionPolicy,
     type RibbonKinds,
@@ -139,7 +140,7 @@ import {
 } from './recorder';
 import { agentScopes, DEPTH, portalChain } from './scopes';
 import { focusRoles, scaleForRole, type FocusScales } from './focus';
-import { paletteCausal, paletteTheme, paletteVars, readTheme } from './theme';
+import { paletteCausal, paletteScopeColors, paletteTheme, paletteVars, readTheme } from './theme';
 import { SHOTS, shotById, type Shot } from './shots';
 import { decodePermalink, encodePermalink, isRevealHash, type PermalinkState } from './permalink';
 import {
@@ -294,6 +295,7 @@ export class PiHost {
     #kernel = new Kernel();
     #theme: RenderTheme = DEFAULT_THEME;
     #causal: string = DEFAULT_THEME.accent;
+    #scopeColors: readonly string[] = [];
     #controller = new GraphController({ trailMaxDepth: 8 });
     #trail = new Trail({ maxDepth: 12 });
     #adapter = new AgentAdapter();
@@ -577,6 +579,7 @@ export class PiHost {
         const base = readTheme();
         this.#theme = paletteTheme(base, palette);
         this.#causal = paletteCausal(base, palette);
+        this.#scopeColors = paletteScopeColors(base, palette);
     }
 
     private applyPolicy(): void {
@@ -982,7 +985,13 @@ export class PiHost {
                             edge.emphasis ?? 0,
                         ),
                     );
-                    return applyEdgeAttention(edge, salience, attention, this.#causal);
+                    const styled = applyEdgeAttention(edge, salience, attention, this.#causal);
+                    return crossScopeTint(
+                        styled,
+                        this.#qualifiedByNode.get(edge.source),
+                        this.#qualifiedByNode.get(edge.target),
+                        this.#scopeColors,
+                    );
                 }),
         };
         this.#annotationWidgets?.refresh(this.#model.nodes);
@@ -3075,7 +3084,10 @@ export class PiHost {
         const line = document.getElementById('proof-line');
         if (!(line instanceof HTMLButtonElement)) return;
         const { presets, experiments } = this.#catalog;
-        line.textContent = `proof · ${presets.length} presets · ${experiments.length} experiments`;
+        const detail = document.createElement('span');
+        detail.className = 'proof-detail';
+        detail.textContent = ` · ${presets.length} presets · ${experiments.length} experiments`;
+        line.replaceChildren(document.createTextNode('proof'), detail);
         line.title = 'Open the catalogue of presets, experiments and recorded comparisons';
     }
 
