@@ -278,9 +278,9 @@ default has been flipped; every new view stays opt-in.
 | 0 — baseline and vocabulary | complete | `docs/screenshots/graph-baseline.json`; `app/pi/scripts/baseline.ts`; `app/pi/tests/graph-layout.test.ts` |
 | 1 — graph arrangements | complete except the study gate | five views by URL/hook/permalink; automated flexibility gate green below; default flip still needs the study result and an ADR 0008 decision |
 | 2 — visible structure | complete for this increment | square hulls and `Turn N · status` tabs; reserved child lane clears the last parent/child overlap; baseline regenerated |
-| 3 — cross-scope ribbons | complete for this increment | `FluxEdge` corridor via opaque `data`; `bundleCorridor()`; unit tests in `test/FluxEdge.test.ts`; gallery comparison still pending |
+| 3 — cross-scope ribbons | complete for this increment | `FluxEdge` corridor via opaque `data`; `bundleCorridor()`; unit tests in `test/FluxEdge.test.ts`; gallery recaptured, human decision pending |
 | 4 — default polish | blocked on human decision | `docs/screenshots/graph-layout/comparison.json`; no default changed, so no ADR 0008 decision is claimed |
-| 5 — verification and handoff | partial | root `check`, `app/pi` `check:fast`, graph-layout e2e and the full vision matrix green; `test:e2e`, `verify:visual`, `shots:all`, `scale` and gallery verdicts pending |
+| 5 — verification and handoff | gates green, verdicts pending | root `check`, `app/pi` `check:fast`, `test:e2e`, `verify:visual`, `shots:all` and `scale` all green; gallery recaptured but verdicts in `review.json` need a human |
 
 ### Gates run in this increment
 
@@ -289,6 +289,9 @@ default has been flipped; every new view stays opt-in.
 - root `pnpm exec vitest run test/FluxEdge.test.ts` — 6 tests green.
 - `app/pi` `pnpm exec playwright test --config playwright.config.ts tests/graph-layout.spec.ts --workers=2` — 4/4 green.
 - `app/pi` `pnpm exec playwright test --config playwright.config.ts tests/vision.spec.ts --grep "graph arrangements pass" --workers=2 --retries=0` — green. This is the Phase 1 flexibility gate: 5 modes × 3 octaves × 2 aspects × dark/light (60 scenes) plus 5 reduced-motion scenes, each running `noOverlap()`, `isLegible()` and `expectedLayoutScore(35)`. The matrix test sets a 240 s timeout; the default 30 s timeout is insufficient.
+- Full suite from `app/pi`: `pnpm run test:e2e` — 113/113; `pnpm run verify:visual` — 23/23;
+  `pnpm run scale` — budgets met (60-turn force 954 ms); `pnpm run shots:all` — 23/23, gallery
+  recaptured. Verdicts in `docs/screenshots/review.json` are intentionally left for a human.
 
 ### What landed in this increment
 
@@ -305,6 +308,8 @@ default has been flipped; every new view stays opt-in.
    rerouting when the path is replaced, and graceful fallback for malformed waypoints.
 4. **Docs consistency.** `app/pi/README.md` documents the opt-in controls; `comparison.json` records
    the zero-overlap baseline; `CHANGELOG.md` records the experiment and the lane fix.
+5. **Full gates and gallery recapture.** Every gate in the suite is green. The 20 px lane shift is
+   visible in the motion comparison centres and all recaptured shots; verdicts stay unassigned.
 
 Earlier increment still in force: one position authority via `ScopeSimulation.setLayoutTargets()`;
 five views reachable by URL, `__pi` and permalink; `graphShape()` baseline measured from solved
@@ -316,17 +321,15 @@ positions; aligned transcript; square scope hulls and turn tabs; opt-in corridor
    timeline and run a pilot to check for a preference penalty; log the outcome. All automated gates
    now pass, but the default stays `freeform` until this decision and ADR 0008 close (invariants 12,
    15; pitfall 12).
-2. **Gallery and ADR evidence (Phases 2–4 — human + capture tooling).** Recapture `cockpit`,
-   `node-detail` and the fit shots for each slice, assign verdicts in `docs/screenshots/review.json`,
-   and log human decisions in `docs/screenshots/graph-layout/comparison.json`. The `images` and
-   `decision` fields there are still `pending`.
+2. **Gallery verdicts and ADR evidence (Phases 2–4 — human).** Shots are recaptured and current.
+   Inspect the contact sheet at `docs/screenshots/index.html`, assign verdicts in
+   `docs/screenshots/review.json`, and log human decisions in
+   `docs/screenshots/graph-layout/comparison.json`. The `images` and `decision` fields there are still
+   `pending`; do not auto-assign verdicts from green gates.
 3. **Phase 4 defaults (human).** Lower ambient glow with selective halos, rank-driven ribbon width,
    flat dark backdrop and `ladder.minLabelPx` → 16. Each needs its own incumbent/variant pair and an
    ADR 0008 decision. None were changed here, so no decision is implied.
-4. **Full gates (tooling).** From `app/pi` run `pnpm run test:e2e`, `pnpm run verify:visual`,
-   `pnpm run shots:all` and `pnpm run scale`; use `--workers=2` on memory-constrained hosts. Focused
-   equivalents of the unit, e2e and vision gates are green above.
-5. **Final docs pass (after items 1–4).** Update `docs/pi-study-ui-audit.md` only if a finding is
+4. **Final docs pass (after items 1–3).** Update `docs/pi-study-ui-audit.md` only if a finding is
    actually closed; do not edit closed findings in `docs/screenshots/audit.json`.
 
 ### User decisions recorded
