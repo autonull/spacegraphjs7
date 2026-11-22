@@ -232,7 +232,10 @@ gallery, review verdicts and docs are current; all full gates are green.
 ## 7. Progress (2026-11-22)
 
 Plan status: **phases 1–5 complete, plus three follow-up change sets**. The user explicitly asked for
-the commits in this session, so invariant 12 was overridden for these change sets only.
+the commits in this session, so invariant 12 was overridden for these change sets only. All four change
+sets are committed on `main` (`28a2c8a`, `aaf9543`, `e197a7c`, `9c83535`). The tree is clean. The only
+work not closed is one **environment-gated measurement** (§7 "Remaining open items", item 1); no source
+change is pending, and the plan forbids further renderer changes until that measurement exists.
 
 | Phase | Status | Evidence |
 | ----- | ------ | -------- |
@@ -287,19 +290,47 @@ Evidence is in `docs/performance.md`: `advance()` averages 0.368 ms against a 2.
 
 ### Remaining open items
 
-1. **Flight frame time — hardware measurement only.** The 80 ms target remains unverified. The JS
-   rebuild cost is removed (see above); the residual Xvfb cost is SwiftShader presentation and camera
-   motion. Next step: run `strobe` on a physical display-backed GPU, repeat the rAF sample with a warm
-   flight and at least three trials, and record the result in `docs/performance.md`. Do not change the
-   renderer again until that measurement exists.
-2. **Scale headroom — keep isolated.** Isolated 60-turn layout was 1476 ms against a 1500 ms budget in
-   the first follow-up; later runs met all budgets. `scale` already runs in its own CI job
+Status at the 2026-11-22 continuation review: items 2 and 3 are **no-ops under current conditions**;
+item 1 is the single open item and is **blocked by this environment, not by code**.
+
+1. **Flight frame time — hardware measurement only — BLOCKED (environment).** The 80 ms target remains
+   unverified. The JS rebuild cost is removed (see above); the residual cost in the recorded run is
+   SwiftShader presentation and camera motion, not JS. The existing numbers in `docs/performance.md`
+   (play frame 0.822 ms, rAF flight p95 99.9 ms, and the headed Xvfb 216.6 → 200 ms pair) come from a
+   custom rAF script under Xvfb on a software GPU — they are not a physical-GPU `strobe` result.
+   Environment findings at this review:
+   - No `DISPLAY` or `WAYLAND_DISPLAY`; `/tmp/.X11-unix` is empty, so `strobe` refuses headed runs
+     (`NoPresentSource`) and classifies any Xvfb run as a software GPU (`SoftwareGpu`, frame metrics
+     refused).
+   - An NVIDIA RTX 3080 is present (`/dev/dri/card1`, HDMI-A-1 reports `connected`) and a NVIDIA
+     `xorg.conf` exists (`/etc/X11/xorg.conf`, HDMI-0 1920x1080), so a display-backed run is possible
+     in principle on a host with an active physical display.
+   - `strobe status` reports `SCHED_IDLE` priority in this agent context, which refuses frame and
+     input-latency metrics even with a display ("run strobe at normal priority").
+   To close this item on a suitable host, in order: (a) start Xorg on the NVIDIA GPU for a real display
+   and export `DISPLAY`; (b) run `strobe` at normal priority (elevate the shell, e.g. via `chrt`/root);
+   (c) measure `frames.*`/rAF during a **warm** flight with at least three trials; (d) record the raw
+   numbers, command and date in `docs/performance.md`, then compare against the 80 ms target. Do not
+   change the renderer until that measurement exists. Blindly repeating the Xvfb/custom-rAF run adds no
+   evidence.
+2. **Scale headroom — keep isolated — NO ACTION.** Isolated 60-turn layout was 1476 ms against a 1500 ms
+   budget in the first follow-up; later runs met all budgets. `scale` already runs in its own CI job
    (`.github/workflows/ci.yml:73`). Do not run it beside Vite/op dev servers; the harness comment in
-   `app/pi/scripts/scale.ts` records why.
-3. **Gates not re-run in the third follow-up.** Full e2e (107), `verify:visual` (21) and `shots:all`
-   (23) were green at the second follow-up. The third change touches positions only and has no visual
-   default change, so no shots were recaptured. Re-run the visual gates if a future slice changes
-   geometry, styling or capture.
+   `app/pi/scripts/scale.ts` records why. Revisit only if a slice increases layout work.
+3. **Gates not re-run in the third follow-up — CONDITIONAL, currently satisfied.** Full e2e (107),
+   `verify:visual` (21) and `shots:all` (23) were green at the second follow-up. The third change touches
+   positions only and has no visual default change, so no shots were recaptured and no files changed
+   after commit `9c83535` — re-running those gates now would be redundant. Re-run the visual gates only
+   when a future slice changes geometry, styling or capture.
+
+### Continuation review (2026-11-22)
+
+Reopened the plan after the third follow-up. Confirmed the four change sets are committed, the working
+tree is clean, and no source change is pending. Per the user's constraint to minimize redundant test
+runs, no gates were re-run: nothing changed since the last green run. Hardware capability was probed
+read-only (see item 1) and the hardware measurement was found blocked by the missing display and
+`SCHED_IDLE` priority; no Xorg server was started and no system configuration was altered. This section
+is the handoff point — resume at item 1 with a display-backed, normal-priority strobe run.
 
 ### Resume notes
 
