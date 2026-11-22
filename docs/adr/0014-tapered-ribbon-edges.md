@@ -19,9 +19,14 @@ target, with thickness still driven by salience × relation rank. Context edges 
 ribbon-free. Reach is not lengthened. The type is registered in the core type registry and selected
 by the dependency-free renderer adapter.
 
+Ribbon color comes from the view palette's `causal` role through `RenderEdge.data.ribbon.color` — the
+same value CSS already consumes as `--view-causal`. No new `RenderTheme` role or global token is added;
+the edge-style color stays the fallback when a host supplies no ribbon color.
+
 ## Consequences
 
-Before: `docs/screenshots/pi-agent-in-action.png` (slice 2 gallery, uniform tube ribbons). After: the
-recaptured same shot plus `pi-agent-fractal.png` in `docs/screenshots/index.html`. The vision and
-scale gates must stay green; if the polygon fails legibility in either theme, the ribbon mapping
-reverts to `DynamicThicknessEdge` and this ADR is superseded.
+Before: `docs/screenshots/pi-agent-in-action.png` (slice 2 gallery, uniform tube ribbons, gray ribbon
+color). After: the recaptured `cockpit`, `dynamic-range`, `neon-cockpit`, `light-theme` and `fractal`
+shots in `docs/screenshots/index.html` — tapered wedges in palette causal color, with graph shots using
+the full-width quiet frame. The vision and scale gates must stay green; if the polygon fails legibility
+in either theme, the ribbon mapping reverts to `DynamicThicknessEdge` and this ADR is superseded.

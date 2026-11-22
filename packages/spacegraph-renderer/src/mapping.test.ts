@@ -154,6 +154,10 @@ describe('edgeSpec', () => {
         expect(loud.data.thickness).toBeCloseTo(plain.data.thickness * 1.8);
         expect(loud.data.color).toBe(plain.data.color);
     });
+    test('a ribbon color overrides the edge style color', () => {
+        const spec = edgeSpec(edge({ data: { ribbon: { color: '#8ff0d0' } } }), theme);
+        expect(spec.data.color).toBe(parseColor('#8ff0d0'));
+    });
 
     test('adds arrowhead only on evidence/delegates edges', () => {
         const evidenceSpec = edgeSpec(edge({ kind: 'evidence', confidence: 'explicit' }), theme);

@@ -205,6 +205,10 @@ const legible = (color: string, base: RenderTheme, fallback: string): string => 
     return color;
 };
 
+/** The causal role is palette data already published to CSS; ribbons reuse the same value. */
+export const paletteCausal = (base: RenderTheme, id: string): string =>
+    legible(paletteOf(id).causal, base, base.accent);
+
 /** The renderer theme varies the view palette, not the HUD tokens; low-contrast roles fall back. */
 export const paletteTheme = (base: RenderTheme, id: string): RenderTheme => {
     const palette = paletteOf(id);

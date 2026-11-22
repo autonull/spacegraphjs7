@@ -2,7 +2,7 @@ import { DEFAULT_THEME } from '@spacegraphjs/renderer';
 import { describe, expect, it } from 'vitest';
 import { POLICY_PRESETS, POLICY_SCHEMA } from '../src/policy';
 import { SHOTS, shotById } from '../src/shots';
-import { paletteTheme, paletteVars, VIEW_PALETTES } from '../src/theme';
+import { paletteCausal, paletteTheme, paletteVars, VIEW_PALETTES } from '../src/theme';
 
 describe('shot catalog', () => {
     it('has unique ids and output files', () => {
@@ -55,5 +55,11 @@ describe('view palettes', () => {
 
     it('falls back to mono for an unknown palette', () => {
         expect(paletteTheme(DEFAULT_THEME, 'missing')).toEqual(paletteTheme(DEFAULT_THEME, 'mono'));
+    });
+    it('takes ribbon color from the palette causal role with a legibility fallback', () => {
+        expect(paletteCausal(DEFAULT_THEME, 'neon')).toBe(VIEW_PALETTES.neon!.causal);
+        expect(paletteCausal({ ...DEFAULT_THEME, background: '#f7f7f7' }, 'mono')).not.toBe(
+            VIEW_PALETTES.mono!.causal,
+        );
     });
 });

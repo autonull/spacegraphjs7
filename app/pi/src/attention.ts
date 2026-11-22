@@ -60,6 +60,7 @@ export const applyEdgeAttention = (
     edge: RenderEdge,
     salience: number,
     policy: AttentionPolicy,
+    causalColor?: string,
 ): RenderEdge => {
     const rank = edgeRank(edge.kind);
     const weight = rank * (0.45 + 0.55 * salience);
@@ -72,6 +73,7 @@ export const applyEdgeAttention = (
                   minRadius: policy.ribbonWidth * 0.15,
                   maxRadius: policy.ribbonWidth,
                   segments: 3,
+                  ...(causalColor ? { color: causalColor } : {}),
               }
             : undefined;
     const mapped = applyEdgeEmphasis(edge, salience, attentionMapping(policy.salienceSize));

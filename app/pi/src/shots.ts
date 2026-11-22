@@ -16,6 +16,8 @@ export interface Shot {
     readonly surface?: ShotSurface;
     readonly arrangement?: ShotArrangement;
     readonly collapsed?: boolean;
+    /** A quiet frame gives the canvas the full width; graph shots use it, chrome shots keep the rail. */
+    readonly rail?: boolean;
     readonly level?: ShotLevel;
     readonly reveal?: string;
     readonly evidence?: string;
@@ -38,6 +40,8 @@ export const SHOTS: readonly Shot[] = [
         question: 'What does the dense, compact multi-turn run look like at one glance?',
         scenario: 'rich',
         preset: 'showcase',
+        rail: false,
+        padding: 40,
         surface: 'hybrid',
         arrangement: 'side',
         evidence: 'vocabulary',
@@ -50,6 +54,7 @@ export const SHOTS: readonly Shot[] = [
         question: 'What does LOD reveal when the camera closes into one failing node and its inner layout?',
         scenario: 'rich',
         preset: 'neon',
+        rail: false,
         surface: 'hybrid',
         arrangement: 'side',
         level: 'detail',
@@ -64,6 +69,7 @@ export const SHOTS: readonly Shot[] = [
         question: 'How much can one node carry when the camera commits to it? (opt-in scale)',
         scenario: 'rich',
         preset: 'focus-lens',
+        rail: false,
         surface: 'map',
         level: 'detail',
         reveal: node('approve'),
@@ -80,6 +86,7 @@ export const SHOTS: readonly Shot[] = [
         scenario: 'rich',
         preset: 'fractal',
         vector: { 'emphasis.innerLayout': 'radial' },
+        rail: false,
         surface: 'hybrid',
         arrangement: 'side',
         level: 'detail',
@@ -97,7 +104,8 @@ export const SHOTS: readonly Shot[] = [
         preset: 'aurora',
         surface: 'map',
         vector: { 'bands.overviewMax': 0.3, 'bands.overviewEnter': 0.45 },
-        zoom: 0.5,
+        rail: false,
+        zoom: 0.58,
         padding: 40,
     },
     {
@@ -129,6 +137,7 @@ export const SHOTS: readonly Shot[] = [
         question: 'Does an emissive palette make the run easier to scan without hiding the HUD?',
         scenario: 'rich',
         preset: 'neon',
+        rail: false,
         surface: 'hybrid',
         arrangement: 'side',
         evidence: 'why',
@@ -141,6 +150,7 @@ export const SHOTS: readonly Shot[] = [
         question: 'Is a cool low-glare palette legible on the full-scope map?',
         scenario: 'rich',
         preset: 'aurora',
+        rail: false,
         surface: 'map',
     },
     {
@@ -150,6 +160,7 @@ export const SHOTS: readonly Shot[] = [
         question: 'Which theme variant keeps the canonical fixture legible in daylight?',
         scenario: 'rich',
         preset: 'light',
+        rail: false,
         surface: 'hybrid',
         arrangement: 'side',
     },

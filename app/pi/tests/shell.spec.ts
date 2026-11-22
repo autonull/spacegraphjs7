@@ -115,6 +115,18 @@ test.describe('the one-surface shell', () => {
         expect(smallest).toBeGreaterThanOrEqual(44);
     });
 
+    test('graph shots use a quiet frame and chrome shots restore the rail', async ({ page }) => {
+        await page.goto('/?shot=cockpit');
+        await page.waitForFunction(() => (window as any).__pi?.ready === true);
+        await expect(page.locator('#rail')).toBeHidden();
+        const quietWidth = await page.locator('#canvas').boundingBox();
+
+        await page.evaluate(() => (window as any).__pi.applyShot('policy'));
+        await expect(page.locator('#rail')).toBeVisible();
+        const chromeWidth = await page.locator('#canvas').boundingBox();
+        expect(quietWidth!.width).toBeGreaterThan(chromeWidth!.width);
+    });
+
     test('chrome follows direction without losing tab order', async ({ page }) => {
         const errors = await boot(page);
         await page.evaluate(() => {

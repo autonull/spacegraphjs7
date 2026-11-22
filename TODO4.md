@@ -6,7 +6,7 @@ the progress block below records what has actually landed.
 
 ---
 
-## Progress (updated 2026-11-21 — slices 1–3, 5 and the standing track complete, visual-correctness and content-legibility passes landed; next: composition)
+## Progress (updated 2026-11-21 — slices 1–3, 5, the standing track and the composition pass complete; next: interaction ergonomics)
 
 **Slice 1 — One surface language: implemented in Pi, not yet promoted to a second host.**
 
@@ -145,6 +145,23 @@ the progress block below records what has actually landed.
 3. The three frames are shell-owned and driven by one public method; no product seam was added for tests. The e2e gate drives the same `setFrame` a script would call.
 4. `cockpit` and `light-theme` no longer ellipsize card labels; the transcript regains full `user message` / `Approve patch` prefixes while cards stay short. The remaining clipped text is pre-existing chip geometry, not a source label.
 
+**Composition and default palette (2026-11-21): a quiet canvas frame and palette-owned causal ribbons.**
+
+| Item                                    | Status | Evidence                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| --------------------------------------- | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Quiet frame for graph shots             | done   | `Shot.rail?: boolean` gives graph-centric shots (`cockpit`, `node-detail`, `deep-focus`, `fractal`, `dynamic-range`, `aurora-map`, `neon-cockpit`, `light-theme`) the full canvas width; chrome shots (`layout-*`, `catalog`, `policy`) keep the rail. `PiHost.applyShot` applies the rail state before framing and re-fits on change, so gallery navigation is deterministic in both directions. `app/pi/tests/shell.spec.ts` asserts the rail hides on `cockpit`, restores on `policy`, and that the canvas is wider in the quiet frame.                                                                                   |
+| Tightened framing                       | done   | `fitView` takes a shot `padding` (default 60); `cockpit` uses 40 and `dynamic-range` moves 0.5 → 0.58 with the rail closed. Recaptured `cockpit` shows larger, denser nodes with the transcript as the only chrome; `dynamic-range` keeps its wide-overview question but with bigger nodes and no rail competing for attention. No clipping at either edge; vision and scale gates green.                                                                                                                                                                                                                                                                                        |
+| Causal color as data with provenance    | done   | `app/pi/src/theme.ts` exports `paletteCausal`, reusing the palette `causal` role already published as `--view-causal` to CSS (card notch, connector) — a second consumer, so no new global token. `attention.ts` writes the color into `RenderEdge.data.ribbon.color`; `packages/spacegraph-renderer/src/mapping.ts` passes it to `TaperedEdge` as `data.color` with the edge-style fallback, adding no renderer branch. `legible()` keeps 3:1 in both themes; `mono` ribbons brighten from edge gray to causal light gray, neon/aurora match the palette, light theme falls back to a dark accent.                                                        |
+| Gates and review                        | done   | All 12 shots recaptured and reviewed in `docs/screenshots/index.html`; `cockpit`, `dynamic-range`, `light-theme`, `neon-cockpit`, `deep-focus` and `aurora-map` checked at zoom. `app/pi`: 134 unit tests and 82 e2e/vision tests green (single worker); `pnpm scale` budgets met; root `pnpm run check` green across all workspaces. `pnpm verify` still reports the same five pre-existing docs references. Decision recorded in ADR 0014.                                                                                                                                                                                                                                             |
+
+**Clarifications that came out of this increment:**
+
+1. The quiet frame is shot data, not a product default change. The rail remains open on the normal entry route; only gallery shots that ask a question about the graph opt into the full-width frame. `applyShot` re-opens it when navigating to a chrome shot.
+2. Ribbon color is palette data, not a new `RenderTheme` role or design token. The causal role already had a CSS consumer, so the renderer reuse satisfies the two-consumer rule without a contract change; `mapping.ts` keeps the existing fallback when a host supplies no ribbon color.
+3. `dynamic-range` stays intentionally sparse: the shot's question is how far the scene can zoom before structure stops communicating. The change tightens node size and removes competing chrome; it does not fabricate density by changing the fixture.
+4. The brighter causal color makes ribbons more legible, not louder: width is still capped at 60 world units against 178–320-unit cards, and the brightness ramp still runs source → target. The `neon-cockpit` shot was re-checked specifically for the earlier "ribbons outshine nodes" regression.
+5. Interaction ergonomics is now the next fundamental. The bounded chip-control 44px exception and the inspector reach around the new node anatomy are the concrete work; reduced-motion final-frame and intermediate-frame vision stay standing gates.
+
 **Direction recorded for slice 3 (user feedback, 2026-11-21):**
 
 - Edges are too long and too line-like. Shorten their reach (`geometry.repulsion`, `geometry.gap` or a new
@@ -174,18 +191,16 @@ the progress block below records what has actually landed.
 
 **Remaining work, in order — fundamentals first, parity last:**
 
-1. **Composition and default palette (§11.8) (next).** The graph now has a legible subject and short
-   titles, but negative space in `cockpit`/`dynamic-range` still reads as sparse, right-hand chrome
-   outspeaks the canvas, and causal ribbons inherit gray `RenderTheme.edge` in the default palette.
-   Tighten shot framing, keep chrome collapsed, and treat a causal color as data with provenance —
-   promote it only when a second consumer can share the token. This is the largest remaining aesthetics
-   and one-eye-movement ergonomics win.
-2. **Interaction ergonomics (§2, §11.2).** Decide the bounded chip-control exception (larger hit area vs.
-   the K4 cap), then tighten focus, inspector reach and the command surface around the new node anatomy.
+1. **Interaction ergonomics (§2, §11.2) (next).** Composition is done: graph shots have a quiet frame and
+   causal ribbons carry palette color. The remaining ergonomic decisions are concrete. Decide the bounded
+   chip-control exception (larger hit area vs. the K4 depth cap) and record it; then tighten focus,
+   inspector reach and the command surface around the node anatomy so the focused object, its exits and
+   its next action sit inside one eye movement. Start from `app/pi/tests/shell.spec.ts` (44px representative
+   controls) and `app/pi/src/shell/inspector.ts`; do not enlarge chip-internal controls without the decision.
    Reduced-motion final-frame parity and intermediate-frame vision stay standing gates in every slice.
-3. **Motion and life (L1–L3, §6).** Parked until composition settles. Effects were already flagged as
+2. **Motion and life (L1–L3, §6).** Parked until ergonomics settles. Effects were already flagged as
    overdone; anything built stays opt-in data with reduced-motion parity, never a new default.
-4. **Slice 4 — Proliferation (O5–O7).** Still gated on a second host consuming the shell, tokens and
+3. **Slice 4 — Proliferation (O5–O7).** Still gated on a second host consuming the shell, tokens and
    inspector unchanged. Verified 2026-11-21: `app/demo` imports only mechanism-layer helpers; the only
    importers of `app/pi/src/shell` and `@spacegraphjs/shared/tokens` live in Pi. Not work we can start;
    when the consumer exists, split core/domain policy vocabulary, emit the world-host template and a real
@@ -201,12 +216,13 @@ the progress block below records what has actually landed.
 - Housekeeping: confirm ADR 0014, fill `docs/screenshots/review.json` verdicts, re-run e2e with
   `--workers=1` on a loaded machine.
 
-Slices 1–3, 5 and the standing accessibility track are recorded as done; the visual-correctness and
-content-legibility passes repair treatments that were recorded before they actually rendered or read
-well. Last prior commits: `bddd7a6` (slice 2), `01c4759` (slice 3), `0c0b184` (standing track),
-`80dd02e` (visual pass), `86dba56` (plan ordering), `1021683` (node anatomy). The remaining program
-starts with composition and the default palette, then interaction ergonomics; motion, parity and
-proliferation stay parked or gated. The study, release and hosted URL stay deferred with TODO3's G3–G5.
+Slices 1–3, 5, the standing accessibility track and the composition pass are recorded as done; the
+visual-correctness and content-legibility passes repaired treatments that were recorded before they
+actually rendered or read well, and the composition pass gave graph shots a quiet frame and palette-owned
+causal ribbons. Last prior commits: `bddd7a6` (slice 2), `01c4759` (slice 3), `0c0b184` (standing track),
+`80dd02e` (visual pass), `86dba56` (plan ordering), `1021683` (node anatomy), `c5c02d8` (labels/frames).
+The remaining program starts with interaction ergonomics; motion, parity and proliferation stay parked
+or gated. The study, release and hosted URL stay deferred with TODO3's G3–G5.
 
 ---
 
@@ -678,7 +694,9 @@ These are real gaps in the plan as written. They are listed, not scheduled.
 8. **Decision governance.** Several current defaults (square corners, hidden catalog, thin ribbons) came
    from conversation, not a recorded comparison. That is acceptable when the user requested them, but
    each promoted default should get a one-line decision record with before/after shots so future
-   contributors know what was chosen and why. Negative alternatives stay in the catalog.
+   contributors know what was chosen and why. Negative alternatives stay in the catalog. ADR 0014 now
+   records both the tapered geometry and the palette-causal ribbon color, with the recaptured gallery as
+   its before/after pair; other promoted defaults still owe a line.
 9. **Scale beyond the smoke fixture.** The budgets are measured at 60 turns and four domains. A real
    filesystem or infrastructure workspace can be an order of magnitude larger. Windowing and sleep exist;
    the plan needs an explicit large-fixture experiment before claiming general-purpose scalability.

@@ -28,8 +28,10 @@ const policy = (overrides: Partial<AttentionPolicy> = {}): AttentionPolicy => ({
 
 const ribbonOf = (
     result: RenderEdge,
-): { weight: number; minRadius: number; maxRadius: number } | undefined =>
-    result.data?.ribbon as { weight: number; minRadius: number; maxRadius: number } | undefined;
+): { weight: number; minRadius: number; maxRadius: number; color?: string } | undefined =>
+    result.data?.ribbon as
+        | { weight: number; minRadius: number; maxRadius: number; color?: string }
+        | undefined;
 
 describe('salience ranking', () => {
     test('causal flow outranks containment and context', () => {
@@ -61,6 +63,12 @@ describe('salience ranking', () => {
 });
 
 describe('ribbon grammar', () => {
+    test('a ribbon carries the palette causal color as data', () => {
+        expect(ribbonOf(applyEdgeAttention(edge('writes'), 1, policy(), '#8ff0d0'))?.color).toBe(
+            '#8ff0d0',
+        );
+        expect(ribbonOf(applyEdgeAttention(edge('writes'), 1, policy()))?.color).toBeUndefined();
+    });
     test('rank and salience set ribbon weight and width', () => {
         const quiet = applyEdgeAttention(edge('writes'), 0, policy());
         const loud = applyEdgeAttention(edge('writes'), 1, policy());

@@ -118,10 +118,10 @@ export function edgeSpec(edge: RenderEdge, theme: RenderTheme): EdgeSpec {
     // the confidence-derived colour or dash decision.
     const thickness = style.width * (1 + (edge.emphasis ?? 0));
     const ribbon = edge.data?.ribbon as
-        | { weight?: number; minRadius?: number; maxRadius?: number; segments?: number }
+        | { weight?: number; minRadius?: number; maxRadius?: number; segments?: number; color?: string }
         | undefined;
     const data = {
-        color: parseColor(style.color),
+        color: parseColor(ribbon?.color ?? style.color),
         thickness,
         dashed: style.dashed,
         label: edge.label,

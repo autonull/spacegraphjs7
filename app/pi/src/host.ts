@@ -131,7 +131,7 @@ import {
 } from './recorder';
 import { agentScopes, DEPTH, portalChain } from './scopes';
 import { focusRoles, scaleForRole, type FocusScales } from './focus';
-import { paletteTheme, paletteVars, readTheme } from './theme';
+import { paletteCausal, paletteTheme, paletteVars, readTheme } from './theme';
 import { SHOTS, shotById, type Shot } from './shots';
 import { decodePermalink, encodePermalink, isRevealHash, type PermalinkState } from './permalink';
 import {
@@ -285,6 +285,7 @@ export class PiHost {
 
     #kernel = new Kernel();
     #theme: RenderTheme = DEFAULT_THEME;
+    #causal: string = DEFAULT_THEME.accent;
     #controller = new GraphController({ trailMaxDepth: 8 });
     #trail = new Trail({ maxDepth: 12 });
     #adapter = new AgentAdapter();
@@ -558,7 +559,10 @@ export class PiHost {
             document.documentElement.style.setProperty(name, value);
         document.documentElement.style.setProperty('--view-glow', String(values['theme.glow']));
         document.documentElement.dataset.backdrop = String(values['theme.backdrop']);
-        this.#theme = paletteTheme(readTheme(), String(values['theme.palette']));
+        const palette = String(values['theme.palette']);
+        const base = readTheme();
+        this.#theme = paletteTheme(base, palette);
+        this.#causal = paletteCausal(base, palette);
     }
 
     private applyPolicy(): void {
@@ -945,7 +949,7 @@ export class PiHost {
                             edge.emphasis ?? 0,
                         ),
                     );
-                    return applyEdgeAttention(edge, salience, attention);
+                    return applyEdgeAttention(edge, salience, attention, this.#causal);
                 }),
         };
         this.#annotationWidgets?.refresh(this.#model.nodes);
@@ -1187,6 +1191,15 @@ export class PiHost {
         if (shot.arrangement) this.setArrangement(shot.arrangement);
         if (shot.collapsed !== undefined && this.#transcriptCollapsed !== shot.collapsed)
             this.toggleTranscript();
+        const railOpen = document.body.dataset.rail !== 'closed';
+        if (shot.rail === false && railOpen) {
+            this.toggleRail(false);
+            this.fitView(shot.padding);
+        }
+        if (shot.rail !== false && !railOpen) {
+            this.toggleRail(true);
+            this.fitView(shot.padding);
+        }
         if (shot.level) this.setLevel(shot.level);
         if (shot.reveal) this.reveal(shot.reveal);
         if (shot.evidence) this.run(shot.evidence);
@@ -2396,11 +2409,11 @@ export class PiHost {
     }
 
     /** One-shot framing at startup; later navigations keep the user's chosen view. */
-    private fitView(): void {
+    private fitView(padding = 60): void {
         const ids =
             this.#model?.nodes.filter((node) => node.visible !== false).map((node) => node.id) ??
             [];
-        if (ids.length) this.renderer.fit(ids, { padding: 60 });
+        if (ids.length) this.renderer.fit(ids, { padding });
     }
 
     /** Detail-card controls are host DOM; actions return through the same verbs as the HUD. */
