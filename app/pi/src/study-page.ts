@@ -5,16 +5,19 @@ import {
     STUDY_TASKS,
     StudyRecorder,
     counterbalance,
+    studyGraphLayout,
     studyMatrix,
     studyReport,
     type StudyArrangement,
     type StudyDepth,
     type StudySurface,
 } from './study';
+import type { GraphLayoutMode } from './graph-layout';
 
 interface PiHooks {
     readonly ready: boolean;
     loadFixture(): number;
+    setGraphLayout(mode: GraphLayoutMode): GraphLayoutMode;
     setSurface(surface: StudySurface): void;
     setArrangement(arrangement: StudyArrangement): void;
     setDepth(depth: StudyDepth): void;
@@ -38,6 +41,7 @@ let index = 0;
 let recorder: StudyRecorder | undefined;
 let startedAt = 0;
 let matrix = studyMatrix();
+let graphLayout: GraphLayoutMode | undefined;
 
 const hooks = async (): Promise<PiHooks> => {
     for (let attempt = 0; attempt < 100; attempt += 1) {
@@ -66,7 +70,9 @@ const show = (): void => {
         return;
     }
     const task = STUDY_TASKS.find((entry) => entry.id === next.taskID)!;
-    question.textContent = `${index + 1}/${assignments.length} · ${next.surface.toUpperCase()} · ${task.question}`;
+    question.textContent =
+        `${index + 1}/${assignments.length} · ${next.surface.toUpperCase()} · ` +
+        `${(graphLayout ?? 'freeform').toUpperCase()} · ${task.question}`;
     startedAt = performance.now();
 };
 
@@ -75,6 +81,8 @@ const begin = async (): Promise<void> => {
     const graph = await hooks();
     (window as Window & { __studyHooks?: PiHooks }).__studyHooks = graph;
     graph.loadFixture();
+    graphLayout = studyGraphLayout(window.location.search);
+    if (graphLayout) graph.setGraphLayout(graphLayout);
     recorder = new StudyRecorder(participant);
     matrix = studyMatrix();
     assignments = counterbalance(participant)
@@ -86,7 +94,7 @@ const begin = async (): Promise<void> => {
     graph.setArrangement(arrangements[(participant - 1) % arrangements.length]!);
     index = 0;
     show();
-    status.textContent = `Participant ${participant}. ${STOP_RULE}`;
+    status.textContent = `Participant ${participant} · graph view ${graphLayout ?? 'freeform'}. ${STOP_RULE}`;
 };
 
 const submit = (): void => {
@@ -111,7 +119,7 @@ const submit = (): void => {
         const report = studyReport(recorder.trials, matrix);
         reportElement.textContent = report;
         Object.assign(window, {
-            __study: { trials: recorder.trials, assignments, matrix, report },
+            __study: { trials: recorder.trials, assignments, matrix, graphLayout, report },
         });
     }
 };

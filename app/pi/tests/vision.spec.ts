@@ -88,6 +88,25 @@ test.describe('Pi flagship vision atlas', () => {
         }
     });
 
+    test('intermediate frames of a graph morph stay legible', async ({ page }) => {
+        const errors: string[] = [];
+        page.on('pageerror', (error) => errors.push(error.message));
+        await page.setViewportSize({ width: 1600, height: 1000 });
+        await page.goto('/?shot=fit-wide-mid&graphLayout=timeline&graphMorph=1');
+        await page.waitForFunction(() => (window as any).__pi?.ready === true);
+        await page.waitForFunction(() => (window as any).__pi?.shotReady?.() === true);
+        await page.evaluate(() => (window as any).__pi.pause(true));
+        await page.evaluate(() => (window as any).__pi.setGraphLayout('lanes'));
+        expect(await page.evaluate(() => (window as any).__pi.simulation().settled)).toBe(false);
+        for (let frame = 0; frame < 6; frame++) {
+            await page.evaluate(() => (window as any).__pi.advance(0.05));
+            await assertScene(page);
+        }
+        await page.evaluate(() => (window as any).__pi.settle());
+        await assertScene(page);
+        expect(errors).toEqual([]);
+    });
+
     test('bounded recursion keeps intermediate frames legible on re-entry', async ({ page }) => {
         const errors: string[] = [];
         page.on('pageerror', (error) => errors.push(error.message));

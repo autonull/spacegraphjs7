@@ -27,6 +27,7 @@ export type PermalinkState = {
     readonly graphLayout?: string;
     readonly graphLayoutAligned?: boolean;
     readonly ribbonCorridor?: boolean;
+    readonly graphMorph?: boolean;
 };
 
 export const PERMALINK_PREFIX = 's=';
@@ -64,7 +65,8 @@ const isPermalinkState = (value: unknown): value is PermalinkState => {
         (value.fixture === undefined || typeof value.fixture === 'string') &&
         (value.graphLayout === undefined || typeof value.graphLayout === 'string') &&
         (value.graphLayoutAligned === undefined || typeof value.graphLayoutAligned === 'boolean') &&
-        (value.ribbonCorridor === undefined || typeof value.ribbonCorridor === 'boolean')
+        (value.ribbonCorridor === undefined || typeof value.ribbonCorridor === 'boolean') &&
+        (value.graphMorph === undefined || typeof value.graphMorph === 'boolean')
     );
 };
 

@@ -6,6 +6,15 @@ import {
     type CaptureMatrix,
     type MetricEvent,
 } from 'spacegraphjs/experiments';
+import { isGraphLayoutMode, type GraphLayoutMode } from './graph-layout';
+
+export const STUDY_GRAPH_LAYOUT_PARAM = 'studyGraphLayout';
+
+/** Opt-in pilot override; the default study matrix and protocol are unchanged. */
+export const studyGraphLayout = (search: string): GraphLayoutMode | undefined => {
+    const value = new URLSearchParams(search).get(STUDY_GRAPH_LAYOUT_PARAM);
+    return isGraphLayoutMode(value) ? value : undefined;
+};
 
 export type StudySurface = 'log' | 'map' | 'hybrid';
 export type StudyDepth = 'flat' | 'layered' | 'depth-stack' | 'orbit';

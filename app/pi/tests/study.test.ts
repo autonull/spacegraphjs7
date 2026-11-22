@@ -6,6 +6,7 @@ import {
     STUDY_TASKS,
     StudyRecorder,
     counterbalance,
+    studyGraphLayout,
     studyMatrix,
     studyReport,
     type StudyTrial,
@@ -22,6 +23,20 @@ const trial = (overrides: Partial<StudyTrial> = {}): StudyTrial => ({
     quote: '',
     events: [],
     ...overrides,
+});
+
+describe('opt-in graph view override', () => {
+    it('reads a valid pilot layout from the harness query only', () => {
+        expect(studyGraphLayout('')).toBeUndefined();
+        expect(studyGraphLayout('?studyGraphLayout=timeline')).toBe('timeline');
+        expect(studyGraphLayout('?studyGraphLayout=timeline-rows')).toBe('timeline-rows');
+        expect(studyGraphLayout('?studyGraphLayout=nope')).toBeUndefined();
+    });
+
+    it('leaves the default matrix axes untouched', () => {
+        expect(studyMatrix().axes).toEqual(['surface', 'depth', 'arrangement']);
+        expect(studyMatrix().total).toBe(36);
+    });
 });
 
 describe('five-task study protocol', () => {

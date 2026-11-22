@@ -53,6 +53,36 @@ test.describe('graph arrangements', () => {
         expect(await page.evaluate(() => (window as any).__pi.graphLayout())).toBe('lanes');
     });
 
+    test('the palette focuses a turn without clicking a card', async ({ page }) => {
+        await boot(page, '?scenario=rich&graphLayout=timeline');
+        await page.locator('#command-open').click();
+        await page.locator('#command-input').fill('Focus turn 3');
+        await page.locator('.command-row[data-command-id="view.turn.pi:local:x4"]').click();
+        expect(await page.evaluate(() => (window as any).__pi.revealed())).toBe('pi:local:x4');
+    });
+
+    test('graph morph springs between views and snaps under reduced motion', async ({ page }) => {
+        await boot(page, '?scenario=rich&graphLayout=timeline&graphMorph=1');
+        expect(await page.evaluate(() => (window as any).__pi.graphMorph())).toBe(true);
+        await page.evaluate(() => (window as any).__pi.pause(true));
+        const before = await page.evaluate(() => (window as any).__pi.positionOf('pi:local:x3'));
+        await page.evaluate(() => (window as any).__pi.setGraphLayout('lanes'));
+        expect(await page.evaluate(() => (window as any).__pi.simulation().settled)).toBe(false);
+        for (let frame = 0; frame < 6; frame++)
+            await page.evaluate(() => (window as any).__pi.advance(0.05));
+        const during = await page.evaluate(() => (window as any).__pi.positionOf('pi:local:x3'));
+        expect(during).not.toEqual(before);
+        await page.evaluate(() => (window as any).__pi.settle());
+        expect(await page.evaluate(() => (window as any).__pi.positionOf('pi:local:x3'))).not.toEqual(during);
+    });
+
+    test('reduced motion ignores graph morph', async ({ page }) => {
+        await page.emulateMedia({ reducedMotion: 'reduce' });
+        await boot(page, '?scenario=rich&graphLayout=timeline&graphMorph=1');
+        await page.evaluate(() => (window as any).__pi.setGraphLayout('lanes'));
+        expect(await page.evaluate(() => (window as any).__pi.simulation().settled)).toBe(true);
+    });
+
     test('a URL selects the view on load and switching keeps focus and camera', async ({ page }) => {
         await boot(page, '?scenario=rich&graphLayout=timeline');
         expect(await page.evaluate(() => (window as any).__pi.graphLayout())).toBe('timeline');

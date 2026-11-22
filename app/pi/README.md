@@ -65,9 +65,9 @@ switch views, click a graph node to reveal its message, or follow `#graph:<nodeI
 
 Mouse: right-drag pan, wheel zoom, middle-drag orbit, click select, node drag, shift-drag box-select.
 Keyboard mirrors: arrows pan, `+`/`-` zoom, `f` focus the revealed node, `Esc` clears selection,
-`g` cycles graph views, `a` toggles transcript alignment, `r` toggles the ribbon corridor (all global
-outside text inputs). `/` lists
-every graph-view command in the palette; the HUD shows the active view and its flags.
+`g` cycles graph views, `a` toggles transcript alignment, `r` toggles the ribbon corridor and `m`
+toggles animated transitions (all global outside text inputs). `/` lists every graph-view command, including `Focus turn 1…N`, in the palette;
+the HUD shows the active view and its flags.
 Export produces JSON, SVG or HTML; WebXR, sound and haptics stay report-only seams.
 
 `verify:visual` runs the vision-gated capture matrix (depth modes × arrangements, reduced motion,
@@ -92,8 +92,10 @@ mode, the list of modes and the measured shape are exposed as `__pi.graphLayout(
 `__pi.graphLayouts()`, `__pi.cycleGraphLayout()` and `__pi.graphShape()`; the HUD shows the active
 view. `?graphAligned=1` aligns transcript rows with their projected graph nodes, and
 `?ribbonCorridor=1` routes cross-scope causal ribbons through a corridor; both have palette commands,
-keys (`a`, `r`) and `__pi` setters. All four fields round-trip through full-state permalinks.
-Switching views preserves selection, focus, camera and transcript scroll. The default stays
+keys (`a`, `r`) and `__pi` setters. `?graphMorph=1` (key `m`) lets the springs animate between views
+instead of snapping; intermediate frames pass the vision gates, and reduced motion still snaps.
+All five fields round-trip through full-state permalinks. Switching views preserves selection,
+focus, camera and transcript scroll. The default stays
 `freeform` until the study decision and the ADR 0008 record in
 `docs/screenshots/graph-layout/comparison.json` close.
 

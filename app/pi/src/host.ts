@@ -349,6 +349,7 @@ export class PiHost {
     #graphLayout: GraphLayoutMode = 'freeform';
     #graphLayoutAligned = false;
     #ribbonCorridor = false;
+    #graphMorph = false;
     #graphLayoutPositions?: ReadonlyMap<string, Position>;
     #surface: Surface = 'hybrid';
     #depthAxis: DepthAxis = 'turn';
@@ -434,6 +435,7 @@ export class PiHost {
         if (isGraphLayoutMode(requestedLayout)) this.#graphLayout = requestedLayout;
         this.#graphLayoutAligned = params.get('graphAligned') === '1';
         this.#ribbonCorridor = params.get('ribbonCorridor') === '1';
+        this.#graphMorph = params.get('graphMorph') === '1';
         const presetID = params.get('preset') ?? shot?.preset;
         const embedded = params.get('policy');
         if (presetID && presetById(presetID)) {
@@ -1525,8 +1527,13 @@ export class PiHost {
         this.#graphLayout = mode;
         this.#graphLayoutPositions = undefined;
         this.refresh();
-        this.simulation.settle();
-        this.renderPositions();
+        if (this.#graphMorph && !this.#reducedMotion) {
+            this.renderPositions();
+            this.syncClock();
+        } else {
+            this.simulation.settle();
+            this.renderPositions();
+        }
         el('transcript-list').scrollTop = scroll;
         this.alignTranscript();
         this.renderHud();
@@ -1553,6 +1560,12 @@ export class PiHost {
         return this.#ribbonCorridor;
     }
 
+    setGraphMorph(enabled: boolean): boolean {
+        this.#graphMorph = enabled;
+        this.renderHud();
+        return this.#graphMorph;
+    }
+
     private alignTranscript(): void {
         const list = el('transcript-list');
         const aligned = this.#graphLayoutAligned && this.#graphLayout !== 'freeform';
@@ -1562,7 +1575,8 @@ export class PiHost {
         const spanX = bounds.size[0] || 1;
         const spanY = bounds.size[1] || 1;
         for (const row of list.querySelectorAll<HTMLElement>('.transcript-row')) {
-            const position = this.#positions.get(row.dataset.node ?? '');
+            const id = row.dataset.node ?? '';
+            const position = this.#graphLayoutPositions?.get(id) ?? this.#positions.get(id);
             if (!position) continue;
             row.style.setProperty('--pi-align-x', String((position.x - bounds.min.x) / spanX));
             row.style.setProperty('--pi-align-y', String((position.y - bounds.min.y) / spanY));
@@ -1674,6 +1688,7 @@ export class PiHost {
             graphLayout: this.#graphLayout,
             graphLayoutAligned: this.#graphLayoutAligned,
             ribbonCorridor: this.#ribbonCorridor,
+            graphMorph: this.#graphMorph,
         };
         return encodePermalink(state);
     }
@@ -1697,6 +1712,7 @@ export class PiHost {
         if (isGraphLayoutMode(state.graphLayout)) this.setGraphLayout(state.graphLayout);
         this.setGraphLayoutAligned(state.graphLayoutAligned === true);
         if (state.ribbonCorridor !== undefined) this.setRibbonCorridor(state.ribbonCorridor);
+        if (state.graphMorph !== undefined) this.setGraphMorph(state.graphMorph);
         if (state.focus) this.reveal(state.focus);
         this.renderer.setViewport({
             zoom: state.viewport.zoom,
@@ -2018,6 +2034,23 @@ export class PiHost {
                 hint: 'r',
                 run: () => this.setRibbonCorridor(!this.#ribbonCorridor),
             },
+            {
+                id: 'view.graphMorph',
+                label: 'Toggle animated graph transition',
+                group: 'graph view',
+                hint: 'm',
+                run: () => this.setGraphMorph(!this.#graphMorph),
+            },
+            ...(this.#view.turns ?? []).map((turnID, index) => ({
+                id: `view.turn.${turnID}`,
+                label: `Focus turn ${index + 1}`,
+                group: 'turn navigation',
+                hint: 'turn',
+                run: () => {
+                    this.reveal(turnID);
+                    this.renderer.focus(turnID);
+                },
+            })),
         ];
         return [...nav, ...chrome, ...focused, ...graph, ...verbs, ...knobs];
     }
@@ -2070,6 +2103,7 @@ export class PiHost {
             { id: 'help.graphView', label: 'Cycle graph views', group: 'shortcut', hint: 'g' },
             { id: 'help.graphAligned', label: 'Toggle aligned transcript', group: 'shortcut', hint: 'a' },
             { id: 'help.corridor', label: 'Toggle ribbon corridor', group: 'shortcut', hint: 'r' },
+            { id: 'help.graphMorph', label: 'Toggle graph morph', group: 'shortcut', hint: 'm' },
         ];
     }
 
@@ -2202,6 +2236,8 @@ export class PiHost {
             graphShape: () => this.graphShape(),
             ribbonCorridor: () => this.#ribbonCorridor,
             setRibbonCorridor: (enabled: boolean) => this.setRibbonCorridor(enabled),
+            graphMorph: () => this.#graphMorph,
+            setGraphMorph: (enabled: boolean) => this.setGraphMorph(enabled),
             cycleGraphLayout: (delta = 1) => this.cycleGraphLayout(delta),
             surface: () => this.#surface,
             setSurface: (surface: Surface) => this.setSurface(surface),
@@ -2618,6 +2654,7 @@ export class PiHost {
                 g: () => this.cycleGraphLayout(),
                 a: () => this.setGraphLayoutAligned(!this.#graphLayoutAligned),
                 r: () => this.setRibbonCorridor(!this.#ribbonCorridor),
+                m: () => this.setGraphMorph(!this.#graphMorph),
             };
             const graphAction = graphKey[event.key];
             if (!graphAction) return;
@@ -3111,7 +3148,7 @@ export class PiHost {
     private renderHud(): void {
         const view =
             `${this.#graphLayout}${this.#graphLayoutAligned ? '+aligned' : ''}` +
-            `${this.#ribbonCorridor ? '+corridor' : ''}`;
+            `${this.#ribbonCorridor ? '+corridor' : ''}${this.#graphMorph ? '+morph' : ''}`;
         const context =
             `${this.#level}/${this.#levelMode} · ${this.#depth}/${this.#depthAxis} · ` +
             `${this.simulation.settled ? 'settled' : 'moving'} · ${view}`;

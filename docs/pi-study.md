@@ -62,8 +62,13 @@ PI_LOCAL_FEED=1 pnpm --filter pi dev        # local feed, no provider
 
 Enter a participant number, start the counterbalanced run, work through the five questions in the
 embedded flagship, and record each answer. At the end the page renders the Markdown report and exposes
-`window.__study` with `trials`, `assignments`, `matrix` and `report`. Copy the report into the study
-record; do not edit captured results by hand.
+`window.__study` with `trials`, `assignments`, `matrix`, `graphLayout` and `report`. Copy the report
+into the study record; do not edit captured results by hand.
+
+For a pilot on an opt-in graph view, add `?studyGraphLayout=timeline` (or `timeline-rows`) to the
+`study.html` URL. This applies one view for the whole run and records it in the question header, the
+status line and `window.__study.graphLayout`. It does **not** add an axis to the 36-cell matrix, change
+the Latin-square surface rotation, or change any default. An unpiloted run stays `freeform`.
 
 Automated checks cover the protocol, not the outcome:
 

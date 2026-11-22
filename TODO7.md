@@ -294,6 +294,8 @@ default has been flipped; every new view stays opt-in.
   recaptured. Verdicts in `docs/screenshots/review.json` are intentionally left for a human.
 - After the UI controls slice: `check:fast` 151/151, graph-layout e2e 5/5, shell readout tests 2/2,
   `verify:visual` 23/23 and `shots:all` 24/24 all green.
+- After the navigation, pilot and morph slices: `check:fast` 153/153, graph-layout e2e 8/8,
+  study pilot e2e 3/3, and the morph intermediate-frame vision gate 1/1 green.
 
 ### What landed in this increment
 
@@ -315,7 +317,15 @@ default has been flipped; every new view stays opt-in.
 6. **UI access to every view.** Palette commands for all six graph views, transcript alignment and
    the ribbon corridor; `g` cycles views, `a` and `r` toggle the two flags; the HUD shows the active
    view and flags. `ribbonCorridor` now round-trips through permalinks, so the documented claim holds.
-7. **Transposed timeline.** `LayoutOptions.orientation: 'rows'` swaps the timeline axes inside the
+7. **Turn navigation and pilot override.** The palette focuses any turn directly, and
+   `?studyGraphLayout=timeline|timeline-rows` applies one graph view for a whole study run. The
+   override is recorded in the question header, status line and `window.__study.graphLayout`; the
+   36-cell matrix, Latin square and all defaults stay unchanged.
+8. **Animated transitions.** `?graphMorph=1` skips the snap in `setGraphLayout()`, kicks the rAF
+   clock and lets `ScopeSimulation` springs move to the new targets. Transcript alignment uses solved
+   target positions, so rows stay paired while bodies move. Reduced motion and the default still snap.
+   The vision gate checks six intermediate frames plus the settled frame.
+9. **Transposed timeline.** `LayoutOptions.orientation: 'rows'` swaps the timeline axes inside the
    general strategy (`src/layout/strategies.ts:394`); `?graphLayout=timeline-rows` exposes it as a
    sixth opt-in view. The new `timeline-rows` shot shows horizontal turn stripes stacked vertically.
    `pnpm run build:lib` is required before app/pi sees a new `src/layout` option, because app/pi
@@ -327,10 +337,11 @@ positions; aligned transcript; square scope hulls and turn tabs; opt-in corridor
 
 ### Remaining work — clarified, in order
 
-1. **Study gate (Phase 1 item 6 — human).** Confirm the five study questions remain answerable on
-   timeline and run a pilot to check for a preference penalty; log the outcome. All automated gates
-   now pass, but the default stays `freeform` until this decision and ADR 0008 close (invariants 12,
-   15; pitfall 12).
+1. **Study gate (Phase 1 item 6 — human).** The harness now supports `?studyGraphLayout=timeline`
+   (or `timeline-rows`) for a whole run without changing the 36-cell matrix. Confirm the five study
+   questions remain answerable and run a pilot to check for a preference penalty; log the outcome.
+   All automated gates pass, but the default stays `freeform` until this decision and ADR 0008 close
+   (invariants 12, 15; pitfall 12).
 2. **Gallery verdicts and ADR evidence (Phases 2–4 — human).** Shots are recaptured and current.
    Inspect the contact sheet at `docs/screenshots/index.html` (including the new `timeline-rows`
    shot), assign verdicts in `docs/screenshots/review.json`, and log human decisions in
