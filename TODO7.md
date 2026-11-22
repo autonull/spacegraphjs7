@@ -284,7 +284,7 @@ default has been flipped; every new view stays opt-in.
 
 ### Gates run in this increment
 
-- root `bun run check` — green.
+- root `pnpm run check` — green.
 - `app/pi` `pnpm run check:fast` — 29 files, 150 tests green.
 - root `pnpm exec vitest run test/FluxEdge.test.ts` — 6 tests green.
 - `app/pi` `pnpm exec playwright test --config playwright.config.ts tests/graph-layout.spec.ts --workers=2` — 4/4 green.
@@ -346,7 +346,7 @@ positions; aligned transcript; square scope hulls and turn tabs; opt-in corridor
    study stop rule, never visual preference alone.
 3. If a phase needs a new contract field, stop and record the blocker instead of adding a branch.
 4. `dist/` is gitignored and stale declaration files break `app/pi` typecheck after a core API change;
-   run `pnpm run build:lib` before `bun run check` in that case.
+   run `pnpm run build:lib` before `pnpm run check` in that case.
 5. On memory-constrained hosts run the full Playwright suite with `--workers=2`.
 6. The flexibility matrix needs `test.setTimeout(240_000)`; 60 scene navigations exceed the 30 s
    Playwright default.
