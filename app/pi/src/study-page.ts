@@ -8,6 +8,7 @@ import {
     studyGraphLayout,
     studyMatrix,
     studyReport,
+    studyUI,
     type StudyArrangement,
     type StudyDepth,
     type StudySurface,
@@ -18,6 +19,7 @@ interface PiHooks {
     readonly ready: boolean;
     loadFixture(): number;
     setGraphLayout(mode: GraphLayoutMode): GraphLayoutMode;
+    applyUIPreset(id: string): string | undefined;
     setSurface(surface: StudySurface): void;
     setArrangement(arrangement: StudyArrangement): void;
     setDepth(depth: StudyDepth): void;
@@ -42,6 +44,7 @@ let recorder: StudyRecorder | undefined;
 let startedAt = 0;
 let matrix = studyMatrix();
 let graphLayout: GraphLayoutMode | undefined;
+let uiPreset: string | undefined;
 
 const hooks = async (): Promise<PiHooks> => {
     for (let attempt = 0; attempt < 100; attempt += 1) {
@@ -72,7 +75,7 @@ const show = (): void => {
     const task = STUDY_TASKS.find((entry) => entry.id === next.taskID)!;
     question.textContent =
         `${index + 1}/${assignments.length} · ${next.surface.toUpperCase()} · ` +
-        `${(graphLayout ?? 'freeform').toUpperCase()} · ${task.question}`;
+        `${(graphLayout ?? 'freeform').toUpperCase()} · UI ${uiPreset ?? 'full'} · ${task.question}`;
     startedAt = performance.now();
 };
 
@@ -83,6 +86,8 @@ const begin = async (): Promise<void> => {
     graph.loadFixture();
     graphLayout = studyGraphLayout(window.location.search);
     if (graphLayout) graph.setGraphLayout(graphLayout);
+    uiPreset = studyUI(window.location.search);
+    if (uiPreset) graph.applyUIPreset(uiPreset);
     recorder = new StudyRecorder(participant);
     matrix = studyMatrix();
     assignments = counterbalance(participant)
@@ -94,7 +99,7 @@ const begin = async (): Promise<void> => {
     graph.setArrangement(arrangements[(participant - 1) % arrangements.length]!);
     index = 0;
     show();
-    status.textContent = `Participant ${participant} · graph view ${graphLayout ?? 'freeform'}. ${STOP_RULE}`;
+    status.textContent = `Participant ${participant} · graph view ${graphLayout ?? 'freeform'} · UI ${uiPreset ?? 'full'}. ${STOP_RULE}`;
 };
 
 const submit = (): void => {
@@ -107,6 +112,7 @@ const submit = (): void => {
         participant: Number(element<HTMLInputElement>('participant').value) || 1,
         taskID: task.id,
         surface: next.surface,
+        ui: uiPreset,
         success: element<HTMLSelectElement>('answer').value === 'yes',
         elapsedMs: performance.now() - startedAt,
         wrongTurns: Number(element<HTMLInputElement>('wrong').value) || 0,
@@ -119,7 +125,7 @@ const submit = (): void => {
         const report = studyReport(recorder.trials, matrix);
         reportElement.textContent = report;
         Object.assign(window, {
-            __study: { trials: recorder.trials, assignments, matrix, graphLayout, report },
+            __study: { trials: recorder.trials, assignments, matrix, graphLayout, ui: uiPreset, report },
         });
     }
 };

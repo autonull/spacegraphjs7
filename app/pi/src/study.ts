@@ -7,13 +7,21 @@ import {
     type MetricEvent,
 } from 'spacegraphjs/experiments';
 import { isGraphLayoutMode, type GraphLayoutMode } from './graph-layout';
+import { uiPresetById } from './ui/presets';
 
 export const STUDY_GRAPH_LAYOUT_PARAM = 'studyGraphLayout';
+export const STUDY_UI_PARAM = 'studyUI';
 
 /** Opt-in pilot override; the default study matrix and protocol are unchanged. */
 export const studyGraphLayout = (search: string): GraphLayoutMode | undefined => {
     const value = new URLSearchParams(search).get(STUDY_GRAPH_LAYOUT_PARAM);
     return isGraphLayoutMode(value) ? value : undefined;
+};
+
+/** Opt-in UI preset for a pilot run, validated against the preset catalogue. */
+export const studyUI = (search: string): string | undefined => {
+    const value = new URLSearchParams(search).get(STUDY_UI_PARAM);
+    return uiPresetById(value)?.id;
 };
 
 export type StudySurface = 'log' | 'map' | 'hybrid';
@@ -104,6 +112,8 @@ export interface StudyTrial {
     readonly participant: number;
     readonly taskID: string;
     readonly surface: StudySurface;
+    /** The opt-in UI preset shown for this trial, when the pilot override is active. */
+    readonly ui?: string;
     readonly success: boolean;
     readonly elapsedMs: number;
     readonly wrongTurns: number;
@@ -116,6 +126,7 @@ export interface TrialInput {
     readonly participant: number;
     readonly taskID: string;
     readonly surface: StudySurface;
+    readonly ui?: string;
     readonly success: boolean;
     readonly elapsedMs: number;
     readonly wrongTurns: number;
@@ -151,7 +162,7 @@ export class StudyRecorder {
             id: `${this.#participant}:${input.taskID}`,
             kind: input.success ? 'answer' : 'wrong-turn',
             at: Date.now(),
-            meta: { surface: input.surface, wrongTurns: input.wrongTurns },
+            meta: { surface: input.surface, ui: input.ui ?? 'full', wrongTurns: input.wrongTurns },
         });
         const trial: StudyTrial = {
             ...input,
@@ -169,26 +180,38 @@ const average = (values: readonly number[]): number =>
 export function studyReport(trials: readonly StudyTrial[], matrix: CaptureMatrix): string {
     const bySurface = (surface: StudySurface) =>
         trials.filter((trial) => trial.surface === surface);
-    const result = (surface: StudySurface) => {
-        const rows = bySurface(surface);
+    const summarize = (name: string, rows: readonly StudyTrial[], negative = false) => {
         const success = average(rows.map((row) => (row.success ? 1 : 0)));
         const seconds = average(rows.map((row) => row.elapsedMs)) / 1000;
         const wrongTurns = average(rows.map((row) => row.wrongTurns));
         const preference = average(rows.map((row) => row.preference));
         return {
-            name: `${surface}: ${rows.length} trials`,
+            name,
             value: `${(success * 100).toFixed(0)}% success, ${seconds.toFixed(1)}s, ${wrongTurns.toFixed(1)} wrong turns, ${preference.toFixed(1)} preference`,
-            negative:
-                surface !== 'log' &&
-                success < average(bySurface('log').map((row) => (row.success ? 1 : 0))),
+            negative,
         };
     };
+    const result = (surface: StudySurface) => {
+        const rows = bySurface(surface);
+        return summarize(
+            `${surface}: ${rows.length} trials`,
+            rows,
+            surface !== 'log' &&
+                average(rows.map((row) => (row.success ? 1 : 0))) <
+                    average(bySurface('log').map((row) => (row.success ? 1 : 0))),
+        );
+    };
+    const presetIDs = [...new Set(trials.map((trial) => trial.ui).filter(Boolean))] as string[];
+    const uiResults = presetIDs.map((id) => {
+        const rows = trials.filter((trial) => trial.ui === id);
+        return summarize(`ui ${id}: ${rows.length} trials`, rows);
+    });
     const participants = new Set(trials.map((trial) => trial.participant)).size;
     return reportMarkdown({
         title: 'Five-task spatial navigation study',
         matrix,
         template: templateById('task-study'),
         samplingNote: `n=${participants} counterbalanced participants; Latin-square surface rotation; local fixture only`,
-        results: STUDY_SURFACES.map(result),
+        results: [...STUDY_SURFACES.map(result), ...uiResults],
     });
 }

@@ -1,0 +1,122 @@
+{
+  "recorded": "2026-11-22",
+  "rule": "ADR 0008 — a default visual change needs incumbent/variant evidence and a logged human decision",
+  "decisions": [
+    {
+      "id": "ui-preset-compact",
+      "status": "experiment; default not flipped",
+      "incumbent": "full — shipped knobs and full chrome (?ui=full)",
+      "variant": "Compact chrome (?ui=compact, chrome compact)",
+      "data": "docs/screenshots/ui-presets/comparison.json",
+      "gates": [
+        "shell",
+        "grammar",
+        "vision",
+        "screenshots"
+      ],
+      "images": "pending — capture ?shot=ui-compact&ui=full and ?shot=ui-compact&ui=compact",
+      "decision": "pending human review; ADR 0008 default gate not closed"
+    },
+    {
+      "id": "ui-preset-reading",
+      "status": "experiment; default not flipped",
+      "incumbent": "full — shipped knobs and full chrome (?ui=full)",
+      "variant": "Reading type (?ui=reading, chrome compact)",
+      "data": "docs/screenshots/ui-presets/comparison.json",
+      "gates": [
+        "grammar",
+        "vision",
+        "screenshots"
+      ],
+      "images": "pending — capture ?shot=ui-reading&ui=full and ?shot=ui-reading&ui=reading",
+      "decision": "pending human review; ADR 0008 default gate not closed"
+    },
+    {
+      "id": "ui-preset-presentation",
+      "status": "experiment; default not flipped",
+      "incumbent": "full — shipped knobs and full chrome (?ui=full)",
+      "variant": "Presentation (?ui=presentation, chrome minimal)",
+      "data": "docs/screenshots/ui-presets/comparison.json",
+      "gates": [
+        "shell",
+        "vision",
+        "screenshots"
+      ],
+      "images": "pending — capture ?shot=ui-presentation&ui=full and ?shot=ui-presentation&ui=presentation",
+      "decision": "pending human review; ADR 0008 default gate not closed"
+    },
+    {
+      "id": "ui-preset-one-index",
+      "status": "experiment; default not flipped",
+      "incumbent": "full — shipped knobs and full chrome (?ui=full)",
+      "variant": "One index (?ui=one-index, chrome full)",
+      "data": "docs/screenshots/ui-presets/comparison.json",
+      "gates": [
+        "shell",
+        "grammar",
+        "vision",
+        "screenshots"
+      ],
+      "images": "pending — capture ?shot=ui-one-index&ui=full and ?shot=ui-one-index&ui=one-index",
+      "decision": "pending human review; ADR 0008 default gate not closed"
+    },
+    {
+      "id": "ui-preset-light-shell",
+      "status": "experiment; default not flipped",
+      "incumbent": "full — shipped knobs and full chrome (?ui=full)",
+      "variant": "Light shell (?ui=light-shell, chrome full)",
+      "data": "docs/screenshots/ui-presets/comparison.json",
+      "gates": [
+        "shell",
+        "vision",
+        "screenshots"
+      ],
+      "images": "pending — capture ?shot=ui-light-shell&ui=full and ?shot=ui-light-shell&ui=light-shell",
+      "decision": "pending human review; ADR 0008 default gate not closed"
+    },
+    {
+      "id": "ui-preset-mono",
+      "status": "experiment; default not flipped",
+      "incumbent": "full — shipped knobs and full chrome (?ui=full)",
+      "variant": "Mono chrome (?ui=mono, chrome full)",
+      "data": "docs/screenshots/ui-presets/comparison.json",
+      "gates": [
+        "shell",
+        "grammar",
+        "vision",
+        "screenshots"
+      ],
+      "images": "pending — capture ?shot=ui-mono&ui=full and ?shot=ui-mono&ui=mono",
+      "decision": "pending human review; ADR 0008 default gate not closed"
+    },
+    {
+      "id": "ui-preset-morph",
+      "status": "experiment; default not flipped",
+      "incumbent": "full — shipped knobs and full chrome (?ui=full)",
+      "variant": "Morph (?ui=morph, chrome full)",
+      "data": "docs/screenshots/ui-presets/comparison.json",
+      "gates": [
+        "graph-layout",
+        "motion",
+        "screenshots"
+      ],
+      "images": "pending — capture ?shot=ui-morph&ui=full and ?shot=ui-morph&ui=morph",
+      "decision": "pending human review; ADR 0008 default gate not closed"
+    },
+    {
+      "id": "ui-preset-failure-first",
+      "status": "experiment; default not flipped",
+      "incumbent": "full — shipped knobs and full chrome (?ui=full)",
+      "variant": "Failure first (?ui=failure-first, chrome compact)",
+      "data": "docs/screenshots/ui-presets/comparison.json",
+      "gates": [
+        "shell",
+        "grammar",
+        "vision",
+        "screenshots"
+      ],
+      "images": "pending — capture ?shot=ui-failure-first&ui=full and ?shot=ui-failure-first&ui=failure-first",
+      "decision": "pending human review; ADR 0008 default gate not closed"
+    }
+  ]
+}

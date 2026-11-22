@@ -2,6 +2,7 @@ import { DEFAULT_THEME } from '@spacegraphjs/renderer';
 import { describe, expect, it } from 'vitest';
 import { POLICY_PRESETS, POLICY_SCHEMA } from '../src/policy';
 import { SHOTS, shotById } from '../src/shots';
+import { isUIPresetID } from '../src/ui/presets';
 import { paletteCausal, paletteTheme, paletteVars, VIEW_PALETTES } from '../src/theme';
 
 describe('shot catalog', () => {
@@ -15,6 +16,7 @@ describe('shot catalog', () => {
         const knobs = new Set(POLICY_SCHEMA.knobs.map((knob) => knob.id));
         for (const shot of SHOTS) {
             if (shot.preset) expect(presets.has(shot.preset), `${shot.id}: ${shot.preset}`).toBe(true);
+            if (shot.ui) expect(isUIPresetID(shot.ui), `${shot.id}: ${shot.ui}`).toBe(true);
             for (const id of Object.keys(shot.vector ?? {}))
                 expect(knobs.has(id), `${shot.id}: ${id}`).toBe(true);
         }

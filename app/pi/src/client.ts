@@ -21,6 +21,8 @@ const boot = async (): Promise<void> => {
     await host.mount(el('canvas'));
     host.setClientID(clientID);
     if (shotID) host.applyShot(shotID);
+    const uiID = params.get('ui');
+    if (uiID) host.applyUIPreset(uiID);
 
     if (!shotID && params.get('scenario') !== 'rich') {
         host.setFrame('pending');

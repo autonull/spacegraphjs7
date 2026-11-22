@@ -9,6 +9,7 @@ import {
     studyGraphLayout,
     studyMatrix,
     studyReport,
+    studyUI,
     type StudyTrial,
 } from '../src/study';
 
@@ -31,6 +32,13 @@ describe('opt-in graph view override', () => {
         expect(studyGraphLayout('?studyGraphLayout=timeline')).toBe('timeline');
         expect(studyGraphLayout('?studyGraphLayout=timeline-rows')).toBe('timeline-rows');
         expect(studyGraphLayout('?studyGraphLayout=nope')).toBeUndefined();
+    });
+
+    it('reads a valid UI preset from the harness query only', () => {
+        expect(studyUI('')).toBeUndefined();
+        expect(studyUI('?studyUI=compact')).toBe('compact');
+        expect(studyUI('?studyUI=presentation&studyGraphLayout=timeline')).toBe('presentation');
+        expect(studyUI('?studyUI=nope')).toBeUndefined();
     });
 
     it('leaves the default matrix axes untouched', () => {
@@ -92,6 +100,25 @@ describe('study recorder and report', () => {
         });
         expect(result.events.map((event) => event.kind)).toEqual(['surfaceOpen', 'answer']);
         expect(recorder.trials).toEqual([result]);
+    });
+
+    it('records the UI preset on a trial and reports success by preset', () => {
+        const recorder = new StudyRecorder(3);
+        const result = recorder.record({
+            participant: 3,
+            taskID: 'question-2',
+            surface: 'hybrid',
+            ui: 'compact',
+            success: true,
+            elapsedMs: 3100,
+            wrongTurns: 0,
+            preference: 5,
+            quote: '',
+        });
+        expect(result.ui).toBe('compact');
+        expect(result.events.map((event) => event.meta?.ui)).toEqual(['compact']);
+        const report = studyReport([trial({ ui: 'compact' }), trial({ ui: 'compact' })], studyMatrix());
+        expect(report).toContain('ui compact: 2 trials');
     });
 
     it('prints a negative result when a spatial surface loses to the log', () => {

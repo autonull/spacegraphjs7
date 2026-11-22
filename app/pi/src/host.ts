@@ -153,6 +153,7 @@ import { focusRoles, scaleForRole, type FocusScales } from './focus';
 import { paletteCausal, paletteScopeColors, paletteTheme, paletteVars, readTheme } from './theme';
 import { SHOTS, shotById, type Shot } from './shots';
 import { decodePermalink, encodePermalink, isRevealHash, type PermalinkState } from './permalink';
+import { UI_PRESETS, applyUIPreset, uiPresetById, type UIPreset } from './ui/presets';
 import {
     createPhysicsPlaySession,
     type GravityPreset,
@@ -350,6 +351,7 @@ export class PiHost {
     #graphLayoutAligned = false;
     #ribbonCorridor = false;
     #graphMorph = false;
+    #uiPresetID?: string;
     #graphLayoutPositions?: ReadonlyMap<string, Position>;
     #surface: Surface = 'hybrid';
     #depthAxis: DepthAxis = 'turn';
@@ -539,6 +541,18 @@ export class PiHost {
         this.#resolved = resolvePolicy(POLICY_SCHEMA, this.#policyLayers);
         this.applyPolicy();
         this.paint();
+    }
+
+    /** Apply a named bundle through existing setters; the preset stays one command away. */
+    applyUIPreset(id: string | null | undefined): UIPreset | undefined {
+        const applied = applyUIPreset(id, this);
+        if (applied) this.#uiPresetID = applied.id;
+        return applied;
+    }
+
+    setTranscriptCollapsed(collapsed: boolean): void {
+        if (this.#transcriptCollapsed === collapsed) return;
+        this.toggleTranscript();
     }
 
     assignExperiment(cell: ExperimentCell): void {
@@ -756,7 +770,9 @@ export class PiHost {
         connector.append(connectorLine);
         el('canvas').append(connector);
         this.#focusConnector = connectorLine;
-        this.#commandSurface = createCommandSurface(() => this.commands(), { help: this.help() });
+        this.#commandSurface = createCommandSurface(() => this.commands(), {
+            help: () => this.help(),
+        });
         document.body.append(this.#commandSurface.element);
         this.#stateFrame = createStateFrame();
         el('canvas').append(this.#stateFrame.element);
@@ -1364,6 +1380,7 @@ export class PiHost {
         if (shot.surface) this.setSurface(shot.surface);
         if (shot.arrangement) this.setArrangement(shot.arrangement);
         if (shot.graphLayout && isGraphLayoutMode(shot.graphLayout)) this.setGraphLayout(shot.graphLayout);
+        if (shot.ui) this.applyUIPreset(shot.ui);
         if (shot.collapsed !== undefined && this.#transcriptCollapsed !== shot.collapsed)
             this.toggleTranscript();
         const railOpen = document.body.dataset.rail !== 'closed';
@@ -1689,6 +1706,7 @@ export class PiHost {
             graphLayoutAligned: this.#graphLayoutAligned,
             ribbonCorridor: this.#ribbonCorridor,
             graphMorph: this.#graphMorph,
+            ui: this.#uiPresetID,
         };
         return encodePermalink(state);
     }
@@ -1713,6 +1731,7 @@ export class PiHost {
         this.setGraphLayoutAligned(state.graphLayoutAligned === true);
         if (state.ribbonCorridor !== undefined) this.setRibbonCorridor(state.ribbonCorridor);
         if (state.graphMorph !== undefined) this.setGraphMorph(state.graphMorph);
+        this.applyUIPreset(state.ui ?? 'full');
         if (state.focus) this.reveal(state.focus);
         this.renderer.setViewport({
             zoom: state.viewport.zoom,
@@ -1967,6 +1986,24 @@ export class PiHost {
                 },
             },
         ];
+        const lab: readonly Command[] = [
+            ...UI_PRESETS.map((entry) => ({
+                id: `lab.${entry.id}`,
+                label: `UI preset · ${entry.title}`,
+                group: 'ui preset',
+                hint: 'ui',
+                run: () => {
+                    this.applyUIPreset(entry.id);
+                },
+            })),
+            {
+                id: 'ui.presets',
+                label: 'UI presets',
+                group: 'ui preset',
+                hint: 'u',
+                run: () => this.#commandSurface?.open('palette', 'ui preset'),
+            },
+        ];
         const verbs = CAPABILITIES.map((capability) => ({
             id: `verb.${capability.id}`,
             label: capability.summary,
@@ -2052,11 +2089,26 @@ export class PiHost {
                 },
             })),
         ];
-        return [...nav, ...chrome, ...focused, ...graph, ...verbs, ...knobs];
+        return [...nav, ...chrome, ...lab, ...focused, ...graph, ...verbs, ...knobs];
     }
 
     private help(): readonly Command[] {
+        const active = uiPresetById(this.#uiPresetID);
+        const hidden = ['minimap', 'trail', 'breadcrumbs'].filter(
+            (widget) => active?.knobs[`navigation.${widget}`] === false,
+        );
+        const uiHelp: readonly Command[] = active
+            ? [
+                  {
+                      id: 'help.uiRestore',
+                      label: `${hidden.length ? `${hidden.join(', ')} hidden by ${active.id}` : `UI preset ${active.id} active`} — run lab.full to restore`,
+                      group: 'ui preset',
+                      hint: 'u',
+                  },
+              ]
+            : [];
         return [
+            ...uiHelp,
             {
                 id: 'help.palette',
                 label: 'Open the command palette',
@@ -2116,6 +2168,9 @@ export class PiHost {
                 this.setKnob(id, value, layer),
             setPolicyLayer: (layer: PolicyLayer, values: PolicyVector) =>
                 this.setPolicyLayer(layer, values),
+            uiPresets: () => UI_PRESETS,
+            ui: () => this.#uiPresetID,
+            applyUIPreset: (id: string) => this.applyUIPreset(id)?.id,
             experiments: () => POLICY_EXPERIMENTS,
             sampleExperiment: (id: string) => {
                 const experiment = experimentById(id);
@@ -2155,7 +2210,8 @@ export class PiHost {
             toggleTranscript: () => this.toggleTranscript(),
             toggleCatalog: (open?: boolean) => this.toggleCatalog(open),
             toggleRail: (open?: boolean) => this.toggleRail(open),
-            openCommands: (mode?: CommandMode) => this.#commandSurface?.open(mode),
+            openCommands: (mode?: CommandMode, query?: string) =>
+                this.#commandSurface?.open(mode, query),
             closeCommands: () => this.#commandSurface?.close(),
             commandMode: () => this.#commandSurface?.mode,
             commandCount: () => this.commands().length,
@@ -2744,6 +2800,7 @@ export class PiHost {
             Home: () => this.returnHome(),
             t: () => this.#revealed && this.trace(this.#revealed),
             s: () => this.survey(),
+            u: () => this.#commandSurface?.open('palette', 'ui preset'),
             Escape: () => this.returnHome(),
         };
         const action = steps[event.key];

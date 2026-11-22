@@ -46,6 +46,12 @@ describe('full-state permalinks', () => {
         expect(decodePolicyVector(POLICY_SCHEMA, 'p2.bad')).toBeNull();
     });
 
+    test('round-trips a UI preset and rejects unknown ids', () => {
+        const withUI: PermalinkState = { ...state, ui: 'compact' };
+        expect(decodePermalink(encodePermalink(withUI))).toEqual(withUI);
+        expect(decodePermalink(encodePermalink({ ...state, ui: 'missing' }))).toBeNull();
+    });
+
     test('keeps #graph:<id> as the reveal-only subset', () => {
         expect(isRevealHash('#graph:action-4')).toBe(true);
         expect(isRevealHash('#s=%7B%22surface%22')).toBe(false);

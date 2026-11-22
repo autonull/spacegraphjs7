@@ -41,6 +41,23 @@
             body[data-rail='closed'] #rail {
                 display: none;
             }
+            body[data-ui-chrome='compact'] {
+                gap: 4px;
+                padding: 4px;
+            }
+            body[data-ui-chrome='compact'] #instrument-kit,
+            body[data-ui-chrome='minimal'] #instrument-kit {
+                display: none;
+            }
+            body[data-ui-chrome='minimal'] {
+                grid-template-columns: minmax(0, 1fr);
+            }
+            body[data-ui-chrome='minimal'][data-catalog='open'] {
+                grid-template-columns: 240px minmax(0, 1fr);
+            }
+            body[data-ui-chrome='minimal'] #rail {
+                display: none;
+            }
             header {
                 grid-column: 1 / -1;
                 display: flex;

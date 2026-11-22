@@ -11,7 +11,7 @@ export interface Command {
 export interface CommandSurface {
     readonly element: HTMLElement;
     readonly mode: CommandMode | undefined;
-    open(mode?: CommandMode): void;
+    open(mode?: CommandMode, query?: string): void;
     close(keepFocus?: boolean): void;
 }
 
@@ -33,7 +33,7 @@ export const filterCommands = (commands: readonly Command[], query: string): rea
 
 export const createCommandSurface = (
     commands: () => readonly Command[],
-    options: { readonly help?: readonly Command[] } = {},
+    options: { readonly help?: readonly Command[] | (() => readonly Command[]) } = {},
 ): CommandSurface => {
     const element = document.createElement('div');
     element.id = 'command-surface';
@@ -82,7 +82,14 @@ export const createCommandSurface = (
     };
 
     const render = (): void => {
-        shown = filterCommands(mode === 'help' ? (options.help ?? []) : commands(), input.value);
+        shown = filterCommands(
+            mode === 'help'
+                ? typeof options.help === 'function'
+                    ? options.help()
+                    : (options.help ?? [])
+                : commands(),
+            input.value,
+        );
         active = 0;
         list.replaceChildren(
             ...shown.map((command) => {
@@ -137,13 +144,13 @@ export const createCommandSurface = (
         get mode() {
             return mode;
         },
-        open(next: CommandMode = 'palette') {
+        open(next: CommandMode = 'palette', query = '') {
             previousFocus = document.activeElement as HTMLElement | null;
             mode = next;
             input.placeholder = next === 'help' ? 'Search shortcuts…' : 'Search verbs and knobs…';
             element.dataset.mode = next;
             element.hidden = false;
-            input.value = '';
+            input.value = query;
             render();
             input.focus();
         },

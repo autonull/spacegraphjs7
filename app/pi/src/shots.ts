@@ -13,6 +13,8 @@ export interface Shot {
     readonly question: string;
     readonly scenario: 'canonical' | 'rich';
     readonly preset?: string;
+    /** Named UI preset applied after the shot's own vector, so a shot stays reproducible. */
+    readonly ui?: string;
     readonly vector?: PolicyVector;
     readonly surface?: ShotSurface;
     readonly arrangement?: ShotArrangement;
@@ -61,8 +63,26 @@ const octaveShot = (aspect: 'wide' | 'narrow', octave: number): Shot => {
     };
 };
 
+const uiShot = (id: string, title: string, question: string): Shot => ({
+    id: `ui-${id}`,
+    file: `pi-agent-ui-${id}.png`,
+    title,
+    question,
+    scenario: 'rich',
+    preset: 'baseline',
+    ui: id,
+    surface: 'hybrid',
+    arrangement: 'side',
+    evidence: 'vocabulary',
+});
+
 export const SHOTS: readonly Shot[] = [
     ...FIT_OCTAVES.flatMap((octave) => [octaveShot('wide', octave), octaveShot('narrow', octave)]),
+    uiShot('full', 'UI · Full chrome', 'Does the shipped arrangement still win the five tasks?'),
+    uiShot('compact', 'UI · Compact chrome', 'How little chrome is usable before the five tasks break?'),
+    uiShot('reading', 'UI · Reading type', 'Is a larger label floor worth the density cost?'),
+    uiShot('presentation', 'UI · Presentation', 'Does a quiet frame and collapsed transcript improve demo clarity?'),
+    uiShot('light-shell', 'UI · Light shell', 'Does the light view need the shell themed too?'),
     {
         id: 'cockpit',
         file: 'pi-agent-in-action.png',

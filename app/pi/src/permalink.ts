@@ -4,6 +4,7 @@
  * runtime dependency.
  */
 import type { PinnedNote } from './annotations';
+import { isUIPresetID } from './ui/presets';
 
 export type PermalinkViewport = {
     readonly zoom: number;
@@ -28,6 +29,8 @@ export type PermalinkState = {
     readonly graphLayoutAligned?: boolean;
     readonly ribbonCorridor?: boolean;
     readonly graphMorph?: boolean;
+    /** Permalink v4: the named UI preset, restored after policy so it wins. */
+    readonly ui?: string;
 };
 
 export const PERMALINK_PREFIX = 's=';
@@ -66,7 +69,8 @@ const isPermalinkState = (value: unknown): value is PermalinkState => {
         (value.graphLayout === undefined || typeof value.graphLayout === 'string') &&
         (value.graphLayoutAligned === undefined || typeof value.graphLayoutAligned === 'boolean') &&
         (value.ribbonCorridor === undefined || typeof value.ribbonCorridor === 'boolean') &&
-        (value.graphMorph === undefined || typeof value.graphMorph === 'boolean')
+        (value.graphMorph === undefined || typeof value.graphMorph === 'boolean') &&
+        (value.ui === undefined || (typeof value.ui === 'string' && isUIPresetID(value.ui)))
     );
 };
 
