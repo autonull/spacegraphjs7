@@ -223,17 +223,17 @@ with a vector version plan.
 
 ## 9. Progress
 
-Plan status: **Phases 0–2 are implemented, gallery evidence is captured, and every in-scope automated
-gate is green; only human gates and the release-boundary full gate run remain**. `ui` names a bundle of
+Plan status: **Phases 0–2 are implemented, gallery evidence is captured, and the full release-boundary
+gate run is green; only human gates and the follow-up documentation remain**. `ui` names a bundle of
 existing knobs and view flags applied through existing setters. No default has changed; no verdict or
 pilot result has been fabricated.
 
 | Phase | Status | Evidence |
 | ----- | ------ | -------- |
-| 0 — experiment loop and test agility | complete | §6 ledger applied; `retries: 0`; full app e2e 130 passed |
+| 0 — experiment loop and test agility | complete | §6 ledger applied; `retries: 0`; full app e2e 138 passed |
 | 1 — presets as evidence | captures complete; verdicts pending | five `ui-*` shots, eight incumbent/variant pairs, ADR scaffold |
 | 2 — task comparison | harness support complete; pilot external | `?studyUI=`, `__study.ui`, per-preset report rows |
-| 3 — graduation and verification | blocked on human decision | no ADR 0008 decision closed; root interaction 5/5 and vision 1/1 green; full gates deferred to release boundary |
+| 3 — graduation and verification | blocked on human decision | no ADR 0008 decision closed; all automated gates green including root `check`, app `check:fast`, `test:e2e`, `verify:visual`, `shots:all`, `scale` |
 
 ### Delivered
 
@@ -262,15 +262,18 @@ pilot result has been fabricated.
 
 ### Verification run
 
-- `app/pi`: `pnpm run check:fast` — 30 files, 162 tests green.
-- `app/pi`: `pnpm run test:e2e -- --workers=2` with `retries: 0` — **130 passed**.
-- `app/pi`: `pnpm run shots:compare` — 8 passed; pair PNGs under `docs/screenshots/ui-presets/<id>/`.
-- `app/demo`: `host.spec.ts` — 10 passed.
-- Root collection check: disabled suites are no longer collected; kept suites parse.
+- Root: `pnpm run check` — all workspace typechecks green.
 - Root: `pnpm run test:behavioral -- --workers=2` — **5 passed** (was 2 passed / 3 failed).
 - Root: `pnpm run test:vision -- --workers=2` — **1 passed** (was 0 passed / 1 failed).
-- Not run to avoid redundant cost: root `pnpm run check`, `verify:visual`, `shots:all`, `scale`,
-  `tests/graph-layout.test.ts`. Run them once at a release boundary or after a layout change.
+- Root collection check: disabled suites are no longer collected; kept suites parse.
+- `app/pi`: `pnpm run check:fast` — 30 files, 162 tests green (includes the graph-baseline snapshot
+  in `tests/graph-layout.test.ts`; no layout change, so no regeneration).
+- `app/pi`: `pnpm run test:e2e -- --workers=2` with `retries: 0` — **138 passed**.
+- `app/pi`: `pnpm run verify:visual` — 24 passed.
+- `app/pi`: `pnpm run shots:all` — 29 passed; byte-level capture noise in tracked PNGs was reverted.
+- `app/pi`: `pnpm run scale` — all budgets met (20,105 nodes in 7.8 ms; 60-turn layout 929.2 ms).
+- `app/pi`: `pnpm run shots:compare` — 8 passed; pair PNGs under `docs/screenshots/ui-presets/<id>/`.
+- `app/demo`: `host.spec.ts` — 10 passed.
 
 ### Remaining work — clarified
 
@@ -287,17 +290,19 @@ pilot result has been fabricated.
    correctly and raises `__overlapsForced` after pinning; both gates pass at `retries: 0` style waits
    with no fixed sleeps.
 3. **Graph baseline snapshot (§6 row 3) stays a gate.** `tests/graph-layout.test.ts` deep-equals
-   `docs/screenshots/graph-baseline.json`. No layout changed in these slices, so the snapshot was not
-   regenerated or re-run. If a layout change lands, capture `measure()` from that test into the JSON,
-   review the diff, and keep the invariant assertions at lines 38–83 as the behavioral gate.
+   `docs/screenshots/graph-baseline.json` and ran green inside `check:fast`. No layout changed in these
+   slices, so the snapshot was not regenerated. If a layout change lands, capture `measure()` from that
+   test into the JSON, review the diff, and keep the invariant assertions at lines 38–83 as the
+   behavioral gate.
 4. **Keep defaults untouched.** No preset is a default until ADR 0008 closes; `uiChrome` is set only
    when a preset is applied, so an unlabelled session keeps the shipped DOM.
 5. **`task-1` … `task-5` presets are deliberately absent.** They need pinned per-question bundles and
    a pilot result; inventing their knobs would fabricate evidence.
-6. **Release-boundary full gates (Phase 3 §2).** After a finding closes, run root `pnpm run check`,
-   then from `app/pi` run `check:fast`, `test:e2e`, `verify:visual`, `shots:all`, `scale`. Update
-   `CHANGELOG.md`, `app/pi/README.md`, `docs/pi-study.md` and stale cross-references only when that
-   finding is actually closed. Not run now to avoid redundant cost.
+6. **Release-boundary full gates (Phase 3 §2) — run and green.** Root `pnpm run check`; from `app/pi`,
+   `check:fast`, `test:e2e`, `verify:visual`, `shots:all`, `scale`. The `shots:all` capture rewrote only
+   byte-level render noise in tracked PNGs, so the curated gallery was restored. The remaining Phase 3
+   §3 doc updates (`CHANGELOG.md`, `app/pi/README.md`, `docs/pi-study.md`, stale cross-references) wait
+   for a closed finding; no docs changed without a human decision.
 
 ### Handoff notes
 
