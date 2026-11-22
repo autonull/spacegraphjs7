@@ -34,3 +34,52 @@ pnpm run test:boundaries
 
 Legacy commands (`packages/session-graph`, `graph:scale`, `packages/app perf`) no longer exist in
 this repository.
+
+## Flagship visual language — frame-time evidence (2026-11-22)
+
+Baseline after commit `8fcbf0c` (registered `FluxEdge`, field halos, grid-packed scopes). Commands
+were run on 2026-11-22 from the repository root unless noted:
+
+- `pnpm run check` — green (31 workspace typechecks).
+- `cd app/pi && pnpm run verify:fast` — green: 140 unit tests, 16 Chrome e2e (`shell`, `orchestration`).
+- `cd app/pi && pnpm run scale` — green: `playSession120Bodies: { "ms": 0.822, "settled": true }`.
+  This is the play-frame number produced by the Node-side scope-simulation harness
+  (`app/pi/scripts/scale.ts:83`); budget < 8 ms, met.
+- The full suites were **not re-run** here: e2e 104/104, `verify:visual` 21/21 and `shots:all` 23/23
+  were green immediately before `8fcbf0c`; that result is the recorded baseline, not a new claim.
+- `strobe status` — CachyOS, Ryzen 7 2700, Chrome 157, **no `DISPLAY`/`WAYLAND_DISPLAY`**,
+  `SCHED_IDLE` priority, SwiftShader software GPU.
+- `strobe record 'http://localhost:5175/?shot=cockpit' --probes timing --for 8s --json` — refused
+  `NoPresentSource` (a headed page needs a display).
+- `strobe record 'http://localhost:5175/?shot=cockpit' --probes timing --for 8s --headless --json`
+  → `rec_04babf`; `strobe query rec_04babf summary --json`. All presented-frame metrics were refused:
+  `frames_refused: Headless: the page ran headless, so nothing it drew reached a display`. Recorded
+  values: `main.busy 22.45%`, `main.paint 19.36 ms`, 16 long tasks over 8 s. No presented-frame p95
+  is measurable on this host.
+- Fallback real-browser rAF measurement: `cd app/pi && node /tmp/opencode/frame-measure.mjs`
+  (temporary Playwright script, not tracked). It boots `http://localhost:5175/?shot=cockpit` with
+  `PI_LOCAL_FEED=1`, waits for `window.__pi.ready` and a settled simulation, calls `__pi.loadFixture()`,
+  and samples `requestAnimationFrame` timestamps for 1.2 s at rest and during
+  `__pi.traverseEdge(__pi.edges()[0].id)`. Run twice, identical results:
+
+  | Sample | Frames | Median ms | p95 ms | Max ms |
+  | ------ | ------ | --------- | ------ | ------ |
+  | At rest (`?shot=cockpit`) | 71 | 16.7 | 16.7 | 33.3 |
+  | Camera flight (same route) | 18 | 66.7 | **99.9** | 99.9 |
+
+  No page errors in either run.
+
+### Verdict
+
+| Metric | Budget | Measured | Result |
+| ------ | ------ | -------- | ------ |
+| Play frame (`scale`, Node simulation) | < 8 ms | 0.822 ms, settled | met |
+| Browser rAF p95 during a flight | < 80 ms | 99.9 ms (headless Chromium, software GPU) | **missed** |
+| Browser rAF p95 at rest | — | 16.7 ms | — |
+
+The flight budget is missed. Likely host-side cause: `renderField()` (`app/pi/src/host.ts:1002`)
+writes `data-kind`, `--field-kind`, `--field-size` and a transform for every visible node on each
+paint, while the flux geometry buffers update on the same frames; the headless SwiftShader and
+`SCHED_IDLE` environment amplifies that cost. Per TODO6 Phase 1.3 this is recorded as evidence only —
+no code was changed. A display-backed GPU run is needed before attributing the 99.9 ms to the field
+layer alone.

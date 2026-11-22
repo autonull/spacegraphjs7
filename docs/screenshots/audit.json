@@ -1,0 +1,202 @@
+{
+  "meta": {
+    "date": "2026-11-22",
+    "auditor": "fresh-session subagent (clean context, no implementation history)",
+    "baseline": "commit 8fcbf0c; root pnpm run check, app/pi pnpm run verify:fast and pnpm run scale green; full e2e/visual/shots suites not re-run",
+    "inputs": [
+      "TODO6.md",
+      "TODO5.md lines 113-130",
+      "docs/adr/0015-bounded-aspect-refit.md",
+      "docs/adr/0016-flux-edges-and-field.md",
+      "AGENTS.md",
+      "all 21 docs/screenshots/pi-agent-*.png files (read directly, not via review notes)",
+      "live app at http://localhost:5175 with PI_LOCAL_FEED=1"
+    ],
+    "method": "Every gallery PNG inspected first. Live routes then driven in headless Chromium through Playwright with __pi hooks and DOM measurements (getBoundingClientRect, getComputedStyle, commandMode, viewport). Findings use tracked PNG paths as evidence plus a reproduce recipe; no review.json verdict was copied as evidence.",
+    "severity_scale": {
+      "high": "core information unreadable in a shipped default state",
+      "medium": "meaningful task friction or occlusion in a default/opt-in state",
+      "low": "polish or a known accepted limitation worth recording",
+      "none": "focus area checked and clean"
+    }
+  },
+  "findings": [
+    {
+      "id": "AUDIT-01",
+      "area": "light theme / legibility",
+      "severity": "high",
+      "shot": "light-theme",
+      "route": "http://localhost:5175/?shot=light-theme",
+      "observation": "The bottom-left HUD readout is effectively invisible: computed #hud color is rgb(22,22,22) over a #canvas background of rgb(5,10,18), a 1.1:1 contrast ratio. The text 'execution/auto · flat/turn · settled' is nearly absent from the gallery PNG. Cards, flux edges and the light-theme field still read; only the HUD value is wrong. The HUD remains grayscale, as required, so this is a token-value failure, not a color-language failure.",
+      "evidence": "docs/screenshots/pi-agent-light.png",
+      "reproduce": "page.goto('/?shot=light-theme'); getComputedStyle(document.querySelector('#hud')).color; getComputedStyle(document.querySelector('#canvas')).backgroundColor; contrast ratio 1.1:1 computed from those two values.",
+      "measured": { "hudColor": "rgb(22,22,22)", "canvasBg": "rgb(5,10,18)", "contrast": 1.1 },
+      "suggested_change": "Bind #hud to a grayscale token that stays light over the dark canvas in both themes, or give it a small opaque square backing using the existing canvas token. No blend modes or blur."
+    },
+    {
+      "id": "AUDIT-02",
+      "area": "interaction affordance / catalog",
+      "severity": "medium",
+      "shot": "catalog",
+      "route": "http://localhost:5175/?shot=catalog",
+      "observation": "After opening the drawer with #proof-line, all 19 preset/experiment rows are plain <summary> elements with a measured height of 18px (range 18-55px), far below the 44px target used by the rest of the HUD. The drawer leaves the graph visible, but the launch targets are small and give no square-surface affordance.",
+      "evidence": "docs/screenshots/pi-agent-catalog.png",
+      "reproduce": "page.goto('/?shot=catalog'); page.locator('#proof-line').click(); evaluate getBoundingClientRect().height for every '#catalog .catalog-card summary'; minimum 18px, count 19.",
+      "measured": { "rows": 19, "minHeightPx": 18, "maxHeightPx": 55 },
+      "suggested_change": "Make each catalog summary a padded square row with at least a 44px hit area and a visible chip marker consistent with the card grammar."
+    },
+    {
+      "id": "AUDIT-03",
+      "area": "legibility after grid packing / narrow and dense shots",
+      "severity": "medium",
+      "shot": "fit-narrow-near, fit-narrow-mid, dense-type, policy",
+      "route": "http://localhost:5175/?shot=fit-narrow-near",
+      "observation": "Grid-packed child cards cover about 40-47% of their parent card area in the fit shots (DOM rect measurement). At mid/near octaves on the 900px canvas and in the dense-type and policy shots, primary labels truncate to 'Tur...', 'assist...' and 'appr...'; parent metadata/bar rows disappear under the child. The role of a truncated card is ambiguous without the transcript, so packing reduces information density rather than adding it.",
+      "evidence": "docs/screenshots/pi-agent-fit-narrow-near.png",
+      "reproduce": "page.goto('/?shot=fit-narrow-near') at 900x1000; list textContent and getBoundingClientRect of '#canvas [data-rung]' and compute pairwise intersection over the smaller card area; largest parent/child fractions 43-47%.",
+      "measured": { "unitReadOverlapPct": 45, "turnGrepOverlapPct": 47, "truncatedLabels": ["Tur...", "assist...", "appr..."] },
+      "suggested_change": "Reserve a minimum text-lane width for primary labels before packing children, or use unambiguous short role tokens. Raising minLabelPx alone will not fix width truncation."
+    },
+    {
+      "id": "AUDIT-04",
+      "area": "legibility and overlap after grid packing / node detail",
+      "severity": "medium",
+      "shot": "node-detail",
+      "route": "http://localhost:5175/?shot=node-detail",
+      "observation": "The focus lens is anchored directly over the revealed 'test failed' node: its detail panel overlaps the source card by 65% of the smaller rect and covers the failed status chip and part of the Turn 5 card. The lens tabs themselves are 44-59px tall, so the issue is placement, not hit area.",
+      "evidence": "docs/screenshots/pi-agent-node-detail.png",
+      "reproduce": "page.goto('/?shot=node-detail'); compare getBoundingClientRect of '#focus-lens' with the '#canvas [data-rung]' whose text starts 'test failed'; largest overlap 65% of smaller rect. Tab sizes measured in the same run: 52x44, 45x44, 59x44, 59x44, 44x44.",
+      "measured": { "lensToSourceOverlapPct": 65, "tabMinHeightPx": 44 },
+      "suggested_change": "Bias lens placement into free canvas space while keeping the 1px connector, or offset/dim the source card when the lens is pinned."
+    },
+    {
+      "id": "AUDIT-05",
+      "area": "status, direction and causality / remaining cross-unit diagonals",
+      "severity": "low",
+      "shot": "cockpit, node-detail",
+      "route": "http://localhost:5175/?shot=cockpit",
+      "observation": "Status glyphs and arrowheads do read without a legend, but the long cross-unit flux filaments ('approve' to 'Unit', 'Run' to 'read') span the whole canvas and cross unrelated unit cards. The causal relation is visible as a filament yet cannot be followed through the intervening scopes. This is the topology limitation already acknowledged in TODO6 section 1, not a regression from ADR 0016.",
+      "evidence": "docs/screenshots/pi-agent-in-action.png",
+      "reproduce": "page.goto('/?shot=cockpit') at 1600x1000 and follow the translucent ribbon from the 'approve' card to the right-hand 'Unit' scope; also visible in docs/screenshots/pi-agent-node-detail.png.",
+      "suggested_change": "Bundle cross-unit filaments or tint them by source scope so the relation stays traceable; preserve the relation instead of deleting it."
+    },
+    {
+      "id": "AUDIT-06",
+      "area": "legibility and space in narrow fit shots",
+      "severity": "low",
+      "shot": "fit-narrow-mid, fit-narrow-far",
+      "route": "http://localhost:5175/?shot=fit-narrow-mid",
+      "observation": "At a 900px viewport the command bar wraps onto two rows (focus moves to the second row), moving the canvas top from about y=62 on wide shots to y=112 and reducing vertical room for the graph. The status chip text itself is not clipped (292x26, scrollWidth == clientWidth), so this is a space cost, not text loss.",
+      "evidence": "docs/screenshots/pi-agent-fit-narrow-mid.png",
+      "reproduce": "page.goto('/?shot=fit-narrow-mid') at 900x1000; measure '#command-bar' row count and '#attention' rect; compare with '/?shot=fit-wide-mid' at 1600x1000.",
+      "measured": { "narrowCanvasTopPx": 112, "wideCanvasTopPx": 62 },
+      "suggested_change": "Collapse secondary HUD labels into the settings menu at narrow widths so the command bar stays on one row."
+    },
+    {
+      "id": "AUDIT-07",
+      "area": "focus lens legibility / recursion",
+      "severity": "low",
+      "shot": "recursion, fractal",
+      "route": "http://localhost:5175/?shot=recursion",
+      "observation": "At bounded depth 3 the inner graph chips render as roughly 6-10px rectangles with sub-8px labels. Spokes, ports and status color are visible; chip names are not. The settled and intermediate frames pass their gates, but the gallery PNG does not communicate which inner chip is which. This disagrees with the existing 'depth-3 legible' note on label legibility only.",
+      "evidence": "docs/screenshots/pi-agent-recursion.png",
+      "reproduce": "page.goto('/?shot=recursion'); open the INNER tab (already pinned in the shot) and zoom the PNG; measure the text bounding boxes of '#focus-lens' inner chips.",
+      "suggested_change": "Reveal inner chip names on hover/focus or enlarge the inner lens within the existing 420x300 clamp before adding more depth."
+    },
+    {
+      "id": "AUDIT-08",
+      "area": "status and direction read without explanation",
+      "severity": "none",
+      "verdict": "no finding",
+      "shot": "cockpit, node-detail",
+      "route": "http://localhost:5175/?shot=cockpit",
+      "observation": "The square red status chip with the exclamation glyph identifies the single failure, and causal filaments carry a small arrowhead at the target end. Corners are square (0px radius) and the one severity channel is consistent across cards. No legend is needed for these two signals.",
+      "evidence": "docs/screenshots/pi-agent-in-action.png",
+      "reproduce": "page.goto('/?shot=cockpit'); inspect '#attention' and the arrowed ribbon ending at the 'read' card; grammar gate app/pi/tests/grammar.spec.ts:41.",
+      "suggested_change": null
+    },
+    {
+      "id": "AUDIT-09",
+      "area": "focus-lens and tab affordances",
+      "severity": "none",
+      "verdict": "no finding",
+      "shot": "deep-focus, node-detail",
+      "route": "http://localhost:5175/?shot=deep-focus",
+      "observation": "The five lens controls (DETAIL, INNER, SIGNALS, ACTIONS, PIN) measure 44-59px wide and 44px tall; tabs switch the inspector and the connector remains visible when pinned. Placement is a separate finding (AUDIT-04); the controls themselves are reachable.",
+      "evidence": "docs/screenshots/pi-agent-deep-focus.png",
+      "reproduce": "page.goto('/?shot=node-detail'); measure '#focus-lens .inspector-tabs button' and '#inspector-pin' rects; see app/pi/tests/grammar.spec.ts:135.",
+      "suggested_change": null
+    },
+    {
+      "id": "AUDIT-10",
+      "area": "keyboard affordances",
+      "severity": "none",
+      "verdict": "no finding",
+      "shot": null,
+      "route": "http://localhost:5175/?shot=cockpit",
+      "observation": "With '#canvas' focused, '/' opens the palette, ':' switches to commands, '?' to help, and Escape closes it; modes reported by __pi.commandMode() were palette, commands, help in that order. The command input also runs a named command.",
+      "evidence": "app/pi/tests/shell.spec.ts",
+      "reproduce": "page.goto('/?shot=cockpit'); page.locator('#canvas').focus(); press '/', ':', '?', 'Escape' and read __pi.commandMode(); see app/pi/tests/shell.spec.ts:133.",
+      "suggested_change": null
+    },
+    {
+      "id": "AUDIT-11",
+      "area": "transcript affordances",
+      "severity": "none",
+      "verdict": "no finding",
+      "shot": "cockpit, layout-stacked, layout-floating",
+      "route": "http://localhost:5175/?shot=layout-floating",
+      "observation": "The transcript stays readable in side, stacked and collapsed floating arrangements; toggling and resizing are reachable from HUD controls, and the collapsed panel keeps a labelled 'Transcript' affordance on the canvas. The floating shot gives the graph the full field without hiding the panel.",
+      "evidence": "docs/screenshots/pi-agent-layout-floating.png",
+      "reproduce": "page.goto('/?shot=layout-floating'); click '#transcript-toggle' twice; see app/pi/tests/browser.spec.ts:87.",
+      "suggested_change": null
+    },
+    {
+      "id": "AUDIT-12",
+      "area": "reduced-motion state",
+      "severity": "none",
+      "verdict": "no finding",
+      "shot": null,
+      "route": "http://localhost:5175/?shot=cockpit",
+      "observation": "With prefers-reduced-motion: reduce, matchMedia matches and a traverseEdge flight reaches the final camera center and a settled simulation within 150ms. No intermediate drift or stuck animation was observed. Camera framing can differ from the normal flight by design (TODO6 invariant 10).",
+      "evidence": "app/pi/tests/grammar.spec.ts",
+      "reproduce": "page.emulateMedia({ reducedMotion: 'reduce' }); page.goto('/?shot=cockpit'); call __pi.traverseEdge(__pi.edges()[0].id); read __pi.viewport() and __pi.simulation().settled after 150ms; see app/pi/tests/grammar.spec.ts:178.",
+      "suggested_change": null
+    },
+    {
+      "id": "AUDIT-13",
+      "area": "wide fit legibility and field vocabulary",
+      "severity": "none",
+      "verdict": "no finding",
+      "shot": "fit-wide-far, fit-wide-mid, fit-wide-near, aurora-map, neon-cockpit, dynamic-range",
+      "route": "http://localhost:5175/?shot=fit-wide-mid",
+      "observation": "On the wide canvas all three octaves keep labels and topology legible: the far octave reads as topology by core LOD, mid and near keep card text. No rounded rectangles, fog, backdrop-filter or blend modes appear in the shots; the field is gradient-based (opacity 0.56 dark, 0.14 light). Dynamic-range cards clip at the canvas edge at the scale floor, which is expected for that shot.",
+      "evidence": "docs/screenshots/pi-agent-fit-wide-mid.png",
+      "reproduce": "page.goto('/?shot=fit-wide-mid'); inspect '#field' computed opacity and '#canvas [data-rung]' border radius; compare the three wide fit PNGs.",
+      "suggested_change": null
+    }
+  ],
+  "shot_verdicts": {
+    "cockpit": { "verdict": "agrees", "note": "Dark field and square cards read cleanly; adds cross-unit diagonal finding AUDIT-05." },
+    "node-detail": { "verdict": "agrees", "note": "Detail rung is legible; adds lens-occlusion finding AUDIT-04." },
+    "deep-focus": { "verdict": "agrees", "note": "Large focused card and lens controls read; no new finding." },
+    "fractal": { "verdict": "agrees", "note": "Directed inner spokes read; inner labels remain small as in AUDIT-07." },
+    "dense-type": { "verdict": "agrees", "note": "Denser cards fit; labels truncate on width as in AUDIT-03." },
+    "living-graph": { "verdict": "agrees", "note": "Longer activity tail does not add occlusion; no new finding." },
+    "recursion": { "verdict": "disagrees", "note": "Structure is bounded, but depth-3 inner chip names are not legible in the PNG (AUDIT-07)." },
+    "dynamic-range": { "verdict": "agrees", "note": "Edge clipping at the scale floor is expected for this shot; flux edges remain distinguishable." },
+    "layout-stacked": { "verdict": "agrees", "note": "Transcript below the canvas keeps the descent spine visible." },
+    "layout-floating": { "verdict": "agrees", "note": "Collapsed panel gives the field the full canvas without losing the affordance." },
+    "neon-cockpit": { "verdict": "agrees", "note": "Emissive palette keeps cards legible; no new finding." },
+    "aurora-map": { "verdict": "agrees", "note": "Full-scope filaments and rings remain distinguishable." },
+    "light-theme": { "verdict": "disagrees", "note": "Cards and edges read, but the HUD readout has 1.1:1 contrast over the dark canvas (AUDIT-01)." },
+    "catalog": { "verdict": "agrees", "note": "Drawer leaves the graph visible and fit intact; adds small hit-target finding AUDIT-02." },
+    "policy": { "verdict": "agrees", "note": "Provenance panel reads; graph labels truncate as in AUDIT-03." },
+    "fit-wide-far": { "verdict": "agrees", "note": "Topology-only core LOD at the scale floor." },
+    "fit-wide-mid": { "verdict": "agrees", "note": "Cards and labels fit inside the aspect-derived insets." },
+    "fit-wide-near": { "verdict": "agrees", "note": "Near octave keeps detail legible; intended child-card lane packing only." },
+    "fit-narrow-far": { "verdict": "agrees", "note": "Topology-only core LOD; two-row header noted in AUDIT-06." },
+    "fit-narrow-mid": { "verdict": "agrees", "note": "Graph fits, but labels truncate (AUDIT-03) and the header wraps (AUDIT-06)." },
+    "fit-narrow-near": { "verdict": "agrees", "note": "No gate regression, but parent/child card occlusion and truncation are visible (AUDIT-03)." }
+  }
+}
