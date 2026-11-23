@@ -36,6 +36,9 @@ same state in a browser; no screenshot script encodes a special camera path.
 | `pi/pi-agent-dense-type.png`       | `dense-type`    | Opt-in denser cards: tighter interior padding, shorter card height and a raised label floor. |
 | `pi/pi-agent-living-graph.png`     | `living-graph`  | The opt-in motion preset: longer activity tail and slower rung/camera blends; pulse evidence in `motion/`. |
 | `pi/pi-agent-dynamic-range.png`    | `dynamic-range` | The same graph near the zoom-out floor, on a starfield backdrop — the scale dynamic range.   |
+| `pi/pi-agent-octaves.png`          | `octaves`       | One hierarchy at 1x, 1/2x and 1/4x world scale in a single frame.                            |
+| `pi/pi-agent-octaves-palette.png`  | `octaves-palette` | The same layout with step colouring per octave — opt-in, pending verdict.                  |
+| `pi/pi-agent-octaves-near.png`     | `octaves-near`  | Zoom into one second-octave branch to promote its smallest cards to legible detail.          |
 | `pi/pi-agent-layout-stacked.png`   | `layout-stacked`| Hybrid surface with the transcript below the graph (ember palette).                         |
 | `pi/pi-agent-layout-floating.png`  | `layout-floating`| Floating transcript, collapsed to give the graph the full canvas (circuit palette).         |
 | `pi/pi-agent-neon-cockpit.png`     | `neon-cockpit`  | The emissive palette with a grid backdrop; color in the view, not the chrome.               |

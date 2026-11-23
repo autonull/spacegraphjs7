@@ -21,10 +21,15 @@ const tsx = resolve(root, 'node_modules/.bin/tsx');
 const packages = [
     { name: 'spacegraphjs', dir: root },
     { name: '@spacegraphjs/renderer', dir: join(root, 'packages/renderer') },
+    { name: '@spacegraphjs/shared', dir: join(root, 'packages/shared') },
+    { name: '@spacegraphjs/kernel', dir: join(root, 'packages/kernel') },
     { name: '@spacegraphjs/adapter', dir: join(root, 'packages/adapter') },
     { name: '@spacegraphjs/spacegraph-renderer', dir: join(root, 'packages/spacegraph-renderer') },
     { name: '@spacegraphjs/cytoscape-renderer', dir: join(root, 'packages/cytoscape-renderer') },
     { name: '@spacegraphjs/svg-renderer', dir: join(root, 'packages/svg-renderer') },
+    { name: '@spacegraphjs/workflow', dir: join(root, 'packages/domain/workflow') },
+    { name: '@spacegraphjs/filesystem', dir: join(root, 'packages/domain/filesystem') },
+    { name: '@spacegraphjs/data', dir: join(root, 'packages/domain/data') },
 ];
 
 // The packages' runtime dependencies are not part of the tarball; the consumer resolves them from the

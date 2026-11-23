@@ -195,6 +195,7 @@ const LEVELS: readonly AgentLevel[] = ['overview', 'execution', 'detail'];
 const LEVEL_MODES: readonly LevelMode[] = ['auto', ...LEVELS];
 const ARRANGEMENTS: readonly Arrangement[] = ['stacked', 'side', 'floating'];
 const SURFACES: readonly Surface[] = ['log', 'map', 'hybrid'];
+const OCTAVE_PALETTE = ['#3b527f', '#3f6a86', '#4a7f78', '#7f6a4a'] as const;
 
 const STATUS_GLYPH: Readonly<Record<string, string>> = {
     complete: '✓',
@@ -276,6 +277,7 @@ export class PiHost {
     #continuity = false;
     #fieldTargets = false;
     #octave = 0;
+    #octavePalette = false;
     #occupancyTarget = 0;
     #cardScale = 1;
     #uiPresetID?: string;
@@ -351,7 +353,7 @@ export class PiHost {
                 : new URLSearchParams(location.search);
         const shot = shotById(params.get('shot'));
         const fixture = fixtureFor(
-            params.get('shot'),
+            shot?.fixture ?? null,
             params.get('scenario') ?? shot?.scenario ?? null,
         );
         if (fixture) this.#kernel = fixture;
@@ -361,6 +363,7 @@ export class PiHost {
         if (Number.isInteger(requestedColumns) && requestedColumns >= 1)
             this.#graphColumns = requestedColumns;
         this.#graphLayoutAligned = params.get('graphAligned') === '1';
+        this.#octavePalette = params.get('octavePalette') === '1';
         this.#ribbonCorridor = params.get('ribbonCorridor') === '1';
         this.#graphMorph = params.get('graphMorph') === '1';
         const presetID = params.get('preset') ?? shot?.preset;
@@ -1054,9 +1057,18 @@ export class PiHost {
                 const pulse = !this.#reducedMotion && activity > 0
                     ? `${this.#ticks % 2 ? 'pi-pulse-a' : 'pi-pulse-b'} ${blendMs}ms ease-out 1`
                     : 'none';
+                const background =
+                    this.#octavePalette && this.#graphLayout === 'octaves'
+                        ? OCTAVE_PALETTE[
+                              Math.min(
+                                  -(this.#octaveScales?.get(node.id)?.octave ?? 0),
+                                  OCTAVE_PALETTE.length - 1,
+                              )
+                          ]
+                        : cardBg;
                 return {
                     ...styled,
-                    data: { ...styled.data, style: { ...style, backgroundColor: cardBg, animation: pulse } },
+                    data: { ...styled.data, style: { ...style, backgroundColor: background, animation: pulse } },
                 };
             }),
             edges: this.#model.edges
@@ -1408,6 +1420,7 @@ export class PiHost {
         if (shot.surface) this.setSurface(shot.surface);
         if (shot.arrangement) this.setArrangement(shot.arrangement);
         if (shot.graphLayout && isGraphLayoutMode(shot.graphLayout)) this.setGraphLayout(shot.graphLayout);
+        if (shot.octavePalette !== undefined) this.#octavePalette = shot.octavePalette;
         if (shot.graphColumns !== undefined && shot.graphColumns >= 1)
             this.#graphColumns = Math.floor(shot.graphColumns);
         if (shot.ui) this.applyUIPreset(shot.ui);
@@ -2312,6 +2325,7 @@ export class PiHost {
             setArrangement: (arrangement: Arrangement) => this.setArrangement(arrangement),
             graphLayout: () => this.#graphLayout,
             setGraphLayout: (mode: GraphLayoutMode) => this.setGraphLayout(mode),
+            octavePalette: () => this.#octavePalette,
             graphLayouts: () => [...GRAPH_LAYOUTS],
             graphLayoutAligned: () => this.#graphLayoutAligned,
             setGraphLayoutAligned: (aligned: boolean) => this.setGraphLayoutAligned(aligned),

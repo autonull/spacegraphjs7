@@ -301,15 +301,40 @@ gate green. Generated pairs and the contact sheet stay out of git.
 
 ### 10.1 Remaining work after this pass
 
-1. **Human verdicts (blocking).** D1 TODO9 verdicts, the study pilot and the eight entries in
+1. **Human verdicts (blocking).** D1 TODO9 verdicts, the study pilot and the pending entries in
    `experiments.json`. Record them in `review.json`, the relevant `comparison.json` files and raw
    study notes. ADR 0008 stays closed until then.
-2. **Scale-lab port (optional).** `scale-lab-geometry` is the only candidate worth a Pi port. It
-   needs a host-side per-octave colour seam and a logged verdict before it becomes one opt-in shot.
-   No default flip.
+2. **Scale-lab port (optional).** Landed as the opt-in `octaves-palette` shot in §11. The verdict is
+   still pending; no default flip.
 3. **`reports/` grouping (deferred).** Move `comparison.json` files and baselines into
    `docs/screenshots/reports/` with stable names, then update `app/pi/scripts/baseline.ts`,
    `app/pi/tests/graph-layout.test.ts`, `app/pi/tests/motion.spec.ts`, `app/pi/scripts/ui-compare.ts`,
    `app/pi/src/ui/evidence.ts` and doc references. Deferred because those writers/readers are green
    today and the move adds no experiment capability.
-4. **C4 follow-up / E3 follow-up.** Unchanged from §7 items 3 and 4.
+4. **C4 follow-up / E3 follow-up.** C4 publish check landed in §11; E3 remains a next-minor task.
+
+---
+
+## 11. Scale-lab port and publish follow-up (2026-11-23)
+
+| Item | Landed (file:line) | Verification |
+| ---- | ------------------ | ------------ |
+| Opt-in palette seam | `app/pi/src/host.ts` (`OCTAVE_PALETTE`, `#octavePalette`, URL `octavePalette=1`, existing `data.style.backgroundColor` seam); `app/pi/src/shots.ts` `octavePalette` flag and `octaves-palette` shot | Root `tsc`; Pi `check:fast`; existing hook tests unchanged |
+| Fixture by shot data | `app/pi/src/fixture.ts` `fixtureFor(fixture, scenario)`; `Shot.fixture`; `octaves`, `octaves-near`, `octaves-palette` and `chapters` declare their fixture | Pair uses the same 1+4+12 tree; no id-based inference |
+| Pair and decision | `docs/screenshots/pi/pi-agent-octaves-palette.png`; pending `octave-palette` entry in `graph-layout/comparison.json`, note in `review.json`, entry in `experiments.json`, row in README | `pnpm --filter pi shot octaves,octaves-palette`; visual comparison of both frames; default layout remains `freeform` |
+| Behaviour test | `app/pi/tests/graph-layout.spec.ts` — palette off by default, on for the shot, identical positions | Pi graph-layout E2E |
+| C4 publish check | `script/publish-check.ts` packs shared, kernel and the three domain packages; `script/publish-check/consumer/check.ts` asserts each published vocabulary loads | `pnpm run test:publish` green |
+
+The port changes only card colour. Positions, sizes, edges, renderer and default layout are
+unchanged. The scale-lab finding and this shot both keep pending verdicts; no ADR 0008 default gate
+was claimed. Full gates were green except the new test, which used a metrics-only `graphShape()`
+result as a node list; it now uses the fixture's node ids and was re-run in isolation. Root `tsc`
+was re-run after that fix; no flaky retry turned a red gate green.
+
+### 11.1 Remaining work after this pass
+
+1. **Human verdicts (blocking).** Unchanged from §10.1 item 1, now including `octave-palette`.
+2. **`reports/` grouping (deferred).** Unchanged from §10.1 item 3.
+3. **E3 follow-up (next minor).** Add `@deprecated` pointers to the aliases in
+   `docs/api-compatibility-review.md`; do not remove them earlier.
+4. **Study pilot.** A screenshot proves structure, not task benefit. No study result is claimed.

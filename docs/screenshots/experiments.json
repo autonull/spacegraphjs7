@@ -100,6 +100,20 @@
       "decision": "docs/screenshots/graph-layout/comparison.json#multi-octave-range"
     },
     {
+      "id": "octave-palette",
+      "host": "pi",
+      "status": "pending",
+      "hypothesis": "Step colouring per octave makes the scale hierarchy legible without changing positions or the renderer.",
+      "incumbent": "?shot=octaves — one card colour for every octave",
+      "variant": "?shot=octaves-palette — three step colours through the existing data.style seam",
+      "pair": {
+        "incumbent": "docs/screenshots/pi/pi-agent-octaves.png",
+        "variant": "docs/screenshots/pi/pi-agent-octaves-palette.png"
+      },
+      "command": "pnpm --filter pi shot octaves,octaves-palette",
+      "decision": "docs/screenshots/graph-layout/comparison.json#octave-palette"
+    },
+    {
       "id": "scale-lab-geometry",
       "host": "demo",
       "status": "pending",
@@ -112,7 +126,7 @@
       },
       "command": "cd app/demo && pnpm exec playwright test --config playwright.config.ts tests/scale-lab.spec.ts --workers=1",
       "decision": "docs/screenshots/labs/scale-lab/comparison.json",
-      "note": "Ring geometry stays clean; spiral candidates (spiral-070-d3, spiral-050-d3) overlap at these radii. Step colouring made the octave hierarchy legible without a renderer change. No Pi default flip; porting the palette back needs a separate opt-in host-side colour seam and a human verdict."
+      "note": "Ring geometry stays clean; spiral candidates (spiral-070-d3, spiral-050-d3) overlap at these radii. Step colouring made the octave hierarchy legible without a renderer change. Ported to Pi as the opt-in octave-palette shot; no default flip and no human verdict recorded."
     }
   ]
 }

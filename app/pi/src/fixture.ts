@@ -183,12 +183,12 @@ export const octavesFixtureOps = (): KernelOp[] => {
 export const octavesFixtureKernel = (): Kernel => foldKernelOps(octavesFixtureOps());
 
 export const fixtureFor = (
-    shotID: string | null,
+    fixture: string | null,
     scenario: string | null,
 ): Kernel | undefined =>
-    shotID === 'octaves' || shotID === 'octaves-near'
+    fixture === 'octaves'
         ? octavesFixtureKernel()
-        : shotID === 'chapters'
+        : fixture === 'chapters'
           ? chaptersFixtureKernel()
           : scenario === 'rich'
             ? richFixtureKernel()

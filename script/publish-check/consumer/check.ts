@@ -7,6 +7,9 @@ import { ModelAdapter } from '@spacegraphjs/adapter';
 import { SpaceGraphRenderer } from '@spacegraphjs/spacegraph-renderer';
 import { CytoscapeRenderer } from '@spacegraphjs/cytoscape-renderer';
 import { renderToSVG } from '@spacegraphjs/svg-renderer';
+import { WORKFLOW_KINDS, workflowVocabulary } from '@spacegraphjs/workflow';
+import { FILESYSTEM_KINDS, filesystemVocabulary } from '@spacegraphjs/filesystem';
+import { DATA_KINDS, dataVocabulary } from '@spacegraphjs/data';
 
 export const MODEL: RenderModel = {
     nodes: [
@@ -48,6 +51,14 @@ export const report = () => {
 };
 
 check('the model adapter is a base class a host can extend', typeof ModelAdapter === 'function');
+
+for (const [name, kinds, vocabulary] of [
+    ['workflow', WORKFLOW_KINDS, workflowVocabulary],
+    ['filesystem', FILESYSTEM_KINDS, filesystemVocabulary],
+    ['data', DATA_KINDS, dataVocabulary],
+] as const) {
+    check(`the ${name} domain loads from published bytes`, kinds.length > 0 && Boolean(vocabulary));
+}
 
 const svg = renderToSVG(MODEL);
 check('the static renderer draws the model', svg.includes('<svg') && svg.includes('Read the log'));

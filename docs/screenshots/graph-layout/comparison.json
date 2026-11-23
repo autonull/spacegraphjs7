@@ -41,6 +41,16 @@
       "decision": "pending human review; ADR 0008 default gate not closed"
     },
     {
+      "id": "octave-palette",
+      "status": "experiment; opt-in via ?shot=octaves-palette (octavePalette=1)",
+      "incumbent": "octaves (?graphLayout=octaves) — one card colour for every octave",
+      "variant": "octaves-palette — same layout with step colouring per octave through the existing data.style seam",
+      "data": "app/pi/src/host.ts — OCTAVE_PALETTE applied only when graphLayout=octaves and octavePalette=1",
+      "effect": "Root, branches and work cards take three distinct step colours. Positions, sizes, edges and renderer are unchanged. Ported from the scale-lab winner; no claim about task success or time.",
+      "images": "regenerable pair: docs/screenshots/pi/pi-agent-octaves.png (incumbent), docs/screenshots/pi/pi-agent-octaves-palette.png (variant) via pnpm --filter pi shot octaves,octaves-palette",
+      "decision": "pending human review; ADR 0008 default gate not closed"
+    },
+    {
       "id": "chapters-wide",
       "status": "experiment; default not flipped",
       "incumbent": "chapters (?graphLayout=chapters) — two packed columns, 1600x900 viewport",

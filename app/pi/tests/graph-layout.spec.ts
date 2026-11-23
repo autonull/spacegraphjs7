@@ -144,6 +144,29 @@ test.describe('graph arrangements', () => {
         expect(await page.evaluate(() => (window as any).__pi.tracePath().length)).toBeGreaterThan(0);
     });
 
+    test('the octave palette is an opt-in colour seam with no position change', async ({ page }) => {
+        const ids = ['pi:local:oroot', 'pi:local:obranch1', 'pi:local:obranch2', 'pi:local:oleaf1-1'];
+        const shape = async () =>
+            page.evaluate((list) => {
+                const pi = (window as any).__pi;
+                return {
+                    palette: pi.octavePalette(),
+                    layout: pi.graphLayout(),
+                    positions: list.map((id) => pi.positionOf(id)),
+                };
+            }, ids);
+        await boot(page, '?shot=octaves');
+        const incumbent = await shape();
+        expect(incumbent.palette).toBe(false);
+        expect(incumbent.layout).toBe('octaves');
+
+        await boot(page, '?shot=octaves-palette');
+        const variant = await shape();
+        expect(variant.palette).toBe(true);
+        expect(variant.layout).toBe('octaves');
+        expect(variant.positions).toEqual(incumbent.positions);
+    });
+
     test('scope hulls, aligned rows and the corridor bundle are host-side overlays', async ({ page }) => {
         await boot(page, '?scenario=rich&graphLayout=timeline&graphAligned=1&ribbonCorridor=1');
         await expect(page.locator('#structure .field-hull').first()).toBeVisible();

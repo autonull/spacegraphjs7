@@ -17,6 +17,8 @@ export interface Shot {
     readonly title: string;
     readonly question: string;
     readonly scenario: 'canonical' | 'rich';
+    /** Deterministic fixture declared by the shot, not inferred from its id. */
+    readonly fixture?: 'octaves' | 'chapters' | 'rich';
     readonly preset?: string;
     /** Named UI preset applied after the shot's own vector, so a shot stays reproducible. */
     readonly ui?: string;
@@ -25,6 +27,8 @@ export interface Shot {
     readonly arrangement?: ShotArrangement;
     /** Opt-in graph arrangement applied before capture. */
     readonly graphLayout?: string;
+    /** Opt-in per-octave card colouring; only applies with the octaves layout. */
+    readonly octavePalette?: boolean;
     /** Opt-in cap on packed chapter columns; the viewport still caps it further. */
     readonly graphColumns?: number;
     readonly collapsed?: boolean;
@@ -219,10 +223,27 @@ export const SHOTS: readonly Shot[] = [
         title: 'Multi-octave range',
         question: 'Does one hierarchy drawn at 1x, 1/2x and 1/4x make zoom legible as a fractal range?',
         scenario: 'rich',
+        fixture: 'octaves',
         preset: 'aurora',
         rail: false,
         surface: 'map',
         graphLayout: 'octaves',
+        fit: true,
+        padding: 40,
+        viewport: { width: 2400, height: 1400 },
+    },
+    {
+        id: 'octaves-palette',
+        file: 'pi/pi-agent-octaves-palette.png',
+        title: 'Multi-octave range · palette',
+        question: 'Does step colouring per octave make the scale hierarchy legible without changing positions?',
+        scenario: 'rich',
+        fixture: 'octaves',
+        preset: 'aurora',
+        rail: false,
+        surface: 'map',
+        graphLayout: 'octaves',
+        octavePalette: true,
         fit: true,
         padding: 40,
         viewport: { width: 2400, height: 1400 },
@@ -233,6 +254,7 @@ export const SHOTS: readonly Shot[] = [
         title: 'Multi-octave range · near',
         question: 'Does zooming into one octave promote the smallest cards to legible detail?',
         scenario: 'rich',
+        fixture: 'octaves',
         preset: 'aurora',
         rail: false,
         surface: 'map',
@@ -305,6 +327,7 @@ export const SHOTS: readonly Shot[] = [
         title: 'Chapters · turn subgraphs',
         question: 'Does one card per turn, with its work inside, read as a compact story?',
         scenario: 'rich',
+        fixture: 'chapters',
         preset: 'aurora',
         rail: false,
         surface: 'map',
