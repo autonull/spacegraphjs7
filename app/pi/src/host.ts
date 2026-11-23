@@ -24,7 +24,6 @@ import {
     occupancySpacingFactor,
     scopeFieldRects,
     ScopeSimulation,
-    type ScopePolicyInput,
     type ScopeSpec,
 } from 'spacegraphjs/layout';
 import {
@@ -39,14 +38,6 @@ import {
     representationWeights,
 } from 'spacegraphjs/salience';
 import { lerp, requireElement } from 'spacegraphjs/utils';
-import {
-    createVisionLoop,
-    type VisionLoop,
-    type VisionLoopAnalyzers,
-    type VisionLoopReport,
-    type VisionLoopScores,
-    type VisionReport,
-} from 'spacegraphjs/vision';
 import type { RenderNode } from '@spacegraphjs/renderer';
 import {
     createInstrumentKit,
@@ -97,11 +88,9 @@ import {
     exportSVG,
     labelFontPx,
     levelForZoom,
-    scoreVision,
     unsupportedSeams,
     windowedView,
     type Position,
-    type VisionScores,
 } from './policy/host';
 import {
     POLICY_EXPERIMENTS,
@@ -186,6 +175,8 @@ import {
     type InspectorTab,
     type StateFrame,
 } from './shell';
+import { SHORTCUT_HELP } from './help';
+import { configureVision, VisionController } from './vision-controller';
 
 export type Arrangement = 'stacked' | 'side' | 'floating';
 export type Surface = 'log' | 'map' | 'hybrid';
@@ -239,76 +230,6 @@ function downloadBlob(blob: Blob, filename: string): void {
     link.click();
     URL.revokeObjectURL(url);
 }
-
-const VISION_MODELS: Record<string, string> = {
-    tla: '/tla_model.onnx',
-    che: '/che_model.onnx',
-    odn: '/odn_model.onnx',
-    vhs: '/vhs_model.onnx',
-    eqa: '/eqa_model.onnx',
-};
-
-type HostVision = {
-    readonly strategy: string;
-    readonly modelLoader: {
-        readonly isLoaded: boolean;
-        getAvailableModels(): readonly string[];
-    };
-    readonly visionSystem: {
-        setStrategy(name: string): void;
-        analyze(graph: unknown, camera: unknown): Promise<VisionReport>;
-    };
-    readonly modelsLoaded: boolean;
-    loadModels(paths: Record<string, string>): Promise<void>;
-};
-
-type VisionInstance = {
-    graph: unknown;
-    renderer: { camera: unknown };
-    vision: HostVision;
-};
-
-const visionInstance = (): VisionInstance | undefined => {
-    const instances = (window as unknown as { SpaceGraph?: { instances?: Set<unknown> } })
-        .SpaceGraph?.instances;
-    return instances ? (Array.from(instances)[0] as VisionInstance | undefined) : undefined;
-};
-
-const hostVision = (): HostVision | undefined => visionInstance()?.vision;
-
-/** Pure analyzers: the gate's strategy, without the autonomous fixer's layout mutation. */
-const visionAnalyzers = (): VisionLoopAnalyzers | undefined => {
-    const instance = visionInstance();
-    if (!instance?.vision) return undefined;
-    return {
-        strategy: instance.vision.strategy,
-        analyze: () =>
-            instance.vision.visionSystem.analyze(instance.graph, instance.renderer.camera),
-    };
-};
-
-/**
- * Never fabricate `modelsLoaded`. Heuristics is the honest default: the bundled ONNX files are
- * placeholders in this runtime, so only an explicit `?vision=onnx` opt-in attempts a real load.
- * The strategy is recorded per capture and a failed load falls back rather than inventing scores.
- */
-const configureVision = async (): Promise<'onnx' | 'heuristics'> => {
-    const vision = hostVision();
-    const optedIn =
-        typeof location !== 'undefined' &&
-        new URLSearchParams(location.search).get('vision') === 'onnx';
-    if (!vision || !optedIn) {
-        vision?.visionSystem.setStrategy('heuristics');
-        return 'heuristics';
-    }
-    await vision.loadModels(VISION_MODELS);
-    if (vision.modelLoader.getAvailableModels().length === 0) {
-        vision.visionSystem.setStrategy('heuristics');
-        return 'heuristics';
-    }
-    vision.visionSystem.setStrategy('onnx');
-    return 'onnx';
-};
 
 /**
  * Host-owned policy. The library never learns about Pi, prompts, lanes, levels or depth choices;
@@ -381,14 +302,8 @@ export class PiHost {
     #fps = 0;
     #diagnostics = new URLSearchParams(globalThis.location?.search ?? '').has('debug');
     #activity = new Map<string, number>();
-    #vision: VisionScores = { overlap: 0, legibility: 1 };
-    #visionStrategy: 'onnx' | 'heuristics' = 'heuristics';
-    #visionTime = 0;
+    readonly vision: VisionController;
     #minimapTime = 0;
-    #visionLoop?: VisionLoop;
-    #visionLoopEnabled = false;
-    #visionLoopBusy = false;
-    #visionReport?: VisionLoopReport;
     #windowSize = 60;
     #hidden = 0;
     #laneScope = '';
@@ -519,6 +434,15 @@ export class PiHost {
             FIXTURE_ID,
             () => (typeof performance === 'undefined' ? 0 : performance.now()) - this.#startedAt,
         );
+        this.vision = new VisionController({
+            global: this.#global,
+            positions: () => this.#positions,
+            focus: () => this.#qualifiedByNode.get(this.#controller.selection[0] ?? this.#revealed),
+            band: () => this.band(),
+            setPolicy: (input) => this.simulation.setPolicy(input),
+            syncClock: () => this.syncClock(),
+            paint: () => this.paint(),
+        });
     }
 
     get policy(): {
@@ -590,10 +514,10 @@ export class PiHost {
         kind: string,
         meta: Readonly<Record<string, string | number | boolean>> = {},
     ): void {
-        const vision = this.#visionReport?.scores ?? this.#visionLoop?.lastReport?.scores;
+        const vision = this.vision.lastScores;
         this.#recorder.record(kind, this.#resolved.vector, {
-            legibility: vision?.legibility ?? this.#vision.legibility,
-            overlap: vision?.overlap ?? this.#vision.overlap,
+            legibility: vision?.legibility ?? this.vision.scores.legibility,
+            overlap: vision?.overlap ?? this.vision.scores.overlap,
             ...meta,
         });
     }
@@ -726,7 +650,7 @@ export class PiHost {
             reducedMotion: this.#reducedMotion,
             global: this.#global,
         });
-        if (this.#global) this.#visionStrategy = await configureVision();
+        if (this.#global) this.vision.strategy = await configureVision();
         if (!supportsDepth(this.renderer.capabilities, this.#depth)) this.#depth = 'flat';
         this.renderer.setDepth(this.#depth);
         this.#controller.bind(this.renderer);
@@ -853,7 +777,7 @@ export class PiHost {
         this.renderPortalCrumb();
         this.renderMinimap();
         this.bindControls();
-        this.renderVisionLoop();
+        this.vision.render();
         if (
             this.#global &&
             typeof location !== 'undefined' &&
@@ -1050,7 +974,7 @@ export class PiHost {
                 const input = {
                     level,
                     activity: this.#activity.get(node.id) ?? 0,
-                    legibility: this.#vision.legibility,
+                    legibility: this.vision.scores.legibility,
                 };
                 const weights = representationWeights(input, thresholds);
                 const blend = 1 - Math.max(weights.overview, weights.execution, weights.detail);
@@ -1277,12 +1201,7 @@ export class PiHost {
             this.clearDissolve();
         }
         decayActivity(this.#activity, seconds, Number(this.#resolved.values['salience.decayRate']));
-        this.#visionTime += seconds;
-        if (this.#visionTime >= 0.4) {
-            this.#visionTime = 0;
-            if (this.#visionLoopEnabled) this.runVisionLoop();
-            else this.sampleVision();
-        }
+        this.vision.advance(seconds);
         this.#minimapTime += seconds;
         if (this.#minimapTime >= 0.2) {
             this.#minimapTime = 0;
@@ -1609,11 +1528,7 @@ export class PiHost {
 
     /** Explicit host toggle: no analysis or retargeting happens until this is enabled. */
     setVisionLoop(enabled: boolean): boolean {
-        this.#visionLoopEnabled = enabled;
-        el('vision-loop-toggle').setAttribute('data-active', String(enabled));
-        if (enabled) this.runVisionLoop();
-        this.renderVisionLoop();
-        return enabled;
+        return this.vision.setEnabled(enabled);
     }
 
     setArrangement(arrangement: Arrangement): Arrangement {
@@ -1970,8 +1885,8 @@ export class PiHost {
         return {
             series: [
                 this.#activity.get(node.id) ?? 0,
-                this.#vision.legibility,
-                1 - this.#vision.overlap,
+                this.vision.scores.legibility,
+                1 - this.vision.scores.overlap,
             ],
             value: node.emphasis ?? 0,
             status: String(data.status ?? node.status ?? 'idle'),
@@ -2003,49 +1918,28 @@ export class PiHost {
     }
 
     private commands(): readonly Command[] {
+        const command = (
+            id: string,
+            label: string,
+            group: string,
+            run: () => void,
+            hint?: string,
+        ): Command => ({ id, label, group, ...(hint ? { hint } : {}), run });
+        const toggle = (
+            id: string,
+            label: string,
+            group: string,
+            current: () => boolean,
+            set: (value: boolean) => void,
+            hint?: string,
+        ): Command => command(id, label, group, () => set(!current()), hint);
         const nav: readonly Command[] = [
-            {
-                id: 'nav.reveal',
-                label: 'Reveal selection',
-                group: 'navigate',
-                hint: 'Enter',
-                run: () => this.focusPrimary(),
-            },
-            {
-                id: 'nav.descend',
-                label: 'Descend into scope',
-                group: 'navigate',
-                hint: 'PgDn',
-                run: () => this.descend(),
-            },
-            {
-                id: 'nav.ascend',
-                label: 'Ascend from scope',
-                group: 'navigate',
-                hint: 'PgUp',
-                run: () => this.ascend(),
-            },
-            {
-                id: 'nav.trace',
-                label: 'Trace a path',
-                group: 'navigate',
-                hint: 't',
-                run: () => this.#revealed && this.trace(this.#revealed),
-            },
-            {
-                id: 'nav.survey',
-                label: 'Survey the graph',
-                group: 'navigate',
-                hint: 's',
-                run: () => this.survey(),
-            },
-            {
-                id: 'nav.home',
-                label: 'Return home',
-                group: 'navigate',
-                hint: 'Home',
-                run: () => this.returnHome(),
-            },
+            command('nav.reveal', 'Reveal selection', 'navigate', () => this.focusPrimary(), 'Enter'),
+            command('nav.descend', 'Descend into scope', 'navigate', () => this.descend(), 'PgDn'),
+            command('nav.ascend', 'Ascend from scope', 'navigate', () => this.ascend(), 'PgUp'),
+            command('nav.trace', 'Trace a path', 'navigate', () => this.#revealed && this.trace(this.#revealed), 't'),
+            command('nav.survey', 'Survey the graph', 'navigate', () => this.survey(), 's'),
+            command('nav.home', 'Return home', 'navigate', () => this.returnHome(), 'Home'),
             ...(
                 [
                     ['scopes', 'Scopes', 'overview'],
@@ -2075,51 +1969,22 @@ export class PiHost {
             })),
         ];
         const chrome: readonly Command[] = [
-            {
-                id: 'ui.catalog',
-                label: 'Toggle catalog',
-                group: 'interface',
-                run: () => this.toggleCatalog(),
-            },
-            {
-                id: 'ui.rail',
-                label: 'Toggle rail',
-                group: 'interface',
-                run: () => this.toggleRail(),
-            },
-            {
-                id: 'ui.transcript',
-                label: 'Toggle transcript',
-                group: 'interface',
-                run: () => this.toggleTranscript(),
-            },
-            {
-                id: 'ui.pin',
-                label: 'Toggle inspector pin',
-                group: 'interface',
-                run: () => this.#inspector?.setPinned(!this.#inspector.pinned),
-            },
+            command('ui.catalog', 'Toggle catalog', 'interface', () => this.toggleCatalog()),
+            command('ui.rail', 'Toggle rail', 'interface', () => this.toggleRail()),
+            command('ui.transcript', 'Toggle transcript', 'interface', () => this.toggleTranscript()),
+            command('ui.pin', 'Toggle inspector pin', 'interface', () => this.#inspector?.setPinned(!this.#inspector.pinned)),
             ...INSPECTOR_TABS.map((tab) => ({
                 id: `ui.tab.${tab}`,
                 label: `Inspector · ${tab}`,
                 group: 'interface',
                 run: () => this.#inspector?.setTab(tab),
             })),
-            {
-                id: 'ui.inspector',
-                label: 'Focus the inspector',
-                group: 'interface',
-                run: () =>
-                    document
-                        .querySelector<HTMLElement>('#focus-lens [role="tab"][aria-selected="true"]')
-                        ?.focus(),
-            },
-            {
-                id: 'ui.share',
-                label: 'Share exact view',
-                group: 'interface',
-                run: () => this.shareView(),
-            },
+            command('ui.inspector', 'Focus the inspector', 'interface', () =>
+                document
+                    .querySelector<HTMLElement>('#focus-lens [role="tab"][aria-selected="true"]')
+                    ?.focus(),
+            ),
+            command('ui.share', 'Share exact view', 'interface', () => this.shareView()),
         ];
         const lab: readonly Command[] = [
             ...UI_PRESETS.map((entry) => ({
@@ -2192,39 +2057,11 @@ export class PiHost {
                 hint: mode === this.#graphLayout ? 'current' : undefined,
                 run: () => this.setGraphLayout(mode),
             })),
-            {
-                id: 'view.graphAligned',
-                label: 'Toggle aligned transcript',
-                group: 'graph view',
-                hint: 'a',
-                run: () => this.setGraphLayoutAligned(!this.#graphLayoutAligned),
-            },
-            {
-                id: 'view.ribbonCorridor',
-                label: 'Toggle ribbon corridor',
-                group: 'graph view',
-                hint: 'r',
-                run: () => this.setRibbonCorridor(!this.#ribbonCorridor),
-            },
-            {
-                id: 'view.graphMorph',
-                label: 'Toggle animated graph transition',
-                group: 'graph view',
-                hint: 'm',
-                run: () => this.setGraphMorph(!this.#graphMorph),
-            },
-            {
-                id: 'view.continuity',
-                label: 'Toggle continuous connection grammar',
-                group: 'graph view',
-                run: () => this.setContinuity(!this.#continuity),
-            },
-            {
-                id: 'view.fieldTargets',
-                label: 'Toggle solved-target scope fields',
-                group: 'graph view',
-                run: () => this.setFieldTargets(!this.#fieldTargets),
-            },
+            toggle('view.graphAligned', 'Toggle aligned transcript', 'graph view', () => this.#graphLayoutAligned, (v) => this.setGraphLayoutAligned(v), 'a'),
+            toggle('view.ribbonCorridor', 'Toggle ribbon corridor', 'graph view', () => this.#ribbonCorridor, (v) => this.setRibbonCorridor(v), 'r'),
+            toggle('view.graphMorph', 'Toggle animated graph transition', 'graph view', () => this.#graphMorph, (v) => this.setGraphMorph(v), 'm'),
+            toggle('view.continuity', 'Toggle continuous connection grammar', 'graph view', () => this.#continuity, (v) => this.setContinuity(v)),
+            toggle('view.fieldTargets', 'Toggle solved-target scope fields', 'graph view', () => this.#fieldTargets, (v) => this.setFieldTargets(v)),
             ...(this.#view.turns ?? []).map((turnID, index) => ({
                 id: `view.turn.${turnID}`,
                 label: `Focus turn ${index + 1}`,
@@ -2291,44 +2128,7 @@ export class PiHost {
                 hint: '?',
                 run: () => this.#commandSurface?.open('help'),
             },
-            {
-                id: 'help.reveal',
-                label: 'Reveal the selected node',
-                group: 'shortcut',
-                hint: 'Enter',
-            },
-            {
-                id: 'help.descend',
-                label: 'Descend / ascend a scope',
-                group: 'shortcut',
-                hint: 'PgDn / PgUp',
-            },
-            { id: 'help.trace', label: 'Trace a path', group: 'shortcut', hint: 't' },
-            { id: 'help.survey', label: 'Survey the graph', group: 'shortcut', hint: 's' },
-            {
-                id: 'help.home',
-                label: 'Return home, close the surface',
-                group: 'shortcut',
-                hint: 'Home / Esc',
-            },
-            { id: 'help.pan', label: 'Pan and zoom', group: 'shortcut', hint: 'arrows / +−' },
-            { id: 'help.focus', label: 'Center the focused node', group: 'shortcut', hint: 'f' },
-            { id: 'help.graphView', label: 'Cycle graph views', group: 'shortcut', hint: 'g' },
-            { id: 'help.graphAligned', label: 'Toggle aligned transcript', group: 'shortcut', hint: 'a' },
-            { id: 'help.corridor', label: 'Toggle ribbon corridor', group: 'shortcut', hint: 'r' },
-            { id: 'help.graphMorph', label: 'Toggle graph morph', group: 'shortcut', hint: 'm' },
-            {
-                id: 'help.continuity',
-                label: 'Toggle continuous connection grammar',
-                group: 'shortcut',
-                hint: 'view.continuity',
-            },
-            {
-                id: 'help.fieldTargets',
-                label: 'Toggle scope fields anchored to solved targets',
-                group: 'shortcut',
-                hint: 'view.fieldTargets',
-            },
+            ...SHORTCUT_HELP,
         ];
     }
 
@@ -2516,16 +2316,16 @@ export class PiHost {
             clock: () => this.#clock,
             ticks: () => this.#ticks,
             fps: () => this.#fps,
-            vision: () => this.#vision,
-            visionStrategy: () => this.#visionStrategy,
+            vision: () => this.vision.scores,
+            visionStrategy: () => this.vision.strategy,
             setVisionLoop: (enabled: boolean) => this.setVisionLoop(enabled),
             visionLoop: () => ({
-                enabled: this.#visionLoopEnabled,
-                strategy: this.visionLoop().strategy,
-                report: this.#visionReport,
-                unsupported: this.visionLoop().reportUnsupported(),
+                enabled: this.vision.enabled,
+                strategy: this.vision.loop.strategy,
+                report: this.vision.report,
+                unsupported: this.vision.loop.reportUnsupported(),
             }),
-            runVisionLoop: () => this.runVisionLoop(),
+            runVisionLoop: () => this.vision.run(),
             cameraMotion: () => ({
                 verbs: this.cameraMotion.verbs,
                 unsupported: this.cameraMotion.reportUnsupported(),
@@ -2591,11 +2391,11 @@ export class PiHost {
                 steps: this.simulation.steps,
             },
             motion: { verbs: this.director.verbs(), active: this.#playback?.active ?? [] },
-            vision: this.#vision,
+            vision: this.vision.scores,
             visionLoop: {
-                enabled: this.#visionLoopEnabled,
-                strategy: this.visionLoop().strategy,
-                retargeted: this.#visionReport?.retargeted ?? [],
+                enabled: this.vision.enabled,
+                strategy: this.vision.loop.strategy,
+                retargeted: this.vision.report?.retargeted ?? [],
             },
             activity: this.#activity.size,
             window: { size: this.#windowSize, hidden: this.#hidden },
@@ -2630,78 +2430,6 @@ export class PiHost {
             return turns.length > 1 ? (index < 0 ? 0 : index / (turns.length - 1)) : 0;
         }
         return (DEPTH[node.kind] ?? 2) / 4;
-    }
-
-    private sampleVision(): void {
-        const next = scoreVision(this.#positions);
-        const changed =
-            Math.abs(next.overlap - this.#vision.overlap) > 0.12 ||
-            Math.abs(next.legibility - this.#vision.legibility) > 0.1;
-        if (!changed) return;
-        this.#vision = next;
-        this.simulation.setPolicy({
-            band: this.band(),
-            focus: this.#qualifiedByNode.get(this.#controller.selection[0] ?? this.#revealed),
-            vision: next,
-        });
-        this.syncClock();
-    }
-
-    private visionLoop(): VisionLoop {
-        if (!this.#visionLoop || this.#visionLoop.reportUnsupported().length) {
-            this.#visionLoop = createVisionLoop(
-                this.#global ? visionAnalyzers() : undefined,
-                (input, scores) => this.applyVisionPolicy(input, scores),
-            );
-        }
-        return this.#visionLoop;
-    }
-
-    private applyVisionPolicy(input: ScopePolicyInput, scores: VisionLoopScores): void {
-        const previous = this.#vision.legibility;
-        this.#vision = { overlap: scores.overlap, legibility: scores.legibility };
-        this.simulation.setPolicy({
-            ...input,
-            band: this.band(),
-            focus: this.#qualifiedByNode.get(this.#controller.selection[0] ?? this.#revealed),
-        });
-        // representationRung switches at 0.5 and 0.7; repaint only when legibility crosses one.
-        if (
-            previous < 0.5 !== scores.legibility < 0.5 ||
-            previous < 0.7 !== scores.legibility < 0.7
-        ) {
-            this.paint();
-        }
-        this.syncClock();
-    }
-
-    private runVisionLoop(): void {
-        if (!this.#visionLoopEnabled || this.#visionLoopBusy) return;
-        this.#visionLoopBusy = true;
-        void this.visionLoop()
-            .cycle()
-            .then((report) => {
-                if (!report) return;
-                this.#visionReport = report;
-                this.renderVisionLoop();
-            })
-            .finally(() => {
-                this.#visionLoopBusy = false;
-            });
-    }
-
-    private renderVisionLoop(): void {
-        const loop = this.visionLoop();
-        const report = this.#visionReport;
-        el('vision-loop-state').textContent = report
-            ? `strategy ${loop.strategy} · overlap ${report.scores.overlap.toFixed(2)} · ` +
-              `legibility ${report.scores.legibility.toFixed(2)} · hierarchy ${report.scores.hierarchy.toFixed(2)} · ` +
-              `ergonomics ${report.scores.ergonomics.toFixed(2)} · retargeted ${report.retargeted.join(', ') || 'none'}`
-            : `${this.#visionLoopEnabled ? 'analyzing…' : 'off'} · strategy ${loop.strategy}` +
-              (loop
-                  .reportUnsupported()
-                  .map((item) => ` · ${item.reason}`)
-                  .join('') || '');
     }
 
     private registerMotion(): CameraMotionHandlers {
@@ -2952,7 +2680,7 @@ export class PiHost {
         );
         el('play-reconcile').addEventListener('click', () => this.reconcilePlay());
         el('vision-loop-toggle').addEventListener('click', () =>
-            this.setVisionLoop(!this.#visionLoopEnabled),
+            this.setVisionLoop(!this.vision.enabled),
         );
         el('guided-replay').addEventListener('click', () => this.openQuestions());
         el('trail-back').addEventListener('click', () => this.trailBack());
@@ -3456,7 +3184,7 @@ export class PiHost {
             `${this.#level}/${this.#levelMode} · ${this.#depth}/${this.#depthAxis} · ` +
             `${this.simulation.settled ? 'settled' : 'moving'} · ${view}`;
         const detail =
-            `energy ${this.simulation.energy.toFixed(3)} · overlap ${this.#vision.overlap.toFixed(2)} · ` +
+            `energy ${this.simulation.energy.toFixed(3)} · overlap ${this.vision.scores.overlap.toFixed(2)} · ` +
             `${Math.round(this.#fps)} fps`;
         const hud = el('hud');
         hud.textContent = this.#diagnostics ? `${context} · ${detail}` : context;
