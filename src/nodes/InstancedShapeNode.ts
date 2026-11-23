@@ -1,9 +1,6 @@
 import {
     Color,
-    DynamicDrawUsage,
-    InstancedBufferAttribute,
     InstancedMesh,
-    Material,
     Matrix4,
     MeshBasicMaterial,
     Quaternion,
@@ -12,6 +9,7 @@ import {
 } from 'three';
 
 import type { SpaceGraph } from '../SpaceGraph';
+import { growInstancedMesh } from '../rendering/InstancedMeshLifecycle';
 import type { NodeSpec } from '../types';
 import { BaseInstancedNode } from './BaseInstancedNode';
 
@@ -74,41 +72,16 @@ export class InstancedShapeNode extends BaseInstancedNode {
     }
 
     private rebuildInstancedMesh(newCapacity: number) {
-        const oldMesh = instancedMeshRegistry.get(this.sg!);
-        const geometry = new SphereGeometry(20, 16, 16);
-        const material = new MeshBasicMaterial();
-        const newMesh = new InstancedMesh(geometry, material, newCapacity);
-        newMesh.instanceMatrix.setUsage(DynamicDrawUsage);
+        const mesh = growInstancedMesh(
+            instancedMeshRegistry.get(this.sg!),
+            new SphereGeometry(20, 16, 16),
+            new MeshBasicMaterial(),
+            newCapacity,
+            this.sg!.renderer.scene,
+        );
 
-        if (newMesh.instanceColor) {
-            newMesh.instanceColor.setUsage(DynamicDrawUsage);
-        } else {
-            newMesh.instanceColor = new InstancedBufferAttribute(
-                new Float32Array(newCapacity * 3),
-                3,
-            );
-            newMesh.instanceColor.setUsage(DynamicDrawUsage);
-        }
-
-        if (oldMesh) {
-            newMesh.count = oldMesh.count;
-            for (let i = 0; i < oldMesh.count; i++) {
-                oldMesh.getMatrixAt(i, matrixHelper);
-                newMesh.setMatrixAt(i, matrixHelper);
-                oldMesh.getColorAt(i, colorHelper);
-                newMesh.setColorAt(i, colorHelper);
-            }
-            this.sg!.renderer.scene.remove(oldMesh);
-            oldMesh.geometry.dispose();
-            (oldMesh.material as Material).dispose();
-            oldMesh.dispose();
-        } else {
-            newMesh.count = 0;
-        }
-
-        instancedMeshRegistry.set(this.sg!, newMesh);
+        instancedMeshRegistry.set(this.sg!, mesh);
         capacityRegistry.set(this.sg!, newCapacity);
-        this.sg!.renderer.scene.add(newMesh);
     }
 
     private updateInstanceMatrix() {

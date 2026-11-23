@@ -5,8 +5,6 @@ import {
     Color,
     ConeGeometry,
     CylinderGeometry,
-    DynamicDrawUsage,
-    InstancedBufferAttribute,
     InstancedMesh,
     Material,
     Matrix4,
@@ -20,6 +18,11 @@ import {
     Vector3,
 } from 'three';
 import type { SpaceGraph } from '../SpaceGraph';
+import {
+    createInstancedMesh,
+    disposeInstancedMesh,
+    growInstancedMesh,
+} from './InstancedMeshLifecycle';
 
 export const GEOMETRY_FAMILIES = {
     SPHERE: 'sphere',
@@ -160,7 +163,8 @@ export class InstancedNodeRenderer {
     }
 
     public dispose() {
-        for (const state of this.familyStates.values()) this.disposeMesh(state.mesh);
+        for (const state of this.familyStates.values())
+            disposeInstancedMesh(state.mesh, this.scene);
         this.familyStates.clear();
         this.nodeToSlot.clear();
     }
@@ -178,16 +182,7 @@ export class InstancedNodeRenderer {
     }
 
     private initializeGeometries() {
-        const families: GeometryFamily[] = [
-            GEOMETRY_FAMILIES.SPHERE,
-            GEOMETRY_FAMILIES.BOX,
-            GEOMETRY_FAMILIES.CYLINDER,
-            GEOMETRY_FAMILIES.PLANE,
-            GEOMETRY_FAMILIES.CONE,
-            GEOMETRY_FAMILIES.TORUS,
-            GEOMETRY_FAMILIES.RING,
-            GEOMETRY_FAMILIES.CIRCLE,
-        ];
+        const families = Object.keys(GEOMETRY_FACTORIES) as GeometryFamily[];
 
         for (const family of families) {
             const mesh = this.createMesh(family, DEFAULT_CAPACITY);
@@ -225,21 +220,7 @@ export class InstancedNodeRenderer {
 
     private createMesh(family: GeometryFamily, capacity: number): InstancedMesh {
         const { geometry, material } = this.createGeometryAndMaterial(family);
-        const mesh = new InstancedMesh(geometry, material, capacity);
-        mesh.instanceMatrix.setUsage(DynamicDrawUsage);
-        mesh.count = 0;
-        mesh.frustumCulled = false;
-        if (!mesh.instanceColor)
-            mesh.instanceColor = new InstancedBufferAttribute(new Float32Array(capacity * 3), 3);
-        mesh.instanceColor.setUsage(DynamicDrawUsage);
-        return mesh;
-    }
-
-    private disposeMesh(mesh: InstancedMesh): void {
-        this.scene.remove(mesh);
-        mesh.geometry.dispose();
-        (mesh.material as Material).dispose();
-        mesh.dispose();
+        return createInstancedMesh(geometry, material, capacity);
     }
 
     private expandFamily(family: GeometryFamily) {
@@ -247,28 +228,14 @@ export class InstancedNodeRenderer {
         if (!oldState) return;
 
         const newCapacity = oldState.slots.length * 2;
-        const oldMesh = oldState.mesh;
-
-        const newMesh = this.createMesh(family, newCapacity);
-        newMesh.count = oldMesh.count;
-
-        const matrix = new Matrix4();
-        const color = new Color();
-
-        for (let i = 0; i < oldMesh.count; i++) {
-            oldMesh.getMatrixAt(i, matrix);
-            newMesh.setMatrixAt(i, matrix);
-
-            if (oldMesh.instanceColor) {
-                oldMesh.getColorAt(i, color);
-                newMesh.setColorAt(i, color);
-            }
-        }
-
-        newMesh.instanceMatrix.needsUpdate = true;
-        if (newMesh.instanceColor) {
-            newMesh.instanceColor.needsUpdate = true;
-        }
+        const { geometry, material } = this.createGeometryAndMaterial(family);
+        const newMesh = growInstancedMesh(
+            oldState.mesh,
+            geometry,
+            material,
+            newCapacity,
+            this.scene,
+        );
 
         const newSlots: InstanceSlot[] = [];
         const newFreeSlots: number[] = [];
@@ -291,9 +258,6 @@ export class InstancedNodeRenderer {
             needsColorUpdate: true,
         };
 
-        this.disposeMesh(oldMesh);
-
         this.familyStates.set(family, newState);
-        this.scene.add(newMesh);
     }
 }

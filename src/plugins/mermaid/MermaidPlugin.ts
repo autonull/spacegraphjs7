@@ -1,4 +1,3 @@
-import { OrthographicCamera, PerspectiveCamera } from 'three';
 import type { Graph } from '../../core/Graph';
 import type { SpaceGraph } from '../../SpaceGraph';
 import { parseColor } from '../../utils/color';
@@ -321,7 +320,11 @@ export class MermaidPlugin extends BaseSystemPlugin {
         duration?: number;
     }): void {
         const hud = this.sg.pluginManager.getPlugin('hud') as HUDPlugin | undefined;
-        hud?.showAlert(options as any);
+        hud?.showAlert({
+            message: options.message,
+            variant: options.type,
+            duration: options.duration,
+        });
     }
 
     dispose(): void {
@@ -490,12 +493,9 @@ export class MermaidPlugin extends BaseSystemPlugin {
     }
 
     private toggle3D(): void {
-        const camera = this.sg.renderer.camera as PerspectiveCamera;
-        const next = camera.isPerspectiveCamera
-            ? new OrthographicCamera(-100, 100, 100, -100, 0.1, 10000)
-            : new PerspectiveCamera(75, 1, 0.1, 10000);
-        (this.sg.cameraControls as any).switchCamera?.(next, { duration: 0.5 });
-        this.sg.renderer.scheduleRender();
+        this.sg.setProjection(
+            this.sg.projection === 'orthographic' ? 'perspective' : 'orthographic',
+        );
     }
 
     private renderDiagram(): void {
@@ -552,12 +552,7 @@ export class MermaidPlugin extends BaseSystemPlugin {
     }
 
     private clearGraph(): void {
-        for (const node of this.graph.getNodes()) {
-            this.graph.removeNode(node.id);
-        }
-        for (const edge of this.graph.getEdges()) {
-            this.graph.removeEdge(edge.id);
-        }
+        this.graph.clear();
     }
 
     private async applyClusterLayouts(): Promise<void> {
